@@ -75,6 +75,7 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
     string fname_base = CDirEntry::ConcatPath(base_dir, fname);
     string fname_app = CDirEntry::ConcatPath(base_dir, fname + ".app");
     string fname_lib = CDirEntry::ConcatPath(base_dir, fname + ".lib");
+    string fname_dll = CDirEntry::ConcatPath(base_dir, fname + ".dll");
     string fname_msvc = CDirEntry::ConcatPath(base_dir, fname + ".msvcproj");
 
     switch (type) {
@@ -83,13 +84,16 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
             return CProjKey::eApp;
         }
         break;
-
     case SMakeInInfo::eLib:
         if ( CDirEntry(fname_lib).Exists()) {
             return CProjKey::eLib;
         }
         break;
-
+    case SMakeInInfo::eDll:
+        if ( CDirEntry(fname_dll).Exists()) {
+            return CProjKey::eDll;
+        }
+        break;
     case SMakeInInfo::eMsvc:
         if ( CDirEntry(fname_msvc).Exists()) {
             return CProjKey::eMsvc;
@@ -102,6 +106,8 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
 
     if ( CDirEntry(fname_lib).Exists() )
         return CProjKey::eLib;
+    else if (CDirEntry(fname_dll).Exists() )
+        return CProjKey::eDll;
     else if (CDirEntry(fname_app).Exists() )
         return CProjKey::eApp;
     else if (CDirEntry(fname_msvc).Exists() )
@@ -116,6 +122,11 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
 
     case SMakeInInfo::eLib:
         PTB_WARNING_EX(fname_lib, ePTB_MissingMakefile,
+                       "Makefile not found");
+        break;
+
+    case SMakeInInfo::eDll:
+        PTB_WARNING_EX(fname_dll, ePTB_MissingMakefile,
                        "Makefile not found");
         break;
 
@@ -143,6 +154,12 @@ bool SMakeProjectT::IsMakeLibFile(const string& name)
 {
     return NStr::StartsWith(name, "Makefile")  &&  
 	       NStr::EndsWith(name, ".lib");
+}
+
+bool SMakeProjectT::IsMakeDllFile(const string& name)
+{
+    return NStr::StartsWith(name, "Makefile")  &&  
+	       NStr::EndsWith(name, ".dll");
 }
 
 
@@ -418,10 +435,9 @@ void SMakeProjectT::AnalyzeMakeIn
      TMakeInInfoList*               info)
 {
     info->clear();
+    CSimpleMakeFileContents::TContents::const_iterator p;
 
-    CSimpleMakeFileContents::TContents::const_iterator p = 
-        makein_contents.m_Contents.find("LIB_PROJ");
-
+    p = makein_contents.m_Contents.find("LIB_PROJ");
     if (p != makein_contents.m_Contents.end()) {
 
         info->push_back(SMakeInInfo(SMakeInInfo::eLib, p->second,
@@ -432,6 +448,31 @@ void SMakeProjectT::AnalyzeMakeIn
 
         info->push_back(SMakeInInfo(SMakeInInfo::eLib, p->second,
             max(makein_contents.GetMakeType(),eMakeType_Expendable))); 
+    }
+    p = makein_contents.m_Contents.find("POTENTIAL_LIB_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eLib, p->second,
+            max(makein_contents.GetMakeType(),eMakeType_Potential))); 
+    }
+
+    p = makein_contents.m_Contents.find("DLL_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eDll, p->second,
+            makein_contents.GetMakeType())); 
+    }
+    p = makein_contents.m_Contents.find("EXPENDABLE_DLL_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eDll, p->second,
+            max(makein_contents.GetMakeType(),eMakeType_Expendable))); 
+    }
+    p = makein_contents.m_Contents.find("POTENTIAL_DLL_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eDll, p->second,
+            max(makein_contents.GetMakeType(),eMakeType_Potential))); 
     }
 
     p = makein_contents.m_Contents.find("APP_PROJ");
@@ -445,6 +486,12 @@ void SMakeProjectT::AnalyzeMakeIn
 
         info->push_back(SMakeInInfo(SMakeInInfo::eApp, p->second,
             max(makein_contents.GetMakeType(),eMakeType_Expendable))); 
+    }
+    p = makein_contents.m_Contents.find("POTENTIAL_APP_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eApp, p->second,
+            max(makein_contents.GetMakeType(),eMakeType_Potential))); 
     }
 
     p = makein_contents.m_Contents.find("ASN_PROJ");
@@ -490,6 +537,9 @@ string SMakeProjectT::CreateMakeAppLibFileName
     if (proj_type==CProjKey::eLib)
         return fname + ".lib";
 
+    if (proj_type==CProjKey::eDll)
+        return fname + ".dll";
+
     if (proj_type==CProjKey::eApp)
         return fname + ".app";
 
@@ -527,22 +577,10 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
             NStr::Split(def, LIST_SEPARATOR, resolved_def);
             ITERATE(list<string>, r, resolved_def) {
                 id = *r;
-                if ( GetApp().GetBuildType().GetType() == CBuildType::eDll &&
-                    GetApp().GetDllsInfo().IsDllHosted(id) ) {
-                    depends_ids->push_back(CProjKey(CProjKey::eDll,
-                                        GetApp().GetDllsInfo().GetDllHost(id)));
-                } else {
-                    depends_ids->push_back(CProjKey(CProjKey::eLib, id));
-                }
-            }
-        } else {
-            if ( GetApp().GetBuildType().GetType() == CBuildType::eDll &&
-                 GetApp().GetDllsInfo().IsDllHosted(id) ) {
-                depends_ids->push_back(CProjKey(CProjKey::eDll,
-                                       GetApp().GetDllsInfo().GetDllHost(id)));
-            } else {
                 depends_ids->push_back(CProjKey(CProjKey::eLib, id));
             }
+        } else {
+            depends_ids->push_back(CProjKey(CProjKey::eLib, id));
         }
     }
     depends_ids->sort();
@@ -896,13 +934,13 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     if (k != m->second.m_Contents.end()) {
         lib_or_dll = k->second.front();
     }
+    string dll_host;
     if (!lib_or_dll.empty() ||
         CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvcNone) {
         if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
             list<string> dll_depends;
             k = m->second.m_Contents.find("DLL_LIB");
             if (k != m->second.m_Contents.end()) {
-//                dll_depends = k->second;
                 ITERATE(list<string>, i, k->second) {
                     dll_depends.push_back( NStr::Replace( *i,"-static",kEmptyStr));
                 }
@@ -912,15 +950,17 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
             copy(dll_depends_ids.begin(), 
                     dll_depends_ids.end(), 
                     back_inserter(depends_ids));
-            if (!GetApp().GetDllsInfo().IsDllHosted(proj_id)) {
-                if (NStr::CompareNocase(lib_or_dll,"dll") == 0 ||
-                    NStr::CompareNocase(lib_or_dll,"both") == 0) {
-                    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
-                        GetApp().GetDllsInfo().AddDllHostedLib(proj_id, proj_id);
-                    } else {
-                        GetApp().GetDllsInfo().AddDllHostedLib(proj_id, proj_name);
-                    }
+            if (NStr::CompareNocase(lib_or_dll,"dll") == 0 ||
+                NStr::CompareNocase(lib_or_dll,"both") == 0) {
+#if 0
+                if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
+                    dll_host = proj_id;
+                } else {
+                    dll_host =  proj_name;
                 }
+#else
+		dll_host = proj_id;
+#endif
             }
         }
     }
@@ -936,10 +976,99 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                                            include_dirs,
                                            defines,
                                            maketype,
-        IdentifySlnGUID(source_base_dir, CProjKey(CProjKey::eLib, proj_id)));
+        IdentifySlnGUID(source_base_dir, proj_key));
+    if (!dll_host.empty()) {
+        tree->m_Projects[proj_key].m_DllHost = dll_host;
+        CProjKey proj_dll(CProjKey::eDll, dll_host);
+        CProjItem item_dll = tree->m_Projects[proj_dll];
+        item_dll.m_ProjType = CProjKey::eDll;
+#if 0
+        item_dll.m_Name = dll_host;
+        item_dll.m_ID = dll_host;
+#else
+        item_dll.m_Name = proj_name;
+        item_dll.m_ID = proj_id;
+#endif
+        item_dll.m_SourcesBaseDir = source_base_dir;
+        item_dll.m_MakeType = maketype;
+        item_dll.m_HostedLibs.push_back(proj_id);
+        item_dll.m_GUID  = IdentifySlnGUID(source_base_dir, proj_dll);
+        tree->m_Projects[proj_dll] = item_dll;
+    }
     return proj_key;
 }
 
+//-----------------------------------------------------------------------------
+CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
+                                const string& proj_name,
+                                const string& applib_mfilepath,
+                                const TFiles& makedll , 
+                                CProjectItemsTree* tree,
+                                EMakeFileType maketype)
+{
+    TFiles::const_iterator m = makedll.find(applib_mfilepath);
+    if (m == makedll.end()) {
+
+        LOG_POST(Info << "Dll Makefile not found: " << applib_mfilepath);
+        return CProjKey();
+    }
+    CSimpleMakeFileContents::TContents::const_iterator k;
+
+    //DLL
+    k = m->second.m_Contents.find("DLL");
+    if (k == m->second.m_Contents.end()  ||  
+                                           k->second.empty()) {
+        LOG_POST(Info << "No DLL specified in Makefile." << proj_name
+                      << ".dll  at " << applib_mfilepath);
+        return CProjKey();
+    }
+    string proj_id = k->second.front();
+
+    //CPPFLAGS
+    list<string> include_dirs;
+    list<string> defines;
+    k = m->second.m_Contents.find("CPPFLAGS");
+    if (k != m->second.m_Contents.end()) {
+        const list<string> cpp_flags = k->second;
+        SMakeProjectT::CreateIncludeDirs(cpp_flags, 
+                                         source_base_dir, &include_dirs);
+        SMakeProjectT::CreateDefines(cpp_flags, &defines);
+
+    }
+
+    list<CProjKey> depends_ids;
+    k = m->second.m_Contents.find("DEPENDENCIES");
+    if (k != m->second.m_Contents.end()) {
+        const list<string> depends = k->second;
+        SMakeProjectT::ConvertLibDepends(depends, &depends_ids);
+    }
+
+    list<string> requires;
+    requires.push_back("DLL");
+
+    list<string> sources;
+    list<string> libs_3_party;
+
+    CProjKey proj_key(CProjKey::eDll, proj_id);
+    tree->m_Projects[proj_key] = CProjItem(CProjKey::eDll,
+                                           proj_name, 
+                                           proj_id,
+                                           source_base_dir,
+                                           sources, 
+                                           depends_ids,
+                                           requires,
+                                           libs_3_party,
+                                           include_dirs,
+                                           defines,
+                                           maketype,
+        IdentifySlnGUID(source_base_dir, proj_key));
+
+    k = m->second.m_Contents.find("HOSTED_LIBS");
+    if (k != m->second.m_Contents.end()) {
+        tree->m_Projects[proj_key].m_HostedLibs = k->second;
+    }
+    return proj_key;
+}
 
 //-----------------------------------------------------------------------------
 CProjKey SAsnProjectT::DoCreate(const string& source_base_dir,
@@ -1283,7 +1412,7 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                                            include_dirs,
                                            defines,
                                            maketype,
-        IdentifySlnGUID(vcproj_file, CProjKey(CProjKey::eMsvc, proj_id)));
+        IdentifySlnGUID(vcproj_file, proj_key));
 //                                           project_makefile.GetGUID());
     return proj_key;
 }
@@ -1314,6 +1443,7 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
     CProjectItemsTree::CreateFrom(root_src_path,
                                   subtree_makefiles.m_In, 
                                   subtree_makefiles.m_Lib, 
+                                  subtree_makefiles.m_Dll, 
                                   subtree_makefiles.m_App,
                                   subtree_makefiles.m_User, tree);
 }
@@ -1378,37 +1508,6 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                                      SMakeFiles*           makefiles,
                                      EMakeFileType         maketype)
 {
-#if 0
-    // Do not collect makefile from root directory
-    CDir dir(dir_name);
-    CDir::TEntries contents = dir.GetEntries("*");
-    ITERATE(CDir::TEntries, i, contents) {
-        string name  = (*i)->GetName();
-        if ( name == "."  ||  name == ".."  ||  name == "CVS" ||  
-             name == string(1,CDir::GetPathSeparator()) ) {
-            continue;
-        }
-        string path = (*i)->GetPath();
-
-        if ( (*i)->IsFile()  &&  
-             !is_root        &&  
-             filter->CheckProject(CDirEntry(path).GetDir()) ) {
-
-            if ( SMakeProjectT::IsMakeInFile(name) )
-	            ProcessMakeInFile(path, makefiles);
-            else if ( SMakeProjectT::IsMakeLibFile(name) )
-	            ProcessMakeLibFile(path, makefiles);
-            else if ( SMakeProjectT::IsMakeAppFile(name) )
-	            ProcessMakeAppFile(path, makefiles);
-            else if ( SMakeProjectT::IsUserProjFile(name) )
-	            ProcessUserProjFile(path, makefiles);
-        } 
-        else if ( (*i)->IsDir() ) {
-
-            ProcessDir(path, false, filter, makefiles);
-        }
-    }
-#else
     // Node - Makefile.in should present
     // this is true if and only if there are also Makefile.*.lib or
     // Makefile.*.app project makefiles to process
@@ -1453,6 +1552,8 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     map<string, EMakeFileType> subprojects;
     map<string, EMakeFileType> appprojects;
     map<string, EMakeFileType> libprojects;
+    map<string, EMakeFileType> dllprojects;
+
     if ( process_projects || weak ) {
         ProcessMakeInFile(node_path, makefiles, maketype);
         TFiles::const_iterator p = makefiles->m_In.find(node_path);
@@ -1498,7 +1599,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         string libproj[] = {"LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ",
                             "ASN_PROJ","DTD_PROJ","XSD_PROJ",""};
         EMakeFileType libtype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential,
-            eMakeType_Undefined, eMakeType_Undefined};
+            eMakeType_Undefined, eMakeType_Undefined, eMakeType_Undefined};
         if (filter->ExcludePotential()) {
             libtype[2] = eMakeType_Excluded;
         }
@@ -1511,6 +1612,23 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                         break;
                     }
                     libprojects["Makefile." + *i + ".lib"] = max(maketype, libtype[j]);
+                }
+            }
+        }
+        string dllproj[] = {"DLL_PROJ","EXPENDABLE_DLL_PROJ","POTENTIAL_DLL_PROJ",""};
+        EMakeFileType dlltype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential};
+        if (filter->ExcludePotential()) {
+            dlltype[2] = eMakeType_Excluded;
+        }
+        for (j=0; !dllproj[j].empty(); ++j) {
+            k = makefile.m_Contents.find(dllproj[j]);
+            if (k != makefile.m_Contents.end()) {
+                const list<string>& values = k->second;
+                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
+                    if (i->at(0) == '#') {
+                        break;
+                    }
+                    dllprojects["Makefile." + *i + ".dll"] = max(maketype, dlltype[j]);
                 }
             }
         }
@@ -1528,6 +1646,19 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             if (libprojects.find(name) != libprojects.end() &&
                 SMakeProjectT::IsMakeLibFile(name) )
 	            ProcessMakeLibFile(dir_entry->GetPath(), makefiles, libprojects[name]);
+
+        }
+    }
+    // Process Makefile.*.dll
+    if ( process_projects && !dllprojects.empty()) {
+        CDir dir(dir_name);
+        CDir::TEntries contents = dir.GetEntries("Makefile.*.dll");
+        ITERATE(CDir::TEntries, p, contents) {
+            const AutoPtr<CDirEntry>& dir_entry = *p;
+            const string name = dir_entry->GetName();
+            if (dllprojects.find(name) != dllprojects.end() &&
+                SMakeProjectT::IsMakeDllFile(name) )
+	            ProcessMakeDllFile(dir_entry->GetPath(), makefiles, dllprojects[name]);
 
         }
     }
@@ -1597,7 +1728,6 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         ProcessDir(subproject_dir, false, filter, makefiles, p->second);
     }
 
-#endif
 }
 
 
@@ -1630,6 +1760,25 @@ void CProjectTreeBuilder::ProcessMakeLibFile(const string& file_name,
 	    }
 	} else {
         PTB_WARNING(file_name, "ignored; empty");
+	}
+}
+
+void CProjectTreeBuilder::ProcessMakeDllFile(const string& file_name, 
+                                             SMakeFiles*   makefiles,
+                                             EMakeFileType type)
+{
+    string s = "MakeDll : " + file_name + "   ";
+
+    CSimpleMakeFileContents fc(file_name, type);
+    if ( !fc.m_Contents.empty()  ) {
+        string unmet;
+        if ( GetApp().IsAllowedProjectTag(fc, unmet) ) {
+	        makefiles->m_Dll[file_name] = fc;
+	    } else {
+            LOG_POST(Info << s << "rejected, proj_tag= " << unmet);
+	    }
+	} else {
+        LOG_POST(Info << s << "rejected (is empty)");
 	}
 }
 

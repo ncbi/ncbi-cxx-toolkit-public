@@ -398,8 +398,7 @@ void CMsvcSite::GetLibChoiceIncludes(
             SLibInfo lib_info;
             GetLibInfo(choice.m_3PartyLib, cfg_info, &lib_info);
             bool b3;
-            if (GetApp().GetBuildType().GetType() == CBuildType::eDll/* &&
-                GetApp().GetDllsInfo().IsDllHosted(lib_id)*/) {
+            if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
                 b3 = choice.m_Choice == e3PartyLib;
             } else {
                 b3 = IsLibOk(lib_info, true);

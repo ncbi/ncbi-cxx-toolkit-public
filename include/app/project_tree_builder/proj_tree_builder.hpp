@@ -61,6 +61,7 @@ struct SMakeProjectT
             eUnknown,
             eApp,
             eLib,
+            eDll,
             eAsn,
             eMsvc
         } TMakeinType;
@@ -119,6 +120,7 @@ struct SMakeProjectT
 
     static bool   IsMakeLibFile           (const string& name);
 
+    static bool   IsMakeDllFile           (const string& name);
 
     static bool   IsMakeAppFile           (const string& name);
 
@@ -179,6 +181,15 @@ struct SLibProjectT : public SMakeProjectT
                              EMakeFileType maketype);
 };
 
+struct SDllProjectT : public SMakeProjectT
+{
+    static CProjKey DoCreate(const string&      source_base_dir,
+                             const string&      proj_name,
+                             const string&      applib_mfilepath,
+                             const TFiles&      makeapp, 
+                             CProjectItemsTree* tree,
+                             EMakeFileType maketype);
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -292,6 +303,7 @@ public:
     {
         TFiles m_In;
         TFiles m_Lib;
+        TFiles m_Dll;
         TFiles m_App;
         TFiles m_User;
     };
@@ -318,6 +330,10 @@ private:
                                     EMakeFileType type);
 
     static void ProcessMakeLibFile (const string& file_name, 
+                                    SMakeFiles*   makefiles,
+                                    EMakeFileType type);
+
+    static void ProcessMakeDllFile (const string& file_name, 
                                     SMakeFiles*   makefiles,
                                     EMakeFileType type);
 

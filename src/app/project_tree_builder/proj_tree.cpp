@@ -92,6 +92,7 @@ void CProjectItemsTree::SetFrom(const CProjectItemsTree& projects)
 void CProjectItemsTree::CreateFrom(const string& root_src,
                                    const TFiles& makein, 
                                    const TFiles& makelib, 
+                                   const TFiles& makedll, 
                                    const TFiles& makeapp, 
                                    const TFiles& makemsvc, 
                                    CProjectItemsTree* tree)
@@ -172,6 +173,12 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                                                makelib, tree, info.m_MakeType);
                     }
                 }
+                else if (info.m_Type == SMakeProjectT::SMakeInInfo::eDll) {
+                    SDllProjectT::DoCreate(source_base_dir, 
+                                           proj_name, 
+                                           applib_mfilepath, 
+                                           makedll, tree, info.m_MakeType);
+                }
                 else if (info.m_Type == SMakeProjectT::SMakeInInfo::eAsn) {
 
                     SAsnProjectT::DoCreate(source_base_dir, 
@@ -218,6 +225,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
             }
         }
     }}
+    AnalyzeDllData(*tree);
 }
 
 
@@ -229,8 +237,11 @@ void CProjectItemsTree::GetInternalDepends(list<CProjKey>* depends) const
 
     ITERATE(TProjects, p, m_Projects) {
         const CProjItem& proj_item = p->second;
-        ITERATE(list<CProjKey>, n, proj_item.m_Depends) {
-            depends_set.insert(*n);
+// DLL dependencies will be handled later
+        if (proj_item.m_ProjType != CProjKey::eDll) {
+            ITERATE(list<CProjKey>, n, proj_item.m_Depends) {
+                depends_set.insert(*n);
+            }
         }
     }
 
@@ -251,7 +262,6 @@ CProjectItemsTree::GetExternalDepends(list<CProjKey>* external_depends) const
             external_depends->push_back(depend_id);
     }
 }
-
 
 //-----------------------------------------------------------------------------
 void CCyclicDepends::FindCycles(const TProjects& tree,

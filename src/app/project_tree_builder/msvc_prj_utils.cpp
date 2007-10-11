@@ -198,20 +198,16 @@ string IdentifySlnGUID(const string& source_dir, const CProjKey& proj)
     if (proj.Type() == CProjKey::eMsvc) {
         vcproj = source_dir;
     } else {
-        if (proj.Type() == CProjKey::eDll) {
-            vcproj = source_dir;
-        } else {
-            vcproj = GetApp().GetProjectTreeInfo().m_Compilers;
-            vcproj = CDirEntry::ConcatPath(vcproj, 
-                GetApp().GetRegSettings().m_CompilersSubdir);
-            vcproj = CDirEntry::ConcatPath(vcproj, 
-                GetApp().GetBuildType().GetTypeStr());
-            vcproj = CDirEntry::ConcatPath(vcproj,
-                GetApp().GetRegSettings().m_ProjectsSubdir);
-            vcproj = CDirEntry::ConcatPath(vcproj, 
-                CDirEntry::CreateRelativePath(
-                    GetApp().GetProjectTreeInfo().m_Src, source_dir));
-        }
+        vcproj = GetApp().GetProjectTreeInfo().m_Compilers;
+        vcproj = CDirEntry::ConcatPath(vcproj, 
+            GetApp().GetRegSettings().m_CompilersSubdir);
+        vcproj = CDirEntry::ConcatPath(vcproj, 
+            GetApp().GetBuildType().GetTypeStr());
+        vcproj = CDirEntry::ConcatPath(vcproj,
+            GetApp().GetRegSettings().m_ProjectsSubdir);
+        vcproj = CDirEntry::ConcatPath(vcproj, 
+            CDirEntry::CreateRelativePath(
+                GetApp().GetProjectTreeInfo().m_Src, source_dir));
         vcproj = CDirEntry::AddTrailingPathSeparator(vcproj);
         vcproj += CreateProjectName(proj);
         vcproj += MSVC_PROJECT_FILE_EXT;
@@ -939,7 +935,14 @@ void CDllProjectFilesInserter::AddHeaderFile(const string& rel_file_path)
     CProjKey proj_key = GetApp().GetDllFilesDistr().GetHeaderLib(abs_path, m_DllProjectKey);
     
     if (proj_key == CProjKey()) {
-        m_PrivateFilters.AddHeaderFile(rel_file_path);
+        CProjectItemsTree::TProjects::const_iterator p = 
+            GetApp().GetWholeTree().m_Projects.find(m_DllProjectKey);
+        if (p != GetApp().GetWholeTree().m_Projects.end()) {
+            const CProjItem& proj_item = p->second;
+            if (NStr::StartsWith(abs_path, proj_item.m_SourcesBaseDir, NStr::eNocase)) {
+                m_PrivateFilters.AddHeaderFile(rel_file_path);
+            }
+        }
         return;
     }
 

@@ -123,9 +123,6 @@ public:
     /// Base directory of source files (....c++/src/a/ )
     string       m_SourcesBaseDir;
 
-    /// Directory of the MsvcProjectMakefile
-    string       m_MsvcProjectMakefileDir;
-
     /// List of source files without extension ( *.cpp or *.c ) -
     /// with relative pathes from m_SourcesBaseDir.
     list<string> m_Sources;
@@ -158,6 +155,8 @@ public:
     /// project GUID
     string m_GUID;
 
+    string  m_DllHost;
+    list<string> m_HostedLibs;
 
 private:
     void Clear(void);

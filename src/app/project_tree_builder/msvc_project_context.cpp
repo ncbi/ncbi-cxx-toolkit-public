@@ -64,7 +64,7 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     m_MsvcProjectMakefile.reset
         (new CMsvcProjectMakefile
                     (CDirEntry::ConcatPath
-                            (project.m_MsvcProjectMakefileDir, 
+                            (project.m_SourcesBaseDir,
                              CreateMsvcProjectMakefileName(project))));
 
     // Done if this is ready MSVC project
@@ -90,28 +90,22 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
 
     // Creating project dir:
-    if (project.m_ProjType == CProjKey::eDll) {
-        //For dll - it is so
-        m_ProjectDir = project.m_SourcesBaseDir;
-
-    } else {
-        m_ProjectDir = GetApp().GetProjectTreeInfo().m_Compilers;
-        m_ProjectDir = 
-            CDirEntry::ConcatPath(m_ProjectDir, 
-                                  GetApp().GetRegSettings().m_CompilersSubdir);
-        m_ProjectDir = 
-            CDirEntry::ConcatPath(m_ProjectDir, 
-                                  GetApp().GetBuildType().GetTypeStr());
-        m_ProjectDir =
-            CDirEntry::ConcatPath(m_ProjectDir,
-                                  GetApp().GetRegSettings().m_ProjectsSubdir);
-        m_ProjectDir = 
-            CDirEntry::ConcatPath(m_ProjectDir, 
-                                  CDirEntry::CreateRelativePath
-                                      (GetApp().GetProjectTreeInfo().m_Src, 
-                                      m_SourcesBaseDir));
-        m_ProjectDir = CDirEntry::AddTrailingPathSeparator(m_ProjectDir);
-    }
+    m_ProjectDir = GetApp().GetProjectTreeInfo().m_Compilers;
+    m_ProjectDir = 
+        CDirEntry::ConcatPath(m_ProjectDir, 
+                                GetApp().GetRegSettings().m_CompilersSubdir);
+    m_ProjectDir = 
+        CDirEntry::ConcatPath(m_ProjectDir, 
+                                GetApp().GetBuildType().GetTypeStr());
+    m_ProjectDir =
+        CDirEntry::ConcatPath(m_ProjectDir,
+                                GetApp().GetRegSettings().m_ProjectsSubdir);
+    m_ProjectDir = 
+        CDirEntry::ConcatPath(m_ProjectDir, 
+                                CDirEntry::CreateRelativePath
+                                    (GetApp().GetProjectTreeInfo().m_Src, 
+                                    m_SourcesBaseDir));
+    m_ProjectDir = CDirEntry::AddTrailingPathSeparator(m_ProjectDir);
 
     string lib_dir = GetApp().GetBuildRoot();
     if (lib_dir.empty()) {
@@ -245,12 +239,7 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     // Proprocessor definitions from makefiles:
     m_Defines = project.m_Defines;
     if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
-        m_Defines.push_back(GetApp().GetDllsInfo().GetBuildDefine());
-        if (project.m_ProjType == CProjKey::eDll) {
-            CMsvcDllsInfo::SDllInfo dll_info;
-            GetApp().GetDllsInfo().GetDllInfo(project.m_ID, &dll_info);
-            m_Defines.push_back(dll_info.m_DllDefine);
-        }
+        m_Defines.push_back(GetApp().GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "DllBuildDefine"));
     }
     // Pre-Builds for LIB projects:
     if (m_ProjType == CProjKey::eLib) {

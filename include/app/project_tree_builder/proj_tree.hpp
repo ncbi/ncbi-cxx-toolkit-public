@@ -62,19 +62,18 @@ public:
     /// Root directory of Project Tree.
     string m_RootSrc;
 
+    /// Full file path / File contents.
+    typedef map<string, CSimpleMakeFileContents> TFiles;
+
     /// Project ID / ProjectItem.
     typedef map<CProjKey, CProjItem> TProjects;
     TProjects m_Projects;
-
-    /// Full file path / File contents.
-    typedef map<string, CSimpleMakeFileContents> TFiles;
 
     /// Collect all depends for all project items.
     void GetInternalDepends(list<CProjKey>* depends) const;
 
     /// Get depends that are not inside this project tree.
     void GetExternalDepends(list<CProjKey>* externalDepends) const;
-
 
     // for navigation through the tree use class CProjectTreeFolders below.
 
@@ -85,6 +84,7 @@ private:
     static void CreateFrom(	const string&      root_src,
                             const TFiles&      makein, 
                             const TFiles&      makelib, 
+                            const TFiles&      makedll, 
                             const TFiles&      makeapp, 
                             const TFiles&      makemsvc, 
                             CProjectItemsTree* tree);

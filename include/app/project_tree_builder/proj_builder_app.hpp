@@ -91,14 +91,14 @@ private:
 
     auto_ptr<CBuildType>        m_BuildType;
 
-    auto_ptr<CMsvcDllsInfo>     m_DllsInfo;
+//    auto_ptr<CMsvcDllsInfo>     m_DllsInfo;
 
     auto_ptr<CProjectItemsTree> m_WholeTree;
 
     auto_ptr<CDllSrcFilesDistr> m_DllSrcFilesDistr;
 
     const CProjectItemsTree*    m_CurrentBuildTree;
-    
+
     set<string>  m_ProjectTags;
     set<string>  m_AllowedTags;
     set<string>  m_DisallowedTags;
@@ -134,8 +134,6 @@ public:
     const SProjectTreeInfo&  GetProjectTreeInfo(void);
 
     const CBuildType&        GetBuildType      (void);
-
-          CMsvcDllsInfo&     GetDllsInfo       (void);
 
     const string&            GetBuildRoot      (void) const
     {

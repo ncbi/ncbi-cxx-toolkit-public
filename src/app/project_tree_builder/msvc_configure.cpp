@@ -136,18 +136,10 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
         return;
     }
     
-    const CBuildType static_build(false);
-    const CBuildType dll_build(true);
+    const CBuildType& build_type(GetApp().GetBuildType());
     ITERATE(list<SConfigInfo>, p, configs) {
         if (!p->m_VTuneAddon) {
-            AnalyzeDefines( site, root_dir, *p, static_build);
-        }
-    }
-    list<SConfigInfo> dlls;
-    GetApp().GetDllsInfo().GetBuildConfigs(&dlls);
-    ITERATE(list<SConfigInfo>, p, dlls) {
-        if (!p->m_VTuneAddon) {
-            AnalyzeDefines( site, root_dir, *p, dll_build);
+            AnalyzeDefines( site, root_dir, *p, build_type);
         }
     }
 
@@ -161,17 +153,7 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
         s_CreateThirdPartyLibsInstallMakefile(site, 
                                               third_party_to_install, 
                                               config, 
-                                              static_build);
-    }
-    // For dll build
-    list<SConfigInfo> dll_configs;
-    GetApp().GetDllsInfo().GetBuildConfigs(&dll_configs);
-    ITERATE(list<SConfigInfo>, p, dll_configs) {
-        const SConfigInfo& config = *p;
-        s_CreateThirdPartyLibsInstallMakefile(site, 
-                                              third_party_to_install, 
-                                              config, 
-                                              dll_build);
+                                              build_type);
     }
 }
 

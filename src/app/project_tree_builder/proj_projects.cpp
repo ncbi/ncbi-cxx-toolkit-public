@@ -36,51 +36,45 @@
 BEGIN_NCBI_SCOPE
 
 //-----------------------------------------------------------------------------
-CProjectOneNodeFilter::CProjectOneNodeFilter(const string& root_src_dir,
-                                             const string& subtree_dir)
-    :m_RootSrcDir(root_src_dir),
-     m_SubtreeDir(subtree_dir)
-{
-    CProjectTreeFolders::CreatePath(m_RootSrcDir, 
-                                    m_SubtreeDir, 
-                                    &m_SubtreePath);
-    m_PassAll = NStr::CompareNocase(m_RootSrcDir, m_SubtreeDir) == 0;
-}
-
-
-bool CProjectOneNodeFilter::CheckProject(const string& project_base_dir, bool* weak) const
-{
-    TPath project_path;
-    CProjectTreeFolders::CreatePath(m_RootSrcDir, 
-                                    project_base_dir, 
-                                    &project_path);
-
-    if (project_path.size() < m_SubtreePath.size()) {
-        if (!weak) {
-            return false;
-        }
-    }
-
-    TPath::const_iterator i = project_path.begin();
-    TPath::const_iterator p = m_SubtreePath.begin();
-    for (; i != project_path.end() && p != m_SubtreePath.end(); ++i, ++p) {
-        const string& subtree_i  = *p;
-        const string& project_i = *i;
-        if (NStr::CompareNocase(subtree_i, project_i) != 0) {
-            if (weak) {*weak=false;}
-            return false;
-        }
-    }
-    if (weak) {*weak = (i == project_path.end());}
-    return p == m_SubtreePath.end();
-}
-
-//-----------------------------------------------------------------------------
 CProjectsLstFileFilter::CProjectsLstFileFilter(const string& root_src_dir,
                                                const string& file_full_path)
 {
+    m_PassAll = false;
+    m_ExcludePotential = false;
     m_RootSrcDir = root_src_dir;
-    InitFromFile(file_full_path);
+    if (CDirEntry(file_full_path).IsFile()) {
+        InitFromFile(file_full_path);
+    } else {
+        InitFromString(file_full_path);
+    }
+    string dll_subtree = GetApp().GetConfig().Get("ProjectTree", "dll");
+    TPath project_path;
+    NStr::Split(dll_subtree, "\\/", project_path);
+    SLstElement elt;
+    elt.m_Path      = project_path;
+    elt.m_Recursive = true;
+    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
+        if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
+            m_LstFileContentsInclude.push_back(elt);
+        }
+    } else {
+        m_LstFileContentsExclude.push_back(elt);
+    }
+}
+
+void CProjectsLstFileFilter::InitFromString(const string& subtree)
+{
+    string sub = CDirEntry::AddTrailingPathSeparator(subtree);
+    TPath project_path;
+    CProjectTreeFolders::CreatePath(m_RootSrcDir, sub, &project_path);
+
+    SLstElement elt;
+    elt.m_Path      = project_path;
+    elt.m_Recursive = subtree.find("$") == NPOS;
+    m_LstFileContentsInclude.push_back(elt);
+
+    m_PassAll = NStr::CompareNocase(m_RootSrcDir, sub) == 0;
+    m_ExcludePotential = true;
 }
 
 void CProjectsLstFileFilter::InitFromFile(const string& file_full_path)

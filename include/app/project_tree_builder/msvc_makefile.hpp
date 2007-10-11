@@ -190,7 +190,7 @@ class CMsvcProjectMakefile : public CMsvcMetaMakefile,
                              public IMsvcProjectMakefile
 {
 public:
-    CMsvcProjectMakefile(const string& file_path);
+    CMsvcProjectMakefile(const string& file_path, bool compound=false);
 
     string GetGUID(void) const;
     bool Redefine(const string& value, list<string>& redef) const;
@@ -235,6 +235,7 @@ public:
 
 
     string m_ProjectBaseDir;
+    bool   m_Compound; // ie, consists of hosted components (DLL)
 
 private:
     void x_GetHeaders(const SConfigInfo& config, const string& entry,
@@ -254,7 +255,7 @@ private:
 class CMsvcProjectRuleMakefile : public CMsvcProjectMakefile
 {
 public:
-    CMsvcProjectRuleMakefile(const string& file_path);
+    CMsvcProjectRuleMakefile(const string& file_path, bool compound);
 
     int GetRulePriority(const SConfigInfo& config) const; 
 

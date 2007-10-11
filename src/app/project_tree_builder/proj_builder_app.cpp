@@ -364,8 +364,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,3,3) );
-
+    SetVersion( CVersionInfo(1,4,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -435,14 +434,13 @@ static
 void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles,
     CProjectItemsTree::TProjects& tree)
 {
-    const CMsvcDllsInfo& dlls = GetApp().GetDllsInfo();
     bool reported = false;
     ITERATE(CCyclicDepends::TDependsCycles, p, cycles) {
         const CCyclicDepends::TDependsChain& cycle = *p;
         bool real_cycle = false;
         string host0, host;
         ITERATE(CCyclicDepends::TDependsChain, m, cycle) {
-            host = dlls.GetDllHost(m->Id());
+            host = tree[*m].m_DllHost;
             if (m == cycle.begin()) {
                 host0 = host;
             } else {
@@ -555,6 +553,7 @@ int CProjBulderApp::Run(void)
     bool dll = (GetBuildType().GetType() == CBuildType::eDll);
     if (dll) {
         PTB_INFO("Assembling DLLs...");
+//        AnalyzeDllData(projects_tree);
         CreateDllBuildTree(projects_tree, &dll_projects_tree);
     }
     CProjectItemsTree& prj_tree = dll ? dll_projects_tree : projects_tree;
@@ -582,7 +581,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
 
     if (dll) {
         _TRACE("DLL build");
-        GetDllsInfo().GetBuildConfigs(&dll_configs);
+        GetBuildConfigs(&dll_configs);
         configurations = &dll_configs;
     } else {
         _TRACE("Static build");
@@ -746,9 +745,11 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                 // exclude missing projects
                 CProjectItemsTree::TProjects::const_iterator n = projects_tree.m_Projects.find(id);
                 if (n == projects_tree.m_Projects.end()) {
+/*
                     CProjKey id_alt(CProjKey::eDll,GetDllsInfo().GetDllHost(id.Id()));
                     n = projects_tree.m_Projects.find(id_alt);
-                    if (n == projects_tree.m_Projects.end()) {
+                    if (n == projects_tree.m_Projects.end())*/
+                    {
                         LOG_POST(Warning << "Project " + 
                                 p->first.Id() + " depends on missing project " + id.Id());
                         continue;
@@ -757,8 +758,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                 dependencies.push_back(CreateProjectName(n->first));
             }
             string rel_path = CDirEntry::CreateRelativePath(GetProjectTreeInfo().m_Src,
-                                                            p->second.m_MsvcProjectMakefileDir);
-//                                                            p->second.m_SourcesBaseDir);
+                                                            p->second.m_SourcesBaseDir);
                                                             
 #if NCBI_COMPILER_MSVC
             rel_path = NStr::Replace(rel_path,"\\","/");
@@ -956,12 +956,9 @@ void CProjBulderApp::GetMetaDataFiles(list<string>* files) const
 void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs)
 {
     configs->clear();
-    if (m_Dll) {
-        GetDllsInfo().GetBuildConfigs(configs);
-        return;
-    }
+    string name = m_Dll ? "DllConfigurations" : "Configurations";
     const string& config_str
-      = GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "Configurations");
+      = GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), name);
     list<string> configs_list;
     NStr::Split(config_str, LIST_SEPARATOR, configs_list);
     LoadConfigInfoByNames(GetConfig(), configs_list, configs);
@@ -1064,20 +1061,9 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     string subtree = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, m_Subtree);
     string ext;
     CDirEntry::SplitPath(subtree, NULL, NULL, &ext);
-    if (NStr::CompareNocase(ext, ".lst") == 0) {
-        PTB_INFO("Project list: " << subtree);
-        //If this is *.lst file
-        m_ProjectTreeInfo->m_IProjectFilter.reset
-            (new CProjectsLstFileFilter(m_ProjectTreeInfo->m_Src,
-                                        subtree));
-    } else {
-        LOG_POST(Info << "Project subtree: " << subtree);
-        //Simple subtree
-        subtree = CDirEntry::AddTrailingPathSeparator(subtree);
-        m_ProjectTreeInfo->m_IProjectFilter.reset
-            (new CProjectOneNodeFilter(m_ProjectTreeInfo->m_Src,
-                                        subtree));
-    }
+    LOG_POST(Info << "Project list or subtree: " << subtree);
+    m_ProjectTreeInfo->m_IProjectFilter.reset(
+        new CProjectsLstFileFilter(m_ProjectTreeInfo->m_Src, subtree));
 
     /// <compilers> branch of tree
     const string& compilers = GetConfig().Get("ProjectTree", "compilers");
@@ -1133,33 +1119,14 @@ const CBuildType& CProjBulderApp::GetBuildType(void)
     return *m_BuildType;
 }
 
-
-CMsvcDllsInfo& CProjBulderApp::GetDllsInfo(void)
-{
-    if ( !m_DllsInfo.get() ) {
-        string site_ini_dir = GetProjectTreeInfo().m_Compilers;
-        site_ini_dir = 
-                CDirEntry::ConcatPath(site_ini_dir, 
-                                      GetRegSettings().m_CompilersSubdir);
-        site_ini_dir = 
-            CDirEntry::ConcatPath(site_ini_dir, 
-                                  GetBuildType().GetTypeStr());
-        string dll_info_file_name = GetRegSettings().m_DllInfo;
-        dll_info_file_name =
-            CDirEntry::ConcatPath(site_ini_dir, dll_info_file_name);
-        m_DllsInfo.reset(new CMsvcDllsInfo(dll_info_file_name));
-    }    
-    return *m_DllsInfo;
-}
-
-
 const CProjectItemsTree& CProjBulderApp::GetWholeTree(void)
 {
     if ( !m_WholeTree.get() ) {
         m_WholeTree.reset(new CProjectItemsTree);
         if (m_ScanWholeTree) {
             m_ScanningWholeTree = true;
-            CProjectDummyFilter pass_all_filter;
+            CProjectsLstFileFilter pass_all_filter(m_ProjectTreeInfo->m_Src, m_ProjectTreeInfo->m_Src);
+//            pass_all_filter.SetExcludePotential(false);
             CProjectTreeBuilder::BuildProjectTree(&pass_all_filter, 
                                                 GetProjectTreeInfo().m_Src, 
                                                 m_WholeTree.get());

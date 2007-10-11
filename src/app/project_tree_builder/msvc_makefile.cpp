@@ -212,11 +212,12 @@ string CreateMsvcProjectMakefileName(const CProjItem& project)
 
 
 //-----------------------------------------------------------------------------
-CMsvcProjectMakefile::CMsvcProjectMakefile(const string& file_path)
+CMsvcProjectMakefile::CMsvcProjectMakefile(const string& file_path, bool compound)
     :CMsvcMetaMakefile(file_path)
 {
     CDirEntry::SplitPath(file_path, &m_ProjectBaseDir);
     m_FilePath = file_path;
+    m_Compound = compound;
 }
 
 
@@ -391,7 +392,7 @@ void CMsvcProjectMakefile::x_GetHeaders(
     
     files->clear();
     NStr::Split(dirs_string, LIST_SEPARATOR, *files);
-    if (files->empty()) {
+    if (files->empty() && !m_Compound) {
         files->push_back("*.h");
         files->push_back("*.hpp");
     }
@@ -458,8 +459,8 @@ void CMsvcProjectMakefile::GetResourceFiles(const SConfigInfo& config,
 
 
 //-----------------------------------------------------------------------------
-CMsvcProjectRuleMakefile::CMsvcProjectRuleMakefile(const string& file_path)
-    :CMsvcProjectMakefile(file_path)
+CMsvcProjectRuleMakefile::CMsvcProjectRuleMakefile(const string& file_path, bool compound)
+    :CMsvcProjectMakefile(file_path, compound)
 {
 }
 
@@ -512,7 +513,7 @@ CMsvcCombinedProjectMakefile::CMsvcCombinedProjectMakefile
                                   s_CreateRuleMakefileFilename(project_type, 
                                                                requires));
         
-        TRule rule(new CMsvcProjectRuleMakefile(rule_path));
+        TRule rule(new CMsvcProjectRuleMakefile(rule_path, project_type== CProjKey::eDll));
         if ( !rule->IsEmpty() )
             m_Rules.push_back(rule);
     }

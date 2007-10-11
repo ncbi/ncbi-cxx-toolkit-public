@@ -41,49 +41,10 @@
 BEGIN_NCBI_SCOPE
 
 
-class CMsvcDllsInfo
-{
-public:
-    CMsvcDllsInfo(const string& file_path);
-    ~CMsvcDllsInfo(void);
-    
-    void GetDllsList      (list<string>*      dlls_ids) const;
-    void GetBuildConfigs  (list<SConfigInfo>* config);
-    string GetBuildDefine (void) const;
-
-    struct SDllInfo
-    {
-        list<string> m_Hosting;
-        list<string> m_Depends;
-        string       m_DllDefine;
-
-        bool IsEmpty(void) const;
-        void Clear  (void);
-    };
-    void GetDllInfo(const string& dll_id, SDllInfo* dll_info) const;
-
-    bool   IsDllHosted(const string& lib_id) const;
-    string GetDllHost (const string& lib_id) const; 
-    void AddDllHostedLib(const string& lib_id, const string& host);
-    string GetDllHostedLib(const string& host) const;
-
-private:
-    CPtbRegistry m_Registry;
-    typedef map<string, string> TDllHosting;
-    TDllHosting m_DllHosted_Registry;
-    TDllHosting m_DllHosted_Assigned;
-    list<string> m_DllsList;
-
-    //no value-type semantics
-    CMsvcDllsInfo(void);
-    CMsvcDllsInfo(const CMsvcDllsInfo&);
-    CMsvcDllsInfo& operator= (const CMsvcDllsInfo&);
-
-};
-
-
 void FilterOutDllHostedProjects(const CProjectItemsTree& tree_src, 
                                 CProjectItemsTree*       tree_dst);
+
+void AnalyzeDllData(CProjectItemsTree& tree_src);
 
 void CreateDllBuildTree(const CProjectItemsTree& tree_src, 
                         CProjectItemsTree*       tree_dst);
@@ -93,7 +54,8 @@ void CreateDllsList(const CProjectItemsTree& tree_src,
                     list<string>*            dll_ids);
 
 
-void CollectDllsDepends(const list<string>& dll_ids,
+void CollectDllsDepends(const CProjectItemsTree& tree_src, 
+                        const list<string>& dll_ids,
                         list<string>*       dll_depends_ids);
 
 END_NCBI_SCOPE

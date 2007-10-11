@@ -36,71 +36,6 @@
 
 BEGIN_NCBI_SCOPE
 
-
-class CProjectDummyFilter : public IProjectFilter
-{
-public:
-    CProjectDummyFilter(void)
-    {
-    }
-    virtual ~CProjectDummyFilter(void)
-    {
-    }
-    virtual bool CheckProject(const string& project_base_dir, bool* weak=0) const
-    {
-        return true;
-    }
-    virtual bool PassAll (void) const
-    {
-        return true;
-    }
-    virtual bool ExcludePotential (void) const
-    {
-        return false;
-    }
-private:
-    // Prohibited to:
-    CProjectDummyFilter(const CProjectDummyFilter&);
-    CProjectDummyFilter& operator= (const CProjectDummyFilter&);   
-};
-
-class CProjectOneNodeFilter : public IProjectFilter
-{
-public:
-    // 
-    CProjectOneNodeFilter(const string& root_src_dir,
-                          const string& subtree_dir);
-
-    virtual ~CProjectOneNodeFilter(void)
-    {
-    }
-
-    virtual bool CheckProject(const string& project_base_dir, bool* weak=0) const;
-    virtual bool PassAll     (void) const
-    {
-        return m_PassAll;
-    }
-    virtual bool ExcludePotential (void) const
-    {
-        return true;
-    }
-
-private:
-    typedef list<string> TPath;
-
-    string m_RootSrcDir;
-    string m_SubtreeDir;
-
-    TPath  m_SubtreePath;
-    bool m_PassAll;
-
-    // Prohibited to:
-    CProjectOneNodeFilter(void);
-    CProjectOneNodeFilter(const CProjectOneNodeFilter&);
-    CProjectOneNodeFilter& operator= (const CProjectOneNodeFilter&);   
-};
-
-
 class CProjectsLstFileFilter : public IProjectFilter
 {
 public:
@@ -115,16 +50,22 @@ public:
     virtual bool CheckProject(const string& project_base_dir, bool* weak=0) const;
     virtual bool PassAll     (void) const
     {
-        return false;
+        return m_PassAll;
     }
     virtual bool ExcludePotential (void) const
     {
-        return false;
+        return m_ExcludePotential;
+    }
+    void SetExcludePotential (bool excl)
+    {
+        m_ExcludePotential = excl;
     }
 
     typedef list<string> TPath;
 private:
     string m_RootSrcDir;
+    bool m_PassAll;
+    bool m_ExcludePotential;
 
     struct SLstElement
     {
@@ -137,6 +78,7 @@ private:
     TLstFileContents m_LstFileContentsExclude;
     
 
+    void InitFromString(const string& subtree);
     void InitFromFile(const string& file_full_path);
     static bool CmpLstElementWithPath(const SLstElement& elt, 
                                       const TPath&       path,

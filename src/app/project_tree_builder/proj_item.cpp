@@ -146,7 +146,6 @@ CProjItem::CProjItem(TProjType type,
     m_ID      (id),
     m_ProjType(type),
     m_SourcesBaseDir (sources_base),
-    m_MsvcProjectMakefileDir(sources_base),
     m_Sources (sources), 
     m_Depends (depends),
     m_Requires(requires),
@@ -178,7 +177,6 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_ID		     = item.m_ID;
     m_ProjType       = item.m_ProjType;
     m_SourcesBaseDir = item.m_SourcesBaseDir;
-    m_MsvcProjectMakefileDir = item.m_MsvcProjectMakefileDir;
     m_Sources        = item.m_Sources;
     m_Depends        = item.m_Depends;
     m_Requires       = item.m_Requires;
@@ -189,6 +187,8 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_NcbiCLibs      = item.m_NcbiCLibs;
     m_MakeType       = item.m_MakeType;
     m_GUID           = item.m_GUID;
+    m_DllHost        = item.m_DllHost;
+    m_HostedLibs     = item.m_HostedLibs;
 }
 
 
