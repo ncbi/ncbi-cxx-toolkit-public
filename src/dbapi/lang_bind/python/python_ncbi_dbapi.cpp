@@ -97,8 +97,39 @@ CRowID::~CRowID(void)
 }
 
 //////////////////////////////////////////////////////////////////////////////
+CParamFmt::CParamFmt(TFormat user_fmt, TFormat drv_fmt)
+: m_UserFmt(user_fmt)
+, m_DrvFmt(drv_fmt)
+{
+}
+
+const char*
+CParamFmt::GetName(TFormat fmt)
+{
+    switch (fmt) {
+    case eTSQL:
+        return "TSQL";
+    case eQmark:
+        return "qmark";
+    case eNumeric:
+        return "numeric";
+    case eNamed:
+        return "named";
+    case eFormat:
+        return "format";
+    case ePyFormat:
+        return "pyformat";
+    }
+
+    return "unknown";
+}
+
+//////////////////////////////////////////////////////////////////////////////
 void
-CStmtStr::SetStr(const string& str, EStatementType default_type)
+CStmtStr::SetStr(const string& str,
+                 EStatementType default_type,
+                 const CParamFmt& fmt
+                 )
 {
     m_StmType = RetrieveStatementType(str, default_type);
 
@@ -130,6 +161,335 @@ CStmtStr::SetStr(const string& str, EStatementType default_type)
     */
 
     m_StmtStr = str;
+
+    if (fmt.GetDriverFmt() != fmt.GetUserFmt()) {
+        // Replace parameters ...
+        if (fmt.GetUserFmt() == CParamFmt::eQmark) {
+            if (fmt.GetDriverFmt() == CParamFmt::eNumeric) {
+                string::size_type pos = 0;
+                string::size_type prev_pos = pos;
+
+                if ((pos = m_StmtStr.find('?', pos)) != string::npos) {
+                    string tmp_stmt;
+                    int pos_num = 1;
+
+                    while (pos != string::npos) {
+                        tmp_stmt += m_StmtStr.substr(prev_pos, pos - prev_pos);
+                        tmp_stmt += ":" + NStr::IntToString(pos_num++);
+                        prev_pos = pos + 1;
+
+                        pos = m_StmtStr.find('?', prev_pos);
+                    }
+
+                    tmp_stmt += m_StmtStr.substr(prev_pos);
+                    m_StmtStr = tmp_stmt;
+                }
+
+                return;
+            } else if (fmt.GetDriverFmt() == CParamFmt::eTSQL) {
+                string::size_type pos = 0;
+                string::size_type prev_pos = pos;
+
+                if ((pos = m_StmtStr.find('?', pos)) != string::npos) {
+                    string tmp_stmt;
+                    int pos_num = 1;
+
+                    while (pos != string::npos) {
+                        tmp_stmt += m_StmtStr.substr(prev_pos, pos - prev_pos);
+                        tmp_stmt += "@" + NStr::IntToString(pos_num++);
+                        prev_pos = pos + 1;
+
+                        pos = m_StmtStr.find('?', prev_pos);
+                    }
+
+                    tmp_stmt += m_StmtStr.substr(prev_pos);
+                    m_StmtStr = tmp_stmt;
+                }
+
+                return;
+            }
+        } else if (fmt.GetUserFmt() == CParamFmt::eNumeric) {
+            if (fmt.GetDriverFmt() == CParamFmt::eQmark) {
+                string::size_type pos = 0;
+                string::size_type prev_pos = pos;
+                int param_len = 0;
+
+                if ((pos = find_numeric(m_StmtStr, pos, param_len)) != string::npos) {
+                    string tmp_stmt;
+
+                    while (pos != string::npos) {
+                        tmp_stmt += m_StmtStr.substr(prev_pos, pos - prev_pos);
+                        tmp_stmt += "?";
+                        prev_pos = pos + param_len;
+
+                        pos = find_numeric(m_StmtStr, prev_pos, param_len);
+                    }
+
+                    tmp_stmt += m_StmtStr.substr(prev_pos);
+                    m_StmtStr = tmp_stmt;
+                }
+
+                return;
+            }
+        } else if (fmt.GetUserFmt() == CParamFmt::eNamed) {
+            if (fmt.GetDriverFmt() == CParamFmt::eQmark) {
+                string::size_type pos = 0;
+                string::size_type prev_pos = pos;
+                int param_len = 0;
+
+                if ((pos = find_named(m_StmtStr, pos, param_len)) != string::npos) {
+                    string tmp_stmt;
+
+                    while (pos != string::npos) {
+                        tmp_stmt += m_StmtStr.substr(prev_pos, pos - prev_pos);
+                        tmp_stmt += "?";
+                        prev_pos = pos + param_len;
+
+                        pos = find_named(m_StmtStr, prev_pos, param_len);
+                    }
+
+                    tmp_stmt += m_StmtStr.substr(prev_pos);
+                    m_StmtStr = tmp_stmt;
+                }
+
+                return;
+            } else if (fmt.GetDriverFmt() == CParamFmt::eNumeric) {
+                string::size_type pos = 0;
+                string::size_type prev_pos = pos;
+                int param_len = 0;
+
+                if ((pos = find_named(m_StmtStr, pos, param_len)) != string::npos) {
+                    string tmp_stmt;
+                    int pos_num = 1;
+                    typedef map<string, string> name_map_t;
+                    name_map_t name2num;
+
+                    while (pos != string::npos) {
+                        string param_name = m_StmtStr.substr(pos + 1, param_len - 1);
+                        tmp_stmt += m_StmtStr.substr(prev_pos, pos - prev_pos);
+                        tmp_stmt += ":";
+
+                        // Get number ...
+                        name_map_t::iterator it = name2num.find(param_name);
+                        if (it == name2num.end()) {
+                            it = name2num.insert(
+                                name_map_t::value_type(
+                                    param_name,
+                                    NStr::IntToString(pos_num++)
+                                    )
+                                ).first;
+                        }
+                        tmp_stmt += it->second;
+
+                        prev_pos = pos + param_len;
+
+                        pos = find_named(m_StmtStr, prev_pos, param_len);
+                    }
+
+                    tmp_stmt += m_StmtStr.substr(prev_pos);
+                    m_StmtStr = tmp_stmt;
+                }
+
+                return;
+            } else if (fmt.GetDriverFmt() == CParamFmt::eTSQL) {
+                string::size_type pos = 0;
+                string::size_type prev_pos = pos;
+                int param_len = 0;
+
+                if ((pos = find_named(m_StmtStr, pos, param_len)) != string::npos) {
+                    string tmp_stmt;
+
+                    while (pos != string::npos) {
+                        string param_name = m_StmtStr.substr(pos + 1, param_len - 1);
+                        tmp_stmt += m_StmtStr.substr(prev_pos, pos - prev_pos);
+                        tmp_stmt += "@" + param_name;
+                        prev_pos = pos + param_len;
+
+                        pos = find_named(m_StmtStr, prev_pos, param_len);
+                    }
+
+                    tmp_stmt += m_StmtStr.substr(prev_pos);
+                    m_StmtStr = tmp_stmt;
+                }
+
+                return;
+            }
+        } else if (fmt.GetUserFmt() == CParamFmt::eTSQL) {
+            if (fmt.GetDriverFmt() == CParamFmt::eQmark) {
+                string::size_type pos = 0;
+                string::size_type prev_pos = pos;
+                int param_len = 0;
+
+                if ((pos = find_TSQL(m_StmtStr, pos, param_len)) != string::npos) {
+                    string tmp_stmt;
+
+                    while (pos != string::npos) {
+                        tmp_stmt += m_StmtStr.substr(prev_pos, pos - prev_pos);
+                        tmp_stmt += "?";
+                        prev_pos = pos + param_len;
+
+                        pos = find_TSQL(m_StmtStr, prev_pos, param_len);
+                    }
+
+                    tmp_stmt += m_StmtStr.substr(prev_pos);
+                    m_StmtStr = tmp_stmt;
+                }
+
+                return;
+            } else if (fmt.GetDriverFmt() == CParamFmt::eNumeric) {
+                string::size_type pos = 0;
+                string::size_type prev_pos = pos;
+                int param_len = 0;
+
+                if ((pos = find_TSQL(m_StmtStr, pos, param_len)) != string::npos) {
+                    string tmp_stmt;
+                    int pos_num = 1;
+                    typedef map<string, string> name_map_t;
+                    name_map_t name2num;
+
+                    while (pos != string::npos) {
+                        string param_name = m_StmtStr.substr(pos + 1, param_len - 1);
+                        tmp_stmt += m_StmtStr.substr(prev_pos, pos - prev_pos);
+                        tmp_stmt += ":";
+
+                        // Get number ...
+                        name_map_t::iterator it = name2num.find(param_name);
+                        if (it == name2num.end()) {
+                            it = name2num.insert(
+                                name_map_t::value_type(
+                                    param_name,
+                                    NStr::IntToString(pos_num++)
+                                    )
+                                ).first;
+                        }
+                        tmp_stmt += it->second;
+
+                        prev_pos = pos + param_len;
+
+                        pos = find_TSQL(m_StmtStr, prev_pos, param_len);
+                    }
+
+                    tmp_stmt += m_StmtStr.substr(prev_pos);
+                    m_StmtStr = tmp_stmt;
+                }
+
+                return;
+            } else if (fmt.GetDriverFmt() == CParamFmt::eNamed) {
+                string::size_type pos = 0;
+                string::size_type prev_pos = pos;
+                int param_len = 0;
+
+                if ((pos = find_TSQL(m_StmtStr, pos, param_len)) != string::npos) {
+                    string tmp_stmt;
+
+                    while (pos != string::npos) {
+                        string param_name = m_StmtStr.substr(pos + 1, param_len - 1);
+                        tmp_stmt += m_StmtStr.substr(prev_pos, pos - prev_pos);
+                        tmp_stmt += ":" + param_name;
+                        prev_pos = pos + param_len;
+
+                        pos = find_TSQL(m_StmtStr, prev_pos, param_len);
+                    }
+
+                    tmp_stmt += m_StmtStr.substr(prev_pos);
+                    m_StmtStr = tmp_stmt;
+                }
+
+                return;
+            }
+        }
+
+        string err = "Cannot convert '";
+        err += CParamFmt::GetName(fmt.GetUserFmt());
+        err += "' parameter format to '";
+        err += CParamFmt::GetName(fmt.GetDriverFmt());
+        err += "'";
+        throw CInterfaceError(err);
+    }
+}
+
+
+string::size_type
+CStmtStr::find_numeric(const string& str,
+                       string::size_type offset,
+                       int& param_len
+                       )
+{
+    string::size_type pos = 0;
+    static const char* num_characters = "0123456789";
+
+    pos = str.find(':', offset);
+    if ((pos != string::npos) && (pos + 1 != string::npos)) {
+        string::size_type tmp_pos = 0;
+
+        tmp_pos = str.find_first_not_of(num_characters, pos + 1);
+        if (tmp_pos != string::npos) {
+            // We've got the end of the number ...
+            param_len = tmp_pos - pos;
+        } else if (str.find_first_of(num_characters, pos + 1) == pos + 1) {
+            // Number till the end of the string ...
+            param_len = str.size() - pos;
+        }
+    }
+
+    return pos;
+}
+
+
+string::size_type
+CStmtStr::find_named(const string& str,
+                     string::size_type offset,
+                     int& param_len
+                     )
+{
+    string::size_type pos = 0;
+    static char const* sep_characters = " \t\n,.()-+<>=";
+
+    pos = str.find(':', offset);
+    if ((pos != string::npos) && (pos + 1 != string::npos)) {
+        string::size_type tmp_pos = 0;
+
+        tmp_pos = str.find_first_of(sep_characters, pos + 1);
+        if (tmp_pos != string::npos) {
+            // We've got the end of the number ...
+            param_len = tmp_pos - pos;
+        } else if ((str[pos + 1] >= 'A' && str[pos + 1] <= 'Z') ||
+                   (str[pos + 1] >= 'a' && str[pos + 1] <= 'z')
+                   ) {
+            // Number till the end of the string ...
+            param_len = str.size() - pos;
+        }
+    }
+
+    return pos;
+}
+
+string::size_type
+CStmtStr::find_TSQL(const string& str,
+                    string::size_type offset,
+                    int& param_len
+                    )
+{
+    string::size_type pos = 0;
+    static char const* sep_characters = " \t\n,.()-+<>=";
+
+    pos = str.find('@', offset);
+    if ((pos != string::npos) && (pos + 1 != string::npos)) {
+        string::size_type tmp_pos = 0;
+
+        tmp_pos = str.find_first_of(sep_characters, pos + 1);
+        if (tmp_pos != string::npos) {
+            // We've got the end of the number ...
+            param_len = tmp_pos - pos;
+        } else if ((str[pos + 1] >= 'A' && str[pos + 1] <= 'Z') ||
+                   (str[pos + 1] >= 'a' && str[pos + 1] <= 'z')
+                   ) {
+            // Number till the end of the string ...
+            param_len = str.size() - pos;
+        }
+    }
+
+    return pos;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -357,7 +717,7 @@ CConnection::CConnection(
 //     CFile file(RetrieveModuleFileName());
 //     m_ModuleName = file.GetBase();
 //     m_DM.AddDllSearchPath(file.GetDir().c_str());
-//-------------------------------------------------- 
+//--------------------------------------------------
 
     try {
         m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName(), &m_ConnParam.GetDatabaseParameters() );
@@ -386,13 +746,13 @@ CConnection::~CConnection(void)
 
         _ASSERT( m_TransList.empty() );
 
-	_ASSERT(m_DS);
-	// DO NOT destroy data source because there is only one data source per
-	// driver in Kholodov's API.
-	// Destroying data source will cause closed and reopened connection to
-	// crash ...
-        // m_DM.DestroyDs(m_DS); 
-	m_DS = NULL;                        // ;-)
+    _ASSERT(m_DS);
+    // DO NOT destroy data source because there is only one data source per
+    // driver in Kholodov's API.
+    // Destroying data source will cause closed and reopened connection to
+    // crash ...
+        // m_DM.DestroyDs(m_DS);
+    m_DS = NULL;                        // ;-)
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -861,11 +1221,10 @@ CStmtHelper::DumpResult(void)
     if ( m_Stmt.get() && m_Executed ) {
         while ( m_Stmt->HasMoreResults() ) {
             if ( m_Stmt->HasRows() ) {
-                m_RS.reset( m_Stmt->GetResultSet() );
+                m_RS = m_Stmt->GetResultSet();
             }
         }
     }
-    m_RS.release();
 }
 
 void
@@ -968,13 +1327,12 @@ CStmtHelper::Execute(void)
     try {
         switch ( m_StmtStr.GetType() ) {
         case estSelect :
-            m_RS.reset( m_Stmt->ExecuteQuery ( m_StmtStr.GetStr() ) );
-            if (m_RS.get()) {
+            m_RS = m_Stmt->ExecuteQuery ( m_StmtStr.GetStr() );
+            if (m_RS) {
                 m_RS->BindBlobToVariant(true);
             }
             break;
         default:
-            m_RS.release();
             m_Stmt->ExecuteUpdate ( m_StmtStr.GetStr() );
         }
         m_Executed = true;
@@ -1002,7 +1360,7 @@ CStmtHelper::GetRowCount(void) const
 IResultSet&
 CStmtHelper::GetRS(void)
 {
-    if ( m_RS.get() == NULL ) {
+    if ( m_RS == NULL ) {
         throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
@@ -1012,7 +1370,7 @@ CStmtHelper::GetRS(void)
 const IResultSet&
 CStmtHelper::GetRS(void) const
 {
-    if ( m_RS.get() == NULL ) {
+    if ( m_RS == NULL ) {
         throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
@@ -1022,7 +1380,7 @@ CStmtHelper::GetRS(void) const
 bool
 CStmtHelper::HasRS(void) const
 {
-    return m_RS.get() != NULL;
+    return m_RS != NULL;
 }
 
 int
@@ -1042,7 +1400,7 @@ CStmtHelper::NextRS(void)
     try {
         while ( m_Stmt->HasMoreResults() ) {
             if ( m_Stmt->HasRows() ) {
-                m_RS.reset( m_Stmt->GetResultSet() );
+                m_RS = m_Stmt->GetResultSet();
                 if ( m_RS->GetResultType() == eDB_StatusResult ) {
                     m_ResultStatus = m_RS->GetVariant(1).GetInt4();
                     m_ResultStatusAvailable = true;
@@ -1111,11 +1469,10 @@ CCallableStmtHelper::DumpResult(void)
     if ( m_Stmt.get() && m_Executed ) {
         while ( m_Stmt->HasMoreResults() ) {
             if ( m_Stmt->HasRows() ) {
-                m_RS.reset( m_Stmt->GetResultSet() );
+                m_RS = m_Stmt->GetResultSet();
             }
         }
     }
-    m_RS.release();
 }
 
 void
@@ -1192,7 +1549,6 @@ CCallableStmtHelper::Execute(void)
         m_ResultStatus = 0;
         m_ResultStatusAvailable = false;
 
-        m_RS.release();                 // Insurance policy :-)
         m_Stmt->Execute();
         // Retrieve a resut if there is any ...
         NextRS();
@@ -1221,7 +1577,7 @@ CCallableStmtHelper::GetRowCount(void) const
 IResultSet&
 CCallableStmtHelper::GetRS(void)
 {
-    if ( m_RS.get() == NULL ) {
+    if ( m_RS == NULL ) {
         throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
@@ -1231,7 +1587,7 @@ CCallableStmtHelper::GetRS(void)
 const IResultSet&
 CCallableStmtHelper::GetRS(void) const
 {
-    if ( m_RS.get() == NULL ) {
+    if ( m_RS == NULL ) {
         throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
@@ -1241,7 +1597,7 @@ CCallableStmtHelper::GetRS(void) const
 bool
 CCallableStmtHelper::HasRS(void) const
 {
-    return m_RS.get() != NULL;
+    return m_RS != NULL;
 }
 
 int
@@ -1261,7 +1617,7 @@ CCallableStmtHelper::NextRS(void)
     try {
         while ( m_Stmt->HasMoreResults() ) {
             if ( m_Stmt->HasRows() ) {
-                m_RS.reset( m_Stmt->GetResultSet() );
+                m_RS = m_Stmt->GetResultSet();
                 m_RS->BindBlobToVariant(true);
                 return true;
             }

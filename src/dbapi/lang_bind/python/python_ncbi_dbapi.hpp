@@ -73,7 +73,7 @@ public:
     ~CRowID(void);
 };
 
-//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 enum EStatementType {
     estNone,
     estSelect,
@@ -92,7 +92,31 @@ RetrieveStatementType(const string& stmt, EStatementType default_type = estNone)
 
 pythonpp::CTuple MakeTupleFromResult(IResultSet& rs);
 
-//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+class CParamFmt
+{
+public:
+    enum TFormat {eTSQL, eQmark, eNumeric, eNamed, eFormat, ePyFormat};
+
+    CParamFmt(TFormat user_fmt = eTSQL, TFormat drv_fmt = eTSQL);
+
+public:
+    TFormat GetUserFmt(void) const
+    {
+        return m_UserFmt;
+    }
+    TFormat GetDriverFmt(void) const
+    {
+        return m_DrvFmt;
+    }
+    static const char* GetName(TFormat fmt);
+
+private:
+    TFormat m_UserFmt;
+    TFormat m_DrvFmt;
+};
+
+////////////////////////////////////////////////////////////////////////////////
 class CStmtStr
 {
 public:
@@ -100,15 +124,21 @@ public:
     : m_StmType(estNone)
     {
     }
-    CStmtStr(const string& str, EStatementType default_type = estSelect)
+    CStmtStr(const string& str,
+             EStatementType default_type = estSelect,
+             const CParamFmt& fmt = CParamFmt()
+             )
     : m_StmType(estNone)
     {
-        SetStr(str, default_type);
+        SetStr(str, default_type, fmt);
     }
 
     // We will accume that SQL has type estFunction if it is
     // hard to get an actual type.
-    void SetStr(const string& str, EStatementType default_type = estSelect);
+    void SetStr(const string& str,
+                EStatementType default_type = estSelect,
+                const CParamFmt& fmt = CParamFmt()
+                );
 
 public:
     string GetStr(void) const
@@ -119,6 +149,20 @@ public:
     {
         return m_StmType;
     }
+
+private:
+    string::size_type find_numeric(const string& str,
+                                   string::size_type offset,
+                                   int& param_len
+                                   );
+    string::size_type find_named(const string& str,
+                                 string::size_type offset,
+                                 int& param_len
+                                 );
+    string::size_type find_TSQL(const string& str,
+                                string::size_type offset,
+                                int& param_len
+                                );
 
 private:
     string          m_StmtStr;
@@ -163,7 +207,7 @@ private:
 private:
     CTransaction* const     m_ParentTransaction; //< A transaction to which belongs this cursor object
     auto_ptr<IStatement>    m_Stmt;     //< DBAPI SQL statement interface
-    auto_ptr<IResultSet>    m_RS;
+    IResultSet*             m_RS;
     CStmtStr                m_StmtStr;
     bool                    m_Executed;
     int                     m_ResultStatus;
@@ -204,7 +248,7 @@ private:
     CTransaction* const             m_ParentTransaction; //< A transaction to which belongs this cursor object
     int                             m_NumOfArgs;         //< Number of arguments in a callable statement
     auto_ptr<ICallableStatement>    m_Stmt;     //< DBAPI SQL statement interface
-    auto_ptr<IResultSet>            m_RS;
+    IResultSet*                     m_RS;
     CStmtStr                        m_StmtStr;
     bool                            m_Executed;
     int                             m_ResultStatus;
@@ -354,7 +398,7 @@ private:
     CTransaction*           m_ParentTransaction; //< A transaction to which belongs this cursor object
     int                     m_NumOfArgs;         //< Number of arguments in a callable statement
     long                    m_RowsNum;
-    auto_ptr<IResultSet>    m_RS;
+    IResultSet*             m_RS;
     size_t                  m_ArraySize;
     CStmtStr                m_StmtStr;
     CStmtHelper             m_StmtHelper;
