@@ -650,7 +650,7 @@ inline
 bool x_IsDefaultSwissprotRelease(const CTextseq_id& tid)
 {
     return tid.IsSetRelease() &&
-        (tid.GetRelease() == "standard"  ||  tid.GetRelease() == "prelim");
+        (tid.GetRelease() == "reviewed"  ||  tid.GetRelease() == "unreviewed");
 }
 
 

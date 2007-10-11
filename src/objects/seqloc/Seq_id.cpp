@@ -1447,7 +1447,7 @@ void CSeq_id::WriteAsFasta(ostream& out)
     if (IsPatent()  &&  !GetPatent().GetCit().GetId().IsNumber() ) {
         out << "pgp|";
     } else if (IsSwissprot()  &&  GetSwissprot().IsSetRelease()
-               &&  NStr::EqualNocase(GetSwissprot().GetRelease(), "prelim")) {
+               &&  GetSwissprot().GetRelease() == "unreviewed") {
         out << "tr|";
     } else {
         out << s_TextId[the_type] << '|';
@@ -1854,10 +1854,10 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
     switch (type) {
     case e_Swissprot:
         if (NStr::EqualNocase(typestr, "tr")) {
-            fields[2] = "prelim";
+            fields[2] = "reviewed";
         } else {
             _ASSERT(NStr::EqualNocase(typestr, "sp"));
-            fields[2] = "standard";
+            fields[2] = "unreviewed";
         }
         break;
 
