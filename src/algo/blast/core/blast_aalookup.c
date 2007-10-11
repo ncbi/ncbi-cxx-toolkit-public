@@ -848,14 +848,41 @@ static void s_CompressedLookupAddEncoded(
                                      Uint1* w,
                                      Int4 query_offset)
 {
-    Int4 alphabet_size = lookup->compressed_alphabet_size;
-    Int4 word_length = lookup->word_length;
-    Int4 index = 0;
-    Int4 i;
+    Int4 index;
 
-    for (i = word_length - 1; i >= 0; i--)
-        index = index * alphabet_size + w[i];
+    static const Int4 W7p1[] = { 0, 10, 20, 30, 40, 50, 60, 70, 80, 90};
+    static const Int4 W7p2[] = { 0, 100, 200, 300, 400, 500, 600, 700, 800,
+                                 900};
+    static const Int4 W7p3[] = { 0, 1000, 2000, 3000, 4000, 5000, 6000,
+                                 7000, 8000, 9000};
+    static const Int4 W7p4[] = { 0, 10000, 20000, 30000, 40000, 50000, 60000,
+                                 70000, 80000, 90000};
+    static const Int4 W7p5[] = { 0, 100000, 200000, 300000, 400000, 500000,
+                                 600000, 700000, 800000, 900000};
+    static const Int4 W7p6[] = { 0, 1000000, 2000000, 3000000, 4000000,
+                                 5000000, 6000000, 7000000, 8000000, 9000000};
     
+    static const Int4 W6p1[] = { 0, 15, 30, 45, 60, 75, 90, 105, 120, 135,
+                                 150, 165, 180, 195, 210};
+    static const Int4 W6p2[] = { 0, 225, 450, 675, 900, 1125, 1350, 1575,
+                                 1800, 2025, 2250, 2475, 2700, 2925, 3150};
+    static const Int4 W6p3[] = { 0, 3375, 6750, 10125, 13500, 16875, 20250,
+                                 23625, 27000, 30375, 33750, 37125, 40500,
+                                 43875, 47250};
+    static const Int4 W6p4[] = { 0, 50625, 101250, 151875, 202500, 253125,
+                                 303750, 354375, 405000, 455625, 506250,
+                                 556875, 607500, 658125, 708750};
+    static const Int4 W6p5[] = { 0, 759375, 1518750, 2278125, 3037500,
+                                 3796875, 4556250, 5315625, 6075000, 6834375,
+                                 7593750, 8353125, 9112500, 9871875, 10631250};
+
+    if(lookup->word_length == 7)
+      index =  w[0] + W7p1[w[1]] + W7p2[w[2]] + W7p3[w[3]] +
+        W7p4[w[4]] + W7p5[w[5]] + W7p6[w[6]];
+    else
+      index = w[0] + W6p1[w[1]] + W6p2[w[2]] + W6p3[w[3]] +
+        W6p4[w[4]] + W6p5[w[5]];
+
     s_CompressedLookupAddWordHit(lookup, index, query_offset);
 }
 
@@ -889,10 +916,55 @@ typedef struct CompressedNeighborInfo {
     Int4 compressed_alphabet_size;  /**< for use with compressed alphabet */
     Int4 wordsize;       /**< number of residues in a word */
     Int4 **matrix;       /**< the substitution matrix */
-    Int4 *row_max;       /**< maximum possible score for each row of the matrix */
+    Int4 row_max[BLASTAA_SIZE]; /**< maximum possible score for each row of the matrix */
     Int4 query_offset;   /**< a single query offset to index */
     Int4 threshold;      /**< the score threshold for neighboring words */
+    Int4 matrixSorted[BLASTAA_SIZE][BLASTAA_SIZE];/**< sorted by substitution score */
+    Uint1 matrixSortedChar[BLASTAA_SIZE][BLASTAA_SIZE];/**< sorted: best substitutions first */
 } CompressedNeighborInfo;
+
+/** Structure used as a helper for sorting matrix according to substitution
+ * score
+ */
+typedef struct LetterAndScoreDifferencePair{
+    int   diff;   /**< score difference */
+    Uint1 letter; /**< given AA letter */
+} LetterAndScoreDifferencePair;
+
+/** callback for the "sort" */
+int ScoreDifferenceSort(const void * a, const void *b ){
+    return (((LetterAndScoreDifferencePair*)a)->diff > 
+            ((LetterAndScoreDifferencePair*)b)->diff);
+}
+
+/** Prepare "score sorted" version of the substitution matrix"
+ * @param info Pointer to the NeighborInfo structure.
+ */
+static void s_loadSortedMatrix(CompressedNeighborInfo* info){
+
+    LetterAndScoreDifferencePair sortTable[BLASTAA_SIZE];
+    Int4 i;
+    Int4 longChar, shortChar;
+
+    for(longChar=0; longChar < BLASTAA_SIZE; longChar++){
+        for(shortChar=0;shortChar<info->compressed_alphabet_size; shortChar++){
+      
+          sortTable[shortChar].diff = info->row_max[longChar] -
+            info->matrix[longChar][shortChar];
+          sortTable[shortChar].letter = shortChar;
+        }
+
+        qsort(sortTable, info->compressed_alphabet_size,
+              sizeof(LetterAndScoreDifferencePair), ScoreDifferenceSort);
+
+        for(i=0; i < info->compressed_alphabet_size; i++){
+            Uint1 letter = sortTable[i].letter;
+
+            info->matrixSorted[longChar][i] = info->matrix[longChar][letter];
+            info->matrixSortedChar[longChar][i] = letter;
+        }
+    }
+}
 
 /** Very similar to s_AddWordHitsCore
  * @param info Pointer to the NeighborInfo structure.
@@ -909,6 +981,9 @@ static void s_CompressedAddWordHitsCore(CompressedNeighborInfo * info,
     Uint1 *subject_word = info->subject_word;
     Int4 *row;
     Int4 i;
+    Int4 *rowSorted;
+    Uint1 *charSorted;
+    Int4 currQueryChar = query_word[current_pos]; 
     
     /* remove the maximum score of letters that align with the query letter
        at position 'current_pos'. Later code will align the entire alphabet
@@ -916,9 +991,10 @@ static void s_CompressedAddWordHitsCore(CompressedNeighborInfo * info,
        the row of the score matrix corresponding to the query letter at
        current_pos */
 
-    score -= info->row_max[query_word[current_pos]];
-    row = info->matrix[query_word[current_pos]];
-    
+    score -= info->row_max[currQueryChar];
+    rowSorted = info->matrixSorted[currQueryChar];
+    charSorted = info->matrixSortedChar[currQueryChar];
+
     if (current_pos == wordsize - 1) {
         
         /* The recursion has bottomed out, and we can produce complete
@@ -930,15 +1006,14 @@ static void s_CompressedAddWordHitsCore(CompressedNeighborInfo * info,
         BlastCompressedAaLookupTable *lookup = info->lookup;
         Int4 query_offset = info->query_offset;
         
-        for (i = 0; i < compressed_alphabet_size; i++) {
-            if (score + row[i] >= threshold) {
-                subject_word[current_pos] = i;
-                s_CompressedLookupAddEncoded(lookup, subject_word, 
-                                             query_offset);
+        for (i = 0; i < compressed_alphabet_size && 
+               (score + rowSorted[i] >= threshold); i++) {
+            subject_word[current_pos] = charSorted[i];
+            s_CompressedLookupAddEncoded(lookup, subject_word, 
+                                         query_offset);
 #ifdef LOOKUP_VERBOSE
                 lookup->neighbor_matches++;
 #endif
-            }
         }
         return;
     }
@@ -947,32 +1022,27 @@ static void s_CompressedAddWordHitsCore(CompressedNeighborInfo * info,
        the subject word, and recurse on all words that could possibly exceed
        the threshold later */
 
-    for (i = 0; i < compressed_alphabet_size; i++) {
-        if (score + row[i] >= threshold) {
-            subject_word[current_pos] = i;
-            s_CompressedAddWordHitsCore(info, score + row[i], 
-                                        current_pos + 1);
-        }
+    for (i = 0; i < compressed_alphabet_size && 
+           (score + rowSorted[i] >= threshold); i++) {
+        subject_word[current_pos] = charSorted[i];
+        s_CompressedAddWordHitsCore(info, score + rowSorted[i], 
+                                    current_pos + 1);
     }
 }
 
 /** Add neighboring words to the lookup table (compressed alphabet).
- * @param lookup Pointer to the lookup table.
- * @param compressed_matrix Pointer to the substitution matrix.
+ * @param info Pointer to the NeighborInfo structure.
  * @param query Pointer to the query sequence.
  * @param query_offset offset where the word occurs in the query
- * @param row_max maximum possible score for each row of the matrix
  */
-static void s_CompressedAddWordHits(BlastCompressedAaLookupTable * lookup,
-                                Int4 ** compressed_matrix,
-                                Uint1 * query, Int4 query_offset,
-                                Int4 * row_max)
+static void s_CompressedAddWordHits(CompressedNeighborInfo * info,
+                                    Uint1 * query, Int4 query_offset)
 {
     Uint1 *w = query + query_offset;
     Uint1 s[32];   /* larger than any possible wordsize */
     Int4 score;
     Int4 i;
-    CompressedNeighborInfo info;
+    BlastCompressedAaLookupTable * lookup = info->lookup;
 
 #ifdef LOOKUP_VERBOSE
     lookup->exact_matches++;
@@ -987,7 +1057,7 @@ static void s_CompressedAddWordHits(BlastCompressedAaLookupTable * lookup,
         if (c >= lookup->compressed_alphabet_size) /* "non-20 aa": skip it*/
             return;
 
-        score += compressed_matrix[w[i]][c];
+        score += info->matrix[w[i]][c];
     }
 
     /* If the self-score is above the threshold, then the neighboring
@@ -1012,25 +1082,19 @@ static void s_CompressedAddWordHits(BlastCompressedAaLookupTable * lookup,
 
     /* Set up the structure of information to be used during the recursion */
 
-    info.lookup = lookup;
-    info.query_word = w;
-    info.subject_word = s;
-    info.compressed_alphabet_size = lookup->compressed_alphabet_size;
-    info.wordsize = lookup->word_length;
-    info.matrix = compressed_matrix;
-    info.row_max = row_max;
-    info.query_offset = query_offset;
-    info.threshold = lookup->threshold;
+    info->query_word = w;
+    info->subject_word = s;
+    info->query_offset = query_offset;
 
     /* compute the largest possible score that any neighboring word can have; 
        this maximum will gradually be replaced by exact scores as subject
        words are built up */
 
-    score = row_max[w[0]];
+    score = info->row_max[w[0]];
     for (i = 1; i < lookup->word_length; i++)
-        score += row_max[w[i]];
+        score += info->row_max[w[i]];
 
-    s_CompressedAddWordHitsCore(&info, score, 0);
+    s_CompressedAddWordHitsCore(info, score, 0);
 }
 
 /**
@@ -1050,7 +1114,7 @@ static void s_CompressedAddNeighboringWords(
                                   BlastSeqLoc * location)
 {
     Int4 i, j;
-    Int4 row_max[BLASTAA_SIZE];
+    CompressedNeighborInfo info;
     BlastSeqLoc *loc;
     Int4 offset;
 
@@ -1060,10 +1124,20 @@ static void s_CompressedAddNeighboringWords(
        row of the score matrix */
 
     for (i = 0; i < lookup->alphabet_size; i++) {
-        row_max[i] = compressed_matrix[i][0];
+        info.row_max[i] = compressed_matrix[i][0];
         for (j = 1; j < lookup->compressed_alphabet_size; j++)
-            row_max[i] = MAX(row_max[i], compressed_matrix[i][j]);
+            info.row_max[i] = MAX(info.row_max[i], compressed_matrix[i][j]);
     }
+
+    /* Set up the structure of information to be used during the recursion */
+    info.lookup = lookup;
+    info.compressed_alphabet_size = lookup->compressed_alphabet_size;
+    info.wordsize = lookup->word_length;
+    info.matrix = compressed_matrix;
+    info.threshold = lookup->threshold;
+
+    s_loadSortedMatrix(&info); 
+
 
     /* Walk through the query and index all the words */
 
@@ -1072,8 +1146,7 @@ static void s_CompressedAddNeighboringWords(
         Int4 to = loc->ssr->right - lookup->word_length + 1;
 
         for (offset = from; offset <= to; offset++){
-            s_CompressedAddWordHits(lookup, compressed_matrix, 
-                                    query->sequence, offset, row_max);
+            s_CompressedAddWordHits(&info, query->sequence, offset);
         }
     }
 }

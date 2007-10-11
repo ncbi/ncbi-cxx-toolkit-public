@@ -54,7 +54,7 @@ USING_SCOPE(objects);
 const string CBlastFormat::kNoHitsFound("No hits found");
 
 CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname, 
-                 int format_type, bool db_is_aa,
+                 CFormattingArgs::EOutputFormat format_type, bool db_is_aa,
                  bool believe_query, CNcbiOstream& outfile,
                  CBlastInput* blast_input,
                  int num_summary, 
@@ -158,12 +158,27 @@ CBlastFormat::x_FillDbInfo()
     info.subset = false;
 }
 
+static const string kHTML_Prefix =
+"<HTML>\n"
+"<TITLE>BLAST Search Results</TITLE>\n"
+"<BODY BGCOLOR=\"#FFFFFF\" LINK=\"#0000FF\" VLINK=\"#660099\" ALINK=\"#660099\">\n"
+"<PRE>\n";
+
+static const string kHTML_Suffix =
+"</PRE>\n"
+"</BODY>\n"
+"</HTML>";
+
 void 
 CBlastFormat::PrintProlog()
 {
     // no header for some output types
-    if (m_FormatType >= 5)
+    if (m_FormatType >= CFormattingArgs::eXml)
         return;
+
+    if (m_IsHTML) {
+        m_Outfile << kHTML_Prefix << endl;
+    }
 
     CBlastFormatUtil::BlastPrintVersionInfo(m_Program, m_IsHTML, 
                                             m_Outfile);
@@ -214,17 +229,18 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
     CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
 
     // ASN.1 formatting is straightforward
-    if (m_FormatType == 8) {
+    if (m_FormatType == CFormattingArgs::eAsnText) {
         if (results.HasAlignments()) {
             m_Outfile << MSerial_AsnText << *aln_set;
         }
         return;
-    } else if (m_FormatType == 9) {
+    } else if (m_FormatType == CFormattingArgs::eAsnBinary) {
         if (results.HasAlignments()) {
             m_Outfile << MSerial_AsnBinary << *aln_set;
         }
         return;
-    } else if (m_FormatType == 5) { // Prepare for XML formatting
+    } else if (m_FormatType == CFormattingArgs::eXml) { 
+        // Prepare for XML formatting
         if (results.HasAlignments()) {
             CRef<CSearchResults> res(const_cast<CSearchResults*>(&results));
             m_AccumulatedResults.push_back(res);
@@ -246,10 +262,11 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
 
     // tabular formatting just prints each alignment in turn
     // (plus a header)
-    if (m_FormatType == 6 || m_FormatType == 7) {
+    if (m_FormatType == CFormattingArgs::eTabular || 
+        m_FormatType == CFormattingArgs::eTabularWithComments) {
         CBlastTabularInfo tabinfo(m_Outfile);
 
-        if (m_FormatType == 7)
+        if (m_FormatType == CFormattingArgs::eTabularWithComments)
              tabinfo.PrintHeader(m_Program,
                                  *(bhandle.GetBioseqCore()),
                                  m_DbName, 0, aln_set);
@@ -338,7 +355,8 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
     if (m_ShowGi)
         flags |= CDisplaySeqalign::eShowGi;
 
-    if (m_FormatType >= 1 && m_FormatType <= 4) {
+    if (m_FormatType >= CFormattingArgs::eQueryAnchoredIdentities && 
+        m_FormatType <= CFormattingArgs::eFlatQueryAnchoredNoIdentities) {
         flags |= CDisplaySeqalign::eMergeAlign;
     }
     else {
@@ -346,10 +364,12 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
                  CDisplaySeqalign::eShowMiddleLine;
     }
 
-    if (m_FormatType == 1 || m_FormatType == 3) {
+    if (m_FormatType == CFormattingArgs::eQueryAnchoredIdentities || 
+        m_FormatType == CFormattingArgs::eFlatQueryAnchoredIdentities) {
         flags |= CDisplaySeqalign::eShowIdentity;
     }
-    if (m_FormatType == 1 || m_FormatType == 2) {
+    if (m_FormatType == CFormattingArgs::eQueryAnchoredIdentities || 
+        m_FormatType == CFormattingArgs::eQueryAnchoredNoIdentities) {
         flags |= CDisplaySeqalign::eMasterAnchored;
     }
     display.SetAlignOption(flags);
@@ -377,12 +397,12 @@ void
 CBlastFormat::PrintEpilog(const CBlastOptions& options)
 {
     // some output types don't have a footer
-    if (m_FormatType >= 6)
+    if (m_FormatType >= CFormattingArgs::eTabular)
         return;
 
     // XML can only be printed once (i.e.: not in batches), so we print it as
     // the epilog of the report
-    if (m_FormatType == 5) {
+    if (m_FormatType == CFormattingArgs::eXml) {
         CRef<CBlastQueryVector> queries = m_Queries->GetAllSeqs();
         CCmdLineBlastXMLReportData report_data(queries, m_AccumulatedResults,
                                                options, m_DbName, m_DbIsAA,
@@ -421,5 +441,9 @@ CBlastFormat::PrintEpilog(const CBlastOptions& options)
     if (options.GetWindowSize()) {
         m_Outfile << "Window for multiple hits: " <<
                         options.GetWindowSize() << endl;
+    }
+
+    if (m_IsHTML) {
+        m_Outfile << kHTML_Suffix << endl;
     }
 }

@@ -191,12 +191,22 @@ calc_lambda_type(double * probs, int min_score, int max_score,
  *
  * @param sequence        a sequence
  * @param range           the range to get
- * @param data            the data obtained
+ * @param data            the matching sequence data obtained
+ * @param queryData       the sequence data for the query
+ * @param queryOffset     offset for align if there are multiple queries
+ * @param align           information about the alignment between query and subject
+ * @param shouldTestIdentical did alignment pass a preliminary test in
+ *                       redo_alignment.c that indicates the sequence
+ *                        pieces may be near identical
  */
 typedef int
 get_range_type(const BlastCompo_MatchingSequence * sequence,
                const BlastCompo_SequenceRange * range,
-               BlastCompo_SequenceData * data);
+               BlastCompo_SequenceData * data,
+	       const BlastCompo_SequenceData * queryData,
+	       const int queryOffset,
+	       const BlastCompo_Alignment *align,
+	       const Boolean shouldTestIdentical);
 
 /**
  * Function type: Calculate the traceback for one alignment by

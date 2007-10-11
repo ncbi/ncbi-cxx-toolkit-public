@@ -96,8 +96,9 @@ s_SeqDBInit(const string       & dbname,
             int                  oid_begin,
             int                  oid_end,
             bool                 use_mmap,
-            CSeqDBGiList       * gi_list,
-            CSeqDBNegativeList * neg_list)
+            CSeqDBGiList       * gi_list = NULL,
+            CSeqDBNegativeList * neg_list = NULL,
+            CSeqDBIdSet          idset = CSeqDBIdSet())
 {
     CSeqDBImpl * impl = 0;
     
@@ -110,7 +111,8 @@ s_SeqDBInit(const string       & dbname,
                                   oid_end,
                                   use_mmap,
                                   gi_list,
-                                  neg_list);
+                                  neg_list,
+                                  idset);
         }
         catch(CSeqDBException &) {
             prot_nucl = 'n';
@@ -124,7 +126,8 @@ s_SeqDBInit(const string       & dbname,
                               oid_end,
                               use_mmap,
                               gi_list,
-                              neg_list);
+                              neg_list,
+                              idset);
     }
     
     _ASSERT(impl);
@@ -142,13 +145,13 @@ CSeqDB::CSeqDB(const string & dbname,
                    "Database name is required.");
     }
     
+    
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          0,
                          0,
                          true,
-                         gi_list,
-                         NULL);
+                         gi_list);
     
     m_Impl->Verify();
 }
@@ -174,6 +177,52 @@ CSeqDB::CSeqDB(const string       & dbname,
     m_Impl->Verify();
 }
 
+// This could become the primary constructor for SeqDB, and those
+// taking positive and negative lists could be deprecated.  This
+// implies refactoring of code using SeqDB, addition of the third
+// (string/Seq-id) type IDs to the IdSet, and changes to client code.
+// Some non-SeqDB code uses FindOID and other methods of the GI list,
+// comparable functionality would need to be added to IdSet().
+//
+// Before any of that is done, all the SeqDB classes should be made to
+// use CSeqDBIdSet instead of using positive and negative lists.  This
+// implies widespread changes to CSeqDBIdSet and SeqDB internal code.
+//
+// I'll leave those changes for another time -- for now I'll just add
+// the pieces of framework that seem useful and are implied by the
+// current design.
+
+CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBIdSet ids)
+{
+    if (dbname.size() == 0) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Database name is required.");
+    }
+    
+    CRef<CSeqDBNegativeList> neg;
+    CRef<CSeqDBGiList> pos;
+    
+    if (! ids.Blank()) {
+        if (ids.IsPositive()) {
+            pos = ids.GetPositiveList();
+        } else {
+            neg = ids.GetNegativeList();
+        }
+    }
+    
+    m_Impl = s_SeqDBInit(dbname,
+                         s_GetSeqTypeChar(seqtype),
+                         0,
+                         0,
+                         true,
+                         pos.GetPointerOrNull(),
+                         neg.GetPointerOrNull(),
+                         ids);
+    
+    m_Impl->Verify();
+}
+
 CSeqDB::CSeqDB(const vector<string> & dbs,
                ESeqType               seqtype,
                CSeqDBGiList         * gi_list)
@@ -192,8 +241,7 @@ CSeqDB::CSeqDB(const vector<string> & dbs,
                          0,
                          0,
                          true,
-                         gi_list,
-                         NULL);
+                         gi_list);
     
     m_Impl->Verify();
 }
@@ -216,8 +264,7 @@ CSeqDB::CSeqDB(const string & dbname,
                          oid_begin,
                          oid_end,
                          use_mmap,
-                         gi_list,
-                         NULL);
+                         gi_list);
     
     m_Impl->Verify();
 }
@@ -243,8 +290,7 @@ CSeqDB::CSeqDB(const vector<string> & dbs,
                          oid_begin,
                          oid_end,
                          use_mmap,
-                         gi_list,
-                         NULL);
+                         gi_list);
     
     m_Impl->Verify();
 }
@@ -851,6 +897,11 @@ void CSeqDB::GetTotals(ESummaryType   sumtype,
 const CSeqDBGiList * CSeqDB::GetGiList() const
 {
     return m_Impl->GetGiList();
+}
+
+CSeqDBIdSet CSeqDB::GetIdSet() const
+{
+    return m_Impl->GetIdSet();
 }
 
 void CSeqDB::SetDefaultMemoryBound(Uint8 bytes)

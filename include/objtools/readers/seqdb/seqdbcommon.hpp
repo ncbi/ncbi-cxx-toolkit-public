@@ -368,6 +368,30 @@ public:
     /// Get the ti list
     void GetTiList(vector<Int8>& tis) const;
     
+    /// Add a new GI to the list.
+    void AddGi(int gi)
+    {
+        m_GisOids.push_back(gi);
+    }
+    
+    /// Add a new TI to the list.
+    void AddTi(Int8 ti)
+    {
+        m_TisOids.push_back(ti);
+    }
+    
+    /// Reserve space for GIs.
+    void ReserveGis(size_t n)
+    {
+        m_GisOids.reserve(n);
+    }
+    
+    /// Reserve space for TIs.
+    void ReserveTis(size_t n)
+    {
+        m_TisOids.reserve(n);
+    }
+    
 protected:
     /// Indicates the current sort order, if any, of this container.
     ESortOrder m_CurrentOrder;
@@ -451,7 +475,7 @@ public:
     }
     
     /// Get the size of the OID array.
-    int Size()
+    int Size() const
     {
         return m_Size;
     }
@@ -548,13 +572,13 @@ public:
         }
     }
     
-    /// Test for existence of a GI.
+    /// Add a new GI to the list.
     void AddGi(int gi)
     {
         m_Gis.push_back(gi);
     }
     
-    /// Test for existence of a GI.
+    /// Add a new TI to the list.
     void AddTi(Int8 ti)
     {
         m_Tis.push_back(ti);
@@ -661,6 +685,30 @@ public:
     int GetNumOids()
     {
         return max(m_Visible.Size(), m_Included.Size());
+    }
+    
+    /// Reserve space for GIs.
+    void ReserveGis(size_t n)
+    {
+        m_Gis.reserve(n);
+    }
+    
+    /// Reserve space for TIs.
+    void ReserveTis(size_t n)
+    {
+        m_Tis.reserve(n);
+    }
+    
+    /// Build ID set for this negative list.
+    const vector<int> & GetGiList()
+    {
+        return m_Gis;
+    }
+    
+    /// Build ID set for this negative list.
+    const vector<Int8> & GetTiList()
+    {
+        return m_Tis;
     }
     
 protected:
@@ -814,21 +862,272 @@ public:
 };
 
 
-/// GI list performing an 'X AND NOT Y' operation.
+/// Helper class to allow copy-on-write semantics for CSeqDBIdSet.
 ///
-/// This class takes a CSeqDBGiList and an integer vector and computes
-/// the intersection of the two.  Note that both input arguments are
-/// sorted to GI order in-place.
+/// This class owns the actual vector of IDs for the CSeqDBIdSet list.
 
-class NCBI_XOBJREAD_EXPORT CAndNotGiList : public CSeqDBGiList {
+class CSeqDBIdSet_Vector : public CObject {
 public:
-    /// Intersect positive and negative lists of GIs.
+    /// Default constructor.
+    CSeqDBIdSet_Vector()
+    {
+    }
+    
+    /// Construct from an 'int' set.
+    CSeqDBIdSet_Vector(const vector<int> & ids)
+    {
+        ITERATE(vector<int>, iter, ids) {
+            m_Ids.push_back(*iter);
+        }
+    }
+    
+    /// Construct from an 'Int8' set.
+    CSeqDBIdSet_Vector(const vector<Int8> & ids)
+    {
+        m_Ids = ids;
+    }
+    
+    /// Access the Int8 set.
+    vector<Int8> & Set()
+    {
+        return m_Ids;
+    }
+    
+    /// Access the Int8 set.
+    const vector<Int8> & Get() const
+    {
+        return m_Ids;
+    }
+    
+    /// Get the number of elements stored here.
+    size_t Size() const
+    {
+        return m_Ids.size();
+    }
+    
+private:
+    /// The actual list elements.
+    vector<Int8> m_Ids;
+    
+    /// Prevent copy construction.
+    CSeqDBIdSet_Vector(CSeqDBIdSet_Vector &);
+    
+    /// Prevent copy assignment.
+    CSeqDBIdSet_Vector & operator=(CSeqDBIdSet_Vector &);
+};
+
+
+/// SeqDB ID list for performing boolean set operations.
+///
+/// This class permits boolean operations on lists of numeric IDs,
+/// and can be passed to CSeqDB in the same way as a CSeqDBGiList.
+/// CSeqDBGiList or CSeqDBNegativeList objects can be constructed as
+/// well.  Logical operations supported include AND, OR, XOR, and NOT.
+/// Internally this uses a CRef based copy-on-write scheme, so these
+/// objects can be copied in constant time.
+
+class NCBI_XOBJREAD_EXPORT CSeqDBIdSet : public CObject {
+public:
+    /// Types of operations that may be performed on GI lists.
+    enum EOperation {
+        eAnd, // Found in both X and Y
+        eXor, // Found in X or Y, but not both
+        eOr   // Found in either X or Y
+    };
+    
+    /// Type of IDs stored here.
+    enum EIdType {
+        eGi,  // Found in both X and Y
+        eTi   // Found in X or Y, but not both
+    };
+    
+    /// Construct a 'blank' CSeqDBIdSet object.
     ///
-    /// The two lists of GIs are sorted and this class is computed as
-    /// an intersection of the first with the negation of the second.
-    /// Both arguments to this function are potentially modified when
-    /// they are sorted in place.
-    CAndNotGiList(CSeqDBGiList & gilist, vector<int> & gis);
+    /// This produces a blank ID set object, which (if applied) would
+    /// not cause any filtering to occur.  This is represented here as
+    /// a negative ID list with no elements.
+    ///
+    /// @param other The object to copy.
+    CSeqDBIdSet();
+    
+    /// Build a computed ID list given an initial set of IDs.
+    ///
+    /// This initializes a list with an initial set of IDs of the
+    /// specified type.  All further logic operations on the list
+    /// should use vectors of IDs or CSeqDBIdSet objects
+    /// initialized with the same EIdType enumeration.
+    ///
+    /// @param ids These IDs will be added to the list.
+    /// @param t The IDs are assumed to be of this type.
+    /// @param positive True for a positive ID list, false for negative.
+    CSeqDBIdSet(const vector<int> & ids, EIdType t, bool positive = true);
+    
+    /// Build a computed ID list given an initial set of IDs.
+    ///
+    /// This initializes a list with an initial set of IDs of the
+    /// specified type.  All further logic operations on the list
+    /// should use vectors of IDs or CSeqDBIdSet objects
+    /// initialized with the same EIdType enumeration.
+    ///
+    /// @param ids These IDs will be added to the list.
+    /// @param t The IDs are assumed to be of this type.
+    /// @param positive True for a positive ID list, false for negative.
+    CSeqDBIdSet(const vector<Int8> & ids, EIdType t, bool positive = true);
+    
+    /// Virtual destructor.
+    virtual ~CSeqDBIdSet()
+    {
+    }
+    
+    /// Invert the current list.
+    void Negate();
+    
+    /// Perform a logical operation on a list.
+    /// 
+    /// The logical operation is performed between the current list
+    /// and the ids parameter, and the 'positive' flag is used to
+    /// determine if the new input list should be treated as a
+    /// positive or negative list.  For example, using op == eOr and
+    /// positive == false would perform the operation (X OR NOT Y).
+    /// 
+    /// @param op Logical operation to perform.
+    /// @param ids List of ids for the second argument.
+    /// @param positive True for positive lists, false for negative.
+    void Compute(EOperation          op,
+                 const vector<int> & ids,
+                 bool                positive = true);
+    
+    /// Perform a logical operation on a list.
+    /// 
+    /// The logical operation is performed between the current list
+    /// and the ids parameter, and the 'positive' flag is used to
+    /// determine if the new input list should be treated as a
+    /// positive or negative list.  For example, using op == eOr and
+    /// positive == false would perform the operation (X OR NOT Y).
+    /// 
+    /// @param op Logical operation to perform.
+    /// @param ids List of ids for the second argument.
+    /// @param positive If true, ids represent 'negative' ids.
+    void Compute(EOperation           op,
+                 const vector<Int8> & ids,
+                 bool                 positive = true);
+    
+    /// Perform a logical operation on a list.
+    /// 
+    /// The logical operation is performed between the current list
+    /// and the ids parameter.  For example if 'eOr' is specified, the
+    /// operation performed will be 'X OR Y'.  The 'ids' list will not
+    /// be modified by this operation.
+    /// 
+    /// @param op Logical operation to perform.
+    /// @param ids List of ids for the second argument.
+    void Compute(EOperation op, const CSeqDBIdSet & ids);
+    
+    /// Checks whether a positive GI list was produced.
+    ///
+    /// If this method returns true, a positive list was produced, and
+    /// can be retrieved with GetPositiveList().  If it returns false,
+    /// a negative list was produced and can be retrieved with
+    /// GetNegativeList().
+    /// 
+    /// @return true If the produced GI list is positive.
+    bool IsPositive()
+    {
+        return m_Positive;
+    }
+    
+    /// Retrieve a positive GI list.
+    ///
+    /// If IsPositive() returned true, this method should be used to
+    /// retrieve a positive GI list.  If IsPositive() returned false,
+    /// this method will throw an exception.
+    CRef<CSeqDBGiList> GetPositiveList();
+    
+    /// Retrieve a negative GI list.
+    ///
+    /// If IsPositive() returned false, this method should be used to
+    /// retrieve a positive GI list.  If IsPositive() returned true,
+    /// this method will throw an exception.
+    ///
+    /// @return A negative GI list.
+    CRef<CSeqDBNegativeList> GetNegativeList();
+    
+    /// Check if an ID list is blank.
+    /// 
+    /// An ID list is considered 'blank' iff it is a negative list
+    /// with no elements.  Constructing a database with such a list is
+    /// equivalent to not specifying a list.  Blank lists are produced
+    /// by the default constructor, by specifying a negative list and
+    /// providing an empty vector, or by computation (an intersection
+    /// of disjoint negative lists, for example).  This method returns
+    /// true in those cases; otherwise it returns false.
+    ///
+    /// @return True if this list is blank.
+    bool Blank() const;
+    
+private:
+    /// Sort and unique the internal set.
+    static void x_SortAndUnique(vector<Int8> & ids);
+    
+    /// Compute inclusion flags for a boolean operation.
+    ///
+    /// This takes a logical operator (AND, OR, or XOR) and a flag
+    /// indicating whether each input lists is positive or negative,
+    /// and produces a flag indicating whether the resulting list will
+    /// be positive or negative and three flags used to control the
+    /// set merging operation.
+    ///
+    /// @param op The operation to perform (OR, AND, or XOR). [in]
+    /// @param A_pos True if the first list is positive. [in]
+    /// @param B_pos True if the second list is positive. [in]
+    /// @param result_pos True if the result is a positive list. [out]
+    /// @param incl_A True if ids found only in list A are kept. [out]
+    /// @param incl_B True if ids found only in list B are kept. [out]
+    /// @param incl_AB True if ids found in both lists are kept. [out]
+    static void x_SummarizeBooleanOp(EOperation op,
+                                     bool       A_pos,
+                                     bool       B_pos,
+                                     bool     & result_pos,
+                                     bool     & incl_A,
+                                     bool     & incl_B,
+                                     bool     & incl_AB);
+    
+    /// Compute boolean operation on two vectors.
+    ///
+    /// This takes a logical operator (AND, OR, or XOR) and two
+    /// positive or negative lists, and produces a positive or
+    /// negative list representing that operation applied to those
+    /// lists.
+    ///
+    /// @param op The operation to perform (OR, AND, or XOR). [in]
+    /// @param A_pos True if the first list is positive. [in]
+    /// @param B_pos True if the second list is positive. [in]
+    /// @param result_pos True if the result is a positive list. [out]
+    /// @param incl_A True if ids found only in list A are kept. [out]
+    /// @param incl_B True if ids found only in list B are kept. [out]
+    /// @param incl_AB True if ids found in both lists are kept. [out]
+    void x_BooleanSetOperation(EOperation           op,
+                               const vector<Int8> & A,
+                               bool                 A_pos,
+                               const vector<Int8> & B,
+                               bool                 B_pos,
+                               vector<Int8>       & result,
+                               bool               & result_pos);
+    
+    /// True if the current list is positive.
+    bool m_Positive;
+    
+    /// Id type.
+    EIdType m_IdType;
+    
+    /// Ids stored here.
+    CRef<CSeqDBIdSet_Vector> m_Ids;
+    
+    /// Cached positive list.
+    CRef<CSeqDBGiList> m_CachedPositive;
+    
+    /// Cached negative list.
+    CRef<CSeqDBNegativeList> m_CachedNegative;
 };
 
 

@@ -801,6 +801,46 @@ s_MatchingSequenceRelease(BlastCompo_MatchingSequence * self)
     }
 }
 
+#define MINUMUM_FRACTION_NEAR_IDENTICAL 0.98
+
+/**
+ * Test whether the aligned parts of two sequences that
+ * have a high-scoring gapless alignment are nearly identical
+ *
+ * @param seqData           subject sequence
+ * @param queryData         query sequence
+ * @param align             information about the alignment
+ * @param rangeOffset       offset for subject sequence (used for tblastn)
+ *
+ * @return                  TRUE if the aligned portions are nearly identical
+ */
+static Boolean 
+s_TestNearIdentical(const BlastCompo_SequenceData *seqData, 
+		 const BlastCompo_SequenceData *queryData, 
+		    const int queryOffset,   
+		 const BlastCompo_Alignment *align,
+		 const int rangeOffset)
+{
+  int numIdentical = 0;
+  double fractionIdentical;
+  int qPos, sPos; /*positions in query and subject;*/
+
+  qPos = align->queryStart - queryOffset;
+  sPos = align->matchStart - rangeOffset;
+  while (qPos < align->queryEnd)  {
+      if (queryData->data[qPos] == seqData->data[sPos])
+	numIdentical++;
+      sPos++;
+      qPos++;
+  }
+  fractionIdentical = ((double) numIdentical/
+  (double) (align->queryEnd - align->queryStart +1));
+  if (fractionIdentical >= MINUMUM_FRACTION_NEAR_IDENTICAL)
+    return(TRUE);
+  else
+    return(FALSE);
+}
+
 
 /**
  * Initialize a new matching sequence, obtaining information about the
@@ -918,13 +958,23 @@ s_DoSegSequenceData(BlastCompo_SequenceData * seqData,
  * @param self          the sequence from which to obtain the data [in]
  * @param range         the range and translation frame to get [in]
  * @param seqData       the resulting data [out]
+ * @param queryData     the query sequence [in]
+ * @param queryOffset   offset for align if there are multiple queries
+ * @param align          information about the alignment between query and subject
+ * @param shouldTestIdentical did alignment pass a preliminary test in
+ *                       redo_alignment.c that indicates the sequence
+ *                        pieces may be near identical
  *
  * @return 0 on success; -1 on failure
  */
 static int
 s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
                              const BlastCompo_SequenceRange * range,
-                             BlastCompo_SequenceData * seqData )
+                             BlastCompo_SequenceData * seqData,
+			     const BlastCompo_SequenceData * queryData,
+			     const int queryOffset,
+			     const BlastCompo_Alignment *align,
+			     const Boolean shouldTestIdentical)
 {
     int status = 0;
     BlastKappa_SequenceInfo * local_data; /* BLAST-specific
@@ -970,6 +1020,9 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
         seqData->length = translated_length;
 
         if ( !(KAPPA_TBLASTN_NO_SEG_SEQUENCE) ) {
+	  if ((!shouldTestIdentical) || 
+            (shouldTestIdentical && 
+	     (!s_TestNearIdentical(seqData, queryData, queryOffset, align, range->begin)))) {
             status = s_DoSegSequenceData(seqData, eBlastTypeTblastn);
             if (status != 0) {
                 free(seqData->buffer);
@@ -977,6 +1030,7 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
                 seqData->data = NULL;
                 seqData->length = 0;
             }
+	  }
         }
     }
     return status;
@@ -989,13 +1043,25 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
  * @param self          a protein sequence [in]
  * @param range         the range to get [in]
  * @param seqData       the resulting data [out]
+ * @param queryData     the query sequence [in]
+ * @param queryOffset   offset for align if there are multiple queries
+ * @param align          information about the alignment 
+ *                         between query and subject [in]
+ * @param shouldTestIdentical did alignment pass a preliminary test in
+ *                       redo_alignment.c that indicates the sequence
+ *                        pieces may be near identical [in]
  *
  * @return 0 on success; -1 on failure
  */
 static int
 s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
                           const BlastCompo_SequenceRange * range,
-                          BlastCompo_SequenceData * seqData )
+                          BlastCompo_SequenceData * seqData,
+			  const BlastCompo_SequenceData * queryData,
+			  const int queryOffset,
+			  const BlastCompo_Alignment *align,
+			  const Boolean shouldTestIdentical)
+
 {
     int status = 0;       /* return status */
     Int4       idx;       /* loop index */
@@ -1030,7 +1096,12 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
         }
     }
     if ( !(KAPPA_BLASTP_NO_SEG_SEQUENCE) ) {
+      if ((!shouldTestIdentical) || 
+	  (shouldTestIdentical && 
+	   (!s_TestNearIdentical(seqData, queryData, queryOffset, align, 0)))) {
+	status = -1;
         status = s_DoSegSequenceData(seqData, eBlastTypeBlastp);
+      }
     }
     /* Fit the data to the range. */
     seqData ->data    = &seqData->data[range->begin - 1];
@@ -1052,20 +1123,32 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
  * @param self          sequence information [in]
  * @param range        range specifying the range of data [in]
  * @param seqData       the sequence data obtained [out]
+ * @param seqData       the resulting data [out]
+ * @param queryData     the query sequence [in]
+ * @param queryOffset   offset for align if there are multiple queries
+ * @param align          information about the alignment between query and subject
+ * @param shouldTestIdentical did alignment pass a preliminary test in
+ *                       redo_alignment.c that indicates the sequence
+ *                        pieces may be near identical
  *
  * @return 0 on success; -1 on failure
  */
 static int
 s_SequenceGetRange(const BlastCompo_MatchingSequence * self,
                    const BlastCompo_SequenceRange * range,
-                   BlastCompo_SequenceData * seqData )
+                   BlastCompo_SequenceData * seqData,
+		   const BlastCompo_SequenceData * queryData,
+		   const int queryOffset,
+		   const BlastCompo_Alignment *align,
+		   const Boolean shouldTestIdentical)
 {
     BlastKappa_SequenceInfo * seq_info = self->local_data;
     if (seq_info->prog_number ==  eBlastTypeTblastn) {
         /* The sequence must be translated. */
-        return s_SequenceGetTranslatedRange(self, range, seqData);
+      return s_SequenceGetTranslatedRange(self, range, seqData,
+					  queryData, queryOffset, align, shouldTestIdentical);
     } else {
-        return s_SequenceGetProteinRange(self, range, seqData);
+      return s_SequenceGetProteinRange(self, range, seqData, queryData, queryOffset, align, shouldTestIdentical);
     }
 }
 

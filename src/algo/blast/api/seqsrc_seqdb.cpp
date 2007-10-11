@@ -173,11 +173,13 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
     // removed by filtering.  If so we return an error.  The traceback
     // code will exclude this HSP list.
     
-    if (seqdb_args->check_oid_exclusion && (**seqdb).GetGiList() == NULL) {
-        list< CRef<CSeq_id> > seqids = (**seqdb).GetSeqIDs(oid);
-        
-        if (seqids.empty()) {
-            return BLAST_SEQSRC_ERROR;
+    if (seqdb_args->check_oid_exclusion) {
+        if ((**seqdb).GetGiList() != NULL) {
+            list< CRef<CSeq_id> > seqids = (**seqdb).GetSeqIDs(oid);
+            
+            if (seqids.empty()) {
+                return BLAST_SEQSRC_ERROR;
+            }
         }
     }
     

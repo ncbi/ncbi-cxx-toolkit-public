@@ -48,6 +48,7 @@ Author: Jason Papadopoulos
 #include <objtools/blast_format/blastfmtutil.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
+#include <algo/blast/blastinput/blast_args.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -91,8 +92,8 @@ public:
     ///                    the best alignment to each database sequence [in]
     ///
     CBlastFormat(const blast::CBlastOptions& opts, const string& dbname, 
-                 int format_type, bool db_is_aa,
-                 bool believe_query, CNcbiOstream& outfile,
+                 blast::CFormattingArgs::EOutputFormat format_type, 
+                 bool db_is_aa, bool believe_query, CNcbiOstream& outfile,
                  blast::CBlastInput* blast_input,
                  int num_summary, 
                  int num_alignments, 
@@ -126,7 +127,8 @@ public:
     void PrintEpilog(const blast::CBlastOptions& options);
 
 private:
-    int m_FormatType;           ///< Format type
+    /// Format type
+    blast::CFormattingArgs::EOutputFormat m_FormatType;
     bool m_IsHTML;              ///< true if HTML output desired
     bool m_DbIsAA;              ///< true if database has protein sequences
     bool m_BelieveQuery;        ///< true if query sequence IDs are parsed

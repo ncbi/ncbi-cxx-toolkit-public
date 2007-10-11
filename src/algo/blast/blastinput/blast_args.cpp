@@ -1271,7 +1271,12 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opt)
 {
     if (args[kArgOutputFormat]) {
-        m_FormattedOutputChoice = args[kArgOutputFormat].AsInteger();
+        int val(args[kArgOutputFormat].AsInteger());
+        if (val < 0 || val >= static_cast<int>(eEndValue)) {
+            string msg("Formatting choice is out of range");
+            throw std::out_of_range(msg);
+        }
+        m_OutputFormat = static_cast<EOutputFormat>(val);
     }
 
     m_ShowGis = static_cast<bool>(args[kArgShowGIs]);

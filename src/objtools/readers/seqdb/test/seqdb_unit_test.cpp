@@ -1085,9 +1085,9 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
     const char * s3[] =
         { "1NPQ", 0 };
     const char * s4[] =
-        { "gi|443091",  "pdb|1LCT|",   "1LCT", 0 };
+        { "gi|157831779", "pdb|1LCT|A", "1LCT", 0 };
     const char * s5[] =
-        { "gi|28948348", "gi|28948349", "pdb|1GWB|A", "pdb|1GWB|B", "1GWB", 0 };
+        { "gi|157878050", "gi|28948349", "pdb|1GWB|A", "pdb|1GWB|B", "1GWB", 0 };
     
     str_list[0] = s0;
     str_list[1] = s1;
@@ -1113,9 +1113,9 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
     Uint4 g3[] =
         { 30749669, 30749670, 0 };
     Uint4 g4[] =
-        { 443091, 0 };
+        { 157831779, 0 };
     Uint4 g5[] =
-        { 28948348, 28948349, 0 };
+        { 157878050, 28948349, 0 };
     
     gi_list[0] = g0;
     gi_list[1] = g1;
@@ -1160,6 +1160,10 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
         for(Uint4 * gip = gi_list[i]; *gip; gip++) {
             int oid1(-1);
             bool worked = nr.GiToOid(*gip, oid1);
+            
+            if (! worked) {
+                cerr << "Failing GI is " << *gip << endl;
+            }
             
             CHECK(worked);
             
@@ -2367,7 +2371,7 @@ BOOST_AUTO_TEST_CASE(IntersectionGiList)
     }
 }
 
-BOOST_AUTO_TEST_CASE(AndNotGiList)
+BOOST_AUTO_TEST_CASE(ComputedList)
 {
     START;
     
@@ -2394,23 +2398,230 @@ BOOST_AUTO_TEST_CASE(AndNotGiList)
     // Add to end of a5
     a5.push_back(special);
     
-    CSimpleGiList gi3(a3);
+    CRef<CSeqDBIdSet> calc(new CSeqDBIdSet(a3, CSeqDBIdSet::eGi));
     
     // X and not Y operation : multiples of 3 (or 41) that aren't
     // multiples of 5 (or 41).
     
-    CAndNotGiList and_not(gi3, a5);
+    calc->Compute(CSeqDBIdSet::eAnd, a5, false);
+    
+    CHECK(calc->IsPositive());
+    CRef<CSeqDBGiList> and_not = calc->GetPositiveList();
     
     for(int i = 0; i < 500; i++) {
         bool is_3 = ((i % 3) == 0) || (i == special);
         bool is_5 = ((i % 5) == 0) || (i == special);
         
         if (is_3 && (! is_5)) {
-            CHECK(true == and_not.FindGi(i));
+            CHECK(true == and_not->FindGi(i));
         } else {
-            CHECK(false == and_not.FindGi(i));
+            CHECK(false == and_not->FindGi(i));
         }
     }
+}
+
+BOOST_AUTO_TEST_CASE(ComplexComputedList)
+{
+    START;
+    
+    vector<int> m2; // multiples of 2
+    vector<int> m3; // multiples of 3
+    vector<int> m5; // multiples of 5
+    vector<int> m7; // multiples of 7
+    
+    // The number 11 is is added to the beginning and end of each list
+    // to insure that all lists are sorted and uniqued properly.
+    
+    int special = 11;
+    
+    m2.push_back(special);
+    m3.push_back(special);
+    m5.push_back(special);
+    m7.push_back(special);
+    
+    for(int i = 0; i < 1000; i++) {
+        if (! (i % 2)) {
+            m2.push_back(i);
+        }
+        if (! (i % 3)) {
+            m3.push_back(i);
+        }
+        if (! (i % 5)) {
+            m5.push_back(i);
+        }
+        if (! (i % 7)) {
+            m7.push_back(i);
+        }
+    }
+    
+    m2.push_back(special);
+    m3.push_back(special);
+    m5.push_back(special);
+    m7.push_back(special);
+    
+    //----------------------------------------
+    // c1: (m2 AND NOT m3) OR (m5 AND NOT m7)
+    
+    CSeqDBIdSet c1(m2, CSeqDBIdSet::eGi);
+    c1.Compute(CSeqDBIdSet::eAnd, m3, false);
+    
+        CSeqDBIdSet m5_not_m7(m5, CSeqDBIdSet::eGi);
+        m5_not_m7.Compute(CSeqDBIdSet::eAnd, m7, false);
+        
+        c1.Compute(CSeqDBIdSet::eOr, m5_not_m7);
+    
+    //----------------------------------------
+    // c2: (NOT m2 OR m3) AND (m5 XOR m7)
+    
+    CSeqDBIdSet c2(m2, CSeqDBIdSet::eGi, false);
+    c2.Compute(CSeqDBIdSet::eOr, m3);
+        
+    CSeqDBIdSet m5_xor_m7(m5, CSeqDBIdSet::eGi);
+    m5_xor_m7.Compute(CSeqDBIdSet::eXor, m7);
+    
+    c2.Compute(CSeqDBIdSet::eAnd, m5_xor_m7);
+
+    //----------------------------------------
+    // c3: (m2 OR NOT m3) AND (NOT m5 OR NOT m7)
+    
+    CSeqDBIdSet c3(m2, CSeqDBIdSet::eGi);
+    c3.Compute(CSeqDBIdSet::eOr, m3, false);
+    
+    CHECK(! c3.IsPositive());
+    
+    CSeqDBIdSet not_m5_ornot_m7(m5, CSeqDBIdSet::eGi, false);
+    not_m5_ornot_m7.Compute(CSeqDBIdSet::eOr, m7, false);
+    
+    CHECK(! not_m5_ornot_m7.IsPositive());
+    c3.Compute(CSeqDBIdSet::eAnd, not_m5_ornot_m7);
+    
+    CHECK(! c3.IsPositive());
+    
+    // check lists.
+    
+    CRef<CSeqDBGiList> c1p, c2p;
+    CRef<CSeqDBNegativeList> c3n;
+    
+    CHECK(c1.IsPositive());
+    CHECK(c2.IsPositive());
+    CHECK(! c3.IsPositive());
+    
+    c1p = c1.GetPositiveList();
+    c2p = c2.GetPositiveList();
+    c3n = c3.GetNegativeList();
+    
+    for(int i = 0; i < 1000; i++) {
+        bool d2(!(i%2)), d3(!(i%3)), d5(!(i%5)), d7(!(i%7));
+        
+        if (i == special) {
+            d2 = d3 = d5 = d7 = true;
+        }
+        
+        // c1: (m2 AND NOT m3) OR (m5 AND NOT m7)
+        // c2: (NOT m2 OR m3) AND (m5 XOR m7)
+        // c3: (m2 OR NOT m3) AND (NOT m5 OR NOT m7)
+        
+        bool in_c1 = ( d2 && !d3) || ( d5 && !d7);
+        bool in_c2 = (!d2 ||  d3) && ( d5 !=  d7);
+        bool in_c3 = ( d2 || !d3) && (!d5 || !d7);
+        
+        CHECK_EQUAL(in_c1,   c1p->FindGi(i));
+        CHECK_EQUAL(in_c2,   c2p->FindGi(i));
+        CHECK_EQUAL(in_c3, ! c3n->FindGi(i));
+    }
+}
+
+static bool s_DbHasOID(CSeqDB & db, int & count, int oid)
+{
+    int oid2 = oid;
+    bool have = db.CheckOrFindOID(oid) && (oid == oid2);
+    
+    if (have) {
+        count++;
+    }
+    
+    return have;
+}
+
+BOOST_AUTO_TEST_CASE(ComputedListFilter)
+{
+    START;
+    
+    int v1[] = {
+        46071115, 46071116, 46071117, 46071118, 46071119,
+        46071120, 46071121, 46071122, 46071123, 46071124,
+        46071125, 46071126, 46071127, 46071128, 46071129,
+        46071130, 46071131, 46071132, 46071133, 46071134 };
+    
+    CHECK((sizeof(v1)/sizeof(int)) == 20);
+    
+    vector<int> all(v1, v1 + 20);
+    vector<int> mid(v1 + 5, v1 + 15);
+    
+    CSeqDBIdSet All(all, CSeqDBIdSet::eGi);
+    CSeqDBIdSet Mid(mid, CSeqDBIdSet::eGi);
+    CSeqDBIdSet Neg(all, CSeqDBIdSet::eGi, false);
+    
+    CSeqDBIdSet TopBot(all, CSeqDBIdSet::eGi);
+    TopBot.Compute(CSeqDBIdSet::eAnd, mid, false);
+    
+    // Compute inverse of TopBot, using a different sequence.
+    
+    CSeqDBIdSet NotTopBot(all, CSeqDBIdSet::eGi, false);
+    
+    NotTopBot.Compute(CSeqDBIdSet::eOr, mid);
+    
+    string nm = "data/seqn";
+    CSeqDB::ESeqType ty = CSeqDB::eNucleotide;
+    
+    CSeqDB seqn(nm, ty);
+    
+    CSeqDB db_A(nm, ty, All);
+    CSeqDB db_M(nm, ty, Mid);
+    CSeqDB db_N(nm, ty, Neg);
+    CSeqDB db_TB(nm, ty, TopBot);
+    CSeqDB db_NTB(nm, ty, NotTopBot);
+    
+    int A_count = 0;
+    int M_count = 0;
+    int N_count = 0;
+    int TB_count = 0;
+    int NTB_count = 0;
+    
+    for(int oid = 0; seqn.CheckOrFindOID(oid); oid++) {
+        bool A_have   = s_DbHasOID(db_A, A_count, oid);
+        bool M_have   = s_DbHasOID(db_M, M_count, oid);
+        bool N_have   = s_DbHasOID(db_N, N_count, oid);
+        bool TB_have  = s_DbHasOID(db_TB, TB_count, oid);
+        bool NTB_have = s_DbHasOID(db_NTB, NTB_count, oid);
+        
+        CHECK((! M_have) || A_have);   // M -> A (implies)
+        CHECK(A_have != N_have);       // A = ! N
+        CHECK((! TB_have) || A_have);  // TB -> A
+        
+        CHECK((!M_have) || (!N_have));  // M -> !N
+        CHECK((!M_have) || (!TB_have)); // M -> !TB
+        CHECK((!M_have) || NTB_have);   // M -> NTB
+        
+        CHECK((!N_have) || (!TB_have)); // N -> !TB
+        CHECK((!N_have) || NTB_have);   // N -> NTB
+        
+        CHECK(TB_have != NTB_have);    // TB != NTB
+    }
+    
+    int NSEQ = seqn.GetNumOIDs();
+    
+    CHECK_EQUAL(NSEQ, 100);
+    
+    CHECK_EQUAL(A_count, 20);
+    CHECK_EQUAL(M_count, 10);
+    CHECK_EQUAL(N_count, NSEQ-A_count);
+    CHECK_EQUAL(TB_count, A_count - M_count);
+    CHECK_EQUAL(NTB_count + TB_count, 100);
+    
+    CSeqDBIdSet idset_TB = db_TB.GetIdSet();
+    
+    CHECK(! idset_TB.Blank());
 }
 
 BOOST_AUTO_TEST_CASE(SharedMemoryMaps)

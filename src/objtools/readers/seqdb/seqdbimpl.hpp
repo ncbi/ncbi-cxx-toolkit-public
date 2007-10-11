@@ -137,13 +137,16 @@ public:
     ///   If not null, specifies included deflines and OIDs.
     /// @param neg_list
     ///   If not null, specifies excluded deflines and OIDs.
+    /// @param idset
+    ///   Specifies included or excluded deflines and OIDs.
     CSeqDBImpl(const string       & db_name_list,
                char                 prot_nucl,
                int                  oid_begin,
                int                  oid_end,
                bool                 use_mmap,
                CSeqDBGiList       * gi_list,
-               CSeqDBNegativeList * neg_list);
+               CSeqDBNegativeList * neg_list,
+               CSeqDBIdSet          idset);
     
     /// Default Constructor
     /// 
@@ -446,6 +449,19 @@ public:
     {
         return m_UserGiList.GetPointerOrNull();
     }
+    
+    /// Get IdSet list attached to this database.
+    ///
+    /// This returns the ID set used to filter this database. If a
+    /// CSeqDBGiList or CSeqDBNegativeList was used instead, then an
+    /// ID set object will be constructed and returned (and cached
+    /// here).  This method only deals with filtering applied to the
+    /// top level CSeqDB constructor; it does not consider GI or TI
+    /// lists attached from alias files.  If no filtering was used, a
+    /// 'blank' list will be returned (an empty negative list).
+    ///
+    /// @return A pointer to the attached ID set, or NULL.
+    CSeqDBIdSet GetIdSet();
     
     /// Set upper limit on memory and mapping slice size.
     /// 
@@ -933,6 +949,9 @@ private:
     
     /// The Negative ID list for the entire CSeqDB object.
     mutable CRef<CSeqDBNegativeList> m_NegativeList;
+    
+    /// The positive or negative ID list for the entire CSeqDB object.
+    CSeqDBIdSet m_IdSet;
     
     /// Cache header data for sequences.
     mutable CSeqDBSimpleCache<int, CRef<CBlast_def_line_set> > m_HeaderCache;

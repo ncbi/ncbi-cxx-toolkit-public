@@ -44,7 +44,8 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
                        int                  oid_end,
                        bool                 use_mmap,
                        CSeqDBGiList       * gi_list,
-                       CSeqDBNegativeList * neg_list)
+                       CSeqDBNegativeList * neg_list,
+                       CSeqDBIdSet          idset)
     : m_AtlasHolder     (use_mmap, & m_FlushCB),
       m_Atlas           (m_AtlasHolder.Get()),
       m_DBNames         (db_name_list),
@@ -67,6 +68,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
       m_OidListSetup    (false),
       m_UserGiList      (gi_list),
       m_NegativeList    (neg_list),
+      m_IdSet           (idset),
       m_HeaderCache     (256),
       m_NeedTotalsScan  (false)
 {
@@ -1472,6 +1474,43 @@ void CSeqDBImpl::HashToOids(unsigned hash, vector<int> & oids)
         
         vol_oids.clear();
     }
+}
+
+CSeqDBIdSet CSeqDBImpl::GetIdSet()
+{
+    if (m_IdSet.Blank()) {
+        if (! m_UserGiList.Empty()) {
+            // Note: this returns a 'blank' IdSet list for positive
+            // lists that specify filtering using CSeq-id objects.
+            
+            if (m_UserGiList->GetNumGis()) {
+                vector<int> gis;
+                m_UserGiList->GetGiList(gis);
+                
+                CSeqDBIdSet new_ids(gis, CSeqDBIdSet::eGi);
+                m_IdSet = new_ids;
+            } else if (m_UserGiList->GetNumTis()) {
+                vector<Int8> tis;
+                m_UserGiList->GetTiList(tis);
+                
+                CSeqDBIdSet new_ids(tis, CSeqDBIdSet::eTi);
+                m_IdSet = new_ids;
+            }
+        } else if (! m_NegativeList.Empty()) {
+            const vector<int> & ngis = m_NegativeList->GetGiList();
+            const vector<Int8> & ntis = m_NegativeList->GetTiList();
+            
+            if (! ngis.empty()) {
+                CSeqDBIdSet new_ids(ngis, CSeqDBIdSet::eGi, false);
+                m_IdSet = new_ids;
+            } else if (! ntis.empty()) {
+                CSeqDBIdSet new_ids(ntis, CSeqDBIdSet::eTi, false);
+                m_IdSet = new_ids;
+            }
+        }
+    }
+    
+    return m_IdSet;
 }
 
 END_NCBI_SCOPE

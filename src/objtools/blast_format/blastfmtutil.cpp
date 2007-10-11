@@ -70,6 +70,7 @@
 #include <objects/blastdb/Blast_def_line_set.hpp>
 
 #include <stdio.h>
+#include <sstream>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE (ncbi);
@@ -376,10 +377,51 @@ void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs,
     }
 }
 
+/// Efficiently decode a Blast-def-line-set from binary ASN.1.
+/// @param oss Octet string sequence of binary ASN.1 data.
+/// @param bdls Blast def line set decoded from oss.
+static void
+s_OssToDefline(const CUser_field::TData::TOss & oss,
+               CBlast_def_line_set            & bdls)
+{
+    typedef const CUser_field::TData::TOss TOss;
+    
+    const char * data = NULL;
+    size_t size = 0;
+    string temp;
+    
+    if (oss.size() == 1) {
+        // In the single-element case, no copies are needed.
+        
+        const vector<char> & v = *oss.front();
+        data = & v[0];
+        size = v.size();
+    } else {
+        // Determine the octet string length and do one allocation.
+        
+        ITERATE (TOss, iter1, oss) {
+            size += (**iter1).size();
+        }
+        
+        temp.reserve(size);
+        
+        ITERATE (TOss, iter3, oss) {
+            // 23.2.4[1] "The elements of a vector are stored contiguously".
+            temp.append(& (**iter3)[0], (*iter3)->size());
+        }
+        
+        data = & temp[0];
+    }
+    
+    CObjectIStreamAsnBinary inpstr(data, size);
+    inpstr >> bdls;
+}
+
 CRef<CBlast_def_line_set> 
 CBlastFormatUtil::GetBlastDefline (const CBioseq_Handle& handle) 
 {
-    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set());
+    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
+    
     if(handle.IsSetDescr()){
         const CSeq_descr& desc = handle.GetDescr();
         const list< CRef< CSeqdesc > >& descList = desc.Get();
@@ -395,39 +437,14 @@ CBlastFormatUtil::GetBlastDefline (const CBioseq_Handle& handle)
                     if (label == kAsnDeflineObjLabel){
                         const vector< CRef< CUser_field > >& usf = 
                             uobj.GetData();
-                        string buf;
                         
-                        if(usf.front()->GetData().IsOss()){ 
+                        if(usf.front()->GetData().IsOss()){
                             //only one user field
                             typedef const CUser_field::TData::TOss TOss;
                             const TOss& oss = usf.front()->GetData().GetOss();
-                            size_t size = 0;
-                            //determine the octet string length
-                            ITERATE (TOss, iter3, oss) {
-                                size += (**iter3).size();
-                            }
                             
-                            int i =0;
-                            char* temp = new char[size];
-                            //retrive the string
-                            ITERATE (TOss, iter3, oss) {
-                                
-                                for(vector< char >::iterator 
-                                        iter4 = (**iter3).begin(); 
-                                    iter4 !=(**iter3).end(); iter4++){
-                                    temp[i] = *iter4;
-                                    i++;
-                                }
-                            }            
-                            
-                            CConn_MemoryStream stream;
-                            stream.write(temp, i);
-                            auto_ptr<CObjectIStream> 
-                                ois(CObjectIStream::
-                                    Open(eSerial_AsnBinary, stream));
-                            *ois >> *bdls;
-                            delete [] temp;
-                        }         
+                            s_OssToDefline(oss, *bdls);
+                        }
                     }
                 }
             }

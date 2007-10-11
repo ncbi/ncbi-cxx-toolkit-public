@@ -1401,56 +1401,6 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
 }
 
 
-CAndNotGiList::CAndNotGiList(CSeqDBGiList & gilist, vector<int> & gis)
-{
-    _ASSERT(this != & gilist);
-    
-    gilist.InsureOrder(CSeqDBGiList::eGi);
-    sort(gis.begin(), gis.end());
-    
-    int list_i = 0;
-    int list_n = gilist.GetNumGis();
-    int gis_i = 0;
-    int gis_n = (int) gis.size();
-    
-    while(list_i < list_n && gis_i < gis_n) {
-        int POS = gilist[list_i].gi;
-        int NEG = gis[gis_i];
-        
-        int P_next = list_i;
-        int N_next = gis_i;
-        
-        bool included = false;
-        
-        if (POS < NEG) {
-            included = true;
-            P_next ++;
-        } else if (POS > NEG) {
-            N_next ++;
-        } else {
-            P_next ++;
-            N_next ++;
-        }
-        
-        if (included) {
-            m_GisOids.push_back(gilist[list_i]);
-        }
-        
-        list_i = P_next;
-        gis_i  = N_next;
-    }
-    
-    // Get the rest of the elements of gilist now that the negative
-    // GIs are exhausted.
-    
-    while(list_i < list_n) {
-        m_GisOids.push_back(gilist[list_i++]);
-    }
-    
-    m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
-}
-
-
 unsigned SeqDB_SequenceHash(const char * sequence,
                             int          length)
 {
@@ -1608,6 +1558,319 @@ unsigned SeqDB_SequenceHash(const CBioseq & sequence)
     
     return SeqDB_SequenceHash(output_data.data(), output_data.size());
 }
+
+CSeqDBIdSet::CSeqDBIdSet(const vector<int> & ids, EIdType t, bool positive)
+    : m_Positive(positive), m_IdType(t), m_Ids(new CSeqDBIdSet_Vector(ids))
+{
+    x_SortAndUnique(m_Ids->Set());
+}
+
+CSeqDBIdSet::CSeqDBIdSet(const vector<Int8> & ids, EIdType t, bool positive)
+    : m_Positive(positive), m_IdType(t), m_Ids(new CSeqDBIdSet_Vector(ids))
+{
+    x_SortAndUnique(m_Ids->Set());
+}
+
+void CSeqDBIdSet::x_SortAndUnique(vector<Int8> & ids)
+{
+    sort(ids.begin(), ids.end());
+    ids.erase(unique(ids.begin(), ids.end()), ids.end());
+}
+
+void CSeqDBIdSet::Negate()
+{
+    m_Positive = ! m_Positive;
+}
+
+void CSeqDBIdSet::
+x_SummarizeBooleanOp(EOperation op,
+                     bool       A_pos,
+                     bool       B_pos,
+                     bool     & result_pos,
+                     bool     & incl_A,
+                     bool     & incl_B,
+                     bool     & incl_AB)
+{
+    typedef CSeqDBIdSet TIdList;
+    
+    incl_A = incl_B = incl_AB = false;
+    
+    // Each binary boolean function can be represented as a 4 bit
+    // descriptor.  The four bits indicate whether the result is true
+    // when it appears, respectively, in neither list, only the second
+    // list, only the first list, or in both lists.  For example, the
+    // operation (A AND B) can be represented as (0001), and (A OR !B)
+    // can be written as (1011).  In a positive ID list, 1 means that
+    // an ID should be included in database iteration.
+    
+    // But 4-bit descriptors starting with a '1' correspond to logical
+    // operations that include all IDs not appearing in either input
+    // set.  But of course we do not have access to the IDs that do
+    // not appear, so we cannot (feasibly) compute such operations.
+    
+    // To solve this problem, De Morgan's Laws are used to transform
+    // the operation into its inverse, the results of which can be
+    // applied to SeqDB as a negative ID list.
+    
+    // For our purposes, these three transforms are needed:
+    //
+    //  1. (!X and !Y) becomes !(X or Y)
+    //  2. (!X or Y) becomes !(X and !Y)
+    //  3. (X or !Y) becomes !(!X and Y)
+    
+    result_pos = true;
+    
+    switch(op) {
+    case eAnd:
+        if ((! A_pos) && (! B_pos)) {
+            op = TIdList::eOr;
+            result_pos = false;
+            A_pos = B_pos = true;
+        }
+        break;
+        
+    case eOr:
+        if ((! A_pos) || (! B_pos)) {
+            op = TIdList::eAnd;
+            result_pos = false;
+            A_pos = ! A_pos;
+            B_pos = ! B_pos;
+        }
+        break;
+        
+    case eXor:
+        result_pos = A_pos == B_pos;
+        break;
+        
+    default:
+        break;
+    }
+    
+    // Once we have a legal operation, we construct these flags to
+    // summarize the boolean operation.  (Each of these corresponds to
+    // one of the bits in the 4-bit descriptor.)
+    
+    switch(op) {
+    case eAnd:
+        _ASSERT(A_pos || B_pos);
+        incl_A = !B_pos;
+        incl_B = !A_pos;
+        incl_AB = A_pos && B_pos;
+        break;
+        
+    case eOr:
+        _ASSERT(A_pos || B_pos);
+        incl_A = incl_B = incl_AB = true;
+        break;
+        
+    case eXor:
+        incl_AB = (A_pos != B_pos);
+        incl_A = incl_B = ! incl_AB;
+        break;
+        
+    default:
+        break;
+    }
+}
+
+void CSeqDBIdSet::
+x_BooleanSetOperation(EOperation           op,
+                      const vector<Int8> & A,
+                      bool                 A_pos,
+                      const vector<Int8> & B,
+                      bool                 B_pos,
+                      vector<Int8>       & result,
+                      bool               & result_pos)
+{
+    bool incl_A(false),
+        incl_B(false),
+        incl_AB(false);
+    
+    x_SummarizeBooleanOp(op,
+                         A_pos,
+                         B_pos,
+                         result_pos,
+                         incl_A,
+                         incl_B,
+                         incl_AB);
+    
+    size_t A_i(0), B_i(0);
+    
+    while((A_i < A.size()) && (B_i < B.size())) {
+        Int8 Ax(A[A_i]), Bx(B[B_i]), target(-1);
+        bool included(false);
+        
+        if (Ax < Bx) {
+            ++ A_i;
+            target = Ax;
+            included = incl_A;
+        } else if (Ax > Bx) {
+            ++ B_i;
+            target = Bx;
+            included = incl_B;
+        } else {
+            ++ A_i;
+            ++ B_i;
+            target = Ax;
+            included = incl_AB;
+        }
+        
+        if (included) {
+            result.push_back(target);
+        }
+    }
+    
+    if (incl_A) {
+        while(A_i < A.size()) {
+            result.push_back(A[A_i++]);
+        }
+    }
+    
+    if (incl_B) {
+        while(B_i < B.size()) {
+            result.push_back(B[B_i++]);
+        }
+    }
+}
+
+void CSeqDBIdSet::Compute(EOperation          op,
+                          const vector<int> & ids,
+                          bool                positive)
+{
+    CRef<CSeqDBIdSet_Vector> result(new CSeqDBIdSet_Vector);
+    
+    CRef<CSeqDBIdSet_Vector> B(new CSeqDBIdSet_Vector(ids));
+    
+    x_SortAndUnique(B->Set());
+    
+    bool result_pos(true);
+    
+    x_BooleanSetOperation(op,
+                          m_Ids->Set(),
+                          m_Positive,
+                          B->Set(),
+                          positive,
+                          result->Set(),
+                          result_pos);
+    
+    m_Positive = result_pos;
+    m_Ids = result;
+}
+
+void CSeqDBIdSet::Compute(EOperation           op,
+                          const vector<Int8> & ids,
+                          bool                 positive)
+{
+    CRef<CSeqDBIdSet_Vector> result(new CSeqDBIdSet_Vector);
+    
+    CRef<CSeqDBIdSet_Vector> B(new CSeqDBIdSet_Vector(ids));
+    x_SortAndUnique(B->Set());
+    
+    bool result_pos(true);
+    
+    x_BooleanSetOperation(op,
+                          m_Ids->Set(),
+                          m_Positive,
+                          B->Set(),
+                          positive,
+                          result->Set(),
+                          result_pos);
+    
+    m_Positive = result_pos;
+    m_Ids = result;
+}
+
+void CSeqDBIdSet::Compute(EOperation op, const CSeqDBIdSet & ids)
+{
+    if (m_IdType != ids.m_IdType ) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Set operation requested but ID types don't match.");
+    }
+    
+    CRef<CSeqDBIdSet_Vector> result(new CSeqDBIdSet_Vector);
+    bool result_pos(true);
+    
+    x_BooleanSetOperation(op,
+                          m_Ids->Set(),
+                          m_Positive,
+                          ids.m_Ids->Get(),
+                          ids.m_Positive,
+                          result->Set(),
+                          result_pos);
+    
+    m_Positive = result_pos;
+    m_Ids = result;
+}
+
+CRef<CSeqDBGiList> CSeqDBIdSet::GetPositiveList()
+{
+    CRef<CSeqDBGiList> ids(new CSeqDBGiList);
+    
+    if (! m_Positive) {
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Positive ID list requested but only negative exists.");
+    }
+    
+    if (m_IdType == eTi) {
+        ids->ReserveTis(m_Ids->Size());
+        
+        ITERATE(vector<Int8>, iter, m_Ids->Set()) {
+            ids->AddTi(*iter);
+        }
+    } else {
+        ids->ReserveGis(m_Ids->Size());
+        
+        ITERATE(vector<Int8>, iter, m_Ids->Set()) {
+            _ASSERT(((*iter) >> 32) == 0);
+            ids->AddGi(*iter);
+        }
+    }
+    
+    return ids;
+}
+
+CRef<CSeqDBNegativeList> CSeqDBIdSet::GetNegativeList()
+{
+    if (m_Positive) {
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Negative ID list requested but only positive exists.");
+    }
+    
+    CRef<CSeqDBNegativeList> ids(new CSeqDBNegativeList);
+    
+    if (m_IdType == eTi) {
+        ids->ReserveTis(m_Ids->Size());
+        
+        ITERATE(vector<Int8>, iter, m_Ids->Set()) {
+            ids->AddTi(*iter);
+        }
+    } else {
+        ids->ReserveGis(m_Ids->Size());
+        
+        ITERATE(vector<Int8>, iter, m_Ids->Set()) {
+            _ASSERT(((*iter) >> 32) == 0);
+            ids->AddGi(*iter);
+        }
+    }
+    
+    return ids;
+}
+
+CSeqDBIdSet::CSeqDBIdSet()
+    : m_Positive (false),
+      m_IdType   (eGi),
+      m_Ids      (new CSeqDBIdSet_Vector)
+{
+}
+
+bool CSeqDBIdSet::Blank() const
+{
+    return (! m_Positive) && (0 == m_Ids->Size());
+}
+
 
 END_NCBI_SCOPE
 

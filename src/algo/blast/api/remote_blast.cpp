@@ -1754,6 +1754,10 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             bo.SetGapTracebackAlgorithm((EBlastTbackExt) v.GetInteger());
         } else if (B4Param_GapTrigger.Match(p)) {
             bo.SetGapTrigger(v.GetReal());
+        } else if (B4Param_GapXDropoff.Match(p)) {
+            bo.SetGapXDropoff(v.GetReal());
+        } else if (B4Param_GapXDropoffFinal.Match(p)) {
+            bo.SetGapXDropoffFinal(v.GetReal());
         } else if (B4Param_GapExtnAlgorithm.Match(p)) {
             bo.SetGapExtnAlgorithm(static_cast<EBlastPrelimGapExt>
                                    (v.GetInteger()));
@@ -1867,6 +1871,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             bo.SetSegFilteringHicut(v.GetReal());
         } else if (B4Param_SumStatistics.Match(p)) {
             bo.SetSumStatisticsMode(v.GetBoolean());
+        } else if (B4Param_SmithWatermanMode.Match(p)) {
+            bo.SetSmithWatermanMode(v.GetBoolean());
         } else {
             found = false;
         }

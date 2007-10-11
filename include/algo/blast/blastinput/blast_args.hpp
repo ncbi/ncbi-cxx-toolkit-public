@@ -620,9 +620,35 @@ private:
 class NCBI_XBLAST_EXPORT CFormattingArgs : public IBlastCmdLineArgs
 {
 public:
+    /// Defines the output formats supported by our command line formatter
+    enum EOutputFormat {
+        /// Standard pairwise alignments
+        ePairwise = 0,                  
+        ///< Query anchored showing identities
+        eQueryAnchoredIdentities,
+        ///< Query anchored no identities
+        eQueryAnchoredNoIdentities,
+        ///< Flat query anchored showing identities
+        eFlatQueryAnchoredIdentities,
+        ///< Flat query anchored no identities
+        eFlatQueryAnchoredNoIdentities,
+        /// XML output
+        eXml,
+        /// Tabular output
+        eTabular,
+        /// Tabular output with comments
+        eTabularWithComments,
+        /// ASN.1 text output
+        eAsnText,
+        /// ASN.1 binary output
+        eAsnBinary,
+        /// Sentinel value for error checking
+        eEndValue
+    };
+
     /// Default constructor
     CFormattingArgs()
-        : m_FormattedOutputChoice(0), m_ShowGis(false), 
+        : m_OutputFormat(ePairwise), m_ShowGis(false), 
         m_NumDescriptions(kDfltArgNumDescriptions),
         m_NumAlignments(kDfltArgNumAlignments), m_Html(false)
     {};
@@ -634,8 +660,8 @@ public:
                                          CBlastOptions& opts);
 
     /// Get the choice of formatted output
-    int GetFormattedOutputChoice() const {
-        return m_FormattedOutputChoice;
+    EOutputFormat GetFormattedOutputChoice() const {
+        return m_OutputFormat;
     }
     /// Display the NCBI GIs in formatted output?
     bool ShowGis() const {
@@ -655,7 +681,7 @@ public:
     }
 
 private:
-    int m_FormattedOutputChoice;    ///< Choice of formatting output
+    EOutputFormat m_OutputFormat;   ///< Choice of formatting output
     bool m_ShowGis;                 ///< Display NCBI GIs?
     size_t m_NumDescriptions;       ///< Number of 1-line descr. to show
     size_t m_NumAlignments;         ///< Number of alignments to show

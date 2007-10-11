@@ -135,8 +135,11 @@ private:
 };
 
 
-/// Forward declaration of ISeqDBGiList interface.
+/// Forward declaration of CSeqDBGiList base class.
 class CSeqDBGiList;
+
+/// Forward declaration of CSeqDBIdSet class.
+class CSeqDBIdSet;
 
 
 /// CSeqDB
@@ -218,6 +221,21 @@ public:
     CSeqDB(const string       & dbname,
            ESeqType             seqtype,
            CSeqDBNegativeList * nlist);
+    
+    /// Short Constructor with Computed ID list.
+    /// 
+    /// This version of the constructor takes a computed CSeqDBIdSet
+    /// list which can be positive or negative.  This is equivalent to
+    /// building a positive or negative list from the IdSet object and
+    /// and passing it into one of the previous constructors.
+    /// 
+    /// @param dbname
+    ///   A list of database or alias names, seperated by spaces
+    /// @param seqtype
+    ///   Specify eProtein, eNucleotide, or eUnknown.
+    /// @param ids
+    ///   The database will be filtered by this set of IDs.
+    CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBIdSet ids);
     
     /// Short Constructor
     /// 
@@ -697,6 +715,19 @@ public:
     ///
     /// @return A pointer to the attached GI list, or NULL.
     const CSeqDBGiList * GetGiList() const;
+    
+    /// Get IdSet list attached to this database.
+    ///
+    /// This returns the ID set used to filter this database. If a
+    /// CSeqDBGiList or CSeqDBNegativeList was used instead, then an
+    /// ID set object will be constructed and returned (and cached
+    /// here).  This method only deals with filtering applied to the
+    /// top level CSeqDB constructor; it does not consider GI or TI
+    /// lists attached from alias files.  If no filtering was used, a
+    /// 'blank' list will be returned (an empty negative list).
+    ///
+    /// @return A pointer to the attached ID set, or NULL.
+    CSeqDBIdSet GetIdSet() const;
     
     /// Set upper limit on memory and mapping slice size.
     /// 

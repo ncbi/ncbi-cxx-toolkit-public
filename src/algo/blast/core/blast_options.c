@@ -985,7 +985,8 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
    if (word_size)
       options->word_size = word_size;
    if ((program_number == eBlastTypeTblastn ||
-        program_number == eBlastTypeBlastp) && 
+        program_number == eBlastTypeBlastp ||
+        program_number == eBlastTypeBlastx) && 
        word_size > 5)
        options->lut_type = eCompressedAaLookupTable;
 
@@ -1141,13 +1142,14 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
     } else if (program_number != eBlastTypeBlastn && options->word_size > 5)
     {
         if (program_number == eBlastTypeBlastp ||
-            program_number == eBlastTypeTblastn)
+            program_number == eBlastTypeTblastn ||
+            program_number == eBlastTypeBlastx)
         {
             if (options->word_size > 7) {
                 Blast_MessageWrite(blast_msg, eBlastSevError, 
                                    kBlastMessageNoContext,
                                    "Word-size must be less than "
-                                   "8 for a tblastn search");
+                                   "8 for a tblastn, blastp or blastx search");
                 return BLASTERR_OPTION_VALUE_INVALID;
             }
         }
@@ -1169,13 +1171,16 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
     }
 
     if (program_number == eBlastTypeBlastp ||
-        program_number == eBlastTypeTblastn)
+        program_number == eBlastTypeTblastn ||
+        program_number == eBlastTypeBlastx)
     {
         if (options->word_size > 5 &&
             options->lut_type != eCompressedAaLookupTable) {
-           Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
-                         "Blastp or Tblastn with word size > 5 requires a "
-                         "compressed alphabet lookup table");
+           Blast_MessageWrite(blast_msg, eBlastSevError,
+                              kBlastMessageNoContext,
+                              "Blastp, Blastx or Tblastn with word size"
+                              " > 5 requires a "
+                              "compressed alphabet lookup table");
            return BLASTERR_OPTION_VALUE_INVALID;
         }
         else if (options->lut_type == eCompressedAaLookupTable &&

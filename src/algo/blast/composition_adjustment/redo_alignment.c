@@ -943,6 +943,30 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
     return params;
 }
 
+#define MINIMUM_LENGTH_NEAR_IDENTICAL 50
+
+
+static Boolean s_preliminaryTestNearIdentical(BlastCompo_QueryInfo query_info[], 
+				   s_WindowInfo *window)
+{
+  BlastCompo_SequenceData *thisQuery; /*one query sequence*/
+  BlastCompo_Alignment *align; /*first alignment in this window*/
+  int queryIndex, queryLength;
+
+  if ((window->hspcnt > 1) ||
+      (window->hspcnt < 1))
+    return(FALSE);
+  align = window->align;
+  queryIndex = align->queryIndex;
+  queryLength = query_info[queryIndex].seq.length;
+  if ((align->queryEnd - align->queryStart) !=
+      (align->matchEnd - align->matchStart))
+    return(FALSE);
+  if ((align->matchEnd - align->matchStart +1) <
+      (MIN(queryLength,  MINIMUM_LENGTH_NEAR_IDENTICAL)))
+    return(FALSE);
+  return(TRUE);
+}
 
 /* Documented in redo_alignment.h. */
 int
@@ -995,11 +1019,19 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
         BlastCompo_SequenceData * query;       /* query data for this window */
         /* the composition of this query */
         Blast_AminoAcidComposition * query_composition;  
+	Boolean nearIdenticalStatus; /*are query and subject nearly
+				       identical in the aligned part?*/
 
         window = windows[window_index];
+
+        nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,  
+						  window);
         status =
             callbacks->get_range(matchingSeq, &window->subject_range,
-                                 &subject);
+                                 &subject, 
+				 &query_info[window->align->queryIndex].seq,
+				 query_info[window->align->queryIndex].origin,
+				 window->align, nearIdenticalStatus);
         if (status != 0) {
             goto window_index_loop_cleanup;
         }
@@ -1141,22 +1173,31 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
         BlastCompo_SequenceData subject = {0,}; 
         /* subject data for this window */
         BlastCompo_SequenceData * query;       /* query data for this window */
+        int query_offset; /*offset if there are multiple queries*/
         /* the composition of this query */
         Blast_AminoAcidComposition * query_composition;  
         double searchsp;                  /* effective search space */
-
+	Boolean nearIdenticalStatus; /*are query and subject nearly
+				       identical in the aligned part?*/
         /* adjust_search_failed is true only if Blast_AdjustScores
          * is called and returns a nonzero value */
         int adjust_search_failed = FALSE;
+
         
         window = windows[window_index];
         query_index = window->query_range.context;
         query = &query_info[query_index].seq;
+        query_offset = query_info[query_index].origin;
         query_composition = &query_info[query_index].composition;
         searchsp = query_info[query_index].eff_search_space;
 
-        status = callbacks->get_range(matchingSeq, &window->subject_range,
-                                      &subject);
+        nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,  
+						  window);
+
+        status =
+            callbacks->get_range(matchingSeq, &window->subject_range,
+                                 &subject, 
+				 query,  query_offset, window->align, nearIdenticalStatus);
         if (status != 0) 
             goto window_index_loop_cleanup;
             
