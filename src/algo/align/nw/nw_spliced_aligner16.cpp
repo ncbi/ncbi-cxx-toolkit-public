@@ -127,6 +127,7 @@ const unsigned char kMaskD        = 0x08;
 // Evaluate dynamic programming matrix. Create transcript.
 CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 {
+    /*
     // use the banded version if there is no space for introns
     const int len_dif (data->m_len2 - data->m_len1);
     if(data->m_len2 > 5 && data->m_len1 > 5 
@@ -143,6 +144,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 
         return CBandAligner::x_Align(data);
     }
+    */
 
     // redefine TScore as a floating-point type for this procedure only
     typedef double TScore;
