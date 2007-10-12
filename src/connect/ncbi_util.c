@@ -47,7 +47,7 @@
 #  ifndef NCBI_OS_SOLARIS
 #    include <limits.h>
 #  endif
-#  if defined(HAVE_GETPWUID)  ||  defined(HAVE_GETPWUID_R)
+#  if defined(HAVE_GETPWUID)  ||  defined(NCBI_HAVE_GETPWUID_R)
 #    include <pwd.h>
 #  endif
 #  include <unistd.h>
@@ -625,7 +625,7 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
     char loginbuf[LOGIN_NAME_MAX + 1];
 #  endif
     struct passwd* pw;
-#  if !defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_GETPWUID_R)
+#  if !defined(NCBI_OS_SOLARIS)  &&  defined(NCBI_HAVE_GETPWUID_R)
     struct passwd pwd;
     char pwdbuf[256];
 #  endif
@@ -677,7 +677,7 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
 #  endif
 
 #  if defined(NCBI_OS_SOLARIS)  ||  \
-    (!defined(HAVE_GETPWUID_R)  &&  defined(HAVE_GETPWUID))
+    (!defined(NCBI_HAVE_GETPWUID_R)  &&  defined(HAVE_GETPWUID))
     /* NB:  getpwuid() is MT-safe on Solaris, so use it here, if available */
 #  ifndef NCBI_OS_SOLARIS
     CORE_LOCK_WRITE;
@@ -689,23 +689,23 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
 #  endif
     if (pw  &&  pw->pw_name)
         return buf;
-#  elif defined(HAVE_GETPWUID_R)
-#    if   HAVE_GETPWUID_R == 4
+#  elif defined(NCBI_HAVE_GETPWUID_R)
+#    if   NCBI_HAVE_GETPWUID_R == 4
     /* obsolete but still existent */
     pw = getpwuid_r(getuid(), &pwd, pwdbuf, sizeof(pwdbuf));
-#    elif HAVE_GETPWUID_R == 5
+#    elif NCBI_HAVE_GETPWUID_R == 5
     /* POSIX-conforming */
     if (getpwuid_r(getuid(), &pwd, pwdbuf, sizeof(pwdbuf), &pw) != 0)
         pw = 0;
 #    else
-#      error "Unknown value of HAVE_GETPWUID_R, 4 or 5 expected."
+#      error "Unknown value of NCBI_HAVE_GETPWUID_R, 4 or 5 expected."
 #    endif
     if (pw  &&  pw->pw_name) {
         assert(pw == &pwd);
         strncpy0(buf, pw->pw_name, bufsize - 1);
         return buf;
     }
-#  endif /*HAVE_GETPWUID_R*/
+#  endif /*NCBI_HAVE_GETPWUID_R*/
 
 #endif /*!NCBI_OS_UNIX*/
 

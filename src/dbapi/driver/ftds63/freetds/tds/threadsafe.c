@@ -368,7 +368,7 @@ tds_get_homedir(void)
 {
 #ifndef WIN32
 /* if is available getpwuid_r use it */
-#if defined(HAVE_GETUID) && defined(HAVE_GETPWUID_R)
+#if defined(HAVE_GETUID) && defined(NCBI_HAVE_GETPWUID_R)
     struct passwd *pw, bpw;
     char buf[1024];
 

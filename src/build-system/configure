@@ -9656,7 +9656,7 @@ _ACEOF
 
 fi
 
-## getservbyname_r() -- 2 major variants: 4-arg, 5-arg (POSIX).
+## getpwuid_r() -- 2 major variants: 4-arg, 5-arg (POSIX).
 ## (Alternate 4-arg interface ignored due to rarity.)
 
 echo "$as_me:$LINENO: checking for getpwuid_r" >&5
@@ -9770,7 +9770,7 @@ echo "${ECHO_T}$ncbi_cv_func_getpwuid_r" >&6
 if test "$ncbi_cv_func_getpwuid_r" != "no" ; then
 
 cat >>confdefs.h <<_ACEOF
-#define HAVE_GETPWUID_R $ncbi_cv_func_getpwuid_r
+#define NCBI_HAVE_GETPWUID_R $ncbi_cv_func_getpwuid_r
 _ACEOF
 
 fi
@@ -30020,13 +30020,13 @@ ncbicfg="$builddir/corelib/ncbicfg.c"
 test -f "$ncbicfg" -a ! -f "$ncbicfg.last" && cp -p "$ncbicfg" "$ncbicfg.last"
 
 ## Configure the compiler/flag-dependent header
-          ac_config_headers="$ac_config_headers ${ncbiconf}:$srcdir/src/build-system/config.h.in"
+          ac_config_headers="$ac_config_headers ${ncbiconf}:src/build-system/config.h.in"
 
 
 ##
 ## Configure makefiles, shell scripts, etc.
 ##
-                    ac_config_files="$ac_config_files $configurables $srcdir/./Makefile:$srcdir/src/build-system/Makefile.in.top"
+                    ac_config_files="$ac_config_files $configurables $srcdir/./Makefile:src/build-system/Makefile.in.top"
 
 
           ac_config_commands="$ac_config_commands default"
@@ -30591,9 +30591,9 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "$configurables" ) CONFIG_FILES="$CONFIG_FILES $configurables" ;;
-  "$srcdir/./Makefile" ) CONFIG_FILES="$CONFIG_FILES $srcdir/./Makefile:$srcdir/src/build-system/Makefile.in.top" ;;
+  "$srcdir/./Makefile" ) CONFIG_FILES="$CONFIG_FILES $srcdir/./Makefile:src/build-system/Makefile.in.top" ;;
   "default" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default" ;;
-  "${ncbiconf}" ) CONFIG_HEADERS="$CONFIG_HEADERS ${ncbiconf}:$srcdir/src/build-system/config.h.in" ;;
+  "${ncbiconf}" ) CONFIG_HEADERS="$CONFIG_HEADERS ${ncbiconf}:src/build-system/config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;

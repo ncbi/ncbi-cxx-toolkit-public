@@ -144,10 +144,6 @@
 /* Define to 1 if you have the `getpwuid' function. */
 #define HAVE_GETPWUID 1
 
-/* If you have the `getpwuid_r' function, define to the number of arguments it
-   takes (normally 4 or 5). */
-#define HAVE_GETPWUID_R 5
-
 /* Define to 1 if you have the `getrusage' function. */
 #define HAVE_GETRUSAGE 1
 
@@ -644,6 +640,10 @@
 
 /* Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB. */
 #define NCBI_FTDS_RENAME_SYBDB 1
+
+/* If you have the `getpwuid_r' function, define to the number of arguments it
+   takes (normally 4 or 5). */
+#define NCBI_HAVE_GETPWUID_R 5
 
 /* If you have the `readdir_r' function, define to the number of arguments it
    takes (normally 2 or 3). */

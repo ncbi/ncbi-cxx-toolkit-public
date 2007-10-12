@@ -1,4 +1,4 @@
-/* config.h.in.  Generated from configure.ac by autoheader.  */
+/* src/build-system/config.h.in.  Generated from src/build-system/configure.ac by autoheader.  */
 
 /* Define to 1 if C++ streams delete their buffers. */
 #undef AUTOMATIC_STREAMBUF_DESTRUCTION
@@ -134,10 +134,6 @@
 
 /* Define to 1 if you have the `getpwuid' function. */
 #undef HAVE_GETPWUID
-
-/* If you have the `getpwuid_r' function, define to the number of arguments it
-   takes (normally 4 or 5). */
-#undef HAVE_GETPWUID_R
 
 /* Define to 1 if you have the `getrusage' function. */
 #undef HAVE_GETRUSAGE
@@ -632,6 +628,10 @@
 
 /* Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB. */
 #undef NCBI_FTDS_RENAME_SYBDB
+
+/* If you have the `getpwuid_r' function, define to the number of arguments it
+   takes (normally 4 or 5). */
+#undef NCBI_HAVE_GETPWUID_R
 
 /* If you have the `readdir_r' function, define to the number of arguments it
    takes (normally 2 or 3). */

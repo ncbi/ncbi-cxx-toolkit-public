@@ -63,11 +63,11 @@
 #endif
 
 
-#ifdef HAVE_GETPWUID_R
-#  if HAVE_GETPWUID_R == 4
+#ifdef NCBI_HAVE_GETPWUID_R
+#  if NCBI_HAVE_GETPWUID_R == 4
 #    define HAVE_FUNC_GETPWUID_R_4 1
 #    define HAVE_FUNC_GETPWUID_R_4_PW 1
-#  elif HAVE_GETPWUID_R == 5
+#  elif NCBI_HAVE_GETPWUID_R == 5
 #    define HAVE_FUNC_GETPWUID_R_5 1
 #  else
 #    error "Unexpected number of arguments detected for getpwuid_r()"

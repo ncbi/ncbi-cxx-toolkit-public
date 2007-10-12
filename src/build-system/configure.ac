@@ -2326,7 +2326,7 @@ if test "$ncbi_cv_func_getservbyname_r" != "no" ; then
      arguments it takes (normally 5 or 6).])
 fi
 
-## getservbyname_r() -- 2 major variants: 4-arg, 5-arg (POSIX).
+## getpwuid_r() -- 2 major variants: 4-arg, 5-arg (POSIX).
 ## (Alternate 4-arg interface ignored due to rarity.)
 
 AC_CACHE_CHECK([for getpwuid_r], ncbi_cv_func_getpwuid_r,
@@ -2351,7 +2351,7 @@ AC_CACHE_CHECK([for getpwuid_r], ncbi_cv_func_getpwuid_r,
     fi])
 
 if test "$ncbi_cv_func_getpwuid_r" != "no" ; then
-   AC_DEFINE_UNQUOTED(HAVE_GETPWUID_R, $ncbi_cv_func_getpwuid_r,
+   AC_DEFINE_UNQUOTED(NCBI_HAVE_GETPWUID_R, $ncbi_cv_func_getpwuid_r,
     [If you have the `getpwuid_r' function, define to the number of
      arguments it takes (normally 4 or 5).])
 fi
@@ -5868,12 +5868,12 @@ ncbicfg="$builddir/corelib/ncbicfg.c"
 test -f "$ncbicfg" -a ! -f "$ncbicfg.last" && cp -p "$ncbicfg" "$ncbicfg.last"
 
 ## Configure the compiler/flag-dependent header
-AC_CONFIG_HEADER(${ncbiconf}:$srcdir/src/build-system/config.h.in)
+AC_CONFIG_HEADER(${ncbiconf}:src/build-system/config.h.in)
 
 ##
 ## Configure makefiles, shell scripts, etc.
 ##
-AC_CONFIG_FILES($configurables $srcdir/./Makefile:$srcdir/src/build-system/Makefile.in.top)
+AC_CONFIG_FILES($configurables $srcdir/./Makefile:src/build-system/Makefile.in.top)
 
 AC_CONFIG_COMMANDS([default], [
 dnl make all shell scripts *.sh be executable
