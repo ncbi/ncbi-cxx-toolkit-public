@@ -647,7 +647,7 @@ NCBI_PARAM_DEF_EX(string, MMDBSrv, Args,
 // test to make sure that HTTP object load from the MMDB Web server works
 BEGIN_TEST_FUNCTION(MMDBSrv)
 
-    // get protein structure 1AL1 (mmdb ID 220) from mmdbsrv
+    // get protein structure 1AL1 (mmdb ID 47901) from mmdbsrv
     CNcbi_mime_asn1 mime;
     if (!GetAsnDataViaHTTP(NCBI_PARAM_TYPE(MMDBSrv, Host)::GetDefault(),
                            NCBI_PARAM_TYPE(MMDBSrv, Path)::GetDefault(),
@@ -659,7 +659,7 @@ BEGIN_TEST_FUNCTION(MMDBSrv)
     if (!mime.IsStrucseq()  ||
         mime.GetStrucseq().GetStructure().GetId().size() == 0 ||
         !mime.GetStrucseq().GetStructure().GetId().front()->IsMmdb_id() ||
-        mime.GetStrucseq().GetStructure().GetId().front()->GetMmdb_id().Get() != 220)
+        mime.GetStrucseq().GetStructure().GetId().front()->GetMmdb_id().Get() != 47901)
         ADD_ERR_RETURN("structure returned is not what was expected");
 
 END_TEST_FUNCTION
