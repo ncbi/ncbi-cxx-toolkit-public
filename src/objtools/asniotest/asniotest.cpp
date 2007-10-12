@@ -58,7 +58,7 @@
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/ncbimime/Biostruc_seq.hpp>
 #include <objects/mmdb1/Biostruc.hpp>
-#include <objects/mmdb1/Biostruc_id.hpp>
+#include <objects/mmdb1/Biostruc_descr.hpp>
 #include <objects/mmdb1/Mmdb_id.hpp>
 #include <objects/mmdb1/Atom.hpp>
 #include <objects/mmdb1/Atom_id.hpp>
@@ -647,7 +647,7 @@ NCBI_PARAM_DEF_EX(string, MMDBSrv, Args,
 // test to make sure that HTTP object load from the MMDB Web server works
 BEGIN_TEST_FUNCTION(MMDBSrv)
 
-    // get protein structure 1AL1 (mmdb ID 47901) from mmdbsrv
+    // get protein structure 1AL1 from mmdbsrv
     CNcbi_mime_asn1 mime;
     if (!GetAsnDataViaHTTP(NCBI_PARAM_TYPE(MMDBSrv, Host)::GetDefault(),
                            NCBI_PARAM_TYPE(MMDBSrv, Path)::GetDefault(),
@@ -657,9 +657,9 @@ BEGIN_TEST_FUNCTION(MMDBSrv)
         ADD_ERR_RETURN("HTTP asn data load failed: " << err);
 
     if (!mime.IsStrucseq()  ||
-        mime.GetStrucseq().GetStructure().GetId().size() == 0 ||
-        !mime.GetStrucseq().GetStructure().GetId().front()->IsMmdb_id() ||
-        mime.GetStrucseq().GetStructure().GetId().front()->GetMmdb_id().Get() != 47901)
+        mime.GetStrucseq().GetStructure().GetDescr().size() == 0 ||
+        !mime.GetStrucseq().GetStructure().GetDescr().front()->IsName() ||
+        mime.GetStrucseq().GetStructure().GetDescr().front()->GetName() != "1AL1")
         ADD_ERR_RETURN("structure returned is not what was expected");
 
 END_TEST_FUNCTION
