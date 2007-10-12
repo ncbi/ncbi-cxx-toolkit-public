@@ -219,6 +219,7 @@ case "$platform" in
 
     RecursiveCheckout compilers/msvc710_prj \
         compilers/msvc800_prj \
+        src/dll \
         src/dbapi \
         include/dbapi \
         src/check
