@@ -72,14 +72,14 @@ CPythonDBAPITest::MakeTestPreparation(void)
                                 m_args.GetUserName() + "', '" +
                                 m_args.GetUserPassword() );
 
-        string connection_str( "connection = python_ncbi_dbapi.connect('" +
+        string connection_str( "connection = dbapi.connect('" +
                                 connection_args +
                                 "', True)\n");
-        string conn_simple_str( "conn_simple = python_ncbi_dbapi.connect('" +
+        string conn_simple_str( "conn_simple = dbapi.connect('" +
                                 connection_args +
                                 "')\n");
 
-        ExecuteStr("import python_ncbi_dbapi\n");
+        ExecuteStr("import python_ncbi_dbapi as dbapi\n");
         ExecuteStr( connection_str.c_str() );
         ExecuteStr( conn_simple_str.c_str() );
 
@@ -103,10 +103,10 @@ void
 CPythonDBAPITest::TestBasic(void)
 {
     try {
-        ExecuteStr("version = python_ncbi_dbapi.__version__ \n");
-        ExecuteStr("apilevel = python_ncbi_dbapi.apilevel \n");
-        ExecuteStr("threadsafety = python_ncbi_dbapi.threadsafety \n");
-        ExecuteStr("paramstyle = python_ncbi_dbapi.paramstyle \n");
+        ExecuteStr("version = dbapi.__version__ \n");
+        ExecuteStr("apilevel = dbapi.apilevel \n");
+        ExecuteStr("threadsafety = dbapi.threadsafety \n");
+        ExecuteStr("paramstyle = dbapi.paramstyle \n");
 
         ExecuteStr("connection.commit()\n");
         ExecuteStr("connection.rollback()\n");
@@ -115,11 +115,11 @@ CPythonDBAPITest::TestBasic(void)
         ExecuteStr("cursor2 = conn_simple.cursor()\n");
 
 #if PY_VERSION_HEX >= 0x02040000
-        ExecuteStr("date_val = python_ncbi_dbapi.Date(1, 1, 1)\n");
-        ExecuteStr("time_val = python_ncbi_dbapi.Time(1, 1, 1)\n");
-        ExecuteStr("timestamp_val = python_ncbi_dbapi.Timestamp(1, 1, 1, 1, 1, 1)\n");
+        ExecuteStr("date_val = dbapi.Date(1, 1, 1)\n");
+        ExecuteStr("time_val = dbapi.Time(1, 1, 1)\n");
+        ExecuteStr("timestamp_val = dbapi.Timestamp(1, 1, 1, 1, 1, 1)\n");
 #endif
-        ExecuteStr("binary_val = python_ncbi_dbapi.Binary('Binary test')\n");
+        ExecuteStr("binary_val = dbapi.Binary('Binary test')\n");
 
         ExecuteStr("cursor.execute('select qq = 57 + 33') \n");
         ExecuteStr("cursor.fetchone()\n");
@@ -165,15 +165,63 @@ CPythonDBAPITest::TestConnection(void)
                                 m_args.GetUserName() + "', '" +
                                 m_args.GetUserPassword() );
 
-        string connection_str( "tmp_connection = python_ncbi_dbapi.connect('" +
+        string connection_str( "tmp_connection = dbapi.connect('" +
                                 connection_args +
                                 "', True)\n");
+        string connection2_str( "tmp_connection2 = dbapi.connect('" +
+                                 connection_args +
+                                 "', True)\n");
+        string connection3_str( "tmp_connection3 = dbapi.connect('" +
+                                 connection_args +
+                                 "', True)\n");
 
-        ExecuteStr( connection_str.c_str() );
-	ExecuteStr( "tmp_connection.close()\n" );
-        ExecuteStr( connection_str.c_str() );
-        ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
-	ExecuteStr( "tmp_cursor.execute('SET NOCOUNT ON')\n" );
+
+
+	// Open and close connection ...
+	{
+		ExecuteStr( connection_str.c_str() );
+		ExecuteStr( "tmp_connection.close()\n" );
+	}
+
+	// Open connection, run a query, close connection ...
+	{
+		ExecuteStr( connection_str.c_str() );
+		ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
+		ExecuteStr( "tmp_cursor.execute('SET NOCOUNT ON')\n" );
+		ExecuteStr( "tmp_connection.close()\n" );
+	}
+
+	// Open multiple connection simulteniously ...
+	{
+		ExecuteStr( connection_str.c_str() );
+		ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
+		ExecuteStr( "tmp_cursor.execute('SELECT @@version')\n" );
+		
+		ExecuteStr( connection2_str.c_str() );
+		ExecuteStr( "tmp_cursor2 = tmp_connection2.cursor()\n");
+		ExecuteStr( "tmp_cursor2.execute('SELECT @@version')\n" );
+
+		ExecuteStr( connection3_str.c_str() );
+		ExecuteStr( "tmp_cursor3 = tmp_connection3.cursor()\n");
+		ExecuteStr( "tmp_cursor3.execute('SELECT @@version')\n" );
+
+		// Execute all statements again ...
+		{
+			ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
+			ExecuteStr( "tmp_cursor.execute('SELECT @@version')\n" );
+			
+			ExecuteStr( "tmp_cursor2 = tmp_connection2.cursor()\n");
+			ExecuteStr( "tmp_cursor2.execute('SELECT @@version')\n" );
+
+			ExecuteStr( "tmp_cursor3 = tmp_connection3.cursor()\n");
+			ExecuteStr( "tmp_cursor3.execute('SELECT @@version')\n" );
+		}
+
+		// Close all open connections ...
+		ExecuteStr( "tmp_connection.close()\n" );
+		ExecuteStr( "tmp_connection2.close()\n" );
+		ExecuteStr( "tmp_connection3.close()\n" );
+	}
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
