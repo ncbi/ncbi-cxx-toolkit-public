@@ -103,7 +103,11 @@ public:
     void SetHelpDocsUrl(string url) { 
         m_HelpDocsUrl = url;
     }  
-    
+       
+    ///Do not show weak(eWeak) match
+    void NoShowWeakMatch() {
+        m_ShowWeakMatch = false;
+    }
     
     ///Process alignment to show    
     ///@return: the processed seqalign ref
@@ -121,7 +125,7 @@ public:
     ///@param out: stream for display    
     ///
     void VecscreenPrint(CNcbiOstream& out);
-    
+ 
 private:
     
     
@@ -137,6 +141,8 @@ private:
     TSeqPos m_MasterLen;
     ///internal match list
     list<AlnInfo*> m_AlnInfoList;
+    ///Show weak match?
+    bool m_ShowWeakMatch;
 
     ///Sort on range from
     ///@param info1: the first range
