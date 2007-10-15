@@ -379,9 +379,10 @@ CProjBulderApp::CProjBulderApp(void)
 void CProjBulderApp::Init(void)
 {
     string logfile = GetLogFile();
-    if (logfile != "STDERR")
-    {
-        SetDiagHandler(new CWindowsCmdErrorHandler);
+    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
+        if (logfile != "STDERR") {
+            SetDiagHandler(new CWindowsCmdErrorHandler);
+        }
     }
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
