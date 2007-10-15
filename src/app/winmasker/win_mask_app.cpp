@@ -124,13 +124,13 @@ void CWinMaskApplication::Init(void)
                              CArgDescriptions::eString, "break" );
 #endif
     arg_desc->AddDefaultKey( "iformat", "input_format",
-                             "controls the format of the masker input",
+                             "controls the format of the masker input (for masking stage only)",
                              CArgDescriptions::eString, "fasta" );
     arg_desc->AddDefaultKey( "oformat", "output_format",
-                             "controls the format of the masker output",
+                             "controls the format of the masker output (for masking stage only)",
                              CArgDescriptions::eString, "interval" );
     arg_desc->AddDefaultKey( "sformat", "unit_counts_format",
-                             "controls the format of the file containing the unit counts",
+                             "controls the format of the file containing the unit counts (for counts generation only)",
                              CArgDescriptions::eString, "ascii" );
 #if 0
     arg_desc->AddDefaultKey( "mpass", "merge_pass_flag",
