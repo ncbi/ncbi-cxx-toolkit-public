@@ -115,16 +115,14 @@ namespace NCBI_NS_NCBI { /* the fake one */ }
 
 
 #if !defined(NCBI_NAME2)
-/// Name concatenation macro with two names
-/// even if this names are macros themselves.
-#  define NCBI_NAME2(Name1, Name2) NCBI_NAME2_2(Name1, Name2)
-#  define NCBI_NAME2_2(Name1, Name2) Name1##Name2
+/// Name concatenation macro with two names.
+/// NB: If this names are macros themselves expanding will not take place.
+#  define NCBI_NAME2(Name1, Name2) Name1##Name2
 #endif
 #if !defined(NCBI_NAME3)
-/// Name concatenation macro with three names
-/// even if this names are macros themselves.
-#  define NCBI_NAME3(Name1, Name2, Name3) NCBI_NAME3_2(Name1, Name2, Name3)
-#  define NCBI_NAME3_2(Name1, Name2, Name3) Name1##Name2##Name3
+/// Name concatenation macro with three names.
+/// NB: If this names are macros themselves expanding will not take place.
+#  define NCBI_NAME3(Name1, Name2, Name3) Name1##Name2##Name3
 #endif
 #if !defined(NCBI_EAT_SEMICOLON)
 #  define NCBI_EAT_SEMICOLON(UniqueName) \

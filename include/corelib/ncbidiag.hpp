@@ -337,12 +337,12 @@ inline void CheckErrSubcodeX(int)
 /// @sa LOG_POST_X, ERR_POST_X
 #define NCBI_CHECK_ERR_SUBCODE_X_NAME(name, subcode)                  \
     NCBI_NS_NCBI::CheckErrSubcodeX(                                   \
-        sizeof(NCBI_NS_NCBI::WRONG_ERROR_SUBCODE_IN_POST_MACRO<       \
+        (int)sizeof(NCBI_NS_NCBI::WRONG_ERROR_SUBCODE_IN_POST_MACRO<  \
               NCBI_ERRCODE_X_NAME(name), subcode,                     \
               NCBI_MAX_ERR_SUBCODE_X_NAME(name),                      \
               ((unsigned int)subcode >                                \
                     (unsigned int)NCBI_MAX_ERR_SUBCODE_X_NAME(name))  \
-                                                              >)      \
+                                                                   >) \
                                   )
 
 #endif  // if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 350 else
