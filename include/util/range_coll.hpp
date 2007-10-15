@@ -45,7 +45,7 @@ template<class Range, class Position>
 struct PRangeLessPos
 {
     bool    operator()(const Range &R, Position Pos)     { return R.GetToOpen() <= Pos;  }    
-    bool    operator()(Position Pos, const Range &R)     { return Pos <= R.GetToOpen();  }    
+    bool    operator()(Position Pos, const Range &R)     { return Pos < R.GetToOpen();  }    
     bool    operator()(const Range &R1, const Range &R2) { return R1.GetToOpen() <= R2.GetToOpen();  }    
 };
     
