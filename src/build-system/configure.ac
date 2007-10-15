@@ -128,6 +128,8 @@ AC_ARG_WITH(lib-rebuilds,
    [ --with-lib-rebuilds     ensure that apps use up-to-date libraries])
 AC_ARG_WITH(lib-rebuilds2,
    [ --with-lib-rebuilds=ask ask whether to update each app's libraries])dnl'
+AC_ARG_WITH(deactivation,
+   [ --without-deactivation  keep old copies of libraries that no longer build])
 AC_ARG_WITH(projects,
    [ --with-projects=FILE    build projects listed in FILE by default])
 AC_ARG_WITH(flat-makefile,
@@ -371,7 +373,7 @@ x_with_list="\
 debug optimization profiling dll static runpath mt 64 universal \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe bin-release strip version lfs pch caution ccache distcc \
-flat-makefile projects ncbi-public \
+flat-makefile projects ncbi-public deactivation \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo lzo2 pcre gnutls openssl sybase sybase-local sybase-new \
@@ -5496,6 +5498,11 @@ case "$with_lib_rebuilds" in
   ask) IF_REBUILDING_CONDITIONALLY="" ;;
 esac
 
+case "$with_deactivation" in
+  no) IF_DEACTIVATING=": " ;;
+  * ) IF_DEACTIVATING=""   ;;
+esac
+
 case "$with_projects" in
  "") if test -r projects; then
         AC_MSG_NOTICE([using default projects file "projects".])
@@ -5823,6 +5830,7 @@ AC_SUBST(APP_NOCOPY)
 AC_SUBST(APP_OR_NULL)
 AC_SUBST(IF_REBUILDING_LIBS)
 AC_SUBST(IF_REBUILDING_CONDITIONALLY)
+AC_SUBST(IF_DEACTIVATING)
 AC_SUBST(CC_FILTER)
 AC_SUBST(CXX_FILTER)
 AC_SUBST(AR_FILTER)

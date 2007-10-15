@@ -108,7 +108,7 @@ LIBP_BRA = \
      if NCBICXX_TESTING_REQS=1 $(MAKE_LIB) -q requirements ; then \
         $(RWL) -base "make_$$i" $(MAKE_LIB)
 LIBP_KET = && continue ; \
-        $(MAKE_LIB) deactivate ; \
+        @IF_DEACTIVATING@$(MAKE_LIB) deactivate ; \
         $(NOTK_BRA) exit 2 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
