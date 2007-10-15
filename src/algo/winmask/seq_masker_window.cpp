@@ -77,7 +77,7 @@ CSeqMaskerWindow::CSeqMaskerWindow( const CSeqVector & arg_data,
     }
 
     units.resize( NumUnits(), 0 );
-    unit_mask = (1 << (unit_size << 1)) - 1;
+    unit_mask = (unit_size == 16) ? 0xFFFFFFFF : (1 << (unit_size << 1)) - 1;
     
     if( winend == 0 )
         winend = data.size();
