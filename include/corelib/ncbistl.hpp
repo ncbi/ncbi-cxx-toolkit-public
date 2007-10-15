@@ -115,17 +115,25 @@ namespace NCBI_NS_NCBI { /* the fake one */ }
 
 
 #if !defined(NCBI_NAME2)
-/// Name concatenation macro with two names.
-#  define NCBI_NAME2(Name1, Name2) Name1##Name2
+/// Name concatenation macro with two names
+/// even if this names are macros themselves.
+#  define NCBI_NAME2(Name1, Name2) NCBI_NAME2_2(Name1, Name2)
+#  define NCBI_NAME2_2(Name1, Name2) Name1##Name2
 #endif
 #if !defined(NCBI_NAME3)
-/// Name concatenation macro with three names.
-#  define NCBI_NAME3(Name1, Name2, Name3) Name1##Name2##Name3
+/// Name concatenation macro with three names
+/// even if this names are macros themselves.
+#  define NCBI_NAME3(Name1, Name2, Name3) NCBI_NAME3_2(Name1, Name2, Name3)
+#  define NCBI_NAME3_2(Name1, Name2, Name3) Name1##Name2##Name3
 #endif
 #if !defined(NCBI_EAT_SEMICOLON)
 #  define NCBI_EAT_SEMICOLON(UniqueName) \
 typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 #endif
+
+/// Convert some value to string even if this value is macro itself
+#define NCBI_AS_STRING(value)   NCBI_AS_STRING2(value)
+#define NCBI_AS_STRING2(value)   #value
 
 
 #if defined(NCBI_OS_MSWIN) && !defined(for)

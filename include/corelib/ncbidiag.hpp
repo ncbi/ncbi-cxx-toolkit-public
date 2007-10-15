@@ -55,25 +55,11 @@
 
 BEGIN_NCBI_SCOPE
 
-
-/// Convert some value to string
-#define NCBI_AS_STRING(str)   #str
-
-/// Set default module name based on NCBI_MODULE macro
-#ifdef NCBI_MODULE
-#  define NCBI_MODULE_AS_STRING(module) NCBI_AS_STRING(module)
-#  define NCBI_MAKE_MODULE(module) NCBI_MODULE_AS_STRING(module)
-#else
-#  define NCBI_MAKE_MODULE(module) NULL
-#endif 
-
-
 /// Incapsulate compile time information such as
 /// _FILE_ _LINE NCBI_MODULE
 /// NCBI_MODULE is used only in .cpp file
 /// @sa
 ///   DIAG_COMPILE_INFO
-
 class CDiagCompileInfo
 {
 public:
@@ -110,7 +96,7 @@ private:
 private:
     const char*    m_File;
     const char*    m_Module;
-    int            m_Line; 
+    int            m_Line;
 
     const   char*  m_CurrFunctName;
     mutable bool   m_Parsed;
@@ -153,18 +139,37 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 #endif
 
 
+/// Set default module name based on NCBI_MODULE macro
+///
+/// @sa DIAG_COMPILE_INFO
+#define NCBI_MAKE_MODULE(module) NCBI_AS_STRING(module)
+
 /// Make compile time diagnostic information object
-/// to use in CDiagInfo and CException
+/// to use in CNcbiDiag and CException.
+///
+/// This macro along with functionality of macro NCBI_MAKE_MODULE and
+/// of constructor CDiagCompileInfo ensures that if variable NCBI_MODULE
+/// will be defined then its value will be used as module name, but if it
+/// isn't defined then module name in CDiagCompileInfo will be empty.
+/// "Checking" of definition of NCBI_MODULE is performed at the moment
+/// of macro issuing so you can define and redefine NCBI_MODULE several
+/// times during one cpp-file. But BE WARNED that macro NCBI_MODULE is
+/// considered as not defined when used in any header file. So if you want
+/// for example make some error posting from inline function defined in
+/// hpp-file and want your custom module name to be shown in error
+/// message then you have to use MDiagModule manipulator as following:
+///
+/// ERR_POST_X(1, MDiagModule("MY_MODULE_NAME") << "Error message" );
+///
 /// @sa
 ///   CDiagCompileInfo
-
 #define DIAG_COMPILE_INFO                               \
   NCBI_NS_NCBI::CDiagCompileInfo(__FILE__,              \
                                  __LINE__,              \
                                  NCBI_CURRENT_FUNCTION, \
                                  NCBI_MAKE_MODULE(NCBI_MODULE))
 
-    
+
 
 
 /// Error posting with file, line number information but without error codes.
@@ -251,21 +256,12 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
     }                                                           \
     extern void err_code_x__dummy_for_semicolon(void)
 
-/// Makes one identifier from 2 parts
-/// A small trick taken from BOOST library: when we do triple redirection
-/// we can use as prefix or postfix macros themselves. They will be finally
-/// expanded before concatenation (see 16.3.1 in C++ standard).
-#define NCBI_CONCAT_IDENTIFIER(prefix, postfix)   \
-    NCBI_CONCAT_IDENTIFIER1(prefix, postfix)
-#define NCBI_CONCAT_IDENTIFIER1(prefix, postfix)   \
-    NCBI_CONCAT_IDENTIFIER2(prefix, postfix)
-#define NCBI_CONCAT_IDENTIFIER2(prefix, postfix) prefix##postfix
 
 /// Returns value of error code by its name defined by NCBI_DEFINE_ERRCODE_X
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X
 #define NCBI_ERRCODE_X_NAME(name)   \
-    NCBI_NS_NCBI::err_code_x::NCBI_CONCAT_IDENTIFIER(eErrCodeX_, name)
+    NCBI_NS_NCBI::err_code_x::NCBI_NAME2(eErrCodeX_, name)
 
 /// Returns currently set default error code. Default error code is set by
 /// definition of NCBI_USE_ERRCODE_X with name of error code as its value.
@@ -277,7 +273,7 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X
 #define NCBI_MAX_ERR_SUBCODE_X_NAME(name)   \
-    NCBI_NS_NCBI::err_code_x::NCBI_CONCAT_IDENTIFIER(eErrCodeX_Max_, name)
+    NCBI_NS_NCBI::err_code_x::NCBI_NAME2(eErrCodeX_Max_, name)
 
 /// Returns maximum value of error subcode within current default error code.
 ///
@@ -308,6 +304,10 @@ struct WRONG_ERROR_SUBCODE_IN_POST_MACRO
 };
 
 
+/// Additional dummy function for use in NCBI_CHECK_ERR_SUBCODE_X macro
+inline void CheckErrSubcodeX(int)
+{}
+
 #if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 350
 
 /// Issue compile-time error if error subcode given is not valid for given
@@ -316,20 +316,17 @@ struct WRONG_ERROR_SUBCODE_IN_POST_MACRO
 /// message more clear to understand.
 ///
 /// @sa LOG_POST_X, ERR_POST_X
-#define NCBI_CHECK_ERR_SUBCODE_X_NAME(name, subcode)                         \
-    typedef char NCBI_CONCAT_IDENTIFIER(check_subcode_typedef_, __LINE__)    \
-        [ NCBI_NS_NCBI::WRONG_ERROR_SUBCODE_IN_POST_MACRO<                   \
-              NCBI_ERRCODE_X_NAME(name), subcode,                            \
-              NCBI_MAX_ERR_SUBCODE_X_NAME(name),                             \
-              ((unsigned int)subcode >                                       \
-                    (unsigned int)NCBI_MAX_ERR_SUBCODE_X_NAME(name))         \
-                                                         >::valid ]
+#define NCBI_CHECK_ERR_SUBCODE_X_NAME(name, subcode)                  \
+    NCBI_NS_NCBI::CheckErrSubcodeX(                                   \
+        NCBI_NS_NCBI::WRONG_ERROR_SUBCODE_IN_POST_MACRO<              \
+              NCBI_ERRCODE_X_NAME(name), subcode,                     \
+              NCBI_MAX_ERR_SUBCODE_X_NAME(name),                      \
+              ((unsigned int)subcode >                                \
+                    (unsigned int)NCBI_MAX_ERR_SUBCODE_X_NAME(name))  \
+                                                       >::valid       \
+                                  )
 
 #else  // if defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 350
-
-/// Additional dummy function for use in NCBI_CHECK_ERR_SUBCODE_X macro
-inline void CheckErrSubcodeX(int)
-{}
 
 /// Issue compile-time error if error subcode given is not valid for given
 /// error code name.
@@ -413,36 +410,36 @@ struct WRONG_ERROR_SUBCODE_IN_POST_MACRO
 ///
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, ERR_POST_EX
-#define ERR_POST_X(err_subcode, message)              \
-    NCBI_CHECK_ERR_SUBCODE_X(err_subcode);            \
-    ERR_POST_EX(NCBI_ERRCODE_X, err_subcode, message)
+#define ERR_POST_X(err_subcode, message)                  \
+    ( (NCBI_CHECK_ERR_SUBCODE_X(err_subcode)),            \
+      ERR_POST_EX(NCBI_ERRCODE_X, err_subcode, message) )
 
 /// Log posting with default error code and given error subcode. See comments
 /// to ERR_POST_X for clarifying the way of use and details of behaviour
 /// of this macro.
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, ERR_POST_X, LOG_POST_EX
-#define LOG_POST_X(err_subcode, message)              \
-    NCBI_CHECK_ERR_SUBCODE_X(err_subcode);            \
-    LOG_POST_EX(NCBI_ERRCODE_X, err_subcode, message)
+#define LOG_POST_X(err_subcode, message)                  \
+    ( (NCBI_CHECK_ERR_SUBCODE_X(err_subcode)),            \
+      LOG_POST_EX(NCBI_ERRCODE_X, err_subcode, message) )
 
 /// Error posting with error code having given name and with given error
 /// subcode. Macro must be placed in headers instead of ERR_POST_X to not
 /// confuse default error codes used in sources where this header is included.
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X, ERR_POST_X
-#define ERR_POST_XX(error_name, err_subcode, message)                  \
-    NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode);            \
-    ERR_POST_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message)
+#define ERR_POST_XX(error_name, err_subcode, message)                      \
+    ( (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode)),            \
+      ERR_POST_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message) )
 
 /// Log posting with error code having given name and with given error
 /// subcode. Macro must be placed in headers instead of LOG_POST_X to not
 /// confuse default error codes used in sources where this header is included.
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X, LOG_POST_X
-#define LOG_POST_XX(error_name, err_subcode, message)                  \
-    NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode);            \
-    LOG_POST_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message)
+#define LOG_POST_XX(error_name, err_subcode, message)                      \
+    ( (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode)),            \
+      LOG_POST_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message) )
 
 
 /// Common code for making log or error posting only given number of times
@@ -477,30 +474,61 @@ struct WRONG_ERROR_SUBCODE_IN_POST_MACRO
 /// Log posting only given number of times during program execution
 /// with default error code and given error subcode.
 ///
-/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, LOG_POST_X
 #define LOG_POST_X_N_TIMES(count, err_subcode, message)   \
     NCBI_REPEAT_POST_N_TIMES( LOG_POST_X, count, (err_subcode, message) )
 
 /// Error posting only given number of times during program execution
 /// with default error code and given error subcode.
 ///
-/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, ERR_POST_X
 #define ERR_POST_X_N_TIMES(count, err_subcode, message)   \
     NCBI_REPEAT_POST_N_TIMES( ERR_POST_X, count, (err_subcode, message) )
 
 /// Log posting only once during program execution with default
 /// error code and given error subcode.
 ///
-/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, LOG_POST_X
 #define LOG_POST_X_ONCE(err_subcode, message)   \
     LOG_POST_X_N_TIMES(1, err_subcode, message)
 
 /// Error posting only once during program execution with default
 /// error code and given error subcode.
 ///
-/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, ERR_POST_X
 #define ERR_POST_X_ONCE(err_subcode, message)   \
     ERR_POST_X_N_TIMES(1, err_subcode, message)
+
+
+/// Log posting only given number of times during program execution
+/// with given error code name and given error subcode.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X, LOG_POST_XX
+#define LOG_POST_XX_N_TIMES(count, error_name, err_subcode, message)   \
+    NCBI_REPEAT_POST_N_TIMES( LOG_POST_XX, count,                      \
+                              (error_name, err_subcode, message) )
+
+/// Error posting only given number of times during program execution
+/// with given error code name and given error subcode.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X, ERR_POST_XX
+#define ERR_POST_XX_N_TIMES(count, error_name, err_subcode, message)   \
+    NCBI_REPEAT_POST_N_TIMES( ERR_POST_XX, count,                      \
+                              (error_name, err_subcode, message) )
+
+/// Log posting only once during program execution with given
+/// error code name and given error subcode.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X, LOG_POST_XX
+#define LOG_POST_XX_ONCE(error_name, err_subcode, message)   \
+    LOG_POST_XX_N_TIMES(1, error_name, err_subcode, message)
+
+/// Error posting only once during program execution with given
+/// error code name and given error subcode.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, ERR_POST_XX
+#define ERR_POST_XX_ONCE(error_name, err_subcode, message)   \
+    ERR_POST_XX_N_TIMES(1, error_name, err_subcode, message)
 
 
 /// Severity level for the posted diagnostics.
@@ -522,8 +550,8 @@ enum EDiagSev {
 /// Severity level change state.
 enum EDiagSevChange {
     eDiagSC_Unknown, ///< Status of changing severity is unknown (first call)
-    eDiagSC_Disable, ///< Disable change severity level 
-    eDiagSC_Enable   ///< Enable change severity level 
+    eDiagSC_Disable, ///< Disable change severity level
+    eDiagSC_Enable   ///< Enable change severity level
 };
 
 
@@ -536,7 +564,7 @@ enum EDiagSevChange {
 ///    <err_code_message>\n
 ///    <err_code_explanation>
 ///
-/// Example: 
+/// Example:
 ///
 /// - If all flags are set, and prefix string is set to "My prefix", and
 ///   ERR_POST(eDiag_Warning, "Take care!"):
@@ -584,7 +612,7 @@ enum EDiagPostFlag {
     // "Unusual" flags -- not included in "eDPF_All"
     eDPF_PreMergeLines      = 0x100000, ///< Remove EOLs before calling handler
     eDPF_MergeLines         = 0x200000, ///< Ask diag.handlers to remove EOLs
-    eDPF_OmitInfoSev        = 0x400000, ///< No sev. indication if eDiag_Info 
+    eDPF_OmitInfoSev        = 0x400000, ///< No sev. indication if eDiag_Info
     eDPF_OmitSeparator      = 0x800000, ///< No '---' separator before message
 
     eDPF_AppLog             = 0x1000000, ///< Post message to application log
@@ -651,7 +679,7 @@ class CNcbiDiag;
 ///
 /// Manipulator to set Module for CNcbiDiag
 
-class MDiagModule 
+class MDiagModule
 {
 public:
     MDiagModule(const char* module);
@@ -669,7 +697,7 @@ private:
 ///
 /// Manipulator to set Class for CNcbiDiag
 
-class MDiagClass 
+class MDiagClass
 {
 public:
     MDiagClass(const char* nclass);
@@ -687,7 +715,7 @@ private:
 ///
 /// Manipulator to set Function for CNcbiDiag
 
-class MDiagFunction 
+class MDiagFunction
 {
 public:
     MDiagFunction(const char* function);
@@ -852,7 +880,7 @@ public:
     ///   Can be the numeric value or a symbolic name (see
     ///   CDiagBuffer::sm_SeverityName[]).
     /// @param sev
-    ///   Severity level. 
+    ///   Severity level.
     /// @return
     ///   Return TRUE if severity level known; FALSE, otherwise.
     NCBI_XNCBI_EXPORT
@@ -997,7 +1025,7 @@ private:
 ///   "TRUE" if the specified "flag" is set in global "flags" that describes
 ///   the post settings.
 /// @sa SetDiagPostFlag(), UnsetDiagPostFlag()
-inline bool IsSetDiagPostFlag(EDiagPostFlag  flag, 
+inline bool IsSetDiagPostFlag(EDiagPostFlag  flag,
                               TDiagPostFlags flags = eDPF_Default);
 
 /// Set global post flags to "flags".
@@ -1108,7 +1136,7 @@ public:
 
 /// Diagnostic post severity level.
 ///
-/// The value of DIAG_POST_LEVEL can be a digital value (0-9) or 
+/// The value of DIAG_POST_LEVEL can be a digital value (0-9) or
 /// string value from CDiagBuffer::sm_SeverityName[].
 #define DIAG_POST_LEVEL "DIAG_POST_LEVEL"
 
@@ -1116,7 +1144,7 @@ public:
 ///
 /// This function has effect only if:
 ///   - Environment variable $DIAG_POST_LEVEL is not set, and
-///   - Registry value of DIAG_POST_LEVEL, section DEBUG is not set 
+///   - Registry value of DIAG_POST_LEVEL, section DEBUG is not set
 ///
 /// Another way to do filtering is to call SetDiagFilter
 ///
@@ -1248,7 +1276,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
                  int err_code = 0, int err_subcode = 0,
                  const char* err_text  = 0,
                  const char* module    = 0,
-                 const char* nclass    = 0, 
+                 const char* nclass    = 0,
                  const char* function  = 0,
                  TPID        pid       = 0,
                  TTID        tid       = 0,
@@ -1321,7 +1349,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
 
     /// Write to string.
     void Write(string& str, TDiagWriteFlags flags = fNone) const;
-    
+
     /// Write to stream.
     CNcbiOstream& Write  (CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
 
@@ -1710,7 +1738,7 @@ extern void SetDiagHandler(FDiagHandler func,
 
 /// Check if diagnostic handler is set.
 ///
-/// @return 
+/// @return
 ///   Return TRUE if user has ever set (or unset) diag. handler.
 NCBI_XNCBI_EXPORT
 extern bool IsSetDiagHandler(void);
@@ -1783,11 +1811,11 @@ public:
     /// Constructor.
     ///
     /// This does *not* own the stream; users will need to clean it up
-    /// themselves if appropriate. 
+    /// themselves if appropriate.
     /// @param os
     ///   Output stream.
     /// @param quick_flush
-    ///   Do stream flush after every message. 
+    ///   Do stream flush after every message.
     CStreamDiagHandler(CNcbiOstream* os,
                        bool          quick_flush = true,
                        const string& stream_name = "");
@@ -1819,7 +1847,7 @@ public:
     /// Constructor.
     ///
     /// Open file handle.
-    /// themselves if appropriate. 
+    /// themselves if appropriate.
     /// @param fname
     ///   Output file name.
     CFileHandleDiagHandler(const string& fname);
@@ -1931,7 +1959,7 @@ extern void SetDiagStream
  );
 
 // Return TRUE if "os" is the current diag. stream.
-NCBI_XNCBI_EXPORT 
+NCBI_XNCBI_EXPORT
 extern bool IsDiagStream(const CNcbiOstream* os);
 
 /// Get current diagnostic stream (if it was set by SetDiagStream) or NULL.
@@ -2066,7 +2094,7 @@ struct NCBI_XNCBI_EXPORT SDiagErrCodeDescription {
 public:
     string m_Message;     ///< Error message (short)
     string m_Explanation; ///< Error message (with detailed explanation)
-    int    m_Severity;    
+    int    m_Severity;
                           ///< Message severity (if less that 0, then use
                           ///< current diagnostic severity level)
 };
@@ -2086,7 +2114,7 @@ public:
     CDiagErrCodeInfo(void);
 
     /// Constructor -- can throw runtime_error.
-    CDiagErrCodeInfo(const string& file_name);  
+    CDiagErrCodeInfo(const string& file_name);
 
     /// Constructor -- can throw runtime_error.
     CDiagErrCodeInfo(CNcbiIstream& is);
@@ -2105,7 +2133,7 @@ public:
     /// Read error descriptions from the specified stream,
     /// store it in memory.
     bool Read(CNcbiIstream& is);
-    
+
     /// Delete all stored error descriptions from memory.
     void Clear(void);
 
@@ -2115,19 +2143,19 @@ public:
     /// @return
     ///   TRUE if error description exists for this code;
     ///   return FALSE otherwise.
-    bool GetDescription(const ErrCode&           err_code, 
+    bool GetDescription(const ErrCode&           err_code,
                         SDiagErrCodeDescription* description) const;
 
     /// Set error description for specified error code.
     ///
     /// If description for this code already exist, then it
     /// will be overwritten.
-    void SetDescription(const ErrCode&                 err_code, 
+    void SetDescription(const ErrCode&                 err_code,
                         const SDiagErrCodeDescription& description);
 
     /// Check if error description exists.
     ///
-    ///  Return TRUE if description for specified error code exists, 
+    ///  Return TRUE if description for specified error code exists,
     /// otherwise return FALSE.
     bool HaveDescription(const ErrCode& err_code) const;
 
@@ -2147,9 +2175,9 @@ private:
 
 /// Set handler for processing error codes.
 ///
-/// By default this handler is unset. 
+/// By default this handler is unset.
 /// NcbiApplication can init itself only if registry key DIAG_MESSAGE_FILE
-/// section DEBUG) is specified. The value of this key should be a name 
+/// section DEBUG) is specified. The value of this key should be a name
 /// of the file with the error codes explanations.
 NCBI_XNCBI_EXPORT
 extern void SetDiagErrCodeInfo(CDiagErrCodeInfo* info,
