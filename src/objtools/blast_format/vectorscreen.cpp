@@ -186,7 +186,7 @@ CVecscreen::MatchType CVecscreen::x_GetMatchType(const CSeq_align& seqalign,
             return eStrong;
         } else if (score >= kTerminalMatchScore[eModerate]){
             return eModerate;
-        } else if (score >= kTerminalMatchScore[eWeak]){
+        } else if (score >= kTerminalMatchScore[eWeak] && m_ShowWeakMatch){
             return eWeak;
         }
     } else {
@@ -195,7 +195,7 @@ CVecscreen::MatchType CVecscreen::x_GetMatchType(const CSeq_align& seqalign,
             return eStrong;
         } else if (score >= kInternalMatchScore[eModerate]){
             return eModerate;
-        } else if (score >= kInternalMatchScore[eWeak]){
+        } else if (score >= kInternalMatchScore[eWeak] && m_ShowWeakMatch){
             return eWeak;
         }
     }
@@ -263,8 +263,8 @@ CVecscreen::CVecscreen(const CSeq_align_set& seqalign, TSeqPos master_length){
     m_ImagePath = "./";
     m_MasterLen = master_length;
     m_FinalSeqalign = new CSeq_align_set;
-    m_HelpDocsUrl = "/VecScreen/VecScreen_docs.html";
-    
+    m_HelpDocsUrl = "/VecScreen/VecScreen_docs.html";    
+    m_ShowWeakMatch = true;
 }
 
 CVecscreen::~CVecscreen()
