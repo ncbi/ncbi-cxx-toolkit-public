@@ -44,10 +44,14 @@
 #include <serial/objcopy.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/serialimpl.hpp>
+#include <serial/error_codes.hpp>
 #ifdef _DEBUG
 #include <serial/serialbase.hpp>
 #endif
 #include <memory>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_MemberInfo
 
 BEGIN_NCBI_SCOPE
 
@@ -287,7 +291,7 @@ bool NCBI_XSERIAL_EXPORT EnabledDelayBuffers(void)
             }
         }
         if ( value == "1" || NStr::CompareNocase(value,"YES") == 0 ) {
-            LOG_POST(Info << "SERIAL: delay buffers are disabled");
+            LOG_POST_X(1, Info << "SERIAL: delay buffers are disabled");
             state = eDisabled;
         }
         else {
@@ -874,9 +878,9 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
             do_err_post = (size == 0);
         }
         if (do_err_post) {
-            ERR_POST(Error << "CObjectOStream: at "<< out.GetPosition()<<
-                     ": Member \""<< memberInfo->GetId().GetName()<<
-                     "\" seems to be unassigned");
+            ERR_POST_X(2, Error << "CObjectOStream: at "<< out.GetPosition()<<
+                          ": Member \""<< memberInfo->GetId().GetName()<<
+                          "\" seems to be unassigned");
         }
     }
 #endif

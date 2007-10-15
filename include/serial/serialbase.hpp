@@ -36,6 +36,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <serial/exception.hpp>
 #include <serial/serialdef.hpp>
+#include <serial/error_codes.hpp>
 #include <typeinfo>
 
 #define BITSTRING_AS_VECTOR    0
@@ -395,9 +396,9 @@ template <class C>
 C& SerialAssign(C& dest, const C& src, ESerialRecursionMode how = eRecursive)
 {
     if ( typeid(src) != typeid(dest) ) {
-        ERR_POST(Fatal <<
-                 "SerialAssign() -- Assignment of incompatible types: " <<
-                 typeid(dest).name() << " = " << typeid(src).name());
+        ERR_POST_XX(Serial_Core, 1, Fatal <<
+                    "SerialAssign() -- Assignment of incompatible types: " <<
+                    typeid(dest).name() << " = " << typeid(src).name());
     }
     C::GetTypeInfo()->Assign(&dest, &src, how);
     return dest;
@@ -409,9 +410,9 @@ bool SerialEquals(const C& object1, const C& object2,
                   ESerialRecursionMode how = eRecursive)
 {
     if ( typeid(object1) != typeid(object2) ) {
-        ERR_POST(Fatal <<
-                 "SerialAssign() -- Can not compare types: " <<
-                 typeid(object1).name() << " == " << typeid(object2).name());
+        ERR_POST_XX(Serial_Core, 2, Fatal <<
+                    "SerialAssign() -- Can not compare types: " <<
+                    typeid(object1).name() << " == " << typeid(object2).name());
     }
     return C::GetTypeInfo()->Equals(&object1, &object2, how);
 }

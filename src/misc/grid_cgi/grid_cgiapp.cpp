@@ -38,9 +38,12 @@
 #include <connect/services/blob_storage_netcache.hpp>
 
 #include <misc/grid_cgi/grid_cgiapp.hpp>
-
+#include <misc/error_codes.hpp>
 
 #include <vector>
+
+
+#define NCBI_USE_ERRCODE_X   Misc_GridCgi
 
 BEGIN_NCBI_SCOPE
 
@@ -249,8 +252,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         CHTMLText* stat_view = new CHTMLText(kGridCgiForm);
         page->AddTagMap("VIEW", stat_view);
     } catch (exception& e) {
-        ERR_POST("Failed to create " << GetPageTitle()
-                                     << " HTML page: " << e.what());
+        ERR_POST_X(1, "Failed to create " << GetPageTitle()
+                                          << " HTML page: " << e.what());
         return 2;
     }
     CGridCgiContext grid_ctx(*page, ctx);
@@ -332,8 +335,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         OnEndProcessRequest(grid_ctx);
     } //try
     catch (exception& e) {
-        ERR_POST("Failed to populate " << GetPageTitle() 
-                                       << " HTML page: " << e.what());
+        ERR_POST_X(2, "Failed to populate " << GetPageTitle() 
+                                            << " HTML page: " << e.what());
         return 3;
     }
 
@@ -344,8 +347,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         response.WriteHeader();
         page->Print(response.out(), CNCBINode::eHTML);
     } catch (exception& e) {
-        ERR_POST("Failed to compose/send " << GetPageTitle() 
-                 <<" HTML page: " << e.what());
+        ERR_POST_X(3, "Failed to compose/send " << GetPageTitle() 
+                       <<" HTML page: " << e.what());
         return 4;
     }
 

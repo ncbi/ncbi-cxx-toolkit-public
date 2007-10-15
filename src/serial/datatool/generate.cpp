@@ -50,6 +50,10 @@
 #include <serial/datatool/rpcgen.hpp>
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/classstr.hpp>
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_MainGen
 
 BEGIN_NCBI_SCOPE
 
@@ -137,9 +141,9 @@ void CCodeGenerator::LoadConfig(const string& fileName,
             if ( ignoreAbsense ) {
                 return;
             } else if (warningAbsense) {
-                ERR_POST(Warning << "cannot open file " << fileName);
+                ERR_POST_X(1, Warning << "cannot open file " << fileName);
             } else {
-                ERR_POST(Fatal << "cannot open file " << fileName);
+                ERR_POST_X(2, Fatal << "cannot open file " << fileName);
             }
         }
         else {
@@ -155,7 +159,7 @@ void CCodeGenerator::AddConfigLine(const string& line)
     SIZE_TYPE ket = line.find(']');
     SIZE_TYPE eq = line.find('=', ket + 1);
     if ( bra != 0 || ket == NPOS || eq == NPOS )
-        ERR_POST(Fatal << "bad config line: " << line);
+        ERR_POST_X(3, Fatal << "bad config line: " << line);
     
     m_Config.Set(line.substr(bra + 1, ket - bra - 1),
                  line.substr(ket + 1, eq - ket - 1),
@@ -416,7 +420,7 @@ void CCodeGenerator::GenerateFileList(
     string fileName(Path(m_CPPDir,Path(m_FileNamePrefix,m_FileListFileName)));
     CNcbiOfstream fileList(fileName.c_str());
     if ( !fileList ) {
-        ERR_POST(Fatal <<
+        ERR_POST_X(4, Fatal <<
                     "cannot create file list file: " << m_FileListFileName);
     }
     
@@ -565,7 +569,7 @@ void CCodeGenerator::GenerateCombiningFile(
         allCpp.push_back(fileName);
         CDelayedOfstream out(fileName);
         if ( !out )
-            ERR_POST(Fatal << "Cannot create file: "<<fileName);
+            ERR_POST_X(5, Fatal << "Cannot create file: "<<fileName);
         
         if (!CFileCode::GetPchHeader().empty()) {
             out <<
@@ -585,7 +589,7 @@ void CCodeGenerator::GenerateCombiningFile(
 
         out.close();
         if ( !out )
-            ERR_POST(Fatal << "Error writing file "<<fileName);
+            ERR_POST_X(6, Fatal << "Error writing file "<<fileName);
     }
     // write combined *__.hpp file
     const char* suffix = ".hpp";
@@ -597,7 +601,7 @@ void CCodeGenerator::GenerateCombiningFile(
 
     CDelayedOfstream out(fileName);
     if ( !out )
-        ERR_POST(Fatal << "Cannot create file: " << fileName);
+        ERR_POST_X(7, Fatal << "Cannot create file: " << fileName);
 
     ITERATE ( TOutputFiles, filei, m_Files ) {
         out << "#include " << (m_UseQuotedForm ? '\"' : '<') << GetStdPath(
@@ -613,7 +617,7 @@ void CCodeGenerator::GenerateCombiningFile(
 
     out.close();
     if ( !out )
-        ERR_POST(Fatal << "Error writing file " << fileName);
+        ERR_POST_X(8, Fatal << "Error writing file " << fileName);
 }
 
 void CCodeGenerator::GenerateCvsignore(
@@ -738,7 +742,7 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
                 filename = Path(path, current_module + "_module.hpp");
                 out.reset(new CDelayedOfstream(filename.c_str()));
                 if (!out->is_open()) {
-                    ERR_POST(Fatal << "Cannot create file: " << filename);
+                    ERR_POST_X(9, Fatal << "Cannot create file: " << filename);
                     return;
                 }
                 generated.push_back(filename);
@@ -764,7 +768,7 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
                 "#endif // " << hppDefine << "\n";
             out->close();
             if ( !*out )
-                ERR_POST(Fatal << "Error writing file " << filename);
+                ERR_POST_X(10, Fatal << "Error writing file " << filename);
         }
         current_module.erase();
     } while (isfound);
@@ -807,7 +811,7 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
                     "#include " << code->Include(module_inc) << "\n";
                 out.reset(new CDelayedOfstream(filename.c_str()));
                 if (!out->is_open()) {
-                    ERR_POST(Fatal << "Cannot create file: " << filename);
+                    ERR_POST_X(11, Fatal << "Cannot create file: " << filename);
                     return;
                 }
                 generated.push_back(filename);
@@ -842,7 +846,7 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
             out_code.seekp(0);
             out->close();
             if ( !*out )
-                ERR_POST(Fatal << "Error writing file " << filename);
+                ERR_POST_X(12, Fatal << "Error writing file " << filename);
         }
         current_module.erase();
     } while (isfound);
@@ -872,7 +876,7 @@ void CCodeGenerator::GenerateClientCode(const string& name, bool mandatory)
     string class_name = m_Config.Get(name, "class");
     if (class_name.empty()) {
         if (mandatory) {
-            ERR_POST(Fatal << "No configuration for mandatory client " + name);
+            ERR_POST_X(13, Fatal << "No configuration for mandatory client " + name);
         }
         return; // not configured
     }
@@ -936,13 +940,13 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext /*context*/)
             resolved = user->Resolve();
         }
         catch ( CNotFoundException& exc) {
-            ERR_POST(Warning <<
-                     "Skipping type: " << user->GetUserTypeName() <<
-                     ": " << exc.what());
+            ERR_POST_X(14, Warning <<
+                       "Skipping type: " << user->GetUserTypeName() <<
+                       ": " << exc.what());
             return;
         }
         if ( resolved->Skipped() ) {
-            ERR_POST(Warning << "Skipping type: " << user->GetUserTypeName());
+            ERR_POST_X(15, Warning << "Skipping type: " << user->GetUserTypeName());
             return;
         }
         if ( !Imported(resolved) ) {
@@ -991,13 +995,13 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
             resolved = user->Resolve();
         }
         catch ( CNotFoundException& exc) {
-            ERR_POST(Warning <<
-                     "Skipping type: " << user->GetUserTypeName() <<
-                     ": " << exc.what());
+            ERR_POST_X(16, Warning <<
+                       "Skipping type: " << user->GetUserTypeName() <<
+                       ": " << exc.what());
             return;
         }
         if ( resolved->Skipped() ) {
-            ERR_POST(Warning << "Skipping type: " << user->GetUserTypeName());
+            ERR_POST_X(17, Warning << "Skipping type: " << user->GetUserTypeName());
             return;
         }
         if ( context == eChoice ) {
@@ -1037,7 +1041,7 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
 
     if ( type->GetParentType() == 0 || context == eChoice ) {
         if ( type->Skipped() ) {
-            ERR_POST(Warning << "Skipping type: " << type->IdName());
+            ERR_POST_X(18, Warning << "Skipping type: " << type->IdName());
             return;
         }
     }
@@ -1120,7 +1124,7 @@ const CDataTypeModule* CCodeGenerator::FindModuleByName(const string& name) cons
             }
         }
     }
-    ERR_POST(Error << "cannot find module " << name);
+    ERR_POST_X(19, Error << "cannot find module " << name);
     return 0;
 }
 

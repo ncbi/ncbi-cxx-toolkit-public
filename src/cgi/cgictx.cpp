@@ -39,6 +39,7 @@
 #include <cgi/cgi_util.hpp>
 #include <cgi/cgi_session.hpp>
 #include <cgi/cgiapp.hpp>
+#include <cgi/error_codes.hpp>
 
 #ifdef NCBI_OS_UNIX
 #  ifdef _AIX32 // version 3.2 *or higher*
@@ -47,6 +48,9 @@
 #  include <sys/time.h>
 #  include <unistd.h> // needed for select() on some platforms
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Cgi_Application
 
 
 BEGIN_NCBI_SCOPE
@@ -193,7 +197,7 @@ CCgiServerContext& CCgiContext::x_GetServerContext(void) const
     if ( !context ) {
         context = m_App.LoadServerContext(const_cast<CCgiContext&>(*this));
         if ( !context ) {
-            ERR_POST("CCgiContext::GetServerContext: no server context set");
+            ERR_POST_X(12, "CCgiContext::GetServerContext: no server context set");
             throw runtime_error("no server context set");
         }
         const_cast<CCgiContext&>(*this).m_ServerContext.reset(context);

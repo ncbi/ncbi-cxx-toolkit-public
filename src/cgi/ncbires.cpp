@@ -36,8 +36,12 @@
 
 #include <cgi/ncbires.hpp>
 #include <cgi/cgictx.hpp>
+#include <cgi/error_codes.hpp>
 
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Cgi_Resourse
 
 BEGIN_NCBI_SCOPE
 
@@ -177,7 +181,7 @@ void CNcbiRelocateCommand::Execute( CCgiContext& ctx )
         ctx.GetResponse().WriteHeader();
     }
     catch (exception&) {
-        ERR_POST("CNcbiRelocateCommand::Execute error getting url");
+        ERR_POST_X(1, "CNcbiRelocateCommand::Execute error getting url");
         throw;
     }
 }

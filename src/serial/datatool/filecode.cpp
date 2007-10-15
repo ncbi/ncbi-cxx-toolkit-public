@@ -41,8 +41,12 @@
 #include <serial/datatool/namespace.hpp>
 #include <serial/datatool/module.hpp>
 #include <serial/datatool/code.hpp>
+#include <serial/error_codes.hpp>
 #include <util/checksum.hpp>
 #include <typeinfo>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_FileCode
 
 
 BEGIN_NCBI_SCOPE
@@ -412,7 +416,7 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
     CreateFileFolder(fileName);
     CDelayedOfstream header(fileName);
     if ( !header ) {
-        ERR_POST(Fatal << "Cannot create file: " << fileName);
+        ERR_POST_X(1, Fatal << "Cannot create file: " << fileName);
         return;
     }
 
@@ -547,7 +551,7 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
         "#endif // " << hppDefine << "\n";
     header.close();
     if ( !header )
-        ERR_POST(Fatal << "Error writing file " << fileName);
+        ERR_POST_X(2, Fatal << "Error writing file " << fileName);
 }
 
 
@@ -557,7 +561,7 @@ void CFileCode::GenerateCPP(const string& path, string& fileName) const
     CreateFileFolder(fileName);
     CDelayedOfstream code(fileName);
     if ( !code ) {
-        ERR_POST(Fatal << "Cannot create file: " << fileName);
+        ERR_POST_X(3, Fatal << "Cannot create file: " << fileName);
         return;
     }
 
@@ -606,7 +610,7 @@ void CFileCode::GenerateCPP(const string& path, string& fileName) const
 
     code.close();
     if ( !code )
-        ERR_POST(Fatal << "Error writing file " << fileName);
+        ERR_POST_X(4, Fatal << "Error writing file " << fileName);
 }
 
 
@@ -651,8 +655,8 @@ bool CFileCode::ModifiedByUser(const string& fileName,
             // text after checksum -> modified by user
             //    OR
             // partial last line -> modified by user
-            ERR_POST(Info <<
-                     "Will not overwrite modified user file: "<<fileName);
+            ERR_POST_X(5, Info <<
+                       "Will not overwrite modified user file: "<<fileName);
             return true;
         }
 
@@ -771,7 +775,7 @@ bool CFileCode::WriteUserFile(const string& path, const string& name,
     // write new contents of nonmodified file
     CDelayedOfstream out(fileName);
     if ( !out ) {
-        ERR_POST(Fatal << "Cannot create file: " << fileName);
+        ERR_POST_X(6, Fatal << "Cannot create file: " << fileName);
         return false;
     }
 
@@ -784,7 +788,7 @@ bool CFileCode::WriteUserFile(const string& path, const string& name,
 
     out.close();
     if ( !out ) {
-        ERR_POST("Error writing file " << fileName);
+        ERR_POST_X(7, "Error writing file " << fileName);
         return false;
     }
     return true;

@@ -41,6 +41,10 @@
 #include <serial/serialdef.hpp>
 #include <serial/datatool/statictype.hpp>
 #include <serial/datatool/unitype.hpp>
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_TypeInfo
 
 BEGIN_NCBI_SCOPE
 
@@ -115,7 +119,7 @@ CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
         break;
     case eKindPointer:
     case eKindRef:
-        ERR_POST("pointer as choice variant");
+        ERR_POST_X(3, "pointer as choice variant");
         memberType = ePointerMember;
         break;
     default:

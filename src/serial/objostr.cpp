@@ -59,9 +59,12 @@
 #include <serial/objectiter.hpp>
 #include <serial/impl/objlist.hpp>
 #include <serial/serialimpl.hpp>
+#include <serial/error_codes.hpp>
 
 #undef _TRACE
 #define _TRACE(arg) ((void)0)
+
+#define NCBI_USE_ERRCODE_X   Serial_OStream
 
 BEGIN_NCBI_SCOPE
 
@@ -136,7 +139,7 @@ void CObjectOStream::SetVerifyDataThread(ESerialVerifyData verify)
         tls_verify != eSerialVerifyData_DefValueAlways) {
         if (tls_verify != verify &&
             (verify == eSerialVerifyData_No || verify == eSerialVerifyData_Never)) {
-            ERR_POST_ONCE(Warning <<
+            ERR_POST_X_ONCE(2, Warning <<
                 "CObjectOStream::SetVerifyDataThread: data verification disabled");
         }
         s_VerifyTLS->SetValue(reinterpret_cast<int*>(verify));
@@ -151,7 +154,7 @@ void CObjectOStream::SetVerifyDataGlobal(ESerialVerifyData verify)
         ms_VerifyDataDefault != eSerialVerifyData_DefValueAlways) {
         if (ms_VerifyDataDefault != verify &&
             (verify == eSerialVerifyData_No || verify == eSerialVerifyData_Never)) {
-            ERR_POST_ONCE(Warning <<
+            ERR_POST_X_ONCE(3, Warning <<
                 "CObjectOStream::SetVerifyDataGlobal: data verification disabled");
         }
         ms_VerifyDataDefault = verify;
@@ -217,7 +220,7 @@ CObjectOStream::~CObjectOStream(void)
         ResetLocalHooks();
     }
     catch (CException& exc) {
-        ERR_POST("Can not close output stream: "<<exc.what());
+        ERR_POST_X(4, "Can not close output stream: "<<exc.what());
     }
 }
 
@@ -272,8 +275,8 @@ CObjectOStream::TFailFlags CObjectOStream::SetFailFlags(TFailFlags flags,
     m_Fail |= flags;
     if ( !old && flags ) {
         // first fail
-        ERR_POST("CObjectOStream: error at "<<
-                 GetPosition()<<": "<<GetStackTrace() << ": " << message);
+        ERR_POST_X(5, "CObjectOStream: error at "<<
+                   GetPosition()<<": "<<GetStackTrace() << ": " << message);
     }
     return old;
 }
@@ -990,7 +993,7 @@ CObjectOStream::ByteBlock::~ByteBlock(void)
             GetStream().Unended("byte block not fully written");
         }
         catch (...) {
-            ERR_POST("unended byte block");
+            ERR_POST_X(6, "unended byte block");
         }
     }
 }
@@ -1020,7 +1023,7 @@ CObjectOStream::CharBlock::~CharBlock(void)
             GetStream().Unended("char block not fully written");
         }
         catch (...) {
-            ERR_POST("unended char block");
+            ERR_POST_X(7, "unended char block");
         }
     }
 }

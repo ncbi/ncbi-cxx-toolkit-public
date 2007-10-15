@@ -45,12 +45,15 @@
 #include <serial/impl/choice.hpp>
 #include <serial/impl/continfo.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/error_codes.hpp>
 
 #include <stdio.h>
 #include <math.h>
 
 #undef _TRACE
 #define _TRACE(arg) ((void)0)
+
+#define NCBI_USE_ERRCODE_X   Serial_OStream
 
 BEGIN_NCBI_SCOPE
 
@@ -90,7 +93,7 @@ CObjectOStreamAsnBinary::~CObjectOStreamAsnBinary(void)
 {
 #if CHECK_OUTSTREAM_INTEGRITY
     if ( !m_Limits.empty() || m_CurrentTagState != eTagStart )
-        ERR_POST("CObjectOStreamAsnBinary not finished");
+        ERR_POST_X(9, "CObjectOStreamAsnBinary not finished");
 #endif
 }
 
@@ -892,7 +895,7 @@ void CObjectOStreamAsnBinary::WriteContainer(const CContainerTypeInfo* cType,
                     CTypeConverter<CPointerTypeInfo>::SafeCast(elementType);
                 _ASSERT(pointerType->GetObjectPointer(cType->GetElementPtr(i)));
                 if ( !pointerType->GetObjectPointer(cType->GetElementPtr(i)) ) {
-                    ERR_POST(Warning << " NULL pointer found in container: skipping");
+                    ERR_POST_X(10, Warning << " NULL pointer found in container: skipping");
                     continue;
                 }
             }

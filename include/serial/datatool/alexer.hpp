@@ -84,7 +84,7 @@ public:
         }
 
     virtual void LexerError(const char* error);
-    virtual void LexerWarning(const char* error);
+    virtual void LexerWarning(int err_subcode, const char* error);
 
     class CComment
     {

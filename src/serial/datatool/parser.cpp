@@ -43,6 +43,10 @@
 #include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/choicetype.hpp>
 #include <serial/datatool/value.hpp>
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_Parsers
 
 BEGIN_NCBI_SCOPE
 
@@ -134,7 +138,7 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
                 ModuleType(module, name);
                 break;
             case T_DEFINE:
-                ERR_POST("LINE " << Location() <<
+                ERR_POST_X(1, "LINE " << Location() <<
                     " type name omitted");
                 Consume();
                 ModuleType(module, "unnamed type");
@@ -142,7 +146,7 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
             case K_END:
                 return;
             default:
-                ERR_POST("LINE " << Location() <<
+                ERR_POST_X(2, "LINE " << Location() <<
                     " type definition expected");
                 return;
             }
@@ -151,7 +155,7 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
             NCBI_RETHROW_SAME(e,"ASNParser::ModuleBody: failed");
         }
         catch (exception& e) {
-            ERR_POST(e.what());
+            ERR_POST_X(3, e.what());
         }
     }
 }

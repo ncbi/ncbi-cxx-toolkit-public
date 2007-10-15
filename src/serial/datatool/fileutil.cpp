@@ -35,7 +35,11 @@
 #include <corelib/ncbifile.hpp>
 #include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/srcutil.hpp>
+#include <serial/error_codes.hpp>
 #include <set>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_Util
 
 BEGIN_NCBI_SCOPE
 
@@ -49,7 +53,7 @@ SourceFile::SourceFile(const string& name, bool binary)
     }
     else {
         if ( !x_Open(name, binary) )
-            ERR_POST(Fatal << "cannot open file " << name);
+            ERR_POST_X(1, Fatal << "cannot open file " << name);
     }
 }
 
@@ -64,7 +68,7 @@ SourceFile::SourceFile(const string& name, const list<string>& dirs,
                 return;
             }
         }
-        ERR_POST(Fatal << "cannot open file " << name);
+        ERR_POST_X(2, Fatal << "cannot open file " << name);
     }
 }
 
@@ -122,7 +126,7 @@ DestinationFile::DestinationFile(const string& name, bool binary)
         if ( !*m_StreamPtr ) {
             delete m_StreamPtr;
             m_StreamPtr = 0;
-            ERR_POST(Fatal << "cannot open file " << name);
+            ERR_POST_X(3, Fatal << "cannot open file " << name);
         }
         m_Open = true;
     }

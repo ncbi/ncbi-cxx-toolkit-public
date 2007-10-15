@@ -37,6 +37,10 @@
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/serialutil.hpp>
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_TypeInfo
 
 BEGIN_NCBI_SCOPE
 
@@ -213,7 +217,7 @@ void CContainerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
                     CTypeConverter<CPointerTypeInfo>::SafeCast(GetElementType());
                 _ASSERT(pointerType->GetObjectPointer(GetElementPtr(isrc)));
                 if ( !pointerType->GetObjectPointer(GetElementPtr(isrc)) ) {
-                    ERR_POST(Warning << " NULL pointer found in container: skipping");
+                    ERR_POST_X(2, Warning << " NULL pointer found in container: skipping");
                     continue;
                 }
             }

@@ -42,6 +42,10 @@
 #include <serial/datatool/srcutil.hpp>
 #include <serial/datatool/statictype.hpp>
 #include <serial/datatool/stdstr.hpp>
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_RPCGen
 
 BEGIN_NCBI_SCOPE
 
@@ -252,7 +256,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         string format  = generator.GetConfig().Get(sect_name, "serialformat");
         string args;
         if (service.empty()) {
-            ERR_POST(Warning << "No service name provided for " << class_name);
+            ERR_POST_X(1, Warning << "No service name provided for " << class_name);
             args = "kEmptyStr";
         } else {
             args = '\"' + NStr::PrintableString(service) + '\"';
@@ -345,9 +349,9 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
                 (*it)->GetType()->PrintASN(oss, 0);
                 string type = CNcbiOstrstreamToString(oss);
                 _ASSERT(type != "NULL");
-                ERR_POST(Warning << m_Source.m_RequestChoiceType->GlobalName()
-                         << ": disabling special init handling because it"
-                         << " requires a payload of type " << type);
+                ERR_POST_X(2, Warning << m_Source.m_RequestChoiceType->GlobalName()
+                              << ": disabling special init handling because it"
+                              << " requires a payload of type " << type);
             }
         } else if (name == "fini") {
             if (dynamic_cast<const CNullDataType*>((*it)->GetType())) {
@@ -357,9 +361,9 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
                 (*it)->GetType()->PrintASN(oss, 0);
                 string type = CNcbiOstrstreamToString(oss);
                 _ASSERT(type != "NULL");
-                ERR_POST(Warning << m_Source.m_RequestChoiceType->GlobalName()
-                         << ": disabling special fini handling because it"
-                         << " requires a payload of type " << type);
+                ERR_POST_X(3, Warning << m_Source.m_RequestChoiceType->GlobalName()
+                              << ": disabling special fini handling because it"
+                              << " requires a payload of type " << type);
             }
         }
     }

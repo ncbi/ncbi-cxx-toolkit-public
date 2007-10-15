@@ -30,6 +30,10 @@
 
 #include <ncbi_pch.hpp>
 #include <html/html.hpp>
+#include <html/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Html_Lib
 
 BEGIN_NCBI_SCOPE
 
@@ -99,8 +103,8 @@ static string s_HTMLEncode(const string& str, const string& set,
             }
             if ( is_entity ) {
                 if (flags & CHTMLHelper::fCheckPreencoded) {
-                    ERR_POST_ONCE(Info << "string \"" <<  str <<
-                                 "\" contains HTML encoded entities");
+                    ERR_POST_X_ONCE(2, Info << "string \"" <<  str <<
+                                    "\" contains HTML encoded entities");
                 }
             } else {
                 out << "amp;";

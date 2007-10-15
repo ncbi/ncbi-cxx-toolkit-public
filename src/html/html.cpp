@@ -32,8 +32,12 @@
 #include <html/htmlhelper.hpp>
 #include <html/indentstream.hpp>
 #include <html/html_exception.hpp>
+#include <html/error_codes.hpp>
 #include <errno.h>
 #include <string.h>
+
+
+#define NCBI_USE_ERRCODE_X   Html_Lib
 
 
 BEGIN_NCBI_SCOPE
@@ -1020,7 +1024,7 @@ CHTML_table::TIndex x_GetSpan(const CHTML_tc* node,
     catch ( exception& ) {
         // Error will be posted later
     }
-    ERR_POST("Bad attribute: " << attributeName << "=\"" << value << "\"");
+    ERR_POST_X(1, "Bad attribute: " << attributeName << "=\"" << value << "\"");
     return 1;
 }
 

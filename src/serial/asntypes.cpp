@@ -46,7 +46,11 @@
 #include <serial/objcopy.hpp>
 #include <serial/impl/classinfob.hpp>
 #include <serial/impl/typemap.hpp>
+#include <serial/error_codes.hpp>
 #include <asn.h>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_ASNTypes
 
 BEGIN_NCBI_SCOPE
 
@@ -690,7 +694,7 @@ CObjectOStream::AsnIo::~AsnIo(void)
             GetStream().Unended("AsnIo write error");
         }
         catch (...) {
-            ERR_POST("AsnIo write error");
+            ERR_POST_X(1, "AsnIo write error");
         }
     }
 }
@@ -730,9 +734,9 @@ void CObjectOStream::AsnIo::Write(const char* data, size_t length)
                 while ( end > beg && isspace((unsigned char) end[-1]) )
                     end--;
                 if ( string(beg, end) != GetRootTypeName() ) {
-                    ERR_POST("AsnWrite: wrong ASN.1 type name: is \""
-                             << string(beg, end) << "\", must be \""
-                             << GetRootTypeName() << "\"");
+                    ERR_POST_X(2, "AsnWrite: wrong ASN.1 type name: is \""
+                               << string(beg, end) << "\", must be \""
+                               << GetRootTypeName() << "\"");
                 }
                 // skip header
                 size_t skip = p + 3 - data;
@@ -742,8 +746,8 @@ void CObjectOStream::AsnIo::Write(const char* data, size_t length)
                 length -= skip;
             }
             else {
-                ERR_POST("AsnWrite: no \"Asn-Type ::=\" header  (data=\""
-                         << data << "\")");
+                ERR_POST_X(3, "AsnWrite: no \"Asn-Type ::=\" header  (data=\""
+                               << data << "\")");
             }
             m_Count = 1;
         }

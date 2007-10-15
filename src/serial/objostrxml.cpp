@@ -46,9 +46,13 @@
 #include <serial/impl/continfo.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/impl/ptrinfo.hpp>
+#include <serial/error_codes.hpp>
 
 #include <stdio.h>
 #include <math.h>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_OStream
 
 BEGIN_NCBI_SCOPE
 
@@ -1069,7 +1073,7 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
                         CTypeConverter<CPointerTypeInfo>::SafeCast(elementType);
                     _ASSERT(pointerType->GetObjectPointer(cType->GetElementPtr(i)));
                     if ( !pointerType->GetObjectPointer(cType->GetElementPtr(i)) ) {
-                        ERR_POST(Warning << " NULL pointer found in container: skipping");
+                        ERR_POST_X(11, Warning << " NULL pointer found in container: skipping");
                         continue;
                     }
                 }

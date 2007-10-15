@@ -369,7 +369,7 @@ void CObjectOStream::SetVerifyData(ESerialVerifyData verify)
     }
     if (m_VerifyData != verify &&
         (verify == eSerialVerifyData_No || verify == eSerialVerifyData_Never)) {
-        ERR_POST_ONCE(Info <<
+        ERR_POST_XX_ONCE(Serial_OStream, 1, Info <<
             "CObjectOStream::SetVerifyData: data verification disabled");
     }
     m_VerifyData = verify;

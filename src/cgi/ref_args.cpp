@@ -35,6 +35,9 @@
 #include <cgi/ncbicgi.hpp>
 #include <cgi/cgi_util.hpp>
 #include <cgi/cgi_exception.hpp>
+#include <cgi/error_codes.hpp>
+
+#define NCBI_USE_ERRCODE_X  Cgi_API
 
 BEGIN_NCBI_SCOPE
 
@@ -106,7 +109,7 @@ string CRefArgs::GetQueryString(const string& referrer) const
             }
         }
     } catch (CCgiArgsException& ex) {
-        ERR_POST(Warning << "Ignoring malformed HTTP referrer " << ex);
+        ERR_POST_X(7, Warning << "Ignoring malformed HTTP referrer " << ex);
     }
     return kEmptyStr;
 }

@@ -47,10 +47,14 @@
 #include <util/cache/cache_ref.hpp>
 
 #include <cgi/cgi_serial.hpp>
+#include <cgi/error_codes.hpp>
 
 #ifdef NCBI_OS_UNIX
 #  include <unistd.h>
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Cgi_Application
 
 
 BEGIN_NCBI_SCOPE
@@ -215,7 +219,7 @@ int CCgiApplication::Run(void)
             try {
                 m_Cache.reset( GetCacheStorage() );
             } catch( exception& ex ) {
-                ERR_POST( "Couldn't create cache : " << ex.what());
+                ERR_POST_X(1, "Couldn't create cache : " << ex.what());
             }
             bool skip_process_request = false;
             bool caching_needed = IsCachingNeeded(m_Context->GetRequest());
@@ -359,7 +363,7 @@ void CCgiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
 CCgiContext& CCgiApplication::x_GetContext( void ) const
 {
     if ( !m_Context.get() ) {
-        ERR_POST("CCgiApplication::GetContext: no context set");
+        ERR_POST_X(2, "CCgiApplication::GetContext: no context set");
         throw runtime_error("no context set");
     }
     return *m_Context;
@@ -369,7 +373,7 @@ CCgiContext& CCgiApplication::x_GetContext( void ) const
 CNcbiResource& CCgiApplication::x_GetResource( void ) const
 {
     if ( !m_Resource.get() ) {
-        ERR_POST("CCgiApplication::GetResource: no resource set");
+        ERR_POST_X(3, "CCgiApplication::GetResource: no resource set");
         throw runtime_error("no resource set");
     }
     return *m_Resource;
@@ -570,8 +574,8 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
 
     // Check for problems in sending the response
     if ( !os.good() ) {
-        ERR_POST("CCgiApplication::OnException() failed to send error page"
-                 " back to the client");
+        ERR_POST_X(4, "CCgiApplication::OnException() failed to send error page"
+                      " back to the client");
         return -1;
     }
     return 0;
@@ -883,7 +887,7 @@ bool CCgiApplication::GetResultFromCache(const CCgiRequest& request, CNcbiOstrea
             return NcbiStreamCopy(os, cache_reader);
         }
     } catch (exception& ex) {
-        ERR_POST("Couldn't read cached request : " << ex.what());
+        ERR_POST_X(5, "Couldn't read cached request : " << ex.what());
     }
     return false;
 }
@@ -901,7 +905,7 @@ void CCgiApplication::SaveResultToCache(const CCgiRequest& request, CNcbiIstream
             NcbiStreamCopy(cache_writer, is);
         }
     } catch (exception& ex) {
-        ERR_POST("Couldn't cache request : " << ex.what());
+        ERR_POST_X(6, "Couldn't cache request : " << ex.what());
     } 
 }
 
@@ -916,7 +920,7 @@ void CCgiApplication::SaveRequest(const string& rid, const CCgiRequest& request)
             request.Serialize(cache_stream);
         }
     } catch (exception& ex) {
-        ERR_POST("Couldn't save request : " << ex.what());
+        ERR_POST_X(7, "Couldn't save request : " << ex.what());
     } 
 }
 CCgiRequest* CCgiApplication::GetSavedRequest(const string& rid)
@@ -932,7 +936,7 @@ CCgiRequest* CCgiApplication::GetSavedRequest(const string& rid)
             return request.release();
         }
     } catch (exception& ex) {
-        ERR_POST("Couldn't read saved request : " << ex.what());
+        ERR_POST_X(8, "Couldn't read saved request : " << ex.what());
     } 
     return NULL;
 }
@@ -951,7 +955,7 @@ void CCgiApplication::x_AddLBCookie()
     string domain = reg.GetString("CGI-LB", "Domain", ".ncbi.nlm.nih.gov");
 
     if ( domain.empty() ) {
-        ERR_POST("CGI-LB: 'Domain' not specified.");
+        ERR_POST_X(9, "CGI-LB: 'Domain' not specified.");
     } else {
         if (domain[0] != '.') {     // domain must start with dot
             domain.insert(0, ".");
@@ -982,7 +986,7 @@ void CCgiApplication::x_AddLBCookie()
                 host = m_HostIP;
             }
             else {
-                ERR_POST("CGI-LB: 'Host' not specified.");
+                ERR_POST_X(10, "CGI-LB: 'Host' not specified.");
             }
         }
     }
@@ -1157,7 +1161,7 @@ string CCgiStatistics::Compose(void)
 
 void CCgiStatistics::Submit(const string& message)
 {
-    LOG_POST(message);
+    LOG_POST_X(11, message);
 }
 
 

@@ -35,6 +35,7 @@
 #include <cgi/ncbicgir.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <cgi/cgi_session.hpp>
+#include <cgi/error_codes.hpp>
 #include <time.h>
 
 // Mac OS has unistd.h, but STDOUT_FILENO is not defined
@@ -47,6 +48,9 @@
 #else
 #  define STDOUT_FILENO 1
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Cgi_Response
 
 
 BEGIN_NCBI_SCOPE
@@ -201,8 +205,8 @@ CNcbiOstream* CCgiResponse::GetOutput(void) const
         (m_Output->rdstate()  &  (IOS_BASE::badbit | IOS_BASE::failbit))
         != 0  &&
         m_ThrowOnBadOutput.Get()) {
-        ERR_POST(Critical <<
-                 "CCgiResponse::GetOutput() -- output stream is in bad state");
+        ERR_POST_X(1, Critical <<
+                   "CCgiResponse::GetOutput() -- output stream is in bad state");
         const_cast<CCgiResponse*>(this)->SetThrowOnBadOutput(false);
     }
     return m_Output;
@@ -336,7 +340,7 @@ void CCgiResponse::BeginPart(const string& name, const string& type_in,
         os << sm_ContentDispoName << ": " << sm_FilenamePrefix
            << NStr::PrintableString(name) << '"' << HTTP_EOL;
     } else if (m_IsMultipart != eMultipart_replace) {
-        ERR_POST(Warning << "multipart content contains anonymous part");
+        ERR_POST_X(2, Warning << "multipart content contains anonymous part");
     }
 
     os << HTTP_EOL;

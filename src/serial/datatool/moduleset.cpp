@@ -40,6 +40,10 @@
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/fileutil.hpp>
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_Modules
 
 BEGIN_NCBI_SCOPE
 
@@ -53,8 +57,8 @@ void CFileModules::AddModule(const AutoPtr<CDataTypeModule>& module)
     module->SetModuleContainer(this);
     CDataTypeModule*& mptr = m_ModulesByName[module->GetName()];
     if ( mptr ) {
-        ERR_POST(GetSourceFileName() << ": duplicate module: " <<
-                 module->GetName());
+        ERR_POST_X(4, GetSourceFileName() << ": duplicate module: " <<
+                      module->GetName());
     }
     else {
         mptr = module.get();
@@ -168,7 +172,7 @@ void CFileModules::PrintDTDModular(void) const
             PrintXMLRefInfo(out);
             (*mi)->PrintDTD(out);
             if ( !out )
-                ERR_POST(Fatal << "Cannot write to file "<<fileName);
+                ERR_POST_X(5, Fatal << "Cannot write to file "<<fileName);
         }
         {
             string fileName = fileNameBase + ".dtd";
@@ -176,7 +180,7 @@ void CFileModules::PrintDTDModular(void) const
             PrintXMLRefInfo(out);
             (*mi)->PrintDTDModular(out);
             if ( !out )
-                ERR_POST(Fatal << "Cannot write to file "<<fileName);
+                ERR_POST_X(6, Fatal << "Cannot write to file "<<fileName);
         }
     }
 }
@@ -190,7 +194,7 @@ void CFileModules::PrintXMLSchemaModular(void) const
             string fileName = fileNameBase + ".mod.xsd";
             CNcbiOfstream out(fileName.c_str());
             if ( !out )
-                ERR_POST(Fatal << "Cannot write to file "<<fileName);
+                ERR_POST_X(7, Fatal << "Cannot write to file "<<fileName);
             BeginXMLSchema(out);
             (*mi)->PrintXMLSchema(out);
             EndXMLSchema(out);
@@ -199,7 +203,7 @@ void CFileModules::PrintXMLSchemaModular(void) const
             string fileName = fileNameBase + ".xsd";
             CNcbiOfstream out(fileName.c_str());
             if ( !out )
-                ERR_POST(Fatal << "Cannot write to file "<<fileName);
+                ERR_POST_X(8, Fatal << "Cannot write to file "<<fileName);
             BeginXMLSchema(out);
             (*mi)->PrintXMLSchemaModular(out);
             EndXMLSchema(out);

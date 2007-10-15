@@ -55,8 +55,12 @@
 #include <serial/datatool/filecode.hpp>
 #include <serial/objistrxml.hpp>
 #include <serial/objostrxml.hpp>
+#include <serial/error_codes.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
+
+
+#define NCBI_USE_ERRCODE_X   Serial_DataTool
 
 
 BEGIN_NCBI_SCOPE
@@ -302,11 +306,11 @@ bool CDataTool::ProcessModules(void)
 
     if ( !generator.Check() ) {
         if ( !args["i"] ) { // ignored
-            ERR_POST("some types are unknown");
+            ERR_POST_X(1, "some types are unknown");
             return false;
         }
         else {
-            ERR_POST(Warning << "some types are unknown: ignoring");
+            ERR_POST_X(2, Warning << "some types are unknown: ignoring");
         }
     }
     return true;
@@ -339,7 +343,7 @@ bool CDataTool::ProcessData(void)
     }
     else if ( const CArgValue& d = args["d"] ) {
         if ( !t ) {
-            ERR_POST("ASN.1 value type must be specified (-t)");
+            ERR_POST_X(3, "ASN.1 value type must be specified (-t)");
             return false;
         }
         inFormat = eSerial_AsnBinary;

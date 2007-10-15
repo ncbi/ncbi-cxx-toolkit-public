@@ -36,6 +36,10 @@
 #include <serial/datatool/aparser.hpp>
 #include <serial/datatool/atoken.hpp>
 #include <serial/datatool/comments.hpp>
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_Lexer
 
 BEGIN_NCBI_SCOPE
 
@@ -63,9 +67,10 @@ void AbstractLexer::LexerError(const char* error)
                " -- lexer error: " + error);
 }
 
-void AbstractLexer::LexerWarning(const char* error)
+void AbstractLexer::LexerWarning(int err_subcode, const char* error)
 {
-    ERR_POST("LINE " << CurrentLine() <<
+    ERR_POST_EX(NCBI_ERRCODE_X, err_subcode,
+        "LINE " << CurrentLine() <<
         ", TOKEN " << m_TokenText <<
         " -- lexer error: " << error);
 }

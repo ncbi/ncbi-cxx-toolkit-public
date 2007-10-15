@@ -43,6 +43,7 @@
 #include <cgi/ncbicgi.hpp>
 #include <cgi/cgi_serial.hpp>
 #include <cgi/cgi_session.hpp>
+#include <cgi/error_codes.hpp>
 #include <util/checksum.hpp>
 
 #include <algorithm>
@@ -58,6 +59,9 @@
 #else
 #  define STDIN_FILENO 0
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Cgi_API
 
 
 BEGIN_NCBI_SCOPE
@@ -304,7 +308,7 @@ CCgiCookie* CCgiCookies::Add(const string& name,    const string& value,
         case eOnBadCookie_StoreAndError:
         case eOnBadCookie_SkipAndError: {
             CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
-            ERR_POST(cex);
+            ERR_POST_X(1, cex);
             return NULL;
         }
         case eOnBadCookie_Store:
@@ -362,14 +366,14 @@ CCgiCookies::x_CheckField(const string& str,
             throw;
         case eOnBadCookie_SkipAndError: {
             CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
-            ERR_POST(cex);
+            ERR_POST_X(2, cex);
             return eCheck_SkipInvalid;
         }
         case eOnBadCookie_Skip:
             return eCheck_SkipInvalid;
         case eOnBadCookie_StoreAndError: {
             CException& cex = ex;  // GCC 3.4.0 can't guess it for ERR_POST
-            ERR_POST(cex);
+            ERR_POST_X(3, cex);
             return eCheck_StoreInvalid;
         }
         case eOnBadCookie_Store:
@@ -882,8 +886,8 @@ static void s_ParseMultipartEntries(const string& boundary,
                 continue;
             } else if (NStr::CompareNocase(str, bol_pos, pos - bol_pos,
                                     "Content-Disposition") != 0) {
-                ERR_POST(Warning << s_Me << ": ignoring unrecognized header: "
-                         + str.substr(bol_pos, eol_pos - bol_pos));
+                ERR_POST_X(4, Warning << s_Me << ": ignoring unrecognized header: "
+                           + str.substr(bol_pos, eol_pos - bol_pos));
                 pos = eol_pos + eol_size;
                 continue;
             }
@@ -1049,7 +1053,7 @@ void CCgiRequest::x_Init
     // put them with empty string key for better access
     if (m_Entries.find(kEmptyStr) != m_Entries.end()) {
         // there is already empty name key
-        ERR_POST("empty key name:  we will not check for IMAGE names");
+        ERR_POST_X(5, "empty key name:  we will not check for IMAGE names");
         return;
     }
     string image_name;
@@ -1067,8 +1071,8 @@ void CCgiRequest::x_Init
 
         // it is a correct IMAGE name
         if ( !image_name.empty() ) {
-            ERR_POST("duplicated IMAGE name: \"" << image_name <<
-                     "\" and \"" << name << "\"");
+            ERR_POST_X(6, "duplicated IMAGE name: \"" << image_name <<
+                          "\" and \"" << name << "\"");
             return;
         }
         image_name = name;

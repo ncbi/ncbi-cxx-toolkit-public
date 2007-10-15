@@ -36,6 +36,10 @@
 #include <serial/datatool/xsdparser.hpp>
 #include <serial/datatool/tokens.hpp>
 #include <serial/datatool/module.hpp>
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_Parsers
 
 BEGIN_NCBI_SCOPE
 
@@ -266,7 +270,7 @@ void XSDParser::ParseHeader()
             ;
         tok = GetNextToken();
     } else {
-        ERR_POST("LINE " << Location() << " XML declaration is missing");
+        ERR_POST_X(4, "LINE " << Location() << " XML declaration is missing");
     }
 // schema    
     if (tok != K_SCHEMA) {

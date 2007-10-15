@@ -40,6 +40,10 @@
 #include <serial/impl/typemap.hpp>
 #include <serial/impl/ptrinfo.hpp>
 #include <serial/impl/typeinfoimpl.hpp>
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_TypeInfo
 
 BEGIN_NCBI_SCOPE
 
@@ -105,7 +109,7 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
             if ( m_NullPointerIndex == kEmptyChoice )
                 m_NullPointerIndex = index;
             else {
-                ERR_POST("double null");
+                ERR_POST_X(1, "double null");
             }
         }
         else {

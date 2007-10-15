@@ -61,6 +61,7 @@
 #include <serial/impl/choiceptr.hpp>
 #include <serial/serialimpl.hpp>
 #include <serial/pack_string.hpp>
+#include <serial/error_codes.hpp>
 
 #include <limits.h>
 #if HAVE_WINDOWS_H
@@ -70,6 +71,8 @@
 
 #undef _TRACE
 #define _TRACE(arg) ((void)0)
+
+#define NCBI_USE_ERRCODE_X   Serial_IStream
 
 BEGIN_NCBI_SCOPE
 
@@ -368,7 +371,7 @@ CObjectIStream::~CObjectIStream(void)
         ResetLocalHooks();
     }
     catch (...) {
-        ERR_POST("Can not close input stream");
+        ERR_POST_X(1, "Can not close input stream");
     }
 }
 
@@ -434,8 +437,8 @@ CObjectIStream::SetFailFlags(TFailFlags flags,
         if ( !old && flags ) {
             // first fail
 // redundant
-//            ERR_POST(Error << "CObjectIStream: error at "<<
-//                     GetPosition()<<": "<<GetStackTrace() << ": " << message);
+//            ERR_POST_X(2, Error << "CObjectIStream: error at "<<
+//                       GetPosition()<<": "<<GetStackTrace() << ": " << message);
         }
     }
     return old;
@@ -831,7 +834,7 @@ bool CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
                     "member "+info->GetId().ToString()+" expected");
         } else {
             SetFailFlags(fMissingValue);
-            ERR_POST("member "+info->GetId().ToString()+" is missing");
+            ERR_POST_X(3, "member "+info->GetId().ToString()+" is missing");
         }
     }
     return (info != 0);
@@ -1343,7 +1346,7 @@ CObjectIStream::ByteBlock::~ByteBlock(void)
             GetStream().Unended("byte block not fully read");
         }
         catch (...) {
-            ERR_POST("unended byte block");
+            ERR_POST_X(4, "unended byte block");
         }
     }
 }
@@ -1406,7 +1409,7 @@ CObjectIStream::CharBlock::~CharBlock(void)
             GetStream().Unended("char block not fully read");
         }
         catch (...) {
-            ERR_POST("unended char block");
+            ERR_POST_X(5, "unended char block");
         }
     }
 }

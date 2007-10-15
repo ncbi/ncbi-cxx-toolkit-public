@@ -45,8 +45,12 @@
 #include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/choicetype.hpp>
 #include <serial/datatool/value.hpp>
+#include <serial/error_codes.hpp>
 #include <algorithm>
 #include <corelib/ncbifile.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_Parsers
 
 BEGIN_NCBI_SCOPE
 
@@ -116,7 +120,7 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
         NCBI_RETHROW_SAME(e,"DTDParser::BuildDocumentTree: failed");
     }
     catch (exception& e) {
-        ERR_POST(e.what());
+        ERR_POST_X(5, e.what());
         throw;
     }
 
@@ -206,7 +210,7 @@ void DTDParser::SkipConditionalSection(void)
             NCBI_RETHROW_SAME(e,"DTDParser::BuildDocumentTree: failed");
         }
         catch (exception& e) {
-            ERR_POST(e.what());
+            ERR_POST_X(6, e.what());
             throw;
         }
     }
@@ -1007,7 +1011,7 @@ CDataType* DTDParser::TypesBlock(
             if (refNode.GetType() == DTDElement::eAny) {
                 refNode.SetName("_Any");
             } else {
-                ERR_POST(Warning << "Element with no name: " << *i);
+                ERR_POST_X(7, Warning << "Element with no name: " << *i);
                 refNode.SetName(*i);
             }
         }

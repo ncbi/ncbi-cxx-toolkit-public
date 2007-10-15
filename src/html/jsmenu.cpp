@@ -32,7 +32,11 @@
 #include <html/jsmenu.hpp>
 #include <html/htmlhelper.hpp>
 #include <html/html_exception.hpp>
+#include <html/error_codes.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Html_Lib
 
 
 BEGIN_NCBI_SCOPE
@@ -359,9 +363,9 @@ string CHTMLPopupMenu::GetAttributeName(EHTML_PM_Attribute attribute, EType type
     if ( attr_name.empty() ) {
         attr_name = "with code " + NStr::IntToString(attribute);
     }
-    ERR_POST(Warning << "CHTMLPopupMenu::GetMenuAttributeName:  " <<
-             type_name << " menu type does not support attribute " <<
-             attr_name);
+    ERR_POST_X(3, Warning << "CHTMLPopupMenu::GetMenuAttributeName:  " <<
+                type_name << " menu type does not support attribute " <<
+                attr_name);
     return kEmptyStr;
 }
 

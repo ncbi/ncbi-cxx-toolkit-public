@@ -32,7 +32,11 @@
 
 #include <ncbi_pch.hpp>
 #include <misc/cgi_redirect/redirect.hpp>
+#include <misc/error_codes.hpp>
 #include <cgi/cgictx.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Misc_CgiRedirect
 
 
 BEGIN_NCBI_SCOPE
@@ -129,7 +133,7 @@ int CCgiRedirectApplication::ProcessRequest(CCgiContext& ctx)
     try {
         RemapEntries(ctx, new_entries);
     } catch (exception& e) {
-        ERR_POST("Failed to remap CGI entries: " << e.what());
+        ERR_POST_X(1, "Failed to remap CGI entries: " << e.what());
         return 1;
     }
 
@@ -163,7 +167,7 @@ int CCgiRedirectApplication::ProcessRequest(CCgiContext& ctx)
         response.WriteHeader();
         m_Page.Print(response.out(), CNCBINode::eHTML);
     } catch (exception& e) {
-        ERR_POST("Failed to compose/send HTML page: " << e.what());
+        ERR_POST_X(2, "Failed to compose/send HTML page: " << e.what());
         return 1;
     }
     return 0;

@@ -43,6 +43,10 @@
 #include <serial/objistrxml.hpp>
 
 #include <serial/impl/classinfob.hpp>
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_Core
 
 
 BEGIN_NCBI_SCOPE
@@ -75,12 +79,12 @@ CSerialObject::~CSerialObject()
 void CSerialObject::Assign(const CSerialObject& source, ESerialRecursionMode how)
 {
     if (this == &source) {
-        ERR_POST(Warning <<
+        ERR_POST_X(3, Warning <<
             "CSerialObject::Assign(): an attempt to assign a serial object to itself");
         return;
     }
     if ( typeid(source) != typeid(*this) && !IsSameTypeInfo(source, *this) ) {
-        ERR_POST(Fatal <<
+        ERR_POST_X(4, Fatal <<
             "CSerialObject::Assign() -- Assignment of incompatible types: " <<
             typeid(*this).name() << " = " << typeid(source).name());
     }
@@ -91,7 +95,7 @@ void CSerialObject::Assign(const CSerialObject& source, ESerialRecursionMode how
 bool CSerialObject::Equals(const CSerialObject& object, ESerialRecursionMode how) const
 {
     if ( typeid(object) != typeid(*this)  && !IsSameTypeInfo(object, *this) ) {
-        ERR_POST(Fatal <<
+        ERR_POST_X(5, Fatal <<
             "CSerialObject::Equals() -- Can not compare types: " <<
             typeid(*this).name() << " == " << typeid(object).name());
     }

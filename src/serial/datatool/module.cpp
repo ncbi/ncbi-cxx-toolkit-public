@@ -39,7 +39,11 @@
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/srcutil.hpp>
 #include <serial/datatool/fileutil.hpp>
+#include <serial/error_codes.hpp>
 #include <typeinfo>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_Modules
 
 BEGIN_NCBI_SCOPE
 
@@ -388,7 +392,7 @@ bool CDataTypeModule::CheckNames()
         const string& name = *e;
         TTypesByName::iterator it = m_LocalTypes.find(name);
         if ( it == m_LocalTypes.end() ) {
-            ERR_POST(Warning << "undefined export type: " << name);
+            ERR_POST_X(1, Warning << "undefined export type: " << name);
             ok = false;
         }
         else {
@@ -401,7 +405,7 @@ bool CDataTypeModule::CheckNames()
         ITERATE ( list<string>, t, imp.types ) {
             const string& name = *t;
             if ( m_LocalTypes.find(name) != m_LocalTypes.end() ) {
-                ERR_POST(Warning <<
+                ERR_POST_X(2, Warning <<
                          "import conflicts with local definition: " << name);
                 ok = false;
                 continue;
@@ -409,7 +413,7 @@ bool CDataTypeModule::CheckNames()
             pair<TImportsByName::iterator, bool> ins =
                 m_ImportedTypes.insert(TImportsByName::value_type(name, module));
             if ( !ins.second ) {
-                ERR_POST(Warning << "duplicated import: " << name);
+                ERR_POST_X(3, Warning << "duplicated import: " << name);
                 ok = false;
                 continue;
             }
