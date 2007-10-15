@@ -404,6 +404,7 @@ special  CAL10024           embl_tpa_prot
 special  CAL36432-CAL36433  embl_tpa_prot
 special  CAL41938-CAL41942  embl_tpa_prot
 special  CAL43796-CAL43799  embl_tpa_prot
+special  CAL48250           embl_tpa_prot
 special  CAL48381-CAL48383  embl_tpa_prot
 special  CAL59562-CAL59577  embl_tpa_prot
 special  CAL63903-CAL63904  embl_tpa_prot
@@ -411,8 +412,13 @@ special  CAL64054-CAL64058  embl_tpa_prot
 special  CAL69054-CAL69118  embl_tpa_prot # '55 unassigned
 special  CAM06633           embl_tpa_prot
 special  CAM12311           embl_tpa_prot
+special  CAM31706-CAM31708  embl_tpa_prot
 special  CAM31891-CAM31896  embl_tpa_prot
+special  CAM32419           embl_tpa_prot
+special  CAM33450-CAM33457  embl_tpa_prot
+special  CAM33512-CAM33520  embl_tpa_prot
 special  CAM91227           embl_tpa_prot
+special  CAO03085-CAO03089  embl_tpa_prot
 # Err on the side of caution on as yet unassigned IDs, and hope that
 # there's not *too* much more backfilling.
-special  CAN13356-CZZ99999  unreserved_prot
+special  CAP09890-CZZ99999  unreserved_prot
