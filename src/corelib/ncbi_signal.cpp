@@ -133,24 +133,27 @@ void s_CSignal_SignalHandler(int signum)
 }
 
 
+CSignal::FSignalHandler CSignal::TrapSignal(int signum, FSignalHandler handler)
+{
+    if (signum) {
 #ifdef HAS_SIGACTION
-#  define SET_SIGNAL(SIGNAL, HANDLER) \
-    if (SIGNAL) { \
-        struct sigaction sig; \
-        memset(&sig, 0, sizeof(sig)); \
-        sig.sa_handler = HANDLER; \
-        sigaction(SIGNAL, &sig, NULL); \
-    }
+        struct sigaction sig;
+        memset(&sig, 0, sizeof(sig));
+        struct sigaction old_sig;
+        memset(&old_sig, 0, sizeof(old_sig));
+        sig.sa_handler = handler;
+        sigaction(signum, &sig, &old_sig);
+        return old_sig.sa_handler;
 #else
-#  define SET_SIGNAL(SIGNAL, HANDLER) \
-    if (SIGNAL) { \
-        signal(SIGNAL, HANDLER); \
-    }
+        return signal(signum, handler);
 #endif
+    }
+}
+
 
 #define TRAP_SIGNAL(SIGMASK, SIGNAL) \
-    if (SIGNAL  &&  (signals & SIGMASK)) { \
-        SET_SIGNAL(SIGNAL, s_CSignal_SignalHandler); \
+    if (signals & SIGMASK) { \
+        TrapSignal(SIGNAL, s_CSignal_SignalHandler); \
         s_SignalMask |= SIGMASK; \
     }
 

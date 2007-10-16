@@ -1,5 +1,5 @@
-#ifndef NCBI_SIGNAL__HPP
-#define NCBI_SIGNAL__HPP
+#ifndef CORELIB___NCBI_SIGNAL__HPP
+#define CORELIB___NCBI_SIGNAL__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,6 +28,7 @@
  *
  * Authors:  Mike DiCuccio
  *
+ * File Description:
  *
  */
 
@@ -65,7 +66,6 @@ BEGIN_NCBI_SCOPE
 class NCBI_XNCBI_EXPORT CSignal
 {
 public:
-    /// Signal types.
     enum ESignal {
         eSignal_HUP   = (1<<1),     ///< Hangup
         eSignal_INT   = (1<<2),     ///< Interrupt
@@ -102,6 +102,19 @@ public:
     /// @sa TrapSignals, GetSignals
     static TSignalMask Reset(void);
 
+    /// Cross-platform wrapper for signal()/sigaction()
+    ///
+    /// This function provides a simple wrapper for the actual signal handling
+    /// function.
+    /// @param signum
+    ///   The signal to be trapped
+    /// @param handler
+    ///   The signal handler function
+    /// @return
+    ///   the previous signal handler
+    typedef void (*FSignalHandler)(int);
+    static FSignalHandler TrapSignal(int signum, FSignalHandler handler);
+
     /// Check that any of specified signals is received.
     ///
     /// @param signals
@@ -131,7 +144,5 @@ public:
 
 END_NCBI_SCOPE
 
-/* @} */
 
-
-#endif  /* NCBI_SIGNAL__HPP */
+#endif  // CORELIB___NCBI_SIGNAL__HPP
