@@ -48,6 +48,7 @@
 #include <bdb/bdb_blobcache.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_trans.hpp>
+#include <bdb/error_codes.hpp>
 
 #include <util/cache/icache_cf.hpp>
 #include <util/cache/icache_clean_thread.hpp>
@@ -55,6 +56,9 @@
 
 #include <time.h>
 #include <math.h>
+
+
+#define NCBI_USE_ERRCODE_X   Bdb_BlobCache
 
 
 BEGIN_NCBI_SCOPE
@@ -334,8 +338,8 @@ public:
             */
 
         } catch (exception & ex) {
-            ERR_POST("Exception in ~CBDB_CacheIWriter() : " << ex.what()
-                     << " " << m_BlobKey);
+            ERR_POST_X(1, "Exception in ~CBDB_CacheIWriter() : " << ex.what()
+                          << " " << m_BlobKey);
             // final attempt to avoid leaks
 //            delete[] m_Buffer;
             delete   m_OverflowFile;
@@ -1215,23 +1219,23 @@ void CBDB_Cache::Open(const string& cache_path,
         try {
             m_Env->JoinEnv(cache_path, CBDB_Env::eThreaded);
             if (m_Env->IsTransactional()) {
-                LOG_POST(Info <<
-                         "LC: '" << cache_name <<
-                         "' Joined transactional environment ");
+                LOG_POST_X(2, Info <<
+                           "LC: '" << cache_name <<
+                           "' Joined transactional environment ");
             } else {
-                LOG_POST(Info <<
-                         "LC: '" << cache_name <<
-                         "' Warning: Joined non-transactional environment ");
+                LOG_POST_X(3, Info <<
+                           "LC: '" << cache_name <<
+                           "' Warning: Joined non-transactional environment ");
             }
             m_JoinedEnv = true;
         }
         catch (CBDB_ErrnoException& err_ex)
         {
             if (err_ex.IsRecovery()) {
-                LOG_POST(Warning <<
-                         "LC: '" << cache_name <<
-                         "'Warning: DB_ENV returned DB_RUNRECOVERY code."
-                         " Running the recovery procedure.");
+                LOG_POST_X(4, Warning <<
+                           "LC: '" << cache_name <<
+                           "'Warning: DB_ENV returned DB_RUNRECOVERY code."
+                           " Running the recovery procedure.");
             }
             needs_recovery = true;
         }
@@ -1298,7 +1302,7 @@ void CBDB_Cache::Open(const string& cache_path,
             }
             break;
         case eNoTrans:
-            LOG_POST(Info << "BDB_Cache: Creating locking environment");
+            LOG_POST_X(5, Info << "BDB_Cache: Creating locking environment");
             m_Env->OpenWithLocks(cache_path);
             break;
         default:
@@ -1377,7 +1381,7 @@ void CBDB_Cache::Open(const string& cache_path,
     //
 
     {{
-    LOG_POST(Info << "Scanning cache content.");
+    LOG_POST_X(6, Info << "Scanning cache content.");
     
     m_CacheAttrDB->SetTransaction(0);
 
@@ -1444,7 +1448,7 @@ void CBDB_Cache::Open(const string& cache_path,
 
     if (m_RunPurgeThread) {
 # ifdef NCBI_THREADS
-       LOG_POST(Info << "Starting cache cleaning thread.");
+       LOG_POST_X(7, Info << "Starting cache cleaning thread.");
        m_PurgeThread.Reset(
            new CCacheCleanerThread(this, m_PurgeThreadDelay, 5));
        m_PurgeThread->Run();
@@ -1459,17 +1463,17 @@ void CBDB_Cache::Open(const string& cache_path,
                                        m_MempTrickle);
         }
 # else
-       LOG_POST(Warning <<
-                 "Cannot run background thread in non-MT configuration.");
+       LOG_POST_X(8, Warning <<
+                  "Cannot run background thread in non-MT configuration.");
        m_Env->TransactionCheckpoint();
 # endif
     }
 
     m_ReadOnly = false;
 
-    LOG_POST(Info <<
-             "LC: '" << cache_name <<
-             "' Cache mount at: " << cache_path);
+    LOG_POST_X(9, Info <<
+               "LC: '" << cache_name <<
+               "' Cache mount at: " << cache_path);
 
 }
 
@@ -1483,11 +1487,11 @@ void CBDB_Cache::StopPurgeThread()
 {
 # ifdef NCBI_THREADS
     if (!m_PurgeThread.Empty()) {
-        LOG_POST(Info << "Stopping cache cleaning thread...");
+        LOG_POST_X(10, Info << "Stopping cache cleaning thread...");
         StopPurge();
         m_PurgeThread->RequestStop();
         m_PurgeThread->Join();
-        LOG_POST(Info << "Stopped.");
+        LOG_POST_X(11, Info << "Stopped.");
     }
 # endif
 }
@@ -1525,9 +1529,9 @@ void CBDB_Cache::OpenReadOnly(const string&  cache_path,
 
     m_ReadOnly = true;
 
-    LOG_POST(Info <<
-             "LC: '" << cache_name <<
-             "' Cache mount read-only at: " << cache_path);
+    LOG_POST_X(12, Info <<
+               "LC: '" << cache_name <<
+               "' Cache mount read-only at: " << cache_path);
 }
 
 
@@ -1566,15 +1570,15 @@ void CBDB_Cache::Close()
         CleanLog();
 
         if (m_Env->CheckRemove()) {
-            LOG_POST(Info    <<
+            LOG_POST_X(13, Info <<
                         "LC: '" << m_Name << "' Unmounted. BDB ENV deleted.");
         } else {
-            LOG_POST(Info    << "LC: '" << m_Name
+            LOG_POST_X(14, Info << "LC: '" << m_Name
                                 << "' environment still in use.");
         }
     }
     catch (exception& ex) {
-        LOG_POST(Warning << "LC: '" << m_Name
+        LOG_POST_X(15, Warning << "LC: '" << m_Name
                          << "' Exception in Close() " << ex.what()
                          << " (ignored.)");
     }
@@ -1825,7 +1829,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
 
             ret = m_CacheAttrDB->Insert();
             if (ret != eBDB_Ok) {
-                LOG_POST(Error << "Failed to insert BLOB attributes " 
+                LOG_POST_X(16, Error << "Failed to insert BLOB attributes " 
                                << key << " " << version << " " << subkey);
             } else {
                 m_CacheIdIDX->blob_id = blob_id;
@@ -1835,7 +1839,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
 
                 ret = m_CacheIdIDX->Insert();
                 if (ret != eBDB_Ok) {
-                    LOG_POST(Error << "Failed to insert BLOB id index " 
+                    LOG_POST_X(17, Error << "Failed to insert BLOB id index " 
                                    << key << " " << version << " " << subkey);
                 }            
             }
@@ -1869,7 +1873,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
                                     CBDB_RawFile::eThrowOnError);
         }
         catch (CBDB_Exception& ex) {
-            LOG_POST(Error << "Cannot delete BLOB from split store " 
+            LOG_POST_X(18, Error << "Cannot delete BLOB from split store " 
                            << ex.what());
             throw;
         }
@@ -1993,7 +1997,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
                                               CBDB_RawFile::eThrowOnError);
                 }
                 catch (CBDB_Exception& ex) {
-                    LOG_POST(Error << "Cannot delete BLOB from split store " 
+                    LOG_POST_X(19, Error << "Cannot delete BLOB from split store " 
                                    << ex.what());
                     throw;
                 }
@@ -3656,7 +3660,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
             if (ex.IsRecovery()) {  // serious stuff! need to quit
                 throw;
             }
-            LOG_POST(Error
+            LOG_POST_X(20, Error
                 <<  "Purge suppressed exception when deleting BLOB "
                 << ex.what());
             if (m_Monitor && m_Monitor->IsActive()) {
@@ -3665,7 +3669,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
             
         }
         catch(exception& ex) {
-            LOG_POST(Error 
+            LOG_POST_X(21, Error 
                 <<  "Purge suppressed exception when deleting BLOB "
                 << ex.what());
             if (m_Monitor && m_Monitor->IsActive()) {
@@ -3959,7 +3963,7 @@ purge_start:
                     if (ex.IsRecovery()) {  // serious stuff! need to quit
                         throw;
                     }
-                    LOG_POST(Error
+                    LOG_POST_X(22, Error
                         <<  "Purge suppressed exception when deleting BLOB "
                         << ex.what());
                     if (m_Monitor && m_Monitor->IsActive()) {
@@ -3968,7 +3972,7 @@ purge_start:
                     
                 }
                 catch(exception& ex) {
-                    LOG_POST(Error 
+                    LOG_POST_X(23, Error 
                         <<  "Purge suppressed exception when deleting BLOB "
                         << ex.what());
                     if (m_Monitor && m_Monitor->IsActive()) {
@@ -3991,13 +3995,13 @@ purge_start:
 
         bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
         if (purge_stop) {
-            LOG_POST(Info << "BDB Cache: Stopping Purge execution.");
+            LOG_POST_X(24, Info << "BDB Cache: Stopping Purge execution.");
             return;
         }
 
         EvaluateTimeLine(&scan_interrupted);
         if (scan_interrupted) {
-            LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
+            LOG_POST_X(25, Warning << "BDB Cache: Stopping Purge execution.");
             return;
         }
 
@@ -4180,7 +4184,7 @@ void CBDB_Cache::Verify(const string&  cache_path,
                     DB_CREATE | DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON);
     }
 
-    LOG_POST("Cache location: " + string(cache_path));
+    LOG_POST_X(26, "Cache location: " + string(cache_path));
 
     string cache_blob_db_name =
        string("lcs_") + string(cache_name) + string("_blob")+ string(".db");
@@ -4193,7 +4197,7 @@ void CBDB_Cache::Verify(const string&  cache_path,
     string bak = m_Path + attr_db_name + ".bak";
     FILE* fl = fopen(bak.c_str(), "wb");
 
-    LOG_POST("Running verification for: " + attr_db_name);
+    LOG_POST_X(27, "Running verification for: " + attr_db_name);
     m_CacheAttrDB->Verify(attr_db_name.c_str(), 0, fl);
     delete m_CacheAttrDB; m_CacheAttrDB = 0;
 
@@ -4205,7 +4209,7 @@ void CBDB_Cache::Verify(const string&  cache_path,
         bool deleted = m_Env->Remove();
 
         if (!deleted)
-            LOG_POST("Cannot delete the environment (it is busy by another process)");
+            LOG_POST_X(28, "Cannot delete the environment (it is busy by another process)");
     }
     delete m_Env; m_Env = 0;
 }
@@ -4352,7 +4356,7 @@ void CBDB_Cache::x_TruncateDB()
     m_BLOB_SplitStore->Save();
 
 
-    LOG_POST(Info << "CBDB_BLOB_Cache:: cache database truncated");
+    LOG_POST_X(29, Info << "CBDB_BLOB_Cache:: cache database truncated");
     m_CacheAttrDB->Truncate();
 
     CDir dir(m_Path);
@@ -4438,8 +4442,8 @@ void CBDB_Cache::x_DropOverflow(const string&  key,
         s_MakeOverflowFileName(path, m_Path, GetName(), key, version, subkey);
         x_DropOverflow(path);
     } catch (exception& ex) {  
-        ERR_POST("Blob Store: Cannot remove file: " << path 
-                 << " " << ex.what());
+        ERR_POST_X(30, "Blob Store: Cannot remove file: " << path 
+                   << " " << ex.what());
     }
 }
 
@@ -4451,8 +4455,8 @@ void CBDB_Cache::x_DropOverflow(const string&  file_path)
             entry.Remove();
         }
     } catch (exception& ex) {  
-        ERR_POST("Blob Store: Cannot remove file: " << file_path 
-                 << " " << ex.what());
+        ERR_POST_X(31, "Blob Store: Cannot remove file: " << file_path 
+                   << " " << ex.what());
     }
 }
 

@@ -46,7 +46,7 @@
 
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_cursor.hpp>
-
+#include <bdb/error_codes.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -437,8 +437,8 @@ CBDB_ExtBlobStore<TBV>::~CBDB_ExtBlobStore()
         } 
         catch (std::exception& ex)
         {
-            LOG_POST(Error <<
-                    "Exception in ~CBDB_ExtBlobStore " << ex.what());
+            LOG_POST_XX(Bdb_Blob, 1, Error <<
+                        "Exception in ~CBDB_ExtBlobStore " << ex.what());
         }
     }
     delete m_AttrContainer;

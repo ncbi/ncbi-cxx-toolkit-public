@@ -33,7 +33,11 @@
 #include <corelib/ncbifile.hpp>
 #include <bdb/bdb_util.hpp>
 #include <bdb/bdb_env.hpp>
+#include <bdb/error_codes.hpp>
 #include <util/strsearch.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Bdb_Util
 
 BEGIN_NCBI_SCOPE
 
@@ -179,10 +183,10 @@ void s_LogEnvParam(const string& param_name,
                    const T& param_value,
                    const string& units = kEmptyStr)
 {
-    LOG_POST(Info
-             << setw(20) << param_name
-             << " : "
-             << param_value << units);
+    LOG_POST_X(1, Info
+               << setw(20) << param_name
+               << " : "
+               << param_value << units);
 }
 
 /// Log a parameter in a human-readable format
@@ -192,10 +196,10 @@ static
 void s_LogEnvParam(const string& param_name,
                    const bool& param_value)
 {
-    LOG_POST(Info
-             << setw(20) << param_name
-             << " : "
-             << (param_value ? "true" : "false"));
+    LOG_POST_X(2, Info
+               << setw(20) << param_name
+               << " : "
+               << (param_value ? "true" : "false"));
 }
 
 

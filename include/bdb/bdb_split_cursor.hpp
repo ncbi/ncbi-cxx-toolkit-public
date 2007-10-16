@@ -35,6 +35,7 @@
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_env.hpp>
+#include <bdb/error_codes.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -205,7 +206,8 @@ CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::x_NextVolume()
         m_Volume->SetEnv(*m_Env);
     }
 
-    LOG_POST(Info << "CBDB_SplitCursor::x_NextVolume(): opening: " << path);
+    LOG_POST_XX(Bdb_Cursor, 1, Info
+                << "CBDB_SplitCursor::x_NextVolume(): opening: " << path);
     m_Volume->Open(path, CBDB_RawFile::eReadOnly);
 
     m_Cursor.reset(new CBDB_FileCursor(*m_Volume));

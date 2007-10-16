@@ -36,6 +36,7 @@
 #include <bdb/bdb_env.hpp>
 #include <bdb/bdb_trans.hpp>
 #include <bdb/bdb_checkpoint_thread.hpp>
+#include <bdb/error_codes.hpp>
 
 #include <connect/server_monitor.hpp>
 
@@ -52,6 +53,8 @@
     #endif
 #endif
 
+
+#define NCBI_USE_ERRCODE_X   Bdb_Env
 
 
 BEGIN_NCBI_SCOPE
@@ -176,15 +179,15 @@ int CBDB_Env::x_Open(const char* db_home, int flags)
 
         if (!recover_requested) {
             fatal_recovery:
-            LOG_POST(Warning << "BDB_Env: Trying fatal recovery.");
+            LOG_POST_X(1, Warning << "BDB_Env: Trying fatal recovery.");
             if ((ret == DB_RUNRECOVERY) && (flags & DB_INIT_TXN)) {
                 recover_flag &= ~DB_RECOVER;
                 recover_flag = flags | DB_RECOVER_FATAL | DB_CREATE;
 
                 ret = m_Env->open(m_Env, db_home, recover_flag, 0664);
                 if (ret) {
-                    LOG_POST(Warning << 
-                             "Fatal recovery returned error code=" << ret);
+                    LOG_POST_X(2, Warning << 
+                               "Fatal recovery returned error code=" << ret);
                 }
             }
         }
@@ -446,7 +449,7 @@ void CBDB_Env::SetLogDir(const string& log_dir)
         CDir dir(log_dir);
         if (!dir.Exists()) {
             if (!dir.Create()) {
-                ERR_POST("Cannot create transaction log directory:" << log_dir);
+                ERR_POST_X(3, "Cannot create transaction log directory:" << log_dir);
                 return;
             }
         }
@@ -455,7 +458,7 @@ void CBDB_Env::SetLogDir(const string& log_dir)
     }
     catch(exception& ex)
     {
-        ERR_POST("Cannot set transaction log directory:" << ex.what());
+        ERR_POST_X(4, "Cannot set transaction log directory:" << ex.what());
     }
 }
 
@@ -634,7 +637,7 @@ void CBDB_Env::CleanLog()
 
 	if (nm_list != NULL) {
         for (char** file = nm_list; *file != NULL; ++file) {
-            LOG_POST(Info << "BDB_Env: Removing LOG file: " << *file);
+            LOG_POST_X(5, Info << "BDB_Env: Removing LOG file: " << *file);
             CDirEntry de(*file);
             de.Remove();
         }
@@ -1000,14 +1003,14 @@ void CBDB_Env::RunBackgroundWriter(TBackgroundFlags flags,
                                    unsigned err_max)
 {
 # ifdef NCBI_THREADS
-    LOG_POST(Info << "Starting BDB transaction checkpoint thread.");
+    LOG_POST_X(6, Info << "Starting BDB transaction checkpoint thread.");
     m_CheckThread.Reset(
         new CBDB_CheckPointThread(*this, memp_trickle, thread_delay, 5));
     m_CheckThread->SetMaxErrors(err_max);
     m_CheckThread->SetWorkFlag(flags);
     m_CheckThread->Run();
 # else
-    LOG_POST(Warning <<
+    LOG_POST_X(7, Warning <<
      "Cannot run BDB transaction checkpoint thread in non-MT configuration.");
 # endif
 }
@@ -1028,10 +1031,10 @@ void CBDB_Env::StopBackgroundWriterThread()
 {
 # ifdef NCBI_THREADS
     if (!m_CheckThread.Empty()) {
-        LOG_POST(Info << "Stopping BDB transaction checkpoint thread...");
+        LOG_POST_X(8, Info << "Stopping BDB transaction checkpoint thread...");
         m_CheckThread->RequestStop();
         m_CheckThread->Join();
-        LOG_POST(Info << "BDB transaction checkpoint thread stopped.");
+        LOG_POST_X(9, Info << "BDB transaction checkpoint thread stopped.");
     }
 # endif
 }

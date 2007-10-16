@@ -33,8 +33,12 @@
 
 #include <bdb/bdb_checkpoint_thread.hpp>
 #include <bdb/bdb_env.hpp>
+#include <bdb/error_codes.hpp>
 
 #include <connect/server_monitor.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Bdb_Checkpoint
 
 BEGIN_NCBI_SCOPE
 
@@ -57,7 +61,7 @@ CBDB_CheckPointThread::CBDB_CheckPointThread(CBDB_Env& env,
 
 CBDB_CheckPointThread::~CBDB_CheckPointThread()
 {
-//    LOG_POST("~CBDB_CheckPointThread()");
+//    LOG_POST_X(1, "~CBDB_CheckPointThread()");
 }
 
 
@@ -79,8 +83,8 @@ void CBDB_CheckPointThread::DoJob(void)
             int nwrotep = 0;
             m_Env.MempTrickle(m_MempTrickle, &nwrotep);
             if (nwrotep) {
-                LOG_POST(Info << "CBDB_CheckPointThread::DoJob(): trickled "
-                         << nwrotep << " pages");
+                LOG_POST_X(2, Info << "CBDB_CheckPointThread::DoJob(): trickled "
+                              << nwrotep << " pages");
             }
         }
         if (m_Flags & CBDB_Env::eBackground_DeadLockDetect) {
@@ -97,16 +101,16 @@ void CBDB_CheckPointThread::DoJob(void)
             RequestStop();
             string msg ="Fatal Berkeley DB error: DB_RUNRECOVERY." 
                         " Checkpoint thread has been stopped.";
-            LOG_POST(Error << msg);
+            LOG_POST_X(3, Error << msg);
         } else {
-            LOG_POST(Error << "Error in checkpoint thread(supressed) " 
-                            << ex.what());
+            LOG_POST_X(4, Error << "Error in checkpoint thread(supressed) " 
+                                << ex.what());
         }
 
         if (m_ErrCnt > m_MaxErrors) {
             RequestStop();
-            LOG_POST(Error << 
-                     "Checkpoint thread has been stopped (too many errors)");
+            LOG_POST_X(5, Error << 
+                       "Checkpoint thread has been stopped (too many errors)");
         }
     }
     catch(exception& ex)
@@ -114,13 +118,13 @@ void CBDB_CheckPointThread::DoJob(void)
         if (m_MaxErrors) {
             ++m_ErrCnt;            
         }
-        LOG_POST(Error << "Error in checkpoint thread: " 
-                        << ex.what());
+        LOG_POST_X(6, Error << "Error in checkpoint thread: " 
+                            << ex.what());
 
         if (m_ErrCnt > m_MaxErrors) {
             RequestStop();
-            LOG_POST(Error << 
-                     "Checkpoint thread has been stopped (too many errors)");
+            LOG_POST_X(7, Error << 
+                       "Checkpoint thread has been stopped (too many errors)");
         }
     }
 }

@@ -33,6 +33,7 @@
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_env.hpp>
 #include <bdb/bdb_trans.hpp>
+#include <bdb/error_codes.hpp>
 
 #include <db.h>
 
@@ -45,6 +46,9 @@
         #define HAVE_GET_MPF
     #endif
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Bdb_File
 
 BEGIN_NCBI_SCOPE
 
@@ -244,7 +248,7 @@ void CBDB_RawFile::SetCompressor(ICompression* compressor, EOwnership own)
 
 void CBDB_RawFile::x_Close(EIgnoreError close_mode)
 {
-    LOG_POST(Info << "Closing: " << m_FileName);
+    LOG_POST_X(1, Info << "Closing: " << m_FileName);
     if (m_FileName.empty())
         return;
 
@@ -262,14 +266,14 @@ void CBDB_RawFile::x_Close(EIgnoreError close_mode)
                 m_Env->LsnResetForMemLog(m_FileName.c_str());
         } else {
             if (ret != 0) {
-                ERR_POST("Error when closing " << m_FileName);
+                ERR_POST_X(2, "Error when closing " << m_FileName);
             } else {
                 try {
                     if (m_Env)
                         m_Env->LsnResetForMemLog(m_FileName.c_str());
                 } catch (CBDB_Exception& ex) {
-                    ERR_POST("Error " << ex.what() << " resetting LSN for "
-                             << m_FileName);
+                    ERR_POST_X(3, "Error " << ex.what() << " resetting LSN for "
+                                  << m_FileName);
                 }
             }
         }
@@ -439,23 +443,23 @@ void CBDB_RawFile::CompactEx(FContinueCompact compact_callback,
         levels_removed += compact.compact_levels;
         pages_truncated += compact.compact_pages_truncated;
 
-        LOG_POST(Info << "CBDB_RawFile::Compact(): "
-                 << "round " << i + 1 << ": "
-                 << compact.compact_pages_examine << " pages examined / "
-                 << compact.compact_pages_free << " pages freed / "
-                 << compact.compact_levels << " levels removed / "
-                 << compact.compact_pages_truncated << " pages truncated");
+        LOG_POST_X(4, Info << "CBDB_RawFile::Compact(): "
+                   << "round " << i + 1 << ": "
+                   << compact.compact_pages_examine << " pages examined / "
+                   << compact.compact_pages_free << " pages freed / "
+                   << compact.compact_levels << " levels removed / "
+                   << compact.compact_pages_truncated << " pages truncated");
 
         if ( !compact_callback() ) {
             break;
         }
     }
 
-    LOG_POST(Info << "CBDB_RawFile::Compact(): "
-             << pages_examined << " pages examined / "
-             << pages_freed << " pages freed / "
-             << levels_removed << " levels removed / "
-             << pages_truncated << " pages truncated");
+    LOG_POST_X(5, Info << "CBDB_RawFile::Compact(): "
+               << pages_examined << " pages examined / "
+               << pages_freed << " pages freed / "
+               << levels_removed << " levels removed / "
+               << pages_truncated << " pages truncated");
 #endif
 }
 

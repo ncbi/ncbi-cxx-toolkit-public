@@ -35,6 +35,10 @@
 #include <bdb/bdb_volumes.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_trans.hpp>
+#include <bdb/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Bdb_Volumes
 
 BEGIN_NCBI_SCOPE
 
@@ -66,7 +70,7 @@ CBDB_Volumes::~CBDB_Volumes()
     } 
     catch (std::exception& ex)
     {
-        ERR_POST("Exception in ~CBDB_Volumes() " << ex.what());
+        ERR_POST_X(1, "Exception in ~CBDB_Volumes() " << ex.what());
     }    
 }
 
@@ -108,9 +112,9 @@ void CBDB_Volumes::Open(const string& dir_path)
         catch (CBDB_ErrnoException& err_ex)
         {
             if (err_ex.IsRecovery()) {
-                LOG_POST(Warning <<
-                         "'Warning: DB_ENV returned DB_RUNRECOVERY code."
-                         " Running the recovery procedure.");
+                LOG_POST_X(2, Warning <<
+                           "'Warning: DB_ENV returned DB_RUNRECOVERY code."
+                           " Running the recovery procedure.");
             }
             m_Env->OpenWithTrans(m_Path,
                                  CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
