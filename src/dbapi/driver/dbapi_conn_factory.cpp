@@ -32,7 +32,11 @@
 #include <dbapi/driver/dbapi_conn_factory.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <dbapi/driver/public.hpp>
+#include <dbapi/error_codes.hpp>
 #include <corelib/ncbiapp.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ConnFactory
 
 BEGIN_NCBI_SCOPE
 
@@ -377,14 +381,14 @@ CDBConnectionFactory::MakeValidConnection(
                 return NULL;
             }
         } catch (const CException& ex) {
-            ERR_POST(Warning << ex.ReportAll() << " when trying to connect to "
-                     << "server '" << conn_attr.srv_name << "' as user '"
-                     << conn_attr.user_name << "'");
+            ERR_POST_X(1, Warning << ex.ReportAll() << " when trying to connect to "
+                       << "server '" << conn_attr.srv_name << "' as user '"
+                       << conn_attr.user_name << "'");
             return NULL;
         } catch (...) {
-            ERR_POST(Warning << "Unknown exception when trying to connect to "
-                     << "server '" << conn_attr.srv_name << "' as user '"
-                     << conn_attr.user_name << "'");
+            ERR_POST_X(2, Warning << "Unknown exception when trying to connect to "
+                       << "server '" << conn_attr.srv_name << "' as user '"
+                       << conn_attr.user_name << "'");
             throw;
         }
     }

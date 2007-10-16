@@ -42,6 +42,7 @@
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include <algorithm>
 
@@ -51,6 +52,9 @@
 #else
 #  include <unistd.h>
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_CTLib
 
 
 BEGIN_NCBI_SCOPE
@@ -983,7 +987,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                 server_name = link->ServerName();
                 user_name = link->UserName();
             } else {
-                ERR_POST(Error << "Invalid value of ServerName." << CStackTrace());
+                ERR_POST_X(1, Error << "Invalid value of ServerName." << CStackTrace());
             }
         }
         else if (cs_config(context,
@@ -1015,7 +1019,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                     err_str << "SQL: " << msg->sqlstate << endl;
                 }
 
-                ERR_POST((string)CNcbiOstrstreamToString(err_str));
+                ERR_POST_X(2, (string)CNcbiOstrstreamToString(err_str));
             }
 
             return CS_SUCCEED;
@@ -1121,7 +1125,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                 server_name = link->ServerName();
                 user_name = link->UserName();
             } else {
-                ERR_POST(Error << "Invalid value of ServerName." << CStackTrace());
+                ERR_POST_X(3, Error << "Invalid value of ServerName." << CStackTrace());
             }
         }
         else if (cs_config(context, CS_GET,
@@ -1157,7 +1161,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
 
             err_str << msg->text << endl;
 
-            ERR_POST((string)CNcbiOstrstreamToString(err_str));
+            ERR_POST_X(4, (string)CNcbiOstrstreamToString(err_str));
 
             return CS_SUCCEED;
         }
@@ -1281,10 +1285,10 @@ CS_INT GetCtlibTdsVersion(int version)
     int fallback_version = (version == NCBI_CTLIB_TDS_VERSION) ?
         NCBI_CTLIB_TDS_FALLBACK_VERSION : NCBI_CTLIB_TDS_VERSION;
 
-    ERR_POST(Warning <<
-             "The version " << version << " of TDS protocol for "
-             "the DBAPI CTLib driver is not supported. Falling back to "
-             "the TDS protocol version " << fallback_version << ".");
+    ERR_POST_X(5, Warning <<
+               "The version " << version << " of TDS protocol for "
+               "the DBAPI CTLib driver is not supported. Falling back to "
+               "the TDS protocol version " << fallback_version << ".");
 
     return GetCtlibTdsVersion(fallback_version);
 }

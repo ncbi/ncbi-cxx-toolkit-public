@@ -36,8 +36,12 @@
 
 #include <dbapi/cache/dbapi_blob_cache.hpp>
 #include <dbapi/driver/drivers.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_CacheAdmin
 
 USING_NCBI_SCOPE;
 
@@ -139,13 +143,13 @@ int CDBAPI_CacheAdmin::Connect(const CArgs& args)
     IDataSource* ds = db_drv_man.CreateDs(drv_name);
 
     if (ds == 0) {
-        ERR_POST(Error << "Cannot init driver: " << drv_name);
+        ERR_POST_X(1, Error << "Cannot init driver: " << drv_name);
         return 1;
     }
 
     m_Conn.reset(ds->CreateConnection());
     if (m_Conn.get() == 0) {
-        ERR_POST("Cannot create connection. Driver: " << drv_name);
+        ERR_POST_X(2, "Cannot create connection. Driver: " << drv_name);
         return 1;
     }
 
@@ -194,7 +198,7 @@ int CDBAPI_CacheAdmin::Run(void)
         }
 
     } catch( CDB_Exception& dbe ) {
-        ERR_POST(dbe.what() << dbe.GetMsg());
+        ERR_POST_X(3, dbe.what() << dbe.GetMsg());
                  
     }
 

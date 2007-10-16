@@ -31,7 +31,11 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
+#include <dbapi/error_codes.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_DrvrExcepts
 
 
 BEGIN_NCBI_SCOPE
@@ -483,27 +487,27 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
 
     if (ex->GetSeverity() == eDiag_Info) {
         if ( m_Prefix.empty() ) {
-            ERR_POST(Severity(ex->GetSeverity()) << ex->GetMsg());
+            ERR_POST_X(1, Severity(ex->GetSeverity()) << ex->GetMsg());
         } else {
-            ERR_POST(Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
-                     ex->GetMsg());
+            ERR_POST_X(2, Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
+                          ex->GetMsg());
         }
     } else {
         if ( m_Prefix.empty() ) {
-            ERR_POST(Severity(ex->GetSeverity()) << ex->what() <<
-                     " SERVER: '" << ex->GetServerName() <<
-                     "' USER: '" << ex->GetUserName() << "'" <<
-                     (GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-                      GetExtraMsg()) << "'"
-                     );
+            ERR_POST_X(3, Severity(ex->GetSeverity()) << ex->what() <<
+                       " SERVER: '" << ex->GetServerName() <<
+                       "' USER: '" << ex->GetUserName() << "'" <<
+                       (GetExtraMsg().empty() ? "" : " CONTEXT: '" +
+                        GetExtraMsg()) << "'"
+                       );
         } else {
-            ERR_POST(Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
-                     ex->what() <<
-                     " SERVER: '" << ex->GetServerName() <<
-                     "' USER: '" << ex->GetUserName() << "'" <<
-                     (GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-                      GetExtraMsg()) << "'"
-                     );
+            ERR_POST_X(4, Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
+                       ex->what() <<
+                       " SERVER: '" << ex->GetServerName() <<
+                       "' USER: '" << ex->GetUserName() << "'" <<
+                       (GetExtraMsg().empty() ? "" : " CONTEXT: '" +
+                        GetExtraMsg()) << "'"
+                       );
         }
     }
 

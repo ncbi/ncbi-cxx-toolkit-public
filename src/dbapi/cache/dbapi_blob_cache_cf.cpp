@@ -31,9 +31,13 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/cache/dbapi_blob_cache.hpp>
+#include <dbapi/error_codes.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/plugin_manager_store.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ICache
 
 BEGIN_NCBI_SCOPE
 
@@ -118,7 +122,7 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
 
     const string& tree_id = params->GetKey();
     if (NStr::CompareNocase(tree_id, kDBAPI_BlobCacheDriverName) != 0) {
-        LOG_POST(Warning
+        LOG_POST_X(2, Warning
           << "ICache class factory: Top level Id does not match driver name."
           << " Id = " << tree_id << " driver=" << kDBAPI_BlobCacheDriverName
           << " parameters ignored." );

@@ -47,9 +47,13 @@
 #include <util/smalldns.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
+#include <dbapi/error_codes.hpp>
 #include <util/random_gen.hpp>
 
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_SampleBase
 
 BEGIN_NCBI_SCOPE
 
@@ -218,9 +222,9 @@ CDbapiSampleApp::Run()
     if (UseSvcMapper()) {
         DBLB_INSTALL_DEFAULT();
 #ifdef HAVE_LIBCONNEXT
-        LOG_POST("Using load-balancer service to server mapper ...");
+        LOG_POST_X(1, "Using load-balancer service to server mapper ...");
 #else
-        ERR_POST("Load balancing requested, but not available in this build");
+        ERR_POST_X(2, "Load balancing requested, but not available in this build");
 #endif
     }
 
@@ -291,8 +295,8 @@ CDbapiSampleApp::GetDriverContext(void)
                                      &GetDatabaseParameters()));
 
     if ( !m_DriverContext.get() ) {
-        ERR_POST(Fatal << "Cannot load driver: " << GetDriverName() << " ["
-                 << err_msg << "] ");
+        ERR_POST_X(3, Fatal << "Cannot load driver: " << GetDriverName() << " ["
+                      << err_msg << "] ");
     }
 
     return *m_DriverContext;
@@ -326,8 +330,8 @@ CDbapiSampleApp::CreateConnection(IConnValidator*                  validator,
     }
 
     if ( !conn.get() ) {
-        ERR_POST(Fatal << "Cannot open connection to the server: "
-                 << GetServerName());
+        ERR_POST_X(4, Fatal << "Cannot open connection to the server: "
+                      << GetServerName());
     }
 
     // Print database name
@@ -345,7 +349,7 @@ CDbapiSampleApp::CreateConnection(IConnValidator*                  validator,
             if ( result->Fetch() ) {
                 CDB_LongChar v;
                 result->GetItem(&v);
-                LOG_POST("Connected to the server '" << v.Value() << "'");
+                LOG_POST_X(5, "Connected to the server '" << v.Value() << "'");
             }
         }
     }

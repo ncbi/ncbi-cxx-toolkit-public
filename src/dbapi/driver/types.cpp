@@ -37,8 +37,12 @@
 #include "memory_store.hpp"
 
 #include <dbapi/driver/types.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include <string.h>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_DrvrTypes
 
 
 BEGIN_NCBI_SCOPE
@@ -459,8 +463,8 @@ static
 void CheckStringTruncation(size_t cur_len, size_t max_len)
 {
     if (cur_len > max_len) {
-        ERR_POST(Warning << "String of size " << cur_len <<
-                 " was truncated to " << max_len << " character(s)");
+        ERR_POST_X(1, Warning << "String of size " << cur_len <<
+                      " was truncated to " << max_len << " character(s)");
     }
 }
 
@@ -470,8 +474,8 @@ static
 void CheckBinaryTruncation(size_t cur_len, size_t max_len)
 {
     if (cur_len > max_len) {
-        ERR_POST(Warning << "Binary data of size " << cur_len <<
-                 " was truncated to " << max_len << " byte(s)");
+        ERR_POST_X(2, Warning << "Binary data of size " << cur_len <<
+                      " was truncated to " << max_len << " byte(s)");
     }
 }
 

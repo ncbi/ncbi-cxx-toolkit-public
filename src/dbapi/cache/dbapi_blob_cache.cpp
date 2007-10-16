@@ -31,11 +31,15 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/cache/dbapi_blob_cache.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbifile.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ICache
 
 
 BEGIN_NCBI_SCOPE
@@ -333,7 +337,7 @@ public:
                 x_Flush();
             }
         } catch(exception& ex) {
-            LOG_POST(ex.what());
+            LOG_POST_X(1, ex.what());
         }
 
         delete [] m_Buffer;

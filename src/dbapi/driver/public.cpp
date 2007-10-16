@@ -34,6 +34,10 @@
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/impl/dbapi_impl_result.hpp>
 #include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_DataServer
 
 
 BEGIN_NCBI_SCOPE
@@ -802,8 +806,8 @@ CAutoTrans::~CAutoTrans(void)
         if (curr_TranCount >= m_TranCount) {
             if (curr_TranCount > m_TranCount) {
                 // A nested transaction is started and not finished yet ...
-                ERR_POST(Warning << "A nested transaction was started and "
-                                    "it is not finished yet.");
+                ERR_POST_X(1, Warning << "A nested transaction was started and "
+                                         "it is not finished yet.");
             }
 
             // Assume that we are on the same level of transaction nesting.
