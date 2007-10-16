@@ -58,6 +58,7 @@
 #define vsnprintf        _vsnprintf
 #define HAVE_WINDOWS_H   1
 #define HAVE_WSTRING     1
+#define HAVE_SIGNAL_H    1
 
 #define NCBI_DEPRECATED __declspec(deprecated)
 #define NCBI_FORCEINLINE __forceinline
