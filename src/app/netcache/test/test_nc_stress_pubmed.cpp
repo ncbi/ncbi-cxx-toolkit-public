@@ -4,8 +4,9 @@
 #include <corelib/ncbi_system.hpp>
 #include <connect/services/netcache_client.hpp>
 
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
+#if defined(HAVE_SIGNAL_H)  &&  defined(NCBI_OS_UNIX)
+#  define USE_SIGNAL
+#  include <signal.h>
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -27,7 +28,7 @@ USING_NCBI_SCOPE;
 
 static void PrintAllStat();
 
-#ifdef HAVE_SIGNAL_H
+#ifdef USE_SIGNAL
 /*******************************************************
  * Signals
  *******************************************************/
@@ -783,7 +784,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-#ifdef HAVE_SIGNAL_H
+#ifdef USE_SIGNAL
 	SetSigHandlers();
 #endif
 
