@@ -1227,9 +1227,10 @@ string GetDefaultLogLocation(CNcbiApplication& app)
     if ( !web_dir.empty() ) {
         return log_path + reg.GetString(kWebDirToPort, web_dir, kEmptyStr);
     }
-    // Could not find a valid web-dir entry, use port or 'srv'
+    // Could not find a valid web-dir entry, use /log/port or empty string
+    // to try /log/srv later.
     const char* port = ::getenv("SERVER_PORT");
-    return port ? log_path + string(port) : log_path + "srv";
+    return port ? log_path + string(port) : kEmptyStr;
 }
 
 
@@ -1390,10 +1391,19 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                 string log_base =
                     CFile(app->GetProgramExecutablePath()).GetBase() + ".log";
                 string log_name;
-                // Try /log/<port>
                 if ( s_UseRootLog ) {
-                    log_name = CFile::ConcatPath(
-                        GetDefaultLogLocation(*app), log_base);
+                    string def_log_dir = GetDefaultLogLocation(*app);
+                    // Try /log/<port>
+                    if ( !def_log_dir.empty() ) {
+                        log_name = CFile::ConcatPath(def_log_dir, log_base);
+                        if ( SetLogFile(log_name, eDiagFile_All) ) {
+                            log_switched = true;
+                            merge_lines = true;
+                            break;
+                        }
+                    }
+                    // Try /log/srv if port is unknown or not writable
+                    log_name = CFile::ConcatPath("/log/srv", log_base);
                     if ( SetLogFile(log_name, eDiagFile_All) ) {
                         log_switched = true;
                         merge_lines = true;
