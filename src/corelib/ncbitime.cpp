@@ -1666,7 +1666,7 @@ bool CTime::operator< (const CTime& t) const
         return true;
     if (Second() > tmp.Second())
         return false;
-    if (NanoSecond() > tmp.NanoSecond())
+    if (NanoSecond() < tmp.NanoSecond())
         return true;
 
     return false;
