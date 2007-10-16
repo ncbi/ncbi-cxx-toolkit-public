@@ -570,14 +570,14 @@ sub DoMerge
         "'$SourcePath' into '$TargetPath'.", @BranchPaths)
 }
 
-sub MergeDown
+sub MergeDownInto
 {
     my $Self = shift;
 
     return $Self->DoMerge('down', @_)
 }
 
-sub MergeUp
+sub MergeUpFrom
 {
     my $Self = shift;
 
