@@ -102,19 +102,6 @@ public:
     /// @sa TrapSignals, GetSignals
     static TSignalMask Reset(void);
 
-    /// Cross-platform wrapper for signal()/sigaction()
-    ///
-    /// This function provides a simple wrapper for the actual signal handling
-    /// function.
-    /// @param signum
-    ///   The signal to be trapped
-    /// @param handler
-    ///   The signal handler function
-    /// @return
-    ///   the previous signal handler
-    typedef void (*FSignalHandler)(int);
-    static FSignalHandler TrapSignal(int signum, FSignalHandler handler);
-
     /// Check that any of specified signals is received.
     ///
     /// @param signals
