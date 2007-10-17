@@ -43,15 +43,15 @@
 BEGIN_NCBI_SCOPE
 
 NCBI_PARAM_DECL(bool,   service_connector, use_linger2);
-NCBI_PARAM_DEF (bool,   service_connector, use_linger2, false);
+//NCBI_PARAM_DEF (bool,   service_connector, use_linger2, false);
 typedef NCBI_PARAM_TYPE(service_connector, use_linger2) TServConn_UserLinger2;
 
 NCBI_PARAM_DECL(double, service_connector, communication_timeout);
-NCBI_PARAM_DEF (double, service_connector, communication_timeout, 12.0);
+//NCBI_PARAM_DEF (double, service_connector, communication_timeout, 12.0);
 typedef NCBI_PARAM_TYPE(service_connector, communication_timeout) TServConn_CommTimeout;
 
 NCBI_PARAM_DECL(unsigned int, service_connector, connection_max_retries);
-NCBI_PARAM_DEF (unsigned int, service_connector, connection_max_retries, 10);
+//NCBI_PARAM_DEF (unsigned int, service_connector, connection_max_retries, 10);
 typedef NCBI_PARAM_TYPE(      service_connector, connection_max_retries) TServConn_ConnMaxRetries;
 
 static bool s_DefaultCommTimeout_Initialized = false;

@@ -80,20 +80,24 @@ void NCBI_XCONNECT_EXPORT DiscoverLBServices(const string& service_name,
 /************************************************************************/
 
 NCBI_PARAM_DECL(double,  service_connector, communication_timeout);
-//NCBI_PARAM_DEF (double,  service_connector, communication_timeout, 12.0);
+NCBI_PARAM_DEF (double,  service_connector, communication_timeout, 12.0);
 typedef NCBI_PARAM_TYPE(service_connector, communication_timeout) TServConn_CommTimeout;
 
 NCBI_PARAM_DECL(bool,   service_connector, use_linger2);
-//NCBI_PARAM_DEF (bool,   service_connector, use_linger2, false);
+NCBI_PARAM_DEF (bool,   service_connector, use_linger2, false);
 typedef NCBI_PARAM_TYPE(service_connector, use_linger2) TServConn_UserLinger2;
 
 NCBI_PARAM_DECL(unsigned int, service_connector, connection_max_retries);
-//NCBI_PARAM_DEF (unsigned int, service_connector, connection_max_retries, 10);
+NCBI_PARAM_DEF (unsigned int, service_connector, connection_max_retries, 10);
 typedef NCBI_PARAM_TYPE(      service_connector, connection_max_retries) TServConn_ConnMaxRetries;
 
 NCBI_PARAM_DECL(int,    service_connector, max_find_lbname_retries);
 NCBI_PARAM_DEF (int,    service_connector, max_find_lbname_retries, 3);
 typedef NCBI_PARAM_TYPE(service_connector, max_find_lbname_retries) TServConn_MaxFineLBNameRetries;
+
+NCBI_PARAM_DECL(int,    service_connector, max_connectors_pool_size);
+NCBI_PARAM_DEF (int,    service_connector, max_connectors_pool_size, 0); // unlimited 
+typedef NCBI_PARAM_TYPE(service_connector, max_connectors_pool_size) TServConn_MaxConnPoolSize;
 
 static bool s_DefaultCommTimeout_Initialized = false;
 static STimeout s_DefaultCommTimeout;
@@ -349,7 +353,7 @@ CNetServerConnectors::CNetServerConnectors(const string& host, unsigned short po
       m_MaxRetries(TServConn_ConnMaxRetries::GetDefault()), m_ServerConnectorFactory(*this),
       m_PermanentConnection(eDefault)
 {
-    m_ServerConnectorPool.reset(new TConnectorPool(0, m_ServerConnectorFactory));
+    m_ServerConnectorPool.reset(new TConnectorPool(TServConn_MaxConnPoolSize::GetDefault(), m_ServerConnectorFactory));
 }
 void CNetServerConnectors::x_TakeConnector(CNetServerConnector* connector)
 {
