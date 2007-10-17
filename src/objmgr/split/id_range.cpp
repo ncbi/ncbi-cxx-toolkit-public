@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/split/id_range.hpp>
+#include <objmgr/error_codes.hpp>
 
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -43,6 +44,9 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Packed_seg.hpp>
 #include <objects/seqres/Seq_graph.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_IdRange
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -245,15 +249,15 @@ void CSeqsRange::Add(const CDense_seg& denseg)
     size_t numseg = denseg.GetNumseg();
     // claimed dimension may not be accurate :-/
     if ( numseg != denseg.GetLens().size() ) {
-        ERR_POST(Warning << "Invalid 'lens' size in denseg");
+        ERR_POST_X(1, Warning << "Invalid 'lens' size in denseg");
         numseg = min(numseg, denseg.GetLens().size());
     }
     if ( dim != denseg.GetIds().size() ) {
-        ERR_POST(Warning << "Invalid 'ids' size in denseg");
+        ERR_POST_X(2, Warning << "Invalid 'ids' size in denseg");
         dim = min(dim, denseg.GetIds().size());
     }
     if ( dim*numseg != denseg.GetStarts().size() ) {
-        ERR_POST(Warning << "Invalid 'starts' size in denseg");
+        ERR_POST_X(3, Warning << "Invalid 'starts' size in denseg");
         dim = min(dim*numseg, denseg.GetStarts().size()) / numseg;
     }
     CDense_seg::TStarts::const_iterator it_start = denseg.GetStarts().begin();
@@ -274,11 +278,11 @@ void CSeqsRange::Add(const CDense_diag& diag)
 {
     size_t dim = diag.GetDim();
     if ( dim != diag.GetIds().size() ) {
-        ERR_POST(Warning << "Invalid 'ids' size in dendiag");
+        ERR_POST_X(4, Warning << "Invalid 'ids' size in dendiag");
         dim = min(dim, diag.GetIds().size());
     }
     if ( dim != diag.GetStarts().size() ) {
-        ERR_POST(Warning << "Invalid 'starts' size in dendiag");
+        ERR_POST_X(5, Warning << "Invalid 'starts' size in dendiag");
         dim = min(dim, diag.GetStarts().size());
     }
     TSeqPos len = diag.GetLen();

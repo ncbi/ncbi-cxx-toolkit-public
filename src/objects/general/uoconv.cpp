@@ -37,6 +37,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/error_codes.hpp>
 
 #include <serial/objectiter.hpp>
 
@@ -45,6 +46,9 @@
 #else
 #  include <util/bitset/bmserial.h>
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Objects_UOConv
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -195,8 +199,8 @@ static void s_SetPrimitiveData(CUser_field& field, CConstObjectInfo obj)
     }
 
     case ePrimitiveValueOther:
-        ERR_POST(Warning
-                 << "s_SetPrimitiveData: ignoring ePrimitiveValueOther");
+        ERR_POST_X(1, Warning
+                   << "s_SetPrimitiveData: ignoring ePrimitiveValueOther");
         break;
     }
 }
@@ -237,8 +241,8 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                 data.SetFields().reserve(count);
                 break;
             case ePrimitiveValueOther:
-                ERR_POST(Warning << "s_SetContainerData:"
-                         " ignoring ePrimitiveValueOther");
+                ERR_POST_X(2, Warning << "s_SetContainerData:"
+                           " ignoring ePrimitiveValueOther");
                 break;
             }
         default:
@@ -314,8 +318,8 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                 break;
             }
             case ePrimitiveValueOther:
-                ERR_POST(Warning << "s_SetContainerData:"
-                         " ignoring ePrimitiveValueOther");
+                ERR_POST_X(3, Warning << "s_SetContainerData:"
+                           " ignoring ePrimitiveValueOther");
                 break;
             }
             break;
@@ -469,8 +473,8 @@ static void s_UnpackPrimitiveField(const TUFData& data, CObjectInfo obj)
     }
 
     case ePrimitiveValueOther:
-        ERR_POST(Warning << "s_UnpackPrimitiveField:"
-                 " ignoring ePrimitiveValueOther");
+        ERR_POST_X(4, Warning << "s_UnpackPrimitiveField:"
+                   " ignoring ePrimitiveValueOther");
         break;
     }
 }

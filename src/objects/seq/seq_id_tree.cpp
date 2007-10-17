@@ -31,7 +31,11 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <objects/error_codes.hpp>
 #include "seq_id_tree.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Objects_SeqIdMap
 
 
 BEGIN_NCBI_SCOPE
@@ -214,14 +218,14 @@ void CSeq_id_not_set_Tree::x_Unindex(const CSeq_id_Info* /*info*/)
 
 CSeq_id_Handle CSeq_id_not_set_Tree::FindInfo(const CSeq_id& /*id*/) const
 {
-    // LOG_POST(Warning << "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
+    // LOG_POST_X(1, Warning << "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
     return CSeq_id_Handle();
 }
 
 
 CSeq_id_Handle CSeq_id_not_set_Tree::FindOrCreate(const CSeq_id& /*id*/)
 {
-    // LOG_POST(Warning << "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
+    // LOG_POST_X(2, Warning << "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
     return CSeq_id_Handle();
 }
 
@@ -229,8 +233,8 @@ CSeq_id_Handle CSeq_id_not_set_Tree::FindOrCreate(const CSeq_id& /*id*/)
 void CSeq_id_not_set_Tree::FindMatch(const CSeq_id_Handle& /*id*/,
                                      TSeq_id_MatchList& /*id_list*/) const
 {
-    LOG_POST(Warning << "CSeq_id_Mapper::GetMatchingHandles() -- "
-             "uninitialized seq-id");
+    LOG_POST_X(3, Warning << "CSeq_id_Mapper::GetMatchingHandles() -- "
+               "uninitialized seq-id");
 }
 
 
@@ -243,8 +247,8 @@ void CSeq_id_not_set_Tree::FindMatchStr(string /*sid*/,
 void CSeq_id_not_set_Tree::FindReverseMatch(const CSeq_id_Handle& /*id*/,
                                             TSeq_id_MatchList& /*id_list*/)
 {
-    LOG_POST(Warning << "CSeq_id_Mapper::GetReverseMatchingHandles() -- "
-             "uninitialized seq-id");
+    LOG_POST_X(4, Warning << "CSeq_id_Mapper::GetReverseMatchingHandles() -- "
+               "uninitialized seq-id");
 }
 
 

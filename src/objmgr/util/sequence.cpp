@@ -76,10 +76,14 @@
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/error_codes.hpp>
 #include <util/strsearch.hpp>
 
 #include <list>
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_SeqUtil
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -295,7 +299,7 @@ int GetGiForAccession(const string& acc, CScope& scope)
         CSeq_id acc_id(acc);
         return GetId(acc_id, scope, eGetId_ForceGi).GetGi();
     } catch (CException& e) {
-         ERR_POST(Warning << e.what());
+         ERR_POST_X(2, Warning << e.what());
     }
 
     return 0;
@@ -307,7 +311,7 @@ int GetGiForId(const objects::CSeq_id& id, CScope& scope)
     try {
         return GetId(id, scope, eGetId_ForceGi).GetGi();
     } catch (CException& e) {
-         ERR_POST(Warning << e.what());
+         ERR_POST_X(3, Warning << e.what());
     }
 
     return 0;
@@ -326,7 +330,7 @@ string GetAccessionForGi
         return GetId(gi_id, scope, eGetId_ForceAcc).GetSeqId()->
             GetSeqIdString(with_version);
     } catch (CException& e) {
-        ERR_POST(Warning << e.what());
+        ERR_POST_X(4, Warning << e.what());
     }
 
     return kEmptyStr;
@@ -343,7 +347,7 @@ string GetAccessionForId(const objects::CSeq_id& id,
         return GetId(id, scope, eGetId_ForceAcc).GetSeqId()->
             GetSeqIdString(with_version);
     } catch (CException& e) {
-        ERR_POST(Warning << e.what());
+        ERR_POST_X(5, Warning << e.what());
     }
 
     return kEmptyStr;
@@ -379,9 +383,9 @@ CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
         }
         NON_CONST_ITERATE (SRelLoc::TRanges, it, rl.m_Ranges) {
             if (IsReverse((*it)->GetStrand())) {
-                ERR_POST(Warning
-                         << "SourceToProduct:"
-                         " parent and child have opposite orientations");
+                ERR_POST_X(6, Warning
+                           << "SourceToProduct:"
+                           " parent and child have opposite orientations");
             }
             (*it)->SetFrom(((*it)->GetFrom() - base_frame) / 3);
             (*it)->SetTo  (((*it)->GetTo()   - base_frame) / 3);
@@ -2049,9 +2053,9 @@ void x_Translate(const Container& seq,
     }
 
     if (mod) {
-        LOG_POST(Warning <<
-                 "translation of sequence whose length "
-                 "is not an even number of codons");
+        LOG_POST_X(7, Warning <<
+                   "translation of sequence whose length "
+                   "is not an even number of codons");
         for (k = 0;  k < mod;  ++k, ++start) {
             state = tbl.NextCodonState(state, *start);
         }
@@ -2628,14 +2632,14 @@ CRef<CSeq_loc> SRelLoc::Resolve(const CSeq_loc& new_parent, CScope* scope,
             new_parent.GetLabel(&label);
             try {
                 total_length = sequence::GetLength(new_parent, scope);
-                ERR_POST(Warning << "SRelLoc::Resolve: Relative position "
-                         << start << " exceeds length (" << total_length
-                         << ") of parent location " << label);
+                ERR_POST_X(8, Warning << "SRelLoc::Resolve: Relative position "
+                           << start << " exceeds length (" << total_length
+                           << ") of parent location " << label);
             } catch (CObjmgrUtilException) {
-                ERR_POST(Warning << "SRelLoc::Resolve: Relative position "
-                         << start
-                         << " exceeds length (?\?\?) of parent location "
-                         << label);
+                ERR_POST_X(9, Warning << "SRelLoc::Resolve: Relative position "
+                           << start
+                           << " exceeds length (?\?\?) of parent location "
+                           << label);
             }            
         }
     }

@@ -63,11 +63,15 @@
 #include <objects/seqres/Seq_graph.hpp>
 
 #include <objmgr/impl/prefetch_impl.hpp>
+#include <objmgr/error_codes.hpp>
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_param.hpp>
 
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_DataSource
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -134,7 +138,7 @@ void CDataSource::DropAllTSEs(void)
             int lock_counter = it->second->m_LockCounter.Get();
             int used_counter = m_StaticBlobs.FindLock(it->second)? 1: 0;
             if ( lock_counter != used_counter ) {
-                ERR_POST("CDataSource::DropAllTSEs: tse is locked");
+                ERR_POST_X(1, "CDataSource::DropAllTSEs: tse is locked");
             }
         }
         NON_CONST_ITERATE( TBlob_Map, it, m_Blob_Map ) {
@@ -320,14 +324,14 @@ void x_UnmapObject(Map& info_map, const Ref& ref, const Info& _DEBUG_ARG(info))
 void CDataSource::x_Map(CConstRef<CSeq_entry> obj, CTSE_Info* info)
 {
     x_MapObject(m_TSE_InfoMap, obj, Ref(info));
-    //LOG_POST(Warning << "CDataSource::x_MapTSE: " << m_TSE_InfoMap.size());
+    //LOG_POST_X(2, Warning << "CDataSource::x_MapTSE: " << m_TSE_InfoMap.size());
 }
 
 
 void CDataSource::x_Unmap(CConstRef<CSeq_entry> obj, CTSE_Info* info)
 {
     x_UnmapObject(m_TSE_InfoMap, obj, info);
-    //LOG_POST(Warning << "CDataSource::x_UnmapTSE: " << m_TSE_InfoMap.size());
+    //LOG_POST_X(3, Warning << "CDataSource::x_UnmapTSE: " << m_TSE_InfoMap.size());
 }
 
 

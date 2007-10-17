@@ -45,6 +45,10 @@
 #include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/synonyms.hpp>
+#include <objmgr/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_Scope
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -116,7 +120,7 @@ CTSE_Handle CScope::GetTSE_Handle(const CSeq_entry& entry,
 CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq,
                                        EMissing action)
 {
-    //ERR_POST_ONCE(Warning<<"CScope::GetBioseqHandle(CBioseq&) is deprecated");
+    //ERR_POST_X_ONCE(1, Warning<<"CScope::GetBioseqHandle(CBioseq&) is deprecated");
     return m_Impl->GetBioseqHandle(seq, action);
 }
 
@@ -144,7 +148,7 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id,
 CBioseq_set_Handle CScope::GetBioseq_setHandle(const CBioseq_set& seqset,
                                                EMissing action)
 {
-    //ERR_POST_ONCE(Warning<<"CScope::GetBioseq_setHandle(CBioseq_set&) is deprecated.");
+    //ERR_POST_X_ONCE(2, Warning<<"CScope::GetBioseq_setHandle(CBioseq_set&) is deprecated.");
     return m_Impl->GetBioseq_setHandle(seqset, action);
 }
 
@@ -152,7 +156,7 @@ CBioseq_set_Handle CScope::GetBioseq_setHandle(const CBioseq_set& seqset,
 CSeq_entry_Handle CScope::GetSeq_entryHandle(const CSeq_entry& entry,
                                              EMissing action)
 {
-    //ERR_POST_ONCE(Warning<<"CScope::GetSeq_entryHandle(CSeq_entry&) is deprecated.");
+    //ERR_POST_X_ONCE(3, Warning<<"CScope::GetSeq_entryHandle(CSeq_entry&) is deprecated.");
     return m_Impl->GetSeq_entryHandle(entry, action);
 }
 
@@ -160,7 +164,7 @@ CSeq_entry_Handle CScope::GetSeq_entryHandle(const CSeq_entry& entry,
 CSeq_annot_Handle CScope::GetSeq_annotHandle(const CSeq_annot& annot,
                                              EMissing action)
 {
-    //ERR_POST_ONCE(Warning<<"CScope::GetSeq_annotHandle(CSeq_annot&) is deprecated.");
+    //ERR_POST_X_ONCE(4, Warning<<"CScope::GetSeq_annotHandle(CSeq_annot&) is deprecated.");
     return m_Impl->GetSeq_annotHandle(annot, action);
 }
 
@@ -412,7 +416,7 @@ CSeq_annot_Handle CScope::AddSeq_annot(const CSeq_annot& annot,
 CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
                                               const CSeq_entry& tse)
 {
-    //ERR_POST_ONCE(Warning<<"GetBioseqHandleFromTSE(CSeq_entry) is deprecated: use handles.");
+    //ERR_POST_X_ONCE(5, Warning<<"GetBioseqHandleFromTSE(CSeq_entry) is deprecated: use handles.");
     return GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
 }
 
@@ -420,35 +424,35 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
 CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                               const CSeq_entry& tse)
 {
-    //ERR_POST_ONCE(Warning<<"GetBioseqHandleFromTSE(CSeq_entry) is deprecated: use handles.");
+    //ERR_POST_X_ONCE(6, Warning<<"GetBioseqHandleFromTSE(CSeq_entry) is deprecated: use handles.");
     return GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
 }
 
 
 void CScope::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
 {
-    //ERR_POST_ONCE(Warning<<"CScope::AttachEntry() is deprecated: use class CSeq_entry_EditHandle.");
+    //ERR_POST_X_ONCE(7, Warning<<"CScope::AttachEntry() is deprecated: use class CSeq_entry_EditHandle.");
     GetSeq_entryEditHandle(parent).SetSet().AttachEntry(entry);
 }
 
 
 void CScope::RemoveEntry(CSeq_entry& entry)
 {
-    //ERR_POST_ONCE(Warning<<"CScope::RemoveEntry() is deprecated: use class CSeq_entry_EditHandle.");
+    //ERR_POST_X_ONCE(8, Warning<<"CScope::RemoveEntry() is deprecated: use class CSeq_entry_EditHandle.");
     GetSeq_entryEditHandle(entry).Remove();
 }
 
 
 void CScope::AttachAnnot(CSeq_entry& parent, CSeq_annot& annot)
 {
-    //ERR_POST_ONCE(Warning<<"CScope::AttachAnnot() is deprecated: use class CSeq_annot_EditHandle.");
+    //ERR_POST_X_ONCE(9, Warning<<"CScope::AttachAnnot() is deprecated: use class CSeq_annot_EditHandle.");
     GetSeq_entryEditHandle(parent).AttachAnnot(annot);
 }
 
 
 void CScope::RemoveAnnot(CSeq_entry& parent, CSeq_annot& annot)
 {
-    //ERR_POST_ONCE(Warning<<"CScope::RemoveAnnot() is deprecated: use class CSeq_annot_EditHandle.");
+    //ERR_POST_X_ONCE(10, Warning<<"CScope::RemoveAnnot() is deprecated: use class CSeq_annot_EditHandle.");
     CSeq_entry_EditHandle eh = GetSeq_entryEditHandle(parent);
     CSeq_annot_EditHandle ah = GetSeq_annotEditHandle(annot);
     if ( ah.GetParentEntry() != eh ) {
@@ -462,7 +466,7 @@ void CScope::RemoveAnnot(CSeq_entry& parent, CSeq_annot& annot)
 void CScope::ReplaceAnnot(CSeq_entry& parent,
                           CSeq_annot& old_annot, CSeq_annot& new_annot)
 {
-    //ERR_POST_ONCE(Warning<<"CScope::RemoveAnnot() is deprecated: use class CSeq_annot_EditHandle.");
+    //ERR_POST_X_ONCE(11, Warning<<"CScope::RemoveAnnot() is deprecated: use class CSeq_annot_EditHandle.");
     CSeq_entry_EditHandle eh = GetSeq_entryEditHandle(parent);
     CSeq_annot_EditHandle ah = GetSeq_annotEditHandle(old_annot);
     if ( ah.GetParentEntry() != eh ) {

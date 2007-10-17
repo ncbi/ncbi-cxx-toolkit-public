@@ -64,6 +64,10 @@
 #include <objmgr/split/asn_sizer.hpp>
 #include <objmgr/split/chunk_info.hpp>
 #include <objmgr/split/place_id.hpp>
+#include <objmgr/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_BlobSplit
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -181,7 +185,7 @@ TSeqPos CBlobSplitterImpl::GetLength(const CSeq_inst& src) const
         }
     }
     catch ( CException& exc ) {
-        ERR_POST("GetLength(CSeq_inst): exception: " << exc.GetMsg());
+        ERR_POST_X(1, "GetLength(CSeq_inst): exception: " << exc.GetMsg());
     }
     return kInvalidSeqPos;
 }
@@ -259,14 +263,14 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
 
     if ( need_split ) {
         if ( !place_id.IsBioseq() ) {
-            ERR_POST("Bioseq doesn't have Seq-id");
+            ERR_POST_X(2, "Bioseq doesn't have Seq-id");
         }
         else {
             info = &m_Entries[place_id];
             
             if ( info->m_PlaceId.IsBioseq() ) {
-                ERR_POST("Several Bioseqs with the same id: " <<
-                         place_id.GetBioseqId().AsString());
+                ERR_POST_X(3, "Several Bioseqs with the same id: " <<
+                              place_id.GetBioseqId().AsString());
                 info = 0;
             }
             else {
@@ -374,13 +378,13 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
 
     if ( need_split ) {
         if ( !place_id.IsBioseq_set() ) {
-            ERR_POST("Bioseq_set doesn't have integer id");
+            ERR_POST_X(4, "Bioseq_set doesn't have integer id");
         }
         else {
             info = &m_Entries[place_id];
             if ( info->m_PlaceId.IsBioseq_set() ) {
-                ERR_POST("Several Bioseq-sets with the same id: " <<
-                         place_id.GetBioseq_setId());
+                ERR_POST_X(5, "Several Bioseq-sets with the same id: " <<
+                              place_id.GetBioseq_setId());
                 info = 0;
             }
             else {

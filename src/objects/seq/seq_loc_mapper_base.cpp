@@ -37,7 +37,11 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
+#include <objects/error_codes.hpp>
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Objects_SeqLocMap
 
 
 BEGIN_NCBI_SCOPE
@@ -657,16 +661,16 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_diag& diag, size_t to_row)
     size_t dim = diag.GetDim();
     _ASSERT(to_row < dim);
     if (dim != diag.GetIds().size()) {
-        ERR_POST(Warning << "Invalid 'ids' size in dendiag");
+        ERR_POST_X(1, Warning << "Invalid 'ids' size in dendiag");
         dim = min(dim, diag.GetIds().size());
     }
     if (dim != diag.GetStarts().size()) {
-        ERR_POST(Warning << "Invalid 'starts' size in dendiag");
+        ERR_POST_X(2, Warning << "Invalid 'starts' size in dendiag");
         dim = min(dim, diag.GetStarts().size());
     }
     bool have_strands = diag.IsSetStrands();
     if (have_strands && dim != diag.GetStrands().size()) {
-        ERR_POST(Warning << "Invalid 'strands' size in dendiag");
+        ERR_POST_X(3, Warning << "Invalid 'strands' size in dendiag");
         dim = min(dim, diag.GetStrands().size());
     }
 
@@ -717,20 +721,20 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_seg& denseg,
     size_t numseg = denseg.GetNumseg();
     // claimed dimension may not be accurate :-/
     if (numseg != denseg.GetLens().size()) {
-        ERR_POST(Warning << "Invalid 'lens' size in denseg");
+        ERR_POST_X(4, Warning << "Invalid 'lens' size in denseg");
         numseg = min(numseg, denseg.GetLens().size());
     }
     if (dim != denseg.GetIds().size()) {
-        ERR_POST(Warning << "Invalid 'ids' size in denseg");
+        ERR_POST_X(5, Warning << "Invalid 'ids' size in denseg");
         dim = min(dim, denseg.GetIds().size());
     }
     if (dim*numseg != denseg.GetStarts().size()) {
-        ERR_POST(Warning << "Invalid 'starts' size in denseg");
+        ERR_POST_X(6, Warning << "Invalid 'starts' size in denseg");
         dim = min(dim*numseg, denseg.GetStarts().size()) / numseg;
     }
     bool have_strands = denseg.IsSetStrands();
     if (have_strands && dim*numseg != denseg.GetStrands().size()) {
-        ERR_POST(Warning << "Invalid 'strands' size in denseg");
+        ERR_POST_X(7, Warning << "Invalid 'strands' size in denseg");
         dim = min(dim*numseg, denseg.GetStrands().size()) / numseg;
     }
 
@@ -819,12 +823,12 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CStd_seg& sseg, size_t to_row)
 {
     size_t dim = sseg.GetDim();
     if (dim != sseg.GetLoc().size()) {
-        ERR_POST(Warning << "Invalid 'loc' size in std-seg");
+        ERR_POST_X(8, Warning << "Invalid 'loc' size in std-seg");
         dim = min(dim, sseg.GetLoc().size());
     }
     if (sseg.IsSetIds()
         && dim != sseg.GetIds().size()) {
-        ERR_POST(Warning << "Invalid 'ids' size in std-seg");
+        ERR_POST_X(9, Warning << "Invalid 'ids' size in std-seg");
         dim = min(dim, sseg.GetIds().size());
     }
 
@@ -850,20 +854,20 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
     size_t numseg = pseg.GetNumseg();
     // claimed dimension may not be accurate :-/
     if (numseg != pseg.GetLens().size()) {
-        ERR_POST(Warning << "Invalid 'lens' size in packed-seg");
+        ERR_POST_X(10, Warning << "Invalid 'lens' size in packed-seg");
         numseg = min(numseg, pseg.GetLens().size());
     }
     if (dim != pseg.GetIds().size()) {
-        ERR_POST(Warning << "Invalid 'ids' size in packed-seg");
+        ERR_POST_X(11, Warning << "Invalid 'ids' size in packed-seg");
         dim = min(dim, pseg.GetIds().size());
     }
     if (dim*numseg != pseg.GetStarts().size()) {
-        ERR_POST(Warning << "Invalid 'starts' size in packed-seg");
+        ERR_POST_X(12, Warning << "Invalid 'starts' size in packed-seg");
         dim = min(dim*numseg, pseg.GetStarts().size()) / numseg;
     }
     bool have_strands = pseg.IsSetStrands();
     if (have_strands && dim*numseg != pseg.GetStrands().size()) {
-        ERR_POST(Warning << "Invalid 'strands' size in packed-seg");
+        ERR_POST_X(13, Warning << "Invalid 'strands' size in packed-seg");
         dim = min(dim*numseg, pseg.GetStrands().size()) / numseg;
     }
 

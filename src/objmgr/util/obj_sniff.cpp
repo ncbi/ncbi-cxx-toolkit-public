@@ -31,11 +31,15 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/util/obj_sniff.hpp>
+#include <objmgr/error_codes.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/serial.hpp>
 #include <serial/objhook.hpp>
 #include <serial/iterator.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_Sniffer
 
 
 BEGIN_NCBI_SCOPE
@@ -195,9 +199,9 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
                     m_TopLevelMap.push_back(
                         SObjectDescription(it->type_info, m_StreamPos));
 
-                    LOG_POST(Info 
-                             << format_name << " top level object found:" 
-                             << it->type_info.GetTypeInfo()->GetName());
+                    LOG_POST_X(1, Info 
+                               << format_name << " top level object found:" 
+                               << it->type_info.GetTypeInfo()->GetName());
                     continue;
                 }
             }
@@ -213,7 +217,7 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
                     m_TopLevelMap.push_back(
                         SObjectDescription(it->type_info, m_StreamPos));
 
-                    LOG_POST(Info 
+                    LOG_POST_X(2, Info 
                                 << format_name << " top level object found:" 
                                 << it->type_info.GetTypeInfo()->GetName());
                     break;
@@ -224,8 +228,8 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
     catch (CEofException& ) {
     }
     catch (CException& e) {
-        LOG_POST(Info << "Exception reading "
-                 << format_name << " " << e.what());
+        LOG_POST_X(3, Info << "Exception reading "
+                   << format_name << " " << e.what());
     }
 }
 
@@ -245,9 +249,9 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
 
         try {
 
-            LOG_POST(Info 
-                     << "Trying ASN.1 binary top level object:" 
-                     << it->type_info.GetTypeInfo()->GetName() );
+            LOG_POST_X(4, Info 
+                       << "Trying ASN.1 binary top level object:" 
+                       << it->type_info.GetTypeInfo()->GetName() );
 
             m_StreamPos = input.GetStreamPos();
 
@@ -255,9 +259,9 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
             m_TopLevelMap.push_back(SObjectDescription(it->type_info, 
                                                        m_StreamPos));
 
-            LOG_POST(Info 
-                     << "ASN.1 binary top level object found:" 
-                     << it->type_info.GetTypeInfo()->GetName() );
+            LOG_POST_X(5, Info 
+                       << "ASN.1 binary top level object found:" 
+                       << it->type_info.GetTypeInfo()->GetName() );
         }
         catch (CEofException& ) {
             break;

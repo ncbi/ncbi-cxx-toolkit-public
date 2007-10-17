@@ -54,8 +54,12 @@
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/synonyms.hpp>
+#include <objmgr/error_codes.hpp>
 
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_SeqUtil
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -178,8 +182,8 @@ bool IsSameBioseq(const CSeq_id_Handle& id1, const CSeq_id_Handle& id2, CScope* 
             CBioseq_Handle hnd2 = scope->GetBioseqHandle(id2, get_flag);
             return hnd1  &&  hnd2  &&  (hnd1 == hnd2);
         } catch (CException& e) {
-            ERR_POST(e.what() << ": CSeq_id1: " << id1.GetSeqId()->DumpAsFasta()
-                     << ": CSeq_id2: " << id2.GetSeqId()->DumpAsFasta());
+            ERR_POST_X(1, e.what() << ": CSeq_id1: " << id1.GetSeqId()->DumpAsFasta()
+                       << ": CSeq_id2: " << id2.GetSeqId()->DumpAsFasta());
         }
     }
 

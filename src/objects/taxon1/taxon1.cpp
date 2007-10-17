@@ -34,6 +34,7 @@
 #include <corelib/ncbistr.hpp>
 #include <objects/taxon1/taxon1.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/error_codes.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <serial/serial.hpp>
 #include <serial/enumvalues.hpp>
@@ -43,6 +44,9 @@
 #include <algorithm>
 
 #include "cache.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Objects_Taxonomy
 
 
 BEGIN_NCBI_SCOPE
@@ -403,7 +407,7 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
                     try {
                         if( SendRequest( req, resp ) ) {
                             if( !resp.IsGetorgmod() ) { // error
-                                ERR_POST( "Response type is not Getorgmod" );
+                                ERR_POST_X( 1, "Response type is not Getorgmod" );
                             } else {
                                 if( resp.GetGetorgmod().size() > 0 ) {
                                     CRef<CTaxon1_info> pInfo
@@ -421,6 +425,7 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
                                         // Another redirection occurred
                                         // leave modifier but issue warning
                                         NCBI_NS_NCBI::CNcbiDiag(eDiag_Warning)
+                                            << NCBI_NS_NCBI::ErrCode(NCBI_ERRCODE_X, 19)
                                             << "OrgMod type="
                                             << COrgMod::GetTypeInfo_enum_ESubtype()
                                             ->FindName( (*i)->GetSubtype(), true )
@@ -435,10 +440,10 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
                                    != CTaxon1_error::eLevel_none ) {
                             string sErr;
                             resp.GetError().GetErrorText( sErr );
-                            ERR_POST( sErr );
+                            ERR_POST_X( 2, sErr );
                         }
                     } catch( exception& e ) {
-                        ERR_POST( e.what() );
+                        ERR_POST_X( 3, e.what() );
                     }
 
                 }
@@ -1617,7 +1622,7 @@ CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
         try {
             if( SendRequest( req, resp ) ) {
                 if( !resp.IsGetorgprop() ) { // error
-                    ERR_POST( "Response type is not Getorgprop" );
+                    ERR_POST_X( 4, "Response type is not Getorgprop" );
                 } else {
                     if( resp.GetGetorgprop().size() > 0 ) {
                         CRef<CTaxon1_info> pInfo
@@ -1631,15 +1636,15 @@ CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
                        != CTaxon1_error::eLevel_none ) {
                 string sErr;
                 resp.GetError().GetErrorText( sErr );
-                ERR_POST( sErr );
+                ERR_POST_X( 5, sErr );
             }
         } catch( exception& e ) {
-            ERR_POST( e.what() );
+            ERR_POST_X( 6, e.what() );
             SetLastError( e.what() );
         }
     } else {
         SetLastError( "Empty property name is not accepted" );
-        ERR_POST( GetLastError() );
+        ERR_POST_X( 7, GetLastError() );
     }
     return false;
 }
@@ -1664,7 +1669,7 @@ CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
         try {
             if( SendRequest( req, resp ) ) {
                 if( !resp.IsGetorgprop() ) { // error
-                    ERR_POST( "Response type is not Getorgprop" );
+                    ERR_POST_X( 8, "Response type is not Getorgprop" );
                 } else {
                     if( resp.GetGetorgprop().size() > 0 ) {
                         CRef<CTaxon1_info> pInfo
@@ -1678,15 +1683,15 @@ CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
                        != CTaxon1_error::eLevel_none ) {
                 string sErr;
                 resp.GetError().GetErrorText( sErr );
-                ERR_POST( sErr );
+                ERR_POST_X( 9, sErr );
             }
         } catch( exception& e ) {
-            ERR_POST( e.what() );
+            ERR_POST_X( 10, e.what() );
             SetLastError( e.what() );
         }
     } else {
         SetLastError( "Empty property name is not accepted" );
-        ERR_POST( GetLastError() );
+        ERR_POST_X( 11, GetLastError() );
     }
     return false;
 }
@@ -1711,7 +1716,7 @@ CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
         try {
             if( SendRequest( req, resp ) ) {
                 if( !resp.IsGetorgprop() ) { // error
-                    ERR_POST( "Response type is not Getorgprop" );
+                    ERR_POST_X( 12, "Response type is not Getorgprop" );
                 } else {
                     if( resp.GetGetorgprop().size() > 0 ) {
                         CRef<CTaxon1_info> pInfo
@@ -1725,15 +1730,15 @@ CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
                        != CTaxon1_error::eLevel_none ) {
                 string sErr;
                 resp.GetError().GetErrorText( sErr );
-                ERR_POST( sErr );
+                ERR_POST_X( 13, sErr );
             }
         } catch( exception& e ) {
-            ERR_POST( e.what() );
+            ERR_POST_X( 14, e.what() );
             SetLastError( e.what() );
         }
     } else {
         SetLastError( "Empty property name is not accepted" );
-        ERR_POST( GetLastError() );
+        ERR_POST_X( 15, GetLastError() );
     }
     return false;
 }
@@ -1911,11 +1916,11 @@ CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
 
     if( tax_id == 0 ) {
         SetLastError( "No organism found for specified org_ref" );
-        ERR_POST( GetLastError() );
+        ERR_POST_X( 16, GetLastError() );
         return false;
     } else if( tax_id < 0 ) {
         SetLastError( "Multiple organisms found for specified org_ref" );
-        ERR_POST( GetLastError() );
+        ERR_POST_X( 17, GetLastError() );
         return false;
     } else {
         CRef< CTaxon2_data > pData( GetById( tax_id ) );
@@ -2020,7 +2025,7 @@ CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
             }
         } else { // Internal error: Cannot find orgref by tax_id
             SetLastError( "No organisms found for tax id" );
-            ERR_POST( GetLastError() );
+            ERR_POST_X( 18, GetLastError() );
             return false;
         }
     }

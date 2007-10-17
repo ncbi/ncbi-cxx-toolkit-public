@@ -43,8 +43,12 @@
 #include <objmgr/split/annot_piece.hpp>
 #include <objmgr/split/asn_sizer.hpp>
 #include <objmgr/split/chunk_info.hpp>
+#include <objmgr/error_codes.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_BlobSplit
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -341,7 +345,7 @@ void CBlobSplitterImpl::SplitPieces(void)
 
     if (  m_Params.m_JoinSmallChunks ) {
         if ( m_Params.m_Verbose ) {
-            LOG_POST("Joining small chunks");
+            LOG_POST_X(6, "Joining small chunks");
         }
 
         typedef multimap<size_t, int> TSizes;
@@ -382,7 +386,7 @@ void CBlobSplitterImpl::SplitPieces(void)
                     break;
                 }
                 if ( m_Params.m_Verbose ) {
-                    LOG_POST("    merging chunk " << small->second
+                    LOG_POST_X(7, "    merging chunk " << small->second
                         << " into " << chunk_it->first
                         << " new size: " << new_size);
                 }
@@ -396,7 +400,7 @@ void CBlobSplitterImpl::SplitPieces(void)
         }
         if ( m_Params.m_Verbose  &&  !sizes.empty() ) {
             ITERATE( TSizes, i, sizes ) {
-                LOG_POST("Small chunk not merged: "
+                LOG_POST_X(8, "Small chunk not merged: "
                     << i->second << ", size: " << i->first);
             }
         }
@@ -450,7 +454,7 @@ void CBlobSplitterImpl::SplitPieces(CAnnotPieces& pieces)
 
         // split this id
         if ( m_Params.m_Verbose ) {
-            LOG_POST("Splitting @"<<max_iter->first.AsString()<<
+            LOG_POST_X(9, "Splitting @"<<max_iter->first.AsString()<<
                      ": "<<max_size);
         }
 
@@ -497,18 +501,18 @@ void CBlobSplitterImpl::SplitPieces(CAnnotPieces& pieces)
                     pcs.push_back(piece);
                     size += piece.m_Size;
                     if ( m_Params.m_Verbose ) {
-                        LOG_POST(" long piece: "<<piece.m_IdRange.GetLength());
+                        LOG_POST_X(10, " long piece: "<<piece.m_IdRange.GetLength());
                     }
                 }
             }
             if ( !pcs.empty() ) {
                 if ( m_Params.m_Verbose ) {
-                    LOG_POST("  "<<pcs.size()<<" long pieces: "<<size);
-                    LOG_POST("  "
-                             " CC:"<<chunk_count<<
-                             " WL:"<<whole_length<<
-                             " CL:"<<chunk_length<<
-                             " ML:"<<max_piece_length);
+                    LOG_POST_X(11, "  "<<pcs.size()<<" long pieces: "<<size);
+                    LOG_POST_X(12, "  "
+                                   " CC:"<<chunk_count<<
+                                   " WL:"<<whole_length<<
+                                   " CL:"<<chunk_length<<
+                                   " ML:"<<max_piece_length);
                 }
                 ITERATE ( vector<SAnnotPiece>, it, pcs ) {
                     const SAnnotPiece& piece = *it;

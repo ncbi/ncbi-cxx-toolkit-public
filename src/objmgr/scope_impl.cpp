@@ -67,8 +67,12 @@
 #include <objmgr/impl/scope_transaction_impl.hpp>
 
 #include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/error_codes.hpp>
 #include <math.h>
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_Scope
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -809,16 +813,16 @@ CScope_Impl::AttachAnnot(const CSeq_entry_EditHandle& entry,
 void CScope_Impl::x_ReportNewDataConflict(const CSeq_id_Handle* conflict_id)
 {
     if ( conflict_id ) {
-        LOG_POST(Info <<
-                 "CScope_Impl: -- "
-                 "adding new data to a scope with non-empty history "
-                 "make data inconsistent on "<<conflict_id->AsString());
+        LOG_POST_X(12, Info <<
+                   "CScope_Impl: -- "
+                   "adding new data to a scope with non-empty history "
+                   "make data inconsistent on "<<conflict_id->AsString());
     }
     else {
-        LOG_POST(Info <<
-                 "CScope_Impl: -- "
-                 "adding new data to a scope with non-empty history "
-                 "may cause the data to become inconsistent");
+        LOG_POST_X(13, Info <<
+                   "CScope_Impl: -- "
+                   "adding new data to a scope with non-empty history "
+                   "may cause the data to become inconsistent");
     }
 }
 
@@ -1554,19 +1558,19 @@ CTSE_Handle CScope_Impl::GetEditHandle(const CTSE_Handle& handle)
     src_scope_info.m_TSE_Lock->GetCompleteSeq_entry();
     CRef<CTSE_Info> new_tse(new CTSE_Info(src_scope_info.m_TSE_Lock));
 #if 0 && defined(_DEBUG)
-    LOG_POST("CTSE_Info is copied, map.size()="<<
-             new_tse->m_BaseTSE->m_ObjectCopyMap.size());
-    LOG_POST(typeid(*new_tse->m_BaseTSE->m_BaseTSE).name() <<
-             "(" << &*new_tse->m_BaseTSE->m_BaseTSE << ")" <<
-             " -> " <<
-             typeid(*new_tse).name() <<
-             "(" << new_tse << ")");
+    LOG_POST_X(14, "CTSE_Info is copied, map.size()="<<
+               new_tse->m_BaseTSE->m_ObjectCopyMap.size());
+    LOG_POST_X(15, typeid(*new_tse->m_BaseTSE->m_BaseTSE).name() <<
+               "(" << &*new_tse->m_BaseTSE->m_BaseTSE << ")" <<
+               " -> " <<
+               typeid(*new_tse).name() <<
+               "(" << new_tse << ")");
     ITERATE ( TEditInfoMap, it, new_tse->m_BaseTSE->m_ObjectCopyMap ) {
-        LOG_POST(typeid(*it->first).name() <<
-                 "(" << it->first << ")" <<
-                 " -> " <<
-                 typeid(*it->second).name() <<
-                 "(" << it->second << ")");
+        LOG_POST_X(16, typeid(*it->first).name() <<
+                   "(" << it->first << ")" <<
+                   " -> " <<
+                   typeid(*it->second).name() <<
+                   "(" << it->second << ")");
     }
 #endif
     CTSE_Lock edit_tse_lock = edit_ds->GetDataSource().AddStaticTSE(new_tse);
@@ -2262,10 +2266,10 @@ void CScope_Impl::x_AddSynonym(const CSeq_id_Handle& idh,
     else {
         CRef<CBioseq_ScopeInfo> info2 = seq_id_info.second.m_Bioseq_Info;
         _ASSERT(info2 != &info);
-        LOG_POST(Warning << "CScope::GetSynonyms: "
-                 "Bioseq["<<info.IdString()<<"]: "
-                 "id "<<idh.AsString()<<" is resolved to another "
-                 "Bioseq["<<info2->IdString()<<"]");
+        LOG_POST_X(17, Warning << "CScope::GetSynonyms: "
+                   "Bioseq["<<info.IdString()<<"]: "
+                   "id "<<idh.AsString()<<" is resolved to another "
+                   "Bioseq["<<info2->IdString()<<"]");
     }
 }
 

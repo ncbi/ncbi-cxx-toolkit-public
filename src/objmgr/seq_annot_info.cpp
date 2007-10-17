@@ -43,6 +43,7 @@
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/error_codes.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_id.hpp>
@@ -50,6 +51,9 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/general/Object_id.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_SeqAnnot
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -598,7 +602,7 @@ void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
                 if ( key.m_Range.Empty() ) {
                     CNcbiOstrstream s;
                     s << MSerial_AsnText << *info.GetFeatFast();
-                    ERR_POST("Empty region in "<<s.rdbuf());
+                    ERR_POST_X(1, "Empty region in "<<s.rdbuf());
                     continue;
                 }
                 key.m_Handle = hrit->first;
@@ -659,7 +663,7 @@ void CSeq_annot_Info::x_InitGraphKeys(CTSE_Info& tse)
                 if ( key.m_Range.Empty() ) {
                     CNcbiOstrstream s;
                     s << MSerial_AsnText << *info.GetGraphFast();
-                    ERR_POST("Empty region in "<<s.rdbuf());
+                    ERR_POST_X(2, "Empty region in "<<s.rdbuf());
                     continue;
                 }
                 key.m_Handle = hrit->first;
@@ -711,7 +715,7 @@ void CSeq_annot_Info::x_InitAlignKeys(CTSE_Info& tse)
                 if ( key.m_Range.Empty() ) {
                     CNcbiOstrstream s;
                     s << MSerial_AsnText << info.GetAlign();
-                    ERR_POST("Empty region in "<<s.rdbuf());
+                    ERR_POST_X(3, "Empty region in "<<s.rdbuf());
                     continue;
                 }
                 key.m_Handle = hrit->first;
@@ -764,7 +768,7 @@ void CSeq_annot_Info::x_InitLocsKeys(CTSE_Info& tse)
             if ( key.m_Range.Empty() ) {
                 CNcbiOstrstream s;
                 s << MSerial_AsnText << info.GetLocs();
-                ERR_POST("Empty region in "<<s.rdbuf());
+                ERR_POST_X(4, "Empty region in "<<s.rdbuf());
                 continue;
             }
             key.m_Handle = hrit->first;
@@ -890,7 +894,7 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
                 else {
                     s << "unknown annotation";
                 }
-                ERR_POST("Empty region in "<<s.rdbuf());
+                ERR_POST_X(5, "Empty region in "<<s.rdbuf());
                 continue;
             }
             key.m_Handle = hrit->first;
@@ -962,7 +966,7 @@ void CSeq_annot_Info::x_RemapAnnotObject(CAnnotObject_Info& info)
                 else {
                     s << "unknown annotation";
                 }
-                ERR_POST("Empty region in "<<s.rdbuf());
+                ERR_POST_X(6, "Empty region in "<<s.rdbuf());
                 continue;
             }
             key.m_Handle = hrit->first;

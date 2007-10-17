@@ -38,6 +38,7 @@
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/annot_type_index.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/error_codes.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -61,6 +62,9 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_AnnotObject
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -525,16 +529,16 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                 const CDense_diag& diag = **it;
                 int dim = diag.GetDim();
                 if (dim != (int)diag.GetIds().size()) {
-                    ERR_POST(Warning << "Invalid 'ids' size in dendiag");
+                    ERR_POST_X(1, Warning << "Invalid 'ids' size in dendiag");
                     dim = min(dim, (int)diag.GetIds().size());
                 }
                 if (dim != (int)diag.GetStarts().size()) {
-                    ERR_POST(Warning << "Invalid 'starts' size in dendiag");
+                    ERR_POST_X(2, Warning << "Invalid 'starts' size in dendiag");
                     dim = min(dim, (int)diag.GetStarts().size());
                 }
                 if (diag.IsSetStrands()
                     && dim != (int)diag.GetStrands().size()) {
-                    ERR_POST(Warning << "Invalid 'strands' size in dendiag");
+                    ERR_POST_X(3, Warning << "Invalid 'strands' size in dendiag");
                     dim = min(dim, (int)diag.GetStrands().size());
                 }
                 if ((int)hrmaps.size() < dim) {
@@ -562,20 +566,20 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             int numseg = denseg.GetNumseg();
             // claimed dimension may not be accurate :-/
             if (numseg != (int)denseg.GetLens().size()) {
-                ERR_POST(Warning << "Invalid 'lens' size in denseg");
+                ERR_POST_X(4, Warning << "Invalid 'lens' size in denseg");
                 numseg = min(numseg, (int)denseg.GetLens().size());
             }
             if (dim != (int)denseg.GetIds().size()) {
-                ERR_POST(Warning << "Invalid 'ids' size in denseg");
+                ERR_POST_X(5, Warning << "Invalid 'ids' size in denseg");
                 dim = min(dim, (int)denseg.GetIds().size());
             }
             if (dim*numseg != (int)denseg.GetStarts().size()) {
-                ERR_POST(Warning << "Invalid 'starts' size in denseg");
+                ERR_POST_X(6, Warning << "Invalid 'starts' size in denseg");
                 dim = min(dim*numseg, (int)denseg.GetStarts().size()) / numseg;
             }
             if (denseg.IsSetStrands()
                 && dim*numseg != (int)denseg.GetStrands().size()) {
-                ERR_POST(Warning << "Invalid 'strands' size in denseg");
+                ERR_POST_X(7, Warning << "Invalid 'strands' size in denseg");
                 dim = min(dim*numseg, (int)denseg.GetStrands().size()) / numseg;
             }
             if ((int)hrmaps.size() < dim) {
@@ -673,8 +677,8 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
         }
     default:
         {
-            LOG_POST(Warning << "Unknown type of Seq-align: "<<
-                     align.GetSegs().Which());
+            LOG_POST_X(8, Warning << "Unknown type of Seq-align: "<<
+                       align.GetSegs().Which());
             break;
         }
     }

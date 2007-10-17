@@ -55,6 +55,7 @@
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
+#include <objmgr/error_codes.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -75,6 +76,9 @@
 
 #include <algorithm>
 #include <typeinfo>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_AnnotCollect
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1841,8 +1845,8 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
                         // Search annotations on the referenced location
                         if ( !ref_loc.IsInt() ) {
-                            ERR_POST("CAnnot_Collector: "
-                                    "Seq-annot.locs is not Seq-interval");
+                            ERR_POST_X(1, "CAnnot_Collector: "
+                                       "Seq-annot.locs is not Seq-interval");
                             continue;
                         }
                         const CSeq_interval& ref_int = ref_loc.GetInt();

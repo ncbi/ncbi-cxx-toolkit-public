@@ -41,10 +41,14 @@
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/error_codes.hpp>
 
 #include <objects/seq/seq_id_mapper.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_Main
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -74,7 +78,7 @@ CObjectManager::~CObjectManager(void)
     TWriteLockGuard guard(m_OM_Lock);
 
     if(!m_setScope.empty()) {
-        ERR_POST("Attempt to delete Object Manager with open scopes");
+        ERR_POST_X(1, "Attempt to delete Object Manager with open scopes");
         while ( !m_setScope.empty() ) {
             // this will cause calling RegisterScope and changing m_setScope
             // be careful with data access synchronization
@@ -89,11 +93,11 @@ CObjectManager::~CObjectManager(void)
         CDataSource* pSource = m_mapToSource.begin()->second.GetPointer();
         _ASSERT(pSource);
         if ( !pSource->ReferencedOnlyOnce() ) {
-            ERR_POST("Attempt to delete Object Manager with used datasources");
+            ERR_POST_X(2, "Attempt to delete Object Manager with used datasources");
         }
         m_mapToSource.erase(m_mapToSource.begin());
     }
-    // LOG_POST("~CObjectManager - delete " << this << "  done");
+    // LOG_POST_X(3, "~CObjectManager - delete " << this << "  done");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -115,7 +119,7 @@ void CObjectManager::RegisterDataLoader(CLoaderMaker_Base& loader_maker,
         x_RegisterLoader(*loader, priority, is_default);
     }
     catch (CObjMgrException& e) {
-        ERR_POST(Warning <<
+        ERR_POST_X(4, Warning <<
             "CObjectManager::RegisterDataLoader: " << e.GetMsg());
         // This can happen only if something is wrong with the new loader.
         // loader_maker.m_RegisterInfo.Set(0, false);
@@ -197,8 +201,8 @@ CObjectManager::x_RevokeDataLoader(CDataLoader* loader)
         // this means it is in use
         if ( is_default )
             _VERIFY(m_setDefaultSource.insert(iter->second).second);
-        ERR_POST("CObjectManager::RevokeDataLoader: "
-                 "data loader is in use");
+        ERR_POST_X(5, "CObjectManager::RevokeDataLoader: "
+                      "data loader is in use");
         return TDataSourceLock();
     }
     // remove from the maps
@@ -402,9 +406,9 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
                 "with the same name");
         }
         if ( !no_warning ) {
-            ERR_POST(Warning <<
-                     "CObjectManager::RegisterDataLoader() -- data loader " <<
-                     loader_name << " already registered");
+            ERR_POST_X(6, Warning <<
+                       "CObjectManager::RegisterDataLoader() -- data loader " <<
+                       loader_name << " already registered");
         }
         TMapToSource::const_iterator it = m_mapToSource.find(&loader);
         _ASSERT(it != m_mapToSource.end() && it->second);
@@ -454,8 +458,8 @@ void CObjectManager::ReleaseDataSource(TDataSourceLock& pSource)
     TMapToSource::iterator iter = m_mapToSource.find(key);
     if ( iter == m_mapToSource.end() ) {
         guard.Release();
-        ERR_POST("CObjectManager::ReleaseDataSource: "
-                 "unknown data source");
+        ERR_POST_X(7, "CObjectManager::ReleaseDataSource: "
+                      "unknown data source");
         pSource.Reset();
         return;
     }

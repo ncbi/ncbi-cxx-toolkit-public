@@ -48,8 +48,12 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/error_codes.hpp>
 
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_TSEinfo
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1256,7 +1260,7 @@ void CTSE_Info::x_AddAllFeaturesById(TAnnotObjects& objects,
                                      TFeatId id,
                                      bool xref) const
 {
-    //LOG_POST(this << ": ""x_AddAllFeaturesWithId: " << id);
+    //LOG_POST_X(1, this << ": ""x_AddAllFeaturesWithId: " << id);
     ITERATE ( TFeatIdIndex, iter, m_FeatIdIndex ) {
         const SFeatIdIndex& index = iter->second;
         if ( !index.m_Chunks.empty() ) {
@@ -1280,7 +1284,7 @@ void CTSE_Info::x_AddAllFeaturesById(TAnnotObjects& objects,
 
 void CTSE_Info::x_MapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref)
 {
-    //LOG_POST(this << ": ""x_MapFeatById: " << id << " " << xref);
+    //LOG_POST_X(2, this << ": ""x_MapFeatById: " << id << " " << xref);
     SFeatIdIndex::TIndex& index = m_FeatIdIndex[info.GetFeatSubtype()].m_Index;
     SFeatIdIndex::TIndex::value_type value(id, SFeatIdInfo(xref, &info));
     index.insert(value);
@@ -1289,7 +1293,7 @@ void CTSE_Info::x_MapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref)
 
 void CTSE_Info::x_UnmapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref)
 {
-    //LOG_POST(this << ": ""x_UnmapFeatById: " << id << " " << xref);
+    //LOG_POST_X(3, this << ": ""x_UnmapFeatById: " << id << " " << xref);
     SFeatIdIndex::TIndex& index = m_FeatIdIndex[info.GetFeatSubtype()].m_Index;
     for ( SFeatIdIndex::TIndex::iterator iter = index.lower_bound(id);
           iter != index.end() && iter->first == id; ++iter ) {

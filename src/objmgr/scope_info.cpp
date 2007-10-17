@@ -1539,6 +1539,7 @@ void CTSE_ScopeInfo::x_RestoreAdded(CScopeInfo_Base& parent,
 // CBioseq_ScopeInfo
 /////////////////////////////////////////////////////////////////////////////
 
+// If this define will be uncomented then it must be changed to use ERR_POST_X
 //#define BIOSEQ_TRACE(x) ERR_POST(x)
 #ifndef BIOSEQ_TRACE
 # define BIOSEQ_TRACE(x)

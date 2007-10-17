@@ -38,6 +38,10 @@
 
 #include <objmgr/edit_saver.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_ScopeTrans
 
 
 BEGIN_NCBI_SCOPE
@@ -93,10 +97,11 @@ CScopeTransaction_Impl::~CScopeTransaction_Impl()
     try {
         RollBack();
     } catch (exception& ex) {
-        ERR_POST(Fatal << "Exception cought in ~CScopeTransaction_Impl() : " 
-                 << ex.what());
+        ERR_POST_X(3, Fatal << "Exception cought in ~CScopeTransaction_Impl() : " 
+                            << ex.what());
     } catch (...) {
-        ERR_POST(Fatal << "Unknown Exception cought in ~CScopeTransaction_Impl()");
+        ERR_POST_X(4, Fatal
+                   << "Unknown Exception cought in ~CScopeTransaction_Impl()");
     }
 }
 
@@ -173,10 +178,10 @@ void CScopeTransaction_Impl::Commit()
                 try {
                     saver->CommitTransaction();
                 } catch (exception& ex) {
-                    ERR_POST(Fatal << "Couldn't commit transaction : " 
-                             << ex.what());
+                    ERR_POST_X(5, Fatal << "Couldn't commit transaction : " 
+                                        << ex.what());
                 } catch (...) {
-                    ERR_POST(Fatal << "Couldn't commit transaction");
+                    ERR_POST_X(6, Fatal << "Couldn't commit transaction");
                 }
             }
         }
@@ -201,10 +206,10 @@ void CScopeTransaction_Impl::RollBack()
                 try {
                     saver->RollbackTransaction();
                 } catch (exception& ex) {
-                    ERR_POST(Fatal << "Couldn't rollback transaction : " 
-                             << ex.what());
+                    ERR_POST_X(7, Fatal << "Couldn't rollback transaction : " 
+                                        << ex.what());
                 } catch (...) {
-                    ERR_POST(Fatal << "Couldn't rollback transaction");
+                    ERR_POST_X(8, Fatal << "Couldn't rollback transaction");
                 }
             }
         }

@@ -37,6 +37,10 @@
 #include <objmgr/scope_transaction.hpp>
 #include <objmgr/impl/scope_transaction_impl.hpp>
 #include <objmgr/impl/scope_impl.hpp>
+#include <objmgr/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_ScopeTrans
 
 
 BEGIN_NCBI_SCOPE
@@ -53,10 +57,11 @@ CScopeTransaction::~CScopeTransaction()
     try {
         RollBack();
     } catch (exception& ex) {
-        ERR_POST(Fatal << "Exception cought in ~CScopeTransaction() : " 
-                 << ex.what());
+        ERR_POST_X(1, Fatal << "Exception cought in ~CScopeTransaction() : " 
+                            << ex.what());
     } catch (...) {
-        ERR_POST(Fatal << "Unknown Exception cought in ~CScopeTransaction()");
+        ERR_POST_X(2, Fatal
+                   << "Unknown Exception cought in ~CScopeTransaction()");
     }
 }
 

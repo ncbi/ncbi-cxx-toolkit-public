@@ -35,7 +35,11 @@
 #include <objects/seq/seq_loc_mapper_base.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
+#include <objects/error_codes.hpp>
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Objects_SeqAlignMap
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -192,16 +196,16 @@ void CSeq_align_Mapper_Base::x_Init(const TDendiag& diags)
         const CDense_diag& diag = **diag_it;
         size_t dim = diag.GetDim();
         if (dim != diag.GetIds().size()) {
-            ERR_POST(Warning << "Invalid 'ids' size in dendiag");
+            ERR_POST_X(1, Warning << "Invalid 'ids' size in dendiag");
             dim = min(dim, diag.GetIds().size());
         }
         if (dim != diag.GetStarts().size()) {
-            ERR_POST(Warning << "Invalid 'starts' size in dendiag");
+            ERR_POST_X(2, Warning << "Invalid 'starts' size in dendiag");
             dim = min(dim, diag.GetStarts().size());
         }
         m_HaveStrands = diag.IsSetStrands();
         if (m_HaveStrands && dim != diag.GetStrands().size()) {
-            ERR_POST(Warning << "Invalid 'strands' size in dendiag");
+            ERR_POST_X(3, Warning << "Invalid 'strands' size in dendiag");
             dim = min(dim, diag.GetStrands().size());
         }
         if (dim != m_Dim) {
@@ -238,20 +242,20 @@ void CSeq_align_Mapper_Base::x_Init(const CDense_seg& denseg)
     size_t numseg = denseg.GetNumseg();
     // claimed dimension may not be accurate :-/
     if (numseg != denseg.GetLens().size()) {
-        ERR_POST(Warning << "Invalid 'lens' size in denseg");
+        ERR_POST_X(4, Warning << "Invalid 'lens' size in denseg");
         numseg = min(numseg, denseg.GetLens().size());
     }
     if (m_Dim != denseg.GetIds().size()) {
-        ERR_POST(Warning << "Invalid 'ids' size in denseg");
+        ERR_POST_X(5, Warning << "Invalid 'ids' size in denseg");
         m_Dim = min(m_Dim, denseg.GetIds().size());
     }
     if (m_Dim*numseg != denseg.GetStarts().size()) {
-        ERR_POST(Warning << "Invalid 'starts' size in denseg");
+        ERR_POST_X(6, Warning << "Invalid 'starts' size in denseg");
         m_Dim = min(m_Dim*numseg, denseg.GetStarts().size()) / numseg;
     }
     m_HaveStrands = denseg.IsSetStrands();
     if (m_HaveStrands && m_Dim*numseg != denseg.GetStrands().size()) {
-        ERR_POST(Warning << "Invalid 'strands' size in denseg");
+        ERR_POST_X(7, Warning << "Invalid 'strands' size in denseg");
         m_Dim = min(m_Dim*numseg, denseg.GetStrands().size()) / numseg;
     }
     m_HaveWidths = denseg.IsSetWidths();
@@ -294,7 +298,7 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
         size_t dim = stdseg.GetDim();
         if (stdseg.IsSetIds()
             && dim != stdseg.GetIds().size()) {
-            ERR_POST(Warning << "Invalid 'ids' size in std-seg");
+            ERR_POST_X(8, Warning << "Invalid 'ids' size in std-seg");
             dim = min(dim, stdseg.GetIds().size());
         }
         SAlignment_Segment& seg = x_PushSeg(0, dim);
@@ -306,7 +310,7 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
         unsigned int row_idx = 0;
         ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
             if (row_idx > dim) {
-                ERR_POST(Warning << "Invalid number of rows in std-seg");
+                ERR_POST_X(9, Warning << "Invalid number of rows in std-seg");
                 dim = row_idx;
                 seg.m_Rows.resize(dim);
             }
@@ -391,20 +395,20 @@ void CSeq_align_Mapper_Base::x_Init(const CPacked_seg& pseg)
     size_t numseg = pseg.GetNumseg();
     // claimed dimension may not be accurate :-/
     if (numseg != pseg.GetLens().size()) {
-        ERR_POST(Warning << "Invalid 'lens' size in packed-seg");
+        ERR_POST_X(10, Warning << "Invalid 'lens' size in packed-seg");
         numseg = min(numseg, pseg.GetLens().size());
     }
     if (m_Dim != pseg.GetIds().size()) {
-        ERR_POST(Warning << "Invalid 'ids' size in packed-seg");
+        ERR_POST_X(11, Warning << "Invalid 'ids' size in packed-seg");
         m_Dim = min(m_Dim, pseg.GetIds().size());
     }
     if (m_Dim*numseg != pseg.GetStarts().size()) {
-        ERR_POST(Warning << "Invalid 'starts' size in packed-seg");
+        ERR_POST_X(12, Warning << "Invalid 'starts' size in packed-seg");
         m_Dim = min(m_Dim*numseg, pseg.GetStarts().size()) / numseg;
     }
     m_HaveStrands = pseg.IsSetStrands();
     if (m_HaveStrands && m_Dim*numseg != pseg.GetStrands().size()) {
-        ERR_POST(Warning << "Invalid 'strands' size in packed-seg");
+        ERR_POST_X(13, Warning << "Invalid 'strands' size in packed-seg");
         m_Dim = min(m_Dim*numseg, pseg.GetStrands().size()) / numseg;
     }
     ENa_strand strand = eNa_strand_unknown;
