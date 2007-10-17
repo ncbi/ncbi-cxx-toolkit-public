@@ -36,7 +36,7 @@
 #include <corelib/ncbi_safe_static.hpp>
 
 
-#define NCBI_USE_ERRCODE_X   Html_Lib
+#define NCBI_USE_ERRCODE_X  Html_Lib
 
 
 BEGIN_NCBI_SCOPE
@@ -54,7 +54,7 @@ const string kJSMenuDefaultURL_Kurdin
 
 // Sergey Kurdin's popup menu with configurations
 const string kJSMenuDefaultURL_KurdinConf
- = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_7loader.js";
+ = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_7portal.js";
 
 // Sergey Kurdin's side menu
 const string kJSMenuDefaultURL_KurdinSide
