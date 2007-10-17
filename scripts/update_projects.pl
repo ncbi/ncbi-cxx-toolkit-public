@@ -58,7 +58,7 @@ my @ProjectDirs = ("$ScriptDir/projects", "$ScriptDir/internal/projects");
 
 sub Usage
 {
-    print $ScriptName . ' $Revision$' . <<EOF;
+    print STDERR $ScriptName . ' $Revision$' . <<EOF;
 
 This script checks out files required for building the specified project
 and optionally (re-)configures and builds it.
