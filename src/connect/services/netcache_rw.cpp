@@ -42,11 +42,10 @@
 
 BEGIN_NCBI_SCOPE
 
-CNetCacheReader::CNetCacheReader(CNetSrvConnector& connector, bool disconnect, size_t blob_size)
-    : m_Connector(&connector), m_Socket(m_Connector->DetachSocket()),
-      m_Disconnect(disconnect), m_BlobBytesToRead(blob_size)
+CNetCacheReader::CNetCacheReader(CNetServerConnectorHolder& connector, size_t blob_size)
+    : m_Connector(connector), m_BlobBytesToRead(blob_size)
 {
-    m_Reader.reset(new CSocketReaderWriter(m_Socket));
+    m_Reader.reset(new CSocketReaderWriter(&m_Connector->GetSocket()));
 }
 
 CNetCacheReader::~CNetCacheReader()
@@ -58,22 +57,8 @@ CNetCacheReader::~CNetCacheReader()
 
 void CNetCacheReader::Close()
 {
-    if (!m_Connector)
-        return;
-
-    if (m_Disconnect)
-        m_Connector->Disconnect(m_Socket);
-    else {
-        // we need to check if all data has been read.
-        // if it has not then we have to close the connection
-        STimeout to = {0, 0};
-        if (m_Socket->Wait(eIO_Read, &to) == eIO_Success)
-            m_Connector->Disconnect(m_Socket);
-    }
-    m_Connector->AttachSocket(m_Socket);
     m_Reader.reset();
-    m_Connector = NULL;
-    m_Socket = NULL;
+    m_Connector.reset();
 }
 
 ERW_Result CNetCacheReader::Read(void*   buf,
@@ -122,13 +107,12 @@ ERW_Result CNetCacheReader::PendingCount(size_t* count)
 
 
 /////////////////////////////////////////////////
-CNetCacheWriter::CNetCacheWriter(const CNetCacheAPI& api,CNetSrvConnector& connector, bool disconnect,
+CNetCacheWriter::CNetCacheWriter(const CNetCacheAPI& api, CNetServerConnectorHolder& connector,
                                   CTransmissionWriter::ESendEofPacket send_eof)
-    : m_API(api), m_Connector(&connector), m_Socket(m_Connector->DetachSocket()),
-      m_Disconnect(disconnect)
+    : m_API(api), m_Connector(connector)
 {
     //m_Socket->DisableOSSendDelay(false);
-    m_Writer.reset(new CTransmissionWriter(new CSocketReaderWriter(m_Socket), 
+    m_Writer.reset(new CTransmissionWriter(new CSocketReaderWriter(&m_Connector->GetSocket()), 
                                            eTakeOwnership, send_eof));
 }
 
@@ -150,17 +134,16 @@ void CNetCacheWriter::Close()
 
     try {
         m_Writer.reset();
-        CNetSrvConnector tmp(*m_Connector, m_Socket);
         //CStopWatch w(CStopWatch::eStart);
-        m_API.WaitResponse(tmp);
+        m_API.WaitResponse(m_Connector);
         //w.Stop();
         //cerr << string(w) << endl;
     } catch (...) {
-        x_Shutdown(true);
+        x_Shutdown();
         throw;
     }
 
-    x_Shutdown(m_Disconnect);
+    x_Shutdown();
 }
 
 ERW_Result CNetCacheWriter::Write(const void* buf,
@@ -194,12 +177,12 @@ ERW_Result CNetCacheWriter::Flush(void)
 bool CNetCacheWriter::x_IsStreamOk()
 {
     STimeout to = {0, 0};
-    EIO_Status io_st = m_Socket->Wait(eIO_Read, &to);
+    EIO_Status io_st = m_Connector->GetSocket().Wait(eIO_Read, &to);
     string msg;
     switch (io_st) {
     case eIO_Success:
         {
-            io_st = m_Socket->ReadLine(msg);
+            io_st = m_Connector->GetSocket().ReadLine(msg);
             if (io_st == eIO_Closed) {
                 m_LastError = "Server closed communication channel (timeout?)";
             } else  if (!msg.empty()) {
@@ -215,21 +198,16 @@ bool CNetCacheWriter::x_IsStreamOk()
         break;
     }
     if (!m_LastError.empty()) {
-        x_Shutdown(true);
+        x_Shutdown();
         return false;
     }
     return true;
 }
 
-void CNetCacheWriter::x_Shutdown(bool disconnect)
+void CNetCacheWriter::x_Shutdown()
 {
-    //m_Socket->DisableOSSendDelay();
-    if (disconnect)
-        m_Connector->Disconnect(m_Socket);
-    m_Connector->AttachSocket(m_Socket);
     m_Writer.reset();
-    m_Connector = NULL;
-    m_Socket = NULL;
+    m_Connector.reset();
 }
 
 END_NCBI_SCOPE

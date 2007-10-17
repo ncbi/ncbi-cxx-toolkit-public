@@ -60,8 +60,7 @@ class CSocket;
 class NCBI_XCONNECT_EXPORT CNetCacheReader : public IReader
 {
 public:
-    CNetCacheReader(CNetSrvConnector& connector, 
-                    bool disconnect, 
+    CNetCacheReader(CNetServerConnectorHolder& connector, 
                     size_t blob_size);
     virtual ~CNetCacheReader();
 
@@ -73,9 +72,7 @@ public:
     void Close();
 
 private:
-    CNetSrvConnector* m_Connector;
-    CSocket* m_Socket;
-    bool m_Disconnect;
+    CNetServerConnectorHolder m_Connector;
     auto_ptr<CSocketReaderWriter> m_Reader;
     /// Remaining BLOB size to be read
     size_t              m_BlobBytesToRead;
@@ -91,8 +88,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IWriter
 {
 public:
     CNetCacheWriter(const CNetCacheAPI& api,
-                    CNetSrvConnector& connector, 
-                    bool disconnect,
+                    CNetServerConnectorHolder& connector, 
                     CTransmissionWriter::ESendEofPacket send_eof =
                             CTransmissionWriter::eDontSendEofPacket);
 
@@ -109,14 +105,12 @@ public:
 
 private:
     const CNetCacheAPI& m_API;
-    CNetSrvConnector* m_Connector;
-    CSocket* m_Socket;
-    bool m_Disconnect;
+    CNetServerConnectorHolder m_Connector;
     auto_ptr<CTransmissionWriter> m_Writer;
     string m_LastError;
 
     bool x_IsStreamOk();
-    void x_Shutdown(bool disconnect);
+    void x_Shutdown();
 
     CNetCacheWriter(const CNetCacheWriter&);
     CNetCacheWriter& operator= (const CNetCacheWriter&);    

@@ -1,5 +1,5 @@
-#ifndef __NETSCHEDULE_API_WAIT_HPP_
-#define __NETSCHEDULE_API_WAIT_HPP_
+#ifndef __NETSCHEDULE_API_DETAILS_HPP_
+#define __NETSCHEDULE_API_DETAILS_HPP_
 
 
 /*  $Id$
@@ -33,6 +33,9 @@
  */
 
 #include <connect/ncbi_socket.hpp>
+#include <connect/services/netschedule_api.hpp>
+#include <connect/services/netschedule_api_expt.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -92,6 +95,58 @@ static bool s_WaitNotification(unsigned       wait_time,
     return false;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////
+//
+
+struct SNSSendCmd
+{
+    enum EFlags {
+        eLogExceptions = 1 >> 1,
+        eIgnoreCommunicationError = 1 >> 2,
+        eIgnoreDuplicateNameError = 1 >> 3
+    };
+    typedef int TFlags;
+
+    SNSSendCmd(const CNetScheduleAPI& api, const string& cmd, TFlags flags)
+        : m_API(&api), m_Cmd(cmd), m_Flags(flags)
+    {}
+    virtual ~SNSSendCmd() {}
+
+    void operator()(CNetServerConnector& con)
+    {
+        string resp;
+        try {
+           resp = m_API->SendCmdWaitResponse(con, m_Cmd);
+        } catch (CNetScheduleException& ex) {
+            if (m_Flags & eLogExceptions) {
+                ERR_POST( con.GetHost() << ":" << con.GetPort() 
+                       << " returned error: \"" << ex.what() << "\"");
+            }
+            if (!(m_Flags & eIgnoreDuplicateNameError && ex.GetErrCode() == CNetScheduleException::eDuplicateName))               
+                throw;
+        } catch (CNetServiceException& ex) {
+            if (m_Flags & eLogExceptions) {
+                ERR_POST( con.GetHost() << ":" << con.GetPort() 
+                       << " returned error: \"" << ex.what() << "\"");
+            }
+            if (!(m_Flags & eIgnoreCommunicationError && ex.GetErrCode() == CNetServiceException::eCommunicationError))               
+                throw;
+        } /*catch (CIO_Exception& ex) {
+            if (m_Flags & eLogExceptions) {
+                     ERR_POST( con.GetHost() << ":" << con.GetPort() 
+                                << " returned error: \"" << ex.what() << "\"");
+            }
+        }*/
+        ProcessResponse(resp, con);
+    }
+    virtual void ProcessResponse(const string& resp, CNetServerConnector& conn) {}
+
+    const CNetScheduleAPI* m_API;
+    string m_Cmd;
+    TFlags m_Flags;
+};
+
+
 END_NCBI_SCOPE
 
-#endif // __NETSCHEDULE_API_WAIT_HPP_
+#endif // __NETSCHEDULE_API_DETAILS_HPP_

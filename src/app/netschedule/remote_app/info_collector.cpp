@@ -172,7 +172,7 @@ CNSInfoCollector::CNSInfoCollector(const string& queue,
     : m_Services(new CNetScheduleAPI(service_name, "netschedule_admin", queue)), 
       m_Factory(factory)
 {
-    m_Services->DiscoverLowPriorityServers(true);
+    m_Services->DiscoverLowPriorityServers(eOn);
     m_Services->SetConnMode(INetServiceAPI::eKeepConnection);
 }
 
@@ -188,11 +188,11 @@ public:
     ISimpleSink() : m_Str(new CNcbiStrstream) {}
     virtual ~ISimpleSink() {}
 
-    virtual CNcbiOstream& GetOstream(CNetSrvConnector& conn)
+    virtual CNcbiOstream& GetOstream(CNetServerConnector& conn)
     {
         return *m_Str;
     }
-    virtual void EndOfData(CNetSrvConnector& conn)
+    virtual void EndOfData(CNetServerConnector& conn)
     {
         ParseStream(*m_Str, conn);
         m_Str.reset(new CNcbiStrstream);
@@ -200,7 +200,7 @@ public:
     
 private:
 
-    virtual void ParseStream(CNcbiIstream& strm, CNetSrvConnector& conn) = 0;
+    virtual void ParseStream(CNcbiIstream& strm, CNetServerConnector& conn) = 0;
 
     auto_ptr<CNcbiStrstream> m_Str;
     
@@ -220,7 +220,7 @@ private:
     CNSInfoCollector::IAction<CNSJobInfo>& m_Action;
     CNSInfoCollector& m_Collector;
     
-    virtual void ParseStream(CNcbiIstream& str, CNetSrvConnector&)
+    virtual void ParseStream(CNcbiIstream& str, CNetServerConnector&)
     {
         while (str.good()) {
             string line;
@@ -280,7 +280,7 @@ public:
 private:
     CNSInfoCollector::TQueueCont& m_Queues;
     
-    virtual void ParseStream(CNcbiIstream& str, CNetSrvConnector& conn)
+    virtual void ParseStream(CNcbiIstream& str, CNetServerConnector& conn)
     {
         string line;
         NcbiGetlineEOL(str, line);
@@ -315,7 +315,7 @@ private:
     CNSInfoCollector& m_Collector;
     std::set<pair<string, unsigned short> > m_Unique;
     
-    virtual void ParseStream(CNcbiIstream& ios, CNetSrvConnector& conn)
+    virtual void ParseStream(CNcbiIstream& ios, CNetServerConnector& conn)
     {
         bool nodes_info = false;        
         string str;

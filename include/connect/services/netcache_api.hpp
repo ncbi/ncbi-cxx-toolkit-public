@@ -195,7 +195,7 @@ protected:
 private:
     friend class CNetCacheAdmin;
 
-    virtual void x_SendAuthetication(CNetSrvConnector& conn) const;
+    virtual void x_SendAuthetication(CNetServerConnector& conn) const;
     
     static EReadResult x_ReadBuffer( IReader& reader,
                                      void*          buf, 
@@ -203,8 +203,8 @@ private:
                                      size_t*        n_read,
                                      size_t         blob_size);
 
-    CNetSrvConnectorHolder x_GetConnector(const string& bid = kEmptyStr) const;
-    CNetSrvConnectorHolder x_PutInitiate(string*  key, unsigned  time_to_live) const;
+    CNetServerConnectorHolder x_GetConnector(const string& bid = kEmptyStr) const;
+    CNetServerConnectorHolder x_PutInitiate(string*  key, unsigned  time_to_live) const;
 
     CNetCacheAPI(const CNetCacheAPI&);
     CNetCacheAPI& operator=(const CNetCacheAPI&);

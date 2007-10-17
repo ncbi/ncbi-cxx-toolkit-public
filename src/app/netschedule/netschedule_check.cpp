@@ -89,13 +89,13 @@ public:
         : m_ServerCounter(0), m_RequestedQueue(requested_queue) {}
     virtual ~CQueueFinder() {}
 
-    virtual CNcbiOstream& GetOstream(CNetSrvConnector& conn)
+    virtual CNcbiOstream& GetOstream(CNetServerConnector& conn)
     {
         ++m_ServerCounter;
         m_Strm.reset(new CNcbiOstrstream);
         return *m_Strm;
     }
-    virtual void EndOfData(CNetSrvConnector& conn) 
+    virtual void EndOfData(CNetServerConnector& conn) 
     {
         string squeues = string(CNcbiOstrstreamToString(*m_Strm));
         m_Strm.release();

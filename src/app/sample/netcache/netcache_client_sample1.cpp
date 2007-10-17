@@ -41,6 +41,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/rwstream.hpp>
 
 #include <connect/services/netcache_api.hpp>
 #include <util/simple_buffer.hpp>
@@ -101,18 +102,42 @@ int CSampleNetCacheClient::Run(void)
         // create load balanced client
         string service_name = args["service"].AsString();
         nc_client.reset(new CNetCacheAPI(service_name, "nc_client_sample1"));
+        nc_client->SetConnMode(INetServiceAPI::eKeepConnection);
     } 
     else {
         ERR_POST("Invalid network address. Use -service option.");
         return 1;
     }
 
+    typedef vector<IWriter*> TWriters;
+    TWriters writers;
+    typedef vector<IReader*> TReaders;
+    TReaders readers;
+    vector<string> keys;
+
+
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
 
     // Store the BLOB
     string key = nc_client->PutData(test_data, strlen(test_data)+1);
     NcbiCout << key << NcbiEndl;
-
+    
+    int i;
+    for(i = 0; i < 5; ++i)
+    {
+        string key;
+        writers.push_back(nc_client->PutData(&key));
+        keys.push_back(key);
+    }
+    i = 0;
+    for(TWriters::iterator it = writers.begin(); it != writers.end(); ++it) {
+        {
+        CWStream s(*it);
+        s << test_data << "  " << ++i;
+        }
+        delete *it;
+    }
+    writers.clear();
 
     SleepMilliSec(500);
 
@@ -126,6 +151,18 @@ int CSampleNetCacheClient::Run(void)
     }
 
     NcbiCout << bdata.data() << NcbiEndl;
+
+    for(vector<string>::const_iterator its = keys.begin(); its != keys.end(); ++its) {
+        readers.push_back(nc_client->GetData(*its));
+    }
+    for(TReaders::iterator it = readers.begin(); it != readers.end(); ++it) {
+        {
+        CRStream s(*it);
+        cout << s.rdbuf() << endl;
+        }
+        delete *it;
+    }
+    readers.clear();
 
     return 0;
 }

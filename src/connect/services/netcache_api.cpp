@@ -48,8 +48,8 @@ typedef NCBI_PARAM_TYPE(netcache_api, fallback_server) TCGI_NetCacheFallbackServ
 NCBI_PARAM_DEF(string, netcache_api, fallback_server, kEmptyStr);
 
 static bool s_FallbackServer_Initialized = false;
-static auto_ptr<CNetSrvConnectorPoll::TService> s_FallbackServer;
-static CNetSrvConnectorPoll::TService* s_GetFallbackServer()
+static auto_ptr<CNetServiceConnector::TServer> s_FallbackServer;
+static CNetServiceConnector::TServer* s_GetFallbackServer()
 {
     if (s_FallbackServer_Initialized)
         return s_FallbackServer.get();
@@ -59,7 +59,7 @@ static CNetSrvConnectorPoll::TService* s_GetFallbackServer()
        if ( NStr::SplitInTwo(hostport, ":", host, sport) ) {
           unsigned int port = NStr::StringToInt(sport);
           host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
-          s_FallbackServer.reset(new CNetSrvConnectorPoll::TService(host, port));
+          s_FallbackServer.reset(new CNetServiceConnector::TServer(host, port));
        }
     } catch (...) {
     }
@@ -68,16 +68,16 @@ static CNetSrvConnectorPoll::TService* s_GetFallbackServer()
 }
 /****************************************************************/
 
-CNetSrvConnectorHolder CNetCacheAPI::x_GetConnector(const string& bid) const
+CNetServerConnectorHolder CNetCacheAPI::x_GetConnector(const string& bid) const
 {
     if (bid.empty())
-        return GetPoll().GetBest(s_GetFallbackServer());
+        return GetConnector().GetBest(s_GetFallbackServer());
 
     CNetCacheKey key(bid);
-    return GetPoll().GetSpecific(key.host, key.port);
+    return GetConnector().GetSpecific(key.host, key.port);
 }
 
-void CNetCacheAPI::x_SendAuthetication(CNetSrvConnector& conn) const
+void CNetCacheAPI::x_SendAuthetication(CNetServerConnector& conn) const
 {
     string auth = GetClientName();
     conn.WriteStr(auth + "\r\n");
@@ -112,8 +112,8 @@ string CNetCacheAPI::PutData(const void*  buf,
 
 
 
-CNetSrvConnectorHolder CNetCacheAPI::x_PutInitiate(string*   key, 
-                                                   unsigned  time_to_live) const
+CNetServerConnectorHolder CNetCacheAPI::x_PutInitiate(string*   key, 
+                                                      unsigned  time_to_live) const
 {
     _ASSERT(key);
 
@@ -122,7 +122,7 @@ CNetSrvConnectorHolder CNetCacheAPI::x_PutInitiate(string*   key,
     request += " ";
     request += *key;
 
-    CNetSrvConnectorHolder holder = x_GetConnector(*key);
+    CNetServerConnectorHolder holder = x_GetConnector(*key);
     *key = SendCmdWaitResponse(holder, request);   
 
     if (NStr::FindCase(*key, "ID:") != 0) {
@@ -147,8 +147,8 @@ string  CNetCacheAPI::PutData(const string& key,
                               unsigned int  time_to_live) const
 {
     string k(key);
-    CNetSrvConnectorHolder holder = x_PutInitiate(&k, time_to_live);
-    CNetCacheWriter writer(*this, holder, holder.NeedDisconnect(), CTransmissionWriter::eSendEofPacket);
+    CNetServerConnectorHolder holder = x_PutInitiate(&k, time_to_live);
+    CNetCacheWriter writer(*this, holder, CTransmissionWriter::eSendEofPacket);
     
     const char* buf_ptr = (const char*)buf;
     size_t size_to_write = size;
@@ -170,15 +170,15 @@ string  CNetCacheAPI::PutData(const string& key,
 
 IWriter* CNetCacheAPI::PutData(string* key, unsigned int time_to_live) const
 {
-    CNetSrvConnectorHolder holder = x_PutInitiate(key, time_to_live);
-    return new CNetCacheWriter(*this, holder, holder.NeedDisconnect(),  CTransmissionWriter::eSendEofPacket);
+    CNetServerConnectorHolder holder = x_PutInitiate(key, time_to_live);
+    return new CNetCacheWriter(*this, holder, CTransmissionWriter::eSendEofPacket);
 }
 
 void CNetCacheAPI::Remove(const string& key) const
 {
     string request = "RMV2 " + key;
 
-    CNetSrvConnectorHolder holder = x_GetConnector(key);
+    CNetServerConnectorHolder holder = x_GetConnector(key);
     try {
         SendCmdWaitResponse(holder, request);
     } catch (...) {
@@ -194,7 +194,7 @@ bool CNetCacheAPI::IsLocked(const string& key) const
 
     string request = "ISLK " + key;
 
-    CNetSrvConnectorHolder holder = x_GetConnector(key);
+    CNetServerConnectorHolder holder = x_GetConnector(key);
 
     try {
         string answer = SendCmdWaitResponse(holder, request);  
@@ -213,7 +213,7 @@ string CNetCacheAPI::GetOwner(const string& key) const
 {
     string request = "GBOW " + key;
 
-    CNetSrvConnectorHolder holder = x_GetConnector(key);
+    CNetServerConnectorHolder holder = x_GetConnector(key);
     try {
         string answer = SendCmdWaitResponse(holder, request);
         return answer;
@@ -242,7 +242,7 @@ IReader* CNetCacheAPI::GetData(const string& key,
     }
 
     size_t bsize = 0;
-    CNetSrvConnectorHolder holder = x_GetConnector(key);
+    CNetServerConnectorHolder holder = x_GetConnector(key);
 
     string answer;
     try {
@@ -262,7 +262,7 @@ IReader* CNetCacheAPI::GetData(const string& key,
             *blob_size = bsize;
         }
     }
-    return new CNetCacheReader(holder, holder.NeedDisconnect(), bsize);
+    return new CNetCacheReader(holder, bsize);
 }
 
 

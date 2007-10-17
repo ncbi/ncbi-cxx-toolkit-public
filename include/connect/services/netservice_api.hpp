@@ -68,22 +68,22 @@ public:
     const string& GetClientName() const { return m_ClientName; }
     const string& GetServiceName() const { return m_ServiceName; }
 
-    void DiscoverLowPriorityServers(bool on_off);
+    void DiscoverLowPriorityServers(ESwitch on_off);
 
     void SetRebalanceStrategy( IRebalanceStrategy* strategy, 
                                EOwnership owner = eTakeOwnership);
 
-    string WaitResponse(CNetSrvConnector& conn) const;
-    string SendCmdWaitResponse(CNetSrvConnector& conn, const string& cmd) const;
+    string WaitResponse(CNetServerConnector& conn) const;
+    string SendCmdWaitResponse(CNetServerConnector& conn, const string& cmd) const;
 
-    CNetSrvConnectorPoll& GetPoll();
-    CNetSrvConnectorPoll& GetPoll() const;
+    CNetServiceConnector& GetConnector();
+    CNetServiceConnector& GetConnector() const;
 
-    void SetCommunicationTimeout(const STimeout& to) { GetPoll().SetCommunicationTimeout(to); }
-    STimeout GetCommunicationTimeout() const { return GetPoll().GetCommunicationTimeout(); }
+    void SetCommunicationTimeout(const STimeout& to) { GetConnector().SetCommunicationTimeout(to); }
+    STimeout GetCommunicationTimeout() const { return GetConnector().GetCommunicationTimeout(); }
 
-    void SetCreateSocketMaxRetries(unsigned int retries) { GetPoll().SetCreateSocketMaxRetries(retries); }
-    unsigned int GetCreateSocketMaxRetries() const { return GetPoll().GetCreateSocketMaxRetries(); }
+    void SetCreateSocketMaxRetries(unsigned int retries) { GetConnector().SetCreateSocketMaxRetries(retries); }
+    unsigned int GetCreateSocketMaxRetries() const { return GetConnector().GetCreateSocketMaxRetries(); }
 
     //protected:
     void CheckServerOK(string& response) const;
@@ -96,14 +96,15 @@ public:
     {
     public:
         virtual ~ISink() {};
-        virtual CNcbiOstream& GetOstream(CNetSrvConnector& conn) = 0;
-        virtual void EndOfData(CNetSrvConnector& conn) {}
+        virtual CNcbiOstream& GetOstream(CNetServerConnector& conn) = 0;
+        virtual void EndOfData(CNetServerConnector& conn) {}
     };
     enum EStreamCollectorType {
         eSendCmdWaitResponse,
         ePrintServerOut
     };
     void x_CollectStreamOutput(const string& cmd, ISink& sink, EStreamCollectorType type) const;
+    void PrintServerOut(CNetServerConnector& conn, CNcbiOstream& out) const;
 
 protected:
     enum ETrimErr {
@@ -113,25 +114,23 @@ protected:
 
     virtual void ProcessServerError(string& response, ETrimErr trim_err) const;
 
-    void PrintServerOut(CNetSrvConnector& conn, CNcbiOstream& out) const;
-    
-    string GetConnectionInfo(CNetSrvConnector& conn) const;
+    string GetConnectionInfo(CNetServerConnector& conn) const;
 
 
 private:
     friend class CNetServiceAuthenticator;
-    void DoAuthenticate(CNetSrvConnector& conn) const {
+    void DoAuthenticate(CNetServerConnector& conn) const {
         x_SendAuthetication(conn);
     }
-    virtual void x_SendAuthetication(CNetSrvConnector& conn) const = 0;
+    virtual void x_SendAuthetication(CNetServerConnector& conn) const = 0;
 
-    void x_CreatePoll();
+    void x_CreateConnector();
 
     string m_ServiceName;
     string m_ClientName;
 
-    auto_ptr<CNetSrvConnector::IEventListener> m_Authenticator;
-    auto_ptr<CNetSrvConnectorPoll> m_Poll;
+    auto_ptr<INetServerConnectorEventListener> m_Authenticator;
+    auto_ptr<CNetServiceConnector> m_Connector;
     EConnectionMode m_ConnMode;
     bool m_LPServices;
     IRebalanceStrategy* m_RebalanceStrategy;

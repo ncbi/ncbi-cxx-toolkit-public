@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <connect/services/netschedule_api.hpp>
 
-#include "netschedule_api_wait.hpp"
+#include "netschedule_api_details.hpp"
 
 #include <stdio.h>
 
@@ -132,7 +132,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
         s_CheckInputSize(input, max_input_size);
     }
 
-    CNetSrvConnector& conn = m_API->x_GetConnector();
+    CNetServerConnector& conn = m_API->x_GetConnector();
 
     //    m_Sock->DisableOSSendDelay(true);
 

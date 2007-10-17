@@ -1,5 +1,5 @@
-#ifndef CONNECT_SERVICES__SRV_CONNECTIONS_HPP
-#define CONNECT_SERVICES__SRV_CONNECTIONS_HPP
+#ifndef CONNECT_SERVICES__SERVER_CONN_HPP_1
+#define CONNECT_SERVICES__SERVER_CONN_HPP_1
 
 /*  $Id$
  * ===========================================================================
@@ -40,50 +40,39 @@
 #include <connect/connect_export.h>
 #include <connect/ncbi_socket.hpp>
 
+#include <corelib/ncbimtx.hpp>
+
 #include <util/resource_pool.hpp>
 
-#include <vector>
 
 BEGIN_NCBI_SCOPE
 
-NCBI_XCONNECT_EXPORT 
-void DiscoverLBServices(const string& service_name, 
-                        vector<pair<string,unsigned short> >& services,
-                        bool all_services = true);
-
-
-/******************************************************************/
-struct CSocketFactory
-{
-    static CSocket* Create(); 
-    static void Delete(CSocket* v) { delete v; }    
-};
-
-class CNetSrvConnectorPoll; 
-class NCBI_XCONNECT_EXPORT CNetSrvConnector
+///////////////////////////////////////////////////////////////////////////
+//
+class CNetServerConnector;
+class INetServerConnectorEventListener
 {
 public:
-    CNetSrvConnector(const string& host, unsigned short port);
-    ~CNetSrvConnector();
+    virtual void OnConnected(CNetServerConnector&) {};
+    virtual void OnDisconnected(CNetServerConnector&) {};
 
-    class IEventListener {
-    public:
-        virtual ~IEventListener() {}
+    virtual ~INetServerConnectorEventListener() {}
+};
 
-        virtual void OnConnected(CNetSrvConnector&) {};
-        virtual void OnDisconnected(CNetSrvConnector&) {};
-    };
-
-    const string GetHost() const { return m_Host; }
-    unsigned short GetPort() const { return m_Port; }
-
-    void SetEventListener(IEventListener* listener)  { m_EventListener = listener; }
-
+///////////////////////////////////////////////////////////////////////////
+//
+class CNetServerConnectors;
+class CNetServerConnectorFactory;
+class CNetServerConnectorHolder;
+class NCBI_XCONNECT_EXPORT CNetServerConnector
+{
+public:
+    ~CNetServerConnector();
 
     bool ReadStr(string& str);
     void WriteStr(const string& str);
     void WriteBuf(const void* buf, size_t len);
-    // if wait_sec is set to 0 m_Timeout will be used
+     // if wait_sec is set to 0 m_Timeout will be used
     void WaitForServer(unsigned int wait_sec = 0);
 
     class IStringProcessor {
@@ -92,92 +81,154 @@ public:
         // if returns false the telnet method will stop
         virtual bool Process(string& line) = 0;
     };
-    void Telnet(CNcbiOstream& out, IStringProcessor* processor = NULL);
+     // out and processor can be NULL
+    void Telnet(CNcbiOstream* out,  IStringProcessor* processor);
 
-    // if socket is not NULL the temporary connector with the given socket
-    // will be create and its disconnect method will be called. This is used
-    // for detached socket
-    void Disconnect(CSocket* socket = NULL);
+    CSocket& GetSocket();
+    void Disconnect();
 
-    CSocket* DetachSocket();
-    void AttachSocket(CSocket* socket);
-
-    static void SetDefaultCommunicationTimeout(const STimeout& to);
-    void SetCommunicationTimeout(const STimeout& to);
-    STimeout GetCommunicationTimeout() const { return m_Timeout; }
-
-    static void SetDefaultCreateSocketMaxReties(unsigned int retires);
-    void SetCreateSocketMaxRetries(unsigned int retries) { m_MaxRetries = retries; }
-    unsigned int GetCreateSocketMaxRetries() const { return m_MaxRetries; }
+    const string& GetHost() const;
+    unsigned int GetPort() const;
 
 private:
-    friend class CNetSrvConnectorPoll; 
-    CNetSrvConnector(const CNetSrvConnector& other);
-    CNetSrvConnector& operator=(const CNetSrvConnector&);
+
+    friend class CNetServerConnectorFactory;
+    explicit CNetServerConnector(CNetServerConnectors& parent);
+
+    CNetServerConnectors& m_Parent;
+    auto_ptr<CSocket>     m_Socket;
+    bool                  m_WasConnected;
 
     bool x_IsConnected();
     void x_CheckConnect();
+    friend class CNetServerConnectorHolder;
+    void x_ReturnToParent();
 
-    string             m_Host;
-    unsigned short     m_Port;
-    auto_ptr<CSocket>  m_Socket;
-    STimeout           m_Timeout;
-    IEventListener*    m_EventListener;
-    bool               m_ReleaseSocket;
-    unsigned int       m_MaxRetries;
+    friend class CNetServerConnectors;
+    void x_SetCommunicationTimeout(const STimeout& to)
+    {
+        if (m_Socket.get())
+            m_Socket->SetTimeout(eIO_ReadWrite, &to);
+    }
 
-    typedef CResourcePool<CSocket, CNoLock, CSocketFactory> TResourcePool;
-    TResourcePool m_SocketPool;
-
-public:
-    // !!Special perpose constructor. Use it only if you know what you
-    // are doing. Copies all member but m_Socket from 'other' and sets m_Socket
-    // with 'socket'. 'socket' will not be deleted after connector 
-    // distruction
-    CNetSrvConnector(const CNetSrvConnector& other, CSocket* socket);
-
+    CNetServerConnector(const CNetServerConnector&);
+    CNetServerConnector& operator= (const CNetServerConnector&);
 };
 
-class CNetSrvConnectorHolder
+///////////////////////////////////////////////////////////////////////////
+//
+class CNetServerConnectorHolder
 {
 public:
-    CNetSrvConnectorHolder(CNetSrvConnector& conn, bool disconnect) 
-        : m_Conn(&conn), m_Disconnect(disconnect) {}
-    ~CNetSrvConnectorHolder() { if (m_Disconnect) m_Conn->Disconnect(); }
+    CNetServerConnectorHolder(CNetServerConnector& conn) 
+        : m_Conn(&conn) {}
+
+    ~CNetServerConnectorHolder() 
+    { 
+        if (m_Conn) m_Conn->x_ReturnToParent(); 
+    }
  
-    CNetSrvConnectorHolder(const CNetSrvConnectorHolder& other)
+    CNetServerConnectorHolder(const CNetServerConnectorHolder& other)
     {
         m_Conn = other.m_Conn;
-        m_Disconnect = other.m_Disconnect;
-        other.m_Disconnect = false;
+        other.m_Conn = NULL;
     }
-    CNetSrvConnectorHolder& operator=( const CNetSrvConnectorHolder& other)
+    CNetServerConnectorHolder& operator= (const CNetServerConnectorHolder& other)
     {
-        if(this != &other) {
-            if (m_Disconnect) m_Conn->Disconnect();
+        if (this != &other) {
+            if (m_Conn) m_Conn->x_ReturnToParent(); 
             m_Conn = other.m_Conn;
-            m_Disconnect = other.m_Disconnect;
-            other.m_Disconnect = false;            
         }
         return *this;
     }
 
-    operator CNetSrvConnector& () const  { return *m_Conn; }
-    CNetSrvConnector* operator->() const { return m_Conn; }
+    operator CNetServerConnector& () const { _ASSERT(m_Conn); return *m_Conn; }
+    CNetServerConnector* operator->() const { _ASSERT(m_Conn); return m_Conn; }
 
-    bool NeedDisconnect() const { return m_Disconnect; }
+    void CheckConnect() const { m_Conn->x_CheckConnect(); }
+
+    void reset()
+    {
+        if (m_Conn) {
+            m_Conn->x_ReturnToParent(); 
+            m_Conn = NULL;
+        }
+    }
+
 private:
-    CNetSrvConnector* m_Conn;
-    mutable bool m_Disconnect;
-
+    mutable CNetServerConnector* m_Conn;
 };
 
+///////////////////////////////////////////////////////////////////////////
+//
+class CNetServerConnectorFactory
+{
+public:
+    explicit CNetServerConnectorFactory(CNetServerConnectors& conns)
+        : m_Connectors(&conns) {}
+
+    CNetServerConnector* Create() const { return new CNetServerConnector(*m_Connectors); }
+    void Delete(CNetServerConnector* conn) const { delete conn; }
+
+private:
+    CNetServerConnectors* m_Connectors;
+};
+
+///////////////////////////////////////////////////////////////////////////
+//
+class NCBI_XCONNECT_EXPORT CNetServerConnectors
+{
+public:
+    CNetServerConnectors(const string& host, unsigned short port,
+                         INetServerConnectorEventListener* listener = NULL);
+
+    const string& GetHost() const { return m_Host; }
+    unsigned short GetPort() const { return m_Port; }
+    
+    INetServerConnectorEventListener* GetEventListener() const { return m_EventListener; }
+
+    static void SetDefaultCommunicationTimeout(const STimeout& to);
+    void SetCommunicationTimeout(const STimeout& to);
+    const STimeout& GetCommunicationTimeout() const { return m_Timeout; }
+      
+    static void SetDefaultCreateSocketMaxReties(unsigned int retires);
+    void SetCreateSocketMaxRetries(unsigned int retries) { m_MaxRetries = retries; }
+    unsigned int GetCreateSocketMaxRetries() const { return m_MaxRetries; }
+
+    void PermanentConnection(ESwitch type) { m_PermanentConnection = type; }
+
+    CNetServerConnectorHolder GetConnector();
+
+private:
+    string         m_Host;
+    unsigned short m_Port;
+
+    STimeout                          m_Timeout;
+    INetServerConnectorEventListener* m_EventListener;
+    unsigned int                      m_MaxRetries;
+
+    CNetServerConnectorFactory m_ServerConnectorFactory;
+    typedef CResourcePool<CNetServerConnector, CRWLock, CNetServerConnectorFactory> TConnectorPool;
+    auto_ptr<TConnectorPool> m_ServerConnectorPool;
+
+    ESwitch m_PermanentConnection;
+
+    friend class CNetServerConnector;
+    void x_TakeConnector(CNetServerConnector*);
+
+    CNetServerConnectors(const CNetServerConnectors&);
+    CNetServerConnectors& operator= (const CNetServerConnectors&);
+};
+
+
+///////////////////////////////////////////////////////////////////////////
+//
 class IRebalanceStrategy 
 {
 public:
     virtual ~IRebalanceStrategy() {}
     virtual bool NeedRebalance() = 0;
-    virtual void OnResourceRequested( const CNetSrvConnector& ) = 0;
+    virtual void OnResourceRequested( const CNetServerConnectors& ) = 0;
     virtual void Reset() = 0;
 };
 
@@ -191,6 +242,7 @@ public:
     virtual ~CSimpleRebalanceStrategy() {}
 
     virtual bool NeedRebalance() {
+        CFastMutexGuard g(m_Mutex);
         time_t curr = time(0);
         if ( !m_LastRebalanceTime || 
              (m_RebalanceTime && int(curr - m_LastRebalanceTime) >= m_RebalanceTime) ||
@@ -201,316 +253,125 @@ public:
         }
         return false;
     }
-    virtual void OnResourceRequested( const CNetSrvConnector& ) {
+    virtual void OnResourceRequested( const CNetServerConnectors& ) {
+        CFastMutexGuard g(m_Mutex);
         ++m_RequestCounter;
     }
     virtual void Reset() {
+        CFastMutexGuard g(m_Mutex);
         m_RequestCounter = 0;
         m_LastRebalanceTime = 0;
-        
     }
+    
 private:
     int     m_RebalanceRequests;
     int     m_RebalanceTime;
     int     m_RequestCounter;
     time_t  m_LastRebalanceTime;
+    CFastMutex m_Mutex;
 };
 
+///////////////////////////////////////////////////////////////////////////
+//
+class NCBI_XCONNECT_EXPORT CNetServiceConnector 
+{
+public:
+    typedef pair<string, unsigned short> TServer;
+    typedef map<TServer, CNetServerConnectors*> TCont;
+    typedef vector<TServer> TServers;
 
+    CNetServiceConnector(const string& service_name,
+                         INetServerConnectorEventListener* listener = NULL);
+    ~CNetServiceConnector();
 
-class NCBI_XCONNECT_EXPORT CNetSrvConnectorPoll : virtual protected CConnIniter
-{    
-public:   
-    class iterator
-    {
-    public:
-        typedef CNetSrvConnector value_type;
-        typedef CNetSrvConnectorHolder pointer;
-        typedef CNetSrvConnectorHolder reference;
+    CNetServerConnectorHolder GetBest(const TServer* backup = NULL, const string& hit = "");
+    CNetServerConnectorHolder GetSpecific(const string& host, unsigned int port);
 
-        reference operator*() const 
-        { 
-            unsigned index = (m_CurIndex-1) % m_Poll->m_Services.size();
-            return CNetSrvConnectorHolder(*m_Poll->x_FindOrCreateConnector(m_Poll->m_Services[index]),
-                                          !m_Poll->m_PermConn);
-        }
-        pointer operator->() const { return operator*(); }
+    void SetCommunicationTimeout(const STimeout& to);
+    const STimeout& GetCommunicationTimeout() const;
+      
+    void SetCreateSocketMaxRetries(unsigned int retries);
+    unsigned int GetCreateSocketMaxRetries() const;
 
-        iterator& operator++() 
-        { 
-            if(m_CurIndex) {
-                if(++m_CurIndex >= m_Pivot+m_Poll->m_Services.size())
-                    m_CurIndex = 0;
-            }
-            return *this; 
-        }
-        iterator operator++(int) { iterator temp(*this); operator++(); return temp; }
-        
-        bool operator == (const iterator& other) const 
-        { return other.m_Poll == m_Poll && other.m_CurIndex == m_CurIndex; }
-        bool operator != (const iterator& other) const
-        { return other.m_Poll != m_Poll || other.m_CurIndex != m_CurIndex; }
-        
-    private:
-        const CNetSrvConnectorPoll* m_Poll;
-        unsigned m_Pivot;
-        unsigned m_CurIndex;
+    void PermanentConnection(ESwitch type);
 
-        friend class CNetSrvConnectorPoll;
-        explicit iterator(const CNetSrvConnectorPoll& poll, bool last = false, bool random = false)
-            : m_Poll(&poll)
-        { 
-            m_Pivot = random && !m_Poll->m_Services.empty()? (rand() %  m_Poll->m_Services.size())+1 : 1;
-            m_CurIndex = last || m_Poll->m_Services.empty()? 0 : m_Pivot;
-        }
-
-
-    };
-
-    typedef pair<string, unsigned short> TService;
-    typedef map<TService, CNetSrvConnector*> TCont;
-    typedef vector<TService> TServices;
-
-    CNetSrvConnectorPoll(const string& service, 
-                         CNetSrvConnector::IEventListener* event_listener,
-                         IRebalanceStrategy* rebalance_strategy);
-    ~CNetSrvConnectorPoll();
-
-    CNetSrvConnectorHolder GetBest(const TService* backup = NULL, const string& hit = "");
-    CNetSrvConnectorHolder GetSpecific(const string& host, unsigned int port);
-
-    // invalidates priveosly taken iterators
-    iterator begin() { x_Rebalance(); return iterator(*this); }
-    // invalidates priveosly taken iterators
-    iterator random_begin() { x_Rebalance(); return iterator(*this,false,true); }
-    iterator end() { return iterator(*this, true); }
-
-    size_t GetServersNumber() const { return m_Services.size(); }
+    bool IsLoadBalanced() const { return m_IsLoadBalanced; }
 
     template<class Pred>
     bool Find(Pred func) {
         x_Rebalance();
+        CReadLockGuard g(m_ServersLock);
+        TServers servers_copy(m_Servers);
+        g.Release();
         // pick a random pivot element, so we do not always
         // fetch jobs using the same lookup order and some servers do 
         // not get equally "milked"
         // also get random list lookup direction
-        unsigned serv_size = m_Services.size();
-        unsigned pivot = rand() % serv_size;
+        unsigned servers_size = servers_copy.size();
+        unsigned pivot = rand() % servers_size;
+        unsigned pivot_plus_servers_size = pivot + servers_size;
 
-        for (unsigned i = pivot; i < pivot + serv_size; ++i) {
-            unsigned j = i % serv_size;
-            const TService& srv = m_Services[j];
-            CNetSrvConnectorHolder holder(*x_FindOrCreateConnector(srv), 
-                                          !m_PermConn);
-            CNetSrvConnector& conn = (CNetSrvConnector&)holder;
-            if (func(conn))
+        for (unsigned i = pivot; i < pivot_plus_servers_size; ++i) {
+            unsigned j = i % servers_size;
+            const TServer& srv = servers_copy[j];
+            CNetServerConnectorHolder h = x_FindOrCreateConnector(srv).GetConnector(); 
+            CNetServerConnector& conn = (CNetServerConnector&)h;
+            if (func(conn, i == pivot_plus_servers_size - 1))
                 return true;
         }
         return false;
     }
-    const string& GetServiceName() const { return m_ServiceName; }
 
-    bool IsLoadBalanced() const { return m_IsLoadBalanced; }
-
-    void UsePermanentConnection(bool of_on) { m_PermConn = of_on; }
-
-    void DiscoverLowPriorityServers(bool on_off) { 
-        m_DiscoverLowPriorityServers = on_off; 
-        if (m_RebalanceStrategy) m_RebalanceStrategy->Reset();
+    template<class Func>
+    void ForEach(Func func) {
+        x_Rebalance();
+        CReadLockGuard g(m_ServersLock);
+        TServers servers_copy(m_Servers);
+        g.Release();
+        NON_CONST_ITERATE(TServers, it, servers_copy) {
+            CNetServerConnectorHolder h = x_FindOrCreateConnector(*it).GetConnector(); 
+            CNetServerConnector& conn = (CNetServerConnector&)h;
+            func(conn);
+        }
     }
 
-    void SetRebalanceStrategy(IRebalanceStrategy* strategy)
-    {
-        m_RebalanceStrategy = strategy;
-    }
+    void DiscoverLowPriorityServers(ESwitch on_off); 
+    void SetRebalanceStrategy(IRebalanceStrategy* strategy);
 
-    void SetCommunicationTimeout(const STimeout& to);
-    STimeout GetCommunicationTimeout() const { return m_Timeout; }
+private: 
+    string        m_ServiceName;
+    TServers      m_Servers;
+    CRWLock       m_ServersLock;
+    mutable TCont      m_Connectors;
+    mutable CFastMutex m_ConnectorsMutex;
 
-    void SetCreateSocketMaxRetries(unsigned int retries);
-    unsigned int GetCreateSocketMaxRetries() const { return m_MaxRetries; }
-    
-private:
-    friend class iterator;
+    bool    m_IsLoadBalanced;
+    ESwitch m_DiscoverLowPriorityServers;
 
-    CNetSrvConnector* x_FindOrCreateConnector(const TService& srv) const;
+    STimeout                          m_Timeout;
+    INetServerConnectorEventListener* m_EventListener;
+    unsigned int                      m_MaxRetries;
+    ESwitch                           m_PermanentConnection;
+    IRebalanceStrategy*               m_RebalanceStrategy;
+
+    CNetServerConnectors& x_FindOrCreateConnector(const TServer& srv) const;
     void x_Rebalance();
 
-    string              m_ServiceName;
-    TServices           m_Services;
-    mutable TCont       m_Connections;
-    IRebalanceStrategy* m_RebalanceStrategy;
-    bool                m_IsLoadBalanced;
-    bool                m_DiscoverLowPriorityServers;
-    CNetSrvConnector::IEventListener* m_EventListener;
-    bool                m_PermConn;
-    STimeout            m_Timeout;
-    unsigned int        m_MaxRetries; 
-
-    CNetSrvConnectorPoll(const CNetSrvConnectorPoll&);
-    CNetSrvConnectorPoll& operator=(const CNetSrvConnectorPoll&);
-
+    CNetServiceConnector(const CNetServiceConnector&);
+    CNetServiceConnector& operator= (const CNetServiceConnector&);
 };
-
-
-
-/// Net Service exception
-///
-class CNetSrvConnException : public CException
-{
-public:
-    enum EErrCode {
-        eReadTimeout,
-        eResponseTimeout,
-        eLBNameNotFound,
-        eSrvListEmpty,
-        eConnectionFailure,
-        eWriteFailure
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eReadTimeout:        return "eReadTimeout";
-        case eResponseTimeout:    return "eResponseTimeout";
-        case eLBNameNotFound:     return "eLBNameNotFound";
-        case eSrvListEmpty:       return "eSrvListEmpty";
-        case eConnectionFailure:  return "eConntectionFailure";
-        case eWriteFailure:       return "eWriteFailure";
-        default:                  return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CNetSrvConnException, CException);
-};
-
-
 ///////////////////////////////////////////////////////////////////////////
-struct undefined_t {};
-
-template<typename TDerived>
-struct CServiceClientTraits {
-    typedef undefined_t client_type;
-};
-
-template<typename TDerived>
-struct Wrapper
+inline 
+const string& CNetServerConnector::GetHost() const
 {
-    TDerived& derived()
-    {
-        return *static_cast<TDerived*>(this);
-    }
-
-    TDerived const& derived() const
-    {
-        return *static_cast<TDerived const*>(this);
-    }
-};
-
-template<typename TDerived>
-class CServiceConnections : public Wrapper<TDerived>
+    return m_Parent.GetHost();
+}
+inline
+unsigned int CNetServerConnector::GetPort() const
 {
-    typedef typename CServiceClientTraits<TDerived>::client_type client_t;
-    typedef vector<client_t*> TConnections;
-public:
-    CServiceConnections(const string& service)
-        : m_Service(service), m_Discovered(false)  {}
-
-    ~CServiceConnections() 
-    {
-        ITERATE(typename TConnections, it, m_Connections) {
-            delete *it;
-        }
-    }
-
-    const string& GetService() const { return m_Service; }
-    bool IsHostPortConfig() { x_DiscoverConnections(); return m_HostPort; }
-
-    template<typename Func>
-    void for_each(Func func) {
-        typename TConnections::const_iterator it_b = GetCont().begin();
-        typename TConnections::const_iterator it_e = GetCont().end();
-        while( it_b != it_e ) {
-            func( **it_b );
-            ++it_b;
-        }
-    }
-
-private:
-
-    TConnections& GetCont() {
-        x_DiscoverConnections();
-        return m_Connections;
-    }
-
-    string m_Service;
-    bool m_HostPort;
-    bool m_Discovered;
-    TConnections m_Connections;
-    void x_DiscoverConnections()
-    {
-        if (m_Discovered) return;
-        string sport, host;
-        typedef vector<pair<string, unsigned short> > TSrvs;
-        TSrvs srvs;
-        if ( NStr::SplitInTwo(m_Service, ":", host, sport) ) {
-            try {
-                unsigned int port = NStr::StringToInt(sport);
-                srvs.push_back(make_pair(host, (unsigned short)port));
-                m_HostPort = true;
-            } catch (...) {
-            }
-        } else {
-            DiscoverLBServices(m_Service, srvs);
-            m_HostPort = false;
-        }
-        if (srvs.empty())
-            NCBI_THROW(CCoreException, eInvalidArg, "\"" +m_Service+ "\" is not a valid service name");
-
-        ITERATE(TSrvs, it, srvs) {
-            m_Connections.push_back(this->derived().CreateClient(it->first, it->second));
-        }
-        m_Discovered = true;
-    }
-};
-
-template<typename TClient>
-class ICtrlCmd
-{
-public:
-    explicit ICtrlCmd(CNcbiOstream& os) : m_Os(os) {}
-    virtual ~ICtrlCmd () {}
-
-    CNcbiOstream& GetStream() { return m_Os;};
-    
-    virtual void Execute(TClient& cln) = 0;
-
-private:
-    CNcbiOstream& m_Os;
-};
-
-template<typename TClient, typename TConnections>
-class CCtrlCmdRunner 
-{
-public:
-    CCtrlCmdRunner(TConnections& connections, ICtrlCmd<TClient>& cmd)
-        : m_Connections(&connections), m_Cmd(&cmd) {}
-
-    void operator()(TClient& cln) {
-        if ( !m_Connections->IsHostPortConfig() ) 
-            m_Cmd->GetStream() << m_Connections->GetService() 
-                              << "(" << cln.GetHost() << ":" << cln.GetPort() << "): ";
-        m_Cmd->Execute(cln);
-    }
-
-private:
-    TConnections* m_Connections;
-    ICtrlCmd<TClient>* m_Cmd;
-};
-
-
+    return m_Parent.GetPort();
+}
 
 END_NCBI_SCOPE
-
-#endif // CONNECT_SERVICES__SRV_CONNECTIONS_HPP
+ 
+#endif // CONNECT_SERVICES__SERVER_CONN_HPP

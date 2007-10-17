@@ -35,13 +35,13 @@
 
 BEGIN_NCBI_SCOPE
 
-class CNetServiceAuthenticator : public CNetSrvConnector::IEventListener
+class CNetServiceAuthenticator : public INetServerConnectorEventListener
 {
 public:
     explicit CNetServiceAuthenticator(const INetServiceAPI& net_srv_client)
         : m_NetSrvClient(net_srv_client) {}
     
-    virtual void OnConnected(CNetSrvConnector& conn) {
+    virtual void OnConnected(CNetServerConnector& conn) {
         m_NetSrvClient.DoAuthenticate(conn);
     }
     
@@ -69,17 +69,17 @@ void INetServiceAPI::SetConnMode(EConnectionMode conn_mode)
     if (m_ConnMode == conn_mode )
         return;
     m_ConnMode = conn_mode;
-    if( m_Poll.get())
-        m_Poll->UsePermanentConnection(conn_mode == eKeepConnection);
+    if (m_Connector.get())
+        m_Connector->PermanentConnection(conn_mode == eKeepConnection ? eOn : eOff);
 }
 
-void INetServiceAPI::DiscoverLowPriorityServers(bool on_off)
+void INetServiceAPI::DiscoverLowPriorityServers(ESwitch on_off)
 {
     if (m_LPServices == on_off)
         return;
     m_LPServices = on_off;
-    if ( m_Poll.get())
-        m_Poll->DiscoverLowPriorityServers(on_off);
+    if (m_Connector.get())
+        m_Connector->DiscoverLowPriorityServers(on_off);
 }
 
 void INetServiceAPI::SetRebalanceStrategy(IRebalanceStrategy* strategy, EOwnership owner)
@@ -89,11 +89,11 @@ void INetServiceAPI::SetRebalanceStrategy(IRebalanceStrategy* strategy, EOwnersh
         m_RebalanceStrategyGuard.reset(m_RebalanceStrategy);
     else
         m_RebalanceStrategyGuard.reset();
-    if (m_Poll.get()) 
-        m_Poll->SetRebalanceStrategy(m_RebalanceStrategy);    
+    if (m_Connector.get()) 
+        m_Connector->SetRebalanceStrategy(m_RebalanceStrategy);    
 }
 
-void  INetServiceAPI::x_CreatePoll()
+void  INetServiceAPI::x_CreateConnector()
 {
     if (!m_Authenticator.get())
         m_Authenticator.reset(new CNetServiceAuthenticator(*this));
@@ -101,33 +101,28 @@ void  INetServiceAPI::x_CreatePoll()
         m_RebalanceStrategyGuard.reset(new CSimpleRebalanceStrategy(50,10));
         m_RebalanceStrategy = m_RebalanceStrategyGuard.get();
     }
-    m_Poll.reset(new CNetSrvConnectorPoll(m_ServiceName, 
-                                          m_Authenticator.get(), 
-                                          m_RebalanceStrategy));
-    m_Poll->UsePermanentConnection(m_ConnMode == eKeepConnection);
-    m_Poll->DiscoverLowPriorityServers(m_LPServices);
+    m_Connector.reset(new CNetServiceConnector(m_ServiceName, m_Authenticator.get()));
+    m_Connector->SetRebalanceStrategy(m_RebalanceStrategy);
+    m_Connector->PermanentConnection(m_ConnMode == eKeepConnection ? eOn : eOff);
+    m_Connector->DiscoverLowPriorityServers(m_LPServices ? eOn : eOff);
 }
 
-CNetSrvConnectorPoll& INetServiceAPI::GetPoll() 
+CNetServiceConnector& INetServiceAPI::GetConnector() 
 {
-    if (!m_Poll.get()) {
-        x_CreatePoll();
+    if (!m_Connector.get()) {
+        x_CreateConnector();
     }
-    return *m_Poll;
+    return *m_Connector;
 }
-CNetSrvConnectorPoll& INetServiceAPI::GetPoll() const
+CNetServiceConnector& INetServiceAPI::GetConnector() const
 {
-    return const_cast<INetServiceAPI&>(*this).GetPoll();
+    return const_cast<INetServiceAPI&>(*this).GetConnector();
 }
 
 
-string INetServiceAPI::GetConnectionInfo(CNetSrvConnector& conn) const
+string INetServiceAPI::GetConnectionInfo(CNetServerConnector& conn) const
 {
-    if( !GetPoll().IsLoadBalanced())
-        return GetServiceName();
-    else
-        return conn.GetHost() + ':' + NStr::UIntToString(conn.GetPort()) 
-            + '(' + GetServiceName() + ')';
+    return GetServiceName();
 }
 
 /* static */
@@ -140,7 +135,7 @@ void INetServiceAPI::TrimErr(string& err_msg)
 }
 
 
-void INetServiceAPI::PrintServerOut(CNetSrvConnector& conn, CNcbiOstream& out) const
+void INetServiceAPI::PrintServerOut(CNetServerConnector& conn, CNcbiOstream& out) const
 {
     conn.WaitForServer();
     string response;
@@ -172,13 +167,13 @@ void INetServiceAPI::ProcessServerError(string& response, ETrimErr trim_err) con
     NCBI_THROW(CNetServiceException, eCommunicationError, response);
 }
 
-string INetServiceAPI::SendCmdWaitResponse(CNetSrvConnector& conn, const string& cmd) const
+string INetServiceAPI::SendCmdWaitResponse(CNetServerConnector& conn, const string& cmd) const
 {
     conn.WriteStr(cmd + "\r\n");
     return WaitResponse(conn);
 }
 
-string INetServiceAPI::WaitResponse(CNetSrvConnector& conn) const
+string INetServiceAPI::WaitResponse(CNetServerConnector& conn) const
 {
     conn.WaitForServer();
     string tmp;
@@ -191,8 +186,40 @@ string INetServiceAPI::WaitResponse(CNetSrvConnector& conn) const
     
 }
 
+struct SNetServiceStreamCollector
+{
+    SNetServiceStreamCollector(const INetServiceAPI& api, const string& cmd, 
+                               INetServiceAPI::ISink& sink, 
+                               INetServiceAPI::EStreamCollectorType type)
+        : m_API(api), m_Cmd(cmd), m_Sink(sink), m_Type(type)
+    {}
+
+    void operator()(CNetServerConnector& conn)
+    {
+        if ( m_Type == INetServiceAPI::eSendCmdWaitResponse ) {  
+            CNcbiOstream& os = m_Sink.GetOstream(conn);
+            os << m_API.SendCmdWaitResponse(conn, m_Cmd);
+        } else if ( m_Type == INetServiceAPI::ePrintServerOut ) {
+            CNcbiOstream& os = m_Sink.GetOstream(conn);
+            conn.WriteStr(m_Cmd + "\r\n");
+            m_API.PrintServerOut(conn, os);
+        } else {
+            _ASSERT(false);
+        }
+        m_Sink.EndOfData(conn);
+    }
+
+    const INetServiceAPI& m_API;
+    const string& m_Cmd;
+    INetServiceAPI::ISink& m_Sink;
+    INetServiceAPI::EStreamCollectorType m_Type;
+
+};
+
 void INetServiceAPI::x_CollectStreamOutput(const string& cmd, ISink& sink, INetServiceAPI::EStreamCollectorType type) const
 {
+    GetConnector().ForEach(SNetServiceStreamCollector(*this, cmd, sink, type));
+    /*
     for (CNetSrvConnectorPoll::iterator it = GetPoll().begin(); 
          it != GetPoll().end(); ++it) {
         CNetSrvConnectorHolder ch = *it;
@@ -207,7 +234,7 @@ void INetServiceAPI::x_CollectStreamOutput(const string& cmd, ISink& sink, INetS
             _ASSERT(false);
         }
         sink.EndOfData(ch);
-    }        
+    } */
 }
 
 

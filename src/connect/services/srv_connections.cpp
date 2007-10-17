@@ -34,11 +34,11 @@
 #include <corelib/ncbi_param.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <connect/services/srv_connections_expt.hpp>
 #include <connect/services/srv_connections.hpp>
 #include <connect/services/error_codes.hpp>
-
 #include <connect/ncbi_service.h>
-
+ 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
@@ -113,57 +113,17 @@ static void s_SetDefaultCommTimeout(const STimeout& tm)
     s_DefaultCommTimeout_Initialized = true;
 }
 
-/************************************************************************/
+/*************************************************************************/
 
-/* static */
-CSocket* CSocketFactory::Create() 
+CNetServerConnector::~CNetServerConnector()
 {
-    auto_ptr<CSocket> socket( new CSocket );
-    if ( TServConn_UserLinger2::GetDefault() ) {
-        STimeout zero = {0,0};
-        socket->SetTimeout(eIO_Close,&zero);
+    try {
+        Disconnect();
+    } catch (...) {
     }
-    return socket.release(); 
 }
 
-CNetSrvConnector::CNetSrvConnector(const string& host, unsigned short port)
-    : m_Host(host), m_Port(port), 
-      m_Timeout(s_GetDefaultCommTimeout()), 
-      m_EventListener(NULL),
-      m_ReleaseSocket(false),
-      m_MaxRetries(TServConn_ConnMaxRetries::GetDefault())	
-{
-}
-
-CNetSrvConnector::CNetSrvConnector(const CNetSrvConnector& other, CSocket* socket) 
-    : m_Host(other.m_Host),  m_Port(other.m_Port), 
-      m_Timeout(other.m_Timeout),
-      m_EventListener(other.m_EventListener), 
-      m_ReleaseSocket(true),
-      m_MaxRetries(other.m_MaxRetries)
-{
-    m_Socket.reset(socket);
-}
-
-CNetSrvConnector::~CNetSrvConnector()
-{
-    if (m_ReleaseSocket)
-        m_Socket.release();
-}
-
-
-/* static */
-void CNetSrvConnector::SetDefaultCommunicationTimeout(const STimeout& to)
-{
-    s_SetDefaultCommTimeout(to);
-}
-/* static */
-void CNetSrvConnector::SetDefaultCreateSocketMaxReties(unsigned int retries)
-{
-    TServConn_ConnMaxRetries::SetDefault(retries);
-}
-
-bool CNetSrvConnector::ReadStr(string& str)
+bool CNetServerConnector::ReadStr(string& str)
 {
     if (!x_IsConnected())
         return false;
@@ -175,20 +135,20 @@ bool CNetSrvConnector::ReadStr(string& str)
         return true;
     case eIO_Timeout:
         NCBI_THROW(CNetSrvConnException, eReadTimeout, 
-                   "Communication timeout reading from server " + GetHost() + ":" + NStr::UIntToString(GetPort()) + ".");
+                   "Communication timeout reading from server " + m_Parent.GetHost() + ":" 
+                   + NStr::UIntToString(m_Parent.GetPort()) + ".");
         break;
     default: // invalid socket or request, bailing out
         return false;
     }
     return true;    
 }
-
-void CNetSrvConnector::WriteStr(const string& str)
+void CNetServerConnector::WriteStr(const string& str)
 {
-    WriteBuf(str.data(), str.size());
+    WriteBuf(str.data(), str.size());    
 }
-
-void  CNetSrvConnector::WriteBuf(const void* buf, size_t len)
+    
+void CNetServerConnector::WriteBuf(const void* buf, size_t len)
 {
     x_CheckConnect();
     const char* buf_ptr = (const char*)buf;
@@ -199,26 +159,28 @@ void  CNetSrvConnector::WriteBuf(const void* buf, size_t len)
         if ( io_st != eIO_Success) {
             CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
             NCBI_THROW(CNetSrvConnException, eWriteFailure, 
-                        "Failed to write to server " + GetHost() + ":" + NStr::UIntToString(GetPort()) + 
+                        "Failed to write to server " + m_Parent.GetHost() + ":" 
+                        + NStr::UIntToString(m_Parent.GetPort()) + 
                         ". Reason: " + string(io_ex.what()));
         }
         size_to_write -= n_written;
         buf_ptr       += n_written;
     } // while
 }
-
-void CNetSrvConnector::WaitForServer(unsigned wait_sec)
+     // if wait_sec is set to 0 m_Timeout will be used
+void CNetServerConnector::WaitForServer(unsigned int wait_sec)
 {
     _ASSERT(x_IsConnected());
 
     STimeout to = {wait_sec, 0};
     if (wait_sec == 0)
-        to = m_Timeout;
+        to = m_Parent.GetCommunicationTimeout();
     while (true) {
         EIO_Status io_st = m_Socket->Wait(eIO_Read, &to);
         if (io_st == eIO_Timeout) {
             NCBI_THROW(CNetSrvConnException, eResponseTimeout, 
-                       "No response from the server " + GetHost() + ":" + NStr::UIntToString(GetPort()) + ".");
+                       "No response from the server " + m_Parent.GetHost() + ":" 
+                       + NStr::UIntToString(m_Parent.GetPort()) + ".");
         }
         else {
             break;
@@ -226,42 +188,40 @@ void CNetSrvConnector::WaitForServer(unsigned wait_sec)
     }
 }
 
-void CNetSrvConnector::Telnet( CNcbiOstream& out,  CNetSrvConnector::IStringProcessor* processor)
+
+CSocket& CNetServerConnector::GetSocket()
 {
-    _ASSERT(x_IsConnected());
-
-    STimeout rto = {1, 0};
-    m_Socket->SetTimeout(eIO_Read, &rto);
-
-    string line;
-    while (1) {
-        EIO_Status st = m_Socket->ReadLine(line);       
-        if (st == eIO_Success) {
-            if (processor && !processor->Process(line))
-                break;
-            out << line << "\n" << flush;
-        } else {
-            EIO_Status st = m_Socket->GetStatus(eIO_Open);
-            if (st != eIO_Success) {
-                break;
-            }
-        }
-    }
-
+    _ASSERT(x_IsConnected());    
+    return *m_Socket;
 }
 
-void CNetSrvConnector::x_CheckConnect()
+CNetServerConnector::CNetServerConnector(CNetServerConnectors& parent)
+    :m_Parent(parent), m_WasConnected(false)
 {
+}
+
+void CNetServerConnector::x_CheckConnect()
+{
+    INetServerConnectorEventListener* listener = m_Parent.GetEventListener();
     if (x_IsConnected())
         return;
 
-    if (!m_Socket.get()) 
-        m_Socket.reset(m_SocketPool.Get());
+    if (m_WasConnected && listener ) listener->OnDisconnected(*this);
+    m_WasConnected = false;
+ 
+    if (!m_Socket.get()) {
+        m_Socket.reset(new CSocket);
+        if ( TServConn_UserLinger2::GetDefault() ) {
+            STimeout zero = {0,0};
+            m_Socket->SetTimeout(eIO_Close,&zero);
+        }
+    }
 
     unsigned conn_repeats = 0;
    
     do {
-        EIO_Status io_st = m_Socket->Connect(m_Host, m_Port, &m_Timeout, eOn);
+        EIO_Status io_st = m_Socket->Connect(m_Parent.GetHost(), m_Parent.GetPort(), 
+                                             &m_Parent.GetCommunicationTimeout(), eOn);
         if (io_st != eIO_Success) {
             if (io_st == eIO_Unknown) {
 
@@ -272,11 +232,12 @@ void CNetSrvConnector::x_CheckConnect()
                 // (this kernel limitation manifests itself on Linux)
                 //
                 
-                if (++conn_repeats > m_MaxRetries) {
+                if (++conn_repeats > m_Parent.GetCreateSocketMaxRetries()) {
                     if ( io_st != eIO_Success) {
                         CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
                         NCBI_THROW(CNetSrvConnException, eConnectionFailure, 
-                                "Failed to connect to server " + GetHost() + ":" + NStr::UIntToString(GetPort()) + 
+                                "Failed to connect to server " + m_Parent.GetHost() + ":" 
+                                + NStr::UIntToString(m_Parent.GetPort()) + 
                                 ". Reason: " + string(io_ex.what()));
                     }
                 }
@@ -286,25 +247,27 @@ void CNetSrvConnector::x_CheckConnect()
             } else {
                 CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
                 NCBI_THROW(CNetSrvConnException, eConnectionFailure, 
-                          "Failed to connect to server " + GetHost() + ":" + NStr::UIntToString(GetPort()) + 
+                          "Failed to connect to server " + m_Parent.GetHost() + ":" 
+                          + NStr::UIntToString(m_Parent.GetPort()) + 
                           ". Reason: " + string(io_ex.what()));
             }
         } else {
             break;
         }
-        
+         
     } while (1);
 
     m_Socket->SetDataLogging(eDefault);
-    m_Socket->SetTimeout(eIO_ReadWrite, &m_Timeout);
+    m_Socket->SetTimeout(eIO_ReadWrite, &m_Parent.GetCommunicationTimeout());
     m_Socket->DisableOSSendDelay();
 //    m_Socket->SetReuseAddress(eOn);
 
-    if (m_EventListener)
-        m_EventListener->OnConnected(*this);
+    if (listener)
+        listener->OnConnected(*this);
+    m_WasConnected = true;
 }
 
-bool CNetSrvConnector::x_IsConnected()
+bool CNetServerConnector::x_IsConnected()
 {
     if (!m_Socket.get()) return false;
     EIO_Status st = m_Socket->GetStatus(eIO_Open);
@@ -339,104 +302,135 @@ bool CNetSrvConnector::x_IsConnected()
     return ret;
 }
 
-
-CSocket* CNetSrvConnector::DetachSocket() 
-{ 
-    _ASSERT(!m_ReleaseSocket);
-    x_CheckConnect();
-    return m_Socket.release(); 
-}
-void CNetSrvConnector::AttachSocket(CSocket* socket) 
-{ 
-    _ASSERT(socket);
-    _ASSERT(!m_ReleaseSocket);
-    if (!m_Socket.get())
-        m_Socket.reset(socket);
-    else
-        m_SocketPool.Put(socket);
-}
-
-void CNetSrvConnector::Disconnect(CSocket* socket)
+void CNetServerConnector::x_ReturnToParent()
 {
-    if (socket) {
-        CNetSrvConnector tmp(*this, socket);
-        tmp.Disconnect();
-    } else {
-        if (x_IsConnected()) {
-            if (m_EventListener)
-                m_EventListener->OnDisconnected(*this);
-            m_Socket->Close();
+    m_Parent.x_TakeConnector(this);
+}
+
+void CNetServerConnector::Disconnect()
+{
+    if (x_IsConnected())
+        m_Socket->Close();
+
+    INetServerConnectorEventListener* listener = m_Parent.GetEventListener();
+    if (listener && m_WasConnected) listener->OnDisconnected(*this);
+    m_WasConnected = false;
+}
+
+void CNetServerConnector::Telnet(CNcbiOstream* out,  CNetServerConnector::IStringProcessor* processor)
+{
+    _ASSERT(x_IsConnected());
+
+    STimeout rto = {1, 0};
+    m_Socket->SetTimeout(eIO_Read, &rto);
+
+    string line;
+    while (1) {
+        EIO_Status st = m_Socket->ReadLine(line);       
+        if (st == eIO_Success) {
+            if (processor && !processor->Process(line))
+                break;
+            if (out) *out << line << "\n" << flush;
+        } else {
+            EIO_Status st = m_Socket->GetStatus(eIO_Open);
+            if (st != eIO_Success) {
+                break;
+            }
         }
     }
+    Disconnect();
 }
 
+/*************************************************************************/
+CNetServerConnectors::CNetServerConnectors(const string& host, unsigned short port,
+                      INetServerConnectorEventListener* listener)
+    : m_Host(host), m_Port(port), m_Timeout(s_GetDefaultCommTimeout()), 
+      m_EventListener(listener),
+      m_MaxRetries(TServConn_ConnMaxRetries::GetDefault()), m_ServerConnectorFactory(*this),
+      m_PermanentConnection(eDefault)
+{
+    m_ServerConnectorPool.reset(new TConnectorPool(0, m_ServerConnectorFactory));
+}
+void CNetServerConnectors::x_TakeConnector(CNetServerConnector* connector)
+{
+    _ASSERT(connector);
+    if (m_PermanentConnection != eOn) 
+        connector->Disconnect();
+    else {
+       // we need to check if all data has been read.
+       // if it has not then we have to close the connection
+        STimeout to = {0, 0};
+        CSocket* socket = connector->m_Socket.get();
+        if (socket && socket->Wait(eIO_Read, &to) == eIO_Success)
+            connector->Disconnect();
+    }
+    m_ServerConnectorPool->Put(connector);
+}
 
-void CNetSrvConnector::SetCommunicationTimeout(const STimeout& to)
+CNetServerConnectorHolder CNetServerConnectors::GetConnector()
+{
+    return CNetServerConnectorHolder(*m_ServerConnectorPool->Get());
+}
+void CNetServerConnectors::SetCommunicationTimeout(const STimeout& to)
 {
     m_Timeout = to;
-    if (m_Socket.get()) {
-        m_Socket->SetTimeout(eIO_ReadWrite, &m_Timeout);
-    }
-    NON_CONST_ITERATE(TResourcePool::TPoolList, it, m_SocketPool.GetFreeList()) {
-        (*it)->SetTimeout(eIO_ReadWrite, &m_Timeout);       
-    }
+    //
+    //NON_CONST_ITERATE(TConnectorPool::TPoolList, it, m_ServerConnectorPool->GetFreeList()) {
+    //    (*it)->x_SetCommunicationTimeout(m_Timeout);       
+    //}
+}
+
+/* static */
+void CNetServerConnectors::SetDefaultCommunicationTimeout(const STimeout& to)
+{
+    s_SetDefaultCommTimeout(to);
+}
+/* static */
+void CNetServerConnectors::SetDefaultCreateSocketMaxReties(unsigned int retries)
+{
+    TServConn_ConnMaxRetries::SetDefault(retries);
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-CNetSrvConnectorPoll::CNetSrvConnectorPoll(const string& service, 
-                                           CNetSrvConnector::IEventListener* event_listener,
-                                           IRebalanceStrategy* rebalance_strategy)
-    : m_ServiceName(service), m_RebalanceStrategy(rebalance_strategy), 
-      m_IsLoadBalanced(false), m_DiscoverLowPriorityServers(false), 
-      m_EventListener(event_listener), m_PermConn(false), m_Timeout(s_GetDefaultCommTimeout()),
-      m_MaxRetries(TServConn_ConnMaxRetries::GetDefault())
+/*************************************************************************/
 
+
+CNetServiceConnector::CNetServiceConnector(const string& service,
+                                 INetServerConnectorEventListener* listener)
+    : m_ServiceName(service), m_IsLoadBalanced(false), 
+      m_DiscoverLowPriorityServers(eOff), m_Timeout(s_GetDefaultCommTimeout()),
+      m_EventListener(listener), 
+      m_MaxRetries(TServConn_ConnMaxRetries::GetDefault()), 
+      m_PermanentConnection(eOff)
 {
     if (service.empty())
         return;
 
     string sport, host;
-    if ( NStr::SplitInTwo(service, ":", host, sport) ) {
-        unsigned int port = NStr::StringToInt(sport);
-        host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
-        m_Services.push_back(TService(host, port));
+    if (NStr::SplitInTwo(service, ":", host, sport)) {
+       unsigned int port = NStr::StringToInt(sport);
+       host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
+       CWriteLockGuard g(m_ServersLock);
+       m_Servers.push_back(TServer(host, port));
     } else {
-        //DiscoverLBServices(service, m_Services, m_DiscoverLowPriorityServers);
-        m_IsLoadBalanced = true;
+       m_IsLoadBalanced = true;
     }
 }
-
-CNetSrvConnectorPoll::~CNetSrvConnectorPoll()
+CNetServiceConnector::~CNetServiceConnector()
 {
-    ITERATE( TCont, it, m_Connections) {
+    CFastMutexGuard g(m_ConnectorsMutex);
+    ITERATE( TCont, it, m_Connectors) {
         delete it->second;
     }
 }
 
-CNetSrvConnector* CNetSrvConnectorPoll::x_FindOrCreateConnector(const TService& srv) const
-{
-    TCont::iterator it = m_Connections.find(srv);
-    CNetSrvConnector* conn = NULL;
-    if(it != m_Connections.end())
-        conn = it->second;
-    if( conn == NULL ) {
-        conn = new CNetSrvConnector(srv.first,srv.second);
-        conn->SetEventListener(m_EventListener);
-        conn->SetCommunicationTimeout(m_Timeout);
-        m_Connections[srv] = conn;
-    }
-    if( m_RebalanceStrategy ) m_RebalanceStrategy->OnResourceRequested(*conn);
-    return conn;
-}
-
-CNetSrvConnectorHolder CNetSrvConnectorPoll::GetBest(const TService* backup, const string& hit)
+CNetServerConnectorHolder CNetServiceConnector::GetBest(const TServer* backup, const string& hit)
 {
     if (!m_IsLoadBalanced) {
-        if (m_Services.empty()) 
+        CReadLockGuard g(m_ServersLock);
+        if (m_Servers.empty()) 
             NCBI_THROW(CNetSrvConnException, eSrvListEmpty, "The service is not set.");
-        return CNetSrvConnectorHolder(*x_FindOrCreateConnector(m_Services[0]), !m_PermConn);
+        return x_FindOrCreateConnector(m_Servers[0]).GetConnector();
     }
     try {
         x_Rebalance();
@@ -444,13 +438,16 @@ CNetSrvConnectorHolder CNetSrvConnectorPoll::GetBest(const TService* backup, con
         if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound || !backup)
             throw;
         ERR_POST_X(1, "Connecting to backup server " << backup->first << ":" << backup->second << ".");
-        return CNetSrvConnectorHolder(*x_FindOrCreateConnector(*backup), !m_PermConn);
+        return x_FindOrCreateConnector(*backup).GetConnector();
     }
-    ITERATE(TServices, it, m_Services) {
-        CNetSrvConnector* conn = x_FindOrCreateConnector(*it);
+    CReadLockGuard g(m_ServersLock);
+    TServers servers_copy(m_Servers);
+    g.Release();
+    ITERATE(TServers, it, servers_copy) {
+        CNetServerConnectorHolder conn = x_FindOrCreateConnector(*it).GetConnector();
         try {
-            conn->x_CheckConnect();
-            return CNetSrvConnectorHolder(*conn, !m_PermConn);
+            conn.CheckConnect();
+            return conn;
         } catch (CNetSrvConnException& ex) {
             if (ex.GetErrCode() == CNetSrvConnException::eConnectionFailure) {
                 ERR_POST_X(2, ex.what());
@@ -462,28 +459,93 @@ CNetSrvConnectorHolder CNetSrvConnectorPoll::GetBest(const TService* backup, con
     if (backup) {
         ERR_POST_X(3, "Couldn't find any availbale servers for " << m_ServiceName 
                    << " service. Connecting to backup server " << backup->first << ":" << backup->second << ".");
-        return CNetSrvConnectorHolder(*x_FindOrCreateConnector(*backup), !m_PermConn);
+        return x_FindOrCreateConnector(*backup).GetConnector();
     }
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty, "Couldn't find any availbale servers for " 
                                                     + m_ServiceName + " service.");
 }
 
-CNetSrvConnectorHolder CNetSrvConnectorPoll::GetSpecific(const string& host, unsigned int port)
+CNetServerConnectorHolder CNetServiceConnector::GetSpecific(const string& host, unsigned int port)
 {
     string x_host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
-    return CNetSrvConnectorHolder(*x_FindOrCreateConnector(TService(x_host,port)), !m_PermConn);
+    return x_FindOrCreateConnector(TServer(x_host,port)).GetConnector();
 }
 
-void CNetSrvConnectorPoll::x_Rebalance()
+void CNetServiceConnector::SetCommunicationTimeout(const STimeout& to)
+{
+    CFastMutexGuard g(m_ConnectorsMutex);
+    m_Timeout = to;
+    NON_CONST_ITERATE( TCont, it, m_Connectors) {
+        it->second->SetCommunicationTimeout(to);
+    }
+}
+const STimeout& CNetServiceConnector::GetCommunicationTimeout() const 
+{ 
+    return m_Timeout; 
+}
+      
+void CNetServiceConnector::SetCreateSocketMaxRetries(unsigned int retries) 
+{ 
+    CFastMutexGuard g(m_ConnectorsMutex);
+    m_MaxRetries = retries;
+    NON_CONST_ITERATE( TCont, it, m_Connectors) {
+        it->second->SetCreateSocketMaxRetries(retries);
+    }
+}
+
+unsigned int CNetServiceConnector::GetCreateSocketMaxRetries() const 
+{ 
+    return m_MaxRetries; 
+}
+
+void CNetServiceConnector::PermanentConnection(ESwitch type) 
+{ 
+    CFastMutexGuard g(m_ConnectorsMutex);
+    m_PermanentConnection = type; 
+    NON_CONST_ITERATE( TCont, it, m_Connectors) {
+        it->second->PermanentConnection(type);
+    }
+}
+void CNetServiceConnector::DiscoverLowPriorityServers(ESwitch on_off) 
+{ 
+    m_DiscoverLowPriorityServers = on_off; 
+    if (m_RebalanceStrategy) m_RebalanceStrategy->Reset();
+}
+
+void CNetServiceConnector::SetRebalanceStrategy(IRebalanceStrategy* strategy)
+{
+    m_RebalanceStrategy = strategy;
+}
+
+CNetServerConnectors& CNetServiceConnector::x_FindOrCreateConnector(const TServer& srv) const
+{
+    CFastMutexGuard g(m_ConnectorsMutex);
+    TCont::iterator it = m_Connectors.find(srv);
+    CNetServerConnectors* conn = NULL;
+    if(it != m_Connectors.end())
+        conn = it->second;
+    if( conn == NULL ) {
+        conn = new CNetServerConnectors(srv.first,srv.second, m_EventListener);
+        conn->SetCommunicationTimeout(m_Timeout);
+        conn->PermanentConnection(m_PermanentConnection);
+        m_Connectors[srv] = conn;
+    }
+    g.Release();
+    if( m_RebalanceStrategy ) m_RebalanceStrategy->OnResourceRequested(*conn);
+    return *conn;
+}
+
+void CNetServiceConnector::x_Rebalance()
 {
     if (!m_IsLoadBalanced)
         return;
     if( !m_RebalanceStrategy || m_RebalanceStrategy->NeedRebalance()) {
-        m_Services.clear();
+        CWriteLockGuard g(m_ServersLock);
+        m_Servers.clear();
         int try_count = 0;
         while(true) {
             try {
-                DiscoverLBServices(m_ServiceName, m_Services, m_DiscoverLowPriorityServers);
+                DiscoverLBServices(m_ServiceName, m_Servers, m_DiscoverLowPriorityServers == eOn);
                 break;
             } catch (CNetSrvConnException& ex) {
                 if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound)
@@ -497,23 +559,5 @@ void CNetSrvConnectorPoll::x_Rebalance()
     }
 }
 
-void CNetSrvConnectorPoll::SetCommunicationTimeout(const STimeout& to)
-{
-    m_Timeout = to;
-    NON_CONST_ITERATE(TCont, it, m_Connections) {
-        it->second->SetCommunicationTimeout(m_Timeout);
-    }
-
-}
-
-void CNetSrvConnectorPoll::SetCreateSocketMaxRetries(unsigned int retries)
-{
-    m_MaxRetries = retries;
-    NON_CONST_ITERATE(TCont, it, m_Connections) {
-        it->second->SetCreateSocketMaxRetries(retries);
-    }
-
-}
-
-
 END_NCBI_SCOPE
+

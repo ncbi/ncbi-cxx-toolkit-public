@@ -121,7 +121,7 @@ CNetScheduleAPI::StringToStatus(const string& status_str)
     return eJobNotFound;
 }
 
-void CNetScheduleAPI::x_SendAuthetication(CNetSrvConnector& conn) const
+void CNetScheduleAPI::x_SendAuthetication(CNetServerConnector& conn) const
 {
     string auth = GetClientName();
     if (!m_ProgramVersion.empty()) {
@@ -236,6 +236,60 @@ CNetScheduleAPI::x_GetJobStatus(const string& job_key, bool submitter) const
     return (EJobStatus) st;
 }
 
+struct SNetScheduleParamsGetter
+{
+    SNetScheduleParamsGetter(const CNetScheduleAPI& api, CNetScheduleAPI::SServerParams& params)
+        : m_API(api), m_Params(params), m_WasCalled(false) 
+    {
+        m_Params.max_input_size = kMax_UInt;
+        m_Params.max_output_size = kMax_UInt;
+        m_Params.fast_status = true;
+    }
+    ~SNetScheduleParamsGetter()
+    {
+        if (m_Params.max_input_size == kMax_UInt)
+            m_Params.max_input_size = kNetScheduleMaxDBDataSize / 4;
+        if (m_Params.max_output_size == kMax_UInt)
+            m_Params.max_output_size = kNetScheduleMaxDBDataSize / 4;
+        if (!m_WasCalled)
+            m_Params.fast_status = false;
+    }
+    void operator()(CNetServerConnector& conn)
+    {
+        if (!m_WasCalled) m_WasCalled = true;
+        string resp;
+        try {
+            resp = m_API.SendCmdWaitResponse(conn, "GETP"); 
+        } catch (CNetScheduleException& ex) {
+            if (ex.GetErrCode() != CNetScheduleException::eProtocolSyntaxError)
+                throw;
+        } catch (...) {
+        }
+        list<string> spars;
+        NStr::Split(resp, ";", spars);
+        bool fast_status = false;
+        ITERATE(list<string>, it, spars) {
+            string n,v;
+            NStr::SplitInTwo(*it,"=",n,v);
+            if (n == "max_input_size") {
+                size_t val = NStr::StringToInt(v) / 4;
+                if (m_Params.max_input_size > val)
+                    m_Params.max_input_size = val ;
+            } else if (n == "max_output_size") {
+                size_t val = NStr::StringToInt(v) / 4;
+                if (m_Params.max_output_size > val)
+                    m_Params.max_output_size = val;
+            } else if (n == "fast_status" && v == "1") {
+                fast_status = true;
+            }
+        }
+        if (m_Params.fast_status) m_Params.fast_status = fast_status;
+    }
+    const CNetScheduleAPI& m_API;
+    CNetScheduleAPI::SServerParams& m_Params;
+    bool m_WasCalled;
+};
+
 const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams() const
 {
     if (m_ServerParams.get() && m_ServerParamsAskCount-- > 0) {
@@ -245,6 +299,8 @@ const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams() const
         m_ServerParams.reset(new SServerParams);
     m_ServerParamsAskCount = SERVER_PARAMS_ASK_MAX_COUNT;
     
+    GetConnector().ForEach(SNetScheduleParamsGetter(*this, *m_ServerParams));
+/*
     string cmd = "GETP";
     m_ServerParams->max_input_size = kMax_UInt;
     m_ServerParams->max_output_size = kMax_UInt;
@@ -288,7 +344,7 @@ const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams() const
         m_ServerParams->max_output_size = kNetScheduleMaxDBDataSize / 4;
     if (fscount == concount && fscount != 0)
         m_ServerParams->fast_status = true;
-        
+  */      
     return *m_ServerParams;
 }
 

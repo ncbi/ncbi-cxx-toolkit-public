@@ -99,15 +99,18 @@ int CSampleNetCacheClient::Run(void)
     nc_client.reset(
             new CNetCacheAPI(service_name, "nc_client_sample2"));
 
-    const char test_data[] = "A quick brown fox, jumps over lazy dog.";
+    nc_client->SetConnMode(INetServiceAPI::eKeepConnection);
 
+    //const char test_data[] = "A quick brown fox, jumps over lazy dog.";
+    const char test_data[] = "1234565 y dog.";
     // storage takes respnsibility of deleting NetCache client
     CBlobStorage_NetCache storage( nc_client.release() );
     
     // Store the BLOB
     string key;
+
     CNcbiOstream& os = storage.CreateOStream(key);
-    os << test_data;
+    os << test_data << endl;
 
     // Reset the storage so we can reuse it to get the data back from 
     // the NetCache
@@ -116,11 +119,11 @@ int CSampleNetCacheClient::Run(void)
     NcbiCout << key << NcbiEndl;
 
 
-    SleepMilliSec(500);
+    //SleepMilliSec(500);
 
     // Get the data back
     try {
-        key = "aaa";
+        //key = "aaa";
         CNcbiIstream& is = storage.GetIStream(key);
         string res;
         getline(is, res);
@@ -137,5 +140,5 @@ int CSampleNetCacheClient::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CSampleNetCacheClient().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSampleNetCacheClient().AppMain(argc, argv);
 }

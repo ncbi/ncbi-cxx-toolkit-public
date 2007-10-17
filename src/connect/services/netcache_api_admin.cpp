@@ -43,23 +43,23 @@ BEGIN_NCBI_SCOPE
 
 void CNetCacheAdmin::ShutdownServer() const
 {
-    if (m_API->GetPoll().IsLoadBalanced()) {
+    if (m_API->GetConnector().IsLoadBalanced()) {
         NCBI_THROW(CNetCacheException, eCommandIsNotAllowed, 
                    "This command is allowed only for non-loadbalance client.");
     }
-    CNetSrvConnectorHolder conn = m_API->x_GetConnector();
+    CNetServerConnectorHolder conn = m_API->x_GetConnector();
     m_API->SendCmdWaitResponse(conn, "SHUTDOWN");  
 }
 
 void CNetCacheAdmin::Logging(bool on_off) const
 {
-    if (m_API->GetPoll().IsLoadBalanced()) {
+    if (m_API->GetConnector().IsLoadBalanced()) {
         NCBI_THROW(CNetCacheException, eCommandIsNotAllowed, 
                    "This command is allowed only for non-loadbalance client.");
     }
     string cmd = "LOG ";
     cmd += on_off ? "ON" : "OFF";
-    CNetSrvConnectorHolder conn = m_API->x_GetConnector();
+    CNetServerConnectorHolder conn = m_API->x_GetConnector();
     m_API->SendCmdWaitResponse(conn, cmd);  
 }
 
@@ -80,24 +80,23 @@ void CNetCacheAdmin::GetServerVersion(INetServiceAPI::ISink& sink) const
 
 void CNetCacheAdmin::DropStat() const
 {
-    if (m_API->GetPoll().IsLoadBalanced()) {
+    if (m_API->GetConnector().IsLoadBalanced()) {
         NCBI_THROW(CNetCacheException, eCommandIsNotAllowed, 
                    "This command is allowed only for non-loadbalance client.");
     }
-    CNetSrvConnectorHolder conn = m_API->x_GetConnector();
+    CNetServerConnectorHolder conn = m_API->x_GetConnector();
     m_API->SendCmdWaitResponse(conn, "DROPSTAT");  
 }
 
 void CNetCacheAdmin::Monitor(CNcbiOstream & out) const
 {
-    if (m_API->GetPoll().IsLoadBalanced()) {
+    if (m_API->GetConnector().IsLoadBalanced()) {
         NCBI_THROW(CNetCacheException, eCommandIsNotAllowed, 
                    "This command is allowed only for non-loadbalance client.");
     }
-    CNetSrvConnectorHolder conn = m_API->x_GetConnector();
+    CNetServerConnectorHolder conn = m_API->x_GetConnector();
     conn->WriteStr("MONI\r\n");
-    conn->Telnet(out);
-    conn->Disconnect();
+    conn->Telnet(&out, NULL);
 }
 
 

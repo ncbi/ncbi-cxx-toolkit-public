@@ -229,9 +229,9 @@ private:
         return SendCmdWaitResponse(x_GetConnector(job_key), tmp);   
     }
 
-    CNetSrvConnectorHolder x_GetConnector(const string& job_key = kEmptyStr) const;
+    CNetServerConnectorHolder x_GetConnector(const string& job_key = kEmptyStr) const;
 
-    virtual void x_SendAuthetication(CNetSrvConnector& conn) const;
+    virtual void x_SendAuthetication(CNetServerConnector& conn) const;
 
     EJobStatus x_GetJobStatus(const string& job_key, bool submitter) const;
 
@@ -570,14 +570,6 @@ private:
 
     void x_RegUnregClient(const string& cmd, unsigned short udp_port) const;
     
-    static
-    void x_ParseGetJobResponse(string*        job_key, 
-                               string*        input, 
-                               string*        jout,
-                               string*        jerr,
-                               CNetScheduleAPI::TJobMask*      job_mask,
-                               const string&  response);
-
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -680,11 +672,11 @@ public:
     template <typename TBVector>
     void RetrieveKeys(const string& query, CNetScheduleKeys<TBVector>& ids) const;
      
+    typedef map<pair<string,unsigned int>, string> TIDsMap;
 private:
     friend class CNetScheduleAPI;
     CNetScheduleAdmin(const CNetScheduleAPI& api) : m_API(&api) {}
 
-    typedef map<pair<string,unsigned int>, string> TIDsMap;
     TIDsMap x_QueueIDs(const string& queury) const;
     
     const CNetScheduleAPI* m_API;
@@ -695,28 +687,28 @@ private:
 
 inline CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
 {
-    DiscoverLowPriorityServers(false);
+    DiscoverLowPriorityServers(eOff);
     return CNetScheduleSubmitter(*this);
 }
 inline CNetScheduleExecuter CNetScheduleAPI::GetExecuter()
 {
-    DiscoverLowPriorityServers(true);
+    DiscoverLowPriorityServers(eOn);
     return CNetScheduleExecuter(*this);
 }
 inline CNetScheduleAdmin CNetScheduleAPI::GetAdmin()
 {
-    DiscoverLowPriorityServers(true);
+    DiscoverLowPriorityServers(eOff);
     return CNetScheduleAdmin(*this);
 }
 
 inline
-CNetSrvConnectorHolder CNetScheduleAPI::x_GetConnector(const string& job_key) const
+CNetServerConnectorHolder CNetScheduleAPI::x_GetConnector(const string& job_key) const
 {
     if (job_key.empty())
-        return GetPoll().GetBest();
+        return GetConnector().GetBest();
 
     CNetScheduleKey nskey(job_key);
-    return GetPoll().GetSpecific(nskey.host, nskey.port);
+    return GetConnector().GetSpecific(nskey.host, nskey.port);
 }
 
 

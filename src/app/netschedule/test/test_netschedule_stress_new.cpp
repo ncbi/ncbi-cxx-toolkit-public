@@ -294,12 +294,12 @@ public:
     CSimpleSink(CNcbiOstream& os) : m_Os(os) {}
     ~CSimpleSink() {}
     
-    virtual CNcbiOstream& GetOstream(CNetSrvConnector& conn)
+    virtual CNcbiOstream& GetOstream(CNetServerConnector& conn)
     {
         m_Os << conn.GetHost() << ":" << conn.GetPort() << endl;
         return m_Os;
     }
-    virtual void EndOfData(CNetSrvConnector& conn)
+    virtual void EndOfData(CNetServerConnector& conn)
     {
         m_Os << endl;
     }
@@ -499,7 +499,7 @@ int CTestNetScheduleStress::Run(void)
 
     {{
     NcbiCout << NcbiEndl << "Processing..." << NcbiEndl;
-    SleepMilliSec(8000);
+    SleepMilliSec(8 * 1000);
     CStopWatch sw(CStopWatch::eStart);
     
     unsigned cnt = 0;
@@ -531,7 +531,7 @@ int CTestNetScheduleStress::Run(void)
 
     {{
     NcbiCout << NcbiEndl << "Check returned jobs..." << NcbiEndl;
-    SleepMilliSec(5000);
+    SleepMilliSec(5 * 1000);
     CStopWatch sw(CStopWatch::eStart);
 
     NON_CONST_ITERATE(vector<string>, it, jobs_returned) {
