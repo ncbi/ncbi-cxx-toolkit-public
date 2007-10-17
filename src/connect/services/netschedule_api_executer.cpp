@@ -179,40 +179,42 @@ struct SNSJobGetter
     SNSJobGetter(const CNetScheduleAPI& api, const string& cmd, CNetScheduleJob& job)
         : m_API(api), m_Cmd(cmd), m_Job(job)
     {}
-    bool operator()(CNetServerConnector& con, bool isLast)
-    {
-        string resp;
-        try {
-           resp = m_API.SendCmdWaitResponse(con, m_Cmd);
-        } catch (CNetServiceException& ex) {
-             ERR_POST( con.GetHost() << ":" << con.GetPort() 
-                  << " returned error: \"" << ex.what() << "\"");
-            if (ex.GetErrCode() == CNetServiceException::eCommunicationError) {
-                if( isLast )
-                    NCBI_THROW(CNetServiceException, eCommunicationError, 
-                           "Communication error");
-                return false;
-            } else throw;
-        } catch (CIO_Exception& ex) {
-            ERR_POST( con.GetHost() << ":" << con.GetPort() 
-                       << " returned error: \"" << ex.what() << "\"");
-            if( isLast )
-                NCBI_THROW(CNetServiceException, eCommunicationError, 
-                           "Communication error");
-            return false;
-        }
-        if (!resp.empty()) {
-           m_Job.mask = CNetScheduleAPI::eEmptyMask;
-           string tmp;
-           s_ParseGetJobResponse(&m_Job.job_id, &m_Job.input, &tmp, &tmp, &m_Job.mask, resp);
-           return true;
-        }
-        return false;
-    }
+    bool operator()(CNetServerConnector& con, bool isLast);
     const CNetScheduleAPI& m_API;
     const string& m_Cmd;
     CNetScheduleJob& m_Job;
 };
+
+bool SNSJobGetter::operator()(CNetServerConnector& con, bool isLast)
+{
+    string resp;
+    try {
+        resp = m_API.SendCmdWaitResponse(con, m_Cmd);
+    } catch (CNetServiceException& ex) {
+        ERR_POST( con.GetHost() << ":" << con.GetPort() 
+                  << " returned error: \"" << ex.what() << "\"");
+        if (ex.GetErrCode() == CNetServiceException::eCommunicationError) {
+            if( isLast )
+                NCBI_THROW(CNetServiceException, eCommunicationError, 
+                           "Communication error");
+            return false;
+        } else throw;
+    } catch (CIO_Exception& ex) {
+        ERR_POST( con.GetHost() << ":" << con.GetPort() 
+                  << " returned error: \"" << ex.what() << "\"");
+        if( isLast )
+            NCBI_THROW(CNetServiceException, eCommunicationError, 
+                       "Communication error");
+        return false;
+    }
+    if (!resp.empty()) {
+        m_Job.mask = CNetScheduleAPI::eEmptyMask;
+        string tmp;
+        s_ParseGetJobResponse(&m_Job.job_id, &m_Job.input, &tmp, &tmp, &m_Job.mask, resp);
+        return true;
+    }
+    return false;
+}
 
 void CNetScheduleExecuter::SetRunTimeout(const string& job_key, 
                                          unsigned      time_to_run) const
