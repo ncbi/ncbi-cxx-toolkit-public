@@ -328,7 +328,6 @@ Available commands:
 
   Operations on working copy:
     switch          - Switch working copy directories to a branch.
-    unswitch        - Switch WC to the parent stream of a branch.
     update          - Update branch directories from the repository.
 
   Merging:
