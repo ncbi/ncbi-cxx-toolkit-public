@@ -539,12 +539,17 @@ unless (@ExistingBuilds)
 
     my $ConfigOptions = join(' ', @ConfigOptions);
 
-    print "Current options to configure (deduced from project list):\n" .
-        "$ConfigOptions\nIf you would like to pass any additional options, " .
-        "please enter them now;\notherwise, just hit return.\n";
+    my $MoreOptions;
 
-    my $MoreOptions = readline STDIN;
-    chomp $MoreOptions;
+    unless ($WithConfigure)
+    {
+        print "Current options to configure (deduced from project list):\n" .
+            "$ConfigOptions\nIf you would like to pass any additional " .
+            "options, please enter them now;\notherwise, just hit return.\n";
+
+        $MoreOptions = readline STDIN;
+        chomp $MoreOptions;
+    }
 
     $ConfigOptions .= ' ' . $MoreOptions if $MoreOptions;
 
