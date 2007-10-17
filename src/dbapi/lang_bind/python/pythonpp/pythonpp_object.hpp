@@ -42,6 +42,13 @@ BEGIN_NCBI_SCOPE
 namespace pythonpp
 {
 
+#if PY_VERSION_HEX >= 0x02050000 
+	typedef Py_ssize_t ssize_t; 
+#else
+
+	typedef int ssize_t; 
+#endif 
+
 enum EOwnership {eTakeOwnership, eAcquireOwnership};
 enum EOwnershipFuture {eOwned, eAcquired, eBorrowed};
 
