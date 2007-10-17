@@ -38,7 +38,7 @@ use Getopt::Long qw(:config permute no_getopt_compat no_ignore_case);
 my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
 
 # Command line options.
-my ($Help, $Force, $RootURL, $Revision, $PathList);
+my ($Help, $Force, $RootURL, $Revision, $PathList, $Parent);
 
 my @OptionInfo =
 (
@@ -62,11 +62,16 @@ EOF
 EOF
 
     ['list|l=s', list => \$PathList,
-        {create => 1, alter => 1, grow => 1, truncate => 1}, <<'EOF']
+        {create => 1, alter => 1, grow => 1, truncate => 1}, <<'EOF'],
   -l [--list] arg       : Pathname of the file containing newline
                           separated list of branch elements. If this
                           option is used, no branch elements may be
                           specified in the command line.
+EOF
+
+    ['parent|p', parent => \$Parent,
+        {switch => 1}, <<'EOF'],
+  -p [--parent]         : Use parent stream path.
 EOF
 );
 
@@ -283,23 +288,17 @@ and maintains this property for newly added branch elements.
 EOF
 
     switch => <<EOF,
-switch: Switch working copy directories to a branch.
+switch: Switch WC directories to a branch or its parent stream.
 
 Usage: $ScriptName switch BRANCH_PATH
 
-This command switches working copy directories to the branch
-identified by the BRANCH_PATH argument. If the working copy
-directories are already switched to that branch, they get
-updated to the latest version from the repository.
-EOF
-
-    unswitch => <<EOF,
-unswitch: Switch WC to the parent stream of a branch.
-
-Usage: $ScriptName unswitch BRANCH_PATH
-
-This command switches working copy directories back to the
-parent stream.
+Without the --parent option, this command switches working
+copy directories to the branch identified by the BRANCH_PATH
+argument. With the --parent option specified, this command
+switches working copy directories back to the parent stream.
+In both cases, if the working copy directories are already
+switched as required, they get updated to the latest version
+from the repository.
 EOF
 );
 
@@ -389,6 +388,14 @@ sub TooManyArgs
     my ($Command) = @_;
 
     UsageError("too many arguments for '$Command'")
+}
+
+sub Deprecated
+{
+    my ($Command, $Substitution) = @_;
+
+    UsageError("command '$Command' is deprecated.\n" .
+        "Please use '$Substitution' instead.")
 }
 
 sub TrimSlashes
@@ -570,8 +577,7 @@ elsif ($Command eq 'remove')
 }
 elsif ($Command eq 'merge_down')
 {
-    UsageError("command 'merge_down' is deprecated.\n" .
-        q(Please use 'merge_down_into' instead.))
+    Deprecated($Command, 'merge_down_into')
 }
 elsif ($Command eq 'merge_down_into')
 {
@@ -579,8 +585,7 @@ elsif ($Command eq 'merge_down_into')
 }
 elsif ($Command eq 'merge_up')
 {
-    UsageError("command 'merge_up' is deprecated.\n" .
-        q(Please use 'merge_up_from' instead.))
+    Deprecated($Command, 'merge_up_from')
 }
 elsif ($Command eq 'merge_up_from')
 {
@@ -604,11 +609,11 @@ elsif ($Command eq 'update')
 }
 elsif ($Command eq 'switch')
 {
-    $Module->Switch(AcceptOnlyBranchPathArg($Command))
+    $Module->Switch(AcceptOnlyBranchPathArg($Command), $Parent)
 }
 elsif ($Command eq 'unswitch')
 {
-    $Module->Unswitch(AcceptOnlyBranchPathArg($Command))
+    Deprecated($Command, 'switch --parent')
 }
 elsif ($Command eq 'svn')
 {

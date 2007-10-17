@@ -722,9 +722,9 @@ sub Svn
             $BranchPath)->{BranchPaths}})
 }
 
-sub DoSwitchUnswitch
+sub Switch
 {
-    my ($Self, $BranchPath, $DoSwitch) = @_;
+    my ($Self, $BranchPath, $Parent) = @_;
 
     my $RootURL = $Self->{SVN}->GetRootURL() ||
         die "$Self->{MyName}: not in a working copy\n";
@@ -732,26 +732,16 @@ sub DoSwitchUnswitch
     my $BranchInfo =
         NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath);
 
-    print STDERR ($DoSwitch ? 'Switching to' : 'Unswitching from') .
-        " branch '$BranchPath'...\n";
+    my $TargetPath = $Parent ? $BranchInfo->{UpstreamPath} : $BranchPath;
 
-    my $BaseURL = $RootURL . '/' . ($DoSwitch ?
-        $BranchPath : $BranchInfo->{UpstreamPath}) . '/';
+    print STDERR "Switching to '$TargetPath'...\n";
+
+    my $BaseURL = "$RootURL/$TargetPath/";
 
     for (@{$BranchInfo->{BranchPaths}})
     {
         $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
     }
-}
-
-sub Switch
-{
-    DoSwitchUnswitch(@_, 1)
-}
-
-sub Unswitch
-{
-    DoSwitchUnswitch(@_, 0)
 }
 
 sub GetWorkingCopyInfo
