@@ -132,7 +132,7 @@ private:
     auto_ptr<INetServerConnectorEventListener> m_Authenticator;
     auto_ptr<CNetServiceConnector> m_Connector;
     EConnectionMode m_ConnMode;
-    bool m_LPServices;
+    ESwitch m_LPServices;
     IRebalanceStrategy* m_RebalanceStrategy;
     auto_ptr<IRebalanceStrategy> m_RebalanceStrategyGuard;
 

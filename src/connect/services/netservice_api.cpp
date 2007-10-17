@@ -52,7 +52,7 @@ private:
 
 INetServiceAPI::INetServiceAPI(const string& service_name, const string& client_name)
     : m_ServiceName(service_name), m_ClientName(client_name), 
-      m_ConnMode(eCloseConnection), m_LPServices(false), m_RebalanceStrategy(NULL)
+      m_ConnMode(eCloseConnection), m_LPServices(eOff), m_RebalanceStrategy(NULL)
 {
 }
 
@@ -104,7 +104,7 @@ void  INetServiceAPI::x_CreateConnector()
     m_Connector.reset(new CNetServiceConnector(m_ServiceName, m_Authenticator.get()));
     m_Connector->SetRebalanceStrategy(m_RebalanceStrategy);
     m_Connector->PermanentConnection(m_ConnMode == eKeepConnection ? eOn : eOff);
-    m_Connector->DiscoverLowPriorityServers(m_LPServices ? eOn : eOff);
+    m_Connector->DiscoverLowPriorityServers(m_LPServices);
 }
 
 CNetServiceConnector& INetServiceAPI::GetConnector() 
