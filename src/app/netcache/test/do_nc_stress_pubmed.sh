@@ -81,7 +81,7 @@ do
 			BATCHES_SPEC=`echo $ARG | sed "s#$BATCHES_TAG##1"`
 			;;
 		*)
-			echo ERROR : unknown parameter \'$ARG\'
+			echo "ERROR : unknown parameter '$ARG'"
 			usage
 			exit 1
 			;;

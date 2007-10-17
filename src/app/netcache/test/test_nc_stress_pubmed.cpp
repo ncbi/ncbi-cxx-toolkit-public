@@ -2,7 +2,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <connect/services/netcache_client.hpp>
+#include <connect/services/netcache_api.hpp>
 
 #if defined(HAVE_SIGNAL_H)  &&  defined(NCBI_OS_UNIX)
 #  define USE_SIGNAL
@@ -272,14 +272,14 @@ public :
 			mDelayedPotams.clear();
 		};
 
-	string Stress(size_t MilliSecsTime, const string &Server, Int4 Port)
+	string Stress(size_t MilliSecsTime, CNetCacheAPI& cln)
 		{
 			TimePotam TPot(MilliSecsTime);
 
 			string NcKey = "";
 
 			try {
-				NcKey = CNetCacheClient(Server, Port, "Ouch!").PutData(mpBuffer, mBufferSize);
+				NcKey = cln.PutData(mpBuffer, mBufferSize);
 				mWTime += TPot.FromLast();
 				mWQty ++;
 
@@ -298,18 +298,16 @@ public :
 
 			if (NcKey != "") {
 				try {
-					CNetCacheClient NcCli("Ouch!");
+					CSimpleBuffer Blob;
+					CNetCacheAPI::EReadResult rres;
 
-					CNetCacheClient::SBlobData Blob;
-					CNetCacheClient::EReadResult rres;
+					rres = cln.GetData(NcKey, Blob);
 
-					while((rres = NcCli.GetData(NcKey, Blob)) == CNetCacheClient::eReadPart);
-
-					if (rres == CNetCacheClient::eNotFound) {
+					if (rres == CNetCacheAPI::eNotFound) {
 						mREQty ++;
 					}
 					else {
-						if (*((Int4 *)Blob.blob.get()) == mBufferSize) {
+						if (*((Int4 *)Blob.data()) == mBufferSize) {
 							mRTime += TPot.FromLast();
 							mRQty ++;
 						}
@@ -327,7 +325,7 @@ public :
 			return NcKey;
 		};
 
-	size_t CheckReadDelayed()
+	size_t CheckReadDelayed(CNetCacheAPI& cln)
 		{
 			Int4 RetVal = 0;
 
@@ -346,18 +344,16 @@ public :
 
 					string NcKey = (*Pos).NcKey();
 
-					CNetCacheClient NcCli("Ouch!");
+					CSimpleBuffer Blob;
+					CNetCacheAPI::EReadResult rres;
 
-					CNetCacheClient::SBlobData Blob;
-					CNetCacheClient::EReadResult rres;
+					rres = cln.GetData(NcKey, Blob);
 
-					while((rres = NcCli.GetData(NcKey, Blob)) == CNetCacheClient::eReadPart);
-
-					if (rres == CNetCacheClient::eNotFound) {
+					if (rres == CNetCacheAPI::eNotFound) {
 						mDEQty ++;
 					}
 					else {
-						if (*((Int4 *)Blob.blob.get()) == mBufferSize) {
+						if (*((Int4 *)Blob.data()) == mBufferSize) {
 							mDTime += TPot.FromStart();
 							mDQty ++;
 							RetVal ++;
@@ -454,8 +450,7 @@ private :
 class StressoPotary {
 public :
 	StressoPotary()
-		:	mServer("")
-		,	mPort(0)
+		:	mService("")
 		,	mPerSec(100)
 		,	mReadDelayMinutes(3)
 		,	mDelayRatio(4)
@@ -468,8 +463,7 @@ public :
 			mReadDelayMinutes = 3;
 			mDelayRatio = 4;
 			mPerSec = 100;
-			mServer = "";
-			mPort = 0;
+			mService = "";
 			mStartStressing = TimePotam().TimeOfDayMilliSecs();
 			mEndStressing = TimePotam().TimeOfDayMilliSecs();
 
@@ -486,15 +480,13 @@ public :
 		};
 
 	void Init(
-				const string &Server,
-				Int4 Port,
+				const string &Service,
 				Int4 PerSec = 100,
 				Int4 DelayRatio = 0,
 				Int4 ReadDelayMinutes = 3
 		)
 		{
-			mServer = Server;
-			mPort = Port;
+			mService = Service;
 			mPerSec = PerSec;
 			mReadDelayMinutes = ReadDelayMinutes;
 			mDelayRatio = DelayRatio;
@@ -545,14 +537,16 @@ public :
 			size_t Pupiter = 0;
 			size_t Puzator = 10000;
 			// size_t Puzator = 100;
+                        CNetCacheAPI cln(mService,"Ooch!");
+                        cln.SetConnMode(INetServiceAPI::eKeepConnection);
 
 			for( ; ; ) {
 				vector < StressoPotam * >::iterator PB =
 														mPotams.begin();
 				for( ; PB != mPotams.end(); PB ++) {
 					StressoPotam *pPotam = *PB;
-					pPotam -> Stress(MilliSecsTime, mServer, mPort);
-					mEndStressing = TPot.TimeOfDayMilliSecs();
+					pPotam -> Stress(MilliSecsTime, cln);
+                                        mEndStressing = TPot.TimeOfDayMilliSecs();
 
 					IterCnt ++;
 				}
@@ -560,7 +554,7 @@ public :
 				PB = mPotams.begin();
 				for( ; PB != mPotams.end(); PB ++) {
 					StressoPotam *pPotam = *PB;
-					size_t DE = pPotam -> CheckReadDelayed();
+					size_t DE = pPotam -> CheckReadDelayed(cln);
 
 						/* OOPS I DID IT lol */
 					for(size_t llp = 0; llp < DE; llp++) {
@@ -623,8 +617,7 @@ public :
 		};
 
 private :
-	string mServer;
-	Int4 mPort;
+	string mService;
 
 	Int4 mPerSec;
 	Int4 mReadDelayMinutes;
@@ -655,8 +648,7 @@ string theProgName = "stress_2";
 
 // string theConnection = "pdev1:9001";
 string theConnection = "";
-string theServer = "pdev1";
-Int4 thePort = 9001;
+string theService = "pdev1:9001";
 Int4 thePerSec = 25;
 Int4 theDelayTime = 30;
 Int4 theDelayRatio = 4;
@@ -746,27 +738,7 @@ parseArgs(int argc, char **argv)
 		return false;
 	}
 
-	size_t pos = theConnection.find(":");
-	if (pos == string::npos) {
-		cerr << "Invalid connection string format : '" << theConnection << "' should be : host:port" << endl;
-		return false;
-	}
-
-	theServer = theConnection.substr(0, pos);
-	string PortStr = theConnection.substr(pos + 1);
-
-	thePort = 0;
-	try {
-		thePort = NStr::StringToInt(PortStr);
-	}
-	catch( ... ) {
-		thePort = 0;
-	}
-
-	if (thePort <= 0) {
-		cerr << "Invalid port value : '" << PortStr << "' should be integer greater than 0 and less than 7" << endl;
-		return false;
-	}
+	theService = theConnection;
 
 	// cerr << "NetCache : " << theServer << ":" << thePort << endl;
 	// cerr << "PerSec   : " << thePerSec << endl;
@@ -793,8 +765,7 @@ main(int argc, char **argv)
 	ThePotary = new StressoPotary;
 
 	ThePotary -> Init(
-					theServer,
-					thePort,
+					theService,
 					thePerSec,
 					theDelayRatio,
 					theDelayTime
