@@ -381,7 +381,7 @@ bool CUniSequenceDataType::CheckValue(const CDataValue& value) const
     const CBlockDataValue* block =
         dynamic_cast<const CBlockDataValue*>(&value);
     if ( !block ) {
-        value.Warning("block of values expected");
+        value.Warning("block of values expected", 18);
         return false;
     }
     bool ok = true;

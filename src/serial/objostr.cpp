@@ -418,7 +418,8 @@ void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info,
     switch(fail)
     {
     case fNoError:
-        CNcbiDiag(diag_info, eDiag_Trace) << message;
+        CNcbiDiag(diag_info, eDiag_Trace) << ErrCode(NCBI_ERRCODE_X, 12)
+                                          << message;
         return;
 //    case fEOF:         err = CSerialException::eEOF;         break;
     default:

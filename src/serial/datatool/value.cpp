@@ -35,6 +35,10 @@
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/module.hpp>
 #include <serial/datatool/srcutil.hpp>
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_DTValue
 
 BEGIN_NCBI_SCOPE
 
@@ -70,9 +74,10 @@ string CDataValue::LocationString(void) const
     return GetSourceFileName() + ": " + NStr::IntToString(GetSourceLine());
 }
 
-void CDataValue::Warning(const string& mess) const
+void CDataValue::Warning(const string& mess, int err_subcode) const
 {
-    CNcbiDiag() << LocationString() << ": " << mess;
+    CNcbiDiag() << ErrCode(NCBI_ERRCODE_X, err_subcode)
+                << LocationString() << ": " << mess;
 }
 
 bool CDataValue::IsComplex(void) const

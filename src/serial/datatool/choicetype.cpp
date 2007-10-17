@@ -151,7 +151,7 @@ bool CChoiceDataType::CheckValue(const CDataValue& value) const
     const CNamedDataValue* choice =
         dynamic_cast<const CNamedDataValue*>(&value);
     if ( !choice ) {
-        value.Warning("CHOICE value expected");
+        value.Warning("CHOICE value expected", 11);
         return false;
     }
     for ( TMembers::const_iterator i = GetMembers().begin();

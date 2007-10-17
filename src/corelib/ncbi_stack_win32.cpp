@@ -32,10 +32,14 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidll.hpp>
+#include <corelib/error_codes.hpp>
 
 #include <windows.h>
 
 #include <dbghelp.h>
+
+
+#define NCBI_USE_ERRCODE_X   Corelib_Stack
 
 
 BEGIN_NCBI_SCOPE
@@ -156,10 +160,10 @@ static bool s_FillModuleListTH32(TModules& modules, DWORD pid)
         return modules.size() != 0;
     }
     catch (exception& e) {
-        ERR_POST(Error << "Error retrieving toolhelp32 symbols: " << e.what());
+        ERR_POST_X(1, Error << "Error retrieving toolhelp32 symbols: " << e.what());
     }
     catch (...) {
-        ERR_POST(Error << "Unknown error retrieving toolhelp32 symbols");
+        ERR_POST_X(2, Error << "Unknown error retrieving toolhelp32 symbols");
     }
 
     return false;
@@ -276,7 +280,7 @@ static bool s_FillModuleListPSAPI(TModules& mods, DWORD pid, HANDLE hProcess)
         return true;
     }
     catch (exception& e) {
-        ERR_POST(Error << "Error getting PSAPI symbols: " << e.what());
+        ERR_POST_X(3, Error << "Error getting PSAPI symbols: " << e.what());
     }
     catch (...) {
     }
@@ -362,11 +366,11 @@ CSymbolGuard::CSymbolGuard(void)
         UpdateSymbols();
     }
     catch (exception& e) {
-        ERR_POST(Error << "Error loading symbols for stack trace: "
+        ERR_POST_X(4, Error << "Error loading symbols for stack trace: "
             << e.what());
     }
     catch (...) {
-        ERR_POST(Error
+        ERR_POST_X(5, Error
             << "Unknown error initializing symbols for stack trace.");
     }
 }
@@ -400,8 +404,8 @@ void CSymbolGuard::UpdateSymbols(void)
             const_cast<char*>(it->moduleName.c_str()),
             it->baseAddress, it->size);
         if ( !module_addr ) {
-            ERR_POST(Error << "Error loading symbols for module: "
-                     << it->moduleName);
+            ERR_POST_X(6, Error << "Error loading symbols for module: "
+                                << it->moduleName);
         } else {
             _TRACE("Loaded symbols from " << it->moduleName);
             m_Loaded.insert(it->moduleName);
@@ -486,10 +490,10 @@ CStackTraceImpl::CStackTraceImpl(void)
         }
     }
     catch (exception& e) {
-        ERR_POST(Error << "Error getting stack trace: " << e.what());
+        ERR_POST_X(7, Error << "Error getting stack trace: " << e.what());
     }
     catch (...) {
-        ERR_POST(Error << "Unknown error getting stack trace");
+        ERR_POST_X(8, Error << "Unknown error getting stack trace");
     }
 }
 
@@ -537,7 +541,7 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
                                     it->AddrPC.Offset,
                                     &offs,
                                     pSym) ) {
-                ERR_POST(Error << "failed to get symbol for address: "
+                ERR_POST_X(9, Error << "failed to get symbol for address: "
                     << it->AddrPC.Offset);
                 continue;
             }
@@ -568,7 +572,7 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
             if ( !SymGetModuleInfo(curr_proc,
                                     it->AddrPC.Offset,
                                     &Module) ) {
-                ERR_POST(Error << "failed to get module info for "
+                ERR_POST_X(10, Error << "failed to get module info for "
                     << sf_info.func);
             } else {
                 sf_info.module = Module.ModuleName;
@@ -581,10 +585,10 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
         }
     }
     catch (exception& e) {
-        ERR_POST(Error << "Error getting stack trace: " << e.what());
+        ERR_POST_X(11, Error << "Error getting stack trace: " << e.what());
     }
     catch (...) {
-        ERR_POST(Error << "Unknown error getting stack trace");
+        ERR_POST_X(12, Error << "Unknown error getting stack trace");
     }
 
     free(pSym);

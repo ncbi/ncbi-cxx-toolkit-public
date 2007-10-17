@@ -646,7 +646,7 @@ bool CDataSetType::CheckValue(const CDataValue& value) const
     const CBlockDataValue* block =
         dynamic_cast<const CBlockDataValue*>(&value);
     if ( !block ) {
-        value.Warning("block of values expected");
+        value.Warning("block of values expected", 2);
         return false;
     }
 
@@ -661,12 +661,12 @@ bool CDataSetType::CheckValue(const CDataValue& value) const
         const CNamedDataValue* currvalue =
             dynamic_cast<const CNamedDataValue*>(v->get());
         if ( !currvalue ) {
-            v->get()->Warning("named value expected");
+            v->get()->Warning("named value expected", 3);
             return false;
         }
         TReadValues::iterator member = mms.find(currvalue->GetName());
         if ( member == mms.end() ) {
-            currvalue->Warning("unexpected member");
+            currvalue->Warning("unexpected member", 4);
             return false;
         }
         if ( !member->second->GetType()->CheckValue(currvalue->GetValue()) ) {
@@ -678,7 +678,7 @@ bool CDataSetType::CheckValue(const CDataValue& value) const
     for ( TReadValues::const_iterator member = mms.begin();
           member != mms.end(); ++member ) {
         if ( !member->second->Optional() ) {
-            value.Warning(member->first + " member expected");
+            value.Warning(member->first + " member expected", 5);
             return false;
         }
     }
@@ -705,7 +705,7 @@ bool CDataSequenceType::CheckValue(const CDataValue& value) const
     const CBlockDataValue* block =
         dynamic_cast<const CBlockDataValue*>(&value);
     if ( !block ) {
-        value.Warning("block of values expected");
+        value.Warning("block of values expected", 6);
         return false;
     }
     TMembers::const_iterator member = GetMembers().begin();
@@ -715,19 +715,19 @@ bool CDataSequenceType::CheckValue(const CDataValue& value) const
         const CNamedDataValue* currvalue =
             dynamic_cast<const CNamedDataValue*>(cvalue->get());
         if ( !currvalue ) {
-            cvalue->get()->Warning("named value expected");
+            cvalue->get()->Warning("named value expected", 7);
             return false;
         }
         for (;;) {
             if ( member == GetMembers().end() ) {
-                currvalue->Warning("unexpected value");
+                currvalue->Warning("unexpected value", 8);
                 return false;
             }
             if ( (*member)->GetName() == currvalue->GetName() )
                 break;
             if ( !(*member)->Optional() ) {
                 currvalue->GetValue().Warning((*member)->GetName() +
-                                              " member expected");
+                                              " member expected", 9);
                 return false;
             }
             ++member;
@@ -740,7 +740,7 @@ bool CDataSequenceType::CheckValue(const CDataValue& value) const
     }
     while ( member != GetMembers().end() ) {
         if ( !(*member)->Optional() ) {
-            value.Warning((*member)->GetName() + " member expected");
+            value.Warning((*member)->GetName() + " member expected", 10);
             return false;
         }
     }

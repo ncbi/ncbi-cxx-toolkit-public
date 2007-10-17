@@ -54,6 +54,8 @@ NCBI_DEFINE_ERRCODE_X(Corelib_Reg,       110,  7);
 NCBI_DEFINE_ERRCODE_X(Corelib_Util,      111,  5);
 NCBI_DEFINE_ERRCODE_X(Corelib_StreamBuf, 112,  4);
 NCBI_DEFINE_ERRCODE_X(Corelib_PluginMgr, 113,  4);
+NCBI_DEFINE_ERRCODE_X(Corelib_Stack,     114, 12);
+NCBI_DEFINE_ERRCODE_X(Corelib_Unix,      115,  1);
 
 
 END_NCBI_SCOPE

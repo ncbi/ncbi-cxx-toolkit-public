@@ -145,7 +145,7 @@ bool CReferenceDataType::CheckType(void) const
         return true;
     }
     catch ( CNotFoundException& exc) {
-        Warning("Unresolved type: " + m_UserTypeName + ": " + exc.what());
+        Warning("Unresolved type: " + m_UserTypeName + ": " + exc.what(), 2);
     }
     return false;
 }

@@ -67,7 +67,7 @@ void AbstractLexer::LexerError(const char* error)
                " -- lexer error: " + error);
 }
 
-void AbstractLexer::LexerWarning(int err_subcode, const char* error)
+void AbstractLexer::LexerWarning(const char* error, int err_subcode)
 {
     ERR_POST_EX(NCBI_ERRCODE_X, err_subcode,
         "LINE " << CurrentLine() <<

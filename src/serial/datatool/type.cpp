@@ -45,7 +45,11 @@
 #include <serial/datatool/enumtype.hpp>
 #include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/srcutil.hpp>
+#include <serial/error_codes.hpp>
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_DTType
 
 BEGIN_NCBI_SCOPE
 
@@ -102,9 +106,10 @@ void CDataType::SetSourceLine(int line)
     m_SourceLine = line;
 }
 
-void CDataType::Warning(const string& mess) const
+void CDataType::Warning(const string& mess, int err_subcode) const
 {
-    CNcbiDiag() << LocationString() << ": " << mess;
+    CNcbiDiag() << ErrCode(NCBI_ERRCODE_X, err_subcode)
+                << LocationString() << ": " << mess;
 }
 
 void CDataType::PrintASNTypeComments(CNcbiOstream& out,
@@ -689,7 +694,7 @@ AutoPtr<CTypeStrings> CDataType::GetFullCType(void) const
 
 string CDataType::GetDefaultString(const CDataValue& ) const
 {
-    Warning("Default is not supported by this type");
+    Warning("Default is not supported by this type", 3);
     return "...";
 }
 

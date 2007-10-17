@@ -187,14 +187,14 @@ void ASNLexer::LookupString(void)
         switch ( c ) {
         case '\r':
         case '\n':
-            LexerWarning(1, "unclosed string");
+            LexerWarning("unclosed string", 1);
             return;
         case 0:
             if ( Eof() ) {
-                LexerWarning(2, "unclosed string");
+                LexerWarning("unclosed string", 2);
                 return;
             }
-            LexerWarning(3, "illegal character in string: \\0");
+            LexerWarning("illegal character in string: \\0", 3);
             AddStringChar(c);
             AddChar();
             break;
@@ -207,7 +207,7 @@ void ASNLexer::LookupString(void)
             break;
         default:
             if ( c < ' ' && c > '\0' ) {
-                LexerWarning(4, "illegal character in string: \\...");
+                LexerWarning("illegal character in string: \\...", 4);
             }
             else {
                 AddStringChar(c);
@@ -226,15 +226,15 @@ TToken ASNLexer::LookupBinHexString(void)
         switch ( c ) {
         case '\r':
         case '\n':
-            LexerWarning(5, "unclosed bit string");
+            LexerWarning("unclosed bit string", 5);
             return token;
         case 0:
             if ( Eof() ) {
-                LexerWarning(6, "unclosed bit string");
+                LexerWarning("unclosed bit string", 6);
                 return token;
             }
             AddChar();
-            LexerWarning(7, "illegal character in bit string");
+            LexerWarning("illegal character in bit string", 7);
             break;
         case '0':
         case '1':
@@ -250,19 +250,19 @@ TToken ASNLexer::LookupBinHexString(void)
             case 'B':
                 AddChars(2);
                 if ( token != T_BINARY_STRING )
-                    LexerWarning(8, "binary string contains hexadecimal digits");
+                    LexerWarning("binary string contains hexadecimal digits", 8);
                 return T_BINARY_STRING;
             case 'H':
                 AddChars(2);
                 return T_HEXADECIMAL_STRING;
             default:
                 AddChar();
-                LexerWarning(9, "unknown type of bit string");
+                LexerWarning("unknown type of bit string", 9);
                 return token;
             }
         default:
             AddChar();
-            LexerWarning(10, "illegal character in bit string");
+            LexerWarning("illegal character in bit string", 10);
             break;
         }
     }
@@ -309,15 +309,15 @@ void ASNLexer::LookupTag(void)
         switch ( c ) {
         case '\r':
         case '\n':
-            LexerWarning(11, "unclosed tag");
+            LexerWarning("unclosed tag", 11);
             return;
         case 0:
             if ( Eof() ) {
-                LexerWarning(12, "unclosed tag");
+                LexerWarning("unclosed tag", 12);
                 return;
             }
             AddChar();
-            LexerWarning(13, "illegal character in tag");
+            LexerWarning("illegal character in tag", 13);
             break;
         case ']':
             AddChar();
@@ -329,7 +329,7 @@ void ASNLexer::LookupTag(void)
             break;
         default:
             AddChar();
-            LexerWarning(14, "illegal character in tag");
+            LexerWarning("illegal character in tag", 14);
             break;
         }
     }

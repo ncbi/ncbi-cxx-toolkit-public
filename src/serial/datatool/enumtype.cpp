@@ -293,14 +293,14 @@ bool CEnumDataType::CheckValue(const CDataValue& value) const
             if ( i->GetName() == id->GetValue() )
                 return true;
         }
-        value.Warning("illegal ENUMERATED value: " + id->GetValue());
+        value.Warning("illegal ENUMERATED value: " + id->GetValue(), 12);
         return false;
     }
 
     const CIntDataValue* intValue =
         dynamic_cast<const CIntDataValue*>(&value);
     if ( !intValue ) {
-        value.Warning("ENUMERATED or INTEGER value expected");
+        value.Warning("ENUMERATED or INTEGER value expected", 13);
         return false;
     }
 
@@ -309,7 +309,7 @@ bool CEnumDataType::CheckValue(const CDataValue& value) const
             if ( i->GetValue() == intValue->GetValue() )
                 return true;
         }
-        value.Warning("illegal INTEGER value: " + intValue->GetValue());
+        value.Warning("illegal INTEGER value: " + intValue->GetValue(), 14);
         return false;
     }
 
@@ -326,7 +326,7 @@ TObjectPtr CEnumDataType::CreateDefault(const CDataValue& value) const
         if ( i->GetName() == id->GetValue() )
             return new TEnumValueType(i->GetValue());
     }
-    value.Warning("illegal ENUMERATED value: " + id->GetValue());
+    value.Warning("illegal ENUMERATED value: " + id->GetValue(), 15);
     return 0;
 }
 

@@ -52,6 +52,7 @@ NCBI_DEFINE_ERRCODE_X(Util_QParse,       208,  2);
 NCBI_DEFINE_ERRCODE_X(Util_Image,        209, 29);
 NCBI_DEFINE_ERRCODE_X(Util_Compress,     210, 73);
 NCBI_DEFINE_ERRCODE_X(Util_BlobStore,    211,  2);
+NCBI_DEFINE_ERRCODE_X(Util_StaticArray,  212,  1);
 
 
 END_NCBI_SCOPE

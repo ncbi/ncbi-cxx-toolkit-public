@@ -69,7 +69,7 @@ void CDataTypeModule::AddDefinition(const string& name,
     CDataType*& oldType = m_LocalTypes[name];
     if ( oldType ) {
         type->Warning("redefinition, original: " +
-                      oldType->LocationString());
+                      oldType->LocationString(), 1);
         m_Errors = true;
         return;
     }

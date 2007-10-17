@@ -137,7 +137,7 @@ public:
     virtual CTypeInfo* CreateTypeInfo(void);
     CTypeInfo* UpdateModuleName(CTypeInfo* typeInfo) const;
 
-    void Warning(const string& mess) const;
+    void Warning(const string& mess, int err_subcode = 0) const;
 
     virtual AutoPtr<CTypeStrings> GenerateCode(void) const;
     void SetParentClassTo(CClassTypeStrings& code) const;
@@ -330,7 +330,7 @@ private:
 
 #define CheckValueType(value, type, name) do{ \
 if ( dynamic_cast<const type*>(&(value)) == 0 ) { \
-    (value).Warning(name " value expected"); return false; \
+    (value).Warning(name " value expected", 1); return false; \
 } } while(0)
 
 END_NCBI_SCOPE

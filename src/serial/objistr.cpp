@@ -668,7 +668,8 @@ void CObjectIStream::ThrowError1(const CDiagCompileInfo& diag_info,
     switch(fail)
     {
     case fNoError:
-        CNcbiDiag(diag_info, eDiag_Trace) << message;
+        CNcbiDiag(diag_info, eDiag_Trace) << ErrCode(NCBI_ERRCODE_X, 6)
+                                          << message;
         return;
     case fEOF:            err = CSerialException::eEOF;            break;
     default:
@@ -1649,12 +1650,14 @@ char ReplaceVisibleChar(char c, EFixNonPrint fix_method, size_t at_line)
              string("")) + ": " + NStr::IntToString(int(c) & 0xff);
         switch (fix_method) {
         case eFNP_ReplaceAndWarn:
-            CNcbiDiag(eDiag_Error, eDPF_Default) << message << Endm;
+            CNcbiDiag(eDiag_Error, eDPF_Default)
+                << ErrCode(NCBI_ERRCODE_X, 7) << message << Endm;
             break;
         case eFNP_Throw:
             NCBI_THROW(CSerialException,eFormatError,message);
         case eFNP_Abort:
-            CNcbiDiag(eDiag_Fatal, eDPF_Default) << message << Endm;
+            CNcbiDiag(eDiag_Fatal, eDPF_Default)
+                << ErrCode(NCBI_ERRCODE_X, 8) << message << Endm;
             break;
         default:
             break;

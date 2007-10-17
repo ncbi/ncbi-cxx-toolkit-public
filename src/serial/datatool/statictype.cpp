@@ -347,7 +347,7 @@ bool CRealDataType::CheckValue(const CDataValue& value) const
                 dynamic_cast<const CIntDataValue*>(&value) != 0;
     }
     if ( block->GetValues().size() != 3 ) {
-        value.Warning("wrong number of elements in REAL value");
+        value.Warning("wrong number of elements in REAL value", 16);
         return false;
     }
     for ( CBlockDataValue::TValues::const_iterator i = block->GetValues().begin();
@@ -383,7 +383,7 @@ string CRealDataType::GetDefaultString(const CDataValue& value) const
             return NStr::DoubleToString((double)(i->GetValue()));
         }
     }
-    value.Warning("REAL value expected");
+    value.Warning("REAL value expected", 17);
     return kEmptyStr;
 }
 

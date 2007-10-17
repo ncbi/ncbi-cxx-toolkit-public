@@ -32,9 +32,13 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_os_unix.hpp>
+#include <corelib/error_codes.hpp>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+
+
+#define NCBI_USE_ERRCODE_X   Corelib_Unix
 
 
 BEGIN_NCBI_SCOPE
@@ -122,7 +126,7 @@ bool Daemonize(const char* logfile, TDaemonFlags flags)
     }
     catch (const char* what) {
         int x_errno = errno;
-        ERR_POST(string("[Daemonize]  ") + what);
+        ERR_POST_X(1, string("[Daemonize]  ") + what);
         ::close(fdin);
         ::close(fdout);
         ::close(fderr);

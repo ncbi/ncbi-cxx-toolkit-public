@@ -36,6 +36,7 @@
  *
  */
 
+#include <util/error_codes.hpp>
 #include <corelib/ncbistd.hpp>
 #include <utility>
 #include <algorithm>
@@ -326,6 +327,8 @@ protected:
                          NCBI_CURRENT_FUNCTION,
                          NCBI_MAKE_MODULE(NCBI_MODULE));
                     NCBI_NS_NCBI::CNcbiDiag(diag_compile_info).GetRef()
+                        << NCBI_NS_NCBI::ErrCode(
+                                 NCBI_ERRCODE_X_NAME(Util_StaticArray), 1)
                         << NCBI_NS_NCBI::Fatal << "keys out of order: " <<
                         getter::get_key(*prev) << " vs. " <<
                         getter::get_key(*curr)

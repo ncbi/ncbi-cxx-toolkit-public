@@ -50,7 +50,7 @@ public:
     virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
     virtual string GetXmlString(void) const = 0;
 
-    void Warning(const string& mess) const;
+    void Warning(const string& mess, int err_subcode = 0) const;
 
     string LocationString(void) const;
     const string& GetSourceFileName(void) const;

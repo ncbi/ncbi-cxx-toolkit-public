@@ -43,8 +43,8 @@ BEGIN_NCBI_SCOPE
 
 
 NCBI_DEFINE_ERRCODE_X(Serial_Core,       801,  5);
-NCBI_DEFINE_ERRCODE_X(Serial_OStream,    802, 11);
-NCBI_DEFINE_ERRCODE_X(Serial_IStream,    803,  5);
+NCBI_DEFINE_ERRCODE_X(Serial_OStream,    802, 12);
+NCBI_DEFINE_ERRCODE_X(Serial_IStream,    803,  8);
 NCBI_DEFINE_ERRCODE_X(Serial_TypeInfo,   804,  3);
 NCBI_DEFINE_ERRCODE_X(Serial_MemberInfo, 805,  2);
 NCBI_DEFINE_ERRCODE_X(Serial_ASNTypes,   806,  3);
@@ -56,6 +56,8 @@ NCBI_DEFINE_ERRCODE_X(Serial_FileCode,   811,  7);
 NCBI_DEFINE_ERRCODE_X(Serial_Util,       812,  3);
 NCBI_DEFINE_ERRCODE_X(Serial_Lexer,      813, 14);
 NCBI_DEFINE_ERRCODE_X(Serial_DataTool,   814,  3);
+NCBI_DEFINE_ERRCODE_X(Serial_DTType,     815,  3);
+NCBI_DEFINE_ERRCODE_X(Serial_DTValue,    816, 18);
 
 
 END_NCBI_SCOPE
