@@ -32,7 +32,11 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <connect/error_codes.hpp>
 #include "connection_pool.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Connect_ThrServer
 
 
 BEGIN_NCBI_SCOPE
@@ -97,7 +101,7 @@ CServer_ConnectionPool::~CServer_ConnectionPool()
     try {
         Erase();
     } catch(...) {
-        ERR_POST("Exception thrown from ~CServer_ConnectionPool");
+        ERR_POST_X(3, "Exception thrown from ~CServer_ConnectionPool");
     }
 }
 
@@ -148,9 +152,9 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn, EConnType type)
         //     printf("Socket just closed\n");
         EIO_Status status = m_ControlSocket.Write("", 1, NULL, eIO_WritePlain);
         if (status != eIO_Success) {
-            ERR_POST(Warning
-                     << "SetConnType: failed to write to control socket: "
-                     << IO_StatusStr(status));
+            ERR_POST_X(4, Warning
+                       << "SetConnType: failed to write to control socket: "
+                       << IO_StatusStr(status));
         }
     }
 }

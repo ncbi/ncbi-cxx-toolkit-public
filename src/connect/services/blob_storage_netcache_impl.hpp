@@ -34,6 +34,7 @@
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/blob_storage.hpp>
+#include <connect/services/error_codes.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -221,7 +222,8 @@ auto_ptr<IReader> CBlobStorage_NetCache_Impl<T>::x_GetReader(const string& key,
             if (ex.GetErrCode() != CNetServiceException::eTimeout) 
                 throw;
             
-            ERR_POST("Communication Error : " << ex.what());
+            ERR_POST_XX(ConnServ_NetCache, 4,
+                        "Communication Error : " << ex.what());
             if (++try_count >= 2)
                 throw;
             SleepMilliSec(1000 + try_count*2000);
@@ -329,7 +331,8 @@ CNcbiOstream& CBlobStorage_NetCache_Impl<T>::CreateOStream(string& key,
                 if (ex.GetErrCode() != CNetServiceException::eTimeout) 
                     throw;
 
-                ERR_POST("Communication Error : " << ex.what());
+                ERR_POST_XX(ConnServ_NetCache, 5,
+                            "Communication Error : " << ex.what());
                 if (++try_count >= 2)
                     throw;
                 SleepMilliSec(1000 + try_count*2000);
@@ -395,7 +398,8 @@ void CBlobStorage_NetCache_Impl<T>::Reset()
                 catch (CNetServiceException& ex) {
                     if (ex.GetErrCode() != CNetServiceException::eTimeout) 
                         throw;
-                    ERR_POST("Communication Error : " << ex.what());
+                    ERR_POST_XX(ConnServ_NetCache, 6,
+                                "Communication Error : " << ex.what());
                     if (++try_count >= 2)
                         throw;
                     SleepMilliSec(1000 + try_count*2000);

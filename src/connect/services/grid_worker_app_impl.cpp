@@ -43,11 +43,15 @@
 #include <connect/services/grid_debug_context.hpp>
 #include <connect/services/grid_control_thread.hpp>
 #include <connect/services/grid_globals.hpp>
+#include <connect/services/error_codes.hpp>
 
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
 BEGIN_NCBI_SCOPE
 
@@ -136,7 +140,7 @@ protected:
     {
         CThread::OnExit();
         CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
-        LOG_POST(CTime(CTime::eCurrent).AsString() << " Worker Node Thread exited.");
+        LOG_POST_X(45, CTime(CTime::eCurrent).AsString() << " Worker Node Thread exited.");
     }
 
 private:
@@ -171,7 +175,7 @@ protected:
     {
         CThread::OnExit();
         CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
-        LOG_POST(CTime(CTime::eCurrent).AsString() << " Control Thread has been stopped.");
+        LOG_POST_X(46, CTime(CTime::eCurrent).AsString() << " Control Thread has been stopped.");
     }
 
 private:
@@ -278,8 +282,8 @@ void* CWorkerNodeIdleThread::Main()
 {
     while (!m_ShutdownFlag) {
         if ( x_IsAutoShutdownTime() ) {
-            LOG_POST(CTime(CTime::eCurrent).AsString() 
-                     << " There are no more jobs to be done. Exiting.");
+            LOG_POST_X(47, CTime(CTime::eCurrent).AsString() 
+                       << " There are no more jobs to be done. Exiting.");
             CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
             break;
         }            
@@ -298,8 +302,8 @@ void* CWorkerNodeIdleThread::Main()
             try {
                 do {
                     if ( x_IsAutoShutdownTime() ) {
-                        LOG_POST(CTime(CTime::eCurrent).AsString() 
-                                 << " There are no more jobs to be done. Exiting.");
+                        LOG_POST_X(48, CTime(CTime::eCurrent).AsString() 
+                                   << " There are no more jobs to be done. Exiting.");
                         CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
                         m_ShutdownFlag = true;
                         break;
@@ -317,7 +321,7 @@ void* CWorkerNodeIdleThread::Main()
 
 void CWorkerNodeIdleThread::OnExit(void)
 {
-    LOG_POST(CTime(CTime::eCurrent).AsString() << " Idle Thread has been stopped.");
+    LOG_POST_X(49, CTime(CTime::eCurrent).AsString() << " Idle Thread has been stopped.");
 }
 
 CWorkerNodeIdleTaskContext& CWorkerNodeIdleThread::GetContext()
@@ -428,7 +432,7 @@ static void s_ParseControlPorts(const string& sports, unsigned int& start_port, 
 
 int CGridWorkerApp_Impl::Run()
 {
-    LOG_POST( GetJobFactory().GetJobVersion() << WN_BUILD_DATE); 
+    LOG_POST_X(50, GetJobFactory().GetJobVersion() << WN_BUILD_DATE); 
 
     const IRegistry& reg = m_App.GetConfig();
     //unsigned int udp_port =
@@ -445,9 +449,9 @@ int CGridWorkerApp_Impl::Run()
                 max_threads = NStr::StringToUInt(s_max_threads);
             } catch (...) {
                 max_threads = GetCpuCount();
-                ERR_POST("Could not convert [" << kServerSec 
-                         << "] max_threads parameter to number.\n" 
-                         << "Using \'auto\' option (" << max_threads << ").");
+                ERR_POST_X(51, "Could not convert [" << kServerSec 
+                           << "] max_threads parameter to number.\n" 
+                           << "Using \'auto\' option (" << max_threads << ").");
             }
         }
         init_threads = 
@@ -513,9 +517,10 @@ int CGridWorkerApp_Impl::Run()
     unsigned int check_status_period = 
         reg.GetInt(kServerSec,"check_status_period",2,0,IRegistry::eReturn);
 
-    if (reg.HasEntry(kServerSec,"wait_server_timeout"))
-       ERR_POST("[" + kServerSec + "] \"wait_server_timeout\" is not used anymore.\n"
+    if (reg.HasEntry(kServerSec,"wait_server_timeout")) {
+       ERR_POST_X(52, "[" + kServerSec + "] \"wait_server_timeout\" is not used anymore.\n"
 	      "Use [" + kNetScheduleAPIDriverName + "] \"communication_timeout\" paramter instead.");
+    }
 
     bool use_embedded_input = false;
     if (reg.HasEntry(kNetScheduleAPIDriverName, "use_embedded_storage"))
@@ -554,7 +559,7 @@ int CGridWorkerApp_Impl::Run()
 
 #if defined(NCBI_OS_UNIX)
     if (is_daemon) {
-        LOG_POST("Entering UNIX daemon mode...");
+        LOG_POST_X(53, "Entering UNIX daemon mode...");
         bool daemon = Daemonize("/dev/null", fDaemon_DontChroot | fDaemon_KeepStdin |
                                 fDaemon_KeepStdout);
         if (!daemon) {
@@ -612,28 +617,28 @@ int CGridWorkerApp_Impl::Run()
     SleepMilliSec(500);
     if (CGridGlobals::GetInstance().
         GetShutdownLevel() == CNetScheduleAdmin::eNoShutdown) {
-        LOG_POST("\n=================== NEW RUN : " 
-                 << CGridGlobals::GetInstance().GetStartTime().AsString()
-                 << " ===================\n"
-                 << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
-                 << "Waiting for control commands on " 
-                 << CSocketAPI::gethostname() << ":" << control_thread->GetControlPort() << "\n"
-                 << "Queue name: " << m_WorkerNode->GetQueueName() << "\n"
-                 << "Maximum job threads: " << max_threads << "\n");
+        LOG_POST_X(54, "\n=================== NEW RUN : " 
+                   << CGridGlobals::GetInstance().GetStartTime().AsString()
+                   << " ===================\n"
+                   << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
+                   << "Waiting for control commands on " 
+                   << CSocketAPI::gethostname() << ":" << control_thread->GetControlPort() << "\n"
+                   << "Queue name: " << m_WorkerNode->GetQueueName() << "\n"
+                   << "Maximum job threads: " << max_threads << "\n");
 
         m_WorkerNode->Run();
 
-        LOG_POST(CTime(CTime::eCurrent).AsString() << " Stopping Control thread...");
+        LOG_POST_X(55, CTime(CTime::eCurrent).AsString() << " Stopping Control thread...");
         control_thread->Stop();
         CNcbiOstrstream os;
         CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
-        LOG_POST(string(CNcbiOstrstreamToString(os)));
+        LOG_POST_X(56, string(CNcbiOstrstreamToString(os)));
     }
     control_thread->Join();
     //    worker_thread->Join();
     if (m_IdleThread) {
         if (!m_IdleThread->IsShutdownRequested()) {
-            LOG_POST(CTime(CTime::eCurrent).AsString() << " Stopping Idle thread...");
+            LOG_POST_X(57, CTime(CTime::eCurrent).AsString() << " Stopping Idle thread...");
             m_IdleThread->RequestShutdown();
         }
         m_IdleThread->Join();

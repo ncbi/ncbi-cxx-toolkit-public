@@ -60,6 +60,8 @@
 
 #define NCBI_USE_PRECOMPILED_CRC32_TABLES 1
 
+#define NCBI_USE_ERRCODE_X   Connect_Util
+
 
 /* Static function pre-declarations to avoid C++ compiler warnings
  */
@@ -139,7 +141,7 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME_Ex
 {
     FILE* fp = fopen(filename, "a");
     if ( !fp ) {
-        CORE_LOGF_ERRNO(eLOG_Error, errno, ("Cannot open \"%s\"", filename));
+        CORE_LOGF_ERRNO_X(9, eLOG_Error, errno, ("Cannot open \"%s\"", filename));
         return 0/*false*/;
     }
 

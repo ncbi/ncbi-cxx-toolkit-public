@@ -258,10 +258,10 @@ static void TEST_CORE_Log(void)
   verify(LOG_Delete(x_log) == x_log);
   assert(TEST_CORE_LogUserData == 1);
 
-  LOG_WRITE(0, eLOG_Trace, 0);
-  LOG_Write(0, eLOG_Trace, 0, 0, 0, 0);
-  LOG_WRITE(x_log, eLOG_Trace, 0);
-  LOG_Write(x_log, eLOG_Trace, 0, 0, 0, 0);
+  LOG_WRITE(0, 0, 0, eLOG_Trace, 0);
+  LOG_Write(0, 0, 0, eLOG_Trace, 0, 0, 0, 0);
+  LOG_WRITE(x_log, 0, 0, eLOG_Trace, 0);
+  LOG_Write(x_log, 0, 0, eLOG_Trace, 0, 0, 0, 0);
 
   verify(LOG_Delete(x_log) == x_log);
   assert(TEST_CORE_LogUserData == 1);
@@ -273,16 +273,16 @@ static void TEST_CORE_Log(void)
   TEST_CORE_LogUserData = 2;
 
   /* do the test logging */
-  LOG_WRITE(x_log, eLOG_Trace, 0);
-  LOG_Write(x_log, eLOG_Trace, 0, 0, 0, 0);
-  LOG_WRITE(x_log, eLOG_Warning, "");
+  LOG_WRITE(x_log, 0, 0, eLOG_Trace, 0);
+  LOG_Write(x_log, 0, 0, eLOG_Trace, 0, 0, 0, 0);
+  LOG_WRITE(x_log, 0, 0, eLOG_Warning, "");
   /* LOG_WRITE(x_log, eLOG_Fatal, "Something fatal"); */
 #undef  THIS_MODULE
 #define THIS_MODULE "FooModuleName"
-  LOG_WRITE(x_log, eLOG_Error, "With changed module name");
+  LOG_WRITE(x_log, 0, 0, eLOG_Error, "With changed module name");
 #undef  THIS_FILE
 #define THIS_FILE "BarFileName"
-  LOG_WRITE(x_log, eLOG_Critical, "With changed module and file name");
+  LOG_WRITE(x_log, 0, 0, eLOG_Critical, "With changed module and file name");
 #undef  THIS_FILE
 #define THIS_FILE __FILE__
 #undef  THIS_MODULE
@@ -316,16 +316,16 @@ static void TEST_UTIL_Log(void)
   LOG_ToFILE(x_log, stdout, 0/*false*/);
 
   /* simple logging */
-  LOG_WRITE(x_log, eLOG_Trace, 0);
-  LOG_Write(x_log, eLOG_Trace, 0, 0, 0, 0);
-  LOG_WRITE(x_log, eLOG_Warning, "");
+  LOG_WRITE(x_log, 0, 0, eLOG_Trace, 0);
+  LOG_Write(x_log, 0, 0, eLOG_Trace, 0, 0, 0, 0);
+  LOG_WRITE(x_log, 0, 0, eLOG_Warning, "");
   /* LOG_WRITE(x_log, eLOG_Fatal, "Something fatal"); */
 #undef  THIS_MODULE
 #define THIS_MODULE "FooModuleName"
-  LOG_WRITE(x_log, eLOG_Error, "With changed module name");
+  LOG_WRITE(x_log, 0, 0, eLOG_Error, "With changed module name");
 #undef  THIS_FILE
 #define THIS_FILE "BarFileName"
-  LOG_WRITE(x_log, eLOG_Critical, "With changed module and file name");
+  LOG_WRITE(x_log, 0, 0, eLOG_Critical, "With changed module and file name");
 #undef  THIS_FILE
 #define THIS_FILE __FILE__
 #undef  THIS_MODULE
@@ -338,20 +338,20 @@ static void TEST_UTIL_Log(void)
     for (i = 0;  i < sizeof(data);  i++) {
         data[i] = (unsigned char) (i % 256);
     }
-    LOG_DATA(x_log, data, sizeof(data), "Data logging test");
+    LOG_DATA(x_log, 0, 0, data, sizeof(data), "Data logging test");
   }}
 
   /* logging with errno */
   errno = 0;
-  LOG_WRITE_ERRNO(x_log, eLOG_Warning, 0);  
-  LOG_WRITE_ERRNO(x_log, eLOG_Error, "");
-  LOG_WRITE_ERRNO(x_log, eLOG_Critical, "OKAY");
+  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Warning, 0);  
+  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Error, "");
+  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Critical, "OKAY");
 
 #undef  THIS_FILE
 #define THIS_FILE 0
-  (void)strtod("1e-999999", 0);  LOG_WRITE_ERRNO(x_log, eLOG_Warning, 0);  
-  (void)strtod("1e-999999", 0);  LOG_WRITE_ERRNO(x_log, eLOG_Error, "");
-  (void)strtod("1e-999999", 0);  LOG_WRITE_ERRNO(x_log, eLOG_Critical, "FAIL");
+  (void)strtod("1e-999999", 0);  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Warning, 0);  
+  (void)strtod("1e-999999", 0);  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Error, "");
+  (void)strtod("1e-999999", 0);  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Critical, "FAIL");
 
   /* delete */
   verify(LOG_Delete(x_log) == 0);

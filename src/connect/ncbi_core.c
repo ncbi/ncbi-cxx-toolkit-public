@@ -264,7 +264,9 @@ extern void LOG_WriteInternal
  int         line,
  const char* message,
  const void* raw_data,
- size_t      raw_size)
+ size_t      raw_size,
+ int         err_code,
+ int         err_subcode)
 {
     if ( lg ) {
         LOG_LOCK_READ;
@@ -274,13 +276,15 @@ extern void LOG_WriteInternal
         if ( lg->handler ) {
             SLOG_Handler call_data;
 
-            call_data.level    = level;
-            call_data.module   = module;
-            call_data.file     = file;
-            call_data.line     = line;
-            call_data.message  = message;
-            call_data.raw_data = raw_data;
-            call_data.raw_size = raw_size;
+            call_data.level       = level;
+            call_data.err_code    = err_code;
+            call_data.err_subcode = err_subcode;
+            call_data.module      = module;
+            call_data.file        = file;
+            call_data.line        = line;
+            call_data.message     = message;
+            call_data.raw_data    = raw_data;
+            call_data.raw_size    = raw_size;
 
             lg->handler(lg->user_data, &call_data);
         }

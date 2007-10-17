@@ -94,6 +94,7 @@ private:
     static void         x_OnClose(CONN conn, ECONN_Callback type, void* data);
 
     static EIO_Status   x_LogIfError(const CDiagCompileInfo& diag_info,
+                                     int err_subcode,
                                      EIO_Status status, const string& msg);
 };
 

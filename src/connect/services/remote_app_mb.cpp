@@ -37,8 +37,12 @@
 
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/remote_app_mb.hpp>
+#include <connect/services/error_codes.hpp>
 
 #include "remote_app_impl.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_Remote
 
 BEGIN_NCBI_SCOPE
 
@@ -116,7 +120,7 @@ public:
             } catch (...) {
                 if (!m_IStream->eof()) {
                     msg = "The Blob data does not match a remote app data";
-                    ERR_POST(msg);
+                    ERR_POST_X(1, msg);
                     m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
                 }
                 return *m_IStream;
@@ -131,7 +135,7 @@ public:
                     m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
                 } else {
                     msg = "Can not open " + name + " of input";                   
-                    ERR_POST(msg);
+                    ERR_POST_X(2, msg);
                     m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
                 }
             }
@@ -248,11 +252,11 @@ void CRemoteAppRequestMB_Impl::Serialize(CNcbiOstream& os)
         CFile file(fname);
         string blobid;
         if (!file.Exists()) {
-            LOG_POST(Warning << "File :\"" << fname << "\" does not exist.");
+            LOG_POST_X(3, Warning << "File :\"" << fname << "\" does not exist.");
             continue;
         }
         if (NStr::Find(GetCmdLine(), fname) == NPOS) {
-            LOG_POST(Warning << "File :\"" << fname << "\" is not found in cmdline. Skipping.");
+            LOG_POST_X(4, Warning << "File :\"" << fname << "\" is not found in cmdline. Skipping.");
             continue;
         }
         
@@ -485,17 +489,20 @@ void CRemoteAppRequestMB_Executer::Reset()
 
 void CRemoteAppRequestMB_Executer::Log(const string& prefix)
 {
-    if (!m_Impl->GetInBlobIdOrData().empty())
-        LOG_POST(prefix
-                  << " Input data: " << m_Impl->GetInBlobIdOrData());
-    LOG_POST(prefix
-             << " Args: " << m_Impl->GetCmdLine());
-    if (!m_Impl->GetStdOutFileName().empty())
-        LOG_POST(prefix
-                  << " StdOutFile: " << m_Impl->GetStdOutFileName());
-    if (!m_Impl->GetStdErrFileName().empty())
-        LOG_POST(prefix
-                  << " StdErrFile: " << m_Impl->GetStdErrFileName());
+    if (!m_Impl->GetInBlobIdOrData().empty()) {
+        LOG_POST_X(5, prefix
+                   << " Input data: " << m_Impl->GetInBlobIdOrData());
+    }
+    LOG_POST_X(6, prefix
+               << " Args: " << m_Impl->GetCmdLine());
+    if (!m_Impl->GetStdOutFileName().empty()) {
+        LOG_POST_X(7, prefix
+                   << " StdOutFile: " << m_Impl->GetStdOutFileName());
+    }
+    if (!m_Impl->GetStdErrFileName().empty()) {
+        LOG_POST_X(8, prefix
+                   << " StdErrFile: " << m_Impl->GetStdErrFileName());
+    }
 }
 
 
@@ -666,12 +673,14 @@ void CRemoteAppResultMB_Executer::Reset()
 
 void CRemoteAppResultMB_Executer::Log(const string& prefix)
 {
-    if (!m_Impl->GetOutBlobIdOrData().empty())
-        LOG_POST(prefix
-                 << " Out data: " << m_Impl->GetOutBlobIdOrData());
-    if (!m_Impl->GetErrBlobIdOrData().empty())
-        LOG_POST(prefix
-                 << " Err data: " << m_Impl->GetErrBlobIdOrData());
+    if (!m_Impl->GetOutBlobIdOrData().empty()) {
+        LOG_POST_X(9, prefix
+                   << " Out data: " << m_Impl->GetOutBlobIdOrData());
+    }
+    if (!m_Impl->GetErrBlobIdOrData().empty()) {
+        LOG_POST_X(10, prefix
+                   << " Err data: " << m_Impl->GetErrBlobIdOrData());
+    }
 }
 
 void CRemoteAppResultMB_Executer::SetMaxOutputSize(size_t max_output_size)

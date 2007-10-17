@@ -33,8 +33,12 @@
 #include <corelib/ncbifile.hpp>
 
 #include <connect/services/remote_app_sb.hpp>
+#include <connect/services/error_codes.hpp>
 
 #include "remote_app_impl.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_Remote
 
 BEGIN_NCBI_SCOPE
 
@@ -136,11 +140,11 @@ void CRemoteAppRequestSB_Impl::Serialize(CNcbiOstream& os)
         const string& fname = it->first;
         CFile file(fname);
         if (!file.Exists()) {
-            LOG_POST(Warning << "File :\"" << fname << "\" does not exist.");
+            LOG_POST_X(11, Warning << "File :\"" << fname << "\" does not exist.");
             continue;
         }
         if (NStr::Find(GetCmdLine(), fname) == NPOS) {
-            LOG_POST(Warning << "File :\"" << fname << "\" is not found in cmdline. Skipping.");
+            LOG_POST_X(12, Warning << "File :\"" << fname << "\" is not found in cmdline. Skipping.");
             continue;
         }
         checked_files[fname] = it->second;
@@ -292,7 +296,7 @@ void CRemoteAppRequestSB_Executer::Reset()
 
 void CRemoteAppRequestSB_Executer::Log(const string& prefix)
 {
-    LOG_POST(prefix
+    LOG_POST_X(13, prefix
              << " Args: " << m_Impl->GetCmdLine());
 }
 

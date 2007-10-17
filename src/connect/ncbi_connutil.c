@@ -38,6 +38,8 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#define NCBI_USE_ERRCODE_X   Connect_Util
+
 
 extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
                                         char* value, size_t value_size,
@@ -268,7 +270,7 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
         return 0/*false*/;
 
     if (strlen(info->host) + 16 + strlen(info->path) >= sizeof(info->path)) {
-        CORE_LOG(eLOG_Error,
+        CORE_LOG_X(1, eLOG_Error,
                  "[ConnNetInfo_AdjustForHttpProxy]  Adjusted path too long");
         assert(0);
         return 0/*false*/;
@@ -823,7 +825,8 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
         return;
 
     if (!info) {
-        LOG_Write(lg, eLOG_Trace, 0, 0, 0, "ConnNetInfo_Log: NULL info");
+        LOG_Write(lg, NCBI_C_ERRCODE_X, 10, eLOG_Trace, 0, 0, 0,
+                  "ConnNetInfo_Log: NULL info");
         return;
     }
 
@@ -833,7 +836,8 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
                               ? strlen(info->http_user_header) : 0) +
                              (info->http_referer
                               ? strlen(info->http_referer) : 0)))) {
-        LOG_WRITE(lg, eLOG_Error, "ConnNetInfo_Log: Cannot alloc temp buffer");
+        LOG_WRITE(lg, NCBI_C_ERRCODE_X, 11, eLOG_Error,
+                  "ConnNetInfo_Log: Cannot alloc temp buffer");
         return;
     }
 
@@ -881,7 +885,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
     s_SaveBool      (s, "proxy_adjusted",  info->http_proxy_adjusted);
     strcat(s, "#################### [END] SConnNetInfo\n");
 
-    LOG_Write(lg, eLOG_Trace, 0, 0, 0, s);
+    LOG_Write(lg, NCBI_C_ERRCODE_X, 12, eLOG_Trace, 0, 0, 0, s);
     free(s);
 }
 
@@ -935,7 +939,7 @@ extern SOCK URL_Connect
     /* check the args */
     if (!host  ||  !*host  ||  !port  ||
         (user_hdr  &&  *user_hdr  &&  user_hdr[user_hdr_len - 1] != '\n')) {
-        CORE_LOG(eLOG_Error, "[URL_Connect]  Bad arguments");
+        CORE_LOG_X(2, eLOG_Error, "[URL_Connect]  Bad arguments");
         assert(0);
         return 0/*error*/;
     }
@@ -944,7 +948,7 @@ extern SOCK URL_Connect
     if (req_method == eReqMethod_Any) {
         req_method = content_length ? eReqMethod_Post : eReqMethod_Get;
     } else if (req_method == eReqMethod_Get  &&  content_length) {
-        CORE_LOG(eLOG_Warning,
+        CORE_LOG_X(3, eLOG_Warning,
                  "[URL_Connect]  Content length ignored with method GET");
         content_length = 0;
     }
@@ -956,8 +960,8 @@ extern SOCK URL_Connect
         x_req_r = "GET ";
         break;
     default:
-        CORE_LOGF(eLOG_Error, ("[URL_Connect]  Unrecognized request method"
-                               " (%d)", (int) req_method));
+        CORE_LOGF_X(4, eLOG_Error, ("[URL_Connect]  Unrecognized request method"
+                                  " (%d)", (int) req_method));
         assert(0);
         return 0/*error*/;
     }
@@ -1007,9 +1011,9 @@ extern SOCK URL_Connect
               !BUF_Write(&buf, buffer, strlen(buffer))))      ||
 
         !BUF_Write(&buf, "\r\n", 2)) {
-        CORE_LOGF(eLOG_Error, ("[URL_Connect]  Error composing HTTP header for"
-                               " %s:%hu%s%s", host, port, errno ? ": " : "",
-                               errno ? strerror(errno) : ""));
+        CORE_LOGF_X(5, eLOG_Error, ("[URL_Connect]  Error composing HTTP header for"
+                                  " %s:%hu%s%s", host, port, errno ? ": " : "",
+                                  errno ? strerror(errno) : ""));
         BUF_Destroy(buf);
         if (x_args  &&  x_args != args)
             free((void*) x_args);
@@ -1020,9 +1024,9 @@ extern SOCK URL_Connect
 
     if (!(header = (char*) malloc(headersize = BUF_Size(buf))) ||
         BUF_Read(buf, header, headersize) != headersize) {
-        CORE_LOGF(eLOG_Error, ("[URL_Connect]  Error storing HTTP header for"
-                               " %s:%hu: %s", host, port,
-                               errno ? strerror(errno) : "Unknown error"));
+        CORE_LOGF_X(6, eLOG_Error, ("[URL_Connect]  Error storing HTTP header for"
+                                  " %s:%hu: %s", host, port,
+                                  errno ? strerror(errno) : "Unknown error"));
         if (header)
             free(header);
         BUF_Destroy(buf);
@@ -1034,7 +1038,7 @@ extern SOCK URL_Connect
     st = SOCK_CreateEx(host, port, c_timeout, &sock, header, headersize, log);
     free(header);
     if (st != eIO_Success) {
-        CORE_LOGF(eLOG_Error,
+        CORE_LOGF_X(7, eLOG_Error,
                   ("[URL_Connect]  Socket connect to %s:%hu failed: %s",
                    host, port, IO_StatusStr(st)));
         return 0/*error*/;
@@ -1042,7 +1046,7 @@ extern SOCK URL_Connect
 
     /* setup I/O timeout for the connection */
     if (SOCK_SetTimeout(sock, eIO_ReadWrite, rw_timeout) != eIO_Success) {
-        CORE_LOG(eLOG_Error, "[URL_Connect]  Cannot set connection timeout");
+        CORE_LOG_X(8, eLOG_Error, "[URL_Connect]  Cannot set connection timeout");
         SOCK_Close(sock);
         return 0/*error*/;
     }

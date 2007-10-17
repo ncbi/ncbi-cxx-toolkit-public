@@ -39,6 +39,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define NCBI_USE_ERRCODE_X   Connect_Service
+
 #define CONN_SERVICE_NAME  DEF_CONN_REG_SECTION "_" REG_CONN_SERVICE_NAME
 
 
@@ -244,7 +246,7 @@ static SERV_ITER s_Open(const char*          service,
          !(do_dispd= !s_IsMapperConfigured(service, REG_CONN_DISPD_DISABLE)) ||
          !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
         if (!do_lbsmd  &&  !do_dispd) {
-            CORE_LOGF(eLOG_Warning,
+            CORE_LOGF_X(1, eLOG_Warning,
                       ("[SERV]  No service mappers available for `%s'",
                        service));
         }

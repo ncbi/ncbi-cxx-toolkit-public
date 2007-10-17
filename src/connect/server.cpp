@@ -35,7 +35,11 @@
 #include "server_connection.hpp"
 #include <connect/ncbi_buffer.h>
 #include <connect/server.hpp>
+#include <connect/error_codes.hpp>
 #include <util/thread_pool.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Connect_ThrServer
 
 
 BEGIN_NCBI_SCOPE
@@ -418,7 +422,7 @@ void CServer::CreateRequest(CStdPoolOfThreads& threadPool,
             threadPool.AcceptRequest(request);
         } catch (CBlockingQueueException&) {
             // This is impossible event, but we handle it gently
-            LOG_POST(Critical << "Thread pool queue full");
+            LOG_POST_X(1, Critical << "Thread pool queue full");
             CServer_Request* req =
                 dynamic_cast<CServer_Request*>(request.GetPointer());
             _ASSERT(req);

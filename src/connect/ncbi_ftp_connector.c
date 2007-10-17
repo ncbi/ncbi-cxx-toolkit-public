@@ -46,6 +46,9 @@
 #include <stdlib.h>
 
 
+#define NCBI_USE_ERRCODE_X   Connect_FTP
+
+
 /***********************************************************************
  *  INTERNAL -- Auxiliary types and static functions
  ***********************************************************************/
@@ -307,7 +310,7 @@ static EIO_Status s_FTPAbort(SFTPConnector*  xxx,
             status = SOCK_Close(xxx->data);
         else {
             if (status == eIO_Timeout) {
-                CORE_LOG(eLOG_Warning,
+                CORE_LOG_X(1, eLOG_Warning,
                          "[FTP]  Timed out on data connection abort");
             }
             SOCK_Abort(xxx->data);

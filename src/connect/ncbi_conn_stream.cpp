@@ -37,6 +37,10 @@
 #include "ncbi_conn_streambuf.hpp"
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <connect/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Connect_Stream
 
 
 BEGIN_NCBI_SCOPE
@@ -275,7 +279,7 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
         net_info->timeout = 0;
     CONNECTOR c = SERVICE_CreateConnectorEx(service, types, net_info, params);
     if (!c)
-        ERR_POST(Error << "Cannot connect to service \"" << service << '\"');
+        ERR_POST_X(1, Error << "Cannot connect to service \"" << service << '\"');
     ConnNetInfo_Destroy(net_info);
     return c;
 }

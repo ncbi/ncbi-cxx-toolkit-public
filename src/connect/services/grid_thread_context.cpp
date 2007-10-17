@@ -37,8 +37,12 @@
 #include <connect/services/grid_debug_context.hpp>
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_rw_impl.hpp>
+#include <connect/services/error_codes.hpp>
 
 #include "grid_thread_context.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
 
 BEGIN_NCBI_SCOPE
@@ -155,7 +159,7 @@ void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immedia
                 m_ProgressWriter->Reset();
             }
             else {
-                //ERR_POST("Couldn't send a progress message.");
+                //ERR_POST_X(5, "Couldn't send a progress message.");
             }
         }
         if (debug_context) {
@@ -164,7 +168,7 @@ void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immedia
                                                m_JobContext->GetJobNumber());
         }           
     } catch (exception& ex) {
-        ERR_POST("Couldn't send a progress message: " << ex.what());
+        ERR_POST_X(6, "Couldn't send a progress message: " << ex.what());
     }
 }
 /// @internal
@@ -176,8 +180,8 @@ void CGridThreadContext::SetJobRunTimeout(unsigned time_to_run)
             m_Reporter->SetRunTimeout(m_JobContext->GetJobKey(), time_to_run);
         }
         catch(exception& ex) {
-            ERR_POST("CWorkerNodeJobContext::SetJobRunTimeout : " 
-                     << ex.what());
+            ERR_POST_X(7, "CWorkerNodeJobContext::SetJobRunTimeout : " 
+                          << ex.what());
         } 
     }
     else {
@@ -194,8 +198,8 @@ void CGridThreadContext::JobDelayExpiration(unsigned time_to_run)
             m_Reporter->JobDelayExpiration(m_JobContext->GetJobKey(), time_to_run);
         }
         catch(exception& ex) {
-            ERR_POST("CWorkerNodeJobContext::JobDelayExpiration : " 
-                     << ex.what());
+            ERR_POST_X(8, "CWorkerNodeJobContext::JobDelayExpiration : " 
+                          << ex.what());
         } 
     }
     else {
@@ -332,7 +336,7 @@ IWorkerNodeJob* CGridThreadContext::GetJob()
                 ret = m_Job.GetPointer(); 
             }
         } catch (...) {
-            ERR_POST( "Could not create an instance of a job class." );
+            ERR_POST_X(9, "Could not create an instance of a job class." );
             CGridGlobals::GetInstance().
                 RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
             throw;

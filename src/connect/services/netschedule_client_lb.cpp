@@ -37,9 +37,13 @@
 #include <connect/ncbi_service.h>
 #include <connect/services/netschedule_client.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
+#include <connect/services/error_codes.hpp>
 #include <util/request_control.hpp>
 #include <stdlib.h>
 #include <memory>
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_NetSchedule
 
 
 BEGIN_NCBI_SCOPE
@@ -135,7 +139,7 @@ bool CNetScheduleClient_LB::CheckConnect(const string& key)
         string warn = "Failed to discover the service ";
         warn += m_LB_ServiceName;
         warn += ". Trying fallback(reserve) server.";
-        ERR_POST(Warning << warn);
+        ERR_POST_X(3, Warning << warn);
 
         CreateSocket("netschedule", 9051);
         if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
@@ -281,7 +285,7 @@ string CNetScheduleClient_LB::SubmitJob(const string& input,
                 // try another server
                 ++m_ServListCurr;
                 if (m_ServListCurr < m_ServList.size()) {
-                    ERR_POST(ex.what());
+                    ERR_POST_X(4, ex.what());
                     continue;
                 }
             }
@@ -358,7 +362,7 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
                         throw;
                     } else {
                         if (++exp_count < m_MaxRetry) {
-                            ERR_POST(ex.what());
+                            ERR_POST_X(5, ex.what());
                         } else {
                             throw;
                         }
@@ -386,7 +390,7 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
                         throw;
                     } else {
                         if (++exp_count < m_MaxRetry) {
-                            ERR_POST(ex.what());
+                            ERR_POST_X(6, ex.what());
                         } else {
                             throw;
                         }
@@ -480,7 +484,7 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                         throw;
                     } else {
                         if (++exp_count < m_MaxRetry) {
-                            ERR_POST(ex.what());
+                            ERR_POST_X(7, ex.what());
                         } else {
                             throw;
                         }
@@ -509,7 +513,7 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                         throw;
                     } else {
                         if (++exp_count < m_MaxRetry) {
-                            ERR_POST(ex.what());
+                            ERR_POST_X(8, ex.what());
                         } else {
                             throw;
                         }

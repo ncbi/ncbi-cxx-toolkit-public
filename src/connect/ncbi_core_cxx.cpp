@@ -142,7 +142,11 @@ static void s_LOG_Handler(void*         /*user_data*/,
         if (call_data->line) {
             diag.SetLine(call_data->line);
         }
-        diag << call_data->message;
+        if (call_data->module) {
+            diag.SetModule(call_data->module);
+        }
+        diag << ErrCode(call_data->err_code, call_data->err_subcode)
+             << call_data->message;
         if ( call_data->raw_size ) {
             diag <<
                 "\n#################### [BEGIN] Raw Data (" <<

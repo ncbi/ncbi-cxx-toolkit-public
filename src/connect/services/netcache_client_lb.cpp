@@ -36,7 +36,11 @@
 #include "../ncbi_servicep.h"
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netcache_client.hpp>
+#include <connect/services/error_codes.hpp>
 #include <memory>
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_NetCache
 
 
 BEGIN_NCBI_SCOPE
@@ -101,10 +105,10 @@ bool s_ConnectClient_Reserve(CNetCacheClient* nc_client,
         try {
             unsigned int port = NStr::StringToUInt(sport);
             if (s_ConnectClient(nc_client, host, port, to)) {
-                LOG_POST(Warning << "Service " << service_name
-                         << " cannot be found using load balancer; "
-                         << " reserve service used "
-                         << host << ":" << port);
+                LOG_POST_X(3, Warning << "Service " << service_name
+                           << " cannot be found using load balancer; "
+                           << " reserve service used "
+                           << host << ":" << port);
                 return true;
             }            
         } catch (exception& /*ex*/) {

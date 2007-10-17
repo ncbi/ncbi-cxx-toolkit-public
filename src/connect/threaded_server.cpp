@@ -31,7 +31,11 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/threaded_server.hpp>
+#include <connect/error_codes.hpp>
 #include <util/thread_pool.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Connect_ThrServer
 
 
 BEGIN_NCBI_SCOPE
@@ -119,7 +123,7 @@ void CThreadedServer::Run(void)
         } else if (status == eIO_Timeout) {
             ProcessTimeout();
         } else {
-            ERR_POST("accept failed: " << IO_StatusStr(status));
+            ERR_POST_X(2, "accept failed: " << IO_StatusStr(status));
         }
     }
 

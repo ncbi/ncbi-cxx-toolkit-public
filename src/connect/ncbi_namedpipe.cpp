@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_namedpipe.hpp>
+#include <connect/error_codes.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <assert.h>
 
@@ -51,6 +52,9 @@
 #else
 #  error "Class CNamedPipe is supported only on Windows and Unix"
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Connect_Pipe
 
 
 BEGIN_NCBI_SCOPE
@@ -220,7 +224,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
     }
     catch (string& what) {
         Close();
-        ERR_POST(s_FormatErrorMessage("Open", what));
+        ERR_POST_X(10, s_FormatErrorMessage("Open", what));
         return eIO_Unknown;
     }
 }
@@ -263,7 +267,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
     }
     catch (string& what) {
         Close();
-        ERR_POST(s_FormatErrorMessage("Create", what));
+        ERR_POST_X(11, s_FormatErrorMessage("Create", what));
         return eIO_Unknown;
     }
 }
@@ -311,7 +315,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
         return eIO_Timeout;
     }
     catch (string& what) {
-        ERR_POST(s_FormatErrorMessage("Listen", what));
+        ERR_POST_X(12, s_FormatErrorMessage("Listen", what));
         return status;
     }
 }
@@ -334,7 +338,7 @@ EIO_Status CNamedPipeHandle::Disconnect(void)
         return Create(m_PipeName, m_PipeBufSize);
     }
     catch (string& what) {
-        ERR_POST(s_FormatErrorMessage("Disconnect", what));
+        ERR_POST_X(13, s_FormatErrorMessage("Disconnect", what));
         return status;
     }
 }
@@ -416,7 +420,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         status = eIO_Success;
     }
     catch (string& what) {
-        ERR_POST(s_FormatErrorMessage("Read", what));
+        ERR_POST_X(14, s_FormatErrorMessage("Read", what));
     }
     m_ReadStatus = status;
     return status;
@@ -473,7 +477,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         status = eIO_Success;
     }
     catch (string& what) {
-        ERR_POST(s_FormatErrorMessage("Write", what));
+        ERR_POST_X(15, s_FormatErrorMessage("Write", what));
     }
     m_WriteStatus = status;
     return status;
@@ -713,7 +717,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
             x_CloseSocket(sock);
         }
         Close();
-        ERR_POST(s_FormatErrorMessage("Open", what));
+        ERR_POST_X(16, s_FormatErrorMessage("Open", what));
         return status;
     }
     return eIO_Success;
@@ -778,7 +782,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
     }
     catch (string& what) {
         Close();
-        ERR_POST(s_FormatErrorMessage("Create", what));
+        ERR_POST_X(17, s_FormatErrorMessage("Create", what));
         return status;
     }
     return eIO_Success;
@@ -861,7 +865,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             x_CloseSocket(sock);
         }
         Close();
-        ERR_POST(s_FormatErrorMessage("Listen", what));
+        ERR_POST_X(18, s_FormatErrorMessage("Listen", what));
         return status;
     }
     return eIO_Success;
@@ -888,9 +892,9 @@ EIO_Status CNamedPipeHandle::Close(void)
     // Close listening socket
     if (m_LSocket >= 0) {
         if ( !x_CloseSocket(m_LSocket) ) {
-            ERR_POST(s_FormatErrorMessage
-                     ("Close", string("UNIX socket close() failed: ") +
-                      strerror(errno)));
+            ERR_POST_X(19, s_FormatErrorMessage
+                       ("Close", string("UNIX socket close() failed: ") +
+                        strerror(errno)));
         }
         m_LSocket = -1;
     }
@@ -917,7 +921,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         }
     }
     catch (string& what) {
-        ERR_POST(s_FormatErrorMessage("Read", what));
+        ERR_POST_X(20, s_FormatErrorMessage("Read", what));
     }
     return status;
 }
@@ -944,7 +948,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         }
     }
     catch (string& what) {
-        ERR_POST(s_FormatErrorMessage("Write", what));
+        ERR_POST_X(21, s_FormatErrorMessage("Write", what));
     }
     return status;
 }
@@ -954,7 +958,7 @@ EIO_Status CNamedPipeHandle::Wait(EIO_Event event, const STimeout* timeout)
 {
     if ( m_IoSocket )
         return SOCK_Wait(m_IoSocket, event, timeout);
-    ERR_POST(s_FormatErrorMessage("Wait", "Pipe is closed"));
+    ERR_POST_X(22, s_FormatErrorMessage("Wait", "Pipe is closed"));
     return eIO_Closed;
 }
 

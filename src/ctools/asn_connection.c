@@ -32,6 +32,10 @@
 
 #include <ctools/asn_connection.h>
 #include "../connect/ncbi_priv.h"
+#include "error_codes.h"
+
+
+#define NCBI_USE_ERRCODE_X   Ctools_ASN
 
 
 #ifdef __cplusplus
@@ -70,7 +74,7 @@ static void s_CloseAsnConn(CONN conn, ECONN_Callback type, void* data)
     struct SAsnConn_Cbdata* cbdata = (struct SAsnConn_Cbdata*) data;
 
     assert(type == eCONN_OnClose && cbdata && cbdata->ptr);
-    CONN_SetCallback(conn, type, &cbdata->cb, 0); 
+    CONN_SetCallback(conn, type, &cbdata->cb, 0);
     AsnIoFree(cbdata->ptr, 0/*not a file - don't close*/);
     if ( cbdata->cb.func )
         (*cbdata->cb.func)(conn, type, cbdata->cb.data);
@@ -91,8 +95,8 @@ static void s_SetAsnConn_CloseCb(CONN conn, AsnIoPtr ptr)
         cb.data = cbdata;
         CONN_SetCallback(conn, eCONN_OnClose, &cb, &cbdata->cb);
     } else
-        CORE_LOG(eLOG_Error,
-                 "Cannot create cleanup callback for ASN conn-based stream");
+        CORE_LOG_X(1, eLOG_Error,
+                   "Cannot create cleanup callback for ASN conn-based stream");
 }
 
 

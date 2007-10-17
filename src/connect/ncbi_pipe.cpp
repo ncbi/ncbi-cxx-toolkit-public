@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_pipe.hpp>
 #include <connect/ncbi_socket.h>
+#include <connect/error_codes.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/stream_utils.hpp>
 #include <assert.h>
@@ -54,6 +55,8 @@
 #else
 #  error "Class CPipe is supported only on Windows and Unix"
 #endif
+
+#define NCBI_USE_ERRCODE_X   Connect_Pipe
 
 #define IS_SET(flags, mask) (((flags) & (mask)) == (mask))
 
@@ -361,7 +364,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
         const STimeout kZeroZimeout = {0,0};
         Close(0, &kZeroZimeout);
-        ERR_POST(what);
+        ERR_POST_X(1, what);
         return eIO_Unknown;
     }
 }
@@ -527,7 +530,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
         status = eIO_Success;
     }
     catch (string& what) {
-        ERR_POST(what);
+        ERR_POST_X(2, what);
     }
     return status;
 }
@@ -586,7 +589,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
         }
     }
     catch (string& what) {
-        ERR_POST(what);
+        ERR_POST_X(3, what);
     }
     return status;
 }
@@ -609,7 +612,7 @@ CPipe::TChildPollMask CPipeHandle::Poll(CPipe::TChildPollMask mask,
         poll = x_Poll(mask, timeout);
     }
     catch (string& what) {
-        ERR_POST(what);
+        ERR_POST_X(4, what);
     }
     return poll;
 }
@@ -1127,7 +1130,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
         // Close all opened file descriptors (close timeout doesn't apply here)
         Close(0,0);
-        ERR_POST(what);
+        ERR_POST_X(5, what);
         return eIO_Unknown;
     }
 }
@@ -1292,7 +1295,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         }
     }
     catch (string& what) {
-        ERR_POST(what);
+        ERR_POST_X(6, what);
     }
     return status;
 }
@@ -1350,7 +1353,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
         }
     }
     catch (string& what) {
-        ERR_POST(what);
+        ERR_POST_X(7, what);
     }
     return status;
 }
@@ -1373,7 +1376,7 @@ CPipe::TChildPollMask CPipeHandle::Poll(CPipe::TChildPollMask mask,
         poll = x_Poll(mask, timeout);
     }
     catch (string& what) {
-        ERR_POST(what);
+        ERR_POST_X(8, what);
     }
     return poll;
 }
@@ -1786,7 +1789,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                         pipe.Write(inbuf + total_bytes_written,
                                    bytes_in_inbuf, &bytes_written);
                     if (rstatus != eIO_Success) {
-                        ERR_POST("Not all data sent to child process.");
+                        ERR_POST_X(9, "Not all data sent to child process.");
                         in_done = true;
                     }
                     total_bytes_written += bytes_written;

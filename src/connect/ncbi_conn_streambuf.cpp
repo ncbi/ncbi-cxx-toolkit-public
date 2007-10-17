@@ -34,9 +34,14 @@
 #include "ncbi_conn_streambuf.hpp"
 #include <corelib/ncbidbg.hpp>
 #include <connect/ncbi_conn_exception.hpp>
+#include <connect/error_codes.hpp>
 #include <memory>
 
-#define LOG_IF_ERROR(status, msg) x_LogIfError(DIAG_COMPILE_INFO, status, msg)
+#define NCBI_USE_ERRCODE_X   Connect_Stream
+
+#define LOG_IF_ERROR(subcode, status, msg)                     \
+    ( (NCBI_CHECK_ERR_SUBCODE_X(subcode)),                     \
+      x_LogIfError(DIAG_COMPILE_INFO, subcode, status, msg) )
 
 
 BEGIN_NCBI_SCOPE
@@ -49,10 +54,10 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
       x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE) size)
 {
     if ( !connector ) {
-        ERR_POST("CConn_Streambuf::CConn_Streambuf(): NULL connector");
+        ERR_POST_X(2, "CConn_Streambuf::CConn_Streambuf(): NULL connector");
         return;
     }
-    if (LOG_IF_ERROR(CONN_Create(connector, &m_Conn),
+    if (LOG_IF_ERROR(3, CONN_Create(connector, &m_Conn),
                      "CConn_Streambuf(): CONN_Create() failed") !=eIO_Success){
         return;
     }
@@ -121,10 +126,12 @@ void CConn_Streambuf::x_OnClose(CONN conn, ECONN_Callback type, void* data)
 
 
 EIO_Status CConn_Streambuf::x_LogIfError(const CDiagCompileInfo& diag_info,
+                                         int err_subcode,
                                          EIO_Status status, const string& msg)
 {
     if (status != eIO_Success) {
-        CNcbiDiag(diag_info) << "CConn_Streambuf::" << msg <<
+        CNcbiDiag(diag_info) << ErrCode(NCBI_ERRCODE_X, err_subcode)
+            << "CConn_Streambuf::" << msg <<
             " (" << IO_StatusStr(status) << ")" << Endm;
     }
     return status;
@@ -141,8 +148,8 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         size_t n_write = pptr() - pbase();
         if ( n_write ) {
             size_t n_written;
-            LOG_IF_ERROR(CONN_Write(m_Conn, pbase(),
-                                    n_write, &n_written, eIO_WritePlain),
+            LOG_IF_ERROR(4, CONN_Write(m_Conn, pbase(),
+                                       n_write, &n_written, eIO_WritePlain),
                          "overflow(): CONN_Write() failed");
             if ( !n_written )
                 return CT_EOF;
@@ -159,7 +166,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         // send char
         size_t n_written;
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
-        LOG_IF_ERROR(CONN_Write(m_Conn, &b, 1, &n_written, eIO_WritePlain),
+        LOG_IF_ERROR(5, CONN_Write(m_Conn, &b, 1, &n_written, eIO_WritePlain),
                      "overflow(): CONN_Write(1) failed");
         x_PPos += (CT_OFF_TYPE) n_written;
         return n_written == 1 ? c : CT_EOF;
@@ -199,7 +206,7 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
             if (x_write) {
                 status = CONN_Write(m_Conn, pbase(),
                                     x_write, &x_written, eIO_WritePlain);
-                LOG_IF_ERROR(status, "xsputn(): CONN_Write(Plain) failed");
+                LOG_IF_ERROR(6, status, "xsputn(): CONN_Write(Plain) failed");
                 if (!x_written)
                     break;
                 memmove(pbase(), pbase() + x_written, x_write - x_written);
@@ -211,7 +218,7 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
         _ASSERT(n  &&  status == eIO_Success);
         status = CONN_Write(m_Conn, buf, n, &x_written, eIO_WritePersist);
-        LOG_IF_ERROR(status, "xsputn(): CONN_Write(Persist) failed");
+        LOG_IF_ERROR(7, status, "xsputn(): CONN_Write(Persist) failed");
         if (!x_written) {
             if (!pbase())
                 return (streamsize) n_written;
@@ -264,7 +271,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
                                   m_BufSize, &n_read, eIO_ReadPlain);
     if (!n_read) {
         if (status != eIO_Closed)
-            LOG_IF_ERROR(status, "underflow(): CONN_Read() failed");
+            LOG_IF_ERROR(8, status, "underflow(): CONN_Read() failed");
         return CT_EOF;
     }
 

@@ -313,6 +313,10 @@ extern NCBI_XCONNECT_EXPORT const char* LOG_LevelStr(ELOG_Level level);
  *  Raw data to log (usually NULL)
  * @param raw_size
  *  Size of the raw data (usually zero)
+ * @param err_code
+ *  Error code of the message
+ * @param err_subcode
+ *  Error subcode of the message
  * @sa
  *  FLOG_Handler, LOG_Create, LOG_WriteInternal
  */
@@ -443,6 +447,10 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
  *  Raw data to log (can be NULL)
  * @param raw_size
  *  Size of the raw data (can be zero)
+ * @param err_code
+ *  Error code of the message
+ * @param err_subcode
+ *  Error subcode of the message
  * @sa
  *  LOG_Create, ELOG_Level, FLOG_Handler, LOG_WRITE, LOG_DATA
  */
@@ -454,8 +462,10 @@ extern NCBI_XCONNECT_EXPORT void LOG_WriteInternal
  int         line,  
  const char* message,
  const void* raw_data,
- size_t      raw_size
- );
+ size_t      raw_size,
+ int         err_code,
+ int         err_subcode
+);
 
 
 

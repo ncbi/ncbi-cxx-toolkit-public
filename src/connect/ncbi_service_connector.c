@@ -41,6 +41,9 @@
 #include <stdlib.h>
 
 
+#define NCBI_USE_ERRCODE_X   Connect_Service
+
+
 typedef struct SServiceConnectorTag {
     const char*     name;               /* Verbal connector type             */
     TSERV_Type      types;              /* Server types, record keeping only */
@@ -148,7 +151,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
                 uuu->host = (unsigned int)(-1);
 #if defined(_DEBUG) && !defined(NDEBUG)
                 if (uuu->net_info->debug_printout) {
-                    CORE_LOG(eLOG_Note,
+                    CORE_LOG_X(2, eLOG_Note,
                              "[SERVICE]  Fallback to stateless requested");
                 }
 #endif
@@ -224,7 +227,7 @@ static int/*bool*/ s_IsContentTypeDefined(const SConnNetInfo* net_info,
                                                c_t, sizeof(c_t))) {
                     *c_t = '\0';
                 }
-                CORE_LOGF(eLOG_Warning,
+                CORE_LOGF_X(3, eLOG_Warning,
                           ("[SERVICE]  Content-Type mismatch for \"%s\" "
                            "%s%s%s%s%s", net_info->service,
                            t  &&  *t           ? "specified="  : "",
@@ -588,8 +591,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             /* This also triggers parse header callback */
             CONN_Close(c);
         } else {
-            CORE_LOGF(eLOG_Error, ("[SERVICE]  Unable to create aux. %s",
-                                   conn ? "connection" : "connector"));
+            CORE_LOGF_X(4, eLOG_Error, ("[SERVICE]  Unable to create aux. %s",
+                                      conn ? "connection" : "connector"));
             assert(0);
         }
         if (!uuu->host)

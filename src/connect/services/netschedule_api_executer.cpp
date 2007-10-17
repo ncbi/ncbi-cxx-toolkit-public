@@ -32,9 +32,13 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/services/netschedule_api.hpp>
+#include <connect/services/error_codes.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 
 #include "netschedule_api_wait.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_NetSchedule
 
 BEGIN_NCBI_SCOPE
 
@@ -46,8 +50,8 @@ bool s_SendCmdWaitResponse(const CNetScheduleAPI& api, CNetSrvConnector& con,
     try {
         r = api.SendCmdWaitResponse(con, cmd);
     } catch (CNetServiceException& ex) {
-        ERR_POST( con.GetHost() << ":" << con.GetPort() 
-                  << " returned error: \"" << ex.what() << "\"");
+        ERR_POST_X(1, con.GetHost() << ":" << con.GetPort() 
+                   << " returned error: \"" << ex.what() << "\"");
         if (ex.GetErrCode() == CNetServiceException::eCommunicationError) {
             if( ++err_count >= api.GetPoll().GetServersNumber() )
                 NCBI_THROW(CNetServiceException, eCommunicationError, 
@@ -55,8 +59,8 @@ bool s_SendCmdWaitResponse(const CNetScheduleAPI& api, CNetSrvConnector& con,
             return false;
         } else throw;
     } catch (CIO_Exception& ex) {
-        ERR_POST( con.GetHost() << ":" << con.GetPort() 
-                  << " returned error: \"" << ex.what() << "\"");
+        ERR_POST_X(2, con.GetHost() << ":" << con.GetPort() 
+                   << " returned error: \"" << ex.what() << "\"");
         if( ++err_count >= api.GetPoll().GetServersNumber() )
             NCBI_THROW(CNetServiceException, eCommunicationError, 
                        "Communication error");

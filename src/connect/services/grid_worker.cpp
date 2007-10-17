@@ -38,9 +38,13 @@
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_debug_context.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
+#include <connect/services/error_codes.hpp>
 #include <util/thread_pool.hpp>
 
 #include "grid_thread_context.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
 
 BEGIN_NCBI_SCOPE
@@ -232,17 +236,17 @@ inline void s_HandleRunJobError(CGridThreadContext& thr_context, exception* ex =
 {
     string msg = " Error in Job execution";
     if (ex) msg += string(": ") + ex->what();
-    ERR_POST(CTime(CTime::eCurrent).AsString()
-             << " " << thr_context.GetJobContext().GetJobKey() << " " 
-             << msg);
+    ERR_POST_X(18, CTime(CTime::eCurrent).AsString()
+               << " " << thr_context.GetJobContext().GetJobKey() << " " 
+               << msg);
     try {
         thr_context.PutFailure(ex ? ex->what() : "Unknown error");
     } catch(exception& ex1) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() << " Failed to report an exception: " 
-                 << thr_context.GetJobContext().GetJobKey() << " " << ex1.what());
+        ERR_POST_X(19, CTime(CTime::eCurrent).AsString() << " Failed to report an exception: " 
+                   << thr_context.GetJobContext().GetJobKey() << " " << ex1.what());
     } catch(...) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() << " Failed to report an exception "
-                 << " " << thr_context.GetJobContext().GetJobKey() << " " );
+        ERR_POST_X(20, CTime(CTime::eCurrent).AsString() << " Failed to report an exception "
+                   << " " << thr_context.GetJobContext().GetJobKey() << " " );
     }
 }
 
@@ -263,11 +267,11 @@ static void s_RunJob(CGridThreadContext& thr_context)
                 CGridGlobalsException::eExclusiveModeIsAlreadySet) 
                 throw;            
             if(thr_context.GetJobContext().IsLogRequested()) {
-                LOG_POST(CTime(CTime::eCurrent).AsString()
-                         << " Job " << thr_context.GetJobContext().GetJobKey() 
-                         << " has been returned back to the queue because it " 
-                         << "requested an Exclusive Mode but another job is "
-                         << "already have the exclusive status.");
+                LOG_POST_X(21, CTime(CTime::eCurrent).AsString()
+                           << " Job " << thr_context.GetJobContext().GetJobKey() 
+                           << " has been returned back to the queue because it " 
+                           << "requested an Exclusive Mode but another job is "
+                           << "already have the exclusive status.");
             }
         }
         thr_context.CloseStreams();
@@ -284,8 +288,8 @@ static void s_RunJob(CGridThreadContext& thr_context)
             } catch (CNetServiceException& ex) {
                 if (ex.GetErrCode() != CNetServiceException::eTimeout) 
                     throw;
-                ERR_POST(CTime(CTime::eCurrent).AsString()
-                         << " Communication Error : " << ex.what());
+                ERR_POST_X(22, CTime(CTime::eCurrent).AsString()
+                           << " Communication Error : " << ex.what());
                 if (++try_count >= 2)
                     throw;
                 SleepMilliSec(1000 + try_count*2000);
@@ -307,14 +311,14 @@ void CWorkerNodeRequest::x_HandleProcessError(exception* ex)
 {
     string msg = " Error during job run";
     if (ex) msg += string(": ") + ex->what();
-    ERR_POST(CTime(CTime::eCurrent).AsString() << msg);
+    ERR_POST_X(23, CTime(CTime::eCurrent).AsString() << msg);
     try {
         m_Context->GetWorkerNode().x_ReturnJob(m_Context->GetJobKey());
     } catch (exception& ex1) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() 
-                 << " Could not return job back to queue: " << ex1.what());
+        ERR_POST_X(24, CTime(CTime::eCurrent).AsString() 
+                   << " Could not return job back to queue: " << ex1.what());
     } catch (...) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() << " Could not return job back to queue.");
+        ERR_POST_X(25, CTime(CTime::eCurrent).AsString() << " Could not return job back to queue.");
     }
     CGridGlobals::GetInstance().
         RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
@@ -363,13 +367,13 @@ void CGridWorkerNode::Run()
             m_ThreadsPool->Spawn(m_InitThreads);
         }
         catch (exception& ex) {
-            ERR_POST(CTime(CTime::eCurrent).AsString() << " " << ex.what());
+            ERR_POST_X(26, CTime(CTime::eCurrent).AsString() << " " << ex.what());
             CGridGlobals::GetInstance().
                 RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
             return;
         }
         catch (...) {
-            ERR_POST(CTime(CTime::eCurrent).AsString() << " Unknown error");
+            ERR_POST_X(27, CTime(CTime::eCurrent).AsString() << " Unknown error");
             CGridGlobals::GetInstance().
                 RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
             return;
@@ -418,7 +422,7 @@ void CGridWorkerNode::Run()
                     try {
                         m_ThreadsPool->AcceptRequest(job_req);
                     } catch (CBlockingQueueException& ex) {
-                        ERR_POST(CTime(CTime::eCurrent).AsString() << " " << ex.what());
+                        ERR_POST_X(28, CTime(CTime::eCurrent).AsString() << " " << ex.what());
                         // that must not happen after CBlockingQueue is fixed
                         _ASSERT(0);
                         x_ReturnJob(job.job_id);
@@ -436,25 +440,25 @@ void CGridWorkerNode::Run()
                 }
             }            
         } catch (exception& ex) {
-            ERR_POST(CTime(CTime::eCurrent).AsString() << " " << ex.what());
+            ERR_POST_X(29, CTime(CTime::eCurrent).AsString() << " " << ex.what());
             CGridGlobals::GetInstance().
                 RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
         } catch (...) {
-            ERR_POST(CTime(CTime::eCurrent).AsString() << " Unknown error");
+            ERR_POST_X(30, CTime(CTime::eCurrent).AsString() << " Unknown error");
             CGridGlobals::GetInstance().
                 RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
         }
     }
-    LOG_POST(CTime(CTime::eCurrent).AsString() << " Shutting down...");  
+    LOG_POST_X(31, CTime(CTime::eCurrent).AsString() << " Shutting down...");  
     if (m_MaxThreads > 1 ) {
         try {
-            LOG_POST(CTime(CTime::eCurrent).AsString() << " Stopping worker threads...");  
+            LOG_POST_X(32, CTime(CTime::eCurrent).AsString() << " Stopping worker threads...");  
             m_ThreadsPool->KillAllThreads(true);
             m_ThreadsPool.reset(0);
         } catch (exception& ex) {
-            ERR_POST(CTime(CTime::eCurrent).AsString() << " Could not stop worker threads: " << ex.what());
+            ERR_POST_X(33, CTime(CTime::eCurrent).AsString() << " Could not stop worker threads: " << ex.what());
         } catch (...) {
-            ERR_POST(CTime(CTime::eCurrent).AsString() << " Could not stop worker threads: Unknown error");
+            ERR_POST_X(34, CTime(CTime::eCurrent).AsString() << " Could not stop worker threads: Unknown error");
         }
     }
     try {
@@ -462,19 +466,20 @@ void CGridWorkerNode::Run()
     } catch (CNetServiceException& ex) {
         // if server does not understand this new command just ignore the error
         if (ex.GetErrCode() != CNetServiceException::eCommunicationError 
-            || NStr::Find(ex.what(),"Server error:Unknown request") == NPOS)
-            ERR_POST(CTime(CTime::eCurrent).AsString() << " Could unregister from NetScehdule services: " 
-                     << ex.what());
+            || NStr::Find(ex.what(),"Server error:Unknown request") == NPOS) {
+            ERR_POST_X(35, CTime(CTime::eCurrent).AsString() << " Could unregister from NetScehdule services: " 
+                       << ex.what());
+        }
     } catch(exception& ex) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() << " Could unregister from NetScehdule services: " 
-                 << ex.what());
+        ERR_POST_X(36, CTime(CTime::eCurrent).AsString() << " Could unregister from NetScehdule services: " 
+                   << ex.what());
     } catch(...) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() 
-                 << " Could unregister from NetScehdule services: Unknown error." );
+        ERR_POST_X(37, CTime(CTime::eCurrent).AsString() 
+                   << " Could unregister from NetScehdule services: Unknown error." );
     }
 
     m_NSReadClient.reset(0);
-    LOG_POST(CTime(CTime::eCurrent).AsString() << " Worker Node has been stopped.");
+    LOG_POST_X(38, CTime(CTime::eCurrent).AsString() << " Worker Node has been stopped.");
 }
 
 const string& CGridWorkerNode::GetQueueName() const 
@@ -560,18 +565,18 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
                     CGridGlobalsException::eExclusiveModeIsAlreadySet) 
                     throw;            
                 if(m_LogRequested) {
-                    LOG_POST(CTime(CTime::eCurrent).AsString() << " Job " << job.job_id 
-                             << " has been returned back to the queue because it " 
-                             << "requested an Exclusive Mode but another job "
-                             << "already has the exclusive status.");
+                    LOG_POST_X(39, CTime(CTime::eCurrent).AsString() << " Job " << job.job_id 
+                               << " has been returned back to the queue because it " 
+                               << "requested an Exclusive Mode but another job "
+                               << "already has the exclusive status.");
                 }
                 x_ReturnJob(job.job_id);
             }
             catch (CNetServiceException& ex) {
                 if (ex.GetErrCode() != CNetServiceException::eTimeout) 
                     throw;
-                ERR_POST(CTime(CTime::eCurrent).AsString() 
-                         << " Communication Error : " << ex.what());
+                ERR_POST_X(40, CTime(CTime::eCurrent).AsString() 
+                           << " Communication Error : " << ex.what());
                 if (++try_count >= 2) {
                     CGridGlobals::GetInstance().
                         RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
@@ -625,12 +630,12 @@ bool CGridWorkerNode::x_CreateNSReadClient()
         }
         
     } catch (exception& ex) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() << " " << ex.what());
+        ERR_POST_X(41, CTime(CTime::eCurrent).AsString() << " " << ex.what());
         CGridGlobals::GetInstance().
             RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
         return false;
     } catch (...) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() << " Unknown error");
+        ERR_POST_X(42, CTime(CTime::eCurrent).AsString() << " Unknown error");
         CGridGlobals::GetInstance().
             RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
         return false;
@@ -717,9 +722,9 @@ bool CGridWorkerNode::x_AreMastersBusy() const
         if (NStr::StartsWith(replay, "ERR:")) {
             string msg;
             NStr::Replace(replay, "ERR:", "", msg);
-            ERR_POST( CTime(CTime::eCurrent).AsString() 
-                      << " Worker Node @ " << it->host << ":" << it->port 
-                      << " returned error : " << msg);
+            ERR_POST_X(43, CTime(CTime::eCurrent).AsString() 
+                       << " Worker Node @ " << it->host << ":" << it->port 
+                       << " returned error : " << msg);
         } else if (NStr::StartsWith(replay, "OK:")) {
             string msg;
             NStr::Replace(replay, "OK:", "", msg);
@@ -729,9 +734,9 @@ bool CGridWorkerNode::x_AreMastersBusy() const
                     return false;
             } catch (...) {}
         } else {
-            ERR_POST( CTime(CTime::eCurrent).AsString() 
-                      << " Worker Node @ " << it->host << ":" << it->port 
-                      << " returned unknown replay : " << replay);
+            ERR_POST_X(44, CTime(CTime::eCurrent).AsString() 
+                       << " Worker Node @ " << it->host << ":" << it->port 
+                       << " returned unknown replay : " << replay);
         }
     }
     return true;

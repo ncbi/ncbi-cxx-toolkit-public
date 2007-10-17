@@ -47,6 +47,7 @@
 #include <connect/connect_export.h>
 #include <connect/services/ns_client_factory.hpp>
 #include <connect/services/ns_client_wrappers.hpp>
+#include <connect/services/error_codes.hpp>
 #include <util/thread_pool.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -432,9 +433,11 @@ public:
         try {
             m_IdleTask.reset(new TWorkerNodeIdleTask(*m_WorkerNodeInitContext));
         } catch (exception& ex) {
-            LOG_POST("Idle tast is not created: " << ex.what());
+            LOG_POST_XX(ConnServ_WorkerNode, 16,
+                        "Idle tast is not created: " << ex.what());
         } catch (...) {
-            LOG_POST("Idle tast is not created: Unknown error");
+            LOG_POST_XX(ConnServ_WorkerNode, 17,
+                        "Idle tast is not created: Unknown error");
         }
     }
     virtual IWorkerNodeJob* CreateInstance(void)

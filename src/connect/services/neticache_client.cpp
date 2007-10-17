@@ -35,8 +35,12 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/neticache_client.hpp>
+#include <connect/services/error_codes.hpp>
 #include <util/cache/icache_cf.hpp>
 #include <memory>
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_NetCache
 
 
 BEGIN_NCBI_SCOPE
@@ -88,7 +92,7 @@ void CNetICacheClient::ReturnSocket(CSocket* sock, const string& blob_comments)
         string line;
         if (io_st == eIO_Success) {
             sock->ReadLine(line);
-            ERR_POST("ReturnSocket detected unread input " << blob_comments << " :" << line);
+            ERR_POST_X(7, "ReturnSocket detected unread input " << blob_comments << " :" << line);
             delete sock;
             return;
         }
@@ -211,11 +215,11 @@ struct CStackGuard
 {
    CStackGuard(const string& name_) : name(name_)
    {
-	   ERR_POST("->" << name);
+	   ERR_POST_X(8, "->" << name);
    }
    ~CStackGuard()
    {
-	   ERR_POST("  " << name << "->");
+	   ERR_POST_X(9, "  " << name << "->");
    }
 
 	string name;

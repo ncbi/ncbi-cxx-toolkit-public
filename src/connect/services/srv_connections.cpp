@@ -35,8 +35,12 @@
 #include <connect/ncbi_conn_exception.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/services/srv_connections.hpp>
+#include <connect/services/error_codes.hpp>
 
 #include <connect/ncbi_service.h>
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
 BEGIN_NCBI_SCOPE
 
@@ -439,7 +443,7 @@ CNetSrvConnectorHolder CNetSrvConnectorPoll::GetBest(const TService* backup, con
     } catch (CNetSrvConnException& ex) {
         if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound || !backup)
             throw;
-        ERR_POST("Connecting to backup server " << backup->first << ":" << backup->second << ".");
+        ERR_POST_X(1, "Connecting to backup server " << backup->first << ":" << backup->second << ".");
         return CNetSrvConnectorHolder(*x_FindOrCreateConnector(*backup), !m_PermConn);
     }
     ITERATE(TServices, it, m_Services) {
@@ -448,15 +452,16 @@ CNetSrvConnectorHolder CNetSrvConnectorPoll::GetBest(const TService* backup, con
             conn->x_CheckConnect();
             return CNetSrvConnectorHolder(*conn, !m_PermConn);
         } catch (CNetSrvConnException& ex) {
-            if (ex.GetErrCode() == CNetSrvConnException::eConnectionFailure)
-                ERR_POST(ex.what());
+            if (ex.GetErrCode() == CNetSrvConnException::eConnectionFailure) {
+                ERR_POST_X(2, ex.what());
+            }
             else
                 throw;
         }
     }
     if (backup) {
-        ERR_POST("Couldn't find any availbale servers for " << m_ServiceName 
-                << " service. Connecting to backup server " << backup->first << ":" << backup->second << ".");
+        ERR_POST_X(3, "Couldn't find any availbale servers for " << m_ServiceName 
+                   << " service. Connecting to backup server " << backup->first << ":" << backup->second << ".");
         return CNetSrvConnectorHolder(*x_FindOrCreateConnector(*backup), !m_PermConn);
     }
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty, "Couldn't find any availbale servers for " 
@@ -483,7 +488,7 @@ void CNetSrvConnectorPoll::x_Rebalance()
             } catch (CNetSrvConnException& ex) {
                 if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound)
                     throw;
-                ERR_POST("Communication Error : " << ex.what());
+                ERR_POST_X(4, "Communication Error : " << ex.what());
                 if (++try_count > TServConn_MaxFineLBNameRetries::GetDefault())
                     throw;
                 SleepMilliSec(1000 + try_count*2000);

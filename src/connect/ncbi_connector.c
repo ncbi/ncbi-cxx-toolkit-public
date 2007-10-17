@@ -35,10 +35,12 @@
 #include <connect/ncbi_connector.h>
 
 
+#define NCBI_USE_ERRCODE_X  Connect_MetaConn
+
 /* Standard logging message
  */
-#define METACONN_LOG(level, descr)                      \
-  CORE_LOGF(level,                                      \
+#define METACONN_LOG(subcode, level, descr)             \
+  CORE_LOGF_X(subcode, level,                             \
             ("%s (connector \"%s\", error \"%s\")",     \
             descr, (*meta->get_type)(meta->c_get_type), \
             IO_StatusStr(status)))
@@ -57,7 +59,7 @@ extern EIO_Status METACONN_Remove
         }
         if (!x_conn) {
             EIO_Status status = eIO_Unknown;
-            METACONN_LOG(eLOG_Error,
+            METACONN_LOG(1, eLOG_Error,
                          "[METACONN_Remove]  Connector is not in connection");
             return status;
         }
@@ -87,7 +89,7 @@ extern EIO_Status METACONN_Add
 
     if (connector->next  ||  !connector->setup) {
         EIO_Status status = eIO_Unknown;
-        METACONN_LOG(eLOG_Error,
+        METACONN_LOG(2, eLOG_Error,
                      "[METACONN_Add]  Input connector is in use/uninitable");
         return status;
     }

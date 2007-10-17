@@ -35,7 +35,11 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netcache_client.hpp>
+#include <connect/services/error_codes.hpp>
 #include <memory>
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_NetCache
 
 
 BEGIN_NCBI_SCOPE
@@ -933,9 +937,9 @@ CNetCacheSock_RW::~CNetCacheSock_RW()
     try {
         FinishTransmission();
     } catch(exception& ex) {
-        ERR_POST("Exception in CNetCacheSock_RW::~CNetCacheSock_RW():" << ex.what());
+        ERR_POST_X(1, "Exception in CNetCacheSock_RW::~CNetCacheSock_RW():" << ex.what());
     } catch(...) {
-        ERR_POST("Unknown Exception in CNetCacheSock_RW::~CNetCacheSock_RW()");
+        ERR_POST_X(2, "Unknown Exception in CNetCacheSock_RW::~CNetCacheSock_RW()");
     }
 }
 

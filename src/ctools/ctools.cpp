@@ -111,6 +111,7 @@ static int LIBCALLBACK s_c2cxxErrorHandler(const ErrDesc* err)
             diag.SetFile(err->srcfile);
         if (err->srcline)
             diag.SetLine(err->srcline);
+        diag.SetErrorCode(err->errcode, err->subcode);
         if (*err->module)
             diag << err->module << ' ';
         if (*err->codestr)
