@@ -3136,83 +3136,95 @@ NETWORK_PURE_LIBS="$NETWORK_LIBS"
 if test "$with_sybase" != "no" ; then
    net_sybase_root="/netopt/Sybase/clients"
    local_sybase_root="/export/home/sybase/clients"
-   default_local_sybase="$local_sybase_root/current"
    sybase_lib=lib$bit64_sfx
-   : ${with_sybase_local:="no"}
    : ${with_sybase_new:="no"}
+   if test -d "$net_sybase_root" ; then
+      : ${with_sybase_local:="no"}
+   else
+      : ${with_sybase_local:="yes"}
+   fi
 
    if test "$with_sybase_local" != "no" ; then
       if test "$with_sybase_local" = "yes" ; then
-         with_sybase_local=${SYBASE_PATH:-$default_local_sybase}
-      fi
-      AC_CACHE_CHECK([for local Sybase install in $with_sybase_local],
-         ncbi_cv_path_sybase_local,
-         [if test -d "$with_sybase_local"; then
-             ncbi_cv_path_sybase_local=yes
-          else
-             ncbi_cv_path_sybase_local=no
-          fi])
-      if test "$ncbi_cv_path_sybase_local" = yes; then
+         if test -n "$SYBASE_PATH" ; then
+            with_sybase_local=$SYBASE_PATH
+         else
+            if test "$with_sybase_new" = "yes" ; then
+               with_sybase_local=$local_sybase_root/new
+            else
+               with_sybase_local=$local_sybase_root/current
+            fi
+            if test -d "$with_sybase_local$NCBI_PLATFORM_BITS" ; then
+               with_sybase_local=$with_sybase_local$NCBI_PLATFORM_BITS
+            fi
+         fi # default paths
+      fi # no command-line path
+      if test -d "$with_sybase_local" ; then
          SYBASE_PATH=$with_sybase_local
+         SYBASE_LCL_PATH=
       else
          with_sybase_local=no
       fi
    fi
+
    if test "$with_sybase_local" = "no" ; then
       if test "$with_sybase_new" = "yes" ; then
-         if test -d "$net_sybase_root/new${bit64_sfx:-32}"; then
-             new_version=new${bit64_sfx:-32}
-         elif test -d "$net_sybase_root/new"; then
-             new_version=new
+         if test -d "$net_sybase_root/new$NCBI_PLATFORM_BITS" ; then
+            SYBASE_LCL_PATH=$local_sybase_root/new$NCBI_PLATFORM_BITS
+            SYBASE_PATH=$net_sybase_root/new$NCBI_PLATFORM_BITS
+         elif test -d "$net_sybase_root/new" ; then
+            SYBASE_LCL_PATH=$local_sybase_root/new
+            SYBASE_PATH=$net_sybase_root/new
+         else
+            with_sybase_new=no
          fi
-         if test -n "$new_version"; then
-            new_sybase_path=$net_sybase_root/$new_version
-            new_sybase_local=$local_sybase_root/$new_version
-            AC_CACHE_CHECK([for new Sybase install in $new_sybase_local:$new_sybase_path],
-               ncbi_cv_path_sybase_new,
-               [if test -d $new_sybase_path; then
-                   if test -d $new_sybase_local; then
-                      ncbi_cv_path_sybase_new=yes
-                   else
-                      ncbi_cv_path_sybase_new=net-only
-                   fi
-                else
-                   ncbi_cv_path_sybase_new=no
-                fi])
-            if test "$ncbi_cv_path_sybase_new" = no; then
-               with_sybase_new=no
-            else
-               SYBASE_PATH=$new_sybase_path
-               sybase_lib=lib
-               if test "$ncbi_cv_path_sybase_new" = yes; then
-                  SYBASE_LCL_PATH=$new_sybase_local
-               fi
-            fi
-         fi # New Sybase potentially available?
-      fi # New Sybase requested?
-      if test "$with_sybase_new" = "no" ; then
-         : ${SYBASE_PATH:="$net_sybase_root/current"}
-         : ${SYBASE_LCL_PATH:="$local_sybase_root/current"}
       fi
-   fi # No local Sybase (requested)?
 
-   if test -d "${SYBASE_PATH}${bit64_sfx:-32}"; then
-      SYBASE_PATH=${SYBASE_PATH}${bit64_sfx:-32}
-   fi
-   if test -d "${SYBASE_LCL_PATH}${bit64_sfx:-32}"; then
-      SYBASE_LCL_PATH=${SYBASE_LCL_PATH}${bit64_sfx:-32}
+      if test -z "$SYBASE_PATH" ; then
+         if test -d "$net_sybase_root/current$NCBI_PLATFORM_BITS" ; then
+            SYBASE_LCL_PATH=$local_sybase_root/current$NCBI_PLATFORM_BITS
+            SYBASE_PATH=$net_sybase_root/current$NCBI_PLATFORM_BITS
+         elif test -d "$net_sybase_root/current" ; then
+            SYBASE_LCL_PATH=$local_sybase_root/current
+            SYBASE_PATH=$net_sybase_root/current
+         else
+            SYBASE_LCL_PATH=
+            SYBASE_PATH=$SYBASE
+         fi
+      fi
    fi
 
    # Lock in the version we found, ignoring symlinks further up
    if test -d "$SYBASE_PATH"; then
       SYBASE_PATH_=`cd $SYBASE_PATH && /bin/pwd`
-      SYBASE_PATH=`dirname $SYBASE_PATH`/`basename $SYBASE_PATH_`
+      SYBASE_VERSION=`basename $SYBASE_PATH_`
+      SYBASE_PATH=`dirname $SYBASE_PATH`/$SYBASE_VERSION
       test -d "$SYBASE_PATH"  ||  SYBASE_PATH=$SYBASE_PATH_
    fi
-   if test -d "$SYBASE_LCL_PATH"; then
-      SYBASE_LCL_PATH=`cd $SYBASE_LCL_PATH && /bin/pwd`
-   elif test -n "$SYBASE_LCL_PATH"; then # assume identity
-      SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/`basename $SYBASE_PATH`
+
+   if test -d "$SYBASE_LCL_PATH" ; then
+      SYBASE_LCL_PATH_=`cd $SYBASE_LCL_PATH && /bin/pwd`
+      SYBASE_LCL_VERSION=`basename $SYBASE_LCL_PATH_`
+      SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/$SYBASE_LCL_VERSION
+      test -d "$SYBASE_LCL_PATH"  ||  SYBASE_LCL_PATH=$SYBASE_LCL_PATH_
+   elif test -n "$SYBASE_LCL_PATH" ; then
+      SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/$SYBASE_VERSION
+   fi
+
+   if test -n "$SYBASE_VERSION" -a -n "$SYBASE_LCL_VERSION" \
+        -a "$SYBASE_VERSION" != "$SYBASE_LCL_VERSION" ; then
+      AC_MSG_WARN([ignoring inconsistent local Sybase symlink: $SYBASE_LCL_VERSION vs. $SYBASE_VERSION])
+      SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/$SYBASE_VERSION
+   fi
+
+   if test -n "$SYBASE" ; then
+      if test -d "$net_sybase_root" -o -d "$local_sybase_root" ; then
+         case $SYBASE in
+            $net_sybase_root/* | $local_sybase_root/* ) ;;
+            * ) AC_MSG_WARN([ignoring non-standard SYBASE setting: $SYBASE]) ;;
+            # Ignored regardless, but standard values are not so concerning.
+         esac
+      fi
    fi
 
    SYBASE_LIBPATH="$SYBASE_PATH/${sybase_lib}"
