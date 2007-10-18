@@ -208,7 +208,7 @@ private:
     unsigned int                      m_MaxRetries;
 
     CNetServerConnectorFactory m_ServerConnectorFactory;
-    typedef CResourcePool<CNetServerConnector, CRWLock, CNetServerConnectorFactory> TConnectorPool;
+    typedef CResourcePool_Base<CNetServerConnector, CRWLock, CNetServerConnectorFactory> TConnectorPool;
     auto_ptr<TConnectorPool> m_ServerConnectorPool;
 
     ESwitch m_PermanentConnection;
