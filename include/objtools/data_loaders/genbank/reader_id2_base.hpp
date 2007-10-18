@@ -82,6 +82,8 @@ public:
                            const string& seq_id);
     bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
                            const CSeq_id_Handle& seq_id);
+    bool LoadSeq_idLabel(CReaderRequestResult& result,
+                         const CSeq_id_Handle& seq_id);
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id);
     bool LoadBlobVersion(CReaderRequestResult& result,
@@ -213,7 +215,8 @@ private:
     CAtomicCounter m_RequestSerialNumber;
 
     enum {
-        fAvoidRequest_nested_get_blob_info = 1
+        fAvoidRequest_nested_get_blob_info = 1,
+        fAvoidRequest_for_Seq_id_label     = 2
     };
     typedef int TAvoidRequests;
     TAvoidRequests m_AvoidRequest;

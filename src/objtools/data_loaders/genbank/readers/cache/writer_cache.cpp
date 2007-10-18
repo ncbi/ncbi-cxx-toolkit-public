@@ -184,6 +184,25 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
 }
 
 
+void CCacheWriter::SaveSeq_idLabel(CReaderRequestResult& result,
+                                   const CSeq_id_Handle& seq_id)
+{
+    if( !m_IdCache) {
+        return;
+    }
+
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( ids->IsLoadedLabel() ) {
+        const string& label = ids->GetLabel();
+        m_IdCache->Store(GetIdKey(seq_id),
+                         0,
+                         GetLabelSubkey(),
+                         label.data(),
+                         label.size());
+    }
+}
+
+
 void CCacheWriter::WriteSeq_ids(const string& key,
                                 const CLoadLockSeq_ids& ids)
 {

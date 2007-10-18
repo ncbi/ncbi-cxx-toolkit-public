@@ -329,6 +329,18 @@ CScope::TIds CScope::GetIds(const CSeq_id_Handle& idh)
 }
 
 
+string CScope::GetLabel(const CSeq_id& id, EForceLabelLoad force_load)
+{
+    return GetLabel(CSeq_id_Handle::GetHandle(id), force_load);
+}
+
+
+string CScope::GetLabel(const CSeq_id_Handle& idh, EForceLabelLoad force_load)
+{
+    return m_Impl->GetLabel(idh, force_load == eForceLabelLoad);
+}
+
+
 CConstRef<CSynonymsSet> CScope::GetSynonyms(const CSeq_id& id)
 {
     return GetSynonyms(CSeq_id_Handle::GetHandle(id));

@@ -37,6 +37,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <set>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -262,6 +263,19 @@ CConstRef<CSeq_id> Get_ConstRef_Seq_id(const CSeq_id_Handle& id)
 /////////////////////////////////////////////////////////////////////
 
 /* @} */
+
+
+/// Return best label for a sequence from single Seq-id, or set of Seq-ids.
+/// Return empty string if the label cannot be determined.
+/// GetDirectLabel() will return non-empty string only if the Seq-id is
+/// very likely enough to get good label without loading full set of
+/// sequence Seq-ids.
+NCBI_SEQ_EXPORT string GetDirectLabel(const CSeq_id& id);
+NCBI_SEQ_EXPORT string GetDirectLabel(const CSeq_id_Handle& id);
+NCBI_SEQ_EXPORT string GetLabel(const CSeq_id& id);
+NCBI_SEQ_EXPORT string GetLabel(const CSeq_id_Handle& id);
+NCBI_SEQ_EXPORT string GetLabel(const vector<CSeq_id_Handle>& ids);
+NCBI_SEQ_EXPORT string GetLabel(const vector<CRef<CSeq_id> >& ids);
 
 
 END_SCOPE(objects)

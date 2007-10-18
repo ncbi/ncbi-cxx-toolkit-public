@@ -215,6 +215,8 @@ public:
     typedef vector<CSeq_id_Handle> TIds;
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
 
+    string GetLabel(const CSeq_id_Handle& idh);
+
     typedef map<CSeq_id_Handle, SSeqMatch_DS>       TSeqMatchMap;
     void GetBlobs(TSeqMatchMap& match_map);
 

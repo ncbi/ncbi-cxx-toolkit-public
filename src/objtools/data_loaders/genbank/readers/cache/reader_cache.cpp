@@ -101,6 +101,12 @@ const char* SCacheInfo::GetGiSubkey(void)
 }
 
 
+const char* SCacheInfo::GetLabelSubkey(void)
+{
+    return "label";
+}
+
+
 const char* SCacheInfo::GetSeq_idsSubkey(void)
 {
     return "ids";
@@ -255,6 +261,34 @@ bool CCacheReader::x_LoadIdCache(const string& key,
 }
 
 
+bool CCacheReader::x_LoadIdCache(const string& key,
+                                 const string& subkey,
+                                 string& data)
+{
+    CConn conn(this);
+    char buffer[256];
+    ICache::SBlobAccessDescr descr(buffer, sizeof(buffer));
+    m_IdCache->GetBlobAccess(key, 0, subkey, &descr);
+    if ( !descr.blob_found ) {
+        conn.Release();
+        return false;
+    }
+    size_t size = descr.blob_size;
+    if ( !descr.reader.get() ) {
+        data.assign(descr.buf, size);
+    }
+    else {
+        data.resize(size);
+        if ( !x_Read(descr, &data[0], size) ) {
+            conn.Release();
+            return false;
+        }
+    }
+    conn.Release();
+    return true;
+}
+
+
 bool CCacheReader::LoadStringSeq_ids(CReaderRequestResult& result,
                                      const string& seq_id)
 {
@@ -295,7 +329,26 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
             return true;
         }
     }
-    return false;
+    return CReader::LoadSeq_idGi(result, seq_id);
+}
+
+
+bool CCacheReader::LoadSeq_idLabel(CReaderRequestResult& result,
+                                   const CSeq_id_Handle& seq_id)
+{
+    if ( !m_IdCache ) {
+        return false;
+    }
+
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( !ids->IsLoadedLabel() ) {
+        string data;
+        if ( x_LoadIdCache(GetIdKey(seq_id), GetLabelSubkey(), data) ) {
+            ids->SetLoadedLabel(data);
+            return true;
+        }
+    }
+    return CReader::LoadSeq_idLabel(result, seq_id);
 }
 
 

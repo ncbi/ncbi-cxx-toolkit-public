@@ -244,6 +244,8 @@ public:
     typedef vector<CSeq_id_Handle> TIds;
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
 
+    virtual string GetLabel(const CSeq_id_Handle& idh);
+
     // Load multiple seq-ids. Same as GetRecords() for multiple ids
     // with choise set to eBlob. The map should be initialized with
     // the id handles to be loaded.
@@ -315,7 +317,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 2, 1, 1);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 3, 0, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>

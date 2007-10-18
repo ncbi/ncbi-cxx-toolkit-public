@@ -717,6 +717,17 @@ void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
+string CGBDataLoader::GetLabel(const CSeq_id_Handle& idh)
+{
+    CGBReaderRequestResult result(this, idh);
+    CLoadLockSeq_ids seq_ids(result, idh);
+    if ( !seq_ids->IsLoadedLabel() ) {
+        m_Dispatcher->LoadSeq_idLabel(result, idh);
+    }
+    return seq_ids->GetLabel();
+}
+
+
 CDataLoader::TBlobVersion CGBDataLoader::GetBlobVersion(const TBlobId& id)
 {
     const TRealBlobId& blob_id = GetRealBlobId(id);

@@ -186,6 +186,7 @@ public:
     virtual void DropTSE(CRef<CTSE_Info> tse_info);
 
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
+    virtual string GetLabel(const CSeq_id_Handle& idh);
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);

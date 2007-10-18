@@ -272,6 +272,33 @@ bool CId2ReaderBase::LoadSeq_idSeq_ids(CReaderRequestResult& result,
 }
 
 
+bool CId2ReaderBase::LoadSeq_idLabel(CReaderRequestResult& result,
+                                     const CSeq_id_Handle& seq_id)
+{
+    if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_label ) {
+        return LoadSeq_idSeq_ids(result, seq_id);
+    }
+
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( ids->IsLoadedLabel() ) {
+        return true;
+    }
+    CID2_Request req;
+    CID2_Request::C_Request::TGet_seq_id& get_id =
+        req.SetRequest().SetGet_seq_id();
+    get_id.SetSeq_id().SetSeq_id().Assign(*seq_id.GetSeqId());
+    get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_label);
+    x_ProcessRequest(result, req);
+
+    if ( !ids->IsLoadedLabel() ) {
+        m_AvoidRequest |= fAvoidRequest_for_Seq_id_label;
+        return LoadSeq_idSeq_ids(result, seq_id);
+    }
+
+    return true;
+}
+
+
 bool CId2ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                         const CSeq_id_Handle& seq_id)
 {
@@ -1124,6 +1151,22 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             if ( (**it).IsGi() ) {
                 SetAndSaveSeq_idGi(result, seq_id, ids, (**it).GetGi());
                 break;
+            }
+        }
+        break;
+    }}
+    case CID2_Request_Get_Seq_id::eSeq_id_type_label:
+    {{
+        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+            const CSeq_id& id = **it;
+            if ( id.IsGeneral() ) {
+                const CDbtag& dbtag = id.GetGeneral();
+                const CObject_id& obj_id = dbtag.GetTag();
+                if ( obj_id.IsStr() && dbtag.GetDb() == "LABEL" ) {
+                    SetAndSaveSeq_idLabel(result, seq_id, ids,
+                                          obj_id.GetStr());
+                    break;
+                }
             }
         }
         break;

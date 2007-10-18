@@ -108,6 +108,14 @@ public:
         }
     void SetLoadedGi(int gi);
 
+    bool IsLoadedLabel(void);
+    const string& GetLabel(void) const
+        {
+            _ASSERT(m_LabelLoaded);
+            return m_Label;
+        }
+    void SetLoadedLabel(const string& label);
+
     const_iterator begin(void) const
         {
             return m_Seq_ids.begin();
@@ -139,6 +147,8 @@ public:
     TSeq_ids    m_Seq_ids;
     bool        m_GiLoaded;
     int         m_Gi;
+    bool        m_LabelLoaded;
+    string      m_Label;
     TState      m_State;
 };
 

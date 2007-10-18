@@ -2227,6 +2227,40 @@ CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh)
 }
 
 
+string CScope_Impl::GetLabel(const CSeq_id_Handle& idh, bool force_load)
+{
+    string ret;
+    if ( !force_load ) {
+        ret = GetDirectLabel(idh);
+        if ( !ret.empty() ) {
+            return ret;
+        }
+    }
+
+    TReadLockGuard rguard(m_ConfLock);
+    if ( !force_load ) {
+        SSeqMatch_Scope match;
+        CRef<CBioseq_ScopeInfo> info =
+            x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
+        if ( info ) {
+            if ( info->HasBioseq() ) {
+                ret = objects::GetLabel(info->GetIds());
+            }
+            return ret;
+        }
+    }
+    
+    // Unknown bioseq, try to find in data sources
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        ret = it->GetDataSource().GetLabel(idh);
+        if ( !ret.empty() ) {
+            break;
+        }
+    }
+    return ret;
+}
+
+
 CConstRef<CSynonymsSet> CScope_Impl::GetSynonyms(const CSeq_id_Handle& id,
                                                  int get_flag)
 {

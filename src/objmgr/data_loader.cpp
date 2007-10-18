@@ -180,6 +180,21 @@ void CDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
+string CDataLoader::GetLabel(const CSeq_id_Handle& idh)
+{
+    string ret;
+    TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
+    ITERATE(TTSE_LockSet, it, locks) {
+        CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
+        if ( bs_info ) {
+            ret = objects::GetLabel(bs_info->GetId());
+            break;
+        }
+    }
+    return ret;
+}
+
+
 void CDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
 {
     NON_CONST_ITERATE(TTSE_LockSets, tse_set, tse_sets) {

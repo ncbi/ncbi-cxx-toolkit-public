@@ -315,6 +315,8 @@ public:
     // Get "native" bioseq ids without filtering and matching.
     TIds GetIds(const CSeq_id_Handle& idh);
 
+    string GetLabel(const CSeq_id_Handle& idh, bool force_load);
+
     // Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id,
                                         int get_flag);

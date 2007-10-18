@@ -303,10 +303,17 @@ public:
 
     /// Get "native" bioseq ids without filtering and matching.
     TIds GetIds(const CSeq_id&        id );
-
-    /// Get "native" bioseq ids without filtering and matching.
     TIds GetIds(const CSeq_id_Handle& idh);
 
+    /// Get short description of bioseq, usually "accession.version"
+    enum EForceLabelLoad {
+        eNoForceLabelLoad,
+        eForceLabelLoad
+    };
+    string GetLabel(const CSeq_id& id,
+                    EForceLabelLoad force_load = eNoForceLabelLoad);
+    string GetLabel(const CSeq_id_Handle& idh,
+                    EForceLabelLoad force_load = eNoForceLabelLoad);
 
     /// Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id&        id);

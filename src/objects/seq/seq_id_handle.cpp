@@ -233,5 +233,123 @@ unsigned CSeq_id_Handle::GetHash(void) const
 }
 
 
+string GetDirectLabel(const CSeq_id& id)
+{
+    string ret;
+    if ( !id.IsGi() ) {
+        if ( id.IsGeneral() ) {
+            const CDbtag& dbtag = id.GetGeneral();
+            const CObject_id& obj_id = dbtag.GetTag();
+            if ( obj_id.IsStr() && dbtag.GetDb() == "LABEL" ) {
+                ret = obj_id.GetStr();
+            }
+        }
+        else {
+            const CTextseq_id* text_id = id.GetTextseq_Id();
+            if ( text_id &&
+                 text_id->IsSetAccession() &&
+                 text_id->IsSetVersion() ) {
+                ret = text_id->GetAccession() + '.' +
+                    NStr::IntToString(text_id->GetVersion());
+            }
+        }
+    }
+    return ret;
+}
+
+
+string GetDirectLabel(const CSeq_id_Handle& idh)
+{
+    string ret;
+    if ( !idh.IsGi() ) {
+        ret = GetDirectLabel(*idh.GetSeqId());
+    }
+    return ret;
+}
+
+
+string GetLabel(const CSeq_id& id)
+{
+    string ret;
+    const CTextseq_id* text_id = id.GetTextseq_Id();
+    if ( text_id ) {
+        if ( text_id->IsSetAccession() ) {
+            ret = text_id->GetAccession();
+        }
+        else if ( text_id->IsSetName() ) {
+            ret = text_id->GetName();
+        }
+        if ( text_id->IsSetVersion() ) {
+            ret += '.';
+            ret += NStr::IntToString(text_id->GetVersion());
+        }
+    }
+    else if ( id.IsGeneral() ) {
+        const CDbtag& dbtag = id.GetGeneral();
+        const CObject_id& obj_id = dbtag.GetTag();
+        if ( obj_id.IsStr() && dbtag.GetDb() == "LABEL" ) {
+            ret = obj_id.GetStr();
+        }
+    }
+    if ( ret.empty() ) {
+        ret = id.AsFastaString();
+    }
+    return ret;
+}
+
+
+string GetLabel(const CSeq_id_Handle& idh)
+{
+    string ret;
+    if ( idh.IsGi() ) {
+        ret = idh.AsString();
+    }
+    else {
+        ret = GetLabel(*idh.GetSeqId());
+    }
+    return ret;
+}
+
+
+string GetLabel(const vector<CSeq_id_Handle>& ids)
+{
+    string ret;
+    CSeq_id_Handle best_id;
+    int best_score = kMax_Int;
+    ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
+        CConstRef<CSeq_id> id = it->GetSeqId();
+        int score = id->TextScore();
+        if ( score < best_score ) {
+            best_score = score;
+            best_id = *it;
+        }
+    }
+    if ( best_id ) {
+        ret = GetLabel(best_id);
+    }
+    return ret;
+}
+
+
+string GetLabel(const vector<CRef<CSeq_id> >& ids)
+{
+    string ret;
+    const CSeq_id* best_id = 0;
+    int best_score = kMax_Int;
+    ITERATE ( vector<CRef<CSeq_id> >, it, ids ) {
+        const CSeq_id& id = **it;
+        int score = id.TextScore();
+        if ( score < best_score ) {
+            best_score = score;
+            best_id = &id;
+        }
+    }
+    if ( best_id ) {
+        ret = GetLabel(*best_id);
+    }
+    return ret;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

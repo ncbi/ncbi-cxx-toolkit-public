@@ -183,6 +183,7 @@ void CDemoApp::Init(void)
                               "protein", "p", "nucleotide", "n"));
 
     arg_desc->AddFlag("seq_map", "scan SeqMap on full depth");
+    arg_desc->AddFlag("seg_labels", "get labels of all segments in Delta");
     arg_desc->AddFlag("whole_sequence", "load whole sequence");
     arg_desc->AddFlag("whole_tse", "perform some checks on whole TSE");
     arg_desc->AddFlag("print_tse", "print TSE with sequence");
@@ -406,6 +407,7 @@ int CDemoApp::Run(void)
         exclude_named.insert(names);
     }
     bool scan_seq_map = args["seq_map"];
+    bool get_seg_labels = args["seg_labels"];
 
     vector<int> types_counts, subtypes_counts;
 
@@ -621,6 +623,30 @@ int CDemoApp::Run(void)
         // get handle again, check for scope TSE locking
         handle = scope.GetBioseqHandle(idh);
         //scope.RemoveFromHistory(handle.GetTSE_Handle()); break;
+
+        if ( get_seg_labels ) {
+            TSeqPos range_length =
+                range_to == 0? kInvalidSeqPos: range_to - range_from + 1;
+            CSeqMap::TFlags flags = CSeqMap::fDefaultFlags;
+            if ( exact_depth ) {
+                flags |= CSeqMap::fFindExactLevel;
+            }
+            const CSeqMap& seq_map = handle.GetSeqMap();
+            CSeqMap::const_iterator seg =
+                seq_map.ResolvedRangeIterator(&scope,
+                                              range_from,
+                                              range_length,
+                                              eNa_strand_plus,
+                                              1,
+                                              flags);
+            for ( ; seg; ++seg ) {
+                if ( seg.GetType() == CSeqMap::eSeqRef ) {
+                    string label = scope.GetLabel(seg.GetRefSeqid());
+                    NcbiCout << "Label(" << seg.GetRefSeqid().AsString()
+                             << ") = " << label << NcbiEndl;
+                }
+            }
+        }
 
         string sout;
         int count;

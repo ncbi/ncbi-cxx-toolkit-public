@@ -324,7 +324,20 @@ bool CReader::LoadSeq_idGi(CReaderRequestResult& result,
     if ( ids->IsLoadedGi() || ids.IsLoaded() ) {
         return true;
     }
-    return LoadSeq_idSeq_ids(result, seq_id);
+    m_Dispatcher->LoadSeq_idSeq_ids(result, seq_id);
+    return ids->IsLoadedGi();
+}
+
+
+bool CReader::LoadSeq_idLabel(CReaderRequestResult& result,
+                              const CSeq_id_Handle& seq_id)
+{
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( ids->IsLoadedLabel() || ids.IsLoaded() ) {
+        return true;
+    }
+    m_Dispatcher->LoadSeq_idSeq_ids(result, seq_id);
+    return ids->IsLoadedLabel();
 }
 
 
@@ -480,6 +493,15 @@ void CReader::SetAndSaveSeq_idGi(CReaderRequestResult& result,
 }
 
 
+void CReader::SetAndSaveSeq_idLabel(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id,
+                                    const string& label) const
+{
+    CLoadLockSeq_ids seq_ids(result, seq_id);
+    SetAndSaveSeq_idLabel(result, seq_id, seq_ids, label);
+}
+
+
 void CReader::SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                        const CSeq_id_Handle& seq_id) const
 {
@@ -562,6 +584,22 @@ void CReader::SetAndSaveSeq_idGi(CReaderRequestResult& result,
     CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
     if( writer ) {
         writer->SaveSeq_idGi(result, seq_id);
+    }
+}
+
+
+void CReader::SetAndSaveSeq_idLabel(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id,
+                                    CLoadLockSeq_ids& seq_ids,
+                                    const string& label) const
+{
+    if ( seq_ids->IsLoadedLabel() ) {
+        return;
+    }
+    seq_ids->SetLoadedLabel(label);
+    CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
+    if( writer ) {
+        writer->SaveSeq_idLabel(result, seq_id);
     }
 }
 

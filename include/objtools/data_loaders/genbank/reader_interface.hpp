@@ -38,7 +38,7 @@ class CReader;
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CReader,  "xreader", 2, 2, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CReader,  "xreader", 3, 0, 0);
 
 template<>
 class CDllResolver_Getter<objects::CReader>

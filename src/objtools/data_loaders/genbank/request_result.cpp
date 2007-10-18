@@ -122,6 +122,27 @@ void CLoadInfoSeq_ids::SetLoadedGi(int gi)
 }
 
 
+bool CLoadInfoSeq_ids::IsLoadedLabel(void)
+{
+    if ( m_LabelLoaded ) {
+        return true;
+    }
+    if ( !IsLoaded() ) {
+        return false;
+    }
+    m_Label = objects::GetLabel(m_Seq_ids);
+    m_LabelLoaded = true;
+    return true;
+}
+
+
+void CLoadInfoSeq_ids::SetLoadedLabel(const string& label)
+{
+    m_Label = label;
+    m_LabelLoaded = true;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CLoadInfoBlob_ids
 /////////////////////////////////////////////////////////////////////////////

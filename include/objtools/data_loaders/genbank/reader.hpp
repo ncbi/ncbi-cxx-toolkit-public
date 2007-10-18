@@ -74,6 +74,8 @@ public:
                                    const CSeq_id_Handle& seq_id) = 0;
     virtual bool LoadSeq_idGi(CReaderRequestResult& result,
                               const CSeq_id_Handle& seq_id);
+    virtual bool LoadSeq_idLabel(CReaderRequestResult& result,
+                                 const CSeq_id_Handle& seq_id);
     virtual bool LoadBlobVersion(CReaderRequestResult& result,
                                  const TBlobId& blob_id) = 0;
     virtual bool LoadBlobs(CReaderRequestResult& result,
@@ -105,6 +107,9 @@ public:
     void SetAndSaveSeq_idGi(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             int gi) const;
+    void SetAndSaveSeq_idLabel(CReaderRequestResult& result,
+                            const CSeq_id_Handle& seq_id,
+                            const string& label) const;
     void SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id) const;
     void SetAndSaveBlobVersion(CReaderRequestResult& result,
@@ -128,6 +133,10 @@ public:
                             const CSeq_id_Handle& seq_id,
                             CLoadLockSeq_ids& seq_ids,
                             int gi) const;
+    void SetAndSaveSeq_idLabel(CReaderRequestResult& result,
+                               const CSeq_id_Handle& seq_id,
+                               CLoadLockSeq_ids& seq_ids,
+                               const string& label) const;
     void SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id,
                                   CLoadLockBlob_ids& blob_ids) const;

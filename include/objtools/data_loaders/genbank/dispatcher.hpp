@@ -87,6 +87,8 @@ public:
                            const CSeq_id_Handle& seq_id);
     void LoadSeq_idGi(CReaderRequestResult& result,
                       const CSeq_id_Handle& seq_id);
+    void LoadSeq_idLabel(CReaderRequestResult& result,
+                         const CSeq_id_Handle& seq_id);
     void LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
     /*
