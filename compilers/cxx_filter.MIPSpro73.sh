@@ -6,4 +6,5 @@ keep
 
 BEGIN { status=0 }
 /^cc-[0-9]+ CC: ERROR/ { status=1 }
+/^CC ERROR:/ { status=1 }
 END { exit status }'
