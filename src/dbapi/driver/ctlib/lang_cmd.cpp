@@ -34,6 +34,10 @@
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 #include <dbapi/driver/public.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Cmds
 
 BEGIN_NCBI_SCOPE
 
@@ -92,7 +96,7 @@ CTL_Cmd::~CTL_Cmd(void)
             Check(ct_cmd_drop(x_GetSybaseCmd()));
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 4, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -475,7 +479,7 @@ CTL_LRCmd::~CTL_LRCmd(void)
         // This call is supposed to cancel brocken resultset.
         Cancel();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 5, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -719,7 +723,7 @@ CTL_LangCmd::~CTL_LangCmd()
 
         Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 6, NCBI_CURRENT_FUNCTION )
 }
 
 

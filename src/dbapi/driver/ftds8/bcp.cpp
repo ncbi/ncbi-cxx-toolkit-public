@@ -32,7 +32,11 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include <dbapi/error_codes.hpp>
 #include <string.h>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Ftds8_Cmds
 
 
 BEGIN_NCBI_SCOPE
@@ -506,7 +510,7 @@ CTDS_BCPInCmd::~CTDS_BCPInCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 

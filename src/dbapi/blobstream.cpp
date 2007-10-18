@@ -34,7 +34,11 @@
 #include "blobstream.hpp"
 
 #include <dbapi/driver/public.hpp>
+#include <dbapi/error_codes.hpp>
 #include "rs_impl.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_BlobStream
 
 BEGIN_NCBI_SCOPE
 
@@ -49,7 +53,7 @@ CBlobIStream::~CBlobIStream()
     try {
         delete rdbuf();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 1, kEmptyStr )
 }
 
 CBlobOStream::CBlobOStream(CDB_Connection* connAux,
@@ -94,7 +98,7 @@ CBlobOStream::~CBlobOStream()
         if( m_destroyConn )
             delete m_conn;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 2, kEmptyStr )
 }
 
 END_NCBI_SCOPE

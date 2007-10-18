@@ -46,7 +46,8 @@ BEGIN_NCBI_SCOPE
 // C sources see src/connect/ncbi_priv.h.
 NCBI_DEFINE_ERRCODE_X(Connect_Stream,    315,  8);
 NCBI_DEFINE_ERRCODE_X(Connect_Pipe,      316, 22);
-NCBI_DEFINE_ERRCODE_X(Connect_ThrServer, 317,  4);
+NCBI_DEFINE_ERRCODE_X(Connect_ThrServer, 317,  7);
+NCBI_DEFINE_ERRCODE_X(Connect_Core,      318,  8);
 
 
 END_NCBI_SCOPE

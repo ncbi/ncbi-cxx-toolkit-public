@@ -31,6 +31,10 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Ftds8_Cmds
 
 
 BEGIN_NCBI_SCOPE
@@ -352,7 +356,7 @@ CTDS_CursorCmd::~CTDS_CursorCmd()
 
         CloseCursor();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 

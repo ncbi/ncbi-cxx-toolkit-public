@@ -35,6 +35,10 @@
 #include "bulkinsert.hpp"
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/public.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_BulkInsert
 
 BEGIN_NCBI_SCOPE
 
@@ -56,7 +60,7 @@ CBulkInsert::~CBulkInsert()
         Notify(CDbapiDeletedEvent(this));
         _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 1, kEmptyStr )
 }
 
 void CBulkInsert::Close()

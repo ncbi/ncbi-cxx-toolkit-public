@@ -35,6 +35,7 @@
 
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/plugin_manager_store.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include "python_ncbi_dbapi.hpp"
 #include "pythonpp/pythonpp_pdt.hpp"
@@ -60,6 +61,9 @@
 #else
 #  define PYDBAPI_MODINIT_FUNC(name)         DL_EXPORT(void) name(void)
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Python
 
 BEGIN_NCBI_SCOPE
 
@@ -754,7 +758,7 @@ CConnection::~CConnection(void)
         // m_DM.DestroyDs(m_DS);
     m_DS = NULL;                        // ;-)
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 IConnection*
@@ -1010,7 +1014,7 @@ CTransaction::~CTransaction(void)
         // Unregister this transaction with the parent connection ...
         GetParentConnection().DestroyTransaction(this);
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 pythonpp::CObject
@@ -1202,7 +1206,7 @@ CStmtHelper::~CStmtHelper(void)
     try {
         Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 }
 
 void
@@ -1450,7 +1454,7 @@ CCallableStmtHelper::~CCallableStmtHelper(void)
     try {
         Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 4, NCBI_CURRENT_FUNCTION )
 }
 
 void
@@ -1765,7 +1769,7 @@ CCursor::~CCursor(void)
         // Unregister this cursor with the parent transaction ...
         GetTransaction().DestroyCursor(this);
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 5, NCBI_CURRENT_FUNCTION )
 }
 
 void

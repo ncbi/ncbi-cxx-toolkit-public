@@ -62,7 +62,7 @@ public:
     {
         try {
             Reset();
-        } NCBI_CATCH_ALL("CBlobStreamHelper::~CBlobStreamHelper()");
+        } NCBI_CATCH_ALL_X(14, "CBlobStreamHelper::~CBlobStreamHelper()");
     }
 
     CNcbiOstream& GetOStream(const string& fname = "", 
@@ -176,7 +176,7 @@ public:
     {
         try {
             Reset();
-        } NCBI_CATCH_ALL("CRemoteAppRequestMB_Impl::~CRemoteAppRequestMB_Impl()");
+        } NCBI_CATCH_ALL_X(15, "CRemoteAppRequestMB_Impl::~CRemoteAppRequestMB_Impl()");
 
     }
 
@@ -529,7 +529,7 @@ public:
     {
         try {
             Reset();
-        } NCBI_CATCH_ALL("CRemoteAppResultMB_Impl::~CRemoteAppResultMB_Impl()");
+        } NCBI_CATCH_ALL_X(16, "CRemoteAppResultMB_Impl::~CRemoteAppResultMB_Impl()");
     }    
 
     CNcbiOstream& GetStdOutForWrite() 

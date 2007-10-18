@@ -35,6 +35,10 @@
 #include "rw_impl.hpp"
 #include "rs_impl.hpp"
 #include <dbapi/driver/public.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ObjImpls
 
 BEGIN_NCBI_SCOPE
 
@@ -119,7 +123,7 @@ CxBlobWriter::~CxBlobWriter()
 		if( m_destroy )
 			delete m_cdbConn;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 8, kEmptyStr )
 }
 
 

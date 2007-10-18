@@ -924,7 +924,7 @@ void CThreadInPool<TRequest>::OnExit(void)
 {
     try {
         x_OnExit();
-    } STD_CATCH_ALL("x_OnExit")
+    } STD_CATCH_ALL_XX(Util_Thread, 6, "x_OnExit")
     if (m_RunMode != eRunOnce)
         m_Pool->m_ThreadCount.Add(-1);
     else 

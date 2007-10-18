@@ -33,6 +33,10 @@
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/dblib/interfaces_p.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Ftds8_Results
 
 
 BEGIN_NCBI_SCOPE
@@ -523,7 +527,7 @@ CTDS_RowResult::~CTDS_RowResult()
         if (!m_EOR)
             Check(dbcanquery(GetCmd()));
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -759,7 +763,7 @@ CTDS_BlobResult::~CTDS_BlobResult()
             Check(dbcanquery(GetCmd()));
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -869,7 +873,7 @@ CTDS_ParamResult::~CTDS_ParamResult()
             m_ColFmt = 0;
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1221,7 +1225,7 @@ CTDS_CursorResult::~CTDS_CursorResult()
     try {
         delete m_Res;
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 4, NCBI_CURRENT_FUNCTION )
 }
 
 

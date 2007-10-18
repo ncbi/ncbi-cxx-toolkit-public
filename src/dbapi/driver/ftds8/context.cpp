@@ -45,6 +45,7 @@
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/dblib/interfaces_p.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include <algorithm>
 
@@ -53,6 +54,9 @@
 #  include <winsock2.h>
 #endif
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Ftds8_Context
 
 BEGIN_NCBI_SCOPE
 
@@ -95,7 +99,7 @@ CDblibContextRegistry::~CDblibContextRegistry(void) throw()
     try {
         ClearAll();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 CDblibContextRegistry&
@@ -349,7 +353,7 @@ CTDSContext::~CTDSContext()
     try {
         x_Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 void
@@ -374,7 +378,7 @@ CTDSContext::x_Close(bool delete_conn)
                         CloseAllConn();
                     }
                 }
-                NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+                NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 
                 // Finalize client library even if we cannot close connections.
                 dbloginfree(m_Login);

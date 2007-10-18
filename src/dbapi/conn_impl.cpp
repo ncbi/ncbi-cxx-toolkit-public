@@ -35,6 +35,7 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/public.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include "conn_impl.hpp"
 #include "ds_impl.hpp"
@@ -43,6 +44,9 @@
 #include "cursor_impl.hpp"
 #include "bulkinsert.hpp"
 #include "err_handler.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ObjImpls
 
 BEGIN_NCBI_SCOPE
 
@@ -150,7 +154,7 @@ CConnection::~CConnection()
         Notify(CDbapiDeletedEvent(this));
         _TRACE(GetIdent() << " " << (void*)this << " deleted.");
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 1, kEmptyStr )
 }
 
 

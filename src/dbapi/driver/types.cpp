@@ -1037,7 +1037,7 @@ CDB_Char::~CDB_Char()
     try {
         delete [] m_Val;
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1187,7 +1187,7 @@ CDB_LongChar::~CDB_LongChar()
     try {
         delete [] m_Val;
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 4, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1326,7 +1326,7 @@ CDB_Binary::~CDB_Binary()
     try {
         delete [] m_Val;
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 5, NCBI_CURRENT_FUNCTION )
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1422,7 +1422,7 @@ CDB_LongBinary::~CDB_LongBinary()
     try {
         delete [] m_Val;
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 6, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1572,7 +1572,7 @@ CDB_Stream::~CDB_Stream()
     try {
         delete m_Store;
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 7, NCBI_CURRENT_FUNCTION )
 }
 
 

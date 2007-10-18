@@ -58,6 +58,7 @@ NCBI_DEFINE_ERRCODE_X(Serial_Lexer,      813, 14);
 NCBI_DEFINE_ERRCODE_X(Serial_DataTool,   814,  3);
 NCBI_DEFINE_ERRCODE_X(Serial_DTType,     815,  3);
 NCBI_DEFINE_ERRCODE_X(Serial_DTValue,    816, 18);
+NCBI_DEFINE_ERRCODE_X(Serial_RPCClient,  817,  1);
 
 
 END_NCBI_SCOPE

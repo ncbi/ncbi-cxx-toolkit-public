@@ -189,7 +189,7 @@ CDB_Connection::~CDB_Connection()
             m_ConnImpl = NULL;
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -314,7 +314,7 @@ CDB_Result::~CDB_Result()
             GetIResult().Release();
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -415,7 +415,7 @@ CDB_LangCmd::~CDB_LangCmd()
             m_CmdImpl->Release();
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 4, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -520,7 +520,7 @@ CDB_RPCCmd::~CDB_RPCCmd()
             m_CmdImpl->Release();
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 5, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -576,7 +576,7 @@ CDB_BCPInCmd::~CDB_BCPInCmd()
             m_CmdImpl->Release();
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 6, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -652,7 +652,7 @@ CDB_CursorCmd::~CDB_CursorCmd()
             m_CmdImpl->Release();
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 7, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -692,7 +692,7 @@ CDB_SendDataCmd::~CDB_SendDataCmd()
             m_CmdImpl->Release();
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 8, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -757,7 +757,7 @@ CDB_ResultProcessor::~CDB_ResultProcessor()
             m_Next->m_Prev = m_Prev;
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 9, NCBI_CURRENT_FUNCTION )
 }
 
 void CDB_ResultProcessor::SetConn(CDB_Connection* c)
@@ -821,7 +821,7 @@ CAutoTrans::~CAutoTrans(void)
         // Skip commit/rollback if this transaction was previously
         // explicitly finished ...
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 10, NCBI_CURRENT_FUNCTION )
 }
 
 void

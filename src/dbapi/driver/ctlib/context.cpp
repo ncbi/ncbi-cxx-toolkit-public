@@ -54,7 +54,7 @@
 #endif
 
 
-#define NCBI_USE_ERRCODE_X   Dbapi_CTLib
+#define NCBI_USE_ERRCODE_X   Dbapi_CTLib_Context
 
 
 BEGIN_NCBI_SCOPE
@@ -121,7 +121,7 @@ CTLibContextRegistry::~CTLibContextRegistry(void) throw()
     try {
         ClearAll();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 6, NCBI_CURRENT_FUNCTION )
 }
 
 CTLibContextRegistry&
@@ -210,7 +210,7 @@ Connection::~Connection(void) throw()
         Close();
         Drop();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 7, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -365,7 +365,7 @@ Command::~Command(void)
         Close();
         Drop();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 8, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -579,7 +579,7 @@ CTLibContext::~CTLibContext()
             m_Locale = NULL;
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 9, NCBI_CURRENT_FUNCTION )
 }
 
 

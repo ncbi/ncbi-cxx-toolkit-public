@@ -30,6 +30,10 @@
 #include <ncbi_pch.hpp>
 
 #include <dbapi/driver/impl/dbapi_impl_result.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_DrvrResult
 
 BEGIN_NCBI_SCOPE
 
@@ -46,7 +50,7 @@ CResult::~CResult(void)
     try {
         DetachInterface();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 1, kEmptyStr )
 }
 
 

@@ -32,6 +32,10 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Mysql_Cmds
 
 
 BEGIN_NCBI_SCOPE
@@ -99,7 +103,7 @@ CMySQL_LangCmd::~CMySQL_LangCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 int CMySQL_LangCmd::LastInsertId() const

@@ -34,6 +34,7 @@
 #include <dbapi/driver/dblib/interfaces_p.hpp>
 
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include <dbapi/error_codes.hpp>
 
 
 // SYBUNIQUE is defined in <tds.h>
@@ -41,6 +42,9 @@
 #ifdef FTDS_IN_USE
 #define SYBUNIQUE 36
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Dblib_Results
 
 BEGIN_NCBI_SCOPE
 
@@ -520,7 +524,7 @@ CDBL_RowResult::~CDBL_RowResult()
         if (!m_EOR)
             Check(dbcanquery(GetCmd()));
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -752,7 +756,7 @@ CDBL_BlobResult::~CDBL_BlobResult()
         if (!m_EOR)
             Check(dbcanquery(GetCmd()));
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -864,7 +868,7 @@ CDBL_ParamResult::~CDBL_ParamResult()
             m_ColFmt = 0;
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1004,7 +1008,7 @@ CDBL_ComputeResult::~CDBL_ComputeResult()
             Fetch();
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 4, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1282,7 +1286,7 @@ CDBL_CursorResult::~CDBL_CursorResult()
     try {
         ClearResultSet();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 5, NCBI_CURRENT_FUNCTION )
 }
 
 

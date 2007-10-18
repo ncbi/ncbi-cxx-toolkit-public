@@ -33,7 +33,11 @@
 #include <algorithm>
 #include "bytestreambuf.hpp"
 #include <dbapi/driver/public.hpp>
+#include <dbapi/error_codes.hpp>
 #include "rs_impl.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_BlobStream
 
 BEGIN_NCBI_SCOPE
 
@@ -62,7 +66,7 @@ CByteStreamBuf::~CByteStreamBuf()
         delete[] m_buf;
         delete m_cmd;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 3, kEmptyStr )
 }
 
 CT_CHAR_TYPE* CByteStreamBuf::getGBuf()

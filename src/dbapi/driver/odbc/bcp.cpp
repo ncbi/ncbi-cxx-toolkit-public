@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include <dbapi/error_codes.hpp>
 #include <string.h>
 
 #ifdef FTDS_IN_USE
@@ -41,6 +42,9 @@
 #endif
 
 #include "odbc_utils.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Cmds
 
 
 BEGIN_NCBI_SCOPE
@@ -590,7 +594,7 @@ CODBC_BCPInCmd::~CODBC_BCPInCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 

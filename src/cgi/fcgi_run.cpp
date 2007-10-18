@@ -60,6 +60,7 @@ bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 # include <corelib/ncbireg.hpp>
 # include <corelib/ncbitime.hpp>
 # include <cgi/cgictx.hpp>
+# include <cgi/error_codes.hpp>
 
 #include <corelib/rwstream.hpp>
 #include <util/multi_writer.hpp>
@@ -76,6 +77,9 @@ bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 #   include <signal.h>
 #   define USE_ALARM
 # endif
+
+
+#define NCBI_USE_ERRCODE_X   Cgi_Fast
 
 BEGIN_NCBI_SCOPE
 
@@ -497,7 +501,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             try {
                 try {
                     m_Cache.reset( GetCacheStorage() );
-                } NCBI_CATCH_ALL("Couldn't create cache")
+                } NCBI_CATCH_ALL_X(1, "Couldn't create cache")
 
                 bool skip_process_request = false;
                 bool caching_needed = IsCachingNeeded(m_Context->GetRequest());

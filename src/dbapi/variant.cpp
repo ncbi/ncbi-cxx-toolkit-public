@@ -35,8 +35,12 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/variant.hpp>
+#include <dbapi/error_codes.hpp>
 #include <algorithm>
 //#include <corelib/ncbistr.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Variant
 
 
 BEGIN_NCBI_SCOPE
@@ -300,7 +304,7 @@ CVariant::~CVariant(void)
     try {
         delete m_data;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 1, kEmptyStr )
 }
 
 

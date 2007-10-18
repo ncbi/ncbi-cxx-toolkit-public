@@ -526,6 +526,13 @@ const char* CExceptionWrapper::GetType(void) const
 void CExceptionReporter::ReportDefault(const CDiagCompileInfo& info,
     const string& title,const exception& ex, TDiagPostFlags flags)
 {
+    ReportDefaultEx(0, 0, info, title, ex, flags);
+}
+
+void CExceptionReporter::ReportDefaultEx(int err_code, int err_subcode,
+    const CDiagCompileInfo& info, const string& title,const exception& ex,
+    TDiagPostFlags flags)
+{
     if ( !sm_DefEnabled )
         return;
 
@@ -542,7 +549,8 @@ void CExceptionReporter::ReportDefault(const CDiagCompileInfo& info,
                               *cex, 
                               flags);
     } else {
-        CNcbiDiag(info, cex->GetSeverity(), flags) << title << *cex;
+        CNcbiDiag(info, cex->GetSeverity(), flags)
+            << ErrCode(err_code, err_subcode) << title << *cex;
     }
 }
 

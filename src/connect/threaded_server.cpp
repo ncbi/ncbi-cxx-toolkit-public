@@ -58,7 +58,7 @@ void CSocketRequest::Process(void)
 {
     try {
         m_Server.Process(m_Sock);
-    } STD_CATCH_ALL("CThreadedServer")
+    } STD_CATCH_ALL_X(7, "CThreadedServer")
 }
 
 

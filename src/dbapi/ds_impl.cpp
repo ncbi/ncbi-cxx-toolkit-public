@@ -31,9 +31,13 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <dbapi/error_codes.hpp>
 #include "ds_impl.hpp"
 #include "conn_impl.hpp"
 #include "err_handler.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ObjImpls
 
 
 BEGIN_NCBI_SCOPE
@@ -69,7 +73,7 @@ CDataSource::~CDataSource()
 
         _TRACE(GetIdent() << " " << (void*)this << " deleted.");
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 5, kEmptyStr )
 }
 
 void CDataSource::SetLoginTimeout(unsigned int i)

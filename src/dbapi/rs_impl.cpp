@@ -44,9 +44,13 @@
 
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/exception.hpp>
+#include <dbapi/error_codes.hpp>
 
 
 #include <typeinfo>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ObjImpls
 
 
 BEGIN_NCBI_SCOPE
@@ -107,7 +111,7 @@ CResultSet::~CResultSet()
         Notify(CDbapiDeletedEvent(this));
         _TRACE(GetIdent() << " " << (void*)this << " deleted.");
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 6, kEmptyStr )
 }
 
 const CVariant& CResultSet::GetVariant(unsigned int idx)

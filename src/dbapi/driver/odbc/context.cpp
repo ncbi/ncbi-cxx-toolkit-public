@@ -41,6 +41,7 @@
 
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include <dbapi/error_codes.hpp>
 #include "../ncbi_win_hook.hpp"
 
 #include <algorithm>
@@ -50,6 +51,9 @@
 #endif
 
 #include "odbc_utils.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Context
 
 BEGIN_NCBI_SCOPE
 
@@ -93,7 +97,7 @@ CODBCContextRegistry::~CODBCContextRegistry(void) throw()
     try {
         ClearAll();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 CODBCContextRegistry&
@@ -346,7 +350,7 @@ CODBCContext::~CODBCContext()
     try {
         x_Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 void

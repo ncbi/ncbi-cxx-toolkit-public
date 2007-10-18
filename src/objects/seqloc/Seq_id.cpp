@@ -59,6 +59,10 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
+#include <objects/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objects_SeqId
 
 // generated classes
 
@@ -1124,7 +1128,7 @@ static void s_LoadGuide(void)
         if (CFile(file).Exists()) {
             try {
                 CSeq_id::LoadAccessionGuide(file);
-            } STD_CATCH_ALL("CSeq_id::LoadAccessionGuide")
+            } STD_CATCH_ALL_X(1, "CSeq_id::LoadAccessionGuide")
         }
     }
     if ( !s_Guide.count ) {

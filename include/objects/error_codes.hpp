@@ -46,6 +46,7 @@ NCBI_DEFINE_ERRCODE_X(Objects_Taxonomy,    1302, 19);
 NCBI_DEFINE_ERRCODE_X(Objects_SeqIdMap,    1303,  4);
 NCBI_DEFINE_ERRCODE_X(Objects_SeqAlignMap, 1304, 13);
 NCBI_DEFINE_ERRCODE_X(Objects_SeqLocMap,   1305, 13);
+NCBI_DEFINE_ERRCODE_X(Objects_SeqId,       1306,  1);
 
 
 END_NCBI_SCOPE

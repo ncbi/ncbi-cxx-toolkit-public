@@ -31,7 +31,11 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
+#include <dbapi/error_codes.hpp>
 #include <memory>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Mysql_Conn
 
 
 BEGIN_NCBI_SCOPE
@@ -66,7 +70,7 @@ CMySQL_Connection::~CMySQL_Connection()
         // because it is defined in this class.
         Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 

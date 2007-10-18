@@ -37,11 +37,15 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
 #include <connect/ncbi_core_cxx.hpp>
+#include <connect/error_codes.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
 #include <stdlib.h>
 #include <time.h>
+
+
+#define NCBI_USE_ERRCODE_X   Connect_Core
 
 
 BEGIN_NCBI_SCOPE
@@ -62,7 +66,7 @@ static void s_REG_Get(void* user_data,
         if ( !result.empty() )
             strncpy0(value, result.c_str(), value_size - 1);
     }
-    NCBI_CATCH_ALL("s_REG_Get() failed");
+    NCBI_CATCH_ALL_X(1, "s_REG_Get() failed");
 }
 
 
@@ -76,7 +80,7 @@ static void s_REG_Set(void* user_data,
                 (storage == eREG_Persistent ? CNcbiRegistry::ePersistent : 0) |
                 CNcbiRegistry::eOverride | CNcbiRegistry::eTruncate);
     }
-    NCBI_CATCH_ALL("s_REG_Set() failed");
+    NCBI_CATCH_ALL_X(2, "s_REG_Set() failed");
 }
 
 
@@ -85,7 +89,7 @@ static void s_REG_Cleanup(void* user_data) THROWS_NONE
     try {
         static_cast<IRegistry*> (user_data)->RemoveReference();
     }
-    NCBI_CATCH_ALL("s_REG_Cleanup() failed");
+    NCBI_CATCH_ALL_X(3, "s_REG_Cleanup() failed");
 }
 
 
@@ -158,7 +162,7 @@ static void s_LOG_Handler(void*         /*user_data*/,
                 "\n#################### [END] Raw Data";
         }
     }
-    NCBI_CATCH_ALL("s_LOG_Handler() failed");
+    NCBI_CATCH_ALL_X(4, "s_LOG_Handler() failed");
 }
 
 
@@ -205,7 +209,7 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
         }
         return 1/*true*/;
     }
-    NCBI_CATCH_ALL("s_LOCK_Handler() failed");
+    NCBI_CATCH_ALL_X(5, "s_LOCK_Handler() failed");
     return 0/*false*/;
 }
 
@@ -215,7 +219,7 @@ static void s_LOCK_Cleanup(void* user_data) THROWS_NONE
     try {
         delete static_cast<CRWLock*> (user_data);
     }
-    NCBI_CATCH_ALL("s_LOCK_Cleanup() failed");
+    NCBI_CATCH_ALL_X(6, "s_LOCK_Cleanup() failed");
 }
 
 
@@ -286,7 +290,7 @@ static void s_InitInternal(void)
                 s_Init(theApp ? &theApp->GetConfig() : 0);
             }
         }
-        NCBI_CATCH_ALL("CONNECT_InitInternal() failed");
+        NCBI_CATCH_ALL_X(7, "CONNECT_InitInternal() failed");
     } else {
         s_ConnectInit = eConnectInit_Explicit;
     }
@@ -302,7 +306,7 @@ extern void CONNECT_Init(IRWRegistry*      reg,
     try {
         s_Init(reg, lock, flags, eConnectInit_Explicit);
     }
-    NCBI_CATCH_ALL("CONNECT_Init() failed");
+    NCBI_CATCH_ALL_X(8, "CONNECT_Init() failed");
 }
 
 

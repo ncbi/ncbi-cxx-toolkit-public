@@ -46,6 +46,7 @@
 #include <dbapi/driver/dblib/interfaces_p.hpp>
 
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include <dbapi/error_codes.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock2.h>
@@ -54,6 +55,9 @@
 
 #include <algorithm>
 #include <stdio.h>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Dblib_Context
 
 BEGIN_NCBI_SCOPE
 
@@ -114,7 +118,7 @@ CDblibContextRegistry::~CDblibContextRegistry(void) throw()
     try {
         ClearAll();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 CDblibContextRegistry&
@@ -433,7 +437,7 @@ CDBLibContext::~CDBLibContext()
     try {
         x_Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 void
@@ -459,7 +463,7 @@ CDBLibContext::x_Close(bool delete_conn)
                         CloseAllConn();
                     }
                 }
-                NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+                NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 
 #ifdef MS_DBLIB_IN_USE
                 dbfreelogin(m_Login);
@@ -475,7 +479,7 @@ CDBLibContext::x_Close(bool delete_conn)
                     dbexit();
                     CheckFunctCall();
                 }
-                NCBI_CATCH_ALL( "dbexit() call failed. This usually happens when "
+                NCBI_CATCH_ALL_X( 4, "dbexit() call failed. This usually happens when "
                     "Sybase client has been used to connect to a MS SQL Server." )
 #endif
             }

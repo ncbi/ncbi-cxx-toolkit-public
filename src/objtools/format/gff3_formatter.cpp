@@ -93,7 +93,7 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
         CRef<CSeq_align> sa2;
         try {
              sa2 = sa.CreateDensegFromStdseg();
-        } STD_CATCH_ALL("CGFF3_Formatter::x_FormatAlignment")
+        } STD_CATCH_ALL_X(4, "CGFF3_Formatter::x_FormatAlignment")
         if (sa2.NotEmpty()  &&  sa2->GetSegs().IsDenseg()) {
             x_FormatDenseg(aln, text_os, sa2->GetSegs().GetDenseg());
         }

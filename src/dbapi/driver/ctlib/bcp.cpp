@@ -33,7 +33,11 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include <dbapi/error_codes.hpp>
 #include <string.h>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Cmds
 
 
 BEGIN_NCBI_SCOPE
@@ -699,7 +703,7 @@ CTL_BCPInCmd::~CTL_BCPInCmd()
             Check(blk_drop(x_GetSybaseCmd()));
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 

@@ -33,8 +33,12 @@
 #include <ncbi_pch.hpp>
 
 #include <dbapi/driver/sqlite3/interfaces.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include "sqlite3_utils.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_SQLt3_Cmds
 
 
 BEGIN_NCBI_SCOPE
@@ -151,7 +155,7 @@ CSL3_LangCmd::~CSL3_LangCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 long long int CSL3_LangCmd::LastInsertId() const

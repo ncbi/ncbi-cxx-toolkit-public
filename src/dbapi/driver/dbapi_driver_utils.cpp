@@ -33,6 +33,10 @@
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/util/handle_stack.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_DrvrUtil
 
 BEGIN_NCBI_SCOPE
 
@@ -68,7 +72,7 @@ CDBExceptionStorage::~CDBExceptionStorage(void) throw()
             delete *it;
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 

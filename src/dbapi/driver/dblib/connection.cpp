@@ -34,6 +34,7 @@
 
 #include <dbapi/driver/dblib/interfaces.hpp>
 #include <dbapi/driver/dblib/interfaces_p.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include <string.h>
 
@@ -47,6 +48,9 @@ inline int close(int fd)
     return _close(fd);
 }
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Dblib_Conn
 
 BEGIN_NCBI_SCOPE
 
@@ -207,7 +211,7 @@ CDBL_Connection::~CDBL_Connection()
         // because it is defined in this class.
         Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -629,7 +633,7 @@ CDBL_SendDataCmd::~CDBL_SendDataCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 

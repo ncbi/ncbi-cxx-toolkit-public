@@ -32,8 +32,12 @@
 
 #include <dbapi/driver/dblib/interfaces.hpp>
 #include <dbapi/driver/dblib/interfaces_p.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include <stdio.h>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Dblib_Cmds
 
 BEGIN_NCBI_SCOPE
 
@@ -263,7 +267,7 @@ CDBL_LangCmd::~CDBL_LangCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 }
 
 

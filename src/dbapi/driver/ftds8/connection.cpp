@@ -34,6 +34,7 @@
 #include "ftds8_utils.hpp"
 
 #include <dbapi/driver/ftds/interfaces.hpp>
+#include <dbapi/error_codes.hpp>
 #include <string.h>
 
 #include <algorithm>
@@ -45,6 +46,8 @@ inline int close(int fd)
     return _close(fd);
 }
 #endif
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Ftds8_Conn
 
 
 BEGIN_NCBI_SCOPE
@@ -203,7 +206,7 @@ CTDS_Connection::~CTDS_Connection()
     try {
         Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -551,7 +554,7 @@ CTDS_SendDataCmd::~CTDS_SendDataCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 

@@ -37,9 +37,13 @@
 #include <corelib/ncbi_safe_static.hpp>
 
 #include <dbapi/driver_mgr.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include "ds_impl.hpp"
 #include "dbexception.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ObjImpls
 
 
 BEGIN_NCBI_SCOPE
@@ -89,7 +93,7 @@ CDriverManager::~CDriverManager()
 
         m_ds_list.clear();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 4, kEmptyStr )
 }
 
 

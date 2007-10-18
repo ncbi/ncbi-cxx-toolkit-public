@@ -31,10 +31,14 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include "odbc_utils.hpp"
 
 #include <stdio.h>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Cmds
 
 BEGIN_NCBI_SCOPE
 
@@ -238,7 +242,7 @@ CODBC_LangCmd::~CODBC_LangCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 4, NCBI_CURRENT_FUNCTION )
 }
 
 

@@ -37,7 +37,10 @@
 #include <connect/services/netcache_api_expt.hpp>
 #include <connect/services/netservice_api.hpp>
 #include <connect/services/srv_connections.hpp>
+#include <connect/services/error_codes.hpp>
 
+
+#define NCBI_USE_ERRCODE_X   ConnServ_NetCache
 
 
 BEGIN_NCBI_SCOPE
@@ -52,7 +55,7 @@ CNetCacheReader::~CNetCacheReader()
 {
     try {
         Close();
-    } NCBI_CATCH_ALL("CNetCacheReader::~CNetCacheReader()");
+    } NCBI_CATCH_ALL_X(10, "CNetCacheReader::~CNetCacheReader()");
 }
 
 void CNetCacheReader::Close()
@@ -120,7 +123,7 @@ CNetCacheWriter::~CNetCacheWriter()
 {
     try {
         Close();
-    } NCBI_CATCH_ALL("CNetCacheWriter::~CNetCacheWriter()");
+    } NCBI_CATCH_ALL_X(11, "CNetCacheWriter::~CNetCacheWriter()");
 }
 
 void CNetCacheWriter::Close()

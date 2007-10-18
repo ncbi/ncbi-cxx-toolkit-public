@@ -1191,7 +1191,7 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                 // or application/x-www-form-urlencoded
                 try {
                     s_ParsePostQuery(content_type, *pstr, m_Entries);
-                } NCBI_CATCH_ALL("CCgiRequest: POST with no content type");
+                } NCBI_CATCH_ALL_X(8, "CCgiRequest: POST with no content type");
                 CStreamUtils::Pushback(*istr, pstr->data(), pstr->length());
                 m_Input    = istr;
                 // m_InputFD  = ifd; // would be exhausted

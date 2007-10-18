@@ -31,6 +31,10 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Cmds
 
 
 BEGIN_NCBI_SCOPE
@@ -208,7 +212,7 @@ CODBC_CursorCmd::~CODBC_CursorCmd()
 
         CloseCursor();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -232,7 +236,7 @@ CODBC_CursorCmdExpl::~CODBC_CursorCmdExpl(void)
 
         CloseCursor();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 }
 
 CDB_Result* CODBC_CursorCmdExpl::OpenCursor(void)

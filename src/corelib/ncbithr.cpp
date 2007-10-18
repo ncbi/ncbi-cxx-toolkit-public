@@ -47,12 +47,16 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/error_codes.hpp>
 #include <assert.h>
 #ifdef NCBI_POSIX_THREADS
 #  include <sys/time.h> // for gettimeofday()
 #endif
 
 #include "ncbidbg_p.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Corelib_Threads
 
 BEGIN_NCBI_SCOPE
 
@@ -428,9 +432,9 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     // walking off of a dangling pointer.  The catch-all is lifted only in
     // debug mode to permit easy inspection of such error conditions, while
     // maintaining safety of production, release-mode applications.
-    NCBI_CATCH("CThread::Wrapper: CThread::Main() failed");
+    NCBI_CATCH_X(1, "CThread::Wrapper: CThread::Main() failed");
 #else
-    NCBI_CATCH_ALL("CThread::Wrapper: CThread::Main() failed");
+    NCBI_CATCH_ALL_X(2, "CThread::Wrapper: CThread::Main() failed");
 #endif
 
     // Call user-provided OnExit()
@@ -443,9 +447,9 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     // walking off of a dangling pointer.  The catch-all is lifted only in
     // debug mode to permit easy inspection of such error conditions, while
     // maintaining safety of production, release-mode applications.
-    NCBI_CATCH("CThread::Wrapper: CThread::OnExit() failed");
+    NCBI_CATCH_X(3, "CThread::Wrapper: CThread::OnExit() failed");
 #else
-    NCBI_CATCH_ALL("CThread::Wrapper: CThread::OnExit() failed");
+    NCBI_CATCH_ALL_X(4, "CThread::Wrapper: CThread::OnExit() failed");
 #endif
 
     // Cleanup local storages used by this thread

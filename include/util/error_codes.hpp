@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 
-NCBI_DEFINE_ERRCODE_X(Util_Thread,       201,  5);
+NCBI_DEFINE_ERRCODE_X(Util_Thread,       201,  6);
 NCBI_DEFINE_ERRCODE_X(Util_Cache,        202,  3);
 NCBI_DEFINE_ERRCODE_X(Util_LVector,      203,  2);
 NCBI_DEFINE_ERRCODE_X(Util_DNS,          204,  4);

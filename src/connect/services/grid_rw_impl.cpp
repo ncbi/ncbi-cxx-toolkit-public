@@ -31,6 +31,10 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/services/grid_rw_impl.hpp>
+#include <connect/services/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_ReadWrite
 
 BEGIN_NCBI_SCOPE
 
@@ -74,7 +78,7 @@ CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()
         if (m_BlobOstr) {
             m_Data = s_Flags[1] + m_Data;
         }
-    } NCBI_CATCH_ALL("CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()");
+    } NCBI_CATCH_ALL_X(1, "CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()");
 }
 
 namespace {
@@ -203,7 +207,7 @@ CStringOrBlobStorageReader::~CStringOrBlobStorageReader()
 {
     try {
         m_Storage.Reset();
-    } NCBI_CATCH_ALL("CStringOrBlobStorageReader::~CStringOrBlobStorageReader()");
+    } NCBI_CATCH_ALL_X(2, "CStringOrBlobStorageReader::~CStringOrBlobStorageReader()");
 }
    
 ERW_Result CStringOrBlobStorageReader::Read(void*   buf,

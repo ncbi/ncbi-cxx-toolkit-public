@@ -33,9 +33,13 @@
 #include <ncbi_pch.hpp>
 
 #include <dbapi/driver/sqlite3/interfaces.hpp>
+#include <dbapi/error_codes.hpp>
 #include <memory>
 
 #include "sqlite3_utils.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_SQLt3_Conn
 
 
 BEGIN_NCBI_SCOPE
@@ -62,7 +66,7 @@ CSL3_Connection::~CSL3_Connection()
         // because it is defined in this class.
         Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 

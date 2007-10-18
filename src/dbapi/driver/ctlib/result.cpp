@@ -33,6 +33,10 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Results
 
 
 BEGIN_NCBI_SCOPE
@@ -1214,7 +1218,7 @@ CTL_RowResult::~CTL_RowResult()
     try {
         Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1309,7 +1313,7 @@ CTL_CursorResult::~CTL_CursorResult()
         }
         else m_EOR= true; // to prevent ct_cancel call (close cursor will do a job)
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 

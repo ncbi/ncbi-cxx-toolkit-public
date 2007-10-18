@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <dbapi/error_codes.hpp>
 #include <corelib/ncbiapp.hpp>
 
 #if defined(NCBI_OS_MSWIN)
@@ -41,6 +42,9 @@
 #include <dbghelp.h>
 
 #pragma comment(lib, "DbgHelp.lib")
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_DrvrWinHook
 
 BEGIN_NCBI_SCOPE
 
@@ -1919,7 +1923,7 @@ namespace NWinHook
         try {
             bResult = RemoveHook(pszCalleeModName, pszFuncName);
         }
-        NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+        NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 
         return (bResult);
     }
@@ -2133,7 +2137,7 @@ namespace NWinHook
                 ::FreeLibrary(m_ModDbghelp);
             }
         }
-        NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+        NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
     }
 
     CPEi386& CPEi386::GetInstance(void)

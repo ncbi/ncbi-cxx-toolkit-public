@@ -30,8 +30,12 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <dbapi/error_codes.hpp>
 #include "memory_store.hpp"
 #include <string.h>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_DrvrMemStore
 
 
 BEGIN_NCBI_SCOPE
@@ -538,7 +542,7 @@ CMemStore::~CMemStore()
             m_Last = m_Current;
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 

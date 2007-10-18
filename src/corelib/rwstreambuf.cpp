@@ -40,11 +40,11 @@
 #define NCBI_USE_ERRCODE_X   Corelib_StreamBuf
 
 
-#define RWSTREAMBUF_CATCH_ALL(message, action)                                \
+#define RWSTREAMBUF_CATCH_ALL(err_subcode, message, action)                   \
 catch (CException& e) {                                                       \
     if (m_Flags & fLogExceptions) {                                           \
         try {                                                                 \
-            NCBI_REPORT_EXCEPTION(message, e);                                \
+            NCBI_REPORT_EXCEPTION_X(err_subcode, message, e);                 \
         } catch (...) {                                                       \
         }                                                                     \
     }                                                                         \
@@ -53,8 +53,8 @@ catch (CException& e) {                                                       \
 catch (exception& e) {                                                        \
     if (m_Flags & fLogExceptions) {                                           \
         try {                                                                 \
-            ERR_POST_X(1, Error << "[" << message                             \
-                                << "] Exception: " << e.what());              \
+            ERR_POST_X(err_subcode, Error << "[" << message                   \
+                                    << "] Exception: " << e.what());          \
         } catch (...) {                                                       \
         }                                                                     \
     }                                                                         \
@@ -63,7 +63,8 @@ catch (exception& e) {                                                        \
 catch (...) {                                                                 \
     if (m_Flags & fLogExceptions) {                                           \
         try {                                                                 \
-            ERR_POST_X(2, Error << "[" << message << "] Unknown exception");  \
+            ERR_POST_X(err_subcode, Error                                     \
+                       << "[" << message << "] Unknown exception");           \
         } catch (...) {                                                       \
         }                                                                     \
     }                                                                         \
@@ -188,8 +189,8 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
             try {
                 m_Writer->Write(pbase(), n_write, &n_written);
             }
-            RWSTREAMBUF_CATCH_ALL("CRWStreambuf::overflow(): IWriter::Write()",
-                                  n_written = 0);
+            RWSTREAMBUF_CATCH_ALL(5, "CRWStreambuf::overflow(): IWriter::Write()",
+                                     n_written = 0);
             if ( !n_written )
                 return CT_EOF;
             // update buffer content (get rid of the data just sent)
@@ -209,8 +210,8 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         try {
             m_Writer->Write(&b, 1, &n_written);
         }
-        RWSTREAMBUF_CATCH_ALL("CRWStreambuf::overflow(): IWriter::Write(1)",
-                              n_written = 0);
+        RWSTREAMBUF_CATCH_ALL(6, "CRWStreambuf::overflow(): IWriter::Write(1)",
+                                 n_written = 0);
         _ASSERT(n_written <= 1);
         x_PPos += (CT_OFF_TYPE) n_written;
         return n_written == 1 ? c : CT_EOF;
@@ -226,8 +227,8 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
             return CT_NOT_EOF(CT_EOF);
         }
     }
-    RWSTREAMBUF_CATCH_ALL("CRWStreambuf::overflow(): IWriter::Flush()",
-                          (void) 0);
+    RWSTREAMBUF_CATCH_ALL(7, "CRWStreambuf::overflow(): IWriter::Flush()",
+                             (void) 0);
     return CT_EOF;
 }
 
@@ -262,8 +263,8 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                 try {
                     result = m_Writer->Write(pbase(), x_write, &x_written);
                 }
-                RWSTREAMBUF_CATCH_ALL("CRWStreambuf::xsputn():"
-                                      " IWriter::Write()", x_written = 0);
+                RWSTREAMBUF_CATCH_ALL(8, "CRWStreambuf::xsputn():"
+                                         " IWriter::Write()", x_written = 0);
                 if (!x_written)
                     break;
                 _ASSERT(x_written <= x_write);
@@ -278,8 +279,8 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         try {
             result = m_Writer->Write(buf, n, &x_written);
         }
-        RWSTREAMBUF_CATCH_ALL("CRWStreambuf::xsputn(): IWriter::Write()",
-                              x_written = 0);
+        RWSTREAMBUF_CATCH_ALL(9, "CRWStreambuf::xsputn(): IWriter::Write()",
+                                 x_written = 0);
         if (!x_written) {
             if (!pbase())
                 return (streamsize) n_written;
@@ -328,8 +329,8 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     try {
         m_Reader->Read(m_ReadBuf, m_BufSize, &n_read);
     }
-    RWSTREAMBUF_CATCH_ALL("CRWStreambuf::underflow(): IReader::Read()",
-                          n_read = 0);
+    RWSTREAMBUF_CATCH_ALL(10, "CRWStreambuf::underflow(): IReader::Read()",
+                              n_read = 0);
     if (!n_read)
         return CT_EOF;
     _ASSERT(n_read <= (size_t) m_BufSize);
@@ -370,8 +371,8 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         try {
             result = m_Reader->Read(x_buf, to_read, &x_read);
         }
-        RWSTREAMBUF_CATCH_ALL("CRWStreambuf::xsgetn(): IReader::Read()",
-                              x_read = 0);
+        RWSTREAMBUF_CATCH_ALL(11, "CRWStreambuf::xsgetn(): IReader::Read()",
+                                  x_read = 0);
         if (!x_read)
             break;
         _ASSERT(x_read <= to_read);
@@ -416,8 +417,8 @@ streamsize CRWStreambuf::showmanyc(void)
             break;
         }
     }
-    RWSTREAMBUF_CATCH_ALL("CRWStreambuf::showmanyc(): IReader::PendingCount()",
-                          (void) 0);
+    RWSTREAMBUF_CATCH_ALL(12, "CRWStreambuf::showmanyc(): IReader::PendingCount()",
+                              (void) 0);
     return -1;
 }
 

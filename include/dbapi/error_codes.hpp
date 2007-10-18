@@ -42,14 +42,42 @@
 BEGIN_NCBI_SCOPE
 
 
-NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrTypes,   1101,  2);
-NCBI_DEFINE_ERRCODE_X(Dbapi_DataServer,  1102,  1);
-NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrExcepts, 1103,  4);
-NCBI_DEFINE_ERRCODE_X(Dbapi_ConnFactory, 1104,  2);
-NCBI_DEFINE_ERRCODE_X(Dbapi_ICache,      1105,  2);
-NCBI_DEFINE_ERRCODE_X(Dbapi_CacheAdmin,  1106,  3);
-NCBI_DEFINE_ERRCODE_X(Dbapi_SampleBase,  1107,  5);
-NCBI_DEFINE_ERRCODE_X(Dbapi_CTLib,       1108,  5);
+NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrTypes,     1101,  7);
+NCBI_DEFINE_ERRCODE_X(Dbapi_DataServer,    1102, 10);
+NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrExcepts,   1103,  6);
+NCBI_DEFINE_ERRCODE_X(Dbapi_ConnFactory,   1104,  2);
+NCBI_DEFINE_ERRCODE_X(Dbapi_ICache,        1105,  2);
+NCBI_DEFINE_ERRCODE_X(Dbapi_CacheAdmin,    1106,  3);
+NCBI_DEFINE_ERRCODE_X(Dbapi_SampleBase,    1107,  5);
+NCBI_DEFINE_ERRCODE_X(Dbapi_CTLib_Context, 1108,  9);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Ftds8_Conn,    1109,  2);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Ftds8_Context, 1110,  3);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Ftds8_Cmds,    1111,  4);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Ftds8_Results, 1112,  4);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Dblib_Conn,    1113,  2);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Dblib_Context, 1114,  4);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Dblib_Cmds,    1115,  4);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Dblib_Results, 1116,  5);
+NCBI_DEFINE_ERRCODE_X(Dbapi_SQLt3_Conn,    1117,  1);
+NCBI_DEFINE_ERRCODE_X(Dbapi_SQLt3_Cmds,    1118,  1);
+NCBI_DEFINE_ERRCODE_X(Dbapi_CTlib_Conn,    1119,  2);
+NCBI_DEFINE_ERRCODE_X(Dbapi_CTlib_Cmds,    1120,  7);
+NCBI_DEFINE_ERRCODE_X(Dbapi_CTlib_Results, 1121,  2);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Mysql_Conn,    1122,  1);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Mysql_Cmds,    1123,  1);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Conn,     1124,  3);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Context,  1125,  2);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Cmds,     1126,  5);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Results,  1127,  5);
+NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrWinHook,   1128,  2);
+NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrMemStore,  1129,  1);
+NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrResult,    1130,  1);
+NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrUtil,      1131,  2);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Python,        1132,  5);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Variant,       1133,  1);
+NCBI_DEFINE_ERRCODE_X(Dbapi_BlobStream,    1134,  3);
+NCBI_DEFINE_ERRCODE_X(Dbapi_ObjImpls,      1135,  9);
+NCBI_DEFINE_ERRCODE_X(Dbapi_BulkInsert,    1136,  1);
 
 
 END_NCBI_SCOPE

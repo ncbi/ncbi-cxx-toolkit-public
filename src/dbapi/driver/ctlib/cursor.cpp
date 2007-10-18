@@ -31,6 +31,10 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Cmds
 
 
 BEGIN_NCBI_SCOPE
@@ -465,7 +469,7 @@ CTL_CursorCmd::~CTL_CursorCmd()
 
         CloseForever();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -706,7 +710,7 @@ CTL_CursorCmdExpl::~CTL_CursorCmdExpl()
         // CloseForever();
         CloseCursor();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 }
 
 

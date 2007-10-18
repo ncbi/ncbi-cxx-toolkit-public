@@ -34,6 +34,10 @@
 #include <dbapi/driver/dblib/interfaces_p.hpp>
 
 #include <dbapi/driver/util/numeric_convert.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Dblib_Cmds
 
 
 BEGIN_NCBI_SCOPE
@@ -227,7 +231,7 @@ CDBL_RPCCmd::~CDBL_RPCCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 4, NCBI_CURRENT_FUNCTION )
 }
 
 

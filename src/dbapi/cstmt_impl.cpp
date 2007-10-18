@@ -36,6 +36,10 @@
 #include "cstmt_impl.hpp"
 #include "rs_impl.hpp"
 #include <dbapi/driver/public.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ObjImpls
 
 BEGIN_NCBI_SCOPE
 
@@ -54,7 +58,7 @@ CCallableStatement::~CCallableStatement()
     try {
         Notify(CDbapiClosedEvent(this));
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 2, kEmptyStr )
 }
 
 CDB_RPCCmd* CCallableStatement::GetRpcCmd()

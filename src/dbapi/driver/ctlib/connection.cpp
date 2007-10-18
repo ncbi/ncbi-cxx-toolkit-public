@@ -34,6 +34,7 @@
 #include "ctlib_utils.hpp"
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
+#include <dbapi/error_codes.hpp>
 
 #include <string.h>
 #include <algorithm>
@@ -48,6 +49,9 @@ inline int close(int fd)
 #else
 #  include <unistd.h>
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Conn
 
 
 BEGIN_NCBI_SCOPE
@@ -417,7 +421,7 @@ CTL_Connection::~CTL_Connection()
     try {
         Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -936,7 +940,7 @@ CTL_SendDataCmd::~CTL_SendDataCmd()
 
         Close();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 

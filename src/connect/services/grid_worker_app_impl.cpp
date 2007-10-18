@@ -311,7 +311,7 @@ void* CWorkerNodeIdleThread::Main()
                     GetContext().Reset();
                     m_Task->Run(GetContext());
                 } while( GetContext().NeedRunAgain() && !m_ShutdownFlag);
-            } NCBI_CATCH_ALL("CWorkerNodeIdleThread::Main: Idle Task failed");
+            } NCBI_CATCH_ALL_X(58, "CWorkerNodeIdleThread::Main: Idle Task failed");
             if (m_ExclusiveMode)
                 m_WorkerNode.PutOnHold(false);
         }

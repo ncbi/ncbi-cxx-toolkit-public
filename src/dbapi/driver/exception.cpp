@@ -476,7 +476,7 @@ CDB_UserHandler_Diag::~CDB_UserHandler_Diag()
     try {
         m_Prefix.erase();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 5, kEmptyStr )
 }
 
 
@@ -547,7 +547,7 @@ CDB_UserHandler_Stream::~CDB_UserHandler_Stream()
 
         m_Prefix.erase();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL_X( 6, kEmptyStr )
 }
 
 

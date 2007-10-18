@@ -32,6 +32,10 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/public.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Cmds
 
 
 BEGIN_NCBI_SCOPE
@@ -100,7 +104,7 @@ CTL_RPCCmd::~CTL_RPCCmd()
 
         DetachInterface();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 7, NCBI_CURRENT_FUNCTION )
 }
 
 

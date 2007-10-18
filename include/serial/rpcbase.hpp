@@ -271,7 +271,7 @@ void CRPCClient<TRequest, TReply>::Ask(const TRequest& request, TReply& reply)
                 // reset on every other attempt in case we're out of sync
                 try {
                     Reset();
-                } STD_CATCH_ALL("CRPCClient<>::Reset()")
+                } STD_CATCH_ALL_XX(Serial_RPCClient, 1, "CRPCClient<>::Reset()")
             }
         }
     }

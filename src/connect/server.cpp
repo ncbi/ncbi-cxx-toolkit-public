@@ -178,7 +178,7 @@ void CAcceptRequest::Process(void)
             m_Connection->OnOverflow();
             delete m_Connection;
         }
-    } STD_CATCH_ALL("CAcceptRequest::Process");
+    } STD_CATCH_ALL_X(5, "CAcceptRequest::Process");
 }
 
 void CAcceptRequest::Cancel(void)
@@ -210,7 +210,7 @@ void CServerConnectionRequest::Process(void)
 {
     try {
         m_Connection->OnSocketEvent(m_Event);
-    } STD_CATCH_ALL("CServerConnectionRequest::Process");
+    } STD_CATCH_ALL_X(6, "CServerConnectionRequest::Process");
     // Return socket to poll vector
     m_ConnPool.SetConnType(m_Connection,
                            CServer_ConnectionPool::eInactiveSocket);

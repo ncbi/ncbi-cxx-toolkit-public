@@ -95,7 +95,7 @@ public:
     {
         try {
             Reset();
-        } NCBI_CATCH_ALL("CRemoteAppRequestSB_Impl::~CRemoteAppRequestSB_Impl()");
+        } NCBI_CATCH_ALL_X(17, "CRemoteAppRequestSB_Impl::~CRemoteAppRequestSB_Impl()");
     }
 
     CNcbiOstream& GetStdInForWrite() 
@@ -317,7 +317,7 @@ public:
     {
         try {
             Reset();
-        } NCBI_CATCH_ALL("CRemoteAppResultSB_Impl::~CRemoteAppResultSB_Impl()");
+        } NCBI_CATCH_ALL_X(18, "CRemoteAppResultSB_Impl::~CRemoteAppResultSB_Impl()");
     }
 
     CNcbiIstream& GetStdOutForRead() 

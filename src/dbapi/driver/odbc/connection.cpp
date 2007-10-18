@@ -33,6 +33,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/types.hpp>
+#include <dbapi/error_codes.hpp>
 #include <stdio.h>
 #include <string.h>
 
@@ -41,6 +42,9 @@
 #endif
 
 #include "odbc_utils.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Conn
 
 BEGIN_NCBI_SCOPE
 
@@ -471,7 +475,7 @@ CODBC_Connection::~CODBC_Connection()
             ReportErrors();
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -769,7 +773,7 @@ CStatementBase::~CStatementBase(void)
             ReportErrors();
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 bool
@@ -1418,7 +1422,7 @@ CODBC_SendDataCmd::~CODBC_SendDataCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 }
 
 void CODBC_SendDataCmd::xCancel()

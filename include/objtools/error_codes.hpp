@@ -67,7 +67,7 @@ NCBI_DEFINE_ERRCODE_X(Objtools_CAV_Seqset, 1423,  6);
 NCBI_DEFINE_ERRCODE_X(Objtools_CAV_Alnset, 1424, 15);
 NCBI_DEFINE_ERRCODE_X(Objtools_CAV_Disp,   1425, 21);
 NCBI_DEFINE_ERRCODE_X(Objtools_CAV_Func,   1426, 31);
-NCBI_DEFINE_ERRCODE_X(Objtools_Fmt_GFF,    1427,  3);
+NCBI_DEFINE_ERRCODE_X(Objtools_Fmt_GFF,    1427,  4);
 NCBI_DEFINE_ERRCODE_X(Objtools_Fmt_Gather, 1428,  2);
 NCBI_DEFINE_ERRCODE_X(Objtools_Edit,       1429,  1);
 NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Align,   1430,  1);

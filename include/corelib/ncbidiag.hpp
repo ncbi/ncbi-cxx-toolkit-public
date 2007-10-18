@@ -283,7 +283,7 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 
 
 /// Template structure that used to point out wrong error subcode in
-/// ERR_POST_X and LOG_POST_X macros. When error subcode that is greater
+/// ERR_POST_X, STD_CATCH_X and alike macros. When error subcode that is greater
 /// than maximum defined in NCBI_DEFINE_ERRCODE_X will be used compiler
 /// will give an error and in text of this error you'll see the name
 /// of this structure. In parameters of template instantiation (that will be

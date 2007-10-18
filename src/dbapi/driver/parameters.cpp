@@ -32,6 +32,10 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <dbapi/driver/util/parameters.hpp>
+#include <dbapi/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_DrvrUtil
 
 
 BEGIN_NCBI_SCOPE
@@ -190,7 +194,7 @@ CDB_Params::~CDB_Params()
         }
         delete [] m_Params;
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 

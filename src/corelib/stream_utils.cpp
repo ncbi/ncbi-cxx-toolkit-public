@@ -35,6 +35,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/stream_utils.hpp>
+#include <corelib/error_codes.hpp>
 #include <string.h>
 
 #ifdef NCBI_COMPILER_MIPSPRO
@@ -50,6 +51,9 @@
   (!defined(NCBI_COMPILER_WORKSHOP)  ||  !defined(_MT))
 #  define HAVE_GOOD_IOS_CALLBACKS 1
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Corelib_StreamUtil
 
 
 BEGIN_NCBI_SCOPE
@@ -135,7 +139,7 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
         m_Is.pword(m_Index) = this;
         m_Is.register_callback(x_Callback, m_Index);
     }
-    STD_CATCH_ALL("CPushback_Streambuf::CPushback_Streambuf");
+    STD_CATCH_ALL_X(1, "CPushback_Streambuf::CPushback_Streambuf");
 #endif //HAVE_GOOD_IOS_CALLBACKS
 }
 
