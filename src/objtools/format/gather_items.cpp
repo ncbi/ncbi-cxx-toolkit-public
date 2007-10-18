@@ -95,7 +95,11 @@
 #include <objtools/format/gff_gather.hpp>
 #include <objtools/format/ftable_gather.hpp>
 #include <objtools/format/context.hpp>
+#include <objtools/error_codes.hpp>
 #include "utils.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Fmt_Gather
 
 
 BEGIN_NCBI_SCOPE
@@ -1287,7 +1291,7 @@ CSeqMap_CI s_CreateGapMapIter(const CSeq_loc& loc, CBioseqContext& ctx)
 
     CConstRef<CSeqMap> seqmap = CSeqMap::CreateSeqMapForSeq_loc(loc, &ctx.GetScope());
     if (!seqmap) {
-        ERR_POST("Failed to create CSeqMap for gap iteration");
+        ERR_POST_X(1, "Failed to create CSeqMap for gap iteration");
         return gap_it;
     }
 
@@ -1414,9 +1418,9 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             }
         } catch (CException& e) {
             // post to log, go on to next feature
-            LOG_POST(Error << "Error processing feature "
-                           << s_GetFeatDesc(it->GetSeq_feat_Handle())
-                           << " [" << e.what() << "]");
+            LOG_POST_X(2, Error << "Error processing feature "
+                                << s_GetFeatDesc(it->GetSeq_feat_Handle())
+                                << " [" << e.what() << "]");
         }
     }  //  end of for loop
 

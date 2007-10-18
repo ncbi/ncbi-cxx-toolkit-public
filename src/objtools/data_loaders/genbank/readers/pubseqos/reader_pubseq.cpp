@@ -35,6 +35,7 @@
 #include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -65,6 +66,8 @@
 #define MAX_MT_CONN         5
 #define DEFAULT_NUM_CONN    2
 #define DEFAULT_ALLOW_GZIP  true
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_Pubseq
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -216,8 +219,8 @@ void CPubseqReader::x_DisconnectAtSlot(TConn conn)
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CDB_Connection>& stream = m_Connections[conn];
     if ( stream ) {
-        LOG_POST(Warning << "CPubseqReader: PubSeqOS"
-                 " GenBank connection failed: reconnecting...");
+        LOG_POST_X(1, Warning << "CPubseqReader: PubSeqOS"
+                   " GenBank connection failed: reconnecting...");
         stream.reset();
     }
 }
@@ -252,14 +255,14 @@ CDB_Connection* CPubseqReader::x_NewConnection(TConn conn_)
         string errmsg;
         m_Context = drvMgr.GetDriverContext("ctlib", &errmsg, &args);
         if ( !m_Context ) {
-            LOG_POST(errmsg);
+            LOG_POST_X(2, errmsg);
 #if defined(NCBI_THREADS)
             NCBI_THROW(CLoaderException, eNoConnection,
                        "Cannot create dbapi context");
 #else
             m_Context = drvMgr.GetDriverContext("dblib", &errmsg, &args);
             if ( !m_Context ) {
-                LOG_POST(errmsg);
+                LOG_POST_X(3, errmsg);
                 NCBI_THROW(CLoaderException, eNoConnection,
                            "Cannot create dbapi context");
             }
@@ -738,19 +741,19 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
                 processor_type = CProcessor::eType_Seq_entry;
             }
             if ( dbr.second & fZipType_gzipped ) {
-                //LOG_POST("Compressed blob: " << blob_id.ToString());
+                //LOG_POST_X(4, "Compressed blob: " << blob_id.ToString());
                 CCompressionIStream unzip(stream,
                                           new CZipStreamDecompressor,
                                           CCompressionIStream::fOwnProcessor);
                 m_Dispatcher->GetProcessor(processor_type)
                     .ProcessStream(result, blob_id, chunk_id, unzip);
-                //LOG_POST("Compressed blob: " << blob_id.ToString() << " read.");
+                //LOG_POST_X(5, "Compressed blob: " << blob_id.ToString() << " read.");
             }
             else {
-                //LOG_POST("Non-compressed blob: " << blob_id.ToString());
+                //LOG_POST_X(6, "Non-compressed blob: " << blob_id.ToString());
                 m_Dispatcher->GetProcessor(processor_type)
                     .ProcessStream(result, blob_id, chunk_id, stream);
-                //LOG_POST("Non-compressed blob: " << blob_id.ToString() << " read.");
+                //LOG_POST_X(7, "Non-compressed blob: " << blob_id.ToString() << " read.");
             }
         }
         else {

@@ -82,6 +82,7 @@
 #include <objtools/data_loaders/genbank/readers/cache/reader_cache.hpp>
 #include <objtools/data_loaders/genbank/processors.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
+#include <objtools/error_codes.hpp>
 #include <objmgr/split/split_exceptions.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
@@ -96,6 +97,9 @@
 
 #include <objmgr/split/blob_splitter.hpp>
 #include <objmgr/split/id2_compress.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_SplitCache
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -296,7 +300,7 @@ void CSplitCacheApp::SetupCache(void)
             cache_dir = reg.GetString("LOCAL_CACHE", "Path", cache_dir);
         }
         if ( cache_dir.empty() ) {
-            ERR_POST(Fatal << "empty cache directory name");
+            ERR_POST_X(1, Fatal << "empty cache directory name");
         }
     }}
 

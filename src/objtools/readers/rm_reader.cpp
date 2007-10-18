@@ -76,8 +76,12 @@
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/rm_reader.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
 BEGIN_NCBI_SCOPE
 
@@ -190,7 +194,7 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry, TFlags flags )
         CMaskData mask_data;
         if ( ! ParseRecord( line, mask_data ) ) {
             ++error_counter;
-            LOG_POST( Error << "Rmo Reader: Parse error in record " 
+            LOG_POST_X( 1, Error << "Rmo Reader: Parse error in record " 
                 << record_counter << " (line " << line_counter 
                 << "). Record skipped" );
             if ( error_counter < MAX_ERROR_COUNT ) {
@@ -203,7 +207,7 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry, TFlags flags )
         
         if ( ! VerifyData( mask_data ) ) {
             ++error_counter;
-            LOG_POST( Error << "Rmo Reader: Verification error in record " 
+            LOG_POST_X( 2, Error << "Rmo Reader: Verification error in record " 
                 << record_counter << " (line " << line_counter 
                 << "). Record skipped." );
             if ( error_counter < MAX_ERROR_COUNT ) {
@@ -217,7 +221,7 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry, TFlags flags )
         if ( ! MakeFeature( mask_data, feat, flags ) ) {
             // we don't tolerate even a few errors here!
             error_counter = MAX_ERROR_COUNT;
-            LOG_POST( Error << "Rmo Reader: Unable to create feature table for record " 
+            LOG_POST_X( 3, Error << "Rmo Reader: Unable to create feature table for record " 
                 << record_counter << " (line " << line_counter 
                 << "). Aborting file import." );
             break;
@@ -227,7 +231,7 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry, TFlags flags )
     }
     
     if ( error_counter == MAX_ERROR_COUNT ) {
-        LOG_POST( Error << "Rmo Reader: File import aborted due to error count or severity." );
+        LOG_POST_X( 4, Error << "Rmo Reader: File import aborted due to error count or severity." );
         throw 0; // upper layer catches everything in sight and reports error to file_loader.
     }
 }

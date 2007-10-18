@@ -76,8 +76,12 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objtools/readers/readfeat.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_Feature
 
 BEGIN_NCBI_SCOPE
 
@@ -1630,7 +1634,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         // unrecognized feature key
 
                         if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                            ERR_POST (Warning << "Unrecognized feature " << feat);
+                            ERR_POST_X (1, Warning << "Unrecognized feature " << feat);
                         }
 
                         if ((flags & CFeature_table_reader::fTranslateBadKey) != 0) {
@@ -1679,7 +1683,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         // unrecognized qualifier key
 
                         if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                            ERR_POST (Warning << "Unrecognized qualifier " << qual);
+                            ERR_POST_X (2, Warning << "Unrecognized qualifier " << qual);
                         }
 
                         if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
@@ -1710,8 +1714,8 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     // unrecognized location
 
                     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                        ERR_POST (Warning << "Bad location on feature " << feat <<
-                                 " (start " << start << ", stop " << stop << ")");
+                        ERR_POST_X (3, Warning << "Bad location on feature " << feat <<
+                                   " (start " << start << ", stop " << stop << ")");
                     }
                 }
             }
@@ -1791,7 +1795,7 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
             // unrecognized feature key
 
             if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                ERR_POST (Warning << "Unrecognized feature " << feat);
+                ERR_POST_X (4, Warning << "Unrecognized feature " << feat);
             }
 
             if ((flags & CFeature_table_reader::fTranslateBadKey) != 0) {
@@ -1837,7 +1841,7 @@ void CFeature_table_reader_imp::AddFeatQual (
             // unrecognized qualifier key
 
             if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                ERR_POST (Warning << "Unrecognized qualifier " << qual);
+                ERR_POST_X (5, Warning << "Unrecognized qualifier " << qual);
             }
 
             if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
@@ -1965,9 +1969,9 @@ void CFeature_table_reader::ReadSequinFeatureTables(CNcbiIstream& ifs,
         if (seq) { // found a match
             seq->SetAnnot().push_back(annot);
         } else { // just package on the set
-            ERR_POST(Warning
-                     << "ReadSequinFeatureTables: unable to find match for "
-                     << feat_id->AsFastaString());
+            ERR_POST_X(6, Warning
+                       << "ReadSequinFeatureTables: unable to find match for "
+                       << feat_id->AsFastaString());
             entry.SetSet().SetAnnot().push_back(annot);
         }
     }

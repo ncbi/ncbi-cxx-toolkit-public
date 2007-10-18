@@ -32,8 +32,12 @@
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/gbload_util.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/error_codes.hpp>
 #include <objmgr/impl/handle_range.hpp>
 #include <objmgr/objmgr_exception.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_GB_Util
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -151,7 +155,7 @@ CMutexPool::~CMutexPool(void)
     delete [] m_Locks;
     if ( spread )  {
         for ( int i = 0; i < m_size; ++i ) {
-            GBLOG_POST("PoolMutex " << i << " used "<< spread[i] << " times");
+            GBLOG_POST_X(1, "PoolMutex " << i << " used "<< spread[i] << " times");
         }
     }
     delete [] spread;
@@ -210,36 +214,36 @@ void CGBLGuard::Select(int s)
     _ASSERT(m_select==s);
 }
 
-#define LOCK_POST(x) GBLOG_POST(x) 
-//#define LOCK_POST(x) 
+#define LOCK_POST(err_subcode, x) GBLOG_POST_X(err_subcode, x) 
+//#define LOCK_POST(err_subcode, x) 
 void CGBLGuard::MLock()
 {
-    LOCK_POST(&m_Locks << ":: MainLock tried   @ " << m_Loc);
+    LOCK_POST(2, &m_Locks << ":: MainLock tried   @ " << m_Loc);
     m_Locks->m_Lookup.Lock();
-    LOCK_POST(&m_Locks << ":: MainLock locked  @ " << m_Loc);
+    LOCK_POST(3, &m_Locks << ":: MainLock locked  @ " << m_Loc);
 }
 
 void CGBLGuard::MUnlock()
 {
-    LOCK_POST(&m_Locks << ":: MainLock unlocked@ " << m_Loc);
+    LOCK_POST(4, &m_Locks << ":: MainLock unlocked@ " << m_Loc);
     m_Locks->m_Lookup.Unlock();
 }
 
 void CGBLGuard::PLock()
 {
     _ASSERT(m_select>=0);
-    LOCK_POST(&m_Locks << ":: Pool["<< setw(2) << m_select << "] tried   @ "
-              << m_Loc);
+    LOCK_POST(5, &m_Locks << ":: Pool["<< setw(2) << m_select << "] tried   @ "
+                 << m_Loc);
     m_Locks->m_Pool.GetMutex(m_select).Lock();
-    LOCK_POST(&m_Locks << ":: Pool["<< setw(2) << m_select << "] locked  @ "
-              << m_Loc);
+    LOCK_POST(6, &m_Locks << ":: Pool["<< setw(2) << m_select << "] locked  @ "
+                 << m_Loc);
 }
 
 void CGBLGuard::PUnlock()
 {
     _ASSERT(m_select>=0);
-    LOCK_POST(&m_Locks << ":: Pool["<< setw(2) << m_select << "] unlocked@ "
-              << m_Loc);
+    LOCK_POST(7, &m_Locks << ":: Pool["<< setw(2) << m_select << "] unlocked@ "
+                 << m_Loc);
     m_Locks->m_Pool.GetMutex(m_select).Unlock();
 }
 
@@ -252,7 +256,7 @@ void CGBLGuard::Switch(EState newstate)
             Switch(eMain);
         }
         _ASSERT(m_current==eMain);
-        //LOCK_POST(&m_Locks << ":: switch 'main' to 'none'");
+        //LOCK_POST(8, &m_Locks << ":: switch 'main' to 'none'");
         MUnlock();
         m_current=eNone;
         return;
@@ -262,7 +266,7 @@ void CGBLGuard::Switch(EState newstate)
             Switch(eMain);
         }
         _ASSERT(m_current==eMain);
-        //LOCK_POST(&m_Locks << ":: switch 'main' to 'both'");
+        //LOCK_POST(9, &m_Locks << ":: switch 'main' to 'both'");
         if ( m_Locks->m_SlowTraverseMode>0 ) {
             PLock();
         }
@@ -274,7 +278,7 @@ void CGBLGuard::Switch(EState newstate)
             Switch(eBoth);
         }
         _ASSERT(m_current==eBoth);
-        //LOCK_POST(&m_Locks << ":: switch 'both' to 'local'");
+        //LOCK_POST(10, &m_Locks << ":: switch 'both' to 'local'");
         if(m_Locks->m_SlowTraverseMode==0) {
             PLock();
         }
@@ -295,12 +299,12 @@ void CGBLGuard::Switch(EState newstate)
         switch(m_current) {
         case eNone:
             m_select=-1;
-            //LOCK_POST(&m_Locks << ":: switch 'none' to 'main'");
+            //LOCK_POST(11, &m_Locks << ":: switch 'none' to 'main'");
             MLock();
             m_current=eMain;
             return;
         case eBoth:
-            //LOCK_POST(&m_Locks << ":: switch 'both' to 'main'");
+            //LOCK_POST(12, &m_Locks << ":: switch 'both' to 'main'");
             if(m_Locks->m_SlowTraverseMode>0) {
                 PUnlock();
             }
@@ -308,11 +312,11 @@ void CGBLGuard::Switch(EState newstate)
             m_current=eMain;
             return;
         case eLocal:
-            //LOCK_POST(&m_Locks << ":: switch 'local' to 'none2main'");
+            //LOCK_POST(13, &m_Locks << ":: switch 'local' to 'none2main'");
             PUnlock();
             m_current=eNoneToMain;
         case eNoneToMain:
-            //LOCK_POST(&m_Locks << ":: switch 'none2main' to 'main'");
+            //LOCK_POST(14, &m_Locks << ":: switch 'none2main' to 'main'");
             MLock();
             m_Locks->m_SlowTraverseMode--;
             m_select=-1;

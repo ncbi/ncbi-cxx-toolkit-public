@@ -58,8 +58,12 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/phrap.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_Phrap
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -2029,7 +2033,7 @@ CPhrap_Seq* CPhrapReader::x_FindSeq(const string& name)
 {
     TSeqs::iterator seq = m_Seqs.find(name);
     if (seq == m_Seqs.end()) {
-        ERR_POST(Warning <<
+        ERR_POST_X(1, Warning <<
             "Referenced contig or read not found: " << name << ".");
         return 0;
     }
@@ -2092,7 +2096,7 @@ void CPhrapReader::x_SkipTag(const string& tag, const string& data)
     }
     content += "}";
     CheckStreamState(m_Stream, tag + "{} data.");
-    ERR_POST(Warning << "Skipping tag:\n" << tag << content);
+    ERR_POST_X(2, Warning << "Skipping tag:\n" << tag << content);
     m_Stream >> ws;
 }
 

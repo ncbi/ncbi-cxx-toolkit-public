@@ -35,6 +35,10 @@
 #include <objtools/lds/lds_manager.hpp>
 #include <objtools/lds/lds_files.hpp>
 #include <objtools/lds/lds_object.hpp>
+#include <objtools/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_LDS_Mgr
 
 
 BEGIN_NCBI_SCOPE
@@ -80,7 +84,7 @@ void CLDS_Manager::sx_CreateDB(CLDS_Database& lds)
     //
     // Upload the object type DB
     //
-    LOG_POST(Info << "Uploading " << "objecttype");
+    LOG_POST_X(1, Info << "Uploading " << "objecttype");
 
     CLDS_CoreObjectsReader  core_reader;
 
@@ -92,7 +96,7 @@ void CLDS_Manager::sx_CreateDB(CLDS_Database& lds)
     db.object_type_db.type_name = "FastaEntry";
     db.object_type_db.Insert();
 
-    LOG_POST(Info << "  " << "FastaEntry");
+    LOG_POST_X(2, Info << "  " << "FastaEntry");
 
     ++id;
     ITERATE(CLDS_CoreObjectsReader::TCandidates, it, cand) {
@@ -102,7 +106,7 @@ void CLDS_Manager::sx_CreateDB(CLDS_Database& lds)
         db.object_type_db.type_name = type_name;
         db.object_type_db.Insert();
 
-        LOG_POST(Info << "  " << type_name);
+        LOG_POST_X(3, Info << "  " << type_name);
 
         ++id;
     }

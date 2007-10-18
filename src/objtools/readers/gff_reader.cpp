@@ -57,9 +57,13 @@
 #include <objtools/readers/cigar.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/readfeat.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <algorithm>
 #include <ctype.h>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_GFF
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -294,7 +298,7 @@ CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
                         ENa_strand strand = feat.GetLocation().GetStrand();
                         const CSeq_id* id = feat.GetLocation().GetId();
                         if ( !id ) {
-                            LOG_POST(Error << "No consistent ID found; gene feature skipped");
+                            LOG_POST_X(1, Error << "No consistent ID found; gene feature skipped");
                             continue;
                         }
 
@@ -340,9 +344,9 @@ CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
 void CGFFReader::x_Warn(const string& message, unsigned int line)
 {
     if (line) {
-        ERR_POST(Warning << message << " [GFF input, line " << line << ']');
+        ERR_POST_X(2, Warning << message << " [GFF input, line " << line << ']');
     } else {
-        ERR_POST(Warning << message << " [GFF input]");
+        ERR_POST_X(3, Warning << message << " [GFF input]");
     }
 }
 
@@ -615,10 +619,10 @@ CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
         if ( !gene.empty() ) {
             if (iter->second->IsSetLocus()  &&
                 iter->second->GetLocus() != gene) {
-                LOG_POST(Warning << "CGFFReader::x_ParseFeatRecord(): "
-                         << "inconsistent gene name: "
-                         << gene << " != " << iter->second->GetLocus()
-                         << ", ignoring second");
+                LOG_POST_X(4, Warning << "CGFFReader::x_ParseFeatRecord(): "
+                           << "inconsistent gene name: "
+                           << gene << " != " << iter->second->GetLocus()
+                           << ", ignoring second");
             } else if ( !iter->second->IsSetLocus() ) {
                 iter->second->SetLocus(gene);
             }
@@ -626,10 +630,10 @@ CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
         if ( !locus_tag.empty() ) {
             if (iter->second->IsSetLocus_tag()  &&
                 iter->second->GetLocus_tag() != locus_tag) {
-                LOG_POST(Warning << "CGFFReader::x_ParseFeatRecord(): "
-                         << "inconsistent locus tag: "
-                         << locus_tag << " != " << iter->second->GetLocus_tag()
-                         << ", ignoring second");
+                LOG_POST_X(5, Warning << "CGFFReader::x_ParseFeatRecord(): "
+                           << "inconsistent locus tag: "
+                           << locus_tag << " != " << iter->second->GetLocus_tag()
+                           << ", ignoring second");
             } else if ( !iter->second->IsSetLocus_tag() ) {
                 iter->second->SetLocus_tag(locus_tag);
             }

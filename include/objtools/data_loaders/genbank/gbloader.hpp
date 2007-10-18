@@ -75,14 +75,18 @@ class CLoadInfoBlob;
 #if !defined(NDEBUG) && defined(DEBUG_SYNC)
 #  if defined(NCBI_THREADS)
 #    define GBLOG_POST(x) LOG_POST(setw(3) << CThread::GetSelf() << ":: " << x)
+#    define GBLOG_POST_X(err_subcode, x)   \
+         LOG_POST_X(err_subcode, setw(3) << CThread::GetSelf() << ":: " << x)
 #  else
 #    define GBLOG_POST(x) LOG_POST("0:: " << x)
+#    define GBLOG_POST_X(err_subcode, x) LOG_POST_X(err_subcode, "0:: " << x)
 #  endif
 #else
 #  ifdef DEBUG_SYNC
 #    undef DEBUG_SYNC
 #  endif
 #  define GBLOG_POST(x)
+#  define GBLOG_POST_X(err_subcode, x)
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////

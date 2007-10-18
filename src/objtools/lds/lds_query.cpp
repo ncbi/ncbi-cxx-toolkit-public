@@ -44,8 +44,12 @@
 #include <objtools/lds/lds_query.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_expt.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <vector>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_LDS_Query
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -608,7 +612,7 @@ CLDS_Query::ReportDuplicateObjectSeqId(const string& seqid,
     err_msg.append(" Conflicting files: " + old_rec.file_name);
     err_msg.append("  " + new_rec.file_name);
 
-    ERR_POST(err_msg);
+    ERR_POST_X(1, err_msg);
 
     LDS_THROW(eDuplicateId, err_msg);
 }

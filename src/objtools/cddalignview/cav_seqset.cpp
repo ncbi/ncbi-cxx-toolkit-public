@@ -61,6 +61,10 @@
 
 #include <objtools/cddalignview/cav_seqset.hpp>
 #include <objtools/cddalignview/cddalignview.h>
+#include <objtools/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_CAV_Seqset
 
 
 BEGIN_NCBI_SCOPE
@@ -110,7 +114,7 @@ SequenceSet::SequenceSet(const CSeq_entry& seqEntry) :
     master(NULL), status(CAV_SUCCESS)
 {
     UnpackSeqEntry(seqEntry);
-    ERR_POST(Info << "number of sequences: " << sequences.size());
+    ERR_POST_X(1, Info << "number of sequences: " << sequences.size());
 }
 
 SequenceSet::SequenceSet(const SeqEntryList& seqEntries) :
@@ -119,7 +123,7 @@ SequenceSet::SequenceSet(const SeqEntryList& seqEntries) :
     SeqEntryList::const_iterator s, se = seqEntries.end();
     for (s=seqEntries.begin(); s!=se; ++s)
         UnpackSeqEntry(s->GetObject());
-    ERR_POST(Info << "number of sequences: " << sequences.size());
+    ERR_POST_X(2, Info << "number of sequences: " << sequences.size());
 }
 
 SequenceSet::~SequenceSet(void)
@@ -235,7 +239,7 @@ Sequence::Sequence(const CBioseq& bioseq) :
         }
     }
     if (mmdbLink != NOT_SET)
-        ERR_POST(Info << "sequence " << GetTitle() << " is from MMDB id " << mmdbLink);
+        ERR_POST_X(3, Info << "sequence " << GetTitle() << " is from MMDB id " << mmdbLink);
 
     // get sequence string
     if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_raw && bioseq.GetInst().IsSetSeq_data()) {
@@ -266,17 +270,17 @@ Sequence::Sequence(const CBioseq& bioseq) :
         }
 
         else {
-            ERR_POST(Critical << "Sequence::Sequence() - sequence " << GetTitle()
-                << ": confused by sequence string format");
+            ERR_POST_X(4, Critical << "Sequence::Sequence() - sequence " << GetTitle()
+                          << ": confused by sequence string format");
             return;
         }
         if (bioseq.GetInst().IsSetLength() && bioseq.GetInst().GetLength() != sequenceString.length()) {
-            ERR_POST(Critical << "Sequence::Sequence() - sequence string length mismatch");
+            ERR_POST_X(5, Critical << "Sequence::Sequence() - sequence string length mismatch");
             return;
         }
     } else {
-        ERR_POST(Critical << "Sequence::Sequence() - sequence " << GetTitle()
-                << ": confused by sequence representation");
+        ERR_POST_X(6, Critical << "Sequence::Sequence() - sequence " << GetTitle()
+                      << ": confused by sequence representation");
         return;
     }
 

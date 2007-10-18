@@ -30,6 +30,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/split_parser.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 
@@ -40,6 +41,9 @@
 #include <objmgr/impl/handle_range_map.hpp>
 
 #include <objects/seqsplit/seqsplit__.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_Split
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -97,7 +101,7 @@ CRef<CTSE_Chunk_Info> CSplitParser::Parse(const CID2S_Chunk_Info& info)
             break;
 #endif
         default:
-            ERR_POST_ONCE("ID2 Split parser: Unexpected split data: "<<content.Which());
+            ERR_POST_X_ONCE(1, "ID2 Split parser: Unexpected split data: "<<content.Which());
         }
     }
     return ret;

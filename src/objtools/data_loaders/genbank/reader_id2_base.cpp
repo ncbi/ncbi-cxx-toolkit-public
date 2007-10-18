@@ -42,6 +42,7 @@
 #include <objmgr/impl/tse_split_info.hpp>
 
 #include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <corelib/ncbimtx.hpp>
 
@@ -63,6 +64,9 @@
 #include <corelib/ncbi_safe_static.hpp>
 
 #include <iomanip>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_Id2Base
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -100,7 +104,7 @@ CId2ReaderBase::CDebugPrinter::CDebugPrinter(CReader::TConn conn,
 
 CId2ReaderBase::CDebugPrinter::~CDebugPrinter()
 {
-    LOG_POST(rdbuf());
+    LOG_POST_X(1, rdbuf());
 }
 
 
@@ -447,7 +451,7 @@ bool CId2ReaderBase::LoadChunk(CReaderRequestResult& result,
         req2.SetGet_data();
         x_ProcessRequest(result, req);
         if ( !chunk_info.IsLoaded() ) {
-            ERR_POST("ExtAnnot chunk is not loaded: "<<blob_id);
+            ERR_POST_X(2, "ExtAnnot chunk is not loaded: "<<blob_id);
             chunk_info.SetLoaded();
         }
     }
@@ -474,7 +478,7 @@ void LoadedChunksPacket(CID2_Request_Packet& packet,
 {
     NON_CONST_ITERATE(vector<CTSE_Chunk_Info*>, it, chunks) {
         if ( !(*it)->IsLoaded() ) {
-            ERR_POST("ExtAnnot chunk is not loaded: " << blob_id);
+            ERR_POST_X(3, "ExtAnnot chunk is not loaded: " << blob_id);
             (*it)->SetLoaded();
         }
     }
@@ -1232,15 +1236,15 @@ void CId2ReaderBase::x_ProcessGetBlob(
         }
         else {
             m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
-            ERR_POST(Info << "CId2ReaderBase: ID2-Reply-Get-Blob: "
-                     "blob already loaded: "<<blob_id);
+            ERR_POST_X(4, Info << "CId2ReaderBase: ID2-Reply-Get-Blob: "
+                          "blob already loaded: "<<blob_id);
             return;
         }
     }
 
     if ( blob->HasSeq_entry() ) {
-        ERR_POST("CId2ReaderBase: ID2-Reply-Get-Blob: "
-                 "Seq-entry already loaded: "<<blob_id);
+        ERR_POST_X(5, "CId2ReaderBase: ID2-Reply-Get-Blob: "
+                      "Seq-entry already loaded: "<<blob_id);
         return;
     }
 
@@ -1265,8 +1269,8 @@ void CId2ReaderBase::x_ProcessGetBlob(
     }
 
     if ( reply.GetData().GetData().empty() ) {
-        ERR_POST("CId2ReaderBase: ID2-Reply-Get-Blob: "
-                 "no data in reply: "<<blob_id);
+        ERR_POST_X(6, "CId2ReaderBase: ID2-Reply-Get-Blob: "
+                      "no data in reply: "<<blob_id);
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
         _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
         return;
@@ -1279,11 +1283,11 @@ void CId2ReaderBase::x_ProcessGetBlob(
         return;
     }
     if ( errors & fError_warning_dead ) {
-        //ERR_POST("blob.SetBlobState(CBioseq_Handle::fState_dead)");
+        //ERR_POST_X(7, "blob.SetBlobState(CBioseq_Handle::fState_dead)");
         blob.SetBlobState(CBioseq_Handle::fState_dead);
     }
     if ( errors & fError_warning_suppressed ) {
-        //ERR_POST("blob.SetBlobState(CBioseq_Handle::fState_suppress_perm)");
+        //ERR_POST_X(8, "blob.SetBlobState(CBioseq_Handle::fState_suppress_perm)");
         blob.SetBlobState(CBioseq_Handle::fState_suppress_perm);
     }
     if ( reply.GetBlob_id().GetSub_sat() == CID2_Blob_Id::eSub_sat_snp ) {
@@ -1310,18 +1314,18 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
     TBlobId blob_id = GetBlobId(reply.GetBlob_id());
     CLoadLockBlob blob(result, blob_id);
     if ( !blob ) {
-        ERR_POST("CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
-                 "no blob: " << blob_id);
+        ERR_POST_X(9, "CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
+                      "no blob: " << blob_id);
         return;
     }
     if ( blob.IsLoaded() ) {
-        ERR_POST(Info << "CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
-                 "blob already loaded: " << blob_id);
+        ERR_POST_X(10, Info << "CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
+                       "blob already loaded: " << blob_id);
         return;
     }
     if ( !reply.IsSetData() ) {
-        ERR_POST("CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
-                 "no data in reply: "<<blob_id);
+        ERR_POST_X(11, "CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
+                       "no data in reply: "<<blob_id);
         return;
     }
 
@@ -1353,18 +1357,18 @@ void CId2ReaderBase::x_ProcessGetChunk(
     TBlobId blob_id = GetBlobId(reply.GetBlob_id());
     CLoadLockBlob blob(result, blob_id);
     if ( !blob ) {
-        ERR_POST("CId2ReaderBase: ID2S-Reply-Get-Chunk: "
-                 "no blob: " << blob_id);
+        ERR_POST_X(12, "CId2ReaderBase: ID2S-Reply-Get-Chunk: "
+                       "no blob: " << blob_id);
         return;
     }
     if ( !blob.IsLoaded() ) {
-        ERR_POST("CId2ReaderBase: ID2S-Reply-Get-Chunk: "
-                 "blob is not loaded yet: " << blob_id);
+        ERR_POST_X(13, "CId2ReaderBase: ID2S-Reply-Get-Chunk: "
+                       "blob is not loaded yet: " << blob_id);
         return;
     }
     if ( !reply.IsSetData() ) {
-        ERR_POST("CId2ReaderBase: ID2S-Reply-Get-Chunk: "
-                 "no data in reply: "<<blob_id);
+        ERR_POST_X(14, "CId2ReaderBase: ID2S-Reply-Get-Chunk: "
+                       "no data in reply: "<<blob_id);
         return;
     }
     

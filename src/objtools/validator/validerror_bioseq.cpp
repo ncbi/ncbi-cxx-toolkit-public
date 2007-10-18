@@ -112,7 +112,12 @@
 #include <objmgr/seq_feat_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 
+#include <objtools/error_codes.hpp>
+
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Validator
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1278,10 +1283,10 @@ void CValidError_bioseq::ValidateSeqParts(const CBioseq& seq)
             ++loc_it;
             ++part_it;
         } catch (const CObjmgrUtilException&) {
-            ERR_POST("Seq-loc not for unique sequence");
+            ERR_POST_X(4, "Seq-loc not for unique sequence");
             return;
         } catch (...) {
-            ERR_POST("Unknown error");
+            ERR_POST_X(5, "Unknown error");
             return;
         }
     }
@@ -1643,7 +1648,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
                 seq);
         }
     } catch (const CObjmgrUtilException&) {
-        ERR_POST(Critical << "Unable to calculate length: ");
+        ERR_POST_X(6, Critical << "Unable to calculate length: ");
     }
 
     // Check for multiple references to the same Bioseq

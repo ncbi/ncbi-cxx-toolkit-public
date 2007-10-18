@@ -41,6 +41,8 @@
 
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 #include <objtools/data_loaders/genbank/split_parser.hpp>
+#include <objtools/error_codes.hpp>
+
 #include <objmgr/impl/tse_split_info.hpp>
 
 #include <objects/id1/id1__.hpp>
@@ -69,6 +71,9 @@
 #include <util/compress/zlib.hpp>
 
 #include <serial/pack_string.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_Process
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -650,7 +655,7 @@ CRef<CSeq_entry> CProcessor_ID1::GetSeq_entry(CReaderRequestResult& result,
             blob_state |= CBioseq_Handle::fState_no_data;
             break;
         default:
-            ERR_POST("CId1Reader::GetMainBlob: ID1server-back.error "<<error);
+            ERR_POST_X(1, "CId1Reader::GetMainBlob: ID1server-back.error "<<error);
             NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                            "CProcessor_ID1::GetSeq_entry: "
                            "ID1server-back.error "<<error);
@@ -851,12 +856,12 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
         CStreamDelayBufferGuard guard;
         CWriter* writer = 0;
         if ( !blob.IsSetBlobVersion() ) {
-            ERR_POST("CProcessor_SE::ProcessObjStream: "
-                     "blob version is not set");
+            ERR_POST_X(2, "CProcessor_SE::ProcessObjStream: "
+                          "blob version is not set");
         }
         else if ( blob.GetBlobState() & CBioseq_Handle::fState_no_data ) {
-            ERR_POST("CProcessor_SE::ProcessObjStream: "
-                     "state no_data is set");
+            ERR_POST_X(3, "CProcessor_SE::ProcessObjStream: "
+                          "state no_data is set");
         }
         else {
             writer = GetWriter(result);
@@ -936,12 +941,12 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
     {{
         CWriter* writer = 0;
         if ( !blob.IsSetBlobVersion() ) {
-            ERR_POST("CProcessor_SE_SNP::ProcessObjStream: "
-                     "blob version is not set");
+            ERR_POST_X(4, "CProcessor_SE_SNP::ProcessObjStream: "
+                          "blob version is not set");
         }
         else if ( blob.GetBlobState() & CBioseq_Handle::fState_no_data ) {
-            ERR_POST("CProcessor_SE_SNP::ProcessObjStream: "
-                     "state no_data is set");
+            ERR_POST_X(5, "CProcessor_SE_SNP::ProcessObjStream: "
+                          "state no_data is set");
         }
         else {
             writer = GetWriter(result);
@@ -1884,14 +1889,14 @@ void CProcessor::PrintStat(const char* type,
     if ( !stat.count ) {
         return;
     }
-    LOG_POST(type << ' ' << stat.count << " blobs " <<
-             setiosflags(ios::fixed) <<
-             setprecision(2) <<
-             (stat.size/1024.0) << " kB in " <<
-             setprecision(3) <<
-             (stat.time) << " s (" <<
-             setprecision(2) <<
-             (stat.size/stat.time/1024) << " kB/s)");
+    LOG_POST_X(6, type << ' ' << stat.count << " blobs " <<
+                  setiosflags(ios::fixed) <<
+                  setprecision(2) <<
+                  (stat.size/1024.0) << " kB in " <<
+                  setprecision(3) <<
+                  (stat.time) << " s (" <<
+                  setprecision(2) <<
+                  (stat.size/stat.time/1024) << " kB/s)");
     stat.count = 0; // Print just once
 #endif
 }
@@ -1910,15 +1915,15 @@ void CProcessor::LogStat(const char* type,
     if ( CollectStatistics() <= 1 ) {
         return;
     }
-    LOG_POST(setw(result.GetRecursionLevel()) << "" <<
-             type << " for " << blob_id << ' ' <<
-             setiosflags(ios::fixed) <<
-             setprecision(2) <<
-             (size/1024.0) << " kB in " <<
-             setprecision(3) <<
-             (time*1000) << " ms (" <<
-             setprecision(2) <<
-             (size/time/1024) << " kB/s)");
+    LOG_POST_X(7, setw(result.GetRecursionLevel()) << "" <<
+                  type << " for " << blob_id << ' ' <<
+                  setiosflags(ios::fixed) <<
+                  setprecision(2) <<
+                  (size/1024.0) << " kB in " <<
+                  setprecision(3) <<
+                  (time*1000) << " ms (" <<
+                  setprecision(2) <<
+                  (size/time/1024) << " kB/s)");
 #endif
 }
 

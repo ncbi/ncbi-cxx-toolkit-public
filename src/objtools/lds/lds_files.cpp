@@ -43,6 +43,10 @@
 #include <objtools/lds/lds_util.hpp>
 #include <objtools/lds/lds_query.hpp>
 #include <objtools/lds/lds.hpp>
+#include <objtools/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_LDS_File
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -92,7 +96,7 @@ void CLDS_File::SyncWithDir(const string& path,
         if (fit == files.end()) { // not found
             deleted->set(m_FileDB.file_id);
 
-            LOG_POST(Info << "LDS: File removed: " << fname);
+            LOG_POST_X(1, Info << "LDS: File removed: " << fname);
         }
     } // while
 
@@ -109,10 +113,10 @@ void CLDS_File::x_SyncWithDir(const string& path,
 {
     CDir dir(path);
     if (!dir.Exists()) {
-        LOG_POST(Info << "LDS: Directory is not found or access denied:" << path);
+        LOG_POST_X(2, Info << "LDS: Directory is not found or access denied:" << path);
         return;
     } else {
-        LOG_POST(Info << "LDS: scanning " << path);
+        LOG_POST_X(3, Info << "LDS: scanning " << path);
     }
 
     CLDS_Query lds_query(m_DataBase);
@@ -180,7 +184,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
 
             updated->set(m_MaxRecId);
 
-            LOG_POST(Info << "New LDS file found: " << entry);
+            LOG_POST_X(4, Info << "New LDS file found: " << entry);
 
             continue;
         }
@@ -309,7 +313,7 @@ void CLDS_File::UpdateEntry(int    file_id,
     EBDB_ErrCode err = m_FileDB.UpdateInsert();
     BDB_CHECK(err, "LDS::File");
 
-    LOG_POST(Info << "LDS: file update: " << file_name);
+    LOG_POST_X(5, Info << "LDS: file update: " << file_name);
 
 }
 

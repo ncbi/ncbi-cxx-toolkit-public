@@ -53,6 +53,10 @@
 #include <objtools/edit/edit_exception.hpp>
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <objtools/edit/promote.hpp>
+#include <objtools/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Edit
 
 
 BEGIN_NCBI_SCOPE
@@ -475,8 +479,8 @@ CSeq_id* CPromote::x_GetProductId(CSeq_feat& feat, const string& qval) const
         if ( qual.IsSetQual()  &&  qual.GetQual() == qval  &&
              qual.IsSetVal()  &&  !qual.GetVal().empty() ) {
             if ( !id.empty() ) {
-                LOG_POST(Warning << *ftype << " " << qval << " " 
-                    << qual.GetVal() << " replacing " << id);
+                LOG_POST_X(1, Warning << *ftype << " " << qval << " " 
+                              << qual.GetVal() << " replacing " << id);
             }
             id = qual.GetVal();
             it = feat.SetQual().erase(it);

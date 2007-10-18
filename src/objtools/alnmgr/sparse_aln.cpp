@@ -33,9 +33,13 @@
 
 #include <objtools/alnmgr/sparse_aln.hpp>
 #include <objtools/alnmgr/sparse_ci.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <objects/seqalign/Sparse_align.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Aln_Sparse
 
 
 BEGIN_NCBI_SCOPE
@@ -380,14 +384,14 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
         string s;
         CSparse_CI it(coll, IAlnSegmentIterator::eSkipGaps, aln_range);
 
-        //LOG_POST("GetAlnSeqString(" << row << ") ==========================================" );
+        //LOG_POST_X(1, "GetAlnSeqString(" << row << ") ==========================================" );
         while (it)   {
             const IAlnSegment::TSignedRange& aln_r = it->GetAlnRange(); // in alignment
             const IAlnSegment::TSignedRange& r = it->GetRange(); // on sequence
 
             size_t off;
-            //LOG_POST("Aln [" << aln_r.GetFrom() << ", " << aln_r.GetTo() << "], Seq  "
-            //                 << r.GetFrom() << ", " << r.GetTo());
+            //LOG_POST_X(2, "Aln [" << aln_r.GetFrom() << ", " << aln_r.GetTo() << "], Seq  "
+            //                      << r.GetFrom() << ", " << r.GetTo());
             if (base_width == 1) {
                 // TODO performance issue - waiting for better API
                 if (IsPositiveStrand(row)) {
@@ -440,7 +444,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
             // there is gap on the right
             buffer.replace(prev_to_open, fill_len, fill_len, m_GapChar);
         }
-        //LOG_POST(buffer);
+        //LOG_POST_X(3, buffer);
     }
     return buffer;
 }

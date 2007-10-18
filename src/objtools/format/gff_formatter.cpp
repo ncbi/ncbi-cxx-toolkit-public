@@ -46,7 +46,11 @@
 #include <objtools/format/items/sequence_item.hpp>
 #include <objtools/format/items/ctrl_items.hpp>
 #include <objtools/format/context.hpp>
+#include <objtools/error_codes.hpp>
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Fmt_GFF
 
 
 BEGIN_NCBI_SCOPE
@@ -234,7 +238,7 @@ void CGFFFormatter::FormatFeature
                         } else {
                             msg = "error: " + msg;
                         }
-                        LOG_POST(Error << msg);
+                        LOG_POST_X(1, Error << msg);
                     } else {
                         SRelLoc::TRange range;
                         range.SetFrom(0);
@@ -403,7 +407,7 @@ string CGFFFormatter::x_GetGeneID(const CFlatFeature& feat,
     } else {
         string msg;
         feature::GetLabel(seqfeat, &msg, feature::eBoth);
-        LOG_POST(Info << "info: no best overlapping feature for " << msg);
+        LOG_POST_X(2, Info << "info: no best overlapping feature for " << msg);
     }
 
     return gene_id;

@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <objtools/readers/aln_reader.hpp>
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/error_codes.hpp>
 #include <util/creaders/alnread.h>
 #include <util/format_guess.hpp>
 
@@ -46,6 +47,9 @@
 #include <objects/seq/IUPACaa.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/seqport_util.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_Align
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -126,7 +130,7 @@ static void ALIGNMENT_CALLBACK s_ReportError(TErrorInfoPtr err_ptr,
                 msg += err_ptr->message;
             }
 
-            LOG_POST(Error << msg);
+            LOG_POST_X(1, Error << msg);
         }
         next_err = err_ptr->next;  
         free (err_ptr->id);

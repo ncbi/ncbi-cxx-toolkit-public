@@ -38,6 +38,10 @@
 #include <objtools/lds/lds_object.hpp>
 #include <objtools/lds/lds_files.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
+#include <objtools/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_LDS
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -75,13 +79,13 @@ CLDS_Database::CLDS_Database(const string& db_dir_name,
 
 CLDS_Database::~CLDS_Database()
 {
-    LOG_POST(Info << "Closing LDS database: " <<  m_Alias);
+    LOG_POST_X(1, Info << "Closing LDS database: " <<  m_Alias);
 }
 
 void CLDS_Database::Create()
 {
     string fname;
-    LOG_POST(Info << "Creating LDS database: " <<  m_Alias);
+    LOG_POST_X(2, Info << "Creating LDS database: " <<  m_Alias);
 
     {{
         m_LDS_DirName = CDirEntry::AddTrailingPathSeparator(m_LDS_DirName);
@@ -107,7 +111,7 @@ void CLDS_Database::Create()
 	
     m_db.reset(new SLDS_TablesCollection);
 
-    LOG_POST(Info << "Creating LDS table: " << "file");
+    LOG_POST_X(3, Info << "Creating LDS table: " << "file");
 
     fname = m_LDS_DirName + "lds_file.db";
 	const char* c = fname.c_str(); 
@@ -115,13 +119,13 @@ void CLDS_Database::Create()
                       "file",
                       CBDB_RawFile::eCreate);
 
-    LOG_POST(Info << "Creating LDS table: " << "objecttype");
+    LOG_POST_X(4, Info << "Creating LDS table: " << "objecttype");
 
     fname = m_LDS_DirName + "lds_objecttype.db"; 
     m_db->object_type_db.Open(fname.c_str(),
                              "objecttype",
                              CBDB_RawFile::eCreate);
-    LOG_POST(Info << "Creating LDS table: " << "object");
+    LOG_POST_X(5, Info << "Creating LDS table: " << "object");
 
     fname = m_LDS_DirName + "lds_object.db"; 
     m_db->object_db.SetCacheSize(3 * (1024 * 1024));
@@ -129,41 +133,41 @@ void CLDS_Database::Create()
                     "object",
                     CBDB_RawFile::eCreate);
 /*
-    LOG_POST(Info << "Creating LDS table: " << "objectattr");
+    LOG_POST_X(6, Info << "Creating LDS table: " << "objectattr");
     fname = m_LDS_DirName + "lds_objectattr.db"; 
     m_db.object_attr_db.Open(fname.c_str(),
                              "objectattr",
                              CBDB_RawFile::eCreate);
 */
-    LOG_POST(Info << "Creating LDS table: " << "annotation");
+    LOG_POST_X(7, Info << "Creating LDS table: " << "annotation");
     fname = m_LDS_DirName + "lds_annotation.db"; 
     m_db->annot_db.Open(fname.c_str(),
                        "annotation",
                        CBDB_RawFile::eCreate);
 
-    LOG_POST(Info << "Creating LDS table: " << "annot2obj");
+    LOG_POST_X(8, Info << "Creating LDS table: " << "annot2obj");
     fname = m_LDS_DirName + "lds_annot2obj.db"; 
     m_db->annot2obj_db.Open(fname.c_str(),
                            "annot2obj",
                            CBDB_RawFile::eCreate);
 
-    LOG_POST(Info << "Creating LDS table: " << "seq_id_list");
+    LOG_POST_X(9, Info << "Creating LDS table: " << "seq_id_list");
     fname = m_LDS_DirName + "lds_seq_id_list.db"; 
     m_db->seq_id_list.Open(fname.c_str(),
                           "seq_id_list",
                           CBDB_RawFile::eCreate);
 
-    LOG_POST(Info << "Creating LDS index: " << "obj_seqid_txt.idx");
+    LOG_POST_X(10, Info << "Creating LDS index: " << "obj_seqid_txt.idx");
     fname = m_LDS_DirName + "obj_seqid_txt.idx"; 
     m_db->obj_seqid_txt_idx.Open(fname.c_str(), 
                                 CBDB_RawFile::eCreate);
 
-    LOG_POST(Info << "Creating LDS index: " << "obj_seqid_int.idx");
+    LOG_POST_X(11, Info << "Creating LDS index: " << "obj_seqid_int.idx");
     fname = m_LDS_DirName + "obj_seqid_int.idx"; 
     m_db->obj_seqid_int_idx.Open(fname.c_str(), 
                                 CBDB_RawFile::eCreate);
 
-    LOG_POST(Info << "Creating LDS index: " << "file_filename.idx");
+    LOG_POST_X(12, Info << "Creating LDS index: " << "file_filename.idx");
     fname = m_LDS_DirName + "file_filename.idx"; 
     m_db->file_filename_idx.Open(fname.c_str(),
                                  CBDB_RawFile::eCreate);

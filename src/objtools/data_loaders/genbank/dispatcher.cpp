@@ -34,9 +34,13 @@
 #include <objtools/data_loaders/genbank/processor.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/data_loaders/genbank/statistics.hpp>
+#include <objtools/error_codes.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_Disp
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -829,8 +833,8 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
             }
             catch ( CLoaderException& exc ) {
                 if ( exc.GetErrCode() == exc.eNoConnection ) {
-                    LOG_POST(Warning<<
-                             "CReadDispatcher: Exception: "<<exc);
+                    LOG_POST_X(1, Warning<<
+                               "CReadDispatcher: Exception: "<<exc);
                     retry_count = kMax_Int;
                 }
                 else {
@@ -838,8 +842,8 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
                          !reader.MayBeSkippedOnErrors() ) {
                         throw;
                     }
-                    LOG_POST(Warning<<
-                             "CReadDispatcher: Exception: "<<exc);
+                    LOG_POST_X(2, Warning<<
+                               "CReadDispatcher: Exception: "<<exc);
                 }
             }
             catch ( CException& exc ) {
@@ -848,8 +852,8 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
                      !reader.MayBeSkippedOnErrors() ) {
                     throw;
                 }
-                LOG_POST(Warning <<
-                         "CReadDispatcher: Exception: "<<exc);
+                LOG_POST_X(3, Warning <<
+                           "CReadDispatcher: Exception: "<<exc);
             }
             catch ( exception& exc ) {
                 // error in the command
@@ -857,8 +861,8 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
                      !reader.MayBeSkippedOnErrors() ) {
                     throw;
                 }
-                LOG_POST(Warning <<
-                         "CReadDispatcher: Exception: "<<exc.what());
+                LOG_POST_X(4, Warning <<
+                           "CReadDispatcher: Exception: "<<exc.what());
             }
             if ( command.IsDone() ) {
                 return;
@@ -1027,12 +1031,12 @@ void CReadDispatcher::PrintStat(const char* type,
     if ( !stat.count ) {
         return;
     }
-    LOG_POST("Dispatcher: " << type << ' ' <<
-             stat.count << ' ' << what << " in " <<
-             setiosflags(ios::fixed) <<
-             setprecision(3) <<
-             (stat.time) << " s (" <<
-             (stat.time*1000/stat.count) << " ms/one)");
+    LOG_POST_X(5, "Dispatcher: " << type << ' ' <<
+                  stat.count << ' ' << what << " in " <<
+                  setiosflags(ios::fixed) <<
+                  setprecision(3) <<
+                  (stat.time) << " s (" <<
+                  (stat.time*1000/stat.count) << " ms/one)");
 #endif
 }
 
@@ -1051,10 +1055,10 @@ void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
     if ( idh ) {
         descr = descr + " for " + idh.AsString();
     }
-    LOG_POST(setw(command.GetResult().GetRecursionLevel()) << "" <<
-             "Dispatcher: read " <<
-             descr << " in " <<
-             setprecision(3) << (time*1000) << " ms");
+    LOG_POST_X(6, setw(command.GetResult().GetRecursionLevel()) << "" <<
+                  "Dispatcher: read " <<
+                  descr << " in " <<
+                  setprecision(3) << (time*1000) << " ms");
 #endif
 }
 

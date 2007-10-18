@@ -45,6 +45,10 @@
 #include <objects/seqalign/Score.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
+#include <objtools/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Fmt_GFF
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -164,8 +168,8 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         }
     }
     if (ref_row < 0) {
-        ERR_POST("CGFF3_Formatter::FormatAlignment: "
-                 "no row with a matching ID found!");
+        ERR_POST_X(3, "CGFF3_Formatter::FormatAlignment: "
+                      "no row with a matching ID found!");
         return;
     }
     alnmap.SetAnchor(ref_row);

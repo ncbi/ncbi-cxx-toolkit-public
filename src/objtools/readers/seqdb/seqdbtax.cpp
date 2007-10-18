@@ -32,7 +32,11 @@
 /// interface for all functionality of one database volume.
 
 #include <ncbi_pch.hpp>
+#include <objtools/error_codes.hpp>
 #include "seqdbtax.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_SeqDBTax
 
 BEGIN_NCBI_SCOPE
 
@@ -104,9 +108,9 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
     int taxid_array_size = int((idx_file_len - data_start)/sizeof(CSeqDBTaxId));
     
     if (taxid_array_size != m_AllTaxidCount) {
-        ERR_POST("SeqDB: Taxid metadata indicates (" << m_AllTaxidCount
-                 << ") entries but file has room for (" << taxid_array_size
-                 << ").");
+        ERR_POST_X(1, "SeqDB: Taxid metadata indicates (" << m_AllTaxidCount
+                   << ") entries but file has room for (" << taxid_array_size
+                   << ").");
         
         if (taxid_array_size < m_AllTaxidCount) {
             m_AllTaxidCount = taxid_array_size;

@@ -36,6 +36,7 @@
 #include <objtools/readers/fasta.hpp>
 #include "fasta_aln_builder.hpp"
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <corelib/ncbiutil.hpp>
 #include <util/format_guess.hpp>
@@ -72,6 +73,9 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <ctype.h>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_Fasta
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -557,8 +561,8 @@ void CFastaReader::ParseDataLine(const TStr& s)
             // comment -- ignore rest of line
             break;
         } else if ( !isspace(c) ) {
-            ERR_POST(Warning << "CFastaReader: Ignoring invalid residue "
-                     << c << " at position " << (StreamPosition() + pos - len));
+            ERR_POST_X(1, Warning << "CFastaReader: Ignoring invalid residue "
+                       << c << " at position " << (StreamPosition() + pos - len));
         }
     }
     m_SeqData.resize(m_CurrentPos);
@@ -1474,9 +1478,9 @@ CRef<CSeq_entry> s_ReadFasta_OLD(CNcbiIstream& in, TReadFastaFlags flags,
                     i = line_size;
                     continue; // skip rest of line
                 } else if ( !isspace((unsigned char) c) ) {
-                    ERR_POST(Warning << "ReadFasta: Ignoring invalid residue "
-                             << c << " at position "
-                             << (in.tellg() - CT_POS_TYPE(0)));
+                    ERR_POST_X(2, Warning << "ReadFasta: Ignoring invalid residue "
+                               << c << " at position "
+                               << (in.tellg() - CT_POS_TYPE(0)));
                 }
             }
 

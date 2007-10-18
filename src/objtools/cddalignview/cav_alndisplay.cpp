@@ -47,6 +47,10 @@
 #include <objtools/cddalignview/cav_seqset.hpp>
 #include <objtools/cddalignview/cav_alignset.hpp>
 #include <objtools/cddalignview/cddalignview.h>
+#include <objtools/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_CAV_Disp
 
 
 BEGIN_NCBI_SCOPE
@@ -84,7 +88,7 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
     // start with master row at top, all in lowercase - will be capitalized as things are
     // aligned to it. Also, add an IndexAlnLocToSeqLocRow for the master (only).
     if (!sequenceSet->master) {
-        ERR_POST(Error << "Need to know master sequence of SequenceSet for AlignmentDisplay construction");
+        ERR_POST_X(1, Error << "Need to know master sequence of SequenceSet for AlignmentDisplay construction");
         return;
     }
     textRows.push_back(new TextRow(StrToLower(sequenceSet->master->sequenceString)));
@@ -190,7 +194,7 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
         }
     }
 
-    ERR_POST(Info << "initial alignment display size: " << GetWidth() << " x " << GetNRows());
+    ERR_POST_X(2, Info << "initial alignment display size: " << GetWidth() << " x " << GetNRows());
 
     // the above algorithm introduces more gaps than are strictly necessary. This
     // will "squeeze" the alignment, deleting gaps wherever possible
@@ -217,8 +221,8 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
             break;
         }
 
-    ERR_POST(Info << "final alignment display size: " << GetWidth() << " x " << GetNRows());
-    ERR_POST(Info << "aligned region: " << firstAlnLoc << " through " << lastAlnLoc);
+    ERR_POST_X(3, Info << "final alignment display size: " << GetWidth() << " x " << GetNRows());
+    ERR_POST_X(4, Info << "aligned region: " << firstAlnLoc << " through " << lastAlnLoc);
     status = CAV_SUCCESS;
 }
 
@@ -275,7 +279,7 @@ void AlignmentDisplay::Squeeze(void)
     for (lastAlignedLoc=GetWidth()-2;
          lastAlignedLoc>=0 && !IsAligned(textRows[0]->GetCharAt(lastAlignedLoc));
          --lastAlignedLoc) ;
-    ERR_POST(Info << "checking for squeeze up to " << (lastAlignedLoc+1));
+    ERR_POST_X(5, Info << "checking for squeeze up to " << (lastAlignedLoc+1));
 
     for (alnLoc=0; alnLoc<=lastAlignedLoc+1; ++alnLoc) {
 
@@ -290,7 +294,7 @@ void AlignmentDisplay::Squeeze(void)
 
         // if all rows are squeezable, then do the squeeze
         if (row == GetNRows()) {
-            ERR_POST(Info << "squeezing " << minNGaps << " gaps at loc " << alnLoc);
+            ERR_POST_X(6, Info << "squeezing " << minNGaps << " gaps at loc " << alnLoc);
             for (row=0; row<GetNRows(); ++row)
                 textRows[row]->DeleteGaps(minNGaps, squeezeLocs[row]);
             lastAlignedLoc -= minNGaps; // account for shift of lastAlignedLoc
@@ -379,7 +383,7 @@ void AlignmentDisplay::InsertGaps(int nGaps, int beforePos)
 char AlignmentDisplay::GetCharAt(int alnLoc, int row) const
 {
     if (alnLoc < 0 || alnLoc >= (int)GetWidth() || row < 0 || row >= (int)GetNRows()) {
-        ERR_POST(Error << "AlignmentDisplay::GetCharAt() - coordinate out of range");
+        ERR_POST_X(7, Error << "AlignmentDisplay::GetCharAt() - coordinate out of range");
         return '?';
     }
 
@@ -479,7 +483,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
     bool doHTML = ((options & CAV_HTML) > 0), doHTMLHeader = ((options & CAV_HTML_HEADER) > 0);
 
     if (firstCol < 0 || lastCol >= (int)GetWidth() || firstCol > lastCol || nColumns < 1) {
-        ERR_POST(Error << "AlignmentDisplay::DumpText() - nonsensical display region parameters");
+        ERR_POST_X(8, Error << "AlignmentDisplay::DumpText() - nonsensical display region parameters");
         return CAV_ERROR_BAD_PARAMS;
     }
 
@@ -596,7 +600,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
     // split alignment up into "paragraphs", each with <= nColumns
     if (doHTML) os << "<TABLE>\n";
     int paragraphStart, nParags = 0, nCondensedColumns;
-    ERR_POST(Info << "paragraph width: " << nColumns);
+    ERR_POST_X(9, Info << "paragraph width: " << nColumns);
     for (paragraphStart=0;
          paragraphStart<(int)condensedColumns.size();
          paragraphStart+=nCondensedColumns, ++nParags) {
@@ -728,12 +732,12 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
         for (alnRow=0; alnRow<(int)GetNRows(); ++alnRow) {
             if (lastShownSeqLocs[alnRow] !=
                     indexAlnLocToSeqLocRows[alnRow]->sequence->sequenceString.size()-1) {
-                ERR_POST(Error << "full display - seqloc markers don't add up");
+                ERR_POST_X(10, Error << "full display - seqloc markers don't add up");
                 break;
             }
         }
         if (alnRow == GetNRows())
-            ERR_POST(Info << "full display - seqloc markers add up correctly");
+            ERR_POST_X(11, Info << "full display - seqloc markers add up correctly");
     }
 
     return CAV_SUCCESS;
@@ -746,7 +750,7 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
     bool doHTML = ((options & CAV_HTML) > 0), doHTMLHeader = ((options & CAV_HTML_HEADER) > 0);
 
     if (firstCol < 0 || lastCol >= (int)GetWidth() || firstCol > lastCol || nColumns < 1) {
-        ERR_POST(Error << "AlignmentDisplay::DumpText() - nonsensical display region parameters");
+        ERR_POST_X(12, Error << "AlignmentDisplay::DumpText() - nonsensical display region parameters");
         return CAV_ERROR_BAD_PARAMS;
     }
 
@@ -983,12 +987,12 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
         for (alnRow=0; alnRow<(int)GetNRows(); ++alnRow) {
             if (lastShownSeqLocs[alnRow] !=
                     indexAlnLocToSeqLocRows[alnRow]->sequence->sequenceString.size()-1) {
-                ERR_POST(Error << "full display - seqloc markers don't add up");
+                ERR_POST_X(13, Error << "full display - seqloc markers don't add up");
                 break;
             }
         }
         if (alnRow == GetNRows())
-            ERR_POST(Info << "full display - seqloc markers add up correctly");
+            ERR_POST_X(14, Info << "full display - seqloc markers add up correctly");
     }
 
     return CAV_SUCCESS;
@@ -998,7 +1002,7 @@ int AlignmentDisplay::DumpFASTA(int firstCol, int lastCol, int nColumns,
     bool doLowercase, CNcbiOstream& os) const
 {
     if (firstCol < 0 || lastCol >= (int)GetWidth() || firstCol > lastCol || nColumns < 1) {
-        ERR_POST(Error << "AlignmentDisplay::DumpFASTA() - nonsensical display region parameters");
+        ERR_POST_X(15, Error << "AlignmentDisplay::DumpFASTA() - nonsensical display region parameters");
         return CAV_ERROR_BAD_PARAMS;
     }
 
@@ -1111,7 +1115,7 @@ const string& AlignmentDisplay::GetColumnColor(int alnLoc, double conservationTh
 void TextRow::InsertGaps(int nGaps, int beforePos)
 {
     if (beforePos < 0 || beforePos > (int)Length()) {
-        ERR_POST(Error << "TextRow::InsertGaps() - beforePos out of range");
+        ERR_POST_X(16, Error << "TextRow::InsertGaps() - beforePos out of range");
         return;
     }
 
@@ -1121,14 +1125,14 @@ void TextRow::InsertGaps(int nGaps, int beforePos)
 void TextRow::DeleteGaps(int nGaps, int startPos)
 {
     if (startPos < 0 || startPos+nGaps-1 > (int)Length()) {
-        ERR_POST(Error << "TextRow::DeleteGaps() - startPos out of range");
+        ERR_POST_X(17, Error << "TextRow::DeleteGaps() - startPos out of range");
         return;
     }
 
     // check to make sure they're all gaps
     for (int i=0; i<nGaps; ++i) {
         if (!IsGap(chars[startPos + i])) {
-            ERR_POST(Error << "TextRow::DeleteGaps() - trying to delete non-gap");
+            ERR_POST_X(18, Error << "TextRow::DeleteGaps() - trying to delete non-gap");
             return;
         }
     }
@@ -1141,7 +1145,7 @@ void TextRow::DeleteGaps(int nGaps, int startPos)
 bool TextRow::IsSqueezable(int alnLoc, int *nGaps, int *startPos, int maxGaps) const
 {
     if (alnLoc < 0 || alnLoc >= (int)chars.size()) {
-        ERR_POST(Error << "TextRow::IsSqueezable() - alnLoc out of range");
+        ERR_POST_X(19, Error << "TextRow::IsSqueezable() - alnLoc out of range");
         return false;
     }
 
@@ -1168,7 +1172,7 @@ void IndexAlnLocToSeqLocRow::InsertGaps(int nGaps, int beforePos)
     if (nGaps <= 0 || seqLocs.size() == 0) return;
 
     if (beforePos < 0 || beforePos > (int)Length()) {
-        ERR_POST(Error << "IndexAlnLocToSeqLocRow::InsertGaps() - beforePos out of range");
+        ERR_POST_X(20, Error << "IndexAlnLocToSeqLocRow::InsertGaps() - beforePos out of range");
         return;
     }
 
@@ -1188,7 +1192,7 @@ void IndexAlnLocToSeqLocRow::ReIndex(const TextRow& textRow)
             seqLocs[i] = seqLoc++;
     }
     if (seqLoc != sequence->sequenceString.size())
-        ERR_POST(Error << "IndexAlnLocToSeqLocRow::ReIndex() - wrong sequence length");
+        ERR_POST_X(21, Error << "IndexAlnLocToSeqLocRow::ReIndex() - wrong sequence length");
 }
 
 END_NCBI_SCOPE

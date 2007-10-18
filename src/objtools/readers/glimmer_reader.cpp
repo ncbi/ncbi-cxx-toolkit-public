@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/glimmer_reader.hpp>
+#include <objtools/error_codes.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
@@ -40,6 +41,9 @@
 #include <objmgr/util/sequence.hpp>
 
 #include <corelib/ncbiutil.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_Glimmer
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -101,7 +105,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify defline: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST(Error << msg);
+                LOG_POST_X(1, Error << msg);
                 NCBI_THROW(CException, eUnknown, msg);
             }
         } else {
@@ -113,7 +117,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                     << count << ": invalid number of tokens: "
                     << "found " << toks.size() << ", expected 5: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST(Error << msg);
+                LOG_POST_X(2, Error << msg);
                 ++errs;
                 if (errs > 5) {
                     NCBI_THROW(CException, eUnknown, msg);
@@ -136,7 +140,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify start pos: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST(Error << msg);
+                LOG_POST_X(3, Error << msg);
 
                 ++errs;
                 if (errs > 5) {
@@ -157,7 +161,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify stop pos: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST(Error << msg);
+                LOG_POST_X(4, Error << msg);
 
                 ++errs;
                 if (errs > 5) {
@@ -186,7 +190,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify frame: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST(Error << msg);
+                LOG_POST_X(5, Error << msg);
 
                 ++errs;
                 if (errs > 5) {
@@ -206,7 +210,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify score: " << line;
                 string msg = string(CNcbiOstrstreamToString(ostr));
-                LOG_POST(Error << msg);
+                LOG_POST_X(6, Error << msg);
 
                 ++errs;
                 if (errs > 5) {
@@ -272,7 +276,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
             annot->SetData().SetFtable().push_back(cds_feat);
         }
     }
-    LOG_POST(Info << "CGlimmerReader::Read(): parsed " << count << " lines, " << errs << " errors");
+    LOG_POST_X(7, Info << "CGlimmerReader::Read(): parsed " << count << " lines, " << errs << " errors");
 
     string prefix("lcl|prot");
     count = 0;

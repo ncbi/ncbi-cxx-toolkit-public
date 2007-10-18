@@ -53,6 +53,10 @@
 #include <objtools/cddalignview/cav_alignset.hpp>
 #include <objtools/cddalignview/cav_asnio.hpp>
 #include <objtools/cddalignview/cav_alndisplay.hpp>
+#include <objtools/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_CAV_Func
 
 
 BEGIN_NCBI_SCOPE
@@ -89,7 +93,7 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
     string err;
 
     if (!isMime) {
-//        ERR_POST(Info << "trying to read input as " <<
+//        ERR_POST_X(1, Info << "trying to read input as " <<
 //            ((isBinary) ? "binary" : "ascii") << " cdd");
         CRef < CCdd > cdd(new CCdd);
         SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
@@ -104,7 +108,7 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
     }
 
     if (!readOK) {
-//        ERR_POST(Info << "trying to read input as " <<
+//        ERR_POST_X(2, Info << "trying to read input as " <<
 //            ((isBinary) ? "binary" : "ascii") << " mime");
         CRef < CNcbi_mime_asn1 > mime(new CNcbi_mime_asn1);
         SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
@@ -136,11 +140,11 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
     }
 
     if (!readOK) {
-        ERR_POST(Error << "Input is not a recognized data type (Ncbi-mime-asn1 or Cdd) : " << err);
+        ERR_POST_X(3, Error << "Input is not a recognized data type (Ncbi-mime-asn1 or Cdd) : " << err);
         return CAV_ERROR_BAD_ASN;
     }
     if (newSequences->size() == 0 || newAlignments->size() == 0) {
-        ERR_POST(Error << "Cannot find sequences and alignments in the input data!");
+        ERR_POST_X(4, Error << "Cannot find sequences and alignments in the input data!");
         return CAV_ERROR_BAD_ASN;
     }
 
@@ -167,12 +171,12 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
             // get and check characters
             masterChar = display->GetCharAt(alnLoc, 0);
             if (masterChar == '?') {
-                ERR_POST(Error << "bad alignment coordinate: loc " << (alnLoc+1) << " row 1 (master)");
+                ERR_POST_X(5, Error << "bad alignment coordinate: loc " << (alnLoc+1) << " row 1 (master)");
                 return false;
             }
             slaveChar = display->GetCharAt(alnLoc, 1 + i);
             if (slaveChar == '?') {
-                ERR_POST(Error << "bad alignment coordinate: loc " << (alnLoc+1) << " row " << (i+2));
+                ERR_POST_X(6, Error << "bad alignment coordinate: loc " << (alnLoc+1) << " row " << (i+2));
                 return false;
             }
 
@@ -181,12 +185,12 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
                 ++masterLoc;
                 if (i == 0) {   // only need to check master once
                     if (masterLoc >= (int) alignment->master->sequenceString.size()) {
-                        ERR_POST(Error << "master sequence too long at alnLoc " << (alnLoc+1)
+                        ERR_POST_X(7, Error << "master sequence too long at alnLoc " << (alnLoc+1)
                             << " row " << (i+2) << " masterLoc " << (masterLoc+1));
                         return false;
                     } else if (toupper((unsigned char) masterChar) != 
                                     toupper((unsigned char) alignment->master->sequenceString[masterLoc])) {
-                        ERR_POST(Error << "master sequence mismatch at alnLoc " << (alnLoc+1)
+                        ERR_POST_X(8, Error << "master sequence mismatch at alnLoc " << (alnLoc+1)
                             << " row " << (i+2) << " masterLoc " << (masterLoc+1));
                         return false;
                     }
@@ -195,12 +199,12 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
             if (!IsGap(slaveChar)) {
                 ++slaveLoc;
                 if (slaveLoc >= (int) alignment->slave->sequenceString.size()) {
-                    ERR_POST(Error << "slave sequence too long at alnLoc " << (alnLoc+1)
+                    ERR_POST_X(9, Error << "slave sequence too long at alnLoc " << (alnLoc+1)
                         << " row " << (i+2) << " slaveLoc " << (slaveLoc+1));
                     return false;
                 } else if (toupper((unsigned char) slaveChar) != 
                                 toupper((unsigned char) alignment->slave->sequenceString[slaveLoc])) {
-                    ERR_POST(Error << "slave sequence mismatch at alnLoc " << (alnLoc+1)
+                    ERR_POST_X(10, Error << "slave sequence mismatch at alnLoc " << (alnLoc+1)
                         << " row " << (i+2) << " slaveLoc " << (slaveLoc+1));
                     return false;
                 }
@@ -211,24 +215,24 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
             // check display characters, to see if they match alignment data
             if (IsGap(slaveChar) || IsUnaligned(slaveChar)) {
                 if (currentMasterLoc >= 0 && alignment->masterToSlave[currentMasterLoc] != -1) {
-                    ERR_POST(Error << "slave should be marked aligned at alnLoc " << (alnLoc+1)
+                    ERR_POST_X(11, Error << "slave should be marked aligned at alnLoc " << (alnLoc+1)
                         << " row " << (i+2));
                     return false;
                 }
             }
             if (IsAligned(slaveChar)) {
                 if (!IsAligned(masterChar)) {
-                    ERR_POST(Error <<" slave marked aligned but master unaligned at alnLoc " << (alnLoc+1)
+                    ERR_POST_X(12, Error <<" slave marked aligned but master unaligned at alnLoc " << (alnLoc+1)
                         << " row " << (i+2));
                     return false;
                 }
                 if (alignment->masterToSlave[currentMasterLoc] == -1) {
-                    ERR_POST(Error << "slave incorrectly marked aligned at alnLoc " << (alnLoc+1)
+                    ERR_POST_X(13, Error << "slave incorrectly marked aligned at alnLoc " << (alnLoc+1)
                         << " row " << (i+2));
                     return false;
                 }
                 if (alignment->masterToSlave[currentMasterLoc] != currentSlaveLoc) {
-                    ERR_POST(Error << "wrong slave residue aligned at alnLoc " << (alnLoc+1)
+                    ERR_POST_X(14, Error << "wrong slave residue aligned at alnLoc " << (alnLoc+1)
                         << " row " << (i+2));
                     return false;
                 }
@@ -238,18 +242,18 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
             if (!IsGap(masterChar)) {
                 if (alignment->masterToSlave[currentMasterLoc] == -1) {
                     if (IsAligned(slaveChar)) {
-                        ERR_POST(Error << "slave should be unaligned at alnLoc " << (alnLoc+1)
+                        ERR_POST_X(15, Error << "slave should be unaligned at alnLoc " << (alnLoc+1)
                             << " row " << (i+2));
                         return false;
                     }
                 } else {    // aligned master
                     if (!IsAligned(slaveChar)) {
-                        ERR_POST(Error << "slave should be aligned at alnLoc " << (alnLoc+1)
+                        ERR_POST_X(16, Error << "slave should be aligned at alnLoc " << (alnLoc+1)
                             << " row " << (i+2));
                         return false;
                     }
                     if (currentSlaveLoc != alignment->masterToSlave[currentMasterLoc]) {
-                        ERR_POST(Error << "wrong slave residue aligned to master at alnLoc " << (alnLoc+1)
+                        ERR_POST_X(17, Error << "wrong slave residue aligned to master at alnLoc " << (alnLoc+1)
                             << " row " << (i+2));
                         return false;
                     }
@@ -260,7 +264,7 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
         // check sequence lengths
         if (masterLoc != alignment->master->sequenceString.size() - 1 ||
             slaveLoc != alignment->slave->sequenceString.size() - 1) {
-            ERR_POST(Error << "bad sequence lengths at row " << (i+2));
+            ERR_POST_X(18, Error << "bad sequence lengths at row " << (i+2));
             return false;
         }
     }
@@ -306,49 +310,49 @@ int CAV_DisplayMultiple(
 
     // check option consistency
     if (options & CAV_CONDENSED && !(options & CAV_TEXT || options & CAV_HTML)) {
-        ERR_POST(Error << "Cannot do condensed display except with text/HTML output");
+        ERR_POST_X(19, Error << "Cannot do condensed display except with text/HTML output");
         return CAV_ERROR_BAD_PARAMS;
     }
     if (options & CAV_FASTA_LOWERCASE && !(options & CAV_FASTA)) {
-        ERR_POST(Error << "Cannot do fasta_lc option except with FASTA output");
+        ERR_POST_X(20, Error << "Cannot do fasta_lc option except with FASTA output");
         return CAV_ERROR_BAD_PARAMS;
     }
     if (options & CAV_HTML_HEADER && !(options & CAV_HTML)) {
-        ERR_POST(Error << "Cannot do HTML header without HTML output");
+        ERR_POST_X(21, Error << "Cannot do HTML header without HTML output");
         return CAV_ERROR_BAD_PARAMS;
     }
 
     // process asn data
     auto_ptr<SequenceSet> sequenceSet(new SequenceSet(sequences));
     if (!sequenceSet.get() || sequenceSet->Status() != CAV_SUCCESS) {
-        ERR_POST(Critical << "Error processing sequence data");
+        ERR_POST_X(22, Critical << "Error processing sequence data");
         return sequenceSet->Status();
     }
     auto_ptr<AlignmentSet> alignmentSet(new AlignmentSet(sequenceSet.get(), alignments));
     if (!alignmentSet.get() || alignmentSet->Status() != CAV_SUCCESS) {
-        ERR_POST(Critical << "Error processing alignment data");
+        ERR_POST_X(23, Critical << "Error processing alignment data");
         return alignmentSet->Status();
     }
 
     // create the alignment display structure
     auto_ptr<AlignmentDisplay> display(new AlignmentDisplay(sequenceSet.get(), alignmentSet.get()));
     if (!display.get() || display->Status() != CAV_SUCCESS) {
-        ERR_POST(Critical << "Error creating alignment display");
+        ERR_POST_X(24, Critical << "Error creating alignment display");
         return display->Status();
     }
 
     // do verification
     if (options & CAV_DEBUG) {
         if (!VerifyAlignmentData(alignmentSet.get(), display.get())) {
-            ERR_POST(Critical << "AlignmentDisplay failed verification");
+            ERR_POST_X(25, Critical << "AlignmentDisplay failed verification");
             return CAV_ERROR_DISPLAY;
         } else {
-            ERR_POST(Info << "AlignmentDisplay passed verification");
+            ERR_POST_X(26, Info << "AlignmentDisplay passed verification");
         }
     }
 
     // display alignment with given parameters
-    ERR_POST(Info << "writing output...");
+    ERR_POST_X(27, Info << "writing output...");
     int
         from = (options & CAV_LEFTTAILS) ? 0 : display->GetFirstAlignedLoc(),
         to = (options & CAV_RIGHTTAILS) ? display->GetWidth()-1 : display->GetLastAlignedLoc();
@@ -367,7 +371,7 @@ int CAV_DisplayMultiple(
     }
 //    if (outStream != &NcbiCout) delete outStream;
     if (retval != CAV_SUCCESS) {
-        ERR_POST(Error << "Error dumping display to output");
+        ERR_POST_X(28, Error << "Error dumping display to output");
         return retval;
     }
 
@@ -388,7 +392,7 @@ int CAV_DisplayMultiple(
 {
     // load input data into an input stream
     if (!asnDataBlock) {
-        ERR_POST(Critical << "NULL asnDataBlock parameter");
+        ERR_POST_X(29, Critical << "NULL asnDataBlock parameter");
         return CAV_ERROR_BAD_ASN;
     }
     CNcbiIstrstream asnIstrstream(static_cast<const char*>(asnDataBlock), asnSize);
@@ -398,7 +402,7 @@ int CAV_DisplayMultiple(
     const SeqAnnotList *alns;
     int retval = LoadASNFromIstream(asnIstrstream, &seqs, &alns);
     if (retval != CAV_SUCCESS) {
-        ERR_POST(Critical << "Couldn't get sequence and alignment ASN data");
+        ERR_POST_X(30, Critical << "Couldn't get sequence and alignment ASN data");
         return retval;
     }
 
@@ -461,7 +465,7 @@ int CAV_DisplayMultiple(
     }
 
     if (!sequences || !alignments) {
-        ERR_POST(Error << "Ncbi-mime-asn1 object is not of recognized type");
+        ERR_POST_X(31, Error << "Ncbi-mime-asn1 object is not of recognized type");
         return CAV_ERROR_BAD_ASN;
     }
 

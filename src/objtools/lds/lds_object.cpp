@@ -55,10 +55,14 @@
 #include <objtools/lds/lds_util.hpp>
 #include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_query.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_LDS_Object
 
 
 BEGIN_NCBI_SCOPE
@@ -278,7 +282,7 @@ void CLDS_Object::UpdateCascadeFiles(const CLDS_Set& file_ids)
             CFormatGuess::EFormat format = 
                 (CFormatGuess::EFormat)(int)m_db.file_db.format;
     
-            LOG_POST(Info << "<< Updating file >>: " << fname);
+            LOG_POST_X(1, Info << "<< Updating file >>: " << fname);
 
             UpdateFileObjects(fid, fname, format);
         }
@@ -302,7 +306,7 @@ void CLDS_Object::UpdateFileObjects(int file_id,
         format == CFormatGuess::eTextASN ||
         format == CFormatGuess::eXml) {
 
-        LOG_POST(Info << "Scanning file: " << file_name);
+        LOG_POST_X(2, Info << "Scanning file: " << file_name);
 
         CLDS_CoreObjectsReader sniffer;
         ESerialDataFormat stream_format = FormatGuess2Serial(format);
@@ -322,15 +326,15 @@ void CLDS_Object::UpdateFileObjects(int file_id,
                     SaveObject(file_id, &sniffer, obj_info);
                 }
             }
-            LOG_POST(Info << "LDS: " 
-                          << obj_vector.size() 
-                          << " object(s) found in:" 
-                          << file_name);
+            LOG_POST_X(3, Info << "LDS: " 
+                               << obj_vector.size() 
+                               << " object(s) found in:" 
+                               << file_name);
 
             sniffer.ClearObjectsVector();
 
         } else {
-            LOG_POST(Info << "LDS: No objects found in:" << file_name);
+            LOG_POST_X(4, Info << "LDS: No objects found in:" << file_name);
         }
 
     } else if ( format == CFormatGuess::eFasta ){
@@ -354,7 +358,7 @@ void CLDS_Object::UpdateFileObjects(int file_id,
                       CFastaReader::fNoSeqData  |
                       CFastaReader::fParseRawID);
     } else {
-        LOG_POST(Info << "Unsupported file format: " << file_name);
+        LOG_POST_X(5, Info << "Unsupported file format: " << file_name);
     }
 
 
@@ -392,7 +396,7 @@ int CLDS_Object::SaveObject(int file_id,
     NStr::ToUpper(ups);
     m_db.object_db.primary_seqid = ups;
 
-    LOG_POST(Info << "Saving Fasta object: " << seq_id);
+    LOG_POST_X(6, Info << "Saving Fasta object: " << seq_id);
 
     err = m_db.object_db.Insert();
     BDB_CHECK(err, "LDS::Object");
@@ -448,7 +452,7 @@ int CLDS_Object::SaveObject(int file_id,
 
     map<string, int>::const_iterator it = m_ObjTypeMap.find(type_name);
     if (it == m_ObjTypeMap.end()) {
-        LOG_POST(Info << "Unrecognized type: " << type_name);
+        LOG_POST_X(7, Info << "Unrecognized type: " << type_name);
         return 0;                
     }
     int type_id = it->second;
@@ -498,7 +502,7 @@ int CLDS_Object::SaveObject(int file_id,
         m_db.object_db.seq_ids = NStr::ToUpper(all_seq_id);
 
 
-//        LOG_POST(Info << "Saving object: " << type_name << " " << id_str);
+//        LOG_POST_X(8, Info << "Saving object: " << type_name << " " << id_str);
 
         err = m_db.object_db.Insert();
         BDB_CHECK(err, "LDS::Object");
@@ -583,15 +587,15 @@ int CLDS_Object::SaveObject(int file_id,
         m_db.annot_db.TSE_object_id = top_level_id;
         m_db.annot_db.parent_object_id = parent_id;
 /*
-        LOG_POST(Info << "Saving annotation: " 
-                      << type_name 
-                      << " " 
-                      << id_str
-                      << " " 
-                      << (const char*)(!top_level_id ? "Top Level. " : " ")
-                      << "offs=" 
-                      << obj_info->offset
-                      );
+        LOG_POST_X(9, Info << "Saving annotation: " 
+                           << type_name 
+                           << " " 
+                           << id_str
+                           << " " 
+                           << (const char*)(!top_level_id ? "Top Level. " : " ")
+                           << "offs=" 
+                           << obj_info->offset
+                           );
 */
 
         EBDB_ErrCode err = m_db.annot_db.Insert();
@@ -651,7 +655,7 @@ bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_i
             CBioseq_Handle bio_handle = m_Scope->GetBioseqHandle(*bioseq);
             if (bio_handle) {
                 *object_title = sequence::GetTitle(bio_handle);
-                //LOG_POST(Info << "object title: " << *object_title);
+                //LOG_POST_X(10, Info << "object title: " << *object_title);
             } else {
                 // the last resort
                 bioseq->GetLabel(object_title, CBioseq::eBoth);
@@ -817,9 +821,9 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
     }
 
 
-    LOG_POST(Warning 
-             << "SeqId indexer: unsupported type " 
-             << seq_id.AsFastaString());
+    LOG_POST_X(11, Warning 
+               << "SeqId indexer: unsupported type " 
+               << seq_id.AsFastaString());
 
     seqid_base->Init();
 
@@ -848,7 +852,7 @@ bool LDS_GetSequenceBase(const string&   seq_id_str,
                                 seq_id_str);
         } catch (CSeqIdException&) {
             can_convert = false;
-            LOG_POST(Error 
+            LOG_POST_X(12, Error 
                 << "Cannot convert seq id string: "
                 << seq_id_str);
             seqid_base->Init();
@@ -969,7 +973,7 @@ void CLDS_Object::BuildSeqIdIdx()
     m_db.obj_seqid_int_idx.Truncate();
     m_db.obj_seqid_txt_idx.Truncate();
 
-    LOG_POST(Info << "Building sequence id index on objects...");
+    LOG_POST_X(13, Info << "Building sequence id index on objects...");
 
     CLDS_BuildIdIdx func(m_DataBase, m_ControlDupIds);
     BDB_iterate_file(m_db.object_db, func);

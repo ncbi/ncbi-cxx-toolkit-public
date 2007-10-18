@@ -46,6 +46,7 @@
 #endif
 
 #include <objtools/data_loaders/genbank/seqref.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 
@@ -64,6 +65,9 @@
 #include <corelib/plugin_manager_store.hpp>
 
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_GBLoader
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -293,14 +297,14 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,
                              const CGBLoaderParams& params)
   : CDataLoader(loader_name)
 {
-    GBLOG_POST( "CGBDataLoader");
+    GBLOG_POST_X(1, "CGBDataLoader");
     x_CreateDriver(params);
 }
 
 
 CGBDataLoader::~CGBDataLoader(void)
 {
-    GBLOG_POST( "~CGBDataLoader");
+    GBLOG_POST_X(2, "~CGBDataLoader");
     // Reset cache for each reader/writer
     m_Dispatcher->ResetCaches();
 }

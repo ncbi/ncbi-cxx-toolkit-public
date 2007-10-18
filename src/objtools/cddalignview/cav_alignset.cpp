@@ -47,6 +47,10 @@
 #include <objtools/cddalignview/cav_alignset.hpp>
 #include <objtools/cddalignview/cav_seqset.hpp>
 #include <objtools/cddalignview/cddalignview.h>
+#include <objtools/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_CAV_Alnset
 
 
 BEGIN_NCBI_SCOPE
@@ -65,7 +69,7 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
     for (n=seqAnnots.begin(); n!=ne; ++n) {
 
         if (!n->GetObject().GetData().IsAlign()) {
-            ERR_POST(Error << "AlignmentSet::AlignmentSet() - confused by alignment data format");
+            ERR_POST_X(1, Error << "AlignmentSet::AlignmentSet() - confused by alignment data format");
             return;
         }
 
@@ -78,7 +82,7 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
                   a->GetObject().GetType() != CSeq_align::eType_diags) ||
                 !a->GetObject().IsSetDim() || a->GetObject().GetDim() != 2 ||
                 (!a->GetObject().GetSegs().IsDendiag() && !a->GetObject().GetSegs().IsDenseg())) {
-                ERR_POST(Error << "AlignmentSet::AlignmentSet() - confused by alignment type");
+                ERR_POST_X(2, Error << "AlignmentSet::AlignmentSet() - confused by alignment type");
                 return;
             }
 
@@ -86,7 +90,7 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
         }
     }
     if (seqaligns.size() == 0) {
-        ERR_POST(Error << "AlignmentSet::AlignmentSet() - no valid Seq-aligns present");
+        ERR_POST_X(3, Error << "AlignmentSet::AlignmentSet() - no valid Seq-aligns present");
         return;
     }
 
@@ -110,7 +114,7 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
                 }
             }
             if (master && !master->Matches(sids.front().GetObject())) {
-                ERR_POST(Error << "AlignmentSet::AlignmentSet() - master must be first sequence of every alignment");
+                ERR_POST_X(4, Error << "AlignmentSet::AlignmentSet() - master must be first sequence of every alignment");
                 return;
             }
         }
@@ -118,9 +122,9 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
     }
 
     if (master) {
-        ERR_POST(Info << "determined that master sequence is " << master->GetTitle());
+        ERR_POST_X(5, Info << "determined that master sequence is " << master->GetTitle());
     } else {
-        ERR_POST(Error << "AlignmentSet::AlignmentSet() - couldn't determine which is master sequence");
+        ERR_POST_X(6, Error << "AlignmentSet::AlignmentSet() - couldn't determine which is master sequence");
         return;
     }
 
@@ -132,14 +136,14 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
         const MasterSlaveAlignment *alignment =
             new MasterSlaveAlignment(sequenceSet, master, **s);
         if (!alignment || alignment->Status() != CAV_SUCCESS) {
-            ERR_POST(Error << "Error parsing master/slave pairwise alignment #" << i);
+            ERR_POST_X(7, Error << "Error parsing master/slave pairwise alignment #" << i);
             status = alignment->Status();
             return;
         }
         alignments.push_back(alignment);
     }
 
-    ERR_POST(Info << "number of alignments: " << alignments.size());
+    ERR_POST_X(8, Info << "number of alignments: " << alignments.size());
     status = CAV_SUCCESS;
 }
 
@@ -186,8 +190,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(
         if (master->Matches(sids.back().GetObject()) && master->Matches(sids.front().GetObject())) {
             slave = master;
         } else {
-            ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
-                "couldn't find matching unaligned slave sequence");
+            ERR_POST_X(9, Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                                   "couldn't find matching unaligned slave sequence");
             return;
         }
     } else {
@@ -207,8 +211,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(
             if (!block.IsSetDim() || block.GetDim() != 2 ||
                 block.GetIds().size() != 2 ||
                 block.GetStarts().size() != 2) {
-                ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
-                    "incorrect dendiag block dimensions");
+                ERR_POST_X(10, Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                                        "incorrect dendiag block dimensions");
                 return;
             }
 
@@ -219,8 +223,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(
                 (!masterFirst &&
                     (!master->Matches(block.GetIds().back().GetObject()) ||
                      !slave->Matches(block.GetIds().front().GetObject())))) {
-                ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
-                    "mismatched Seq-id in dendiag block");
+                ERR_POST_X(11, Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                                        "mismatched Seq-id in dendiag block");
                 return;
             }
 
@@ -234,8 +238,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(
                     slaveRes = block.GetStarts().front() + i;
                 }
                 if (masterRes >= (int) master->Length() || slaveRes >= (int) slave->Length()) {
-                    ERR_POST(Critical << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
-                        "seqloc in dendiag block > length of sequence!");
+                    ERR_POST_X(12, Critical << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                                               "seqloc in dendiag block > length of sequence!");
                     return;
                 }
                 masterToSlave[masterRes] = slaveRes;
@@ -252,8 +256,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(
             block.GetIds().size() != 2 ||
             block.GetStarts().size() != 2 * block.GetNumseg() ||
             block.GetLens().size() != block.GetNumseg()) {
-            ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
-                "incorrect denseg block dimension");
+            ERR_POST_X(13, Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                                    "incorrect denseg block dimension");
             return;
         }
 
@@ -264,8 +268,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(
             (!masterFirst &&
                 (!master->Matches(block.GetIds().back().GetObject()) ||
                  !slave->Matches(block.GetIds().front().GetObject())))) {
-            ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
-                "mismatched Seq-id in denseg block");
+            ERR_POST_X(14, Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                                    "mismatched Seq-id in denseg block");
             return;
         }
 
@@ -283,8 +287,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(
             if (masterRes != -1 && slaveRes != -1) { // skip gaps
                 if ((masterRes + *lens - 1) >= master->Length() ||
                     (slaveRes + *lens - 1) >= slave->Length()) {
-                    ERR_POST(Critical << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
-                        "seqloc in denseg block > length of sequence!");
+                    ERR_POST_X(15, Critical << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                                               "seqloc in denseg block > length of sequence!");
                     return;
                 }
                 for (i=0; i<*lens; ++i)

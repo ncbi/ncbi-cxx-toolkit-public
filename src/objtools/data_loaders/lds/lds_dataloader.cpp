@@ -37,6 +37,7 @@
 #include <objtools/lds/lds_util.hpp>
 #include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_object.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <objects/general/Object_id.hpp>
 
@@ -51,6 +52,9 @@
 #include <corelib/plugin_manager.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_LDS_Loader
 
 BEGIN_NCBI_SCOPE
 
@@ -116,9 +120,9 @@ public:
                     m_Disposition.push_back(
                         SLDS_ObjectDisposition(object_id, parent_id, tse_id));
 /*
-                    LOG_POST(Info << "LDS: Local object " << seq_id_str
-                                  << " id=" << object_id << " matches "
-                                  << seq_id->AsFastaString());
+                    LOG_POST_X(1, Info << "LDS: Local object " << seq_id_str
+                                       << " id=" << object_id << " matches "
+                                       << seq_id->AsFastaString());
 */
 
                     return;
@@ -167,9 +171,9 @@ public:
                     m_Disposition.push_back(
                         SLDS_ObjectDisposition(object_id, parent_id, tse_id));
 /*
-                    LOG_POST(Info << "LDS: Local object " << seq_id_str
-                                  << " id=" << object_id << " matches "
-                                  << seq_id->AsFastaString());
+                    LOG_POST_X(2, Info << "LDS: Local object " << seq_id_str
+                                       << " id=" << object_id << " matches "
+                                       << seq_id->AsFastaString());
 */
                     return;
                 }
@@ -468,7 +472,7 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
             if (db_recovery_count > 10) {
                 throw;
             }
-            ERR_POST("LDS Database returned db recovery error... Reopening.");
+            ERR_POST_X(3, "LDS Database returned db recovery error... Reopening.");
             CFastMutexGuard mg(sx_LDS_Lock);
             m_LDS_db->ReOpen();
         }

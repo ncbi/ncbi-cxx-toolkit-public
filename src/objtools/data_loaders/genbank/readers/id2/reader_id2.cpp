@@ -38,6 +38,7 @@
 #include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/processors.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -67,6 +68,9 @@
 #include <corelib/ncbi_safe_static.hpp>
 
 #include <iomanip>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Reader_Id2
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -210,8 +214,8 @@ void CId2Reader::x_DisconnectAtSlot(TConn conn)
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
     if ( stream ) {
-        LOG_POST(Warning << "CId2Reader("<<conn<<"): "
-                 "ID2 connection failed: reconnecting...");
+        LOG_POST_X(1, Warning << "CId2Reader("<<conn<<"): "
+                   "ID2 connection failed: reconnecting...");
         stream.reset();
     }
 }

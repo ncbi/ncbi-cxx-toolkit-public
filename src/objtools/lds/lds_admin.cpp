@@ -33,6 +33,10 @@
 #include <objtools/lds/lds_admin.hpp>
 #include <objtools/lds/lds_files.hpp>
 #include <objtools/lds/lds_object.hpp>
+#include <objtools/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_LDS_Admin
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -87,7 +91,7 @@ CLDS_Management::OpenCreateDB(const string&      source_dir,
     {
         // Failed to open: file does not exists.
         // Force the construction
-        LOG_POST("Warning: trying to open LDS database:" << ex.what());
+        LOG_POST_X(1, "Warning: trying to open LDS database:" << ex.what());
 
         CLDS_Management admin(*db);
         admin.Create();
@@ -130,7 +134,7 @@ void CLDS_Management::Create()
     //
     // Upload the object type DB
     //
-    LOG_POST(Info << "Uploading " << "objecttype");
+    LOG_POST_X(2, Info << "Uploading " << "objecttype");
 
     CLDS_CoreObjectsReader  core_reader;
 
@@ -142,7 +146,7 @@ void CLDS_Management::Create()
     db.object_type_db.type_name = "FastaEntry";
     db.object_type_db.Insert();
 
-    LOG_POST(Info << "  " << "FastaEntry");
+    LOG_POST_X(3, Info << "  " << "FastaEntry");
 
     ++id;
     ITERATE(CLDS_CoreObjectsReader::TCandidates, it, cand) {
@@ -152,7 +156,7 @@ void CLDS_Management::Create()
         db.object_type_db.type_name = type_name;
         db.object_type_db.Insert();
 
-        LOG_POST(Info << "  " << type_name);
+        LOG_POST_X(4, Info << "  " << type_name);
 
         ++id;
     }

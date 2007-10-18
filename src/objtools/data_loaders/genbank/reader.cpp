@@ -33,11 +33,15 @@
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/data_loaders/genbank/processors.hpp>
 #include <objtools/data_loaders/genbank/cache_manager.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <algorithm>
 #include <math.h>
 #include <corelib/ncbi_system.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Reader
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -76,8 +80,8 @@ void CReader::OpenInitialConnection(bool force)
                     // no connection can be opened
                     throw;
                 }
-                LOG_POST(Warning<<"CReader: "
-                         "cannot open initial connection: "<<exc.what());
+                LOG_POST_X(1, Warning<<"CReader: "
+                           "cannot open initial connection: "<<exc.what());
                 if ( attempt >= GetRetryCount() ) {
                     // this is the last attempt to establish connection
                     NCBI_RETHROW(exc, CLoaderException, eNoConnection,
@@ -85,8 +89,8 @@ void CReader::OpenInitialConnection(bool force)
                 }
             }
             catch ( CException& exc ) {
-                LOG_POST(Warning<<"CReader: "
-                         "cannot open initial connection: "<<exc.what());
+                LOG_POST_X(2, Warning<<"CReader: "
+                           "cannot open initial connection: "<<exc.what());
                 if ( attempt >= GetRetryCount() ) {
                     // this is the last attempt to establish connection
                     NCBI_RETHROW(exc, CLoaderException, eNoConnection,
@@ -126,8 +130,8 @@ int CReader::SetMaximumConnections(int max)
             error_count = 0;
         }
         catch ( exception& exc ) {
-            LOG_POST(Warning <<
-                     "CReader: cannot add connection: "<<exc.what());
+            LOG_POST_X(3, Warning <<
+                       "CReader: cannot add connection: "<<exc.what());
             if ( ++error_count >= GetRetryCount() ) {
                 if ( max > 0 && GetMaximumConnections() == 0 ) {
                     throw;
@@ -271,7 +275,7 @@ void CReader::x_AbortConnection(TConn conn)
         return;
     }
     catch ( exception& exc ) {
-        ERR_POST("CReader("<<conn<<"): cannot reuse connection: "<<exc.what());
+        ERR_POST_X(4, "CReader("<<conn<<"): cannot reuse connection: "<<exc.what());
     }
     // cannot reuse connection number, allocate new one
     try {
@@ -288,8 +292,8 @@ void CReader::x_AbortConnection(TConn conn)
 
 void CReader::x_DisconnectAtSlot(TConn conn)
 {
-    LOG_POST(Warning << "CReader("<<conn<<"): "
-             "GenBank connection failed: reconnecting...");
+    LOG_POST_X(5, Warning << "CReader("<<conn<<"): "
+               "GenBank connection failed: reconnecting...");
     x_RemoveConnectionSlot(conn);
     x_AddConnectionSlot(conn);
 }

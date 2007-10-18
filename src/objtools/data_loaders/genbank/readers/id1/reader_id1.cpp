@@ -37,6 +37,7 @@
 #include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -61,6 +62,9 @@
 #include <corelib/plugin_manager_store.hpp>
 
 #include <iomanip>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Reader_Id1
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -88,7 +92,7 @@ namespace {
             }
         ~CDebugPrinter()
             {
-                LOG_POST(rdbuf());
+                LOG_POST_X(1, rdbuf());
                 /*
                 DEFINE_STATIC_FAST_MUTEX(sx_DebugPrinterMutex);
                 CFastMutexGuard guard(sx_DebugPrinterMutex);
@@ -224,8 +228,8 @@ void CId1Reader::x_DisconnectAtSlot(TConn conn)
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
     if ( stream.get() ) {
-        LOG_POST(Warning << "CId1Reader: ID1"
-                 " GenBank connection failed: reconnecting...");
+        LOG_POST_X(2, Warning << "CId1Reader: ID1"
+                   " GenBank connection failed: reconnecting...");
         stream.reset();
     }
 }
@@ -558,7 +562,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         return;
     }
     if ( info.GetSat() < 0 || info.GetSat_key() < 0 ) {
-        LOG_POST(Warning<<"CId1Reader: gi "<<gi<<" negative sat/satkey");
+        LOG_POST_X(3, Warning<<"CId1Reader: gi "<<gi<<" negative sat/satkey");
         CBlob_id blob_id;
         blob_id.SetSat(kSat_BlobError);
         blob_id.SetSatKey(gi);
@@ -640,8 +644,8 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
             blob_state |= CBioseq_Handle::fState_no_data;
             break;
         default:
-            ERR_POST("CId1Reader::GetBlobVersion: "
-                     "ID1server-back.error "<<error);
+            ERR_POST_X(4, "CId1Reader::GetBlobVersion: "
+                          "ID1server-back.error "<<error);
             NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                            "CId1Reader::GetBlobVersion: "
                            "ID1server-back.error "<<error);
@@ -649,8 +653,8 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
         break;
     }}
     default:
-        ERR_POST("CId1Reader::GetBlobVersion: "
-                 "invalid ID1server-back.");
+        ERR_POST_X(5, "CId1Reader::GetBlobVersion: "
+                      "invalid ID1server-back.");
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "CId1Reader::GetBlobVersion: "
                    "invalid ID1server-back");

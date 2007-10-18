@@ -35,6 +35,7 @@
 #include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -77,6 +78,8 @@
 #define DEFAULT_DB_PASSWORD "allowed"
 #define MAX_MT_CONN         5
 #define DEFAULT_NUM_CONN    2
+
+#define NCBI_USE_ERRCODE_X   Objtools_Rd_Pubseq2
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -200,8 +203,8 @@ void CPubseq2Reader::x_DisconnectAtSlot(TConn conn)
     _ASSERT(m_Connections.count(conn));
     SConnection& c = m_Connections[conn];
     if ( c.m_Connection ) {
-        LOG_POST(Warning << "CPubseq2Reader: PubSeqOS"
-                 " GenBank connection failed: reconnecting...");
+        LOG_POST_X(1, Warning << "CPubseq2Reader: PubSeqOS"
+                   " GenBank connection failed: reconnecting...");
         c.m_Result.reset();
         c.m_Connection.reset();
     }
@@ -269,14 +272,14 @@ CDB_Connection* CPubseq2Reader::x_NewConnection(TConn conn_)
         string errmsg;
         m_Context = drvMgr.GetDriverContext("ctlib", &errmsg, &args);
         if ( !m_Context ) {
-            LOG_POST(errmsg);
+            LOG_POST_X(2, errmsg);
 #if defined(NCBI_THREADS)
             NCBI_THROW(CLoaderException, eNoConnection,
                        "Cannot create dbapi context");
 #else
             m_Context = drvMgr.GetDriverContext("dblib", &errmsg, &args);
             if ( !m_Context ) {
-                LOG_POST(errmsg);
+                LOG_POST_X(3, errmsg);
                 NCBI_THROW(CLoaderException, eNoConnection,
                            "Cannot create dbapi context");
             }

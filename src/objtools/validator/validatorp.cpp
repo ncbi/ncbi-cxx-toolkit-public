@@ -104,7 +104,12 @@
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Affil.hpp>
 
+#include <objtools/error_codes.hpp>
+
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Validator
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -194,7 +199,7 @@ void CValidError_imp::PostErr
 {
     const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
     if (desc != 0) {
-        LOG_POST(Warning << "Seqdesc validation error using default context.");
+        LOG_POST_X(1, Warning << "Seqdesc validation error using default context.");
         PostErr (sv, et, msg, GetTSE(), *desc);
         return;
     }
@@ -540,7 +545,7 @@ bool CValidError_imp::Validate
 
     // Check that CSeq_entry has data
     if (seh.Which() == CSeq_entry::e_not_set) {
-        ERR_POST(Warning << "Seq_entry not set");
+        ERR_POST_X(2, Warning << "Seq_entry not set");
         return false;
     }
 
@@ -549,7 +554,7 @@ bool CValidError_imp::Validate
     // Get first CBioseq object pointer for PostErr below.
     CTypeConstIterator<CBioseq> seq(ConstBegin(*m_TSE));
     if (!seq) {
-        ERR_POST("No Bioseq anywhere on this Seq-entry");
+        ERR_POST_X(3, "No Bioseq anywhere on this Seq-entry");
         return false;
     }
 

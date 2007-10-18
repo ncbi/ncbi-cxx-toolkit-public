@@ -50,6 +50,10 @@
 
 #include <objtools/alnmgr/aln_converters.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
+#include <objtools/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objtools_Aln_Conv
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -817,7 +821,7 @@ void SeqLocMapperToPairwiseAligns(const objects::CSeq_loc_Mapper_Base& mapper,
 //         bool res = ConvertToPairwise(align, master_id, aln_seqs);
 //         ok |= res;
 //     }
-//     LOG_POST("ConvertToPairwise( vector of CSeq_align) " << 1000 * timer.Elapsed() << " ms");
+//     LOG_POST_X(1, "ConvertToPairwise( vector of CSeq_align) " << 1000 * timer.Elapsed() << " ms");
 //     return ok;
 // }
 
@@ -848,8 +852,8 @@ void SeqLocMapperToPairwiseAligns(const objects::CSeq_loc_Mapper_Base& mapper,
 //                 aln_seqs.push_back(aln_seq);
 //             }
 //         } else {
-//             LOG_POST(Error << "CreateAlnRow() - a CSparse_align is"
-//                      << "invalid, neither of its CSeq_ids match master id");
+//             LOG_POST_X(2, Error << "CreateAlnRow() - a CSparse_align is"
+//                           << "invalid, neither of its CSeq_ids match master id");
 //         }
 //     }
 //     return true; // handle errors
