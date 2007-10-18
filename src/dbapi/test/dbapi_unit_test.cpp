@@ -63,13 +63,17 @@ static const char* msg_record_expected = "Record expected";
 inline
 void PutMsgDisabled(const char* msg)
 {
+#if 0
     LOG_POST(Warning << "- " << msg << " is disabled !!!");
+#endif
 }
 
 inline
 void PutMsgExpected(const char* msg, const char* replacement)
 {
+#if 0
     LOG_POST(Warning << "? " << msg << " is expected instead of " << replacement);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3859,6 +3863,103 @@ CDBAPIUnitTest::Test_Bulk_Writing3(void)
                     bi->AddRow();
                 }
                 bi->StoreBatch();
+            }
+
+            bi->Complete();
+        }
+
+
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+void
+CDBAPIUnitTest::Test_Bulk_Writing4(void)
+{
+    string sql;
+    string table_name("#blk_table4");
+    const int test_num = 10;
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        const string test_data("Test, test, tEST.");
+        
+        // Create table ...
+        {
+            /*
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "    id int IDENTITY (1, 1) NOT NULL , \n"
+                "    id_nwparams int NOT NULL, \n"
+                "    gi1 int NOT NULL, \n"
+                "    gi2 int NOT NULL, \n"
+                "    idty FLOAT NOT NULL, \n"
+                "    transcript TEXT NOT NULL, \n"
+                "    idty_tup2 FLOAT NULL, \n"
+                "    idty_tup4 FLOAT NULL \n"
+                ")"
+                ;
+             */
+
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                // "    id int IDENTITY (1, 1) NOT NULL , \n"
+                "    transcript TEXT NOT NULL, \n"
+                "    idty_tup4 FLOAT NULL \n"
+                ")"
+                ;
+
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+        // Insert data ...
+        {
+            //
+            auto_ptr<IBulkInsert> bi(
+                // m_Conn->CreateBulkInsert(table_name, 8)
+                m_Conn->CreateBulkInsert(table_name, 2)
+                );
+
+            CVariant b_idnwparams(eDB_Int);
+            CVariant b_gi1(eDB_Int);
+            CVariant b_gi2(eDB_Int);
+            CVariant b_idty(eDB_Float);
+            CVariant b_idty2(eDB_Float);
+            CVariant b_idty4(eDB_Float);
+            CVariant b_trans(eDB_Text);
+
+            /*
+            bi->Bind(2, &b_idnwparams);
+            bi->Bind(3, &b_gi1);
+            bi->Bind(4, &b_gi2);
+            bi->Bind(5, &b_idty);
+            bi->Bind(6, &b_trans);
+            bi->Bind(7, &b_idty2);
+            bi->Bind(8, &b_idty4);
+            */
+
+            bi->Bind(1, &b_trans);
+            bi->Bind(2, &b_idty4);
+
+            b_idnwparams = 123456;
+
+            for (int j = 0; j < test_num; ++j) {
+
+                b_gi1 = j + 1;
+                b_gi2 = j + 2;
+                b_idty = float(j + 1.1);
+                b_idty2 = float(j + 2.2);
+                b_idty4 = float(j + 3.3);
+
+                b_trans.Truncate();
+                b_trans.Append(
+                        test_data.c_str(),
+                        test_data.size()
+                        );
+
+                bi->AddRow();
             }
 
             bi->Complete();
@@ -10930,6 +11031,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     Irix = true;
 #endif
 
+    // Get Sybase client version number (at least try to do that).
     const string sybase_version = GetSybaseClientVersion();
     if (NStr::CompareNocase(sybase_version, 0, 4, "12.5") == 0
         || NStr::CompareNocase(sybase_version, "current") == 0) {
@@ -10970,6 +11072,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
 
     add(tc_init);
+
+    /* Doesn't work at the moment ...
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+     */
 
     if (args.GetServerType() == CTestArguments::eMsSql ||
         args.GetServerType() == CTestArguments::eMsSql2005
@@ -11145,6 +11253,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             add(tc);
         }
+
+        /*
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+        */
     } else {
         PutMsgDisabled("Test_Bulk_Writing");
     }
@@ -11874,6 +11988,13 @@ init_unit_test_suite( int argc, char * argv[] )
     // Configure UTF ...
     // boost::unit_test_framework::unit_test_log::instance().set_log_format( "XML" );
     // boost::unit_test_framework::unit_test_result::set_report_format( "XML" );
+
+    // Disable old log format ...
+    // ncbi::GetDiagContext().SetOldPostFormat(false);
+
+    // Using old log format ...
+    // Show time (no msec.) ...
+    ncbi::SetDiagPostFlag(ncbi::eDPF_DateTime);
 
     test_suite* test = BOOST_TEST_SUITE("DBAPI Unit Test.");
 
