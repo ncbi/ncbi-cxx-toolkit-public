@@ -64,7 +64,8 @@ public:
 
 
 
-/// General purpose resource pool.
+/// General purpose resource pool (base class, sans default
+/// constructor arguments for maximum versatility).
 ///
 /// Intended use is to store reusable objects.
 /// Pool frees all vacant objects only upon pools destruction.
@@ -80,7 +81,7 @@ public:
 template<class Value, 
          class Lock = CNoLock, 
          class CF   = CResoursePool_NewClassFactory<Value> >
-class CResourcePool
+class CResourcePool_Base
 {
 public: 
     typedef Value                          TValue;
@@ -98,14 +99,12 @@ public:
     ///     Max pool size. Everything coming to pool above this limit is
     ///     destroyed right away. 0 - upper limit not set
     ///
-    CResourcePool(size_t               capacity_upper_limit = 0, 
-                  const TClassFactory& cf = TClassFactory()
-                  )
+    CResourcePool_Base(size_t capacity_upper_limit, const TClassFactory& cf)
         : m_CF(cf),
           m_UpperLimit(capacity_upper_limit)
     {}
 
-    ~CResourcePool()
+    ~CResourcePool_Base()
     {
         FreeAll();
     }
@@ -252,14 +251,43 @@ public:
     }
 
 protected:
-    CResourcePool(const CResourcePool&);
-    CResourcePool& operator=(const CResourcePool&);
+    CResourcePool_Base(const CResourcePool_Base&);
+    CResourcePool_Base& operator=(const CResourcePool_Base&);
 
 protected:
     TPoolList                 m_FreeObjects;
     mutable TLock             m_Lock;
     TClassFactory             m_CF;
     size_t                    m_UpperLimit; ///< Upper limit how much to pool
+};
+
+
+/// General purpose resource pool (standard version, requiring CF to
+/// have a default constructor).
+///
+template<class Value, 
+         class Lock = CNoLock, 
+         class CF   = CResoursePool_NewClassFactory<Value> >
+class CResourcePool : public CResourcePool_Base<Value, Lock, CF>
+{
+public:
+    typedef CResourcePool_Base<Value, Lock, CF> TBase;
+    typedef typename TBase::TValue              TValue;
+    typedef typename TBase::TLock               TLock;
+    typedef typename TBase::TReadLockGuard      TReadLockGuard;
+    typedef typename TBase::TWriteLockGuard     TWriteLockGuard;
+    typedef typename TBase::TClassFactory       TClassFactory;
+    typedef typename TBase::TValuePtr           TValuePtr;
+    typedef typename TBase::TPoolList           TPoolList;
+
+    CResourcePool(size_t capacity_upper_limit = 0,
+                  const TClassFactory& cf     = TClassFactory())
+        : TBase(capacity_upper_limit, cf)
+    {}
+
+protected:
+    CResourcePool(const CResourcePool&);
+    CResourcePool& operator=(const CResourcePool&);
 };
 
 
