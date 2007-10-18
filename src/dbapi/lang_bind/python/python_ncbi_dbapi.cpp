@@ -1908,7 +1908,7 @@ void
 CCursor::SetupParameters(const pythonpp::CDict& dict, CStmtHelper& stmt)
 {
     // Iterate over a dict.
-    ssize_t i = 0;
+    pythonpp::py_ssize_t i = 0;
     PyObject* key;
     PyObject* value;
     while ( PyDict_Next(dict, &i, &key, &value) ) {
@@ -1925,7 +1925,7 @@ void
 CCursor::SetupParameters(const pythonpp::CDict& dict, CCallableStmtHelper& stmt)
 {
     // Iterate over a dict.
-    ssize_t i = 0;
+    pythonpp::py_ssize_t i = 0;
     PyObject* key;
     PyObject* value;
     while ( PyDict_Next(dict, &i, &key, &value) ) {
