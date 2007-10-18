@@ -266,33 +266,35 @@ const CItemInfo* CItemsInfo::FindNextMandatory(const CItemInfo* info)
         _ASSERT(classType);
         const CItemsInfo& items = classType->GetItems();
         TMemberIndex i;
-        for (i = items.FirstIndex(); !found && i <= items.LastIndex(); ++i) {
+        const CItemInfo* found_first = 0;
+        for (i = items.FirstIndex(); i <= items.LastIndex(); ++i) {
 
             const CItemInfo* item = classType->GetItems().GetItemInfo(i);
             const CMemberId& id = item->GetId();
             ETypeFamily item_family = item->GetTypeInfo()->GetTypeFamily();
 
-            if (item_family == eTypeFamilyPointer) {
-                found = FindNextMandatory( item );
-                continue;
-            }
             if (item_family == eTypeFamilyContainer) {
                 if (item->NonEmpty()) {
-                    return FindNextMandatory( item);
+                    found = FindNextMandatory( item );
                 }
+            } else {
+                found = FindNextMandatory( item );
             }
             if (family == eTypeFamilyClass) {
-                const CMemberInfo* mem = dynamic_cast<const CMemberInfo*>(item);
-                if (!mem->Optional()) {
-                    return FindNextMandatory( item);
+                if (found) {
+                    return found;
                 }
-                continue;
-            }
-            if ( id.HasNotag() ) {
-                found = FindNextMandatory( item );
-                continue;
+            } else {
+                if (!found) {
+                    // this is optional choice variant
+                    return 0;
+                }
+                if (!found_first) {
+                    found_first = found;
+                }
             }
         }
+        return found_first;
     }
     return found;
 }

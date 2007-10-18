@@ -790,6 +790,9 @@ void CObjectOStreamXml::CopyStringStore(CObjectIStream& in)
 
 void CObjectOStreamXml::WriteNullPointer(void)
 {
+    if (TopFrame().GetNotag()) {
+        return;
+    }
     OpenTagEndBack();
     SelfCloseTagEnd();
 }
