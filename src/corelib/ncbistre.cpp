@@ -402,7 +402,7 @@ EEncodingForm ReadIntoUtf8(
         return ef_bom;
     }
 
-    const int buf_size = 2048;//256;
+    const int buf_size = 4096;//2048;//256;
     char tmp[buf_size+2];
     Uint2* us = reinterpret_cast<Uint2*>(tmp);
 
@@ -473,6 +473,12 @@ EEncodingForm ReadIntoUtf8(
             break;
         default:
             if (what_if_no_bom == eNoBOM_GuessEncoding) {
+                if (n == bom_max) {
+                    input.read(tmp + n, buf_size - n);
+                    n += input.gcount();
+                    result->reserve(max(result->capacity(), result->size() + n));
+                }
+                tmp[n] = '\0';
                 EEncoding enc = CStringUTF8::GuessEncoding(tmp);
                 switch (enc) {
                 default:
