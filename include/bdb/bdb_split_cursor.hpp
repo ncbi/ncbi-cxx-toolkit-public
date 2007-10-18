@@ -110,6 +110,8 @@ CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::CBDB_SplitCursor(TSplitStore& store)
          FindFiles(m_Files,
                    paths.begin(), paths.end(), masks.begin(), masks.end(),
                    fFF_File);
+
+         LOG_POST(Info << "found " << m_Files.size() << " candidate files");
      }}
 }
 
