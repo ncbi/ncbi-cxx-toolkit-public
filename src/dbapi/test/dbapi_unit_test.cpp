@@ -8676,7 +8676,7 @@ CDBAPIUnitTest::Test_CDB_Object(void)
             CDB_Char value_Char;
             CDB_LongChar value_LongChar;
             CDB_VarBinary value_VarBinary;
-            CDB_Binary value_Binary;
+            CDB_Binary value_Binary(3);
             CDB_LongBinary value_LongBinary;
             CDB_Float value_Float;
             CDB_Double value_Double;
@@ -8750,7 +8750,7 @@ CDBAPIUnitTest::Test_CDB_Object(void)
             CDB_Char value_Char(10);
             CDB_LongChar value_LongChar;
             CDB_VarBinary value_VarBinary;
-            CDB_Binary value_Binary;
+            CDB_Binary value_Binary(3);
             CDB_LongBinary value_LongBinary;
             CDB_Float value_Float;
             CDB_Double value_Double;
