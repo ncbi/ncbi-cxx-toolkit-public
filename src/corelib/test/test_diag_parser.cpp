@@ -276,7 +276,7 @@ void CDiagParserApp::x_CheckMessage(void)
     _ASSERT(msg->m_ErrCode == 123);
     _ASSERT(msg->m_ErrSubCode == 45);
 
-    _ASSERT(msg->GetTime() >= post_time);
+    _ASSERT(msg->GetTime() >= post_time-CTimeSpan(.001));
 
     _ASSERT(CmpStr(msg->m_Class, info.GetClass()));
     _ASSERT(CmpStr(msg->m_Function, info.GetFunction()));
