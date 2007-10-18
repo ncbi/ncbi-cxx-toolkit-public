@@ -67,7 +67,7 @@ public:
     }
 
     static TCoord s_GetDefaultMaxIntron(void) {
-        return 1048575;
+        return 1100000; // NM_147181.3  vs   NC_000004.10
     }
     
     void SetPenalty(TCoord penalty) {
@@ -488,7 +488,11 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                         }
                         subj_space = s0 - phcbox[3] - 1;
 
-                        const TCoord max_gap = 50; // max run of spaces inside an exon
+
+                        // max run of spaces inside an exon
+                        // example: NM_021645.4 vs NC_000013.9: 51.4 - 51.51M
+                        const TCoord max_gap (100);
+
                         good = (subj_space <= int(m_intron_max))
                             && (subj_space + max_gap >= q0 - phcbox[1] - 1)
                             && (s0 < hbox[3] && q0 < hbox[1]);
