@@ -113,7 +113,7 @@ if test "$with_purge" = "yes" ; then
    # Delete previous builds' installation, or whatever else happened
    # to be there...
    rm -rf "$install_dir"
-   mkdir "$install_dir"
+   mkdir -p "$install_dir"
 elif test -r "$install_dir" ; then
    # Must be a directory...
    test -d "$install_dir"  ||  Usage "$install_dir is not a directory"
@@ -136,7 +136,7 @@ elif test -r "$install_dir" ; then
    fi
 else
    # Create new install dir
-   mkdir "$install_dir"  ||  Usage "Cannot create $install_dir"
+   mkdir -p "$install_dir"  ||  Usage "Cannot create $install_dir"
 fi
 
 
