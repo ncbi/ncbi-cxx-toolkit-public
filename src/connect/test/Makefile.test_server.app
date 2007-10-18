@@ -10,3 +10,4 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 REQUIRES = MT
 
 CHECK_CMD =
+CHECK_AUTHORS = kazimird joukovv
