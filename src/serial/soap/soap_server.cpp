@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <serial/soap/soap_server.hpp>
-#include <html/commentdiag.hpp>
 
 #include <serial/objistrxml.hpp>
 #include <serial/objostrxml.hpp>
@@ -115,7 +114,6 @@ int CSoapServerApplication::ProcessRequest(CCgiContext& ctx)
         x_ProcessSoapRequest(response, request);
     }
     response.Flush();
-    SetDiagNode(NULL);
     return 0;
 }
 

@@ -10,7 +10,7 @@ SRC = soap_client_sample
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = soap_dataobj xsoap xcgi xhtml xconnect xser xutil xncbi
+LIB = soap_dataobj xsoap xcgi xconnect xser xutil xncbi
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
 #CHECK_CMD = soap_client_sample
