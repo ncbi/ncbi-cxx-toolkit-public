@@ -1527,7 +1527,7 @@ Seq-feat ::= {
     id gi 2
   }
 }
-Error: Empty region in Seq-align ::= {
+Error: (1204.3) Empty region in Seq-align ::= {
   type partial,
   dim 2,
   segs denseg {
@@ -1547,7 +1547,7 @@ Error: Empty region in Seq-align ::= {
   }
 }
 
-Error: Empty region in Seq-align ::= {
+Error: (1204.3) Empty region in Seq-align ::= {
   type partial,
   dim 2,
   segs denseg {
