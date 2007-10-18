@@ -274,7 +274,7 @@ sub ReadProjectListingFile
         {
             push @Paths, $1
         }
-        else
+        elsif (!m/^\s*-/)
         {
             $AllProjects{$_} = 1;
 
