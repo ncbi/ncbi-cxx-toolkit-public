@@ -941,7 +941,7 @@ extern EIO_Status SOCK_InitializeAPI(void)
     {{
         WSADATA wsadata;
         int x_errno = WSAStartup(MAKEWORD(1,1), &wsadata);
-        if (x_errno != 0) {
+        if (x_errno) {
             CORE_UNLOCK;
             CORE_LOG_ERRNO_EXX(3, eLOG_Error,
                                x_errno, SOCK_STRERROR(x_errno),
@@ -4879,8 +4879,13 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
         if ((x_errno = getnameinfo((struct sockaddr*) &addr, sizeof(addr),
                                    name, namelen, 0, 0, 0)) != 0  ||  !*name) {
             if (SOCK_ntoa(host, name, namelen) != 0) {
-                if (!x_errno)
+                if (!x_errno) {
+#ifdef ENOSPC
+                    x_errno = ENOSPC;
+#else
                     x_errno = ERANGE;
+#endif /*ENOSPC*/
+                }
                 name[0] = '\0';
                 name = 0;
             }
@@ -4934,7 +4939,11 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 
         if (!he  ||  strlen(he->h_name) >= namelen) {
             if (he  ||  SOCK_ntoa(host, name, namelen) != 0) {
+#ifdef ENOSPC
+                x_errno = ENOSPC;
+#else
                 x_errno = ERANGE;
+#endif /*ENOSPC*/
                 name[0] = '\0';
                 name = 0;
             }
