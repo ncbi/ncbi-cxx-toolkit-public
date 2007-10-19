@@ -4611,37 +4611,29 @@ extern int SOCK_ntoa(unsigned int host,
 
 extern int/*bool*/ SOCK_isip(const char* host)
 {
-    return SOCK_isipEx(host, strlen(host));
-}
-
-
-extern int/*bool*/ SOCK_isipEx(const char* host, size_t len)
-{
-    const char* dot = 0;
+    const char* c = host;
+    unsigned long val;
     int dots = 0;
-    size_t i;
 
-    if (len > 15)
-        return 0/*longer than the longest 255.255.255.255*/;
-    for (i = 0;  i < len;  i++) {
-        if (host[i] == '.') {
-            size_t n;
-            char* e;
-            long v;
-            if (i == 0  ||  ++dots > 3)
-                return 0/*false*/;
-            n = (size_t)(&host[i] - (dot ? dot : host - 1));
-            if (n <= 1  ||  n > 4)
-                return 0/*false*/;
-            errno = 0;
-            v = strtol(dot ? dot + 1 : host, &e, 0);
-            if (errno  ||  e != &host[i]  ||  v < 0  ||  v > 255)
-                return 0/*false*/;
-            dot = &host[i];
-        } else if (!isdigit((unsigned char) host[i]))
+    for (;;) {
+        char* e;
+        if (!isdigit((unsigned char)(*c)))
             return 0/*false*/;
+        errno = 0;
+        val = strtoul(c, &e, 0);
+        if (c == e  ||  errno)
+            return 0/*false*/;
+        c = e;
+        if (*c != '.')
+            break;
+        if (++dots > 3)
+            return 0/*false*/;
+        if (val > 255)
+            return 0/*false*/;
+        c++;
     }
-    return !(dots < 3);
+
+    return !*c  &&  val <= (0xFFFFFFFFUL >> (dots << 3));
 }
 
 

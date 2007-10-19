@@ -736,7 +736,7 @@ static const char* s_ntoa(unsigned int host)
 }
 
 
-static int/*bool*/ TEST_gethostbyname(const char* name)
+static unsigned int TEST_gethostbyname(const char* name)
 {
     char         buf[256];
     unsigned int host;
@@ -745,23 +745,21 @@ static int/*bool*/ TEST_gethostbyname(const char* name)
 
     host = SOCK_gethostbyname(name);
     fprintf(log_fp, "SOCK_gethostbyname(\"%s\"):  0x%08X [%s]\n",
-            name, (unsigned int) host, s_ntoa(host));
-    if ( !host ) {
-        return 0/*false*/;
+            name, (unsigned int) SOCK_NetToHostLong(host), s_ntoa(host));
+    if ( host ) {
+        name = SOCK_gethostbyaddr(host, buf, sizeof(buf));
+        if ( name ) {
+            assert(name == buf);
+            assert(0 < strlen(buf)  &&  strlen(buf) < sizeof(buf));
+            fprintf(log_fp, "SOCK_gethostbyaddr(0x%08X [%s]):  \"%s\"\n",
+                    (unsigned int) SOCK_NetToHostLong(host), s_ntoa(host),
+                    name);
+        } else {
+            fprintf(log_fp, "SOCK_gethostbyaddr(0x%08X [%s]):  <not found>\n",
+                    (unsigned int) SOCK_NetToHostLong(host), s_ntoa(host));
+        }
     }
-      
-    name = SOCK_gethostbyaddr(host, buf, sizeof(buf));
-    if ( name ) {
-        assert(name == buf);
-        assert(0 < strlen(buf)  &&  strlen(buf) < sizeof(buf));
-        fprintf(log_fp, "SOCK_gethostbyaddr(0x%08X [%s]):  \"%s\"\n",
-                (unsigned int) host, s_ntoa(host), name);
-    } else {
-        fprintf(log_fp, "SOCK_gethostbyaddr(0x%08X [%s]):  <not found>\n",
-                (unsigned int) host, s_ntoa(host));
-    }
-
-    return 1/*true*/;
+    return host;
 }
 
 
@@ -770,23 +768,23 @@ static int/*bool*/ TEST_gethostbyaddr(unsigned int host)
     const char*  name;
     char         buf[1024];
 
-    fprintf(log_fp, "- - - - - - -\n");
+    fprintf(log_fp, "------------\n");
 
     name = SOCK_gethostbyaddr(host, buf, sizeof(buf));
     if ( name ) {
         assert(name == buf);
         assert(0 < strlen(buf)  &&  strlen(buf) < sizeof(buf));
         fprintf(log_fp, "SOCK_gethostbyaddr(0x%08X [%s]):  \"%s\"\n",
-                (unsigned int) host, s_ntoa(host), name);
+                (unsigned int) SOCK_NetToHostLong(host), s_ntoa(host), name);
     } else {
         fprintf(log_fp, "SOCK_gethostbyaddr(0x%08X [%s]):  <not found>\n",
-                (unsigned int) host, s_ntoa(host));
+                (unsigned int) SOCK_NetToHostLong(host), s_ntoa(host));
         return 0/*false*/;
     }
 
     host = SOCK_gethostbyname(name);
     fprintf(log_fp, "SOCK_gethostbyname(\"%s\"):  0x%08X [%s]\n",
-            name, (unsigned int) host, s_ntoa(host));
+            name, (unsigned int) SOCK_NetToHostLong(host), s_ntoa(host));
       
     return 1/*true*/;
 }
@@ -805,8 +803,6 @@ static void TEST_gethostby(void)
     assert( !TEST_gethostbyname("a1....b1") );
     assert( !TEST_gethostbyname("boo.foo.bar.doo") );
 
-    fprintf(log_fp, "\n++++++++++++++++++++++\n");
-
     (void) TEST_gethostbyname("localhost");
     (void) TEST_gethostbyname("ncbi.nlm.nih.gov");
 
@@ -822,6 +818,58 @@ static void TEST_gethostby(void)
     fprintf(log_fp, "\n===============================\n");
 }
 
+
+static int/*bool*/ TEST_isip(const char* ip)
+{
+    int retval = SOCK_isip(ip);
+
+    fprintf(log_fp, "------------\n");
+    
+    fprintf(log_fp, "SOCK_isip(\"%s\"):  %s\n", ip, retval ? "True" : "False");
+
+    return retval;
+}
+
+
+
+/* Try SOCK_isip()
+ */
+static void TEST_SOCK_isip(void)
+{
+    fprintf(log_fp, "\n===============================\n");
+
+    assert(TEST_isip("0")  &&  TEST_isip("0.0.0.0"));
+    assert(TEST_gethostbyname("0") == 0);
+    assert(TEST_isip("1"));
+    assert(TEST_gethostbyname("1") == SOCK_HostToNetLong(1));
+    assert(TEST_isip("0x7F000002"));
+    assert(TEST_gethostbyname("0x7F000002") ==
+           TEST_gethostbyname("127.0.0.2"));
+    assert(TEST_isip("127.234"));
+    assert(TEST_gethostbyname("127.234") ==
+           TEST_gethostbyname("127.0.0.234"));
+    assert(TEST_isip("127.234.345"));
+    assert(TEST_gethostbyname("127.234.345") ==
+           TEST_gethostbyname("127.234.1.89"));
+    assert(TEST_isip("127.012344321"));
+    assert(TEST_gethostbyname("127.012344321") ==
+           TEST_gethostbyname("127.41.200.209"));
+    assert(TEST_isip("127.234.0x1234"));
+    assert(TEST_isip("127.123.234.123"));
+    assert(TEST_isip("255.255.255.255"));
+    assert(!TEST_isip("a"));
+    assert(!TEST_isip("-1"));
+    assert(!TEST_isip("1.2.3a"));
+    assert(!TEST_isip("1.2.3.259"));
+    assert(!TEST_isip("1.2.128000"));
+    assert(!TEST_isip("1.1.1.1."));
+    assert(!TEST_isip("1.1.-1.1"));
+    assert(!TEST_isip("1.0x100.1.1"));
+    assert(!TEST_isip("1.0100000000"));
+    assert(!TEST_isip("0x100000000"));
+
+    fprintf(log_fp, "\n===============================\n");
+}
 
 
 /* Main function
@@ -919,6 +967,8 @@ extern int main(int argc, char** argv)
 #endif /* DO_CLIENT */
 
         TEST_gethostby();
+
+        TEST_SOCK_isip();
 
         TEST__client(server_host, (unsigned short)server_port, timeout);
         assert(SOCK_ShutdownAPI() == eIO_Success);
