@@ -722,28 +722,6 @@ sub Svn
             $BranchPath)->{BranchPaths}})
 }
 
-sub Switch
-{
-    my ($Self, $BranchPath, $Parent) = @_;
-
-    my $RootURL = $Self->{SVN}->GetRootURL() ||
-        die "$Self->{MyName}: not in a working copy\n";
-
-    my $BranchInfo =
-        NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath);
-
-    my $TargetPath = $Parent ? $BranchInfo->{UpstreamPath} : $BranchPath;
-
-    print STDERR "Switching to '$TargetPath'...\n";
-
-    my $BaseURL = "$RootURL/$TargetPath/";
-
-    for (@{$BranchInfo->{BranchPaths}})
-    {
-        $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
-    }
-}
-
 sub GetWorkingCopyInfo
 {
     my ($Self, $BranchPath) = @_;
@@ -855,54 +833,21 @@ sub GetWorkingCopyInfo
         \@MissingBranchPaths, \@MissingTree, \@ObsoletePaths, $WorkingDirPath)
 }
 
-sub Update
+sub DoUpdateAndSwitch
 {
-    my ($Self, $BranchPath) = @_;
-
-    my ($RootURL, $BranchInfo,
-        $SwitchedToBranch, $SwitchedToParent, $IncorrectlySwitched,
-        $MissingBranchPaths, $MissingTree, $ObsoletePaths, $WorkingDirPath) =
-            $Self->GetWorkingCopyInfo($BranchPath);
-
-    print STDERR "Updating working copy directories of '$BranchPath'...\n";
+    my ($Self, $TargetPath, $RootURL, $PathsToUpdate, $PathsToSwtich,
+        $IncorrectlySwitched, $MissingBranchPaths, $MissingTree,
+        $ObsoletePaths, $WorkingDirPath) = @_;
 
     $Self->{SVN}->RunSubversion('update', '-N', @$MissingTree) if @$MissingTree;
 
-    my $BaseURL;
-    my @PathsToSwtich;
+    $Self->{SVN}->RunSubversion('update', @$PathsToUpdate) if @$PathsToUpdate;
 
-    if (@$SwitchedToBranch)
+    my $BaseURL = "$RootURL/$TargetPath/";
+
+    for (@$PathsToSwtich, @$IncorrectlySwitched, @$MissingBranchPaths)
     {
-        $Self->{SVN}->RunSubversion('update', @$SwitchedToBranch);
-
-        $BaseURL = "$RootURL/$BranchPath/";
-
-        @PathsToSwtich = (@$SwitchedToParent,
-            @$IncorrectlySwitched, @$MissingBranchPaths)
-    }
-    elsif (@$SwitchedToParent)
-    {
-        $Self->{SVN}->RunSubversion('update', @$SwitchedToParent);
-
-        $BaseURL = "$RootURL/$BranchInfo->{UpstreamPath}/";
-
-        @PathsToSwtich = (@$IncorrectlySwitched, @$MissingBranchPaths)
-    }
-    else
-    {
-        warn "WARNING: unable to determine how this working copy relates to\n" .
-            "'$BranchPath' - no switching will be done.\n";
-
-        $Self->{SVN}->RunSubversion('update',
-            @$IncorrectlySwitched, @$MissingBranchPaths)
-    }
-
-    if (@PathsToSwtich)
-    {
-        for (@PathsToSwtich)
-        {
-            $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
-        }
+        $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
     }
 
     if (@$ObsoletePaths)
@@ -915,6 +860,62 @@ sub Update
                 $BaseURL . $ObsoletePath, $ObsoletePath)
         }
     }
+}
+
+sub Switch
+{
+    my ($Self, $BranchPath, $Parent) = @_;
+
+    my ($RootURL, $BranchInfo,
+        $SwitchedToBranch, $SwitchedToParent, $IncorrectlySwitched,
+        $MissingBranchPaths, $MissingTree, $ObsoletePaths, $WorkingDirPath) =
+            $Self->GetWorkingCopyInfo($BranchPath);
+
+    my ($TargetPath, $PathsToUpdate, $PathsToSwtich) = $Parent ?
+        ($BranchInfo->{UpstreamPath}, $SwitchedToParent, $SwitchedToBranch) :
+        ($BranchPath, $SwitchedToBranch, $SwitchedToParent);
+
+    print STDERR "Switching to '$TargetPath'...\n";
+
+    $Self->DoUpdateAndSwitch($TargetPath, $RootURL, $PathsToUpdate, $PathsToSwtich,
+        $IncorrectlySwitched, $MissingBranchPaths, $MissingTree,
+        $ObsoletePaths, $WorkingDirPath)
+}
+
+sub Update
+{
+    my ($Self, $BranchPath) = @_;
+
+    my ($RootURL, $BranchInfo,
+        $SwitchedToBranch, $SwitchedToParent, $IncorrectlySwitched,
+        $MissingBranchPaths, $MissingTree, $ObsoletePaths, $WorkingDirPath) =
+            $Self->GetWorkingCopyInfo($BranchPath);
+
+    my $TargetPath;
+    my $PathsToUpdate;
+    my @PathsToSwtich;
+
+    if (@$SwitchedToBranch)
+    {
+        $TargetPath = $BranchPath;
+        $PathsToUpdate = $SwitchedToBranch;
+        @PathsToSwtich = @$SwitchedToParent
+    }
+    elsif (@$SwitchedToParent)
+    {
+        $TargetPath = $BranchInfo->{UpstreamPath};
+        $PathsToUpdate = $SwitchedToParent
+    }
+    else
+    {
+        die "$Self->{MyName}: unable to find a check-out of '$BranchPath'.\n"
+    }
+
+    print STDERR "Updating working copy directories of '$BranchPath'...\n";
+
+    $Self->DoUpdateAndSwitch($TargetPath, $RootURL, $PathsToUpdate, \@PathsToSwtich,
+        $IncorrectlySwitched, $MissingBranchPaths, $MissingTree,
+        $ObsoletePaths, $WorkingDirPath)
 }
 
 1
