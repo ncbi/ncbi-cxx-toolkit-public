@@ -845,23 +845,37 @@ static void TEST_SOCK_isip(void)
     assert(TEST_isip("0x7F000002"));
     assert(TEST_gethostbyname("0x7F000002") ==
            TEST_gethostbyname("127.0.0.2"));
+
     assert(TEST_isip("127.234"));
     assert(TEST_gethostbyname("127.234") ==
            TEST_gethostbyname("127.0.0.234"));
-    assert(TEST_isip("127.234.345"));
-    assert(TEST_gethostbyname("127.234.345") ==
-           TEST_gethostbyname("127.234.1.89"));
+    assert(TEST_isip("127.16777215"));
+    assert(TEST_gethostbyname("127.16777215") ==
+           TEST_gethostbyname("127.255.255.255"));
+
+    assert(TEST_isip("127.234.0x345"));
+    assert(TEST_gethostbyname("127.234.3.69") ==
+           TEST_gethostbyname("127.234.3.69"));
+    assert(TEST_isip("127.234.0xFFFF"));
+    assert(TEST_gethostbyname("127.234.0xFFFF") ==
+           TEST_gethostbyname("127.234.255.255"));
+
     assert(TEST_isip("127.012344321"));
     assert(TEST_gethostbyname("127.012344321") ==
            TEST_gethostbyname("127.41.200.209"));
-    assert(TEST_isip("127.234.0x1234"));
-    assert(TEST_isip("127.123.234.123"));
+    assert(TEST_isip("127.077777777"));
+    assert(TEST_gethostbyname("127.077777777") ==
+           TEST_gethostbyname("127.255.255.255"));
+
+    assert(TEST_isip("0.0321.0xAB.123"));
     assert(TEST_isip("255.255.255.255"));
+
     assert(!TEST_isip("a"));
     assert(!TEST_isip("-1"));
     assert(!TEST_isip("1.2.3a"));
-    assert(!TEST_isip("1.2.3.259"));
-    assert(!TEST_isip("1.2.128000"));
+    assert(!TEST_isip("1.0xDEATH"));
+    assert(!TEST_isip("1.2.3.256"));
+    assert(!TEST_isip("1.2.0200000"));
     assert(!TEST_isip("1.1.1.1."));
     assert(!TEST_isip("1.1.-1.1"));
     assert(!TEST_isip("1.0x100.1.1"));
