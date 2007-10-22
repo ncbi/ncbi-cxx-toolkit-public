@@ -270,7 +270,6 @@ const CItemInfo* CItemsInfo::FindNextMandatory(const CItemInfo* info)
         for (i = items.FirstIndex(); i <= items.LastIndex(); ++i) {
 
             const CItemInfo* item = classType->GetItems().GetItemInfo(i);
-            const CMemberId& id = item->GetId();
             ETypeFamily item_family = item->GetTypeInfo()->GetTypeFamily();
 
             if (item_family == eTypeFamilyContainer) {
