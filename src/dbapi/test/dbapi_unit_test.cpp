@@ -11355,12 +11355,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 PutMsgDisabled("Test_Cursor2");
             }
 
-            /*
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor_Param,
-                                       DBAPIInstance);
-            tc->depends_on(tc_cursor);
-            add(tc);
-             */
+
+            if (args.GetDriverName() != "ftds") {
+                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor_Param,
+                        DBAPIInstance);
+                tc->depends_on(tc_cursor);
+                add(tc);
+            } else {
+                PutMsgDisabled("Test_Cursor_Param");
+            }
 
             // Does not work with all databases and drivers currently ...
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB,
