@@ -323,7 +323,7 @@ public:
     }
 
     template<class Func>
-    void ForEach(Func func) {
+    Func ForEach(Func func) {
         x_Rebalance();
         CReadLockGuard g(m_ServersLock);
         TServers servers_copy(m_Servers);
@@ -333,6 +333,7 @@ public:
             CNetServerConnector& conn = (CNetServerConnector&)h;
             func(conn);
         }
+        return func;
     }
 
     void DiscoverLowPriorityServers(ESwitch on_off); 

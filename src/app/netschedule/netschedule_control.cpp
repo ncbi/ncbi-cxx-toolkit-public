@@ -226,14 +226,20 @@ private:
     CNcbiOstream& m_Os;
 };
 
-
 int CNetScheduleControl::Run(void)
 {
-
-    //    NSClient client("ns_test", "netschedule_admin", "sample");
-    //    client.PrintStatistics(cout);
-
-    //    return 0;
+    /*
+    auto_ptr<CNetScheduleAPI> cl(x_CreateNewClient(true));
+    CNetScheduleAdmin admin = cl->GetAdmin();
+    typedef CNetScheduleKeys<> TNSKeys;
+    TNSKeys keys;
+    admin.RetrieveKeys("status=done", keys);
+ 
+    for (TNSKeys::const_iterator it = keys.begin(); it != keys.end(); ++it) {
+         cout << string(*it) << endl;
+    }
+    return 0;
+    */
 
     const CArgs& args = GetArgs();
     CNcbiOstream& os = NcbiCout;

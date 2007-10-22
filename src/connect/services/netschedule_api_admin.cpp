@@ -300,9 +300,9 @@ struct SNSJobCounter : public SNSSendCmd
         m_Cmd = "QERY ";
         m_Cmd.append("\"");
         m_Cmd.append(NStr::PrintableString(query));
-        m_Cmd.append("\" COUNT\r\n");
+        m_Cmd.append("\" COUNT");
     }
-    virtual void ProcessResponce(const string& resp, CNetServerConnector&)
+    virtual void ProcessResponse(const string& resp, CNetServerConnector&)
     {
         m_Counter += NStr::StringToULong(resp);
     }
@@ -311,8 +311,7 @@ struct SNSJobCounter : public SNSSendCmd
 
 unsigned long CNetScheduleAdmin::Count(const string& query) const
 {
-    SNSJobCounter counter(*m_API, query);
-    m_API->GetConnector().ForEach(counter);
+    SNSJobCounter counter = m_API->GetConnector().ForEach(SNSJobCounter(*m_API, query));
     return counter.m_Counter;
     /*
     unsigned long count = 0;
@@ -404,27 +403,27 @@ void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os) cons
 
 struct SNSJobIDsGetter : public SNSSendCmd
 {
-    SNSJobIDsGetter(const CNetScheduleAPI& api, const string query, CNetScheduleAdmin::TIDsMap& ids_map)
-        : SNSSendCmd(api, "", 0), m_Counter(0), m_IDsMap(ids_map)
+    SNSJobIDsGetter(const CNetScheduleAPI& api, const string query)
+        : SNSSendCmd(api, "", 0), m_Counter(0)
     {
         m_Cmd = "QERY ";
         m_Cmd.append("\"");
         m_Cmd.append(NStr::PrintableString(query));
-        m_Cmd.append("\" IDS\r\n");
+        m_Cmd.append("\" IDS");
     }
-    virtual void ProcessResponce(const string& resp, CNetServerConnector& conn)
+    virtual void ProcessResponse(const string& resp, CNetServerConnector& conn)
     {
         string ip_addr = CSocketAPI::ntoa(CSocketAPI::gethostbyname(conn.GetHost()));
         m_IDsMap[CNetScheduleAdmin::TIDsMap::key_type(ip_addr, conn.GetPort())] = resp;
     }
     unsigned long m_Counter;
-    CNetScheduleAdmin::TIDsMap& m_IDsMap;
+    CNetScheduleAdmin::TIDsMap m_IDsMap;
 };
 
 CNetScheduleAdmin::TIDsMap CNetScheduleAdmin::x_QueueIDs(const string& query) const
 {
-    TIDsMap ret;
-    m_API->GetConnector().ForEach(SNSJobIDsGetter(*m_API, query, ret));
+    SNSJobIDsGetter getter = m_API->GetConnector().ForEach(SNSJobIDsGetter(*m_API, query));
+    return getter.m_IDsMap;
     /*
     string cmd = "QERY ";
     cmd.append("\"");
@@ -439,7 +438,6 @@ CNetScheduleAdmin::TIDsMap CNetScheduleAdmin::x_QueueIDs(const string& query) co
         ret[TIDsMap::key_type(ip_addr, ch->GetPort())] = resp;
     }
     */
-    return ret;
 }
 
 END_NCBI_SCOPE

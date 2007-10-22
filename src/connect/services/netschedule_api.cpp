@@ -292,6 +292,7 @@ struct SNetScheduleParamsGetter
 
 const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams() const
 {
+    CFastMutexGuard g(m_ServerParamsMutex);
     if (m_ServerParams.get() && m_ServerParamsAskCount-- > 0) {
         return *m_ServerParams;
     }

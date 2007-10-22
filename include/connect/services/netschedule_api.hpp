@@ -244,6 +244,7 @@ private:
 
     mutable auto_ptr<SServerParams> m_ServerParams;
     mutable long m_ServerParamsAskCount;
+    mutable CFastMutex m_ServerParamsMutex;
 };
 
 
