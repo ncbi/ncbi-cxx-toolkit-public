@@ -348,30 +348,35 @@ do {                                                                     \
      LOG_WRITE_ERRNO_EX(lg, code, subcode, level, message, errno, 0)
 
 
-// Several defines brought here from ncbidiag.hpp. Names of macros slightly
-// changed (added _C) because some sources include this header and
-// ncbidiag.hpp simultaneously
+/* Several defines brought here from ncbidiag.hpp. Names of macros slightly
+ * changed (added _C) because some sources include this header and
+ * ncbidiag.hpp simultaneously
+ */
 
-/// Defines global error code name with given value (err_code)
+/** Defines global error code name with given value (err_code)
+ */
 #define NCBI_C_DEFINE_ERRCODE_X(name, err_code, max_err_subcode)        \
     enum enum##name {                                                   \
         eErrCodeX_##name = err_code                                     \
         /* automatic subcode checking is not implemented in C code */   \
     }
 
-/// Makes one identifier from 2 parts
+/** Makes one identifier from 2 parts
+ */
 #define NCBI_C_CONCAT_IDENTIFIER(prefix, postfix) prefix##postfix
 
-/// Returns value of error code by its name defined by NCBI_DEFINE_ERRCODE_X
-///
-/// @sa NCBI_C_DEFINE_ERRCODE_X
+/** Returns value of error code by its name defined by NCBI_DEFINE_ERRCODE_X
+ *
+ * @sa NCBI_C_DEFINE_ERRCODE_X
+ */
 #define NCBI_C_ERRCODE_X_NAME(name)   \
     NCBI_C_CONCAT_IDENTIFIER(eErrCodeX_, name)
 
-/// Returns currently set default error code. Default error code is set by
-/// definition of NCBI_USE_ERRCODE_X with name of error code as its value.
-///
-/// @sa NCBI_DEFINE_ERRCODE_X
+/** Returns currently set default error code. Default error code is set by
+ *  definition of NCBI_USE_ERRCODE_X with name of error code as its value.
+ *
+ * @sa NCBI_DEFINE_ERRCODE_X
+ */
 #define NCBI_C_ERRCODE_X   NCBI_C_ERRCODE_X_NAME(NCBI_USE_ERRCODE_X)
 
 
