@@ -1,3 +1,4 @@
+--$Revision$
 --  ----------------------------------------------------------------------------
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -35,8 +36,6 @@ EXPORTS
     SeqTable-column-info, SeqTable-column, Seq-table;
     
 IMPORTS
-    Object-id                       FROM NCBI-General
-    Annotdesc                       FROM NCBI-Sequence
     Seq-id, Seq-loc, Seq-interval   FROM NCBI-Seqloc;
 
 
