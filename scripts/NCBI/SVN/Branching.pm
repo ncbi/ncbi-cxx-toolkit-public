@@ -11,6 +11,7 @@ use File::Temp qw/tempfile/;
 
 use NCBI::SVN::Branching::Util;
 use NCBI::SVN::Branching::BranchInfo;
+use NCBI::SVN::Branching::WorkingCopyInfo;
 use NCBI::SVN::Wrapper;
 
 sub List
@@ -722,122 +723,12 @@ sub Svn
             $BranchPath)->{BranchPaths}})
 }
 
-sub GetWorkingCopyInfo
-{
-    my ($Self, $BranchPath) = @_;
-
-    my $WorkingDirInfo = $Self->{SVN}->ReadInfo('.')->{'.'};
-
-    my $RootURL = $WorkingDirInfo && $WorkingDirInfo->{Root} ||
-        die "$Self->{MyName}: not in a working copy\n";
-
-    my $BranchInfo =
-        NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath);
-
-    my ($BranchPaths, $UpstreamPath, $ObsoleteBranchPaths) =
-        @$BranchInfo{qw(BranchPaths UpstreamPath ObsoleteBranchPaths)};
-
-    my @ExistingBranchPaths;
-    my @MissingBranchPaths;
-
-    for my $Path (@$BranchPaths)
-    {
-        if (-e $Path)
-        {
-            push @ExistingBranchPaths, $Path
-        }
-        else
-        {
-            push @MissingBranchPaths, $Path
-        }
-    }
-
-    my @ExistingObsoletePaths;
-
-    if ($ObsoleteBranchPaths)
-    {
-        for my $Path (reverse @$ObsoleteBranchPaths)
-        {
-            push @ExistingObsoletePaths, $Path if -e $Path
-        }
-    }
-
-    my $ExistingPathInfo =
-        $Self->{SVN}->ReadInfo(@ExistingBranchPaths, @ExistingObsoletePaths);
-
-    my @SwitchedToBranch;
-    my @SwitchedToParent;
-    my @IncorrectlySwitched;
-
-    for my $Path (@ExistingBranchPaths)
-    {
-        my $Info = delete $ExistingPathInfo->{$Path};
-
-        unless ($Info)
-        {
-            push @MissingBranchPaths, $Path
-        }
-        elsif ($Info->{Path} eq "$BranchPath/$Path")
-        {
-            push @SwitchedToBranch, $Path
-        }
-        elsif ($Info->{Path} eq "$UpstreamPath/$Path")
-        {
-            push @SwitchedToParent, $Path
-        }
-        else
-        {
-            push @IncorrectlySwitched, $Path
-        }
-    }
-
-    my @MissingTree;
-
-    if (@MissingBranchPaths)
-    {
-        my %MissingTree;
-
-        for my $MissingPath (@MissingBranchPaths)
-        {
-            my $Path = '.';
-            my $PathStillExists = 1;
-            my $Tree = \%MissingTree;
-
-            for my $PathComponent (split('/', $MissingPath))
-            {
-                $Tree = ($Tree->{$PathComponent} ||= {});
-
-                $Tree->{'/'} = 1 unless $PathStillExists &&=
-                    -e ($Path .= '/' . $PathComponent)
-            }
-        }
-
-        @MissingTree =
-            sort @{NCBI::SVN::Branching::Util::FindPathsInTree(\%MissingTree)}
-    }
-
-    my $WorkingDirPath = $WorkingDirInfo->{Path};
-
-    my @ObsoletePaths;
-
-    while (my ($Path, $Info) = each %$ExistingPathInfo)
-    {
-        if ($Info->{Path} eq "$BranchPath/$Path")
-        {
-            push @ObsoletePaths, $Path
-        }
-    }
-
-    return ($RootURL, $BranchInfo,
-        \@SwitchedToBranch, \@SwitchedToParent, \@IncorrectlySwitched,
-        \@MissingBranchPaths, \@MissingTree, \@ObsoletePaths, $WorkingDirPath)
-}
-
 sub DoUpdateAndSwitch
 {
-    my ($Self, $TargetPath, $RootURL, $PathsToUpdate, $PathsToSwtich,
-        $IncorrectlySwitched, $MissingBranchPaths, $MissingTree,
-        $ObsoletePaths, $WorkingDirPath) = @_;
+    my ($Self, $WorkingCopyInfo, $TargetPath,
+        $PathsToUpdate, $PathsToSwtich) = @_;
+
+    my ($RootURL, $MissingTree) = @$WorkingCopyInfo{qw(RootURL MissingTree)};
 
     $Self->{SVN}->RunSubversion('update', '-N', @$MissingTree) if @$MissingTree;
 
@@ -845,20 +736,18 @@ sub DoUpdateAndSwitch
 
     my $BaseURL = "$RootURL/$TargetPath/";
 
-    for (@$PathsToSwtich, @$IncorrectlySwitched, @$MissingBranchPaths)
+    for (@$PathsToSwtich,
+        @{$WorkingCopyInfo->{IncorrectlySwitched}},
+        @{$WorkingCopyInfo->{MissingBranchPaths}})
     {
         $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
     }
 
-    if (@$ObsoletePaths)
-    {
-        $BaseURL = "$RootURL/$WorkingDirPath/";
+    $BaseURL = "$RootURL/$WorkingCopyInfo->{WorkingDirPath}/";
 
-        for my $ObsoletePath (@$ObsoletePaths)
-        {
-            $Self->{SVN}->RunSubversion('switch',
-                $BaseURL . $ObsoletePath, $ObsoletePath)
-        }
+    for (@{$WorkingCopyInfo->{ObsoletePaths}})
+    {
+        $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
     }
 }
 
@@ -866,45 +755,44 @@ sub Switch
 {
     my ($Self, $BranchPath, $Parent) = @_;
 
-    my ($RootURL, $BranchInfo,
-        $SwitchedToBranch, $SwitchedToParent, $IncorrectlySwitched,
-        $MissingBranchPaths, $MissingTree, $ObsoletePaths, $WorkingDirPath) =
-            $Self->GetWorkingCopyInfo($BranchPath);
+    my $WorkingCopyInfo =
+        NCBI::SVN::Branching::WorkingCopyInfo->new($BranchPath);
 
-    my ($TargetPath, $PathsToUpdate, $PathsToSwtich) = $Parent ?
-        ($BranchInfo->{UpstreamPath}, $SwitchedToParent, $SwitchedToBranch) :
-        ($BranchPath, $SwitchedToBranch, $SwitchedToParent);
+    my $TargetPath = $Parent ?
+        $WorkingCopyInfo->{BranchInfo}->{UpstreamPath} : $BranchPath;
 
     print STDERR "Switching to '$TargetPath'...\n";
 
-    $Self->DoUpdateAndSwitch($TargetPath, $RootURL, $PathsToUpdate, $PathsToSwtich,
-        $IncorrectlySwitched, $MissingBranchPaths, $MissingTree,
-        $ObsoletePaths, $WorkingDirPath)
+    $Self->DoUpdateAndSwitch($WorkingCopyInfo, $TargetPath,
+        @$WorkingCopyInfo{$Parent ? qw(SwitchedToParent SwitchedToBranch) :
+            qw(SwitchedToBranch SwitchedToParent)})
 }
 
 sub Update
 {
     my ($Self, $BranchPath) = @_;
 
-    my ($RootURL, $BranchInfo,
-        $SwitchedToBranch, $SwitchedToParent, $IncorrectlySwitched,
-        $MissingBranchPaths, $MissingTree, $ObsoletePaths, $WorkingDirPath) =
-            $Self->GetWorkingCopyInfo($BranchPath);
+    my $WorkingCopyInfo =
+        NCBI::SVN::Branching::WorkingCopyInfo->new($BranchPath);
+
+    my ($SwitchedToBranch, $SwitchedToParent) =
+        @$WorkingCopyInfo{qw(SwitchedToBranch SwitchedToParent)};
 
     my $TargetPath;
     my $PathsToUpdate;
-    my @PathsToSwtich;
+    my $PathsToSwtich;
 
     if (@$SwitchedToBranch)
     {
         $TargetPath = $BranchPath;
         $PathsToUpdate = $SwitchedToBranch;
-        @PathsToSwtich = @$SwitchedToParent
+        $PathsToSwtich = $SwitchedToParent
     }
     elsif (@$SwitchedToParent)
     {
-        $TargetPath = $BranchInfo->{UpstreamPath};
-        $PathsToUpdate = $SwitchedToParent
+        $TargetPath = $WorkingCopyInfo->{BranchInfo}->{UpstreamPath};
+        $PathsToUpdate = $SwitchedToParent;
+        $PathsToSwtich = []
     }
     else
     {
@@ -913,9 +801,8 @@ sub Update
 
     print STDERR "Updating working copy directories of '$BranchPath'...\n";
 
-    $Self->DoUpdateAndSwitch($TargetPath, $RootURL, $PathsToUpdate, \@PathsToSwtich,
-        $IncorrectlySwitched, $MissingBranchPaths, $MissingTree,
-        $ObsoletePaths, $WorkingDirPath)
+    $Self->DoUpdateAndSwitch($WorkingCopyInfo, $TargetPath,
+        $PathsToUpdate, $PathsToSwtich)
 }
 
 1
