@@ -242,6 +242,8 @@ sub ShapeBranch
         {
             $UpstreamPath = $BranchInfo->{UpstreamPath};
 
+            $SourceRevision ||= $BranchInfo->{LastDownSyncRevisionNumber};
+
             for my $Path (@BranchPaths)
             {
                 unless (delete $OldBranchPaths{$Path})
@@ -251,8 +253,7 @@ sub ShapeBranch
 
                     MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
                     push @MUCCCommands, 'cp',
-                        $BranchInfo->{LastDownSyncRevisionNumber},
-                            $SourcePath, $TargetPath
+                        $SourceRevision, $SourcePath, $TargetPath
                 }
             }
 
@@ -426,10 +427,10 @@ sub Alter
 
 sub Grow
 {
-    my ($Self, $RootURL, $BranchPath, @BranchPaths) = @_;
+    my ($Self, $RootURL, $BranchPath, $SourceRev, @BranchPaths) = @_;
 
     $Self->ShapeBranch('grow', undef, $RootURL,
-        $BranchPath, undef, undef, @BranchPaths)
+        $BranchPath, undef, $SourceRev, @BranchPaths)
 }
 
 sub Truncate

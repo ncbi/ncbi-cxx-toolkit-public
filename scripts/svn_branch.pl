@@ -57,7 +57,8 @@ EOF
 EOF
 
     ['revision|rev|r=i', revision => \$Revision,
-        {create => 1, merge_down_into => 1, merge_up_from => 1}, <<'EOF'],
+        {create => 1, grow => 1,
+            merge_down_into => 1, merge_up_from => 1}, <<'EOF'],
   -r [--revision] arg   : Source revision number (HEAD by default).
 EOF
 
@@ -172,8 +173,9 @@ Usage: $ScriptName grow BRANCH_PATH [BRANCH_ELEMENT ...]
 This command adds more branch elements (directories and/or files) by
 copying them from the parent path.
 
-Note that the source revision of the latest 'create' or 'merge_down_into'
-revision will be used for this 'grow' operation.
+Note that unless overridden by the --revision option, the source
+revision of the latest 'create' or 'merge_down_into' revision
+will be used for this 'grow' operation.
 
 Example:
     $ScriptName grow app_new_gui doc/gui
@@ -562,7 +564,8 @@ elsif ($Command eq 'grow')
 {
     my $BranchPath = ExtractBranchPathArg();
 
-    $Module->Grow(RequireRootURL(), $BranchPath, GetBranchDirArgs($Command))
+    $Module->Grow(RequireRootURL(), $BranchPath,
+        $Revision, GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'truncate')
 {
