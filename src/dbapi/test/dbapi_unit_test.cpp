@@ -11023,6 +11023,9 @@ string GetSybaseClientVersion(void)
 {
     CNcbiEnvironment env;
     string sybase_version = env.Get("SYBASE");
+    CDirEntry dir_entry(sybase_version);
+    dir_entry.DereferenceLink();
+    sybase_version = dir_entry.GetPath();
 
     sybase_version = sybase_version.substr(
         sybase_version.find_last_of('/') + 1
