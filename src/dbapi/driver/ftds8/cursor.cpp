@@ -104,11 +104,11 @@ CDB_Result* CTDS_CursorCmd::OpenCursor()
             cur_feat = " cursor FORWARD_ONLY for ";
         }
 
-        buff = "declare " + GetCmdName() + cur_feat + GetQuery();
+        buff = "declare " + GetCmdName() + cur_feat + GetCombinedQuery();
     } else {
         // Sybase ...
 
-        buff = "declare " + GetCmdName() + " cursor for " + GetQuery();
+        buff = "declare " + GetCmdName() + " cursor for " + GetCombinedQuery();
     }
 
     try {
