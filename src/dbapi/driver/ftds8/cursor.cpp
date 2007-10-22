@@ -98,7 +98,7 @@ CDB_Result* CTDS_CursorCmd::OpenCursor()
     if ( connected_to_MSSQLServer ) {
         string cur_feat;
 
-        if(for_update_of(GetQuery())) {
+        if(for_update_of(GetCombinedQuery())) {
             cur_feat = " cursor FORWARD_ONLY SCROLL_LOCKS for ";
         } else {
             cur_feat = " cursor FORWARD_ONLY for ";
