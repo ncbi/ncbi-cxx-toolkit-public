@@ -4609,6 +4609,32 @@ CDBAPIUnitTest::Test_Cursor2(void)
     }
 }
 
+
+void 
+CDBAPIUnitTest::Test_Cursor_Param(void)
+{
+    string sql;
+
+    {
+        sql = "select int_field from " + GetTableName() + " WHERE id = @id_value";
+
+        // Open a cursor for the first time ...
+        {
+            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test10", sql));
+            
+            auto_cursor->SetParam(CVariant(Int4(1)), "@id_value" );
+
+            auto_ptr<IResultSet> rs(auto_cursor->Open());
+            BOOST_CHECK(rs.get() != NULL);
+
+            while (rs->Next()) {
+                ;
+            }
+        }
+    }
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_SelectStmt(void)
@@ -11328,6 +11354,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             } else {
                 PutMsgDisabled("Test_Cursor2");
             }
+
+            /*
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor_Param,
+                                       DBAPIInstance);
+            tc->depends_on(tc_cursor);
+            add(tc);
+             */
 
             // Does not work with all databases and drivers currently ...
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB,
