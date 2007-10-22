@@ -77,6 +77,17 @@ BEGIN_SCOPE(objects)
 
 CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
                                      TIndex index,
+                                     const SAnnotTypeSelector& type)
+    : m_Seq_annot_Info(&annot),
+      m_ObjectIndex(index),
+      m_Type(type)
+{
+    m_Iter.m_RawPtr = 0;
+}
+
+
+CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
+                                     TIndex index,
                                      TFtable::iterator iter)
     : m_Seq_annot_Info(&annot),
       m_ObjectIndex(index),

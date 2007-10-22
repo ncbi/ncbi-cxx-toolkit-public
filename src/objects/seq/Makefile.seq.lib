@@ -1,6 +1,6 @@
 # $Id$
 
-ASN = seq seqalign seqblock seqfeat seqloc seqres
+ASN = seq seqalign seqblock seqfeat seqloc seqres seqtable
 
 ASN_DEP = seqcode
 

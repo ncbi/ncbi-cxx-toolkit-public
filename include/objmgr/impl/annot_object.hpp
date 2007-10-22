@@ -126,6 +126,8 @@ public:
                       TGraph& cont, const CSeq_graph& obj);
     CAnnotObject_Info(CSeq_annot_Info& annot, TIndex index,
                       TLocs& cont, const CSeq_loc& obj);
+    CAnnotObject_Info(CSeq_annot_Info& annot, TIndex index,
+                      const SAnnotTypeSelector& type);
     CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
                       const SAnnotTypeSelector& sel);
 
@@ -371,7 +373,7 @@ bool CAnnotObject_Info::IsRemoved(void) const
 inline
 bool CAnnotObject_Info::IsRegular(void) const
 {
-    return m_ObjectIndex >= 0;
+    return m_ObjectIndex >= 0 && m_Iter.m_RawPtr;
 }
 
 

@@ -1,0 +1,108 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:SNP",
+      tag id 6912644
+    }
+  },
+  inst {
+    repr delta,
+    mol aa,
+    length 293,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 292,
+        id gi 6912644
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:SNP",
+      data seq-table {
+        feat-type 8,
+        feat-subtype 71,
+        num-rows 4,
+        columns {
+          {
+            header {
+              field int data-imp-key
+            },
+            default string "variation"
+          },
+          {
+            header {
+              field int location-gi
+            },
+            default int 6912644
+          },
+          {
+            header {
+              field int location-from
+            },
+            data int {
+              152,
+              171,
+              209,
+              54
+            }
+          },
+          {
+            header {
+              field int location-strand
+            },
+            default int 1
+          },
+          {
+            header {
+              field str "Q.replace"
+            },
+            data string {
+              "D",
+              "I",
+              "S",
+              "R"
+            }
+          },
+          {
+            header {
+              field str "Q.replace"
+            },
+            data string {
+              "N",
+              "V",
+              "T",
+              "G"
+            }
+          },
+          {
+            header {
+              field int ext-type
+            },
+            default string "dbSnpSynonymyData"
+          },
+          {
+            header {
+              field str "E.weight"
+            },
+            default int 1
+          },
+          {
+            header {
+              field str "D.dbSNP"
+            },
+            data int {
+              183854,
+              2232534,
+              2232535,
+              2232532
+            }
+          }
+        }
+      }
+    }
+  }
+}

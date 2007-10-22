@@ -39,6 +39,7 @@
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/tse_handle.hpp>
 #include <objmgr/impl/heap_scope.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -154,19 +155,25 @@ class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
 {
 public:
     typedef CRange<TSeqPos> TRange;
-    typedef Int4            TIndex;
+    typedef Int4           TAnnotIndex;
+    enum {
+        kSNPTableBit    = 0x80000000,
+        kAnnotIndexMask = 0x7fffffff
+    };
 
     CAnnotObject_Ref(void);
     CAnnotObject_Ref(const CAnnotObject_Info& object);
     CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
-                     const SSNP_Info& snp_info);
+                     const SSNP_Info& snp_info,
+                     CSeq_loc_Conversion* cvt);
 
     bool IsRegular(void) const;
     bool IsSNPFeat(void) const;
+    bool IsTableFeat(void) const;
 
     const CSeq_annot_Info& GetSeq_annot_Info(void) const;
     const CSeq_annot_SNP_Info& GetSeq_annot_SNP_Info(void) const;
-    TIndex GetAnnotIndex(void) const;
+    TAnnotIndex GetAnnotIndex(void) const;
 
     const CAnnotObject_Info& GetAnnotObject_Info(void) const;
     const SSNP_Info& GetSNP_Info(void) const;
@@ -180,8 +187,6 @@ public:
 
     CAnnotMapping_Info& GetMappingInfo(void) const;
 
-    void SetSNP_Point(const SSNP_Info& snp, CSeq_loc_Conversion* cvt);
-
     void ResetLocation(void);
     bool operator<(const CAnnotObject_Ref& ref) const; // sort by object
     bool operator==(const CAnnotObject_Ref& ref) const; // sort by object
@@ -190,17 +195,9 @@ public:
     void Swap(CAnnotObject_Ref& ref);
 
 private:
-    // states:
-    // A. Regular annot:
-    //    m_Object == CSeq_annot_Info*
-    //    m_AnnotIndex >= 0, index of CAnnotObject_Info within CSeq_annot_Info
-    // B. SNP table annot:
-    //    m_Object == CSeq_annot_SNP_Info*
-    //    m_AnnotIndex < 0, ==  (index of SSNP_Info) + kMin_I4
-
-    CConstRef<CObject>         m_Object;
-    TIndex                     m_AnnotIndex;
-    mutable CAnnotMapping_Info m_MappingInfo;
+    CConstRef<CSeq_annot_Info> m_Seq_annot;   //  4 or  8
+    TAnnotIndex                m_AnnotIndex;  //  4 or  4
+    mutable CAnnotMapping_Info m_MappingInfo; // 16 or 20
 };
 
 
@@ -640,54 +637,47 @@ CAnnotObject_Ref::CAnnotObject_Ref(void)
 
 
 inline
-CAnnotObject_Ref::TIndex CAnnotObject_Ref::GetAnnotIndex(void) const
+CAnnotObject_Ref::TAnnotIndex CAnnotObject_Ref::GetAnnotIndex(void) const
 {
-    return m_AnnotIndex;
+    return m_AnnotIndex & kAnnotIndexMask;
 }
 
 
 inline
 bool CAnnotObject_Ref::IsRegular(void) const
 {
-    return m_AnnotIndex >= 0;
+    return (m_AnnotIndex & kSNPTableBit) == 0;
 }
 
 
 inline
 bool CAnnotObject_Ref::IsSNPFeat(void) const
 {
-    return m_AnnotIndex < 0;
+    return (m_AnnotIndex & kSNPTableBit) != 0;
 }
 
 
 inline
 const CSeq_annot_Info& CAnnotObject_Ref::GetSeq_annot_Info(void) const
 {
-    _ASSERT(IsRegular());
-    return reinterpret_cast<const CSeq_annot_Info&>(*m_Object);
-}
-
-
-inline
-const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
-{
-    _ASSERT(IsSNPFeat());
-    return reinterpret_cast<const CSeq_annot_SNP_Info&>(*m_Object);
+    return *m_Seq_annot;
 }
 
 
 inline
 bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
 {
-    return (m_Object < ref.m_Object  ||
-            m_Object == ref.m_Object && m_AnnotIndex < ref.m_AnnotIndex);
+    if ( m_Seq_annot != ref.m_Seq_annot ) {
+        return m_Seq_annot < ref.m_Seq_annot;
+    }
+    return m_AnnotIndex < ref.m_AnnotIndex;
 }
 
 
 inline
 bool CAnnotObject_Ref::operator==(const CAnnotObject_Ref& ref) const
 {
-    return (m_Object == ref.m_Object  &&
+    return (m_Seq_annot == ref.m_Seq_annot &&
             m_AnnotIndex == ref.m_AnnotIndex);
 }
 
@@ -695,7 +685,7 @@ bool CAnnotObject_Ref::operator==(const CAnnotObject_Ref& ref) const
 inline
 bool CAnnotObject_Ref::operator!=(const CAnnotObject_Ref& ref) const
 {
-    return (m_Object != ref.m_Object  ||
+    return (m_Seq_annot != ref.m_Seq_annot ||
             m_AnnotIndex != ref.m_AnnotIndex);
 }
 
@@ -750,7 +740,7 @@ CScope::EGetBioseqFlag CAnnot_Collector::GetGetFlag(void) const
 inline
 void CAnnotObject_Ref::Swap(CAnnotObject_Ref& ref)
 {
-    m_Object.Swap(ref.m_Object);
+    m_Seq_annot.Swap(ref.m_Seq_annot);
     swap(m_AnnotIndex, ref.m_AnnotIndex);
     m_MappingInfo.Swap(ref.m_MappingInfo);
 }

@@ -210,6 +210,42 @@ CSeq_loc_Conversion::ReverseFuzz(const CInt_fuzz& fuzz) const
 }
 
 
+void CSeq_loc_Conversion::ConvertSimpleLoc(const CSeq_id_Handle& src_id,
+                                           const CRange<TSeqPos> src_range,
+                                           const SAnnotObject_Index& src_index)
+{
+    if ( src_id != m_Src_id_Handle ) {
+        m_Partial = true;
+        return;
+    }
+    
+    ENa_strand strand;
+    switch ( src_index.m_Flags & src_index.fStrand_mask ) {
+    case SAnnotObject_Index::fStrand_plus:
+        strand = eNa_strand_plus;
+        break;
+    case SAnnotObject_Index::fStrand_minus:
+        strand = eNa_strand_minus;
+        break;
+    default:
+        strand = eNa_strand_unknown;
+        break;
+    }
+    if ( src_index.LocationIsPoint() ) {
+        ConvertPoint(src_range.GetFrom(), strand);
+    }
+    else if ( src_index.LocationIsInterval() ) {
+        ConvertInterval(src_range.GetFrom(), src_range.GetTo(), strand);
+    }
+    else {
+        _ASSERT(src_index.LocationIsWhole());
+        CBioseq_Handle bh =
+            m_Scope->GetBioseqHandle(src_id, CScope::eGetBioseq_All);
+        ConvertInterval(0, bh.GetBioseqLength()-1, eNa_strand_unknown);
+    }
+}
+
+
 bool CSeq_loc_Conversion::ConvertPoint(const CSeq_point& src)
 {
     ENa_strand strand = src.IsSetStrand()? src.GetStrand(): eNa_strand_unknown;
@@ -671,11 +707,12 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
 
 
 void CSeq_loc_Conversion::ConvertCdregion(CAnnotObject_Ref& ref,
+                                          const CSeq_feat& orig_feat,
                                           CRef<CSeq_feat>& mapped_feat)
 {
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
     _ASSERT( obj.IsFeat() );
-    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
+    const CSeqFeatData& src_feat_data = orig_feat.GetData();
     _ASSERT( src_feat_data.IsCdregion() );
     if (!src_feat_data.GetCdregion().IsSetCode_break()) {
         return;
@@ -756,11 +793,12 @@ void CSeq_loc_Conversion::ConvertCdregion(CAnnotObject_Ref& ref,
 
 
 void CSeq_loc_Conversion::ConvertRna(CAnnotObject_Ref& ref,
+                                     const CSeq_feat& orig_feat,
                                      CRef<CSeq_feat>& mapped_feat)
 {
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
     _ASSERT( obj.IsFeat() );
-    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
+    const CSeqFeatData& src_feat_data = orig_feat.GetData();
     _ASSERT( src_feat_data.IsRna() );
     if (!src_feat_data.GetRna().IsSetExt()  ||
         !src_feat_data.GetRna().GetExt().IsTRNA()  ||
@@ -819,17 +857,34 @@ void CSeq_loc_Conversion::ConvertRna(CAnnotObject_Ref& ref,
 }
 
 
+static inline
+bool NeedFullFeature(const CAnnotObject_Ref& ref,
+                     CSeq_loc_Conversion::ELocationType loctype)
+{
+    if ( loctype == CSeq_loc_Conversion::eLocation ) {
+        CSeqFeatData::E_Choice type = ref.GetAnnotObject_Info().GetFeatType();
+        if ( type == CSeqFeatData::e_Cdregion ||
+             type == CSeqFeatData::e_Rna ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CSeq_loc_Conversion::ConvertFeature(CAnnotObject_Ref& ref,
+                                         const CSeq_feat& orig_feat,
                                          CRef<CSeq_feat>& mapped_feat)
 {
-    const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
-    _ASSERT( obj.IsFeat() );
-    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
-    if ( src_feat_data.IsCdregion() ) {
-        ConvertCdregion(ref, mapped_feat);
-    }
-    else if ( src_feat_data.IsRna() ) {
-        ConvertRna(ref, mapped_feat);
+    switch ( orig_feat.GetData().Which() ) {
+    case CSeqFeatData::e_Cdregion:
+        ConvertCdregion(ref, orig_feat, mapped_feat);
+        break;
+    case CSeqFeatData::e_Rna:
+        ConvertRna(ref, orig_feat, mapped_feat);
+        break;
+    default:
+        break;
     }
 }
 
@@ -837,23 +892,75 @@ void CSeq_loc_Conversion::ConvertFeature(CAnnotObject_Ref& ref,
 void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
 {
     Reset();
-    CRef<CSeq_feat> mapped_feat;
     CAnnotMapping_Info& map_info = ref.GetMappingInfo();
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
     switch ( obj.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
     {
-        CRef<CSeq_loc> mapped_loc;
-        const CSeq_loc* src_loc;
-        if ( loctype != eProduct ) {
-            ConvertFeature(ref, mapped_feat);
-            src_loc = &obj.GetFeatFast()->GetLocation();
+        if ( NeedFullFeature(ref, loctype) ) {
+            CConstRef<CSeq_feat> orig_feat;
+            if ( obj.IsRegular() ) {
+                orig_feat = obj.GetFeatFast();
+            }
+            else {
+                CRef<CSeq_feat> created_feat;
+                CRef<CSeq_point> created_point;
+                CRef<CSeq_interval> created_interval;
+                const CSeq_annot_Info& annot = obj.GetSeq_annot_Info();
+                annot.UpdateTableFeat(created_feat,
+                                      created_point,
+                                      created_interval,
+                                      obj);
+                orig_feat = created_feat;
+            }
+            CRef<CSeq_feat> mapped_feat;
+            CRef<CSeq_loc> mapped_loc;
+            if ( loctype == eLocation ) {
+                ConvertFeature(ref, *orig_feat, mapped_feat);
+                Convert(orig_feat->GetLocation(), &mapped_loc);
+            }
+            else {
+                Convert(orig_feat->GetProduct(), &mapped_loc);
+            }
+            map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+            if ( mapped_feat ) {
+                // This will also set location and partial of mapped feature
+                map_info.SetMappedSeq_feat(*mapped_feat);
+            }
         }
         else {
-            src_loc = &obj.GetFeatFast()->GetProduct();
+            CConstRef<CSeq_loc> orig_loc;
+            if ( obj.IsRegular() ) {
+                if ( loctype == eLocation ) {
+                    orig_loc = &obj.GetFeatFast()->GetLocation();
+                }
+                else {
+                    orig_loc = &obj.GetFeatFast()->GetProduct();
+                }
+            }
+            else {
+                CRef<CSeq_loc> created_loc;
+                CRef<CSeq_point> created_point;
+                CRef<CSeq_interval> created_interval;
+                const CSeq_annot_Info& annot = obj.GetSeq_annot_Info();
+                if ( loctype == eLocation ) {
+                    annot.UpdateTableFeatLocation(created_loc,
+                                                  created_point,
+                                                  created_interval,
+                                                  obj);
+                }
+                else {
+                    annot.UpdateTableFeatProduct(created_loc,
+                                                 created_point,
+                                                 created_interval,
+                                                 obj);
+                }
+                orig_loc = created_loc;
+            }
+            CRef<CSeq_loc> mapped_loc;
+            Convert(*orig_loc, &mapped_loc);
+            map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         }
-        Convert(*src_loc, &mapped_loc);
-        map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
     }
     case CSeq_annot::C_Data::e_Graph:
@@ -868,10 +975,104 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
         break;
     }
     SetMappedLocation(ref, loctype);
-    if ( mapped_feat ) {
-        // This will also set location and partial of the mapped feature
-        map_info.SetMappedSeq_feat(*mapped_feat);
+}
+
+
+void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref,
+                                  ELocationType loctype,
+                                  const CSeq_id_Handle& id,
+                                  const CRange<TSeqPos>& range,
+                                  const SAnnotObject_Index& index)
+{
+    Reset();
+    CAnnotMapping_Info& map_info = ref.GetMappingInfo();
+    const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
+    switch ( obj.Which() ) {
+    case CSeq_annot::C_Data::e_Ftable:
+    {
+        if ( NeedFullFeature(ref, loctype) ) {
+            CConstRef<CSeq_feat> orig_feat;
+            if ( obj.IsRegular() ) {
+                orig_feat = obj.GetFeatFast();
+            }
+            else {
+                CRef<CSeq_feat> created_feat;
+                CRef<CSeq_point> created_point;
+                CRef<CSeq_interval> created_interval;
+                const CSeq_annot_Info& annot = obj.GetSeq_annot_Info();
+                annot.UpdateTableFeat(created_feat,
+                                      created_point,
+                                      created_interval,
+                                      obj);
+                orig_feat = created_feat;
+            }
+            CRef<CSeq_feat> mapped_feat;
+            CRef<CSeq_loc> mapped_loc;
+            if ( loctype == eLocation ) {
+                ConvertFeature(ref, *orig_feat, mapped_feat);
+                Convert(orig_feat->GetLocation(), &mapped_loc);
+            }
+            else {
+                Convert(orig_feat->GetProduct(), &mapped_loc);
+            }
+            map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+            if ( mapped_feat ) {
+                // This will also set location and partial of mapped feature
+                map_info.SetMappedSeq_feat(*mapped_feat);
+            }
+        }
+        else if ( index.LocationIsSimple() ) {
+            // simple conversion of location is possible
+            // no need for ConvertFeature
+            ConvertSimpleLoc(id, range, index);
+        }
+        else {
+            CConstRef<CSeq_loc> orig_loc;
+            if ( obj.IsRegular() ) {
+                if ( loctype == eLocation ) {
+                    orig_loc = &obj.GetFeatFast()->GetLocation();
+                }
+                else {
+                    orig_loc = &obj.GetFeatFast()->GetProduct();
+                }
+            }
+            else {
+                CRef<CSeq_loc> created_loc;
+                CRef<CSeq_point> created_point;
+                CRef<CSeq_interval> created_interval;
+                const CSeq_annot_Info& annot = obj.GetSeq_annot_Info();
+                if ( loctype == eLocation ) {
+                    annot.UpdateTableFeatLocation(created_loc,
+                                                  created_point,
+                                                  created_interval,
+                                                  obj);
+                }
+                else {
+                    annot.UpdateTableFeatProduct(created_loc,
+                                                 created_point,
+                                                 created_interval,
+                                                 obj);
+                }
+                orig_loc = created_loc;
+            }
+            CRef<CSeq_loc> mapped_loc;
+            Convert(*orig_loc, &mapped_loc);
+            map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+        }
+        break;
     }
+    case CSeq_annot::C_Data::e_Graph:
+    {
+        CRef<CSeq_loc> mapped_loc;
+        Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc);
+        map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+        break;
+    }
+    default:
+        _ASSERT(0);
+        break;
+    }
+    SetMappedLocation(ref, loctype);
 }
 
 
@@ -969,11 +1170,12 @@ CSeq_loc_Conversion_Set::BeginRanges(CSeq_id_Handle id,
 
 
 void CSeq_loc_Conversion_Set::ConvertCdregion(CAnnotObject_Ref& ref,
+                                              const CSeq_feat& orig_feat,
                                               CRef<CSeq_feat>& mapped_feat)
 {
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
     _ASSERT( obj.IsFeat() );
-    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
+    const CSeqFeatData& src_feat_data = orig_feat.GetData();
     _ASSERT( src_feat_data.IsCdregion() );
     if (!src_feat_data.GetCdregion().IsSetCode_break()) {
         return;
@@ -1046,11 +1248,12 @@ void CSeq_loc_Conversion_Set::ConvertCdregion(CAnnotObject_Ref& ref,
 
 
 void CSeq_loc_Conversion_Set::ConvertRna(CAnnotObject_Ref& ref,
+                                         const CSeq_feat& orig_feat,
                                          CRef<CSeq_feat>& mapped_feat)
 {
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
     _ASSERT( obj.IsFeat() );
-    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
+    const CSeqFeatData& src_feat_data = orig_feat.GetData();
     _ASSERT( src_feat_data.IsRna() );
     if (!src_feat_data.GetRna().IsSetExt()  ||
         !src_feat_data.GetRna().GetExt().IsTRNA()  ||
@@ -1108,16 +1311,18 @@ void CSeq_loc_Conversion_Set::ConvertRna(CAnnotObject_Ref& ref,
 
 
 void CSeq_loc_Conversion_Set::ConvertFeature(CAnnotObject_Ref& ref,
+                                             const CSeq_feat& orig_feat,
                                              CRef<CSeq_feat>& mapped_feat)
 {
-    const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
-    _ASSERT( obj.IsFeat() );
-    const CSeqFeatData& src_feat_data = obj.GetFeatFast()->GetData();
-    if ( src_feat_data.IsCdregion() ) {
-        ConvertCdregion(ref, mapped_feat);
-    }
-    else if ( src_feat_data.IsRna() ) {
-        ConvertRna(ref, mapped_feat);
+    switch ( orig_feat.GetData().Which() ) {
+    case CSeqFeatData::e_Cdregion:
+        ConvertCdregion(ref, orig_feat, mapped_feat);
+        break;
+    case CSeqFeatData::e_Rna:
+        ConvertRna(ref, orig_feat, mapped_feat);
+        break;
+    default:
+        break;
     }
 }
 
@@ -1147,7 +1352,7 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
         const CSeq_loc* src_loc;
         unsigned int loc_index = 0;
         if ( loctype != CSeq_loc_Conversion::eProduct ) {
-            ConvertFeature(ref, mapped_feat);
+            ConvertFeature(ref, *obj.GetFeatFast(), mapped_feat);
             src_loc = &obj.GetFeatFast()->GetLocation();
         }
         else {

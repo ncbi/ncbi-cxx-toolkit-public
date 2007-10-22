@@ -3,7 +3,7 @@
 all: sources
 
 sources:
-	for x in seqalign seqblock seqfeat seqloc seqres; do \
+	for x in seqalign seqblock seqfeat seqloc seqres seqtable; do \
 	    d=$(srcdir)/../$$x ; \
 	    (cd $$d  &&  $(builddir)/new_module.sh) ; \
 	    test -f $${x}__.cpp  ||  \

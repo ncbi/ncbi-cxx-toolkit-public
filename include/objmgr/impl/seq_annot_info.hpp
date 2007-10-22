@@ -57,6 +57,7 @@ class CAnnotObject_Info;
 struct SAnnotObject_Key;
 class CTSEAnnotObjectMapper;
 class CSeq_annot_SNP_Info;
+class CSeq_annot_Table_Info;
 class CFeat_id;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
@@ -69,7 +70,8 @@ public:
     typedef C_Data::TAlign      TAlign;
     typedef C_Data::TGraph      TGraph;
     typedef C_Data::TLocs       TLocs;
-    typedef Int4                TIndex;
+    typedef C_Data::TSeq_table  TSeq_table;
+    typedef Uint4               TAnnotIndex;
 
     explicit CSeq_annot_Info(CSeq_annot& annot);
     explicit CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
@@ -114,23 +116,40 @@ public:
     bool x_HasSNP_annot_Info(void) const;
     const CSeq_annot_SNP_Info& x_GetSNP_annot_Info(void) const;
 
+    TAnnotIndex x_GetSNPFeatCount(void) const;
+    TAnnotIndex x_GetAnnotCount(void) const;
+
     void x_DoUpdate(TNeedUpdateFlags flags);
 
     typedef SAnnotObjectsIndex::TObjectInfos TAnnotObjectInfos;
     const TAnnotObjectInfos& GetAnnotObjectInfos(void) const;
 
     // individual annotation editing API
-    void Remove(TIndex index);
-    void Replace(TIndex index, const CSeq_feat& new_obj);
-    void Replace(TIndex index, const CSeq_align& new_obj);
-    void Replace(TIndex index, const CSeq_graph& new_obj);
-    TIndex Add(const CSeq_feat& new_obj);
-    TIndex Add(const CSeq_align& new_obj);
-    TIndex Add(const CSeq_graph& new_obj);
+    void Remove(TAnnotIndex index);
+    void Replace(TAnnotIndex index, const CSeq_feat& new_obj);
+    void Replace(TAnnotIndex index, const CSeq_align& new_obj);
+    void Replace(TAnnotIndex index, const CSeq_graph& new_obj);
+    TAnnotIndex Add(const CSeq_feat& new_obj);
+    TAnnotIndex Add(const CSeq_align& new_obj);
+    TAnnotIndex Add(const CSeq_graph& new_obj);
 
-    void Update(TIndex index);
+    void Update(TAnnotIndex index);
 
-    const CAnnotObject_Info& GetInfo(TIndex index) const;
+    const CAnnotObject_Info& GetInfo(TAnnotIndex index) const;
+
+    void UpdateTableFeat(CRef<CSeq_feat>& seq_feat,
+                         CRef<CSeq_point>& seq_point,
+                         CRef<CSeq_interval>& seq_interval,
+                         const CAnnotObject_Info& feat_info) const;
+    void UpdateTableFeatLocation(CRef<CSeq_loc>& seq_loc,
+                                 CRef<CSeq_point>& seq_point,
+                                 CRef<CSeq_interval>& seq_interval,
+                                 const CAnnotObject_Info& feat_info) const;
+    void UpdateTableFeatProduct(CRef<CSeq_loc>& seq_loc,
+                                CRef<CSeq_point>& seq_point,
+                                CRef<CSeq_interval>& seq_interval,
+                                const CAnnotObject_Info& feat_info) const;
+    bool IsTableFeatPartial(const CAnnotObject_Info& feat_info) const;
 
 protected:
     friend class CDataSource;
@@ -149,6 +168,7 @@ protected:
     void x_InitAlignList(TAlign& objs);
     void x_InitGraphList(TGraph& objs);
     void x_InitLocsList(TLocs& annot);
+    void x_InitFeatTable(TSeq_table& table);
     void x_InitFeatList(TFtable& objs, const CSeq_annot_Info& info);
     void x_InitAlignList(TAlign& objs, const CSeq_annot_Info& info);
     void x_InitGraphList(TGraph& objs, const CSeq_annot_Info& info);
@@ -160,6 +180,7 @@ protected:
     void x_InitAlignKeys(CTSE_Info& tse);
     void x_InitGraphKeys(CTSE_Info& tse);
     void x_InitLocsKeys(CTSE_Info& tse);
+    void x_InitFeatTableKeys(CTSE_Info& tse);
 
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
@@ -190,6 +211,9 @@ protected:
 
     // SNP annotation table
     CRef<CSeq_annot_SNP_Info> m_SNP_Info;
+
+    // Feature table info
+    CRef<CSeq_annot_Table_Info> m_Table_Info;
 
 private:
     CSeq_annot_Info(const CSeq_annot_Info&);
@@ -239,9 +263,9 @@ CConstRef<CSeq_annot> CSeq_annot_Info::GetSeq_annotSkeleton(void) const
 }
 
 inline
-const CAnnotObject_Info& CSeq_annot_Info::GetInfo(TIndex index) const
+const CAnnotObject_Info& CSeq_annot_Info::GetInfo(TAnnotIndex index) const
 {
-    _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
+    _ASSERT(index < GetAnnotObjectInfos().size());
     return GetAnnotObjectInfos()[index];
 }
 

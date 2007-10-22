@@ -27,7 +27,8 @@ IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
         EMBL-block FROM EMBL-General
         SP-block FROM SP-General
         PRF-block FROM PRF-General
-        PDB-block FROM PDB-General;
+        PDB-block FROM PDB-General
+        Seq-table FROM NCBI-SeqTable;
 
 --*** Sequence ********************************
 --*
@@ -433,8 +434,9 @@ Seq-annot ::= SEQUENCE {
         ftable SET OF Seq-feat ,
         align SET OF Seq-align ,
         graph SET OF Seq-graph ,
-        ids SET OF Seq-id ,        -- used for communication between tools
-        locs SET OF Seq-loc } }    -- used for communication between tools
+        ids SET OF Seq-id ,      -- used for communication between tools
+        locs SET OF Seq-loc ,    -- used for communication between tools
+        seq-table Seq-table } }  -- features in table form
 
 END
 

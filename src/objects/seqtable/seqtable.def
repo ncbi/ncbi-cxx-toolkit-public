@@ -2,14 +2,25 @@
 _export = NCBI_SEQ_EXPORT
 
 [Seq-table]
-columns._type    = vector
+columns._type       = vector
 
-[Table-column]
-data.int._type    = vector
-data.real._type    = vector
-data.bool._type    = vector
-data.string._type    = vector
-data.loc._type    = vector
-data.id._type    = vector
-data.interval._type    = vector
+[SeqTable-multi-data]
+int._type      = vector
+real._type     = vector
+string._type   = vector
+bytes._type    = vector
+bit._type      = vector
+loc._type      = vector
+id._type       = vector
+interval._type = vector
 
+[CommonString-table]
+strings._type       = vector
+indexes._type       = vector
+
+[CommonBytes-table]
+bytes._type         = vector
+indexes._type       = vector
+
+[SeqTable-sparse-index]
+indexes._type       = vector

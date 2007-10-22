@@ -51,11 +51,11 @@ class CScope;
 
 
 CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
-                                   TIndex index)
-    : m_Annot(annot),
-      m_AnnotIndex(index)
+                                   TFeatIndex feat_index)
+    : m_Seq_annot(annot),
+      m_FeatIndex(feat_index)
 {
-    _ASSERT(IsPlainFeat());
+    _ASSERT(!IsTableSNP());
     _ASSERT(!IsRemoved());
     _ASSERT(x_GetAnnotObject_Info().IsFeat());
 }
@@ -64,20 +64,21 @@ CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
 CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
                                    const SSNP_Info& snp_info,
                                    CCreatedFeat_Ref& created_ref)
-    : m_Annot(annot),
-      m_AnnotIndex(-1),
+    : m_Seq_annot(annot),
+      m_FeatIndex(annot.x_GetInfo().x_GetSNP_annot_Info().GetIndex(snp_info)
+                  | kSNPTableBit),
       m_CreatedFeat(&created_ref)
 {
-    _ASSERT(annot.x_GetInfo().x_HasSNP_annot_Info());
-    m_AnnotIndex = -1 - x_GetSNP_annot_Info().GetIndex(snp_info);
     _ASSERT(IsTableSNP());
+    _ASSERT(!IsRemoved());
 }
 
 
 CSeq_feat_Handle::CSeq_feat_Handle(CScope& scope,
                                    CAnnotObject_Info* info)
-    : m_Annot(scope.GetSeq_annotHandle(*info->GetSeq_annot_Info().GetSeq_annotSkeleton())),
-      m_AnnotIndex(info->GetAnnotIndex())
+    : m_Seq_annot(scope.GetSeq_annotHandle
+                  (*info->GetSeq_annot_Info().GetSeq_annotSkeleton())),
+      m_FeatIndex(info->GetAnnotIndex())
 {
 }
 
@@ -85,8 +86,8 @@ CSeq_feat_Handle::CSeq_feat_Handle(CScope& scope,
 void CSeq_feat_Handle::Reset(void)
 {
     m_CreatedFeat.Reset();
-    m_AnnotIndex = eNull;
-    m_Annot.Reset();
+    m_FeatIndex = 0;
+    m_Seq_annot.Reset();
 }
 
 
@@ -96,13 +97,33 @@ const CSeq_annot_SNP_Info& CSeq_feat_Handle::x_GetSNP_annot_Info(void) const
 }
 
 
+bool CSeq_feat_Handle::IsTableSNP(void) const
+{
+    return (m_FeatIndex & kSNPTableBit) != 0;
+}
+
+
+bool CSeq_feat_Handle::IsPlainFeat(void) const
+{
+    return (m_FeatIndex & kSNPTableBit) == 0 &&
+        x_GetAnnotObject_InfoAny().IsRegular();
+}
+
+
+bool CSeq_feat_Handle::IsTableFeat(void) const
+{
+    return (m_FeatIndex & kSNPTableBit) == 0 &&
+        !x_GetAnnotObject_InfoAny().IsRegular();
+}
+
+
 const CAnnotObject_Info& CSeq_feat_Handle::x_GetAnnotObject_InfoAny(void) const
 {
-    if ( !IsPlainFeat() ) {
+    if ( IsTableSNP() ) {
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_Handle::x_GetAnnotObject: not Seq-feat info");
     }
-    return x_GetSeq_annot_Info().GetInfo(x_GetAnnotIndex());
+    return x_GetSeq_annot_Info().GetInfo(x_GetFeatIndex());
 }
 
 
@@ -124,7 +145,7 @@ const SSNP_Info& CSeq_feat_Handle::x_GetSNP_InfoAny(void) const
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_Handle::GetSNP_Info: not SNP info");
     }
-    return x_GetSNP_annot_Info().GetInfo(-1 - x_GetAnnotIndex());
+    return x_GetSNP_annot_Info().GetInfo(x_GetFeatIndex());
 }
 
 
@@ -152,6 +173,20 @@ CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
     }
     else {
         return m_CreatedFeat->MakeOriginalFeature(*this);
+    }
+}
+
+
+bool CSeq_feat_Handle::IsSetData(void) const
+{
+    if ( !*this ) {
+        return false;
+    }
+    if ( IsPlainFeat() ) {
+        return x_GetPlainSeq_feat().IsSetData();
+    }
+    else {
+        return true;
     }
 }
 
@@ -203,11 +238,11 @@ CSeq_feat_Handle::GetSNPQualityCodeWhich(void) const
 
 bool CSeq_feat_Handle::IsRemoved(void) const
 {
-    if ( IsPlainFeat() ) {
-        return x_GetAnnotObject_InfoAny().IsRemoved();
+    if ( IsTableSNP() ) {
+        return x_GetSNP_InfoAny().IsRemoved();
     }
     else {
-        return x_GetSNP_InfoAny().IsRemoved();
+        return x_GetAnnotObject_InfoAny().IsRemoved();
     }
 }
 
@@ -236,8 +271,8 @@ CSeq_feat_EditHandle::CSeq_feat_EditHandle(const CSeq_feat_Handle& h)
 
 
 CSeq_feat_EditHandle::CSeq_feat_EditHandle(const CSeq_annot_EditHandle& annot,
-                                           TIndex index)
-    : CSeq_feat_Handle(annot, index)
+                                           TFeatIndex feat_index)
+    : CSeq_feat_Handle(annot, feat_index)
 {
 }
 
@@ -267,13 +302,13 @@ void CSeq_feat_EditHandle::Replace(const CSeq_feat& new_feat) const
 
 void CSeq_feat_EditHandle::Update(void) const
 {
-    GetAnnot().x_GetInfo().Update(x_GetAnnotIndex());
+    GetAnnot().x_GetInfo().Update(x_GetFeatIndex());
 }
 
 void CSeq_feat_EditHandle::x_RealRemove(void) const
 {
     if ( IsPlainFeat() ) {
-        GetAnnot().x_GetInfo().Remove(x_GetAnnotIndex());
+        GetAnnot().x_GetInfo().Remove(x_GetFeatIndex());
         _ASSERT(IsRemoved());
     }
     else {
@@ -285,9 +320,8 @@ void CSeq_feat_EditHandle::x_RealRemove(void) const
 
 void CSeq_feat_EditHandle::x_RealReplace(const CSeq_feat& new_feat) const
 {
-    if ( IsPlainFeat() ) {
-        GetAnnot().x_GetInfo().
-            Replace(x_GetAnnotIndex(), new_feat);
+    if ( IsRemoved() || IsPlainFeat() ) {
+        GetAnnot().x_GetInfo().Replace(x_GetFeatIndex(), new_feat);
         _ASSERT(!IsRemoved());
     }
     else {
@@ -308,93 +342,51 @@ CSeq_annot_ftable_CI::CSeq_annot_ftable_CI(const CSeq_annot_Handle& annot,
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_annot_ftable_CI: annot is not ftable");
     }
-    m_Feat.m_Annot = annot;
-    if ( m_Flags & fOnlyTable ) {
-        // only table features requested
-        if ( GetAnnot().x_GetInfo().x_HasSNP_annot_Info() ) {
-            // start with table features
-            m_Feat.m_AnnotIndex = -1;
-        }
-        else {
-            // no requested features
-            x_Reset();
-            return;
-        }
+    m_Feat.m_Seq_annot = annot;
+    m_Feat.m_FeatIndex = 0;
+    if ( m_Flags & fIncludeTable && annot.x_GetInfo().x_HasSNP_annot_Info() ) {
+        m_Feat.m_FeatIndex |= m_Feat.kSNPTableBit;
     }
-    else {
-        // start with plain features
-        m_Feat.m_AnnotIndex = 0;
-    }
-    // find by flags
     x_Settle();
-}
-
-
-bool CSeq_annot_ftable_CI::x_IsValid(void) const
-{
-    if ( !GetAnnot() ) {
-        // null iterator
-        return false;
-    }
-    CSeq_feat_Handle::TIndex index = m_Feat.m_AnnotIndex;
-    if ( index == m_Feat.eNull ) {
-        // end of features
-        return false;
-    }
-    if ( index >= 0 ) {
-        // scanning plain features
-        CSeq_feat_Handle::TIndex count =
-            GetAnnot().x_GetInfo().GetAnnotObjectInfos().size();
-        return index < count || GetAnnot().x_GetInfo().x_HasSNP_annot_Info();
-    }
-    else {
-        // scanning table features
-        CSeq_feat_Handle::TIndex count =
-            GetAnnot().x_GetInfo().x_GetSNP_annot_Info().size();
-        index = -1 - index;
-        return index < count;
-    }
 }
 
 
 void CSeq_annot_ftable_CI::x_Step(void)
 {
-    _ASSERT(m_Feat.m_AnnotIndex != m_Feat.eNull);
-    if ( m_Feat.IsPlainFeat() ) {
-        // scanning plain features
-        CSeq_feat_Handle::TIndex count =
-            GetAnnot().x_GetInfo().GetAnnotObjectInfos().size();
-        if ( ++m_Feat.m_AnnotIndex == count ) {
-            // no more plain features
-            if ( (m_Flags & fIncludeTable) &&
-                 GetAnnot().x_GetInfo().x_HasSNP_annot_Info() ) {
-                // switch to table
-                m_Feat.m_AnnotIndex = -1;
-            }
-        }
-    }
-    else {
-        --m_Feat.m_AnnotIndex;
-    }
+    ++m_Feat.m_FeatIndex;
+    x_Settle();
 }
 
 
 void CSeq_annot_ftable_CI::x_Reset(void)
 {
     // mark end of features
-    m_Feat.m_AnnotIndex = m_Feat.eNull;
+    m_Feat.Reset();
 }
 
 
 void CSeq_annot_ftable_CI::x_Settle(void)
 {
-    while ( x_IsValid() ) {
-        if ( m_Feat.IsRemoved() ) {
-            x_Step();
+    for ( ;; ) {
+        CSeq_feat_Handle::TFeatIndex end;
+        bool is_snp_table = m_Feat.IsTableSNP();
+        if ( is_snp_table ) {
+            end = GetAnnot().x_GetInfo().x_GetSNPFeatCount()
+                | m_Feat.kSNPTableBit;
         }
         else {
-            return;
+            end = GetAnnot().x_GetInfo().x_GetAnnotCount();
         }
+        while ( m_Feat.m_FeatIndex < end ) {
+            if ( !m_Feat.IsRemoved() ) {
+                return;
+            }
+            ++m_Feat.m_FeatIndex;
+        }
+        if ( !is_snp_table || (m_Flags & fOnlyTable) ) {
+            break;
+        }
+        m_Feat.m_FeatIndex = 0;
     }
     x_Reset();
 }
@@ -411,93 +403,51 @@ CSeq_annot_ftable_I::CSeq_annot_ftable_I(const CSeq_annot_EditHandle& annot,
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_annot_ftable_I: annot is not ftable");
     }
-    m_Feat.m_Annot = annot;
-    if ( m_Flags & fOnlyTable ) {
-        // only table features requested
-        if ( GetAnnot().x_GetInfo().x_HasSNP_annot_Info() ) {
-            // start with table features
-            m_Feat.m_AnnotIndex = -1;
-        }
-        else {
-            // no requested features
-            x_Reset();
-            return;
-        }
+    m_Feat.m_Seq_annot = annot;
+    m_Feat.m_FeatIndex = 0;
+    if ( m_Flags & fIncludeTable && annot.x_GetInfo().x_HasSNP_annot_Info() ) {
+        m_Feat.m_FeatIndex |= m_Feat.kSNPTableBit;
     }
-    else {
-        // start with plain features
-        m_Feat.m_AnnotIndex = 0;
-    }
-    // find by flags
     x_Settle();
-}
-
-
-bool CSeq_annot_ftable_I::x_IsValid(void) const
-{
-    if ( !GetAnnot() ) {
-        // null iterator
-        return false;
-    }
-    CSeq_feat_Handle::TIndex index = m_Feat.m_AnnotIndex;
-    if ( index == m_Feat.eNull ) {
-        // end of features
-        return false;
-    }
-    if ( index >= 0 ) {
-        // scanning plain features
-        CSeq_feat_Handle::TIndex count =
-            GetAnnot().x_GetInfo().GetAnnotObjectInfos().size();
-        return index < count || GetAnnot().x_GetInfo().x_HasSNP_annot_Info();
-    }
-    else {
-        // scanning table features
-        CSeq_feat_Handle::TIndex count =
-            GetAnnot().x_GetInfo().x_GetSNP_annot_Info().size();
-        index = -1 - index;
-        return index < count;
-    }
 }
 
 
 void CSeq_annot_ftable_I::x_Step(void)
 {
-    _ASSERT(m_Feat.m_AnnotIndex != m_Feat.eNull);
-    if ( m_Feat.IsPlainFeat() ) {
-        // scanning plain features
-        CSeq_feat_Handle::TIndex count =
-            GetAnnot().x_GetInfo().GetAnnotObjectInfos().size();
-        if ( ++m_Feat.m_AnnotIndex == count ) {
-            // no more plain features
-            if ( (m_Flags & fIncludeTable) &&
-                 GetAnnot().x_GetInfo().x_HasSNP_annot_Info() ) {
-                // switch to table
-                m_Feat.m_AnnotIndex = -1;
-            }
-        }
-    }
-    else {
-        --m_Feat.m_AnnotIndex;
-    }
+    ++m_Feat.m_FeatIndex;
+    x_Settle();
 }
 
 
 void CSeq_annot_ftable_I::x_Reset(void)
 {
     // mark end of features
-    m_Feat.m_AnnotIndex = m_Feat.eNull;
+    m_Feat.Reset();
 }
 
 
 void CSeq_annot_ftable_I::x_Settle(void)
 {
-    while ( x_IsValid() ) {
-        if ( m_Feat.IsRemoved() ) {
-            x_Step();
+    for ( ;; ) {
+        CSeq_feat_Handle::TFeatIndex end;
+        bool is_snp_table = m_Feat.IsTableSNP();
+        if ( is_snp_table ) {
+            end = GetAnnot().x_GetInfo().x_GetSNPFeatCount()
+                | m_Feat.kSNPTableBit;
         }
         else {
-            return;
+            end = GetAnnot().x_GetInfo().x_GetAnnotCount();
         }
+        while ( m_Feat.m_FeatIndex < end ) {
+            if ( !m_Feat.IsRemoved() ) {
+                return;
+            }
+            ++m_Feat.m_FeatIndex;
+        }
+        if ( !is_snp_table || (m_Flags & fOnlyTable) ) {
+            break;
+        }
+        m_Feat.m_FeatIndex = 0;
     }
     x_Reset();
 }

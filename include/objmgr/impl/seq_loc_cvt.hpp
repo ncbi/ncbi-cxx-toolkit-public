@@ -65,6 +65,7 @@ class CSeq_align;
 class CDense_seg;
 class CPacked_seg;
 class CSeq_align_set;
+struct SAnnotObject_Index;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -105,17 +106,24 @@ public:
             return m_Reverse;
         }
 
+    void ConvertSimpleLoc(const CSeq_id_Handle& src_id,
+                          const CRange<TSeqPos> src_range,
+                          const SAnnotObject_Index& src_index);
     bool ConvertPoint(TSeqPos src_pos, ENa_strand src_strand);
     bool ConvertPoint(const CSeq_point& src);
 
     bool ConvertInterval(TSeqPos src_from, TSeqPos src_to,
                          ENa_strand src_strand);
     bool ConvertInterval(const CSeq_interval& src);
+
     void ConvertFeature(CAnnotObject_Ref& ref,
+                        const CSeq_feat& orig_feat,
                         CRef<CSeq_feat>& mapped_feat);
     void ConvertCdregion(CAnnotObject_Ref& ref,
+                         const CSeq_feat& orig_feat,
                          CRef<CSeq_feat>& mapped_feat);
     void ConvertRna(CAnnotObject_Ref& ref,
+                    const CSeq_feat& orig_feat,
                     CRef<CSeq_feat>& mapped_feat);
 
     CConstRef<CInt_fuzz> ReverseFuzz(const CInt_fuzz& fuzz) const;
@@ -131,8 +139,6 @@ public:
 
     bool Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
                  EConvertFlag flag = eCnvDefault);
-
-    void Convert(CAnnotObject_Ref& obj, ELocationType loctype);
 
     void Reset(void);
 
@@ -168,6 +174,17 @@ public:
     ENa_strand ConvertStrand(ENa_strand strand) const;
 
     void SetMappedLocation(CAnnotObject_Ref& ref, ELocationType loctype);
+
+protected:
+    friend class CAnnot_Collector;
+
+    void Convert(CAnnotObject_Ref& obj,
+                 ELocationType loctype);
+    void Convert(CAnnotObject_Ref& ref,
+                 ELocationType loctype,
+                 const CSeq_id_Handle& id,
+                 const CRange<TSeqPos>& range,
+                 const SAnnotObject_Index& index);
 
 private:
     void CheckDstInterval(void);
@@ -309,10 +326,13 @@ private:
                      CRef<CSeq_loc>* dst,
                      unsigned int loc_index);
     void ConvertFeature(CAnnotObject_Ref& ref,
+                        const CSeq_feat& orig_feat,
                         CRef<CSeq_feat>& mapped_feat);
     void ConvertCdregion(CAnnotObject_Ref& ref,
+                         const CSeq_feat& orig_feat,
                          CRef<CSeq_feat>& mapped_feat);
     void ConvertRna(CAnnotObject_Ref& ref,
+                    const CSeq_feat& orig_feat,
                     CRef<CSeq_feat>& mapped_feat);
 
     CRef<CSeq_loc_Conversion> m_SingleConv;

@@ -22,7 +22,7 @@ SRC = seq_map_switch snp_annot_info annot_types_ci seq_loc_cvt annot_selector \
       tse_assigner scope_transaction scope_transaction_impl \
       edit_commands_impl bioseq_edit_commands seq_entry_edit_commands \
       bioseq_set_edit_commands edit_saver unsupp_editsaver \
-      edits_db_engine edits_db_saver annot_finder
+      edits_db_engine edits_db_saver annot_finder table_annot_info
 
 LIB    = xobjmgr
 

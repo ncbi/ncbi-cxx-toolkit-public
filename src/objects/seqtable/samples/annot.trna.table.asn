@@ -1,0 +1,107 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:tRNA",
+      tag id 51459255
+    }
+  },
+  inst {
+    repr delta,
+    mol dna,
+    length 3518496,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 3518495,
+        id gi 51459255
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:tRNA",
+      desc {
+        name "tRNA",
+        title "tRNAscan-SE",
+        comment "Calculated by tRNAscan-SE"
+      },
+      data seq-table {
+        feat-type 5,
+        feat-subtype 11,
+        num-rows 7,
+        columns {
+          {
+            header {
+              field str "data.rna.type"
+            },
+            default int 3
+          },
+          {
+            header {
+              field str "data.rna.ext.tRNA.aa.ncbieaa"
+            },
+            data int {
+              71,
+              68,
+              71,
+              71,
+              69,
+              78,
+              78
+            }
+          },
+          {
+            header {
+              field int location-gi
+            },
+            default int 51459255
+          },
+          {
+            header {
+              field int location-from
+            },
+            data int {
+              3446617,
+              3399338,
+              3397603,
+              3265271,
+              3254611,
+              3251730,
+              3239917
+            }
+          },
+          {
+            header {
+              field int location-to
+            },
+            data int {
+              3446687,
+              3399410,
+              3397673,
+              3265341,
+              3254682,
+              3251803,
+              3239990
+            }
+          },
+          {
+            header {
+              field int location-strand
+            },
+            data int {
+              1
+            },
+            default int 2
+          },
+          {
+            header {
+              field str "xref.data.gene"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -540,6 +540,9 @@ public:
     /// or scope if it's top level Seq-entry.
     void Remove(void) const;
 
+    /// Update annotation index after manual modification of the object
+    void UpdateAnnotations(void) const;
+
 protected:
     friend class CScope_Impl;
     friend class CBioseq_EditHandle;

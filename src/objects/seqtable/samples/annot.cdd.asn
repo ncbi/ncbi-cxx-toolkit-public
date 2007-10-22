@@ -1,0 +1,199 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:CDD",
+      tag id 6
+    }
+  },
+  inst {
+    repr delta,
+    mol aa,
+    length 342,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 341,
+        id gi 6
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:CDD",
+      desc {
+        name "CDDSearch",
+        create-date std {
+          year 2004,
+          month 5,
+          day 12
+        }
+      },
+      data ftable {
+        {
+          data region "Domain abundant in complement control proteins",
+          comment "CCP",
+          location int {
+            from 80,
+            to 128,
+            id gi 6
+          },
+          ext {
+            type str "cddScoreData",
+            data {
+              {
+                label str "definition",
+                data str "cd00033"
+              },
+              {
+                label str "short_name",
+                data str "CCP"
+              },
+              {
+                label str "score",
+                data int 118
+              },
+              {
+                label str "evalue",
+                data real { 484829, 10, -12 }
+              },
+              {
+                label str "bit_score",
+                data real { 496938, 10, -4 }
+              }
+            }
+          },
+          dbxref {
+            {
+              db "CDD",
+              tag id 14774
+            }
+          }
+        },
+        {
+          data region "Domain abundant in complement control proteins",
+          comment "CCP",
+          location int {
+            from 201,
+            to 257,
+            id gi 6
+          },
+          ext {
+            type str "cddScoreData",
+            data {
+              {
+                label str "definition",
+                data str "cd00033"
+              },
+              {
+                label str "short_name",
+                data str "CCP"
+              },
+              {
+                label str "score",
+                data int 111
+              },
+              {
+                label str "evalue",
+                data real { 3601, 10, -9 }
+              },
+              {
+                label str "bit_score",
+                data real { 469974, 10, -4 }
+              }
+            }
+          },
+          dbxref {
+            {
+              db "CDD",
+              tag id 14774
+            }
+          }
+        },
+        {
+          data region "Domain abundant in complement control proteins",
+          comment "CCP",
+          location int {
+            from 19,
+            to 75,
+            id gi 6
+          },
+          ext {
+            type str "cddScoreData",
+            data {
+              {
+                label str "definition",
+                data str "cd00033"
+              },
+              {
+                label str "short_name",
+                data str "CCP"
+              },
+              {
+                label str "score",
+                data int 101
+              },
+              {
+                label str "evalue",
+                data real { 517214, 10, -10 }
+              },
+              {
+                label str "bit_score",
+                data real { 431454, 10, -4 }
+              }
+            }
+          },
+          dbxref {
+            {
+              db "CDD",
+              tag id 14774
+            }
+          }
+        },
+        {
+          data region "Domain abundant in complement control proteins",
+          partial TRUE,
+          comment "CCP",
+          location int {
+            from 162,
+            to 197,
+            id gi 6,
+            fuzz-from lim lt
+          },
+          ext {
+            type str "cddScoreData",
+            data {
+              {
+                label str "definition",
+                data str "cd00033"
+              },
+              {
+                label str "short_name",
+                data str "CCP"
+              },
+              {
+                label str "score",
+                data int 86
+              },
+              {
+                label str "evalue",
+                data real { 230448, 10, -8 }
+              },
+              {
+                label str "bit_score",
+                data real { 373674, 10, -4 }
+              }
+            }
+          },
+          dbxref {
+            {
+              db "CDD",
+              tag id 14774
+            }
+          }
+        }
+      }
+    }
+  }
+}

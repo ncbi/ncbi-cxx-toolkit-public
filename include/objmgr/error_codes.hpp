@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 NCBI_DEFINE_ERRCODE_X(ObjMgr_Main,         1201,  7);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_Scope,        1202, 17);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_ScopeTrans,   1203,  8);
-NCBI_DEFINE_ERRCODE_X(ObjMgr_SeqAnnot,     1204,  6);
+NCBI_DEFINE_ERRCODE_X(ObjMgr_SeqAnnot,     1204,  8);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_TSEinfo,      1205,  3);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_DataSource,   1206,  3);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_AnnotObject,  1207,  8);

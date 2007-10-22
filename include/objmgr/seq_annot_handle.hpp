@@ -222,7 +222,7 @@ public:
     /// Navigate object tree
     CSeq_entry_EditHandle GetParentEntry(void) const;
 
-    /// Eemove current annot
+    /// Remove current annot
     void Remove(void) const;
 
     // Individual annotations modifications.
@@ -240,6 +240,9 @@ public:
     CSeq_graph_Handle TakeGraph(const CSeq_graph_Handle& handle) const;
 
     void TakeAllAnnots(const CSeq_annot_EditHandle& annot) const;
+
+    /// Update index after manual modification of the object
+    void Update(void) const;
 
 protected:
     friend class CScope_Impl;

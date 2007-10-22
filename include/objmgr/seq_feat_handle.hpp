@@ -79,7 +79,7 @@ public:
 
     void Reset(void);
 
-    DECLARE_OPERATOR_BOOL(m_Annot && m_AnnotIndex != eNull && !IsRemoved());
+    DECLARE_OPERATOR_BOOL(m_Seq_annot && !IsRemoved());
 
     bool operator ==(const CSeq_feat_Handle& feat) const;
     bool operator !=(const CSeq_feat_Handle& feat) const;
@@ -96,6 +96,9 @@ public:
 
     /// Check if this is plain feature
     bool IsPlainFeat(void) const;
+
+    /// Check if this is non-SNP table feature
+    bool IsTableFeat(void) const;
 
     /// Check if this is SNP table feature
     bool IsTableSNP(void) const;
@@ -177,9 +180,13 @@ protected:
     friend class CSeq_annot_ftable_CI;
     friend class CSeq_annot_ftable_I;
     friend class CTSE_Handle;
-    typedef Int4 TIndex;
+    typedef Int4 TFeatIndex;
+    enum {
+        kSNPTableBit   = 0x80000000,
+        kFeatIndexMask = 0x7fffffff
+    };
 
-    TIndex x_GetAnnotIndex() const;
+    TFeatIndex x_GetFeatIndex() const;
 
     // Seq-annot retrieval
     const CSeq_annot_Info& x_GetSeq_annot_Info(void) const;
@@ -192,32 +199,23 @@ protected:
     const SSNP_Info& x_GetSNP_InfoAny(void) const;
     const SSNP_Info& x_GetSNP_Info(void) const;
 
-    enum EAnnotInfoType {
-        eType_null,
-        eType_Seq_annot_Info,
-        eType_Seq_annot_SNP_Info
-    };
-
-    enum {
-        eNull = kMax_I4
-    };
-
-    CSeq_feat_Handle(const CSeq_annot_Handle& annot, TIndex index);
+    CSeq_feat_Handle(const CSeq_annot_Handle& annot,
+                     TFeatIndex feat_index);
     CSeq_feat_Handle(const CSeq_annot_Handle& annot,
                      const SSNP_Info& snp_info,
                      CCreatedFeat_Ref& created_ref);
     CSeq_feat_Handle(CScope& scope, CAnnotObject_Info* info);
 
 private:
-    CSeq_annot_Handle              m_Annot;
-    TIndex                         m_AnnotIndex;
+    CSeq_annot_Handle              m_Seq_annot;
+    TFeatIndex                     m_FeatIndex;
     mutable CRef<CCreatedFeat_Ref> m_CreatedFeat;
 };
 
 
 inline
 CSeq_feat_Handle::CSeq_feat_Handle(void)
-    : m_AnnotIndex(eNull)
+    : m_FeatIndex(0)
 {
 }
 
@@ -225,7 +223,7 @@ CSeq_feat_Handle::CSeq_feat_Handle(void)
 inline
 const CSeq_annot_Handle& CSeq_feat_Handle::GetAnnot(void) const
 {
-    return m_Annot;
+    return m_Seq_annot;
 }
 
 
@@ -244,9 +242,9 @@ CScope& CSeq_feat_Handle::GetScope(void) const
 
 
 inline
-CSeq_feat_Handle::TIndex CSeq_feat_Handle::x_GetAnnotIndex(void) const
+CSeq_feat_Handle::TFeatIndex CSeq_feat_Handle::x_GetFeatIndex(void) const
 {
-    return m_AnnotIndex;
+    return m_FeatIndex & kFeatIndexMask;
 }
 
 
@@ -254,37 +252,25 @@ inline
 bool CSeq_feat_Handle::operator ==(const CSeq_feat_Handle& feat) const
 {
     return GetAnnot() == feat.GetAnnot() &&
-        x_GetAnnotIndex() == feat.x_GetAnnotIndex();
+        x_GetFeatIndex() == feat.x_GetFeatIndex();
 }
 
 
 inline
 bool CSeq_feat_Handle::operator !=(const CSeq_feat_Handle& feat) const
 {
-    return !(*this == feat);
+    return GetAnnot() != feat.GetAnnot() ||
+        x_GetFeatIndex() != feat.x_GetFeatIndex();
 }
 
 
 inline
 bool CSeq_feat_Handle::operator <(const CSeq_feat_Handle& feat) const
 {
-    return GetAnnot() < feat.GetAnnot() ||
-        GetAnnot() == feat.GetAnnot() &&
-        x_GetAnnotIndex() < feat.x_GetAnnotIndex();
-}
-
-
-inline
-bool CSeq_feat_Handle::IsPlainFeat(void) const
-{
-    return x_GetAnnotIndex() >= 0;
-}
-
-
-inline
-bool CSeq_feat_Handle::IsTableSNP(void) const
-{
-    return x_GetAnnotIndex() < 0;
+    if ( GetAnnot() != feat.GetAnnot() ) {
+        return GetAnnot() < feat.GetAnnot();
+    }
+    return x_GetFeatIndex() < feat.x_GetFeatIndex();
 }
 
 
@@ -334,13 +320,6 @@ inline
 const CFeat_id& CSeq_feat_Handle::GetId(void) const
 {
     return x_GetPlainSeq_feat().GetId();
-}
-
-
-inline
-bool CSeq_feat_Handle::IsSetData(void) const
-{
-    return IsTableSNP() || IsPlainFeat() && x_GetPlainSeq_feat().IsSetData();
 }
 
 
@@ -546,7 +525,7 @@ CSeqFeatData::E_Choice CSeq_feat_Handle::GetFeatType(void) const
 {
     return IsTableSNP()?
         CSeqFeatData::e_Imp:
-        x_GetPlainSeq_feat().GetData().Which();
+        x_GetAnnotObject_Info().GetFeatType();
 }
 
 
@@ -555,7 +534,7 @@ CSeqFeatData::ESubtype CSeq_feat_Handle::GetFeatSubtype(void) const
 {
     return IsTableSNP()?
         CSeqFeatData::eSubtype_variation:
-        x_GetPlainSeq_feat().GetData().GetSubtype();
+        x_GetAnnotObject_Info().GetFeatSubtype();
 }
 
 
@@ -586,7 +565,8 @@ public:
 protected:
     friend class CSeq_annot_EditHandle;
 
-    CSeq_feat_EditHandle(const CSeq_annot_EditHandle& annot, TIndex index);
+    CSeq_feat_EditHandle(const CSeq_annot_EditHandle& annot,
+                         TFeatIndex feat_index);
     CSeq_feat_EditHandle(const CSeq_annot_EditHandle& annot,
                          const SSNP_Info& snp_info,
                          CCreatedFeat_Ref& created_ref);
@@ -645,7 +625,6 @@ public:
     CSeq_annot_ftable_CI& operator++(void);
 
 protected:
-    bool x_IsValid(void) const;
     bool x_IsExcluded(void) const;
     void x_Step(void);
     void x_Reset(void);
@@ -695,7 +674,6 @@ inline
 CSeq_annot_ftable_CI& CSeq_annot_ftable_CI::operator++(void)
 {
     x_Step();
-    x_Settle();
     return *this;
 }
 
@@ -726,7 +704,6 @@ public:
     CSeq_annot_ftable_I& operator++(void);
 
 protected:
-    bool x_IsValid(void) const;
     bool x_IsExcluded(void) const;
     void x_Step(void);
     void x_Reset(void);
@@ -778,7 +755,6 @@ inline
 CSeq_annot_ftable_I& CSeq_annot_ftable_I::operator++(void)
 {
     x_Step();
-    x_Settle();
     return *this;
 }
 

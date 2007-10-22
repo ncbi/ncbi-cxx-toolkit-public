@@ -10,7 +10,7 @@ SUB_PROJ = tinyseq omssa general biblio medline pub pubmed \
            id1 id2 gbseq insdseq entrez2 submit medlars mla proj mmdb \
            cdd cn3d scoremat ncbimime access objprt docsum taxon1 mim \
            entrezgene blast blastdb blastxml pcsubstance pcassay remap \
-           seqtest seqsplit homologene seqedit seqtable valerr
+           seqtest seqsplit homologene seqedit valerr
 
 REQUIRES = objects
 

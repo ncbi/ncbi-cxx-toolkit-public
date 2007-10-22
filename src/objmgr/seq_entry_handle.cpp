@@ -688,5 +688,12 @@ void CSeq_entry_EditHandle::x_RealAddSeq_descr(TDescr& v) const
     x_GetInfo().AddSeq_descr(v);
 }
 
+
+void CSeq_entry_EditHandle::UpdateAnnotations(void) const
+{
+    x_GetInfo();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

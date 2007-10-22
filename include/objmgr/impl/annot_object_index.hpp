@@ -72,11 +72,17 @@ struct SAnnotObject_Index
         }
 
     enum EFlags {
+        fStrand_mask        = 3,
         fStrand_none        = 0,
-        fStrand_plus        = 1 << 0,
-        fStrand_minus       = 1 << 1,
-        fStrand_both        = fStrand_plus | fStrand_minus,
-        fMultiId            = 1 << 2
+        fStrand_plus        = 1,
+        fStrand_minus       = 2,
+        fStrand_both        = 3,
+        fMultiId            = 1 << 2,
+        fPartial            = 1 << 3,
+        fSimpleLocation_Mask= 3 << 4,
+        fLocation_Point     = 1 << 4,
+        fLocation_Interval  = 2 << 4,
+        fLocation_Whole     = 3 << 4
     };
     typedef Uint1 TFlags;
     
@@ -87,6 +93,44 @@ struct SAnnotObject_Index
     void SetMultiIdFlag(void)
         {
             m_Flags |= fMultiId;
+        }
+    bool IsPartial(void) const
+        {
+            return (m_Flags & fPartial) != 0;
+        }
+    void SetPartial(bool partial)
+        {
+            if ( partial ) {
+                m_Flags |= fPartial;
+            }
+        }
+    bool LocationIsSimple(void) const
+        {
+            return (m_Flags & fSimpleLocation_Mask) != 0;
+        }
+    bool LocationIsPoint(void) const
+        {
+            return (m_Flags & fSimpleLocation_Mask) == fLocation_Point;
+        }
+    bool LocationIsInterval(void) const
+        {
+            return (m_Flags & fSimpleLocation_Mask) == fLocation_Interval;
+        }
+    bool LocationIsWhole(void) const
+        {
+            return (m_Flags & fSimpleLocation_Mask) == fLocation_Whole;
+        }
+    void SetLocationIsPoint(void)
+        {
+            m_Flags = (m_Flags & ~fSimpleLocation_Mask) | fLocation_Point;
+        }
+    void SetLocationIsInterval(void)
+        {
+            m_Flags = (m_Flags & ~fSimpleLocation_Mask) | fLocation_Interval;
+        }
+    void SetLocationIsWhole(void)
+        {
+            m_Flags = (m_Flags & ~fSimpleLocation_Mask) | fLocation_Whole;
         }
 
     CAnnotObject_Info*                  m_AnnotObject_Info;
