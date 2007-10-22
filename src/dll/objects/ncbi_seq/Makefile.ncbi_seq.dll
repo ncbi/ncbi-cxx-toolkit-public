@@ -6,7 +6,6 @@ HOSTED_LIBS    = seq          \
                  seqset       \
                  seqcode      \
                  seqedit      \
-                 seqtable     \
                  submit       \
                  scoremat     \
                  xnetblast    \
