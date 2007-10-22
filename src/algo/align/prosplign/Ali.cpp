@@ -310,7 +310,7 @@ int CPosAli::NucPosOut(int pos) const
 //     AddPostProcInfo(pcs);
 // }
 
-CAliCreator::CAliCreator(CAli& ali) : m_ali(ali)
+CAliCreator::CAliCreator(CAli& ali) : m_ali(ali), m_CurType(eMP)
 {
     m_CurLen = 0; 
 }

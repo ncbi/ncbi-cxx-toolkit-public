@@ -94,6 +94,7 @@ void CNSeq::Init(CScope& scope, CSeq_loc& genomic)
     else {
         CRef<CSeq_loc> extra_seqloc(new CSeq_loc(*seqid,seq_end+1,loc_end,genomic.GetStrand()) );
         extended_seqloc = sequence::Seq_loc_Subtract(genomic,*extra_seqloc,CSeq_loc::fMerge_All|CSeq_loc::fSort,&scope);
+        genomic.Assign(*extended_seqloc);
     }
 
     m_size = sequence::GetLength(*extended_seqloc,&scope);
