@@ -61,6 +61,10 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
+#include <objects/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objects_Bioseq
 
 // generated classes
 
@@ -166,7 +170,7 @@ void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
     if (!label) {
         return;
     }
-    
+
     if (type != eType  &&  !GetId().empty()) {
         const CSeq_id* id = 0;
         if (!worst) {
@@ -202,7 +206,7 @@ void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
     if (!label->empty()) {
         (*label) += ": ";
     }
-    
+
     const CEnumeratedTypeValues* tv;
     tv = CSeq_inst::GetTypeInfo_enum_ERepr();
     (*label) += tv->FindName(GetInst().GetRepr(), true) + ",";
@@ -255,8 +259,8 @@ void CBioseq::PackAsDeltaSeq(void)
         src.assign(&data.GetNcbi8na().Get()[0], data.GetNcbi8na().Get().size());
         break;
     default:
-        ERR_POST(Warning << "PackAsDeltaSeq: unsupported encoding "
-                 << CSeq_data::SelectionName(data.Which()));
+        ERR_POST_X(1, Warning << "PackAsDeltaSeq: unsupported encoding "
+                      << CSeq_data::SelectionName(data.Which()));
         return;
     }
 

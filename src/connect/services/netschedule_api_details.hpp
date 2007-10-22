@@ -35,12 +35,16 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
+#include <connect/services/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_NetSchedule
 
 
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
-// 
+//
 ///@internal
 
 
@@ -90,7 +94,7 @@ static bool s_WaitNotification(unsigned       wait_time,
             buf.resize(msg_len);
             if( pred(buf) )
                 return true;
-        } 
+        }
     } // for
     return false;
 }
@@ -119,21 +123,21 @@ struct SNSSendCmd
            resp = m_API->SendCmdWaitResponse(con, m_Cmd);
         } catch (CNetScheduleException& ex) {
             if (m_Flags & eLogExceptions) {
-                ERR_POST( con.GetHost() << ":" << con.GetPort() 
-                       << " returned error: \"" << ex.what() << "\"");
+                ERR_POST_X(11, con.GetHost() << ":" << con.GetPort()
+                               << " returned error: \"" << ex.what() << "\"");
             }
-            if (!(m_Flags & eIgnoreDuplicateNameError && ex.GetErrCode() == CNetScheduleException::eDuplicateName))               
+            if (!(m_Flags & eIgnoreDuplicateNameError && ex.GetErrCode() == CNetScheduleException::eDuplicateName))
                 throw;
         } catch (CNetServiceException& ex) {
             if (m_Flags & eLogExceptions) {
-                ERR_POST( con.GetHost() << ":" << con.GetPort() 
-                       << " returned error: \"" << ex.what() << "\"");
+                ERR_POST_X(12, con.GetHost() << ":" << con.GetPort()
+                               << " returned error: \"" << ex.what() << "\"");
             }
-            if (!(m_Flags & eIgnoreCommunicationError && ex.GetErrCode() == CNetServiceException::eCommunicationError))               
+            if (!(m_Flags & eIgnoreCommunicationError && ex.GetErrCode() == CNetServiceException::eCommunicationError))
                 throw;
         } /*catch (CIO_Exception& ex) {
             if (m_Flags & eLogExceptions) {
-                     ERR_POST( con.GetHost() << ":" << con.GetPort() 
+                     ERR_POST_X(13, con.GetHost() << ":" << con.GetPort()
                                 << " returned error: \"" << ex.what() << "\"");
             }
         }*/

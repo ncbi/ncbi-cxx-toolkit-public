@@ -39,11 +39,11 @@
 
 /* Standard logging message
  */
-#define METACONN_LOG(subcode, level, descr)             \
-  CORE_LOGF_X(subcode, level,                             \
-            ("%s (connector \"%s\", error \"%s\")",     \
-            descr, (*meta->get_type)(meta->c_get_type), \
-            IO_StatusStr(status)))
+#define METACONN_LOG(subcode, level, descr)                \
+  CORE_LOGF_X(subcode, level,                              \
+              ("%s (connector \"%s\", error \"%s\")",      \
+               descr, (*meta->get_type)(meta->c_get_type), \
+               IO_StatusStr(status)))
 
 
 extern EIO_Status METACONN_Remove

@@ -141,7 +141,8 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME_Ex
 {
     FILE* fp = fopen(filename, "a");
     if ( !fp ) {
-        CORE_LOGF_ERRNO_X(9, eLOG_Error, errno, ("Cannot open \"%s\"", filename));
+        CORE_LOGF_ERRNO_X(9, eLOG_Error, errno,
+                          ("Cannot open \"%s\"", filename));
         return 0/*false*/;
     }
 

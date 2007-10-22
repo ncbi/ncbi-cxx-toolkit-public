@@ -36,9 +36,13 @@
 
 // standard includes
 #include <ncbi_pch.hpp>
+#include <objects/error_codes.hpp>
 
 // generated includes
 #include <objects/omssa/MSModSpecSet.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Objects_Omssa
 
 // generated classes
 
@@ -58,7 +62,8 @@ void CMSModSpecSet::CreateArrays(void)
     for(iMods = Get().begin(); iMods != Get().end(); ++iMods) {
         int ModNum = (*iMods)->GetMod();
         if(ModNum >= eMSMod_max){
-            ERR_POST(Warning << "CMSModSpecSet::CreateArrays modification number unknown");
+            ERR_POST_X(1, Warning <<
+                "CMSModSpecSet::CreateArrays modification number unknown");
             continue;
         }
         // ignore unspecified mods
@@ -69,10 +74,10 @@ void CMSModSpecSet::CreateArrays(void)
 
         // set up neutral loss if specified
         if((*iMods)->CanGetNeutralloss())
-            NeutralLoss[ModNum] = MSSCALE2INT 
+            NeutralLoss[ModNum] = MSSCALE2INT
             ((*iMods)->GetMonomass() -
               (*iMods)->GetNeutralloss().GetMonomass());
-        else 
+        else
             NeutralLoss[ModNum] = ModMass[ModNum];
 
         strncpy(ModNames[ModNum], (*iMods)->GetName().c_str(), kMaxNameSize - 1);
@@ -84,14 +89,17 @@ void CMSModSpecSet::CreateArrays(void)
         // loop thru chars
         for(iRes = (*iMods)->GetResidues().begin(); iRes != (*iMods)->GetResidues().end(); ++iRes) {
             if (iChars >= kMaxAAs) {
-                ERR_POST(Warning << "CMSModSpecSet::CreateArrays too many AAs in mod " << ModNum);
+                ERR_POST_X(2, Warning <<
+                           "CMSModSpecSet::CreateArrays too many AAs in mod " <<
+                           ModNum);
                 break;
             }
             if(strchr(UniqueAA, (*iRes)[0]) != 0)
                 ModChar[ModNum][iChars] = strchr(UniqueAA, (*iRes)[0]) - UniqueAA;
             else {
-                ERR_POST(Warning << "CMSModSpecSet::CreateArrays unknown AA " <<
-                         (*iRes) << " specified for mod " << ModNum);
+                ERR_POST_X(3, Warning <<
+                           "CMSModSpecSet::CreateArrays unknown AA " <<
+                           (*iRes) << " specified for mod " << ModNum);
                  break;
             }
 
@@ -102,11 +110,11 @@ void CMSModSpecSet::CreateArrays(void)
     isArrayed = true;
 }
 
-//! concatenates in another CMSModSpecSet 
+//! concatenates in another CMSModSpecSet
 void CMSModSpecSet::Append(const CMSModSpecSet &ModsIn)
 {
     CMSModSpecSet::Tdata::const_iterator i;
-    if(ModsIn.CanGet()) {   
+    if(ModsIn.CanGet()) {
         for(i = ModsIn.Get().begin(); i != ModsIn.Get().end(); ++i) {
             Set().push_back(*i);
         }

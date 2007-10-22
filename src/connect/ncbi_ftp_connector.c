@@ -311,7 +311,7 @@ static EIO_Status s_FTPAbort(SFTPConnector*  xxx,
         else {
             if (status == eIO_Timeout) {
                 CORE_LOG_X(1, eLOG_Warning,
-                         "[FTP]  Timed out on data connection abort");
+                           "[FTP]  Timed out on data connection abort");
             }
             SOCK_Abort(xxx->data);
         }

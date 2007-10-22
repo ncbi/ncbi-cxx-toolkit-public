@@ -271,7 +271,7 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
 
     if (strlen(info->host) + 16 + strlen(info->path) >= sizeof(info->path)) {
         CORE_LOG_X(1, eLOG_Error,
-                 "[ConnNetInfo_AdjustForHttpProxy]  Adjusted path too long");
+                   "[ConnNetInfo_AdjustForHttpProxy]  Adjusted path too long");
         assert(0);
         return 0/*false*/;
     }
@@ -949,7 +949,7 @@ extern SOCK URL_Connect
         req_method = content_length ? eReqMethod_Post : eReqMethod_Get;
     } else if (req_method == eReqMethod_Get  &&  content_length) {
         CORE_LOG_X(3, eLOG_Warning,
-                 "[URL_Connect]  Content length ignored with method GET");
+                   "[URL_Connect]  Content length ignored with method GET");
         content_length = 0;
     }
     switch (req_method) {
@@ -960,8 +960,9 @@ extern SOCK URL_Connect
         x_req_r = "GET ";
         break;
     default:
-        CORE_LOGF_X(4, eLOG_Error, ("[URL_Connect]  Unrecognized request method"
-                                  " (%d)", (int) req_method));
+        CORE_LOGF_X(4, eLOG_Error,
+                    ("[URL_Connect]  Unrecognized request method (%d)",
+                     (int) req_method));
         assert(0);
         return 0/*error*/;
     }
@@ -1011,9 +1012,10 @@ extern SOCK URL_Connect
               !BUF_Write(&buf, buffer, strlen(buffer))))      ||
 
         !BUF_Write(&buf, "\r\n", 2)) {
-        CORE_LOGF_X(5, eLOG_Error, ("[URL_Connect]  Error composing HTTP header for"
-                                  " %s:%hu%s%s", host, port, errno ? ": " : "",
-                                  errno ? strerror(errno) : ""));
+        CORE_LOGF_X(5, eLOG_Error,
+                    ("[URL_Connect]  Error composing HTTP header for"
+                     " %s:%hu%s%s", host, port, errno ? ": " : "",
+                     errno ? strerror(errno) : ""));
         BUF_Destroy(buf);
         if (x_args  &&  x_args != args)
             free((void*) x_args);
@@ -1024,9 +1026,10 @@ extern SOCK URL_Connect
 
     if (!(header = (char*) malloc(headersize = BUF_Size(buf))) ||
         BUF_Read(buf, header, headersize) != headersize) {
-        CORE_LOGF_X(6, eLOG_Error, ("[URL_Connect]  Error storing HTTP header for"
-                                  " %s:%hu: %s", host, port,
-                                  errno ? strerror(errno) : "Unknown error"));
+        CORE_LOGF_X(6, eLOG_Error,
+                    ("[URL_Connect]  Error storing HTTP header for"
+                     " %s:%hu: %s", host, port,
+                     errno ? strerror(errno) : "Unknown error"));
         if (header)
             free(header);
         BUF_Destroy(buf);
@@ -1039,8 +1042,8 @@ extern SOCK URL_Connect
     free(header);
     if (st != eIO_Success) {
         CORE_LOGF_X(7, eLOG_Error,
-                  ("[URL_Connect]  Socket connect to %s:%hu failed: %s",
-                   host, port, IO_StatusStr(st)));
+                    ("[URL_Connect]  Socket connect to %s:%hu failed: %s",
+                     host, port, IO_StatusStr(st)));
         return 0/*error*/;
     }
 

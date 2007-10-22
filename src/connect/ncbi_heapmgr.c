@@ -194,8 +194,9 @@ HEAP HEAP_Create(void* base,       TNCBI_Size   size,
         return 0;
     if (size  &&  size < _HEAP_ALIGNMENT) {
         CORE_LOGF_X(1, eLOG_Error,
-                  ("Heap Create: Storage too small: provided %u, required %u+",
-                   size, _HEAP_ALIGNMENT));
+                    ("Heap Create: Storage too small: "
+                     "provided %u, required %u+",
+                     size, _HEAP_ALIGNMENT));
         return 0;
     }
     if (!(heap = (HEAP) malloc(sizeof(*heap))))
@@ -215,7 +216,8 @@ HEAP HEAP_Create(void* base,       TNCBI_Size   size,
         /* Reformat the pre-allocated heap */
         if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
             CORE_LOGF_X(2, eLOG_Warning,
-                     ("Heap Create: Unaligned base (0x%08lX)", (long) base));
+                        ("Heap Create: Unaligned base (0x%08lX)",
+                         (long) base));
         }
         b->head.flag = HEAP_FREE | HEAP_LAST;
         b->head.size = size;
@@ -235,15 +237,16 @@ HEAP HEAP_AttachFast(const void* base, TNCBI_Size size, int serial)
         return 0;
     if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
         CORE_LOGF_X(3, eLOG_Warning,
-                  ("Heap Attach: Unaligned base (0x%08lX)", (long) base));
+                    ("Heap Attach: Unaligned base (0x%08lX)", (long) base));
     }
     heap->base   = (SHEAP_HeapBlock*) base;
     heap->size   = HEAP_ALIGN(size) >> _HEAP_ALIGNSHIFT;
     heap->serial = serial;
     if (size != heap->size << _HEAP_ALIGNSHIFT) {
         CORE_LOGF_X(4, eLOG_Warning,
-                  ("Heap Attach: Heap size alignment (%u->%u) can result in"
-                   " garbage in data", size, heap->size << _HEAP_ALIGNSHIFT));
+                    ("Heap Attach: Heap size alignment (%u->%u) "
+                     "can result in garbage in data",
+                     size, heap->size << _HEAP_ALIGNSHIFT));
     }
     return heap;
 }
@@ -258,9 +261,9 @@ HEAP HEAP_Attach(const void* base, int serial)
         for (;;) {
             if (!HEAP_ISUSED(b)  &&  !HEAP_ISFREE(b)) {
                 CORE_LOGF_X(5, eLOG_Error,
-                          ("Heap Attach: Heap corrupt @%u (0x%08X, %u)",
-                           HEAP_INDEX(b, (SHEAP_HeapBlock*) base),
-                           b->head.flag, b->head.size));
+                            ("Heap Attach: Heap corrupt @%u (0x%08X, %u)",
+                             HEAP_INDEX(b, (SHEAP_HeapBlock*) base),
+                             b->head.flag, b->head.size));
                 return 0;
             }
             size += b->head.size;
@@ -415,7 +418,7 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
 
     if (!heap->chunk) {
         CORE_LOGF_X(7, eLOG_Error,
-                  ("Heap Alloc%s: Heap read-only", s_HEAP_Id(_id, heap)));
+                    ("Heap Alloc%s: Heap read-only", s_HEAP_Id(_id, heap)));
         return 0;
     }
     if (size < 1)
@@ -430,10 +433,11 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
         do {
             if (!HEAP_ISFREE(b)) {
                 CORE_LOGF_X(8, eLOG_Error,
-                          ("Heap Alloc%s: Heap%s corrupt @%u/%u (0x%08X, %u)",
-                           s_HEAP_Id(_id, heap), b == f ? " header" : "",
-                           HEAP_INDEX(b, heap->base), heap->size,
-                           b->head.flag, b->head.size));
+                            ("Heap Alloc%s: Heap%s corrupt "
+                             "@%u/%u (0x%08X, %u)",
+                             s_HEAP_Id(_id, heap), b == f ? " header" : "",
+                             HEAP_INDEX(b, heap->base), heap->size,
+                             b->head.flag, b->head.size));
                 return 0;
             }
             if (b->head.size >= size)
@@ -455,8 +459,8 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
             heap->resize(heap->base, (size_t) hsize, heap->arg);
         if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
             CORE_LOGF_X(9, eLOG_Warning,
-                      ("Heap Alloc%s: Unaligned base (0x%08lX)",
-                       s_HEAP_Id(_id, heap), (long) base));
+                        ("Heap Alloc%s: Unaligned base (0x%08lX)",
+                         s_HEAP_Id(_id, heap), (long) base));
         }
         if (!base)
             return 0;
@@ -597,7 +601,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 
     if (!heap->chunk) {
         CORE_LOGF_X(11, eLOG_Error,
-                  ("Heap Free%s: Heap read-only", s_HEAP_Id(_id, heap)));
+                    ("Heap Free%s: Heap read-only", s_HEAP_Id(_id, heap)));
         return;
     }
     if (!ptr)
@@ -611,13 +615,13 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
                 s_HEAP_Free(heap, p, b);
             } else if (HEAP_ISFREE(b)) {
                 CORE_LOGF_X(12, eLOG_Warning,
-                          ("Heap Free%s: Freeing free block @%u",
-                           s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base)));
+                            ("Heap Free%s: Freeing free block @%u",
+                             s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base)));
             } else {
                 CORE_LOGF_X(13, eLOG_Error,
-                          ("Heap Free%s: Heap corrupt @%u/%u (0x%08X, %u)",
-                           s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
-                           heap->size, b->head.flag, b->head.size));
+                            ("Heap Free%s: Heap corrupt @%u/%u (0x%08X, %u)",
+                             s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
+                             heap->size, b->head.flag, b->head.size));
             }
             return;
         }
@@ -626,7 +630,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
     }
 
     CORE_LOGF_X(14, eLOG_Error,
-              ("Heap Free%s: Block not found", s_HEAP_Id(_id, heap)));
+                ("Heap Free%s: Block not found", s_HEAP_Id(_id, heap)));
 }
 
 
@@ -643,7 +647,7 @@ void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
 
     if (!heap->chunk) {
         CORE_LOGF_X(16, eLOG_Error,
-                  ("Heap Free%s: Heap read-only", s_HEAP_Id(_id, heap)));
+                    ("Heap Free%s: Heap read-only", s_HEAP_Id(_id, heap)));
         return;
     }
     if (!ptr)
@@ -654,18 +658,18 @@ void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
     if (!s_HEAP_fast) {
         if (b < heap->base  ||  b >= heap->base + heap->size) {
             CORE_LOGF_X(17, eLOG_Error,
-                      ("Heap Free%s: Alien block", s_HEAP_Id(_id, heap)));
+                        ("Heap Free%s: Alien block", s_HEAP_Id(_id, heap)));
             return;
         } else if ((!p  &&  b != heap->base)  ||
                    ( p  &&  (p < heap->base  ||  HEAP_NEXT(p) != b))) {
             CORE_LOGF_X(18, eLOG_Warning,
-                      ("Heap Free%s: Invalid hint", s_HEAP_Id(_id, heap)));
+                        ("Heap Free%s: Invalid hint", s_HEAP_Id(_id, heap)));
             HEAP_Free(heap, ptr);
             return;
         } else if (HEAP_ISFREE(b)) {
             CORE_LOGF_X(19, eLOG_Warning,
-                      ("Heap Free%s: Freeing free block @%u",
-                       s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base)));
+                        ("Heap Free%s: Freeing free block @%u",
+                         s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base)));
             return;
         }
     }
@@ -690,8 +694,8 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
                     if (HEAP_ISUSED(b)  &&  heap->chunk/*RW heap*/  &&
                         heap->base + heap->free == b) {
                         CORE_LOGF_X(20, eLOG_Warning,
-                                  ("Heap Walk%s: Used block @ free ptr %u",
-                                   s_HEAP_Id(_id, heap), heap->free));
+                                    ("Heap Walk%s: Used block @ free ptr %u",
+                                     s_HEAP_Id(_id, heap), heap->free));
                     } else if (HEAP_ISFREE(b)  &&
                                (b->prevfree >= heap->size  ||
                                 b->nextfree >= heap->size  ||
@@ -701,10 +705,10 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
                                  && (heap->base + b->prevfree == b  ||
                                      heap->base + b->nextfree == b)))) {
                         CORE_LOGF_X(21, eLOG_Warning,
-                                  ("Heap Walk%s: Free list corrupt @%u/%u"
-                                   " (%u, <-%u, %u->)", s_HEAP_Id(_id,heap),
-                                   HEAP_INDEX(b, heap->base), heap->size,
-                                   b->head.size, b->prevfree, b->nextfree));
+                                    ("Heap Walk%s: Free list corrupt @%u/%u"
+                                     " (%u, <-%u, %u->)", s_HEAP_Id(_id,heap),
+                                     HEAP_INDEX(b, heap->base), heap->size,
+                                     b->head.size, b->prevfree, b->nextfree));
                     }
                 }
                 /* Block 'b' seems okay for walking onto, but... */
@@ -712,14 +716,16 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
                     return &b->head;
                 if (HEAP_ISLAST(p)) {
                     CORE_LOGF_X(22, eLOG_Error,
-                              ("Heap Walk%s: Misplaced last block @%u",
-                               s_HEAP_Id(_id,heap), HEAP_INDEX(p,heap->base)));
+                                ("Heap Walk%s: Misplaced last block @%u",
+                                 s_HEAP_Id(_id,heap),
+                                 HEAP_INDEX(p,heap->base)));
                 } else if (s_HEAP_newalk  &&  heap->chunk/*RW heap*/  &&
                            HEAP_ISLAST(b)  &&  heap->base + heap->last != b) {
                     CORE_LOGF_X(23, eLOG_Error,
-                              ("Heap Walk%s: Last block @%u not @ last ptr %u",
-                               s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
-                               heap->last));
+                                ("Heap Walk%s: Last block @%u "
+                                 "not @ last ptr %u",
+                                 s_HEAP_Id(_id, heap),
+                                 HEAP_INDEX(b, heap->base), heap->last));
                 } else if (HEAP_ISFREE(p)  &&  HEAP_ISFREE(b)) {
                     const SHEAP_HeapBlock* c = heap->base;
                     while (c < p) {
@@ -730,27 +736,30 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
                     if (c < p)
                         return &b->head;
                     CORE_LOGF_X(24, eLOG_Error,
-                              ("Heap Walk%s: Adjacent free blocks @%u and @%u",
-                               s_HEAP_Id(_id, heap), HEAP_INDEX(p, heap->base),
-                               HEAP_INDEX(b, heap->base)));
+                                ("Heap Walk%s: Adjacent free blocks "
+                                 "@%u and @%u",
+                                 s_HEAP_Id(_id, heap),
+                                 HEAP_INDEX(p, heap->base),
+                                 HEAP_INDEX(b, heap->base)));
                 } else
                     return &b->head;
             } else {
                 CORE_LOGF_X(25, eLOG_Error,
-                          ("Heap Walk%s: Heap corrupt @%u/%u (0x%08X, %u)",
-                           s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
-                           heap->size, b->head.flag, b->head.size));
+                            ("Heap Walk%s: Heap corrupt @%u/%u (0x%08X, %u)",
+                             s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
+                             heap->size, b->head.flag, b->head.size));
             }
         } else if (b > heap->base + heap->size) {
             CORE_LOGF_X(26, eLOG_Error,
-                      ("Heap Walk%s: Heap corrupt", s_HEAP_Id(_id, heap)));
+                        ("Heap Walk%s: Heap corrupt", s_HEAP_Id(_id, heap)));
         } else if (b  &&  !HEAP_ISLAST(p)) {
             CORE_LOGF_X(27, eLOG_Error,
-                      ("Heap Walk%s: Last block lost", s_HEAP_Id(_id, heap)));
+                        ("Heap Walk%s: Last block lost",
+                         s_HEAP_Id(_id, heap)));
         }
     } else {
         CORE_LOGF_X(28, eLOG_Error,
-                  ("Heap Walk%s: Alien pointer", s_HEAP_Id(_id, heap)));
+                    ("Heap Walk%s: Alien pointer", s_HEAP_Id(_id, heap)));
     }
     return 0;
 }
@@ -787,7 +796,7 @@ HEAP HEAP_Trim(HEAP heap)
  
    if (!heap->chunk) {
         CORE_LOGF_X(30, eLOG_Error,
-                  ("Heap Trim%s: Heap read-only", s_HEAP_Id(_id, heap)));
+                    ("Heap Trim%s: Heap read-only", s_HEAP_Id(_id, heap)));
         return 0;
     }
 
@@ -816,8 +825,8 @@ HEAP HEAP_Trim(HEAP heap)
             return 0;
         if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
             CORE_LOGF_X(31, eLOG_Warning,
-                      ("Heap Trim%s: Unaligned base (0x%08lX)",
-                       s_HEAP_Id(_id, heap), (long) base));
+                        ("Heap Trim%s: Unaligned base (0x%08lX)",
+                         s_HEAP_Id(_id, heap), (long) base));
         }
         prev = HEAP_INDEX(f, heap->base);
         heap->base = base;
@@ -835,7 +844,7 @@ HEAP HEAP_Trim(HEAP heap)
         assert(hsize % heap->chunk == 0);
     } else if (hsize != heap->size << _HEAP_ALIGNSHIFT) {
         CORE_LOGF_X(32, eLOG_Error,
-                  ("Heap Trim%s: Heap not trimmable", s_HEAP_Id(_id, heap)));
+                    ("Heap Trim%s: Heap not trimmable", s_HEAP_Id(_id, heap)));
     }
 
     assert(!heap->base == !heap->size);

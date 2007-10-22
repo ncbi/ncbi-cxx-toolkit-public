@@ -246,7 +246,7 @@ extern const char* CORE_SendMail(const char* to,
     do {                                                                   \
         if (sock)                                                          \
             SOCK_Close(sock);                                              \
-        CORE_LOGF_X(subcode, eLOG_Error, ("[SendMail]  %s", reason));        \
+        CORE_LOGF_X(subcode, eLOG_Error, ("[SendMail]  %s", reason));      \
         if (reason/*always true, though, to trick "smart" compiler*/)      \
             return reason;                                                 \
     } while (0)
@@ -255,8 +255,8 @@ extern const char* CORE_SendMail(const char* to,
     do {                                                                   \
        if (sock)                                                           \
            SOCK_Close(sock);                                               \
-       CORE_LOGF_X( subcode, eLOG_Error,                                     \
-                  ("[SendMail]  %s: %s", reason, explanation) );           \
+       CORE_LOGF_X( subcode, eLOG_Error,                                   \
+                    ("[SendMail]  %s: %s", reason, explanation) );         \
        if (reason/*always true, though, to trick "smart" compiler*/)       \
            return reason;                                                  \
     } while (0)
@@ -294,9 +294,10 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
             SENDMAIL_RETURN(3, "Recepient address is too long");
         buf[k] = '\0'/*just in case*/;
         if (quote) {
-            CORE_LOGF_X(1, eLOG_Warning, ("[SendMail]  Unbalanced delimiters in "
-                                        "recepient %s for %s: \"%c\" expected",
-                                        buf, what, quote));
+            CORE_LOGF_X(1, eLOG_Warning,
+                        ("[SendMail]  Unbalanced delimiters in "
+                         "recepient %s for %s: \"%c\" expected",
+                         buf, what, quote));
         }
         if (!s_SockWrite(sock, "RCPT TO: <", 0)  ||
             !s_SockWrite(sock, buf, k)           ||
@@ -440,7 +441,8 @@ const char* CORE_SendMailEx(const char*          to,
                 SENDMAIL_RETURN(19, "Write error in sending Cc");
         }
     } else if (subject && *subject)
-        CORE_LOG_X(2, eLOG_Warning, "[SendMail]  Subject ignored in as-is messages");
+        CORE_LOG_X(2, eLOG_Warning,
+                   "[SendMail]  Subject ignored in as-is messages");
 
     if (!s_SockWrite(sock, "X-Mailer: CORE_SendMail (NCBI "
                      NCBI_SENDMAIL_TOOLKIT " Toolkit)" MX_CRLF, 0)) {

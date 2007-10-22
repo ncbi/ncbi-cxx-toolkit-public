@@ -183,8 +183,9 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
  *  Error codes used throughout C-code
  */
 
-// Here are only error codes used in C sources. For error codes used in
-// C++ sources see include/connect/error_codes.hpp.
+/* Here are only error codes used in C sources. For error codes used in
+ * C++ sources (in C++ Toolkit) see include/connect/error_codes.hpp.
+ */
 NCBI_C_DEFINE_ERRCODE_X(Connect_Connection, 301,  31);
 NCBI_C_DEFINE_ERRCODE_X(Connect_MetaConn,   302,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Util,       303,  12);
@@ -198,6 +199,9 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Service,    310,   4);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,     311, 109);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,      312,   6);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LocalNet,   313,  11);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,      319,  16);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,       320,  26);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBSMD,      321,  17);
 
 
 /******************************************************************************

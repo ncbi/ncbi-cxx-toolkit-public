@@ -30,10 +30,10 @@
  *
  */
 
-/// @file error_codes.hpp
-/// Definition of all error codes used in C code of ctools library
-/// (xctools.lib).
-///
+/** @file error_codes.hpp
+ *  Definition of all error codes used in C code of ctools library
+ *  (xctools.lib).
+ */
 
 
 #include "../connect/ncbi_priv.h"

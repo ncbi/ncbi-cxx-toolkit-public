@@ -152,7 +152,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
 #if defined(_DEBUG) && !defined(NDEBUG)
                 if (uuu->net_info->debug_printout) {
                     CORE_LOG_X(2, eLOG_Note,
-                             "[SERVICE]  Fallback to stateless requested");
+                               "[SERVICE]  Fallback to stateless requested");
                 }
 #endif
             } else {
@@ -228,13 +228,13 @@ static int/*bool*/ s_IsContentTypeDefined(const SConnNetInfo* net_info,
                     *c_t = '\0';
                 }
                 CORE_LOGF_X(3, eLOG_Warning,
-                          ("[SERVICE]  Content-Type mismatch for \"%s\" "
-                           "%s%s%s%s%s", net_info->service,
-                           t  &&  *t           ? "specified="  : "",
-                           t  &&  *t           ? t             : "",
-                           t  &&  *t  &&  *c_t ? ", "          : "",
-                           *c_t                ? "configured=" : "",
-                           *c_t                ? c_t           : ""));
+                            ("[SERVICE]  Content-Type mismatch for \"%s\" "
+                             "%s%s%s%s%s", net_info->service,
+                             t  &&  *t           ? "specified="  : "",
+                             t  &&  *t           ? t             : "",
+                             t  &&  *t  &&  *c_t ? ", "          : "",
+                             *c_t                ? "configured=" : "",
+                             *c_t                ? c_t           : ""));
                 if (t)
                     free(t);
             }
@@ -592,7 +592,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             CONN_Close(c);
         } else {
             CORE_LOGF_X(4, eLOG_Error, ("[SERVICE]  Unable to create aux. %s",
-                                      conn ? "connection" : "connector"));
+                                        conn ? "connection" : "connector"));
             assert(0);
         }
         if (!uuu->host)

@@ -247,8 +247,8 @@ static SERV_ITER s_Open(const char*          service,
          !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
         if (!do_lbsmd  &&  !do_dispd) {
             CORE_LOGF_X(1, eLOG_Warning,
-                      ("[SERV]  No service mappers available for `%s'",
-                       service));
+                        ("[SERV]  No service mappers available for `%s'",
+                         service));
         }
         SERV_Close(iter);
         return 0;

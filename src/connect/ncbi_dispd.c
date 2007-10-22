@@ -178,7 +178,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     }
     if (!conn  ||  CONN_Create(conn, &c) != eIO_Success) {
         CORE_LOGF_X(1, eLOG_Error, ("[DISPATCHER]  Unable to create aux. %s",
-                                  conn ? "connection" : "connector"));
+                                    conn ? "connection" : "connector"));
         assert(0);
         return 0/*failed*/;
     }
@@ -249,8 +249,9 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
             text += sizeof(HTTP_DISP_FAILURES) - 1;
             while (*text  &&  isspace((unsigned char)(*text)))
                 text++;
-            CORE_LOGF_X(2, eLOG_Warning, ("[DISPATCHER %s]  %s",
-                                        failure ? "FAILURE" : "MESSAGE", text));
+            CORE_LOGF_X(2, eLOG_Warning,
+                        ("[DISPATCHER %s]  %s",
+                         failure ? "FAILURE" : "MESSAGE", text));
         }
 #endif /*_DEBUG && !NDEBUG*/
         if (failure)

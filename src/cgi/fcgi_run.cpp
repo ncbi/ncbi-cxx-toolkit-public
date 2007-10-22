@@ -148,7 +148,7 @@ CCgiWatchFile::CCgiWatchFile(const string& filename, int limit)
 {
     m_Count = x_Read(m_Buf.get());
     if (m_Count < 0) {
-        ERR_POST("Failed to open CGI watch file " << filename);
+        ERR_POST_X(2, "Failed to open CGI watch file " << filename);
     }
 }
 
@@ -200,8 +200,8 @@ static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher, int delay)
     } else if ( !restart_reason  &&  watcher  &&  watcher->HasChanged()) {
         // Check if the file we're watching (if any) has changed
         // (based on contents, not timestamp!)
-        ERR_POST(Warning <<
-                 "Scheduling restart of Fast-CGI, as its watch file has changed");
+        ERR_POST_X(3, Warning <<
+            "Scheduling restart of Fast-CGI, as its watch file has changed");
         restart_reason = kSR_WatchFile;
     }
 
@@ -246,12 +246,12 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             // FCGX_OpenSocket() started to appear in the Fast-CGI API
             // simultaneously with FCGX_Accept_r()
             if (FCGX_OpenSocket(path.c_str(), 10/*max backlog*/) == -1) {
-                ERR_POST("CCgiApplication::x_RunFastCGI:  cannot run as a "
-                         "standalone server at: '" << path << "'"); 
+                ERR_POST_X(4, "CCgiApplication::x_RunFastCGI:  cannot run as a "
+                              "standalone server at: '" << path << "'");
             }
 # else
-            ERR_POST("CCgiApplication::x_RunFastCGI:  cannot run as a "
-                     "standalone server (not supported in this version)");
+            ERR_POST_X(5, "CCgiApplication::x_RunFastCGI:  cannot run as a "
+                          "standalone server (not supported in this version)");
 # endif
         }
     }}
@@ -277,9 +277,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         if (x_iterations > 0) {
             max_iterations = (unsigned int) x_iterations;
         } else {
-            ERR_POST("CCgiApplication::x_RunFastCGI:  invalid "
-                     "[FastCGI].Iterations config.parameter value: "
-                     << x_iterations);
+            ERR_POST_X(6, "CCgiApplication::x_RunFastCGI:  invalid "
+                          "[FastCGI].Iterations config.parameter value: "
+                          << x_iterations);
             _ASSERT(def_iter);
             max_iterations = def_iter;
         }
@@ -308,8 +308,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                                          0, 0, CNcbiRegistry::eErrPost);
         if (x_watch_timeout <= 0) {
             if (watcher.get()) {
-                ERR_POST
-                    ("CCgiApplication::x_RunFastCGI:  non-positive "
+                ERR_POST_X(7,
+                     "CCgiApplication::x_RunFastCGI:  non-positive "
                      "[FastCGI].WatchFile.Timeout conf.param. value ignored: "
                      << x_watch_timeout);
             }
@@ -319,10 +319,10 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     }}
 # ifndef USE_ALARM
     if (watcher.get()  ||  watch_timeout ) {
-        ERR_POST(Warning <<
-                 "CCgiApplication::x_RunFastCGI:  [FastCGI].WatchFile.*** "
-                 "conf.parameter value(s) specified, but this functionality "
-                 "is not supported");
+        ERR_POST_X(8, Warning <<
+                   "CCgiApplication::x_RunFastCGI:  [FastCGI].WatchFile.*** "
+                   "conf.parameter value(s) specified, but this functionality "
+                   "is not supported");
     }
 # endif
 
@@ -384,7 +384,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             alarm(watch_timeout);
         }
 #   endif
-        accept_errcode = FCGX_Accept_r(&request); 
+        accept_errcode = FCGX_Accept_r(&request);
         if (request.ipcFd >= 0) {
             // Hide it from any children we spawn, which have no use
             // for it and shouldn't be able to tie it open.
@@ -435,7 +435,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         CTime start_time(CTime::eCurrent);
         bool skip_stat_log = false;
 
-        try {            
+        try {
             // Initialize CGI context with the new request data
             CNcbiEnvironment env(penv);
             PushDiagPostPrefix(env.Get(m_DiagPrefixEnv).c_str());
@@ -530,7 +530,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                                     SaveResultToCache(m_Context->GetRequest(), result_copy);
                                 else {
                                     auto_ptr<CCgiRequest> request(GetSavedRequest(m_RID));
-                                    if (request.get()) 
+                                    if (request.get())
                                         SaveResultToCache(*request, result_copy);
                                 }
                             } else if (caching_needed) {
@@ -579,7 +579,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 x_OnEvent(eException, exit_code);
                 FCGX_SetExitStatus(exit_code, pfout);
             }}
-            
+
             // Logging
             {{
                 string msg =
@@ -633,7 +633,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             stat->Submit(msg);
         }
 
-        // 
+        //
         x_OnEvent(eEndRequest, 121);
 
         // If to restart the application

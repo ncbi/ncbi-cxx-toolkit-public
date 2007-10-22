@@ -353,7 +353,7 @@ do {                                                                     \
 // ncbidiag.hpp simultaneously
 
 /// Defines global error code name with given value (err_code)
-#define NCBI_C_DEFINE_ERRCODE_X(name, err_code, max_err_subcode)          \
+#define NCBI_C_DEFINE_ERRCODE_X(name, err_code, max_err_subcode)        \
     enum enum##name {                                                   \
         eErrCodeX_##name = err_code                                     \
         /* automatic subcode checking is not implemented in C code */   \

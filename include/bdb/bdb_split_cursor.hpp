@@ -111,7 +111,8 @@ CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::CBDB_SplitCursor(TSplitStore& store)
                    paths.begin(), paths.end(), masks.begin(), masks.end(),
                    fFF_File);
 
-         LOG_POST(Info << "found " << m_Files.size() << " candidate files");
+         LOG_POST_XX(Bdb_Cursor, 2, Info <<
+                     "found " << m_Files.size() << " candidate files");
      }}
 }
 

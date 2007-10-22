@@ -49,10 +49,10 @@
  */
 #define CONN_LOG_EX(subcode, level, descr, status)         \
   CORE_LOGF_X(subcode, level,                                \
-            ("%s (connector \"%s\", error \"%s\")", descr, \
-             conn->meta.get_type                           \
-             ? conn->meta.get_type(conn->meta.c_get_type)  \
-             : "Unknown", IO_StatusStr(status)))
+              ("%s (connector \"%s\", error \"%s\")", descr, \
+               conn->meta.get_type                           \
+               ? conn->meta.get_type(conn->meta.c_get_type)  \
+               : "Unknown", IO_StatusStr(status)))
 
 #define CONN_LOG(subcode, level, descr)   \
     CONN_LOG_EX(subcode, level, descr, status)
@@ -65,12 +65,12 @@
 
 /* Standard macros to verify that the passed connection handle is not NULL
  */
-#define CONN_NOT_NULL_EX(subcode, func_name, status)            \
-  if ( !conn ) {                                                \
+#define CONN_NOT_NULL_EX(subcode, func_name, status)              \
+  if ( !conn ) {                                                  \
       CORE_LOG_X(subcode, eLOG_Error, "CONN_" #func_name          \
-               "(conn, ...) -- passed NULL connection handle"); \
-      assert(conn);                                             \
-      return status;                                            \
+                 "(conn, ...) -- passed NULL connection handle"); \
+      assert(conn);                                               \
+      return status;                                              \
   }
 
 #define CONN_NOT_NULL(subcode, func_name)   \

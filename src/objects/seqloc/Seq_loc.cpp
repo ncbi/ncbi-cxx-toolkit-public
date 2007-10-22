@@ -46,9 +46,13 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
+#include <objects/error_codes.hpp>
 #include <util/range_coll.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Objects_SeqLoc
 
 
 BEGIN_NCBI_SCOPE
@@ -377,13 +381,13 @@ void CSeq_loc::x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id) const
     if ( total_id == id ) {
         return;
     }
-    
+
     if ( !total_id ) {
         total_id = id;
     } else if ( (id  &&  !total_id->Equals(*id))  ||  !id ) {
         NCBI_THROW(CException, eUnknown, "CSeq_loc -- multiple seq-ids");
     }
-} 
+}
 
 
 
@@ -506,7 +510,7 @@ ENa_strand CSeq_loc::GetStrand(void) const
     case e_not_set:
     case e_Null:
     case e_Empty:
-        return eNa_strand_unknown; 
+        return eNa_strand_unknown;
     case e_Whole:
         return eNa_strand_both;
     case e_Int:
@@ -1396,12 +1400,13 @@ void CSeq_loc::SetId(CSeq_id& id)
         break;
 
     case e_Feat:
-        LOG_POST(Error << "unhandled loc type in CSeq_loc::SetId(): e_Feat");
+        LOG_POST_X(1, Error
+                      << "unhandled loc type in CSeq_loc::SetId(): e_Feat");
         break;
 
     default:
-        LOG_POST(Error << "unhandled loc type in CSeq_loc::SetId(): "
-                 << Which());
+        LOG_POST_X(2, Error << "unhandled loc type in CSeq_loc::SetId(): "
+                      << Which());
         break;
     }
 }
@@ -1410,7 +1415,7 @@ void CSeq_loc::SetId(CSeq_id& id)
 bool CSeq_loc::Equals(const CSerialObject& object, ESerialRecursionMode how) const
 {
     if ( typeid(object) != typeid(*this) ) {
-        ERR_POST(Fatal <<
+        ERR_POST_X(3, Fatal <<
             "CSeq_loc::Assign() -- Assignment of incompatible types: " <<
             typeid(*this).name() << " = " << typeid(object).name());
     }
@@ -1484,7 +1489,7 @@ void CSeq_loc::x_CheckId(const CSeq_id*& id) const
                 x_UpdateId(id, &bond.GetB().GetId());
             }
             break;
-        }        
+        }
     case e_Equiv:
         {
             // Doesn't make much sense to test equiv, but ...
@@ -1626,7 +1631,7 @@ void CSeq_loc::x_ChangeToPackedInt(const CSeq_loc& other)
 {
     _ASSERT(IsInt());
     _ASSERT(other.IsInt()  ||  other.IsPacked_int());
-    
+
     ChangeToPackedInt();
 
     if ( other.IsInt() ) {
