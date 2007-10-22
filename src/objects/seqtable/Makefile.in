@@ -1,3 +1,0 @@
-ASN_PROJ = seqtable
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
