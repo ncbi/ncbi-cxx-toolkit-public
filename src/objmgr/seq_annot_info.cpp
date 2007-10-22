@@ -61,6 +61,77 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+struct SLocColumns
+{
+    SLocColumns(const char* field_name,
+                CSeqTable_column_info::C_Field::EField_int base_value)
+        : field_name(field_name),
+          base_value(base_value),
+          is_set(false),
+          is_real_loc(false),
+          is_simple(false),
+          is_probably_simple(false),
+          is_simple_point(false),
+          is_simple_interval(false),
+          is_simple_whole(false),
+          col_loc(0), col_id(0), col_gi(0),
+          col_from(0), col_to(0), col_strand(0)
+        {
+        }
+
+    bool AddColumn(const CSeqTable_column& col);
+    
+    void SetColumn(const CSeqTable_column*& ptr,
+                   const CSeqTable_column& col);
+
+    void ParseDefaults(void);
+
+    void UpdateSeq_loc(size_t row,
+                       CRef<CSeq_loc>& seq_loc,
+                       CRef<CSeq_point>& seq_pnt,
+                       CRef<CSeq_interval>& seq_int) const;
+
+    const CSeq_loc& GetLoc(size_t row) const;
+    const CSeq_id& GetId(size_t row) const;
+    CSeq_id_Handle GetIdHandle(size_t row) const;
+    CRange<TSeqPos> GetRange(size_t row) const;
+    ENa_strand GetStrand(size_t row) const;
+
+    CTempString field_name;
+    int base_value;
+    bool is_set, is_real_loc;
+    bool is_simple, is_probably_simple;
+    bool is_simple_point, is_simple_interval, is_simple_whole;
+    const CSeqTable_column* col_loc;
+    const CSeqTable_column* col_id;
+    const CSeqTable_column* col_gi;
+    const CSeqTable_column* col_from;
+    const CSeqTable_column* col_to;
+    const CSeqTable_column* col_strand;
+    typedef vector<const CSeqTable_column*> TExtraCols;
+    TExtraCols extra_cols;
+
+    CSeq_id_Handle default_id_handle;
+};
+
+
+class CSeq_annot_Table_Info : public CObject
+{
+public:
+    CSeq_annot_Table_Info(const CSeq_table& feat_table);
+
+    void UpdateSeq_feat(size_t row,
+                        CRef<CSeq_feat>& seq_feat,
+                        CRef<CSeq_point>& seq_pnt,
+                        CRef<CSeq_interval>& seq_int) const;
+
+    SLocColumns loc, prod;
+    const CSeqTable_column* col_partial;
+    typedef vector<const CSeqTable_column*> TExtraCols;
+    TExtraCols extra_cols;
+};
+
+
 CSeq_annot_Info::CSeq_annot_Info(CSeq_annot& annot)
 {
     x_SetObject(annot);
@@ -811,60 +882,6 @@ void CSeq_annot_Info::x_InitLocsKeys(CTSE_Info& tse)
 }
 
 
-struct SLocColumns
-{
-    SLocColumns(const char* field_name,
-                CSeqTable_column_info::C_Field::EField_int base_value)
-        : field_name(field_name),
-          base_value(base_value),
-          is_set(false),
-          is_real_loc(false),
-          is_simple(false),
-          is_probably_simple(false),
-          is_simple_point(false),
-          is_simple_interval(false),
-          is_simple_whole(false),
-          col_loc(0), col_id(0), col_gi(0),
-          col_from(0), col_to(0), col_strand(0)
-        {
-        }
-
-    bool AddColumn(const CSeqTable_column& col);
-    
-    void SetColumn(const CSeqTable_column*& ptr,
-                   const CSeqTable_column& col);
-
-    void ParseDefaults(void);
-
-    void UpdateSeq_loc(size_t row,
-                       CRef<CSeq_loc>& seq_loc,
-                       CRef<CSeq_point>& seq_pnt,
-                       CRef<CSeq_interval>& seq_int) const;
-
-    const CSeq_loc& GetLoc(size_t row) const;
-    const CSeq_id& GetId(size_t row) const;
-    CSeq_id_Handle GetIdHandle(size_t row) const;
-    CRange<TSeqPos> GetRange(size_t row) const;
-    ENa_strand GetStrand(size_t row) const;
-
-    CTempString field_name;
-    int base_value;
-    bool is_set, is_real_loc;
-    bool is_simple, is_probably_simple;
-    bool is_simple_point, is_simple_interval, is_simple_whole;
-    const CSeqTable_column* col_loc;
-    const CSeqTable_column* col_id;
-    const CSeqTable_column* col_gi;
-    const CSeqTable_column* col_from;
-    const CSeqTable_column* col_to;
-    const CSeqTable_column* col_strand;
-    typedef vector<const CSeqTable_column*> TExtraCols;
-    TExtraCols extra_cols;
-
-    CSeq_id_Handle default_id_handle;
-};
-
-
 void SLocColumns::SetColumn(const CSeqTable_column*& ptr,
                             const CSeqTable_column& col)
 {
@@ -1176,23 +1193,6 @@ ENa_strand SLocColumns::GetStrand(size_t row) const
     }
     return ENa_strand(sx_GetColumnInt(*col_strand, row, eNa_strand_unknown));
 }
-
-
-class CSeq_annot_Table_Info : public CObject
-{
-public:
-    CSeq_annot_Table_Info(const CSeq_table& feat_table);
-
-    void UpdateSeq_feat(size_t row,
-                        CRef<CSeq_feat>& seq_feat,
-                        CRef<CSeq_point>& seq_pnt,
-                        CRef<CSeq_interval>& seq_int) const;
-
-    SLocColumns loc, prod;
-    const CSeqTable_column* col_partial;
-    typedef vector<const CSeqTable_column*> TExtraCols;
-    TExtraCols extra_cols;
-};
 
 
 CSeq_annot_Table_Info::CSeq_annot_Table_Info(const CSeq_table& feat_table)
