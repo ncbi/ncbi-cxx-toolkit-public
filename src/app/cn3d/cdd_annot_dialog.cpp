@@ -319,6 +319,7 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     RegistryGetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, &readOnly);
 
     // fill out annots listbox
+    int pos = annots->GetScrollPos(wxVERTICAL);
     annots->Clear();
     CAlign_annot *selectedAnnot = NULL;
     CAlign_annot_set::Tdata::iterator a, ae = annotSet->Set().end();
@@ -334,8 +335,10 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
         annots->SetSelection(0);
     if (annots->GetCount() > 0)
         selectedAnnot = reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
+    annots->SetFirstItem(pos);
 
     // fill out evidence listbox
+    pos = evids->GetScrollPos(wxVERTICAL);
     evids->Clear();
     CFeature_evidence *selectedEvid = NULL;
     if (selectedAnnot && selectedAnnot->IsSetEvidence()) {
@@ -360,6 +363,7 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
             evids->SetSelection(0);
         if (evids->GetCount() > 0)
             selectedEvid = reinterpret_cast<CFeature_evidence*>(evids->GetClientData(evids->GetSelection()));
+        evids->SetFirstItem(pos);
     }
 
     // set button states
