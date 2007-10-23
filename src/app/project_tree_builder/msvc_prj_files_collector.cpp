@@ -33,6 +33,8 @@
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/configurable_file.hpp>
 #include <app/project_tree_builder/ptb_err_codes.hpp>
+#include <app/project_tree_builder/proj_tree_builder.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -257,8 +259,14 @@ CMsvcPrjFilesCollector::CollectSources(void)
                 CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
                                               abs_path + ".cpp"));
         } else {
-            PTB_WARNING_EX(abs_path + ".cpp", ePTB_FileNotFound,
-                           "Source file not found");
+            if (SMakeProjectT::IsConfigurableDefine(CDirEntry(abs_path).GetBase()) ||
+                !m_Project->m_DatatoolSources.empty()) {
+                PTB_WARNING_EX(abs_path, ePTB_FileNotFound,
+                            "Source file not found");
+            } else {
+                PTB_ERROR_EX(abs_path, ePTB_FileNotFound,
+                            "Source file not found");
+            }
         }
     }
     m_SourceFiles.sort(s_FileName_less);
