@@ -135,6 +135,7 @@ public:
     // Test scenarios.
     void TestTransaction(void);
     void TestScenario_1(void);
+    void TestScenario_2(void);
 
     // Run a Python script from a file
     void TestFromFile(void);

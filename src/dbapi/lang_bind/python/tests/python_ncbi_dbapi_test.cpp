@@ -646,6 +646,77 @@ CPythonDBAPITest::TestScenario_1(void)
     }
 }
 
+
+// From example4.py
+void
+CPythonDBAPITest::TestScenario_2(void)
+{
+    string sql;
+
+    try {
+            ExecuteStr("conn = None");
+
+            ExecuteStr( "def getCon(): \n"
+                        "    global conn \n"
+                        "    return conn"
+                        );
+
+            ExecuteStr( "def CreateSchema(): \n"
+                        "        cu = getCon().cursor() \n"
+                        "        cu.execute(\"SELECT name from sysobjects "
+                        "           WHERE name = 'customers' AND type = 'U'\") \n"
+                        "        if len(cu.fetchall()) > 0: \n"
+                        "                cu.execute(\"DROP TABLE customers\") \n"
+                        "        cu.execute(\"\"\" \n"
+                        "               CREATE TABLE customers ( \n"
+                        "                       cust_name VARCHAR(255) NOT NULL \n"
+                        "               ) \n"
+                        "               \"\"\") \n"
+                        "        getCon().commit() \n"
+                    );
+
+            ExecuteStr("def GetCustomers(): \n"
+                        "        cu = getCon().cursor() \n"
+                        "        cu.execute(\"select * from customers\") \n"
+                        "        print cu.fetchall() \n"
+                );
+
+            ExecuteStr("def DeleteCustomers(): \n"
+                        "        cu = getCon().cursor() \n"
+                        "        cu.execute(\"delete from customers\") \n"
+                        "        getCon().commit() \n"
+                );
+
+            ExecuteStr("def CreateCustomers(): \n"
+                        "        cu = getCon().cursor() \n"
+                        "        sql = \"insert into customers(cust_name) values (@name)\" \n"
+                        "        cu.execute(sql, {'@name':'1111'}) \n"
+                        "        cu.execute(sql, {'@name':'2222'}) \n"
+                        "        cu.execute(sql, {'@name':'3333'}) \n"
+                        "        getCon().rollback() \n"
+                        "        cu.execute(sql, {'@name':'Jane'}) \n"
+                        "        cu.execute(sql, {'@name':'Doe'}) \n"
+                        "        cu.execute(sql, {'@name':'Scott'}) \n"
+                        "        getCon().commit() \n"
+                );
+
+            ExecuteStr("def TestScenario_2(): \n"
+                        "        global conn \n"
+                        "        conn = dbapi.connect('ftds', 'MSSQL', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed', True) \n"
+                        "        CreateSchema() \n"
+                        "        CreateCustomers() \n"
+                        "        GetCustomers() \n"
+                        "        DeleteCustomers() \n"
+                );
+
+            ExecuteStr("TestScenario_2()");
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
+}
+
+
 static
 string GetSybaseClientVersion(void)
 {
@@ -746,6 +817,10 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     }
 
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestScenario_1, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestScenario_2, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
 
