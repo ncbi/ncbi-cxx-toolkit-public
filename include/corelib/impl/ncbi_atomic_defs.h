@@ -172,7 +172,11 @@ extern "C" {
 #  define NCBI_COUNTER_RESERVED_VALUE 0x3FFFFFFF
 #  define NCBI_COUNTER_USE_ASM 1
 #elif defined(NCBI_COMPILER_GCC3)  &&  defined(__cplusplus)
-#  include <bits/atomicity.h>
+#  if NCBI_COMPILER_VERSION >= 420
+#    include <ext/atomicity.h>
+#  else
+#    include <bits/atomicity.h>
+#  endif
    typedef _Atomic_word TNCBIAtomicValue;
 #  if NCBI_COMPILER_VERSION >= 340
 #    define NCBI_COUNTER_ADD(p, d) (__gnu_cxx::__exchange_and_add(p, d) + d)
