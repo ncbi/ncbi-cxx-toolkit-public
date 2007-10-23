@@ -19,6 +19,7 @@ builddir = @builddir@
 build_root = @build_root@
 top_srcdir = @top_srcdir@
 abs_top_srcdir = @abs_top_srcdir@
+abs_srcdir = `echo $(srcdir) | sed -e 's,^$(top_srcdir),$(abs_top_srcdir),'`
 
 ### Make sure we are using a right command shell
 
@@ -39,7 +40,7 @@ NOTK_BRA = test "$$expendable" = true || case "$(MFLAGS)" in *k*) ;; *)
 NOTK_KET = ;; esac
 
 # Factored out merely to avoid duplication
-MAKE_USR = $(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
+MAKE_USR = $(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(abs_srcdir)" $(MFLAGS)
 USRP_BRA = \
 +if test ! -z "$(USR_PROJ)"  ||  test ! -z "@UNIX_USR_PROJ@" \
 	|| test ! -z "$(EXPENDABLE_USR_PROJ)" ; then \
@@ -68,7 +69,7 @@ ASNP_BRA = \
 +if test ! -z "$(ASN_PROJ)" ; then \
    x_project="$(ASN_PROJ)" ; \
    for i in $$x_project ; do \
-      (cd `echo $(srcdir) | sed -e 's,^$(top_srcdir),$(abs_top_srcdir),'` \
+      (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS)" $(RWL) -base make_asn $(MAKE_ASN)
 ASNP_KET = ) || $(NOTK_BRA) exit 6 $(NOTK_KET) ; \
    done ; \
@@ -79,7 +80,7 @@ DTDP_BRA = \
 +if test ! -z "$(DTD_PROJ)" ; then \
    x_project="$(DTD_PROJ)" ; \
    for i in $$x_project ; do \
-      (cd `echo $(srcdir) | sed -e 's,^$(top_srcdir),$(abs_top_srcdir),'` \
+      (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS)" $(RWL) -base make_asn $(MAKE_DTD)
 DTDP_KET = ) || $(NOTK_BRA) exit 6 $(NOTK_KET) ; \
    done ; \
@@ -90,7 +91,7 @@ XSDP_BRA = \
 +if test ! -z "$(XSD_PROJ)" ; then \
    x_project="$(XSD_PROJ)" ; \
    for i in $$x_project ; do \
-      (cd `echo $(srcdir) | sed -e 's,^$(top_srcdir),$(abs_top_srcdir),'` \
+      (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS)" $(RWL) -base make_asn $(MAKE_XSD)
 XSDP_KET = ) || $(NOTK_BRA) exit 6 $(NOTK_KET) ; \
    done ; \
@@ -148,7 +149,7 @@ if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
    expendable=false ; \
    for i in $$x_project ; do \
       if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
-      $(check_add) `echo $(srcdir) | sed -e 's,^$(top_srcdir),$(abs_top_srcdir),'` $$i @signature@ @exe_ext@
+      $(check_add) $(abs_srcdir) $$i @signature@ @exe_ext@
 CHECK_ADD_KET = ||  exit 5 ; \
    done ; \
 fi
