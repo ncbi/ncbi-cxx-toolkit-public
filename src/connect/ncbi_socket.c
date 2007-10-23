@@ -2805,6 +2805,17 @@ static EIO_Status s_CreateListening(const char*    path,
         return eIO_Unknown;
     }
 
+#ifdef NCBI_OS_UNIX
+    if ((flags & fLSCE_CloseOnExec)  &&  !s_SetCloexec(x_lsock, 1/*true*/)) {
+        int x_errno = SOCK_ERRNO;
+        CORE_LOGF_ERRNO_EXX(110, eLOG_Warning,
+                            x_errno, SOCK_STRERROR(x_errno),
+                            ("LSOCK#%u[%u]: [LSOCK::Create] "
+                             " Cannot set socket close-on-exec mode",
+                             x_id, (unsigned int) x_lsock));
+    }
+#endif /*NCBI_OS_UNIX*/
+
     /* allocate memory for the internal socket structure */
     if (!(*lsock = (LSOCK)calloc(1, sizeof(**lsock) + (path?strlen(path):0)))){
         return eIO_Unknown;
