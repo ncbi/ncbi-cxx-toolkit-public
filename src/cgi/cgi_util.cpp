@@ -932,8 +932,8 @@ typedef int TUASearchFlags; // Binary OR of "ESearchFlags"
 // Browser search information
 struct SBrowser {
     CCgiUserAgent::EBrowser       type;   // Browser type
-    char*                         name;   // Browser name
-    char*                         key;    // Search key
+    const char*                   name;   // Browser name
+    const char*                   key;    // Search key
     CCgiUserAgent::EBrowserEngine engine; // Engine type
     TUASearchFlags                flags;  // Search flags
 };
