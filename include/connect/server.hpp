@@ -219,6 +219,7 @@ public:
     // your message spans all the buffer, return 0. If you returned non-zero
     // value, this piece of data will be used in the next CheckMessage to
     // simplify client state management.
+    // You also need to copy bytes, comprising the message from data to buffer.
     virtual int CheckMessage(BUF* buffer, const void *data, size_t size) = 0;
     // Process incoming message in the buffer, by using
     // BUF_Read(buffer, your_data_buffer, BUF_Size(buffer)).
