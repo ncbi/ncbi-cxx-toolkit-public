@@ -57,9 +57,9 @@ EOF
 EOF
 
     ['revision|rev|r=i', revision => \$Revision,
-        {create => 1, grow => 1,
+        {create => 1, alter => 1, grow => 1,
             merge_down_into => 1, merge_up_from => 1}, <<'EOF'],
-  -r [--revision] arg   : Source revision number (HEAD by default).
+  -r [--revision] arg   : Source revision number.
 EOF
 
     ['list|l=s', list => \$PathList,
