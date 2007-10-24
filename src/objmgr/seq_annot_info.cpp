@@ -80,7 +80,7 @@ struct SLocColumns
         }
 
     bool AddColumn(const CSeqTable_column& col);
-    
+
     void SetColumn(const CSeqTable_column*& ptr,
                    const CSeqTable_column& col);
 
@@ -258,7 +258,7 @@ void CSeq_annot_Info::x_TSEDetachContents(CTSE_Info& tse)
 
 const CAnnotName& CSeq_annot_Info::GetName(void) const
 {
-    return m_Name.IsNamed()? m_Name: 
+    return m_Name.IsNamed()? m_Name:
         HasTSE_Info() ? GetTSE_Info().GetName() : m_Name;
 }
 
@@ -1039,7 +1039,7 @@ size_t sx_GetRowIndex(const CSeqTable_column& col, size_t row)
     }
     const CSeqTable_sparse_index::TIndexes& idx =
         col.GetSparse().GetIndexes();
-    CSeqTable_sparse_index::TIndexes::const_iterator iter = 
+    CSeqTable_sparse_index::TIndexes::const_iterator iter =
         lower_bound(idx.begin(), idx.end(), int(row));
     if ( iter != idx.end() && *iter == int(row) ) {
         return iter-idx.begin();
@@ -1070,7 +1070,7 @@ bool sx_IsColumnSet(const CSeqTable_column& col, size_t row)
             }
             break;
         default:
-            ERR_POST("Bad field data type: "<<col.GetData().Which());
+            ERR_POST_X(9, "Bad field data type: "<<col.GetData().Which());
             break;
         }
     }
@@ -1626,7 +1626,7 @@ void sx_SetFeatField(CSeq_loc& loc, const SFeatSetField& field,
                 }
                 break;
             default:
-                ERR_POST("Bad field data type: "<<col.GetData().Which());
+                ERR_POST_X(10, "Bad field data type: "<<col.GetData().Which());
                 return;
             }
         }
@@ -1643,7 +1643,7 @@ void sx_SetFeatField(CSeq_loc& loc, const SFeatSetField& field,
             field.Set(loc, col.GetDefault().GetString());
             return;
         default:
-            ERR_POST("Bad field data type: "<<col.GetDefault().Which());
+            ERR_POST_X(11, "Bad field data type: "<<col.GetDefault().Which());
             return;
         }
     }
@@ -1677,7 +1677,7 @@ void sx_SetFeatField(CSeq_feat& feat, const SFeatSetField& field,
                 }
                 break;
             default:
-                ERR_POST("Bad field data type: "<<col.GetData().Which());
+                ERR_POST_X(12, "Bad field data type: "<<col.GetData().Which());
                 return;
             }
         }
@@ -1694,7 +1694,7 @@ void sx_SetFeatField(CSeq_feat& feat, const SFeatSetField& field,
             field.Set(feat, col.GetDefault().GetString());
             return;
         default:
-            ERR_POST("Bad field data type: "<<col.GetDefault().Which());
+            ERR_POST_X(13, "Bad field data type: "<<col.GetDefault().Which());
             return;
         }
     }
@@ -1717,7 +1717,7 @@ void sx_UpdateField(CSeq_loc& loc, const CSeqTable_column& col, size_t row)
             sx_SetFeatField(loc, SFeatSetLocFuzzToLim(), col, row);
             break;
         default:
-            ERR_POST("SeqTable-column-info.field.int = "<<field);
+            ERR_POST_X(14, "SeqTable-column-info.field.int = "<<field);
             break;
         }
     }
@@ -1730,9 +1730,9 @@ void sx_UpdateField(CSeq_loc& loc, const CSeqTable_column& col, size_t row)
             field = field.substr(8);
         }
         else {
-            ERR_POST("SeqTable-column-info.field.str = "<<field);
+            ERR_POST_X(15, "SeqTable-column-info.field.str = "<<field);
         }
-        ERR_POST("SeqTable-column-info.field.str = "<<field);
+        ERR_POST_X(16, "SeqTable-column-info.field.str = "<<field);
     }
 }
 
@@ -1769,7 +1769,7 @@ void sx_UpdateField(CSeq_feat& feat, const CSeqTable_column& col, size_t row)
             sx_SetFeatField(feat, SFeatSetExtType(), col, row);
             break;
         default:
-            ERR_POST("SeqTable-column-info.field.int = "<<field);
+            ERR_POST_X(17, "SeqTable-column-info.field.int = "<<field);
             break;
         }
     }
@@ -1785,7 +1785,7 @@ void sx_UpdateField(CSeq_feat& feat, const CSeqTable_column& col, size_t row)
             sx_SetFeatField(feat, SFeatSetQual(field.substr(2)), col, row);
         }
         else {
-            ERR_POST("SeqTable-column-info.field.str = "<<field);
+            ERR_POST_X(18, "SeqTable-column-info.field.str = "<<field);
         }
     }
 }
@@ -2045,7 +2045,7 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
                 x_Map(mapper, key, index);
             }
         }
-        
+
         if ( m_Table_Info->prod.is_set ) {
             index.m_AnnotLocationIndex = 1;
             if ( m_Table_Info->prod.is_real_loc ) {
@@ -2176,7 +2176,7 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
     if (HasDataSource())
         guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
-    
+
     SAnnotObject_Key key;
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
@@ -2307,10 +2307,10 @@ void CSeq_annot_Info::x_RemapAnnotObject(CAnnotObject_Info& info)
     if (HasDataSource())
         guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
-    
+
     CTSEAnnotObjectMapper mapper(tse, GetName());
     // replace annotation indexes in TSE
-    
+
     size_t old_begin, old_end;
     if ( info.HasSingleKey() ) {
         mapper.Unmap(info.GetKey(), info);
@@ -2351,9 +2351,9 @@ void CSeq_annot_Info::x_UnmapAnnotObject(CAnnotObject_Info& info)
     if (HasDataSource())
         guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
-    
+
     CTSEAnnotObjectMapper mapper(tse, GetName());
-    
+
     if ( info.HasSingleKey() ) {
         mapper.Unmap(info.GetKey(), info);
     }
