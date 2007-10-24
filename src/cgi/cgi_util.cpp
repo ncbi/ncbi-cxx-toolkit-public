@@ -1165,7 +1165,8 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eOregano,      "Oregano",                  "Oregano2",                 CCgiUserAgent::eEngine_Unknown, fAppComment },
     { CCgiUserAgent::eOregano,      "Oregano",                  "Oregano",                  CCgiUserAgent::eEngine_Unknown, fAppComment },
     { CCgiUserAgent::eOpera,        "Opera",                    "Opera",                    CCgiUserAgent::eEngine_Unknown, fAny },
-    { CCgiUserAgent::eW3m,          "w3m",                      "w3m",                      CCgiUserAgent::eEngine_Unknown, fAppProduct }
+    { CCgiUserAgent::eW3m,          "w3m",                      "w3m",                      CCgiUserAgent::eEngine_Unknown, fAppProduct },
+    { CCgiUserAgent::eNagios,       "check_http (nagios-plugins)","check_http",             CCgiUserAgent::eEngine_Bot,     fAppProduct }
 
     // We have special case to detect Mozilla/Mozilla-based
 };
@@ -1241,7 +1242,8 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
                m_UserAgent.find("FreeBSD") != NPOS  ||
                m_UserAgent.find("NetBSD")  != NPOS  ||
                m_UserAgent.find("OpenBSD") != NPOS  ||
-               m_UserAgent.find("IRIX")    != NPOS) {
+               m_UserAgent.find("IRIX")    != NPOS  ||
+               m_UserAgent.find("nagios-plugins") != NPOS) {
         m_Platform = ePlatform_Unix;
     }
 

@@ -781,7 +781,7 @@ const SUserAgent s_UserAgentTests[] = {
      // AppProduct token tests
 
     { "Microsoft Internet Explorer/4.0b1 (Windows 95)",
-        CCgiUserAgent::eIE,             { 4,  0, -1 },
+        CCgiUserAgent::eIE,             { 4,  0, -1},
         CCgiUserAgent::eEngine_IE,      { 4,  0, -1},
         {-1, -1, -1}
     },
@@ -799,6 +799,11 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::eOpera,          { 3, 62, -1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
         {-1, -1, -1}
+    },
+    { "check_http/1.89 (nagios-plugins 1.4.3)",
+        CCgiUserAgent::eNagios,         { 1,  89, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1,  -1, -1},
+        { -1, -1, -1}
     }
 };
 

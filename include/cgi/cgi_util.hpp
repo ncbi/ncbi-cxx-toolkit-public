@@ -474,6 +474,7 @@ public:
         eOpera,                 ///< Opera      (www.opera.com)
         eOregano,               ///< Oregano    (www.castle.org.uk/oregano/)
         eW3m,                   ///< w3m        (www.w3m.org)
+        eNagios,                ///< check_http/nagios-plugins (nagiosplugins.org)
 
         // Gecko-based browsers
         eBeonex,                ///< Beonex Communicator (www.beonex.com)
