@@ -469,11 +469,10 @@ sub DoMerge
 {
     my ($Self, $Direction, $BranchPath, $SourceRev) = @_;
 
-    my $RootURL = $Self->{SVN}->GetRootURL() ||
-        die "$Self->{MyName}: not in a working copy\n";
+    my $WorkingCopyInfo = $Self->Switch($BranchPath, $Direction eq 'up');
 
-    my $BranchInfo =
-        NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath);
+    my ($BranchInfo, $RootURL) = @$WorkingCopyInfo{qw(BranchInfo RootURL)};
+
     my $UpstreamInfo = NCBI::SVN::Branching::UpstreamInfo->new($BranchInfo);
 
     my @BranchPaths = @{$BranchInfo->{BranchPaths}};
@@ -510,10 +509,6 @@ sub DoMerge
 
     my $SourceURL = $RootURL . '/' . $SourcePath . '/';
     my $TargetURL = $RootURL . '/' . $TargetPath . '/';
-
-    print STDERR "Performing updates...\n";
-
-    $Self->{SVN}->RunSubversion('update', @BranchPaths);
 
     print STDERR "Merging with r$SourceRev...\n";
 
@@ -791,7 +786,9 @@ sub Switch
 
     $Self->DoUpdateAndSwitch($WorkingCopyInfo, $TargetPath,
         @$WorkingCopyInfo{$Parent ? qw(SwitchedToParent SwitchedToBranch) :
-            qw(SwitchedToBranch SwitchedToParent)})
+            qw(SwitchedToBranch SwitchedToParent)});
+
+    return $WorkingCopyInfo
 }
 
 sub Update
