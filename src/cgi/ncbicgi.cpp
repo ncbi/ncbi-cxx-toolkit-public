@@ -1408,22 +1408,77 @@ CCgiSession& CCgiRequest::GetSession(ESessionCreateMode mode) const
 }
 
 
+// Arguments listed here as 'arg1&arg2...' are completely removed from
+// log message. If '*' is listed, all arguments are excluded.
 NCBI_PARAM_DECL(string, CGI, LOG_EXCLUDE_ARGS);
 NCBI_PARAM_DEF_EX(string, CGI, LOG_EXCLUDE_ARGS, kEmptyStr, eParam_NoThread,
                   CGI_LOG_EXCLUDE_ARGS);
 typedef NCBI_PARAM_TYPE(CGI, LOG_EXCLUDE_ARGS) TCGI_LogExcludeArgs;
 
+// Arguments to be listed with restructed size.
+// Value format is arg1:size1&arg2:size2...&*:size
+// The listed arguments are truncated to the size specified.
+// '*' may be used to limit size of all unlisted arguments.
+NCBI_PARAM_DECL(string, CGI, LOG_LIMIT_ARGS);
+NCBI_PARAM_DEF_EX(string, CGI, LOG_LIMIT_ARGS, kEmptyStr, eParam_NoThread,
+                  CGI_LOG_LIMIT_ARGS);
+typedef NCBI_PARAM_TYPE(CGI, LOG_LIMIT_ARGS) TCGI_LogLimitArgs;
+
 
 string CCgiRequest::GetCGIEntriesStr(void) const
 {
-    string exclusions = TCGI_LogExcludeArgs::GetDefault();
-    list<string> excl;
-    NStr::Split(exclusions, "&", excl);
+    list<string> excluded, limited;
+    // Map argument name to its limit. Limit of -2 indicates excluded
+    // arguments, limit = -1 means no limit.
+    typedef map<string, int> TArgLimits;
+    TArgLimits arg_limits;
+    int lim_unlisted = -1;
+
+    NStr::Split(TCGI_LogLimitArgs::GetDefault(), "&", limited);
+    ITERATE(list<string>, it, limited) {
+        string arg, val;
+        NStr::SplitInTwo(*it, ":", arg, val);
+        if ( arg.empty() ) {
+            ERR_POST(Error << "Missing argument name before size limit: "
+                << *it);
+            continue;
+        }
+        if ( val.empty() ) {
+            ERR_POST(Error << "Missing argument size limit: " << *it);
+            continue;
+        }
+        int ival;
+        try {
+            ival = NStr::StringToInt(val);
+        }
+        catch (CStringException) {
+            ERR_POST(Error << "Invalid argument size limit: " << *it);
+            continue;
+        }
+        if (arg == "*") {
+            lim_unlisted = ival;
+            continue;
+        }
+        arg_limits[arg] = ival;
+    }
+
+    NStr::Split(TCGI_LogExcludeArgs::GetDefault(), "&", excluded);
+    ITERATE(list<string>, it, excluded) {
+        if (*it == "*") {
+            return kEmptyStr;
+        }
+        arg_limits[*it] = -2;
+    }
 
     string args;
     ITERATE(TCgiEntries, entry, m_Entries) {
-        if ((entry->first.empty()  &&  entry->second.empty())  ||
-            find(excl.begin(), excl.end(), entry->first) != excl.end()) {
+        if (entry->first.empty()  &&  entry->second.empty()) {
+            continue;
+        }
+        TArgLimits::const_iterator lim_it = arg_limits.find(entry->first);
+        int lim = (lim_it == arg_limits.end()) ? lim_unlisted : lim_it->second;
+        if (lim == -2) {
+            // Excluded argument
             continue;
         }
         if ( !args.empty() ) {
@@ -1431,7 +1486,9 @@ string CCgiRequest::GetCGIEntriesStr(void) const
         }
         args += URL_EncodeString(entry->first, eUrlEncode_ProcessMarkChars);
         args += "=";
-        args += URL_EncodeString(entry->second.substr(0, 16384),
+        args += URL_EncodeString(lim >= 0 ?
+                                 entry->second.substr(0, lim) :
+                                 string(entry->second),
                                  eUrlEncode_ProcessMarkChars);
     }
     return args;
