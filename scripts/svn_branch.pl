@@ -234,10 +234,12 @@ EOF
     commit_merge => <<EOF,
 commit_merge: Commit the results of 'merge_down_into' or 'merge_up_from'.
 
-Usage: $ScriptName commit_merge BRANCH_PATH
+Usage: $ScriptName commit_merge BRANCH_PATH [LOG_MESSAGE]
 
 This command commits local changes made by a merge operation to the
-repository. A special format of the commit log message is used.
+repository. Log message of a special format appended by the LOG_MESSAGE
+parameter will be used for this check-in. LOG_MESSAGE is optional for
+the merge_down_into command and required by the merge_up_from command.
 EOF
 
     merge_stat => <<EOF,
@@ -595,7 +597,11 @@ elsif ($Command eq 'merge_up_from')
 }
 elsif ($Command eq 'commit_merge')
 {
-    $Module->CommitMerge(AcceptOnlyBranchPathArg($Command))
+    my $BranchPath = ExtractBranchPathArg();
+
+    TooManyArgs($Command) if @ARGV > 1;
+
+    $Module->CommitMerge($BranchPath, @ARGV)
 }
 elsif ($Command eq 'merge_diff')
 {

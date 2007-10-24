@@ -24,6 +24,37 @@ sub List
         for $Self->{SVN}->ReadFileLines($RootURL . '/branches/branch_list')
 }
 
+sub PrintMergeRevisionHistory
+{
+    my ($Self, $Direction, $SourcePath, $TargetPath, $Revisions) = @_;
+
+    sub Times
+    {
+        return @{$_[0]} ? @{$_[0]} > 1 ? @{$_[0]} . ' times' : 'once' : 'never'
+    }
+
+    print "Merged [$Direction] from '$SourcePath' into '$TargetPath': " .
+        Times($Revisions) . "\n";
+
+    for my $Revision (@$Revisions)
+    {
+        my $Line = "  r$Revision->{Number} (from " .
+            "r$Revision->{SourceRevisionNumber})";
+
+        if (my $Description = $Revision->{MergeDescription})
+        {
+            $Line .= "\t- ";
+            $Description =~ s/\s+$//so;
+            $Description =~ s/^\s+//so;
+            $Description =~ s/\s+/ /gso;
+            $Description = "$1..." if $Description =~ m/^(.{37}).{4}/;
+            $Line .= $Description
+        }
+
+        print $Line . "\n"
+    }
+}
+
 sub Info
 {
     my ($Self, $RootURL, $BranchPath) = @_;
@@ -43,28 +74,11 @@ sub Info
         print "  $Path\n"
     }
 
-    sub Times
-    {
-        return @{$_[0]} ? @{$_[0]} > 1 ? @{$_[0]} . ' times' : 'once' : 'never'
-    }
+    $Self->PrintMergeRevisionHistory('up', $BranchPath, $UpstreamPath,
+        $BranchInfo->{MergeUpRevisions});
 
-    print "Merged [down] from '$UpstreamPath' into '$BranchPath': " .
-        Times($BranchInfo->{MergeDownRevisions}) . "\n";
-
-    for my $Revision (@{$BranchInfo->{MergeDownRevisions}})
-    {
-        print "  r$Revision->{Number} (from " .
-            "r$Revision->{SourceRevisionNumber})\n"
-    }
-
-    print "Merged [up] from '$BranchPath' into '$UpstreamPath': " .
-        Times($BranchInfo->{MergeUpRevisions}) . "\n";
-
-    for my $Revision (@{$BranchInfo->{MergeUpRevisions}})
-    {
-        print "  r$Revision->{Number} (from " .
-            "r$Revision->{SourceRevisionNumber})\n"
-    }
+    $Self->PrintMergeRevisionHistory('down', $UpstreamPath, $BranchPath,
+        $BranchInfo->{MergeDownRevisions})
 }
 
 sub MarkPath
@@ -588,13 +602,15 @@ sub MergeUpFrom
 
 sub CommitMerge
 {
-    my ($Self, $BranchPath) = @_;
+    my ($Self, $BranchPath, $LogMessage) = @_;
 
     my $RootURL = $Self->{SVN}->GetRootURL() ||
         die "$Self->{MyName}: not in a working copy\n";
 
-    my @BranchPaths = @{NCBI::SVN::Branching::BranchInfo->new($RootURL,
-        $BranchPath)->{BranchPaths}};
+    my $BranchInfo =
+        NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath);
+
+    my @BranchPaths = @{$BranchInfo->{BranchPaths}};
 
     my $Message;
 
@@ -613,16 +629,31 @@ sub CommitMerge
         }
     }
 
-    my ($Changes) = $Message =~ m/to merge (changes .*?)[\r\n]*$/o;
+    my ($Changes, $SourcePath, $TargetPath) = $Message =~
+        m/(changes up to r\d+ from '(.+?)' into '(.+?)'\.)/so or
+            die "$Self->{MyName}: cannot retrieve log message.\n";
 
-    die "$Self->{MyName}: cannot retrieve log message.\n" unless $Changes;
+    my $UpstreamPath = $BranchInfo->{UpstreamPath};
+
+    if ($SourcePath eq $BranchPath)
+    {
+        die "$Self->{MyName}: wrong BRANCH_PATH argument for this merge.\n"
+            if $TargetPath ne $UpstreamPath;
+
+        die "$Self->{MyName}: upstream merge requires a log message.\n"
+            unless $LogMessage
+    }
+    elsif ($TargetPath ne $BranchPath || $SourcePath ne $UpstreamPath)
+    {
+        die "$Self->{MyName}: wrong BRANCH_PATH argument for this merge.\n"
+    }
 
     $Self->{SVN}->RunSubversion('propdel', '-R', 'ncbi:raw', @BranchPaths);
 
     eval
     {
-        $Self->{SVN}->RunSubversion('commit',
-            '-m', "Merged $Changes", @BranchPaths)
+        $Self->{SVN}->RunSubversion('commit', '-m', 'Merged ' . ($LogMessage ?
+            $Changes . "\n\n" . $LogMessage : $Changes), @BranchPaths)
     };
 
     $Self->SetRawMergeProp($BranchPath, $Changes, @BranchPaths) if $@

@@ -131,6 +131,9 @@ sub ModelBranchStructure
     }
 }
 
+my $LogMessageParsingRE =
+    qr/changes up to r(\d+) from '(.+?)' into '(.+?)'\.\s*(.*)/so;
+
 sub new
 {
     my ($Class, $RootURL, $BranchPath) = @_;
@@ -187,14 +190,14 @@ sub new
             $Self->ModelBranchStructure(\%BranchStructure,
                 $Revision, $CommonTarget)
         }
-        elsif ($LogMessage =~
-            m/^Merged changes up to r(\d+) from '(.+)' into '(.+)'.$/o &&
-                $2 eq $UpstreamPath && $3 eq $BranchPath)
+        elsif ($LogMessage =~ $LogMessageParsingRE &&
+            $2 eq $UpstreamPath && $3 eq $BranchPath)
         {
             $Revision->{SourceRevisionNumber} =
                 $Self->{LastDownSyncRevisionNumber} = $1;
 
             $Revision->{MergeDirection} = 'down';
+            $Revision->{MergeDescription} = $4;
 
             unshift @MergeDownRevisions, $Revision
         }
@@ -244,14 +247,14 @@ sub new
 
     for my $Revision (reverse @$UpstreamRevisions)
     {
-        if ($Revision->{LogMessage} =~
-            m/^Merged changes up to r(\d+) from '(.+)' into '(.+)'.$/o &&
-                $2 eq $BranchPath && $3 eq $UpstreamPath)
+        if ($Revision->{LogMessage} =~ $LogMessageParsingRE &&
+            $2 eq $BranchPath && $3 eq $UpstreamPath)
         {
             $Revision->{SourceRevisionNumber} =
                 $Self->{LastUpSyncRevisionNumber} = $1;
 
             $Revision->{MergeDirection} = 'up';
+            $Revision->{MergeDescription} = $4;
 
             unshift @MergeUpRevisions, $Revision
         }
