@@ -143,6 +143,7 @@ sub new
 
     my $Self = $Class->SUPER::new(
         BranchPath => $BranchPath,
+        RootURL => $RootURL,
         BranchRevisions => \@BranchRevisions,
         MergeDownRevisions => \@MergeDownRevisions
     );
@@ -222,26 +223,27 @@ sub new
     return $Self
 }
 
-package NCBI::SVN::Branching::BranchAndUpstreamInfo;
+package NCBI::SVN::Branching::UpstreamInfo;
 
-use base qw(NCBI::SVN::Branching::BranchInfo);
+use base qw(NCBI::SVN::Base);
 
 sub new
 {
-    my ($Class, $RootURL, $BranchPath) = @_;
+    my ($Class, $BranchInfo) = @_;
 
-    my $Self = $Class->SUPER::new($RootURL, $BranchPath);
+    my $Self = $Class->SUPER::new(BranchInfo => $BranchInfo);
 
-    my $UpstreamPath = $Self->{UpstreamPath};
+    my ($BranchPath, $UpstreamPath) = @$BranchInfo{qw(BranchPath UpstreamPath)};
 
     print STDERR "Gathering information about $UpstreamPath...\n";
 
     $Self->{LastUpSyncRevisionNumber} =
-        $Self->{BranchCreationRevision}->{Number};
+        $BranchInfo->{BranchCreationRevision}->{Number};
 
     my $UpstreamRevisions = $Self->{SVN}->ReadLog('--stop-on-copy',
-        "-rHEAD\:$Self->{BranchRevisions}->[-1]->{Number}",
-        $RootURL, map {"$UpstreamPath/$_"} @{$Self->{BranchPaths}});
+        "-rHEAD\:$BranchInfo->{BranchRevisions}->[-1]->{Number}",
+        $BranchInfo->{RootURL},
+        map {"$UpstreamPath/$_"} @{$BranchInfo->{BranchPaths}});
 
     my @MergeUpRevisions;
 
@@ -264,7 +266,7 @@ sub new
         ($UpstreamRevisions, \@MergeUpRevisions);
 
     $Self->{MergeRevisions} = [sort {$b->{Number} <=> $a->{Number}}
-        @MergeUpRevisions, @{$Self->{MergeDownRevisions}}];
+        @MergeUpRevisions, @{$BranchInfo->{MergeDownRevisions}}];
 
     return $Self
 }

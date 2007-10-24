@@ -60,7 +60,8 @@ sub Info
     my ($Self, $RootURL, $BranchPath) = @_;
 
     my $BranchInfo =
-        NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL, $BranchPath);
+        NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath);
+    my $UpstreamInfo = NCBI::SVN::Branching::UpstreamInfo->new($BranchInfo);
 
     my $UpstreamPath = $BranchInfo->{UpstreamPath};
 
@@ -75,7 +76,7 @@ sub Info
     }
 
     $Self->PrintMergeRevisionHistory('up', $BranchPath, $UpstreamPath,
-        $BranchInfo->{MergeUpRevisions});
+        $UpstreamInfo->{MergeUpRevisions});
 
     $Self->PrintMergeRevisionHistory('down', $UpstreamPath, $BranchPath,
         $BranchInfo->{MergeDownRevisions})
@@ -301,31 +302,23 @@ sub ShapeBranch
             $RewriteBranchList = 1
         }
 
-        my $BranchInfo;
-
-        if (!$Force && ($BranchInfo =
-            eval {NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL,
-                $BranchPath)}))
+        if (my $BranchInfo =
+            eval {NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath)})
         {
             my $BranchRevisions = $BranchInfo->{BranchRevisions};
+            my $UpstreamInfo;
 
-            if (@$BranchRevisions > 1 && $BranchRevisions->[0]->{Number} >
-                ($BranchInfo->{MergeUpRevisions}->[0]->{SourceRevisionNumber} ||
-                    0))
+            if (!$Force && @$BranchRevisions > 1 && ($UpstreamInfo =
+                eval {NCBI::SVN::Branching::UpstreamInfo($BranchInfo)}) &&
+                $BranchRevisions->[0]->{Number} >
+                    ($UpstreamInfo->{MergeUpRevisions}->[0]->
+                        {SourceRevisionNumber} || 0))
             {
                 die "WARNING: Latest modifications in '$BranchPath'\n" .
                     "were not merged into '$BranchInfo->{UpstreamPath}'.\n" .
                     "Use --force to remove the branch anyway.\n"
             }
-        }
-        else
-        {
-            $BranchInfo = eval {NCBI::SVN::Branching::BranchInfo->new($RootURL,
-                $BranchPath)}
-        }
 
-        if ($BranchInfo)
-        {
             for (@{$BranchInfo->{BranchPaths}})
             {
                 MarkPath("$BranchPath/$_", \%ModTree, 'rm')
@@ -480,7 +473,8 @@ sub DoMerge
         die "$Self->{MyName}: not in a working copy\n";
 
     my $BranchInfo =
-        NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL, $BranchPath);
+        NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath);
+    my $UpstreamInfo = NCBI::SVN::Branching::UpstreamInfo->new($BranchInfo);
 
     my @BranchPaths = @{$BranchInfo->{BranchPaths}};
 
@@ -498,13 +492,13 @@ sub DoMerge
         $LastSourceRev, $LastTargetRev, $SourceRevisions) =
         $Direction eq 'up' ?
             ($BranchPath, $UpstreamPath,
-                $BranchInfo->{LastUpSyncRevisionNumber},
+                $UpstreamInfo->{LastUpSyncRevisionNumber},
                 $BranchInfo->{LastDownSyncRevisionNumber},
                 $BranchInfo->{BranchRevisions}) :
             ($UpstreamPath, $BranchPath,
                 $BranchInfo->{LastDownSyncRevisionNumber},
-                $BranchInfo->{LastUpSyncRevisionNumber},
-                $BranchInfo->{UpstreamRevisions});
+                $UpstreamInfo->{LastUpSyncRevisionNumber},
+                $UpstreamInfo->{UpstreamRevisions});
 
     $SourceRev ||= $SourceRevisions->[0]->{Number} || 0;
 
@@ -523,7 +517,7 @@ sub DoMerge
 
     print STDERR "Merging with r$SourceRev...\n";
 
-    my $LastMergeRevision = $BranchInfo->{MergeRevisions}->[0];
+    my $LastMergeRevision = $UpstreamInfo->{MergeRevisions}->[0];
 
     my $BranchPathInfo = $BranchInfo->{BranchPathInfo};
 
