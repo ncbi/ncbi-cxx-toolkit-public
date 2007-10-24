@@ -117,7 +117,15 @@ public:
     static void FindCycles(const TProjects& tree,
                            TDependsCycles*  cycles);
 
+    static void FindCyclesNew(const TProjects& tree,
+                              TDependsCycles*  cycles);
+
 private:
+    static bool AnalyzeProjItemNew( const TProjects& tree,
+                                    const CProjKey&  proj_id,
+                                    set< CProjKey>& projkeys,
+                                    TDependsChain& chain);
+    
     static bool IsInAnyCycle(const CProjKey&       proj_id,
                              const TDependsCycles& cycles);
 

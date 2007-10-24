@@ -264,6 +264,68 @@ CProjectItemsTree::GetExternalDepends(list<CProjKey>* external_depends) const
 }
 
 //-----------------------------------------------------------------------------
+void CCyclicDepends::FindCyclesNew(const TProjects& tree,
+                        TDependsCycles*  cycles)
+{
+    cycles->clear();
+
+    set< CProjKey> projkeys;
+    TDependsChain chain;
+
+    // For all projects in tree.
+    ITERATE(TProjects, p, tree) {
+        const CProjKey& proj_id = p->first;
+        if (p->second.m_ProjType == CProjKey::eDll) {
+            continue;
+        }
+        if (AnalyzeProjItemNew(tree, proj_id, projkeys, chain)) {
+            cycles->insert(chain);
+            chain.clear();
+        }
+        _ASSERT(chain.size() == 0);
+        _ASSERT(projkeys.size() == 0);
+    }
+}
+
+bool CCyclicDepends::AnalyzeProjItemNew(
+    const TProjects& tree,
+    const CProjKey&  proj_id,
+    set< CProjKey>& projkeys,
+    TDependsChain& chain)
+{
+    if (projkeys.find(proj_id) != projkeys.end()) {
+        chain.push_back(proj_id);
+        return true;
+    }
+    TProjects::const_iterator p = tree.find(proj_id);
+    if (p == tree.end()) {
+        if (!SMakeProjectT::IsConfigurableDefine(proj_id.Id())) {
+            LOG_POST( Error << "Undefined project: " << proj_id.Id() );
+        }
+        return false;
+    }
+    const CProjItem& project = p->second;
+    TDependsChain::const_iterator i = project.m_Depends.begin();
+    if (i == project.m_Depends.end()) {
+        return false;
+    }
+    chain.push_back(proj_id);
+    projkeys.insert(proj_id);
+    bool found=false;
+    for ( ; !found && i != project.m_Depends.end(); ++i) {
+        if (*i == proj_id) {
+            continue;
+        }
+        found = AnalyzeProjItemNew(tree, *i, projkeys,chain);
+    }
+    if (!found) {
+        chain.pop_back();
+    }
+    projkeys.erase(proj_id);
+    return found;
+}
+
+
 void CCyclicDepends::FindCycles(const TProjects& tree,
                                 TDependsCycles*  cycles)
 {

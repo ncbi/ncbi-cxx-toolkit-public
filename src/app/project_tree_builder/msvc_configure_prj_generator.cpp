@@ -211,7 +211,9 @@ void CMsvcConfigureProjectGenerator::SaveProject(bool with_gui)
         build_info.m_SourceFile  = source_file_path_abs;
         build_info.m_Description = "Configure solution : $(SolutionName)";
         build_info.m_CommandLine = m_CustomBuildCommand;
-        build_info.m_Outputs     = m_CustomBuildOutput;//"$(InputPath).aanofile.out";
+        string outputs("$(InputPath).aanofile.out;");
+        outputs += m_CustomBuildOutput;
+        build_info.m_Outputs     = outputs;//"$(InputPath).aanofile.out";
         
         AddCustomBuildFileToFilter(filter, 
                                    m_Configs, 

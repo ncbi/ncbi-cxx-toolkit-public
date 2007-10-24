@@ -516,12 +516,6 @@ int CProjBulderApp::Run(void)
                                           GetProjectTreeInfo().m_Src, 
                                           &projects_tree);
     
-    // Analyze tree for dependencies cycles
-    PTB_INFO("Checking project inter-dependencies...");
-    CCyclicDepends::TDependsCycles cycles;
-    CCyclicDepends::FindCycles(projects_tree.m_Projects, &cycles);
-    s_ReportDependenciesStatus(cycles,projects_tree.m_Projects);
-
     // MSVC specific part:
     PTB_INFO("Checking project requirements...");
     // Exclude some projects from build:
@@ -558,6 +552,11 @@ int CProjBulderApp::Run(void)
         CreateDllBuildTree(projects_tree, &dll_projects_tree);
     }
     CProjectItemsTree& prj_tree = dll ? dll_projects_tree : projects_tree;
+
+    PTB_INFO("Checking project inter-dependencies...");
+    CCyclicDepends::TDependsCycles cycles;
+    CCyclicDepends::FindCyclesNew(prj_tree.m_Projects, &cycles);
+    s_ReportDependenciesStatus(cycles,projects_tree.m_Projects);
 
     PTB_INFO("Creating projects...");
     if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
