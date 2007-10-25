@@ -170,7 +170,6 @@ CBlastInitialWordOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*
         return;
 
     ddc.Log("window_size", m_Ptr->window_size);
-    ddc.Log("ungapped_extension", m_Ptr->ungapped_extension);
     ddc.Log("x_dropoff", m_Ptr->x_dropoff);
 }
 void
@@ -224,7 +223,6 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
     ddc.Log("hitlist_size", m_Ptr->hitlist_size);
     ddc.Log("hsp_num_max", m_Ptr->hsp_num_max);
     ddc.Log("total_hsp_limit", m_Ptr->total_hsp_limit);
-    ddc.Log("hsp_range_max", m_Ptr->hsp_range_max);
     ddc.Log("culling_limit", m_Ptr->culling_limit);
     ddc.Log("expect_value", m_Ptr->expect_value);
     ddc.Log("cutoff_score", m_Ptr->cutoff_score);

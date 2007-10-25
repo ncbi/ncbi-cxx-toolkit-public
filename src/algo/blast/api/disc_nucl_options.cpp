@@ -71,7 +71,6 @@ CDiscNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
     m_Opts->SetDefaultsMode(false);
     SetWindowSize(BLAST_WINDOW_SIZE_DISC);
     m_Opts->SetDefaultsMode(defaults_mode);
-    SetUngappedExtension(false);  // not yet supported over the network.
 }
 
 void

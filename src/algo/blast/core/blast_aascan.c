@@ -153,6 +153,7 @@ static Int4 s_BlastCompressedAaScanSubject(
                               Int4 array_size)
 {
     Int4 index;
+    Int4 preshift; /* used for 2-stage index calculation */
     Uint1 *s;
     Uint1 *s_first;
     Uint1 *s_last;
@@ -182,42 +183,60 @@ static Int4 s_BlastCompressedAaScanSubject(
     pv_array_bts = lookup->pv_array_bts;
 
     /* prime the index */
-    index = s_ComputeCompressedIndex(word_length - 1, s_first,
-                                     compressed_alphabet_size,
-                                     &skip, lookup);
+    for(s = s_first; s <= s_last; s++){
+        index = s_ComputeCompressedIndex(word_length - 1, s,
+                                         compressed_alphabet_size,
+                                         &skip, lookup);
+        if(!skip)
+          break;
+    }
 
-    next_char = ((subject->length > word_length)? s_first[word_length-1] : 0);
+    next_char = ((s <= s_last)? s[word_length-1] : 0);
+    preshift = (Int4)((((Int8)index) * recip) >> 32); 
 
-    for (s = s_first; s <= s_last; s++) {
+    /* main scanning loop */
+    for (; s <= s_last; s++) {
        /* compute the index value */
 
        compressed_char = scaled_compress_table[next_char];
        next_char = s[word_length];
-
-       if (compressed_char < 0) {
-          /* skip all words containing this (ignored) letter */
-          skip = word_length; 
-          continue;
-       } 
-       else {
-          /* we have to remove the oldest letter from the
-             index and add in the next letter. The latter is easy,
-             but since the compressed alphabet size is not a
-             power of two the former requires a remainder and
-             multiply, assuming the old letter is in the high part
-             of the index. For this reason, we reverse the order
-             of the letters and keep the oldest in the low part
-             of index, so that a single divide (implemented via
-             reciprocal multiplication) does the removal */
-
-          index = (Int4)((((Int8)index) * recip) >> 32) + compressed_char;
-
-          if (skip) {
-             if (--skip) /* still skipping? */
-                continue;
-          }
-       }
       
+       if(compressed_char < 0){ /* flush (rare) "bad" character(s) */
+         preshift = 0;
+         s++;
+         for(skip = word_length-1; skip && (s <= s_last) ; s++){
+           compressed_char = scaled_compress_table[next_char];
+           next_char = s[word_length];
+           
+           if(compressed_char < 0){ /* not again! */
+             skip = word_length-1;
+             preshift = 0;
+             continue;
+           }
+           
+           index = preshift + compressed_char;
+           preshift = (Int4)((((Int8)( index )) * recip) >> 32);
+           skip--;
+         }
+         
+         s--; /*undo the following increment*/
+         continue;
+       }
+
+       /* we have to remove the oldest letter from the
+          index and add in the next letter. The latter is easy,
+          but since the compressed alphabet size is not a
+          power of two the former requires a remainder and
+          multiply, assuming the old letter is in the high part
+          of the index. For this reason, we reverse the order
+          of the letters and keep the oldest in the low part
+          of index, so that a single divide (implemented via
+          reciprocal multiplication) does the removal.
+          Index calculation done in two steps to let the CPU do 
+          out-of-order execution. */
+       
+       index = preshift + compressed_char;
+       preshift = (Int4)((((Int8)( index )) * recip) >> 32);
 
        /* if there are hits */
        if (PV_TEST(pv, index, pv_array_bts)) {

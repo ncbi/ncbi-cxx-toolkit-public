@@ -115,6 +115,8 @@ typedef struct BlastInitialWordParameters {
                                         seeds? */
    Int4 nucl_score_table[256]; /**< the combined score of all match/mismatch
                                     combinations for aligning four bases */
+   Boolean ungapped_extension; /**< Should an ungapped extension be
+                                  performed? */
 } BlastInitialWordParameters;
     
 /** Computed values used as parameters for gapped alignments.

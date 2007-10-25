@@ -1855,11 +1855,52 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
         int firstGi = 0;
     
         if(bdl.empty()){ //no blast defline struct, should be no such case now
-            out << ">"; 
-            wid->WriteAsFasta(out);
-            out<<" ";
-            s_WrapOutputLine(out, GetTitle(bsp_handle));
-            out << endl;
+            //actually not so fast...as we now fetch from entrez even when it's not in blast db
+            //there is no blast defline in such case.
+            int gi = FindGi(bsp_handle.GetBioseqCore()->GetId());
+            string urlLink;
+            out << ">";
+            if ((m_AlignOption&eSequenceRetrieval)
+                && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
+                char buf[512];
+                sprintf(buf, k_Checkbox.c_str(), gi > 0 ?
+                        NStr::IntToString(gi).c_str() : wid->GetSeqIdString().c_str(),
+                        m_QueryNumber);
+                out << buf;
+            }
+                
+            if(m_AlignOption&eHtml){
+                
+                urlLink = x_GetUrl(bsp_handle.GetBioseqCore()->GetId(), gi, 1, 0, 0);
+                out<<urlLink;
+            }
+                
+            if(m_AlignOption&eShowGi && gi > 0){
+                out<<"gi|"<<gi<<"|";
+                    }     
+            if(!(wid->AsFastaString().find("gnl|BL_ORD_ID") 
+                 != string::npos)){
+                wid->WriteAsFasta(out);
+            }
+            if(m_AlignOption&eHtml){
+                if(urlLink != NcbiEmptyString){
+                    out<<"</a>";
+                }
+                if(gi != 0){
+                    out<<"<a name="<<gi<<"></a>";
+                    id_label = NStr::IntToString(gi);
+                } else {
+                    out<<"<a name="<<wid->GetSeqIdString()<<"></a>";
+                    id_label = wid->GetSeqIdString();
+                }
+            }
+            out <<" ";
+            s_WrapOutputLine(out, (m_AlignOption&eHtml) ? 
+                             CHTMLHelper::HTMLEncode(GetTitle(bsp_handle)) :
+                             GetTitle(bsp_handle));     
+                
+            out<<endl;
+            
         } else {
             //print each defline 
             for(list< CRef< CBlast_def_line > >::const_iterator 

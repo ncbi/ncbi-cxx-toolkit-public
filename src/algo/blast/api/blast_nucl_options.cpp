@@ -135,14 +135,12 @@ CBlastNucleotideOptionsHandle::SetInitialWordOptionsDefaults()
 {
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_NUCL);
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
-    SetUngappedExtension();
 }
 
 void
 CBlastNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
 {
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
-    SetUngappedExtension();
 }
 
 void

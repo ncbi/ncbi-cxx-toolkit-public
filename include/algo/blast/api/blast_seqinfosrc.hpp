@@ -55,8 +55,7 @@ BEGIN_SCOPE(blast)
 /// Abstract base class to encapsulate retrieval of sequence identifiers. 
 /// Used for processing of results coming directly from the BLAST 
 /// core engine, e.g. on-the-fly tabular output.
-class IBlastSeqInfoSrc
-{
+class IBlastSeqInfoSrc : public CObject {
 public:
     virtual ~IBlastSeqInfoSrc() {}
     

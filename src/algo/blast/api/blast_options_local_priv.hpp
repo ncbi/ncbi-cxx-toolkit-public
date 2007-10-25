@@ -134,9 +134,6 @@ public:
     int GetWindowSize() const;
     void SetWindowSize(int w);
 
-    bool GetUngappedExtension() const;
-    void SetUngappedExtension(bool val = true);
-
     double GetXDropoff() const;
     void SetXDropoff(double x);
 
@@ -773,18 +770,6 @@ inline void
 CBlastOptionsLocal::SetWindowSize(int s)
 {
     m_InitWordOpts->window_size = s;
-}
-
-inline bool
-CBlastOptionsLocal::GetUngappedExtension() const
-{
-    return m_InitWordOpts->ungapped_extension ? true : false;
-}
-
-inline void 
-CBlastOptionsLocal::SetUngappedExtension(bool val)
-{
-    m_InitWordOpts->ungapped_extension = val;
 }
 
 inline double

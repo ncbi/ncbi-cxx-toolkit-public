@@ -71,7 +71,6 @@ CBlastRPSOptionsHandle::SetInitialWordOptionsDefaults()
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_PROT);
     SetWindowSize(BLAST_WINDOW_SIZE_PROT);
     // FIXME: extend_word_method is missing
-    m_Opts->SetUngappedExtension();
 }
 
 void

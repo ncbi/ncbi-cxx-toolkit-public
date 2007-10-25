@@ -682,7 +682,7 @@ BOOST_AUTO_TEST_CASE( testExtParamNewSomeInvalidKbp )
     const EBlastProgramType kBlastProgram=eBlastTypeBlastn;
     
     BlastExtensionOptions* ext_options;
-    BlastExtensionOptionsNew(kBlastProgram, &ext_options);
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options, true);
     ext_options->gap_x_dropoff = 20;
     ext_options->gap_x_dropoff_final = 20;
 /*  FIXME
@@ -743,7 +743,7 @@ BOOST_AUTO_TEST_CASE( testExtensionParamsNew )
     const EBlastProgramType kBlastProgram=eBlastTypeBlastn;
 
     BlastExtensionOptions* ext_options;
-    BlastExtensionOptionsNew(kBlastProgram, &ext_options);
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options, true);
     ext_options->gap_x_dropoff = 20;
     ext_options->gap_x_dropoff_final = 22;
 

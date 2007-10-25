@@ -824,17 +824,19 @@ s_TestNearIdentical(const BlastCompo_SequenceData *seqData,
   int numIdentical = 0;
   double fractionIdentical;
   int qPos, sPos; /*positions in query and subject;*/
+  int qEnd; /*end of query*/
 
   qPos = align->queryStart - queryOffset;
+  qEnd = align->queryEnd - queryOffset;
   sPos = align->matchStart - rangeOffset;
-  while (qPos < align->queryEnd)  {
+  while (qPos < qEnd)  {
       if (queryData->data[qPos] == seqData->data[sPos])
 	numIdentical++;
       sPos++;
       qPos++;
   }
   fractionIdentical = ((double) numIdentical/
-  (double) (align->queryEnd - align->queryStart +1));
+  (double) (align->queryEnd - align->queryStart));
   if (fractionIdentical >= MINUMUM_FRACTION_NEAR_IDENTICAL)
     return(TRUE);
   else

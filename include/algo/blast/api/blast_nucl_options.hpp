@@ -134,14 +134,6 @@ public:
 
     /******************* Initial word options ***********************/
 
-    /// Returns UngappedExtension
-    bool GetUngappedExtension() const { return m_Opts->GetUngappedExtension();}
-    /// Sets UngappedExtension
-    /// @param val UngappedExtension [in]
-    void SetUngappedExtension(bool val = true) { 
-        m_Opts->SetUngappedExtension(val); 
-    }
-
     /// Returns XDropoff
     double GetXDropoff() const { return m_Opts->GetXDropoff(); } 
     /// Sets XDropoff

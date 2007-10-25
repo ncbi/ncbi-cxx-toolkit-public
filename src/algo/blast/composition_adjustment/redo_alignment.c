@@ -949,7 +949,6 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
 static Boolean s_preliminaryTestNearIdentical(BlastCompo_QueryInfo query_info[], 
 				   s_WindowInfo *window)
 {
-  BlastCompo_SequenceData *thisQuery; /*one query sequence*/
   BlastCompo_Alignment *align; /*first alignment in this window*/
   int queryIndex, queryLength;
 

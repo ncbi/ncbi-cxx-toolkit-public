@@ -86,10 +86,6 @@ CLocalDbAdapter::~CLocalDbAdapter()
     if (m_SeqSrc) {
         m_SeqSrc = BlastSeqSrcFree(m_SeqSrc);
     }
-    if (m_SeqInfoSrc) {
-        delete m_SeqInfoSrc;
-        m_SeqInfoSrc = 0;
-    }
 }
 
 void

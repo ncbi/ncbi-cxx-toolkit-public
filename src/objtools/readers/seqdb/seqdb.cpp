@@ -322,7 +322,7 @@ int CSeqDB::GetSeqLengthApprox(int oid) const
 CRef<CBlast_def_line_set> CSeqDB::GetHdr(int oid) const
 {
     m_Impl->Verify();
-    CRef<CBlast_def_line_set> rv =m_Impl->GetHdr(oid);
+    CRef<CBlast_def_line_set> rv = m_Impl->GetHdr(oid);
     m_Impl->Verify();
     
     return rv;

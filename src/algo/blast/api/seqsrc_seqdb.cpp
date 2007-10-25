@@ -174,7 +174,7 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
     // code will exclude this HSP list.
     
     if (seqdb_args->check_oid_exclusion) {
-        if ((**seqdb).GetGiList() != NULL) {
+        if (! (**seqdb).GetIdSet().Blank()) {
             list< CRef<CSeq_id> > seqids = (**seqdb).GetSeqIDs(oid);
             
             if (seqids.empty()) {

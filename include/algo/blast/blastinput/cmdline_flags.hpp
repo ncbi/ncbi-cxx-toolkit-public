@@ -43,6 +43,8 @@ BEGIN_SCOPE(blast)
 
 /// Query sequence(s)
 extern const string kArgQuery;
+/// Default value for query sequence input
+extern const string kDfltArgQuery;
 
 /// Output file name
 extern const string kArgOutput;

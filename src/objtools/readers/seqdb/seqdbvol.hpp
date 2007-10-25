@@ -241,10 +241,10 @@ public:
     /// @return
     ///   The set of blast-def-lines describing this sequence.
     CRef<CBlast_def_line_set>
-    GetFilteredHeader(int                  oid,
-                      bool                 have_oidlist,
-                      int                  membership_bit,
-                      CSeqDBLockHold     & locked) const;
+    GetFilteredHeader(int              oid,
+                      bool             have_oidlist,
+                      int              membership_bit,
+                      CSeqDBLockHold & locked) const;
     
     /// Get the sequence type stored in this database.
     /// 
@@ -1186,7 +1186,7 @@ private:
     mutable CRef<CSeqDBIsam> m_IsamHash;
     
     /// This cache allows CBioseqs to share taxonomic objects.
-    mutable CSeqDBSimpleCache< int, CRef<CSeqdesc> > m_TaxCache;
+    mutable CSeqDBIntCache< CRef<CSeqdesc> > m_TaxCache;
     
     /// The user ID list, if one exists.
     mutable CRef<CSeqDBGiList> m_UserGiList;
@@ -1208,6 +1208,9 @@ private:
     
     /// First OID past end of this volume.
     int m_VolEnd;
+    
+    /// Cache for x_GetFilteredHeader.
+    mutable CSeqDBIntCache< CRef<CBlast_def_line_set> > m_DeflineCache;
 };
 
 END_NCBI_SCOPE

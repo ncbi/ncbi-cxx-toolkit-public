@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 const string kArgQuery("query");
+const string kDfltArgQuery("-");
 const string kArgOutput("out");
 
 const string kArgDb("db");

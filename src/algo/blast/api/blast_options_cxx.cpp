@@ -84,7 +84,6 @@ enum EBlastOptIdx {
     eBlastOpt_WindowSize,
     eBlastOpt_SeedContainerType,
     eBlastOpt_SeedExtensionMethod,
-    eBlastOpt_UngappedExtension,
     eBlastOpt_XDropoff,
     eBlastOpt_GapXDropoff,
     eBlastOpt_GapXDropoffFinal,
@@ -685,18 +684,6 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
         x_SetParam(B4Param_SmithWatermanMode, v);
         return;
 
-/*  What about this???
-    case eBlastOpt_FullByteScan:
-        x_SetParam(B4Param_FullByteScan, v);
-        return;
-*/
-
-/* This is needed !!
-    case eBlastOpt_UngappedExtension:
-        x_SetParam(B4Param_UngappedExtension, v);
-        return;
-*/
-        
     default:
         break;
     }
@@ -1199,25 +1186,6 @@ CBlastOptions::SetWindowSize(int w)
     }
     if (m_Remote) {
         m_Remote->SetValue(eBlastOpt_WindowSize, w);
-    }
-}
-
-bool 
-CBlastOptions::GetUngappedExtension() const
-{
-    if (! m_Local) {
-        x_Throwx("Error: GetUngappedExtension() not available.");
-    }
-    return m_Local->GetUngappedExtension();
-}
-void 
-CBlastOptions::SetUngappedExtension(bool val)
-{
-    if (m_Local) {
-        m_Local->SetUngappedExtension(val);
-    }
-    if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_UngappedExtension, val);
     }
 }
 

@@ -458,7 +458,7 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
       (*options)->gap_trigger = BLAST_GAP_TRIGGER_NUCL;
       (*options)->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
    }
-   (*options)->ungapped_extension = TRUE;
+
    (*options)->program_number = program;
 
    return 0;
@@ -473,8 +473,8 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
 
    ASSERT(options);
 
-   /* For some blastn variants (i.e., megablast), and for PHI BLAST there is no
-    * ungapped extension. */
+   /* PHI-BLAST has no ungapped extension phase.  Megablast may not have it,
+    but generally does now. */
    if (program_number != eBlastTypeBlastn  &&
        (!Blast_ProgramIsPhiBlast(program_number)) &&
        options->x_dropoff <= 0.0)
@@ -515,7 +515,7 @@ BlastExtensionOptionsFree(BlastExtensionOptions* options)
 }
 
 Int2
-BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *options)
+BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *options, Boolean gapped)
 
 {
 	*options = (BlastExtensionOptions*) 
@@ -541,7 +541,7 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
 
     /** @todo how to determine this for PSI-BLAST bootstrap run (i.e. when
      * program is blastp? */
-    if (Blast_QueryIsPssm(program) && ! Blast_SubjectIsTranslated(program)) {
+    if (gapped && (Blast_QueryIsPssm(program) && ! Blast_SubjectIsTranslated(program))) {
         (*options)->compositionBasedStats = eCompositionBasedStats;
     }
 
@@ -1417,10 +1417,11 @@ Int2 BLAST_InitDefaultOptions(EBlastProgramType program_number,
    if ((status=BlastInitialWordOptionsNew(program_number, word_options)))
       return status;
 
-   if ((status = BlastExtensionOptionsNew(program_number, ext_options)))
+   if ((status=BlastScoringOptionsNew(program_number, score_options)))
       return status;
 
-   if ((status=BlastScoringOptionsNew(program_number, score_options)))
+   if ((status = BlastExtensionOptionsNew(program_number, ext_options,
+                                       (*score_options)->gapped_calculation)))
       return status;
 
    if ((status=BlastHitSavingOptionsNew(program_number, hit_options,
@@ -1467,6 +1468,22 @@ static Int2 s_BlastExtensionScoringOptionsValidate(EBlastProgramType program_num
 			return BLASTERR_OPTION_VALUE_INVALID;
 	    }
 	}
+    }
+
+    if (ext_options->compositionBasedStats != eNoCompositionBasedStats)
+    {
+            if (!Blast_QueryIsPssm(program_number) && program_number != eBlastTypeTblastn && 
+                 program_number != eBlastTypeBlastp) {
+			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
+                            "Compositional adjustments are only supported with blastp or tblastn");
+			return BLASTERR_OPTION_VALUE_INVALID;
+            }
+            if (!score_options->gapped_calculation) {
+			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
+                            "Compositional adjustments are only supported for gapped searches");
+			return BLASTERR_OPTION_VALUE_INVALID;
+            }
+            
     }
 
     return 0;

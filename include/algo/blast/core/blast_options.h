@@ -184,8 +184,6 @@ typedef struct LookupTableOptions {
    Int4 mb_template_length; /**< Length of the discontiguous words */
    Int4 mb_template_type; /**< Type of a discontiguous word template */
    char* phi_pattern;  /**< PHI-BLAST pattern */
-   Int4 max_num_patterns; /**< Maximal number of patterns allowed for 
-                             PHI-BLAST */
    EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
 } LookupTableOptions;
 
@@ -243,8 +241,6 @@ typedef struct BlastInitialWordOptions {
    double gap_trigger; /**< Score in bits for starting gapped extension */
    Int4 window_size; /**< Maximal allowed distance between 2 hits in case 2 
                         hits are required to trigger the extension */
-   Boolean ungapped_extension; /**< Should the ungapped extension be 
-                                  performed? */
    double x_dropoff; /**< X-dropoff value (in bits) for the ungapped 
                          extension */
    EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
@@ -308,8 +304,6 @@ typedef struct BlastHitSavingOptions {
    Int4 hsp_num_max; /**< Maximal number of HSPs to save for one database 
                         sequence */
    Int4 total_hsp_limit; /**< Maximal total number of HSPs to keep */
-   Int4 hsp_range_max; /**< Maximal number of HSPs to save in a region: 
-                          used for culling only */
    Int4 culling_limit; /**< If the query range of an HSP is contained in
                             at least this many higher-scoring HSPs, throw
                             away the HSP as redundant (turned off if zero) */
@@ -616,10 +610,11 @@ BlastExtensionOptionsFree(BlastExtensionOptions* options);
 /** Allocate memory for BlastExtensionOptions and fill with default values.
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
+ * @param gapped The search is gapped [in]
 */
 NCBI_XBLAST_EXPORT
 Int2
-BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *options);
+BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *options, Boolean gapped);
 
 /** Fill non-default values in the BlastExtensionOptions structure.
  * @param options The options structure [in] [out]

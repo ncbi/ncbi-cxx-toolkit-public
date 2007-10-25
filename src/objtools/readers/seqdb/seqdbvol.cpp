@@ -56,12 +56,13 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                      CSeqDBNegativeList * neg_list,
                      int                  vol_start,
                      CSeqDBLockHold     & locked)
-    : m_Atlas    (atlas),
-      m_IsAA     (prot_nucl == 'p'),
-      m_VolName  (name),
-      m_TaxCache (256),
-      m_VolStart (vol_start),
-      m_VolEnd   (0)
+    : m_Atlas        (atlas),
+      m_IsAA         (prot_nucl == 'p'),
+      m_VolName      (name),
+      m_TaxCache     (256),
+      m_VolStart     (vol_start),
+      m_VolEnd       (0),
+      m_DeflineCache (256)
 {
     if (user_list) {
         m_UserGiList.Reset(user_list);
@@ -1041,7 +1042,7 @@ CSeqDBVol::x_GetTaxDefline(int                  oid,
     typedef TBDLL::iterator               TBDLLIter;
     typedef TBDLL::const_iterator         TBDLLConstIter;
     
-    // 1. read a defline set w/ gethdr, filtering by membership bit
+    // 1. read a defline set w/ gethdr, filtering by membership bit.
     
     CRef<CBlast_def_line_set> BDLS =
         x_GetFilteredHeader(oid,
@@ -1052,23 +1053,22 @@ CSeqDBVol::x_GetTaxDefline(int                  oid,
     // 2. if there is a preferred gi, bump it to the top.
     
     if (preferred_gi != 0) {
+        CRef<CBlast_def_line_set> new_bdls(new CBlast_def_line_set);
+        
         CSeq_id seqid(CSeq_id::e_Gi, preferred_gi);
         
-        TBDLL & dl = BDLS->Set();
+        bool found = false;
         
-        CRef<CBlast_def_line> moved;
-        
-        for(TBDLLIter iter = dl.begin(); iter != dl.end(); iter++) {
-            if (s_SeqDB_SeqIdIn((**iter).GetSeqid(), seqid)) {
-                moved = *iter;
-                dl.erase(iter);
-                break;
+        ITERATE(list< CRef<CBlast_def_line> >, iter, BDLS->Get()) {
+            if ((! found) && s_SeqDB_SeqIdIn((**iter).GetSeqid(), seqid)) {
+                found = true;
+                new_bdls->Set().push_front(*iter);
+            } else {
+                new_bdls->Set().push_back(*iter);
             }
         }
         
-        if (! moved.Empty()) {
-            dl.push_front(moved);
-        }
+        return new_bdls;
     }
     
     return BDLS;
@@ -1232,23 +1232,27 @@ CSeqDBVol::GetBioseq(int                   oid,
     typedef list< CRef<CBlast_def_line> > TDeflines;
     CRef<CBioseq> null_result;
     
-    CRef<CBlast_def_line_set> defline_set;
     CRef<CBlast_def_line>     defline;
     list< CRef< CSeq_id > >   seqids;
     
-    // Get the defline set
+    // Get the defline set; but do not modify the object returned by
+    // GetFilteredHeader, since that object lives in the cache.
     
-    defline_set =
+    CRef<CBlast_def_line_set> orig_deflines =
         x_GetFilteredHeader(oid, have_oidlist, memb_bit, locked);
     
-    if (target_gi != 0) {
-        CSeq_id seqid(CSeq_id::e_Gi, target_gi);
+    CRef<CBlast_def_line_set> defline_set;
+    
+    if (target_gi == 0) {
+        defline_set = orig_deflines;
+    } else {
+        defline_set.Reset(new CBlast_def_line_set);
         
-        TDeflines & dl = defline_set->Set();
+        CSeq_id seqid(CSeq_id::e_Gi, target_gi);
         
         CRef<CBlast_def_line> filt_dl;
         
-        ITERATE(TDeflines, iter, dl) {
+        ITERATE(TDeflines, iter, orig_deflines->Get()) {
             if (s_SeqDB_SeqIdIn((**iter).GetSeqid(), seqid)) {
                 filt_dl = *iter;
                 break;
@@ -1259,8 +1263,7 @@ CSeqDBVol::GetBioseq(int                   oid,
             NCBI_THROW(CSeqDBException, eArgErr,
                        "Error: oid headers do not contain target gi.");
         } else {
-            dl.clear();
-            dl.push_back(filt_dl);
+            defline_set->Set().push_back(filt_dl);
         }
     }
     
@@ -1918,6 +1921,12 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
     
     m_Atlas.Lock(locked);
     
+    CRef<CBlast_def_line_set> & cached = m_DeflineCache.Lookup(oid);
+    
+    if (cached.NotEmpty()) {
+        return cached;
+    }
+    
     CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, true, locked);
     
     // Filter based on "rdfp->membership_bit" or similar.
@@ -1979,7 +1988,9 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
         }
     }
     
-    return BDLS;
+    cached = BDLS;
+    
+    return cached;
 }
 
 CRef<CBlast_def_line_set>

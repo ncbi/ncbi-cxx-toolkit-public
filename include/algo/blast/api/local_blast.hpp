@@ -69,7 +69,7 @@ public:
 private:
     /// Query factory from which to obtain the query sequence data
     CRef<IQueryFactory> m_QueryFactory;
-
+    
     /// Options to use
     CRef<CBlastOptions> m_Opts;
 
@@ -82,6 +82,9 @@ private:
 
     /// Object which runs the traceback stage of the search
     CRef<CBlastTracebackSearch> m_TbackSearch;
+    
+    /// Local DB adaptor (if one was) passed to constructor.
+    CRef<CLocalDbAdapter> m_LocalDbAdapter;
 };
 
 END_SCOPE(BLAST)

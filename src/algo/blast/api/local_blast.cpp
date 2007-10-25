@@ -68,7 +68,8 @@ CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
   m_Opts            (const_cast<CBlastOptions*>(&opts_handle->GetOptions())),
   m_InternalData    (0),
   m_PrelimSearch    (new CBlastPrelimSearch(qf, m_Opts, db)),
-  m_TbackSearch     (0)
+  m_TbackSearch     (0),
+  m_LocalDbAdapter  (db.GetNonNullPointer())
 {}
 
 CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
@@ -88,7 +89,7 @@ CLocalBlast::Run()
     _ASSERT(m_QueryFactory);
     _ASSERT(m_PrelimSearch);
     _ASSERT(m_Opts);
-
+    
     // Note: we need to pass the search messages ...
     // filtered query regions should be masked in the BLAST_SequenceBlk
     // already.
@@ -96,12 +97,23 @@ CLocalBlast::Run()
     m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
     m_InternalData = m_PrelimSearch->Run();
     _ASSERT(m_InternalData);
-
+    
     TSearchMessages search_msgs = m_PrelimSearch->GetSearchMessages();
-
-    auto_ptr<IBlastSeqInfoSrc>
-        seqinfo_src(InitSeqInfoSrc(m_InternalData->m_SeqSrc->GetPointer()));
-
+    
+    CRef<IBlastSeqInfoSrc> seqinfo_src;
+    
+    if (m_LocalDbAdapter.NotEmpty()) {
+        // This path is preferred because it preserves the GI list
+        // limitation if there is one.  DBs with both internal OID
+        // filtering and user GI list filtering will not do complete
+        // filtering during the traceback stage, which can cause
+        // 'Unknown defline' errors during formatting.
+        
+        seqinfo_src.Reset(m_LocalDbAdapter->MakeSeqInfoSrc());
+    } else {
+        seqinfo_src.Reset(InitSeqInfoSrc(m_InternalData->m_SeqSrc->GetPointer()));
+    }
+    
     m_TbackSearch.Reset(new CBlastTracebackSearch(m_QueryFactory,
                                                   m_InternalData,
                                                   *m_Opts,

@@ -663,16 +663,20 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
  * [in]
  * @param smith_waterman_value command line value for determining the use of
  * the smith-waterman algorithm [in]
+ * @param ungapped pointer to the value which determines whether the search
+ * should be ungapped or not. It is NULL if ungapped searches are not
+ * applicable
  */
 static void
 s_SetCompositionBasedStats(CBlastOptions& opt,
                            const string& comp_stat_string,
-                           bool smith_waterman_value)
+                           bool smith_waterman_value,
+                           bool* ungapped = NULL)
 {
     const EProgram program = opt.GetProgram();
     if (program == eBlastp || program == eTblastn || program == ePSIBlast) {
 
-        ECompoAdjustModes compo_mode = eNoCompositionBasedStats;;
+        ECompoAdjustModes compo_mode = eNoCompositionBasedStats;
     
         switch (comp_stat_string[0]) {
             case 'D': case 'd':
@@ -689,6 +693,14 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
                 compo_mode = eCompoForceFullMatrixAdjust;
                 break;
         }
+
+        if (ungapped && *ungapped && compo_mode != eNoCompositionBasedStats) {
+            NCBI_THROW(CBlastException, eInvalidArgument, 
+                       "Composition-adjusted searched are not supported with "
+                       "an ungapped search, please add -comp_based_stats F or "
+                       "do a gapped search");
+        }
+
         opt.SetCompositionBasedStats(compo_mode);
         if (program == eBlastp &&
             compo_mode != eNoCompositionBasedStats &&
@@ -704,9 +716,12 @@ CCompositionBasedStatsArgs::ExtractAlgorithmOptions(const CArgs& args,
                                                     CBlastOptions& opt)
 {
     if (args[kArgCompBasedStats]) {
+        auto_ptr<bool> ungapped(args.Exist(kArgUngapped) 
+            ? new bool(args[kArgUngapped]) : 0);
         s_SetCompositionBasedStats(opt, 
                                    args[kArgCompBasedStats].AsString(),
-                                   args[kArgUseSWTraceback]);
+                                   args[kArgUseSWTraceback],
+                                   ungapped.get());
     }
 
 }
@@ -1085,6 +1100,16 @@ CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
     m_IsSubjectProvided(false), m_SubjectInputStream(0)
 {}
 
+bool
+CBlastDatabaseArgs::HasBeenSet(const CArgs& args)
+{
+    if ( (args.Exist(kArgDb) && args[kArgDb].HasValue()) ||
+         (args.Exist(kArgSubject) && args[kArgSubject].HasValue()) ) {
+        return true;
+    }
+    return false;
+}
+
 void
 CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
@@ -1453,7 +1478,7 @@ CStdCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // query filename
     arg_desc.AddDefaultKey(kArgQuery, "input_file", 
                      "Input file name",
-                     CArgDescriptions::eInputFile, "-");
+                     CArgDescriptions::eInputFile, kDfltArgQuery);
 
     arg_desc.SetCurrentGroup("General search options");
 
@@ -1564,6 +1589,9 @@ CBlastAppArgs::SetCommandLine()
 CRef<CBlastOptionsHandle>
 CBlastAppArgs::SetOptions(const CArgs& args)
 {
+    // We're recovering from a saved strategy, so we need to still extract
+    // certain options from the command line, include overriding query
+    // and/or database
     if (m_OptsHandle.NotEmpty()) {
         CBlastOptions& opts = m_OptsHandle->SetOptions();
         // invoke ExtractAlgorithmOptions on certain argument classes
@@ -1572,6 +1600,9 @@ CBlastAppArgs::SetOptions(const CArgs& args)
         m_StdCmdLineArgs->ExtractAlgorithmOptions(args, opts);
         m_RemoteArgs->ExtractAlgorithmOptions(args, opts);
         m_DebugArgs->ExtractAlgorithmOptions(args, opts);
+        if (CBlastDatabaseArgs::HasBeenSet(args)) {
+            m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
+        }
         return m_OptsHandle;
     }
 

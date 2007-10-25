@@ -565,6 +565,10 @@ public:
     /// alias for the database molecule type
     typedef CSearchDatabase::EMoleculeType EMoleculeType;
 
+    /// Auxiliary function to determine if the database/subject sequence has
+    /// been set
+    static bool HasBeenSet(const CArgs& args);
+
     /// Constructor
     /// @param request_mol_type If true, the command line arguments will
     /// include a mandatory option to disambiguate whether a protein or a

@@ -1107,90 +1107,54 @@ struct SSeqDBSlice {
 };
 
 
-/// Simple "Copy Collector" Like Cache
+/// Simple int-keyed cache.
 ///
-/// This code implements a simple STL map based cache with limited LRU
-/// properties.  The cache is given a size, and will maintain a size
-/// somewhere between half this number and this number of entries.
+/// This code implements a simple vector based cache, mapping OIDs to
+/// objects of some type.  The cache has a fixed size (which must be a
+/// power of two), and uses the OID mod the cache size to select a
+/// cache slot.
 
-template<typename TKey, typename TValue>
-class CSeqDBSimpleCache {
+template<typename TValue>
+class CSeqDBIntCache {
 public:
     /// Constructor
     ///
-    /// Constructs a cache with the specified size limit.
+    /// Constructs a cache with the specified number of entries.
     ///
-    /// @param sz
-    ///   Maximum size of the cache.
-    CSeqDBSimpleCache(int sz)
-        : m_MaxSize(sz/2)
+    /// @param sz Number of cache slots.
+    CSeqDBIntCache(int sz)
     {
-        if (m_MaxSize < 4) {
-            m_MaxSize = 4;
-        }
+        _ASSERT(IS_POWER_OF_TWO(sz));
+        m_Slots.resize(sz);
     }
     
-    /// Lookup a value in the cache.
+    /// Find a value in the cache.
     ///
-    /// Like the C++ STL's map::operator[], this method will find the
-    /// specified cache mapping and return a reference to the value at
-    /// that location.  If the key was not found, the key will be
-    /// inserted with a null value and the reference to that null
-    /// returned (the caller may assign to it to add a value).
+    /// This method find the specified item, returning a reference to
+    /// it.  An existing entry in the slot will be cleared if the key
+    /// does not match.
     ///
-    /// @param k
-    ///     The key to find or insert in the cache.
-    TValue & Lookup(const TKey & k)
+    /// @param key The integer key to find.
+    TValue & Lookup(int key)
     {
-        TMapIter i = m_Mapping.find(k);
+        _ASSERT(IS_POWER_OF_TWO(m_Slots.size()));
         
-        // If we have it, just return it.
+        TSlot & slot = m_Slots[key & (m_Slots.size()-1)];
         
-        if (i != m_Mapping.end()) {
-            return (*i).second;
+        if (slot.first != key) {
+            slot.first = key;
+            slot.second = TValue();
         }
         
-        i = m_OldMap.find(k);
-        
-        // If the old version has it, transfer to the new version.
-        // The erase here is optional.  It should not affect the
-        // code except to reduce memory requirements and possibly
-        // to speed up lookups in oldmap.
-        
-        if (i != m_OldMap.end()) {
-            TValue & rv = m_Mapping[k] = ((*i).second);
-            m_OldMap.erase(i);
-            
-            return rv;
-        }
-        
-        // Otherwise, add a new value, returning a reference to it.
-        // Since we are expanding the map, we may swap the containers
-        // and discard the old values here.
-        
-        if (int(m_Mapping.size()) >= m_MaxSize) {
-            m_OldMap.clear();
-            m_Mapping.swap(m_OldMap);
-        }
-        
-        return m_Mapping[k];
+        return slot.second;
     }
     
 private:
-    /// The underlying associative array type.
-    typedef std::map<TKey, TValue> TMap;
+    /// Type used for cache slots.
+    typedef std::pair<int, TValue> TSlot;
     
-    /// The underlying associative array iterator type.
-    typedef typename TMap::iterator TMapIter;
-    
-    /// Values will be added to this mapping until size is reached.
-    TMap m_Mapping;
-    
-    /// Values from m_Mapping are moved here when size is exceeded.
-    TMap m_OldMap;
-    
-    /// Maximum size of the m_Mapping container.
-    int m_MaxSize;
+    /// Values are stored here.
+    vector<TSlot> m_Slots;
 };
 
 

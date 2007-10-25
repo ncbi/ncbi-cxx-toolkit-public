@@ -419,7 +419,7 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
         hit_ready = 1;
 
     if (hit_ready) {
-        if (word_params->options->ungapped_extension) {
+        if (word_params->ungapped_extension) {
             /* Perform ungapped extension */
             Int4 context = BSearchContextInfo(q_off, query_info);
             cutoffs = word_params->cutoffs + context;
@@ -536,7 +536,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
             hit_ready = 1;
 
         if (hit_ready) {
-            if (word_params->options->ungapped_extension) {
+            if (word_params->ungapped_extension) {
                 /* Perform ungapped extension */
                 Int4 context = BSearchContextInfo(q_off, query_info);
                 cutoffs = word_params->cutoffs + context;
@@ -587,7 +587,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
         /* Save the hit if it already qualifies */
         if (!two_hits) {
             hit_ready = 1;
-            if (word_params->options->ungapped_extension) {
+            if (word_params->ungapped_extension) {
                 /* Perform ungapped extension */
                 Int4 context = BSearchContextInfo(q_off, query_info);
                 cutoffs = word_params->cutoffs + context;
@@ -661,7 +661,7 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         lut_word_length = lut->lut_word_length;
         /* When ungapped extension is not performed, the hit will be new only 
            if it is more than scan_step away from the previous hit. */
-        if (!word_params->options->ungapped_extension)
+        if (!word_params->ungapped_extension)
             min_step = lut->scan_step;
         template_length = lut->template_length;
     } 
@@ -669,13 +669,13 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         BlastSmallNaLookupTable *lut = 
                         (BlastSmallNaLookupTable *) lookup_wrap->lut;
         lut_word_length = lut->lut_word_length;
-        if (!word_params->options->ungapped_extension)
+        if (!word_params->ungapped_extension)
             min_step = lut->scan_step;
     } 
     else {
         BlastNaLookupTable *lut = (BlastNaLookupTable *) lookup_wrap->lut;
         lut_word_length = lut->lut_word_length;
-        if (!word_params->options->ungapped_extension)
+        if (!word_params->ungapped_extension)
             min_step = lut->scan_step;
     }
 
@@ -757,7 +757,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         BlastMBLookupTable *lut = (BlastMBLookupTable *) lookup_wrap->lut;
         word_length = lut->word_length;
         lut_word_length = lut->lut_word_length;
-        if (!word_params->options->ungapped_extension)
+        if (!word_params->ungapped_extension)
             min_step = lut->scan_step;
         template_length = lut->template_length;
     } 
@@ -765,7 +765,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         BlastNaLookupTable *lut = (BlastNaLookupTable *) lookup_wrap->lut;
         word_length = lut->word_length;
         lut_word_length = lut->lut_word_length;
-        if (!word_params->options->ungapped_extension)
+        if (!word_params->ungapped_extension)
             min_step = lut->scan_step;
     }
     extra_bases = word_length - lut_word_length;
@@ -908,7 +908,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         BlastMBLookupTable *lut = (BlastMBLookupTable *) lookup_wrap->lut;
         word_length = lut->word_length;
         lut_word_length = lut->lut_word_length;
-        if (!word_params->options->ungapped_extension)
+        if (!word_params->ungapped_extension)
             min_step = lut->scan_step;
         template_length = lut->template_length;
     } 
@@ -1098,7 +1098,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
     Int4 hits_extended = 0;
     Int4 min_step = 0;
 
-    if (!word_params->options->ungapped_extension)
+    if (!word_params->ungapped_extension)
         min_step = lut->scan_step;
 
     for (i = 0; i < num_hits; i++) {
@@ -1207,7 +1207,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     Int4 hits_extended = 0;
     Int4 min_step = 0;
 
-    if (!word_params->options->ungapped_extension)
+    if (!word_params->ungapped_extension)
         min_step = lut->scan_step;
 
     for (i = 0; i < num_hits; i++) {
@@ -1358,7 +1358,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
     Blast_UngappedStatsUpdate(ungapped_stats, total_hits, hits_extended,
                               init_hitlist->total);
 
-    if (word_params->options->ungapped_extension)
+    if (word_params->ungapped_extension)
         Blast_InitHitListSortByScore(init_hitlist);
 
     return 0;
@@ -1394,7 +1394,7 @@ Int2 MB_IndexedWordFinder(
     ASSERT(get_results);
     word_size = get_results(lookup_wrap->lut, oid, chunk, init_hitlist);
 
-    if( word_size > 0 && word_params->options->ungapped_extension ) {
+    if( word_size > 0 && word_params->ungapped_extension ) {
         hash = ir_hash_create();
         new_hsp = hsp = init_hitlist->init_hsp_array;
         hsp_end = hsp + init_hitlist->total;
@@ -1439,7 +1439,7 @@ Int2 MB_IndexedWordFinder(
         hash = ir_hash_destroy( hash );
     }
 
-    if (word_params->options->ungapped_extension)
+    if (word_params->ungapped_extension)
         Blast_InitHitListSortByScore(init_hitlist);
 
     return 0;

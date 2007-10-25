@@ -778,7 +778,7 @@ public:
     /// 
     /// @param i
     ///   The index of the volume.
-    const int GetVolOIDStart(int i) const
+    int GetVolOIDStart(int i) const
     {
         if (m_VolList.empty()) {
             return 0;

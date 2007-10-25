@@ -610,7 +610,7 @@ public:
     /// Access an element of the GI array.
     /// @param index The index of the element to access. [in]
     /// @return The GI for that index.
-    const int GetGi(int index) const
+    int GetGi(int index) const
     {
         return m_Gis[index];
     }
@@ -618,7 +618,7 @@ public:
     /// Access an element of the TI array.
     /// @param index The index of the element to access. [in]
     /// @return The TI for that index.
-    const Int8 GetTi(int index) const
+    Int8 GetTi(int index) const
     {
         return m_Tis[index];
     }

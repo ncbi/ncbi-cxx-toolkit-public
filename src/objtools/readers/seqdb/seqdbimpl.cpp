@@ -69,7 +69,6 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
       m_UserGiList      (gi_list),
       m_NegativeList    (neg_list),
       m_IdSet           (idset),
-      m_HeaderCache     (256),
       m_NeedTotalsScan  (false)
 {
     INIT_CLASS_MARK();
@@ -155,7 +154,6 @@ CSeqDBImpl::CSeqDBImpl()
       m_VolumeLength    (0),
       m_SeqType         ('-'),
       m_OidListSetup    (true),
-      m_HeaderCache     (1),
       m_NeedTotalsScan  (false)
 {
     INIT_CLASS_MARK();
@@ -779,12 +777,6 @@ CSeqDBImpl::x_GetHdr(int oid, CSeqDBLockHold & locked) const
     m_Atlas.Lock(locked);
     m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
-    CRef<CBlast_def_line_set> & rvref = m_HeaderCache.Lookup(oid);
-    
-    if (! rvref.Empty()) {
-        return rvref;
-    }
-    
     int vol_oid = 0;
     
     if (! m_OidListSetup) {
@@ -795,12 +787,10 @@ CSeqDBImpl::x_GetHdr(int oid, CSeqDBLockHold & locked) const
         bool have_oidlist = m_OIDList.NotEmpty();
         Uint4 memb_bit = m_Aliases.GetMembBit(m_VolSet);
         
-        rvref = vol->GetFilteredHeader(vol_oid,
-                                    have_oidlist,
-                                    memb_bit,
-                                    locked);
-        
-        return rvref;
+        return vol->GetFilteredHeader(vol_oid,
+                                      have_oidlist,
+                                      memb_bit,
+                                      locked);
     }
     
     NCBI_THROW(CSeqDBException,

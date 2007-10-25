@@ -340,6 +340,13 @@ public:
     int GetSeqLengthApprox(int oid) const;
     
     /// Get the ASN.1 header for the sequence.
+    ///
+    /// Do not modify the object returned here (e.g. by removing some
+    /// of the deflines), as the object is cached internally and
+    /// future operations on this OID may be affected.
+    ///
+    /// @param oid The ordinal ID of the sequence.
+    /// @return The blast deflines for this sequence.
     CRef<CBlast_def_line_set> GetHdr(int oid) const;
     
     /// Get taxid for an OID.

@@ -186,6 +186,11 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
    p = *parameters = (BlastInitialWordParameters*)calloc(1, 
                                      sizeof(BlastInitialWordParameters));
 
+   if (Blast_ProgramIsPhiBlast(program_number))
+      p->ungapped_extension = FALSE;
+   else
+      p->ungapped_extension = TRUE;
+
    p->cutoffs = (BlastUngappedCutoffs *)calloc(
            (size_t)(query_info->last_context+1), sizeof(BlastUngappedCutoffs));
 

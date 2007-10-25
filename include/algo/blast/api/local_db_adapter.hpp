@@ -109,7 +109,7 @@ private:
     //bool m_OwnSeqInfoSrc;
 
     /// Pointer to the IBlastSeqInfoSrc
-    IBlastSeqInfoSrc* m_SeqInfoSrc;
+    CRef<IBlastSeqInfoSrc> m_SeqInfoSrc;
 
     /// Object containing BLAST database description
     CRef<CSearchDatabase> m_DbInfo;

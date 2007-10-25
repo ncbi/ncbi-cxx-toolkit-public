@@ -953,9 +953,6 @@ private:
     /// The positive or negative ID list for the entire CSeqDB object.
     CSeqDBIdSet m_IdSet;
     
-    /// Cache header data for sequences.
-    mutable CSeqDBSimpleCache<int, CRef<CBlast_def_line_set> > m_HeaderCache;
-    
     /// True if this configuration cannot deduce totals without a scan.
     bool m_NeedTotalsScan;
     

@@ -38,13 +38,18 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include "blast_app_util.hpp"
+
+#include <serial/serial.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objistrxml.hpp>
+
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/blastinput/psiblast_args.hpp>
 #include <algo/blast/blastinput/tblastn_args.hpp>
-#include <serial/objostr.hpp>
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <util/format_guess.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -117,12 +122,14 @@ s_ExportSearchStrategy(CNcbiOstream* out,
 
     CRef<CBlast4_request> req = 
         s_GetSearchStrategy(queries, options_handle, search_db, pssm);
+    // N.B.: If writing XML, be sure to call SetEnforcedStdXml on the stream!
     *out << MSerial_AsnText << *req;
 }
 
 static void
 s_ImportSearchStrategy(CNcbiIstream* in, 
-                       blast::CBlastAppArgs* cmdline_args)
+                       blast::CBlastAppArgs* cmdline_args,
+                       bool override_query, bool override_subject)
 {
     if ( !in ) {
         return;
@@ -130,7 +137,28 @@ s_ImportSearchStrategy(CNcbiIstream* in,
 
     CRef<CBlast4_request> b4req(new CBlast4_request);
     try {
-        *in >> MSerial_AsnText >> *b4req;
+        switch (CFormatGuess().Format(*in)) {
+        case CFormatGuess::eBinaryASN:
+            *in >> MSerial_AsnBinary >> *b4req;
+            break;
+
+        case CFormatGuess::eTextASN:
+            *in >> MSerial_AsnText >> *b4req;
+            break;
+
+        case CFormatGuess::eXml:
+            {
+                auto_ptr<CObjectIStream> is(
+                    CObjectIStream::Open(eSerial_Xml, *in));
+                dynamic_cast<CObjectIStreamXml*>
+                    (is.get())->SetEnforcedStdXml(true);
+                *is >> *b4req;
+            }
+            break;
+
+        default:
+            abort();
+        }
     } catch (const CException& e) {
         ERR_POST(Fatal << "Fail to read search strategy: " << e.what());
     }
@@ -166,8 +194,10 @@ s_ImportSearchStrategy(CNcbiIstream* in,
     const EBlastProgramType prog = opts_hndl->GetOptions().GetProgramType();
 
     // Get the subject
-    CRef<blast::CBlastDatabaseArgs> db_args;
-    {{
+    if (override_subject) {
+        ERR_POST(Warning << "Overriding database/subject in saved strategy");
+    } else {
+        CRef<blast::CBlastDatabaseArgs> db_args;
         const CBlast4_subject& subj = req.GetSubject();
 
         db_args.Reset(new CBlastDatabaseArgs());
@@ -199,63 +229,70 @@ s_ImportSearchStrategy(CNcbiIstream* in,
         } else {
             throw runtime_error("Recovering from bl2seq is not implemented");
         }
-    }}
-    _ASSERT(db_args.NotEmpty());
-    cmdline_args->SetBlastDatabaseArgs(db_args);
+        _ASSERT(db_args.NotEmpty());
+        cmdline_args->SetBlastDatabaseArgs(db_args);
+    }
 
     // Get the query, queries, or pssm
-    const CBlast4_queries& queries = req.GetQueries();
-
-    if (queries.IsPssm()) {
-
-        CRef<CPssmWithParameters> pssm
-            (const_cast<CPssmWithParameters*>(&queries.GetPssm()));
-        CPsiBlastAppArgs* psi_args = NULL;
-        CTblastnAppArgs* tbn_args = NULL;
-
-        if ( (psi_args = dynamic_cast<CPsiBlastAppArgs*>(cmdline_args)) ) {
-            psi_args->SetInputPssm(pssm);
-        } else if ( (tbn_args = dynamic_cast<CTblastnAppArgs*>(cmdline_args))) {
-            tbn_args->SetInputPssm(pssm);
-        } else {
-            EBlastProgramType p = opts_hndl->GetOptions().GetProgramType();
-            string msg("PSSM found in saved strategy, but not supported ");
-            msg += "for " + Blast_ProgramNameFromType(p);
-            NCBI_THROW(CBlastException, eNotSupported, msg);
-        }
-
+    if (override_query) {
+        ERR_POST(Warning << "Overriding query in saved strategy");
     } else {
+        const CBlast4_queries& queries = req.GetQueries();
 
-        CRef<CTmpFile> tmpfile(new CTmpFile(CTmpFile::eNoRemove));
+        if (queries.IsPssm()) {
 
-        // Stuff the query bioseq or seqloc list in the input stream of the
-        // cmdline_args
-        if (queries.IsSeq_loc_list()) {
-            const CBlast4_queries::TSeq_loc_list& seqlocs =
-                queries.GetSeq_loc_list();
-            CFastaOstream out(tmpfile->AsOutputFile(CTmpFile::eIfExists_Throw));
-            CBlastScopeSource scope_src(Blast_QueryIsProtein(prog));
-            CRef<CScope> scope(scope_src.NewScope());
+            CRef<CPssmWithParameters> pssm
+                (const_cast<CPssmWithParameters*>(&queries.GetPssm()));
+            CPsiBlastAppArgs* psi_args = NULL;
+            CTblastnAppArgs* tbn_args = NULL;
 
-            ITERATE(CBlast4_queries::TSeq_loc_list, itr, seqlocs) {
-                CBioseq_Handle bh = scope->GetBioseqHandle(**itr);
-                CConstRef<CBioseq> bioseq = bh.GetCompleteBioseq();
-                out.Write(*bioseq);
+            if ( (psi_args = dynamic_cast<CPsiBlastAppArgs*>(cmdline_args)) ) {
+                psi_args->SetInputPssm(pssm);
+            } else if ( (tbn_args = 
+                         dynamic_cast<CTblastnAppArgs*>(cmdline_args))) {
+                tbn_args->SetInputPssm(pssm);
+            } else {
+                EBlastProgramType p = opts_hndl->GetOptions().GetProgramType();
+                string msg("PSSM found in saved strategy, but not supported ");
+                msg += "for " + Blast_ProgramNameFromType(p);
+                NCBI_THROW(CBlastException, eNotSupported, msg);
             }
 
         } else {
-            _ASSERT(queries.IsBioseq_set());
-            const CBlast4_queries::TBioseq_set& bioseqs =
-                queries.GetBioseq_set();
-            CFastaOstream out(tmpfile->AsOutputFile(CTmpFile::eIfExists_Throw));
-            ITERATE(CBioseq_set::TSeq_set, seq_entry, bioseqs.GetSeq_set()) {
-                out.Write(**seq_entry);
-            }
-        }
 
-        const string& fname = tmpfile->GetFileName();
-        tmpfile.Reset(new CTmpFile(fname));
-        cmdline_args->SetInputStream(tmpfile);
+            CRef<CTmpFile> tmpfile(new CTmpFile(CTmpFile::eNoRemove));
+
+            // Stuff the query bioseq or seqloc list in the input stream of the
+            // cmdline_args
+            if (queries.IsSeq_loc_list()) {
+                const CBlast4_queries::TSeq_loc_list& seqlocs =
+                    queries.GetSeq_loc_list();
+                CFastaOstream out(tmpfile->AsOutputFile
+                                  (CTmpFile::eIfExists_Throw));
+                CBlastScopeSource scope_src(Blast_QueryIsProtein(prog));
+                CRef<CScope> scope(scope_src.NewScope());
+
+                ITERATE(CBlast4_queries::TSeq_loc_list, itr, seqlocs) {
+                    CBioseq_Handle bh = scope->GetBioseqHandle(**itr);
+                    CConstRef<CBioseq> bioseq = bh.GetCompleteBioseq();
+                    out.Write(*bioseq);
+                }
+
+            } else {
+                _ASSERT(queries.IsBioseq_set());
+                const CBlast4_queries::TBioseq_set& bioseqs =
+                    queries.GetBioseq_set();
+                CFastaOstream out(tmpfile->AsOutputFile
+                                  (CTmpFile::eIfExists_Throw));
+                ITERATE(CBioseq_set::TSeq_set, seq_entry, bioseqs.GetSeq_set()){
+                    out.Write(**seq_entry);
+                }
+            }
+
+            const string& fname = tmpfile->GetFileName();
+            tmpfile.Reset(new CTmpFile(fname));
+            cmdline_args->SetInputStream(tmpfile);
+        }
     }
 
 }
@@ -264,7 +301,10 @@ void
 RecoverSearchStrategy(const CArgs& args, blast::CBlastAppArgs* cmdline_args)
 {
     CNcbiIstream* in = cmdline_args->GetImportSearchStrategyStream(args);
-    s_ImportSearchStrategy(in, cmdline_args);
+    s_ImportSearchStrategy(in, cmdline_args,
+                           (args[kArgQuery].HasValue() && 
+                            args[kArgQuery].AsString() != kDfltArgQuery),
+                            CBlastDatabaseArgs::HasBeenSet(args));
 }
 
 // Process search strategies

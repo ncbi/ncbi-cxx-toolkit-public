@@ -193,9 +193,6 @@ public:
     int GetWindowSize() const;
     void SetWindowSize(int w);
 
-    bool GetUngappedExtension() const;
-    void SetUngappedExtension(bool val = true);
-
     double GetXDropoff() const;
     void SetXDropoff(double x);
 

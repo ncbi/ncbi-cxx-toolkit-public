@@ -73,7 +73,6 @@ CBlastProteinOptionsHandle::SetInitialWordOptionsDefaults()
 {
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_PROT);
     SetWindowSize(BLAST_WINDOW_SIZE_PROT);
-    m_Opts->SetUngappedExtension();
 }
 
 void
