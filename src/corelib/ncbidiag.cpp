@@ -919,9 +919,12 @@ static const char* kDiagTimeFormat = "Y-M-DTh:m:s.l";
 static const int   kDiagW_PID      = 5;
 static const int   kDiagW_TID      = 3;
 static const int   kDiagW_RID      = 4;
+static const int   kDiagW_AppState = 2;
 static const int   kDiagW_SN       = 4;
 static const int   kDiagW_UID      = 16;
+static const int   kDiagW_Host     = 15;
 static const int   kDiagW_Client   = 15;
+static const int   kDiagW_Session  = 24;
 
 
 void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
@@ -975,15 +978,18 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
     // Print common fields
     ostr << setfill('0') << setw(kDiagW_PID) << pid << '/'
          << setw(kDiagW_TID) << tid << '/'
-         << setw(kDiagW_RID) << rid << app_state
+         << setw(kDiagW_RID) << rid
+         << setfill(' ') << setw(kDiagW_AppState+1) << setiosflags(IOS_BASE::left)
+         << app_state << resetiosflags(IOS_BASE::left)
          << ' ' << setw(0) << setfill(' ') << uid << ' '
          << setfill('0') << setw(kDiagW_SN) << psn << '/'
          << setw(kDiagW_SN) << tsn << ' '
          << setw(0) << timestamp.AsString(kDiagTimeFormat) << ' '
-         << host << ' '
-         << setfill(' ') << setw(kDiagW_Client) << setiosflags(IOS_BASE::left)
-         << setw(0) << client << resetiosflags(IOS_BASE::left) << ' '
-         << session << ' '
+         << setfill(' ') << setiosflags(IOS_BASE::left)
+         << setw(kDiagW_Host) << host << ' '
+         << setw(kDiagW_Client) << client << ' '
+         << setw(kDiagW_Session) << session << ' '
+         << resetiosflags(IOS_BASE::left) << setw(0)
          << app << ' ';
 }
 
@@ -2473,18 +2479,22 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
 
     // <severity>:
     if ( IsSetDiagPostFlag(eDPF_AppLog, m_Flags) ) {
-        os << GetEventName(m_Event) << " ";
+        os << setfill(' ') << setw(13) << setiosflags(IOS_BASE::left)
+            << GetEventName(m_Event) << resetiosflags(IOS_BASE::left);
     }
     else {
         string sev = CNcbiDiag::SeverityName(m_Severity);
-        os << setfill(' ') << setw(12); // add 2 for colon and space
+        os << setfill(' ') << setw(13) // add 1 for space
+            << setiosflags(IOS_BASE::left);
         if ( IsSetDiagPostFlag(eDPF_IsMessage, m_Flags) ) {
-            os << string("Message[") + sev[0] + "]: ";
+            os << string("Message[") + sev[0] + "]:";
         }
         else {
-            os << sev + ": ";
+            os << sev + ":";
         }
+        os << resetiosflags(IOS_BASE::left);
     }
+    os << " ";
 
     // <module>-<err_code>.<err_subcode> or <module>-<err_text>
     bool have_module = (m_Module && *m_Module) || (m_File && *m_File);
