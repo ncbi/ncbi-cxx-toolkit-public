@@ -30,12 +30,11 @@ BEGIN
 
 use lib $ScriptDir;
 
-use NCBI::SVN::Branching;
+use NCBI::SVN::Branching::BranchShapingOps;
+use NCBI::SVN::Branching::WorkingCopyOps;
+use NCBI::SVN::Branching::MiscOps;
 
 use Getopt::Long qw(:config permute no_getopt_compat no_ignore_case);
-
-# Instantiate the Branching module, which actually does the work.
-my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
 
 # Command line options.
 my ($Help, $Force, $RootURL, $Revision, $PathList, $Parent);
@@ -76,9 +75,12 @@ EOF
 EOF
 );
 
-my %CommandHelp =
+my %CommandInfo =
 (
-    help => <<EOF,
+    help =>
+    {
+        module => undef,
+        help => <<EOF
 help: Describe the usage of this program or its commands.
 
 Usage: $ScriptName help [COMMAND ...]
@@ -92,8 +94,12 @@ Examples:
 
     $ScriptName help merge_down_into merge_up_from
 EOF
+    },
 
-    list => <<EOF,
+    list =>
+    {
+        module => 'MiscOps',
+        help => <<EOF
 list: Print the list of branches that were created using this utility.
 
 Usage: $ScriptName list
@@ -101,8 +107,12 @@ Usage: $ScriptName list
 Example:
   $ScriptName -U http://example.org/repos/example list
 EOF
+    },
 
-    info => <<EOF,
+    info =>
+    {
+        module => 'MiscOps',
+        help => <<EOF
 info: Display brief information about a branch.
 
 Usage: $ScriptName info BRANCH_PATH
@@ -114,7 +124,12 @@ performed on this branch.
 Example:
   $ScriptName -U http://example.org/repos/example info new_feat
 EOF
-    create => <<EOF,
+    },
+
+    create =>
+    {
+        module => 'BranchShapingOps',
+        help => <<EOF
 create: Create a new managed branch.
 
 Usage: $ScriptName create BRANCH_PATH PARENT_PATH [BRANCH_ELEMENT ...]
@@ -143,8 +158,12 @@ Examples:
 
     $ScriptName create app_new_gui branches/app_new_feat src/gui
 EOF
+    },
 
-    alter => <<EOF,
+    alter =>
+    {
+        module => 'BranchShapingOps',
+        help => <<EOF
 alter: Modify the structure of an existing branch.
 
 Usage: $ScriptName alter BRANCH_PATH [BRANCH_ELEMENT ...]
@@ -164,8 +183,12 @@ Example:
     $ScriptName create app_new_gui branches/app_new_feat src/gui
     $ScriptName alter app_new_gui src/gui include/gui
 EOF
+    },
 
-    grow => <<EOF,
+    grow =>
+    {
+        module => 'BranchShapingOps',
+        help => <<EOF
 grow: Expand an existing branch.
 
 Usage: $ScriptName grow BRANCH_PATH [BRANCH_ELEMENT ...]
@@ -180,8 +203,12 @@ will be used for this 'grow' operation.
 Example:
     $ScriptName grow app_new_gui doc/gui
 EOF
+    },
 
-    truncate => <<EOF,
+    truncate =>
+    {
+        module => 'BranchShapingOps',
+        help => <<EOF
 truncate: Remove elements of an existing branch.
 
 Usage: $ScriptName truncate BRANCH_PATH [BRANCH_ELEMENT ...]
@@ -189,8 +216,12 @@ Usage: $ScriptName truncate BRANCH_PATH [BRANCH_ELEMENT ...]
 Example:
     $ScriptName truncate app_new_gui include/gui
 EOF
+    },
 
-    remove => <<EOF,
+    remove =>
+    {
+        module => 'BranchShapingOps',
+        help => <<EOF
 remove: Remove a managed branch.
 
 Usage: $ScriptName remove BRANCH_PATH
@@ -203,8 +234,12 @@ removed as well.
 Note that this operation will require the '--force' option if not all
 recent changes were merged into the parent stream.
 EOF
+    },
 
-    merge_down_into => <<EOF,
+    merge_down_into =>
+    {
+        module => 'WorkingCopyOps',
+        help => <<EOF
 merge_down_into: Synchronize the branch with the parent stream.
 
 Usage: $ScriptName merge_down_into BRANCH_PATH
@@ -218,8 +253,12 @@ Once the merge results are reviewed and possible conflicts are
 resolved, the results of the 'merge_down_into' operation can be
 committed with the help of the 'commit_merge' command.
 EOF
+    },
 
-    merge_up_from => <<EOF,
+    merge_up_from =>
+    {
+        module => 'WorkingCopyOps',
+        help => <<EOF
 merge_up_from: Promote branch changes to the parent stream.
 
 Usage: $ScriptName merge_up_from BRANCH_PATH
@@ -230,8 +269,12 @@ current working directory and there must be no local changes in it.
 The results of the merge can be committed with the help of the
 'commit_merge' command.
 EOF
+    },
 
-    commit_merge => <<EOF,
+    commit_merge =>
+    {
+        module => 'WorkingCopyOps',
+        help => <<EOF
 commit_merge: Commit the results of 'merge_down_into' or 'merge_up_from'.
 
 Usage: $ScriptName commit_merge BRANCH_PATH [LOG_MESSAGE]
@@ -241,8 +284,12 @@ repository. Log message of a special format appended by the LOG_MESSAGE
 parameter will be used for this check-in. LOG_MESSAGE is optional for
 the merge_down_into command and required by the merge_up_from command.
 EOF
+    },
 
-    merge_stat => <<EOF,
+    merge_stat =>
+    {
+        module => 'WorkingCopyOps',
+        help => <<EOF
 merge_stat: Sanitize 'svn stat' output after merge_down_into or merge_up_from.
 
 Usage: $ScriptName merge_stat BRANCH_PATH
@@ -254,8 +301,12 @@ directory. Thus, the 'svn stat' output gets bloated with property changes.
 The 'merge_stat' command leaves out all property changes resulting in a
 clearer 'svn stat' output.
 EOF
+    },
 
-    merge_diff => <<EOF,
+    merge_diff =>
+    {
+        module => 'WorkingCopyOps',
+        help => <<EOF
 merge_diff: Sanitize 'svn diff' output after merge_down_into or merge_up_from.
 
 Usage: $ScriptName merge_diff BRANCH_PATH
@@ -264,8 +315,12 @@ This command leaves out changes of the 'ncbi:raw' property from the
 output of the 'svn diff' command run on the results of a 'merge_down_into'
 or 'merge_up_from' operation thus making the diff readable.
 EOF
+    },
 
-    svn => <<EOF,
+    svn =>
+    {
+        module => 'WorkingCopyOps',
+        help => <<EOF
 svn: Execute an arbitrary Subversion command.
 
 Usage: $ScriptName svn SVN_COMMAND [SVN_ARG ...] BRANCH_PATH
@@ -279,8 +334,12 @@ Example:
   In this example, the 'svn revert' command is executed on all files
   and directories that form the 'new_feat' branch.
 EOF
+    },
 
-    update => <<EOF,
+    update =>
+    {
+        module => 'WorkingCopyOps',
+        help => <<EOF
 update: Update branch directories from the repository.
 
 Usage: $ScriptName update BRANCH_PATH
@@ -290,8 +349,12 @@ identified by BRANCH_PATH. It automatically detects if these
 directories are switched to the branch or its parent stream
 and maintains this property for newly added branch elements.
 EOF
+    },
 
-    switch => <<EOF,
+    switch =>
+    {
+        module => 'WorkingCopyOps',
+        help => <<EOF
 switch: Switch WC directories to a branch or its parent stream.
 
 Usage: $ScriptName switch BRANCH_PATH
@@ -304,6 +367,7 @@ In both cases, if the working copy directories are already
 switched as required, they get updated to the latest version
 from the repository.
 EOF
+    }
 );
 
 sub Help
@@ -352,7 +416,7 @@ EOF
     {
         for my $Command (@Commands)
         {
-            if (my $Help = $CommandHelp{$Command})
+            if (my $Help = $CommandInfo{$Command}->{help})
             {
                 print "$Help\n";
 
@@ -430,12 +494,6 @@ sub ExtractBranchPathArg
     return AdjustBranchPath(shift(@ARGV) or
         UsageError(q(') . ($ArgName || 'branch_path') .
             q(' argument is missing)))
-}
-
-sub RequireRootURL
-{
-    return $RootURL || $Module->{SVN}->GetRootURL() ||
-        die "$ScriptName\: chdir to a working copy or use --root-url\n"
 }
 
 sub AcceptOnlyBranchPathArg
@@ -531,6 +589,17 @@ else
         UsageError("command '$Command' doesn't accept option '--$Option'")
             if defined $$OptionValueRev && !$CommandsThatAcceptIt->{$Command}
     }
+}
+
+# Instantiate the Branching module, which actually does the work.
+my $Module = $CommandInfo{$Command}->{module};
+
+$Module &&= "NCBI::SVN::Branching::$Module"->new(MyName => $ScriptName);
+
+sub RequireRootURL
+{
+    return $RootURL || $Module->{SVN}->GetRootURL() ||
+        die "$ScriptName\: chdir to a working copy or use --root-url\n"
 }
 
 if ($Command eq 'help')
