@@ -736,7 +736,8 @@ CConnection::CConnection(
 
     try {
         // Create a default transaction ...
-        m_DefTransaction = new CTransaction(this, pythonpp::eBorrowed, m_ConnectionMode);
+        // m_DefTransaction = new CTransaction(this, pythonpp::eBorrowed, m_ConnectionMode);
+        m_DefTransaction = new CTransaction(this, pythonpp::eAcquired, m_ConnectionMode);
     }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e.GetMsg());
@@ -746,17 +747,20 @@ CConnection::CConnection(
 CConnection::~CConnection(void)
 {
     try {
+        // This DecRefCount caused a lot of problems for some reason ...
         DecRefCount( m_DefTransaction );
+        // delete m_DefTransaction;
 
         _ASSERT( m_TransList.empty() );
 
-    _ASSERT(m_DS);
-    // DO NOT destroy data source because there is only one data source per
-    // driver in Kholodov's API.
-    // Destroying data source will cause closed and reopened connection to
-    // crash ...
+        _ASSERT(m_DS);
+
+        // DO NOT destroy data source because there is only one data source per
+        // driver in Kholodov's API.
+        // Destroying data source will cause closed and reopened connection to
+        // crash ...
         // m_DM.DestroyDs(m_DS);
-    m_DS = NULL;                        // ;-)
+        m_DS = NULL;                        // ;-)
     }
     NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
@@ -791,6 +795,10 @@ CConnection::CreateTransaction(void)
 void
 CConnection::DestroyTransaction(CTransaction* trans)
 {
+    if (m_DefTransaction == trans) {
+        m_DefTransaction = NULL;
+    }
+
     // Python will take care of the object deallocation ...
     m_TransList.erase(trans);
 }
@@ -935,8 +943,8 @@ CDMLConnPool::Clear(void)
     }
 
     // Close the DML connection ...
-    m_LocalStmt.release();
-    m_DMLConnection.release();
+    m_LocalStmt.reset();
+    m_DMLConnection.reset();
     m_Started = false;
 }
 
@@ -1059,9 +1067,9 @@ CTransaction::CloseInternal(void)
 
     // Double check ...
     // Check for the DML connection also ...
-    if ( !m_SelectConnPool.Empty() || !m_DMLConnPool.Empty() ) {
-        throw CInternalError("Unable to close a transaction. There are open cursors in use.");
-    }
+    // if ( !m_SelectConnPool.Empty() || !m_DMLConnPool.Empty() ) {
+    //     throw CInternalError("Unable to close a transaction. There are open cursors in use.");
+    // }
 
     // Rollback transaction ...
     RollbackInternal();
@@ -1238,7 +1246,7 @@ CStmtHelper::ReleaseStmt(void)
         IConnection* conn = m_Stmt->GetParentConn();
 
         // Release the statement before a connection release because it is a child object for a connection.
-        m_Stmt.release();
+        m_Stmt.reset();
 
         _ASSERT( m_StmtStr.GetType() != estNone );
 
@@ -1486,7 +1494,7 @@ CCallableStmtHelper::ReleaseStmt(void)
         IConnection* conn = m_Stmt->GetParentConn();
 
         // Release the statement before a connection release because it is a child object for a connection.
-        m_Stmt.release();
+        m_Stmt.reset();
 
         _ASSERT( m_StmtStr.GetType() != estNone );
 
