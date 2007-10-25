@@ -336,11 +336,10 @@ sub ShapeBranch
         else
         {
             print "*** DRY RUN ***\nsvnmucc\n";
-            print "$_\n" for @MUCCCommands;
-            print "*** *** *** ***\n"
+            print "$_\n" for @MUCCCommands
         }
 
-        unless ($Action eq 'remove' or $Action eq 'create')
+        unless ($DryRun or $Action eq 'remove' or $Action eq 'create')
         {
             print STDERR 'WARNING: The branch has been modified. Please ' .
                 "run\n  $Self->{MyName} update " .
