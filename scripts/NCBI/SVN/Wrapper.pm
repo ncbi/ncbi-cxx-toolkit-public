@@ -246,6 +246,18 @@ sub ReadInfo
     return \%Info
 }
 
+sub LogParsingError
+{
+    my ($Stream, $CurrentRevision, $State, $Line) = @_;
+
+    local $/ = undef;
+    $Stream->ReadLine();
+    $Stream->Close();
+
+    confess "svn log parsing error: r$CurrentRevision->{Number}; " .
+        "state: $State; line '$Line'\n"
+}
+
 sub ReadLog
 {
     my ($Self, @LogParams) = @_;
@@ -254,7 +266,6 @@ sub ReadLog
 
     my $Line;
     my $State = 'initial';
-    my $ErrorMessage = 'svn log parsing error';
 
     my @Revisions;
     my $CurrentRevision;
@@ -269,7 +280,7 @@ sub ReadLog
             if ($Line)
             {
                 $Line =~ m/^   ([AMDR]) (.+?)(?: \(from (.+):(\d+)\))?$/o or
-                    goto ParsingError;
+                    LogParsingError($Stream, $CurrentRevision, $State, $Line);
 
                 push @{$CurrentRevision->{ChangedPaths}}, [$1, $2, $3, $4]
             }
@@ -290,20 +301,22 @@ sub ReadLog
             push @Revisions, ($CurrentRevision = \%NewRev);
 
             (@NewRev{qw(Number Author)}, $NumberOfLogLines) = $Line =~
-                m/^r(\d+) \| (.+?) \| .+? \| (\d) lines?$/o or
-                    goto ParsingError;
+                m/^r(\d+) \| (.+?) \| .+? \| (\d+) lines?$/o or
+                    LogParsingError($Stream, $CurrentRevision, $State, $Line);
 
             $State = $NumberOfLogLines > 0 ? 'changed_path_header' : 'initial'
         }
         elsif ($State eq 'changed_path_header')
         {
-            goto ParsingError if $Line ne 'Changed paths:';
+            LogParsingError($Stream, $CurrentRevision, $State, $Line)
+                if $Line ne 'Changed paths:';
 
             $State = 'changed_path'
         }
         elsif ($State eq 'initial')
         {
-            goto ParsingError unless $Line =~ m/^-{70}/o;
+            LogParsingError($Stream, $CurrentRevision, $State, $Line)
+                unless $Line =~ m/^-{70}/o;
 
             $State = 'revision_header'
         }
@@ -314,12 +327,6 @@ sub ReadLog
     $_->{LogMessage} =~ s/[\r\n]+$//so for @Revisions;
 
     return \@Revisions;
-
-ParsingError:
-    local $/ = undef;
-    $Stream->ReadLine();
-    $Stream->Close();
-    confess('svn log parsing error')
 }
 
 sub GetLatestRevision
