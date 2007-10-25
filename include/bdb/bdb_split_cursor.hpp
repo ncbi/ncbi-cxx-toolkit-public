@@ -63,7 +63,7 @@ private:
     string m_StoreName;
     size_t m_BufferSize;
 
-    list<string>              m_Files;
+    vector<string>              m_Files;
     auto_ptr<TVolume>         m_Volume;
     auto_ptr<CBDB_FileCursor> m_Cursor;
 
@@ -83,8 +83,8 @@ CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::CBDB_SplitCursor(TSplitStore& store)
     /// find our relevant files
     ///
     {{
-         list<string> paths;
-         list<string> masks;
+         vector<string> paths;
+         vector<string> masks;
 
          string path = store.GetFileName();
          string path_dir;
@@ -200,8 +200,8 @@ CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::x_NextVolume()
     }
 
     /// open the next file
-    string path = m_Files.front();
-    m_Files.pop_front();
+    string path = m_Files.back();
+    m_Files.pop_back();
 
     m_Volume.reset(new TVolume);
     m_Volume->SetCacheSize(10 * 1024 * 1024);
