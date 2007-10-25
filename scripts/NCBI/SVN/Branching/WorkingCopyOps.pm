@@ -16,17 +16,19 @@ sub DoUpdateAndSwitch
     my ($Self, $WorkingCopyInfo, $TargetPath,
         $PathsToUpdate, $PathsToSwtich) = @_;
 
-    my ($RootURL, $MissingTree) = @$WorkingCopyInfo{qw(RootURL MissingTree)};
+    my ($RootURL, $MissingTree, $MissingBranchPaths) =
+        @$WorkingCopyInfo{qw(RootURL MissingTree MissingBranchPaths)};
 
     $Self->{SVN}->RunSubversion('update', '-N', @$MissingTree) if @$MissingTree;
 
-    $Self->{SVN}->RunSubversion('update', @$PathsToUpdate) if @$PathsToUpdate;
+    my @PathsToUpdate = (@$PathsToUpdate, @$MissingBranchPaths);
+
+    $Self->{SVN}->RunSubversion('update', @PathsToUpdate) if @PathsToUpdate;
 
     my $BaseURL = "$RootURL/$TargetPath/";
 
-    for (@$PathsToSwtich,
-        @{$WorkingCopyInfo->{IncorrectlySwitched}},
-        @{$WorkingCopyInfo->{MissingBranchPaths}})
+    for (@$PathsToSwtich, @$MissingBranchPaths,
+        @{$WorkingCopyInfo->{IncorrectlySwitched}})
     {
         $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
     }

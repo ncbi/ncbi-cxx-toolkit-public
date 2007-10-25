@@ -103,7 +103,10 @@ sub new
             my $PathStillExists = 1;
             my $Tree = \%MissingTree;
 
-            for my $PathComponent (split('/', $MissingPath))
+            my @PathComponents = split('/', $MissingPath);
+            pop @PathComponents;
+
+            for my $PathComponent (@PathComponents)
             {
                 $Tree = ($Tree->{$PathComponent} ||= {});
 
