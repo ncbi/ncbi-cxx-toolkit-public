@@ -935,7 +935,10 @@ bool CSeqDBImpl::OidToGi(int oid, int & gi) const
     int vol_oid(0);
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetGi(vol_oid, gi, locked);
+        bool have_oidlist = m_OIDList.NotEmpty();
+        Uint4 memb_bit = m_Aliases.GetMembBit(m_VolSet);
+        
+        return vol->GetGi(vol_oid, have_oidlist, memb_bit, gi, locked);
     }
     
     NCBI_THROW(CSeqDBException,

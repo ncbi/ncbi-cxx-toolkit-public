@@ -471,13 +471,21 @@ public:
     ///
     /// @param oid
     ///   The oid of the sequence. [in]
+    /// @param have_oidlist
+    ///   True if the database is filtered. [in]
+    /// @param membership_bit
+    ///   Membership bit to filter deflines. [in]
     /// @param gi
     ///   The returned GI. [out]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     /// @return
     ///   True if a GI was returned.
-    bool GetGi(int oid, int & gi, CSeqDBLockHold & locked) const;
+    bool GetGi(int              oid,
+               bool             have_oidlist,
+               int              membership_bit,
+               int            & gi,
+               CSeqDBLockHold & locked) const;
     
     /// Find OIDs for the specified accession or formatted Seq-id.
     ///
@@ -861,6 +869,8 @@ private:
     ///   The OID of the sequence. [in]
     /// @param adjust_oids
     ///   If true, BL_ORD_ID ids will be adjusted to this volume. [in]
+    /// @param changed
+    ///   Indicates whether ASN.1 data needed changes (optional). [out]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     /// @return
@@ -868,7 +878,23 @@ private:
     CRef<CBlast_def_line_set>
     x_GetHdrAsn1(int              oid,
                  bool             adjust_oids,
+                 bool           * changed,
                  CSeqDBLockHold & locked) const;
+    
+    /// Get sequence header binary data.
+    /// 
+    /// This method returns the sequence header information as a
+    /// reference to raw ASN.1 binary data.  This reference can be
+    /// used until the next access to the Atlas layer or the header
+    /// data memory lease.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence. [in]
+    /// @param locked
+    ///   The lock holder object for this thread. [in]
+    /// @return
+    ///   The Blast-def-line-set describing this sequence.
+    CTempString x_GetHdrAsn1Binary(int oid, CSeqDBLockHold & locked) const;
     
     /// Get binary sequence header information.
     /// 
@@ -906,15 +932,18 @@ private:
     ///   True if the database is filtered. [in]
     /// @param membership_bit
     ///   Membership bit to filter deflines. [in]
+    /// @param changed
+    ///   Indicates whether ASN.1 data needed changes (optional). [out]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     /// @return
     ///   The set of blast-def-lines describing this sequence.
     CRef<CBlast_def_line_set>
-    x_GetFilteredHeader(int                  oid,
-                        bool                 have_oidlist,
-                        int                  membership_bit,
-                        CSeqDBLockHold     & locked) const;
+    x_GetFilteredHeader(int              oid,
+                        bool             have_oidlist,
+                        int              membership_bit,
+                        bool           * changed,
+                        CSeqDBLockHold & locked) const;
     
     /// Get sequence header information structures.
     /// 
@@ -1209,8 +1238,11 @@ private:
     /// First OID past end of this volume.
     int m_VolEnd;
     
-    /// Cache for x_GetFilteredHeader.
-    mutable CSeqDBIntCache< CRef<CBlast_def_line_set> > m_DeflineCache;
+    /// Filtered defline plus whether binary data needed changes.
+    typedef pair<CRef<CBlast_def_line_set>, bool> TDeflineCacheItem;
+    
+    /// Cache of filtered deflines.
+    mutable CSeqDBIntCache<TDeflineCacheItem> m_DeflineCache;
 };
 
 END_NCBI_SCOPE

@@ -1048,6 +1048,7 @@ CSeqDBVol::x_GetTaxDefline(int                  oid,
         x_GetFilteredHeader(oid,
                             have_oidlist,
                             membership_bit,
+                            NULL,
                             locked);
     
     // 2. if there is a preferred gi, bump it to the top.
@@ -1239,7 +1240,7 @@ CSeqDBVol::GetBioseq(int                   oid,
     // GetFilteredHeader, since that object lives in the cache.
     
     CRef<CBlast_def_line_set> orig_deflines =
-        x_GetFilteredHeader(oid, have_oidlist, memb_bit, locked);
+        x_GetFilteredHeader(oid, have_oidlist, memb_bit, NULL, locked);
     
     CRef<CBlast_def_line_set> defline_set;
     
@@ -1876,6 +1877,7 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int                  oid,
         x_GetFilteredHeader(oid,
                             have_oidlist,
                             membership_bit,
+                            NULL,
                             locked);
     
     if ((! defline_set.Empty()) && defline_set->CanGet()) {
@@ -1907,6 +1909,7 @@ CSeqDBVol::GetFilteredHeader(int                  oid,
     return x_GetFilteredHeader(oid,
                                have_oidlist,
                                membership_bit,
+                               NULL,
                                locked);
 }
 
@@ -1914,6 +1917,7 @@ CRef<CBlast_def_line_set>
 CSeqDBVol::x_GetFilteredHeader(int                  oid,
                                bool                 have_oidlist,
                                int                  membership_bit,
+                               bool               * changed,
                                CSeqDBLockHold     & locked) const
 {
     typedef list< CRef<CBlast_def_line> > TBDLL;
@@ -1921,13 +1925,20 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
     
     m_Atlas.Lock(locked);
     
-    CRef<CBlast_def_line_set> & cached = m_DeflineCache.Lookup(oid);
+    TDeflineCacheItem & cached = m_DeflineCache.Lookup(oid);
     
-    if (cached.NotEmpty()) {
-        return cached;
+    if (cached.first.NotEmpty()) {
+        if (changed) {
+            *changed = cached.second;
+        }
+        
+        return cached.first;
     }
     
-    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, true, locked);
+    bool asn_changed = false;
+    
+    CRef<CBlast_def_line_set> BDLS =
+        x_GetHdrAsn1(oid, true, & asn_changed, locked);
     
     // Filter based on "rdfp->membership_bit" or similar.
     
@@ -1982,45 +1993,42 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
             if (! have_memb) {
                 TBDLLIter eraseme = iter++;
                 dl.erase(eraseme);
+                asn_changed = true;
             } else {
                 iter++;
             }
         }
     }
     
-    cached = BDLS;
+    cached.first = BDLS;
+    cached.second = asn_changed;
     
-    return cached;
+    return BDLS;
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::x_GetHdrAsn1(int oid, bool adjust_oids, CSeqDBLockHold & locked) const
+CSeqDBVol::x_GetHdrAsn1(int              oid,
+                        bool             adjust_oids,
+                        bool           * changed,
+                        CSeqDBLockHold & locked) const
 {
-    CRef<CBlast_def_line_set> nullret;
+    CRef<CBlast_def_line_set> bdls;
     
-    TIndx hdr_start = 0;
-    TIndx hdr_end   = 0;
+    CTempString raw_data = x_GetHdrAsn1Binary(oid, locked);
     
-    m_Atlas.Lock(locked);
-    
-    m_Idx->GetHdrStartEnd(oid, hdr_start, hdr_end);
-    
-    const char * asn_region = m_Hdr->GetRegion(hdr_start, hdr_end, locked);
-    
-    // Now; create an ASN.1 object from the memory chunk provided
-    // here.
-        
-    if (! asn_region) {
-        return nullret;
+    if (! raw_data.size()) {
+        return bdls;
     }
     
-    CObjectIStreamAsnBinary inpstr(asn_region, hdr_end - hdr_start);
+    // Now create an ASN.1 object from the memory chunk provided here.
     
-    CRef<objects::CBlast_def_line_set> bdls(new objects::CBlast_def_line_set);
+    CObjectIStreamAsnBinary inpstr(raw_data.data(), raw_data.size());
+    
+    bdls.Reset(new objects::CBlast_def_line_set);
     
     inpstr >> *bdls;
     
-    if (adjust_oids && bdls.NotEmpty()) {
+    if (adjust_oids && bdls.NotEmpty() && m_VolStart) {
         NON_CONST_ITERATE(list< CRef<CBlast_def_line> >, dl, bdls->Set()) {
             if (! (**dl).CanGetSeqid()) {
                 continue;
@@ -2035,6 +2043,10 @@ CSeqDBVol::x_GetHdrAsn1(int oid, bool adjust_oids, CSeqDBLockHold & locked) cons
                     if (dbt.GetDb() == "BL_ORD_ID") {
                         int vol_oid = dbt.GetTag().GetId();
                         dbt.SetTag().SetId(m_VolStart + vol_oid);
+                        
+                        if (changed) {
+                            *changed = true;
+                        }
                     }
                 }
             }
@@ -2044,6 +2056,21 @@ CSeqDBVol::x_GetHdrAsn1(int oid, bool adjust_oids, CSeqDBLockHold & locked) cons
     return bdls;
 }
 
+CTempString
+CSeqDBVol::x_GetHdrAsn1Binary(int oid, CSeqDBLockHold & locked) const
+{
+    TIndx hdr_start = 0;
+    TIndx hdr_end   = 0;
+    
+    m_Atlas.Lock(locked);
+    
+    m_Idx->GetHdrStartEnd(oid, hdr_start, hdr_end);
+    
+    const char * asn_region = m_Hdr->GetRegion(hdr_start, hdr_end, locked);
+    
+    return CTempString(asn_region, hdr_end - hdr_start);
+}
+
 void
 CSeqDBVol::x_GetFilteredBinaryHeader(int                  oid,
                                      vector<char>       & hdr_data,
@@ -2051,19 +2078,34 @@ CSeqDBVol::x_GetFilteredBinaryHeader(int                  oid,
                                      int                  memb_bit,
                                      CSeqDBLockHold     & locked) const
 {
+    // This method's client is GetBioseq() and related methods.  That
+    // code needs filtered ASN.1 headers; eliminating the fetching of
+    // filtered data here is not necessary (the cache will hit.)
+    
+    // If the data changed after deserialization, we need to serialize
+    // the modified version.  If not, we can just copy the binary data
+    // from disk.
+    
+    bool changed = false;
+    
     CRef<CBlast_def_line_set> dls =
-        x_GetFilteredHeader(oid, have_oidlist, memb_bit, locked);
+        x_GetFilteredHeader(oid, have_oidlist, memb_bit, & changed, locked);
     
-    CNcbiOstrstream asndata;
-    
-    {{
-        CObjectOStreamAsnBinary outpstr(asndata);
-        outpstr << *dls;
-    }}
-    size_t size = asndata.pcount();
-    const char* ptr = asndata.str();
-    asndata.freeze(false);
-    hdr_data.assign(ptr, ptr+size);
+    if (changed) {
+        CNcbiOstrstream asndata;
+        
+        {{
+            CObjectOStreamAsnBinary outpstr(asndata);
+            outpstr << *dls;
+        }}
+        size_t size = asndata.pcount();
+        const char* ptr = asndata.str();
+        asndata.freeze(false);
+        hdr_data.assign(ptr, ptr+size);
+    } else {
+        CTempString raw = x_GetHdrAsn1Binary(oid, locked);
+        hdr_data.assign(raw.data(), raw.data() + raw.size());
+    }
 }
 
 void CSeqDBVol::x_GetAmbChar(int              oid,
@@ -2147,7 +2189,7 @@ bool CSeqDBVol::GetPig(int oid, int & pig, CSeqDBLockHold & locked) const
         return false;
     }
     
-    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, false, locked);
+    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, false, NULL, locked);
     
     if (BDLS.Empty() || (! BDLS->IsSet())) {
         return false;
@@ -2288,7 +2330,11 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
     }
 }
 
-bool CSeqDBVol::GetGi(int oid, int & gi, CSeqDBLockHold & locked) const
+bool CSeqDBVol::GetGi(int              oid,
+                      bool             have_oidlist,
+                      int              membership_bit,
+                      int            & gi,
+                      CSeqDBLockHold & locked) const
 {
     gi = -1;
     
@@ -2296,7 +2342,8 @@ bool CSeqDBVol::GetGi(int oid, int & gi, CSeqDBLockHold & locked) const
         return false;
     }
     
-    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, false, locked);
+    CRef<CBlast_def_line_set> BDLS =
+        x_GetFilteredHeader(oid, have_oidlist, membership_bit, NULL, locked);
     
     if (BDLS.Empty() || (! BDLS->IsSet())) {
         return false;
