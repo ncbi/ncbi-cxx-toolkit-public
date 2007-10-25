@@ -1238,7 +1238,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType)
     CLightString id = ReadMemberId(SkipWhiteSpace());
     TMemberIndex index = GetMemberIndex(classType, id);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+        if (CanSkipUnknownMembers()) {
             SetFailFlags(fUnknownValue);
             SkipAnyContent();
             return BeginClassMember(classType);
@@ -1259,7 +1259,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType,
     CLightString id = ReadMemberId(SkipWhiteSpace());
     TMemberIndex index = GetMemberIndex(classType, id, pos);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+        if (CanSkipUnknownMembers()) {
             SetFailFlags(fUnknownValue);
             SkipAnyContent();
             return BeginClassMember(classType, pos);
@@ -1369,7 +1369,7 @@ TMemberIndex CObjectIStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* choice
 
     TMemberIndex index = GetChoiceIndex(choiceType, id);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownVariants() == eSerialSkipUnknown_Yes) {
+        if (CanSkipUnknownVariants()) {
             SetFailFlags(fUnknownValue);
         } else {
             UnexpectedMember(id, choiceType->GetVariants());

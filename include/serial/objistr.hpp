@@ -313,6 +313,15 @@ public:
     ///   Skip unknown choice variants parameter
     static  void SetSkipUnknownVariantsGlobal(ESerialSkipUnknown skip);
 
+    /// Simple check if it's allowed to skip unknown members
+    bool CanSkipUnknownMembers(void);
+    /// Simple check if it's allowed to skip unknown variants
+    bool CanSkipUnknownVariants(void);
+    /// Update skip unknown members option to non-default value
+    ESerialSkipUnknown UpdateSkipUnknownMembers(void);
+    /// Update skip unknown variants option to non-default value
+    ESerialSkipUnknown UpdateSkipUnknownVariants(void);
+
 //---------------------------------------------------------------------------
 // Stream state
 

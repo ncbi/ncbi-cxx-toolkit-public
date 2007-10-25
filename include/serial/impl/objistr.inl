@@ -482,56 +482,57 @@ ESerialVerifyData CObjectIStream::GetVerifyData(void) const
 }
 
 inline
-void CObjectIStream::SetSkipUnknownMembers(ESerialSkipUnknown skip)
-{
-    if (m_SkipUnknown == eSerialSkipUnknown_Never ||
-        m_SkipUnknown == eSerialSkipUnknown_Always) {
-        return;
-    }
-    m_SkipUnknown = (skip == eSerialSkipUnknown_Default) ?
-                    x_GetSkipUnknownDefault() : skip;
-}
-
-inline
 ESerialSkipUnknown CObjectIStream::GetSkipUnknownMembers(void)
 {
-    switch (m_SkipUnknown) {
-    default:
-        break;
-    case eSerialSkipUnknown_No:
-    case eSerialSkipUnknown_Never:
-        return eSerialSkipUnknown_No;
-    case eSerialSkipUnknown_Yes:
-    case eSerialSkipUnknown_Always:
-        return eSerialSkipUnknown_Yes;
+    ESerialSkipUnknown skip = m_SkipUnknown;
+    if ( skip == eSerialSkipUnknown_Default ) {
+        skip = UpdateSkipUnknownMembers();
     }
-    return ms_SkipUnknownDefault;
-}
-
-inline
-void CObjectIStream::SetSkipUnknownVariants(ESerialSkipUnknown skip)
-{
-    if (m_SkipUnknownVariants == eSerialSkipUnknown_Never ||
-        m_SkipUnknownVariants == eSerialSkipUnknown_Always) {
-        return;
-    }
-    m_SkipUnknownVariants = (skip == eSerialSkipUnknown_Default) ?
-                            x_GetSkipUnknownVariantsDefault() : skip;
+    return skip;
 }
 
 inline
 ESerialSkipUnknown CObjectIStream::GetSkipUnknownVariants(void)
 {
-    switch (m_SkipUnknownVariants) {
-    case eSerialSkipUnknown_Yes:
-    case eSerialSkipUnknown_Always:
-        return eSerialSkipUnknown_Yes;
-    default:
-    case eSerialSkipUnknown_No:
-    case eSerialSkipUnknown_Never:
-        break;
+    ESerialSkipUnknown skip = m_SkipUnknownVariants;
+    if ( skip == eSerialSkipUnknown_Default ) {
+        skip = UpdateSkipUnknownVariants();
     }
-    return eSerialSkipUnknown_No;
+    return skip;
+}
+
+inline
+void CObjectIStream::SetSkipUnknownMembers(ESerialSkipUnknown skip)
+{
+    ESerialSkipUnknown old_skip = GetSkipUnknownMembers();
+    if ( old_skip != eSerialSkipUnknown_Never &&
+         old_skip != eSerialSkipUnknown_Always ) {
+        m_SkipUnknown = skip;
+    }
+}
+
+inline
+void CObjectIStream::SetSkipUnknownVariants(ESerialSkipUnknown skip)
+{
+    ESerialSkipUnknown old_skip = GetSkipUnknownVariants();
+    if ( old_skip != eSerialSkipUnknown_Never &&
+         old_skip != eSerialSkipUnknown_Always ) {
+        m_SkipUnknownVariants = skip;
+    }
+}
+
+inline
+bool CObjectIStream::CanSkipUnknownMembers(void)
+{
+    ESerialSkipUnknown skip = GetSkipUnknownMembers();
+    return skip == eSerialSkipUnknown_Yes || skip == eSerialSkipUnknown_Always;
+}
+
+inline
+bool CObjectIStream::CanSkipUnknownVariants(void)
+{
+    ESerialSkipUnknown skip = GetSkipUnknownVariants();
+    return skip == eSerialSkipUnknown_Yes || skip == eSerialSkipUnknown_Always;
 }
 
 inline

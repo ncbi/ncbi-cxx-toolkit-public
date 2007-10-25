@@ -276,7 +276,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
     BEGIN_OBJECT_FRAME_OF(in, eFrameChoiceVariant);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember ) {
-        if (in.GetSkipUnknownVariants() == eSerialSkipUnknown_Yes) {
+        if (in.CanSkipUnknownVariants()) {
             in.SkipAnyContentVariant();
         } else {
             in.ThrowError(in.fFormatError, "choice variant id expected");

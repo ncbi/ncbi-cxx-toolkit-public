@@ -306,6 +306,7 @@ ESerialSkipUnknown CObjectIStream::x_GetSkipUnknownDefault(void)
     return skip;
 }
 
+
 NCBI_PARAM_ENUM_ARRAY(ESerialSkipUnknown, SERIAL, SKIP_UNKNOWN_VARIANTS)
 {
     {"NO",     eSerialSkipUnknown_No},
@@ -351,14 +352,43 @@ ESerialSkipUnknown CObjectIStream::x_GetSkipUnknownVariantsDefault(void)
     return ms_SkipUnknownVariantsDefault.GetThreadDefault();
 }
 
+
+ESerialSkipUnknown CObjectIStream::UpdateSkipUnknownMembers(void)
+{
+    ESerialSkipUnknown skip = m_SkipUnknown;
+    if ( skip == eSerialSkipUnknown_Default ) {
+        skip = x_GetSkipUnknownDefault();
+        if ( skip = eSerialSkipUnknown_Default ) {
+            skip = eSerialSkipUnknown_No;
+        }
+        m_SkipUnknown = skip;
+    }
+    return skip;
+}
+
+
+ESerialSkipUnknown CObjectIStream::UpdateSkipUnknownVariants(void)
+{
+    ESerialSkipUnknown skip = m_SkipUnknownVariants;
+    if ( skip == eSerialSkipUnknown_Default ) {
+        skip = x_GetSkipUnknownVariantsDefault();
+        if ( skip = eSerialSkipUnknown_Default ) {
+            skip = eSerialSkipUnknown_No;
+        }
+        m_SkipUnknownVariants = skip;
+    }
+    return skip;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 CObjectIStream::CObjectIStream(ESerialDataFormat format)
     : m_DiscardCurrObject(false),
       m_DataFormat(format),
       m_VerifyData(x_GetVerifyDataDefault()),
-      m_SkipUnknown(x_GetSkipUnknownDefault()),
-      m_SkipUnknownVariants(x_GetSkipUnknownVariantsDefault()),
+      m_SkipUnknown(eSerialSkipUnknown_Default),
+      m_SkipUnknownVariants(eSerialSkipUnknown_Default),
       m_Fail(fNotOpen),
       m_Flags(fFlagNone)
 {

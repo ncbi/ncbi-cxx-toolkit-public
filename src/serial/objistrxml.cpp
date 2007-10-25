@@ -1818,7 +1818,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
     CLightString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+        if (CanSkipUnknownMembers()) {
             SetFailFlags(fUnknownValue);
             string tag(tagName);
             if (SkipAnyContent()) {
@@ -1966,7 +1966,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             TopFrame().SetNotag();
             return ind;
         }
-        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes &&
+        if (CanSkipUnknownMembers() &&
             pos <= classType->GetMembers().LastIndex()) {
             SetFailFlags(fUnknownValue);
             string tag(RejectedName());
@@ -1980,7 +1980,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
     CLightString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id, pos);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+        if (CanSkipUnknownMembers()) {
             SetFailFlags(fUnknownValue);
             string tag(tagName);
             if (SkipAnyContent()) {
@@ -2106,7 +2106,7 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
     CLightString id = SkipStackTagName(tagName, 1, '_');
     ind = choiceType->GetVariants().Find(id);
     if ( ind == kInvalidMember ) {
-        if (GetSkipUnknownVariants() == eSerialSkipUnknown_Yes) {
+        if (CanSkipUnknownVariants()) {
             SetFailFlags(fUnknownValue);
             UndoClassMember();
         } else {

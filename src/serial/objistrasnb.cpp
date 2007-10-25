@@ -862,7 +862,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType)
     ExpectIndefiniteLength();
     TMemberIndex index = classType->GetMembers().Find(tag);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+        if (CanSkipUnknownMembers()) {
             SetFailFlags(fUnknownValue);
             SkipAnyContent();
             ExpectEndOfContent();
@@ -887,7 +887,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType,
     ExpectIndefiniteLength();
     TMemberIndex index = classType->GetMembers().Find(tag, pos);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
+        if (CanSkipUnknownMembers()) {
             SetFailFlags(fUnknownValue);
             SkipAnyContent();
             ExpectEndOfContent();
@@ -996,7 +996,7 @@ CObjectIStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
     ExpectIndefiniteLength();
     TMemberIndex index = choiceType->GetVariants().Find(tag);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownVariants() == eSerialSkipUnknown_Yes) {
+        if (CanSkipUnknownVariants()) {
             SetFailFlags(fUnknownValue);
         } else {
             UnexpectedMember(tag);
