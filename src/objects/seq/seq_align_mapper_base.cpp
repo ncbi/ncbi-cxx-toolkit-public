@@ -423,7 +423,7 @@ void CSeq_align_Mapper_Base::x_Init(const CPacked_seg& pseg)
                 strand = pseg.GetStrands()[seg*m_Dim + row];
             }
             SAlignment_Segment::SAlignment_Row& last_row =
-                alnseg.AddRow(row, 
+                alnseg.AddRow(row,
                 *pseg.GetIds()[row],
                 (pseg.GetPresent()[seg*m_Dim + row] ?
                 pseg.GetStarts()[seg*m_Dim + row] : kInvalidSeqPos),
@@ -1123,3 +1123,4 @@ const CSeq_id_Handle& CSeq_align_Mapper_Base::GetRowId(size_t idx) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+

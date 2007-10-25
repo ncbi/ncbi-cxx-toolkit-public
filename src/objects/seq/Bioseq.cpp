@@ -279,4 +279,6 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
+#undef NCBI_USE_ERRCODE_X
+
 /* Original file checksum: lines: 61, chars: 1871, CRC32: 1d5d7d05 */
