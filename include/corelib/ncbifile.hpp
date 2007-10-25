@@ -2690,6 +2690,8 @@ public:
         eCreateNew,
         ///< Open existent file, fails if the file does not exists.
         eOpen,
+        ///< Open existent file, or create new if the file does not exists.
+        eOpenAlways,
         /// Open existent file, and truncate its size to 0.
         /// Fails if the file does not exists.
         eTruncate
@@ -2757,20 +2759,20 @@ public:
     /// @return
     ///   On success, the number of bytes read (zero indicates end of file,
     ///   or that 'count' is zero). On error, -1 is returned. 
-    ssize_t Read(void* buf, size_t count);
+    ssize_t Read(void* buf, size_t count) const;
 
     /// Write file.
     ///
     /// @return
     ///   On success, the number of bytes written (zero indicates nothing
     ///   was written).  On error, -1 is returned. 
-    ssize_t Write(const void* buf, size_t count);
+    ssize_t Write(const void* buf, size_t count) const;
 
     /// Flush file buffers.
-    void Flush(void);
+    void Flush(void) const;
 
     /// Return system file handle associated with the file.
-    TFileHandle GetFileHandle(void) { return m_Handle; };
+    TFileHandle GetFileHandle(void) const { return m_Handle; };
 
     /// Close previous handle if needed and use given handle for all I/O.
     void SetFileHandle(TFileHandle handle);
@@ -2779,10 +2781,10 @@ public:
     ///
     /// @return
     ///   Current file position. On error, -1 is returned. 
-    ssize_t GetFilePos(void);
+    ssize_t GetFilePos(void) const;
 
     /// Set file position.
-    void SetFilePos(off_t offset, EPositionMoveMethod move_method);
+    void SetFilePos(off_t offset, EPositionMoveMethod move_method) const;
 
     /// Set new size for the file.
     ///
@@ -2800,7 +2802,7 @@ public:
     /// @param pos
     ///   Defines how to set current file position after changing file size.
     ///   eCurrent means that file position does not change.
-    void SetFileSize(size_t length, EPositionMoveMethod pos = eCurrent);
+    void SetFileSize(size_t length, EPositionMoveMethod pos = eCurrent) const;
 
 protected:
     TFileHandle  m_Handle;      ///< System file handle.
@@ -2965,6 +2967,7 @@ private:
 ///    Therefore, it is recommended that your process explicitly remove all
 ///    locks, before closing a file. If this is not done, access to file
 ///    may be denied if the operating system has not yet unlocked them.
+///
 ///  4) Locks are not inherited by a child process.
 ///
 /// All methods of this class except the destructor throw exceptions
@@ -3021,6 +3024,8 @@ public:
 
     /// Construct CFileLock for locking file by system file handle 'handle'.
     /// Throw CFileException on error.
+    /// @note
+    ///   The file will not be closed at CFileLock destruction.
     /// @sa Lock, LockSegment
     CFileLock(TFileHandle handle,
               TFlags flags  = fDefault,
@@ -3051,8 +3056,9 @@ public:
     /// Unlock file.
     ///
     /// Unlock range of the file previously locked using Lock() method.
-    /// It do not remove locks, established on the file somewhere else.
-    /// Only closing a file can unlock all locks.
+    /// The file remains open. Note, that this method cannot remove locks,
+    /// established on the file somewhere else. Only closing a file can
+    /// unlock all locks.
     /// @sa Lock
     void Unlock(void);
 

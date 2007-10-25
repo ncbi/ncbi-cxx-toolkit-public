@@ -4527,6 +4527,9 @@ void CFileIO::Open(const string& filename,
         case eOpen:
             dwOpenMode = OPEN_EXISTING;
             break;
+        case eOpenAlways:
+            dwOpenMode = OPEN_ALWAYS;
+            break;
         case eTruncate:
             dwOpenMode = TRUNCATE_EXISTING;
             break;
@@ -4592,6 +4595,11 @@ void CFileIO::Open(const string& filename,
         case eOpen:
             // by default
             break;
+        case eOpenAlways:
+            if ( !CFile(filename).Exists() ) {
+                flags |= O_CREAT;
+            }
+            break;
         case eTruncate:
             flags |= O_TRUNC;
             break;
@@ -4639,10 +4647,12 @@ void CFileIO::Close(void)
         close(m_Handle);
 #endif
     }
+    m_Handle = kInvalidHandle;
+    m_CloseHandle = false;
 }
 
 
-ssize_t CFileIO::Read(void* buf, size_t count)
+ssize_t CFileIO::Read(void* buf, size_t count) const
 {
 #if defined(NCBI_OS_MSWIN)
     DWORD n = 0;
@@ -4653,13 +4663,18 @@ ssize_t CFileIO::Read(void* buf, size_t count)
         return GetLastError() == ERROR_HANDLE_EOF? 0 : -1;
     }
 #elif defined(NCBI_OS_UNIX)
-    ssize_t n = read(int(m_Handle), buf, count);
+    ssize_t n = 0;
+    while ((n = read(int(m_Handle), buf, count)) < 0) {
+        if (errno != EINTR) {
+            return -1;
+        }
+    }
 #endif
     return n;
 }
 
 
-ssize_t CFileIO::Write(const void* buf, size_t count)
+ssize_t CFileIO::Write(const void* buf, size_t count) const
 {
 #if defined(NCBI_OS_MSWIN)
     DWORD n = 0;
@@ -4676,7 +4691,7 @@ ssize_t CFileIO::Write(const void* buf, size_t count)
 }
 
 
-void CFileIO::Flush(void)
+void CFileIO::Flush(void) const
 {
     bool res;
 #if defined(NCBI_OS_MSWIN)
@@ -4699,7 +4714,7 @@ void CFileIO::SetFileHandle(TFileHandle handle)
 }
 
 
-ssize_t CFileIO::GetFilePos(void)
+ssize_t CFileIO::GetFilePos(void) const
 {
 #if defined(NCBI_OS_MSWIN)
     LARGE_INTEGER ofs;
@@ -4720,7 +4735,7 @@ ssize_t CFileIO::GetFilePos(void)
 }
 
 
-void CFileIO::SetFilePos(off_t offset, EPositionMoveMethod move_method)
+void CFileIO::SetFilePos(off_t offset, EPositionMoveMethod move_method) const
 {
 #if defined(NCBI_OS_MSWIN)
     DWORD from = 0;
@@ -4766,7 +4781,7 @@ void CFileIO::SetFilePos(off_t offset, EPositionMoveMethod move_method)
 }
 
 
-void CFileIO::SetFileSize(size_t length, EPositionMoveMethod pos)
+void CFileIO::SetFileSize(size_t length, EPositionMoveMethod pos) const
 {
 #if defined(NCBI_OS_MSWIN)
     BOOL res = true;
@@ -4775,7 +4790,8 @@ void CFileIO::SetFileSize(size_t length, EPositionMoveMethod pos)
     LARGE_INTEGER saved;
     ofs.QuadPart = 0;
     saved.QuadPart = 0;
-    if (pos != eEnd) {
+    // Save current file position if needed
+    if (pos == eCurrent) {
         res = SetFilePointerEx(m_Handle, ofs, &saved, FILE_CURRENT);
     }
     if (res) {
@@ -4787,8 +4803,16 @@ void CFileIO::SetFileSize(size_t length, EPositionMoveMethod pos)
             res = SetEndOfFile(m_Handle);
         }
         // Set file pointer if other than eEnd
-        if (res  &&  (pos != eEnd)) {
-            res = SetFilePointerEx(m_Handle, saved, NULL, FILE_BEGIN);
+        if (res) {
+            if (pos == eBegin) {
+                // eBegin
+                ofs.QuadPart = 0;
+                res = SetFilePointerEx(m_Handle, ofs, NULL, FILE_BEGIN);
+            }
+            else if (pos == eCurrent) {
+                res = SetFilePointerEx(m_Handle, saved, NULL, FILE_BEGIN);
+            }
+            // Nothing todo if eEnd, because we already at the EOF position
         }
     }
 #elif defined(NCBI_OS_UNIX)
@@ -5056,7 +5080,7 @@ struct SLock {
 
 CFileLock::CFileLock(const string& filename, TFlags flags, EType type,
                      off_t offset, size_t length)
-    : m_Handle(kInvalidHandle), m_CloseHandle(true), m_Flags(flags),
+    : m_Handle(kInvalidHandle), m_CloseHandle(false), m_Flags(flags),
       m_IsLocked(false), m_Lock(0)
 {
     x_Init(filename.c_str(), type, offset, length);
@@ -5065,7 +5089,7 @@ CFileLock::CFileLock(const string& filename, TFlags flags, EType type,
 
 CFileLock::CFileLock(const char* filename, TFlags flags, EType type,
                      off_t offset, size_t length)
-    : m_Handle(kInvalidHandle), m_CloseHandle(true), m_Flags(flags),
+    : m_Handle(kInvalidHandle), m_CloseHandle(false), m_Flags(flags),
       m_IsLocked(false), m_Lock(0)
 {
     x_Init(filename, type, offset, length);
@@ -5074,7 +5098,7 @@ CFileLock::CFileLock(const char* filename, TFlags flags, EType type,
 
 CFileLock::CFileLock(TFileHandle handle, TFlags flags, EType type,
                      off_t offset, size_t length)
-    : m_Handle(handle), m_CloseHandle(true), m_Flags(flags),
+    : m_Handle(handle), m_CloseHandle(false), m_Flags(flags),
       m_IsLocked(false), m_Lock(0)
 {
     x_Init(0, type, offset, length);
@@ -5099,6 +5123,9 @@ void CFileLock::x_Init(const char* filename, EType type, off_t offset, size_t le
     if (m_Handle == kInvalidHandle) {
         NCBI_THROW(CFileErrnoException, eFileLock,
                    "Cannot open file " + string(filename));
+    }
+    if (filename) {
+        m_CloseHandle = true;
     }
     m_Lock = new SLock;
 
