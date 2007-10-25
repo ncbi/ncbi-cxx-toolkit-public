@@ -1138,6 +1138,26 @@ static void s_TEST_FileIO(void)
         _TROUBLE;
     } catch (CFileException&) { }
 
+    // eOpenAlways
+    {{
+        // Open existing file
+        fio.Open(filename, CFileIO::eOpenAlways, CFileIO::eWrite);
+        assert( f.Exists() );
+        n = fio.Write(data, data_len);
+        assert( n == data_len );
+        fio.Close();
+        assert( f.GetLength() == data_len );
+        // Remove file
+        assert( f.Remove() );
+        assert( !f.Exists() );
+        // Open new file
+        fio.Open(filename, CFileIO::eOpenAlways, CFileIO::eWrite);
+        assert( f.Exists() );
+        n = fio.Write(data, data_len);
+        assert( n == data_len );
+        fio.Close();
+        assert( f.GetLength() == data_len );
+    }}
 
     // Recreate file with RW permissions
     {{
