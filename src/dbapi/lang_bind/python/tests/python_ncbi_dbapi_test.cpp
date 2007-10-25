@@ -31,6 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
 
 #include "python_ncbi_dbapi_test.hpp"
 #include <common/test_assert.h>  /* This header must go last */
@@ -46,6 +47,7 @@ CPythonDBAPITest::CPythonDBAPITest(const CTestArguments& args)
 
 CPythonDBAPITest::~CPythonDBAPITest(void)
 {
+    // delete m_Engine;
 }
 
 void
@@ -722,6 +724,9 @@ string GetSybaseClientVersion(void)
 {
     CNcbiEnvironment env;
     string sybase_version = env.Get("SYBASE");
+    CDirEntry dir_entry(sybase_version);
+    dir_entry.DereferenceLink();
+    sybase_version = dir_entry.GetPath();
 
     sybase_version = sybase_version.substr(
         sybase_version.find_last_of('/') + 1
@@ -778,7 +783,6 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
-
 
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_SelectStmt, DBAPIInstance);
     tc->depends_on(tc_init);
