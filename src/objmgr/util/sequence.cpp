@@ -1974,20 +1974,32 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
         v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     }
 
-    unsigned int line_pos = 0;
-    ITERATE (CSeqVector, it, v) {
-        if ( !(m_Flags & eInstantiateGaps)  &&  it.SkipGap() ) {
+    unsigned rem_line = m_Width;
+    CSeqVector_CI it(v);
+    while ( it ) {
+        if ( !(m_Flags & eInstantiateGaps) && it.SkipGap() ) {
             m_Out << "-\n";
-            line_pos = 0;
-        } else {
-            m_Out << *it;
-            if (++line_pos >= m_Width) {
+            rem_line = m_Width;
+        }
+        else {
+            TSeqPos buffer_count = it.GetBufferSize();
+            TSeqPos new_pos = it.GetPos()+buffer_count;
+            const char* buffer_ptr = it.GetBufferPtr();
+            while ( buffer_count >= rem_line ) {
+                m_Out.write(buffer_ptr, rem_line);
+                buffer_ptr += rem_line;
+                buffer_count -= rem_line;
                 m_Out << '\n';
-                line_pos = 0;
+                rem_line = m_Width;
             }
+            if ( buffer_count > 0 ) {
+                m_Out.write(buffer_ptr, buffer_count);
+                rem_line -= buffer_count;
+            }
+            it.SetPos(new_pos);
         }
     }
-    if (line_pos > 0) {
+    if ( rem_line < m_Width ) {
         m_Out << '\n';
     }
     m_Out << NcbiFlush;
