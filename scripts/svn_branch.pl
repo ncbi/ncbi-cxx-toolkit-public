@@ -37,7 +37,7 @@ use NCBI::SVN::Branching::MiscOps;
 use Getopt::Long qw(:config permute no_getopt_compat no_ignore_case);
 
 # Command line options.
-my ($Help, $Force, $RootURL, $Revision, $PathList, $Parent);
+my ($Help, $Force, $RootURL, $Revision, $PathList, $DryRun, $Parent);
 
 my @OptionInfo =
 (
@@ -67,6 +67,13 @@ EOF
                           separated list of branch elements. If this
                           option is used, no branch elements may be
                           specified in the command line.
+EOF
+
+    ['dry-run|d', dryrun => \$DryRun,
+        {create => 1, alter => 1, grow => 1,
+            truncate => 1, remove => 1}, <<'EOF'],
+  -d [--dry-run]        : Print the commands that would be executed,
+                          but do not execute them.
 EOF
 
     ['parent|p', parent => \$Parent,
@@ -621,32 +628,34 @@ elsif ($Command eq 'create')
     my $BranchPath = ExtractBranchPathArg();
     my $UpstreamPath = ExtractBranchPathArg('upstream_path');
 
-    $Module->Create(RequireRootURL(), $BranchPath,
+    $Module->Create($DryRun, RequireRootURL(), $BranchPath,
         $UpstreamPath, $Revision, GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'alter')
 {
     my $BranchPath = ExtractBranchPathArg();
 
-    $Module->Alter($Force, RequireRootURL(), $BranchPath,
+    $Module->Alter($DryRun, $Force, RequireRootURL(), $BranchPath,
         GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'grow')
 {
     my $BranchPath = ExtractBranchPathArg();
 
-    $Module->Grow(RequireRootURL(), $BranchPath,
+    $Module->Grow($DryRun, RequireRootURL(), $BranchPath,
         $Revision, GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'truncate')
 {
     my $BranchPath = ExtractBranchPathArg();
 
-    $Module->Truncate(RequireRootURL(), $BranchPath, GetBranchDirArgs($Command))
+    $Module->Truncate($DryRun, RequireRootURL(), $BranchPath,
+        GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'remove')
 {
-    $Module->Remove($Force, RequireRootURL(), AcceptOnlyBranchPathArg($Command))
+    $Module->Remove($DryRun, $Force, RequireRootURL(),
+        AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'merge_down')
 {

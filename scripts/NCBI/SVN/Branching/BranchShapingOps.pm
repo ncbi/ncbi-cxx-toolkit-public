@@ -131,7 +131,7 @@ sub GetDirsToCreate
 
 sub ShapeBranch
 {
-    my ($Self, $Action, $Force, $RootURL, $BranchPath,
+    my ($Self, $Action, $DryRun, $Force, $RootURL, $BranchPath,
         $UpstreamPath, $SourceRevision, @BranchPaths) = @_;
 
     my @MUCCCommands;
@@ -326,8 +326,19 @@ sub ShapeBranch
 
         print STDERR "$VerbING branch '$BranchPath'...\n";
 
-        $Self->{SVN}->RunMUCC('--root-url', $RootURL,
-            '--message', "$VerbED branch '$BranchPath'.", @MUCCCommands);
+        unshift @MUCCCommands, '--root-url', $RootURL,
+            '--message', "$VerbED branch '$BranchPath'.";
+
+        unless ($DryRun)
+        {
+            $Self->{SVN}->RunMUCC(@MUCCCommands)
+        }
+        else
+        {
+            print "*** DRY RUN ***\nsvnmucc\n";
+            print "$_\n" for @MUCCCommands;
+            print "*** *** *** ***\n"
+        }
 
         unless ($Action eq 'remove' or $Action eq 'create')
         {
@@ -347,42 +358,42 @@ sub ShapeBranch
 
 sub Create
 {
-    my ($Self, $RootURL, $BranchPath,
+    my ($Self, $DryRun, $RootURL, $BranchPath,
         $UpstreamPath, $SourceRev, @BranchPaths) = @_;
 
-    $Self->ShapeBranch('create', undef, $RootURL,
+    $Self->ShapeBranch('create', $DryRun, undef, $RootURL,
         $BranchPath, $UpstreamPath, $SourceRev, @BranchPaths)
 }
 
 sub Alter
 {
-    my ($Self, $Force, $RootURL, $BranchPath, @BranchPaths) = @_;
+    my ($Self, $DryRun, $Force, $RootURL, $BranchPath, @BranchPaths) = @_;
 
-    $Self->ShapeBranch('alter', $Force, $RootURL,
+    $Self->ShapeBranch('alter', $DryRun, $Force, $RootURL,
         $BranchPath, undef, undef, @BranchPaths)
 }
 
 sub Grow
 {
-    my ($Self, $RootURL, $BranchPath, $SourceRev, @BranchPaths) = @_;
+    my ($Self, $DryRun, $RootURL, $BranchPath, $SourceRev, @BranchPaths) = @_;
 
-    $Self->ShapeBranch('grow', undef, $RootURL,
+    $Self->ShapeBranch('grow', $DryRun, undef, $RootURL,
         $BranchPath, undef, $SourceRev, @BranchPaths)
 }
 
 sub Truncate
 {
-    my ($Self, $RootURL, $BranchPath, @BranchPaths) = @_;
+    my ($Self, $DryRun, $RootURL, $BranchPath, @BranchPaths) = @_;
 
-    $Self->ShapeBranch('truncate', undef, $RootURL,
+    $Self->ShapeBranch('truncate', $DryRun, undef, $RootURL,
         $BranchPath, undef, undef, @BranchPaths)
 }
 
 sub Remove
 {
-    my ($Self, $Force, $RootURL, $BranchPath) = @_;
+    my ($Self, $DryRun, $Force, $RootURL, $BranchPath) = @_;
 
-    $Self->ShapeBranch('remove', $Force, $RootURL, $BranchPath)
+    $Self->ShapeBranch('remove', $DryRun, $Force, $RootURL, $BranchPath)
 }
 
 1
