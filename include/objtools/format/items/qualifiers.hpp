@@ -171,11 +171,11 @@ public:
     }
     iterator LowerBound(Key& key) {
         typename TQualMMap::iterator it = m_Quals.lower_bound(key);
-        return it->first == key ? it : m_Quals.end();
+        return (it == m_Quals.end() || it->first == key) ? it : m_Quals.end();
     }
     const_iterator LowerBound(const Key& key) const {
         typename TQualMMap::const_iterator it = m_Quals.lower_bound(key);
-        return it->first == key ? it : m_Quals.end();
+        return (it == m_Quals.end() || it->first == key) ? it : m_Quals.end();
     }
     iterator Erase(iterator it) {
         iterator next = it;
