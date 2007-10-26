@@ -14,7 +14,7 @@ use NCBI::SVN::Branching::WorkingCopyInfo;
 sub DoUpdateAndSwitch
 {
     my ($Self, $WorkingCopyInfo, $TargetPath,
-        $PathsToUpdate, $PathsToSwtich) = @_;
+        $PathsToUpdate, $PathsToSwitch) = @_;
 
     my ($RootURL, $MissingTree, $MissingBranchPaths) =
         @$WorkingCopyInfo{qw(RootURL MissingTree MissingBranchPaths)};
@@ -27,7 +27,7 @@ sub DoUpdateAndSwitch
 
     my $BaseURL = "$RootURL/$TargetPath/";
 
-    for (@$PathsToSwtich, @$MissingBranchPaths,
+    for (@$PathsToSwitch, @$MissingBranchPaths,
         @{$WorkingCopyInfo->{IncorrectlySwitched}})
     {
         $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
@@ -72,19 +72,19 @@ sub Update
 
     my $TargetPath;
     my $PathsToUpdate;
-    my $PathsToSwtich;
+    my $PathsToSwitch;
 
     if (@$SwitchedToBranch)
     {
         $TargetPath = $BranchPath;
         $PathsToUpdate = $SwitchedToBranch;
-        $PathsToSwtich = $SwitchedToParent
+        $PathsToSwitch = $SwitchedToParent
     }
     elsif (@$SwitchedToParent)
     {
         $TargetPath = $WorkingCopyInfo->{BranchInfo}->{UpstreamPath};
         $PathsToUpdate = $SwitchedToParent;
-        $PathsToSwtich = []
+        $PathsToSwitch = []
     }
     else
     {
@@ -94,7 +94,7 @@ sub Update
     print STDERR "Updating working copy directories of '$BranchPath'...\n";
 
     $Self->DoUpdateAndSwitch($WorkingCopyInfo, $TargetPath,
-        $PathsToUpdate, $PathsToSwtich)
+        $PathsToUpdate, $PathsToSwitch)
 }
 
 sub SetRawMergeProp
