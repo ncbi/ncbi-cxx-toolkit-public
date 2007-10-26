@@ -274,3 +274,8 @@
 
 // va_list assignment is a problem on 64-bit SUSE
 %ignore ncbi::NStr::FormatVarargs;
+
+// There are GetLabel signatures in both objects
+// and objects::feature.  SWIG doesn't deal properly
+// with these, even though they have different parameters.
+%ignore ncbi::objects::GetLabel;
