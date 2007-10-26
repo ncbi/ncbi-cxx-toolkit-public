@@ -55,28 +55,28 @@ void CCompartApp::Init()
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "Compart v.1.0.0. Input must be sorted "
+                              "Compart v.1.0.1. Input must be sorted "
                               "by query and subject (on Unix: sort -k 1,1 -k 2,2).");
 
     argdescr->AddDefaultKey("penalty", "penalty", 
                             "Per-compartment penalty",
-                            CArgDescriptions::eDouble, "0.4");
+                            CArgDescriptions::eDouble, "0.55");
     
     argdescr->AddDefaultKey("min_idty", "min_idty", 
                             "Minimal overall identity",
-                            CArgDescriptions::eDouble, "0.1");
+                            CArgDescriptions::eDouble, "0.75");
     
     argdescr->AddDefaultKey("min_singleton_idty", "min_singleton_idty", 
                             "Minimal identity for singleton compartments",
-                            CArgDescriptions::eDouble, "0.1");
+                            CArgDescriptions::eDouble, "0.75");
 
     argdescr->AddFlag("noxf", 
                       "Suppress overlap x-filtering: print all "
                       "compartment hits intact");
     
     argdescr->AddDefaultKey("N", "N", 
-                            "Max number of compartments per query",
-                            CArgDescriptions::eInteger, "5");
+                            "Max number of compartments per query (0 = All).",
+                            CArgDescriptions::eInteger, "0");
     
     argdescr->AddOptionalKey("seqlens", "seqlens", 
                              "Two-column file with sequence IDs and their lengths. "
@@ -91,7 +91,7 @@ void CCompartApp::Init()
 
     {{
         USING_SCOPE(objects);
-        CRef<CObjectManager> om = CObjectManager::GetInstance();
+        CRef<CObjectManager> om (CObjectManager::GetInstance());
         CGBDataLoader::RegisterInObjectManager(*om);
         m_Scope.Reset(new CScope (*om));
         m_Scope->AddDefaults();
@@ -305,11 +305,10 @@ void CCompartApp::x_RankAndStore(void)
         return;
     }
 
-    if(cdim > m_MaxCompsPerQuery) {
+    if(m_MaxCompsPerQuery > 0 && cdim > m_MaxCompsPerQuery) {
         stable_sort(m_Compartments.begin(), m_Compartments.end(), PCompartmentRanker);
+        m_Compartments.resize(m_MaxCompsPerQuery);
     }
-
-    m_Compartments.resize(min(cdim, m_MaxCompsPerQuery));
 
     copy(m_Compartments.begin(), m_Compartments.end(),
          back_inserter(m_CompartmentsPermanent));
@@ -402,10 +401,10 @@ const
             const bool strand_rhs (rhs.GetStrand());
             if(strand_lhs == strand_rhs) {
                 if(strand_lhs) {
-                    return GetSpan().second <= rhs.GetSpan().first;
+                    return GetSpan().first < rhs.GetSpan().first;
                 }
                 else {
-                    return GetSpan().first >= rhs.GetSpan().second;
+                    return GetSpan().first > rhs.GetSpan().first;
                 }
             }
             else {
