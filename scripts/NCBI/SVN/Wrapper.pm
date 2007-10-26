@@ -254,8 +254,11 @@ sub LogParsingError
     $Stream->ReadLine();
     $Stream->Close();
 
-    confess "svn log parsing error: r$CurrentRevision->{Number}; " .
-        "state: $State; line '$Line'\n"
+    my $ErrorMessage = "svn log parsing error: state: $State; line '$Line'";
+
+    $ErrorMessage .= "; r$CurrentRevision->{Number}" if $CurrentRevision;
+
+    confess "$ErrorMessage\n"
 }
 
 sub ReadLog
