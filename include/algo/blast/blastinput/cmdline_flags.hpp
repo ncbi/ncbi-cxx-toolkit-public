@@ -42,9 +42,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Query sequence(s)
-extern const string kArgQuery;
+NCBI_XBLAST_EXPORT extern const string kArgQuery;
 /// Default value for query sequence input
-extern const string kDfltArgQuery;
+NCBI_XBLAST_EXPORT extern const string kDfltArgQuery;
 
 /// Output file name
 extern const string kArgOutput;

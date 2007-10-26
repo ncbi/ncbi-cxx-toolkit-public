@@ -2043,7 +2043,6 @@ CSeqDBVol::x_GetHdrAsn1(int              oid,
                     if (dbt.GetDb() == "BL_ORD_ID") {
                         int vol_oid = dbt.GetTag().GetId();
                         dbt.SetTag().SetId(m_VolStart + vol_oid);
-                        
                         if (changed) {
                             *changed = true;
                         }
