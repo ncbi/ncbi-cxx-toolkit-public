@@ -1231,12 +1231,11 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     // Very crude algorithm to get platform type...
     if (m_UserAgent.find("Win") != NPOS) {
         m_Platform = ePlatform_Windows;
-    } else if (m_UserAgent.find("Mac") != NPOS) {
-        if (m_UserAgent.find("OS X") == NPOS) {
-            m_Platform = ePlatform_Mac;
-        } else {
-            m_Platform = ePlatform_Unix;
-        }
+    } else if (m_UserAgent.find("MacOS")       != NPOS  || 
+               m_UserAgent.find("Mac OS")      != NPOS  ||
+               m_UserAgent.find("Macintosh")   != NPOS  ||
+               m_UserAgent.find("Mac_PowerPC") != NPOS) {
+        m_Platform = ePlatform_Mac;
     } else if (m_UserAgent.find("SunOS")   != NPOS  || 
                m_UserAgent.find("Linux")   != NPOS  ||
                m_UserAgent.find("FreeBSD") != NPOS  ||
