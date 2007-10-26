@@ -33,6 +33,7 @@ use lib $ScriptDir;
 use NCBI::SVN::Update;
 use NCBI::SVN::SwitchMap;
 use NCBI::SVN::MultiSwitch;
+use NCBI::SVN::Branching::WorkingCopyOps;
 
 use File::Spec;
 use File::Basename;
@@ -176,6 +177,9 @@ Description:
 Options:
     --help                          Display this help screen.
 
+    --branch=<BranchPath>           After retrieval, switch working copy
+                                    subdirectories to BranchPath.
+
     --switch-map=<SwitchMapFile>    After retrieval, switch working copy
                                     subdirectories as described in
                                     SwitchMapFile.
@@ -310,10 +314,13 @@ sub FindProjectListing
     die "$Context: unable to find project '$Project'\n"
 }
 
-my ($SwitchMapFile, $ToolkitLocation, $WithConfigure, $WithoutConfigure,
-    $WithMake, $WithoutMake, $WithCheck, $WithoutCheck);
+my (@Branches, $SwitchMapFile, $ToolkitLocation,
+    $WithConfigure, $WithoutConfigure,
+    $WithMake, $WithoutMake,
+    $WithCheck, $WithoutCheck);
 
 GetOptions('help|h|?' => sub {Usage()},
+    'branch=s' => \@Branches,
     'switch-map=s' => \$SwitchMapFile,
     'with-toolkit=s' => \$ToolkitLocation,
     'with-configure=s' => \$WithConfigure,
@@ -408,6 +415,25 @@ $SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $ScriptName,
     MapFileName => $SwitchMapFile) if $SwitchMapFile;
 
 chdir $BuildDir;
+
+if (@Branches)
+{
+    my $BranchingModule =
+        NCBI::SVN::Branching::WorkingCopyOps->new(MyName => $ScriptName);
+
+    for my $BranchPath (@Branches)
+    {
+        unless ($BranchPath =~ m/^(?:\/|trunk|branches)/)
+        {
+            $BranchPath = 'branches/' . $BranchPath
+        }
+
+        $BranchPath =~ s/\/+$//o;
+        $BranchPath =~ s/^\/+//o;
+
+        $BranchingModule->Switch($BranchPath)
+    }
+}
 
 $Update->UpdateDirList($HEAD, @Paths);
 
