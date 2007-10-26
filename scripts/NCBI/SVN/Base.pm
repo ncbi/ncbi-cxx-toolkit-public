@@ -15,7 +15,7 @@ sub new
     my %Self = @Params;
 
     $Self{MyName} ||= $Class;
-    $Self{SVN} ||= ($SvnWrapperCache || NCBI::SVN::Wrapper->new(@Params));
+    $Self{SVN} ||= ($SvnWrapperCache ||= NCBI::SVN::Wrapper->new(@Params));
 
     return bless \%Self, $Class
 }
