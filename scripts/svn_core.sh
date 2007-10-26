@@ -301,7 +301,7 @@ if test "$with_objects" = "yes" ; then
     echo
     echo 'Generating serialization code from ASN.1 specs:'
     cd src/objects  ||  Usage "Failed:  cd src/objects"
-    { make builddir=$NCBI/c++.metastable/Release/build  ||  Usage "Failed to generate serialization classes" ; } \
+    { make -f Makefile.sources builddir=$NCBI/c++.metastable/Release/build  ||  Usage "Failed to generate serialization classes" ; } \
     | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.asn ' \
     | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.asn\).*%  \1%g'
     cd ../../src/app/sample/soap   ||  Usage "Failed:  cd ../../src/app/sample/soap (from src/objects)" ;
