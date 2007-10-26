@@ -4,7 +4,8 @@
 
 # Default directory settings, corresponding to an import_project.sh-
 # produced layout; normal builds will override these on the command line.
-builddir = ..
+# NB: builddir is interpreted relative to subdirectories!
+builddir = ../..
 srcdir   = .
 
 include $(builddir)/Makefile.mk
