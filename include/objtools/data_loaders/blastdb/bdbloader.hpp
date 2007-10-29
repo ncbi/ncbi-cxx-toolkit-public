@@ -60,7 +60,10 @@ const string kCFParam_BlastDb_DbType = "DbType"; // = EDbType (e.g. "Protein")
 class NCBI_XLOADER_BLASTDB_EXPORT CBlastDbDataLoader : public CDataLoader
 {
     /// The sequence data will sliced into pieces of this size.
-    enum { kSequenceSliceSize = 65536 };
+    enum {
+        kFastSequenceLoadSize = 1024,
+        kSequenceSliceSize    = 65536
+    };
     
 public:
 
@@ -316,7 +319,7 @@ public:
         CSeqChunkData BuildDataChunk(int id, TSeqPos begin, TSeqPos end);
 
         /// Add an empty CDelta_seq to the Seq-entry in m_TSE.
-        void AddDelta(TSeqPos begin, TSeqPos end);
+        void AddSeq_data(void);
 
         /// Add this sequence's identifiers to a lookup table.
         ///

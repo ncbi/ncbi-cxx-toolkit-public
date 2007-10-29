@@ -271,12 +271,53 @@ void CBlastDbDataLoader::CSeqChunkData::BuildLiteral()
     m_Literal.Reset(literal);
 }
 
+
+void CBlastDbDataLoader::CCachedSeqData::AddSeq_data()
+{
+    CSeq_data& seq_data = GetTSE()->SetSeq().SetInst().SetSeq_data();
+    if (m_SeqDB->GetSequenceType() == CSeqDB::eProtein) {
+        const char * buffer(0);
+        TSeqPos      length = m_SeqDB->GetSequence(m_OID, &buffer);
+        _ASSERT(GetLength() == length);
+        
+        seq_data.SetNcbistdaa().Set().assign(buffer, buffer+length);
+
+        m_SeqDB->RetSequence(& buffer);
+    } else {
+        int nucl_code(kSeqDBNuclNcbiNA8);
+        
+        const char * buffer(0);
+        TSeqPos length = m_SeqDB->GetAmbigSeq(m_OID, &buffer, nucl_code);
+        _ASSERT(GetLength() == length);
+    
+        vector<char>& v4 = seq_data.SetNcbi4na().Set();
+        v4.reserve((length+1)/2);
+    
+        TSeqPos length_whole = length & -2;
+    
+        for(TSeqPos i = 0; i < length_whole; i += 2) {
+            v4.push_back((buffer[i] << 4) | buffer[i+1]);
+        }
+        if (length_whole != length) {
+            _ASSERT((length_whole) == (length-1));
+            v4.push_back(buffer[length_whole] << 4);
+        }
+
+        m_SeqDB->RetSequence(& buffer);
+    }
+}
+
 void CBlastDbDataLoader::x_SplitSeqData(TChunks        & chunks,
                                         CCachedSeqData & seqdata)
 {
     CSeq_inst& inst = seqdata.GetTSE()->SetSeq().SetInst();
     TSeqPos length = seqdata.GetLength();
-    if ( length <= kSequenceSliceSize ) {
+    if ( length <= kFastSequenceLoadSize ) {
+        // single Seq-data, no need to use Delta
+        inst.SetRepr(CSeq_inst::eRepr_raw);
+        seqdata.AddSeq_data();
+    }
+    else if ( length <= kSequenceSliceSize ) {
         // single Seq-data, no need to use Delta
         inst.SetRepr(CSeq_inst::eRepr_raw);
         x_AddSplitSeqChunk(chunks, seqdata.GetSeqIdHandle(), 0, length);
