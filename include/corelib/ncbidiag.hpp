@@ -1579,8 +1579,41 @@ public:
     void PrintStart(const string& message);
     /// Print exit message.
     void PrintStop(void);
-    /// Print extra message.
-    void PrintExtra(const string& message);
+    /// Print extra message in plain text format.
+    /// This method is deprecated and should be replaced by a call to
+    /// Extra() method and one or more calls to CExtraArgs::Print().
+    NCBI_DEPRECATED void PrintExtra(const string& message);
+
+    /// Temporary object for holding extra message arguments. Prints all
+    /// of the arguments on destruction.
+    class NCBI_XNCBI_EXPORT CExtraArgs
+    {
+    public:
+        /// Prints all arguments as "name1=value1&name2=value2...".
+        ~CExtraArgs(void);
+        /// The method does not print the argument, but adds it to the string.
+        /// Name must contain only alphanumeric chars or '_'.
+        /// Value is URL-encoded before printing.
+        CExtraArgs Print(const string& name, const string& value);
+
+        /// Copying the object will prevent printing it on destruction.
+        /// The new copy should take care of printing.
+        CExtraArgs(const CExtraArgs& args);
+        CExtraArgs& operator=(const CExtraArgs& args);
+
+    private:
+        // Can be created only by CDiagContext.
+        CExtraArgs(void) {}
+        friend class CDiagContext;
+
+        auto_ptr<string> m_Message;
+    };
+    friend class CExtraArgs;
+    /// Create a temporary CExtraArgs object. The object will print
+    /// arguments on destruction. Can be used like:
+    ///   Extra().Print(name1, val1).Print(name2, val2);
+    CExtraArgs Extra(void) { return CExtraArgs(); }
+
     /// Print request start message (for request-driven applications)
     void PrintRequestStart(const string& message);
     /// Print request stop message (for request-driven applications)
