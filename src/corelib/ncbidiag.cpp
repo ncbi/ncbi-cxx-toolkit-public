@@ -921,6 +921,9 @@ CDiagContext::CExtraArgs::Print(const string& name,
         "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
     };
 
+    if ( !m_Message.get() ) {
+        m_Message.reset(new string);
+    }
     if ( !m_Message->empty() ) {
         *m_Message += "&";
     }
