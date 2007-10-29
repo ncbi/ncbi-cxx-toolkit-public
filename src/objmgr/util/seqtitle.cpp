@@ -159,20 +159,33 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             break;
         }
     }
-    
+
     {
-        CSeqdesc_CI it(hnd, CSeqdesc::e_Source);
-        if (it) {
-            source = &it->GetSource();
-        }
+        CSeqdesc_CI::TDescChoices choices;
+        choices.push_back(CSeqdesc::e_Source);
+        choices.push_back(CSeqdesc::e_Molinfo);
+        int found = 0;
+        for ( CSeqdesc_CI it(hnd, choices); it; ++it ) {
+            if ( it->Which() == CSeqdesc::e_Source ) {
+                if ( !source ) {
+                    source = &it->GetSource();
+                    if ( (found |= 1) == 3 ) {
+                        break;
+                    }
+                }
+            }
+            else {
+                if ( !mol_info ) {
+                    mol_info = &it->GetMolinfo();
+                    tech = mol_info->GetTech();
+                    if ( (found |= 2) == 3 ) {
+                        break;
+                    }
+                }
+            }
+        }            
     }
-    {
-        CSeqdesc_CI it(hnd, CSeqdesc::e_Molinfo);
-        if (it) {
-            mol_info = &it->GetMolinfo();
-            tech = mol_info->GetTech();
-        }
-    }
+
     switch (tech) {
     case CMolInfo::eTech_htgs_0:
     case CMolInfo::eTech_htgs_1:
@@ -267,7 +280,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     } else if (title.empty()  &&  is_nr  &&  source.NotEmpty()
                &&  source->GetOrg().IsSetTaxname()) {
         for (CTypeConstIterator<CSeq_feat> it(
-            *hnd.GetTopLevelEntry().GetCompleteSeq_entry());
+                 *hnd.GetTopLevelEntry().GetCompleteSeq_entry());
              it;  ++it) {
             if (it->GetData().IsGene()) {
                 title = source->GetOrg().GetTaxname() + ' ';
@@ -397,7 +410,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         if (htgs_draft  &&  title.find("WORKING DRAFT") == NPOS) {
             suffix = ", WORKING DRAFT SEQUENCE";
         } else if ( !htgs_draft  &&  !htgs_cancelled
-                   &&  title.find("SEQUENCING IN") == NPOS) {
+                    &&  title.find("SEQUENCING IN") == NPOS) {
             suffix = ", *** SEQUENCING IN PROGRESS ***";
         }
         
