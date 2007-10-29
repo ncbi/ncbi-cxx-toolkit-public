@@ -278,7 +278,7 @@ public:
     {
         try {
             bool upd_statistics = false;
-		    if (!m_AttrUpdFlag || m_Buffer.size() != 0) {
+		    if (/* !m_AttrUpdFlag || */ m_Buffer.size() != 0) {
 
 			    // Dumping the buffer
                 try {
@@ -356,7 +356,7 @@ public:
             *bytes_written = 0;
         if (count == 0)
             return eRW_Success;
-		m_AttrUpdFlag = false;
+//		m_AttrUpdFlag = false;
         m_BlobSize += count;
 
         // check BLOB size quota
@@ -572,7 +572,7 @@ private:
     string                m_OverflowFilePath;
 
     int                   m_StampSubKey;
-	bool                  m_AttrUpdFlag; ///< Falgs attributes are up to date
+//  bool                  m_AttrUpdFlag; ///< Flags attributes are up to date
     CBDB_Cache::EWriteSyncMode m_WSync;
     unsigned int          m_TTL;
     time_t                m_RequestTime;
@@ -1098,13 +1098,13 @@ void SBDB_CacheStatistics::PrintStatistics(CNcbiOstream& out) const
 }
 
 
-
 CBDB_Cache::CBDB_Cache()
 : m_PidGuard(0),
   m_ReadOnly(false),
   m_JoinedEnv(false),
   m_LockTimeout(20 * 1000),
   m_Env(0),
+  m_Closed(true),
   m_BLOB_SplitStore(0),
   m_CacheAttrDB(0),
   m_CacheIdIDX(0),
@@ -1189,6 +1189,7 @@ void CBDB_Cache::Open(const string& cache_path,
     m_LastTimeLineCheck = 0;
 
     Close();
+    m_Closed = false;
 
     CFastMutexGuard guard(m_DB_Lock);
 
@@ -1537,9 +1538,10 @@ void CBDB_Cache::OpenReadOnly(const string&  cache_path,
 
 void CBDB_Cache::Close()
 {
-    if (!m_Env) {
-        return;
-    }
+    if (m_Closed) return;
+    // We mark cache as closed early to prevent double close attempt if
+    // exception fires before completion. We MUST not StopPurgeThread twice.
+    m_Closed = true;
     StopPurgeThread();
 
     if (m_Env && !m_JoinedEnv) {
@@ -1667,11 +1669,10 @@ void CBDB_Cache::KillBlob(const string&  key,
     CBDB_Transaction trans(*m_Env,
                             CBDB_Transaction::eEnvDefault,
                             CBDB_Transaction::eNoAssociation);
-    m_BLOB_SplitStore->SetTransaction(&trans);
-
     {{
-    CFastMutexGuard guard(m_DB_Lock);
-    x_DropBlob(key, version, subkey, overflow, blob_id, trans);
+        CFastMutexGuard guard(m_DB_Lock);
+        m_BLOB_SplitStore->SetTransaction(&trans);
+        x_DropBlob(key, version, subkey, overflow, blob_id, trans);
     }}
     trans.Commit();
 
@@ -1698,7 +1699,6 @@ void CBDB_Cache::DropBlob(const string&  key,
     {{
 
         CFastMutexGuard guard(m_DB_Lock);
-
         m_CacheAttrDB->SetTransaction(&trans);
 
         CBDB_FileCursor cur(*m_CacheAttrDB, trans,
@@ -1715,12 +1715,11 @@ void CBDB_Cache::DropBlob(const string&  key,
             coord[1] = m_CacheAttrDB->split_id;
 
             if (!for_update) {   // permanent BLOB removal
-                unsigned read_count = m_CacheAttrDB->read_count;
                 m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
 
                 /* FIXME:
                 m_Statistics.AddExplDelete(m_TmpOwnerName);
-                if (0 == read_count) {
+                if (0 == m_CacheAttrDB->read_count) {
                     m_Statistics.AddNeverRead(m_TmpOwnerName);
                 }
                 x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
@@ -1780,7 +1779,6 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
 
         {{
         CFastMutexGuard guard(m_DB_Lock);
-
         m_CacheAttrDB->SetTransaction(&trans);
         m_CacheIdIDX->SetTransaction(&trans);
 
@@ -1899,7 +1897,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
     EBDB_ErrCode ret;
 
     time_t curr = time(0);
-    int tz_delta = m_LocalTimer.GetLocalTimezone();
+    // int tz_delta = m_LocalTimer.GetLocalTimezone();
     
     // ----------------------------------------------------
     // check BLOB size quota
@@ -2051,7 +2049,6 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
                                 CBDB_Transaction::eNoAssociation);
             {{
                 CFastMutexGuard guard(m_DB_Lock);
-
                 m_CacheAttrDB->SetTransaction(&trans);
 
                 CBDB_FileCursor cur(*m_CacheAttrDB, 
@@ -2178,10 +2175,12 @@ size_t CBDB_Cache::GetSize(const string&  key,
     unsigned int ttl, blob_id, volume_id, split_id;
 
     blob_id = GetBlobId(key, version, subkey);
+    if (!blob_id) return 0;
     TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout); 
 
     {{
         CFastMutexGuard guard(m_DB_Lock);
+        m_CacheAttrDB->SetTransaction(0);
 
 	    bool rec_exists =
             x_RetrieveBlobAttributes(key, version, subkey, 
@@ -2224,7 +2223,7 @@ size_t CBDB_Cache::GetSize(const string&  key,
     size_t blob_size;
     EBDB_ErrCode ret = 
         m_BLOB_SplitStore->BlobSize(blob_id, coords, &blob_size);
-    if (ret != eBDB_Ok) {
+    if (ret == eBDB_Ok) {
         return blob_size;
     }
     return 0;
@@ -2238,10 +2237,9 @@ void CBDB_Cache::GetBlobOwner(const string&  key,
     _ASSERT(owner);
 
     CFastMutexGuard guard(m_DB_Lock);
-
     m_CacheAttrDB->SetTransaction(0);
-    bool ret = x_FetchBlobAttributes(key, version, subkey);
-    if (ret == false) {
+
+    if (!x_FetchBlobAttributes(key, version, subkey)) {
         owner->erase();
         return;
     }
@@ -2257,7 +2255,6 @@ bool CBDB_Cache::HasBlobs(const string&  key,
     unsigned blob_id = 0;
     {{
     CFastMutexGuard guard(m_DB_Lock);
-
     m_CacheAttrDB->SetTransaction(0);
 
     CBDB_FileCursor cur(*m_CacheAttrDB);
@@ -2299,15 +2296,13 @@ bool CBDB_Cache::Read(const string& key,
 	EBDB_ErrCode ret;
 
     time_t curr = time(0);
-    int tz_delta = m_LocalTimer.GetLocalTimezone();
+    // int tz_delta = m_LocalTimer.GetLocalTimezone();
 
 	int overflow;
     unsigned volume_id, split_id;
 
     unsigned blob_id = GetBlobId(key, version, subkey);
-    if (blob_id == 0) {
-        return false;
-    }
+    if (!blob_id) return false;
     TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout); 
 
 
@@ -2318,8 +2313,7 @@ bool CBDB_Cache::Read(const string& key,
 
     {{
         CFastMutexGuard guard(m_DB_Lock);
-
-        {{
+        {{ // TODO: nested scope here is nonsensical
             m_CacheAttrDB->SetTransaction(&trans);
             CBDB_FileCursor cur(*m_CacheAttrDB, trans,
                                 CBDB_FileCursor::eReadModifyUpdate);
@@ -2424,7 +2418,6 @@ bool CBDB_Cache::Read(const string& key,
 
     {{
         CFastMutexGuard guard(m_DB_Lock);
-
         m_CacheAttrDB->SetTransaction(0);
 
 	    int overflow;
@@ -2544,14 +2537,12 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 	EBDB_ErrCode ret;
 
     time_t curr = time(0);
-    int tz_delta = m_LocalTimer.GetLocalTimezone();
+    // int tz_delta = m_LocalTimer.GetLocalTimezone();
 	int overflow;
     unsigned volume_id, split_id;
 
     unsigned blob_id = GetBlobId(key, version, subkey);
-    if (blob_id == 0) {
-        return 0;
-    }
+    if (!blob_id) return 0;
     TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout); 
 
 
@@ -2563,8 +2554,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
     {{
         CFastMutexGuard guard(m_DB_Lock);
-
-        {{
+        {{ // TODO: nested scope here is nonsensical
             m_CacheAttrDB->SetTransaction(&trans);
             CBDB_FileCursor cur(*m_CacheAttrDB, trans,
                                 CBDB_FileCursor::eReadModifyUpdate);
@@ -2598,7 +2588,6 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
                 return false;
             }
         }} // cursor
-
     }} // m_DB_Lock
 
     if (ret != eBDB_Ok) {
@@ -2652,7 +2641,6 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 /*
     {{
         CFastMutexGuard guard(m_DB_Lock);
-
         m_CacheAttrDB->SetTransaction(0);
 
 	    bool rec_exists =
@@ -2752,14 +2740,12 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     EBDB_ErrCode ret;
 
     time_t curr = time(0);
-    int tz_delta = m_LocalTimer.GetLocalTimezone();
+    // int tz_delta = m_LocalTimer.GetLocalTimezone();
 	int overflow;
     unsigned volume_id, split_id;
 
     unsigned blob_id = GetBlobId(key, version, subkey);
-    if (blob_id == 0) {
-        return;
-    }
+    if (!blob_id) return;
     TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout); 
 
 
@@ -2771,8 +2757,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
 
     {{
         CFastMutexGuard guard(m_DB_Lock);
-
-        {{
+        {{ // TODO: nested scope here is nonsensical
             m_CacheAttrDB->SetTransaction(&trans);
 
             CBDB_FileCursor cur(*m_CacheAttrDB, trans,
@@ -2805,7 +2790,6 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
                 return;
             }
         }} // cursor
-
     }} // m_DB_Lock
 
     if (ret != eBDB_Ok) {
@@ -2908,7 +2892,6 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
 
         {{    
         CFastMutexGuard guard(m_DB_Lock);
-
         m_CacheAttrDB->SetTransaction(0);
 
 	    bool rec_exists =
@@ -3032,8 +3015,7 @@ unsigned CBDB_Cache::GetBlobId(const string&  key,
     m_CacheAttrDB_RO1->subkey = subkey;
 
     if (m_CacheAttrDB_RO1->Fetch() == eBDB_Ok) {
-        unsigned blob_id = m_CacheAttrDB_RO1->blob_id;
-        return blob_id;
+        return m_CacheAttrDB_RO1->blob_id;
     }
     return 0;
 }
@@ -3124,7 +3106,6 @@ void CBDB_Cache::Remove(const string& key)
 
     {{
         CFastMutexGuard guard(m_DB_Lock);
-
         m_CacheAttrDB->SetTransaction(0);
 
         CBDB_FileCursor cur(*m_CacheAttrDB);
@@ -3198,7 +3179,6 @@ void CBDB_Cache::Remove(const string&    key,
 
     {{
     CFastMutexGuard guard(m_DB_Lock);
-
     m_CacheAttrDB->SetTransaction(0);
 
     CBDB_FileCursor cur(*m_CacheAttrDB);
@@ -3259,7 +3239,6 @@ time_t CBDB_Cache::GetAccessTime(const string&  key,
 {
     _ASSERT(m_CacheAttrDB);
     CFastMutexGuard guard(m_DB_Lock);
-
     m_CacheAttrDB->SetTransaction(0);
 
     m_CacheAttrDB->key = key;
@@ -3284,8 +3263,7 @@ void CBDB_Cache::SetPurgeBatchSize(unsigned batch_size)
 unsigned CBDB_Cache::GetPurgeBatchSize() const
 {
     CFastMutexGuard guard(m_DB_Lock);
-    unsigned ret = m_PurgeBatchSize;
-    return ret;
+    return m_PurgeBatchSize;
 }
 
 void CBDB_Cache::SetBatchSleep(unsigned sleep)
@@ -3297,8 +3275,7 @@ void CBDB_Cache::SetBatchSleep(unsigned sleep)
 unsigned CBDB_Cache::GetBatchSleep() const
 {
     CFastMutexGuard guard(m_DB_Lock);
-    unsigned ret = m_BatchSleep;
-    return ret;
+    return m_BatchSleep;
 }
 
 void CBDB_Cache::StopPurge()
@@ -3407,8 +3384,6 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
     }
 
     TBitVector::enumerator en(delete_candidates.first());
-    unsigned cnt = 0;
-    unsigned deleted = 0;
     unsigned candidates = delete_candidates.count();
 
     delete_candidates -= m_GC_Deleted;
@@ -3712,6 +3687,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
     if (keep_last_version == eDropAll && access_timeout == 0) {
         CFastMutexGuard guard(m_DB_Lock);
+        // TODO: SetTransaction here ??? Which one, zero?
         x_TruncateDB();
         return;
     }
@@ -3843,11 +3819,10 @@ purge_start:
                 time_t exp_time;
                 if (x_CheckTimestampExpired(*m_CacheAttrDB_RO2, curr, &exp_time)) {
 
-                    unsigned read_count = m_CacheAttrDB_RO2->read_count;
                     m_CacheAttrDB_RO2->owner_name.ToString(m_TmpOwnerName);
                     
                     /* FIXME: statistics, locking, etc
-                    if (0 == read_count) {
+                    if (0 == m_CacheAttrDB_RO2->read_count) {
                         m_Statistics.AddNeverRead(m_TmpOwnerName);
                     }
                     m_Statistics.AddPurgeDelete(m_TmpOwnerName);
@@ -4066,6 +4041,7 @@ void CBDB_Cache::Purge(const string&    key,
 
     if (key.empty() && keep_last_version == eDropAll && access_timeout == 0) {
         CFastMutexGuard guard(m_DB_Lock);
+        // TODO: SetTransaction ??? see TODO above
         x_TruncateDB();
         return;
     }
@@ -4077,7 +4053,6 @@ void CBDB_Cache::Purge(const string&    key,
 
     {{
     CFastMutexGuard guard(m_DB_Lock);
-
     m_CacheAttrDB->SetTransaction(0);
 
     CBDB_FileCursor cur(*m_CacheAttrDB);
@@ -4576,8 +4551,8 @@ bool CBDB_Cache::DropBlobWithExpCheck(const string&      key,
     //
     {{
         CFastMutexGuard guard(m_DB_Lock);
-
         m_CacheAttrDB->SetTransaction(&trans);
+
         m_CacheAttrDB->key     = key;
         m_CacheAttrDB->version = version;
         m_CacheAttrDB->subkey  = subkey;
@@ -4692,11 +4667,8 @@ bool CBDB_Cache::IsLocked(const string&  key,
                           const string&  subkey)
 {
     unsigned blob_id = GetBlobId(key, version, subkey);
-    if (blob_id) {
-        bool locked = IsLocked(blob_id);
-        return locked;
-    }
-    return false;
+    if (!blob_id) return false;
+    return IsLocked(blob_id);
 }
 
 
@@ -4769,7 +4741,6 @@ CBDB_Cache::BlobCheckIn(unsigned         blob_id_ext,
             //
             {{
                 CFastMutexGuard guard(m_DB_Lock);
-
                 m_CacheAttrDB->SetTransaction(&trans);
 
                 m_CacheAttrDB->key = key;
@@ -4789,7 +4760,6 @@ CBDB_Cache::BlobCheckIn(unsigned         blob_id_ext,
                 ret = m_CacheAttrDB->Insert();
 
                 if (ret == eBDB_Ok) {
-
                     m_CacheIdIDX->SetTransaction(&trans);
 
                     m_CacheIdIDX->blob_id = blob_id;                    
@@ -4916,7 +4886,6 @@ void CBDB_Cache::RegisterInternalError(
         const string&                        owner)
 {
     CFastMutexGuard guard(m_DB_Lock);
-
     m_Statistics.AddInternalError(owner, operation);
 }
 
@@ -4925,7 +4894,6 @@ void CBDB_Cache::RegisterProtocolError(
                             const string&                        owner)
 {
     CFastMutexGuard guard(m_DB_Lock);
-
     m_Statistics.AddProtocolError(owner, operation);
 }
 

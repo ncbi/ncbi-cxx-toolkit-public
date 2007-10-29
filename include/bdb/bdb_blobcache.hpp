@@ -872,6 +872,7 @@ private:
     TLockVector             m_LockVector;   ///< BLOB lock vector
     unsigned                m_LockTimeout;  ///< Lock timeout (ms)
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
+    bool                    m_Closed;       ///< Double-close safeguard flag
     TSplitStore*            m_BLOB_SplitStore;///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
     SCache_IdIDX*           m_CacheIdIDX;   ///< Cache id index

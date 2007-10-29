@@ -3,7 +3,7 @@
 #################################
 
 APP = netcached
-SRC = netcached nc_request_parser process_ic smng_thread
+SRC = netcached request_handler message_handler ic_handler nc_handler smng_thread
 
 REQUIRES = MT bdb
 
