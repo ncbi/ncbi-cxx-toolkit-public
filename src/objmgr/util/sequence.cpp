@@ -1952,7 +1952,7 @@ void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
     }
     string safe_title;
     NStr::Replace(sequence::GetTitle(handle), ">", "_", safe_title);
-    m_Out << ' ' << safe_title << NcbiEndl;
+    m_Out << ' ' << safe_title << '\n';
 }
 
 
@@ -2002,7 +2002,7 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
     if ( rem_line < m_Width ) {
         m_Out << '\n';
     }
-    m_Out << NcbiFlush;
+    // m_Out << NcbiFlush;
 }
 
 
