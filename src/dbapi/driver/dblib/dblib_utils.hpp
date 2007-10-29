@@ -48,8 +48,6 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 #if defined(MS_DBLIB_IN_USE)
 
-extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_MSDBLIB_DriverName;
-
 extern "C"
 {
 
@@ -65,8 +63,6 @@ NCBI_EntryPoint_xdbapi_msdblib(
 
 // Uncomment a line below if you want to simulate a previous ftds driver logic.
 // #define FTDS_LOGIC
-
-extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_FTDS_DriverName;
 
 extern "C"
 {
@@ -92,8 +88,6 @@ NCBI_EntryPoint_xdbapi_ftds_dblib(
 } // extern C
 
 #else
-
-extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_DBLIB_DriverName;
 
 extern "C"
 {

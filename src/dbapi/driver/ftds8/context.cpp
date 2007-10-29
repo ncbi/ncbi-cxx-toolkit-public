@@ -61,7 +61,13 @@
 BEGIN_NCBI_SCOPE
 
 
-static const CDiagCompileInfo kBlankCompileInfo;
+/////////////////////////////////////////////////////////////////////////////
+inline
+CDiagCompileInfo GetBlankCompileInfo(void)
+{
+    return CDiagCompileInfo();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -447,7 +453,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
     case SYBEFCON:
     case SYBECONN:
         {
-            CDB_TimeoutEx ex(kBlankCompileInfo,
+            CDB_TimeoutEx ex(GetBlankCompileInfo(),
                              0,
                              message,
                              dberr);
@@ -461,7 +467,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         return INT_TIMEOUT;
     default:
         if(dberr == 1205) {
-            CDB_DeadlockEx ex(kBlankCompileInfo,
+            CDB_DeadlockEx ex(GetBlankCompileInfo(),
                               0,
                               message);
 
@@ -482,7 +488,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
     case EXINFO:
     case EXUSER:
         {
-            CDB_ClientEx ex(kBlankCompileInfo,
+            CDB_ClientEx ex(GetBlankCompileInfo(),
                             0,
                             message,
                             eDiag_Info,
@@ -500,7 +506,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
     case EXSERVER:
     case EXPROGRAM:
         {
-            CDB_ClientEx ex(kBlankCompileInfo,
+            CDB_ClientEx ex(GetBlankCompileInfo(),
                             0,
                             message,
                             eDiag_Error,
@@ -515,7 +521,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         break;
     case EXTIME:
         {
-            CDB_TimeoutEx ex(kBlankCompileInfo,
+            CDB_TimeoutEx ex(GetBlankCompileInfo(),
                              0,
                              message,
                              dberr);
@@ -529,7 +535,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         return INT_TIMEOUT;
     default:
         {
-            CDB_ClientEx ex(kBlankCompileInfo,
+            CDB_ClientEx ex(GetBlankCompileInfo(),
                             0,
                             message,
                             eDiag_Critical,
@@ -573,7 +579,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
     }
 
     if (msgno == 1205/*DEADLOCK*/) {
-        CDB_DeadlockEx ex(kBlankCompileInfo,
+        CDB_DeadlockEx ex(GetBlankCompileInfo(),
                           0,
                           message);
 
@@ -589,7 +595,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
             severity <  16 ? eDiag_Error : eDiag_Critical;
 
         if (!procname.empty()) {
-            CDB_RPCEx ex(kBlankCompileInfo,
+            CDB_RPCEx ex(GetBlankCompileInfo(),
                          0,
                          message,
                          sev,
@@ -603,7 +609,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
 
             GetFTDS8ExceptionStorage().Accept(ex);
         } else {
-            CDB_DSEx ex(kBlankCompileInfo,
+            CDB_DSEx ex(GetBlankCompileInfo(),
                         0,
                         message,
                         sev,

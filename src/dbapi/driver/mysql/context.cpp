@@ -78,8 +78,6 @@ static I_DriverContext* MYSQL_CreateContext(const map<string,string>* /*attr*/)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-const string kDBAPI_MYSQL_DriverName("mysql");
-
 class CDbapiMySqlCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CMySQLContext>
 {
 public:
@@ -92,7 +90,7 @@ public:
 };
 
 CDbapiMySqlCF2::CDbapiMySqlCF2(void)
-    : TParent( kDBAPI_MYSQL_DriverName, 0 )
+    : TParent( "mysql", 0 )
 {
     return ;
 }

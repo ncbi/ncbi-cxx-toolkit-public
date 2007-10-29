@@ -57,7 +57,13 @@
 
 BEGIN_NCBI_SCOPE
 
-static const CDiagCompileInfo kBlankCompileInfo;
+/////////////////////////////////////////////////////////////////////////////
+inline
+CDiagCompileInfo GetBlankCompileInfo(void)
+{
+    return CDiagCompileInfo();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -213,7 +219,7 @@ void CODBC_Reporter::ReportErrors(void) const
             case SQL_SUCCESS:
                 if(util::strncmp(SqlState, _T("HYT"), 3) == 0) { // timeout
 
-                    CDB_TimeoutEx to(kBlankCompileInfo,
+                    CDB_TimeoutEx to(GetBlankCompileInfo(),
                                     0,
                                     err_msg.c_str(),
                                     NativeError);
@@ -221,14 +227,14 @@ void CODBC_Reporter::ReportErrors(void) const
                     m_HStack->PostMsg(&to);
                 }
                 else if(util::strncmp(SqlState, _T("40001"), 5) == 0) { // deadlock
-                    CDB_DeadlockEx dl(kBlankCompileInfo,
+                    CDB_DeadlockEx dl(GetBlankCompileInfo(),
                                     0,
                                     err_msg.c_str());
                     m_HStack->PostMsg(&dl);
                 }
                 else if(NativeError != 5701
                     && NativeError != 5703 ){
-                    CDB_SQLEx se(kBlankCompileInfo,
+                    CDB_SQLEx se(GetBlankCompileInfo(),
                                 0,
                                 err_msg.c_str(),
                                 (NativeError == 0 ? eDiag_Info : eDiag_Warning),
@@ -247,7 +253,7 @@ void CODBC_Reporter::ReportErrors(void) const
                 err_msg += GetExtraMsg();
 
                 {
-                    CDB_DSEx dse(kBlankCompileInfo,
+                    CDB_DSEx dse(GetBlankCompileInfo(),
                                 0,
                                 err_msg.c_str(),
                                 eDiag_Warning,
@@ -262,7 +268,7 @@ void CODBC_Reporter::ReportErrors(void) const
                 err_msg += GetExtraMsg();
 
                 {
-                    CDB_ClientEx ce(kBlankCompileInfo,
+                    CDB_ClientEx ce(GetBlankCompileInfo(),
                                     0,
                                     err_msg.c_str(),
                                     eDiag_Warning,

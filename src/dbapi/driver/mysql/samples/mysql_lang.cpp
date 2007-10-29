@@ -41,10 +41,10 @@
 USING_NCBI_SCOPE;
 
 
-class CDemoeApp : public CNcbiApplication
+class CDemoApp : public CNcbiApplication
 {
 public:
-    virtual ~CDemoeApp(void) {}
+    virtual ~CDemoApp(void) {}
 
     virtual void Init(void);
     virtual int Run(void);
@@ -52,7 +52,7 @@ public:
 
 
 void
-CDemoeApp::Init()
+CDemoApp::Init()
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -86,7 +86,7 @@ CDemoeApp::Init()
 
 
 int
-CDemoeApp::Run(void)
+CDemoApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
@@ -218,7 +218,7 @@ CDemoeApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CDemoeApp().AppMain(argc, argv);
+    return CDemoApp().AppMain(argc, argv);
 }
 
 

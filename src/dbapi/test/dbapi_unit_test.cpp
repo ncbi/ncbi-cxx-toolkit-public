@@ -54,6 +54,13 @@
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+inline
+CDiagCompileInfo GetBlankCompileInfo(void)
+{
+    return CDiagCompileInfo();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 enum { max_text_size = 8000 };
 #define CONN_OWNERSHIP  eTakeOwnership
@@ -4042,7 +4049,6 @@ CDBAPIUnitTest::Test_Variant2(void)
 ///////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_CDB_Exception(void)
 {
-    static const CDiagCompileInfo kBlankCompileInfo;
     const string message("Very dangerous message");
     const int msgnumber = 67890;
 
@@ -4053,7 +4059,7 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
             const int severity = 12345;
 
             CDB_Exception ex(
-                kBlankCompileInfo,
+                GetBlankCompileInfo(),
                 NULL,
                 CDB_Exception::eMulti,
                 message,
@@ -4088,7 +4094,7 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
 
         {
             CDB_DSEx ex(
-                kBlankCompileInfo,
+                GetBlankCompileInfo(),
                 NULL,
                 message,
                 eDiag_Fatal,
@@ -4113,7 +4119,7 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
             const int proc_line = 12345;
 
             CDB_RPCEx ex(
-                kBlankCompileInfo,
+                GetBlankCompileInfo(),
                 NULL,
                 message,
                 eDiag_Critical,
@@ -4142,7 +4148,7 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
             const int batch_line = 12345;
 
             CDB_SQLEx ex(
-                kBlankCompileInfo,
+                GetBlankCompileInfo(),
                 NULL,
                 message,
                 eDiag_Error,
@@ -4169,7 +4175,7 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
 
         {
             CDB_DeadlockEx ex(
-                kBlankCompileInfo,
+                GetBlankCompileInfo(),
                 NULL,
                 message);
 
@@ -4187,7 +4193,7 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
 
         {
             CDB_TimeoutEx ex(
-                kBlankCompileInfo,
+                GetBlankCompileInfo(),
                 NULL,
                 message,
                 msgnumber);
@@ -4208,7 +4214,7 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
 
         {
             CDB_ClientEx ex(
-                kBlankCompileInfo,
+                GetBlankCompileInfo(),
                 NULL,
                 message,
                 eDiag_Warning,
@@ -4230,7 +4236,7 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
 
         {
             CDB_MultiEx ex(
-                kBlankCompileInfo,
+                GetBlankCompileInfo(),
                 NULL);
 
             BOOST_CHECK_EQUAL(0, ex.GetDBErrCode());

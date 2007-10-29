@@ -64,7 +64,12 @@ namespace ftds64_ctlib
 {
 #endif
 
-static const CDiagCompileInfo kBlankCompileInfo;
+/////////////////////////////////////////////////////////////////////////////
+inline
+CDiagCompileInfo GetBlankCompileInfo(void)
+{
+    return CDiagCompileInfo();
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -879,7 +884,7 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
 
     try {
         CDB_ClientEx ex(
-            kBlankCompileInfo,
+            GetBlankCompileInfo(),
             0, msg->msgstring,
             sev,
             msg->msgnumber
@@ -940,7 +945,7 @@ HandleConnStatus(CS_CONNECTION* conn,
 #if !defined(FTDS_IN_USE)
             case CS_TRYING: {
                 CDB_TimeoutEx ex(
-                    kBlankCompileInfo,
+                    GetBlankCompileInfo(),
                     0,
                     "Got timeout on ct_cancel(CS_CANCEL_ALL)",
                     msg->msgnumber);
@@ -1036,7 +1041,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         // Process the message ...
         switch (msg->severity) {
         case CS_SV_INFORM: {
-            CDB_ClientEx ex( kBlankCompileInfo,
+            CDB_ClientEx ex( GetBlankCompileInfo(),
                                0,
                                message,
                                eDiag_Info,
@@ -1048,7 +1053,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         }
         case CS_SV_RETRY_FAIL: {
             CDB_TimeoutEx ex(
-                kBlankCompileInfo,
+                GetBlankCompileInfo(),
                 0,
                 message,
                 msg->msgnumber);
@@ -1062,7 +1067,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         case CS_SV_CONFIG_FAIL:
         case CS_SV_API_FAIL:
         case CS_SV_INTERNAL_FAIL: {
-            CDB_ClientEx ex( kBlankCompileInfo,
+            CDB_ClientEx ex( GetBlankCompileInfo(),
                               0,
                               message,
                               eDiag_Error,
@@ -1074,7 +1079,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         }
         default: {
             CDB_ClientEx ex(
-                kBlankCompileInfo,
+                GetBlankCompileInfo(),
                 0,
                 message,
                 eDiag_Critical,
@@ -1171,7 +1176,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         }
 
         if (msg->msgnumber == 1205 /*DEADLOCK*/) {
-            CDB_DeadlockEx ex(kBlankCompileInfo,
+            CDB_DeadlockEx ex(GetBlankCompileInfo(),
                               0,
                               message);
 
@@ -1184,7 +1189,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                 msg->severity <  16 ? eDiag_Error : eDiag_Critical;
 
             if (msg->proclen > 0) {
-                CDB_RPCEx ex(kBlankCompileInfo,
+                CDB_RPCEx ex(GetBlankCompileInfo(),
                               0,
                               message,
                               sev,
@@ -1196,7 +1201,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
             }
             else if (msg->sqlstatelen > 1  &&
                      (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
-                CDB_SQLEx ex(kBlankCompileInfo,
+                CDB_SQLEx ex(GetBlankCompileInfo(),
                               0,
                               message,
                               sev,
@@ -1207,7 +1212,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                 PassException(ex, server_name, user_name, msg->severity);
             }
             else {
-                CDB_DSEx ex(kBlankCompileInfo,
+                CDB_DSEx ex(GetBlankCompileInfo(),
                             0,
                             message,
                             sev,

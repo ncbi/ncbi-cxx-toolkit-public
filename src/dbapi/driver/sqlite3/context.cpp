@@ -80,8 +80,6 @@ static I_DriverContext* SQLite3_CreateContext(const map<string,string>* attr)
 */
 
 ///////////////////////////////////////////////////////////////////////////////
-const string kDBAPI_SQLite3_DriverName("sqlite3");
-
 class CDbapiSQLite3CF2 : public CSimpleClassFactoryImpl<I_DriverContext, CSL3Context>
 {
 public:
@@ -94,7 +92,7 @@ public:
 };
 
 CDbapiSQLite3CF2::CDbapiSQLite3CF2(void)
-    : TParent( kDBAPI_SQLite3_DriverName, 0 )
+    : TParent( "sqlite3", 0 )
 {
     return ;
 }

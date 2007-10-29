@@ -38,9 +38,6 @@
 
 BEGIN_NCBI_SCOPE
 
-/////////////////////////////////////////////////////////////////////////////
-extern NCBI_DBAPIDRIVER_SQLITE3_EXPORT const string kDBAPI_SQLite3_DriverName;
-
 extern "C"
 {
 

@@ -79,22 +79,22 @@ public:
 
 // List of parameters accepted by the CF
 
-static const string kCFParam_connection    = "connection";
+static const char* kCFParam_connection    = "connection";
 
-static const string kCFParam_temp_dir      = "temp_dir";
-static const string kCFParam_temp_prefix   = "temp_prefix";
+static const char* kCFParam_temp_dir      = "temp_dir";
+static const char* kCFParam_temp_prefix   = "temp_prefix";
 
-static const string kCFParam_driver         = "driver";
-static const string kCFParam_server         = "server";
-static const string kCFParam_database       = "database";
+static const char* kCFParam_driver         = "driver";
+static const char* kCFParam_server         = "server";
+static const char* kCFParam_database       = "database";
 
-static const string kCFParam_login         = "login";
-static const string kCFParam_login_default = "cwrite";
+static const char* kCFParam_login         = "login";
+static const char* kCFParam_login_default = "cwrite";
 
-static const string kCFParam_password         = "password";
-static const string kCFParam_password_default = "allowed";
+static const char* kCFParam_password         = "password";
+static const char* kCFParam_password_default = "allowed";
 
-static const string kCFParam_mem_size      = "mem_size";
+static const char* kCFParam_mem_size      = "mem_size";
 
 
 ////////////////////////////////////////////////////////////////////////////

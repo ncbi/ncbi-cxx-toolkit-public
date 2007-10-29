@@ -44,7 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static const unsigned int s_WriterBufferSize = 1024 * 1024;
+enum { s_WriterBufferSize = 1024 * 1024 };
 
 
 /// Add BLOB key specific where condition

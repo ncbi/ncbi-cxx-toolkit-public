@@ -62,7 +62,13 @@
 BEGIN_NCBI_SCOPE
 
 
-static const CDiagCompileInfo kBlankCompileInfo;
+/////////////////////////////////////////////////////////////////////////////
+inline
+CDiagCompileInfo GetBlankCompileInfo(void)
+{
+    return CDiagCompileInfo();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -551,7 +557,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case SYBEFCON:
     case SYBECONN:
         {
-            CDB_TimeoutEx ex(kBlankCompileInfo,
+            CDB_TimeoutEx ex(GetBlankCompileInfo(),
                              0,
                              message,
                              dberr);
@@ -565,7 +571,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         return INT_TIMEOUT;
     default:
         if(dberr == 1205) {
-            CDB_DeadlockEx ex(kBlankCompileInfo,
+            CDB_DeadlockEx ex(GetBlankCompileInfo(),
                               0,
                               message);
 
@@ -586,7 +592,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXINFO:
     case EXUSER:
         {
-            CDB_ClientEx ex(kBlankCompileInfo,
+            CDB_ClientEx ex(GetBlankCompileInfo(),
                             0,
                             message,
                             eDiag_Info,
@@ -604,7 +610,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXSERVER:
     case EXPROGRAM:
         if ( dberr != 20018 ) {
-            CDB_ClientEx ex(kBlankCompileInfo,
+            CDB_ClientEx ex(GetBlankCompileInfo(),
                             0,
                             message,
                             eDiag_Error,
@@ -619,7 +625,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         break;
     case EXTIME:
         {
-            CDB_TimeoutEx ex(kBlankCompileInfo,
+            CDB_TimeoutEx ex(GetBlankCompileInfo(),
                              0,
                              message,
                              dberr);
@@ -633,7 +639,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         return INT_TIMEOUT;
     default:
         {
-            CDB_ClientEx ex(kBlankCompileInfo,
+            CDB_ClientEx ex(GetBlankCompileInfo(),
                             0,
                             message,
                             eDiag_Critical,
@@ -678,7 +684,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
     }
 
     if (msgno == 1205/*DEADLOCK*/) {
-        CDB_DeadlockEx ex(kBlankCompileInfo,
+        CDB_DeadlockEx ex(GetBlankCompileInfo(),
                           0,
                           message);
 
@@ -694,7 +700,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
             severity <  16 ? eDiag_Error : eDiag_Critical;
 
         if (!procname.empty()) {
-            CDB_RPCEx ex(kBlankCompileInfo,
+            CDB_RPCEx ex(GetBlankCompileInfo(),
                          0,
                          message,
                          sev,
@@ -708,7 +714,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 
             GetDBLExceptionStorage().Accept(ex);
         } else {
-            CDB_DSEx ex(kBlankCompileInfo,
+            CDB_DSEx ex(GetBlankCompileInfo(),
                         0,
                         message,
                         sev,
@@ -922,8 +928,6 @@ I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
 ///////////////////////////////////////////////////////////////////////////////
 #if defined(MS_DBLIB_IN_USE)
 
-const string kDBAPI_MSDBLIB_DriverName("msdblib");
-
 class CDbapiMSDblibCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
 {
 public:
@@ -944,7 +948,7 @@ public:
 };
 
 CDbapiMSDblibCF2::CDbapiMSDblibCF2(void)
-    : TParent( kDBAPI_MSDBLIB_DriverName, 0 )
+    : TParent( "msdblib", 0 )
 {
     return ;
 }
@@ -1029,7 +1033,6 @@ extern "C" {
 #  endif
 #endif
 
-const string kDBAPI_FTDS_DriverName("ftds");
 
 class CDbapiFtdsCFBase : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
 {
@@ -1147,7 +1150,7 @@ class CDbapiFtdsCF : public CDbapiFtdsCFBase
 {
 public:
     CDbapiFtdsCF(void)
-    : CDbapiFtdsCFBase(kDBAPI_FTDS_DriverName)
+    : CDbapiFtdsCFBase("ftds")
     {
     }
 };
@@ -1239,8 +1242,6 @@ extern "C" {
 #else
 
 ///////////////////////////////////////////////////////////////////////////////
-const string kDBAPI_DBLIB_DriverName("dblib");
-
 class CDbapiDblibCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
 {
 public:
@@ -1261,7 +1262,7 @@ public:
 };
 
 CDbapiDblibCF2::CDbapiDblibCF2(void)
-    : TParent( kDBAPI_DBLIB_DriverName, 0 )
+    : TParent( "dblib", 0 )
 {
     return ;
 }

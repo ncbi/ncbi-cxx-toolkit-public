@@ -170,9 +170,6 @@ namespace util
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-extern NCBI_DBAPIDRIVER_ODBC_EXPORT const string kDBAPI_ODBC_DriverName;
-
 extern "C"
 {
 

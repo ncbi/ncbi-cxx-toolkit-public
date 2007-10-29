@@ -38,7 +38,12 @@
 
 BEGIN_NCBI_SCOPE
 
-static const CDiagCompileInfo kBlankCompileInfo;
+/////////////////////////////////////////////////////////////////////////////
+inline
+CDiagCompileInfo GetBlankCompileInfo(void)
+{
+    return CDiagCompileInfo();
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -47,7 +52,7 @@ int CheckSQLite3(sqlite3* h_native, CDBHandlerStack& h_stack, int rc)
     if (rc != SQLITE_OK) {
         _ASSERT(h_native);
 
-        CDB_ClientEx ex(kBlankCompileInfo,
+        CDB_ClientEx ex(GetBlankCompileInfo(),
                         0,
                         sqlite3_errmsg(h_native),
                         eDiag_Error,

@@ -41,7 +41,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static const streamsize DEF_BUFSIZE = 2048;
+enum { DEF_BUFSIZE = 2048 };
 
 CByteStreamBuf::CByteStreamBuf(streamsize bufsize)
     : m_buf(0), 

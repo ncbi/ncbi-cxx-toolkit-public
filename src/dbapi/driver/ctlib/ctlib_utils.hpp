@@ -39,8 +39,6 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
-extern NCBI_DBAPIDRIVER_CTLIB_EXPORT const string kDBAPI_CTLIB_DriverName;
-
 extern "C"
 {
 
