@@ -78,6 +78,10 @@ public:
             return m_MatchCount;
         }
 
+        size_t GetHitCount(void) const {
+            return m_HitRefs.size();
+        }
+
         friend ostream& operator << (ostream& ostr, const CCompartment& rhs);
 
     protected:
@@ -112,6 +116,8 @@ private:
     size_t                 m_MaxCompsPerQuery;
 
     bool                   m_NoXF;
+
+    size_t                 m_Allocated;
 
     int     x_ProcessPair  (const string& query0, THitRefs& hitrefs);
     void    x_RankAndStore (void);

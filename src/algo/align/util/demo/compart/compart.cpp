@@ -89,13 +89,6 @@ void CCompartApp::Init()
     argdescr->SetConstraint("min_idty", constrain01);
     argdescr->SetConstraint("min_singleton_idty", constrain01);
 
-    {{
-        USING_SCOPE(objects);
-        CRef<CObjectManager> om (CObjectManager::GetInstance());
-        CGBDataLoader::RegisterInObjectManager(*om);
-        m_Scope.Reset(new CScope (*om));
-        m_Scope->AddDefaults();
-    }}
     SetupArgDescriptions(argdescr.release());
 }
 
@@ -117,7 +110,7 @@ void CCompartApp::x_ReadSeqLens(CNcbiIstream& istr)
 
 size_t CCompartApp::x_GetSeqLength(const string& id)
 {
-    TStrIdToLen::const_iterator ie = m_id2len.end(), im = m_id2len.find(id);
+    TStrIdToLen::const_iterator ie (m_id2len.end()), im (m_id2len.find(id));
     if(im != ie) {
         return im->second;
     }
@@ -130,8 +123,13 @@ size_t CCompartApp::x_GetSeqLength(const string& id)
             return 0;
         }
 
-        const size_t len = sequence::GetLength(*seqid, m_Scope.GetNonNullPointer());
+        const size_t len (sequence::GetLength(*seqid, m_Scope.GetNonNullPointer()));
         m_id2len[id] = len;
+        
+        if(m_id2len.size() >= 1000) {
+            m_Scope->ResetHistory();
+        }
+
         return len;
     }
 }
@@ -150,10 +148,10 @@ int CCompartApp::Run()
     m_penalty                  = args["penalty"].AsDouble();
     m_min_idty                 = args["min_idty"].AsDouble();
     m_min_singleton_idty       = args["min_singleton_idty"].AsDouble();
-
     m_MaxCompsPerQuery         = args["N"].AsInteger();
 
     m_CompartmentsPermanent.resize(0);
+    m_Allocated = 0;
 
     THitRefs hitrefs;
 
@@ -182,11 +180,24 @@ int CCompartApp::Run()
 
                 if(query != query0 || subj != subj0) {
 
-                    int rv = x_ProcessPair(query0, hitrefs);
+                    const int rv (x_ProcessPair(query0, hitrefs));
                     if(rv != 0) return rv;
 
                     if(query != query0) {
+
                         x_RankAndStore();
+
+                        if(m_Allocated > 128 * 1024 * 1024) {
+
+                            stable_sort(m_CompartmentsPermanent.begin(),
+                                        m_CompartmentsPermanent.end());
+
+                            ITERATE(TCompartRefs, ii, m_CompartmentsPermanent) {
+                                cout << **ii << endl;
+                                m_Allocated -= (*ii)->GetHitCount()*sizeof(THit);
+                            }
+                            m_CompartmentsPermanent.clear();
+                        }
                     }
 
                     query0 = query;
@@ -212,6 +223,7 @@ int CCompartApp::Run()
         int rv = x_ProcessPair(query0, hitrefs);
         if(rv != 0) return rv;
         x_RankAndStore();
+        hitrefs.clear();
     }
 
     stable_sort(m_CompartmentsPermanent.begin(), m_CompartmentsPermanent.end());
@@ -219,6 +231,8 @@ int CCompartApp::Run()
     ITERATE(TCompartRefs, ii, m_CompartmentsPermanent) {
         cout << **ii << endl;
     }
+
+    m_CompartmentsPermanent.clear();
 
     return 0;
 }
@@ -310,8 +324,11 @@ void CCompartApp::x_RankAndStore(void)
         m_Compartments.resize(m_MaxCompsPerQuery);
     }
 
-    copy(m_Compartments.begin(), m_Compartments.end(),
-         back_inserter(m_CompartmentsPermanent));
+    for(size_t i (0), in (m_Compartments.size()); i < in; ++i) {
+        TCompartRef cr (m_Compartments[i]);
+        m_CompartmentsPermanent.push_back(cr);
+        m_Allocated += cr->GetHitCount() * sizeof(THit);
+    }
     
     m_Compartments.resize(0);
 }
