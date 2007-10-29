@@ -115,6 +115,9 @@ public:
     /// Return a handle for the parent seq-entry of the bioseq
     CSeq_entry_Handle GetParentEntry(void) const;
     
+    /// Return a handle for the parent Bioseq-set, or null handle
+    CBioseq_set_Handle GetParentBioseq_set(void) const;
+
     /// Return a handle for the top-level seq-entry
     CSeq_entry_Handle GetTopLevelEntry(void) const;
 

@@ -33,6 +33,11 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/seq_descr_ci.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/bioseq_set_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/impl/bioseq_set_info.hpp>
+#include <objmgr/impl/seq_entry_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -46,7 +51,18 @@ CSeq_descr_CI::CSeq_descr_CI(void)
 
 CSeq_descr_CI::CSeq_descr_CI(const CBioseq_Handle& handle,
                              size_t search_depth)
-    : m_CurrentEntry(handle.GetParentEntry()),
+    : m_CurrentBase(&handle.x_GetInfo()),
+      m_CurrentSeq(handle),
+      m_ParentLimit(search_depth-1)
+{
+    x_Settle(); // Skip entries without descriptions
+}
+
+
+CSeq_descr_CI::CSeq_descr_CI(const CBioseq_set_Handle& handle,
+                             size_t search_depth)
+    : m_CurrentBase(&handle.x_GetInfo()),
+      m_CurrentSet(handle),
       m_ParentLimit(search_depth-1)
 {
     x_Settle(); // Skip entries without descriptions
@@ -55,19 +71,28 @@ CSeq_descr_CI::CSeq_descr_CI(const CBioseq_Handle& handle,
 
 CSeq_descr_CI::CSeq_descr_CI(const CSeq_entry_Handle& entry,
                              size_t search_depth)
-    : m_CurrentEntry(entry),
-      m_ParentLimit(search_depth-1)
+    : m_ParentLimit(search_depth-1)
 {
+    if ( entry.IsSeq() ) {
+        m_CurrentSeq = entry.GetSeq();
+        m_CurrentBase = &m_CurrentSeq.x_GetInfo();
+    }
+    else {
+        m_CurrentSet = entry.GetSet();
+        m_CurrentBase = &m_CurrentSet.x_GetInfo();
+    }
     x_Settle(); // Skip entries without descriptions
-    _ASSERT(!m_CurrentEntry || m_CurrentEntry.IsSetDescr());
+    _ASSERT(!m_CurrentBase || m_CurrentBase->IsSetDescr());
 }
 
-    
+
 CSeq_descr_CI::CSeq_descr_CI(const CSeq_descr_CI& iter)
-    : m_CurrentEntry(iter.m_CurrentEntry),
+    : m_CurrentBase(iter.m_CurrentBase),
+      m_CurrentSeq(iter.m_CurrentSeq),
+      m_CurrentSet(iter.m_CurrentSet),
       m_ParentLimit(iter.m_ParentLimit)
 {
-    _ASSERT(!m_CurrentEntry || m_CurrentEntry.IsSetDescr());
+    _ASSERT(!m_CurrentBase || m_CurrentBase->IsSetDescr());
 }
 
 
@@ -79,11 +104,22 @@ CSeq_descr_CI::~CSeq_descr_CI(void)
 CSeq_descr_CI& CSeq_descr_CI::operator= (const CSeq_descr_CI& iter)
 {
     if (this != &iter) {
-        m_CurrentEntry = iter.m_CurrentEntry;
+        m_CurrentBase = iter.m_CurrentBase;
+        m_CurrentSeq = iter.m_CurrentSeq;
+        m_CurrentSet = iter.m_CurrentSet;
         m_ParentLimit = iter.m_ParentLimit;
     }
-    _ASSERT(!m_CurrentEntry || m_CurrentEntry.IsSetDescr());
+    _ASSERT(!m_CurrentBase || m_CurrentBase->IsSetDescr());
     return *this;
+}
+
+
+
+CSeq_entry_Handle CSeq_descr_CI::GetSeq_entry_Handle(void) const
+{
+    return m_CurrentSeq?
+        m_CurrentSeq.GetParentEntry():
+        m_CurrentSet.GetParentEntry();
 }
 
 
@@ -91,55 +127,44 @@ void CSeq_descr_CI::x_Next(void)
 {
     x_Step();
     x_Settle();
-    _ASSERT(!m_CurrentEntry || m_CurrentEntry.IsSetDescr());
+    _ASSERT(!m_CurrentBase || m_CurrentBase->IsSetDescr());
 }
 
 
 void CSeq_descr_CI::x_Settle(void)
 {
-    while ( m_CurrentEntry && !m_CurrentEntry.IsSetDescr() ) {
+    while ( m_CurrentBase && !m_CurrentBase->IsSetDescr() ) {
         x_Step();
     }
-    _ASSERT(!m_CurrentEntry || m_CurrentEntry.IsSetDescr());
+    _ASSERT(!m_CurrentBase || m_CurrentBase->IsSetDescr());
 }
 
 
 void CSeq_descr_CI::x_Step(void)
 {
-    if ( m_CurrentEntry && m_ParentLimit > 0 ) {
-        --m_ParentLimit;
-        m_CurrentEntry = m_CurrentEntry.GetParentEntry();
+    if ( !m_CurrentBase ) {
+        return;
+    }
+    if ( m_ParentLimit <= 0 ) {
+        m_CurrentBase.Reset();
+        m_CurrentSeq.Reset();
+        m_CurrentSet.Reset();
+        return;
+    }
+    --m_ParentLimit;
+    if ( m_CurrentSeq ) {
+        m_CurrentSet = m_CurrentSeq.GetParentBioseq_set();
     }
     else {
-        m_CurrentEntry.Reset();
+        m_CurrentSet = m_CurrentSet.GetParentBioseq_set();
     }
-}
-
-
-CSeq_descr_CI& CSeq_descr_CI::operator++(void)
-{
-    x_Next();
-    return *this;
-}
-
-
-const CSeq_descr& CSeq_descr_CI::operator* (void) const
-{
-    _ASSERT(m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr());
-    return m_CurrentEntry.GetDescr();
-}
-
-
-const CSeq_descr* CSeq_descr_CI::operator-> (void) const
-{
-    _ASSERT(m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr());
-    return &m_CurrentEntry.GetDescr();
-}
-
-
-CSeq_entry_Handle CSeq_descr_CI::GetSeq_entry_Handle(void) const
-{
-    return m_CurrentEntry;
+    m_CurrentSeq.Reset();
+    if ( m_CurrentSet ) {
+        m_CurrentBase = &m_CurrentSet.x_GetInfo();
+    }
+    else {
+        m_CurrentBase.Reset();
+    }
 }
 
 

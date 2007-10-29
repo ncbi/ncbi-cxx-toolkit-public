@@ -69,6 +69,7 @@ class CSeq_id_ScopeInfo;
 class CTSE_Lock;
 
 class CBioseq_Handle;
+class CBioseq_set_Handle;
 class CSeq_annot_Handle;
 class CSeq_entry_Handle;
 class CBioseq_EditHandle;
@@ -150,6 +151,9 @@ public:
     /// @sa 
     ///     GetSeq_entry_Handle()
     CSeq_entry_Handle GetParentEntry(void) const;
+
+    /// Return a handle for the parent Bioseq-set, or null handle
+    CBioseq_set_Handle GetParentBioseq_set(void) const;
 
     /// Get parent Seq-entry handle
     ///

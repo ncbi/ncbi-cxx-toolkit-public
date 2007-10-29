@@ -34,7 +34,8 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objmgr/impl/annot_object.hpp>
-#include <objmgr/impl/seq_entry_info.hpp>
+//#include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/impl/bioseq_base_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -48,11 +49,17 @@ BEGIN_SCOPE(objects)
 
 // inline methods first
 inline
+const CBioseq_Base_Info& CSeqdesc_CI::x_GetBaseInfo(void) const
+{
+    return m_Entry.x_GetBaseInfo();
+}
+
+
+inline
 bool CSeqdesc_CI::x_ValidDesc(void) const
 {
     _ASSERT(m_Entry);
-    const CSeq_entry_Info& entry = m_Entry.GetSeq_entry_Handle().x_GetInfo();
-    return !entry.x_IsEndDesc(m_Desc_CI);
+    return !x_GetBaseInfo().x_IsEndDesc(m_Desc_CI);
 }
 
 
@@ -186,8 +193,7 @@ void CSeqdesc_CI::x_SetChoices(const TDescChoices& choices)
 void CSeqdesc_CI::x_NextDesc(void)
 {
     _ASSERT(x_ValidDesc());
-    const CSeq_entry_Info& entry = m_Entry.GetSeq_entry_Handle().x_GetInfo();
-    m_Desc_CI = entry.x_GetNextDesc(m_Desc_CI, m_Choice);
+    m_Desc_CI = x_GetBaseInfo().x_GetNextDesc(m_Desc_CI, m_Choice);
 }
 
 
@@ -196,8 +202,7 @@ void CSeqdesc_CI::x_FirstDesc(void)
     if ( !m_Entry ) {
         return;
     }
-    const CSeq_entry_Info& entry = m_Entry.GetSeq_entry_Handle().x_GetInfo();
-    m_Desc_CI = entry.x_GetFirstDesc(m_Choice);
+    m_Desc_CI = x_GetBaseInfo().x_GetFirstDesc(m_Choice);
 }
 
 

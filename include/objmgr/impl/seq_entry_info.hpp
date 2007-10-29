@@ -132,6 +132,9 @@ public:
     //    void AddDescr(CSeq_entry_Info& src);
     void AddSeq_descr(const TDescr& v);
 
+    // get current content no matter what type it is
+    const CBioseq_Base_Info& x_GetBaseInfo(void) const;
+
     // low level access for CSeqdesc_CI in case sequence is split
     typedef CSeq_descr::Tdata::const_iterator TDesc_CI;
     typedef unsigned TDescTypeMask;
@@ -255,6 +258,12 @@ const CSeq_entry& CSeq_entry_Info::x_GetObject(void) const
     return *m_Object;
 }
 
+
+inline 
+const CBioseq_Base_Info& CSeq_entry_Info::x_GetBaseInfo(void) const
+{
+    return *m_Contents;
+}
 
 inline
 bool CSeq_entry_Info::IsSet(void) const

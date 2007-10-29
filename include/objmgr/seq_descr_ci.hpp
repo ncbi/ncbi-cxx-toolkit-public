@@ -34,7 +34,10 @@
 */
 
 #include <objects/seq/Seq_descr.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/impl/bioseq_base_info.hpp>
 #include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -48,6 +51,8 @@ BEGIN_SCOPE(objects)
 
 
 class CBioseq_Handle;
+class CSeqdesc_CI;
+class CBioseq_Base_Info;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -69,6 +74,12 @@ public:
                            size_t search_depth = 0);
 
     /// Create an iterator that enumerates CSeq_descr objects 
+    /// from a bioseq with limit number of seq-entries
+    /// to "search_depth" (0 = unlimited).
+    explicit CSeq_descr_CI(const CBioseq_set_Handle& handle,
+                           size_t search_depth = 0);
+
+    /// Create an iterator that enumerates CSeq_descr objects 
     /// from a seq-entry, limit number of seq-entries
     /// to "search_depth" (0 = unlimited).
     explicit CSeq_descr_CI(const CSeq_entry_Handle& entry,
@@ -83,7 +94,7 @@ public:
     CSeq_descr_CI& operator++ (void);
 
     /// Check if iterator points to an object
-    DECLARE_OPERATOR_BOOL(m_CurrentEntry);
+    DECLARE_OPERATOR_BOOL(m_CurrentBase);
 
     const CSeq_descr& operator*  (void) const;
     const CSeq_descr* operator-> (void) const;
@@ -91,14 +102,49 @@ public:
     CSeq_entry_Handle GetSeq_entry_Handle(void) const;
 
 private:
+    friend class CSeqdesc_CI;
+
     // Move to the next entry containing a descriptor
     void x_Next(void);
     void x_Step(void);
     void x_Settle(void);
 
-    CSeq_entry_Handle     m_CurrentEntry;
+    const CBioseq_Base_Info& x_GetBaseInfo(void) const;
+
+    CConstRef<CBioseq_Base_Info> m_CurrentBase;
+    CBioseq_Handle        m_CurrentSeq;
+    CBioseq_set_Handle    m_CurrentSet;
     size_t                m_ParentLimit;
 };
+
+
+inline
+CSeq_descr_CI& CSeq_descr_CI::operator++(void)
+{
+    x_Next();
+    return *this;
+}
+
+
+inline
+const CBioseq_Base_Info& CSeq_descr_CI::x_GetBaseInfo(void) const
+{
+    return *m_CurrentBase;
+}
+
+
+inline
+const CSeq_descr& CSeq_descr_CI::operator* (void) const
+{
+    return x_GetBaseInfo().GetDescr();
+}
+
+
+inline
+const CSeq_descr* CSeq_descr_CI::operator-> (void) const
+{
+    return &x_GetBaseInfo().GetDescr();
+}
 
 
 /* @} */

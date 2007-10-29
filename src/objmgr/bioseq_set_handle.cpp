@@ -109,6 +109,21 @@ CSeq_entry_Handle CBioseq_set_Handle::GetParentEntry(void) const
 }
 
 
+CBioseq_set_Handle CBioseq_set_Handle::GetParentBioseq_set(void) const
+{
+    CBioseq_set_Handle ret;
+    const CBioseq_set_Info& info = x_GetInfo();
+    if ( info.HasParent_Info() ) {
+        const CSeq_entry_Info& entry = info.GetParentSeq_entry_Info();
+        if ( entry.HasParent_Info() ) {
+            ret = CBioseq_set_Handle(entry.GetParentBioseq_set_Info(),
+                                     GetTSE_Handle());
+        }
+    }
+    return ret;
+}
+
+
 CSeq_entry_Handle CBioseq_set_Handle::GetTopLevelEntry(void) const
 {
     return GetTSE_Handle();

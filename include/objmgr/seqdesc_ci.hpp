@@ -48,6 +48,9 @@ BEGIN_SCOPE(objects)
  */
 
 
+class CBioseq_Base_Info;
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  CSeqdesc_CI --
@@ -136,6 +139,8 @@ private:
 
     void x_Next(void);
     void x_Settle(void);
+
+    const CBioseq_Base_Info& x_GetBaseInfo(void) const;
 
     TDescTypeMask       m_Choice;
     CSeq_descr_CI       m_Entry;
