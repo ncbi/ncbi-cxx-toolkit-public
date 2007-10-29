@@ -4939,11 +4939,6 @@ ERW_Result CFileWriter::Write(const void* buf,
 
 ERW_Result CFileWriter::Flush(void)
 {
-    try {
-        m_File.Flush();
-    } catch (CFileException&) { 
-       return eRW_Error;
-    }
     return eRW_Success;
 }
 
