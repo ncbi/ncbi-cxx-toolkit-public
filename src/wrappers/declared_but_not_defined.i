@@ -31,6 +31,9 @@
  */
 
 
+%ignore ncbi::objects::CAnnotObject_Ref::IsTableFeat;
+%ignore ncbi::objects::CSeq_annot_EditHandle::Update;
+
 %ignore ncbi::CWriteDB::AddDefline;
 
 %ignore ncbi::blast::CBlastOptionsHandle::ClearFilterOptions;
