@@ -105,8 +105,6 @@ public:
     bool ReuseJobObject() const { return m_ReuseJobObject; }
     void SetReuseJobObject(bool value) { m_ReuseJobObject = value; }
     void SetWorker(CGridWorkerNode& worker) { m_Worker = &worker; }
-    void SetExclusiveMode(bool on_off);
-    bool IsExclusiveMode() const;
 
 
     /// Request node shutdown
@@ -124,6 +122,7 @@ public:
     const CTime& GetStartTime() const { return m_StartTime; }
     
     void KillNode();
+
 private:
 
     CGridGlobals();
@@ -136,32 +135,12 @@ private:
     auto_ptr<CWNJobsWatcher> m_JobsWatcher;
     const CTime  m_StartTime;
     CGridWorkerNode* m_Worker;
-    volatile bool m_ExclusiveMode;
-    mutable CFastMutex m_ExclModeGuard;
 
     CGridGlobals(const CGridGlobals&);
     CGridGlobals& operator=(const CGridGlobals&);
     
 };
 
-class CGridGlobalsException : public CException
-{
-public:
-    enum EErrCode {
-        eExclusiveModeIsAlreadySet
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eExclusiveModeIsAlreadySet:    return "eExclusiveModeIsAlreadySet";
-        default:                      return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CGridGlobalsException, CException);
-};
 
 END_NCBI_SCOPE
 

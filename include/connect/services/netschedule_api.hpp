@@ -620,7 +620,7 @@ public:
     enum EShutdownLevel {
         eNoShutdown = 0,    ///< No Shutdown was requested
         eNormalShutdown,    ///< Normal shutdown was requested
-        eShutdownImmidiate, ///< Urgent shutdown was requested
+        eShutdownImmediate, ///< Urgent shutdown was requested
         eDie                ///< Somethig wrong has happend, so server should kill itself
     };
 

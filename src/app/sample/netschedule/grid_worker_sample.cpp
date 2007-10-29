@@ -109,7 +109,7 @@ public:
         //
         for (int i = 0; i < m_Iters; ++i) {
             if (context.GetShutdownLevel() 
-                == CNetScheduleAdmin::eShutdownImmidiate) {
+                == CNetScheduleAdmin::eShutdownImmediate) {
                 return 1;
             }
             context.PutProgressMessage("Iteration " + NStr::IntToString(i+1) +

@@ -46,7 +46,7 @@
 #include <corelib/blob_storage.hpp>
 #include <connect/connect_export.h>
 #include <connect/services/ns_client_factory.hpp>
-#include <connect/services/ns_client_wrappers.hpp>
+//#nclude <connect/services/ns_client_wrappers.hpp>
 #include <connect/services/error_codes.hpp>
 #include <util/thread_pool.hpp>
 
@@ -305,18 +305,12 @@ private:
 
     CGridWorkerNode&     m_WorkerNode;
     CNetScheduleJob      m_Job;
-    //string               m_JobKey;
-    //string               m_JobInput;
-    //string               m_JobOutput;
-    //string               m_ProgressMsgKey;
     ECommitStatus        m_JobCommitted;
     size_t               m_InputBlobSize;
     bool                 m_LogRequested;
     unsigned int         m_JobNumber;
     CGridThreadContext*  m_ThreadContext;
     bool                 m_ExclusiveJob;
-    //string               m_ErrMsg;
-    //CNetScheduleAPI::TJobMask m_Mask;
 
 
     /// The copy constructor and the assignment operator
@@ -486,7 +480,6 @@ public:
 };
 
 class CWNJobsWatcher;
-
 /// Grid Worker Node
 /// 
 /// It gets jobs from a NetSchedule server and runs them simultaneously
@@ -562,8 +555,11 @@ public:
     ///
     const string& GetServiceName() const;
 
-    void PutOnHold(bool hold);
-    bool IsOnHold() const;
+
+    CNetScheduleAPI& GetNSClient() const;
+    CNetScheduleExecuter GetNSExecuter() const;
+
+    bool IsExclusiveMode();
    
 private:
     IWorkerNodeJobFactory&       m_JobFactory;
@@ -571,9 +567,7 @@ private:
     INetScheduleClientFactory&   m_NSClientFactory;
     IWorkerNodeJobWatcher*       m_JobWatcher;
 
-    auto_ptr<INSCWrapper>        m_NSReadClient;
-    mutable CFastMutex           m_SharedClientMutex;
-    auto_ptr<CNetScheduleAPI>    m_SharedNSClient;
+    mutable auto_ptr<CNetScheduleAPI>    m_SharedNSClient;
 
     auto_ptr<CStdPoolOfThreads>  m_ThreadsPool;
     unsigned int                 m_UdpPort;
@@ -581,16 +575,14 @@ private:
     unsigned int                 m_InitThreads;
     unsigned int                 m_NSTimeout;
     unsigned int                 m_ThreadsPoolTimeout;
-    CFastMutex                   m_NSClientFactoryMutex;
+    mutable CFastMutex           m_NSClientFactoryMutex;
     mutable CFastMutex           m_JobFactoryMutex;
     CFastMutex                   m_StorageFactoryMutex;
     CFastMutex                   m_JobWatcherMutex;
     bool                         m_LogRequested;
-    volatile bool                m_OnHold;
-    CSemaphore                   m_HoldSem;
-    mutable CFastMutex           m_HoldMutex;
     bool                         m_UseEmbeddedStorage;
     unsigned int                 m_CheckStatusPeriod;
+    CSemaphore                   m_JobGetterSemaphore;
 
     friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()
@@ -603,7 +595,8 @@ private:
         CFastMutexGuard guard(m_StorageFactoryMutex);
         return  m_NSStorageFactory.CreateInstance();
     }
-    INSCWrapper* CreateClient();
+    friend class CWorkerNodeJobContext;
+    CSemaphore& x_GetJobGetterSemaphore() { return m_JobGetterSemaphore; }
 
     void x_NotifyJobWatcher(const CWorkerNodeJobContext& job,
                             IWorkerNodeJobWatcher::EEvent event)
@@ -641,11 +634,32 @@ private:
 
 };
 
+
+class CGridWorkerNodeException : public CException
+{
+public:
+    enum EErrCode {
+        eExclusiveModeIsAlreadySet
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eExclusiveModeIsAlreadySet:    return "eExclusiveModeIsAlreadySet";
+        default:                      return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CGridWorkerNodeException, CException);
+};
+
+
 /* @} */
 
 
 END_NCBI_SCOPE
 
-#define WN_BUILD_DATE " build " __DATE__ " " __TIME__ " (Framework version: 2.3.0)"
+#define WN_BUILD_DATE " build " __DATE__ " " __TIME__ " (Framework version: 3.0.0)"
 
 #endif //CONNECT_SERVICES__GRID_WOKER_HPP

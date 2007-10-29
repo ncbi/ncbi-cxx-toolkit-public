@@ -305,7 +305,7 @@ int CNSRemoveJobControlApp::Run(void)
         string cmd = args["cmd"].AsString();
         if (NStr::CompareNocase(cmd, "shutdown_nodes") == 0) {
             CNetScheduleAdmin::EShutdownLevel level = 
-                CNetScheduleAdmin::eShutdownImmidiate;
+                CNetScheduleAdmin::eShutdownImmediate;
             CWNodeShutdownAction action(level);
             info_collector->TraverseNodes(action);
         }

@@ -128,6 +128,7 @@ void CNetScheduleControl::Init(void)
 
     
     arg_desc->AddFlag("shutdown", "Shutdown server");
+    arg_desc->AddFlag("shutdown_now", "Shutdown server IMMIDIATE");
     arg_desc->AddFlag("die", "Shutdown server");
     arg_desc->AddOptionalKey("log",
                              "server_logging",
@@ -250,6 +251,11 @@ int CNetScheduleControl::Run(void)
         ctl.reset(x_CreateNewClient(false));
         ctl->GetAdmin().ShutdownServer();
         os << "Shutdown request has been sent to server" << endl;
+    }
+    else if (args["shutdown_now"]) {
+        ctl.reset(x_CreateNewClient(false));
+        ctl->GetAdmin().ShutdownServer(CNetScheduleAdmin::eShutdownImmediate);
+        os << "Shutdown IMMEDIATE request has been sent to server" << endl;
     }
     else if (args["die"]) {
         ctl.reset(x_CreateNewClient(false));

@@ -102,7 +102,7 @@ public:
             CNetScheduleAdmin::EShutdownLevel level =
                 CNetScheduleAdmin::eNormalShutdown;
             if (request.find("IMMEDIATE") != NPOS) 
-                level = CNetScheduleAdmin::eShutdownImmidiate;
+                level = CNetScheduleAdmin::eShutdownImmediate;
             os << "OK:";
             CGridGlobals::GetInstance().
                 RequestShutdown(level);
@@ -139,13 +139,13 @@ public:
             GetShutdownLevel() != CNetScheduleAdmin::eNoShutdown) {
                 os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
         }
-        if (CGridGlobals::GetInstance().IsExclusiveMode())
+        if (node.IsExclusiveMode())
             os << "THE NODE IS IN AN EXCLUSIVE MODE!!!" << endl;
 
         CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
-        if (node.IsOnHold()) {
-                os << "THE NODE IDLE TASK IS RUNNING..." << endl;
-        }
+        //if (node.IsOnHold()) {
+        //        os << "THE NODE IDLE TASK IS RUNNING..." << endl;
+        //}
 
     }
 };
@@ -187,7 +187,7 @@ public:
                          CGridWorkerNode& node)
     {
         int load = 0;
-        if (!node.IsOnHold())
+        //if (!node.IsOnHold())
             load = node.GetMaxThreads() 
                 - CGridGlobals::GetInstance().GetJobsWatcher().GetJobsRunningNumber();
         os << "OK:" << load;

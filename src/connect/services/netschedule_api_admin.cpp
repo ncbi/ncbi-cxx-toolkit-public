@@ -55,7 +55,7 @@ void CNetScheduleAdmin::ShutdownServer(CNetScheduleAdmin::EShutdownLevel level) 
     case eDie :
         cmd = "SHUTDOWN SUICIDE ";
         break;
-    case eShutdownImmidiate :
+    case eShutdownImmediate :
         cmd = "SHUTDOWN IMMEDIATE ";
         break;
     default:

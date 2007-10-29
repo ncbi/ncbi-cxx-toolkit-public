@@ -36,7 +36,6 @@
 #include <util/request_control.hpp>
 
 #include <connect/services/grid_worker.hpp>
-#include <connect/services/ns_client_wrappers.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -72,9 +71,10 @@ public:
     IWorkerNodeJob* GetJob();
 private:
 
+    CGridWorkerNode&              m_Worker;
     CWorkerNodeJobContext*        m_JobContext;
     CRef<IWorkerNodeJob>          m_Job;
-    auto_ptr<INSCWrapper>         m_Reporter;
+    CNetScheduleExecuter          m_Reporter;
 
     auto_ptr<IBlobStorage>        m_Reader;
     auto_ptr<CNcbiIstream>        m_RStream;

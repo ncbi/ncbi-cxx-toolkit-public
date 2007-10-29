@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <connect/services/grid_globals.hpp>
@@ -87,7 +88,7 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
                               << m_MaxFailuresAllowed << ") has been reached.\n" 
                               << "Sending the shutdown request." );
                 CGridGlobals::GetInstance().
-                    RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
+                    RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
             }
         break;
     case eJobSucceed :
@@ -140,7 +141,7 @@ void CWNJobsWatcher::CheckInfinitLoop()
                                   << it->first->GetJobKey());
                     it->second.second = true;      
                     CGridGlobals::GetInstance().
-                        RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
+                        RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
                 }
             } else
                 ++count;
@@ -180,8 +181,7 @@ CGridGlobals::CGridGlobals()
     : m_ReuseJobObject(false),
       m_ShutdownLevel(CNetScheduleAdmin::eNoShutdown),
       m_StartTime(CTime(CTime::eCurrent)),
-      m_Worker(NULL),
-      m_ExclusiveMode(false)
+      m_Worker(NULL)
 {
 }
 
@@ -215,19 +215,6 @@ void CGridGlobals::KillNode()
     _ASSERT(m_Worker);
     if( m_Worker )
         GetJobsWatcher().x_KillNode(*m_Worker);    
-}
-
-void CGridGlobals::SetExclusiveMode(bool on_off) 
-{ 
-    CFastMutexGuard guard(m_ExclModeGuard);
-    if (m_ExclusiveMode && on_off)
-        NCBI_THROW(CGridGlobalsException, eExclusiveModeIsAlreadySet, "");
-    m_ExclusiveMode = on_off; 
-}
-bool CGridGlobals::IsExclusiveMode() const 
-{ 
-    CFastMutexGuard guard(m_ExclModeGuard);
-    return m_ExclusiveMode; 
 }
 
 END_NCBI_SCOPE
