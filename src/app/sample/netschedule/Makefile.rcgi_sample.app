@@ -22,5 +22,5 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 # CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 ### END COPIED SETTINGS
 
-CHECK_CMD  =
-CHECK_COPY = rcgi_sample.html rcgi_sample.ini
+#CHECK_CMD  =
+#CHECK_COPY = rcgi_sample.html rcgi_sample.ini
