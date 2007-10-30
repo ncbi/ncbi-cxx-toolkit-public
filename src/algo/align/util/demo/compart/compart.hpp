@@ -112,6 +112,7 @@ private:
     double                 m_penalty;
     double                 m_min_idty;
     double                 m_min_singleton_idty;
+    size_t                 m_min_singleton_idty_bps;
 
     size_t                 m_MaxCompsPerQuery;
 

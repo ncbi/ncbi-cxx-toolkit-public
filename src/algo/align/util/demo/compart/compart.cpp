@@ -32,9 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "compart.hpp"
-
 #include <algo/align/util/compartment_finder.hpp>
-
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -67,8 +65,16 @@ void CCompartApp::Init()
                             CArgDescriptions::eDouble, "0.75");
     
     argdescr->AddDefaultKey("min_singleton_idty", "min_singleton_idty", 
-                            "Minimal identity for singleton compartments",
+                            "Minimal identity for singleton compartments. "
+                            "The actual parameter passed to the compartmentization "
+                            "procedure is least of this parameter multipled "
+                            "by the seq length, and min_singleton_idty_bps.",
                             CArgDescriptions::eDouble, "0.75");
+
+    argdescr->AddDefaultKey("min_singleton_idty_bps", "min_singleton_idty_bps", 
+                            "Minimal identity for singleton compartments "
+                            "in base pairs. Default = parameter disabled.",
+                            CArgDescriptions::eInteger, "9999999");
 
     argdescr->AddFlag("noxf", 
                       "Suppress overlap x-filtering: print all "
@@ -124,8 +130,9 @@ size_t CCompartApp::x_GetSeqLength(const string& id)
         }
 
         const size_t len (sequence::GetLength(*seqid, m_Scope.GetNonNullPointer()));
-        m_id2len[id] = len;
         
+        m_id2len[id] = len;
+
         if(m_id2len.size() >= 1000) {
             m_Scope->ResetHistory();
         }
@@ -144,10 +151,18 @@ int CCompartApp::Run()
     if(args["seqlens"]) {
         x_ReadSeqLens(args["seqlens"].AsInputFile());
     }
+    else {
+        USING_SCOPE(objects);    
+        CRef<CObjectManager> objmgr (CObjectManager::GetInstance());
+        CGBDataLoader::RegisterInObjectManager(*objmgr);
+        m_Scope = new CScope(*objmgr);
+        m_Scope->AddDefaults();
+    }
 
     m_penalty                  = args["penalty"].AsDouble();
     m_min_idty                 = args["min_idty"].AsDouble();
     m_min_singleton_idty       = args["min_singleton_idty"].AsDouble();
+    m_min_singleton_idty_bps   = args["min_singleton_idty_bps"].AsInteger();
     m_MaxCompsPerQuery         = args["N"].AsInteger();
 
     m_CompartmentsPermanent.resize(0);
@@ -170,7 +185,7 @@ int CCompartApp::Run()
 
             const string query (hit->GetQueryId()->GetSeqIdString(true));
             const string subj  (hit->GetSubjId()->GetSeqIdString(true));
-            
+
             if(query0.size() == 0 || subj0.size() == 0) {
                 query0 = query;
                 subj0 = subj;
@@ -240,7 +255,6 @@ int CCompartApp::Run()
 
 int CCompartApp::x_ProcessPair(const string& query0, THitRefs& hitrefs)
 {
-
     const size_t qlen (x_GetSeqLength(query0));
 
     if(qlen == 0) {
@@ -250,11 +264,13 @@ int CCompartApp::x_ProcessPair(const string& query0, THitRefs& hitrefs)
     }
 
     typedef CCompartmentAccessor<THit> TAccessor;
-    typedef TAccessor::TCoord TCoord;
+    typedef TAccessor::TCoord          TCoord;
 
     const TCoord penalty_bps (TCoord(m_penalty * qlen + 0.5));
     const TCoord min_matches (TCoord(m_min_idty * qlen + 0.5));
-    const TCoord min_singleton_matches (TCoord(m_min_singleton_idty * qlen + 0.5));
+    const TCoord msm1        (TCoord(m_min_singleton_idty * qlen + 0.5));
+    const TCoord msm2        (m_min_singleton_idty_bps);
+    const TCoord min_singleton_matches (min(msm1, msm2));
 
     TAccessor ca (hitrefs.begin(), hitrefs.end(),
                   penalty_bps,
