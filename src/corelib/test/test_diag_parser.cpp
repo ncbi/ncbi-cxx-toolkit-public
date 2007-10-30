@@ -80,64 +80,64 @@ void CDiagParserApp::Init(void)
 int CDiagParserApp::Run(void)
 {
     x_CheckMessage("03960/000/0000/A 2C2D0F7851AB7E40 0005/0005 "
-                "2006-09-27T13:41:56 NCBIPC1204 UNK_CLIENT "
+                "2006-09-27T13:41:56.000 NCBIPC1204 UNK_CLIENT "
                 "UNK_SESSION cgi_sample.cgi start", true);
     x_CheckMessage("03960/000/0000/A 2C2D0F7851AB7E40 0010/0010 "
-                "2006-09-27T13:41:56 NCBIPC1204 UNK_CLIENT "
+                "2006-09-27T13:41:56.000 NCBIPC1204 UNK_CLIENT "
                 "2C2D0F7851AB7E40_0000SID cgi_sample.cgi "
                 "request-stop 200 0.105005566", true);
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Message[E]: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
                 "--- Message from thread 6", true);
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST(111.222) "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
                 "--- Message from thread 6", true);
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST(error.text) "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
                 "--- Message from thread 6", true);
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST(error text) "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
                 "--- Message from thread 6", true);
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: "
                 "TEST(error text (with extra '(' and ')')) "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
                 "--- Message from thread 6", true);
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Message[E]: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: ::Thread_Run() "
                 "--- Message from thread 6", true);
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Message[E]: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp:: "
                 "--- Message from thread 6", true);
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Message[E]: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::f() "
                 "--- Message from thread 6", true);
     // Valid non-MT message
     x_CheckMessage("15176/003/A 2A763B485350C030 0098 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
@@ -145,49 +145,49 @@ int CDiagParserApp::Run(void)
     // Bad messages
     // Missing () after fuunction
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Message[E]: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run "
                 "--- Message from thread 6", false);
     // Missing function name
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Message[E]: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::() "
                 "--- Message from thread 6", false);
     // Missing class::function
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: "
                 "--- Message from thread 6", false);
     // Missing ) after error text
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST(error text "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
                 "--- Message from thread 6", false);
     // Missing TID/RqID
     x_CheckMessage("15176 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
                 "--- Message from thread 6", false);
     // Missing UID
     x_CheckMessage("15176/003/0006/A 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
                 "--- Message from thread 6", false);
     // ??? (missing Thread_SerialNumber
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
@@ -201,28 +201,28 @@ int CDiagParserApp::Run(void)
                 "--- Message from thread 6", false);
     // Missing host
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
                 "--- Message from thread 6", false);
     // Missing client
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 "
+                "2006-10-17T12:59:47.000 widget3 "
                 "UNK_SESSION my_app Error: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
                 "--- Message from thread 6", false);
     // Missing severity
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::Thread_Run() "
                 "--- Message from thread 6", false);
     // Missing file, line
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
-                "2006-10-17T12:59:47 widget3 UNK_CLIENT "
+                "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST "
                 "CMyApp::Thread_Run() "
                 "--- Message from thread 6", false);
