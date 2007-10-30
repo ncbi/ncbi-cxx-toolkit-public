@@ -928,7 +928,7 @@ CDiagContext::CExtraArgs::Print(const string& name,
         *m_Message += "&";
     }
     ITERATE(string, c, name) {
-        const char* enc = s_EncodeChars[*c];
+        const char* enc = s_EncodeChars[(unsigned char)(*c)];
         if (enc[1] != 0  ||  enc[0] != *c) {
             NCBI_THROW(CCoreException, eInvalidArg,
                 "Invalid char in CExtraArgs name: " + name);
@@ -937,7 +937,7 @@ CDiagContext::CExtraArgs::Print(const string& name,
     }
     *m_Message += "=";
     ITERATE(string, c, value) {
-        *m_Message += s_EncodeChars[*c];
+        *m_Message += s_EncodeChars[(unsigned char)(*c)];
     }
     return *this;
 }
