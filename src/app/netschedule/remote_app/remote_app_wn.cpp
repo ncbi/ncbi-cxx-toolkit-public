@@ -84,6 +84,8 @@ public:
                 context.GetQueueName() + "_"  + context.GetJobKey() + "_" +
                 NStr::UIntToString((unsigned int)lt.GetLocalTime().GetTimeT());
 
+        string job_wdir = tmp_path.empty() ? CDir::GetCwd() : tmp_path;
+
         IRemoteAppRequest_Executer* request = &m_RequestMB;
         IRemoteAppResult_Executer* result = &m_ResultMB;
 
@@ -133,6 +135,8 @@ public:
                                         request->GetAppRunTimeout(),
                                         m_Params.GetKeepAlivePeriod(),
                                         tmp_path,
+                                        m_Params.RemoveTempDir(),
+                                        job_wdir,
                                         x_GetEnv(),
                                         m_Params.GetMonitorAppPath(),
                                         m_Params.GetMaxMonitorRunningTime(),

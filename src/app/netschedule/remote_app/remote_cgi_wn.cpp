@@ -187,6 +187,8 @@ public:
                 context.GetQueueName() + "_"  + context.GetJobKey() + "_" +
                 NStr::UIntToString((unsigned int)lt.GetLocalTime().GetTimeT());
 
+        string job_wdir = tmp_path.empty() ? CDir::GetCwd() : tmp_path;
+
         CCgiRequest request;
         request.Deserialize(context.GetIStream(), CCgiRequest::fIgnoreQueryString |
                                                   CCgiRequest::fDoNotParseContent);
@@ -212,6 +214,8 @@ public:
                                          0,
                                          m_Params.GetKeepAlivePeriod(),
                                          tmp_path,
+                                         m_Params.RemoveTempDir(),
+                                         job_wdir,
                                          env.GetEnv(),
                                          m_Params.GetMonitorAppPath(),
                                          m_Params.GetMaxMonitorRunningTime(),

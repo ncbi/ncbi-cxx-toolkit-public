@@ -35,9 +35,15 @@
 #include <corelib/stream_utils.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbireg.hpp>
-
+#include <corelib/ncbi_system.hpp>
+#include <corelib/ncbifile.hpp>
+#include <corelib/rwstream.hpp>
 #include <connect/ncbi_pipe.hpp>
 #include <connect/services/grid_worker.hpp>
+
+#if defined(NCBI_OS_UNIX)
+#include <fcntl.h>
+#endif
 
 #include "exec_helpers.hpp"
 
@@ -48,7 +54,7 @@ BEGIN_NCBI_SCOPE
 CRemoteAppParams::CRemoteAppParams()
     : m_MaxAppRunningTime(0), m_KeepAlivePeriod(0), 
       m_NonZeroExitAction(eDoneOnNonZeroExit),
-      m_RunInSeparateDir(false)
+      m_RunInSeparateDir(false), m_RemoveTempDir(true)
 {
 }
 
@@ -91,10 +97,17 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
                     CNcbiRegistry::eReturn);
 
     if (m_RunInSeparateDir) {
-	if (reg.HasEntry(sec_name, "tmp_dir"))
+	if (reg.HasEntry(sec_name, "tmp_dir")) {
 	    m_TempDir = reg.GetString(sec_name, "tmp_dir", "." );
-	else
-           m_TempDir = reg.GetString(sec_name, "tmp_path", "." );
+            m_RemoveTempDir =
+                   reg.GetBool(sec_name, "remove_tmp_dir", true, 0, 
+                                    CNcbiRegistry::eReturn);
+        } else {
+            m_TempDir = reg.GetString(sec_name, "tmp_path", "." );
+            m_RemoveTempDir =
+                   reg.GetBool(sec_name, "remove_tmp_path", true, 0, 
+                                    CNcbiRegistry::eReturn);
+        }
         if (!CDirEntry::IsAbsolutePath(m_TempDir)) {
             string tmp = CDir::GetCwd() 
                 + CDirEntry::GetPathSeparator() 
@@ -118,12 +131,12 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
                 + CDirEntry::GetPathSeparator() 
                 + m_MonitorAppPath;
             m_MonitorAppPath = CDirEntry::NormalizePath(tmp);
-            CFile f(m_MonitorAppPath);
-            if (!f.Exists() || !CanExecRemoteApp(f) ) {
-                ERR_POST("Can not execute \"" << m_MonitorAppPath 
-                         << "\". The Monitor application will not run!");
-                m_MonitorAppPath = "";
-            }
+        }
+        CFile f(m_MonitorAppPath);
+        if (!f.Exists() || !CanExecRemoteApp(f) ) {
+            ERR_POST("Can not execute \"" << m_MonitorAppPath 
+                     << "\". The Monitor application will not run!");
+            m_MonitorAppPath = "";
         }
     }
 
@@ -169,7 +182,8 @@ bool CanExecRemoteApp(const CFile& file)
 ///
 struct STmpDirGuard
 {
-    STmpDirGuard(const string& path) : m_Path(path) 
+    STmpDirGuard(const string& path, bool remove_path) 
+        : m_Path(path), m_RemovePath(remove_path)
     { 
         if (!m_Path.empty()) {
             CDir dir(m_Path); 
@@ -179,10 +193,12 @@ struct STmpDirGuard
     }
     ~STmpDirGuard() 
     { 
-        if (!m_Path.empty()) {
+        if (m_RemovePath && !m_Path.empty()) {
             try {
-                if (!CDir(m_Path).Remove()) 
-                    ERR_POST("Could not delete temp directory \"" << m_Path <<"\"");
+                if (!CDir(m_Path).Remove()) {
+                   ERR_POST("Could not delete temp directory \"" << m_Path <<"\"");
+                }
+                //cerr << "Deleted " << m_Path << endl;
             } catch (exception& ex) {
                 ERR_POST("Error during tmp directory deletion\"" << m_Path <<"\": " << ex.what());
             }  catch (...) {
@@ -191,6 +207,7 @@ struct STmpDirGuard
         }
     }
     string m_Path;
+    bool m_RemovePath;
 };
 //////////////////////////////////////////////////////////////////////////////
 ///
@@ -274,10 +291,11 @@ public:
     CPipeProcessWatcher( CWorkerNodeJobContext& context,
                    int max_app_running_time,
                    int app_running_time,
-                   int keep_alive_period)
+                   int keep_alive_period,
+                   const string& job_wdir)
         : CPipeProcessWatcher_Base(max_app_running_time, app_running_time),
           m_Context(context), m_KeepAlivePeriod(keep_alive_period),
-          m_Monitor(NULL)
+          m_Monitor(NULL), m_JobWDir(job_wdir)
     {
         if (m_KeepAlivePeriod > 0)
             m_KeepAlive.reset(new CStopWatch(CStopWatch::eStart));
@@ -301,6 +319,7 @@ public:
     {
         if (m_Context.GetShutdownLevel() == 
             CNetScheduleAdmin::eShutdownImmediate) {
+            //cerr << "Shutdown requested " << endl;
             return CPipe::IProcessWatcher::eStop;
         }
 
@@ -322,6 +341,8 @@ public:
             args.push_back( NStr::UInt8ToString((Uint8)pid) );
             args.push_back( "-jid");
             args.push_back( m_Context.GetJobKey() );
+            args.push_back( "-jwdir");
+            args.push_back( m_JobWDir );
 
             int ret = m_Monitor->Run(args, out, err);
             switch(ret) {
@@ -379,6 +400,7 @@ private:
     CRAMonitor* m_Monitor;
     auto_ptr<CStopWatch> m_MonitorWatch;
     int m_MonitorPeriod;
+    string m_JobWDir;
 
 };
 
@@ -396,7 +418,21 @@ public:
             m_Name = tmp_dir + CDirEntry::GetPathSeparator() + name;
         }
         if ( !m_Name.empty() ) {
-            m_StreamGuard.reset(new CNcbiOfstream(m_Name.c_str()));
+            try {
+               m_Writer.reset(new CFileWriter(m_Name));
+            } catch (CFileException&) {
+                ERR_POST("Could not create a temporary file " << m_Name 
+                        << " the data will be written directly to the orgional stream");
+                m_Name.erase();
+                return;
+            }
+#if defined(NCBI_OS_UNIX)
+            // if the file is created on NFS we need to set CLOEXEC flag
+            // overwise deleting of temp direcory will not succeed 
+            TFileHandle fd = m_Writer->GetFileHandle();
+            fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
+#endif            
+            m_StreamGuard.reset(new CWStream(m_Writer.get()));
             m_Stream = m_StreamGuard.get();
         } else {
             m_Stream = &m_OrigStream;
@@ -417,20 +453,30 @@ public:
     {
         if( !m_Name.empty() && m_StreamGuard.get()) {
             m_StreamGuard.reset();
-            CNcbiIfstream ifs( m_Name.c_str() );
-            if (!ifs.good() 
-                || !NcbiStreamCopy(m_OrigStream, ifs)) 
+            m_Writer.reset();
+            CFileReader reader(m_Name);
+#if defined(NCBI_OS_UNIX)
+            // if the file is created on NFS we need to set CLOEXEC flag
+            // overwise deleting of temp direcory will not succeed 
+            TFileHandle fd = reader.GetFileHandle();
+            fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
+#endif            
+            CRStream rstm(&reader);
+            if (!rstm.good() 
+                || !NcbiStreamCopy(m_OrigStream, rstm)) 
                 ERR_POST( "Cannot copy \"" << m_Name << "\" file.");
+
         }
     }
 
 private:
     CNcbiOstream& m_OrigStream;
-    auto_ptr<CNcbiOfstream> m_StreamGuard;
+    auto_ptr<CFileWriter> m_Writer;
+    auto_ptr<CNcbiOstream> m_StreamGuard;
     CNcbiOstream* m_Stream;
     string m_Name;
-};
 
+};
 
 //////////////////////////////////////////////////////////////////////////////
 ///
@@ -443,21 +489,24 @@ bool ExecRemoteApp(const string& cmd,
                    int app_running_time,
                    int keep_alive_period,
                    const string& tmp_path,
+                   bool remove_tmp_path,
+                   const string& job_wdir,
                    const char* const env[],
                    const string& monitor_app,
                    int max_monitor_running_time,
                    int monitor_period,
                    int kill_timeout)
 {
-    STmpDirGuard guard(tmp_path);
+    STmpDirGuard guard(tmp_path, remove_tmp_path);
     {
         CTmpStreamGuard std_out_guard(tmp_path, "std.out", out);
         CTmpStreamGuard std_err_guard(tmp_path, "std.err", err);
-        
+
         CPipeProcessWatcher callback(context,
                                      max_app_running_time,
                                      app_running_time,
-                                     keep_alive_period);
+                                     keep_alive_period,
+                                     job_wdir);
 
         auto_ptr<CRAMonitor> ra_monitor;
         if (!monitor_app.empty() && monitor_period > 0) {
@@ -465,12 +514,15 @@ bool ExecRemoteApp(const string& cmd,
             callback.SetMonitor(*ra_monitor, monitor_period);
         }
         STimeout kill_tm = { kill_timeout, 0 };
+       
+        
         return CPipe::ExecWait(cmd, args, in, 
                                std_out_guard.GetOStream(),
                                std_err_guard.GetOStream(),
                                exit_value, 
                                tmp_path, env, &callback, 
                                &kill_tm) == CPipe::eDone;
+
     }
 }
 

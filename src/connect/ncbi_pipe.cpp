@@ -1828,7 +1828,6 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
             if (watcher) {
                 if (watcher->Watch(pipe.GetProcessHandle()) != 
                     IProcessWatcher::eContinue) {
-                    CProcess proc(pipe.GetProcessHandle());
                     pipe.SetTimeout(eIO_Close, &ktm);
                     pipe.Close(&exit_value);
                     finish = eCanceled;
@@ -1837,7 +1836,6 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
             }
         }
     } catch (...) {
-        CProcess proc(pipe.GetProcessHandle());
         pipe.SetTimeout(eIO_Close, &ktm);
         pipe.Close(&exit_value);
         throw;

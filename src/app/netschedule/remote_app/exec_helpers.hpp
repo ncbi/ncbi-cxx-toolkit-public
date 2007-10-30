@@ -51,6 +51,8 @@ bool ExecRemoteApp(const string& cmd,
                    int app_running_time,
                    int keep_alive_period,
                    const string& tmp_path,
+                   bool remove_tmp_path,
+                   const string& job_wdir,
                    const char* const env[] = 0,
                    const string& monitor_app = kEmptyStr,
                    int max_monitor_running_time = 5,
@@ -80,6 +82,7 @@ public:
     ENonZeroExitAction GetNonZeroExitAction() const { return m_NonZeroExitAction; }
     bool RunInSeparateDir() const { return m_RunInSeparateDir; }
     const string& GetTempDir() const { return m_TempDir; }
+    bool RemoveTempDir() const { return m_RemoveTempDir; }
 
     const string& GetMonitorAppPath() const { return m_MonitorAppPath; }
     int GetMaxMonitorRunningTime() const { return m_MaxMonitorRunningTime; }
@@ -99,6 +102,7 @@ private:
     ENonZeroExitAction m_NonZeroExitAction;
     bool m_RunInSeparateDir;
     string m_TempDir;
+    bool m_RemoveTempDir;
 
     string m_MonitorAppPath;
     int m_MaxMonitorRunningTime;
