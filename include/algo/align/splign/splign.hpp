@@ -91,6 +91,9 @@ public:
     void   SetMinSingletonIdentity(double idty);
     double GetMinSingletonIdentity(void) const;
 
+    void   SetMinSingletonIdentityBps(size_t idty);
+    size_t GetMinSingletonIdentityBps(void) const;
+
     void   SetMinExonIdentity(double idty);
     static double s_GetDefaultMinExonIdty(void);
     double GetMinExonIdentity(void) const;
@@ -206,8 +209,14 @@ protected:
     // min compartment idty - others will be skipped
     double m_MinCompartmentIdty;
 
-    // min single compartment idty (single per subject per strand)
+    // min single compartment idty (per subject per strand) as a fraction of
+    // the query length and as an absolute value.
+    // The final value for the parameter is computed
+    // as min(m_MinSingletonIdty * query_length, m_MinSingletonIdtyBps)
     double m_MinSingletonIdty;
+
+    size_t m_MinSingletonIdtyBps;
+
 
     // mandatory end gap detection flag
     bool m_endgaps;
