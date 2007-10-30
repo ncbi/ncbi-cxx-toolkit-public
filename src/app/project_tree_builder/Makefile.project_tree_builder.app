@@ -30,4 +30,4 @@ SRC = file_contents \
 DATATOOL_SRC = msvc71_project
 
 
-LIB = xutil xncbi
+LIB = xutil xncbi xregexp $(PCRE_LIB)
