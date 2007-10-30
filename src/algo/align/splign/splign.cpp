@@ -85,6 +85,7 @@ CSplign::CSplign( void )
     m_CompartmentPenalty = s_GetDefaultCompartmentPenalty();
     m_MinExonIdty = s_GetDefaultMinExonIdty();
     m_MinSingletonIdty = m_MinCompartmentIdty =s_GetDefaultMinCompartmentIdty();
+    m_MinSingletonIdtyBps = numeric_limits<size_t>::max();
     m_max_genomic_ext = s_GetDefaultMaxGenomicExtent();
     m_endgaps = true;
     m_strand = true;
@@ -162,6 +163,10 @@ void CSplign::SetMinSingletonIdentity(double idty)
     }
 }
 
+void CSplign::SetMinSingletonIdentityBps(size_t idty_bps)
+{
+    m_MinSingletonIdtyBps = idty_bps;
+}
 
 size_t CSplign::s_GetDefaultMaxGenomicExtent(void)
 {
@@ -196,6 +201,10 @@ double CSplign::GetMinCompartmentIdentity(void) const {
 
 double CSplign::GetMinSingletonIdentity(void) const {
     return m_MinSingletonIdty;
+}
+
+size_t CSplign::GetMinSingletonIdentityBps(void) const {
+    return m_MinSingletonIdtyBps;
 }
 
 double CSplign::s_GetDefaultMinCompartmentIdty(void)
@@ -677,11 +686,16 @@ void CSplign::Run(THitRefs* phitrefs)
     }
     
     // iterate through compartments
+
+    const THit::TCoord min_singleton_idty_final (
+                       min(size_t(m_MinSingletonIdty * mrna_size),
+                           m_MinSingletonIdtyBps));
+
     CCompartmentAccessor<THit> comps (hitrefs.begin(),
                                       hitrefs.end(),
                                       THit::TCoord(m_CompartmentPenalty * mrna_size),
                                       THit::TCoord(m_MinCompartmentIdty * mrna_size),
-                                      THit::TCoord(m_MinSingletonIdty * mrna_size),
+                                      min_singleton_idty_final,
                                       true);
 
     pair<size_t,size_t> dim (comps.GetCounts()); // (count_total, count_unmasked)
@@ -1187,7 +1201,12 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 mcount += jj->m_idty * jj->m_len;
             }
         }
-        if(mcount / (1 + qmax) < m_MinSingletonIdty) {
+
+        const THit::TCoord min_singleton_idty_final (
+                 min(size_t(m_MinSingletonIdty * mrna_size),
+                     m_MinSingletonIdtyBps));
+
+        if(mcount / (1 + qmax) < min_singleton_idty_final) {
             NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);
         }
 

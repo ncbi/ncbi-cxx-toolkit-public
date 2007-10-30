@@ -63,10 +63,20 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddOptionalKey
         ("min_singleton_idty",
          "min_singleton_identity",
-         "Minimal singleton compartment identity to align. Singletons are "
-         "per subject and strand",
+         "Minimal singleton compartment identity to use per subject and strand, "
+         "expressed as a fraction of the query's length.",
          CArgDescriptions::eDouble);
     
+    argdescr->AddDefaultKey
+        ("min_singleton_idty_bps",
+         "min_singleton_identity_bps",
+         "Minimal singleton compartment identity to use per subject and strand, "
+         "in base pairs. "
+         "The actual value passed to the compartmentization procedure is the least of "
+         "(min_singleton_idty * query_length) and min_singleton_identity_bps.",
+         CArgDescriptions::eInteger,
+         "9999999");
+
     argdescr->AddDefaultKey
         ("max_extent",
          "max_extent",
@@ -156,6 +166,8 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
     else {
         splign->SetMinSingletonIdentity(splign->GetMinCompartmentIdentity());
     }
+
+    splign->SetMinSingletonIdentityBps(args["min_singleton_idty_bps"].AsInteger());
 
     splign->SetMaxGenomicExtent(args["max_extent"].AsInteger());
 

@@ -1042,7 +1042,9 @@ int CSplignApp::Run()
                    eInternal,
                    "Mode not implemented");
     }
-        
+     
+    cout << "# END" << endl;
+   
     return 0;
 }
 
