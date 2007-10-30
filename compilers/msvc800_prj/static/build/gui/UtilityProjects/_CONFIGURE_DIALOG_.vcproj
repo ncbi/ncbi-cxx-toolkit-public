@@ -19,6 +19,26 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
+			Name="DebugDLL|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="ReleaseDLL|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
@@ -33,6 +53,27 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="DebugDLL|x64"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -70,7 +111,29 @@
 				RelativePath="configure_dialog._"
 				>
 				<FileConfiguration
+					Name="DebugDLL|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Configure solution : $(SolutionName)"
+                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\bin\ReleaseDLL&#xa;if exist &quot;%PREBUILT_PTB_EXE%&quot; (set PTB_EXE=%PREBUILT_PTB_EXE%) else (set PTB_EXE=%PTB_PATH%\project_tree_builder.exe)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;if not exist &quot;%PTB_EXE%&quot; (msbuild &quot;..\..\ncbi_cpp.sln&quot; /t:&quot;project_tree_builder_exe:Rebuild&quot; /p:Configuration=ReleaseDLL;Platform=$(PlatformName)) else (echo USING PREBUILT PTB at %PTB_EXE%)&#xa;if errorlevel 1 exit 1&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
+						AdditionalDependencies=""
+						Outputs="$(ProjectDir)..\..\..\bin\ReleaseDLL\project_tree_builder.exe;$(InputPath).aanofile.out"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="ReleaseDLL|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Configure solution : $(SolutionName)"
+                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\bin\ReleaseDLL&#xa;if exist &quot;%PREBUILT_PTB_EXE%&quot; (set PTB_EXE=%PREBUILT_PTB_EXE%) else (set PTB_EXE=%PTB_PATH%\project_tree_builder.exe)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;if not exist &quot;%PTB_EXE%&quot; (msbuild &quot;..\..\ncbi_cpp.sln&quot; /t:&quot;project_tree_builder_exe:Rebuild&quot; /p:Configuration=ReleaseDLL;Platform=$(PlatformName)) else (echo USING PREBUILT PTB at %PTB_EXE%)&#xa;if errorlevel 1 exit 1&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
+						AdditionalDependencies=""
+						Outputs="$(ProjectDir)..\..\..\bin\ReleaseDLL\project_tree_builder.exe;$(InputPath).aanofile.out"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
