@@ -109,7 +109,7 @@ test -f "$ptbini" || Usage "$ptbini not found"
 COMMON_Exec cd $builddir
 if test "$buildptb" = "yes"; then
 #  ptbdep="corelib util serial serial/datatool app/project_tree_builder"
-  ptbdep="corelib util app/project_tree_builder"
+  ptbdep="corelib util util/regexp app/project_tree_builder"
   for dep in $ptbdep; do
     test -d "$dep"          || Usage "$builddir/$dep not found"
     test -f "$dep/Makefile" || Usage "$builddir/$dep/Makefile not found"
