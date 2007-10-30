@@ -1203,10 +1203,9 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         }
 
         const THit::TCoord min_singleton_idty_final (
-                 min(size_t(m_MinSingletonIdty * mrna_size),
-                     m_MinSingletonIdtyBps));
+                 min(size_t(m_MinSingletonIdty * qmax), m_MinSingletonIdtyBps));
 
-        if(mcount / (1 + qmax) < min_singleton_idty_final) {
+        if(mcount < min_singleton_idty_final) {
             NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);
         }
 
