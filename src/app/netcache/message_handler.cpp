@@ -112,7 +112,7 @@ int CNetCache_MessageHandler::CheckMessage(BUF* buffer, const void *data, size_t
                 start = n + 1;
             }
         } else {
-            unsigned chunk_len = min(m_Length, size-start); 
+            unsigned chunk_len = min(m_Length, (unsigned)(size-start)); 
             BUF_Write(buffer, msg+start, chunk_len);
             m_Length -= chunk_len;
             n += chunk_len - 1;
