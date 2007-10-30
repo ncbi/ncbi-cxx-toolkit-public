@@ -300,7 +300,13 @@ bool CCyclicDepends::AnalyzeProjItemNew(
     TProjects::const_iterator p = tree.find(proj_id);
     if (p == tree.end()) {
         if (!SMakeProjectT::IsConfigurableDefine(proj_id.Id())) {
-            LOG_POST( Error << "Undefined project: " << proj_id.Id() );
+            string str_chain("Dependency chain: ");
+            ITERATE(TDependsChain, n, chain) {
+                str_chain += n->Id();
+                str_chain += " - ";
+            }
+            str_chain += proj_id.Id();
+            LOG_POST( Error << str_chain << ": Undefined project: " << proj_id.Id() );
         }
         return false;
     }
