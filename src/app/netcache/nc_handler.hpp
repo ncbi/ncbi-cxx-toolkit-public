@@ -84,8 +84,6 @@ public:
     virtual
     void ProcessRequest(string&               request,
                         const string&         auth,
-                        char*                 buffer,
-                        size_t                buf_size,
                         NetCache_RequestStat& stat,
                         NetCache_RequestInfo* info);
     virtual

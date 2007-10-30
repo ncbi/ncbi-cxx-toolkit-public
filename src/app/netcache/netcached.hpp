@@ -230,11 +230,6 @@ public:
     bool IsLog() const;
 
 private:
-    /// Returns FALSE when socket is closed or cannot be read
-    bool ReadStr(CSocket& sock, string* str);
-
-
-private:
     void x_CreateLog();
 
     /// Read the registry for icache_XXXX entries

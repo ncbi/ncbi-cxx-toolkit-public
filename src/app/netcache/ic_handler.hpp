@@ -86,16 +86,14 @@ class CICacheHandler : public CNetCache_RequestHandler
 {
 public:
     CICacheHandler(CNetCache_RequestHandlerHost* host);
-    // Transitional
 
+    // Transitional
     void ParseRequest(const string& reqstr, SIC_Request* req);
 
     /// Process ICache request
     virtual
     void ProcessRequest(string&               request,
                         const string&         auth,
-                        char*                 buffer,
-                        size_t                buf_size,
                         NetCache_RequestStat& stat,
                         NetCache_RequestInfo* info);
     virtual

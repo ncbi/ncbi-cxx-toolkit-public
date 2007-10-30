@@ -263,8 +263,6 @@ void CICacheHandler::ParseRequest(const string& reqstr, SIC_Request* req)
 
 void CICacheHandler::ProcessRequest(string&               request,
                                     const string&         auth,
-                                    char*                 buffer,
-                                    size_t                buf_size,
                                     NetCache_RequestStat& stat,
                                     NetCache_RequestInfo* info)
 {
@@ -272,8 +270,6 @@ void CICacheHandler::ProcessRequest(string&               request,
     SIC_Request req;
     ParseRequest(request, &req);
 
-    m_Buffer = buffer;
-    m_BufferSize = buf_size;
     m_Auth = &auth;
 
     ICache* ic = m_Server->GetLocalCache(req.cache_name);

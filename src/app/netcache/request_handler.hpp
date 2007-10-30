@@ -57,8 +57,6 @@ public:
     virtual
     void ProcessRequest(string&               request,
                         const string&         auth,
-                        char*                 buffer,
-                        size_t                buf_size,
                         NetCache_RequestStat& stat,
                         NetCache_RequestInfo* info) = 0;
     // Optional for transmission reader, to start reading
@@ -84,8 +82,6 @@ protected:
     CNetCache_RequestHandlerHost* m_Host;
     CNetCacheServer* m_Server;
     // Transitional - do not hold ownership
-    char*            m_Buffer;
-    size_t           m_BufferSize;
     const string*    m_Auth;
 private:
     CSocket* m_Socket;

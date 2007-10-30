@@ -277,10 +277,6 @@ void CNetCache_MessageHandler::ProcessSM(CSocket& socket, string& req)
 void CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
 {
     CSocket& socket = GetSocket();
-    unsigned buf_size = 64*1024; // TODO: server buf_size or buffer pool
-    AutoPtr<char, ArrayDeleter<char> >
-        buf(new char[buf_size + 256]);
-
     NetCache_RequestInfo info;
 
     string request;
@@ -304,7 +300,6 @@ void CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
             m_LastHandler = m_ICHandler.get();
             m_ICHandler->SetSocket(&socket);
             m_ICHandler->ProcessRequest(request, m_Auth,
-                buf.get(), buf_size,
                 m_Stat, inf);
         } else 
         if (request[0] == 'A' && request[1] == '?') { // Alive?
@@ -328,7 +323,6 @@ void CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
             m_LastHandler = m_NCHandler.get();
             m_NCHandler->SetSocket(&socket);
             m_NCHandler->ProcessRequest(request, m_Auth,
-                buf.get(), buf_size,
                 m_Stat, inf);
         }
 

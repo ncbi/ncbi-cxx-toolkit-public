@@ -429,62 +429,6 @@ void CNetCacheServer::WriteBuf(CSocket& sock,
 }
 
 
-bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
-{
-    _ASSERT(str);
-
-    str->erase();
-    char ch;
-    EIO_Status io_st;
-
-    char szBuf[1024] = {0,};
-    unsigned str_len = 0;
-    size_t n_read = 0;
-
-    for (bool flag = true; flag; ) {
-        io_st = sock.Read(szBuf, 256, &n_read, eIO_ReadPeek);
-        switch (io_st) 
-        {
-        case eIO_Success:
-            flag = false;
-            break;
-        case eIO_Timeout:
-            return false;
-            /*
-            NCBI_THROW(CNetServiceException, eTimeout, "Connection timeout");
-            */
-            break;
-        default: // invalid socket or request, bailing out
-            return false;
-        };
-    }
-
-    for (str_len = 0; str_len < n_read; ++str_len) {
-        ch = szBuf[str_len];
-        if (ch == 0)
-            break;
-        if (ch == '\n' || ch == '\r') {
-            // analyse next char for \r\n sequence
-            ++str_len;
-            ch = szBuf[str_len];
-            if (ch == '\n' || ch == '\r') {} else {--str_len;}
-            break;
-        }
-        *str += ch;
-    }
-
-    if (str_len == 0) {
-        return false;
-    }
-    io_st = sock.Read(szBuf, str_len + 1);
-    if (io_st != eIO_Success) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
-                   "Cannot read string");
-    }
-    return true;
-}
-
-
 void CNetCacheServer::SwitchLog(bool on)
 {
     if (on) {

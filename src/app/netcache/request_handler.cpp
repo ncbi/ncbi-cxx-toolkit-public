@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 
 CNetCache_RequestHandler::CNetCache_RequestHandler(
     CNetCache_RequestHandlerHost* host)
-  : m_Host(host), m_Buffer(0), m_BufferSize(0), m_Auth(0)
+  : m_Host(host), m_Auth(0)
 {
     // convenience
     m_Server = m_Host->GetServer();

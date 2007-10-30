@@ -257,8 +257,6 @@ void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
 
 void CNetCacheHandler::ProcessRequest(string&               request,
                                       const string&         auth,
-                                      char*                 buffer,
-                                      size_t                buf_size,
                                       NetCache_RequestStat& stat,
                                       NetCache_RequestInfo* info)
 {
@@ -266,8 +264,6 @@ void CNetCacheHandler::ProcessRequest(string&               request,
     SNC_Request req;
     ParseRequest(request, &req);
 
-    m_Buffer = buffer;
-    m_BufferSize = buf_size;
     m_Auth = &auth;
 
     if (info) {
