@@ -43,6 +43,7 @@
 // generated includes
 #include <objects/omssa/MSResponse_.hpp>
 #include <objects/omssa/MSModSpecSet.hpp>
+#include <objects/omssa/MSScoreSet.hpp>
 
 #include <set>
 

@@ -67,7 +67,7 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
 {
 	if(!CanGetHitsets() ) return;
 
-	os << "Spectrum number, Filename/id, Peptide, E-value, Mass, gi, Accession, Start, Stop, Defline, Mods, Charge, Theo Mass, P-value" << endl;
+	os << "Spectrum number, Filename/id, Peptide, E-value, Mass, gi, Accession, Start, Stop, Defline, Mods, Charge, Theo Mass, P-value, NIST score" << endl;
     // read out hits
     
     CMSResponse::THitsets::const_iterator iHits;
@@ -89,6 +89,13 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
             string id;
             if (HitSet->GetIds().begin() != HitSet->GetIds().end())
 				id = *(HitSet->GetIds().begin());
+            double NISTScore (0.0L);
+            if ((*iHit)->CanGetScores()) {
+                ITERATE(CMSHits::TScores, iNISTScore, (*iHit)->GetScores()) {
+                    if((*iNISTScore)->GetName() == "NIST Score")
+                        NISTScore = (*iNISTScore)->GetValue();
+                }
+            }
 
             for(iPephit = (*iHit)->GetPephits().begin(); iPephit != (*iHit)->GetPephits().end(); iPephit++) 
 			{
@@ -110,7 +117,8 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
                     CSVString((*iPephit)->GetDefline()) << "," << CSVString(ModString) <<
                     "," << (*iHit)->GetCharge() << 
                     "," <<  (*iHit)->GetTheomass()/fMZ_scale <<
-                    "," <<  (*iHit)->GetPvalue() << endl;
+                    "," <<  (*iHit)->GetPvalue() << 
+                    "," <<  NISTScore << endl;
             }
         }
     }
