@@ -625,7 +625,11 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
             size_t nullified (0);
             for(int in (hitrefs.size()), i (in - 1); i > 0; --i) {
 
-                THitRef& h1 (hitrefs[i]);
+                int j1 (i);
+                while(j1 < in && hitrefs[j1].IsNull()) ++j1;
+                if(j1 == in) continue;
+
+                THitRef& h1 (hitrefs[j1]);
                 THitRef& h2 (hitrefs[i-1]);
 
                 if(h1.IsNull()) continue;
