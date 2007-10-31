@@ -237,7 +237,6 @@ gui/utils/function.hpp
 gui/utils/gui_event.hpp
 gui/utils/id_generator.hpp
 gui/utils/ihelp_handler.hpp
-gui/utils/message_box.hpp
 gui/utils/mru_list.hpp
 gui/utils/reporter.hpp
 gui/utils/rgba_color.hpp
