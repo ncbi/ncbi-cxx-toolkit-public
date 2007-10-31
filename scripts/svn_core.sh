@@ -12,6 +12,7 @@
 
 REPOS_DEVELOPMENT='https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++'
 REPOS_PRODUCTION='https://svn.ncbi.nlm.nih.gov/repos/toolkit/production/current/c++'
+GUI_URL='https://svn.ncbi.nlm.nih.gov/repos/gbench/branches/current'
 REPOS=$REPOS_DEVELOPMENT
 
 ##  Cmd.-line args
@@ -272,11 +273,6 @@ if test "$with_ctools" != "no" ; then
         include/ctools
 fi
 
-if test "$with_gui" != "no" ; then
-    RecursiveCheckout src/gui \
-        include/gui
-fi
-
 if test "$export" = "yes" ; then
     for dir in $non_recursive_dirs
     do
@@ -286,6 +282,8 @@ if test "$export" = "yes" ; then
     do
         $svn_cmd export -r "$revision" $REPOS/$dir $dir
     done
+
+    cmd_for_externals='export'
 else
     dirs=''
     for dir in $non_recursive_dirs
@@ -293,8 +291,14 @@ else
         dirs="$dirs $dir/"
     done
     $script_dir/svn_up.pl $dirs $recursive_dirs
+
+    cmd_for_externals='co'
 fi
 
+if test "$with_gui" != "no" ; then
+    $svn_cmd $cmd_for_externals $GUI_URL/include/gui include/gui
+    $svn_cmd $cmd_for_externals $GUI_URL/src/gui src/gui
+fi
 
 ## Generate serialization code from ASN.1 specs
 if test "$with_objects" = "yes" ; then
