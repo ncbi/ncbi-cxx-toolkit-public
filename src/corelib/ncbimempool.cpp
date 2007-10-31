@@ -37,6 +37,7 @@
 #include <corelib/ncbimempool.hpp>
 #include <corelib/error_codes.hpp>
 
+//#define DEBUG_MEMORY_POOL
 
 #define NCBI_USE_ERRCODE_X   Corelib_Object
 
@@ -52,11 +53,13 @@ static const size_t kMinThresholdRatio = 2;
 static const size_t kMinThreshold = 4;
 
 #if defined(_DEBUG) && defined (DEBUG_MEMORY_POOL)
+namespace {
+
 static CAtomicCounter sx_chunks_counter;
 static CAtomicCounter::TValue sx_max_counter;
-static struct Printer
+static struct SPrinter
 {
-    ~Printer()
+    ~SPrinter()
         {
             if ( sx_max_counter ) {
                 ERR_POST_X(9, "Max memory chunks: " << sx_max_counter);
@@ -77,6 +80,8 @@ inline
 void DeregisterMemoryChunk(size_t /*size*/)
 {
     sx_chunks_counter.Add(-1);
+}
+
 }
 #else
 # define RegisterMemoryChunk(size)
@@ -155,7 +160,7 @@ public:
 
 private:
     void* m_CurPtr;
-    void* m_EndPtr;
+    char* m_EndPtr;
     char m_Memory[1];
 
 private:
