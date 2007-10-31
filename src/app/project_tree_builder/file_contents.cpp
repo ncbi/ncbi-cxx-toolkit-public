@@ -89,7 +89,7 @@ void CSimpleMakeFileContents::Clear(void)
 {
     m_Contents.clear();
     m_Type = eMakeType_Undefined;
-    m_Filename.clear();
+    m_Filename.erase();
 }
 
 
