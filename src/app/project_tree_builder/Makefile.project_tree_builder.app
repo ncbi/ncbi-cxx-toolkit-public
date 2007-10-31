@@ -31,3 +31,5 @@ DATATOOL_SRC = msvc71_project
 
 
 LIB = xutil xncbi xregexp $(PCRE_LIB)
+
+LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
