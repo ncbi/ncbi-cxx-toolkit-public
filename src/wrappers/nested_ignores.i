@@ -30,6 +30,9 @@
  */
 
 
+%ignore *::CDiagContext_CExtraArgs::Print;
+%ignore *::CDiagContext_CExtraArgs(const CExtraArgs&);
+
 %ignore *::CSplign_SAlignedCompartment::m_Score;
 %ignore *::CSplign_SAlignedCompartment::m_Segments;
 
