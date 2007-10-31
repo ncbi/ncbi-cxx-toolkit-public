@@ -103,6 +103,7 @@ public:
     string XmlTagName(void) const;
     const string& GlobalName(void) const; // name of type or empty
     bool Skipped(void) const;
+    string DefClassMemberName(void) const;
     string ClassName(void) const;
     string FileName(void) const;
     const CNamespace& Namespace(void) const;

@@ -246,9 +246,13 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
         code->SetObject(true);
         ITERATE ( TMembers, i, GetMembers() ) {
             AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
+            string member_name = (*i)->GetType()->DefClassMemberName();
+            if (member_name.empty()) {
+                member_name = (*i)->GetName();
+            }
             bool delayed = GetBoolVar((*i)->GetName()+"._delay");
             bool in_union = GetBoolVar((*i)->GetName()+"._in_union", true);
-            code->AddVariant((*i)->GetName(), varType, delayed, in_union,
+            code->AddVariant(member_name, varType, delayed, in_union,
                              (*i)->GetType()->GetTag(),
                              (*i)->NoPrefix(), (*i)->Attlist(), (*i)->Notag(),
                              (*i)->SimpleType(),(*i)->GetType(),

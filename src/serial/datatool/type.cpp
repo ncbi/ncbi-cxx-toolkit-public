@@ -460,6 +460,24 @@ bool CDataType::Skipped(void) const
     return GetVar("_class") == "-";
 }
 
+string CDataType::DefClassMemberName(void) const
+{
+    string cls;
+    // only for local types
+    if ( GetParentType() ) {
+        cls = GetVar("_class");
+        if ( !cls.empty() ) {
+            if (cls[0] == 'C') {
+                cls.erase(0,1);
+            }
+            if (cls[0]=='_') {
+                cls.erase(0,1);
+            }
+        }
+    }
+    return cls;
+}
+
 string CDataType::ClassName(void) const
 {
     const string& cls = GetVar("_class");

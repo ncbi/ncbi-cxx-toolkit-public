@@ -596,7 +596,11 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
 
         bool delayed = GetBoolVar((*i)->GetName()+"._delay");
         AutoPtr<CTypeStrings> memberType = (*i)->GetType()->GetFullCType();
-        code->AddMember((*i)->GetName(), memberType,
+        string member_name = (*i)->GetType()->DefClassMemberName();
+        if (member_name.empty()) {
+            member_name = (*i)->GetName();
+        }
+        code->AddMember(member_name, memberType,
                         (*i)->GetType()->GetVar("_pointer"),
                         optional, defaultCode, delayed,
                         (*i)->GetType()->GetTag(),
