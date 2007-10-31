@@ -293,7 +293,12 @@ const string CDataType::GetVar(const string& varName) const
         return GetModule()->GetVar(m_MemberName, varName);
     }
     else {
-        string s = parent->GetVar(m_MemberName + '.' + varName);
+        string s;
+        if (IsUniSeq() && m_MemberName == parent->GetMemberName()) {
+            s = parent->GetVar(varName);
+        } else {
+            s = parent->GetVar(m_MemberName + '.' + varName);
+        }
         if (!s.empty()) {
             return s;
         }

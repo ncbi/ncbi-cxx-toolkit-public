@@ -351,8 +351,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     const CDataMemberContainerType* elem =
                         dynamic_cast<const CDataMemberContainerType*>(mem->GetElementType());
                     if (elem != 0 && NStr::StartsWith(elem->GetMemberName(),"E_")) {
+                        string name;
+                        if (elem->GetTypeStr()) {
+                            name = elem->GetTypeStr()->GetClassNameDT();
+                        } else {
+                            name = "C_" + elem->GetMemberName();
+                        }
                         code.ClassPublic() <<
-                            "    typedef C_"<< elem->GetMemberName() <<" "<< "C_E;\n";
+                            "    typedef "<< name <<" "<< "C_E;\n";
                         ce_defined = true;
                     }
                 }
