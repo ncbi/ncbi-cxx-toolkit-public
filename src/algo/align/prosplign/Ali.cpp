@@ -54,13 +54,15 @@ CAli::CAli(CNSeq& nseq, CPSeq& pseq)
 
 //CPosAli::CPosAli(const CAli& ali, const string& nuc, const string& prot) : CAli(ali), m_protid(prot), m_nucid(nuc)
 CPosAli::CPosAli(const CAli& ali, const CSeq_id& protein, const CSeq_loc& genomic, const CProSplignOutputOptions& output_options, const CSubstMatrix& matrix) : 
-    CAli(ali), m_genomic(genomic), m_protein(protein), m_output_options(output_options)
+    CAli(ali), m_genomic(genomic), m_protein(protein), m_output_options(output_options), m_has_stop_on_nuc(false)
 {
     m_IsFull = m_output_options.IsPassThrough();
     CInfo info(ali,m_output_options);
     info.InitAlign(matrix);
     info.Cut();
     AddPostProcInfo(info.m_AliPiece);
+
+    SetHasStopOnNuc(info);
 }
 
 bool CAli::HasStartOnNuc(void) const
@@ -84,25 +86,27 @@ bool CAli::HasStartOnNuc(void) const
     return true;
 }
 
-bool CAli::HasStopOnNuc(void) const
-{ 
-    vector<CAliPiece>::const_iterator pit = m_ps.end();
-    int nulpos = cnseq->size();
-    while(pit != m_ps.begin()) {
-        --pit;
-        if(pit->m_type == eMP || pit->m_type == eVP) break;
-        nulpos -= pit->m_len;
-    }
-    if(pit->m_type != eMP && pit->m_type != eVP) return false;
-    if(!cnseq->ValidPos(nulpos) || !cnseq->ValidPos(nulpos+2)) return false;
+bool CPosAli::HasStopOnNuc() const
+{
+    return m_has_stop_on_nuc;
+}
+void CPosAli::SetHasStopOnNuc(const CInfo& info)
+{
+    m_has_stop_on_nuc = false;
+
+    if (info.m_AliPiece.empty())
+        return;
+
+    int nulpos = info.NextNucNullBased(m_pcs.back().end-1);
+    if(!cnseq->ValidPos(nulpos) || !cnseq->ValidPos(nulpos+2)) return;
+
     char stop[] = "---";
     stop[0] = cnseq->Upper(nulpos);
     ++nulpos;
     stop[1] = cnseq->Upper(nulpos);
     ++nulpos;
     stop[2] = cnseq->Upper(nulpos);
-    if(!strcmp(stop, "TGA") || !strcmp(stop, "TAG") || !strcmp(stop, "TAA")) return true;
-    return false;
+    m_has_stop_on_nuc = (!strcmp(stop, "TGA") || !strcmp(stop, "TAG") || !strcmp(stop, "TAA"));
 }
     
 

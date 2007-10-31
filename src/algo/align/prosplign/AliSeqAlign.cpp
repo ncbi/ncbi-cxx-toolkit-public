@@ -306,21 +306,23 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(void) const
             exon->SetPartial(nultripos < int(m_ali.cpseq->seq.size())*3);
             sps.SetExons().push_back(exon);
         }
+
+        if (!sps.SetExons().empty()) {
+            //start, stop
+            if(sps.SetExons().front()->GetProduct_start().GetProtpos().GetAmin()==0 && sps.SetExons().front()->GetProduct_start().GetProtpos().GetFrame()==1 && m_ali.HasStartOnNuc() && m_ali.cpseq->HasStart()) {
+                CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
+                modi->SetStart_codon_found(true);
+                sps.SetModifiers().push_back(modi);
+            }
+            if(sps.SetExons().back()->GetProduct_end().GetProtpos().GetFrame()==3 && m_ali.HasStopOnNuc()) {
+                CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
+                modi->SetStop_codon_found(true);
+                sps.SetModifiers().push_back(modi);
+            }
+        }
     }
-    
     sps.SetProduct_type(CSpliced_seg::eProduct_type_protein);
     sps.SetProduct_length(m_ali.cpseq->seq.size());
-    //start, stop
-    if(m_ali.HasStartOnNuc() && m_ali.cpseq->HasStart()) {
-        CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
-        modi->SetStart_codon_found(true);
-        sps.SetModifiers().push_back(modi);
-    }
-    if(m_ali.HasStopOnNuc()) {
-        CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
-        modi->SetStop_codon_found(true);
-        sps.SetModifiers().push_back(modi);
-    }
 
     return topl;
 }
