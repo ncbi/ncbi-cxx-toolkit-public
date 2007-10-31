@@ -44,7 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
-enum { s_WriterBufferSize = 1024 * 1024 };
+static const unsigned int kWriterBufferSize = 1024 * 1024;
 
 
 /// Add BLOB key specific where condition
@@ -181,7 +181,7 @@ public:
                         const string&            key,
                         int                      version,
                         const string&            subkey,
-                        unsigned                 buf_size = s_WriterBufferSize)
+                        unsigned                 buf_size = kWriterBufferSize)
     : m_GoodStateFlag(true),
       m_Conn(conn),
       m_Key(key),
@@ -313,7 +313,7 @@ public:
                       const string&            key,
                       int                      version,
                       const string&            subkey,
-                      unsigned int             buffer_size = s_WriterBufferSize)
+                      unsigned int             buffer_size = kWriterBufferSize)
     : m_Cache(cache),
       m_TmpFile(0),
       m_GoodStateFlag(true),
@@ -572,7 +572,7 @@ CDBAPI_Cache::CDBAPI_Cache()
   m_OwnConnection(false),
   m_Timeout(0),
   m_MaxTimeout(0),
-  m_MemBufferSize(s_WriterBufferSize)
+  m_MemBufferSize(kWriterBufferSize)
 {
 }
 
