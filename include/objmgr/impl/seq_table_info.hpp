@@ -36,6 +36,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqtable/SeqTable_column.hpp>
 #include <objects/seqtable/SeqTable_column_info.hpp>
 #include <util/range.hpp>
 #include <vector>
@@ -45,8 +46,6 @@ BEGIN_SCOPE(objects)
 
 class CDataSource;
 class CSeq_table;
-class CSeqTable_column;
-class CSeqTable_column_info;
 class CSeq_loc;
 class CSeq_interval;
 class CSeq_point;
