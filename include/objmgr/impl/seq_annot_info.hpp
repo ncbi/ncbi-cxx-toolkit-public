@@ -57,7 +57,7 @@ class CAnnotObject_Info;
 struct SAnnotObject_Key;
 class CTSEAnnotObjectMapper;
 class CSeq_annot_SNP_Info;
-class CSeq_annot_Table_Info;
+class CSeqTableInfo;
 class CFeat_id;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
@@ -213,7 +213,7 @@ protected:
     CRef<CSeq_annot_SNP_Info> m_SNP_Info;
 
     // Feature table info
-    CRef<CSeq_annot_Table_Info> m_Table_Info;
+    CRef<CSeqTableInfo> m_Table_Info;
 
 private:
     CSeq_annot_Info(const CSeq_annot_Info&);
