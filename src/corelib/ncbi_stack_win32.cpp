@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidll.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>
 
 #include <windows.h>
@@ -414,7 +415,7 @@ void CSymbolGuard::UpdateSymbols(void)
 }
 
 
-static CSymbolGuard s_SymbolGuard;
+static CSafeStaticPtr<CSymbolGuard> s_SymbolGuard;
 
 
 class CStackTraceImpl
@@ -509,7 +510,7 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
         return;
     }
 
-    s_SymbolGuard.UpdateSymbols();
+    s_SymbolGuard->UpdateSymbols();
 
     HANDLE curr_proc = GetCurrentProcess();
 

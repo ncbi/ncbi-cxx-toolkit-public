@@ -119,8 +119,8 @@ static size_t s_TraceCollectionSize = 0;
 
 TTraceCollection& GetTraceCollection(void)
 {
-    static TTraceCollection s_TraceCollection;
-    return s_TraceCollection;
+    static CSafeStaticPtr<TTraceCollection> s_TraceCollection;
+    return s_TraceCollection.Get();
 }
 
 
@@ -176,8 +176,8 @@ void CollectTraceMessage(const SDiagMessage& mess)
 ///////////////////////////////////////////////////////
 //  Static variables for Trace and Post filters
 
-static CDiagFilter s_TraceFilter;
-static CDiagFilter s_PostFilter;
+static CSafeStaticPtr<CDiagFilter> s_TraceFilter;
+static CSafeStaticPtr<CDiagFilter> s_PostFilter;
 
 
 // Analogue to strstr.
@@ -3506,10 +3506,10 @@ extern void SetDiagFilter(EDiagFilter what, const char* filter_str)
 {
     CMutexGuard LOCK(s_DiagMutex);
     if (what == eDiagFilter_Trace  ||  what == eDiagFilter_All) 
-        s_TraceFilter.Fill(filter_str);
+        s_TraceFilter->Fill(filter_str);
 
     if (what == eDiagFilter_Post  ||  what == eDiagFilter_All) 
-        s_PostFilter.Fill(filter_str);
+        s_PostFilter->Fill(filter_str);
 }
 
 
@@ -3523,16 +3523,16 @@ bool s_CheckDiagFilter(const CException& ex, EDiagSev sev, const char* file)
 
     // check for trace filter
     if (sev == eDiag_Trace) {
-        EDiagFilterAction action = s_TraceFilter.CheckFile(file);
+        EDiagFilterAction action = s_TraceFilter->CheckFile(file);
         if(action == eDiagFilter_None)
-            return s_TraceFilter.Check(ex, sev) == eDiagFilter_Accept;
+            return s_TraceFilter->Check(ex, sev) == eDiagFilter_Accept;
         return action == eDiagFilter_Accept;
     }
 
     // check for post filter
-    EDiagFilterAction action = s_PostFilter.CheckFile(file);
+    EDiagFilterAction action = s_PostFilter->CheckFile(file);
     if (action == eDiagFilter_None) {
-        action = s_PostFilter.Check(ex, sev);
+        action = s_PostFilter->Check(ex, sev);
     }
 
     return (action == eDiagFilter_Accept);
@@ -3623,13 +3623,13 @@ bool CNcbiDiag::CheckFilters(void) const
     CMutexGuard LOCK(s_DiagMutex);
     if (GetSeverity() == eDiag_Trace) {
         // check for trace filter
-        return 
-         s_TraceFilter.Check(*this, this->GetSeverity()) != eDiagFilter_Reject;
+        return  s_TraceFilter->Check(*this, this->GetSeverity())
+                != eDiagFilter_Reject;
     }
     
     // check for post filter and severity
-    return 
-        s_PostFilter.Check(*this, this->GetSeverity()) != eDiagFilter_Reject;
+    return  s_PostFilter->Check(*this, this->GetSeverity())
+            != eDiagFilter_Reject;
 }
 
 

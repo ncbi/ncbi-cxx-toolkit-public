@@ -49,10 +49,10 @@
 BEGIN_NCBI_SCOPE
 
 
-static const string kSubNode           = ".SubNode";
-static const string kSubSection        = ".SubSection";
-static const string kNodeName          = ".NodeName";
-static const string kIncludeSections   = ".Include";
+static const char* kSubNode           = ".SubNode";
+static const char* kSubSection        = ".SubSection";
+static const char* kNodeName          = ".NodeName";
+static const char* kIncludeSections   = ".Include";
 
 
 static
@@ -66,13 +66,11 @@ void s_List2Set(const list<string>& src, set<string>* dst)
 
 bool s_IsSubNode(const string& str)
 {
-    const string* aliases[] = { &kSubNode, &kSubSection };
-
-    for (unsigned int i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
-        const string& element_name = *aliases[i];
-        if (NStr::CompareNocase(element_name, str) == 0) {
-            return true;
-        }
+    if (NStr::CompareNocase(kSubNode, str) == 0) {
+        return true;
+    }
+    if (NStr::CompareNocase(kSubSection, str) == 0) {
+        return true;
     }
     return false;
 }

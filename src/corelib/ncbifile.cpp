@@ -4434,8 +4434,7 @@ void FindFiles(const string& pattern,
                list<string>& result,
                TFindFiles flags)
 {
-    static string kDirSep(1, CDirEntry::GetPathSeparator());
-
+    string kDirSep(1, CDirEntry::GetPathSeparator());
     string abs_path = CDirEntry::CreateAbsolutePath(pattern);
     string search_path = kDirSep;
 
@@ -4448,7 +4447,7 @@ void FindFiles(const string& pattern,
 #if defined(DISK_SEPARATOR)
     // Network paths on Windows start with double back-slash and
     // need special processing.
-    static string kNetSep(2, CDirEntry::GetPathSeparator());
+    string kNetSep(2, CDirEntry::GetPathSeparator());
     bool is_network = pattern.find(kNetSep) == 0;
     if ( is_network ) {
         search_path = kNetSep + parts.front() + kDirSep;

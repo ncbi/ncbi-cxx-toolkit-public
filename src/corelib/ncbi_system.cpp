@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>
 
 
@@ -118,7 +119,7 @@ extern "C" {
 DEFINE_STATIC_FAST_MUTEX(s_ExitHandler_Mutex);
 static bool                  s_ExitHandlerIsSet  = false;
 static ELimitsExitCode       s_ExitCode          = eLEC_None;
-static CTime                 s_TimeSet;
+static CSafeStaticPtr<CTime> s_TimeSet;
 static size_t                s_HeapLimit         = 0;
 static size_t                s_CpuTimeLimit      = 0;
 static char*                 s_ReserveMemory     = 0;
@@ -160,7 +161,7 @@ static void s_ExitHandler(void)
             return;
         }
         // Call user's print handler
-        (*s_PrintHandler)(s_ExitCode, limit_size, s_TimeSet, 
+        (*s_PrintHandler)(s_ExitCode, limit_size, s_TimeSet.Get(), 
                           s_PrintHandlerParam);
         return;
     }
@@ -209,9 +210,9 @@ static void s_ExitHandler(void)
     // Write program's time
     CTime ct(CTime::eCurrent);
     CTime et(2000, 1, 1);
-    et.AddSecond((int) (ct.GetTimeT() - s_TimeSet.GetTimeT()));
+    et.AddSecond((int) (ct.GetTimeT() - s_TimeSet->GetTimeT()));
     LOG_POST_X(7, "Program's time: " << Endm <<
-                  "\tstart limit - " << s_TimeSet.AsString() << Endm <<
+                  "\tstart limit - " << s_TimeSet->AsString() << Endm <<
                   "\ttermination - " << ct.AsString() << Endm);
     et.SetFormat("h:m:s");
     LOG_POST_X(8, "\texecution   - " << et.AsString());
@@ -231,7 +232,7 @@ static bool s_SetExitHandler(TLimitsPrintHandler handler,
             return false;
         }
         s_ExitHandlerIsSet = true;
-        s_TimeSet.SetCurrent();
+        s_TimeSet->SetCurrent();
 
         // Store print handler and parameter
         s_PrintHandler = handler;

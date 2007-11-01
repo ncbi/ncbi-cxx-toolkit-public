@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <corelib/obj_store.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #define NCBI_USE_ERRCODE_X   Corelib_PluginMgr
 
@@ -52,8 +53,8 @@ typedef CReverseObjectStore<TObjectStoreKey, TObjectStoreObject> TObjectStore;
 
 static TObjectStore& GetObjStore(void)
 {
-    static TObjectStore s_obj_store;
-    return s_obj_store;
+    static CSafeStaticPtr<TObjectStore> s_obj_store;
+    return s_obj_store.Get();
 }
 
 

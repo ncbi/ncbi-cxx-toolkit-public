@@ -54,7 +54,6 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
 //  Include the private header
 //
 
@@ -64,14 +63,12 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
 //  Constants
 //
 
-static const string s_AutoHelp("h");
-static const string s_AutoHelpFull("help");
-static const string s_ExtraName("....");
-
+static const char* s_AutoHelp     = "h";
+static const char* s_AutoHelpFull = "help";
+static const char* s_ExtraName    = "....";
 
 
 
@@ -85,7 +82,6 @@ string s_ArgExptMsg(const string& name, const string& what, const string& attr)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 //  CArg_***::   classes representing various types of argument value
 //
@@ -119,11 +115,13 @@ CArgValue::~CArgValue(void)
     return;
 }
 
+
 const CArgValue::TStringArray& CArgValue::GetStringList() const
 {
     NCBI_THROW(CArgException, eInvalidArg,
         "Value lists not implemented for this argument: " + m_Name);
 }
+
 
 CArgValue::TStringArray& CArgValue::SetStringList()
 {
@@ -131,11 +129,10 @@ CArgValue::TStringArray& CArgValue::SetStringList()
         "Value lists not implemented for this argument: " + m_Name);
 }
 
-///////////////////////////////////////////////////////
+
 //  Overload the comparison operator -- to handle "CRef<CArgValue>" elements
 //  in "CArgs::m_Args" stored as "set< CRef<CArgValue> >"
 //
-
 inline bool operator< (const CRef<CArgValue>& x, const CRef<CArgValue>& y)
 {
     return x->GetName() < y->GetName();
@@ -198,10 +195,12 @@ const string& CArg_String::AsString(void) const
     return m_StringList[0];
 }
 
+
 const CArgValue::TStringArray& CArg_String::GetStringList() const
 {
     return m_StringList;
 }
+
 
 CArgValue::TStringArray& CArg_String::SetStringList()
 {
@@ -486,8 +485,6 @@ void CArg_OutputFile::CloseFile(void) const
 
 
 
-
-/////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 //  CArgDesc***::   abstract base classes for argument descriptions
 //
@@ -555,12 +552,9 @@ string CArgDesc::GetUsageConstraint(void) const
 }
 
 
-
-///////////////////////////////////////////////////////
 //  Overload the comparison operator -- to handle "AutoPtr<CArgDesc>" elements
 //  in "CArgs::m_Args" stored as "set< AutoPtr<CArgDesc> >"
 //
-
 inline bool operator< (const AutoPtr<CArgDesc>& x, const AutoPtr<CArgDesc>& y)
 {
     return x->GetName() < y->GetName();
@@ -602,7 +596,8 @@ CArgDescMandatory::CArgDescMandatory(const string&            name,
     NCBI_THROW(CArgException, eArgType,
                s_ArgExptMsg(GetName(),
                             "Argument type/flags mismatch",
-                            "(type=" + CArgDescriptions::GetTypeName(type) +
+                            string("(type=") +
+                            CArgDescriptions::GetTypeName(type) +
                             ", flags=" + NStr::UIntToString(flags) + ")"));
 }
 
@@ -727,6 +722,7 @@ const CArgAllow* CArgDescMandatory::GetConstraint(void) const
     return m_Constraint;
 }
 
+
 bool CArgDescMandatory::IsConstraintInverted() const
 {
     return m_NegateConstraint == CArgDescriptions::eConstraintInvert;
@@ -803,7 +799,6 @@ void CArgDescDefault::VerifyDefault(void) const
 }
 
 
-
 ///////////////////////////////////////////////////////
 //  CArgDescSynopsis::
 
@@ -822,8 +817,6 @@ CArgDescSynopsis::CArgDescSynopsis(const string& synopsis)
 
 
 
-
-/////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 //  CArgDesc_***::   classes for argument descriptions
 //    CArgDesc_Flag    : CArgDesc
@@ -836,7 +829,6 @@ CArgDescSynopsis::CArgDescSynopsis(const string& synopsis)
 //    CArgDesc_PosOpt  : CArgDesc_Pos, virtual CArgDescOptional
 //    CArgDesc_PosDef  : CArgDesc_Pos, CArgDescDefault
 //
-
 
 
 ///////////////////////////////////////////////////////
@@ -1119,7 +1111,7 @@ CArgValue* CArgDesc_Alias::ProcessDefault(void) const
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
+
 /////////////////////////////////////////////////////////////////////////////
 //  Aux.functions to figure out various arg. features
 //
@@ -1159,7 +1151,6 @@ inline bool s_IsAlias(const CArgDesc& arg)
 
 
 
-/////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 //  CArgs::
 //
@@ -1362,7 +1353,6 @@ CArgValue* CArgErrorHandler::HandleError(const CArgDesc& arg_desc,
 
 
 ///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
 //  CArgDescriptions::
 //
 
@@ -1439,9 +1429,9 @@ void CArgDescriptions::SetArgsType(EArgSetType args_type)
 }
 
 
-const string& CArgDescriptions::GetTypeName(EType type)
+const char* CArgDescriptions::GetTypeName(EType type)
 {
-    static const string s_TypeName[k_EType_Size] = {
+    static const char* s_TypeName[k_EType_Size] = {
         "String",
         "Boolean",
         "Int8r",
@@ -1454,7 +1444,7 @@ const string& CArgDescriptions::GetTypeName(EType type)
     if (type == k_EType_Size) {
         _TROUBLE;
         NCBI_THROW(CArgException, eArgType,
-            "Invalid argument type: k_EType_Size");
+                   "Invalid argument type: k_EType_Size");
     }
     return s_TypeName[(int) type];
 }
@@ -1849,12 +1839,11 @@ void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
     }
 }
 
+
 // (return TRUE if "arg2" was used)
-bool CArgDescriptions::x_CreateArg
-(const string& arg1,
- bool have_arg2, const string& arg2,
- unsigned* n_plain, CArgs& args)
-    const
+bool CArgDescriptions::x_CreateArg(const string& arg1,
+                                   bool have_arg2, const string& arg2,
+                                   unsigned* n_plain, CArgs& args) const
 {
     // Argument name
     string name;
@@ -1912,6 +1901,7 @@ bool CArgDescriptions::x_CreateArg
     // Success (also indicate whether one or two "raw" args have been used)
     return arg2_used;
 }
+
 
 bool CArgDescriptions::x_CreateArg(const string& arg1,
                                    const string& name, 
@@ -2054,6 +2044,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     return arg2_used;
 }
 
+
 bool CArgDescriptions::x_IsMultiArg(const string& name) const
 {
     TArgsCI it = x_Find(name);
@@ -2069,6 +2060,7 @@ bool CArgDescriptions::x_IsMultiArg(const string& name) const
     }
     return (adm->GetFlags() & CArgDescriptions::fAllowMultiple) != 0;
 }
+
 
 void CArgDescriptions::x_PostCheck(CArgs&           args,
                                    unsigned int     n_plain,
@@ -2413,8 +2405,8 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
             } else if (dynamic_cast<const CArgDesc_Key*> (arg)) {
                 args.insert(it_keys, arg);
             } else if (dynamic_cast<const CArgDesc_Flag*> (arg)) {
-                if (s_AutoHelp.compare(arg->GetName()) == 0 ||
-                    s_AutoHelpFull.compare(arg->GetName()) == 0)
+                if (strcmp(s_AutoHelp,     (arg->GetName()).c_str()) == 0  ||
+                    strcmp(s_AutoHelpFull, (arg->GetName()).c_str()) == 0)
                     args.push_front(arg);
                 else
                     args.insert(it_flags, arg);

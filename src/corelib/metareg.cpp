@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 
 
-CSafeStaticPtr<CMetaRegistry> s_Instance;
+static CSafeStaticPtr<CMetaRegistry> s_Instance;
 
 
 bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)

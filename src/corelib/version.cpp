@@ -36,6 +36,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 const CVersionInfo CVersionInfo::kAny(0, 0, 0);
 const CVersionInfo CVersionInfo::kLatest(-1, -1, -1);
 

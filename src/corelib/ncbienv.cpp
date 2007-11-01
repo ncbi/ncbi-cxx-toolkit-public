@@ -35,6 +35,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>
 #include <algorithm>
 
@@ -252,8 +253,9 @@ const string& CNcbiArguments::GetProgramName(EFollowLinks follow_links) const
     } else if ( m_Args.size() ) {
         return m_Args[0];
     } else {
-        static const string kDefProgramName("ncbi");
-        return kDefProgramName;
+        static CSafeStaticPtr<string> kDefProgramName;
+        kDefProgramName->assign("ncbi");
+        return kDefProgramName.Get();
     }
 }
 

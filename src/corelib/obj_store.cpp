@@ -32,11 +32,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/obj_store.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
 
-SSystemFastMutex&
-CObjectStoreProtectedBase::GetMutex(void)
+SSystemFastMutex& CObjectStoreProtectedBase::GetMutex(void)
 {
     DEFINE_STATIC_FAST_MUTEX(lock);
 

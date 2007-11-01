@@ -458,8 +458,8 @@ public:
         k_EType_Size ///< For internal use only
     };
 
-    /// Get argument type's name string.
-    static const string& GetTypeName(EType type);
+    /// Get argument type's name.
+    static const char* GetTypeName(EType type);
 
     /// Additional flags, the first group is file related flags.
     ///
