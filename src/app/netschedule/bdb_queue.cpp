@@ -173,8 +173,9 @@ void CQueueIterator::operator++()
 
 /////////////////////////////////////////////////////////////////////////////
 // CQueueDataBase implementation
-CQueueDataBase::CQueueDataBase()
-: m_Env(0),
+CQueueDataBase::CQueueDataBase(CBackgroundHost& host)
+: m_Host(host),
+  m_Env(0),
   m_QueueCollection(*this),
   m_StopPurge(false),
   m_FreeStatusMemCnt(0),
@@ -777,7 +778,7 @@ void CQueueDataBase::RunPurgeThread(void)
 {
     LOG_POST(Info << "Starting guard and cleaning thread...");
     m_PurgeThread.Reset(
-        new CJobQueueCleanerThread(*this, 1));
+        new CJobQueueCleanerThread(m_Host, *this, 1));
     m_PurgeThread->Run();
     LOG_POST(Info << "Started.");
 }
@@ -790,6 +791,7 @@ void CQueueDataBase::StopPurgeThread(void)
         StopPurge();
         m_PurgeThread->RequestStop();
         m_PurgeThread->Join();
+        m_PurgeThread.Reset(0);
         LOG_POST(Info << "Stopped.");
     }
 }
@@ -813,6 +815,7 @@ void CQueueDataBase::StopNotifThread(void)
         LOG_POST(Info << "Stopping notification thread...");
         m_NotifThread->RequestStop();
         m_NotifThread->Join();
+        m_NotifThread.Reset(0);
         LOG_POST(Info << "Stopped.");
     }
 }
@@ -821,7 +824,7 @@ void CQueueDataBase::RunExecutionWatcherThread(unsigned run_delay)
 {
     LOG_POST(Info << "Starting execution watcher thread...");
     m_ExeWatchThread.Reset(
-        new CJobQueueExecutionWatcherThread(*this, run_delay));
+        new CJobQueueExecutionWatcherThread(m_Host, *this, run_delay));
     m_ExeWatchThread->Run();
     LOG_POST(Info << "Started.");
 }
@@ -832,6 +835,7 @@ void CQueueDataBase::StopExecutionWatcherThread(void)
         LOG_POST(Info << "Stopping execution watch thread...");
         m_ExeWatchThread->RequestStop();
         m_ExeWatchThread->Join();
+        m_ExeWatchThread.Reset(0);
         LOG_POST(Info << "Stopped.");
     }
 }

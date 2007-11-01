@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description: Queue cleaning thread.
  *                   
@@ -45,20 +45,34 @@ class CQueueDataBase;
 
 void CJobQueueCleanerThread::DoJob(void)
 {
+    if (!m_Host.ShouldRun()) return;
     try {
         m_QueueDB.Purge();
+#ifdef _DEBUG
+    if (m_DbgTriggerDBRecover)
+        BDB_ERRNO_THROW(DB_RUNRECOVERY, "Test of error processing");
+#endif
     } 
     catch (CBDB_ErrnoException& ex)
     {
         if (ex.IsNoMem()) {
-            ERR_POST(Error << 
+            ERR_POST(Warning << 
                 "BDB reported resource shortage in cleaning thread. Ignored.");
+            return;
+        }
+
+        if (ex.IsDeadLock()) {
+            ERR_POST(Warning << 
+                "BDB reported deadlock in cleaning thread. Ignored.");
             return;
         }
 
         int err_no = ex.BDB_GetErrno();
         if (err_no == DB_RUNRECOVERY) {
-            ERR_POST("Fatal Berkeley DB error: DB_RUNRECOVERY");
+            string msg("Fatal BerkeleyDB error: DB_RUNRECOVERY. ");
+            msg += ex.what();
+            ERR_POST(msg);
+            m_Host.ReportError(CBackgroundHost::eFatal, msg);
         } else {
             ERR_POST(Error << "BDB Error when cleaning job queue: " 
                            << ex.what()
@@ -74,10 +88,6 @@ void CJobQueueCleanerThread::DoJob(void)
                         << " cleaning thread has been stopped.");
         RequestStop();
     }
-    catch (...)
-    {
-        throw;
-    }
 }
 
 
@@ -88,9 +98,24 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
     } 
     catch (CBDB_ErrnoException& ex)
     {
+        if (ex.IsNoMem()) {
+            ERR_POST(Warning << 
+                "BDB reported resource shortage in exe watch thread. Ignored.");
+            return;
+        }
+
+        if (ex.IsDeadLock()) {
+            ERR_POST(Warning << 
+                "BDB reported deadlock in exe watch thread. Ignored.");
+            return;
+        }
+
         int err_no = ex.BDB_GetErrno();
         if (err_no == DB_RUNRECOVERY) {
-            ERR_POST("Fatal Berkeley DB error: DB_RUNRECOVERY");
+            string msg("Fatal BerkeleyDB error: DB_RUNRECOVERY. ");
+            msg += ex.what();
+            ERR_POST(msg);
+            m_Host.ReportError(CBackgroundHost::eFatal, msg);
         } else {
             ERR_POST(Error << "BDB Error in execution watcher thread: " 
                            << ex.what()

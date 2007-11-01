@@ -1,5 +1,5 @@
-#ifndef NS_QUEUE_CLEAN_THREAD__HPP
-#define NS_QUEUE_CLEAN_THREAD__HPP
+#ifndef NETSCHEDULE_QUEUE_CLEAN_THREAD__HPP
+#define NETSCHEDULE_QUEUE_CLEAN_THREAD__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,13 +26,14 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description: Queue cleaning thread.
  *                   
  *
  */
 
+#include "background_host.hpp"
 #include <util/thread_nonstop.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -45,10 +46,15 @@ class CQueueDataBase;
 class CJobQueueCleanerThread : public CThreadNonStop
 {
 public:
-    CJobQueueCleanerThread(CQueueDataBase& qdb,
+    CJobQueueCleanerThread(CBackgroundHost& host,
+                           CQueueDataBase& qdb,
                            unsigned run_delay)
     : CThreadNonStop(run_delay),
+      m_Host(host),
       m_QueueDB(qdb)
+#ifdef _DEBUG
+      , m_DbgTriggerDBRecover(false)
+#endif
     {}
 
     virtual void DoJob(void);
@@ -56,7 +62,11 @@ private:
     CJobQueueCleanerThread(const CJobQueueCleanerThread&);
     CJobQueueCleanerThread& operator=(const CJobQueueCleanerThread&);
 private:
+    CBackgroundHost& m_Host;
     CQueueDataBase&  m_QueueDB;
+#ifdef _DEBUG
+    bool m_DbgTriggerDBRecover;
+#endif
 };
 
 
@@ -66,9 +76,11 @@ private:
 class CJobQueueExecutionWatcherThread : public CThreadNonStop
 {
 public:
-    CJobQueueExecutionWatcherThread(CQueueDataBase& qdb,
+    CJobQueueExecutionWatcherThread(CBackgroundHost& host,
+                                    CQueueDataBase& qdb,
                                     unsigned run_delay)
     : CThreadNonStop(run_delay),
+      m_Host(host),
       m_QueueDB(qdb)
     {}
 
@@ -78,10 +90,11 @@ private:
     CJobQueueExecutionWatcherThread& 
         operator=(const CJobQueueExecutionWatcherThread&);
 private:
+    CBackgroundHost& m_Host;
     CQueueDataBase&  m_QueueDB;
 };
 
 
 END_NCBI_SCOPE
 
-#endif
+#endif /* NETSCHEDULE_QUEUE_CLEAN_THREAD__HPP */

@@ -62,6 +62,7 @@
 #include "ns_types.hpp"
 #include "job_status.hpp"
 #include "access_list.hpp"
+#include "background_host.hpp"
 
 #include "netschedule_version.hpp"
 
@@ -469,6 +470,22 @@ private:
 
 
 //////////////////////////////////////////////////////////////////////////
+/// Host for background threads
+class CNetScheduleBackgroundHost : public CBackgroundHost
+{
+public:
+    CNetScheduleBackgroundHost(CNetScheduleServer* server) :
+      m_Server(server)
+    {}
+    virtual void ReportError(ESeverity severity,
+        const string& what);
+    virtual bool ShouldRun();
+private:
+    CNetScheduleServer* m_Server;
+};
+
+
+//////////////////////////////////////////////////////////////////////////
 /// NetScheduler threaded server
 ///
 /// @internal
@@ -517,7 +534,9 @@ public:
     unsigned GetPort() { return m_Port; }
     unsigned GetHostNetAddr() { return m_HostNetAddr; }
     const CTime& GetStartTime(void) const { return m_StartTime; }
-    const CNetSchedule_AccessList& GetAccessList(void) const { return m_AdminHosts; }
+    const CNetSchedule_AccessList& GetAccessList(void) const
+        { return m_AdminHosts; }
+    CBackgroundHost& GetBackgroundHost() { return m_BackgroundHost; }
 
 protected:
     virtual void Exit();
@@ -526,6 +545,8 @@ private:
     void x_CreateLog();
 
 private:
+    /// API for background threads
+    CNetScheduleBackgroundHost m_BackgroundHost;
     /// Host name where server runs
     string                  m_Host;
     unsigned                m_Port;
@@ -560,6 +581,22 @@ static void s_ReadBufToString(BUF buf, string& str)
     str.reserve(size);
     BUF_PeekAtCB(buf, 0, s_BufReadHelper, &str, size);
     BUF_Read(buf, NULL, size);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// CNetScheduleBackgroundHost implementation
+void CNetScheduleBackgroundHost::ReportError(ESeverity severity,
+                                             const string& what)
+{
+    if (severity == CBackgroundHost::eFatal)
+        m_Server->SetShutdownFlag();
+}
+
+
+bool CNetScheduleBackgroundHost::ShouldRun()
+{
+    return true;
 }
 
 
@@ -2514,7 +2551,8 @@ CNetScheduleServer::CNetScheduleServer(unsigned int    port,
                                        bool            use_hostname,
                                        unsigned        network_timeout,
                                        bool            is_log)
-:   m_Port(port),
+:   m_BackgroundHost(this),
+    m_Port(port),
     m_Shutdown(false),
     m_SigNum(0),
     m_InactivityTimeout(network_timeout),
@@ -2768,7 +2806,8 @@ int CNetScheduleDApp::Run(void)
         // two transactions per thread should be enough
         bdb_params.max_trans = params.max_threads * 2;
 
-        auto_ptr<CQueueDataBase> qdb(new CQueueDataBase());
+        auto_ptr<CQueueDataBase> qdb(
+            new CQueueDataBase(server->GetBackgroundHost()));
 
         NcbiCout << "Mounting database at " << db_path << NcbiEndl;
         LOG_POST(Info << "Mounting database at " << db_path);

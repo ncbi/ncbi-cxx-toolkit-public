@@ -50,6 +50,7 @@
 #include "notif_thread.hpp"
 #include "squeue.hpp"
 #include "queue_vc.hpp"
+#include "background_host.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -585,7 +586,7 @@ struct SNSDBEnvironmentParams
 class CQueueDataBase
 {
 public:
-    CQueueDataBase();
+    CQueueDataBase(CBackgroundHost& host);
     ~CQueueDataBase();
 
     /// @param path
@@ -655,6 +656,7 @@ private:
     bool x_CheckStopPurge(void);
     void x_CleanParamMap(void);
 
+    CBackgroundHost&                m_Host;
     CBDB_Env*                       m_Env;
     string                          m_Path;
     string                          m_Name;

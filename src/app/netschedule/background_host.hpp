@@ -1,5 +1,5 @@
-#ifndef NETSCHEDULE_VERSION__HPP
-#define NETSCHEDULE_VERSION__HPP
+#ifndef NETSCHEDULE_BACKGROUND_HOST__HPP
+#define NETSCHEDULE_BACKGROUND_HOST__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,11 +28,28 @@
  *
  * Authors:  Victor Joukov
  *
- * File Description: Network scheduler daemon version
+ * File Description: Host interface for background thread. Allows thread to
+ *                   report errors and to learn is it needed to execute.
+ *
  *
  */
 
-#define NETSCHEDULED_VERSION "3.1.7"
+BEGIN_NCBI_SCOPE
+
+class CBackgroundHost
+{
+public:
+    enum ESeverity {
+        eWarning = 0,
+        eError,
+        eFatal
+    };
+    virtual ~CBackgroundHost() {}
+    virtual void ReportError(ESeverity severity, const string& what) = 0;
+    virtual bool ShouldRun() = 0;
+};
 
 
-#endif /* NETSCHEDULE_VERSION__HPP */
+END_NCBI_SCOPE
+
+#endif /* NETSCHEDULE_BACKGROUND_HOST__HPP */
