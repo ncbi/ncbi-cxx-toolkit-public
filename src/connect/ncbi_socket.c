@@ -644,8 +644,8 @@ static const char* s_StrError(int error)
     };
     size_t i, n = sizeof(errmap) / sizeof(errmap[0]) - 1/*dummy entry*/;
 
-    /* always called on error so get error number here if not having already */
-    assert(error);
+    if (!error)
+        return "";
     for (i = 0;  i < n;  i++) {
         if (errmap[i].errnum == error)
             return errmap[i].errtxt;
@@ -1160,6 +1160,7 @@ static EIO_Status s_Select(size_t                n,
 
     for (;;) { /* (optionally) auto-resume if interrupted by a signal */
         struct timeval xx_tv;
+        int x_errno;
 
         n_fds = 0;
         FD_ZERO(&r_fds);
@@ -1297,8 +1298,7 @@ static EIO_Status s_Select(size_t                n,
             break;
 
         /* n_fds < 0 */
-        if (SOCK_ERRNO != SOCK_EINTR) {
-            int  x_errno = SOCK_ERRNO;
+        if ((x_errno = SOCK_ERRNO) != SOCK_EINTR) {
             char _id[32];
             CORE_LOGF_ERRNO_EXX(5, eLOG_Trace,
                                 x_errno, SOCK_STRERROR(x_errno),
@@ -1848,11 +1848,11 @@ static EIO_Status s_WritePending(SOCK                  sock,
 {
     const struct timeval* x_tv;
     EIO_Status status;
-    int x_errno;
     size_t off;
 
     assert(sock->stype != eSOCK_Datagram  &&  sock->sock != SOCK_INVALID);
     if ( sock->pending ) {
+        int x_errno;
         status = s_IsConnected(sock, tv, &x_errno, writeable);
         if (status != eIO_Success) {
             if (status != eIO_Timeout) {
