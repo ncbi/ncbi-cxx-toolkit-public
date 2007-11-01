@@ -1831,10 +1831,10 @@ CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
 {
     _ASSERT(m_AutoHelp);
-    if (arg.compare('-' + s_AutoHelp) == 0) {
+    if (arg.compare(string("-") + s_AutoHelp) == 0) {
         NCBI_THROW(CArgHelpException,eHelp,kEmptyStr);
     }
-    if (arg.compare('-' + s_AutoHelpFull) == 0) {
+    if (arg.compare(string("-") + s_AutoHelpFull) == 0) {
         NCBI_THROW(CArgHelpException,eHelpFull,kEmptyStr);
     }
 }
