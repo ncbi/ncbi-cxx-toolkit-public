@@ -241,7 +241,7 @@ string IdentifySlnGUID(const string& source_dir, const CProjKey& proj)
                      "MSVC Project GUID already in use by "
                      << guid_gen.GetGuidUser(guid));
         if (proj.Type() != CProjKey::eMsvc) {
-            guid.clear();
+            guid.erase();
         }
     }
     if (!guid.empty()) {
