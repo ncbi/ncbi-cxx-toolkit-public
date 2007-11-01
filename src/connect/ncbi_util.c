@@ -471,7 +471,7 @@ static int/*bool*/ s_SafeCopy(const char* src, char** beg, const char* end)
 }
 
 
-extern char* MessagePlusErrno
+extern const char* MessagePlusErrno
 (const char*  message,
  int          x_errno,
  const char*  descr,
@@ -481,9 +481,14 @@ extern char* MessagePlusErrno
     char* beg;
     char* end;
 
+    /* Check for an empty result */
+    if (!x_errno  &&  (!descr  ||  !*descr))
+        return !message  ||  !*message ? "" : message;
+
     /* Check and init */
     if (!buf  ||  !buf_size)
         return 0;
+
     buf[0] = '\0';
     if (buf_size < 2)
         return buf;  /* empty */
@@ -496,10 +501,6 @@ extern char* MessagePlusErrno
             descr = s_UnknownErrno;
         }
     }
-
-    /* Check for an empty result, calculate string lengths */
-    if ((!message  ||  !*message)  &&  !x_errno  &&  (!descr  ||  !*descr))
-        return buf;  /* empty */
 
     /* Compose:   <message> {errno=<x_errno>,<descr>} */
     beg = buf;

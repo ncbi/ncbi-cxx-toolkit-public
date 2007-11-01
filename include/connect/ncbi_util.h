@@ -298,7 +298,7 @@ extern NCBI_XCONNECT_EXPORT void LOG_ToFILE
 
 
 /** Add current "errno" (and maybe its description) to the message:
- * <message> {errno=<errno>,<descr>}
+ * <message>[ {errno=[<errno>][,][<descr>]}]
  * @param message
  *  [in]  message text (can be NULL)
  * @param x_errno
@@ -308,13 +308,13 @@ extern NCBI_XCONNECT_EXPORT void LOG_ToFILE
  * @param buf
  *  [out] buffer to put the composed message to
  * @param buf_size
- *  [in]  maximal buffer size
+ *  [in]  buffer size available for use
  * @return
- *  Return "buf"
+ *  Return "buf" if composition occurred, else "message" (if non-empty) or ""
  * @sa
  *  LOG_ComposeMessage
  */
-extern NCBI_XCONNECT_EXPORT char* MessagePlusErrno
+extern NCBI_XCONNECT_EXPORT const char* MessagePlusErrno
 (const char*  message,
  int          x_errno,
  const char*  descr,
