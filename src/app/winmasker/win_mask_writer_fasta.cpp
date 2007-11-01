@@ -44,9 +44,10 @@ USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
 void CWinMaskWriterFasta::Print( CBioseq_Handle& bsh,
-                                 const CSeqMasker::TMaskList & mask )
+                                 const CSeqMasker::TMaskList & mask,
+                                 bool match_id )
 {
-    PrintId( bsh );
+    PrintId( bsh, match_id );
     CSeqVector data = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     /// FIXME: this can be implemented as a call to CFastaOstream, which

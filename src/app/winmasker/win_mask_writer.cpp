@@ -47,7 +47,24 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
-void CWinMaskWriter::PrintId( CBioseq_Handle& bsh )
-{ os << ">" << sequence::GetTitle( bsh ) << "\n"; }
+void CWinMaskWriter::PrintId( CBioseq_Handle& bsh, bool match_id )
+{ 
+    string id_str = ">";
+
+    if( match_id ) {
+        const CBioseq_Handle::TId & ids = bsh.GetId();
+
+        ITERATE( CBioseq_Handle::TId, iter, ids )
+        {
+            id_str += iter->AsString();
+            if( *id_str.rbegin() != '|' ) id_str += "|";
+        }
+
+        id_str += " ";
+    }
+
+    id_str += sequence::GetTitle( bsh ) + "\n";
+    os << id_str;
+}
 
 END_NCBI_SCOPE

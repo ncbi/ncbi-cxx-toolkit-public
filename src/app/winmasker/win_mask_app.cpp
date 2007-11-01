@@ -214,7 +214,7 @@ void CWinMaskApplication::Init(void)
                              CArgDescriptions::eString, "" );
     arg_desc->AddDefaultKey( "text_match", "text_match_ids",
                              "match ids as strings",
-                             CArgDescriptions::eBoolean, "F" );
+                             CArgDescriptions::eBoolean, "T" );
     arg_desc->AddDefaultKey( "use_ba", "use_bit_array_optimization",
                              "whether to use extra bit array optimization "
                              "for optimized binary counts format",
@@ -381,7 +381,7 @@ int CWinMaskApplication::Run (void)
                     CSeqMasker::MergeMaskInfo( mask_info.get(), dust_info.get() );
                 }
 
-                theWriter.Print( bsh, *mask_info );
+                theWriter.Print( bsh, *mask_info, aConfig.MatchId() );
 
                 for( CSeqMasker::TMaskList::const_iterator i = mask_info->begin();
                      i != mask_info->end(); ++i )

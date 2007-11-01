@@ -608,6 +608,13 @@ public:
      **/
     bool UseBA() const { return use_ba; }
 
+    /**\brief Use CSeq_id objects to match/print sequence ids.
+     **
+     **\return true if CSeq_id objects should be used; 
+     **        false if strings should be used
+     **/
+    bool MatchId() const { return !text_match; }
+
 private:
 
     /**\internal

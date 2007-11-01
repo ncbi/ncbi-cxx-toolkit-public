@@ -19,7 +19,7 @@ ABSTRACT
 
 SYNOPSIS
 
-    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-text_match text_match_ids] [-sformat unit_counts_format] [-smem available_memory] [-use_ba use_bit_arrays]
+    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format] [-smem available_memory] [-use_ba use_bit_arrays]
 
     windowmasker -ustat unit_counts [-input input_file_name] [-output output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-iformat input_format] [-oformat output_format] [-dust use_dust] [-exclude_ids exclude_id_list] [-ids id_list] [-text_match text_match_ids] [-use_ba use_bit_arrays]
 
@@ -112,21 +112,6 @@ Common Options
         per line) in the input that should be processed. See section 
         FILES for an example. This option and "-exclude_ids" option 
         are mutually exclusive.
-
-    -text_match true/false
-
-        default: false
-
-        This option applies to "-exclude_ids" and "-ids" options.
-        If set to "false" the sequence ids are compared as instances
-        of CSeq_id classes. If set to "true" the sequence ids are
-        compared as strings. In that case each id is represented as
-        a sequence of words separated by '|' characters. A sequence
-        is found in "exclude_ids" or "ids" set if some element of
-        the set contains a subsequence of the given sequence which
-        spans that whole number of words. This option allows to 
-        overcome some problems resulting from direct CSeq_id 
-        comparisons.
 
     -use_ba true/false
 
@@ -373,6 +358,21 @@ Stage 2 Options
         definition of the window score see description of 
         "-window_size" option. This parameter overrides the value
         contained in the unit counts file.
+
+    -text_match true/false
+
+        default: true
+
+        This option applies to "-exclude_ids" and "-ids" options.
+        If set to "false" the sequence ids are compared as instances
+        of CSeq_id classes. If set to "true" the sequence ids are
+        compared as strings. In that case each id is represented as
+        a sequence of words separated by '|' characters. A sequence
+        is found in "exclude_ids" or "ids" set if some element of
+        the set contains a subsequence of the given sequence which
+        spans that whole number of words. This option allows to 
+        overcome some problems resulting from direct CSeq_id 
+        comparisons.
 
     -ustat unit_counts
 

@@ -39,6 +39,7 @@
 #include "win_mask_writer_fasta.hpp"
 #include "win_mask_config.hpp"
 #include <objects/seqloc/Seq_id.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -106,6 +107,8 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
 {
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
 
+    string iformatstr = args["iformat"].AsString();
+
     if( !mk_counts )
     {
         if( is && !*is )
@@ -114,8 +117,6 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
                         eInputOpenFail,
                         args["input"].AsString() );
         }
-
-        string iformatstr = args["iformat"].AsString();
 
         if( iformatstr == "fasta" )
             reader = new CWinMaskFastaReader( *is );
@@ -140,6 +141,9 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
         set_min_score = args["set_t_low"]   ? args["set_t_low"].AsInteger()
                                             : 0;
     }
+    else {
+        text_match = true;
+    }
 
     string ids_file_name( args["ids"].AsString() );
     string exclude_ids_file_name( args["exclude_ids"].AsString() );
@@ -155,7 +159,12 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
         if( text_match ) {
             ids = new CIdSet_TextMatch;
         }else {
-            ids = new CIdSet_SeqId;
+            if( !mk_counts && iformatstr == "blastdb" ) 
+                ids = new CIdSet_SeqId;
+            else
+                NCBI_THROW( CWinMaskConfigException, eInconsistentOptions,
+                        "-text_match false can be used only with -mk_counts true "
+                        "and -iformat blastb" );
         }
 
         FillIdList( ids_file_name, *ids );
@@ -165,7 +174,12 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
         if( text_match ) {
             exclude_ids = new CIdSet_TextMatch;
         }else {
-            exclude_ids = new CIdSet_SeqId;
+            if( !mk_counts && iformatstr == "blastdb" ) 
+                exclude_ids = new CIdSet_SeqId;
+            else
+                NCBI_THROW( CWinMaskConfigException, eInconsistentOptions,
+                        "-text_match false can be used only with -mk_counts true "
+                        "and -iformat blastb" );
         }
 
         FillIdList( exclude_ids_file_name, *exclude_ids );
@@ -313,8 +327,19 @@ bool CWinMaskConfig::CIdSet_TextMatch::find(
         const objects::CBioseq_Handle & bsh ) const
 {
     CConstRef< CBioseq > seq = bsh.GetCompleteBioseq();
-    string id_str = CSeq_id::GetStringDescr( *seq, CSeq_id::eFormat_FastA );
-    return find( id_str );
+    string id_str = sequence::GetTitle( bsh );
+    
+    if( !id_str.empty() ) {
+        string::size_type pos = id_str.find_first_of( " \t" );
+        id_str = id_str.substr( 0, pos );
+    }
+
+    if( find( id_str ) ) return true;
+    else if( id_str.substr( 0, 4 ) == "lcl|" ) {
+        id_str = id_str.substr( 4, string::npos );
+        return find( id_str );
+    }
+    else return false;
 }
 
 //----------------------------------------------------------------------------

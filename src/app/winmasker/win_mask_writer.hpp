@@ -78,13 +78,14 @@ public:
      ** it using the ostream object passed to the writer at 
      ** construction time.
      **
-     **\param seh the sequence entry handle
-     **\param seq the bioseq instance
+     **\param bsh the bioseq handle
      **\param mask the resulting list of masked intervals
+     **\param match_id match by actual id object, not id string
      **
      **/
     virtual void Print( objects::CBioseq_Handle & bsh,
-                        const CSeqMasker::TMaskList & mask ) = 0;
+                        const CSeqMasker::TMaskList & mask,
+                        bool match_id = false ) = 0;
 
 protected:
 
@@ -95,11 +96,11 @@ protected:
      ** can redefine it as necessary and use from within Print()
      ** method.
      **
-     **\param seh seq entry handle (via object manager)
-     **\param seq the sequence whose id is to be printed
+     **\param bsh the bioseq handle
+     **\param match_id match by actual id object, not id string
      **
      **/
-    virtual void PrintId( objects::CBioseq_Handle& bsh );
+    virtual void PrintId( objects::CBioseq_Handle& bsh, bool match_id );
 
     /**
      **\brief the standard C++ ostream object 

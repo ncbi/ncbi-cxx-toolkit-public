@@ -67,13 +67,14 @@ public:
     /**
      **\brief Output masked sequence data.
      **
-     **\param seh the sequence entry handle (via object manager)
-     **\param seq the sequence subject to masking
+     **\param bsh the bioseq handle
      **\param mask the resulting list of masked intervals
+     **\param match_id use CSeq_id objects instead of strings
      **
      **/
     virtual void Print( objects::CBioseq_Handle& bsh,
-                        const CSeqMasker::TMaskList & mask );
+                        const CSeqMasker::TMaskList & mask,
+                        bool match_id = false );
 };
 
 END_NCBI_SCOPE

@@ -37,9 +37,10 @@ BEGIN_NCBI_SCOPE
 
 //-------------------------------------------------------------------------
 void CWinMaskWriterInt::Print( objects::CBioseq_Handle& bsh,
-                               const CSeqMasker::TMaskList & mask )
+                               const CSeqMasker::TMaskList & mask,
+                               bool match_id )
 {
-    PrintId( bsh );
+    PrintId( bsh, match_id );
 
     for( CSeqMasker::TMaskList::const_iterator i = mask.begin();
          i != mask.end(); ++i )
