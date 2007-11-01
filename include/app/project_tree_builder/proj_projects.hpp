@@ -67,22 +67,13 @@ private:
     bool m_PassAll;
     bool m_ExcludePotential;
 
-    struct SLstElement
-    {
-        TPath m_Path;
-        bool  m_Recursive;
-    };
-    /// One .lst file
-    typedef list<SLstElement> TLstFileContents;
-    TLstFileContents m_LstFileContentsInclude;
-    TLstFileContents m_LstFileContentsExclude;
-    
+    list<string> m_listEnabled;
+    list<string> m_listDisabled;
+    string ConvertToMask(const string& name);
 
     void InitFromString(const string& subtree);
     void InitFromFile(const string& file_full_path);
-    static bool CmpLstElementWithPath(const SLstElement& elt, 
-                                      const TPath&       path,
-                                      bool* weak);
+
     // Prohibited to:
     CProjectsLstFileFilter(void);
     CProjectsLstFileFilter(const CProjectsLstFileFilter&);

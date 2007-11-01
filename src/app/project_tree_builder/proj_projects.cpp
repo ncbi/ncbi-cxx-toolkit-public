@@ -32,7 +32,7 @@
 #include <app/project_tree_builder/proj_tree.hpp>
 
 #include <corelib/ncbienv.hpp>
-//#include <util/regexp.hpp>
+#include <util/regexp.hpp>
 BEGIN_NCBI_SCOPE
 
 //-----------------------------------------------------------------------------
@@ -48,30 +48,32 @@ CProjectsLstFileFilter::CProjectsLstFileFilter(const string& root_src_dir,
         InitFromString(file_full_path);
     }
     string dll_subtree = GetApp().GetConfig().Get("ProjectTree", "dll");
-    TPath project_path;
-    NStr::Split(dll_subtree, "\\/", project_path);
-    SLstElement elt;
-    elt.m_Path      = project_path;
-    elt.m_Recursive = true;
+    string s = ConvertToMask("dll");
     if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
         if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
-            m_LstFileContentsInclude.push_back(elt);
+            m_listEnabled.push_back(s);
         }
     } else {
-        m_LstFileContentsExclude.push_back(elt);
+        m_listDisabled.push_back(s);
     }
 }
+
+string CProjectsLstFileFilter::ConvertToMask(const string& name)
+{
+    string s = NStr::Replace(m_RootSrcDir,"\\","/");
+    s += NStr::Replace(name,"\\","/");
+    return s;
+}
+
 
 void CProjectsLstFileFilter::InitFromString(const string& subtree)
 {
     string sub = CDirEntry::AddTrailingPathSeparator(subtree);
-    TPath project_path;
-    CProjectTreeFolders::CreatePath(m_RootSrcDir, sub, &project_path);
-
-    SLstElement elt;
-    elt.m_Path      = project_path;
-    elt.m_Recursive = subtree.find("$") == NPOS;
-    m_LstFileContentsInclude.push_back(elt);
+    string s = NStr::Replace(subtree,"\\","/");
+    if (NStr::EndsWith(s,'/')) {
+        s.erase(s.size()-1,1);
+    }
+    m_listEnabled.push_back( s );
 
     m_PassAll = NStr::CompareNocase(m_RootSrcDir, sub) == 0;
     m_ExcludePotential = true;
@@ -90,113 +92,63 @@ void CProjectsLstFileFilter::InitFromFile(const string& file_full_path)
         if (strline.find(" update-only") != NPOS)
             continue;
 
-        TPath project_path;
-        NStr::Split(strline, " \r\n\t/$", project_path);
-        if ( !project_path.empty() ) {
-            if (project_path.front() == "#include") {
-                project_path.erase( project_path.begin() );
-                string tmp = NStr::Join(project_path,"/");
-                string name = NStr::Replace(tmp,"\"","");
-                if (CDirEntry::IsAbsolutePath(name)) {
-                    InitFromFile( name );
-                } else {
-                    CDirEntry d(file_full_path);
-                    InitFromFile( CDirEntry::ConcatPathEx( d.GetDir(), name) );
-                }
+        NStr::TruncateSpacesInPlace(strline);
+        if (strline.empty()) {
+            continue;
+        }
+        if ( NStr::StartsWith(strline, "#include") ) {
+            NStr::ReplaceInPlace(strline,"#include","",0,1);
+            NStr::TruncateSpacesInPlace(strline);
+            NStr::ReplaceInPlace(strline,"\"","");
+            string name = CDirEntry::ConvertToOSPath(strline);
+            if (CDirEntry::IsAbsolutePath(name)) {
+                InitFromFile( name );
             } else {
-                if ( NStr::StartsWith(project_path.front(), "-") ) {
-                    
-                    // exclusion statement
-                    SLstElement elt;
-                    // erase '-'
-                    project_path.front().erase(0, 1);
-                    elt.m_Path      = project_path;
-                    elt.m_Recursive = true;
-                    m_LstFileContentsExclude.push_back(elt);
-                } else {
-                    // inclusion statement
-                    SLstElement elt;
-                    elt.m_Path      = project_path;
-                    elt.m_Recursive = strline.find("$") == NPOS;
-                    m_LstFileContentsInclude.push_back(elt);
-                }
+                CDirEntry d(file_full_path);
+                InitFromFile( CDirEntry::ConcatPathEx( d.GetDir(), name) );
+            }
+        } else {
+            if ( NStr::StartsWith(strline, "-") ) {
+                strline.erase(0,1);
+                string s = ConvertToMask( strline );
+                m_listDisabled.push_back( s );
+            } else {
+                string s = ConvertToMask( strline );
+                m_listEnabled.push_back( s );
             }
         }
     }
 }
-
-
-bool CProjectsLstFileFilter::CmpLstElementWithPath(const SLstElement& elt, 
-                                                   const TPath&       path,
-                                                   bool* weak)
-{
-    if (path.size() < elt.m_Path.size())
-        if (!weak) {
-            return false;
-        }
-
-    if ( !elt.m_Recursive  && path.size() != elt.m_Path.size()) {
-        if (!weak) {
-            return false;
-        }
-    }
-
-    TPath::const_iterator i = path.begin();
-    TPath::const_iterator p = elt.m_Path.begin();
-    for (; i != path.end() && p != elt.m_Path.end(); ++i, ++p) {
-        const string& elt_i  = *p;
-        const string& path_i = *i;
-        if (elt_i == ".*") {
-            ++p;
-            if (p != elt.m_Path.end()) {
-                while (++i != path.end() && *i != *p)
-                    ;
-                if (i != path.end()) {
-                    continue;
-                }
-            }
-            break;
-        }
-        if (NStr::CompareNocase(elt_i, path_i) != 0) {
-            if (weak) {*weak=false;}
-            return false;
-        }
-    }
-    if (weak) {*weak = (i == path.end());}
-    if ( !elt.m_Recursive && i != path.end() && p == elt.m_Path.end()) {
-        return false;
-    }
-    return p == elt.m_Path.end();
-}
-
 
 bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool* weak) const
 {
-    TPath project_path;
-    CProjectTreeFolders::CreatePath(m_RootSrcDir, 
-                                    project_base_dir, 
-                                    &project_path);
-
+    string proj_dir = NStr::Replace(project_base_dir,"\\","/");
     bool include_ok = false;
-    ITERATE(TLstFileContents, p, m_LstFileContentsInclude) {
-        const SLstElement& elt = *p;
-        if ( CmpLstElementWithPath(elt, project_path, weak) ) {
+    ITERATE(list<string>, s, m_listEnabled) {
+        string str(*s);
+        CRegexp rx(str);
+        if (rx.IsMatch(proj_dir)) {
             include_ok =  true;
             break;
-        } else if (weak && *weak) {
-            return false;
+        } else if (weak) {
+            string pd = proj_dir + "/.*";
+            CRegexp px(pd);
+            *weak = px.IsMatch(str);
+            if (*weak) {
+                return false;
+            }
         }
     }
     if ( !include_ok )
         return false;
-
-    ITERATE(TLstFileContents, p, m_LstFileContentsExclude) {
-        const SLstElement& elt = *p;
-        if ( CmpLstElementWithPath(elt, project_path, weak) ) {
+    ITERATE(list<string>, s, m_listDisabled) {
+        string str(*s);
+        str += "$";
+        CRegexp rx(str);
+        if (rx.IsMatch(proj_dir)) {
             return false;
         }
     }
-
     return true;
 }
 
