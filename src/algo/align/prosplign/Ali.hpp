@@ -115,7 +115,7 @@ public:
     int NucPosOut(int pos) const;
     //checks if three (nucleotide) basis right after last protein residue equal to (TGA or TAA or TAG)
     bool HasStopOnNuc(void) const;
-    void CPosAli::SetHasStopOnNuc(const CInfo& info);
+    void SetHasStopOnNuc(const CInfo& info);
 };
 
 class CAliCreator
