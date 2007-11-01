@@ -4049,13 +4049,13 @@ CDBAPIUnitTest::Test_Variant2(void)
 ///////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_CDB_Exception(void)
 {
-    const string message("Very dangerous message");
+    const char* message = "Very dangerous message";
     const int msgnumber = 67890;
 
     try {
         {
-            const string server_name("server_name");
-            const string user_name("user_name");
+            const char* server_name = "server_name";
+            const char* user_name = "user_name";
             const int severity = 12345;
 
             CDB_Exception ex(
@@ -6993,8 +6993,13 @@ CDBAPIUnitTest::Test_Procedure(void)
 
         // Test output parameters ...
         if (false) {
+            CRef<CDB_UserHandler_Diag> handler(new  CDB_UserHandler_Diag());
+            I_DriverContext* drv_context = m_DS->GetDriverContext();
+            
+            drv_context->PushDefConnMsgHandler(handler);
+
             auto_ptr<ICallableStatement> auto_stmt(
-                m_Conn->GetCallableStatement("DBAPI_Sample..SampleProc", 3)
+                m_Conn->GetCallableStatement("DBAPI_Sample..SampleProc3", 3)
                 );
             auto_stmt->SetParam(CVariant(1), "@id");
             auto_stmt->SetParam(CVariant(2.0), "@f");
@@ -7019,6 +7024,12 @@ CDBAPIUnitTest::Test_Procedure(void)
                                   << rs->GetVariant(1).GetInt4()
                                   << endl;
                          break;
+                     case eDB_ComputeResult:
+                         break;
+                     case eDB_StatusResult:
+                         break;
+                     case eDB_CursorResult:
+                         break;
                      default:
                          break;
                      }
@@ -7040,6 +7051,8 @@ CDBAPIUnitTest::Test_Procedure(void)
     //         BOOST_CHECK(num > 0);
 
             DumpResults(auto_stmt.get());
+            
+            drv_context->PopDefConnMsgHandler(handler);
         }
 
         // Temporary test ...
@@ -10654,6 +10667,38 @@ void CDBAPIUnitTest::Test_Timeout(void)
         BOOST_CHECK(timeout_was_reported);
 
         dc->SetTimeout(timeout);
+
+        // Check selecting from a huge table ...
+        if (false) {
+            size_t num = 0;
+
+            timeout = dc->GetTimeout();
+            dc->SetTimeout(600);
+
+            auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
+
+            local_conn->Connect(
+                "*****",
+                "******",
+                "GEOWRITE",
+                "GeoDb"
+                );
+
+            auto_ptr<IStatement> auto_stmt(local_conn->GetStatement());
+            auto_stmt->SendSql("SELECT * FROM Sample");
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            BOOST_CHECK( rs.get() != NULL );
+
+            while (rs->Next()) {
+                ++num;
+            }
+
+            dc->SetTimeout(timeout);
+
+            BOOST_CHECK(num > 0);
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -11519,6 +11564,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             if (!(args.GetDriverName() == "ftds8"
                   && args.GetServerType() == CTestArguments::eSybase)
                 && args.GetDriverName() != "ftds_dblib"
+                && !(args.GetDriverName() == "ctlib" && Solaris && !sybase_client_v125)
                 ) {
                 tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Recordset,
                                            DBAPIInstance);
@@ -11611,7 +11657,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
 
-        if (args.GetDriverName() != "dblib") {
+        if (args.GetDriverName() != "dblib"
+           && !(args.GetDriverName() == "ctlib" && Solaris && !sybase_client_v125)
+           ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
