@@ -254,9 +254,9 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
         return CT_EOF;
 
     // flush output buffer, if tied up to it
-    if ( m_Tie ) {
-        _VERIFY(sync() == 0);
-    }
+    if (m_Tie  &&  sync() != 0)
+        return CT_EOF;
+
     _ASSERT(!gptr()  ||  gptr() >= egptr());
 
 #ifdef NCBI_COMPILER_MIPSPRO
@@ -289,9 +289,8 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         return 0;
 
     // flush output buffer, if tied up to it
-    if ( m_Tie ) {
-        _VERIFY(sync() == 0);
-    }
+    if (m_Tie  &&  sync() != 0)
+        return 0;
 
     if (m <= 0)
         return 0;
@@ -345,9 +344,9 @@ streamsize CConn_Streambuf::showmanyc(void)
         return -1;
 
     // flush output buffer, if tied up to it
-    if ( m_Tie ) {
-        _VERIFY(sync() == 0);
-    }
+    if (m_Tie  &&  sync() != 0)
+        return -1;
+
     _ASSERT(!gptr()  ||  gptr() >= egptr());
 
     static const STimeout kZero = {0, 0};
