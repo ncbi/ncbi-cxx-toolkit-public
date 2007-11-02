@@ -208,6 +208,7 @@ public:
                                          *in, 
                                          context.GetOStream(), 
                                          err,
+                                         m_Params.CacheStdOutErr(),
                                          ret,
                                          context,
                                          m_Params.GetMaxAppRunningTime(),

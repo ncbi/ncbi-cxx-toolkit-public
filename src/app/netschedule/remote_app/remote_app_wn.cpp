@@ -129,6 +129,7 @@ public:
                                         request->GetStdIn(), 
                                         result->GetStdOut(), 
                                         result->GetStdErr(),
+                                        m_Params.CacheStdOutErr(),
                                         ret,
                                         context,
                                         m_Params.GetMaxAppRunningTime(),

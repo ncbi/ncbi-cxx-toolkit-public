@@ -45,6 +45,7 @@ class CWorkerNodeJobContext;
 bool ExecRemoteApp(const string& cmd, 
                    const vector<string>& args,
                    CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
+                   bool cache_std_out_err,
                    int& exit_value,
                    CWorkerNodeJobContext& context,
                    int max_app_running_time,
@@ -83,6 +84,7 @@ public:
     bool RunInSeparateDir() const { return m_RunInSeparateDir; }
     const string& GetTempDir() const { return m_TempDir; }
     bool RemoveTempDir() const { return m_RemoveTempDir; }
+    bool CacheStdOutErr() const { return m_CacheStdOutErr; }
 
     const string& GetMonitorAppPath() const { return m_MonitorAppPath; }
     int GetMaxMonitorRunningTime() const { return m_MaxMonitorRunningTime; }
@@ -103,6 +105,7 @@ private:
     bool m_RunInSeparateDir;
     string m_TempDir;
     bool m_RemoveTempDir;
+    bool m_CacheStdOutErr;
 
     string m_MonitorAppPath;
     int m_MaxMonitorRunningTime;

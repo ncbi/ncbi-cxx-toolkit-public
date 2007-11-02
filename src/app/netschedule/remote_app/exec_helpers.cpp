@@ -54,7 +54,8 @@ BEGIN_NCBI_SCOPE
 CRemoteAppParams::CRemoteAppParams()
     : m_MaxAppRunningTime(0), m_KeepAlivePeriod(0), 
       m_NonZeroExitAction(eDoneOnNonZeroExit),
-      m_RunInSeparateDir(false), m_RemoveTempDir(true)
+      m_RunInSeparateDir(false), m_RemoveTempDir(true),
+      m_CacheStdOutErr(true)
 {
 }
 
@@ -97,23 +98,25 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
                     CNcbiRegistry::eReturn);
 
     if (m_RunInSeparateDir) {
-	if (reg.HasEntry(sec_name, "tmp_dir")) {
+	if (reg.HasEntry(sec_name, "tmp_dir")) 
 	    m_TempDir = reg.GetString(sec_name, "tmp_dir", "." );
-            m_RemoveTempDir =
-                   reg.GetBool(sec_name, "remove_tmp_dir", true, 0, 
-                                    CNcbiRegistry::eReturn);
-        } else {
+        else 
             m_TempDir = reg.GetString(sec_name, "tmp_path", "." );
-            m_RemoveTempDir =
-                   reg.GetBool(sec_name, "remove_tmp_path", true, 0, 
-                                    CNcbiRegistry::eReturn);
-        }
+        
         if (!CDirEntry::IsAbsolutePath(m_TempDir)) {
             string tmp = CDir::GetCwd() 
                 + CDirEntry::GetPathSeparator() 
                 + m_TempDir;
             m_TempDir = CDirEntry::NormalizePath(tmp);
         }
+	if (reg.HasEntry(sec_name, "remove_tmp_dir")) 
+            m_RemoveTempDir = reg.GetBool(sec_name, "remove_tmp_dir", true, 0, 
+                                    CNcbiRegistry::eReturn);
+        else
+            m_RemoveTempDir = reg.GetBool(sec_name, "remove_tmp_path", true, 0, 
+                                    CNcbiRegistry::eReturn);
+        m_CacheStdOutErr = reg.GetBool(sec_name, "cache_std_out_err", true, 0, 
+                                    CNcbiRegistry::eReturn);
     }
 
     m_AppPath = reg.GetString(sec_name, "app_path", "" );
@@ -411,28 +414,30 @@ private:
 class CTmpStreamGuard
 {
 public:
-    CTmpStreamGuard(const string& tmp_dir, const string& name, CNcbiOstream& orig_stream)
+    CTmpStreamGuard(const string& tmp_dir, const string& name, CNcbiOstream& orig_stream,
+                    bool cache_std_out_err)       
         : m_OrigStream(orig_stream), m_Stream(NULL)
     {
-        if ( !tmp_dir.empty() ) {
+        if (!tmp_dir.empty() && cache_std_out_err) {
             m_Name = tmp_dir + CDirEntry::GetPathSeparator() + name;
         }
         if ( !m_Name.empty() ) {
             try {
-               m_Writer.reset(new CFileWriter(m_Name));
-            } catch (CFileException&) {
-                ERR_POST("Could not create a temporary file " << m_Name 
+               m_ReaderWriter.reset(new CFileReaderWriter(m_Name, CFileIO_Base::eCreate));
+            } catch (CFileException& ex) {
+                ERR_POST("Could not create a temporary file " << m_Name << " :" << ex.what()
                         << " the data will be written directly to the orgional stream");
                 m_Name.erase();
+                m_Stream = &m_OrigStream;
                 return;
             }
 #if defined(NCBI_OS_UNIX)
             // if the file is created on NFS we need to set CLOEXEC flag
             // overwise deleting of temp direcory will not succeed 
-            TFileHandle fd = m_Writer->GetFileHandle();
+            TFileHandle fd = m_ReaderWriter->GetFileIO().GetFileHandle();
             fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
 #endif            
-            m_StreamGuard.reset(new CWStream(m_Writer.get()));
+            m_StreamGuard.reset(new CWStream(m_ReaderWriter.get()));
             m_Stream = m_StreamGuard.get();
         } else {
             m_Stream = &m_OrigStream;
@@ -442,8 +447,10 @@ public:
     {
         try {
             Close();
-        } catch(exception& /*ex*/) {
+        } catch(exception& ex) {
+            ERR_POST( "CTmpStreamGuard::~CTmpStreamGuard(): " << m_Name << " --> " << ex.what());
         } catch(...) {
+            ERR_POST( "CTmpStreamGuard::~CTmpStreamGuard(): " << m_Name << " --> Unknown error.");
         }
     }
 
@@ -453,25 +460,22 @@ public:
     {
         if( !m_Name.empty() && m_StreamGuard.get()) {
             m_StreamGuard.reset();
-            m_Writer.reset();
-            CFileReader reader(m_Name);
-#if defined(NCBI_OS_UNIX)
-            // if the file is created on NFS we need to set CLOEXEC flag
-            // overwise deleting of temp direcory will not succeed 
-            TFileHandle fd = reader.GetFileHandle();
-            fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
-#endif            
-            CRStream rstm(&reader);
+            m_ReaderWriter->Flush();
+            m_ReaderWriter->GetFileIO().SetFilePos(0, CFileIO_Base::eBegin);
+            {
+            CRStream rstm(m_ReaderWriter.get());
             if (!rstm.good() 
                 || !NcbiStreamCopy(m_OrigStream, rstm)) 
                 ERR_POST( "Cannot copy \"" << m_Name << "\" file.");
-
+            }
+            m_ReaderWriter.reset();
+            CFile(m_Name).Remove();
         }
     }
 
 private:
     CNcbiOstream& m_OrigStream;
-    auto_ptr<CFileWriter> m_Writer;
+    auto_ptr<CFileReaderWriter> m_ReaderWriter;
     auto_ptr<CNcbiOstream> m_StreamGuard;
     CNcbiOstream* m_Stream;
     string m_Name;
@@ -483,6 +487,7 @@ private:
 bool ExecRemoteApp(const string& cmd, 
                    const vector<string>& args,
                    CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
+                   bool cache_std_out_err,
                    int& exit_value,
                    CWorkerNodeJobContext& context,
                    int max_app_running_time,
@@ -499,8 +504,8 @@ bool ExecRemoteApp(const string& cmd,
 {
     STmpDirGuard guard(tmp_path, remove_tmp_path);
     {
-        CTmpStreamGuard std_out_guard(tmp_path, "std.out", out);
-        CTmpStreamGuard std_err_guard(tmp_path, "std.err", err);
+        CTmpStreamGuard std_out_guard(tmp_path, "std.out", out, cache_std_out_err);
+        CTmpStreamGuard std_err_guard(tmp_path, "std.err", err, cache_std_out_err);
 
         CPipeProcessWatcher callback(context,
                                      max_app_running_time,
