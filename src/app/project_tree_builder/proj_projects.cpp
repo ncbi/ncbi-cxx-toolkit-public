@@ -60,8 +60,7 @@ CProjectsLstFileFilter::CProjectsLstFileFilter(const string& root_src_dir,
 
 string CProjectsLstFileFilter::ConvertToMask(const string& name)
 {
-    string s = NStr::Replace(m_RootSrcDir,"\\","/");
-    s += NStr::Replace(name,"\\","/");
+    string s = NStr::Replace(name,"\\","/");
     return s;
 }
 
@@ -69,13 +68,15 @@ string CProjectsLstFileFilter::ConvertToMask(const string& name)
 void CProjectsLstFileFilter::InitFromString(const string& subtree)
 {
     string sub = CDirEntry::AddTrailingPathSeparator(subtree);
-    string s = NStr::Replace(subtree,"\\","/");
-    if (NStr::EndsWith(s,'/')) {
-        s.erase(s.size()-1,1);
-    }
-    m_listEnabled.push_back( s );
-
     m_PassAll = NStr::CompareNocase(m_RootSrcDir, sub) == 0;
+    if (!m_PassAll) {
+        string s = CDirEntry::CreateRelativePath(m_RootSrcDir,subtree);
+        NStr::ReplaceInPlace(s,"\\","/");
+        if (NStr::EndsWith(s,'/')) {
+            s.erase(s.size()-1,1);
+        }
+        m_listEnabled.push_back( s );
+    }
     m_ExcludePotential = true;
 }
 
@@ -122,29 +123,32 @@ void CProjectsLstFileFilter::InitFromFile(const string& file_full_path)
 
 bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool* weak) const
 {
-    string proj_dir = NStr::Replace(project_base_dir,"\\","/");
+    string proj_dir = CDirEntry::CreateRelativePath(m_RootSrcDir,project_base_dir);
+    proj_dir = NStr::Replace(proj_dir,"\\","/");
     bool include_ok = false;
-    ITERATE(list<string>, s, m_listEnabled) {
-        string str(*s);
-        CRegexp rx(str);
-        if (rx.IsMatch(proj_dir)) {
-            include_ok =  true;
-            break;
-        } else if (weak) {
-            string pd = proj_dir + "/.*";
-            CRegexp px(pd);
-            *weak = px.IsMatch(str);
-            if (*weak) {
-                return false;
+    if (!m_PassAll) {
+        ITERATE(list<string>, s, m_listEnabled) {
+            string str(*s);
+            CRegexp rx("^" + str);
+            if (rx.IsMatch(proj_dir)) {
+                include_ok =  true;
+                break;
+            } else if (weak) {
+                string pd = "^" + proj_dir + "/.*";
+                CRegexp px(pd);
+                *weak = px.IsMatch(str);
+                if (*weak) {
+                    return false;
+                }
             }
         }
+        if ( !include_ok )
+            return false;
     }
-    if ( !include_ok )
-        return false;
     ITERATE(list<string>, s, m_listDisabled) {
         string str(*s);
         str += "$";
-        CRegexp rx(str);
+        CRegexp rx("^" + str);
         if (rx.IsMatch(proj_dir)) {
             return false;
         }
