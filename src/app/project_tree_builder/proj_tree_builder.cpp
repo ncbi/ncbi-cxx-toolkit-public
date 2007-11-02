@@ -260,7 +260,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                     string resolved_def_str;
                                     GetApp().GetSite().ResolveDefine(stripped, resolved_def_str);
                                     if (resolved_def_str == " ") {
-                                        resolved_def_str.clear();
+                                        resolved_def_str.erase();
                                     }
                                     if (msvc_empty) {
                                         new_vals.push_back( NStr::Replace(define, raw, resolved_def_str));
