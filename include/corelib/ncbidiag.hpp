@@ -1612,8 +1612,8 @@ public:
     /// Extra() method and one or more calls to CDiagContext_Extra::Print().
     NCBI_DEPRECATED void PrintExtra(const string& message);
 
-    /// Create a temporary CExtraArgs object. The object will print
-    /// arguments on destruction. Can be used like:
+    /// Create a temporary CDiagContext_Extra object. The object will print
+    /// arguments automatically from destructor. Can be used like:
     ///   Extra().Print(name1, val1).Print(name2, val2);
     CDiagContext_Extra Extra(void) { return CDiagContext_Extra(); }
 
