@@ -2828,6 +2828,9 @@ public:
     CFileReaderWriter_Base(void) {};
     /// Return system file handle associated with the file.
     TFileHandle GetFileHandle(void) { return m_File.GetFileHandle(); };
+    /// Get an underlaying fileio object
+    CFileIO& GetFileIO(void) { return m_File; }
+
 protected:
     CFileIO  m_File;
 private:
