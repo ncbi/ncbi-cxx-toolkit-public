@@ -857,23 +857,24 @@ void CDiagContext::PrintExtra(const string& message)
 }
 
 
-CDiagContext::CExtraArgs::CExtraArgs(const CExtraArgs& args)
-    : m_Message(const_cast<CExtraArgs&>(args).m_Message.release())
+CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
+    : m_Message(const_cast<CDiagContext_Extra&>(args).m_Message.release())
 {
 }
 
 
-CDiagContext::CExtraArgs&
-CDiagContext::CExtraArgs::operator=(const CExtraArgs& args)
+CDiagContext_Extra&
+CDiagContext_Extra::operator=(const CDiagContext_Extra& args)
 {
     if (this != &args) {
-        m_Message.reset(const_cast<CExtraArgs&>(args).m_Message.release());
+        m_Message.reset(const_cast<CDiagContext_Extra&>
+            (args).m_Message.release());
     }
     return *this;
 }
 
 
-CDiagContext::CExtraArgs::~CExtraArgs(void)
+CDiagContext_Extra::~CDiagContext_Extra(void)
 {
     if ( m_Message.get() ) {
         GetDiagContext().
@@ -882,9 +883,9 @@ CDiagContext::CExtraArgs::~CExtraArgs(void)
 }
 
 
-CDiagContext::CExtraArgs
-CDiagContext::CExtraArgs::Print(const string& name,
-                                const string& value)
+CDiagContext_Extra
+CDiagContext_Extra::Print(const string& name,
+                          const string& value)
 {
     static const char s_EncodeChars[256][4] = {
         "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
@@ -1659,7 +1660,11 @@ const char*    CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
 
 void* InitDiagHandler(void)
 {
-    CDiagContext::SetupDiag(eDS_Default, 0, eDCM_Init);
+    static bool s_DiagInitialized = false;
+    if ( !s_DiagInitialized ) {
+        CDiagContext::SetupDiag(eDS_Default, 0, eDCM_Init);
+        s_DiagInitialized = true;
+    }
     return 0;
 }
 

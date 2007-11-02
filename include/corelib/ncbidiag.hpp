@@ -1492,6 +1492,32 @@ private:
 };
 
 
+/// Temporary object for holding extra message arguments. Prints all
+/// of the arguments on destruction.
+class NCBI_XNCBI_EXPORT CDiagContext_Extra
+{
+public:
+    /// Prints all arguments as "name1=value1&name2=value2...".
+    ~CDiagContext_Extra(void);
+    /// The method does not print the argument, but adds it to the string.
+    /// Name must contain only alphanumeric chars or '_'.
+    /// Value is URL-encoded before printing.
+    CDiagContext_Extra Print(const string& name, const string& value);
+
+    /// Copying the object will prevent printing it on destruction.
+    /// The new copy should take care of printing.
+    CDiagContext_Extra(const CDiagContext_Extra& args);
+    CDiagContext_Extra& operator=(const CDiagContext_Extra& args);
+
+private:
+    // Can be created only by CDiagContext.
+    CDiagContext_Extra(void) {}
+    friend class CDiagContext;
+
+    auto_ptr<string> m_Message;
+};
+
+
 class NCBI_XNCBI_EXPORT CDiagContext
 {
 public:
@@ -1577,45 +1603,23 @@ public:
     ///   request-start
     ///   request-stop [STATUS] [REQ_ELAPSED_TIME] [BYTES_RD] [BYTES_WR]
     void PrintStart(const string& message);
+
     /// Print exit message.
     void PrintStop(void);
+
     /// Print extra message in plain text format.
     /// This method is deprecated and should be replaced by a call to
-    /// Extra() method and one or more calls to CExtraArgs::Print().
+    /// Extra() method and one or more calls to CDiagContext_Extra::Print().
     NCBI_DEPRECATED void PrintExtra(const string& message);
 
-    /// Temporary object for holding extra message arguments. Prints all
-    /// of the arguments on destruction.
-    class NCBI_XNCBI_EXPORT CExtraArgs
-    {
-    public:
-        /// Prints all arguments as "name1=value1&name2=value2...".
-        ~CExtraArgs(void);
-        /// The method does not print the argument, but adds it to the string.
-        /// Name must contain only alphanumeric chars or '_'.
-        /// Value is URL-encoded before printing.
-        CExtraArgs Print(const string& name, const string& value);
-
-        /// Copying the object will prevent printing it on destruction.
-        /// The new copy should take care of printing.
-        CExtraArgs(const CExtraArgs& args);
-        CExtraArgs& operator=(const CExtraArgs& args);
-
-    private:
-        // Can be created only by CDiagContext.
-        CExtraArgs(void) {}
-        friend class CDiagContext;
-
-        auto_ptr<string> m_Message;
-    };
-    friend class CExtraArgs;
     /// Create a temporary CExtraArgs object. The object will print
     /// arguments on destruction. Can be used like:
     ///   Extra().Print(name1, val1).Print(name2, val2);
-    CExtraArgs Extra(void) { return CExtraArgs(); }
+    CDiagContext_Extra Extra(void) { return CDiagContext_Extra(); }
 
     /// Print request start message (for request-driven applications)
     void PrintRequestStart(const string& message);
+
     /// Print request stop message (for request-driven applications)
     void PrintRequestStop(void);
 
@@ -1708,6 +1712,7 @@ private:
     typedef map<string, string> TProperties;
     friend void ThreadDataTlsCleanup(CDiagContextThreadData* value,
                                      void* cleanup_data);
+    friend class CDiagContext_Extra;
 
     // Saved messages to be flushed after setting up log files
     typedef list<SDiagMessage> TMessages;
