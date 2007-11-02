@@ -1886,6 +1886,18 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
         fields[2] = typestr;
         break;
 
+    case e_Pdb:
+        if (fields[0].size() > 4  &&  fields[1].empty()) { // misdelimited
+            if (fields[0].size() > 5) {
+                fields[1] = fields[0].substr(5);
+            } else {
+                _ASSERT(fields[0][4] != '|');
+                fields[1] = fields[0].substr(4);
+            }
+            fields[0].resize(4);
+        }
+        break;
+
     default:
         break; // avoid compiler warnings
     }
