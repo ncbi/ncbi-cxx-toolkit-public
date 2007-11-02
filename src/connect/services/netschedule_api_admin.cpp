@@ -66,6 +66,11 @@ void CNetScheduleAdmin::ShutdownServer(CNetScheduleAdmin::EShutdownLevel level) 
 }
 
 
+void CNetScheduleAdmin::ForceReschedule(const string& job_key) const
+{
+    m_API->x_SendJobCmdWaitResponse("FRES", job_key);
+}
+
 void CNetScheduleAdmin::ReloadServerConfig() const
 {
     if (m_API->GetConnector().IsLoadBalanced()) {
@@ -86,25 +91,6 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
     }
     SNSSendCmd::TFlags f = flags == eIgnoreDuplicateName ? SNSSendCmd::eIgnoreDuplicateNameError : 0;
     m_API->GetConnector().ForEach(SNSSendCmd(*m_API, param, f));
-    /*
-    string param = "QCRE " + qname + " " + qclass;
-    if (!comment.empty()) {
-        param.append(" \"");
-        param.append(comment);
-        param.append("\"");
-    }
-    for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
-         it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-        try {
-           m_API->SendCmdWaitResponse(ch, param); 
-        } catch (CNetScheduleException& ex) {
-            if (flags == eIgnoreDuplicateName && ex.GetErrCode() == CNetScheduleException::eDuplicateName)
-                continue;
-            throw;
-        }
-    }
-    */
 }
 
 
@@ -113,13 +99,6 @@ void CNetScheduleAdmin::DeleteQueue(const string& qname) const
     string param = "QDEL " + qname;
 
     m_API->GetConnector().ForEach(SNSSendCmd(*m_API, param, 0));
-    /*
-    for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
-         it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-        m_API->SendCmdWaitResponse(ch, param); 
-    }
-    */
 }
 
 void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key) const
@@ -134,13 +113,6 @@ void CNetScheduleAdmin::DropQueue() const
 {
     string cmd = "DROPQ";
     m_API->GetConnector().ForEach(SNSSendCmd(*m_API, cmd, 0));
-/*
-    for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
-         it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-        m_API->SendCmdWaitResponse(ch, cmd); 
-    }
-    */
 }
 
 
@@ -264,32 +236,6 @@ void CNetScheduleAdmin::StatusSnapshot(CNetScheduleAdmin::TStatusMap&  status_ma
 
     CStatusProcessor processor(*m_API, status_map);
     m_API->GetConnector().ForEach(SNSTelnetRunner(*m_API, cmd, processor));
-/*
-    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
-        it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-        ch->WriteStr(cmd);
-        ch->WaitForServer();
-
-        string line;
-        while (true) {
-            if (!ch->ReadStr(line)) {
-                break;
-            }
-            m_API->CheckServerOK(line);
-            if (line == "END")
-                break;
-
-            // parse the status message
-            string st_str, cnt_str;
-            bool delim = NStr::SplitInTwo(line, " ", st_str, cnt_str);
-            if (delim) {
-                CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::StringToStatus(st_str);
-                unsigned cnt = NStr::StringToUInt(cnt_str);
-                status_map[status] += cnt;
-            }
-        }
-    }*/
 }
 
 struct SNSJobCounter : public SNSSendCmd
@@ -313,24 +259,6 @@ unsigned long CNetScheduleAdmin::Count(const string& query) const
 {
     SNSJobCounter counter = m_API->GetConnector().ForEach(SNSJobCounter(*m_API, query));
     return counter.m_Counter;
-    /*
-    unsigned long count = 0;
-    string cmd = "QERY ";
-    cmd.append("\"");
-    cmd.append(NStr::PrintableString(query));
-    cmd.append("\" COUNT\r\n");
-
-    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
-        it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-        string resp = m_API->SendCmdWaitResponse(ch, cmd);
-        count += NStr::StringToULong(resp);
-    }
-    return count;
-    */
-}
-void CNetScheduleAdmin::ForceReschedule(const string& query) const
-{
 }
 void CNetScheduleAdmin::Cancel(const string& query) const
 {
@@ -371,15 +299,6 @@ void CNetScheduleAdmin::Query(const string& query, const vector<string>& fields,
 
     CSimpleStringProcessor processor(*m_API);
     m_API->GetConnector().ForEach(SNSTelnetRunner(*m_API, cmd, processor, &os));
-    /*
-    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
-        it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-        ch->WriteStr(cmd);
-        CQueryStringProcessor processor(*m_API);
-        ch->Telnet(os, &processor);
-    }
-    */
 }
 void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os) const
 {
@@ -390,14 +309,6 @@ void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os) cons
 
     CSimpleStringProcessor processor(*m_API);    
     m_API->GetConnector().ForEach(SNSTelnetRunner(*m_API, cmd, processor, &os));
-    /*
-    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
-        it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-        ch->WriteStr(cmd);
-        CQueryStringProcessor processor(*m_API);
-        ch->Telnet(os, &processor);
-    }*/
 }
 
 
@@ -424,20 +335,6 @@ CNetScheduleAdmin::TIDsMap CNetScheduleAdmin::x_QueueIDs(const string& query) co
 {
     SNSJobIDsGetter getter = m_API->GetConnector().ForEach(SNSJobIDsGetter(*m_API, query));
     return getter.m_IDsMap;
-    /*
-    string cmd = "QERY ";
-    cmd.append("\"");
-    cmd.append(NStr::PrintableString(query));
-    cmd.append("\" IDS");
-
-    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
-        it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-        string resp = m_API->SendCmdWaitResponse(ch, cmd);
-        string ip_addr = CSocketAPI::ntoa(CSocketAPI::gethostbyname(ch->GetHost()));
-        ret[TIDsMap::key_type(ip_addr, ch->GetPort())] = resp;
-    }
-    */
 }
 
 END_NCBI_SCOPE

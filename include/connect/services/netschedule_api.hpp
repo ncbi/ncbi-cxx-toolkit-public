@@ -633,6 +633,10 @@ public:
     void DropQueue() const;
 
     void DumpJob(CNcbiOstream& out, const string& job_key) const;
+    
+    /// Reschedule a job
+    ///
+    void ForceReschedule(const string& job_key) const;
 
     /// Turn server-side logging on(off)
     ///
@@ -664,7 +668,6 @@ public:
 
     /// Query by tags
     unsigned long Count(const string& query) const;
-    void ForceReschedule(const string& query) const;
     void Cancel(const string& query) const;
     void Drop(const string& query) const;
     void Query(const string& query, const vector<string>& fields, CNcbiOstream& os) const;

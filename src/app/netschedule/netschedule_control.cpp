@@ -170,6 +170,11 @@ void CNetScheduleControl::Init(void)
                              CArgDescriptions::eString);
 
     arg_desc->AddFlag("dump", "Print queue dump or job dump if -jid parameter is specified");
+    
+    arg_desc->AddOptionalKey("reschedule",
+                             "job_key",
+                             "Reschedule a job",
+                             CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("qprint",
                              "job_status",
@@ -185,6 +190,7 @@ void CNetScheduleControl::Init(void)
                              "query",
                              "Perform a query on the queue jobs",
                              CArgDescriptions::eString);
+
     arg_desc->AddOptionalKey("fields",
                              "fields_list",
                              "Fields (separated by ',') which should be returned by query",
@@ -347,6 +353,12 @@ int CNetScheduleControl::Run(void)
             CSimpleSink sink(os);
             ctl->GetAdmin().DumpQueue(sink);
         }
+    }
+    else if (args["reschedule"]) {
+        ctl.reset(x_CreateNewClient(true));
+        string jid = args["reschedule"].AsString();
+        ctl->GetAdmin().ForceReschedule(jid);
+        os << "Job " << jid << " has been resheduled." << endl;
     }
     else if (args["ver"]) {
         ctl.reset(x_CreateNewClient(false));
