@@ -62,28 +62,30 @@ CPosAli::CPosAli(const CAli& ali, const CSeq_id& protein, const CSeq_loc& genomi
     info.Cut();
     AddPostProcInfo(info.m_AliPiece);
 
+    SetHasStartOnNuc(info);
     SetHasStopOnNuc(info);
 }
 
-bool CAli::HasStartOnNuc(void) const
+bool CPosAli::HasStartOnNuc(void) const
 {
-    vector<CAliPiece>::const_iterator pit = m_ps.begin();
-    int nulpos = 0;
+    return m_has_start_on_nuc;
+}
+void CPosAli::SetHasStartOnNuc(const CInfo& info)
+{
+    m_has_start_on_nuc = false;
+
+    if (info.m_AliPiece.empty())
+        return;
+
+    int nulpos = info.NextNucNullBased(m_pcs.front().beg-1);
+    if(!cnseq->ValidPos(nulpos) || !cnseq->ValidPos(nulpos+2)) return;
     char start[] = "---";
-    while(pit->m_type == eHP || pit->m_type == eSP) {
-        nulpos += pit->m_len;
-        ++pit;
-    }
-    if(pit == m_ps.end()) return false;
-    if(pit->m_type != eMP) return false;
-    if(pit->m_len < 3) return false;
     start[0] = cnseq->Upper(nulpos);
     ++nulpos;
     start[1] = cnseq->Upper(nulpos);
     ++nulpos;
     start[2] = cnseq->Upper(nulpos);
-    if(strcmp(start, "ATG")) return false;
-    return true;
+    m_has_start_on_nuc = strcmp(start, "ATG")==0;
 }
 
 bool CPosAli::HasStopOnNuc() const

@@ -196,10 +196,10 @@ void CInfo::Cut(void)
     }
 }
 
-bool CInfo::ReportStart(void) const
-{
-    return ProtBegOnAli() && m_Ali.cpseq->HasStart() && m_Ali.HasStartOnNuc();
-}
+// bool CInfo::ReportStart(void) const
+// {
+//     return ProtBegOnAli() && m_Ali.cpseq->HasStart() && m_Ali.HasStartOnNuc();
+// }
 
 bool CInfo::ReportStop(void) const
 {

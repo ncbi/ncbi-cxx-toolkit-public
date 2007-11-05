@@ -77,10 +77,6 @@ public:
     //finds protein frame by alignment position (0, 1 or 2)
     int FindFrame(int alipos) const;
 
-    //checks if first protein residue matches ATG (and is NOT spliced)
-    //the protein residue may have any value (may be not M)
-    bool HasStartOnNuc(void) const;
-
     double score;
   CAli(CNSeq& nseq, CPSeq& pseq, const vector<pair<int, int> >& igi, bool lgap, bool rgap, const CAli& frali);//adds introns/end gaps
   CAli(CNSeq& nseq, CPSeq& pseq);
@@ -98,6 +94,7 @@ public:
     const CSeq_loc& m_genomic;
     const CSeq_id& m_protein;
     CProSplignOutputOptionsExt m_output_options;
+    bool m_has_start_on_nuc; // at the beginning of the first good piece
     bool m_has_stop_on_nuc; // after the last good piece
 
     //FULL
@@ -113,6 +110,11 @@ public:
 	CRef<CSeq_align> ToSeq_align(int comp_id = -1);// keeps comp_id as a score. Doesn't keep if '-1', 
 	void PopulateDense_seg(CDense_seg& ds, vector<CAliPiece>::const_iterator& spit, int sshift, int nulpos, int nultripos, vector<CAliPiece>::const_iterator& epit, int eshift, ENa_strand nstrand);
     int NucPosOut(int pos) const;
+    //checks if first protein residue matches ATG
+    //the protein residue may have any value (may be not M)
+    bool HasStartOnNuc(void) const;
+    void CPosAli::SetHasStartOnNuc(const CInfo& info);
+
     //checks if three (nucleotide) basis right after last protein residue equal to (TGA or TAA or TAG)
     bool HasStopOnNuc(void) const;
     void SetHasStopOnNuc(const CInfo& info);
