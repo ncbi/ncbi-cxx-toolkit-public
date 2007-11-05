@@ -1,0 +1,27 @@
+# $Id$
+
+SUB_PROJ =  \
+			algo_align \
+			algo_basic \
+			algo_cn3d \
+			algo_external \
+			algo_gnomon \
+			algo_init \
+			algo_linkout \
+			algo_phylo \
+			algo_submit \
+			algo_validator \
+			algo_web_page \
+			dload_basic \
+			dload_table \
+			view_align \
+			view_graphic \
+			view_phylotree \
+			view_snp \
+			view_table \
+			view_taxplot \
+			view_text \
+			view_validator
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

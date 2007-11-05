@@ -1,8 +1,0 @@
-#################################
-# $Id$
-#################################
-
-DLL_PROJ = dload_contig
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

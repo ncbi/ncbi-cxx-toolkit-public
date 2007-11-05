@@ -1,8 +1,10 @@
 # $Id$
 
 SUB_PROJ =  \
-    ncbi_gbench_contig \
-    ncbi_gbench_internal
+			ncbi_gbench_contig \
+			ncbi_gbench_internal \
+			Proteus \
+			radar
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

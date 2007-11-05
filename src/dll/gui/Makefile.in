@@ -1,22 +1,19 @@
 # $Id$
 
 SUB_PROJ =  \
-    algo \
-    dload_basic \
-    dload_contig \
-    dload_table \
-    gui_config \
-    gui_core \
-    gui_dialogs \
-    gui_graph \
-    gui_objects \
-    gui_services \
-    gui_utils \
-    internal \
-    Proteus \
-    radar \
-    view \
-    widgets
+			gui_utils \
+			gui_objects \
+			gui_config \
+			gui_graph \
+			gui_widgets \
+			gui_widgets_seq \
+			gui_widgets_aln \
+			gui_widgets_misc \
+			gui_dialogs \
+			gui_core \
+			gui_services \
+			plugins \
+			internal
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
