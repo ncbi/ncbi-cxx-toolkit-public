@@ -142,6 +142,7 @@ void CNetCacheWriter::Close()
         //w.Stop();
         //cerr << string(w) << endl;
     } catch (...) {
+        m_Connector->Disconnect();
         x_Shutdown();
         throw;
     }
@@ -201,6 +202,7 @@ bool CNetCacheWriter::x_IsStreamOk()
         break;
     }
     if (!m_LastError.empty()) {
+        m_Connector->Disconnect();
         x_Shutdown();
         return false;
     }

@@ -117,6 +117,10 @@ static void s_SetDefaultCommTimeout(const STimeout& tm)
     s_DefaultCommTimeout_Initialized = true;
 }
 
+inline static string s_GetHostDNSName(const string& host)
+{
+    return CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(host));
+}
 /*************************************************************************/
 
 CNetServerConnector::~CNetServerConnector()
@@ -138,8 +142,9 @@ bool CNetServerConnector::ReadStr(string& str)
     case eIO_Success:
         return true;
     case eIO_Timeout:
+        Disconnect();
         NCBI_THROW(CNetSrvConnException, eReadTimeout, 
-                   "Communication timeout reading from server " + m_Parent.GetHost() + ":" 
+                   "Communication timeout reading from server " + s_GetHostDNSName(m_Parent.GetHost()) + ":" 
                    + NStr::UIntToString(m_Parent.GetPort()) + ".");
         break;
     default: // invalid socket or request, bailing out
@@ -161,9 +166,10 @@ void CNetServerConnector::WriteBuf(const void* buf, size_t len)
         size_t n_written;
         EIO_Status io_st = m_Socket->Write(buf_ptr, size_to_write, &n_written);
         if ( io_st != eIO_Success) {
+            Disconnect();
             CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
             NCBI_THROW(CNetSrvConnException, eWriteFailure, 
-                        "Failed to write to server " + m_Parent.GetHost() + ":" 
+                        "Failed to write to server " + s_GetHostDNSName(m_Parent.GetHost()) + ":" 
                         + NStr::UIntToString(m_Parent.GetPort()) + 
                         ". Reason: " + string(io_ex.what()));
         }
@@ -182,8 +188,9 @@ void CNetServerConnector::WaitForServer(unsigned int wait_sec)
     while (true) {
         EIO_Status io_st = m_Socket->Wait(eIO_Read, &to);
         if (io_st == eIO_Timeout) {
+            Disconnect();
             NCBI_THROW(CNetSrvConnException, eResponseTimeout, 
-                       "No response from the server " + m_Parent.GetHost() + ":" 
+                       "No response from the server " + s_GetHostDNSName(m_Parent.GetHost()) + ":" 
                        + NStr::UIntToString(m_Parent.GetPort()) + ".");
         }
         else {
@@ -240,7 +247,7 @@ void CNetServerConnector::x_CheckConnect()
                     if ( io_st != eIO_Success) {
                         CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
                         NCBI_THROW(CNetSrvConnException, eConnectionFailure, 
-                                "Failed to connect to server " + m_Parent.GetHost() + ":" 
+                                "Failed to connect to server " + s_GetHostDNSName(m_Parent.GetHost()) + ":" 
                                 + NStr::UIntToString(m_Parent.GetPort()) + 
                                 ". Reason: " + string(io_ex.what()));
                     }
@@ -251,7 +258,7 @@ void CNetServerConnector::x_CheckConnect()
             } else {
                 CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
                 NCBI_THROW(CNetSrvConnException, eConnectionFailure, 
-                          "Failed to connect to server " + m_Parent.GetHost() + ":" 
+                          "Failed to connect to server " + s_GetHostDNSName(m_Parent.GetHost()) + ":" 
                           + NStr::UIntToString(m_Parent.GetPort()) + 
                           ". Reason: " + string(io_ex.what()));
             }

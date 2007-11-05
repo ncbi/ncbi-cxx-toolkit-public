@@ -178,6 +178,7 @@ string INetServiceAPI::WaitResponse(CNetServerConnector& conn) const
     conn.WaitForServer();
     string tmp;
     if (!conn.ReadStr(tmp)) {
+        conn.Disconnect();
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
