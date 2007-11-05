@@ -1670,13 +1670,7 @@ void* InitDiagHandler(void)
 
 
 // MT-safe initialization of the default handler
-CDiagHandler* CreateDefaultDiagHandler(void)
-{
-    CMutexGuard guard(s_DiagMutex);
-    return new CStreamDiagHandler(&NcbiCerr,
-                                  true,
-                                  kLogName_Stderr);
-}
+CDiagHandler* CreateDefaultDiagHandler(void);
 
 
 // Use s_DefaultHandler only for purposes of comparison, as installing
@@ -1689,6 +1683,20 @@ bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 
 // For initialization only
 void* s_DiagHandlerInitializer = InitDiagHandler();
+
+
+CDiagHandler* CreateDefaultDiagHandler(void)
+{
+    CMutexGuard guard(s_DiagMutex);
+    static bool s_DefaultDiagHandlerInitialized = false;
+    if ( !s_DefaultDiagHandlerInitialized ) {
+        s_DefaultDiagHandlerInitialized = true;
+        return new CStreamDiagHandler(&NcbiCerr,
+                                      true,
+                                      kLogName_Stderr);
+    }
+    return s_DefaultHandler;
+}
 
 
 CDiagBuffer::CDiagBuffer(void)
