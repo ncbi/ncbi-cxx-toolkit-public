@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-DLL_PROJ = Proteus
+DLL_PROJ = proteus
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
