@@ -332,21 +332,21 @@ void CCgiApplication::ProcessHttpReferer(void)
         GetConfig().Set("CONN", "HTTP_REFERER", ref);
         // Print script URL
         if ( s_PrintSelfUrlParam.Get() ) {
-            GetDiagContext().PrintExtra("SELF_URL=" + ref);
+            GetDiagContext().Extra().Print("SELF_URL", ref);
         }
     }
     // Print HTTP_REFERER
     if ( s_PrintRefererParam.Get() ) {
         ref = ctx.GetRequest().GetProperty(eCgi_HttpReferer);
         if ( !ref.empty() ) {
-            GetDiagContext().PrintExtra("HTTP_REFERER=" + ref);
+            GetDiagContext().Extra().Print("HTTP_REFERER", ref);
         }
     }
     // Print USER_AGENT
     if ( s_PrintUserAgentParam.Get() ) {
         string agent = ctx.GetRequest().GetProperty(eCgi_HttpUserAgent);
         if ( !agent.empty() ) {
-            GetDiagContext().PrintExtra("USER_AGENT=" + agent);
+            GetDiagContext().Extra().Print("USER_AGENT", agent);
         }
     }
 }
