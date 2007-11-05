@@ -604,7 +604,7 @@ void CIndexedDb::SetNumThreads( size_t n_threads )
 {
     if( !threads_set_ && n_threads > 0 ) threads_ = n_threads;
 
-    if( threads_ >= index_names_.size() ) {
+    if( threads_ >= index_names_.size() && !index_preloaded_ ) {
         seq_from_index_ = true;
         index_preloaded_ = true;
 
@@ -624,6 +624,10 @@ void CIndexedDb::SetNumThreads( size_t n_threads )
             CDbIndex::TSeqNum s = seqmap_.empty() ? 0 : *seqmap_.rbegin();
             seqmap_.push_back( s + (index->StopSeq() - index->StartSeq()) );
         }
+    }
+    else if( !index_preloaded_ ) {
+        results_.clear();
+        seqmap_.clear();
     }
 }
 
