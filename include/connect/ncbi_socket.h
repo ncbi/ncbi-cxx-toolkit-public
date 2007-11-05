@@ -115,6 +115,7 @@
  *  SOCK_gethostname
  *  SOCK_ntoa
  *  SOCK_isip
+ *  SOCK_isipEx
  *  SOCK_HostToNetShort
  *  SOCK_HostToNetLong
  *  SOCK_NetToHostShort
@@ -1456,6 +1457,20 @@ extern NCBI_XCONNECT_EXPORT int SOCK_ntoa
 
 
 /**
+ * @param host
+ *  [in] '\0'-terminated string to check against being a plain IP address
+ * @param fullquad
+ *  [in] non-zero to only accept "host" if it is a full-quad IP notation
+ * @return
+ *  Non-zero (true) if given string is an IP address, zero (false) otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isipEx
+(const char* host,
+ int/*bool*/ fullquad
+ );
+
+
+/** Equivalent of SOCK_isip(host, 0)
  * @param host
  *  [in] '\0'-terminated string to check against being a plain IP address
  * @return

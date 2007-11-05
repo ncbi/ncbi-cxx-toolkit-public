@@ -4711,6 +4711,12 @@ extern int SOCK_ntoa(unsigned int host,
 
 extern int/*bool*/ SOCK_isip(const char* host)
 {
+    return SOCK_isipEx(host, 0/*nofullquad*/);
+}
+
+
+extern int/*bool*/ SOCK_isipEx(const char* host, int/*bool*/ fullquad)
+{
     const char* c = host;
     unsigned long val;
     int dots = 0;
@@ -4720,7 +4726,7 @@ extern int/*bool*/ SOCK_isip(const char* host)
         if (!isdigit((unsigned char)(*c)))
             return 0/*false*/;
         errno = 0;
-        val = strtoul(c, &e, 0);
+        val = strtoul(c, &e, fullquad ? 10 : 0);
         if (c == e  ||  errno)
             return 0/*false*/;
         c = e;
@@ -4733,7 +4739,8 @@ extern int/*bool*/ SOCK_isip(const char* host)
         c++;
     }
 
-    return !*c  &&  val <= (0xFFFFFFFFUL >> (dots << 3));
+    return !*c  &&
+        (!fullquad  ||  dots == 3)  &&  val <= (0xFFFFFFFFUL >> (dots << 3));
 }
 
 
