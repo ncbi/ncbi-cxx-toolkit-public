@@ -29,19 +29,19 @@ Seq-entry ::= seq {
         columns {
           {
             header {
-              field int data-imp-key
+              field-id data-imp-key
             },
             default string "variation"
           },
           {
             header {
-              field int location-gi
+              field-id location-gi
             },
             default int 6912644
           },
           {
             header {
-              field int location-from
+              field-id location-from
             },
             data int {
               152,
@@ -52,13 +52,14 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int location-strand
+              field-id location-strand
             },
             default int 1
           },
           {
             header {
-              field str "Q.replace"
+              field-id qual,
+              field-name "Q.replace"
             },
             data string {
               "D",
@@ -69,7 +70,8 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field str "Q.replace"
+              field-id qual,
+              field-name "Q.replace"
             },
             data string {
               "N",
@@ -80,19 +82,21 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int ext-type
+              field-id ext-type
             },
             default string "dbSnpSynonymyData"
           },
           {
             header {
-              field str "E.weight"
+              field-id ext,
+              field-name "E.weight"
             },
             default int 1
           },
           {
             header {
-              field str "D.dbSNP"
+              field-id dbxref,
+              field-name "D.dbSNP"
             },
             data int {
               183854,

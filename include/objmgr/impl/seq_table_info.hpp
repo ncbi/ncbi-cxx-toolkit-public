@@ -128,7 +128,7 @@ class CSeqTableSetQual : public CSeqTableSetField
 {
 public:
     CSeqTableSetQual(const CTempString& name)
-        : name(name)
+        : name(name.substr(2))
         {
         }
 
@@ -143,7 +143,7 @@ class CSeqTableSetExt : public CSeqTableSetField
 {
 public:
     CSeqTableSetExt(const CTempString& name)
-        : name(name)
+        : name(name.substr(2))
         {
         }
 
@@ -156,22 +156,11 @@ private:
 };
 
 
-class CSeqTableSetExtType : public CSeqTableSetField
-{
-public:
-    virtual void Set(CSeq_feat& feat, int value) const;
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-
-private:
-    CTempString name;
-};
-
-
 class CSeqTableSetDbxref : public CSeqTableSetField
 {
 public:
     CSeqTableSetDbxref(const CTempString& name)
-        : name(name)
+        : name(name.substr(2))
         {
         }
 
@@ -180,6 +169,14 @@ public:
 
 private:
     CTempString name;
+};
+
+
+class CSeqTableSetExtType : public CSeqTableSetField
+{
+public:
+    virtual void Set(CSeq_feat& feat, int value) const;
+    virtual void Set(CSeq_feat& feat, const string& value) const;
 };
 
 
@@ -224,6 +221,9 @@ public:
     const CSeq_id* GetSeq_id(size_t row) const;
     const CSeq_loc* GetSeq_loc(size_t row) const;
 
+    void UpdateSeq_loc(CSeq_loc& loc, size_t row) const;
+    void UpdateSeq_feat(CSeq_feat& feat, size_t row) const;
+
 private:
     CConstRef<CSeqTable_column> m_Column;
     CConstRef<CSeqTableSetField> m_Setter;
@@ -233,13 +233,15 @@ class CSeqTableLocColumns
 {
 public:
     CSeqTableLocColumns(const char* field_name,
-                        CSeqTable_column_info::C_Field::EField_int base_value);
+                        CSeqTable_column_info::EField_id base_value);
     ~CSeqTableLocColumns();
 
     bool AddColumn(const CSeqTable_column& column);
 
     void SetColumn(CSeqTableColumnInfo& field,
                    const CSeqTable_column& column);
+    void AddExtraColumn(const CSeqTable_column& column,
+                        const CSeqTableSetField* setter);
 
     void ParseDefaults(void);
 
@@ -267,7 +269,7 @@ public:
 
 private:
     CTempString m_FieldName;
-    CSeqTable_column_info::C_Field::EField_int m_BaseValue;
+    CSeqTable_column_info::EField_id m_BaseValue;
 
     bool m_Is_set, m_Is_real_loc;
     bool m_Is_simple, m_Is_probably_simple;

@@ -29,19 +29,19 @@ Seq-entry ::= seq {
         columns {
           {
             header {
-              field int data-imp-key
+              field-id data-imp-key
             },
             default string "STS"
           },
           {
             header {
-              field int location-gi
+              field-id location-gi
             },
             default int 30240931
           },
           {
             header {
-              field int location-from
+              field-id location-from
             },
             data int {
               3307,
@@ -66,7 +66,7 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int location-to
+              field-id location-to
             },
             data int {
               3433,
@@ -91,13 +91,14 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int location-strand
+              field-id location-strand
             },
             default int 1
           },
           {
             header {
-              field str "Q.standard_name"
+              field-id qual,
+              field-name "Q.standard_name"
             },
             data string {
               "SHGC-31898",
@@ -140,7 +141,8 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field str "D.UniSTS"
+              field-id dbxref,
+              field-name "D.UniSTS"
             },
             data int {
               14622,

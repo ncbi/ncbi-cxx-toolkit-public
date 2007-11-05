@@ -41,89 +41,89 @@ IMPORTS
 
 SeqTable-column-info ::= SEQUENCE {
     -- user friendly column name, can be skipped
-    name VisibleString OPTIONAL,
+    title VisibleString OPTIONAL,
 
     -- identification of the column data in the objects described by the table
-    field CHOICE {
-        -- known column data types
-        int INTEGER {
-            -- position types
-            location        (0), -- location as Seq-loc
-            location-id     (1), -- location Seq-id
-            location-gi     (2), -- gi
-            location-from   (3), -- interval from
-            location-to     (4), -- interval to
-            location-strand (5), -- location strand
-            location-fuzz-from-lim (6),
-            location-fuzz-to-lim   (7),
+    field-id INTEGER { -- known column data types
+        -- position types
+        location        (0), -- location as Seq-loc
+        location-id     (1), -- location Seq-id
+        location-gi     (2), -- gi
+        location-from   (3), -- interval from
+        location-to     (4), -- interval to
+        location-strand (5), -- location strand
+        location-fuzz-from-lim (6),
+        location-fuzz-to-lim   (7),
 
-            product         (10), -- product as Seq-loc
-            product-id      (11), -- product Seq-id
-            product-gi      (12), -- product gi
-            product-from    (13), -- product interval from
-            product-to      (14), -- product interval to
-            product-strand  (15), -- product strand
-            product-fuzz-from-lim (16),
-            product-fuzz-to-lim   (17),
-            
-            -- main feature fields
-            id-local        (20), -- id.local.id
-            xref-id-local   (21), -- xref.id.local.id
-            partial         (22),
-            comment         (23),
-            title           (24),
+        product         (10), -- product as Seq-loc
+        product-id      (11), -- product Seq-id
+        product-gi      (12), -- product gi
+        product-from    (13), -- product interval from
+        product-to      (14), -- product interval to
+        product-strand  (15), -- product strand
+        product-fuzz-from-lim (16),
+        product-fuzz-to-lim   (17),
+        
+        -- main feature fields
+        id-local        (20), -- id.local.id
+        xref-id-local   (21), -- xref.id.local.id
+        partial         (22),
+        comment         (23),
+        title           (24),
+        ext             (25), -- field-name must be "E.xxx", see below
+        qual            (26), -- field-name must be "Q.xxx", see below
+        dbxref          (27), -- field-name must be "D.xxx", see below
 
-            -- various data fields
-            data-imp-key        (30),
-            data-region         (31),
-            data-cdregion-frame (32),
+        -- various data fields
+        data-imp-key        (30),
+        data-region         (31),
+        data-cdregion-frame (32),
 
-            -- extra fields, see also special values for str below
-            ext-type        (40),
-            qual-qual       (41),
-            qual-val        (42),
-            dbxref-db       (43),
-            dbxref-tag      (44),
+        -- extra fields, see also special values for str below
+        ext-type        (40),
+        qual-qual       (41),
+        qual-val        (42),
+        dbxref-db       (43),
+        dbxref-tag      (44),
 
-            -- more specialized field ???
-            -- match by gene name
-            gene-name       (50),
-            
-            -- match by protein product
-            protein-product (51),
-            
-            -- match by transcript
-            transcript-product(52),
-            
-            -- match by this SNP rsid
-            snp-rsid        (53),
-            
-            -- provide these colors
-            color           (54),
-            bgcolor         (55)
-        },
+        -- more specialized field ???
+        -- match by gene name
+        gene-name       (50),
+        
+        -- match by protein product
+        protein-product (51),
+        
+        -- match by transcript
+        transcript-product(52),
+        
+        -- match by this SNP rsid
+        snp-rsid        (53),
+        
+        -- provide these colors
+        color           (54),
+        bgcolor         (55)
+    } OPTIONAL,
 
-        -- any other column must be identified by ASN.1 text locator string
-        -- with omitted object type.
-        -- examples:
-        --   "data.gene.locus" for Seq-feat.data.gene.locus
-        --   "data.imp.key" for Seq-feat.data.imp.key
-        --   "qual.qual"
-        --    - Seq-feat.qual is SEQUENCE so several columns are allowed
-        --      see also "Q.xxx" special value for shorter qual representation
-        --   "ext.type.str"
-        --   "ext.data.label.str"
-        --   "ext.data.data.int"
-        --      see also "E.xxx" special value for shorter ext representation
-        -- special values start with capital letter:
-        --   "E.xxx" - ext.data.label.str = xxx, ext.data.data = data
-        --    - Seq-feat.ext.data is SEQUENCE so several columns are allowed
-        --   "Q.xxx" - qual.qual = xxx, qual.val = data
-        --    - Seq-feat.qual is SEQUENCE so several columns are allowed
-        --   "D.xxx" - dbxref.id = xxx, dbxref.tag = data
-        --    - Seq-feat.dbxref is SET so several columns are allowed
-        str     VisibleString
-    }
+    -- any column can be identified by ASN.1 text locator string
+    -- with omitted object type.
+    -- examples:
+    --   "data.gene.locus" for Seq-feat.data.gene.locus
+    --   "data.imp.key" for Seq-feat.data.imp.key
+    --   "qual.qual"
+    --    - Seq-feat.qual is SEQUENCE so several columns are allowed
+    --      see also "Q.xxx" special value for shorter qual representation
+    --   "ext.type.str"
+    --   "ext.data.label.str"
+    --   "ext.data.data.int"
+    --      see also "E.xxx" special value for shorter ext representation
+    -- special values start with capital letter:
+    --   "E.xxx" - ext.data.label.str = xxx, ext.data.data = data
+    --    - Seq-feat.ext.data is SEQUENCE so several columns are allowed
+    --   "Q.xxx" - qual.qual = xxx, qual.val = data
+    --    - Seq-feat.qual is SEQUENCE so several columns are allowed
+    --   "D.xxx" - dbxref.id = xxx, dbxref.tag = data
+    --    - Seq-feat.dbxref is SET so several columns are allowed
+    field-name  VisibleString OPTIONAL
 }
 
 

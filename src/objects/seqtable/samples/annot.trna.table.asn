@@ -34,13 +34,13 @@ Seq-entry ::= seq {
         columns {
           {
             header {
-              field str "data.rna.type"
+              field-name "data.rna.type"
             },
             default int 3
           },
           {
             header {
-              field str "data.rna.ext.tRNA.aa.ncbieaa"
+              field-name "data.rna.ext.tRNA.aa.ncbieaa"
             },
             data int {
               71,
@@ -54,13 +54,13 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int location-gi
+              field-id location-gi
             },
             default int 51459255
           },
           {
             header {
-              field int location-from
+              field-id location-from
             },
             data int {
               3446617,
@@ -74,7 +74,7 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int location-to
+              field-id location-to
             },
             data int {
               3446687,
@@ -88,7 +88,7 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int location-strand
+              field-id location-strand
             },
             data int {
               1
@@ -97,7 +97,7 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field str "xref.data.gene"
+              field-name "xref.data.gene"
             }
           }
         }

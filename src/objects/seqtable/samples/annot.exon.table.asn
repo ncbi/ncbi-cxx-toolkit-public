@@ -32,19 +32,19 @@ Seq-entry ::= seq {
         columns {
           {
             header {
-              field int data-imp-key
+              field-id data-imp-key
             },
             default string "exon"
           },
           {
             header {
-              field int location-gi
+              field-id location-gi
             },
             default int 42741670
           },
           {
             header {
-              field int location-from
+              field-id location-from
             },
             data int {
               0,
@@ -54,7 +54,7 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int location-to
+              field-id location-to
             },
             data int {
               74,
@@ -64,13 +64,14 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int location-strand
+              field-id location-strand
             },
             default int 1
           },
           {
             header {
-              field str "Q.number"
+              field-id qual,
+              field-name "Q.number"
             },
             data string {
                 "1",
@@ -80,7 +81,8 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field str "Q.inference"
+              field-id qual,
+              field-name "Q.inference"
             },
             default string "alignment:Splign"
           }

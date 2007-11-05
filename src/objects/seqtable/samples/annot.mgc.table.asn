@@ -33,13 +33,13 @@ Seq-entry ::= seq {
         columns {
           {
             header {
-              field int data-imp-key
+              field-id data-imp-key
             },
             default string "misc_difference"
           },
           {
             header {
-              field int comment
+              field-id comment
             },
             data string {
               "2 bases in genome, TT, are not found in cDNA.",
@@ -48,13 +48,13 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int location-gi
+              field-id location-gi
             },
             default int 17391200
           },
           {
             header {
-              field int location-from
+              field-id location-from
             },
             data int {
               1251,
@@ -63,7 +63,7 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int location-to
+              field-id location-to
             },
             data int {
               3178
@@ -74,7 +74,7 @@ Seq-entry ::= seq {
           },
           {
             header {
-              field int location-fuzz-from-lim
+              field-id location-fuzz-from-lim
             },
             data int {
               3
