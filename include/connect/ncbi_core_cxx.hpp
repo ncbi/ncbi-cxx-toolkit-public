@@ -94,6 +94,40 @@ protected:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// C++ version of STimeout
+///
+
+class NCBI_XCONNECT_EXPORT CTimeout
+{
+public:
+    /// Create default timeout
+    CTimeout(void) : m_Ptr(kDefaultTimeout) {}
+    /// Create timeout from STimeout*
+    CTimeout(const STimeout* tmo) { Set(tmo); }
+    /// Initialize timeout in seconds and microseconds
+    CTimeout(unsigned int sec, unsigned int usec) { Set(sec, usec); }
+    ~CTimeout(void) {}
+
+    /// Get STimeout*
+    const STimeout* Get(void) const { return m_Ptr; }
+    /// Convert to const STimeout*
+    operator const STimeout*(void) const { return Get(); }
+
+    /// Set timeout
+    void Set(const STimeout* tmo);
+    /// Set timeout in seconds and microseconds
+    void Set(unsigned int sec, unsigned int usec);
+    /// Copy timeout from STimeout*
+    const CTimeout& operator=(const STimeout* tmo) { Set(tmo); return *this; }
+
+private:
+    const STimeout* m_Ptr;
+    STimeout        m_Timeout;
+};
+
+
 END_NCBI_SCOPE
 
 

@@ -317,4 +317,24 @@ CConnIniter::CConnIniter()
 }
 
 
+void CTimeout::Set(const STimeout* tmo)
+{
+    if (tmo == kDefaultTimeout  ||  tmo == kInfiniteTimeout) {
+        m_Ptr = tmo;
+    }
+    else {
+        m_Timeout = *tmo;
+        m_Ptr = &m_Timeout;
+    }
+}
+
+
+void CTimeout::Set(unsigned int sec, unsigned int usec)
+{
+    m_Timeout.sec = sec;
+    m_Timeout.usec = usec;
+    m_Ptr = &m_Timeout;
+}
+
+
 END_NCBI_SCOPE
