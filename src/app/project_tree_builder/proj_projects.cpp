@@ -61,6 +61,12 @@ CProjectsLstFileFilter::CProjectsLstFileFilter(const string& root_src_dir,
 string CProjectsLstFileFilter::ConvertToMask(const string& name)
 {
     string s = NStr::Replace(name,"\\","/");
+    if (NStr::EndsWith(s,'$')) {
+        s.erase(s.size()-1,1);
+        s += "/$";
+    } else {
+        s += '/';
+    }
     return s;
 }
 
@@ -125,6 +131,7 @@ bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool* 
 {
     string proj_dir = CDirEntry::CreateRelativePath(m_RootSrcDir,project_base_dir);
     proj_dir = NStr::Replace(proj_dir,"\\","/");
+    proj_dir += '/';
     bool include_ok = false;
     if (!m_PassAll) {
         ITERATE(list<string>, s, m_listEnabled) {
@@ -134,7 +141,7 @@ bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool* 
                 include_ok =  true;
                 break;
             } else if (weak) {
-                string pd = "^" + proj_dir + "/.*";
+                string pd = "^" + proj_dir + ".*";
                 CRegexp px(pd);
                 *weak = px.IsMatch(str);
                 if (*weak) {
