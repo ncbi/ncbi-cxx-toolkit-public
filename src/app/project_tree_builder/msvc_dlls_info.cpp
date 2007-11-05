@@ -324,27 +324,6 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
 
     FilterOutDllHostedProjects(tree_src, tree_dst);
 
-    NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, tree_dst->m_Projects) {
-
-        list<CProjKey> new_depends;
-        CProjItem& project = p->second;
-        ITERATE(list<CProjKey>, n, project.m_Depends) {
-            const CProjKey& depend_id = *n;
-
-            CProjectItemsTree::TProjects::const_iterator i = tree_src.m_Projects.find(depend_id);
-            if (i != tree_src.m_Projects.end()) {
-                if (i->second.m_DllHost.empty()) {
-                    new_depends.push_back(depend_id);
-                } else {
-                    new_depends.push_back(CProjKey(CProjKey::eDll, i->second.m_DllHost));
-                }
-            }
-        }
-        new_depends.sort();
-        new_depends.unique();
-        project.m_Depends = new_depends;
-    }
-
     list<string> dll_ids;
     CreateDllsList(tree_src, &dll_ids);
 
@@ -410,6 +389,26 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
             PTB_WARNING_EX(path, ePTB_ProjectExcluded,
                            "Skipped empty project: " << dll_id);
         }
+    }
+    NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, tree_dst->m_Projects) {
+
+        list<CProjKey> new_depends;
+        CProjItem& project = p->second;
+        ITERATE(list<CProjKey>, n, project.m_Depends) {
+            const CProjKey& depend_id = *n;
+
+            CProjectItemsTree::TProjects::const_iterator i = tree_src.m_Projects.find(depend_id);
+            if (i != tree_src.m_Projects.end()) {
+                if (i->second.m_DllHost.empty()) {
+                    new_depends.push_back(depend_id);
+                } else {
+                    new_depends.push_back(CProjKey(CProjKey::eDll, i->second.m_DllHost));
+                }
+            }
+        }
+        new_depends.sort();
+        new_depends.unique();
+        project.m_Depends = new_depends;
     }
 }
 
