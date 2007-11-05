@@ -659,17 +659,34 @@ static bool x_IsInputAlignment( const char* byte_buf, size_t byte_count )
 
 static bool x_IsInputXml( const char* byte_buf, size_t byte_count )
 {
-    if (byte_count > 5) {
-        const char* xml_sig = "<?XML";
-        for (unsigned i = 0; i < 5; ++i) {
-            unsigned char ch = byte_buf[i];
-            char upch = toupper(ch);
-            if (upch != xml_sig[i]) {
-                return false;
-            }
-        }
+    string input( byte_buf, byte_count );
+    NStr::TruncateSpacesInPlace( input, NStr::eTrunc_Begin );
+
+    //
+    //  Test 1: If it starts with typical XML decorations such as "<?xml..."
+    //  then respect that:
+    //
+    if ( NStr::StartsWith( input, "<?XML", NStr::eNocase ) ) {
         return true;
     }
+    if ( NStr::StartsWith( input, "<!DOCTYPE", NStr::eNocase ) ) {
+        return true;
+    }
+
+    //
+    //  Test 2: In the absence of XML specific declarations, check whether the
+    //  input starts with the opening tag of a well known set of doc types:
+    //
+    static const char* known_types[] = { 
+        "<Blast4-request>" 
+    };
+    const int num_types = sizeof( known_types ) / sizeof( const char* );
+
+    for ( int i=0; i < num_types; ++i ) {
+        if ( NStr::StartsWith( input, known_types[i], NStr::eCase ) ) {
+            return true;
+        }
+    } 
     
     return false;
 }
