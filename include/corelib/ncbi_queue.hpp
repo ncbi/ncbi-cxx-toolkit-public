@@ -666,10 +666,14 @@ private:
     // friends
     friend class CSyncQueue_ConstAccessGuard<Type, Container>;
     friend class CSyncQueue_AccessGuard<Type, Container>;
-    friend class CSyncQueue_I<Type, Container,
-                              typename TQueue::TNativeIter>;
-    friend class CSyncQueue_I<Type, Container,
-                              typename TQueue::TNativeConstIter>;
+
+    // Const iterator must be friend of non-const iterator. But const
+    // iterator cannot be friend of itself (gives compile error on
+    // gcc 2.95).
+    typedef typename
+    GetTypeWhenNotEqual<typename TQueue::TNativeConstIter,
+                        TNativeIterator>::Result       TIntrnNativeConstIter;
+    friend class CSyncQueue_I<Type, Container, TIntrnNativeConstIter>;
 };
 
 
@@ -992,8 +996,8 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
         while ( (this->*func_to_check)() ) {
             CTimeSpan tmo = x_GetNextTimeout(*timeout, timer);
 
-            // Counter is checked only in locked queue. So we have to increase it
-            // before unlocking.
+            // Counter is checked only in locked queue. So we have to
+            // increase it before unlocking.
             counter->Add(1);
             lock->Unlock();
             bool is_success = trigger->TryWait(tmo.GetCompleteSeconds(),
@@ -1013,13 +1017,13 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
         // infinite timeout
         lock->Lock(this);
         while ( (this->*func_to_check)() ) {
-            // Counter is checked only in locked queue. So we have to increase it
-            // before unlocking.
+            // Counter is checked only in locked queue. So we have to
+            // increase it before unlocking.
             counter->Add(1);
             lock->Unlock();
             trigger->Wait();
-            // To minimize unnecessary semaphore increasing we decrease the counter
-            // asap, before we can acquire queue lock.
+            // To minimize unnecessary semaphore increasing we decrease
+            // the counter asap, before we can acquire queue lock.
             counter->Add(-1);
             lock->Lock(this);
         }
