@@ -113,7 +113,7 @@ public:
     //checks if first protein residue matches ATG
     //the protein residue may have any value (may be not M)
     bool HasStartOnNuc(void) const;
-    void CPosAli::SetHasStartOnNuc(const CInfo& info);
+    void SetHasStartOnNuc(const CInfo& info);
 
     //checks if three (nucleotide) basis right after last protein residue equal to (TGA or TAA or TAG)
     bool HasStopOnNuc(void) const;
