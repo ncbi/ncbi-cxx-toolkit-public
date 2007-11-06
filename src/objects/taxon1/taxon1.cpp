@@ -1106,12 +1106,16 @@ CTaxon1::GetRankName(short rank_id, string& rank_name_out )
 // Get taxonomic division name by division id
 ///
 bool
-CTaxon1::GetDivisionName(short div_id, string& div_name_out )
+CTaxon1::GetDivisionName(short div_id, string& div_name_out, string* div_code_out )
 {
     SetLastError( NULL );
     const char* pchName = m_plCache->GetDivisionName( div_id );
+    const char* pchCode = m_plCache->GetDivisionCode( div_id );
     if( pchName ) {
         div_name_out.assign( pchName );
+        if( pchCode && div_code_out != NULL ) {
+            div_code_out->assign( pchCode );
+        }
         return true;
     } else {
         SetLastError( "ERROR: GetDivisionName(): Division not found" );
