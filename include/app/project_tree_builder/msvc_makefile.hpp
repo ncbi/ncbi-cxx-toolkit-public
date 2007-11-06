@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 class IMsvcMetaMakefile
 {
 public:
+    virtual ~IMsvcMetaMakefile() {}
     virtual string GetCompilerOpt (const string&       opt, 
                                    const SConfigInfo&  config)   const = 0;
 
@@ -61,6 +62,7 @@ public:
 class IMsvcProjectMakefile
 {
 public:
+    virtual ~IMsvcProjectMakefile() {}
     virtual bool IsExcludeProject (bool default_val)             const = 0;
 
     virtual void GetAdditionalSourceFiles
