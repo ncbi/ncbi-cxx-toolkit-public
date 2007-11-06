@@ -77,6 +77,15 @@ protected:
     {
         m_Server->MonitorPost(msg);
     }
+    void MonitorException(const std::exception& ex,
+                          const string& comment,
+                          const string& request);
+    void ReportException(const std::exception& ex,
+                         const string& comment,
+                         const string& request);
+    void ReportException(const CException& ex,
+                         const string& comment,
+                         const string& request);
 
 protected:
     NetCache_RequestStat m_Stat;

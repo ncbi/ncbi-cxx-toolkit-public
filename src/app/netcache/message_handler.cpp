@@ -380,45 +380,13 @@ void CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
     } 
     catch (CNetCacheException &ex)
     {
-        string msg;
-        msg = "NC Server error: ";
-        msg.append(ex.what());
-        msg.append(" client=");  msg.append(m_Auth);
-        msg.append(" request='");msg.append(request); msg.append("'");
-        msg.append(" peer="); msg.append(socket.GetPeerAddress());
-        msg.append(" blobsize=");
-            msg.append(NStr::UIntToString(m_Stat.blob_size));
-        msg.append(" io blocks=");
-            msg.append(NStr::UIntToString(m_Stat.io_blocks));
-
-        ERR_POST(msg);
-
+        ReportException(ex, "NC Server error: ", request);
         m_Server->RegisterException(m_Stat.op_code, m_Auth, ex);
-
-        if (IsMonitoring()) {
-            MonitorPost(msg);
-        }
     }
     catch (CNetServiceException& ex)
     {
-        string msg;
-        msg = "NC Service exception: ";
-        msg.append(ex.what());
-        msg.append(" client=");  msg.append(m_Auth);
-        msg.append(" request='");msg.append(request); msg.append("'");
-        msg.append(" peer="); msg.append(socket.GetPeerAddress());
-        msg.append(" blobsize=");
-            msg.append(NStr::UIntToString(m_Stat.blob_size));
-        msg.append(" io blocks=");
-            msg.append(NStr::UIntToString(m_Stat.io_blocks));
-
-        ERR_POST(msg);
-
+        ReportException(ex, "NC Service exception: ", request);
         m_Server->RegisterException(m_Stat.op_code, m_Auth, ex);
-
-        if (IsMonitoring()) {
-            MonitorPost(msg);
-        }
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -431,46 +399,71 @@ void CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
             }
             m_Server->SetShutdownFlag();
         } else {
-            string msg;
-            msg = "NC BerkeleyDB error: ";
-            msg.append(ex.what());
-            msg.append(" client=");  msg.append(m_Auth);
-            msg.append(" request='");msg.append(request); msg.append("'");
-            msg.append(" peer="); msg.append(socket.GetPeerAddress());
-            msg.append(" blobsize=");
-                msg.append(NStr::UIntToString(m_Stat.blob_size));
-            msg.append(" io blocks=");
-                msg.append(NStr::UIntToString(m_Stat.io_blocks));
-            ERR_POST(msg);
-
-            if (IsMonitoring()) {
-                MonitorPost(msg);
-            }
-
+            ReportException(ex, "NC BerkeleyDB error: ", request);
             m_Server->RegisterInternalErr(m_Stat.op_code, m_Auth);
         }
         throw;
     }
+    catch (CException& ex)
+    {
+        ReportException(ex, "NC CException: ", request);
+    }
     catch (exception& ex)
     {
-        string msg;
-        msg = "NC std::exception: ";
-        msg.append(ex.what());
-        msg.append(" client="); msg.append(m_Auth);
-        msg.append(" request='"); msg.append(request); msg.append("'");
-        msg.append(" peer="); msg.append(socket.GetPeerAddress());
-        msg.append(" blobsize=");
-            msg.append(NStr::UIntToString(m_Stat.blob_size));
-        msg.append(" io blocks=");
-            msg.append(NStr::UIntToString(m_Stat.io_blocks));
-
-        ERR_POST(msg);
-
+        ReportException(ex, "NC std::exception: ", request);
         m_Server->RegisterInternalErr(m_Stat.op_code, m_Auth);
+    }
+}
 
-        if (IsMonitoring()) {
-            MonitorPost(msg);
-        }
+
+void CNetCache_MessageHandler::MonitorException(const std::exception& ex,
+                                                const string& comment,
+                                                const string& request)
+{
+    CSocket& socket = GetSocket();
+    string msg = comment;
+    msg.append(ex.what());
+    msg.append(" client="); msg.append(m_Auth);
+    msg.append(" request='"); msg.append(request); msg.append("'");
+    msg.append(" peer="); msg.append(socket.GetPeerAddress());
+    msg.append(" blobsize=");
+        msg.append(NStr::UIntToString(m_Stat.blob_size));
+    msg.append(" io blocks=");
+        msg.append(NStr::UIntToString(m_Stat.io_blocks));
+    MonitorPost(msg);
+}
+
+
+void CNetCache_MessageHandler::ReportException(const std::exception& ex,
+                                               const string& comment,
+                                               const string& request)
+{
+    CSocket& socket = GetSocket();
+    LOG_POST(Error << ex.what()
+        << " client=" << m_Auth
+        << " request='" << request << "'"
+        << " peer=" << socket.GetPeerAddress()
+        << " blobsize=" << NStr::UIntToString(m_Stat.blob_size)
+        << " io blocks="<< NStr::UIntToString(m_Stat.io_blocks));
+    if (IsMonitoring()) {
+        MonitorException(ex, comment, request);
+    }
+}
+
+
+void CNetCache_MessageHandler::ReportException(const CException& ex,
+                                               const string& comment,
+                                               const string& request)
+{
+    CSocket& socket = GetSocket();
+    LOG_POST(Error << ex
+        << " client=" << m_Auth
+        << " request='" << request << "'"
+        << " peer=" << socket.GetPeerAddress()
+        << " blobsize=" << NStr::UIntToString(m_Stat.blob_size)
+        << " io blocks="<< NStr::UIntToString(m_Stat.io_blocks));
+    if (IsMonitoring()) {
+        MonitorException(ex, comment, request);
     }
 }
 
