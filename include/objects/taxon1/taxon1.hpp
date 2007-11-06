@@ -262,7 +262,7 @@ public:
     //---------------------------------------------
     // Get taxonomic division name by division id
     ///
-    bool GetDivisionName(short div_id, string& div_name_out );
+    bool GetDivisionName(short div_id, string& div_name_out, string* div_code_out = NULL );
 
     //---------------------------------------------
     // Get taxonomic name class name by name class id
