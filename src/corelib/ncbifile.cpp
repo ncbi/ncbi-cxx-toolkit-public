@@ -1320,9 +1320,11 @@ bool CDirEntry::SetTime(CTime* modification,
             0 /* creation/change */);
 
     if ( !modification ) {
+        x_modification.SetCurrent();
         modification = &x_modification;
     }
     if ( !last_access ) {
+        x_last_access.SetCurrent();
         last_access = &x_last_access;
     }
     // Change times
