@@ -192,13 +192,16 @@ void CTestQueueApp::RunGuarder() {
 
     assert((it + 2) - it == 2);
     assert(it - 2 < it);
-    assert(it[2] == *(it + 2));
     assert(itc - it == -(it - itc));
     assert(2 == itc - it);
 
     assert(guard.End() - it >= 3);
-    assert(*guard.Begin() == *(--guard.REnd()));
-    assert(*guard.RBegin() == *(--guard.End()));
+    TQueue::TRevIterator rev_it = guard.REnd();
+    --rev_it;
+    assert(*guard.Begin() == *rev_it);
+    it = guard.End();
+    --it;
+    assert(*guard.RBegin() == *it);
 
     // Now different guard and queue methods
     it = guard.Erase(it);
@@ -255,11 +258,14 @@ void CTestQueueApp::RunConstGuarder() {
 
     assert((it + 2) - it == 2);
     assert(it - 2 < it);
-    assert(it[2] == *(it + 2));
 
     assert(guard.End() - it >= 3);
-    assert(*guard.Begin() == *(--guard.REnd()));
-    assert(*guard.RBegin() == *(--guard.End()));
+    TQueue::TRevConstIterator rev_it = guard.REnd();
+    --rev_it;
+    assert(*guard.Begin() == *rev_it);
+    it = guard.End();
+    --it;
+    assert(*guard.RBegin() == *it);
 
     sm_Queue.Clear();
 

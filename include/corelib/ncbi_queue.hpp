@@ -122,10 +122,23 @@ public:
     typedef CSyncQueue_I<Type, Container, TNativeConstIter>  TConstIterator;
     /// Non-constant iterator on this queue
     typedef CSyncQueue_I<Type, Container, TNativeIter>       TIterator;
+
+#ifdef NCBI_COMPILER_WORKSHOP
+    /// Constant reverse iterator on this queue
+    typedef
+    reverse_iterator<TConstIterator,
+           typename TNativeConstIter::iterator_category,
+           const TValue>                                     TRevConstIterator;
+    /// Non-constant reverse iterator on this queue
+    typedef
+    reverse_iterator<TIterator,
+           typename TNativeIter::iterator_category, TValue>  TRevIterator;
+#else
     /// Constant reverse iterator on this queue
     typedef reverse_iterator<TConstIterator>                 TRevConstIterator;
     /// Non-constant reverse iterator on this queue
     typedef reverse_iterator<TIterator>                      TRevIterator;
+#endif
 
     /// Short name of this queue type
     typedef CSyncQueue<Type, Container>                      TMyType;
@@ -384,15 +397,25 @@ class CSyncQueue_ConstAccessGuard
 {
 public:
     /// Queue type that this object can guard
-    typedef const CSyncQueue<Type, Container>  TQueue;
+    typedef const CSyncQueue<Type, Container>           TQueue;
     /// Type of size of the queue
-    typedef typename TQueue::TSize             TSize;
+    typedef typename TQueue::TSize                      TSize;
     /// Type of values stored in the queue
-    typedef typename TQueue::TValue            TValue;
+    typedef typename TQueue::TValue                     TValue;
     /// Type of iterator returned from this guard
-    typedef typename TQueue::TConstIterator    TIterator;
+    typedef typename TQueue::TConstIterator             TIterator;
+
+#ifdef NCBI_COMPILER_WORKSHOP
+    typedef typename TQueue::TNativeConstIter           TNativeConstIter;
     /// Type of reverse iterator returned from this guard
-    typedef reverse_iterator<TIterator>        TRevIterator;
+    typedef
+    reverse_iterator<TIterator,
+        typename TNativeConstIter::iterator_category,
+        const TValue>                                   TRevIterator;
+#else
+    /// Type of reverse iterator returned from this guard
+    typedef reverse_iterator<TIterator>                 TRevIterator;
+#endif;
 
     /// Constructor -- locks a queue
     ///
@@ -451,7 +474,7 @@ private:
     /// List of non-constant iterators owned by this guard
     list<TNonConstIterator*> m_NonConstIters;
 
-    //
+    // friends
     friend
     class CSyncQueue_I<Type, Container, typename TQueue::TNativeIter>;
     friend
@@ -481,8 +504,18 @@ public:
     typedef typename TQueue::TValue                        TValue;
     /// Type of iterator returned from this guard
     typedef typename TQueue::TIterator                     TIterator;
+
+#ifdef NCBI_COMPILER_WORKSHOP
+    typedef typename TQueue::TNativeIter                   TNativeIter;
+    /// Type of reverse iterator returned from this guard
+    typedef
+    reverse_iterator<TIterator,
+                typename TNativeIter::iterator_category,
+                TValue>                                    TRevIterator;
+#else
     /// Type of reverse iterator returned from this guard
     typedef reverse_iterator<TIterator>                    TRevIterator;
+#endif
 
     /// Constructor locking given queue
     ///
