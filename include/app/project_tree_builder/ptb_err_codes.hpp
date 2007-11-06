@@ -107,10 +107,10 @@ private:
     ERR_POST(Info << MDiagFile(file) << ErrCode(err_code) << msg)
 
 #define PTB_TRACE(msg) \
-    _TRACE(ErrCode(ePTB_NoError) << msg)
+    _TRACE(Trace << ErrCode(ePTB_NoError) << msg)
 
 #define PTB_TRACE_EX(file, err_code, msg) \
-    _TRACE(MDiagFile(file) << ErrCode(err_code) << msg)
+    _TRACE(Trace << MDiagFile(file) << ErrCode(err_code) << msg)
 
 
 
