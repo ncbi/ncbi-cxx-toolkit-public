@@ -2010,7 +2010,7 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
     case e_Genbank:    tsid = &SetGenbank();    break;
     case e_Embl:       tsid = &SetEmbl();       break;
     case e_Pir:        tsid = &SetPir();        allow_dot = false;  break;
-    case e_Swissprot:  tsid = &SetSwissprot();  allow_dot = false;  break;
+    case e_Swissprot:  tsid = &SetSwissprot();  break;
     case e_Other:      tsid = &SetOther();      break;
     case e_Ddbj:       tsid = &SetDdbj();       break;
     case e_Prf:        tsid = &SetPrf();        allow_dot = false;  break;

@@ -346,8 +346,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaSwissprot)
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("sp|Q7CQJ0.1")));
     CHECK(id->IsSwissprot());
-    CHECK_EQUAL(id->GetSwissprot().GetAccession(), string("Q7CQJ0.1"));
-    CHECK( !id->GetSwissprot().IsSetVersion() );
+    CHECK_EQUAL(id->GetSwissprot().GetAccession(), string("Q7CQJ0"));
+    CHECK_EQUAL(id->GetSwissprot().GetVersion(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPatent)
