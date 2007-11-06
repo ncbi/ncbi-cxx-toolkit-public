@@ -46,6 +46,31 @@ template <typename BDB_SplitStore, typename BDB_Vol = typename BDB_SplitStore::T
 class CBDB_SplitCursor
 {
 public:
+    struct SVolumeLess : public binary_function<string, string, bool>
+    {
+        bool operator() (const string& s1, const string& s2) const
+        {
+            string::size_type pos1 = s1.find_last_of("_");
+            if (pos1 == string::npos) {
+                pos1 = 0;
+            }
+            string::size_type pos2 = s2.find_last_of("_");
+            if (pos2 == string::npos) {
+                pos2 = 0;
+            }
+
+            CTempString ts1(s1, pos1, s1.size());
+            CTempString ts2(s2, pos2, s2.size());
+            if (ts1 < ts2) {
+                return true;
+            }
+            if (ts2 < ts1) {
+                return false;
+            }
+
+            return s1 < s2;
+        }
+    };
     typedef BDB_SplitStore TSplitStore;
     typedef BDB_Vol        TVolume;
 
@@ -110,6 +135,8 @@ CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::CBDB_SplitCursor(TSplitStore& store)
          FindFiles(m_Files,
                    paths.begin(), paths.end(), masks.begin(), masks.end(),
                    fFF_File);
+
+         std::sort(paths.begin(), paths.end(), SVolumeLess());
 
          LOG_POST_XX(Bdb_Cursor, 2, Info <<
                      "found " << m_Files.size() << " candidate files");
