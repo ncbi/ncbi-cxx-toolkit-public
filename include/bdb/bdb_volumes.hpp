@@ -170,6 +170,9 @@ public:
                unsigned volume_id_new2,
                EVolumeStatus new_status = eOnlineActive);
 
+    /// Delete volume
+    void Delete(const vector<unsigned>& remove_list);
+
     /// Merge volumes into one
     void Merge(unsigned volume_id_new,
                const vector<unsigned>& merge_list,
