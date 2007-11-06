@@ -201,6 +201,24 @@ void CBDB_Volumes::LockVolume(unsigned volume_id)
     trans.Commit();
 }
 
+void CBDB_Volumes::Delete(const vector<unsigned>& remove_list)
+{
+    CBDB_VolumesTransaction trans(*this);
+
+    for (vector<unsigned>::const_iterator iter = remove_list.begin(); 
+        iter != remove_list.end(); ++iter) {
+        m_VolumesDB->volume_id = *iter;
+        EBDB_ErrCode err = m_VolumesDB->FetchForUpdate();    
+        if (err != eBDB_Ok) {
+            NCBI_THROW(CBDB_VolumesException, eVolumeNotFound,
+                string("Cannot find volume=") + NStr::UIntToString(*iter));
+        }
+        err = m_VolumesDB->Delete();    
+    }
+    
+    trans.Commit();
+}
+
 void CBDB_Volumes::UnLockVolume(unsigned volume_id)
 {
     CBDB_VolumesTransaction trans(*this);
@@ -267,11 +285,8 @@ void CBDB_Volumes::Merge(unsigned volume_id_new,
 
     x_ChangeCurrentStatus(volume_id_new,  new_status);
 
-    for (size_t i = 0; i < merge_list.size(); ++i) {
-        unsigned v_id = merge_list[i];
-        x_ChangeCurrentStatus(v_id,  eOffline);
-    } // for
-
+    Delete(merge_list);
+    
     trans.Commit();
 }
 
