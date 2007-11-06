@@ -469,7 +469,7 @@ public:
                 ERR_POST( "Cannot copy \"" << m_Name << "\" file.");
             }
             m_ReaderWriter.reset();
-            CFile(m_Name).Remove();
+            //CFile(m_Name).Remove();
         }
     }
 
