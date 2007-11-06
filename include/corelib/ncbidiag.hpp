@@ -1502,19 +1502,25 @@ public:
     /// The method does not print the argument, but adds it to the string.
     /// Name must contain only alphanumeric chars or '_'.
     /// Value is URL-encoded before printing.
-    CDiagContext_Extra Print(const string& name, const string& value);
+    CDiagContext_Extra& Print(const string& name, const string& value);
 
     /// Copying the object will prevent printing it on destruction.
     /// The new copy should take care of printing.
     CDiagContext_Extra(const CDiagContext_Extra& args);
     CDiagContext_Extra& operator=(const CDiagContext_Extra& args);
 
+    /// Print the message and reset object
+    void Flush(void);
+
 private:
+    void x_Release(void);
+
     // Can be created only by CDiagContext.
-    CDiagContext_Extra(void) {}
+    CDiagContext_Extra(void);
     friend class CDiagContext;
 
-    auto_ptr<string> m_Message;
+    string* m_Message;
+    int*    m_Counter;
 };
 
 

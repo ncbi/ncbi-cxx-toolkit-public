@@ -857,9 +857,38 @@ void CDiagContext::PrintExtra(const string& message)
 }
 
 
-CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
-    : m_Message(const_cast<CDiagContext_Extra&>(args).m_Message.release())
+CDiagContext_Extra::CDiagContext_Extra(void)
+    : m_Message(0),
+      m_Counter(new int(1))
 {
+}
+
+
+CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
+    : m_Message(const_cast<CDiagContext_Extra&>(args).m_Message),
+      m_Counter(const_cast<CDiagContext_Extra&>(args).m_Counter)
+{
+    (*m_Counter)++;
+}
+
+
+void CDiagContext_Extra::Flush(void)
+{
+    if ( m_Message  &&  !m_Message->empty() ) {
+        GetDiagContext().
+            x_PrintMessage(SDiagMessage::eEvent_Extra, *m_Message);
+        m_Message->erase();
+    }
+}
+
+
+void CDiagContext_Extra::x_Release(void)
+{
+    if ( m_Counter  &&  --(*m_Counter) == 0) {
+        Flush();
+        delete m_Message;
+        m_Message = 0;
+    }
 }
 
 
@@ -867,8 +896,10 @@ CDiagContext_Extra&
 CDiagContext_Extra::operator=(const CDiagContext_Extra& args)
 {
     if (this != &args) {
-        m_Message.reset(const_cast<CDiagContext_Extra&>
-            (args).m_Message.release());
+        x_Release();
+        m_Message = const_cast<CDiagContext_Extra&>(args).m_Message;
+        m_Counter = const_cast<CDiagContext_Extra&>(args).m_Counter;
+        (*m_Counter)++;
     }
     return *this;
 }
@@ -876,14 +907,14 @@ CDiagContext_Extra::operator=(const CDiagContext_Extra& args)
 
 CDiagContext_Extra::~CDiagContext_Extra(void)
 {
-    if ( m_Message.get() ) {
-        GetDiagContext().
-            x_PrintMessage(SDiagMessage::eEvent_Extra, *m_Message);
+    x_Release();
+    if ( *m_Counter == 0) {
+        delete m_Counter;
     }
 }
 
 
-CDiagContext_Extra
+CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name,
                           const string& value)
 {
@@ -922,8 +953,8 @@ CDiagContext_Extra::Print(const string& name,
         "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
     };
 
-    if ( !m_Message.get() ) {
-        m_Message.reset(new string);
+    if ( !m_Message ) {
+        m_Message = new string;
     }
     if ( !m_Message->empty() ) {
         *m_Message += "&";
