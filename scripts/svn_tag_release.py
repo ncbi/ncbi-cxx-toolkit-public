@@ -107,6 +107,8 @@ def get_list_to_remove(root, proj_tree, revision):
     add_path(src_tree, "app/Makefile.in", False)
     # This one is genuine exception
     add_path(inc_tree, "common")
+    # Build system
+    add_path(src_tree, "build-system")
     # Project tree builder
     add_path(inc_tree, "serial$")
     add_path(inc_tree, "serial/impl$")
