@@ -251,10 +251,11 @@ merge_down_into: Synchronize the branch with the parent stream.
 
 Usage: $ScriptName merge_down_into BRANCH_PATH
 
-This command must be executed from a working copy "switched" to
-the branch identified by the BRANCH_PATH argument. There must be
-no local changes in directories and files belonging to the branch
-before running this command.
+This command must be executed from a working copy, which will
+be "switched" by this command to the branch identified by the
+BRANCH_PATH argument. There must be no local changes in
+directories and files belonging to the branch before running
+this command.
 
 Once the merge results are reviewed and possible conflicts are
 resolved, the results of the 'merge_down_into' operation can be
@@ -270,8 +271,11 @@ merge_up_from: Promote branch changes to the parent stream.
 
 Usage: $ScriptName merge_up_from BRANCH_PATH
 
-Before the merge, the parent stream must be checked out to the
-current working directory and there must be no local changes in it.
+This command must be executed from a working copy, which will
+be "switched" by this command to the the parent stream of the
+branch identified by the BRANCH_PATH argument. There must be no
+local changes in directories and files belonging to the branch
+before running this command.
 
 The results of the merge can be committed with the help of the
 'commit_merge' command.
