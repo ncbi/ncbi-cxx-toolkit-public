@@ -139,7 +139,14 @@ static void s_JpegOutputHandler(j_common_ptr ptr)
 // specialized internal structs used for reading/writing from streams
 //
 
-struct SJpegInput {
+struct SJpegInput
+{
+    SJpegInput()
+        : stream(NULL)
+        , buffer(NULL)
+    {
+        memset(&pub, 0, sizeof(pub));
+    }
 
     // the input data elements
     struct jpeg_source_mgr pub;
@@ -150,7 +157,14 @@ struct SJpegInput {
 };
 
 
-struct SJpegOutput {
+struct SJpegOutput
+{
+    SJpegOutput()
+        : stream(NULL)
+        , buffer(NULL)
+    {
+        memset(&pub, 0, sizeof(pub));
+    }
 
     // the input data elements
     struct jpeg_destination_mgr pub;
@@ -311,6 +325,7 @@ static void s_JpegWriteSetup(j_compress_ptr cinfo,
     if (cinfo->dest == NULL) {
         cinfo->dest =
             (struct jpeg_destination_mgr*)malloc(sizeof(SJpegOutput));
+        memset(cinfo->dest, 0, sizeof (SJpegOutput));
         sptr = (SJpegOutput*)cinfo->dest;
     }
 
@@ -345,6 +360,8 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
     // standard libjpeg stuff
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
+    memset(&cinfo, 0, sizeof(cinfo));
+    memset(&jerr, 0, sizeof(jerr));
 
     SJpegErrorInfo jpeg_err_info;
 
@@ -497,6 +514,8 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr,
     // standard libjpeg stuff
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
+    memset(&cinfo, 0, sizeof(cinfo));
+    memset(&jerr, 0, sizeof(jerr));
 
     try {
         // open our file for reading
@@ -617,6 +636,8 @@ bool CImageIOJpeg::ReadImageInfo(CNcbiIstream& istr,
     // standard libjpeg stuff
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
+    memset(&cinfo, 0, sizeof(cinfo));
+    memset(&jerr, 0, sizeof(jerr));
 
     try {
         // open our file for reading
@@ -673,6 +694,8 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
 
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
+    memset(&cinfo, 0, sizeof(cinfo));
+    memset(&jerr, 0, sizeof(jerr));
 
     try {
         // standard libjpeg setup
@@ -770,6 +793,8 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
 
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
+    memset(&cinfo, 0, sizeof(cinfo));
+    memset(&jerr, 0, sizeof(jerr));
 
     try {
         // standard libjpeg setup
