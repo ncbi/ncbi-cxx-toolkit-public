@@ -255,8 +255,7 @@ static void s_JpegWriteTerminate(j_compress_ptr cinfo)
     }
     sptr->stream->flush();
     if ( !*(sptr->stream) ) {
-        NCBI_THROW(CImageException, eWriteError,
-                   "Error writing to JPEG stream");
+        LOG_POST(Error << "Error writing to JPEG stream");
     }
 }
 
