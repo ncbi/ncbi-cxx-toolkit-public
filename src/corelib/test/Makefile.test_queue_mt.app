@@ -7,4 +7,4 @@ LIB = test_mt xncbi
 
 CHECK_CMD =
 
-REQUIRES = MT
+CHECK_AUTHORS = ivanovp

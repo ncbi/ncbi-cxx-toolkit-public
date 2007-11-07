@@ -107,18 +107,27 @@ CSemaphore CTestQueueApp::sm_Guarder(1, 1);
 void CTestQueueApp::RunAtomic() {
     // Block atomic semaphore
     sm_Atomic.Wait();
+
+#ifdef _MT
     // Wait when Guarder enters locked zone
     sm_Sem1.Wait();
     // Show to Guarder that we get it and going on
     sm_Sem2.Post();
+#endif
 
     // Set test semaphore to check interoperation between Atomic and Guarder
     sm_Test.Post();
     // Try to push - queue must wait when Guarder finishes its locked zone
     CTimeSpan span(1.);
     sm_Queue.Push(0, &span);
+
+#ifdef _MT
     // Here Guarder must already reset this semaphore
     assert(!sm_Test.TryWait());
+#else
+    // There is no Guarder thread - nobody can reset the semaphore
+    assert(sm_Test.TryWait());
+#endif
 
     // Do some operations to force methods instantiation
     for (int i = 0; 10 > i; ++i) {
@@ -141,8 +150,11 @@ void CTestQueueApp::RunAtomic() {
     } catch (CSyncQueueException&) {
     }
 
+#ifdef _MT
     // Show to Guarder that we are finished
     sm_Sem2.Post();
+#endif
+
     // Unblock atomic semaphore
     sm_Atomic.Post();
 }
@@ -151,16 +163,21 @@ void CTestQueueApp::RunAtomic() {
 void CTestQueueApp::RunGuarder() {
     // Block guarder semaphore
     sm_Guarder.Wait();
+
+#ifdef _MT
     // Wait while previous atomic finishes its tasks
     sm_Sem2.Wait();
+#endif
 
     // Block the queue
     TQueue::TAccessGuard guard(sm_Queue);
 
+#ifdef _MT
     // Show to Atomic that we entered
     sm_Sem1.Post();
     // Wait when Atomic proceeds its operation
     sm_Sem2.Wait();
+#endif
 
     // Do some tasks to instantiate methods
     for (int i = 0; 10 > i; ++i) {
@@ -216,10 +233,15 @@ void CTestQueueApp::RunGuarder() {
     guard.Queue().Clear();
     assert(sm_Queue.IsEmpty());
 
+#ifdef _MT
     // Sleep to ensure that Atomic entered to Push
     SleepMilliSec(10);
     // Check that Atomic didn't exited from Push
     assert(sm_Test.TryWait());
+#else
+    // Nobody can set this semaphore
+    assert(!sm_Test.TryWait());
+#endif
 
     // Unblock guarder semaphore
     sm_Guarder.Post();
@@ -229,16 +251,21 @@ void CTestQueueApp::RunGuarder() {
 void CTestQueueApp::RunConstGuarder() {
     // Block guarder semaphore
     sm_Guarder.Wait();
+
+#ifdef _MT
     // Wait while previous atomic finishes its tasks
     sm_Sem2.Wait();
+#endif
 
     // Block the queue
     TQueue::TConstAccessGuard guard(sm_Queue);
 
+#ifdef _MT
     // Show to Atomic that we entered
     sm_Sem1.Post();
     // Wait when Atomic proceeds its operation
     sm_Sem2.Wait();
+#endif
 
     // Do some tasks to instantiate methods
     for (int i = 0; 5 > i; ++i) {
@@ -269,10 +296,15 @@ void CTestQueueApp::RunConstGuarder() {
 
     sm_Queue.Clear();
 
+#ifdef _MT
     // Sleep to ensure that Atomic entered to Push
     SleepMilliSec(10);
     // Check that Atomic didn't exited from Push
     assert(sm_Test.TryWait());
+#else
+    // Nobody can set this semaphore
+    assert(!sm_Test.TryWait());
+#endif
 
     // Unblock guarder semaphore
     sm_Guarder.Post();

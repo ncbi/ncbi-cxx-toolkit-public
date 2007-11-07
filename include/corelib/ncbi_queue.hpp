@@ -415,7 +415,7 @@ public:
 #else
     /// Type of reverse iterator returned from this guard
     typedef reverse_iterator<TIterator>                 TRevIterator;
-#endif;
+#endif
 
     /// Constructor -- locks a queue
     ///
