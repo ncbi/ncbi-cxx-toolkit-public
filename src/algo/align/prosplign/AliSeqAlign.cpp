@@ -309,7 +309,7 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(void) const
 
         if (!sps.SetExons().empty()) {
             //start, stop
-            if(sps.SetExons().front()->GetProduct_start().GetProtpos().GetAmin()==0 && sps.SetExons().front()->GetProduct_start().GetProtpos().GetFrame()==1 && m_ali.HasStartOnNuc() && m_ali.cpseq->HasStart()) {
+            if(sps.SetExons().front()->GetProduct_start().GetProtpos().GetFrame()==1 && m_ali.HasStartOnNuc()) {
                 CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
                 modi->SetStart_codon_found(true);
                 sps.SetModifiers().push_back(modi);
