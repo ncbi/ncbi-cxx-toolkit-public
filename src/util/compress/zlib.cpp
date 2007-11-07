@@ -235,6 +235,9 @@ static size_t s_WriteGZipHeader(void* src_buf, size_t buf_size,
 }
 
 
+// For files > 4GB, gzip stores just the last 32 bits of the file size.
+#define LOW32(i) (i & 0xFFFFFFFFL)
+
 static size_t s_WriteGZipFooter(void*         buf,
                                 size_t        buf_size,
                                 unsigned long total,
@@ -245,7 +248,7 @@ static size_t s_WriteGZipFooter(void*         buf,
         return 0;
     }
     CCompressionUtil::StoreUI4(buf, crc);
-    CCompressionUtil::StoreUI4((unsigned char*)buf+4, total);
+    CCompressionUtil::StoreUI4((unsigned char*)buf+4, LOW32(total));
 
     return 8;
 }
