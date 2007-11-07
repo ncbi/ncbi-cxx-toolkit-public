@@ -6,3 +6,5 @@ SRC = test_queue_mt
 LIB = test_mt xncbi
 
 CHECK_CMD =
+
+REQUIRES = MT
