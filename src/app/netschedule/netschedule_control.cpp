@@ -185,6 +185,11 @@ void CNetScheduleControl::Init(void)
                              "query",
                              "Count all jobs with tags set by query string",
                              CArgDescriptions::eString);
+    
+    arg_desc->AddOptionalKey("show_jobs_id",
+                             "query",
+                             "Show all jobs id by query string",
+                             CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("query",
                              "query",
@@ -235,22 +240,8 @@ private:
 
 int CNetScheduleControl::Run(void)
 {
-    /*
-    auto_ptr<CNetScheduleAPI> cl(x_CreateNewClient(true));
-    CNetScheduleAdmin admin = cl->GetAdmin();
-    typedef CNetScheduleKeys<> TNSKeys;
-    TNSKeys keys;
-    admin.RetrieveKeys("status=done", keys);
- 
-    for (TNSKeys::const_iterator it = keys.begin(); it != keys.end(); ++it) {
-         cout << string(*it) << endl;
-    }
-    return 0;
-    */
-
     const CArgs& args = GetArgs();
     CNcbiOstream& os = NcbiCout;
-
 
     auto_ptr<CNetScheduleAPI> ctl;
     if (args["shutdown"]) {
@@ -283,6 +274,17 @@ int CNetScheduleControl::Run(void)
         ctl.reset(x_CreateNewClient(true));
         string query = args["count"].AsString();
         os << ctl->GetAdmin().Count(query) << endl;
+    }
+    else if( args["show_jobs_id"]) {
+        ctl.reset(x_CreateNewClient(true));
+        string query = args["show_jobs_id"].AsString();
+        typedef CNetScheduleKeys<> TNSKeys;
+        TNSKeys keys;
+        ctl->GetAdmin().RetrieveKeys(query, keys);
+ 
+        for (TNSKeys::const_iterator it = keys.begin(); it != keys.end(); ++it) {
+            os << string(*it) << endl;
+        }
     }
     else if( args["query"]) {
         ctl.reset(x_CreateNewClient(true));

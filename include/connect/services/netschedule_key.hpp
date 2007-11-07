@@ -107,9 +107,13 @@ public:
             if (end) 
                 m_SrvIter = m_Keys->end();
             else {
-                m_SrvIter = m_Keys->begin();
-                if (m_SrvIter != m_Keys->end())
+                for (m_SrvIter = m_Keys->begin(); m_SrvIter != m_Keys->end(); ++m_SrvIter) {
                     m_BVEnum = m_SrvIter->second.first();
+                    if (m_BVEnum != m_SrvIter->second.end())
+                        break;
+                }
+                if (m_SrvIter == m_Keys->end())
+                    m_BVEnum = TBVEnumerator();
             }
         }
         bool operator == (const const_iterator& other) const
