@@ -11943,7 +11943,10 @@ CTestArguments::GetServerType(void) const
          || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
          ) {
         return eSybase;
-    } else if (NStr::CompareNocase(GetServerName(), 0, 7, "MSSQL67") == 0) {
+    } else if ( NStr::CompareNocase(GetServerName(), 0, 7, "MSSQL67") == 0
+                || NStr::CompareNocase(GetServerName(), 0, 7, "MSSQL79") == 0
+                || NStr::CompareNocase(GetServerName(), 0, 7, "MSSQL82") == 0
+                ) {
         return eMsSql2005;
     } else if (NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
