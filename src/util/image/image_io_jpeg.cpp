@@ -87,9 +87,8 @@ struct SJpegErrorInfo
 
 static void s_JpegErrorHandler(j_common_ptr ptr)
 {
-#if JPEG_LIB_VERSION >= 62
     try {
-#endif
+
         string msg("Error processing JPEG image: ");
 
         /// format the message
@@ -98,8 +97,8 @@ static void s_JpegErrorHandler(j_common_ptr ptr)
 
         msg += buffer;
 
-#if JPEG_LIB_VERSION >= 62
         LOG_POST_X(12, Error << msg);
+#if JPEG_LIB_VERSION >= 62
         if (ptr->client_data) {
             SJpegErrorInfo* err_info = (SJpegErrorInfo*)ptr->client_data;
             if ( !err_info->message.empty() ) {
@@ -108,17 +107,11 @@ static void s_JpegErrorHandler(j_common_ptr ptr)
             err_info->message += msg;
             err_info->has_error = true;
         }
+#endif
     }
     catch (...) {
         LOG_POST_X(13, Error << "error processing error info");
     }
-#else
-    if (ptr->is_decompressor) {
-        NCBI_THROW(CImageException, eReadError, msg);
-    } else {
-        NCBI_THROW(CImageException, eWriteError, msg);
-    }
-#endif
 }
 
 
@@ -141,13 +134,6 @@ static void s_JpegOutputHandler(j_common_ptr ptr)
 
 struct SJpegInput
 {
-    SJpegInput()
-        : stream(NULL)
-        , buffer(NULL)
-    {
-        memset(&pub, 0, sizeof(pub));
-    }
-
     // the input data elements
     struct jpeg_source_mgr pub;
 
@@ -159,13 +145,6 @@ struct SJpegInput
 
 struct SJpegOutput
 {
-    SJpegOutput()
-        : stream(NULL)
-        , buffer(NULL)
-    {
-        memset(&pub, 0, sizeof(pub));
-    }
-
     // the input data elements
     struct jpeg_destination_mgr pub;
 
@@ -194,6 +173,9 @@ static void s_JpegReadInit(j_decompress_ptr cinfo)
 static boolean s_JpegReadBuffer(j_decompress_ptr cinfo)
 {
     struct SJpegInput* sptr = (SJpegInput*)cinfo->src;
+    if ( !*(sptr->stream) ) {
+        return FALSE;
+    }
 
     // read data from the stream
     sptr->stream->read(reinterpret_cast<char*>(sptr->buffer), sc_JpegBufLen);
@@ -202,10 +184,7 @@ static boolean s_JpegReadBuffer(j_decompress_ptr cinfo)
     sptr->pub.bytes_in_buffer = sptr->stream->gcount();
     sptr->pub.next_input_byte = sptr->buffer;
 
-    if ( !*(sptr->stream) ) {
-        return FALSE;
-    }
-    return TRUE;
+    return sptr->pub.bytes_in_buffer ? TRUE : FALSE;
 }
 
 
@@ -293,6 +272,7 @@ static void s_JpegReadSetup(j_decompress_ptr cinfo,
     if (cinfo->src == NULL) {
         cinfo->src =
             (struct jpeg_source_mgr*)malloc(sizeof(SJpegInput));
+        memset(cinfo->src, 0, sizeof(SJpegInput));
         sptr = (SJpegInput*)cinfo->src;
     }
 
@@ -652,7 +632,11 @@ bool CImageIOJpeg::ReadImageInfo(CNcbiIstream& istr,
         s_JpegReadSetup(&cinfo, istr, buf_ptr);
 
         //jpeg_stdio_src(&cinfo, fp);
-        jpeg_read_header(&cinfo, TRUE);
+        int ret_val = jpeg_read_header(&cinfo, TRUE);
+        if (ret_val != JPEG_HEADER_OK) {
+            NCBI_THROW(CException, eUnknown,
+                "invalid image header");
+        }
 
         // decompression parameters
         cinfo.dct_method = JDCT_FLOAT;
