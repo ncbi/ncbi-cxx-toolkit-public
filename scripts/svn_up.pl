@@ -7,6 +7,8 @@ my ($ScriptDir, $ScriptName);
 
 use File::Spec;
 
+use Getopt::Long qw(:config permute no_getopt_compat no_ignore_case);
+
 BEGIN
 {
     my $Volume;
@@ -32,9 +34,10 @@ use lib $ScriptDir;
 
 use NCBI::SVN::Update;
 
-# Print usage if the --help argument is passed.
-if (@ARGV && $ARGV[0] eq '--help')
+sub Usage
 {
+    my ($ExitCode) = @_;
+
     die $ScriptName . ' $Revision$' . <<EOF;
 
 This script fixes the officially broken -N switch of the "svn update"
@@ -42,7 +45,7 @@ command. That is, it keeps track of which directories have been checked
 out non-recursively.
 
 Usage:
-    $ScriptName [-r REV] dir/subdir dir/another/
+    $ScriptName [-r REV] [-l FILE] dir/subdir dir/another/
 
     $ScriptName [-r REV]
 
@@ -59,19 +62,44 @@ Description:
     2. Without arguments. In this mode $ScriptName updates the
        current directory the same way it was initially updated.
 
+Options:
+    -r          Repository revision number to update to.
+
+    -l          Pathname of the file containing directory names
+                to be updated. If this parameter is specified,
+                other directory names can be omitted from the
+                command line.
+
 EOF
+
+    exit $ExitCode
+}
+
+my ($Help, $Rev, $DirListing);
+
+GetOptions('help|h|?' => \$Help, 'r=i' => \$Rev, 'l=s' => \$DirListing)
+    or Usage(1);
+
+# Print usage if the --help argument is passed.
+Usage(0) if $Help;
+
+my @DirList = @ARGV;
+
+if ($DirListing)
+{
+    open FILE, '<', $DirListing or die "$ScriptName\: $DirListing\: $!\n";
+
+    while (<FILE>)
+    {
+        chomp;
+        push @DirList, $_ if $_
+    }
+
+    close FILE
 }
 
 my $Update = NCBI::SVN::Update->new(MyName => $ScriptName);
 
-my $Rev;
-
-if (@ARGV && $ARGV[0] =~ m/^-r(.*)/)
-{
-    shift @ARGV;
-    $Rev = $1 ? $1 : shift @ARGV
-}
-
-@ARGV ? $Update->UpdateDirList($Rev, @ARGV) : $Update->UpdateCWD($Rev);
+@DirList ? $Update->UpdateDirList($Rev, @DirList) : $Update->UpdateCWD($Rev);
 
 exit 0
