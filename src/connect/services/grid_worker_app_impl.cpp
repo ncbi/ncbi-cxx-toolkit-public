@@ -419,7 +419,7 @@ void CGridWorkerApp_Impl::Init()
         m_ClientFactory.reset(new CNetScheduleClientFactory(reg));
 }
 
-const string kServerSec = "server";
+const char* kServerSec = "server";
 
 static void s_ParseControlPorts(const string& sports, unsigned int& start_port, unsigned int& end_port)
 {
@@ -518,7 +518,7 @@ int CGridWorkerApp_Impl::Run()
         reg.GetInt(kServerSec,"check_status_period",2,0,IRegistry::eReturn);
 
     if (reg.HasEntry(kServerSec,"wait_server_timeout")) {
-       ERR_POST_X(52, "[" + kServerSec + "] \"wait_server_timeout\" is not used anymore.\n"
+       ERR_POST_X(52, string("[") + kServerSec + "] \"wait_server_timeout\" is not used anymore.\n"
 	      "Use [" + kNetScheduleAPIDriverName + "] \"communication_timeout\" paramter instead.");
     }
 

@@ -33,6 +33,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <corelib/ncbi_safe_static.hpp>
+
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netcache_api.hpp>
 #include <connect/services/netcache_rw.hpp>
@@ -43,29 +45,32 @@ BEGIN_NCBI_SCOPE
 
 
 /****************************************************************/
+
 NCBI_PARAM_DECL(string, netcache_api, fallback_server); 
 typedef NCBI_PARAM_TYPE(netcache_api, fallback_server) TCGI_NetCacheFallbackServer;
 NCBI_PARAM_DEF(string, netcache_api, fallback_server, kEmptyStr);
 
 static bool s_FallbackServer_Initialized = false;
-static auto_ptr<CNetServiceConnector::TServer> s_FallbackServer;
+static CSafeStaticPtr< auto_ptr<CNetServiceConnector::TServer> > s_FallbackServer;
+
 static CNetServiceConnector::TServer* s_GetFallbackServer()
 {
     if (s_FallbackServer_Initialized)
-        return s_FallbackServer.get();
+        return s_FallbackServer->get();
     try {
        string sport, host, hostport;
        hostport = TCGI_NetCacheFallbackServer::GetDefault(); 
        if ( NStr::SplitInTwo(hostport, ":", host, sport) ) {
           unsigned int port = NStr::StringToInt(sport);
           host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
-          s_FallbackServer.reset(new CNetServiceConnector::TServer(host, port));
+          s_FallbackServer->reset(new CNetServiceConnector::TServer(host, port));
        }
     } catch (...) {
     }
     s_FallbackServer_Initialized = true;
-    return s_FallbackServer.get();
+    return s_FallbackServer->get();
 }
+
 /****************************************************************/
 
 CNetServerConnectorHolder CNetCacheAPI::x_GetConnector(const string& bid) const

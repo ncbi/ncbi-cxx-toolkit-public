@@ -220,12 +220,13 @@ CGridThreadContext& CWorkerNodeRequest::x_GetThreadContext()
     return *context;
 }
 
-static auto_ptr<CGridThreadContext> s_SingleTHreadContext;
+static CSafeStaticPtr< auto_ptr<CGridThreadContext> > s_SingleTHreadContext;
+
 static CGridThreadContext& s_GetSingleTHreadContext(CGridWorkerNode& node)
 {
-    if (!s_SingleTHreadContext.get())
-        s_SingleTHreadContext.reset(new CGridThreadContext(node, node.GetCheckStatusPeriod()));
-    return *s_SingleTHreadContext;
+    if (!s_SingleTHreadContext->get())
+        s_SingleTHreadContext->reset(new CGridThreadContext(node, node.GetCheckStatusPeriod()));
+    return *s_SingleTHreadContext.Get();
 }
 
 inline void s_HandleRunJobError(CGridThreadContext& thr_context, exception* ex = NULL)

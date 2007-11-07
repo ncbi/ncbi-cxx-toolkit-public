@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netservice_client.hpp>
 #include <connect/services/netservice_api_expt.hpp>
@@ -66,6 +67,7 @@ static STimeout s_GetDefaultCommTimeout()
     s_DefaultCommTimeout_Initialized = true;
     return s_DefaultCommTimeout;
 }
+
 static void s_SetDefaultCommTimeout(const STimeout& tm)
 {
     s_DefaultCommTimeout = tm;
@@ -75,22 +77,21 @@ static void s_SetDefaultCommTimeout(const STimeout& tm)
 //static unsigned int s_DefaultMaxRetries = 10;
 
 
-static string  s_GlobalClientName;
-static CNetServiceClient::EUseName  s_UseName = 
-                        CNetServiceClient::eUseName_Both;
+static CSafeStaticPtr<string> s_GlobalClientName;
+static CNetServiceClient::EUseName s_UseName = CNetServiceClient::eUseName_Both;
 
 
 void CNetServiceClient::SetGlobalName(const string&  global_name,
                                       EUseName       use_name)
 {
-    s_GlobalClientName = global_name;
+    s_GlobalClientName->assign(global_name);
     s_UseName = use_name;
 }
 
 
 const string& CNetServiceClient::GetGlobalName()
 {
-    return s_GlobalClientName;
+    return s_GlobalClientName.Get();
 }
 
 
@@ -106,8 +107,8 @@ CNetServiceClient::CNetServiceClient(const string& client_name)
       m_Timeout(s_GetDefaultCommTimeout()),
       m_MaxRetries(TServConn_ConnMaxRetries::GetDefault())
 {
-    if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
-        m_ClientName = s_GlobalClientName + "::" + client_name;
+    if ((s_UseName == eUseName_Both) && !s_GlobalClientName->empty()) {
+        m_ClientName = s_GlobalClientName.Get() + "::" + client_name;
     } else {
         m_ClientName = client_name;
     }
@@ -124,8 +125,8 @@ CNetServiceClient::CNetServiceClient(const string&  host,
       m_Timeout(s_GetDefaultCommTimeout()),
       m_MaxRetries(TServConn_ConnMaxRetries::GetDefault())
 {
-    if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
-        m_ClientName = s_GlobalClientName + "::" + client_name;
+    if ((s_UseName == eUseName_Both) && !s_GlobalClientName->empty()) {
+        m_ClientName = s_GlobalClientName.Get() + "::" + client_name;
     } else {
         m_ClientName = client_name;
     }
@@ -142,8 +143,8 @@ CNetServiceClient::CNetServiceClient(CSocket*      sock,
       m_Timeout(s_GetDefaultCommTimeout()),
       m_MaxRetries(TServConn_ConnMaxRetries::GetDefault())
 {
-    if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
-        m_ClientName = s_GlobalClientName + "::" + client_name;
+    if ((s_UseName == eUseName_Both) && !s_GlobalClientName->empty()) {
+        m_ClientName = s_GlobalClientName.Get() + "::" + client_name;
     } else {
         m_ClientName = client_name;
     }

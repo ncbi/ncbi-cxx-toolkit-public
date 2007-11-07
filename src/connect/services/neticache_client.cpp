@@ -907,12 +907,12 @@ public:
 };
 
 
-static const string kCFParam_server          = "server";
-static const string kCFParam_host            = "host";
-static const string kCFParam_port            = "port";
-static const string kCFParam_cache_name2     = "cache_name";
-static const string kCFParam_cache_name      = "name";
-static const string kCFParam_client          = "client";
+static const char* kCFParam_server          = "server";
+static const char* kCFParam_host            = "host";
+static const char* kCFParam_port            = "port";
+static const char* kCFParam_cache_name2     = "cache_name";
+static const char* kCFParam_cache_name      = "name";
+static const char* kCFParam_client          = "client";
 
 
 ICache* CNetICacheCF::CreateInstance(

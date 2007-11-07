@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netschedule_client.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
@@ -43,14 +44,27 @@
 BEGIN_NCBI_SCOPE
 
 
-const string kNetSchedule_KeyPrefix = "JSID";
+const char* kNetSchedule_KeyPrefix = "JSID";
 
 /// Request rate controller (one for all client instances)
-/// Default limitation is 20000 requests per minute
+/// Default limitation is 20000 requests per minute.
+///
+/// Use wrapper class because CSafeStaticPtr do not accept parameters
+/// for quarded object.
 ///
 /// @internal
 ///
-static CRequestRateControl s_Throttler(20000, CTimeSpan(60,0));
+class CNetScheduleThrottler {
+public:
+    CNetScheduleThrottler(void) 
+        : m_Throttler(20000, CTimeSpan(60,0)) { }
+    bool Approve(CRequestRateControl::EThrottleAction action 
+                 = CRequestRateControl::eDefault) {
+        return m_Throttler.Approve(action);
+    }
+    CRequestRateControl m_Throttler;
+};
+static CSafeStaticPtr<CNetScheduleThrottler> s_Throttler; 
 
 
 unsigned CNetSchedule_GetJobId(const string&  key_str)
@@ -316,7 +330,7 @@ string CNetScheduleClient::SubmitJob(const string& input,
             "Input data too long.");
     }
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(kEmptyStr);
@@ -392,7 +406,7 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
         }
     }
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(kEmptyStr);
@@ -548,7 +562,7 @@ CNetScheduleClient::SubmitJobAndWait(const string&  input,
             "Input data too long.");
     }
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
     *output = kEmptyStr;
 
@@ -651,7 +665,7 @@ void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
 void CNetScheduleClient::CancelJob(const string& job_key)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(job_key);
@@ -666,7 +680,7 @@ void CNetScheduleClient::CancelJob(const string& job_key)
 void CNetScheduleClient::DropJob(const string& job_key)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(job_key);
@@ -692,7 +706,7 @@ void CNetScheduleClient::SetRunTimeout(const string& job_key,
                                        unsigned      time_to_run)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
     CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
@@ -718,7 +732,7 @@ void CNetScheduleClient::JobDelayExpiration(const string& job_key,
                                             unsigned      runtime_inc)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
     CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
@@ -751,7 +765,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
     _ASSERT(output);
 
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     EJobStatus status;
@@ -886,7 +900,7 @@ bool CNetScheduleClient::GetJob(string*        job_key,
 
     //cerr << ">>GetJob" << endl;
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(kEmptyStr);
@@ -948,7 +962,7 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
     //cerr << ">>GetJobWaitNotify" << endl;
 
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     {{
@@ -1232,7 +1246,7 @@ void CNetScheduleClient::PutResult(const string& job_key,
     }
 
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(job_key);
@@ -1285,7 +1299,7 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
     }
 
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
     CheckConnect(done_job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
@@ -1339,7 +1353,7 @@ void CNetScheduleClient::PutProgressMsg(const string& job_key,
                                         const string& progress_msg)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
     if (progress_msg.length() >= kNetScheduleMaxDataSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 
@@ -1369,7 +1383,7 @@ void CNetScheduleClient::PutProgressMsg(const string& job_key,
 string CNetScheduleClient::GetProgressMsg(const string& job_key)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(job_key);
@@ -1397,7 +1411,7 @@ void CNetScheduleClient::PutFailure(const string& job_key,
                                     int           ret_code)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     if (output.length() > kNetScheduleMaxDataSize) {
@@ -1441,7 +1455,7 @@ void CNetScheduleClient::StatusSnapshot(TStatusMap*   status_map,
     _ASSERT(status_map);
 
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
     CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
@@ -1478,7 +1492,7 @@ void CNetScheduleClient::StatusSnapshot(TStatusMap*   status_map,
 void CNetScheduleClient::ReturnJob(const string& job_key)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(job_key);
@@ -1500,7 +1514,7 @@ void CNetScheduleClient::RegUnregClient(const string&  cmd,
                                         unsigned short udp_port)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
     CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
@@ -1562,7 +1576,7 @@ void CNetScheduleClient::ShutdownServer(CNetScheduleClient::EShutdownLevel level
 void CNetScheduleClient::ReloadServerConfig()
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(kEmptyStr);
@@ -1582,7 +1596,7 @@ void CNetScheduleClient::ReloadServerConfig()
 string CNetScheduleClient::ServerVersion()
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(kEmptyStr);
@@ -1611,7 +1625,7 @@ void CNetScheduleClient::CreateQueue(const string& qname, const string& qclass,
                                      const string& comment)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(kEmptyStr);
@@ -1632,7 +1646,7 @@ void CNetScheduleClient::CreateQueue(const string& qname, const string& qclass,
 void CNetScheduleClient::DeleteQueue(const string& qname)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(kEmptyStr);
@@ -1648,7 +1662,7 @@ void CNetScheduleClient::DumpQueue(CNcbiOstream& out,
                                    const string& job_key)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(job_key);
@@ -1666,7 +1680,7 @@ void CNetScheduleClient::PrintQueue(CNcbiOstream& out,
                                     EJobStatus    status)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(kEmptyStr);
@@ -1688,7 +1702,7 @@ void CNetScheduleClient::PrintStatistics(CNcbiOstream & out,
                                          EStatisticsOptions opt)
 {
     if (m_RequestRateControl) {
-        s_Throttler.Approve(CRequestRateControl::eSleep);
+        s_Throttler->Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(kEmptyStr);
