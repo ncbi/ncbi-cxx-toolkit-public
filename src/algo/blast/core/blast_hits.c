@@ -594,8 +594,8 @@ s_Blast_HSPGetNumIdentities(const Uint1* query, const Uint1* subject,
    if ( !subject || !query || !hsp )
       return -1;
 
-   q = &query[q_off];
-   s = &subject[s_off];
+   q = (Uint1*) &query[q_off];
+   s = (Uint1*) &subject[s_off];
 
    num_ident = 0;
    align_length = 0;
@@ -670,11 +670,11 @@ s_Blast_HSPGetOOFNumIdentities(const Uint1* query, const Uint1* subject,
 
    if (program == eBlastTypeTblastn ||
        program == eBlastTypeRpsTblastn) {
-       q = &query[hsp->query.offset];
-       s = &subject[hsp->subject.offset];
+       q = (Uint1*) &query[hsp->query.offset];
+       s = (Uint1*) &subject[hsp->subject.offset];
    } else {
-       s = &query[hsp->query.offset];
-       q = &subject[hsp->subject.offset];
+       s = (Uint1*) &query[hsp->query.offset];
+       q = (Uint1*) &subject[hsp->subject.offset];
    }
    num_ident = 0;
    align_length = 0;

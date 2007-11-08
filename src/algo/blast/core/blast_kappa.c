@@ -446,7 +446,6 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
 {
     Uint1* query = NULL;
     Uint1* subject = NULL;
-    ASSERT(scoring_options);
     const EBlastProgramType program_number = scoring_options->program_number;
     const Boolean kIsOutOfFrame = scoring_options->is_ooframe;
     const EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
