@@ -94,7 +94,7 @@ public:
     CSeq_descr_CI& operator++ (void);
 
     /// Check if iterator points to an object
-    DECLARE_OPERATOR_BOOL(m_CurrentBase);
+    DECLARE_OPERATOR_BOOL_REF(m_CurrentBase);
 
     const CSeq_descr& operator*  (void) const;
     const CSeq_descr* operator-> (void) const;
