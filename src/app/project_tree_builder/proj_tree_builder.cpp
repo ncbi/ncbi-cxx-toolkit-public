@@ -1845,6 +1845,13 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
         keys.insert("DLL_LIB");
         SMakeProjectT::DoResolveDefs(resolver, makefiles.m_Lib, keys);
     }}
+
+    {{
+        _TRACE("*** Resolving macrodefinitions in Msvc projects ***");
+        set<string> keys;
+        keys.insert("DLL_DEP");
+        SMakeProjectT::DoResolveDefs(resolver, makefiles.m_User, keys);
+    }}
 }
 
 
