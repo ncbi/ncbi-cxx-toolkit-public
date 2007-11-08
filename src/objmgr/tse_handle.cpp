@@ -81,13 +81,6 @@ CTSE_Handle::CTSE_Handle(const CTSE_Handle& tse)
 }
 
 
-CTSE_Handle::~CTSE_Handle(void)
-{
-    _CHECK();
-    _TRACE_TSE_LOCK("unlock");
-}
-
-
 CTSE_Handle& CTSE_Handle::operator=(const CTSE_Handle& tse)
 {
     _CHECK();

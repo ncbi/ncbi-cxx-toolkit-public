@@ -272,7 +272,7 @@ private: // to prevent copying
 };
 
 
-class NCBI_XOBJMGR_EXPORT CTSE_ScopeInfo : public CObject
+class NCBI_XOBJMGR_EXPORT CTSE_ScopeInfo : public CTSE_ScopeInfo_Base
 {
 public:
     typedef CBlobIdKey                                    TBlobId;
@@ -355,9 +355,7 @@ public:
 
     void RemoveLastInfoLock(CScopeInfo_Base& info);
 
-    void x_LockTSE(void);
-    void x_InternalUnlockTSE(void);
-    void x_UserUnlockTSE(void);
+    friend class CTSE_ScopeInfo_Base;
 
     void ForgetTSE_Lock(void);
 
@@ -407,7 +405,6 @@ private: // members
     TBioseqById                 m_BioseqById;
     // TSE locking support
     mutable CMutex              m_TSE_LockMutex;
-    mutable CAtomicCounter      m_TSE_LockCounter;
     mutable CTSE_Lock           m_TSE_Lock;
     // Used by TSE support
     mutable const CTSE_ScopeInfo*   m_UsedByTSE;

@@ -630,34 +630,6 @@ bool CDataSource_ScopeInfo::TSEIsInQueue(const CTSE_ScopeInfo& tse) const
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CTSE_ScopeLocker
-/////////////////////////////////////////////////////////////////////////////
-
-void CTSE_ScopeLocker::Lock(CTSE_ScopeInfo* tse) const
-{
-    _TRACE_TSE_LOCK("CTSE_ScopeLocker("<<this<<") "<<tse<<" lock");
-    CObjectCounterLocker::Lock(tse);
-    tse->x_LockTSE();
-}
-
-
-void CTSE_ScopeInternalLocker::Unlock(CTSE_ScopeInfo* tse) const
-{
-    _TRACE_TSE_LOCK("CTSE_ScopeInternalLocker("<<this<<") "<<tse<<" unlock");
-    tse->x_InternalUnlockTSE();
-    CObjectCounterLocker::Unlock(tse);
-}
-
-
-void CTSE_ScopeUserLocker::Unlock(CTSE_ScopeInfo* tse) const
-{
-    _TRACE_TSE_LOCK("CTSE_ScopeUserLocker("<<this<<") "<<tse<<" unlock");
-    tse->x_UserUnlockTSE();
-    CObjectCounterLocker::Unlock(tse);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
 // CTSE_ScopeInfo
 /////////////////////////////////////////////////////////////////////////////
 
@@ -753,34 +725,32 @@ const CTSE_ScopeInfo::TSeqIds& CTSE_ScopeInfo::GetBioseqsIds(void) const
 }
 
 
-void CTSE_ScopeInfo::x_LockTSE(void)
+void CTSE_ScopeInfo_Base::x_LockTSE(void)
 {
-    m_TSE_LockCounter.Add(1);
-    if ( !m_TSE_Lock ) {
-        GetDSInfo().UpdateTSELock(*this, CTSE_Lock());
+    CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
+    if ( !tse->m_TSE_Lock ) {
+        tse->GetDSInfo().UpdateTSELock(*tse, CTSE_Lock());
     }
-    _ASSERT(m_TSE_Lock);
+    _ASSERT(tse->m_TSE_Lock);
 }
 
 
-void CTSE_ScopeInfo::x_UserUnlockTSE(void)
+void CTSE_ScopeInfo_Base::x_UserUnlockTSE(void)
 {
-    if ( m_TSE_LockCounter.Add(-1) == 0 ) {
-        _ASSERT(CanBeUnloaded());
-        if ( IsAttached() ) {
-            GetDSInfo().ReleaseTSELock(*this);
-        }
+    CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
+    _ASSERT(tse->CanBeUnloaded());
+    if ( tse->IsAttached() ) {
+        tse->GetDSInfo().ReleaseTSELock(*tse);
     }
 }
 
 
-void CTSE_ScopeInfo::x_InternalUnlockTSE(void)
+void CTSE_ScopeInfo_Base::x_InternalUnlockTSE(void)
 {
-    if ( m_TSE_LockCounter.Add(-1) == 0 ) {
-        _ASSERT(CanBeUnloaded());
-        if ( IsAttached() ) {
-            GetDSInfo().ForgetTSELock(*this);
-        }
+    CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
+    _ASSERT(tse->CanBeUnloaded());
+    if ( tse->IsAttached() ) {
+        tse->GetDSInfo().ForgetTSELock(*tse);
     }
 }
 

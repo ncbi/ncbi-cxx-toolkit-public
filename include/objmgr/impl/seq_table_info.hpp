@@ -34,6 +34,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <objmgr/impl/seq_table_setter.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqtable/SeqTable_column.hpp>
@@ -52,133 +53,6 @@ class CSeq_point;
 class CSeq_feat;
 struct SAnnotObject_Key;
 struct SAnnotObject_Index;
-
-/////////////////////////////////////////////////////////////////////////////
-// CSeq_feat and CSeq_loc field setters
-/////////////////////////////////////////////////////////////////////////////
-
-class CSeqTableSetField : public CObject
-{
-public:
-    virtual ~CSeqTableSetField();
-
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_loc& loc, double value) const;
-    virtual void Set(CSeq_loc& loc, const string& value) const;
-    virtual void Set(CSeq_feat& feat, int value) const;
-    virtual void Set(CSeq_feat& feat, double value) const;
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-};
-
-
-class CSeqTableSetComment : public CSeqTableSetField
-{
-public:
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-};
-
-
-class CSeqTableSetDataImpKey : public CSeqTableSetField
-{
-public:
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-};
-
-
-class CSeqTableSetDataRegion : public CSeqTableSetField
-{
-public:
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-};
-
-
-class CSeqTableSetLocFuzzFromLim : public CSeqTableSetField
-{
-public:
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_feat& feat, int value) const;
-};
-
-
-class CSeqTableSetLocFuzzToLim : public CSeqTableSetField
-{
-public:
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_feat& feat, int value) const;
-};
-
-
-class CSeqTableSetProdFuzzFromLim : public CSeqTableSetField
-{
-public:
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_feat& feat, int value) const;
-};
-
-
-class CSeqTableSetProdFuzzToLim : public CSeqTableSetField
-{
-public:
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_feat& feat, int value) const;
-};
-
-
-class CSeqTableSetQual : public CSeqTableSetField
-{
-public:
-    CSeqTableSetQual(const CTempString& name)
-        : name(name.substr(2))
-        {
-        }
-
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-
-private:
-    CTempString name;
-};
-
-
-class CSeqTableSetExt : public CSeqTableSetField
-{
-public:
-    CSeqTableSetExt(const CTempString& name)
-        : name(name.substr(2))
-        {
-        }
-
-    virtual void Set(CSeq_feat& feat, int value) const;
-    virtual void Set(CSeq_feat& feat, double value) const;
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-
-private:
-    CTempString name;
-};
-
-
-class CSeqTableSetDbxref : public CSeqTableSetField
-{
-public:
-    CSeqTableSetDbxref(const CTempString& name)
-        : name(name.substr(2))
-        {
-        }
-
-    virtual void Set(CSeq_feat& feat, int value) const;
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-
-private:
-    CTempString name;
-};
-
-
-class CSeqTableSetExtType : public CSeqTableSetField
-{
-public:
-    virtual void Set(CSeq_feat& feat, int value) const;
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-};
-
 
 /////////////////////////////////////////////////////////////////////////////
 // information about Seq-table column

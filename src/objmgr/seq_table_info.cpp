@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/seq_table_info.hpp>
+#include <objmgr/impl/seq_table_setters.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
@@ -44,218 +45,6 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CSeq_feat and CSeq_loc setters
-/////////////////////////////////////////////////////////////////////////////
-
-
-CSeqTableSetField::~CSeqTableSetField()
-{
-}
-
-
-void CSeqTableSetField::Set(CSeq_loc& loc, int value) const
-{
-    NCBI_THROW_FMT(CAnnotException, eOtherError,
-                   "Incompatible Seq-loc field value: "<<value);
-}
-
-
-void CSeqTableSetField::Set(CSeq_loc& loc, double value) const
-{
-    NCBI_THROW_FMT(CAnnotException, eOtherError,
-                   "Incompatible Seq-loc field value: "<<value);
-}
-
-
-void CSeqTableSetField::Set(CSeq_loc& loc, const string& value) const
-{
-    NCBI_THROW_FMT(CAnnotException, eOtherError,
-                   "Incompatible Seq-loc field value: "<<value);
-}
-
-
-void CSeqTableSetField::Set(CSeq_feat& feat, int value) const
-{
-    Set(feat, NStr::IntToString(value));
-}
-
-
-void CSeqTableSetField::Set(CSeq_feat& feat, double value) const
-{
-    Set(feat, NStr::DoubleToString(value));
-}
-
-
-void CSeqTableSetField::Set(CSeq_feat& feat, const string& value) const
-{
-    NCBI_THROW_FMT(CAnnotException, eOtherError,
-                   "Incompatible Seq-feat field value: "<<value);
-}
-
-
-void CSeqTableSetComment::Set(CSeq_feat& feat, const string& value) const
-{
-    feat.SetComment(value);
-}
-
-
-void CSeqTableSetDataImpKey::Set(CSeq_feat& feat, const string& value) const
-{
-    feat.SetData().SetImp().SetKey(value);
-}
-
-
-void CSeqTableSetDataRegion::Set(CSeq_feat& feat, const string& value) const
-{
-    feat.SetData().SetRegion(value);
-}
-
-
-void CSeqTableSetLocFuzzFromLim::Set(CSeq_loc& loc, int value) const
-{
-    if ( loc.IsPnt() ) {
-        loc.SetPnt().SetFuzz().SetLim(CInt_fuzz_Base::ELim(value));
-    }
-    else if ( loc.IsInt() ) {
-        loc.SetInt().SetFuzz_from().SetLim(CInt_fuzz_Base::ELim(value));
-    }
-    else {
-        NCBI_THROW_FMT(CAnnotException, eOtherError,
-                       "Incompatible fuzz field");
-    }
-}
-
-
-void CSeqTableSetLocFuzzFromLim::Set(CSeq_feat& feat, int value) const
-{
-    Set(feat.SetLocation(), value);
-}
-
-
-void CSeqTableSetLocFuzzToLim::Set(CSeq_loc& loc, int value) const
-{
-    if ( loc.IsInt() ) {
-        loc.SetInt().SetFuzz_to().SetLim(CInt_fuzz_Base::ELim(value));
-    }
-    else {
-        NCBI_THROW_FMT(CAnnotException, eOtherError,
-                       "Incompatible fuzz field");
-    }
-}
-
-
-void CSeqTableSetLocFuzzToLim::Set(CSeq_feat& feat, int value) const
-{
-    Set(feat.SetLocation(), value);
-}
-
-
-void CSeqTableSetProdFuzzFromLim::Set(CSeq_loc& loc, int value) const
-{
-    if ( loc.IsPnt() ) {
-        loc.SetPnt().SetFuzz().SetLim(CInt_fuzz_Base::ELim(value));
-    }
-    else if ( loc.IsInt() ) {
-        loc.SetInt().SetFuzz_from().SetLim(CInt_fuzz_Base::ELim(value));
-    }
-    else {
-        NCBI_THROW_FMT(CAnnotException, eOtherError,
-                       "Incompatible fuzz field");
-    }
-}
-
-
-void CSeqTableSetProdFuzzFromLim::Set(CSeq_feat& feat, int value) const
-{
-    Set(feat.SetProduct(), value);
-}
-
-
-void CSeqTableSetProdFuzzToLim::Set(CSeq_loc& loc, int value) const
-{
-    if ( loc.IsInt() ) {
-        loc.SetInt().SetFuzz_to().SetLim(CInt_fuzz_Base::ELim(value));
-    }
-    else {
-        NCBI_THROW_FMT(CAnnotException, eOtherError,
-                       "Incompatible fuzz field");
-    }
-}
-
-
-void CSeqTableSetProdFuzzToLim::Set(CSeq_feat& feat, int value) const
-{
-    Set(feat.SetProduct(), value);
-}
-
-
-void CSeqTableSetQual::Set(CSeq_feat& feat, const string& value) const
-{
-    CRef<CGb_qual> qual(new CGb_qual);
-    qual->SetQual(name);
-    qual->SetVal(value);
-    feat.SetQual().push_back(qual);
-}
-
-
-void CSeqTableSetExt::Set(CSeq_feat& feat, int value) const
-{
-    CRef<CUser_field> field(new CUser_field);
-    field->SetLabel().SetStr(name);
-    field->SetData().SetInt(value);
-    feat.SetExt().SetData().push_back(field);
-}
-
-
-void CSeqTableSetExt::Set(CSeq_feat& feat, double value) const
-{
-    CRef<CUser_field> field(new CUser_field);
-    field->SetLabel().SetStr(name);
-    field->SetData().SetReal(value);
-    feat.SetExt().SetData().push_back(field);
-}
-
-
-void CSeqTableSetExt::Set(CSeq_feat& feat, const string& value) const
-{
-    CRef<CUser_field> field(new CUser_field);
-    field->SetLabel().SetStr(name);
-    field->SetData().SetStr(value);
-    feat.SetExt().SetData().push_back(field);
-}
-
-
-void CSeqTableSetDbxref::Set(CSeq_feat& feat, int value) const
-{
-    CRef<CDbtag> dbtag(new CDbtag);
-    dbtag->SetDb(name);
-    dbtag->SetTag().SetId(value);
-    feat.SetDbxref().push_back(dbtag);
-}
-
-
-void CSeqTableSetDbxref::Set(CSeq_feat& feat, const string& value) const
-{
-    CRef<CDbtag> dbtag(new CDbtag);
-    dbtag->SetDb(name);
-    dbtag->SetTag().SetStr(value);
-    feat.SetDbxref().push_back(dbtag);
-}
-
-
-void CSeqTableSetExtType::Set(CSeq_feat& feat, int value) const
-{
-    feat.SetExt().SetType().SetId(value);
-}
-
-
-void CSeqTableSetExtType::Set(CSeq_feat& feat, const string& value) const
-{
-    feat.SetExt().SetType().SetStr(value);
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -416,6 +205,11 @@ void CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc, size_t row) const
             }
         }
     }
+    else if ( !m_Column->IsSetDefault() ) {
+        // no multi or single data -> no value, but we need to touch the field
+        m_Setter->Set(loc, 0);
+        return;
+    }
     if ( m_Column->IsSetDefault() ) {
         const CSeqTable_single_data& data = m_Column->GetDefault();
         switch ( data.Which() ) {
@@ -466,6 +260,11 @@ void CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat, size_t row) const
                 return;
             }
         }
+    }
+    else if ( !m_Column->IsSetDefault() ) {
+        // no multi or single data -> no value, but we need to touch the field
+        m_Setter->Set(feat, 0);
+        return;
     }
     if ( m_Column->IsSetDefault() ) {
         const CSeqTable_single_data& data = m_Column->GetDefault();
@@ -967,8 +766,7 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
                 setter = new CSeqTableSetQual(field);
             }
             if ( !setter ) {
-                ERR_POST_X(9, "SeqTable-column-info.field-name = "<<field);
-                continue;
+                setter = new CSeqTableSetAnyFeatField(field);
             }
         }
         m_ExtraColumns.push_back(CSeqTableColumnInfo(col, setter));

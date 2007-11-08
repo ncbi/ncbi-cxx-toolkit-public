@@ -5,8 +5,8 @@
 
 ASN_DEP  = seq general biblio seqset seqedit
 
-SRC = seq_table_info seq_annot_info seq_map_switch snp_annot_info \
-      annot_types_ci seq_loc_cvt annot_selector \
+SRC = seq_table_setters seq_table_info seq_annot_info \
+      seq_map_switch snp_annot_info annot_types_ci seq_loc_cvt annot_selector \
       seq_descr_ci feat_ci graph_ci annot_object annot_object_index annot_ci \
       tse_info tse_info_object seq_entry_info \
       bioseq_base_info bioseq_set_info bioseq_info \
