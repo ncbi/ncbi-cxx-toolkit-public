@@ -117,7 +117,8 @@ CBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                                       const CArgs& args)
 {
     CRef<CBlastOptionsHandle> retval;
-    retval.Reset(CBlastOptionsFactory::CreateTask(args[kTask].AsString(), locality));
+    m_Task.assign(args[kTask].AsString());
+    retval.Reset(CBlastOptionsFactory::CreateTask(m_Task, locality));
     ASSERT(retval.NotEmpty());
     return retval;
 }
@@ -125,7 +126,8 @@ CBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 int
 CBlastnAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize("blastn");
+    _ASSERT( !m_Task.empty() );
+    return blast::GetQueryBatchSize(m_Task);
 }
 
 END_SCOPE(blast)

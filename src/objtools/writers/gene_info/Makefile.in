@@ -1,0 +1,6 @@
+# $Id$
+
+LIB_PROJ = gene_info_writer
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

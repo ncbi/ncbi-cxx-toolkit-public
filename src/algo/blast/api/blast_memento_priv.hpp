@@ -28,10 +28,8 @@
  */
 
 /// @file blast_memento_priv.hpp
-/// Class that allows the transfer of internal BLAST data structures from the
-/// preliminary stage to the traceback stage.
-/// NOTE: This file contains work in progress and the APIs are likely to change,
-/// please do not rely on them until this notice is removed.
+/// Classes that capture the state of the BLAST options (or subsets of options)
+/// and restore them later (usually upon destruction) using the RAII idiom.
 
 #ifndef ALGO_BLAST_API__BLAST_MEMENTO_PRIV__HPP
 #define ALGO_BLAST_API__BLAST_MEMENTO_PRIV__HPP
@@ -47,14 +45,6 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
-
-// Forward declarations
-class CBlastOptions;
-class CBlastPrelimSearch;
-class CBlastTracebackSearch;
-class CPsiBl2Seq;
-class CFilteringMemento;
-class CEffectiveSearchSpaceCalculator;
 
 /// Class that allows the transfer of data structures from the
 /// CBlastOptionsLocal class to either the BLAST preliminary or 
@@ -109,43 +99,51 @@ private:
     BlastEffectiveLengthsOptions* m_EffLenOpts;
 };
 
-
-/// Class that allows the transfer of data structures from the preliminary 
-/// stage to the traceback stage.
-///
-/// It is a modification of the memento design pattern in which the object is
-/// not to restore state but rather to control access to private data
-/// structures of classes enclosing BLAST CORE C-structures.
-/// @todo FIXME: this is not being used, instead the SInternalData is being used
-class CBlastMemento : public CObject
+/// Memento class to save, replace out, and restore the effective search space
+/// options of the CBlastOptions object passed to its constructor.
+/// This is done because the SplitQuery_SetEffectiveSearchSpace function
+/// modifies the search spaces in the CBlastOptions object, but this shouldn't
+/// be modified, so a temporary object is created and the destroyed.
+class CEffectiveSearchSpacesMemento
 {
 public:
-    /// Note the no-op destructor, this class does not own any of its data
-    /// members!
-    ~CBlastMemento() {}
+    /// Parametrized constructor
+    /// @param options the BLAST options [in]
+    CEffectiveSearchSpacesMemento(CBlastOptions* options)
+        : m_Options(options), m_EffLenOrig(0), m_EffLenReplace(0)
+    {
+        _ASSERT(options);
+        if (options->m_Local) {
+            m_EffLenOrig = options->m_Local->m_EffLenOpts.Release();
+            BlastEffectiveLengthsOptionsNew(&m_EffLenReplace);
+            memcpy((void*) m_EffLenReplace,
+                   (void*) m_EffLenOrig,
+                   sizeof(*m_EffLenOrig));
+            m_EffLenReplace->searchsp_eff = 
+                (Int8*)malloc(sizeof(Int8) * m_EffLenOrig->num_searchspaces);
+            memcpy((void*) m_EffLenReplace->searchsp_eff,
+                   (void*) m_EffLenOrig->searchsp_eff,
+                   sizeof(Int8) * m_EffLenOrig->num_searchspaces);
+            options->m_Local->m_EffLenOpts.Reset(m_EffLenReplace);
+        }
+    }
+
+    /// Destructor
+    ~CEffectiveSearchSpacesMemento()
+    {
+        _ASSERT(m_Options->m_Local);
+        m_Options->m_Local->m_EffLenOpts.Reset(m_EffLenOrig);
+        m_Options = NULL;
+        m_EffLenOrig = m_EffLenReplace = NULL;
+    }
 
 private:
-
-    // The originator
-    friend class CBlastPrelimSearch;
-
-    // Recipients of data 
-    friend class CBlastTracebackSearch;
-
-    CBlastMemento();
-
-    // The state is represented by the structures below
-
-    // Internal data structures
-    BlastGapAlignStruct*        m_GapAlignStruct;
-    BlastScoreBlk*              m_ScoreBlk;
-
-    // Options and parameter structures
-    CBlastInitialWordParameters m_InitWordParams;
-    CBlastHitSavingParameters   m_HitSavingParams;
-    CBlastExtensionOptions      m_ExtendWord;
-    CBlastExtensionParameters   m_ExtensionParams;
-    CBlastDatabaseOptions       m_SubjectOptions;
+    /** Snapshopt of BLAST options */
+    CBlastOptions* m_Options;    
+    /** Original effective length options */
+    BlastEffectiveLengthsOptions* m_EffLenOrig;
+    /** Effective length that will be replaced in the BLAST options object */
+    BlastEffectiveLengthsOptions* m_EffLenReplace;
 };
 
 END_SCOPE(blast)

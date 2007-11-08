@@ -37,6 +37,8 @@
 #include <util/range.hpp>
 #include <algo/blast/api/sseqloc.hpp>
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+
 // Forward declarations
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -92,48 +94,6 @@ private:
     const CTestObjMgr& operator=(const CTestObjMgr& rhs);
 };
 
-#endif // _TEST_OBJMRG_HPP
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
-/*
-* ===========================================================================
-*
-* $Log: test_objmgr.hpp,v $
-* Revision 1.12  2006/02/22 19:53:43  bealer
-* - Unit testing for CBlastQueryVector.
-*
-* Revision 1.11  2005/11/10 14:47:08  madden
-* Add CreateEmptySSeqLoc method
-*
-* Revision 1.10  2005/09/23 18:55:53  camacho
-* + overloaded CTestObjMgr::CreateSSeqLoc
-*
-* Revision 1.9  2004/05/14 12:45:36  camacho
-* Added #include guards
-*
-* Revision 1.8  2004/05/05 14:40:59  dondosha
-* Added method CreateWholeSSeqLoc
-*
-* Revision 1.7  2004/03/23 16:10:02  camacho
-* Minor changes
-*
-* Revision 1.6  2004/03/22 19:19:55  camacho
-* Added comments to CTestObjMgr class
-*
-* Revision 1.5  2004/02/20 23:20:37  camacho
-* Remove undefs.h
-*
-* Revision 1.4  2003/12/05 20:18:09  camacho
-* Fix error object manager error message
-*
-* Revision 1.3  2003/11/13 18:53:31  camacho
-* Include file with #undefs to avoid compiler warnings
-*
-* Revision 1.2  2003/10/31 22:18:28  camacho
-* Minor updates
-*
-* Revision 1.1  2003/10/18 01:05:28  camacho
-* Initial revision
-*
-*
-* ===========================================================================
-*/
+#endif // _TEST_OBJMRG_HPP

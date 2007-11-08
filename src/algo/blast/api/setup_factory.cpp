@@ -360,10 +360,13 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
         else {
             ind_seqsrc = DbIndexSeqSrcInit(
             options->GetIndexName(), new_seqsrc );
+            char* error_str = BlastSeqSrcGetInitError(ind_seqsrc);
 
-            if( ind_seqsrc == 0 ) {
+            if( error_str != 0 ) {
                 errstr = "Allocation of BlastSeqSrc structure for index ";
-                errstr += "failed.";
+                errstr += "failed: " + string(error_str);
+                sfree(error_str);
+                ind_seqsrc = BlastSeqSrcFree(ind_seqsrc);
                 free( new_seqsrc );
             }
         }

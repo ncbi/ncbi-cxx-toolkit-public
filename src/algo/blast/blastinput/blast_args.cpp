@@ -239,11 +239,11 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
 
     arg_desc.SetCurrentGroup("Restrict search or results");
-    arg_desc.AddOptionalKey(kArgTargetPercentIdentity, "float_value",
-                            "Target percent identity",
+    arg_desc.AddOptionalKey(kArgPercentIdentity, "float_value",
+                            "Percent identity",
                             CArgDescriptions::eDouble);
-    arg_desc.SetConstraint(kArgTargetPercentIdentity,
-                           new CArgAllow_Doubles(0.0, 1.0));
+    arg_desc.SetConstraint(kArgPercentIdentity,
+                           new CArgAllow_Doubles(0.0, 100.0));
 
     arg_desc.SetCurrentGroup("Extension options");
     // ungapped X-drop
@@ -333,8 +333,8 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetEffectiveSearchSpace(args[kArgEffSearchSpace].AsInt8());
     }
 
-    if (args[kArgTargetPercentIdentity]) {
-        opt.SetPercentIdentity(args[kArgTargetPercentIdentity].AsDouble());
+    if (args[kArgPercentIdentity]) {
+        opt.SetPercentIdentity(args[kArgPercentIdentity].AsDouble());
     }
 
 #if 0
@@ -357,6 +357,9 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                         "Filter query sequence with SEG "
                         "(Format: 'window locut hicut', or 'no' to disable)",
                         CArgDescriptions::eString, kDfltArgSegFiltering);
+        arg_desc.AddDefaultKey(kArgLookupTableMaskingOnly, "soft_masking",
+                        "Apply filtering locations as soft masks",
+                        CArgDescriptions::eBoolean, "false");
     } else {
         arg_desc.AddDefaultKey(kArgDustFiltering, "DUST_options",
                         "Filter query sequence with DUST "
@@ -365,12 +368,10 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgFilteringDb, "filtering_database",
                 "BLAST database containing filtering elements (i.e.: repeats)",
                 CArgDescriptions::eString);
-
+        arg_desc.AddDefaultKey(kArgLookupTableMaskingOnly, "soft_masking",
+                        "Apply filtering locations as soft masks",
+                        CArgDescriptions::eBoolean, "true");
     }
-    arg_desc.AddFlag(kArgLookupTableMaskingOnly,
-                     "Apply filtering locations as soft masks?", true);
-    arg_desc.AddNegatedFlagAlias("no_" + kArgLookupTableMaskingOnly, 
-                                 kArgLookupTableMaskingOnly);
 
     arg_desc.SetCurrentGroup("");
 }

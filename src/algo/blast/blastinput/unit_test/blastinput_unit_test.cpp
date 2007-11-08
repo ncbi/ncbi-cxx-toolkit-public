@@ -857,6 +857,63 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessions)
     CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
 }
 
+BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessionsFromMemory)
+{
+    typedef vector< pair<string, int> > TStringIntVector;
+    TStringIntVector accession_lengths;
+    accession_lengths.push_back(make_pair(string("P01012.2"), 386));
+    accession_lengths.push_back(make_pair(string("1OVA-A"), 385));
+    // Fails in entrez, we implemented regex for this in CBlastInputReader
+    accession_lengths.push_back(make_pair(string("pdb|1OVA-A"), 385));
+    // Fails in entrez, we implemented regex for this in CBlastInputReader
+    // but we cannot get the sequence length...
+    accession_lengths.push_back(make_pair(string("prf||0705172A"), 385));
+    // Fails in entrez, we implemented regex for this in CBlastInputReader
+    // but we cannot get the sequence length...
+    //accession_lengths.push_back(make_pair(string("sp|P01012.2"), 386));
+
+    // This we're not even going to try to fix...
+    //accession_lengths.push_back(make_pair(string("0705172A"), 385));
+
+    string user_input;
+    ITERATE(TStringIntVector, itr, accession_lengths) {
+        user_input += itr->first + "\n";
+    }
+    istringstream instream(user_input);
+
+    const bool is_protein(true);
+    CBlastInputConfig iconfig(is_protein);
+    iconfig.SetRetrieveSequenceData(false);
+    CRef<CBlastFastaInputSource> source(s_DeclareSource(instream, iconfig));
+
+    const size_t kNumQueries(accession_lengths.size());
+    CBlastInput bi(source);
+    blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
+    CHECK_EQUAL(kNumQueries, query_vector.size());
+    CHECK(source->End() == true);
+
+    {{
+        blast::TSeqLocVector cached_queries = bi.GetAllSeqLocs();
+        CHECK_EQUAL(kNumQueries, cached_queries.size());
+        CHECK(source->End() == true);
+    }}
+
+    for (size_t i = 0; i < kNumQueries; i++) {
+
+        //cout << "Accession: '" << accession_lengths[i].first << "'" << endl;
+        blast::SSeqLoc& ssl = query_vector[i];
+        CHECK_EQUAL((TSeqPos)accession_lengths[i].second - 1, 
+                    ssl.seqloc->GetInt().GetTo());
+        CHECK_EQUAL(eNa_strand_unknown, ssl.seqloc->GetStrand());
+
+        CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+    }
+
+    /// Validate the data that would be retrieved by blast.cgi
+    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
+}
+
 BOOST_AUTO_TEST_CASE(s_ReadSingleGi)
 {
     CNcbiIfstream infile("data/gi.txt");
@@ -1844,12 +1901,12 @@ BOOST_AUTO_TEST_CASE(CheckPercentIdentity) {
     CBlastxAppArgs blast_args;
 
     // invalid value
-    CString2Args s2a("-db ecoli -target_perc_identity 4.3");
+    CString2Args s2a("-db ecoli -perc_identity 104.3");
     BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(blast_args)), 
                       CArgException);
 
     // valid combination
-    s2a.Reset("-db ecoli -target_perc_identity .75 ");
+    s2a.Reset("-db ecoli -perc_identity 75.0 ");
     BOOST_CHECK_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
 }
 

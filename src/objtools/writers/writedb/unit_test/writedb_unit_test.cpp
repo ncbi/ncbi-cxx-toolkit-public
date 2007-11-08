@@ -58,6 +58,7 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -1139,3 +1140,4 @@ BOOST_AUTO_TEST_CASE(FourAndEightByteTis)
     CHECK(data8 == d8);
 }
 
+#endif /* SKIP_DOXYGEN_PROCESSING */

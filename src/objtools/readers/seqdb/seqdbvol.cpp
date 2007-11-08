@@ -1126,7 +1126,7 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
             have_org_desc = true;
         }
         
-        CSeqDBTaxNames tnames;
+        SSeqDBTaxInfo tnames;
         
         if (tax_info.Empty()) {
             continue;
@@ -1151,10 +1151,10 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
                 CRef<CDbtag> org_tag(new CDbtag);
                 org_tag->SetDb(TAX_ORGREF_DB_NAME);
                 org_tag->SetTag().SetId(taxid);
-            
+                
                 CRef<COrg_ref> org(new COrg_ref);
-                org->SetTaxname(tnames.GetSciName());
-                org->SetCommon(tnames.GetCommonName());
+                org->SetTaxname().swap(tnames.scientific_name);
+                org->SetCommon().swap(tnames.common_name);
                 org->SetDb().push_back(org_tag);
                 
                 CRef<CBioSource>   source;

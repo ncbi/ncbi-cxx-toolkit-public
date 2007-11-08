@@ -1,0 +1,8 @@
+# $Id$
+
+APP_PROJ = gene_info_unit_test
+
+REQUIRES = Boost.Test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

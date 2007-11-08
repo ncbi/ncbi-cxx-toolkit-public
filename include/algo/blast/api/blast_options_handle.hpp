@@ -57,6 +57,8 @@ class CBlastOptionsHandle;
 * specific task at hand, please instantiate the appropriate CBlastOptionsHandle
 * subclass.
 *
+* @sa @ref blast_opts_cookbook
+*
 * Example:
 * @code
 * ...
@@ -128,6 +130,9 @@ private:
 ///
 /// This abstract base class only defines those options that are truly 
 /// "universal" BLAST options (they apply to all flavors of BLAST).
+///
+/// @sa @ref blast_opts_cookbook 
+///     @ref blast_opts_cpp_design
 ///
 /// @invariant Derived classes define options that are applicable only to 
 /// those programs whose options they manipulate.

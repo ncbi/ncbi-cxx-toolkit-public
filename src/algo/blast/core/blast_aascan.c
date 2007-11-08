@@ -152,7 +152,7 @@ static Int4 s_BlastCompressedAaScanSubject(
                               BlastOffsetPair * NCBI_RESTRICT offset_pairs,
                               Int4 array_size)
 {
-    Int4 index;
+    Int4 index=0;
     Int4 preshift; /* used for 2-stage index calculation */
     Uint1 *s;
     Uint1 *s_first;

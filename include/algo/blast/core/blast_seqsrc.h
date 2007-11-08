@@ -198,17 +198,17 @@ typedef struct BlastSeqSrcGetSeqArg {
      * eBlastEncodingNucleotide, etc [in] */
     EBlastEncoding encoding;
 
-    /** Specify true here to disable this OID's ranges before
-     * fetching.  OID ranges are a (somewhat complicated) performance
-     * feature that allows less nucleotide unpacking to be done in
-     * some cases.  If in doubt, specify FALSE here.
-     * TRUE to disable ranges, FALSE to use them if they exist [in] */
+    /** Specify true here to enable this OID's ranges before fetching.
+     * OID ranges are a (somewhat complicated) performance feature that
+     * reduces the amount of nucleotide unpacking needed for some OIDs.
+     * If in doubt, specify FALSE here.
+     * TRUE to use ranges if they exist, FALSE to disable them. [in] */
     Boolean enable_ranges;
 
     /** Check whether an OID is excluded due to overlapping filtering.
      * The disease is rare, and the test for it is somewhat expensive,
      * so it is deferred to the traceback stage.
-     * TRUE to disable ranges, FALSE to use them if they exist [in] */
+     * TRUE to enable this test. [in] */
     Boolean check_oid_exclusion;
 
     /** Sequence to return, if NULL, it should allocated by GetSeqBlkFnPtr

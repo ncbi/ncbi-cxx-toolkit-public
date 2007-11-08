@@ -44,6 +44,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_filter.h>
+#include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/link_hsps.h>
 #include <algo/blast/core/gencode_singleton.h>
 #include "blast_psi_priv.h"
@@ -295,7 +296,7 @@ s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
                                 BlastQueryInfo* queryInfo)
 {
     int status = 0;                    /* return code for any routine called */
-    const int unknown_value = 0;   /* dummy constant to use when a
+    static const int unknown_value = 0;   /* dummy constant to use when a
                                       parameter value is not known */
     BlastCompo_Alignment * align;  /* an alignment in the list */
     BlastHSPList * hsp_list;       /* the new HSP list */
@@ -381,7 +382,7 @@ s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
 static int
 s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
                           BlastHSPList * hsp_list,
-			  const BlastSeqSrc* seqSrc,
+                          const BlastSeqSrc* seqSrc,
                           int subject_length,
                           EBlastProgramType program_number,
                           BlastQueryInfo* queryInfo,
@@ -425,6 +426,67 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
         }
     }
     return status == 0 ? 0 : -1;
+}
+
+/** Compute the number of identities for the HSPs in the hsp_list
+ * @note this only works for blastp right now
+ * 
+ * @param query_blk the query sequence data [in]
+ * @param query_info structure describing the query_blk structure [in]
+ * @param seq_src source of subject sequence data [in]
+ * @param hsp_list list of HSPs to be processed [in|out]
+ * @param scoring_options scoring options [in]
+ */
+static void
+s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
+                       const BlastQueryInfo* query_info,
+                       const BlastSeqSrc* seq_src,
+                       BlastHSPList* hsp_list,
+                       const BlastScoringOptions* scoring_options)
+{
+    Uint1* query = NULL;
+    Uint1* subject = NULL;
+    ASSERT(scoring_options);
+    const EBlastProgramType program_number = scoring_options->program_number;
+    const Boolean kIsOutOfFrame = scoring_options->is_ooframe;
+    const EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
+    BlastSeqSrcGetSeqArg seq_arg;
+    Int2 status = 0;
+    int i;
+
+    if ( !hsp_list || program_number != eBlastTypeBlastp ) {
+        return;
+    }
+
+    /* Initialize the subject */
+    {
+        memset((void*) &seq_arg, 0, sizeof(seq_arg));
+        seq_arg.oid = hsp_list->oid;
+        seq_arg.encoding = encoding;
+        status = BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg);
+        ASSERT(status == 0);
+        subject = seq_arg.seq->sequence;
+    }
+
+    for (i = 0; i < hsp_list->hspcnt; i++) {
+        BlastHSP* hsp = hsp_list->hsp_array[i];
+
+        /* Initialize the query */
+        if (program_number == eBlastTypeBlastx && kIsOutOfFrame) {
+            Int4 context = hsp->context - hsp->context % CODON_LENGTH;
+            Int4 context_offset = query_info->contexts[context].query_offset;
+            query = query_blk->oof_sequence + CODON_LENGTH + context_offset;
+        } else {
+            query = query_blk->sequence + 
+                query_info->contexts[hsp->context].query_offset;
+        }
+
+        status = Blast_HSPGetNumIdentities(query, subject, hsp, 
+                                           scoring_options, 0);
+        ASSERT(status == 0);
+    }
+    BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
+    BlastSequenceBlkFree(seq_arg.seq);
 }
 
 
@@ -2179,7 +2241,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                 status_code =
                     s_HitlistEvaluateAndPurge(&bestScore, &bestEvalue,
                                               hsp_list,
-					      seqSrc,
+                                              seqSrc,
                                               matchingSeq.length,
                                               program_number,
                                               queryInfo, query_index,
@@ -2197,6 +2259,8 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                     s_HSPListNormalizeScores(hsp_list,
                                              kbp->Lambda, kbp->logK,
                                              localScalingFactor);
+                    s_ComputeNumIdentities(queryBlk, queryInfo, seqSrc,
+                                           hsp_list, scoringParams->options);
                     status_code =
                         BlastCompo_HeapInsert(&redoneMatches[query_index],
                                               hsp_list, bestEvalue,

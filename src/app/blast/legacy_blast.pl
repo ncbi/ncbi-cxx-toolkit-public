@@ -124,7 +124,7 @@ sub convert_filter_string($$)
     }
 
     if ($filter_string =~ /m/) {
-        $retval .= "-soft_masking ";
+        $retval .= "-soft_masking true ";
     }
     #print STDERR "returning '$retval'\n";
     return $retval;
@@ -432,7 +432,7 @@ sub handle_megablast($)
     }
 
 
-    $retval .= "-target_perc_identity $opt_p " if (defined $opt_p);
+    $retval .= "-perc_identity $opt_p " if (defined $opt_p);
     $retval .= "-min_raw_gapped_score $opt_s " if (defined $opt_s);
     $retval .= &convert_strand($opt_S) if (defined $opt_S);
     $retval .= &convert_sequence_locations($opt_L, "query") if ($opt_L);

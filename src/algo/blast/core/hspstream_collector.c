@@ -355,6 +355,16 @@ fprintf(stderr, "No hits to query %d\n", global_query);
                           SplitQueryBlk_GetChunkOverlapSize(squery_blk));
    }
 
+   /* Sort to the canonical order, which the merge may not have done. */
+   for (i = 0; i < results2->num_queries; i++) {
+       BlastHitList *hitlist = results2->hitlist_array[i];
+       if (hitlist == NULL)
+           continue;
+
+       for (j = 0; j < hitlist->hsplist_count; j++)
+           Blast_HSPListSortByScore(hitlist->hsplist_array[j]);
+   }
+
    stream2->results_sorted = FALSE;
 
 #if _DEBUG_VERBOSE

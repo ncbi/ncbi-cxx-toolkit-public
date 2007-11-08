@@ -79,7 +79,7 @@ USING_SCOPE(objects);
 bool kTranslation;
 CRef<CScope> kScope;
 
-
+CNcbiRegistry *CBlastFormatUtil::m_Reg = NULL;
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
 ///@param score: place to extract the raw score to
@@ -1633,9 +1633,10 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
     }
     
     char buf[1024];
-    
+
     if (linkout & eUnigene) {
-        sprintf(buf, kUnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
+      string l_UnigeneUrl = CBlastFormatUtil::GetURLFromRegistry("UNIGEN");
+        sprintf(buf, l_UnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
                 is_na ? "nucleotide" : "protein", gi, rid.c_str());
         linkout_list.push_back(buf);
     }
@@ -1648,11 +1649,13 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
         linkout_list.push_back(buf);
     }
     if (linkout & eGeo){
-        sprintf(buf, kGeoUrl.c_str(), gi, rid.c_str());
+      string l_GeoUrl = CBlastFormatUtil::GetURLFromRegistry("GEO");
+       sprintf(buf, l_GeoUrl.c_str(), gi, rid.c_str());
         linkout_list.push_back(buf);
     }
     if(linkout & eGene){
-        sprintf(buf, kGeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID", rid.c_str());
+      string l_GeneUrl = CBlastFormatUtil::GetURLFromRegistry("GENE");
+        sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID", rid.c_str());
         linkout_list.push_back(buf);
     }
 
@@ -1776,5 +1779,48 @@ CBlastFormatUtil::SortSeqalignForSortableFormat(CCgiContext& ctx,
        
     return HitListToHspList(seqalign_hit_total_list);
 }
- 
+//
+// get given url from registry file or return corresponding kNAME
+// value as default to preserve compatibility.
+// 
+string CBlastFormatUtil::GetURLFromRegistry( const string url_name){
+  string  result_url;
+  string l_key, l_host_port, l_format; 
+  if( !m_Reg ){
+    CNcbiIfstream l_ConfigFile(".ncbirc");
+    m_Reg = new CNcbiRegistry(l_ConfigFile);
+  }
+  if( !m_Reg ) return GetURLDefault(url_name); 
+  // get host_port value first
+  l_key = url_name + "_HOST_PORT";
+  string l_pattern="$"+l_key;
+  l_host_port = m_Reg->Get("BLASTFMTUTILS", l_key);
+  if( l_host_port.empty())   return GetURLDefault(url_name);
+  // get format part
+  l_key = url_name + "_FORMAT";
+  l_format = m_Reg->Get("BLASTFMTUTILS", l_key);
+  if( l_format.empty())   return GetURLDefault(url_name);
+  // replace placeholder by the actual host/port values
+  result_url = NStr::Replace(l_format,l_pattern,l_host_port);
+  if( result_url.empty()) return GetURLDefault(url_name);
+  return result_url;
+}
+//
+// return default URL value for the given key.
+//
+string  CBlastFormatUtil::GetURLDefault( const string url_name){
+    if( url_name == "ENTREZ" ) return kEntrezUrl;
+    if( url_name == "UNIGEN" ) return kUnigeneUrl;
+    if( url_name == "GEO" ) return kGeoUrl;
+    if( url_name == "GENE" ) return kGeneUrl;
+    if( url_name == "ENTREZ_SUBSEQ" ) return kEntrezSubseqUrl;
+    if( url_name == "TREEVIEW" ) return kTreeViewURL;    
+    return "CBlastFormatUtil::GetURLDefault:no_defualt_for"+url_name;
+}
+//
+// Release memory allocated for the NCBIRegistry object
+//
+void CBlastFormatUtil::ReleaseURLRegistry(void){
+    if( m_Reg) { delete m_Reg; m_Reg = NULL;}
+}
 END_NCBI_SCOPE

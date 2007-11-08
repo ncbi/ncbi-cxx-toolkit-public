@@ -455,7 +455,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
               query_info->contexts[hsp->context].query_offset;
           query_length = query_info->contexts[hsp->context].query_length;
       }
-      
+
       /* preliminary RPS blast alignments have not had
          the composition-based correction applied yet, so
          we cannot reliably check whether an HSP is contained

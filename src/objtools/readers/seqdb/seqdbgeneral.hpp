@@ -424,6 +424,22 @@ private:
 };
 
 
+/// Parse a prefix from a substring.
+///
+/// The `buffer' argument is searched for a character.  If found, the
+/// region before the delimiter is returned in `front' and the region
+/// after the delimiter is returned in `buffer', and true is returned.
+/// If not found, neither argument changes and false is returned.
+///
+/// @param buffer Source data to search and remainder if found. [in|out]
+/// @param front Region before delim if found. [out]
+/// @param delim Character for which to search. [in]
+/// @return true if the character was found, false otherwise.
+bool SeqDB_SplitString(CSeqDB_Substring & buffer,
+                       CSeqDB_Substring & front,
+                       char               delim);
+
+
 /// Combine a filesystem path and file name
 ///
 /// Combine a provided filesystem path and a file name.  This function

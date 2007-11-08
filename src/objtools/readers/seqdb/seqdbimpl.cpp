@@ -1170,19 +1170,11 @@ void CSeqDBImpl::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
                    "Taxonomic database was not found.");
     }
     
-    CSeqDBTaxNames tnames;
-    
-    if (! m_TaxInfo->GetTaxNames(taxid, tnames, locked)) {
+    if (! m_TaxInfo->GetTaxNames(taxid, info, locked)) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Specified taxid was not found.");
     }
-    
-    info.taxid           = taxid;
-    info.scientific_name = tnames.GetSciName();
-    info.common_name     = tnames.GetCommonName();
-    info.blast_name      = tnames.GetBlastName();
-    info.s_kingdom       = tnames.GetSKing();
 }
 
 void CSeqDBImpl::GetTotals(ESummaryType   sumtype,

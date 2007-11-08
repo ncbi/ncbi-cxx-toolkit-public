@@ -1,0 +1,14 @@
+#Format: tax_id GeneID status RNA_nucleotide_accession.version RNA_nucleotide_gi protein_accession.version protein_gi genomic_nucleotide_accession.version genomic_nucleotide_gi start_position_on_the_genomic_accession end_position_on_the_genomic_accession orientation assembly (tab is used as a separator, pound sign - start of a comment)
+1	1	-	-	-	x.y	10	x.y	20	-	-	?	-
+1	1	-	-	-	x.y	10	x.y	21	-	-	?	-
+1	1	-	-	-	x.y	11	x.y	20	-	-	?	-
+1	7	-	x.y	1	x.y	11	x.y	21	5	10	-	-
+9031	2	-	x.y	2	x.y	30	x.y	40	15	25	+	-
+9031	2	-	x.y	2	x.y	30	x.y	41	15	25	+	-
+9031	2	-	x.y	2	x.y	30	x.y	42	15	25	+	-
+9031	5	-	x.y	2	x.y	31	x.y	50	-	-	?	-
+9606	3	-	x.y	2	x.y	32	x.y	60	-	-	?	-
+9606	4	-	x.y	3	x.y	31	x.y	60	-	-	?	-
+9606	4	-	x.y	3	x.y	31	x.y	61	-	-	?	-
+9606	4	-	x.y	4	x.y	31	x.y	61	10	15	-	-
+9606	6	-	x.y	4	x.y	32	x.y	62	-	-	?	-

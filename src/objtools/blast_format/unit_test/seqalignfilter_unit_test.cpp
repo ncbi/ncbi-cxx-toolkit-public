@@ -67,6 +67,8 @@
 #  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
 #endif
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 using boost::unit_test::test_suite;
@@ -368,3 +370,4 @@ BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
         }
     }
 }
+#endif /* SKIP_DOXYGEN_PROCESSING */

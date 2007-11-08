@@ -41,6 +41,9 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_message.h>  /* for error codes */
 
+/** factor by which these arrays are resized */
+const size_t kResizeFactor = 2;
+
 SDynamicUint4Array* DynamicUint4ArrayFree(SDynamicUint4Array* arr)
 {
     if ( !arr ) {
@@ -85,12 +88,14 @@ s_DynamicUint4Array_ReallocIfNecessary(SDynamicUint4Array* arr)
 
     if (arr->num_used+1 > arr->num_allocated) {
         /* we need more room for elements */
-        arr->num_allocated *= 2;
-        arr->data = (Uint4*) realloc(arr->data, 
-                                     arr->num_allocated * sizeof(Uint4));
-        if ( !arr->data ) {
+        Uint4* reallocation = 
+            (Uint4*) realloc(arr->data, 
+                     kResizeFactor * arr->num_allocated * sizeof(*arr->data));
+        if ( !reallocation ) {
             return BLASTERR_MEMORY;
         }
+        arr->data = reallocation;
+        arr->num_allocated *= kResizeFactor;
     }
     return 0;
 }
@@ -104,7 +109,8 @@ DynamicUint4Array_Append(SDynamicUint4Array* arr, Uint4 element)
     if ( (retval = s_DynamicUint4Array_ReallocIfNecessary(arr)) != 0) {
         return retval;
     }
-    arr->data[arr->num_used++] = element;
+    arr->data[arr->num_used] = element;
+    arr->num_used++;
     return retval;
 }
 
@@ -130,12 +136,14 @@ DynamicUint4Array_Copy(SDynamicUint4Array* dest,
     Uint4 i = 0;        /* index into arrays */
 
     if (dest->num_allocated < src->num_allocated) {
-        dest->num_allocated = src->num_allocated;
-        dest->data = (Uint4*) realloc(dest->data, 
-                                      dest->num_allocated * sizeof(Uint4));
-        if ( !dest->data ) {
-            return -1;
+        /* we need more room for elements */
+        Uint4* reallocation = (Uint4*) realloc(dest->data,
+                                     src->num_allocated * sizeof(*dest->data));
+        if ( !reallocation ) {
+            return BLASTERR_MEMORY;
         }
+        dest->data = reallocation;
+        dest->num_allocated = src->num_allocated;
     }
 
     for (i = 0; i < src->num_used; i++) {
@@ -203,12 +211,13 @@ s_DynamicInt4Array_ReallocIfNecessary(SDynamicInt4Array* arr)
 
     if (arr->num_used+1 > arr->num_allocated) {
         /* we need more room for elements */
-        arr->num_allocated *= 2;
-        arr->data = (Int4*) realloc(arr->data, 
-                                     arr->num_allocated * sizeof(Int4));
-        if ( !arr->data ) {
+        Int4* reallocation = (Int4*) realloc(arr->data,
+                     kResizeFactor * arr->num_allocated * sizeof(*arr->data));
+        if ( !reallocation ) {
             return BLASTERR_MEMORY;
         }
+        arr->data = reallocation;
+        arr->num_allocated *= kResizeFactor;
     }
     return 0;
 }
@@ -222,7 +231,8 @@ DynamicInt4Array_Append(SDynamicInt4Array* arr, Int4 element)
     if ( (retval = s_DynamicInt4Array_ReallocIfNecessary(arr)) != 0) {
         return retval;
     }
-    arr->data[arr->num_used++] = element;
+    arr->data[arr->num_used] = element;
+    arr->num_used++;
     return retval;
 }
 
@@ -272,12 +282,13 @@ s_DynamicSGenCodeNodeArray_ReallocIfNecessary(SDynamicSGenCodeNodeArray* arr)
 
     if (arr->num_used+1 > arr->num_allocated) {
         /* we need more room for elements */
-        arr->num_allocated *= 2;
-        arr->data = (SGenCodeNode*) realloc(arr->data, 
-                                     arr->num_allocated * sizeof(SGenCodeNode));
-        if ( !arr->data ) {
+        SGenCodeNode* reallocation = (SGenCodeNode*) realloc(arr->data,
+                     kResizeFactor * arr->num_allocated * sizeof(*arr->data));
+        if ( !reallocation ) {
             return BLASTERR_MEMORY;
         }
+        arr->data = reallocation;
+        arr->num_allocated *= kResizeFactor;
     }
     return 0;
 }

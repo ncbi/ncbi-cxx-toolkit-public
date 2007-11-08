@@ -98,11 +98,15 @@ public:
     /// Overloaded method to attempt to read non-FASTA input types
     virtual CRef<CSeq_entry> ReadOneSeq(void) {
         
-        static const string kRegex_Gi("^ *[0-9]+ *$");
-        static const string kRegex_Accession("^ *[a-z].*[0-9]+ *$");
+        static const string kRegex_Gi("^[0-9]+$");
         static const string kRegex_Ti("^gnl\\|ti\\|[0-9]+$");
+        static const string kRegex_Accession("^[a-z].*[0-9]+$");
+        // The following are not matched by CSeq_id::IdentifyAccession
+        static const string kRegex_PdbWithDash("^pdb\\|[a-z0-9\-]+$");
+        static const string kRegex_Prf("^prf\\|{1,2}[a-z0-9]+$");
+        static const string kRegex_SpWithVersion("^sp\\|[a-z0-9]+.[0-9]+$");
 
-        const string line = *++GetLineReader();
+        const string line = NStr::TruncateSpaces(*++GetLineReader());
 
         CRegexpUtil regex(line);
         const CRegexp::ECompile flags = static_cast<CRegexp::ECompile>
@@ -111,18 +115,21 @@ public:
         try {
             // Test for GI only
             if (regex.Exists(kRegex_Gi)) {
-                const int conv_flags
+                static const int conv_flags
                     (NStr::fAllowLeadingSpaces|NStr::fAllowTrailingSpaces);
                 int gi = NStr::StringToLong(line, conv_flags);
                 return x_PrepareBioseqWithGi(gi);
-            // Test for accession
-            } else if (regex.Exists(kRegex_Accession, flags) ||
-                       x_MatchPdb(line)) {
-                return x_PrepareBioseqWithAccession(line);
             // Test for Trace ID
             } else if (regex.Exists(kRegex_Ti, flags)) {
                 int ti = NStr::StringToLong(regex.Extract("[0-9]+", flags));
                 return x_PrepareBioseqWithTi(ti);
+            // Test for accession
+            } else if (regex.Exists(kRegex_Accession, flags) ||
+                       regex.Exists(kRegex_PdbWithDash, flags) ||
+                       regex.Exists(kRegex_Prf, flags) ||
+                       regex.Exists(kRegex_SpWithVersion, flags) ||
+                       x_MatchKnownAccessions(line)) {
+                return x_PrepareBioseqWithAccession(line);
             }
         } catch (const CInputException&) { 
             throw; 
@@ -131,9 +138,10 @@ public:
                 NCBI_THROW(CInputException, eSeqIdNotFound,
                            "Sequence ID not found: '" + line + "'");
             }
+        } catch (const exception& e) {
+            throw;
         } catch (...) {
-            // in case of other exceptions, just defer to the parent 
-            // implementation
+            // in case of other exceptions, just defer to CFastaReader
         }
 
         // If all fails, fall back to parent's implementation
@@ -239,13 +247,22 @@ private:
         return retval;
     }
     
-    /// Check whether an input line qualifies as a PDB accession.
+    /// Check whether an input line qualifies as a known accession type.
     /// @param str The input line.
-    /// @return True iff the line is a PDB.
-    bool x_MatchPdb(const string & str)
+    /// @return True iff the input line is a known accession, as identified by
+    /// CSeq_id::IdentifyAccession
+    inline bool x_MatchKnownAccessions(const string & str) const
     {
-        string s = NStr::TruncateSpaces(str);
-        return CSeq_id::IdentifyAccession(s) == CSeq_id::eAcc_pdb;
+        // try matching untagged accessions first...
+        switch (CSeq_id::IdentifyAccession(str)) {
+        case CSeq_id::eAcc_pdb:
+        case CSeq_id::eAcc_swissprot:
+        case CSeq_id::eAcc_prf:
+            return true;
+        default:
+            break;
+        }
+        return false;
     }
 };
 

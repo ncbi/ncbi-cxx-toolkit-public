@@ -43,6 +43,8 @@
 
 #include <algo/blast/api/sseqloc.hpp>
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+
 USING_SCOPE(objects);
 USING_SCOPE(blast);
 
@@ -163,49 +165,4 @@ CTestObjMgr::CreateBlastSearchQuery(CSeq_id& id, ENa_strand strand)
     return bsq;
 }
 
-/*
-* ===========================================================================
-*
-* $Log: test_objmgr.cpp,v $
-* Revision 1.13  2006/02/22 19:53:44  bealer
-* - Unit testing for CBlastQueryVector.
-*
-* Revision 1.12  2005/11/10 14:47:07  madden
-* Add CreateEmptySSeqLoc method
-*
-* Revision 1.11  2005/09/28 18:26:22  camacho
-* Rearrangement of headers/functions to segregate object manager dependencies.
-*
-* Revision 1.10  2005/09/23 18:55:53  camacho
-* + overloaded CTestObjMgr::CreateSSeqLoc
-*
-* Revision 1.9  2004/07/22 13:46:43  madden
-* ObjectManager interface change
-*
-* Revision 1.8  2004/05/05 14:40:59  dondosha
-* Added method CreateWholeSSeqLoc
-*
-* Revision 1.7  2004/03/23 17:55:26  camacho
-* Fix destructor
-*
-* Revision 1.6  2004/03/23 16:10:02  camacho
-* Minor changes
-*
-* Revision 1.5  2004/03/19 16:57:41  camacho
-* Use CRefs when allocating CScopes
-*
-* Revision 1.4  2003/12/05 20:18:09  camacho
-* Fix error object manager error message
-*
-* Revision 1.3  2003/12/05 17:22:15  camacho
-* Correction to singleton pattern
-*
-* Revision 1.2  2003/10/31 22:18:28  camacho
-* Minor updates
-*
-* Revision 1.1  2003/10/18 01:05:28  camacho
-* Initial revision
-*
-*
-* ===========================================================================
-*/
+#endif /* SKIP_DOXYGEN_PROCESSING */

@@ -148,7 +148,8 @@ static list<string> s_GetLinkoutString(int linkout, int gi, string& rid,
     char buf[1024];
     
     if (linkout & eUnigene) {
-        sprintf(buf, kUnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
+      string l_UnigeneUrl = CBlastFormatUtil::GetURLFromRegistry("UNIGEN");
+        sprintf(buf, l_UnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
                 is_na ? "nucleotide" : "protein", gi, rid.c_str());
         linkout_list.push_back(buf);
     }
@@ -160,11 +161,13 @@ static list<string> s_GetLinkoutString(int linkout, int gi, string& rid,
         linkout_list.push_back(buf);
     }
     if (linkout & eGeo){
-        sprintf(buf, kGeoUrl.c_str(), gi, rid.c_str());
+      string l_GeoUrl = CBlastFormatUtil::GetURLFromRegistry("GEO");
+        sprintf(buf, l_GeoUrl.c_str(), gi, rid.c_str());
         linkout_list.push_back(buf);
     }
     if(linkout & eGene){
-        sprintf(buf, kGeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID", rid.c_str());
+      string l_GeneUrl = CBlastFormatUtil::GetURLFromRegistry("GENE");
+        sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID", rid.c_str());
         linkout_list.push_back(buf);
     }
     return linkout_list;
@@ -200,7 +203,8 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
         
         char url_buf[2048];
         if (gi > 0) {
-            sprintf(url_buf, kEntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
+	  string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");
+            sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
                     open_new_window ? "TARGET=\"EntrezView\"" : "");
             url_link = url_buf;
         } else {//seqid general, dbtag specified
@@ -277,8 +281,8 @@ static string s_GetIdUrlNew(const CBioseq::TId& ids, int gi, string& user_url,
                 strcpy(dopt, "GenPept");
                 strcpy(db, "Protein");
             }    
-            
-            sprintf(url_buf, kEntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
+	  string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");            
+            sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
                     open_new_window ? "TARGET=\"EntrezView\"" : "");
             url_link = url_buf;
         } else {//seqid general, dbtag specified

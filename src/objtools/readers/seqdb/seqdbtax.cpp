@@ -35,7 +35,6 @@
 #include <objtools/error_codes.hpp>
 #include "seqdbtax.hpp"
 
-
 #define NCBI_USE_ERRCODE_X   Objtools_SeqDBTax
 
 BEGIN_NCBI_SCOPE
@@ -135,7 +134,7 @@ CSeqDBTaxInfo::~CSeqDBTaxInfo()
 }
 
 bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
-                                CSeqDBTaxNames & tnames,
+                                SSeqDBTaxInfo  & info,
                                 CSeqDBLockHold & locked)
 {
     Int4 low_index  = 0;
@@ -172,7 +171,7 @@ bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
     }
     
     if (tax_id == m_TaxData[new_index].GetTaxId()) {
-        tnames.SetTaxId(tax_id);
+        info.taxid = tax_id;
         
         m_Atlas.Lock(locked);
         
@@ -208,23 +207,23 @@ bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
         
         const char * start_ptr = m_Lease.GetPtr(begin_data);
         
-        string buffer(start_ptr, start_ptr + (end_data - begin_data));
+        CSeqDB_Substring buffer(start_ptr, start_ptr + (end_data - begin_data));
+        CSeqDB_Substring sci, com, blast, king;
+        bool rc1, rc2, rc3;
         
-        // Scientific name, Common name, Blast name, and Super kingdom
+        rc1 = SeqDB_SplitString(buffer, sci, '\t');
+        rc2 = SeqDB_SplitString(buffer, com, '\t');
+        rc3 = SeqDB_SplitString(buffer, blast, '\t');
+        king = buffer;
         
-        vector<string> names;
-        NStr::Tokenize(buffer, "\t", names, NStr::eNoMergeDelims);
-        
-        if (names.size() != 4) {
-            return false;
+        if (rc1 && rc2 && rc3 && buffer.Size()) {
+            sci   .GetString(info.scientific_name);
+            com   .GetString(info.common_name);
+            blast .GetString(info.blast_name);
+            king  .GetString(info.s_kingdom);
+            
+            return true;
         }
-        
-        tnames.SetSciName   (names[0]);
-        tnames.SetCommonName(names[1]);
-        tnames.SetBlastName (names[2]);
-        tnames.SetSKing     (names[3]);
-        
-        return true;
     }
     
     return false;

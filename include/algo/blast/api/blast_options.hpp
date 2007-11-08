@@ -82,6 +82,7 @@ class CBlastOptionsMemento;
 /// CBlastOptionsHandle::[GS]etOptions().
 /// @note This class provides accessors and mutators for all BLAST options 
 /// without preventing the caller from setting inconsistent options.
+/// @sa @ref blast_opts_cookbook
 class NCBI_XBLAST_EXPORT CBlastOptions : public CObject
 {
 public:
@@ -407,6 +408,7 @@ private:
     friend class CDbBlast;
     friend class CDbBlastTraceback;
     friend class CDbBlastPrelim;
+    friend class CEffectiveSearchSpacesMemento;
     
     // Tabular formatting thread needs to calculate parameters structures
     // and hence needs access to individual options structures.

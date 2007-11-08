@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = gene_info_writer
+SRC = gene_info_writer

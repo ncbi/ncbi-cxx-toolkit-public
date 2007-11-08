@@ -148,7 +148,8 @@ public:
         eSeqIdNotFound,     ///< The sequence ID cannot be resolved
         eEmptyUserInput,    ///< No input was provided
         eInvalidRange,      ///< Invalid range specification
-        eSequenceMismatch   ///< Expected sequence type isn't what was expected
+        eSequenceMismatch,  ///< Expected sequence type isn't what was expected
+        eInvalidInput       ///< Invalid input data
     };
 
     /// Translate from the error code value to its string representation
@@ -159,6 +160,7 @@ public:
         case eEmptyUserInput:       return "eEmptyUserInput";
         case eInvalidRange:         return "eInvalidRange";
         case eSequenceMismatch:     return "eSequenceMismatch";
+        case eInvalidInput:         return "eInvalidInput";
         default:                    return CException::GetErrCodeString();
         }
     }

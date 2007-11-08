@@ -1564,7 +1564,7 @@ void CSeqDBMapStrategy::x_SetBounds(Uint8 bound)
     }
     
     int overhang_ratio = 32;
-    int slice_ratio = 8;
+    int slice_ratio = 10;
     
     // If a mapping request has never failed, use large slice for
     // efficiency.  Otherwise, if the client follows a mostly linear
@@ -1598,6 +1598,8 @@ void CSeqDBMapStrategy::x_SetBounds(Uint8 bound)
     m_Overhang = x_Pick(e_MinOverhang,
                         e_MaxOverhang,
                         m_SliceSize / overhang_ratio);
+    
+    m_AdjustedBound = false;
 }
 
 void CSeqDBAtlas::SetDefaultMemoryBound(Uint8 bytes)

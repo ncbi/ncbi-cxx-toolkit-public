@@ -1,0 +1,8 @@
+#Format: tax_id GeneID Symbol LocusTag Synonyms dbXrefs chromosome map_location description type_of_gene Symbol_from_nomenclature_authority Full_name_from_nomenclature_authority Nomenclature_status Other_designations Modification_date (tab is used as a separator, pound sign - start of a comment)
+1	1	GeneID1	-	-	-	-	-	Description text for GeneID1	-	-	-	-	-	20071106
+1	7	GeneID7	-	-	-	-	-	Description text for GeneID7	-	-	-	-	-	20071106
+9031	2	GeneID2	-	-	-	-	-	Description text for GeneID2	-	-	-	-	-	20071106
+9031	5	GeneID5	-	-	-	-	-	Description text for GeneID5	-	-	-	-	-	20071106
+9606	3	GeneID3	-	-	-	-	-	Description text for GeneID3	-	-	-	-	-	20071106
+9606	4	GeneID4	-	-	-	-	-	Description text for GeneID4	-	-	-	-	-	20071106
+9606	6	GeneID6	-	-	-	-	-	Description text for GeneID6	-	-	-	-	-	20071106

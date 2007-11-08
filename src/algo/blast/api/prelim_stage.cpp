@@ -154,14 +154,14 @@ CRef<SInternalData>
 CBlastPrelimSearch::Run()
 {
     BlastSeqSrcResetChunkIterator(m_InternalData->m_SeqSrc->GetPointer());
-    // N.B.: this changes the options!
+
+    CEffectiveSearchSpacesMemento eff_memento(m_Options);
     SplitQuery_SetEffectiveSearchSpace(m_Options, m_QueryFactory,
                                        m_InternalData);
     int retval = 0;
 
     auto_ptr<const CBlastOptionsMemento> opts_memento
         (m_Options->CreateSnapshot());
-
     BlastSeqSrc * seqsrc = m_InternalData->m_SeqSrc->GetPointer();
     BLAST_SequenceBlk* queries = m_InternalData->m_Queries;
     LookupTableOptions * lut_options = opts_memento->m_LutOpts;

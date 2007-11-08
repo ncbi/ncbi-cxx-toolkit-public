@@ -127,6 +127,24 @@ CSeqDB_Substring SeqDB_GetBaseName(CSeqDB_Substring s)
 }
 
 
+bool SeqDB_SplitString(CSeqDB_Substring & buffer,
+                       CSeqDB_Substring & front,
+                       char               delim)
+{
+    for(int i = 0; i < buffer.Size(); i++) {
+        if (buffer[i] == delim) {
+            front = buffer;
+            
+            buffer.EraseFront(i + 1);
+            front.Resize(i);
+            
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void SeqDB_CombinePath(const CSeqDB_Substring & one,
                        const CSeqDB_Substring & two,
                        const CSeqDB_Substring * extn,

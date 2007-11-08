@@ -1105,7 +1105,6 @@ static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args )
     }else {
         ERR_POST( "Index load operation failed." );
         delete idb;
-        sfree( retval );
     }
 
     return retval;

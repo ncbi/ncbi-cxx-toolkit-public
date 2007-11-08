@@ -9,3 +9,20 @@ APP_PROJ = psiblast blastp blastn blastx rpsblast rpstblastn tblastn tblastx mul
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
+
+blastn:
+	make -f Makefile.blastn_app
+blastp:
+	make -f Makefile.blastp_app
+blastx:
+	make -f Makefile.blastx_app
+tblastn:
+	make -f Makefile.tblastn_app
+tblastx:
+	make -f Makefile.tblastx_app
+psiblast:
+	make -f Makefile.psiblast_app
+rpsblast:
+	make -f Makefile.rpsblast_app
+rpstblastn:
+	make -f Makefile.rpstblastn_app

@@ -113,6 +113,8 @@ const string kBl2seqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/\
 blast/bl2seq/wblast2.cgi?PROGRAM=tblastx&WORD=3&RID=%s&ONE=%s&TWO=%s\">Get \
 TBLASTX alignments</a>";
 
+//TreeView
+static string kTreeViewURL = "<a href=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi";
 
 /** This class contains misc functions for displaying BLAST results. */
 
@@ -538,6 +540,23 @@ public:
                                       bool structure_linkout_as_group);
 
     static int GetMasterCoverage(const CSeq_align_set& alnset);
+    ///retrieve URL from .ncbirc file combining host/port and format string value.
+    ///key/name mapping is next:
+    ///kEntrezUrl =>  ENTREZ_HOST_PORT, ENTREZ_FORMAT
+    ///kUnigeneUrl =>  UNIGEN_HOST_PORT,  UNIGEN_FORMAT
+    ///kGeoUrl =>  GEO_HOST_PORT, GEO_FORMAT
+    ///kGeneUrl => GENE_HOST_PORT, GENE_FORMAT
+    ///@param url_name:  url name to retrieve
+    ///@return: URL format string from .ncbirc file or default as kNAME
+    ///
+    static string GetURLFromRegistry( const string url_name);
+    // get default value if there is problem with .ncbirc file or
+    // settings are not complete. return corresponding static value
+    static string GetURLDefault( const string url_name);
+    ///release memory allocated for the registry object by GetURLFromRegistry
+    ///
+    static void ReleaseURLRegistry(void);
+    static CNcbiRegistry *m_Reg;
 };
 
 /// 256x256 matrix used for calculating positives etc. during formatting.

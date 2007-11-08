@@ -313,6 +313,7 @@ private:
     /// Friend class which allows extraction of this class' data members for
     /// internal use in the C++ API APIs
     friend class CBlastOptionsMemento;
+    friend class CEffectiveSearchSpacesMemento;
     
     /// @internal
     QuerySetUpOptions * GetQueryOpts() const
@@ -380,6 +381,16 @@ CBlastOptionsLocal::SetProgram(EProgram p)
 {
     _ASSERT(p >= eBlastn && p < eBlastProgramMax);
     m_Program = p;
+    const EBlastProgramType prog_type = EProgramToEBlastProgramType(p);
+    if (prog_type == eBlastTypeUndefined) {
+        return;
+    }
+
+    GetScoringOpts()->program_number = prog_type;
+    GetLutOpts()->program_number = prog_type;
+    GetInitWordOpts()->program_number = prog_type;
+    GetExtnOpts()->program_number = prog_type;
+    GetHitSaveOpts()->program_number = prog_type;
 }
 
 inline const char*

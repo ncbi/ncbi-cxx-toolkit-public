@@ -1029,7 +1029,7 @@ public:
         e_ProbeMemory = true,
         
         /// Maximum memory: 2 GB for non-WinOS, 32 bit systems.
-        e_MaxMemory32 = 768 << 20, //2048 << 20,
+        e_MaxMemory32 = 768 << 20,
 #else
         /// Probe address space with special allocations.
         e_ProbeMemory = false,
@@ -1050,7 +1050,7 @@ public:
         e_MinMemory = 64 << 20,
         
         /// Maximum slice to map on a 32 bit system.
-        e_MaxSlice32 = 256 << 20,
+        e_MaxSlice32 = 128 << 20,
         
         /// Maximum slice to map on a 64 bit system.
         e_MaxSlice64 = 1 << 30,

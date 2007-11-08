@@ -237,7 +237,7 @@ extern const int kDfltArgMaxHSPsPerSubject;
 #endif
 
 /// Argument to specify the target percent identity
-extern const string kArgTargetPercentIdentity;
+extern const string kArgPercentIdentity;
 /// Argument to specify the search strategy file to read and use for a BLAST
 /// search
 extern const string kArgInputSearchStrategy;

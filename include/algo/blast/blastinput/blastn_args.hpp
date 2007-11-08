@@ -52,6 +52,9 @@ protected:
     virtual CRef<CBlastOptionsHandle>
     x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                           const CArgs& args);
+
+    /// Task specified in the command line
+    string m_Task;
 };
 
 

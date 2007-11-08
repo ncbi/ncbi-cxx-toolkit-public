@@ -47,66 +47,6 @@ BEGIN_NCBI_SCOPE
 /// Import definitions from the objects namespace.
 USING_SCOPE(objects);
 
-/// CSeqDBTaxNames class
-/// 
-/// This class is used as a simple container to return taxonomic data.
-
-class CSeqDBTaxNames {
-public:
-    /// Constructor
-    CSeqDBTaxNames()
-        : m_TaxId(0)
-    {
-    }
-    
-    /// Get the taxonomic identifier
-    Int4 GetTaxId() { return m_TaxId; }
-    
-    /// Get the scientific name (genus and species)
-    string GetSciName() { return m_SciName; }
-    
-    /// Get the common name for this organism
-    string GetCommonName() { return m_CommonName; }
-    
-    /// Get a organism category name used by BLAST for this organism
-    string GetBlastName() { return m_BlastName; }
-    
-    /// Get a single letter string representing the "super kingdom"
-    string GetSKing() { return m_SKing; }
-    
-    
-    /// Set the taxonomic identifier
-    void SetTaxId     (Int4 v)   { m_TaxId      = v; }
-    
-    /// Set the scientific name (genus and species)
-    void SetSciName   (string v) { m_SciName    = v; }
-    
-    /// Set the common name for this organism
-    void SetCommonName(string v) { m_CommonName = v; }
-    
-    /// Set a organism category name used by BLAST for this organism
-    void SetBlastName (string v) { m_BlastName  = v; }
-    
-    /// Set a single letter string representing the "super kingdom"
-    void SetSKing     (string v) { m_SKing      = v; }
-    
-private:
-    /// The taxonomic identifier
-    Int4 m_TaxId;
-
-    /// The scientific name (genus and species)
-    string m_SciName;
-
-    /// The common name for this organism
-    string m_CommonName;
-
-    /// A taxonomic category used by BLAST for this organism
-    string m_BlastName;
-
-    /// A string of length one indicating the "super kingdom"
-    string m_SKing;
-};
-
 /// CSeqDBTaxId class
 /// 
 /// This is a memory overlay class.  Do not change the size or layout
@@ -150,6 +90,7 @@ private:
     Uint4 m_Offset;
 };
 
+
 /// CSeqDBTaxInfo class
 /// 
 /// This manages access to the taxonomy database.
@@ -170,13 +111,13 @@ public:
     ///
     /// @param tax_id
     ///   The taxonomic identiifer.
-    /// @param tnames
+    /// @param info
     ///   A container structure in which to return the names.
     /// @param locked
     ///   The lock holder object for this thread.
     /// @return true if the taxonomic id was found
     bool GetTaxNames(Int4             tax_id,
-                     CSeqDBTaxNames & tnames,
+                     SSeqDBTaxInfo  & info,
                      CSeqDBLockHold & locked);
     
 private:

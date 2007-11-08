@@ -148,7 +148,7 @@ const string kArgPHIPatternFile("phi_pattern");
 const string kArgMaxHSPsPerSubject("max_hsps_per_subject");
 const int kDfltArgMaxHSPsPerSubject = 0;
 #endif
-const string kArgTargetPercentIdentity("target_perc_identity");
+const string kArgPercentIdentity("perc_identity");
 const string kArgNoGreedyExtension("no_greedy");
 const string kArgDMBTemplateType("template_type");
 const string kArgDMBTemplateLength("template_length");

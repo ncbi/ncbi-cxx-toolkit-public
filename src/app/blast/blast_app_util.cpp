@@ -45,6 +45,7 @@ static char const rcsid[] =
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <algo/blast/api/remote_blast.hpp>
+#include <algo/blast/blastinput/blast_input.hpp>  // for blast::CInputException
 #include <algo/blast/blastinput/psiblast_args.hpp>
 #include <algo/blast/blastinput/tblastn_args.hpp>
 #include <algo/blast/blastinput/blast_scope_src.hpp>
@@ -157,7 +158,8 @@ s_ImportSearchStrategy(CNcbiIstream* in,
             break;
 
         default:
-            abort();
+            NCBI_THROW(CInputException, eInvalidInput, 
+                       "Unrecognized input format ");
         }
     } catch (const CException& e) {
         ERR_POST(Fatal << "Fail to read search strategy: " << e.what());
