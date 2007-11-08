@@ -53,7 +53,7 @@ enum EProjectTreeBuilderErrCode
     ePTB_MissingMakefile,
     ePTB_PathNotFound,
     ePTB_ProjectExcluded,
-    ePTB_ProjectNotFound,
+    ePTB_ProjectNotFound
 };
 
 
