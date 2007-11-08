@@ -123,8 +123,7 @@ int CCgiIOTestApplication::ProcessRequest(CCgiContext& ctx)
 #endif
 
 
-    GetDiagContext().PrintExtra("The request ID: " + s_Arg("id").AsString());
-
+    GetDiagContext().Extra().Print("ReqID", s_Arg("id").AsString());
 
     static bool printed_args = false;
     if ( !printed_args ) {
