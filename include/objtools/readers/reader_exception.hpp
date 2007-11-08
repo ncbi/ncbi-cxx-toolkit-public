@@ -53,18 +53,20 @@ public:
         eNoDefline,
         eNoIDs,
         eAmbiguous,
-        eBadSegSet
+        eBadSegSet,
+        eDuplicateID
     };
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eFormat:    return "eFormat";
-        case eEOF:       return "eEOF";
-        case eNoDefline: return "eNoDefline";
-        case eNoIDs:     return "eNoIDs";
-        case eAmbiguous: return "eAmbiguous";
-        case eBadSegSet: return "eBadSegSet";
-        default:         return CException::GetErrCodeString();
+        case eFormat:      return "eFormat";
+        case eEOF:         return "eEOF";
+        case eNoDefline:   return "eNoDefline";
+        case eNoIDs:       return "eNoIDs";
+        case eAmbiguous:   return "eAmbiguous";
+        case eBadSegSet:   return "eBadSegSet";
+        case eDuplicateID: return "eDuplicateID";
+        default:           return CException::GetErrCodeString();
         }
     }
     NCBI_EXCEPTION_DEFAULT2(CObjReaderParseException,
