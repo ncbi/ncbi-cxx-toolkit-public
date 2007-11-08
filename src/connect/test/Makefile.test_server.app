@@ -11,3 +11,4 @@ REQUIRES = MT
 
 CHECK_CMD =
 CHECK_AUTHORS = kazimird joukovv
+CHECK_TIMEOUT = 400
