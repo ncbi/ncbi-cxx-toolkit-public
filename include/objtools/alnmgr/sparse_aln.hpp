@@ -34,8 +34,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
-#include <gui/gui_export.h>
-
 #include <util/align_range.hpp>
 #include <util/align_range_coll.hpp>
 
