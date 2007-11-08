@@ -115,19 +115,21 @@ public:
             Throw("cannot create iterator");
             return false;
         }
-    static void AddElement(const CContainerTypeInfo* /*containerType*/,
-                           TObjectPtr /*containerPtr*/,
-                           TConstObjectPtr /*elementPtr*/,
-                           ESerialRecursionMode)
+    static TObjectPtr AddElement(const CContainerTypeInfo* /*containerType*/,
+                                 TObjectPtr /*containerPtr*/,
+                                 TConstObjectPtr /*elementPtr*/,
+                                 ESerialRecursionMode)
         {
             Throw("illegal call");
+            return 0;
         }
     
-    static void AddElementIn(const CContainerTypeInfo* /*containerType*/,
-                             TObjectPtr /*containerPtr*/,
-                             CObjectIStream& /*in*/)
+    static TObjectPtr AddElementIn(const CContainerTypeInfo* /*containerType*/,
+                                   TObjectPtr /*containerPtr*/,
+                                   CObjectIStream& /*in*/)
         {
             Throw("illegal call");
+            return 0;
         }
 
     static size_t GetElementCount(const CContainerTypeInfo*, TConstObjectPtr)

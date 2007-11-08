@@ -127,10 +127,10 @@ public:
     bool EraseElement(CIterator& it) const;
     void EraseAllElements(CIterator& it) const;
 
-    void AddElement(TObjectPtr containerPtr, TConstObjectPtr elementPtr,
-                    ESerialRecursionMode how = eRecursive) const;
-    void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const;
-
+    TObjectPtr AddElement(TObjectPtr containerPtr, TConstObjectPtr elementPtr,
+                          ESerialRecursionMode how = eRecursive) const;
+    TObjectPtr AddElement(TObjectPtr containerPtr, CObjectIStream& in) const;
+    
     // corresponding to size() and reserve() respectively
     size_t GetElementCount(TConstObjectPtr containerPtr) const;
     void   ReserveElements(TObjectPtr containerPtr, size_t new_count) const;
@@ -148,11 +148,11 @@ public:
     typedef bool (*TEraseElement)(CIterator&);
     typedef void (*TEraseAllElements)(CIterator&);
 
-    typedef void (*TAddElement)(const CContainerTypeInfo* cType,
-                                TObjectPtr cPtr, TConstObjectPtr ePtr,
-                                ESerialRecursionMode how);
-    typedef void (*TAddElementIn)(const CContainerTypeInfo* cType,
-                                  TObjectPtr cPtr, CObjectIStream& in);
+    typedef TObjectPtr (*TAddElement)(const CContainerTypeInfo* cType,
+                                      TObjectPtr cPtr, TConstObjectPtr ePtr,
+                                      ESerialRecursionMode how);
+    typedef TObjectPtr (*TAddElementIn)(const CContainerTypeInfo* cType,
+                                        TObjectPtr cPtr, CObjectIStream& in);
 
     typedef size_t (*TGetElementCount)(const CContainerTypeInfo* cType,
                                        TConstObjectPtr containerPtr);

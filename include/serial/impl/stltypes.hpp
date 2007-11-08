@@ -223,22 +223,29 @@ public:
             Get(objectPtr).clear();
         }
 
-    static void AddElement(const CContainerTypeInfo* containerType,
-                           TObjectPtr containerPtr, TConstObjectPtr elementPtr,
-                           ESerialRecursionMode how = eRecursive)
+    static TObjectPtr AddElement(const CContainerTypeInfo* containerType,
+                                 TObjectPtr containerPtr,
+                                 TConstObjectPtr elementPtr,
+                                 ESerialRecursionMode how = eRecursive)
         {
             TObjectType& container = Get(containerPtr);
 #if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
             container.allocation_size(container.size());
 #endif
-            //container.push_back(CTypeConverter<TElementType>::Get(elementPtr));
-            TElementType elm;
-            containerType->GetElementType()->Assign
-                (&elm, &CTypeConverter<TElementType>::Get(elementPtr), how);
-            container.push_back(elm);
+            if ( elementPtr ) {
+                TElementType elm;
+                containerType->GetElementType()->Assign
+                    (&elm, &CTypeConverter<TElementType>::Get(elementPtr), how);
+                container.push_back(elm);
+            }
+            else {
+                container.push_back(TElementType());
+            }
+            return &container.back();
         }
-    static void AddElementIn(const CContainerTypeInfo* containerType,
-                             TObjectPtr containerPtr, CObjectIStream& in)
+    static TObjectPtr AddElementIn(const CContainerTypeInfo* containerType,
+                                   TObjectPtr containerPtr,
+                                   CObjectIStream& in)
         {
             TObjectType& container = Get(containerPtr);
 #if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
@@ -249,7 +256,9 @@ public:
             if (in.GetDiscardCurrObject()) {
                 container.pop_back();
                 in.SetDiscardCurrObject(false);
+                return 0;
             }
+            return &container.back();
         }
 
     static size_t GetElementCount(const CContainerTypeInfo*,
@@ -313,12 +322,14 @@ public:
             if ( !container.insert(element).second )
                 CStlClassInfoUtil::ThrowDuplicateElementError();
         }
-    static void AddElement(const CContainerTypeInfo* /*containerType*/,
-                           TObjectPtr containerPtr, TConstObjectPtr elementPtr,
-                           ESerialRecursionMode /* how = eRecursive */)
+    static TObjectPtr AddElement(const CContainerTypeInfo* /*containerType*/,
+                                 TObjectPtr containerPtr,
+                                 TConstObjectPtr elementPtr,
+                                 ESerialRecursionMode /* how = eRecursive */)
         {
             InsertElement(containerPtr,
                           CTypeConverter<TElementType>::Get(elementPtr));
+            return 0;
         }
     // this structure is required to initialize pointers by null before reading
     struct SInitializer
@@ -326,12 +337,14 @@ public:
         SInitializer() : data() {}
         TElementType data;
     };
-    static void AddElementIn(const CContainerTypeInfo* containerType,
-                             TObjectPtr containerPtr, CObjectIStream& in)
+    static TObjectPtr AddElementIn(const CContainerTypeInfo* containerType,
+                                   TObjectPtr containerPtr,
+                                   CObjectIStream& in)
         {
             SInitializer data;
             containerType->GetElementType()->ReadData(in, &data.data);
             InsertElement(containerPtr, data.data);
+            return 0;
         }
 
     static void SetAddElementFunctions(CStlOneArgTemplate* info)
@@ -358,12 +371,14 @@ public:
 #endif
             container.insert(element);
         }
-    static void AddElement(const CContainerTypeInfo* /*containerType*/,
-                           TObjectPtr containerPtr, TConstObjectPtr elementPtr,
-                           ESerialRecursionMode how = eRecursive)
+    static TObjectPtr AddElement(const CContainerTypeInfo* /*containerType*/,
+                                 TObjectPtr containerPtr,
+                                 TConstObjectPtr elementPtr,
+                                 ESerialRecursionMode how = eRecursive)
         {
             InsertElement(containerPtr,
                           CTypeConverter<TElementType>::Get(elementPtr));
+            return 0;
         }
     // this structure is required to initialize pointers by null before reading
     struct SInitializer
@@ -371,12 +386,14 @@ public:
         SInitializer() : data() {}
         TElementType data;
     };
-    static void AddElementIn(const CContainerTypeInfo* containerType,
-                             TObjectPtr containerPtr, CObjectIStream& in)
+    static TObjectPtr AddElementIn(const CContainerTypeInfo* containerType,
+                                   TObjectPtr containerPtr,
+                                   CObjectIStream& in)
         {
             SInitializer data;
             containerType->GetElementType()->ReadData(in, &data.data);
             InsertElement(containerPtr, data.data);
+            return 0;
         }
 
     static void SetAddElementFunctions(CStlOneArgTemplate* info)

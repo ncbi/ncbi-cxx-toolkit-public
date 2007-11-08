@@ -451,16 +451,26 @@ public:
     CMemberIterator GetClassMemberIterator(TMemberIndex index) const;
     CMemberIterator FindClassMember(const string& memberName) const;
     CMemberIterator FindClassMemberByTag(int memberTag) const;
+    // create if necessary and return member object
+    CObjectInfo SetClassMember(TMemberIndex index) const;
 
     // choice interface
     CChoiceVariant GetCurrentChoiceVariant(void) const;
+    // select if necessary and return variant object
+    CObjectInfo SetChoiceVariant(TMemberIndex index) const;
 
     // pointer interface
     CObjectInfo GetPointedObject(void) const;
+    // create if necessary and return pointed object
+    CObjectInfo SetPointedObject(void) const;
 
     // container interface
     CElementIterator BeginElements(void) const;
     void ReadContainer(CObjectIStream& in, CReadContainerElementHook& hook);
+    // add and return new element object
+    CObjectInfo AddNewElement(void) const;
+    // add new pointer element, create new pointed object and return it
+    CObjectInfo AddNewPointedElement(void) const;
 };
 
 // get starting point of object hierarchy

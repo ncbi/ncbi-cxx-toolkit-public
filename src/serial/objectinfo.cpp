@@ -301,6 +301,65 @@ TMemberIndex CConstObjectInfo::GetCurrentChoiceVariantIndex(void) const
     return GetChoiceTypeInfo()->GetIndex(GetObjectPtr());
 }
 
+CObjectInfo CObjectInfo::SetPointedObject(void) const
+{
+    const CPointerTypeInfo* pointerType = GetPointerTypeInfo();
+    TObjectPtr pointerPtr = GetObjectPtr();
+    TTypeInfo pointeeType = pointerType->GetPointedType();
+    TObjectPtr pointeePtr = pointerType->GetObjectPointer(pointerPtr);
+    if ( !pointeePtr ) {
+        pointeePtr = pointeeType->Create();
+        pointerType->SetObjectPointer(pointerPtr, pointeePtr);
+    }
+    return CObjectInfo(pointeePtr, pointeeType);
+}
+
+
+CObjectInfo CObjectInfo::AddNewElement(void) const
+{
+    const CContainerTypeInfo* container_type = GetContainerTypeInfo();
+    return CObjectInfo(container_type->AddElement(GetObjectPtr(), 0),
+                       container_type->GetElementType());
+}
+
+
+CObjectInfo CObjectInfo::AddNewPointedElement(void) const
+{
+    const CContainerTypeInfo* container_type = GetContainerTypeInfo();
+    TTypeInfo element_type = container_type->GetElementType();
+    if ( element_type->GetTypeFamily() != eTypeFamilyPointer )
+        WrongTypeFamily(eTypeFamilyPointer);
+    const CPointerTypeInfo* pointer_type =
+        CTypeConverter<CPointerTypeInfo>::SafeCast(element_type);
+    TTypeInfo pointee_type = pointer_type->GetPointedType();
+    TObjectPtr pointee_ptr = pointee_type->Create();
+    CObjectInfo ret(pointee_ptr, pointee_type);
+    container_type->AddElement(GetObjectPtr(), &pointee_ptr, eShallow);
+    return ret;
+}
+
+
+CObjectInfo CObjectInfo::SetClassMember(TMemberIndex index) const
+{
+    const CClassTypeInfo* class_type = GetClassTypeInfo();
+    TObjectPtr class_ptr = GetObjectPtr();
+    const CMemberInfo* member_info = class_type->GetMemberInfo(index);
+    member_info->UpdateSetFlagMaybe(class_ptr);
+    return CObjectInfo(member_info->GetMemberPtr(class_ptr),
+                       member_info->GetTypeInfo());
+}
+
+CObjectInfo CObjectInfo::SetChoiceVariant(TMemberIndex index) const
+{
+    const CChoiceTypeInfo* choice_type = GetChoiceTypeInfo();
+    TObjectPtr choice_ptr = GetObjectPtr();
+    choice_type->SetIndex(choice_ptr, index);
+    _ASSERT(choice_type->GetIndex(choice_ptr) == index);
+    const CVariantInfo* variant_info = choice_type->GetVariantInfo(index);
+    return CObjectInfo(variant_info->GetVariantPtr(choice_ptr),
+                       variant_info->GetTypeInfo());
+}
+
 void CObjectTypeInfo::SetLocalReadHook(CObjectIStream& stream,
                                        CReadObjectHook* hook) const
 {

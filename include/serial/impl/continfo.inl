@@ -223,18 +223,18 @@ void CContainerTypeInfo::EraseAllElements(CIterator& it) const
 }
 
 inline
-void CContainerTypeInfo::AddElement(TObjectPtr containerPtr,
-                                    TConstObjectPtr elementPtr,
-                                    ESerialRecursionMode how) const
+TObjectPtr CContainerTypeInfo::AddElement(TObjectPtr containerPtr,
+                                          TConstObjectPtr elementPtr,
+                                          ESerialRecursionMode how) const
 {
-    m_AddElement(this, containerPtr, elementPtr, how);
+    return m_AddElement(this, containerPtr, elementPtr, how);
 }
 
 inline
-void CContainerTypeInfo::AddElement(TObjectPtr containerPtr,
-                                    CObjectIStream& in) const
+TObjectPtr CContainerTypeInfo::AddElement(TObjectPtr containerPtr,
+                                          CObjectIStream& in) const
 {
-    m_AddElementIn(this, containerPtr, in);
+    return m_AddElementIn(this, containerPtr, in);
 }
 
 inline
