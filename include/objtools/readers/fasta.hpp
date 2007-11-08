@@ -37,6 +37,7 @@
 #include <corelib/ncbi_param.hpp>
 #include <util/line_reader.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 // #include <objects/seqset/Seq_entry.hpp>
 #include <stack>
 
@@ -50,7 +51,6 @@ BEGIN_SCOPE(objects)
 
 class CSeq_data;
 class CSeq_entry;
-class CSeq_id;
 class CSeq_loc;
 
 class CSeqIdGenerator;
@@ -69,19 +69,21 @@ public:
     /// control-As.  Normally, the reader stops at the first
     /// control-A; however, this flag makes it parse all the IDs.
     enum EFlags {
-        fAssumeNuc  = 0x1,   ///< Assume nucs unless accns indicate otherwise
-        fAssumeProt = 0x2,   ///< Assume prots unless accns indicate otherwise
-        fForceType  = 0x4,   ///< Force specified type regardless of accession
-        fNoParseID  = 0x8,   ///< Generate an ID (whole defline -> title)
-        fParseGaps  = 0x10,  ///< Make a delta sequence if gaps found
-        fOneSeq     = 0x20,  ///< Just read the first sequence found
-        fAllSeqIds  = 0x40,  ///< Read Seq-ids past the first ^A (see note)
-        fNoSeqData  = 0x80,  ///< Parse the deflines but skip the data
-        fRequireID  = 0x100, ///< Reject deflines that lack IDs
-        fDLOptional = 0x200, ///< Don't require a leading defline
-        fParseRawID = 0x400, ///< Try to identify raw accessions
-        fSkipCheck  = 0x800, ///< Skip (rudimentary) body content check
-        fNoSplit    = 0x1000 ///< Don't split out ambiguous sequence regions
+        fAssumeNuc  = 0x1,    ///< Assume nucs unless accns indicate otherwise
+        fAssumeProt = 0x2,    ///< Assume prots unless accns indicate otherwise
+        fForceType  = 0x4,    ///< Force specified type regardless of accession
+        fNoParseID  = 0x8,    ///< Generate an ID (whole defline -> title)
+        fParseGaps  = 0x10,   ///< Make a delta sequence if gaps found
+        fOneSeq     = 0x20,   ///< Just read the first sequence found
+        fAllSeqIds  = 0x40,   ///< Read Seq-ids past the first ^A (see note)
+        fNoSeqData  = 0x80,   ///< Parse the deflines but skip the data
+        fRequireID  = 0x100,  ///< Reject deflines that lack IDs
+        fDLOptional = 0x200,  ///< Don't require a leading defline
+        fParseRawID = 0x400,  ///< Try to identify raw accessions
+        fSkipCheck  = 0x800,  ///< Skip (rudimentary) body content check
+        fNoSplit    = 0x1000, ///< Don't split out ambiguous sequence regions
+        fValidate   = 0x2000, ///< Check (alphabetic) residue validity
+        fUniqueIDs  = 0x4000  ///< Forbid duplicate IDs
     };
     typedef int TFlags; ///< binary OR of EFlags
 
@@ -123,6 +125,9 @@ public:
     const CSeqIdGenerator& GetIDGenerator(void) const { return *m_IDGenerator; }
     CSeqIdGenerator&       SetIDGenerator(void)       { return *m_IDGenerator; }
     void                   SetIDGenerator(CSeqIdGenerator& gen);
+
+    /// Re-allow previously seen IDs even if fUniqueIds is on.
+    void ResetIDTracker(void) { m_IDTracker.clear(); }
 
 protected:
     enum EInternalFlags {
@@ -174,6 +179,9 @@ protected:
     bool          TestFlag(EInternalFlags flag) const
         { return (GetFlags() & flag) != 0; }
     CBioseq::TId& SetIDs(void)                { return m_CurrentSeq->SetId(); }
+ 
+    // NB: Not necessarily fully-formed!
+    CBioseq& SetCurrentSeq(void)              { return *m_CurrentSeq; }
 
     enum EPosType {
         eRawPos,
@@ -187,7 +195,8 @@ private:
         TSeqPos pos; // 0-based, and NOT counting previous gaps
         TSeqPos len; // may be zero for gaps of unknown length
     };
-    typedef vector<SGap> TGaps;
+    typedef vector<SGap>        TGaps;
+    typedef set<CSeq_id_Handle> TIDTracker;
 
     CRef<ILineReader>     m_LineReader;
     stack<TFlags>         m_Flags;
@@ -208,6 +217,7 @@ private:
     TStartsMap            m_Starts;
     TRowNum               m_Row;
     TSeqPos               m_Offset;
+    TIDTracker            m_IDTracker;
 };
 
 

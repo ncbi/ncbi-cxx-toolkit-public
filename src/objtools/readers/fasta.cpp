@@ -425,6 +425,17 @@ void CFastaReader::ParseDefLine(const TStr& s)
     desc->SetUser().SetType().SetStr("CFastaReader");
     desc->SetUser().AddField("DefLine", NStr::PrintableString(s));
     m_CurrentSeq->SetDescr().Set().push_back(desc);
+
+    if (TestFlag(fUniqueIDs)) {
+        ITERATE (CBioseq::TId, it, GetIDs()) {
+            CSeq_id_Handle h = CSeq_id_Handle::GetHandle(**it);
+            if ( !m_IDTracker.insert(h).second ) {
+                NCBI_THROW2(CObjReaderParseException, eDuplicateID,
+                            "Seq-id " + h.AsString() + " is a duplicate",
+                            StreamPosition());
+            }
+        }
+    }
 }
 
 bool CFastaReader::ParseIDs(const TStr& s)
@@ -496,7 +507,16 @@ bool CFastaReader::IsValidLocalID(const string& s)
 
 void CFastaReader::GenerateID(void)
 {
-    SetIDs().push_back(SetIDGenerator().GenerateID(true));
+    if (TestFlag(fUniqueIDs)) { // be extra careful
+        CRef<CSeq_id> id;
+        TIDTracker::const_iterator idt_end = m_IDTracker.end();
+        do {
+            id = m_IDGenerator->GenerateID(true);
+        } while (m_IDTracker.find(CSeq_id_Handle::GetHandle(*id)) != idt_end);
+        SetIDs().push_back(id);
+    } else {
+        SetIDs().push_back(m_IDGenerator->GenerateID(true));
+    }
 }
 
 void CFastaReader::CheckDataLine(const TStr& s)
@@ -619,6 +639,16 @@ void CFastaReader::AssembleSeq(void)
     AssignMolType();
     CSeq_data::E_Choice format
         = inst.IsAa() ? CSeq_data::e_Ncbieaa : CSeq_data::e_Iupacna;
+    if (TestFlag(fValidate)) {
+        CSeq_data tmp_data(m_SeqData, format);
+        if ( !CSeqportUtil::FastValidate(tmp_data) ) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        "Invalid residue(s) in input sequence",
+                        StreamPosition());
+        }
+    }
+
+
     if (m_Gaps.empty()) {
         _ASSERT(m_TotalGapLength == 0);
         if (m_SeqData.empty()) {
