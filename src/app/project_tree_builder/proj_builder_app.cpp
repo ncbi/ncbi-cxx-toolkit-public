@@ -462,7 +462,7 @@ void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles,
             }
             str_chain += proj_id.Id();
         }
-        LOG_POST(Error << str_chain);
+        LOG_POST(Warning << str_chain);
         reported = true;
         CCyclicDepends::TDependsChain::const_iterator i = cycle.end();
         const CProjKey& last = *(--i);
@@ -473,7 +473,7 @@ void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles,
                 CProjItem item = t->second;
                 item.m_Depends.remove(last);
                 tree[prev] = item;
-                LOG_POST(Error << "Removing LIB dependency: "
+                LOG_POST(Warning << "Removing LIB dependency: "
                                << prev.Id() << " - " << last.Id());
             }
         }

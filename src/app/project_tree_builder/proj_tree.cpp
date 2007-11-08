@@ -306,7 +306,7 @@ bool CCyclicDepends::AnalyzeProjItemNew(
                 str_chain += " - ";
             }
             str_chain += proj_id.Id();
-            LOG_POST( Error << str_chain << ": Undefined project: " << proj_id.Id() );
+            LOG_POST( Warning << str_chain << ": Undefined project: " << proj_id.Id() );
         }
         return false;
     }
