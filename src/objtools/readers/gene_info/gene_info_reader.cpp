@@ -62,7 +62,7 @@ static const int k_iGenomicGiField = 3;
 ///     Index of the field in record.
 /// @return
 ///     Corresponding field of the record.
-static int& s_GetField(CGeneInfoFileReader::STwoIntRecord& record,
+/* static */ int& s_GetField(CGeneInfoFileReader::STwoIntRecord& record,
                        int iField)
 {
     if (iField == 0)
@@ -132,7 +132,7 @@ static bool s_SearchSortedArray(TRecordType* pRecs, int nRecs,
 ///     List of integers to sort and filter.
 /// @param bRemoveZeros
 ///     Remove zeros from the list.
-static void s_SortAndFilter(list<int>& listVals, bool bRemoveZeros)
+/* static */ void s_SortAndFilter(list<int>& listVals, bool bRemoveZeros)
 {
     listVals.sort();
     listVals.unique();
