@@ -102,7 +102,7 @@ public:
         static const string kRegex_Ti("^gnl\\|ti\\|[0-9]+$");
         static const string kRegex_Accession("^[a-z].*[0-9]+$");
         // The following are not matched by CSeq_id::IdentifyAccession
-        static const string kRegex_PdbWithDash("^pdb\\|[a-z0-9\-]+$");
+        static const string kRegex_PdbWithDash("^pdb\\|[a-z0-9-]+$");
         static const string kRegex_Prf("^prf\\|{1,2}[a-z0-9]+$");
         static const string kRegex_SpWithVersion("^sp\\|[a-z0-9]+.[0-9]+$");
 
