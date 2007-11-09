@@ -9,8 +9,11 @@ Currently the program supports files the in format of Cn3D and the Conserved
 Domain Database (CD format).  A preliminary version of an MFASTA -> CD converter
 ('fasta2cd') is also provided.
 
-The Linux binary names end in '_LX' and PC binary names end in '.exe'; a Mac
-version will be available shortly. 
+The Linux binary names end in '_LX' and PC binary names end in '.exe'.  
+
+Mac binaries are available for the PowerPC architecture (name ends in '_MACP') 
+and the newer Intel architecture (name ends in '_MACI').  Note that the 
+PowerPC version can be run on Intel Macs, but not vice-verse.
 
 Contact Chris Lanczycki (lanczyck@ncbi.nlm.nih.gov) or Saikat Chakrabarti
 (chakraba@ncbi.nlm.nih.gov) for comments or reports of problems with this
