@@ -55,7 +55,7 @@ public:
 //    CAlignmentRefiner() : m_quietMode(false), m_quietDetails(false), m_nTrials(1), m_nCycles(1), m_forcedThreshold(-1), m_scoreDeviationThreshold(0.01)
     CAlignmentRefiner() : m_quietMode(false), m_quietDetails(false), m_nTrials(1), m_nCycles(1), m_scoreDeviationThreshold(0.01)
 {
-    SetVersion(CVersionInfo(1,1,0, "a Block-based Multiple Alignment Refinement program"));
+    SetVersion(CVersionInfo(1,2,0, "a Block-based Multiple Alignment Refinement program"));
     };
 
     ~CAlignmentRefiner() {

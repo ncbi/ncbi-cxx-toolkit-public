@@ -101,6 +101,8 @@ void CAlignmentRefiner::Init(void)
     argDescr->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Alignment Refinement w/ 'Leave One Out'");
 
+    HideStdArgs(fHideLogfile | fHideConffile | fHideDryRun);
+
      // input/output CD
     argDescr->AddKey("i", "CdFilenameIn", "full filename of input CD w/ alignment to refine (ascii or binary)", argDescr->eString);
     argDescr->AddDefaultKey("o", "CdBasenameOut", "basename of output CD(s) containing refined alignment; output saved to 'basename_<number>.cn3'; ascii text by default", argDescr->eString, "refiner");
@@ -290,6 +292,9 @@ int CAlignmentRefiner::Run(void)
     ostream& detailsStream = *x_lg;
 
     SetDiagStream(x_lg); // send all diagnostic messages to the same stream
+
+    //  Set to info level here, not in main, to avoid info messages about missing log files.
+    SetDiagPostLevel(eDiag_Info);
 
     // Set up details stream first...
     if (args["details"]) {
@@ -807,7 +812,7 @@ int main(int argc, const char* argv[])
     int result;
 
     SetDiagStream(&NcbiCerr); // send all diagnostic messages to cerr
-    SetDiagPostLevel(eDiag_Info);   
+    SetDiagPostLevel(eDiag_Warning);   
     //    SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
 
     SetDiagTrace(eDT_Default);      // trace messages only when DIAG_TRACE env. var. is set
