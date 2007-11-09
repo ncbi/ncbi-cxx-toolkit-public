@@ -461,9 +461,11 @@ void CCleanup_imp::BasicCleanup(CAffil& af)
             CLEAN_STRING_MEMBER(std, City);
             CLEAN_STRING_MEMBER(std, Sub);
             CLEAN_STRING_MEMBER(std, Country);
-            if (NStr::CompareNocase (std.GetCountry(), "U.S.A.") == 0) {
-                std.SetCountry("USA");
-                ChangeMade (CCleanupChange::eChangePublication);
+            if (std.CanGetCountry() ) {
+                if (NStr::CompareNocase (std.GetCountry(), "U.S.A.") == 0) {
+                    std.SetCountry("USA");
+                    ChangeMade (CCleanupChange::eChangePublication);
+                }
             }
             CLEAN_STRING_MEMBER(std, Street);
             CLEAN_STRING_MEMBER(std, Email);
@@ -900,7 +902,7 @@ void CCleanup_imp::x_ChangeCitationQualToCitationPub(CBioseq_Handle bs)
                         if (gb_qual.CanGetVal()) {
                             // find the publication that goes with this citation
                             int citnum = NStr::StringToInt (gb_qual.GetVal());
-                            if (citnum < pub_list.size()) {
+                            if ((size_t)citnum < pub_list.size()) {
                                 // add to the citation list for the feature
                                 feat->SetCit().SetPub().push_back(x_MinimizePub(*pub_list[citnum]));
                             }

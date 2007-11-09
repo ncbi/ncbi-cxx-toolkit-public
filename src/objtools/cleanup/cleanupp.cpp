@@ -96,6 +96,8 @@ void CCleanup_imp::Setup(const CSeq_entry& se)
     
     CConstRef<CBioseq> first_bioseq;
     switch (se.Which()) {
+        default:
+            break;
         case CSeq_entry::e_Seq:
         {
             first_bioseq.Reset(&se.GetSeq());
@@ -400,6 +402,8 @@ void CCleanup_imp::Setup(const CSeq_entry_Handle& seh)
     
     CBioseq_Handle first_bioseq;
     switch (seh.Which()) {
+        default:
+            break;
         case CSeq_entry::e_Seq :
         {
             first_bioseq = seh.GetSeq();
@@ -489,13 +493,10 @@ void CCleanup_imp::BasicCleanup(CSeq_annot_Handle& sah)
 static
 bool x_IsOneMinusStrand(const CSeq_loc& sl)
 {
-    bool isReverse = true;
+//    bool isReverse = true;
     switch ( sl.Which() ) {
-        case CSeq_loc::e_not_set:
-        case CSeq_loc::e_Null:
-        case CSeq_loc::e_Empty:
-        case CSeq_loc::e_Whole:
-            return false; 
+        default:
+            return false;
         case CSeq_loc::e_Int:
         case CSeq_loc::e_Pnt:
             return sl.IsReverseStrand();
@@ -560,6 +561,8 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
     
         
     switch (sl.Which()) {
+    default:
+        break;
     case CSeq_loc::e_Int :
         BasicCleanup(sl.SetInt());
         break;
@@ -1377,7 +1380,7 @@ void CCleanup_imp::RenormalizeNucProtSets (CBioseq_set_Handle bsh)
     }
 }
 
-
+/*
 static bool s_HasBackboneID (CBioseq_Handle bs)
 {
     ITERATE (CBioseq::TId, it, bs.GetBioseqCore()->GetId()) {
@@ -1388,6 +1391,7 @@ static bool s_HasBackboneID (CBioseq_Handle bs)
     }
     return false;
 }
+*/
 
 void CCleanup_imp::CheckNucProtSet (CBioseq_set_Handle bss)
 {
