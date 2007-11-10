@@ -79,7 +79,7 @@ static const int k_iGenomicGiField = 3;
 /// @return
 ///     Corresponding field of the record.
 template<int k_nFields>
-static int& s_GetField(CGeneInfoFileReader::
+/* static */ int& s_GetField(CGeneInfoFileReader::
                             SMultiIntRecord<k_nFields>& record,
                        int iField)
 {
@@ -103,7 +103,7 @@ static int& s_GetField(CGeneInfoFileReader::
 /// @return
 ///     True if any records were found matching the key.
 template <typename TRecordType>
-static bool s_SearchSortedArray(TRecordType* pRecs, int nRecs,
+/* static */ bool s_SearchSortedArray(TRecordType* pRecs, int nRecs,
                          int n1, int& iFirstIndex)
 {
     int iRecBeg = 0, iRecEnd = nRecs;
