@@ -577,10 +577,54 @@ void CCleanup_imp::BasicCleanup(COrgName& on)
 }
 
 
+static bool RemoveSpaceBeforeAndAfterColon (string& str)
+{
+    size_t pos, prev_pos, next_pos;
+    bool changed = false;
+
+    pos = NStr::Find (str, ":");
+    while (pos != string::npos) {
+        prev_pos = pos - 1;
+        while (prev_pos > 0 && isspace (str[prev_pos])) {
+            prev_pos--;
+        }
+        if (!isspace (str[prev_pos])) {
+            prev_pos++;
+        }
+        next_pos = pos + 1;
+        while (isspace (str[next_pos]) || str[next_pos] == ':') {
+            next_pos++;
+        }
+        string before = "";
+        if (prev_pos > 0) {
+            before = str.substr(0, prev_pos);
+        }
+        string after = str.substr(next_pos);
+        string tmp = before + ":" + after;
+        if (!NStr::Equal (str, tmp)) {
+            str = tmp;
+            changed = true;
+        }
+        pos = NStr::Find (str, ":", prev_pos + 1);
+    }
+    return changed;
+}
+
+
 void CCleanup_imp::BasicCleanup(COrgMod& om)
 {
     CLEAN_STRING_MEMBER(om, Subname);
     CLEAN_STRING_MEMBER(om, Attrib);
+    COrgMod::TSubtype subtype = om.GetSubtype();
+
+    if ((subtype == COrgMod::eSubtype_specimen_voucher
+         || subtype == COrgMod::eSubtype_culture_collection
+         || subtype == COrgMod::eSubtype_bio_material) 
+        && om.IsSetSubname()) {
+        if (RemoveSpaceBeforeAndAfterColon (om.SetSubname())) {
+            ChangeMade(CCleanupChange::eTrimSpaces);
+        }
+    }  
 }
 
 
