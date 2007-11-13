@@ -38,6 +38,7 @@ BEGIN_NCBI_SCOPE
 class CNetCache_RequestHandlerHost
 {
 public:
+    virtual ~CNetCache_RequestHandlerHost() {}
     virtual void BeginReadTransmission() = 0;
     virtual void BeginDelayedWrite() = 0;
     virtual CNetCacheServer* GetServer() = 0;
