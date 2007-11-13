@@ -246,16 +246,18 @@ void CMergeVolumes::x_StoreMerger()
     // merge
     //
     TRawBuffer* blob_buffer = m_Merger->GetMergeBuffer();
-    TBufPoolGuard guard(m_BufResourcePool, blob_buffer);
+    if (blob_buffer) {
+        TBufPoolGuard guard(m_BufResourcePool, blob_buffer);
 
-    m_Merger->Reset();
+        m_Merger->Reset();
 
-    if (m_Store->IsGood()) {
-        // Place async. store request
-        m_Store->Store(m_MergeKey, guard.Release());
-    } else {
-        NCBI_THROW(CMerge_Exception, eStoreFailure,
-            "Store device failed. Volume merge cannot recover.");
+        if (m_Store->IsGood()) {
+            // Place async. store request
+            m_Store->Store(m_MergeKey, guard.Release());
+        } else {
+            NCBI_THROW(CMerge_Exception, eStoreFailure,
+                       "Store device failed. Volume merge cannot recover.");
+        }
     }
     m_MergeKey = 0;
 }
