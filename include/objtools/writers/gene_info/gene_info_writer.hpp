@@ -73,12 +73,16 @@ BEGIN_NCBI_SCOPE
 
 class CGeneFileWriter : public CGeneFileUtils
 {
-private:
-    /// Integer-to-integer map type.
-    typedef map<int, int> TIntToIntMap;
+public:
+    // For the sake of inner classes, which WorkShop doesn't properly
+    // trust even when given friend declarations!
 
     /// Vector type for two-integer records.
     typedef vector<STwoIntRecord> TTwoIntRecordVec;
+
+private:
+    /// Integer-to-integer map type.
+    typedef map<int, int> TIntToIntMap;
 
     /// Four-integer record type (used in Gene ID to Gi file).
     typedef SMultiIntRecord<4> TFourIntRecord;
@@ -381,6 +385,8 @@ private:
                              TTwoIntRecordVec& vecRecords);
     };
 
+    friend class CGene2AccnProcessor;
+
     /// Filtering step for processing Gene->Accession records.
     ///
     /// The function adds vecRecords[iRec-1] to the filtered vector
@@ -462,6 +468,8 @@ private:
                              TTwoIntRecordVec& vecRecords);
     };
 
+    friend class CGeneInfoProcessor;
+
     /// Process the Gene Info text file.
     ///
     /// Reads the original Gene Info lines and writes sorted
@@ -520,6 +528,8 @@ private:
         virtual void Process(const string& strLine,
                              TTwoIntRecordVec& vecRecords);
     };
+
+    friend class CGene2PMProcessor;
 
     /// Process the Gene Info text file.
     ///
