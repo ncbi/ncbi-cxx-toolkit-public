@@ -4,7 +4,7 @@
 ############################################
 
 LIB_PROJ = xobjwrite
-SUB_PROJ = writedb
+SUB_PROJ = writedb gene_info
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
