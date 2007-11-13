@@ -3137,6 +3137,8 @@ if test "$with_sybase" != "no" ; then
    net_sybase_root="/netopt/Sybase/clients"
    local_sybase_root="/export/home/sybase/clients"
    sybase_lib=lib$bit64_sfx
+   resolve_sybase=true
+   default_pointer=default-${NCBI_PLATFORM_BITS}bit
    : ${with_sybase_new:="no"}
    if test -d "$net_sybase_root" ; then
       : ${with_sybase_local:="no"}
@@ -3151,6 +3153,9 @@ if test "$with_sybase" != "no" ; then
          else
             if test "$with_sybase_new" = "yes" ; then
                with_sybase_local=$local_sybase_root/new
+            elif test -f "$local_sybase_root/$default_pointer" ; then
+               with_sybase_local=`cat $local_sybase_root/$default_pointer`
+               resolve_sybase=false
             else
                with_sybase_local=$local_sybase_root/current
             fi
@@ -3181,7 +3186,11 @@ if test "$with_sybase" != "no" ; then
       fi
 
       if test -z "$SYBASE_PATH" ; then
-         if test -d "$net_sybase_root/current$NCBI_PLATFORM_BITS" ; then
+         if test -f "$net_sybase_root/$default_pointer" ; then
+            SYBASE_LCL_PATH=
+            SYBASE_PATH=`cat $local_sybase_root/$default_pointer`
+            resolve_sybase=false
+         elif test -d "$net_sybase_root/current$NCBI_PLATFORM_BITS" ; then
             SYBASE_LCL_PATH=$local_sybase_root/current$NCBI_PLATFORM_BITS
             SYBASE_PATH=$net_sybase_root/current$NCBI_PLATFORM_BITS
          elif test -d "$net_sybase_root/current" ; then
@@ -3195,18 +3204,43 @@ if test "$with_sybase" != "no" ; then
    fi
 
    # Lock in the version we found, ignoring symlinks further up
-   if test -d "$SYBASE_PATH"; then
-      SYBASE_PATH_=`cd $SYBASE_PATH && /bin/pwd`
-      SYBASE_VERSION=`basename $SYBASE_PATH_`
-      SYBASE_PATH=`dirname $SYBASE_PATH`/$SYBASE_VERSION
-      test -d "$SYBASE_PATH"  ||  SYBASE_PATH=$SYBASE_PATH_
+   if test -d "$SYBASE_PATH"  &&  $resolve_sybase; then
+      # SYBASE_PATH_=`cd $SYBASE_PATH && /bin/pwd`
+      SYBASE_PATH_=`ls -ld $SYBASE_PATH | sed -ne 's/.* -> //p'`
+      case "$SYBASE_PATH_" in
+         '' ) ;;
+         /* )
+            SYBASE_VERSION=`basename $SYBASE_PATH_`
+            SYBASE_PATH=`dirname $SYBASE_PATH`/$SYBASE_VERSION
+            test -d "$SYBASE_PATH"  ||  SYBASE_PATH=$SYBASE_PATH_
+            ;;
+         * )
+            orig_parent=`dirname $SYBASE_PATH`
+            SYBASE_VERSION=`basename $SYBASE_PATH_`
+            SYBASE_PATH=$orig_parent/$SYBASE_VERSION
+            test -d "$SYBASE_PATH"  ||  SYBASE_PATH=$orig_parent/$SYBASE_PATH_
+            ;;
+      esac
    fi
 
-   if test -d "$SYBASE_LCL_PATH" ; then
-      SYBASE_LCL_PATH_=`cd $SYBASE_LCL_PATH && /bin/pwd`
-      SYBASE_LCL_VERSION=`basename $SYBASE_LCL_PATH_`
-      SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/$SYBASE_LCL_VERSION
-      test -d "$SYBASE_LCL_PATH"  ||  SYBASE_LCL_PATH=$SYBASE_LCL_PATH_
+   if test -d "$SYBASE_LCL_PATH"  &&  $resolve_sybase ; then
+      # SYBASE_LCL_PATH_=`cd $SYBASE_LCL_PATH && /bin/pwd`
+      SYBASE_LCL_PATH_=`ls -ld $SYBASE_LCL_PATH | sed -ne 's/.* -> //p'`
+      case "$SYBASE_LCL_PATH_" in
+         '' ) ;;
+         /* )
+            SYBASE_LCL_VERSION=`basename $SYBASE_LCL_PATH_`
+            SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/$SYBASE_LCL_VERSION
+            test -d "$SYBASE_LCL_PATH"  ||  SYBASE_LCL_PATH=$SYBASE_LCL_PATH_
+            ;;
+         * )
+            orig_parent=`dirname $SYBASE_LCL_PATH`
+            SYBASE_LCL_VERSION=`basename $SYBASE_LCL_PATH_`
+            SYBASE_LCL_PATH=$orig_parent/$SYBASE_LCL_VERSION
+            test -d "$SYBASE_LCL_PATH"  || \
+               SYBASE_LCL_PATH=$orig_parent/$SYBASE_LCL_PATH_
+            ;;
+      esac
    elif test -n "$SYBASE_LCL_PATH" ; then
       SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/$SYBASE_VERSION
    fi
