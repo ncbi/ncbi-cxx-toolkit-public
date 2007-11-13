@@ -224,8 +224,8 @@ void CGeneFileWriter::
             record.n1 = lineData.giRNANucl;
             vecRecords.push_back(record);
 
-            m_mapGiToType.insert(make_pair(lineData.giRNANucl,
-                                           eRNAGi));
+            m_mapGiToType.insert(TIntToIntMap::value_type(lineData.giRNANucl,
+                                                          eRNAGi));
             m_nTotalGis++;
             m_nRNAGis++;
 
@@ -236,8 +236,8 @@ void CGeneFileWriter::
             record.n1 = lineData.giProt;
             vecRecords.push_back(record);
 
-            m_mapGiToType.insert(make_pair(lineData.giProt,
-                                           eProtGi));
+            m_mapGiToType.insert(TIntToIntMap::value_type(lineData.giProt,
+                                                          eProtGi));
             m_nTotalGis++;
             m_nProtGis++;
 
@@ -248,8 +248,8 @@ void CGeneFileWriter::
             record.n1 = lineData.giGenomicNucl;
             vecRecords.push_back(record);
 
-            m_mapGiToType.insert(make_pair(lineData.giGenomicNucl,
-                                           eGenomicGi));
+            m_mapGiToType.insert(TIntToIntMap::value_type
+                                 (lineData.giGenomicNucl, eGenomicGi));
             m_nTotalGis++;
             m_nGenomicGis++;
 
