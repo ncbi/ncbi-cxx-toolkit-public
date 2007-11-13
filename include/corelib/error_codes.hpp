@@ -46,9 +46,9 @@ NCBI_DEFINE_ERRCODE_X(Corelib_Config,     102, 23);
 NCBI_DEFINE_ERRCODE_X(Corelib_Blob,       103,  1);
 NCBI_DEFINE_ERRCODE_X(Corelib_Static,     104,  1);
 NCBI_DEFINE_ERRCODE_X(Corelib_System,     105, 10);
-NCBI_DEFINE_ERRCODE_X(Corelib_App,        106, 14);
+NCBI_DEFINE_ERRCODE_X(Corelib_App,        106, 18);
 NCBI_DEFINE_ERRCODE_X(Corelib_Diag,       107, 16);
-NCBI_DEFINE_ERRCODE_X(Corelib_File,       108,  3);
+NCBI_DEFINE_ERRCODE_X(Corelib_File,       108,  4);
 NCBI_DEFINE_ERRCODE_X(Corelib_Object,     109, 15);
 NCBI_DEFINE_ERRCODE_X(Corelib_Reg,        110,  7);
 NCBI_DEFINE_ERRCODE_X(Corelib_Util,       111,  5);
@@ -58,6 +58,7 @@ NCBI_DEFINE_ERRCODE_X(Corelib_Stack,      114, 12);
 NCBI_DEFINE_ERRCODE_X(Corelib_Unix,       115,  1);
 NCBI_DEFINE_ERRCODE_X(Corelib_StreamUtil, 116,  1);
 NCBI_DEFINE_ERRCODE_X(Corelib_Threads,    117,  4);
+NCBI_DEFINE_ERRCODE_X(Corelib_Dll,        118,  1);
 
 
 END_NCBI_SCOPE

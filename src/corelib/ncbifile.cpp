@@ -5143,7 +5143,8 @@ CFileLock::~CFileLock()
             Unlock();
         }
     } catch(CException& e) {
-        NCBI_REPORT_EXCEPTION("CFileLock destructor: Unlock() failed", e);
+        NCBI_REPORT_EXCEPTION_X(4,
+                                "CFileLock destructor: Unlock() failed", e);
     }
     delete m_Lock;
 

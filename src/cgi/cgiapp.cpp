@@ -299,7 +299,7 @@ int CCgiApplication::Run(void)
         }}
 
         // Exception reporting
-        NCBI_REPORT_EXCEPTION("(CGI) CCgiApplication::Run", e);
+        NCBI_REPORT_EXCEPTION_X(13, "(CGI) CCgiApplication::Run", e);
     }
 
     // Logging

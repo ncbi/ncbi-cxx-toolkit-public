@@ -34,6 +34,7 @@
 #include <corelib/ncbidll.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/error_codes.hpp>
 
 
 #if defined(NCBI_OS_MSWIN)
@@ -51,6 +52,9 @@
 #else
 #  error "Class CDll defined only for MS Windows and UNIX platforms"
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Corelib_Dll
 
 
 BEGIN_NCBI_SCOPE
@@ -105,7 +109,7 @@ CDll::~CDll()
         try {
             Unload();
         } catch(CException& e) {
-            NCBI_REPORT_EXCEPTION("CDll destructor", e);
+            NCBI_REPORT_EXCEPTION_X(1, "CDll destructor", e);
         }
     }
     delete m_Handle;

@@ -590,12 +590,14 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Generate a report on the exception with default error code and
 /// given subcode.
 #define NCBI_REPORT_EXCEPTION_X(err_subcode, title, ex)                  \
+    NCBI_CHECK_ERR_SUBCODE_X(err_subcode);                               \
     CExceptionReporter::ReportDefaultEx(NCBI_ERRCODE_X, err_subcode,     \
                             DIAG_COMPILE_INFO, title, ex, eDPF_Default)
 
 /// Generate a report on the exception with default error code and
 /// given subcode.
 #define NCBI_REPORT_EXCEPTION_XX(err_name, err_subcode, title, ex)   \
+    NCBI_CHECK_ERR_SUBCODE_X_NAME(err_name, err_subcode);            \
     CExceptionReporter::ReportDefaultEx(                             \
                 NCBI_ERRCODE_X_NAME(err_name), err_subcode,          \
                 DIAG_COMPILE_INFO, title, ex, eDPF_Default)

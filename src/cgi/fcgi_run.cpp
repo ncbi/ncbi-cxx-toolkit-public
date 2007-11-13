@@ -594,8 +594,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             }}
 
             // Exception reporting
-            NCBI_REPORT_EXCEPTION
-                ("(FastCGI) CCgiApplication::x_RunFastCGI", e);
+            NCBI_REPORT_EXCEPTION_X
+                (9, "(FastCGI) CCgiApplication::x_RunFastCGI", e);
 
             // (If to) abrupt the FCGI loop on error
             {{

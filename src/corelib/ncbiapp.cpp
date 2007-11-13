@@ -489,7 +489,8 @@ int CNcbiApplication::AppMain
             NCBI_RETHROW_SAME(e, "Application's initialization failed");
         }
         catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("Application's initialization failed", e);
+            NCBI_REPORT_EXCEPTION_X(15,
+                                    "Application's initialization failed", e);
             got_exception = true;
             exit_code = 2;
         }
@@ -509,7 +510,8 @@ int CNcbiApplication::AppMain
                 NCBI_RETHROW_SAME(e, "Application's execution failed");
             }
             catch (CException& e) {
-                NCBI_REPORT_EXCEPTION("Application's execution failed", e);
+                NCBI_REPORT_EXCEPTION_X(16,
+                                        "Application's execution failed", e);
                 got_exception = true;
                 exit_code = 3;
             }
@@ -529,7 +531,7 @@ int CNcbiApplication::AppMain
             NCBI_RETHROW_SAME(e, "Application's cleanup failed");
         }
         catch (CException& e) {
-            NCBI_REPORT_EXCEPTION("Application's cleanup failed", e);
+            NCBI_REPORT_EXCEPTION_X(17, "Application's cleanup failed", e);
             got_exception = true;
         }
         catch (exception& e) {
@@ -544,7 +546,7 @@ int CNcbiApplication::AppMain
             string str;
             LOG_POST_X(9, m_ArgDesc->PrintUsage(str) << string(72, '='));
         }
-        NCBI_REPORT_EXCEPTION("", e);
+        NCBI_REPORT_EXCEPTION_X(18, "", e);
         got_exception = true;
         exit_code = 1;
     }
