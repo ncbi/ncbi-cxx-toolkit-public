@@ -53,6 +53,16 @@ const char* NCBI_GetRunpath(void);
 /** Set run path. */
 void        NCBI_SetRunpath(const char* runpath);
 
+
+/** Get default Sybase client installation path. */
+const char* NCBI_GetDefaultSybasePath(void);
+
+/** Get Sybase client installation path. */
+const char* NCBI_GetSybasePath(void);
+
+/** Set Sybase client installation path. */
+void        NCBI_SetSybasePath(const char* sybpath);
+
 #ifdef __cplusplus
 }
 #endif

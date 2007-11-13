@@ -49,6 +49,9 @@
 static const char s_DefaultRunpath[] = "@ncbi_runpath@";
 static const char *s_Runpath         = s_DefaultRunpath;
 
+static const char s_DefaultSybasePath[] = "@SYBASE_PATH@";
+static const char *s_SybasePath         = s_DefaultSybasePath;
+
 
 const char* NCBI_GetDefaultRunpath(void)
 {
@@ -65,4 +68,22 @@ const char* NCBI_GetRunpath(void)
 void NCBI_SetRunpath(const char* runpath)
 {
     s_Runpath = runpath;
+}
+
+
+const char* NCBI_GetDefaultSybasePath(void)
+{
+    return s_DefaultSybasePath;
+}
+
+
+const char* NCBI_GetSybasePath(void)
+{
+    return s_SybasePath;
+}
+
+
+void NCBI_SetSybasePath(const char* sybpath)
+{
+    s_SybasePath = sybpath;
 }
