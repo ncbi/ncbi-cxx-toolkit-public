@@ -34,11 +34,6 @@
 
 %pythoncode %{
 
-# Without this, object manager use gives a crash
-# if SYBASE environment variable is set
-import os
-os.environ['GENBANK_LOADER_METHOD'] = 'id1'
-
 # dynamic casting
 def dynamic_cast(new_class, obj):
     return new_class.__dynamic_cast_to__(obj)
@@ -184,7 +179,8 @@ def SerialObjectTreeView(sobj, *args):
     caption_switch = ''
     if len(args) > 0:
         if len(args) > 1:
-            raise "takes 1 or 2 arguments: %d given" % len(args + 1)
+            raise RuntimeError("takes 1 or 2 arguments: %d given"
+                               % len(args + 1))
         caption_switch = '--caption \'' + args[0] + '\' '
     fname = tempfile.mktemp()
     fid = open(fname, 'w')
@@ -256,7 +252,8 @@ def Doxy(arg):
         # an instance of a "new-style" class
         class_name = arg.__class__.__name__
     else:
-        raise "Doxy: couldn't figure out a class name from the argument"
+        msg = "Doxy: couldn't figure out a class name from the argument"
+        raise RuntimeError(msg)
 
     mangled_class_name = class_name.replace('_', '__')
     if class_name[0] == 'S':
@@ -303,7 +300,8 @@ def Lxr(arg):
         # an instance of a "new-style" class
         class_name = arg.__class__.__name__
     else:
-        raise "Lxr: couldn't figure out a symbol name from the argument"
+        msg = "Lxr: couldn't figure out a symbol name from the argument"
+        raise RuntimeError(msg)
 
     import webbrowser
     url = lxr_url_base + 'ident?i=' + class_name
@@ -403,7 +401,7 @@ def EntrezUrl(ids, db=None):
         elif isinstance(id, CSeq_id):
             seq_id = id
         else:
-            raise "couldn't convert argument to a gi"
+            raise RuntimeError("couldn't convert argument to a gi")
 
         return id1cli.AskGetgi(seq_id)
 
