@@ -108,7 +108,7 @@ void CTestQueueApp::RunAtomic() {
     // Block atomic semaphore
     sm_Atomic.Wait();
 
-#ifdef _MT
+#ifdef NCBI_THREADS
     // Wait when Guarder enters locked zone
     sm_Sem1.Wait();
     // Show to Guarder that we get it and going on
@@ -121,7 +121,7 @@ void CTestQueueApp::RunAtomic() {
     CTimeSpan span(1.);
     sm_Queue.Push(0, &span);
 
-#ifdef _MT
+#ifdef NCBI_THREADS
     // Here Guarder must already reset this semaphore
     assert(!sm_Test.TryWait());
 #else
@@ -150,7 +150,7 @@ void CTestQueueApp::RunAtomic() {
     } catch (CSyncQueueException&) {
     }
 
-#ifdef _MT
+#ifdef NCBI_THREADS
     // Show to Guarder that we are finished
     sm_Sem2.Post();
 #endif
@@ -164,7 +164,7 @@ void CTestQueueApp::RunGuarder() {
     // Block guarder semaphore
     sm_Guarder.Wait();
 
-#ifdef _MT
+#ifdef NCBI_THREADS
     // Wait while previous atomic finishes its tasks
     sm_Sem2.Wait();
 #endif
@@ -172,7 +172,7 @@ void CTestQueueApp::RunGuarder() {
     // Block the queue
     TQueue::TAccessGuard guard(sm_Queue);
 
-#ifdef _MT
+#ifdef NCBI_THREADS
     // Show to Atomic that we entered
     sm_Sem1.Post();
     // Wait when Atomic proceeds its operation
@@ -233,7 +233,7 @@ void CTestQueueApp::RunGuarder() {
     guard.Queue().Clear();
     assert(sm_Queue.IsEmpty());
 
-#ifdef _MT
+#ifdef NCBI_THREADS
     // Sleep to ensure that Atomic entered to Push
     SleepMilliSec(10);
     // Check that Atomic didn't exited from Push
@@ -252,7 +252,7 @@ void CTestQueueApp::RunConstGuarder() {
     // Block guarder semaphore
     sm_Guarder.Wait();
 
-#ifdef _MT
+#ifdef NCBI_THREADS
     // Wait while previous atomic finishes its tasks
     sm_Sem2.Wait();
 #endif
@@ -260,7 +260,7 @@ void CTestQueueApp::RunConstGuarder() {
     // Block the queue
     TQueue::TConstAccessGuard guard(sm_Queue);
 
-#ifdef _MT
+#ifdef NCBI_THREADS
     // Show to Atomic that we entered
     sm_Sem1.Post();
     // Wait when Atomic proceeds its operation
@@ -296,7 +296,7 @@ void CTestQueueApp::RunConstGuarder() {
 
     sm_Queue.Clear();
 
-#ifdef _MT
+#ifdef NCBI_THREADS
     // Sleep to ensure that Atomic entered to Push
     SleepMilliSec(10);
     // Check that Atomic didn't exited from Push
