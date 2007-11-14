@@ -99,7 +99,6 @@ void CSplignApp::Init()
          "(e.g. sort -k 2,2 -k 1,1).",
          CArgDescriptions::eInputFile);
    
-#ifdef GENOME_PIPELINE
     argdescr->AddOptionalKey
         ("comps", "comps",
          "[Batch mode] Externally computed input blast compartments "
@@ -107,7 +106,6 @@ void CSplignApp::Init()
          "No built-in compartmentization will occur. "
          "The hits must be collated by subject and query.",
          CArgDescriptions::eInputFile);
-#endif
 
     argdescr->AddOptionalKey
         ("mklds", "mklds",
