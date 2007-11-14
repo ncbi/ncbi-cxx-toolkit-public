@@ -61,6 +61,8 @@ CNetCacheReader::~CNetCacheReader()
 void CNetCacheReader::Close()
 {
     m_Reader.reset();
+    if (m_BlobBytesToRead != 0)
+        m_Connector->Disconnect();
     m_Connector.reset();
 }
 
