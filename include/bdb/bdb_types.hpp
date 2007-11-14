@@ -1571,13 +1571,12 @@ public:
 class NCBI_BDB_EXPORT CBDB_FieldStringBase : public CBDB_Field
 {
 public:
-    // if mute == true function do not report overflow condition, but just
-    // truncates the string value
     enum EOverflowAction {
         eThrowOnOverflow,
-        eTruncateOnOverflow
+        eTruncateOnOverflow,
+        eTruncateOnOverflowLogError
     };
-    
+
 protected:
     CBDB_FieldStringBase() : CBDB_Field(eVariableLength) {}
 };
@@ -2413,12 +2412,23 @@ void CBDB_FieldString::Set(const char* str, EOverflowAction if_overflow)
 
     // check overflow
     if (new_len > GetBufferSize()) {
-        if (if_overflow == eTruncateOnOverflow) {
+        switch (if_overflow) {
+        case eTruncateOnOverflowLogError:
+            LOG_POST(Warning << "Value truncated for field '"
+                    << GetName() << "'");
+            /* FALLTHROUGH */
+        case eTruncateOnOverflow:
             new_len = GetBufferSize();
-        } else {
-            string message("String field overflow."); 
-            // TODO: add info what caused overflow, what length expected
-            BDB_THROW(eOverflow, message);
+            break;
+        case eThrowOnOverflow:
+            string msg("String field '");
+            msg += GetName();
+            msg += "' overflow: max size = ";
+            msg += NStr::IntToString(GetBufferSize());
+            msg += ", assignee size = ";
+            msg += NStr::IntToString(new_len);
+            BDB_THROW(eOverflow, msg);
+            break;
         }
     }
     Unpack();

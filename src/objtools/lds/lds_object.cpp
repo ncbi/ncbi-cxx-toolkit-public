@@ -389,7 +389,8 @@ int CLDS_Object::SaveObject(int file_id,
 //    m_db.object_db.object_attr_id = m_MaxObjRecId;
     m_db.object_db.TSE_object_id = 0;
     m_db.object_db.parent_object_id = 0;
-    m_db.object_db.object_title = description;
+    m_db.object_db.object_title.Set(description.c_str(),
+        CBDB_FieldStringBase::eTruncateOnOverflowLogError);
     m_db.object_db.seq_ids = seq_ids;
 
     string ups = seq_id; 
