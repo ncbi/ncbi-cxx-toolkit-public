@@ -185,17 +185,12 @@ void CNetServerConnector::WaitForServer(unsigned int wait_sec)
     STimeout to = {wait_sec, 0};
     if (wait_sec == 0)
         to = m_Parent.GetCommunicationTimeout();
-    while (true) {
-        EIO_Status io_st = m_Socket->Wait(eIO_Read, &to);
-        if (io_st == eIO_Timeout) {
-            Disconnect();
-            NCBI_THROW(CNetSrvConnException, eResponseTimeout, 
-                       "No response from the server " + s_GetHostDNSName(m_Parent.GetHost()) + ":" 
-                       + NStr::UIntToString(m_Parent.GetPort()) + ".");
-        }
-        else {
-            break;
-        }
+    EIO_Status io_st = m_Socket->Wait(eIO_Read, &to);
+    if (io_st == eIO_Timeout) {
+        Disconnect();
+        NCBI_THROW(CNetSrvConnException, eResponseTimeout, 
+                  "No response from the server " + s_GetHostDNSName(m_Parent.GetHost()) + ":" 
+                  + NStr::UIntToString(m_Parent.GetPort()) + ".");
     }
 }
 
@@ -213,10 +208,10 @@ CNetServerConnector::CNetServerConnector(CNetServerConnectors& parent)
 
 void CNetServerConnector::x_CheckConnect()
 {
-    INetServerConnectorEventListener* listener = m_Parent.GetEventListener();
     if (x_IsConnected())
         return;
 
+    INetServerConnectorEventListener* listener = m_Parent.GetEventListener();
     if (m_WasConnected && listener ) listener->OnDisconnected(*this);
     m_WasConnected = false;
  
@@ -271,7 +266,7 @@ void CNetServerConnector::x_CheckConnect()
     m_Socket->SetDataLogging(eDefault);
     m_Socket->SetTimeout(eIO_ReadWrite, &m_Parent.GetCommunicationTimeout());
     m_Socket->DisableOSSendDelay();
-//    m_Socket->SetReuseAddress(eOn);
+    m_Socket->SetReuseAddress(eOn);
 
     if (listener)
         listener->OnConnected(*this);
@@ -295,9 +290,28 @@ bool CNetServerConnector::x_IsConnected()
         return false;
 
     st = m_Socket->Read(0,1,0,eIO_ReadPeek);
+    bool ret = false;
+    switch (st) {
+         case eIO_Closed:
+            m_Socket->Close();
+            return false;
+         case eIO_Success:
+            if (m_Socket->GetStatus(eIO_Read) != eIO_Success) {
+                m_Socket->Close();
+                break;
+            }
+         case eIO_Timeout:
+            ret = true;
+         default:        
+            break;
+    }
+    
+    /*
+    st = m_Socket->Read(0,1,0,eIO_ReadPeek);
     bool ret = st == eIO_Timeout;
     if (!ret)
         m_Socket->Close();
+    */
     if (m_Socket->SetTimeout(eIO_Read, tmp) != eIO_Success)
         return false;
     return ret;
