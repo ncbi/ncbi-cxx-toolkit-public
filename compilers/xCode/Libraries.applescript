@@ -405,7 +405,7 @@ property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_reg
 property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs ncbi_image ncbi_validator gui_config gui_widgets ncbi_misc ncbi_general ncbi_pub" & FI_LIBS, req:true}
 property gbench_monitor : {name:"gbench_monitor", path:"gui:gbench", inc:{"gbench_monitor.cpp"}, dep:"ncbi_core ncbi_xcache_netcache", req:true}
 property gbench_feedback_agent : {name:"gbench_feedback_agent", path:"gui:gbench", inc:{"gbench_feedback_agent.cpp", "feedback_wizard.cpp", "gbench_version.cpp"}, dep:"gui_dialogs ncbi_image ncbi_pub ncbi_validator ncbi_seq ncbi_seqext gui_config ncbi_misc ncbi_core ncbi_general gui_core gui_utils gui_widgets" & FI_LIBS, fworks:"Carbon", req:true}
-property gbench_cache_agent : {name:"gbench_cache_agent", path:"app:netcache", inc:{"netcached.cpp", "nc_request_parser.cpp", "process_ic.cpp", "smng_thread.cpp"}, dep:"ncbi_core ncbi_bdb ncbi_xcache_bdb ncbi_xcache_netcache db", req:true}
+property gbench_cache_agent : {name:"gbench_cache_agent", path:"app:netcache", inc:{"netcached.cpp", "ic_handler.cpp", "message_handler.cpp", "request_handler.cpp", "nc_handler.cpp", "smng_thread.cpp"}, dep:"ncbi_core ncbi_bdb ncbi_xcache_bdb ncbi_xcache_netcache db", req:true}
 (* ====================================================================================================== *)
 
 
