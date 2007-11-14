@@ -211,6 +211,8 @@ protected:
 
     void SetExtraMsg(const string& msg);
 
+    void ResetEnvSybase(void) const;
+
 
 private:
     /// Unused(reserve) connections

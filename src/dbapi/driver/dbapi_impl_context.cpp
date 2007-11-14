@@ -136,6 +136,25 @@ void CDriverContext::SetExtraMsg(const string& msg)
 }
 
 
+void CDriverContext::ResetEnvSybase(void) const
+{
+    CMutexGuard mg(m_CtxMtx);
+
+    CNcbiEnvironment env;
+    bool reset_sybase = false;
+    const string& sybase = env.Get("SYBASE");
+
+    try {
+        reset_sybase = NStr::StringToBool(env.Get("RESET_SYBASE"));
+    } catch (const CStringException&) {
+        // Conversion error. Just ignore it ...
+    }
+
+    if (!(reset_sybase && !sybase.empty())) {
+        env.Set("SYBASE", NCBI_GetDefaultSybasePath());
+    }
+}
+
 void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 {
     CMutexGuard mg(m_CtxMtx);
