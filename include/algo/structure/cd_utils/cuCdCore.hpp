@@ -155,6 +155,13 @@ public:
     bool   GetMmdbId(int SeqIndex, int& id) const;         // get mmdb-id from sequence list
 	int	   GetMmdbIdWithEvidence(set<int>& MmdbIds);
 	int		GetStructuralRowsWithEvidence(vector<int>& rows);
+
+    //  If the master is a structure, fill in the master3d field with its PDB SeqId.
+    //  Return true if the field was filled in, or false if master is not a structure
+    //  or otherwise failed.  For simplicity, always removes an existing master3d first
+    //  so that when false is returned master3d will be empty.
+    bool   SynchronizeMaster3D();
+
     /*  CD alignment methods  (most added or renamed) */
 
     //  Returns coordinate on 'otherRow' that is mapped to 'thisPos' on 'thisRow'.

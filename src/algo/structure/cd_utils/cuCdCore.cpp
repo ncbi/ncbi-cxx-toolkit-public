@@ -1161,7 +1161,23 @@ void CCdCore::Clear()
 /*  Methods for structures, structure alignments, MMDB identifiers  */
 /* ================================================================ */
 
+bool CCdCore::SynchronizeMaster3D()
+{
+    bool result = false;
 
+    ResetMaster3d();
+    if (Has3DMaster()) {
+
+        CRef< CSeq_id > masterPdbId(new CSeq_id);
+
+        //  this should *always* be true but just in case...) {
+        if (GetSeqIDForRow(0, 0, masterPdbId) && masterPdbId->IsPdb()) {       
+            SetMaster3d().push_back(masterPdbId);
+            result = true;
+        }
+    }
+    return result;
+}
 
 bool CCdCore::Has3DMaster() const {
 //-------------------------------------------------------------------------
