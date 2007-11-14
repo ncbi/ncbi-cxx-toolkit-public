@@ -294,20 +294,10 @@ bool CNetServerConnector::x_IsConnected()
     if (m_Socket->SetTimeout(eIO_Read, &zero) != eIO_Success)
         return false;
 
-    EIO_Status io_st = m_Socket->Read(0,1,0,eIO_ReadPeek);
-    bool ret = false;
-    switch (io_st) {
-    case eIO_Closed:
+    st = m_Socket->Read(0,1,0,eIO_ReadPeek);
+    bool ret = st == eIO_Timeout;
+    if (!ret)
         m_Socket->Close();
-        return false;
-    case eIO_Success:
-        if (m_Socket->GetStatus(eIO_Read) != eIO_Success) 
-            break;
-    case eIO_Timeout:
-        ret = true;
-    default:        
-        break;
-    }
     if (m_Socket->SetTimeout(eIO_Read, tmp) != eIO_Success)
         return false;
     return ret;
