@@ -150,7 +150,7 @@ void CDriverContext::ResetEnvSybase(void) const
         // Conversion error. Just ignore it ...
     }
 
-    if (!(reset_sybase && !sybase.empty())) {
+    if (!reset_sybase || sybase.empty()) {
         env.Set("SYBASE", NCBI_GetDefaultSybasePath());
     }
 }
