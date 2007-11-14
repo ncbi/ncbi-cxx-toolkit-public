@@ -480,6 +480,8 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
+    ResetEnvSybase();
+
     SetApplicationName("CTLibDriver");
 
     CS_RETCODE r = reuse_context ? Check(cs_ctx_global(version, &m_Context)) :

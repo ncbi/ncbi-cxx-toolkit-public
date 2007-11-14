@@ -216,6 +216,8 @@ CTDSContext::CTDSContext(DBINT version)
         "You cannot use more than one ftds contexts "
        "concurrently", 200000 );
 
+    ResetEnvSybase();
+
     char hostname[256];
     if(gethostname(hostname, 256) == 0) {
         hostname[255]= '\0';
