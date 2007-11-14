@@ -548,7 +548,7 @@ SOBJMGR_LIBS = xobjmgr $(SOBJMGR_LDEP)
 OBJMGR_LIBS = $(GENBANK_LIBS)
 
 BLAST_INPUT_LIBS = blastinput xregexp $(PCRE_LIB) ncbi_xloader_blastdb
-BLAST_FORMATTER_LIBS = xblastformat xalnmgr $(BLAST_INPUT_LIBS) \
+BLAST_FORMATTER_LIBS = xblastformat gene_info xalnmgr $(BLAST_INPUT_LIBS) \
                        blastxml xcgi xhtml
 # BLAST_FORMATTER_LIBS and BLAST_INPUT_LIBS need $BLAST_LIBS
 BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment xalgodustmask \
