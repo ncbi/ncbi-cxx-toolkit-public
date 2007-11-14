@@ -163,6 +163,7 @@ protected:
           m_line_skipped=false;
           //m_error_code=0; -- another possible way to prevent endless recursion
           if( !ProcessThisRow() ) return false;
+          renum_current_obj=true;
           break;
         }
         // else: print diags
@@ -216,7 +217,7 @@ int ProcessStream(istream &in, ostream& out)
   bool no_eol_at_eof=false;
 
   while( NcbiGetline(in, s, "\r\n") ) {
-    // get rid of spaces except in EOL #comments
+    // get rid of spaces except in or in front of EOL #comments
     char prev_ch=0;
     int tab_count=0;
     bool at_beg=true;
@@ -230,11 +231,15 @@ int ProcessStream(istream &in, ostream& out)
         case '\t':
           if(prev_ch!='\t') {
             tab_count++;
-            if(tab_count<=8) {
-              *buf<<'\t';
-            }
-            else {
-              had_extra_tab=true;
+            *buf<<'\t';
+            if(tab_count>8) {
+              if( tab_count==9 && i<s.size()-1 && s[i+1]=='#' ) {
+                // don't bark at the tab we keep (for aesthetic reasons)
+                // in front of EOL comment in component lines
+              }
+              else if(!had_space){
+                had_extra_tab=true;
+              }
             }
           }
           else if(!had_space){
