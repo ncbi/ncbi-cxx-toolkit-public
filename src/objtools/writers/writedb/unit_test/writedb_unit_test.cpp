@@ -680,6 +680,30 @@ BOOST_AUTO_TEST_CASE(BioseqHandle)
     s_WrapUpDb(db);
 }
 
+BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVectorNonWriteDB)
+{
+    START;
+    
+    // This is a modified version of the following test.  The
+    // assumption is that some errors occur due to environmental
+    // factors.  Hopefully this test will help to determine the
+    // library in which these intermittent errors occur.
+    
+    CRef<CScope> scope = s_GetScope();
+    
+    CRef<CSeq_id> id2(new CSeq_id("gi|129296"));
+    CBioseq_Handle bsh2 = scope->GetBioseqHandle(*id2);
+    CConstRef<CBioseq> bs1c = bsh2.GetCompleteBioseq();
+    
+    CRef<CBioseq> bs1 = s_Duplicate(*bs1c);
+    CSeqVector sv(bsh2);
+    
+    string bytes;
+    sv.GetSeqData(0, sv.size(), bytes);
+    
+    CHECK(bytes.size() == sv.size());
+}
+
 BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVector)
 {
     START;
