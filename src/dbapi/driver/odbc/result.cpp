@@ -1026,11 +1026,14 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
             }
         }
 
+#ifdef HAVE_WSTRING
         if (data_type == SQL_WCHAR  ||  data_type == SQL_WVARCHAR  ||  data_type == SQL_WLONGVARCHAR) {
             string conv_data = CODBCString((wchar_t*) next_data.c_str(), next_data.size() / sizeof(wchar_t)).ConvertTo(GetClientEncoding());
             m_LastReadData += conv_data;
         }
-        else {
+        else
+#endif
+        {
             m_LastReadData += next_data;
         }
     }
