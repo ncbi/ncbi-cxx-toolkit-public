@@ -62,7 +62,7 @@ void CNetCacheReader::Close()
 {
     m_Reader.reset();
     if (m_BlobBytesToRead != 0)
-        m_Connector->Disconnect();
+        m_Connector->Disconnect(true /* CSocket::Abort instead of Close */);
     m_Connector.reset();
 }
 
@@ -144,7 +144,7 @@ void CNetCacheWriter::Close()
         //w.Stop();
         //cerr << string(w) << endl;
     } catch (...) {
-        m_Connector->Disconnect();
+        m_Connector->Disconnect(true /* CSocket::Abort */);
         x_Shutdown();
         throw;
     }
@@ -204,7 +204,7 @@ bool CNetCacheWriter::x_IsStreamOk()
         break;
     }
     if (!m_LastError.empty()) {
-        m_Connector->Disconnect();
+        m_Connector->Disconnect(true /* CSocket::Abort */);
         x_Shutdown();
         return false;
     }

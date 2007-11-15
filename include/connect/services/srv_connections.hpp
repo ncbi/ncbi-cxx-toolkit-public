@@ -85,7 +85,7 @@ public:
     void Telnet(CNcbiOstream* out,  IStringProcessor* processor);
 
     CSocket& GetSocket();
-    void Disconnect();
+    void Disconnect(bool abort = false);
 
     const string& GetHost() const;
     unsigned int GetPort() const;
@@ -371,6 +371,11 @@ inline
 unsigned int CNetServerConnector::GetPort() const
 {
     return m_Parent.GetPort();
+}
+
+inline string GetHostDNSName(const string& host)
+{
+    return CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(host));
 }
 
 END_NCBI_SCOPE

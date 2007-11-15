@@ -178,13 +178,14 @@ string INetServiceAPI::WaitResponse(CNetServerConnector& conn) const
     conn.WaitForServer();
     string tmp;
     if (!conn.ReadStr(tmp)) {
-        conn.Disconnect();
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
-                   "Communication error");
+        conn.Disconnect(true /* Abort */);
+        NCBI_THROW(CNetServiceException, eCommunicationError,
+                   "Communication error reading from server " +
+                   GetHostDNSName(conn.GetHost()) + ":" +
+                   NStr::UIntToString(conn.GetPort()) + ".");
     }
     CheckServerOK(tmp);
     return tmp;
-    
 }
 
 struct SNetServiceStreamCollector
