@@ -72,7 +72,8 @@ enum ESerialDataFormat {
     eSerial_None         = 0,
     eSerial_AsnText      = 1,      ///< ASN.1 text
     eSerial_AsnBinary    = 2,      ///< ASN.1 binary
-    eSerial_Xml          = 3       ///< XML
+    eSerial_Xml          = 3,      ///< XML
+    eSerial_Json         = 4       ///< JSON
 };
 
 

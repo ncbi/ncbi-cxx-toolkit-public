@@ -14,6 +14,6 @@ SRC = \
 	exception objhook objlist objstack \
 	$(serial_ws50_rtti_kludge) \
 	objostrasn objistrasn objostrasnb objistrasnb objostrxml objistrxml \
-	serializable serialobject pathhook
+	objostrjson serializable serialobject pathhook
 
 LIB    = xser

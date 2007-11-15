@@ -488,6 +488,7 @@ public:
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_AsnText(CNcbiIos& io);
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_AsnBinary(CNcbiIos& io);
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_Xml(CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_Json(CNcbiIos& io);
 
 // Class member assignment verification
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyDefault(CNcbiIos& io);

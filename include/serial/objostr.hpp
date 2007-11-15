@@ -696,6 +696,8 @@ private:
                                                       bool deleteOut);
     static CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& out,
                                                 bool deleteOut);
+    static CObjectOStream* OpenObjectOStreamJson(CNcbiOstream& out,
+                                                bool deleteOut);
     static ESerialVerifyData x_GetVerifyDataDefault(void);
 
     ESerialVerifyData   m_VerifyData;

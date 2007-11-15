@@ -390,7 +390,8 @@ CAnyContentObject::GetAttributes(void) const
 #define  eFmt_AsnText     (1l <<  0)
 #define  eFmt_AsnBinary   (1l <<  1)
 #define  eFmt_Xml         (1l <<  2)
-#define  eFmt_All         (eFmt_AsnText | eFmt_AsnBinary | eFmt_Xml)
+#define  eFmt_Json        (1l <<  3)
+#define  eFmt_All         (eFmt_AsnText | eFmt_AsnBinary | eFmt_Xml | eFmt_Json)
 #define  eVerify_No       (1l <<  8)
 #define  eVerify_Yes      (1l <<  9)
 #define  eVerify_DefValue (1l << 10)
@@ -422,6 +423,7 @@ ESerialDataFormat s_FlagsToFormat(CNcbiIos& io)
     case eFmt_AsnText:     return eSerial_AsnText;
     case eFmt_AsnBinary:   return eSerial_AsnBinary;
     case eFmt_Xml:         return eSerial_Xml;
+    case eFmt_Json:        return eSerial_Json;
     default:               return eSerial_None;
     }
 }
@@ -432,6 +434,7 @@ long s_FormatToFlags(ESerialDataFormat fmt)
     case eSerial_AsnText:    return eFmt_AsnText;
     case eSerial_AsnBinary:  return eFmt_AsnBinary;
     case eSerial_Xml:        return eFmt_Xml;
+    case eSerial_Json:       return eFmt_Json;
     default:                 return 0;
     }
 }
@@ -525,6 +528,11 @@ CNcbiIos& MSerial_AsnBinary(CNcbiIos& io)
 CNcbiIos& MSerial_Xml(CNcbiIos& io)
 {
     s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All) | eFmt_Xml;
+    return io;
+}
+CNcbiIos& MSerial_Json(CNcbiIos& io)
+{
+    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All) | eFmt_Json;
     return io;
 }
 
