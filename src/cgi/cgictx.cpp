@@ -34,6 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <cgi/ncbires.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_util.hpp>
@@ -217,10 +218,9 @@ const CCgiEntry& CCgiContext::GetRequestValue(const string& name,
         if ( is_found ) {
             *is_found = false;
         }
-        static const CCgiEntry kEmptyCgiEntry = kEmptyStr;
-        return kEmptyCgiEntry;
+        static CSafeStaticPtr<CCgiEntry> s_EmptyCgiEntry; 
+        return s_EmptyCgiEntry.Get();
     }
-
     if ( is_found ) {
         *is_found = true;
     }

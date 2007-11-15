@@ -36,16 +36,17 @@
 #include <corelib/rwstream.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/stream_utils.hpp>
-#include <cgi/cgiapp.hpp>
-#include <cgi/cgictx.hpp>
-#include <cgi/cgi_exception.hpp>
 #include <corelib/ncbi_system.hpp> // for SuppressSystemMessageBox
 #include <corelib/rwstream.hpp>
-#include <util/multi_writer.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
+#include <util/multi_writer.hpp>
 #include <util/cache/icache.hpp>
 #include <util/cache/cache_ref.hpp>
 
+#include <cgi/cgiapp.hpp>
+#include <cgi/cgictx.hpp>
+#include <cgi/cgi_exception.hpp>
 #include <cgi/cgi_serial.hpp>
 #include <cgi/error_codes.hpp>
 
@@ -769,7 +770,8 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
     const CCgiRequest& request = context.GetRequest();
 
     typedef map<string, TDiagPostFlags> TFlagMap;
-    static TFlagMap s_FlagMap;
+    static CSafeStaticPtr<TFlagMap> s_FlagMap;
+    TFlagMap& flagmap = s_FlagMap.Get();
 
     TDiagPostFlags defaults = (eDPF_Prefix | eDPF_Severity
                                | eDPF_ErrCode | eDPF_ErrSubCode);
@@ -786,37 +788,37 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
     if ( !is_set )
         return;
 
-    if (s_FlagMap.empty()) {
-        s_FlagMap["file"]        = eDPF_File;
-        s_FlagMap["path"]        = eDPF_LongFilename;
-        s_FlagMap["line"]        = eDPF_Line;
-        s_FlagMap["prefix"]      = eDPF_Prefix;
-        s_FlagMap["severity"]    = eDPF_Severity;
-        s_FlagMap["code"]        = eDPF_ErrCode;
-        s_FlagMap["subcode"]     = eDPF_ErrSubCode;
-        s_FlagMap["time"]        = eDPF_DateTime;
-        s_FlagMap["omitinfosev"] = eDPF_OmitInfoSev;
-        s_FlagMap["all"]         = eDPF_All;
-        s_FlagMap["trace"]       = eDPF_Trace;
-        s_FlagMap["log"]         = eDPF_Log;
-        s_FlagMap["errorid"]     = eDPF_ErrorID;
-        s_FlagMap["location"]    = eDPF_Location;
-        s_FlagMap["pid"]         = eDPF_PID;
-        s_FlagMap["tid"]         = eDPF_TID;
-        s_FlagMap["serial"]      = eDPF_SerialNo;
-        s_FlagMap["serial_thr"]  = eDPF_SerialNo_Thread;
-        s_FlagMap["iteration"]   = eDPF_RequestId;
-        s_FlagMap["uid"]         = eDPF_UID;
+    if (flagmap.empty()) {
+        flagmap["file"]        = eDPF_File;
+        flagmap["path"]        = eDPF_LongFilename;
+        flagmap["line"]        = eDPF_Line;
+        flagmap["prefix"]      = eDPF_Prefix;
+        flagmap["severity"]    = eDPF_Severity;
+        flagmap["code"]        = eDPF_ErrCode;
+        flagmap["subcode"]     = eDPF_ErrSubCode;
+        flagmap["time"]        = eDPF_DateTime;
+        flagmap["omitinfosev"] = eDPF_OmitInfoSev;
+        flagmap["all"]         = eDPF_All;
+        flagmap["trace"]       = eDPF_Trace;
+        flagmap["log"]         = eDPF_Log;
+        flagmap["errorid"]     = eDPF_ErrorID;
+        flagmap["location"]    = eDPF_Location;
+        flagmap["pid"]         = eDPF_PID;
+        flagmap["tid"]         = eDPF_TID;
+        flagmap["serial"]      = eDPF_SerialNo;
+        flagmap["serial_thr"]  = eDPF_SerialNo_Thread;
+        flagmap["iteration"]   = eDPF_RequestId;
+        flagmap["uid"]         = eDPF_UID;
     }
     list<string> flags;
     NStr::Split(format, " ", flags);
     ITERATE(list<string>, flag, flags) {
         TFlagMap::const_iterator it;
-        if ((it = s_FlagMap.find(*flag)) != s_FlagMap.end()) {
+        if ((it = flagmap.find(*flag)) != flagmap.end()) {
             new_flags |= it->second;
         } else if ((*flag)[0] == '!'
-                   &&  ((it = s_FlagMap.find(flag->substr(1)))
-                        != s_FlagMap.end())) {
+                   &&  ((it = flagmap.find(flag->substr(1)))
+                        != flagmap.end())) {
             new_flags &= ~(it->second);
         } else if (*flag == "default") {
             new_flags |= defaults;

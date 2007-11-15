@@ -388,15 +388,16 @@ private:
     };
 
 public:
-    CCgiEntry(const string& value,
+    CCgiEntry(const string& value    = kEmptyStr, 
+              // default empty value for 1 constructor only
               const string& filename = kEmptyStr,
-              unsigned int position = 0,
-              const string& type = kEmptyStr)
+              unsigned int  position = 0,
+              const string& type     = kEmptyStr)
         : m_Data(new SData(value, filename, position, type)) { }
-    CCgiEntry(const char* value,
+    CCgiEntry(const char*   value,
               const string& filename = kEmptyStr,
-              unsigned int position = 0,
-              const string& type = kEmptyStr)
+              unsigned int  position = 0,
+              const string& type     = kEmptyStr)
         : m_Data(new SData(value, filename, position, type)) { }
     CCgiEntry(const CCgiEntry& e)
         : m_Data(e.m_Data) { }
@@ -623,8 +624,8 @@ public:
     /// Destructor
     ~CCgiRequest(void);
 
-    /// Get name(not value!) of a "standard" property
-    static const string& GetPropertyName(ECgiProp prop);
+    /// Get name (not value!) of a "standard" property
+    static const string GetPropertyName(ECgiProp prop);
 
     /// Get value of a "standard" property (return empty string if not defined)
     const string& GetProperty(ECgiProp prop) const;

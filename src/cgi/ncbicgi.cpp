@@ -38,6 +38,7 @@
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/stream_utils.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <cgi/cgi_exception.hpp>
 #include <cgi/ncbicgi.hpp>
@@ -74,6 +75,7 @@ BEGIN_NCBI_SCOPE
 
 // auxiliary zero "tm" struct
 static const tm kZeroTime = { 0 };
+
 inline bool s_IsZeroTime(const tm& date)
 {
     return ::memcmp(&date, &kZeroTime, sizeof(tm)) == 0 ? true : false;
@@ -234,8 +236,8 @@ void CCgiCookie::x_CheckField(const string& str, const char* banned_symbols)
 
 
 static bool s_CookieLess
-(const string& name1, const string& domain1, const string& path1,
- const string& name2, const string& domain2, const string& path2)
+    (const string& name1, const string& domain1, const string& path1,
+     const string& name2, const string& domain2, const string& path2)
 {
     PNocase nocase_less;
     bool x_less;
@@ -639,8 +641,7 @@ static const char* s_TrackingVars[] =
 
 
 CTrackingEnvHolder::CTrackingEnvHolder(const CNcbiEnvironment* env)
-	: m_Env(env),
-     m_TrackingEnv(NULL)
+	: m_Env(env), m_TrackingEnv(NULL)
 {
     if ( !m_Env )
         return;
@@ -694,7 +695,7 @@ CTrackingEnvHolder::~CTrackingEnvHolder()
 //
 
 // Standard property names
-static const string s_PropName[eCgi_NProperties + 1] = {
+static const char* s_PropName[eCgi_NProperties + 1] = {
     "SERVER_SOFTWARE",
     "SERVER_NAME",
     "GATEWAY_INTERFACE",
@@ -727,7 +728,7 @@ static const string s_PropName[eCgi_NProperties + 1] = {
 };
 
 
-const string& CCgiRequest::GetPropertyName(ECgiProp prop)
+const string CCgiRequest::GetPropertyName(ECgiProp prop)
 {
     if ((long) prop < 0  ||  (long) eCgi_NProperties <= (long) prop) {
         _TROUBLE;
@@ -1264,13 +1265,13 @@ const string& CCgiRequest::GetRandomProperty(const string& key, bool http)
 const CCgiEntry& CCgiRequest::GetEntry(const string& name, bool* is_found)
     const
 {
-    static const CCgiEntry kEmptyEntry = kEmptyStr;
+    static CSafeStaticPtr<CCgiEntry> s_EmptyCgiEntry; 
     TCgiEntriesCI it = GetEntries().find(name);
     bool x_found = (it != GetEntries().end());
     if ( is_found ) {
         *is_found = x_found;
     }
-    return x_found ? it->second : kEmptyEntry;
+    return x_found ? it->second : s_EmptyCgiEntry.Get();
 }
 
 
