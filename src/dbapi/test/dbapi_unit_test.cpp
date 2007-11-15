@@ -10511,8 +10511,13 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
             {
                 auto_ptr<ICallableStatement> auto_stmt;
 
+                const char *proc_name =
+                    m_args.GetServerType() == CTestArguments::eMsSql2005 ?
+                                                     "sp_oledb_database" :
+                                                     "sp_databases";
+
                 // 1
-                auto_stmt.reset(m_Conn->GetCallableStatement("sp_oledb_database"));
+                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 DumpResults(auto_stmt.get());
                 auto_stmt->Execute();
@@ -10526,16 +10531,16 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
                 auto_stmt->Cancel();
 
                 // 3
-                auto_stmt.reset(m_Conn->GetCallableStatement("sp_oledb_database"));
+                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 auto_stmt->Cancel();
-                auto_stmt.reset(m_Conn->GetCallableStatement("sp_oledb_database"));
+                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 auto_stmt->Cancel();
                 auto_stmt->Cancel();
 
                 // 4
-                auto_stmt.reset(m_Conn->GetCallableStatement("sp_oledb_database"));
+                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
@@ -10547,7 +10552,7 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
                 auto_stmt->Cancel();
 
                 // 5
-                auto_stmt.reset(m_Conn->GetCallableStatement("sp_oledb_database"));
+                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
@@ -10560,7 +10565,7 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
                 auto_stmt->Cancel();
 
                 // 6
-                auto_stmt.reset(m_Conn->GetCallableStatement("sp_oledb_database"));
+                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
