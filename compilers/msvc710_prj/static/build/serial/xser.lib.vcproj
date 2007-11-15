@@ -898,6 +898,26 @@
           <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
         </FileConfiguration>
       </File>
+      <File RelativePath="..\..\..\..\..\src\serial\objostrjson.cpp">
+        <FileConfiguration Name="Debug|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="DebugMT|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="Release|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseMT|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
+        </FileConfiguration>
+      </File>
       <File RelativePath="..\..\..\..\..\src\serial\objistrxml.cpp">
         <FileConfiguration Name="Debug|Win32">
           <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
