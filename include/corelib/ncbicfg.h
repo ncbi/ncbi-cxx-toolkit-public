@@ -39,28 +39,35 @@
  */
 
 #include <ncbiconf.h>
+#include <corelib/mswin_export.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** Get default run path. */
+NCBI_XNCBI_EXPORT
 const char* NCBI_GetDefaultRunpath(void);
 
 /** Get run path. */
+NCBI_XNCBI_EXPORT
 const char* NCBI_GetRunpath(void);
 
 /** Set run path. */
+NCBI_XNCBI_EXPORT
 void        NCBI_SetRunpath(const char* runpath);
 
 
 /** Get default Sybase client installation path. */
+NCBI_XNCBI_EXPORT
 const char* NCBI_GetDefaultSybasePath(void);
 
 /** Get Sybase client installation path. */
+NCBI_XNCBI_EXPORT
 const char* NCBI_GetSybasePath(void);
 
 /** Set Sybase client installation path. */
+NCBI_XNCBI_EXPORT
 void        NCBI_SetSybasePath(const char* sybpath);
 
 #ifdef __cplusplus
