@@ -236,19 +236,22 @@ CDriverContext::MakePooledConnection(const SConnAttr& conn_attr)
         // try to get a connection from the pot
         if (!conn_attr.pool_name.empty()) {
             // use a pool name
-            NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
+            for (TConnPool::iterator it = m_NotInUse.begin(); it != m_NotInUse.end(); ) {
                 CConnection* t_con(*it);
 
                 // There is no pool name check here. We assume that a connection
                 // pool contains connections with appropriate server names only.
                 if (conn_attr.pool_name.compare(t_con->PoolName()) == 0) {
-                    it = --m_NotInUse.erase(it);
+                    it = m_NotInUse.erase(it);
                     if(t_con->Refresh()) {
                         return MakeCDBConnection(t_con);
                     }
                     else {
                         delete t_con;
                     }
+                }
+                else {
+                    ++it;
                 }
             }
         }

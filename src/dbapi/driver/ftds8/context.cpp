@@ -55,6 +55,10 @@
 #endif
 #endif
 
+#if defined(NCBI_OS_MSWIN)
+#  include "../ncbi_win_hook.hpp"
+#endif
+
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Ftds8_Context
 
@@ -84,12 +88,18 @@ public:
     void ClearAll(void);
     static void StaticClearAll(void);
 
+    bool ExitProcessIsPatched(void) const
+    {
+        return m_ExitProcessPatched;
+    }
+
 private:
     CDblibContextRegistry(void);
     ~CDblibContextRegistry(void) throw();
 
     mutable CMutex          m_Mutex;
     vector<CDBLibContext*>  m_Registry;
+    bool                    m_ExitProcessPatched;
 
     friend class CSafeStaticPtr<CDblibContextRegistry>;
 };
@@ -98,6 +108,17 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 CDblibContextRegistry::CDblibContextRegistry(void)
 {
+#if defined(NCBI_OS_MSWIN)
+
+    try {
+        NWinHook::COnExitProcess::Instance().Add(CDblibContextRegistry::StaticClearAll);
+        m_ExitProcessPatched = true;
+    } catch (const NWinHook::CWinHookException&) {
+        // Just in case ...
+        m_ExitProcessPatched = false;
+    }
+
+#endif
 }
 
 CDblibContextRegistry::~CDblibContextRegistry(void) throw()
@@ -404,6 +425,12 @@ CTDSContext::x_Close(bool delete_conn)
 
 bool CTDSContext::x_SafeToFinalize(void) const
 {
+    if (m_Registry) {
+#if defined(NCBI_OS_MSWIN)
+        return m_Registry->ExitProcessIsPatched();
+#endif
+    }
+
     return true;
 }
 

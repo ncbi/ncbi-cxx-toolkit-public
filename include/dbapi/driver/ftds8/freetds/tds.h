@@ -39,6 +39,7 @@ static void *no_unused_tds_h_warn[]={rcsid_tds_h, no_unused_tds_h_warn};
 #ifdef WIN32
 #include <windows.h>
 #include <stdio.h>
+#include <process.h>
 #endif
 
 #ifdef NCBI_FTDS
@@ -54,7 +55,6 @@ static void *no_unused_tds_h_warn[]={rcsid_tds_h, no_unused_tds_h_warn};
 #define TDSSOCK_EINPROGRESS WSAEINPROGRESS
 #define TDSSOCK_EWOULDBLOCK WSAEWOULDBLOCK
 
-#define getpid() GetCurrentThreadId()
 #define sock_errno WSAGetLastError()
 #ifndef __MINGW32__
 typedef DWORD pid_t;
@@ -440,8 +440,8 @@ sheesh! </rant>
 /* Transfered from FreeTDS v0.63 */
 typedef union
 {
-	void *p;
-	int i;
+    void *p;
+    int i;
 } tds_align_struct;
 
 #define TDS_ALIGN_SIZE sizeof(tds_align_struct)

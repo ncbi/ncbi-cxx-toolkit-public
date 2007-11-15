@@ -620,7 +620,8 @@ private:
     static int x_GetBCPDataType(EDB_Type type);
     static size_t x_GetBCPDataSize(EDB_Type type);
     static void* x_GetDataTerminator(EDB_Type type);
-    static void* x_GetDataPtr(EDB_Type type, void* pb);
+    static size_t x_GetDataTermSize(EDB_Type type);
+    static const void* x_GetDataPtr(EDB_Type type, void* pb);
 
     SQLHDBC m_Cmd;
     bool    m_WasBound;
@@ -757,6 +758,9 @@ private:
 
     SODBC_ColDescr* m_ColFmt;
     SQLLEN* const   m_RowCountPtr;
+
+    string m_LastReadData;
+    bool m_HasMoreData;
 };
 
 

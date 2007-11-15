@@ -94,7 +94,10 @@ private:
 CODBCContextRegistry::CODBCContextRegistry(void)
 {
 #if defined(NCBI_OS_MSWIN)
-    // NWinHook::COnExitProcess::Instance().Add(CODBCContextRegistry::StaticClearAll);
+    try {
+        NWinHook::COnExitProcess::Instance().Add(CODBCContextRegistry::StaticClearAll);
+    } catch (const NWinHook::CWinHookException&) {
+    }
 #endif
 }
 

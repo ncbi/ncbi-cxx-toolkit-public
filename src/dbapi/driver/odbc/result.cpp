@@ -57,11 +57,7 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
     case SQL_LONGVARCHAR:  return eDB_Text;
     case SQL_LONGVARBINARY:
     case SQL_WLONGVARCHAR:
-#ifdef UNICODE
-        return eDB_Text;
-#else
         return eDB_Image;
-#endif
     case SQL_DECIMAL:
     case SQL_NUMERIC:      if(prec > 20 || dec_digits > 0) return eDB_Numeric;
     case SQL_BIGINT:       return eDB_BigInt;
@@ -96,6 +92,7 @@ CODBC_RowResult::CODBC_RowResult(
     , m_CurrItem(-1)
     , m_EOR(false)
     , m_RowCountPtr( row_count )
+    , m_HasMoreData(false)
 {
     odbc::TSqlChar column_name_buff[eODBC_Column_Name_Size];
     m_NofCols = nof_cols;
@@ -173,13 +170,16 @@ EDB_Type CODBC_RowResult::ItemDataType(unsigned int item_num) const
 
 bool CODBC_RowResult::Fetch()
 {
-    m_CurrItem= -1;
+    m_CurrItem = -1;
+    m_LastReadData.resize(0);
+    m_HasMoreData = false;
     if (!m_EOR) {
         switch (SQLFetch(GetHandle())) {
         case SQL_SUCCESS_WITH_INFO:
             ReportErrors();
         case SQL_SUCCESS:
             m_CurrItem = 0;
+            m_HasMoreData = true;
             if ( m_RowCountPtr != NULL ) {
                 ++(*m_RowCountPtr);
             }
@@ -970,44 +970,83 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
 
     if(is_null) *is_null= false;
 
-    switch(SQLGetData(GetHandle(), m_CurrItem + 1, SQL_C_BINARY, buffer, buffer_size, &f)) {
-    case SQL_SUCCESS_WITH_INFO:
-        switch(f) {
-        case SQL_NO_TOTAL:
-            return buffer_size;
-        case SQL_NULL_DATA:
-            ++m_CurrItem;
-            if(is_null) *is_null= true;
-            return 0;
-        default:
-            if ( f >= 0 ) {
-                return (static_cast<size_t>(f) <= buffer_size) ?
-                    static_cast<size_t>(f) : buffer_size;
+    SQLSMALLINT data_type = m_ColFmt[m_CurrItem].DataType;
+
+    while (m_HasMoreData  &&  m_LastReadData.size() < buffer_size) {
+        m_HasMoreData = false;
+
+        string next_data;
+        size_t next_len = 0;
+
+        switch(SQLGetData(GetHandle(), m_CurrItem + 1, SQL_C_BINARY, buffer, buffer_size, &f)) {
+        case SQL_SUCCESS_WITH_INFO:
+            switch(f) {
+            case SQL_NO_TOTAL:
+                next_data.append((char*) buffer, buffer_size);
+                m_HasMoreData = true;
+                break;
+            case SQL_NULL_DATA:
+                if(is_null) *is_null= true;
+                break;
+            default:
+                if ( f < 0 ) {
+                    ReportErrors();
+                    return 0;
+                }
+                m_HasMoreData = true;
+                next_len = static_cast<size_t>(f);
+                if (next_len >= buffer_size) {
+                    next_len = buffer_size;
+                }
+                next_data.append((char*) buffer, next_len);
+                break;
             }
+            break;
+        case SQL_SUCCESS:
+            if(f == SQL_NULL_DATA) {
+                if(is_null) *is_null= true;
+            }
+            else {
+                next_len = (f >= 0)? ((size_t)f) : 0;
+                next_data.append((char*) buffer, next_len);
+            }
+            break;
+        case SQL_NO_DATA:
+            if(f == SQL_NULL_DATA) {
+                if(is_null) *is_null= true;
+            }
+            break;
+        case SQL_ERROR:
             ReportErrors();
             return 0;
+        default:
+            {
+                string err_message = "SQLGetData failed." + GetDbgInfo();
+                DATABASE_DRIVER_ERROR( err_message, 430026 );
+            }
         }
-    case SQL_SUCCESS:
-        ++m_CurrItem;
-        if(f == SQL_NULL_DATA) {
-            if(is_null) *is_null= true;
-            return 0;
+
+        if (data_type == SQL_WCHAR  ||  data_type == SQL_WVARCHAR  ||  data_type == SQL_WLONGVARCHAR) {
+            string conv_data = CODBCString((wchar_t*) next_data.c_str(), next_data.size() / sizeof(wchar_t)).ConvertTo(GetClientEncoding());
+            m_LastReadData += conv_data;
         }
-        return (f >= 0)? ((size_t)f) : 0;
-    case SQL_NO_DATA:
-        ++m_CurrItem;
-        if(f == SQL_NULL_DATA) {
-            if(is_null) *is_null= true;
-        }
-        return 0;
-    case SQL_ERROR:
-        ReportErrors();
-    default:
-        {
-            string err_message = "SQLGetData failed." + GetDbgInfo();
-            DATABASE_DRIVER_ERROR( err_message, 430026 );
+        else {
+            m_LastReadData += next_data;
         }
     }
+
+    size_t return_len = m_LastReadData.size();
+    if (return_len > buffer_size) {
+        return_len = buffer_size;
+    }
+    memcpy(buffer, m_LastReadData.c_str(), return_len);
+    m_LastReadData = m_LastReadData.substr(return_len);
+    if (!m_HasMoreData  &&  return_len <= buffer_size) {
+        ++m_CurrItem;
+        m_HasMoreData = true;
+    }
+
+    return return_len;
 }
 
 
