@@ -1976,11 +1976,32 @@ public:
     // Reopen all files to enable log rotation.
     virtual void Reopen(bool truncate = false);
 
+    // Set the selected sub-handler directly with the given ownership.
+    void SetSubHandler(CStreamDiagHandler_Base* handler,
+                       EDiagFileType            file_type,
+                       bool                     own);
+
+    /// Change ownership for the given handler if it's currently installed.
+    void SetOwnership(CStreamDiagHandler_Base* handler, bool own);
+
 private:
-    auto_ptr<CStreamDiagHandler_Base> m_Err;
-    auto_ptr<CStreamDiagHandler_Base> m_Log;
-    auto_ptr<CStreamDiagHandler_Base> m_Trace;
-    CTime*                            m_LastReopen;
+    // Check if the object is owned and if it's used as more than one handler,
+    // update ownership or delete the handler if necessary.
+    void x_ResetHandler(CStreamDiagHandler_Base** ptr, bool* owned);
+    // Set the selected member to the handler, make sure only one
+    // owhnership flag is set for the handler.
+    void x_SetHandler(CStreamDiagHandler_Base** member,
+                      bool*                     own_member,
+                      CStreamDiagHandler_Base*  handler,
+                      bool                      own);
+
+    CStreamDiagHandler_Base* m_Err;
+    bool                     m_OwnErr;
+    CStreamDiagHandler_Base* m_Log;
+    bool                     m_OwnLog;
+    CStreamDiagHandler_Base* m_Trace;
+    bool                     m_OwnTrace;
+    CTime*                   m_LastReopen;
 };
 
 

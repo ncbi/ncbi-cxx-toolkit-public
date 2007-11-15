@@ -3231,8 +3231,11 @@ bool s_IsSpecialLogName(const string& name)
 
 CFileDiagHandler::CFileDiagHandler(void)
     : m_Err(0),
+      m_OwnErr(false),
       m_Log(0),
+      m_OwnLog(false),
       m_Trace(0),
+      m_OwnTrace(false),
       m_LastReopen(new CTime(CTime::eCurrent))
 {
     SetLogFile("-", eDiagFile_All, true);
@@ -3241,7 +3244,98 @@ CFileDiagHandler::CFileDiagHandler(void)
 
 CFileDiagHandler::~CFileDiagHandler(void)
 {
+    x_ResetHandler(&m_Err, &m_OwnErr);
+    x_ResetHandler(&m_Log, &m_OwnLog);
+    x_ResetHandler(&m_Trace, &m_OwnTrace);
     delete m_LastReopen;
+}
+
+
+void CFileDiagHandler::x_ResetHandler(CStreamDiagHandler_Base** ptr,
+                                      bool*                     owned)
+{
+    if (!ptr  ||  !(*ptr)) {
+        return;
+    }
+    _ASSERT(owned);
+    if ( *owned ) {
+        if (ptr != &m_Err  &&  *ptr == m_Err) {
+            // The handler is also used by m_Err
+            _ASSERT(!m_OwnErr);
+            m_OwnErr = true; // now it's owned as m_Err
+            *owned = false;
+        }
+        else if (ptr != &m_Log  &&  *ptr == m_Log) {
+            _ASSERT(!m_OwnLog);
+            m_OwnLog = true;
+            *owned = false;
+        }
+        else if (ptr != &m_Trace  &&  *ptr == m_Trace) {
+            _ASSERT(!m_OwnTrace);
+            m_OwnTrace = true;
+            *owned = false;
+        }
+        if (*owned) {
+            delete *ptr;
+        }
+    }
+    *owned = false;
+    *ptr = 0;
+}
+
+
+void CFileDiagHandler::x_SetHandler(CStreamDiagHandler_Base** member,
+                                    bool*                     own_member,
+                                    CStreamDiagHandler_Base*  handler,
+                                    bool                      own)
+{
+    if (*member == handler) {
+        *member = 0;
+        *own_member = false;
+    }
+    else {
+        x_ResetHandler(member, own_member);
+    }
+    if (handler  &&  own) {
+        // Check if the handler is already owned
+        if (member != &m_Err) {
+            if (handler == m_Err  &&  m_OwnErr) {
+                own = false;
+            }
+        }
+        if (member != &m_Log) {
+            if (handler == m_Log  &&  m_OwnLog) {
+                own = false;
+            }
+        }
+        if (member != &m_Trace) {
+            if (handler == m_Trace  &&  m_OwnTrace) {
+                own = false;
+            }
+        }
+    }
+    *member = handler;
+    *own_member = own;
+}
+
+
+void CFileDiagHandler::SetOwnership(CStreamDiagHandler_Base* handler, bool own)
+{
+    if (!handler) {
+        return;
+    }
+    if (m_Err == handler) {
+        m_OwnErr = own;
+        own = false;
+    }
+    if (m_Log == handler) {
+        m_OwnLog = own;
+        own = false;
+    }
+    if (m_Trace == handler) {
+        m_OwnTrace = own;
+        own = false;
+    }
 }
 
 
@@ -3316,10 +3410,12 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
                 !s_CanOpenLogFile(trace_name))) {
                 return false;
             }
-
-            m_Err.reset(s_CreateHandler(err_name, failed));
-            m_Log.reset(s_CreateHandler(log_name, failed));
-            m_Trace.reset(s_CreateHandler(trace_name, failed));
+            x_SetHandler(&m_Err, &m_OwnErr,
+                s_CreateHandler(err_name, failed), true);
+            x_SetHandler(&m_Log, &m_OwnLog,
+                s_CreateHandler(log_name, failed), true);
+            x_SetHandler(&m_Trace, &m_OwnTrace,
+                s_CreateHandler(trace_name, failed), true);
             m_LastReopen->SetCurrent();
             break;
         }
@@ -3327,19 +3423,22 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
         if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
             return false;
         }
-        m_Err.reset(s_CreateHandler(file_name, failed));
+        x_SetHandler(&m_Err, &m_OwnErr,
+            s_CreateHandler(file_name, failed), true);
         break;
     case eDiagFile_Log:
         if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
             return false;
         }
-        m_Log.reset(s_CreateHandler(file_name, failed));
+        x_SetHandler(&m_Log, &m_OwnLog,
+            s_CreateHandler(file_name, failed), true);
         break;
     case eDiagFile_Trace:
         if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
             return false;
         }
-        m_Trace.reset(s_CreateHandler(file_name, failed));
+        x_SetHandler(&m_Trace, &m_OwnTrace,
+            s_CreateHandler(file_name, failed), true);
         break;
     }
     if (file_name == "") {
@@ -3376,11 +3475,11 @@ CNcbiOstream* CFileDiagHandler::GetLogStream(EDiagFileType file_type)
     CStreamDiagHandler_Base* handler = 0;
     switch ( file_type ) {
     case eDiagFile_Err:
-        handler = m_Err.get();
+        handler = m_Err;
     case eDiagFile_Log:
-        handler = m_Log.get();
+        handler = m_Log;
     case eDiagFile_Trace:
-        handler = m_Trace.get();
+        handler = m_Trace;
     case eDiagFile_All:
         return 0;
     }
@@ -3388,15 +3487,34 @@ CNcbiOstream* CFileDiagHandler::GetLogStream(EDiagFileType file_type)
 }
 
 
+void CFileDiagHandler::SetSubHandler(CStreamDiagHandler_Base* handler,
+                                     EDiagFileType            file_type,
+                                     bool                     own)
+{
+    switch ( file_type ) {
+    case eDiagFile_All:
+        // Must set all three handlers
+    case eDiagFile_Err:
+        x_SetHandler(&m_Err, &m_OwnErr, handler, own);
+        if (file_type != eDiagFile_All) break;
+    case eDiagFile_Log:
+        x_SetHandler(&m_Log, &m_OwnLog, handler, own);
+        if (file_type != eDiagFile_All) break;
+    case eDiagFile_Trace:
+        x_SetHandler(&m_Trace, &m_OwnTrace, handler, own);
+    }
+}
+
+
 void CFileDiagHandler::Reopen(bool truncate)
 {
-    if ( m_Err.get() ) {
+    if ( m_Err ) {
         m_Err->Reopen(truncate);
     }
-    if ( m_Log.get() ) {
+    if ( m_Log ) {
         m_Log->Reopen(truncate);
     }
-    if ( m_Trace.get() ) {
+    if ( m_Trace ) {
         m_Trace->Reopen(truncate);
     }
     m_LastReopen->SetCurrent();
@@ -3413,16 +3531,16 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
     // Output the message
     CStreamDiagHandler_Base* handler = 0;
     if ( IsSetDiagPostFlag(eDPF_AppLog, mess.m_Flags) ) {
-        handler = m_Log.get();
+        handler = m_Log;
     }
     else {
         switch ( mess.m_Severity ) {
         case eDiag_Info:
         case eDiag_Trace:
-            handler = m_Trace.get();
+            handler = m_Trace;
             break;
         default:
-            handler = m_Err.get();
+            handler = m_Err;
         }
     }
     if ( !handler ) {
@@ -3444,6 +3562,10 @@ extern bool SetLogFile(const string& file_name,
         }
     }
 
+    if (file_type != eDiagFile_All) {
+        // Auto-split log file
+        SetSplitLogFile(true);
+    }
     bool no_split = !s_SplitLogFile;
     if ( no_split ) {
         if (file_type != eDiagFile_All) {
@@ -3479,8 +3601,17 @@ extern bool SetLogFile(const string& file_name,
         CFileDiagHandler* handler =
             dynamic_cast<CFileDiagHandler*>(GetDiagHandler());
         if ( !handler ) {
-            // Install new handler
+            CStreamDiagHandler_Base* sub_handler =
+                dynamic_cast<CStreamDiagHandler_Base*>(GetDiagHandler());
+            // Install new handler, try to re-use the old one
             auto_ptr<CFileDiagHandler> fhandler(new CFileDiagHandler());
+            // If we are going to set all three handlers, no need to save
+            // the old one.
+            if ( sub_handler  &&  file_type != eDiagFile_All) {
+                GetDiagHandler(true); // Take ownership!
+                // Set all three handlers to the old one.
+                fhandler->SetSubHandler(sub_handler, eDiagFile_All, false);
+            }
             if ( fhandler->SetLogFile(file_name, file_type, quick_flush) ) {
                 handler = fhandler.get();
                 SetDiagHandler(fhandler.release());
