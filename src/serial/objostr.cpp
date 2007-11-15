@@ -85,6 +85,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
         switch ( format ) {
         case eSerial_AsnText:
         case eSerial_Xml:
+        case eSerial_Json:
             outStream = new CNcbiOfstream(fileName.c_str());
             break;
         case eSerial_AsnBinary:
@@ -116,6 +117,8 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
         return OpenObjectOStreamAsnBinary(outStream, deleteStream);
     case eSerial_Xml:
         return OpenObjectOStreamXml(outStream, deleteStream);
+    case eSerial_Json:
+        return OpenObjectOStreamJson(outStream, deleteStream);
     default:
         break;
     }
