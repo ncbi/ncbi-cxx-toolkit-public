@@ -96,6 +96,15 @@ bool CreateConfigurableFile(const string& src_path, const string& dst_path,
     run_path = NStr::Replace(run_path, "\\", "\\\\");
     str = NStr::Replace(str, "@ncbi_runpath@", run_path);
 
+    // ---------- @SYBASE_PATH@ ----------
+    string sb_path;
+    if ( GetApp().GetSite().ResolveDefine("SYBASE_PATH", sb_path )) {
+        if (!CDirEntry(sb_path).Exists()) {
+            sb_path.erase();
+        }
+    }
+    sb_path = NStr::Replace(sb_path, "\\", "\\\\");
+    str = NStr::Replace(str, "@SYBASE_PATH@", sb_path);
     // ------------------------------------
 
     // Write result
