@@ -35,31 +35,30 @@
 #include <html/error_codes.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
-
 #define NCBI_USE_ERRCODE_X  Html_Lib
 
 
 BEGIN_NCBI_SCOPE
 
 
-// URL to menu library (default)
+// URL to default popup menu libraries for each menu type
 
 // Smith's menu 
-const string kJSMenuDefaultURL_Smith
+const char* kJSMenuDefaultURL_Smith
  = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/ncbi_menu_dnd.js";
 
 // Sergey Kurdin's popup menu
-const string kJSMenuDefaultURL_Kurdin
+const char* kJSMenuDefaultURL_Kurdin
  = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_4.js";
 
 // Sergey Kurdin's popup menu with configurations
-const string kJSMenuDefaultURL_KurdinConf
+const char* kJSMenuDefaultURL_KurdinConf
  = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_7portal.js";
 
 // Sergey Kurdin's side menu
-const string kJSMenuDefaultURL_KurdinSide
+const char* kJSMenuDefaultURL_KurdinSide
  = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/sidemenu/sidemenu1.js";
-const string kJSMenuDefaultURL_KurdinSideCSS
+const char* kJSMenuDefaultURL_KurdinSideCSS
  = "http://www.ncbi.nlm.nih.gov/coreweb/styles/sidemenu.css"; 
 
 
@@ -472,7 +471,7 @@ string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
     case eKurdinSide:
         url  = menu_lib_url.empty() ? kJSMenuDefaultURL_KurdinSide :
                menu_lib_url;
-        code = "<link rel=\"stylesheet\" type=\"text/css\" href=\"" +
+        code = string("<link rel=\"stylesheet\" type=\"text/css\" href=\"") +
                kJSMenuDefaultURL_KurdinSideCSS + "\">" + nl; 
         break;
     }

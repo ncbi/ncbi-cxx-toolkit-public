@@ -28,10 +28,11 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiutil.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <html/components.hpp>
 #include <html/page.hpp>
 #include <html/jsmenu.hpp>
-#include <corelib/ncbiutil.hpp>
 
 #include <errno.h>
 
@@ -47,10 +48,9 @@ extern const char* kTagEnd;
 const char* kTagStartEnd = "</@";  
 
 // Template file cahing (disabled by default)
-CHTMLPage::ECacheTemplateFiles CHTMLPage::sm_CacheTemplateFiles
-    = CHTMLPage::eCTF_Disable;
+CHTMLPage::ECacheTemplateFiles CHTMLPage::sm_CacheTemplateFiles = CHTMLPage::eCTF_Disable;
 typedef map<string, string*> TTemplateCache;
-static TTemplateCache s_TemplateCache;
+static CSafeStaticPtr<TTemplateCache> s_TemplateCache;
 
 
 // CHTMLBasicPage
@@ -279,18 +279,20 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
     string* pstr = &str;
     bool    print_template = (out  &&  !m_UsePopupMenus);
 
+    TTemplateCache& cache = s_TemplateCache.Get();
+
     // File
     if ( !m_TemplateFile.empty() ) {
         if ( sm_CacheTemplateFiles == eCTF_Enable ) {
             TTemplateCache::const_iterator i 
-                = s_TemplateCache.find(m_TemplateFile);
-            if ( i != s_TemplateCache.end() ) {
+                = cache.find(m_TemplateFile);
+            if ( i != cache.end() ) {
                 pstr = i->second;
             } else {
                 pstr = new string();
                 CNcbiIfstream is(m_TemplateFile.c_str());
                 x_LoadTemplate(is, *pstr);
-                s_TemplateCache[m_TemplateFile] = pstr;
+                cache[m_TemplateFile] = pstr;
             }
         } else {
             CNcbiIfstream is(m_TemplateFile.c_str());
@@ -513,10 +515,11 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
     bool    caching   = false;
     bool    need_read = true;
     CNcbiIstream* is  = &istrm;
+    TTemplateCache& cache = s_TemplateCache.Get();
 
     if ( !file_name.empty()  &&  sm_CacheTemplateFiles == eCTF_Enable ) {
-        TTemplateCache::const_iterator i = s_TemplateCache.find(file_name);
-        if ( i != s_TemplateCache.end() ) {
+        TTemplateCache::const_iterator i = cache.find(file_name);
+        if ( i != cache.end() ) {
             pstr = i->second;
             need_read = false;
         } else { 
@@ -632,7 +635,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
 
     // Cache template lib
     if ( caching ) {
-        s_TemplateCache[file_name] = pstr;
+        cache[file_name] = pstr;
     }
 
     // Parse template
