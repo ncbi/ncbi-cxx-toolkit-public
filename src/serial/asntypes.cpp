@@ -36,6 +36,7 @@
 #if HAVE_NCBI_C
 
 #include <corelib/ncbiutil.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <serial/impl/asntypes.hpp>
 #include <serial/impl/autoptrinfo.hpp>
 #include <serial/impl/classinfo.hpp>
@@ -73,7 +74,7 @@ static CSafeStaticPtr<CTypeInfoMap> s_SequenceOfTypeInfo_map;
 
 TTypeInfo CSequenceOfTypeInfo::GetTypeInfo(TTypeInfo base)
 {
-    return s_SequenceOfTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
+    return s_SequenceOfTypeInfo_map->GetTypeInfo(base, &CreateTypeInfo);
 }
 
 CTypeInfo* CSequenceOfTypeInfo::CreateTypeInfo(TTypeInfo base)
@@ -397,7 +398,7 @@ static CSafeStaticPtr<CTypeInfoMap> s_SetOfTypeInfo_map;
 
 TTypeInfo CSetOfTypeInfo::GetTypeInfo(TTypeInfo base)
 {
-    return s_SetOfTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
+    return s_SetOfTypeInfo_map->GetTypeInfo(base, &CreateTypeInfo);
 }
 
 CTypeInfo* CSetOfTypeInfo::CreateTypeInfo(TTypeInfo base)
