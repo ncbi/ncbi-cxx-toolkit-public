@@ -46,6 +46,7 @@ public:
     virtual ~XSDLexer(void);
 
     bool ProcessDocumentation(void);
+    TToken Skip(void);
 
 protected:
     virtual TToken LookupToken(void);

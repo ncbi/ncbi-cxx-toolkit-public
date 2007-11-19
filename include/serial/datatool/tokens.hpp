@@ -122,6 +122,7 @@ static const TToken K_ANNOTATION     = 313;
 static const TToken K_DOCUMENTATION  = 314;
 static const TToken K_ATTRIBUTEGROUP = 315;
 static const TToken K_GROUP          = 316;
+static const TToken K_APPINFO        = 317;
 
 END_NCBI_SCOPE
 

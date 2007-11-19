@@ -158,7 +158,7 @@ TToken XSDParser::GetNextToken(void)
         if (tok == K_XMLNS) {
             if (m_PrefixToNamespace.find(m_Attribute) != m_PrefixToNamespace.end()) {
                 if (!m_PrefixToNamespace[m_Attribute].empty()) {
-                    ParseError("Unexpected data");
+                    ParseError("Unexpected data", "");
                 }
             }
             m_PrefixToNamespace[m_Attribute] = data;
@@ -286,7 +286,7 @@ void XSDParser::ParseHeader()
         }
     }
     if (tok != K_CLOSING) {
-        ParseError("Unexpected token");
+        ParseError("tag closing");
     }
 }
 
@@ -300,18 +300,20 @@ void XSDParser::ParseInclude(void)
         }
     }
     if (tok != K_ENDOFTAG) {
-        ParseError("Unexpected token");
+        ParseError("endoftag");
     }
     if (name.empty()) {
         ParseError("schemaLocation");
     }
     DTDEntity& node = m_MapEntity[CreateEntityId(name, DTDEntity::eEntity)];
-    node.SetName(name);
-    node.SetData(name);
-    node.SetExternal();
-    PushEntityLexer(name);
-    Reset();
-    ParseHeader();
+    if (node.GetName().empty()) {
+        node.SetName(name);
+        node.SetData(name);
+        node.SetExternal();
+        PushEntityLexer(name);
+        Reset();
+        ParseHeader();
+    }
 }
 
 void XSDParser::ParseImport(void)
@@ -338,7 +340,15 @@ void XSDParser::ParseAnnotation(void)
         ParseDocumentation();
         m_ExpectLastComment = false;
     }
-    if (GetNextToken() != K_ENDOFTAG) {
+    TToken tok = GetNextToken();
+    if (tok == K_APPINFO) {
+        tok = GetRawAttributeSet();
+        if (tok == K_CLOSING) {
+            SkipContent();
+        }
+        tok = GetNextToken();
+    }
+    if (tok != K_ENDOFTAG) {
         ParseError("endoftag");
     }
     m_ExpectLastComment = true;
@@ -354,7 +364,7 @@ void XSDParser::ParseDocumentation(void)
     }
     tok = GetNextToken();
     if (tok != K_ENDOFTAG) {
-        ParseError("Unexpected tag", "endoftag");
+        ParseError("endoftag");
     }
     m_ExpectLastComment = true;
 }
@@ -363,8 +373,11 @@ TToken XSDParser::GetRawAttributeSet(void)
 {
     m_RawAttributes.clear();
     TToken tok;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
-        m_RawAttributes[m_Attribute] = m_Value;
+    for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS;
+          tok = GetNextToken()) {
+        if (tok == K_ATTPAIR ) {
+            m_RawAttributes[m_Attribute] = m_Value;
+        }
     }
     return tok;
 }
@@ -384,15 +397,27 @@ bool XSDParser::GetAttribute(const string& att)
 void XSDParser::SkipContent()
 {
     TToken tok;
-    for ( tok=GetNextToken(); tok != K_ENDOFTAG; tok=GetNextToken()) {
-        if (tok == K_DOCUMENTATION) {
-            m_Comments = 0;
-            ParseDocumentation();
-        } else {
-            if (GetRawAttributeSet() == K_CLOSING) {
-                SkipContent();
-            }
+    bool eatEOT= false;
+    XSDLexer& l = dynamic_cast<XSDLexer&>(Lexer());
+    for ( tok = l.Skip(); ; tok = l.Skip()) {
+        if (tok == T_EOF) {
+            return;
         }
+        ConsumeToken();
+        switch (tok) {
+        case K_ENDOFTAG:
+            if (!eatEOT) {
+                return;
+            }
+            break;
+        case K_CLOSING:
+            SkipContent();
+            break;
+        default:
+        case K_ELEMENT:
+            break;
+        }
+        eatEOT = tok == K_ELEMENT;
     }
 }
 
@@ -408,7 +433,7 @@ DTDElement::EOccurrence XSDParser::ParseMinOccurs( DTDElement::EOccurrence occNo
                 occNew = DTDElement::eZeroOrMore;
             }
         } else if (m != 1) {
-            ParseError("Unsupported attribute");
+            ParseError("0, 1, or unbounded");
         }
     }
     return occNew;
@@ -426,7 +451,7 @@ DTDElement::EOccurrence XSDParser::ParseMaxOccurs( DTDElement::EOccurrence occNo
                 occNew = DTDElement::eZeroOrMore;
             }
         } else if (m != 1) {
-            ParseError("Unsupported attribute");
+            ParseError("0, 1, or unbounded");
         }
     }
     return occNew;
@@ -471,7 +496,7 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
         owner->SetOccurrence(name, ParseMaxOccurs( owner->GetOccurrence(name)));
     }
     if (tok != K_CLOSING && tok != K_ENDOFTAG) {
-        ParseError("Unexpected token");
+        ParseError("endoftag");
     }
     if (tok == K_CLOSING) {
         ParseContent(m_MapElement[name]);
@@ -563,7 +588,7 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             break;
         case K_ANY:
             if (node.GetType() != DTDElement::eSequence) {
-                ParseError("Unexpected element type");
+                ParseError("sequence");
             } else {
                 string name = CreateEmbeddedName(node.GetName(), emb);
                 DTDElement& elem = m_MapElement[name];
@@ -579,7 +604,7 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             emb= node.GetContent().size();
             if (emb != 0 && extended) {
                 if (node.GetType() != DTDElement::eSequence) {
-                    ParseError("Unexpected element type");
+                    ParseError("sequence");
                 }
                 tok = GetRawAttributeSet();
                 eatEOT = true;
@@ -797,7 +822,7 @@ void XSDParser::ParseAny(DTDElement& node)
     TToken tok = GetRawAttributeSet();
     if (GetAttribute("processContents")) {
         if (!IsValue("lax") && !IsValue("skip")) {
-            ParseError("Unsupported attribute");
+            ParseError("lax or skip");
         }
     }
     node.SetOccurrence( ParseMinOccurs( node.GetOccurrence()));

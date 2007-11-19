@@ -83,6 +83,67 @@ bool XSDLexer::ProcessDocumentation(void)
     return false;
 }
 
+TToken XSDLexer::Skip(void)
+{
+    if (TokenStarted()) {
+        TToken tok = NextToken().GetToken();
+        if (tok == K_CLOSING || tok == K_ENDOFTAG) {
+            return tok;
+        }
+    }
+    char c = Char();
+    for (;;) {
+        c = Char();
+        switch (c) {
+        case '\0':
+            return T_EOF;
+        case '\r':
+            SkipChar();
+            break;
+        case '\n':
+            SkipChar();
+            NextLine();
+            break;
+        case '>':
+            StartToken();
+            AddChar();
+            return K_CLOSING;
+        case '/':
+            if (Char(1) == '>') {
+                StartToken();
+                AddChars(2);
+                return K_ENDOFTAG;
+            }
+            SkipChar();
+            break;
+        case '<':
+            if (Char(1) == '/') {
+                StartToken();
+                AddChars(2);
+                AddElement();
+                return K_ENDOFTAG;
+            } else {
+                SkipChar();
+                StartToken();
+                for (c = Char(); ; c = Char()) {
+                    if (c == '>' || c == '\0') {
+                        break;
+                    }
+                    if (c == '/' && Char(1) == '>') {
+                        break;
+                    }
+                    AddChar();
+                }
+                return K_ELEMENT;
+            }
+            break;
+        default:
+            SkipChar();
+            break;
+        }
+    }
+}
+
 TToken XSDLexer::LookupToken(void)
 {
     TToken tok = LookupEndOfTag();
@@ -119,7 +180,9 @@ TToken XSDLexer::LookupLexeme(void)
             return K_ATTPAIR;
         } else if (isspace((unsigned char)c) || c == '>' ||
                    (c == '/' && Char(1) == '>')) {
-            break;
+            if (!(att && isspace((unsigned char)c))) {
+                break;
+            }
         }
         if (c == '=') {
             att = true;
@@ -167,6 +230,7 @@ TToken XSDLexer::LookupKeyword(void)
     case 7:
         CHECK("include", K_INCLUDE, 7);
         CHECK("element", K_ELEMENT, 7);
+        CHECK("appinfo", K_APPINFO, 7);
         break;
     case 8:
         CHECK("sequence", K_SEQUENCE, 8);
