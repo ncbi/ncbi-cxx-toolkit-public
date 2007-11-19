@@ -4420,7 +4420,8 @@ if test "$with_wxwidgets" != "no" ; then
       ncbi_cv_lib_wxwidgets,
       [if test -x "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
-          NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, $wxconf --libs, [$libsed; ])
+          NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf --libs std,richtext],
+             [$libsed; ])
 
           CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIDGETS_LIBS $orig_LIBS"
@@ -4452,9 +4453,11 @@ else
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
       WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
-      NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, $wxconf --libs, [$libsed; ])
+      NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf --libs std,richtext],
+         [$libsed; ])
    fi
-   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static | sed -e "$basesed"`
+   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static std,richtext |\
+      sed -e "$basesed"`
    WXWIDGETS_GL_LIBS=`$wxconf --gl-libs | sed -e "$basesed"`
    WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static | sed -e "$basesed"`
    WXWIDGETS_POST_LINK=`$wxconf --rezflags 2>/dev/null`

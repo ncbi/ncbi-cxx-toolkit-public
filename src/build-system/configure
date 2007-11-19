@@ -25714,12 +25714,12 @@ else
   if test -x "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
           if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    WXWIDGETS_LIBS=`$wxconf --libs | sed -e "$libsed; "`
+    WXWIDGETS_LIBS=`$wxconf --libs std,richtext | sed -e "$libsed; "`
  else
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in `$wxconf --libs | sed -e "$libsed; "`; do
+    for x in `$wxconf --libs std,richtext | sed -e "$libsed; "`; do
        case "$x" in
           -L*)
              WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_L_sep}$x"
@@ -25814,12 +25814,12 @@ else
    if test -z "$WXWIDGETS_INCLUDE"; then
       WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
       if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    WXWIDGETS_LIBS=`$wxconf --libs | sed -e "$libsed; "`
+    WXWIDGETS_LIBS=`$wxconf --libs std,richtext | sed -e "$libsed; "`
  else
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in `$wxconf --libs | sed -e "$libsed; "`; do
+    for x in `$wxconf --libs std,richtext | sed -e "$libsed; "`; do
        case "$x" in
           -L*)
              WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_L_sep}$x"
@@ -25838,7 +25838,8 @@ else
     WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_R_flags}"
  fi
    fi
-   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static | sed -e "$basesed"`
+   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static std,richtext |\
+      sed -e "$basesed"`
    WXWIDGETS_GL_LIBS=`$wxconf --gl-libs | sed -e "$basesed"`
    WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static | sed -e "$basesed"`
    WXWIDGETS_POST_LINK=`$wxconf --rezflags 2>/dev/null`
