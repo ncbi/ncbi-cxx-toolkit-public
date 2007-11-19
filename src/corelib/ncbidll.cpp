@@ -97,12 +97,12 @@ CDll::CDll(const string& name, ELoad when_to_load, EAutoUnload auto_unload,
 CDll::CDll(const string& path, const string& name, ELoad when_to_load,
            EAutoUnload auto_unload, EBasename treate_as)
 {
-    x_Init(path, name, 
+    x_Init(path, name,
            TFlags(when_to_load) | TFlags(auto_unload) | TFlags(treate_as));
 }
 
 
-CDll::~CDll() 
+CDll::~CDll()
 {
     // Unload DLL automaticaly
     if ( F_ISSET(fAutoUnload) ) {
@@ -134,7 +134,7 @@ void CDll::x_Init(const string& path, const string& name, TFlags flags)
     NStr::ToLower(x_name);
 #endif
     // Process DLL name
-    if (F_ISSET(fBaseName)  &&  
+    if (F_ISSET(fBaseName)  &&
         name.find_first_of(":/\\") == NPOS  &&
         !CDirEntry::MatchesMask(name.c_str(),
                                 NCBI_PLUGIN_PREFIX "*" NCBI_PLUGIN_SUFFIX "*")
@@ -142,7 +142,7 @@ void CDll::x_Init(const string& path, const string& name, TFlags flags)
         // "name" is basename
         x_name = NCBI_PLUGIN_PREFIX + x_name + NCBI_PLUGIN_SUFFIX;
     }
-    m_Name = CDirEntry::ConcatPath(path, x_name);  
+    m_Name = CDirEntry::ConcatPath(path, x_name);
     // Load DLL now if indicated
     if (F_ISSET(fLoadNow)) {
         Load();
@@ -238,10 +238,10 @@ void CDll::x_ThrowException(const string& what)
 {
 #if defined(NCBI_OS_MSWIN)
     char* ptr = NULL;
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                  FORMAT_MESSAGE_FROM_SYSTEM | 
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                  FORMAT_MESSAGE_FROM_SYSTEM |
                   FORMAT_MESSAGE_IGNORE_INSERTS,
-                  NULL, GetLastError(), 
+                  NULL, GetLastError(),
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                   (LPTSTR) &ptr, 0, NULL);
     string errmsg = ptr ? ptr : "unknown reason";
@@ -261,14 +261,14 @@ void CDll::x_ThrowException(const string& what)
 }
 
 
-CDllResolver::CDllResolver(const string& entry_point_name, 
+CDllResolver::CDllResolver(const string& entry_point_name,
                            CDll::EAutoUnload unload)
     : m_AutoUnloadDll(unload)
-{    
+{
     m_EntryPoinNames.push_back(entry_point_name);
 }
 
-CDllResolver::CDllResolver(const vector<string>& entry_point_names, 
+CDllResolver::CDllResolver(const vector<string>& entry_point_names,
                            CDll::EAutoUnload unload)
     : m_AutoUnloadDll(unload)
 {
@@ -291,27 +291,27 @@ bool CDllResolver::TryCandidate(const string& file_name,
 
         ITERATE(vector<string>, it, m_EntryPoinNames) {
             string entry_point_name;
-            
+
             const string& dll_name = dll->GetName();
-            
+
             if ( !dll_name.empty() ) {
                 string base_name;
                 CDirEntry::SplitPath(entry_point_name, 0, &base_name, 0);
-                NStr::Replace(*it, 
+                NStr::Replace(*it,
                               "${basename}", base_name, entry_point_name);
 
                 if (!driver_name.empty()) {
-                    NStr::Replace(*it, 
+                    NStr::Replace(*it,
                             "${driver}", driver_name, entry_point_name);
                 }
             }
-            
+
             // Check for the BASE library name macro
-            
+
             if ( entry_point_name.empty() )
                 continue;
             p = dll->GetEntryPoint(entry_point_name);
-            if ( p.data ) { 
+            if ( p.data ) {
                 entry_point.entry_points.push_back(SNamedEntryPoint(entry_point_name, p));
             }
         } // ITERATE
@@ -323,7 +323,7 @@ bool CDllResolver::TryCandidate(const string& file_name,
         }
 
         m_ResolvedEntries.push_back(entry_point);
-    } 
+    }
     catch (CCoreException& ex)
     {
         if (ex.GetErrCode() != CCoreException::eDll)
@@ -358,6 +358,35 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
         }
     }
 
+    // Add systems directories
+
+    if ((which & fSystemDllPath) != 0) {
+#if defined(NCBI_OS_MSWIN)
+        // Get Windows system directories
+        char buf[MAX_PATH+1];
+        UINT len = GetSystemDirectory(buf, MAX_PATH+1);
+        if (len>0  &&  len<=MAX_PATH) {
+            paths.push_back(buf);
+        }
+        len = GetWindowsDirectory(buf, MAX_PATH+1);
+        if (len>0  &&  len<=MAX_PATH) {
+            paths.push_back(buf);
+        }
+        // Parse PATH environment variable
+        const char* env = getenv("PATH");
+        if (env  &&  *env) {
+            NStr::Tokenize(env, ";", paths);
+        }
+
+#elif defined(NCBI_OS_UNIX)
+        // From LD_LIBRARY_PATH environment variable
+        const char* env = getenv("LD_LIBRARY_PATH");
+        if (env  &&  *env) {
+            NStr::Tokenize(env, ":", paths);
+        }
+#endif
+    }
+
     // Add hardcoded runpath
 
 #if !defined(NCBI_COMPILER_METROWERKS)
@@ -375,34 +404,6 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
     }
 #endif
 
-    // Add systems directories
-
-    if ((which & fSystemDllPath) != 0) {
-#if defined(NCBI_OS_MSWIN)
-        // Get Windows system directories
-        char buf[MAX_PATH+1];
-        UINT len = GetSystemDirectory(buf, MAX_PATH+1);
-        if (len>0  &&  len<=MAX_PATH) {
-            paths.push_back(buf);
-        }
-        len = GetWindowsDirectory(buf, MAX_PATH+1);
-        if (len>0  &&  len<=MAX_PATH) {
-            paths.push_back(buf);
-        }
-        // Parse PATH environment variable 
-        const char* env = getenv("PATH");
-        if (env  &&  *env) {
-            NStr::Tokenize(env, ";", paths);
-        }
-
-#elif defined(NCBI_OS_UNIX)
-        // From LD_LIBRARY_PATH environment variable 
-        const char* env = getenv("LD_LIBRARY_PATH");            
-        if (env  &&  *env) {
-            NStr::Tokenize(env, ":", paths);
-        }
-#endif
-    }
     return;
 }
 
@@ -414,7 +415,7 @@ void CDllResolver::Unload()
         }
         delete it->dll;
     }
-    m_ResolvedEntries.resize(0);    
+    m_ResolvedEntries.resize(0);
 }
 
 
