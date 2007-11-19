@@ -913,6 +913,8 @@ static const char * kBuiltInGuide[] = {
     "2+6  EW  gb_est",
     "2+6  EX  gb_est",
     "2+6  EY  gb_est",
+    "2+6  EZ  gb_other_nuc",
+    "2+6  FA  gb_con",
     "2+6  FB  embl_patent",
     "2+6  ??  unreserved_nuc",
     "",
