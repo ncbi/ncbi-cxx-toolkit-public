@@ -4,6 +4,8 @@ ASN = seq seqalign seqblock seqfeat seqloc seqres seqtable
 
 ASN_DEP = seqcode
 
+CPPFLAGS = -I$(srcdir) -I$(top_srcdir)/src/objects/seq $(ORIG_CPPFLAGS)
+
 LIB = seq
 SRC = $(ASN:%=%__) $(ASN:%=%___) seqport_util \
       seq_id_tree seq_id_handle seq_id_mapper \
