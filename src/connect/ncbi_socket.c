@@ -750,7 +750,7 @@ static void s_DoLog
     case eIO_Write:
         if (sock->stype == eSOCK_Datagram) {
             const struct sockaddr_in* sin = (const struct sockaddr_in*) sa;
-            assert(sa && sa->sa_family == AF_INET);
+            assert(sa  &&  sa->sa_family == AF_INET);
             SOCK_HostPortToString(sin->sin_addr.s_addr,
                                   ntohs(sin->sin_port),
                                   tail, sizeof(tail));
@@ -2330,8 +2330,8 @@ static EIO_Status s_Connect(SOCK            sock,
 #endif /*HAVE_SIN_LEN*/
             sock->host = x_host;
             sock->port = x_port;
-            c = SOCK_HostPortToString(x_host, ntohs(x_port), s, sizeof(s))
-                ? s : "???";
+            SOCK_HostPortToString(x_host, ntohs(x_port), s, sizeof(s));
+            c = s;
         }
 
     /* check the new socket */
@@ -2766,8 +2766,8 @@ static EIO_Status s_CreateListening(const char*    path,
 #ifdef HAVE_SIN_LEN
             addr.sin.sin_len         = addrlen;
 #endif /*HAVE_SIN_LEN*/
-            c = SOCK_HostPortToString(htonl(ip), port, s, sizeof(s))
-                ? s : "?:?";
+            SOCK_HostPortToString(htonl(ip), port, s, sizeof(s));
+            c = s;
         }
     if (bind(x_lsock, &addr.sa, addrlen) != 0) {
         int x_errno = SOCK_ERRNO;
@@ -2788,7 +2788,7 @@ static EIO_Status s_CreateListening(const char*    path,
                             x_errno, SOCK_STRERROR(x_errno),
                             ("LSOCK#%u[%u]: [LSOCK::Create]  Failed "
                              "listen(%hu) at %s", x_id, (unsigned int) x_lsock,
-                             backlog, s));
+                             backlog, c));
         SOCK_CLOSE(x_lsock);
         return eIO_Unknown;
     }
@@ -3012,7 +3012,6 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
 extern EIO_Status LSOCK_Close(LSOCK lsock)
 {
     EIO_Status status;
-    const char* c;
     char s[80];
 
     if (lsock->sock == SOCK_INVALID) {
@@ -3033,15 +3032,18 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
                              lsock->id, (unsigned int) lsock->sock));
     }
 
-#ifdef NCBI_OS_UNIX
-    if ( lsock->path[0] )
-        c = lsock->path;
-    else
-#endif /*NCBI_OS_UNIX*/
-        c = SOCK_HostPortToString(0, lsock->port, s, sizeof(s)) ? s : ":?";
-
     /* statistics & logging */
     if (lsock->log == eOn  ||  (lsock->log == eDefault  &&  s_Log == eOn)) {
+        const char* c;
+#ifdef NCBI_OS_UNIX
+        if ( lsock->path[0] )
+            c = lsock->path;
+        else
+#endif /*NCBI_OS_UNIX*/ 
+            {
+                SOCK_HostPortToString(0, lsock->port, s, sizeof(s));
+                c = s;
+            }
         CORE_TRACEF(("LSOCK#%u[%u]: Closing at %s "
                      "(%u accept%s total)", lsock->id,
                      (unsigned int) lsock->sock, c,
@@ -3399,8 +3401,10 @@ extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
     if (!s_Initialized) {
         sock->sock = SOCK_INVALID;
         status = eIO_Success;
+    } else if (sock->sock == SOCK_INVALID) {
+        status = eIO_Closed;
     } else
-        status = sock->sock == SOCK_INVALID ? eIO_Success : s_Close(sock, 0);
+        status = s_Close(sock, 0/*orderly*/);
 
     if (destroy) {
         BUF_Destroy(sock->r_buf);
@@ -3431,6 +3435,19 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
 
     /* check against already shutdown socket there */
     switch ( event ) {
+    case eIO_Open:
+        if (sock->stype == eSOCK_Datagram)
+            return eIO_Success/*always connected*/;
+        if (sock->pending) {
+            struct timeval tv;
+            int x_errno/*unused*/;
+            return s_IsConnected(sock, s_to2tv(timeout, &tv), &x_errno, 0);
+        }
+        if (sock->r_status == eIO_Success  &&  sock->w_status == eIO_Success)
+            return eIO_Success;
+        if (sock->r_status == eIO_Closed   &&  sock->w_status == eIO_Closed)
+            return eIO_Closed;
+        return eIO_Unknown;
     case eIO_Read:
         if (BUF_Size(sock->r_buf) != 0)
             return eIO_Success;
@@ -3912,14 +3929,21 @@ extern EIO_Status SOCK_Abort(SOCK sock)
 extern EIO_Status SOCK_Status(SOCK      sock,
                               EIO_Event direction)
 {
-    if (direction != eIO_Read  &&  direction != eIO_Write) {
+    switch (direction) {
+    case eIO_Open:
+    case eIO_Read:
+    case eIO_Write:
+        if (sock->sock == SOCK_INVALID)
+            return eIO_Closed;
+        if (sock->pending)
+            return eIO_Timeout;
         if (direction == eIO_Open)
-            return sock->sock == SOCK_INVALID ? eIO_Closed : eIO_Success;
+            return eIO_Success;
+        break;
+    default:
         return eIO_InvalidArg;
     }
-
-    return (sock->sock == SOCK_INVALID ? eIO_Closed :
-            sock->pending ? eIO_Timeout : s_Status(sock, direction));
+    return s_Status(sock, direction);
 }
 
 
@@ -4694,18 +4718,19 @@ extern int SOCK_ntoa(unsigned int host,
 {
     const unsigned char* b = (const unsigned char*) &host;
     char str[16/*sizeof("255.255.255.255")*/];
+    int len;
 
-    assert(buf && buflen > 0);
-    verify(sprintf(str, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]) > 0);
-    assert(strlen(str) < sizeof(str));
+    assert(buf  &&  buflen > 0);
+    verify((len = sprintf(str, "%u.%u.%u.%u", b[0], b[1], b[2], b[3])) > 0);
+    assert((size_t) len < sizeof(str));
 
-    if (strlen(str) >= buflen) {
-        buf[0] = '\0';
-        return -1/*failed*/;
+    if ((size_t) len < buflen) {
+        memcpy(buf, str, len + 1);
+        return 0/*success*/;
     }
 
-    strcpy(buf, str);
-    return 0/*success*/;
+    buf[0] = '\0';
+    return -1/*failed*/;
 }
 
 
@@ -4909,8 +4934,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
             }
             if (!name  &&  s_Log == eOn) {
                 char addr[16];
-                if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
-                    strcpy(addr, "<unknown>");
+                SOCK_ntoa(host, addr, sizeof(addr));
                 if (x_errno == EAI_SYSTEM)
                     x_errno = SOCK_ERRNO;
                 else
@@ -4979,8 +5003,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
             if (x_errno == NETDB_INTERNAL + DNS_BASE)
                 x_errno = SOCK_ERRNO;
 #  endif /*NETDB_INTERNAL*/
-            if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
-                strcpy(addr, "<unknown>");
+            SOCK_ntoa(host, addr, sizeof(addr));
             CORE_LOGF_ERRNO_EXX(108, eLOG_Warning,
                                 x_errno, SOCK_STRERROR(x_errno),
                                 ("[SOCK_gethostbyaddr]  Failed "
@@ -5057,24 +5080,24 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
                                     char*          buf,
                                     size_t         buflen)
 {
-    char   x_buf[16/*sizeof("255.255.255.255")*/ + 8/*:port*/];
+    char   x_buf[16/*sizeof("255.255.255.255")*/ + 6/*:port#*/];
     size_t n;
 
-    if (!buf || !buflen)
+    if (!buf  ||  !buflen)
         return 0;
     if (!host)
-        *x_buf = 0;
+        *x_buf = '\0';
     else if (SOCK_ntoa(host, x_buf, sizeof(x_buf)) != 0) {
-        *buf = 0;
+        *buf = '\0';
         return 0;
     }
     n = strlen(x_buf);
-    if (port || !host)
+    if (port  ||  !host)
         n += sprintf(x_buf + n, ":%hu", port);
     assert(n < sizeof(x_buf));
     if (n >= buflen)
-        n = buflen - 1;
+        n  = buflen - 1;
     memcpy(buf, x_buf, n);
-    buf[n] = 0;
+    buf[n] = '\0';
     return n;
 }

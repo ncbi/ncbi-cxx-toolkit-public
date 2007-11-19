@@ -161,7 +161,7 @@ public:
     /// @param direction
     ///  is one of
     ///     - eIO_Open  - return eIO_Success if CSocket is okay and open,
-    ///                 eIO_Closed if closed by Close() or not yet open;
+    ///                   eIO_Closed if closed by Close() or not yet open;
     ///     - eIO_Read  - status of last read operation;
     ///     - eIO_Write - status of last write operation.
     /// Direction eIO_Close and eIO_ReadWrite generate eIO_InvalidArg error.

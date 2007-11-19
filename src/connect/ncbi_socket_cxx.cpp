@@ -253,9 +253,11 @@ EIO_Status CSocket::Close(void)
     if ( !m_Socket )
         return eIO_Success;
 
-    EIO_Status status = m_IsOwned != eNoOwnership
-        ? SOCK_CloseEx(m_Socket, 0) : eIO_Success;
-    return status;
+    if (m_IsOwned != eNoOwnership)
+        return SOCK_CloseEx(m_Socket, 0);
+
+    m_Socket = 0;
+    return eIO_Success;
 }
 
 
