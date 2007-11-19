@@ -1031,6 +1031,19 @@ void XSDParser::ProcessNamedTypes(void)
             if (!node.GetTypeName().empty()) {
                 if ( node.GetType() == DTDElement::eUnknown) {
                     found = true;
+// in rare cases of recursive type definition this node type can already be defined
+                    map<string,DTDElement>::iterator j;
+                    for (j = m_MapElement.begin(); j != m_MapElement.end(); ++j) {
+                        if (j->second.GetName() == node.GetName() &&
+                            j->second.GetTypeName() == node.GetTypeName() &&
+                            j->second.GetType() != DTDElement::eUnknown) {
+                            m_MapElement[i->first] = j->second;
+                            break;
+                        }
+                    }
+                    if (j != m_MapElement.end()) {
+                        break;
+                    }
                     PushEntityLexer(CreateEntityId(node.GetTypeName(),DTDEntity::eType));
                     ParseContent(node);
                     node.SetTypeIfUnknown(DTDElement::eEmpty);
