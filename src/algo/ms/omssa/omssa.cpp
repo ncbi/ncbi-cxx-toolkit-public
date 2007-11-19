@@ -531,12 +531,12 @@ void CSearch::Spectrum2Peak(CRef<CMSPeakSet> PeakSet)
         }
 
         Peaks->ReadAndProcess(*Spectrum, *GetSettings());
-//#if 0
+#if 0
         {
             ofstream os("test.dta");
             Peaks->Write(os, eMSSpectrumFileType_dta, eMSPeakListCharge1);
         }
-//#endif
+#endif
         PeakSet->AddPeak(Peaks);
 
     }

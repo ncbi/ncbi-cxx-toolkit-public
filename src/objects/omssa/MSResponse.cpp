@@ -72,7 +72,7 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
     
     CMSResponse::THitsets::const_iterator iHits;
     iHits = GetHitsets().begin();
-	float fMZ_scale = CanGetScale() ? GetScale() :  100.0;
+	double fMZ_scale = CanGetScale() ? GetScale() :  100.0;
     for(; iHits != GetHitsets().end(); iHits++)  
 	{
 		CRef< CMSHitSet > HitSet =  *iHits;
