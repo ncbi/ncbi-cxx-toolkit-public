@@ -150,10 +150,6 @@ PLUGINS = \
         $(GBENCH)\plugins\view_snp.dll          \
         $(GBENCH)\plugins\view_validator.dll
 
-INTERNAL_PLUGINS = \
-        ncbi_gbench_internal \
-        ncbi_gbench_contig
-
 #
 # Resource files
 #
@@ -320,29 +316,6 @@ $(PLUGINS) : $(DLLBIN)\$(*B).dll
     @if exist $** echo Updating $(*B).dll...
     @if exist $** $(COPY) $** $(GBENCH)\plugins > NUL
     @if exist $(DLLBIN)\$(*B).pdb $(COPY) $(DLLBIN)\$(*B).pdb $(GBENCH)\plugins > NUL
-
-###############################################################
-#
-# Target: Install the standard internal plugins
-#
-ncbi_gbench_internal :
-    @echo Installing NCBI internal plugin...
-    @if not exist $(GBENCH)\extra\ncbi mkdir $(GBENCH)\extra\ncbi
-    @if exist $(DLLBIN)\ncbi_gbench_internal.dll copy $(DLLBIN)\ncbi_gbench_internal.dll $(GBENCH)\extra\ncbi\ncbi_gbench_internal.dll
-    @if exist $(DLLBIN)\ncbi_gbench_internal.pdb copy $(DLLBIN)\ncbi_gbench_internal.pdb $(GBENCH)\extra\ncbi\ncbi_gbench_internal.pdb
-    @if exist $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-config.asn copy $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-config.asn $(GBENCH)\extra\ncbi\ncbi-config.asn
-    @if exist $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-win32-config.asn copy $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-win32-config.asn $(GBENCH)\extra\ncbi\ncbi-win32-config.asn
-    @if exist $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-unix-config.asn copy $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-unix-config.asn $(GBENCH)\extra\ncbi\ncbi-unix-config.asn
-    @if exist $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-macos-config.asn copy $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-macos-config.asn $(GBENCH)\extra\ncbi\ncbi-macos-config.asn
-    @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\ncbi
-
-ncbi_gbench_contig :
-    @echo Installing NCBI contig editing plugin...
-    @if not exist $(GBENCH)\extra\contig mkdir $(GBENCH)\extra\contig
-    @if exist $(DLLBIN)\ncbi_gbench_contig.dll copy $(DLLBIN)\ncbi_gbench_contig.dll $(GBENCH)\extra\contig\ncbi_gbench_contig.dll
-    @if exist $(DLLBIN)\ncbi_gbench_contig.pdb copy $(DLLBIN)\ncbi_gbench_contig.pdb $(GBENCH)\extra\contig\ncbi_gbench_contig.pdb
-    @if exist $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn copy $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn $(GBENCH)\extra\contig\contig-config.asn
-    @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\contig
 
 ###############################################################
 #
