@@ -126,6 +126,8 @@ protected:
     virtual void WriteClassMember(const CMemberId& memberId,
                                   TTypeInfo memberType,
                                   TConstObjectPtr memberPtr);
+    virtual bool WriteClassMember(const CMemberId& memberId,
+                                  const CDelayBuffer& buffer);
 #endif
 
     // low level I/O

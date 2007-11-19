@@ -183,22 +183,22 @@ void CObjectOStreamJson::WriteNullPointer(void)
 {
 }
 
-void CObjectOStreamJson::WriteObjectReference(TObjectIndex index)
+void CObjectOStreamJson::WriteObjectReference(TObjectIndex /*index*/)
 {
     ThrowError(fNotImplemented, "Not Implemented");
 }
 
-void CObjectOStreamJson::WriteOtherBegin(TTypeInfo typeInfo)
+void CObjectOStreamJson::WriteOtherBegin(TTypeInfo /*typeInfo*/)
 {
     ThrowError(fNotImplemented, "Not Implemented");
 }
 
-void CObjectOStreamJson::WriteOtherEnd(TTypeInfo typeInfo)
+void CObjectOStreamJson::WriteOtherEnd(TTypeInfo /*typeInfo*/)
 {
     ThrowError(fNotImplemented, "Not Implemented");
 }
 
-void CObjectOStreamJson::WriteOther(TConstObjectPtr object, TTypeInfo typeInfo)
+void CObjectOStreamJson::WriteOther(TConstObjectPtr /*object*/, TTypeInfo /*typeInfo*/)
 {
     ThrowError(fNotImplemented, "Not Implemented");
 }
@@ -251,12 +251,12 @@ void CObjectOStreamJson::CopyAnyContentObject(CObjectIStream& in)
 }
 
 
-void CObjectOStreamJson::WriteBitString(const CBitString& obj)
+void CObjectOStreamJson::WriteBitString(const CBitString& /*obj*/)
 {
     ThrowError(fNotImplemented, "Not Implemented");
 }
 
-void CObjectOStreamJson::CopyBitString(CObjectIStream& in)
+void CObjectOStreamJson::CopyBitString(CObjectIStream& /*in*/)
 {
     ThrowError(fNotImplemented, "Not Implemented");
 }
@@ -291,6 +291,12 @@ void CObjectOStreamJson::WriteClassMember(const CMemberId& memberId,
     CObjectOStream::WriteClassMember(memberId,memberType,memberPtr);
 }
 
+bool CObjectOStreamJson::WriteClassMember(const CMemberId& memberId,
+                                          const CDelayBuffer& buffer)
+{
+    return CObjectOStream::WriteClassMember(memberId,buffer);
+}
+
 
 void CObjectOStreamJson::BeginNamedType(TTypeInfo namedTypeInfo)
 {
@@ -303,7 +309,7 @@ void CObjectOStreamJson::EndNamedType(void)
 }
 
 
-void CObjectOStreamJson::BeginContainer(const CContainerTypeInfo* containerType)
+void CObjectOStreamJson::BeginContainer(const CContainerTypeInfo* /*containerType*/)
 {
     BeginArray();
 }
@@ -313,7 +319,7 @@ void CObjectOStreamJson::EndContainer(void)
     EndArray();
 }
 
-void CObjectOStreamJson::BeginContainerElement(TTypeInfo elementType)
+void CObjectOStreamJson::BeginContainerElement(TTypeInfo /*elementType*/)
 {
     NextElement();
 }
@@ -323,7 +329,7 @@ void CObjectOStreamJson::EndContainerElement(void)
 }
 
 
-void CObjectOStreamJson::BeginClass(const CClassTypeInfo* classInfo)
+void CObjectOStreamJson::BeginClass(const CClassTypeInfo* /*classInfo*/)
 {
     if (FetchFrameFromTop(1).GetNotag()) {
         return;
@@ -359,7 +365,7 @@ void CObjectOStreamJson::EndClassMember(void)
 }
 
 
-void CObjectOStreamJson::BeginChoice(const CChoiceTypeInfo* choiceType)
+void CObjectOStreamJson::BeginChoice(const CChoiceTypeInfo* /*choiceType*/)
 {
     if (FetchFrameFromTop(1).GetNotag()) {
         return;
@@ -375,7 +381,7 @@ void CObjectOStreamJson::EndChoice(void)
     EndBlock();
 }
 
-void CObjectOStreamJson::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
+void CObjectOStreamJson::BeginChoiceVariant(const CChoiceTypeInfo* /*choiceType*/,
                                 const CMemberId& id)
 {
     if (id.HasNotag() || id.IsAttlist()) {
@@ -395,14 +401,14 @@ void CObjectOStreamJson::EndChoiceVariant(void)
 }
 
 
-void CObjectOStreamJson::WriteBytes(const ByteBlock& block,
-                        const char* bytes, size_t length)
+void CObjectOStreamJson::WriteBytes(const ByteBlock& /*block*/,
+                        const char* /*bytes*/, size_t /*length*/)
 {
     ThrowError(fNotImplemented, "Not Implemented");
 }
 
-void CObjectOStreamJson::WriteChars(const CharBlock& block,
-                        const char* chars, size_t length)
+void CObjectOStreamJson::WriteChars(const CharBlock& /*block*/,
+                        const char* /*chars*/, size_t /*length*/)
 {
     ThrowError(fNotImplemented, "Not Implemented");
 }
