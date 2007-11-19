@@ -4,6 +4,7 @@ util/compress
 util/regexp$
 util/cache$
 util/unicode_plans$
+util/bitset
 connect$
 connect/ext$
 dbapi
