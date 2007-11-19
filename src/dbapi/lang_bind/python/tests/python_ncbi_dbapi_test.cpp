@@ -397,6 +397,16 @@ CPythonDBAPITest::Test_callproc(void)
             ExecuteStr("cursor = conn_simple.cursor()\n");
         }
 
+        // Check output parameters ...
+        if (false) {
+            // ExecuteStr("cursor.callproc('sp_server_info', {'@attribute_id':1}) \n");
+            ExecuteStr("cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
+            ExecuteStr("print cursor.fetchall()\n");
+            ExecuteStr("while cursor.nextset() : \n"
+                       "    print cursor.fetchall() "
+                    );
+        }
+        
         // CALL stored procedure ...
         ExecuteStr("cursor.callproc('sp_databases')\n");
         BOOST_CHECK_THROW(
@@ -417,6 +427,16 @@ CPythonDBAPITest::Test_callproc(void)
         ExecuteStr("cursor.callproc('sp_server_info')\n");
         ExecuteStr("cursor.fetchall()\n");
         ExecuteStr("rc = cursor.get_proc_return_status()\n");
+
+        // Check output parameters ...
+        if (false) {
+            // ExecuteStr("cursor.callproc('sp_server_info', {'@attribute_id':1}) \n");
+            ExecuteStr("cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
+            ExecuteStr("print cursor.fetchall()\n");
+            ExecuteStr("while cursor.nextset() : \n"
+                       "    print cursor.fetchall() "
+                    );
+        }
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -477,27 +497,27 @@ CPythonDBAPITest::Test_SelectStmt(void)
             ExecuteStr("cursor = conn_simple.cursor()\n");
 
             sql =
-            "CREATE TABLE #Overlaps ( \n"
-            "   pairId int NOT NULL , \n"
-            "   overlapNum smallint NOT NULL , \n"
-            "   start1 int NOT NULL , \n"
-            "   start2 int NOT NULL , \n"
-            "   stop1 int NOT NULL , \n"
-            "   stop2 int NOT NULL , \n"
-            "   orient char (2) NOT NULL , \n"
-            "   gaps int NOT NULL , \n"
-            "   mismatches int NOT NULL , \n"
-            "   adjustedLen int NOT NULL , \n"
-            "   length int NOT NULL , \n"
-            "   contained tinyint NOT NULL , \n"
-            "   seq_align text  NULL , \n"
-            "   merged_sa char (1) NOT NULL , \n"
-            "   PRIMARY KEY \n"
-            "   ( \n"
-            "       pairId, \n"
-            "       overlapNum \n"
-            "   ) \n"
-            ") \n";
+                "CREATE TABLE #Overlaps ( \n"
+                "   pairId int NOT NULL , \n"
+                "   overlapNum smallint NOT NULL , \n"
+                "   start1 int NOT NULL , \n"
+                "   start2 int NOT NULL , \n"
+                "   stop1 int NOT NULL , \n"
+                "   stop2 int NOT NULL , \n"
+                "   orient char (2) NOT NULL , \n"
+                "   gaps int NOT NULL , \n"
+                "   mismatches int NOT NULL , \n"
+                "   adjustedLen int NOT NULL , \n"
+                "   length int NOT NULL , \n"
+                "   contained tinyint NOT NULL , \n"
+                "   seq_align text  NULL , \n"
+                "   merged_sa char (1) NOT NULL , \n"
+                "   PRIMARY KEY \n"
+                "   ( \n"
+                "       pairId, \n"
+                "       overlapNum \n"
+                "   ) \n"
+                ") \n";
 
             ExecuteSQL(sql);
 
