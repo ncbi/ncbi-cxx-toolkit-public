@@ -3,6 +3,13 @@
 
 /* $Id$ */
 
+/* Redefine function's names in order to avoid conflicts with libmd.so in Solaris. */
+#define MD4Init      FTDS64_MD4Init
+#define MD4Update    FTDS64_MD4Update
+#define MD4Transform FTDS64_MD4Transform
+#define MD4Final     FTDS64_MD4Final
+
+
 struct MD4Context
 {
 	TDS_UINT buf[4];

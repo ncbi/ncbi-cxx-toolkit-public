@@ -11331,7 +11331,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
          || args.GetServerType() == CTestArguments::eMsSql2005) &&
         (args.GetDriverName() == ftds_odbc_driver
          || args.GetDriverName() == ftds64_driver)
-        && !Solaris
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication,
                                    DBAPIInstance);
