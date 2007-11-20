@@ -121,32 +121,32 @@ void CObjectOStreamJson::WriteChar(char data)
 
 void CObjectOStreamJson::WriteInt4(Int4 data)
 {
-    WriteValue(NStr::IntToString(data));
+    WriteKeywordValue(NStr::IntToString(data));
 }
 
 void CObjectOStreamJson::WriteUint4(Uint4 data)
 {
-    WriteValue(NStr::UIntToString(data));
+    WriteKeywordValue(NStr::UIntToString(data));
 }
 
 void CObjectOStreamJson::WriteInt8(Int8 data)
 {
-    WriteValue(NStr::Int8ToString(data));
+    WriteKeywordValue(NStr::Int8ToString(data));
 }
 
 void CObjectOStreamJson::WriteUint8(Uint8 data)
 {
-    WriteValue(NStr::UInt8ToString(data));
+    WriteKeywordValue(NStr::UInt8ToString(data));
 }
 
 void CObjectOStreamJson::WriteFloat(float data)
 {
-    WriteValue(NStr::DoubleToString(data,FLT_DIG));
+    WriteKeywordValue(NStr::DoubleToString(data,FLT_DIG));
 }
 
 void CObjectOStreamJson::WriteDouble(double data)
 {
-    WriteValue(NStr::DoubleToString(data,DBL_DIG));
+    WriteKeywordValue(NStr::DoubleToString(data,DBL_DIG));
 }
 
 void CObjectOStreamJson::WriteCString(const char* str)
@@ -264,10 +264,14 @@ void CObjectOStreamJson::CopyBitString(CObjectIStream& /*in*/)
 void CObjectOStreamJson::WriteEnum(const CEnumeratedTypeValues& values,
                         TEnumValueType value)
 {
-    string value_str = values.IsInteger() ?
-        NStr::IntToString(value) :
-        values.FindName(value, values.IsInteger());
-    WriteValue(value_str);
+    string value_str;
+    if (values.IsInteger()) {
+        value_str = NStr::IntToString(value);
+        WriteKeywordValue(value_str);
+    } else {
+        value_str = values.FindName(value, values.IsInteger());
+        WriteValue(value_str);
+    }
 }
 
 void CObjectOStreamJson::CopyEnum(const CEnumeratedTypeValues& values,
