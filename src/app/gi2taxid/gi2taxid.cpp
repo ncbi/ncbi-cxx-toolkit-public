@@ -98,29 +98,42 @@ int CGi2TaxIdApp::Run()
     CTaxon1 tax;
     tax.Init();
 
+    static const char* sc_ValidChars =
+        "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "0123456789"
+        "_.|";
+
     ITERATE (vector<string>, iter, id_list) {
-        if ( iter->empty() ) {
-            LOG_POST(Info << "ignoring empty accession: ");
+        string id_str = *iter;
+        id_str = NStr::TruncateSpaces(id_str);
+        string::size_type pos = id_str.find_first_not_of(sc_ValidChars);
+        if (pos != string::npos) {
+            id_str.erase(pos);
+        }
+        if ( id_str.empty() ) {
+            LOG_POST(Info << "ignoring accession: " << *iter);
             continue;
         }
 
         // resolve the id to a gi
         int gi = 0;
         try {
-            gi = NStr::StringToInt(*iter);
+            gi = NStr::StringToInt(id_str);
         }
         catch (...) {
             try {
-                CSeq_id id(*iter);
+                cout << "trying: " << *iter << " -> " << id_str << endl;
+                CSeq_id id(id_str);
                 gi = id1_client.AskGetgi(id);
-            } catch (CSeqIdException&) {
+            } catch (CException&) {
                 // gi = 0;
             }
         }
 
         if (gi == 0) {
             LOG_POST(Error << "don't know anything about accession/id: "
-                << *iter);
+                << id_str);
             continue;
         }
 
@@ -128,7 +141,7 @@ int CGi2TaxIdApp::Run()
         tax.GetTaxId4GI(gi, tax_id);
 
         if (show) {
-            cout << *iter << " ";
+            cout << id_str << " ";
         }
         cout << gi << " " << tax_id << endl;
     }
