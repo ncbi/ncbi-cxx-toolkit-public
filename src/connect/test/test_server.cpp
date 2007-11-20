@@ -373,6 +373,7 @@ int CServerTestApp::Run(void)
     server.SetParameters(params);
 
     server.AddListener(new CTestConnectionFactory(&server), port);
+    server.StartListening();
 
     CStdPoolOfThreads pool(args["maxclthreads"].AsInteger(),
         max_number_of_clients);
