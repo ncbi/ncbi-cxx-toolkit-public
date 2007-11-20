@@ -2107,31 +2107,23 @@ string CDB_Numeric::Value() const
 
 
 
-static int s_NextValue(const char** s, int rem, int base)
-{
-    while (**s < base) {
-        rem = rem * base + (int) **s;
-        (*s)++;
-        if (rem >= 256)
-            break;
-    }
-    return rem;
-}
-
-
 static int s_Div256(const char* value, char* product, int base)
 {
     int res = 0;
-    int n;
+    char* const initial = product;
 
     while (*value < base) {
-        n = s_NextValue(&value, res, base);
-        *product = (char) (n / 256);
-        res = n % 256;
+        res = res % 256 * base + (int)*value;
+        ++value;
+        while (product == initial && *value < base && res < 256) {
+            res = res * base + (int)*value;
+            ++value;
+        }
+        *product = (char) (res / 256);
         ++product;
     }
     *product = base;
-    return res;
+    return res % 256;
 }
 
 

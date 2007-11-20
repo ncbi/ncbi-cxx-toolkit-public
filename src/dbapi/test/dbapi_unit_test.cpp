@@ -8939,6 +8939,17 @@ CDBAPIUnitTest::Test_CDB_Object(void)
             BOOST_CHECK(!value_Numeric2.IsNULL());
 
         }
+
+        // Check that numeric stores values correctly
+        {
+            CDB_Numeric value_Numeric(10, 0, "2571");
+
+            BOOST_CHECK_EQUAL(value_Numeric.Value(), "2571");
+            value_Numeric = "25856";
+            BOOST_CHECK_EQUAL(value_Numeric.Value(), "25856");
+            value_Numeric = "2585856";
+            BOOST_CHECK_EQUAL(value_Numeric.Value(), "2585856");
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
