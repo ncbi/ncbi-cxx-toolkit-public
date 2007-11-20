@@ -162,14 +162,47 @@ unsigned CBDB_Volumes::AddVolume(const string& location,
     m_VolumesDB->mtimestamp = (Uint4)time(0);
     m_VolumesDB->relo_volume_id = 0;
     m_VolumesDB->location = location;
-    m_VolumesDB->backup_loc = "";
-    
+    m_VolumesDB->backup_loc = "";        
+
     CBDB_VolumesTransaction trans(*this);
     unsigned volume_id = m_VolumesDB->Append();
     trans.Commit();
+    
     return volume_id;
 }
 
+void CBDB_Volumes::SortVolumes() {
+
+
+    /// retrieve the enumerated volumes and store them in a sorted map
+    vector<unsigned> vol_ids;
+    typedef map<string, unsigned> TSortedVols;
+    TSortedVols sorted_volumes;
+
+    EnumerateVolumes(vol_ids);
+
+    ITERATE (vector<unsigned>, iter, vol_ids) {
+        const SVolumesDB& db = FetchVolumeRec(*iter);
+        string path = (string)db.location;              
+        sorted_volumes.insert(TSortedVols::value_type(path, *iter));
+    }
+
+    CBDB_VolumesTransaction trans(*this);
+                   
+    ITERATE (TSortedVols, iter, sorted_volumes) {
+        m_VolumesDB->volume_id = iter->second;
+        EBDB_ErrCode err = m_VolumesDB->Fetch();
+        if (err != eBDB_Ok) {
+            NCBI_THROW(CBDB_VolumesException, eVolumeNotFound,
+                string("Cannot find volume=") + NStr::UIntToString(iter->second));
+        }
+        unsigned volume_id = m_VolumesDB->Append();
+    }
+    trans.Commit();
+
+    Delete(vol_ids);
+}
+    
 void CBDB_Volumes::SetBackupLocation(unsigned      volume_id, 
                                      const string& backup_loc)
 {

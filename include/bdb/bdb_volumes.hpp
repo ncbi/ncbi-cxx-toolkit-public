@@ -173,11 +173,13 @@ public:
     /// Delete volume
     void Delete(const vector<unsigned>& remove_list);
 
+    /// Sort volumes
+    void SortVolumes();
+
     /// Merge volumes into one
     void Merge(unsigned volume_id_new,
                const vector<unsigned>& merge_list,
                EVolumeStatus new_status = eOnlineActive);
-
 
     /// Update date range
     void SetDateRange(unsigned volume_id,
