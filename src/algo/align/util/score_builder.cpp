@@ -314,7 +314,6 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
             for (int seg = 0;  seg < vec.GetNumSegs();  ++seg) {
                 vector<string> data;
                 for (int i = 0;  i < vec.GetNumRows();  ++i) {
-                    data.push_back(string());
                     TSeqPos start = vec.GetStart(i, seg);
                     if (start == (TSeqPos)(-1)) {
                         /// we compute ungapped identities
@@ -326,6 +325,7 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
                         break;
                     }
 
+                    data.push_back(string());
                     vec.GetSeqString(data.back(), i, start, stop);
                 }
 
