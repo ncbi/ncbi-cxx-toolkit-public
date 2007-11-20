@@ -43,3 +43,14 @@ dbapi/driver/public.hpp
 dbapi/driver/types.hpp
 
 %%
+
+
+%init %{
+    // Calling these frees the user of the need to call them
+    // in the absence of shared libraries.
+    DBAPI_RegisterDriver_CTLIB();
+    DBAPI_RegisterDriver_DBLIB();
+    DBAPI_RegisterDriver_FTDS();
+    DBAPI_RegisterDriver_SQLITE3();
+%}
+

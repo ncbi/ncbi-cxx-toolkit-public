@@ -82,3 +82,26 @@ objtools/data_loaders/genbank/readers/pubseqos2/reader_pubseq2.hpp
 objtools/data_loaders/genbank/readers/pubseqos2/reader_pubseq2_entry.hpp
 
 %%
+
+
+%init %{
+
+    // Calling these frees the user of the need to call them
+    // in the absence of shared libraries.
+
+    // see objtools/data_loaders/loaders.hpp
+    DataLoaders_Register_GenBank();
+    DataLoaders_Register_BlastDb();
+    DataLoaders_Register_CDD();
+    DataLoaders_Register_LDS();
+    DataLoaders_Register_Trace();
+
+    // see objtools/data_loaders/genbank/readers/readers.hpp
+    GenBankReaders_Register_Id1();
+    GenBankReaders_Register_Id2();
+    GenBankReaders_Register_Pubseq();
+    GenBankReaders_Register_Pubseq2();
+    GenBankReaders_Register_Cache();
+    GenBankWriters_Register_Cache();
+
+%}
