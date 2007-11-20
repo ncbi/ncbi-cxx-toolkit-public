@@ -106,7 +106,7 @@ static void s_TlsFormatCleanup(CTimeFormat* fmt, void* /* data */)
 }
 
 // Global quick and dirty getter of local time
-static CFastLocalTime s_FastLocalTime;
+static CSafeStaticPtr<CFastLocalTime> s_FastLocalTime;
 
 
 //============================================================================
@@ -2411,13 +2411,13 @@ int operator- (const CTime& t1, const CTime& t2)
 
 CTime GetFastLocalTime(void)
 {
-    return s_FastLocalTime.GetLocalTime();
+    return s_FastLocalTime->GetLocalTime();
 }
 
 
 void TuneupFastLocalTime(void)
 {
-    s_FastLocalTime.Tuneup();
+    s_FastLocalTime->Tuneup();
 }
 
 const char* CTimeException::GetErrCodeString(void) const
