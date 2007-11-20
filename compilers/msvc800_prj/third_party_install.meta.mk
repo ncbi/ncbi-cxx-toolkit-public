@@ -14,7 +14,7 @@ INTDIR = $(INTDIR:.\=)
 ALTDIR = $(INTDIR:VTune_=)
 
 # Extensions of files to copy
-EXTENSIONS         = dll pdb
+EXTENSIONS         = dll pdb manifest
 
 # MSVC DLLs
 #  MSVC_SRC must be defined elsewhere (eg, in command line)
@@ -101,7 +101,7 @@ INSTALL_CMD = \
 	    if exist "$*\*.%%e" ( \
 	      for /f "delims=" %%i in ('dir /a-d/b "$*\*.%%e"') do @( \
 	        xcopy /Y /D /F "$*\%%i" "$(INSTALL_BINPATH)" ) \
-	    ) else (echo WARNING:   "$*\*.%%e" not found) ) \
+	    )) \
 	) else (echo ERROR:   "$*" not found)
 
 CLEAN_CMD = \
