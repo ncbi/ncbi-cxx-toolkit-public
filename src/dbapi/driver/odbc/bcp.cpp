@@ -104,7 +104,7 @@ CODBC_BCPInCmd::x_GetBCPDataType(EDB_Type type)
         bcp_datatype = SQLINT1;
         break;
     case eDB_BigInt:
-        bcp_datatype = SQLNUMERIC;
+        bcp_datatype = SQLINT8;
         break;
     case eDB_Char:
     case eDB_VarChar:
@@ -144,11 +144,12 @@ CODBC_BCPInCmd::x_GetBCPDataType(EDB_Type type)
         bcp_datatype = SQLDATETIME;
         break;
     case eDB_Text:
-#ifdef UNICODE
+//TODO: Make different type depending on type of underlying column
+/*#ifdef UNICODE
         bcp_datatype = SQLNTEXT;
-#else
+#else*/
         bcp_datatype = SQLTEXT;
-#endif
+//#endif
         break;
     case eDB_Image:
         bcp_datatype = SQLIMAGE;
@@ -266,7 +267,6 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         switch ( param.GetType() ) {
         case eDB_Int: {
             CDB_Int& val = dynamic_cast<CDB_Int&> (param);
-            // DBINT v = (DBINT) val.Value();
             r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
                 == SUCCEED &&
                 bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int4), i + 1)
@@ -293,18 +293,10 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         break;
         case eDB_BigInt: {
             CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-            DBNUMERIC* v = (DBNUMERIC*) pb;
-            /*v->precision = 18;
-            v->scale = 0;
-            v->sign = 1;*/
-            Int8 v8 = val.Value();
-            if (longlong_to_numeric(v8, 18, DBNUMERIC_val(v)) == 0)
-                return false;
-            r = bcp_colptr(GetHandle(), (BYTE*) v, i + 1)
+            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
                 == SUCCEED &&
-                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(DBNUMERIC), i + 1)
+                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int8), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
-            pb = (void*) (v + 1);
         }
         break;
         case eDB_Char: {
@@ -476,20 +468,9 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         break;
         case eDB_Image: {
             CDB_Image& val = dynamic_cast<CDB_Image&> (param);
+            // Null images doesn't work in odbc
+            // (at least in those tests that exists in dbapi_unit_test)
             r = bcp_collen(GetHandle(),  (DBINT) val.Size(), i + 1);
-            /*if (val.IsNULL()) {
-                r = bcp_colptr(GetHandle(), (BYTE*) pb, i + 1)
-                    == SUCCEED &&
-                    bcp_collen(GetHandle(),  SQL_NULL_DATA, i + 1)
-                    == SUCCEED ? SUCCEED : FAIL;
-            }
-            else {
-                r = bcp_bind(GetHandle(), (BYTE*) NULL, 0, (DBINT) val.Size(),
-                             static_cast<LPCBYTE>(x_GetDataTerminator(eDB_Image)),
-                             static_cast<INT>(x_GetDataTermSize(eDB_Image)),
-                             x_GetBCPDataType(eDB_Image),
-                             i + 1);
-            }*/
         }
         break;
         default:
@@ -533,9 +514,8 @@ bool CODBC_BCPInCmd::Send(void)
 
             CDB_Object& param = *GetParams().GetParam(i);
 
-            if (param.GetType() != eDB_Text &&
-                param.GetType() != eDB_Image
-                ||  (param.IsNULL() && param.GetType() != eDB_Image))
+            if (param.GetType() != eDB_Image &&
+                (param.GetType() != eDB_Text  ||  param.IsNULL()))
                 continue;
 
             CDB_Stream& val = dynamic_cast<CDB_Stream&> (param);
@@ -561,10 +541,10 @@ bool CODBC_BCPInCmd::Send(void)
 
                 CODBCString odbc_str(buff, len);
 
-                // !!! Decode to UCS2 !!!!
+                // !!! TODO: Decode to UCS2 if needed !!!!
                 if (bcp_moretext(GetHandle(),
                                  (DBINT) valid_len,
-                                 (LPCBYTE)static_cast<const odbc::TChar*>(odbc_str)
+                                 (LPCBYTE)static_cast<const char*>(odbc_str)
                                  ) != SUCCEED) {
                     SetHasFailed();
                     ReportErrors();

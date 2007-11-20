@@ -2318,8 +2318,8 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
         {
             sql  = " CREATE TABLE " + table_name + "( \n";
             sql += "    geneId INT NOT NULL, \n";
-            sql += "    dataText TEXT NULL \n";
-            //sql += "    dataImage IMAGE NULL \n";
+            sql += "    dataText TEXT NULL, \n";
+            sql += "    dataImage IMAGE NULL \n";
             sql += " )";
 
             auto_ptr<CDB_LangCmd> auto_stmt(conn->LangCmd(sql));
@@ -2332,15 +2332,15 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
         {
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 2));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 3));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
-                //CDB_Image dataImageVal;
+                CDB_Image dataImageVal;
 
                 bcp->Bind(0, &geneIdVal);
                 bcp->Bind(1, &dataTextVal);
-                //bcp->Bind(2, &dataImageVal);
+                bcp->Bind(2, &dataImageVal);
 
                 geneIdVal = 2;
 
@@ -2408,15 +2408,15 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 2));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 3));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
-                //CDB_Image dataImageVal;
+                CDB_Image dataImageVal;
 
                 bcp->Bind(0, &geneIdVal);
                 bcp->Bind(1, &dataTextVal);
-                //bcp->Bind(2, &dataImageVal);
+                bcp->Bind(2, &dataImageVal);
 
                 geneIdVal = 2;
 
@@ -2481,28 +2481,28 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 2));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 3));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
-                //CDB_Image dataImageVal;
+                CDB_Image dataImageVal;
 
                 bcp->Bind(0, &geneIdVal);
                 bcp->Bind(1, &dataTextVal);
-                //bcp->Bind(2, &dataImageVal);
+                bcp->Bind(2, &dataImageVal);
 
                 // First row ...
-                geneIdVal = 1;
+                geneIdVal = 2;
 
-                dataTextVal.Append(data);
-                dataTextVal.MoveTo(0);
+                dataTextVal.AssignNULL();
 
                 bcp->SendRow();
 
                 // Second row ...
-                geneIdVal = 2;
+                geneIdVal = 1;
 
-                dataTextVal.AssignNULL();
+                dataTextVal.Append(data);
+                dataTextVal.MoveTo(0);
 
                 bcp->SendRow();
 
@@ -2515,7 +2515,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
                 string result;
                 char buff[64];
 
-                sql = "SELECT dataText FROM "+ table_name;
+                sql = "SELECT dataText FROM "+ table_name + " ORDER BY geneId";
 
                 auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
 
@@ -2576,15 +2576,15 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 2));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 3));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
-                //CDB_Image dataImageVal;
+                CDB_Image dataImageVal;
 
                 bcp->Bind(0, &geneIdVal);
                 bcp->Bind(1, &dataTextVal);
-                //bcp->Bind(2, &dataImageVal);
+                bcp->Bind(2, &dataImageVal);
 
                 for(int i = 0; i < num_of_tests; ++i ) {
                     geneIdVal = i;
@@ -3571,8 +3571,12 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
                     CVariant col1(eDB_Int);
                     CVariant col2(eDB_BigInt);
+                    //CVariant col_tmp2(eDB_VarChar);
+                    //CVariant col_tmp3(eDB_Int);
 
                     bi->Bind(1, &col1);
+                    //bi->Bind(2, &col_tmp2);
+                    //bi->Bind(3, &col_tmp3);
                     bi->Bind(4, &col2);
 
                     for(int i = 0; i < num_of_tests; ++i ) {
@@ -3608,15 +3612,13 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 }
             }
             else {
-                PutMsgDisabled("Bigint in odbc");
+                PutMsgDisabled("Binding not all columns in bcp or bigint in Sybase");
             }
         }
 
         // Yet another BIGINT test (and more) ...
         // Sybase doesn't have BIGINT data type ...
-        if (m_args.GetServerType() != CTestArguments::eSybase
-            &&  m_args.GetDriverName() != odbc_driver
-            &&  m_args.GetDriverName() != odbcw_driver)
+        if (m_args.GetServerType() != CTestArguments::eSybase)
         {
             auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
 
@@ -3680,7 +3682,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
     //         }
         }
         else {
-            PutMsgDisabled("Bigint in odbc");
+            PutMsgDisabled("Bigint in Sybase");
         }
 
         // VARCHAR ...
@@ -3862,7 +3864,7 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
                 bi->Bind(7, &col7);
             }
             else {
-                PutMsgDisabled("Insert default values - binding");
+                PutMsgDisabled("Binding not all columns in bcp");
             }
 
             col1 = 15001;
@@ -11205,8 +11207,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.GetDriverName() == ctlib_driver
         || args.GetDriverName() == ftds64_driver
-        || args.GetDriverName() == odbc_driver
         || args.GetDriverName() == ftds_odbc_driver
+        || args.GetDriverName() == odbc_driver
         || args.GetDriverName() == odbcw_driver
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many,
@@ -11304,7 +11306,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // There is a problem with ftds driver
     // on GCC_340-ReleaseMT--i686-pc-linux2.4.23
     // There is a problem with ftds64 driver
-    // on orkShop55_550-ReleaseMT
+    // on WorkShop55_550-ReleaseMT
     if (args.GetDriverName() != ftds8_driver
         && args.GetDriverName() != ftds64_driver
         && args.GetDriverName() != ftds_dblib_driver
@@ -11379,7 +11381,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.IsBCPAvailable()
         && !Solaris // Requires Sybase client 12.5
-        && args.GetDriverName() != odbcw_driver
         && args.GetDriverName() != ftds_dblib_driver
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
@@ -11538,7 +11539,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.IsBCPAvailable()
         && args.GetDriverName() != ftds_dblib_driver
-        && args.GetDriverName() != odbcw_driver
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob,
                                    DBAPIInstance);
@@ -11550,7 +11550,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.IsBCPAvailable()) {
         if(args.GetDriverName() != ftds_dblib_driver
-           && args.GetDriverName() != odbcw_driver
            && !(args.GetDriverName() == ctlib_driver && Solaris && !sybase_client_v125)
           )
         {
@@ -11566,7 +11565,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()) {
         if (args.GetDriverName() != dblib_driver // Invalid parameters to bcp_bind ...
             && args.GetDriverName() != ftds_dblib_driver // Invalid parameters to bcp_bind ...
-            && args.GetDriverName() != odbcw_driver
             && !(args.GetDriverName() == ctlib_driver && Solaris)
            ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,
@@ -11754,7 +11752,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (args.IsBCPAvailable()
-        //&& args.GetDriverName() != odbc_driver
         && args.GetDriverName() != msdblib_driver     // Just does'nt work for some reason
         && args.GetDriverName() != ftds_dblib_driver
         ) {
@@ -11768,8 +11765,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // !!! There are still problems ...
     if (args.IsBCPAvailable()) {
-        if (/*args.GetDriverName() != odbc_driver
-            && */args.GetDriverName() != ftds64_driver // Something is completely wrong ...
+        if (args.GetDriverName() != ftds64_driver // Something is completely wrong ...
             // && !(args.GetDriverName() == ftds64_driver
             //      && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
             && args.GetDriverName() != ctlib_driver
@@ -12044,7 +12040,6 @@ CTestArguments::IsBCPAvailable(void) const
         // There is no apropriate client
         return false;
     } else if ( GetDriverName() == ftds_odbc_driver
-         //|| GetDriverName() == odbcw_driver
          || GetDriverName() == msdblib_driver
          || ((GetDriverName() == ftds64_driver || GetDriverName() == ftds8_driver) && GetServerType() == CTestArguments::eSybase)
          ) {
