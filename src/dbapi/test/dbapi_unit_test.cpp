@@ -8944,11 +8944,11 @@ CDBAPIUnitTest::Test_CDB_Object(void)
         {
             CDB_Numeric value_Numeric(10, 0, "2571");
 
-            BOOST_CHECK_EQUAL(value_Numeric.Value(), "2571");
+            BOOST_CHECK_EQUAL(value_Numeric.Value(), string("2571"));
             value_Numeric = "25856";
-            BOOST_CHECK_EQUAL(value_Numeric.Value(), "25856");
+            BOOST_CHECK_EQUAL(value_Numeric.Value(), string("25856"));
             value_Numeric = "2585856";
-            BOOST_CHECK_EQUAL(value_Numeric.Value(), "2585856");
+            BOOST_CHECK_EQUAL(value_Numeric.Value(), string("2585856"));
         }
     }
     catch(const CException& ex) {
