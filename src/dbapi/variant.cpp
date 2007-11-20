@@ -542,7 +542,7 @@ string CVariant::GetNumeric() const
 
 const CTime& CVariant::GetCTime() const
 {
-    CTime *ptr;
+    CTime *ptr = NULL;
     switch(GetType()) {
     case eDB_DateTime:
         ptr = const_cast<CTime*>(&((CDB_DateTime*)GetData())->Value());

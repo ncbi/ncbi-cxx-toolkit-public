@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
     }
     table_name= p? p : "MyDataTable";
 
-    string *blob_column;
+    string *blob_column = NULL;
 
     try {
         C_DriverMgr drv_mgr;

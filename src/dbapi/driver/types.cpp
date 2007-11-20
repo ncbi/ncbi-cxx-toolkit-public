@@ -1937,12 +1937,14 @@ CDB_Numeric::CDB_Numeric(unsigned int precision,
 
 
 CDB_Numeric::CDB_Numeric(unsigned int precision, unsigned int scale, const char* val)
+    : m_Precision(0), m_Scale(0)
 {
     x_MakeFromString(precision, scale, val);
 }
 
 
 CDB_Numeric::CDB_Numeric(unsigned int precision, unsigned int scale, const string& val)
+    : m_Precision(0), m_Scale(0)
 {
     x_MakeFromString(precision, scale, val.c_str());
 }

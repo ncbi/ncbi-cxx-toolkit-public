@@ -193,9 +193,9 @@ static CDB_Object* s_GetItem(EDB_Type    data_type,
         return item_buff;
     }
 
-    long   int_val;
-    Int8   int8_val;
-    double double_val;
+    long   int_val = 0;
+    Int8   int8_val = 0;
+    double double_val = 0;
 
     switch ( data_type ) {
     case eDB_Bit:
