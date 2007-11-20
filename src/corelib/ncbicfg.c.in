@@ -33,6 +33,9 @@
 
 #include <corelib/ncbicfg.h>
 
+#ifdef NCBI_OS_UNIX
+#  include <unistd.h>
+#endif
 
 /*
 
@@ -49,8 +52,10 @@
 static const char s_DefaultRunpath[] = "@ncbi_runpath@";
 static const char *s_Runpath         = s_DefaultRunpath;
 
-static const char s_DefaultSybasePath[] = "@SYBASE_PATH@";
-static const char *s_SybasePath         = s_DefaultSybasePath;
+static const char s_DefaultSybaseLocalPath[] = "@SYBASE_LCL_PATH@";
+static const char s_DefaultSybaseNetPath[]   = "@SYBASE_PATH@";
+static const char *s_DefaultSybasePath       = NULL;
+static const char *s_SybasePath              = NULL;
 
 
 const char* NCBI_GetDefaultRunpath(void)
@@ -73,12 +78,27 @@ void NCBI_SetRunpath(const char* runpath)
 
 const char* NCBI_GetDefaultSybasePath(void)
 {
+    if (s_DefaultSybasePath == NULL) {
+#ifdef NCBI_OS_UNIX
+        if (sizeof(s_DefaultSybaseLocalPath) > 1
+            &&  access(s_DefaultSybaseLocalPath, R_OK | X_OK) >= 0) {
+            s_DefaultSybasePath = s_DefaultSybaseLocalPath;
+        } else {
+            s_DefaultSybasePath = s_DefaultSybaseNetPath;
+        }
+#else
+        s_DefaultSybasePath = s_DefaultSybaseNetPath;
+#endif
+    }
     return s_DefaultSybasePath;
 }
 
 
 const char* NCBI_GetSybasePath(void)
 {
+    if (s_SybasePath == NULL) {
+        s_SybasePath = NCBI_GetDefaultSybasePath();
+    }
     return s_SybasePath;
 }
 
