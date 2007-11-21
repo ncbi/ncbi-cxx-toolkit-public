@@ -78,7 +78,7 @@ void NCBI_SetRunpath(const char* runpath)
 
 const char* NCBI_GetDefaultSybasePath(void)
 {
-    if (s_DefaultSybasePath == NULL) {
+    if ( !s_DefaultSybasePath ) {
 #ifdef NCBI_OS_UNIX
         if (sizeof(s_DefaultSybaseLocalPath) > 1
             &&  access(s_DefaultSybaseLocalPath, R_OK | X_OK) >= 0) {
@@ -96,7 +96,7 @@ const char* NCBI_GetDefaultSybasePath(void)
 
 const char* NCBI_GetSybasePath(void)
 {
-    if (s_SybasePath == NULL) {
+    if ( !s_SybasePath ) {
         s_SybasePath = NCBI_GetDefaultSybasePath();
     }
     return s_SybasePath;
