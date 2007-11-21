@@ -54,7 +54,8 @@ class CServer_ControlConnection : public CSocket,
 public:
     virtual CStdRequest* CreateRequest(EIO_Event event,
                                        CServer_ConnectionPool& connPool,
-                                       const STimeout* timeout);
+                                       const STimeout* timeout,
+                                       int request_id);
 };
 
 

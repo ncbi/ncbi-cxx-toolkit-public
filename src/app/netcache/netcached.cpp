@@ -323,7 +323,8 @@ void CNetCacheServer::WriteMsg(CSocket&       sock,
     err_msg.append("\r\n");
     size_t n_written;
     /* EIO_Status io_st = */
-        sock.Write(err_msg.c_str(), err_msg.length(), &n_written);
+        sock.Write(err_msg.data(), err_msg.size(), &n_written);
+    _TRACE("WriteMsg " << prefix << msg);
 }
 
 
@@ -624,7 +625,7 @@ private:
 
 void CNetCacheDApp::Init(void)
 {
-    SetDiagPostLevel(eDiag_Warning);
+//    SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_DateTime);
 
     // Setup command line arguments and parameters
@@ -683,6 +684,7 @@ int CNetCacheDApp::Run(void)
         }
         }}
 
+        /*
         string log_path = 
                 reg.GetString("server", "log_path", kEmptyStr, 
                               CNcbiRegistry::eReturn);
@@ -692,6 +694,7 @@ int CNetCacheDApp::Run(void)
         // All errors redirected to rotated log
         // from this moment on the server is silent...
         SetDiagStream(m_ErrLog.get());
+        */
 
         if (!is_port_free) {
             LOG_POST(("Startup problem: listening port is busy. Port=" + 

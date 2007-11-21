@@ -120,8 +120,9 @@ protected:
 
 private:
     void CreateRequest(CStdPoolOfThreads& threadPool,
-        IServer_ConnectionBase* conn_base,
-        EIO_Event event, const STimeout* timeout);
+                       IServer_ConnectionBase* conn_base,
+                       EIO_Event event, const STimeout* timeout,
+                       int request_id);
 
     SServer_Parameters*      m_Parameters;
     CServer_ConnectionPool*  m_ConnectionPool;

@@ -103,6 +103,7 @@ int CNetCache_MessageHandler::CheckMessage(BUF* buffer, const void *data, size_t
             m_Length = (m_Length << 8) + msg[n];
             if (++m_LenRead == 4) {
                 if (m_Length == 0xffffffff) {
+                    _TRACE("Got end of transmission, tail is " << (size-n-1) << " buf size " << BUF_Size(*buffer));
                     m_InTransmission = false;
                     return size-n-1;
                 }
@@ -112,7 +113,8 @@ int CNetCache_MessageHandler::CheckMessage(BUF* buffer, const void *data, size_t
                 start = n + 1;
             }
         } else {
-            unsigned chunk_len = min(m_Length, (unsigned)(size-start)); 
+            unsigned chunk_len = min(m_Length, (unsigned)(size-start));
+            _TRACE("Transmission buffer written " << chunk_len);
             BUF_Write(buffer, msg+start, chunk_len);
             m_Length -= chunk_len;
             n += chunk_len - 1;
@@ -295,6 +297,7 @@ void CNetCache_MessageHandler::ProcessMsgRequest(BUF buffer)
         }
 
         // check if it is NC or IC
+        _TRACE("Processing request " << request.substr(0, 100));
 
         if (request[0] == 'I' && request[1] == 'C') { // ICache request
             m_LastHandler = m_ICHandler.get();

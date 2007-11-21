@@ -67,10 +67,11 @@ void CServer_ConnectionPool::SPerConnInfo::UpdateExpiration(
 CStdRequest* CServer_ControlConnection::CreateRequest(
     EIO_Event event,
     CServer_ConnectionPool& connPool,
-    const STimeout* timeout)
+    const STimeout* timeout, int request_id)
 {
     char buf[64];
     Read(buf, sizeof(buf));
+    _TRACE("Control socket read");
     return NULL;
 }
 
@@ -83,7 +84,7 @@ CServer_ConnectionPool::CServer_ConnectionPool(unsigned max_connections) :
     // m_ControlSocketForPoll
     unsigned short port;
     CListeningSocket listener;
-    static const STimeout kTimeout = { 0, 500000 }; // 500 ms
+    static const STimeout kTimeout = { 10, 500000 }; // 500 ms // DEBUG
     for (port = 2049; port < 65535; ++port) {
         if (eIO_Success == listener.Listen(port, 5, fLSCE_BindLocal))
             break;
@@ -123,6 +124,7 @@ bool CServer_ConnectionPool::Add(TConnBase* conn, EConnType type)
 
     if (data.size() >= m_MaxConnections) {
         // XXX - try to prune old idle connections before giving up?
+        _TRACE("Failed to add connection " << conn << " to pool");
         return false;
     }
 
@@ -130,6 +132,7 @@ bool CServer_ConnectionPool::Add(TConnBase* conn, EConnType type)
     info.type = type;
     info.UpdateExpiration(conn);
 
+    _TRACE("Added connection " << conn << " to pool");
     return true;
 }
 
@@ -150,7 +153,10 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn, EConnType type)
     if (type == eInactiveSocket) {
         // DEBUG if (it != data.end() && !it->first->IsOpen())
         //     printf("Socket just closed\n");
+        _TRACE("Connection inactive " << conn);
+//        _TRACE("Control socket BEGIN");
         EIO_Status status = m_ControlSocket.Write("", 1, NULL, eIO_WritePlain);
+//        _TRACE("Control socket END");
         if (status != eIO_Success) {
             ERR_POST_X(4, Warning
                        << "SetConnType: failed to write to control socket: "
@@ -178,8 +184,10 @@ void CServer_ConnectionPool::Clean(void)
         CServer_Connection* conn = dynamic_cast<CServer_Connection*>(it->first);
         if (!it->first->IsOpen() || info.expiration <= now) {
             if (info.expiration <= now) {
+                _TRACE("Timeout on " << dynamic_cast<TConnBase *>(it->first));
                 it->first->OnTimeout();
             } else {
+                _TRACE("Closed " << dynamic_cast<TConnBase *>(it->first));
                 conn->OnSocketEvent(eIO_Close);
             }
             to_delete.push_back(it->first);
@@ -212,15 +220,18 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
     const CTime* alarm_time = NULL;
     const CTime* min_alarm_time = NULL;
     bool alarm_time_defined = false;
+//    _TRACE("Connection map of size " << data.size());
     ITERATE (TData, it, data) {
         // Check that socket is not processing packet - safeguards against
         // out-of-order packet processing by effectively pulling socket from
         // poll vector until it is done with previous packet. See comments in
         // server.cpp: CServer_Connection::CreateRequest() and
         // CServerConnectionRequest::Process()
+//        _TRACE("Considering " << dynamic_cast<TConnBase *>(it->first));
         if (it->second.type != eActiveSocket && it->first->IsOpen()) {
             CPollable* pollable = dynamic_cast<CPollable*>(it->first);
             _ASSERT(pollable);
+//            _TRACE("ConnBase " << dynamic_cast<TConnBase *>(it->first) << " inserted");
             polls.push_back(CSocketAPI::SPoll(pollable,
                 it->first->GetEventsToPollFor(&alarm_time)));
             if (alarm_time != NULL) {

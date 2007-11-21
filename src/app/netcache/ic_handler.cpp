@@ -362,21 +362,26 @@ bool CICacheHandler::ProcessTransmission(
         WriteMsg(GetSocket(), "ERR:", "Blob overflow");
         return false;
     }
-    ERW_Result res = 
-        m_Writer->Write(buf, buf_size, &bytes_written);
-    m_BlobSize -= buf_size;
-    if (res != eRW_Success) {
-        WriteMsg(GetSocket(), "ERR:", "Server I/O error");
-        m_Server->RegisterInternalErr(
-            SBDB_CacheUnitStatistics::eErr_Put, *m_Auth);
-        return false;
+    if ((eot != eTransmissionLastBuffer) || buf_size) {
+        ERW_Result res = 
+            m_Writer->Write(buf, buf_size, &bytes_written);
+        m_BlobSize -= buf_size;
+        if (res != eRW_Success) {
+            WriteMsg(GetSocket(), "ERR:", "Server I/O error");
+            m_Server->RegisterInternalErr(
+                SBDB_CacheUnitStatistics::eErr_Put, *m_Auth);
+            return false;
+        }
     }
-    if (eot == eTransmissionLastBuffer) {
+    if ((eot == eTransmissionLastBuffer) ||
+        (m_SizeKnown && (m_BlobSize == 0))) {
         m_Writer->Flush();
         m_Writer.reset(0);
         if (m_SizeKnown && (m_BlobSize != 0))
             WriteMsg(GetSocket(), "ERR:",
                      "eCommunicationError:Unexpected EOF");
+        _TRACE("EOT");
+        GetSocket().Close();
     }
     return true;
 }
