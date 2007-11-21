@@ -54,8 +54,8 @@ static const char *s_Runpath         = s_DefaultRunpath;
 
 static const char s_DefaultSybaseLocalPath[] = "@SYBASE_LCL_PATH@";
 static const char s_DefaultSybaseNetPath[]   = "@SYBASE_PATH@";
-static const char *s_DefaultSybasePath       = NULL;
-static const char *s_SybasePath              = NULL;
+static const char *s_DefaultSybasePath       = 0;
+static const char *s_SybasePath              = 0;
 
 
 const char* NCBI_GetDefaultRunpath(void)
