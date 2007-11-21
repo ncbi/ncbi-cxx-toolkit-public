@@ -34,6 +34,8 @@
 
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
+#include <corelib/ncbifile.hpp>
+
 #include <algorithm>
 
 #if defined(NCBI_OS_MSWIN)
@@ -41,6 +43,7 @@
 #endif
 
 BEGIN_NCBI_SCOPE
+
 
 namespace impl
 {
@@ -139,21 +142,37 @@ void CDriverContext::SetExtraMsg(const string& msg)
 void CDriverContext::ResetEnvSybase(void) const
 {
     CMutexGuard mg(m_CtxMtx);
-
     CNcbiEnvironment env;
-    bool reset_sybase = false;
-    const string& sybase = env.Get("SYBASE");
 
+    // If user forces his own Sybase client path using $RESET_SYBASE
+    // and $SYBASE -- use that unconditionally.
     try {
-        reset_sybase = NStr::StringToBool(env.Get("RESET_SYBASE"));
+        if (!env.Get("SYBASE").empty()  &&
+            NStr::StringToBool(env.Get("RESET_SYBASE"))) {
+            return;
+        }
+        // ...else try hardcoded paths 
     } catch (const CStringException&) {
-        // Conversion error. Just ignore it ...
+        // Conversion error -- try hardcoded paths too
     }
 
-    if (!reset_sybase || sybase.empty()) {
+    // User-set or default hardcoded path
+    if ( CDir(NCBI_GetSybasePath()).CheckAccess(CDirEntry::fRead) ) {
+        env.Set("SYBASE", NCBI_GetSybasePath());
+        return;
+    }
+
+    // If NCBI_SetSybasePath() was used to set up the Sybase path, and it is
+    // not right, then use the very Sybase client against which the code was
+    // compiled
+    if ( !NStr::Equal(NCBI_GetSybasePath(), NCBI_GetDefaultSybasePath())  &&
+         CDir(NCBI_GetDefaultSybasePath()).CheckAccess(CDirEntry::fRead) ) {
         env.Set("SYBASE", NCBI_GetDefaultSybasePath());
     }
+
+    // Else, well, use whatever $SYBASE there is
 }
+
 
 void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 {
