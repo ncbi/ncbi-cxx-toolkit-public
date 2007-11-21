@@ -924,8 +924,11 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
             }
             map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
             if ( mapped_feat ) {
+                // SetMappedLocation must be called before SetMappedSeq_feat
+                SetMappedLocation(ref, loctype);
                 // This will also set location and partial of mapped feature
                 map_info.SetMappedSeq_feat(*mapped_feat);
+                return;
             }
         }
         else {
@@ -1017,8 +1020,11 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref,
             }
             map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
             if ( mapped_feat ) {
+                // SetMappedLocation must be called before SetMappedSeq_feat
+                SetMappedLocation(ref, loctype);
                 // This will also set location and partial of mapped feature
                 map_info.SetMappedSeq_feat(*mapped_feat);
+                return;
             }
         }
         else if ( index.LocationIsSimple() ) {
