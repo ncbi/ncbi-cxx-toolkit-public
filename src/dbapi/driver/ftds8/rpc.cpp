@@ -240,7 +240,8 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
         }
         case eDB_BigInt: {
             const CDB_BigInt& val = dynamic_cast<const CDB_BigInt&> (param);
-            sprintf(val_buffer, "%lld\n", val.Value());
+            string s8 = NStr::Int8ToString(val.Value());
+            s8.copy(val_buffer, s8.size());
             break;
         }
         case eDB_Char: {
