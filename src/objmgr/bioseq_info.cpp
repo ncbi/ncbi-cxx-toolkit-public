@@ -52,6 +52,8 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Ref_ext.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
@@ -265,7 +267,7 @@ CRef<CBioseq> CBioseq_Info::sx_ShallowCopy(const TObject& src)
         obj->SetId() = src.GetId();
     }
     if ( src.IsSetDescr() ) {
-        obj->SetDescr(const_cast<TDescr&>(src.GetDescr()));
+        obj->SetDescr().Set() = src.GetDescr().Get();
     }
     if ( src.IsSetInst() ) {
         CRef<TInst> inst = sx_ShallowCopy(src.GetInst());

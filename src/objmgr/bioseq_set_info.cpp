@@ -45,6 +45,8 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 #include <algorithm>
 
@@ -289,7 +291,7 @@ CRef<CBioseq_set> CBioseq_set_Info::sx_ShallowCopy(const CBioseq_set& src)
         obj->SetDate(const_cast<TDate&>(src.GetDate()));
     }
     if ( src.IsSetDescr() ) {
-        obj->SetDescr(const_cast<TDescr&>(src.GetDescr()));
+        obj->SetDescr().Set() = src.GetDescr().Get();
     }
     if ( src.IsSetSeq_set() ) {
         obj->SetSeq_set() = src.GetSeq_set();
