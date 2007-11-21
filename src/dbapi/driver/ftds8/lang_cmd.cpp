@@ -310,6 +310,7 @@ bool CTDS_LangCmd::x_AssignParams()
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
                 string s8 = NStr::Int8ToString(val.Value());
                 s8.copy(val_buffer, s8.size());
+                val_buffer[s8.size()] = '\0';
                 break;
             }
             case eDB_Char: {
