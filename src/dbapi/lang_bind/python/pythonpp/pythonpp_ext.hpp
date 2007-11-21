@@ -46,7 +46,7 @@ extern "C"
 {
     typedef PyObject* (*TMethodVarArgsHandler)( PyObject* self, PyObject* args );
     typedef PyObject* (*TMethodKeywordHandler)( PyObject* self, PyObject* args, PyObject* dict );
-};
+}
 
 //////////////////////////////////////////////////////////////////////////
 /// Introduces constructor methods for a python PyMethodDef structure ...
