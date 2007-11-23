@@ -1536,50 +1536,9 @@ CScope_Impl::GetEditDataSource(CDataSource_ScopeInfo& src_ds,
 }
 
 
-#define EDITHANDLE_IS_NEW 0
-
 CTSE_Handle CScope_Impl::GetEditHandle(const CTSE_Handle& handle)
 {
     _ASSERT(handle);
-#if EDITHANDLE_IS_NEW
-
-    _ASSERT(!handle.CanBeEdited());
-    CTSE_ScopeInfo& src_scope_info = handle.x_GetScopeInfo();
-    if ( src_scope_info.m_EditLock ) {
-        return *src_scope_info.m_EditLock;
-    }
-    TWriteLockGuard guard(m_ConfLock);
-    if ( src_scope_info.m_EditLock ) {
-        return *src_scope_info.m_EditLock;
-    }
-    CDataSource_ScopeInfo& src_ds = src_scope_info.GetDSInfo();
-    CRef<CDataSource_ScopeInfo> edit_ds = GetEditDataSource(src_ds);
-    // load all missing information if split
-    src_scope_info.m_TSE_Lock->GetCompleteSeq_entry();
-    CRef<CTSE_Info> new_tse(new CTSE_Info(src_scope_info.m_TSE_Lock));
-#if 0 && defined(_DEBUG)
-    LOG_POST_X(14, "CTSE_Info is copied, map.size()="<<
-               new_tse->m_BaseTSE->m_ObjectCopyMap.size());
-    LOG_POST_X(15, typeid(*new_tse->m_BaseTSE->m_BaseTSE).name() <<
-               "(" << &*new_tse->m_BaseTSE->m_BaseTSE << ")" <<
-               " -> " <<
-               typeid(*new_tse).name() <<
-               "(" << new_tse << ")");
-    ITERATE ( TEditInfoMap, it, new_tse->m_BaseTSE->m_ObjectCopyMap ) {
-        LOG_POST_X(16, typeid(*it->first).name() <<
-                   "(" << it->first << ")" <<
-                   " -> " <<
-                   typeid(*it->second).name() <<
-                   "(" << it->second << ")");
-    }
-#endif
-    CTSE_Lock edit_tse_lock = edit_ds->GetDataSource().AddStaticTSE(new_tse);
-    src_scope_info.m_EditLock = edit_ds->GetTSE_Lock(edit_tse_lock);
-    x_ClearCacheOnEdit(src_scope_info);
-    return *src_scope_info.m_EditLock;
-
-#else
-
     if ( handle.CanBeEdited() ) {
         return handle;
     }
@@ -1597,7 +1556,7 @@ CTSE_Handle CScope_Impl::GetEditHandle(const CTSE_Handle& handle)
     CTSE_Lock new_tse_lock = new_ds->GetDataSource().AddStaticTSE(new_tse);
     scope_info.SetEditTSE(new_tse_lock, *new_ds,
                           new_tse_lock->m_BaseTSE->m_ObjectCopyMap);
-    const_cast<CTSE_Info&>(*new_tse_lock).m_BaseTSE.reset();
+    const_cast<CTSE_Info&>(*new_tse_lock).m_BaseTSE->m_ObjectCopyMap.clear();
     _ASSERT(handle.CanBeEdited());
     _ASSERT(!old_ds->CanBeEdited());
 
@@ -1611,184 +1570,42 @@ CTSE_Handle CScope_Impl::GetEditHandle(const CTSE_Handle& handle)
         old_ds->DetachScope();
     }
     return handle;
-
-#endif
 }
 
 
 CBioseq_EditHandle CScope_Impl::GetEditHandle(const CBioseq_Handle& h)
 {
     CHECK_HANDLE(GetEditHandle, h);
-
-#if EDITHANDLE_IS_NEW
-
-    if ( h.GetTSE_Handle().CanBeEdited() ) {
-        // use original TSE
-        return CBioseq_EditHandle(h);
-    }
-    
-    CBioseq_EditHandle ret;
-
-    CTSE_Handle edit_tse(GetEditHandle(h.GetTSE_Handle()));
-    _ASSERT(edit_tse && edit_tse != h.GetTSE_Handle());
-    const CTSE_Info& edit_tse_info = edit_tse.x_GetTSE_Info();
-
-    // find corresponding info in edit_tse
-    const TEditInfoMap& info_map = edit_tse_info.m_BaseTSE->m_ObjectCopyMap;
-    TEditInfoMap::const_iterator iter =
-        info_map.find(CConstRef<CObject>(&h.x_GetInfo()));
-    CConstRef<CBioseq_Info> edit_info;
-    if ( iter != info_map.end() ) {
-        edit_info = dynamic_cast<const CBioseq_Info*>(&*iter->second);
-    }
-
-    if ( !edit_info || !edit_info->BelongsToTSE_Info(edit_tse_info) ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CScope::GetEditHandle: "
-                   "Bioseq already removed from TSE");
-    }
-    
-    ret.m_Handle_Seq_id = h.m_Handle_Seq_id;
-    ret.m_Info = edit_tse.x_GetScopeInfo().GetBioseqLock(null, edit_info);
-    x_UpdateHandleSeq_id(ret);
-    return ret;
-
-#else
-    
     _VERIFY(GetEditHandle(h.GetTSE_Handle()) == h.GetTSE_Handle());
     _ASSERT(h.GetTSE_Handle().CanBeEdited());
     return CBioseq_EditHandle(h);
-
-#endif
 }
 
 
 CSeq_entry_EditHandle CScope_Impl::GetEditHandle(const CSeq_entry_Handle& h)
 {
     CHECK_HANDLE(GetEditHandle, h);
-
-#if EDITHANDLE_IS_NEW
-
-    if ( h.GetTSE_Handle().CanBeEdited() ) {
-        // use original TSE
-        return CSeq_entry_EditHandle(h);
-    }
-    
-    CTSE_Handle edit_tse(GetEditHandle(h.GetTSE_Handle()));
-    _ASSERT(edit_tse && edit_tse != h.GetTSE_Handle());
-    const CTSE_Info& edit_tse_info = edit_tse.x_GetTSE_Info();
-
-    // find corresponding info in edit_tse
-    const TEditInfoMap& info_map = edit_tse_info.m_BaseTSE->m_ObjectCopyMap;
-    TEditInfoMap::const_iterator iter =
-        info_map.find(CConstRef<CObject>(&h.x_GetInfo()));
-    CRef<CSeq_entry_Info> edit_info;
-    if ( iter != info_map.end() ) {
-        edit_info =
-            dynamic_cast<CSeq_entry_Info*>(iter->second.GetNCPointer());
-    }
-
-    if ( !edit_info || !edit_info->BelongsToTSE_Info(edit_tse_info) ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CScope::GetEditHandle: "
-                   "Seq-entry already removed from TSE");
-    }
-    
-    return CSeq_entry_EditHandle(*edit_info, edit_tse);
-
-#else
-    
     _VERIFY(GetEditHandle(h.GetTSE_Handle()) == h.GetTSE_Handle());
     _ASSERT(h.GetTSE_Handle().CanBeEdited());
     return CSeq_entry_EditHandle(h);
-
-#endif
 }
 
 
 CSeq_annot_EditHandle CScope_Impl::GetEditHandle(const CSeq_annot_Handle& h)
 {
     CHECK_HANDLE(GetEditHandle, h);
-
-#if EDITHANDLE_IS_NEW
-
-    if ( h.GetTSE_Handle().CanBeEdited() ) {
-        // use original TSE
-        return CSeq_annot_EditHandle(h);
-    }
-    
-    CTSE_Handle edit_tse(GetEditHandle(h.GetTSE_Handle()));
-    _ASSERT(edit_tse && edit_tse != h.GetTSE_Handle());
-    const CTSE_Info& edit_tse_info = edit_tse.x_GetTSE_Info();
-
-    // find corresponding info in edit_tse
-    const TEditInfoMap& info_map = edit_tse_info.m_BaseTSE->m_ObjectCopyMap;
-    TEditInfoMap::const_iterator iter =
-        info_map.find(CConstRef<CObject>(&h.x_GetInfo()));
-    CRef<CSeq_annot_Info> edit_info;
-    if ( iter != info_map.end() ) {
-        edit_info =
-            dynamic_cast<CSeq_annot_Info*>(iter->second.GetNCPointer());
-    }
-
-    if ( !edit_info || !edit_info->BelongsToTSE_Info(edit_tse_info) ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CScope::GetEditHandle: "
-                   "Seq-annot already removed from TSE");
-    }
-    
-    return CSeq_annot_EditHandle(*edit_info, edit_tse);
-
-#else
-    
     _VERIFY(GetEditHandle(h.GetTSE_Handle()) == h.GetTSE_Handle());
     _ASSERT(h.GetTSE_Handle().CanBeEdited());
     return CSeq_annot_EditHandle(h);
-
-#endif
 }
 
 
 CBioseq_set_EditHandle CScope_Impl::GetEditHandle(const CBioseq_set_Handle& h)
 {
     CHECK_HANDLE(GetEditHandle, h);
-
-#if EDITHANDLE_IS_NEW
-
-    if ( h.GetTSE_Handle().CanBeEdited() ) {
-        // use original TSE
-        return CBioseq_set_EditHandle(h);
-    }
-    
-    CTSE_Handle edit_tse(GetEditHandle(h.GetTSE_Handle()));
-    _ASSERT(edit_tse && edit_tse != h.GetTSE_Handle());
-    const CTSE_Info& edit_tse_info = edit_tse.x_GetTSE_Info();
-
-    // find corresponding info in edit_tse
-    const TEditInfoMap& info_map = edit_tse_info.m_BaseTSE->m_ObjectCopyMap;
-    TEditInfoMap::const_iterator iter =
-        info_map.find(CConstRef<CObject>(&h.x_GetInfo()));
-    CRef<CBioseq_set_Info> edit_info;
-    if ( iter != info_map.end() ) {
-        edit_info =
-            dynamic_cast<CBioseq_set_Info*>(iter->second.GetNCPointer());
-    }
-
-    if ( !edit_info || !edit_info->BelongsToTSE_Info(edit_tse_info) ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CScope::GetEditHandle: "
-                   "Bioseq-set already removed from TSE");
-    }
-    
-    return CBioseq_set_EditHandle(*edit_info, edit_tse);
-
-#else
-    
     _VERIFY(GetEditHandle(h.GetTSE_Handle()) == h.GetTSE_Handle());
     _ASSERT(h.GetTSE_Handle().CanBeEdited());
     return CBioseq_set_EditHandle(h);
-
-#endif
 }
 
 
