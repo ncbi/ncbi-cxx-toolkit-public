@@ -1,0 +1,20 @@
+# $Id$
+
+# Meta-makefile("APP" project)
+#################################
+
+REQUIRES = dbapi objects algo
+
+APP_PROJ = blastdbcmd makeblastdb blastdb_aliastool
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+makeblastdb:
+	make -f Makefile.makeblastdb_app
+
+blastdbcmd:
+	make -f Makefile.blastdbcmd_app
+
+blastdb_aliastool:
+	make -f Makefile.blastdb_aliastool_app
