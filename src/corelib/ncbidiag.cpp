@@ -568,7 +568,7 @@ extern void SetDiagRequestId(int id)
 
 struct SDiagMessageData
 {
-    SDiagMessageData(void) : m_UID(0), m_Time(CTime::eCurrent) {}
+    SDiagMessageData(void) : m_UID(0), m_Time(GetFastLocalTime()) {}
     ~SDiagMessageData(void) {}
 
     string m_Message;
@@ -1062,7 +1062,7 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
         GetProcessPostNumber(ePostNumber_Increment);
     int tsn = msg ?
         msg->m_ThrPost : thr_data.GetThreadPostNumber(ePostNumber_Increment);
-    CTime timestamp = msg ? msg->GetTime() : CTime(CTime::eCurrent);
+    CTime timestamp = msg ? msg->GetTime() : GetFastLocalTime();
     string host = x_GetHost();
     string client = GetProperty(kProperty_ClientIP);
     string session = GetProperty(kProperty_SessionID);
@@ -2351,7 +2351,7 @@ CDiagContext::TUID SDiagMessage::GetUID(void) const
 
 CTime SDiagMessage::GetTime(void) const
 {
-    return m_Data ? m_Data->m_Time : CTime(CTime::eCurrent);
+    return m_Data ? m_Data->m_Time : GetFastLocalTime();
 }
 
 
@@ -2741,7 +2741,7 @@ void SDiagMessage::x_InitData(void) const
         m_Data->m_UID = GetDiagContext().GetUID();
     }
     if ( m_Data->m_Time.IsEmpty() ) {
-        m_Data->m_Time = CTime(CTime::eCurrent);
+        m_Data->m_Time = GetFastLocalTime();
     }
 }
 
@@ -3107,7 +3107,7 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
 
 CFileHandleDiagHandler::CFileHandleDiagHandler(const string& fname)
     : m_Handle(-1),
-      m_LastReopen(new CTime(CTime::eCurrent))
+      m_LastReopen(new CTime(GetFastLocalTime()))
 {
     SetLogName(fname);
     Reopen(CDiagContext::GetLogTruncate());
@@ -3236,7 +3236,7 @@ CFileDiagHandler::CFileDiagHandler(void)
       m_OwnLog(false),
       m_Trace(0),
       m_OwnTrace(false),
-      m_LastReopen(new CTime(CTime::eCurrent))
+      m_LastReopen(new CTime(GetFastLocalTime()))
 {
     SetLogFile("-", eDiagFile_All, true);
 }
