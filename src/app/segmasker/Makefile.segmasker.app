@@ -4,11 +4,10 @@ REQUIRES = dbapi objects algo
 
 ASN_DEP = seq
 
-APP = dustmasker
-SRC = main dust_mask_app
+APP = segmasker
+SRC = segmasker seg
 
-LIB = xalgodustmask seqmasks_io xobjread creaders xobjutil \
-	$(OBJMGR_LIBS:%=%$(STATIC))
+LIB = xobjsimple seqmasks_io $(BLAST_LIBS) $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

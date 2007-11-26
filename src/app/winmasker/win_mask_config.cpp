@@ -33,11 +33,12 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidbg.hpp>
 
-#include "win_mask_fasta_reader.hpp"
-#include "win_mask_bdb_reader.hpp"
-#include "win_mask_writer_int.hpp"
-#include "win_mask_writer_fasta.hpp"
 #include "win_mask_config.hpp"
+#include <objtools/seqmasks_io/mask_cmdline_args.hpp>
+#include <objtools/seqmasks_io/mask_fasta_reader.hpp>
+#include <objtools/seqmasks_io/mask_bdb_reader.hpp>
+#include <objtools/seqmasks_io/mask_writer_int.hpp>
+#include <objtools/seqmasks_io/mask_writer_fasta.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -46,13 +47,13 @@ USING_SCOPE(objects);
 
 //----------------------------------------------------------------------------
 CWinMaskConfig::CWinMaskConfig( const CArgs & args )
-    : is( !args["mk_counts"].AsBoolean() && args["iformat"].AsString() != "blastdb" ? 
-          ( !args["input"].AsString().empty() 
-            ? new CNcbiIfstream( args["input"].AsString().c_str() ) 
+    : is( !args["mk_counts"].AsBoolean() && args[kInputFormat].AsString() != "blastdb" ? 
+          ( !args[kInput].AsString().empty() 
+            ? new CNcbiIfstream( args[kInput].AsString().c_str() ) 
             : static_cast<CNcbiIstream*>(&NcbiCin) ) : NULL ), reader( NULL ), 
       os( !args["mk_counts"].AsBoolean() ?
-          ( !args["output"].AsString().empty() 
-            ? new CNcbiOfstream( args["output"].AsString().c_str() )
+          ( !args[kOutput].AsString().empty() 
+            ? new CNcbiOfstream( args[kOutput].AsString().c_str() )
             : static_cast<CNcbiOstream*>(&NcbiCout) ) : NULL ), writer( NULL ),
       lstat_name( args["ustat"].AsString() ),
       textend( args["t_extend"] ? args["t_extend"].AsInteger() : 0 ), 
@@ -87,8 +88,8 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
       mem( args["mem"].AsInteger() ),
       unit_size( args["unit"] ? args["unit"].AsInteger() : 0 ),
       genome_size( args["genome_size"] ? args["genome_size"].AsInt8() : 0 ),
-      input( args["input"].AsString() ),
-      output( args["output"].AsString() ),
+      input( args[kInput].AsString() ),
+      output( args[kOutput].AsString() ),
       // th( args["th"].AsString() ),
       th( "90,99,99.5,99.8" ),
       use_dust( args["dust"].AsBoolean() ),
@@ -107,7 +108,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
 {
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
 
-    string iformatstr = args["iformat"].AsString();
+    string iformatstr = args[kInputFormat].AsString();
 
     if( !mk_counts )
     {
@@ -115,20 +116,20 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
         {
             NCBI_THROW( CWinMaskConfigException,
                         eInputOpenFail,
-                        args["input"].AsString() );
+                        args[kInput].AsString() );
         }
 
         if( iformatstr == "fasta" )
-            reader = new CWinMaskFastaReader( *is );
+            reader = new CMaskFastaReader( *is );
         else if( iformatstr == "blastdb" )
-            reader = new CWinMaskBDBReader( args["input"].AsString() );
+            reader = new CMaskBDBReader( args[kInput].AsString() );
 
-        string oformatstr = args["oformat"].AsString();
+        string oformatstr = args[kOutputFormat].AsString();
 
         if( oformatstr == "interval" )
-            writer = new CWinMaskWriterInt( *os );
+            writer = new CMaskWriterInt( *os );
         else if( oformatstr == "fasta" )
-            writer = new CWinMaskWriterFasta( *os );
+            writer = new CMaskWriterFasta( *os );
 
         if( !reader )
         {
@@ -164,7 +165,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
             else
                 NCBI_THROW( CWinMaskConfigException, eInconsistentOptions,
                         "-text_match false can be used only with -mk_counts true "
-                        "and -iformat blastb" );
+                        "and " + string(kInputFormat) + " blastdb" );
         }
 
         FillIdList( ids_file_name, *ids );
@@ -179,7 +180,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
             else
                 NCBI_THROW( CWinMaskConfigException, eInconsistentOptions,
                         "-text_match false can be used only with -mk_counts true "
-                        "and -iformat blastb" );
+                        "and " + string(kInputFormat) + " blastdb" );
         }
 
         FillIdList( exclude_ids_file_name, *exclude_ids );

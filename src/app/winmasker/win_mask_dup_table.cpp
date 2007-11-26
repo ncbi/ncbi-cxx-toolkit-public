@@ -47,7 +47,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include "win_mask_fasta_reader.hpp"
+#include <objtools/seqmasks_io/mask_fasta_reader.hpp>
 #include "win_mask_dup_table.hpp"
 #include "win_mask_util.hpp"
 
@@ -544,7 +544,7 @@ void CheckDuplicates( const vector< string > & input,
     for( input_iterator i( input.begin() ); i != input.end(); ++i )
     {
         CNcbiIfstream istream( i->c_str() );
-        CWinMaskFastaReader reader( istream );
+        CMaskFastaReader reader( istream );
         CRef< CSeq_entry > entry( 0 );
         Uint4 seqnum( 0 );
 

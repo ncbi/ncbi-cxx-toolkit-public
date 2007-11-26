@@ -54,6 +54,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
+#include <objtools/seqmasks_io/mask_cmdline_args.hpp>
 
 #include "dust_mask_app.hpp"
 
@@ -106,13 +107,14 @@ const char * const CDustMaskApplication::USAGE_LINE
 //-------------------------------------------------------------------------
 void CDustMaskApplication::Init(void)
 {
+    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion | fHideDryRun);
     auto_ptr< CArgDescriptions > arg_desc( new CArgDescriptions );
     arg_desc->SetUsageContext( GetArguments().GetProgramBasename(),
                                USAGE_LINE );
-    arg_desc->AddDefaultKey( "input", "input_file_name",
+    arg_desc->AddDefaultKey( kInput, "input_file_name",
                              "input file name",
                              CArgDescriptions::eString, "" );
-    arg_desc->AddDefaultKey( "output", "output_file_name",
+    arg_desc->AddDefaultKey( kOutput, "output_file_name",
                              "output file name",
                              CArgDescriptions::eString, "" );
     arg_desc->AddDefaultKey( "window", "window_size",
@@ -125,12 +127,16 @@ void CDustMaskApplication::Init(void)
                              "DUST linker (how close masked intervals "
                              "should be to get merged together).",
                              CArgDescriptions::eInteger, "1" );
-    arg_desc->AddDefaultKey( "oformat", "output_format",
+    arg_desc->AddDefaultKey( kOutputFormat, "output_format",
                              "output format",
-                             CArgDescriptions::eString, "interval" );
-    arg_desc->SetConstraint( "oformat",
-                             (new CArgAllow_Strings())->Allow( "interval" )
-                             ->Allow( "fasta" )->Allow( "acclist" ) );
+                             CArgDescriptions::eString, *kOutputFormats );
+    CArgAllow_Strings* strings_allowed = new CArgAllow_Strings();
+    for (size_t i = 0; i < kNumOutputFormats; i++) {
+        strings_allowed->Allow(kOutputFormats[i]);
+    }
+    strings_allowed->Allow("acclist");
+    arg_desc->SetConstraint( kOutputFormat, strings_allowed );
+
     SetupArgDescriptions( arg_desc.release() );
 }
 
@@ -244,21 +250,21 @@ int CDustMaskApplication::Run (void)
     CNcbiIstream * input_stream = NULL;
     CNcbiOstream * output_stream = NULL;
     
-    if( GetArgs()["input"].AsString().empty() )
+    if( GetArgs()[kInput].AsString().empty() )
         input_stream = &cin;
     else
     {
         input_stream_ptr.reset(
-            new CNcbiIfstream( GetArgs()["input"].AsString().c_str() ) );
+            new CNcbiIfstream( GetArgs()[kInput].AsString().c_str() ) );
         input_stream = input_stream_ptr.get();
     }
 
-    if( GetArgs()["output"].AsString().empty() )
+    if( GetArgs()[kOutput].AsString().empty() )
         output_stream = &cout;
     else
     {
         output_stream_ptr.reset(
-            new CNcbiOfstream( GetArgs()["output"].AsString().c_str() ) );
+            new CNcbiOfstream( GetArgs()[kOutput].AsString().c_str() ) );
         output_stream = output_stream_ptr.get();
     }
 
@@ -276,7 +282,7 @@ int CDustMaskApplication::Run (void)
     out_handler_type out_handler = 0;
 
     {
-        std::string oformat = GetArgs()["oformat"].AsString();
+        std::string oformat = GetArgs()[kOutputFormat].AsString();
         
         if( oformat == "interval" ) {
             out_handler = &interval_out_handler;

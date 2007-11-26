@@ -23,70 +23,64 @@
  *
  * ===========================================================================
  *
- * Author:  Aleksandr Morgulis
+ * Author:  Christiam Camacho
  *
  * File Description:
- *   Header file for CWinMaskReader class.
+ *   CSegMasker class definition.
  *
  */
 
-#ifndef C_WIN_MASK_READER_H
-#define C_WIN_MASK_READER_H
+#ifndef __SEG_MASKER__HPP
+#define __SEG_MASKER__HPP
 
-#include <corelib/ncbiobj.hpp>
-#include <corelib/ncbistre.hpp>
-#include <objects/seqset/Seq_entry.hpp>
+#include <algo/blast/core/blast_def.h>
+#include <objmgr/seq_vector.hpp>
+#include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
 
 /**
- **\brief Virtual base class for all input readers.
- **
- ** Each derived class should implement GetNextSequence()
- ** interface to supply new sequences to the user.
+ **\brief This class encapsulates the SEG filtering algorithm
  **
  **/
-class CWinMaskReader
+class CSegMasker
 {
 public:
+
+    /**\brief Type representing a list of masked segments. */
+    typedef vector< pair<TSeqPos, TSeqPos> > TMaskList;
 
     /**
      **\brief Object constructor.
      **
-     **\param newInputStream iostream object from which the
-     **                      data will be read. The format
-     **                      of the data is determined by
-     **                      the implementation.
+     **\param window seg window
+     **\param locut seg locut
+     **\param hicut seg hicut
      **
      **/
-    CWinMaskReader( CNcbiIstream & newInputStream )
-        : input_stream( newInputStream ) {}
+    CSegMasker(int window = kSegWindow, 
+               double locut = kSegLocut, 
+               double hicut = kSegHicut);
 
     /**
      **\brief Object destructor.
+     **
      **/
-    virtual ~CWinMaskReader() {}
+    ~CSegMasker();
 
     /**
-     **\brief Read the next sequence from the source stream.
+     **\brief Function performing the actual dusting.
      **
-     **\return Pointer (reference counting) to the next biological
-     **        sequence entry read from the data source. Returns
-     **        CRef( CSeq_entry >( NULL ) if no more data is
-     **        available.
+     **\param data sequence data in NCBISTDAA format
+     **\return pointer to a list of filtered regions
      **
      **/
-    virtual CRef< objects::CSeq_entry > GetNextSequence() = 0;
+    TMaskList * operator()(const objects::CSeqVector & data);
 
-protected:
-
-    /**\internal
-     **\brief istream object to read data from.
-     **
-     **/
-    CNcbiIstream & input_stream;
+private:
+    struct SegParameters* m_SegParameters; ///< Parameters to SEG algorithm
 };
 
 END_NCBI_SCOPE
 
-#endif
+#endif /* __SEG_MASKER__HPP */

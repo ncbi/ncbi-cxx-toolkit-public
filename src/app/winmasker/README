@@ -19,9 +19,9 @@ ABSTRACT
 
 SYNOPSIS
 
-    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format] [-smem available_memory] [-use_ba use_bit_arrays]
+    windowmasker -mk_counts true [-in input_file_name] [-out output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format] [-smem available_memory] [-use_ba use_bit_arrays]
 
-    windowmasker -ustat unit_counts [-input input_file_name] [-output output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-iformat input_format] [-oformat output_format] [-dust use_dust] [-exclude_ids exclude_id_list] [-ids id_list] [-text_match text_match_ids] [-use_ba use_bit_arrays]
+    windowmasker -ustat unit_counts [-in input_file_name] [-out output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-infmt input_format] [-outfmt output_format] [-dust use_dust] [-exclude_ids exclude_id_list] [-ids id_list] [-text_match text_match_ids] [-use_ba use_bit_arrays]
 
 
 DESCRIPTION
@@ -145,10 +145,10 @@ Stage 1 Options
 
         default: false
 
-        If the value of this parameter is true, then "-input" option
+        If the value of this parameter is true, then "-in" option
         specifies a file containing a list of pathnames (one pathname
         per line) to the FASTA formatted files that will be used as 
-        input. Otherwise "-input" option specifies a single FASTA
+        input. Otherwise "-in" option specifies a single FASTA
         formatted file.
 
     -genome_size genome_size
@@ -161,7 +161,7 @@ Stage 1 Options
         does not have any effect if "-unit" option is specified. 
         Otherwise it is used to compute the unit length.
 
-    -input input_file_name
+    -in input_file_name
 
         default: <empty>
 
@@ -185,7 +185,7 @@ Stage 1 Options
         subpasses.  This is especially true for large (>=14) values 
         of unit length.
 
-    -output output_file_name
+    -out output_file_name
 
         default: <stdout>
 
@@ -259,7 +259,7 @@ Stage 2 Options
         Use the symmetric algorithm of the DUST module in addition 
         to the WinMask module to mask out low-complexity regions. 
 
-    -input input_file_name
+    -in input_file_name
 
         default: <stdin>
 
@@ -267,7 +267,7 @@ Stage 2 Options
         input in FASTA format. If this option is skipped, then the 
         standard input will be used as the source of input. 
 
-    -iformat input_format
+    -infmt input_format
 
         default: fasta
 
@@ -275,7 +275,7 @@ Stage 2 Options
         FASTA formatted file, and "blastdb" for reading sequence data
         from a BLAST database. 
 
-    -oformat output_format
+    -outfmt output_format
 
         default: interval
 
@@ -289,12 +289,12 @@ Stage 2 Options
         are considered unmasked and window masker does not preserve 
         the case of the input.]
 
-    -output output_file_name
+    -out output_file_name
 
         default: <stdout>
 
         Specifies the output file. The output file format depends on
-        the value of "-oformat" option. If this option is skipped,
+        the value of "-outfmt" option. If this option is skipped,
         then the standard output will be used as the output file
         descriptor.
 
@@ -403,11 +403,11 @@ FILES
 
     If the genome data is contained in multiple FASTA formatted
     files, then "-fa_list true" should be used and the value of 
-    "-input" option should name the file containing the list of the 
+    "-in" option should name the file containing the list of the 
     required FASTA files, one file per line. For example, for human 
     genome build 34, one could have one FASTA file per chromosome 
     named chrX.fa, chrY.fa, chr1.fa, chr2.fa, ..., chr22.fa located 
-    in the /human34 directory. Then the file given to the "-input" 
+    in the /human34 directory. Then the file given to the "-in" 
     option should look like this:
 
 /human34/chr1.fa
@@ -550,7 +550,7 @@ gi|20349357|ref|NT_033777.1|
     WindowMasker Interval Output Format
 
     By default the output of WindowMasker Stage 2 is in Interval
-    format ("-oformat interval"). The file is an ASCII text file
+    format ("-outfmt interval"). The file is an ASCII text file
     consisting of blocks of information for each input sequence in 
     the order those sequences appear in the input FASTA file.  Each 
     block starts with the FASTA title of the sequence followed by the 
@@ -631,7 +631,7 @@ SAMPLE WINDOWMASKER SESSION
     progress by printing dots to standard error (stderr).
 
 
-./windowmasker -mk_counts true -fa_list true -input fa_list -checkdup true -output ustat.15
+./windowmasker -mk_counts true -fa_list true -in fa_list -checkdup true -out ustat.15
 Possible duplication of sequences:
 subject: lcl|Hs1_27103_34 and query: lcl|Hs1_33153_34
 at intervals
@@ -660,7 +660,7 @@ Pass 2..........................................................................
     progress information is printed on standard error (stderr).
 
 
-./windowmasker -ustat ustat.15 -input chr1.fa -output chr1.wm -dust true
+./windowmasker -ustat ustat.15 -in chr1.fa -out chr1.wm -dust true
 
 
     The output in the interval format is written to chr1.wm.

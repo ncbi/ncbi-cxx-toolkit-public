@@ -50,9 +50,10 @@
 
 #include "win_mask_app.hpp"
 #include "win_mask_config.hpp"
-#include "win_mask_reader.hpp"
-#include "win_mask_fasta_reader.hpp"
-#include "win_mask_writer.hpp"
+#include <objtools/seqmasks_io/mask_cmdline_args.hpp>
+#include <objtools/seqmasks_io/mask_reader.hpp>
+#include <objtools/seqmasks_io/mask_fasta_reader.hpp>
+#include <objtools/seqmasks_io/mask_writer.hpp>
 #include "win_mask_gen_counts.hpp"
 #include "win_mask_util.hpp"
 #include "win_mask_sdust_masker.hpp"
@@ -69,6 +70,7 @@ CWinMaskApplication::USAGE_LINE = "Window based sequence masker";
 //-------------------------------------------------------------------------
 void CWinMaskApplication::Init(void)
 {
+    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion | fHideDryRun);
     auto_ptr< CArgDescriptions > arg_desc( new CArgDescriptions );
 
     // Set the program description
@@ -80,11 +82,11 @@ void CWinMaskApplication::Init(void)
                              "file with unit counts"
                              "(required if -mk_counts is false)",
                              CArgDescriptions::eString, "" );
-    arg_desc->AddDefaultKey( "input", "input_file_name",
+    arg_desc->AddDefaultKey( kInput, "input_file_name",
                              "input file name "
                              "(not optional if used with -mk_counts option)",
                              CArgDescriptions::eString, "" );
-    arg_desc->AddDefaultKey( "output", "output_file_name",
+    arg_desc->AddDefaultKey( kOutput, "output_file_name",
                              "output file name",
                              CArgDescriptions::eString, "" );
     arg_desc->AddDefaultKey( "checkdup", "check_duplicates",
@@ -123,12 +125,12 @@ void CWinMaskApplication::Init(void)
                              "the way to handle ambiguity characters",
                              CArgDescriptions::eString, "break" );
 #endif
-    arg_desc->AddDefaultKey( "iformat", "input_format",
+    arg_desc->AddDefaultKey( kInputFormat, "input_format",
                              "controls the format of the masker input (for masking stage only)",
-                             CArgDescriptions::eString, "fasta" );
-    arg_desc->AddDefaultKey( "oformat", "output_format",
+                             CArgDescriptions::eString, *kInputFormats );
+    arg_desc->AddDefaultKey( kOutputFormat, "output_format",
                              "controls the format of the masker output (for masking stage only)",
-                             CArgDescriptions::eString, "interval" );
+                             CArgDescriptions::eString, *kOutputFormats );
     arg_desc->AddDefaultKey( "sformat", "unit_counts_format",
                              "controls the format of the file containing the unit counts (for counts generation only)",
                              CArgDescriptions::eString, "ascii" );
@@ -253,12 +255,16 @@ void CWinMaskApplication::Init(void)
     arg_desc->SetConstraint( "ambig",
                              (new CArgAllow_Strings())->Allow( "break" ) );
 #endif
-    arg_desc->SetConstraint( "iformat",
-                             (new CArgAllow_Strings())->Allow( "fasta" )
-                             ->Allow( "blastdb" ) );
-    arg_desc->SetConstraint( "oformat",
-                             (new CArgAllow_Strings())->Allow( "interval" )
-                             ->Allow( "fasta" ) );
+    CArgAllow_Strings* strings_allowed = new CArgAllow_Strings();
+    for (size_t i = 0; i < kNumInputFormats; i++) {
+        strings_allowed->Allow(kInputFormats[i]);
+    }
+    arg_desc->SetConstraint( kInputFormat, strings_allowed );
+    strings_allowed = new CArgAllow_Strings();
+    for (size_t i = 0; i < kNumOutputFormats; i++) {
+        strings_allowed->Allow(kOutputFormats[i]);
+    }
+    arg_desc->SetConstraint( kOutputFormat, strings_allowed );
     arg_desc->SetConstraint( "sformat",
                              (new CArgAllow_Strings())
                              ->Allow( "ascii" )
@@ -319,8 +325,8 @@ int CWinMaskApplication::Run (void)
         return 0;
     }
 
-    CWinMaskReader & theReader = aConfig.Reader();
-    CWinMaskWriter & theWriter = aConfig.Writer();
+    CMaskReader & theReader = aConfig.Reader();
+    CMaskWriter & theWriter = aConfig.Writer();
     CSeqMasker theMasker( aConfig.LStatName(),
                           aConfig.WindowSize(),
                           aConfig.WindowStep(),

@@ -50,7 +50,7 @@
 
 #include <algo/winmask/seq_masker_util.hpp>
 
-#include "win_mask_fasta_reader.hpp"
+#include <objtools/seqmasks_io/mask_fasta_reader.hpp>
 #include "win_mask_gen_counts.hpp"
 #include "win_mask_dup_table.hpp"
 #include "win_mask_util.hpp"
@@ -106,7 +106,7 @@ string mkdata( const CSeq_entry & entry )
 Uint8 CWinMaskCountsGenerator::fastalen( const string & fname ) const
 {
     CNcbiIfstream input_stream( fname.c_str() );
-    CWinMaskFastaReader reader( input_stream );
+    CMaskFastaReader reader( input_stream );
     CRef< CSeq_entry > entry( 0 );
     Uint8 result = 0;
 
@@ -390,7 +390,7 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
          it != input_list.end(); ++it )
     {
         CNcbiIfstream input_stream( it->c_str() );
-        CWinMaskFastaReader reader( input_stream );
+        CMaskFastaReader reader( input_stream );
         CRef< CSeq_entry > entry( 0 );
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )

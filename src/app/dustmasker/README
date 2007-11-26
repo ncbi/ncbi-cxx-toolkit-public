@@ -12,7 +12,8 @@ ABSTRACT
 
 SYNOPSIS
 
-    dustmasker [-input input_file_name] [-output output_file_name] [-window window_size] [-level level] [-linker linker] [-oformat output_format] 
+    dustmasker [-in input_file_name] [-out output_file_name] [-window
+    window_size] [-level level] [-linker linker] [-outfmt output_format] 
 
 DESCRIPTIONS
 
@@ -29,7 +30,7 @@ OPTIONS
     In this section, command line options to DustMasker are 
     explained. 
 
-    -input input_file_name
+    -in input_file_name
 
         default: <empty>
 
@@ -51,7 +52,7 @@ OPTIONS
         the end of the previous masked interval at which those intervals
         should be merged into one.
 
-    -oformat output_format
+    -outfmt output_format
 
         default: interval
 
@@ -70,7 +71,7 @@ OPTIONS
         content is identical to the input file except that the masked
         parts are written in lower case letters.
 
-    -output output_file_name
+    -out output_file_name
 
         default: <empty>
 

@@ -45,8 +45,8 @@
 
 BEGIN_NCBI_SCOPE
 
-class CWinMaskReader;
-class CWinMaskWriter;
+class CMaskReader;
+class CMaskWriter;
 
 /**
  **\brief Objects of this class contain winmasker configuration data.
@@ -232,7 +232,7 @@ public:
      **\return the current input reader.
      **
      **/
-    CWinMaskReader & Reader() { return *reader; }
+    CMaskReader & Reader() { return *reader; }
 
     /**
      **\brief Get the output writer object.
@@ -240,7 +240,7 @@ public:
      **\return the current output writer.
      **
      **/
-    CWinMaskWriter & Writer() { return *writer; }
+    CMaskWriter & Writer() { return *writer; }
 
     /**
      **\brief Get the t_extend value.
@@ -774,9 +774,9 @@ private:
      **/
     //@{
     CIstreamProxy is;               /**< input file resource manager */
-    CWinMaskReader * reader;        /**< input reader object */
+    CMaskReader * reader;           /**< input reader object */
     COstreamProxy os;               /**< output file resource manager */
-    CWinMaskWriter * writer;        /**< output writer object */
+    CMaskWriter * writer;           /**< output writer object */
     string lstat_name;              /**< name of the file containing unit length statitsics */
     Uint4 textend;                  /**< t_extend value for extension of masked intervals */
     Uint4 cutoff_score;             /**< window score that triggers masking */
