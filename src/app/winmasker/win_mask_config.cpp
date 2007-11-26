@@ -39,6 +39,7 @@
 #include <objtools/seqmasks_io/mask_bdb_reader.hpp>
 #include <objtools/seqmasks_io/mask_writer_int.hpp>
 #include <objtools/seqmasks_io/mask_writer_fasta.hpp>
+#include <objtools/seqmasks_io/mask_writer_seqloc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -130,6 +131,10 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
             writer = new CMaskWriterInt( *os );
         else if( oformatstr == "fasta" )
             writer = new CMaskWriterFasta( *os );
+        else if( NStr::StartsWith(oformatstr, "seqloc_") )
+            writer = new CMaskWriterSeqLoc( *os, oformatstr );
+        else
+            _ASSERT("Unknown output format" == 0);
 
         if( !reader )
         {

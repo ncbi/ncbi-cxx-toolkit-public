@@ -1,11 +1,13 @@
 # $Id$
 
 LIB = seqmasks_io
-SRC = mask_bdb_reader \
+SRC = mask_cmdline_args \
+mask_bdb_reader \
 mask_fasta_reader \
 mask_writer \
 mask_writer_fasta \
-mask_writer_int
+mask_writer_int \
+mask_writer_seqloc
 
 ASN_DEP = seqset
 DLL_LIB = seqdb blastdb

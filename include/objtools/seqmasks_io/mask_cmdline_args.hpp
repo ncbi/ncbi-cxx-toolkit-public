@@ -35,25 +35,32 @@
 #ifndef __MASK_CMDLINE_ARGS__HPP__
 #define __MASK_CMDLINE_ARGS__HPP__
 
+#include <ncbiconf.h>
+#include <corelib/ncbistd.hpp>
+#include <corelib/mswin_export.h>
 #include <string>
 
+BEGIN_NCBI_SCOPE
+
 /// Command line flag to specify the input
-NCBI_XOBJREAD_EXPORT const std::string kInput;
+NCBI_XOBJREAD_EXPORT extern const std::string kInput;
 /// Command line flag to specify the input format
-NCBI_XOBJREAD_EXPORT const std::string kInputFormat;
+NCBI_XOBJREAD_EXPORT extern const std::string kInputFormat;
 /// Command line flag to specify the output
-NCBI_XOBJREAD_EXPORT const std::string kOutput;
+NCBI_XOBJREAD_EXPORT extern const std::string kOutput;
 /// Command line flag to specify the output format
-NCBI_XOBJREAD_EXPORT const std::string kOutputFormat;
+NCBI_XOBJREAD_EXPORT extern const std::string kOutputFormat;
 
 /// Number of elements in kInputFormats
-NCBI_XOBJREAD_EXPORT const size_t kNumInputFormats;
+NCBI_XOBJREAD_EXPORT extern const size_t kNumInputFormats;
 /// Number of elements in kOutputFormats
-NCBI_XOBJREAD_EXPORT const size_t kNumOutputFormats;
+NCBI_XOBJREAD_EXPORT extern const size_t kNumOutputFormats;
 /// Input formats allowed, the first one is the default
-NCBI_XOBJREAD_EXPORT const char* kInputFormats[];
+NCBI_XOBJREAD_EXPORT extern const char* kInputFormats[];
 /// Output formats allowed, the first one is the default
-NCBI_XOBJREAD_EXPORT const char* kOutputFormats[];
+NCBI_XOBJREAD_EXPORT extern const char* kOutputFormats[];
+
+END_NCBI_SCOPE
 
 #endif /* __MASK_CMDLINE_ARGS__HPP__ */
 

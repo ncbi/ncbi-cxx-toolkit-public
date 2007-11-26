@@ -23,48 +23,34 @@
  *
  * ===========================================================================
  *
- * Author:  Aleksandr Morgulis
- *
- * File Description:
- *   CMaskWriter class member and method definitions.
+ * Author: 
  *
  */
 
+/** @file mask_cmdline_args.cpp
+ *  
+ */
+
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = 
+    "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 #include <ncbi_pch.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Seq_descr.hpp>
-
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-
-#include <objtools/seqmasks_io/mask_writer.hpp>
+#include <objtools/seqmasks_io/mask_cmdline_args.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 
-//-------------------------------------------------------------------------
-void CMaskWriter::PrintId( CBioseq_Handle& bsh, bool match_id )
-{ 
-    string id_str = ">";
-
-    if( match_id ) {
-        const CBioseq_Handle::TId & ids = bsh.GetId();
-
-        ITERATE( CBioseq_Handle::TId, iter, ids )
-        {
-            id_str += iter->AsString();
-            if( *id_str.rbegin() != '|' ) id_str += "|";
-        }
-
-        id_str += " ";
-    }
-
-    id_str += sequence::GetTitle( bsh ) + "\n";
-    os << id_str;
-}
+/* Constants from mask_cmdline_args.hpp */
+const std::string kInput("in");
+const std::string kInputFormat("infmt");
+const std::string kOutput("out");
+const std::string kOutputFormat("outfmt");
+const size_t kNumInputFormats = 2;
+const size_t kNumOutputFormats = 5;
+const char* kInputFormats[] =  { "fasta", "blastdb" };
+const char* kOutputFormats[] = 
+    { "interval", "fasta", 
+      "seqloc_asn1_bin", "seqloc_asn1_text", "seqloc_xml" };
 
 END_NCBI_SCOPE

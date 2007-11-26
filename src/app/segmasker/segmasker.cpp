@@ -45,6 +45,7 @@
 #include <objtools/seqmasks_io/mask_bdb_reader.hpp>
 #include <objtools/seqmasks_io/mask_writer_int.hpp>
 #include <objtools/seqmasks_io/mask_writer_fasta.hpp>
+#include <objtools/seqmasks_io/mask_writer_seqloc.hpp>
 
 // Object manager includes
 #include <objmgr/object_manager.hpp>
@@ -142,7 +143,7 @@ SegMaskerApplication::x_GetReader()
     } else if (format == "blastdb") {
         retval = new CMaskBDBReader(args[kInput].AsString(), false);
     } else {
-        _ASSERT("Unknown input format" != 0);
+        _ASSERT("Unknown input format" == 0);
     }
     return retval;
 }
@@ -159,8 +160,10 @@ SegMaskerApplication::x_GetWriter()
         retval = new CMaskWriterInt(output);
     } else if (format == "fasta") {
         retval = new CMaskWriterFasta(output);
+    } else if (NStr::StartsWith(format, "seqloc_")) {
+        retval = new CMaskWriterSeqLoc(output, format);
     } else {
-        _ASSERT("Unknown output format" != 0);
+        _ASSERT("Unknown output format" == 0);
     }
     return retval;
 }

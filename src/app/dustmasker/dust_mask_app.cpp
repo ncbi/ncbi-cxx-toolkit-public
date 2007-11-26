@@ -131,6 +131,7 @@ void CDustMaskApplication::Init(void)
                              "output format",
                              CArgDescriptions::eString, *kOutputFormats );
     CArgAllow_Strings* strings_allowed = new CArgAllow_Strings();
+    const size_t kNumOutputFormats = 2;
     for (size_t i = 0; i < kNumOutputFormats; i++) {
         strings_allowed->Allow(kOutputFormats[i]);
     }
@@ -290,6 +291,8 @@ int CDustMaskApplication::Run (void)
             out_handler = &acclist_out_handler;
         }else if( oformat == "fasta" ) {
             out_handler = &fasta_out_handler;
+        }else {
+            _ASSERT("Unknown output format" == 0);
         }
     }
 
