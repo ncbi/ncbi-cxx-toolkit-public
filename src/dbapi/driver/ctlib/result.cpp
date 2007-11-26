@@ -1135,63 +1135,6 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
 
 I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
 {
-    // !!! ReadItem is not suitable here because it may increase value of m_CurrItem
-    // under some conditions.
-    // ReadItem(NULL, 0, NULL);
-
-    // Code, which is almost the same as in ReadItem.
-    {
-        bool is_null = false;
-
-        if ((unsigned int) m_CurrItem >= m_NofCols  ||  m_CurrItem == -1) {
-            return 0;
-        }
-
-        char dummy[4];
-
-        switch (my_ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, dummy, 0, 0, is_null) ) {
-        // switch ( ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, dummy, 0, 0) ) {
-        case CS_END_ITEM:
-        case CS_END_DATA:
-        case CS_SUCCEED:
-            break;
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
-    }
-
-
-    auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
-
-    bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
-                                  CS_GET,
-                                  m_CurrItem + 1,
-                                  &desc->m_Desc))
-        != CS_SUCCEED);
-    CHECK_DRIVER_ERROR( rc, "ct_data_info failed." + GetDbgInfo(), 130010 );
-
-    // Code below was supposed to be used with ReadItem, which behaves somewhat
-    // differenly than expected. Fri Jul 13 12:39:12 EDT 2007
-//--------------------------------------------------
-//     int current_item = m_CurrItem;
-//
-// #if defined(FTDS_IN_USE)
-//     // At the moment ctlib from Sybase will increase m_CurrItemi, but ctlib
-//     // from FreeTDS won't ...
-//     ++ current_item;
-// #endif
-//
-//     bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
-//                                   CS_GET,
-//                                   current_item,
-//                                   &desc->m_Desc))
-//         != CS_SUCCEED);
-//     CHECK_DRIVER_ERROR( rc, "ct_data_info failed." + GetDbgInfo(), 130010 );
-//--------------------------------------------------
-
-    return desc.release();
     return GetImageOrTextDescriptor(m_CurrItem);
 }
 
@@ -1199,7 +1142,35 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
 I_ITDescriptor*
 CTL_RowResult::GetImageOrTextDescriptor(int item_num)
 {
-    return NULL;
+    bool is_null = false;
+
+    if ((unsigned int) item_num >= NofItems()  ||  item_num < 0) {
+        return 0;
+    }
+
+    char dummy[4];
+
+    switch (my_ct_get_data(x_GetSybaseCmd(), item_num + 1, dummy, 0, 0, is_null) ) {
+    case CS_END_ITEM:
+    case CS_END_DATA:
+    case CS_SUCCEED:
+        break;
+    case CS_CANCELED:
+        DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
+    default:
+        DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
+    }
+
+    auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
+
+    bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
+                                  CS_GET,
+                                  item_num + 1,
+                                  &desc->m_Desc))
+        != CS_SUCCEED);
+    CHECK_DRIVER_ERROR( rc, "ct_data_info failed." + GetDbgInfo(), 130010 );
+
+    return desc.release();
 }
 
 bool CTL_RowResult::SkipItem()
@@ -1341,59 +1312,19 @@ CTL_ITDescriptor::~CTL_ITDescriptor()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-CTL_CursorResultExpl::CTL_CursorResultExpl(CTL_LangCmd& cmd) :
-    CTL_CursorResult(cmd.x_GetSybaseCmd(), cmd.GetConnection())
+CTL_CursorResultExpl::CTL_CursorResultExpl(CTL_LangCmd* cmd) :
+    CTL_CursorResult(cmd->x_GetSybaseCmd(), cmd->GetConnection()),
+    m_Cmd(cmd),
+    m_Res(0)
 {
-}
-
-CTL_CursorResultExpl::~CTL_CursorResultExpl(void)
-{
-}
-
-
-bool CTL_CursorResultExpl::Fetch(void)
-{
-/* Not ready yet ...
-    if( m_EOR ) {
-        return false;
-    }
-
     try {
-        if (m_Res && m_Res->Fetch()) {
-            return true;
-        }
-    } catch ( const CDB_Exception& ) {
-        delete m_Res;
-        m_Res = 0;
-    }
-
-    try {
-        // finish this command
-        m_EOR = true;
-        if( m_Res ) {
-            delete m_Res;
-            m_Res = 0;
-            while (m_Cmd->HasMoreResults()) {
-                m_Res = m_Cmd->Result();
-                if (m_Res) {
-                    while (m_Res->Fetch()) {
-                        continue;
-                    }
-                    delete m_Res;
-                    m_Res = 0;
-                }
+        GetCmd().Send();
+        while (GetCmd().HasMoreResults()) {
+            m_Res = GetCmd().Result();
+            if (m_Res  &&  m_Res->ResultType() == eDB_RowResult) {
+                return;
             }
-        }
-
-        // send the another "fetch cursor_name" command
-        m_Cmd->Send();
-        while (m_Cmd->HasMoreResults()) {
-            m_Res = m_Cmd->Result();
-            if (m_Res && m_Res->ResultType() == eDB_RowResult) {
-                m_EOR = false;
-                return m_Res->Fetch();
-            }
-            if ( m_Res ) {
+            if (m_Res) {
                 while (m_Res->Fetch()) {
                     continue;
                 }
@@ -1401,13 +1332,149 @@ bool CTL_CursorResultExpl::Fetch(void)
                 m_Res = 0;
             }
         }
-    } catch (const CDB_Exception& e) {
-        string err_message = "Failed to fetch the results." + GetDbgInfo();
-        DATABASE_DRIVER_ERROR_EX( e, err_message, 422011 );
+    } catch ( const CDB_Exception& e ) {
+        DATABASE_DRIVER_ERROR_EX( e, "Failed to get the results." + GetDbgInfo(), 122510 );
+    }
+}
+
+EDB_ResType CTL_CursorResultExpl::ResultType() const
+{
+    return eDB_CursorResult;
+}
+
+
+unsigned int CTL_CursorResultExpl::NofItems() const
+{
+    return m_Res? m_Res->NofItems() : 0;
+}
+
+
+const char* CTL_CursorResultExpl::ItemName(unsigned int item_num) const
+{
+    return m_Res ? m_Res->ItemName(item_num) : 0;
+}
+
+
+size_t CTL_CursorResultExpl::ItemMaxSize(unsigned int item_num) const
+{
+    return m_Res ? m_Res->ItemMaxSize(item_num) : 0;
+}
+
+
+EDB_Type CTL_CursorResultExpl::ItemDataType(unsigned int item_num) const
+{
+    return m_Res ? m_Res->ItemDataType(item_num) : eDB_UnsupportedType;
+}
+
+
+bool CTL_CursorResultExpl::Fetch()
+{
+    if (!m_Res) {
+        return false;
+    }
+
+    try {
+        if (m_Res->Fetch()) {
+            return true;
+        }
+    }
+    catch (CDB_ClientEx& ex) {
+        if (ex.GetDBErrCode() == 200003) {
+            m_Res = 0;
+        } else {
+            DATABASE_DRIVER_ERROR( "Failed to fetch the results." + GetDbgInfo(), 122511 );
+        }
+    }
+
+    // try to get next cursor result
+    try {
+        // finish this command
+        if (m_Res) {
+            delete m_Res;
+            m_Res = NULL;
+        }
+
+        while (GetCmd().HasMoreResults()) {
+            auto_ptr<CDB_Result> res( GetCmd().Result() );
+            if (res.get()) {
+                while (res->Fetch())
+                    continue;
+            }
+        }
+        // send the another "fetch cursor_name" command
+        GetCmd().Send();
+        while (GetCmd().HasMoreResults()) {
+            m_Res = GetCmd().Result();
+            if (m_Res  &&  m_Res->ResultType() == eDB_RowResult) {
+                return m_Res->Fetch();
+            }
+            if (m_Res) {
+                while (m_Res->Fetch()) {
+                    continue;
+                }
+
+                delete m_Res;
+                m_Res = NULL;
+            }
+        }
+    } catch ( const CDB_Exception& e ) {
+        DATABASE_DRIVER_ERROR_EX( e, "Failed to fetch the results." + GetDbgInfo(), 222011 );
     }
     return false;
-*/
-    return false;
+}
+
+
+int CTL_CursorResultExpl::CurrentItemNo() const
+{
+    return m_Res ? m_Res->CurrentItemNo() : -1;
+}
+
+
+int CTL_CursorResultExpl::GetColumnNum(void) const
+{
+    return m_Res ? m_Res->GetColumnNum() : -1;
+}
+
+
+CDB_Object* CTL_CursorResultExpl::GetItem(CDB_Object* item_buff)
+{
+    return m_Res ? m_Res->GetItem(item_buff) : 0;
+}
+
+
+size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
+                                      bool* is_null)
+{
+    if (m_Res) {
+        return m_Res->ReadItem(buffer, buffer_size, is_null);
+    }
+
+    if (is_null) {
+        *is_null = true;
+    }
+
+    return 0;
+}
+
+
+I_ITDescriptor* CTL_CursorResultExpl::GetImageOrTextDescriptor()
+{
+    return m_Res ? m_Res->GetImageOrTextDescriptor() : 0;
+}
+
+
+bool CTL_CursorResultExpl::SkipItem()
+{
+    return m_Res ? m_Res->SkipItem() : false;
+}
+
+
+CTL_CursorResultExpl::~CTL_CursorResultExpl()
+{
+    try {
+        delete m_Res;
+    }
+    NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 }
 
 

@@ -502,81 +502,130 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
 //
 
 CTL_CursorCmdExpl::CTL_CursorCmdExpl(CTL_Connection& conn,
-        const string& cursor_name,
-        const string& query,
-        unsigned int nof_params,
-        unsigned int fetch_size
-        )
-: CTL_Cmd(conn)
-, impl::CBaseCmd(conn, cursor_name, query, nof_params)
-, m_FetchSize(fetch_size)
+                                     const string& cursor_name,
+                                     const string& query,
+                                     unsigned int nof_params,
+                                     unsigned int fetch_size)
+    : CTL_Cmd(conn),
+      impl::CBaseCmd(conn, cursor_name, query, nof_params),
+      m_LCmd(NULL),
+      m_Res(NULL)
 {
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
         query + "\"";
     SetExecCntxInfo(extra_msg);
-
-    m_CursSql =
-        "declare " + cursor_name + " cursor for " + query
-        ;
 }
 
 
-CDB_Result*
-CTL_CursorCmdExpl::OpenCursor()
+static bool for_update_of(const string& q)
 {
+    if((q.find("update") == string::npos) &&
+       (q.find("UPDATE") == string::npos))
+        return false;
+
+    if((q.find("for update") != string::npos) ||
+       (q.find("FOR UPDATE") != string::npos))
+        return true;
+
+    // TODO: add more logic here to find "for update" clause
+    return false;
+}
+
+CDB_Result* CTL_CursorCmdExpl::OpenCursor()
+{
+    const bool connected_to_MSSQLServer = GetConnection().GetCDriverContext().ConnectedToMSSQLServer();
+
     // need to close it first
     CloseCursor();
 
     SetHasFailed(false);
 
     // declare the cursor
-    try {
-        auto_ptr<CDB_LangCmd> stmt(GetConnection().LangCmd(m_CursSql));
+    SetHasFailed(!x_AssignParams());
+    CHECK_DRIVER_ERROR(
+        HasFailed(),
+        "Cannot assign params." + GetDbgInfo(),
+        122503 );
 
-        stmt->Send();
-        stmt->DumpResults();
-    } catch (const CDB_Exception& e) {
-        string err_message = "Failed to declare cursor." + GetDbgInfo();
-        DATABASE_DRIVER_ERROR_EX( e, err_message, 422001 );
+
+    m_LCmd.reset(0);
+
+    string buff;
+    if ( connected_to_MSSQLServer ) {
+        string cur_feat;
+
+        if(for_update_of(GetCombinedQuery())) {
+            cur_feat = " cursor FORWARD_ONLY SCROLL_LOCKS for ";
+        } else {
+            cur_feat = " cursor FORWARD_ONLY for ";
+        }
+
+        buff = "declare " + GetCmdName() + cur_feat + GetCombinedQuery();
+    } else {
+        // Sybase ...
+
+        buff = "declare " + GetCmdName() + " cursor for " + GetCombinedQuery();
+    }
+
+    try {
+        auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+
+        cmd->Send();
+        cmd->DumpResults();
+    } catch ( const CDB_Exception& e ) {
+        DATABASE_DRIVER_ERROR_EX( e, "Failed to declare cursor." + GetDbgInfo(), 122501 );
     }
 
     SetCursorDeclared();
 
-    try {
-        auto_ptr<CDB_LangCmd> stmt(GetConnection().LangCmd("open " + GetCmdName()));
+    // open the cursor
+    buff = "open " + GetCmdName();
 
-        stmt->Send();
-        stmt->DumpResults();
-    } catch (const CDB_Exception& e) {
-        string err_message = "Failed to open cursor." + GetDbgInfo();
-        DATABASE_DRIVER_ERROR_EX( e, err_message, 422002 );
+    try {
+        auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+
+        cmd->Send();
+        cmd->DumpResults();
+    } catch ( const CDB_Exception& e ) {
+        DATABASE_DRIVER_ERROR_EX( e, "Failed to open cursor." + GetDbgInfo(), 122502 );
     }
 
     SetCursorOpen();
 
-    m_LCmd.reset(GetConnection().xLangCmd("fetch " + GetCmdName()));
-    m_Res.reset(new CTL_CursorResultExpl(*m_LCmd));
+    buff = "fetch " + GetCmdName();
+    m_LCmd.reset(GetConnection().xLangCmd(buff));
+    m_Res.reset(new CTL_CursorResultExpl(m_LCmd.get()));
 
-    return Create_Result(*m_Res);
+    return Create_Result(*GetResultSet());
 }
 
 
-bool CTL_CursorCmdExpl::Update(const string& table_name, const string& upd_query)
+bool CTL_CursorCmdExpl::Update(const string&, const string& upd_query)
 {
     if (!CursorIsOpen())
         return false;
 
     try {
-        m_LCmd->Cancel();
+        while(m_LCmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> r(m_LCmd->Result());
+        }
 
         string buff = upd_query + " where current of " + GetCmdName();
-
-        auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
+        const auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
-    } catch (const CDB_Exception& e) {
-        string err_message = "Update failed." + GetDbgInfo();
-        DATABASE_DRIVER_ERROR_EX( e, err_message, 422004 );
+#if 0
+        while (cmd->HasMoreResults()) {
+            CDB_Result* r = cmd->Result();
+            if (r) {
+                while (r->Fetch())
+                    ;
+                delete r;
+            }
+        }
+#endif
+    } catch ( const CDB_Exception& e ) {
+        DATABASE_DRIVER_ERROR_EX( e, "Update failed." + GetDbgInfo(), 122507 );
     }
 
     return true;
@@ -584,49 +633,52 @@ bool CTL_CursorCmdExpl::Update(const string& table_name, const string& upd_query
 
 I_ITDescriptor* CTL_CursorCmdExpl::x_GetITDescriptor(unsigned int item_num)
 {
-    if(!CursorIsOpen() || m_Res.get() == 0 || m_LCmd.get() == 0) {
-        return NULL;
+    if(!CursorIsOpen() || !m_Res.get() || !m_LCmd.get()) {
+        return 0;
+    }
+    while(static_cast<unsigned int>(m_Res->CurrentItemNo()) < item_num) {
+        if(!m_Res->SkipItem()) return 0;
     }
 
-    string cond = "current of " + GetCmdName();
-
-    // Not ready yet ...
-    // return m_LCmd->m_Res->GetImageOrTextDescriptor(item_num, cond);
-    return NULL;
-    // I_ITDescriptor* desc = new CTL_ITDescriptor(GetConnection(), GetCmd(), item_num+1);
-    // return desc;
+    I_ITDescriptor* desc = m_Res->GetImageOrTextDescriptor(item_num);
+    return desc;
 }
 
 bool CTL_CursorCmdExpl::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                     bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    auto_ptr<I_ITDescriptor> g(desc);
+    auto_ptr<I_ITDescriptor> d_guard(desc);
 
-    if(desc == NULL) {
-        return false;
+    if(desc) {
+        while(m_LCmd->HasMoreResults()) {
+            CDB_Result* r= m_LCmd->Result();
+            if(r) delete r;
+        }
+
+        return GetConnection().x_SendData(*desc, data, log_it);
     }
-
-    m_LCmd->Cancel();
-
-    return (data.GetType() == eDB_Text) ?
-        GetConnection().SendData(*desc, (CDB_Text&)data, log_it) :
-        GetConnection().SendData(*desc, (CDB_Image&)data, log_it);
+    return false;
 }
 
 CDB_SendDataCmd* CTL_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t size,
                         bool log_it)
 {
-    I_ITDescriptor* desc = x_GetITDescriptor(item_num);
-    auto_ptr<I_ITDescriptor> g(desc);
+    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
+    auto_ptr<I_ITDescriptor> d_guard(desc);
 
-    if(desc == NULL) {
-        return NULL;
+    if(desc) {
+        m_LCmd->DumpResults();
+#if 0
+        while(m_LCmd->HasMoreResults()) {
+            CDB_Result* r= m_LCmd->Result();
+            if(r) delete r;
+        }
+#endif
+
+        return GetConnection().SendDataCmd(*desc, size, log_it);
     }
-
-    m_LCmd->Cancel();
-
-    return GetConnection().SendDataCmd(*desc, size, log_it);
+    return 0;
 }
 
 bool CTL_CursorCmdExpl::Delete(const string& table_name)
@@ -634,17 +686,33 @@ bool CTL_CursorCmdExpl::Delete(const string& table_name)
     if (!CursorIsOpen())
         return false;
 
+    CDB_LangCmd* cmd = 0;
+
     try {
-        m_LCmd->Cancel();
+        while(m_LCmd->HasMoreResults()) {
+            CDB_Result* r= m_LCmd->Result();
+            if(r) delete r;
+        }
 
         string buff = "delete " + table_name + " where current of " + GetCmdName();
-
-        auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+        cmd = GetConnection().LangCmd(buff);
         cmd->Send();
         cmd->DumpResults();
-    } catch (const CDB_Exception& e) {
-        string err_message = "Update failed." + GetDbgInfo();
-        DATABASE_DRIVER_ERROR_EX( e, err_message, 422004 );
+#if 0
+        while (cmd->HasMoreResults()) {
+            CDB_Result* r = cmd->Result();
+            if (r) {
+                while (r->Fetch())
+                    ;
+                delete r;
+            }
+        }
+#endif
+        delete cmd;
+    } catch ( const CDB_Exception& e ) {
+        if (cmd)
+            delete cmd;
+        DATABASE_DRIVER_ERROR_EX( e, "Update failed." + GetDbgInfo(), 122506 );
     }
 
     return true;
@@ -662,19 +730,30 @@ bool CTL_CursorCmdExpl::CloseCursor()
     if (!CursorIsOpen())
         return false;
 
-    m_Res.reset();
-    m_LCmd.reset();
+    m_Res.reset(0);
+
+    m_LCmd.reset(0);
 
     if (CursorIsOpen()) {
         string buff = "close " + GetCmdName();
         try {
-            auto_ptr<CTL_LangCmd> cmd(GetConnection().xLangCmd(buff));
-
-            cmd->Send();
-            cmd->DumpResults();
-        } catch (const CDB_Exception& e) {
-            string err_message = "Failed to close cursor." + GetDbgInfo();
-            DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
+            m_LCmd.reset(GetConnection().xLangCmd(buff));
+            m_LCmd->Send();
+            m_LCmd->DumpResults();
+#if 0
+            while (m_LCmd->HasMoreResults()) {
+                CDB_Result* r = m_LCmd->Result();
+                if (r) {
+                    while (r->Fetch())
+                        ;
+                    delete r;
+                }
+            }
+#endif
+            m_LCmd.reset(0);
+        } catch ( const CDB_Exception& e ) {
+            m_LCmd.reset(0);
+            DATABASE_DRIVER_ERROR_EX( e, "Failed to close cursor." + GetDbgInfo(), 122504 );
         }
 
         SetCursorOpen(false);
@@ -682,15 +761,24 @@ bool CTL_CursorCmdExpl::CloseCursor()
 
     if (CursorIsDeclared()) {
         string buff = "deallocate " + GetCmdName();
-
         try {
-            auto_ptr<CTL_LangCmd> cmd(GetConnection().xLangCmd(buff));
-
-            cmd->Send();
-            cmd->DumpResults();
-        } catch (const CDB_Exception& e) {
-            string err_message = "Failed to deallocate cursor." + GetDbgInfo();
-            DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
+            m_LCmd.reset(GetConnection().xLangCmd(buff));
+            m_LCmd->Send();
+            m_LCmd->DumpResults();
+#if 0
+            while (m_LCmd->HasMoreResults()) {
+                CDB_Result* r = m_LCmd->Result();
+                if (r) {
+                    while (r->Fetch())
+                        ;
+                    delete r;
+                }
+            }
+#endif
+            m_LCmd.reset(0);
+        } catch ( const CDB_Exception& e) {
+            m_LCmd.reset(0);
+            DATABASE_DRIVER_ERROR_EX( e, "Failed to deallocate cursor." + GetDbgInfo(), 122505 );
         }
 
         SetCursorDeclared(false);
@@ -705,12 +793,169 @@ CTL_CursorCmdExpl::~CTL_CursorCmdExpl()
     try {
         DetachInterface();
 
-        DropCmd(*this);
+        GetConnection().DropCmd(*this);
 
-        // CloseForever();
         CloseCursor();
     }
-    NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
+    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
+}
+
+
+bool CTL_CursorCmdExpl::x_AssignParams()
+{
+    static const char s_hexnum[] = "0123456789ABCDEF";
+
+    m_CombinedQuery = GetQuery();
+
+    for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
+        const string& name = GetParams().GetParamName(n);
+        if (name.empty())
+            continue;
+        CDB_Object& param = *GetParams().GetParam(n);
+        char val_buffer[16*1024];
+
+        if (!param.IsNULL()) {
+            switch (param.GetType()) {
+            case eDB_Int: {
+                CDB_Int& val = dynamic_cast<CDB_Int&> (param);
+                sprintf(val_buffer, "%d", val.Value());
+                break;
+            }
+            case eDB_SmallInt: {
+                CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
+                sprintf(val_buffer, "%d", (int) val.Value());
+                break;
+            }
+            case eDB_TinyInt: {
+                CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
+                sprintf(val_buffer, "%d", (int) val.Value());
+                break;
+            }
+            case eDB_BigInt: {
+                CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
+                Int8 v8 = val.Value();
+                sprintf(val_buffer, "%lld", v8);
+                break;
+            }
+            case eDB_Char: {
+                CDB_Char& val = dynamic_cast<CDB_Char&> (param);
+                const char* c = val.Value(); // NB: 255 bytes at most
+                size_t i = 0;
+                val_buffer[i++] = '\'';
+                while (*c) {
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
+                    val_buffer[i++] = *c++;
+                }
+                val_buffer[i++] = '\'';
+                val_buffer[i] = '\0';
+                break;
+            }
+            case eDB_VarChar: {
+                CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
+                const char* c = val.Value(); // NB: 255 bytes at most
+                size_t i = 0;
+                val_buffer[i++] = '\'';
+                while (*c) {
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
+                    val_buffer[i++] = *c++;
+                }
+                val_buffer[i++] = '\'';
+                val_buffer[i] = '\0';
+                break;
+            }
+            case eDB_LongChar: {
+                CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+                const char* c = val.Value(); // NB: 255 bytes at most
+                size_t i = 0;
+                val_buffer[i++] = '\'';
+                while (*c && (i < sizeof(val_buffer) - 2)) {
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
+                    val_buffer[i++] = *c++;
+                }
+                if(*c != '\0') return false;
+                val_buffer[i++] = '\'';
+                val_buffer[i] = '\0';
+                break;
+            }
+            case eDB_Binary: {
+                CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
+                const unsigned char* c = (const unsigned char*) val.Value();
+                size_t i = 0, size = val.Size();
+                val_buffer[i++] = '0';
+                val_buffer[i++] = 'x';
+                for (size_t j = 0; j < size; j++) {
+                    val_buffer[i++] = s_hexnum[c[j] >> 4];
+                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
+                }
+                val_buffer[i++] = '\0';
+                break;
+            }
+            case eDB_VarBinary: {
+                CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
+                const unsigned char* c = (const unsigned char*) val.Value();
+                size_t i = 0, size = val.Size();
+                val_buffer[i++] = '0';
+                val_buffer[i++] = 'x';
+                for (size_t j = 0; j < size; j++) {
+                    val_buffer[i++] = s_hexnum[c[j] >> 4];
+                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
+                }
+                val_buffer[i++] = '\0';
+                break;
+            }
+            case eDB_LongBinary: {
+                CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+                const unsigned char* c = (const unsigned char*) val.Value();
+                size_t i = 0, size = val.DataSize();
+                if(size*2 > sizeof(val_buffer) - 4) return false;
+                val_buffer[i++] = '0';
+                val_buffer[i++] = 'x';
+                for (size_t j = 0; j < size; j++) {
+                    val_buffer[i++] = s_hexnum[c[j] >> 4];
+                    val_buffer[i++] = s_hexnum[c[j] & 0x0F];
+                }
+                val_buffer[i++] = '\0';
+                break;
+            }
+            case eDB_Float: {
+                CDB_Float& val = dynamic_cast<CDB_Float&> (param);
+                sprintf(val_buffer, "%E", (double) val.Value());
+                break;
+            }
+            case eDB_Double: {
+                CDB_Double& val = dynamic_cast<CDB_Double&> (param);
+                sprintf(val_buffer, "%E", val.Value());
+                break;
+            }
+            case eDB_SmallDateTime: {
+                CDB_SmallDateTime& val =
+                    dynamic_cast<CDB_SmallDateTime&> (param);
+                string t = val.Value().AsString("M/D/Y h:m");
+                sprintf(val_buffer, "'%s'", t.c_str());
+                break;
+            }
+            case eDB_DateTime: {
+                CDB_DateTime& val =
+                    dynamic_cast<CDB_DateTime&> (param);
+                string t = val.Value().AsString("M/D/Y h:m:s");
+                sprintf(val_buffer, "'%s:%.3d'", t.c_str(),
+            (int)(val.Value().NanoSecond()/1000000));
+                break;
+            }
+            default:
+                return false;
+            }
+        } else
+            strcpy(val_buffer, "NULL");
+
+        // substitute the param
+        m_CombinedQuery = g_SubstituteParam(m_CombinedQuery, name, val_buffer);
+    }
+
+    return true;
 }
 
 

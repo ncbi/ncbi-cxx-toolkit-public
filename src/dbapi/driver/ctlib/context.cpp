@@ -711,6 +711,12 @@ unsigned int CTLibContext::GetTimeout(void) const
 }
 
 
+bool CTLibContext::ConnectedToMSSQLServer(void) const
+{
+    return (m_TDSVersion == 70 || m_TDSVersion == 80);
+}
+
+
 impl::CConnection*
 CTLibContext::MakeIConnection(const SConnAttr& conn_attr)
 {

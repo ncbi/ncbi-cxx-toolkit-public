@@ -87,6 +87,7 @@ class CTL_CmdBase;
 class CTL_LangCmd;
 class CTL_RPCCmd;
 class CTL_CursorCmd;
+class CTL_CursorCmdExpl;
 class CTL_BCPInCmd;
 class CTL_SendDataCmd;
 class CTL_RowResult;
@@ -94,6 +95,7 @@ class CTL_ParamResult;
 class CTL_ComputeResult;
 class CTL_StatusResult;
 class CTL_CursorResult;
+class CTL_CursorResultExpl;
 class CTLibContextRegistry;
 
 
@@ -235,6 +237,8 @@ public:
 
     virtual unsigned int GetLoginTimeout(void) const;
     virtual unsigned int GetTimeout     (void) const;
+
+    virtual bool ConnectedToMSSQLServer(void) const;
 
     //
     // CTLIB specific functionality
@@ -594,6 +598,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : public CTL_LRCmd
 {
     friend class CTL_Connection;
     friend class CTL_CursorCmdExpl;
+    friend class CTL_CursorResultExpl;
     friend class auto_ptr<CTL_LangCmd>;
 
 protected:
@@ -707,12 +712,11 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmdExpl :
     friend class CTL_Connection;
 
 protected:
-    CTL_CursorCmdExpl(CTL_Connection& conn,
-            const string& cursor_name,
-            const string& query,
-            unsigned int nof_params,
-            unsigned int fetch_size
-            );
+    CTL_CursorCmdExpl(CTL_Connection& con,
+                      const string& cursor_name,
+                      const string& query,
+                      unsigned int nof_params,
+                      unsigned int fetch_size);
     virtual ~CTL_CursorCmdExpl(void);
 
 protected:
@@ -727,13 +731,22 @@ protected:
     virtual bool CloseCursor(void);
 
 private:
-    I_ITDescriptor*   x_GetITDescriptor(unsigned int item_num);
+    CTL_CursorResultExpl* GetResultSet(void) const;
+    void SetResultSet(CTL_CursorResultExpl* res);
+    void ClearResultSet(void);
+    const string GetCombinedQuery(void) const
+    {
+        return m_CombinedQuery;
+    }
 
 private:
-    unsigned int            m_FetchSize;
-    string                  m_CursSql;
-    auto_ptr<CTL_LangCmd>   m_LCmd;
-    auto_ptr<impl::CResult> m_Res;
+    bool x_AssignParams(void);
+    I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
+
+    auto_ptr<CTL_LangCmd>          m_LCmd;
+    auto_ptr<CTL_CursorResultExpl> m_Res;
+    string                         m_CombinedQuery;
+    unsigned int                   m_FetchSize;
 };
 
 
@@ -987,13 +1000,51 @@ protected:
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorResultExpl : public CTL_CursorResult
 {
     friend class CTL_CursorCmdExpl;
+    friend class auto_ptr<CTL_CursorResultExpl>;
 
 protected:
-    CTL_CursorResultExpl(CTL_LangCmd& cmd);
+    CTL_CursorResultExpl(CTL_LangCmd* cmd);
     virtual ~CTL_CursorResultExpl(void);
 
 protected:
-    virtual bool Fetch(void);
+    virtual EDB_ResType     ResultType(void) const;
+    virtual unsigned int    NofItems(void) const;
+    virtual const char*     ItemName    (unsigned int item_num) const;
+    virtual size_t          ItemMaxSize (unsigned int item_num) const;
+    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
+    virtual bool            Fetch(void);
+    virtual int             CurrentItemNo(void) const;
+    virtual int             GetColumnNum(void) const;
+    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0);
+    virtual size_t          ReadItem(void* buffer, size_t buffer_size,
+                                     bool* is_null = 0);
+    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    virtual bool            SkipItem(void);
+
+    using CTL_RowResult::GetImageOrTextDescriptor;
+
+private:
+    CDB_Result* GetResultSet(void) const;
+    void SetResultSet(CDB_Result* res);
+    void ClearResultSet(void);
+    void DumpResultSet(void);
+    void FetchAllResultSet(void);
+
+    CTL_LangCmd& GetCmd(void)
+    {
+        _ASSERT(m_Cmd);
+        return *m_Cmd;
+    }
+    CTL_LangCmd const& GetCmd(void) const
+    {
+        _ASSERT(m_Cmd);
+        return *m_Cmd;
+    }
+
+private:
+    // data
+    CTL_LangCmd* m_Cmd;
+    CDB_Result*  m_Res;
 };
 
 
@@ -1136,6 +1187,30 @@ CTL_Cmd::DeleteResultInternal(void)
         DeleteResult();
     }
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+inline
+CTL_CursorResultExpl*
+CTL_CursorCmdExpl::GetResultSet(void) const
+{
+    return m_Res.get();
+}
+
+inline
+void
+CTL_CursorCmdExpl::SetResultSet(CTL_CursorResultExpl* res)
+{
+    m_Res.reset(res);
+}
+
+inline
+void
+CTL_CursorCmdExpl::ClearResultSet(void)
+{
+    m_Res.reset(NULL);
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
