@@ -1,0 +1,6 @@
+# $Id$
+
+LIB_PROJ = seqmasks_io
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
