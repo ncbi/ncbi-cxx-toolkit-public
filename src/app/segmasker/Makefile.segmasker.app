@@ -7,7 +7,8 @@ ASN_DEP = seq
 APP = segmasker
 SRC = segmasker seg
 
-LIB = xobjsimple seqmasks_io $(BLAST_LIBS) $(OBJMGR_LIBS:%=%$(STATIC))
+LIB = xobjsimple seqmasks_io $(BLAST_LIBS:%=%$(STATIC)) \
+      $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
