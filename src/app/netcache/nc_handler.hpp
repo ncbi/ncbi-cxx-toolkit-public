@@ -53,7 +53,8 @@ typedef enum {
     eGetStat,
     eIsLock,
     eGetBlobOwner,
-    eDropStat
+    eDropStat,
+    eHasBlob
 } ENC_RequestType;
 
 
@@ -139,6 +140,9 @@ public:
 
     /// Process "DROPSTAT" request
     void ProcessDropStat(CSocket& sock);
+
+     /// Process "HASB" request
+    void ProcessHasBlob(CSocket& sock, const SNC_Request& req);
 
     /// Process "GBOW" request
     void ProcessGetBlobOwner(CSocket& sock, const SNC_Request& req);

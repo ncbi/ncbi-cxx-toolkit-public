@@ -172,6 +172,15 @@ void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
 
         break;
 
+    case 'H':
+        if (strncmp(s, "HASB", 4) == 0) {  // has blob
+            req->req_type = eHasBlob;
+            s += 4;
+            goto parse_blob_id;
+        } // HASB
+
+        break;
+
     case 'I':
 
         if (strncmp(s, "ISLK", 4) == 0) {
@@ -309,6 +318,9 @@ void CNetCacheHandler::ProcessRequest(string&               request,
     case eDropStat:
         stat.req_code = 'D';
         ProcessDropStat(socket);
+        break;
+    case eHasBlob:
+        ProcessHasBlob(socket, req);
         break;
     case eGetBlobOwner:
         ProcessGetBlobOwner(socket, req);
@@ -646,6 +658,26 @@ void CNetCacheHandler::ProcessPut3(CSocket&              sock,
 {
     m_PutOK = true;
     ProcessPut2(sock, req, stat);
+}
+
+
+void CNetCacheHandler::ProcessHasBlob(CSocket&           sock, 
+                                      const SNC_Request& req)
+{
+    const string& req_id = req.req_id;
+
+    if (req_id.empty()) {
+        WriteMsg(sock, "ERR:", "BLOB id is empty.");
+        return;
+    }
+    CNetCache_Key blob_id(req_id);
+    if (!x_CheckBlobId(sock, &blob_id, req_id))
+        return;
+
+    bool hb = m_Server->GetCache()->HasBlobs(req_id, kEmptyStr);
+    string str;
+    NStr::UIntToString(str, (int)hb);
+    WriteMsg(sock, "OK:", str);
 }
 
 

@@ -33,6 +33,6 @@
  */
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=4.0.0  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=4.0.1  " __DATE__ " " __TIME__
 
 #endif /* NETCACHE_VERSION__HPP */
