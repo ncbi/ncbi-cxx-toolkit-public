@@ -123,6 +123,8 @@ static const TToken K_DOCUMENTATION  = 314;
 static const TToken K_ATTRIBUTEGROUP = 315;
 static const TToken K_GROUP          = 316;
 static const TToken K_APPINFO        = 317;
+static const TToken K_UNION          = 318;
+static const TToken K_LIST           = 319;
 
 END_NCBI_SCOPE
 

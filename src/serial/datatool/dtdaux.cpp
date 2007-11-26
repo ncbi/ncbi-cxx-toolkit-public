@@ -346,7 +346,9 @@ DTDElement::EOccurrence DTDElement::GetOccurrence(void) const
 
 void DTDElement::AddContent( const string& ref_name)
 {
-    m_Refs.push_back( ref_name);
+    if (find(m_Refs.begin(), m_Refs.end(), ref_name) == m_Refs.end()) {
+        m_Refs.push_back( ref_name);
+    }
 }
 
 const list<string>& DTDElement::GetContent(void) const

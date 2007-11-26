@@ -48,7 +48,7 @@ NCBI_DEFINE_ERRCODE_X(Serial_IStream,    803,  8);
 NCBI_DEFINE_ERRCODE_X(Serial_TypeInfo,   804,  3);
 NCBI_DEFINE_ERRCODE_X(Serial_MemberInfo, 805,  2);
 NCBI_DEFINE_ERRCODE_X(Serial_ASNTypes,   806,  3);
-NCBI_DEFINE_ERRCODE_X(Serial_Parsers,    807,  7);
+NCBI_DEFINE_ERRCODE_X(Serial_Parsers,    807, 10);
 NCBI_DEFINE_ERRCODE_X(Serial_Modules,    808,  8);
 NCBI_DEFINE_ERRCODE_X(Serial_MainGen,    809, 19);
 NCBI_DEFINE_ERRCODE_X(Serial_RPCGen,     810,  3);

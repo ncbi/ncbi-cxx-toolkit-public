@@ -85,12 +85,6 @@ bool XSDLexer::ProcessDocumentation(void)
 
 TToken XSDLexer::Skip(void)
 {
-    if (TokenStarted()) {
-        TToken tok = NextToken().GetToken();
-        if (tok == K_CLOSING || tok == K_ENDOFTAG) {
-            return tok;
-        }
-    }
     char c = Char();
     for (;;) {
         c = Char();
@@ -219,8 +213,12 @@ TToken XSDLexer::LookupKeyword(void)
         CHECK("any", K_ANY, 3);
         CHECK("all", K_SET, 3);
         break;
+    case 4:
+        CHECK("list", K_LIST, 4);
+        break;
     case 5:
         CHECK("group", K_GROUP, 5);
+        CHECK("union", K_UNION, 5);
         break;
     case 6:
         CHECK("choice", K_CHOICE, 6);

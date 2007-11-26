@@ -50,6 +50,7 @@ XSDParser::XSDParser(XSDLexer& lexer)
     : DTDParser(lexer)
 {
     m_SrcType = eSchema;
+    m_ResolveTypes = false;
 }
 
 XSDParser::~XSDParser(void)
@@ -157,8 +158,9 @@ TToken XSDParser::GetNextToken(void)
         data = data2.substr(first+1, last - first - 1);
         if (tok == K_XMLNS) {
             if (m_PrefixToNamespace.find(m_Attribute) != m_PrefixToNamespace.end()) {
-                if (!m_PrefixToNamespace[m_Attribute].empty()) {
-                    ParseError("Unexpected data", "");
+                if (!m_PrefixToNamespace[m_Attribute].empty() &&
+                    m_PrefixToNamespace[m_Attribute] != data) {
+                    ParseError("Unexpected xmlns data", "");
                 }
             }
             m_PrefixToNamespace[m_Attribute] = data;
@@ -224,6 +226,10 @@ bool XSDParser::DefineElementType(DTDElement& node)
         node.SetType(DTDElement::eBigInt);
     } else if (IsValue("hexBinary")) {
         node.SetType(DTDElement::eOctetString);
+// this is WRONG, it only provides some sort of default for
+// unsupported built-in types
+    } else if (IsValue("base64Binary")) {
+        node.SetType(DTDElement::eString);
     } else {
         return false;
     }
@@ -232,7 +238,8 @@ bool XSDParser::DefineElementType(DTDElement& node)
 
 bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
 {
-    if (IsValue("string") || IsValue("QName")) {
+    if (IsValue("string") || IsValue("token") || IsValue("QName") ||
+        IsValue("anyURI")) {
         attrib.SetType(DTDAttribute::eString);
     } else if (IsValue("ID")) {
         attrib.SetType(DTDAttribute::eId);
@@ -255,6 +262,10 @@ bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
         attrib.SetType(DTDAttribute::eInteger);
     } else if (IsValue("float") || IsValue("double") || IsValue("decimal")) {
         attrib.SetType(DTDAttribute::eDouble);
+// this is WRONG, it only provides some sort of default for
+// unsupported built-in types
+    } else if (IsValue("base64Binary")) {
+        attrib.SetType(DTDAttribute::eString);
     } else {
         return false;
     }
@@ -294,7 +305,7 @@ void XSDParser::ParseInclude(void)
 {
     TToken tok;
     string name;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
+    for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS; tok = GetNextToken()) {
         if (IsAttribute("schemaLocation")) {
             name = m_Value;
         }
@@ -333,23 +344,17 @@ void XSDParser::ParseImport(void)
 
 void XSDParser::ParseAnnotation(void)
 {
+    TToken tok;
     if (GetRawAttributeSet() == K_CLOSING) {
-        if (GetNextToken() != K_DOCUMENTATION) {
-            ParseError("documentation");
+        for ( tok = GetNextToken(); tok != K_ENDOFTAG; tok=GetNextToken()) {
+            if (tok == K_DOCUMENTATION) {
+                ParseDocumentation();
+            } else if (tok == K_APPINFO) {
+                ParseAppInfo();
+            } else {
+                ParseError("documentation or appinfo");
+            }
         }
-        ParseDocumentation();
-        m_ExpectLastComment = false;
-    }
-    TToken tok = GetNextToken();
-    if (tok == K_APPINFO) {
-        tok = GetRawAttributeSet();
-        if (tok == K_CLOSING) {
-            SkipContent();
-        }
-        tok = GetNextToken();
-    }
-    if (tok != K_ENDOFTAG) {
-        ParseError("endoftag");
     }
     m_ExpectLastComment = true;
 }
@@ -357,6 +362,9 @@ void XSDParser::ParseAnnotation(void)
 void XSDParser::ParseDocumentation(void)
 {
     TToken tok = GetRawAttributeSet();
+    if (tok == K_ENDOFTAG) {
+        return;
+    }
     if (tok == K_CLOSING) {
         XSDLexer& l = dynamic_cast<XSDLexer&>(Lexer());
         while (l.ProcessDocumentation())
@@ -367,6 +375,14 @@ void XSDParser::ParseDocumentation(void)
         ParseError("endoftag");
     }
     m_ExpectLastComment = true;
+}
+
+void XSDParser::ParseAppInfo(void)
+{
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        SkipContent();
+    }
 }
 
 TToken XSDParser::GetRawAttributeSet(void)
@@ -432,8 +448,9 @@ DTDElement::EOccurrence XSDParser::ParseMinOccurs( DTDElement::EOccurrence occNo
             } else if (occNow == DTDElement::eOneOrMore) {
                 occNew = DTDElement::eZeroOrMore;
             }
-        } else if (m != 1) {
-            ParseError("0, 1, or unbounded");
+        } else if (m > 1) {
+            ERR_POST_X(8, Warning << "Unsupported element minOccurs= " << m);
+            occNew = DTDElement::eOneOrMore;
         }
     }
     return occNew;
@@ -444,14 +461,15 @@ DTDElement::EOccurrence XSDParser::ParseMaxOccurs( DTDElement::EOccurrence occNo
     DTDElement::EOccurrence occNew = occNow;
     if (GetAttribute("maxOccurs")) {
         int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
-        if (m == -1) {
+        if (m == -1 || m > 1) {
+            if (m > 1) {
+                ERR_POST_X(8, Warning << "Unsupported element maxOccurs= " << m);
+            }
             if (occNow == DTDElement::eOne) {
                 occNew = DTDElement::eOneOrMore;
             } else if (occNow == DTDElement::eZeroOrOne) {
                 occNew = DTDElement::eZeroOrMore;
             }
-        } else if (m != 1) {
-            ParseError("0, 1, or unbounded");
         }
     }
     return occNew;
@@ -524,9 +542,13 @@ string XSDParser::ParseGroup(DTDElement* owner, int emb)
         node.SetOccurrence( ParseMaxOccurs( node.GetOccurrence()));
         m_Comments = &(node.Comments());
 
-        if (m_MapEntity.find(id) != m_MapEntity.end()) {
-            PushEntityLexer(id);
-            ParseGroupRef(node);
+        if (m_ResolveTypes) {
+            if (m_MapEntity.find(id) != m_MapEntity.end()) {
+                PushEntityLexer(id);
+                ParseGroupRef(node);
+            } else {
+                ParseError("Unresolved entity", id.c_str());
+            }
         } else {
             node.SetTypeName(node.GetName());
             node.SetType(DTDElement::eUnknownGroup);
@@ -587,6 +609,7 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             ParseAttributeGroup(node);
             break;
         case K_ANY:
+            node.SetTypeIfUnknown(DTDElement::eSequence);
             if (node.GetType() != DTDElement::eSequence) {
                 ParseError("sequence");
             } else {
@@ -603,6 +626,7 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
         case K_SEQUENCE:
             emb= node.GetContent().size();
             if (emb != 0 && extended) {
+                node.SetTypeIfUnknown(DTDElement::eSequence);
                 if (node.GetType() != DTDElement::eSequence) {
                     ParseError("sequence");
                 }
@@ -674,7 +698,7 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             ParseAnnotation();
             break;
         default:
-            for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
+            for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS; tok = GetNextToken())
                 ;
             if (tok == K_CLOSING) {
                 ParseContent(node);
@@ -724,12 +748,17 @@ void XSDParser::ParseExtension(DTDElement& node)
     bool extended=false;
     if (GetAttribute("base")) {
         if (!DefineElementType(node)) {
-            string id = CreateEntityId(m_Value,DTDEntity::eType);
-            if (m_MapEntity.find(id) != m_MapEntity.end()) {
-                PushEntityLexer(id);
-                extended=true;
+            if (m_ResolveTypes) {
+                string id = CreateEntityId(m_Value,DTDEntity::eType);
+                if (m_MapEntity.find(id) != m_MapEntity.end()) {
+                    PushEntityLexer(id);
+                    extended=true;
+                } else {
+                    ParseError("Unresolved entity", id.c_str());
+                }
+            } else {
+                node.SetTypeName(m_Value);
             }
-            node.SetTypeName(m_Value);
         }
     }
     if (tok == K_CLOSING) {
@@ -740,13 +769,24 @@ void XSDParser::ParseExtension(DTDElement& node)
 void XSDParser::ParseRestriction(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
+    bool extended=false;
     if (GetAttribute("base")) {
         if (!DefineElementType(node)) {
-            node.SetTypeName(m_Value);
+            string id = CreateEntityId(m_Value,DTDEntity::eType);
+            if (m_ResolveTypes) {
+                if (m_MapEntity.find(id) != m_MapEntity.end()) {
+                    PushEntityLexer(id);
+                    extended=true;
+                } else {
+                    ParseError("Unresolved entity", id.c_str());
+                }
+            } else {
+                node.SetTypeName(m_Value);
+            }
         }
     }
     if (tok == K_CLOSING) {
-        ParseContent(node);
+        ParseContent(node,extended);
     }
 }
 
@@ -790,10 +830,14 @@ void XSDParser::ParseAttributeGroup(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
     if (GetAttribute("ref")) {
-        string id = CreateEntityId(m_Value,DTDEntity::eAttGroup);
-        if (m_MapEntity.find(id) != m_MapEntity.end()) {
-            PushEntityLexer(id);
-            ParseAttributeGroupRef(node);
+        if (m_ResolveTypes) {
+            string id = CreateEntityId(m_Value,DTDEntity::eAttGroup);
+            if (m_MapEntity.find(id) != m_MapEntity.end()) {
+                PushEntityLexer(id);
+                ParseAttributeGroupRef(node);
+            } else {
+                ParseError("Unresolved entity", id.c_str());
+            }
         } else {
             DTDAttribute a;
             a.SetType(DTDAttribute::eUnknownGroup);
@@ -837,6 +881,32 @@ void XSDParser::ParseAny(DTDElement& node)
     m_ExpectLastComment = true;
 }
 
+void XSDParser::ParseUnion(DTDElement& node)
+{
+    ERR_POST_X(9, Warning
+        << "Unsupported element type: union; in node "
+        << node.GetName());
+    node.SetType(DTDElement::eString);
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        ParseContent(node);
+    }
+    m_ExpectLastComment = true;
+}
+
+void XSDParser::ParseList(DTDElement& node)
+{
+    ERR_POST_X(10, Warning
+        << "Unsupported element type: list; in node "
+        << node.GetName());
+    node.SetType(DTDElement::eString);
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        ParseContent(node);
+    }
+    m_ExpectLastComment = true;
+}
+
 string XSDParser::ParseAttributeContent()
 {
     TToken tok = GetRawAttributeSet();
@@ -871,12 +941,21 @@ void XSDParser::ParseContent(DTDAttribute& att)
         case K_ENUMERATION:
             ParseEnumeration(att);
             break;
+        case K_EXTENSION:
+            ParseExtension(att);
+            break;
         case K_RESTRICTION:
             ParseRestriction(att);
             break;
         case K_ANNOTATION:
             m_Comments = &(att.Comments());
             ParseAnnotation();
+            break;
+        case K_UNION:
+            ParseUnion(att);
+            break;
+        case K_LIST:
+            ParseList(att);
             break;
         default:
             tok = GetRawAttributeSet();
@@ -888,12 +967,43 @@ void XSDParser::ParseContent(DTDAttribute& att)
     }
 }
 
+void XSDParser::ParseExtension(DTDAttribute& att)
+{
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("base")) {
+        if (!DefineAttributeType(att)) {
+            if (m_ResolveTypes) {
+                string id = CreateEntityId(m_Value,DTDEntity::eType);
+                if (m_MapEntity.find(id) != m_MapEntity.end()) {
+                    PushEntityLexer(id);
+                } else {
+                    ParseError("Unresolved entity", id.c_str());
+                }
+            } else {
+                att.SetTypeName(m_Value);
+            }
+        }
+    }
+    if (tok == K_CLOSING) {
+        ParseContent(att);
+    }
+}
+
 void XSDParser::ParseRestriction(DTDAttribute& att)
 {
     TToken tok = GetRawAttributeSet();
     if (GetAttribute("base")) {
         if (!DefineAttributeType(att)) {
-            att.SetTypeName(m_Value);
+            if (m_ResolveTypes) {
+                string id = CreateEntityId(m_Value,DTDEntity::eType);
+                if (m_MapEntity.find(id) != m_MapEntity.end()) {
+                    PushEntityLexer(id);
+                } else {
+                    ParseError("Unresolved entity", id.c_str());
+                }
+            } else {
+                att.SetTypeName(m_Value);
+            }
         }
     }
     if (tok == K_CLOSING) {
@@ -913,6 +1023,30 @@ void XSDParser::ParseEnumeration(DTDAttribute& att)
     if (GetAttribute("value")) {
         att.AddEnumValue(m_Value, Lexer().CurrentLine(), id);
     }
+    if (tok == K_CLOSING) {
+        ParseContent(att);
+    }
+}
+
+void XSDParser::ParseUnion(DTDAttribute& att)
+{
+    ERR_POST_X(9, Warning
+        << "Unsupported attribute type: union; in attribute "
+        << att.GetName());
+    att.SetType(DTDAttribute::eString);
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        ParseContent(att);
+    }
+}
+
+void XSDParser::ParseList(DTDAttribute& att)
+{
+    ERR_POST_X(10, Warning
+        << "Unsupported attribute type: list; in attribute "
+        << att.GetName());
+    att.SetType(DTDAttribute::eString);
+    TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
         ParseContent(att);
     }
@@ -955,7 +1089,7 @@ void XSDParser::CreateTypeDefinition(DTDEntity::EType type)
     string id, name, data;
     TToken tok;
     data += "<" + m_Raw;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
+    for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS; tok = GetNextToken()) {
         data += " " + m_Raw;
         if (IsAttribute("name")) {
             name = m_Value;
@@ -980,6 +1114,9 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
     TToken tok;
     CComments comments;
     for ( tok=GetNextToken(); tok != K_ENDOFTAG; tok=GetNextToken()) {
+        if (tok == T_EOF) {
+            break;
+        }
         {
             CComments comm;
             Lexer().FlushCommentsTo(comm);
@@ -988,16 +1125,25 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
                 comm.PrintDTD(buffer);
                 data += CNcbiOstrstreamToString(buffer);
                 data += closing;
+                closing.erase();
             }
         }
-        data += "<" + m_Raw;
         if (tok == K_DOCUMENTATION) {
-            data += ">";
+            data += "<" + m_Raw;
             m_Comments = &comments;
             ParseDocumentation();
-            closing = m_Raw;
+            if (m_Raw == "/>") {
+                data += "/>";
+                closing.erase();
+            } else {
+                data += ">";
+                closing = m_Raw;
+            }
+        } else if (tok == K_APPINFO) {
+            ParseAppInfo();
         } else {
-            for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
+            data += "<" + m_Raw;
+            for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS; tok = GetNextToken()) {
                 data += " " + m_Raw;
             }
             data += m_Raw;
@@ -1021,6 +1167,7 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
 
 void XSDParser::ProcessNamedTypes(void)
 {
+    m_ResolveTypes = true;
     bool found;
     do {
         found = false;
@@ -1100,6 +1247,9 @@ void XSDParser::ProcessNamedTypes(void)
                             found = true;
                             PushEntityLexer(CreateEntityId(a->GetTypeName(),DTDEntity::eType));
                             ParseContent(*a);
+                            if (a->GetType() == DTDAttribute::eUnknown) {
+                                a->SetType(DTDAttribute::eString);
+                            }
                         } else if ( a->GetType() == DTDAttribute::eUnknownGroup) {
                             found = true;
                             PushEntityLexer(CreateEntityId(a->GetTypeName(),DTDEntity::eAttGroup));
@@ -1112,6 +1262,7 @@ void XSDParser::ProcessNamedTypes(void)
             }
         }
     } while (found);
+    m_ResolveTypes = false;
 }
 
 void XSDParser::PushEntityLexer(const string& name)

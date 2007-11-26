@@ -65,6 +65,7 @@ protected:
     void ParseImport(void);
     void ParseAnnotation(void);
     void ParseDocumentation(void);
+    void ParseAppInfo(void);
 
     TToken GetRawAttributeSet(void);
     bool GetAttribute(const string& att);
@@ -89,11 +90,16 @@ protected:
     void ParseAttributeGroupRef(DTDElement& node);
     
     void ParseAny(DTDElement& node);
+    void ParseUnion(DTDElement& node);
+    void ParseList(DTDElement& node);
 
     string ParseAttributeContent(void);
     void ParseContent(DTDAttribute& att);
+    void ParseExtension(DTDAttribute& att);
     void ParseRestriction(DTDAttribute& att);
     void ParseEnumeration(DTDAttribute& att);
+    void ParseUnion(DTDAttribute& att);
+    void ParseList(DTDAttribute& att);
 
     string CreateEmbeddedName(const string& name, int emb);
     string CreateEntityId( const string& name, DTDEntity::EType type);
@@ -133,6 +139,7 @@ private:
     stack<string> m_StackTargetNamespace;
     stack<bool> m_StackElementFormDefault;
     set<string> m_EmbeddedNames;
+    bool m_ResolveTypes;
 };
 
 END_NCBI_SCOPE
