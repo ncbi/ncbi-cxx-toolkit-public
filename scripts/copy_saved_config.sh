@@ -15,7 +15,7 @@ mkdir $abs_top_srcdir/$build_name/status
 sed "
 s|@script_shell@|#!/bin/sh|
 s|@builddir@|$abs_top_srcdir/$build_name/build|
-s|@abs_top_srcdir@|$abs_top_srcdir|" <$abs_top_srcdir/src/reconfigure.sh.in >$abs_top_srcdir/$build_name/build/reconfigure.sh
+s|@abs_top_srcdir@|$abs_top_srcdir|" <$abs_top_srcdir/src/build-system/reconfigure.sh.in >$abs_top_srcdir/$build_name/build/reconfigure.sh
 chmod +x $abs_top_srcdir/$build_name/build/reconfigure.sh
 
 touch $abs_top_srcdir/$build_name/inc/ncbiconf_unix.h
