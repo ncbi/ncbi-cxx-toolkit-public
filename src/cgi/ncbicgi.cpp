@@ -1622,7 +1622,15 @@ CStringUTF8 CCgiEntry::GetValueAsUTF8(EOnCharsetError on_error) const
     CNcbiIstrstream is(GetValue().c_str());
     EEncodingForm enc = GetCharsetEncodingForm(x_GetCharset(), on_error);
     CStringUTF8 utf_str;
-    ReadIntoUtf8(is, &utf_str, enc);
+    try {
+        ReadIntoUtf8(is, &utf_str, enc);
+    }
+    catch (CException) {
+        if (on_error == eCharsetError_Throw) {
+            throw;
+        }
+        return CStringUTF8();
+    }
     return utf_str;
 }
 
