@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
  ** interface to supply new sequences to the user.
  **
  **/
-class CMaskReader
+class NCBI_XOBJREAD_EXPORT CMaskReader
 {
 public:
 

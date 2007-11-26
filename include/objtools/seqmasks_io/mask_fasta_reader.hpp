@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 /**
  **\brief Class for reading sequences from fasta files.
  **/
-class CMaskFastaReader : public CMaskReader
+class NCBI_XOBJREAD_EXPORT CMaskFastaReader : public CMaskReader
 {
 public:
 

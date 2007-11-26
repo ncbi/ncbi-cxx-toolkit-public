@@ -38,22 +38,22 @@
 #include <string>
 
 /// Command line flag to specify the input
-extern const std::string kInput;
+NCBI_XOBJREAD_EXPORT const std::string kInput;
 /// Command line flag to specify the input format
-extern const std::string kInputFormat;
+NCBI_XOBJREAD_EXPORT const std::string kInputFormat;
 /// Command line flag to specify the output
-extern const std::string kOutput;
+NCBI_XOBJREAD_EXPORT const std::string kOutput;
 /// Command line flag to specify the output format
-extern const std::string kOutputFormat;
+NCBI_XOBJREAD_EXPORT const std::string kOutputFormat;
 
 /// Number of elements in kInputFormats
-extern const size_t kNumInputFormats;
+NCBI_XOBJREAD_EXPORT const size_t kNumInputFormats;
 /// Number of elements in kOutputFormats
-extern const size_t kNumOutputFormats;
+NCBI_XOBJREAD_EXPORT const size_t kNumOutputFormats;
 /// Input formats allowed, the first one is the default
-extern const char* kInputFormats[];
+NCBI_XOBJREAD_EXPORT const char* kInputFormats[];
 /// Output formats allowed, the first one is the default
-extern const char* kOutputFormats[];
+NCBI_XOBJREAD_EXPORT const char* kOutputFormats[];
 
 #endif /* __MASK_CMDLINE_ARGS__HPP__ */
 

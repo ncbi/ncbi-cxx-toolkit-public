@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
  ** should be written for each supported format.
  **
  **/
-class CMaskWriter
+class NCBI_XOBJREAD_EXPORT CMaskWriter
 {
 public:
 

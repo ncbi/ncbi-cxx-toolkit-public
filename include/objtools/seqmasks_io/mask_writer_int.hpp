@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
  ** [start] - [end].
  **
  **/
-class CMaskWriterInt : public CMaskWriter
+class NCBI_XOBJREAD_EXPORT CMaskWriterInt : public CMaskWriter
 {
 public:
 

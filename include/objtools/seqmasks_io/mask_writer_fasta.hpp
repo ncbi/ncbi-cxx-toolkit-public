@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
  ** portions of sequences are printed in lower case letters.
  ** 
  **/
-class CMaskWriterFasta : public CMaskWriter
+class NCBI_XOBJREAD_EXPORT CMaskWriterFasta : public CMaskWriter
 {
 public:
 

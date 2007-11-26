@@ -42,18 +42,18 @@ extern "C" {
 
 /****************************** Constants *********************************/
 
-extern const int kDustLevel;  /**< Level parameter used by dust. */
-extern const int kDustWindow; /**< Window parameter used by dust. */
-extern const int kDustLinker; /**< Parameter used by dust to link together close low-complexity segments. */
+NCBI_XBLAST_EXPORT const int kDustLevel;  /**< Level parameter used by dust. */
+NCBI_XBLAST_EXPORT const int kDustWindow; /**< Window parameter used by dust. */
+NCBI_XBLAST_EXPORT const int kDustLinker; /**< Parameter used by dust to link together close low-complexity segments. */
 
-extern const int kSegWindow;  /**< Window that SEG examines at once. */
-extern const double kSegLocut;   /**< Locut parameter for SEG. */
-extern const double kSegHicut;   /**< Hicut parameter for SEG. */
+NCBI_XBLAST_EXPORT const int kSegWindow;  /**< Window that SEG examines at once. */
+NCBI_XBLAST_EXPORT const double kSegLocut;   /**< Locut parameter for SEG. */
+NCBI_XBLAST_EXPORT const double kSegHicut;   /**< Hicut parameter for SEG. */
 
 /** Maximum number of HPSs to be saved in an ungapped search.
  * Value defined in blast_options.c
  */
-extern const int kUngappedHSPNumMax; 
+NCBI_XBLAST_EXPORT const int kUngappedHSPNumMax; 
 
 /******************** Preprocessor definitions ******************************/
 

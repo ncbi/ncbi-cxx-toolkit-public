@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 /**
  **\brief Class for reading sequences from BLAST databases.
  **/
-class CMaskBDBReader : public CMaskReader
+class NCBI_XOBJREAD_EXPORT CMaskBDBReader : public CMaskReader
 {
 public:
 
