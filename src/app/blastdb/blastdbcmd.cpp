@@ -259,10 +259,12 @@ void CBlastDBCmdApp::Init()
             "\t'fasta', 'taxid', 'gi', 'accession', or 'custom'\n"
             "\twhere custom is a quoted string containing the following "
             "directives:\n"
+            "\t\t%s means sequence id (identifier + title)\n"
             "\t\t%a means accession\n"
             "\t\t%g means gi\n"
             "\t\t%t means sequence title\n"
-            "\t\t%s means sequence data in FASTA\n"
+            "\t\t%f means sequence data in FASTA\n"
+            "\t\t%l means sequence length\n"
             "\t\t%T means taxid\n"
             "\t\t%P means PIG\n",
             CArgDescriptions::eString, "fasta");
