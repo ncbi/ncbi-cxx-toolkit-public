@@ -41,6 +41,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiargs.hpp>
 
+#include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 
 BEGIN_NCBI_SCOPE
