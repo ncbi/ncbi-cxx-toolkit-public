@@ -1161,21 +1161,62 @@ void CCdCore::Clear()
 /*  Methods for structures, structure alignments, MMDB identifiers  */
 /* ================================================================ */
 
-bool CCdCore::SynchronizeMaster3D()
+bool CCdCore::SynchronizeMaster3D(bool checkRow1WhenConsensusMaster)
 {
     bool result = false;
+    CRef< CSeq_id > masterPdbId(new CSeq_id);
 
     ResetMaster3d();
     if (Has3DMaster()) {
-
-        CRef< CSeq_id > masterPdbId(new CSeq_id);
 
         //  this should *always* be true but just in case...) {
         if (GetSeqIDForRow(0, 0, masterPdbId) && masterPdbId->IsPdb()) {       
             SetMaster3d().push_back(masterPdbId);
             result = true;
         }
+
+    } else if (checkRow1WhenConsensusMaster && UsesConsensusSequenceAsMaster()) {
+
+        //  If the first row is a structure, then this will be the master3d entry
+        //  after the consensus has been removed.
+        if (GetSeqIDForRow(0, 1, masterPdbId) && masterPdbId->IsPdb()) {       
+            SetMaster3d().push_back(masterPdbId);
+            result = true;
+        }
     }
+
+    return result;
+}
+
+bool CCdCore::IsMaster3DOK() const
+{
+    bool result = false;
+    CRef< CSeq_id > masterPdbId;
+
+    //  If master is a structure, master3d field should only contain that structure.
+    if (Has3DMaster()) {
+
+        //  this should *always* be true but just in case...) {
+        if (GetSeqIDFromAlignment(0, masterPdbId) && masterPdbId->IsPdb()) {       
+            if (GetMaster3d().size() == 1 && SeqIdsMatch(GetMaster3d().front(), masterPdbId)) {
+                result = true;
+            } 
+        }
+
+    //  If master is not a structure, master3d field should be empty...
+    //  unless we have a consensus master and master3d corresponds to the first row.
+    } else if (UsesConsensusSequenceAsMaster()) {
+        
+        if (GetSeqIDFromAlignment(1, masterPdbId) && masterPdbId->IsPdb()) {       
+            if (GetMaster3d().size() == 1 && SeqIdsMatch(GetMaster3d().front(), masterPdbId)) {
+                result = true;
+            } 
+        }
+
+    } else if (GetMaster3d().size() == 0) {
+        result = true;
+    }
+
     return result;
 }
 

@@ -156,11 +156,20 @@ public:
 	int	   GetMmdbIdWithEvidence(set<int>& MmdbIds);
 	int		GetStructuralRowsWithEvidence(vector<int>& rows);
 
+    //  Returns true only if one of the following is true:
+    //  a) the master is not a structure and master3d is empty,
+    //  b) the master is a structure and master3d contains only the Seq-id for the master, or
+    //  c) the master is consensus, and row 1 is a structure whose Seq-id is the only entry in master3d.
+    bool   IsMaster3DOK() const;
+
     //  If the master is a structure, fill in the master3d field with its PDB SeqId.
-    //  Return true if the field was filled in, or false if master is not a structure
-    //  or otherwise failed.  For simplicity, always removes an existing master3d first
-    //  so that when false is returned master3d will be empty.
-    bool   SynchronizeMaster3D();
+    //  Return true if the field is populated at exit (whether or not it was correctly set
+    //  to begin with), or false if master is not a structure or otherwise failed.  
+    //  If checkRow1WhenConsensusMaster is true and the master is a consensus sequence, 
+    //  then synchronize master3d based on row 1, as above; otherwise, master3d is always emptied.
+    //  ***  NOTE:  this method *always* resets master3d first.  So, when false is returned, 
+    //  master3d will be empty.
+    bool   SynchronizeMaster3D(bool checkRow1WhenConsensusMaster = true);
 
     /*  CD alignment methods  (most added or renamed) */
 
