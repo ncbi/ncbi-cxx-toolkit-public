@@ -849,7 +849,7 @@ void StructureSet::CenterViewOnStructure(void)
 {
     if (objects.size() != 1)
         return;
-    
+
     TRACEMSG("Computing structure view...");
     Vector alphaCenter;
     double alphaRadius = 0.0;
@@ -858,7 +858,7 @@ void StructureSet::CenterViewOnStructure(void)
     // loop through twice - once to get average center, then once to
     // find max distance from this center
     for (int i=0; i<2; ++i) {
-    
+
         // find all biopolymer alpha residues
         ChemicalGraph::MoleculeMap::const_iterator m, me = objects.front()->graph->molecules.end();
         for (m=objects.front()->graph->molecules.begin(); m!=me; ++m) {
@@ -881,10 +881,10 @@ void StructureSet::CenterViewOnStructure(void)
                 }
             }
         }
-    
+
         if (i == 0) {
             if (nAlphas == 0)
-                break;
+                return;
             alphaCenter /= nAlphas;
         }
     }

@@ -1616,7 +1616,7 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
     GlobalMessenger()->SetAllWindowTitles();
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
     glCanvas->Refresh(false);
-    if (!noAlignmentWindow)
+    if (!noAlignmentWindow && glCanvas->structureSet->alignmentManager)
         glCanvas->structureSet->alignmentManager->ShowSequenceViewer(true);
     SetCursor(wxNullCursor);
 
