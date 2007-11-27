@@ -833,8 +833,9 @@ bool CTL_CursorCmdExpl::x_AssignParams()
             }
             case eDB_BigInt: {
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-                Int8 v8 = val.Value();
-                sprintf(val_buffer, "%lld", v8);
+                string s8 = NStr::Int8ToString(val.Value());
+                s8.copy(val_buffer, s8.size());
+                val_buffer[s8.size()] = '\0';
                 break;
             }
             case eDB_Char: {

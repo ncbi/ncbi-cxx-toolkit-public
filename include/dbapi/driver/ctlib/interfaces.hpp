@@ -1019,9 +1019,11 @@ protected:
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    // For correct compiling in gcc 2.95.3
+    I_ITDescriptor*         GetImageOrTextDescriptor(int item_num) {
+        return CTL_RowResult::GetImageOrTextDescriptor(item_num);
+    }
     virtual bool            SkipItem(void);
-
-    using CTL_RowResult::GetImageOrTextDescriptor;
 
 private:
     CDB_Result* GetResultSet(void) const;
