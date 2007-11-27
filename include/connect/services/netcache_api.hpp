@@ -110,6 +110,15 @@ public:
                    size_t        size,
                    unsigned int  time_to_live = 0) const;
 
+    /// Check if the BLOB identified by the key "key" exists.
+    ///
+    /// @param key
+    ///    Key of the BLOB to check for existence.
+    ///
+    /// @return
+    ///    True, if the BLOB exists; false otherwise.
+    bool HasBlob(const string& key) const;
+
     /// BLOB locking mode
     enum ELockMode {
         eLockWait,   ///< waits for BLOB to become available

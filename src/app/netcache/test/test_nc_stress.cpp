@@ -301,6 +301,10 @@ void CTestNetCacheStress::StressTestPut(size_t           blob_size,
             os->write((char*)buf, blob_size);
         }
 
+        if ((rand() & 3) == 0 && !cl.HasBlob(ti.key))
+            m_Os << NcbiEndl <<
+                "ERROR: newly added BLOB disappeared" << NcbiEndl;
+
         if (tlog) {
             tlog->push_back(ti);
         }

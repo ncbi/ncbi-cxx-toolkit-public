@@ -179,6 +179,13 @@ IWriter* CNetCacheAPI::PutData(string* key, unsigned int time_to_live) const
     return new CNetCacheWriter(*this, holder, CTransmissionWriter::eSendEofPacket);
 }
 
+bool CNetCacheAPI::HasBlob(const string& key) const
+{
+    string request = "HASB " + key;
+
+    return SendCmdWaitResponse(x_GetConnector(key), request)[0] == '1';
+}
+
 void CNetCacheAPI::Remove(const string& key) const
 {
     string request = "RMV2 " + key;
