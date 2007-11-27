@@ -938,7 +938,7 @@ typedef struct LetterAndScoreDifferencePair{
 
 /** callback for the "sort" */
 int ScoreDifferenceSort(const void * a, const void *b ){
-    return (((LetterAndScoreDifferencePair*)a)->diff > 
+    return (((LetterAndScoreDifferencePair*)a)->diff - 
             ((LetterAndScoreDifferencePair*)b)->diff);
 }
 
