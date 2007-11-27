@@ -34,6 +34,8 @@
 
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
+#include <dbapi/error_codes.hpp>
+
 #include <corelib/ncbifile.hpp>
 
 #include <algorithm>
@@ -41,6 +43,10 @@
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock2.h>
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ConnFactory
+
 
 BEGIN_NCBI_SCOPE
 
@@ -187,6 +193,7 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
     if ( conn_reusable ) {
         m_NotInUse.push_back(conn);
     } else {
+        CDbapiConnMgr::Instance().DelConnect();
         delete conn;
     }
 }
@@ -281,17 +288,20 @@ CDriverContext::MakePooledConnection(const SConnAttr& conn_attr)
             }
 
             // try to use a server name
-            NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
+            for (TConnPool::iterator it = m_NotInUse.begin(); it != m_NotInUse.end(); ) {
                 CConnection* t_con(*it);
 
                 if (conn_attr.srv_name.compare(t_con->ServerName()) == 0) {
-                    it = --m_NotInUse.erase(it);
+                    it = m_NotInUse.erase(it);
                     if(t_con->Refresh()) {
                         return MakeCDBConnection(t_con);
                     }
                     else {
                         delete t_con;
                     }
+                }
+                else {
+                    ++it;
                 }
             }
         }
@@ -320,9 +330,25 @@ CDriverContext::MakePooledConnection(const SConnAttr& conn_attr)
         DATABASE_DRIVER_ERROR( err_msg, 200010 );
     }
 
-    CConnection* t_con = MakeIConnection(conn_attr);
+    // Check for maximum number of connections
+    if (!CDbapiConnMgr::Instance().AddConnect()) {
+        ERR_POST_X_ONCE(3, "Cannot create new connection: "
+                           "maximum connections amount ("
+                           << CDbapiConnMgr::Instance().GetMaxConnect()
+                           << ") is exceeded!!!");
+        return NULL;
+    }
 
-    return MakeCDBConnection(t_con);
+    try {
+        CConnection* t_con = MakeIConnection(conn_attr);
+
+        return MakeCDBConnection(t_con);
+    }
+    catch (...) {
+        // In case of an error adjust current connections counter
+        CDbapiConnMgr::Instance().DelConnect();
+        throw;
+    }
 }
 
 void

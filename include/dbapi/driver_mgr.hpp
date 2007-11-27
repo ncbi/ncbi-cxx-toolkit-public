@@ -36,6 +36,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
+#include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 #include <map>
 
 
@@ -82,6 +83,16 @@ public:
     // Destroy datasource object
     void DestroyDs(const string& driver_name);
     void DestroyDs(const IDataSource* ds);
+
+    // Set maximum number of connections in application
+    void SetMaxConnect(int max_connect) {
+        CDbapiConnMgr::Instance().SetMaxConnect(max_connect);
+    }
+
+    // Get maximum number of connections in application
+    int GetMaxConnect(void) {
+        return CDbapiConnMgr::Instance().GetMaxConnect();
+    }
 
 protected:
     typedef multimap<string, class IDataSource*> TDsContainer;

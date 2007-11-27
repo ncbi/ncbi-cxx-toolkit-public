@@ -109,7 +109,7 @@ IDBConnectionFactory::~IDBConnectionFactory(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-CDbapiConnMgr::CDbapiConnMgr(void)
+CDbapiConnMgr::CDbapiConnMgr(void) : m_MaxConnect(100), m_NumConnect(0)
 {
     m_ConnectFactory.Reset( new CDefaultConnectPolicy() );
 }
@@ -124,6 +124,32 @@ CDbapiConnMgr::Instance(void)
     static CSafeStaticPtr<CDbapiConnMgr> instance;
 
     return instance.Get();
+}
+
+void CDbapiConnMgr::SetMaxConnect(int max_connect)
+{
+    CMutexGuard mg(m_Mutex);
+
+    m_MaxConnect = max_connect;
+}
+
+bool CDbapiConnMgr::AddConnect(void)
+{
+    CMutexGuard mg(m_Mutex);
+
+    if (m_NumConnect >= m_MaxConnect)
+        return false;
+
+    ++m_NumConnect;
+    return true;
+}
+
+void CDbapiConnMgr::DelConnect(void)
+{
+    CMutexGuard mg(m_Mutex);
+
+    if (m_NumConnect > 0)
+        --m_NumConnect;
 }
 
 END_NCBI_SCOPE

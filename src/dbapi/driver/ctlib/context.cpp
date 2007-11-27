@@ -40,6 +40,7 @@
 // DO NOT DELETE this include !!!
 #include <dbapi/driver/driver_mgr.hpp>
 
+#include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
 #include <dbapi/error_codes.hpp>
@@ -1426,7 +1427,7 @@ CDbapiCtlibCFBase::CreateInstance(
         string prog_name;
         string host_name;
         string client_charset;
-        unsigned int max_connect = 0;
+        int max_connect = 0;
 
         if ( params != NULL ) {
             typedef TPluginManagerParamTree::TNodeList_CI TCIter;
@@ -1452,7 +1453,7 @@ CDbapiCtlibCFBase::CreateInstance(
                 } else if ( v.id == "client_charset" ) {
                     client_charset = v.value;
                 } else if ( v.id == "max_connect" ) {
-                    max_connect = NStr::StringToUInt(v.value);;
+                    max_connect = NStr::StringToInt(v.value);;
                 }
             }
         }
@@ -1480,9 +1481,10 @@ CDbapiCtlibCFBase::CreateInstance(
             drv->SetClientCharset(client_charset);
         }
 
-        if (max_connect) {
-            drv->SetMaxConnect(max_connect);
+        if (max_connect && CDbapiConnMgr::Instance().GetMaxConnect() < max_connect) {
+            CDbapiConnMgr::Instance().SetMaxConnect(max_connect);
         }
+        drv->SetMaxConnect(1000);
     }
 
     return drv.release();

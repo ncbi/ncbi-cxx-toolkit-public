@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/interfaces.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -134,14 +135,28 @@ public:
         return m_ConnectFactory;
     }
 
+    void SetMaxConnect(int max_connect);
+
+    int GetMaxConnect(void) const {
+        return m_MaxConnect;
+    }
+
 private:
     CDbapiConnMgr(void);
     ~CDbapiConnMgr(void);
 
+    bool AddConnect(void);
+    void DelConnect(void);
+
     CRef<IDBConnectionFactory> m_ConnectFactory;
+
+    CMutex m_Mutex;
+    int m_MaxConnect;
+    int m_NumConnect;
 
     // Friends
     friend class CSafeStaticPtr<CDbapiConnMgr>;
+    friend class impl::CDriverContext;
 };
 
 

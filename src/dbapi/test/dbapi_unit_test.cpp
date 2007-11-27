@@ -8405,19 +8405,58 @@ void CDBAPIUnitTest::Test_DropConnection(void)
 void
 CDBAPIUnitTest::Test_N_Connections(void)
 {
-    enum {
-        eN = 50
-    };
+    {
+        enum {
+            eN = 5
+        };
 
-    auto_ptr<IConnection> auto_conns[eN];
+        auto_ptr<IConnection> auto_conns[eN + 1];
 
-    for (int i = 0; i < eN; ++i) {
-        auto_ptr<IConnection> auto_conn(m_DS->CreateConnection(CONN_OWNERSHIP));
-        Connect(auto_conn);
-        auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+        // There are already 2 connections - so +2
+        CDriverManager::GetInstance().SetMaxConnect(eN + 2);
+        for (int i = 0; i < eN; ++i) {
+            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection(CONN_OWNERSHIP));
+            Connect(auto_conn);
 
-        auto_stmt->ExecuteUpdate("SELECT @@version");
-        auto_conns[i] = auto_conn;
+            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            auto_stmt->ExecuteUpdate("SELECT @@version");
+
+            auto_conns[i] = auto_conn;
+        }
+
+        try {
+            auto_conns[eN].reset(m_DS->CreateConnection(CONN_OWNERSHIP));
+            Connect(auto_conns[eN]);
+            BOOST_FAIL("Connection above limit is created");
+        }
+        catch (CDB_Exception&) {
+            // exception thrown - it's ok
+            LOG_POST("Connection above limit is rejected - that is ok");
+        }
+    }
+
+    // This test is not supposed to be run every day.
+    if (false) {
+        enum {
+            eN = 50
+        };
+
+        auto_ptr<IConnection> auto_conns[eN];
+
+        // There are already 2 connections - so +2
+        CDriverManager::GetInstance().SetMaxConnect(eN + 2);
+        for (int i = 0; i < eN; ++i) {
+            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection(CONN_OWNERSHIP));
+            Connect(auto_conn);
+
+            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            auto_stmt->ExecuteUpdate("SELECT @@version");
+
+            auto_conns[i] = auto_conn;
+        }
+    }
+    else {
+        PutMsgDisabled("Large connections amount");
     }
 }
 
@@ -11914,15 +11953,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(tc);
 
 
-    // This test is not supposed to be run every day.
-    if (false) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_N_Connections,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    } else {
-        // PutMsgDisabled("Test_N_Connections");
-    }
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_N_Connections,
+                               DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
 
 //     if (args.GetServerType() == CTestArguments::eMsSql
 //         && args.GetDriverName() != odbc_driver // Doesn't work ...
