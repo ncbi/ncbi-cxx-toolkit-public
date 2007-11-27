@@ -471,9 +471,10 @@ bool CCdFromFasta::AddCddDescr(CRef< CCdd_descr >& descr)
 
 
 
-void CCdFromFasta::WriteToFile(const string& outputFile) const
+bool CCdFromFasta::WriteToFile(const string& outputFile) const
 {
     static const string cdExt = ".cn3";
+    bool result = true;
     string cdOutFile, cdOutExt, err;
 
     cdOutFile = (outputFile.size() > 0) ? outputFile : "fastaCd";
@@ -485,8 +486,10 @@ void CCdFromFasta::WriteToFile(const string& outputFile) const
     }
 
     if (!WriteASNToFile(cdOutFile.c_str(), *this, false, &err)) {
+        result = false;
         cerr << "Error writing cd to file " << cdOutFile << endl << err << endl;
     }
+    return result;
 }
 
 END_SCOPE(cd_utils)

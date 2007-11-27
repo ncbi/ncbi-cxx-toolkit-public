@@ -90,7 +90,8 @@ public:
     // update any existing source-ids with this one
     bool UpdateSourceId(const string& sourceId, int version = 0);  
 
-    void WriteToFile(const string& outputFile) const;
+    // false if there was an error
+    bool WriteToFile(const string& outputFile) const;
 
     bool   WasInputError() const { return m_fastaInputErrorMsg.length() > 0; }
     string GetFastaInputErrorMsg() const { return m_fastaInputErrorMsg;}
