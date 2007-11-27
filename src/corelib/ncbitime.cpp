@@ -1166,46 +1166,45 @@ CTime& CTime::x_SetTimeMTSafe(const time_t* value)
     return *this;
 }
 
+// Get current GMT time with nanoseconds
+static void s_GetTimeT(time_t& timer, long& ns)
+{
+#if defined(NCBI_OS_MSWIN)
+    struct _timeb timebuffer;
+    _ftime(&timebuffer);
+    timer = timebuffer.time;
+    ns = (long) timebuffer.millitm *
+         (long) (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
+
+#elif defined(NCBI_OS_UNIX)
+    struct timeval tp;
+    if (gettimeofday(&tp,0) == -1) {
+        timer = 0;
+        ns = 0;
+    } else {
+        timer = tp.tv_sec;
+        ns = long((double)tp.tv_usec *
+                    (double)kNanoSecondsPerSecond /
+                    (double)kMicroSecondsPerSecond);
+    }
+#else // NCBI_OS_MAC
+    timer = time(0);
+    ns = 0;
+#endif
+}
+
 
 CTime& CTime::x_SetTime(const time_t* value)
 {
-    long ns = 0;
     time_t timer;
+    long ns = 0;
 
-    // Get time with nanoseconds
-#if defined(NCBI_OS_MSWIN)
-
+	// Get time with nanoseconds
     if ( value ) {
         timer = *value;
     } else {
-        struct _timeb timebuffer;
-        _ftime(&timebuffer);
-        timer = timebuffer.time;
-        ns = (long) timebuffer.millitm *
-             (long) (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
+        s_GetTimeT(timer, ns);
     }
-#elif defined(NCBI_OS_UNIX)
-
-    if ( value ) {
-        timer = *value;
-    } else {
-        struct timeval tp;
-        if (gettimeofday(&tp,0) == -1) {
-            timer = 0;
-            ns = 0;
-        } else {
-            timer = tp.tv_sec;
-            ns = long((double)tp.tv_usec *
-                      (double)kNanoSecondsPerSecond /
-                      (double)kMicroSecondsPerSecond);
-        }
-    }
-
-#else // NCBI_OS_MAC
-
-    timer = value ? *value : time(0);
-    ns = 0;
-#endif
 
     // Bind values to internal variables
     struct tm *t;
@@ -2200,7 +2199,11 @@ void CFastLocalTime::Tuneup(void)
     if ( m_IsTuneup ) {
         return;
     }
-    x_Tuneup(time(0));
+    // Get system time
+    time_t timer;
+    long ns;
+    s_GetTimeT(timer, ns);
+    x_Tuneup(timer, ns);
 
     // MT-Safe protect: copy current local time to cached time
     CFastMutexGuard LOCK(s_FastLocalTimeMutex);
@@ -2209,7 +2212,7 @@ void CFastLocalTime::Tuneup(void)
 }
 
 
-void CFastLocalTime::x_Tuneup(time_t timer)
+void CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
 {
     // Tuneup in progress
     m_IsTuneup = true;
@@ -2217,6 +2220,7 @@ void CFastLocalTime::x_Tuneup(time_t timer)
     // MT-Safe protect: use CTime locking mutex
     CFastMutexGuard LOCK(s_TimeMutex);
     m_TunedTime.x_SetTime(&timer);
+    m_TunedTime.SetNanoSecond(nanosec);
 
 #if !defined(TIMEZONE_IS_UNDEFINED)
     m_Timezone = (int)TimeZone();
@@ -2231,8 +2235,10 @@ void CFastLocalTime::x_Tuneup(time_t timer)
 
 CTime CFastLocalTime::GetLocalTime(void)
 {
-    // Get system timer
-    time_t timer = time(0);
+    // Get system time
+    time_t timer;
+    long ns;
+    s_GetTimeT(timer, ns);
 
     // Avoid to make time tune up in first m_SecAfterHour for each hour
     // Otherwise do this at each hours/timezone change.
@@ -2244,7 +2250,7 @@ CTime CFastLocalTime::GetLocalTime(void)
             ||  (TimeZone() != m_Timezone  ||  Daylight() != m_Daylight)
 #endif
         ) {
-            x_Tuneup(timer);
+            x_Tuneup(timer, ns);
             // MT-Safe protect: copy tuned time to cached local time
             CFastMutexGuard LOCK(s_FastLocalTimeMutex);
             m_LocalTime   = m_TunedTime;
@@ -2262,13 +2268,15 @@ CTime CFastLocalTime::GetLocalTime(void)
         // Lets make its dirty initialization using UTC time... 
         m_LocalTime = CTime(1970, 1);
         m_LocalTime.AddSecond(timer, CTime::eIgnoreDaylight);
-        // Temporary setup a tuneup time to current.
+        m_LocalTime.SetNanoSecond(ns);
+        // Temporary, setup a tuneup time to current.
         // This variable will be changed soon to correct value,
         // after finishing current Tuneup() process in another thread.
         m_LastTuneupTime = timer;
     } else {
         // Adjust local time on base of system time without any system calls
         m_LocalTime.AddSecond(timer - m_LastSysTime, CTime::eIgnoreDaylight);
+        m_LocalTime.SetNanoSecond(ns);
     }
     m_LastSysTime = timer;
 
@@ -2281,7 +2289,9 @@ int CFastLocalTime::GetLocalTimezone(void)
 {
 #if !defined(TIMEZONE_IS_UNDEFINED)
     // Get system timer
-    time_t timer = time(0);
+    time_t timer;
+    long ns;
+    s_GetTimeT(timer, ns);
 
     // Avoid to make time tune up in first m_SecAfterHour for each hour
     // Otherwise do this at each hours/timezone change.
@@ -2293,7 +2303,7 @@ int CFastLocalTime::GetLocalTimezone(void)
             ||  (TimeZone() != m_Timezone  ||  Daylight() != m_Daylight)
 #endif
         ) {
-            x_Tuneup(timer);
+            x_Tuneup(timer, ns);
             // MT-Safe protect: copy tuned time to cached local time
             CFastMutexGuard LOCK(s_FastLocalTimeMutex);
             m_LocalTime   = m_TunedTime;

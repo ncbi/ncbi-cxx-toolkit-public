@@ -1426,7 +1426,7 @@ public:
 
 private:
     /// Internal version of Tuneup()
-    void x_Tuneup(time_t timer);
+    void x_Tuneup(time_t timer, long nanosec);
 
 private:
     unsigned int m_SecAfterHour;  ///< Time interval in seconds after hour
