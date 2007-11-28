@@ -342,7 +342,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     {
         code.ClassPublic() <<
             "    // types\n";
-        bool ce_defined = false;
+        bool ce_defined = GetClassNameDT() == "C_E";
         ITERATE ( TMembers, i, m_Members ) {
             if (!ce_defined && i->dataType) {
                 const CUniSequenceDataType* mem =
