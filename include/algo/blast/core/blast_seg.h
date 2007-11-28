@@ -38,10 +38,10 @@
 #include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_def.h>
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /** Structure to hold parameters for seg search.
  */
@@ -60,11 +60,13 @@ typedef struct SegParameters
 /** Allocated SeqParameter struct for proteins and fills with default values.
  * @return pointer to SegParameters
  */
+NCBI_XBLAST_EXPORT
 SegParameters* SegParametersNewAa (void);
 
 /** Free SegParameters structure
  * @param sparamsp object to be freed [in]
  */
+NCBI_XBLAST_EXPORT
 void SegParametersFree(SegParameters* sparamsp);
 
 /** Runs seg on a protein sequence in ncbistdaa.
@@ -76,6 +78,7 @@ void SegParametersFree(SegParameters* sparamsp);
  * @param seg_locs resulting locations for filtering [out]
  * @return zero on success
  */
+NCBI_XBLAST_EXPORT
 Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
                    SegParameters* sparamsp, BlastSeqLoc** seg_locs);
 
