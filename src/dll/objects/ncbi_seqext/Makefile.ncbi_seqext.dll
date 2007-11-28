@@ -18,6 +18,7 @@ HOSTED_LIBS    = xalnmgr   \
                  id2cli    \
                  id2_split \
                  seqsplit  \
+                 seqmasks_io \
                  xobjedit  \
                  xcleanup  \
                  valerr
