@@ -175,26 +175,28 @@ int CBlastDBAliasApp::ConvertGiFile() const
 
     CBinaryListBuilder builder(CBinaryListBuilder::eGi);
 
+    unsigned int line_ctr = 0;
     while (input) {
         string line;
         NcbiGetlineEOL(input, line);
+        line_ctr++;
         if ( !line.empty() ) {
             try { builder.AppendId(NStr::StringToInt8(line)); }
             catch (const CStringException& e) {
-                ERR_POST(Warning << e.GetMsg());
+                ERR_POST(Warning << "error in line " << line_ctr 
+                         << ": " << e.GetMsg());
             }
         }
     }
 
     builder.Write(output);
-    ERR_POST(Info << "Converted " << builder.Size() << " GIs");
+    LOG_POST("Converted " << builder.Size() << " GIs");
     return 0;
 }
 
 int CBlastDBAliasApp::Run(void)
 {
     int status = 0;
-    SetDiagPostLevel(eDiag_Info);
 
     try {
 
