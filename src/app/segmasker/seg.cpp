@@ -72,10 +72,10 @@ CSegMasker::operator()(const CSeqVector & data)
     BlastSeqLoc* seq_locs = NULL;
     data.GetSeqData(data.begin(), data.end(), sequence);
 
-    Int2 status = SeqBufferSeg((Uint1*)(sequence.c_str()),
+    Int2 status = SeqBufferSeg((Uint1*)(sequence.data()),
                                static_cast<Int4>(sequence.size()), 0,
                                m_SegParameters, &seq_locs);
-    sequence.clear();
+    sequence.erase();
     if (status != 0) {
         seq_locs = BlastSeqLocFree(seq_locs);
         throw runtime_error("SEG internal error " + NStr::IntToString(status));
