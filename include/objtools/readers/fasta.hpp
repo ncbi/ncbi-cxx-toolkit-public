@@ -38,6 +38,7 @@
 #include <util/line_reader.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 // #include <objects/seqset/Seq_entry.hpp>
 #include <stack>
 
