@@ -90,6 +90,40 @@ void CDistMethods::KimuraDist(const TMatrix& frac_diff,
     }
 }
 
+///1 - p = (1 - e^(2*d)) / (2 * d)
+///  using approximation d = p(2 - p) / (2(1 - p))
+void CDistMethods::GrishinDist(const TMatrix& frac_diff,
+                               TMatrix& result)
+{
+    result.Resize(frac_diff.GetRows(), frac_diff.GetCols());
+    for (size_t i = 0; i < frac_diff.GetRows(); ++i) {
+        for (size_t j = 0; j < frac_diff.GetCols(); ++j) {
+            if (frac_diff(i, j) >= 1.0) {
+                throw invalid_argument("Grishin distance can not be computed \
+                                     for sequences that are 100% different");
+            }
+            result(i, j) = frac_diff(i, j) * (2.0 - frac_diff(i, j)) 
+                                          / (2 * (1.0 - frac_diff(i, j)));
+        }
+    }
+}
+
+/// d = 0.65((1 - p)^(-1/0.65) - 1)
+void CDistMethods::GrishinGeneralDist(const TMatrix& frac_diff,
+                TMatrix& result)
+{
+    result.Resize(frac_diff.GetRows(), frac_diff.GetCols());
+    for (size_t i = 0;  i < frac_diff.GetRows();  ++i) {
+        for (size_t j = 0;  j < frac_diff.GetCols();  ++j) {
+            if (frac_diff(i, j) >= 1.0) {
+                throw invalid_argument("Grishin distance can not be computed \
+                         for sequences that are 100% different");
+            }
+            result(i, j) = 
+                  0.65 * (pow(1 - frac_diff(i, j), -1.0 / 0.65) - 1.0);
+        }
+    }
+}
 
 /// As per Hillis et al. (Ed.), Molecular Systematics, pg. 488-489
 CDistMethods::TTree *CDistMethods::NjTree(const TMatrix& dist_mat,
@@ -301,6 +335,20 @@ CDistMethods::TTree *CDistMethods::FastMeTree(const TMatrix& dist_mat,
     TTree *me_tree = s_ConvertFastMeTree(me_out, labels);
     fastme::freeTree(me_out);
     return me_tree;
+}
+
+void CDistMethods::ZeroNegativeBranches(TTree* node)
+{
+    if (!node->IsLeaf()) {
+        for (TPhyTreeNode::TNodeList_CI it = node->SubNodeBegin();
+                     it != node->SubNodeEnd(); ++it) {
+            ZeroNegativeBranches(*it);
+	}
+    }
+
+    if (node->GetValue().GetDist() < 0.0) {
+        node->GetValue().SetDist(0.0);
+    }
 }
 
 
