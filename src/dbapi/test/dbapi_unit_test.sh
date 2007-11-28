@@ -109,7 +109,7 @@ EOF
                 export SYBASE
             fi
 
-            if test \( $driver = "ctlib" -o $driver = "dblib" \) -a \( $server = $server_mssql -o $server = $server_mssql2005 \) ; then
+            if test $driver = "ctlib" -a \( $server = $server_mssql -o $server = $server_mssql2005 \) ; then
                 continue
             fi
 

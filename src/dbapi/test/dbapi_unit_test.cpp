@@ -11364,6 +11364,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         || args.GetServerType() == CTestArguments::eMsSql2005)
         && args.GetDriverName() != msdblib_driver
         && args.GetDriverName() != ftds_dblib_driver
+        && args.GetDriverName() != dblib_driver
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStore,
                                    DBAPIInstance);
@@ -11378,7 +11379,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
          !(Solaris && CompilerWorkShop) &&
          !Irix
          )
-        || args.GetDriverName() == dblib_driver
+        || (args.GetDriverName() == dblib_driver && args.GetServerType() == CTestArguments::eSybase)
         || args.GetDriverName() == msdblib_driver
         || (args.GetDriverName() == ctlib_driver && !Solaris)
         || args.GetDriverName() == ftds64_driver
@@ -11411,6 +11412,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
              && args.GetServerType() == CTestArguments::eSybase)
         && !(args.GetDriverName() == ftds_odbc_driver
              && args.GetServerType() == CTestArguments::eMsSql2005)
+        && (args.GetDriverName() != dblib_driver
+             || args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation,
                                    DBAPIInstance);
@@ -11474,6 +11477,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && !Solaris // Requires Sybase client 12.5
         && args.GetDriverName() != ftds_dblib_driver
+        && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
         tc->depends_on(tc_init);
@@ -11515,11 +11519,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc_parameters->depends_on(tc_init);
         add(tc_parameters);
 
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetRowCount,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        tc->depends_on(tc_parameters);
-        add(tc);
+        if (args.GetDriverName() != dblib_driver
+               || args.GetServerType() == CTestArguments::eSybase)) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetRowCount,
+                                       DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(tc_parameters);
+            add(tc);
+        }
 
         // Doesn't work at the moment ...
         if (args.GetDriverName() != ftds8_driver
@@ -11527,6 +11534,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             && args.GetDriverName() != odbc_driver
             && args.GetDriverName() != odbcw_driver
             && args.GetDriverName() != msdblib_driver // Fails with the message "Cannot get the DBCOLINFO*"
+            && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
             ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_LowLevel,
                                    DBAPIInstance);
@@ -11631,6 +11639,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.IsBCPAvailable()
         && args.GetDriverName() != ftds_dblib_driver
+        && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob,
                                    DBAPIInstance);
@@ -11642,6 +11651,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.IsBCPAvailable()) {
         if(args.GetDriverName() != ftds_dblib_driver
+           && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
            && !(args.GetDriverName() == ctlib_driver && Solaris && !sybase_client_v125)
           )
         {
@@ -11802,6 +11812,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
         && !(args.GetDriverName() == ftds8_driver
           && args.GetServerType() == CTestArguments::eSybase)
+        && (args.GetDriverName() != dblib_driver
+          || args.GetServerType() == CTestArguments::eSybase)
         && args.GetDriverName() != ftds_dblib_driver
         ) {
 
@@ -11846,6 +11858,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && args.GetDriverName() != msdblib_driver     // Just does'nt work for some reason
         && args.GetDriverName() != ftds_dblib_driver
+        && (args.GetDriverName() != dblib_driver
+             ||  args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTimeBCP,
                                    DBAPIInstance);
@@ -11862,6 +11876,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             //      && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
             && args.GetDriverName() != ctlib_driver
             && args.GetDriverName() != ftds_dblib_driver
+            && (args.GetDriverName() != dblib_driver
+                 ||  args.GetServerType() == CTestArguments::eSybase)
            )
         {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow,
@@ -11931,11 +11947,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (!(((args.GetDriverName() == ftds64_driver
                 || args.GetDriverName() == ftds8_driver
                 || args.GetDriverName() == ftds_dblib_driver
-                || args.GetDriverName() == dblib_driver
               )
            && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
           || args.GetDriverName() == msdblib_driver
           )
+         && args.GetDriverName() != dblib_driver
         )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Identity,
@@ -11953,10 +11969,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(tc);
 
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_N_Connections,
-                               DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
+    if (!(args.GetDriverName() == ftds64_driver
+            &&  args.GetServerType() == CTestArguments::eSybase))
+    {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_N_Connections,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
 //     if (args.GetServerType() == CTestArguments::eMsSql
 //         && args.GetDriverName() != odbc_driver // Doesn't work ...

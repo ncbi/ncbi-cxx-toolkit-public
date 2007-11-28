@@ -186,7 +186,10 @@ EOF
 
             cmd="lang_query -lb random -d $driver -S $server -Q"
             if test $driver != "ftds63" ; then
-                RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
+                if test $driver != 'dblib' -o \( $driver = 'dblib' -a $server != $server_mssql -a $server != $server_mssql2005 \) ; then
+                    RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
+                fi
+                RunTest2 'select qq = convert(real, 57.55 + 0.0033)' '<ROW><qq>57\.5533<'
             else
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd select qq = 57.55 + 0.0033 (skipped)"
             fi
