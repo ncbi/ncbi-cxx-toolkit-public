@@ -103,6 +103,8 @@ MolInfo ::= SEQUENCE {
         cRNA (11) ,              -- viral RNA genome copy intermediate
         snoRNA (12) ,            -- small nucleolar RNA
         transcribed-RNA (13) ,   -- transcribed RNA other than existing classes
+        ncRNA (14) ,
+        tmRNA (15) ,
         other (255) } DEFAULT unknown ,
     tech INTEGER {
         unknown (0) ,
@@ -146,7 +148,8 @@ MolInfo ::= SEQUENCE {
       no-ends (5) ,                    -- missing both ends
       has-left (6) ,                   -- 5' or NH3 end present
       has-right (7) ,                  -- 3' or COOH end present
-      other (255) } DEFAULT unknown }
+      other (255) } DEFAULT unknown ,
+    gbmoltype VisibleString OPTIONAL } -- identifies particular ncRNA
 
 
 GIBB-mol ::= ENUMERATED {       -- type of molecule represented
