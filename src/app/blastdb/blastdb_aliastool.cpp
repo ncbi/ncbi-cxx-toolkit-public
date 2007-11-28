@@ -57,7 +57,27 @@ private:
     virtual void Init();
     virtual int Run();
 
+    /// Converts gi files from binary to text format
+    /// @return 0 on success
+    int ConvertGiFile() const;
+
+    /// Documentation for this program
     static const char * const DOCUMENTATION;
+
+    /// Describes the modes of operation of this application
+    enum EOperationMode {
+        eCreateAlias,       ///< Create alias files
+        eConvertGiFile      ///< Convert gi files from text to binary format
+    };
+
+    /// Determine what mode of operation is being used
+    EOperationMode x_GetOperationMode() const {
+        EOperationMode retval = eCreateAlias;
+        if (GetArgs()["gi_file_in"].HasValue()) {
+            retval = eConvertGiFile;
+        }
+        return retval;
+    }
 };
 
 const char * const CBlastDBAliasApp::DOCUMENTATION = "\n\n"
@@ -98,8 +118,9 @@ void CBlastDBAliasApp::Init()
                                 string(exclusions[i]));
     }
     arg_desc->AddOptionalKey("gi_file_out", "output_file",
-                             "File name of converted GI file\n" + dflt,
-                             CArgDescriptions::eOutputFile);
+                     "File name of converted GI file\n" + dflt,
+                     CArgDescriptions::eOutputFile,
+                     CArgDescriptions::fPreOpen | CArgDescriptions::fBinary);
     arg_desc->SetDependency("gi_file_out", CArgDescriptions::eRequires,
                             "gi_file_in");
     for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
@@ -146,19 +167,48 @@ void CBlastDBAliasApp::Init()
     SetupArgDescriptions(arg_desc.release());
 }
 
+int CBlastDBAliasApp::ConvertGiFile() const
+{
+    const CArgs& args = GetArgs();
+    CNcbiIstream& input = args["gi_file_in"].AsInputFile();
+    CNcbiOstream& output = args["gi_file_out"].AsOutputFile();
+
+    CBinaryListBuilder builder(CBinaryListBuilder::eGi);
+
+    while (input) {
+        string line;
+        NcbiGetlineEOL(input, line);
+        if ( !line.empty() ) {
+            try { builder.AppendId(NStr::StringToInt8(line)); }
+            catch (const CStringException& e) {
+                ERR_POST(Warning << e.GetMsg());
+            }
+        }
+    }
+
+    builder.Write(output);
+    ERR_POST(Info << "Converted " << builder.Size() << " GIs");
+    return 0;
+}
+
 int CBlastDBAliasApp::Run(void)
 {
     int status = 0;
+    SetDiagPostLevel(eDiag_Info);
 
     try {
 
-        throw runtime_error("Implement me!");
+        if (x_GetOperationMode() == eConvertGiFile) {
+            status = ConvertGiFile();
+        } else {
+            throw runtime_error("Unimplemented functionality");
+        }
 
     } catch (const CException& exptn) {
-        cerr << exptn.what() << endl;
+        cerr << exptn.GetMsg() << endl;
         status = exptn.GetErrCode();
     } catch (const exception& e) {
-        cerr << e.what() << endl;
+        cerr << "Error: " << e.what() << endl;
         status = -1;
     } catch (...) {
         cerr << "Unknown exception" << endl;
