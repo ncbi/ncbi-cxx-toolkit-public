@@ -11520,7 +11520,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc_parameters);
 
         if (args.GetDriverName() != dblib_driver
-               || args.GetServerType() == CTestArguments::eSybase)) {
+               || args.GetServerType() == CTestArguments::eSybase) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetRowCount,
                                        DBAPIInstance);
             tc->depends_on(tc_init);

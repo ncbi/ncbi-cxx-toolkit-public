@@ -33,6 +33,8 @@
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/error_codes.hpp>
 
+#include <stdio.h>
+
 
 #define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Cmds
 
