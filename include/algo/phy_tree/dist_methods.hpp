@@ -75,6 +75,23 @@ public:
     static void KimuraDist(const TMatrix& frac_diff,
                            TMatrix& result);
 
+    /// Grishin's distance for protein sequences:
+    /// 1 - p = (1 - e^(2*d)) / (2 * d)
+    /// approximated with d = p(2 + p) / (2(1 - p))
+    ///proposed in Grishin, J Mol Evol 41:675-679, 1995.
+    static void GrishinDist(const TMatrix& frac_diff,
+                           TMatrix& result);
+
+    /// Grishin's distance for protein sequences
+    /// 1 - p = ln(1 + 2d) / 2d.
+    ///
+    /// For general model: substitution rates vary for amino acids and sites
+    /// proposed in Grishin N, J Mol Evol, 41:675-679, 1995
+    /// approximated with d = 0.65((1 - p)^(-1/0.65) - 1) (gamma distance)
+    /// accoriding to M Nei and S Mumar, Mollecular Evolution and Phylogenetics.
+    static void GrishinGeneralDist(const TMatrix& frac_diff,
+                           TMatrix& result);
+
     /// Calculate pairwise fractions of non-identity
     static double Divergence(const string& seq1, const string& seq2);
     static void Divergence(const objects::CAlnVec& avec_in, TMatrix& result);
@@ -90,6 +107,9 @@ public:
                              EFastMePar btype = eOls,
                              EFastMePar wtype = eOls,
                              EFastMePar ntype = eBalanced);
+
+    /// Sets negative lengths of branches of a tree to zero.
+    static void ZeroNegativeBranches(TTree* node);
 
     /// Check a matrix for NaNs and Infs
     static bool AllFinite(const TMatrix& mat);
