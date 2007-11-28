@@ -150,8 +150,17 @@ sub new
 
     print STDERR "Gathering information about $BranchPath...\n";
 
-    my $RevisionLog = $Self->{SVN}->ReadLog('--stop-on-copy',
-        "-rHEAD\:1", $RootURL, $BranchPath);
+    my $RevisionLog = eval {$Self->{SVN}->ReadLog('--stop-on-copy',
+        "-rHEAD\:1", $RootURL, $BranchPath)};
+
+    # Interpret a misleading error message issued when accessing the
+    # repository via HTTPS and the branch identified by $BranchPath
+    # couldn't be found.
+    if ($@)
+    {
+        die $@ =~ m/Secure connection truncated/s ?
+            "$BranchPath\: no such branch\n" : $@
+    }
 
     my %BranchStructure;
     my $CommonTarget = "/$BranchPath/";
