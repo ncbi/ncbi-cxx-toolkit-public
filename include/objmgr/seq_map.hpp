@@ -225,6 +225,9 @@ protected:
                  TSeqPos length = kInvalidSeqPos,
                  bool unknown_len = false);
 
+        // Check if this segment has CSeq_data object (may be gap)
+        bool IsSeqData(void) const;
+
         // Relative position of the segment in seqmap
         mutable TSeqPos      m_Position;
         // Length of the segment (kInvalidSeqPos if unresolved)
@@ -387,6 +390,13 @@ protected:
 
 /////////////////////////////////////////////////////////////////////
 //  CSeqMap: inline methods
+
+inline
+bool CSeqMap::CSegment::IsSeqData(void) const
+{
+    return m_SegType == CSeqMap::eSeqData || m_ObjType == CSeqMap::eSeqData;
+}
+
 
 inline
 size_t CSeqMap::GetSegmentsCount(void) const
