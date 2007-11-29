@@ -1,6 +1,6 @@
 APP = blastdbcmd
 SRC = blastdbcmd
-LIB = $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB = blastinput $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)

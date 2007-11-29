@@ -207,7 +207,7 @@ int CBlastDBAliasApp::Run(void)
         }
 
     } catch (const CException& exptn) {
-        cerr << exptn.GetMsg() << endl;
+        cerr << "Error: " << exptn.GetMsg() << endl;
         status = exptn.GetErrCode();
     } catch (const exception& e) {
         cerr << "Error: " << e.what() << endl;

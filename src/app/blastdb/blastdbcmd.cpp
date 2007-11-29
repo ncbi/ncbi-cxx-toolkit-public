@@ -41,12 +41,49 @@ static char const rcsid[] =
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/api/version.hpp>
 #include <objtools/readers/seqdb/seqdbexpert.hpp>
+#include <algo/blast/blastinput/blast_input_aux.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 #endif
 
+/// Encapsulates identifier to retrieve from BLAST database
+class CData2Retrieve 
+{
+public:
+    CData2Retrieve() : m_PIG(kInvalid), m_GI(kInvalid) {}
+
+    CData2Retrieve(string entry) {
+        m_PIG = kInvalid;
+        try { 
+            m_GI = NStr::StringToInt(entry); 
+            return; 
+        } catch (...) {}
+        m_SequenceId = entry;
+    }
+
+    CData2Retrieve(int pig) {
+        m_PIG = pig;
+        m_GI = kInvalid;
+    }
+
+    bool IsGi() const { return m_GI != kInvalid; }
+    bool IsPig() const { return m_PIG != kInvalid; }
+    bool IsStringId() const { return !m_SequenceId.empty(); }
+
+    int GetGi() const { return m_GI; }
+    int GetPig() const { return m_PIG; }
+    string GetStringId() const { return m_SequenceId; }
+
+private:
+    static const int kInvalid = -1;
+    int m_PIG;
+    int m_GI;
+    string m_SequenceId;
+};
+
+/// The application class
 class CBlastDBCmdApp : public CNcbiApplication
 {
 public:
@@ -57,41 +94,75 @@ private:
     virtual void Init();
     virtual int Run();
     
+    /// Handle to BLAST database
     CRef<CSeqDBExpert> m_BlastDb;
+    /// Is the database protein
     bool m_DbIsProtein;
+    /// Sequence range, non-empty if provided as command line argument
+    TSeqRange m_SeqRange;
+    /// Strand to retrieve
+    ENa_strand m_Strand;
 
-    void x_InitializeBlastDbHandle();
+    void x_InitApplicationData();
     void x_PrintBlastDatabaseInformation();
     void x_ProcessSearchRequest() const;
-};
 
-/// Class to constrain the values of an argument to those greater than or equal
-/// to the value specified in the constructor
-class CArgAllowValuesGreaterThanOrEqual : public CArgAllow
-{
-public:
-    /// Constructor taking an integer
-    CArgAllowValuesGreaterThanOrEqual(int min) : m_MinValue(min) {}
-    /// Constructor taking a double
-    CArgAllowValuesGreaterThanOrEqual(double min) : m_MinValue(min) {}
-
-protected:
-    /// Overloaded method from CArgAllow
-    virtual bool Verify(const string& value) const {
-        return NStr::StringToDouble(value) >= m_MinValue;
-    }
-
-    /// Overloaded method from CArgAllow
-    virtual string GetUsage(void) const {
-        return ">=" + NStr::DoubleToString(m_MinValue);
-    }
-    
-private:
-    double m_MinValue;  /**< Minimum value for this object */
+    typedef vector<CData2Retrieve> TQueries;
+    /// Return the queries for the BLAST database
+    /// @queries queries to retrieve, will be empty if all the database should
+    /// be returned, or else, the specific entries contained in it [in|out]
+    void x_GetQueries(TQueries& queries) const;
 };
 
 void
-CBlastDBCmdApp::x_InitializeBlastDbHandle()
+CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
+{
+    const CArgs& args = GetArgs();
+    retval.clear();
+
+    if (args["pig"].HasValue()) {
+
+        retval.reserve(1);
+        retval.push_back(CData2Retrieve(args["pig"].AsInteger()));
+
+    } else if (args["entry"].HasValue()) {
+
+        static const string kDelim(",");
+        const string& entry = args["entry"].AsString();
+        if (entry == "all") {
+            return;
+        } else if (entry.find(kDelim[0]) != string::npos) {
+            vector<string> tokens;
+            NStr::Tokenize(entry, kDelim, tokens);
+            retval.reserve(tokens.size());
+            ITERATE(vector<string>, itr, tokens) {
+                retval.push_back(CData2Retrieve(*itr));
+            }
+        } else {
+            retval.reserve(1);
+            retval.push_back(CData2Retrieve(entry));
+        }
+
+    } else if (args["entry_batch"].HasValue()) {
+
+        CNcbiIstream& input = args["entry_batch"].AsInputFile();
+        retval.reserve(256); // arbitrary value
+        while (input) {
+            string line;
+            NcbiGetlineEOL(input, line);
+            if ( !line.empty() ) {
+                retval.push_back(CData2Retrieve(line));
+            }
+        }
+
+    } else {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "Must specify query type");
+    }
+}
+
+void
+CBlastDBCmdApp::x_InitApplicationData()
 {
     const CArgs& args = GetArgs();
     CSeqDB::ESeqType seqtype;
@@ -108,6 +179,20 @@ CBlastDBCmdApp::x_InitializeBlastDbHandle()
     m_BlastDb.Reset(new CSeqDBExpert(args["db"].AsString(), seqtype));
     m_DbIsProtein = 
         static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
+
+    m_SeqRange = TSeqRange::GetEmpty();
+    if (args["range"].HasValue()) {
+        m_SeqRange = ParseSequenceRange(args["range"].AsString());
+    }
+
+    m_Strand = eNa_strand_unknown;
+    if (args["strand"].HasValue() && !m_DbIsProtein) {
+        if (args["strand"].AsString() == "plus") {
+            m_Strand = eNa_strand_plus;
+        } else {
+            m_Strand = eNa_strand_minus;
+        }
+    } 
 }
 
 // FIXME: this should be moved as a member function of SBlastDbMaskData
@@ -188,8 +273,34 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
 void
 CBlastDBCmdApp::x_ProcessSearchRequest() const
 {
-    //const CArgs& args = GetArgs();
-    throw runtime_error("Unimplemented");
+    TQueries queries;
+    x_GetQueries(queries);
+    CNcbiOstream& out = GetArgs()["out"].AsOutputFile();
+
+    // Convert the entries into OIDs
+    vector<CSeqDB::TOID> oids2fetch;
+    oids2fetch.reserve(queries.size());
+    ITERATE(TQueries, itr, queries) {
+        CSeqDB::TOID oid = -1;
+        if (itr->IsGi() && m_BlastDb->GiToOid(itr->GetGi(), oid)) {
+            oids2fetch.push_back(oid);
+        } else if (itr->IsPig() && m_BlastDb->PigToOid(itr->GetPig(), oid)) {
+            oids2fetch.push_back(oid);
+        } else if (itr->IsStringId()) {
+            vector<int> oids;
+            m_BlastDb->AccessionToOids(itr->GetStringId(), oids);
+            copy(oids.begin(), oids.end(), back_inserter(oids2fetch));
+        }
+    }
+
+    out << "DBG: Will fetch " << oids2fetch.size() << " OIDs" << endl;
+    // FIXME: add formatting interfaces here
+    if (oids2fetch.empty()) {
+        // dump the entire database
+    } else {
+        ITERATE(vector<CSeqDB::TOID>, itr, oids2fetch) {
+        }
+    }
 }
 
 void CBlastDBCmdApp::Init()
@@ -220,8 +331,8 @@ void CBlastDBCmdApp::Init()
                      CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("entry_batch", "input_file", 
-                             "Input file with batch input", 
-                             CArgDescriptions::eInputFile);
+                 "Input file for batch processing (Format: one entry per line)",
+                 CArgDescriptions::eInputFile);
     arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes,
                             "entry");
 
@@ -296,7 +407,7 @@ int CBlastDBCmdApp::Run(void)
     const CArgs& args = GetArgs();
 
     try {
-        x_InitializeBlastDbHandle();
+        x_InitApplicationData();
 
         if (args["info"]) {
             x_PrintBlastDatabaseInformation();
@@ -305,10 +416,10 @@ int CBlastDBCmdApp::Run(void)
         }
 
     } catch (const CException& exptn) {
-        cerr << exptn.what() << endl;
+        cerr << "Error: " << exptn.GetMsg() << endl;
         status = exptn.GetErrCode();
     } catch (const exception& e) {
-        cerr << e.what() << endl;
+        cerr << "Error: " << e.what() << endl;
         status = -1;
     } catch (...) {
         cerr << "Unknown exception" << endl;

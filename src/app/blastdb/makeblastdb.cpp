@@ -138,10 +138,10 @@ int CMakeBlastDBApp::Run(void)
         throw runtime_error("Implement me!");
 
     } catch (const CException& exptn) {
-        cerr << exptn.what() << endl;
+        cerr << "Error: " << exptn.GetMsg() << endl;
         status = exptn.GetErrCode();
     } catch (const exception& e) {
-        cerr << e.what() << endl;
+        cerr << "Error: " << e.what() << endl;
         status = -1;
     } catch (...) {
         cerr << "Unknown exception" << endl;
