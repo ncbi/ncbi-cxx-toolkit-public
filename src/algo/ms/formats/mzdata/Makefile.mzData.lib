@@ -1,0 +1,2 @@
+LIB = mzData
+SRC = mzData__ mzData___

@@ -1,0 +1,411 @@
+<!ELEMENT msms_pipeline_analysis (analysis_summary*, dataset_derivation?, msms_run_summary+)>
+<!ATTLIST msms_pipeline_analysis
+	name CDATA #IMPLIED
+	date NMTOKEN #REQUIRED
+	summary_xml CDATA #REQUIRED
+>
+<!--Summary of analysis subjected to run(s)-->
+<!ELEMENT analysis_summary (#PCDATA)>
+<!ATTLIST analysis_summary
+	time NMTOKEN #REQUIRED
+	analysis CDATA #REQUIRED
+	version CDATA #IMPLIED
+>
+<!--Source and filtering criteria used to generate dataset-->
+<!ELEMENT dataset_derivation (data_filter*)>
+<!ATTLIST dataset_derivation
+	generation_no NMTOKEN #REQUIRED
+>
+<!ELEMENT data_filter EMPTY>
+<!ATTLIST data_filter
+	number NMTOKEN #REQUIRED
+	parent_file CDATA #REQUIRED
+	windows_parent CDATA #IMPLIED
+	description CDATA #REQUIRED
+>
+<!--Search results for LC/MS/MS run-->
+<!ELEMENT msms_run_summary (sample_enzyme, search_summary+, analysis_timestamp*, spectrum_query*)>
+<!ATTLIST msms_run_summary
+	base_name CDATA #REQUIRED
+	raw_data_type CDATA #REQUIRED
+	raw_data CDATA #REQUIRED
+	msManufacturer CDATA #IMPLIED
+	msModel CDATA #IMPLIED
+	msIonization CDATA #IMPLIED
+	msMassAnalyzer CDATA #IMPLIED
+	msDetector CDATA #IMPLIED
+>
+<!--Defines the net cleavage specificity of an enzyme, chemical reagent, or a mixture of these, for mass spectrometry purposes-->
+<!ELEMENT sample_enzyme (specificity*)>
+<!ATTLIST sample_enzyme
+	name CDATA #REQUIRED
+	description CDATA #IMPLIED
+	fidelity (specific | semispecific | nonspecific) "specific"
+	independent NMTOKEN "1"
+>
+<!--Component cleavage specificity. Must be at least one specificity unless enzymeType:fidelity is nonspecific -->
+<!ELEMENT specificity EMPTY>
+<!-- Sense is (C | N) -->
+<!ATTLIST specificity
+	sense CDATA #REQUIRED
+	min_spacing NMTOKEN "1"
+	cut CDATA #REQUIRED
+	no_cut CDATA #IMPLIED
+>
+<!--Database search settings-->
+<!ELEMENT search_summary (search_database?, enzymatic_search_constraint?, sequence_search_constraint*, aminoacid_modification*, terminal_modification*, parameter*)>
+<!-- mass_types are (monoisotopic | average) -->
+<!ATTLIST search_summary
+	base_name CDATA #REQUIRED
+	search_engine CDATA #REQUIRED
+	precursor_mass_type CDATA #REQUIRED
+	fragment_mass_type CDATA #REQUIRED
+	out_data_type CDATA #IMPLIED
+	out_data CDATA #IMPLIED
+	search_id NMTOKEN #REQUIRED
+>
+<!ELEMENT search_database EMPTY>
+<!-- type is (AA | NA)-->
+<!ATTLIST search_database
+	local_path CDATA #REQUIRED
+	URL CDATA #IMPLIED
+	database_name CDATA #IMPLIED
+	orig_database_url CDATA #IMPLIED
+	database_release_date NMTOKEN #IMPLIED
+	database_release_identifier CDATA #IMPLIED
+	size_in_db_entries NMTOKEN #IMPLIED
+	size_of_residues NMTOKEN #IMPLIED
+	type CDATA #REQUIRED
+>
+<!--Required peptide termini-->
+<!ELEMENT enzymatic_search_constraint EMPTY>
+<!ATTLIST enzymatic_search_constraint
+	enzyme CDATA #REQUIRED
+	max_num_internal_cleavages NMTOKEN #REQUIRED
+	min_number_termini NMTOKEN #REQUIRED
+>
+<!--Required amino acid string-->
+<!ELEMENT sequence_search_constraint EMPTY>
+<!ATTLIST sequence_search_constraint
+	sequence CDATA #REQUIRED
+>
+<!--Modified aminoacid, static or variable-->
+<!ELEMENT aminoacid_modification EMPTY>
+<!ATTLIST aminoacid_modification
+	aminoacid CDATA #REQUIRED
+	massdiff CDATA #REQUIRED
+	mass NMTOKEN #REQUIRED
+	variable CDATA #REQUIRED
+	peptide_terminus CDATA #IMPLIED
+	symbol CDATA #IMPLIED
+	binary CDATA #IMPLIED
+	description CDATA #IMPLIED
+>
+<!--Modification to the N or C terminus, static or variable-->
+<!ELEMENT terminal_modification EMPTY>
+<!ATTLIST terminal_modification
+	terminus CDATA #REQUIRED
+	massdiff CDATA #REQUIRED
+	mass NMTOKEN #REQUIRED
+	variable CDATA #REQUIRED
+	symbol CDATA #IMPLIED
+	protein_terminus CDATA #REQUIRED
+	description CDATA #IMPLIED
+>
+<!ELEMENT parameter (#PCDATA)>
+<!ATTLIST parameter
+	name CDATA #REQUIRED
+	value CDATA #REQUIRED
+	type CDATA #IMPLIED
+>
+<!--Reference for analysis applied to current run (time corresponds with analysis_summary/@time, id corresponds with analysis_result/@id)-->
+<!ELEMENT analysis_timestamp (#PCDATA)>
+<!ATTLIST analysis_timestamp
+	time NMTOKEN #REQUIRED
+	analysis CDATA #REQUIRED
+	id NMTOKEN #REQUIRED
+>
+<!--MS/MS spectrum, precursor ion charge and mass-->
+<!ELEMENT spectrum_query (search_result*)>
+<!ATTLIST spectrum_query
+	spectrum CDATA #REQUIRED
+	start_scan NMTOKEN #REQUIRED
+	end_scan NMTOKEN #REQUIRED
+	retention_time_sec NMTOKEN #IMPLIED
+	precursor_neutral_mass NMTOKEN #REQUIRED
+	assumed_charge NMTOKEN #REQUIRED
+	search_specification CDATA #IMPLIED
+	index NMTOKEN #REQUIRED
+>
+<!ELEMENT search_result (search_hit*)>
+<!ATTLIST search_result
+	search_id NMTOKEN "1"
+>
+<!--Peptide assignment-->
+<!ELEMENT search_hit (alternative_protein*, modification_info?, search_score*, analysis_result*, parameter*)>
+<!ATTLIST search_hit
+	hit_rank NMTOKEN #REQUIRED
+	peptide CDATA #REQUIRED
+	peptide_prev_aa CDATA #IMPLIED
+	peptide_next_aa CDATA #IMPLIED
+	protein CDATA #REQUIRED
+	num_tot_proteins NMTOKEN #REQUIRED
+	num_matched_ions NMTOKEN #IMPLIED
+	tot_num_ions NMTOKEN #IMPLIED
+	calc_neutral_pep_mass NMTOKEN #REQUIRED
+	massdiff CDATA #REQUIRED
+	num_tol_term NMTOKEN #IMPLIED
+	num_missed_cleavages NMTOKEN #IMPLIED
+	is_rejected NMTOKEN "0"
+	protein_descr CDATA #IMPLIED
+	calc_pI CDATA #IMPLIED
+	protein_mw NMTOKEN #IMPLIED
+>
+<!--Other protein in search database that contains peptide-->
+<!ELEMENT alternative_protein EMPTY>
+<!ATTLIST alternative_protein
+	protein CDATA #REQUIRED
+	protein_descr CDATA #IMPLIED
+	num_tol_term NMTOKEN #IMPLIED
+	protein_mw NMTOKEN #IMPLIED
+>
+<!--Positions and masses of modifications-->
+<!ELEMENT modification_info (mod_aminoacid_mass*)>
+<!ATTLIST modification_info
+	mod_nterm_mass NMTOKEN #IMPLIED
+	mod_cterm_mass NMTOKEN #IMPLIED
+	modified_peptide CDATA #IMPLIED
+>
+<!ELEMENT mod_aminoacid_mass EMPTY>
+<!ATTLIST mod_aminoacid_mass
+	position NMTOKEN #REQUIRED
+	mass NMTOKEN #REQUIRED
+>
+<!ELEMENT search_score EMPTY>
+<!ATTLIST search_score
+	name CDATA #REQUIRED
+	value CDATA #REQUIRED
+	type CDATA #IMPLIED
+>
+<!ELEMENT analysis_result (#PCDATA)>
+<!ATTLIST analysis_result
+	analysis CDATA #REQUIRED
+	id NMTOKEN "1"
+>
+<!--Summary information for PeptideProphet analysis-->
+<!ELEMENT peptideprophet_summary (inputfile+, roc_data_point*, error_point*, distribution_point*, mixture_model*)>
+<!ATTLIST peptideprophet_summary
+	version CDATA #REQUIRED
+	author CDATA #REQUIRED
+	min_prob NMTOKEN #REQUIRED
+	options CDATA #IMPLIED
+	est_tot_num_correct NMTOKEN #IMPLIED
+>
+<!ELEMENT inputfile EMPTY>
+<!ATTLIST inputfile
+	name CDATA #REQUIRED
+>
+<!ELEMENT roc_data_point EMPTY>
+<!ATTLIST roc_data_point
+	min_prob NMTOKEN #REQUIRED
+	sensitivity NMTOKEN #REQUIRED
+	error NMTOKEN #REQUIRED
+	num_corr NMTOKEN #REQUIRED
+	num_incorr NMTOKEN #REQUIRED
+>
+<!ELEMENT error_point EMPTY>
+<!ATTLIST error_point
+	error NMTOKEN #REQUIRED
+	min_prob NMTOKEN #REQUIRED
+	num_corr NMTOKEN #REQUIRED
+	num_incorr NMTOKEN #REQUIRED
+>
+<!ELEMENT distribution_point EMPTY>
+<!ATTLIST distribution_point
+	fvalue NMTOKEN #REQUIRED
+	obs_1_distr NMTOKEN #REQUIRED
+	model_1_pos_distr NMTOKEN #REQUIRED
+	model_1_neg_distr NMTOKEN #REQUIRED
+	obs_2_distr NMTOKEN #REQUIRED
+	model_2_pos_distr NMTOKEN #REQUIRED
+	model_2_neg_distr NMTOKEN #REQUIRED
+	obs_3_distr NMTOKEN #REQUIRED
+	model_3_pos_distr NMTOKEN #REQUIRED
+	model_3_neg_distr NMTOKEN #REQUIRED
+>
+<!ELEMENT mixture_model (mixturemodel_distribution+)>
+<!ATTLIST mixture_model
+	precursor_ion_charge NMTOKEN #REQUIRED
+	comments CDATA #REQUIRED
+	prior_probability NMTOKEN #REQUIRED
+	est_tot_correct NMTOKEN #REQUIRED
+	tot_num_spectra NMTOKEN #REQUIRED
+	num_iterations NMTOKEN #REQUIRED
+>
+<!ELEMENT mixturemodel_distribution (posmodel_distribution, negmodel_distribution)>
+<!ATTLIST mixturemodel_distribution
+	name CDATA #REQUIRED
+>
+<!ELEMENT posmodel_distribution (parameter+)>
+<!ATTLIST posmodel_distribution
+	type (discrete | gaussian | extremevalue | gamma | evd) #IMPLIED
+>
+<!ELEMENT negmodel_distribution (parameter+)>
+<!ATTLIST negmodel_distribution
+	type (discrete | gaussian | extremevalue | gamma | evd) #IMPLIED
+>
+<!--Quantitation-->
+<!ELEMENT asapratio_summary EMPTY>
+<!ATTLIST asapratio_summary
+	version CDATA #REQUIRED
+	author CDATA #REQUIRED
+	elution NMTOKEN #REQUIRED
+	labeled_residues CDATA #REQUIRED
+	area_flag NMTOKEN #REQUIRED
+	static_quant CDATA #REQUIRED
+>
+<!--Quantitation-->
+<!ELEMENT xpressratio_summary EMPTY>
+<!ATTLIST xpressratio_summary
+	version CDATA #REQUIRED
+	author CDATA #REQUIRED
+	same_scan_range CDATA #REQUIRED
+	labeled_residues CDATA #REQUIRED
+	xpress_light NMTOKEN #REQUIRED
+	massdiff CDATA #REQUIRED
+	masstol NMTOKEN #REQUIRED
+>
+<!--PeptideProphet validation results for search hit-->
+<!ELEMENT peptideprophet_result (search_score_summary?)>
+<!ATTLIST peptideprophet_result
+	probability NMTOKEN #REQUIRED
+	all_ntt_prob CDATA #IMPLIED
+	analysis CDATA #IMPLIED
+>
+<!ELEMENT search_score_summary (parameter+)>
+<!--ASAPRatio quantitation results for search hit-->
+<!ELEMENT asapratio_result (asapratio_peptide_data)>
+<!ATTLIST asapratio_result
+	mean NMTOKEN #REQUIRED
+	error NMTOKEN #REQUIRED
+	heavy2light_mean NMTOKEN #REQUIRED
+	heavy2light_error NMTOKEN #REQUIRED
+>
+<!ELEMENT asapratio_peptide_data (asapratio_contribution+)>
+<!ATTLIST asapratio_peptide_data
+	status NMTOKEN #REQUIRED
+	cidIndex NMTOKEN #REQUIRED
+	light_mass NMTOKEN #REQUIRED
+	heavy_mass NMTOKEN #REQUIRED
+	area_flag NMTOKEN #REQUIRED
+>
+<!ELEMENT asapratio_contribution (asapratio_lc_lightpeak, asapratio_lc_heavypeak)>
+<!ATTLIST asapratio_contribution
+	ratio NMTOKEN #REQUIRED
+	error NMTOKEN #REQUIRED
+	charge NMTOKEN #REQUIRED
+	use NMTOKEN #REQUIRED
+>
+<!ELEMENT asapratio_lc_lightpeak EMPTY>
+<!ATTLIST asapratio_lc_lightpeak
+	status NMTOKEN #REQUIRED
+	left_valley NMTOKEN #REQUIRED
+	right_valley NMTOKEN #REQUIRED
+	background NMTOKEN #REQUIRED
+	area NMTOKEN #REQUIRED
+	area_error NMTOKEN #REQUIRED
+	time NMTOKEN #REQUIRED
+	time_width NMTOKEN #REQUIRED
+	is_heavy CDATA #REQUIRED
+>
+<!ELEMENT asapratio_lc_heavypeak EMPTY>
+<!ATTLIST asapratio_lc_heavypeak
+	status NMTOKEN #REQUIRED
+	left_valley NMTOKEN #REQUIRED
+	right_valley NMTOKEN #REQUIRED
+	background NMTOKEN #REQUIRED
+	area NMTOKEN #REQUIRED
+	area_error NMTOKEN #REQUIRED
+	time NMTOKEN #REQUIRED
+	time_width NMTOKEN #REQUIRED
+	is_heavy CDATA #REQUIRED
+>
+<!ELEMENT database_refresh_timestamp EMPTY>
+<!ATTLIST database_refresh_timestamp
+	database CDATA #REQUIRED
+	min_num_enz_term NMTOKEN #IMPLIED
+>
+<!ELEMENT xpressratio_timestamp EMPTY>
+<!ATTLIST xpressratio_timestamp
+	xpress_light NMTOKEN #REQUIRED
+>
+<!ELEMENT asapratio_timestamp EMPTY>
+<!ATTLIST asapratio_timestamp
+	quant_label_masses CDATA #IMPLIED
+	static_quant_label CDATA #IMPLIED
+>
+<!--Quantitation-->
+<!ELEMENT xpressratio_result EMPTY>
+<!ATTLIST xpressratio_result
+	light_firstscan NMTOKEN #REQUIRED
+	light_lastscan NMTOKEN #REQUIRED
+	light_mass NMTOKEN #REQUIRED
+	heavy_firstscan NMTOKEN #REQUIRED
+	heavy_lastscan NMTOKEN #REQUIRED
+	heavy_mass NMTOKEN #REQUIRED
+	mass_tol NMTOKEN #REQUIRED
+	ratio CDATA #REQUIRED
+	heavy2light_ratio CDATA #REQUIRED
+	light_area NMTOKEN #REQUIRED
+	heavy_area NMTOKEN #REQUIRED
+	decimal_ratio NMTOKEN #REQUIRED
+>
+<!--Combined datasets-->
+<!ELEMENT interact_summary (inputfile+)>
+<!ATTLIST interact_summary
+	filename CDATA #REQUIRED
+	directory CDATA #REQUIRED
+>
+<!--libra quantitation for search hit-->
+<!ELEMENT libra_result (intensity+)>
+<!ATTLIST libra_result
+	is_rejected NMTOKEN "0"
+>
+<!--integrated mass intensity-->
+<!ELEMENT intensity EMPTY>
+<!ATTLIST intensity
+	channel NMTOKEN #REQUIRED
+	target_mass NMTOKEN #REQUIRED
+	absolute NMTOKEN #REQUIRED
+	normalized NMTOKEN #REQUIRED
+	reject NMTOKEN "0"
+>
+<!--summary info for libra quantitation analysis-->
+<!ELEMENT libra_summary (fragment_masses+, isotopic_contributions?)>
+<!ATTLIST libra_summary
+	mass_tolerance NMTOKEN #REQUIRED
+	centroiding_preference NMTOKEN #REQUIRED
+	normalization NMTOKEN #REQUIRED
+	output_type NMTOKEN #REQUIRED
+	channel_code CDATA #IMPLIED
+>
+<!--quantitation channel-->
+<!ELEMENT fragment_masses EMPTY>
+<!ATTLIST fragment_masses
+	channel NMTOKEN #REQUIRED
+	mz NMTOKEN #REQUIRED
+	offset NMTOKEN #IMPLIED
+>
+<!--isotopic contributions from one channel to others-->
+<!ELEMENT isotopic_contributions (contributing_channel+)>
+<!--channel donor-->
+<!ELEMENT contributing_channel (affected_channel+)>
+<!ATTLIST contributing_channel
+	channel NMTOKEN #REQUIRED
+>
+<!--channel recipient-->
+<!ELEMENT affected_channel EMPTY>
+<!ATTLIST affected_channel
+	channel NMTOKEN #REQUIRED
+	correction NMTOKEN #REQUIRED
+>

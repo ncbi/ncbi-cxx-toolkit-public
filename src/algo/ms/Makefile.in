@@ -3,7 +3,7 @@
 # Meta-makefile("algo/ms" projects)
 #################################
 
-SUB_PROJ = omssa
+SUB_PROJ = formats omssa 
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

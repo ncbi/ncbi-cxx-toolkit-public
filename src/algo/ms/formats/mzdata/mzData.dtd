@@ -1,0 +1,180 @@
+<!--This schema can capture the use of a mass spectrometer, the data generated, and the initial processing of that data (to the level of the peak list). Peak lists are processed data from a mass spectrometry experiment. There can be multiple peak lists in an mzData file, which might be related via a separation, or  just in sequence from an automated run. Any one peak list (mass spectrum) may also be composed of a number of acquisitions, which can be described individually herein.-->
+<!ELEMENT mzData (cvLookup*, description, spectrumList)>
+<!ATTLIST mzData
+	version CDATA #FIXED "1.05"
+	accessionNumber CDATA #REQUIRED
+>
+<!--This stores the location, name, version and a short, arbitrarily assigned in-file reference label, for one or more controlled vocabulary sources. Short labels are for use elsewhere in the data file, primarily in the cvLabel attribute, to indicate the use of a particular source for an item of controlled vocabulary.-->
+<!ELEMENT cvLookup EMPTY>
+<!ATTLIST cvLookup
+	cvLabel CDATA #REQUIRED
+	fullName CDATA #IMPLIED
+	version CDATA #REQUIRED
+	address CDATA #REQUIRED
+>
+<!--Each data set starts with a description section. This section captures &apos;general&apos; information; such as the instrument on which the data were generated.-->
+<!ELEMENT description (admin, instrument, dataProcessing)>
+<!--Administrative information pertaining to the entire mzData file (i.e. not specific to any part of the data set) is stored here.-->
+<!ELEMENT admin (sampleName, sampleDescription?, sourceFile?, contact+)>
+<!--Instrument descripton (not &apos;run time&apos; parameters, which should properly be captured in spectrumInstrument); these features must be common to all acquisitions.-->
+<!ELEMENT instrument (instrumentName, source, analyzerList, detector, additional?)>
+<!--Description of the default processing by which the peak list(s) were generated.-->
+<!ELEMENT dataProcessing (software, processingMethod?)>
+<!--All mass spectra and the acquisitions underlying them are described and attached here. Subsidiary data arrays are also both described and attached here.-->
+<!ELEMENT spectrumList (spectrum+)>
+<!ATTLIST spectrumList
+	count NMTOKEN #REQUIRED
+>
+<!--This is an individual spectrum.The spectrum is considered to be composed of an array of acquisitions. There are two primary ways of representing data; base64 encoded binary (single or double precision) or arrays of simple data types. All arrays used to describe a single spectrum are the same length, with the same indexing.-->
+<!ELEMENT spectrum (spectrumDesc, supDesc*, mzArrayBinary, intenArrayBinary, (supDataArrayBinary | supDataArray)*)>
+<!ATTLIST spectrum
+	id NMTOKEN #REQUIRED
+>
+<!--Name of the source file, without reference to location (either URI or local path).-->
+<!ELEMENT nameOfFile (#PCDATA)>
+<!--URI-formatted full path to file, without actual file name appended.-->
+<!ELEMENT pathToFile (#PCDATA)>
+<!--Type of the file if appropriate, else a description of the software or reference resource used.-->
+<!ELEMENT fileType (#PCDATA)>
+<!--Name of the supplemental data array.-->
+<!ELEMENT arrayName (#PCDATA)>
+<!ELEMENT float (#PCDATA)>
+<!ELEMENT double (#PCDATA)>
+<!ELEMENT int (#PCDATA)>
+<!ELEMENT boolean (#PCDATA)>
+<!ELEMENT string (#PCDATA)>
+<!ELEMENT time (#PCDATA)>
+<!ELEMENT URI (#PCDATA)>
+<!--Contact person name, or role name (e.g. &quot;Group leader of team 42&quot;) of the individual responsible for this dataset.-->
+<!ELEMENT name (#PCDATA)>
+<!--Academic or corporate organisation with which the contact person or role is associated.-->
+<!ELEMENT institution (#PCDATA)>
+<!--Phone number, email, postal address or other appropriate means of contact.-->
+<!ELEMENT contactInfo (#PCDATA)>
+<!--The official name for the software package used.-->
+<!--The version number of the software package.-->
+<!ELEMENT version (#PCDATA)>
+<!--Additional comments on the use of the software.-->
+<!ELEMENT comments (#PCDATA)>
+<!--Specific information on the conversion or processing software.-->
+<!ELEMENT software (name, version, comments?)>
+<!ATTLIST software
+	completionTime NMTOKEN #IMPLIED
+>
+<!--Description of the default peak processing method.This element describes the base method used in the generation of a particular mzData file. Variable methods should be described in the appropriate acquisition section - if no acquisition-specific details are found, then this information serves as the default.-->
+<!ELEMENT processingMethod (cvParam | userParam)*>
+<!--There is one spectrumDesc per spectrum. It captures both the instance-specific parameters for the underlying acquisitions, and where applicable, the postion of this spectrum in a possible hierarchy of spectra. For example, for &apos;tandem&apos; mass spectrometry; the id attribute on the spectrum element allows the survey scan to be identified from which the parent ion was selected that gave rise to this MSMS spectrum - note that these identifying numbers can be given, in a list if necessary, whether or not the actual referred-to spectra are present in the file - they are the &apos;family tree&apos; of this spectrum.-->
+<!ELEMENT spectrumDesc (spectrumSettings, precursorList?, comments*)>
+<!--There is one supDesc for each supDataArray (binary or otherwise) found under this particular spectrum element.-->
+<!ELEMENT supDesc (supDataDesc?, supSourceFile*)>
+<!ATTLIST supDesc
+	supDataArrayRef NMTOKEN #REQUIRED
+>
+<!--The list of m/z values (for any type of spectrum). The array is stored as a base64 encoded binary.The only type allowed is IEEE-754 floating point; the precision must be specified as either 32- or 64-bit; endianess must also be specified.-->
+<!ELEMENT mzArrayBinary (data)>
+<!--The intensities for each member of the m/z array, also in base64 encoded binary as IEEE-754 floating point, with specified precision and endianess.-->
+<!ELEMENT intenArrayBinary (data)>
+<!--In addition to the m/z and intensity arrays, an arbitrary number of other arrays can be stored using the same indexing. For each array stored as base64 binary, precision and endianess must be specified.The only type allowed is IEEE-754 floating point (even booleans must be re-encoded this way).-->
+<!ELEMENT supDataArrayBinary (arrayName, (data))>
+<!ATTLIST supDataArrayBinary
+	id NMTOKEN #REQUIRED
+>
+<!--If the raw data representation method was not binary, or if the supplemental data array was a string or other non-binary type, then it can be represented in the supDataArray element (again with the same indexing).-->
+<!ELEMENT supDataArray (arrayName, (float+ | double+ | int+ | boolean+ | string+ | time+ | URI+))>
+<!ATTLIST supDataArray
+	id NMTOKEN #REQUIRED
+	length NMTOKEN #REQUIRED
+	indexed NMTOKEN #REQUIRED
+	offset NMTOKEN "0"
+>
+<!--Name of the supplemental data array.-->
+<!ELEMENT data (#PCDATA)>
+<!ATTLIST data
+	precision (32 | 64) #REQUIRED
+	endian (big | little) #REQUIRED
+	length NMTOKEN #REQUIRED
+>
+<!--A short label that is referable to the sample used to generate the dataset. This will often be a copy of the internal (lab) reference code for the sample being analysed.-->
+<!ELEMENT sampleName (#PCDATA)>
+<!--Expansible description of the sample used to generate the dataset, named in sampleName.-->
+<!ELEMENT sampleDescription (cvParam | userParam)*>
+<!ATTLIST sampleDescription
+	comment CDATA #IMPLIED
+>
+<!--Information about the original source file (i.e. that generated by the instrument) used in generating the instance document.-->
+<!ELEMENT sourceFile (nameOfFile, pathToFile, fileType?)>
+<!--Audit information concerning the means by which the originator/owner of this mzData file can be identified, and contacted if necessary.-->
+<!ELEMENT contact (name, institution, contactInfo?)>
+<!--Specification for combining raw scans/acquisitions into a single peak list or spectrum. A list of acquisitions from the original raw file can be specified. Software parameters specified in the cv/userParams under acquisition automatically override the default parameters given in dataProcessing.-->
+<!ELEMENT acqSpecification (acquisition+)>
+<!ATTLIST acqSpecification
+	spectrumType (discrete | continuous) #REQUIRED
+	methodOfCombination CDATA #REQUIRED
+	count NMTOKEN #REQUIRED
+>
+<!--Scan or acquisition from original raw file used to create this peak list, as specified in sourceFile.-->
+<!ELEMENT acquisition (cvParam | userParam)*>
+<!ATTLIST acquisition
+	acqNumber NMTOKEN #REQUIRED
+>
+<!--The instrument&apos;s &apos;run time&apos; parameters; common to the whole of this spectrum.-->
+<!ELEMENT spectrumInstrument (cvParam | userParam)*>
+<!ATTLIST spectrumInstrument
+	msLevel NMTOKEN #REQUIRED
+	mzRangeStart NMTOKEN #IMPLIED
+	mzRangeStop NMTOKEN #IMPLIED
+>
+<!--This captures the type of ion selection being performed, and  trigger m/z (or m/z&apos;s), neutral loss criteria etc. for tandem MS or data dependent scans.-->
+<!ELEMENT ionSelection (cvParam | userParam)*>
+<!--The type and energy level used for activation.-->
+<!ELEMENT activation (cvParam | userParam)*>
+<!--Both run time instrument settings and variations in software parameters all leading to the generation of the specific spectrum being described.-->
+<!ELEMENT spectrumSettings (acqSpecification?, spectrumInstrument)>
+<!--List and descriptions of precursors to the spectrum currently being described.-->
+<!ELEMENT precursorList (precursor+)>
+<!ATTLIST precursorList
+	count NMTOKEN #REQUIRED
+>
+<!--This is the precursor step. If source activation is used then both msLevel and  spectrumRef have the value 0. The spectrumRef holds the value of the id attrubute of the spectrum from which the precursor ion was selected. An ordered list of these precursors can be given; the referred-to id numbers my not represent spectra present in the mzData file, but this should not present a bar to providing the history of this scan. Example (trivially); MS survey scan has id = 1 and the first MSMS spectrum has id= 2, with the spectrumRef attribute on precursor for the MSMS spectrum having the value 1.-->
+<!ELEMENT precursor (ionSelection, activation)>
+<!ATTLIST precursor
+	msLevel NMTOKEN #REQUIRED
+	spectrumRef NMTOKEN #REQUIRED
+>
+<!--Additional comments regarding the acquisition are captured here as free text. This should only be used as a lifeboat for when the cv/userParams are inappropriate; or as a &apos;scratch&apos; comment space.-->
+<!--Description of the supplemental dataset, in both CV and free-text.-->
+<!ELEMENT supDataDesc (cvParam | userParam)*>
+<!ATTLIST supDataDesc
+	comment CDATA #IMPLIED
+>
+<!--Information about the original source file used to generate the supDataArray.-->
+<!ELEMENT supSourceFile (nameOfFile, pathToFile, fileType?)>
+<!--Descriptive name of the instrument (make, model, significant customisations).-->
+<!ELEMENT instrumentName (#PCDATA)>
+<!--Invariant ion source (e.g. MALDI) information, as a run of name-value pairs.-->
+<!ELEMENT source (cvParam | userParam)*>
+<!--Mass analyzer component list; ordered so as to reflect the physical order of the desribed components in the mass spectrometer.-->
+<!ELEMENT analyzerList (analyzer+)>
+<!ATTLIST analyzerList
+	count NMTOKEN #REQUIRED
+>
+<!--A single component of the mass analyzer (e.g. quadrupole, collision cell), decribed with a run of name-value pairs.-->
+<!ELEMENT analyzer (cvParam | userParam)*>
+<!--Ion detector information, as a run of name-value pairs.-->
+<!ELEMENT detector (cvParam | userParam)*>
+<!--Subsidiary information about the instrument; a run of additional parameters  captured as name-value pairs-->
+<!ELEMENT additional (cvParam | userParam)*>
+<!--This element holds additional data or annotation. Only controlled values are allowed here.-->
+<!ELEMENT cvParam EMPTY>
+<!ATTLIST cvParam
+	cvLabel CDATA #REQUIRED
+	accession CDATA #REQUIRED
+	name CDATA #REQUIRED
+	value CDATA #IMPLIED
+>
+<!--This element holds additional data or annotation. Uncontrolled, or user controlled values are allowed here.-->
+<!ELEMENT userParam EMPTY>
+<!ATTLIST userParam
+	name CDATA #REQUIRED
+	value CDATA #IMPLIED
+>

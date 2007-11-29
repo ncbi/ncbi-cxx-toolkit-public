@@ -1,0 +1,4 @@
+SUB_PROJ = mzdata mzml mzxml pepxml
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

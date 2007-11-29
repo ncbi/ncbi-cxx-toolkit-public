@@ -1,0 +1,202 @@
+<!--This is the root element for the Proteomics Standards Initiative (PSI) mzML schema, which is intended to capture the use of a mass spectrometer, the data generated, and the initial processing of that data (to the level of the peak list).-->
+<!ELEMENT mzML (cvList, fileDescription, referenceableParamGroupList?, sampleList?, instrumentList, softwareList, dataProcessingList, run)>
+<!ATTLIST mzML
+	accession CDATA #IMPLIED
+	version CDATA #REQUIRED
+	id CDATA #REQUIRED
+>
+<!ELEMENT cvList (cv+)>
+<!ATTLIST cvList
+	count NMTOKEN #REQUIRED
+>
+<!ELEMENT fileDescription (fileContent, sourceFileList?, contact*)>
+<!ELEMENT referenceableParamGroupList (referenceableParamGroup+)>
+<!ATTLIST referenceableParamGroupList
+	count NMTOKEN #REQUIRED
+>
+<!ELEMENT sampleList (sample+)>
+<!ATTLIST sampleList
+	count NMTOKEN #REQUIRED
+>
+<!ELEMENT instrumentList (instrument+)>
+<!ATTLIST instrumentList
+	count NMTOKEN #REQUIRED
+>
+<!ELEMENT softwareList (software+)>
+<!ATTLIST softwareList
+	count NMTOKEN #REQUIRED
+>
+<!ELEMENT dataProcessingList (dataProcessing+)>
+<!ATTLIST dataProcessingList
+	count NMTOKEN #REQUIRED
+>
+<!ELEMENT run ((paramGroupRef*, cvParam*, userParam*), (sourceFileRefList?, spectrumList))>
+<!ATTLIST run
+	id CDATA #REQUIRED
+	instrumentRef CDATA #REQUIRED
+	sampleRef CDATA #IMPLIED
+	startTimeStamp NMTOKEN #IMPLIED
+>
+<!--This summarizes the different types of spectra that can be expected in the file. This is expected to aid processing software in skipping files that do not contain appropriate spectrum types for it.-->
+<!ELEMENT fileContent (paramGroupRef*, cvParam*, userParam*)>
+<!ELEMENT sourceFileList (sourceFile*)>
+<!ATTLIST sourceFileList
+	count NMTOKEN #REQUIRED
+>
+<!ELEMENT contact (paramGroupRef*, cvParam*, userParam*)>
+<!ELEMENT sourceFile (paramGroupRef*, cvParam*, userParam*)>
+<!ATTLIST sourceFile
+	id CDATA #REQUIRED
+	sourceFileName CDATA #REQUIRED
+	sourceFileLocation CDATA #REQUIRED
+>
+<!ELEMENT cv EMPTY>
+<!ATTLIST cv
+	cvLabel CDATA #REQUIRED
+	fullName CDATA #REQUIRED
+	version CDATA #IMPLIED
+	URI CDATA #REQUIRED
+>
+<!ELEMENT referenceableParamGroup (paramGroupRef*, cvParam*, userParam*)>
+<!ATTLIST referenceableParamGroup
+	id CDATA #REQUIRED
+>
+<!ELEMENT paramGroupRef EMPTY>
+<!ATTLIST paramGroupRef
+	ref CDATA #REQUIRED
+>
+<!ELEMENT cvParam EMPTY>
+<!ATTLIST cvParam
+	cvLabel CDATA #REQUIRED
+	accession CDATA #REQUIRED
+	value CDATA #IMPLIED
+	name CDATA #REQUIRED
+	unitAccession CDATA #IMPLIED
+	unitName CDATA #IMPLIED
+>
+<!ELEMENT userParam EMPTY>
+<!ATTLIST userParam
+	name CDATA #REQUIRED
+	type CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!ELEMENT sample (paramGroupRef*, cvParam*, userParam*)>
+<!ATTLIST sample
+	id CDATA #REQUIRED
+	name CDATA #IMPLIED
+>
+<!ELEMENT instrument ((paramGroupRef*, cvParam*, userParam*), (componentList, instrumentSoftwareRef?))>
+<!ATTLIST instrument
+	id CDATA #REQUIRED
+>
+<!--A source component.-->
+<!ELEMENT source (paramGroupRef*, cvParam*, userParam*)>
+<!ATTLIST source
+	order NMTOKEN #REQUIRED
+>
+<!--A mass analyzer (or mass filter) component.-->
+<!ELEMENT analyzer (paramGroupRef*, cvParam*, userParam*)>
+<!ATTLIST analyzer
+	order NMTOKEN #REQUIRED
+>
+<!--A detector component.-->
+<!ELEMENT detector (paramGroupRef*, cvParam*, userParam*)>
+<!ATTLIST detector
+	order NMTOKEN #REQUIRED
+>
+<!ELEMENT componentList ((source | analyzer | detector)+)>
+<!ATTLIST componentList
+	count NMTOKEN #REQUIRED
+>
+<!ELEMENT instrumentSoftwareRef EMPTY>
+<!ATTLIST instrumentSoftwareRef
+	ref CDATA #REQUIRED
+>
+<!--A piece of software.-->
+<!ELEMENT software (softwareParam)>
+<!ATTLIST software
+	id CDATA #REQUIRED
+>
+<!--A description of the software, based on CV information and a software version.-->
+<!ELEMENT softwareParam EMPTY>
+<!ATTLIST softwareParam
+	cvLabel CDATA #REQUIRED
+	accession CDATA #REQUIRED
+	name CDATA #REQUIRED
+	version CDATA #REQUIRED
+>
+<!ELEMENT dataProcessing (processingMethod+)>
+<!ATTLIST dataProcessing
+	id CDATA #REQUIRED
+	softwareRef CDATA #REQUIRED
+>
+<!--Description of the default peak processing method. This element describes the base method used in the generation of a particular mzML file. Variable methods should be described in the appropriate acquisition section - if no acquisition-specific details are found, then this information serves as the default.-->
+<!ELEMENT processingMethod (paramGroupRef*, cvParam*, userParam*)>
+<!ATTLIST processingMethod
+	order NMTOKEN #REQUIRED
+>
+<!--Container for a list of source file references.-->
+<!ELEMENT sourceFileRefList (sourceFileRef*)>
+<!ATTLIST sourceFileRefList
+	count NMTOKEN #REQUIRED
+>
+<!--Reference to a previously defined sourceFile.-->
+<!ELEMENT sourceFileRef EMPTY>
+<!ATTLIST sourceFileRef
+	ref CDATA #REQUIRED
+>
+<!--All mass spectra and the acquisitions underlying them are described and attached here. Subsidiary data arrays are also both described and attached here.-->
+<!ELEMENT spectrumList (spectrum*)>
+<!ATTLIST spectrumList
+	count NMTOKEN #REQUIRED
+>
+<!ELEMENT spectrum ((paramGroupRef*, cvParam*, userParam*), (spectrumDescription, binaryDataArray*))>
+<!ATTLIST spectrum
+	id CDATA #REQUIRED
+	scanNumber NMTOKEN #REQUIRED
+	dataProcessingRef CDATA #IMPLIED
+	sourceFileRef CDATA #IMPLIED
+	msLevel NMTOKEN #REQUIRED
+>
+<!ELEMENT spectrumDescription ((paramGroupRef*, cvParam*, userParam*), (acquisitionList?, precursorList?, scan?))>
+<!ELEMENT binaryDataArray ((paramGroupRef*, cvParam*, userParam*), binary)>
+<!ATTLIST binaryDataArray
+	arrayLength NMTOKEN #REQUIRED
+	dataProcessingRef CDATA #IMPLIED
+	encodedLength NMTOKEN #REQUIRED
+>
+<!ELEMENT acquisitionList ((paramGroupRef*, cvParam*, userParam*), (acquisition+))>
+<!ATTLIST acquisitionList
+	count NMTOKEN #REQUIRED
+>
+<!ELEMENT precursorList (precursor+)>
+<!ATTLIST precursorList
+	count NMTOKEN #REQUIRED
+>
+<!ELEMENT scan ((paramGroupRef*, cvParam*, userParam*), selectionWindowList)>
+<!ATTLIST scan
+	instrumentRef CDATA #REQUIRED
+>
+<!--Container for a list of select windows.-->
+<!ELEMENT selectionWindowList (selectionWindow+)>
+<!ATTLIST selectionWindowList
+	count NMTOKEN #REQUIRED
+>
+<!--Definition of a selection window.-->
+<!ELEMENT selectionWindow (cvParam+)>
+<!ELEMENT acquisition (paramGroupRef*, cvParam*, userParam*)>
+<!ATTLIST acquisition
+	acqNumber NMTOKEN #REQUIRED
+	spectrumRef CDATA #REQUIRED
+	sourceFileRef CDATA #REQUIRED
+>
+<!ELEMENT precursor (ionSelection, activation)>
+<!ATTLIST precursor
+	spectrumRef CDATA #IMPLIED
+>
+<!--This captures the type of ion selection being performed, and trigger m/z (or m/z), neutral loss criteria etc. for tandem-MS or data dependent scans.-->
+<!ELEMENT ionSelection (paramGroupRef*, cvParam*, userParam*)>
+<!--The type and energy level used for activation.-->
+<!ELEMENT activation (paramGroupRef*, cvParam*, userParam*)>
+<!--The actual encoded binary data.-->
+<!ELEMENT binary (#PCDATA)>

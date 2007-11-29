@@ -1,0 +1,227 @@
+<!--element and attribute declarations-->
+<!--Comment describing your root element-->
+<!ELEMENT mzXML (msRun, index?, indexOffset, sha1?)>
+<!ATTLIST mzXML
+>
+<!--Index for non sequential data access-->
+<!ELEMENT index (offset+)>
+<!ATTLIST index
+	name CDATA #REQUIRED
+>
+<!--Offset of the element identified by name (index attribute) and id-->
+<!ELEMENT offset (#PCDATA)>
+<!ATTLIST offset
+	id NMTOKEN #REQUIRED
+>
+<!--offset of the index element (if 0 no index present)-->
+<!ELEMENT indexOffset (#PCDATA)>
+<!--sha-1 sum for this file (from the beginning of the file up to (and including) the opening tag of sha1-->
+<!ELEMENT sha1 (#PCDATA)>
+<!ELEMENT msRun (parentFile+, msInstrument?, dataProcessing+, separation?, spotting?, scan+, sha1?)>
+<!ATTLIST msRun
+	scanCount NMTOKEN #IMPLIED
+	startTime NMTOKEN #IMPLIED
+	endTime NMTOKEN #IMPLIED
+>
+<!--Path to all the ancestor files (up to the native acquisition file) used to generate the current XML instance document.-->
+<!ELEMENT parentFile (#PCDATA)>
+<!ATTLIST parentFile
+	fileName CDATA #REQUIRED
+	fileType (RAWData | processedData) #REQUIRED
+	fileSha1 CDATA #REQUIRED
+>
+<!--General information about the MS instrument.-->
+<!ELEMENT msInstrument (msManufacturer, msModel, msIonisation, msMassAnalyzer, msDetector, software, msResolution?, operator?, (nameValue, comment?)*)>
+<!ELEMENT msManufacturer EMPTY>
+<!ATTLIST msManufacturer
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!ELEMENT msModel EMPTY>
+<!ATTLIST msModel
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!ELEMENT msIonisation EMPTY>
+<!ATTLIST msIonisation
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!ELEMENT msMassAnalyzer EMPTY>
+<!ATTLIST msMassAnalyzer
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!ELEMENT msDetector EMPTY>
+<!ATTLIST msDetector
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!ELEMENT msResolution EMPTY>
+<!ATTLIST msResolution
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!--Any additional property of the instrument not included elsewhere in the instrument element.-->
+<!ELEMENT nameValue (#PCDATA)>
+<!ATTLIST nameValue
+	name CDATA #IMPLIED
+	value CDATA #IMPLIED
+	type CDATA #IMPLIED
+>
+<!--Additional comments.-->
+<!ELEMENT comment (#PCDATA)>
+<!--Description of any manipulation (from the first conversion to mzXML format until the creation of the current mzXML instance document) applied to the data.-->
+<!ELEMENT dataProcessing (software, (processingOperation, comment?)*)>
+<!ATTLIST dataProcessing
+	intensityCutoff NMTOKEN #IMPLIED
+	centroided NMTOKEN #IMPLIED
+	deisotoped NMTOKEN #IMPLIED
+	chargeDeconvoluted NMTOKEN #IMPLIED
+	spotIntegration NMTOKEN #IMPLIED
+>
+<!--Any additional manipulation not included elsewhere in the dataProcessing element.-->
+<!ELEMENT processingOperation (#PCDATA)>
+<!ATTLIST processingOperation
+	name CDATA #IMPLIED
+	value CDATA #IMPLIED
+	type CDATA #IMPLIED
+>
+<!--Additional comments-->
+<!--Information about the separation technique, if any, used right before the acquisition.-->
+<!ELEMENT separation (separationTechnique+)>
+<!--Acquisition independent properties of a MALDI experiment.-->
+<!ELEMENT spotting (plate+, robot?)>
+<!--Information about a MALDI plate.-->
+<!ELEMENT plate (plateManufacturer, plateModel, pattern?, spot+)>
+<!ATTLIST plate
+	plateID NMTOKEN #REQUIRED
+	spotXCount NMTOKEN #REQUIRED
+	spotYCount NMTOKEN #REQUIRED
+>
+<!ELEMENT plateManufacturer EMPTY>
+<!ATTLIST plateManufacturer
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!ELEMENT plateModel EMPTY>
+<!ATTLIST plateModel
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!ELEMENT pattern (spottingPattern, orientation)>
+<!ELEMENT spottingPattern EMPTY>
+<!ATTLIST spottingPattern
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!--Defines the orientation of the spotting pattern, with the IDs of the fist two consecutive spotted spots.-->
+<!ELEMENT orientation EMPTY>
+<!ATTLIST orientation
+	firstSpotID CDATA #REQUIRED
+	secondSpotID CDATA #REQUIRED
+>
+<!--Information about individual spots.-->
+<!ELEMENT spot (maldiMatrix)>
+<!ATTLIST spot
+	spotID CDATA #REQUIRED
+	spotXPosition CDATA #REQUIRED
+	spotYPosition CDATA #REQUIRED
+	spotDiameter NMTOKEN #IMPLIED
+>
+<!ELEMENT maldiMatrix EMPTY>
+<!ATTLIST maldiMatrix
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!--Information about the robot, if any, used to spot the plates.-->
+<!ELEMENT robot (robotManufacturer, robotModel)>
+<!ATTLIST robot
+	timePerSpot NMTOKEN #REQUIRED
+	deadVolume NMTOKEN #IMPLIED
+>
+<!ELEMENT robotManufacturer EMPTY>
+<!ATTLIST robotManufacturer
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!ELEMENT robotModel EMPTY>
+<!ATTLIST robotModel
+	category CDATA #REQUIRED
+	value CDATA #REQUIRED
+>
+<!--sha-1 sum for this file (from the beginning of the file up to (and including) the opening tag of sha1-->
+<!--Contact information for the person responsible for the instrument.-->
+<!ELEMENT operator (#PCDATA)>
+<!ATTLIST operator
+	first CDATA #REQUIRED
+	last CDATA #REQUIRED
+	phone CDATA #IMPLIED
+	email CDATA #IMPLIED
+	URI CDATA #IMPLIED
+>
+<!--Software identifier-->
+<!ELEMENT software (#PCDATA)>
+<!ATTLIST software
+	type (acquisition | conversion | processing) #REQUIRED
+	name CDATA #REQUIRED
+	version CDATA #REQUIRED
+	completionTime NMTOKEN #IMPLIED
+>
+<!--The actual MS data is here-->
+<!ELEMENT scan (scanOrigin*, precursorMz*, maldi?, peaks, (nameValue, comment?)*, scan*)>
+<!ATTLIST scan
+	num NMTOKEN #REQUIRED
+	msLevel NMTOKEN #REQUIRED
+	peaksCount NMTOKEN #REQUIRED
+	polarity CDATA #IMPLIED
+	scanType (Full | zoom | SIM | SRM | CRM | Q1 | Q3) #IMPLIED
+	centroided NMTOKEN #IMPLIED
+	deisotoped NMTOKEN #IMPLIED
+	chargeDeconvoluted NMTOKEN "0"
+	retentionTime NMTOKEN #IMPLIED
+	ionisationEnergy NMTOKEN #IMPLIED
+	collisionEnergy NMTOKEN #IMPLIED
+	cidGasPressure NMTOKEN #IMPLIED
+	startMz NMTOKEN #IMPLIED
+	endMz NMTOKEN #IMPLIED
+	lowMz NMTOKEN #IMPLIED
+	highMz NMTOKEN #IMPLIED
+	basePeakMz NMTOKEN #IMPLIED
+	basePeakIntensity NMTOKEN #IMPLIED
+	totIonCurrent NMTOKEN #IMPLIED
+>
+<!ELEMENT scanOrigin EMPTY>
+<!ATTLIST scanOrigin
+	parentFileID CDATA #REQUIRED
+	num NMTOKEN #REQUIRED
+>
+<!--Information about the precursor ion.-->
+<!ELEMENT precursorMz (#PCDATA)>
+<!ATTLIST precursorMz
+	precursorScanNum NMTOKEN #IMPLIED
+	precursorIntensity NMTOKEN #REQUIRED
+	precursorCharge NMTOKEN #IMPLIED
+	windowWideness NMTOKEN #IMPLIED
+>
+<!--Acquisition dependent properties of a MALDI experiment.-->
+<!ELEMENT maldi EMPTY>
+<!ATTLIST maldi
+	plateID CDATA #REQUIRED
+	spotID CDATA #REQUIRED
+	laserShootCount NMTOKEN #IMPLIED
+	laserFrequency NMTOKEN #IMPLIED
+	laserIntensity NMTOKEN #IMPLIED
+	collisionGas NMTOKEN #IMPLIED
+>
+<!--This is the actual data encoded using base64. Byte order must be network. The order of the pairs must be m/z intensity.-->
+<!ELEMENT peaks (#PCDATA)>
+<!ATTLIST peaks
+	precision (32 | 64) #REQUIRED
+	byteOrder CDATA #FIXED "network"
+	pairOrder CDATA #FIXED "m/z-int"
+>
+<!--Since this schema is only for MS data, the actual implementation of this element is left to another schema. See "Implementing variable content containers using an abstract element and element substitution" (http://www.xfront.com/VariableContentContainers.pdf).-->
+<!ELEMENT separationTechnique EMPTY>
+<!ATTLIST separationTechnique
+>
