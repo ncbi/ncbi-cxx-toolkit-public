@@ -374,14 +374,18 @@ bool CICacheHandler::ProcessTransmission(
         }
     }
     if ((eot == eTransmissionLastBuffer) ||
+        // Handle STRS implementation error - it does not
+        // send EOT token, but relies on byte count
         (m_SizeKnown && (m_BlobSize == 0))) {
         m_Writer->Flush();
         m_Writer.reset(0);
         if (m_SizeKnown && (m_BlobSize != 0))
             WriteMsg(GetSocket(), "ERR:",
                      "eCommunicationError:Unexpected EOF");
-        _TRACE("EOT");
-        GetSocket().Close();
+        _TRACE("EOT " << eot);
+        // Forcibly close transmission - client not is going
+        // to send us EOT
+        return false;
     }
     return true;
 }

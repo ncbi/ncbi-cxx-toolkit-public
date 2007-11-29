@@ -2252,27 +2252,47 @@ bool CBDB_Cache::HasBlobs(const string&  key,
                           const string&  subkey)
 {
     time_t curr = time(0);
-    unsigned blob_id = 0;
-    {{
+
     CFastMutexGuard guard(m_DB_Lock);
     m_CacheAttrDB->SetTransaction(0);
 
     CBDB_FileCursor cur(*m_CacheAttrDB);
-    cur.SetCondition(CBDB_FileCursor::eGE);
-    cur.From << key;
-    if (!subkey.empty()) {
+
+    // Simple case - key only. Just look it up
+    if (subkey.empty()) {
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+        cur.From << key;
+        return cur.FetchFirst() == eBDB_Ok &&
+               !x_CheckTimestampExpired(*m_CacheAttrDB, curr);
+    }
+
+    // More complicated case with subkey
+    int version = 0;
+    for (;;) {
+        // Get version for key
+        cur.SetCondition(CBDB_FileCursor::eGE);
+        cur.From << key;
+        cur.From << version;
+        if (cur.FetchFirst() != eBDB_Ok)
+            return false;
+        // We have version, now fetch subkey
+        version = m_CacheAttrDB->version;
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+        cur.From << key;
+        cur.From << version;
         cur.From << subkey;
+        if (cur.FetchFirst() == eBDB_Ok &&
+            !x_CheckTimestampExpired(*m_CacheAttrDB, curr))
+            return true;
+        ++version;
     }
-    if (cur.FetchFirst() != eBDB_Ok) {
-        return false;
-    }
-    blob_id = m_CacheAttrDB->blob_id;
 
-    if (x_CheckTimestampExpired(*m_CacheAttrDB, curr)) {
-        return false;
-    }
-    }}
+    return false;
 
+    /* I don't know why we need this extra check if we already have
+       a record in CacheAttrDB. Moreover, for overflown blobs there is
+       NO record in SplitStore DB. So I am commenting this out.
+       joukovv 2007-11-27
     TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout); 
 
     _ASSERT(blob_id);
@@ -2281,9 +2301,7 @@ bool CBDB_Cache::HasBlobs(const string&  key,
         m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
     if (ret != eBDB_Ok) {
         return false;
-    }
-
-    return true;
+    } */
 }
 
 

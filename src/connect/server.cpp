@@ -166,6 +166,7 @@ CAcceptRequest::CAcceptRequest(EIO_Event event,
         return;
     conn->SetTimeout(eIO_ReadWrite, m_IdleTimeout);
     m_Connection = conn.release();
+    _TRACE("Connection accepted " << m_Connection);
 }
 
 void CAcceptRequest::Process(void)
@@ -250,7 +251,6 @@ CStdRequest* TListener::CreateRequest(EIO_Event event,
                                       CServer_ConnectionPool& conn_pool,
                                       const STimeout* timeout, int request_id)
 {
-    _TRACE("Connection accepted");
     return new CAcceptRequest(event, conn_pool, timeout, this, request_id);
 }
 

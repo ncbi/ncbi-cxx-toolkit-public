@@ -597,6 +597,7 @@ void CNetCacheHandler::ProcessPut2(CSocket&              sock,
 
     CBDB_Cache* bdb_cache = m_Server->GetCache();
     unsigned int id = 0;
+    _TRACE("Getting an id, socket " << &sock);
     if (req.req_id.empty()) {
         id = bdb_cache->GetNextBlobId(do_id_lock);
         CNetCache_Key::GenerateBlobKey(&rid, id,
@@ -605,6 +606,7 @@ void CNetCacheHandler::ProcessPut2(CSocket&              sock,
     } else {
         id = CNetCache_Key::GetBlobId(req.req_id);
     }
+    _TRACE("Got id " << id);
 
     // BLOB already locked, it is safe to return BLOB id
     if (!do_id_lock) {
@@ -622,6 +624,7 @@ void CNetCacheHandler::ProcessPut2(CSocket&              sock,
         WriteMsg(sock, "ID:", rid);
     }
 
+    _TRACE("Begin read transmission");
     m_Host->BeginReadTransmission();
 }
 
@@ -633,6 +636,7 @@ bool CNetCacheHandler::ProcessTransmission(
     ERW_Result res = 
         m_Writer->Write(buf, buf_size, &bytes_written);
     if (res != eRW_Success) {
+        _TRACE("Transmission failed, socket " << &GetSocket());
         WriteMsg(GetSocket(), "ERR:", "Server I/O error");
         m_Writer->Flush();
         m_Writer.reset(0);
@@ -641,9 +645,11 @@ bool CNetCacheHandler::ProcessTransmission(
         return false;
     }
     if (eot == eTransmissionLastBuffer) {
+        _TRACE("Flushing transmission, socket " << &GetSocket());
         m_Writer->Flush();
         m_Writer.reset(0);
         if (m_PutOK) {
+            _TRACE("OK, socket " << &GetSocket());
             WriteMsg(GetSocket(), "OK:", "");
             m_PutOK = false;
         }
@@ -671,6 +677,7 @@ void CNetCacheHandler::ProcessHasBlob(CSocket&           sock,
         return;
     }
     CNetCache_Key blob_id(req_id);
+    _TRACE("Checking blob " << req_id);
     if (!x_CheckBlobId(sock, &blob_id, req_id))
         return;
 

@@ -625,7 +625,6 @@ private:
 
 void CNetCacheDApp::Init(void)
 {
-//    SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_DateTime);
 
     // Setup command line arguments and parameters
@@ -684,7 +683,7 @@ int CNetCacheDApp::Run(void)
         }
         }}
 
-        /*
+        /* This piece interferes with standard log conventions/procedures
         string log_path = 
                 reg.GetString("server", "log_path", kEmptyStr, 
                               CNcbiRegistry::eReturn);
