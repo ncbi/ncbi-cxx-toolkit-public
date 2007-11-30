@@ -226,7 +226,7 @@ protected:
                  bool unknown_len = false);
 
         // Check if this segment has CSeq_data object (may be gap)
-        bool IsSeqData(void) const;
+        bool IsSetData(void) const;
 
         // Relative position of the segment in seqmap
         mutable TSeqPos      m_Position;
@@ -392,7 +392,7 @@ protected:
 //  CSeqMap: inline methods
 
 inline
-bool CSeqMap::CSegment::IsSeqData(void) const
+bool CSeqMap::CSegment::IsSetData(void) const
 {
     return m_SegType == CSeqMap::eSeqData || m_ObjType == CSeqMap::eSeqData;
 }

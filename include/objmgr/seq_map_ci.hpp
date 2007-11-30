@@ -74,7 +74,7 @@ public:
 
     bool InRange(void) const;
     CSeqMap::ESegmentType GetType(void) const;
-    bool IsSeqData(void) const;
+    bool IsSetData(void) const;
     bool x_Move(bool minusStrand, CScope* scope);
 
     TSeqPos x_GetLevelRealPos(void) const;
@@ -266,7 +266,7 @@ public:
     TSeqPos      GetEndPosition(void) const;
 
     CSeqMap::ESegmentType GetType(void) const;
-    bool IsSeqData(void) const;
+    bool IsSetData(void) const;
     /// will allow only regular data segments (whole, plus strand)
     const CSeq_data& GetData(void) const;
     /// will allow any data segments, user should check for position and strand
@@ -452,9 +452,9 @@ CSeqMap::ESegmentType CSeqMap_CI_SegmentInfo::GetType(void) const
 
 
 inline
-bool CSeqMap_CI_SegmentInfo::IsSeqData(void) const
+bool CSeqMap_CI_SegmentInfo::IsSetData(void) const
 {
-    return InRange() && x_GetSegment().IsSeqData();
+    return InRange() && x_GetSegment().IsSetData();
 }
 
 
@@ -512,9 +512,9 @@ CSeqMap::ESegmentType CSeqMap_CI::GetType(void) const
 
 
 inline
-bool CSeqMap_CI::IsSeqData(void) const
+bool CSeqMap_CI::IsSetData(void) const
 {
-    return x_GetSegmentInfo().IsSeqData();
+    return x_GetSegmentInfo().IsSetData();
 }
 
 
