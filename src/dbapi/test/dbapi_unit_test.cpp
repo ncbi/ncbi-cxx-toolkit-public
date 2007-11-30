@@ -7779,6 +7779,11 @@ CDBAPIUnitTest::Test_NULL(void)
         }
 
         // Check NULL with stored procedures ...
+#ifdef NCBI_OS_SOLARIS
+        // On Solaris GetNumOfRecords gives an error with MS SQL database
+        if (m_args.GetDriverName() != dblib_driver
+            ||  m_args.GetServerType() == CTestArguments::eSybase)
+#endif
         {
             {
                 auto_ptr<ICallableStatement> auto_stmt(
