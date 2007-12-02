@@ -988,8 +988,13 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     const StructureObject *object;
     if (!molecule->GetParentOfType(&object)) return;
     object->coordSets.front()->atomSet->SetActiveEnsemble(NULL);    // don't actually know which alternate...
-    Vector pickedAtomCoord = object->coordSets.front()->atomSet->
-        GetAtom(AtomPntr(molecule->id, residue->id, atomID)) ->site;
+	const AtomCoord *pickedAtom = object->coordSets.front()->atomSet->
+        GetAtom(AtomPntr(molecule->id, residue->id, atomID));
+	if (!pickedAtom) {
+		WARNINGMSG("Can't get coordinates for this atom (in the first coordinate set)");
+		return;
+	}
+	Vector pickedAtomCoord = pickedAtom->site;
     if (object->IsDependent() && object->transformToMaster)
         ApplyTransformation(&pickedAtomCoord, *(object->transformToMaster));
 
