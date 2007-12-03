@@ -43,7 +43,6 @@ static const char
     s_One       = '?',
     s_Many      = '*',
     s_All       = '*';
-static const char* s_RootStr = "*.";
 static const char* s_AllStr  = "?";
 
 
