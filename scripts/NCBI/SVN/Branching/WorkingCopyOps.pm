@@ -213,8 +213,9 @@ sub DoMerge
         }
     }
 
-    $Self->SetRawMergeProp($BranchPath, "changes up to r$SourceRev from " .
-        "'$SourcePath' into '$TargetPath'.", @BranchPaths)
+    $Self->SetRawMergeProp($BranchPath,
+        NCBI::SVN::Branching::Util::MakeMergeLogMessage($SourcePath,
+            $TargetPath, $LastTargetRev, $SourceRev), @BranchPaths)
 }
 
 sub MergeDownInto
@@ -233,7 +234,7 @@ sub MergeUpFrom
 
 sub CommitMerge
 {
-    my ($Self, $BranchPath, $LogMessage) = @_;
+    my ($Self, $BranchPath, $MergeDescription) = @_;
 
     my $RootURL = $Self->{SVN}->GetRootURL() ||
         die "$Self->{MyName}: not in a working copy\n";
@@ -260,8 +261,8 @@ sub CommitMerge
         }
     }
 
-    my ($Changes, $SourcePath, $TargetPath) = $Message =~
-        m/(changes up to r\d+ from '(.+?)' into '(.+?)'\.)/so or
+    my ($SourcePath, $TargetPath, $FromRevisionNumber, $ToRevisionNumber) =
+        NCBI::SVN::Branching::Util::ParseMergeLogMessage($Message) or
             die "$Self->{MyName}: cannot retrieve log message.\n";
 
     my $UpstreamPath = $BranchInfo->{UpstreamPath};
@@ -272,7 +273,7 @@ sub CommitMerge
             if $TargetPath ne $UpstreamPath;
 
         die "$Self->{MyName}: upstream merge requires a log message.\n"
-            unless $LogMessage
+            unless $MergeDescription
     }
     elsif ($TargetPath ne $BranchPath || $SourcePath ne $UpstreamPath)
     {
@@ -281,13 +282,17 @@ sub CommitMerge
 
     $Self->{SVN}->RunSubversion('propdel', '-R', 'ncbi:raw', @BranchPaths);
 
+    my $LogMessage = NCBI::SVN::Branching::Util::MakeMergeLogMessage(
+        $SourcePath, $TargetPath, $FromRevisionNumber,
+            $ToRevisionNumber, $MergeDescription);
+
     eval
     {
-        $Self->{SVN}->RunSubversion('commit', '-m', 'Merged ' . ($LogMessage ?
-            $Changes . "\n\n" . $LogMessage : $Changes), @BranchPaths)
+        $Self->{SVN}->RunSubversion('commit', '-m', 'Merged ' .
+            $LogMessage, @BranchPaths)
     };
 
-    $Self->SetRawMergeProp($BranchPath, $Changes, @BranchPaths) if $@
+    $Self->SetRawMergeProp($BranchPath, $LogMessage, @BranchPaths) if $@
 }
 
 sub MergeDiff

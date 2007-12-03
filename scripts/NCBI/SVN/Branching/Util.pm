@@ -57,4 +57,38 @@ sub FindPathsInTree
     return \@Paths
 }
 
+sub MakeMergeLogMessage
+{
+    my ($SourcePath, $TargetPath,
+        $FromRevisionNumber, $ToRevisionNumber, $MergeDescription) = @_;
+
+    my $LogMessage = "changes from '$SourcePath' " .
+        "(Revisions $FromRevisionNumber\:$ToRevisionNumber) " .
+        "into '$TargetPath'.";
+
+    $LogMessage .= "\n\n$MergeDescription" if $MergeDescription;
+
+    return $LogMessage
+}
+
+sub ParseMergeLogMessage
+{
+    my ($LogMessage) = @_;
+
+    if ($LogMessage =~
+        m/changes from '(.+?)' \(Revisions (\d+):(\d+)\) into '(.+?)'\.\s*(.*)/so)
+    {
+        return ($1, $4, $2, $3, $5)
+    }
+
+    # Old format.
+    if ($LogMessage =~
+        m/changes up to r(\d+) from '(.+?)' into '(.+?)'\.\s*(.*)/so)
+    {
+        return ($2, $3, -1, $1, $4)
+    }
+
+    return ()
+}
+
 1

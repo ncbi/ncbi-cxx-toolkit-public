@@ -131,8 +131,21 @@ sub ModelBranchStructure
     }
 }
 
-my $LogMessageParsingRE =
-    qr/changes up to r(\d+) from '(.+?)' into '(.+?)'\.\s*(.*)/so;
+sub DetectMergeRevision
+{
+    my ($LogMessage, $RequiredSourcePath, $RequiredTargetPath) = @_;
+
+    if (my ($SourcePath, $TargetPath,
+        undef, $ToRevisionNumber, $MergeDescription) =
+            NCBI::SVN::Branching::Util::ParseMergeLogMessage($LogMessage))
+    {
+        return ($ToRevisionNumber, $MergeDescription)
+            if $SourcePath eq $RequiredSourcePath &&
+                $TargetPath eq $RequiredTargetPath
+    }
+
+    return ()
+}
 
 sub new
 {
@@ -200,14 +213,14 @@ sub new
             $Self->ModelBranchStructure(\%BranchStructure,
                 $Revision, $CommonTarget)
         }
-        elsif ($LogMessage =~ $LogMessageParsingRE &&
-            $2 eq $UpstreamPath && $3 eq $BranchPath)
+        elsif (my ($SourceRevisionNumber, $MergeDescription) =
+            DetectMergeRevision($LogMessage, $UpstreamPath, $BranchPath))
         {
             $Revision->{SourceRevisionNumber} =
-                $Self->{LastDownSyncRevisionNumber} = $1;
+                $Self->{LastDownSyncRevisionNumber} = $SourceRevisionNumber;
 
             $Revision->{MergeDirection} = 'down';
-            $Revision->{MergeDescription} = $4;
+            $Revision->{MergeDescription} = $MergeDescription;
 
             unshift @MergeDownRevisions, $Revision
         }
@@ -258,14 +271,15 @@ sub new
 
     for my $Revision (reverse @$UpstreamRevisions)
     {
-        if ($Revision->{LogMessage} =~ $LogMessageParsingRE &&
-            $2 eq $BranchPath && $3 eq $UpstreamPath)
+        if (my ($SourceRevisionNumber, $MergeDescription) =
+            NCBI::SVN::Branching::BranchInfo::DetectMergeRevision(
+                $Revision->{LogMessage}, $BranchPath, $UpstreamPath))
         {
             $Revision->{SourceRevisionNumber} =
-                $Self->{LastUpSyncRevisionNumber} = $1;
+                $Self->{LastUpSyncRevisionNumber} = $SourceRevisionNumber;
 
             $Revision->{MergeDirection} = 'up';
-            $Revision->{MergeDescription} = $4;
+            $Revision->{MergeDescription} = $MergeDescription;
 
             unshift @MergeUpRevisions, $Revision
         }
