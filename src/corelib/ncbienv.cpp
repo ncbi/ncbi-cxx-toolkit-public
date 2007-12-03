@@ -98,17 +98,17 @@ void CNcbiEnvironment::Reset(const char* const* envp)
             ERR_POST_X(3, "CNcbiEnvironment: bad string '" << s << "'");
             continue;
         }
-        m_Cache[string(s, eq)] = eq + 1;
+        m_Cache[string(s, eq)] = SEnvValue(eq + 1, NULL);
     }
 }
 
 
 const string& CNcbiEnvironment::Get(const string& name) const
 {
-    map<string, string>::const_iterator i = m_Cache.find(name);
+    TCache::const_iterator i = m_Cache.find(name);
     if ( i != m_Cache.end() )
-        return i->second;
-    return m_Cache[name] = Load(name);
+        return i->second.value;
+    return (m_Cache[name] = SEnvValue(Load(name), NULL)).value;
 }
 
 
@@ -116,9 +116,9 @@ void CNcbiEnvironment::Enumerate(list<string>& names, const string& prefix)
     const
 {
     names.clear();
-    for (map<string, string>::const_iterator it = m_Cache.lower_bound(prefix);
+    for (TCache::const_iterator it = m_Cache.lower_bound(prefix);
          it != m_Cache.end()  &&  NStr::StartsWith(it->first, prefix);  ++it) {
-        if ( !it->second.empty() ) { // missing/empty values cached too...
+        if ( !it->second.value.empty() ) { // missing/empty values cached too...
             names.push_back(it->first);
         }
     }
@@ -137,11 +137,16 @@ void CNcbiEnvironment::Set(const string& name, const string& value)
     }
 
     if (putenv(str) != 0) {
+        free(str);
         NCBI_THROW(CErrnoTemplException<CCoreException>, eErrno,
                    "failed to set environment variable " + name);
     }
 
-    m_Cache[name] = value;
+    TCache::const_iterator i = m_Cache.find(name);
+    if ( i != m_Cache.end()  &&  i->second.ptr ) {
+        free(i->second.ptr);
+    }
+    m_Cache[name] = SEnvValue(value, str);
 
 #ifdef NCBI_OS_MSWIN
 #undef putenv

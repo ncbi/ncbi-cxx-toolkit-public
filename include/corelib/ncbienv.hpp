@@ -139,7 +139,15 @@ protected:
 
 private:
     /// Cached environment <name,value> pair.
-    mutable map<string, string> m_Cache;
+    struct SEnvValue {
+        SEnvValue(void) : ptr(NULL) {}
+        SEnvValue(const string& v, char* p) : value(v), ptr(p) {}
+
+        string value; // cached value
+        char*  ptr;   // string created by strdup() or NULL
+    };
+    typedef map<string, SEnvValue> TCache;
+    mutable TCache m_Cache;
 };
 
 
