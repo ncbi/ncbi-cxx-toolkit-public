@@ -375,6 +375,8 @@ CExitThreadException::~CExitThreadException(void)
 // will not proceed until after the appropriate Run() is finished.
 DEFINE_STATIC_FAST_MUTEX(s_ThreadMutex);
 
+unsigned int CThread::sm_ThreadsCount = 1;
+
 
 // Internal storage for thread objects and related variables/functions
 CTls<CThread>* CThread::sm_ThreadsTls;
@@ -458,6 +460,9 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     {{
         CFastMutexGuard state_guard(s_ThreadMutex);
 
+        // Thread is terminated - decrement counter under mutex
+        --sm_ThreadsCount;
+
         // Indicate the thread is terminated
         thread_obj->m_IsTerminated = true;
 
@@ -468,6 +473,16 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     }}
 
     return 0;
+}
+
+
+void CThread::MarkAppFinished() {
+    CFastMutexGuard state_guard(s_ThreadMutex);
+
+    // Method is called only from CNcbiApplication::AppMain(), so we know
+    // for sure that method is called only once and there is no need to
+    // remember something - simply decrement
+    --sm_ThreadsCount;
 }
 
 
@@ -551,75 +566,86 @@ bool CThread::Run(TRunMode flags)
     CProcess::sx_GetPid(CProcess::ePID_GetCurrent);
 #endif
 
+    // Thread will run - increment counter under mutex
+    ++sm_ThreadsCount;
+    try {
+
 #if defined(NCBI_WIN32_THREADS)
-    // We need this parameter in WinNT - can not use NULL instead!
-    DWORD thread_id;
-    // Suspend thread to adjust its priority
-    DWORD creation_flags = (flags & fRunNice) == 0 ? 0 : CREATE_SUSPENDED;
-    m_Handle = CreateThread(NULL, 0,
-                            reinterpret_cast<FSystemWrapper>(Wrapper),
-                            this, creation_flags, &thread_id);
-    xncbi_Validate(m_Handle != NULL,
-                   "CThread::Run() -- error creating thread");
-    if (flags & fRunNice) {
-        // Adjust priority and resume the thread
-        SetThreadPriority(m_Handle, THREAD_PRIORITY_BELOW_NORMAL);
-        ResumeThread(m_Handle);
-    }
-    if ( m_IsDetached ) {
-        CloseHandle(m_Handle);
-        m_Handle = NULL;
-    }
-    else {
-        // duplicate handle to adjust security attributes
-        HANDLE oldHandle = m_Handle;
-        xncbi_Validate(DuplicateHandle(GetCurrentProcess(), oldHandle,
-                                       GetCurrentProcess(), &m_Handle,
-                                       0, FALSE, DUPLICATE_SAME_ACCESS),
-                       "CThread::Run() -- error getting thread handle");
-        xncbi_Validate(CloseHandle(oldHandle),
-                       "CThread::Run() -- error closing thread handle");
-    }
+        // We need this parameter in WinNT - can not use NULL instead!
+        DWORD thread_id;
+        // Suspend thread to adjust its priority
+        DWORD creation_flags = (flags & fRunNice) == 0 ? 0 : CREATE_SUSPENDED;
+        m_Handle = CreateThread(NULL, 0,
+                                reinterpret_cast<FSystemWrapper>(Wrapper),
+                                this, creation_flags, &thread_id);
+        xncbi_Validate(m_Handle != NULL,
+                       "CThread::Run() -- error creating thread");
+        if (flags & fRunNice) {
+            // Adjust priority and resume the thread
+            SetThreadPriority(m_Handle, THREAD_PRIORITY_BELOW_NORMAL);
+            ResumeThread(m_Handle);
+        }
+        if ( m_IsDetached ) {
+            CloseHandle(m_Handle);
+            m_Handle = NULL;
+        }
+        else {
+            // duplicate handle to adjust security attributes
+            HANDLE oldHandle = m_Handle;
+            xncbi_Validate(DuplicateHandle(GetCurrentProcess(), oldHandle,
+                                           GetCurrentProcess(), &m_Handle,
+                                           0, FALSE, DUPLICATE_SAME_ACCESS),
+                           "CThread::Run() -- error getting thread handle");
+            xncbi_Validate(CloseHandle(oldHandle),
+                           "CThread::Run() -- error closing thread handle");
+        }
 #elif defined(NCBI_POSIX_THREADS)
-    pthread_attr_t attr;
-    xncbi_Validate(pthread_attr_init (&attr) == 0,
-                   "CThread::Run() - error initializing thread attributes");
-    if ( ! (flags & fRunUnbound) ) {
+        pthread_attr_t attr;
+        xncbi_Validate(pthread_attr_init (&attr) == 0,
+                       "CThread::Run() - error initializing thread attributes");
+        if ( ! (flags & fRunUnbound) ) {
 #if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_CYGWIN)
-        xncbi_Validate(pthread_attr_setscope(&attr,
-                                             PTHREAD_SCOPE_PROCESS) == 0,
-                       "CThread::Run() - error setting thread scope");
+            xncbi_Validate(pthread_attr_setscope(&attr,
+                                                 PTHREAD_SCOPE_PROCESS) == 0,
+                           "CThread::Run() - error setting thread scope");
 #else
-        xncbi_Validate(pthread_attr_setscope(&attr,
-                                             PTHREAD_SCOPE_SYSTEM) == 0,
-                       "CThread::Run() - error setting thread scope");
+            xncbi_Validate(pthread_attr_setscope(&attr,
+                                                 PTHREAD_SCOPE_SYSTEM) == 0,
+                           "CThread::Run() - error setting thread scope");
 #endif
-    }
-    if ( m_IsDetached ) {
-        xncbi_Validate(pthread_attr_setdetachstate(&attr,
-                                                   PTHREAD_CREATE_DETACHED) == 0,
-                       "CThread::Run() - error setting thread detach state");
-    }
-    xncbi_Validate(pthread_create(&m_Handle, &attr,
-                                  reinterpret_cast<FSystemWrapper>(Wrapper),
-                                  this) == 0,
-                   "CThread::Run() -- error creating thread");
+        }
+        if ( m_IsDetached ) {
+            xncbi_Validate(pthread_attr_setdetachstate(&attr,
+                                                       PTHREAD_CREATE_DETACHED) == 0,
+                           "CThread::Run() - error setting thread detach state");
+        }
+        xncbi_Validate(pthread_create(&m_Handle, &attr,
+                                      reinterpret_cast<FSystemWrapper>(Wrapper),
+                                      this) == 0,
+                       "CThread::Run() -- error creating thread");
 
-    xncbi_Validate(pthread_attr_destroy(&attr) == 0,
-                   "CThread::Run() - error destroying thread attributes");
+        xncbi_Validate(pthread_attr_destroy(&attr) == 0,
+                       "CThread::Run() - error destroying thread attributes");
 
 #else
-    if (flags & fRunAllowST) {
-        Wrapper(this);
-    }
-    else {
-        xncbi_Validate(0,
-                       "CThread::Run() -- system does not support threads");
-    }
+        if (flags & fRunAllowST) {
+            Wrapper(this);
+        }
+        else {
+            xncbi_Validate(0,
+                           "CThread::Run() -- system does not support threads");
+        }
 #endif
 
-    // prevent deletion of CThread until thread is finished
-    m_SelfRef.Reset(this);
+        // prevent deletion of CThread until thread is finished
+        m_SelfRef.Reset(this);
+
+    }
+    catch (...) {
+        // In case of any error we need to decrement threads count
+        --sm_ThreadsCount;
+        throw;
+    }
 
     // Indicate that the thread is run
     m_IsRun = true;

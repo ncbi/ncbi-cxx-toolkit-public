@@ -37,6 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/syslog.hpp>
+#include <corelib/ncbithr.hpp>
 #include <corelib/error_codes.hpp>
 
 #if defined(NCBI_OS_MSWIN)
@@ -122,6 +123,9 @@ CNcbiApplication::CNcbiApplication(void)
 
 CNcbiApplication::~CNcbiApplication(void)
 {
+    // Mark that main thread is finished
+    CThread::MarkAppFinished();
+
     m_Instance = 0;
     FlushDiag(0, true);
     if (m_CinBuffer) {

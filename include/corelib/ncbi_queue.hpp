@@ -34,7 +34,95 @@
 /// 
 /// Definition of synchronized queue (CSyncQueue template) and templates
 /// related to it.
+/// See also: @ref CSyncQueueDescription.
 
+/*! @page CSyncQueueDescription Using CSyncQueue class
+
+    CSyncQueue is a thread-safe queue object with additional blocking
+    mechanism. It supports operations that wait for the queue to become
+    non-empty when retrieving an element, and wait for space to become
+    available in the queue when storing an element.
+
+    CSyncQueue method Pop() will automatically block and wait while the queue
+    has no elements. It will wait for a given timeout until some other
+    thread push element to the queue. CSyncQueue method Push() will
+    automatically block and wait while the queue is full and contains maximum
+    allowed amount of elements in it. It will wait for a given timeout until
+    some other thread pops one or more elements from the queue (or maybe
+    erases them via iterators).
+
+    CSyncQueue is designed to be used primarily for producer-consumer queues,
+    but additionally it supports the iterator-based access. So, for example,
+    it is possible to remove an arbitrary element from a queue using method
+    Erase(it) in CSyncQueue::TAccessGuard.
+
+    Typical use of CSyncQueue in producer-consumer environment can be
+    as follows:
+
+    <code>
+    typedef CSyncQueue&lt;TSomeObject&gt; TObjQueue;
+
+    TObjQueue s_queue(kSomeMaxSize);
+
+    class CProducer : public CThread {
+    protected:
+        virtual void* Main(void) {
+            while (1) {
+                s_queue.Push(Produce());
+            }
+        }
+    private:
+        TSomeObject Produce() {
+            ...
+        }
+    };
+
+    class CConsumer : public CThread {
+    protected:
+        virtual void* Main(void) {
+            while (1) {
+                Consume(s_queue.Pop());
+            }
+        }
+    private:
+        void Consume(TSomeObject obj) {
+            ...
+        }
+    };
+    </code>
+
+    It is safe to use CSyncQueue object with multiple producers and
+    multiple consumers.
+
+    Extended use of CSyncQueue class for iterator-based access or for
+    performing some bulk operations may look like following:
+
+    <code>
+    void FunctionWithGuard(void) {
+        TObjQueue::TAccessGuard guard(s_queue);
+
+        for (TObjQueue::TIterator it = guard.Begin(); it != guard.End(); )
+        {
+            if (NeedErase(*it)) {
+                it = guard.Erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+
+        while (HasMoreSomeObjects()) {
+            guard.Queue().Push(GetNextSomeObject());
+        }
+    }
+    </code>
+
+    CSyncQueue::TAccessGuard object here ensures that while the function
+    is working other threads will not be able to push or pop any elements
+    from the queue. Methods Push() and Pop() in other threads will block
+    and wait while some CSyncQueue::TAccessGuard object is active.
+
+ */
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
@@ -75,13 +163,17 @@ class CSyncQueue_AccessGuard;
 /// Thread-safe queue object with a blocking mechanism.
 ///
 /// An attempt to pop from empty queue or push to full queue function call
-/// waits for normal operation finishing.
-///
-/// Queue can also be locked for a
+/// waits for normal operation finishing. Queue can also be locked for a
 /// long time for some bulk operations. This can be achieved by
-/// CSyncQueue_*AccessGuard classes. When using this queue with access
+/// CSyncQueue::T*AccessGuard classes.
+///
+/// When using CSyncQueue object with access
 /// guardian it is mandatory to use it only in the threads created by
 /// C++ Toolkit (using CThread class or some of its wrappers).
+///
+/// Full description and examples of using look here:
+/// @ref CSyncQueueDescription.
+///
 ///
 /// @param Type
 ///   Type of elements saved in queue
@@ -224,8 +316,10 @@ private:
     ///        another thread 
     /// @param timeout
     ///   Maximum time period to wait on this call; NULL to wait infinitely.
-    ///   If the timeout is exceeded, then throw CSyncQueueException.
-    void x_Lock(const CTimeSpan* timeout = NULL) const;
+    /// @return
+    ///   TRUE if the queue is locked successfully,
+    ///   FALSE if timeout is exceeded
+    bool x_Lock(const CTimeSpan* timeout = NULL) const;
 
     /// Unlock access to queue.
     void x_Unlock(void) const;
@@ -243,37 +337,35 @@ private:
                       const TMyType& other_obj)
         const;
 
-    /// Calculate next timeout value from initial value and time spent
-    /// in previous waits
-    /// @param timeout
-    ///   Initial timeout
-    /// @param timer
-    ///   Timer showing amount of time spent since the beginning of wait
-    CTimeSpan x_GetNextTimeout(const CTimeSpan&  timeout,
-                               const CStopWatch& timer)
-        const;
-
     /// Function to check condition; usually points to IsFull() or IsEmpty()
     /// @sa x_LockAndWait()
     typedef bool (CSyncQueue::*TCheckFunc)(void) const;
+
+    /// Function to throw an exception; usually points to
+    /// ThrowSyncQueueNoRoom() or ThrowSyncQueueEmpty()
+    /// @sa x_LockAndWait()
+    typedef void (*TErrorThrower)(void);
 
     /// Lock the queue and wait until the condition function returns FALSE.
     /// @param lock
     ///   Auto-lock object to acquire the lock on the queue
     /// @param timeout
     ///   Maximum time period to wait on this call; NULL to wait infinitely.
-    ///   If the timeout is exceeded, then throw CSyncQueueException.
+    ///   If the timeout is exceeded, then return (with or without locking).
     /// @param func_to_check
     ///   Function to check condition
     /// @param trigger
     ///   Semaphore to wait for the condition
     /// @param counter
     ///   Counter of threads waiting on this semaphore
+    /// @param throw_error
+    ///   Function to throw exception when timeout is exceeded
     void x_LockAndWait(TAutoLock*       lock,
                        const CTimeSpan* timeout,
                        TCheckFunc       func_to_check,
                        CSemaphore*      trigger,
-                       CAtomicCounter*  counter)
+                       CAtomicCounter*  counter,
+                       TErrorThrower    throw_error)
         const;
 
     /// Lock the queue and wait until it has room for more elements
@@ -281,7 +373,7 @@ private:
     ///   Auto-lock object  to acquire the lock on the queue
     /// @param timeout
     ///   Maximum time period to wait on this call; NULL to wait infinitely.
-    ///   If the timeout is exceeded, then throw CSyncQueueException.
+    ///   If the timeout is exceeded, then return (with or without locking).
     void x_LockAndWaitWhileFull(TAutoLock*       lock,
                                 const CTimeSpan* timeout)
         const;
@@ -291,7 +383,7 @@ private:
     ///   Auto-lock object  to acquire the lock on the queue
     /// @param timeout
     ///   Maximum time period to wait on this call; NULL to wait infinitely.
-    ///   If the timeout is exceeded, then throw CSyncQueueException.
+    ///   If the timeout is exceeded, then return (with or without locking).
     void x_LockAndWaitWhileEmpty(TAutoLock* lock, const CTimeSpan* timeout)
         const;
 
@@ -391,6 +483,9 @@ private:
 /// can change it if you still have non-const reference to object but you
 /// cannot do it using methods of this guard itself. For this purpose you are
 /// to use CSyncQueue_AccessGuard object.
+///
+/// Full description and examples of using look here:
+/// @ref CSyncQueueDescription.
 
 template <class Type, class Container>
 class CSyncQueue_ConstAccessGuard
@@ -488,6 +583,9 @@ private:
 /// while it is alive the queue is locked and no other thread can change it.
 /// So you can freely iterate through queue and change it. All changes can
 /// be done via methods of this quardian or via methods of the queue itself.
+///
+/// Full description and examples of using look here:
+/// @ref CSyncQueueDescription.
 
 template <class Type, class Container>
 class CSyncQueue_AccessGuard
@@ -856,6 +954,21 @@ inline void ThrowSyncQueueTimeout(void) {
 }
 
 
+/// Throw an exception about no room in a queue with standard message
+inline void ThrowSyncQueueNoRoom(void) {
+    NCBI_THROW(CSyncQueueException, eNoRoom,
+               "The queue has reached its size limit. "
+               "Cannot push to it anymore.");
+}
+
+
+/// Throw an exception about empty queue with standard message
+inline void ThrowSyncQueueEmpty(void) {
+    NCBI_THROW(CSyncQueueException, eEmpty,
+               "The queue is empty. Can't pop from it any value.");
+}
+
+
 
 /// Auto-lock the queue and unlock it when object will be destroyed.
 /// For internal use in CSyncQueue only. Do not use it in your applications.
@@ -883,7 +996,9 @@ public:
                                 const CTimeSpan*  timeout = NULL)
         : m_Queue(NULL)
     {
-        Lock(pqueue, timeout);
+        if (!Lock(pqueue, timeout)) {
+            ThrowSyncQueueTimeout();
+        }
     }
 
     /// Destructor -- unlock the queue
@@ -898,11 +1013,14 @@ public:
     /// @param timeout
     ///   Time period to wait until the queue can be locked.
     ///   If NULL then wait infinitely.
-    void Lock(const TQueue* pqueue, const CTimeSpan* timeout = NULL)
+    /// @return
+    ///   TRUE if queue is locked successfully,
+    ///   FALSE if timeout is exceeded
+    bool Lock(const TQueue* pqueue, const CTimeSpan* timeout = NULL)
     {
         Unlock();
         m_Queue = pqueue;
-        m_Queue->x_Lock(timeout);
+        return m_Queue->x_Lock(timeout);
     }
 
     /// Unlock the queue
@@ -950,18 +1068,20 @@ CSyncQueue<Type, Container>::CSyncQueue(TSize max_size)
 
 template <class Type, class Container>
 inline
-void CSyncQueue<Type, Container>::x_Lock(const CTimeSpan* timeout) const
+bool CSyncQueue<Type, Container>::x_Lock(const CTimeSpan* timeout) const
 {
     if (timeout) {
         if ( !m_TrigLock.TryWait(timeout->GetCompleteSeconds(),
                                  timeout->GetNanoSecondsAfterSecond()) )
         {
-            ThrowSyncQueueTimeout();
+            return false;
         }
     }
     else {
         m_TrigLock.Wait();
     }
+
+    return true;
 }
 
 
@@ -987,28 +1107,17 @@ void CSyncQueue<Type, Container>::x_DoubleLock(TAutoLock*     my_lock,
                                                const TMyType& other_obj) const
 {
     // The order of locking is significant
+    bool is_success = false;
     if (this < &other_obj) {
-        my_lock->Lock(this);
-        other_lock->Lock(&other_obj);
+        is_success = my_lock->Lock(this)  &&  other_lock->Lock(&other_obj);
     }
     else {
-        other_lock->Lock(&other_obj);
-        my_lock->Lock(this);
+        is_success = other_lock->Lock(&other_obj)  &&  my_lock->Lock(this);
     }
-}
 
-
-template <class Type, class Container>
-inline
-CTimeSpan CSyncQueue<Type, Container>::x_GetNextTimeout
-(const CTimeSpan&   timeout,
- const CStopWatch&  timer) const
-{
-    double next_wait = timeout.GetAsDouble() - timer.Elapsed();
-    if (next_wait <= 0.0)
+    if (!is_success) {
         ThrowSyncQueueTimeout();
-
-    return CTimeSpan(next_wait);
+    }
 }
 
 
@@ -1018,21 +1127,39 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
                                                 const CTimeSpan* timeout,
                                                 TCheckFunc       func_to_check,
                                                 CSemaphore*      trigger,
-                                                CAtomicCounter*  counter)
+                                                CAtomicCounter*  counter,
+                                                TErrorThrower    throw_error)
     const
 {
+    // If we are in single-thread mode or we didn't run other threads
+    // then we will wait forever. Avoid it and let's think that timeout
+    // was ran over
+    bool is_ST = true;
+#ifdef NCBI_THREADS
+    is_ST = CThread::GetThreadsCount() == 1;
+#endif
+    if (is_ST) {
+        throw_error();
+    }
+
     if (timeout) {
         // finite timeout
         CStopWatch timer(CStopWatch::eStart);
-        lock->Lock(this, timeout);
+        if (!lock->Lock(this, timeout)) {
+            throw_error();
+        }
 
         while ( (this->*func_to_check)() ) {
-            CTimeSpan tmo = x_GetNextTimeout(*timeout, timer);
+            CTimeSpan tmo(timeout->GetAsDouble() - timer.Elapsed());
+            if (tmo.GetSign() != ePositive) {
+                throw_error();
+            }
 
             // Counter is checked only in locked queue. So we have to
             // increase it before unlocking.
             counter->Add(1);
             lock->Unlock();
+
             bool is_success = trigger->TryWait(tmo.GetCompleteSeconds(),
                                                tmo.GetNanoSecondsAfterSecond());
 
@@ -1040,14 +1167,22 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
             // the counter asap, before we can acquire queue lock.
             counter->Add(-1);
             if ( !is_success ) {
-                ThrowSyncQueueTimeout();
+                throw_error();
             }
-            tmo = x_GetNextTimeout(*timeout, timer);
-            lock->Lock(this, &tmo);
+
+            tmo = CTimeSpan(timeout->GetAsDouble() - timer.Elapsed());
+            if (tmo.GetSign() != ePositive) {
+                throw_error();
+            }
+
+            if (!lock->Lock(this, &tmo)) {
+                throw_error();
+            }
         }
     }
     else {
         // infinite timeout
+        // There is no timeout, so it can not be any throw_error
         lock->Lock(this);
         while ( (this->*func_to_check)() ) {
             // Counter is checked only in locked queue. So we have to
@@ -1069,8 +1204,8 @@ inline
 void CSyncQueue<Type, Container>
     ::x_LockAndWaitWhileFull(TAutoLock* lock, const CTimeSpan* timeout) const
 {
-    x_LockAndWait(lock, timeout,
-                  &TMyType::IsFull, &m_TrigNotFull, &m_CntWaitNotFull);
+    x_LockAndWait(lock, timeout, &TMyType::IsFull,
+                  &m_TrigNotFull, &m_CntWaitNotFull, &ThrowSyncQueueNoRoom);
 }
 
 
@@ -1079,8 +1214,8 @@ inline
 void CSyncQueue<Type, Container>
     ::x_LockAndWaitWhileEmpty(TAutoLock* lock, const CTimeSpan* timeout) const
 {
-    x_LockAndWait(lock, timeout,
-                  &TMyType::IsEmpty, &m_TrigNotEmpty, &m_CntWaitNotEmpty);
+    x_LockAndWait(lock, timeout, &TMyType::IsEmpty,
+                  &m_TrigNotEmpty, &m_CntWaitNotEmpty, &ThrowSyncQueueEmpty);
 }
 
 
@@ -1150,9 +1285,7 @@ void CSyncQueue<Type, Container>::x_Push_NonBlocking(const TValue& elem)
 {
     // NOTE. This check is active only when the queue is under access guard
     if ( IsFull() ) {
-        NCBI_THROW(CSyncQueueException, eNoRoom,
-                   "The queue has reached its size limit. "
-                   "Cannot push to it anymore.");
+        ThrowSyncQueueNoRoom();
     }
 
     m_Store.push_back(elem);
@@ -1167,8 +1300,7 @@ typename CSyncQueue<Type, Container>::TValue
 {
     // NOTE. This check is active only when the queue is under access guard
     if (IsEmpty()) {
-        NCBI_THROW(CSyncQueueException, eEmpty,
-                   "The queue is empty. Can't pop from it any value.");
+        ThrowSyncQueueEmpty();
     }
 
     TValue elem = m_Store.front();
@@ -1224,7 +1356,9 @@ void CSyncQueue<Type, Container>::Clear(const CTimeSpan* timeout)
     TAutoLock lock;
 
     if ( !x_IsGuarded() ) {
-        lock.Lock(this, timeout);
+        if (!lock.Lock(this, timeout)) {
+            ThrowSyncQueueTimeout();
+        }
     }
 
     x_Clear_NonBlocking();
@@ -1243,11 +1377,15 @@ void CSyncQueue<Type, Container>::CopyTo(TMyType* other) const
         // both queues guarded or both not guarded
         if ( x_IsGuarded() ) {
             if ( !other->x_IsGuarded() ) {
-                other_lock.Lock(other);
+                if (!other_lock.Lock(other)) {
+                    ThrowSyncQueueTimeout();
+                }
             }
         }
         else if ( other->x_IsGuarded() ) {
-            my_lock.Lock(this);
+            if (!my_lock.Lock(this)) {
+                ThrowSyncQueueTimeout();
+            }
         }
         else {
             x_DoubleLock(&my_lock, &other_lock, *other);
@@ -1256,7 +1394,7 @@ void CSyncQueue<Type, Container>::CopyTo(TMyType* other) const
         if (other->m_Size + m_Size > other->m_MaxSize) {
             NCBI_THROW(CSyncQueueException, eNoRoom,
                        "Queue copy cannot be done due to the lack of "
-                       "room in the destination queue");
+                       "room in the destination queue.");
         }
 
         copy(m_Store.begin(), m_Store.end(), back_inserter(other->m_Store));
@@ -1771,7 +1909,10 @@ CSyncQueue_ConstAccessGuard(TQueue& queue_to_guard)
                    "Cannot guard an already guarded queue once again");
     }
 
-    m_Queue.x_Lock();
+    if (!m_Queue.x_Lock()) {
+        ThrowSyncQueueTimeout();
+    }
+
     m_Queue.x_SetGuarded();
 }
 

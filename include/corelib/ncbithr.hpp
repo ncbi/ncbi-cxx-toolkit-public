@@ -283,6 +283,14 @@ public:
     /// re-used by another thread later.
     static void GetSystemID(TThreadSystemID* id);
 
+    /// Get total amount of threads
+    /// This amount contains main thread too. If main thread is based on
+    /// CNcbiApplication object then main thread will be excluded from this
+    /// amount when application's Run() method is finished.
+    static unsigned int GetThreadsCount() {
+        return sm_ThreadsCount;
+    }
+
 protected:
     /// Derived (user-created) class must provide a real thread function.
     virtual void* Main(void) = 0;
@@ -317,6 +325,12 @@ private:
     static void sx_SetThreadPid(TPid pid);
 #endif
 
+    static unsigned int sm_ThreadsCount;  ///< Total amount of threads
+
+    /// Exclude main thread from total number of threads
+    /// Method is only for call from CNcbiApplication::AppMain() method
+    static void MarkAppFinished();
+
     /// Function to use (internally) as the thread's startup function
     static TWrapperRes Wrapper(TWrapperArg arg);
 
@@ -339,6 +353,8 @@ private:
     CUsedTlsBases m_UsedTls;
 
     static CUsedTlsBases& GetUsedTlsBases(void);
+
+    friend class CNcbiApplication;
 };
 
 
