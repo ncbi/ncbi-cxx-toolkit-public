@@ -614,9 +614,12 @@ class NCBI_DBAPI_EXPORT IConnection
 public:
     /// Which connection mode.
     enum EConnMode {
-        eBulkInsert = I_DriverContext::fBcpIn,  ///< Bulk insert mode.
-        ePasswordEncrypted  ///< Encrypted password mode.
-                    = I_DriverContext::fPasswordEncrypted
+        /// Bulk insert mode.
+        /// This value is not needed anymore because BCP mode is enabled
+        /// all the time in all drivers now.
+        eBulkInsert = I_DriverContext::fBcpIn,
+        /// Encrypted password mode.
+        ePasswordEncrypted = I_DriverContext::fPasswordEncrypted
     };
 
     /// Destructor.
