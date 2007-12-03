@@ -90,14 +90,14 @@ void CNetCacheAPI::x_SendAuthetication(CNetServerConnector& conn) const
 
 
 CNetCacheAPI::CNetCacheAPI(const string&  client_name)
-    : INetServiceAPI(kEmptyStr, client_name)
+    : INetServiceAPI(kEmptyStr, client_name), m_NoHasBlob(false)
 {
 }
 
 
 CNetCacheAPI::CNetCacheAPI(const string&  service,
                            const string&  client_name)
-    : INetServiceAPI(service, client_name)
+    : INetServiceAPI(service, client_name), m_NoHasBlob(false)
 {
 }
 
@@ -179,12 +179,23 @@ IWriter* CNetCacheAPI::PutData(string* key, unsigned int time_to_live) const
     return new CNetCacheWriter(*this, holder, CTransmissionWriter::eSendEofPacket);
 }
 
+
 bool CNetCacheAPI::HasBlob(const string& key) const
 {
+    if (m_NoHasBlob)
+        return !GetOwner(key).empty();
     string request = "HASB " + key;
-
-    return SendCmdWaitResponse(x_GetConnector(key), request)[0] == '1';
+    try {
+        return SendCmdWaitResponse(x_GetConnector(key), request)[0] == '1';
+    } catch (CNetServiceException& e) {
+        if (e.GetErrCode() != CNetServiceException::eCommunicationError ||
+            e.GetMsg() != "Unknown request")
+            throw;
+        m_NoHasBlob = true;
+        return !GetOwner(key).empty();
+    }
 }
+
 
 void CNetCacheAPI::Remove(const string& key) const
 {
@@ -198,7 +209,6 @@ void CNetCacheAPI::Remove(const string& key) const
     }
 
 }
-
 
 
 bool CNetCacheAPI::IsLocked(const string& key) const

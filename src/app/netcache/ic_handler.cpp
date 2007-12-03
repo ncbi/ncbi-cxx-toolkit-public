@@ -383,7 +383,7 @@ bool CICacheHandler::ProcessTransmission(
             WriteMsg(GetSocket(), "ERR:",
                      "eCommunicationError:Unexpected EOF");
         _TRACE("EOT " << eot);
-        // Forcibly close transmission - client not is going
+        // Forcibly close transmission - client is not going
         // to send us EOT
         return false;
     }

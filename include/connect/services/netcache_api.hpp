@@ -218,6 +218,8 @@ private:
     CNetCacheAPI(const CNetCacheAPI&);
     CNetCacheAPI& operator=(const CNetCacheAPI&);
 
+private:
+    mutable bool m_NoHasBlob;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////
