@@ -42,6 +42,10 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
+#include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
@@ -64,8 +68,16 @@ bool CTestSingleAln::CanTest(const CSerialObject& obj,
 {
     const CSeq_align* aln = dynamic_cast<const CSeq_align*>(&obj);
     if (aln) {
+        // Can analyze a disc alignment...
         if (aln->GetType() == ncbi::CSeq_align::eType_disc) {
             return true;
+        }
+        // ...or a Spliced-seg where product is a transcript
+        if (aln->GetSegs().IsSpliced()) {
+            if (aln->GetSegs().GetSpliced().GetProduct_type()
+                == CSpliced_seg::eProduct_type_transcript) {
+                return true;
+            }
         }
     }
     return false;
@@ -84,6 +96,8 @@ static ENa_strand s_GetSeqStrand(const CSeq_align& aln, CSeq_align::TDim row)
 }
 
 
+static CRef<CSeq_align> s_SplicedToDisc(const CSeq_align& spliced_seg_aln);
+
 CRef<CSeq_test_result_set>
 CTestSingleAln_All::RunTest(const CSerialObject& obj,
                             const CSeqTestContext* ctx)
@@ -92,6 +106,13 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     const CSeq_align* aln = dynamic_cast<const CSeq_align*>(&obj);
     if ( !aln  ||  !ctx ) {
         return ref;
+    }
+
+    // Handle a Spliced-seg by converting it to a disc
+    CRef<CSeq_align> disc_from_spliced_seg;
+    if (!aln->GetSegs().IsDisc()) {
+        disc_from_spliced_seg = s_SplicedToDisc(*aln);
+        aln = disc_from_spliced_seg;
     }
 
     ref.Reset(new CSeq_test_result_set());
@@ -647,5 +668,132 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
 
     return ref;
 }
+
+
+// Conversion from Spliced-seg to disc.
+// This should probably eventually be moved, e.g., to CSeq_align.
+
+static vector<TSignedSeqPos>
+s_CalculateStarts(const vector<TSeqPos>& lens, ENa_strand strand,
+                  TSeqPos start, TSeqPos end)
+{
+    vector<TSignedSeqPos> rv;
+    rv.reserve(lens.size());
+    TSignedSeqPos offset = 0;
+    ITERATE (vector<TSeqPos>, len, lens) {
+        if (*len == 0) {
+            // a gap
+            rv.push_back(-1);
+        } else {
+            if (IsReverse(strand)) {
+                offset += *len;
+                rv.push_back((end + 1) - offset);
+            } else {
+                rv.push_back(start + offset);
+                offset += *len;
+            }
+        }
+    }
+    return rv;
+}
+
+
+static CRef<CDense_seg>
+s_ExonToDenseg(const CSpliced_exon& exon,
+               ENa_strand product_strand, ENa_strand genomic_strand,
+               const CSeq_id& product_id, const CSeq_id& genomic_id)
+{
+    CRef<CDense_seg> ds(new CDense_seg);
+
+    vector<TSeqPos> product_lens;
+    vector<TSeqPos> genomic_lens;
+    ITERATE (CSpliced_exon::TParts, iter, exon.GetParts()) {
+        const CSpliced_exon_chunk& part = **iter;
+        if (part.IsMatch()) {
+            product_lens.push_back(part.GetMatch());
+            genomic_lens.push_back(part.GetMatch());
+        } else if (part.IsMismatch()) {
+            product_lens.push_back(part.GetMismatch());
+            genomic_lens.push_back(part.GetMismatch());
+        } else if (part.IsDiag()) {
+            product_lens.push_back(part.GetDiag());
+            genomic_lens.push_back(part.GetDiag());
+        } else if (part.IsProduct_ins()) {
+            product_lens.push_back(part.GetProduct_ins());
+            genomic_lens.push_back(0);
+        } else if (part.IsGenomic_ins()) {
+            product_lens.push_back(0);
+            genomic_lens.push_back(part.GetGenomic_ins());
+        } else {
+            throw runtime_error("unhandled part type in Spliced-enon");
+        }
+    }
+
+    CDense_seg::TLens& lens = ds->SetLens();
+    lens.reserve(product_lens.size());
+    for (unsigned int i = 0; i < product_lens.size(); ++i) {
+        lens.push_back(max(product_lens[i], genomic_lens[i]));
+    }
+    vector<TSignedSeqPos> product_starts =
+        s_CalculateStarts(product_lens, product_strand,
+                          exon.GetProduct_start().GetNucpos(),
+                          exon.GetProduct_end().GetNucpos());
+    vector<TSignedSeqPos> genomic_starts =
+        s_CalculateStarts(genomic_lens, genomic_strand,
+                          exon.GetGenomic_start(),
+                          exon.GetGenomic_end());
+
+    CDense_seg::TStarts& starts = ds->SetStarts();
+    starts.reserve(product_starts.size() + genomic_starts.size());
+    for (unsigned int i = 0; i < lens.size(); ++i) {
+        starts.push_back(product_starts[i]);  // product row first
+        starts.push_back(genomic_starts[i]);
+    }
+    ds->SetIds().push_back(CRef<CSeq_id>(SerialClone(product_id)));
+    ds->SetIds().push_back(CRef<CSeq_id>(SerialClone(genomic_id)));
+
+    // Set strands, unless they're both plus
+    if (!(product_strand == eNa_strand_plus
+          && genomic_strand == eNa_strand_plus)) {
+        CDense_seg::TStrands& strands = ds->SetStrands();
+        for (unsigned int i = 0; i < lens.size(); ++i) {
+            strands.push_back(product_strand);
+            strands.push_back(genomic_strand);
+        }
+    }
+
+    ds->SetNumseg(lens.size());
+
+    ds->Compact();  // join adjacent match/mismatch/diag parts
+    return ds;
+}
+
+
+static CRef<CSeq_align> s_SplicedToDisc(const CSeq_align& spliced_seg_aln)
+{
+
+    CRef<CSeq_align> disc(new CSeq_align);
+    disc->SetType(CSeq_align::eType_disc);
+
+    const CSpliced_seg& spliced_seg = spliced_seg_aln.GetSegs().GetSpliced();
+
+    ENa_strand product_strand = spliced_seg.GetProduct_strand();
+    ENa_strand genomic_strand = spliced_seg.GetGenomic_strand();
+    const CSeq_id& product_id = spliced_seg.GetProduct_id();
+    const CSeq_id& genomic_id = spliced_seg.GetGenomic_id();
+
+    //for exon in spliced_seg.GetSegs().GetSpliced().GetExons()[:] {
+    ITERATE (CSpliced_seg::TExons, exon, spliced_seg.GetExons()) {
+        CRef<CDense_seg> ds = s_ExonToDenseg(**exon,
+                                             product_strand, genomic_strand,
+                                             product_id, genomic_id);
+        CRef<CSeq_align> ds_align(new CSeq_align);
+        ds_align->SetSegs().SetDenseg(*ds);
+        ds_align->SetType(CSeq_align::eType_partial);
+        disc->SetSegs().SetDisc().Set().push_back(ds_align);
+    }
+    return disc;
+}
+
 
 END_NCBI_SCOPE
