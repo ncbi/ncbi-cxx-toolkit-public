@@ -1,0 +1,13 @@
+[-]
+_export = NCBI_EUTILS_EXPORT
+_namespace = elink
+
+[IdUrlSet]
+OI._class = C_Data
+
+[LinkSet]
+IIIE._class = C_Data
+IIIE.IL._class = C_Links
+
+[LinkSetDb]
+LI._class = C_Data

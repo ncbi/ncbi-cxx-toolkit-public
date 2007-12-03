@@ -1,0 +1,6 @@
+[-]
+_export = NCBI_EUTILS_EXPORT
+_namespace = esummary
+
+[ESummaryResult]
+E._class = C_Data

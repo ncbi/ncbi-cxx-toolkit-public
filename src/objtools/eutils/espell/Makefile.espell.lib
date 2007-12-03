@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = espell
+SRC = espell__ espell___

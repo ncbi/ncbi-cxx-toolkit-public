@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = einfo
+SRC = einfo__ einfo___

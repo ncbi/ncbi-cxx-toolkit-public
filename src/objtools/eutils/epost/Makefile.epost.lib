@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = epost
+SRC = epost__ epost___

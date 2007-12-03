@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = esearch
+SRC = esearch__ esearch___

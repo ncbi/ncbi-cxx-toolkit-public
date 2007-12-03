@@ -1,0 +1,31 @@
+[-]
+_export = NCBI_EUTILS_EXPORT
+_namespace = linkout
+
+[Link]
+OS._class = C_Selector
+
+[Normalize]
+E._class = C_Data
+
+[ObjectList]
+E._class = C_Data
+
+[ObjectUrl]
+BR_2._class = C_Data
+BR_2.BR._class = C_BaseData
+BR_2.BR.RR._class = C_Rule
+BR_2.RR._class = C_Rule
+
+[Rule]
+E._class = C_Data
+
+[SubProvider]
+IE._class = C_Data
+IE.E_IE._class = C_E_Data
+
+[Tolower]
+E._class = C_Data
+
+[Toupper]
+E._class = C_Data

@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("eutils" project)
+#################################
+
+SUB_PROJ = egquery elink epost esearch espell esummary linkout einfo api
+# pubmed nlmsharedcatcit nlmcommon nlmmedline nlmmedlinecitation
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

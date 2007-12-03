@@ -1,0 +1,14 @@
+<!--    
+                This is the Current DTD for Entrez ePost
+$Id$
+-->
+<!-- ================================================================= -->
+
+<!ELEMENT	Id		(#PCDATA)>	<!-- \d+ -->
+
+<!ELEMENT	InvalidIdList	(Id+)>
+<!ELEMENT       QueryKey        (#PCDATA)>	<!-- \d+ -->
+<!ELEMENT       WebEnv          (#PCDATA)>	<!-- \S+ -->
+<!ELEMENT       ERROR           (#PCDATA)>	<!-- .+ -->
+
+<!ELEMENT     ePostResult       (InvalidIdList?,(QueryKey,WebEnv)?,ERROR?)>

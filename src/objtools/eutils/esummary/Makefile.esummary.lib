@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = esummary
+SRC = esummary__ esummary___

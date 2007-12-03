@@ -1,0 +1,6 @@
+# $Id$
+
+DTD_PROJ = linkout
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

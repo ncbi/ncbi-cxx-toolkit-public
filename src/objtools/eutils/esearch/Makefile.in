@@ -1,0 +1,6 @@
+# $Id$
+
+DTD_PROJ = esearch
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

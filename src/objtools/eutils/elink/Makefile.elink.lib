@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = elink
+SRC = elink__ elink___

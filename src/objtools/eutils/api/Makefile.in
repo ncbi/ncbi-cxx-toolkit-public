@@ -1,0 +1,6 @@
+# $Id$
+
+LIB_PROJ = eutils
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

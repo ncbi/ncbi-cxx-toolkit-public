@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = egquery
+SRC = egquery__ egquery___

@@ -1,0 +1,12 @@
+# $Id$
+
+DLL = ncbi_eutils
+
+HOSTED_LIBS    = eutils egquery elink epost esearch espell esummary linkout \
+                 einfo
+                 
+# pubmed nlmsharedcatcit nlmcommon nlmmedline nlmmedlinecitation
+
+DEPENDENCIES   = ncbi_core ncbi_web
+
+CPPFLAGS = -DNCBI_EUTILS_EXPORTS
