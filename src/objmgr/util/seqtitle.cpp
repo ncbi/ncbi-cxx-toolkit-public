@@ -295,7 +295,10 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
                 case CMolInfo::eBiomol_scRNA:   title += "scRNA";        break;
                 case CMolInfo::eBiomol_cRNA:    title += "cRNA";         break;
                 case CMolInfo::eBiomol_snoRNA:  title += "snoRNA";       break;
-                default:                        title += "miscRNA";      break;
+                case CMolInfo::eBiomol_transcribed_RNA: title+="miscRNA"; break;
+                case CMolInfo::eBiomol_ncRNA:   title += "ncRNA";        break;
+                case CMolInfo::eBiomol_tmRNA:   title += "tmRNA";        break;
+                default:                        break;
                 }
                 BREAK(it);
             }
