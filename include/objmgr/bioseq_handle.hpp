@@ -597,6 +597,9 @@ public:
     };
     void Remove(ERemoveMode mode = eRemoveSeq_entry) const;
 
+    /// Get CSeqMap object for sequence editing
+    CSeqMap& SetSeqMap(void) const;
+
 protected:
     friend class CScope_Impl;
 

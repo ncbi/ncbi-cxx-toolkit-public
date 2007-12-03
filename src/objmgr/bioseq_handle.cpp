@@ -1115,6 +1115,11 @@ void CBioseq_EditHandle::x_RealResetInst_Hist() const
 }
 
 
+CSeqMap& CBioseq_EditHandle::SetSeqMap(void) const
+{
+    return const_cast<CSeqMap&>(GetSeqMap());
+}
+
 
 // end of Bioseq members
 /////////////////////////////////////////////////////////////////////////////
