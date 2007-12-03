@@ -101,7 +101,7 @@ protected:
     void ParseUnion(DTDAttribute& att);
     void ParseList(DTDAttribute& att);
 
-    string CreateEmbeddedName(const string& name, int emb);
+    string CreateTmpEmbeddedName(const string& name, int emb);
     string CreateEntityId( const string& name, DTDEntity::EType type);
     void CreateTypeDefinition(DTDEntity::EType type);
     void ParseTypeDefinition(DTDEntity& ent);

@@ -103,7 +103,6 @@ void DTDParser::EndCommentBlock()
         Lexer().FlushComments();
         m_ExpectLastComment = false;
     }
-    
 }
 
 AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
@@ -419,6 +418,47 @@ void DTDParser::AddElementContent(DTDElement& node, string& id_name,
         type != DTDElement::eSet) {
         ParseError("Unexpected element contents", "");
     }
+    const list<string>& content = node.GetContent();
+    if (id_name == s_SpecialName) {
+        if (find(content.begin(), content.end(), id_name) != content.end()) {
+            // already there
+            return;
+        }
+    } else {
+        list<string>::const_iterator i;
+        DTDElement& candidate = m_MapElement[ id_name ];
+        for (i = content.begin(); i != content.end(); ++i) {
+            DTDElement& elem = m_MapElement[ *i ];
+            if (!elem.GetName().empty() &&
+                candidate.GetName() == elem.GetName()) {
+/*
+                if (candidate.GetType() != elem.GetType() ||
+                    candidate.GetTypeName() != elem.GetTypeName()) {
+                    ParseError("Unexpected element type", "");
+                }
+*/
+                DTDElement::EOccurrence occ_candidate = node.GetOccurrence(id_name);
+                DTDElement::EOccurrence occ_elem      = node.GetOccurrence(*i);
+                if (occ_candidate == DTDElement::eZero) {
+                    node.RemoveContent(*i);
+                    return;
+                }
+                if (occ_candidate != occ_elem) {
+                    node.SetOccurrence(*i, occ_candidate);
+                }
+                occ_candidate = candidate.GetOccurrence();
+                occ_elem      = elem.GetOccurrence();
+                if (occ_candidate != occ_elem) {
+                    elem.SetOccurrence( occ_candidate );
+                }
+                if (!candidate.GetComments().Empty()) {
+                    elem.Comments() = candidate.GetComments();
+                }
+                return;
+            }
+        }
+    }
+    
     if (id_name == s_SpecialName) {
         if (type == DTDElement::eUnknown && separator == ')') {
             node.SetType(DTDElement::eString);
@@ -473,6 +513,45 @@ void DTDParser::EndElementContent(DTDElement& node)
     FixEmbeddedNames(node);
 }
 
+string DTDParser::CreateEmbeddedName(const DTDElement& node, int depth) const
+{
+#ifdef _DEBUG
+    string old_var = node.CreateEmbeddedName(depth);
+#endif
+    string new_var;
+
+    if (node.GetType() == DTDElement::eAny) {
+        new_var = "AnyContent";
+    } else {
+        string tmp, refname;
+        list<string>::const_iterator i;
+        map<string,DTDElement>::const_iterator r;
+        const list<string>& refs = node.GetContent();
+
+        for ( i = refs.begin(); i != refs.end(); ++i) {
+            r = m_MapElement.find(*i);
+            if (r != m_MapElement.end()) {
+                refname = r->second.GetName();
+            }
+            if (refname.empty()) {
+                refname = *i;
+            }
+            if (!refname.empty()) {
+                new_var += toupper((unsigned char) refname[0]);;
+// try to avoid very long names
+                if (new_var.size() > 8) {
+                    break;
+                }
+            }
+        }
+        if (depth > 1) {
+            new_var += '_';
+            new_var += NStr::IntToString(depth);
+        }
+    }
+    return new_var;
+}
+
 void DTDParser::FixEmbeddedNames(DTDElement& node)
 {
     const list<string>& refs = node.GetContent();
@@ -481,13 +560,23 @@ void DTDParser::FixEmbeddedNames(DTDElement& node)
         DTDElement& refNode = m_MapElement[*i];
         if (refNode.IsEmbedded() && !refNode.IsNamed() && refNode.GetName() == *i) {
             for ( int depth=1; depth<100; ++depth) {
-                string testName = refNode.CreateEmbeddedName(depth);
-                if (find(refs.begin(),refs.end(),testName) == refs.end()) {
-                    if (find(fixed.begin(),fixed.end(),testName) == fixed.end()) {
-                        fixed.push_back(testName);
-                        refNode.SetName(testName);
-                        break;
+
+                string testName = CreateEmbeddedName(refNode,depth);
+                bool allowed =
+                    find(refs.begin(),refs.end(),testName) == refs.end() &&
+                    find(fixed.begin(),fixed.end(),testName) == fixed.end();
+                if (allowed) {
+                    const list<string>& refrefs = refNode.GetContent();
+                    list<string>::const_iterator r= refrefs.begin();
+                    for (; allowed && r != refrefs.end(); ++r) {
+                        const string& t = m_MapElement[*r].GetName();
+                        allowed = t != testName;
                     }
+                }
+                if (allowed) {
+                    fixed.push_back(testName);
+                    refNode.SetName(testName);
+                    break;
                 }
             }
         }
@@ -783,6 +872,7 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
         {
             string qname = i->second.GetName() + i->second.GetNamespaceName();
             if (m_GeneratedTypes.find(qname) == m_GeneratedTypes.end()) {
+                m_GeneratedTypes.insert(qname);
                 ModuleType(module, i->second);
             }
         }
@@ -851,12 +941,6 @@ CDataType* DTDParser::x_Type(
     if (m_SrcType != eDTD) {
         keep_global = keep_global || ref;
     }
-/*
-    ref = ref || 
-        m_GeneratedTypes.find(node.GetName() + node.GetNamespaceName()) !=
-        m_GeneratedTypes.end();
-*/
-
 
     if (keep_global) {
         if (ref) {
@@ -988,9 +1072,6 @@ CDataType* DTDParser::TypesBlock(
     CDataMemberContainerType* containerType,const DTDElement& node,
     bool ignoreAttrib)
 {
-    if (!node.IsEmbedded()) {
-        m_GeneratedTypes.insert(node.GetName() + node.GetNamespaceName());
-    }
     AutoPtr<CDataMemberContainerType> container(containerType);
 
     if (!ignoreAttrib) {
@@ -1134,7 +1215,7 @@ CDataType* DTDParser::AttribBlock(const DTDElement& node)
         AutoPtr<CDataMember> member(new CDataMember(i->GetName(), type));
         string defValue( i->GetValue());
         if (!defValue.empty()) {
-            member->SetDefault(new CIdDataValue(defValue));
+            member->SetDefault(x_AttribValue(*i,defValue));
         }
         if (i->GetValueType() == DTDAttribute::eImplied) {
             member->SetOptional();
@@ -1161,6 +1242,7 @@ CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
     case DTDAttribute::eUnknownGroup:
         ParseError("Unknown attribute", "attribute");
         break;
+    default:
     case DTDAttribute::eId:
     case DTDAttribute::eIdRef:
     case DTDAttribute::eIdRefs:
@@ -1193,6 +1275,46 @@ CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
     return type;
 }
 
+CDataValue* DTDParser::x_AttribValue(const DTDAttribute& att,
+                                     const string& defvalue)
+{
+    CDataValue* value=0;
+    switch (att.GetType()) {
+    case DTDAttribute::eUnknown:
+        ParseError("Unknown attribute", "attribute");
+        break;
+    case DTDAttribute::eUnknownGroup:
+        ParseError("Unknown attribute", "attribute");
+        break;
+    default:
+    case DTDAttribute::eId:
+    case DTDAttribute::eIdRef:
+    case DTDAttribute::eIdRefs:
+    case DTDAttribute::eNmtoken:
+    case DTDAttribute::eNmtokens:
+    case DTDAttribute::eEntity:
+    case DTDAttribute::eEntities:
+    case DTDAttribute::eNotation:
+    case DTDAttribute::eString:
+    case DTDAttribute::eEnum:
+        value = new CIdDataValue(defvalue);
+        break;
+
+    case DTDAttribute::eBoolean:
+        value = new CBoolDataValue(NStr::StringToBool(defvalue));
+        break;
+    case DTDAttribute::eIntEnum:
+    case DTDAttribute::eInteger:
+        value = new CIntDataValue(NStr::StringToInt(defvalue));
+        break;
+    case DTDAttribute::eDouble:
+        value = new CDoubleDataValue(NStr::StringToDouble(defvalue));
+        break;
+    }
+    return value;
+}
+
+
 CDataType* DTDParser::EnumeratedBlock(const DTDAttribute& att,
     CEnumDataType* enumType)
 {
@@ -1207,6 +1329,15 @@ CDataType* DTDParser::EnumeratedBlock(const DTDAttribute& att,
             att.GetEnumValueSourceLine(*i));
     }
     return enumType;
+}
+
+void DTDParser::SetCommentsIfEmpty(CComments* comments)
+{
+    if (comments->Empty()) {
+        m_Comments = comments;
+    } else {
+        m_Comments = 0;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////

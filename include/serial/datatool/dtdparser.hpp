@@ -92,6 +92,7 @@ protected:
     void AddElementContent(DTDElement& node, string& id_name,
                            char separator=0);
     void EndElementContent(DTDElement& node);
+    string CreateEmbeddedName(const DTDElement& node, int depth) const;
     void FixEmbeddedNames(DTDElement& node);
 
     void BeginEntityContent(void);
@@ -124,8 +125,10 @@ protected:
                        const DTDElement& node);
     CDataType* AttribBlock(const DTDElement& node);
     CDataType* x_AttribType(const DTDAttribute& att);
+    CDataValue* x_AttribValue(const DTDAttribute& att, const string& value);
     CDataType* EnumeratedBlock(const DTDAttribute& att,
                                CEnumDataType* enumType);
+    void SetCommentsIfEmpty(CComments* comments);
 
 #if defined(NCBI_DTDPARSER_TRACE)
     virtual void PrintDocumentTree(void);

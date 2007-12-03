@@ -79,7 +79,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,8,7) );
+    SetVersion( CVersionInfo(1,8,8) );
 }
 
 void CDataTool::Init(void)

@@ -346,9 +346,13 @@ DTDElement::EOccurrence DTDElement::GetOccurrence(void) const
 
 void DTDElement::AddContent( const string& ref_name)
 {
-    if (find(m_Refs.begin(), m_Refs.end(), ref_name) == m_Refs.end()) {
-        m_Refs.push_back( ref_name);
-    }
+    m_Refs.push_back( ref_name);
+}
+
+void DTDElement::RemoveContent( const string& ref_name)
+{
+    string t(ref_name);
+    m_Refs.remove(t);
 }
 
 const list<string>& DTDElement::GetContent(void) const
@@ -405,6 +409,37 @@ const list<DTDAttribute>& DTDElement::GetAttributes(void) const
 list<DTDAttribute>& DTDElement::GetNonconstAttributes(void)
 {
     return m_Attrib;
+}
+
+void DTDElement::MergeAttributes(void)
+{
+    list<DTDAttribute>::iterator i, redef;
+    for (i = m_Attrib.begin(); i != m_Attrib.end();) {
+        bool found = false;
+        redef = i;
+        ++redef;
+        while ( !found && redef != m_Attrib.end() ) {
+            if (i->GetName() == redef->GetName()) {
+/*
+                if (i->GetType() != redef->GetType()) {
+                }
+*/
+                if (i->GetValueType() != redef->GetValueType()) {
+                    i->SetValueType( redef->GetValueType() );
+                }
+                redef = m_Attrib.erase(redef);
+                if (redef->GetValueType() == DTDAttribute::eProhibited) {
+                    i = m_Attrib.erase(i);
+                    found = true;
+                }
+            } else {
+                ++redef;
+            }
+        }
+        if (!found) {
+            ++i;
+        }
+    }
 }
 
 void DTDElement::SetNamespaceName(const string& name)

@@ -128,7 +128,8 @@ public:
         eDefault,
         eRequired,
         eImplied,
-        eFixed
+        eFixed,
+        eProhibited
     };
     
     DTDAttribute& operator= (const DTDAttribute& other);
@@ -205,6 +206,7 @@ public:
         eOctetString
     };
     enum EOccurrence {
+        eZero,
         eOne,
         eOneOrMore,
         eZeroOrMore,
@@ -233,6 +235,7 @@ public:
 
     // i.e. element contains other elements
     void AddContent( const string& ref_name);
+    void RemoveContent( const string& ref_name);
     const list<string>& GetContent(void) const;
 
     // element is contained somewhere
@@ -248,6 +251,7 @@ public:
     bool HasAttributes(void) const;
     const list<DTDAttribute>& GetAttributes(void) const;
     list<DTDAttribute>& GetNonconstAttributes(void);
+    void MergeAttributes(void);
     
     void SetNamespaceName(const string& name);
     const string& GetNamespaceName(void) const;
