@@ -17,7 +17,8 @@ SUB_PROJ =  \
     ncbi_xreader_id1 \
     ncbi_xreader_id2 \
     ncbi_xreader_pubseqos \
-    ncbi_xreader_pubseqos2
+    ncbi_xreader_pubseqos2 \
+    ncbi_eutils
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

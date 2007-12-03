@@ -5,7 +5,7 @@
 
 SUB_PROJ = \
    basic cgi dbapi objects objmgr alnmgr soap lds netschedule netcache blast \
-   asn
+   asn eutils
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

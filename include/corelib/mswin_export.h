@@ -1166,6 +1166,15 @@
 #endif
 
 
+/* Export specifier for library eutils
+ */
+#ifdef NCBI_EUTILS_EXPORTS
+#  define NCBI_EUTILS_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_EUTILS_EXPORT __declspec(dllimport)
+#endif
+
+
 #else  /* !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD) */
 
 
@@ -1292,7 +1301,7 @@
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XSQLITE_EXPORT
 #  define NCBI_XUTIL_EXPORT
-
+#  define NCBI_EUTILS_EXPORT
 #endif
 
 

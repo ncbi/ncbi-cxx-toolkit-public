@@ -562,3 +562,7 @@ QOBJMGR_ONLY_LIBS = xobjmgr id2 seqsplit id1 seqset $(SEQ_LIBS) pub medline bibl
 	general xcompress $(CMPRS_LIB)
 QOBJMGR_LIBS = $(QOBJMGR_ONLY_LIBS) qall
 QOBJMGR_STATIC_LIBS = $(QOBJMGR_ONLY_LIBS:%=%$(STATIC)) qall
+
+# EUtils
+EUTILS_LIBS = eutils egquery elink epost esearch espell esummary linkout \
+              einfo
