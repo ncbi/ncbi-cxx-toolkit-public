@@ -164,27 +164,31 @@ sub DoMerge
         # Previous merge was of the opposite direction.
         for my $Path (@BranchPaths)
         {
+            my $PathInfo = $BranchPathInfo->{$Path};
+
             my $PathCreationRevisionNumber =
-                $BranchPathInfo->{$Path}->{PathCreationRevision}->{Number};
+                $PathInfo->{PathCreationRevision}->{Number};
 
-            my $LocalLastTargetRev = $LastTargetRev;
-            my $LocalSourceRev = $SourceRev;
+            my $PathSourceRevisionNumber =
+                $PathInfo->{SourceRevisionNumber};
 
-            if ($Direction eq 'up')
+            my ($MinTargetRev, $MinSourceRev) = $Direction eq 'up' ?
+                ($PathSourceRevisionNumber, $PathCreationRevisionNumber) :
+                ($PathCreationRevisionNumber, $PathSourceRevisionNumber);
+
+            my $LocalLastTargetRev =
+                $LastTargetRev > $MinTargetRev ? $LastTargetRev : $MinTargetRev;
+
+            my $LocalSourceRev =
+                $SourceRev > $MinSourceRev ? $SourceRev : $MinSourceRev;
+
+            if ($LocalLastTargetRev < $LocalSourceRev)
             {
-                $LocalSourceRev = $PathCreationRevisionNumber
-                    if $LocalSourceRev < $PathCreationRevisionNumber
+                $Self->{SVN}->RunSubversion('merge',
+                    $TargetURL . $Path . '@' . $LocalLastTargetRev,
+                    $SourceURL . $Path . '@' . $LocalSourceRev,
+                    $Path)
             }
-            else
-            {
-                $LocalLastTargetRev = $PathCreationRevisionNumber
-                    if $LocalLastTargetRev < $PathCreationRevisionNumber
-            }
-
-            $Self->{SVN}->RunSubversion('merge',
-                $TargetURL . $Path . '@' . $LocalLastTargetRev,
-                $SourceURL . $Path . '@' . $LocalSourceRev,
-                $Path)
         }
     }
     else
@@ -193,16 +197,14 @@ sub DoMerge
         # previous merge was of the same direction.
         for my $Path (@BranchPaths)
         {
-            my $PathCreationRevisionNumber =
-                $BranchPathInfo->{$Path}->{PathCreationRevision}->{Number};
+            my $PathInfo = $BranchPathInfo->{$Path};
 
-            my $LocalLastSourceRev = $LastSourceRev;
+            my $MinSourceRev = $Direction eq 'up' ?
+                $PathInfo->{PathCreationRevision}->{Number} :
+                    $PathInfo->{SourceRevisionNumber};
 
-            if ($Direction eq 'up')
-            {
-                $LocalLastSourceRev = $PathCreationRevisionNumber
-                    if $LocalLastSourceRev < $PathCreationRevisionNumber
-            }
+            my $LocalLastSourceRev =
+                $LastSourceRev > $MinSourceRev ? $LastSourceRev : $MinSourceRev;
 
             if ($LocalLastSourceRev < $SourceRev)
             {
