@@ -50,6 +50,9 @@ public:
     std::string Xml(void) const {
         return ncbi_CSerialObject_Serialize(self, ncbi::eSerial_Xml);
     };
+    std::string Json(void) const {
+        return ncbi_CSerialObject_Serialize(self, ncbi::eSerial_Json);
+    };
 
     void WriteAsn(ostream& ostr) const {
         ostr << MSerial_AsnText << *self;
@@ -59,6 +62,9 @@ public:
     };
     void WriteXml(ostream& ostr) const {
         ostr << MSerial_Xml << *self;
+    };
+    void WriteJson(ostream& ostr) const {
+        ostr << MSerial_Json << *self;
     };
 
     void WriteAsn(const std::string& fname) const {
@@ -72,6 +78,10 @@ public:
     void WriteXml(const std::string& fname) const {
         ofstream ostr(fname.c_str());
         ostr << MSerial_Xml << *self;
+    };
+    void WriteJson(const std::string& fname) const {
+        ofstream ostr(fname.c_str());
+        ostr << MSerial_Json << *self;
     };
 
     void Deserialize(const std::string& str, ncbi::ESerialDataFormat format) {
