@@ -842,6 +842,7 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
 {
     const CSeq_id_Handle* conflict_id = 0;
     if ( !m_Seq_idMap.empty() && !seq_ids.empty() ) {
+        // scan for conflicts and mark new seq-ids for new scan if unresolved
         size_t add_count = seq_ids.size();
         size_t old_count = m_Seq_idMap.size();
         size_t scan_time = add_count + old_count;
@@ -850,7 +851,7 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
         if ( scan_time < lookup_time ) {
             // scan both
             TIds::const_iterator it1 = seq_ids.begin();
-            TSeq_idMap::const_iterator it2 = m_Seq_idMap.begin();
+            TSeq_idMap::iterator it2 = m_Seq_idMap.begin();
             while ( it1 != seq_ids.end() && it2 != m_Seq_idMap.end() ) {
                 if ( *it1 < it2->first ) {
                     ++it1;
@@ -858,12 +859,16 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
                 else if ( it2->first < *it1 ) {
                     ++it2;
                 }
-                else if ( it2->second.m_Bioseq_Info ) {
-                    conflict_id = &*it1;
-                    break;
-                }
                 else {
-                    // not resolved yet
+                    if ( it2->second.m_Bioseq_Info ) {
+                        conflict_id = &*it1;
+                        CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
+                        if ( !binfo.HasBioseq() ) {
+                            // try to resolve again
+                            binfo.m_SynCache.Reset(); // break circular link
+                            it2->second.m_Bioseq_Info.Reset();
+                        }
+                    }
                     ++it1;
                     ++it2;
                 }
@@ -872,21 +877,31 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
         else if ( add_count < old_count ) {
             // lookup in old
             ITERATE ( TIds, it1, seq_ids ) {
-                TSeq_idMap::const_iterator it2 = m_Seq_idMap.find(*it1);
+                TSeq_idMap::iterator it2 = m_Seq_idMap.find(*it1);
                 if ( it2 != m_Seq_idMap.end() &&
                      it2->second.m_Bioseq_Info ) {
                     conflict_id = &*it1;
-                    break;
+                    CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
+                    if ( !binfo.HasBioseq() ) {
+                        // try to resolve again
+                        binfo.m_SynCache.Reset(); // break circular link
+                        it2->second.m_Bioseq_Info.Reset();
+                    }
                 }
             }
         }
         else {
             // lookup in add
-            ITERATE ( TSeq_idMap, it2, m_Seq_idMap ) {
+            NON_CONST_ITERATE ( TSeq_idMap, it2, m_Seq_idMap ) {
                 if ( it2->second.m_Bioseq_Info &&
                      binary_search(seq_ids.begin(), seq_ids.end(), it2->first) ) {
                     conflict_id = &it2->first;
-                    break;
+                    CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
+                    if ( !binfo.HasBioseq() ) {
+                        // try to resolve again
+                        binfo.m_SynCache.Reset(); // break circular link
+                        it2->second.m_Bioseq_Info.Reset();
+                    }
                 }
             }
         }
@@ -894,20 +909,9 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
     if ( conflict_id ) {
         x_ReportNewDataConflict(conflict_id);
     }
-    for ( TSeq_idMap::iterator it = m_Seq_idMap.begin();
-          it != m_Seq_idMap.end(); ) {
-        if ( it->second.m_Bioseq_Info ) {
-            CBioseq_ScopeInfo& binfo = *it->second.m_Bioseq_Info;
-            if ( binfo.HasBioseq() ) {
-                binfo.m_BioseqAnnotRef_Info.Reset();
-            }
-            else {
-                binfo.m_SynCache.Reset(); // break circular link
-                it->second.m_Bioseq_Info.Reset(); // try to resolve again
-            }
-        }
-        it->second.m_AllAnnotRef_Info.Reset();
-        ++it;
+    if ( !annot_ids.empty() ) {
+        // recollect annot TSEs
+        x_ClearAnnotCache();
     }
 }
 
@@ -1006,13 +1010,7 @@ void CScope_Impl::x_ClearCacheOnRemoveData(const CTSE_Info* old_tse)
 void CScope_Impl::x_ClearCacheOnRemoveAnnot(const CTSE_Info& old_tse)
 {
     // Clear annot cache
-    NON_CONST_ITERATE ( TSeq_idMap, it, m_Seq_idMap ) {
-        if ( it->second.m_Bioseq_Info ) {
-            CBioseq_ScopeInfo& binfo = *it->second.m_Bioseq_Info;
-            binfo.m_BioseqAnnotRef_Info.Reset();
-        }
-        it->second.m_AllAnnotRef_Info.Reset();
-    }
+    x_ClearAnnotCache();
 }
 
 
