@@ -716,6 +716,7 @@ void CDiagContext::x_CreateUID(void) const
     ITERATE(string, s, host) {
         h = (h*15 + *s) & 0xFFFF;
     }
+    // The low 4 bits are reserved as GUID generator version number.
     m_UID = (h << 48) + ((pid & 0xFFFF) << 32) + ((t & 0xFFFFFFF) << 4);
 }
 
@@ -2031,9 +2032,9 @@ SDiagMessage::SDiagMessage(const string& message)
 
     try {
         // Fixed prefix
-        m_PID = s_ParseInt(message, pos, kDiagW_PID, '/');
-        m_TID = s_ParseInt(message, pos, kDiagW_TID, '/');
-        m_RequestId = s_ParseInt(message, pos, kDiagW_RID, '/');
+        m_PID = s_ParseInt(message, pos, 0, '/');
+        m_TID = s_ParseInt(message, pos, 0, '/');
+        m_RequestId = s_ParseInt(message, pos, 0, '/');
         s_ParseStr(message, pos, ' ', true);
 
         if (message[pos + kDiagW_UID] != ' ') {
@@ -2043,8 +2044,8 @@ SDiagMessage::SDiagMessage(const string& message)
             NStr::StringToUInt8(message.substr(pos, kDiagW_UID), 0, 16);
         pos += kDiagW_UID + 1;
         
-        m_ProcPost = s_ParseInt(message, pos, kDiagW_SN, '/');
-        m_ThrPost = s_ParseInt(message, pos, kDiagW_SN, ' ');
+        m_ProcPost = s_ParseInt(message, pos, 0, '/');
+        m_ThrPost = s_ParseInt(message, pos, 0, ' ');
 
         // Date and time
         string tmp = s_ParseStr(message, pos, ' ');
