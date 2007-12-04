@@ -130,6 +130,7 @@ MolInfo ::= SEQUENCE {
         wgs (20) ,              -- whole genome shotgun sequencing
         barcode (21) ,          -- barcode of life project
         composite-wgs-htgs (22) , -- composite of WGS and HTGS
+        tsa (23) ,              -- transcriptome shotgun assembly
         other (255) }           -- use Source.techexp
                DEFAULT unknown ,
     techexp VisibleString OPTIONAL ,   -- explanation if tech not enough
@@ -243,12 +244,12 @@ Pubdesc ::= SEQUENCE {              -- how sequence presented in pub
     seq-raw StringStore OPTIONAL ,  -- original sequence from paper
     align-group INTEGER OPTIONAL ,  -- this seq aligned with others in paper
     comment VisibleString OPTIONAL, -- any comment on this pub in context
-	reftype INTEGER {           -- type of reference in a GenBank record
-		seq (0) ,               -- refers to sequence
-		sites (1) ,             -- refers to unspecified features
-		feats (2) ,             -- refers to specified features
-		no-target (3) }         -- nothing specified (EMBL)
-		DEFAULT seq }
+    reftype INTEGER {           -- type of reference in a GenBank record
+        seq (0) ,               -- refers to sequence
+        sites (1) ,             -- refers to unspecified features
+        feats (2) ,             -- refers to specified features
+        no-target (3) }         -- nothing specified (EMBL)
+        DEFAULT seq }
 
 Heterogen ::= VisibleString       -- cofactor, prosthetic group, inhibitor, etc
 
