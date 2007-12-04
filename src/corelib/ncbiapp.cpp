@@ -37,14 +37,13 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/syslog.hpp>
-#include <corelib/ncbithr.hpp>
 #include <corelib/error_codes.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
 #  include <corelib/ncbidll.hpp>
-#  include <io.h> 
-#  include <fcntl.h> 
+#  include <io.h>
+#  include <fcntl.h>
 #endif
 
 #if defined(NCBI_OS_UNIX)
@@ -116,16 +115,13 @@ CNcbiApplication::CNcbiApplication(void)
 
     // Create an empty registry
     m_Config.Reset(new CNcbiRegistry);
-    
+
     m_DryRun = false;
 }
 
 
 CNcbiApplication::~CNcbiApplication(void)
 {
-    // Mark that main thread is finished
-    CThread::MarkAppFinished();
-
     m_Instance = 0;
     FlushDiag(0, true);
     if (m_CinBuffer) {
@@ -189,19 +185,19 @@ SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool /*close_diag*/)
 
 #if defined(NCBI_OS_DARWIN)
 static void s_MacArgMunging(CNcbiApplication&   app,
-                            int*                argcPtr,  
+                            int*                argcPtr,
                             const char* const** argvPtr,
                             const string&       exepath)
 {
 
-    // Sometimes on Mac there will be an argument -psn which 
+    // Sometimes on Mac there will be an argument -psn which
     // will be followed by the Process Serial Number, e.g. -psn_0_13107201
     // this is in situations where the application could have no other
     // arguments like when it is double clicked.
     // This will mess up argument processing later, so get rid of it.
-    static const char* s_ArgMacPsn = "-psn_"; 
+    static const char* s_ArgMacPsn = "-psn_";
 
-    if (*argcPtr == 2  && 
+    if (*argcPtr == 2  &&
         NStr::strncmp((*argvPtr)[1], s_ArgMacPsn, strlen(s_ArgMacPsn)) == 0) {
         --*argcPtr;
     }
@@ -232,7 +228,7 @@ static void s_MacArgMunging(CNcbiApplication&   app,
     }
 
     // grab the rest of the arguments from the file.
-    // arguments are separated by whitespace. Can be on 
+    // arguments are separated by whitespace. Can be on
     // more than one line.
     string arg;
     while (in >> arg) {
@@ -242,9 +238,9 @@ static void s_MacArgMunging(CNcbiApplication&   app,
     // stash them away in the standard argc and argv places.
     *argcPtr = v.size();
 
-    char** argv =  new char*[v.size()]; 
+    char** argv =  new char*[v.size()];
     int c = 0;
-    ITERATE(vector<string>, vp, v) { 
+    ITERATE(vector<string>, vp, v) {
         argv[c++] = strdup(vp->c_str());
     }
     *argvPtr = argv;
@@ -417,7 +413,7 @@ int CNcbiApplication::AppMain
 
             // Setup the standard features from the config file.
             // Don't call till after LoadConfig()
-            // NOTE: this will override environment variables, 
+            // NOTE: this will override environment variables,
             // except DIAG_POST_LEVEL which is Set*Fixed*.
             x_HonorStandardSettings();
 
@@ -428,12 +424,12 @@ int CNcbiApplication::AppMain
 #if (defined(NCBI_COMPILER_ICC) && NCBI_COMPILER_VERSION < 900)
             // ICC 8.0 have an optimization bug in exceptions handling,
             // so workaround it here
-            try {            
+            try {
                 Init();
             }
             catch (CArgHelpException& ) {
                 throw;
-            }            
+            }
 #else
             Init();
 #endif
@@ -771,7 +767,7 @@ void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 
 
 string CNcbiApplication::FindProgramExecutablePath
-(int                _DEBUG_ARG(argc), 
+(int                _DEBUG_ARG(argc),
  const char* const*            argv,
  string*                       real_path)
 {
@@ -791,7 +787,7 @@ string CNcbiApplication::FindProgramExecutablePath
         if (err == noErr) {
             err = FSRefMakePath(&fsRef, (UInt8*) filePath, sizeof(filePath));
         }
-    }    
+    }
     ret_val = filePath;
 
 #elif defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
@@ -804,7 +800,7 @@ string CNcbiApplication::FindProgramExecutablePath
         CDll dll_psapi("psapi.dll", CDll::eLoadNow, CDll::eAutoUnload);
 
         // Get function entry-point from DLL
-        BOOL  (STDMETHODCALLTYPE FAR * dllEnumProcessModules) 
+        BOOL  (STDMETHODCALLTYPE FAR * dllEnumProcessModules)
                 (HANDLE  hProcess,     // handle to process
                  HMODULE *lphModule,   // array of module handles
                  DWORD   cb,           // size of array
@@ -980,7 +976,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
                            << "Mb (as per the config param [NCBI.HeapSizeLimit])");
         }
     }
-    
+
     // [NCBI.CpuTimeLimit]
     if ( !reg->Get("NCBI", "CpuTimeLimit").empty() ) {
         int cpu_time_limit = reg->GetInt("NCBI", "CpuTimeLimit", 0);

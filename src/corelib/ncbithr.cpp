@@ -375,7 +375,7 @@ CExitThreadException::~CExitThreadException(void)
 // will not proceed until after the appropriate Run() is finished.
 DEFINE_STATIC_FAST_MUTEX(s_ThreadMutex);
 
-unsigned int CThread::sm_ThreadsCount = 1;
+unsigned int CThread::sm_ThreadsCount = 0;
 
 
 // Internal storage for thread objects and related variables/functions
@@ -473,16 +473,6 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     }}
 
     return 0;
-}
-
-
-void CThread::MarkAppFinished() {
-    CFastMutexGuard state_guard(s_ThreadMutex);
-
-    // Method is called only from CNcbiApplication::AppMain(), so we know
-    // for sure that method is called only once and there is no need to
-    // remember something - simply decrement
-    --sm_ThreadsCount;
 }
 
 

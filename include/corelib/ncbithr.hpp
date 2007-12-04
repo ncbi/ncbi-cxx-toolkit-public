@@ -84,30 +84,30 @@ protected:
     /// Cleanup data and delete TLS key.
     ~CTlsBase(void);
 
-    /// Helper method to get stored thread data. 
+    /// Helper method to get stored thread data.
     void* x_GetValue(void) const;
 
-    /// Helper method to set thread data. 
+    /// Helper method to set thread data.
     void x_SetValue(void* value, FCleanupBase cleanup=0, void* cleanup_data=0);
 
-    /// Helper method to reset thread data. 
+    /// Helper method to reset thread data.
     void x_Reset(void);
 
-    /// Helper method to discard thread data. 
+    /// Helper method to discard thread data.
     void x_Discard(void);
 
 private:
-    TTlsKey m_Key;              ///< 
+    TTlsKey m_Key;              ///<
     bool    m_Initialized;      ///< Indicates if thread data initialized.
 
     /// Internal structure to store all three pointers in the same TLS.
     struct STlsData {
-        void*        m_Value;       
+        void*        m_Value;
         FCleanupBase m_CleanupFunc;
         void*        m_CleanupData;
     };
 
-    /// Helper method to get the STlsData* 
+    /// Helper method to get the STlsData*
     STlsData* x_GetTlsData(void) const;
     /// Deletes STlsData* structure and managed pointer
     /// Returns true if CTlsBase must be deregistered from current thread
@@ -189,7 +189,7 @@ public:
 
     void Register(CTlsBase* tls);
     void Deregister(CTlsBase* tls);
-    
+
 private:
     typedef set< CRef<CTlsBase> > TTlsSet;
     TTlsSet m_UsedTls;
@@ -284,12 +284,8 @@ public:
     static void GetSystemID(TThreadSystemID* id);
 
     /// Get total amount of threads
-    /// This amount contains main thread too. If main thread is based on
-    /// CNcbiApplication object then main thread will be excluded from this
-    /// amount when application's Run() method is finished.
-    static unsigned int GetThreadsCount() {
-        return sm_ThreadsCount;
-    }
+    /// This amount does not contain main thread.
+    static unsigned int GetThreadsCount();
 
 protected:
     /// Derived (user-created) class must provide a real thread function.
@@ -327,10 +323,6 @@ private:
 
     static unsigned int sm_ThreadsCount;  ///< Total amount of threads
 
-    /// Exclude main thread from total number of threads
-    /// Method is only for call from CNcbiApplication::AppMain() method
-    static void MarkAppFinished();
-
     /// Function to use (internally) as the thread's startup function
     static TWrapperRes Wrapper(TWrapperArg arg);
 
@@ -353,8 +345,6 @@ private:
     CUsedTlsBases m_UsedTls;
 
     static CUsedTlsBases& GetUsedTlsBases(void);
-
-    friend class CNcbiApplication;
 };
 
 
@@ -435,6 +425,12 @@ inline
 TThreadHandle CThread::GetThreadHandle()
 {
     return m_Handle;
+}
+
+
+inline
+unsigned int CThread::GetThreadsCount() {
+    return sm_ThreadsCount;
 }
 
 

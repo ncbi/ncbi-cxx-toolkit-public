@@ -31,7 +31,7 @@
  */
 
 /// @file ncbi_queue.hpp
-/// 
+///
 /// Definition of synchronized queue (CSyncQueue template) and templates
 /// related to it.
 /// See also: @ref CSyncQueueDescription.
@@ -291,7 +291,7 @@ public:
     /// @warning This call can lead to a deadlock in some situations when
     ///          either queue is locked by access guardian.
     /// @throws  CSyncQueueException Does nothing and throws with "eNoRoom"
-    ///          err.code if there is not enough room in the destination queue 
+    ///          err.code if there is not enough room in the destination queue
     ///
     /// @param other
     ///   Another queue to which all elements will be copied
@@ -313,7 +313,7 @@ private:
 
     /// Lock access to the queue.
     /// @note  This call will block if the queue is already locked by
-    ///        another thread 
+    ///        another thread
     /// @param timeout
     ///   Maximum time period to wait on this call; NULL to wait infinitely.
     /// @return
@@ -1131,26 +1131,27 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
                                                 TErrorThrower    throw_error)
     const
 {
+    auto_ptr<CTimeSpan> real_timeout;
+    
     // If we are in single-thread mode or we didn't run other threads
     // then we will wait forever. Avoid it and let's think that timeout
-    // was ran over
-    bool is_ST = true;
-#ifdef NCBI_THREADS
-    is_ST = CThread::GetThreadsCount() == 1;
-#endif
-    if (is_ST) {
-        throw_error();
+    // was ran over.
+    if (CThread::GetThreadsCount() == 0) {
+        real_timeout.reset(new CTimeSpan(0.0));
+    }
+    else if (timeout) {
+        real_timeout.reset(new CTimeSpan(*timeout));
     }
 
-    if (timeout) {
+    if (real_timeout.get()) {
         // finite timeout
         CStopWatch timer(CStopWatch::eStart);
-        if (!lock->Lock(this, timeout)) {
+        if (!lock->Lock(this, real_timeout.get())) {
             throw_error();
         }
 
         while ( (this->*func_to_check)() ) {
-            CTimeSpan tmo(timeout->GetAsDouble() - timer.Elapsed());
+            CTimeSpan tmo(real_timeout->GetAsDouble() - timer.Elapsed());
             if (tmo.GetSign() != ePositive) {
                 throw_error();
             }
@@ -1170,7 +1171,7 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
                 throw_error();
             }
 
-            tmo = CTimeSpan(timeout->GetAsDouble() - timer.Elapsed());
+            tmo = CTimeSpan(real_timeout->GetAsDouble() - timer.Elapsed());
             if (tmo.GetSign() != ePositive) {
                 throw_error();
             }
