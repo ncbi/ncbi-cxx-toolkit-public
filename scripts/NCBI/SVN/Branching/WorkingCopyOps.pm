@@ -123,6 +123,9 @@ sub DoMerge
 
     for ($Self->{SVN}->ReadSubversionLines('status', @BranchPaths))
     {
+        # Ignore status of external items.
+        last unless $_;
+
         die "$Self->{MyName}: local modifications detected.\n"
             unless m/^(?:[\?~X]|    S)/o
     }
