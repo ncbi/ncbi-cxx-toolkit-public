@@ -578,6 +578,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     list<SConfigInfo> dll_configs;
     const list<SConfigInfo>* configurations = 0;
     bool skip_config = !GetEnvironment().Get(s_ptb_skipconfig).empty();
+    string str_config;
 
     if (dll) {
         _TRACE("DLL build");
@@ -588,11 +589,10 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
         configurations = &GetRegSettings().m_ConfigInfo;
     }
     {{
-        string str_log;
         ITERATE(list<SConfigInfo>, p , *configurations) {
-            str_log += p->GetConfigFullName() + " ";
+            str_config += p->GetConfigFullName() + " ";
         }
-        PTB_INFO("Building configurations: " << str_log);
+        PTB_INFO("Building configurations: " << str_config);
     }}
 
     if ( m_AddMissingLibs ) {
@@ -684,7 +684,51 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
     sln_gen.SaveSolution(m_Solution);
 
-    CreateFeaturesAndPackagesFiles(configurations);
+    list<string> enabled, disabled;
+    CreateFeaturesAndPackagesFiles(configurations, enabled, disabled);
+
+    // summary
+    SetDiagPostAllFlags(eDPF_Log);
+    PTB_INFO("===========================================================");
+    PTB_INFO("SOLUTION: " << m_Solution);
+    PTB_INFO("PROJECTS: " << CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, m_Subtree));
+    PTB_INFO("CONFIGURATIONS: " << str_config);
+    PTB_INFO("FEATURES AND PACKAGES: ");
+    string str_pkg = "     enabled: ";
+    ITERATE( list<string>, p, enabled) {
+        if (str_pkg.length() > 70) {
+            PTB_INFO(str_pkg);
+            str_pkg = "              ";
+        }
+        str_pkg += " ";
+        str_pkg += *p;
+    }
+    if (!str_pkg.empty()) {
+        PTB_INFO(str_pkg);
+    }
+    str_pkg = "    disabled: ";
+    ITERATE( list<string>, p, disabled) {
+        if (str_pkg.length() > 70) {
+            PTB_INFO(str_pkg);
+            str_pkg = "              ";
+        }
+        str_pkg += " ";
+        str_pkg += *p;
+    }
+    if (!str_pkg.empty()) {
+        PTB_INFO(str_pkg);
+    }
+    string str_path = GetProjectTreeInfo().m_Compilers;
+    str_path = CDirEntry::ConcatPath(str_path, 
+        GetRegSettings().m_CompilersSubdir);
+    str_path = CDirEntry::ConcatPath(str_path, GetBuildType().GetTypeStr());
+
+    PTB_INFO(" ");
+    PTB_INFO("    If a package is present in both lists,");
+    PTB_INFO("    it is disabled in SOME configurations only");
+    PTB_INFO("    For details see 'features_and_packages' files in");
+    PTB_INFO("    " << str_path << "/%ConfigurationName%");
+    PTB_INFO("===========================================================");
 #endif //NCBI_COMPILER_MSVC
 }
 
@@ -783,7 +827,8 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 
 
 void CProjBulderApp::CreateFeaturesAndPackagesFiles(
-    const list<SConfigInfo>* configs)
+    const list<SConfigInfo>* configs,
+    list<string>& list_enabled, list<string>& list_disabled)
 {
     // Create makefile path
     string base_path = GetProjectTreeInfo().m_Compilers;
@@ -825,20 +870,27 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
             CMsvcPrjProjectContext::GetEnabledPackages(c->GetConfigFullName());
         ITERATE(set<string>, e, epackages) {
             ofs << *e << endl;
+            list_enabled.push_back(*e);
         }
 
         list<string> std_features;
         GetSite().GetStandardFeatures(std_features);
         ITERATE(list<string>, s, std_features) {
             ofs << *s << endl;
+            list_enabled.push_back(*s);
         }
 
         const set<string>& dpackages =
             CMsvcPrjProjectContext::GetDisabledPackages(c->GetConfigFullName());
         ITERATE(set<string>, d, dpackages) {
             ofsd << *d << endl;
+            list_disabled.push_back(*d);
         }
     }
+    list_enabled.sort();
+    list_enabled.unique();
+    list_disabled.sort();
+    list_disabled.unique();
 }
 
 

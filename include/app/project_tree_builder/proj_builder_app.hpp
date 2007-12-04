@@ -163,7 +163,8 @@ private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
     void    GenerateMsvcProjects(CProjectItemsTree& projects_tree);
     void    GenerateUnixProjects(CProjectItemsTree& projects_tree);
-    void    CreateFeaturesAndPackagesFiles(const list<SConfigInfo>* configs);
+    void    CreateFeaturesAndPackagesFiles(const list<SConfigInfo>* configs,
+                list<string>& enabled, list<string>& disabled);
     bool    ConfirmConfiguration(void);
 };
 
