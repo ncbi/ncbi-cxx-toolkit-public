@@ -129,9 +129,7 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
 
         static const string kDelim(",");
         const string& entry = args["entry"].AsString();
-        if (entry == "all") {
-            return;
-        } else if (entry.find(kDelim[0]) != string::npos) {
+        if (entry.find(kDelim[0]) != string::npos) {
             vector<string> tokens;
             NStr::Tokenize(entry, kDelim, tokens);
             retval.reserve(tokens.size());
@@ -270,12 +268,27 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
     }
 }
 
+class CFormatProcessor {
+public:
+    CFormatProcessor(CNcbiOstream& out, const string& format)
+        : m_Out(out), m_Format(format) {}
+
+    void operator()(CSeqDB::TOID oid) const {
+        m_Out << "Print " << oid << " in " << m_Format << endl;
+    }
+
+private:
+    CNcbiOstream& m_Out;
+    string m_Format;
+};
+
 void
 CBlastDBCmdApp::x_ProcessSearchRequest() const
 {
     TQueries queries;
     x_GetQueries(queries);
     CNcbiOstream& out = GetArgs()["out"].AsOutputFile();
+    const string kOutFmt = GetArgs()["outfmt"].AsString();
 
     // Convert the entries into OIDs
     vector<CSeqDB::TOID> oids2fetch;
@@ -287,19 +300,32 @@ CBlastDBCmdApp::x_ProcessSearchRequest() const
         } else if (itr->IsPig() && m_BlastDb->PigToOid(itr->GetPig(), oid)) {
             oids2fetch.push_back(oid);
         } else if (itr->IsStringId()) {
-            vector<int> oids;
-            m_BlastDb->AccessionToOids(itr->GetStringId(), oids);
-            copy(oids.begin(), oids.end(), back_inserter(oids2fetch));
+            const string& kStringId = itr->GetStringId();
+            if (kStringId == "all") {
+                // dump the entire database
+                const vector<CSeqDB::TOID>::size_type kMax = 
+                    m_BlastDb->GetNumOIDs();
+                oids2fetch.clear();
+                oids2fetch.reserve(kMax);
+                for (vector<CSeqDB::TOID>::size_type i = 0; i < kMax; i++) {
+                    oids2fetch.push_back(i);
+                }
+                break;
+            } else {
+                vector<int> oids;
+                m_BlastDb->AccessionToOids(kStringId, oids);
+                if (oids.empty()) {
+                    ERR_POST(Warning << "Did not find '" << kStringId << "'");
+                } else {
+                    copy(oids.begin(), oids.end(), back_inserter(oids2fetch));
+                }
+            }
         }
     }
 
-    out << "DBG: Will fetch " << oids2fetch.size() << " OIDs" << endl;
-    // FIXME: add formatting interfaces here
-    if (oids2fetch.empty()) {
-        // dump the entire database
-    } else {
-        ITERATE(vector<CSeqDB::TOID>, itr, oids2fetch) {
-        }
+    CFormatProcessor fmt_proc(out, kOutFmt);
+    ITERATE(vector<CSeqDB::TOID>, itr, oids2fetch) {
+        fmt_proc(*itr);
     }
 }
 
