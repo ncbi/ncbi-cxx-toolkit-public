@@ -67,7 +67,7 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                              CAlnUserOptions::EDirection direction) ///< which direction
 {
     _ASSERT(row_1 >=0  &&  row_2 >= 0);
-    _ASSERT(sa.GetDim() > max(row_1, row_2));
+    _ASSERT( !sa.IsSetDim()  ||  sa.GetDim() > max(row_1, row_2));
 
     typedef CSeq_align::TSegs TSegs;
     const TSegs& segs = sa.GetSegs();
