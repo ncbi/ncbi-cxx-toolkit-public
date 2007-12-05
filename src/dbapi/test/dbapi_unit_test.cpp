@@ -4771,7 +4771,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
             BOOST_CHECK( !rs->Next() );
 
             // 3) Select another recordset with just one record
-            rs = auto_stmt->ExecuteQuery( "select qq = 57.55 + 0.0033" );
+            rs = auto_stmt->ExecuteQuery( "select qq = convert(real, 57.55 + 0.0033)" );
             BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK( !rs->Next() );
@@ -4792,7 +4792,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 
             // 3) Select another recordset with just one record
             auto_ptr<IStatement> auto_stmt2( m_Conn->CreateStatement() );
-            rs = auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" );
+            rs = auto_stmt2->ExecuteQuery( "select qq = convert(real, 57.55 + 0.0033)" );
             BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK( !rs->Next() );
@@ -5013,6 +5013,7 @@ CDBAPIUnitTest::Test_Recordset(void)
             }
 
             // numeric
+            if (m_args.GetDriverName() != dblib_driver  ||  m_args.GetServerType() == CTestArguments::eSybase)
             {
                 rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
                 BOOST_CHECK(rs != NULL);
@@ -5024,6 +5025,7 @@ CDBAPIUnitTest::Test_Recordset(void)
             }
 
             // decimal
+            if (m_args.GetDriverName() != dblib_driver  ||  m_args.GetServerType() == CTestArguments::eSybase)
             {
                 rs = auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)");
                 BOOST_CHECK(rs != NULL);
@@ -5269,6 +5271,7 @@ CDBAPIUnitTest::Test_Recordset(void)
             }
 
             // numeric
+            if (m_args.GetDriverName() != dblib_driver  ||  m_args.GetServerType() == CTestArguments::eSybase)
             {
                 rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
                 BOOST_CHECK(rs != NULL);
@@ -5304,6 +5307,7 @@ CDBAPIUnitTest::Test_Recordset(void)
             }
 
             // decimal
+            if (m_args.GetDriverName() != dblib_driver  ||  m_args.GetServerType() == CTestArguments::eSybase)
             {
                 rs = auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)");
                 BOOST_CHECK(rs != NULL);
@@ -11930,9 +11934,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // Valid for all drivers ...
     if (args.GetDriverName() != ftds_dblib_driver
+        && args.GetDriverName() != dblib_driver
         && !(args.GetDriverName() == ftds64_driver
-          && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
-        && !(args.GetDriverName() == dblib_driver
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Decimal,
