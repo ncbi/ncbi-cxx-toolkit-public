@@ -963,7 +963,7 @@ static void TestBASE64Encoding(void)
         j = rand() % 100;
         BASE64_Encode(buf1, len, &read, buf2, sizeof(buf2), &written, &j);
         if (len != read)
-            fprintf(stderr, "len = %d, read = %d\n", (int)len, (int)read);
+            NcbiCerr << "len = " << len << ", read = " << read << NcbiEndl;
         _ASSERT(len == read);
         _ASSERT(written < sizeof(buf2));
         _ASSERT(buf2[written] == '\0');
@@ -974,7 +974,7 @@ static void TestBASE64Encoding(void)
         j = written;
         BASE64_Decode(buf2, j, &read, buf3, sizeof(buf3), &written);
         if (j != read)
-            fprintf(stderr, "j = %d, read = %d\n", (int)j, (int)read);
+            NcbiCerr << "j = " << len << ", read = " << read << NcbiEndl;
         _ASSERT(j == read);
         _ASSERT(len == written);
         _ASSERT(memcmp(buf1, buf3, len) == 0);
