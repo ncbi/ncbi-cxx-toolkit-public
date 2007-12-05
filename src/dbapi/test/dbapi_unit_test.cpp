@@ -11356,7 +11356,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         if (args.GetDriverName() != dblib_driver
             && args.GetDriverName() != ftds_dblib_driver
             && args.GetDriverName() != ftds8_driver
-            && args.GetDriverName() != ftds64_driver
+            // && args.GetDriverName() != ftds64_driver
             // ctlib on x86_64 requires appropriate Sybase client ...
             && args.GetDriverName() != ctlib_driver
            ) {
@@ -11586,14 +11586,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             }
 
 
-            if (args.GetDriverName() != ftds64_driver) {
-                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor_Param,
-                        DBAPIInstance);
-                tc->depends_on(tc_cursor);
-                add(tc);
-            } else {
-                PutMsgDisabled("Test_Cursor_Param");
-            }
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor_Param,
+                    DBAPIInstance);
+            tc->depends_on(tc_cursor);
+            add(tc);
 
             // Does not work with all databases and drivers currently ...
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB,
