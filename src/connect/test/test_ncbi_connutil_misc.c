@@ -147,60 +147,6 @@ static void TEST_URL_Encoding(void)
 
 
 /***********************************************************************
- *  TEST:  BASE64_Encode(), BAS64_Decode()
- */
-
-static void TEST_BASE64_Encoding(void)
-{
-    const char test_string[] = "Quick brown fox jumps over the lazy dog";
-    char buf1[1024], buf2[1024], buf3[1024];
-    size_t read, written, len = 16, i, j;
-
-    BASE64_Encode(test_string, strlen(test_string) + 1, &read,
-                  buf1, sizeof(buf1), &written, &len);
-    assert(read == strlen(test_string) + 1);
-    assert(written < sizeof(buf1));
-    assert(buf1[written] == '\0');
-
-    assert(BASE64_Decode(buf1, written, &read,
-                         buf2, sizeof(buf2), &written));
-    assert(strlen(buf1) == read);
-    assert(written == strlen(test_string) + 1);
-    assert(buf2[written - 1] == '\0');
-    assert(strcmp(buf2, test_string) == 0);
-
-    for (i = 0; i < 100; i++) {
-        len = rand() % 250;
-        memset(buf1, '\0', sizeof(buf1));
-        memset(buf2, '\0', sizeof(buf2));
-        memset(buf3, '\0', sizeof(buf3));
-        for (j = 0; j < len; j++) {
-            buf1[j] = rand() & 0xFF;
-        }
-
-        j = rand() % 100;
-        BASE64_Encode(buf1, len, &read, buf2, sizeof(buf2), &written, &j);
-        if (len != read)
-            fprintf(stderr, "len = %d, read = %d\n", (int)len, (int)read);
-        assert(len == read);
-        assert (written < sizeof(buf2));
-        assert(buf2[written] == '\0');
-
-        if (rand() & 1) {
-            buf2[written] = '=';
-        }
-        j = written;
-        BASE64_Decode(buf2, j, &read, buf3, sizeof(buf3), &written);
-        if (j != read)
-            fprintf(stderr, "j = %d, read = %d\n", (int)j, (int)read);
-        assert(j == read);
-        assert(len == written);
-        assert(memcmp(buf1, buf3, len) == 0);
-    }
-}
-
-
-/***********************************************************************
  *  TEST:  Miscellaneous
  */
 
@@ -382,7 +328,6 @@ int main(void)
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     TEST_URL_Encoding();
-    TEST_BASE64_Encoding();
     TEST_MIME();
     TEST_ConnNetInfo();
 

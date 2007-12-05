@@ -684,6 +684,46 @@ EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
                                   EBOMDiscard   discard_bom);
 
 
+/// BASE64-encode up to "src_size" symbols(bytes) from buffer "src_buf".
+/// Write the encoded data to buffer "dst_buf", but no more than "dst_size"
+/// bytes.
+/// Assign "*src_read" to the # of bytes successfully encoded from "src_buf".
+/// Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
+/// Resulting lines will not exceed "*line_len" (or the standard default
+/// if "line_len" is NULL) bytes;  *line_len == 0 disables line breaks.
+/// To estimate required destination buffer size, you can take into account
+/// that BASE64 coding converts every 3 bytes of source into 4 bytes on
+/// destination, not including the line breaks ('\n').
+extern "C" NCBI_XNCBI_EXPORT void BASE64_Encode
+(const void* src_buf,     /* [in]     non-NULL */
+ size_t      src_size,    /* [in]              */
+ size_t*     src_read,    /* [out]    non-NULL */
+ void*       dst_buf,     /* [in/out] non-NULL */
+ size_t      dst_size,    /* [in]              */
+ size_t*     dst_written, /* [out]    non-NULL */
+ size_t*     line_len     /* [in]  may be NULL */
+ );
+
+
+/// BASE64-decode up to "src_size" symbols(bytes) from buffer "src_buf".
+/// Write the decoded data to buffer "dst_buf", but no more than "dst_size"
+/// bytes.
+/// Assign "*src_read" to the # of bytes successfully decoded from "src_buf".
+/// Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
+/// Return FALSE (0) only if cannot decode anything.
+/// Destination buffer size, as a worst case, equal to the source size
+/// will accomodate the entire input.  As a rule, each 4 bytes of source
+/// (line breaks skipped) are converted into 3 bytes on output.
+extern "C" NCBI_XNCBI_EXPORT int/*bool*/ BASE64_Decode
+(const void* src_buf,     /* [in]     non-NULL */
+ size_t      src_size,    /* [in]              */
+ size_t*     src_read,    /* [out]    non-NULL */
+ void*       dst_buf,     /* [in/out] non-NULL */
+ size_t      dst_size,    /* [in]              */
+ size_t*     dst_written  /* [out]    non-NULL */
+ );
+
+
 END_NCBI_SCOPE
 
 
