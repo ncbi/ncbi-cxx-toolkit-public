@@ -91,47 +91,49 @@ void CSpliced_seg::Validate(bool full_test) const
 
 
         /// Ranges
-        TSeqPos exon_product_len = 0;
-        TSeqPos exon_genomic_len = 0;
-        ITERATE (CSpliced_exon::TParts, chunk_it, exon.GetParts()) {
-            const CSpliced_exon_chunk& chunk = **chunk_it;
+        if (exon.IsSetParts()) {
+            TSeqPos exon_product_len = 0;
+            TSeqPos exon_genomic_len = 0;
+            ITERATE (CSpliced_exon::TParts, chunk_it, exon.GetParts()) {
+                const CSpliced_exon_chunk& chunk = **chunk_it;
                 
-            TSeqPos exon_chunk_product_len = 0;
-            TSeqPos exon_chunk_genomic_len = 0;
+                TSeqPos exon_chunk_product_len = 0;
+                TSeqPos exon_chunk_genomic_len = 0;
             
-            switch (chunk.Which()) {
-            case CSpliced_exon_chunk::e_Match: 
-                exon_chunk_product_len = exon_chunk_genomic_len = chunk.GetMatch();
-                break;
-            case CSpliced_exon_chunk::e_Diag: 
-                exon_chunk_product_len = exon_chunk_genomic_len = chunk.GetDiag();
-                break;
-            case CSpliced_exon_chunk::e_Mismatch:
-                break;
-            case CSpliced_exon_chunk::e_Product_ins:
-                exon_chunk_product_len = chunk.GetProduct_ins();
-                break;
-            case CSpliced_exon_chunk::e_Genomic_ins:
-                exon_chunk_genomic_len = chunk.GetGenomic_ins();
-                break;
-            default:
-                break;
+                switch (chunk.Which()) {
+                case CSpliced_exon_chunk::e_Match: 
+                    exon_chunk_product_len = exon_chunk_genomic_len = chunk.GetMatch();
+                    break;
+                case CSpliced_exon_chunk::e_Diag: 
+                    exon_chunk_product_len = exon_chunk_genomic_len = chunk.GetDiag();
+                    break;
+                case CSpliced_exon_chunk::e_Mismatch:
+                    break;
+                case CSpliced_exon_chunk::e_Product_ins:
+                    exon_chunk_product_len = chunk.GetProduct_ins();
+                    break;
+                case CSpliced_exon_chunk::e_Genomic_ins:
+                    exon_chunk_genomic_len = chunk.GetGenomic_ins();
+                    break;
+                default:
+                    break;
+                }
+                exon_product_len += exon_chunk_product_len;
+                exon_genomic_len += exon_chunk_genomic_len;
             }
-            exon_product_len += exon_chunk_product_len;
-            exon_genomic_len += exon_chunk_genomic_len;
-        }
-        if (exon_product_len != 
-            (prot ? 
-             exon.GetProduct_end().GetProtpos().GetAmin() * 3 + exon.GetProduct_end().GetProtpos().GetFrame() - 1 -
-             (exon.GetProduct_start().GetProtpos().GetAmin() * 3 + exon.GetProduct_start().GetProtpos().GetFrame() - 1) + 1 :
-             exon.GetProduct_end().GetNucpos() - exon.GetProduct_start().GetNucpos() + 1)) {
-            NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                       "Product exon range length is not consistent with exon chunks.");
-        }
-        if (exon_genomic_len != 
-            exon.GetGenomic_end() - exon.GetGenomic_start() + 1) {
-            NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                       "Genomic exon range length is not consistent with exon chunks.");
+            if (exon_product_len != 
+                (prot ? 
+                 exon.GetProduct_end().GetProtpos().GetAmin() * 3 + exon.GetProduct_end().GetProtpos().GetFrame() - 1 -
+                 (exon.GetProduct_start().GetProtpos().GetAmin() * 3 + exon.GetProduct_start().GetProtpos().GetFrame() - 1) + 1 :
+                 exon.GetProduct_end().GetNucpos() - exon.GetProduct_start().GetNucpos() + 1)) {
+                NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                           "Product exon range length is not consistent with exon chunks.");
+            }
+            if (exon_genomic_len != 
+                exon.GetGenomic_end() - exon.GetGenomic_start() + 1) {
+                NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                           "Genomic exon range length is not consistent with exon chunks.");
+            }
         }
     }
 
