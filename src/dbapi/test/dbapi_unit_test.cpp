@@ -4671,25 +4671,9 @@ CDBAPIUnitTest::Test_Cursor2(void)
 //                 }
 
                 if (blobRs->Next()) {
-                    try {
-                        ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-                        out.write(clob, sizeof(clob) - 1);
-                        out.flush();
-                    } catch(...)
-                    {
-                    }
-                } else {
-                    BOOST_FAIL( msg_record_expected );
-                }
-
-                if (blobRs->Next()) {
-                    try {
-                         ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-                         out.write(clob, sizeof(clob) - 1);
-                         out.flush();
-                    } catch(...)
-                    {
-                    }
+                    ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+                    out.write(clob, sizeof(clob) - 1);
+                    out.flush();
                 } else {
                     BOOST_FAIL( msg_record_expected );
                 }
@@ -4712,6 +4696,7 @@ CDBAPIUnitTest::Test_Cursor2(void)
                 if ( !blobRs->Next() ) {
                     BOOST_FAIL( msg_record_expected );
                 }
+
                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
                 out.write(clob, sizeof(clob) - 1);
                 out.flush();
