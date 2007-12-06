@@ -11353,12 +11353,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
 
     if (args.GetServerType() == CTestArguments::eSybase) {
-        if (args.GetDriverName() != dblib_driver
-            && args.GetDriverName() != ftds_dblib_driver
+        if (args.GetDriverName() != dblib_driver // Cannot connect to the server ...
+            && args.GetDriverName() != ftds_dblib_driver // Cannot connect to the server ... 
             && args.GetDriverName() != ftds8_driver
-            // && args.GetDriverName() != ftds64_driver
-            // ctlib on x86_64 requires appropriate Sybase client ...
-            && args.GetDriverName() != ctlib_driver
            ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
                     DBAPIInstance);
