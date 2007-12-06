@@ -37,22 +37,54 @@
 
 BEGIN_NCBI_SCOPE
 
+enum ESymbolType {
+    fDNA_Alphabet       = 1<<0,
+    fProtein_Alphabet   = 1<<1,
+    fLineEnd            = 1<<2,
+    fAlpha              = 1<<3,
+    fDigit              = 1<<4,
+    fSpace              = 1<<5,
+    fInvalid            = 1<<6
+};
 
-static bool isDNA_Alphabet(char ch)
+static unsigned char symbol_type_table[256];
+
+static void do_init_symbol_type_table(void)
 {
-    return ::strchr("ATGCN", ch) != 0;
+    if ( symbol_type_table[0] == 0 ) {
+        for ( const char* s = "ATGCN"; *s; ++s ) {
+            unsigned char c = *s;
+            symbol_type_table[c] |= fDNA_Alphabet;
+            c = tolower(c);
+            symbol_type_table[c] |= fDNA_Alphabet;
+        }
+        for ( const char* s = "ACDEFGHIKLMNPQRSTVWYBZX"; *s; ++s ) {
+            unsigned char c = *s;
+            symbol_type_table[c] |= fProtein_Alphabet;
+            c = tolower(c);
+            symbol_type_table[c] |= fProtein_Alphabet;
+        }
+        for ( const char* s = "\r\n"; *s; ++s ) {
+            unsigned char c = *s;
+            symbol_type_table[c] |= fLineEnd;
+        }
+        for ( int c = 1; c < 256; ++c ) {
+            if ( isalpha(c) )
+                symbol_type_table[c] |= fAlpha;
+            if ( isdigit(c) )
+                symbol_type_table[c] |= fDigit;
+            if ( isspace(c) )
+                symbol_type_table[c] |= fSpace;
+        }
+        symbol_type_table[0] |= fInvalid;
+    }
 }
 
-// Check if letter belongs to amino acid alphabet
-static bool isProtein_Alphabet(char ch)
+static inline void init_symbol_type_table(void)
 {
-    return ::strchr("ACDEFGHIKLMNPQRSTVWYBZX", ch) != 0;
-}
-
-// Check if character belongs to the CR/LF group of symbols
-static inline bool isLineEnd(char ch)
-{
-    return ch == 0x0D || ch == 0x0A || ch == '\n';
+    if ( symbol_type_table[0] == 0 ) {
+        do_init_symbol_type_table();
+    }
 }
 
 static bool x_SplitLines( const char* byte_buf, size_t byte_count,
@@ -933,17 +965,16 @@ CFormatGuess::SequenceType(const char* str, unsigned length)
     if (length == 0)
         length = (unsigned)::strlen(str);
 
+    init_symbol_type_table();
     unsigned ATGC_content = 0;
     unsigned amino_acid_content = 0;
 
     for (unsigned i = 0; i < length; ++i) {
-        unsigned char ch = str[i];
-        char upch = toupper(ch);
-
-        if (isDNA_Alphabet(upch)) {
+        unsigned char type = symbol_type_table[str[i]];
+        if ( type & fDNA_Alphabet ) {
             ++ATGC_content;
         }
-        if (isProtein_Alphabet(upch)) {
+        if ( type & fProtein_Alphabet ) {
             ++amino_acid_content;
         }
     }
@@ -1029,6 +1060,7 @@ CFormatGuess::Format(const unsigned char* buffer,
         return eTable;
     }
 
+    init_symbol_type_table();
     //
     //  The following is actually three tests rolled into one, based on symbol
     //  frequencies in the input sample. I am leaving them "as is".
@@ -1042,10 +1074,13 @@ CFormatGuess::Format(const unsigned char* buffer,
     unsigned alpha_content = 0;
 
     if (buffer[0] == '>') { // FASTA ?
-        for (i = 0; (!isLineEnd(buffer[i])) && i < buffer_size; ++i) {
+        for (i = 0; i < buffer_size; ++i) {
             // skip the first line (presumed this is free-text information)
-            unsigned char ch = buffer[i];
-            if (isalnum(ch) || isspace(ch)) {
+            unsigned char type = symbol_type_table[buffer[i]];
+            if ( type & fLineEnd ) {
+                break;
+            }
+            if ( type & (fAlpha | fDigit | fSpace) ) {
                 ++alpha_content;
             }
         }
@@ -1056,19 +1091,18 @@ CFormatGuess::Format(const unsigned char* buffer,
     }
 
     for (i = 0; i < buffer_size; ++i) {
-        unsigned char ch = buffer[i];
-        char upch = toupper(ch);
+        unsigned char type = symbol_type_table[buffer[i]];
 
-        if (isalnum(ch) || isspace(ch)) {
+        if ( type & (fAlpha | fDigit | fSpace) ) {
             ++alpha_content;
         }
-        if (isDNA_Alphabet(upch)) {
+        if ( type & fDNA_Alphabet ) {
             ++ATGC_content;
         }
-        if (isProtein_Alphabet(upch)) {
+        if ( type & fProtein_Alphabet ) {
             ++amino_acid_content;
         }
-        if (isLineEnd(ch)) {
+        if ( type & fLineEnd ) {
             ++alpha_content;
             --seq_length;
         }
@@ -1102,26 +1136,26 @@ CFormatGuess::Format(const unsigned char* buffer,
                 if (line[0] == '>') {  // header line
                     txt_length += line.length();
                     for (size_t i = 0; i < line.length(); ++i) {
-                        unsigned char ch = line[i];
-                        char upch = toupper(ch);
-                        if (isDNA_Alphabet(upch)) {
+                        unsigned char type = symbol_type_table[line[i]];
+
+                        if ( type & fDNA_Alphabet ) {
                             ++ATGC_content_txt;
                         }
-                        if (isProtein_Alphabet(upch)) {
+                        if ( type & fProtein_Alphabet ) {
                             ++amino_acid_content_txt;
-                        }                        
+                        }
                     } // for
                 } else { // sequence line
                     seq_length += line.length();
                     for (size_t i = 0; i < line.length(); ++i) {
-                        unsigned char ch = line[i];
-                        char upch = toupper(ch);
-                        if (isDNA_Alphabet(upch)) {
+                        unsigned char type = symbol_type_table[line[i]];
+
+                        if ( type & fDNA_Alphabet ) {
                             ++ATGC_content;
                         }
-                        if (isProtein_Alphabet(upch)) {
+                        if ( type & fProtein_Alphabet ) {
                             ++amino_acid_content;
-                        }                        
+                        }
                     } // for
                 }
             } // while
@@ -1383,6 +1417,7 @@ CFormatGuess::EnsureStats()
         reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
     string strLine;
 
+    init_symbol_type_table();
     // Things we keep track of:
     //   m_iStatsCountAlNumChars: number of characters that are letters or 
     //     digits
@@ -1395,22 +1430,24 @@ CFormatGuess::EnsureStats()
     //
     while ( ! TestBuffer.fail() ) {
         NcbiGetline( TestBuffer, strLine, "\n\r" );
-        for ( size_t i=0; i < strLine.length(); ++i ) {
-            char cur = strLine[i];
-            if ( isalnum( cur ) || isspace( cur ) ) {
+        size_t size = strLine.size();
+        bool is_header = size > 0 && strLine[0] == '>';
+        for ( size_t i=0; i < size; ++i ) {
+            unsigned char type = symbol_type_table[strLine[i]];
+
+            if ( type & (fAlpha | fDigit | fSpace) ) {
                 ++m_iStatsCountAlNumChars;
             }
-            if ( strLine[0] != '>' ) {
+            if ( !is_header ) {
                 ++m_iStatsCountData;
 
-                cur = toupper( cur );
-                if ( isDNA_Alphabet( cur ) ) {
+                if ( type & fDNA_Alphabet ) {
                     ++m_iStatsCountDnaChars;
                 }
-                if ( isProtein_Alphabet( cur ) ) {
+                if ( type & fProtein_Alphabet ) {
                     ++m_iStatsCountAaChars;
                 }
-                if ( isLineEnd( cur ) ) {
+                if ( type & fLineEnd ) {
                     --m_iStatsCountData;
                 }
             }
