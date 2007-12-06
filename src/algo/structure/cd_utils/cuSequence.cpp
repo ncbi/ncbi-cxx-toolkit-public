@@ -219,7 +219,7 @@ int GetSeqLength(const CBioseq& bioseq)
 
     if (bioseq.GetInst().IsSetLength()) {
 		len = bioseq.GetInst().GetLength();
-	} else {
+	} else if (bioseq.GetInst().IsSetSeq_data()) {
         const CSeq_data & pDat = bioseq.GetInst().GetSeq_data();
 
         if (pDat.IsNcbieaa()) {
@@ -229,7 +229,7 @@ int GetSeqLength(const CBioseq& bioseq)
 		} else if (pDat.IsNcbistdaa()) {
             len = pDat.GetNcbistdaa().Get().size();
         } else {
-			len = -1;
+			len = 0;
 		}
 	}
 	return len;

@@ -92,7 +92,8 @@ void CSimpleB2SWrapper::SetSeq(CRef<CBioseq>& seq, bool isSeq1, unsigned int fro
     if (full || from > to) {
         full = true;
         from = 0;
-		to = (seq.NotEmpty()) ? seq->GetInst().GetLength() - 1 : 0;
+		to = (seq.NotEmpty()) ? GetSeqLength(*seq) - 1 : 0;
+//		to = (seq.NotEmpty()) ? seq->GetInst().GetLength() - 1 : 0;
     }
 
     SB2SSeq tmp = {full, from, to, seq};
