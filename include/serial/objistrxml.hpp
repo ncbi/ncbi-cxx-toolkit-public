@@ -223,6 +223,7 @@ protected:
 
     void BeginBytes(ByteBlock& );
     int GetHexChar(void);
+    int GetBase64Char(void);
     size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
 
     void BeginChars(CharBlock& );

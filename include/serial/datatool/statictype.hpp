@@ -171,8 +171,18 @@ public:
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual string GetSchemaTypeString(void) const;
-private:
-    bool x_AsBitString(void) const;
+    virtual bool IsCompressed(void) const;
+protected:
+    virtual bool x_AsBitString(void) const;
+};
+
+class CBase64BinaryDataType : public COctetStringDataType {
+    typedef COctetStringDataType CParent;
+public:
+    virtual string GetSchemaTypeString(void) const;
+    virtual bool IsCompressed(void) const;
+protected:
+    virtual bool x_AsBitString(void) const;
 };
 
 class CIntDataType : public CStaticDataType {

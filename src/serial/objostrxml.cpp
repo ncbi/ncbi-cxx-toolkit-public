@@ -1431,7 +1431,36 @@ static const char* const HEX = "0123456789ABCDEF";
 void CObjectOStreamXml::WriteBytes(const ByteBlock& ,
                                    const char* bytes, size_t length)
 {
+    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+        WriteBase64Bytes(bytes,length);
+        return;
+    }
     WriteBytes(bytes,length);
+}
+
+void CObjectOStreamXml::WriteBase64Bytes(const char* bytes, size_t length)
+{
+    const size_t chunk_in  = 57;
+    const size_t chunk_out = 80;
+    if (length > chunk_in) {
+        m_Output.PutEol(false);
+    }
+    char dst_buf[chunk_out];
+    size_t bytes_left = length;
+    size_t  src_read=0, dst_written=0, line_len=0;
+    while (bytes_left > 0 && bytes_left <= length) {
+        BASE64_Encode(bytes,  min(bytes_left,chunk_in),  &src_read,
+                        dst_buf, chunk_out, &dst_written, &line_len);
+        m_Output.PutString(dst_buf,dst_written);
+        bytes_left -= src_read;
+        bytes += src_read;
+        if (bytes_left > 0) {
+            m_Output.PutEol(false);
+        }
+    }
+    if (length > chunk_in) {
+        m_Output.PutEol(false);
+    }
 }
 
 void CObjectOStreamXml::WriteBytes(const char* bytes, size_t length)

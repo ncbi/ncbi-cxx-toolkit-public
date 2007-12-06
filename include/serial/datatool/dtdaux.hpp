@@ -122,7 +122,8 @@ public:
 
         eBoolean,
         eInteger,
-        eDouble
+        eDouble,
+        eBase64Binary
     };
     enum EValueType {
         eDefault,
@@ -203,7 +204,8 @@ public:
         eInteger,
         eBigInt,
         eDouble,
-        eOctetString
+        eOctetString,
+        eBase64Binary
     };
     enum EOccurrence {
         eZero,

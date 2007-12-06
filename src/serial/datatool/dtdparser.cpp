@@ -997,6 +997,9 @@ CDataType* DTDParser::x_Type(
         case DTDElement::eOctetString:
             type = new COctetStringDataType();
             break;
+        case DTDElement::eBase64Binary:
+            type = new CBase64BinaryDataType();
+            break;
 
         default:
             ParseError("Unknown element", "element");
@@ -1269,6 +1272,9 @@ CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
         break;
     case DTDAttribute::eDouble:
         type = new CRealDataType();
+        break;
+    case DTDAttribute::eBase64Binary:
+        type = new CBase64BinaryDataType();
         break;
     }
     type->SetSourceLine(att.GetSourceLine());

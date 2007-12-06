@@ -1306,9 +1306,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 const COctetStringDataType* octets =
                     dynamic_cast<const COctetStringDataType*>(i->dataType);
                 if (octets) {
-                    const CBitStringTypeStrings* bits =
-                        dynamic_cast<const CBitStringTypeStrings*>(i->type.get());
-                    if (bits) {
+                    if (octets->IsCompressed()) {
                         methods << "->SetCompressed()";
                     }
                 }

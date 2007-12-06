@@ -226,11 +226,8 @@ bool XSDParser::DefineElementType(DTDElement& node)
         node.SetType(DTDElement::eBigInt);
     } else if (IsValue("hexBinary")) {
         node.SetType(DTDElement::eOctetString);
-// this is WRONG, it only provides some sort of default for
-// unsupported built-in types
     } else if (IsValue("base64Binary")) {
-        ERR_POST_X(8, Warning << "Unsupported element type= " << m_Value);
-        node.SetType(DTDElement::eString);
+        node.SetType(DTDElement::eBase64Binary);
     } else {
         return false;
     }
@@ -263,11 +260,8 @@ bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
         attrib.SetType(DTDAttribute::eInteger);
     } else if (IsValue("float") || IsValue("double") || IsValue("decimal")) {
         attrib.SetType(DTDAttribute::eDouble);
-// this is WRONG, it only provides some sort of default for
-// unsupported built-in types
     } else if (IsValue("base64Binary")) {
-        ERR_POST_X(8, Warning << "Unsupported attribute type= " << m_Value);
-        attrib.SetType(DTDAttribute::eString);
+        attrib.SetType(DTDAttribute::eBase64Binary);
     } else {
         return false;
     }

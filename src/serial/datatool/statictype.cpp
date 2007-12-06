@@ -651,10 +651,30 @@ AutoPtr<CTypeStrings> COctetStringDataType::GetFullCType(void) const
     return AutoPtr<CTypeStrings>(new CVectorTypeStrings(charType, GetNamespaceName(), Comments()));
 }
 
+bool COctetStringDataType::IsCompressed(void) const
+{
+    return x_AsBitString();
+}
+
 bool COctetStringDataType::x_AsBitString(void) const
 {
     string type = GetVar("_type");
     return NStr::FindNoCase(type, "CBitString") != NPOS;
+}
+
+string CBase64BinaryDataType::GetSchemaTypeString(void) const
+{
+    return "xs:base64Binary";
+}
+
+bool CBase64BinaryDataType::IsCompressed(void) const
+{
+    return true;
+}
+
+bool CBase64BinaryDataType::x_AsBitString(void) const
+{
+    return false;
 }
 
 CIntDataType::CIntDataType(void)

@@ -173,7 +173,7 @@ bool IsEndOfTagChar(char c)
 
 char CObjectIStreamXml::SkipWS(void)
 {
-    _ASSERT(InsideTag());
+//    _ASSERT(InsideTag());
     for ( ;; ) {
         char c = m_Input.SkipSpaces();
         switch ( c ) {
@@ -2220,10 +2220,58 @@ int CObjectIStreamXml::GetHexChar(void)
     return -1;
 }
 
+int CObjectIStreamXml::GetBase64Char(void)
+{
+    char c = SkipWS();
+    if ( IsDigit(c) ||
+            ( c >= 'A' && c <= 'Z' ) ||
+            ( c >= 'a' && c <= 'z' ) ||
+            ( c == '+' || c == '/' || c == '=')) {
+        return c;
+    }
+    else {
+        if ( c != '<' )
+            ThrowError(fFormatError, "invalid char in base64Binary data");
+    }
+    return -1;
+}
+
 size_t CObjectIStreamXml::ReadBytes(ByteBlock& block,
                                     char* dst, size_t length)
 {
     size_t count = 0;
+    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+        bool end_of_data = false;
+        const size_t chunk_in = 80;
+        char src_buf[chunk_in];
+        size_t bytes_left = length;
+        size_t src_size, src_read, dst_written;
+        while (!end_of_data && bytes_left > 0 && bytes_left <= length) {
+            for ( src_size = 0; src_size < chunk_in; ) {
+                int c = GetBase64Char();
+                if (c < 0) {
+                    end_of_data = true;
+                    break;
+                }
+                if (c != '=') {
+                    src_buf[ src_size++ ] = c;
+                }
+                m_Input.SkipChar();
+            }
+            BASE64_Decode( src_buf, src_size, &src_read,
+                        dst, bytes_left, &dst_written);
+            if (src_size != src_read) {
+                ThrowError(fFail, "error decoding base64Binary data");
+            }
+            count += dst_written;
+            bytes_left -= dst_written;
+            dst += dst_written;
+        }
+        if (end_of_data) {
+            block.EndOfBlock();
+        }
+        return count;;
+    }
     while ( length-- > 0 ) {
         int c1 = GetHexChar();
         if ( c1 < 0 ) {
@@ -2358,14 +2406,18 @@ void CObjectIStreamXml::SkipByteBlock(void)
         if ( IsDigit(c) ) {
             continue;
         }
-        else if ( c >= 'A' && c <= 'F' ) {
+        else if ( c >= 'A' && c <= 'Z' ) {
             continue;
         }
-        else if ( c >= 'a' && c <= 'f' ) {
+        else if ( c >= 'a' && c <= 'z' ) {
             continue;
         }
         else if ( c == '\r' || c == '\n' ) {
             m_Input.SkipEndOfLine(c);
+            continue;
+        }
+        else if ( c == '+' || c == '/' || c == '=' ) {
+            // to allow base64 byte blocks
             continue;
         }
         else if ( c == '<' ) {

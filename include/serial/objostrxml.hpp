@@ -379,6 +379,7 @@ protected:
 #endif
 
 private:
+    void WriteBase64Bytes(const char* bytes, size_t length);
     void WriteBytes(const char* bytes, size_t length);
     void WriteString(const char* str, size_t length);
 
