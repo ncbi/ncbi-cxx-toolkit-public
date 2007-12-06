@@ -953,6 +953,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
     }
     m_Selector = &selector;
     try {
+        CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
         m_Selector->CheckLimitObjectType();
         if ( m_Selector->m_LimitObjectType != SAnnotSelector::eLimit_None ) {
             x_GetTSE_Info();
@@ -1104,7 +1105,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                 try {
                     smit.Next(deeper);
                 }
-                catch (CSeqMapException) {
+                catch (CSeqMapException&) {
                     switch ( m_Selector->m_UnresolvedFlag ) {
                     case SAnnotSelector::eIgnoreUnresolved:
                     case SAnnotSelector::eSearchUnresolved:
@@ -1133,6 +1134,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
 {
     m_Selector = &selector;
     try {
+        CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
         if ( !m_Selector->m_LimitObject ) {
             m_Selector->m_LimitObjectType = SAnnotSelector::eLimit_None;
         }
@@ -1205,7 +1207,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                     try {
                         smit.Next(deeper);
                     }
-                    catch (CSeqMapException) {
+                    catch (CSeqMapException&) {
                         switch ( m_Selector->m_UnresolvedFlag ) {
                         case SAnnotSelector::eIgnoreUnresolved:
                         case SAnnotSelector::eSearchUnresolved:
@@ -1281,6 +1283,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector)
 {
     m_Selector = &selector;
     try {
+        CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
         // Limit must be set, resolving is obsolete
         _ASSERT(m_Selector->m_LimitObjectType != SAnnotSelector::eLimit_None);
         _ASSERT(m_Selector->m_LimitObject);

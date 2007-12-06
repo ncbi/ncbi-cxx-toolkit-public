@@ -348,7 +348,7 @@ public:
     void SetRequestedId(const CSeq_id_Handle& requested_id) const;
 
     // annot object map mutex
-    typedef CRWLock        TAnnotLock;
+    typedef CMutex                      TAnnotLock;
     typedef TAnnotLock::TReadLockGuard  TAnnotLockReadGuard;
     typedef TAnnotLock::TWriteLockGuard TAnnotLockWriteGuard;
     TAnnotLock& GetAnnotLock(void) const;

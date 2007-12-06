@@ -281,14 +281,14 @@ private:
                      CSeq_loc_Conversion*  cvt);
     void x_SearchObjects(const CTSE_Handle&    tse,
                          const SIdAnnotObjs*   objs,
-                         CReadLockGuard&       guard,
+                         CMutexGuard&          guard,
                          const CAnnotName&     name,
                          const CSeq_id_Handle& id,
                          const CHandleRange&   hr,
                          CSeq_loc_Conversion*  cvt);
     void x_SearchRange(const CTSE_Handle&    tse,
                        const SIdAnnotObjs*   objs,
-                       CReadLockGuard&       guard,
+                       CMutexGuard&          guard,
                        const CAnnotName&     name,
                        const CSeq_id_Handle& id,
                        const CHandleRange&   hr,
