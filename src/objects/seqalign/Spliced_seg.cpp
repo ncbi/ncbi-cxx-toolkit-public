@@ -56,15 +56,34 @@ void CSpliced_seg::Validate(bool full_test) const
 {
     bool prot = GetProduct_type() == eProduct_type_protein;
 
+
     ITERATE (CSpliced_seg::TExons, exon_it, GetExons()) {
 
         const CSpliced_exon& exon = **exon_it;
 
-        /// Strands
-        if (CanGetProduct_strand()  &&  exon.CanGetProduct_strand()  &&
-            GetProduct_strand() != exon.GetProduct_strand()) {
+        /// Ids
+        if ( !(IsSetProduct_id()  ||  exon.IsSetProduct_id()) ) {
+             NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                        "product-id not set.");
+        }
+        if (IsSetProduct_id()  ==  exon.IsSetProduct_id()) {
             NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                       "Product strands are not consistent.");
+                       "product-id should be set on the level of Spliced-seg XOR Spliced-exon.");
+        }
+        if ( !(IsSetGenomic_id()  ||  exon.IsSetGenomic_id()) ) {
+             NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                        "genomic-id not set.");
+        }
+        if (IsSetGenomic_id()  ==  exon.IsSetGenomic_id()) {
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                       "genomic-id should be set on the level of Spliced-seg XOR Spliced-exon.");
+        }
+
+
+        /// Strands
+        if (IsSetProduct_strand()  &&  exon.IsSetProduct_strand()) {
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                       "product-strand can be set on level of Spliced-seg XOR Spliced-exon.");
         }
         bool product_plus = true;
         if (exon.CanGetProduct_strand()) {
@@ -77,10 +96,9 @@ void CSpliced_seg::Validate(bool full_test) const
                        "Protein product cannot have a negative strand.");
         }
 
-        if (CanGetGenomic_strand()  &&  exon.CanGetGenomic_strand()  &&
-            GetGenomic_strand() != exon.GetGenomic_strand()) {
+        if (CanGetGenomic_strand()  &&  exon.CanGetGenomic_strand()) {
             NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                       "Genomic strands are not consistent.");
+                       "genomic-strand can be set on level of Spliced-seg XOR Spliced-exon.");
         }
         bool genomic_plus = true;
         if (exon.CanGetGenomic_strand()) {
@@ -97,29 +115,30 @@ void CSpliced_seg::Validate(bool full_test) const
             ITERATE (CSpliced_exon::TParts, chunk_it, exon.GetParts()) {
                 const CSpliced_exon_chunk& chunk = **chunk_it;
                 
-                TSeqPos exon_chunk_product_len = 0;
-                TSeqPos exon_chunk_genomic_len = 0;
+                TSeqPos chunk_product_len = 0;
+                TSeqPos chunk_genomic_len = 0;
             
                 switch (chunk.Which()) {
                 case CSpliced_exon_chunk::e_Match: 
-                    exon_chunk_product_len = exon_chunk_genomic_len = chunk.GetMatch();
+                    chunk_product_len = chunk_genomic_len = chunk.GetMatch();
                     break;
                 case CSpliced_exon_chunk::e_Diag: 
-                    exon_chunk_product_len = exon_chunk_genomic_len = chunk.GetDiag();
+                    chunk_product_len = chunk_genomic_len = chunk.GetDiag();
                     break;
                 case CSpliced_exon_chunk::e_Mismatch:
+                    chunk_product_len = chunk_genomic_len = chunk.GetMismatch();
                     break;
                 case CSpliced_exon_chunk::e_Product_ins:
-                    exon_chunk_product_len = chunk.GetProduct_ins();
+                    chunk_product_len = chunk.GetProduct_ins();
                     break;
                 case CSpliced_exon_chunk::e_Genomic_ins:
-                    exon_chunk_genomic_len = chunk.GetGenomic_ins();
+                    chunk_genomic_len = chunk.GetGenomic_ins();
                     break;
                 default:
                     break;
                 }
-                exon_product_len += exon_chunk_product_len;
-                exon_genomic_len += exon_chunk_genomic_len;
+                exon_product_len += chunk_product_len;
+                exon_genomic_len += chunk_genomic_len;
             }
             if (exon_product_len != 
                 (prot ? 
