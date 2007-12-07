@@ -65,7 +65,8 @@ THIRDPARTYLIB = ..\..\..\..\..\..\..\..\lib\$(INTDIR)
 INTERNAL_PLUGINS = \
         proteus \
         radar \
-        contig
+        contig \
+        ncbi
 
 #
 #
@@ -97,6 +98,15 @@ dirs :
 #
 # Target: internal plugins
 #
+
+ncbi :
+    @echo Installing NCBI plugins...
+    @if not exist $(GBENCH)\extra\ncbi mkdir $(GBENCH)\extra\ncbi
+    @if exist $(DLLBIN)\ncbi_gbench_internal.dll copy $(DLLBIN)\ncbi_gbench_internal.dll $(GBENCH)\extra\ncbi\ncbi_gbench_internal.dll
+    @if exist $(DLLBIN)\ncbi_gbench_internal.pdb copy $(DLLBIN)\ncbi_gbench_internal.pdb $(GBENCH)\extra\ncbi\ncbi_gbench_internal.pdb
+    @if exist $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-config.asn copy $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-win32-config.asn $(GBENCH)\extra\ncbi\ncbi-config.asn
+    @if exist $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-win32-config.asn copy $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-win32-config.asn $(GBENCH)\extra\ncbi\ncbi-win32-config.asn
+    $(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\ncbi
 
 proteus :
     @echo Installing Proteus...
