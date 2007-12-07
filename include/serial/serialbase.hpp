@@ -396,9 +396,11 @@ template <class C>
 C& SerialAssign(C& dest, const C& src, ESerialRecursionMode how = eRecursive)
 {
     if ( typeid(src) != typeid(dest) ) {
-        ERR_POST_XX(Serial_Core, 1, Fatal <<
-                    "SerialAssign() -- Assignment of incompatible types: " <<
-                    typeid(dest).name() << " = " << typeid(src).name());
+        string msg("Assignment of incompatible types: ");
+        msg += typeid(dest).name();
+        msg += " = ";
+        msg += typeid(src).name();
+        NCBI_THROW(CSerialException,eIllegalCall, msg);
     }
     C::GetTypeInfo()->Assign(&dest, &src, how);
     return dest;
@@ -410,9 +412,11 @@ bool SerialEquals(const C& object1, const C& object2,
                   ESerialRecursionMode how = eRecursive)
 {
     if ( typeid(object1) != typeid(object2) ) {
-        ERR_POST_XX(Serial_Core, 2, Fatal <<
-                    "SerialAssign() -- Can not compare types: " <<
-                    typeid(object1).name() << " == " << typeid(object2).name());
+        string msg("Can not compare types: ");
+        msg += typeid(object1).name();
+        msg += " == ";
+        msg += typeid(object2).name();
+        NCBI_THROW(CSerialException,eIllegalCall, msg);
     }
     return C::GetTypeInfo()->Equals(&object1, &object2, how);
 }

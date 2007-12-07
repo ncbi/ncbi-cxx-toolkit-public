@@ -84,9 +84,11 @@ void CSerialObject::Assign(const CSerialObject& source, ESerialRecursionMode how
         return;
     }
     if ( typeid(source) != typeid(*this) && !IsSameTypeInfo(source, *this) ) {
-        ERR_POST_X(4, Fatal <<
-            "CSerialObject::Assign() -- Assignment of incompatible types: " <<
-            typeid(*this).name() << " = " << typeid(source).name());
+        string msg("Assignment of incompatible types: ");
+        msg += typeid(*this).name();
+        msg += " = ";
+        msg += typeid(source).name();
+        NCBI_THROW(CSerialException,eIllegalCall, msg);
     }
     GetThisTypeInfo()->Assign(this, &source, how);
 }
@@ -95,9 +97,11 @@ void CSerialObject::Assign(const CSerialObject& source, ESerialRecursionMode how
 bool CSerialObject::Equals(const CSerialObject& object, ESerialRecursionMode how) const
 {
     if ( typeid(object) != typeid(*this)  && !IsSameTypeInfo(object, *this) ) {
-        ERR_POST_X(5, Fatal <<
-            "CSerialObject::Equals() -- Can not compare types: " <<
-            typeid(*this).name() << " == " << typeid(object).name());
+        string msg("Can not compare types: ");
+        msg += typeid(*this).name();
+        msg += " == ";
+        msg += typeid(object).name();
+        NCBI_THROW(CSerialException,eIllegalCall, msg);
     }
     return GetThisTypeInfo()->Equals(this, &object, how);
 }
