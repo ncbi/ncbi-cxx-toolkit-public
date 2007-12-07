@@ -11579,11 +11579,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_cursor);
             add(tc);
 
-//             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB2,
-//             DBAPIInstance);
-//             tc->depends_on(tc_init);
-//             tc->depends_on(tc_cursor);
-//             add(tc);
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB2,
+            DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(tc_cursor);
+            add(tc);
 
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStream,
                                        DBAPIInstance);
