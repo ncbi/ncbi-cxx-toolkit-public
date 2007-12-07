@@ -50,11 +50,17 @@ static char const rcsid[] =
 static BlastHSPStream* 
 s_BlastHSPListCollectorFree(BlastHSPStream* hsp_stream) 
 {
+   int index=0;
    BlastHSPListCollectorData* stream_data = 
       (BlastHSPListCollectorData*) GetData(hsp_stream);
    stream_data->x_lock = MT_LOCK_Delete(stream_data->x_lock);
    SBlastHitsParametersFree(stream_data->blasthit_params);
    Blast_HSPResultsFree(stream_data->results);
+   for (index=0; index < stream_data->num_hsplists; index++)
+   {
+        stream_data->sorted_hsplists[index] =
+            Blast_HSPListFree(stream_data->sorted_hsplists[index]);
+   }
    sfree(stream_data->sorted_hsplists);
    sfree(stream_data);
    sfree(hsp_stream);

@@ -68,10 +68,6 @@ static const string k_strManyPubMedLinksBegin = "(Over ";
 /// Second part of the "many PubMed links" message.
 static const string k_strManyPubMedLinksEnd = " PubMed links)";
 
-/// URL prefix for linking to the Entrez Gene entry.
-static const string k_strGeneLinkURL =
-    "http://www.ncbi.nlm.nih.gov/sites/entrez?db=gene&cmd=search&term=";
-
 /// HTML opening tag for the PubMed link information.
 static const string k_strSpanPubMedBegin =
                         "<span class=\"Gene_PubMedLinks\">";
@@ -121,6 +117,7 @@ void CGeneInfo::x_Append(string& strDest,
 
 void CGeneInfo::ToString(string& strGeneInfo,
                          bool bFormatAsHTML,
+                         const string& strGeneLinkURL,
                          unsigned int nMaxLineLength) const
 {
     if (!IsInitialized())
@@ -147,7 +144,7 @@ void CGeneInfo::ToString(string& strGeneInfo,
         if (bFormatAsHTML)
         {
             strGeneIdSection += "<a href=\"";
-            strGeneIdSection += k_strGeneLinkURL + strGeneId;
+            strGeneIdSection += strGeneLinkURL;
             strGeneIdSection += "\">";
         }
 

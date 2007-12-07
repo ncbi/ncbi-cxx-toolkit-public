@@ -70,21 +70,43 @@ SetUpCommandLineArguments(TBlastCmdLineArgs& args)
 }
 
 int
-GetQueryBatchSize(const string& program)
+GetQueryBatchSize(EBlastProgramType program)
 {
-    if (program == "blastn") {
-        return 40000;
-    } else if (program == "megablast") {
-        return 5000000;
-    } else if (program == "tblastn") {
-        return 20000;
-    } else if (program == "psiblast" || 
-               program == "psitblastn" || 
-               program == "phiblast") {
-        return CPsiBlastAppArgs::kMaxNumQueries;
-    } else {
-        return 10000;
+    int retval = 0;
+
+    // used for experimentation purposes
+    char* batch_sz_str = getenv("BATCH_SIZE");
+    if (batch_sz_str) {
+        retval = NStr::StringToInt(batch_sz_str);
+        _TRACE("DEBUG: Using query batch size " << retval);
+        return retval;
     }
+
+    switch (program) {
+    case eBlastTypeBlastn:
+        retval = 1000000;
+        break;
+    case eBlastTypeTblastn:
+        retval = 20000;
+        break;
+    // if the query will be translated, round the chunk size up to the next
+    // multiple of 3, that way, when the nucleotide sequence(s) get(s)
+    // split, context N%6 in one chunk will have the same frame as context N%6
+    // in the next chunk
+    case eBlastTypeBlastx:
+    case eBlastTypeTblastx:
+        // N.B.: the splitting is done on the nucleotide query sequences, then
+        // each of these chunks is translated
+        retval = 10002;
+        break;
+    case eBlastTypeBlastp:
+    default:
+        retval = 10000;
+        break;
+    }
+
+    _TRACE("Using query batch size " << retval);
+    return retval;
 }
 
 END_SCOPE(blast)

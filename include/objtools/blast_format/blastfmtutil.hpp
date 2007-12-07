@@ -57,14 +57,17 @@ USING_SCOPE (objects);
 const static string kClassInfo = "class=\"info\"";
 
 ///entrez
+// .ncbirc alias: ENTREZ
 const string kEntrezUrl = "<a %shref=\"http://www.ncbi.nlm.nih.gov/entre\
 z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s&RID=%s\" %s>";
 
 ///trace db
+//.ncbirc alias: TRACE
 const string kTraceUrl = "<a %shref=\"http://www.ncbi.nlm.nih.gov/Traces\
 /trace.cgi?cmd=retrieve&dopt=fasta&val=%s&RID=%s\">";
 
 ///genome button
+//.ncbirc alias: GENOME_BTN
 const string kGenomeButton = "<table border=0 width=600 cellpadding=8>\
 <tr valign=\"top\"><td><a href=\
 \"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?taxid=%d&RID=%s&CLIENT=\
@@ -73,10 +76,12 @@ const string kGenomeButton = "<table border=0 width=600 cellpadding=8>\
 using the Entrez Genomes MapViewer</td></tr></table><p>";
 
 ///unigene
+// .ncbirc alias: UNIGEN
 const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=%s&cmd=Display&dopt=%s_unigene&from_uid=%d&RID=%s\"><img border=0 h\
 eight=16 width=16 src=\"images/U.gif\" alt=\"UniGene info\"></a>";
 
 ///structure
+// .ncbirc alias: STRUCTURE_URL
 const string kStructureUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/St\
 ructure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_RID=%s\
 &blast_view=%s&hsp=0&taxname=%s&client=blast\"><img border=0 height=16 width=\
@@ -89,32 +94,133 @@ gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_\
 RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
 
 ///Geo
+// .ncbirc alias: GEO
 const string kGeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
 query.fcgi?db=geo&term=%d[gi]&RID=%s\"><img border=0 height=16 width=16 src=\
 \"images/E.gif\" alt=\"Geo\"></a>";
 
 ///Gene
+// .ncbirc alias: GENE
 const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
-query.fcgi?db=gene&cmd=search&term=%d[%s]&RID=%s\"><img border=0 height=16 width=16 \
+query.fcgi?db=gene&cmd=search&term=%d[%s]&RID=%s&value=%s\"><img border=0 height=16 width=16 \
 src=\"images/G.gif\" alt=\"Gene info\"></a>";
 
 ///mapviewer linkout
+// .ncbirc alias: MAPVIEWER
 /*const string kMapviwerUrl = "<a href=\"%s\"><img border=0 height=16 width=16 \
   src=\"images/M.gif\" alt=\"Genome view with mapviewer\"></a>";*/
 const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=%d&THE_BLAST_RID=%s\"><img border=0 height=16 width=16 \
 src=\"images/M.gif\" alt=\"Genome view with mapviewer\"></a>";
 
 ///Sub-sequence
+// .ncbirc alias: ENTREZ_SUBSEQ
 const string kEntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.\
 gov/entrez/viewer.fcgi?val=%d&db=%s&from=%d&to=%d&view=gbwithparts&RID=%s\">";
 
 ///Bl2seq 
+// .ncbirc alias: BL2SEQ
 const string kBl2seqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/\
 blast/bl2seq/wblast2.cgi?PROGRAM=tblastx&WORD=3&RID=%s&ONE=%s&TWO=%s\">Get \
 TBLASTX alignments</a>";
 
-//TreeView
-static string kTreeViewURL = "<a href=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi";
+// .ncbirc alias: GETSEQ_SUB_FRM_0
+// .ncbirc alias: GETSEQ_SUB_FRM_1
+const string k_GetSeqSubmitForm[] = {"<FORM  method=\"post\" \
+action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
+name=\"%s%d\"><input type=button value=\"Get selected sequences\" \
+onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s%d', %d)\"><input \
+type=\"hidden\" name=\"db\" value=\"\"><input type=\"hidden\" name=\"term\" \
+value=\"\"><input type=\"hidden\" name=\"doptcmdl\" value=\"docsum\"><input \
+type=\"hidden\" name=\"cmd\" value=\"search\"></form>",
+                                     
+                                     "<FORM  method=\"POST\" \
+action=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi\" \
+name=\"%s%d\"><input type=button value=\"Get selected sequences\" \
+onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s%d', %d)\"><input \
+type=\"hidden\" name=\"val\" value=\"\"><input \
+type=\"hidden\" name=\"cmd\" value=\"retrieve\"></form>"
+};
+
+// .ncbirc alias: GETSEQ_SEL_FRM
+// 'getSeqAlignment%d', 'getSeqGi')\"></form>";
+const string k_GetSeqSelectForm = "<FORM><input \
+type=\"button\" value=\"Select all\" onClick=\"handleCheckAll('select', \
+'getSeqAlignment%d', 'getSeqGi')\"></form></td><td><FORM><input \
+type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
+'getSeqAlignment%d', 'getSeqGi')\"></form>";
+
+// .ncbirc alias: TREEVIEW_FRM
+const  string k_GetTreeViewForm =  "<FORM  method=\"post\" \
+action=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=page&rid=%s&queryID=%s&distmode=on\" \
+name=\"tree%s%d\" target=\"trv%s\"> \
+<input type=button value=\"Distance tree of results\" onClick=\"extractCheckedSeq('getSeqAlignment%d', 'getSeqGi', 'tree%s%d')\"> \
+<input type=\"hidden\" name=\"sequenceSet\" value=\"\"><input type=\"hidden\" name=\"screenWidth\" value=\"\"></form>";
+
+// .ncbirc alias: GENE_INFO
+const string kGeneInfoUrl = "http://www.ncbi.nlm.nih.gov/sites/entrez?db=gene&cmd=search&term=%d&RID=%s";
+
+// .ncbirc alias: TREEVIEW_CGI
+const string kGetTreeViewCgi="http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi";
+// .ncbirc alias: ENTREZ_QUERY_CGI
+const string kEntrezQueryCgi = "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi";
+// .ncbirc alias: TRACE_CGI
+const string kTraceCgi = "http://www.ncbi.nlm.nih.gov/Traces/trace.cgi";
+// .ncbirc alias:  MAP_SEARCH_CGI
+const string kMapSearchCgi = "http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi";
+// .ncbirc alias: CBLAST_CGI
+const string kCBlastCgi = "http://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi";
+// .ncbirc alias: ENTREZ_VIEWER_CGI
+const string kEntrezViewerCgi = "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi";
+// .ncbirc alias: BL2SEQ_WBLAST_CGI
+const string kBl2SeqWBlastCgi = "http://www.ncbi.nlm.nih.gov/blast/bl2seq/wblast2.cgi";
+// .ncbirc alias: ENTREZ_SITES_CGI
+const string kEntrezSitesCgi = "http://www.ncbi.nlm.nih.gov/sites/entrez";
+
+
+/// list all static url patterns 
+static 
+pair <string,string> 
+k_all_url_pairs[]={
+  pair <string,string>  ("ENTREZ",  kEntrezUrl ),
+  pair <string,string>  ("UNIGEN",  kUnigeneUrl),  
+  pair <string,string>  ("GEO",    kGeoUrl),
+  pair <string,string>  ("GENE",  kGeneUrl),
+  pair <string,string>  ("GENE_INFO",  kGeneInfoUrl),
+  pair <string,string>  ("ENTREZ_SUBSEQ",  kEntrezSubseqUrl),
+  pair <string,string>  ("TRACE",  kTraceUrl),
+  pair <string,string>  ("GENOME_BTN",  kGenomeButton),
+  pair <string,string>  ("STRUCTURE_URL",  kStructureUrl),
+  pair <string,string>  ("STRUCTURE_OVW",  kStructure_Overview),
+  pair <string,string>  ("MAPVIEWER",  kMapviwerUrl),
+  pair <string,string>  ("BL2SEQ",  kBl2seqUrl),
+  pair <string,string>  ("GETSEQ_SUB_FRM_0",  k_GetSeqSubmitForm[0]),
+  pair <string,string>  ("GETSEQ_SUB_FRM_1",  k_GetSeqSubmitForm[1]),
+  pair <string,string>  ("GETSEQ_SEL_FRM",  k_GetSeqSelectForm),
+  pair <string,string>  ("TREEVIEW_FRM",  k_GetTreeViewForm),
+  // only cgi links
+  pair <string,string>  ("TREEVIEW_CGI",  kGetTreeViewCgi),
+  pair <string,string>  ("ENTREZ_QUERY_CGI",  kEntrezQueryCgi),
+  pair <string,string>  ("ENTREZ_VIEWER_CGI",  kEntrezViewerCgi),
+  pair <string,string>  ("TRACE_CGI",  kTraceCgi),
+  pair <string,string>  ("MAP_SEARCH_CGI",  kMapSearchCgi),
+  pair <string,string>  ("CBLAST_CGI",  kCBlastCgi),
+  pair <string,string>  ("BL2SEQ_WBLAST_CGI",  kBl2SeqWBlastCgi),
+  pair <string,string>  ("ENTREZ_SITES_CGI",  kEntrezSitesCgi)
+};
+
+#ifndef DIM
+#define DIM(static_array) (sizeof(static_array)/sizeof(*static_array))
+#endif
+
+/// Type definition for a map of tags - URLs
+typedef map<string, string> TUrlMap;
+
+/// create map source of all static URL's using previously defined pairs
+static 
+TUrlMap
+k_UrlMap((const TUrlMap::value_type*)&k_all_url_pairs[0], 
+         (const TUrlMap::value_type*)k_all_url_pairs + DIM(k_all_url_pairs));
+
 
 /** This class contains misc functions for displaying BLAST results. */
 
@@ -537,26 +643,28 @@ public:
                                       const string& cdd_rid, const string& entrez_term,
                                       bool is_na, string& user_url,
                                       const bool db_is_na, int first_gi,
-                                      bool structure_linkout_as_group);
+                                      bool structure_linkout_as_group,
+                                      bool for_alignment);
 
     static int GetMasterCoverage(const CSeq_align_set& alnset);
-    ///retrieve URL from .ncbirc file combining host/port and format string value.
-    ///key/name mapping is next:
-    ///kEntrezUrl =>  ENTREZ_HOST_PORT, ENTREZ_FORMAT
-    ///kUnigeneUrl =>  UNIGEN_HOST_PORT,  UNIGEN_FORMAT
-    ///kGeoUrl =>  GEO_HOST_PORT, GEO_FORMAT
-    ///kGeneUrl => GENE_HOST_PORT, GENE_FORMAT
+    ///retrieve URL from .ncbirc file combining host/port and format strings values.
+    ///consult blastfmtutil.hpp
     ///@param url_name:  url name to retrieve
+    ///@param index:   name index ( default: -1: )
     ///@return: URL format string from .ncbirc file or default as kNAME
     ///
-    static string GetURLFromRegistry( const string url_name);
-    // get default value if there is problem with .ncbirc file or
-    // settings are not complete. return corresponding static value
-    static string GetURLDefault( const string url_name);
+    static string GetURLFromRegistry( const string url_name, int index = -1);
+    ////get default value if there is problem with .ncbirc file or
+    ////settings are not complete. return corresponding static value
+    ///@param url_name: constant name to return .
+    ///@param index:   name index ( default: -1: )
+    ///@return: URL format string defined in blastfmtutil.hpp 
+  static string GetURLDefault( const string url_name, int index = -1);
     ///release memory allocated for the registry object by GetURLFromRegistry
     ///
     static void ReleaseURLRegistry(void);
     static CNcbiRegistry *m_Reg;
+    static bool   m_geturl_debug_flag;
 };
 
 /// 256x256 matrix used for calculating positives etc. during formatting.

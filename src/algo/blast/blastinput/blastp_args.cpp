@@ -112,7 +112,7 @@ CBlastpAppArgs::CBlastpAppArgs()
 
 CRef<CBlastOptionsHandle> 
 CBlastpAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality, 
-                                      const CArgs& args)
+                                      const CArgs& /*args*/)
 {
     CRef<CBlastOptionsHandle> retval
         (new CBlastAdvancedProteinOptionsHandle(locality));
@@ -122,7 +122,7 @@ CBlastpAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 int
 CBlastpAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize("blastp");
+    return blast::GetQueryBatchSize(eBlastTypeBlastp);
 }
 
 END_SCOPE(blast)

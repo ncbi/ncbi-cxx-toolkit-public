@@ -40,7 +40,7 @@ Author: Jason Papadopoulos
 #include <ncbi_pch.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
-#include <util/tables/raw_scoremat.h>
+#include <algo/blast/core/blast_stat.h>
 #include <objtools/blast_format/blastxml_format.hpp>
 #include "blast_format.hpp"
 #include "data4xmlformat.hpp"
@@ -56,13 +56,14 @@ const string CBlastFormat::kNoHitsFound("No hits found");
 CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname, 
                  CFormattingArgs::EOutputFormat format_type, bool db_is_aa,
                  bool believe_query, CNcbiOstream& outfile,
-                 CBlastInput* blast_input,
                  int num_summary, 
                  int num_alignments, 
-                 const char *matrix_name,
-                 bool show_gi, bool is_html,
-                 int qgencode, int dbgencode,
-                 bool show_linked)
+                 const char *matrix_name /* = BLAST_DEFAULT_MATRIX */,
+                 bool show_gi /* = false */, 
+                 bool is_html /* = false */,
+                 int qgencode /* = BLAST_GENETIC_CODE */, 
+                 int dbgencode /* = BLAST_GENETIC_CODE */,
+                 bool show_linked /* = false */)
         : m_FormatType(format_type), m_IsHTML(is_html), 
           m_DbIsAA(db_is_aa), m_BelieveQuery(believe_query),
           m_Outfile(outfile), m_NumSummary(num_summary),
@@ -73,71 +74,16 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
           m_ShowGi(show_gi), m_ShowLinkedSetSize(show_linked),
           m_IsDbAvailable(dbname.length() > 0),
           m_IsUngappedSearch(!options.GetGappedMode()),
-          m_MatrixSet(false),
-          m_Queries(blast_input)
+          m_MatrixName(matrix_name)
 {
-    x_FillScoreMatrix(matrix_name);
     if (m_IsDbAvailable) {
         x_FillDbInfo();
     }
-}
-
-
-CBlastFormat::~CBlastFormat()
-{
-    for (int i = 0; i < CDisplaySeqalign::ePMatrixSize; i++)
-        delete [] m_Matrix[i];
-}
-
-
-void
-CBlastFormat::x_FillScoreMatrix(const char *matrix_name)
-{
-    for (int i = 0; i < CDisplaySeqalign::ePMatrixSize; i++)
-        m_Matrix[i] = new int[CDisplaySeqalign::ePMatrixSize];
-
-    if (matrix_name == NULL)
-        return;
-
-    const char *letter_order = "ARNDCQEGHILKMFPSTWYVBZX";
-    const SNCBIPackedScoreMatrix *packed_matrix = 0;
-
-    if (strcmp(matrix_name, "BLOSUM45") == 0)
-        packed_matrix = &NCBISM_Blosum45;
-    else if (strcmp(matrix_name, "BLOSUM50") == 0)
-        packed_matrix = &NCBISM_Blosum50;
-    else if (strcmp(matrix_name, "BLOSUM62") == 0)
-        packed_matrix = &NCBISM_Blosum62;
-    else if (strcmp(matrix_name, "BLOSUM80") == 0)
-        packed_matrix = &NCBISM_Blosum80;
-    else if (strcmp(matrix_name, "BLOSUM90") == 0)
-        packed_matrix = &NCBISM_Blosum90;
-    else if (strcmp(matrix_name, "PAM30") == 0)
-        packed_matrix = &NCBISM_Pam30;
-    else if (strcmp(matrix_name, "PAM70") == 0)
-        packed_matrix = &NCBISM_Pam70;
-    else if (strcmp(matrix_name, "PAM250") == 0)
-        packed_matrix = &NCBISM_Pam250;
-    else if (m_Program != "blastn" && m_Program != "megablast") {
-        NCBI_THROW(blast::CBlastException, 
-                   eInvalidArgument,
-                   "unsupported score matrix");
-    }
-
-    if (packed_matrix) {
-        SNCBIFullScoreMatrix m;
-
-        NCBISM_Unpack(packed_matrix, &m);
-
-        for (int i = 0; i < CDisplaySeqalign::ePMatrixSize; i++) {
-            for (int j = 0; j < CDisplaySeqalign::ePMatrixSize; j++) {
-                m_Matrix[i][j] = m.s[(unsigned char)letter_order[i]]
-                                    [(unsigned char)letter_order[j]];
-            }
-        }
-        m_MatrixSet = true;
+    if (m_FormatType == CFormattingArgs::eXml) {
+        m_AccumulatedQueries.Reset(new CBlastQueryVector());
     }
 }
+
 
 void
 CBlastFormat::x_FillDbInfo()
@@ -223,6 +169,7 @@ CBlastFormat::x_PrintOneQueryFooter(const CBlastAncillaryData& summary)
 void
 CBlastFormat::PrintOneResultSet(const CSearchResults& results,
                                 CScope& scope,
+                                CConstRef<CBlastQueryVector> queries,
                                 unsigned int itr_num
                                 /* = numeric_limits<unsigned int>::max() */)
 {
@@ -244,6 +191,9 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
         if (results.HasAlignments()) {
             CRef<CSearchResults> res(const_cast<CSearchResults*>(&results));
             m_AccumulatedResults.push_back(res);
+        }
+        ITERATE(CBlastQueryVector, itr, *queries) {
+            m_AccumulatedQueries->push_back(*itr);
         }
         return;
     }
@@ -344,7 +294,7 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
     CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_NumAlignments);
 
     CDisplaySeqalign display(copy_aln_set, scope, &masklocs, NULL,
-                             m_MatrixSet ? (const int(*)[23])m_Matrix : NULL);
+                             m_MatrixName);
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
 
@@ -403,13 +353,15 @@ CBlastFormat::PrintEpilog(const CBlastOptions& options)
     // XML can only be printed once (i.e.: not in batches), so we print it as
     // the epilog of the report
     if (m_FormatType == CFormattingArgs::eXml) {
-        CRef<CBlastQueryVector> queries = m_Queries->GetAllSeqs();
-        CCmdLineBlastXMLReportData report_data(queries, m_AccumulatedResults,
+        CCmdLineBlastXMLReportData report_data(m_AccumulatedQueries, 
+                                               m_AccumulatedResults,
                                                options, m_DbName, m_DbIsAA,
                                                m_QueryGenCode, m_DbGenCode);
         objects::CBlastOutput xml_output;
         BlastXML_FormatReport(xml_output, &report_data);
         m_Outfile << MSerial_Xml << xml_output;
+        m_AccumulatedResults.clear();
+        m_AccumulatedQueries->clear();
         return;
     }
 

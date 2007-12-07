@@ -298,9 +298,10 @@ CBl2Seq::RunFullSearch()
                             kOptions.GetScoringOpts(), &blasthit_params);
     /* Initialize an HSPList stream to collect hits; 
        results should not be sorted for reading from the stream. */
-    AutoPtr<BlastHSPStream> hsp_stream(
-        Blast_HSPListCollectorInit(kOptions.GetProgramType(), blasthit_params,
-                                   mi_clsQueryInfo->num_queries));
+    BlastHSPStream* hsp_stream = Blast_HSPListCollectorInit(kOptions.GetProgramType(), blasthit_params,
+                                   mi_clsQueryInfo->num_queries);
+    TBlastHSPStream thsp_stream(hsp_stream, BlastHSPStreamFree);
+    
                   
     SBlastProgressReset(m_ProgressMonitor);
     Int4 status = Blast_RunFullSearch(kOptions.GetProgramType(),
@@ -313,7 +314,7 @@ CBl2Seq::RunFullSearch()
                                       kOptions.GetHitSaveOpts(),
                                       kOptions.GetEffLenOpts(),
                                       NULL, kOptions.GetDbOpts(),
-                                      hsp_stream.get(), NULL, mi_pDiagnostics, 
+                                      thsp_stream.GetPointer(), NULL, mi_pDiagnostics, 
                                       &mi_pResults, m_fnpInterrupt,
                                       m_ProgressMonitor);
     if (status) {

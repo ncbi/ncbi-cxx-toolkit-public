@@ -178,9 +178,10 @@ void CBlastSampleApplication::Exit(void)
 //  MAIN
 
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[])
 {
     // Execute main application function
     return CBlastSampleApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
+#endif /* SKIP_DOXYGEN_PROCESSING */

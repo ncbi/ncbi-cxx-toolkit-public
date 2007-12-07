@@ -45,9 +45,30 @@ BEGIN_SCOPE(blast)
 /// Class that centralizes the configuration data for
 /// sequences to be converted
 ///
-class NCBI_XBLAST_EXPORT CBlastInputConfig {
+class NCBI_XBLAST_EXPORT CBlastInputSourceConfig {
 
 public:
+
+    /** This value and the seqlen_thresh2guess argument to this class'
+      constructor are related as follows: if the default parameter value is
+      used, then no sequence type guessing will occurs, instead the sequence
+      type specified in
+      CBlastInputSourceConfig::SDataLoader::m_IsLoadingProteins is assumed
+      correct. If an alternate value is specified, then any sequences shorter
+      than that length will be treated as described above, otherwise those
+      sequences will have their sequence type guessed (and be subject to
+      validation between what is guessed by CFastaReader and what is expected
+      by CBlastInputSource).
+
+      By design, the default setting should be fine for command line BLAST
+      search binaries, but on the BLAST web pages we use kSeqLenThreshold2Guess
+      to validate sequences longer than that length, and to accept sequences
+      shorter than that length.
+      
+      @sa Implementation in CCustomizedFastaReader
+      @sa TestSmallDubiousSequences unit test
+    */
+    static const unsigned int kSeqLenThreshold2Guess = 25;
 
     /// Constructor
     /// @param dlconfig Configuration object for the data loaders used in
@@ -60,20 +81,27 @@ public:
     /// @param believe_defline If true, all sequences ID's are parsed;
     ///                 otherwise all sequences receive a local ID set
     ///                 to a monotonically increasing count value [in]
-    /// @param retrieve_seq_data Should the sequence data be fetched by this
-    /// library? [in]
+    /// @param retrieve_seq_data When gis/accessions are provided in the input,
+    ///                 should the sequence data be fetched by this library?
     /// @param range Range restriction for all sequences (default means no
     ///                 restriction) [in]
-    CBlastInputConfig(const SDataLoaderConfig& dlconfig,
-                      objects::ENa_strand strand = objects::eNa_strand_other,
-                      bool lowercase = false,
-                      bool believe_defline = false,
-                      TSeqRange range = TSeqRange(),
-                      bool retrieve_seq_data = true);
+    /// @param seqlen_thresh2guess sequence length threshold for molecule
+    ///                 type guessing (see @ref kSeqLenThreshold2Guess) [in]
+    /// @param local_id_counter counter used to create the CSeqidGenerator to
+    ///                 create local identifiers for sequences read [in]
+    CBlastInputSourceConfig(const SDataLoaderConfig& dlconfig,
+                  objects::ENa_strand strand = objects::eNa_strand_other,
+                  bool lowercase = false,
+                  bool believe_defline = false,
+                  TSeqRange range = TSeqRange(),
+                  bool retrieve_seq_data = true,
+                  int local_id_counter = 1,
+                  unsigned int seqlen_thresh2guess = 
+                    numeric_limits<unsigned int>::max());
 
     /// Destructor
     ///
-    ~CBlastInputConfig() {}
+    ~CBlastInputSourceConfig() {}
 
     /// Set the strand to a specified value
     /// @param strand The strand value
@@ -107,6 +135,8 @@ public:
     /// Set range for all sequences
     /// @param r range to use [in]
     void SetRange(const TSeqRange& r) { m_Range = r; }
+    /// Set range for all sequences
+    /// @return range to modify
     TSeqRange& SetRange(void) { return m_Range; }
 
     /// Get range for all sequences
@@ -122,18 +152,42 @@ public:
     bool IsProteinInput() const { return m_DLConfig.m_IsLoadingProteins; }
 
     /// True if the sequence data must be fetched
-    bool RetrieveSequenceData() const { return m_RetrieveSeqData; }
+    bool RetrieveSeqData() const { return m_RetrieveSeqData; }
     /// Turn on or off the retrieval of sequence data
     /// @param value true to turn on, false to turn off [in]
-    void SetRetrieveSequenceData(bool value) { m_RetrieveSeqData = value; }
+    void SetRetrieveSeqData(bool value) { m_RetrieveSeqData = value; }
+
+    /// Retrieve the local id counter initial value
+    int GetLocalIdCounterInitValue() const { return m_LocalIdCounter; }
+    /// Set the local id counter initial value
+    void SetLocalIdCounterInitValue(int val) { m_LocalIdCounter = val; }
+
+    /// Retrieve the sequence length threshold to guess the molecule type
+    unsigned int GetSeqLenThreshold2Guess() const { 
+        return m_SeqLenThreshold2Guess; 
+    }
+    /// Set the sequence length threshold to guess the molecule type
+    void SetSeqLenThreshold2Guess(unsigned int val) { 
+        m_SeqLenThreshold2Guess = val;
+    }
 
 private:
-    objects::ENa_strand m_Strand;  ///< strand to assign to sequences
-    bool m_LowerCaseMask;          ///< whether to save lowercase mask locs
-    bool m_BelieveDeflines;        ///< whether to parse sequence IDs
-    TSeqRange m_Range;             ///< sequence range
-    SDataLoaderConfig m_DLConfig;  ///< Configuration object for data loaders, used by CBlastInputReader
-    bool m_RetrieveSeqData;        ///< Configuration for CBlastInputReader
+    /// Strand to assign to sequences
+    objects::ENa_strand m_Strand;  
+    /// Whether to save lowercase mask locs
+    bool m_LowerCaseMask;          
+    /// Whether to parse sequence IDs
+    bool m_BelieveDeflines;        
+    /// Sequence range
+    TSeqRange m_Range;             
+    /// Configuration object for data loaders, used by CBlastInputReader
+    SDataLoaderConfig m_DLConfig;  
+    /// Configuration for CBlastInputReader
+    bool m_RetrieveSeqData;        
+    /// Initialization parameter to CSeqidGenerator
+    int m_LocalIdCounter;          
+    /// The sequence length threshold to guess molecule type
+    unsigned int m_SeqLenThreshold2Guess;
 };
 
 
@@ -176,107 +230,95 @@ public:
 ///
 class NCBI_XBLAST_EXPORT CBlastInputSource : public CObject
 {
-public:
-    /// Constructor
-    /// @param objmgr Object Manager instance
-    ///
-    CBlastInputSource(objects::CObjectManager& objmgr);
-
-    /// Retrieve the scope used by the sequences in this object
-    CRef<objects::CScope> GetScope() { return m_Scope; }
-
+protected:
     /// Destructor
     ///
     virtual ~CBlastInputSource() {}
 
     /// Retrieve a single sequence (in an SSeqLoc container)
+    /// @param scope CScope object to use in SSeqLoc returned [in]
     /// @note Embedded Seq-loc returned must be of type interval or whole
-    virtual SSeqLoc GetNextSSeqLoc() = 0;
+    virtual SSeqLoc GetNextSSeqLoc(CScope& scope) = 0;
 
     /// Retrieve a single sequence (in a CBlastSearchQuery container)
+    /// @param scope CScope object to use in CBlastSearchQuery returned [in]
     /// @note Embedded Seq-loc returned must be of type interval or whole
-    virtual CRef<CBlastSearchQuery> GetNextSequence() = 0;
+    virtual CRef<CBlastSearchQuery> GetNextSequence(CScope& scope) = 0;
 
     /// Signal whether there are any unread sequence left
     /// @return true if no unread sequences remaining
-    ///
     virtual bool End() = 0;
 
-protected:
-    objects::CObjectManager& m_ObjMgr;  ///< object manager instance
-    CRef<objects::CScope> m_Scope;      ///< scope instance (local to object)
+    /// Declare CBlastInput as a friend
+    friend class CBlastInput;
 };
 
 
 /// Generalized converter from an abstract source of
 /// biological sequence data to collections of blast input
-///
 class NCBI_XBLAST_EXPORT CBlastInput : public CObject
 {
 public:
+
     /// Constructor
     /// @param source Pointer to abstract source of sequences
     /// @param batch_size A hint specifying how many letters should
     ///               be in a batch of converted sequences
     ///
-    CBlastInput(CBlastInputSource *source, int batch_size = kMax_Int)
+    CBlastInput(CBlastInputSource* source, int batch_size = kMax_Int)
         : m_Source(source), m_BatchSize(batch_size) {}
 
     /// Destructor
     ///
     ~CBlastInput() {}
 
-    /// Copy constructor
-    CBlastInput(const CBlastInput& rhs);
-
-    /// Assignment operator
-    CBlastInput& operator=(const CBlastInput& rhs);
-
     /// Read and convert all the sequences from the source
+    /// @param scope CScope object to use in return value [in]
     /// @return The converted sequences
     ///
-    TSeqLocVector GetAllSeqLocs();
+    TSeqLocVector GetAllSeqLocs(CScope& scope);
 
     /// Read and convert all the sequences from the source
+    /// @param scope CScope object to use in return value [in]
     /// @return The converted sequences
     ///
-    CRef<CBlastQueryVector> GetAllSeqs();
+    CRef<CBlastQueryVector> GetAllSeqs(CScope& scope);
 
     /// Read and convert the next batch of sequences
+    /// @param scope CScope object to use in return value [in]
     /// @return The next batch of sequence. The size of the batch is
     ///        either all remaining sequences, or the size of sufficiently
     ///        many whole sequences whose combined size exceeds m_BatchSize,
     ///        whichever is smaller
     ///
-    TSeqLocVector GetNextSeqLocBatch();
+    TSeqLocVector GetNextSeqLocBatch(CScope& scope);
 
     /// Read and convert the next batch of sequences
+    /// @param scope CScope object to use in return value [in]
     /// @return The next batch of sequence. The size of the batch is
     ///        either all remaining sequences, or the size of sufficiently
     ///        many whole sequences whose combined size exceeds m_BatchSize,
     ///        whichever is smaller
     ///
-    CRef<CBlastQueryVector> GetNextSeqBatch();
-
-    /// Set the target size of a batch of sequences
-    /// @param batch_size The desired total size of all the 
-    ///                 sequences in future batches
-    ///                  
-    void SetBatchSize(TSeqPos batch_size) { m_BatchSize = batch_size; }
+    CRef<CBlastQueryVector> GetNextSeqBatch(CScope& scope);
 
     /// Retrieve the target size of a batch of sequences
     /// @return The current batch size
     ///                  
     TSeqPos GetBatchSize() const { return m_BatchSize; }
 
+    /// Determine if we have reached the end of the BLAST input
+    bool End() { return m_Source->End(); }
+
 private:
     CRef<CBlastInputSource> m_Source;  ///< pointer to source of sequences
     TSeqPos m_BatchSize;          ///< total size of one block of sequences
 
-    /// Cached value for all queries read in TSeqLocVector format
-    auto_ptr<TSeqLocVector> m_AllSeqLocs;
-    /// Cached value for all queries read in CBlastQueryVector format
-    CRef<CBlastQueryVector> m_AllQueries;
+    /// Prohibit copy constructor
+    CBlastInput(const CBlastInput& rhs);
+
+    /// Prohibit assignment operator
+    CBlastInput& operator=(const CBlastInput& rhs);
 
     /// Perform the actual copy for assignment operator and copy constructor
     void do_copy(const CBlastInput& input);

@@ -1,6 +1,7 @@
 # $Id$
 
 LIB_PROJ = gene_info
+SUB_PROJ = demo unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

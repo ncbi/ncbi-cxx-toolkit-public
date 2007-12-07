@@ -1,0 +1,7 @@
+#
+# Makefile:  Makefile.builddir
+#
+
+
+###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
+builddir = $(NCBI)/c++.metastable/ReleaseMT/build

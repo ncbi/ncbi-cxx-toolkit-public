@@ -39,6 +39,7 @@
 #include <objects/seqalign/Score.hpp>
 
 #include <algo/blast/api/tblastn_options.hpp>
+#include <objtools/blast_format/blastfmtutil.hpp>
 
 #include "test_objmgr.hpp"
 
@@ -337,7 +338,7 @@ void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
 
 BOOST_AUTO_TEST_CASE(ProteinBlastSelfHit)
 {
-    const int kSeqLength = 232;
+    //const int kSeqLength = 232;
     CSeq_id id("gi|129295");
     auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
@@ -348,6 +349,8 @@ BOOST_AUTO_TEST_CASE(ProteinBlastSelfHit)
     testBlastHitCounts(blaster, eBlastp_129295_129295);
     testRawCutoffs(blaster, eBlastp, eBlastp_129295_129295);
 
+    // the number of identities is NOT calculated when composition based
+    // statistics is turned on (default for blastp)
     int num_ident = 0;
     sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
 #if 0
@@ -355,7 +358,12 @@ BOOST_AUTO_TEST_CASE(ProteinBlastSelfHit)
     o << MSerial_AsnText << *sar ;
     o.close();
 #endif
-    BOOST_CHECK_EQUAL(kSeqLength, num_ident);
+    BOOST_CHECK_EQUAL(0, num_ident);
+
+    // calculate the number of identities using the BLAST formatter
+    double percent_identity = 
+        CBlastFormatUtil::GetPercentIdentity(*sar, *sl->scope, false);
+    BOOST_CHECK_EQUAL(1, (int) percent_identity);
 }
 
 BOOST_AUTO_TEST_CASE(TBlastn2Seqs)
@@ -413,6 +421,7 @@ o.close();
     BOOST_CHECK_EQUAL(0, num_ident);
 }
 
+#if 0
 BOOST_AUTO_TEST_CASE(TBlastn2SeqsLargeWord)
 {
     CSeq_id qid("gi|129295");
@@ -444,4 +453,36 @@ o.close();
 #endif
     BOOST_CHECK_EQUAL(5, num_ident);
 }
+#endif
+
+BOOST_AUTO_TEST_CASE(IdenticalProteins)
+{
+    //const int kSeqLength = 377;
+    CSeq_id qid("gi|34810917");
+    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    CSeq_id sid("gi|34810916");
+    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    CBl2Seq blaster(*query, *subj, eBlastp);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    // the number of identities is NOT calculated when composition based
+    // statistics is turned on (default for blastp)
+    int num_ident = 0;
+    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+#if 0
+    ofstream o("4.asn");
+    o << MSerial_AsnText << *sar ;
+    o.close();
+#endif
+    BOOST_CHECK_EQUAL(0, num_ident);
+
+    // calculate the number of identities using the BLAST formatter
+    double percent_identity = 
+        CBlastFormatUtil::GetPercentIdentity(*sar, *query->scope, false);
+    BOOST_CHECK_EQUAL(1, (int) percent_identity);
+}
+
 #endif /* SKIP_DOXYGEN_PROCESSING */

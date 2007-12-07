@@ -167,7 +167,8 @@ static list<string> s_GetLinkoutString(int linkout, int gi, string& rid,
     }
     if(linkout & eGene){
       string l_GeneUrl = CBlastFormatUtil::GetURLFromRegistry("GENE");
-        sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID", rid.c_str());
+        sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID",
+                rid.c_str(), "top");
         linkout_list.push_back(buf);
     }
     return linkout_list;
@@ -282,7 +283,7 @@ static string s_GetIdUrlNew(const CBioseq::TId& ids, int gi, string& user_url,
                 strcpy(db, "Protein");
             }    
 	  string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");            
-            sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
+	  sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
                     open_new_window ? "TARGET=\"EntrezView\"" : "");
             url_link = url_buf;
         } else {//seqid general, dbtag specified
@@ -713,7 +714,7 @@ void CShowBlastDefline::x_FillDeflineAndIdNew(const CBioseq_Handle& handle,
                                       taxid, m_CddRid, 
                                       m_EntrezTerm, 
                                       handle.GetBioseqCore()->IsNa(), user_url,
-                                      m_IsDbNa, 0, true);
+                                      m_IsDbNa, 0, true, false);
                 }
                 break;
             }
@@ -729,7 +730,7 @@ void CShowBlastDefline::x_FillDeflineAndIdNew(const CBioseq_Handle& handle,
                                           taxid, m_CddRid, 
                                           m_EntrezTerm,
                                           handle.GetBioseqCore()->IsNa(), user_url,
-                                          m_IsDbNa, 0, true);
+                                          m_IsDbNa, 0, true, false);
                     }
                     linkout_not_found = false;
                     break;
@@ -749,20 +750,18 @@ void CShowBlastDefline::x_FillDeflineAndIdNew(const CBioseq_Handle& handle,
         sdl->score_url += sdl->gi == 0 ? accession : 
             NStr::IntToString(sdl->gi);
         sdl->score_url += ">";
-        string user_url = m_Reg->Get(m_BlastType, "TOOL_URL");
-        string type_temp = m_BlastType;
-        type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
-        int taxid = 0;
-        if (type_temp == "mapview" || type_temp == "mapview_prev" || 
-            type_temp == "gsfasta") {
-            taxid = 
-                CBlastFormatUtil::GetTaxidForSeqid(aln_id, *m_ScopeRef);
+        string tool_url = m_Reg->Get(m_BlastType, "TOOL_URL");
+        string type = m_BlastType;
+        type = NStr::TruncateSpaces(NStr::ToLower(type));
+        int tax_id = 0;
+        if (type == "mapview" || type == "mapview_prev" || type == "gsfasta") {
+            tax_id = CBlastFormatUtil::GetTaxidForSeqid(aln_id, *m_ScopeRef);
         }
        
-        sdl->id_url = s_GetIdUrlNew(*ids, sdl->gi, user_url,
+        sdl->id_url = s_GetIdUrlNew(*ids, sdl->gi, tool_url,
                                  m_IsDbNa, m_Database, 
                                  (m_Option & eNewTargetWindow) ? true : false,
-                                 m_Rid, m_QueryNumber, taxid, sdl->linkout);
+                                 m_Rid, m_QueryNumber, tax_id, sdl->linkout);
     }
 
   
@@ -1541,11 +1540,11 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
         if((m_Option & eLinkout) && (m_Option & eHtml)){
                
             out << "<td>";
-            bool is_first = true;
+            bool first_time = true;
             ITERATE(list<string>, iter_linkout, (*iter)->linkout_list){
-                if(is_first){
+                if(first_time){
                     out << kOneSpaceMargin;
-                    is_first = false;
+                    first_time = false;
                 }
                 out << *iter_linkout;
             }
@@ -1589,7 +1588,7 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
         sdl->sum_n = sum_n == -1 ? 1:sum_n ;
         sdl->bit_string = bit_score_buf;
         sdl->evalue_string = evalue_buf;
-    } catch (CException& ){
+    } catch (CException& e){
         sdl = new SDeflineInfo;
         CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n,
                                        num_ident, use_this_gi);

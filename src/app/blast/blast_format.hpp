@@ -69,9 +69,6 @@ public:
     ///                are to be parsed. If multiple queries are provieded,
     ///                their sequence ID's must be distinct [in]
     /// @param outfile Stream that will receive formatted output
-    /// @param blast_input object containing query sequences read. Its lifetime
-    ///                 must exceed that of this object, as this object doesn't
-    ///                 own this pointer [in]
     /// @param asn_outfile Name of file to receive ASN.1 output
     /// @param num_summary The number of 1-line summaries at the top of
     ///                   the blast report (for output types that have
@@ -94,7 +91,6 @@ public:
     CBlastFormat(const blast::CBlastOptions& opts, const string& dbname, 
                  blast::CFormattingArgs::EOutputFormat format_type, 
                  bool db_is_aa, bool believe_query, CNcbiOstream& outfile,
-                 blast::CBlastInput* blast_input,
                  int num_summary, 
                  int num_alignments, 
                  const char *matrix_name = BLAST_DEFAULT_MATRIX,
@@ -103,9 +99,6 @@ public:
                  int qgencode = BLAST_GENETIC_CODE,
                  int dbgencode = BLAST_GENETIC_CODE,
                  bool show_linked = false);
-
-    /// Destructor
-    ~CBlastFormat();
 
     /// Print the header of the blast report
     void PrintProlog();
@@ -116,8 +109,11 @@ public:
     ///                ancillary data to be output [in]
     /// @param scope The scope to use for retrieving sequence data
     ///              (must contain query and database sequences) [in]
+    /// @param queries Query sequences (cached for XML formatting) [in]
+    /// @param itr_num iteration number being performed (for PSI-BLAST) [in]
     void PrintOneResultSet(const blast::CSearchResults& results,
                            objects::CScope& scope,
+                           CConstRef<blast::CBlastQueryVector> queries,
                            unsigned int itr_num =
                            numeric_limits<unsigned int>::max());
 
@@ -143,36 +139,21 @@ private:
     bool m_ShowLinkedSetSize;   ///< show size of linked set in 1-line summary
     bool m_IsDbAvailable;       ///< true if a database is available
     bool m_IsUngappedSearch;    ///< true if the search was ungapped
-
-    /// True if a user-specified score matrix is required
-    /// for formatting
-    bool m_MatrixSet;
-
-    /// Score matrix used by blast formatter to determine
-    /// neighboring protein residues
-    int *m_Matrix[CDisplaySeqalign::ePMatrixSize];
+    const char* m_MatrixName;   ///< name of scoring matrix
 
     /// internal representation of database information
     list<CBlastFormatUtil::SDbInfo> m_DbInfo;
 
-    /// Queries are required for XML format, not owned by this class
-    blast::CBlastInput* m_Queries;
+    /// Queries are required for XML format only
+    CRef<blast::CBlastQueryVector> m_AccumulatedQueries;
     /// Accumulated results to display in XML format 
     blast::CSearchResultSet m_AccumulatedResults;
-    
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]
     /// @param options Options used for blast search [in]
     ///
     void x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary);
-
-    /// Initialize the score matrix to be used for formatting
-    /// (if applicable)
-    /// @param matrix_name Name of score matrix. NULL defaults to
-    ///                    BLOSUM62 [in]
-    ///
-    void x_FillScoreMatrix(const char *matrix_name = BLAST_DEFAULT_MATRIX);
 
     /// Initialize database statistics
     void x_FillDbInfo();

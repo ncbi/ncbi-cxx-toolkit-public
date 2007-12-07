@@ -214,7 +214,8 @@ public:
     ///     HTML elements invisible to the user). If set to 0,
     ///     the function will use a reasonable default value.
     void ToString(string& strGeneInfo,
-                  bool bFormatAsHTML = true,
+                  bool bFormatAsHTML = false,
+                  const string& strGeneLinkURL = "",
                   unsigned int nMaxLineLength = 0) const;
 };
 
@@ -244,7 +245,7 @@ public:
     typedef map< int, CRef<CGeneInfo> > TGeneIdToGeneInfoMap;
 
     /// List of Gene Information objects.
-    typedef list< CRef<CGeneInfo> > TGeneInfoList;
+    typedef vector< CRef<CGeneInfo> > TGeneInfoList;
 
 public:
     /// Destructor.

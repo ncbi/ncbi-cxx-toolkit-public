@@ -6,7 +6,7 @@
 REQUIRES = dbapi
 
 LIB_PROJ = blastinput
-SUB_PROJ = unit_test
+SUB_PROJ = demo unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

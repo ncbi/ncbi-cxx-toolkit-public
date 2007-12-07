@@ -656,6 +656,25 @@ void CSeqDB::AccessionToOids(const string & acc, vector<int> & oids) const
 {
     m_Impl->Verify();
     m_Impl->AccessionToOids(acc, oids);
+    
+    // If we have a numeric ID and the search failed, try to look it
+    // up as a GI (but not as a PIG or TI).  Due to the presence of
+    // PDB ids like "pdb|1914|a", the faster GitToOid is not done
+    // first (unless the caller does so.)
+    
+    if (oids.empty()) {
+        try {
+            int gi = NStr::StringToInt(acc, NStr::fConvErr_NoThrow);
+            int oid(-1);
+            
+            if (gi > 0 && GiToOid(gi, oid)) {
+                oids.push_back(oid);
+            }
+        }
+        catch(...) {
+        }
+    }
+    
     m_Impl->Verify();
 }
 

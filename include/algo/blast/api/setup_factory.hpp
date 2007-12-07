@@ -108,6 +108,7 @@ public:
         if (m_Data && m_DeleteFunction) {
             m_DeleteFunction(m_Data);
         }
+        m_Data = NULL;
     }
     
     TData * GetPointer()

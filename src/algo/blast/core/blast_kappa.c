@@ -429,7 +429,9 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
 }
 
 /** Compute the number of identities for the HSPs in the hsp_list
- * @note this only works for blastp right now
+ * @note this only works for blastp right now and it's not currently being used
+ * because we cannot reliably calculate the number of identities for queries
+ * that have hard masking applied to them (which is the default).
  * 
  * @param query_blk the query sequence data [in]
  * @param query_info structure describing the query_blk structure [in]
@@ -2258,8 +2260,10 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                     s_HSPListNormalizeScores(hsp_list,
                                              kbp->Lambda, kbp->logK,
                                              localScalingFactor);
-                    s_ComputeNumIdentities(queryBlk, queryInfo, seqSrc,
-                                           hsp_list, scoringParams->options);
+                    /* currently commented out, see function definition for
+                      explanation
+                     s_ComputeNumIdentities(queryBlk, queryInfo, seqSrc,
+                                           hsp_list, scoringParams->options);*/
                     status_code =
                         BlastCompo_HeapInsert(&redoneMatches[query_index],
                                               hsp_list, bestEvalue,

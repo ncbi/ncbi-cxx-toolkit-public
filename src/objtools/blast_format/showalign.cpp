@@ -91,6 +91,7 @@
 #include <util/tables/raw_scoremat.h>
 #include <objtools/readers/getfeature.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
+#include <algo/blast/core/blast_stat.h>
 #include <html/htmlhelper.hpp>
 
 
@@ -112,7 +113,13 @@ static const int k_NumAsciiChar = 128;
 const string color[]={"#000000", "#808080", "#FF0000"};
 const string k_ColorRed = "#FF0000";
 const string k_ColorPink = "#F805F5";
-static const char k_PSymbol[CDisplaySeqalign::ePMatrixSize+1] =
+
+///protein matrix define
+enum {
+    ePMatrixSize = 23       // number of amino acid for matrix
+};
+
+static const char k_PSymbol[ePMatrixSize+1] =
 "ARNDCQEGHILKMFPSTWYVBZX";
 
 static const char k_IntronChar = '~';
@@ -127,7 +134,7 @@ name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment%d',\
 static const string k_Checkbox = "<input type=\"checkbox\" \
 name=\"getSeqGi\" value=\"%s\" onClick=\"synchronizeCheck(this.value, \
 'getSeqAlignment%d', 'getSeqGi', this.checked)\">";
-
+#ifdef USE_ORG_IMPL
 static string k_GetSeqSubmitForm[] = {"<FORM  method=\"post\" \
 action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
 name=\"%s%d\"><input type=button value=\"Get selected sequences\" \
@@ -156,17 +163,17 @@ action=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=
 name=\"tree%s%d\" target=\"trv%s\"> \
 <input type=button value=\"Distance tree of results\" onClick=\"extractCheckedSeq('getSeqAlignment%d', 'getSeqGi', 'tree%s%d')\"> \
 <input type=\"hidden\" name=\"sequenceSet\" value=\"\"><input type=\"hidden\" name=\"screenWidth\" value=\"\"></form>";
-
+#endif
 
 
 
 
 
 CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, 
-                                   CScope& scope,
-                                   list <CRef<blast::CSeqLocInfo> >* mask_seqloc, 
-                                   list <FeatureInfo*>* external_feature,
-                                   const int matrix[][ePMatrixSize])
+                       CScope& scope,
+                       list <CRef<blast::CSeqLocInfo> >* mask_seqloc, 
+                       list <FeatureInfo*>* external_feature,
+                       const char* matrix_name /* = BLAST_DEFAULT_MATRIX */)
     : m_SeqalignSetRef(&seqalign),
       m_Seqloc(mask_seqloc),
       m_QueryFeature(external_feature),
@@ -194,8 +201,14 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_SlaveGeneticCode = 1;
     m_Ctx = NULL;
 
-    SNCBIFullScoreMatrix blosumMatrix;
-    NCBISM_Unpack(&NCBISM_Blosum62, &blosumMatrix);
+    const SNCBIPackedScoreMatrix* packed_mtx = 
+        BlastScoreBlkGetCompiledInMatrix(matrix_name);
+    if (packed_mtx == NULL) {
+        packed_mtx = &NCBISM_Blosum62;
+    }
+
+    SNCBIFullScoreMatrix mtx;
+    NCBISM_Unpack(packed_mtx, &mtx);
  
     int** temp = new int*[k_NumAsciiChar];
     for(int i = 0; i<k_NumAsciiChar; ++i) {
@@ -208,14 +221,8 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     }
     for(int i = 0; i < ePMatrixSize; ++i){
         for(int j = 0; j < ePMatrixSize; ++j){
-            if(matrix){
-                temp[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]] =
-                    matrix[i][j];
-            } else {
-                temp[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]] =
-                    blosumMatrix.s[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]];
-            }
-     
+            temp[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]] =
+                mtx.s[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]];
         }
     }
     for(int i = 0; i < ePMatrixSize; ++i) {
@@ -397,13 +404,16 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
     if(form_name){             
         string localClientButtons = "";
         if(showTreeButtons) {
-            localClientButtons = "<td>" + k_GetTreeViewForm + "</td>";
+	    string l_GetTreeViewForm  = CBlastFormatUtil::GetURLFromRegistry( "TREEVIEW_FRM");
+            localClientButtons = "<td>" + l_GetTreeViewForm + "</td>";
         }
-
+	string l_GetSeqSubmitForm  = CBlastFormatUtil::GetURLFromRegistry( "GETSEQ_SUB_FRM", db_type); 
+	string l_GetSeqSelectForm = CBlastFormatUtil::GetURLFromRegistry( "GETSEQ_SEL_FRM");
+	
         string template_str = "<table border=\"0\"><tr><td>" +
-                            k_GetSeqSubmitForm[db_type] +
+	                    l_GetSeqSubmitForm + //k_GetSeqSubmitForm[db_type] +
                             "</td><td>" +
-                            k_GetSeqSelectForm +
+ 	                    l_GetSeqSelectForm + //k_GetSeqSelectForm +
                             "</td>" +
                             localClientButtons +
                             "</tr></table>";
@@ -1991,7 +2001,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                                               bsp_handle.
                                               GetBioseqCore()->IsNa(), 
                                               user_url, m_IsDbNa, firstGi,
-                                              false);
+                                              false, true);
                             out <<" ";
                             ITERATE(list<string>, iter_linkout, linkout_url){
                                 out << *iter_linkout;
@@ -2759,6 +2769,53 @@ CDisplaySeqalign::PrepareBlastUngappedSeqalign(const CSeq_align_set& alnset)
 }
 
 
+bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
+{
+    const CBioseq_Handle& bsp_handle =
+        aln_vec_info->alnvec->GetBioseqHandle(1);
+    if (bsp_handle &&
+        (m_AlignOption&eHtml) &&
+        (m_AlignOption&eLinkout) &&
+        (m_AlignOption&eShowGeneInfo))
+    {
+        CNcbiEnvironment env;
+        if (env.Get(GENE_INFO_PATH_ENV_VARIABLE) == kEmptyStr)
+        {
+            return false;
+        }
+
+        const CRef<CBlast_def_line_set> bdlRef 
+            =  CBlastFormatUtil::GetBlastDefline(bsp_handle);
+        const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+
+        for(list< CRef< CBlast_def_line > >::const_iterator 
+                iter = bdl.begin(); iter != bdl.end(); iter++)
+        {
+            int linkout = CBlastFormatUtil::
+                GetLinkout((**iter));
+            if (linkout & eGene)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+string CDisplaySeqalign::x_GetGeneLinkUrl(int gene_id)
+{
+    string strGeneLinkUrl = CBlastFormatUtil::GetURLFromRegistry("GENE_INFO");
+    char* buf = new char[strGeneLinkUrl.size() + 1024];
+    sprintf(buf, strGeneLinkUrl.c_str(), 
+                 gene_id,
+                 m_Rid.c_str());
+    strGeneLinkUrl = string(buf);
+    delete [] buf;
+    return strGeneLinkUrl;
+}
+
+
 void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out, 
                                            SAlnInfo* aln_vec_info,
                                            bool show_defline) 
@@ -2771,6 +2828,47 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
         if(!(m_AlignOption & eShowNoDeflineInfo)){
             x_PrintDefLine(bsp_handle, aln_vec_info->use_this_gi, id_label, out);
             out<<"Length="<<bsp_handle.GetBioseqLength()<<endl;
+
+            try
+            {
+                if (x_IsGeneInfoAvailable(aln_vec_info))
+                {
+                    if (m_GeneInfoReader.get() == 0)
+                    {
+                        m_GeneInfoReader.reset(
+                            new CGeneInfoFileReader(false));
+                    }
+
+                    int giForGeneLookup =
+                        FindGi(bsp_handle.GetBioseqCore()->GetId());
+
+                    CGeneInfoFileReader::TGeneInfoList infoList;
+                    m_GeneInfoReader->GetGeneInfoForGi(giForGeneLookup,
+                                                        infoList);
+
+                    CGeneInfoFileReader::TGeneInfoList::const_iterator
+                        itInfo = infoList.begin();
+                    if (itInfo != infoList.end())
+                        out << endl;
+                    for (; itInfo != infoList.end(); itInfo++)
+                    {
+                        CRef<CGeneInfo> info = *itInfo;
+                        string strUrl = x_GetGeneLinkUrl(info->GetGeneId());
+                        string strInfo;
+                        info->ToString(strInfo, true, strUrl);
+                        out << strInfo << endl;
+                    }
+                }
+            }
+            catch (CException& e)
+            {
+                out << "(Gene info extraction error: "
+                    << e.GetMsg() << ")" << endl;
+            }
+            catch (...)
+            {
+                out << "(Gene info extraction error)" << endl;
+            }
         }
         
         if(m_AlignOption&eHtml && m_AlignOption & eShowBlastInfo &&

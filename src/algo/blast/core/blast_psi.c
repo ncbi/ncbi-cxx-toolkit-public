@@ -181,7 +181,9 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     }
 
     status = _PSIComputeFreqRatios(msa, seq_weights, sbp, aligned_block, 
-                                   options->pseudo_count, internal_pssm);
+                                   options->pseudo_count, 
+                                   options->nsg_compatibility_mode,
+                                   internal_pssm);
     if (status != PSI_SUCCESS) {
         s_PSICreatePssmCleanUp(pssm, packed_msa, msa, aligned_block, 
                                seq_weights, internal_pssm);

@@ -135,30 +135,30 @@ static void
 
     // Link Gis to Gene IDs
 
-    mapGiToIds.insert(make_pair(1, 7)); 
-    mapGiToIds.insert(make_pair(2, 2)); 
-    mapGiToIds.insert(make_pair(2, 3)); 
-    mapGiToIds.insert(make_pair(2, 5)); 
-    mapGiToIds.insert(make_pair(3, 4)); 
-    mapGiToIds.insert(make_pair(4, 4)); 
-    mapGiToIds.insert(make_pair(4, 6)); 
-    mapGiToIds.insert(make_pair(10, 1)); 
-    mapGiToIds.insert(make_pair(11, 1)); 
-    mapGiToIds.insert(make_pair(11, 7)); 
-    mapGiToIds.insert(make_pair(20, 1)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(1, 7)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 2)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 3)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 5)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(3, 4)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 4)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 6)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(10, 1)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 1)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 7)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(20, 1)); 
 //  (21, 1), (21, 7) excluded: "Genomic" Gi, multiple IDs
-    mapGiToIds.insert(make_pair(30, 2)); 
-    mapGiToIds.insert(make_pair(31, 5)); 
-    mapGiToIds.insert(make_pair(31, 4)); 
-    mapGiToIds.insert(make_pair(32, 3)); 
-    mapGiToIds.insert(make_pair(32, 6)); 
-    mapGiToIds.insert(make_pair(40, 2)); 
-    mapGiToIds.insert(make_pair(41, 2)); 
-    mapGiToIds.insert(make_pair(42, 2)); 
-    mapGiToIds.insert(make_pair(50, 5)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(30, 2)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 5)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 4)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 3)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 6)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(40, 2)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(41, 2)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(42, 2)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(50, 5)); 
 //  (60, 3), (60, 4) excluded: "Genomic" Gi, multiple IDs
-    mapGiToIds.insert(make_pair(61, 4)); 
-    mapGiToIds.insert(make_pair(62, 6)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(61, 4)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(62, 6)); 
 
     listGis.push_back(1);
     listGis.push_back(2);
@@ -214,17 +214,18 @@ static void
                                  info2->GetNumPubMedLinks()));
 }
 
-static bool
-    s_CompareInfos(CRef<CGeneInfo> info1,
-                   CRef<CGeneInfo> info2)
-{
-    return info1->GetGeneId() < info2->GetGeneId();
-}
+struct SGeneInfoListSorter {
+    bool operator() (const CRef<CGeneInfo>& a,
+                     const CRef<CGeneInfo>& b) const
+    {
+        return a->GetGeneId() < b->GetGeneId();
+    }
+};
 
 static void
     s_SortInfoList(IGeneInfoInput::TGeneInfoList& infoList)
 {
-    infoList.sort(s_CompareInfos);
+    sort(infoList.begin(), infoList.end(), SGeneInfoListSorter() );
 }
 
 static void
@@ -457,7 +458,7 @@ BOOST_AUTO_TEST_CASE(s_TestGeneInfo)
 
         string strPlain, strHTML;
         CHECK_NO_THROW(info.ToString(strPlain, false));
-        CHECK_NO_THROW(info.ToString(strHTML, true));
+        CHECK_NO_THROW(info.ToString(strHTML, true, "GENE_URL"));
 
         string strExpectedPlain =
                    " GENE ID: 3481 IGF2"
@@ -467,9 +468,7 @@ BOOST_AUTO_TEST_CASE(s_TestGeneInfo)
         CHECK(strPlain == strExpectedPlain);
 
         string strExpectedHTML =
-                   " <a href=\"http://www.ncbi.nlm.nih.gov/sites/entrez"
-                     "?db=gene&cmd=search&term=3481\">"
-                     "GENE ID: 3481 IGF2</a>"
+                   " <a href=\"GENE_URL\">GENE ID: 3481 IGF2</a>"
                    " | insulin-like growth factor 2 (somatomedin A)"
                    "\n[Homo sapiens]"
                    " <span class=\"Gene_PubMedLinks\">"

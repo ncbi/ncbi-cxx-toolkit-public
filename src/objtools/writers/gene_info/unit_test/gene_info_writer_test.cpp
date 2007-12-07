@@ -53,6 +53,12 @@
 #  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
 #endif
 
+#ifdef NCBI_OS_DARWIN
+#include <corelib/plugin_manager_store.hpp>
+#include <objmgr/data_loader_factory.hpp>
+#include <objtools/data_loaders/genbank/processors.hpp>
+#endif
+
 #include <common/test_assert.h>  /* This header must go last */
 
 //==========================================================================//
@@ -126,30 +132,30 @@ static void
 
     // Link Gis to Gene IDs
 
-    mapGiToIds.insert(make_pair(1, 7)); 
-    mapGiToIds.insert(make_pair(2, 2)); 
-    mapGiToIds.insert(make_pair(2, 3)); 
-    mapGiToIds.insert(make_pair(2, 5)); 
-    mapGiToIds.insert(make_pair(3, 4)); 
-    mapGiToIds.insert(make_pair(4, 4)); 
-    mapGiToIds.insert(make_pair(4, 6)); 
-    mapGiToIds.insert(make_pair(10, 1)); 
-    mapGiToIds.insert(make_pair(11, 1)); 
-    mapGiToIds.insert(make_pair(11, 7)); 
-    mapGiToIds.insert(make_pair(20, 1)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(1, 7)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 2)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 3)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 5)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(3, 4)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 4)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 6)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(10, 1)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 1)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 7)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(20, 1)); 
 //  (21, 1), (21, 7) excluded: "Genomic" Gi, multiple IDs
-    mapGiToIds.insert(make_pair(30, 2)); 
-    mapGiToIds.insert(make_pair(31, 5)); 
-    mapGiToIds.insert(make_pair(31, 4)); 
-    mapGiToIds.insert(make_pair(32, 3)); 
-    mapGiToIds.insert(make_pair(32, 6)); 
-    mapGiToIds.insert(make_pair(40, 2)); 
-    mapGiToIds.insert(make_pair(41, 2)); 
-    mapGiToIds.insert(make_pair(42, 2)); 
-    mapGiToIds.insert(make_pair(50, 5)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(30, 2)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 5)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 4)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 3)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 6)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(40, 2)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(41, 2)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(42, 2)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(50, 5)); 
 //  (60, 3), (60, 4) excluded: "Genomic" Gi, multiple IDs
-    mapGiToIds.insert(make_pair(61, 4)); 
-    mapGiToIds.insert(make_pair(62, 6)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(61, 4)); 
+    mapGiToIds.insert(TIntToIntMultimap::value_type(62, 6)); 
 
     listGis.push_back(1);
     listGis.push_back(2);
@@ -278,13 +284,13 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
 
         CNcbiIfstream inAllGeneData;
         string strAllGeneData = strOutputDirPath +
-                                "all_gene_data.txt";
+                                GENE_ALL_GENE_DATA_FILE_NAME;
         CHECK(CGeneFileUtils::
                 OpenBinaryInputFile(strAllGeneData, inAllGeneData));
 
         CNcbiIfstream inGene2Offset;
         string strGene2Offset = strOutputDirPath +
-                                "gene2offset.ginfo";
+                                GENE_GENE2OFFSET_FILE_NAME;
         CHECK(CGeneFileUtils::
                 OpenBinaryInputFile(strGene2Offset, inGene2Offset));
 
@@ -312,7 +318,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
 
         CNcbiIfstream inGi2Gene;
         string strGi2Gene = strOutputDirPath +
-                                "gi2gene.ginfo";
+                                GENE_GI2GENE_FILE_NAME;
         CHECK(CGeneFileUtils::
                 OpenBinaryInputFile(strGi2Gene, inGi2Gene));
         
@@ -327,8 +333,9 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
             s_CheckIntInList(recordGi2Gene.n1, listGis);
             s_CheckIntInList(recordGi2Gene.n2, listGeneIds);
 
-            mapGiToIdsFromFile.insert(make_pair(recordGi2Gene.n1,
-                                                recordGi2Gene.n2));
+            mapGiToIdsFromFile.insert(TIntToIntMultimap::value_type
+                                      (recordGi2Gene.n1, 
+                                       recordGi2Gene.n2));
         }
 
         IGeneInfoInput::TGiList::iterator itGi = listGis.begin();
@@ -351,7 +358,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
 
         CNcbiIfstream inGene2Gi;
         string strGene2Gi = strOutputDirPath +
-                                "gene2gi.ginfo";
+                                GENE_GENE2GI_FILE_NAME;
         CHECK(CGeneFileUtils::
                 OpenBinaryInputFile(strGene2Gi, inGene2Gi));
         
@@ -391,7 +398,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
 
         CNcbiIfstream inGi2Offset;
         string strGi2Offset = strOutputDirPath +
-                                "gi2offset.ginfo";
+                                GENE_GI2OFFSET_FILE_NAME;
         CHECK(CGeneFileUtils::
                 OpenBinaryInputFile(strGi2Offset, inGi2Offset));
 
@@ -474,6 +481,23 @@ BOOST_AUTO_TEST_CASE(s_FailedWritingTest)
                         CGeneInfoException);
 }
 
+#ifdef NCBI_OS_DARWIN
+// nonsense to work around linker screwiness (horribly kludgy)
+class CDummyDLF : public CDataLoaderFactory {
+public:
+    CDummyDLF() : CDataLoaderFactory(kEmptyStr) { }
+    CDataLoader* CreateAndRegister(CObjectManager&,
+                                   const TPluginManagerParamTree*) const
+        { return 0; }
+};
+
+void s_ForceSymbolDefinitions(CReadDispatcher& rd)
+{
+    auto_ptr<CDataLoaderFactory> dlf(new CDummyDLF);
+    CRef<CProcessor> pid2(new CProcessor_ID2(rd));
+    CPluginManagerGetterImpl::GetBase(kEmptyStr);
+}
+#endif
 //==========================================================================//
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

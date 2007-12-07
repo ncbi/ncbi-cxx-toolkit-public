@@ -43,7 +43,7 @@
 class CVecscreenTest;  //For internal test only
 
 
-/** @addtogroup blast_format
+/** @addtogroup BlastFormat
  *
  * @{
  */

@@ -571,9 +571,11 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
             break;
             
         case CSeq_id::e_Gi:
+#ifndef SHORT_ISAM_FORMAT
             if (! m_Sparse) {
                 x_AddGiString(oid, seqid.GetGi());
             }
+#endif
             break;
             
         case CSeq_id::e_Ddbj:
@@ -643,6 +645,7 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
     }
 }
 
+#ifndef SHORT_ISAM_FORMAT
 void CWriteDB_IsamIndex::x_AddGiString(int oid, int gi)
 {
     char buf[64];
@@ -651,6 +654,7 @@ void CWriteDB_IsamIndex::x_AddGiString(int oid, int gi)
     
     x_AddStringData(oid, buf, sz);
 }
+#endif
 
 void CWriteDB_IsamIndex::x_AddLocal(int             oid,
                                     const CSeq_id & seqid)
@@ -805,11 +809,13 @@ void CWriteDB_IsamIndex::x_AddTextId(int                 oid,
             x_AddString(oid, acc, ver);
         }
         
+#ifndef SHORT_ISAM_FORMAT
         x_AddString(oid, typestr, acc, ver, nm);
         
         if (add_gb && acc.size() && ver) {
             x_AddString(oid, "gb", acc, ver, nm);
         }
+#endif
     }
 }
 
@@ -871,6 +877,7 @@ void CWriteDB_IsamIndex::x_AddString(int oid, const CTempString & acc, int ver)
     }
 }
 
+#ifndef SHORT_ISAM_FORMAT
 void CWriteDB_IsamIndex::x_AddString(int                 oid,
                                      const char        * typestr,
                                      const CTempString & acc,
@@ -939,6 +946,7 @@ void CWriteDB_IsamIndex::x_AddString(int                 oid,
         x_AddStringData(oid, buf, sz);
     }
 }
+#endif
 
 CWriteDB_IsamData::CWriteDB_IsamData(EWriteDBIsamType itype,
                                      const string   & dbname,

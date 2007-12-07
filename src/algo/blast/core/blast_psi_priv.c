@@ -1801,6 +1801,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
                       const BlastScoreBlk* sbp,
                       const _PSIAlignedBlock* aligned_blocks,
                       Int4 pseudo_count,
+                      Boolean nsg_compatibility_mode,
                       _PSIInternalPssmData* internal_pssm)
 {
     /* Subscripts are indicated as follows: N_i, where i is a subscript of N */
@@ -1858,7 +1859,11 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
 
                 denominator = alpha + kBeta;
 
-                ASSERT(denominator != 0.0);
+                if (nsg_compatibility_mode && denominator == 0.0) {
+                    return PSIERR_UNKNOWN;
+                } else {
+                    ASSERT(denominator != 0.0);
+                }
                 qOverPEstimate = numerator/denominator;
 
                 /* Note artificial multiplication by standard probability

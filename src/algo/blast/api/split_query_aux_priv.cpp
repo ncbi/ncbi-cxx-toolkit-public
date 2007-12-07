@@ -58,7 +58,7 @@ SplitQuery_GetOverlapChunkSize(EBlastProgramType program)
     // used for experimentation purposes
     char* overlap_sz_str = getenv("OVERLAP_CHUNK_SIZE");
     if (overlap_sz_str) {
-        size_t retval = NStr::StringToInt(overlap_sz_str);
+        retval = NStr::StringToInt(overlap_sz_str);
         _TRACE("DEBUG: Using overlap chunk size " << retval);
         return retval;
     }
@@ -176,7 +176,8 @@ SplitQuery_SetEffectiveSearchSpace(CRef<CBlastOptions> options,
         num_seqs = BlastSeqSrcGetNumSeqs(seqsrc);
 
     CEffectiveSearchSpaceCalculator calc(full_query_fact, *options, 
-                                         num_seqs, total_length);
+                                         num_seqs, total_length, 
+                                         full_data->m_ScoreBlk->GetPointer());
     BlastQueryInfo* qinfo = full_data->m_QueryInfo;
     _ASSERT(qinfo);
 

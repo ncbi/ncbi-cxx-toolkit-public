@@ -58,10 +58,12 @@ public:
     /// search [in]
     /// @param db_num_bases number of bases/residues in the database/subjects to
     /// search [in]
+    /// @param sbp BlastScoreBlk to be used.  If NULL another instance will be created [in]
     CEffectiveSearchSpaceCalculator(CRef<IQueryFactory> query_factory,
                                     const CBlastOptions& options,
                                     Int4 db_num_seqs,
-                                    Int8 db_num_bases);
+                                    Int8 db_num_bases,
+                                    BlastScoreBlk* sbp = NULL);
 
     /// Retrieve the effective search space calculated for a given query
     /// @param query_index index of the query sequence of interest

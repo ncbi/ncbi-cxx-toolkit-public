@@ -84,14 +84,15 @@ CEffectiveSearchSpaceCalculator::CEffectiveSearchSpaceCalculator
     (CRef<IQueryFactory> query_factory,
      const CBlastOptions& options, 
      Int4 db_num_seqs, 
-     Int8 db_num_bases)
+     Int8 db_num_bases,
+     BlastScoreBlk* sbp)
     : m_QueryFactory(query_factory), m_Program(options.GetProgramType())
 {
+    bool delete_sbp = false;
     CRef<ILocalQueryData> local_data =
         m_QueryFactory->MakeLocalQueryData(&options);
     m_QueryInfo = local_data->GetQueryInfo();
 
-    CBlastScoreBlk score_blk;
     auto_ptr<CBlastOptionsMemento> opts_memento
         (const_cast<CBlastOptionsMemento*>(options.CreateSnapshot()));
     {{
@@ -99,10 +100,11 @@ CEffectiveSearchSpaceCalculator::CEffectiveSearchSpaceCalculator
 
         CFilteringMemento
             fm(const_cast<CBlastOptionsMemento*>(opts_memento.get()));
-        score_blk.Reset(CSetupFactory::CreateScoreBlock(opts_memento.get(), 
-                                                        local_data, 
-                                                        NULL, 
-                                                        messages));
+        if (sbp == NULL)
+        {
+              sbp = CSetupFactory::CreateScoreBlock(opts_memento.get(), local_data, NULL, messages);
+              delete_sbp = true;
+        }
         _ASSERT(!messages.HasMessages());
     }}
 
@@ -116,7 +118,11 @@ CEffectiveSearchSpaceCalculator::CEffectiveSearchSpaceCalculator
 
     Int2 status = 
         BLAST_CalcEffLengths(m_Program, opts_memento->m_ScoringOpts,
-                             eff_len_params, score_blk, m_QueryInfo, NULL);
+                             eff_len_params, sbp, m_QueryInfo, NULL);
+
+    if (delete_sbp == true)
+        sbp = BlastScoreBlkFree(sbp);
+
     if (status) {
         NCBI_THROW(CBlastException, eCoreBlastError, 
                    "BLAST_CalcEffLengths failed");

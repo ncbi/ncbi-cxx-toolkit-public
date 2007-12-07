@@ -122,7 +122,7 @@ CTblastnAppArgs::CTblastnAppArgs()
 
 CRef<CBlastOptionsHandle> 
 CTblastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
-                                      const CArgs& args)
+                                      const CArgs& /*args*/)
 {
     return CRef<CBlastOptionsHandle>(new CTBlastnOptionsHandle(locality));
 }
@@ -142,7 +142,7 @@ CTblastnAppArgs::SetInputPssm(CRef<objects::CPssmWithParameters> pssm)
 int
 CTblastnAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize("tblastn");
+    return blast::GetQueryBatchSize(eBlastTypeTblastn);
 }
 
 END_SCOPE(blast)

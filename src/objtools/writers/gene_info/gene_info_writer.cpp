@@ -38,11 +38,6 @@
 BEGIN_NCBI_SCOPE
 
 //==========================================================================//
-// Static data
-
-CRef<CSeqDBExpert> CGeneFileWriter::sm_seqDb(0);
-
-//==========================================================================//
 // General file processing
 
 void CGeneFileWriter::x_ReadAndProcessFile
@@ -84,15 +79,15 @@ void CGeneFileWriter::
         x_GetOrgnameForTaxId(int nTaxId,
                              string& strName)
 {
-    if (sm_seqDb.Empty())
+    if (m_seqDb.Empty())
     {
-        sm_seqDb.Reset(new CSeqDBExpert());
+        m_seqDb.Reset(new CSeqDBExpert());
     }
 
     try
     {
         SSeqDBTaxInfo taxInfo;
-        sm_seqDb->GetTaxInfo(nTaxId, taxInfo);
+        m_seqDb->GetTaxInfo(nTaxId, taxInfo);
         strName = taxInfo.scientific_name;
     }
     catch (CException& e)

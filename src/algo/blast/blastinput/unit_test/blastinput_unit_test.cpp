@@ -122,24 +122,36 @@ private:
     CNcbiOstream* m_DiagStream;
 };
 
-static CRef<CBlastFastaInputSource>
-s_DeclareSource(CNcbiIstream& input_file, const CBlastInputConfig& iconfig)
+static CRef<CBlastInput>
+s_DeclareBlastInput(CNcbiIstream& input_file, 
+                    const CBlastInputSourceConfig& iconfig,
+                    int batch_size = kMax_Int)
 {
-    CRef<CObjectManager> om(CObjectManager::GetInstance());
-    return CRef<CBlastFastaInputSource>
-        (new CBlastFastaInputSource(*om, input_file, iconfig));
+    CRef<CBlastFastaInputSource> fasta_src
+        (new CBlastFastaInputSource(input_file, iconfig));
+    return CRef<CBlastInput>(new CBlastInput(&*fasta_src, batch_size));
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadAccession_MismatchNuclProt)
+static CRef<CBlastInput>
+s_DeclareBlastInput(const string& user_input, 
+                    const CBlastInputSourceConfig& iconfig)
+{
+    CRef<CBlastFastaInputSource> fasta_src
+        (new CBlastFastaInputSource(user_input, iconfig));
+    return CRef<CBlastInput>(new CBlastInput(&*fasta_src));
+}
+
+BOOST_AUTO_TEST_CASE(ReadAccession_MismatchNuclProt)
 {
     CNcbiIfstream infile("data/nucl_acc.txt");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
     CHECK(source->End() == false);
     bool caught_exception(false);
-    try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
+    try { blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Gi/accession mismatch: requested protein, found nucleotide")
@@ -151,16 +163,17 @@ BOOST_AUTO_TEST_CASE(s_ReadAccession_MismatchNuclProt)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadAccession_MismatchProtNucl)
+BOOST_AUTO_TEST_CASE(ReadAccession_MismatchProtNucl)
 {
     CNcbiIfstream infile("data/prot_acc.txt");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
     CHECK(source->End() == false);
     bool caught_exception(false);
-    try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
+    try { blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Gi/accession mismatch: requested nucleotide, found protein")
@@ -172,16 +185,17 @@ BOOST_AUTO_TEST_CASE(s_ReadAccession_MismatchProtNucl)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadGi_MismatchNuclProt)
+BOOST_AUTO_TEST_CASE(ReadGi_MismatchNuclProt)
 {
     CNcbiIfstream infile("data/gi.txt");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
     CHECK(source->End() == false);
     bool caught_exception(false);
-    try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
+    try { blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Gi/accession mismatch: requested protein, found nucleotide")
@@ -193,16 +207,17 @@ BOOST_AUTO_TEST_CASE(s_ReadGi_MismatchNuclProt)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadGi_MismatchProtNucl)
+BOOST_AUTO_TEST_CASE(ReadGi_MismatchProtNucl)
 {
     CNcbiIfstream infile("data/prot_gi.txt");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
     CHECK(source->End() == false);
     bool caught_exception(false);
-    try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
+    try { blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Gi/accession mismatch: requested nucleotide, found protein")
@@ -214,16 +229,109 @@ BOOST_AUTO_TEST_CASE(s_ReadGi_MismatchProtNucl)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadFastaWithDefline_MismatchProtNucl)
+struct SDubiousShortSequence
+{
+    string sequence_data;
+    CSeq_inst::EMol mol_type;
+
+    SDubiousShortSequence(const string& seq, 
+                          CSeq_inst::EMol mol_type)
+        : sequence_data(seq), mol_type(mol_type)
+    {
+        seqlen = NStr::Replace(sequence_data, " ", kEmptyStr).length();
+    }
+
+    bool IsProtein() const { return CSeq_inst::IsAa(mol_type); }
+    TSeqPos GetLength() const { return seqlen; }
+
+private:
+    TSeqPos seqlen;
+};
+
+BOOST_AUTO_TEST_CASE(TestSmallDubiousSequences)
+{
+    string seq;
+
+    vector<SDubiousShortSequence> test_data;
+    test_data.push_back(SDubiousShortSequence("NNWNN", CSeq_inst::eMol_aa));
+    // P84064
+    seq.assign("ykrggggwgg gggwkggggg gggwkggggg gkgggg");
+    test_data.push_back(SDubiousShortSequence(seq, CSeq_inst::eMol_aa));
+    // AAB32668
+    seq.assign("GGGGGGGGGGGGGGG");
+    test_data.push_back(SDubiousShortSequence(seq, CSeq_inst::eMol_aa));
+
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+
+    // First test the usage of the sequence length threshold
+    ITERATE(vector<SDubiousShortSequence>, itr, test_data) {
+        CBlastInputSourceConfig iconfig(itr->IsProtein());
+        iconfig.SetSeqLenThreshold2Guess(itr->GetLength() + 1);
+
+        CRef<CBlastFastaInputSource> fasta_source
+            (new CBlastFastaInputSource(itr->sequence_data, iconfig));
+        CRef<CBlastInput> source(new CBlastInput(&*fasta_source));
+
+        CScope scope(*om);
+        CHECK(source->End() == false);
+        bool caught_exception(false);
+        blast::SSeqLoc ssl;
+        try { ssl = source->GetNextSeqLocBatch(scope).front(); }
+        catch (const CInputException& e) {
+            string msg(e.what());
+            BOOST_CHECK(msg.find("Gi/accession mismatch: ") != NPOS);
+            BOOST_CHECK_EQUAL(CInputException::eSequenceMismatch, 
+                              e.GetErrCode());
+            caught_exception = true;
+        }
+        BOOST_CHECK(caught_exception == false);
+        BOOST_CHECK(source->End() == true);
+
+        TSeqPos length = sequence::GetLength(*ssl.seqloc, ssl.scope);
+        BOOST_CHECK_EQUAL(itr->GetLength(), length);
+    }
+
+    // Now check that these sequences will be rejected as being the wrong
+    // molecule type (achieved by setting seqlen_thresh2guess argument to
+    // CBlastFastaInputSource to a small value
+    ITERATE(vector<SDubiousShortSequence>, itr, test_data) {
+
+        CBlastInputSourceConfig iconfig(itr->IsProtein());
+        iconfig.SetSeqLenThreshold2Guess(5);
+
+        CRef<CBlastFastaInputSource> fasta_source
+            (new CBlastFastaInputSource(itr->sequence_data, iconfig));
+        CRef<CBlastInput> source(new CBlastInput(&*fasta_source));
+
+        CScope scope(*om);
+        CHECK(source->End() == false);
+        bool caught_exception(false);
+        blast::SSeqLoc ssl;
+        try { ssl = source->GetNextSeqLocBatch(scope).front(); }
+        catch (const CInputException& e) {
+            string msg(e.what());
+            BOOST_CHECK(msg.find("Nucleotide FASTA provided for prot") != NPOS);
+            BOOST_CHECK_EQUAL(CInputException::eSequenceMismatch, 
+                              e.GetErrCode());
+            caught_exception = true;
+        }
+        BOOST_CHECK(caught_exception == true);
+        BOOST_CHECK(source->End() == true);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(ReadFastaWithDefline_MismatchProtNucl)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetSeqLenThreshold2Guess(25);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
+    CScope scope(*CObjectManager::GetInstance());
     CHECK(source->End() == false);
     bool caught_exception(false);
-    try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
+    try { blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Protein FASTA provided for nucleotide") != NPOS);
@@ -234,16 +342,18 @@ BOOST_AUTO_TEST_CASE(s_ReadFastaWithDefline_MismatchProtNucl)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadFastaWithDefline_MismatchNuclProt)
+BOOST_AUTO_TEST_CASE(ReadFastaWithDefline_MismatchNuclProt)
 {
     CNcbiIfstream infile("data/nt.555");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetSeqLenThreshold2Guess(25);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
+    CScope scope(*CObjectManager::GetInstance());
     CHECK(source->End() == false);
     bool caught_exception(false);
-    try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
+    try { blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Nucleotide FASTA provided for protein") != NPOS);
@@ -254,15 +364,16 @@ BOOST_AUTO_TEST_CASE(s_ReadFastaWithDefline_MismatchNuclProt)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadFastaWithDeflineProtein_Single)
+BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineProtein_Single)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
+    CScope scope(*CObjectManager::GetInstance());
     CHECK(source->End() == false);
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
@@ -283,16 +394,17 @@ BOOST_AUTO_TEST_CASE(s_ReadFastaWithDeflineProtein_Single)
     CHECK(!ssl.mask);
 }
 
-BOOST_AUTO_TEST_CASE(s_RawFastaWithSpaces)
+BOOST_AUTO_TEST_CASE(RawFastaWithSpaces)
 {
     // this is gi 555, length 624
     CNcbiIfstream infile("data/raw_fasta.na");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
+    CScope scope(*CObjectManager::GetInstance());
     CHECK(source->End() == false);
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
@@ -313,15 +425,16 @@ BOOST_AUTO_TEST_CASE(s_RawFastaWithSpaces)
     CHECK(!ssl.mask);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadProteinWithGaps)
+BOOST_AUTO_TEST_CASE(ReadProteinWithGaps)
 {
     CNcbiIfstream infile("data/prot_w_gaps.txt");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
-    CHECK(source->End() == false);
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    CScope scope(*CObjectManager::GetInstance());
+    TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
@@ -333,16 +446,14 @@ BOOST_AUTO_TEST_CASE(s_ReadProteinWithGaps)
     const TSeqPos length(91); // it's actually 103 with gaps
     CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 
-    CRef<CScope> scope = ssl.scope;
-
-    CBioseq_Handle bh = scope->GetBioseqHandle(*ssl.seqloc);
+    CBioseq_Handle bh = scope.GetBioseqHandle(*ssl.seqloc);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     for (size_t i = 0; i < sv.size(); i++) {
         BOOST_CHECK((char)sv[i] != '-');
     }
 
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     const CBioseq& bioseq = bioseqs->GetSeq_set().front()->GetSeq();
     const CSeq_inst& inst = bioseq.GetInst();
     BOOST_CHECK_EQUAL(inst.GetLength(), length);
@@ -355,16 +466,17 @@ BOOST_AUTO_TEST_CASE(s_ReadProteinWithGaps)
     }
 }
 
-BOOST_AUTO_TEST_CASE(s_RawFastaNoSpaces)
+BOOST_AUTO_TEST_CASE(RawFastaNoSpaces)
 {
     // this is gi 555, length 624
     CNcbiIfstream infile("data/raw_fasta2.na");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
-    CHECK(source->End() == false);
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    CScope scope(*CObjectManager::GetInstance());
+    TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs[0];
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
@@ -382,10 +494,51 @@ BOOST_AUTO_TEST_CASE(s_RawFastaNoSpaces)
     CHECK(ssl.seqloc->GetInt().IsSetId() == true);
     CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
 
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     CHECK(bioseqs.NotEmpty());
 
     CHECK(!ssl.mask);
+}
+
+BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN)
+{
+    // this has length 682 and contains an 'N' which without the
+    // CFastaReader::fNoSplit flag, produces a delta sequence
+    CNcbiIfstream infile("data/nucl_w_n.fsa");
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+
+    CScope scope(*CObjectManager::GetInstance());
+    CHECK(source->End() == false);
+    TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
+    CHECK(source->End() == true);
+
+    CHECK(ssl.seqloc->IsInt() == true);
+
+    CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
+    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+
+    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+    CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
+
+    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+    const TSeqPos length(682);
+    CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+
+    CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+    CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
+    CHECK(!ssl.mask);
+
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
+    CHECK(bioseqs->CanGetSeq_set());
+    CHECK(bioseqs->GetSeq_set().front()->IsSeq());
+    CHECK(bioseqs->GetSeq_set().front()->GetSeq().CanGetInst());
+    CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().CanGetRepr());
+    CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().GetRepr() 
+          == CSeq_inst::eRepr_raw);
+
 }
 
 class CAutoEnvironmentVariable
@@ -410,66 +563,32 @@ private:
     const char* m_VariableName;
 };
 
-BOOST_AUTO_TEST_CASE(s_RawFastaNoSpaces_UpperCaseWithN)
+BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN_ReadDeltaSeq)
 {
-    // this has length 682 and contains an 'N' which without the
-    // CFastaReader::fNoSplit flag, produces a delta sequence
+    // Note the setting of the environment variable
+    CAutoEnvironmentVariable env("BLASTINPUT_GEN_DELTA_SEQ");
     CNcbiIfstream infile("data/nucl_w_n.fsa");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
-    CHECK(source->End() == false);
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    CScope s(*CObjectManager::GetInstance());
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(s);
+    blast::SSeqLoc ssl = seqs.front();
+    (void)ssl;
     CHECK(source->End() == true);
 
-    CHECK(ssl.seqloc->IsInt() == true);
-
-    CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
-    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
-
-    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
-    CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
-
-    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
-    const TSeqPos length(682);
-    CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
-
-    CHECK(ssl.seqloc->GetInt().IsSetId() == true);
-    CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
-    CHECK(!ssl.mask);
-
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     CHECK(bioseqs->CanGetSeq_set());
     CHECK(bioseqs->GetSeq_set().front()->IsSeq());
     CHECK(bioseqs->GetSeq_set().front()->GetSeq().CanGetInst());
     CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().CanGetRepr());
     CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().GetRepr() 
-          == CSeq_inst::eRepr_raw);
-
-#ifndef NCBI_OS_MSWIN
-    {
-        CAutoEnvironmentVariable env("BLASTINPUT_GEN_DELTA_SEQ");
-        CNcbiIfstream infile("data/nucl_w_n.fsa");
-        const bool is_protein(false);
-        CBlastInputConfig iconfig(is_protein);
-        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
-
-        blast::SSeqLoc ssl = source->GetNextSSeqLoc();
-        CHECK(source->End() == true);
-
-        CRef<CBioseq_set> bioseqs = source->GetBioseqs();
-        CHECK(bioseqs->CanGetSeq_set());
-        CHECK(bioseqs->GetSeq_set().front()->IsSeq());
-        CHECK(bioseqs->GetSeq_set().front()->GetSeq().CanGetInst());
-        CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().CanGetRepr());
-        CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().GetRepr() 
-              == CSeq_inst::eRepr_delta);
-    }
-#endif
+          == CSeq_inst::eRepr_delta);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadGenbankReport)
+
+BOOST_AUTO_TEST_CASE(ReadGenbankReport)
 {
     CAutoDiagnosticsRedirector dr;
 
@@ -480,11 +599,12 @@ BOOST_AUTO_TEST_CASE(s_ReadGenbankReport)
     // this is gi 555, length 624
     CNcbiIfstream infile("data/gbreport.txt");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
+    CScope scope(*CObjectManager::GetInstance());
     CHECK(source->End() == false);
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
     CHECK(source->End() == true);
 
     string s(error_stream.str());
@@ -508,19 +628,20 @@ BOOST_AUTO_TEST_CASE(s_ReadGenbankReport)
     CHECK(!ssl.mask);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadInvalidGi)
+BOOST_AUTO_TEST_CASE(ReadInvalidGi)
 {
     const char* fname = "data/invalid_gi.txt";
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
 
     CNcbiIfstream infile(fname);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CHECK(source->End() == false);
 
+    CScope scope(*CObjectManager::GetInstance());
     blast::SSeqLoc ssl;
     bool caught_exception(false);
-    try { ssl = source->GetNextSSeqLoc(); }
+    try { ssl = source->GetNextSeqLocBatch(scope).front(); }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Sequence ID not found: ") != NPOS);
@@ -531,19 +652,20 @@ BOOST_AUTO_TEST_CASE(s_ReadInvalidGi)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadInvalidSeqId)
+BOOST_AUTO_TEST_CASE(ReadInvalidSeqId)
 {
     const char* fname = "data/bad_seqid.txt";
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
 
     CNcbiIfstream infile(fname);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CHECK(source->End() == false);
 
+    CScope scope(*CObjectManager::GetInstance());
     blast::SSeqLoc ssl;
     bool caught_exception(false);
-    try { ssl = source->GetNextSSeqLoc(); }
+    try { ssl = source->GetNextSeqLocBatch(scope).front(); }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Sequence ID not found: ") != NPOS);
@@ -554,67 +676,50 @@ BOOST_AUTO_TEST_CASE(s_ReadInvalidSeqId)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadBadUserInput)
+BOOST_AUTO_TEST_CASE(ReadBadUserInput)
 {
     const char* fname = "data/bad_input.txt";
     const bool is_protein(false);
     const size_t kNumQueries(0);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
+    CScope scope(*CObjectManager::GetInstance());
 
     {
         CNcbiIfstream infile(fname);
-        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+        CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
         CHECK(source->End() == false);
 
-        CBlastInput bi(source);
         blast::TSeqLocVector query_vector;
-        BOOST_REQUIRE_THROW(query_vector = bi.GetAllSeqLocs(),
+        BOOST_REQUIRE_THROW(query_vector = source->GetAllSeqLocs(scope),
                             CObjReaderParseException);
         CHECK_EQUAL(kNumQueries, query_vector.size());
+        CHECK_EQUAL(kNumQueries, query_vector.size());
 
-        CRef<CBioseq_set> bioseqs;
-        bool caught_exception(false);
-        try { bioseqs = source->GetBioseqs(); }
-        catch (const CInputException& e) {
-            string msg(e.what());
-            BOOST_CHECK(msg.find("No sequences have been read") != NPOS);
-            BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
-            caught_exception = true;
-        }
-        CHECK(caught_exception);
+        CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
         CHECK(bioseqs.Empty());
     }
 
     {
         CNcbiIfstream infile(fname);
-        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+        CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
         CHECK(source->End() == false);
 
-        CBlastInput bi(source);
         CRef<blast::CBlastQueryVector> query_vector;
-        BOOST_REQUIRE_THROW(query_vector = bi.GetAllSeqs(), 
+        BOOST_REQUIRE_THROW(query_vector = source->GetAllSeqs(scope), 
                             CObjReaderParseException);
         CHECK(query_vector.Empty());
     }
 
-    {
-        CNcbiIfstream infile(fname);
-        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
-        CHECK(source->End() == false);
-
-        blast::SSeqLoc ssl;
-        BOOST_REQUIRE_THROW(source->GetNextSSeqLoc(), CObjReaderParseException);
-        CHECK(source->End() == true);
-    }
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadMultipleGis_WithBadInput)
+/// This unit test proves that if one input is bad, all of them are rejected.
+BOOST_AUTO_TEST_CASE(ReadMultipleGis_WithBadInput)
 {
     const char* fname = "data/gis_bad_input.txt";
     CNcbiIfstream infile(fname);
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    iconfig.SetRetrieveSequenceData(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
 
     vector< pair<long, long> > gi_length;
     gi_length.push_back(make_pair(89161185L, 247249719L));
@@ -624,114 +729,64 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleGis_WithBadInput)
 
     const size_t kNumQueries(gi_length.size());
 
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CHECK(source->End() == false);
 
-    // check the first sequence
+    CScope scope(*CObjectManager::GetInstance());
+
+    blast::TSeqLocVector seqs;
+    BOOST_REQUIRE_THROW(seqs = source->GetAllSeqLocs(scope),
+                        CObjReaderParseException);
+
+#if 0
+    // This is no longer possible because the SSeqLocs cannot be read
+    // individually via the CBlastInput interface
+    // Check the first sequence
     {
-        blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+        blast::SSeqLoc ssl = seqs.front();
         CHECK(ssl.seqloc->IsInt() == true);
         CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
         CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
         CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
         CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
         CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
-        const TSeqPos length = gi_length[0].second;
+        const TSeqPos length = gi_length.front().second;
         CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
         CHECK(ssl.seqloc->GetInt().IsSetId() == true);
         CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
-        const int gi = gi_length[0].first;
+        const int gi = gi_length.front().first;
         CHECK_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
         CHECK(!ssl.mask);
     }
+#endif
 
-    {
-        blast::SSeqLoc ssl;
-        BOOST_REQUIRE_THROW(ssl = source->GetNextSSeqLoc(),
-                            CObjReaderParseException);
-    }
-
-    /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
-    CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
-
-    CBioseq_set::TSeq_set::const_iterator itr = bioseqs->GetSeq_set().begin();
-    CBioseq_set::TSeq_set::const_iterator end = bioseqs->GetSeq_set().end();
-    {
-        CHECK(itr != end);
-        CHECK((*itr)->IsSeq());
-        const CBioseq& b = (*itr)->GetSeq();
-        CHECK(b.IsNa());
-        CHECK_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
-        CHECK_EQUAL(gi_length[0].first, b.GetId().front()->GetGi());
-        CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
-        BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
-        CHECK_EQUAL((long)gi_length[0].second, (long)b.GetInst().GetLength());
-        ++itr;
-        CHECK(itr == end);
-    }
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadEmptyUserInput)
+BOOST_AUTO_TEST_CASE(ReadEmptyUserInput)
 {
     const char* fname("/dev/null");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
+    CScope scope(*CObjectManager::GetInstance());
+    CBlastInputSourceConfig iconfig(is_protein);
     {
         CNcbiIfstream infile(fname);
-        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+        CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
         CHECK(source->End() == true);
 
-        CBlastInput bi(source);
-        blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
+        blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
         CHECK(query_vector.empty());
 
-        bool caught_exception(false);
-        CRef<CBioseq_set> bioseqs;
-        try { bioseqs = source->GetBioseqs(); }
-        catch (const CInputException& e) {
-            string msg(e.what());
-            BOOST_CHECK(msg.find("No sequences have been read") != NPOS);
-            BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
-            caught_exception = true;
-        }
-        BOOST_CHECK(caught_exception);
+        CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
+        BOOST_CHECK(bioseqs.Empty());
     }
 
     {
         CNcbiIfstream infile(fname);
-        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+        CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
         CHECK(source->End() == true);
 
-        CBlastInput bi(source);
-        CRef<blast::CBlastQueryVector> query_vector = bi.GetAllSeqs();
-        CHECK(query_vector->Empty());
-
-        bool caught_exception(false);
-        CRef<CBioseq_set> bioseqs;
-        try { bioseqs = source->GetBioseqs(); }
-        catch (const CInputException& e) {
-            string msg(e.what());
-            BOOST_CHECK(msg.find("No sequences have been read") != NPOS);
-            BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
-            caught_exception = true;
-        }
-        BOOST_CHECK(caught_exception);
-    }
-
-    // Confirm advertised exceptions
-    {
-        CNcbiIfstream infile(fname);
-        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
-        CHECK(source->End() == true);
-
-        blast::SSeqLoc ssl;
-        BOOST_REQUIRE_THROW(ssl = source->GetNextSSeqLoc(), 
-                            CObjReaderParseException);
-
-        CRef<blast::CBlastSearchQuery> query;
-        BOOST_REQUIRE_THROW(query = source->GetNextSequence(),
-                            CObjReaderParseException);
+        CRef<blast::CBlastQueryVector> queries = source->GetAllSeqs(scope);
+        CHECK(queries->Empty());
     }
 
     // Read from buffer
@@ -741,7 +796,7 @@ BOOST_AUTO_TEST_CASE(s_ReadEmptyUserInput)
         CRef<CBlastFastaInputSource> source;
         
         bool caught_exception(false);
-        try { source.Reset(new CBlastFastaInputSource(*om, empty, iconfig)); }
+        try { source.Reset(new CBlastFastaInputSource(empty, iconfig)); }
         catch (const CInputException& e) {
             string msg(e.what());
             BOOST_CHECK(msg.find("No sequence input was provided") != NPOS);
@@ -752,16 +807,18 @@ BOOST_AUTO_TEST_CASE(s_ReadEmptyUserInput)
     }
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadSingleAccession)
+BOOST_AUTO_TEST_CASE(ReadSingleAccession)
 {
     CNcbiIfstream infile("data/accession.txt");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    iconfig.SetRetrieveSequenceData(false);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
+    CScope scope(*CObjectManager::GetInstance());
     CHECK(source->End() == false);
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
@@ -787,7 +844,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleAccession)
     CHECK(!ssl.mask);
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
     CHECK(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
@@ -799,13 +856,13 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleAccession)
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessions)
+BOOST_AUTO_TEST_CASE(ReadMultipleAccessions)
 {
     CNcbiIfstream infile("data/accessions.txt");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    iconfig.SetRetrieveSequenceData(false);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     vector< pair<string, long> > accession_lengths;
     accession_lengths.push_back(make_pair(string("NC_000001.9"), 247249719L));
@@ -814,14 +871,14 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessions)
     accession_lengths.push_back(make_pair(string("NC_000012.10"), 132349534L));
 
     const size_t kNumQueries(accession_lengths.size());
-    CBlastInput bi(source);
-    blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
+    CScope scope(*CObjectManager::GetInstance());
+    blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
     CHECK_EQUAL(kNumQueries, query_vector.size());
     CHECK(source->End() == true);
 
     {{
-        blast::TSeqLocVector cached_queries = bi.GetAllSeqLocs();
-        CHECK_EQUAL(kNumQueries, cached_queries.size());
+        blast::TSeqLocVector cached_queries = source->GetAllSeqLocs(scope);
+        CHECK_EQUAL((size_t)0, (size_t)cached_queries.size());
         CHECK(source->End() == true);
     }}
 
@@ -853,11 +910,12 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessions)
     }
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
     CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessionsFromMemory)
+// This test was created to test issues in jira/browse/CXX-82
+BOOST_AUTO_TEST_CASE(ReadMultipleAccessionsFromMemory)
 {
     typedef vector< pair<string, int> > TStringIntVector;
     TStringIntVector accession_lengths;
@@ -865,12 +923,10 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessionsFromMemory)
     accession_lengths.push_back(make_pair(string("1OVA-A"), 385));
     // Fails in entrez, we implemented regex for this in CBlastInputReader
     accession_lengths.push_back(make_pair(string("pdb|1OVA-A"), 385));
-    // Fails in entrez, we implemented regex for this in CBlastInputReader
-    // but we cannot get the sequence length...
+    // Note the double bar..
     accession_lengths.push_back(make_pair(string("prf||0705172A"), 385));
     // Fails in entrez, we implemented regex for this in CBlastInputReader
-    // but we cannot get the sequence length...
-    //accession_lengths.push_back(make_pair(string("sp|P01012.2"), 386));
+    accession_lengths.push_back(make_pair(string("sp|P01012.2"), 386));
 
     // This we're not even going to try to fix...
     //accession_lengths.push_back(make_pair(string("0705172A"), 385));
@@ -882,19 +938,19 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessionsFromMemory)
     istringstream instream(user_input);
 
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
-    iconfig.SetRetrieveSequenceData(false);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(instream, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(instream, iconfig));
 
     const size_t kNumQueries(accession_lengths.size());
-    CBlastInput bi(source);
-    blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
+    CScope scope(*CObjectManager::GetInstance());
+    blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
     CHECK_EQUAL(kNumQueries, query_vector.size());
     CHECK(source->End() == true);
 
     {{
-        blast::TSeqLocVector cached_queries = bi.GetAllSeqLocs();
-        CHECK_EQUAL(kNumQueries, cached_queries.size());
+        blast::TSeqLocVector cached_queries = source->GetAllSeqLocs(scope);
+        CHECK_EQUAL((size_t)0, (size_t)cached_queries.size());
         CHECK(source->End() == true);
     }}
 
@@ -910,20 +966,22 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessionsFromMemory)
     }
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
     CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadSingleGi)
+BOOST_AUTO_TEST_CASE(ReadSingleGi)
 {
     CNcbiIfstream infile("data/gi.txt");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    iconfig.SetRetrieveSequenceData(false);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
+    CScope scope(*CObjectManager::GetInstance());
     CHECK(source->End() == false);
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
@@ -946,7 +1004,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleGi)
     CHECK(!ssl.mask);
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
     CHECK(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
@@ -958,13 +1016,13 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleGi)
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadMultipleGis)
+BOOST_AUTO_TEST_CASE(ReadMultipleGis)
 {
     CNcbiIfstream infile("data/gis.txt");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    iconfig.SetRetrieveSequenceData(false);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     vector< pair<long, long> > gi_length;
     gi_length.push_back(make_pair(89161185L, 247249719L));
@@ -972,11 +1030,13 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleGis)
     gi_length.push_back(make_pair(557L, 489L));
 
     const size_t kNumQueries(gi_length.size());
-
+    CScope scope(*CObjectManager::GetInstance());
     CHECK(source->End() == false);
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    CHECK(source->End() == true);
 
     for (size_t i = 0; i < kNumQueries; i++) {
-        blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+        blast::SSeqLoc ssl = seqs[i];
         CHECK(ssl.seqloc->IsInt() == true);
 
         CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
@@ -998,7 +1058,7 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleGis)
     }
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
 
     CBioseq_set::TSeq_set::const_iterator itr = bioseqs->GetSeq_set().begin();
@@ -1018,32 +1078,29 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleGis)
 
 // This input file contains very short sequences (1-3 bases) which were product
 // of a sequencing machine
-BOOST_AUTO_TEST_CASE(s_ReadMultipleSequencesFromSequencer)
+BOOST_AUTO_TEST_CASE(ReadMultipleSequencesFromSequencer)
 {
     CNcbiIfstream infile("data/DF-1.txt");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     const size_t kNumQueries(96);
 
     CHECK(source->End() == false);
 
-    CBlastInput bi(source);
-    blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
+    CScope scope(*CObjectManager::GetInstance());
+    blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
     CHECK_EQUAL(kNumQueries, query_vector.size());
-
-    /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
-    CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadMultipleTis)
+BOOST_AUTO_TEST_CASE(ReadMultipleTis)
 {
     CNcbiIfstream infile("data/tis.txt");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    iconfig.SetRetrieveSequenceData(false);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
     CHECK(source->End() == false);
 
@@ -1054,14 +1111,13 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleTis)
     ti_lengths.push_back(make_pair(10000, 670L));
 
     const size_t kNumQueries(ti_lengths.size());
-    CBlastInput bi(source);
-    blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
+    blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
     CHECK_EQUAL(kNumQueries, query_vector.size());
     CHECK(source->End() == true);
 
     {{
-        blast::TSeqLocVector cached_queries = bi.GetAllSeqLocs();
-        CHECK_EQUAL(kNumQueries, cached_queries.size());
+        blast::TSeqLocVector cached_queries = source->GetAllSeqLocs(scope);
+        CHECK_EQUAL((size_t)0, (size_t)cached_queries.size());
         CHECK(source->End() == true);
     }}
 
@@ -1082,19 +1138,22 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleTis)
     }
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
     CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadSingleTi)
+BOOST_AUTO_TEST_CASE(ReadSingleTi)
 {
     CNcbiIfstream infile("data/ti.txt");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(true);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
+    CScope scope(*CObjectManager::GetInstance());
     CHECK(source->End() == false);
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
@@ -1120,7 +1179,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleTi)
     CHECK(!ssl.mask);
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
     CHECK(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
@@ -1133,13 +1192,13 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleTi)
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadAccessionsAndGisWithNewLines)
+BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
 {
     CNcbiIfstream infile("data/accgis_nl.txt");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    iconfig.SetRetrieveSequenceData(false);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     vector< pair<string, long> > gi_accessions;
     gi_accessions.push_back(make_pair(string("89161215"), 111583154L));
@@ -1152,14 +1211,14 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionsAndGisWithNewLines)
     gi_accessions.push_back(make_pair(string("NC_000012.10"), 132349534L));
 
     const size_t kNumQueries(gi_accessions.size());
-    CBlastInput bi(source);
-    blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
+    CScope scope(*CObjectManager::GetInstance());
+    blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
     CHECK_EQUAL(kNumQueries, query_vector.size());
     CHECK(source->End() == true);
 
     {{
-        blast::TSeqLocVector cached_queries = bi.GetAllSeqLocs();
-        CHECK_EQUAL(kNumQueries, cached_queries.size());
+        blast::TSeqLocVector cached_queries = source->GetAllSeqLocs(scope);
+        CHECK_EQUAL((size_t)0, (size_t)cached_queries.size());
         CHECK(source->End() == true);
     }}
 
@@ -1210,7 +1269,7 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionsAndGisWithNewLines)
     }
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
     CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
 }
 
@@ -1228,19 +1287,23 @@ s_FileContents2String(const char* file_name)
     return retval.release();
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadAccessionNucleotideIntoBuffer_Single)
+BOOST_AUTO_TEST_CASE(ReadAccessionNucleotideIntoBuffer_Single)
 {
     const char* fname("data/accession.txt");
     auto_ptr<string> user_input(s_FileContents2String(fname));
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CBlastInputConfig iconfig(false);
-    iconfig.SetRetrieveSequenceData(false);
-    CBlastFastaInputSource source(*om, *user_input, iconfig);
+    CBlastInputSourceConfig iconfig(false);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(*user_input, iconfig));
 
-    CHECK(source.End() == false);
-    blast::SSeqLoc ssl = source.GetNextSSeqLoc();
-    CHECK(source.End() == true);
+    CScope scope(*om);
+    CHECK(source->End() == false);
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
+
+
+    CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
 
@@ -1265,7 +1328,7 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionNucleotideIntoBuffer_Single)
     CHECK(!ssl.mask);
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source.GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
     CHECK(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
@@ -1278,17 +1341,20 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionNucleotideIntoBuffer_Single)
 
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
+BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
 {
     auto_ptr<string> user_input(new string("    1945386   "));
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CBlastInputConfig iconfig(false);
-    CBlastFastaInputSource source(*om, *user_input, iconfig);
+    CBlastInputSourceConfig iconfig(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(*user_input, iconfig));
 
-    CHECK(source.End() == false);
-    blast::SSeqLoc ssl = source.GetNextSSeqLoc();
-    CHECK(source.End() == true);
+    CScope scope(*om);
+    CHECK(source->End() == false);
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
+
+    CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
 
@@ -1310,7 +1376,7 @@ BOOST_AUTO_TEST_CASE(s_ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
     CHECK(!ssl.mask);
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source.GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
     CHECK(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
@@ -1323,16 +1389,20 @@ BOOST_AUTO_TEST_CASE(s_ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
 
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
+BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
 {
     auto_ptr<string> user_input(new string("    u93236 "));
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CBlastInputConfig iconfig(false);
-    CBlastFastaInputSource source(*om, *user_input, iconfig);
+    CBlastInputSourceConfig iconfig(false);
+    CBlastFastaInputSource fasta_source(*user_input, iconfig);
+    CBlastInput source(&fasta_source);
 
+    CScope scope(*om);
     CHECK(source.End() == false);
-    blast::SSeqLoc ssl = source.GetNextSSeqLoc();
+    blast::TSeqLocVector seqs = source.GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
+
     CHECK(source.End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
@@ -1356,7 +1426,7 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
     CHECK(!ssl.mask);
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source.GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
     CHECK(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
@@ -1370,17 +1440,21 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
 
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadFastaWithDeflineProteinIntoBuffer_Single)
+BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineProteinIntoBuffer_Single)
 {
     const char* fname("data/aa.129295");
     auto_ptr<string> user_input(s_FileContents2String(fname));
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CBlastInputConfig iconfig(true);
-    CBlastFastaInputSource source(*om, *user_input, iconfig);
+    CBlastInputSourceConfig iconfig(true);
+    CBlastFastaInputSource fasta_source(*user_input, iconfig);
+    CBlastInput source(&fasta_source);
 
+    CScope scope(*om);
     CHECK(source.End() == false);
-    blast::SSeqLoc ssl = source.GetNextSSeqLoc();
+    blast::TSeqLocVector seqs = source.GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
+
     CHECK(source.End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
@@ -1400,7 +1474,7 @@ BOOST_AUTO_TEST_CASE(s_ReadFastaWithDeflineProteinIntoBuffer_Single)
 
     CHECK(!ssl.mask);
 
-    CRef<CBioseq_set> bioseqs = source.GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
     CHECK(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
@@ -1411,18 +1485,19 @@ BOOST_AUTO_TEST_CASE(s_ReadFastaWithDeflineProteinIntoBuffer_Single)
 
 }
 
-BOOST_AUTO_TEST_CASE(s_RangeBoth)
+BOOST_AUTO_TEST_CASE(RangeBoth)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
     const TSeqPos start(50);
     const TSeqPos stop(100);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRange().SetFrom(start);
     iconfig.SetRange().SetTo(stop);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    CScope scope(*CObjectManager::GetInstance());
+    blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
 
     CHECK_EQUAL(start, ssl.seqloc->GetInt().GetFrom());
     CHECK_EQUAL(stop, ssl.seqloc->GetInt().GetTo());
@@ -1430,17 +1505,18 @@ BOOST_AUTO_TEST_CASE(s_RangeBoth)
     CHECK_EQUAL(stop, ssl.seqloc->GetStop(eExtreme_Positional));
 }
 
-BOOST_AUTO_TEST_CASE(s_RangeStartOnly)
+BOOST_AUTO_TEST_CASE(RangeStartOnly)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
     const TSeqPos start(50);
     const TSeqPos length(232);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRange().SetFrom(start);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    CScope scope(*CObjectManager::GetInstance());
+    blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
 
     CHECK_EQUAL(start, ssl.seqloc->GetInt().GetFrom());
     CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
@@ -1448,16 +1524,17 @@ BOOST_AUTO_TEST_CASE(s_RangeStartOnly)
     CHECK_EQUAL(length-1, ssl.seqloc->GetStop(eExtreme_Positional));
 }
 
-BOOST_AUTO_TEST_CASE(s_RangeInvalid_FromGreaterThanTo)
+BOOST_AUTO_TEST_CASE(RangeInvalid_FromGreaterThanTo)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRange().SetFrom(100);
     iconfig.SetRange().SetTo(50);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
-    try { source->GetNextSSeqLoc(); }
+    try { source->GetNextSeqLocBatch(scope).front(); }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Invalid sequence range") != NPOS);
@@ -1467,15 +1544,16 @@ BOOST_AUTO_TEST_CASE(s_RangeInvalid_FromGreaterThanTo)
     BOOST_CHECK(false); // should never get here
 }
 
-BOOST_AUTO_TEST_CASE(s_RangeInvalid_FromGreaterThanSequenceLength)
+BOOST_AUTO_TEST_CASE(RangeInvalid_FromGreaterThanSequenceLength)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRange().SetFrom(1000);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
-    try { source->GetNextSSeqLoc(); }
+    try { source->GetNextSeqLocBatch(scope).front(); }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Invalid from coordinate") != NPOS);
@@ -1485,17 +1563,18 @@ BOOST_AUTO_TEST_CASE(s_RangeInvalid_FromGreaterThanSequenceLength)
     BOOST_CHECK(false); // should never get here
 }
 
-BOOST_AUTO_TEST_CASE(s_RangeInvalid_ToEqualThanSequenceLength)
+BOOST_AUTO_TEST_CASE(RangeInvalid_ToEqualThanSequenceLength)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
     const TSeqPos length(232);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRange().SetFrom(10);
     iconfig.SetRange().SetTo(length);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
 
     CHECK(ssl.seqloc->IsInt() == true);
 
@@ -1509,17 +1588,18 @@ BOOST_AUTO_TEST_CASE(s_RangeInvalid_ToEqualThanSequenceLength)
     CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 }
 
-BOOST_AUTO_TEST_CASE(s_RangeInvalid_ToGreaterThanSequenceLength)
+BOOST_AUTO_TEST_CASE(RangeInvalid_ToGreaterThanSequenceLength)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
     const TSeqPos length(232);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRange().SetFrom(10);
     iconfig.SetRange().SetTo(length*2);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
 
     CHECK(ssl.seqloc->IsInt() == true);
 
@@ -1533,35 +1613,38 @@ BOOST_AUTO_TEST_CASE(s_RangeInvalid_ToGreaterThanSequenceLength)
     CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 }
 
-BOOST_AUTO_TEST_CASE(s_ParseDefline)
+BOOST_AUTO_TEST_CASE(ParseDefline)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetBelieveDeflines(true);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
     const int gi(129295);
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
     CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetId()->Which());
     CHECK_EQUAL(gi, ssl.seqloc->GetId()->GetGi());
     CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
     CHECK_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
 }
 
-BOOST_AUTO_TEST_CASE(s_BadProtStrand)
+BOOST_AUTO_TEST_CASE(BadProtStrand)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetStrand(eNa_strand_both);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
     bool caught_exception(false);
-    try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
+    try { blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_CHECK(msg.find("Cannot assign nucleotide strand to protein") != NPOS);
+        BOOST_CHECK(msg.find("Cannot assign nucleotide strand to protein") 
+                    != NPOS);
         BOOST_CHECK_EQUAL(CInputException::eInvalidStrand, e.GetErrCode());
         caught_exception = true;
     }
@@ -1569,23 +1652,23 @@ BOOST_AUTO_TEST_CASE(s_BadProtStrand)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadFastaWithDeflineNucl_Multiple)
+BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineNucl_Multiple)
 {
     CNcbiIfstream infile("data/nt.cat");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetStrand(eNa_strand_both);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     const size_t kNumQueries(2);
-    CBlastInput bi(source);
-    blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
+    CScope scope(*CObjectManager::GetInstance());
+    blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
     CHECK_EQUAL(kNumQueries, query_vector.size());
     CHECK(source->End() == true);
 
     {{
-        blast::TSeqLocVector cached_queries = bi.GetAllSeqLocs();
-        CHECK_EQUAL(kNumQueries, cached_queries.size());
+        blast::TSeqLocVector cached_queries = source->GetAllSeqLocs(scope);
+        CHECK_EQUAL((size_t)0, (size_t)cached_queries.size());
         CHECK(source->End() == true);
     }}
 
@@ -1607,26 +1690,26 @@ BOOST_AUTO_TEST_CASE(s_ReadFastaWithDeflineNucl_Multiple)
     CHECK(!ssl.mask);
 }
 
-BOOST_AUTO_TEST_CASE(s_NuclStrand)
+BOOST_AUTO_TEST_CASE(NuclStrand)
 {
     const char* fname("data/nt.cat");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
+    CScope scope(*CObjectManager::GetInstance());
 
     // Test plus strand
     {
         CNcbiIfstream infile(fname);
         const ENa_strand strand(eNa_strand_plus);
         iconfig.SetStrand(strand);
-        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+        CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+        TSeqLocVector seqs = source->GetAllSeqLocs(scope);
 
-        blast::SSeqLoc ssl = source->GetNextSSeqLoc();
-        CHECK_EQUAL(strand, ssl.seqloc->GetStrand());
-        CHECK_EQUAL(strand, ssl.seqloc->GetInt().GetStrand());
-
-        ssl = source->GetNextSSeqLoc();
-        CHECK_EQUAL(strand, ssl.seqloc->GetStrand());
-        CHECK_EQUAL(strand, ssl.seqloc->GetInt().GetStrand());
+        ITERATE(TSeqLocVector, itr, seqs) {
+            const blast::SSeqLoc& ssl = *itr;
+            CHECK_EQUAL(strand, ssl.seqloc->GetStrand());
+            CHECK_EQUAL(strand, ssl.seqloc->GetInt().GetStrand());
+        }
     }
 
     // Test minus strand
@@ -1634,27 +1717,29 @@ BOOST_AUTO_TEST_CASE(s_NuclStrand)
         CNcbiIfstream infile(fname);
         const ENa_strand strand(eNa_strand_minus);
         iconfig.SetStrand(strand);
-        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+        CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+        TSeqLocVector seqs = source->GetAllSeqLocs(scope);
 
-        blast::SSeqLoc ssl = source->GetNextSSeqLoc();
-        CHECK_EQUAL(strand, ssl.seqloc->GetStrand());
-        CHECK_EQUAL(strand, ssl.seqloc->GetInt().GetStrand());
-
-        ssl = source->GetNextSSeqLoc();
-        CHECK_EQUAL(strand, ssl.seqloc->GetStrand());
-        CHECK_EQUAL(strand, ssl.seqloc->GetInt().GetStrand());
+        ITERATE(TSeqLocVector, itr, seqs) {
+            const blast::SSeqLoc& ssl = *itr;
+            CHECK_EQUAL(strand, ssl.seqloc->GetStrand());
+            CHECK_EQUAL(strand, ssl.seqloc->GetInt().GetStrand());
+        }
     }
 }
 
-BOOST_AUTO_TEST_CASE(s_NuclLcaseMask)
+BOOST_AUTO_TEST_CASE(NuclLcaseMask)
 {
     CNcbiIfstream infile("data/nt.cat");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetLowercaseMask(true);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    blast::TSeqLocVector seqs = source->GetNextSeqLocBatch(scope);
+    blast::TSeqLocVector::iterator itr = seqs.begin();
+    blast::SSeqLoc ssl = *itr;
     CHECK(ssl.mask)
     CHECK(ssl.mask->IsPacked_int());
 
@@ -1665,37 +1750,36 @@ BOOST_AUTO_TEST_CASE(s_NuclLcaseMask)
     CHECK_EQUAL((TSeqPos)330, masklocs.back()->GetFrom());
     CHECK_EQUAL((TSeqPos)356, masklocs.back()->GetTo());
 
-    ssl = source->GetNextSSeqLoc();
+    ssl = *++itr;
     CHECK(ssl.mask);
     CHECK(ssl.mask->IsNull());
 }
 
-BOOST_AUTO_TEST_CASE(s_MultiSeq)
+BOOST_AUTO_TEST_CASE(MultiSeq)
 {
     CNcbiIfstream infile("data/aa.cat");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
-    CBlastInput in(source);
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
-    blast::TSeqLocVector v = in.GetAllSeqLocs();
+    blast::TSeqLocVector v = source->GetAllSeqLocs(scope);
     CHECK(source->End());
     CHECK_EQUAL((size_t)19, v.size());
 }
 
-BOOST_AUTO_TEST_CASE(s_MultiRange)
+BOOST_AUTO_TEST_CASE(MultiRange)
 {
     CNcbiIfstream infile("data/aa.cat");
     const bool is_protein(true);
     const TSeqPos start(50);
     const TSeqPos stop(100);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRange().SetFrom(start).SetTo(stop);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
-    CBlastInput in(source);
-
-    blast::TSeqLocVector v = in.GetAllSeqLocs();
+    blast::TSeqLocVector v = source->GetAllSeqLocs(scope);
     NON_CONST_ITERATE(blast::TSeqLocVector, itr, v) {
         CHECK_EQUAL(start, itr->seqloc->GetStart(eExtreme_Positional));
         CHECK_EQUAL(stop, itr->seqloc->GetStop(eExtreme_Positional));
@@ -1704,33 +1788,33 @@ BOOST_AUTO_TEST_CASE(s_MultiRange)
     }
 }
 
-BOOST_AUTO_TEST_CASE(s_MultiBatch)
+BOOST_AUTO_TEST_CASE(MultiBatch)
 {
     CNcbiIfstream infile("data/aa.cat");
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetBelieveDeflines(true);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
-    CBlastInput in(source, 5000);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig, 5000));
+    CScope scope(*CObjectManager::GetInstance());
 
     int gi;
     blast::TSeqLocVector v;
 
-    v = in.GetNextSeqLocBatch();
+    v = source->GetNextSeqLocBatch(scope);
     CHECK_EQUAL((size_t)7, v.size());
     CHECK_EQUAL((TSeqPos)530, v[0].seqloc->GetInt().GetTo());
     gi = 1346057;
     CHECK_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
     CHECK_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
 
-    v = in.GetNextSeqLocBatch();
+    v = source->GetNextSeqLocBatch(scope);
     CHECK_EQUAL((size_t)8, v.size());
     CHECK_EQUAL((TSeqPos)445, v[0].seqloc->GetInt().GetTo());
     gi = 1170625;
     CHECK_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
     CHECK_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
 
-    v = in.GetNextSeqLocBatch();
+    v = source->GetNextSeqLocBatch(scope);
     CHECK_EQUAL((size_t)4, v.size());
     CHECK_EQUAL((TSeqPos)688, v[0].seqloc->GetInt().GetTo());
     gi = 114152;
@@ -1740,29 +1824,29 @@ BOOST_AUTO_TEST_CASE(s_MultiBatch)
     CHECK(source->End());
 }
 
-BOOST_AUTO_TEST_CASE(s_NoDeflineExpected)
+BOOST_AUTO_TEST_CASE(NoDeflineExpected)
 {
     CNcbiIfstream infile("data/tiny.fa");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
-    CBlastInput in(source);
+    CBlastInputSourceConfig iconfig(is_protein);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
-    blast::TSeqLocVector v = in.GetAllSeqLocs();
+    blast::TSeqLocVector v = source->GetAllSeqLocs(scope);
     CHECK(source->End());
     CHECK_EQUAL((size_t)1, v.size());
 }
 
-BOOST_AUTO_TEST_CASE(s_NoDeflineUnexpected)
+BOOST_AUTO_TEST_CASE(NoDeflineUnexpected)
 {
     CNcbiIfstream infile("data/tiny.fa");
     const bool is_protein(false);
-    CBlastInputConfig iconfig(is_protein);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetBelieveDeflines(true);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
-    CBlastInput in(source);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
 
-    BOOST_CHECK_THROW(in.GetAllSeqLocs(), CException);
+    BOOST_CHECK_THROW(source->GetAllSeqLocs(scope), CException);
 }
 
 /// Auxiliary class to convert a string into an argument count and vector
@@ -1964,7 +2048,7 @@ BOOST_AUTO_TEST_CASE(CheckTaskArgs) {
     arg.Reset(new CTaskCmdLineArgs(tasks, "blastp-short"));
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadSinglePdb)
+BOOST_AUTO_TEST_CASE(ReadSinglePdb)
 {
     string pdb_mol("1QCF");
     string pdb_chain("A");
@@ -1972,12 +2056,15 @@ BOOST_AUTO_TEST_CASE(s_ReadSinglePdb)
     istringstream instream(pdb);
     
     const bool is_protein(true);
-    CBlastInputConfig iconfig(is_protein);
-    iconfig.SetRetrieveSequenceData(false);
-    CRef<CBlastFastaInputSource> source(s_DeclareSource(instream, iconfig));
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(instream, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
     
     CHECK(source->End() == false);
-    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
+
     CHECK(source->End() == true);
     
     CHECK(ssl.seqloc->IsInt() == true);
@@ -2000,7 +2087,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSinglePdb)
     CHECK(!ssl.mask);
     
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
     CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
     CHECK(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
@@ -2012,7 +2099,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSinglePdb)
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
-BOOST_AUTO_TEST_CASE(s_ReadSinglePdb_InDifferentFormats)
+BOOST_AUTO_TEST_CASE(ReadSinglePdb_InDifferentFormats)
 {
     string pdb_mol("1IQR");
     string pdb_chain("A");
@@ -2028,12 +2115,14 @@ BOOST_AUTO_TEST_CASE(s_ReadSinglePdb_InDifferentFormats)
         istringstream instream(pdb);
         
         const bool is_protein(true);
-        CBlastInputConfig iconfig(is_protein);
-        iconfig.SetRetrieveSequenceData(false);
-        CRef<CBlastFastaInputSource> source(s_DeclareSource(instream, iconfig));
+        CBlastInputSourceConfig iconfig(is_protein);
+        iconfig.SetRetrieveSeqData(false);
+        CRef<CBlastInput> source(s_DeclareBlastInput(instream, iconfig));
+        CScope scope(*CObjectManager::GetInstance());
         
         CHECK(source->End() == false);
-        blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+        blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+        blast::SSeqLoc ssl = seqs.front();
         CHECK(source->End() == true);
         
         CHECK(ssl.seqloc->IsInt() == true);
@@ -2057,7 +2146,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSinglePdb_InDifferentFormats)
         CHECK(!ssl.mask);
         
         /// Validate the data that would be retrieved by blast.cgi
-        CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+        CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
         CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
         CHECK(bioseqs->GetSeq_set().front()->IsSeq());
         const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();

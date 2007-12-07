@@ -36,6 +36,8 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbifile.hpp>
 #include <html/htmlhelper.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -80,6 +82,7 @@ bool kTranslation;
 CRef<CScope> kScope;
 
 CNcbiRegistry *CBlastFormatUtil::m_Reg = NULL;
+bool  CBlastFormatUtil::m_geturl_debug_flag = false;
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
 ///@param score: place to extract the raw score to
@@ -1620,7 +1623,8 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
                                              const string& entrez_term,
                                              bool is_na, string& user_url,
                                              const bool db_is_na, int first_gi,
-                                             bool structure_linkout_as_group)
+                                             bool structure_linkout_as_group,
+                                             bool for_alignment)
 {
     list<string> linkout_list;
     int gi = FindGi(ids);
@@ -1655,7 +1659,8 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
     }
     if(linkout & eGene){
       string l_GeneUrl = CBlastFormatUtil::GetURLFromRegistry("GENE");
-        sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID", rid.c_str());
+        sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID",
+                rid.c_str(), for_alignment ? "aln" : "top");
         linkout_list.push_back(buf);
     }
 
@@ -1726,7 +1731,7 @@ int CBlastFormatUtil::GetMasterCoverage(const CSeq_align_set& alnset)
 }
 
 CRef<CSeq_align_set>
-CBlastFormatUtil::SortSeqalignForSortableFormat(CCgiContext& ctx,
+CBlastFormatUtil::SortSeqalignForSortableFormat(CCgiContext& /* ctx */,
                                              CScope& scope,
                                              CSeq_align_set& aln_set,
                                              bool nuc_to_nuc_translation,
@@ -1783,39 +1788,119 @@ CBlastFormatUtil::SortSeqalignForSortableFormat(CCgiContext& ctx,
 // get given url from registry file or return corresponding kNAME
 // value as default to preserve compatibility.
 // 
-string CBlastFormatUtil::GetURLFromRegistry( const string url_name){
+// algoritm:
+// 1) config file name is ".ncbirc" unless FMTCFG specifies another name  
+// 2) try to read local configuration file before  
+//    checking location specified by the NCBI environment.
+// 3) if index != -1, use it as trailing version number for a key name,
+//    ABCD_V0. try to read ABCD key if version variant doesn't exist.
+// 4) use INCLUDE_BASE_DIR key to specify base for all include files.
+// 5) treat "_FORMAT" key as filename first and  string in second.
+//    in case of existances of filename, read it starting from 
+//    location specified by INCLUDE_BASE_DIR key
+string CBlastFormatUtil::GetURLFromRegistry( const string url_name, int index){
   string  result_url;
   string l_key, l_host_port, l_format; 
-  if( !m_Reg ){
-    CNcbiIfstream l_ConfigFile(".ncbirc");
+  string l_secion_name = "BLASTFMTUTIL";
+  string l_fmt_suffix = "_FORMAT";
+  string l_host_port_suffix = "_HOST_PORT";
+  string l_subst_pattern;
+  string l_cfg_file_name;
+  bool   l_dbg = CBlastFormatUtil::m_geturl_debug_flag;
+  if( getenv("GETURL_DEBUG") ) CBlastFormatUtil::m_geturl_debug_flag = l_dbg = true;
+
+  if( !m_Reg ) {
+    string l_ncbi_env;
+    string l_fmtcfg_env;
+    if( NULL !=  getenv("NCBI")   ) l_ncbi_env = getenv("NCBI");  
+    if( NULL !=  getenv("FMTCFG") ) l_fmtcfg_env = getenv("FMTCFG");
+    // config file name: value of FMTCFG or  default ( .ncbirc ) 
+    if( l_fmtcfg_env.empty()  ) 
+      l_cfg_file_name = ".ncbirc";
+    else 
+      l_cfg_file_name = l_fmtcfg_env;
+    // checkinf existance of configuration file
+    CFile  l_fchecker( l_cfg_file_name );
+    if( (!l_fchecker.Exists()) && (!l_ncbi_env.empty()) ) {
+      if( l_ncbi_env.rfind("/") != (l_ncbi_env.length() -1 ))  
+	l_ncbi_env.append("/");
+      l_cfg_file_name = l_ncbi_env + l_cfg_file_name;
+      CFile  l_fchecker2( l_cfg_file_name );
+      if( !l_fchecker2.Exists() ) return GetURLDefault(url_name,index); // can't find  .ncbrc file
+    }    
+    CNcbiIfstream l_ConfigFile(l_cfg_file_name.c_str() );
     m_Reg = new CNcbiRegistry(l_ConfigFile);
+    if( l_dbg ) fprintf(stderr,"REGISTRY: %s\n",l_cfg_file_name.c_str());
   }
-  if( !m_Reg ) return GetURLDefault(url_name); 
-  // get host_port value first
-  l_key = url_name + "_HOST_PORT";
-  string l_pattern="$"+l_key;
-  l_host_port = m_Reg->Get("BLASTFMTUTILS", l_key);
-  if( l_host_port.empty())   return GetURLDefault(url_name);
+  if( !m_Reg ) return GetURLDefault(url_name,index); // can't read .ncbrc file
+  string l_base_dir = m_Reg->Get(l_secion_name, "INCLUDE_BASE_DIR");
+  if( !l_base_dir.empty() && ( l_base_dir.rfind("/") != (l_base_dir.length()-1)) ) {
+    l_base_dir.append("/");
+  }
+  
+
+  string default_host_port;
+  string l_key_ndx; 
+  if( index >=0) { 
+    l_key_ndx = url_name + l_host_port_suffix + "_" + NStr::IntToString( index );
+    l_subst_pattern="<@"+l_key_ndx+"@>";      
+    l_host_port = m_Reg->Get(l_secion_name, l_key_ndx); // try indexed
+  }
+  // next is initialization for non version/array type of settings
+  if( l_host_port.empty()){  // not indexed or index wasn't found
+    l_key = url_name + l_host_port_suffix; l_subst_pattern="<@"+l_key+"@>";  
+    l_host_port = m_Reg->Get(l_secion_name, l_key);
+  }
+  if( l_host_port.empty())   return GetURLDefault(url_name,index);
+
   // get format part
-  l_key = url_name + "_FORMAT";
-  l_format = m_Reg->Get("BLASTFMTUTILS", l_key);
-  if( l_format.empty())   return GetURLDefault(url_name);
-  // replace placeholder by the actual host/port values
-  result_url = NStr::Replace(l_format,l_pattern,l_host_port);
-  if( result_url.empty()) return GetURLDefault(url_name);
+  l_format.clear();
+  l_key = url_name + l_fmt_suffix ; //"_FORMAT";
+  l_key_ndx = l_key + "_" + NStr::IntToString( index );
+  if( index >= 0 ){
+    l_format = m_Reg->Get(l_secion_name, l_key_ndx);
+  }
+
+  if( l_format.empty() ) l_format = m_Reg->Get(l_secion_name, l_key);
+  if( l_format.empty())   return GetURLDefault(url_name,index);
+  // format found check wether this string or file name
+  string l_format_file  = l_base_dir + l_format;
+  CFile  l_fchecker( l_format_file );
+  bool file_name_mode = l_fchecker.Exists();
+  if( file_name_mode ) { // read whole content of the file to string buffer    
+    string l_inc_file_name = l_format_file;
+    CNcbiIfstream l_file (l_inc_file_name.c_str(), ios::in|ios::binary|ios::ate); 
+    CNcbiIfstream::pos_type l_inc_size = l_file.tellg();
+    //    size_t l_buf_sz = (size_t) l_inc_size;
+    char *l_mem = new char [ (size_t) l_inc_size + 1];
+    memset( l_mem,0, (size_t) l_inc_size + 1 ) ;
+    l_file.seekg( 0, ios::beg );
+    l_file.read(l_mem, l_inc_size);
+    l_file.close();
+    l_format.clear(); l_format.reserve( (size_t)l_inc_size + 1 );
+    l_format =  l_mem;
+    delete [] l_mem;     
+  }
+
+  result_url = NStr::Replace(l_format,l_subst_pattern,l_host_port);
+
+  if( result_url.empty()) return GetURLDefault(url_name,index);
   return result_url;
 }
 //
 // return default URL value for the given key.
 //
-string  CBlastFormatUtil::GetURLDefault( const string url_name){
-    if( url_name == "ENTREZ" ) return kEntrezUrl;
-    if( url_name == "UNIGEN" ) return kUnigeneUrl;
-    if( url_name == "GEO" ) return kGeoUrl;
-    if( url_name == "GENE" ) return kGeneUrl;
-    if( url_name == "ENTREZ_SUBSEQ" ) return kEntrezSubseqUrl;
-    if( url_name == "TREEVIEW" ) return kTreeViewURL;    
-    return "CBlastFormatUtil::GetURLDefault:no_defualt_for"+url_name;
+string  CBlastFormatUtil::GetURLDefault( const string url_name, int index) {
+
+  string search_name = url_name;
+  map <string,string>::iterator url_it;
+  if( index >= 0 ) search_name += "_" + NStr::IntToString( index); // actual name for index value is NAME_{index}
+
+  if( (url_it = k_UrlMap.find( search_name ) ) != k_UrlMap.end()) return url_it->second;
+
+  string error_msg = "CBlastFormatUtil::GetURLDefault:no_defualt_for"+url_name;
+  if( index != -1 ) error_msg += "_index_"+ NStr::IntToString( index ); 
+  return error_msg;
 }
 //
 // Release memory allocated for the NCBIRegistry object

@@ -106,13 +106,13 @@ int CTblastnApp::Run(void)
         CRef<CPssmWithParameters> pssm = m_CmdLineArgs->GetInputPssm();
         CRef<CBlastFastaInputSource> fasta;
         CRef<CBlastInput> input;
+        const SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
         if (pssm.Empty()) {
-            SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
-            CBlastInputConfig iconfig(dlconfig, query_opts->GetStrand(),
+            CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                          query_opts->UseLowercaseMasks(),
                                          query_opts->BelieveQueryDefline(),
                                          query_opts->GetRange());
-            fasta.Reset(new CBlastFastaInputSource(*m_ObjMgr, 
+            fasta.Reset(new CBlastFastaInputSource(
                                          m_CmdLineArgs->GetInputStream(),
                                          iconfig));
             input.Reset(new CBlastInput(&*fasta,
@@ -128,12 +128,11 @@ int CTblastnApp::Run(void)
                                                for exporting the search
                                                strategy */
         search_db = db_args->GetSearchDatabase();
+        CRef<CScope> scope = CBlastScopeSource(dlconfig).NewScope();
         if ( !m_CmdLineArgs->ExecuteRemotely() ) {
             CRef<CSeqDB> seqdb = GetSeqDB(db_args);
             db_adapter.Reset(new CLocalDbAdapter(seqdb));
-
-            const string loader_name = RegisterOMDataLoader(m_ObjMgr, seqdb);
-            fasta->GetScope()->AddDataLoader(loader_name); 
+            scope->AddDataLoader(RegisterOMDataLoader(m_ObjMgr, seqdb));
         }
 
         /*** Get the formatting options ***/
@@ -143,7 +142,7 @@ int CTblastnApp::Run(void)
                                fmt_args->GetFormattedOutputChoice(),
                                db_args->IsProtein(),
                                query_opts->BelieveQueryDefline(),
-                               m_CmdLineArgs->GetOutputStream(), input,
+                               m_CmdLineArgs->GetOutputStream(),
                                fmt_args->GetNumDescriptions(),
                                fmt_args->GetNumAlignments(),
                                opt.GetMatrixName(),
@@ -155,10 +154,10 @@ int CTblastnApp::Run(void)
         formatter.PrintProlog();
 
         /*** Process the input ***/
-        while ( !fasta->End() ) {
+        for (; !input->End(); scope->ResetHistory()) {
 
-            TSeqLocVector query_batch(input->GetNextSeqLocBatch());
-            CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_batch));
+            CRef<CBlastQueryVector> query_batch(input->GetNextSeqBatch(*scope));
+            CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
 
             SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl, 
                                search_db);
@@ -178,7 +177,7 @@ int CTblastnApp::Run(void)
             }
 
             ITERATE(CSearchResultSet, result, *results) {
-                formatter.PrintOneResultSet(**result, *fasta->GetScope());
+                formatter.PrintOneResultSet(**result, *scope, query_batch);
             }
         }
 
@@ -189,10 +188,10 @@ int CTblastnApp::Run(void)
         }
 
     } catch (const CBlastException& exptn) {
-        cerr << exptn.what() << endl;
+        cerr << "Error: " << exptn.GetMsg() << endl;
         status = exptn.GetErrCode();
     } catch (const exception& e) {
-        cerr << e.what() << endl;
+        cerr << "Error: " << e.what() << endl;
         status = -1;
     } catch (...) {
         cerr << "Unknown exception" << endl;

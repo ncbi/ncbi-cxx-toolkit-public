@@ -2,5 +2,7 @@
 
 LIB_PROJ = gene_info_writer
 
+SUB_PROJ = unit_test
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

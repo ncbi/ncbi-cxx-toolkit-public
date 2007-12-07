@@ -53,17 +53,17 @@ BEGIN_NCBI_SCOPE
 #define GENE_INFO_PATH_ENV_VARIABLE      "GENE_INFO_PATH"
 
 /// Name of the processed "Gi to GeneID" file.
-#define GENE_GI2GENE_FILE_NAME              "gi2gene.ginfo"
+#define GENE_GI2GENE_FILE_NAME              "geneinfo.g2i"
 /// Name of the processed "GeneID to Offset" file.
-#define GENE_GENE2OFFSET_FILE_NAME          "gene2offset.ginfo"
+#define GENE_GENE2OFFSET_FILE_NAME          "geneinfo.i2o"
 /// Name of the processed "Gi to Offset" file.
-#define GENE_GI2OFFSET_FILE_NAME            "gi2offset.ginfo"
+#define GENE_GI2OFFSET_FILE_NAME            "geneinfo.g2o"
 /// Name of the processed "Gene ID to Gi" file.
-#define GENE_GENE2GI_FILE_NAME              "gene2gi.ginfo"
+#define GENE_GENE2GI_FILE_NAME              "geneinfo.i2g"
 /// Name of the combined "Gene Data" file.
-#define GENE_ALL_GENE_DATA_FILE_NAME        "all_gene_data.txt"
+#define GENE_ALL_GENE_DATA_FILE_NAME        "geneinfo.dat"
 /// Name of the general information/statistics file.
-#define GENE_GENERAL_INFO_FILE_NAME         "general.ginfo"
+#define GENE_GENERAL_INFO_FILE_NAME         "geneinfo.log"
 
 /// CGeneInfoFileReader
 ///

@@ -119,15 +119,14 @@ CBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
     CRef<CBlastOptionsHandle> retval;
     m_Task.assign(args[kTask].AsString());
     retval.Reset(CBlastOptionsFactory::CreateTask(m_Task, locality));
-    ASSERT(retval.NotEmpty());
+    _ASSERT(retval.NotEmpty());
     return retval;
 }
 
 int
 CBlastnAppArgs::GetQueryBatchSize() const
 {
-    _ASSERT( !m_Task.empty() );
-    return blast::GetQueryBatchSize(m_Task);
+    return blast::GetQueryBatchSize(eBlastTypeBlastn);
 }
 
 END_SCOPE(blast)

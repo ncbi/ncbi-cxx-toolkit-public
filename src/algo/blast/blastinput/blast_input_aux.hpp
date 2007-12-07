@@ -51,7 +51,7 @@ CArgDescriptions*
 SetUpCommandLineArguments(TBlastCmdLineArgs& args);
 
 int
-GetQueryBatchSize(const string& program);
+GetQueryBatchSize(EBlastProgramType program);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

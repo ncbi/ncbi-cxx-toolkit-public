@@ -150,7 +150,8 @@ void Blast_HSPStreamResultBatchReset(BlastHSPStreamResultBatch *batch)
 {
     Int4 i;
     for (i = 0; i < batch->num_hsplists; i++) {
-        sfree(batch->hsplist_array[i]);
+        batch->hsplist_array[i] = 
+           Blast_HSPListFree(batch->hsplist_array[i]);
     }
     batch->num_hsplists = 0;
 }

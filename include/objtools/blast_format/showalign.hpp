@@ -43,6 +43,7 @@
 #include <objtools/readers/getfeature.hpp>
 #include <cgi/cgictx.hpp>
 #include <algo/blast/api/blast_aux.hpp>
+#include <objtools/readers/gene_info/gene_info_reader.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -86,11 +87,6 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
         CConstRef < CSeq_loc > seqloc;  // must be seqloc int
         char feature_char;               // Character for feature
         string feature_id;               // ID for feature
-    };
-
-    ///protein matrix define
-    enum {
-        ePMatrixSize = 23       // number of amino acid for matrix
     };
 
     ///option for alignment display
@@ -138,7 +134,8 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
                                                //seqid. Note you need 
                                                //seperate style sheet functions
                                                //for this to work
-        eShowSortControls = (1 << 23)
+        eShowSortControls = (1 << 23),
+        eShowGeneInfo = (1 << 24)
     };
     
     ///Middle line style option
@@ -170,16 +167,14 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
     ///and colors such as masked sequence.  Must be seqloc-int
     ///@param external_feature:  Feature to display such as phiblast pattern.
     ///Must be seqloc-int 
-    ///@param matrix: customized matrix for computing
-    ///positive protein matchs.  Note the matrix must exactly consist of
-    ///"ARNDCQEGHILKMFPSTWYVBZX", default matrix is blosum62 
+    ///@param matrix_name: scoring matrix name [in]
     ///@param scope: scope to fetch your sequence 
     ///
     CDisplaySeqalign(const CSeq_align_set & seqalign,
                      CScope & scope,
                      list < CRef<blast::CSeqLocInfo> >* mask_seqloc = NULL,
                      list < FeatureInfo * >* external_feature = NULL,
-                     const int matrix[][ePMatrixSize] = NULL);
+                     const char* matrix_name = BLAST_DEFAULT_MATRIX);
     
     /// Destructor
     ~CDisplaySeqalign();
@@ -399,6 +394,9 @@ private:
     int m_SlaveGeneticCode;
     CCgiContext* m_Ctx;
 
+    /// Gene info reader object, reads Gene info entries from files.
+    auto_ptr<CGeneInfoFileReader> m_GeneInfoReader;
+
     ///Display the current alnvec
     ///@param out: stream for display
     ///
@@ -553,6 +551,17 @@ private:
                       CAlnMap::TSeqPosList& insert_seq_start,
                       CAlnMap::TSeqPosList& insert_length, 
                       int line_aln_stop);
+
+    ///check if Gene info is enabled and a Gene link is present for a hit
+    ///@param aln_vec_info: alnvec list
+    ///
+    bool x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info);
+
+    ///get the URL of the Gene info link.
+    ///@param gene_id: gene id to link to.
+    ///@return: fully formatted URL of the Gene info link.
+    ///
+    string x_GetGeneLinkUrl(int gene_id);
 
     ///display alnvec info
     ///@param out: output stream

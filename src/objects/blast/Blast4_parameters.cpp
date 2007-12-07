@@ -95,12 +95,12 @@ CRef< CBlast4_parameter> CBlast4_parameters::Add(const string name,const bool &v
 	CRef< CBlast4_parameter> p;	
 	p = GetParamByName(name); 
 	if(p.Empty()) {
-		CRef< CBlast4_parameter> p(new CBlast4_parameter);
+		CRef< CBlast4_parameter> param(new CBlast4_parameter);
 		CRef< CBlast4_value> v(new CBlast4_value);
 		v->SetBoolean(value);
-		p->SetName(name);
-		p->SetValue(*v);
-		this->Set().push_back(p);
+		param->SetName(name);
+		param->SetValue(*v);
+		this->Set().push_back(param);
 	}
 	else {
 		p->SetValue().SetBoolean(value);
@@ -113,12 +113,12 @@ CRef< CBlast4_parameter> CBlast4_parameters::Add(const string name,const double 
 	CRef< CBlast4_parameter> p;
 	p = GetParamByName(name); 
 	if(p.Empty()) {
-		CRef< CBlast4_parameter> p(new CBlast4_parameter);
+		CRef< CBlast4_parameter> param(new CBlast4_parameter);
 		CRef< CBlast4_value> v(new CBlast4_value);
 		v->SetReal(value);		
-		p->SetName(name);
-		p->SetValue(*v);
-		this->Set().push_back(p);
+		param->SetName(name);
+		param->SetValue(*v);
+		this->Set().push_back(param);
 	}
 	else {
 		p->SetValue().SetReal(value);
@@ -132,12 +132,12 @@ CRef< CBlast4_parameter> CBlast4_parameters::Add(const string name,const Int8 &v
 	CRef< CBlast4_parameter> p;
 	p = GetParamByName(name); 
 	if(p.Empty()) {
-		CRef< CBlast4_parameter> p(new CBlast4_parameter);
+		CRef< CBlast4_parameter> param(new CBlast4_parameter);
 		CRef< CBlast4_value> v(new CBlast4_value);
 		v->SetBig_integer(value);		
-		p->SetName(name);
-		p->SetValue(*v);
-		this->Set().push_back(p);
+		param->SetName(name);
+		param->SetValue(*v);
+		this->Set().push_back(param);
 	}
 	else {
 		p->SetValue().SetBig_integer(value);
@@ -150,12 +150,12 @@ CRef< CBlast4_parameter> CBlast4_parameters::Add(const string name,const EBlast4
 	CRef< CBlast4_parameter> p;
 	p = GetParamByName(name); 
 	if(p.Empty()) {
-		CRef< CBlast4_parameter> p(new CBlast4_parameter);
+		CRef< CBlast4_parameter> param(new CBlast4_parameter);
 		CRef< CBlast4_value> v(new CBlast4_value);
 		v->SetStrand_type(value);		
-		p->SetName(name);
-		p->SetValue(*v);
-		this->Set().push_back(p);
+		param->SetName(name);
+		param->SetValue(*v);
+		this->Set().push_back(param);
 	}
 	else {
 		p->SetValue().SetStrand_type(value);

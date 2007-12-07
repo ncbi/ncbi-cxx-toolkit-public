@@ -255,20 +255,20 @@ private:
 
 class NCBI_XBLAST_EXPORT CSearchResultSet : public CObject {
 public:
+    /// data type contained by this container
+    typedef CRef<CSearchResults> value_type;
+
     /// List of query ids.
     typedef vector< CConstRef<objects::CSeq_id> > TQueryIdVector;
     
     /// size_type type definition
-    typedef vector< CRef<CSearchResults> >::size_type size_type;
+    typedef vector<value_type>::size_type size_type;
     
     /// typedef for a vector of CRef<CBlastAncillaryData>
     typedef vector< CRef<CBlastAncillaryData> > TAncillaryVector;
 
     /// const_iterator type definition
-    typedef vector< CRef<CSearchResults> >::const_iterator const_iterator;
-
-    /// data type contained by this container
-    typedef CRef<CSearchResults> value_type;
+    typedef vector<value_type>::const_iterator const_iterator;
 
     /// Simplest constructor
     CSearchResultSet(EResultType res_type = eDatabaseSearch);
@@ -363,6 +363,12 @@ public:
     /// Returns const_iterator to end of container, provided to
     /// facilitate STL-style iteration
     const_iterator end() const { return m_Results.end(); }
+
+    /// Clears the contents of this object
+    void clear() {
+        m_NumQueries = 0;
+        m_Results.clear();
+    }
 
     /// Add a value to the back of this container
     /// @param element element to add [in]

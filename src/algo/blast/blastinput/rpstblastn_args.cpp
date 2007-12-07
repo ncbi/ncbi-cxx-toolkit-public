@@ -104,7 +104,7 @@ CRPSTBlastnAppArgs::CRPSTBlastnAppArgs()
 
 CRef<CBlastOptionsHandle> 
 CRPSTBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
-                                      const CArgs& args)
+                                      const CArgs& /*args*/)
 {
     return CRef<CBlastOptionsHandle>(new CRPSTBlastnOptionsHandle(locality));
 }
@@ -112,7 +112,7 @@ CRPSTBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 int
 CRPSTBlastnAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize("rpstblastn");
+    return blast::GetQueryBatchSize(eBlastTypeRpsTblastn);
 }
 
 END_SCOPE(blast)

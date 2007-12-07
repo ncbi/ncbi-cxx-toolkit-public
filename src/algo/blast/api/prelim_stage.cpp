@@ -213,17 +213,19 @@ CBlastPrelimSearch::Run()
                 // because the chunks might end up producing a region of
                 // the query for which ungapped Karlin-Altschul blocks
                 // cannot be calculated
-                const string err_msg("search cannot proceed due to errors "
+                const string err_msg1("search cannot proceed due to errors "
                                      "in all contexts/frames of query "
                                      "sequences");
-                if (e.GetMsg().find(err_msg) == NPOS) {
+                const string err_msg2("Warning: Could not calculate ungapped Karlin-Altschul "
+                                      "parameters due to an invalid query sequence or its translation. "
+                                      "Please verify the query sequence(s) and/or filtering options");
+                if (e.GetMsg().find(err_msg1) == NPOS && e.GetMsg().find(err_msg2) == NPOS) {
                     throw;
                 }
             }
         }
 
     } else {
-        BlastSeqSrc * seqsrc = m_InternalData->m_SeqSrc->GetPointer();
 
         GetDbIndexRunSearchFn()( 
                 seqsrc, queries, lut_options, word_options );

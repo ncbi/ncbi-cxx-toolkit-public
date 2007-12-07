@@ -39,6 +39,8 @@
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 #include <algo/blast/core/gencode_singleton.h>
 #include <objects/seqfeat/Genetic_code_table.hpp>
@@ -46,6 +48,7 @@
 #include <objects/seq/seqport_util.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_seqsrc_impl.h>
+#include <algo/blast/api/sseqloc.hpp>
 #include "blast_setup.hpp"
 #include "blast_aux_priv.hpp"
 
@@ -935,6 +938,27 @@ TMaskedQueryRegions::RestrictToSeqInt(const objects::CSeq_interval& location) co
                                                   (*maskinfo)->GetFrame()));
             retval.push_back(sli);
         }
+    }
+
+    return retval;
+}
+
+CRef<objects::CBioseq_set>
+TSeqLocVector2Bioseqs(const TSeqLocVector& input)
+{
+    CRef<objects::CBioseq_set> retval;
+
+    if (input.empty()) {
+        return retval;
+    }
+    retval.Reset(new objects::CBioseq_set);
+
+    ITERATE(TSeqLocVector, itr, input) {
+        CBioseq_Handle bh = itr->scope->GetBioseqHandle(*itr->seqloc);
+        CSeq_entry_Handle seh = bh.GetTopLevelEntry();
+        CRef<objects::CSeq_entry> seq_entry
+            (const_cast<objects::CSeq_entry*>(&*seh.GetCompleteSeq_entry()));
+        retval->SetSeq_set().push_back(seq_entry);
     }
 
     return retval;

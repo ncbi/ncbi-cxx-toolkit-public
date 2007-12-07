@@ -45,7 +45,7 @@
 
 #include <objtools/readers/seqdb/seqdb.hpp>
 
-/** @addtogroup blast_format
+/** @addtogroup BlastFormat
  *
  * @{
  */

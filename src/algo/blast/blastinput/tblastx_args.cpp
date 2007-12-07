@@ -117,7 +117,7 @@ CTblastxAppArgs::CTblastxAppArgs()
 
 CRef<CBlastOptionsHandle> 
 CTblastxAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
-                                       const CArgs& args)
+                                       const CArgs& /*args*/)
 {
     return CRef<CBlastOptionsHandle>(new CTBlastxOptionsHandle(locality));
 }
@@ -125,7 +125,7 @@ CTblastxAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 int
 CTblastxAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize("tblastx");
+    return blast::GetQueryBatchSize(eBlastTypeTblastx);
 }
 
 END_SCOPE(blast)

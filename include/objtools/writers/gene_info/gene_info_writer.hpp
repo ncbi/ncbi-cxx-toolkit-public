@@ -195,7 +195,7 @@ private:
     bool m_bAllowMultipleIds_GenomicGis;
 
     /// SeqDB object used to convert taxID to organism name.
-    static CRef<CSeqDBExpert> sm_seqDb;
+    CRef<CSeqDBExpert> m_seqDb;
 
     /// Temporary map for GeneID to Offset conversion.
     TIntToIntMap m_mapIdToOffset;
@@ -276,7 +276,7 @@ private:
     ///     Taxonomy ID to look up.
     /// @param strName
     ///     Set to the scientific name of the organism.
-    static void x_GetOrgnameForTaxId(int nTaxId, string& strName);
+    void x_GetOrgnameForTaxId(int nTaxId, string& strName);
 
     /// Get Gene Data offset given the Gene ID.
     ///

@@ -46,15 +46,20 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
-CBlastInputConfig::CBlastInputConfig(const SDataLoaderConfig& dlconfig,
-                                     objects::ENa_strand strand,
-                                     bool lowercase,
-                                     bool believe_defline,
-                                     TSeqRange range,
-                                     bool retrieve_seqs)
+CBlastInputSourceConfig::CBlastInputSourceConfig
+    (const SDataLoaderConfig& dlconfig,
+     objects::ENa_strand strand         /* = objects::eNa_strand_other */,
+     bool lowercase                     /* = false */,
+     bool believe_defline               /* = false */,
+     TSeqRange range                    /* = TSeqRange() */,
+     bool retrieve_seq_data             /* = true */,
+     int local_id_counter               /* = 1 */,
+     unsigned int seqlen_thresh2guess   /* = numeric_limits<unsigned int>::max()*/ )
 : m_Strand(strand), m_LowerCaseMask(lowercase), 
   m_BelieveDeflines(believe_defline), m_Range(range), m_DLConfig(dlconfig),
-  m_RetrieveSeqData(retrieve_seqs)
+  m_RetrieveSeqData(retrieve_seq_data),
+  m_LocalIdCounter(local_id_counter),
+  m_SeqLenThreshold2Guess(seqlen_thresh2guess)
 {}
 
 CBlastInput::CBlastInput(const CBlastInput& rhs)
@@ -75,29 +80,21 @@ CBlastInput::do_copy(const CBlastInput& rhs)
     if (this != &rhs) {
         m_Source = rhs.m_Source;
         m_BatchSize = rhs.m_BatchSize;
-        if (rhs.m_AllSeqLocs.get() != 0) {
-            m_AllSeqLocs.reset(new TSeqLocVector(rhs.m_AllSeqLocs->size()));
-            copy(rhs.m_AllSeqLocs->begin(),
-                 rhs.m_AllSeqLocs->end(),
-                 m_AllSeqLocs->begin());
-        }
-        m_AllQueries = rhs.m_AllQueries;
     }
 }
 
 TSeqLocVector
-CBlastInput::GetNextSeqLocBatch()
+CBlastInput::GetNextSeqLocBatch(CScope& scope)
 {
     TSeqLocVector retval;
     TSeqPos size_read = 0;
 
-    while (size_read < m_BatchSize) {
+    while (size_read < GetBatchSize()) {
 
-        if (m_Source->End())
+        if (End())
             break;
 
-        retval.push_back(m_Source->GetNextSSeqLoc());
-
+        retval.push_back(m_Source->GetNextSSeqLoc(scope));
         SSeqLoc& loc = retval.back();
 
         if (loc.seqloc->IsInt()) {
@@ -111,11 +108,6 @@ CBlastInput::GetNextSeqLocBatch()
             // of type interval or whole
             abort();
         }
-
-        if (m_AllSeqLocs.get() == 0) {
-            m_AllSeqLocs.reset(new TSeqLocVector());
-        }
-        m_AllSeqLocs->push_back(loc);
     }
 
     return retval;
@@ -123,17 +115,17 @@ CBlastInput::GetNextSeqLocBatch()
 
 
 CRef<CBlastQueryVector>
-CBlastInput::GetNextSeqBatch()
+CBlastInput::GetNextSeqBatch(CScope& scope)
 {
     CRef<CBlastQueryVector> retval(new CBlastQueryVector);
     TSeqPos size_read = 0;
 
-    while (size_read < m_BatchSize) {
+    while (size_read < GetBatchSize()) {
 
-        if (m_Source->End())
+        if (End())
             break;
 
-        CRef<CBlastSearchQuery> q(m_Source->GetNextSequence());
+        CRef<CBlastSearchQuery> q(m_Source->GetNextSequence(scope));
         CConstRef<CSeq_loc> loc = q->GetQuerySeqLoc();
 
         if (loc->IsInt()) {
@@ -148,11 +140,6 @@ CBlastInput::GetNextSeqBatch()
         }
 
         retval->AddQuery(q);
-
-        if (m_AllQueries.Empty()) {
-            m_AllQueries.Reset(new CBlastQueryVector());
-        }
-        m_AllQueries->AddQuery(q);
     }
 
     return retval;
@@ -160,74 +147,29 @@ CBlastInput::GetNextSeqBatch()
 
 
 TSeqLocVector
-CBlastInput::GetAllSeqLocs()
+CBlastInput::GetAllSeqLocs(CScope& scope)
 {
-    if (m_AllSeqLocs.get() == 0) {
-        m_AllSeqLocs.reset(new TSeqLocVector());
+    TSeqLocVector retval;
+
+    while (!End()) {
+        retval.push_back(m_Source->GetNextSSeqLoc(scope));
     }
 
-    while (!m_Source->End()) {
-        m_AllSeqLocs->push_back(m_Source->GetNextSSeqLoc());
-    }
-
-    if (m_AllSeqLocs->empty() ) {
-        // Copy from cached CBlastQueryVector
-        if (m_AllQueries.NotEmpty() && !m_AllQueries->Empty()) {
-            m_AllSeqLocs.reset(new TSeqLocVector(m_AllQueries->Size()));
-            for (size_t i = 0; i < m_AllQueries->Size(); i++) {
-                CRef<CBlastSearchQuery> bq =
-                    m_AllQueries->GetBlastSearchQuery(i);
-                (*m_AllSeqLocs)[i].seqloc = bq->GetQuerySeqLoc();
-                (*m_AllSeqLocs)[i].scope = bq->GetScope();
-
-                TMaskedQueryRegions mqr = bq->GetMaskedRegions();
-                (*m_AllSeqLocs)[i].mask = MaskedQueryRegionsToPackedSeqLoc(mqr);
-            }
-        }
-    }
-
-    return *m_AllSeqLocs;
+    return retval;
 }
 
 
 CRef<CBlastQueryVector>
-CBlastInput::GetAllSeqs()
+CBlastInput::GetAllSeqs(CScope& scope)
 {
-    if (m_AllQueries.Empty()) {
-        m_AllQueries.Reset(new CBlastQueryVector());
+    CRef<CBlastQueryVector> retval(new CBlastQueryVector);
+
+    while (!End()) {
+        retval->AddQuery(m_Source->GetNextSequence(scope));
     }
 
-    while (!m_Source->End()) {
-        CRef<CBlastSearchQuery> q(m_Source->GetNextSequence());
-        m_AllQueries->AddQuery(q);
-    }
-
-    if (m_AllQueries->Empty()) {
-        // Copy from cached TSeqLocVector
-        if (m_AllSeqLocs.get() && !m_AllSeqLocs->empty()) {
-            // it's safe to add empty query masks because these are
-            // available from the blast::CSearchResultsSet class
-            TMaskedQueryRegions empty_masks;
-            ITERATE(TSeqLocVector, itr, *m_AllSeqLocs) {
-                CRef<CBlastSearchQuery> bq (new CBlastSearchQuery(*itr->seqloc, 
-                                                                  *itr->scope, 
-                                                                  empty_masks));
-                m_AllQueries->AddQuery(bq);
-            }
-        }
-    }
-
-    return m_AllQueries;
+    return retval;
 }
-
-
-CBlastInputSource::CBlastInputSource(objects::CObjectManager& objmgr)
-    : m_ObjMgr(objmgr),
-      m_Scope(new CScope(objmgr))
-{
-    m_Scope->AddDefaults();
-}
-
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

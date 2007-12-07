@@ -88,14 +88,14 @@ public:
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc) = 0;
 
     /** Extracts BLAST algorithmic options from the command line arguments into
-     * the CBlastOptions object
+     * the CBlastOptions object. Default implementation does nothing.
      * @param cmd_line_args Command line arguments parsed by the NCBI
      * application framework [in]
      * @param options object to which the appropriate options will be set
      * [in|out]
      */
     virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
-                                         CBlastOptions& options) {}
+                                         CBlastOptions& options);
 };
 
 /** Argument class to retrieve input and output streams for a command line
@@ -667,6 +667,16 @@ public:
     EOutputFormat GetFormattedOutputChoice() const {
         return m_OutputFormat;
     }
+
+    /// Returns true if the desired output format is structured (needed to
+    /// determine whether to print or not that a PSI-BLAST search has
+    /// converged - this is not supported in structured formats)
+    bool HasStructuredOutputFormat() const {
+        return m_OutputFormat == eXml || 
+            m_OutputFormat == eAsnText ||
+            m_OutputFormat == eAsnBinary;
+    }
+
     /// Display the NCBI GIs in formatted output?
     bool ShowGis() const {
         return m_ShowGis;

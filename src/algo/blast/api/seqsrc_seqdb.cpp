@@ -366,7 +366,7 @@ s_SeqDbIteratorNext(void* seqdb_handle, BlastSeqSrcIterator* itr)
 static void
 s_SeqDbResetChunkIterator(void* seqdb_handle)
 {
-    ASSERT(seqdb_handle);
+    _ASSERT(seqdb_handle);
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     (*seqdb)->ResetInternalChunkBookmark();
 }

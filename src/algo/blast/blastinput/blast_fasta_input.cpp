@@ -56,26 +56,57 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
-// In BLAST gaps are not accepted, so we create this class to override
-// CFastaReader's behavior when the flag fParseGaps is present, namely to
-// ignore the gaps.
-class CFastaReaderIgnoringGaps : public CFastaReader
+
+/// CFastaReader-derived class which contains customizations for processing
+/// BLAST sequence input.
+///
+/// 1) In BLAST gaps are not accepted, so we create this class to override
+/// CFastaReader's behavior when the flag fParseGaps is present, namely to
+/// ignore the gaps.
+/// 2) Also, this class allows for overriding the logic to set the molecule type
+/// for sequences read by CFastaReader @sa kSeqLenThreshold2Guess
+class CCustomizedFastaReader : public CFastaReader
 {
 public:
-    /// Constructor, passes all arguments to parent class
-    CFastaReaderIgnoringGaps(ILineReader& reader, 
-                             CFastaReader::TFlags flags = 0)
-        : CFastaReader(reader, flags) {}
+    /// Constructor
+    /// @param reader line reader argument for parent class [in]
+    /// @param seqlen_thresh2guess sequence length threshold for molecule
+    /// type guessing [in]
+    /// @param flags flags for parent class [in]
+    CCustomizedFastaReader(ILineReader& reader, 
+                           CFastaReader::TFlags flags,
+                           unsigned int seq_len_threshold)
+        : CFastaReader(reader, flags), m_SeqLenThreshold(seq_len_threshold) {}
 
     /// Override this method to force the parent class to ignore gaps
+    /// @param len length of the gap? @sa CFastaReader
     virtual void x_CloseGap(TSeqPos len) {
+        (void)len;  // remove solaris compiler warning
         return;
     }
+
+    /// Override logic for assigning the molecule type
+    /// @note fForceType is ignored if the sequence length is less than the
+    /// value configured in the constructor
+    virtual void AssignMolType() {
+        if (GetCurrentPos(eRawPos) < m_SeqLenThreshold) {
+            _ASSERT( (TestFlag(fAssumeNuc) ^ TestFlag(fAssumeProt) ) );
+            SetCurrentSeq().SetInst().SetMol(TestFlag(fAssumeNuc) 
+                                             ? CSeq_inst::eMol_na 
+                                             : CSeq_inst::eMol_aa);
+        } else {
+            CFastaReader::AssignMolType();
+        }
+    }
+
+private:
+    /// Sequence length threshold for molecule type guessing
+    unsigned int m_SeqLenThreshold;
 };
 
 /// Class to read non-FASTA sequence input to BLAST programs using the various
 /// data loaders configured in CBlastScopeSource objects
-class CBlastInputReader : public CFastaReaderIgnoringGaps
+class CBlastInputReader : public CCustomizedFastaReader
 {
 public:
     /// Constructor
@@ -86,14 +117,18 @@ public:
     /// @param retrieve_seq_data Should the sequence data be fetched by this
     /// library? [in]
     /// @param reader line reader argument for parent class [in]
+    /// @param seqlen_thresh2guess sequence length threshold for molecule
+    /// type guessing [in]
     /// @param flags flags for parent class [in]
     CBlastInputReader(const SDataLoaderConfig& dlconfig,
                       bool read_proteins,
                       bool retrieve_seq_data,
+                      unsigned int seqlen_thresh2guess,
                       ILineReader& reader, 
-                      CFastaReader::TFlags flags = 0)
-        : CFastaReaderIgnoringGaps(reader, flags), m_DLConfig(dlconfig),
-          m_ReadProteins(read_proteins), m_RetrieveSeqData(retrieve_seq_data) {}
+                      CFastaReader::TFlags flags)
+        : CCustomizedFastaReader(reader, flags, seqlen_thresh2guess), 
+          m_DLConfig(dlconfig), m_ReadProteins(read_proteins), 
+          m_RetrieveSeqData(retrieve_seq_data) {}
 
     /// Overloaded method to attempt to read non-FASTA input types
     virtual CRef<CSeq_entry> ReadOneSeq(void) {
@@ -138,7 +173,7 @@ public:
                 NCBI_THROW(CInputException, eSeqIdNotFound,
                            "Sequence ID not found: '" + line + "'");
             }
-        } catch (const exception& e) {
+        } catch (const exception&) {
             throw;
         } catch (...) {
             // in case of other exceptions, just defer to CFastaReader
@@ -182,8 +217,7 @@ private:
     CRef<CBioseq> x_CreateBioseq(CRef<CSeq_id> id)
     {
         if (m_InputScope.Empty()) {
-            CBlastScopeSource scope_src(m_DLConfig);
-            m_InputScope = scope_src.NewScope();
+            m_InputScope = CBlastScopeSource(m_DLConfig).NewScope();
         }
 
         // N.B.: this call fetches the Bioseq into the scope from its
@@ -266,24 +300,18 @@ private:
     }
 };
 
-CBlastFastaInputSource::CBlastFastaInputSource(objects::CObjectManager& objmgr,
-                                               CNcbiIstream& infile,
-                                               const CBlastInputConfig& iconfig,
-                                               int local_id_counter)
-    : CBlastInputSource(objmgr),
-      m_Config(iconfig),
+CBlastFastaInputSource::CBlastFastaInputSource(CNcbiIstream& infile,
+                                       const CBlastInputSourceConfig& iconfig)
+    : m_Config(iconfig),
       m_LineReader(new CStreamLineReader(infile)),
       m_ReadProteins(iconfig.IsProteinInput())
 {
-    x_InitInputReader(local_id_counter);
+    x_InitInputReader();
 }
 
-CBlastFastaInputSource::CBlastFastaInputSource(objects::CObjectManager& objmgr,
-                                               const string& user_input,
-                                               const CBlastInputConfig& iconfig,
-                                               int local_id_counter)
-    : CBlastInputSource(objmgr),
-      m_Config(iconfig),
+CBlastFastaInputSource::CBlastFastaInputSource(const string& user_input,
+                                       const CBlastInputSourceConfig& iconfig)
+    : m_Config(iconfig),
       m_ReadProteins(iconfig.IsProteinInput())
 {
     if (user_input.empty()) {
@@ -292,11 +320,11 @@ CBlastFastaInputSource::CBlastFastaInputSource(objects::CObjectManager& objmgr,
     }
     m_LineReader.Reset(new CMemoryLineReader(user_input.c_str(), 
                                              user_input.size()));
-    x_InitInputReader(local_id_counter);
+    x_InitInputReader();
 }
 
 void
-CBlastFastaInputSource::x_InitInputReader(int local_id_counter)
+CBlastFastaInputSource::x_InitInputReader()
 {
     CFastaReader::TFlags flags = m_Config.GetBelieveDeflines() ? 
                                     CFastaReader::fAllSeqIds :
@@ -316,13 +344,17 @@ CBlastFastaInputSource::x_InitInputReader(int local_id_counter)
         m_InputReader.reset
             (new CBlastInputReader(m_Config.GetDataLoaderConfig(), 
                                    m_ReadProteins, 
-                                   m_Config.RetrieveSequenceData(),
-                                   *m_LineReader, flags));
+                                   m_Config.RetrieveSeqData(),
+                                   m_Config.GetSeqLenThreshold2Guess(),
+                                   *m_LineReader, 
+                                   flags));
     } else {
-        m_InputReader.reset(new CFastaReaderIgnoringGaps(*m_LineReader, flags));
+        m_InputReader.reset(new CCustomizedFastaReader(*m_LineReader, flags,
+                                       m_Config.GetSeqLenThreshold2Guess()));
     }
 
-    CRef<CSeqIdGenerator> idgen(new CSeqIdGenerator(local_id_counter));
+    CRef<CSeqIdGenerator> idgen
+        (new CSeqIdGenerator(m_Config.GetLocalIdCounterInitValue()));
     m_InputReader->SetIDGenerator(*idgen);
 }
 
@@ -332,18 +364,9 @@ CBlastFastaInputSource::End()
     return m_LineReader->AtEOF();
 }
 
-CRef<CBioseq_set>
-CBlastFastaInputSource::GetBioseqs()
-{
-    if (m_Bioseqs.Empty()) {
-        NCBI_THROW(CInputException, eEmptyUserInput, 
-                   "No sequences have been read");
-    }
-    return CRef<CBioseq_set>(&m_Bioseqs->SetSet());
-}
-
 CRef<CSeq_loc>
-CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
+CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
+                                        CScope& scope)
 {
     static const TSeqRange kEmptyRange(TSeqRange::GetEmpty());
 
@@ -351,11 +374,8 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
         lcase_mask = m_InputReader->SaveMask();
 
     CRef<CSeq_entry> seq_entry(m_InputReader->ReadOneSeq());
-    if (m_Bioseqs.Empty()) {
-        m_Bioseqs.Reset(new CSeq_entry());
-    }
-    m_Bioseqs->SetSet().SetSeq_set().push_back(seq_entry);
-    m_Scope->AddTopLevelSeqEntry(*seq_entry);
+    _ASSERT(seq_entry.NotEmpty());
+    scope.AddTopLevelSeqEntry(*seq_entry);
 
     CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry));
     CRef<CSeq_loc> retval(new CSeq_loc());
@@ -390,14 +410,13 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
         ? 0 : m_Config.GetRange().GetTo();
 
     // Get the sequence length
-    const TSeqPos seq_length = sequence::GetLength(*itr->GetId().front(), 
-                                                   m_Scope);
-    ASSERT(seq_length != numeric_limits<TSeqPos>::max());
+    const TSeqPos seqlen = seq_entry->GetSeq().GetInst().GetLength();
+    _ASSERT(seqlen != numeric_limits<TSeqPos>::max());
     if (to > 0 && to < from) {
         NCBI_THROW(CInputException, eInvalidRange, 
                    "Invalid sequence range");
     }
-    if (from > seq_length) {
+    if (from > seqlen) {
         NCBI_THROW(CInputException, eInvalidRange, 
                    "Invalid from coordinate (greater than sequence length)");
     }
@@ -407,7 +426,7 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
 
     // set sequence range
     retval->SetInt().SetFrom(from);
-    retval->SetInt().SetTo((to > 0 && to < seq_length) ? to : (seq_length-1));
+    retval->SetInt().SetTo((to > 0 && to < seqlen) ? to : (seqlen-1));
 
     // set ID
     retval->SetInt().SetId().Assign(*itr->GetId().front());
@@ -417,12 +436,12 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
 
 
 SSeqLoc
-CBlastFastaInputSource::GetNextSSeqLoc()
+CBlastFastaInputSource::GetNextSSeqLoc(CScope& scope)
 {
     CRef<CSeq_loc> lcase_mask;
-    CRef<CSeq_loc> seqloc(x_FastaToSeqLoc(lcase_mask));
-
-    SSeqLoc retval(seqloc, m_Scope);
+    CRef<CSeq_loc> seqloc = x_FastaToSeqLoc(lcase_mask, scope);
+    
+    SSeqLoc retval(seqloc, &scope);
     if (m_Config.GetLowercaseMask())
         retval.mask = lcase_mask;
 
@@ -431,10 +450,10 @@ CBlastFastaInputSource::GetNextSSeqLoc()
 
 
 CRef<CBlastSearchQuery>
-CBlastFastaInputSource::GetNextSequence()
+CBlastFastaInputSource::GetNextSequence(CScope& scope)
 {
     CRef<CSeq_loc> lcase_mask;
-    CRef<CSeq_loc> seqloc(x_FastaToSeqLoc(lcase_mask));
+    CRef<CSeq_loc> seqloc = x_FastaToSeqLoc(lcase_mask, scope);
 
     TMaskedQueryRegions masks_in_query;
     if (m_Config.GetLowercaseMask()) {
@@ -447,7 +466,7 @@ CBlastFastaInputSource::GetNextSequence()
                                 program, apply_mask_to_both_strands);
     }
     return CRef<CBlastSearchQuery>
-        (new CBlastSearchQuery(*seqloc, *m_Scope, masks_in_query));
+        (new CBlastSearchQuery(*seqloc, scope, masks_in_query));
 }
 
 END_SCOPE(blast)

@@ -156,6 +156,11 @@ DEFINE_CARGALLOW_SET_CLASS(CArgAllowIntegerSet, int, NStr::StringToInt);
 DEFINE_CARGALLOW_SET_CLASS(CArgAllowStringSet, string, string);
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
+void
+IBlastCmdLineArgs::ExtractAlgorithmOptions(const CArgs& /* cmd_line_args */,
+                                           CBlastOptions& /* options */)
+{}
+
 CProgramDescriptionArgs::CProgramDescriptionArgs(const string& program_name, 
                                                  const string& program_desc)
     : m_ProgName(program_name), m_ProgDesc(program_desc)
@@ -196,8 +201,8 @@ CTaskCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 }
 
 void
-CTaskCmdLineArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
-                                          CBlastOptions& options)
+CTaskCmdLineArgs::ExtractAlgorithmOptions(const CArgs& /* cmd_line_args */,
+                                          CBlastOptions& /* options */)
 {
     // N.B.: handling of tasks occurs at the application level to ensure that
     // only relevant tasks are added (@sa CBlastnAppArgs)
@@ -989,7 +994,6 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         default:
             NCBI_THROW(CBlastException, eInvalidArgument, 
                        "Unsupported format for PSSM");
-            break;
         }
         _ASSERT(m_Pssm.NotEmpty());
     }
@@ -1550,7 +1554,7 @@ CSearchStrategyArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 }
 
 void
-CSearchStrategyArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
+CSearchStrategyArgs::ExtractAlgorithmOptions(const CArgs& /* cmd_line_args */,
                                              CBlastOptions& /* options */)
 {
 }

@@ -347,6 +347,8 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights);
 #define PSIERR_STARTINGGAP      (-10)
 /** Found flanking gap at end of alignment */
 #define PSIERR_ENDINGGAP        (-11)
+/** Unknown error */
+#define PSIERR_UNKNOWN          (-255)
 
 /****************************************************************************/
 /* Function prototypes for the various stages of the PSSM generation engine */
@@ -412,6 +414,8 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,
  * @param aligned_blocks data structure describing the aligned blocks'
  * properties for each position of the multiple sequence alignment [in]
  * @param pseudo_count pseudo count constant [in]
+ * @param nsg_compatibility_mode set to true to emulate the structure group's
+ * use of PSSM engine in the cddumper application. By default should be FALSE
  * @param internal_pssm PSSM being computed [out]
  * @return PSIERR_BADPARAM if arguments are NULL, PSI_SUCCESS otherwise
  */
@@ -421,6 +425,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
                       const BlastScoreBlk* sbp,
                       const _PSIAlignedBlock* aligned_blocks,
                       Int4 pseudo_count,
+                      Boolean nsg_compatibility_mode,
                       _PSIInternalPssmData* internal_pssm);
 
 /** Converts the PSSM's frequency ratios obtained in the previous stage to a 

@@ -127,6 +127,13 @@ struct SSeqLoc {
 /// Vector of sequence locations
 typedef vector<SSeqLoc>   TSeqLocVector;
 
+/// Convert a TSeqLocVector to a CBioseq_set
+/// @param input TSeqLocVector to convert [in]
+/// @return CBioseq_set with CBioseqs from the input, or NULL of input is empty
+NCBI_XBLAST_EXPORT 
+CRef<objects::CBioseq_set>
+TSeqLocVector2Bioseqs(const TSeqLocVector& input);
+
 
 /// Search Query
 ///
@@ -138,6 +145,16 @@ typedef vector<SSeqLoc>   TSeqLocVector;
 /// algorithms, or that are specified by the user as masked regions.
 class CBlastSearchQuery : public CObject {
 public:
+    /// Constructor
+    ///
+    /// Build a CBlastSearchQuery object with no masking locations assigned
+    ///
+    /// @param sl The query itself.
+    /// @param sc The scope containing the query.
+    CBlastSearchQuery(const objects::CSeq_loc & sl,
+                      objects::CScope         & sc)
+        : seqloc(& sl), scope(& sc), genetic_code_id(BLAST_GENETIC_CODE) {}
+
     /// Constructor
     ///
     /// Build a CBlastSearchQuery object.
@@ -234,8 +251,14 @@ private:
 
 class CBlastQueryVector : public CObject {
 public:
+    // data type contained by this container
+    typedef CRef<CBlastSearchQuery> value_type;
+
     /// size_type type definition
-    typedef vector< CRef<CBlastSearchQuery> >::size_type size_type;
+    typedef vector<value_type>::size_type size_type;
+
+    /// const_iterator type definition
+    typedef vector<value_type>::const_iterator const_iterator;
 
     /// Add a query to the set.
     ///
@@ -313,6 +336,24 @@ public:
         return m_Queries[i];
     }
     
+    /// Identical to Size, provided to facilitate STL-style iteration
+    size_type size() const { return Size(); }
+
+    /// Returns const_iterator to beginning of container, provided to
+    /// facilitate STL-style iteration
+    const_iterator begin() const { return m_Queries.begin(); }
+
+    /// Returns const_iterator to end of container, provided to
+    /// facilitate STL-style iteration
+    const_iterator end() const { return m_Queries.end(); }
+
+    /// Clears the contents of this object
+    void clear() { m_Queries.clear(); }
+
+    /// Add a value to the back of this container
+    /// @param element element to add [in]
+    void push_back(const value_type& element) { m_Queries.push_back(element); }
+
 private:
     /// The set of queries used for a search.
     vector< CRef<CBlastSearchQuery> > m_Queries;

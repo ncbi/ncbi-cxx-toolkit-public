@@ -59,7 +59,8 @@ CBl2Seq_Runner::~CBl2Seq_Runner()
 {}
 
 void CBl2Seq_Runner::ProcessDatabaseArgs(CRef<CBlastDatabaseArgs> db_args,
-                                         CRef<CObjectManager> obj_mgr)
+                                         CRef<CObjectManager> obj_mgr,
+                                         objects::CScope* scope_formatter)
 {
     m_is_bl2seq = db_args->IsSubjectProvided();
     if (!m_is_bl2seq)
@@ -67,13 +68,19 @@ void CBl2Seq_Runner::ProcessDatabaseArgs(CRef<CBlastDatabaseArgs> db_args,
 
     /*** Get the subject sequence(s) ***/
     SDataLoaderConfig dlconfig(m_is_subject_protein);
-    CBlastInputConfig iconfig(dlconfig, objects::eNa_strand_other, false, 
+    CBlastInputSourceConfig iconfig(dlconfig, objects::eNa_strand_other, false, 
                               false, db_args->GetSubjectRange());
     m_fasta_subject.Reset(new CBlastFastaInputSource(*obj_mgr, 
                                 db_args->GetSubjectInputStream(), iconfig,
                                 m_subject_id_offset + 1));
     m_input_subject.Reset(new CBlastInput(m_fasta_subject.GetPointer()));
     m_subject_seqs = m_input_subject->GetAllSeqLocs();
+
+    /*** Update the scope ***/
+    scope_formatter->AddScope(m_fasta_subject->GetScope().GetObject());
+
+    m_fasta_subject.Reset();
+    m_input_subject.Reset();
 }
 
 bool CBl2Seq_Runner::IsBl2Seq() const
@@ -88,9 +95,6 @@ void CBl2Seq_Runner::RunAndFormat(CBlastFastaInputSource* fasta_query,
                                   CScope* scope_formatter)
 {
     _ASSERT(m_is_bl2seq);
-
-    /*** Update the scope ***/
-    scope_formatter->AddScope(m_fasta_subject->GetScope().GetObject());
 
     /*** Process the input ***/
     while ( !fasta_query->End() ) {

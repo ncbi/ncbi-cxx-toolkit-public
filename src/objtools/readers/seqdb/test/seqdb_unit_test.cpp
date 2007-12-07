@@ -36,6 +36,7 @@
 #include <objects/seq/seq__.hpp>
 #include <corelib/ncbifile.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <math.h>
 
 #include <util/sequtil/sequtil_convert.hpp>
@@ -95,6 +96,9 @@ using boost::unit_test::test_suite;
 #define CHECK_EQUAL_MESSAGE(M, x, y) \
     CHECK_NO_THROW(BOOST_CHECK_MESSAGE((x) == (y), M))
 
+#define CHECK_EQUAL_MESSAGE_PRINT(M, x, y) \
+    CHECK_EQUAL_MESSAGE(s_ToString(M, ": ", x, " != ", y), x, y)
+
 #define CHECK_THROW(s, x) \
     BOOST_CHECK_THROW(s, x)
 
@@ -126,6 +130,13 @@ static void s_UnitTestVerbosity(string s)
 
 // Helper functions
 
+template<class A, class B, class C, class D, class E>
+string s_ToString(const A & a, const B & b, const C & c, const D & d, const E & e)
+{
+    ostringstream oss;
+    oss << a << b << c << d << e;
+    return oss.str();
+}
 
 enum EMaskingType {
     eAll, eOdd, eEven, ePrime, eEND
@@ -137,18 +148,15 @@ static void s_TestPartialAmbigRange(CSeqDB & db, int oid, int begin, int end)
     int          sliceL (0);
     const char * whole (0);
     int          wholeL(0);
-        
+    
     sliceL = db.GetAmbigSeq(oid, & slice, kSeqDBNuclNcbiNA8, begin, end);
     wholeL = db.GetAmbigSeq(oid, & whole, kSeqDBNuclNcbiNA8);
-        
-    string op = "Checking NcbiNA8 subsequence range [";
-    op += NStr::IntToString(begin);
-    op += ",";
-    op += NStr::IntToString(end);
-    op += "].";
-        
+    
+    string op =
+        s_ToString("Checking NcbiNA8 subsequence range [", begin, ",", end, "].");
+    
     CHECK_EQUAL_MESSAGE(op, 0, memcmp(slice, whole + begin, sliceL));
-        
+    
     db.RetSequence(& whole);
     db.RetSequence(& slice);
 }
@@ -1602,12 +1610,7 @@ BOOST_AUTO_TEST_CASE(OidRanges)
                 continue;
             }
             
-            string dbname("data/ranges/");
-            dbname += mask_name[mask];
-            dbname += NStr::UIntToString(first);
-            dbname += "_";
-            dbname += NStr::UIntToString(second);
-            
+            string dbname = s_ToString("data/ranges/", mask_name[mask], first, "_", second);
             CSeqDB db(dbname, CSeqDB::eProtein);
             
             int obegin(0), oend(0);
@@ -3379,6 +3382,139 @@ BOOST_AUTO_TEST_CASE(FilteredHeaders)
     CHECK(size2);
     CHECK(size1 >= 14);
     CHECK(size1 > (size2 + 5));
+}
+
+static void s_CheckIdLookup(CSeqDB & db, const string & acc, size_t exp_oids, size_t exp_size)
+{
+    list<string> ids;
+    NStr::Split(acc, ", ", ids);
+    
+    vector<int> oids;
+    
+    ostringstream fasta;
+    CFastaOstream fos(fasta);
+    fos.SetWidth(80);
+    
+    ITERATE(list<string>, iter, ids) {
+        // For each ID, check that:
+        // 1. SeqDB can find it.
+        
+        vector<int> tmp_oids;
+        db.AccessionToOids(*iter, tmp_oids);
+        
+        BOOST_CHECK_MESSAGE(tmp_oids.size(),
+                            string("No OIDs found for ")+(*iter));
+        
+        oids.insert(oids.end(), tmp_oids.begin(), tmp_oids.end());
+    }
+    
+    // sort/unique
+    
+    sort(oids.begin(), oids.end());
+    oids.erase(unique(oids.begin(), oids.end()), oids.end());
+    
+    ITERATE(vector<int>, iter, oids) {
+        fos.Write(*db.GetBioseq(*iter));
+    }
+    
+    string all_fasta = fasta.str();
+    string msg = string("Error for accession: ") + acc;
+    
+    if (oids.size() != exp_oids) {
+        cout << "\nacc: " << acc << ": #oids " << oids.size() << endl;
+    }
+    
+    CHECK_EQUAL_MESSAGE_PRINT(msg, all_fasta.size(), exp_size);
+    CHECK_EQUAL_MESSAGE_PRINT(msg, exp_oids, oids.size());
+}
+
+BOOST_AUTO_TEST_CASE(ProtOldTest)
+{
+    START;
+    CSeqDB db("data/nrshort.old", CSeqDB::eUnknown);
+    
+    s_CheckIdLookup(db, "gi|67472376", 1, 6590);
+    s_CheckIdLookup(db, "sp|P0A7U1|RS18_SALTI", 1, 6590);
+    s_CheckIdLookup(db, "sp||RS18_SALTI", 1, 6590);
+    s_CheckIdLookup(db, "sp|P0A7U1|", 1, 6590);
+    s_CheckIdLookup(db, "P0A7U1", 1, 6590);
+    s_CheckIdLookup(db, "RS18_SALTI", 1, 6590);
+    s_CheckIdLookup(db, "ref|NP_313205.1|", 1, 6590);
+    s_CheckIdLookup(db, "NP_313205.1", 1, 6590);
+    s_CheckIdLookup(db, "pir||AI1052", 1, 6590);
+    s_CheckIdLookup(db, "AI1052", 1, 6590);
+    s_CheckIdLookup(db, "NP_268346, XP_642837.1, 30262378, ABD21303.1", 4, 5411);
+    s_CheckIdLookup(db, "pdb|1VS7|R", 1, 6590);
+    s_CheckIdLookup(db, "1VS7", 1, 6590);
+    s_CheckIdLookup(db, "prf||2202317B", 1, 628);
+    s_CheckIdLookup(db, "2202317B", 1, 628);
+    s_CheckIdLookup(db, "tr|Q4QBU6|Q4QBU6_LEIMA", 1, 609);
+    s_CheckIdLookup(db, "Q4QBU6", 1, 609);
+}
+
+BOOST_AUTO_TEST_CASE(ProtTest)
+{
+    START;
+    CSeqDB db("data/nrshort", CSeqDB::eUnknown);
+    
+    s_CheckIdLookup(db, "gi|67472376", 1, 6590);
+    s_CheckIdLookup(db, "sp|P0A7U1|RS18_SALTI", 1, 6590);
+    s_CheckIdLookup(db, "sp||RS18_SALTI", 1, 6590);
+    s_CheckIdLookup(db, "sp|P0A7U1|", 1, 6590);
+    s_CheckIdLookup(db, "P0A7U1", 1, 6590);
+    s_CheckIdLookup(db, "RS18_SALTI", 1, 6590);
+    s_CheckIdLookup(db, "ref|NP_313205.1|", 1, 6590);
+    s_CheckIdLookup(db, "ref|NP_313205|", 1, 6590);
+    s_CheckIdLookup(db, "NP_313205.1", 1, 6590);
+    s_CheckIdLookup(db, "pir||AI1052", 1, 6590);
+    s_CheckIdLookup(db, "AI1052", 1, 6590);
+    s_CheckIdLookup(db, "NP_268346, XP_642837.1, 30262378, ABD21303.1", 4, 5411);
+    s_CheckIdLookup(db, "pdb|1VS7|R", 1, 6590);
+    s_CheckIdLookup(db, "1VS7", 1, 6590);
+    s_CheckIdLookup(db, "prf||2202317B", 1, 628);
+    s_CheckIdLookup(db, "2202317B", 1, 628);
+    s_CheckIdLookup(db, "tr|Q4QBU6|Q4QBU6_LEIMA", 1, 609);
+    s_CheckIdLookup(db, "Q4QBU6", 1, 609);
+}
+
+BOOST_AUTO_TEST_CASE(NuclOldTest)
+{
+    START;
+    CSeqDB db("data/ntshort.old", CSeqDB::eUnknown);
+    
+    s_CheckIdLookup(db, "gi|2695850", 1, 683);
+    s_CheckIdLookup(db, "2695850", 1, 683);
+    s_CheckIdLookup(db, "emb|Y13260.1|ABY13260", 1, 683);
+    s_CheckIdLookup(db, "emb||ABY13260", 1, 683);
+    s_CheckIdLookup(db, "emb|Y13260.1|", 1, 683);
+    s_CheckIdLookup(db, "gb|Y13260.1|ABY13260", 1, 683);
+    s_CheckIdLookup(db, "Y13260.1", 1, 683);
+    s_CheckIdLookup(db, "ABY13260", 1, 683);
+    s_CheckIdLookup(db, "emb|Y13260|ABY13260", 1, 683);
+    s_CheckIdLookup(db, "emb|Y13260|", 1, 683);
+    s_CheckIdLookup(db, "gb|Y13260|ABY13260", 1, 683);
+    s_CheckIdLookup(db, "Y13260", 1, 683);
+    s_CheckIdLookup(db, "gnl|ti|43939557", 1, 972);
+}
+
+BOOST_AUTO_TEST_CASE(NuclTest)
+{
+    START;
+    CSeqDB db("data/ntshort", CSeqDB::eUnknown);
+    
+    s_CheckIdLookup(db, "gi|2695850", 1, 683);
+    s_CheckIdLookup(db, "2695850", 1, 683);
+    s_CheckIdLookup(db, "emb|Y13260.1|ABY13260", 1, 683);
+    s_CheckIdLookup(db, "emb||ABY13260", 1, 683);
+    s_CheckIdLookup(db, "emb|Y13260.1|", 1, 683);
+    s_CheckIdLookup(db, "gb|Y13260.1|ABY13260", 1, 683);
+    s_CheckIdLookup(db, "Y13260.1", 1, 683);
+    s_CheckIdLookup(db, "ABY13260", 1, 683);
+    s_CheckIdLookup(db, "emb|Y13260|ABY13260", 1, 683);
+    s_CheckIdLookup(db, "emb|Y13260|", 1, 683);
+    s_CheckIdLookup(db, "gb|Y13260|ABY13260", 1, 683);
+    s_CheckIdLookup(db, "Y13260", 1, 683);
+    s_CheckIdLookup(db, "gnl|ti|43939557", 1, 972);
 }
 
 BOOST_AUTO_TEST_CASE(PdbIdWithChain)

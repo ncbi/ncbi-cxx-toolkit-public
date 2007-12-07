@@ -1696,6 +1696,39 @@ void CSeqDBIsam::StringToOids(const string   & acc,
         return;
     }
     
+    if (! found) {
+        size_t pos = acc.find(".");
+        
+        bool is_version = false;
+        
+        if (pos != string::npos) {
+            int ver_len = acc.size() - pos - 1;
+            
+            is_version = (ver_len <= 3 && ver_len >= 1);
+            
+            for(size_t vp = pos+1; vp < acc.size(); vp++) {
+                if (! isdigit(acc[pos])) {
+                    is_version = false;
+                    break;
+                }
+            }
+        }
+        
+        if (is_version) {
+            string nover(acc, 0, pos);
+            
+            err = x_StringSearch(acc,
+                                 keys_out,
+                                 data_out,
+                                 indices_out,
+                                 locked);
+            
+            if (err < 0) {
+                return;
+            }
+        }
+    }
+    
     if (err != eNotFound) {
         found = true;
     }
@@ -1894,20 +1927,24 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
     }
     
     if (tsip) {
-        simpler = true;
-        result = eStringId;
+        bool found = false;
         
-        string tmp_name;
-        
-        if (tsip->CanGetName() && tsip->CanGetAccession()) {
-            tmp_name = tsip->GetName();
-            tsip->ResetName();
+        if (tsip->CanGetAccession()) {
+            str_id = tsip->GetAccession();
+            found = true;
+            
+            if (tsip->CanGetVersion()) {
+                str_id += ".";
+                str_id += NStr::UIntToString(tsip->GetVersion());
+            }
+        } else if (tsip->CanGetName()) {
+            str_id = tsip->GetName();
+            found = true;
         }
         
-        bestid.GetLabel(& str_id, CSeq_id::eFasta, label_flags);
-        
-        if (! tmp_name.empty()) {
-            tsip->SetName(tmp_name);
+        if (found) {
+            simpler = true;
+            result = eStringId;
         }
     }
     

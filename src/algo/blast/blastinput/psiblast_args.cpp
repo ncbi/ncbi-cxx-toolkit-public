@@ -128,7 +128,7 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
 
 CRef<CBlastOptionsHandle>
 CPsiBlastAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
-                                        const CArgs& args)
+                                        const CArgs& /*args*/)
 {
     return CRef<CBlastOptionsHandle>(new CPSIBlastOptionsHandle(locality));
 }
@@ -154,7 +154,7 @@ CPsiBlastAppArgs::SetInputPssm(CRef<objects::CPssmWithParameters> pssm)
 int 
 CPsiBlastAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize("psiblast");
+    return blast::GetQueryBatchSize(eBlastTypePsiBlast);
 }
 
 bool

@@ -1316,7 +1316,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
 
       }         /* loop over all batches */
 
-      Blast_HSPStreamResultBatchFree(batch);
+      batch = Blast_HSPStreamResultBatchFree(batch);
       BlastSequenceBlkFree(seq_arg.seq);
    }
 

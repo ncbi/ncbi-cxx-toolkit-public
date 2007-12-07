@@ -10,6 +10,8 @@ APP_PROJ = psiblast blastp blastn blastx rpsblast rpstblastn tblastn tblastx mul
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
+.PHONY: all $(APP_PROJ)
+
 blastn:
 	make -f Makefile.blastn_app
 blastp:

@@ -254,7 +254,7 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     {
         CBlastNucleotideOptionsHandle* opts = 
              dynamic_cast<CBlastNucleotideOptionsHandle*> (CBlastOptionsFactory::Create(eBlastn, locality));
-        ASSERT(opts);
+        _ASSERT(opts);
         if (!NStr::CompareNocase(task, "blastn-short"))
         {
              opts->SetMatchReward(1);

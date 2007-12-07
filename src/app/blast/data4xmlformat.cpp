@@ -61,12 +61,12 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
   m_NoHitsFound(false)
 {
     _ASSERT( !m_Queries->Empty() );
-    _ASSERT(results.GetResultType() == eDatabaseSearch);
 
     x_FillScoreMatrix(m_Options.GetMatrixName());
-    if (m_DbName.empty()) {
+    if (m_DbName.empty() ||
+        results.GetResultType() != eDatabaseSearch) {
         NCBI_THROW(CBlastException, eNotSupported,
-                   "error: XML formatting requires a database search");
+                   "XML formatting is only supported for a database search");
     }
     x_FillDbInfo(db_is_aa);
 
@@ -76,8 +76,7 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
                         CBlastFormat::kNoHitsFound);
     } else {
 
-        if (opts.GetProgram() == ePSIBlast) {
-            _ASSERT(m_Queries->Size() == 1);
+        if (opts.GetProgram() == ePSIBlast && m_Queries->Size() == 1) {
             // artificially increment the number of 'queries' to match the
             // number of results, which represents the actual number of
             // iterations in PSI-BLAST

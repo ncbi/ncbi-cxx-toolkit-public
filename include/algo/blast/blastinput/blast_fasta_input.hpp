@@ -50,71 +50,58 @@ class NCBI_XBLAST_EXPORT CBlastFastaInputSource : public CBlastInputSource
 public:
 
     /// Constructor
-    /// @param objmgr Object Manager instance [in]
     /// @param infile The file to read [in]
     /// @param iconfig Input configuration object, this options apply to all
     /// input read [in]
-    /// @param local_id_counter counter used to create the CSeqidGenerator to
-    /// create local identifiers for sequences read [in]
-    CBlastFastaInputSource(objects::CObjectManager& objmgr,
-                   CNcbiIstream& infile,
-                   const CBlastInputConfig& iconfig,
-                   int local_id_counter = 1);
+    CBlastFastaInputSource(CNcbiIstream& infile,
+                   const CBlastInputSourceConfig& iconfig);
 
     /// Constructor
     /// @param objmgr Object Manager instance [in]
     /// @param user_input User provided input in a string [in]
     /// @param iconfig Input configuration object, this options apply to all
     /// input read [in]
-    /// @param local_id_counter counter used to create the CSeqidGenerator to
-    /// create local identifiers for sequences read [in]
-    CBlastFastaInputSource(objects::CObjectManager& objmgr,
-                           const string& user_input,
-                           const CBlastInputConfig& iconfig,
-                           int local_id_counter = 1);
+    CBlastFastaInputSource(const string& user_input,
+                   const CBlastInputSourceConfig& iconfig);
 
     /// Destructor
     virtual ~CBlastFastaInputSource() {}
 
+protected:
     /// Retrieve a single sequence (in an SSeqLoc container)
+    /// @param scope CScope object to use in SSeqLoc returned [in]
     /// @throws CObjReaderParseException if input file is empty
-    virtual SSeqLoc GetNextSSeqLoc();
+    virtual SSeqLoc GetNextSSeqLoc(CScope& scope);
 
     /// Retrieve a single sequence (in a CBlastSearchQuery container)
+    /// @param scope CScope object to use in CBlastSearchQuery returned [in]
     /// @throws CObjReaderParseException if input file is empty
-    virtual CRef<CBlastSearchQuery> GetNextSequence();
+    virtual CRef<CBlastSearchQuery> GetNextSequence(CScope& scope);
 
     /// Signal whether there are any unread sequences left
     /// @return true if no unread sequences remaining
     virtual bool End();
 
-    /// Return all the queries read as a Bioseq-set (for blastcgi)
-    /// Assumes that all queries have been read (i.e.: via a call to 
-    /// CBlastInput::GetAllSeqLocs or CBlastInput::GetAllSeqs())
-    CRef<CBioseq_set> GetBioseqs();
-
 private:
-    CBlastInputConfig m_Config; ///< Configuration for the sequences to be read
+    CBlastInputSourceConfig m_Config; ///< Configuration for the sequences to be read
     CRef<ILineReader> m_LineReader; ///< interface to read lines
     /// Reader of FASTA sequences or identifiers
     AutoPtr<CFastaReader> m_InputReader; 
     bool m_ReadProteins;        ///< read protein sequences?
-    /// Set of sequences read, this is saved to be used in the context of
-    /// blast.cgi
-    CRef<CSeq_entry> m_Bioseqs;
 
     /// Read a single sequence from file and convert to a Seq_loc
     /// @param lcase_mask A Seq_loc that describes the
     ///           lowercase-masked regions in the query that was read in.
     ///           If there are no such locations, the Seq_loc is of type
     ///           'null', otherwise it is of type 'packed_seqint' [out]
+    /// @param scope CScope object to which the read sequence is added [in]
     /// @return The sequence in Seq_loc format
     ///
     CRef<objects::CSeq_loc> 
-    x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask);
+    x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask, CScope& scope);
 
     /// Initialization method for the input reader
-    void x_InitInputReader(int local_id_counter);
+    void x_InitInputReader();
 };
 
 END_SCOPE(blast)

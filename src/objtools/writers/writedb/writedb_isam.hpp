@@ -200,6 +200,7 @@ private:
     /// @param seqid The sequence identifier.
     void x_AddPdb(int oid, const CSeq_id & seqid);
     
+#ifndef SHORT_ISAM_FORMAT
     /// Add GI String.
     /// 
     /// In non-sparse mode, the set of string index objects includes
@@ -209,6 +210,7 @@ private:
     /// @param oid OID of the sequence.
     /// @param gi GI to stringify.
     void x_AddGiString(int oid, int gi);
+#endif
     
     /// Add a 'local' type Seq-id.
     /// 
@@ -304,6 +306,7 @@ private:
     /// @param ver Version to use, or zero.
     void x_AddString(int oid, const CTempString & s, int ver);
     
+#ifndef SHORT_ISAM_FORMAT
     /// Add several strings for the given identifier.
     ///
     /// In non-sparse mode, this method is used to add up to 12
@@ -330,6 +333,7 @@ private:
                      const CTempString & nm,
                      int                 ver,
                      const CTempString & acc);
+#endif
     
     /// Write the ISAM index header to disk.
     void x_WriteHeader();

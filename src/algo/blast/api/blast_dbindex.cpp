@@ -1047,8 +1047,8 @@ static BlastSeqSrc * s_IDbSrcCopy( BlastSeqSrc * seq_src )
 /** Initialize the BlastSeqSrc data structure with the appropriate callbacks. */
 static void s_IDbSrcInit( BlastSeqSrc * retval, CIndexedDb::TThreadLocal * idb )
 {
-    ASSERT( retval );
-    ASSERT( idb );
+    _ASSERT( retval );
+    _ASSERT( idb );
 
     _BlastSeqSrcImpl_SetDeleteFnPtr        (retval, & s_IDbSrcFree);
     _BlastSeqSrcImpl_SetCopyFnPtr          (retval, & s_IDbSrcCopy);
@@ -1079,8 +1079,8 @@ static BlastSeqSrc * s_CloneSrcNew( BlastSeqSrc * retval, void * args )
 //------------------------------------------------------------------------------
 static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args )
 {
-    ASSERT( retval );
-    ASSERT( args );
+    _ASSERT( retval );
+    _ASSERT( args );
     SIndexedDbNewArgs * idb_args = (SIndexedDbNewArgs *)args;
     CIndexedDb::TThreadLocal * idb = 0;
     bool success = false;
@@ -1116,10 +1116,10 @@ static unsigned long s_MB_IdbGetResults(
         Int4 oid_i, Int4 chunk_i,
         BlastInitHitList * init_hitlist )
 {
-    ASSERT( idb_v != 0 );
-    ASSERT( oid_i >= 0 );
-    ASSERT( chunk_i >= 0 );
-    ASSERT( init_hitlist != 0 );
+    _ASSERT( idb_v != 0 );
+    _ASSERT( oid_i >= 0 );
+    _ASSERT( chunk_i >= 0 );
+    _ASSERT( init_hitlist != 0 );
 
     CIndexedDb * idb = (CIndexedDb *)idb_v;
     CDbIndex::TSeqNum oid = (CDbIndex::TSeqNum)oid_i;

@@ -1065,8 +1065,8 @@ BOOST_AUTO_TEST_CASE(BinaryListBuilder)
           "0 1 0 10 0 100 0 1000 0 10000 "
           "0 100000 0 1000000 0 10000000 1 0 10 0");
     
-    CFile(h4).Remove();
-    CFile(h8).Remove();
+    CFile(fn4).Remove();
+    CFile(fn8).Remove();
 }
 
 BOOST_AUTO_TEST_CASE(FourAndEightByteTis)

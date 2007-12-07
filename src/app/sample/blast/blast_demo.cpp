@@ -181,8 +181,7 @@ int CBlastDemoApplication::Run(void)
     // This will dump the options to stderr.
     // opts->GetOptions().DebugDumpText(cerr, "opts", 1);
 
-    CRef<CObjectManager> objmgr;
-    objmgr = CObjectManager::GetInstance();
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     if (!objmgr) {
          throw std::runtime_error("Could not initialize object manager");
     }
@@ -190,13 +189,13 @@ int CBlastDemoApplication::Run(void)
     const bool is_protein = 
         Blast_QueryIsProtein(opts->GetOptions().GetProgramType());
     SDataLoaderConfig dlconfig(is_protein);
-    CBlastInputConfig iconfig(dlconfig);
-    CBlastFastaInputSource fasta_input(*objmgr, args["in"].AsInputFile(),
-                                       iconfig);
+    CBlastInputSourceConfig iconfig(dlconfig);
+    CBlastFastaInputSource fasta_input(args["in"].AsInputFile(), iconfig);
+    CScope scope(*objmgr);
 
     CBlastInput blast_input(&fasta_input);
 
-    TSeqLocVector query_loc = blast_input.GetAllSeqLocs();
+    TSeqLocVector query_loc = blast_input.GetAllSeqLocs(scope);
 
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
 
@@ -249,8 +248,10 @@ void CBlastDemoApplication::Exit(void)
 //  MAIN
 
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[])
 {
     // Execute main application function
     return CBlastDemoApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+#endif /* SKIP_DOXYGEN_PROCESSING */

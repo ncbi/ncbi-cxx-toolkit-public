@@ -57,7 +57,8 @@ public:
 
     /// Initialize the runner object from the command line arguments
     void ProcessDatabaseArgs(CRef<blast::CBlastDatabaseArgs> db_args,
-                             CRef<objects::CObjectManager> obj_mgr);
+                             CRef<objects::CObjectManager> obj_mgr,
+                             objects::CScope* scope_formatter);
 
     /// Is the object properly initialized to run Blast 2 sequences?
     bool IsBl2Seq() const;
