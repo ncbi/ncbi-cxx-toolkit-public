@@ -11553,10 +11553,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_parameters);
             add(tc);
 
-            if (args.GetDriverName() != odbc_driver
-                && args.GetDriverName() != odbcw_driver
-                && args.GetDriverName() != ftds8_driver
-                ) {
+            if (args.GetDriverName() != ftds8_driver) {
                 tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor2,
                                         DBAPIInstance);
                 tc->depends_on(tc_init);
