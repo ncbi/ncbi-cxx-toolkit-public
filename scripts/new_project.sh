@@ -38,12 +38,15 @@ ARGUMENTS:
      app/blast       to build an application using BLAST
      app/cgi         to build a CGI or FastCGI application
      app/dbapi       to build a DBAPI application
+     app/eutils      to build an eUtils client application
      app/gui         to build an FLTK application
      app/lds         to build an application using a local data store
+     app/netschedule to build an NCBI GRID (NetSchedule) application
      app/objects     to build an application using ASN.1 objects
      app/objmgr      to build an application using the object manager
      app/soap/client to build a SOAP client
      app/soap/server to build a SOAP server
+     app/unit_test   to build a Boost-based unit test application
    [builddir]  -- path to the pre-built NCBI C++ toolkit
                   (default = $def_builddir)
 
