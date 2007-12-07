@@ -1877,7 +1877,7 @@ string CBlastFormatUtil::GetURLFromRegistry( const string url_name, int index){
     l_file.seekg( 0, ios::beg );
     l_file.read(l_mem, l_inc_size);
     l_file.close();
-    l_format.clear(); l_format.reserve( (size_t)l_inc_size + 1 );
+    l_format.erase(); l_format.reserve( (size_t)l_inc_size + 1 );
     l_format =  l_mem;
     delete [] l_mem;     
   }
