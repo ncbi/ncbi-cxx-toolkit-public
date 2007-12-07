@@ -8,7 +8,7 @@ APP = gene_info_reader
 SRC = gene_info_reader_app
 
 LIB = gene_info xobjutil xobjsimple seqdb \
-	$(BLAST_LIBS) $(OBJMGR_LIBS:%=%$(STATIC))
+	$(BLAST_LIBS:%=%$(STATIC)) $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
