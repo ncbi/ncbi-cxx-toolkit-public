@@ -1,0 +1,8 @@
+# $Id$
+
+APP_PROJ = unit_test_sample
+
+REQUIRES = Boost.Test objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
