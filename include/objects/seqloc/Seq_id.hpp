@@ -433,11 +433,6 @@ public:
     virtual void Assign(const CSerialObject& source,
                         ESerialRecursionMode how = eRecursive);
 
-    /// Optimized implementation of CSerialObject::Equals, which is
-    /// not so efficient.
-    virtual bool Equals(const CSerialObject& object,
-                        ESerialRecursionMode how = eRecursive) const;
-
 private:
     void x_Init(list<string>& fasta_pieces);
 

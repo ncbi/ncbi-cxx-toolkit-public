@@ -2105,17 +2105,6 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
 }
 
 
-bool CSeq_id::Equals(const CSerialObject& object, ESerialRecursionMode how) const
-{
-    if ( typeid(object) != typeid(*this) ) {
-        ERR_POST_X(8, Fatal <<
-            "CSeq_id::Assign() -- Assignment of incompatible types: " <<
-            typeid(*this).name() << " = " << typeid(object).name());
-    }
-    return CSerialObject::Equals(object, how);
-}
-
-
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 

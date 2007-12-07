@@ -1412,17 +1412,6 @@ void CSeq_loc::SetId(CSeq_id& id)
 }
 
 
-bool CSeq_loc::Equals(const CSerialObject& object, ESerialRecursionMode how) const
-{
-    if ( typeid(object) != typeid(*this) ) {
-        ERR_POST_X(3, Fatal <<
-            "CSeq_loc::Assign() -- Assignment of incompatible types: " <<
-            typeid(*this).name() << " = " << typeid(object).name());
-    }
-    return CSerialObject::Equals(object, how);
-}
-
-
 void CSeq_loc::x_CheckId(const CSeq_id*& id) const
 {
     switch ( Which() ) {

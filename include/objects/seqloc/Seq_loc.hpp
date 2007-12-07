@@ -167,8 +167,6 @@ public:
 
     virtual void Assign(const CSerialObject& source,
                         ESerialRecursionMode how = eRecursive);
-    virtual bool Equals(const CSerialObject& object,
-                        ESerialRecursionMode how = eRecursive) const;
 
     /// Compare locations if they are defined on the same single sequence
     /// or throw exception.
