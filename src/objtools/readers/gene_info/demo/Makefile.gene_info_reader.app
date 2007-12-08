@@ -7,8 +7,7 @@ ASN_DEP = seq
 APP = gene_info_reader
 SRC = gene_info_reader_app
 
-LIB = gene_info xobjutil xobjsimple seqdb \
-	$(BLAST_LIBS:%=%$(STATIC)) $(OBJMGR_LIBS:%=%$(STATIC))
+LIB = gene_info xobjutil seqdb blastdb $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
