@@ -1854,7 +1854,6 @@ string CBlastFormatUtil::GetURLFromRegistry( const string url_name, int index){
   if( l_host_port.empty())   return GetURLDefault(url_name,index);
 
   // get format part
-  l_format.clear();
   l_key = url_name + l_fmt_suffix ; //"_FORMAT";
   l_key_ndx = l_key + "_" + NStr::IntToString( index );
   if( index >= 0 ){
@@ -1870,7 +1869,7 @@ string CBlastFormatUtil::GetURLFromRegistry( const string url_name, int index){
   if( file_name_mode ) { // read whole content of the file to string buffer    
     string l_inc_file_name = l_format_file;
     CNcbiIfstream l_file (l_inc_file_name.c_str(), ios::in|ios::binary|ios::ate); 
-    CNcbiIfstream::pos_type l_inc_size = l_file.tellg();
+    CT_POS_TYPE l_inc_size = l_file.tellg();
     //    size_t l_buf_sz = (size_t) l_inc_size;
     char *l_mem = new char [ (size_t) l_inc_size + 1];
     memset( l_mem,0, (size_t) l_inc_size + 1 ) ;
