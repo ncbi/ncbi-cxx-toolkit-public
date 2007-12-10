@@ -140,9 +140,9 @@ public:
 
     typedef CDSAnnotLockReadGuard                   TAnnotLockReadGuard;
     typedef CDSAnnotLockWriteGuard                  TAnnotLockWriteGuard;
-    typedef CRWLock TMainLock;
-    typedef CRWLock TAnnotLock;
-    typedef CRWLock TCacheLock;
+    typedef CMutex TMainLock;
+    typedef CMutex TAnnotLock;
+    typedef CMutex TCacheLock;
 
     /// Register new TSE (Top Level Seq-entry)
     TTSE_Lock AddTSE(CSeq_entry& se,
