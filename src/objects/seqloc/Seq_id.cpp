@@ -1107,6 +1107,7 @@ static const char * kBuiltInGuide[] = {
     "special  CAK32514           embl_tpa_prot",
     "special  CAL08000-CAL08005  embl_tpa_prot",
     "special  CAL10024           embl_tpa_prot",
+    "special  CAL36192           embl_tpa_prot",
     "special  CAL36432-CAL36433  embl_tpa_prot",
     "special  CAL41938-CAL41942  embl_tpa_prot",
     "special  CAL43796-CAL43799  embl_tpa_prot",
