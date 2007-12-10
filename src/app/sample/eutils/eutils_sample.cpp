@@ -619,7 +619,7 @@ void CEUtilsApp::CallEFetch(const CArgs& args)
     }
 
     string retmode_str = args["retmode"].AsString();
-    CEFetch_Request::ERetMode retmode;
+    CEFetch_Request::ERetMode retmode = CEFetch_Request::eRetMode_none;
     if (retmode_str == "text") {
         retmode = CEFetch_Request::eRetMode_text;
     }
