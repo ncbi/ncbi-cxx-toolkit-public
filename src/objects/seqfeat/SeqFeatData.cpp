@@ -201,6 +201,7 @@ static const SImportEntry kImportTable[] = {
     { "exon",                CSeqFeatData::eSubtype_exon },
     { "gap",                 CSeqFeatData::eSubtype_gap },
     { "iDNA",                CSeqFeatData::eSubtype_iDNA },
+    { "import",              CSeqFeatData::eSubtype_imp },
     { "intron",              CSeqFeatData::eSubtype_intron },
     { "mat_peptide",         CSeqFeatData::eSubtype_mat_peptide },
     { "misc_RNA",            CSeqFeatData::eSubtype_misc_RNA },
@@ -2281,8 +2282,8 @@ const CSiteList* CSeqFeatData::GetSiteList()
 //////////////////////////////////////////////////////////////////////////////
 
 static CFeatListItem sc_ConfigItemInit[] = {
-    CFeatListItem( CSeqFeatData::e_not_set,   CSeqFeatData::eSubtype_any,   "All",  "Master" ),
-    CFeatListItem( CSeqFeatData::e_Gene,      CSeqFeatData::eSubtype_gene,  "Gene", "Gene" ),
+    CFeatListItem( CSeqFeatData::e_not_set,  CSeqFeatData::eSubtype_any,   "All",  "Master" ),
+    CFeatListItem( CSeqFeatData::e_Gene,     CSeqFeatData::eSubtype_gene,  "Gene", "Gene" ),
     CFeatListItem( CSeqFeatData::e_Org,      CSeqFeatData::eSubtype_org,   "Org",  "Org" ),
     CFeatListItem( CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion,  "CDS",  "CDS" ),
 
@@ -2305,8 +2306,8 @@ static CFeatListItem sc_ConfigItemInit[] = {
 
     CFeatListItem( CSeqFeatData::e_Pub,     CSeqFeatData::eSubtype_pub,   "Pub", "Pub" ),
     CFeatListItem( CSeqFeatData::e_Seq,     CSeqFeatData::eSubtype_seq,   "Seq", "Seq" ),
-    
-    CFeatListItem( CSeqFeatData::e_Imp,     CSeqFeatData::eSubtype_any,   "Import All", "Import Master" ),
+
+    CFeatListItem( CSeqFeatData::e_Imp,      CSeqFeatData::eSubtype_any,   "Import All", "Import Master" ),
 
     CFeatListItem( CSeqFeatData::e_Region,   CSeqFeatData::eSubtype_region,    "region",     "region" ),
     CFeatListItem( CSeqFeatData::e_Comment,  CSeqFeatData::eSubtype_comment,    "comment",     "comment" ),
