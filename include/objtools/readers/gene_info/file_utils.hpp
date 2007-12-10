@@ -45,6 +45,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 //==========================================================================//
 
 /// CGeneFileUtils
@@ -58,7 +59,7 @@ BEGIN_NCBI_SCOPE
 /// tuples), as well as providing a uniform storage/retrieval mechanism for
 /// Gene info objects that is independent of any text formatting issues.
 
-class CGeneFileUtils
+class NCBI_XOBJREAD_EXPORT CGeneFileUtils
 {
 public:
     /// STwoIntRecord - a pair of integers.

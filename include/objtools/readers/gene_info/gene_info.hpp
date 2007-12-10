@@ -48,6 +48,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 //==========================================================================//
 
 /// CGeneInfoException
@@ -90,6 +91,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CGeneInfoException, CException);
 };
 
+
 //==========================================================================//
 
 /// CGeneInfo
@@ -101,7 +103,7 @@ public:
 /// symbol, description, unique ID, etc. The class is derived from CObject
 /// so that one can freely use CRefs with this class.
 
-class CGeneInfo : public CObject
+class NCBI_XOBJREAD_EXPORT CGeneInfo : public CObject
 {
 private:
     /// Is the object properly initialized.
@@ -222,6 +224,7 @@ public:
 /// Output the Gene information formatted as HTML.
 CNcbiOstream& operator<<(CNcbiOstream& out, const CGeneInfo& geneInfo);
 
+
 //==========================================================================//
 
 /// IGeneInfoInput
@@ -232,7 +235,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CGeneInfo& geneInfo);
 /// objects for a given Gi or a given Gene ID from any input source.
 /// Additionally, the interface defines Gi to/from Gene ID conversions.
 
-class IGeneInfoInput
+class NCBI_XOBJREAD_EXPORT IGeneInfoInput
 {
 public:
     /// List of Gis.
@@ -277,7 +280,7 @@ public:
     ///     The Gi list to append to.
     /// @return
     ///     True if one or more Gis were found for the Gene ID.
-     virtual bool
+    virtual bool
         GetRNAGisForGeneId(int geneId, TGiList& giList) = 0;
 
     /// Get all Protein Gis for a given Gene ID.
@@ -339,6 +342,7 @@ public:
 };
 
 //==========================================================================//
+
 
 END_NCBI_SCOPE
 

@@ -47,6 +47,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 //==========================================================================//
 
 /// Name of the environment variable holding the path to Gene info files.
@@ -81,8 +82,8 @@ BEGIN_NCBI_SCOPE
 /// directly to the constructor, or the class attempts to read them from
 /// a path stored in an environment variable (the preferred approach).
 
-class CGeneInfoFileReader : public IGeneInfoInput,
-                            public CGeneFileUtils
+class NCBI_XOBJREAD_EXPORT CGeneInfoFileReader : public IGeneInfoInput,
+                                                 public CGeneFileUtils
 {
 private:
     /// Path to the Gi to Gene ID file.
@@ -209,6 +210,7 @@ public:
 };
 
 //==========================================================================//
+
 
 END_NCBI_SCOPE
 
