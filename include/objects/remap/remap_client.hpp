@@ -58,7 +58,7 @@ class NCBI_REMAP_EXPORT CRemapClient : public CRemapClient_Base
     typedef CRemapClient_Base Tparent;
 public:
     // constructor
-    CRemapClient(void);
+    CRemapClient(const string& url = kDefaultUrl);
     // destructor
     ~CRemapClient(void);
 
@@ -74,6 +74,8 @@ public:
                                   const string& to_build,
                                   vector<CRef<objects::CSeq_loc> >& result);
 
+    static const string kDefaultUrl;
+
 protected:
     // we override this to use a server that's not a named service
     void x_Connect();
@@ -83,13 +85,15 @@ private:
     CRemapClient(const CRemapClient& value);
     CRemapClient& operator=(const CRemapClient& value);
 
+    string m_Url;
+
 };
 
 /////////////////// CRemapClient inline methods
 
 // constructor
 inline
-CRemapClient::CRemapClient(void)
+CRemapClient::CRemapClient(const string& url) : m_Url(url)
 {
     SetDefaultRequest().SetVersion(0);
 }

@@ -51,6 +51,10 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+const string CRemapClient::kDefaultUrl = "http://bender.be-md.ncbi.nlm.nih.gov:6224/"
+    "staff/jcherry/remap/remap_server.cgi";
+
+
 // destructor
 CRemapClient::~CRemapClient(void)
 {
@@ -61,10 +65,7 @@ CRemapClient::~CRemapClient(void)
 // set up as a named service.
 void CRemapClient::x_Connect()
 {
-    const string kUrl = "http://graceland.ncbi.nlm.nih.gov:6224/"
-        "staff/jcherry/remap/remap_server.cgi";
-    
-    x_ConnectURL(kUrl);
+    x_ConnectURL(m_Url);
 }
 
 
