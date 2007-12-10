@@ -47,7 +47,7 @@ NCBI_XBLAST_EXPORT extern const string kArgQuery;
 NCBI_XBLAST_EXPORT extern const string kDfltArgQuery;
 
 /// Output file name
-extern const string kArgOutput;
+NCBI_XBLAST_EXPORT extern const string kArgOutput;
 
 /// BLAST database name
 extern const string kArgDb;
