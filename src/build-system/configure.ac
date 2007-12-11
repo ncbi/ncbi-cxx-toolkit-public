@@ -5635,10 +5635,10 @@ case "$AR"     in compilers/*)     AR="\$(top_srcdir)/$AR"     ;; esac
 ### Get Insure++ to honor the Toolkit's psrc file
 case "$CC" in
    */insure*)
-      CC="$CC -Zop \$(top_srcdir)/etc/psrc -D__INSURE__"
-      CXX="$CXX -Zop \$(top_srcdir)/etc/psrc -D__INSURE__"
-      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/etc/psrc -D__INSURE__"
-      LINK_DLL=`echo "$LINK_DLL" | sed -e 's:insure:& -Zop \$(top_srcdir)/etc/psrc:'`
+      CC="$CC -Zop \$(top_srcdir)/compilers/psrc -D__INSURE__"
+      CXX="$CXX -Zop \$(top_srcdir)/compilers/psrc -D__INSURE__"
+      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/compilers/psrc -D__INSURE__"
+      LINK_DLL=`echo "$LINK_DLL" | sed -e 's:insure:& -Zop \$(top_srcdir)/compilers/psrc:'`
    ;;
 esac
 
@@ -5659,7 +5659,7 @@ s%^.\\(/build-system\\)\\(/.*\\)\\.in\$%$builddir\\2:./src\\1\\2\\.in%
 s%^.\\(/[[^:]]*\\)\\.in\$%$builddir\\1:./src\\1\\.in%
 EOF
 cat $tmp_sed >&AS_MESSAGE_LOG_FD
-configurables=`cd "${real_srcdir}/src"  &&  find . -name '*.in' -print | sed -f $tmp_sed`
+configurables=`cd "${real_srcdir}/src"  &&  find . -name '.svn' -prune -o -name '*.in' -print | sed -f $tmp_sed`
 rm $tmp_sed
 
 if test -z "$configurables" ; then
