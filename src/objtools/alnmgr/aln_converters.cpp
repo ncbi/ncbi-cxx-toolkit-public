@@ -522,7 +522,10 @@ ConvertSeqLocsToPairwiseAln(CPairwiseAln& aln,
     if ( !wid2 ) {
         wid2 = 1;
     }
-
+    if (wid1 == wid2) { // protein to protein does not need widths
+        wid1 = 1;
+        wid2 = 1;
+    }
     CSeq_loc_CI it1(loc_1);
     CSeq_loc_CI it2(loc_2);
     TSeqPos lshift1 = 0;
@@ -540,29 +543,29 @@ ConvertSeqLocsToPairwiseAln(CPairwiseAln& aln,
         }
         bool rev1 = IsReverse(it1.GetStrand());
         bool rev2 = IsReverse(it2.GetStrand());
-        TSeqPos len1 = (it1.GetRange().GetLength() - lshift1 - rshift1)*wid1;
-        TSeqPos len2 = (it2.GetRange().GetLength() - lshift2 - rshift2)*wid2;
+        TSeqPos len1 = it1.GetRange().GetLength()*wid1 - lshift1 - rshift1;
+        TSeqPos len2 = it2.GetRange().GetLength()*wid2 - lshift2 - rshift2;
         TSeqPos len = len1 > len2 ? len2 : len1;
-        TSeqPos start1 = (it1.GetRange().GetFrom() + lshift1)*wid1;
+        TSeqPos start1 = it1.GetRange().GetFrom()*wid1 + lshift1;
         if ( rev1 ) {
             start1 += len1 - len;
         }
-        TSeqPos start2 = (it2.GetRange().GetFrom() + lshift2)*wid2;
+        TSeqPos start2 = it2.GetRange().GetFrom()*wid2 + lshift2;
         if ( rev2 ) {
             start2 += len2 - len;
         }
         aln.insert(CPairwiseAln::TAlnRng(start1, start2, len, rev1 == rev2));
         if ( rev1 ) {
-            rshift1 += len/wid1;
+            rshift1 += len;
         }
         else {
-            lshift1 += len/wid1;
+            lshift1 += len;
         }
         if ( rev2 ) {
-            rshift2 += len/wid2;
+            rshift2 += len;
         }
         else {
-            lshift2 += len/wid2;
+            lshift2 += len;
         }
         if (len1 == len) {
             ++it1;
