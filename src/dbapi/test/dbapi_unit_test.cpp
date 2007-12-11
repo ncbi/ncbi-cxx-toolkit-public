@@ -3963,7 +3963,7 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
         {
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
-                "    id int IDENTITY (1, 1) NOT NULL , \n"
+                "    id int IDENTITY NOT NULL , \n"
                 "    id_nwparams int NOT NULL, \n"
                 "    gi1 int NOT NULL, \n"
                 "    gi2 int NOT NULL, \n"
@@ -11466,9 +11466,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             add(tc);
         }
 
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
+        if (args.GetDriverName() != ctlib_driver) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        }
+        else {
+            PutMsgDisabled("Test_Bulk_Writing4");
+        }
     } else {
         PutMsgDisabled("Test_Bulk_Writing");
     }
