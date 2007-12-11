@@ -3961,7 +3961,6 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
 
         // Create table ...
         {
-            /*
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
                 "    id int IDENTITY (1, 1) NOT NULL , \n"
@@ -3974,15 +3973,6 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
                 "    idty_tup4 FLOAT NULL \n"
                 ")"
                 ;
-             */
-
-            sql =
-                "CREATE TABLE " + table_name + " ( \n"
-                // "    id int IDENTITY (1, 1) NOT NULL , \n"
-                "    transcript TEXT NOT NULL, \n"
-                "    idty_tup4 FLOAT NULL \n"
-                ")"
-                ;
 
             auto_stmt->ExecuteUpdate(sql);
         }
@@ -3991,8 +3981,7 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
         {
             //
             auto_ptr<IBulkInsert> bi(
-                // m_Conn->CreateBulkInsert(table_name, 8)
-                m_Conn->CreateBulkInsert(table_name, 2)
+                m_Conn->CreateBulkInsert(table_name, 8)
                 );
 
             CVariant b_idnwparams(eDB_Int);
@@ -4003,7 +3992,6 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
             CVariant b_idty4(eDB_Float);
             CVariant b_trans(eDB_Text);
 
-            /*
             bi->Bind(2, &b_idnwparams);
             bi->Bind(3, &b_gi1);
             bi->Bind(4, &b_gi2);
@@ -4011,10 +3999,6 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
             bi->Bind(6, &b_trans);
             bi->Bind(7, &b_idty2);
             bi->Bind(8, &b_idty4);
-            */
-
-            bi->Bind(1, &b_trans);
-            bi->Bind(2, &b_idty4);
 
             b_idnwparams = 123456;
 
@@ -11307,12 +11291,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
-    /* Doesn't work at the moment ...
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
-     */
-
     if (args.GetServerType() == CTestArguments::eMsSql ||
         args.GetServerType() == CTestArguments::eMsSql2005
         ) {
@@ -11488,11 +11466,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             add(tc);
         }
 
-        /*
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
-        */
     } else {
         PutMsgDisabled("Test_Bulk_Writing");
     }

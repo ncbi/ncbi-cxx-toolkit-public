@@ -633,6 +633,8 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
     CS_CONTEXT  *ctx = blkdesc->con->ctx;
     unsigned char* current_row = blkdesc->bindinfo->current_row;
 
+    int i;
+
     tdsdump_log(TDS_DBG_FUNC, "blk_textxfer(blkdesc, buflen %d, outlen)\n", buflen);
 
     record = blkdesc->bindinfo->current_row;
@@ -640,6 +642,21 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
     new_record_size = 0;
 
     if (IS_TDS7_PLUS(tds)) {
+
+        if ( blkdesc->text_sent == 0 ) {
+            for (i = blkdesc->current_col; i < blkdesc->bindinfo->num_cols; i++) {
+
+                bindcol = blkdesc->bindinfo->columns[i];
+                if (bindcol == NULL) {
+                    return CS_FAIL;
+                }
+                if (is_blob_type (bindcol->on_server.column_type) ) { 
+                    blkdesc->current_col = i;
+                    break;
+                }
+            }
+            if(i >= blkdesc->bindinfo->num_cols) return CS_FAIL;
+        }
 
         bindcol = blkdesc->bindinfo->columns[blkdesc->current_col];
 
@@ -738,7 +755,10 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
                             /* ssikorsk */
                             /* TDSBLOB */
                             /* *record = textptr_size; record++; */
-                            tds_put_n(tds, &textptr_size, sizeof(textptr_size)); record += sizeof(TDS_CHAR*); current_row += sizeof(TDS_CHAR*);
+                            *((TDS_CHAR**) record) = 0;
+                            tds_put_n(tds, &textptr_size, sizeof(textptr_size));
+                            record += sizeof(TDS_CHAR*);
+                            current_row += sizeof(TDS_CHAR*);
                             memcpy(record, textptr, 16); record += 16;
                             memcpy(record, timestamp, 8); record += 8;
                             /* new_record_size += 25; */
@@ -1053,7 +1073,7 @@ _rowxfer_in_init(CS_BLKDESC * blkdesc)
     TDSSOCKET *tds = blkdesc->con->tds_socket;
     TDSCOLUMN *bcpcol;
 
-    int i;
+    int i, n;
     int firstcol;
 
     int fixed_col_len_tot     = 0;
@@ -1074,19 +1094,26 @@ _rowxfer_in_init(CS_BLKDESC * blkdesc)
 
         firstcol = 1;
 
-        for (i = 0; i < blkdesc->bindinfo->num_cols; i++) {
-            bcpcol = blkdesc->bindinfo->columns[i];
-            if (blkdesc->identity_insert_on) {
-                /* ssikorsk */
-                if (!bcpcol->column_timestamp && blk_is_binded(bcpcol)) {
-                    _blk_build_bulk_insert_stmt(&colclause, bcpcol, firstcol);
-                    firstcol = 0;
-                }
-            } else {
-                /* ssikorsk */
-                if (!bcpcol->column_identity && !bcpcol->column_timestamp && blk_is_binded(bcpcol)) {
-                    _blk_build_bulk_insert_stmt(&colclause, bcpcol, firstcol);
-                    firstcol = 0;
+        for (n = 2; n--; ) {
+            for (i = 0; i < blkdesc->bindinfo->num_cols; i++) {
+                bcpcol = blkdesc->bindinfo->columns[i];
+                if (n  &&  is_blob_type(bcpcol->on_server.column_type))
+                    continue;
+                else if (!n  &&  !is_blob_type(bcpcol->on_server.column_type))
+                    continue;
+
+                if (blkdesc->identity_insert_on) {
+                    /* ssikorsk */
+                    if (!bcpcol->column_timestamp && blk_is_binded(bcpcol)) {
+                        _blk_build_bulk_insert_stmt(&colclause, bcpcol, firstcol);
+                        firstcol = 0;
+                    }
+                } else {
+                    /* ssikorsk */
+                    if (!bcpcol->column_identity && !bcpcol->column_timestamp && blk_is_binded(bcpcol)) {
+                        _blk_build_bulk_insert_stmt(&colclause, bcpcol, firstcol);
+                        firstcol = 0;
+                    }
                 }
             }
         }
@@ -1341,7 +1368,7 @@ _blk_send_colmetadata(CS_BLKDESC * blkdesc)
     TDSSOCKET *tds = blkdesc->con->tds_socket;
     unsigned char colmetadata_token = 0x81;
     TDSCOLUMN *bcpcol;
-    int i;
+    int i, n;
     TDS_SMALLINT num_cols;
 
     /*
@@ -1363,57 +1390,64 @@ _blk_send_colmetadata(CS_BLKDESC * blkdesc)
 
     tds_put_smallint(tds, num_cols);
 
-    for (i = 0; i < blkdesc->bindinfo->num_cols; i++) {
-        bcpcol = blkdesc->bindinfo->columns[i];
+    for (n = 2; n--; ) {
+        for (i = 0; i < blkdesc->bindinfo->num_cols; i++) {
+            bcpcol = blkdesc->bindinfo->columns[i];
 
-        /*
-         * dont send the (meta)data for timestamp columns, or
-         * identity columns (unless indentity_insert is enabled
-         */
+            if (n  &&  is_blob_type(bcpcol->on_server.column_type))
+                continue;
+            else if (!n  &&  !is_blob_type(bcpcol->on_server.column_type))
+                continue;
 
-        /* ssikorsk */
-        if ((!blkdesc->identity_insert_on && bcpcol->column_identity) ||
-                bcpcol->column_timestamp ||
-                !blk_is_binded(bcpcol)) {
-            continue;
+            /*
+             * dont send the (meta)data for timestamp columns, or
+             * identity columns (unless indentity_insert is enabled
+             */
+
+            /* ssikorsk */
+            if ((!blkdesc->identity_insert_on && bcpcol->column_identity) ||
+                    bcpcol->column_timestamp ||
+                    !blk_is_binded(bcpcol)) {
+                continue;
+            }
+
+            tds_put_smallint(tds, bcpcol->column_usertype);
+            tds_put_smallint(tds, bcpcol->column_flags);
+            tds_put_byte(tds, bcpcol->on_server.column_type);
+
+            switch (bcpcol->column_varint_size) {
+                case 4:
+                    tds_put_int(tds, bcpcol->column_size);
+                    break;
+                case 2:
+                    tds_put_smallint(tds, bcpcol->column_size);
+                    break;
+                case 1:
+                    tds_put_byte(tds, bcpcol->column_size);
+                    break;
+                case 0:
+                    break;
+                default:
+                    break;
+            }
+
+            if (is_numeric_type(bcpcol->on_server.column_type)) {
+                tds_put_byte(tds, bcpcol->column_prec);
+                tds_put_byte(tds, bcpcol->column_scale);
+            }
+            if (IS_TDS80(tds)
+                    && is_collate_type(bcpcol->on_server.column_type)) {
+                tds_put_n(tds, bcpcol->column_collation, 5);
+            }
+            if (is_blob_type(bcpcol->on_server.column_type)) {
+                tds_put_smallint(tds, strlen(blkdesc->tablename));
+                tds_put_string(tds, blkdesc->tablename, strlen(blkdesc->tablename));
+            }
+            /* FIXME support multibyte string */
+            tds_put_byte(tds, bcpcol->column_namelen);
+            tds_put_string(tds, bcpcol->column_name, bcpcol->column_namelen);
+
         }
-
-        tds_put_smallint(tds, bcpcol->column_usertype);
-        tds_put_smallint(tds, bcpcol->column_flags);
-        tds_put_byte(tds, bcpcol->on_server.column_type);
-
-        switch (bcpcol->column_varint_size) {
-            case 4:
-                tds_put_int(tds, bcpcol->column_size);
-                break;
-            case 2:
-                tds_put_smallint(tds, bcpcol->column_size);
-                break;
-            case 1:
-                tds_put_byte(tds, bcpcol->column_size);
-                break;
-            case 0:
-                break;
-            default:
-                break;
-        }
-
-        if (is_numeric_type(bcpcol->on_server.column_type)) {
-            tds_put_byte(tds, bcpcol->column_prec);
-            tds_put_byte(tds, bcpcol->column_scale);
-        }
-        if (IS_TDS80(tds)
-                && is_collate_type(bcpcol->on_server.column_type)) {
-            tds_put_n(tds, bcpcol->column_collation, 5);
-        }
-        if (is_blob_type(bcpcol->on_server.column_type)) {
-            tds_put_smallint(tds, strlen(blkdesc->tablename));
-            tds_put_string(tds, blkdesc->tablename, strlen(blkdesc->tablename));
-        }
-        /* FIXME support multibyte string */
-        tds_put_byte(tds, bcpcol->column_namelen);
-        tds_put_string(tds, bcpcol->column_name, bcpcol->column_namelen);
-
     }
     return CS_SUCCEED;
 }
@@ -1458,6 +1492,7 @@ _blk_build_bcp_record(CS_BLKDESC *blkdesc, CS_INT offset)
     new_record_size = 0;
 
     if (IS_TDS7_PLUS(tds)) {
+        int has_text = 0;
 
         for (blkdesc->current_col = 0; blkdesc->current_col < blkdesc->bindinfo->num_cols; ++blkdesc->current_col) {
 
@@ -1483,7 +1518,8 @@ _blk_build_bcp_record(CS_BLKDESC *blkdesc, CS_INT offset)
             }
 
             if (rc == CS_BLK_HAS_TEXT) {
-                break;
+                has_text = 1;
+                continue;
             }
 
             tdsdump_log(TDS_DBG_INFO1, "gotten column %d length %d null %d\n",
@@ -1578,6 +1614,11 @@ _blk_build_bcp_record(CS_BLKDESC *blkdesc, CS_INT offset)
 
         tds_put_byte(tds, row_token);   /* 0xd1 */
         tds_put_n(tds, blkdesc->bindinfo->current_row, new_record_size);
+
+        blkdesc->current_col = 0;
+        if (has_text) {
+            rc = CS_BLK_HAS_TEXT;
+        }
     }  /* IS_TDS7_PLUS */
     else {
         memset(record, '\0', old_record_size);	/* zero the rowbuffer */
