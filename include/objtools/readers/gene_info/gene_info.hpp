@@ -222,6 +222,7 @@ public:
 };
 
 /// Output the Gene information formatted as HTML.
+NCBI_XOBJREAD_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, const CGeneInfo& geneInfo);
 
 
