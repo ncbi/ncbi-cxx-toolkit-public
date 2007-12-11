@@ -11379,8 +11379,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
              && args.GetServerType() == CTestArguments::eSybase)
         && !(args.GetDriverName() == ftds64_driver
              && args.GetServerType() == CTestArguments::eSybase)
-        && !(args.GetDriverName() == ftds_odbc_driver
-             && args.GetServerType() == CTestArguments::eMsSql2005)
         && (args.GetDriverName() != dblib_driver
              || args.GetServerType() == CTestArguments::eSybase)
         ) {
