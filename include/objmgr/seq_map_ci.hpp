@@ -287,6 +287,10 @@ private:
     friend class CSeqMap;
     typedef CSeqMap_CI_SegmentInfo TSegmentInfo;
 
+    CSeqMap_CI(const CSeqMap_CI& base,
+               const CSeqMap& seqmap, size_t index,
+               TSeqPos pos);
+
     const TSegmentInfo& x_GetSegmentInfo(void) const;
     TSegmentInfo& x_GetSegmentInfo(void);
 

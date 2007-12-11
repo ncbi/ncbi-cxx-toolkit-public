@@ -208,6 +208,11 @@ public:
     ///   New iterator pointing to the next segment.
     CSeqMap_CI RemoveSegment(const CSeqMap_CI& seg);
 
+    void SetRepr(CSeq_inst::TRepr repr);
+    void ResetRepr(void);
+    void SetMol(CSeq_inst::TMol mol);
+    void ResetMol(void);
+
 protected:
 
     class CSegment;
@@ -381,7 +386,7 @@ protected:
     mutable TSeqPos m_SeqLength;
 
     // MT-protection
-    mutable CFastMutex   m_SeqMap_Mtx;
+    mutable CMutex  m_SeqMap_Mtx;
     
     friend class CSeqMap_CI;
     friend class CSeqMap_CI_SegmentInfo;

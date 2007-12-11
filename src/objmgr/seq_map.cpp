@@ -329,7 +329,7 @@ TSeqPos CSeqMap::x_ResolveSegmentPosition(size_t index, CScope* scope) const
         m_Segments[++resolved].m_Position = resolved_pos;
     } while ( resolved < index );
     {{
-        CFastMutexGuard guard(m_SeqMap_Mtx);
+        CMutexGuard guard(m_SeqMap_Mtx);
         if ( m_Resolved < resolved )
             m_Resolved = resolved;
     }}
@@ -357,7 +357,7 @@ size_t CSeqMap::x_FindSegment(TSeqPos pos, CScope* scope) const
             m_Segments[++resolved].m_Position = resolved_pos;
         } while ( resolved_pos <= pos );
         {{
-            CFastMutexGuard guard(m_SeqMap_Mtx);
+            CMutexGuard guard(m_SeqMap_Mtx);
             if ( m_Resolved < resolved )
                 m_Resolved = resolved;
         }}
@@ -407,7 +407,7 @@ const CObject* CSeqMap::x_GetObject(const CSegment& seg) const
 void CSeqMap::x_SetObject(CSegment& seg, const CObject& obj)
 {
     // lock for object modification
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    CMutexGuard guard(m_SeqMap_Mtx);
     // check for object
     if ( seg.m_RefObject && seg.m_SegType == seg.m_ObjType ) {
         NCBI_THROW(CSeqMapException, eDataError, "object already set");
@@ -422,7 +422,7 @@ void CSeqMap::x_SetObject(CSegment& seg, const CObject& obj)
 void CSeqMap::x_SetChunk(CSegment& seg, CTSE_Chunk_Info& chunk)
 {
     // lock for object modification
-    //CFastMutexGuard guard(m_SeqMap_Mtx);
+    //CMutexGuard guard(m_SeqMap_Mtx);
     // check for object
     if ( seg.m_ObjType == eSeqChunk ||
          seg.m_RefObject && seg.m_SegType == seg.m_ObjType ) {
@@ -513,7 +513,7 @@ void CSeqMap::x_SetSegmentGap(size_t index,
                               TSeqPos length,
                               CSeq_data* gap_data)
 {
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    CMutexGuard guard(m_SeqMap_Mtx);
     x_StartEditing();
     CSegment& seg = x_SetSegment(index);
     if ( seg.m_SegType != eSeqGap ) {
@@ -540,7 +540,7 @@ void CSeqMap::x_SetSegmentData(size_t index,
                                TSeqPos length,
                                CSeq_data& data)
 {
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    CMutexGuard guard(m_SeqMap_Mtx);
     x_StartEditing();
     CSegment& seg = x_SetSegment(index);
     if ( seg.m_SegType != eSeqData ) {
@@ -562,7 +562,7 @@ void CSeqMap::x_SetSegmentRef(size_t index,
                               TSeqPos ref_pos,
                               bool ref_minus_strand)
 {
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    CMutexGuard guard(m_SeqMap_Mtx);
     x_StartEditing();
     CSegment& seg = x_SetSegment(index);
     if ( seg.m_SegType != eSeqRef ) {
@@ -629,11 +629,12 @@ CSeqMap_CI CSeqMap::InsertSegmentGap(const CSeqMap_CI& seg0,
     _ASSERT(&seg0.x_GetSegmentInfo().x_GetSeqMap() == this);
     size_t index = seg0.x_GetSegmentInfo().x_GetIndex();
     TSeqPos pos = x_GetSegmentPosition(index, 0);
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    CMutexGuard guard(m_SeqMap_Mtx);
     x_StartEditing();
     m_Segments.insert(m_Segments.begin() + index, CSegment(eSeqGap, length));
+    x_SetSegment(index).m_Position = pos;
     x_SetChanged(index);
-    return FindSegment(pos, 0);
+    return CSeqMap_CI(seg0, *this, index, pos);
 }
 
 
@@ -642,7 +643,7 @@ CSeqMap_CI CSeqMap::RemoveSegment(const CSeqMap_CI& seg0)
     _ASSERT(&seg0.x_GetSegmentInfo().x_GetSeqMap() == this);
     size_t index = seg0.x_GetSegmentInfo().x_GetIndex();
     TSeqPos pos = x_GetSegmentPosition(index, 0);
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    CMutexGuard guard(m_SeqMap_Mtx);
     x_StartEditing();
     CSegment& seg = x_SetSegment(index);
     if ( seg.m_SegType == eSeqEnd ) {
@@ -650,8 +651,9 @@ CSeqMap_CI CSeqMap::RemoveSegment(const CSeqMap_CI& seg0)
                    "cannot remove end segment");
     }
     m_Segments.erase(m_Segments.begin() + index);
+    x_SetSegment(index).m_Position = pos;
     x_SetChanged(index);
-    return FindSegment(pos, 0);
+    return CSeqMap_CI(seg0, *this, index, pos);
 }
 
 
@@ -836,7 +838,7 @@ CRef<CSeqMap> CSeqMap::CloneFor(const CBioseq& seq) const
 {
     return CreateSeqMapForBioseq(seq);
     /*
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    CMutexGuard guard(m_SeqMap_Mtx);
     CRef<CSeqMap> ret;
     const CSeq_inst& inst = seq.GetInst();
     if ( inst.IsSetSeq_data() ) {
@@ -1146,7 +1148,7 @@ void CSeqMap::SetRegionInChunk(CTSE_Chunk_Info& chunk,
         length = m_SeqLength;
     }
     size_t index = x_FindSegment(pos, 0);
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    CMutexGuard guard(m_SeqMap_Mtx);
     while ( length ) {
         // get segment
         if ( index > x_GetLastEndSegmentIndex() ) {
@@ -1288,6 +1290,28 @@ bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
     }
     delta.erase(iter, delta.end());
     return true;
+}
+
+
+void CSeqMap::SetRepr(CSeq_inst::TRepr repr)
+{
+}
+
+
+void CSeqMap::ResetRepr(void)
+{
+}
+
+
+void CSeqMap::SetMol(CSeq_inst::TMol mol)
+{
+    m_Mol = mol;
+}
+
+
+void CSeqMap::ResetMol(void)
+{
+    m_Mol = CSeq_inst::eMol_not_set;
 }
 
 

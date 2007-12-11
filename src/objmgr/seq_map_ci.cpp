@@ -173,6 +173,32 @@ CSeqMap_CI::CSeqMap_CI(const CBioseq_Handle& bioseq,
 }
 
 
+CSeqMap_CI::CSeqMap_CI(const CSeqMap_CI& base,
+                       const CSeqMap& seqmap,
+                       size_t index,
+                       TSeqPos pos)
+    : m_Scope(base.m_Scope),
+      m_Stack(1, base.m_Stack.back())
+{
+    TSegmentInfo& info = x_GetSegmentInfo();
+    if ( &info.x_GetSeqMap() != &seqmap ||
+         info.x_GetIndex() != index ) {
+        NCBI_THROW(CSeqMapException, eInvalidIndex,
+                   "Invalid argument");
+    }
+    info.m_LevelRangePos = 0;
+    info.m_LevelRangeEnd = kInvalidSeqPos;
+    info.m_MinusStrand = 0;
+    const CSeqMap::CSegment& seg = info.x_GetSegment();
+    if ( seg.m_Position != pos ) {
+        NCBI_THROW(CSeqMapException, eInvalidIndex,
+                   "Invalid argument");
+    }
+    m_Selector.m_Position = pos;
+    m_Selector.m_Length = info.x_CalcLength();
+}
+
+
 CSeqMap_CI::~CSeqMap_CI(void)
 {
 }

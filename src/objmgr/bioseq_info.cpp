@@ -470,17 +470,17 @@ const CBioseq_Info::TInst& CBioseq_Info::GetInst(void) const
 
 void CBioseq_Info::SetInst(TInst& v)
 {
+    x_ResetSeqMap();
     m_Seq_dataChunks.clear();
     m_Object->SetInst(v);
-    x_ResetSeqMap();
 }
 
 void CBioseq_Info::ResetInst()
 {
     if (IsSetInst()) {
+        x_ResetSeqMap();
         m_Seq_dataChunks.clear();
         m_Object->ResetInst();
-        x_ResetSeqMap();
     }
 }
 
@@ -519,14 +519,20 @@ CBioseq_Info::TInst_Repr CBioseq_Info::GetInst_Repr(void) const
 
 void CBioseq_Info::SetInst_Repr(TInst_Repr v)
 {
-    x_ResetSeqMap();
+    CFastMutexGuard guard(m_SeqMap_Mtx);
+    if ( m_SeqMap ) {
+        m_SeqMap->SetRepr(v);
+    }
     m_Object->SetInst().SetRepr(v);
 }
 
 void CBioseq_Info::ResetInst_Repr()
 {
     if (IsSetInst_Repr()) {
-        x_ResetSeqMap();
+        CFastMutexGuard guard(m_SeqMap_Mtx);
+        if ( m_SeqMap ) {
+            m_SeqMap->ResetRepr();
+        }
         m_Object->SetInst().ResetRepr();
     }
 }
@@ -555,14 +561,20 @@ CBioseq_Info::TInst_Mol CBioseq_Info::GetInst_Mol(void) const
 
 void CBioseq_Info::SetInst_Mol(TInst_Mol v)
 {
-    x_ResetSeqMap();
+    CFastMutexGuard guard(m_SeqMap_Mtx);
+    if ( m_SeqMap ) {
+        m_SeqMap->SetMol(v);
+    }
     m_Object->SetInst().SetMol(v);
 }
 
 void CBioseq_Info::ResetInst_Mol()
 {
     if (IsSetInst_Mol()) {
-        x_ResetSeqMap();
+        CFastMutexGuard guard(m_SeqMap_Mtx);
+        if ( m_SeqMap ) {
+            m_SeqMap->ResetMol();
+        }
         m_Object->SetInst().ResetMol();
     }
 }
@@ -586,12 +598,19 @@ bool CBioseq_Info::CanGetInst_Length(void) const
 
 CBioseq_Info::TInst_Length CBioseq_Info::GetInst_Length(void) const
 {
-    return m_Object->GetInst().GetLength();
+    CFastMutexGuard guard(m_SeqMap_Mtx);
+    if ( m_SeqMap ) {
+        return m_SeqMap->GetLength(0);
+    }
+    else {
+        return m_Object->GetInst().GetLength();
+    }
 }
 
 
 void CBioseq_Info::SetInst_Length(TInst_Length v)
 {
+    x_Update(fNeedUpdate_seq_data);
     x_ResetSeqMap();
     m_Object->SetInst().SetLength(v);
 }
@@ -599,6 +618,7 @@ void CBioseq_Info::SetInst_Length(TInst_Length v)
 void CBioseq_Info::ResetInst_Length()
 {
     if (IsSetInst_Length()) {
+        x_Update(fNeedUpdate_seq_data);
         x_ResetSeqMap();
         m_Object->SetInst().ResetLength();
     }
@@ -644,8 +664,9 @@ void CBioseq_Info::SetInst_Fuzz(TInst_Fuzz& v)
 
 void CBioseq_Info::ResetInst_Fuzz()
 {
-    if (IsSetInst_Fuzz())
+    if (IsSetInst_Fuzz()) {
         m_Object->SetInst().ResetFuzz();
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -677,8 +698,9 @@ void CBioseq_Info::SetInst_Topology(TInst_Topology v)
 
 void CBioseq_Info::ResetInst_Topology()
 {
-    if (IsSetInst_Topology())
+    if (IsSetInst_Topology()) {
         m_Object->SetInst().ResetTopology();
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -710,8 +732,9 @@ void CBioseq_Info::SetInst_Strand(TInst_Strand v)
 
 void CBioseq_Info::ResetInst_Strand()
 {
-    if (IsSetInst_Strand())
+    if (IsSetInst_Strand()) {
         m_Object->SetInst().ResetStrand();
+    }
 }
 
 
@@ -739,6 +762,7 @@ const CBioseq_Info::TInst_Seq_data& CBioseq_Info::GetInst_Seq_data(void) const
 
 void CBioseq_Info::SetInst_Seq_data(TInst_Seq_data& v)
 {
+    x_Update(fNeedUpdate_seq_data);
     x_ResetSeqMap();
     m_Seq_dataChunks.clear();
     m_Object->SetInst().SetSeq_data(v);
@@ -747,6 +771,7 @@ void CBioseq_Info::SetInst_Seq_data(TInst_Seq_data& v)
 void CBioseq_Info::ResetInst_Seq_data()
 {
     if (IsSetInst_Seq_data()) {
+        x_Update(fNeedUpdate_seq_data);
         x_ResetSeqMap();
         m_Seq_dataChunks.clear();
         m_Object->SetInst().ResetSeq_data();
@@ -778,6 +803,7 @@ const CBioseq_Info::TInst_Ext& CBioseq_Info::GetInst_Ext(void) const
 
 void CBioseq_Info::SetInst_Ext(TInst_Ext& v)
 {
+    x_Update(fNeedUpdate_seq_data);
     x_ResetSeqMap();
     m_Seq_dataChunks.clear();
     m_Object->SetInst().SetExt(v);
@@ -786,6 +812,7 @@ void CBioseq_Info::SetInst_Ext(TInst_Ext& v)
 void CBioseq_Info::ResetInst_Ext()
 {
     if (IsSetInst_Ext()) {
+        x_Update(fNeedUpdate_seq_data);
         x_ResetSeqMap();
         m_Seq_dataChunks.clear();
         m_Object->SetInst().ResetExt();
@@ -818,6 +845,7 @@ const CBioseq_Info::TInst_Hist& CBioseq_Info::GetInst_Hist(void) const
 
 void CBioseq_Info::SetInst_Hist(TInst_Hist& v)
 {
+    x_Update(fNeedUpdate_assembly);
     m_AssemblyChunk = -1;
     m_Object->SetInst().SetHist(v);
 }
@@ -826,6 +854,7 @@ void CBioseq_Info::SetInst_Hist(TInst_Hist& v)
 void CBioseq_Info::ResetInst_Hist()
 {
     if (IsSetInst_Hist()) {
+        x_Update(fNeedUpdate_assembly);
         m_AssemblyChunk = -1;
         m_Object->SetInst().ResetHist();
     }
@@ -859,6 +888,7 @@ CBioseq_Info::GetInst_Hist_Assembly(void) const
 
 void CBioseq_Info::SetInst_Hist_Assembly(const TInst_Hist_Assembly& v)
 {
+    x_Update(fNeedUpdate_assembly);
     m_AssemblyChunk = -1;
     m_Object->SetInst().SetHist().SetAssembly() = v;
 }
