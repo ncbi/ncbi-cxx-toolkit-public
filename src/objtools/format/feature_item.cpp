@@ -1042,26 +1042,11 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
             s_feat = GetOverlappingGene(GetLoc(), ctx.GetScope());
         }
 
-        if ( s_feat ) {
-            if ( g_ref == 0 ) {
-                g_ref = &s_feat->GetData().GetGene();
-            }
-        }
-    }
-}
-
-//  ----------------------------------------------------------------------------
-void CFeatureItem::x_AddQualNote(
-    const CGene_ref* gene_ref,
-    CConstRef<CSeq_feat> gene_feat ) const
-//
-//  For non-gene features, add the /comment qualifier if the necessary info
-//  exists.
-//  ----------------------------------------------------------------------------
-{
-    if ( gene_feat && gene_feat->CanGetComment() ) {
-        x_AddQual( eFQ_gene_note, new CFlatStringQVal( 
-            gene_feat->GetComment() ) );
+//        if ( s_feat ) {
+//            if ( g_ref == 0 ) {
+//                g_ref = &s_feat->GetData().GetGene();
+//            }
+//        }
     }
 }
 
@@ -1167,65 +1152,56 @@ void CFeatureItem::x_AddQuals(
 
     if (!data.IsGene()  &&
         (subtype != CSeqFeatData::eSubtype_operon)  &&
-        (subtype != CSeqFeatData::eSubtype_gap)) {
-
-        const CGene_ref* grp = m_Feat->GetGeneXref();
-        CConstRef<CSeq_feat> overlap_gene;
-
+        (subtype != CSeqFeatData::eSubtype_gap)) 
+    {
         const CGene_ref* gene_ref = 0;
         CConstRef<CSeq_feat> gene_feat;
         x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat );
-        
-        if (grp != NULL  &&  grp->CanGetDb()) {
-            x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(grp->GetDb()));
-        }
-        if (grp == NULL) {
-            if (ctx.IsProt()  ||  !IsMapped()) { // can use feature's original location
-                overlap_gene = GetBestOverlappingFeat(
-                    *m_Feat,
-                    CSeqFeatData::e_Gene,
-                    sequence::eOverlap_Contained,
-                    scope,
-                    fBestFeat_NoExpensive);
-            } else {
-                overlap_gene = GetOverlappingGene(GetLoc(), scope);
-            }
-        }
         x_AddQualNote( gene_ref, gene_feat );
-
-        if (grp == NULL) {
-            if (overlap_gene) {
-                if (overlap_gene->CanGetComment()) {
+        x_AddQualOldLocusTag( gene_ref, gene_feat );
+        x_AddQualDb( gene_ref, gene_feat );
+        
+        if ( gene_ref == NULL ) {
+            if (gene_feat) {
+                if (gene_feat->CanGetComment()) {
                     x_AddQual(eFQ_gene_note,
-                        new CFlatStringQVal(overlap_gene->GetComment()));
+                        new CFlatStringQVal(gene_feat->GetComment()));
                 }
-                if ( overlap_gene->CanGetPseudo()  &&  overlap_gene->GetPseudo() ) {
+                if ( gene_feat->CanGetPseudo()  &&  gene_feat->GetPseudo() ) {
                     pseudo = true;
                 }
-                grp = &overlap_gene->GetData().GetGene();
-                if ( grp != NULL  &&  grp->IsSetDb() ) {
-                    x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(grp->GetDb()));
-                } else if ( overlap_gene->IsSetDbxref() ) {
-                    x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(overlap_gene->GetDbxref()));
+                gene_ref = &gene_feat->GetData().GetGene();
+                if ( gene_ref != NULL  &&  gene_ref->IsSetDb() ) {
+                    x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(gene_ref->GetDb()));
+                } else if ( gene_feat->IsSetDbxref() ) {
+                    x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(gene_feat->GetDbxref()));
                 }
             }
-        }
-        x_AddQualOldLocusTag( gene_ref, gene_feat );
-
-        if (grp != NULL) {
-            if (grp->CanGetPseudo()  &&  grp->GetPseudo() ) {
+            if ( gene_ref && gene_ref->CanGetPseudo() && gene_ref->GetPseudo() ) {
                 pseudo = true;
             }
-            if (!grp->IsSuppressed()) {
+            if ( gene_ref && !gene_ref->IsSuppressed() ) {
                 if ( subtype != CSeqFeatData::eSubtype_primer_bind ) {
-                    gene_syn = x_AddQuals(*grp, pseudo, subtype, overlap_gene.NotEmpty());
+                    gene_syn = x_AddQuals(*gene_ref, pseudo, subtype, gene_feat.NotEmpty());
                 }
             }
         }
+
+        else {
+            if ( gene_ref->CanGetPseudo()  &&  gene_ref->GetPseudo() ) {
+                pseudo = true;
+            }
+            if (!gene_ref->IsSuppressed()) {
+                if ( subtype != CSeqFeatData::eSubtype_primer_bind ) {
+                    gene_syn = x_AddQuals( *gene_ref, pseudo, subtype, false );
+                }
+            }
+        }
+
         if ( type != CSeqFeatData::e_Cdregion  &&  type !=  CSeqFeatData::e_Rna ) {
             x_RemoveQuals(eFQ_gene_xref);
         }
-    }
+    } // end of "interesting" scope //
 
     // operon qual for any feature but operon and gap
     if (ctx.HasOperon()  &&

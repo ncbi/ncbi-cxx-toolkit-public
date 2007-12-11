@@ -159,6 +159,7 @@ private:
     void x_AddQualExceptions( CBioseqContext& ) const;
     void x_AddQualNote( const CGene_ref*, CConstRef<CSeq_feat> ) const;
     void x_AddQualOldLocusTag( const CGene_ref*, CConstRef<CSeq_feat> ) const;
+    void x_AddQualDb( const CGene_ref*, CConstRef<CSeq_feat> ) const;
 
     // qualifier collection
     void x_AddQuals( CBioseqContext& ctx );
@@ -304,6 +305,34 @@ private:
     bool           m_IsSynthetic;
 };
 
+//  ----------------------------------------------------------------------------
+inline void CFeatureItem::x_AddQualNote(
+    const CGene_ref* gene_ref,
+    CConstRef<CSeq_feat> gene_feat ) const
+//
+//  For non-gene features, add the /comment qualifier if the necessary info
+//  exists.
+//  ----------------------------------------------------------------------------
+{
+    if ( gene_feat && gene_feat->CanGetComment() ) {
+        x_AddQual( eFQ_gene_note, new CFlatStringQVal( 
+            gene_feat->GetComment() ) );
+    }
+}
+
+//  ----------------------------------------------------------------------------
+inline void CFeatureItem::x_AddQualDb(
+    const CGene_ref* gene_ref,
+    CConstRef<CSeq_feat> gene_feat ) const
+//
+//  Add DB qualifiers, if they exist.
+//  ----------------------------------------------------------------------------
+{
+    if ( gene_ref != NULL && gene_ref->CanGetDb() ) {
+        x_AddQual(eFQ_gene_xref, new CFlatXrefQVal( gene_ref->GetDb() ) );
+    }
+}
+    
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
