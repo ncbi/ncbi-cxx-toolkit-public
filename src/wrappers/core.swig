@@ -44,6 +44,12 @@
 // It thinks that ncbi::CAlignRangeCollection::CAlignRangeCollException exists.
 #define UTIL___ALIGN_RANGE_COLL__HPP
 
+// Since the introduction of NCBI_EXCEPTION_VAR_EX, instances of NCBI_THROW
+// in headers make SWIG preprocessor choke, so #define it to nothing.
+%include corelib/ncbiexpt.hpp
+#undef NCBI_THROW
+#define NCBI_THROW(foo, bar, baz)
+
 %template(vector_CSerialAttribInfoItem)
     std::vector<ncbi::CSerialAttribInfoItem>;
 
@@ -105,12 +111,6 @@ static bool IsSameTypeInfo( const CSerialObject& obj1,
     ncbi::CStringAliasBase<std::vector<char> >;
 %template(CAliasBase_int) ncbi::CAliasBase<int>;
 %template(CStdAliasBase_int) ncbi::CStdAliasBase<int>;
-
-// Since the introduction of NCBI_EXCEPTION_VAR_EX, instances of NCBI_THROW
-// in headers make SWIG preprocessor choke, so #define it to nothing.
-%include corelib/ncbiexpt.hpp
-#undef NCBI_THROW
-#define NCBI_THROW(foo, bar, baz)
 
 // Avoid error:
 //    ISO C++ forbids casting to an array type
