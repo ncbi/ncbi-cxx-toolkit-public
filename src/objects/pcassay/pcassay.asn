@@ -95,11 +95,11 @@ PC-AssayResults ::= SEQUENCE {
 }
 
 
--- Substance Tested Assay Results for a given Assay Result Type defined in the referenced Assay Description
+-- Assay Readouts/Results for a Tested Substance
 PC-AssayData ::= SEQUENCE {
     tid               INTEGER,                            -- Assay Result Field Type ID (TID)
                                                           --   Note: Result Field ID's must be greater than "0"
-    value             CHOICE {                            -- Assay Result, must be the same as defined for TID
+    value             CHOICE {                            -- Assay Result, must be the same type as defined for TID
                           ival    INTEGER,
                           fval    REAL,
                           bval    BOOLEAN,
@@ -111,9 +111,9 @@ PC-AssayData ::= SEQUENCE {
 -- Assay Description provided by an Organization that describes the assay/protocol performed and defines the 
 --   measured end-points and parameters to be stored.  An Assay Description is not a database table.  You can 
 --   define as many Result Definitions as needed and they need not be used by all Substances tested.
---
--- Note:  After initial submission, Users cannot add new Result Definitions or modify existing Result Definitions
---        beyond the description text; however, users can change the Assay Description Information, as desired.
+-- Assay Descriptions can be modified on both description text and Result Definitions after initial submission
+-- as desired, and such udpates will be tracked in PubChem
+ 
 PC-AssayDescription ::= SEQUENCE {
     -- Internal/External Tracking Information
     aid               PC-ID,                                 -- Assay Description ID/Version  [Either valid ID 
@@ -132,14 +132,30 @@ PC-AssayDescription ::= SEQUENCE {
     xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL, -- Annotated Cross-Reference Information
 
     -- Allowed Assay Result Types
-
     results           SEQUENCE OF PC-ResultType,             -- Result Definitions (vector)
 
     -- Additional Information
-    pub               SEQUENCE OF Pub              OPTIONAL, -- Depositor provided publications for this assay
-    revision          INTEGER                      OPTIONAL,  -- Revision identifier for textual description
-    target            SEQUENCE OF PC-AssayTargetInfo   OPTIONAL, -- Target information
-    activity-outcome-method  INTEGER               OPTIONAL -- 0: other; 1: primary; 2: dose response; 3: probe summary 
+    pub               SEQUENCE OF Pub                 OPTIONAL, -- Depositor provided publications for this assay
+    revision          INTEGER                         OPTIONAL, -- Revision identifier for textual description
+    target            SEQUENCE OF PC-AssayTargetInfo  OPTIONAL, -- Target information
+    activity-outcome-method  INTEGER  {                         -- Assay Outcome Qualifier
+                               other              (0),          --   All Other Type
+                               screening          (1),          --   Primary Screen Assay
+                               confirmatory       (2),          --   Confirmatory Assay
+                               summary            (3)           --   Probe Summary Assay
+                             }                        OPTIONAL,
+    dr                SEQUENCE OF PC-AssayDRAttr      OPTIONAL  -- Dose-Response Attribution
+ }
+
+
+--  Assay Dose-response attribute information used to define a set of readouts
+--    as being part of a dose-response curve (for curve plotting/analysis)
+PC-AssayDRAttr ::=SEQUENCE {
+    id                INTEGER,                               -- Unique dose-response test set identifier
+                                                             --   Note: A valid ID is greater than "0"
+    descr             VisibleString               OPTIONAL,  -- Dose-Response Curve Description (used as curve title)
+    dn                VisibleString               OPTIONAL,  -- Dose Axis Description (used as axis name)
+    rn                VisibleString               OPTIONAL   -- Response Axis Description (used as axis name)
 }
 
 
@@ -148,13 +164,15 @@ PC-AssayDescription ::= SEQUENCE {
 PC-AssayTargetInfo ::= SEQUENCE {
    name                    VisibleString,                     -- Molecular name of target
    mol-id                  INTEGER,                           -- NCBI database identifier of the target molecule
-   molecule-type           INTEGER {   protein (1),                -- Molecule type of target
-                                       dna (2),
-                                       rna (3),
-                                       other-biopolymer (4)} DEFAULT protein ,
-   organism                BioSource               OPTIONAL,  -- Organism of the target
-   descr                   VisibleString           OPTIONAL,  -- Description of target, such as its cellular functionality and location 
-   comment                 VisibleString           OPTIONAL  -- Comments or additional information
+   molecule-type           INTEGER {                          -- Assay Target Type
+                               protein            (1),
+                               dna                (2),
+                               rna                (3),
+                               other-biopolymer   (4)
+                           }                DEFAULT protein,
+   organism                BioSource               OPTIONAL,  -- Target Organism
+   descr                   VisibleString           OPTIONAL,  -- Target Description  (e.g., cellular functionality and location)
+   comment                 VisibleString           OPTIONAL   -- Comments or Additional Information
 }
 
 -- Annotated Cross-Reference (XRef) Information to allow the XRef to be qualified, as to its meaning or context
@@ -271,7 +289,8 @@ PC-ConcentrationAttr ::= SEQUENCE {
                          fgml            (13),             -- femtograms per mL
                          m               (14),             -- Molar
                          unspecified    (255)
-                     }                       
+                     },                       
+   dr-id             INTEGER                     OPTIONAL  -- Dose-Response Attribution ID (if applicable)
 }
 
 
