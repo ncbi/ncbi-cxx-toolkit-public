@@ -4740,7 +4740,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
             BOOST_CHECK( !rs->Next() );
 
             // 3) Select another recordset with just one record
-            rs = auto_stmt->ExecuteQuery( "select qq = convert(real, 57.55 + 0.0033)" );
+            rs = auto_stmt->ExecuteQuery( "select qq = 57.55 + 0.0033" );
             BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK( !rs->Next() );
@@ -4761,7 +4761,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 
             // 3) Select another recordset with just one record
             auto_ptr<IStatement> auto_stmt2( m_Conn->CreateStatement() );
-            rs = auto_stmt2->ExecuteQuery( "select qq = convert(real, 57.55 + 0.0033)" );
+            rs = auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" );
             BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK( !rs->Next() );
@@ -11682,10 +11682,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
               && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
             && !(args.GetDriverName() == ftds8_driver
                  && args.GetServerType() == CTestArguments::eSybase)
+            && args.GetDriverName() != dblib_driver // Because of "select qq = 57.55 + 0.0033" ...
           ) {
             boost::unit_test::test_case* select_stmt_tc =
                 BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmt,
-                                      DBAPIInstance);
+                        DBAPIInstance);
             select_stmt_tc->depends_on(tc_init);
             add(select_stmt_tc);
 
