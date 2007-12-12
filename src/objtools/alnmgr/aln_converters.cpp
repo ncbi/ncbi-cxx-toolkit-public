@@ -522,10 +522,6 @@ ConvertSeqLocsToPairwiseAln(CPairwiseAln& aln,
     if ( !wid2 ) {
         wid2 = 1;
     }
-    if (wid1 == wid2) { // protein to protein does not need widths
-        wid1 = 1;
-        wid2 = 1;
-    }
     CSeq_loc_CI it1(loc_1);
     CSeq_loc_CI it2(loc_2);
     TSeqPos lshift1 = 0;
