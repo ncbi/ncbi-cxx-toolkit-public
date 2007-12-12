@@ -2268,6 +2268,9 @@ double CStopWatch::Elapsed() const
 inline
 void CStopWatch::Stop()
 {
+    if ( m_State == eStop ) {
+        return;
+    }
     m_Total += GetTimeMark() - m_Start;
     m_State = eStop;
 }
