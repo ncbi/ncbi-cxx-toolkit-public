@@ -160,24 +160,26 @@ private:
     void x_AddQualNote( const CGene_ref*, CConstRef<CSeq_feat> ) const;
     void x_AddQualOldLocusTag( const CGene_ref*, CConstRef<CSeq_feat> ) const;
     void x_AddQualDb( const CGene_ref*, CConstRef<CSeq_feat> ) const;
+    bool x_GetPseudo(  const CGene_ref* =0, const CSeq_feat* =0 ) const;
+
 
     // qualifier collection
     void x_AddQuals( CBioseqContext& ctx );
     void x_AddQuals(const CCdregion& cds)  const;
     void x_AddQuals(const CProt_ref& prot) const;
-    const TGeneSyn* x_AddGeneQuals(const CSeq_feat& gene, bool& pseudo) const;
+    const TGeneSyn* x_AddGeneQuals(const CSeq_feat& gene, bool pseudo) const;
     void x_AddCdregionQuals(const CSeq_feat& cds, CBioseqContext& ctx,
-        bool& pseudo, bool& had_prot_desc) const;
+        bool pseudo, bool& had_prot_desc) const;
     const CProt_ref* x_AddProteinQuals(CBioseq_Handle& prot) const;
     void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot) const;
     void x_AddRnaQuals(const CSeq_feat& feat, CBioseqContext& ctx,
-        bool& pseudo) const;
+        bool pseudo) const;
     void x_AddProtQuals(const CSeq_feat& feat, CBioseqContext& ctx,
-        bool& pseudo, bool& had_prot_desc, string& precursor_comment) const;
+        bool pseudo, bool& had_prot_desc, string& precursor_comment) const;
     void x_AddRegionQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddSiteQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddBondQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
-    const TGeneSyn* x_AddQuals(const CGene_ref& gene, bool& pseudo,
+    const TGeneSyn* x_AddQuals(const CGene_ref& gene, bool pseudo,
         CSeqFeatData::ESubtype subtype, bool from_overlap) const;
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;

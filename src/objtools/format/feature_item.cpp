@@ -1076,6 +1076,32 @@ void CFeatureItem::x_AddQualOldLocusTag(
 }
 
 //  ----------------------------------------------------------------------------
+bool CFeatureItem::x_GetPseudo(  
+    const CGene_ref* gene_ref, 
+    const CSeq_feat* gene_feat ) const
+//  ----------------------------------------------------------------------------
+{
+    const CSeqFeatData& data  = m_Feat->GetData();
+
+    if ( data.IsGene() ) {
+        return m_Feat->CanGetPseudo() ? m_Feat->GetPseudo() : false;
+    }
+    if ( gene_ref && gene_ref->CanGetPseudo() && gene_ref->GetPseudo() ) {
+        return true;
+    }
+    if ( gene_feat ) {
+        gene_ref = &gene_feat->GetData().GetGene();
+        if ( gene_ref && gene_ref->CanGetPseudo() && gene_ref->GetPseudo() ) {
+            return true;
+        }
+        if ( gene_feat->CanGetPseudo()  &&  gene_feat->GetPseudo() ) {
+            return true;
+        }
+    }
+    return m_Feat->CanGetPseudo() ? m_Feat->GetPseudo() : false;
+}
+
+//  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQuals(
     CBioseqContext& ctx)
 //
@@ -1222,14 +1248,19 @@ void CFeatureItem::x_AddQuals(
     }
 
     // specific fields set here...
+//    pseudo = x_GetPseudo( gene_ref, gene_feat );
     switch ( type ) {
     case CSeqFeatData::e_Gene:
+        pseudo = pseudo || 
+            ( data.GetGene().CanGetPseudo() && data.GetGene().GetPseudo() );
         gene_syn = x_AddGeneQuals(*m_Feat, pseudo);
         break;
     case CSeqFeatData::e_Cdregion:
         x_AddCdregionQuals(*m_Feat, ctx, pseudo, had_prot_desc);
         break;
     case CSeqFeatData::e_Rna:
+        pseudo = pseudo ||
+            ( data.GetRna().CanGetPseudo() && data.GetRna().GetPseudo() );
         x_AddRnaQuals(*m_Feat, ctx, pseudo);
         break;
     case CSeqFeatData::e_Prot:
@@ -1346,18 +1377,14 @@ static int s_ToIupacaa(int aa)
 }
 
 
-void CFeatureItem::x_AddRnaQuals
-(const CSeq_feat& feat,
- CBioseqContext& ctx,
- bool& pseudo) const
+void CFeatureItem::x_AddRnaQuals(
+    const CSeq_feat& feat,
+    CBioseqContext& ctx,
+    bool pseudo ) const
 {
     const CRNA_ref& rna = feat.GetData().GetRna();
     const CFlatFileConfig& cfg = ctx.Config();
     CScope& scope = ctx.GetScope();
-
-    if ( rna.CanGetPseudo()  &&  rna.GetPseudo() ) {
-        pseudo = true;
-    }
 
     CRNA_ref::TType rna_type = rna.CanGetType() ?
         rna.GetType() : CRNA_ref::eType_unknown;
@@ -1466,18 +1493,19 @@ void CFeatureItem::x_AddRnaQuals
 }
 
 
-const CFeatureItem::TGeneSyn* CFeatureItem::x_AddGeneQuals
-(const CSeq_feat& gene,
- bool &pseudo) const
+const CFeatureItem::TGeneSyn* CFeatureItem::x_AddGeneQuals(
+    const CSeq_feat& gene,
+    bool pseudo ) const
 {
     return x_AddQuals(gene.GetData().GetGene(), pseudo, CSeqFeatData::eSubtype_gene, false);
 }
 
 
-void CFeatureItem::x_AddCdregionQuals
-(const CSeq_feat& cds,
- CBioseqContext& ctx,
- bool& pseudo, bool& had_prot_desc) const
+void CFeatureItem::x_AddCdregionQuals(
+    const CSeq_feat& cds,
+    CBioseqContext& ctx,
+    bool pseudo, 
+    bool& had_prot_desc) const
 {
     CScope& scope = ctx.GetScope();
     const CFlatFileConfig& cfg = ctx.Config();
@@ -1938,11 +1966,11 @@ void CFeatureItem::x_AddGoQuals(const CUser_object& uo) const
 }
 
 
-const CFeatureItem::TGeneSyn* CFeatureItem::x_AddQuals
-(const CGene_ref& gene,
- bool& pseudo,
- CSeqFeatData::ESubtype subtype,
- bool from_overlap) const
+const CFeatureItem::TGeneSyn* CFeatureItem::x_AddQuals(
+    const CGene_ref& gene,
+    bool pseudo,
+    CSeqFeatData::ESubtype subtype,
+    bool from_overlap ) const
 {
     const CBioseqContext& ctx = *GetContext();
 
@@ -2018,8 +2046,6 @@ const CFeatureItem::TGeneSyn* CFeatureItem::x_AddQuals
     if (!from_overlap  &&  gene.IsSetMaploc()) {
         x_AddQual(eFQ_gene_map, new CFlatStringQVal(gene.GetMaploc()));
     }
-
-    pseudo = (pseudo  ||  (gene.GetPseudo()));
     return syn;
 }
 
@@ -2108,12 +2134,12 @@ void CFeatureItem::x_AddQuals(const CCdregion& cds) const
     }
 }
 
-void CFeatureItem::x_AddProtQuals
-(const CSeq_feat& feat,
- CBioseqContext& ctx, 
- bool& pseudo,
- bool& had_prot_desc,
- string& precursor_comment) const
+void CFeatureItem::x_AddProtQuals(
+    const CSeq_feat& feat,
+    CBioseqContext& ctx, 
+    bool pseudo,
+    bool& had_prot_desc,
+    string& precursor_comment ) const
 {
     const CProt_ref& pref = feat.GetData().GetProt();
     CProt_ref::TProcessed processed = pref.GetProcessed();
