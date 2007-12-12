@@ -362,6 +362,7 @@ void CParam<TDescription>::SetDefault(const TValueType& val)
 {
     CMutexGuard guard(s_GetLock());
     sx_GetDefault() = val;
+    sx_GetState() = eState_User;
 }
 
 
