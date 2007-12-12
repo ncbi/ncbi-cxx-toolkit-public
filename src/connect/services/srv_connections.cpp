@@ -30,19 +30,73 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <connect/ncbi_socket.hpp>
-#include <corelib/ncbi_param.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-#include <corelib/ncbi_system.hpp>
 #include <connect/services/srv_connections_expt.hpp>
 #include <connect/services/srv_connections.hpp>
 #include <connect/services/error_codes.hpp>
 #include <connect/ncbi_service.h>
- 
+
+#include <corelib/ncbi_param.hpp>
+#include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_config.hpp>
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
 BEGIN_NCBI_SCOPE
+
+class CSimpleRebalanceStrategy : public IRebalanceStrategy
+{
+public:
+    CSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time)
+        : m_RebalanceRequests(rebalance_requests), m_RebalanceTime(rebalance_time),
+          m_RequestCounter(0), m_LastRebalanceTime(0) {}
+
+    virtual bool NeedRebalance() {
+        CFastMutexGuard g(m_Mutex);
+        time_t curr = time(0);
+        if ( !m_LastRebalanceTime || 
+             (m_RebalanceTime && int(curr - m_LastRebalanceTime) >= m_RebalanceTime) ||
+             (m_RebalanceRequests && (m_RequestCounter >= m_RebalanceRequests)) )  {
+            m_RequestCounter = 0;
+            m_LastRebalanceTime = curr;
+            return true;
+        }
+        return false;
+    }
+    virtual void OnResourceRequested( const CNetServerConnectors& ) {
+        CFastMutexGuard g(m_Mutex);
+        ++m_RequestCounter;
+    }
+    virtual void Reset() {
+        CFastMutexGuard g(m_Mutex);
+        m_RequestCounter = 0;
+        m_LastRebalanceTime = 0;
+    }
+    
+private:
+    int     m_RebalanceRequests;
+    int     m_RebalanceTime;
+    int     m_RequestCounter;
+    time_t  m_LastRebalanceTime;
+    CFastMutex m_Mutex;
+};
+
+IRebalanceStrategy*
+    CreateSimpleRebalanceStrategy(CConfig& conf, const string& driver_name)
+{
+    return new CSimpleRebalanceStrategy(
+        conf.GetInt(driver_name, "rebalance_requests",
+            CConfig::eErr_NoThrow, 100),
+        conf.GetInt(driver_name, "rebalance_time",
+            CConfig::eErr_NoThrow, 10));
+}
+
+IRebalanceStrategy* CreateDefaultRebalanceStrategy()
+{
+    return new CSimpleRebalanceStrategy(50, 10);
+}
 
 void NCBI_XCONNECT_EXPORT DiscoverLBServices(const string& service_name, 
                                              vector<pair<string,unsigned short> >& services,

@@ -232,44 +232,12 @@ public:
     virtual void Reset() = 0;
 };
 
-class NCBI_XCONNECT_EXPORT CSimpleRebalanceStrategy : public IRebalanceStrategy 
-{
-public:
-    CSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time) 
-        : m_RebalanceRequests(rebalance_requests), m_RebalanceTime(rebalance_time),
-          m_RequestCounter(0), m_LastRebalanceTime(0) {}
+class CConfig;
 
-    virtual ~CSimpleRebalanceStrategy() {}
+NCBI_XCONNECT_EXPORT IRebalanceStrategy* CreateSimpleRebalanceStrategy(
+    CConfig& conf, const string& driver_name);
 
-    virtual bool NeedRebalance() {
-        CFastMutexGuard g(m_Mutex);
-        time_t curr = time(0);
-        if ( !m_LastRebalanceTime || 
-             (m_RebalanceTime && int(curr - m_LastRebalanceTime) >= m_RebalanceTime) ||
-             (m_RebalanceRequests && (m_RequestCounter >= m_RebalanceRequests)) )  {
-            m_RequestCounter = 0;
-            m_LastRebalanceTime = curr;
-            return true;
-        }
-        return false;
-    }
-    virtual void OnResourceRequested( const CNetServerConnectors& ) {
-        CFastMutexGuard g(m_Mutex);
-        ++m_RequestCounter;
-    }
-    virtual void Reset() {
-        CFastMutexGuard g(m_Mutex);
-        m_RequestCounter = 0;
-        m_LastRebalanceTime = 0;
-    }
-    
-private:
-    int     m_RebalanceRequests;
-    int     m_RebalanceTime;
-    int     m_RequestCounter;
-    time_t  m_LastRebalanceTime;
-    CFastMutex m_Mutex;
-};
+NCBI_XCONNECT_EXPORT IRebalanceStrategy* CreateDefaultRebalanceStrategy();
 
 ///////////////////////////////////////////////////////////////////////////
 //

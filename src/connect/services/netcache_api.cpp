@@ -379,7 +379,6 @@ void CNetCacheAPI::ProcessServerError(string& response, ETrimErr trim_err) const
 }
 
 
-
 ///////////////////////////////////////////////////////////////////////////////
 const char* kNetCacheAPIDriverName = "netcache_api";
 
@@ -433,12 +432,6 @@ public:
                     conf.GetString(m_DriverName, 
                                    "service", CConfig::eErr_NoThrow, kEmptyStr);
                 NStr::TruncateSpacesInPlace(service);
-                unsigned int rebalance_time = conf.GetInt(m_DriverName, 
-                                                          "rebalance_time",
-                                                          CConfig::eErr_NoThrow, 10);
-                unsigned int rebalance_requests = conf.GetInt(m_DriverName,
-                                                              "rebalance_requests",
-                                                              CConfig::eErr_NoThrow, 100);
                 unsigned int communication_timeout = conf.GetInt(m_DriverName,
                                                               "communication_timeout",
                                                               CConfig::eErr_NoThrow, 12);
@@ -448,8 +441,7 @@ public:
                 drv->SetCommunicationTimeout(tm);
 
                 drv->SetRebalanceStrategy(
-                               new CSimpleRebalanceStrategy(rebalance_requests,
-                                                            rebalance_time),
+                    CreateSimpleRebalanceStrategy(conf, m_DriverName),
                                eTakeOwnership);
 
                 //bool permanent_conntction =

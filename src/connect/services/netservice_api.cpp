@@ -98,7 +98,7 @@ void  INetServiceAPI::x_CreateConnector()
     if (!m_Authenticator.get())
         m_Authenticator.reset(new CNetServiceAuthenticator(*this));
     if (!m_RebalanceStrategy ) {
-        m_RebalanceStrategyGuard.reset(new CSimpleRebalanceStrategy(50,10));
+        m_RebalanceStrategyGuard.reset(CreateDefaultRebalanceStrategy());
         m_RebalanceStrategy = m_RebalanceStrategyGuard.get();
     }
     m_Connector.reset(new CNetServiceConnector(m_ServiceName, m_Authenticator.get()));
