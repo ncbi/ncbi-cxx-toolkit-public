@@ -87,16 +87,39 @@ public:
             return m_Column.GetPointer();
         }
 
-    size_t GetRowIndex(size_t row) const;
     bool IsSet(size_t row) const;
-    bool GetBool(size_t row) const;
-    int GetInt(size_t row, int def) const;
-    const string& GetString(size_t row) const;
-    const CSeq_id* GetSeq_id(size_t row) const;
-    const CSeq_loc* GetSeq_loc(size_t row) const;
+    bool GetBool(size_t row, bool& v) const;
+    bool GetReal(size_t row, double& v) const;
+    bool GetInt(size_t row, int& v) const;
+    bool GetString(size_t row, string& v) const;
+    CConstRef<CSeq_id> GetSeq_id(size_t row) const;
+    CConstRef<CSeq_loc> GetSeq_loc(size_t row) const;
+
+    bool GetValue(size_t row, bool& value) const
+        {
+            return GetBool(row, value);
+        }
+    bool GetValue(size_t row, int& value) const
+        {
+            return GetInt(row, value);
+        }
+    bool GetValue(size_t row, string& value) const
+        {
+            return GetString(row, value);
+        }
 
     void UpdateSeq_loc(CSeq_loc& loc, size_t row) const;
     void UpdateSeq_feat(CSeq_feat& feat, size_t row) const;
+    void UpdateSeq_loc(CSeq_loc& loc,
+                       const CSeqTable_single_data& data) const;
+    bool UpdateSeq_loc(CSeq_loc& loc,
+                       const CSeqTable_multi_data& data,
+                       size_t index) const;
+    void UpdateSeq_feat(CSeq_feat& feat,
+                        const CSeqTable_single_data& data) const;
+    bool UpdateSeq_feat(CSeq_feat& feat,
+                        const CSeqTable_multi_data& data,
+                        size_t index) const;
 
 private:
     CConstRef<CSeqTable_column> m_Column;
@@ -124,8 +147,8 @@ public:
                        CRef<CSeq_point>& seq_pnt,
                        CRef<CSeq_interval>& seq_int) const;
 
-    const CSeq_loc& GetLoc(size_t row) const;
-    const CSeq_id& GetId(size_t row) const;
+    CConstRef<CSeq_loc> GetLoc(size_t row) const;
+    CConstRef<CSeq_id> GetId(size_t row) const;
     CSeq_id_Handle GetIdHandle(size_t row) const;
     CRange<TSeqPos> GetRange(size_t row) const;
     ENa_strand GetStrand(size_t row) const;
@@ -191,6 +214,7 @@ private:
     CSeqTableColumnInfo m_Partial;
     typedef vector<CSeqTableColumnInfo> TExtraColumns;
     TExtraColumns m_ExtraColumns;
+    typedef map<string, CConstRef<CSeqTableColumnInfo> > TColumnsByName;
 
 private:
     CSeqTableInfo(const CSeqTableInfo&);

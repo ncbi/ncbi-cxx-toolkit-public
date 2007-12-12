@@ -76,13 +76,15 @@ void CSeqTableSetField::Set(CSeq_loc& loc, const string& value) const
 
 void CSeqTableSetField::Set(CSeq_feat& feat, int value) const
 {
-    Set(feat, NStr::IntToString(value));
+    NCBI_THROW_FMT(CAnnotException, eOtherError,
+                   "Incompatible Seq-feat field value: "<<value);
 }
 
 
 void CSeqTableSetField::Set(CSeq_feat& feat, double value) const
 {
-    Set(feat, NStr::DoubleToString(value));
+    NCBI_THROW_FMT(CAnnotException, eOtherError,
+                   "Incompatible Seq-feat field value: "<<value);
 }
 
 
@@ -90,6 +92,13 @@ void CSeqTableSetField::Set(CSeq_feat& feat, const string& value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: "<<value);
+}
+
+
+void CSeqTableSetField::Set(CSeq_feat& feat, const vector<char>& value) const
+{
+    NCBI_THROW_FMT(CAnnotException, eOtherError,
+                   "Incompatible Seq-feat field value: vector<char>");
 }
 
 
@@ -225,6 +234,15 @@ void CSeqTableSetExt::Set(CSeq_feat& feat, const string& value) const
 }
 
 
+void CSeqTableSetExt::Set(CSeq_feat& feat, const vector<char>& value) const
+{
+    CRef<CUser_field> field(new CUser_field);
+    field->SetLabel().SetStr(name);
+    field->SetData().SetOs() = value;
+    feat.SetExt().SetData().push_back(field);
+}
+
+
 void CSeqTableSetDbxref::Set(CSeq_feat& feat, int value) const
 {
     CRef<CDbtag> dbtag(new CDbtag);
@@ -311,7 +329,6 @@ CSeqTableSetAnyObjField::CSeqTableSetAnyObjField(CObjectTypeInfo type,
             type = type.GetPointedType();
             break;
         case eTypeFamilyContainer:
-        {{
             type = type.GetElementType();
             if ( type.GetTypeFamily() == eTypeFamilyPointer ) {
                 next = new CSeqTableNextObjectPtrElementNew();
@@ -321,7 +338,6 @@ CSeqTableSetAnyObjField::CSeqTableSetAnyObjField(CObjectTypeInfo type,
                 next = new CSeqTableNextObjectElementNew();
             }
             break;
-        }}
         case eTypeFamilyPrimitive:
             if ( !field.empty() ) {
                 ERR_POST("Incompatible field: "<<
@@ -331,39 +347,34 @@ CSeqTableSetAnyObjField::CSeqTableSetAnyObjField(CObjectTypeInfo type,
             m_SetFinalObject = true;
             return;
         case eTypeFamilyClass:
-        {{
+        case eTypeFamilyChoice:
             if ( field.empty() ) {
                 // no fields to set in the class
                 return;
             }
-            size_t dot = field.find('.');
-            CTempString member_name = field;
-            CTempString next_field;
-            if ( dot != CTempString::npos ) {
-                member_name = field.substr(0, dot);
-                next_field = field.substr(dot+1);
+            else {
+                size_t dot = field.find('.');
+                CTempString field_name = field;
+                CTempString next_field;
+                if ( dot != CTempString::npos ) {
+                    field_name = field.substr(0, dot);
+                    next_field = field.substr(dot+1);
+                }
+                field = next_field;
+                if ( type.GetTypeFamily() == eTypeFamilyClass ) {
+                    TMemberIndex index = type.FindMemberIndex(field_name);
+                    next = new CSeqTableNextObjectClassMember(index);
+                    type = type.GetClassTypeInfo()->GetMemberInfo(index)
+                        ->GetTypeInfo();
+                }
+                else {
+                    TMemberIndex index = type.FindVariantIndex(field_name);
+                    next = new CSeqTableNextObjectChoiceVariant(index);
+                    type = type.GetChoiceTypeInfo()->GetVariantInfo(index)
+                        ->GetTypeInfo();
+                }
             }
-            TMemberIndex member_index = type.FindMemberIndex(member_name);
-            next = new CSeqTableNextObjectClassMember(member_index);
-            type = type.GetClassTypeInfo()->GetMemberInfo(member_index)->GetTypeInfo();
-            field = next_field;
             break;
-        }}
-        case eTypeFamilyChoice:
-        {{
-            size_t dot = field.find('.');
-            CTempString variant_name = field;
-            CTempString next_field;
-            if ( dot != CTempString::npos ) {
-                variant_name = field.substr(0, dot);
-                next_field = field.substr(dot+1);
-            }
-            TMemberIndex variant_index = type.FindVariantIndex(variant_name);
-            next = new CSeqTableNextObjectChoiceVariant(variant_index);
-            type = type.GetChoiceTypeInfo()->GetVariantInfo(variant_index)->GetTypeInfo();
-            field = next_field;
-            break;
-        }}
         }
         m_Nexters.push_back(next);
     }
@@ -388,9 +399,7 @@ void CSeqTableSetAnyObjField::SetObjectField(CObjectInfo obj,
     ITERATE ( TNexters, it, m_Nexters ) {
         obj = (*it)->GetNextObject(obj);
     }
-    if ( m_SetFinalObject ) {
-        obj.GetPrimitiveTypeInfo()->SetValueDouble(obj.GetObjectPtr(), value);
-    }
+    obj.GetPrimitiveTypeInfo()->SetValueDouble(obj.GetObjectPtr(), value);
 }
 
 
@@ -400,9 +409,17 @@ void CSeqTableSetAnyObjField::SetObjectField(CObjectInfo obj,
     ITERATE ( TNexters, it, m_Nexters ) {
         obj = (*it)->GetNextObject(obj);
     }
-    if ( m_SetFinalObject ) {
-        obj.GetPrimitiveTypeInfo()->SetValueString(obj.GetObjectPtr(), value);
+    obj.GetPrimitiveTypeInfo()->SetValueString(obj.GetObjectPtr(), value);
+}
+
+
+void CSeqTableSetAnyObjField::SetObjectField(CObjectInfo obj,
+                                             const vector<char>& value) const
+{
+    ITERATE ( TNexters, it, m_Nexters ) {
+        obj = (*it)->GetNextObject(obj);
     }
+    obj.GetPrimitiveTypeInfo()->SetValueOctetString(obj.GetObjectPtr(), value);
 }
 
 
@@ -430,6 +447,13 @@ void CSeqTableSetAnyLocField::Set(CSeq_loc& obj, const string& value) const
 }
 
 
+void CSeqTableSetAnyLocField::Set(CSeq_loc& obj,
+                                  const vector<char>& value) const
+{
+    SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
+}
+
+
 CSeqTableSetAnyFeatField::CSeqTableSetAnyFeatField(const CTempString& field)
     : CSeqTableSetAnyObjField(CSeq_feat::GetTypeInfo(), field)
 {
@@ -449,6 +473,13 @@ void CSeqTableSetAnyFeatField::Set(CSeq_feat& obj, double value) const
 
 
 void CSeqTableSetAnyFeatField::Set(CSeq_feat& obj, const string& value) const
+{
+    SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
+}
+
+
+void CSeqTableSetAnyFeatField::Set(CSeq_feat& obj,
+                                   const vector<char>& value) const
 {
     SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
 }

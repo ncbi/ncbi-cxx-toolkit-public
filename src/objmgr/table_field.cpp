@@ -1,6 +1,3 @@
-#ifndef SEQ_TABLE_SETTER__HPP
-#define SEQ_TABLE_SETTER__HPP
-
 /*  $Id$
 * ===========================================================================
 *
@@ -29,42 +26,61 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Object field setter interface
+*   CSeq_table_Info -- parsed information about Seq-table and its columns
 *
 */
 
-#include <corelib/ncbiobj.hpp>
+#include <ncbi_pch.hpp>
+#include <objmgr/impl/seq_table_info.hpp>
+#include <objmgr/impl/seq_table_setters.hpp>
+#include <objmgr/impl/annot_object_index.hpp>
+#include <objects/general/general__.hpp>
+#include <objects/seqloc/seqloc__.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/seqtable/seqtable__.hpp>
+#include <objmgr/objmgr_exception.hpp>
+#include <objmgr/error_codes.hpp>
+
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/table_field.hpp>
 
 BEGIN_NCBI_SCOPE
-
-class CObjectInfo;
-class CObjectTypeInfo;
-
 BEGIN_SCOPE(objects)
 
-class CSeq_loc;
-class CSeq_feat;
 
 /////////////////////////////////////////////////////////////////////////////
-// CSeq_feat and CSeq_loc field setters
+// CTableFieldHandle_Base
 /////////////////////////////////////////////////////////////////////////////
 
-class CSeqTableSetField : public CObject
+
+CTableFieldHandle_Base::CTableFieldHandle_Base(const string& name)
+    : m_FieldName(name)
 {
-public:
-    virtual ~CSeqTableSetField();
+}
 
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_loc& loc, double value) const;
-    virtual void Set(CSeq_loc& loc, const string& value) const;
-    virtual void Set(CSeq_feat& feat, int value) const;
-    virtual void Set(CSeq_feat& feat, double value) const;
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-    virtual void Set(CSeq_feat& feat, const vector<char>& value) const;
-};
 
+CTableFieldHandle_Base::~CTableFieldHandle_Base()
+{
+}
+
+
+int CTableFieldHandle_Base::x_GetAnnotIndex(const CFeat_CI& feat_ci) const
+{
+    return feat_ci.Get().GetAnnotIndex();
+}
+
+
+bool CTableFieldHandle_Base::x_IsSet(size_t row) const
+{
+    return m_CachedFieldInfo.IsSet(row);
+}
+
+/*
+int get_table_int(const CFeat_CI& feat_ci, const string& name)
+{
+    return CTableFieldHandle<int>(name)(feat_ci);
+}
+*/
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-#endif  // SEQ_TABLE_INFO__HPP

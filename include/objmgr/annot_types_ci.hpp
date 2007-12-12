@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CAnnot_CI;
+class CTableFieldHandle_Base;
 
 // Base class for specific annotation iterators
 class NCBI_XOBJMGR_EXPORT CAnnotTypes_CI
@@ -90,6 +91,7 @@ public:
 
 protected:
     friend class CAnnot_CI;
+    friend class CTableFieldHandle_Base;
 
     typedef CAnnot_Collector::TAnnotSet TAnnotSet;
     typedef TAnnotSet::const_iterator   TIterator;

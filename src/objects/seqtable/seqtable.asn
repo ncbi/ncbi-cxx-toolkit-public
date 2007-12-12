@@ -84,24 +84,7 @@ SeqTable-column-info ::= SEQUENCE {
         qual-qual       (41),
         qual-val        (42),
         dbxref-db       (43),
-        dbxref-tag      (44),
-
-        -- more specialized field ???
-        -- match by gene name
-        gene-name       (50),
-        
-        -- match by protein product
-        protein-product (51),
-        
-        -- match by transcript
-        transcript-product(52),
-        
-        -- match by this SNP rsid
-        snp-rsid        (53),
-        
-        -- provide these colors
-        color           (54),
-        bgcolor         (55)
+        dbxref-tag      (44)
     } OPTIONAL,
 
     -- any column can be identified by ASN.1 text locator string
@@ -218,7 +201,10 @@ SeqTable-column ::= SEQUENCE {
     sparse      SeqTable-sparse-index OPTIONAL,
 
     -- default value for sparse table, or if row data is too short
-    default     SeqTable-single-data OPTIONAL
+    default     SeqTable-single-data OPTIONAL,
+
+    -- single value for indexes not listed in sparse table
+    sparse-other SeqTable-single-data OPTIONAL
 }
 
 

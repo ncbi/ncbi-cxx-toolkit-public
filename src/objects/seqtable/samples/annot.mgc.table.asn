@@ -65,23 +65,19 @@ Seq-entry ::= seq {
             header {
               field-id location-to
             },
-            data int {
-              3178
-            },
             sparse indexes {
               1
-            }
+            },
+            default int 3178
           },
           {
             header {
               field-id location-fuzz-from-lim
             },
-            data int {
-              3
-            },
             sparse indexes {
               0
-            }
+            },
+            default int 3
           }
         }
       }

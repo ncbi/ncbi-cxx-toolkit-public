@@ -41,6 +41,9 @@
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/error_codes.hpp>
 
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/table_field.hpp>
+
 #define NCBI_USE_ERRCODE_X   ObjMgr_SeqTable
 
 BEGIN_NCBI_SCOPE
@@ -51,237 +54,259 @@ BEGIN_SCOPE(objects)
 // CSeqTableColumnInfo
 /////////////////////////////////////////////////////////////////////////////
 
-
-size_t CSeqTableColumnInfo::GetRowIndex(size_t row) const
-{
-    if ( !m_Column->IsSetSparse() ) {
-        return row;
-    }
-    const CSeqTable_sparse_index::TIndexes& idx =
-        m_Column->GetSparse().GetIndexes();
-    CSeqTable_sparse_index::TIndexes::const_iterator iter =
-        lower_bound(idx.begin(), idx.end(), int(row));
-    if ( iter != idx.end() && *iter == int(row) ) {
-        return iter-idx.begin();
-    }
-    return size_t(-1); // maximum
-}
-
-
 bool CSeqTableColumnInfo::IsSet(size_t row) const
 {
-    if ( m_Column->IsSetData() ) {
-        size_t index = GetRowIndex(row);
-        const CSeqTable_multi_data& data = m_Column->GetData();
-        switch ( data.Which() ) {
-        case CSeqTable_multi_data::e_Int:
-            if ( index < data.GetInt().size() ) {
+    return m_Column->IsSet(row);
+}
+
+
+bool CSeqTableColumnInfo::GetBool(size_t row, bool& v) const
+{
+    return m_Column->GetBool(row, v);
+}
+
+
+bool CSeqTableColumnInfo::GetInt(size_t row, int& v) const
+{
+    return m_Column->GetInt(row, v);
+}
+
+
+bool CSeqTableColumnInfo::GetString(size_t row, string& v) const
+{
+    return m_Column->GetString(row, v);
+}
+
+
+CConstRef<CSeq_id> CSeqTableColumnInfo::GetSeq_id(size_t row) const
+{
+    return m_Column->GetSeq_id(row);
+}
+
+
+CConstRef<CSeq_loc> CSeqTableColumnInfo::GetSeq_loc(size_t row) const
+{
+    return m_Column->GetSeq_loc(row);
+}
+
+
+void CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc,
+                                        const CSeqTable_single_data& data) const
+{
+    switch ( data.Which() ) {
+    case CSeqTable_single_data::e_Int:
+        m_Setter->Set(loc, data.GetInt());
+        return;
+    case CSeqTable_single_data::e_Real:
+        m_Setter->Set(loc, data.GetReal());
+        return;
+    case CSeqTable_single_data::e_String:
+        m_Setter->Set(loc, data.GetString());
+        return;
+    default:
+        ERR_POST_X(1, "Bad field data type: "<<data.Which());
+        return;
+    }
+}
+
+
+void CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat,
+                                         const CSeqTable_single_data& data) const
+{
+    switch ( data.Which() ) {
+    case CSeqTable_single_data::e_Int:
+        m_Setter->Set(feat, data.GetInt());
+        return;
+    case CSeqTable_single_data::e_Real:
+        m_Setter->Set(feat, data.GetReal());
+        return;
+    case CSeqTable_single_data::e_String:
+        m_Setter->Set(feat, data.GetString());
+        return;
+    case CSeqTable_single_data::e_Bytes:
+        m_Setter->Set(feat, data.GetBytes());
+        return;
+    default:
+        ERR_POST_X(2, "Bad field data type: "<<data.Which());
+        return;
+    }
+}
+
+
+bool CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc,
+                                        const CSeqTable_multi_data& data,
+                                        size_t index) const
+{
+    switch ( data.Which() ) {
+    case CSeqTable_multi_data::e_Int:
+        if ( index < data.GetInt().size() ) {
+            m_Setter->Set(loc, data.GetInt()[index]);
+            return true;
+        }
+        break;
+    case CSeqTable_multi_data::e_Real:
+        if ( index < data.GetReal().size() ) {
+            m_Setter->Set(loc, data.GetReal()[index]);
+            return true;
+        }
+        break;
+    case CSeqTable_multi_data::e_String:
+        if ( index < data.GetString().size() ) {
+            m_Setter->Set(loc, data.GetString()[index]);
+            return true;
+        }
+        break;
+    case CSeqTable_multi_data::e_Common_string:
+    {{
+        const CCommonString_table& common = data.GetCommon_string();
+        const CCommonString_table::TIndexes& indexes = common.GetIndexes();
+        if ( index < indexes.size() ) {
+            const CCommonString_table::TStrings& strings = common.GetStrings();
+            size_t string_index = indexes[index];
+            if ( string_index < strings.size() ) {
+                m_Setter->Set(loc, strings[string_index]);
                 return true;
             }
-            break;
-        case CSeqTable_multi_data::e_Real:
-            if ( index < data.GetReal().size() ) {
+            else {
+                ERR_POST_X(3, "Bad common string index");
+                return false;
+            }
+        }
+        break;
+    }}
+    default:
+        ERR_POST_X(4, "Bad field data type: "<<data.Which());
+        return true;
+    }
+    return false;
+}
+
+
+bool CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat,
+                                         const CSeqTable_multi_data& data,
+                                         size_t index) const
+{
+    switch ( data.Which() ) {
+    case CSeqTable_multi_data::e_Int:
+        if ( index < data.GetInt().size() ) {
+            m_Setter->Set(feat, data.GetInt()[index]);
+            return true;
+        }
+        break;
+    case CSeqTable_multi_data::e_Real:
+        if ( index < data.GetReal().size() ) {
+            m_Setter->Set(feat, data.GetReal()[index]);
+            return true;
+        }
+        break;
+    case CSeqTable_multi_data::e_String:
+        if ( index < data.GetString().size() ) {
+            m_Setter->Set(feat, data.GetString()[index]);
+            return true;
+        }
+        break;
+    case CSeqTable_multi_data::e_Bytes:
+        if ( index < data.GetBytes().size() ) {
+            m_Setter->Set(feat, *data.GetBytes()[index]);
+            return true;
+        }
+        break;
+    case CSeqTable_multi_data::e_Common_string:
+    {{
+        const CCommonString_table& common = data.GetCommon_string();
+        const CCommonString_table::TIndexes& indexes = common.GetIndexes();
+        if ( index < indexes.size() ) {
+            const CCommonString_table::TStrings& strings = common.GetStrings();
+            size_t string_index = indexes[index];
+            if ( string_index < strings.size() ) {
+                m_Setter->Set(feat, strings[string_index]);
                 return true;
             }
-            break;
-        case CSeqTable_multi_data::e_String:
-            if ( index < data.GetString().size() ) {
+            else {
+                ERR_POST_X(5, "Bad common string index");
+                return false;
+            }
+        }
+        break;
+    }}
+    case CSeqTable_multi_data::e_Common_bytes:
+    {{
+        const CCommonBytes_table& common = data.GetCommon_bytes();
+        const CCommonBytes_table::TIndexes& indexes = common.GetIndexes();
+        if ( index < indexes.size() ) {
+            const CCommonBytes_table::TBytes& bytes = common.GetBytes();
+            size_t bytes_index = indexes[index];
+            if ( bytes_index < bytes.size() ) {
+                m_Setter->Set(feat, *bytes[bytes_index]);
                 return true;
             }
-            break;
-        default:
-            ERR_POST_X(1, "Bad field data type: "<<data.Which());
-            break;
+            else {
+                ERR_POST_X(6, "Bad common bytes index");
+                return false;
+            }
         }
+        break;
+    }}
+    default:
+        ERR_POST_X(7, "Bad field data type: "<<data.Which());
+        return true;
     }
-    return m_Column->IsSetDefault();
-}
-
-
-bool CSeqTableColumnInfo::GetBool(size_t row) const
-{
-    if ( m_Column->IsSetData() ) {
-        size_t index = GetRowIndex(row);
-        const CSeqTable_multi_data::TBit& arr = m_Column->GetData().GetBit();
-        if ( index < arr.size()*8 ) {
-            size_t byte = index / 8;
-            size_t bit = index % 8;
-            return ((arr[byte]<<bit)&0x80) != 0;
-        }
-    }
-    return m_Column->IsSetDefault() && m_Column->GetDefault().GetBit();
-}
-
-
-int CSeqTableColumnInfo::GetInt(size_t row, int def) const
-{
-    if ( m_Column->IsSetData() ) {
-        size_t index = GetRowIndex(row);
-        const CSeqTable_multi_data::TInt& arr = m_Column->GetData().GetInt();
-        if ( index < arr.size() ) {
-            return arr[index];
-        }
-    }
-    return m_Column->IsSetDefault()? m_Column->GetDefault().GetInt(): def;
-}
-
-
-const string& CSeqTableColumnInfo::GetString(size_t row) const
-{
-    if ( m_Column->IsSetData() ) {
-        size_t index = GetRowIndex(row);
-        const CSeqTable_multi_data::TString& arr =
-            m_Column->GetData().GetString();
-        if ( index < arr.size() ) {
-            return arr[index];
-        }
-    }
-    return m_Column->GetDefault().GetString();
-}
-
-
-const CSeq_id* CSeqTableColumnInfo::GetSeq_id(size_t row) const
-{
-    if ( m_Column->IsSetData() ) {
-        size_t index = GetRowIndex(row);
-        const CSeqTable_multi_data::TId& arr =
-            m_Column->GetData().GetId();
-        if ( index < arr.size() ) {
-            return arr[index].GetPointer();
-        }
-    }
-    if ( m_Column->IsSetDefault() ) {
-        return &m_Column->GetDefault().GetId();
-    }
-    return 0;
-}
-
-
-const CSeq_loc* CSeqTableColumnInfo::GetSeq_loc(size_t row) const
-{
-    if ( m_Column->IsSetData() ) {
-        size_t index = GetRowIndex(row);
-        const CSeqTable_multi_data::TLoc& arr =
-            m_Column->GetData().GetLoc();
-        if ( index < arr.size() ) {
-            return arr[index].GetPointer();
-        }
-    }
-    if ( m_Column->IsSetDefault() ) {
-        return &m_Column->GetDefault().GetLoc();
-    }
-    return 0;
+    return false;
 }
 
 
 void CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc, size_t row) const
 {
-    if ( m_Column->IsSetData() ) {
-        size_t index = GetRowIndex(row);
-        if ( index != size_t(-1) ) {
-            const CSeqTable_multi_data& data = m_Column->GetData();
-            switch ( data.Which() ) {
-            case CSeqTable_multi_data::e_Int:
-                if ( index < data.GetInt().size() ) {
-                    m_Setter->Set(loc, data.GetInt()[index]);
-                    return;
-                }
-                break;
-            case CSeqTable_multi_data::e_Real:
-                if ( index < data.GetReal().size() ) {
-                    m_Setter->Set(loc, data.GetReal()[index]);
-                    return;
-                }
-                break;
-            case CSeqTable_multi_data::e_String:
-                if ( index < data.GetString().size() ) {
-                    m_Setter->Set(loc, data.GetString()[index]);
-                    return;
-                }
-                break;
-            default:
-                ERR_POST_X(2, "Bad field data type: "<<data.Which());
-                return;
+    size_t index = row;
+    if ( m_Column->IsSetSparse() ) {
+        index = m_Column->GetSparse().GetIndexAt(row);
+        if ( index == CSeqTable_sparse_index::kSkipped ) {
+            if ( m_Column->IsSetSparse_other() ) {
+                UpdateSeq_loc(loc, m_Column->GetSparse_other());
             }
+            return;
         }
     }
-    else if ( !m_Column->IsSetDefault() ) {
-        // no multi or single data -> no value, but we need to touch the field
-        m_Setter->Set(loc, 0);
+
+    if ( m_Column->IsSetData() &&
+         UpdateSeq_loc(loc, m_Column->GetData(), index) ) {
         return;
     }
+
     if ( m_Column->IsSetDefault() ) {
-        const CSeqTable_single_data& data = m_Column->GetDefault();
-        switch ( data.Which() ) {
-        case CSeqTable_single_data::e_Int:
-            m_Setter->Set(loc, data.GetInt());
-            return;
-        case CSeqTable_single_data::e_Real:
-            m_Setter->Set(loc, data.GetReal());
-            return;
-        case CSeqTable_single_data::e_String:
-            m_Setter->Set(loc, data.GetString());
-            return;
-        default:
-            ERR_POST_X(3, "Bad field data type: "<<data.Which());
-            return;
-        }
+        UpdateSeq_loc(loc, m_Column->GetDefault());
+    }
+    else if ( !m_Column->IsSetData() ) {
+        // no multi or single data -> no value, but we need to touch the field
+        m_Setter->Set(loc, 0);
     }
 }
 
 
 void CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat, size_t row) const
 {
-    if ( m_Column->IsSetData() ) {
-        size_t index = GetRowIndex(row);
-        if ( index != size_t(-1) ) {
-            const CSeqTable_multi_data& data = m_Column->GetData();
-            switch ( data.Which() ) {
-            case CSeqTable_multi_data::e_Int:
-                if ( index < data.GetInt().size() ) {
-                    m_Setter->Set(feat, data.GetInt()[index]);
-                    return;
-                }
-                break;
-            case CSeqTable_multi_data::e_Real:
-                if ( index < data.GetReal().size() ) {
-                    m_Setter->Set(feat, data.GetReal()[index]);
-                    return;
-                }
-                return;
-            case CSeqTable_multi_data::e_String:
-                if ( index < data.GetString().size() ) {
-                    m_Setter->Set(feat, data.GetString()[index]);
-                    return;
-                }
-                break;
-            default:
-                ERR_POST_X(4, "Bad field data type: "<<data.Which());
-                return;
+    size_t index = row;
+    if ( m_Column->IsSetSparse() ) {
+        index = m_Column->GetSparse().GetIndexAt(row);
+        if ( index == CSeqTable_sparse_index::kSkipped ) {
+            if ( m_Column->IsSetSparse_other() ) {
+                UpdateSeq_feat(feat, m_Column->GetSparse_other());
             }
+            return;
         }
     }
-    else if ( !m_Column->IsSetDefault() ) {
-        // no multi or single data -> no value, but we need to touch the field
-        m_Setter->Set(feat, 0);
+
+    if ( m_Column->IsSetData() &&
+         UpdateSeq_feat(feat, m_Column->GetData(), index) ) {
         return;
     }
+
     if ( m_Column->IsSetDefault() ) {
-        const CSeqTable_single_data& data = m_Column->GetDefault();
-        switch ( data.Which() ) {
-        case CSeqTable_single_data::e_Int:
-            m_Setter->Set(feat, data.GetInt());
-            return;
-        case CSeqTable_single_data::e_Real:
-            m_Setter->Set(feat, data.GetReal());
-            return;
-        case CSeqTable_single_data::e_String:
-            m_Setter->Set(feat, data.GetString());
-            return;
-        default:
-            ERR_POST_X(5, "Bad field data type: "<<data.Which());
-            return;
-        }
+        UpdateSeq_feat(feat, m_Column->GetDefault());
+    }
+    else if ( !m_Column->IsSetData() ) {
+        // no multi or single data -> no value, but we need to touch the field
+        m_Setter->Set(feat, 0);
     }
 }
 
@@ -483,19 +508,19 @@ void CSeqTableLocColumns::ParseDefaults(void)
 }
 
 
-const CSeq_loc& CSeqTableLocColumns::GetLoc(size_t row) const
+CConstRef<CSeq_loc> CSeqTableLocColumns::GetLoc(size_t row) const
 {
     _ASSERT(m_Loc);
     _ASSERT(!m_Loc->IsSetDefault());
-    return *m_Loc.GetSeq_loc(row);
+    return m_Loc.GetSeq_loc(row);
 }
 
 
-const CSeq_id& CSeqTableLocColumns::GetId(size_t row) const
+CConstRef<CSeq_id> CSeqTableLocColumns::GetId(size_t row) const
 {
     _ASSERT(!m_Loc);
     _ASSERT(m_Id);
-    return *m_Id.GetSeq_id(row);
+    return m_Id.GetSeq_id(row);
 }
 
 
@@ -514,8 +539,8 @@ CSeq_id_Handle CSeqTableLocColumns::GetIdHandle(size_t row) const
     else {
         _ASSERT(!m_Gi->IsSetSparse());
         if ( m_Gi->IsSetData() ) {
-            int gi = m_Gi.GetInt(row, 0);
-            if ( gi ) {
+            int gi;
+            if ( m_Gi.GetInt(row, gi) ) {
                 return CSeq_id_Handle::GetGiHandle(gi);
             }
         }
@@ -528,14 +553,14 @@ CRange<TSeqPos> CSeqTableLocColumns::GetRange(size_t row) const
 {
     _ASSERT(!m_Loc);
     _ASSERT(m_From);
-    if ( !m_From ) {
+    int from;
+    if ( !m_From || !m_From.GetInt(row, from) ) {
         return CRange<TSeqPos>::GetWhole();
     }
-    TSeqPos from = m_From.GetInt(row, kInvalidSeqPos);
-    if ( from == kInvalidSeqPos ) {
-        return CRange<TSeqPos>::GetWhole();
+    int to = from;
+    if ( m_To ) {
+        m_To.GetInt(row, to);
     }
-    TSeqPos to = m_To? m_To.GetInt(row, from): from;
     return CRange<TSeqPos>(from, to);
 }
 
@@ -543,10 +568,11 @@ CRange<TSeqPos> CSeqTableLocColumns::GetRange(size_t row) const
 ENa_strand CSeqTableLocColumns::GetStrand(size_t row) const
 {
     _ASSERT(!m_Loc);
-    if ( !m_Strand ) {
-        return eNa_strand_unknown;
+    int strand = eNa_strand_unknown;
+    if ( m_Strand ) {
+        m_Strand.GetInt(row, strand);
     }
-    return ENa_strand(m_Strand.GetInt(row, eNa_strand_unknown));
+    return ENa_strand(strand);
 }
 
 
@@ -557,7 +583,7 @@ void CSeqTableLocColumns::UpdateSeq_loc(size_t row,
 {
     _ASSERT(m_Is_set);
     if ( m_Loc ) {
-        seq_loc = &const_cast<CSeq_loc&>(GetLoc(row));
+        seq_loc = &const_cast<CSeq_loc&>(*GetLoc(row));
         return;
     }
     if ( !seq_loc ) {
@@ -565,31 +591,34 @@ void CSeqTableLocColumns::UpdateSeq_loc(size_t row,
     }
     CSeq_loc& loc = *seq_loc;
 
-    CSeq_id* id = 0;
+    CConstRef<CSeq_id> id;
     int gi = 0;
     if ( m_Id ) {
-        id = &const_cast<CSeq_id&>(GetId(row));
+        id = GetId(row);
     }
     else {
         _ASSERT(m_Gi);
-        gi = m_Gi.GetInt(row, 0);
+        m_Gi.GetInt(row, gi);
     }
 
-    TSeqPos from = !m_From? kInvalidSeqPos: m_From.GetInt(row, kInvalidSeqPos);
-    if ( from == kInvalidSeqPos ) {
+    int from = 0;
+    if ( !m_From || !m_From.GetInt(row, from) ) {
         // whole
         if ( id ) {
-            loc.SetWhole(*id);
+            loc.SetWhole(const_cast<CSeq_id&>(*id));
         }
         else {
             loc.SetWhole().SetGi(gi);
         }
     }
     else {
-        TSeqPos to = !m_To? kInvalidSeqPos: m_To.GetInt(row, kInvalidSeqPos);
+        int strand = -1;
+        if ( m_Strand ) {
+            m_Strand.GetInt(row, strand);
+        }
 
-        int strand = !m_Strand? -1: m_Strand.GetInt(row, -1);
-        if ( to == kInvalidSeqPos ) {
+        int to = 0;
+        if ( !m_To || !m_To.GetInt(row, to) ) {
             // point
             if ( !seq_pnt ) {
                 seq_pnt = new CSeq_point();
@@ -599,7 +628,7 @@ void CSeqTableLocColumns::UpdateSeq_loc(size_t row,
             }
             CSeq_point& point = *seq_pnt;
             if ( id ) {
-                point.SetId(*id);
+                point.SetId(const_cast<CSeq_id&>(*id));
             }
             else {
                 point.SetId().SetGi(gi);
@@ -620,7 +649,7 @@ void CSeqTableLocColumns::UpdateSeq_loc(size_t row,
             }
             CSeq_interval& interval = *seq_int;
             if ( id ) {
-                interval.SetId(*id);
+                interval.SetId(const_cast<CSeq_id&>(*id));
             }
             else {
                 interval.SetId().SetGi(gi);
@@ -731,14 +760,14 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
                 break;
             default:
                 if ( !type.IsSetField_name() ) {
-                    ERR_POST_X(6, "SeqTable-column-info.field-id = "<<field);
+                    ERR_POST_X(8, "SeqTable-column-info.field-id = "<<field);
                     continue;
                 }
                 break;
             }
         }
         else if ( !type.IsSetField_name() ) {
-            ERR_POST_X(7, "SeqTable-column-info: "
+            ERR_POST_X(9, "SeqTable-column-info: "
                        "neither field-id nor field-name is set");
             continue;
         }
@@ -753,7 +782,7 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
                 continue;
             }
             else if ( field.empty() ) {
-                ERR_POST_X(8, "SeqTable-column-info.field-name is empty");
+                ERR_POST_X(10, "SeqTable-column-info.field-name is empty");
                 continue;
             }
             else if ( field[0] == 'E' ) {
@@ -784,7 +813,8 @@ CSeqTableInfo::~CSeqTableInfo()
 
 bool CSeqTableInfo::IsPartial(size_t row) const
 {
-    return m_Partial && m_Partial.GetBool(row);
+    bool val = false;
+    return m_Partial && m_Partial.GetBool(row, val) && val;
 }
 
 
@@ -818,8 +848,11 @@ void CSeqTableInfo::UpdateSeq_feat(size_t row,
         m_Product.UpdateSeq_loc(row, seq_loc, seq_pnt, seq_int);
         feat.SetProduct(*seq_loc);
     }
-    if ( IsPartial(row) ) {
-        feat.SetPartial(true);
+    if ( m_Partial ) {
+        bool val = false;
+        if ( m_Partial.GetBool(row, val) ) {
+            feat.SetPartial(val);
+        }
     }
     ITERATE ( TExtraColumns, it, m_ExtraColumns ) {
         it->UpdateSeq_feat(feat, row);

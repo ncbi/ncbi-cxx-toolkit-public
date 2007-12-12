@@ -79,18 +79,19 @@ Seq-entry ::= seq {
             header {
               field-id partial
             },
-            data bit '10'H
+            sparse indexes {
+                3
+            },
+            default bit TRUE
           },
           {
             header {
               field-id location-fuzz-from-lim
             },
-            data int {
-              2
-            },
             sparse indexes {
               3
-            }
+            },
+            default int 2
           },
           {
             header {

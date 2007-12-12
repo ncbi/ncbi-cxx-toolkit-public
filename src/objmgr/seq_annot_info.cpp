@@ -886,7 +886,7 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
             if ( loc.IsSet() ) { // if this Seq-loc field is set
                 if ( loc.IsRealLoc() ) { // full Seq-loc object
                     CHandleRangeMap hrmap;
-                    hrmap.AddLocation(loc.GetLoc(row));
+                    hrmap.AddLocation(*loc.GetLoc(row));
                     bool multi_id = hrmap.GetMap().size() > 1;
                     ITERATE ( CHandleRangeMap, hrit, hrmap ) {
                         const CHandleRange& hr = hrit->second;

@@ -125,6 +125,7 @@ public:
     virtual void Set(CSeq_feat& feat, int value) const;
     virtual void Set(CSeq_feat& feat, double value) const;
     virtual void Set(CSeq_feat& feat, const string& value) const;
+    virtual void Set(CSeq_feat& feat, const vector<char>& value) const;
 
 private:
     CTempString name;
@@ -154,24 +155,6 @@ public:
     virtual void Set(CSeq_feat& feat, const string& value) const;
 };
 
-/*
-class CSeqTableSetStdField : public CSeqTableSetObjectField
-{
-public:
-    virtual void Set(const CObjectInfo& obj, int value) const;
-    virtual void Set(const CObjectInfo& obj, double value) const;
-    virtual void Set(const CObjectInfo& obj, const string& value) const;
-};
-
-
-class CSeqTableSetNothing : public CSeqTableSetObjectField
-{
-public:
-    virtual void Set(const CObjectInfo& obj, int value) const;
-    virtual void Set(const CObjectInfo& obj, double value) const;
-    virtual void Set(const CObjectInfo& obj, const string& value) const;
-};
-*/
 
 class CSeqTableNextObject : public CObject
 {
@@ -241,6 +224,7 @@ public:
     void SetObjectField(CObjectInfo obj, int value) const;
     void SetObjectField(CObjectInfo obj, double value) const;
     void SetObjectField(CObjectInfo obj, const string& value) const;
+    void SetObjectField(CObjectInfo obj, const vector<char>& value) const;
 
 private:
     typedef vector< CConstRef<CSeqTableNextObject> > TNexters;
@@ -257,6 +241,7 @@ public:
     virtual void Set(CSeq_loc& loc, int value) const;
     virtual void Set(CSeq_loc& loc, double value) const;
     virtual void Set(CSeq_loc& loc, const string& value) const;
+    virtual void Set(CSeq_loc& loc, const vector<char>& value) const;
 };
 
 
@@ -268,6 +253,7 @@ public:
     virtual void Set(CSeq_feat& feat, int value) const;
     virtual void Set(CSeq_feat& feat, double value) const;
     virtual void Set(CSeq_feat& feat, const string& value) const;
+    virtual void Set(CSeq_feat& feat, const vector<char>& value) const;
 };
 
 
