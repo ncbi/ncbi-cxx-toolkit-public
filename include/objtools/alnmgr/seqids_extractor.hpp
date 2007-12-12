@@ -275,6 +275,11 @@ public:
 };
 
 
+/// Typical usage:
+typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
+
+
+
 END_NCBI_SCOPE
 
 #endif  // OBJTOOLS_ALNMGR___SEQIDS_EXTRACTOR__HPP

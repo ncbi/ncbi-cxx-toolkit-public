@@ -39,6 +39,7 @@
 
 #include <util/bitset/ncbi_bitset.hpp>
 #include <objtools/alnmgr/aln_seqid.hpp>
+#include <objtools/alnmgr/aln_tests.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -275,6 +276,10 @@ private:
     TBitVecVec m_BitVecVec;
     mutable TAlignedIdsMap m_AlignedIdsMap;
 };
+
+
+/// Typical usage:
+typedef CAlnStats<TAlnIdMap> TAlnStats;
 
 
 END_NCBI_SCOPE

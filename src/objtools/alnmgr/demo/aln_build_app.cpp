@@ -202,15 +202,8 @@ int CAlnBuildApp::Run(void)
     LoadInputAlns();
     ReportTime("LoadInputAlns");
     
-    /// Types we use here:
-    typedef CSeq_align::TDim TDim;
-    typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
-    typedef CAlnIdMap<vector<const CSeq_align*>, TIdExtract> TAlnIdMap;
-    typedef CAlnStats<TAlnIdMap> TAlnStats;
-
 
     /// Create a vector of seq-ids per seq-align
-       
     TIdExtract id_extract;
     TAlnIdMap aln_id_map(id_extract, m_AlnContainer.size());
     ITERATE(CAlnContainer, aln_it, m_AlnContainer) {
@@ -289,7 +282,7 @@ int CAlnBuildApp::Run(void)
     CSparseAln sparse_aln(out_anchored_aln, GetScope());
     ReportTime("CSparseAln");
     if (GetArgs()["print"].AsBoolean()) {
-        for (TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
+        for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
             string sequence;
             sparse_aln.GetAlnSeqString
                 (row, 

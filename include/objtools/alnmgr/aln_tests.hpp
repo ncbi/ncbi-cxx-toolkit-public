@@ -38,6 +38,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objtools/alnmgr/alnexception.hpp>
+#include <objtools/alnmgr/seqids_extractor.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -142,6 +143,10 @@ private:
 
     TAlnVec m_AlnVec;
 };
+
+
+/// Typical usage:
+typedef CAlnIdMap<vector<const CSeq_align*>, TIdExtract> TAlnIdMap;
 
 
 END_NCBI_SCOPE
