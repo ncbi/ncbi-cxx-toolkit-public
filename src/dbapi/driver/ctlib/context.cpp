@@ -1116,6 +1116,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         /* (msg->severity == 0  &&  msg->msgnumber == 0)  ||*/
         // commented out because nobody remember why it is there and PubSeqOS does
         // send messages with 0 0 that need to be processed
+        msg->msgnumber == 3980 ||
         msg->msgnumber == 5701 ||
         msg->msgnumber == 5703 ||
         msg->msgnumber == 5704

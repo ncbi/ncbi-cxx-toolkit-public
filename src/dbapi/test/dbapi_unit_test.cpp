@@ -10731,14 +10731,14 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
                 // 1
                 try {
                     auto_stmt.reset(m_Conn->GetCallableStatement("sp_wrong"));
-                    auto_stmt->Execute();
+                    auto_stmt->ExecuteUpdate();
                 } catch(const CDB_Exception&)
                 {
                     auto_stmt->Cancel();
                 }
 
                 try {
-                    auto_stmt->Execute();
+                    auto_stmt->ExecuteUpdate();
                 } catch(const CDB_Exception&)
                 {
                     auto_stmt->Cancel();
@@ -11370,11 +11370,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // There is a problem with ftds64 driver
     // on WorkShop55_550-ReleaseMT
     if (args.GetDriverName() != ftds8_driver
-        && args.GetDriverName() != ftds64_driver
         && args.GetDriverName() != ftds_dblib_driver
         && args.GetDriverName() != msdblib_driver
         && !(args.GetDriverName() == ftds8_driver && Solaris)
-        && !(args.GetDriverName() == ftds64_driver && Solaris)
         && !(args.GetDriverName() == ftds8_driver
              && args.GetServerType() == CTestArguments::eSybase)
         && !(args.GetDriverName() == ftds64_driver
