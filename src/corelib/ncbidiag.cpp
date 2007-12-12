@@ -1515,71 +1515,74 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             }
         case eDS_ToStdlog:
         case eDS_Default:
-            if ( app ) {
-                string log_base =
-                    CFile(app->GetProgramExecutablePath()).GetBase() + ".log";
-                string log_name;
-                if ( s_UseRootLog ) {
-                    string def_log_dir = GetDefaultLogLocation(*app);
-                    // Try /log/<port>
-                    if ( !def_log_dir.empty() ) {
-                        log_name = CFile::ConcatPath(def_log_dir, log_base);
+            {
+                string log_base = app ?
+                    app->GetProgramExecutablePath() : kEmptyStr;
+                if ( !log_base.empty() ) {
+                    log_base += CFile(log_base).GetBase() + ".log";
+                    string log_name;
+                    if ( s_UseRootLog ) {
+                        string def_log_dir = GetDefaultLogLocation(*app);
+                        // Try /log/<port>
+                        if ( !def_log_dir.empty() ) {
+                            log_name = CFile::ConcatPath(def_log_dir, log_base);
+                            if ( SetLogFile(log_name, eDiagFile_All) ) {
+                                log_switched = true;
+                                merge_lines = true;
+                                break;
+                            }
+                        }
+                        // Try /log/srv if port is unknown or not writable
+                        log_name = CFile::ConcatPath("/log/srv", log_base);
+                        if ( SetLogFile(log_name, eDiagFile_All) ) {
+                            log_switched = true;
+                            merge_lines = true;
+                            break;
+                        }
+                        if (try_root_log_first && OpenLogFileFromConfig(*config)) {
+                            log_switched = true;
+                            break;
+                        }
+                        // Try to switch to /log/fallback/
+                        log_name = CFile::ConcatPath("/log/fallback/", log_base);
                         if ( SetLogFile(log_name, eDiagFile_All) ) {
                             log_switched = true;
                             merge_lines = true;
                             break;
                         }
                     }
-                    // Try /log/srv if port is unknown or not writable
-                    log_name = CFile::ConcatPath("/log/srv", log_base);
-                    if ( SetLogFile(log_name, eDiagFile_All) ) {
-                        log_switched = true;
-                        merge_lines = true;
-                        break;
+                    // Try cwd/ for eDS_ToStdlog only
+                    if (ds == eDS_ToStdlog) {
+                        log_name = CFile::ConcatPath(".", log_base);
+                        log_switched = SetLogFile(log_name, eDiagFile_All);
                     }
-                    if (try_root_log_first && OpenLogFileFromConfig(*config)) {
-                        log_switched = true;
-                        break;
-                    }
-                    // Try to switch to /log/fallback/
-                    log_name = CFile::ConcatPath("/log/fallback/", log_base);
-                    if ( SetLogFile(log_name, eDiagFile_All) ) {
-                        log_switched = true;
-                        merge_lines = true;
-                        break;
+                    if ( !log_switched ) {
+                        ERR_POST_X(3, Info << "Failed to set log file to " +
+                            CFile::NormalizePath(log_name));
                     }
                 }
-                // Try cwd/ for eDS_ToStdlog only
-                if (ds == eDS_ToStdlog) {
-                    log_name = CFile::ConcatPath(".", log_base);
-                    log_switched = SetLogFile(log_name, eDiagFile_All);
+                else {
+                    static const char* kDefaultFallback = "/log/fallback/UNKNOWN";
+                    // Try to switch to /log/fallback/UNKNOWN
+                    if ( s_UseRootLog ) {
+                        if ( SetLogFile(kDefaultFallback, eDiagFile_All) ) {
+                            log_switched = true;
+                            merge_lines = true;
+                        }
+                        else {
+                            ERR_POST_X(4, Info <<
+                                "Failed to set log file to " <<
+                                CFile::NormalizePath(kDefaultFallback));
+                        }
+                    }
                 }
-                if ( !log_switched ) {
-                    ERR_POST_X(3, Info << "Failed to set log file to " +
-                        CFile::NormalizePath(log_name));
+                if (!log_switched  &&  old_log_name != kLogName_Stderr) {
+                    SetDiagHandler(new CStreamDiagHandler(&cerr,
+                        true, kLogName_Stderr), true);
+                    log_switched = true;
                 }
+                break;
             }
-            else {
-                static const char* kDefaultFallback = "/log/fallback/UNKNOWN";
-                // Try to switch to /log/fallback/UNKNOWN
-                if ( s_UseRootLog ) {
-                    if ( SetLogFile(kDefaultFallback, eDiagFile_All) ) {
-                        log_switched = true;
-                        merge_lines = true;
-                    }
-                    else {
-                        ERR_POST_X(4, Info <<
-                            "Failed to set log file to " <<
-                            CFile::NormalizePath(kDefaultFallback));
-                    }
-                }
-            }
-            if (!log_switched  &&  old_log_name != kLogName_Stderr) {
-                SetDiagHandler(new CStreamDiagHandler(&cerr,
-                    true, kLogName_Stderr), true);
-                log_switched = true;
-            }
-            break;
         default:
             ERR_POST_X(5, Warning << "Unknown EAppDiagStream value");
             _ASSERT(0);
