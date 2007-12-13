@@ -1,0 +1,18 @@
+diff -urN wxMSW-2.8.4.orig/include/wx/wxchar.h wxMSW-2.8.4/include/wx/wxchar.h
+--- wxMSW-2.8.4.orig/include/wx/wxchar.h	2007-05-14 09:06:42.000000000 -0400
++++ wxMSW-2.8.4/include/wx/wxchar.h	2007-06-28 10:32:57.704755100 -0400
+@@ -859,11 +859,11 @@
+  */
+ #if defined(HAVE_VSNPRINTF) && !defined(HAVE_VSNPRINTF_DECL)
+ #ifdef __cplusplus
+-    extern "C"
++//    extern "C"
+ #else
+-    extern
++//    extern
+ #endif
+-    int vsnprintf(char *str, size_t size, const char *format, va_list ap);
++//    int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+ #endif /* !HAVE_VSNPRINTF_DECL */
+ 
+ #if defined(HAVE_SNPRINTF) && !defined(HAVE_SNPRINTF_DECL)

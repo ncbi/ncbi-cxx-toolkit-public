@@ -1,0 +1,33 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libz", "libz.vcproj", "{5ED5460A-696B-489F-B126-B19594AEBE02}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		DebugDLL = DebugDLL
+		DebugMT = DebugMT
+		Release = Release
+		ReleaseDLL = ReleaseDLL
+		ReleaseMT = ReleaseMT
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.Debug.ActiveCfg = Debug|Win32
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.Debug.Build.0 = Debug|Win32
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.DebugDLL.ActiveCfg = DebugDLL|Win32
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.DebugDLL.Build.0 = DebugDLL|Win32
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.DebugMT.ActiveCfg = DebugMT|Win32
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.DebugMT.Build.0 = DebugMT|Win32
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.Release.ActiveCfg = Release|Win32
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.Release.Build.0 = Release|Win32
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
+		{5ED5460A-696B-489F-B126-B19594AEBE02}.ReleaseMT.Build.0 = ReleaseMT|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

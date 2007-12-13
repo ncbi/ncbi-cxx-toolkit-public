@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="icu_install_headers"
+	ProjectGUID="{F0C3266C-B49D-4097-BDBD-EEB592017670}"
+	RootNamespace="icu_install_headers"
+	Keyword="ManagedCProj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Installing headers..."
+				CommandLine="IF EXIST ..\include GOTO HAVE_INCLUDE
+
+mkdir ..\include
+
+mkdir ..\include\layout
+copy ..\icu\source\layout\LayoutEngine.h ..\include\layout
+copy ..\icu\source\layout\LE*.h  ..\include\layout
+copy ..\icu\source\layoutex\layout\*.h  ..\include\layout
+
+mkdir ..\include\unicode
+copy ..\icu\source\common\unicode\*.h ..\include\unicode
+copy ..\icu\source\i18n\unicode\*.h ..\include\unicode
+copy ..\icu\source\layout\unicode\*.h ..\include\unicode
+copy ..\icu\source\io\unicode\*.h ..\include\unicode
+
+:HAVE_INCLUDE
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+		<Configuration
+			Name="DebugDLL|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Installing headers..."
+				CommandLine="IF EXIST ..\include GOTO HAVE_INCLUDE
+
+mkdir ..\include
+
+mkdir ..\include\layout
+copy ..\icu\source\layout\LayoutEngine.h ..\include\layout
+copy ..\icu\source\layout\LE*.h  ..\include\layout
+copy ..\icu\source\layoutex\layout\*.h  ..\include\layout
+
+mkdir ..\include\unicode
+copy ..\icu\source\common\unicode\*.h ..\include\unicode
+copy ..\icu\source\i18n\unicode\*.h ..\include\unicode
+copy ..\icu\source\layout\unicode\*.h ..\include\unicode
+copy ..\icu\source\io\unicode\*.h ..\include\unicode
+
+:HAVE_INCLUDE
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+		<Configuration
+			Name="DebugMT|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Installing headers..."
+				CommandLine="IF EXIST ..\include GOTO HAVE_INCLUDE
+
+mkdir ..\include
+
+mkdir ..\include\layout
+copy ..\icu\source\layout\LayoutEngine.h ..\include\layout
+copy ..\icu\source\layout\LE*.h  ..\include\layout
+copy ..\icu\source\layoutex\layout\*.h  ..\include\layout
+
+mkdir ..\include\unicode
+copy ..\icu\source\common\unicode\*.h ..\include\unicode
+copy ..\icu\source\i18n\unicode\*.h ..\include\unicode
+copy ..\icu\source\layout\unicode\*.h ..\include\unicode
+copy ..\icu\source\io\unicode\*.h ..\include\unicode
+
+:HAVE_INCLUDE
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Installing headers..."
+				CommandLine="IF EXIST ..\include GOTO HAVE_INCLUDE
+
+mkdir ..\include
+
+mkdir ..\include\layout
+copy ..\icu\source\layout\LayoutEngine.h ..\include\layout
+copy ..\icu\source\layout\LE*.h  ..\include\layout
+copy ..\icu\source\layoutex\layout\*.h  ..\include\layout
+
+mkdir ..\include\unicode
+copy ..\icu\source\common\unicode\*.h ..\include\unicode
+copy ..\icu\source\i18n\unicode\*.h ..\include\unicode
+copy ..\icu\source\layout\unicode\*.h ..\include\unicode
+copy ..\icu\source\io\unicode\*.h ..\include\unicode
+
+:HAVE_INCLUDE
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseDLL|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Installing headers..."
+				CommandLine="IF EXIST ..\include GOTO HAVE_INCLUDE
+
+mkdir ..\include
+
+mkdir ..\include\layout
+copy ..\icu\source\layout\LayoutEngine.h ..\include\layout
+copy ..\icu\source\layout\LE*.h  ..\include\layout
+copy ..\icu\source\layoutex\layout\*.h  ..\include\layout
+
+mkdir ..\include\unicode
+copy ..\icu\source\common\unicode\*.h ..\include\unicode
+copy ..\icu\source\i18n\unicode\*.h ..\include\unicode
+copy ..\icu\source\layout\unicode\*.h ..\include\unicode
+copy ..\icu\source\io\unicode\*.h ..\include\unicode
+
+:HAVE_INCLUDE
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseMT|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Installing headers..."
+				CommandLine="IF EXIST ..\include GOTO HAVE_INCLUDE
+
+mkdir ..\include
+
+mkdir ..\include\layout
+copy ..\icu\source\layout\LayoutEngine.h ..\include\layout
+copy ..\icu\source\layout\LE*.h  ..\include\layout
+copy ..\icu\source\layoutex\layout\*.h  ..\include\layout
+
+mkdir ..\include\unicode
+copy ..\icu\source\common\unicode\*.h ..\include\unicode
+copy ..\icu\source\i18n\unicode\*.h ..\include\unicode
+copy ..\icu\source\layout\unicode\*.h ..\include\unicode
+copy ..\icu\source\io\unicode\*.h ..\include\unicode
+
+:HAVE_INCLUDE
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

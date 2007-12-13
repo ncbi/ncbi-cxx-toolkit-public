@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="fcgi_dll"
+	ProjectGUID="{77FE94C1-6BF8-42D0-9668-BDD646A7FC66}"
+	RootNamespace="fcgi_dll"
+	SccProjectName=""
+	SccLocalPath="">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="DebugDLL|Win32"
+			OutputDirectory="..\bin\$(ConfigurationName)"
+			IntermediateDirectory=".\$(ProjectName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\fastcgi-0.6\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="2"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="1"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="wsock32.lib ws2_32.lib"
+				OutputFile="$(OutDir)\libfcgidll.dll"
+				Version="1.0"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories=""
+				IgnoreAllDefaultLibraries="FALSE"
+				GenerateDebugInformation="TRUE"
+				SubSystem="2"
+				ImportLibrary="..\lib_dll\$(ConfigurationName)\$(TargetName).lib"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\../test/fltkdll.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Installing headers..."
+				CommandLine="IF EXIST ..\include GOTO HAVE_INCLUDE
+mkdir ..\include
+:HAVE_INCLUDE
+del /Q ..\include\*.*
+copy /Y ..\fastcgi-0.6\include\*.h ..\include
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseDLL|Win32"
+			OutputDirectory="..\bin\$(ConfigurationName)"
+			IntermediateDirectory=".\$(ProjectName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				FavorSizeOrSpeed="0"
+				AdditionalIncludeDirectories="..\fastcgi-0.6\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="2"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="wsock32.lib ws2_32.lib"
+				OutputFile="$(OutDir)\libfcgidll.dll"
+				Version="1.0"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories=""
+				SubSystem="2"
+				ImportLibrary="..\lib_dll\$(ConfigurationName)\$(TargetName).lib"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\../test/fltkdll.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Installing headers..."
+				CommandLine="IF EXIST ..\include GOTO HAVE_INCLUDE
+mkdir ..\include
+:HAVE_INCLUDE
+del /Q ..\include\*.*
+copy /Y ..\fastcgi-0.6\include\*.h ..\include
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="Source Files"
+			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			<File
+				RelativePath="..\fastcgi-0.6\libfcgi\fcgi_stdio.c">
+			</File>
+			<File
+				RelativePath="..\fastcgi-0.6\libfcgi\fcgiapp.c">
+			</File>
+			<File
+				RelativePath="..\fastcgi-0.6\libfcgi\os_win32.c">
+			</File>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl">
+			<File
+				RelativePath="..\fastcgi-0.6\include\fastcgi.h">
+			</File>
+			<File
+				RelativePath="..\fastcgi-0.6\include\fcgi_config.h">
+			</File>
+			<File
+				RelativePath="..\fastcgi-0.6\include\fcgi_stdio.h">
+			</File>
+			<File
+				RelativePath="..\fastcgi-0.6\include\fcgiapp.h">
+			</File>
+			<File
+				RelativePath="..\fastcgi-0.6\include\fcgiappmisc.h">
+			</File>
+			<File
+				RelativePath="..\fastcgi-0.6\include\fcgimisc.h">
+			</File>
+			<File
+				RelativePath="..\fastcgi-0.6\include\fcgio.h">
+			</File>
+			<File
+				RelativePath="..\fastcgi-0.6\include\fcgios.h">
+			</File>
+		</Filter>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

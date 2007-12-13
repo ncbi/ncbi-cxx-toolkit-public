@@ -1,0 +1,67 @@
+diff -ru -x'*~' fltk-1.1.6/configure fltk-1.1.6-ncbi0/configure
+--- fltk-1.1.6/configure	2004-11-23 15:35:43.000000000 -0500
++++ fltk-1.1.6-ncbi0/configure	2004-11-29 11:22:50.000000000 -0500
+@@ -1464,7 +1464,7 @@
+ 	    ;;
+     esac
+ 
+-    LINKSHARED="-L../src -lfltk_images$SHAREDSUFFIX -lfltk_forms$SHAREDSUFFIX -lfltk$SHAREDSUFFIX"
++    LINKSHARED="-L../src -L../lib -lfltk_images$SHAREDSUFFIX -lfltk_forms$SHAREDSUFFIX -lfltk$SHAREDSUFFIX"
+ else
+     DSOCOMMAND="echo"
+     DSOLINK=""
+diff -ru -x'*~' fltk-1.1.6/configure.in fltk-1.1.6-ncbi0/configure.in
+--- fltk-1.1.6/configure.in	2004-11-19 22:44:17.000000000 -0500
++++ fltk-1.1.6-ncbi0/configure.in	2004-11-29 11:22:50.000000000 -0500
+@@ -195,7 +195,7 @@
+ 	    ;;
+     esac
+ 
+-    LINKSHARED="-L../src -lfltk_images$SHAREDSUFFIX -lfltk_forms$SHAREDSUFFIX -lfltk$SHAREDSUFFIX"
++    LINKSHARED="-L../src -L../lib -lfltk_images$SHAREDSUFFIX -lfltk_forms$SHAREDSUFFIX -lfltk$SHAREDSUFFIX"
+ else
+     DSOCOMMAND="echo"
+     DSOLINK=""
+diff -ru -x'*~' fltk-1.1.6/makeinclude.in fltk-1.1.6-ncbi0/makeinclude.in
+--- fltk-1.1.6/makeinclude.in	2004-10-18 16:22:21.000000000 -0400
++++ fltk-1.1.6-ncbi0/makeinclude.in	2004-11-29 11:22:50.000000000 -0500
+@@ -76,7 +76,8 @@
+ LINKFLTKGL	= -L../lib @LINKFLTKGL@
+ LINKFLTKFORMS	= -L../lib -lfltk_forms @LINKFLTK@
+ LINKFLTKIMG	= -L../lib -lfltk_images @LINKFLTK@ $(IMAGELIBS)
+-LINKSHARED	= @DSOLINK@ @LINKSHARED@ $(IMAGELIBS)
++DSOLINK         = @DSOLINK@
++LINKSHARED	= $(DSOLINK) @LINKSHARED@ $(IMAGELIBS)
+ IMAGELIBS	= @IMAGELIBS@
+ 
+ # image libraries to build...
+diff -ru -x'*~' fltk-1.1.6/src/Makefile fltk-1.1.6-ncbi0/src/Makefile
+--- fltk-1.1.6/src/Makefile	2004-11-19 22:19:58.000000000 -0500
++++ fltk-1.1.6-ncbi0/src/Makefile	2004-11-29 11:22:54.000000000 -0500
+@@ -237,7 +237,7 @@
+ 
+ libfltk_forms.so.1.1: $(FLOBJECTS) libfltk.so.1.1
+ 	echo $(DSOCOMMAND) $@ ...
+-	$(DSOCOMMAND) $@ $(FLOBJECTS) -L. -lfltk
++	$(DSOCOMMAND) $@ $(FLOBJECTS) $(DSOLINK) -L. -lfltk
+ 	$(RM) libfltk_forms.so
+ 	$(LN) libfltk_forms.so.1.1 libfltk_forms.so
+ 
+@@ -273,7 +273,7 @@
+ 
+ libfltk_gl.so.1.1: $(GLOBJECTS) libfltk.so.1.1
+ 	echo $(DSOCOMMAND) $@ ...
+-	$(DSOCOMMAND) $@ $(GLOBJECTS) -L. -lfltk
++	$(DSOCOMMAND) $@ $(GLOBJECTS) $(GLDLIBS) $(DSOLINK) -L. -lfltk
+ 	$(RM) libfltk_gl.so
+ 	$(LN) libfltk_gl.so.1.1 libfltk_gl.so
+ 
+@@ -309,7 +309,7 @@
+ 
+ libfltk_images.so.1.1: $(IMGOBJECTS) libfltk.so.1.1
+ 	echo $(DSOCOMMAND) $@ ...
+-	$(DSOCOMMAND) $@ $(IMGOBJECTS) $(IMAGELIBS) -L. -lfltk
++	$(DSOCOMMAND) $@ $(IMGOBJECTS) -L../lib $(IMAGELIBS) $(DSOLINK) -L. -lfltk
+ 	$(RM) libfltk_images.so
+ 	$(LN) libfltk_images.so.1.1 libfltk_images.so
+ 

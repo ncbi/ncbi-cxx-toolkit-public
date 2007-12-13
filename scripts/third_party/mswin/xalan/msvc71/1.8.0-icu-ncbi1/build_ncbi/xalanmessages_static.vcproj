@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="xalanmessages_static"
+	ProjectGUID="{CA1C3CA3-7717-4A7A-B542-B31D66E54DE8}"
+	RootNamespace="xalanmessages_static"
+	Keyword="ManagedCProj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectName)\$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Building XalanMessages.lib..."
+				CommandLine="..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\genrb.exe -t --package-name XalanMessages -d $(IntDir) en_US.txt
+echo XalanMessages_en_US.res &gt; $(IntDir)\res-file-list.txt
+..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\pkgdata.exe --name XalanMessages -v -E  --mode static -d $(IntDir) -s $(IntDir) $(IntDir)\res-file-list.txt
+mkdir..\lib_static\
+mkdir..\lib_static\$(ConfigurationName)
+copy $(IntDir)\*.lib ..\lib_static\$(ConfigurationName)
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+		<Configuration
+			Name="DebugDLL|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectName)\$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Building XalanMessages.lib..."
+				CommandLine="..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\genrb.exe -t --package-name XalanMessages -d $(IntDir) en_US.txt
+echo XalanMessages_en_US.res &gt; $(IntDir)\res-file-list.txt
+..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\pkgdata.exe --name XalanMessages -v -E  --mode static -d $(IntDir) -s $(IntDir) $(IntDir)\res-file-list.txt
+mkdir..\lib_static\
+mkdir..\lib_static\$(ConfigurationName)
+copy $(IntDir)\*.lib ..\lib_static\$(ConfigurationName)
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+		<Configuration
+			Name="DebugMT|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectName)\$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Building XalanMessages.lib..."
+				CommandLine="..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\genrb.exe -t --package-name XalanMessages -d $(IntDir) en_US.txt
+echo XalanMessages_en_US.res &gt; $(IntDir)\res-file-list.txt
+..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\pkgdata.exe --name XalanMessages -v -E  --mode static -d $(IntDir) -s $(IntDir) $(IntDir)\res-file-list.txt
+mkdir..\lib_static\
+mkdir..\lib_static\$(ConfigurationName)
+copy $(IntDir)\*.lib ..\lib_static\$(ConfigurationName)
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectName)\$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Building XalanMessages.lib..."
+				CommandLine="..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\genrb.exe -t --package-name XalanMessages -d $(IntDir) en_US.txt
+echo XalanMessages_en_US.res &gt; $(IntDir)\res-file-list.txt
+..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\pkgdata.exe --name XalanMessages -v -E  --mode static -d $(IntDir) -s $(IntDir) $(IntDir)\res-file-list.txt
+mkdir..\lib_static\
+mkdir..\lib_static\$(ConfigurationName)
+copy $(IntDir)\*.lib ..\lib_static\$(ConfigurationName)
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseDLL|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectName)\$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Building XalanMessages.lib..."
+				CommandLine="..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\genrb.exe -t --package-name XalanMessages -d $(IntDir) en_US.txt
+echo XalanMessages_en_US.res &gt; $(IntDir)\res-file-list.txt
+..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\pkgdata.exe --name XalanMessages -v -E  --mode static -d $(IntDir) -s $(IntDir) $(IntDir)\res-file-list.txt
+mkdir..\lib_static\
+mkdir..\lib_static\$(ConfigurationName)
+copy $(IntDir)\*.lib ..\lib_static\$(ConfigurationName)
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseMT|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectName)\$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			ManagedExtensions="TRUE">
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Building XalanMessages.lib..."
+				CommandLine="..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\genrb.exe -t --package-name XalanMessages -d $(IntDir) en_US.txt
+echo XalanMessages_en_US.res &gt; $(IntDir)\res-file-list.txt
+..\..\..\..\icu\msvc71\3.2\bin\$(ConfigurationName)\pkgdata.exe --name XalanMessages -v -E  --mode static -d $(IntDir) -s $(IntDir) $(IntDir)\res-file-list.txt
+mkdir..\lib_static\
+mkdir..\lib_static\$(ConfigurationName)
+copy $(IntDir)\*.lib ..\lib_static\$(ConfigurationName)
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

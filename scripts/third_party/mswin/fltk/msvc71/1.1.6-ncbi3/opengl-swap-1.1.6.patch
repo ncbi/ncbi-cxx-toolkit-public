@@ -1,0 +1,28 @@
+diff -urN fltk-1.1.6.orig/src/Fl_Gl_Window.cxx fltk-1.1.6/src/Fl_Gl_Window.cxx
+--- fltk-1.1.6.orig/src/Fl_Gl_Window.cxx	2004-09-09 17:34:46.000000000 -0400
++++ fltk-1.1.6/src/Fl_Gl_Window.cxx	2004-11-29 10:48:18.986260200 -0500
+@@ -285,14 +285,21 @@
+     if (SWAP_TYPE == NODAMAGE) {
+ 
+       // don't draw if only overlay damage or expose events:
+-      if ((damage()&~(FL_DAMAGE_OVERLAY|FL_DAMAGE_EXPOSE)) || !save_valid)
+-	draw();
++      if ((damage()&~(FL_DAMAGE_OVERLAY|FL_DAMAGE_EXPOSE)) || !save_valid) {
++        draw();
++      } else {
++        swap_buffers();
++      }
+       swap_buffers();
+ 
+     } else if (SWAP_TYPE == COPY) {
+ 
+       // don't draw if only the overlay is damaged:
+-      if (damage() != FL_DAMAGE_OVERLAY || !save_valid) draw();
++      if (damage() != FL_DAMAGE_OVERLAY || !save_valid) {
++        draw();
++      } else {
++        swap_buffers();
++      }
+       swap_buffers();
+ 
+     } else { // SWAP_TYPE == UNDEFINED

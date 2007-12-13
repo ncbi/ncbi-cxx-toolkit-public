@@ -1,0 +1,13 @@
+diff -urN fltk-1.1.6.orig/FL/Fl_Window.H fltk-1.1.6/FL/Fl_Window.H
+--- fltk-1.1.6.orig/FL/Fl_Window.H	2004-11-19 22:19:57.000000000 -0500
++++ fltk-1.1.6/FL/Fl_Window.H	2004-11-29 11:11:10.350839400 -0500
+@@ -88,7 +88,7 @@
+   void hotspot(const Fl_Widget& p, int offscreen = 0) {hotspot(&p,offscreen);}
+   void free_position()	{clear_flag(FL_FORCE_POSITION);}
+   void size_range(int a, int b, int c=0, int d=0, int e=0, int f=0, int g=0) {
+-    minw=(short)a; minh=(short)b; maxw=(short)c; maxh=(short)d; dw=(short)e; dh=(short)f; aspect=(short)g; size_range_();}
++    minw=(short)a; minh=(short)b; maxw=(short)c; maxh=(short)d; dw=(uchar)e; dh=(uchar)f; aspect=(uchar)g; size_range_();}
+ 
+   const char* label() const	{return Fl_Widget::label();}
+   const char* iconlabel() const	{return iconlabel_;}
+

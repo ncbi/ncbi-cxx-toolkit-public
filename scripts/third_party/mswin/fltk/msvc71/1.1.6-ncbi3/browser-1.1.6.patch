@@ -1,0 +1,68 @@
+diff -urN fltk-1.1.6.orig/FL/Fl_Browser_.H fltk-1.1.6/FL/Fl_Browser_.H
+--- fltk-1.1.6.orig/FL/Fl_Browser_.H	2004-04-11 00:38:54.000000000 -0400
++++ fltk-1.1.6/FL/Fl_Browser_.H	2005-01-31 13:49:00.983771800 -0500
+@@ -92,6 +92,7 @@
+   void redraw_lines() {damage(FL_DAMAGE_SCROLL);} // redraw all of them
+   void bbox(int&,int&,int&,int&) const;
+   int leftedge() const;	// x position after scrollbar & border
++  int top_offset() const; // y position after scrollbar and border
+   void *find_item(int my); // item under mouse
+   void draw(int,int,int,int);
+   int handle(int,int,int,int,int);
+@@ -144,6 +145,9 @@
+ 
+ };
+ 
++// guard for NCBI-specific binary changes
++#define NCBI_FLTK_FL_BROWSER
++
+ #endif
+ 
+ //
+diff -urN fltk-1.1.6.orig/src/Fl_Browser.cxx fltk-1.1.6/src/Fl_Browser.cxx
+--- fltk-1.1.6.orig/src/Fl_Browser.cxx	2004-11-19 22:19:58.000000000 -0500
++++ fltk-1.1.6/src/Fl_Browser.cxx	2005-01-28 10:28:53.625252400 -0500
+@@ -374,9 +374,13 @@
+     }
+   BREAK:
+     fl_font(font, tsize);
+-    if (((FL_BLINE*)v)->flags & SELECTED)
+-      lcol = fl_contrast(lcol, selection_color());
+-    if (!active_r()) lcol = fl_inactive(lcol);
++    if (((FL_BLINE*)v)->flags & SELECTED) {
++      if (active_r() && Fl::focus() == static_cast<const Fl_Widget *>(this)) {
++        lcol = fl_contrast(lcol, selection_color());
++      }
++    } else if (!active_r()) {
++      lcol = fl_inactive(lcol);
++    }
+     fl_color(lcol);
+     fl_draw(str, X+3, Y, w1-6, H, e ? Fl_Align(talign|FL_ALIGN_CLIP) : talign, 0, 0);
+     if (!e) break; // no more fields...
+diff -urN fltk-1.1.6.orig/src/Fl_Browser_.cxx fltk-1.1.6/src/Fl_Browser_.cxx
+--- fltk-1.1.6.orig/src/Fl_Browser_.cxx	2004-07-27 12:02:19.000000000 -0400
++++ fltk-1.1.6/src/Fl_Browser_.cxx	2005-01-28 10:28:53.625252400 -0500
+@@ -91,6 +91,10 @@
+   return X;
+ }
+ 
++int Fl_Browser_::top_offset() const {
++    return offset_;
++}
++
+ // The scrollbars may be moved again by draw(), since each one's size
+ // depends on whether the other is visible or not.  This skips over
+ // Fl_Group::resize since it moves the scrollbars uselessly.
+@@ -353,7 +357,11 @@
+     if (hh <= 0) continue;
+     if ((damage()&(FL_DAMAGE_SCROLL|FL_DAMAGE_ALL)) || l == redraw1 || l == redraw2) {
+       if (item_selected(l)) {
+-	fl_color(active_r() ? selection_color() : fl_inactive(selection_color()));
++        Fl_Color sel_c = selection_color();
++        if ( !active_r()  ||  Fl::focus() != this ) {
++          sel_c = FL_BACKGROUND_COLOR;
++        }
++	fl_color(sel_c);
+ 	fl_rectf(X, yy+Y, W, hh);
+       } else if (!(damage()&FL_DAMAGE_ALL)) {
+ 	fl_push_clip(X, yy+Y, W, hh);

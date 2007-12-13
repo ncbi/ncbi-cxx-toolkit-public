@@ -1,0 +1,45 @@
+<table width=100% border=0 cellspacing=0 cellpadding=1>
+<tr valign=middle align=center class=fc>
+    <th width="1%">&nbsp;
+    <th width="15%" nowrap align=left><b>Name</b>
+    <th width="1%"  class=ft>
+    <th width="10%" nowrap><b>Size</b>
+    <th width="1%"  class=ft>
+    <th width="20%" nowrap><b>Date (GMT)</b>
+    <th width="1%"  class=ft>
+    <th width="*"   nowrap><b>Description</b>
+  $files{
+  <tr valign=middle align=left>
+    <td nowrap>$iconlink&nbsp;&nbsp;
+    <td nowrap>$namelink
+    <td>
+    <td nowrap align=right>$filesize{$bytes}&nbsp;
+    <td>
+    <td nowrap align=center>$modtime
+    <td>
+    <td>$description{<i>$desctext</i>}}
+</table>
+
+<!--
+<table width=100% border=0 cellspacing=0 cellpadding=1>
+  <tr valign=middle align=center class=fc>
+    <th>&nbsp;
+    <th nowrap align=left><b>Name</b>
+    <th class=ft>
+    <th nowrap width=80><b>Size</b>
+    <th class=ft>
+    <th nowrap width=140><b>Date (GMT)</b>
+    <th class=ft>
+    <th nowrap width=200><b>Description</b>
+  $files{
+  <tr valign=middle align=left>
+    <td nowrap>$iconlink
+    <td nowrap>$namelink
+    <td>
+    <td nowrap align=right>$filesize{$bytes}&nbsp;&nbsp;
+    <td>
+    <td nowrap align=center>$modtime
+    <td>
+    <td>$description{<i>$desctext</i>}}
+</table>
+-->

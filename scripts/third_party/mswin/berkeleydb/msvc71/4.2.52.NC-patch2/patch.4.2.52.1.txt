@@ -1,0 +1,36 @@
+*** mp/mp_fget.c.orig	25 Sep 2003 02:15:16 -0000	11.81
+--- mp/mp_fget.c	9 Dec 2003 19:06:28 -0000	11.82
+***************
+*** 440,446 ****
+  		c_mp->stat.st_pages--;
+  		alloc_bhp = NULL;
+  		R_UNLOCK(dbenv, &dbmp->reginfo[n_cache]);
+- 		MUTEX_LOCK(dbenv, &hp->hash_mutex);
+  
+  		/*
+  		 * We can't use the page we found in the pool if DB_MPOOL_NEW
+--- 440,445 ----
+***************
+*** 455,460 ****
+--- 454,462 ----
+  			b_incr = 0;
+  			goto alloc;
+  		}
++ 
++ 		/* We can use the page -- get the bucket lock. */
++ 		MUTEX_LOCK(dbenv, &hp->hash_mutex);
+  		break;
+  	case SECOND_MISS:
+  		/*
+*** mp/mp_fput.c.orig	30 Sep 2003 17:12:00 -0000	11.48
+--- mp/mp_fput.c	13 Dec 2003 00:08:29 -0000	11.49
+***************
+*** 285,290 ****
+--- 285,291 ----
+  		    bhp != NULL; bhp = SH_TAILQ_NEXT(bhp, hq, __bh))
+  			if (bhp->priority != UINT32_T_MAX &&
+  			    bhp->priority > MPOOL_BASE_DECREMENT)
++ 				bhp->priority -= MPOOL_BASE_DECREMENT;
+  		MUTEX_UNLOCK(dbenv, &hp->hash_mutex);
+  	}
+  }

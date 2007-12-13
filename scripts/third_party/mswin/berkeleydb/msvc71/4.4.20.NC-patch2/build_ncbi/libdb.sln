@@ -1,0 +1,45 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdb_dll", "libdb_dll.vcproj", "{AB0B207E-CC85-4903-8A60-C998131E7AB5}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdb_static", "libdb_static.vcproj", "{79D1DBE6-069F-4697-B87A-180A5DC97C96}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		DebugDLL = DebugDLL
+		DebugMT = DebugMT
+		Release = Release
+		ReleaseDLL = ReleaseDLL
+		ReleaseMT = ReleaseMT
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{AB0B207E-CC85-4903-8A60-C998131E7AB5}.Debug.ActiveCfg = DebugDLL|Win32
+		{AB0B207E-CC85-4903-8A60-C998131E7AB5}.DebugDLL.ActiveCfg = DebugDLL|Win32
+		{AB0B207E-CC85-4903-8A60-C998131E7AB5}.DebugDLL.Build.0 = DebugDLL|Win32
+		{AB0B207E-CC85-4903-8A60-C998131E7AB5}.DebugMT.ActiveCfg = DebugDLL|Win32
+		{AB0B207E-CC85-4903-8A60-C998131E7AB5}.Release.ActiveCfg = ReleaseDLL|Win32
+		{AB0B207E-CC85-4903-8A60-C998131E7AB5}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
+		{AB0B207E-CC85-4903-8A60-C998131E7AB5}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
+		{AB0B207E-CC85-4903-8A60-C998131E7AB5}.ReleaseMT.ActiveCfg = ReleaseDLL|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.Debug.ActiveCfg = Debug|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.Debug.Build.0 = Debug|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.DebugDLL.ActiveCfg = DebugDLL|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.DebugDLL.Build.0 = DebugDLL|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.DebugMT.ActiveCfg = DebugMT|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.DebugMT.Build.0 = DebugMT|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.Release.ActiveCfg = Release|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.Release.Build.0 = Release|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.ReleaseDLL.ActiveCfg = ReleaseDLL|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.ReleaseDLL.Build.0 = ReleaseDLL|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.ReleaseMT.ActiveCfg = ReleaseMT|Win32
+		{79D1DBE6-069F-4697-B87A-180A5DC97C96}.ReleaseMT.Build.0 = ReleaseMT|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

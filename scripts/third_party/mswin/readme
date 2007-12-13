@@ -1,0 +1,263 @@
+------------------------------------------------------------------------------
+berkleydb
+    Name           : Berkley DB
+    Official site  : http://www.oracle.com/database/berkeley-db/index.html
+    Default version: 4.5.20.NC
+    4.2.52NC
+        Download   : http://www.sleepycat.com/webforms/postdownload.php?fname=db-4.2.52.tar.gz&prod=core
+    4.2.52NC-patch2
+        Download   : http://www.sleepycat.com/webforms/postdownload.php?fname=db-4.2.52.tar.gz&prod=core
+        Patches    : http://www.sleepycat.com/webforms/patchdl.php?src=patch.4.2.52.1
+                     http://www.sleepycat.com/webforms/patchdl.php?src=patch.4.2.52.2
+    4.3.21NC
+        Download   : http://www.sleepycat.com/webforms/postdownload.php?fname=db-4.3.21.NC.tar.gz&prod=core
+    4.4.20.NC-patch2
+        Download   : http://dev.sleepycat.com/downloads/optreg.html?fname=db-4.4.20.NC.tar.gz&prod=core
+        Patches    : http://www.sleepycat.com/update/4.4.20/patch.4.4.20.html
+                     http://www.sleepycat.com/update/4.4.20/patch.4.4.20.1
+                     http://www.sleepycat.com/update/4.4.20/patch.4.4.20.2
+    4.5.20NC
+        Download   : http://www.oracle.com/technology/software/products/berkeley-db/htdocs/popup/db/4.5.20/db-nctargz.html
+    4.6.18NC
+        Download   : http://www.oracle.com/technology/software/products/berkeley-db/htdocs/popup/db/4.6.18/db-nctargz.html
+
+------------------------------------------------------------------------------
+bzip2
+    Name           : libbzip2
+    Official site  : http://sources.redhat.com/bzip2/
+    Default version: 1.0.2
+    1.0.2
+        Download   : ftp://sources.redhat.com/pub/bzip2/v102/bzip2-1.0.2.tar.gz
+
+
+------------------------------------------------------------------------------
+cppunit
+    Name           : CppUnit
+    Official site  : http://sourceforge.net/projects/cppunit
+    Default version: 1.10.2
+    1.10.2
+        Download   : http://prdownloads.sourceforge.net/cppunit/cppunit-1.10.2.tar.gz?download
+
+------------------------------------------------------------------------------
+crypt
+    Name           : UFC-crypt
+    Official site  : 
+    Default version: 2.27
+
+------------------------------------------------------------------------------
+fltk
+    Name           : The Fast Light Toolkit
+    Official site  : http://fltk.org/
+    Default version: 1.1.6-ncbi8
+    1.1.5rc2-ncbi2
+        Download   : ???
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.1.4
+    1.1.5
+        Download   : ftp://ftp2.easysw.com/pub/fltk/1.1.5/fltk-1.1.5-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.1.4
+    1.1.5-ncbi1
+        1.1.5 + focus patch
+        Download   : ftp://ftp2.easysw.com/pub/fltk/1.1.5/fltk-1.1.5-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.1.4
+    1.1.6
+        Download   : http://prdownloads.sourceforge.net/fltk/fltk-1.1.6-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.2.3
+    1.1.6-ncbi1
+        1.1.6 + focus patch
+        Download   : http://prdownloads.sourceforge.net/fltk/fltk-1.1.6-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.1.4
+    1.1.6-ncbi2
+        1.1.6 + 3 patches
+        Download   : http://prdownloads.sourceforge.net/fltk/fltk-1.1.6-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.1.4
+    1.1.6-ncbi3
+        1.1.6 + 8 patches
+        Download   : http://prdownloads.sourceforge.net/fltk/fltk-1.1.6-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.1.4
+    1.1.6-ncbi4
+        1.1.6 + 8 patches
+        Download   : http://prdownloads.sourceforge.net/fltk/fltk-1.1.6-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.1.4
+    1.1.6-ncbi5
+        1.1.6 + patches
+        Download   : http://prdownloads.sourceforge.net/fltk/fltk-1.1.6-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.1.4
+    1.1.6-ncbi6
+        1.1.6 + patches
+        Download   : http://prdownloads.sourceforge.net/fltk/fltk-1.1.6-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.2.3
+    1.1.6-ncbi7
+        1.1.6 + patches
+        Download   : http://prdownloads.sourceforge.net/fltk/fltk-1.1.6-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.2.3
+    1.1.6-ncbi8
+        1.1.6 + patches
+        Download   : http://prdownloads.sourceforge.net/fltk/fltk-1.1.6-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.2.3
+    1.1.6-ncbi9
+        1.1.6 + patches
+        Download   : http://prdownloads.sourceforge.net/fltk/fltk-1.1.6-source.tar.gz
+        Depend on  : jpeg 6b, png 1.2.7, zlib 1.2.3
+
+
+------------------------------------------------------------------------------
+gif
+    Name           : Libungif 
+    Official site  : http://sourceforge.net/projects/libungif
+    Default version: 4.1.3
+    4.1.0
+        Download   : ???
+    4.1.3
+        Download   : http://easynews.dl.sourceforge.net/sourceforge/libungif/libungif-4.1.3.tar.gz
+
+------------------------------------------------------------------------------
+jpeg
+    Name           : JPEG
+    Official site  : http://www.faqs.org/faqs/jpeg-faq/ 
+    Default version: 6b
+    6b
+        Download   : ftp://ftp.uu.net/graphics/jpeg/jpegsrc.v6b.tar.gz
+
+------------------------------------------------------------------------------
+lzo
+    Name           : LZO -- a real-time data compression library
+    Official site  : http://www.oberhumer.com/opensource/lzo/ 
+    Default version: 2.02
+    2.02
+        Download   : http://www.oberhumer.com/opensource/lzo/download/lzo-2.02.tar.gz
+
+------------------------------------------------------------------------------
+icu
+    Name           : International Components for Unicode
+    Official site  : http://ibm.com/software/globalization/icu/
+    Default version: 3.2
+    3.2 + patch
+        Download   : ftp://ftp.software.ibm.com/software/globalization/icu/3.2/icu-3.2.tgz
+                     ftp://ftp.software.ibm.com/software/globalization/icu/3.2/icu-3.2-patch.tgz
+
+------------------------------------------------------------------------------
+mysql
+    Name           : MySQL
+    Official site  : http://www.mysql.com 
+    Default version: 3.23.55
+    3.23.55
+        Download   : http://downloads.mysql.com/archives/mysql-3.23/mysql-3.23.55.tar.gz
+        Depend on  : zlib 1.2.3
+
+------------------------------------------------------------------------------
+pcre
+    Name           : PCRE - Perl Compatible Regular Expressions
+    Official site  : http://www.pcre.org/
+    Default version: 4.3
+    4.3
+        Download   : ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-4.3.tar.gz
+
+------------------------------------------------------------------------------
+png
+    Name           : libpng
+    Official site  : http://www.libpng.org/pub/png/libpng.html
+    Default version: 1.2.7
+    1.2.5
+        Download   : http://download.sourceforge.net/libpng/libpng-1.2.5.tar.gz
+        Depend on  : zlib 1.1.4
+    1.2.7
+        Download   : http://download.sourceforge.net/libpng/libpng-1.2.7.tar.gz
+        Depend on  : zlib 1.2.3
+
+------------------------------------------------------------------------------
+sqlite
+    Name           : SQLite
+    Official site  : http://www.sqlite.org/ 
+    Default version: 2.8.6
+    2.8.6
+        Download   : http://www.sqlite.org/sqlite-2.8.6.tar.gz
+
+------------------------------------------------------------------------------
+sqlite3
+    Name           : SQLite
+    Official site  : http://www.sqlite.org/ 
+    Default version: 3.3.5
+    3.3.5
+        Download   : http://www.sqlite.org/sqlite-3.3.5.tar.gz     (install first)
+                     http://www.sqlite.org/sqlite-source-3_3_5.zip (update src dir)
+
+------------------------------------------------------------------------------
+tiff
+    Name           : LibTIFF
+    Official site  : http://www.libtiff.org/
+    Default version: v3.6.1
+    3.6.0-beta
+        Download   : ftp://ftp.remotesensing.org/pub/libtiff/old/tiff-v3.6.0-beta.tar.gz
+        Depend on  : jpeg 6b, zlib 1.1.4
+    3.6.1
+        Download   : ftp://ftp.remotesensing.org/pub/libtiff/tiff-v3.6.1.tar.gz
+        Depend on  : jpeg 6b, zlib 1.2.3
+
+------------------------------------------------------------------------------
+xalan
+    Name           : Xalan-C++
+    Official site  : http://xml.apache.org/xerces-c/
+    Default version: 1.8.0-ncbi1
+    1.8.0-ncbi1
+        1.8.0 + 2 patches
+        Download   : http://archive.apache.org/dist/xml/xalan-c/Xalan-C_1_8_0-src.tar.gz
+        Depend on  : xerces 2.6.0
+    1.8.0-icu-ncbi1
+        1.8.0 + 2 patches
+        Download   : http://archive.apache.org/dist/xml/xalan-c/Xalan-C_1_8_0-src.tar.gz
+        Depend on  : xerces 2.6.0, icu 3.2
+    1.9.0
+        Download   : http://archive.apache.org/dist/xml/xalan-c/Xalan-C_1_9_0-src.tar.gz
+        Depend on  : xerces 2.6.0
+
+------------------------------------------------------------------------------
+xerces
+    Name           : Xerces-C++
+    Official site  : http://xml.apache.org/xerces-c/
+    Default version: 2.6.0
+    2.6.0
+        Download   : http://www.apache.org/dist/xml/xerces-c/xerces-c-src_2_6_0.tar.gz
+    2.6.0-icu
+        Download   : http://www.apache.org/dist/xml/xerces-c/xerces-c-src_2_6_0.tar.gz
+        Depend on  : icu 3.2
+
+------------------------------------------------------------------------------
+z
+    Name           : zlib
+    Official site  : http://www.zlib.org/
+    Default version: 1.2.3
+    1.1.4
+        Download   : http://www.gzip.org/zlib/zlib-1.1.4.tar.gz
+    1.2.3
+        Download   : http://www.zlib.net/zlib-1.2.3.tar.gz
+
+------------------------------------------------------------------------------
+
+
+Not included:
+
+        boost_test
+        cppunit
+        crypt
+	fastcgi
+	mssql
+	sybase
+	wxwin (wxWidgets) http://www.wxwidgets.org/
+    wxwidgets
+
+------------------------------------------------------------------------------
+xml
+    Name           : libxml2
+    Official site  : http://xmlsoft.org
+    Default version: 2.6.23
+    2.6.23
+        Download   : ftp://xmlsoft.org/libxml2/libxml2-2.6.23.tar.gz
+
+------------------------------------------------------------------------------
+xslt
+    Name           : libxslt
+    Official site  : http://xmlsoft.org
+    Default version: 1.1.15
+    1.1.15
+        Download   : ftp://xmlsoft.org/libxml2/libxslt-1.1.15.tar.gz
+        Depend on  : libxml2 2.6.23

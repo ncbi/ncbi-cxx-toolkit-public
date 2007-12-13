@@ -1,0 +1,66 @@
+diff -urN fltk-1.1.5rc2.orig/FL/Fl.H fltk-1.1.5rc2/FL/Fl.H
+--- fltk-1.1.5rc2.orig/FL/Fl.H	2004-04-11 00:38:53.000000000 -0400
++++ fltk-1.1.5rc2/FL/Fl.H	2004-08-10 12:10:00.707588000 -0400
+@@ -257,8 +257,23 @@
+   static void unlock();
+   static void awake(void* message = 0);
+   static void* thread_message();
++
++  // patch for focus handling
++public:
++    typedef void (TFocusCallback_F)(Fl_Widget* new_focus, void* data);
++
++    static void         set_focus_callback(TFocusCallback_F* callback, void* data);
++    TFocusCallback_F*   get_focus_callback() const;
++private:
++    static TFocusCallback_F*   focus_callback_;
++    static void*    focus_callback_data_;
++  // end of patch for focus handling
+ };
+ 
++// patch for focus handling
++#define FLTK_SET_FOCUS_PATCH
++// end of patch for focus handling
++
+ #endif // !Fl_H
+ 
+ //
+diff -urN fltk-1.1.5rc2.orig/src/Fl.cxx fltk-1.1.5rc2/src/Fl.cxx
+--- fltk-1.1.5rc2.orig/src/Fl.cxx	2004-04-11 00:38:56.000000000 -0400
++++ fltk-1.1.5rc2/src/Fl.cxx	2004-08-10 12:10:00.723212900 -0400
+@@ -422,12 +422,35 @@
+ 
+ ////////////////////////////////////////////////////////////////
+ 
++// patch for focus handling
++Fl::TFocusCallback_F*   Fl::focus_callback_ = NULL;
++void*   Fl::focus_callback_data_ = NULL;
++
++void  Fl::set_focus_callback(TFocusCallback_F* callback, void* data)
++{
++    focus_callback_ = callback;
++    focus_callback_data_ = data; 
++}
++
++Fl::TFocusCallback_F*    Fl::get_focus_callback() const
++{
++    return focus_callback_;
++}
++// end of patch
++
+ Fl_Widget* fl_oldfocus; // kludge for Fl_Group...
+ 
+ void Fl::focus(Fl_Widget *o) {
+   if (o && !o->visible_focus()) return;
+   if (grab()) return; // don't do anything while grab is on
+   Fl_Widget *p = focus_;
++
++  // patch for focus handling
++  if(focus_callback_)  {
++    (*focus_callback_)(o, focus_callback_data_);
++  }
++  // end of patch
++
+   if (o != p) {
+     Fl::compose_reset();
+     focus_ = o;

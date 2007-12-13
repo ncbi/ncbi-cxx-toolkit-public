@@ -1,0 +1,211 @@
+#!/usr/bin/perl
+# $Id$
+
+# ident --	Look up identifiers
+#
+#	Arne Georg Gleditsch <argggh@ifi.uio.no>
+#	Per Kristian Gjermshus <pergj@ifi.uio.no>
+#
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+######################################################################
+
+use lib '../../../../../data/ToolBox/CPP_DOC/lxr/lib/';
+use LXR::Common;
+use LXR::Config;
+use DB_File;
+
+#%ty = (('M', 'preprocessor macro'),
+#       ('V', 'variable'),
+#       ('f', 'function prototype'),
+#       ('F', 'function'),
+#       ('C', 'class'),			# C++
+#       ('c', '(forwarded) class'),	# C++
+#       ('T', 'type'),
+#       ('S', 'struct type'),
+#       ('E', 'enum type'),
+#       ('U', 'union type'));
+
+# Order for search 
+@ty_s = ('C', 'S', 'E', 'U', 'T', 'f', 'F', 'c', 'M', 'V');
+%ty   = (('C', 'class'),
+		 ('S', 'struct type'),
+		 ('E', 'enum type'),
+		 ('U', 'union type'),
+		 ('T', 'type'),
+		 ('f', 'function prototype'),
+		 ('F', 'function'),
+		 ('c', '(forwarded) class'),
+		 ('M', 'preprocessor macro'),
+		 ('V', 'variable'));
+
+
+sub ident {
+    $buf.="<p align=center>\n<form method=get action=\"ident\">\n";
+
+    foreach ($Conf->allvariables) {
+	if ($Conf->variable($_) ne $Conf->vardefault($_)) {
+	    $buf.=join('',"<input type=hidden name=\"",$_,"\" ",
+		  "value=\"",$Conf->variable($_),"\">\n");
+	}
+    }
+    
+    $buf.=join('',"Identifier: <input type=text name=\"i\" ",
+	  "value=\"",$identifier,"\" size=45>\n",
+      "<select name=\"d\">",
+      "<option value=\"\"     >All",
+	  "<option value=\"smart\">Any first entry",
+	  "<option value=\"C\"    >Class",
+	  "<option value=\"S\"    >Struct type",
+	  "<option value=\"E\"    >Enum type",
+	  "<option value=\"U\"    >Union type",
+	  "<option value=\"T\"    >Type",
+	  "<option value=\"f\"    >Function prototype",
+	  "<option value=\"F\"    >Function",
+	  "<option value=\"c\"    >Class (forwarded)",
+	  "<option value=\"M\"    >Macro",
+	  "<option value=\"V\"    >Variable",
+      "</select>\n",
+	  "<input type=submit value=\"Go get it\">\n",
+	  "</form>\n</p>\n");
+    
+    if ($identifier) {
+	tie(%xref, "DB_File", $Conf->dbdir."/xref", 
+	    O_RDONLY, undef, $DB_HASH) || 
+		&fatal("Could not open \"".$Conf->dbdir."/xref\"");
+
+	@refs = split(/\t/,$xref{$identifier});
+
+	$buf.="<hr>\n";
+	$buf.="<h1>$identifier</h1>\n";
+	if (@refs) {
+	    tie(%fileidx, "DB_File", $Conf->dbdir."/fileidx", 
+		O_RDONLY, undef, $DB_HASH) || 
+		    &fatal("Could not open \"".$Conf->dbdir."/fileidx\"");
+	    
+	    foreach (@refs) {
+		$f{$1} .= "$2\t" if /^(.)(.*)/;
+	    }
+
+	    foreach $t (@ty_s) {
+		if ($f{$t}) {
+		    $buf.="Defined as a $ty{$t} in:<ul>\n";
+		    @_ = split(/\t/, $f{$t});
+		    unshift(@_);
+
+            if ($definition eq "smart" || $definition eq $t) {
+        	   $first = shift(@_);
+	   	       ($fnum, $line, @clss) = split(/:/, $first);
+		       $fnam = substr($fileidx{$fnum},1);
+	  	       $ref = "$fnam#L$line";			
+	           untie(%fileidx);
+		       untie(%xref);
+		       return;
+            }
+
+		    foreach (@_) {
+			($fnum, $line, @clss) = split(/:/, $_);
+            $fnam = substr($fileidx{$fnum},1);
+			$buf.="<li>";
+            $buf.=&fileref("$fnam, line $line","/$fnam", $line);
+
+			if (@clss) { 
+			    if ($t eq 'F' || $t eq 'f') {
+				$buf.=", as member of ";
+				if ($xref{$clss[0]}) {
+				    $buf.=&idref("class $clss[0]", $clss[0]);
+				} else {
+				    $buf.="class $clss[0]";
+				}
+			    } elsif ($t eq 'C') {
+				$buf.=", inheriting <ul>\n";
+				foreach (@clss) {
+				    $buf.="<li>";
+				    if ($xref{$_}) {
+					$buf.=&idref("class $_", $clss[0]);
+				    } else {
+					$buf.="class $_";
+				    }
+				}
+				$buf.="</ul>";
+			    }
+			}
+			$buf.="\n";
+		    }
+		    $buf.="</ul>\n";
+		}
+	    }
+
+	    $buf.="Referenced (in ";
+        $buf.=int(grep(/^R/, @refs));
+        $buf.=" files total) in:\n<ul>\n";
+
+	    $concise = $#refs > 100;
+	    foreach (@refs) {
+		if (/^R(.+):([\d,]+)/) {
+		    $fnam = substr($fileidx{$1},1);
+		    @fpos = split(/,/, $2);
+		    if ($#fpos > 0) {
+			if ($concise) {
+			    $buf.=join('',"<li>", &fileref("$fnam", "/$fnam"),
+				  ", ",$#fpos+1," times\n");
+			} else {
+			    $buf.="<li>$fnam:\n<ul>\n";
+			    foreach (@fpos) {
+				$buf.=join('',"<li>", &fileref("line $_","/$fnam", $_),"\n");
+			    }
+			    $buf.="</ul>\n";
+			}
+		    } else {
+			$buf.=join('',"<li>", &fileref("$fnam, line $fpos[0]",
+					   "/$fnam", $fpos[0]),"\n");
+		    }
+		}
+	    }
+	    $buf.="</ul>\n";
+	    untie(%fileidx);
+
+	} else {
+	    $buf.="<br><b>Not used</b>";
+	}
+	
+	untie(%xref);
+    }
+}
+
+
+($Conf, $HTTP, $Path) = &init(1);
+$identifier = $HTTP->{'param'}->{'i'};
+$definition = $HTTP->{'param'}->{'d'};
+$buf = "";
+$ref = "";
+# Trim whitespaces from an identifier name
+$identifier =~ s/^\s+//;
+$identifier =~ s/\s+$//;
+
+&ident;
+
+if ($ref eq "") {
+   print("Content-Type: text/html\n\n");
+   &makeheader('ident');
+   print($buf);
+   &makefooter('ident');
+} else {
+   print("Status: 302 Moved\nLocation:source/",$ref,"\n\n");
+}
+
+
+

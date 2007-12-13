@@ -1,0 +1,41 @@
+diff -urN xml-xalan.orig/c/src/xalanc/PlatformSupport/XalanICUMessageLoader.cpp xml-xalan/c/src/xalanc/PlatformSupport/XalanICUMessageLoader.cpp
+--- xml-xalan.orig/c/src/xalanc/PlatformSupport/XalanICUMessageLoader.cpp	2004-04-28 04:33:07.000000000 -0400
++++ xml-xalan/c/src/xalanc/PlatformSupport/XalanICUMessageLoader.cpp	2005-04-20 12:49:01.417806800 -0400
+@@ -37,27 +37,11 @@
+ 
+ #ifdef WIN32
+ 
+-#ifdef  NDEBUG_SYMBOLS // release with symbols
+-
+-#define ENTRY_POINT_SUFFIX S_dat
+-#define PACKAGE_NAME_SUFFIX S
+-
+-#elif NDEBUG // release
+-
+ #define ENTRY_POINT_SUFFIX _dat
+ #define PACKAGE_NAME_SUFFIX
+ 
+-#elif _DEBUG // debug only 
+-
+-#define ENTRY_POINT_SUFFIX D_dat
+-#define PACKAGE_NAME_SUFFIX D
+ 
+-#endif // NDEBUG_SYMBOLS
+-
+-
+-#define ICUDLL_ENTRYPOINT_NAME INVK_CAT3_RAW_NUMERIC(XALAN_MESSAGES_NAME,\
+-									INVK_CAT2_RAW_NUMERIC_SEP_UNDERSCORE(XALAN_VERSION_MAJOR,XALAN_VERSION_MINOR),\
+-									ENTRY_POINT_SUFFIX)
++#define ICUDLL_ENTRYPOINT_NAME XalanMessages_dat
+ 
+ #define PACKAGE_NAME INVK_CAT3_RAW_NUMERIC(XALAN_MESSAGES_NAME,\
+ 									INVK_CAT2_RAW_NUMERIC_SEP_UNDERSCORE(XALAN_VERSION_MAJOR,XALAN_VERSION_MINOR),\
+@@ -65,7 +49,7 @@
+ 
+ extern "C" const char U_IMPORT  ICUDLL_ENTRYPOINT_NAME [];
+  
+-static const char* const	sPackageName=INVK_MAKE_STRING(PACKAGE_NAME)	;	
++static const char* const	sPackageName="XalanMessages";	
+ 												   
+ #else // NON-WIN32 systems
+ 
