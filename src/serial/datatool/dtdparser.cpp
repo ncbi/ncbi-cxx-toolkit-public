@@ -830,6 +830,7 @@ void DTDParser::ParseEnumeratedList(DTDAttribute& attrib)
             ParseError("Unknown token", "token");
             break;
         case T_IDENTIFIER:
+        case T_NMTOKEN:
             attrib.AddEnumValue(GetNextTokenText(),Lexer().CurrentLine());
             ConsumeToken();
             break;
@@ -837,6 +838,9 @@ void DTDParser::ParseEnumeratedList(DTDAttribute& attrib)
             // may be either '|' or ')'
             if (NextToken().GetSymbol() == ')') {
                 return;
+            }
+            if (NextToken().GetSymbol() != '|') {
+                ParseError("Unknown token", "|");
             }
             ConsumeToken();
             break;

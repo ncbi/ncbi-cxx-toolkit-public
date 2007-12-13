@@ -103,6 +103,10 @@ TToken DTDLexer::LookupToken(void)
             tok = LookupIdentifier();
             return tok;
         }
+        if (isdigit((unsigned char) c)) {
+            LookupIdentifier();
+            return T_NMTOKEN;
+        }
         break;
     }
     return T_SYMBOL;

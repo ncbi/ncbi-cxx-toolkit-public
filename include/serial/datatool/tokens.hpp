@@ -77,6 +77,7 @@ static const TToken T_ENTITY            =  11;
 static const TToken T_IDENTIFIER_END    =  12;
 static const TToken T_CONDITIONAL_BEGIN =  13;
 static const TToken T_CONDITIONAL_END   =  14;
+static const TToken T_NMTOKEN           =  15;
 
 static const TToken K_ELEMENT  = 201;
 static const TToken K_ATTLIST  = 202;
