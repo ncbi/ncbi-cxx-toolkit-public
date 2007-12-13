@@ -238,8 +238,8 @@ public:
     }
     bool IntersectingWith(const CRange<position_type>& r) const
     {
-        return ! (this->GetFrom() > r.GetTo()
-                  ||  r.GetFrom() > this->GetTo());
+        return ! (this->GetFirstFrom() > r.GetTo()
+                  ||  r.GetFrom() > this->GetFirstTo());
     }
     bool    IsAbutting(const TThisType& r) const
     {
@@ -297,7 +297,7 @@ public:
     }
     static TThisType GetEmpty(void)
     {
-        return TThisType(GetEmptyFrom(), GetEmptyToOpen());
+        return TThisType();
     }
     static position_type GetPositionMin(void)
     {

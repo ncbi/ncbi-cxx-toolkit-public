@@ -329,8 +329,8 @@ public:
     position_type   GetFirstLength (void) const
     {
        if(! m_Ranges.empty())  {
-            position_type from = begin()->GetFrom();
-            return rbegin()->GetToOpen() - from;
+            position_type from = begin()->GetFirstFrom();
+            return rbegin()->GetFirstToOpen() - from;
        } else {
            return 0;
        }
