@@ -204,8 +204,12 @@ EOF
                 continue
             fi
 
-            cmd="dbapi_conn_policy -lb random -d $driver -S $server"
-            RunSimpleTest "dbapi_conn_policy"
+            if test \( $driver = "ftds8" -o $driver = "ftds_odbc" \) -a $server = $server_mssql2005 ; then
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_conn_policy -lb random -d $driver -S $server (skipped)"
+            else
+                cmd="dbapi_conn_policy -lb random -d $driver -S $server"
+                RunSimpleTest "dbapi_conn_policy"
+            fi
 
             # Do not run dbapi_bcp and dbapi_testspeed on SunOS Intel
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
