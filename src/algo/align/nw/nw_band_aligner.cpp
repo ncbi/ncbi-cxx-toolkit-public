@@ -106,7 +106,6 @@ const Uint1 kMaskFc (0x01);
 const Uint1 kMaskEc (0x02);
 const Uint1 kMaskE  (0x04);
 const Uint1 kMaskD  (0x08);
-const Uint1 kVoid   (0xFF);
 
 CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 {
@@ -130,33 +129,33 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
         m_prg_info.m_iter_done = 0;
         if(m_terminate = m_prg_callback(&m_prg_info)) {
             return 0;
-	}
+        }
     }
     
     CBacktraceMatrix4 backtrace_matrix (N1*fullrow);
 
-    TScore V = 0;
-    TScore E = kInfMinus, V2 = kInfMinus, G, n0;
-    Uint1 tracer = 0;
+    TScore V (0);
+    TScore E (kInfMinus), V2 (kInfMinus), G, n0;
+    Uint1 tracer (0);
 
     const int ibeg ((m_Shift >= 0 && m_Shift > int(m_band))? 
 		    (m_Shift - m_band): 0);
 
-    const TScore wgleft1   = data->m_esf_L1? 0: m_Wg;
-    const TScore wsleft1   = data->m_esf_L1? 0: m_Ws;
-    const TScore wgleft2   = data->m_esf_L2? 0: m_Wg;
-    const TScore wsleft2   = data->m_esf_L2? 0: m_Ws;    
+    const TScore wgleft1 (data->m_esf_L1? 0: m_Wg);
+    const TScore wsleft1 (data->m_esf_L1? 0: m_Ws);
+    const TScore wgleft2 (data->m_esf_L2? 0: m_Wg);
+    const TScore wsleft2 (data->m_esf_L2? 0: m_Ws);
 
-    TScore wg1 = m_Wg, ws1 = m_Ws;
-    TScore V1 = wgleft2 + wsleft2 * ibeg;
+    TScore wg1 (m_Wg), ws1 (m_Ws);
+    TScore V1 (wgleft2 + wsleft2 * ibeg);
 
     int lendif = int(N2) - (int(N1) - (m_Shift + int(m_band)));
     const int iend ((lendif >= 0)? N1: (N1 - abs(lendif)));
 
     m_LastCoordSeq1 = m_LastCoordSeq2 = m_TermK = kMax_size_t;
 
-    int jbeg0 = ibeg - m_Shift - int(m_band);
-    size_t jendcnt = 0;
+    int jbeg0 (ibeg - m_Shift - int(m_band));
+    size_t jendcnt (0);
     for(int i = ibeg; i < iend && !m_terminate; ++i, ++jbeg0) {
 
         TScore wg2 = m_Wg, ws2 = m_Ws;
@@ -185,7 +184,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
         
         int j;
         int k (fullrow * (i - ibeg) + jbeg - jbeg0);
-        if(k & 1) {
+        if(size_t(k - 1) > m_TermK && (k & 1)) {
             backtrace_matrix.SetAt(k - 1, 0);
         }
 
@@ -348,6 +347,7 @@ void CBandAligner::x_CheckParameters(const SAlignInOut* data) const
     }
 }
 
+
 void CBandAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
                                  CNWAligner::SAlignInOut* data)
 {
@@ -376,10 +376,14 @@ void CBandAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
 
     while (true) {
 
-        const size_t kOverflow = kMax_size_t - 256, kMax = kMax_size_t;
-        if(i1 > kOverflow && i1 != kMax || i2 > kOverflow && i2 != kMax) {
-            NCBI_THROW(CAlgoAlignException, eInternal, 
-		       g_msg_InvalidBacktraceData);
+        const size_t kOverflow (kMax_size_t - 256), kMax (kMax_size_t);
+
+        const bool invalid_backtrace_data (
+            (i1 > kOverflow && i1 != kMax || i2 > kOverflow && i2 != kMax) ||
+            (abs(m_Shift - int(i1) + int(i2)) > m_band) );
+
+        if(invalid_backtrace_data) {
+            NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidBacktraceData);
         }
 
         if(i1 == kMax) {
