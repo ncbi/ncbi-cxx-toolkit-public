@@ -155,7 +155,11 @@ private:
     bool x_ExceptionIsLegalForFeature() const;
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
         CConstRef<CSeq_feat>& );
+    void x_AddQualPartial( CBioseqContext& );
+    void x_AddQualDbXref( CBioseqContext& );
     void x_AddQualCitation( CBioseqContext& );
+    void x_AddQualExpInv( CBioseqContext& );
+    void x_AddQualOperon( CBioseqContext& );
     void x_AddQualExceptions( CBioseqContext& ) const;
     void x_AddQualNote( const CGene_ref*, CConstRef<CSeq_feat> ) const;
     void x_AddQualOldLocusTag( const CGene_ref*, CConstRef<CSeq_feat> ) const;
@@ -164,6 +168,7 @@ private:
 
 
     // qualifier collection
+    void x_AddQualsExt( const CSeq_feat::TExt& ) const;
     void x_AddQuals( CBioseqContext& ctx );
     void x_AddQuals(const CCdregion& cds)  const;
     void x_AddQuals(const CProt_ref& prot) const;
@@ -181,7 +186,6 @@ private:
     void x_AddBondQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     const TGeneSyn* x_AddQuals(const CGene_ref& gene, bool pseudo,
         CSeqFeatData::ESubtype subtype, bool from_overlap) const;
-    void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;
     void x_ImportQuals(CBioseqContext& ctx) const;
     void x_AddRptUnitQual(const string& rpt_unit) const;
@@ -326,8 +330,6 @@ inline void CFeatureItem::x_AddQualNote(
 inline void CFeatureItem::x_AddQualDb(
     const CGene_ref* gene_ref,
     CConstRef<CSeq_feat> gene_feat ) const
-//
-//  Add DB qualifiers, if they exist.
 //  ----------------------------------------------------------------------------
 {
     if ( gene_ref != NULL && gene_ref->CanGetDb() ) {
@@ -335,6 +337,26 @@ inline void CFeatureItem::x_AddQualDb(
     }
 }
     
+//  ----------------------------------------------------------------------------
+inline void CFeatureItem::x_AddQualCitation(
+    CBioseqContext& )
+//  ----------------------------------------------------------------------------
+{
+    if (m_Feat->IsSetCit()) {
+        x_AddQual(eFQ_citation, new CFlatPubSetQVal(m_Feat->GetCit()));
+    }
+}
+
+//  ----------------------------------------------------------------------------
+inline void CFeatureItem::x_AddQualDbXref(
+    CBioseqContext& )
+//  ----------------------------------------------------------------------------
+{
+    if (m_Feat->IsSetDbxref()) {
+        x_AddQual( eFQ_db_xref, 
+            new CFlatXrefQVal( m_Feat->GetDbxref(), &m_Quals ) );
+    }
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

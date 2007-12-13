@@ -461,16 +461,6 @@ static bool s_SkipFeature(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqCon
         return true;
     }
 
-    // supress full length comment features
-    // NB: the test is performed on the bioseq the feature is
-    // annotated on even in master style. full length features are
-    // analogous to descriptors and those aren't propagated.
-//    if ( type == CSeqFeatData::e_Comment ) {
-//        if (s_SuppressCommentFeature(feat, loc, ctx)) {
-//            return true;
-//        }
-//    }
-
     // if RELEASE mode, make sure we have all info to create mandatory quals.
     if ( cfg.NeedRequiredQuals() ) {
         return !s_CheckMandatoryQuals(feat, loc, ctx);
@@ -904,15 +894,84 @@ bool CFeatureItem::x_ExceptionIsLegalForFeature() const
 }
 
 //  ----------------------------------------------------------------------------
-void CFeatureItem::x_AddQualCitation(
-    CBioseqContext& )
+void CFeatureItem::x_AddQualPartial(
+    CBioseqContext& ctx )
 //
-//  Process the /citation qualifier, if present.
+//  Note: /partial has been depricated since DEC-2001. Current policy is to 
+//  suppress /partial in entrez and release modes and let it stand in gbench and 
+//  dump modes
 //  ----------------------------------------------------------------------------
 {
-    if (m_Feat->IsSetCit()) {
-        x_AddQual(eFQ_citation, new CFlatPubSetQVal(m_Feat->GetCit()));
+    if ( !ctx.Config().HideUnclassPartial() ) {
+        if ( !IsMappedFromCDNA() || !ctx.IsProt() ) {
+            if ( m_Feat->CanGetPartial()  &&  m_Feat->GetPartial() ) {
+                if ( !s_LocIsFuzz( *m_Feat, GetLoc() ) ) {
+                    x_AddQual( eFQ_partial, new CFlatBoolQVal( true ) );
+                }
+            }
+        }
     }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualOperon(
+    CBioseqContext& ctx )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! ctx.HasOperon() ) {
+        return;
+    }
+
+    CSeqFeatData::ESubtype subtype = m_Feat->GetData().GetSubtype();
+    if ( subtype == CSeqFeatData::eSubtype_operon ||
+         subtype == CSeqFeatData::eSubtype_gap ) {
+        return;
+    }
+
+    const CGene_ref* gene_ref = m_Feat->GetGeneXref();
+    if ( gene_ref == NULL  ||  !gene_ref->IsSuppressed()) {
+            const CSeq_loc& operon_loc = ( ctx.IsProt() || !IsMapped() ) ? 
+                m_Feat->GetLocation() : GetLoc();
+        CConstRef<CSeq_feat> operon 
+            = GetOverlappingOperon( operon_loc, ctx.GetScope() );
+        if ( operon ) {
+            const string& operon_name = operon->GetNamedQual( "operon" );
+            if ( !operon_name.empty() ) {
+                x_AddQual(eFQ_operon, new CFlatStringQVal(operon_name));
+            }
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualExpInv(
+    CBioseqContext& ctx )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! m_Feat->IsSetExp_ev() ) {
+        return;
+    }
+
+    if ( m_Feat->GetExp_ev() == CSeq_feat::eExp_ev_experimental ) {
+        x_AddQual(eFQ_experiment, new CFlatExperimentQVal());
+        return;
+    }
+
+    string value;
+    CSeq_feat::TQual gbQuals = m_Feat->GetQual();
+    for ( CSeq_feat::TQual::iterator it = gbQuals.begin();
+        it != gbQuals.end(); ++it ) 
+    {
+        if (!(*it)->CanGetQual()  ||  !(*it)->CanGetVal()) {
+            continue;
+        }
+        if ( (*it)->GetQual() != "inference" ) {
+            continue;
+        }
+        value = (*it)->GetVal();
+        break;
+    }
+    x_AddQual(eFQ_inference, new CFlatInferenceQVal( value ));
 }
 
 //  ----------------------------------------------------------------------------
@@ -920,7 +979,7 @@ void CFeatureItem::x_AddQualExceptions(
     CBioseqContext& ctx ) const
 //
 //  Add any existing exception qualifiers.
-//  Note: These include /ribosomal_slippage and /tarns-splicing as special 
+//  Note: These include /ribosomal_slippage and /trans-splicing as special 
 //  cases. Also, some exceptions are listed as notes.
 //  ----------------------------------------------------------------------------
 {
@@ -1041,12 +1100,6 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         else {
             s_feat = GetOverlappingGene(GetLoc(), ctx.GetScope());
         }
-
-//        if ( s_feat ) {
-//            if ( g_ref == 0 ) {
-//                g_ref = &s_feat->GetData().GetGene();
-//            }
-//        }
     }
 }
 
@@ -1103,7 +1156,7 @@ bool CFeatureItem::x_GetPseudo(
 
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQuals(
-    CBioseqContext& ctx)
+    CBioseqContext& ctx )
 //
 //  Add the various qualifiers to this feature. Top level function.
 //  ----------------------------------------------------------------------------
@@ -1112,6 +1165,11 @@ void CFeatureItem::x_AddQuals(
         x_AddFTableQuals(ctx);
         return;
     }
+
+    //
+    //  Collect/Compute data that will be shared between several qualifier
+    //  collectors:
+    //
     CScope&             scope = ctx.GetScope();
     const CSeqFeatData& data  = m_Feat->GetData();
     const CSeq_loc&     loc   = GetLoc();
@@ -1123,62 +1181,21 @@ void CFeatureItem::x_AddQuals(
     string precursor_comment;
     const TGeneSyn* gene_syn = NULL;
 
-    // add various common qualifiers...
-
-    // partial
-    // note: /partial has been depricated since DEC-2001. Current policy is to suppress
-    //  /partial in entrez and release modes and let it stand in gbench and dump modes
     //
-    if ( !(IsMappedFromCDNA()  &&  ctx.IsProt())  &&
-         !ctx.Config().HideUnclassPartial() ) {
-        if ( m_Feat->CanGetPartial()  &&  m_Feat->GetPartial() ) {
-            if ( !s_LocIsFuzz(*m_Feat, loc) ) {
-//                int partial = SeqLocPartialCheck(m_Feat->GetLocation(), &scope);
-//                if ( partial == eSeqlocPartial_Complete ) {
-                    x_AddQual(eFQ_partial, new CFlatBoolQVal(true));
-//                }
-            }
-        }
-    }
-   
-    // dbxref
-    if (m_Feat->IsSetDbxref()) {
-        x_AddQual(eFQ_db_xref, new CFlatXrefQVal(m_Feat->GetDbxref(), &m_Quals));
-    }
-    // model_evidance and go quals
+    //  Collect qualifiers that are common to most feature types:
+    //
+    x_AddQualPartial( ctx );
+    x_AddQualDbXref( ctx );
     if ( m_Feat->IsSetExt() ) {
-        x_AddExtQuals(m_Feat->GetExt());
+        x_AddQualsExt(m_Feat->GetExt());
     }
-  
-    // experiment and inference
-    if (m_Feat->IsSetExp_ev()) {
-        if ( m_Feat->GetExp_ev() == CSeq_feat::eExp_ev_experimental ) {
-            x_AddQual(eFQ_experiment, new CFlatExperimentQVal());
-        } else {
-            string value;
-            CSeq_feat::TQual gbQuals = m_Feat->GetQual();
-            for ( CSeq_feat::TQual::iterator it = gbQuals.begin();
-                it != gbQuals.end(); ++it ) 
-            {
-                if (!(*it)->CanGetQual()  ||  !(*it)->CanGetVal()) {
-                    continue;
-                }
-                if ( (*it)->GetQual() != "inference" ) {
-                    continue;
-                }
-                value = (*it)->GetVal();
-                break;
-            }
-
-            x_AddQual(eFQ_inference, new CFlatInferenceQVal( value ));
-        }
-    }
+    x_AddQualExpInv( ctx );
     x_AddQualCitation( ctx );
     x_AddQualExceptions( ctx );
 
-    if (!data.IsGene()  &&
-        (subtype != CSeqFeatData::eSubtype_operon)  &&
-        (subtype != CSeqFeatData::eSubtype_gap)) 
+    if ( type != CSeqFeatData::e_Gene &&
+         subtype != CSeqFeatData::eSubtype_operon &&
+         subtype != CSeqFeatData::eSubtype_gap ) 
     {
         const CGene_ref* gene_ref = 0;
         CConstRef<CSeq_feat> gene_feat;
@@ -1229,26 +1246,15 @@ void CFeatureItem::x_AddQuals(
         }
     } // end of "interesting" scope //
 
-    // operon qual for any feature but operon and gap
-    if (ctx.HasOperon()  &&
-        subtype != CSeqFeatData::eSubtype_operon  &&
-        subtype != CSeqFeatData::eSubtype_gap) {
-        const CGene_ref* grp = m_Feat->GetGeneXref();
-        if (grp == NULL  ||  !grp->IsSuppressed()) {
-            const CSeq_loc& operon_loc = (ctx.IsProt()  ||  !IsMapped()) ? 
-                m_Feat->GetLocation() : GetLoc();
-            CConstRef<CSeq_feat> operon = GetOverlappingOperon(operon_loc, scope);
-            if (operon) {
-                const string& operon_name = operon->GetNamedQual("operon");
-                if (!operon_name.empty()) {
-                    x_AddQual(eFQ_operon, new CFlatStringQVal(operon_name));
-                }
-            }
-        }
-    }
+    x_AddQualOperon( ctx );
 
     // specific fields set here...
 //    pseudo = x_GetPseudo( gene_ref, gene_feat );
+
+    //
+    //  Collect qualifiers that are specific to a single or just a few feature
+    //  types:
+    //
     switch ( type ) {
     case CSeqFeatData::e_Gene:
         pseudo = pseudo || 
@@ -1308,6 +1314,7 @@ void CFeatureItem::x_AddQuals(
     x_CleanQuals(had_prot_desc, gene_syn);
 
     if (seqfeat_note) {
+//        if (add_period  &&  ! x_GetStringQual(eFQ_prot_desc ) ) {
         if (add_period  &&  !had_prot_desc) {
             seqfeat_note->SetAddPeriod();
         }
@@ -1908,8 +1915,10 @@ void CFeatureItem::x_AddSiteQuals(const CSeq_feat& feat, CBioseqContext& ctx) co
     }
 }
 
-
-void CFeatureItem::x_AddExtQuals(const CSeq_feat::TExt& ext) const
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualsExt(
+    const CSeq_feat::TExt& ext ) const
+//  ----------------------------------------------------------------------------
 {
     ITERATE (CUser_object::TData, it, ext.GetData()) {
         const CUser_field& field = **it;
@@ -1918,11 +1927,11 @@ void CFeatureItem::x_AddExtQuals(const CSeq_feat::TExt& ext) const
         }
         if ( field.GetData().IsObject() ) {
             const CUser_object& obj = field.GetData().GetObject();
-            x_AddExtQuals(obj);
+            x_AddQualsExt(obj);
             return;
         } else if ( field.GetData().IsObjects() ) {
             ITERATE (CUser_field::C_Data::TObjects, o, field.GetData().GetObjects()) {
-                x_AddExtQuals(**o);
+                x_AddQualsExt(**o);
             }
             return;
         }
@@ -3190,11 +3199,11 @@ void CFeatureItem::x_AddFTableExtQuals(const CSeq_feat::TExt& ext) const
         }
         if ( field.GetData().IsObject() ) {
             const CUser_object& obj = field.GetData().GetObject();
-            x_AddExtQuals(obj);
+            x_AddQualsExt(obj);
             return;
         } else if ( field.GetData().IsObjects() ) {
             ITERATE (CUser_field::C_Data::TObjects, o, field.GetData().GetObjects()) {
-                x_AddExtQuals(**o);
+                x_AddQualsExt(**o);
             }
             return;
         }
