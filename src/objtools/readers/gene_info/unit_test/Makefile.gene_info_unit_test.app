@@ -13,9 +13,8 @@ LIB = gene_info xobjutil xobjsimple $(OBJMGR_LIBS)
 LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) \
        $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
        
-REQUIRES = objects
+REQUIRES = dbapi
 
 CHECK_CMD = gene_info_unit_test
 CHECK_COPY = data
 CHECK_AUTHORS = blastsoft
-
