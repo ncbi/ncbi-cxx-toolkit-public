@@ -82,7 +82,7 @@ void CBulkInsert::FreeResources()
  
 void CBulkInsert::Bind(unsigned int col, CVariant* v)
 {
-    GetBCPInCmd()->BindParam(col - 1, v->GetData());
+    GetBCPInCmd()->Bind(col - 1, v->GetData());
 }
 		
 		
