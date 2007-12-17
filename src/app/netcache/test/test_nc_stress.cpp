@@ -497,6 +497,11 @@ void CTestNetCacheStressApp::Init(void)
                              "threads",
                              "Number of threads",
                              CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey("timeout", 
+                             "timeout",
+                             "Communication timeout in msec",
+                             CArgDescriptions::eInteger);
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
@@ -518,14 +523,20 @@ int CTestNetCacheStressApp::Run(void)
     }
     if (!count) count = 5000;
 
-    int threads = 1;
+    unsigned threads = 1;
     if (args["threads"]) {
-        threads = args["threads"].AsInteger();
+        threads = (unsigned) args["threads"].AsInteger();
     }
+
+    int timeout = 12000;
+    if (args["timeout"]) {
+        timeout = args["timeout"].AsInteger();
+    }
+
 
     auto_ptr<CNetCacheAPI> nc(new CNetCacheAPI(service_name, "stress_test"));
     nc->SetConnMode(INetServiceAPI::eKeepConnection);
-    STimeout to = {12, 0};
+    STimeout to = {timeout/1000, timeout*1000};
     nc->SetCommunicationTimeout(to);
 
     if (threads < 2) {
@@ -545,6 +556,7 @@ int CTestNetCacheStressApp::Run(void)
         CRef<CThread> thread(*it);
         thread->Join();
     }
+    return 0;
 }
 
 
