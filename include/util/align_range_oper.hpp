@@ -51,7 +51,7 @@ struct PAlignRangeToLess
     typedef typename TAlignRange::position_type   position_type;
     bool    operator()(const TAlignRange& r, position_type pos)  
     { 
-        return true;
+        return r.GetFirstToOpen() <= pos;
     }    
     bool    operator()(position_type pos, const TAlignRange& r)  
     { 
@@ -59,19 +59,19 @@ struct PAlignRangeToLess
     }    
     bool    operator()(const TAlignRange& r1, const TAlignRange& r2)  
     { 
-        return true;
+        return r1.GetFirstToOpen() <= r2.GetFirstToOpen();
     }    
     bool    operator()(const TAlignRange* r, position_type pos)  
     { 
-        return false;
+        return r->GetFirstToOpen() <= pos;  
     }
     bool    operator()(position_type pos, const TAlignRange* r)  
     { 
-        return false;
+        return pos < r->GetFirstToOpen();
     }
     bool    operator()(const TAlignRange* r1, const TAlignRange* r2)  
     { 
-        return false;
+        return r1->GetFirstToOpen() <= r2->GetFirstToOpen();  
     }
 };
 
