@@ -458,8 +458,6 @@ void CAlignGroup::x_SeparateByTaxId(const TAlignList& alignments,
                                     TTaxAlignMap&     tax_aligns,
                                     CScope&           scope)
 {
-    CTaxon1 taxon1;
-    taxon1.Init();
     ITERATE (TAlignList, iter, alignments) {
         CRef<CSeq_align> align = *iter;
 
