@@ -654,11 +654,13 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                     m_InputStream->clear();
                 }
                 GetDiagContext().SetProperty(CDiagContext::kProperty_BytesRd,
-                    NStr::IntToString(m_InputStream->tellg()));
+                    NStr::Int8ToString(
+                    NcbiStreamposToInt8(m_InputStream->tellg())));
             }
             if ( m_OutputStream.get() ) {
                 GetDiagContext().SetProperty(CDiagContext::kProperty_BytesWr,
-                    NStr::IntToString(m_OutputStream->tellp()));
+                    NStr::Int8ToString(
+                    NcbiStreamposToInt8(m_OutputStream->tellp())));
             }
             break;
         }
