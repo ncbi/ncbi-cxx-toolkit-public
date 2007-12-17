@@ -91,7 +91,7 @@ void CDiagRangeCollection::x_Diff(const TAlnRng& rng,
                                   TAlnRngColl&   result,
                                   TAlnRngColl::const_iterator& r_it)
 {
-    TAlnRngColl::PRangeLess<TAlnRng> p;
+    PAlignRangeToLess<TAlnRng> p;
 
     r_it = std::lower_bound(r_it, end(), rng.GetFirstFrom(), p); /* NCBI_FAKE_WARNING: WorkShop */
 
