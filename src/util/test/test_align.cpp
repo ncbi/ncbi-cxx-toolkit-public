@@ -292,6 +292,21 @@ ostream& operator<<(ostream& out, const TAlignRange& r)
 }
 
 
+void AR_Test_Empty()
+{
+    TAlignRange r = TAlignRange::GetEmpty();
+    BOOST_CHECK(r.Empty());
+    BOOST_CHECK( !r.NotEmpty() );
+    BOOST_CHECK_EQUAL(r.GetFirstFrom(), TAlignRange::GetEmptyFrom());
+    BOOST_CHECK_EQUAL(r.GetFirstToOpen(), TAlignRange::GetEmptyToOpen());
+    BOOST_CHECK_EQUAL(r.GetFirstTo(), TAlignRange::GetEmptyTo());
+    BOOST_CHECK_EQUAL(r.GetSecondFrom(), TAlignRange::GetEmptyFrom());
+    BOOST_CHECK_EQUAL(r.GetSecondToOpen(), TAlignRange::GetEmptyToOpen());
+    BOOST_CHECK_EQUAL(r.GetSecondTo(), TAlignRange::GetEmptyTo());
+    BOOST_CHECK_EQUAL(r.GetLength(), TAlignRange::GetEmptyLength());
+}
+
+
 void AR_Test_Clip(TSignedSeqPos clip_from, TSignedSeqPos clip_to, const TAlignRange& r, 
                   TSignedSeqPos res_from_1, TSignedSeqPos res_from_2, TSignedSeqPos res_len)
 {   
@@ -1232,6 +1247,7 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
         = BOOST_TEST_SUITE("UTIL Align Range, Collection Unit Test.");
 
     test_suite* ar_suite = BOOST_TEST_SUITE("CAlignRange Unit Test");
+    ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_Empty));
     ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_SetGet));
     ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_Constructors));
     ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_Equality));
