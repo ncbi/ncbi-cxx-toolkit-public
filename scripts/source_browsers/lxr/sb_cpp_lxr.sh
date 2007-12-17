@@ -26,11 +26,13 @@
 # Local LXR directory
 LXR=/home/coremake/lxr
 
+# Scripts directory (for svn_core.sh)
+SCRIPTS=$NCBI/c++.potluck/scripts
+
 # C++ source trees.
-# For intranet -- build against already installed source tree.
-# For public -- checkout a copy from repository to specified path.
-SRC=/netopt/ncbi_tools/c++.potluck/.
+# Checkout a copy from repository to specified path.
 SRC_PUB=/web/public/data/ToolBox/CPP_DOC/c++
+SRC_PRIV=/web/private/data/ToolBox/CPP_DOC/c++
 
 # Building LXR indexes
 BUILD_PUB=$LXR/build/internal_cpp_public
@@ -52,10 +54,11 @@ WEB_BASE_PRIV=$TMP_DAT_PRIV/indexes
 
 # Directories to distribute content to real servers
 DIST_WEB_PUB=/net/nasys02/vol/export2/tweb_pub/IEB/ToolBox/CPP_DOC/lxr
-DIST_WEB_PRIV=/net/nasys02/vol/export2/tweb_priv/ieb/ToolBox/CPP_DOC/lxr
 DIST_DAT_PUB=/net/nasys02/vol/export2/tweb_data_pub/ToolBox/CPP_DOC/lxr
-DIST_DAT_PRIV=/net/nasys02/vol/export2/tweb_data_priv/ToolBox/CPP_DOC/lxr
 DIST_SRC_PUB=/net/nasys02/vol/export2/tweb_data_pub/ToolBox/CPP_DOC/c++
+DIST_WEB_PRIV=/net/nasys02/vol/export2/tweb_priv/ieb/ToolBox/CPP_DOC/lxr
+DIST_DAT_PRIV=/net/nasys02/vol/export2/tweb_data_priv/ToolBox/CPP_DOC/lxr
+DIST_SRC_PRIV=/net/nasys02/vol/export2/tweb_data_priv/ToolBox/CPP_DOC/c++
 
 #------------------------------------------------------------------------------
 
@@ -80,14 +83,18 @@ svn --non-interactive update >/dev/null 2>&1
 #------------------------------------------------------------------------------
 # PRIVATE
 
+# Get C++ Toolkit source tree
+rm -fr $SRC_PRIV
+$SCRIPTS/svn_core.sh $SRC_PRIV --export --with-objects --with-internal ||  (rm -rf $SRC_PRIV; exit 4)
+
 # Change work directory
 cd $BUILD_PRIV || exit 1
 rm -f * .* >/dev/null 2>&1
 
 # Create LXR indexes
-../bin/genxref           $SRC || exit 1
-../bin/glimpseindex -H . $SRC || exit 1
-chmod -f 644 * .glimpse_*     || exit 1
+../bin/genxref           $SRC_PRIV || exit 1
+../bin/glimpseindex -H . $SRC_PRIV || exit 1
+chmod -f 644 * .glimpse_*          || exit 1
 
 # Copy all viewing tools into temporary directories also
 rm   -rf $TMP_WEB_PRIV  || exit 2
@@ -116,18 +123,19 @@ rm -rf `find $TMP_DAT_PRIV -type d -name .svn -print` >/dev/null 2>&1
 # Copy all data to the real webserver
 RedistDir $TMP_WEB_PRIV $DIST_WEB_PRIV
 RedistDir $TMP_DAT_PRIV $DIST_DAT_PRIV
+RedistDir $SRC_PRIV     $DIST_SRC_PRIV
 
 # Initiate update on public web servers
 touch $DIST_WEB_PRIV/.sink_subtree
 touch $DIST_DAT_PRIV/.sink_subtree
-
+touch $DIST_SRC_PRIV/.sink_subtree
 
 #------------------------------------------------------------------------------
 # PUBLIC
 
 # Get public C++ Toolkit source tree
 rm -fr $SRC_PUB
-$SRC/scripts/svn_core.sh $SRC_PUB --export --with-objects  ||  (rm -rf $SRC_PUB; exit 4)
+$SCRIPTS/svn_core.sh $SRC_PUB --export --with-objects  ||  (rm -rf $SRC_PUB; exit 4)
 
 # Delete all secure code
 $SRC_PUB/scripts/internal/misc/strip_sensitive_sources.sh $SRC_PUB || (rm -rf $SRC_PUB; exit 4)
@@ -167,7 +175,7 @@ rm -rf `find $TMP_DAT_PUB -type d -name .svn -print` >/dev/null 2>&1
 # Copy all data to the real webserver
 RedistDir $TMP_WEB_PUB $DIST_WEB_PUB
 RedistDir $TMP_DAT_PUB $DIST_DAT_PUB
-RedistDir $SRC_PUB $DIST_SRC_PUB
+RedistDir $SRC_PUB     $DIST_SRC_PUB
 
 # Initiate update on public web servers
 touch $DIST_WEB_PUB/.sink_subtree
