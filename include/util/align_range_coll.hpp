@@ -37,6 +37,7 @@
 #include <corelib/ncbiexpt.hpp>
 
 #include <util/range.hpp>
+#include <util/align_range_oper.hpp>
 
 #include <algorithm>
 
@@ -160,7 +161,7 @@ public:
             iterator it = end_nc();
 
             if(IsSet(fKeepNormalized))  { // find insertion point                
-                PRangeFromLess<TAlignRange>    p;
+                PAlignRangeFromLess<TAlignRange>    p;
                 it = std::lower_bound(begin_nc(), end_nc(), r.GetFirstFrom(), p);
             }
 
@@ -279,7 +280,7 @@ public:
     /// contains the position.
     pair<const_iterator, bool>  find_2(position_type pos) const
     {
-        PRangeLess<TAlignRange>    p;
+        PAlignRangeToLess<TAlignRange>    p;
         const_iterator it = std::lower_bound(begin(), end(), pos, p); /* NCBI_FAKE_WARNING: WorkShop */
         bool b_contains = (it != end()  &&  it->GetFirstFrom() <= pos);
         return make_pair(it, b_contains);
@@ -287,13 +288,13 @@ public:
 
     const_iterator lower_bound(position_type pos) const
     {
-        PRangeLess<TAlignRange>    p;
+        PAlignRangeToLess<TAlignRange>    p;
         return std::lower_bound(begin(), end(), pos, p);
     }
 
     const_iterator upper_bound(position_type pos) const
     {
-        PRangeLess<TAlignRange>    p;
+        PAlignRangeToLess<TAlignRange>    p;
         return std::upper_bound(begin(), end(), pos, p);
     }
 
@@ -347,53 +348,6 @@ public:
     bool    IsSet(int flags) const  {
         return (m_Flags & flags) == flags;
     }
-
-    template<class Range>
-    struct PRangeLess
-    {
-        typedef typename Range::position_type   position_type;
-        bool    operator()(const Range& r, position_type pos)  
-        { 
-            return r.GetFirstToOpen() <= pos;
-        }    
-        bool    operator()(position_type pos, const Range& r)  
-        { 
-            return pos < r.GetFirstToOpen();
-        }    
-        bool    operator()(const Range& r1, const Range& r2)  
-        { 
-            return r1.GetFirstToOpen() <= r2.GetFirstToOpen();
-        }    
-        bool    operator()(const Range* r, position_type pos)  
-        { 
-            return r->GetFirstToOpen() <= pos;  
-        }
-        bool    operator()(position_type pos, const Range* r)  
-        { 
-            return pos < r->GetFirstToOpen();
-        }
-        bool    operator()(const Range* r1, const Range* r2)  
-        { 
-            return r1->GetFirstToOpen() <= r2->GetFirstToOpen();  
-        }
-    };
-    template<class Range>
-    struct PRangeFromLess
-    {
-        typedef typename Range::position_type   position_type;
-        bool    operator()(const Range& r, position_type pos)  
-        { 
-            return r.GetFirstFrom() < pos;  
-        }
-        bool    operator()(position_type pos, const Range& r)
-        { 
-            return pos < r.GetFirstFrom();  
-        }
-        bool    operator()(const Range& r_1, const Range& r_2)
-        {
-            return r_1.GetFirstFrom() < r_2.GetFirstFrom();
-        }
-    };
 
     TSignedSeqPos GetSecondPosByFirstPos(position_type pos, ESearchDirection dir = eNone) const
     {
@@ -464,7 +418,7 @@ public:
     void    Sort()
     {
         std::sort(m_Ranges.begin(), m_Ranges.end(),
-                  PRangeFromLess<TAlignRange>());
+                  PAlignRangeFromLess<TAlignRange>());
 
         x_ResetFlags(fUnsorted);
         x_SetFlags(fNotValidated);
