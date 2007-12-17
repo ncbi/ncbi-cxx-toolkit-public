@@ -724,71 +724,6 @@ void CFeatureItem::x_GatherInfo(CBioseqContext& ctx)
 }
 
 
-static bool s_IsPseudo
-(bool pseudo, 
- CSeqFeatData::ESubtype subtype,
- CBioseqContext& ctx)
-{
-    if (!pseudo) {
-        return false;
-    }
-
-    if (subtype == CSeqFeatData::eSubtype_repeat_region) {
-        return false;
-    }
-    CSeqFeatData::E_Choice type = CSeqFeatData::GetTypeFromSubtype(subtype);
-
-    if (ctx.Config().DropIllegalQuals()  &&  (type == CSeqFeatData::e_Rna  ||  type == CSeqFeatData::e_Imp)) {
-        switch (subtype) {
-            case  CSeqFeatData::eSubtype_allele:
-            case  CSeqFeatData::eSubtype_attenuator:
-            case  CSeqFeatData::eSubtype_CAAT_signal:
-            case  CSeqFeatData::eSubtype_conflict:
-            case  CSeqFeatData::eSubtype_D_loop:
-            case  CSeqFeatData::eSubtype_enhancer:
-            case  CSeqFeatData::eSubtype_GC_signal:
-            case  CSeqFeatData::eSubtype_iDNA:
-            case  CSeqFeatData::eSubtype_LTR:
-            case  CSeqFeatData::eSubtype_misc_binding:
-            case  CSeqFeatData::eSubtype_misc_difference:
-            case  CSeqFeatData::eSubtype_misc_recomb:
-            case  CSeqFeatData::eSubtype_misc_RNA:
-            case  CSeqFeatData::eSubtype_misc_signal:
-            case  CSeqFeatData::eSubtype_misc_structure:
-            case  CSeqFeatData::eSubtype_modified_base:
-            case  CSeqFeatData::eSubtype_mutation:
-            case  CSeqFeatData::eSubtype_old_sequence:
-            case  CSeqFeatData::eSubtype_polyA_signal:
-            case  CSeqFeatData::eSubtype_polyA_site:
-            case  CSeqFeatData::eSubtype_precursor_RNA:
-            case  CSeqFeatData::eSubtype_prim_transcript:
-            case  CSeqFeatData::eSubtype_primer_bind:
-            case  CSeqFeatData::eSubtype_protein_bind:
-            case  CSeqFeatData::eSubtype_RBS:
-            case  CSeqFeatData::eSubtype_repeat_region:
-            case  CSeqFeatData::eSubtype_repeat_unit:
-            case  CSeqFeatData::eSubtype_rep_origin:
-            case  CSeqFeatData::eSubtype_satellite:
-            case  CSeqFeatData::eSubtype_stem_loop:
-            case  CSeqFeatData::eSubtype_STS:
-            case  CSeqFeatData::eSubtype_TATA_signal:
-            case  CSeqFeatData::eSubtype_terminator:
-            case  CSeqFeatData::eSubtype_unsure:
-            case  CSeqFeatData::eSubtype_variation:
-            case  CSeqFeatData::eSubtype_3clip:
-            case  CSeqFeatData::eSubtype_3UTR:
-            case  CSeqFeatData::eSubtype_5clip:
-            case  CSeqFeatData::eSubtype_5UTR:
-            case  CSeqFeatData::eSubtype_10_signal:
-            case  CSeqFeatData::eSubtype_35_signal:
-                return false;
-            default:
-                break;
-        }
-    }
-    return true;
-}
-
 bool s_GetGbValue( CConstRef<CSeq_feat> feat, const string& key, string& value )
 {
     if ( ! feat->CanGetQual() ) {
@@ -915,14 +850,14 @@ void CFeatureItem::x_AddQualPartial(
 
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualOperon(
-    CBioseqContext& ctx )
+    CBioseqContext& ctx,
+    CSeqFeatData::ESubtype subtype )
 //  ----------------------------------------------------------------------------
 {
     if ( ! ctx.HasOperon() ) {
         return;
     }
 
-    CSeqFeatData::ESubtype subtype = m_Feat->GetData().GetSubtype();
     if ( subtype == CSeqFeatData::eSubtype_operon ||
          subtype == CSeqFeatData::eSubtype_gap ) {
         return;
@@ -941,6 +876,71 @@ void CFeatureItem::x_AddQualOperon(
             }
         }
     }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualPseudo(
+    CBioseqContext& ctx,
+    CSeqFeatData::E_Choice type,
+    CSeqFeatData::ESubtype subtype,
+    bool pseudo )
+//  ----------------------------------------------------------------------------
+{
+    if ( !pseudo || subtype == CSeqFeatData::eSubtype_repeat_region ) {
+        return;
+    }
+
+    if (ctx.Config().DropIllegalQuals()  &&  
+        ( type == CSeqFeatData::e_Rna || type == CSeqFeatData::e_Imp ) ) 
+    {
+        switch (subtype) {
+            case  CSeqFeatData::eSubtype_allele:
+            case  CSeqFeatData::eSubtype_attenuator:
+            case  CSeqFeatData::eSubtype_CAAT_signal:
+            case  CSeqFeatData::eSubtype_conflict:
+            case  CSeqFeatData::eSubtype_D_loop:
+            case  CSeqFeatData::eSubtype_enhancer:
+            case  CSeqFeatData::eSubtype_GC_signal:
+            case  CSeqFeatData::eSubtype_iDNA:
+            case  CSeqFeatData::eSubtype_LTR:
+            case  CSeqFeatData::eSubtype_misc_binding:
+            case  CSeqFeatData::eSubtype_misc_difference:
+            case  CSeqFeatData::eSubtype_misc_recomb:
+            case  CSeqFeatData::eSubtype_misc_RNA:
+            case  CSeqFeatData::eSubtype_misc_signal:
+            case  CSeqFeatData::eSubtype_misc_structure:
+            case  CSeqFeatData::eSubtype_modified_base:
+            case  CSeqFeatData::eSubtype_mutation:
+            case  CSeqFeatData::eSubtype_old_sequence:
+            case  CSeqFeatData::eSubtype_polyA_signal:
+            case  CSeqFeatData::eSubtype_polyA_site:
+            case  CSeqFeatData::eSubtype_precursor_RNA:
+            case  CSeqFeatData::eSubtype_prim_transcript:
+            case  CSeqFeatData::eSubtype_primer_bind:
+            case  CSeqFeatData::eSubtype_protein_bind:
+            case  CSeqFeatData::eSubtype_RBS:
+            case  CSeqFeatData::eSubtype_repeat_region:
+            case  CSeqFeatData::eSubtype_repeat_unit:
+            case  CSeqFeatData::eSubtype_rep_origin:
+            case  CSeqFeatData::eSubtype_satellite:
+            case  CSeqFeatData::eSubtype_stem_loop:
+            case  CSeqFeatData::eSubtype_STS:
+            case  CSeqFeatData::eSubtype_TATA_signal:
+            case  CSeqFeatData::eSubtype_terminator:
+            case  CSeqFeatData::eSubtype_unsure:
+            case  CSeqFeatData::eSubtype_variation:
+            case  CSeqFeatData::eSubtype_3clip:
+            case  CSeqFeatData::eSubtype_3UTR:
+            case  CSeqFeatData::eSubtype_5clip:
+            case  CSeqFeatData::eSubtype_5UTR:
+            case  CSeqFeatData::eSubtype_10_signal:
+            case  CSeqFeatData::eSubtype_35_signal:
+                return;
+            default:
+                break;
+        }
+    }
+    x_AddQual( eFQ_pseudo, new CFlatBoolQVal( true ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -1177,8 +1177,6 @@ void CFeatureItem::x_AddQuals(
     CSeqFeatData::ESubtype subtype = data.GetSubtype();
 
     bool pseudo = m_Feat->CanGetPseudo() ? m_Feat->GetPseudo() : false;
-    bool had_prot_desc = false;
-    string precursor_comment;
     const TGeneSyn* gene_syn = NULL;
 
     //
@@ -1246,7 +1244,7 @@ void CFeatureItem::x_AddQuals(
         }
     } // end of "interesting" scope //
 
-    x_AddQualOperon( ctx );
+    x_AddQualOperon( ctx, subtype );
 
     // specific fields set here...
 //    pseudo = x_GetPseudo( gene_ref, gene_feat );
@@ -1262,7 +1260,7 @@ void CFeatureItem::x_AddQuals(
         gene_syn = x_AddGeneQuals(*m_Feat, pseudo);
         break;
     case CSeqFeatData::e_Cdregion:
-        x_AddCdregionQuals(*m_Feat, ctx, pseudo, had_prot_desc);
+        x_AddCdregionQuals(*m_Feat, ctx, pseudo);
         break;
     case CSeqFeatData::e_Rna:
         pseudo = pseudo ||
@@ -1270,7 +1268,7 @@ void CFeatureItem::x_AddQuals(
         x_AddRnaQuals(*m_Feat, ctx, pseudo);
         break;
     case CSeqFeatData::e_Prot:
-        x_AddProtQuals(*m_Feat, ctx, pseudo, had_prot_desc, precursor_comment);
+        x_AddProtQuals(*m_Feat, ctx, pseudo);
         break;
     case CSeqFeatData::e_Region:
         x_AddRegionQuals(*m_Feat, ctx);
@@ -1285,37 +1283,29 @@ void CFeatureItem::x_AddQuals(
     default:
         break;
     }
-    
-    // pseudo
-    if (s_IsPseudo(pseudo, subtype, ctx)) {
-        x_AddQual(eFQ_pseudo, new CFlatBoolQVal(true));
-    }
+    x_AddQualPseudo( ctx, type, subtype, pseudo );
     // comment
     CRef<CFlatStringQVal> seqfeat_note;
     bool add_period = false;
     if (m_Feat->IsSetComment()) {
         string comment = m_Feat->GetComment();
-        TrimSpacesAndJunkFromEnds(comment, true);
-		MakeLegalFlatFileString( comment );
-        add_period = RemovePeriodFromEnd(comment, true);
 
-        if (precursor_comment != comment) {
+        if ( ! comment.empty() ) {
+            TrimSpacesAndJunkFromEnds(comment, true);
+		    MakeLegalFlatFileString( comment );
+            add_period = RemovePeriodFromEnd(comment, true);
             seqfeat_note.Reset(new CFlatStringQVal(comment));
             x_AddQual(eFQ_seqfeat_note, seqfeat_note);
         }
     }
 
-    // now go through gbqual list
-    if (m_Feat->IsSetQual()) {
-        x_ImportQuals(ctx);
-    }
+    x_AddQualsGb( ctx );
 
     // cleanup (drop illegal quals, duplicate information etc.)
-    x_CleanQuals(had_prot_desc, gene_syn);
+    x_CleanQuals(gene_syn);
 
-    if (seqfeat_note) {
-//        if (add_period  &&  ! x_GetStringQual(eFQ_prot_desc ) ) {
-        if (add_period  &&  !had_prot_desc) {
+    if ( x_GetStringQual( eFQ_seqfeat_note  ) ) {
+        if (add_period  &&  ! x_GetStringQual(eFQ_prot_desc ) ) {
             seqfeat_note->SetAddPeriod();
         }
     }
@@ -1511,8 +1501,7 @@ const CFeatureItem::TGeneSyn* CFeatureItem::x_AddGeneQuals(
 void CFeatureItem::x_AddCdregionQuals(
     const CSeq_feat& cds,
     CBioseqContext& ctx,
-    bool pseudo, 
-    bool& had_prot_desc) const
+    bool pseudo) const
 {
     CScope& scope = ctx.GetScope();
     const CFlatFileConfig& cfg = ctx.Config();
@@ -1621,7 +1610,7 @@ void CFeatureItem::x_AddCdregionQuals(
                     prot_desc->SetAddPeriod();
                 }
                 x_AddQual(eFQ_prot_desc, prot_desc);
-                had_prot_desc = true;
+//                had_prot_desc = true;
             }
             if ( !pref->GetActivity().empty() ) {
                 ITERATE (CProt_ref::TActivity, it, pref->GetActivity()) {
@@ -2146,9 +2135,7 @@ void CFeatureItem::x_AddQuals(const CCdregion& cds) const
 void CFeatureItem::x_AddProtQuals(
     const CSeq_feat& feat,
     CBioseqContext& ctx, 
-    bool pseudo,
-    bool& had_prot_desc,
-    string& precursor_comment ) const
+    bool pseudo) const
 {
     const CProt_ref& pref = feat.GetData().GetProt();
     CProt_ref::TProcessed processed = pref.GetProcessed();
@@ -2171,7 +2158,7 @@ void CFeatureItem::x_AddProtQuals(
                     prot_desc->SetAddPeriod();
                 }
                 x_AddQual(eFQ_prot_desc, prot_desc);
-                had_prot_desc = true;
+//                had_prot_desc = true;
             } else {
                 x_AddQual(eFQ_prot_name, new CFlatStringQVal(pref.GetDesc()));
             }
@@ -2209,15 +2196,6 @@ void CFeatureItem::x_AddProtQuals(
         }
     } else { // protein feature on subpeptide bioseq
         x_AddQual(eFQ_derived_from, new CFlatSeqLocQVal(m_Feat->GetLocation()));
-        // check precursor_comment
-        CConstRef<CSeq_feat> prot = 
-            GetBestOverlappingFeat(m_Feat->GetProduct(),
-                                   CSeqFeatData::e_Prot,
-                                   eOverlap_Simple,
-                                   ctx.GetScope());
-        if ( prot  &&  prot->CanGetComment() ) {
-            precursor_comment = prot->GetComment();
-        }
     }
     if ( !pseudo  &&  ctx.Config().ShowPeptides() ) {
         if ( processed == CProt_ref::eProcessed_mature          ||
@@ -2817,7 +2795,8 @@ CFlatStringListQVal* CFeatureItem::x_GetStringListQual(EFeatureQualifier slot) c
 }
 
 
-void CFeatureItem::x_CleanQuals(bool& had_prot_desc, const TGeneSyn* gene_syn) const
+void CFeatureItem::x_CleanQuals(
+    const TGeneSyn* gene_syn ) const
 {
     const CBioseqContext& ctx = *GetContext();
 
@@ -2960,7 +2939,7 @@ void CFeatureItem::x_CleanQuals(bool& had_prot_desc, const TGeneSyn* gene_syn) c
 
 
     if (prot_desc == NULL) {
-        had_prot_desc = false;
+//        had_prot_desc = false;
     }
 }
 
