@@ -353,26 +353,39 @@ string CCgiContext::RetrieveTrackingId() const
         return "";
 
     bool is_found = false;
-    const CCgiEntry& entry = m_Request->GetEntry(TCGI_TrackingCookieName::GetDefault(), 
-                                                &is_found);
+    const CCgiEntry* entry =
+        &m_Request->GetEntry(TCGI_TrackingCookieName::GetDefault(), &is_found);
     if (is_found) {
-        return entry.GetValue();
+        return entry->GetValue();
     }
 
     const CCgiCookies& cookies = m_Request->GetCookies();
 
+    static const char cookie_or_entry_name_1[] = "WebCubbyUser";
+    static const char cookie_or_entry_name_2[] = "WebEnv";
+
     string tid;
-    const CCgiCookie* cookie = cookies.Find("WebCubbyUser");
+    const CCgiCookie* cookie = cookies.Find(cookie_or_entry_name_1);
     if( s_CheckCookieForTID(cookie, tid) )
         return tid;
-    cookie = cookies.Find("WebEnv");
+    cookie = cookies.Find(cookie_or_entry_name_2);
     if( s_CheckCookieForTID(cookie, tid) )
         return tid;
 
-    cookie = cookies.Find(TCGI_TrackingCookieName::GetDefault(), kEmptyStr, kEmptyStr); 
-    
+    cookie = cookies.Find(TCGI_TrackingCookieName::GetDefault(),
+        kEmptyStr, kEmptyStr); 
+
     if (cookie) 
         return cookie->GetValue();
+
+    entry = &m_Request->GetEntry(cookie_or_entry_name_1, &is_found);
+    if (is_found) {
+        return entry->GetValue();
+    }
+    entry = &m_Request->GetEntry(cookie_or_entry_name_2, &is_found);
+    if (is_found) {
+        return entry->GetValue();
+    }
 
     CNcbiOstrstream oss;
     oss << GetDiagContext().GetStringUID() << '_' << setw(4) << setfill('0')
