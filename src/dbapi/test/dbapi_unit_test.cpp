@@ -4697,23 +4697,81 @@ void
 CDBAPIUnitTest::Test_Cursor_Param(void)
 {
     string sql;
+    const long rec_num = 2;
 
-    {
-        sql = "select int_field from " + GetTableName() + " WHERE id = @id_value";
-
-        // Open a cursor for the first time ...
+    try {
+         // Initialize a test table ...
         {
-            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test10", sql));
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-            auto_cursor->SetParam(CVariant(Int4(1)), "@id_value" );
+            // Drop all records ...
+            sql  = " DELETE FROM " + GetTableName();
+            auto_stmt->ExecuteUpdate(sql);
 
-            auto_ptr<IResultSet> rs(auto_cursor->Open());
-            BOOST_CHECK(rs.get() != NULL);
+            // Insert new LOB records ...
+            sql  = " INSERT INTO " + GetTableName() +
+                "(int_field, text_field) VALUES(@id, '') \n";
 
-            while (rs->Next()) {
-                ;
+            // CVariant variant(eDB_Text);
+            // variant.Append(" ", 1);
+
+            for (long i = 0; i < rec_num; ++i) {
+                auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
+                // Execute a statement with parameters ...
+                auto_stmt->ExecuteUpdate( sql );
+            }
+            // Check record number ...
+            BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
+        }
+
+        {
+            sql = "select int_field from " + GetTableName() + " WHERE int_field = @int_value";
+
+            // Open a cursor for the first time ...
+            {
+                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test10", sql));
+
+                auto_cursor->SetParam(CVariant(Int4(0)), "@int_value" );
+
+                // First Open ...
+                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                BOOST_CHECK(rs.get() != NULL);
+
+                BOOST_CHECK(rs->Next());
+                BOOST_CHECK_EQUAL(rs->GetVariant(1).GetInt4(), 0);
+
+                ///////////////
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                // No ClearParamList in ICursor at the moment ...
+                // auto_cursor->ClearParamList();
+
+                auto_cursor->SetParam(CVariant(Int4(1)), "@int_value" );
+
+                //  Second Open ...
+                rs.reset(auto_cursor->Open());
+                BOOST_CHECK(rs.get() != NULL);
+
+                BOOST_CHECK(rs->Next());
+                BOOST_CHECK_EQUAL(rs->GetVariant(1).GetInt4(), 1);
+            }
+
+            // Open a cursor for the second time ...
+            {
+                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test10", sql));
+
+                auto_cursor->SetParam(CVariant(Int4(1)), "@int_value" );
+
+                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                BOOST_CHECK(rs.get() != NULL);
+
+                BOOST_CHECK(rs->Next());
+                BOOST_CHECK_EQUAL(rs->GetVariant(1).GetInt4(), 1);
             }
         }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -11541,10 +11599,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             }
 
 
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor_Param,
-                    DBAPIInstance);
-            tc->depends_on(tc_cursor);
-            add(tc);
+            if (args.GetDriverName() != ctlib_driver) {
+                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor_Param,
+                        DBAPIInstance);
+                tc->depends_on(tc_cursor);
+                add(tc);
+            }
 
             // Does not work with all databases and drivers currently ...
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB,
@@ -11578,8 +11638,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //         add(tc);
 
         if (args.GetDriverName() == odbcw_driver
-    //         args.GetDriverName() == ftds63_driver ||
-    //         args.GetDriverName() == ftds_odbc_driver ||
+            // || args.GetDriverName() == ftds63_driver
+            // || args.GetDriverName() == ftds_odbc_driver
             // || args.GetDriverName() == ftds64_driver
             ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode,
@@ -12183,7 +12243,7 @@ CTestArguments::SetDatabaseParameters(void)
     if ( (GetDriverName() == ftds8_driver ||
           GetDriverName() == ftds63_driver ||
           GetDriverName() == ftds64_driver ||
-//           GetDriverName() == ftds_odbc_driver  ||
+          // GetDriverName() == ftds_odbc_driver  ||
           GetDriverName() == ftds_dblib_driver)
          && GetServerType() == eMsSql) {
         m_DatabaseParameters["client_charset"] = "UTF-8";
