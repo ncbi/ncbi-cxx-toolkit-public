@@ -15,3 +15,5 @@ CHECK_REQUIRES = DLL
 CHECK_COPY = dbapi_unit_test.sh
 CHECK_CMD = dbapi_unit_test.sh
 CHECK_TIMEOUT = 400
+
+CHECK_AUTHORS = ivanovp
