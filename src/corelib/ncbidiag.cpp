@@ -1519,7 +1519,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                 string log_base = app ?
                     app->GetProgramExecutablePath() : kEmptyStr;
                 if ( !log_base.empty() ) {
-                    log_base += CFile(log_base).GetBase() + ".log";
+                    log_base = CFile(log_base).GetBase() + ".log";
                     string log_name;
                     if ( s_UseRootLog ) {
                         string def_log_dir = GetDefaultLogLocation(*app);
