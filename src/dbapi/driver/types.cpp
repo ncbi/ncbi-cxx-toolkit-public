@@ -1102,9 +1102,16 @@ CDB_LongChar& CDB_LongChar::operator= (const CDB_LongChar& v)
 
 CDB_LongChar& CDB_LongChar::operator= (const string& v)
 {
-    Assign(v);
+    string s;
+    const string* new_val = &v;
+    if (v.size() > m_Size) {
+        s.assign(v, 0, m_Size);
+        new_val = &s;
+    }
 
-    size_t l = v.copy(m_Val, m_Size);
+    Assign(*new_val);
+
+    size_t l = new_val->copy(m_Val, m_Size);
     m_Val[l]= '\0';
 
     return *this;
