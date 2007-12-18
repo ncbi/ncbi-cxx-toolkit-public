@@ -304,9 +304,9 @@ CRef<CSeq_loc> GetGenomicBounds(const objects::CSeq_align& seqalign)
 void CProSplignText::AddSpliceText(CSeqVector_CI& genomic_ci, int& nuc_prev, char match)
 {
     AddDNAText(genomic_ci,nuc_prev,2);
-    m_translation.append(2,SPACE_CHAR);
-    m_match.append(2,match);
-    m_protein.append(2,INTRON_CHAR);
+    m_translation.append((SIZE_TYPE)2,SPACE_CHAR);
+    m_match.append((SIZE_TYPE)2,match);
+    m_protein.append((SIZE_TYPE)2,INTRON_CHAR);
 }
 
 void CProSplignText::AddDNAText(CSeqVector_CI& genomic_ci, int& nuc_prev, size_t len)
@@ -326,7 +326,7 @@ void CProSplignText::AddProtText(CSeqVector_CI& protein_ci, int& prot_prev, size
     if (phase!=0) {
         size_t prev_not_intron_pos = m_protein.find_last_not_of(INTRON_CHAR,m_protein.size()-1);
         char aa = m_protein[prev_not_intron_pos];
-        int added_len = min(3-phase,len);
+        SIZE_TYPE added_len = min(3-phase,len);
         if (prev_not_intron_pos == m_protein.size()-1 && phase+added_len==3) {
             m_protein.append(added_len,SPACE_CHAR);
             m_protein[m_protein.size()-3] = SPACE_CHAR;
@@ -377,9 +377,9 @@ void CProSplignText::TranslateDNA(int phase, size_t len)
                 m_translation[i] = tolower(aa);
                 m_match[i] = MatchChar(i);
             }
-            m_translation.append(3-phase,tolower(aa));
+            m_translation.append((SIZE_TYPE)(3-phase),tolower(aa));
         } else {
-            m_translation.append(3-phase,SPACE_CHAR);
+            m_translation.append((SIZE_TYPE)(3-phase),SPACE_CHAR);
         }
         start_pos += 3-phase;
    }
@@ -456,28 +456,29 @@ void CProSplignText::AddHoleText(
         nuc_hole_len = nuc_cur_start - nuc_prev -1;
     }
 
-    int hole_len = max(prot_hole_len,nuc_hole_len);
-    _ASSERT( hole_len>0 );
+    SIZE_TYPE hole_len = max(prot_hole_len,nuc_hole_len);
+    _ASSERT( prot_hole_len>0 || nuc_hole_len>0 );
     int left_gap = 0;
     
     left_gap = (prot_hole_len-nuc_hole_len)/2;
     if (left_gap>0)
-        m_dna.append(left_gap,GAP_CHAR);
+        m_dna.append((SIZE_TYPE)left_gap,GAP_CHAR);
     if (nuc_hole_len>0)
         AddDNAText(genomic_ci,nuc_prev,nuc_hole_len);
     if (prot_hole_len>nuc_hole_len)
-        m_dna.append(prot_hole_len-nuc_hole_len-left_gap,GAP_CHAR);
+        m_dna.append((SIZE_TYPE)(prot_hole_len-nuc_hole_len-left_gap),GAP_CHAR);
     
     m_translation.append(hole_len,SPACE_CHAR);
     m_match.append(hole_len,BAD_PIECE_CHAR);
     
     left_gap = (nuc_hole_len-prot_hole_len)/2;
     if (left_gap>0)
-        m_protein.append(left_gap,GAP_CHAR);
+        m_protein.append((SIZE_TYPE)left_gap,GAP_CHAR);
     if (prot_hole_len>0)
         AddProtText(protein_ci,prot_prev,prot_hole_len);
     if (prot_hole_len<nuc_hole_len)
-        m_protein.append(nuc_hole_len-prot_hole_len-left_gap,GAP_CHAR);
+        m_protein.append((SIZE_TYPE)(nuc_hole_len-prot_hole_len-left_gap),
+                         GAP_CHAR);
     
     if (can_show_splices && cur_5_prime_splice) {
         AddSpliceText(genomic_ci,nuc_prev, BAD_PIECE_CHAR);
@@ -536,7 +537,7 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
                         nuc_prev, prot_prev,
                         nuc_cur_start, prot_cur_start);
         } else { //intron
-            int intron_len = nuc_cur_start - nuc_prev -1;
+            SIZE_TYPE intron_len = nuc_cur_start - nuc_prev -1;
             AddDNAText(genomic_ci, nuc_prev, intron_len);
             m_translation.append(intron_len,SPACE_CHAR);
             m_match.append(intron_len,MISMATCH_CHAR);
@@ -567,13 +568,13 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
             } else if (chunk.IsProduct_ins()) {
                 _ASSERT((prot_prev+1)%3==0);
 
-                int len = chunk.GetProduct_ins();
+                SIZE_TYPE len = chunk.GetProduct_ins();
                 m_dna.append(len,GAP_CHAR);
                 m_translation.append(len,SPACE_CHAR);
                 m_match.append(len,MISMATCH_CHAR);
                 AddProtText(protein_ci,prot_prev,len);
             } else if (chunk.IsGenomic_ins()) {
-                int len = chunk.GetGenomic_ins();
+                SIZE_TYPE len = chunk.GetGenomic_ins();
                 AddDNAText(genomic_ci,nuc_prev,len);
                 if (0<=prot_prev && prot_prev<prot_len-1)
                     TranslateDNA((prot_prev+1-len%3)%3,len);
@@ -660,16 +661,23 @@ void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& 
         if (apos >= (int)dna.length())
             apos = (int)dna.length() - 1;
 
+#ifdef NCBI_COMPILER_WORKSHOP
+        int gaps = 0;
+        count(dna.begin()+i, dna.begin()+(i+width), GAP_CHAR, gaps);
+        int real_bases = width-gaps;
+#else
         int real_bases = width-count(dna.begin()+i, dna.begin()+(i+width), GAP_CHAR);
+#endif
+
         int npos2 = is_plus_strand?npos1+real_bases-1:npos1-(real_bases-1);
 
         //throw out head and tail lines with a complete row gap
         if (apos > prot_beg_pos) {
-
+            out.setf(IOS_BASE::left, IOS_BASE::adjustfield);
             if (real_bases>0) {
-                out<<left<<setw(12)<<npos1<<dna.substr(i, width)<<"   "<<npos2<<endl;
+                out<<setw(12)<<npos1<<dna.substr(i, width)<<"   "<<npos2<<endl;
             } else { //complete row is a nucleotide gap
-                out<<left<<setw(12)<<"-"<<dna.substr(i, width)<<"   "<<"-"<<endl;
+                out<<setw(12)<<"-"<<dna.substr(i, width)<<"   "<<"-"<<endl;
             }
             out<<setw(12)<<" "<<translation.substr(i, width)<<endl;
             out<<setw(12)<<" "<<match.substr(i, width)<<endl;
