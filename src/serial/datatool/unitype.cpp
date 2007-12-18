@@ -264,7 +264,9 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
 void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 {
     const CDataType* typeElem = GetElementType();
-    typeElem->PrintDTDTypeComments(out,0);
+    if (!contents_only) {
+        typeElem->PrintDTDTypeComments(out,0);
+    }
     const CReferenceDataType* typeRef =
         dynamic_cast<const CReferenceDataType*>(typeElem);
     const CStaticDataType* typeStatic = 0;
@@ -276,6 +278,10 @@ void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only
         typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
 
     if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
+        if (typeRef && !contents_only) {
+            typeRef->PrintDTDElement(out,contents_only);
+            return;
+        }
         if (!GetParentType() || typeStatic || !contents_only) {
             out << "\n<!ELEMENT " << tag << ' ';
         }

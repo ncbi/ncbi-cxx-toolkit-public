@@ -390,6 +390,7 @@ void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_
             string member_name( member.GetType()->XmlTagName());
             const CUniSequenceDataType* uniType =
                 dynamic_cast<const CUniSequenceDataType*>(member.GetType());
+            bool isOptional = member.Optional();
             if (GetEnforcedStdXml()) {
                 if (member.Attlist()) {
                     need_separator = false;
@@ -398,13 +399,27 @@ void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_
                 if (member.Notag()) {
                     const CStaticDataType* statType = 
                         dynamic_cast<const CStaticDataType*>(member.GetType());
-                    if (!statType) {
+                    bool need_open = !statType;
+                    bool need_newline = !need_open;
+                    const CDataMemberContainerType* data =
+                        dynamic_cast<const CDataMemberContainerType*>(member.GetType());
+                    if (data) {
+                        const CDataMember* data_member = data->GetMembers().front().get();
+                        if (data_member && data_member->Notag() &&
+                            data_member->GetType()->IsUniSeq()) {
+                            isOptional = false;
+                            need_open = false;
+                            need_newline = false;
+                        }
+                    }
+                    if (need_open) {
                         out << "(";
-                    } else {
+                    }
+                    if (need_newline) {
                         out << "\n        ";
                     }
                     member.GetType()->PrintDTDElement(out,true);
-                    if (!statType) {
+                    if (need_open) {
                         out << ")";
                     }
                 } else {
@@ -417,18 +432,18 @@ void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_
                 const CStaticDataType* elemType =
                     dynamic_cast<const CStaticDataType*>(uniType->GetElementType());
                 if ((elemType || member.NoPrefix()) && GetEnforcedStdXml()) {
-                    if ( member.Optional() ) {
+                    if ( isOptional ) {
                         out << '*';
                     } else {
                         out << '+';
                     }
                 } else {
-                    if ( member.Optional() ) {
+                    if ( isOptional ) {
                         out << '?';
                     }
                 }
             } else {
-                if ( member.Optional() ) {
+                if ( isOptional ) {
                     out << '?';
                 }
             }

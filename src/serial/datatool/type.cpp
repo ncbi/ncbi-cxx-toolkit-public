@@ -186,14 +186,8 @@ void CDataType::PrintDTD(CNcbiOstream& out,
         }
     }
     m_Comments.PrintDTD(out, CComments::eOneLine);
-    bool oneLineComment = extra.OneLine();
-    if ( !oneLineComment )
-        extra.PrintDTD(out, CComments::eNoEOL);
+    extra.PrintDTD(out, CComments::eNoEOL);
     PrintDTDElement(out);
-    if ( oneLineComment ) {
-        out << ' ';
-        extra.PrintDTD(out, CComments::eOneLine);
-    }
     x_AddSavedName(XmlTagName());
     PrintDTDExtra(out);
 }

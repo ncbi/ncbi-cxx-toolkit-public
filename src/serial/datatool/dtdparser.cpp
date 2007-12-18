@@ -1231,9 +1231,6 @@ CDataType* DTDParser::AttribBlock(const DTDElement& node)
         member->Comments() = i->GetComments();
         container->AddMember(member);
     }
-     if (m_SrcType == eDTD || node.IsEmbedded()) {
-        container->Comments() = node.GetComments();
-    }
     return container.release();
 }
 
