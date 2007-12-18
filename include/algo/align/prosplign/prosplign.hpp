@@ -37,6 +37,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <objects/seqalign/seqalign__.hpp>
+#include <objmgr/seq_vector_ci.hpp>
 
 #include <list>
 
@@ -44,9 +46,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
     class CScope;
-    class CSeq_id;
-    class CSeq_loc;
-    class CSeq_align;
 END_SCOPE(objects)
 
 /// Scoring parameters object
@@ -60,7 +59,7 @@ public:
     CProSplignScoring& SetMinIntronLen(int);
     int GetMinIntronLen() const;
 
-    ///  in addition to BLOSSOM62 prosplign uses following costs (negate to get a score)
+    ///  in addition to BLOSUM62 prosplign uses following costs (negate to get a score)
 
     CProSplignScoring& SetGapOpeningCost(int);
     int GetGapOpeningCost() const;
@@ -204,6 +203,7 @@ public:
 
     CNPiece(string::size_type obeg, string::size_type oend, int oposit, int oefflen);
 };
+class CSubstMatrix;
 END_SCOPE(prosplign)
 
 /// Extended output filtering parameters
@@ -223,6 +223,7 @@ public:
     bool BackCheck(list<prosplign::CNPiece>::iterator it1, list<prosplign::CNPiece>::iterator it2);
 };
 
+class CProSplignText;
 
 /// spliced protein to genomic alignment
 ///
@@ -243,10 +244,35 @@ public:
     ///
     /// Returns Spliced-seg
     CRef<objects::CSeq_align>
-        FindAlignment(objects::CScope& scope,
-                      const objects::CSeq_id& protein,
-                      const objects::CSeq_loc& genomic, 
-                      CProSplignOutputOptions output_options = CProSplignOutputOptions());
+    FindAlignment(objects::CScope& scope,
+                  const objects::CSeq_id& protein,
+                  const objects::CSeq_loc& genomic, 
+                  CProSplignOutputOptions output_options = CProSplignOutputOptions())
+    {
+        CRef<objects::CSeq_align> align_ref;
+        align_ref = FindGlobalAlignment(scope, protein, genomic);
+        align_ref = RefineAlignment(scope, *align_ref, output_options);
+        return align_ref;
+    }
+
+    /// Globally aligns protein to a region on genomic sequence.
+    /// genomic seq_loc should be a continuous region - an interval or a whole sequence
+    ///
+    /// Returns Spliced-seg
+    CRef<objects::CSeq_align>
+    FindGlobalAlignment(objects::CScope& scope,
+                        const objects::CSeq_id& protein,
+                        const objects::CSeq_loc& genomic);
+
+    /// Refines Spliced-seg alignment by removing bad pieces according to output_options.
+    /// This is irreversible action - more relaxed parameters will not change the alignment back
+    CRef<objects::CSeq_align>
+    RefineAlignment(objects::CScope& scope,
+                    const objects::CSeq_align& seq_align,
+                    CProSplignOutputOptions output_options = CProSplignOutputOptions());
+
+    /// Returns text representation of ProSplign alignment
+    CProSplignText GetProsplignText(objects::CScope& scope, const objects::CSeq_align& seqalign);
 
     /// deprecated internals
     void SetMode(bool one_stage, bool just_second_stage, bool old);
@@ -264,6 +290,44 @@ private:
     CProSplign& operator=(const CProSplign&);
 };
 
+/// Text representation of ProSplign alignment
+// dna        : GATGAAACAGCACTAGTGACAGGTAAA----GATCTAAATATCGTTGA<skip>GGAAGACATCCATTGGCAATGGCAATGGCAT
+// translation:  D  E  T  A  L  V  T  G  K        S  K  Y h                hh I  H       
+// match      :  |  |     +        |  |  |        |  |  | +                ++ +  | XXXXXbad partXXXXX
+// protein    :  D  E  Q  S  F --- T  G  K  E  Y  S  K  Y y.....intron.....yy L  H  D  T  S  T  E  G 
+//
+// there are no "<skip>", "intron", or "bad part" in actual values
+class CProSplignText {
+public:
+    /// Outputs formatted text
+    static void Output(const objects::CSeq_align& seqalign, objects::CScope& scope, ostream& out, int width);
+
+    CProSplignText(objects::CScope& scope, const objects::CSeq_align& seqalign, const string& matrix_name = "BLOSUM62");
+    ~CProSplignText();
+
+    const string& GetDNA() { return m_dna; }
+    const string& GetTranslation() { return m_translation; }
+    const string& GetMatch() { return m_match; }
+    const string& GetProtein() { return m_protein; }
+
+private:
+    string m_dna;
+    string m_translation;
+    string m_match;
+    string m_protein;
+    auto_ptr<prosplign::CSubstMatrix> m_matrix;
+
+    void AddDNAText(objects::CSeqVector_CI& genomic_ci, int& nuc_prev, size_t len);
+    void TranslateDNA(int phase, size_t len);
+    void AddProtText(objects::CSeqVector_CI& protein_ci, int& prot_prev, size_t len);
+    void MatchText(size_t len);
+    char MatchChar(size_t i);
+    void AddHoleText(bool prev_3_prime_splice, bool cur_5_prime_splice,
+                     objects::CSeqVector_CI& genomic_ci, objects::CSeqVector_CI& protein_ci,
+                     int& nuc_prev, int& prot_prev,
+                     int nuc_cur_start, int prot_cur_start);
+    void AddSpliceText(objects::CSeqVector_CI& genomic_ci, int& nuc_prev, char match);
+};
 
 END_NCBI_SCOPE
 

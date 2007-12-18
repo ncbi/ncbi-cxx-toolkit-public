@@ -39,7 +39,6 @@
 #include "nucprot.hpp"
 #include "Ali.hpp"
 #include "AliSeqAlign.hpp"
-#include "AliUtil.hpp"
 #include "Info.hpp"
 
 #include <objects/seqloc/seqloc__.hpp>
@@ -289,7 +288,7 @@ int CProSplignOutputOptions::GetStopBonus() const
 
 struct CProSplign::SImplData {
     SImplData(CProSplignScoring scoring) :
-        m_scoring(scoring), m_matrix("BLOSUM62",m_scoring), m_intronless(false),
+        m_scoring(scoring), m_matrix("BLOSUM62",m_scoring.sm_koef), m_intronless(false),
         m_old(false), m_one_stage(false), m_just_second_stage(false),
         lgap(false), rgap(false)
     {
@@ -354,8 +353,22 @@ bool CProSplign::GetIntronlessMode() const
     return m_data->m_intronless;
 }
 
-CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic_orig, 
-                                   CProSplignOutputOptions output_options)
+namespace {
+/// true if first and last aa are aligned, nothing about inside holes
+bool IsProteinSpanWhole(const CSpliced_seg& sps)
+{
+    CSpliced_seg::TExons exons = sps.GetExons();
+    if (exons.empty())
+        return false;
+    const CProt_pos& prot_start_pos = exons.front()->GetProduct_start().GetProtpos();
+    const CProt_pos& prot_stop_pos = exons.back()->GetProduct_end().GetProtpos();
+       
+    return prot_start_pos.GetAmin()==0 && prot_start_pos.GetFrame()==1 &&
+        prot_stop_pos.GetAmin()+1 == sps.GetProduct_length() && prot_stop_pos.GetFrame() == 3;
+}
+}
+
+CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic_orig)
 {
     CPSeq protseq(scope, protein);
     PSEQ& pseq = protseq.seq;
@@ -368,12 +381,11 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
 
     if (!m_data->m_intronless) {
         if (m_data->m_one_stage) {
-            pali.reset(new CAli(cnseq, protseq));
+            pali.reset(new CAli());
             CTBackAlignInfo<CBMode> bi;
             bi.Init((int)pseq.size(), (int)cnseq.size());//backtracking
             int friscore = AlignFNog(bi, pseq, cnseq, m_data->m_scoring, m_data->m_matrix);
             BackAlignNog(bi, *pali);
-//             _ASSERT(CAliUtil::CountIScore(*pali, 2) == friscore);
         } else {
             int iscore1 = 0;
             if (!m_data->m_just_second_stage) {
@@ -403,18 +415,14 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
             else
                 friscore = FrAlignFNog1(bi, pseq, cfrnseq, m_data->m_scoring, m_data->m_matrix, m_data->lgap, m_data->rgap);
         
-            pali.reset( new CAli(cfrnseq, protseq) );
+            pali.reset( new CAli() );
             FrBackAlign(bi, *pali);
 
-//             _ASSERT(CAliUtil::CountFrIScore(*pali, 2 /* new */, m_data->lgap, m_data->rgap) == friscore);
+            pali.reset( new CAli(m_data->igi, m_data->lgap, m_data->rgap, *pali) );
 
-            pali.reset( new CAli(cnseq, protseq, m_data->igi, m_data->lgap, m_data->rgap, *pali) );
-
-//             _ASSERT(CAliUtil::CountIScore(*pali, 2 /* new */) == iscore1);
-//             _DEBUG_CODE(CAliUtil::CheckValidity(*pali););
         }
     } else { // flag "no_introns" is set
-        pali.reset(new CAli(cnseq, protseq));
+        pali.reset(new CAli());
         CBackAlignInfo bi;
         bi.Init((int)pseq.size(), (int)cnseq.size());//backtracking
         int friscore;
@@ -425,16 +433,38 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
                                m_data->m_scoring.GetFrameshiftOpeningCost(), m_data->m_scoring, m_data->m_matrix); 
         else
             friscore = FrAlignFNog1(bi, pseq, cnseq, m_data->m_scoring, m_data->m_matrix);
-        pali->score = friscore/m_data->m_scoring.GetScale();
+//         pali->score = friscore/m_data->m_scoring.GetScale();
         FrBackAlign(bi, *pali);
-//         _ASSERT(CAliUtil::CountFrIScore(*pali, 2) == friscore);
     }
 
-    auto_ptr<CPosAli> pposali( new CPosAli(*pali, protein, genomic, output_options, m_data->m_matrix) );
-    pali.reset();
+    CAliToSeq_align cpa(*pali, scope, protein, genomic);
+    CRef<CSeq_align> seq_align = cpa.MakeSeq_align(protseq, cnseq);
 
-    CAliToSeq_align cpa(scope, *pposali);
-    return cpa.MakeSeq_align();
+    prosplign::SeekStartStop(*seq_align, scope);
+
+    if (!IsProteinSpanWhole(seq_align->GetSegs().GetSpliced()))
+        seq_align->SetType(CSeq_align::eType_disc);
+
+    return seq_align;
+}
+
+CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_align& seq_align, CProSplignOutputOptions output_options)
+{
+    CProSplignText alignment_text(scope, seq_align, "BLOSUM62");
+    list<CNPiece> good_parts = FindGoodParts( alignment_text.GetMatch(), alignment_text.GetProtein(), output_options);
+
+    CRef<CSeq_align> refined_align(new CSeq_align);
+    refined_align->Assign(seq_align);
+
+    prosplign::RefineAlignment(*refined_align, good_parts);
+
+    if (good_parts.size()!=1 || !IsProteinSpanWhole(refined_align->GetSegs().GetSpliced())) {
+        refined_align->SetType(CSeq_align::eType_disc);
+    }
+
+    prosplign::SeekStartStop(*refined_align, scope);
+
+    return refined_align;
 }
 
 END_NCBI_SCOPE

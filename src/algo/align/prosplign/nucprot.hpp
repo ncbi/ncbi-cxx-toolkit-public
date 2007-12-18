@@ -83,12 +83,16 @@ struct SEQUTIL {
     inline static char nuc2a(int nuc1, int nuc2, int nuc3) {
         return aa_table[nuc1*25+nuc2*5+nuc3];
     }
+    inline static char TranslateTriplet(const string& triplet)
+    {
+        return nuc2a(CharToNuc(triplet[0]),CharToNuc(triplet[1]),CharToNuc(triplet[2]));
+    }
 };
 
 /// Substitution Matrix for Scoring Amino-Acid Alignments
 class CSubstMatrix {
 public:
-    CSubstMatrix(const string& name, const CProSplignScaledScoring& scoring);
+    CSubstMatrix(const string& name, int scaling);
 
     inline int MultScore(int nuc1, int nuc2, int nuc3, char amin) const { return scaled_subst_matrix[int(amin)][int(SEQUTIL::nuc2a(nuc1, nuc2, nuc3))]; }
 

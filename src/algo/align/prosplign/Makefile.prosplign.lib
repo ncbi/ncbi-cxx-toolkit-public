@@ -2,7 +2,7 @@
 
 ASN_DEP = seq
 
-SRC = prosplign scoring PSeq NSeq Ali  AliSeqAlign AliUtil Info nucprot intron AlignInfo
+SRC = prosplign scoring PSeq NSeq Ali  AliSeqAlign Info nucprot intron AlignInfo
 
 LIB = prosplign
 

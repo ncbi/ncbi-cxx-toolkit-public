@@ -38,6 +38,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <corelib/ncbiutil.hpp>
 
+#include <algo/align/prosplign/prosplign_exception.hpp>
 #include "PSeq.hpp"
 #include "NSeq.hpp"
 #include "AliSeqAlign.hpp"
@@ -47,10 +48,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 using namespace objects;
 
-CAliToSeq_align::CAliToSeq_align(CScope& scope, const CPosAli& ali) :
-    m_scope(scope), m_ali(ali)
+CAliToSeq_align::CAliToSeq_align(const CAli& ali, CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic) :
+    m_ali(ali), m_scope(scope), m_protein(protein), m_genomic(genomic)
 {
-    m_IsFull = m_ali.m_output_options.IsPassThrough();
 }
 
 CRef<CSeq_id> CAliToSeq_align::StringToSeq_id(const string& id)
@@ -74,7 +74,7 @@ string CAliToSeq_align::Seq_idToString(CRef<CSeq_id> seqid)
   return seqid->GetSeqIdString(true);
 }
 
-CRef<CProduct_pos> CAliToSeq_align::NultriposToProduct_pos(int nultripos)
+CRef<CProduct_pos> NultriposToProduct_pos(int nultripos)
 {
     CRef<CProduct_pos> pos(new CProduct_pos);
     pos->SetProtpos().SetFrame(nultripos%3 + 1);
@@ -84,41 +84,40 @@ CRef<CProduct_pos> CAliToSeq_align::NultriposToProduct_pos(int nultripos)
 
 void CAliToSeq_align::SetExonBioStart(CRef<CSpliced_exon> exon, int nulpos, int nultripos) const
 { 
-    if(IsForward(m_ali.m_genomic.GetStrand()))
-        exon->SetGenomic_start(m_ali.NucPosOut(nulpos));
+    if(IsForward(m_genomic.GetStrand()))
+        exon->SetGenomic_start(NucPosOut(nulpos));
     else
-        exon->SetGenomic_end(m_ali.NucPosOut(nulpos));
+        exon->SetGenomic_end(NucPosOut(nulpos));
     exon->SetProduct_start(*NultriposToProduct_pos(nultripos));
 }
 
 void CAliToSeq_align::SetExonBioEnd(CRef<CSpliced_exon> exon, int nulpos, int nultripos) const
 { 
-    if(IsForward(m_ali.m_genomic.GetStrand()))
-        exon->SetGenomic_end(m_ali.NucPosOut(nulpos));
+    if(IsForward(m_genomic.GetStrand()))
+        exon->SetGenomic_end(NucPosOut(nulpos));
     else
-        exon->SetGenomic_start(m_ali.NucPosOut(nulpos));
+        exon->SetGenomic_start(NucPosOut(nulpos));
     exon->SetProduct_end(*NultriposToProduct_pos(nultripos));
 }
 
-CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(void) const
+CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(const CPSeq& cpseq, const CNSeq& cnseq) const
 {
     //strand setup
-    ENa_strand nstrand = m_ali.m_genomic.GetStrand();
+    ENa_strand nstrand = m_genomic.GetStrand();
     //Seq-align
     CRef<CSeq_align> topl(new CSeq_align);
-    if(m_IsFull) topl->SetType(CSeq_align::eType_global);
-    else topl->SetType(CSeq_align::eType_disc);
+    topl->SetType(CSeq_align::eType_global);
     topl->SetDim(2);
     //Seq-align bounds
     CRef<CSeq_loc> ploc(new CSeq_loc);
     topl->SetBounds().push_back(ploc);
 
     CRef<CSeq_id> prot_seqid(new CSeq_id);
-    prot_seqid->Assign(m_ali.m_protein);
+    prot_seqid->Assign(m_protein);
     ploc->SetWhole(*prot_seqid);
 
     CRef<CSeq_loc> nloc(new CSeq_loc);
-    nloc->Assign(m_ali.m_genomic);
+    nloc->Assign(m_genomic);
     topl->SetBounds().push_back(nloc);
 
     //compartment id
@@ -136,87 +135,67 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(void) const
 
 
     CRef<CSeq_id> genomic_seqid(new CSeq_id);
-    genomic_seqid->Assign(*m_ali.m_genomic.GetId());
+    genomic_seqid->Assign(*m_genomic.GetId());
     sps.SetGenomic_id(*genomic_seqid);
     sps.SetGenomic_strand(nstrand);
 
     sps.SetExons();
-    if (!m_ali.m_pcs.empty()) {
+    {
     //EXONS
         CRef<CSpliced_exon> exon;
         CRef<CSpliced_exon_chunk> chunk;
 
         int nulpos = 0, nultripos = 0;
         int alipos = 0;
-        EAliPieceType prev_type = eSP;
         char s[] = "GT"; 
         
-
-        list<CNPiece>::const_iterator good_piece_it = m_ali.m_pcs.begin();
-        int good_begin = good_piece_it->beg;
-        int good_end = good_piece_it->end -1;
 
         vector<CAliPiece>::const_iterator pit = m_ali.m_ps.begin();
         vector<CAliPiece>::const_iterator pit_end = m_ali.m_ps.end();
 
-//         // skip gaps at the start
-//         while (alipos<good_begin && pit != m_ali.m_ps.end()) {
-//             EAliPieceType type = pit->m_type;
-//             if (type == eVP)
-//                 nultripos += pit->m_len;
-//             else if (type == eHP)
-//                 nulpos += pit->m_len;
-//             else
-//                 break;
-//             alipos += pit->m_len;
-//             ++pit;
-//         }
-
-//         //remove gaps at the end
-//         do {
-//             --pit_end;
-//         } while (pit_end->m_type == eVP || pit_end->m_type == eHP);
-//         ++pit_end;
-
-        if (good_begin == 0 && pit->m_type != eSP && pit->m_type != eMP) {
-            exon = new CSpliced_exon;
-            SetExonBioStart(exon, nulpos, nultripos);
+        for(; pit != pit_end; ++pit) {
+            if (pit->m_type == eVP)
+                nultripos += pit->m_len;
+            else if (pit->m_type == eHP || pit->m_type == eSP)
+                nulpos += pit->m_len;
+            else
+                break;
         }
+
+        if (pit == pit_end)
+            NCBI_THROW(CProSplignException, eGenericError, "Just insertions in alignment");
+
+        _ASSERT(pit->m_type == eMP);
+
+        while(--pit_end != pit && pit_end->m_type != eMP)
+            ;
+
+        _ASSERT(pit_end->m_type == eMP);
+        ++pit_end;
+
+        exon = new CSpliced_exon;
+        SetExonBioStart(exon, nulpos, nultripos);
+        exon->SetPartial(nultripos > 0);
 
         for(; pit != pit_end; ++pit) {
             if(pit->m_type == eSP) {
-                if(prev_type != eSP) {
-                    if (exon.NotNull()) {
-                        SetExonBioEnd(exon, nulpos-1, nultripos-1);
-                        s[0] = m_ali.cnseq->Upper(nulpos);
-                        s[1] = m_ali.cnseq->Upper(nulpos+1);
-                        exon->SetSplice_3_prime().SetBases(s);
+                SetExonBioEnd(exon, nulpos-1, nultripos-1);
+                s[0] = cnseq.Upper(nulpos);
+                s[1] = cnseq.Upper(nulpos+1);
+                exon->SetSplice_3_prime().SetBases(s);
+                sps.SetExons().push_back(exon);
 
-                        sps.SetExons().push_back(exon);
-
-                        if (good_begin<=alipos && alipos<=good_end)
-                            exon = new CSpliced_exon;
-                        else
-                            exon.Reset();
-                    }
-                }
+                exon = new CSpliced_exon;
                 nulpos += pit->m_len;
-                if (exon.NotNull()) {
-                    SetExonBioStart(exon, nulpos, nultripos);
-                    s[0] = m_ali.cnseq->Upper(nulpos-2);
-                    s[1] = m_ali.cnseq->Upper(nulpos-1);
-                    exon->SetSplice_5_prime().SetBases(s);
-                }
+                SetExonBioStart(exon, nulpos, nultripos);
+                s[0] = cnseq.Upper(nulpos-2);
+                s[1] = cnseq.Upper(nulpos-1);
+                exon->SetSplice_5_prime().SetBases(s);
+
             } else {
                 if (exon.NotNull()) {
-                    if (!(good_begin<=alipos && alipos<=good_end)) {
-                        exon->SetPartial(true);
-                        sps.SetExons().push_back(exon);
-                        exon.Reset();                        
-                    } else {
-                        chunk.Reset(new CSpliced_exon_chunk);
-                        exon->SetParts().push_back(chunk);
-                    }
+                    chunk.Reset(new CSpliced_exon_chunk);
+                    exon->SetParts().push_back(chunk);
                 }
                     
                 switch(pit->m_type) {
@@ -234,97 +213,38 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(void) const
                     }
                     nulpos += pit->m_len;
                     break;
-                case eMP : {
-
-                    int remaining_len = pit->m_len;
-                    int tmp_alipos = alipos;
-                    while (remaining_len > 0) {
-                        if(alipos < good_begin && exon.NotNull()) {
-                            if (exon->SetParts().back()->Which()==CSpliced_exon_chunk::e_not_set)
-                                exon->SetParts().pop_back();
-                            sps.SetExons().push_back(exon);
-                            exon.Reset();
-                        }
-                        if (!(tmp_alipos <= good_end && good_begin <= tmp_alipos+remaining_len))
-                            break;
-
-                        if (tmp_alipos <= good_begin) {
-                            int bad_len = good_begin - tmp_alipos;
-                            nultripos += bad_len;
-                            nulpos += bad_len;
-                            remaining_len -= bad_len;
-                            tmp_alipos += bad_len;
-                            
-                            exon = new CSpliced_exon;
-                            SetExonBioStart(exon, nulpos, nultripos);
-                            exon->SetPartial(prev_type!=eSP || bad_len>0);
-                            chunk = new CSpliced_exon_chunk;
-                            exon->SetParts().push_back(chunk);
-                        }
-                        int chunk_len = min(remaining_len,good_end - tmp_alipos+1);
-                        _ASSERT(chunk.NotNull());
-                        chunk->SetDiag(chunk_len);
-                        chunk.Reset();
-
-                        nultripos += chunk_len;
-                        nulpos += chunk_len;
-                        remaining_len -= chunk_len;
-                        tmp_alipos += chunk_len;
-
-                        if (tmp_alipos > good_end) {
-                            SetExonBioEnd(exon, nulpos-1, nultripos-1);
-                            if (remaining_len > 0) {
-                                exon->SetPartial(true);
-                                sps.SetExons().push_back(exon);
-                                exon.Reset();
-                            }
-                            if (++good_piece_it != m_ali.m_pcs.end()) {
-                                good_begin = good_piece_it->beg;
-                                good_end = good_piece_it->end -1;
-                            } else {
-                                good_begin = numeric_limits<int>::max();
-                                good_end = good_begin;
-                            }
-                        }
-                    }
-                    
-                    nultripos += remaining_len;
-                    nulpos += remaining_len;
-                }
+                case eMP :
+                    _ASSERT(chunk.NotNull());
+                    chunk->SetDiag(pit->m_len);
+                    chunk.Reset();
+                    nultripos += pit->m_len;
+                    nulpos += pit->m_len;
                     break;
                 default :
                     _ASSERT(false); //shouldn't get here
                     break;
                 }
             }
-            prev_type = pit->m_type;
             alipos += pit->m_len;
         }
 
-        if (exon.NotNull()) {
-            SetExonBioEnd(exon, nulpos-1, nultripos-1);
-            exon->SetPartial(nultripos < int(m_ali.cpseq->seq.size())*3);
-            sps.SetExons().push_back(exon);
-        }
-
-        if (!sps.SetExons().empty()) {
-            //start, stop
-            if(sps.SetExons().front()->GetProduct_start().GetProtpos().GetFrame()==1 && m_ali.HasStartOnNuc()) {
-                CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
-                modi->SetStart_codon_found(true);
-                sps.SetModifiers().push_back(modi);
-            }
-            if(sps.SetExons().back()->GetProduct_end().GetProtpos().GetFrame()==3 && m_ali.HasStopOnNuc()) {
-                CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
-                modi->SetStop_codon_found(true);
-                sps.SetModifiers().push_back(modi);
-            }
-        }
+        _ASSERT (exon.NotNull());
+        SetExonBioEnd(exon, nulpos-1, nultripos-1);
+        exon->SetPartial(nultripos < int(cpseq.seq.size())*3);
+        sps.SetExons().push_back(exon);
     }
     sps.SetProduct_type(CSpliced_seg::eProduct_type_protein);
-    sps.SetProduct_length(m_ali.cpseq->seq.size());
+    sps.SetProduct_length(cpseq.seq.size());
 
     return topl;
+}
+
+int CAliToSeq_align::NucPosOut(int pos) const
+{
+    if(IsForward(m_genomic.GetStrand()))
+        return pos + m_genomic.GetStart(eExtreme_Positional);
+    else
+        return m_genomic.GetStop(eExtreme_Positional) - pos;
 }
 
 END_SCOPE(prosplign)

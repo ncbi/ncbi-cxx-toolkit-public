@@ -50,20 +50,26 @@ class CPosAli;
 
 class CAliToSeq_align
 {
+    const CAli& m_ali; 
     CScope& m_scope;
-    const CPosAli& m_ali; 
-    bool m_IsFull;
+    const CSeq_id& m_protein;
+    const CSeq_loc& m_genomic;
 
 public:
-    CAliToSeq_align(CScope& scope, const CPosAli& ali);
-    CRef<CSeq_align> MakeSeq_align(void) const;
+    CAliToSeq_align(const CAli& ali, CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic);
+    CRef<CSeq_align> MakeSeq_align(const CPSeq& cpseq, const CNSeq& cnseq) const;
     static CRef<CSeq_id> StringToSeq_id(const string& id);
     static string Seq_idToString(CRef<CSeq_id> seqid);
-    static CRef<CProduct_pos> NultriposToProduct_pos(int nultripos);
     //Takes care of strand
     void SetExonBioStart(CRef<CSpliced_exon> exon, int nulpos, int nultripos) const;
     void SetExonBioEnd(CRef<CSpliced_exon> exon, int nulpos, int nultripos) const;
+private:
+    int NucPosOut(int pos) const;
+
 };
+
+/// Convert linear coordinate into (amin,frame)
+CRef<CProduct_pos> NultriposToProduct_pos(int nultripos);
 
 END_SCOPE(prosplign)
 END_NCBI_SCOPE
