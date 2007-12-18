@@ -217,6 +217,7 @@ public:
     void Test_Create_Destroy(void);
     void Test_Multiple_Close(void);
     void Test_Unicode_Simple(void);
+    void Test_UnicodeNB(void);
     void Test_Unicode(void);
     void Test_NVARCHAR(void);
     void Test_Iskhakov(void);
