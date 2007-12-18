@@ -84,8 +84,28 @@ svn --non-interactive update >/dev/null 2>&1
 # PRIVATE
 
 # Get C++ Toolkit source tree
-rm -fr $SRC_PRIV
-$SCRIPTS/svn_core.sh $SRC_PRIV --export --with-objects --with-internal ||  (rm -rf $SRC_PRIV; exit 4)
+rm -fr $SRC_PRIV  ||  exit 4
+svn --non-interactive checkout https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++ $SRC_PRIV  ||  exit 4
+
+# Generating serialization code from ASN.1 specs
+cd $SRC_PRIV/src/objects  ||  exit 5
+    { make -f Makefile.sources builddir=$NCBI/c++.metastable/Release/build  ||  exit 5; } \
+    | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.asn ' \
+    | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.asn\).*%  \1%g'
+cd ../../src/app/sample/soap   ||  exit 5
+    { $NCBI/c++.metastable/Release/build/new_module.sh --xsd soap_dataobj  ||  exit 5; } \
+    | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.dtd ' \
+    | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.dtd\).*%  \1%g'
+cd $SRC_PRIV/src/gui/objects  ||  exit 5
+    for x in *.asn; do
+        { $NCBI/c++.metastable/Release/build/new_module.sh `basename $x .asn`  ||  exit 5; } \
+        | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.asn ' \
+        | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.asn\).*%  \1%g'
+    done
+cd ../dialogs/edit/feature  ||  exit 5
+    { $NCBI/c++.metastable/Release/build/new_module.sh  ||  exit 5; } \
+    | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.asn ' \
+    | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.asn\).*%  \1%g'
 
 # Change work directory
 cd $BUILD_PRIV || exit 1
@@ -134,7 +154,7 @@ touch $DIST_SRC_PRIV/.sink_subtree
 # PUBLIC
 
 # Get public C++ Toolkit source tree
-rm -fr $SRC_PUB
+rm -fr $SRC_PUB  ||  exit 4
 $SCRIPTS/svn_core.sh $SRC_PUB --export --with-objects  ||  (rm -rf $SRC_PUB; exit 4)
 
 # Delete all secure code
