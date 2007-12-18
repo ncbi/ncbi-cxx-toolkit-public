@@ -402,6 +402,7 @@ CDBAPIUnitTest::TestInit(void)
     }
 }
 
+
 class CTestErrHandler : public CDB_UserHandler
 {
 public:
@@ -446,16 +447,19 @@ private:
     bool            m_Succeed;
 };
 
+
 CTestErrHandler::CTestErrHandler()
 : m_max_severity(eDB_Info)
 , m_Succeed(false)
 {
 }
 
+
 CTestErrHandler::~CTestErrHandler()
 {
    ;
 }
+
 
 bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 {
@@ -531,8 +535,79 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// Test unicode without binding values ...
+void CDBAPIUnitTest::Test_UnicodeNB(void)
+{
+    string table_name("#test_unicode_table");
+
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    string str_ger("Au遝rdem k鰊nen Sie einzelne Eintr鋑e aus Ihrem "
+                   "Suchprotokoll entfernen");
+
+    const CStringUTF8 utf8_str_ger(str_ger, eEncoding_Windows_1252);
+
+    try {
+        // Clean table ...
+        {
+            auto_stmt->ExecuteUpdate("DELETE FROM " + table_name);
+        }
+
+        // Insert data ...
+        {
+            string sql_ger = "INSERT INTO " + table_name + "(nvc255_field) VALUES('" + str_ger + "')";
+
+            CStringUTF8 utf8_sql_ger(sql_ger, eEncoding_Windows_1252);
+
+            BOOST_CHECK( utf8_sql_ger.size() > 0 );
+
+            auto_stmt->ExecuteUpdate( utf8_sql_ger );
+        }
+
+        // Retrieve data ...
+        {
+            string nvc255_value;
+            string sql;
+
+            sql  = " SELECT nvc255_field FROM " + table_name;
+            sql += " ORDER BY id";
+
+            CStringUTF8 utf8_sql(sql, eEncoding_Windows_1252);
+            auto_stmt->SendSql( utf8_sql );
+
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            BOOST_CHECK( rs.get() != NULL );
+
+            // Read ...
+            BOOST_CHECK( rs->Next() );
+            nvc255_value = rs->GetVariant(1).GetString();
+            BOOST_CHECK( nvc255_value.size() > 0);
+            BOOST_CHECK_EQUAL( utf8_str_ger.size(), nvc255_value.size() );
+            BOOST_CHECK_EQUAL( utf8_str_ger, nvc255_value );
+            CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
+            string value_ger =
+                utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
+            BOOST_CHECK_EQUAL( str_ger, value_ger );
+
+            DumpResults(auto_stmt.get());
+        }
+    }
+    catch(const CDB_Exception& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_Unicode(void)
 {
+    string table_name("#test_unicode_table");
+    // string table_name("DBAPI_Sample..test_nstring_table");
+
     string sql;
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     string str_rus("坚坚 假结 俞家");
@@ -556,11 +631,13 @@ void CDBAPIUnitTest::Test_Unicode(void)
 
     try {
         // Clean table ...
-        auto_stmt->ExecuteUpdate( "DELETE FROM #test_unicode_table" );
+        {
+            auto_stmt->ExecuteUpdate("DELETE FROM " + table_name);
+        }
 
         // Insert data ...
         {
-            sql = "INSERT INTO #test_unicode_table(nvc255_field) "
+            sql = "INSERT INTO " + table_name + "(nvc255_field) "
                   "VALUES(@nvc_val)";
 
             //
@@ -590,7 +667,7 @@ void CDBAPIUnitTest::Test_Unicode(void)
         {
             string nvc255_value;
 
-            sql  = " SELECT nvc255_field FROM #test_unicode_table";
+            sql  = " SELECT nvc255_field FROM " + table_name;
             sql += " ORDER BY id";
 
             auto_stmt->SendSql( sql );
@@ -631,84 +708,6 @@ void CDBAPIUnitTest::Test_Unicode(void)
             BOOST_CHECK_EQUAL( str_ger, value_ger );
 
             DumpResults(auto_stmt.get());
-        }
-
-        // Use permanent table ...
-        if (false) {
-            auto_stmt->ExecuteUpdate( "DELETE FROM DBAPI_Sample.."
-                                      "test_nstring_table" );
-
-            // Insert data ...
-            {
-                sql = "INSERT INTO DBAPI_Sample..test_nstring_table"
-                    "(first_field) VALUES(@val)";
-
-                //
-                auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_rus.c_str(),
-                                                       utf8_str_1252_rus.size()),
-                                     "@val" );
-                auto_stmt->ExecuteUpdate(sql);
-
-                //
-                auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_ger.c_str(),
-                                                       utf8_str_1252_ger.size()),
-                                     "@val" );
-                auto_stmt->ExecuteUpdate(sql);
-
-                //
-                auto_stmt->SetParam( CVariant::VarChar(utf8_str_utf8.c_str(),
-                                                       utf8_str_utf8.size()),
-                                     "@val" );
-                auto_stmt->ExecuteUpdate(sql);
-            }
-
-            // Retrieve data ....
-            {
-                string nvc255_value;
-
-                sql  = " SELECT first_field FROM DBAPI_Sample..test_nstring_table";
-                sql += " ORDER BY id";
-
-                auto_stmt->SendSql( sql );
-
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-                BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-                BOOST_CHECK( rs.get() != NULL );
-
-                // Read utf8_str_1252_rus ...
-                BOOST_CHECK( rs->Next() );
-                nvc255_value = rs->GetVariant(1).GetString();
-                BOOST_CHECK_EQUAL(utf8_str_1252_rus.size(),
-                                  nvc255_value.size()
-                                  );
-                BOOST_CHECK_EQUAL(utf8_str_1252_rus, nvc255_value);
-                CStringUTF8 utf8_rus(nvc255_value, eEncoding_UTF8);
-                string value_rus =
-                    utf8_rus.AsSingleByteString(eEncoding_Windows_1252);
-                BOOST_CHECK_EQUAL( str_rus, value_rus );
-
-                // Read utf8_str_1252_ger ...
-                BOOST_CHECK( rs->Next() );
-                nvc255_value = rs->GetVariant(1).GetString();
-                BOOST_CHECK_EQUAL( utf8_str_1252_ger.size(),
-                                   nvc255_value.size()
-                                   );
-                BOOST_CHECK_EQUAL( utf8_str_1252_ger, nvc255_value );
-                CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
-                string value_ger =
-                    utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
-                BOOST_CHECK_EQUAL( str_ger, value_ger );
-
-                // Read utf8_str_utf8 ...
-                BOOST_CHECK( rs->Next() );
-                nvc255_value = rs->GetVariant(1).GetString();
-                BOOST_CHECK_EQUAL( utf8_str_utf8.size(), nvc255_value.size() );
-                BOOST_CHECK_EQUAL( utf8_str_utf8, nvc255_value );
-                CStringUTF8 utf8_utf8(nvc255_value, eEncoding_UTF8);
-
-                DumpResults(auto_stmt.get());
-            }
         }
     }
     catch(const CDB_Exception& ex) {
@@ -11745,6 +11744,23 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //         tc->depends_on(tc_init);
 //         tc->depends_on(tc_parameters);
 //         add(tc);
+
+        if (args.GetDriverName() == odbcw_driver
+            // || args.GetDriverName() == ftds63_driver
+            // || (args.GetDriverName() == ftds_odbc_driver 
+            //       && args.GetServerType() == CTestArguments::eMsSql)
+            || (args.GetDriverName() == ftds64_driver
+                  && args.GetServerType() == CTestArguments::eMsSql)
+            // || args.GetDriverName() == ftds8_driver
+            ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UnicodeNB,
+                                       DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(tc_parameters);
+            add(tc);
+        } else {
+            PutMsgDisabled("Test_UnicodeNB");
+        }
 
         if (args.GetDriverName() == odbcw_driver
             // || args.GetDriverName() == ftds63_driver
