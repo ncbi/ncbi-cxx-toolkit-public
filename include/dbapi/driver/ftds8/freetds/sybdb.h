@@ -729,6 +729,7 @@ extern	RETCODE    bcp_sendrow(DBPROCESS *dbproc);
 extern	RETCODE    bcp_moretext(DBPROCESS *dbproc, DBINT size, BYTE *text);
 extern	int    bcp_batch(DBPROCESS *dbproc);
 extern	int    bcp_done(DBPROCESS *dbproc);
+extern  int    bcp_cancel(DBPROCESS *dbproc);
 extern	RETCODE    bcp_bind(DBPROCESS *dbproc, BYTE *varaddr, int prefixlen,
                             DBINT varlen, BYTE *terminator, int termlen,
                             int type, int table_column);

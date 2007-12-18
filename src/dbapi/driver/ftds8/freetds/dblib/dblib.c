@@ -81,7 +81,7 @@ int i = 0;
 
 	while (i<TDS_MAX_CONN && ctx->connection_list[i]) i++;
 	if (i==TDS_MAX_CONN) {
-		/*fprintf(stderr,"Max connections reached, increase value of TDS_MAX_CONN\n");*/
+		/*tds_error_log("Max connections reached, increase value of TDS_MAX_CONN");*/
 		return 1;
 	} else {
 		ctx->connection_list[i] = tds;
@@ -593,7 +593,7 @@ DBPROCESS *dbproc;
       /* tds_set_parent( dbproc->tds_socket, dbproc); */
       dblib_add_connection(g_dblib_ctx, dbproc->tds_socket);
    } else {
-       /*fprintf(stderr,"DB-Library: Login incorrect.\n");*/
+       /*tds_error_log("DB-Library: Login incorrect.");*/
       free(dbproc); /* memory leak fix (mlilback, 11/17/01) */
       return NULL;
    }
@@ -1097,6 +1097,7 @@ DBNUMERIC   *num;
 		  case SYBVARBINARY:
           case SYBIMAGE:
                if (srclen > destlen && destlen >= 0) {
+                  tds_error_log("Data-conversion resulted in overflow.");
                   ret = -1;
                }
                else {
@@ -1134,16 +1135,13 @@ DBNUMERIC   *num;
                }
                else { /* destlen is > 0 */
                   if (srclen > destlen) {
-                     /* fprintf(stderr,"%s: Line%d: Data-conversion resulted in overflow.\n", __FILE__, __LINE__);
-                     fprintf(stderr,"\tsrclen (%d)> destlen (%d).\n", srclen, destlen); */
-                    ret = -1;
+                     tds_error_log("Data-conversion resulted in overflow.");
+                     srclen = destlen;
                   }
-                  else {
-                     memcpy(dest, src, srclen);
-                     for (i = srclen; i < destlen; i++ )
-                       dest[i] = ' ';
-                     ret = srclen;
-                  }
+                  memcpy(dest, src, srclen);
+                  for (i = srclen; i < destlen; i++ )
+                     dest[i] = ' ';
+                  ret = srclen;
                }
 
                break;
@@ -1206,6 +1204,7 @@ DBNUMERIC   *num;
         case SYBIMAGE:
 
              if (len > destlen && destlen >= 0) {
+                tds_error_log("Data-conversion resulted in overflow.");
 #if 0
                 fprintf(stderr,"%s: Line %d: Data-conversion resulted in overflow.\n", __FILE__, __LINE__);
                 fprintf(stderr,"\tlen (%d) > destlen (%d).\n", len, destlen);
@@ -1288,11 +1287,9 @@ DBNUMERIC   *num;
              }
              else { /* destlen is > 0 */
                 if (len > destlen) {
-               	 /*fprintf(stderr,"%s: Line%d: Data-conversion resulted in overflow.\n", __FILE__, __LINE__);
-               	 fprintf(stderr,"\tlen (%d)> destlen (%d).\n", len, destlen);*/
-                   	 ret = -1;
+                     tds_error_log("Data-conversion resulted in overflow.");
+                     len = destlen;
                 }
-                else
                    memcpy(dest, dres.c, len);
                    for (i = len; i < destlen; i++ )
                        dest[i] = ' ';

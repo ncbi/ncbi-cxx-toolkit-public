@@ -3334,6 +3334,8 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
             auto_stmt->ExecuteUpdate( sql );
         }
 
+        string str_data = string(data_size, 'O');
+
         // Insert data ...
         {
             bool exception_catched = false;
@@ -3345,61 +3347,103 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
 
             bi->Bind(1, &col1);
 
-            col1 = string(data_size, 'O');
+            col1 = str_data;
 
-            // Either AddRow() or Complete() should throw an exception.
+            // Neither AddRow() nor Complete() should throw an exception.
             try
             {
                 bi->AddRow();
-
+                bi->Complete();
             } catch(const CDB_Exception&)
             {
                 exception_catched = true;
             }
 
+            if (m_args.GetDriverName() == dblib_driver) {
+                PutMsgDisabled("Unexceptional overflow of varchar in bulk-insert");
+
+                if ( !exception_catched ) {
+                    BOOST_FAIL("Exception CDB_ClientEx was expected.");
+                }
+            }
+            else {
+                if ( exception_catched ) {
+                    BOOST_FAIL("Exception CDB_ClientEx was not expected.");
+                }
+            }
+        }
+
+        // Retrieve data ...
+        if (m_args.GetDriverName() != dblib_driver)
+        {
+            sql = "SELECT * FROM #test_bulk_overflow";
+
+            auto_stmt->SendSql( sql );
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+   
+            BOOST_CHECK( rs.get() );
+            BOOST_CHECK( rs->Next() );
+   
+            const CVariant& value = rs->GetVariant(1);
+   
+            BOOST_CHECK( !value.IsNull() );
+   
+            string str_value = value.GetString();
+            BOOST_CHECK_EQUAL( string::size_type(column_size), str_value.size() );
+        }
+
+        // Initialize ...
+        {
+            sql = "DROP TABLE #test_bulk_overflow";
+
+            auto_stmt->ExecuteUpdate( sql );
+
+            sql =
+                "CREATE TABLE #test_bulk_overflow ( \n"
+                "   vb32_field VARBINARY(32) \n"
+                ") \n";
+
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Insert data ...
+        {
+            bool exception_catched = false;
+            auto_ptr<IBulkInsert> bi(
+                m_Conn->GetBulkInsert("#test_bulk_overflow", 1)
+                );
+
+            CVariant col1(eDB_VarBinary, data_size);
+
+            bi->Bind(1, &col1);
+
+            col1 = CVariant::VarBinary(str_data.c_str(), str_data.size());
+
+            // Here either AddRow() or Complete() should throw an exception.
             try
             {
+                bi->AddRow();
                 bi->Complete();
             } catch(const CDB_Exception&)
             {
-                if ( exception_catched ) {
-                    throw;
-                } else {
-                    exception_catched = true;
-                }
+                exception_catched = true;
             }
 
-            if (m_args.GetDriverName() == odbc_driver  ||  m_args.GetDriverName() == odbcw_driver) {
+            if (m_args.GetDriverName() == ctlib_driver) {
+                PutMsgDisabled("Exception when overflow of varbinary in bulk-insert");
+
                 if ( exception_catched ) {
                     BOOST_FAIL("Exception CDB_ClientEx was not expected.");
                 }
             }
             else {
                 if ( !exception_catched ) {
-                    BOOST_FAIL("Exception CDB_ClientEx expected.");
+                    BOOST_FAIL("Exception CDB_ClientEx was expected.");
                 }
             }
         }
-
-        // Retrieve data ...
-    //     {
-    //         sql = "SELECT * FROM #test_bulk_overflow";
-    //
-    //         auto_stmt->SendSql( sql );
-    //         BOOST_CHECK( auto_stmt->HasMoreResults() );
-    //         BOOST_CHECK( !auto_stmt->HasRows() );
-    //         auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-    //
-    //         BOOST_CHECK( rs.get() );
-    //         BOOST_CHECK( rs->Next() );
-    //
-    //         const CVariant& value = rs->GetVariant(1);
-    //
-    //         BOOST_CHECK( !value.IsNull() );
-    //
-    //         string str_value = value.GetString();
-    //         BOOST_CHECK_EQUAL( string::size_type(column_size), str_value.size() );
-    //     }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -3493,33 +3537,26 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
 
             // INT collumn ...
-            if (m_args.GetDriverName() != odbc_driver
-                &&  m_args.GetDriverName() != odbcw_driver)
             {
                 enum { num_of_tests = 8 };
 
                 // Insert data ...
                 {
                     auto_ptr<IBulkInsert> bi(
-                        m_Conn->GetBulkInsert("#bulk_insert_table", 3)
+                        m_Conn->GetBulkInsert("#bulk_insert_table",
+                                  m_args.GetServerType() == CTestArguments::eSybase? 3: 4)
                         );
 
                     CVariant col1(eDB_Int);
                     CVariant col2(eDB_Int);
-                    CVariant col_tmp(eDB_VarChar);
-                    CVariant col4(eDB_BigInt);
 
                     bi->Bind(1, &col1);
-                    // bi->Bind(2, &col_tmp);
                     bi->Bind(3, &col2);
-                    // bi->Bind(4, &col4);
 
                     for(int i = 0; i < num_of_tests; ++i ) {
                         col1 = i;
                         Int4 value = Int4( 1 ) << (i * 4);
                         col2 = value;
-                        // Int8 value8 = Int8( 1 ) << (i * 4);
-                        // col4 = value8;
                         bi->AddRow();
                     }
                     bi->Complete();
@@ -3548,18 +3585,13 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                     DumpResults( auto_stmt.get() );
                 }
             }
-            else {
-                PutMsgDisabled("Binding not all columns in bcp");
-            }
 
             // Clean table ...
             auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
 
             // BIGINT collumn ...
             // Sybase doesn't have BIGINT data type ...
-            if (m_args.GetServerType() != CTestArguments::eSybase
-                &&  m_args.GetDriverName() != odbc_driver
-                &&  m_args.GetDriverName() != odbcw_driver)
+            if (m_args.GetServerType() != CTestArguments::eSybase)
             {
                 enum { num_of_tests = 16 };
 
@@ -3612,7 +3644,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 }
             }
             else {
-                PutMsgDisabled("Binding not all columns in bcp or bigint in Sybase");
+                PutMsgDisabled("Bigint in Sybase");
             }
         }
 
@@ -3686,8 +3718,6 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
         }
 
         // VARCHAR ...
-        if (m_args.GetDriverName() != odbc_driver
-            &&  m_args.GetDriverName() != odbcw_driver)
         {
             int num_of_tests;
 
@@ -3705,7 +3735,8 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             // Insert data ...
             {
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert("#bulk_insert_table", 2)
+                    m_Conn->GetBulkInsert("#bulk_insert_table",
+                              m_args.GetServerType() == CTestArguments::eSybase? 3: 4)
                     );
 
                 CVariant col1(eDB_Int);
@@ -3806,9 +3837,6 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 PutMsgDisabled("Test_Bulk_Writing Retrieve data");
             }
         }
-        else {
-            PutMsgDisabled("Binding not all columns in bcp");
-        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -3830,10 +3858,10 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
                 "    sacc int NOT NULL , \n"
                 "    sid int NOT NULL , \n"
                 "    ver smallint NOT NULL , \n"
-                "    live bit NOT NULL DEFAULT (1), \n"
-                "    date datetime NOT NULL DEFAULT (getdate()), \n"
+                "    live bit DEFAULT (1) NOT NULL, \n"
+                "    date datetime DEFAULT (getdate()) NULL, \n"
                 "    rlsdate smalldatetime NULL, \n"
-                "    depdate datetime NOT NULL DEFAULT (getdate()) \n"
+                "    depdate datetime DEFAULT (getdate()) NOT NULL \n"
                 ")"
                 ;
 
@@ -3849,23 +3877,10 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
             CVariant col1(eDB_Int);
             CVariant col2(eDB_Int);
             CVariant col3(eDB_Int);
-            CVariant col4(eDB_Int);
-            CVariant col5(eDB_DateTime);
-            CVariant col6(eDB_DateTime);
-            CVariant col7(eDB_DateTime);
 
             bi->Bind(1, &col1);
             bi->Bind(2, &col2);
             bi->Bind(3, &col3);
-            if (m_args.GetDriverName() == odbc_driver  ||  m_args.GetDriverName() == odbcw_driver) {
-                bi->Bind(4, &col4);
-                bi->Bind(5, &col5);
-                bi->Bind(6, &col6);
-                bi->Bind(7, &col7);
-            }
-            else {
-                PutMsgDisabled("Binding not all columns in bcp");
-            }
 
             col1 = 15001;
             col2 = 1;
@@ -3874,6 +3889,105 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
             bi->Complete();
         }
 
+        // Retrieve data ...
+        {
+            sql  = " SELECT live, date, rlsdate, depdate FROM #SbSubs";
+
+            auto_stmt->SendSql( sql );
+
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            BOOST_CHECK( rs.get() != NULL );
+
+            BOOST_CHECK( rs->Next() );
+            BOOST_CHECK( !rs->GetVariant(1).IsNull() );
+            BOOST_CHECK( rs->GetVariant(1).GetBit() );
+            BOOST_CHECK( !rs->GetVariant(2).IsNull() );
+            BOOST_CHECK( rs->GetVariant(2).GetCTime().GetTimeT() );
+            BOOST_CHECK( rs->GetVariant(3).IsNull() );
+            BOOST_CHECK( !rs->GetVariant(4).IsNull() );
+            BOOST_CHECK( rs->GetVariant(4).GetCTime().GetTimeT() );
+
+            // Dump results ...
+            DumpResults( auto_stmt.get() );
+        }
+
+        // Second test
+        {
+            sql = "DELETE FROM #SbSubs";
+            auto_stmt->ExecuteUpdate(sql);
+
+            auto_ptr<IBulkInsert> bi(
+                    m_Conn->GetBulkInsert("#SbSubs", 7)
+                    );
+
+            CVariant col1(eDB_Int);
+            CVariant col2(eDB_Int);
+            CVariant col3(eDB_Int);
+            CVariant col4(eDB_Int);
+            CVariant col5(eDB_DateTime);
+            CVariant col6(eDB_DateTime);
+            CVariant col7(eDB_DateTime);
+
+            bi->Bind(1, &col1);
+            bi->Bind(2, &col2);
+            bi->Bind(3, &col3);
+            bi->Bind(4, &col4);
+            bi->Bind(5, &col5);
+            bi->Bind(6, &col6);
+            bi->Bind(7, &col7);
+
+            col1 = 15001;
+            col2 = 1;
+            col3 = 2;
+            if (m_args.GetDriverName() == odbc_driver
+                ||  m_args.GetDriverName() == odbcw_driver
+                ||  m_args.GetDriverName() == dblib_driver)
+            {
+                PutMsgDisabled("Bulk-insert NULLs when there are defaults");
+
+                bi->AddRow();
+                bi->Complete();
+
+                // Retrieve data ...
+                {
+                    sql  = " SELECT live, date, rlsdate, depdate FROM #SbSubs";
+
+                    auto_stmt->SendSql( sql );
+
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    BOOST_CHECK( rs.get() != NULL );
+
+                    BOOST_CHECK( rs->Next() );
+                    BOOST_CHECK( !rs->GetVariant(1).IsNull() );
+                    BOOST_CHECK( rs->GetVariant(1).GetBit() );
+                    BOOST_CHECK( !rs->GetVariant(2).IsNull() );
+                    BOOST_CHECK( rs->GetVariant(2).GetCTime().GetTimeT() );
+                    BOOST_CHECK( rs->GetVariant(3).IsNull() );
+                    BOOST_CHECK( !rs->GetVariant(4).IsNull() );
+                    BOOST_CHECK( rs->GetVariant(4).GetCTime().GetTimeT() );
+
+                    // Dump results ...
+                    DumpResults( auto_stmt.get() );
+                }
+            }
+            else if (m_args.GetDriverName() != ctlib_driver) {
+                try {
+                    bi->AddRow();
+                    bi->Complete();
+                }
+                catch (CDB_ClientEx&) {
+                    // exception must be thrown
+                }
+            }
+            else {
+                // driver crushes after trying to insert
+                PutMsgDisabled("Bulk-insert NULL into NOT-NULL column");
+            }
+        }
 
     }
     catch(const CException& ex) {
@@ -3963,7 +4077,8 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
         {
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
-                "    id int IDENTITY NOT NULL , \n"
+                // Identity doesn't work with old ctlib driver (12.5.0.6-ESD13-32bit)
+                //"    id int IDENTITY NOT NULL , \n"
                 "    id_nwparams int NOT NULL, \n"
                 "    gi1 int NOT NULL, \n"
                 "    gi2 int NOT NULL, \n"
@@ -3981,7 +4096,7 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
         {
             //
             auto_ptr<IBulkInsert> bi(
-                m_Conn->CreateBulkInsert(table_name, 8)
+                m_Conn->CreateBulkInsert(table_name, 7)
                 );
 
             CVariant b_idnwparams(eDB_Int);
@@ -3992,13 +4107,13 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
             CVariant b_idty4(eDB_Float);
             CVariant b_trans(eDB_Text);
 
-            bi->Bind(2, &b_idnwparams);
-            bi->Bind(3, &b_gi1);
-            bi->Bind(4, &b_gi2);
-            bi->Bind(5, &b_idty);
-            bi->Bind(6, &b_trans);
-            bi->Bind(7, &b_idty2);
-            bi->Bind(8, &b_idty4);
+            bi->Bind(1, &b_idnwparams);
+            bi->Bind(2, &b_gi1);
+            bi->Bind(3, &b_gi2);
+            bi->Bind(4, &b_idty);
+            bi->Bind(5, &b_trans);
+            bi->Bind(6, &b_idty2);
+            bi->Bind(7, &b_idty4);
 
             b_idnwparams = 123456;
 
@@ -11506,28 +11621,22 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
 
-        if (args.GetServerType() != CTestArguments::eSybase) {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing2, DBAPIInstance);
-            tc->depends_on(tc_init);
-            add(tc);
-        } else {
-            PutMsgDisabled("Test_Bulk_Writing2");
-        }
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing2, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
 
         if (args.GetDriverName() != dblib_driver) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing3, DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
         }
-
-        if (args.GetDriverName() != ctlib_driver) {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
-            tc->depends_on(tc_init);
-            add(tc);
-        }
         else {
-            PutMsgDisabled("Test_Bulk_Writing4");
+            PutMsgDisabled("Test_Bulk_Writing3");
         }
+
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
     } else {
         PutMsgDisabled("Test_Bulk_Writing");
     }
@@ -11892,13 +12001,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // !!! There are still problems ...
     if (args.IsBCPAvailable()) {
-        if (args.GetDriverName() != ftds64_driver // Something is completely wrong ...
-            // && !(args.GetDriverName() == ftds64_driver
-            //      && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
-            && args.GetDriverName() != ctlib_driver
-            && args.GetDriverName() != ftds_dblib_driver
-            && (args.GetDriverName() != dblib_driver
-                 ||  args.GetServerType() == CTestArguments::eSybase)
+        if (!(args.GetDriverName() == ftds_dblib_driver
+                 &&  args.GetServerType() == CTestArguments::eSybase)
+            && !(args.GetDriverName() == dblib_driver
+                 &&  args.GetServerType() != CTestArguments::eSybase)
            )
         {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow,

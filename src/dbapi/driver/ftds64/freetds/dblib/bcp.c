@@ -3331,7 +3331,7 @@ _bcp_get_col_data(DBPROCESS * dbproc, TDSCOLUMN *bindcol)
 		if ((converted_data_size =
 		     dbconvert(dbproc, bindcol->column_bindtype,
 			       (BYTE *) dataptr, collen,
-			       desttype, bindcol->bcp_column_data->data, bindcol->column_size)) == FAIL) {
+			       desttype, bindcol->bcp_column_data->data, bindcol->column_size)) == -1) {
 			return (FAIL);
 		}
 

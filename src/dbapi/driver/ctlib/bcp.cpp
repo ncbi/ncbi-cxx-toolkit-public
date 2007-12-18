@@ -502,25 +502,6 @@ bool CTL_BCPInCmd::Send(void)
                 "blk_describe failed (check the number of "
                 "columns in a table)." + GetDbgInfo(),
                 123002 );
-
-            // It is a fake binding ...
-            SetHasFailed((Check(blk_bind(x_GetSybaseCmd(),
-                                         i + 1,
-                                         &fmt,
-                                         // This adderess is semantically
-                                         // invalid, but we have to pass
-                                         // something except of NULL.
-                                         // In case of NULL data is supposed to
-                                         // transfered via blk_textxfer.
-                                         (void*) &GetParams(),
-                                         &datalen,
-                                         &indicator)) != CS_SUCCEED));
-            CHECK_DRIVER_ERROR(
-                HasFailed(),
-                "blk_bind failed for default value." + GetDbgInfo(),
-                123003 );
-
-            // GetParams().SetParamStatus(i, CDB_Params::fSet);
         }
     }
 

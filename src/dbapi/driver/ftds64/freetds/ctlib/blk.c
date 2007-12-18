@@ -56,6 +56,7 @@ static CS_RETCODE _blk_rowxfer_in(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_
 static CS_RETCODE _blk_rowxfer_out(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred);
 static CS_RETCODE _blk_start_new_batch(CS_BLKDESC * blkdesc);
 static int blk_is_binded(TDSCOLUMN *);
+static void _blk_clean_desc(CS_BLKDESC * blkdesc);
 
 #undef MIN
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
@@ -270,25 +271,25 @@ blk_done(CS_BLKDESC * blkdesc, CS_INT type, CS_INT * outrow)
                 *outrow = tds->rows_affected;
 
             /* free allocated storage in blkdesc & initialise flags, etc. */
+            _blk_clean_desc(blkdesc);
 
-            if (blkdesc->tablename)
-                TDS_ZERO_FREE(blkdesc->tablename);
+            break;
 
-            if (blkdesc->insert_stmt)
-                TDS_ZERO_FREE(blkdesc->insert_stmt);
+        case CS_BLK_CANCEL:
 
-            if (blkdesc->bindinfo) {
-                tds_free_results(blkdesc->bindinfo);
-                blkdesc->bindinfo = NULL;
+            tds_send_cancel(tds);
+
+            tds_set_state(tds, TDS_PENDING);
+            if (tds_process_cancel(tds) != TDS_SUCCEED) {
+                _ctclient_msg(blkdesc->con, "blk_done", 2, 5, 1, 140, "");
+                return CS_FAIL;
             }
 
-            blkdesc->direction = 0;
-            blkdesc->bind_count = CS_UNUSED;
-            blkdesc->xfer_init = 0;
-            blkdesc->var_cols = 0;
-            blkdesc->text_sent = 0;
-            blkdesc->current_col = 0;
-            blkdesc->blob_cols = 0;
+            if (outrow)
+                *outrow = 0;
+
+            /* free allocated storage in blkdesc & initialise flags, etc. */
+            _blk_clean_desc(blkdesc);
 
             break;
 
@@ -303,14 +304,33 @@ blk_drop(CS_BLKDESC * blkdesc)
     if (!blkdesc)
         return CS_SUCCEED;
 
-    if (blkdesc->tablename)
-        free(blkdesc->tablename);
-    if (blkdesc->insert_stmt)
-        free(blkdesc->insert_stmt);
-    tds_free_results(blkdesc->bindinfo);
+    _blk_clean_desc(blkdesc);
     free(blkdesc);
 
     return CS_SUCCEED;
+}
+
+static void
+_blk_clean_desc(CS_BLKDESC * blkdesc)
+{
+    if (blkdesc->tablename)
+        TDS_ZERO_FREE(blkdesc->tablename);
+
+    if (blkdesc->insert_stmt)
+        TDS_ZERO_FREE(blkdesc->insert_stmt);
+
+    if (blkdesc->bindinfo) {
+        tds_free_results(blkdesc->bindinfo);
+        blkdesc->bindinfo = NULL;
+    }
+
+    blkdesc->direction = 0;
+    blkdesc->bind_count = CS_UNUSED;
+    blkdesc->xfer_init = 0;
+    blkdesc->var_cols = 0;
+    blkdesc->text_sent = 0;
+    blkdesc->current_col = 0;
+    blkdesc->blob_cols = 0;
 }
 
 CS_RETCODE
@@ -1999,8 +2019,8 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
             srcfmt.datatype = srctype;
             srcfmt.maxlength = srclen;
 
-            destfmt.datatype  = _ct_get_client_type(bindcol->column_type, bindcol->column_usertype, bindcol->column_size);
-            destfmt.maxlength = bindcol->column_size;
+            destfmt.datatype  = _ct_get_client_type(bindcol->column_type, bindcol->column_usertype, bindcol->on_server.column_size);
+            destfmt.maxlength = bindcol->on_server.column_size;
             destfmt.precision = bindcol->column_prec;
             destfmt.scale     = bindcol->column_scale;
 

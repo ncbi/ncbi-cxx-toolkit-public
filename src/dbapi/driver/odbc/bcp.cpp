@@ -233,23 +233,23 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
     if (!m_WasBound) {
         for (unsigned int i = 0; i < GetParams().NofParams(); ++i) {
             if (GetParams().GetParamStatus(i) == 0) {
-                bcp_bind(GetHandle(), (BYTE*) pb, 0, SQL_NULL_DATA, 0, 0, 0, i + 1);
-                continue;
+                r = bcp_bind(GetHandle(), (BYTE*) pb, 0, SQL_VARLEN_DATA, 0, 0, 0, i + 1);
             }
+            else {
+                CDB_Object& param = *GetParams().GetParam(i);
 
-            CDB_Object& param = *GetParams().GetParam(i);
+                EDB_Type data_type = param.GetType();
+                r = bcp_bind(GetHandle(),
+                             static_cast<LPCBYTE>(const_cast<void*>(x_GetDataPtr(data_type, pb))),
+                             0,
+                             static_cast<DBINT>(x_GetBCPDataSize(data_type)),
+                             static_cast<LPCBYTE>(x_GetDataTerminator(data_type)),
+                             static_cast<INT>(x_GetDataTermSize(data_type)),
+                             x_GetBCPDataType(data_type),
+                             i + 1);
 
-            EDB_Type data_type = param.GetType();
-            r = bcp_bind(GetHandle(),
-                         static_cast<LPCBYTE>(const_cast<void*>(x_GetDataPtr(data_type, pb))),
-                         0,
-                         static_cast<DBINT>(x_GetBCPDataSize(data_type)),
-                         static_cast<LPCBYTE>(x_GetDataTerminator(data_type)),
-                         static_cast<INT>(x_GetDataTermSize(data_type)),
-                         x_GetBCPDataType(data_type),
-                         i + 1);
-
-            m_HasTextImage = m_HasTextImage || (data_type == eDB_Image || data_type == eDB_Text);
+                m_HasTextImage = m_HasTextImage || (data_type == eDB_Image || data_type == eDB_Text);
+            }
 
             if (r != SUCCEED) {
                 ReportErrors();
@@ -259,224 +259,225 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         m_WasBound = true;
     }
     for (unsigned int i = 0; i < GetParams().NofParams(); i++) {
-        if (GetParams().GetParamStatus(i) == 0)
-            continue;
+        if (GetParams().GetParamStatus(i) == 0) {
+            r = bcp_collen(GetHandle(), SQL_NULL_DATA, i + 1);
+        }
+        else {
+            CDB_Object& param = *GetParams().GetParam(i);
 
-        CDB_Object& param = *GetParams().GetParam(i);
-
-        switch ( param.GetType() ) {
-        case eDB_Int: {
-            CDB_Int& val = dynamic_cast<CDB_Int&> (param);
-            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int4), i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_SmallInt: {
-            CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
-            // DBSMALLINT v = (DBSMALLINT) val.Value();
-            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int2), i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_TinyInt: {
-            CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
-            // DBTINYINT v = (DBTINYINT) val.Value();
-            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : sizeof(Uint1), i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_BigInt: {
-            CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int8), i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_Char: {
-            CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-            BYTE* data = NULL;
-
-            if (val.IsNULL()) {
-                data = (BYTE*)pb;
-            } else {
-                if (IsMultibyteClientEncoding()) {
-                    data = (BYTE*)val.AsUnicode(GetClientEncoding());
-                } else {
-                    data = (BYTE*)val.Value();
-                }
+            switch ( param.GetType() ) {
+            case eDB_Int: {
+                CDB_Int& val = dynamic_cast<CDB_Int&> (param);
+                r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int4), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
             }
-
-            r = bcp_colptr(GetHandle(),
-                           data,
-                           i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(),
-                           val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
-                           i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_VarChar: {
-            CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
-            BYTE* data = NULL;
-
-            if (val.IsNULL()) {
-                data = (BYTE*)pb;
-            } else {
-                if (IsMultibyteClientEncoding()) {
-                    data = (BYTE*)val.AsUnicode(GetClientEncoding());
-                } else {
-                    data = (BYTE*)val.Value();
-                }
+            break;
+            case eDB_SmallInt: {
+                CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
+                // DBSMALLINT v = (DBSMALLINT) val.Value();
+                r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int2), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
             }
-
-            r = bcp_colptr(GetHandle(),
-                           data,
-                           i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(),
-                           val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
-                           i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_LongChar: {
-            CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-            BYTE* data = NULL;
-
-            if (val.IsNULL()) {
-                data = (BYTE*)pb;
-            } else {
-                if (IsMultibyteClientEncoding()) {
-                    data = (BYTE*)val.AsUnicode(GetClientEncoding());
-                } else {
-                    data = (BYTE*)val.Value();
-                }
+            break;
+            case eDB_TinyInt: {
+                CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
+                // DBTINYINT v = (DBTINYINT) val.Value();
+                r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : sizeof(Uint1), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
             }
+            break;
+            case eDB_BigInt: {
+                CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
+                r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int8), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
+            case eDB_Char: {
+                CDB_Char& val = dynamic_cast<CDB_Char&> (param);
+                BYTE* data = NULL;
 
-            r = bcp_colptr(GetHandle(),
-                           data,
-                           i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(),
-                           val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
-                           i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_Binary: {
-            CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
-            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(),
-                           val.IsNULL() ? SQL_NULL_DATA : (Int4) val.Size(), i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_VarBinary: {
-            CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
-            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(),
-                           val.IsNULL() ? SQL_NULL_DATA : (Int4) val.Size(), i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_LongBinary: {
-            CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
-            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(),
-                           val.IsNULL() ? SQL_NULL_DATA : (Int4) val.DataSize(), i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_Float: {
-            CDB_Float& val = dynamic_cast<CDB_Float&> (param);
-            //DBREAL v = (DBREAL) val.Value();
-            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(float), i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_Double: {
-            CDB_Double& val = dynamic_cast<CDB_Double&> (param);
-            //DBFLT8 v = (DBFLT8) val.Value();
-            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(double), i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-        }
-        break;
-        case eDB_SmallDateTime: {
-            CDB_SmallDateTime& val =
-                dynamic_cast<CDB_SmallDateTime&> (param);
-            DBDATETIM4* dt = (DBDATETIM4*) pb;
-            DBDATETIME4_days(dt)     = val.GetDays();
-            DBDATETIME4_mins(dt)     = val.GetMinutes();
-            r = bcp_colptr(GetHandle(), (BYTE*) dt, i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : sizeof(DBDATETIM4), i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-            pb = (void*) (dt + 1);
-        }
-        break;
-        case eDB_DateTime: {
-            CDB_DateTime& val = dynamic_cast<CDB_DateTime&> (param);
-            DBDATETIME* dt = (DBDATETIME*) pb;
-            if (val.IsNULL()) {
+                if (val.IsNULL()) {
+                    data = (BYTE*)pb;
+                } else {
+                    if (IsMultibyteClientEncoding()) {
+                        data = (BYTE*)val.AsUnicode(GetClientEncoding());
+                    } else {
+                        data = (BYTE*)val.Value();
+                    }
+                }
+
+                r = bcp_colptr(GetHandle(),
+                               data,
+                               i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(),
+                               val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
+                               i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
+            case eDB_VarChar: {
+                CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
+                BYTE* data = NULL;
+
+                if (val.IsNULL()) {
+                    data = (BYTE*)pb;
+                } else {
+                    if (IsMultibyteClientEncoding()) {
+                        data = (BYTE*)val.AsUnicode(GetClientEncoding());
+                    } else {
+                        data = (BYTE*)val.Value();
+                    }
+                }
+
+                r = bcp_colptr(GetHandle(),
+                               data,
+                               i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(),
+                               val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
+                               i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
+            case eDB_LongChar: {
+                CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+                BYTE* data = NULL;
+
+                if (val.IsNULL()) {
+                    data = (BYTE*)pb;
+                } else {
+                    if (IsMultibyteClientEncoding()) {
+                        data = (BYTE*)val.AsUnicode(GetClientEncoding());
+                    } else {
+                        data = (BYTE*)val.Value();
+                    }
+                }
+
+                r = bcp_colptr(GetHandle(),
+                               data,
+                               i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(),
+                               val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
+                               i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
+            case eDB_Binary: {
+                CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
+                r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(),
+                               val.IsNULL() ? SQL_NULL_DATA : (Int4) val.Size(), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
+            case eDB_VarBinary: {
+                CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
+                r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(),
+                               val.IsNULL() ? SQL_NULL_DATA : (Int4) val.Size(), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
+            case eDB_LongBinary: {
+                CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+                r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(),
+                               val.IsNULL() ? SQL_NULL_DATA : (Int4) val.DataSize(), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
+            case eDB_Float: {
+                CDB_Float& val = dynamic_cast<CDB_Float&> (param);
+                //DBREAL v = (DBREAL) val.Value();
+                r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(float), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
+            case eDB_Double: {
+                CDB_Double& val = dynamic_cast<CDB_Double&> (param);
+                //DBFLT8 v = (DBFLT8) val.Value();
+                r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
+                    == SUCCEED &&
+                    bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(double), i + 1)
+                    == SUCCEED ? SUCCEED : FAIL;
+            }
+            break;
+            case eDB_SmallDateTime: {
+                CDB_SmallDateTime& val =
+                    dynamic_cast<CDB_SmallDateTime&> (param);
+                DBDATETIM4* dt = (DBDATETIM4*) pb;
+                DBDATETIME4_days(dt)     = val.GetDays();
+                DBDATETIME4_mins(dt)     = val.GetMinutes();
                 r = bcp_colptr(GetHandle(), (BYTE*) dt, i + 1)
                     == SUCCEED &&
-                    bcp_collen(GetHandle(), SQL_NULL_DATA, i + 1)
+                    bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : sizeof(DBDATETIM4), i + 1)
                     == SUCCEED ? SUCCEED : FAIL;
+                pb = (void*) (dt + 1);
             }
-            else {
-                dt->dtdays     = val.GetDays();
-                dt->dttime     = val.Get300Secs();
-                r = bcp_colptr(GetHandle(), (BYTE*) dt, i + 1)
-                    == SUCCEED &&
-                    bcp_collen(GetHandle(), sizeof(DBDATETIME), i + 1)
-                    == SUCCEED ? SUCCEED : FAIL;
+            break;
+            case eDB_DateTime: {
+                CDB_DateTime& val = dynamic_cast<CDB_DateTime&> (param);
+                DBDATETIME* dt = (DBDATETIME*) pb;
+                if (val.IsNULL()) {
+                    r = bcp_colptr(GetHandle(), (BYTE*) dt, i + 1)
+                        == SUCCEED &&
+                        bcp_collen(GetHandle(), SQL_NULL_DATA, i + 1)
+                        == SUCCEED ? SUCCEED : FAIL;
+                }
+                else {
+                    dt->dtdays     = val.GetDays();
+                    dt->dttime     = val.Get300Secs();
+                    r = bcp_colptr(GetHandle(), (BYTE*) dt, i + 1)
+                        == SUCCEED &&
+                        bcp_collen(GetHandle(), sizeof(DBDATETIME), i + 1)
+                        == SUCCEED ? SUCCEED : FAIL;
+                }
+                pb = (void*) (dt + 1);
             }
-            pb = (void*) (dt + 1);
-        }
-        break;
-        case eDB_Text: {
-            CDB_Text& val = dynamic_cast<CDB_Text&> (param);
-            if (val.IsNULL()) {
-                r = bcp_colptr(GetHandle(), (BYTE*) pb, i + 1)
-                    == SUCCEED &&
-                    bcp_collen(GetHandle(),  SQL_NULL_DATA, i + 1)
-                    == SUCCEED ? SUCCEED : FAIL;
+            break;
+            case eDB_Text: {
+                CDB_Text& val = dynamic_cast<CDB_Text&> (param);
+                if (val.IsNULL()) {
+                    r = bcp_colptr(GetHandle(), (BYTE*) pb, i + 1)
+                        == SUCCEED &&
+                        bcp_collen(GetHandle(),  SQL_NULL_DATA, i + 1)
+                        == SUCCEED ? SUCCEED : FAIL;
+                }
+                else {
+                    r = bcp_bind(GetHandle(), (BYTE*) NULL, 0, (DBINT) val.Size(),
+                                 static_cast<LPCBYTE>(x_GetDataTerminator(eDB_Text)),
+                                 static_cast<INT>(x_GetDataTermSize(eDB_Text)),
+                                 x_GetBCPDataType(eDB_Text),
+                                 i + 1);
+                }
             }
-            else {
-                r = bcp_bind(GetHandle(), (BYTE*) NULL, 0, (DBINT) val.Size(),
-                             static_cast<LPCBYTE>(x_GetDataTerminator(eDB_Text)),
-                             static_cast<INT>(x_GetDataTermSize(eDB_Text)),
-                             x_GetBCPDataType(eDB_Text),
-                             i + 1);
+            break;
+            case eDB_Image: {
+                CDB_Image& val = dynamic_cast<CDB_Image&> (param);
+                // Null images doesn't work in odbc
+                // (at least in those tests that exists in dbapi_unit_test)
+                r = bcp_collen(GetHandle(),  (DBINT) val.Size(), i + 1);
+            }
+            break;
+            default:
+                return false;
             }
         }
-        break;
-        case eDB_Image: {
-            CDB_Image& val = dynamic_cast<CDB_Image&> (param);
-            // Null images doesn't work in odbc
-            // (at least in those tests that exists in dbapi_unit_test)
-            r = bcp_collen(GetHandle(),  (DBINT) val.Size(), i + 1);
-        }
-        break;
-        default:
-            return false;
-        }
-
 
         if (r != SUCCEED) {
             ReportErrors();
@@ -497,13 +498,14 @@ bool CODBC_BCPInCmd::Send(void)
         DATABASE_DRIVER_ERROR( err_message, 423004 );
     }
 
+    SetWasSent();
+
     if (bcp_sendrow(GetHandle()) != SUCCEED) {
         SetHasFailed();
         ReportErrors();
         string err_message = "bcp_sendrow failed." + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 423005 );
     }
-    SetWasSent();
 
     if (m_HasTextImage) { // send text/image data
         char buff[1800]; // text/image page size
@@ -576,6 +578,7 @@ bool CODBC_BCPInCmd::Cancel()
 {
     if (WasSent()) {
         DBINT outrow = bcp_done(GetHandle());
+        bcp_control(GetHandle(), BCPABORT, NULL);
         SetWasSent(false);
         return outrow == 0;
     }

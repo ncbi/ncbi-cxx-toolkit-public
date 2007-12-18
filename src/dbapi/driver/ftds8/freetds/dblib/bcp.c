@@ -1002,13 +1002,6 @@ static int _bcp_add_fixed_columns(DBPROCESS *dbproc, BYTE *rowbuffer, int start)
 				memcpy(&rowbuffer[row_pos], bcpcol->data, cpbytes);
 			}
 
-			/* Bill T commenting this out. It always seems to print 
-               This error message regardless...
-               if (row_pos != bcpcol->db_offset) {
-               fprintf(stderr,"Error: computed offset does not match one returned from database engine\n");
-               }
-			 */
-
 			row_pos += bcpcol->db_length;
 		}
 	}
@@ -1089,7 +1082,6 @@ static int _bcp_add_variable_columns(DBPROCESS *dbproc, BYTE *rowbuffer, int sta
 
 	/* write the adjust table (right to left) */
 	for (i = adjust_pos - 1; i >= 0; i--) {
-		/* fprintf(stderr,"adjust %d\n",adjust_table[i]); */
 		rowbuffer[row_pos++] = adjust_table[i];
 	}
 
@@ -1098,7 +1090,6 @@ static int _bcp_add_variable_columns(DBPROCESS *dbproc, BYTE *rowbuffer, int sta
 
 	/* write the offset table (right to left) */
 	for (i = offset_pos - 1; i >= 0; i--) {
-		/* fprintf(stderr,"offset %d\n",offset_table[i]); */
 		rowbuffer[row_pos++] = offset_table[i];
 	}
 
@@ -1986,7 +1977,7 @@ BCP_HOSTCOLINFO *hostcol;
 
 		if (topptr == (struct fflist *) NULL) {	/* first time */
 			if ((topptr = (struct fflist *) malloc(sizeof(struct fflist))) == (struct fflist *) NULL) {
-				fprintf(stderr, "out of memory\n");
+				tds_error_log("out of memory");
 				return (FAIL);
 			}
 			curptr = topptr;
@@ -1997,7 +1988,7 @@ BCP_HOSTCOLINFO *hostcol;
 				return (FAIL);
 		} else {
 			if ((curptr->nextptr = (struct fflist *) malloc(sizeof(struct fflist))) == (struct fflist *) NULL) {
-				fprintf(stderr, "out of memory\n");
+				tds_error_log("out of memory");
 				return (FAIL);
 			}
 			curptr = curptr->nextptr;
@@ -2300,6 +2291,27 @@ int rows_copied = -1;
 	_bcp_clear_storage(dbproc);
 
 	return (rows_copied);
+
+}
+
+RETCODE bcp_cancel(DBPROCESS *dbproc)
+{
+
+TDSSOCKET *tds = dbproc->tds_socket;
+int marker;
+int rows_copied = -1;
+
+	if (dbproc->bcp_direction == 0) {
+        _bcp_err_handler(dbproc, BCPEBCPI);
+        /* return FAIL; */
+        return -1;
+	}
+    tds_send_cancel(tds);
+    tds_process_cancel(tds);
+
+    _bcp_clear_storage(dbproc);
+
+	return SUCCEED;
 
 }
 
