@@ -230,7 +230,7 @@ dblib_add_connection(DBLIBCONTEXT * ctx, TDSSOCKET * tds)
 	while (i < list_size && ctx->connection_list[i])
 		i++;
 	if (i == list_size) {
-		fprintf(stderr, "Max connections reached, increase value of TDS_MAX_CONN\n");
+		tds_error_log("Max connections reached, increase value of TDS_MAX_CONN");
 		return 1;
 	} else {
 		ctx->connection_list[i] = tds;
@@ -7101,13 +7101,16 @@ dbperror (DBPROCESS *dbproc, DBINT msgno, int errnum)
 	default:
 		tdsdump_log(TDS_DBG_SEVERE, int_invalid_text, "Invalid return code", rc, msgno);
 		/* fall through */
-	case INT_EXIT:
-		if (dbproc && dbproc->msdblib) {
-			/* Microsoft behavior */
-			return INT_CANCEL;
-		}
-		fprintf(stderr, int_exit_text, rc, msgno);
-		tdsdump_log(TDS_DBG_SEVERE, int_exit_text, rc, msgno);
+    case INT_EXIT: {
+            char buf[300];
+		    if (dbproc && dbproc->msdblib) {
+			    /* Microsoft behavior */
+			    return INT_CANCEL;
+		    }
+		    sprintf(buf, int_exit_text, rc, msgno);
+            tds_error_log(buf);
+		    tdsdump_log(TDS_DBG_SEVERE, int_exit_text, rc, msgno);
+        }
 		break;
 	}
 	exit(EXIT_FAILURE);

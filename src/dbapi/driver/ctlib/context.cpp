@@ -54,6 +54,9 @@
 #  include <unistd.h>
 #endif
 
+#ifdef FTDS_IN_USE
+#  include "tds.h"
+#endif
 
 #define NCBI_USE_ERRCODE_X   Dbapi_CTLib_Context
 
@@ -1116,7 +1119,8 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         /* (msg->severity == 0  &&  msg->msgnumber == 0)  ||*/
         // commented out because nobody remember why it is there and PubSeqOS does
         // send messages with 0 0 that need to be processed
-        msg->msgnumber == 3980 ||
+        msg->msgnumber == 3621 ||  // The statement has been terminated.
+        msg->msgnumber == 3980 ||  // The request failed to run because the batch is aborted...
         msg->msgnumber == 5701 ||
         msg->msgnumber == 5703 ||
         msg->msgnumber == 5704
@@ -1494,12 +1498,22 @@ CDbapiCtlibCFBase::CreateInstance(
 ///////////////////////////////////////////////////////////////////////////////
 #if defined(FTDS_IN_USE)
 
+extern "C" {
+
+static void s_TDSCtlibErrorLogCallback(const char* msg) {
+    ERR_POST_X(10, Warning << "Error in FreeTDS: " << msg);
+}
+
+}
+
+
 class CDbapiCtlibCF_ftds64_ctlib : public CDbapiCtlibCFBase
 {
 public:
     CDbapiCtlibCF_ftds64_ctlib(void)
     : CDbapiCtlibCFBase("ftds64")
     {
+        tds_set_errlog_callback(s_TDSCtlibErrorLogCallback);
     }
 };
 
@@ -1510,6 +1524,7 @@ public:
     CDbapiCtlibCF_ftds(void)
     : CDbapiCtlibCFBase("ftds")
     {
+        tds_set_errlog_callback(s_TDSCtlibErrorLogCallback);
     }
 };
 

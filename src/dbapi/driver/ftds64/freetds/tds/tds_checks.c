@@ -259,9 +259,11 @@ tds_check_resultinfo_extra(const TDSRESULTINFO * res_info)
 			|| (i == (res_info->num_cols - 1) && res_info->columns[i]->column_offset == 0)
 			|| (res_info->columns[i]->column_offset == res_info->row_size && res_info->columns[i]->column_size == 0);
 		if (!offset_check) {
-			fprintf(stderr, "offset %d row size %d i %d num cols %d column_size %d\n",
+            char buf[200];
+			sprintf(buf, "offset %d row size %d i %d num cols %d column_size %d\n",
 				(int) res_info->columns[i]->column_offset, (int) res_info->row_size, (int) i,
 				(int) res_info->num_cols, (int) res_info->columns[i]->column_size);
+            tds_error_log(buf);
 		}
 		assert(offset_check);
 	}

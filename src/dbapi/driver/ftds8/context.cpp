@@ -215,6 +215,10 @@ extern "C" {
              line);
         return 0;
     }
+
+    static void s_TDSErrorLogCallback(const char* msg) {
+        ERR_POST_X(4, Warning << "Error in FreeTDS: " << msg);
+    }
 }
 
 
@@ -252,6 +256,7 @@ CTDSContext::CTDSContext(DBINT version)
 
     Check(dberrhandle(s_TDS_err_callback));
     Check(dbmsghandle(s_TDS_msg_callback));
+    tds_set_errlog_callback(s_TDSErrorLogCallback);
 
     g_pTDSContext = this;
     m_Login = Check(dblogin());

@@ -571,6 +571,9 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
             GetDBLExceptionStorage().Accept(ex);
         }
         return INT_TIMEOUT;
+    case 20049:
+        ERR_POST_X(5, Warning << "Error in DBLib: Data-conversion resulted in overflow.");
+        return INT_CANCEL;
     default:
         if(dberr == 1205) {
             CDB_DeadlockEx ex(GetBlankCompileInfo(),

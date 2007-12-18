@@ -1412,6 +1412,10 @@ void tdsdump_log(const char* file, unsigned int level_line, const char *fmt, ...
 extern int tds_debug_flags;
 unsigned int tds_gettime_ms(void);
 
+typedef void (*tds_errlog_callback)(const char*);
+tds_errlog_callback tds_set_errlog_callback(tds_errlog_callback cb);
+void tds_error_log(const char* msg);
+
 /* net.c */
 int tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int timeout);
 int tds_close_socket(TDSSOCKET * tds);

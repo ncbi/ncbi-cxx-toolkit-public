@@ -285,7 +285,6 @@ int found = 0;
                 insection=0;
             }
         } else if (insection) {
-                    /* fprintf(stderr,"option = '%s' value = '%s'\n", option, value); */
                         tdsdump_log(TDS_DBG_INFO1, "%L option = '%s' value = '%s'.\n", option, value);
             if (!strcmp(option,TDS_STR_VERSION)) {
                 tds_config_verstr(value, config);

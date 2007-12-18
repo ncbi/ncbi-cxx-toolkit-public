@@ -303,9 +303,12 @@ ct_callback(CS_CONTEXT * ctx, CS_CONNECTION * con, CS_INT action, CS_INT type, C
         case CS_SERVERMSG_CB:
             *(void **) func = (CS_VOID *) (con ? con->_servermsg_cb : ctx->_servermsg_cb);
             return CS_SUCCEED;
-        default:
-            fprintf(stderr, "Unknown callback %d\n", type);
-            *(void **) func = NULL;
+        default: {
+                char buf[50];
+                sprintf(buf, "Unknown callback %d\n", type);
+                tds_error_log(buf);
+                *(void **) func = NULL;
+            }
             return CS_SUCCEED;
         }
     }
@@ -1972,8 +1975,11 @@ _ct_get_client_type(int datatype, int usertype, int size)
             return CS_SMALLINT_TYPE;
         case 1:
             return CS_TINYINT_TYPE;
-        default:
-            fprintf(stderr, "Unknown size %d for SYBINTN\n", size);
+        default: {
+                char buf[50];
+                sprintf(buf, "Unknown size %d for SYBINTN\n", size);
+                tds_error_log(buf);
+            }
         }
         break;
     case SYBREAL:
@@ -1988,7 +1994,9 @@ _ct_get_client_type(int datatype, int usertype, int size)
         } else if (size == 8) {
             return CS_FLOAT_TYPE;
         } else {
-            fprintf(stderr, "Error! unknown float size of %d\n", size);
+            char buf[50];
+            sprintf(buf, "Unknown float size of %d\n", size);
+            tds_error_log(buf);
         }
     case SYBMONEY:
         return CS_MONEY_TYPE;
@@ -2002,7 +2010,9 @@ _ct_get_client_type(int datatype, int usertype, int size)
         } else if (size == 8) {
             return CS_MONEY_TYPE;
         } else {
-            fprintf(stderr, "Error! unknown money size of %d\n", size);
+            char buf[50];
+            sprintf(buf, "Unknown money size of %d\n", size);
+            tds_error_log(buf);
         }
     case SYBDATETIME:
         return CS_DATETIME_TYPE;
@@ -2016,7 +2026,9 @@ _ct_get_client_type(int datatype, int usertype, int size)
         } else if (size == 8) {
             return CS_DATETIME_TYPE;
         } else {
-            fprintf(stderr, "Error! unknown date size of %d\n", size);
+            char buf[50];
+            sprintf(buf, "Unknown date size of %d\n", size);
+            tds_error_log(buf);
         }
         break;
     case SYBNUMERIC:
@@ -2443,8 +2455,11 @@ ct_res_info(CS_COMMAND * cmd, CS_INT type, CS_VOID * buffer, CS_INT buflen, CS_I
         tdsdump_log(TDS_DBG_FUNC, "ct_res_info(): Number of rows is %d\n", int_val);
         memcpy(buffer, &int_val, sizeof(CS_INT));
         break;
-    default:
-        fprintf(stderr, "Unknown type in ct_res_info: %d\n", type);
+    default: {
+            char buf[50];
+            sprintf(buf, "Unknown type in ct_res_info: %d\n", type);
+            tds_error_log(buf);
+        }
         return CS_FAIL;
         break;
     }
@@ -2718,8 +2733,11 @@ ct_compute_info(CS_COMMAND * cmd, CS_INT type, CS_INT colnum, CS_VOID * buffer, 
         if (outlen)
             *outlen = sizeof(CS_INT);
         break;
-    default:
-        fprintf(stderr, "Unknown type in ct_compute_info: %d\n", type);
+    default: {
+            char buf[50];
+            sprintf(buf, "Unknown type in ct_compute_info: %d\n", type);
+            tds_error_log(buf);
+        }
         return CS_FAIL;
         break;
     }
@@ -4307,7 +4325,7 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
         const unsigned char *prow;
 
         if (!(params = tds_alloc_param_result(params))) {
-            fprintf(stderr, "out of rpc memory!");
+            tds_error_log("out of rpc memory!");
             return NULL;
         }
 
@@ -4429,7 +4447,7 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
                 pcol->column_cur_size, pcol->column_output);
         prow = paramrowalloc(params, pcol, i, temp_value, temp_datalen);
         if (!prow) {
-            fprintf(stderr, "out of memory for rpc row!");
+            tds_error_log("out of memory for rpc row!");
             return NULL;
         }
     }

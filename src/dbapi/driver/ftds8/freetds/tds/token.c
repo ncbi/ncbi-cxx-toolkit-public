@@ -1144,7 +1144,6 @@ int len;
 				if (curcol->column_unicodedata) {
 					tds_get_string_local(tds,curcol->column_textvalue,colsize/2);
                                         curcol->column_textsize = colsize = strlen(curcol->column_textvalue);
-					/*fprintf(stderr,"XXXX: unicode string (%d) %s\n",colsize,curcol->column_textvalue);*/
 				} else {
 					tds_get_n(tds,curcol->column_textvalue,colsize);
 				}
@@ -1829,7 +1828,6 @@ TDSDYNAMIC *dyn;
 			curcol->column_size = get_size_by_type(curcol->column_type);
 		}
 		tds_get_byte(tds);
-		/* fprintf(stderr,"elem %d coltype %d size %d\n",tds->cur_dyn_elem, curcol->column_type, curcol->column_size); */
 	}
 }
 
