@@ -47,9 +47,11 @@ BEGIN_SCOPE(blast)
  * 
  * @return a CArgDescriptions object with the command line options set
  */
+NCBI_XBLAST_EXPORT
 CArgDescriptions* 
 SetUpCommandLineArguments(TBlastCmdLineArgs& args);
 
+NCBI_XBLAST_EXPORT
 int
 GetQueryBatchSize(EBlastProgramType program);
 

@@ -832,7 +832,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
     m_PsiblastStatus = eFirstPass;
     m_SeqStatus = NULL;
     m_Ctx = NULL;
-
+    m_StructureLinkout = false;
 }
 
 CShowBlastDefline::~CShowBlastDefline()
@@ -843,7 +843,39 @@ CShowBlastDefline::~CShowBlastDefline()
     }
 }
 
-void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
+
+void CShowBlastDefline::Init(void)
+{
+    string descrTableFormat = m_Ctx->GetRequestValue("NEW_VIEW").GetValue();
+    descrTableFormat = NStr::ToLower(descrTableFormat);
+    bool formatAsTable = (descrTableFormat == "on" || descrTableFormat == "true" || descrTableFormat == "yes") ? true : false;        
+    if (formatAsTable) {
+        x_InitDeflineTable();        
+    }
+    else {        
+        x_InitDefline();
+    }
+}
+
+
+void CShowBlastDefline::Display(CNcbiOstream & out)
+{
+    string descrTableFormat = m_Ctx->GetRequestValue("NEW_VIEW").GetValue();
+    descrTableFormat = NStr::ToLower(descrTableFormat);
+    bool formatAsTable = (descrTableFormat == "on" || descrTableFormat == "true" || descrTableFormat == "yes") ? true : false;    
+    if (formatAsTable) {        
+        x_DisplayDeflineTable(out);        
+    }
+    else {        
+        x_DisplayDefline(out);
+    }
+}
+
+//size_t max_score_len = kBits.size(), max_evalue_len = kValue.size();
+//size_t max_sum_n_len =1;
+//size_t m_MaxScoreLen , m_MaxEvalueLen,m_MaxSumNLen;
+//bool m_StructureLinkout
+void CShowBlastDefline::x_InitDefline(void)
 {
     /*Note we can't just show each alnment as we go because we will 
       need to show defline only once for all hsp's with the same id*/
@@ -851,8 +883,11 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
     bool is_first_aln = true;
     size_t num_align = 0;
     CConstRef<CSeq_id> previous_id, subid;
-    size_t max_score_len = kBits.size(), max_evalue_len = kValue.size();
-    size_t max_sum_n_len =1;
+
+    m_MaxScoreLen = kBits.size();
+    m_MaxEvalueLen = kValue.size();
+    m_MaxSumNLen =1;
+    
 
     if(m_Option & eHtml){
         m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
@@ -877,15 +912,15 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
             SDeflineInfo* sdl = x_GetDeflineInfo(**iter);
             if(sdl){
                 m_DeflineList.push_back(sdl);
-                if(max_score_len < sdl->bit_string.size()){
-                    max_score_len = sdl->bit_string.size();
+                if(m_MaxScoreLen < sdl->bit_string.size()){
+                    m_MaxScoreLen = sdl->bit_string.size();
                 }
-                if(max_evalue_len < sdl->evalue_string.size()){
-                    max_evalue_len = sdl->evalue_string.size();
+                if(m_MaxEvalueLen < sdl->evalue_string.size()){
+                    m_MaxEvalueLen = sdl->evalue_string.size();
                 }
 
-                if( max_sum_n_len < NStr::IntToString(sdl->sum_n).size()){
-                    max_sum_n_len = NStr::IntToString(sdl->sum_n).size();
+                if( m_MaxSumNLen < NStr::IntToString(sdl->sum_n).size()){
+                    m_MaxSumNLen = NStr::IntToString(sdl->sum_n).size();
                 }
             }
             num_align++;
@@ -898,17 +933,17 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
     if((m_Option & eLinkout) && (m_Option & eHtml) && !m_IsDbNa && !master_is_na){
         ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
             if((*iter)->linkout & eStructure){
-                char buf[512];
-                sprintf(buf, kStructure_Overview.c_str(), m_Rid.c_str(),
-                        0, 0, m_CddRid.c_str(), "overview",
-                        m_EntrezTerm == NcbiEmptyString ?
-                        m_EntrezTerm.c_str() : "none");
-                out << buf <<endl<<endl;
+                m_StructureLinkout = true;                
                 break;
             }
         }
     }
+}
 
+
+
+void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
+{
     if(!(m_Option & eNoShowHeader)) {
         if((m_PsiblastStatus == eFirstPass) ||
            (m_PsiblastStatus == eRepeatPass)){
@@ -924,7 +959,7 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
                 }
             }
             out << kScore;
-            CBlastFormatUtil::AddSpace(out, max_score_len - kScore.size());
+            CBlastFormatUtil::AddSpace(out, m_MaxScoreLen - kScore.size());
             CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
             CBlastFormatUtil::AddSpace(out, 2); //E align to l of value
             out << kE;
@@ -943,12 +978,12 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
             CBlastFormatUtil::AddSpace(out, m_LineLen - kHeader.size());
             CBlastFormatUtil::AddSpace(out, kOneSpaceMargin.size());
             out << kBits;
-            //in case max_score_len > kBits.size()
-            CBlastFormatUtil::AddSpace(out, max_score_len - kBits.size()); 
+            //in case m_MaxScoreLen > kBits.size()
+            CBlastFormatUtil::AddSpace(out, m_MaxScoreLen - kBits.size()); 
             CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
             out << kValue;
             if(m_Option & eShowSumN){
-                CBlastFormatUtil::AddSpace(out, max_evalue_len - kValue.size()); 
+                CBlastFormatUtil::AddSpace(out, m_MaxEvalueLen - kValue.size()); 
                 CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
                 out << kN;
             }
@@ -1044,12 +1079,12 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
         if((m_Option & eHtml) && ((*iter)->score_url != NcbiEmptyString)) {
             out << "</a>";
         }   
-        CBlastFormatUtil::AddSpace(out, max_score_len - (*iter)->bit_string.size());
+        CBlastFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
         out << kTwoSpaceMargin << (*iter)->evalue_string;
-        CBlastFormatUtil::AddSpace(out, max_evalue_len - (*iter)->evalue_string.size());
+        CBlastFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
         if(m_Option & eShowSumN){ 
             out << kTwoSpaceMargin << (*iter)->sum_n;   
-            CBlastFormatUtil::AddSpace(out, max_sum_n_len - 
+            CBlastFormatUtil::AddSpace(out, m_MaxSumNLen - 
                      NStr::IntToString((*iter)->sum_n).size());
         }
         if((m_Option & eLinkout) && (m_Option & eHtml)){
@@ -1066,6 +1101,19 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
     }
 }
 
+void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
+{
+    x_InitDefline();
+    if(m_StructureLinkout){        
+        char buf[512];
+        sprintf(buf, kStructure_Overview.c_str(), m_Rid.c_str(),
+                        0, 0, m_CddRid.c_str(), "overview",
+                        m_EntrezTerm == NcbiEmptyString ?
+                        m_EntrezTerm.c_str() : "none");
+        out << buf <<endl<<endl;  
+    }
+    x_DisplayDefline(out);
+}
 
 static void s_DisplayDescrColumnHeader(CNcbiOstream & out,
                                        int currDisplaySort,
@@ -1104,7 +1152,7 @@ static void s_DisplayDescrColumnHeader(CNcbiOstream & out,
     
 }
 
-void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
+void CShowBlastDefline::x_InitDeflineTable(void)
 {
     /*Note we can't just show each alnment as we go because we will 
       need to show defline only once for all hsp's with the same id*/
@@ -1112,12 +1160,13 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
     bool is_first_aln = true;
     size_t num_align = 0;
     CConstRef<CSeq_id> previous_id, subid;
-    size_t max_score_len = kMaxScore.size(), max_evalue_len = kValue.size();
-    size_t max_sum_n_len =1;
-    size_t max_total_score_len = kTotal.size();
-    size_t max_percent_identity_len = kIdentity.size();
+    m_MaxScoreLen = kMaxScore.size();
+    m_MaxEvalueLen = kValue.size();
+    m_MaxSumNLen =1;
+    m_MaxTotalScoreLen = kTotal.size();
+    m_MaxPercentIdentityLen = kIdentity.size();
     int percent_identity = 0;
-    size_t max_query_cover_len = kCoverage.size();
+    m_MaxQueryCoverLen = kCoverage.size();
 
     if(m_Option & eHtml){
         m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
@@ -1125,7 +1174,7 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
     }
 
     CSeq_align_set hit;
-    int query_length = 1;
+    m_QueryLength = 1;
     bool master_is_na = false;
     //prepare defline
     CSeq_align_set actual_aln_list;
@@ -1137,7 +1186,7 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
          iter != actual_aln_list.Get().end() && num_align < m_NumToShow; 
          iter++){
         if (is_first_aln) {
-            query_length = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).
+            m_QueryLength = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).
                 GetBioseqLength();
             master_is_na = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).
                 GetBioseqCore()->IsNa();
@@ -1149,22 +1198,22 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
             SDeflineInfo* sdl = x_GetHitDeflineInfo(hit);
             if(sdl){
                 m_DeflineList.push_back(sdl);
-                if(max_score_len < sdl->bit_string.size()){
-                    max_score_len = sdl->bit_string.size();
+                if(m_MaxScoreLen < sdl->bit_string.size()){
+                    m_MaxScoreLen = sdl->bit_string.size();
                 }
-                if(max_total_score_len < sdl->total_bit_string.size()){
-                    max_total_score_len = sdl->total_bit_string.size();
+                if(m_MaxTotalScoreLen < sdl->total_bit_string.size()){
+                    m_MaxTotalScoreLen = sdl->total_bit_string.size();
                 }
                 percent_identity = 100*sdl->match/sdl->align_length;
-                if(max_percent_identity_len < NStr::IntToString(percent_identity).size()) {
-                    max_percent_identity_len = NStr::IntToString(percent_identity).size();
+                if(m_MaxPercentIdentityLen < NStr::IntToString(percent_identity).size()) {
+                    m_MaxPercentIdentityLen = NStr::IntToString(percent_identity).size();
                 }
-                if(max_evalue_len < sdl->evalue_string.size()){
-                    max_evalue_len = sdl->evalue_string.size();
+                if(m_MaxEvalueLen < sdl->evalue_string.size()){
+                    m_MaxEvalueLen = sdl->evalue_string.size();
                 }
                 
-                if( max_sum_n_len < NStr::IntToString(sdl->sum_n).size()){
-                    max_sum_n_len = NStr::IntToString(sdl->sum_n).size();
+                if( m_MaxSumNLen < NStr::IntToString(sdl->sum_n).size()){
+                    m_MaxSumNLen = NStr::IntToString(sdl->sum_n).size();
                 }
                 hit.Set().clear();
             }
@@ -1183,22 +1232,22 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
     SDeflineInfo* sdl = x_GetHitDeflineInfo(hit);
     if(sdl){
         m_DeflineList.push_back(sdl);
-        if(max_score_len < sdl->bit_string.size()){
-            max_score_len = sdl->bit_string.size();
+        if(m_MaxScoreLen < sdl->bit_string.size()){
+            m_MaxScoreLen = sdl->bit_string.size();
         }
-        if(max_total_score_len < sdl->total_bit_string.size()){
-            max_score_len = sdl->total_bit_string.size();
+        if(m_MaxTotalScoreLen < sdl->total_bit_string.size()){
+            m_MaxScoreLen = sdl->total_bit_string.size();
         }
         percent_identity = 100*sdl->match/sdl->align_length;
-        if(max_percent_identity_len < NStr::IntToString(percent_identity).size()) {
-            max_percent_identity_len =  NStr::IntToString(percent_identity).size();
+        if(m_MaxPercentIdentityLen < NStr::IntToString(percent_identity).size()) {
+            m_MaxPercentIdentityLen =  NStr::IntToString(percent_identity).size();
         }
-        if(max_evalue_len < sdl->evalue_string.size()){
-            max_evalue_len = sdl->evalue_string.size();
+        if(m_MaxEvalueLen < sdl->evalue_string.size()){
+            m_MaxEvalueLen = sdl->evalue_string.size();
         }
         
-        if( max_sum_n_len < NStr::IntToString(sdl->sum_n).size()){
-            max_sum_n_len = NStr::IntToString(sdl->sum_n).size();
+        if( m_MaxSumNLen < NStr::IntToString(sdl->sum_n).size()){
+            m_MaxSumNLen = NStr::IntToString(sdl->sum_n).size();
         }
         hit.Set().clear();
     }
@@ -1206,17 +1255,17 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
     //actual output
     if((m_Option & eLinkout) && (m_Option & eHtml) && !m_IsDbNa && !master_is_na){
         ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
-            if((*iter)->linkout & eStructure){
-                char buf[512];
-                sprintf(buf, kStructure_Overview.c_str(), m_Rid.c_str(),
-                        0, 0, m_CddRid.c_str(), "overview",
-                        m_EntrezTerm == NcbiEmptyString ?
-                        m_EntrezTerm.c_str() : "none");
-                out << buf <<endl<<endl;
+            if((*iter)->linkout & eStructure){                
+                m_StructureLinkout = true;
                 break;
             }
         }
     }
+}
+
+void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
+{
+    int percent_identity = 0;
 	//This is max number of columns in the table - later should be probably put in enum DisplayOption
 	int tableColNumber = 9;
     //if(!(m_Option & eNoShowHeader)) {
@@ -1285,13 +1334,13 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
             int display_sort = display_sort_value == NcbiEmptyString ? 
                 CBlastFormatUtil::eEvalue : NStr::StringToInt(display_sort_value);
             
-            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eHighestScore,CBlastFormatUtil::eScore,kMaxScore,max_score_len,m_Option & eHtml);
+            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eHighestScore,CBlastFormatUtil::eScore,kMaxScore,m_MaxScoreLen,m_Option & eHtml);
 
-            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eTotalScore,CBlastFormatUtil::eScore,kTotalScore,max_total_score_len,m_Option & eHtml);
-            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eQueryCoverage,CBlastFormatUtil::eHspEvalue,kCoverage,max_query_cover_len,m_Option & eHtml);
-            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eEvalue,CBlastFormatUtil::eHspEvalue,kEvalue,max_evalue_len,m_Option & eHtml);
+            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eTotalScore,CBlastFormatUtil::eScore,kTotalScore,m_MaxTotalScoreLen,m_Option & eHtml);
+            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eQueryCoverage,CBlastFormatUtil::eHspEvalue,kCoverage,m_MaxQueryCoverLen,m_Option & eHtml);
+            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eEvalue,CBlastFormatUtil::eHspEvalue,kEvalue,m_MaxEvalueLen,m_Option & eHtml);
             if(m_Option & eShowPercentIdent){
-                s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::ePercentIdentity,CBlastFormatUtil::eHspPercentIdentity,kIdentity,max_percent_identity_len,m_Option & eHtml);
+                s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::ePercentIdentity,CBlastFormatUtil::eHspPercentIdentity,kIdentity,m_MaxPercentIdentityLen,m_Option & eHtml);
             }else {
                 tableColNumber--;
             }
@@ -1485,14 +1534,14 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
 			out << "<td>" << (*iter)->total_bit_string << "</td>";
 		}
 		if (!(m_Option & eHtml)) {
-			CBlastFormatUtil::AddSpace(out, max_score_len - (*iter)->bit_string.size());
+			CBlastFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
 
 			out << kTwoSpaceMargin << kOneSpaceMargin << (*iter)->total_bit_string;
-			CBlastFormatUtil::AddSpace(out, max_total_score_len - 
+			CBlastFormatUtil::AddSpace(out, m_MaxTotalScoreLen - 
                                    (*iter)->total_bit_string.size());
 		}
 		
-        int percent_coverage = 100*(*iter)->master_covered_lenghth/query_length;
+        int percent_coverage = 100*(*iter)->master_covered_lenghth/m_QueryLength;
 		if (m_Option & eHtml) {
 			out << "<td>" << percent_coverage << "%</td>";
 		}
@@ -1500,7 +1549,7 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
 			out << kTwoSpaceMargin << percent_coverage << "%";
         
 			//minus one due to % sign
-			CBlastFormatUtil::AddSpace(out, max_query_cover_len - 
+			CBlastFormatUtil::AddSpace(out, m_MaxQueryCoverLen - 
 			                           NStr::IntToString(percent_coverage).size() - 1);
 		}
 
@@ -1509,7 +1558,7 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
 		}
 		else {
 			out << kTwoSpaceMargin << (*iter)->evalue_string;
-			CBlastFormatUtil::AddSpace(out, max_evalue_len - (*iter)->evalue_string.size());
+			CBlastFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
 		}
         if(m_Option & eShowPercentIdent){
             percent_identity = 100*(*iter)->match/(*iter)->align_length;
@@ -1519,7 +1568,7 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
             else {
                 out << kTwoSpaceMargin << percent_identity <<"%";
                 
-                CBlastFormatUtil::AddSpace(out, max_percent_identity_len - 
+                CBlastFormatUtil::AddSpace(out, m_MaxPercentIdentityLen - 
                                            NStr::IntToString(percent_identity).size());
             }
         }
@@ -1532,7 +1581,7 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
             if (m_Option & eHtml) {
                 out << "</td>";
             } else {
-                CBlastFormatUtil::AddSpace(out, max_sum_n_len - 
+                CBlastFormatUtil::AddSpace(out, m_MaxSumNLen - 
                                            NStr::IntToString((*iter)->sum_n).size());
             }
         }
@@ -1562,6 +1611,21 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
 	}
 }
 
+void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
+{
+    x_InitDeflineTable();
+    if(m_StructureLinkout){        
+        char buf[512];
+        sprintf(buf, kStructure_Overview.c_str(), m_Rid.c_str(),
+                        0, 0, m_CddRid.c_str(), "overview",
+                        m_EntrezTerm == NcbiEmptyString ?
+                        m_EntrezTerm.c_str() : "none");
+        out << buf <<endl<<endl;        
+    }    
+    x_DisplayDeflineTable(out);
+}
+
+
 CShowBlastDefline::SDeflineInfo* 
 CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 {
@@ -1588,7 +1652,7 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
         sdl->sum_n = sum_n == -1 ? 1:sum_n ;
         sdl->bit_string = bit_score_buf;
         sdl->evalue_string = evalue_buf;
-    } catch (CException& e){
+    } catch (const CException&){
         sdl = new SDeflineInfo;
         CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n,
                                        num_ident, use_this_gi);

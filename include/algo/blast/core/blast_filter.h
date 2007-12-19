@@ -110,27 +110,22 @@ BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc);
  */
 BlastSeqLoc* BlastSeqLocListDup(BlastSeqLoc* head);
 
-/** Converts reverse strand coordinates to forward strand.
- * @param filter_in BlastSeqLoc to be reversed [in]
+/** Converts reverse strand coordinates to forward strand in place.
+ * @param masks BlastSeqLoc to be reversed [in|out]
  * @param query_length length of query [in]
- * @return reversed BlastSeqLoc
  */
 NCBI_XBLAST_EXPORT
-BlastSeqLoc* BlastSeqLocReverse(const BlastSeqLoc* filter_in, 
-                                Int4 query_length);
+void BlastSeqLocReverse(BlastSeqLoc* masks, Int4 query_length);
 
-/** Go through all mask locations in one sequence, 
- * combine any that overlap. Deallocate the memory for the locations that 
- * were on the list, produce a new (merged) list of locations. 
- * @param mask_loc The list of masks to be merged [in] 
+/** Go through all mask locations in one sequence and combine any that overlap,
+ * deallocating the unneeded locations.
+ * @param mask_loc The list of masks to be merged (in place) [in|out] 
  * @param link_value Largest gap size between locations for which they
  *                   should be linked together [in] 
- * @return The new (merged) list of masks or NULL if mask_loc is NULL or memory
- * allocation failure.
 */
 NCBI_XBLAST_EXPORT
-BlastSeqLoc*
-BlastSeqLocCombine(BlastSeqLoc* mask_loc, Int4 link_value);
+void
+BlastSeqLocCombine(BlastSeqLoc** mask_loc, Int4 link_value);
 
 /** Allocate memory for a BlastMaskLoc.
  * @param total number of contexts for which SSeqLocs should be allocated 

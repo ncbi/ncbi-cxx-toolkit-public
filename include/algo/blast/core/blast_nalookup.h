@@ -74,6 +74,7 @@ typedef struct BlastSmallNaLookupTable {
     Int4  overflow_size;   /**< Number of elements in the overflow array */
     void *scansub_callback;  /**< function for scanning subject sequences */
     void *extend_callback;  /**< function for extending hits */
+    BlastSeqLoc* locations; /**< masked locations. */
 } BlastSmallNaLookupTable;
 
 /** Create a new small nucleotide lookup table.

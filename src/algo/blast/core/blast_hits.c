@@ -1956,6 +1956,7 @@ Blast_HSPListReevaluateWithAmbiguitiesUngapped(EBlastProgramType program,
       /* Wrap subject sequence block into a BlastSeqSrcGetSeqArg structure, which is 
          needed by the BlastSeqSrc API. */
       BlastSeqSrcGetSeqArg seq_arg;
+      memset((void*) &seq_arg, 0, sizeof(seq_arg));
       seq_arg.oid = subject_blk->oid;
       seq_arg.encoding =
          (kTranslateSubject ? eBlastEncodingNcbi4na : eBlastEncodingNucleotide);

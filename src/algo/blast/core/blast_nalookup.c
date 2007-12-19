@@ -32,6 +32,7 @@
 #include <algo/blast/core/lookup_util.h>
 #include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_filter.h>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
@@ -344,6 +345,9 @@ Int4 BlastSmallNaLookupTableNew(BLAST_SequenceBlk* query,
                                       BITS_PER_NUC,
                                       lookup->lut_word_length,
                                       query, locations);
+    if (query->hard_masking == FALSE && locations && lookup->word_length > lookup->lut_word_length)
+       lookup->locations = BlastSeqLocListDup(locations);
+
     status = s_BlastSmallNaLookupFinalize(thin_backbone, lookup, query);
     if (status != 0) {
         lookup = BlastSmallNaLookupTableDestruct(lookup);
@@ -359,6 +363,8 @@ BlastSmallNaLookupTable *BlastSmallNaLookupTableDestruct(
 {
     sfree(lookup->final_backbone);
     sfree(lookup->overflow);
+    if (lookup->locations)
+       lookup->locations = BlastSeqLocFree(lookup->locations);
     sfree(lookup);
     return NULL;
 }

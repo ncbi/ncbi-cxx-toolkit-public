@@ -1032,11 +1032,10 @@ s_SeqDB_SeqIdIn(const list< CRef< CSeq_id > > & seqids, const CSeq_id & target)
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::x_GetTaxDefline(int                  oid,
-                           bool                 have_oidlist,
-                           int                  membership_bit,
-                           int                  preferred_gi,
-                           CSeqDBLockHold     & locked) const
+CSeqDBVol::x_GetTaxDefline(int                    oid,
+                           const CSeqDBFiltInfo & filt_info,
+                           int                    preferred_gi,
+                           CSeqDBLockHold       & locked)
 {
     typedef list< CRef<CBlast_def_line> > TBDLL;
     typedef TBDLL::iterator               TBDLLIter;
@@ -1046,8 +1045,7 @@ CSeqDBVol::x_GetTaxDefline(int                  oid,
     
     CRef<CBlast_def_line_set> BDLS =
         x_GetFilteredHeader(oid,
-                            have_oidlist,
-                            membership_bit,
+                            & filt_info,
                             NULL,
                             locked);
     
@@ -1076,12 +1074,11 @@ CSeqDBVol::x_GetTaxDefline(int                  oid,
 }
 
 list< CRef<CSeqdesc> >
-CSeqDBVol::x_GetTaxonomy(int                   oid,
-                         bool                  have_oidlist,
-                         int                   membership_bit,
-                         int                   preferred_gi,
-                         CRef<CSeqDBTaxInfo>   tax_info,
-                         CSeqDBLockHold      & locked) const
+CSeqDBVol::x_GetTaxonomy(int                    oid,
+                         const CSeqDBFiltInfo & filt_info,
+                         int                    preferred_gi,
+                         CRef<CSeqDBTaxInfo>    tax_info,
+                         CSeqDBLockHold       & locked)
 {
     const bool provide_new_taxonomy_info = true;
     const bool use_taxinfo_cache         = true;
@@ -1092,8 +1089,7 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
     
     CRef<CBlast_def_line_set> bdls =
         x_GetTaxDefline(oid,
-                        have_oidlist,
-                        membership_bit,
+                        filt_info,
                         preferred_gi,
                         locked);
     
@@ -1177,10 +1173,9 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
 }
 
 CRef<CSeqdesc>
-CSeqDBVol::x_GetAsnDefline(int              oid,
-                           bool             have_oidlist,
-                           int              memb_bit,
-                           CSeqDBLockHold & locked) const
+CSeqDBVol::x_GetAsnDefline(int                    oid,
+                           const CSeqDBFiltInfo & filt_info,
+                           CSeqDBLockHold       & locked) const
 {
     const char * ASN1_DEFLINE_LABEL = "ASN1_BlastDefLine";
     
@@ -1189,8 +1184,7 @@ CSeqDBVol::x_GetAsnDefline(int              oid,
     vector<char> hdr_data;
     x_GetFilteredBinaryHeader(oid,
                               hdr_data,
-                              have_oidlist,
-                              memb_bit,
+                               filt_info,
                               locked);
     
     if (! hdr_data.empty()) {
@@ -1222,13 +1216,12 @@ CSeqDBVol::x_GetAsnDefline(int              oid,
 }
 
 CRef<CBioseq>
-CSeqDBVol::GetBioseq(int                   oid,
-                     bool                  have_oidlist,
-                     int                   memb_bit,
-                     int                   target_gi,
-                     CRef<CSeqDBTaxInfo>   tax_info,
-                     bool                  seqdata,
-                     CSeqDBLockHold      & locked) const
+CSeqDBVol::GetBioseq(int                    oid,
+                     const CSeqDBFiltInfo & filt_info,
+                     int                    target_gi,
+                     CRef<CSeqDBTaxInfo>    tax_info,
+                     bool                   seqdata,
+                     CSeqDBLockHold       & locked)
 {
     typedef list< CRef<CBlast_def_line> > TDeflines;
     CRef<CBioseq> null_result;
@@ -1240,7 +1233,7 @@ CSeqDBVol::GetBioseq(int                   oid,
     // GetFilteredHeader, since that object lives in the cache.
     
     CRef<CBlast_def_line_set> orig_deflines =
-        x_GetFilteredHeader(oid, have_oidlist, memb_bit, NULL, locked);
+        x_GetFilteredHeader(oid, & filt_info, NULL, locked);
     
     CRef<CBlast_def_line_set> defline_set;
     
@@ -1364,8 +1357,7 @@ CSeqDBVol::GetBioseq(int                   oid,
         desc1->SetTitle().swap(description);
         
         CRef<CSeqdesc> desc2( x_GetAsnDefline(oid,
-                                              have_oidlist,
-                                              memb_bit,
+                                              filt_info,
                                               locked) );
         
         CSeq_descr & seq_desc_set = bioseq->SetDescr();
@@ -1378,8 +1370,7 @@ CSeqDBVol::GetBioseq(int                   oid,
     
     list< CRef<CSeqdesc> > tax =
         x_GetTaxonomy(oid,
-                      have_oidlist,
-                      memb_bit,
+                      filt_info,
                       target_gi,
                       tax_info,
                       locked);
@@ -1866,17 +1857,15 @@ int CSeqDBVol::x_GetSequence(int              oid,
     return length;
 }
 
-list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int                  oid,
-                                           bool                 have_oidlist,
-                                           int                  membership_bit,
-                                           CSeqDBLockHold     & locked) const
+list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int                    oid,
+                                           const CSeqDBFiltInfo * filt_info,
+                                           CSeqDBLockHold       & locked) const
 {
     list< CRef< CSeq_id > > seqids;
     
     CRef<CBlast_def_line_set> defline_set =
         x_GetFilteredHeader(oid,
-                            have_oidlist,
-                            membership_bit,
+                            filt_info,
                             NULL,
                             locked);
     
@@ -1901,24 +1890,21 @@ Uint8 CSeqDBVol::GetVolumeLength() const
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::GetFilteredHeader(int                  oid,
-                             bool                 have_oidlist,
-                             int                  membership_bit,
-                             CSeqDBLockHold     & locked) const
+CSeqDBVol::GetFilteredHeader(int                    oid,
+                             const CSeqDBFiltInfo * filt_info,
+                             CSeqDBLockHold       & locked) const
 {
     return x_GetFilteredHeader(oid,
-                               have_oidlist,
-                               membership_bit,
+                               filt_info,
                                NULL,
                                locked);
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::x_GetFilteredHeader(int                  oid,
-                               bool                 have_oidlist,
-                               int                  membership_bit,
-                               bool               * changed,
-                               CSeqDBLockHold     & locked) const
+CSeqDBVol::x_GetFilteredHeader(int                    oid,
+                               const CSeqDBFiltInfo * filt_info,
+                               bool                 * changed,
+                               CSeqDBLockHold       & locked) const
 {
     typedef list< CRef<CBlast_def_line> > TBDLL;
     typedef TBDLL::iterator               TBDLLIter;
@@ -1944,11 +1930,14 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
     
     bool id_filter = x_HaveIdFilter();
     
-    if (id_filter || (have_oidlist && (membership_bit != 0))) {
+    int mbit = filt_info ? filt_info->MembershipBit() : 0;
+    bool have_oidlist = filt_info ? filt_info->HaveOidList() : false;
+    
+    if (id_filter || (filt_info && have_oidlist && mbit)) {
         // Create the memberships mask (should this be fixed to allow
         // membership bits greater than 32?)
         
-        int memb_mask = 0x1 << (membership_bit-1);
+        int memb_mask = 0x1 << (mbit-1);
         
         TBDLL & dl = BDLS->Set();
         
@@ -1957,7 +1946,7 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
             
             bool have_memb = true;
             
-            if (have_oidlist && (membership_bit != 0)) {
+            if (have_oidlist && (mbit != 0)) {
                 have_memb =
                     defline.CanGetMemberships() &&
                     defline.IsSetMemberships() &&
@@ -2000,8 +1989,12 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
         }
     }
     
-    cached.first = BDLS;
-    cached.second = asn_changed;
+    if (filt_info) {
+        cached.first = BDLS;
+        cached.second = asn_changed;
+    } else {
+        cached.first.Reset();
+    }
     
     return BDLS;
 }
@@ -2071,11 +2064,10 @@ CSeqDBVol::x_GetHdrAsn1Binary(int oid, CSeqDBLockHold & locked) const
 }
 
 void
-CSeqDBVol::x_GetFilteredBinaryHeader(int                  oid,
-                                     vector<char>       & hdr_data,
-                                     bool                 have_oidlist,
-                                     int                  memb_bit,
-                                     CSeqDBLockHold     & locked) const
+CSeqDBVol::x_GetFilteredBinaryHeader(int                    oid,
+                                     vector<char>         & hdr_data,
+                                     const CSeqDBFiltInfo & filt_info,
+                                     CSeqDBLockHold       & locked) const
 {
     // This method's client is GetBioseq() and related methods.  That
     // code needs filtered ASN.1 headers; eliminating the fetching of
@@ -2088,7 +2080,7 @@ CSeqDBVol::x_GetFilteredBinaryHeader(int                  oid,
     bool changed = false;
     
     CRef<CBlast_def_line_set> dls =
-        x_GetFilteredHeader(oid, have_oidlist, memb_bit, & changed, locked);
+        x_GetFilteredHeader(oid, & filt_info, & changed, locked);
     
     if (changed) {
         CNcbiOstrstream asndata;
@@ -2216,7 +2208,10 @@ bool CSeqDBVol::GetPig(int oid, int & pig, CSeqDBLockHold & locked) const
     return false;
 }
 
-bool CSeqDBVol::TiToOid(Int8 ti, int & oid, CSeqDBLockHold & locked) const
+bool CSeqDBVol::TiToOid(Int8                   ti,
+                        int                  & oid,
+                        const CSeqDBFiltInfo & filt_info,
+                        CSeqDBLockHold       & locked) const
 {
     // Note: this is the (Int8 to int) interface layer; code below
     // this point (in the call stack) uses int; code above this level,
@@ -2231,7 +2226,7 @@ bool CSeqDBVol::TiToOid(Int8 ti, int & oid, CSeqDBLockHold & locked) const
         CSeq_id seqid(string("gnl|ti|") + NStr::Int8ToString(ti));
         vector<int> oids;
         
-        SeqidToOids(seqid, oids, locked);
+        SeqidToOids(seqid, oids, & filt_info, locked);
         
         if (oids.size()) {
             oid = oids[0];
@@ -2286,7 +2281,22 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
         const CSeqDBGiList::SSeqIdOid & item = ids.GetSeqIdOid(i);
         
         if (item.oid == -1 && item.seqid.NotEmpty()) {
-            SeqidToOids(const_cast<CSeq_id&>(*item.seqid), oids, locked);
+            // The filt_info structure is not provided in this case,
+            // which means that the fetched headers won't be filtered
+            // by OID and membership bit (or cached).  Providing the
+            // filt_info here would require the OID list construction
+            // code to be redesigned.  Sparse index support will be
+            // deprecated in the near future, so I have elected not to
+            // redesign large sections of SeqDB for this purposes.
+
+            // So there is a (theoretical) bug in filtering sparse
+            // databases by Seq-id lists.  It should only occur when
+            // versioned accessions are provided that don't match the
+            // versioned accessions in the sparsely indexed volume;
+            // the effect of the bug is that these incorrect versions
+            // of sequences will be included in the database. (kmb)
+            
+            SeqidToOids(const_cast<CSeq_id&>(*item.seqid), oids, NULL, locked);
             
             for(size_t j = 0; j < oids.size(); j++) {
                 // This should always be true except in the presence of
@@ -2329,11 +2339,10 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
     }
 }
 
-bool CSeqDBVol::GetGi(int              oid,
-                      bool             have_oidlist,
-                      int              membership_bit,
-                      int            & gi,
-                      CSeqDBLockHold & locked) const
+bool CSeqDBVol::GetGi(int                    oid,
+                      const CSeqDBFiltInfo & filt_info,
+                      int                  & gi,
+                      CSeqDBLockHold       & locked) const
 {
     gi = -1;
     
@@ -2342,7 +2351,7 @@ bool CSeqDBVol::GetGi(int              oid,
     }
     
     CRef<CBlast_def_line_set> BDLS =
-        x_GetFilteredHeader(oid, have_oidlist, membership_bit, NULL, locked);
+        x_GetFilteredHeader(oid, & filt_info, NULL, locked);
     
     if (BDLS.Empty() || (! BDLS->IsSet())) {
         return false;
@@ -2374,10 +2383,12 @@ bool CSeqDBVol::GetGi(int              oid,
     return false;
 }
 
-void CSeqDBVol::AccessionToOids(const string   & acc,
-                                vector<int>    & oids,
-                                CSeqDBLockHold & locked) const
+void CSeqDBVol::AccessionToOids(const string         & acc,
+                                vector<int>          & oids,
+                                const CSeqDBFiltInfo & filt_info,
+                                CSeqDBLockHold       & locked) const
 {
+    bool   vcheck  (false);
     bool   simpler (false);
     Int8   ident   (-1);
     string str_id;
@@ -2392,7 +2403,8 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
     case CSeqDBIsam::eStringId:
         if (! m_IsamStr.Empty()) {
             // Not simplified
-            m_IsamStr->StringToOids(str_id, oids, simpler, locked);
+            vcheck = true;
+            m_IsamStr->StringToOids(str_id, oids, simpler, vcheck, locked);
         }
         break;
         
@@ -2449,12 +2461,76 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
                    eArgErr,
                    "ID overflows range of specified type.");
     }
+    
+    if (vcheck) {
+        x_CheckVersions(acc, oids, & filt_info, locked);
+    }
 }
 
-void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
-                            vector<int>    & oids,
-                            CSeqDBLockHold & locked) const
+void CSeqDBVol::x_CheckVersions(const string         & acc,
+                                vector<int>          & oids,
+                                const CSeqDBFiltInfo * filt_info,
+                                CSeqDBLockHold       & locked) const
 {
+    // If we resolved a string id by stripping the version off of the
+    // string, we need to check (for each OID) if the real ID had a
+    // matching version.
+    
+    // This condition happens in two cases: where the database has a
+    // different version of the same ID, and in the case of sparse
+    // databases (which do not store the version).  In the latter
+    // case, we may get a list of OIDs where some of the OIDs pass
+    // this test, and others fail.
+    
+    size_t pos = acc.find(".");
+    _ASSERT(pos != acc.npos);
+    
+    string ver_str(acc, pos+1, acc.size()-(pos+1));
+    int vernum = NStr::StringToInt(ver_str,
+                                   NStr::fConvErr_NoThrow |
+                                   NStr::fAllowTrailingSymbols);
+    
+    string nover(acc, 0, pos);
+    
+    size_t pos2(0);
+    while((pos2 = nover.find("|")) != nover.npos) {
+        nover.erase(0, pos2+1);
+    }
+        
+    NON_CONST_ITERATE(vector<int>, iter, oids) {
+        list< CRef<CSeq_id> > ids =
+            GetSeqIDs(*iter, filt_info, locked);
+        
+        bool found = false;
+        
+        ITERATE(list< CRef<CSeq_id> >, seqid, ids) {
+            const CTextseq_id * id = (*seqid)->GetTextseq_Id();
+            
+            if (id &&
+                id->CanGetAccession() &&
+                id->GetAccession() == nover &&
+                id->CanGetVersion() &&
+                id->GetVersion() == vernum) {
+                
+                found = true;
+                break;
+            }
+        }
+        
+        if (! found) {
+            *iter = -1;
+        }
+    }
+    
+    oids.erase(remove(oids.begin(), oids.end(), -1), oids.end());
+}
+
+void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
+                            vector<int>          & oids,
+                            const CSeqDBFiltInfo * filt_info,
+                            CSeqDBLockHold       & locked) const
+{
+    bool   vcheck  (false);
     bool   simpler (false);
     Int8   ident   (-1);
     string str_id;
@@ -2469,7 +2545,8 @@ void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
     case CSeqDBIsam::eStringId:
         if (! m_IsamStr.Empty()) {
             // Not simplified
-            m_IsamStr->StringToOids(str_id, oids, simpler, locked);
+            vcheck = true;
+            m_IsamStr->StringToOids(str_id, oids, simpler, vcheck, locked);
         }
         break;
         
@@ -2525,6 +2602,10 @@ void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "ID overflows range of specified type.");
+    }
+    
+    if (vcheck) {
+        x_CheckVersions(seqid.AsFastaString(), oids, filt_info, locked);
     }
 }
 

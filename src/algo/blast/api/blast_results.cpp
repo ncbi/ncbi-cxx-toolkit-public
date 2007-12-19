@@ -256,12 +256,13 @@ CSearchResultSet::CSearchResultSet(EResultType res_type /* = eDatabaseSearch*/)
 : m_ResultType(res_type)
 {}
 
-CSearchResultSet::CSearchResultSet(TQueryIdVector               queries,
-                                   TSeqAlignVector              aligns,
-                                   TSearchMessages              msg_vec,
-                                   TAncillaryVector             ancillary_data,
-                                   const TSeqLocInfoVector*     query_masks,
-                                   EResultType                  res_type)
+CSearchResultSet::CSearchResultSet(
+    TQueryIdVector               queries,
+    TSeqAlignVector              aligns,
+    TSearchMessages              msg_vec,
+    TAncillaryVector             ancillary_data /* = TAncillaryVector() */,
+    const TSeqLocInfoVector*     query_masks /* = NULL */,
+    EResultType                  res_type /* = eDatabaseSearch */)
 : m_ResultType(res_type)
 {
     if (ancillary_data.empty()) {
@@ -272,7 +273,7 @@ CSearchResultSet::CSearchResultSet(TQueryIdVector               queries,
 
 CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
                                    TSearchMessages msg_vec,
-                                   EResultType res_type)
+                                   EResultType res_type /* = eDatabaseSearch */)
 : m_ResultType(res_type)
 {
     vector< CConstRef<CSeq_id> > queries;
@@ -285,7 +286,7 @@ CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
     x_Init(queries, aligns, msg_vec, ancillary_data, NULL);
 }
 
-void CSearchResultSet::x_Init(vector< CConstRef<objects::CSeq_id> > queries,
+void CSearchResultSet::x_Init(TQueryIdVector&                    queries,
                               TSeqAlignVector                    aligns,
                               TSearchMessages                    msg_vec,
                               TAncillaryVector                   ancillary_data,

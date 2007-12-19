@@ -428,6 +428,7 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
     return status == 0 ? 0 : -1;
 }
 
+#if 0
 /** Compute the number of identities for the HSPs in the hsp_list
  * @note this only works for blastp right now and it's not currently being used
  * because we cannot reliably calculate the number of identities for queries
@@ -489,6 +490,7 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
     BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
     BlastSequenceBlkFree(seq_arg.seq);
 }
+#endif
 
 
 /**

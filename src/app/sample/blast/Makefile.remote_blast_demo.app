@@ -11,7 +11,8 @@ SRC = remote_blast_demo
 
 ### BEGIN COPIED SETTINGS
 BLAST_INPUT_LIBS = blastinput xregexp $(PCRE_LIB)
-LIB = $(BLAST_INPUT_LIBS) ncbi_xloader_blastdb $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB_ = $(BLAST_INPUT_LIBS) ncbi_xloader_blastdb $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(PCRE_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 # These settings are necessary for optimized WorkShop builds, due to

@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <serial/iterator.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/blast_types.hpp>
 
@@ -1117,6 +1118,15 @@ void CRemoteBlast::x_Init(CRef<CBlastOptionsHandle>   opts_handle,
     x_Init(&* opts_handle);
     
     SetDatabase(db.GetDatabaseName());
+    SetEntrezQuery(db.GetEntrezQueryLimitation().c_str());
+    CSearchDatabase::TGiList tmplist = db.GetGiListLimitation();
+    if ( !tmplist.empty() ) {
+        list<Int4> gilist;
+        ITERATE(CSearchDatabase::TGiList, itr, tmplist) {
+            gilist.push_back(list<Int4>::value_type(*itr));
+        }
+        SetGIList(gilist);
+    }
 }
 
 CRemoteBlast::~CRemoteBlast()
@@ -1126,8 +1136,7 @@ CRemoteBlast::~CRemoteBlast()
 void CRemoteBlast::SetGIList(list<Int4> & gi_list)
 {
     if (gi_list.empty()) {
-        NCBI_THROW(CBlastException, eInvalidArgument,
-                   "Empty gi_list specified.");
+        return;
     }
     x_SetOneParam(B4Param_GiList, & gi_list);
     
@@ -1358,6 +1367,8 @@ CRemoteBlast::GetSequences(vector< CRef<objects::CSeq_id> > & seqids,   // in
     x_GetSeqsFromReply(reply, bioseqs, errors, warnings);
 }
 
+static const string 
+    kNoRIDSpecified("Cannot fetch query info: No RID was specified.");
 
 void
 CRemoteBlast::x_GetRequestInfo()
@@ -1366,7 +1377,7 @@ CRemoteBlast::x_GetRequestInfo()
     
     if (m_RID.empty()) {
         NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
-                   "Cannot fetch query info: No RID was specified.");
+                   kNoRIDSpecified);
     }
     
     // First... poll until done.
@@ -2101,57 +2112,129 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
 /// @return Search results.
 CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
 {
+    CRef<CSearchResultSet> retval;
     SubmitSync();
+
+    TSeqAlignVector alignments = GetSeqAlignSets();
     
-    TSeqAlignVector R = GetSeqAlignSets();
-    if (eDebug == m_Verbose) {
-        NcbiCout << "Converted TSeqAlignVector" << endl;
-        int i = 0;
-        ITERATE(TSeqAlignVector, itr, R) {
-            NcbiCout << "Query # " << ++i << endl 
+    /* Process errors and warnings */
+    TSearchMessages search_messages;
+    {
+        const vector<string> & W = GetWarningVector();
+        const vector<string> & E = GetErrorVector();
+        
+        TQueryMessages query_messages;
+        
+        // Represents the context of the error, not the error id.
+        int err = kBlastMessageNoContext;
+        
+        ITERATE(vector<string>, itw, W) {
+            CRef<CSearchMessage>
+                sm(new CSearchMessage(eBlastSevWarning, err, *itw));
+            
+            query_messages.push_back(sm);
+        }
+        
+        ITERATE(vector<string>, ite, E) {
+            err = kBlastMessageNoContext;
+            
+            CRef<CSearchMessage>
+                sm(new CSearchMessage(eBlastSevError, err, *ite));
+            
+            query_messages.push_back(sm);
+        }
+
+        // Since there is no way to report per-query messages, all
+        // warnings and errors are applied to all queries.
+        search_messages.insert(search_messages.end(), 
+                               alignments.empty() ? 1 : alignments.size(), 
+                               query_messages);
+
+        if (eDebug == m_Verbose) {
+            NcbiCout << "Error/Warning messages: '" 
+                     << search_messages.ToString() << "'" << endl;
+        }
+    }
+
+    CSearchResultSet::TQueryIdVector query_ids;
+    int i = 0;
+    ITERATE(TSeqAlignVector, itr, alignments) {
+        CRef<CSeq_align> first_aln = (*itr)->Get().front();
+        query_ids.push_back(CConstRef<CSeq_id>(&first_aln->GetSeq_id(0)));
+        if (eDebug == m_Verbose) {
+            NcbiCout << "Query # " << ++i << ": '"
+                     << query_ids.back()->AsFastaString() << "'" << endl 
                      << MSerial_AsnText << **itr << endl;
         }
     }
-    const vector<string> & W = GetWarningVector();
-    const vector<string> & E = GetErrorVector();
     
-    TQueryMessages QM;
     
-    // Represents the context of the error, not the error id.
-    int err = kBlastMessageNoContext;
-    
-    ITERATE(vector<string>, itw, W) {
-        CRef<CSearchMessage>
-            sm(new CSearchMessage(eBlastSevWarning, err, *itw));
-        
-        QM.push_back(sm);
+    if (alignments.empty()) {
+        // this is required by the CSearchResultSet ctor
+        alignments.resize(1);    
+        try {
+            CRef<CBlast4_queries> queries = GetQueries();
+            for (CTypeConstIterator<CSeq_id> itr(ConstBegin(*m_Queries)); 
+                 itr; ++itr) {
+                query_ids.push_back(CConstRef<CSeq_id>(&*itr));
+            }
+        } catch (const CRemoteBlastException& e) {
+            if (e.GetMsg() == kNoRIDSpecified) {
+                retval.Reset(new CSearchResultSet(alignments, search_messages));
+                return retval;
+            }
+            throw;
+        }
+    }
+
+    /* Build the ancillary data structure */
+    CSearchResultSet::TAncillaryVector ancill_vector;
+    {
+        /* Get the effective search space */
+        const string kTarget("Effective search space used: ");
+        list<string> search_stats = GetSearchStats();
+        Int8 effective_search_space = 0;
+        NON_CONST_ITERATE(list<string>, itr, search_stats) {
+            if (NStr::Find(*itr, kTarget) != NPOS) {
+                NStr::ReplaceInPlace(*itr, kTarget, kEmptyStr);
+                effective_search_space = 
+                    NStr::StringToInt8(*itr, NStr::fConvErr_NoThrow);
+                break;
+            }
+        }
+
+        /* Get the Karlin-Altschul parameters */
+        bool found_gapped = false, found_ungapped = false;
+        pair<double, double> lambdas, Ks, Hs;
+        TKarlinAltschulBlocks ka_blocks = GetKABlocks();
+
+        ITERATE(TKarlinAltschulBlocks, itr, ka_blocks) {
+            if ((*itr)->GetGapped()) {
+                lambdas.second = (*itr)->GetLambda();
+                Ks.second = (*itr)->GetK();
+                Hs.second = (*itr)->GetH();
+                found_gapped = true;
+            } else {
+                lambdas.first = (*itr)->GetLambda();
+                Ks.first = (*itr)->GetK();
+                Hs.first = (*itr)->GetH();
+                found_ungapped = true;
+            }
+
+            if (found_gapped && found_ungapped) {
+                break;
+            }
+        }
+
+        CRef<CBlastAncillaryData> ancillary_data
+            (new CBlastAncillaryData(lambdas, Ks, Hs, effective_search_space));
+        ancill_vector.insert(ancill_vector.end(), alignments.size(),
+                             ancillary_data);
     }
     
-    ITERATE(vector<string>, ite, E) {
-        err = kBlastMessageNoContext;
-        
-        CRef<CSearchMessage>
-            sm(new CSearchMessage(eBlastSevError, err, *ite));
-        
-        QM.push_back(sm);
-    }
-    
-    TSearchMessages SM;
-    
-    // Since there is no way to report per-query messages, all
-    // warnings and errors are applied to all queries.
-    
-    if (R.empty()) {
-        R.resize(1);    // this is required by the CSearchResultSet ctor
-    }
-    for(unsigned i = 0; i<R.size(); i++) {
-        SM.push_back(QM);
-    }
-    if (eDebug == m_Verbose) {
-        NcbiCout << "Error/Warning messages: '" << SM.ToString() << "'" << endl;
-    }
-    
-    return CRef<CSearchResultSet>(new CSearchResultSet(R, SM));
+    retval.Reset(new CSearchResultSet(query_ids, alignments, search_messages,
+                                      ancill_vector));
+    return retval;
 }
 
 END_SCOPE(blast)

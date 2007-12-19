@@ -41,6 +41,8 @@ static char const rcsid[] =
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
 
+#include <algo/blast/core/gencode_singleton.h>
+
 #include "prelim_search_runner.hpp"
 #include "blast_aux_priv.hpp"
 #include "psiblast_aux_priv.hpp"
@@ -168,6 +170,13 @@ CBlastPrelimSearch::Run()
     BlastInitialWordOptions * word_options = opts_memento->m_InitWordOpts;
 
     GetDbIndexSetNumThreadsFn()( seqsrc, GetNumberOfThreads() );
+
+    if (m_Options->GetDbGeneticCode() > 0 && 
+       GenCodeSingletonFind(m_Options->GetDbGeneticCode()) == NULL)
+    {
+       TAutoUint1ArrayPtr gc = FindGeneticCode(m_Options->GetDbGeneticCode());
+       GenCodeSingletonAdd(m_Options->GetDbGeneticCode(), gc.get());
+    }
 
     if (m_QuerySplitter->IsQuerySplit()) {
 

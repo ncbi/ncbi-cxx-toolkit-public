@@ -322,6 +322,9 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
         m_FormatType == CFormattingArgs::eQueryAnchoredNoIdentities) {
         flags |= CDisplaySeqalign::eMasterAnchored;
     }
+    if (m_Program == "tblastx") {
+        flags |= CDisplaySeqalign::eTranslateNucToNucAlignment;
+    }
     display.SetAlignOption(flags);
 
     if (m_Program == "blastn" || m_Program == "megablast") {

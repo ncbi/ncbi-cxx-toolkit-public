@@ -35,9 +35,7 @@
 #ifndef ALGO_BLAST_API___BLAST_RESULTS_HPP
 #define ALGO_BLAST_API___BLAST_RESULTS_HPP
 
-#include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_stat.h>
-#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/api/blast_aux.hpp>
 
 /** @addtogroup AlgoBlast
@@ -97,6 +95,32 @@ public:
                 Blast_KarlinBlkCopy(m_GappedKarlinBlk, kbp);
             }
         }
+    }
+
+    /** Parametrized constructor taking pairs of values for ungapped and gapped
+     * Karlin-Altschul parameters as well as the effective search space
+     * @param lambda Pair of ungapped and gapped lambda (in that order) [in]
+     * @param k Pair of ungapped and gapped k (in that order) [in]
+     * @param h Pair of ungapped and gapped h (in that order) [in]
+     * @param effective_search_space effective search space [in]
+     */
+    CBlastAncillaryData(pair<double, double> lambda,
+                        pair<double, double> k,
+                        pair<double, double> h,
+                        Int8 effective_search_space)
+        : m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_SearchSpace(0)
+    {
+        m_GappedKarlinBlk = Blast_KarlinBlkNew();
+        m_GappedKarlinBlk->Lambda = lambda.first;
+        m_GappedKarlinBlk->K = k.first;
+        m_GappedKarlinBlk->H = h.first;
+
+        m_UngappedKarlinBlk = Blast_KarlinBlkNew();
+        m_UngappedKarlinBlk->Lambda = lambda.second;
+        m_UngappedKarlinBlk->K = k.second;
+        m_UngappedKarlinBlk->H = h.second;
+
+        m_SearchSpace = effective_search_space;
     }
 
     /// Destructor
@@ -378,7 +402,7 @@ public:
     
 private:    
     /// Initialize the result set.
-    void x_Init(vector< CConstRef<objects::CSeq_id> > queries,
+    void x_Init(TQueryIdVector& queries,
                 TSeqAlignVector                       aligns,
                 TSearchMessages                       msg_vec,
                 TAncillaryVector                      ancillary_data,

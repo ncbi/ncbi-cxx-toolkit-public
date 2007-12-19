@@ -1637,8 +1637,12 @@ s_SeqDB_ParseSeqIDs(const string              & line,
 void CSeqDBIsam::StringToOids(const string   & acc,
                               vector<TOid>   & oids,
                               bool             adjusted,
+                              bool           & version_check,
                               CSeqDBLockHold & locked)
 {
+    bool strip_version = version_check;
+    version_check = false;
+    
     _ASSERT(m_IdentType == eStringId);
     
     m_Atlas.Lock(locked);
@@ -1693,10 +1697,15 @@ void CSeqDBIsam::StringToOids(const string   & acc,
                               data_out,
                               indices_out,
                               locked)) < 0) {
+        
         return;
     }
     
-    if (! found) {
+    if (err != eNotFound) {
+        found = true;
+    }
+    
+    if ((! found) && strip_version) {
         size_t pos = acc.find(".");
         
         bool is_version = false;
@@ -1707,7 +1716,7 @@ void CSeqDBIsam::StringToOids(const string   & acc,
             is_version = (ver_len <= 3 && ver_len >= 1);
             
             for(size_t vp = pos+1; vp < acc.size(); vp++) {
-                if (! isdigit(acc[pos])) {
+                if (! isdigit(acc[vp])) {
                     is_version = false;
                     break;
                 }
@@ -1717,11 +1726,15 @@ void CSeqDBIsam::StringToOids(const string   & acc,
         if (is_version) {
             string nover(acc, 0, pos);
             
-            err = x_StringSearch(acc,
+            err = x_StringSearch(nover,
                                  keys_out,
                                  data_out,
                                  indices_out,
                                  locked);
+            
+            if (data_out.size()) {
+                version_check = true;
+            }
             
             if (err < 0) {
                 return;
@@ -1787,12 +1800,12 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
 {
     EIdentType result = eStringId;
     
-    CTextseq_id * tsip = 0;
+    const CTextseq_id * tsip = 0;
     
     bool use_version = false;
     
     bool matched = true;
-    
+
     switch(bestid.Which()) {
     case CSeq_id::e_Gi:
         simpler = true;
@@ -1855,50 +1868,20 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
         // tsip types
         
     case CSeq_id::e_Embl:      /* embl */
-        tsip = & (bestid.SetEmbl());
-        use_version = true;
-        break;
-        
     case CSeq_id::e_Ddbj:      /* ddbj */
-        tsip = & (bestid.SetDdbj());
-        use_version = true;
-        break;
-        
     case CSeq_id::e_Genbank:   /* genbank */
-        tsip = & (bestid.SetGenbank());
-        use_version = true;
-        break;
-        
     case CSeq_id::e_Tpg:       /* Third Party Annot/Seq Genbank */
-        tsip = & (bestid.SetTpg());
-        use_version = true;
-        break;
-        
     case CSeq_id::e_Tpe:       /* Third Party Annot/Seq EMBL */
-        tsip = & (bestid.SetTpe());
-        use_version = true;
-        break;
-        
     case CSeq_id::e_Tpd:       /* Third Party Annot/Seq DDBJ */
-        tsip = & (bestid.SetTpd());
-        use_version = true;
-        break;
-        
     case CSeq_id::e_Other:     /* other */
-        tsip = & (bestid.SetOther());
+    case CSeq_id::e_Swissprot: /* swissprot (now with versions) */
+        tsip = bestid.GetTextseq_Id();
         use_version = true;
         break;
         
     case CSeq_id::e_Pir:       /* pir   */
-        tsip = & (bestid.SetPir());
-        break;
-        
-    case CSeq_id::e_Swissprot: /* swissprot */
-        tsip = & (bestid.SetSwissprot());
-        break;
-        
     case CSeq_id::e_Prf:       /* prf   */
-        tsip = & (bestid.SetPrf());
+        tsip = bestid.GetTextseq_Id();
         break;
         
     default:

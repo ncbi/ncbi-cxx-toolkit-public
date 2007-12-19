@@ -7,6 +7,8 @@ REQUIRES = dbapi objects algo
 
 APP_PROJ = psiblast blastp blastn blastx rpsblast rpstblastn tblastn tblastx multisource
 
+#USR_PROJ = legacy_blast
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 

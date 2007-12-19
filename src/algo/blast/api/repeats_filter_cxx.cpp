@@ -214,11 +214,9 @@ s_FillMaskLocFromBlastResults(TSeqLocVector& query,
         
         
         // Make the intervals unique
-        BlastSeqLoc* ordered_loc_list =
-            BlastSeqLocCombine(loc_list, REPEAT_MASK_LINK_VALUE);
-        
-        // Free the list of locations that's no longer needed.
-        loc_list = BlastSeqLocFree(loc_list);
+        BlastSeqLocCombine(&loc_list, REPEAT_MASK_LINK_VALUE);
+        BlastSeqLoc* ordered_loc_list = loc_list;
+        loc_list = NULL;
 
         /* Create a CSeq_loc with these locations and fill it for the 
            respective query */
@@ -292,11 +290,9 @@ s_FillMaskLocFromBlastResults(CBlastQueryVector& query,
         s_SeqAlignToBlastSeqLoc(*(result.GetSeqAlign()), &loc_list);
         
         // Make the intervals unique
-        BlastSeqLoc* ordered_loc_list =
-            BlastSeqLocCombine(loc_list, REPEAT_MASK_LINK_VALUE);
-        
-        // Free the list of locations that's no longer needed.
-        loc_list = BlastSeqLocFree(loc_list);
+        BlastSeqLocCombine(&loc_list, REPEAT_MASK_LINK_VALUE);
+        BlastSeqLoc* ordered_loc_list = loc_list;
+        loc_list = NULL;
         
         /* Create a CSeq_loc with these locations and fill it for the 
            respective query */

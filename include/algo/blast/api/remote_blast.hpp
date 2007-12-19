@@ -278,9 +278,12 @@ public:
     /// @return Reference to PHI alignment set.
     CRef<objects::CBlast4_phi_alignments> GetPhiAlignments(void);
     
+    /// Convenience typedef for a list of CRef<CBlast4_ka_block>
+    typedef list< CRef<objects::CBlast4_ka_block > > TKarlinAltschulBlocks;
+
     /// Get the Karlin/Altschul parameter blocks produced by the search.
     /// @return List of references to KA blocks.
-    list< CRef<objects::CBlast4_ka_block > > GetKABlocks(void);
+    TKarlinAltschulBlocks GetKABlocks(void);
 
     /// Get the queries' masked locations
     TSeqLocInfoVector GetMasks(void);

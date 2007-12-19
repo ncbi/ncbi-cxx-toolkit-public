@@ -315,7 +315,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
                                    num_ident, use_this_gi);
     SetScores(score, bit_score, evalue);
 
-    bool query_is_na, subject_is_na;
+    bool query_is_na = false, subject_is_na = false;
     bool bioseqs_found = true;
     // Extract the full query id from the correspondintg Bioseq handle.
     try {

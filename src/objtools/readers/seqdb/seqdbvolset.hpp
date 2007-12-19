@@ -504,6 +504,52 @@ public:
         return 0;
     }
     
+    /// Find a volume by OID.
+    /// 
+    /// Many of the CSeqDB methods identify which sequence to use by
+    /// OID.  That OID applies to all sequences in all volumes of the
+    /// opened database(s).  This method is used to find the volume
+    /// (if any) that contains this OID, and to return both a pointer
+    /// to that volume and the OID within that volume that corresponds
+    /// to the global input OID.
+    ///
+    /// @param oid
+    ///   The global OID to search for.
+    /// @param vol_oid
+    ///   The returned OID within the relevant volume.
+    /// @return
+    ///   A pointer to the volume containing the oid, or NULL.
+    CSeqDBVol * FindVol(int oid, int & vol_oid)
+    {
+        int rec_indx = m_RecentVol;
+        
+        if (rec_indx < (int) m_VolList.size()) {
+            CSeqDBVolEntry & rvol = m_VolList[rec_indx];
+            
+            if ((rvol.OIDStart() <= oid) &&
+                (rvol.OIDEnd()   >  oid)) {
+                
+                vol_oid = oid - rvol.OIDStart();
+                
+                return rvol.Vol();
+            }
+        }
+        
+        for(int index = 0; index < (int) m_VolList.size(); index++) {
+            if ((m_VolList[index].OIDStart() <= oid) &&
+                (m_VolList[index].OIDEnd()   >  oid)) {
+                
+                m_RecentVol = index;
+                
+                vol_oid = oid - m_VolList[index].OIDStart();
+                
+                return m_VolList[index].Vol();
+            }
+        }
+        
+        return 0;
+    }
+    
     /// Find a volume by index.
     /// 
     /// This method returns a volume by index, so that 0 is the first

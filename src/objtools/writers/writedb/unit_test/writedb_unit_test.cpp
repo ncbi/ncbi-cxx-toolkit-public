@@ -217,13 +217,27 @@ string s_HexDumpFile(const string & fname,
 
 typedef vector< CRef<CSeq_id> > TIdList;
 
+class CNonException : exception {
+public:
+    
+};
+
+#define CHECK_CUTPOINT(X) if (cutpoint == X) throw CNonException()
+
 static void
 s_DupIdsBioseq(CWriteDB      & w,
                CSeqDB        & s,
-               const TIdList & ids)
+               const TIdList & ids,
+               int             cutpoint)
 {
+    int count1 = 0;
+    
     ITERATE(TIdList, iter, ids) {
         CRef<CSeq_id> seqid = *iter;
+        
+        CHECK(seqid.NotEmpty());
+        
+        CHECK_CUTPOINT(4);
         
         int oid = -1;
         bool found = s.SeqidToOid(*seqid, oid);
@@ -232,19 +246,32 @@ s_DupIdsBioseq(CWriteDB      & w,
         
         CRef<CBioseq> bs;
         
+        CHECK_CUTPOINT(5);
+        
         if (seqid->IsGi()) {
             bs = s.GetBioseq(oid, seqid->GetGi());
         } else {
             bs = s.GetBioseq(oid);
         }
         
+        CHECK_CUTPOINT(6);
+        
         CRef<CBlast_def_line_set> bdls = s.GetHdr(oid);
         
         CHECK(bs.NotEmpty());
         CHECK(bdls.NotEmpty());
         
+        CHECK_CUTPOINT(7);
+        
         w.AddSequence(*bs);
         w.SetDeflines(*bdls);
+        
+        count1++;
+        CHECK_CUTPOINT(8);
+        
+        if (count1 > 3) {
+            CHECK_CUTPOINT(9);
+        }
     }
 }
 
@@ -437,6 +464,28 @@ void s_WrapUpDb(CWriteDB & db)
     s_WrapUpFiles(files);
 }
 
+class CWrapperUpper {
+public:
+    CWrapperUpper()
+    {
+    }
+    
+    ~CWrapperUpper()
+    {
+        if (m_Db.NotEmpty()) {
+            s_WrapUpDb(*m_Db);
+        }
+    }
+    
+    void SetDb(CWriteDB & db)
+    {
+        m_Db.Reset(& db);
+    }
+    
+private:
+    CRef<CWriteDB> m_Db;
+};
+
 // Copy the specified ids (int -> GI, string -> FASTA Seq-id) from the
 // source database (src_name) to a new CWriteDB object, then perform
 // checks on the resulting database and remove it.
@@ -447,8 +496,13 @@ s_DupSequencesTest(const TIdList & ids,
                    bool            raw_data,
                    string          src_name,
                    string          dst_name,
-                   string          title)
+                   string          title,
+                   int             cutpoint = 99)
 {
+    CWrapperUpper wrap;
+    
+    CHECK_CUTPOINT(1);
+    
     CSeqDBExpert src(src_name, (is_protein
                                 ? CSeqDB::eProtein
                                 : CSeqDB::eNucleotide));
@@ -457,6 +511,8 @@ s_DupSequencesTest(const TIdList & ids,
     
     CRef<CWriteDB> db;
     
+    CHECK_CUTPOINT(2);
+    
     db.Reset(new CWriteDB(dst_name,
                           (is_protein
                            ? CWriteDB::eProtein
@@ -464,18 +520,27 @@ s_DupSequencesTest(const TIdList & ids,
                           title,
                           CWriteDB::eFullIndex));
     
+    wrap.SetDb(*db);
+    
+    CHECK_CUTPOINT(3);
+    
     if (raw_data) {
         s_DupIdsRaw(*db, src, ids);
     } else {
-        s_DupIdsBioseq(*db, src, ids);
+        s_DupIdsBioseq(*db, src, ids, cutpoint);
     }
+    
+    CHECK_CUTPOINT(10);
     
     db->Close();
     db->ListFiles(files);
     db.Reset();
     
+    CHECK_CUTPOINT(11);
+    
     s_TestDatabase(src, dst_name, title);
-    s_WrapUpFiles(files);
+    
+    CHECK_CUTPOINT(12);
 }
 
 // Create an object manager, add ID2 loaders to it, and return it.
@@ -574,7 +639,7 @@ static void s_UnitTestVerbosity(string s)
 // Actual test cases.
 //
 
-BOOST_AUTO_TEST_CASE(NuclBioseqDup)
+static void s_NuclBioseqDupSwitch(int cutpoint)
 {
     START;
     
@@ -593,19 +658,199 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDup)
     TIdList ids;
     s_BuildIds(ids, gis);
     
+    CHECK_CUTPOINT(0);
+    
     s_DupSequencesTest(ids,
                        false,
                        false,
                        "nt",
                        "w-nucl-bs",
-                       "bioseq nucleotide dup");
+                       "bioseq nucleotide dup",
+                       cutpoint);
+    
+    CHECK_CUTPOINT(13);
     
     s_DupSequencesTest(ids,
                        false,
                        true,
                        "nt",
                        "w-nucl-raw",
-                       "raw nucleotide dup");
+                       "raw nucleotide dup",
+                       cutpoint);
+    
+    CHECK_CUTPOINT(14);
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupZ)
+{
+    START;
+    
+    try {
+        s_NuclBioseqDupSwitch(0);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupA)
+{
+    START;
+    
+    try {
+        s_NuclBioseqDupSwitch(1);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupB)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(2);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupC)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(3);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupD)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(4);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupE)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(5);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupF)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(6);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupG)
+{
+    START;
+    
+    try {
+        s_NuclBioseqDupSwitch(7);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupH)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(8);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupI)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(9);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupK)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(11);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupL)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(12);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupM)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(13);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupN)
+{
+    START;
+
+    try {
+        s_NuclBioseqDupSwitch(14);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDup)
+{
+    START;
+    
+    s_NuclBioseqDupSwitch(99);
 }
 
 BOOST_AUTO_TEST_CASE(ProtBioseqDup)
@@ -965,8 +1210,8 @@ BOOST_AUTO_TEST_CASE(HashToOid)
                                      "test of hash ISAMs (N)",
                                      itype));
     
-    s_DupIdsBioseq(*prot, nr, prot_ids);
-    s_DupIdsBioseq(*nucl, nt, nucl_ids);
+    s_DupIdsBioseq(*prot, nr, prot_ids, 99);
+    s_DupIdsBioseq(*nucl, nt, nucl_ids, 99);
     
     prot->Close();
     nucl->Close();

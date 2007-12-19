@@ -10,7 +10,8 @@ SRC = blast_sample
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = xobjsimple $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB_ = xobjsimple $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 # These settings are necessary for optimized WorkShop builds, due to

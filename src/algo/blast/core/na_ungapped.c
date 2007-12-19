@@ -1147,10 +1147,10 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
                                            subject, min_step, 0, word_params, 
                                            matrix, query_info,
                                            ewp->hash_table,
-                                           q_off - extended_left,
+                                           q_off,
                                            s_off + lut_word_length +
                                                      extended_right,
-                                           s_off - extended_left,
+                                           s_off,
                                            init_hitlist);
         }
         else {
@@ -1158,14 +1158,46 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
                                            subject, min_step, 0, word_params, 
                                            matrix, query_info,
                                            ewp->diag_table,
-                                           q_off - extended_left,
+                                           q_off,
                                            s_off + lut_word_length +
                                                      extended_right,
-                                           s_off - extended_left,
+                                           s_off,
                                            init_hitlist);
         }
     }
     return hits_extended;
+}
+
+
+/** Check that word just found is not part of a soft-masked region.
+ * This check only happens for soft masking for certain word sizes
+ * @param locations not masked regions [in]
+ * @param word_size size of the word [in]
+ * @param offset query offset for for word [in]
+ * @param left_extend how far extended to left by mini-extension [in]
+ * @param right_extend how far extended to right by mini-extension [in]
+ */
+Boolean 
+s_SmallBlastnCheckLocations(BlastSeqLoc* locations,
+                            Int4 word_size,
+                            Int4 offset,
+                            Int4 left_extend,
+                            Int4 right_extend)
+{
+    Boolean retval = FALSE;
+    Int4 q_start = offset - left_extend;
+    Int4 q_end = offset + right_extend;
+    while (locations)
+    {
+       if (MIN(locations->ssr->right, q_end) - MAX(locations->ssr->left, q_start)  >= word_size)
+       {
+          retval = TRUE;
+          break;
+       }
+       locations = locations->next;
+    }
+    return retval;
+
 }
 
 /** Perform exact match extensions on the hits retrieved from
@@ -1269,21 +1301,27 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         if (extended_left + extended_right < word_length)
             continue;
 
+        /* Check that the exact match was not masked out. */
+        if (word_length > lut_word_length && lut->locations)
+            if (s_SmallBlastnCheckLocations(lut->locations, word_length, q_off, extended_left, extended_right) == FALSE)
+                continue; 
+        
+
         if (word_params->container_type == eDiagHash) {
             hits_extended += s_BlastnDiagHashExtendInitialHit(query, subject, 
                                                min_step, 0, word_params, matrix,
                                                query_info, ewp->hash_table,
-                                               q_off - extended_left,
+                                               q_off,
                                                s_off + extended_right,
-                                               s_off - extended_left,
+                                               s_off,
                                                init_hitlist);
         } else {
             hits_extended += s_BlastnDiagTableExtendInitialHit(query, subject, 
                                                min_step, 0, word_params, matrix,
                                                query_info, ewp->diag_table,
-                                               q_off - extended_left,
+                                               q_off,
                                                s_off + extended_right,
-                                               s_off - extended_left,
+                                               s_off,
                                                init_hitlist);
         }
     }

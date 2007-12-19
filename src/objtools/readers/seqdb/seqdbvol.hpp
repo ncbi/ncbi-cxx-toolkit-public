@@ -132,6 +132,61 @@ private:
     int m_RefCount;
 };
 
+
+/// Membership Filtering Info
+/// 
+/// This is a memento produced by the SeqDBImpl layer, indicating how
+/// (and whether) to do membership bit based filtering.  It is needed
+/// by any method which may use the OID list, which includes any
+/// method that gets filtered headers.
+
+class CSeqDBFiltInfo {
+public:
+    /// Constructor.
+    CSeqDBFiltInfo()
+        : m_Init(false), m_HaveOidList(false), m_MembBit(0)
+    {
+    }
+    
+    /// Store the data (may be called only once).
+    /// @param have Is an OID list present. 
+    /// @param mbit The OID list membership bit (or zero for none).
+    void Set(bool have, int mbit)
+    {
+        m_Init = true;
+        m_HaveOidList = have;
+        m_MembBit = mbit;
+    }
+    
+    /// Check if this struct is initialized.
+    /// @return True if Set() has been called.
+    bool IsSet() const
+    {
+        return m_Init;
+    }
+    
+    /// Check for an OID list (Set must be called first).
+    /// @return True if an OID list is present. 
+    bool HaveOidList() const
+    {
+        _ASSERT(m_Init);
+        return m_HaveOidList;
+    }
+    
+    /// Get the membership bit (Set must be called first).
+    /// @return The OID list membership bit (or zero if none).
+    int MembershipBit() const
+    {
+        _ASSERT(m_Init);
+        return m_MembBit;
+    }
+    
+private:
+    bool m_Init;        ///< True if this struct is initialized.
+    bool m_HaveOidList; ///< True if there is an OID list.
+    int  m_MembBit;     ///< The value of the membership bit.
+};
+
 /// CSeqDBVol class.
 /// 
 /// This object defines access to one database volume.  It aggregates
@@ -226,25 +281,25 @@ public:
     /// 
     /// This method returns the set of Blast-def-line objects stored
     /// for each sequence.  These contain descriptive information
-    /// related to the sequence.  If have_oidlist is true, and
-    /// memb_bit is nonzero, only deflines with that membership bit
-    /// set will be returned.
+    /// related to the sequence.  If OID filtering is enabled and a
+    /// membership bit is used, only deflines with that membership bit
+    /// set will be returned.  The OID list existence and membership
+    /// bit are contained in filt_info.  This field may be NULL, in
+    /// which case OID list bit filtering is not done (in this case
+    /// the deflines are not cached).
     /// 
     /// @param oid
     ///   The OID of the sequence. [in]
-    /// @param have_oidlist
-    ///   True if the database is filtered. [in]
-    /// @param membership_bit
-    ///   Membership bit to filter deflines. [in]
+    /// @param filt_info
+    ///   Information about OID list filtering. [in]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     /// @return
     ///   The set of blast-def-lines describing this sequence.
     CRef<CBlast_def_line_set>
-    GetFilteredHeader(int              oid,
-                      bool             have_oidlist,
-                      int              membership_bit,
-                      CSeqDBLockHold & locked) const;
+    GetFilteredHeader(int                    oid,
+                      const CSeqDBFiltInfo * filt_info,
+                      CSeqDBLockHold       & locked) const;
     
     /// Get the sequence type stored in this database.
     /// 
@@ -276,10 +331,8 @@ public:
     /// 
     /// @param oid
     ///   The OID of the sequence. [in]
-    /// @param have_oidlist
-    ///   Specify true if the database is filtered by an oidlist. [in]
-    /// @param memb_bit
-    ///   If specified, only return deflines matching this bit. [in]
+    /// @param filt_info
+    ///   Information about OID list filtering. [in]
     /// @param pref_gi
     ///   If specified, only return deflines containing this GI. [in]
     /// @param tax_info
@@ -291,13 +344,12 @@ public:
     /// @return
     ///   A CBioseq describing this sequence.
     CRef<CBioseq>
-    GetBioseq(int                   oid,
-              bool                  have_oidlist,
-              int                   memb_bit,
-              int                   pref_gi,
-              CRef<CSeqDBTaxInfo>   tax_info,
-              bool                  seqdata,
-              CSeqDBLockHold      & locked) const;
+    GetBioseq(int                    oid,
+              const CSeqDBFiltInfo & filt_info,
+              int                    pref_gi,
+              CRef<CSeqDBTaxInfo>    tax_info,
+              bool                   seqdata,
+              CSeqDBLockHold       & locked);
     
     /// Get the sequence data.
     /// 
@@ -365,18 +417,15 @@ public:
     /// 
     /// @param oid
     ///   The OID of the sequence. [in]
-    /// @param have_oidlist
-    ///   True if the database is filtered. [in]
-    /// @param membership_bit
-    ///   Membership bit to filter deflines. [in]
+    /// @param filt_info
+    ///   Information about OID list filtering. [in]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     /// @return
     ///   The list of Seq-id objects for this sequences.
-    list< CRef<CSeq_id> > GetSeqIDs(int                  oid,
-                                    bool                 have_oidlist,
-                                    int                  membership_bit,
-                                    CSeqDBLockHold     & locked) const;
+    list< CRef<CSeq_id> > GetSeqIDs(int                    oid,
+                                    const CSeqDBFiltInfo * filt_info,
+                                    CSeqDBLockHold       & locked) const;
     
     /// Get the volume title.
     string GetTitle() const;
@@ -448,7 +497,10 @@ public:
     ///   The lock holder object for this thread. [in]
     /// @return
     ///   True if the TI was found.
-    bool TiToOid(Int8 ti, int & oid, CSeqDBLockHold & locked) const;
+    bool TiToOid(Int8                   ti,
+                 int                  & oid,
+                 const CSeqDBFiltInfo & filt_info,
+                 CSeqDBLockHold       & locked) const;
     
     /// Find the OID given a GI.
     ///
@@ -471,21 +523,18 @@ public:
     ///
     /// @param oid
     ///   The oid of the sequence. [in]
-    /// @param have_oidlist
-    ///   True if the database is filtered. [in]
-    /// @param membership_bit
-    ///   Membership bit to filter deflines. [in]
+    /// @param filt_info
+    ///   Information about OID list filtering. [in]
     /// @param gi
     ///   The returned GI. [out]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     /// @return
     ///   True if a GI was returned.
-    bool GetGi(int              oid,
-               bool             have_oidlist,
-               int              membership_bit,
-               int            & gi,
-               CSeqDBLockHold & locked) const;
+    bool GetGi(int                    oid,
+               const CSeqDBFiltInfo & filt_info,
+               int                  & gi,
+               CSeqDBLockHold       & locked) const;
     
     /// Find OIDs for the specified accession or formatted Seq-id.
     ///
@@ -502,9 +551,10 @@ public:
     ///   A set of OIDs found for this sequence. [out]
     /// @param locked
     ///   The lock holder object for this thread. [in]
-    void AccessionToOids(const string   & acc,
-                         vector<int>    & oids,
-                         CSeqDBLockHold & locked) const;
+    void AccessionToOids(const string         & acc,
+                         vector<int>          & oids,
+                         const CSeqDBFiltInfo & filt_info,
+                         CSeqDBLockHold       & locked) const;
     
     /// Find OIDs for the specified Seq-id.
     ///
@@ -519,9 +569,10 @@ public:
     ///   A set of OIDs found for this sequence. [out]
     /// @param locked
     ///   The lock holder object for this thread. [in]
-    void SeqidToOids(CSeq_id        & seqid,
-                     vector<int>    & oids,
-                     CSeqDBLockHold & locked) const;
+    void SeqidToOids(CSeq_id              & seqid,
+                     vector<int>          & oids,
+                     const CSeqDBFiltInfo * filt_info,
+                     CSeqDBLockHold       & locked) const;
     
     /// Find the OID at a given index into the database.
     ///
@@ -905,33 +956,28 @@ private:
     ///   The OID of the sequence. [in]
     /// @param hdr_data
     ///   The returned binary ASN.1 of the Blast-def-line-set. [out]
-    /// @param have_oidlist
-    ///   True if the database is filtered. [in]
-    /// @param membership_bit
-    ///   Membership bit to filter deflines. [in]
+    /// @param filt_info
+    ///   Information about OID list filtering. [in]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     void
-    x_GetFilteredBinaryHeader(int              oid,
-                              vector<char>   & hdr_data,
-                              bool             have_oidlist,
-                              int              membership_bit,
-                              CSeqDBLockHold & locked) const;
+    x_GetFilteredBinaryHeader(int                    oid,
+                              vector<char>         & hdr_data,
+                              const CSeqDBFiltInfo & filt_info,
+                              CSeqDBLockHold       & locked) const;
     
     /// Get sequence header information.
     /// 
     /// This method returns the set of Blast-def-line objects stored
     /// for each sequence.  These contain descriptive information
-    /// related to the sequence.  If have_oidlist is true, and
-    /// memb_bit is nonzero, only deflines with that membership bit
+    /// related to the sequence.  If OID filtering is enabled and a
+    /// membership bit is used, only deflines with that membership bit
     /// set will be returned.
     /// 
     /// @param oid
     ///   The OID of the sequence. [in]
-    /// @param have_oidlist
-    ///   True if the database is filtered. [in]
-    /// @param membership_bit
-    ///   Membership bit to filter deflines. [in]
+    /// @param filt_info
+    ///   Information about OID list filtering. [in]
     /// @param changed
     ///   Indicates whether ASN.1 data needed changes (optional). [out]
     /// @param locked
@@ -939,11 +985,10 @@ private:
     /// @return
     ///   The set of blast-def-lines describing this sequence.
     CRef<CBlast_def_line_set>
-    x_GetFilteredHeader(int              oid,
-                        bool             have_oidlist,
-                        int              membership_bit,
-                        bool           * changed,
-                        CSeqDBLockHold & locked) const;
+    x_GetFilteredHeader(int                    oid,
+                        const CSeqDBFiltInfo * filt_info,
+                        bool                 * changed,
+                        CSeqDBLockHold       & locked) const;
     
     /// Get sequence header information structures.
     /// 
@@ -954,18 +999,15 @@ private:
     /// 
     /// @param oid
     ///   The OID of the sequence. [in]
-    /// @param have_oidlist
-    ///   True if the database is filtered. [in]
-    /// @param membership_bit
-    ///   Membership bit to filter deflines. [in]
+    /// @param filt_info
+    ///   Information about OID list filtering. [in]
     /// @param locked
     ///   The lock holder object for this thread. [in]
     /// @return
     ///   The CSeqdesc to include in the CBioseq.
-    CRef<CSeqdesc> x_GetAsnDefline(int                  oid,
-                                   bool                 have_oidlist,
-                                   int                  membership_bit,
-                                   CSeqDBLockHold     & locked) const;
+    CRef<CSeqdesc> x_GetAsnDefline(int                    oid,
+                                   const CSeqDBFiltInfo & filt_info,
+                                   CSeqDBLockHold       & locked) const;
     
     /// Returns 'p' for protein databases, or 'n' for nucleotide.
     char x_GetSeqType() const;
@@ -1112,10 +1154,8 @@ private:
     /// 
     /// @param oid
     ///     The ordinal ID of the sequence to get. [in]
-    /// @param have_oidlist
-    ///     Specify true if an OID list is available for this database. [in]
-    /// @param membership_bit
-    ///     Specify the value of the membership bit if one exists. [in]
+    /// @param filt_info
+    ///   Information about OID list filtering. [in]
     /// @param preferred_gi
     ///     This GI's defline (if found) will be put at the front of the list. [in]
     /// @param locked
@@ -1123,11 +1163,10 @@ private:
     /// @return
     ///     The defline set for the specified oid.
     CRef<CBlast_def_line_set>
-    x_GetTaxDefline(int                  oid,
-                    bool                 have_oidlist,
-                    int                  membership_bit,
-                    int                  preferred_gi,
-                    CSeqDBLockHold     & locked) const;
+    x_GetTaxDefline(int                    oid,
+                    const CSeqDBFiltInfo & filt_info,
+                    int                    preferred_gi,
+                    CSeqDBLockHold       & locked);
     
     /// Get taxonomic descriptions of a sequence.
     ///
@@ -1141,10 +1180,8 @@ private:
     /// 
     /// @param oid
     ///     The ordinal ID of the sequence to get. [in]
-    /// @param have_oidlist
-    ///     Specify true if an OID list is available for this database. [in]
-    /// @param membership_bit
-    ///     Specify the value of the membership bit if one exists. [in]
+    /// @param filt_info
+    ///   Information about OID list filtering. [in]
     /// @param preferred_gi
     ///     This GI's defline (if found) will be put at the front of the list. [in]
     /// @param tax_info
@@ -1154,12 +1191,11 @@ private:
     /// @return
     ///     A list of CSeqdesc objects for the specified oid.
     list< CRef<CSeqdesc> >
-    x_GetTaxonomy(int                   oid,
-                  bool                  have_oidlist,
-                  int                   membership_bit,
-                  int                   preferred_gi,
-                  CRef<CSeqDBTaxInfo>   tax_info,
-                  CSeqDBLockHold      & locked) const;
+    x_GetTaxonomy(int                    oid,
+                  const CSeqDBFiltInfo & filt_info,
+                  int                    preferred_gi,
+                  CRef<CSeqDBTaxInfo>    tax_info,
+                  CSeqDBLockHold       & locked);
     
     /// Returns the base-offset of the specified oid.
     ///
@@ -1178,6 +1214,31 @@ private:
     /// @return
     ///     The offset in the volume of that sequence in bytes.
     Uint8 x_GetSeqResidueOffset(int oid, CSeqDBLockHold & locked) const;
+    
+    /// Check Seq-id versions for special sparse-id support case.
+    ///
+    /// The BlastDB `sparse indexing' feature omits versions when
+    /// emitting (string) ISAM indices.  If a search for a Seq-id with
+    /// a version fails, SeqDB strips the version and tries the search
+    /// again.  However, for non-sparse databases, this second search
+    /// has the harmful side effect that it can find IDs with the same
+    /// accession but an incorrect version.  This method scans the OID
+    /// list and removes the OIDs with incorrect versions.  It should
+    /// only be called in cases when the version removal needed to be
+    /// done to get results.
+    ///
+    /// @param acc
+    ///   An accession or formatted Seq-id for which to search. [in]
+    /// @param oids
+    ///   A set of OIDs found for this sequence. [out]
+    /// @param filt_info
+    ///   Information about OID list filtering. [in]
+    /// @param locked
+    ///   The lock holder object for this thread. [in]
+    void x_CheckVersions(const string         & acc,
+                         vector<int>          & oids,
+                         const CSeqDBFiltInfo * filt_info,
+                         CSeqDBLockHold       & locked) const;
     
     /// The memory management layer.
     CSeqDBAtlas & m_Atlas;

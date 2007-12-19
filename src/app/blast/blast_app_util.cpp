@@ -130,7 +130,9 @@ s_ExportSearchStrategy(CNcbiOstream* out,
 static void
 s_ImportSearchStrategy(CNcbiIstream* in, 
                        blast::CBlastAppArgs* cmdline_args,
-                       bool override_query, bool override_subject)
+                       bool is_remote_search, 
+                       bool override_query, 
+                       bool override_subject)
 {
     if ( !in ) {
         return;
@@ -216,6 +218,12 @@ s_ImportSearchStrategy(CNcbiIstream* in,
             if (opts_builder.HaveEntrezQuery()) {
                 string limit(opts_builder.GetEntrezQuery());
                 search_db->SetEntrezQueryLimitation(limit);
+                if ( !is_remote_search ) {
+                    string msg("Entrez query '");
+                    msg += limit + string("' will not be processed locally.\n");
+                    msg += string("Please use the -remote option.");
+                    throw runtime_error(msg);
+                }
             }
 
             if (opts_builder.HaveGiList()) {
@@ -271,6 +279,8 @@ s_ImportSearchStrategy(CNcbiIstream* in,
                     queries.GetSeq_loc_list();
                 CFastaOstream out(tmpfile->AsOutputFile
                                   (CTmpFile::eIfExists_Throw));
+                out.SetFlag(CFastaOstream::eAssembleParts);
+                
                 CBlastScopeSource scope_src(Blast_QueryIsProtein(prog));
                 CRef<CScope> scope(scope_src.NewScope());
 
@@ -286,6 +296,8 @@ s_ImportSearchStrategy(CNcbiIstream* in,
                     queries.GetBioseq_set();
                 CFastaOstream out(tmpfile->AsOutputFile
                                   (CTmpFile::eIfExists_Throw));
+                out.SetFlag(CFastaOstream::eAssembleParts);
+
                 ITERATE(CBioseq_set::TSeq_set, seq_entry, bioseqs.GetSeq_set()){
                     out.Write(**seq_entry);
                 }
@@ -304,6 +316,8 @@ RecoverSearchStrategy(const CArgs& args, blast::CBlastAppArgs* cmdline_args)
 {
     CNcbiIstream* in = cmdline_args->GetImportSearchStrategyStream(args);
     s_ImportSearchStrategy(in, cmdline_args,
+                           (args[kArgRemote].HasValue() &&
+                            args[kArgRemote].AsBoolean()),
                            (args[kArgQuery].HasValue() && 
                             args[kArgQuery].AsString() != kDfltArgQuery),
                             CBlastDatabaseArgs::HasBeenSet(args));

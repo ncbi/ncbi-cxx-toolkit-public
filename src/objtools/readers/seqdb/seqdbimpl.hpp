@@ -188,7 +188,7 @@ public:
     ///   The ordinal id of the sequence.
     /// @return
     ///   The length of the sequence in bases.
-    CRef<CBlast_def_line_set> GetHdr(int oid) const;
+    CRef<CBlast_def_line_set> GetHdr(int oid);
     
     /// Get the sequence type.
     ///
@@ -216,7 +216,7 @@ public:
     ///   If false, the map will be cleared before adding new entries.
     void GetTaxIDs(int             oid,
                    map<int, int> & gi_to_taxid,
-                   bool            persist) const;
+                   bool            persist);
     
     /// Get taxids for an OID.
     ///
@@ -236,7 +236,7 @@ public:
     ///   If false, the map will be cleared before adding new entries.
     void GetTaxIDs(int           oid,
                    vector<int> & taxids,
-                   bool          persist) const;
+                   bool          persist);
     
     /// Get a CBioseq for a sequence.
     ///
@@ -253,7 +253,7 @@ public:
     ///   If true, sequence data will be provided.
     /// @return
     ///   A CBioseq object corresponding to the sequence.
-    CRef<CBioseq> GetBioseq(int oid, int target_gi, bool seqdata) const;
+    CRef<CBioseq> GetBioseq(int oid, int target_gi, bool seqdata);
     
     /// Get the sequence data for a sequence.
     ///
@@ -324,7 +324,7 @@ public:
     ///   The oid of the sequence.
     /// @return
     ///   A list of Seq-id objects for this sequence.
-    list< CRef<CSeq_id> > GetSeqIDs(int oid) const;
+    list< CRef<CSeq_id> > GetSeqIDs(int oid);
     
     /// Returns the database title.
     ///
@@ -495,19 +495,20 @@ public:
     bool OidToPig(int oid, int & pig) const;
     
     /// Translate a TI to an OID.
-    bool TiToOid(Int8 ti, int & oid) const;
+    bool TiToOid(Int8 ti, int & oid);
     
     /// Translate a GI to an OID.
     bool GiToOid(int gi, int & oid) const;
     
     /// Translate a GI to an OID.
-    bool OidToGi(int oid, int & gi) const;
+    bool OidToGi(int oid, int & gi);
     
     /// Find OIDs matching the specified string.
-    void AccessionToOids(const string & acc, vector<int> & oids) const;
+    void AccessionToOids(const string & acc,
+                         vector<int>  & oids);
     
     /// Translate a CSeq-id to a list of OIDs.
-    void SeqidToOids(const CSeq_id & seqid, vector<int> & oids, bool multi) const;
+    void SeqidToOids(const CSeq_id & seqid, vector<int> & oids, bool multi);
     
     /// Find the OID corresponding to the offset given in residues,
     /// into the database as a whole.
@@ -861,7 +862,7 @@ private:
     ///   The lock hold object for this thread.
     /// @return
     ///   The length of the sequence in bases.
-    CRef<CBlast_def_line_set> x_GetHdr(int oid, CSeqDBLockHold & locked) const;
+    CRef<CBlast_def_line_set> x_GetHdr(int oid, CSeqDBLockHold & locked);
     
     /// Compute totals via iteration
     ///
@@ -882,6 +883,17 @@ private:
                       int            * seq_count,
                       Uint8          * base_count, 
                       CSeqDBLockHold & locked);
+    
+    /// Get oid list filtering info struct.
+    ///
+    /// This method returns a struct describing the OID list and
+    /// initializes it if it has not been set up yet.
+    ///
+    /// @param locked
+    ///   The lock hold object for this thread.
+    /// @return
+    ///   A reference to the list filtering info object.
+    const CSeqDBFiltInfo & x_GetFiltInfo(CSeqDBLockHold & locked);
     
     /// This callback functor allows the atlas code flush any cached
     /// region holds prior to garbage collection.
@@ -958,6 +970,9 @@ private:
     
     /// Cached most recent date string for GetDate().
     mutable string m_Date;
+    
+    /// Cached membership bit info.
+    CSeqDBFiltInfo m_FiltInfo;
 };
 
 END_NCBI_SCOPE

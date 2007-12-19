@@ -1,6 +1,7 @@
 APP = blastdb_aliastool
 SRC = blastdb_aliastool
-LIB = writedb seqdb xblast composition_adjustment blastdb tables $(OBJMGR_LIBS)
+LIB_ = writedb seqdb xblast composition_adjustment blastdb tables $(OBJMGR_LIBS)
+LIB = $(LIB_:%=%$(STATIC))
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)

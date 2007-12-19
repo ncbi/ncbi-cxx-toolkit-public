@@ -488,6 +488,8 @@ private:
     
     /// Frame and BlastSeqLoc* data.
     TFrameSet m_Seqlocs;
+    /// Frame and tail of BlastSeqLoc* linked list (to speed up appending)
+    TFrameSet m_SeqlocTails;
     
     /// True if this object's masked regions store DNA coordinates
     /// that will later be translated into protein coordinates.

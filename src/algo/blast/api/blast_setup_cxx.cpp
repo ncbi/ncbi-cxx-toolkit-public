@@ -1481,6 +1481,7 @@ CBlastQueryFilteredFrames::~CBlastQueryFilteredFrames()
 void CBlastQueryFilteredFrames::Release(int frame)
 {
     m_Seqlocs.erase((ETranslationFrame)frame);
+    m_SeqlocTails.erase((ETranslationFrame)frame);
 }
 
 void CBlastQueryFilteredFrames::UseProteinCoords(TSeqPos dna_length)
@@ -1610,20 +1611,25 @@ void CBlastQueryFilteredFrames::AddSeqLoc(const objects::CSeq_interval & intv,
     if ((frame == 0) && (m_Program == eBlastTypeBlastn)) {
         x_VerifyFrame(CSeqLocInfo::eFramePlus1);
         x_VerifyFrame(CSeqLocInfo::eFrameMinus1);
+        static const CSeqLocInfo::ETranslationFrame kFrames[] = {
+            CSeqLocInfo::eFramePlus1, CSeqLocInfo::eFrameMinus1 };
         
-        BlastSeqLocNew(& m_Seqlocs[CSeqLocInfo::eFramePlus1],
-                       intv.GetFrom(),
-                       intv.GetTo());
-        
-        BlastSeqLocNew(& m_Seqlocs[CSeqLocInfo::eFrameMinus1],
-                       intv.GetFrom(),
-                       intv.GetTo());
+        for (size_t i = 0; i < sizeof(kFrames)/sizeof(*kFrames); i++) {
+            m_SeqlocTails[ kFrames[i] ] = 
+                BlastSeqLocNew( (m_SeqlocTails[ kFrames[i] ] 
+                                ? & m_SeqlocTails[ kFrames[i] ] 
+                                : & m_Seqlocs[ kFrames[i] ]),
+                               intv.GetFrom(), intv.GetTo());
+        }
+
     } else {
         x_VerifyFrame(frame);
         
-        BlastSeqLocNew(& m_Seqlocs[(ETranslationFrame) frame],
-                       intv.GetFrom(),
-                       intv.GetTo());
+        m_SeqlocTails[(ETranslationFrame) frame] = 
+            BlastSeqLocNew( (m_SeqlocTails[(ETranslationFrame) frame] 
+                            ? & m_SeqlocTails[(ETranslationFrame) frame] 
+                            : & m_Seqlocs[(ETranslationFrame) frame]),
+                           intv.GetFrom(), intv.GetTo());
     }
 }
 

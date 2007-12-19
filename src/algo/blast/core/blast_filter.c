@@ -313,7 +313,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
 			ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
 			if (buffer[0] != NULLB)
                         {
-                                int window, level, linker;
+                                int window = 0, level = 0, linker = 0;
 				status = s_ParseDustOptions(buffer, &level, &window, &linker);
                                 if (status)
                                 {
@@ -440,35 +440,70 @@ static BlastSeqLoc* s_BlastSeqLocNodeDup(BlastSeqLoc* source)
     return BlastSeqLocNew(NULL, source->ssr->left, source->ssr->right);
 }
 
-/** Prepend node to the head of the list and return the new head of the list */
-static BlastSeqLoc* s_BlastSeqLocPrepend(BlastSeqLoc* head, BlastSeqLoc* node)
+/** Calculates number of links in a chain of BlastSeqLoc's.
+ * @param var Chain of BlastSeqLoc structures [in]
+ * @return Number of links in the chain.
+ */
+static Int4 s_BlastSeqLocLen(const BlastSeqLoc* var)
 {
-    if ( !node ) {
-        return NULL;
+    BlastSeqLoc* itr = NULL;
+    Int4 retval = 0;
+   
+    for (itr = (BlastSeqLoc*)var; itr; itr = itr->next, retval++) {
+        ;
     }
-    node->next = head;
-    return node;
+    return retval;
+}
+
+/** Converts a BlastSeqLoc list to an array of pointers, each pointing to an
+ * element of the list passed in to this function and the last element points
+ * to NULL 
+ * @param list List to convert to an array of pointers [in]
+ * @count number of elements populated in the array [out]
+ */
+static BlastSeqLoc**
+s_BlastSeqLocListToArrayOfPointers(const BlastSeqLoc* list, Int4* count)
+{
+    BlastSeqLoc* tmp,** retval;
+    Int4 i;
+    *count = 0;
+
+    if (list == NULL) 
+       return NULL;
+
+    *count = s_BlastSeqLocLen(list);
+    retval = (BlastSeqLoc**) calloc(((size_t)(*count)+1), sizeof(BlastSeqLoc*));
+    for (tmp = (BlastSeqLoc*)list, i = 0; tmp != NULL && i < *count; i++) {
+        retval[i] = tmp;
+        tmp = tmp->next;
+    }
+    return retval;
 }
 
 /** Reverse elements in the list 
- * @param head pointer to pointer to the head of the list. After this call,
- * this is set to NULL [in|out]
- * @return the new head of the list or NULL if argument is NULL
+ * @param head pointer to pointer to the head of the list. [in|out]
+ * (this is not declared static so that it can be tested in the unit tests
  */
-static BlastSeqLoc* s_BlastSeqLocListReverse(BlastSeqLoc** head)
+void BlastSeqLocListReverse(BlastSeqLoc** head)
 {
-    BlastSeqLoc* retval = NULL;     /* return value */
-    BlastSeqLoc* itr = NULL;        /* iterator */
+    BlastSeqLoc** ptrs = NULL;  /* array of pointers to BlastSeqLoc elements */
+    Int4 num_elems = 0, i = 0;
 
     if ( !head ) {
-        return NULL;
+        return;
     }
 
-    for (itr = *head; itr; itr = itr->next) {
-        retval = s_BlastSeqLocPrepend(retval, s_BlastSeqLocNodeDup(itr));
+    ptrs = s_BlastSeqLocListToArrayOfPointers(*head, &num_elems);
+    if (num_elems == 0) {
+        return;
     }
-    *head = BlastSeqLocFree(*head);
-    return retval;
+    ASSERT(ptrs);
+    *head = ptrs[num_elems-1];
+    for (i = num_elems-1; i > 0; i--) {
+        ptrs[i]->next = ptrs[i-1];
+    }
+    ptrs[0]->next = NULL;
+    sfree(ptrs);
 }
 
 BlastSeqLoc* BlastSeqLocNodeFree(BlastSeqLoc* loc)
@@ -715,98 +750,49 @@ static int s_SeqRangeSortByStartPosition(const void *vp1, const void *vp2)
       return 0;
 }
 
-/** Calculates number of links in a chain of BlastSeqLoc's.
- * @param var Chain of BlastSeqLoc structures [in]
- * @return Number of links in the chain.
- */
-static Int4 s_BlastSeqLocLen(BlastSeqLoc* var)
+void
+BlastSeqLocCombine(BlastSeqLoc** mask_loc, Int4 link_value)
 {
-     Int4 count=0;
-   
-     while (var)
-     {
-         count++;
-         var = var->next;
-     }
+    BlastSeqLoc** ptrs = NULL;
+    Int4 i = 0, num_elems = 0;
 
-     return count;
-}
+    /* Break up the list into an array of pointers and sort it */
+    ptrs = s_BlastSeqLocListToArrayOfPointers(*mask_loc, &num_elems);
+    if (num_elems == 0) {
+        return;
+    }
+    ASSERT(ptrs);
+    qsort(ptrs, (size_t)num_elems, sizeof(*ptrs), 
+          s_SeqRangeSortByStartPosition);
 
-/** Sort a list of BlastSeqLoc structures
- * @param list List of BlastSeqLoc's [in]
- * @param compar Comparison function to use [in]
- * @return Sorted list.  
- */
-static BlastSeqLoc* 
-s_BlastSeqLocSort (BlastSeqLoc* list,
-                 int (*compar )(const void *, const void *))
-{
-        BlastSeqLoc* tmp,** head;
-        Int4 count, i;
+    /* Merge the overlapping elements */
+    {
+        BlastSeqLoc* curr_tail = *mask_loc = ptrs[0];
+        for (i = 0; i < num_elems - 1; i++) {
+            const SSeqRange* next_ssr = ptrs[i+1]->ssr;
+            const Int4 stop = curr_tail->ssr->right;
 
-        if (list == NULL) 
-           return NULL;
-
-        count = s_BlastSeqLocLen (list);
-        head = (BlastSeqLoc* *) calloc (((size_t) count + 1), sizeof (BlastSeqLoc*));
-        for (tmp = list, i = 0; tmp != NULL && i < count; i++) {
-                head [i] = tmp;
-                tmp = tmp->next;
+            if ((stop + link_value) > next_ssr->left) {
+                curr_tail->ssr->right = MAX(stop, next_ssr->right);
+                ptrs[i+1] = BlastSeqLocNodeFree(ptrs[i+1]);
+            } else {
+                curr_tail = ptrs[i+1];
+            }
         }
+    }
 
-        qsort (head, (size_t) count, sizeof (BlastSeqLoc*), compar);
-        for (i = 0; i < count; i++) {
-                tmp = head [i];
-                tmp->next = head [i + 1];
+    /* Rebuild the linked list */
+    {
+        BlastSeqLoc* tail = *mask_loc;
+        for (i = 1; i < num_elems; i++) {
+            if (ptrs[i]) {
+                tail->next = ptrs[i];
+                tail = ptrs[i];
+            }
         }
-        list = head [0];
-        sfree (head);
-
-        return list;
-}
-
-BlastSeqLoc*
-BlastSeqLocCombine(BlastSeqLoc* mask_loc, Int4 link_value)
-{
-   BlastSeqLoc* retval = NULL;
-   BlastSeqLoc* retval_tail = NULL;
-   Int4 start, stop;	/* Used to merge overlapping SeqLoc's. */
-   BlastSeqLoc* loc_head=NULL,* loc_var=NULL;
-   
-   if ( !mask_loc ) {
-      return NULL;
-   }
-
-   /* Copy the BlastSeqLoc-s and sort them by starting position. */
-   loc_head = loc_var = s_BlastSeqLocSort(BlastSeqLocListDup(mask_loc),
-                                          s_SeqRangeSortByStartPosition);
-   if ( !loc_head ) {
-       return NULL;
-   }
-   start = loc_head->ssr->left;
-   stop = loc_head->ssr->right;
-
-   for (; loc_var; loc_var = loc_var->next) {
-       SSeqRange* ssr = loc_var->next ? loc_var->next->ssr : NULL;
-
-       if (ssr && ((stop + link_value) > ssr->left)) {
-          stop = MAX(stop, ssr->right);
-       } else {
-          /* Cache the tail of the list to avoid the overhead of traversing the
-           * list when appending to it */
-          retval_tail = BlastSeqLocNew((retval_tail ? &retval_tail : &retval), 
-                                       start, stop);
-          if (loc_var->next) {
-              start = ssr->left;
-              stop = ssr->right;
-          }
-       }
-   }
-
-   /* Free memory allocated for the temporary list of BlastSeqLoc-s */
-   BlastSeqLocFree(loc_head);
-
-   return retval;
+        tail->next = NULL;
+    }
+    sfree(ptrs);
 }
 
 Int2 
@@ -853,8 +839,7 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
       }
       
       if (BlastIsReverseStrand(kIsNucl, context)) {
-         mask_loc->seqloc_array[context] = 
-             s_BlastSeqLocListReverse(&mask_loc->seqloc_array[context]);
+         BlastSeqLocListReverse(&mask_loc->seqloc_array[context]);
       }
       loc = mask_loc->seqloc_array[context];
 
@@ -958,23 +943,13 @@ BlastSetUp_Filter(EBlastProgramType program_number,
 	return status;
 }
 
-BlastSeqLoc*
-BlastSeqLocReverse(const BlastSeqLoc* filter_in, Int4 query_length)
+void
+BlastSeqLocReverse(BlastSeqLoc* masks, Int4 query_length)
 {
-   BlastSeqLoc* filter_out = NULL;   /* Return variable. */
-
-   while (filter_in)
-   {
-        Int4 start, stop;
-        SSeqRange* loc = filter_in->ssr;
-        
-        start = query_length - 1 - loc->right;
-        stop = query_length - 1 - loc->left;
-        BlastSeqLocNew(&filter_out, start, stop);
-        filter_in = filter_in->next;
-   }
-
-   return filter_out;
+    for(; masks; masks = masks->next) {
+        masks->ssr->left    = query_length - 1 - masks->ssr->right;
+        masks->ssr->right   = query_length - 1 - masks->ssr->left;
+    }
 }
 
 /** Calculates the mask locations one context at a time.
@@ -999,7 +974,6 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk,
     Int2 status = 0;
     Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
     Int4 context_offset;
-    BlastSeqLoc *filter_slp = NULL;     /* SeqLocPtr computed for filtering. */
     Uint1 *buffer;              /* holds sequence for plus strand or protein. */
 
     const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
@@ -1018,16 +992,14 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk,
                                query_length, 
                                0, 
                                filter_options, 
-                               &filter_slp, 
+                               filter_out, 
                                blast_message);
     if (status)
          return status;
 
-    if (BlastIsReverseStrand(kIsNucl, context) == TRUE)
-    {  /* Reverse this as it's on minus strand. */
-          BlastSeqLoc* tmp = BlastSeqLocReverse(filter_slp, query_length);
-          filter_slp = BlastSeqLocFree(filter_slp);
-          filter_slp = tmp;
+    if (BlastIsReverseStrand(kIsNucl, context) == TRUE) {  
+        /* Reverse this as it's on minus strand. */
+        BlastSeqLocReverse(*filter_out, query_length);
     }
 
     /* Extract the mask locations corresponding to this query 
@@ -1045,17 +1017,16 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk,
             ASSERT(context < query_blk->lcase_mask->total_size);
             lcase_mask_slp = query_blk->lcase_mask->seqloc_array[context];
             /* Set location list to NULL, to allow safe memory deallocation, 
-              ownership transferred to filter_slp below. */
+              ownership transferred to filter_out below. */
             query_blk->lcase_mask->seqloc_array[context] = NULL;
         }
 
         /* Attach the lower case mask locations to the filter locations and 
            combine them */
-        BlastSeqLocAppend(&filter_slp, lcase_mask_slp);
+        BlastSeqLocAppend(filter_out, lcase_mask_slp);
     }
 
-    *filter_out = BlastSeqLocCombine(filter_slp, 0);
-    filter_slp = BlastSeqLocFree(filter_slp);
+    BlastSeqLocCombine(filter_out, 0);
 
 	return 0;
 }
@@ -1160,6 +1131,8 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk,
     ASSERT(query_blk);
     ASSERT(query_info);
     ASSERT(filter_maskloc);
+
+    query_blk->hard_masking = TRUE;
 
     for (context = query_info->first_context;
          context <= query_info->last_context; ++context) {

@@ -1,6 +1,7 @@
 APP = makeblastdb
 SRC = makeblastdb
-LIB = $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB_ = $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB = $(LIB_:%=%$(STATIC))
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)

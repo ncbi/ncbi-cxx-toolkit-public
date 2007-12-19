@@ -215,6 +215,8 @@ typedef struct BLAST_SequenceBlk {
                               owned by the genetic code singleton. 
                               @sa gencode_singleton.h
                               */
+   Boolean hard_masking;    /**< specifies that hard_masking was done or not.  
+                              Important for some of the lookup tables. */
 } BLAST_SequenceBlk;
 
 /** Information about a single pattern occurence in the query. */

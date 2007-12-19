@@ -224,7 +224,17 @@ public:
     void DisplayBlastDefline(CNcbiOstream & out);
     void DisplayBlastDeflineTable(CNcbiOstream & out);
  
+    ///Initialize defline params
+    void Init(void);
 
+    ///Display defline
+    ///@param out: stream to output
+    ///
+    void Display(CNcbiOstream & out);    
+
+    ///Indicates if 'Related structures' link should show
+    ///@return: true if show
+    bool HasStructureLinkout(void){return m_StructureLinkout;}
 private:
   
     ///Internal data Representing each defline
@@ -298,6 +308,22 @@ private:
 
     ///used to calculate the alignment length
     bool m_TranslatedNucAlignment;
+
+    ///Score header size
+    size_t m_MaxScoreLen;
+    ///Eval header size
+    size_t m_MaxEvalueLen;
+    size_t m_MaxSumNLen;
+    ///Total score header size
+    size_t m_MaxTotalScoreLen;
+    //Percent identity header size
+    size_t m_MaxPercentIdentityLen;    
+    //Coverage header size
+    size_t m_MaxQueryCoverLen;  
+    //Query Lenghth
+    int m_QueryLength;
+    ///Indicates if 'Related structures' link should show
+    bool m_StructureLinkout;
     
     CCgiContext* m_Ctx;
 
@@ -330,6 +356,23 @@ private:
                             const CSeq_id& aln_id,
                             list<int>& use_this_gi,
                             SDeflineInfo* sdl);
+
+    ///Initialize defline params for regular output
+    ///
+    void x_InitDefline(void);
+
+    ///Initialize defline params for table output
+    ///
+    void x_InitDeflineTable(void);
+
+    ///Display defline for regular output
+    ///
+    void x_DisplayDefline(CNcbiOstream & out);
+
+    ///Display defline for table output
+    ///
+    void x_DisplayDeflineTable(CNcbiOstream & out);
+
     //For internal test 
     friend class ::CShowBlastDeflineTest;
 };

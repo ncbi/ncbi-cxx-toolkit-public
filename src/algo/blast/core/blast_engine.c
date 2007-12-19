@@ -860,7 +860,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    Boolean gapped_calculation = score_options->gapped_calculation;
    BlastScoreBlk* sbp = gap_align->sbp;
    BlastSeqSrcIterator* itr;
-   Int4 default_db_genetic_code = db_options->genetic_code;
    const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
                                 program_number == eBlastTypePhiBlastn);
 
@@ -939,7 +938,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
       if (Blast_SubjectIsTranslated(program_number) && 
           seq_arg.seq->gen_code_string == NULL) {
           seq_arg.seq->gen_code_string = 
-              GenCodeSingletonFind(default_db_genetic_code);
+              GenCodeSingletonFind(db_options->genetic_code);
           ASSERT(seq_arg.seq->gen_code_string);
       }
       status = 

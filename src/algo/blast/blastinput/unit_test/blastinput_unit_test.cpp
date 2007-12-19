@@ -727,8 +727,6 @@ BOOST_AUTO_TEST_CASE(ReadMultipleGis_WithBadInput)
     //gi_length.push_back(make_pair(0L, 0L));   // bad sequence
     //gi_length.push_back(make_pair(557L, 489L));
 
-    const size_t kNumQueries(gi_length.size());
-
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CHECK(source->End() == false);
 
@@ -737,29 +735,6 @@ BOOST_AUTO_TEST_CASE(ReadMultipleGis_WithBadInput)
     blast::TSeqLocVector seqs;
     BOOST_REQUIRE_THROW(seqs = source->GetAllSeqLocs(scope),
                         CObjReaderParseException);
-
-#if 0
-    // This is no longer possible because the SSeqLocs cannot be read
-    // individually via the CBlastInput interface
-    // Check the first sequence
-    {
-        blast::SSeqLoc ssl = seqs.front();
-        CHECK(ssl.seqloc->IsInt() == true);
-        CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
-        CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
-        CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
-        CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
-        CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
-        const TSeqPos length = gi_length.front().second;
-        CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
-        CHECK(ssl.seqloc->GetInt().IsSetId() == true);
-        CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
-        const int gi = gi_length.front().first;
-        CHECK_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
-        CHECK(!ssl.mask);
-    }
-#endif
-
 }
 
 BOOST_AUTO_TEST_CASE(ReadEmptyUserInput)

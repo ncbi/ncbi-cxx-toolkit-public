@@ -495,7 +495,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
         return;
 
     case eBlastOpt_CullingLimit:
-        x_SetParam(B4Param_Culling, v);
+        x_SetParam(B4Param_CullingLimit, v);
         return;
 
     case eBlastOpt_LongestIntronLength:

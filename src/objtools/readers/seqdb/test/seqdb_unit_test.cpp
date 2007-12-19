@@ -3531,6 +3531,26 @@ BOOST_AUTO_TEST_CASE(PdbIdWithChain)
     CHECK(oids.size());
 }
 
+BOOST_AUTO_TEST_CASE(VersionedSparseId)
+{
+    START;
+    
+    CSeqDB db("data/sparse_id", CSeqDB::eNucleotide);
+    
+    string good("Z12841.1");
+    string bad ("Z12842.1");
+    string both("Z12843.1");
+    
+    vector<int> o1, o2, o3;
+    db.AccessionToOids(good, o1);
+    db.AccessionToOids(bad,  o2);
+    db.AccessionToOids(both, o3);
+    
+    CHECK(o1.size() == 1);
+    CHECK(o2.size() == 0);
+    CHECK(o3.size() == 1);
+}
+
 
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)

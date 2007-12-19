@@ -223,15 +223,23 @@ public:
     
     /// String translation
     /// 
-    /// A string identifier is translated to one or more OIDs.  String
-    /// identifiers are used by some groups which produce sequence
-    /// data.  In a few cases, the string may correspond to multiple
-    /// OIDs with different sequences of bases.  For this reason, the
-    /// list of OIDs is returned in a vector.  The string provided
-    /// here is looked up in several ways.  If it contains pipe
-    /// characters (ie "|") the data will be interpreted as a SeqID.
-    /// This routine can use faster lookup mechanisms if the
-    /// simplification routines were able to recognize the sequence.
+    /// A string id is translated to one or more OIDs.  String ids are
+    /// used by some groups which produce sequence data.  In some
+    /// cases, the string may correspond to more than one OID.  For
+    /// this reason, the OIDs are returned in a vector.  The string
+    /// provided is looked up in several ways.  If it contains a pipe
+    /// character ("|") the data will be interpreted as a SeqID.  This
+    /// routine can use faster lookup mechanisms if the simplification
+    /// routines were able to recognize the sequence as one of several
+    /// types that have numerical indices.  The version_check flag is
+    /// needed to support sparse indexing.  If version_check is true,
+    /// and the string has a version, and the lookup fails, this
+    /// method will try to remove the version and search again.  On
+    /// return from this method version_check will be set to true if
+    /// and only if the first search failed and the versionless search
+    /// succeeded.  CSeqDBVol::x_CheckVersions() can then be called to
+    /// verify the OIDs; see that method for more information about
+    /// this scenario.
     /// 
     /// @param acc
     ///   The string to look up. [in]
@@ -239,11 +247,14 @@ public:
     ///   The returned oids. [out]
     /// @param adjusted
     ///   Whether the simplification adjusted the string. [in|out]
+    /// @param version_check
+    ///   If the version can be stripped [in] and if it was [out].
     /// @param locked
     ///   The lock hold object for this thread. [in|out]
     void StringToOids(const string   & acc,
                       vector<TOid>   & oids,
                       bool             adjusted,
+                      bool           & version_check,
                       CSeqDBLockHold & locked);
     
     /// Seq-id translation

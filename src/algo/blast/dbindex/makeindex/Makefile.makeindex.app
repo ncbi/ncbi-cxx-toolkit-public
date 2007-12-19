@@ -1,8 +1,9 @@
 APP = makeindex
 SRC = main mkindex_app
 
-LIB = xalgoblastdbindex blast composition_adjustment seqdb blastdb \
+LIB_ = xalgoblastdbindex blast composition_adjustment seqdb blastdb \
       xobjread creaders tables connect $(SOBJMGR_LIBS)
+LIB = $(LIB_:%=%$(STATIC))
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
