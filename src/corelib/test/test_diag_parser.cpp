@@ -156,14 +156,14 @@ int CDiagParserApp::Run(void)
                 "UNK_SESSION my_app Message[E]: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: CMyApp::() "
-                "--- Message from thread 6", false);
+                "--- Message from thread 6", true);
     // Missing class::function
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
                 "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST "
                 "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
                 "line 81: "
-                "--- Message from thread 6", false);
+                "--- Message from thread 6", true);
     // Missing ) after error text
     x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
                 "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
