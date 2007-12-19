@@ -538,7 +538,8 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
 // Test unicode without binding values ...
 void CDBAPIUnitTest::Test_UnicodeNB(void)
 {
-    string table_name("#test_unicode_table");
+    // string table_name("#test_unicode_table");
+    string table_name("DBAPI_Sample..test_unicode_table");
 
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     string str_ger("Außerdem können Sie einzelne Einträge aus Ihrem "
@@ -547,20 +548,41 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
     const CStringUTF8 utf8_str_ger(str_ger, eEncoding_Windows_1252);
 
     try {
+        // Create table ...
+        if (false) {
+            string sql = 
+                "CREATE TABLE " + table_name + "( \n"
+                "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n"
+                "    nvc255_field NVARCHAR(255) NULL \n"
+                ") ";
+
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
         // Clean table ...
         {
             auto_stmt->ExecuteUpdate("DELETE FROM " + table_name);
         }
 
         // Insert data ...
-        {
-            string sql_ger = "INSERT INTO " + table_name + "(nvc255_field) VALUES('" + str_ger + "')";
+
+        // The code below actually works ...
+        if (false) {
+            string sql_ger = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + str_ger + "')";
 
             CStringUTF8 utf8_sql_ger(sql_ger, eEncoding_Windows_1252);
 
             BOOST_CHECK( utf8_sql_ger.size() > 0 );
 
             auto_stmt->ExecuteUpdate( utf8_sql_ger );
+        }
+
+        // That works either ...
+        if (true) {
+            // string sql_ger = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + utf8_str_ger + "')";
+            string sql_ger = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + str_ger + "')";
+
+            auto_stmt->ExecuteUpdate( sql_ger );
         }
 
         // Retrieve data ...
@@ -583,12 +605,17 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
             BOOST_CHECK( rs->Next() );
             nvc255_value = rs->GetVariant(1).GetString();
             BOOST_CHECK( nvc255_value.size() > 0);
-            BOOST_CHECK_EQUAL( utf8_str_ger.size(), nvc255_value.size() );
-            BOOST_CHECK_EQUAL( utf8_str_ger, nvc255_value );
-            CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
-            string value_ger =
-                utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
-            BOOST_CHECK_EQUAL( str_ger, value_ger );
+            if (false) {
+                BOOST_CHECK_EQUAL( utf8_str_ger.size(), nvc255_value.size() );
+                BOOST_CHECK_EQUAL( utf8_str_ger, nvc255_value );
+                CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
+                string value_ger =
+                    utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
+                BOOST_CHECK_EQUAL( str_ger, value_ger );
+            } else {
+                BOOST_CHECK_EQUAL( str_ger.size(), nvc255_value.size() );
+                BOOST_CHECK_EQUAL( str_ger, nvc255_value );
+            }
 
             DumpResults(auto_stmt.get());
         }
@@ -3320,9 +3347,16 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
     string sql;
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IConnection> conn(
+                m_DS->CreateConnection(CONN_OWNERSHIP)
+                );
+        conn->SetMode(IConnection::eBulkInsert);
+        Connect(conn);
+
+        auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
 
         // Initialize ...
+        // Block 1 ...
         {
             sql =
                 "CREATE TABLE #test_bcp_cancel ( \n"
@@ -3333,9 +3367,10 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         }
 
         // Insert data ...
+        // Block 2 ...
         {
             auto_ptr<IBulkInsert> bi(
-                m_Conn->GetBulkInsert("#test_bcp_cancel", 1)
+                conn->GetBulkInsert("#test_bcp_cancel", 1)
                 );
 
             CVariant col1(eDB_Int);
@@ -3355,7 +3390,8 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         }
 
         // Retrieve data ...
-        {
+        // Block 3 ...
+        if (true) {
             sql = "SELECT count(*) FROM #test_bcp_cancel";
 
             auto_stmt->SendSql( sql );
@@ -3375,16 +3411,18 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         }
 
         // Initialize ...
-        {
+        // Block 4 ...
+        if (true) {
             sql = "CREATE INDEX test_bcp_cancel_ind ON #test_bcp_cancel (int_field)";
 
             auto_stmt->ExecuteUpdate( sql );
         }
 
         // Insert data ...
-        {
+        // Block 5 ...
+        if (true) {
             auto_ptr<IBulkInsert> bi(
-                m_Conn->GetBulkInsert("#test_bcp_cancel", 1)
+                conn->GetBulkInsert("#test_bcp_cancel", 1)
                 );
 
             CVariant col1(eDB_Int);
@@ -3404,7 +3442,8 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         }
 
         // Retrieve data ...
-        {
+        // Block 6 ...
+        if (true) {
             sql = "SELECT count(*) FROM #test_bcp_cancel";
 
             auto_stmt->SendSql( sql );
@@ -11861,10 +11900,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
         if (args.GetDriverName() == odbcw_driver
             // || args.GetDriverName() == ftds63_driver
-            // || (args.GetDriverName() == ftds_odbc_driver 
-            //       && args.GetServerType() == CTestArguments::eMsSql)
-            || (args.GetDriverName() == ftds64_driver
-                  && args.GetServerType() == CTestArguments::eMsSql)
+            // || args.GetDriverName() == ftds_odbc_driver
+            || args.GetDriverName() == ftds64_driver
             // || args.GetDriverName() == ftds8_driver
             ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UnicodeNB,
@@ -12490,7 +12527,7 @@ CTestArguments::SetDatabaseParameters(void)
 
     if ( (GetDriverName() == ftds8_driver ||
           GetDriverName() == ftds63_driver ||
-          GetDriverName() == ftds64_driver ||
+          // GetDriverName() == ftds64_driver ||
           // GetDriverName() == ftds_odbc_driver  ||
           GetDriverName() == ftds_dblib_driver)
          && GetServerType() == eMsSql) {
