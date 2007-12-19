@@ -538,8 +538,8 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
 // Test unicode without binding values ...
 void CDBAPIUnitTest::Test_UnicodeNB(void)
 {
-    // string table_name("#test_unicode_table");
-    string table_name("DBAPI_Sample..test_unicode_table");
+    string table_name("#test_unicode_table");
+    // string table_name("DBAPI_Sample..test_unicode_table");
 
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     string str_ger("Außerdem können Sie einzelne Einträge aus Ihrem "
@@ -579,8 +579,8 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
 
         // That works either ...
         if (true) {
-            // string sql_ger = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + utf8_str_ger + "')";
-            string sql_ger = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + str_ger + "')";
+            string sql_ger = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + utf8_str_ger + "')";
+            // string sql_ger = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + str_ger + "')";
 
             auto_stmt->ExecuteUpdate( sql_ger );
         }
@@ -605,7 +605,7 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
             BOOST_CHECK( rs->Next() );
             nvc255_value = rs->GetVariant(1).GetString();
             BOOST_CHECK( nvc255_value.size() > 0);
-            if (false) {
+            if (true) {
                 BOOST_CHECK_EQUAL( utf8_str_ger.size(), nvc255_value.size() );
                 BOOST_CHECK_EQUAL( utf8_str_ger, nvc255_value );
                 CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
@@ -12527,7 +12527,7 @@ CTestArguments::SetDatabaseParameters(void)
 
     if ( (GetDriverName() == ftds8_driver ||
           GetDriverName() == ftds63_driver ||
-          // GetDriverName() == ftds64_driver ||
+          GetDriverName() == ftds64_driver ||
           // GetDriverName() == ftds_odbc_driver  ||
           GetDriverName() == ftds_dblib_driver)
          && GetServerType() == eMsSql) {
