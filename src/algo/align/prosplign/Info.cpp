@@ -881,12 +881,12 @@ TAliChunkCollection ExtractChunks(CSeq_align& seq_align)
     return chunks;
 }
 
-list<TSeqRange> InvertPartList(const list<CNPiece>& good_parts, TSeqRange bad_range)
+list<TSeqRange> InvertPartList(const list<CNPiece>& good_parts, TSeqRange total_range)
 {
     list<TSeqRange> bad_parts;
     
-    int tail_beg = bad_range.GetFrom();
-    int tail_end = bad_range.GetTo();
+    int tail_beg = total_range.GetFrom();
+    int tail_end = total_range.GetTo();
     ITERATE(list<CNPiece>, i, good_parts) {
         if (tail_beg < i->beg)
             bad_parts.push_back(TSeqRange(tail_beg,i->beg-1));
@@ -1093,7 +1093,7 @@ void prosplign::RefineAlignment(CSeq_align& seq_align, const list<CNPiece>& good
     CSpliced_seg::TExons::iterator prev_exon_iter = sps.SetExons().end();
 
     NON_CONST_ITERATE(TAliChunkCollection, chunk_iter, chunks) {
-        while(!chunk_iter->m_bad) {
+        while(chunk_iter != chunks.end() && !chunk_iter->m_bad) {
             prev_exon_iter = chunk_iter->m_exon_iter;
             ++chunk_iter;
         }
