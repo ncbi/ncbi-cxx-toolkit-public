@@ -577,8 +577,8 @@ bool CODBC_BCPInCmd::Send(void)
 bool CODBC_BCPInCmd::Cancel()
 {
     if (WasSent()) {
-        DBINT outrow = bcp_done(GetHandle());
         bcp_control(GetHandle(), BCPABORT, NULL);
+        DBINT outrow = bcp_done(GetHandle());
         SetWasSent(false);
         return outrow == 0;
     }

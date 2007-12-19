@@ -235,6 +235,7 @@ public:
     void Test_N_Connections(void);
     void Test_ConnFactory(void);
     void Test_ConnPool(void);
+    void Test_BCP_Cancel(void);
 
 public:
     typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)

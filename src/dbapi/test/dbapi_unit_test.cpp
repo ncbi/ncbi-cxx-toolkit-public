@@ -3315,6 +3315,120 @@ CDBAPIUnitTest::DumpResults(IStatement* const stmt)
 }
 
 void
+CDBAPIUnitTest::Test_BCP_Cancel(void)
+{
+    string sql;
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Initialize ...
+        {
+            sql =
+                "CREATE TABLE #test_bcp_cancel ( \n"
+                "   int_field int \n"
+                ") \n";
+
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Insert data ...
+        {
+            auto_ptr<IBulkInsert> bi(
+                m_Conn->GetBulkInsert("#test_bcp_cancel", 1)
+                );
+
+            CVariant col1(eDB_Int);
+
+            bi->Bind(1, &col1);
+
+            for (int i = 0; i < 10; ++i) {
+                col1 = i;
+                bi->AddRow();
+            }
+            bi->StoreBatch();
+            for (int i = 0; i < 10; ++i) {
+                col1 = i;
+                bi->AddRow();
+            }
+            bi->Cancel();
+        }
+
+        // Retrieve data ...
+        {
+            sql = "SELECT count(*) FROM #test_bcp_cancel";
+
+            auto_stmt->SendSql( sql );
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+   
+            BOOST_CHECK( rs.get() );
+            BOOST_CHECK( rs->Next() );
+   
+            const CVariant& value = rs->GetVariant(1);
+   
+            BOOST_CHECK( !value.IsNull() );
+   
+            int count = value.GetInt4();
+            BOOST_CHECK_EQUAL( count, 10 );
+        }
+
+        // Initialize ...
+        {
+            sql = "CREATE INDEX test_bcp_cancel_ind ON #test_bcp_cancel (int_field)";
+
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Insert data ...
+        {
+            auto_ptr<IBulkInsert> bi(
+                m_Conn->GetBulkInsert("#test_bcp_cancel", 1)
+                );
+
+            CVariant col1(eDB_Int);
+
+            bi->Bind(1, &col1);
+
+            for (int i = 0; i < 10; ++i) {
+                col1 = i;
+                bi->AddRow();
+            }
+            bi->StoreBatch();
+            for (int i = 0; i < 10; ++i) {
+                col1 = i;
+                bi->AddRow();
+            }
+            bi->Cancel();
+        }
+
+        // Retrieve data ...
+        {
+            sql = "SELECT count(*) FROM #test_bcp_cancel";
+
+            auto_stmt->SendSql( sql );
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+   
+            BOOST_CHECK( rs.get() );
+            BOOST_CHECK( rs->Next() );
+   
+            const CVariant& value = rs->GetVariant(1);
+   
+            BOOST_CHECK( !value.IsNull() );
+   
+            int count = value.GetInt4();
+            BOOST_CHECK_EQUAL( count, 20 );
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+void
 CDBAPIUnitTest::Test_Bulk_Overflow(void)
 {
     string sql;
@@ -12138,6 +12252,18 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     } else {
         PutMsgDisabled("Test_HasMoreResults");
+    }
+
+
+    // DBLIB has not cancel command, so this test doesn't working
+    if (args.IsBCPAvailable()
+        &&  args.GetDriverName() != dblib_driver
+        &&  args.GetDriverName() != ftds_dblib_driver)
+    {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BCP_Cancel,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
     }
 
 }
