@@ -474,7 +474,7 @@ bool CTL_BCPInCmd::Send(void)
     unsigned int i;
     CS_INT       datalen = 0;
     // CS_SMALLINT  indicator = -1; // NULL value
-    CS_SMALLINT  indicator = 0; // DEFAULT value
+    // CS_SMALLINT  indicator = 0; // DEFAULT value
     size_t       len = 0;
     char         buff[2048];
 
