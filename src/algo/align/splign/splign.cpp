@@ -1368,7 +1368,7 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
     ITERATE(TSegmentDeque, ii, segments) {
         cerr << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
              << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
-             << ii->m_annot << '\t' << ii->m_score << endl;
+             << ii->m_annot  << '\t' << ii->m_score  << endl;
     }
 #endif
 
@@ -1784,16 +1784,18 @@ Uint4 CSplign::x_GetGenomicExtent(const Uint4 query_len, Uint4 max_ext) const
     }
 
     Uint4 rv (0);
-
     if(query_len >= kNonCoveredEndThreshold) {
-
         rv = m_max_genomic_ext;
     }
     else {
-
-        const double k (pow(kNonCoveredEndThreshold, - 1. / kPower) * max_ext);
-        const double drv (k * pow(query_len, 1. / kPower));
-        rv = Uint4(drv);
+        if(query_len < 5) {
+            rv = 10 * query_len;
+        }
+        else {
+            const double k (pow(kNonCoveredEndThreshold, - 1. / kPower) * max_ext);
+            const double drv (k * pow(query_len, 1. / kPower));
+            rv = Uint4(drv);
+        }
     }
 
     return rv;
