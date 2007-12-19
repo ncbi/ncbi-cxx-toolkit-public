@@ -156,43 +156,45 @@ private:
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
         CConstRef<CSeq_feat>& );
     void x_AddQualPartial( CBioseqContext& );
-    void x_AddQualDbXref( CBioseqContext& );
-    void x_AddQualCitation( CBioseqContext& );
+    void x_AddQualDbXref();
+    void x_AddQualCitation();
+    void x_AddQualExt();
     void x_AddQualExpInv( CBioseqContext& );
+    void x_AddQualGeneXref( const CGene_ref*, const CConstRef<CSeq_feat>& ) const;
     void x_AddQualOperon( CBioseqContext&, CSeqFeatData::ESubtype );
     void x_AddQualPseudo( CBioseqContext&, CSeqFeatData::E_Choice, 
         CSeqFeatData::ESubtype, bool );
     void x_AddQualExceptions( CBioseqContext& ) const;
-    void x_AddQualNote( const CGene_ref*, CConstRef<CSeq_feat> ) const;
-    void x_AddQualOldLocusTag( const CGene_ref*, CConstRef<CSeq_feat> ) const;
-    void x_AddQualDb( const CGene_ref*, CConstRef<CSeq_feat> ) const;
+    void x_AddQualNote( CConstRef<CSeq_feat> ) const;
+    void x_AddQualOldLocusTag( CConstRef<CSeq_feat> ) const;
+    void x_AddQualDb( const CGene_ref* ) const;
+    void x_AddQualSeqfeatNote();
     void x_AddQualsGb( CBioseqContext& );
     bool x_GetPseudo(  const CGene_ref* =0, const CSeq_feat* =0 ) const;
 
     // qualifier collection
     void x_AddQualsExt( const CSeq_feat::TExt& ) const;
+    void x_AddQualsBond( CBioseqContext& ) const;
+    void x_AddQualsSite( CBioseqContext& ) const;
+    void x_AddQualsRegion( CBioseqContext& ) const;
+    void x_AddQualsProt( CBioseqContext&, bool ) const;
+
     void x_AddQuals( CBioseqContext& ctx );
     void x_AddQuals(const CCdregion& cds)  const;
     void x_AddQuals(const CProt_ref& prot) const;
-    const TGeneSyn* x_AddGeneQuals(const CSeq_feat& gene, bool pseudo) const;
     void x_AddCdregionQuals(const CSeq_feat& cds, CBioseqContext& ctx,
         bool pseudo) const;
     const CProt_ref* x_AddProteinQuals(CBioseq_Handle& prot) const;
     void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot) const;
     void x_AddRnaQuals(const CSeq_feat& feat, CBioseqContext& ctx,
         bool pseudo) const;
-    void x_AddProtQuals(const CSeq_feat& feat, CBioseqContext& ctx,
-        bool pseudo) const;
-    void x_AddRegionQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
-    void x_AddSiteQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
-    void x_AddBondQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
-    const TGeneSyn* x_AddQuals(const CGene_ref& gene, bool pseudo,
-        CSeqFeatData::ESubtype subtype, bool from_overlap) const;
+    void x_AddQualsGene(const CGene_ref*, CConstRef<CSeq_feat>&,
+        bool from_overlap) const;
     void x_AddGoQuals(const CUser_object& uo) const;
     void x_ImportQuals(CBioseqContext& ctx) const;
     void x_AddRptUnitQual(const string& rpt_unit) const;
     void x_AddRptTypeQual(const string& rpt_type, bool check_qual_syntax) const;
-    void x_CleanQuals(const TGeneSyn* gene_syn) const;
+    void x_CleanQuals( const CGene_ref* );
     const CFlatStringQVal* x_GetStringQual(EFeatureQualifier slot) const;
     CFlatStringListQVal* x_GetStringListQual(EFeatureQualifier slot) const;
     // feature table quals
@@ -314,50 +316,34 @@ private:
 };
 
 //  ----------------------------------------------------------------------------
-inline void CFeatureItem::x_AddQualNote(
-    const CGene_ref* gene_ref,
-    CConstRef<CSeq_feat> gene_feat ) const
-//
-//  For non-gene features, add the /comment qualifier if the necessary info
-//  exists.
-//  ----------------------------------------------------------------------------
-{
-    if ( gene_feat && gene_feat->CanGetComment() ) {
-        x_AddQual( eFQ_gene_note, new CFlatStringQVal( 
-            gene_feat->GetComment() ) );
-    }
-}
-
-//  ----------------------------------------------------------------------------
 inline void CFeatureItem::x_AddQualDb(
-    const CGene_ref* gene_ref,
-    CConstRef<CSeq_feat> gene_feat ) const
+    const CGene_ref* gene_ref ) const
 //  ----------------------------------------------------------------------------
 {
-    if ( gene_ref != NULL && gene_ref->CanGetDb() ) {
-        x_AddQual(eFQ_gene_xref, new CFlatXrefQVal( gene_ref->GetDb() ) );
+    if ( ! gene_ref || ! gene_ref->CanGetDb() ) {
+        return;
     }
+    x_AddQual(eFQ_gene_xref, new CFlatXrefQVal( gene_ref->GetDb() ) );
 }
     
 //  ----------------------------------------------------------------------------
-inline void CFeatureItem::x_AddQualCitation(
-    CBioseqContext& )
+inline void CFeatureItem::x_AddQualCitation()
 //  ----------------------------------------------------------------------------
 {
-    if (m_Feat->IsSetCit()) {
-        x_AddQual(eFQ_citation, new CFlatPubSetQVal(m_Feat->GetCit()));
+    if ( ! m_Feat->IsSetCit() ) {
+        return;
     }
+    x_AddQual( eFQ_citation, new CFlatPubSetQVal( m_Feat->GetCit() ) );
 }
 
 //  ----------------------------------------------------------------------------
-inline void CFeatureItem::x_AddQualDbXref(
-    CBioseqContext& )
+inline void CFeatureItem::x_AddQualDbXref()
 //  ----------------------------------------------------------------------------
 {
-    if (m_Feat->IsSetDbxref()) {
-        x_AddQual( eFQ_db_xref, 
-            new CFlatXrefQVal( m_Feat->GetDbxref(), &m_Quals ) );
+    if ( ! m_Feat->IsSetDbxref() ) {
+        return;
     }
+    x_AddQual( eFQ_db_xref, new CFlatXrefQVal( m_Feat->GetDbxref(), &m_Quals ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -367,6 +353,15 @@ inline void CFeatureItem::x_AddQualsGb(
 {
     if (m_Feat->IsSetQual()) {
         x_ImportQuals(ctx);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+inline void CFeatureItem::x_AddQualExt()
+//  ----------------------------------------------------------------------------
+{
+    if ( m_Feat->IsSetExt() ) {
+        x_AddQualsExt( m_Feat->GetExt() );
     }
 }
 
