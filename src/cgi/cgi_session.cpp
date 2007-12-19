@@ -57,7 +57,7 @@ CCgiSession::CCgiSession(const CCgiRequest& request,
 
 CCgiSession::~CCgiSession()
 {
-    if (m_Status == eLoaded || m_Status == eNew) {
+    if (Exists()) {
         try {
             m_Impl->Reset();
         } catch(...) {}
@@ -79,7 +79,7 @@ void CCgiSession::SetId(const string& id)
 {
     if (m_SessionId == id) 
         return;
-    if (m_Status == eLoaded || m_Status == eNew) {
+    if (Exists()) {
         m_Impl->Reset();
         m_Status = eNotLoaded;
     }
@@ -95,7 +95,7 @@ void CCgiSession::ModifyId(const string& new_session_id)
     if (!m_Impl)
         NCBI_THROW(CCgiSessionException, eImplNotSet,
                    "The session implementation is not set");
-    if (m_Status != eLoaded && m_Status != eNew)
+    if (!Exists())
         NCBI_THROW(CCgiSessionException, eSessionId,
                    "The session must be loaded");
     m_Impl->ModifySessionId(new_session_id);
@@ -106,7 +106,7 @@ void CCgiSession::ModifyId(const string& new_session_id)
 
 void CCgiSession::Load()
 {
-    if (m_Status == eLoaded || m_Status == eNew)
+    if (Exists())
         return;
     if (!m_Impl)
         NCBI_THROW(CCgiSessionException, eImplNotSet,
@@ -121,7 +121,7 @@ void CCgiSession::Load()
 
 void CCgiSession::CreateNewSession()
 {
-    if (m_Status == eLoaded || m_Status == eNew)
+    if (Exists())
         m_Impl->Reset();
     if (!m_Impl)
         NCBI_THROW(CCgiSessionException, eImplNotSet,
@@ -187,7 +187,7 @@ void CCgiSession::DeleteSession()
 const CCgiCookie * const CCgiSession::GetSessionCookie() const
 {
     if (m_CookieSupport == eNoCookie ||
-        (m_Status != eLoaded && m_Status != eNew && m_Status != eDeleted))
+        (!Exists() && m_Status != eDeleted))
         return NULL;
 
     if (!m_SessionCookie.get()) {

@@ -166,6 +166,12 @@ public:
     /// Get current status of the session.
     EStatus GetStatus(void) const;
 
+    /// Check if this session object is valid.
+    /// @return True, if this session has been successfully loaded
+    ///         or has just been created. False - if this session
+    ///         does not exist and cannot be used.
+    bool Exists(void) const;
+
     /// Get name for session ID.
     /// @sa SetSessionIdName
     const string& GetSessionIdName(void) const;
@@ -215,6 +221,11 @@ private:
     CCgiSession(const CCgiSession&);
     CCgiSession& operator=(const CCgiSession&);
 };
+
+inline bool CCgiSession::Exists(void) const
+{
+    return m_Status == eLoaded || m_Status == eNew;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -1397,7 +1397,7 @@ CCgiSession& CCgiRequest::GetSession(ESessionCreateMode mode) const
                          "Session implementation error");
         }
     }
-    if (m_Session->GetStatus() != CCgiSession::eLoaded) {
+    if (!m_Session->Exists()) {
         if (mode != eCreateIfNotExist)
             NCBI_THROW(CCgiSessionException, eSessionDoesnotExist, 
                        "Session doesn't exist.");
