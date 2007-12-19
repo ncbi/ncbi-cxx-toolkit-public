@@ -304,7 +304,7 @@ CDBAPIUnitTest::TestInit(void)
         m_Conn.reset(m_DS->CreateConnection( CONN_OWNERSHIP ));
         BOOST_CHECK(m_Conn.get() != NULL);
 
-        m_Conn->SetMode(IConnection::eBulkInsert);
+        // m_Conn->SetMode(IConnection::eBulkInsert);
 
         Connect(m_Conn);
 
@@ -3350,7 +3350,7 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         auto_ptr<IConnection> conn(
                 m_DS->CreateConnection(CONN_OWNERSHIP)
                 );
-        conn->SetMode(IConnection::eBulkInsert);
+        // conn->SetMode(IConnection::eBulkInsert);
         Connect(conn);
 
         auto_ptr<IStatement> auto_stmt( conn->GetStatement() );

@@ -262,7 +262,9 @@ protected:
     }
     void SetBCPable(bool flag = true)
     {
-        m_BCPable = flag;
+        // m_BCPable = flag;
+        // BCP is enabled with all drivers by default.
+        m_BCPable = true;
     }
     bool IsBCPable(void) const
     {

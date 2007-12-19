@@ -93,7 +93,7 @@ CConnection::CConnection(CDriverContext& dc,
 , m_ResProc(NULL)
 , m_Pool(pool_name)
 , m_Reusable(reusable)
-, m_BCPable(isBCPable)
+, m_BCPable(true) // BCP is enabled with all drivers by default. m_BCPable(isBCPable)
 , m_SecureLogin(hasSecureLogin)
 {
     _ASSERT(m_MsgHandlers.GetSize() == dc.GetConnHandlerStack().GetSize());
