@@ -579,8 +579,7 @@ void CGenbankFormatter::FormatFeature
         // (May have to be amended once sizeable numbers of violators are found
         // in existing data).
         NON_CONST_ITERATE (list<string>, it, l_new) {
-            string str = (*it).substr( GetFeatIndent().size() );
-            *it = GetFeatIndent() + NStr::TruncateSpaces(str, NStr::eTrunc_Both);
+            NStr::TruncateSpacesInPlace( *it, NStr::eTrunc_End );
         }
         l.insert( l.end(), l_new.begin(), l_new.end() );
         l_new.clear();
