@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = mapview
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

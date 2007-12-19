@@ -1,0 +1,13 @@
+# $Id$
+
+DLL = mapview
+
+HOSTED_LIBS = mapdata mapview mapviewcli mv_admin mv_admincli mv_align \
+			  mv_entrez mv_entrezcli mv_meta mv_metacli mv_types \
+			  mvobjutil
+
+
+DEPENDENCIES = ncbi_core ncbi_seq ncbi_seqext ncbi_misc ncbi_image ncbi_general
+
+CPPFLAGS = -DNCBI_MAPVIEWASN_EXPORTS
+
