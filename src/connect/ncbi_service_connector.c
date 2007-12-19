@@ -731,7 +731,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
                 static const char prefix[] = "SERVICE/";
                 char* name = (char*) malloc(sizeof(prefix) + strlen(type));
                 if (name) {
-                    strcpy(&name[0],                prefix);
+                    memcpy(&name[0],                prefix, sizeof(prefix)-1);
                     strcpy(&name[sizeof(prefix)-1], type);
                     uuu->name = name;
                 }
