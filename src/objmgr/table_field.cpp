@@ -53,8 +53,15 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CTableFieldHandle_Base::CTableFieldHandle_Base(const string& name)
-    : m_FieldName(name)
+CTableFieldHandle_Base::CTableFieldHandle_Base(int field_id)
+    : m_FieldId(field_id)
+{
+}
+
+
+CTableFieldHandle_Base::CTableFieldHandle_Base(const string& field_name)
+    : m_FieldId(CSeqTable_column_info::GetIdForName(field_name)),
+      m_FieldName(field_name)
 {
 }
 
@@ -64,23 +71,34 @@ CTableFieldHandle_Base::~CTableFieldHandle_Base()
 }
 
 
+const CSeqTableColumnInfo&
+CTableFieldHandle_Base::x_GetColumn(const CFeat_CI& feat_ci) const
+{
+    const CSeq_annot_Info& annot = feat_ci.Get().GetSeq_annot_Info();
+    if ( &annot != m_CachedAnnotInfo ) {
+        m_CachedAnnotInfo = &annot;
+        if ( m_FieldId < 0 ) {
+            m_CachedFieldInfo = annot.GetTableInfo().GetColumn(m_FieldName);
+        }
+        else {
+            m_CachedFieldInfo = annot.GetTableInfo().GetColumn(m_FieldId);
+        }
+    }
+    return m_CachedFieldInfo;
+}
+
+
 int CTableFieldHandle_Base::x_GetAnnotIndex(const CFeat_CI& feat_ci) const
 {
     return feat_ci.Get().GetAnnotIndex();
 }
 
 
-bool CTableFieldHandle_Base::x_IsSet(size_t row) const
+bool CTableFieldHandle_Base::IsSet(const CFeat_CI& feat_ci) const
 {
-    return m_CachedFieldInfo.IsSet(row);
+    return x_GetColumn(feat_ci).IsSet(x_GetAnnotIndex(feat_ci));
 }
 
-/*
-int get_table_int(const CFeat_CI& feat_ci, const string& name)
-{
-    return CTableFieldHandle<int>(name)(feat_ci);
-}
-*/
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -137,6 +137,8 @@ public:
 
     const CAnnotObject_Info& GetInfo(TAnnotIndex index) const;
 
+    const CSeqTableInfo& GetTableInfo(void) const;
+
     void UpdateTableFeat(CRef<CSeq_feat>& seq_feat,
                          CRef<CSeq_point>& seq_point,
                          CRef<CSeq_interval>& seq_interval,
@@ -254,6 +256,12 @@ inline
 const CSeq_annot_SNP_Info& CSeq_annot_Info::x_GetSNP_annot_Info(void) const
 {
     return *m_SNP_Info;
+}
+
+inline
+const CSeqTableInfo& CSeq_annot_Info::GetTableInfo(void) const
+{
+    return *m_Table_Info;
 }
 
 inline 

@@ -35,6 +35,7 @@
 
 #include <corelib/ncbiobj.hpp>
 
+#include <objects/seqtable/SeqTable_column_info.hpp>
 #include <objmgr/impl/seq_table_info.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -51,21 +52,21 @@ class CFeat_CI;
 class NCBI_XOBJMGR_EXPORT CTableFieldHandle_Base
 {
 public:
-    CTableFieldHandle_Base(const string& name);
+    CTableFieldHandle_Base(CSeqTable_column_info::TField_id field_id);
+    CTableFieldHandle_Base(const string& field_name);
     ~CTableFieldHandle_Base();
 
     const string& GetFieldName(void) const {
         return m_FieldName;
     }
 
-    bool IsSet(const CFeat_CI& feat_ci) const {
-        return x_IsSet(x_GetAnnotIndex(feat_ci));
-    }
+    bool IsSet(const CFeat_CI& feat_ci) const;
     
 protected:
+    const CSeqTableColumnInfo& x_GetColumn(const CFeat_CI& feat_ci) const;
     int x_GetAnnotIndex(const CFeat_CI& feat_ci) const;
-    bool x_IsSet(size_t row) const;
 
+    int m_FieldId;
     string m_FieldName;
     mutable CSeqTableColumnInfo m_CachedFieldInfo;
     mutable CConstRef<CSeq_annot_Info> m_CachedAnnotInfo;
@@ -80,16 +81,20 @@ class CTableFieldHandle : public CTableFieldHandle_Base
 {
 public:
     typedef FieldType TFieldType;
-    CTableFieldHandle(const string& name)
-        : CTableFieldHandle_Base(name) {
+    CTableFieldHandle(CSeqTable_column_info::TField_id field_id)
+        : CTableFieldHandle_Base(field_id) {
     }
-    /*
-    TFieldType operator()(const CFeat_CI& feat_ci) const {
-        const TFieldType* ptr = 0;
-        int index = x_GetAnnotIndex(feat_ci);
-        return this->m_CachedFieldInfo.GetValue(ptr, index);
+    CTableFieldHandle(const string& field_name)
+        : CTableFieldHandle_Base(field_name) {
     }
-    */
+    bool Get(const CFeat_CI& feat_ci, TFieldType& v) const {
+        return x_GetColumn(feat_ci).GetValue(x_GetAnnotIndex(feat_ci), v);
+    }
+    TFieldType Get(const CFeat_CI& feat_ci) const {
+        TFieldType ret;
+        x_GetColumn(feat_ci).GetValue(x_GetAnnotIndex(feat_ci), ret, true);
+        return ret;
+    }
 };
 
 

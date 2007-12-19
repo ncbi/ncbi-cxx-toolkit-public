@@ -60,33 +60,53 @@ bool CSeqTableColumnInfo::IsSet(size_t row) const
 }
 
 
-bool CSeqTableColumnInfo::GetBool(size_t row, bool& v) const
+bool CSeqTableColumnInfo::x_CheckUnsetValue(bool force) const
 {
-    return m_Column->GetBool(row, v);
+    if ( force ) {
+        NCBI_THROW(CAnnotException, eOtherError,
+                   "CSeqTableColumnInfo::GetValue: value is not set");
+    }
+    return false;
 }
 
 
-bool CSeqTableColumnInfo::GetInt(size_t row, int& v) const
+bool CSeqTableColumnInfo::GetBool(size_t row, bool& v, bool force) const
 {
-    return m_Column->GetInt(row, v);
+    return m_Column->GetBool(row, v) || x_CheckUnsetValue(force);
 }
 
 
-bool CSeqTableColumnInfo::GetString(size_t row, string& v) const
+bool CSeqTableColumnInfo::GetInt(size_t row, int& v, bool force) const
 {
-    return m_Column->GetString(row, v);
+    return m_Column->GetInt(row, v) || x_CheckUnsetValue(force);
 }
 
 
-CConstRef<CSeq_id> CSeqTableColumnInfo::GetSeq_id(size_t row) const
+bool CSeqTableColumnInfo::GetString(size_t row, string& v, bool force) const
 {
-    return m_Column->GetSeq_id(row);
+    return m_Column->GetString(row, v) || x_CheckUnsetValue(force);
 }
 
 
-CConstRef<CSeq_loc> CSeqTableColumnInfo::GetSeq_loc(size_t row) const
+CConstRef<CSeq_id> CSeqTableColumnInfo::GetSeq_id(size_t row,
+                                                  bool force) const
 {
-    return m_Column->GetSeq_loc(row);
+    CConstRef<CSeq_id> ret = m_Column->GetSeq_id(row);
+    if ( !ret && force ) {
+        x_CheckUnsetValue(force);
+    }
+    return ret;
+}
+
+
+CConstRef<CSeq_loc> CSeqTableColumnInfo::GetSeq_loc(size_t row,
+                                                    bool force) const
+{
+    CConstRef<CSeq_loc> ret = m_Column->GetSeq_loc(row);
+    if ( !ret && force ) {
+        x_CheckUnsetValue(force);
+    }
+    return ret;
 }
 
 
@@ -722,11 +742,32 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
 {
     ITERATE ( CSeq_table::TColumns, it, feat_table.GetColumns() ) {
         const CSeqTable_column& col = **it;
+        const CSeqTable_column_info& type = col.GetHeader();
+        int field_id;
+        string field_name;
+        if ( type.IsSetField_id() ) {
+            field_id = type.GetField_id();
+            field_name = type.GetNameForId(field_id);
+            if ( field_name.empty() ) {
+                field_name = type.GetField_name();
+                field_id = type.GetIdForName(field_name);
+            }
+        }
+        else {
+            field_name = type.GetField_name();
+            field_id = type.GetIdForName(field_name);
+        }
+        if ( field_id >= 0 ) {
+            m_ColumnsById[field_id].SetColumn(col, null);
+        }
+        if ( !field_name.empty() ) {
+            m_ColumnsByName[field_name].SetColumn(col, null);
+        }
+
         if ( m_Location.AddColumn(col) || m_Product.AddColumn(col) ) {
             continue;
         }
         CConstRef<CSeqTableSetField> setter;
-        const CSeqTable_column_info& type = col.GetHeader();
         if ( type.IsSetField_id() ) {
             int field = type.GetField_id();
             switch ( field ) {
@@ -857,6 +898,32 @@ void CSeqTableInfo::UpdateSeq_feat(size_t row,
     ITERATE ( TExtraColumns, it, m_ExtraColumns ) {
         it->UpdateSeq_feat(feat, row);
     }
+}
+
+
+const CSeqTableColumnInfo&
+CSeqTableInfo::GetColumn(int field_id) const
+{
+    TColumnsById::const_iterator iter = m_ColumnsById.find(field_id);
+    if ( iter == m_ColumnsById.end() ) {
+        NCBI_THROW_FMT(CAnnotException, eOtherError,
+                       "CSeqTableInfo::GetColumn: "
+                       "column "<<field_id<<" not found");
+    }
+    return iter->second;
+}
+
+
+const CSeqTableColumnInfo&
+CSeqTableInfo::GetColumn(const string& field_name) const
+{
+    TColumnsByName::const_iterator iter = m_ColumnsByName.find(field_name);
+    if ( iter == m_ColumnsByName.end() ) {
+        NCBI_THROW_FMT(CAnnotException, eOtherError,
+                       "CSeqTableInfo::GetColumn: "
+                       "column "<<field_name<<" not found");
+    }
+    return iter->second;
 }
 
 

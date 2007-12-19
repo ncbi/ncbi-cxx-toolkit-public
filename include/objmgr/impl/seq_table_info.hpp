@@ -88,24 +88,24 @@ public:
         }
 
     bool IsSet(size_t row) const;
-    bool GetBool(size_t row, bool& v) const;
-    bool GetReal(size_t row, double& v) const;
-    bool GetInt(size_t row, int& v) const;
-    bool GetString(size_t row, string& v) const;
-    CConstRef<CSeq_id> GetSeq_id(size_t row) const;
-    CConstRef<CSeq_loc> GetSeq_loc(size_t row) const;
+    bool GetBool(size_t row, bool& v, bool force = false) const;
+    bool GetReal(size_t row, double& v, bool force = false) const;
+    bool GetInt(size_t row, int& v, bool force = false) const;
+    bool GetString(size_t row, string& v, bool force = false) const;
+    CConstRef<CSeq_id> GetSeq_id(size_t row, bool force = false) const;
+    CConstRef<CSeq_loc> GetSeq_loc(size_t row, bool force = false) const;
 
-    bool GetValue(size_t row, bool& value) const
+    bool GetValue(size_t row, bool& value, bool force) const
         {
-            return GetBool(row, value);
+            return GetBool(row, value, force);
         }
-    bool GetValue(size_t row, int& value) const
+    bool GetValue(size_t row, int& value, bool force) const
         {
-            return GetInt(row, value);
+            return GetInt(row, value, force);
         }
-    bool GetValue(size_t row, string& value) const
+    bool GetValue(size_t row, string& value, bool force) const
         {
-            return GetString(row, value);
+            return GetString(row, value, force);
         }
 
     void UpdateSeq_loc(CSeq_loc& loc, size_t row) const;
@@ -120,6 +120,9 @@ public:
     bool UpdateSeq_feat(CSeq_feat& feat,
                         const CSeqTable_multi_data& data,
                         size_t index) const;
+
+protected:
+    bool x_CheckUnsetValue(bool force) const;
 
 private:
     CConstRef<CSeqTable_column> m_Column;
@@ -208,13 +211,19 @@ public:
     }
     bool IsPartial(size_t row) const;
     
+    const CSeqTableColumnInfo& GetColumn(int field_id) const;
+    const CSeqTableColumnInfo& GetColumn(const string& field_name) const;
+
 private:
     CSeqTableLocColumns m_Location;
     CSeqTableLocColumns m_Product;
     CSeqTableColumnInfo m_Partial;
     typedef vector<CSeqTableColumnInfo> TExtraColumns;
     TExtraColumns m_ExtraColumns;
-    typedef map<string, CConstRef<CSeqTableColumnInfo> > TColumnsByName;
+    typedef map<int, CSeqTableColumnInfo> TColumnsById;
+    typedef map<string, CSeqTableColumnInfo> TColumnsByName;
+    TColumnsById m_ColumnsById;
+    TColumnsByName m_ColumnsByName;
 
 private:
     CSeqTableInfo(const CSeqTableInfo&);

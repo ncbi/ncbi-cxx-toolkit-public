@@ -73,6 +73,9 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objmgr/prefetch_manager.hpp>
+#include <objmgr/prefetch_actions.hpp>
+#include <objmgr/table_field.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
@@ -264,6 +267,12 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("used_memory_check", "exit(0) after loading sequence");
     arg_desc->AddFlag("reset_scope", "reset scope before exiting");
     arg_desc->AddFlag("modify", "try to modify Bioseq object");
+    arg_desc->AddOptionalKey("table_field_name", "table_field_name",
+                             "Table Seq-feat field name to retrieve",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("table_field_id", "table_field_id",
+                             "Table Seq-feat field id to retrieve",
+                             CArgDescriptions::eInteger);
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -296,6 +305,104 @@ typename C::E_Choice GetVariant(const CArgValue& value)
 }
 
 
+int test1()
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CScope scope(*om);
+    scope.AddDefaults();
+    ifstream gi_in("prot_gis.txt");
+    int gi;
+    int seq_count = 0;
+    int prot_count = 0;
+    int gene_count = 0;
+    int cdr_count = 0;
+    vector<int> gis;
+    vector<CSeq_id_Handle> ids;
+    while ( gi_in >> gi ) {
+        gis.push_back(gi);
+        ids.push_back(CSeq_id_Handle::GetGiHandle(gi));
+    }
+    
+    CRef<CPrefetchManager> prefetch_manager;
+    //prefetch_manager = new CPrefetchManager();
+    CRef<CPrefetchSequence> prefetch;
+    if ( prefetch_manager ) {
+        // Initialize prefetch token;
+        prefetch = new CPrefetchSequence
+            (*prefetch_manager,
+             new CPrefetchBioseqActionSource(CScopeSource(scope), ids));
+    }
+
+    ITERATE ( vector<CSeq_id_Handle>, id, ids ) {
+        gi = id->GetGi();
+        NcbiCout << "Loading gi "<<gi << NcbiEndl;
+        CBioseq_Handle bh;
+        if ( prefetch ) {
+            bh = CStdPrefetch::GetBioseqHandle(prefetch->GetNextToken());
+        }
+        else {
+            bh = scope.GetBioseqHandle(*id);
+        }
+        if ( !bh ) {
+            ERR_POST("Cannot load gi "<<gi);
+            continue;
+        }
+        CConstRef<CSeq_entry> core = bh.GetTSE_Handle().GetTSECore();
+        if ( core->IsSeq() ) {
+            NcbiCout << gi << " seq" << NcbiEndl;
+        }
+        else if ( !core->GetSet().IsSetId() ) {
+            NcbiCout << gi << " set" << NcbiEndl;
+        }
+        else {
+            NcbiCout << gi << " split" << NcbiEndl;
+        }
+        ++seq_count;
+        if ( 0 ) {
+            for ( CFeat_CI it(bh, CSeqFeatData::e_Prot); it; ++it ) {
+                ++prot_count;
+            }
+            for ( CFeat_CI it(bh, SAnnotSelector(CSeqFeatData::e_Cdregion, true));
+                  it; ++it ) {
+                ++cdr_count;
+                for ( CFeat_CI it2(scope, it->GetLocation(), CSeqFeatData::e_Gene);
+                      it2; ++it2 ) {
+                    ++gene_count;
+                }
+            }
+        }
+    }
+    NcbiCout << "Total sequences: "<<seq_count
+             << " prot: "<<prot_count
+             << " gene: "<<gene_count
+             << " cdr: "<<cdr_count
+             << NcbiEndl;
+    return 0;
+}
+
+
+int test2()
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CScope scope(*om);
+    scope.AddDefaults();
+    CSeq_id id("NT_029998.7");
+    CBioseq_Handle bh = scope.GetBioseqHandle(id);
+    CSeqMap& sm = bh.GetEditHandle().SetSeqMap();
+    CSeqMap_CI it = sm.RemoveSegment(sm.FindSegment(72470, &scope));
+    NcbiCout << "New seg: " << it.GetPosition() << " " << it.GetLength()
+             << NcbiEndl;
+    NcbiCout << "New len: " << bh.GetBioseqLength() << " "
+             << sm.GetLength(&scope)
+             << NcbiEndl;
+    NcbiCout << MSerial_AsnText << *bh.GetCompleteObject()
+             << NcbiEndl;
+    return 0;
+}
+
+
 int CDemoApp::Run(void)
 {
     //SetDiagPostLevel(eDiag_Warning);
@@ -323,6 +430,7 @@ int CDemoApp::Run(void)
         ss >> MSerial_AsnText >> *id;
     }
     else {
+        return test2();
         ERR_POST(Fatal << "One of -gi, -id or -asn_id arguments is required");
     }
 
@@ -571,6 +679,7 @@ int CDemoApp::Run(void)
         NcbiCout << "-------------------- END --------------------\n";
     }
     if ( print_seq ) {
+        handle.GetEditHandle();
         NcbiCout << "-------------------- SEQ --------------------\n";
         NcbiCout << MSerial_AsnText << *handle.GetCompleteObject() << '\n';
         NcbiCout << "-------------------- END --------------------\n";
@@ -613,6 +722,12 @@ int CDemoApp::Run(void)
         overlap = SAnnotSelector::eOverlap_TotalRange;
     if ( args["overlap"].AsString() == "intervals" )
         overlap = SAnnotSelector::eOverlap_Intervals;
+    string table_field_name;
+    if ( args["table_field_name"] )
+        table_field_name = args["table_field_name"].AsString();
+    int table_field_id = -1;
+    if ( args["table_field_id"] )
+        table_field_id = args["table_field_id"].AsInteger();
 
     handle.Reset();
     for ( int c = 0; c < repeat_count; ++c ) {
@@ -819,6 +934,14 @@ int CDemoApp::Run(void)
         }
         base_sel.SetByProduct(by_product);
 
+        auto_ptr< CTableFieldHandle<int> > table_field;
+        if ( table_field_id >= 0 ) {
+            table_field.reset(new CTableFieldHandle<int>(CSeqTable_column_info::EField_id(table_field_id)));
+        }
+        else if ( !table_field_name.empty() ) {
+            table_field.reset(new CTableFieldHandle<int>(table_field_name));
+        }
+
         {{
             if ( count_types ) {
                 types_counts.assign(CSeqFeatData::e_MaxChoice, 0);
@@ -917,6 +1040,14 @@ int CDemoApp::Run(void)
                     it->GetOriginalFeature();
                 if ( get_mapped_feature )
                     it->GetMappedFeature();
+
+                if ( table_field.get() &&
+                     it->GetSeq_feat_Handle().IsTableFeat() ) {
+                    if ( table_field->IsSet(it) ) {
+                        NcbiCout << "table field: " << table_field->Get(it)
+                                 << NcbiEndl;
+                    }
+                }
                 
                 // Get seq-annot containing the feature
                 if ( print_features ) {
