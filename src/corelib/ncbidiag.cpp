@@ -244,7 +244,6 @@ CDiagCompileInfo::CDiagCompileInfo(const char* file,
     }
     if (!module)
         return;
-
     if ( x_NeedModule() && 0 != strcmp(module, "NCBI_MODULE") ) {
         m_Module = module;
     }
@@ -2001,10 +2000,13 @@ string s_ParseStr(const string& message,
         NCBI_THROW(CException, eUnknown,
             "Failed to parse diagnostic message");
     }
-    while (pos < message.length()  &&  message[pos] == sep) {
-        pos++;
+    // remember end position of the string, skip separators
+    size_t pos2 = pos;
+    pos = message.find_first_not_of(sep, pos);
+    if (pos == NPOS) {
+        pos = message.length();
     }
-    return message.substr(pos1, pos - pos1 - 1);
+    return message.substr(pos1, pos2 - pos1);
 }
 
 
@@ -2101,9 +2103,10 @@ SDiagMessage::SDiagMessage(const string& message)
             }
         }
         if ( have_severity ) {
-            do {
-                pos++;
-            } while (pos < message.length()  &&  message[pos] == ' ');
+            pos = message.find_first_not_of(' ', pos);
+            if (pos == NPOS) {
+                pos = message.length();
+            }
         }
         else {
             // Check event type rather than severity level
@@ -2142,58 +2145,61 @@ SDiagMessage::SDiagMessage(const string& message)
         }
 
         // <module>, <module>(<err_code>.<err_subcode>) or <module>(<err_text>)
-        size_t mod_pos = pos;
-        tmp = s_ParseStr(message, pos, ' ');
-        size_t lbr = tmp.find("(");
-        if (lbr != NPOS) {
-            if (tmp[tmp.length() - 1] != ')') {
-                // Space(s) inside the error text, try to find closing ')'
-                int open_br = 1;
-                while (pos < message.length()  &&  open_br > 0) {
-                    if (message[pos] == '(') {
-                        open_br++;
+        if (message[pos] != '"') {
+            size_t mod_pos = pos;
+            tmp = s_ParseStr(message, pos, ' ');
+            size_t lbr = tmp.find("(");
+            if (lbr != NPOS) {
+                if (tmp[tmp.length() - 1] != ')') {
+                    // Space(s) inside the error text, try to find closing ')'
+                    int open_br = 1;
+                    while (pos < message.length()  &&  open_br > 0) {
+                        if (message[pos] == '(') {
+                            open_br++;
+                        }
+                        else if (message[pos] == ')') {
+                            open_br--;
+                        }
+                        pos++;
                     }
-                    else if (message[pos] == ')') {
-                        open_br--;
+                    if (pos >= message.length()  ||  message[pos] != ' ') {
+                        return;
                     }
-                    pos++;
+                    tmp = message.substr(mod_pos, pos - mod_pos);
+                    // skip space(s)
+                    pos = message.find_first_not_of(' ', pos);
+                    if (pos == NPOS) {
+                        pos = message.length();
+                    }
                 }
-                if (pos >= message.length()  ||  message[pos] != ' ') {
-                    return;
+                m_Data->m_Module = tmp.substr(0, lbr);
+                tmp = tmp.substr(lbr + 1, tmp.length() - lbr - 2);
+                size_t dot_pos = tmp.find('.');
+                if (dot_pos != NPOS) {
+                    // Try to parse error code/subcode
+                    try {
+                        m_ErrCode = NStr::StringToInt(tmp.substr(0, dot_pos));
+                        m_ErrSubCode = NStr::StringToInt(
+                            tmp.substr(dot_pos + 1, tmp.length()));
+                    }
+                    catch (CStringException) {
+                        m_ErrCode = 0;
+                        m_ErrSubCode = 0;
+                    }
                 }
-                tmp = message.substr(mod_pos, pos - mod_pos);
-                // skip space(s)
-                while (pos < message.length()  &&  message[pos] == ' ') {
-                    pos++;
+                if (!m_ErrCode  &&  !m_ErrSubCode) {
+                    m_Data->m_ErrText = tmp;
+                    m_ErrText = m_Data->m_ErrText.c_str();
                 }
             }
-            m_Data->m_Module = tmp.substr(0, lbr);
-            tmp = tmp.substr(lbr + 1, tmp.length() - lbr - 2);
-            size_t dot_pos = tmp.find('.');
-            if (dot_pos != NPOS) {
-                // Try to parse error code/subcode
-                try {
-                    m_ErrCode = NStr::StringToInt(tmp.substr(0, dot_pos));
-                    m_ErrSubCode = NStr::StringToInt(
-                        tmp.substr(dot_pos + 1, tmp.length()));
-                }
-                catch (CStringException) {
-                    m_ErrCode = 0;
-                    m_ErrSubCode = 0;
-                }
+            else {
+                m_Data->m_Module = tmp;
             }
-            if (!m_ErrCode  &&  !m_ErrSubCode) {
-                m_Data->m_ErrText = tmp;
-                m_ErrText = m_Data->m_ErrText.c_str();
+            if ( !m_Data->m_Module.empty() ) {
+                m_Module = m_Data->m_Module.c_str();
             }
         }
-        else {
-            m_Data->m_Module = tmp;
-        }
-        if ( !m_Data->m_Module.empty() ) {
-            m_Module = m_Data->m_Module.c_str();
-        }
-        
+
         // ["<file>", ][line <line>][:]
         if (message[pos] != '"') {
             return;
@@ -2207,38 +2213,35 @@ SDiagMessage::SDiagMessage(const string& message)
         }
         pos += 7;
         m_Line = s_ParseInt(message, pos, 0, ':');
-        while (pos < message.length()  &&  message[pos] == ' ') {
-            pos++;
+        pos = message.find_first_not_of(' ', pos);
+        if (pos == NPOS) {
+            pos = message.length();
         }
 
         // Class:: Class::Function() ::Function()
-        tmp = s_ParseStr(message, pos, ' ');
-        size_t dcol = tmp.find("::");
-        if (dcol == NPOS) {
-            return;
-        }
-        if (dcol > 0) {
-            m_Data->m_Class = tmp.substr(0, dcol);
-            m_Class = m_Data->m_Class.c_str();
-        }
-        dcol += 2;
-        if (dcol < tmp.length() - 2) {
-            // Remove "()"
-            if (tmp[tmp.length() - 2] != '(' || tmp[tmp.length() - 1] != ')') {
-                return;
+        if (message.find("::", pos) != NPOS) {
+            tmp = s_ParseStr(message, pos, ' ');
+            size_t dcol = tmp.find("::");
+            _ASSERT(dcol != NPOS);
+            if (dcol > 0) {
+                m_Data->m_Class = tmp.substr(0, dcol);
+                m_Class = m_Data->m_Class.c_str();
             }
-            tmp.resize(tmp.length() - 2);
-            m_Data->m_Function = tmp.substr(dcol, tmp.length());
-            m_Function = m_Data->m_Function.c_str();
-        }
-        else {
-            return;
+            dcol += 2;
+            if (dcol < tmp.length() - 2) {
+                // Remove "()"
+                if (tmp[tmp.length() - 2] != '(' || tmp[tmp.length() - 1] != ')') {
+                    return;
+                }
+                tmp.resize(tmp.length() - 2);
+                m_Data->m_Function = tmp.substr(dcol, tmp.length());
+                m_Function = m_Data->m_Function.c_str();
+            }
         }
 
-        if (message.substr(pos, 4) != "--- ") {
-            return;
+        if (message.substr(pos, 4) == "--- ") {
+            pos += 4;
         }
-        pos += 4;
 
         // All the rest goes to message - no way to parse prefix/error code.
         // [<prefix1>::<prefix2>::.....]
