@@ -301,9 +301,9 @@ void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
     }
     
     // if the resulting segment is still long enough
-    if(m_box[1] - m_box[0] + 1 - i0_max >= min_query_size
-       && i0_max > 0) {
-        
+    if(m_box[1] - m_box[0] + 1 - i0_max >= min_query_size 
+       && (i0_max > 0 || i1_max > 0))
+    {
         // resize
         m_box[0] += i0_max;
         m_box[2] += i1_max;
