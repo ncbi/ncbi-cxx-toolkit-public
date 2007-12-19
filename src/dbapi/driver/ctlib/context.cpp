@@ -55,6 +55,7 @@
 #endif
 
 #ifdef FTDS_IN_USE
+#  include "config.h"
 #  include "tds.h"
 #endif
 
