@@ -60,7 +60,7 @@ public:
     ~CSeqTable_column_info(void);
 
     // Maps field id to name, returns empty string for unknown ids
-    static const char* GetNameForId(EField_id id);
+    static const char* GetNameForId(int id);
     // Maps field name to id, returns -1 for unknown names
     static int GetIdForName(const string& name);
 

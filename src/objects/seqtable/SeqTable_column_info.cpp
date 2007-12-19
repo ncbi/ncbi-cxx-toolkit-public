@@ -146,7 +146,7 @@ int CSeqTable_column_info::GetIdForName(const string& name)
 }
 
 
-const char* CSeqTable_column_info::GetNameForId(EField_id id)
+const char* CSeqTable_column_info::GetNameForId(int id)
 {
     size_t index = id;
     if ( index < sizeof(s_Field_id_names)/sizeof(s_Field_id_names[0]) ) {
