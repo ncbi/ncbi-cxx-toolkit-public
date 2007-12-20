@@ -412,6 +412,14 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
                 } else {
                     new_depends.push_back(CProjKey(CProjKey::eDll, i->second.m_DllHost));
                 }
+            } else /* if (!GetApp().m_ScanWholeTree)*/ {
+                ITERATE(CProjectItemsTree::TProjects, d, tree_src.m_Projects) {
+                    const list<string>& lst = d->second.m_HostedLibs;
+                    if ( find (lst.begin(), lst.end(), depend_id.Id()) != lst.end()) {
+                        new_depends.push_back(d->first);
+                        break;
+                    }
+                }
             }
         }
         new_depends.sort();
