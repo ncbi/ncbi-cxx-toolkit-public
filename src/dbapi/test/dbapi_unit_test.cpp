@@ -304,8 +304,6 @@ CDBAPIUnitTest::TestInit(void)
         m_Conn.reset(m_DS->CreateConnection( CONN_OWNERSHIP ));
         BOOST_CHECK(m_Conn.get() != NULL);
 
-        // m_Conn->SetMode(IConnection::eBulkInsert);
-
         Connect(m_Conn);
 
         auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
@@ -540,12 +538,29 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
 {
     string table_name("#test_unicode_table");
     // string table_name("DBAPI_Sample..test_unicode_table");
+    const bool isValueInUTF8 = true;
 
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     string str_ger("Außerdem können Sie einzelne Einträge aus Ihrem "
                    "Suchprotokoll entfernen");
 
+    // Russian phrase in WINDOWS-1251 encoding ...
+    const char str_rus[] = 
+    {
+        0xcc, 0xe0, 0xec, 0xe0, 0x20, 0xec, 0xfb, 0xeb, 0xe0, 0x20, 0xf0, 0xe0,
+        0xec, 0xf3, 0x00
+    };
+
+    // Russian phrase in UTF8 encoding ...
+    const char str_rus_utf8[] = 
+    {   
+        0xd0, 0x9c, 0xd0, 0xb0, 0xd0, 0xbc, 0xd0, 0xb0, 0x20, 0xd0, 0xbc, 0xd1,
+        0x8b, 0xd0, 0xbb, 0xd0, 0xb0, 0x20, 0xd1, 0x80, 0xd0, 0xb0, 0xd0, 0xbc,
+        0xd1, 0x83, 0x00
+    };
+
     const CStringUTF8 utf8_str_ger(str_ger, eEncoding_Windows_1252);
+    const CStringUTF8 utf8_str_rus(str_rus_utf8, eEncoding_UTF8);
 
     try {
         // Create table ...
@@ -578,11 +593,18 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
         }
 
         // That works either ...
-        if (true) {
-            string sql_ger = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + utf8_str_ger + "')";
-            // string sql_ger = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + str_ger + "')";
+        if (isValueInUTF8) {
+            string sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + utf8_str_ger + "')";
+            auto_stmt->ExecuteUpdate( sql );
 
-            auto_stmt->ExecuteUpdate( sql_ger );
+            sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + utf8_str_rus + "')";
+            auto_stmt->ExecuteUpdate( sql );
+        } else {
+            string sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + str_ger + "')";
+            auto_stmt->ExecuteUpdate( sql );
+
+            sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + str_rus + "')";
+            auto_stmt->ExecuteUpdate( sql );
         }
 
         // Retrieve data ...
@@ -602,19 +624,42 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
             BOOST_CHECK( rs.get() != NULL );
 
             // Read ...
-            BOOST_CHECK( rs->Next() );
-            nvc255_value = rs->GetVariant(1).GetString();
-            BOOST_CHECK( nvc255_value.size() > 0);
-            if (true) {
+            if (isValueInUTF8) {
+                // 
+                BOOST_CHECK( rs->Next() );
+                nvc255_value = rs->GetVariant(1).GetString();
+                BOOST_CHECK( nvc255_value.size() > 0);
+
                 BOOST_CHECK_EQUAL( utf8_str_ger.size(), nvc255_value.size() );
                 BOOST_CHECK_EQUAL( utf8_str_ger, nvc255_value );
                 CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
                 string value_ger =
                     utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
                 BOOST_CHECK_EQUAL( str_ger, value_ger );
+
+                // 
+                BOOST_CHECK( rs->Next() );
+                nvc255_value = rs->GetVariant(1).GetString();
+                BOOST_CHECK( nvc255_value.size() > 0);
+
+                BOOST_CHECK_EQUAL( utf8_str_rus.size(), nvc255_value.size() );
+                BOOST_CHECK_EQUAL( utf8_str_rus, nvc255_value );
             } else {
+                // 
+                BOOST_CHECK( rs->Next() );
+                nvc255_value = rs->GetVariant(1).GetString();
+                BOOST_CHECK( nvc255_value.size() > 0);
+
                 BOOST_CHECK_EQUAL( str_ger.size(), nvc255_value.size() );
                 BOOST_CHECK_EQUAL( str_ger, nvc255_value );
+
+                // 
+                BOOST_CHECK( rs->Next() );
+                nvc255_value = rs->GetVariant(1).GetString();
+                BOOST_CHECK( nvc255_value.size() > 0);
+
+                BOOST_CHECK_EQUAL( strlen(str_rus), nvc255_value.size() );
+                BOOST_CHECK_EQUAL( str_rus, nvc255_value );
             }
 
             DumpResults(auto_stmt.get());
@@ -3350,7 +3395,6 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         auto_ptr<IConnection> conn(
                 m_DS->CreateConnection(CONN_OWNERSHIP)
                 );
-        // conn->SetMode(IConnection::eBulkInsert);
         Connect(conn);
 
         auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
@@ -5157,8 +5201,6 @@ CDBAPIUnitTest::Test_SelectStmt(void)
     //         auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
     //         BOOST_CHECK( conn.get() != NULL );
     //
-    //         conn->SetMode(IConnection::eBulkInsert);
-    //
     //         conn->Connect(
     //             "anyone",
     //             "allowed",
@@ -5190,8 +5232,6 @@ CDBAPIUnitTest::Test_SelectStmt(void)
     //     {
     //         auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
     //         BOOST_CHECK( conn.get() != NULL );
-    //
-    //         conn->SetMode(IConnection::eBulkInsert);
     //
     //         conn->Connect(
     //             "mvread",
@@ -12188,7 +12228,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if(args.GetServerType() == CTestArguments::eSybase)
     {
         if (args.GetDriverName() != ftds8_driver
-            && args.GetDriverName() != ftds64_driver
+            && args.GetDriverName() != ftds64_driver // Critical: Bad token from the server: Datastream processing out of sync
             && args.GetDriverName() != ftds_dblib_driver
            ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Iskhakov,
@@ -12409,6 +12449,7 @@ CTestArguments::GetServerType(void) const
          || NStr::CompareNocase(GetServerName(), "MOZART") == 0
          || NStr::CompareNocase(GetServerName(), "OBERON") == 0
          || NStr::CompareNocase(GetServerName(), "TAPER") == 0
+         || NStr::CompareNocase(GetServerName(), "LINK_OS") == 0
          || NStr::CompareNocase(GetServerName(), "SCHUMANN") == 0
          || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
          ) {
