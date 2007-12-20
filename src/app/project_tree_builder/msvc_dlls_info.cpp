@@ -71,50 +71,55 @@ void FilterOutDllHostedProjects(const CProjectItemsTree& tree_src,
 
 static bool s_IsInTree(CProjKey::TProjType      proj_type,
                        const string&            proj_id,
-                       const CProjectItemsTree& tree)
+                       const CProjectItemsTree* tree)
 {
-    return tree.m_Projects.find
+    return tree->m_Projects.find
                   (CProjKey(proj_type, 
                             proj_id)) != 
-                                    tree.m_Projects.end();
+                                    tree->m_Projects.end();
 }
 
 
 static void s_InitalizeDllProj(const string&                  dll_id, 
                                CProjItem*                     dll,
+                               const CProjectItemsTree&       tree_src,
                                CProjectItemsTree*             tree_dst)
 {
     list<CProjKey> new_depends;
     ITERATE(list<CProjKey>, p, dll->m_Depends) {
 
         const string& depend_id = p->Id();
+        const CProjectItemsTree* tree;
 
         // Is this a dll?
-        if ( s_IsInTree(CProjKey::eDll, depend_id, GetApp().GetWholeTree())) {
+        if ( s_IsInTree(CProjKey::eDll, depend_id, tree = &tree_src) ||
+             s_IsInTree(CProjKey::eDll, depend_id, tree = &GetApp().GetWholeTree())) {
             new_depends.push_back(CProjKey(CProjKey::eDll, depend_id));    
         } else  {
-            if ( s_IsInTree(CProjKey::eApp, depend_id, GetApp().GetWholeTree()) ) {
+            if ( s_IsInTree(CProjKey::eApp, depend_id, tree = &tree_src) ||
+                 s_IsInTree(CProjKey::eApp, depend_id, tree = &GetApp().GetWholeTree()) ) {
 
                 CProjKey depend_key(CProjKey::eApp, depend_id);
                 new_depends.push_back(depend_key);
                 tree_dst->m_Projects[depend_key] = 
-                    (GetApp().GetWholeTree().m_Projects.find(depend_key))->second;
+                    (tree->m_Projects.find(depend_key))->second;
             }
-            else if ( s_IsInTree(CProjKey::eLib, depend_id, GetApp().GetWholeTree()) ) {
+            else if ( s_IsInTree(CProjKey::eLib, depend_id, tree = &tree_src) ||
+                      s_IsInTree(CProjKey::eLib, depend_id, tree = &GetApp().GetWholeTree()) ) {
 
-                string dll_host = GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eLib, depend_id))->second.m_DllHost;
+                string dll_host = tree->m_Projects.find(CProjKey(CProjKey::eLib, depend_id))->second.m_DllHost;
                 if (!dll_host.empty()) {
                     new_depends.push_back(CProjKey(CProjKey::eDll, dll_host));    
                 } else {
                     CProjKey depend_key(CProjKey::eLib, depend_id);
                     new_depends.push_back(depend_key); 
                     tree_dst->m_Projects[depend_key] = 
-                        (GetApp().GetWholeTree().m_Projects.find(depend_key))->second;
+                        (tree->m_Projects.find(depend_key))->second;
                 }
 
             } else  {
                 PTB_WARNING_EX(dll_id, ePTB_MissingDependency,
-                               "Missing dependency: " << depend_id);
+                            "Missing dependency: " << depend_id);
             }
         }
     }
@@ -340,11 +345,14 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         CProjectItemsTree::TProjects::const_iterator d;
         d = GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eDll, dll_id));
         if (d == GetApp().GetWholeTree().m_Projects.end()) {
-            LOG_POST(Error << "DLL project not found: " << dll_id);
-            continue;
+            d = tree_src.m_Projects.find(CProjKey(CProjKey::eDll, dll_id));
+            if (d == tree_src.m_Projects.end()) {
+                LOG_POST(Error << "DLL project not found: " << dll_id);
+                continue;
+            }
         }
         CProjItem dll( d->second);
-        s_InitalizeDllProj(dll_id, &dll, tree_dst);
+        s_InitalizeDllProj(dll_id, &dll, tree_src, tree_dst);
 
         CProjectItemsTree::TProjects::const_iterator k;
         bool is_empty = true;
