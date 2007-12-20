@@ -36,6 +36,7 @@
 
 #include <string>
 #include <exception>
+#include <ctime>
 
 #include <corelib/ncbistd.hpp>
 #include <algo/blast/api/blast_types.hpp>

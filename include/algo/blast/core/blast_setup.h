@@ -211,6 +211,7 @@ Int2 BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
  * @param from Starting offset of a sequence interval [in]
  * @param to Ending offset of a sequence interval [in]
  */
+NCBI_XBLAST_EXPORT
 void
 BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
 
@@ -226,6 +227,7 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
  * @param blast_message will be filled in if pattern not found on query [in][out]
  * @return Status, 0 on success, -1 on error.
  */
+NCBI_XBLAST_EXPORT
 Int2 
 Blast_SetPHIPatternInfo(EBlastProgramType            program,
                         const SPHIPatternSearchBlk * pattern_blk,
@@ -239,6 +241,7 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
  * @note In the case of a Blast2Sequences search, this function assumes a
  * single sequence and returns the length of the first sequence only
  */
+NCBI_XBLAST_EXPORT
 void
 BLAST_GetSubjectTotals(const BlastSeqSrc* seqsrc,
                        Int8* total_length,

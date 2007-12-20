@@ -47,8 +47,10 @@ extern "C" {
 #endif
 
 /** BLASTNA element used to mask bases in BLAST */
+NCBI_XBLAST_EXPORT
 extern const Uint1 kNuclMask;
 /** NCBISTDAA element used to mask residues in BLAST */
+NCBI_XBLAST_EXPORT
 extern const Uint1 kProtMask;
 
 /** Repeats filtering default options. */
@@ -86,6 +88,7 @@ BlastSeqLoc* BlastSeqLocNew(BlastSeqLoc** head, Int4 from, Int4 to);
  * @returns pointer to the second argument to this function (i.e.: tail of the
  * list)
  */
+NCBI_XBLAST_EXPORT
 BlastSeqLoc* BlastSeqLocAppend(BlastSeqLoc** head, BlastSeqLoc* node);
 
 /** Deallocate a single BlastSeqLoc structure and its contents, without
@@ -93,6 +96,7 @@ BlastSeqLoc* BlastSeqLocAppend(BlastSeqLoc** head, BlastSeqLoc* node);
  * @param node structure to deallocate [in]
  * @return NULL
  */
+NCBI_XBLAST_EXPORT
 BlastSeqLoc* BlastSeqLocNodeFree(BlastSeqLoc* node);
 
 /** Deallocate all BlastSeqLoc objects in a chain.
@@ -108,6 +112,7 @@ BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc);
  * @return NULL on NULL input or memory allocation failure, else a copy of the
  * list and its contents
  */
+NCBI_XBLAST_EXPORT
 BlastSeqLoc* BlastSeqLocListDup(BlastSeqLoc* head);
 
 /** Converts reverse strand coordinates to forward strand in place.
@@ -167,6 +172,7 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
  * @note This function does NOT take into consideration the strands requested
  * to be searched, which is INCONSISTENT with what the C++ API does.
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc, 
                               const BlastQueryInfo* query_info);
 
@@ -175,6 +181,7 @@ Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc,
  * @param mask_loc Mask locations structure [in|out]
  * @param query_info Query information structure, containing contexts data [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 BlastMaskLocProteinToDNA(BlastMaskLoc* mask_loc, 
                               const BlastQueryInfo* query_info);
 
@@ -193,6 +200,7 @@ Int2 BlastMaskLocProteinToDNA(BlastMaskLoc* mask_loc,
  * @param complement_mask Linked list of SSeqRange*s in the concatenated 
  *                        sequence to be indexed in the lookup table . [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 
 BLAST_ComplementMaskLocations(EBlastProgramType program_number, 
    const BlastQueryInfo* query_info, const BlastMaskLoc* mask_loc, 

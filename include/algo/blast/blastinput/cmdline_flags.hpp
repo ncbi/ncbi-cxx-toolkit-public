@@ -50,204 +50,204 @@ NCBI_XBLAST_EXPORT extern const string kDfltArgQuery;
 NCBI_XBLAST_EXPORT extern const string kArgOutput;
 
 /// BLAST database name
-extern const string kArgDb;
+NCBI_XBLAST_EXPORT extern const string kArgDb;
 
 /// Effective length of BLAST database
-extern const string kArgDbSize;
+NCBI_XBLAST_EXPORT extern const string kArgDbSize;
 
 /// Subject input file to search
-extern const string kArgSubject;
+NCBI_XBLAST_EXPORT extern const string kArgSubject;
 
 /// BLAST database molecule type
-extern const string kArgDbType;
+NCBI_XBLAST_EXPORT extern const string kArgDbType;
 
 /// gi list file name to restrict BLAST database
-extern const string kArgGiList;
+NCBI_XBLAST_EXPORT extern const string kArgGiList;
 
 /// Task to perform
-extern const string kTask;
+NCBI_XBLAST_EXPORT extern const string kTask;
 
 /// Query genetic code
-extern const string kArgQueryGeneticCode;
+NCBI_XBLAST_EXPORT extern const string kArgQueryGeneticCode;
 /// Database genetic code
-extern const string kArgDbGeneticCode;
+NCBI_XBLAST_EXPORT extern const string kArgDbGeneticCode;
 
 /// Argument to determine whether searches should be run locally or remotely
-extern const string kArgRemote;
+NCBI_XBLAST_EXPORT extern const string kArgRemote;
 
 /// Argument to determine the number of threads to use when running BLAST
-extern const string kArgNumThreads;
+NCBI_XBLAST_EXPORT extern const string kArgNumThreads;
 
 /// Argument for scoring matrix
-extern const string kArgMatrixName;
+NCBI_XBLAST_EXPORT extern const string kArgMatrixName;
 
 /// Argument for expectation value cutoff
-extern const string kArgEvalue;
+NCBI_XBLAST_EXPORT extern const string kArgEvalue;
 /// Argument for minimum raw gapped score for preliminary gapped and traceback
 /// stages
-extern const string kArgMinRawGappedScore;
+NCBI_XBLAST_EXPORT extern const string kArgMinRawGappedScore;
 
 /// Argument for minimum raw score to keep an alignment in the preliminary
 /// gapped and traceback stages
-extern const string kMinRawGappedScore;
+NCBI_XBLAST_EXPORT extern const string kMinRawGappedScore;
 
 /* Formatting options */
 
 /// Argument to select formatted output type
-extern const string kArgOutputFormat;
+NCBI_XBLAST_EXPORT extern const string kArgOutputFormat;
 /// Default value for formatted output type
-extern const int kDfltArgOutputFormat;
+NCBI_XBLAST_EXPORT extern const int kDfltArgOutputFormat;
 /// Argument to specify whether the GIs should be shown in the deflines in the
 /// traditional BLAST report
-extern const string kArgShowGIs;
+NCBI_XBLAST_EXPORT extern const string kArgShowGIs;
 /// Argument to specify the number of one-line descriptions to show in the
 /// traditional BLAST report
-extern const string kArgNumDescriptions;
+NCBI_XBLAST_EXPORT extern const string kArgNumDescriptions;
 /// Default number of one-line descriptions to display in the traditional
 /// BLAST report
 NCBI_XBLAST_EXPORT extern const size_t kDfltArgNumDescriptions;
 /// Argument to specify the number of alignments to show in the traditional 
 /// BLAST report
-extern const string kArgNumAlignments;
+NCBI_XBLAST_EXPORT extern const string kArgNumAlignments;
 /// Default number of alignments to display in the traditional BLAST report
 NCBI_XBLAST_EXPORT extern const size_t kDfltArgNumAlignments;
 /// Argument to specify whether to create output as HTML or not
-extern const string kArgProduceHtml;
+NCBI_XBLAST_EXPORT extern const string kArgProduceHtml;
 
 
 /// Argument to select the gap opening penalty
-extern const string kArgGapOpen;
+NCBI_XBLAST_EXPORT extern const string kArgGapOpen;
 /// Argument to select the gap extending penalty
-extern const string kArgGapExtend;
+NCBI_XBLAST_EXPORT extern const string kArgGapExtend;
 
 /// Argument to select the nucleotide mismatch penalty
-extern const string kArgMismatch;
+NCBI_XBLAST_EXPORT extern const string kArgMismatch;
 /// Argument to select the nucleotide match reward
-extern const string kArgMatch;
+NCBI_XBLAST_EXPORT extern const string kArgMatch;
 
 /// Argument to select the ungapped X dropoff value
-extern const string kArgUngappedXDropoff;
+NCBI_XBLAST_EXPORT extern const string kArgUngappedXDropoff;
 /// Argument to select the gapped X dropoff value
-extern const string kArgGappedXDropoff;
+NCBI_XBLAST_EXPORT extern const string kArgGappedXDropoff;
 /// Argument to select the final gapped X dropoff value
-extern const string kArgFinalGappedXDropoff;
+NCBI_XBLAST_EXPORT extern const string kArgFinalGappedXDropoff;
 
 /// Argument to select the window size in the 2-hit wordfinder algorithm
-extern const string kArgWindowSize;
+NCBI_XBLAST_EXPORT extern const string kArgWindowSize;
 
 /// Argument to select the wordfinder's word size
-extern const string kArgWordSize;
+NCBI_XBLAST_EXPORT extern const string kArgWordSize;
 
 /// Argument to specify the minimum word score such that the word is added to
 /// the lookup table
-extern const string kArgWordScoreThreshold;
+NCBI_XBLAST_EXPORT extern const string kArgWordScoreThreshold;
 
 /// Argument to specify the effective length of the search space
-extern const string kArgEffSearchSpace;
+NCBI_XBLAST_EXPORT extern const string kArgEffSearchSpace;
 
 /// Argument to specify that Smith-Waterman algorithm should be used to compute
 /// locally optimal alignments
-extern const string kArgUseSWTraceback;
+NCBI_XBLAST_EXPORT extern const string kArgUseSWTraceback;
 
 /// Argument to specify whether lowercase masking in the query sequence(s)
 /// should be interpreted as masking
-extern const string kArgUseLCaseMasking;
+NCBI_XBLAST_EXPORT extern const string kArgUseLCaseMasking;
 /// Argument to select the query strand(s) to search
-extern const string kArgStrand;
+NCBI_XBLAST_EXPORT extern const string kArgStrand;
 /// Default value for strand selection
-extern const string kDfltArgStrand;
+NCBI_XBLAST_EXPORT extern const string kDfltArgStrand;
 /// Argument to specify a location to restrict the query sequence(s)
-extern const string kArgQueryLocation;
+NCBI_XBLAST_EXPORT extern const string kArgQueryLocation;
 /// Argument to specify a location to restrict the subject sequence(s)
-extern const string kArgSubjectLocation;
+NCBI_XBLAST_EXPORT extern const string kArgSubjectLocation;
 /// Argument to specify if the query sequence(s) defline should be parsed
-extern const string kArgParseQueryDefline;
+NCBI_XBLAST_EXPORT extern const string kArgParseQueryDefline;
 
 /// Argument to specify the maximum length of an intron when linking multiple
 /// distinct alignments (applicable to translated queries only)
-extern const string kArgMaxIntronLength;
+NCBI_XBLAST_EXPORT extern const string kArgMaxIntronLength;
 /// Default value for maximum intron length
-extern const int kDfltArgMaxIntronLength;
+NCBI_XBLAST_EXPORT extern const int kDfltArgMaxIntronLength;
 
 /// Argument to specify the culling limit
-extern const string kArgCullingLimit;
+NCBI_XBLAST_EXPORT extern const string kArgCullingLimit;
 /// Default argument to specify the culling limit
-extern const int kDfltArgCullingLimit;
+NCBI_XBLAST_EXPORT extern const int kDfltArgCullingLimit;
 
 /// Argument to specify the frame shift penality
-extern const string kArgFrameShiftPenalty;
+NCBI_XBLAST_EXPORT extern const string kArgFrameShiftPenalty;
 
 /// Argument to specify number of bits to initiate gapping
-extern const string kArgGapTrigger;
+NCBI_XBLAST_EXPORT extern const string kArgGapTrigger;
 
 /// Argument to specify whether the search should be ungapped only
-extern const string kArgUngapped;
+NCBI_XBLAST_EXPORT extern const string kArgUngapped;
 
 /// Argument to specify the composition based statistics mode to sue
-extern const string kArgCompBasedStats;
+NCBI_XBLAST_EXPORT extern const string kArgCompBasedStats;
 
 
 /// Argument to specify SEG filtering on query sequence(s)
-extern const string kArgSegFiltering;
+NCBI_XBLAST_EXPORT extern const string kArgSegFiltering;
 /// Default arguments to apply SEG filtering on query sequence(s)
-extern const string kDfltArgSegFiltering;
+NCBI_XBLAST_EXPORT extern const string kDfltArgSegFiltering;
 
 /// Argument to specify DUST filtering on query sequence(s)
-extern const string kArgDustFiltering;
+NCBI_XBLAST_EXPORT extern const string kArgDustFiltering;
 /// Default arguments to apply DUST filtering on query sequence(s)
-extern const string kDfltArgDustFiltering;
+NCBI_XBLAST_EXPORT extern const string kDfltArgDustFiltering;
 
 /// Argument to specify a filtering database (i.e.: one containing repetitive
 /// elements)
-extern const string kArgFilteringDb;
+NCBI_XBLAST_EXPORT extern const string kArgFilteringDb;
 
 /// Argument to specify to mask query during lookup table creation
-extern const string kArgLookupTableMaskingOnly;
+NCBI_XBLAST_EXPORT extern const string kArgLookupTableMaskingOnly;
 
 /* PSI-BLAST options */
 
 /// Argument to select the number of iterations to perform in PSI-BLAST
-extern const string kArgPSINumIterations;
+NCBI_XBLAST_EXPORT extern const string kArgPSINumIterations;
 
 /// Argument to specify a 'checkpoint' file to recover the PSSM from
-extern const string kArgPSIInputChkPntFile;
+NCBI_XBLAST_EXPORT extern const string kArgPSIInputChkPntFile;
 /// Argument to specify a 'checkpoint' file to write the PSSM
-extern const string kArgPSIOutputChkPntFile;
+NCBI_XBLAST_EXPORT extern const string kArgPSIOutputChkPntFile;
 /// Argument to specify a PHI-BLAST pattern file
-extern const string kArgPHIPatternFile;
+NCBI_XBLAST_EXPORT extern const string kArgPHIPatternFile;
 
 /// Argument to specify the pseudo-count value used when constructing PSSM
-extern const string kArgPSIPseudocount;
+NCBI_XBLAST_EXPORT extern const string kArgPSIPseudocount;
 /// Argument to specify the evalue inclusion threshold for considering
 /// aligned sequences for PSSM constructions
-extern const string kArgPSIInclusionEThreshold;
+NCBI_XBLAST_EXPORT extern const string kArgPSIInclusionEThreshold;
 
 /// Argument to specify non-greedy dynamic programming extension
-extern const string kArgNoGreedyExtension;
+NCBI_XBLAST_EXPORT extern const string kArgNoGreedyExtension;
 /// Argument to specify the discontinuous megablast template type
-extern const string kArgDMBTemplateType;
+NCBI_XBLAST_EXPORT extern const string kArgDMBTemplateType;
 /// Argument to specify the discontinuous megablast template length
-extern const string kArgDMBTemplateLength;
+NCBI_XBLAST_EXPORT extern const string kArgDMBTemplateLength;
 
 #if 0
 /// Argument to specify the maximum number of HPSs to save per subject
-extern const string kArgMaxHSPsPerSubject;
+NCBI_XBLAST_EXPORT extern const string kArgMaxHSPsPerSubject;
 /// Default value for specifying the maximum number of HPSs to save per subject
-extern const int kDfltArgMaxHSPsPerSubject;
+NCBI_XBLAST_EXPORT extern const int kDfltArgMaxHSPsPerSubject;
 #endif
 
 /// Argument to specify the target percent identity
-extern const string kArgPercentIdentity;
+NCBI_XBLAST_EXPORT extern const string kArgPercentIdentity;
 /// Argument to specify the search strategy file to read and use for a BLAST
 /// search
-extern const string kArgInputSearchStrategy;
+NCBI_XBLAST_EXPORT extern const string kArgInputSearchStrategy;
 /// Argument to specify the file name to save the search strategy used for a 
 /// BLAST search
-extern const string kArgOutputSearchStrategy;
+NCBI_XBLAST_EXPORT extern const string kArgOutputSearchStrategy;
 /// Flag to force using or not using megablast database index.
-extern const string kArgUseIndex;
+NCBI_XBLAST_EXPORT extern const string kArgUseIndex;
 /// Megablast database index name.
-extern const string kArgIndexName;
+NCBI_XBLAST_EXPORT extern const string kArgIndexName;
 
 /* OLD C TOOLKIT ARGUMENTS */
 

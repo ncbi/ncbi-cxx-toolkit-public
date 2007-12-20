@@ -484,6 +484,7 @@ s_BlastSeqLocListToArrayOfPointers(const BlastSeqLoc* list, Int4* count)
  * @param head pointer to pointer to the head of the list. [in|out]
  * (this is not declared static so that it can be tested in the unit tests
  */
+NCBI_XBLAST_EXPORT
 void BlastSeqLocListReverse(BlastSeqLoc** head)
 {
     BlastSeqLoc** ptrs = NULL;  /* array of pointers to BlastSeqLoc elements */
