@@ -917,6 +917,7 @@ static const char * kBuiltInGuide[] = {
     "2+6  FA  gb_con",
     "2+6  FB  embl_patent",
     "2+6  FC  gb_est",
+    "2+6  FD  gb_est",
     "2+6  ??  unreserved_nuc",
     "",
     "# SPECIAL CASES",
