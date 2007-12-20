@@ -970,7 +970,8 @@ CFormatGuess::SequenceType(const char* str, unsigned length)
     unsigned amino_acid_content = 0;
 
     for (unsigned i = 0; i < length; ++i) {
-        unsigned char type = symbol_type_table[str[i]];
+        unsigned char c = str[i];
+        unsigned char type = symbol_type_table[c];
         if ( type & fDNA_Alphabet ) {
             ++ATGC_content;
         }
@@ -1136,7 +1137,8 @@ CFormatGuess::Format(const unsigned char* buffer,
                 if (line[0] == '>') {  // header line
                     txt_length += line.length();
                     for (size_t i = 0; i < line.length(); ++i) {
-                        unsigned char type = symbol_type_table[line[i]];
+                        unsigned char c = line[i];
+                        unsigned char type = symbol_type_table[c];
 
                         if ( type & fDNA_Alphabet ) {
                             ++ATGC_content_txt;
@@ -1148,7 +1150,8 @@ CFormatGuess::Format(const unsigned char* buffer,
                 } else { // sequence line
                     seq_length += line.length();
                     for (size_t i = 0; i < line.length(); ++i) {
-                        unsigned char type = symbol_type_table[line[i]];
+                        unsigned char c = line[i];
+                        unsigned char type = symbol_type_table[c];
 
                         if ( type & fDNA_Alphabet ) {
                             ++ATGC_content;
@@ -1433,7 +1436,8 @@ CFormatGuess::EnsureStats()
         size_t size = strLine.size();
         bool is_header = size > 0 && strLine[0] == '>';
         for ( size_t i=0; i < size; ++i ) {
-            unsigned char type = symbol_type_table[strLine[i]];
+            unsigned char c = strLine[i];
+            unsigned char type = symbol_type_table[c];
 
             if ( type & (fAlpha | fDigit | fSpace) ) {
                 ++m_iStatsCountAlNumChars;
