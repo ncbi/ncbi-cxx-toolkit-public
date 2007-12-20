@@ -1005,7 +1005,7 @@ bool CCdCore::EraseTheseRows(const std::vector<int>& TossRows) {
     Count++;
   }
 
-  delete ind;
+  delete [] ind;
 
   return(true);
 }
