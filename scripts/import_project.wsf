@@ -16,16 +16,12 @@ function Usage()
     usage_str  = "USAGE: cscript import_project.wsf <tree_path> [builddir] [-t branch] [-dll [-b] [-r] [-v]\n";
     usage_str += "SYNOPSIS:\n";
     usage_str += "    Retrieve project (with all sub-projects) located in the NCBI C++ toolkit\n";
-    if ( GetUseSvn() ) {
-	    usage_str += "    SVN tree at:\n";
-    } else {
-	    usage_str += "    CVS tree at:\n";
-    }
-    usage_str += "        " + GetCvsTreeRoot()+"/src/<tree_path>\n";
-    usage_str += "        " + GetCvsTreeRoot()+"/include/<tree_path>\n";
+	usage_str += "    SVN tree at:\n";
+    usage_str += "        " + GetRepositoryRoot()+"/src/<tree_path>\n";
+    usage_str += "        " + GetRepositoryRoot()+"/include/<tree_path>\n";
     usage_str += "    Create local build tree structure. Fill-in local tree.\n";
     usage_str += "    Run project tree builder on local build tree.\n";
-    usage_str += "    Open created solution in MSVC7.1 IDE.\n";
+    usage_str += "    Open created solution in MSVC IDE.\n";
     usage_str += "ARGUMENTS:\n";
     usage_str += "    <tree_path>      -- starting path for import\n";
     usage_str += "    [builddir]       -- path to the pre-built NCBI C++ toolkit\n";
@@ -33,6 +29,7 @@ function Usage()
     usage_str += "            " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
     usage_str += "        you can only specify a subfolder of\n";
     usage_str += "            " + GetDefaultCXX_ToolkitFolder() + "\n";
+//    usage_str += "    [-msvc nn]       -- MSVC version: 71 or 80; default is " + GetDefaultMsvcVer() + "\n";
     usage_str += "    [-t branch]      -- SVN repository branch:\n";
     usage_str += "        repository root is always:\n";
     usage_str += "            " + GetSvnRepositoryRoot() + "\n";
@@ -106,6 +103,7 @@ function VerifyTask(oTask)
 function Task()
 {
     var oArgs = WScript.Arguments;
+//    SetMsvcVer(oArgs, "-msvc");
     if ( !VerifyArguments(oArgs) ) {
         WScript.Echo(Usage());
         WScript.Quit(1);
@@ -150,14 +148,14 @@ function Task()
 // Diagnostic dump of task object
 function DumpTask(oTask)
 {
-    VerboseEcho("ProjectName    = " + oTask.ProjectName);
-    VerboseEcho("ProjectFolder  = " + oTask.ProjectFolder);
-    VerboseEcho("ToolkitPath    = " + oTask.ToolkitPath);
-    VerboseEcho("ToolkitSrcPath = " + oTask.ToolkitSrcPath);
-    VerboseEcho("DllBuild       = " + oTask.DllBuild.toString());
-    VerboseEcho("CopyDlls       = " + oTask.CopyDlls.toString());
-    VerboseEcho("CopyRes        = " + oTask.CopyRes.toString());
-    VerboseEcho("CvsTreeRoot    = " + GetCvsTreeRoot());
+    WScript.Echo("ProjectName    = " + oTask.ProjectName);
+    WScript.Echo("ProjectFolder  = " + oTask.ProjectFolder);
+    WScript.Echo("ToolkitPath    = " + oTask.ToolkitPath);
+    WScript.Echo("ToolkitSrcPath = " + oTask.ToolkitSrcPath);
+    WScript.Echo("DllBuild       = " + oTask.DllBuild.toString());
+    WScript.Echo("CopyDlls       = " + oTask.CopyDlls.toString());
+    WScript.Echo("CopyRes        = " + oTask.CopyRes.toString());
+    WScript.Echo("RepositoryRoot = " + GetRepositoryRoot());
 }
 
 // Fill local tree
@@ -172,25 +170,7 @@ function FillTree(oShell, oTree, oTask)
 
     FillMakefileinTree(oShell, oTree, oTask);
 }
-/*
-// Project will require pre-built C++ Toolkit       
-function AdjustProject(oShell, oTree, oTask)
-{
-    var oFso = new ActiveXObject("Scripting.FileSystemObject");
 
-    // Makefile.in - open for appending
-    var makefile_path = oTree.SrcProjectBranch + "\\Makefile.in";
-    if ( oFso.FileExists(makefile_path) ) {
-        VerboseEcho("Modifying (appending): " + makefile_path);
-        var makefile = oFso.OpenTextFile(makefile_path, 8);
-        makefile.WriteLine("REQUIRES = CXX_Toolkit");
-        makefile.Close();
-    } else {
-        WScript.Echo("ERROR: " + makefile_path + " not found");
-        WScript.Quit(1);    
-    }
-}
-*/
 // Generate solution name. Must be the same as we can import more projects
 function SolutionName(oTask)
 {
@@ -227,9 +207,7 @@ function RunPtb(oShell, oTree, oTask)
     if ( oTask.DllBuild ) {
         ptb_command_line += " -dll";
     }
-    if ( GetVerbose() ) {
-        ptb_command_line += " -cfg";
-    }
+    ptb_command_line += " -cfg";
     ptb_command_line += " -nobuildptb";
     ptb_command_line += " -ext -nws -extroot \"";
     var lib_dir = oTask.ToolkitPath + "\\lib\\";
@@ -256,6 +234,9 @@ function RunPtb(oShell, oTree, oTask)
         ptb_command_line += " \"" + oTree.CompilersBranchDll   + "\\build\\" +  SolutionName(oTask) + ".sln\"";
     } else {
         ptb_command_line += " \"" + oTree.CompilersBranchStatic + "\\build\\" + SolutionName(oTask) + ".sln\"";
+    }
+    if (!GetVerbose()) {
+        WScript.Echo(ptb_command_line);
     }
     if ( execute(oShell, ptb_command_line) != 0) {
         WScript.Echo("ERROR: project_tree_builder failed");
@@ -362,36 +343,32 @@ var oShell = WScript.CreateObject("WScript.shell");
 
 var oTask  = new Task();
 VerifyTask(oTask);
-VerboseEcho("========================= Task ========================================");
+WScript.Echo("========================= Task ========================================");
 DumpTask(oTask);
 
 var oTree  = new Tree(oShell, oTask);
 VerboseEcho("========================= Tree ========================================");
 DumpTree(oTree);
 
-VerboseEcho("========================= CreateTreeStructure =========================");
+WScript.Echo("========================= CreateTreeStructure =========================");
 CreateTreeStructure(oTree, oTask);
-VerboseEcho("========================= FillTree ====================================");
+WScript.Echo("========================= FillTree ====================================");
 FillTree           (oShell, oTree, oTask);
-//VerboseEcho("========================= AdjustLocalSite =============================");
-//AdjustLocalSite    (oShell, oTree, oTask);
-//VerboseEcho("========================= AdjustProject ===============================");
-//AdjustProject      (oShell, oTree, oTask);
 VerboseEcho("========================= CopyDlls ====================================");
 CopyDlls           (oShell, oTree, oTask);
 VerboseEcho("========================= CopyRes =====================================");
 CopyRes            (oShell, oTree, oTask);
 
-VerboseEcho("========================= CopyPtb =====================================");
+WScript.Echo("========================= CopyPtb =====================================");
 CopyPtb            (oShell, oTree, oTask);
-VerboseEcho("========================= CopyDatatool ================================");
+WScript.Echo("========================= CopyDatatool ================================");
 CopyDatatool       (oShell, oTree, oTask);
 
-VerboseEcho("========================= RunPtb ======================================");
+WScript.Echo("========================= RunPtb ======================================");
 RunPtb             (oShell, oTree, oTask);
-VerboseEcho("========================= LoadSolution ================================");
+WScript.Echo("========================= LoadSolution ================================");
 LoadSolution       (oShell, oTree, oTask);
-VerboseEcho("========================= done ========================================");
+WScript.Echo("========================= done ========================================");
 
 </script>
 </job>
