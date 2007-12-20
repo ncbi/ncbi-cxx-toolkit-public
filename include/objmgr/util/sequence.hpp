@@ -559,14 +559,14 @@ public:
     virtual ~CFastaOstream() { }
 
     /// Unspecified locations designate complete sequences
-    void Write        (const CSeq_entry_Handle& handle,
-                       const CSeq_loc* location = 0);
-    void Write        (const CBioseq_Handle& handle,
-                       const CSeq_loc* location = 0);
-    void WriteTitle   (const CBioseq_Handle& handle,
-                       const CSeq_loc* location = 0);
-    void WriteSequence(const CBioseq_Handle& handle,
-                       const CSeq_loc* location = 0);
+    virtual void Write        (const CSeq_entry_Handle& handle,
+                               const CSeq_loc* location = 0);
+    virtual void Write        (const CBioseq_Handle& handle,
+                               const CSeq_loc* location = 0);
+    virtual void WriteTitle   (const CBioseq_Handle& handle,
+                               const CSeq_loc* location = 0);
+    virtual void WriteSequence(const CBioseq_Handle& handle,
+                               const CSeq_loc* location = 0);
 
     /// These versions set up a temporary object manager scope
     void Write(const CSeq_entry& entry, const CSeq_loc* location = 0);
@@ -580,7 +580,17 @@ public:
     virtual bool SkipBioseq(const CBioseq_Handle& handle)
     { return SkipBioseq(*handle.GetCompleteBioseq()); }
 
-    /// To adjust various parameters...
+    /// Which residues to mask out in subsequent output.
+    /// These do NOT automatically reset between calls to Write;
+    /// you must do so yourself by setting them to null.
+    enum EMaskType {
+        eSoftMask = 1, ///< write as lowercase rather than uppercase
+        eHardMask = 2  ///< write as N for nucleotides, X for peptides
+    };
+    CConstRef<CSeq_loc> GetMask(EMaskType type) const;
+    void                SetMask(EMaskType type, CConstRef<CSeq_loc> location);
+
+    /// Other parameters...
     TSeqPos GetWidth   (void) const    { return m_Width;   }
     void    SetWidth   (TSeqPos width) { m_Width = width;  }
     TFlags  GetAllFlags(void) const    { return m_Flags;   }
@@ -589,9 +599,11 @@ public:
     void    ResetFlag  (EFlags flag)   { m_Flags &= ~flag; }
 
 private:
-    CNcbiOstream& m_Out;
-    TSeqPos       m_Width;
-    TFlags        m_Flags;
+    CNcbiOstream&       m_Out;
+    CConstRef<CSeq_loc> m_SoftMask;
+    CConstRef<CSeq_loc> m_HardMask;
+    TSeqPos             m_Width;
+    TFlags              m_Flags;
 };
 
 

@@ -1963,38 +1963,138 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
         return; // XXX - too extreme?
     }
 
-    CScope& scope = handle.GetScope();
+    CScope&               scope = handle.GetScope();
+    CSeq_loc              whole;
+    CRef<CSeq_loc_Mapper> mapper;
+    CSeqVector            v;
 
-    CSeqVector v;
+    whole.SetWhole().Assign(*handle.GetSeqId());
+
     if (location) {
+        mapper.Reset(new CSeq_loc_Mapper(*location, whole, &scope));
         CRef<CSeq_loc> merged
             = sequence::Seq_loc_Merge(*location, CSeq_loc::fMerge_All, &scope);
         v = CSeqVector(*merged, scope, CBioseq_Handle::eCoding_Iupac);
     } else {
+        // useful for filtering out locations on other sequences
+        mapper.Reset(new CSeq_loc_Mapper(whole, whole, &scope));
         v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     }
+    mapper->SetMergeAll();
+    mapper->TruncateNonmappingRanges();
 
-    unsigned rem_line = m_Width;
-    CSeqVector_CI it(v);
+    typedef map<TSeqPos, int> TMSMap;
+    TMSMap                    masking_state;
+    masking_state[0] = 0;
+
+    if (m_SoftMask.NotEmpty()  ||  m_HardMask.NotEmpty()) {
+        const CSeq_loc& mask        = m_SoftMask ? *m_SoftMask : *m_HardMask;
+        int             type        = m_SoftMask ? eSoftMask : eHardMask;
+        CRef<CSeq_loc>  mapped_mask = mapper->Map(mask);
+        for (CSeq_loc_CI it(*mapped_mask);  it;  ++it) {
+            CSeq_loc_CI::TRange loc_range = it.GetRange();
+            masking_state[loc_range.GetFrom()]   = type;
+            masking_state[loc_range.GetToOpen()] = 0;
+        }
+    }
+
+    if (m_SoftMask.NotEmpty()  &&  m_HardMask.NotEmpty()) {
+        CRef<CSeq_loc> mapped_mask = mapper->Map(*m_HardMask);
+        for (CSeq_loc_CI it(*mapped_mask);  it;  ++it) {
+            CSeq_loc_CI::TRange loc_range = it.GetRange();
+            TSeqPos             from      = loc_range.GetFrom();
+            TSeqPos             to        = loc_range.GetToOpen();
+            TMSMap::iterator    ms_it     = masking_state.lower_bound(from);
+            int                 prev_state;
+
+            if (ms_it == masking_state.end()) {
+                masking_state[loc_range.GetFrom()]   = eHardMask;
+                masking_state[loc_range.GetToOpen()] = 0;
+                continue;
+            } else if (ms_it->first == from) {
+                prev_state = ms_it->second;
+                ms_it->second |= eHardMask;
+            } else {
+                _ASSERT(ms_it != masking_state.begin());
+                TMSMap::iterator prev_it = ms_it;
+                --prev_it;
+                prev_state = prev_it->second;
+                TMSMap::value_type value(from, prev_state | eHardMask);
+                masking_state.insert(ms_it, value);
+            }
+            while (++ms_it != masking_state.end()  &&  ms_it->first < to) {
+                prev_state = ms_it->second;
+                ms_it->second |= eHardMask;
+            }
+            if (ms_it == masking_state.end()  ||  ms_it->first != to) {
+                masking_state.insert(ms_it, TMSMap::value_type(to, prev_state));
+            }
+        }
+    }
+
+    TSeqPos                 rem_line      = m_Width;
+    CSeqVector_CI           it(v);
+    TMSMap::const_iterator  ms_it         = masking_state.begin();
+    TSeqPos                 rem_state     = ms_it->first;
+    int                     current_state = 0;
+    CSeqVector_CI::TResidue gap_char      = it.GetGapChar();
+    string                  uc_gaps(m_Width, gap_char);
+    string                  lc_gaps(m_Width, tolower(gap_char));
     while ( it ) {
-        if ( !(m_Flags & eInstantiateGaps) && it.SkipGap() ) {
+        if (rem_state == 0) {
+            _ASSERT(ms_it->first == it.GetPos());
+            current_state = ms_it->second;
+            if (++ms_it == masking_state.end()) {
+                rem_state = numeric_limits<TSeqPos>::max();
+            } else {
+                rem_state = ms_it->first - it.GetPos();
+            }
+        }
+        if ( !(m_Flags & eInstantiateGaps)  &&  it.GetGapSizeForward() ) {
+            TSeqPos gap_size = it.SkipGap();
             m_Out << "-\n";
             rem_line = m_Width;
-        }
-        else {
-            TSeqPos buffer_count = it.GetBufferSize();
-            TSeqPos new_pos = it.GetPos()+buffer_count;
-            const char* buffer_ptr = it.GetBufferPtr();
-            while ( buffer_count >= rem_line ) {
-                m_Out.write(buffer_ptr, rem_line);
-                buffer_ptr += rem_line;
-                buffer_count -= rem_line;
+            if (rem_state >= gap_size) {
+                rem_state -= gap_size;
+            } else {
+                while (++ms_it != masking_state.end()
+                       &&  ms_it->first < it.GetPos()) {
+                    current_state = ms_it->second;
+                }
+                if (ms_it == masking_state.end()) {
+                    rem_state = numeric_limits<TSeqPos>::max();
+                } else {
+                    rem_state = ms_it->first - it.GetPos();
+                }
+            }
+        } else {
+            TSeqPos     count   = min(TSeqPos(it.GetBufferSize()), rem_state);
+            TSeqPos     new_pos = it.GetPos() + count;
+            const char* ptr     = it.GetBufferPtr();
+            string      lc_buffer;
+
+            rem_state -= count;
+            if (current_state & eHardMask) {
+                ptr = (current_state & eSoftMask) ? lc_gaps.data()
+                    : uc_gaps.data();
+            } else if (current_state & eSoftMask) {
+                // ToLower() always operates in place. :-/
+                lc_buffer.assign(ptr, count);
+                NStr::ToLower(lc_buffer);
+                ptr = lc_buffer.data();
+            }
+            while ( count >= rem_line ) {
+                m_Out.write(ptr, rem_line);
+                if ( !(current_state & eHardMask) ) {
+                    ptr += rem_line;
+                }
+                count -= rem_line;
                 m_Out << '\n';
                 rem_line = m_Width;
             }
-            if ( buffer_count > 0 ) {
-                m_Out.write(buffer_ptr, buffer_count);
-                rem_line -= buffer_count;
+            if ( count > 0 ) {
+                m_Out.write(ptr, count);
+                rem_line -= count;
             }
             it.SetPos(new_pos);
         }
@@ -2019,6 +2119,18 @@ void CFastaOstream::Write(const CBioseq& seq, const CSeq_loc* location)
     CScope scope(*CObjectManager::GetInstance());
 
     Write(scope.AddBioseq(seq), location);
+}
+
+
+CConstRef<CSeq_loc> CFastaOstream::GetMask(EMaskType type) const
+{
+    return (type == eSoftMask) ? m_SoftMask : m_HardMask;
+}
+
+
+void CFastaOstream::SetMask(EMaskType type, CConstRef<CSeq_loc> location)
+{
+    ((type == eSoftMask) ? m_SoftMask : m_HardMask) = location;
 }
 
 
