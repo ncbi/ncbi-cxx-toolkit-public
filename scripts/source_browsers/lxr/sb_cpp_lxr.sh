@@ -60,6 +60,7 @@ DIST_WEB_PRIV=/net/nasys02/vol/export2/tweb_priv/ieb/ToolBox/CPP_DOC/lxr
 DIST_DAT_PRIV=/net/nasys02/vol/export2/tweb_data_priv/ToolBox/CPP_DOC/lxr
 DIST_SRC_PRIV=/net/nasys02/vol/export2/tweb_data_priv/ToolBox/CPP_DOC/c++
 
+
 #------------------------------------------------------------------------------
 
 RedistDir() {
@@ -137,8 +138,9 @@ mkdir -p $WEB_BASE_PRIV
 cp -f * .glimpse_* $WEB_BASE_PRIV || exit 2
 
 # Remove all .svn dirs
-rm -rf `find $TMP_WEB_PRIV -type d -name .svn -print` >/dev/null 2>&1
-rm -rf `find $TMP_DAT_PRIV -type d -name .svn -print` >/dev/null 2>&1
+find $TMP_WEB_PRIV  -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
+find $TMP_DAT_PRIV  -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
+find $DIST_SRC_PRIV -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
 
 # Copy all data to the real webserver
 RedistDir $TMP_WEB_PRIV $DIST_WEB_PRIV
@@ -189,8 +191,8 @@ mkdir -p $WEB_BASE_PUB
 cp -f * .glimpse_* $WEB_BASE_PUB || exit 2
 
 # Remove all .svn dirs
-rm -rf `find $TMP_WEB_PUB -type d -name .svn -print` >/dev/null 2>&1
-rm -rf `find $TMP_DAT_PUB -type d -name .svn -print` >/dev/null 2>&1
+find $TMP_WEB_PUB  -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
+find $TMP_DAT_PUB  -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
 
 # Copy all data to the real webserver
 RedistDir $TMP_WEB_PUB $DIST_WEB_PUB
