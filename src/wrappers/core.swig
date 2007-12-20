@@ -40,10 +40,6 @@
 // inside of a template class that inherits from something.
 #define CORELIB___PLUGIN_MANAGER__HPP
 
-// util/align_range_coll.hpp confuses SWIG
-// It thinks that ncbi::CAlignRangeCollection::CAlignRangeCollException exists.
-#define UTIL___ALIGN_RANGE_COLL__HPP
-
 // Since the introduction of NCBI_EXCEPTION_VAR_EX, instances of NCBI_THROW
 // in headers make SWIG preprocessor choke, so #define it to nothing.
 %include corelib/ncbiexpt.hpp
@@ -176,6 +172,7 @@ corelib/version.hpp
 
 util/align_range.hpp
 util/align_range_coll.hpp
+util/align_range_oper.hpp
 util/arg_regexp.hpp
 util/compress/bzip2.hpp
 util/compress/compress.hpp
@@ -384,6 +381,9 @@ public:
 %template(CRange_TSeqPos) ncbi::CRange<ncbi::TSeqPos>;
 %template(COpenRange_TSignedSeqPos) ncbi::COpenRange<ncbi::TSignedSeqPos>;
 %template(CRange_TSignedSeqPos) ncbi::CRange<ncbi::TSignedSeqPos>;
+%template(TAlnRng) ncbi::CAlignRange<ncbi::TSignedSeqPos>;
+%template(TAlnRngColl)  ncbi::CAlignRangeCollection<ncbi::CAlignRange<int> >;
+                      //  Using TSignedSeqPos here makes SWIG crash   ^^^
 
 
 // An ugly semi-fix.  With SWIG/Python, if there are static and

@@ -373,3 +373,10 @@ public:
 // Must go in third section to be below nested #define in .cpp file
 %template(vector_CObjectsSniffer_SObjectDescription)
     std::vector<ncbi::objects::CObjectsSniffer_SObjectDescription>;
+
+
+%template(TAlnIdMap)
+ncbi::CAlnIdMap<std::vector<const ncbi::objects::CSeq_align*>,
+                ncbi::TIdExtract>;
+%template(TIdExtract) ncbi::CAlnSeqIdsExtract<ncbi::CAlnSeqId>;
+%template(TAlnStats) ncbi::CAlnStats<ncbi::TAlnIdMap>;

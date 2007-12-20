@@ -112,4 +112,11 @@ def Modify(s):
     s = Replace(s, begin_trouble, end_trouble,
                 '// template class CNetScheduleKeys deleted\n')
     
+    # Bad nested/template interaction in util/align_range_coll.hpp
+    begin_trouble = 'template <class TColl>\n' \
+                    '    class CAlignRangeCollExtender'
+    end_trouble = '\n};'
+    s = Replace(s, begin_trouble, end_trouble,
+                '// template class CAlignRangeCollExtender deleted\n')
+    
     return s
