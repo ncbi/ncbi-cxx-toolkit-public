@@ -545,14 +545,14 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
                    "Suchprotokoll entfernen");
 
     // Russian phrase in WINDOWS-1251 encoding ...
-    const char str_rus[] = 
+    const unsigned char str_rus[] = 
     {
         0xcc, 0xe0, 0xec, 0xe0, 0x20, 0xec, 0xfb, 0xeb, 0xe0, 0x20, 0xf0, 0xe0,
         0xec, 0xf3, 0x00
     };
 
     // Russian phrase in UTF8 encoding ...
-    const char str_rus_utf8[] = 
+    const unsigned char str_rus_utf8[] = 
     {   
         0xd0, 0x9c, 0xd0, 0xb0, 0xd0, 0xbc, 0xd0, 0xb0, 0x20, 0xd0, 0xbc, 0xd1,
         0x8b, 0xd0, 0xbb, 0xd0, 0xb0, 0x20, 0xd1, 0x80, 0xd0, 0xb0, 0xd0, 0xbc,
@@ -560,7 +560,7 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
     };
 
     const CStringUTF8 utf8_str_ger(str_ger, eEncoding_Windows_1252);
-    const CStringUTF8 utf8_str_rus(str_rus_utf8, eEncoding_UTF8);
+    const CStringUTF8 utf8_str_rus(reinterpret_cast<const char*>(str_rus_utf8), eEncoding_UTF8);
 
     try {
         // Create table ...
@@ -603,7 +603,7 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
             string sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + str_ger + "')";
             auto_stmt->ExecuteUpdate( sql );
 
-            sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + str_rus + "')";
+            sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + reinterpret_cast<const char*>(str_rus) + "')";
             auto_stmt->ExecuteUpdate( sql );
         }
 
@@ -658,8 +658,8 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
                 nvc255_value = rs->GetVariant(1).GetString();
                 BOOST_CHECK( nvc255_value.size() > 0);
 
-                BOOST_CHECK_EQUAL( strlen(str_rus), nvc255_value.size() );
-                BOOST_CHECK_EQUAL( str_rus, nvc255_value );
+                BOOST_CHECK_EQUAL( strlen(reinterpret_cast<const char*>(str_rus)), nvc255_value.size() );
+                BOOST_CHECK_EQUAL( reinterpret_cast<const char*>(str_rus), nvc255_value );
             }
 
             DumpResults(auto_stmt.get());
