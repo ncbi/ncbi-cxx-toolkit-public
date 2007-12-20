@@ -208,6 +208,15 @@ protected:
     ///  - others:            non-zero, and different for any one status
     virtual void OnEvent(EEvent event, int status);
 
+    /// Schedule Fast-CGI loop to end as soon as possible, after
+    /// safely finishing the currently processed request, if any.
+    /// @note
+    ///  Calling it from inside OnEvent(eWaiting) will end the Fast-CGI
+    ///  loop immediately.
+    /// @note
+    ///  It is a no-op for the regular CGI.
+    void FASTCGI_ScheduleExit(void) { m_ShouldExit = true; }
+
 
     /// Factory method for the Context object construction
     virtual CCgiContext*   CreateContext(CNcbiArguments*   args = 0,
@@ -316,6 +325,9 @@ private:
 
     string m_RID;
     bool m_IsResultReady;
+
+    /// @sa FASTCGI_ScheduleExit()
+    bool m_ShouldExit;
 
     // forbidden
     CCgiApplication(const CCgiApplication&);

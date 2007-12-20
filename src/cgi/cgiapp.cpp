@@ -507,7 +507,8 @@ CCgiApplication::CCgiApplication(void)
    m_ArgContextSync(false),
    m_HTTPStatus(200),
    m_RequestTimer(CStopWatch::eStop),
-   m_IsResultReady(true)
+   m_IsResultReady(true),
+   m_ShouldExit(false)
 {
     // CGI applications should use /log for logging by default
     CDiagContext::SetUseRootLog();

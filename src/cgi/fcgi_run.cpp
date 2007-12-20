@@ -413,6 +413,12 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 }}
                 m_Iteration--;
                 x_OnEvent(eWaiting, 115);
+
+                // User code requested Fast-CGI loop to end ASAP
+                if ( m_ShouldExit ) {
+                    break;
+                }
+
                 continue;
             }
         }
@@ -635,6 +641,11 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
         //
         x_OnEvent(eEndRequest, 121);
+
+        // User code requested Fast-CGI loop to end ASAP
+        if ( m_ShouldExit ) {
+            break;
+        }
 
         // If to restart the application
         {{
