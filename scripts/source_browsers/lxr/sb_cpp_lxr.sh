@@ -108,6 +108,9 @@ cd ../dialogs/edit/feature  ||  exit 5
     | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.asn ' \
     | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.asn\).*%  \1%g'
 
+# Remove all .svn dirs in the source tree
+find $SRC_PRIV -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
+
 # Change work directory
 cd $BUILD_PRIV || exit 1
 rm -f * .* >/dev/null 2>&1
@@ -140,7 +143,6 @@ cp -f * .glimpse_* $WEB_BASE_PRIV || exit 2
 # Remove all .svn dirs
 find $TMP_WEB_PRIV -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
 find $TMP_DAT_PRIV -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
-find $SRC_PRIV     -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
 
 # Copy all data to the real webserver
 RedistDir $TMP_WEB_PRIV $DIST_WEB_PRIV
