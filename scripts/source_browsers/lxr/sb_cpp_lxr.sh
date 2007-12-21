@@ -138,9 +138,9 @@ mkdir -p $WEB_BASE_PRIV
 cp -f * .glimpse_* $WEB_BASE_PRIV || exit 2
 
 # Remove all .svn dirs
-find $TMP_WEB_PRIV  -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
-find $TMP_DAT_PRIV  -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
-find $DIST_SRC_PRIV -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
+find $TMP_WEB_PRIV -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
+find $TMP_DAT_PRIV -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
+find $SRC_PRIV     -type d -name .svn -exec rm -rf {} \; >/dev/null 2>&1
 
 # Copy all data to the real webserver
 RedistDir $TMP_WEB_PRIV $DIST_WEB_PRIV
@@ -151,6 +151,7 @@ RedistDir $SRC_PRIV     $DIST_SRC_PRIV
 touch $DIST_WEB_PRIV/.sink_subtree
 touch $DIST_DAT_PRIV/.sink_subtree
 touch $DIST_SRC_PRIV/.sink_subtree
+
 
 #------------------------------------------------------------------------------
 # PUBLIC
