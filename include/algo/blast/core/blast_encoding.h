@@ -36,6 +36,7 @@
 #define ALGO_BLAST_CORE___BLAST_ENCODING__H
 
 #include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
 
 /** @addtogroup AlgoBlast
  *
