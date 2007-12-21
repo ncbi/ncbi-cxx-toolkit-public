@@ -43,7 +43,7 @@
  */
 
 #ifdef __cplusplus
-extern "C" {
+NCBI_XBLAST_EXPORT extern "C" {
 #endif
 
 /** Different types of sequence encodings for sequence retrieval from the 
@@ -64,22 +64,22 @@ typedef enum {
 
 /** Translates between ncbi4na and blastna. The first four elements
  *	of this array match ncbi2na. */
-extern const Uint1 NCBI4NA_TO_BLASTNA[];
+NCBI_XBLAST_EXPORT extern const Uint1 NCBI4NA_TO_BLASTNA[];
 
 /** Translates between blastna and ncbi4na. */
-extern const Uint1 BLASTNA_TO_NCBI4NA[];
+NCBI_XBLAST_EXPORT extern const Uint1 BLASTNA_TO_NCBI4NA[];
 
 /** Translates between iupacna and blastna. */
-extern const Uint1 IUPACNA_TO_BLASTNA[];
+NCBI_XBLAST_EXPORT extern const Uint1 IUPACNA_TO_BLASTNA[];
 
 /** Translates between iupacna and ncbi4na. */
-extern const Uint1 IUPACNA_TO_NCBI4NA[];
+NCBI_XBLAST_EXPORT extern const Uint1 IUPACNA_TO_NCBI4NA[];
 
 /** Translates between ncbieaa and ncbistdaa. */
-extern const Uint1 AMINOACID_TO_NCBISTDAA[];
+NCBI_XBLAST_EXPORT extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 
 /** Translates between ncbieaa and ncbistdaa. */
-extern const char NCBISTDAA_TO_AMINOACID[];
+NCBI_XBLAST_EXPORT extern const char NCBISTDAA_TO_AMINOACID[];
 
 #define BLAST2NA_SIZE 4     /**< Size of compressed nucleic acid alphabet */
 #define BLASTNA_SIZE 16     /**< Size of nucleic acid alphabet */
@@ -92,9 +92,9 @@ extern const char NCBISTDAA_TO_AMINOACID[];
 #define NCBI4NA_SEQ_CODE 4  /**< == Seq_code_ncbi4na */	
 
 /** Sentinel byte for protein sequences */
-extern const Uint1 kProtSentinel;
+NCBI_XBLAST_EXPORT extern const Uint1 kProtSentinel;
 /** Sentinel nibble for nucleotide sequences */
-extern const Uint1 kNuclSentinel;
+NCBI_XBLAST_EXPORT extern const Uint1 kNuclSentinel;
 
 #ifdef __cplusplus
 }
