@@ -64,9 +64,13 @@ public:
     ~CSeqTable_column(void);
 
     bool IsSet(size_t row) const;
-    bool GetBool(size_t row, bool& v) const;
-    bool GetInt(size_t row, int& v) const;
-    bool GetString(size_t row, string& v) const;
+
+    bool TryGetBool(size_t row, bool& v) const;
+    bool TryGetInt(size_t row, int& v) const;
+    bool TryGetReal(size_t row, double& v) const;
+
+    const string* GetStringPtr(size_t row) const;
+    const vector<char>* GetBytesPtr(size_t row) const;
     CConstRef<CSeq_id> GetSeq_id(size_t row) const;
     CConstRef<CSeq_loc> GetSeq_loc(size_t row) const;
     CConstRef<CSeq_interval> GetSeq_int(size_t row) const;
@@ -96,4 +100,3 @@ END_NCBI_SCOPE
 
 
 #endif // OBJECTS_SEQTABLE_SEQTABLE_COLUMN_HPP
-/* Original file checksum: lines: 86, chars: 2531, CRC32: 1f641da9 */
