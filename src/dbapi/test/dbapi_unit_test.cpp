@@ -12335,7 +12335,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // DBLIB has not cancel command, so this test doesn't working
     if (args.IsBCPAvailable()
         &&  args.GetDriverName() != dblib_driver
-        &&  args.GetDriverName() != ftds_dblib_driver)
+        &&  args.GetDriverName() != ctlib_driver // Disabled temporarily ...
+        &&  args.GetDriverName() != ftds_dblib_driver
+        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BCP_Cancel,
                                    DBAPIInstance);
