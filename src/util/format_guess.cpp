@@ -47,6 +47,13 @@ enum ESymbolType {
     fInvalid            = 1<<6
 };
 
+enum EConfidence {
+    eNo = 0,
+    eMaybe,
+    eYes
+};
+
+
 static unsigned char symbol_type_table[256];
 
 static void do_init_symbol_type_table(void)
@@ -724,19 +731,24 @@ static bool x_IsInputXml( const char* byte_buf, size_t byte_count )
 }
 
 
-static bool x_IsInputBinaryAsn( const char* byte_buf, size_t byte_count )
+static EConfidence x_IsInputBinaryAsn( const char* byte_buf, size_t byte_count )
 {
     //
     //  Criterion: Presence of any non-printing characters
     //
+    EConfidence conf = eNo;
     for (unsigned int i = 0;  i < byte_count;  ++i) {
         if ( !isgraph((unsigned char) byte_buf[i])  &&  
-            !isspace((unsigned char) byte_buf[i]) ) 
+             !isspace((unsigned char) byte_buf[i]) ) 
         {
-            return true;
+            if (byte_buf[i] == '\1') {
+                conf = eMaybe;
+            } else {
+                return eYes;
+            }
         }
     }
-    return false;
+    return conf;
 }
 
 
@@ -1011,6 +1023,7 @@ CFormatGuess::Format(const unsigned char* buffer,
         return eUnknown;
     }
     EFormat format = eUnknown;
+    EConfidence eBinAsn;
 
     const char* chbuf = (const char*)buffer;
 
@@ -1042,7 +1055,8 @@ CFormatGuess::Format(const unsigned char* buffer,
     if ( x_IsInputAlignment(chbuf, buffer_size) ) {
         return eAlignment;
     }
-    if ( x_IsInputBinaryAsn(chbuf, buffer_size) ) {
+    eBinAsn = x_IsInputBinaryAsn(chbuf, buffer_size);
+    if ( eBinAsn == eYes ) {
         return eBinaryASN;
     }
     if ( x_IsInputDistanceMatrix(chbuf, buffer_size) ) {
@@ -1207,6 +1221,9 @@ CFormatGuess::Format(const unsigned char* buffer,
                 break;  // only interested in first such line
             }
         }
+    }
+    if ( eBinAsn == eMaybe ) {
+        return eBinaryASN;
     }
     return format;
 
@@ -1568,7 +1585,7 @@ CFormatGuess::TestFormatBinaryAsn(
     if ( ! EnsureTestBuffer() ) {
         return false;
     }
-    return x_IsInputBinaryAsn( m_pTestBuffer, m_iTestDataSize );
+    return x_IsInputBinaryAsn( m_pTestBuffer, m_iTestDataSize ) != eNo;
 }
 
 //  -----------------------------------------------------------------------------
