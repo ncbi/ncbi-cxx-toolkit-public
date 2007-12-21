@@ -53,74 +53,74 @@ CSeqTableSetField::~CSeqTableSetField()
 }
 
 
-void CSeqTableSetField::Set(CSeq_loc& loc, int value) const
+void CSeqTableSetField::SetInt(CSeq_loc& loc, int value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-loc field value: "<<value);
 }
 
 
-void CSeqTableSetField::Set(CSeq_loc& loc, double value) const
+void CSeqTableSetField::SetReal(CSeq_loc& loc, double value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-loc field value: "<<value);
 }
 
 
-void CSeqTableSetField::Set(CSeq_loc& loc, const string& value) const
+void CSeqTableSetField::SetString(CSeq_loc& loc, const string& value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-loc field value: "<<value);
 }
 
 
-void CSeqTableSetField::Set(CSeq_feat& feat, int value) const
+void CSeqTableSetField::SetInt(CSeq_feat& feat, int value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: "<<value);
 }
 
 
-void CSeqTableSetField::Set(CSeq_feat& feat, double value) const
+void CSeqTableSetField::SetReal(CSeq_feat& feat, double value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: "<<value);
 }
 
 
-void CSeqTableSetField::Set(CSeq_feat& feat, const string& value) const
+void CSeqTableSetField::SetString(CSeq_feat& feat, const string& value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: "<<value);
 }
 
 
-void CSeqTableSetField::Set(CSeq_feat& feat, const vector<char>& value) const
+void CSeqTableSetField::SetBytes(CSeq_feat& feat, const vector<char>& value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: vector<char>");
 }
 
 
-void CSeqTableSetComment::Set(CSeq_feat& feat, const string& value) const
+void CSeqTableSetComment::SetString(CSeq_feat& feat, const string& value) const
 {
     feat.SetComment(value);
 }
 
 
-void CSeqTableSetDataImpKey::Set(CSeq_feat& feat, const string& value) const
+void CSeqTableSetDataImpKey::SetString(CSeq_feat& feat, const string& value) const
 {
     feat.SetData().SetImp().SetKey(value);
 }
 
 
-void CSeqTableSetDataRegion::Set(CSeq_feat& feat, const string& value) const
+void CSeqTableSetDataRegion::SetString(CSeq_feat& feat, const string& value) const
 {
     feat.SetData().SetRegion(value);
 }
 
 
-void CSeqTableSetLocFuzzFromLim::Set(CSeq_loc& loc, int value) const
+void CSeqTableSetLocFuzzFromLim::SetInt(CSeq_loc& loc, int value) const
 {
     if ( loc.IsPnt() ) {
         loc.SetPnt().SetFuzz().SetLim(CInt_fuzz_Base::ELim(value));
@@ -135,13 +135,13 @@ void CSeqTableSetLocFuzzFromLim::Set(CSeq_loc& loc, int value) const
 }
 
 
-void CSeqTableSetLocFuzzFromLim::Set(CSeq_feat& feat, int value) const
+void CSeqTableSetLocFuzzFromLim::SetInt(CSeq_feat& feat, int value) const
 {
-    Set(feat.SetLocation(), value);
+    SetInt(feat.SetLocation(), value);
 }
 
 
-void CSeqTableSetLocFuzzToLim::Set(CSeq_loc& loc, int value) const
+void CSeqTableSetLocFuzzToLim::SetInt(CSeq_loc& loc, int value) const
 {
     if ( loc.IsInt() ) {
         loc.SetInt().SetFuzz_to().SetLim(CInt_fuzz_Base::ELim(value));
@@ -153,13 +153,13 @@ void CSeqTableSetLocFuzzToLim::Set(CSeq_loc& loc, int value) const
 }
 
 
-void CSeqTableSetLocFuzzToLim::Set(CSeq_feat& feat, int value) const
+void CSeqTableSetLocFuzzToLim::SetInt(CSeq_feat& feat, int value) const
 {
-    Set(feat.SetLocation(), value);
+    SetInt(feat.SetLocation(), value);
 }
 
 
-void CSeqTableSetProdFuzzFromLim::Set(CSeq_loc& loc, int value) const
+void CSeqTableSetProdFuzzFromLim::SetInt(CSeq_loc& loc, int value) const
 {
     if ( loc.IsPnt() ) {
         loc.SetPnt().SetFuzz().SetLim(CInt_fuzz_Base::ELim(value));
@@ -174,13 +174,13 @@ void CSeqTableSetProdFuzzFromLim::Set(CSeq_loc& loc, int value) const
 }
 
 
-void CSeqTableSetProdFuzzFromLim::Set(CSeq_feat& feat, int value) const
+void CSeqTableSetProdFuzzFromLim::SetInt(CSeq_feat& feat, int value) const
 {
-    Set(feat.SetProduct(), value);
+    SetInt(feat.SetProduct(), value);
 }
 
 
-void CSeqTableSetProdFuzzToLim::Set(CSeq_loc& loc, int value) const
+void CSeqTableSetProdFuzzToLim::SetInt(CSeq_loc& loc, int value) const
 {
     if ( loc.IsInt() ) {
         loc.SetInt().SetFuzz_to().SetLim(CInt_fuzz_Base::ELim(value));
@@ -192,13 +192,13 @@ void CSeqTableSetProdFuzzToLim::Set(CSeq_loc& loc, int value) const
 }
 
 
-void CSeqTableSetProdFuzzToLim::Set(CSeq_feat& feat, int value) const
+void CSeqTableSetProdFuzzToLim::SetInt(CSeq_feat& feat, int value) const
 {
-    Set(feat.SetProduct(), value);
+    SetInt(feat.SetProduct(), value);
 }
 
 
-void CSeqTableSetQual::Set(CSeq_feat& feat, const string& value) const
+void CSeqTableSetQual::SetString(CSeq_feat& feat, const string& value) const
 {
     CRef<CGb_qual> qual(new CGb_qual);
     qual->SetQual(name);
@@ -207,7 +207,7 @@ void CSeqTableSetQual::Set(CSeq_feat& feat, const string& value) const
 }
 
 
-void CSeqTableSetExt::Set(CSeq_feat& feat, int value) const
+void CSeqTableSetExt::SetInt(CSeq_feat& feat, int value) const
 {
     CRef<CUser_field> field(new CUser_field);
     field->SetLabel().SetStr(name);
@@ -216,7 +216,7 @@ void CSeqTableSetExt::Set(CSeq_feat& feat, int value) const
 }
 
 
-void CSeqTableSetExt::Set(CSeq_feat& feat, double value) const
+void CSeqTableSetExt::SetReal(CSeq_feat& feat, double value) const
 {
     CRef<CUser_field> field(new CUser_field);
     field->SetLabel().SetStr(name);
@@ -225,7 +225,7 @@ void CSeqTableSetExt::Set(CSeq_feat& feat, double value) const
 }
 
 
-void CSeqTableSetExt::Set(CSeq_feat& feat, const string& value) const
+void CSeqTableSetExt::SetString(CSeq_feat& feat, const string& value) const
 {
     CRef<CUser_field> field(new CUser_field);
     field->SetLabel().SetStr(name);
@@ -234,7 +234,7 @@ void CSeqTableSetExt::Set(CSeq_feat& feat, const string& value) const
 }
 
 
-void CSeqTableSetExt::Set(CSeq_feat& feat, const vector<char>& value) const
+void CSeqTableSetExt::SetBytes(CSeq_feat& feat, const vector<char>& value) const
 {
     CRef<CUser_field> field(new CUser_field);
     field->SetLabel().SetStr(name);
@@ -243,7 +243,7 @@ void CSeqTableSetExt::Set(CSeq_feat& feat, const vector<char>& value) const
 }
 
 
-void CSeqTableSetDbxref::Set(CSeq_feat& feat, int value) const
+void CSeqTableSetDbxref::SetInt(CSeq_feat& feat, int value) const
 {
     CRef<CDbtag> dbtag(new CDbtag);
     dbtag->SetDb(name);
@@ -252,7 +252,7 @@ void CSeqTableSetDbxref::Set(CSeq_feat& feat, int value) const
 }
 
 
-void CSeqTableSetDbxref::Set(CSeq_feat& feat, const string& value) const
+void CSeqTableSetDbxref::SetString(CSeq_feat& feat, const string& value) const
 {
     CRef<CDbtag> dbtag(new CDbtag);
     dbtag->SetDb(name);
@@ -261,13 +261,13 @@ void CSeqTableSetDbxref::Set(CSeq_feat& feat, const string& value) const
 }
 
 
-void CSeqTableSetExtType::Set(CSeq_feat& feat, int value) const
+void CSeqTableSetExtType::SetInt(CSeq_feat& feat, int value) const
 {
     feat.SetExt().SetType().SetId(value);
 }
 
 
-void CSeqTableSetExtType::Set(CSeq_feat& feat, const string& value) const
+void CSeqTableSetExtType::SetString(CSeq_feat& feat, const string& value) const
 {
     feat.SetExt().SetType().SetStr(value);
 }
@@ -429,26 +429,25 @@ CSeqTableSetAnyLocField::CSeqTableSetAnyLocField(const CTempString& field)
 }
 
 
-void CSeqTableSetAnyLocField::Set(CSeq_loc& obj, int value) const
+void CSeqTableSetAnyLocField::SetInt(CSeq_loc& obj, int value) const
 {
     SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
 }
 
 
-void CSeqTableSetAnyLocField::Set(CSeq_loc& obj, double value) const
+void CSeqTableSetAnyLocField::SetReal(CSeq_loc& obj, double value) const
 {
     SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
 }
 
 
-void CSeqTableSetAnyLocField::Set(CSeq_loc& obj, const string& value) const
+void CSeqTableSetAnyLocField::SetString(CSeq_loc& obj, const string& value) const
 {
     SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
 }
 
 
-void CSeqTableSetAnyLocField::Set(CSeq_loc& obj,
-                                  const vector<char>& value) const
+void CSeqTableSetAnyLocField::SetBytes(CSeq_loc& obj, const vector<char>& value) const
 {
     SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
 }
@@ -460,26 +459,25 @@ CSeqTableSetAnyFeatField::CSeqTableSetAnyFeatField(const CTempString& field)
 }
 
 
-void CSeqTableSetAnyFeatField::Set(CSeq_feat& obj, int value) const
+void CSeqTableSetAnyFeatField::SetInt(CSeq_feat& obj, int value) const
 {
     SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
 }
 
 
-void CSeqTableSetAnyFeatField::Set(CSeq_feat& obj, double value) const
+void CSeqTableSetAnyFeatField::SetReal(CSeq_feat& obj, double value) const
 {
     SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
 }
 
 
-void CSeqTableSetAnyFeatField::Set(CSeq_feat& obj, const string& value) const
+void CSeqTableSetAnyFeatField::SetString(CSeq_feat& obj, const string& value) const
 {
     SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
 }
 
 
-void CSeqTableSetAnyFeatField::Set(CSeq_feat& obj,
-                                   const vector<char>& value) const
+void CSeqTableSetAnyFeatField::SetBytes(CSeq_feat& obj, const vector<char>& value) const
 {
     SetObjectField(CObjectInfo(&obj, obj.GetTypeInfo()), value);
 }

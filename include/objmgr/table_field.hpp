@@ -36,7 +36,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objects/seqtable/SeqTable_column_info.hpp>
-#include <objmgr/impl/seq_table_info.hpp>
+#include <objects/seqtable/SeqTable_column.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -56,19 +56,40 @@ public:
     CTableFieldHandle_Base(const string& field_name);
     ~CTableFieldHandle_Base();
 
+    int GetFieldId(void) const {
+        return m_FieldId;
+    }
     const string& GetFieldName(void) const {
         return m_FieldName;
     }
 
     bool IsSet(const CFeat_CI& feat_ci) const;
+
+    void Get(const CFeat_CI& feat_ci, int& v) const;
+    void Get(const CFeat_CI& feat_ci, double& v) const;
+    void Get(const CFeat_CI& feat_ci, string& v) const;
+    void Get(const CFeat_CI& feat_ci, vector<char>& v) const;
+
+    bool TryGet(const CFeat_CI& feat_ci, int& v) const;
+    bool TryGet(const CFeat_CI& feat_ci, double& v) const;
+    bool TryGet(const CFeat_CI& feat_ci, string& v) const;
+    bool TryGet(const CFeat_CI& feat_ci, vector<char>& v) const;
+
+    const string* GetPtr(const CFeat_CI& feat_ci,
+                         const string* dummy,
+                         bool force = false) const;
+    const vector<char>* GetPtr(const CFeat_CI& feat_ci,
+                               const vector<char>* dummy,
+                               bool force = false) const;
     
 protected:
-    const CSeqTableColumnInfo& x_GetColumn(const CFeat_CI& feat_ci) const;
+    bool x_ThrowUnsetValue(void) const;
+    const CSeqTable_column& x_GetColumn(const CFeat_CI& feat_ci) const;
     int x_GetAnnotIndex(const CFeat_CI& feat_ci) const;
 
     int m_FieldId;
     string m_FieldName;
-    mutable CSeqTableColumnInfo m_CachedFieldInfo;
+    mutable CConstRef<CSeqTable_column> m_CachedFieldInfo;
     mutable CConstRef<CSeq_annot_Info> m_CachedAnnotInfo;
 
 private:
@@ -87,13 +108,13 @@ public:
     CTableFieldHandle(const string& field_name)
         : CTableFieldHandle_Base(field_name) {
     }
-    bool Get(const CFeat_CI& feat_ci, TFieldType& v) const {
-        return x_GetColumn(feat_ci).GetValue(x_GetAnnotIndex(feat_ci), v);
+    const TFieldType* GetPtr(const CFeat_CI& feat_ci) const {
+        const TFieldType* dummy = 0;
+        return GetPtr(feat_ci, dummy, false);
     }
-    TFieldType Get(const CFeat_CI& feat_ci) const {
-        TFieldType ret;
-        x_GetColumn(feat_ci).GetValue(x_GetAnnotIndex(feat_ci), ret, true);
-        return ret;
+    const TFieldType& Get(const CFeat_CI& feat_ci) const {
+        const TFieldType* dummy = 0;
+        return *GetPtr(feat_ci, dummy, true);
     }
 };
 

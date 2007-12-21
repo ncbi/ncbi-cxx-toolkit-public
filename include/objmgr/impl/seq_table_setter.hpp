@@ -54,13 +54,13 @@ class CSeqTableSetField : public CObject
 public:
     virtual ~CSeqTableSetField();
 
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_loc& loc, double value) const;
-    virtual void Set(CSeq_loc& loc, const string& value) const;
-    virtual void Set(CSeq_feat& feat, int value) const;
-    virtual void Set(CSeq_feat& feat, double value) const;
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-    virtual void Set(CSeq_feat& feat, const vector<char>& value) const;
+    virtual void SetInt(CSeq_loc& loc, int value) const;
+    virtual void SetReal(CSeq_loc& loc, double value) const;
+    virtual void SetString(CSeq_loc& loc, const string& value) const;
+    virtual void SetInt(CSeq_feat& feat, int value) const;
+    virtual void SetReal(CSeq_feat& feat, double value) const;
+    virtual void SetString(CSeq_feat& feat, const string& value) const;
+    virtual void SetBytes(CSeq_feat& feat, const vector<char>& value) const;
 };
 
 

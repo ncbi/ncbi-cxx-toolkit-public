@@ -49,53 +49,53 @@ BEGIN_SCOPE(objects)
 class CSeqTableSetComment : public CSeqTableSetField
 {
 public:
-    virtual void Set(CSeq_feat& feat, const string& value) const;
+    virtual void SetString(CSeq_feat& feat, const string& value) const;
 };
 
 
 class CSeqTableSetDataImpKey : public CSeqTableSetField
 {
 public:
-    virtual void Set(CSeq_feat& feat, const string& value) const;
+    virtual void SetString(CSeq_feat& feat, const string& value) const;
 };
 
 
 class CSeqTableSetDataRegion : public CSeqTableSetField
 {
 public:
-    virtual void Set(CSeq_feat& feat, const string& value) const;
+    virtual void SetString(CSeq_feat& feat, const string& value) const;
 };
 
 
 class CSeqTableSetLocFuzzFromLim : public CSeqTableSetField
 {
 public:
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_feat& feat, int value) const;
+    virtual void SetInt(CSeq_loc& loc, int value) const;
+    virtual void SetInt(CSeq_feat& feat, int value) const;
 };
 
 
 class CSeqTableSetLocFuzzToLim : public CSeqTableSetField
 {
 public:
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_feat& feat, int value) const;
+    virtual void SetInt(CSeq_loc& loc, int value) const;
+    virtual void SetInt(CSeq_feat& feat, int value) const;
 };
 
 
 class CSeqTableSetProdFuzzFromLim : public CSeqTableSetField
 {
 public:
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_feat& feat, int value) const;
+    virtual void SetInt(CSeq_loc& loc, int value) const;
+    virtual void SetInt(CSeq_feat& feat, int value) const;
 };
 
 
 class CSeqTableSetProdFuzzToLim : public CSeqTableSetField
 {
 public:
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_feat& feat, int value) const;
+    virtual void SetInt(CSeq_loc& loc, int value) const;
+    virtual void SetInt(CSeq_feat& feat, int value) const;
 };
 
 
@@ -107,7 +107,7 @@ public:
         {
         }
 
-    virtual void Set(CSeq_feat& feat, const string& value) const;
+    virtual void SetString(CSeq_feat& feat, const string& value) const;
 
 private:
     CTempString name;
@@ -122,10 +122,10 @@ public:
         {
         }
 
-    virtual void Set(CSeq_feat& feat, int value) const;
-    virtual void Set(CSeq_feat& feat, double value) const;
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-    virtual void Set(CSeq_feat& feat, const vector<char>& value) const;
+    virtual void SetInt(CSeq_feat& feat, int value) const;
+    virtual void SetReal(CSeq_feat& feat, double value) const;
+    virtual void SetString(CSeq_feat& feat, const string& value) const;
+    virtual void SetBytes(CSeq_feat& feat, const vector<char>& value) const;
 
 private:
     CTempString name;
@@ -140,8 +140,8 @@ public:
         {
         }
 
-    virtual void Set(CSeq_feat& feat, int value) const;
-    virtual void Set(CSeq_feat& feat, const string& value) const;
+    virtual void SetInt(CSeq_feat& feat, int value) const;
+    virtual void SetString(CSeq_feat& feat, const string& value) const;
 
 private:
     CTempString name;
@@ -151,8 +151,8 @@ private:
 class CSeqTableSetExtType : public CSeqTableSetField
 {
 public:
-    virtual void Set(CSeq_feat& feat, int value) const;
-    virtual void Set(CSeq_feat& feat, const string& value) const;
+    virtual void SetInt(CSeq_feat& feat, int value) const;
+    virtual void SetString(CSeq_feat& feat, const string& value) const;
 };
 
 
@@ -238,10 +238,10 @@ class CSeqTableSetAnyLocField : public CSeqTableSetAnyObjField
 public:
     CSeqTableSetAnyLocField(const CTempString& field);
 
-    virtual void Set(CSeq_loc& loc, int value) const;
-    virtual void Set(CSeq_loc& loc, double value) const;
-    virtual void Set(CSeq_loc& loc, const string& value) const;
-    virtual void Set(CSeq_loc& loc, const vector<char>& value) const;
+    virtual void SetInt(CSeq_loc& loc, int value) const;
+    virtual void SetReal(CSeq_loc& loc, double value) const;
+    virtual void SetString(CSeq_loc& loc, const string& value) const;
+    virtual void SetBytes(CSeq_loc& loc, const vector<char>& value) const;
 };
 
 
@@ -250,10 +250,10 @@ class CSeqTableSetAnyFeatField : public CSeqTableSetAnyObjField
 public:
     CSeqTableSetAnyFeatField(const CTempString& field);
 
-    virtual void Set(CSeq_feat& feat, int value) const;
-    virtual void Set(CSeq_feat& feat, double value) const;
-    virtual void Set(CSeq_feat& feat, const string& value) const;
-    virtual void Set(CSeq_feat& feat, const vector<char>& value) const;
+    virtual void SetInt(CSeq_feat& feat, int value) const;
+    virtual void SetReal(CSeq_feat& feat, double value) const;
+    virtual void SetString(CSeq_feat& feat, const string& value) const;
+    virtual void SetBytes(CSeq_feat& feat, const vector<char>& value) const;
 };
 
 

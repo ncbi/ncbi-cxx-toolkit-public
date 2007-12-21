@@ -82,30 +82,58 @@ public:
             m_Setter = setter;
         }
 
+    const CSeqTable_column* Get(void) const
+        {
+            return m_Column.GetPointer();
+        }
     const CSeqTable_column* operator->(void) const
         {
             return m_Column.GetPointer();
         }
 
     bool IsSet(size_t row) const;
-    bool GetBool(size_t row, bool& v, bool force = false) const;
-    bool GetReal(size_t row, double& v, bool force = false) const;
-    bool GetInt(size_t row, int& v, bool force = false) const;
+
+    bool GetBool(size_t row, bool& v, bool force = false) const
+        {
+            return m_Column->TryGetBool(row, v) ||
+                force && x_ThrowUnsetValue();
+        }
+    bool GetInt(size_t row, int& v, bool force = false) const
+        {
+            return m_Column->TryGetInt(row, v) ||
+                force && x_ThrowUnsetValue();
+        }
+    bool GetReal(size_t row, double& v, bool force = false) const
+        {
+            return m_Column->TryGetReal(row, v) ||
+                force && x_ThrowUnsetValue();
+        }
     bool GetString(size_t row, string& v, bool force = false) const;
+    bool GetBytes(size_t row, vector<char>& v, bool force = false) const;
+    const string* GetStringPtr(size_t row, bool force = false) const;
+    const vector<char>* GetBytesPtr(size_t row, bool force = false) const;
     CConstRef<CSeq_id> GetSeq_id(size_t row, bool force = false) const;
     CConstRef<CSeq_loc> GetSeq_loc(size_t row, bool force = false) const;
 
-    bool GetValue(size_t row, bool& value, bool force) const
+    bool GetValue(size_t row, bool& value, bool force = false) const
         {
             return GetBool(row, value, force);
         }
-    bool GetValue(size_t row, int& value, bool force) const
+    bool GetValue(size_t row, int& value, bool force = false) const
         {
             return GetInt(row, value, force);
         }
-    bool GetValue(size_t row, string& value, bool force) const
+    bool GetValue(size_t row, double& value, bool force = false) const
+        {
+            return GetReal(row, value, force);
+        }
+    bool GetValue(size_t row, string& value, bool force = false) const
         {
             return GetString(row, value, force);
+        }
+    bool GetValue(size_t row, vector<char>& value, bool force = false) const
+        {
+            return GetBytes(row, value, force);
         }
 
     void UpdateSeq_loc(CSeq_loc& loc, size_t row) const;
@@ -122,7 +150,8 @@ public:
                         size_t index) const;
 
 protected:
-    bool x_CheckUnsetValue(bool force) const;
+    // report unset value with exception
+    bool x_ThrowUnsetValue(void) const;
 
 private:
     CConstRef<CSeqTable_column> m_Column;

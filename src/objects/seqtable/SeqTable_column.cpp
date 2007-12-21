@@ -75,7 +75,7 @@ bool CSeqTable_column::IsSet(size_t row) const
 }
 
 
-bool CSeqTable_column::GetBool(size_t row, bool& v) const
+bool CSeqTable_column::TryGetBool(size_t row, bool& v) const
 {
     size_t index = row;
     if ( IsSetSparse() ) {
@@ -105,7 +105,7 @@ bool CSeqTable_column::GetBool(size_t row, bool& v) const
 }
 
 
-bool CSeqTable_column::GetInt(size_t row, int& v) const
+bool CSeqTable_column::TryGetInt(size_t row, int& v) const
 {
     size_t index = row;
     if ( IsSetSparse() ) {
@@ -133,17 +133,44 @@ bool CSeqTable_column::GetInt(size_t row, int& v) const
 }
 
 
-bool CSeqTable_column::GetString(size_t row, string& v) const
+bool CSeqTable_column::TryGetReal(size_t row, double& v) const
 {
     size_t index = row;
     if ( IsSetSparse() ) {
         index = GetSparse().GetIndexAt(row);
         if ( index == CSeqTable_sparse_index::kSkipped ) {
             if ( IsSetSparse_other() ) {
-                v = GetSparse_other().GetString();
+                v = GetSparse_other().GetReal();
                 return true;
             }
             return false;
+        }
+    }
+    if ( IsSetData() ) {
+        const CSeqTable_multi_data::TReal& arr = GetData().GetReal();
+        if ( index < arr.size() ) {
+            v = arr[index];
+            return true;
+        }
+    }
+    if ( IsSetDefault() ) {
+        v = GetDefault().GetReal();
+        return true;
+    }
+    return false;
+}
+
+
+const string* CSeqTable_column::GetStringPtr(size_t row) const
+{
+    size_t index = row;
+    if ( IsSetSparse() ) {
+        index = GetSparse().GetIndexAt(row);
+        if ( index == CSeqTable_sparse_index::kSkipped ) {
+            if ( IsSetSparse_other() ) {
+                return &GetSparse_other().GetString();
+            }
+            return 0;
         }
     }
     if ( IsSetData() ) {
@@ -151,8 +178,7 @@ bool CSeqTable_column::GetString(size_t row, string& v) const
         if ( data.IsString() ) {
             const CSeqTable_multi_data::TString& arr = data.GetString();
             if ( index < arr.size() ) {
-                v = arr[index];
-                return true;
+                return &arr[index];
             }
         }
         else {
@@ -162,18 +188,56 @@ bool CSeqTable_column::GetString(size_t row, string& v) const
                 const CCommonString_table::TStrings& arr = common.GetStrings();
                 size_t arr_index = indexes[index];
                 if ( arr_index < arr.size() ) {
-                    v = arr[arr_index];
-                    return true;
+                    return &arr[arr_index];
                 }
-                return false;
+                return 0;
             }
         }
     }
     if ( IsSetDefault() ) {
-        v = GetDefault().GetString();
-        return true;
+        return &GetDefault().GetString();
     }
-    return false;
+    return 0;
+}
+
+
+const vector<char>* CSeqTable_column::GetBytesPtr(size_t row) const
+{
+    size_t index = row;
+    if ( IsSetSparse() ) {
+        index = GetSparse().GetIndexAt(row);
+        if ( index == CSeqTable_sparse_index::kSkipped ) {
+            if ( IsSetSparse_other() ) {
+                return &GetSparse_other().GetBytes();
+            }
+            return 0;
+        }
+    }
+    if ( IsSetData() ) {
+        const CSeqTable_multi_data& data = GetData();
+        if ( data.IsBytes() ) {
+            const CSeqTable_multi_data::TBytes& arr = data.GetBytes();
+            if ( index < arr.size() ) {
+                return arr[index];
+            }
+        }
+        else {
+            const CCommonBytes_table& common = data.GetCommon_bytes();
+            const CCommonBytes_table::TIndexes& indexes = common.GetIndexes();
+            if ( index < indexes.size() ) {
+                const CCommonBytes_table::TBytes& arr = common.GetBytes();
+                size_t arr_index = indexes[index];
+                if ( arr_index < arr.size() ) {
+                    return arr[arr_index];
+                }
+                return 0;
+            }
+        }
+    }
+    if ( IsSetDefault() ) {
+        return &GetDefault().GetBytes();
+    }
+    return 0;
 }
 
 

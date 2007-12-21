@@ -403,6 +403,21 @@ int test2()
 }
 
 
+CNcbiOstream& operator<<(CNcbiOstream& out, const vector<char>& v)
+{
+    out << '\'';
+    ITERATE ( vector<char>, i, v ) {
+        int c = *i & 255;
+        for ( int j = 0; j < 2; ++j ) {
+            out << "0123456789ABCDEF"[(c>>4)&15];
+            c <<= 4;
+        }
+    }
+    out << "\'H";
+    return out;
+}
+
+
 int CDemoApp::Run(void)
 {
     //SetDiagPostLevel(eDiag_Warning);
@@ -934,12 +949,13 @@ int CDemoApp::Run(void)
         }
         base_sel.SetByProduct(by_product);
 
-        auto_ptr< CTableFieldHandle<int> > table_field;
+        typedef int TTableField;
+        auto_ptr< CTableFieldHandle<TTableField> > table_field;
         if ( table_field_id >= 0 ) {
-            table_field.reset(new CTableFieldHandle<int>(CSeqTable_column_info::EField_id(table_field_id)));
+            table_field.reset(new CTableFieldHandle<TTableField>(CSeqTable_column_info::EField_id(table_field_id)));
         }
         else if ( !table_field_name.empty() ) {
-            table_field.reset(new CTableFieldHandle<int>(table_field_name));
+            table_field.reset(new CTableFieldHandle<TTableField>(table_field_name));
         }
 
         {{
@@ -1043,9 +1059,9 @@ int CDemoApp::Run(void)
 
                 if ( table_field.get() &&
                      it->GetSeq_feat_Handle().IsTableFeat() ) {
-                    if ( table_field->IsSet(it) ) {
-                        NcbiCout << "table field: " << table_field->Get(it)
-                                 << NcbiEndl;
+                    TTableField value;
+                    if ( table_field->TryGet(it, value) ) {
+                        NcbiCout << "table field: " << value << NcbiEndl;
                     }
                 }
                 

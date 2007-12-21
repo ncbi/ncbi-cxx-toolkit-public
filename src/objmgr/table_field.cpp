@@ -71,20 +71,22 @@ CTableFieldHandle_Base::~CTableFieldHandle_Base()
 }
 
 
-const CSeqTableColumnInfo&
+const CSeqTable_column&
 CTableFieldHandle_Base::x_GetColumn(const CFeat_CI& feat_ci) const
 {
     const CSeq_annot_Info& annot = feat_ci.Get().GetSeq_annot_Info();
     if ( &annot != m_CachedAnnotInfo ) {
         m_CachedAnnotInfo = &annot;
         if ( m_FieldId < 0 ) {
-            m_CachedFieldInfo = annot.GetTableInfo().GetColumn(m_FieldName);
+            m_CachedFieldInfo =
+                annot.GetTableInfo().GetColumn(m_FieldName).Get();
         }
         else {
-            m_CachedFieldInfo = annot.GetTableInfo().GetColumn(m_FieldId);
+            m_CachedFieldInfo =
+                annot.GetTableInfo().GetColumn(m_FieldId).Get();
         }
     }
-    return m_CachedFieldInfo;
+    return *m_CachedFieldInfo;
 }
 
 
@@ -97,6 +99,119 @@ int CTableFieldHandle_Base::x_GetAnnotIndex(const CFeat_CI& feat_ci) const
 bool CTableFieldHandle_Base::IsSet(const CFeat_CI& feat_ci) const
 {
     return x_GetColumn(feat_ci).IsSet(x_GetAnnotIndex(feat_ci));
+}
+
+
+bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
+                                    int& v) const
+{
+    return x_GetColumn(feat_ci).TryGetInt(x_GetAnnotIndex(feat_ci), v);
+}
+
+
+void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
+                                 int& v) const
+{
+    if ( !TryGet(feat_ci, v) ) {
+        x_ThrowUnsetValue();
+    }
+}
+
+
+bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
+                                    double& v) const
+{
+    return x_GetColumn(feat_ci).TryGetReal(x_GetAnnotIndex(feat_ci), v);
+}
+
+
+void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
+                                 double& v) const
+{
+    if ( !TryGet(feat_ci, v) ) {
+        x_ThrowUnsetValue();
+    }
+}
+
+
+const string*
+CTableFieldHandle_Base::GetPtr(const CFeat_CI& feat_ci,
+                               const string* /*dummy*/,
+                               bool force) const
+{
+    const string* ret =
+        x_GetColumn(feat_ci).GetStringPtr(x_GetAnnotIndex(feat_ci));
+    if ( !ret && force ) {
+        x_ThrowUnsetValue();
+    }
+    return ret;
+}
+
+
+bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
+                                    string& v) const
+{
+    const string* ptr = 0;
+    ptr = GetPtr(feat_ci, ptr, false);
+    if ( ptr ) {
+        v = *ptr;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
+                                 string& v) const
+{
+    const string* ptr = 0;
+    v = *GetPtr(feat_ci, ptr, true);
+}
+
+
+const vector<char>*
+CTableFieldHandle_Base::GetPtr(const CFeat_CI& feat_ci,
+                               const vector<char>* /*dummy*/,
+                               bool force) const
+{
+    const vector<char>* ret =
+        x_GetColumn(feat_ci).GetBytesPtr(x_GetAnnotIndex(feat_ci));
+    if ( !ret && force ) {
+        x_ThrowUnsetValue();
+    }
+    return ret;
+}
+
+
+bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
+                                    vector<char>& v) const
+{
+    const vector<char>* ptr = 0;
+    ptr = GetPtr(feat_ci, ptr, false);
+    if ( ptr ) {
+        v = *ptr;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
+                                 vector<char>& v) const
+{
+    const vector<char>* ptr = 0;
+    v = *GetPtr(feat_ci, ptr, true);
+}
+
+
+bool CTableFieldHandle_Base::x_ThrowUnsetValue(void) const
+{
+    NCBI_THROW(CAnnotException, eOtherError,
+               "CTableFieldHandle::Get: value is not set");
 }
 
 
