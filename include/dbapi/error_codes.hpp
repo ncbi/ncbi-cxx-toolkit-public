@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 
 NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrTypes,     1101,  7);
 NCBI_DEFINE_ERRCODE_X(Dbapi_DataServer,    1102, 10);
-NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrExcepts,   1103,  6);
+NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrExcepts,   1103,  7);
 NCBI_DEFINE_ERRCODE_X(Dbapi_ConnFactory,   1104,  3);
 NCBI_DEFINE_ERRCODE_X(Dbapi_ICache,        1105,  2);
 NCBI_DEFINE_ERRCODE_X(Dbapi_CacheAdmin,    1106,  3);

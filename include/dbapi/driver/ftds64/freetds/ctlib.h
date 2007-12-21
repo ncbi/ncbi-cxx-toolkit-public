@@ -278,7 +278,7 @@ int _ct_handle_server_message(const TDSCONTEXT * ctxptr, TDSSOCKET * tdsptr, TDS
 int _ct_handle_client_message(const TDSCONTEXT * ctxptr, TDSSOCKET * tdsptr, TDSMESSAGE * msgptr);
 int _ct_get_server_type(int datatype);
 int _ct_bind_data(CS_CONTEXT *ctx, TDSRESULTINFO * resinfo, TDSRESULTINFO *bindinfo, CS_INT offset);
-int _ct_get_client_type(int datatype, int usertype, int size);
+int _ct_get_client_type(CS_CONTEXT *ctx, int datatype, int usertype, int size);
 void _ctclient_msg(CS_CONNECTION * con, const char *funcname, int layer, int origin, int severity, int number,
 		   const char *fmt, ...);
 CS_INT _ct_diag_clearmsg(CS_CONTEXT * context, CS_INT type);

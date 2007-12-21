@@ -81,7 +81,9 @@ int i = 0;
 
 	while (i<TDS_MAX_CONN && ctx->connection_list[i]) i++;
 	if (i==TDS_MAX_CONN) {
-		/*tds_error_log("Max connections reached, increase value of TDS_MAX_CONN");*/
+		/*if(g_dblib_err_handler) {
+            g_dblib_err_handler(dbproc, EXPROGRAM, 50001, 0, "Max connections reached, increase value of TDS_MAX_CONN", "");
+        }*/
 		return 1;
 	} else {
 		ctx->connection_list[i] = tds;
@@ -593,7 +595,9 @@ DBPROCESS *dbproc;
       /* tds_set_parent( dbproc->tds_socket, dbproc); */
       dblib_add_connection(g_dblib_ctx, dbproc->tds_socket);
    } else {
-       /*tds_error_log("DB-Library: Login incorrect.");*/
+       /*if(g_dblib_err_handler) {
+            g_dblib_err_handler(dbproc, EXUSER, 50003, 0, "DB-Library: Login incorrect.", "");
+        }*/
       free(dbproc); /* memory leak fix (mlilback, 11/17/01) */
       return NULL;
    }
@@ -1097,7 +1101,9 @@ DBNUMERIC   *num;
 		  case SYBVARBINARY:
           case SYBIMAGE:
                if (srclen > destlen && destlen >= 0) {
-                  tds_error_log("Data-conversion resulted in overflow.");
+                  if(g_dblib_err_handler) {
+                      g_dblib_err_handler(dbproc, EXPROGRAM, 20049, 0, "Data-conversion resulted in overflow.", "");
+                  }
                   ret = -1;
                }
                else {
@@ -1135,7 +1141,9 @@ DBNUMERIC   *num;
                }
                else { /* destlen is > 0 */
                   if (srclen > destlen) {
-                     tds_error_log("Data-conversion resulted in overflow.");
+                     if(g_dblib_err_handler) {
+                        g_dblib_err_handler(dbproc, EXPROGRAM, 50000, 0, "Data is truncated during conversion", "");
+                     }
                      srclen = destlen;
                   }
                   memcpy(dest, src, srclen);
@@ -1204,7 +1212,9 @@ DBNUMERIC   *num;
         case SYBIMAGE:
 
              if (len > destlen && destlen >= 0) {
-                tds_error_log("Data-conversion resulted in overflow.");
+                if(g_dblib_err_handler) {
+                   g_dblib_err_handler(dbproc, EXPROGRAM, 20049, 0, "Data-conversion resulted in overflow.", "");
+                }
 #if 0
                 fprintf(stderr,"%s: Line %d: Data-conversion resulted in overflow.\n", __FILE__, __LINE__);
                 fprintf(stderr,"\tlen (%d) > destlen (%d).\n", len, destlen);
@@ -1287,7 +1297,9 @@ DBNUMERIC   *num;
              }
              else { /* destlen is > 0 */
                 if (len > destlen) {
-                     tds_error_log("Data-conversion resulted in overflow.");
+                     if(g_dblib_err_handler) {
+                        g_dblib_err_handler(dbproc, EXPROGRAM, 50000, 0, "Data is truncated during conversion", "");
+                     }
                      len = destlen;
                 }
                    memcpy(dest, dres.c, len);

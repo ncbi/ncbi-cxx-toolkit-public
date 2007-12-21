@@ -215,10 +215,6 @@ extern "C" {
              line);
         return 0;
     }
-
-    static void s_TDSErrorLogCallback(const char* msg) {
-        ERR_POST_X(4, Warning << "Error in FreeTDS: " << msg);
-    }
 }
 
 
@@ -256,7 +252,6 @@ CTDSContext::CTDSContext(DBINT version)
 
     Check(dberrhandle(s_TDS_err_callback));
     Check(dbmsghandle(s_TDS_msg_callback));
-    tds_set_errlog_callback(s_TDSErrorLogCallback);
 
     g_pTDSContext = this;
     m_Login = Check(dblogin());
@@ -499,6 +494,21 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
             GetFTDS8ExceptionStorage().Accept(ex);
         }
         return INT_TIMEOUT;
+    case 50000:
+        {
+            CDB_TruncateEx ex(GetBlankCompileInfo(),
+                              0,
+                              message,
+                              dberr);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
+
+            GetFTDS8ExceptionStorage().Accept(ex);
+
+            return INT_CANCEL;
+        }
     default:
         if(dberr == 1205) {
             CDB_DeadlockEx ex(GetBlankCompileInfo(),

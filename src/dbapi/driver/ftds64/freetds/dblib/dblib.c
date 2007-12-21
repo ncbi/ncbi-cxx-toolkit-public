@@ -230,7 +230,7 @@ dblib_add_connection(DBLIBCONTEXT * ctx, TDSSOCKET * tds)
 	while (i < list_size && ctx->connection_list[i])
 		i++;
 	if (i == list_size) {
-		tds_error_log("Max connections reached, increase value of TDS_MAX_CONN");
+		dbperror((DBPROCESS *) tds->parent, 50001, 0);
 		return 1;
 	} else {
 		ctx->connection_list[i] = tds;
@@ -1747,10 +1747,14 @@ dbconvert(DBPROCESS * dbproc, int srctype, const BYTE * src, DBINT srclen, int d
 				break;
 			default:
 				assert(destlen > 0);
-				if (destlen < 0 || srclen > destlen) {
+				if (destlen < 0) {
 					dbperror(dbproc, SYBECOFL, 0);
 					ret = -1;
 				} else {
+                    if (srclen > destlen) {
+                        dbperror(dbproc, 50000, 0);
+                        srclen = destlen;
+                    }
 					memcpy(dest, src, srclen);
 					for (i = srclen; i < destlen; i++)
 						dest[i] = ' ';
@@ -1946,13 +1950,17 @@ dbconvert(DBPROCESS * dbproc, int srctype, const BYTE * src, DBINT srclen, int d
 			break;
 		default:
 			assert(destlen > 0);
-			if (destlen < 0 || len > destlen) {
+			if (destlen < 0) {
 				dbperror(dbproc, SYBECOFL, 0);
 				ret = -1;
 				tdsdump_log(TDS_DBG_INFO1, "%d bytes type %d -> %d, destlen %d < %d required\n",
 					    srclen, srctype, desttype, destlen, len);
 				break;
 			}
+            if (len > destlen) {
+				dbperror(dbproc, 50000, 0);
+                len = destlen;
+            }
 			/* else pad with blanks */
 			memcpy(dest, dres.c, len);
 			for (i = len; i < destlen; i++)
@@ -6976,6 +6984,8 @@ static const DBLIB_ERROR_MESSAGE dblib_error_messages[] =
 	, { SYBEXTSN,           EXPROGRAM,	"Warning: the xlt_tosrv parameter to dbfree_xlate was NULL. The space associated "
 						"with the xlt_todisp parameter has been freed" }
 	, { SYBEZTXT,              EXINFO,	"Attempt to send zero length TEXT or IMAGE to dataserver via dbwritetext" }
+	, { 50000,           EXCONVERSION,	"Data is truncated during conversion" }
+	, { 50001,              EXPROGRAM,	"Max connections reached, increase value of TDS_MAX_CONN" }
 	};
 
  /* note jkl Sun Jul 17 00:50:55 EDT 2005
@@ -7102,13 +7112,13 @@ dbperror (DBPROCESS *dbproc, DBINT msgno, int errnum)
 		tdsdump_log(TDS_DBG_SEVERE, int_invalid_text, "Invalid return code", rc, msgno);
 		/* fall through */
     case INT_EXIT: {
-            char buf[300];
+            /*char buf[300];*/
 		    if (dbproc && dbproc->msdblib) {
 			    /* Microsoft behavior */
 			    return INT_CANCEL;
 		    }
-		    sprintf(buf, int_exit_text, rc, msgno);
-            tds_error_log(buf);
+		    /*sprintf(buf, int_exit_text, rc, msgno);
+            fprintf(stderr, buf);*/
 		    tdsdump_log(TDS_DBG_SEVERE, int_exit_text, rc, msgno);
         }
 		break;

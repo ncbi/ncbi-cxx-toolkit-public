@@ -808,10 +808,6 @@ void tds_answer_challenge(char *passwd, char *challenge,TDSANSWER* answer);
 
 #ifdef NCBI_FTDS
 void tds_setTDS_version(TDSLOGIN *tds_login, int version);
-
-typedef void (*tds_errlog_callback)(const char*);
-tds_errlog_callback tds_set_errlog_callback(tds_errlog_callback cb);
-void tds_error_log(const char* msg);
 #endif
 
 #define IS_TDS42(x) (x->major_version==4 && x->minor_version==2)

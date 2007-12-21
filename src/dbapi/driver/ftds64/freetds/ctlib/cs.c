@@ -145,6 +145,33 @@ _cs_get_user_api_layer_error(int error)
     case 24:
         return "The conversion/operation was stopped due to a syntax error in the source field.";
         break;
+    case 25:
+        return "Data is truncated during conversion.";
+        break;
+    case 26:
+        return "Data-conversion resulted in overflow.";
+        break;
+    case 27:
+        return "Unknown callback %1!.";
+        break;
+    case 28:
+        return "Unknown size %1! for SYBINTN.";
+        break;
+    case 29:
+        return "Unknown float size of %1!.";
+        break;
+    case 30:
+        return "Unknown money size of %1!.";
+        break;
+    case 31:
+        return "Unknown date size of %1!.";
+        break;
+    case 32:
+        return "Unknown type: %1!.";
+        break;
+    case 33:
+        return "Out of memory!";
+        break;
     default:
         break;
     }
@@ -164,7 +191,7 @@ _cs_get_msgstr(const char *funcname, int layer, int origin, int severity, int nu
     return m;
 }
 
-static void
+void
 _csclient_msg(CS_CONTEXT * ctx, const char *funcname, int layer, int origin, int severity, int number, const char *fmt, ...)
 {
     va_list ap;
@@ -398,7 +425,7 @@ CS_RETCODE ret;
         case SYBVARBINARY:
         case SYBIMAGE:
             if (src_len > destlen) {
-                tds_error_log("Data-conversion resulted in overflow.");
+                _csclient_msg(ctx, "cs_convert", 2, 1, 16, 26, "");
                 ret = CS_FAIL;
             } else {
                 switch (destfmt->format) {
@@ -429,7 +456,7 @@ CS_RETCODE ret;
         case SYBTEXT:
             tdsdump_log(TDS_DBG_FUNC, "cs_convert() desttype = character\n");
             if (src_len > destlen) {
-                tds_error_log("Data-conversion resulted in overflow.");
+                _csclient_msg(ctx, "cs_convert", 2, 1, 10, 25, "");
                 src_len = destlen;
             }
             switch (destfmt->format) {
@@ -498,7 +525,7 @@ CS_RETCODE ret;
             src_len = tds_numeric_bytes_per_prec[((TDS_NUMERIC *) srcdata)->precision] + 2;
         case SYBBITN:
             if (src_len > destlen) {
-                tds_error_log("Data-conversion resulted in overflow.");
+                _csclient_msg(ctx, "cs_convert", 2, 1, 16, 26, "");
                 ret = CS_FAIL;
             } else {
                 memcpy(dest, srcdata, src_len);
@@ -568,7 +595,7 @@ CS_RETCODE ret;
 
         if (len > destlen) {
             free(cres.ib);
-            tds_error_log("Data-conversion resulted in overflow.");
+            _csclient_msg(ctx, "cs_convert", 2, 1, 16, 26, "");
             ret = CS_FAIL;
         } else {
             memcpy(dest, cres.ib, len);
@@ -666,7 +693,7 @@ CS_RETCODE ret;
     case SYBVARCHAR:
     case SYBTEXT:
         if (len > destlen) {
-            tds_error_log("Data-conversion resulted in overflow.");
+            _csclient_msg(ctx, "cs_convert", 2, 1, 10, 25, "");
             len = destlen;
         }
 

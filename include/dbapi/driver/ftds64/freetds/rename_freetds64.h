@@ -193,7 +193,5 @@
 #define tdsdump_off                     tdsdump_off_ver64
 #define tdsdump_on                      tdsdump_on_ver64
 #define tdsdump_open                    tdsdump_open_ver64
-#define tds_set_errlog_callback         tds_set_errlog_callback_ver64
-#define tds_error_log                   tds_error_log_ver64
 
 #endif  /* DBAPI_DRIVER_FTDS64_FREETDS___RENAME_FREETDS64__H */

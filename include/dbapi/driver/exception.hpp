@@ -118,7 +118,8 @@ public:
         eDeadlock,
         eTimeout,
         eClient,
-        eMulti
+        eMulti,
+        eTruncate
     };
     typedef EErrCode EType;
 
@@ -343,6 +344,27 @@ public:
                        severity,
                        db_err_code)
         NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_ClientEx,
+                                                       CDB_Exception,
+                                                       db_err_code);
+};
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDB_TruncateEx : public CDB_Exception
+{
+public:
+    CDB_TruncateEx(const CDiagCompileInfo& info,
+                   const CException* prev_exception,
+                   const string& message,
+                   int db_err_code)
+       : CDB_Exception(info,
+                       prev_exception,
+                       CDB_Exception::eTruncate,
+                       message,
+                       eDiag_Warning,
+                       db_err_code)
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_TruncateEx,
                                                        CDB_Exception,
                                                        db_err_code);
 };

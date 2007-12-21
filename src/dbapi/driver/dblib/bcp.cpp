@@ -430,13 +430,12 @@ bool CDBL_BCPInCmd::Send(void)
         DATABASE_DRIVER_ERROR( "Cannot assign params." + GetDbgInfo(), 223004 );
     }
 
+    SetWasSent();
+
     if (Check(bcp_sendrow(GetCmd())) != SUCCEED) {
-        Check(bcp_done(GetCmd()));
         SetHasFailed();
         DATABASE_DRIVER_ERROR( "bcp_sendrow failed." + GetDbgInfo(), 223005 );
     }
-
-    SetWasSent();
 
     if (m_HasTextImage) { // send text/image data
         char buff[1800]; // text/image page size

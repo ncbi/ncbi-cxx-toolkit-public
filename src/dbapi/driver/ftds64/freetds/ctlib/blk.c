@@ -205,7 +205,7 @@ blk_describe(CS_BLKDESC * blkdesc, CS_INT item, CS_DATAFMT * datafmt)
     datafmt->name[len] = 0;
     datafmt->namelen = len;
     /* need to turn the SYBxxx into a CS_xxx_TYPE */
-    datafmt->datatype = _ct_get_client_type(curcol->column_type, curcol->column_usertype, curcol->column_size);
+    datafmt->datatype = _ct_get_client_type(blkdesc->con->ctx, curcol->column_type, curcol->column_usertype, curcol->column_size);
     tdsdump_log(TDS_DBG_INFO1, "blk_describe() datafmt->datatype = %d server type %d\n", datafmt->datatype,
             curcol->column_type);
     /* FIXME is ok this value for numeric/decimal? */
@@ -837,7 +837,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
             srcfmt.datatype = srctype;
             srcfmt.maxlength = srclen;
 
-            destfmt.datatype  = _ct_get_client_type(bindcol->column_type, bindcol->column_usertype, bindcol->column_size);
+            destfmt.datatype  = _ct_get_client_type(blkdesc->con->ctx, bindcol->column_type, bindcol->column_usertype, bindcol->column_size);
             destfmt.maxlength = buflen;
             destfmt.precision = bindcol->column_prec;
             destfmt.scale     = bindcol->column_scale;
@@ -2019,7 +2019,7 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
             srcfmt.datatype = srctype;
             srcfmt.maxlength = srclen;
 
-            destfmt.datatype  = _ct_get_client_type(bindcol->column_type, bindcol->column_usertype, bindcol->on_server.column_size);
+            destfmt.datatype  = _ct_get_client_type(blkdesc->con->ctx, bindcol->column_type, bindcol->column_usertype, bindcol->on_server.column_size);
             destfmt.maxlength = bindcol->on_server.column_size;
             destfmt.precision = bindcol->column_prec;
             destfmt.scale     = bindcol->column_scale;

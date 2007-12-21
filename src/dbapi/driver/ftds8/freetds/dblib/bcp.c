@@ -1977,7 +1977,9 @@ BCP_HOSTCOLINFO *hostcol;
 
 		if (topptr == (struct fflist *) NULL) {	/* first time */
 			if ((topptr = (struct fflist *) malloc(sizeof(struct fflist))) == (struct fflist *) NULL) {
-				tds_error_log("out of memory");
+                if(g_dblib_err_handler) {
+                    g_dblib_err_handler(dbproc, EXRESOURCE, 50002, 0, "out of memory", "");
+                }
 				return (FAIL);
 			}
 			curptr = topptr;
@@ -1988,7 +1990,9 @@ BCP_HOSTCOLINFO *hostcol;
 				return (FAIL);
 		} else {
 			if ((curptr->nextptr = (struct fflist *) malloc(sizeof(struct fflist))) == (struct fflist *) NULL) {
-				tds_error_log("out of memory");
+                if(g_dblib_err_handler) {
+                    g_dblib_err_handler(dbproc, EXRESOURCE, 50002, 0, "out of memory", "");
+                }
 				return (FAIL);
 			}
 			curptr = curptr->nextptr;

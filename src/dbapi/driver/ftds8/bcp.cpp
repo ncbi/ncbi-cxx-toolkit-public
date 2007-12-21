@@ -405,8 +405,6 @@ bool CTDS_BCPInCmd::Send(void)
     SetWasSent();
 
     if (Check(bcp_sendrow(GetCmd())) != SUCCEED) {
-        Check(bcp_done(GetCmd()));
-        SetWasSent(false);
         SetHasFailed();
         DATABASE_DRIVER_ERROR( "bcp_sendrow failed." + GetDbgInfo(), 223005 );
     }

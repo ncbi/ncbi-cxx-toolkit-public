@@ -571,9 +571,25 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
             GetDBLExceptionStorage().Accept(ex);
         }
         return INT_TIMEOUT;
-    case 20049:
-        ERR_POST_X(5, Warning << "Error in DBLib: Data-conversion resulted in overflow.");
-        return INT_CANCEL;
+
+#ifdef FTDS_IN_USE
+    case 50000:
+        {
+            CDB_TruncateEx ex(GetBlankCompileInfo(),
+                              0,
+                              message,
+                              dberr);
+
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
+
+            GetDBLExceptionStorage().Accept(ex);
+
+            return INT_CANCEL;
+        }
+#endif
+
     default:
         if(dberr == 1205) {
             CDB_DeadlockEx ex(GetBlankCompileInfo(),

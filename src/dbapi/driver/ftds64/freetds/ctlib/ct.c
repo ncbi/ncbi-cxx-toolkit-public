@@ -49,7 +49,7 @@ static char * ct_describe_cmd_state(CS_INT state);
  * @return 0 on success
  */
 static int _ct_fetch_cursor(CS_COMMAND * cmd, CS_INT type, CS_INT offset, CS_INT option, CS_INT * rows_read);
-int _ct_get_client_type(int datatype, int usertype, int size);
+int _ct_get_client_type(CS_CONTEXT *ctx, int datatype, int usertype, int size);
 static int _ct_fetchable_results(CS_COMMAND * cmd);
 static int _ct_process_return_status(TDSSOCKET * tds);
 
@@ -86,6 +86,9 @@ static CS_INT  _ct_deallocate_dynamic(CS_CONNECTION * con, CS_DYNAMIC *dyn);
 static CS_DYNAMIC * _ct_locate_dynamic(CS_CONNECTION * con, char *id, int idlen);
 
 /* RPC Code changes ends here */
+
+void _csclient_msg(CS_CONTEXT * ctx, const char *funcname, int layer, int origin, int severity, int number, const char *fmt, ...);
+
 
 static const char *
 _ct_get_layer(int layer)
@@ -303,12 +306,9 @@ ct_callback(CS_CONTEXT * ctx, CS_CONNECTION * con, CS_INT action, CS_INT type, C
         case CS_SERVERMSG_CB:
             *(void **) func = (CS_VOID *) (con ? con->_servermsg_cb : ctx->_servermsg_cb);
             return CS_SUCCEED;
-        default: {
-                char buf[50];
-                sprintf(buf, "Unknown callback %d\n", type);
-                tds_error_log(buf);
-                *(void **) func = NULL;
-            }
+        default:
+            _csclient_msg(ctx, "ct_callback", 2, 1, 16, 27, "%d", type);
+            *(void **) func = NULL;
             return CS_SUCCEED;
         }
     }
@@ -1797,7 +1797,7 @@ _ct_bind_data(CS_CONTEXT *ctx, TDSRESULTINFO * resinfo, TDSRESULTINFO *bindinfo,
                     *datalen = 0;
             } else {
 
-                srctype = _ct_get_client_type(curcol->column_type, curcol->column_usertype, curcol->column_size);
+                srctype = _ct_get_client_type(ctx, curcol->column_type, curcol->column_usertype, curcol->column_size);
 
                 src = &(resinfo->current_row[curcol->column_offset]);
                 if (is_blob_type(curcol->column_type))
@@ -1941,7 +1941,7 @@ ct_con_drop(CS_CONNECTION * con)
 }
 
 int
-_ct_get_client_type(int datatype, int usertype, int size)
+_ct_get_client_type(CS_CONTEXT *ctx, int datatype, int usertype, int size)
 {
     tdsdump_log(TDS_DBG_FUNC, "_ct_get_client_type(type %d, user %d, size %d)\n", datatype, usertype, size);
     switch (datatype) {
@@ -1975,11 +1975,8 @@ _ct_get_client_type(int datatype, int usertype, int size)
             return CS_SMALLINT_TYPE;
         case 1:
             return CS_TINYINT_TYPE;
-        default: {
-                char buf[50];
-                sprintf(buf, "Unknown size %d for SYBINTN\n", size);
-                tds_error_log(buf);
-            }
+        default:
+            _csclient_msg(ctx, "_ct_get_client_type", 2, 1, 16, 28, "%d", size);
         }
         break;
     case SYBREAL:
@@ -1994,9 +1991,7 @@ _ct_get_client_type(int datatype, int usertype, int size)
         } else if (size == 8) {
             return CS_FLOAT_TYPE;
         } else {
-            char buf[50];
-            sprintf(buf, "Unknown float size of %d\n", size);
-            tds_error_log(buf);
+            _csclient_msg(ctx, "_ct_get_client_type", 2, 1, 16, 29, "%d", size);
         }
     case SYBMONEY:
         return CS_MONEY_TYPE;
@@ -2010,9 +2005,7 @@ _ct_get_client_type(int datatype, int usertype, int size)
         } else if (size == 8) {
             return CS_MONEY_TYPE;
         } else {
-            char buf[50];
-            sprintf(buf, "Unknown money size of %d\n", size);
-            tds_error_log(buf);
+            _csclient_msg(ctx, "_ct_get_client_type", 2, 1, 16, 30, "%d", size);
         }
     case SYBDATETIME:
         return CS_DATETIME_TYPE;
@@ -2026,9 +2019,7 @@ _ct_get_client_type(int datatype, int usertype, int size)
         } else if (size == 8) {
             return CS_DATETIME_TYPE;
         } else {
-            char buf[50];
-            sprintf(buf, "Unknown date size of %d\n", size);
-            tds_error_log(buf);
+            _csclient_msg(ctx, "_ct_get_client_type", 2, 1, 16, 31, "%d", size);
         }
         break;
     case SYBNUMERIC:
@@ -2390,7 +2381,7 @@ ct_describe(CS_COMMAND * cmd, CS_INT item, CS_DATAFMT * datafmt)
     datafmt->name[len] = 0;
     datafmt->namelen = len;
     /* need to turn the SYBxxx into a CS_xxx_TYPE */
-    datafmt->datatype = _ct_get_client_type(curcol->column_type, curcol->column_usertype, curcol->column_size);
+    datafmt->datatype = _ct_get_client_type(cmd->con->ctx, curcol->column_type, curcol->column_usertype, curcol->column_size);
     tdsdump_log(TDS_DBG_INFO1, "ct_describe() datafmt->datatype = %d server type %d\n", datafmt->datatype,
             curcol->column_type);
     /* FIXME is ok this value for numeric/decimal? */
@@ -2455,11 +2446,8 @@ ct_res_info(CS_COMMAND * cmd, CS_INT type, CS_VOID * buffer, CS_INT buflen, CS_I
         tdsdump_log(TDS_DBG_FUNC, "ct_res_info(): Number of rows is %d\n", int_val);
         memcpy(buffer, &int_val, sizeof(CS_INT));
         break;
-    default: {
-            char buf[50];
-            sprintf(buf, "Unknown type in ct_res_info: %d\n", type);
-            tds_error_log(buf);
-        }
+    default:
+        _csclient_msg(cmd->con->ctx, "ct_res_info", 2, 1, 16, 32, "%d", type);
         return CS_FAIL;
         break;
     }
@@ -2733,11 +2721,8 @@ ct_compute_info(CS_COMMAND * cmd, CS_INT type, CS_INT colnum, CS_VOID * buffer, 
         if (outlen)
             *outlen = sizeof(CS_INT);
         break;
-    default: {
-            char buf[50];
-            sprintf(buf, "Unknown type in ct_compute_info: %d\n", type);
-            tds_error_log(buf);
-        }
+    default:
+        _csclient_msg(cmd->con->ctx, "ct_compute_info", 2, 1, 16, 32, "%d", type);
         return CS_FAIL;
         break;
     }
@@ -4325,7 +4310,7 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
         const unsigned char *prow;
 
         if (!(params = tds_alloc_param_result(params))) {
-            tds_error_log("out of rpc memory!");
+            _csclient_msg(((CS_CONNECTION*)tds->parent)->ctx, "paraminfoalloc", 2, 1, 17, 33, "");
             return NULL;
         }
 
@@ -4447,7 +4432,7 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
                 pcol->column_cur_size, pcol->column_output);
         prow = paramrowalloc(params, pcol, i, temp_value, temp_datalen);
         if (!prow) {
-            tds_error_log("out of memory for rpc row!");
+            _csclient_msg(((CS_CONNECTION*)tds->parent)->ctx, "paraminfoalloc", 2, 1, 17, 33, "");
             return NULL;
         }
     }

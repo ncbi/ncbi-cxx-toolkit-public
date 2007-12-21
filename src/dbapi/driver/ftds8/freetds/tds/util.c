@@ -79,10 +79,6 @@ static char *g_dump_filename;
 static int   write_dump = 0;      /* is TDS stream debug log turned on? */
 static FILE *dumpfile   = NULL;   /* file pointer for dump log          */
 
-#ifdef NCBI_FTDS
-static tds_errlog_callback g_errlog_cb = NULL;
-#endif
-
 void
 tds_set_parent(TDSSOCKET *tds, void *the_parent)
 {
@@ -489,25 +485,4 @@ void tds_setTDS_version(TDSLOGIN *tds_login, int version)
 //             break;
     }
 }
-
-
-tds_errlog_callback
-tds_set_errlog_callback(tds_errlog_callback cb)
-{
-    tds_errlog_callback prev = g_errlog_cb;
-    g_errlog_cb = cb;
-    return prev;
-}
-
-
-void tds_error_log(const char* msg)
-{
-    if (g_errlog_cb) {
-        g_errlog_cb(msg);
-    }
-    else {
-        fprintf(stderr, "%s\n", msg);
-    }
-}
 #endif
-

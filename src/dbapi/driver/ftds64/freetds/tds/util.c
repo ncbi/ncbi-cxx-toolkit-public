@@ -75,8 +75,6 @@ static int write_dump = 0;	/* is TDS stream debug log turned on? */
 static FILE *g_dumpfile = NULL;	/* file pointer for dump log          */
 static TDS_MUTEX_DECLARE(g_dump_mutex);
 
-static tds_errlog_callback g_errlog_cb = NULL;
-
 static FILE* tdsdump_append(void);
 
 #ifdef TDS_ATTRIBUTE_DESTRUCTOR
@@ -514,24 +512,3 @@ tdsdump_log(const char* file, unsigned int level_line, const char *fmt, ...)
 #endif
 	TDS_MUTEX_UNLOCK(&g_dump_mutex);
 }				/* tdsdump_log()  */
-
-
-tds_errlog_callback
-tds_set_errlog_callback(tds_errlog_callback cb)
-{
-    tds_errlog_callback prev = g_errlog_cb;
-    g_errlog_cb = cb;
-    return prev;
-}
-
-
-void tds_error_log(const char* msg)
-{
-    if (g_errlog_cb) {
-        g_errlog_cb(msg);
-    }
-    else {
-        fprintf(stderr, "%s\n", msg);
-    }
-}
-

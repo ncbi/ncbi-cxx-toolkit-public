@@ -895,6 +895,21 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
         sev = eDiag_Critical;
     }
 
+
+#ifdef FTDS_IN_USE
+    if ((msg->msgnumber & 0xFF) == 25) {
+        CDB_TruncateEx ex(
+            GetBlankCompileInfo(),
+            0,
+            msg->msgstring,
+            msg->msgnumber);
+
+        ex.SetSybaseSeverity(msg->severity);
+        GetCTLExceptionStorage().Accept(ex);
+        return CS_SUCCEED;
+    }
+#endif
+
     try {
         CDB_ClientEx ex(
             GetBlankCompileInfo(),
@@ -1050,6 +1065,19 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
             return HandleConnStatus(con, msg, server_name, user_name);
         }
         */
+
+#ifdef FTDS_IN_USE
+        if ((msg->msgnumber & 0xFF) == 25) {
+            CDB_TruncateEx ex(
+                GetBlankCompileInfo(),
+                0,
+                message,
+                msg->msgnumber);
+
+            PassException(ex, server_name, user_name, msg->severity);
+            return CS_SUCCEED;
+        }
+#endif
 
         // Process the message ...
         switch (msg->severity) {
@@ -1499,22 +1527,12 @@ CDbapiCtlibCFBase::CreateInstance(
 ///////////////////////////////////////////////////////////////////////////////
 #if defined(FTDS_IN_USE)
 
-extern "C" {
-
-static void s_TDSCtlibErrorLogCallback(const char* msg) {
-    ERR_POST_X(10, Warning << "Error in FreeTDS: " << msg);
-}
-
-}
-
-
 class CDbapiCtlibCF_ftds64_ctlib : public CDbapiCtlibCFBase
 {
 public:
     CDbapiCtlibCF_ftds64_ctlib(void)
     : CDbapiCtlibCFBase("ftds64")
     {
-        tds_set_errlog_callback(s_TDSCtlibErrorLogCallback);
     }
 };
 
@@ -1525,7 +1543,6 @@ public:
     CDbapiCtlibCF_ftds(void)
     : CDbapiCtlibCFBase("ftds")
     {
-        tds_set_errlog_callback(s_TDSCtlibErrorLogCallback);
     }
 };
 

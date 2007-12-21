@@ -591,6 +591,12 @@ CDB_UserHandler_Exception::HandleIt(CDB_Exception* ex)
     if (ex->GetDBErrCode() == 0)
         return true;
 
+    CDB_TruncateEx* trunc_ex = dynamic_cast<CDB_TruncateEx*>(ex);
+    if (trunc_ex) {
+        ERR_POST_X(7, Severity(ex->GetSeverity()) << ex->GetMsg());
+        return true;
+    }
+
     if (ex->GetSeverity() != eDiag_Info) {
 	string msg = string(ex->what()) + 
 		" SERVER: '" + ex->GetServerName() +
