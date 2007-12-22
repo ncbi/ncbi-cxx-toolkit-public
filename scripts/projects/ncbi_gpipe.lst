@@ -11,6 +11,7 @@ html
 internal/align_model$
 internal/algo/align/splign
 internal/algo/align/pipeline-tools
+internal/algo/align/gpipe-wnodes
 internal/gpipe
 internal/ID/utils$
 misc
