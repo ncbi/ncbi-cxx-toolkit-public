@@ -56,32 +56,31 @@ sub GetPathsToRemove
 
     my $DirExistingStructure = $ExistingStructure->{$DirName};
 
-    return 0 unless $DirExistingStructure;
+    return 0b00 unless $DirExistingStructure;
 
     if (!$DirContents->{'/'}->{rm})
     {
-        my $ChildRemoved;
-        my @PathsToRemove;
+        my $RetValAcc;
+        my @LocalPathsToRemove;
 
         while (my ($Subdir, $Subtree) = each %$DirContents)
         {
             next if $Subdir eq '/';
 
-            $ChildRemoved = 1
-                if GetPathsToRemove(\@PathsToRemove, $DirExistingStructure,
-                    $Subdir, $Subtree, "$Path/$Subdir")
+            $RetValAcc |= GetPathsToRemove(\@LocalPathsToRemove,
+                $DirExistingStructure, $Subdir, $Subtree, "$Path/$Subdir")
         }
 
-        if (!$ChildRemoved || %$DirExistingStructure)
+        if ($RetValAcc != 0b01 || %$DirExistingStructure)
         {
-            push @$PathsToRemove, @PathsToRemove;
-            return 0
+            push @$PathsToRemove, @LocalPathsToRemove;
+            return 0b00
         }
     }
 
     delete $ExistingStructure->{$DirName};
     push @$PathsToRemove, $Path;
-    return 1
+    return $DirContents->{'/'}->{mkparent} ? 0b10 : 0b01
 }
 
 sub CreateEntireTree
