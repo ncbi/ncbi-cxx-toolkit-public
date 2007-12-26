@@ -199,7 +199,9 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
         string msg_text(msg.m_Buffer, msg.m_BufferLen);
         size_t pos = msg_text.find(" created");
         if (pos != NPOS  &&  msg_text.find("Thread ") == 0) {
-            assert(strcmp(msg.m_Function, "Thread_Init") == 0);
+            if ( msg.m_Function ) {
+                assert(strcmp(msg.m_Function, "Thread_Init") == 0);
+            }
             assert(msg.m_Line == s_CreateLine);
             create_msg_count++;
         }
@@ -208,7 +210,9 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
             assert(pos != NPOS);
             tid = NStr::StringToUInt8(msg_text.substr(pos + 1));
             assert(msg.m_TID != 0);
-            assert(strcmp(msg.m_Function, "Thread_Run") == 0);
+            if ( msg.m_Function ) {
+                assert(strcmp(msg.m_Function, "Thread_Run") == 0);
+            }
             assert(msg.m_Line == s_LogLine);
             log_msg_count++;
         }
@@ -217,7 +221,9 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
             assert(pos != NPOS);
             tid = NStr::StringToUInt8(msg_text.substr(pos + 1));
             assert(msg.m_TID != 0);
-            assert(strcmp(msg.m_Function, "Thread_Run") == 0);
+            if ( msg.m_Function ) {
+                assert(strcmp(msg.m_Function, "Thread_Run") == 0);
+            }
             assert(msg.m_Line == s_ErrLine);
             err_msg_count++;
         }
@@ -226,9 +232,15 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
             continue;
         }
         assert(msg.m_Severity == eDiag_Error);
-        assert(strcmp(msg.m_File, "test_ncbidiag_mt.cpp") == 0);
-        assert(strcmp(msg.m_Module, "TEST") == 0);
-        assert(strcmp(msg.m_Class, "CTestDiagApp") == 0);
+        if ( msg.m_File ) {
+            assert(strcmp(msg.m_File, "test_ncbidiag_mt.cpp") == 0);
+        }
+        if ( msg.m_Module ) {
+            assert(strcmp(msg.m_Module, "TEST") == 0);
+        }
+        if ( msg.m_Class ) {
+            assert(strcmp(msg.m_Class, "CTestDiagApp") == 0);
+        }
     }
     assert(create_msg_count == s_NumThreads);
     assert(log_msg_count == s_NumThreads);
