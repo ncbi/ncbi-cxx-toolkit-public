@@ -91,4 +91,19 @@ sub ParseMergeLogMessage
     return ()
 }
 
+sub DetectMergeRevision
+{
+    my ($LogMessage, $RequiredSourcePath, $RequiredTargetPath) = @_;
+
+    if (my ($SourcePath, $TargetPath, undef, $ToRevisionNumber,
+        $MergeDescription) = ParseMergeLogMessage($LogMessage))
+    {
+        return ($ToRevisionNumber, $MergeDescription)
+            if $SourcePath eq $RequiredSourcePath &&
+                $TargetPath eq $RequiredTargetPath
+    }
+
+    return ()
+}
+
 1

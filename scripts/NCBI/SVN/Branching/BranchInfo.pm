@@ -21,6 +21,8 @@ sub SetUpstreamAndDownSynchRev
         or die 'branch structure does not replicate ' .
             "upstream structure in r$Revision->{Number}";
 
+    $UpstreamPath =~ s/^\/?(.+?)\/?$/$1/so;
+
     unless (my $SameUpstreamPath = $Self->{UpstreamPath})
     {
         $Self->{UpstreamPath} = $UpstreamPath
@@ -131,22 +133,6 @@ sub ModelBranchStructure
     }
 }
 
-sub DetectMergeRevision
-{
-    my ($LogMessage, $RequiredSourcePath, $RequiredTargetPath) = @_;
-
-    if (my ($SourcePath, $TargetPath,
-        undef, $ToRevisionNumber, $MergeDescription) =
-            NCBI::SVN::Branching::Util::ParseMergeLogMessage($LogMessage))
-    {
-        return ($ToRevisionNumber, $MergeDescription)
-            if $SourcePath eq $RequiredSourcePath &&
-                $TargetPath eq $RequiredTargetPath
-    }
-
-    return ()
-}
-
 sub new
 {
     my ($Class, $RootURL, $BranchPath) = @_;
@@ -178,43 +164,15 @@ sub new
     my %BranchStructure;
     my $CommonTarget = "/$BranchPath/";
 
-    for my $Revision (@$RevisionLog)
+    for my $Revision (reverse @$RevisionLog)
     {
-        push @BranchRevisions, $Revision;
+        unshift @BranchRevisions, $Revision;
 
-        if ($Revision->{LogMessage} =~ m/^Created branch '(.+?)'.$/o &&
-            $1 eq $BranchPath)
-        {
-            $Self->{BranchCreationRevision} = $Revision;
-
-            $Self->ModelBranchStructure(\%BranchStructure,
-                $Revision, $CommonTarget);
-
-            last
-        }
-    }
-
-    unless ($Self->{UpstreamPath} &&
-        ($Self->{BranchSourceRevision} = $Self->{LastDownSyncRevisionNumber}))
-    {
-        die 'unable to determine branch source'
-    }
-
-    my $UpstreamPath = $Self->{UpstreamPath};
-
-    $UpstreamPath =~ s/^\/?(.+?)\/?$/$1/;
-
-    for my $Revision (reverse @BranchRevisions)
-    {
         my $LogMessage = $Revision->{LogMessage};
 
-        if ($LogMessage =~ m/^Modified branch '(.+?)'.$/o && $1 eq $BranchPath)
-        {
-            $Self->ModelBranchStructure(\%BranchStructure,
-                $Revision, $CommonTarget)
-        }
-        elsif (my ($SourceRevisionNumber, $MergeDescription) =
-            DetectMergeRevision($LogMessage, $UpstreamPath, $BranchPath))
+        if (my ($SourceRevisionNumber, $MergeDescription) =
+            NCBI::SVN::Branching::Util::DetectMergeRevision($LogMessage,
+                $Self->{UpstreamPath}, $BranchPath))
         {
             $Revision->{SourceRevisionNumber} =
                 $Self->{LastDownSyncRevisionNumber} = $SourceRevisionNumber;
@@ -224,6 +182,34 @@ sub new
 
             unshift @MergeDownRevisions, $Revision
         }
+        elsif ($LogMessage =~ m/^(Created|Modified) branch '(.+?)'.$/o &&
+            $2 eq $BranchPath)
+        {
+            if ($1 eq 'Created' || !$Self->{BranchCreationRevision})
+            {
+                $Self->{BranchCreationRevision} = $Revision;
+
+                @BranchRevisions = ($Revision);
+                @MergeDownRevisions = ();
+                %BranchStructure = ();
+
+                $Self->ModelBranchStructure(\%BranchStructure,
+                    $Revision, $CommonTarget);
+
+                $Self->{BranchSourceRevision} =
+                    $Self->{LastDownSyncRevisionNumber}
+            }
+            else
+            {
+                $Self->ModelBranchStructure(\%BranchStructure,
+                    $Revision, $CommonTarget)
+            }
+        }
+    }
+
+    unless ($Self->{BranchCreationRevision} && $Self->{UpstreamPath})
+    {
+        die 'unable to determine branch source'
     }
 
     my @BranchPaths =
@@ -239,8 +225,6 @@ sub new
             NCBI::SVN::Branching::Util::FindPathsInTree(
                 $Self->{ObsoleteBranchPaths})
     }
-
-    $Self->{UpstreamPath} = $UpstreamPath;
 
     return $Self
 }
@@ -272,7 +256,7 @@ sub new
     for my $Revision (reverse @$UpstreamRevisions)
     {
         if (my ($SourceRevisionNumber, $MergeDescription) =
-            NCBI::SVN::Branching::BranchInfo::DetectMergeRevision(
+            NCBI::SVN::Branching::Util::DetectMergeRevision(
                 $Revision->{LogMessage}, $BranchPath, $UpstreamPath))
         {
             $Revision->{SourceRevisionNumber} =
