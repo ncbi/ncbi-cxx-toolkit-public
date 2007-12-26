@@ -595,15 +595,19 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
         // That works either ...
         if (isValueInUTF8) {
             string sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + utf8_str_ger + "')";
+            // string sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES('" + utf8_str_ger + "')";
             auto_stmt->ExecuteUpdate( sql );
 
             sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + utf8_str_rus + "')";
+            // sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES('" + utf8_str_rus + "')";
             auto_stmt->ExecuteUpdate( sql );
         } else {
             string sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + str_ger + "')";
+            // string sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES('" + str_ger + "')";
             auto_stmt->ExecuteUpdate( sql );
 
             sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + reinterpret_cast<const char*>(str_rus) + "')";
+            // sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES('" + reinterpret_cast<const char*>(str_rus) + "')";
             auto_stmt->ExecuteUpdate( sql );
         }
 
@@ -3436,22 +3440,7 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         // Retrieve data ...
         // Block 3 ...
         if (true) {
-            sql = "SELECT count(*) FROM #test_bcp_cancel";
-
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-   
-            BOOST_CHECK( rs.get() );
-            BOOST_CHECK( rs->Next() );
-   
-            const CVariant& value = rs->GetVariant(1);
-   
-            BOOST_CHECK( !value.IsNull() );
-   
-            int count = value.GetInt4();
-            BOOST_CHECK_EQUAL( count, 10 );
+            BOOST_CHECK_EQUAL( GetNumOfRecords(auto_stmt, "#test_bcp_cancel"), 10 );
         }
 
         // Initialize ...
@@ -3488,22 +3477,7 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         // Retrieve data ...
         // Block 6 ...
         if (true) {
-            sql = "SELECT count(*) FROM #test_bcp_cancel";
-
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-   
-            BOOST_CHECK( rs.get() );
-            BOOST_CHECK( rs->Next() );
-   
-            const CVariant& value = rs->GetVariant(1);
-   
-            BOOST_CHECK( !value.IsNull() );
-   
-            int count = value.GetInt4();
-            BOOST_CHECK_EQUAL( count, 20 );
+            BOOST_CHECK_EQUAL( GetNumOfRecords(auto_stmt, "#test_bcp_cancel"), 20 );
         }
     }
     catch(const CException& ex) {
@@ -12332,9 +12306,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
 
-    // DBLIB has not cancel command, so this test doesn't working
+    // DBLIB has no cancel command, so this test doesn't work with DBLIB API
     if (args.IsBCPAvailable()
         &&  args.GetDriverName() != dblib_driver
+        &&  args.GetDriverName() != msdblib_driver
         &&  args.GetDriverName() != ctlib_driver // Disabled temporarily ...
         &&  args.GetDriverName() != ftds_dblib_driver
         )
