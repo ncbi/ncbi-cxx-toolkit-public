@@ -2954,7 +2954,17 @@ ct_data_info(CS_COMMAND * cmd, CS_INT action, CS_INT colnum, CS_IODESC * iodesc)
         cmd->iodesc = malloc(sizeof(CS_IODESC));
 
         cmd->iodesc->iotype = CS_IODATA;
-        cmd->iodesc->datatype = iodesc->datatype;
+        
+        /* ssikorsk cmd->iodesc->datatype = iodesc->datatype; */
+        switch (iodesc->datatype) {
+            case CS_IMAGE_TYPE:
+                cmd->iodesc->datatype = SYBIMAGE;
+            case CS_TEXT_TYPE:
+                cmd->iodesc->datatype = SYBTEXT;
+            default:
+                break;
+        };
+        
         cmd->iodesc->locale = cmd->con->locale;
         cmd->iodesc->usertype = iodesc->usertype;
         cmd->iodesc->total_txtlen = iodesc->total_txtlen;
@@ -2976,7 +2986,17 @@ ct_data_info(CS_COMMAND * cmd, CS_INT action, CS_INT colnum, CS_IODESC * iodesc)
             return CS_FAIL;
 
         iodesc->iotype = cmd->iodesc->iotype;
-        iodesc->datatype = cmd->iodesc->datatype;
+        
+        /* ssikorsk iodesc->datatype = cmd->iodesc->datatype; */
+        switch (cmd->iodesc->datatype) {
+            case SYBIMAGE:
+                iodesc->datatype = CS_IMAGE_TYPE;
+            case SYBTEXT:
+                iodesc->datatype = CS_TEXT_TYPE;
+            default:
+                break;
+        };
+
         iodesc->locale = cmd->iodesc->locale;
         iodesc->usertype = cmd->iodesc->usertype;
         iodesc->total_txtlen = cmd->iodesc->total_txtlen;
