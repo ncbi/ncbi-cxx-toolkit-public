@@ -301,8 +301,14 @@ static void s_TestMisc(void)
         LOG_POST("DiffNanoSecond = " +
                  NStr::DoubleToString(t2.DiffNanoSecond(t1),0));
         LOG_POST("DiffTimeSpan   = " + ts.AsString());
-        assert(t2.DiffTimeSpan(t1) == ts);
+        assert(t2.DiffTimeSpan(t1) ==  ts);
         assert(t1.DiffTimeSpan(t2) == -ts);
+        t1 = t2; // local times
+        t1.SetTimeZone(CTime::eGmt);
+        ts = CTimeSpan(long(t1.DiffSecond(t2)));
+        LOG_POST("DiffSecond(TZ) = " + ts.AsString());
+        LOG_POST("TimeZoneDiff   = " + NStr::Int8ToString(t2.TimeZoneDiff()));
+        assert(ts.GetAsDouble() == double(t2.TimeZoneDiff()));
     }}
 
     // Datebase formats conversion
@@ -812,7 +818,7 @@ static void s_TestGMT(void)
         t.SetTimeZonePrecision(CTime::eTZPrecisionDefault);
         LOG_POST("init  " + STR(t));
 
-        t.SetTimeZoneFormat(CTime::eGmt);
+        t.SetTimeZone(CTime::eGmt);
         LOG_POST("GMT");
         tn = t + 5;  
         LOG_POST("+5d   " + STR(tn));
@@ -821,7 +827,7 @@ static void s_TestGMT(void)
         LOG_POST("+40d  " + STR(tn));
         assert(tn.AsString() == "04/20/2007 01:01:00");
 
-        t.SetTimeZoneFormat(CTime::eLocal);
+        t.SetTimeZone(CTime::eLocal);
         LOG_POST("Local eNone");
         t.SetTimeZonePrecision(CTime::eNone);
         tn=t+5;  LOG_POST("+5d   " + STR(tn));

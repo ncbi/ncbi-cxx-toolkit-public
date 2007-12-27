@@ -1004,11 +1004,13 @@ public:
     // Timezone functions
     //
 
-    /// Get time zone format.
-    ETimeZone GetTimeZoneFormat(void) const;
+    /// Get time zone.
+    ETimeZone GetTimeZone(void) const;
+    NCBI_DEPRECATED ETimeZone GetTimeZoneFormat(void) const;
 
-    /// Set time zone format.
-    ETimeZone SetTimeZoneFormat(ETimeZone val);
+    /// Set time zone.
+    ETimeZone SetTimeZone(ETimeZone val);
+    NCBI_DEPRECATED ETimeZone SetTimeZoneFormat(ETimeZone val);
 
     /// Get time zone precision.
     ETimeZonePrecision GetTimeZonePrecision(void) const;
@@ -1962,15 +1964,27 @@ double CTime::DiffNanoSecond(const CTime& t) const
 }
 
 inline
+CTimeSpan CTime::DiffTimeSpan(const CTime& t) const
+{
+    return CTimeSpan((long) DiffSecond(t), NanoSecond() - t.NanoSecond());
+}
+
+inline
 bool CTime::IsLocalTime(void) const { return m_Data.tz == eLocal; }
 
 inline
 bool CTime::IsGmtTime(void) const { return m_Data.tz == eGmt; }
 
 inline
-CTime::ETimeZone CTime::GetTimeZoneFormat(void) const
+CTime::ETimeZone CTime::GetTimeZone(void) const
 {
     return m_Data.tz;
+}
+
+inline
+CTime::ETimeZone CTime::GetTimeZoneFormat(void) const
+{
+    return GetTimeZone();
 }
 
 inline
@@ -1980,11 +1994,17 @@ CTime::ETimeZonePrecision CTime::GetTimeZonePrecision(void) const
 }
 
 inline
-CTime::ETimeZone CTime::SetTimeZoneFormat(ETimeZone val)
+CTime::ETimeZone CTime::SetTimeZone(ETimeZone val)
 {
     ETimeZone tmp = m_Data.tz;
     m_Data.tz = val;
     return tmp;
+}
+
+inline
+CTime::ETimeZone CTime::SetTimeZoneFormat(ETimeZone val)
+{
+    return SetTimeZone(val);
 }
 
 inline
@@ -1993,13 +2013,6 @@ CTime::ETimeZonePrecision CTime::SetTimeZonePrecision(ETimeZonePrecision val)
     ETimeZonePrecision tmp = m_Data.tzprec;
     m_Data.tzprec = val;
     return tmp;
-}
-
-inline
-TSeconds CTime::TimeZoneDiff(void) const
-{
-    TSeconds seconds = GetLocalTime().DiffSecond(GetGmtTime());
-    return seconds;
 }
 
 inline
@@ -2019,7 +2032,7 @@ CTime& CTime::ToGmtTime(void)
 inline
 bool CTime::x_NeedAdjustTime(void) const
 {
-    return GetTimeZoneFormat() == eLocal  &&  GetTimeZonePrecision() != eNone;
+    return GetTimeZone() == eLocal  &&  GetTimeZonePrecision() != eNone;
 }
 
 

@@ -285,7 +285,7 @@ static void s_TestGMT(int idx)
         assert(timer == tgmt.GetTimeT());
         // On the day of changing to summer/winter time, the local time
         // converted to GMT may differ from the value returned by time(0),
-        // because in the common case API don't know is DST in effect for
+        // because in the common case API don't know if DST is in effect for
         // specified local time or not (see mktime()).
         time_t l_ = tloc.GetTimeT();
         if (timer != l_ ) {
@@ -318,14 +318,14 @@ static void s_TestGMT(int idx)
         t.SetTimeZonePrecision(CTime::eTZPrecisionDefault);
 
         // GMT
-        t.SetTimeZoneFormat(CTime::eGmt);
+        t.SetTimeZone(CTime::eGmt);
         tn = t + 5;  
         OUTS( idx, __LINE__,  tn.AsString(), "03/16/2007 01:01:00");
         tn = t + 40; 
         OUTS( idx, __LINE__,  tn.AsString(), "04/20/2007 01:01:00");
 
         // Local eNone
-        t.SetTimeZoneFormat(CTime::eLocal);
+        t.SetTimeZone(CTime::eLocal);
         t.SetTimeZonePrecision(CTime::eNone);
         tn=t+5;
         OUTS( idx, __LINE__,  tn.AsString(), "03/16/2007 01:01:00");

@@ -207,7 +207,7 @@ static CTime s_Number2Date(unsigned num, const CTime& t)
     // Construct new CTime object
     return
         CTime(year, month, day, t.Hour(), t.Minute(), t.Second(),
-              t.NanoSecond(), t.GetTimeZoneFormat(), t.GetTimeZonePrecision());
+              t.NanoSecond(), t.GetTimeZone(), t.GetTimeZonePrecision());
 }
 
 
@@ -1134,7 +1134,7 @@ CTime& CTime::SetTimeDBU(const TDBTimeU& t)
     time.SetTimeZonePrecision(GetTimeZonePrecision());
     time.AddDay(t.days);
     time.AddMinute(t.time);
-    time.ToTime(GetTimeZoneFormat());
+    time.ToTime(GetTimeZone());
 
     *this = time;
     return *this;
@@ -1151,7 +1151,7 @@ CTime& CTime::SetTimeDBI(const TDBTimeI& t)
     time.AddSecond(t.time / 300);
     time.AddNanoSecond((long)((t.time % 300) *
                               (double)kNanoSecondsPerSecond / 300));
-    time.ToTime(GetTimeZoneFormat());
+    time.ToTime(GetTimeZone());
 
     *this = time;
     return *this;
@@ -1211,14 +1211,14 @@ CTime& CTime::x_SetTime(const time_t* value)
 
 #ifdef HAVE_LOCALTIME_R
     struct tm temp;
-    if (GetTimeZoneFormat() == eLocal) {
+    if (GetTimeZone() == eLocal) {
         localtime_r(&timer, &temp);
     } else {
         gmtime_r(&timer, &temp);
     }
     t = &temp;
 #else
-    t = ( GetTimeZoneFormat() == eLocal ) ? localtime(&timer) : gmtime(&timer);
+    t = ( GetTimeZone() == eLocal ) ? localtime(&timer) : gmtime(&timer);
 #endif
     m_Data.adjTimeDiff = 0;
     m_Data.year        = t->tm_year + 1900;
@@ -1548,7 +1548,7 @@ CTime& CTime::ToTime(ETimeZone tz)
     if ( IsEmptyDate() ) {
         NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
     }
-    if (GetTimeZoneFormat() != tz) {
+    if (GetTimeZone() != tz) {
         struct tm* t;
         time_t timer;
         timer = GetTimeT();
@@ -1585,7 +1585,7 @@ bool CTime::operator== (const CTime& t) const
 {
     CTime tmp(t);
     if ( !tmp.IsEmptyDate() ) {
-        tmp.ToTime(GetTimeZoneFormat());
+        tmp.ToTime(GetTimeZone());
     }
     return
         Year()       == tmp.Year()    &&
@@ -1602,7 +1602,7 @@ bool CTime::operator> (const CTime& t) const
 {
     CTime tmp(t);
     if ( !tmp.IsEmptyDate() ) {
-        tmp.ToTime(GetTimeZoneFormat());
+        tmp.ToTime(GetTimeZone());
     }
     if (Year()   > tmp.Year())
         return true;
@@ -1639,7 +1639,7 @@ bool CTime::operator< (const CTime& t) const
 {
     CTime tmp(t);
     if ( !tmp.IsEmptyDate() ) {
-        tmp.ToTime(GetTimeZoneFormat());
+        tmp.ToTime(GetTimeZone());
     }
     if (Year()   < tmp.Year())
         return true;
@@ -1679,25 +1679,35 @@ bool CTime::IsLeap(void) const
 }
 
 
-TSeconds CTime::DiffSecond(const CTime& t) const
+TSeconds CTime::TimeZoneDiff(void) const
 {
-    TSeconds dSec  = Second() - t.Second();
-    int dMin  = Minute() - t.Minute();
-    int dHour = Hour()   - t.Hour();
-    int dDay  = (*this)  - t;
-    return dSec + 60 * dMin + 60 * 60 * dHour + 60 * 60 * 24 * dDay;
+    CTime temp(GetLocalTime());
+    temp.SetTimeZone(eGmt);
+    return temp.DiffSecond(GetGmtTime());
 }
 
-
-CTimeSpan CTime::DiffTimeSpan(const CTime& t) const
-{
-    CTimeSpan ts((*this)  - t,
-                 Hour()   - t.Hour(),
-                 Minute() - t.Minute(),
-                 Second() - t.Second(),
-                 NanoSecond() - t.NanoSecond());
-    return ts;
+TSeconds CTime::DiffSecond(const CTime& from) const
+{ 
+    const CTime* p1, *p2;
+    CTime        t1,  t2;
+    if (GetTimeZone() != from.GetTimeZone()) {
+        t1 = *this;
+        t2 =  from;
+        t1.ToGmtTime();
+        t2.ToGmtTime();
+        p1 = &t1;
+        p2 = &t2;
+    } else {
+        p1 =  this;
+        p2 = &from;
+    }
+    TSeconds dSecs = p1->Second() - p2->Second();
+    int      dMins = p1->Minute() - p2->Minute();
+    int     dHours = p1->Hour()   - p2->Hour();
+    int      dDays = p1->Day()    - p2->Day();
+    return ((dDays * 24 + dHours) * 60 + dMins) * 60 + dSecs;
 }
+
 
 void CTime::x_AdjustDay()
 {
@@ -1768,7 +1778,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     // Make correction with temporary time shift
     time_t t = GetTimeT();
     CTime tn(t + (time_t)diff + 3600 * kShift * sign);
-    if (from.GetTimeZoneFormat() == eLocal) {
+    if (from.GetTimeZone() == eLocal) {
         tn.ToLocalTime();
     }
     tn.SetTimeZonePrecision(GetTimeZonePrecision());
@@ -1902,16 +1912,16 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
 
 void CTimeSpan::x_Normalize(void)
 {
-    // If signs is different, than make timespan correction
-    if ( (m_Sec > 0) && (m_NanoSec < 0)) {
-        m_Sec--;
-        m_NanoSec = kNanoSecondsPerSecond + m_NanoSec;
-    } else  if ((m_Sec < 0) && (m_NanoSec > 0)) {
-        m_Sec++;
-        m_NanoSec = m_NanoSec - kNanoSecondsPerSecond;
-    }
-    m_Sec += (m_NanoSec / kNanoSecondsPerSecond);
+    m_Sec += m_NanoSec / kNanoSecondsPerSecond;
     m_NanoSec %= kNanoSecondsPerSecond;
+    // If signs are different then make timespan correction
+    if (m_Sec > 0  &&  m_NanoSec < 0) {
+        m_Sec--;
+        m_NanoSec += kNanoSecondsPerSecond;
+    } else if (m_Sec < 0  &&  m_NanoSec > 0) {
+        m_Sec++;
+        m_NanoSec -= kNanoSecondsPerSecond;
+    }
 }
 
 
