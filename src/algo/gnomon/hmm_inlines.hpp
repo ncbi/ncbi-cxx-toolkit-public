@@ -233,25 +233,4 @@ template<class State> void EvaluateInitialScore(State& r)
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3.2.1  2006/10/12 19:08:22  chetvern
- * Changed hmm parameters reading
- *
- * Revision 1.3  2005/10/06 15:52:13  chetvern
- * moved methods that compiler doesn't make inline anyway from hmm_inlines.hpp to hmm.cpp and score.cpp
- *
- * Revision 1.2  2005/09/16 18:04:16  ucko
- * kBadScore has been replaced with an inline BadScore function that
- * always returns the same value to avoid lossage in optimized WorkShop
- * builds.
- *
- * Revision 1.1  2005/09/15 21:28:07  chetvern
- * Sync with Sasha's working tree
- *
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_GNOMON___HMM_INLINES__HPP

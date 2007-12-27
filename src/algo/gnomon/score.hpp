@@ -115,33 +115,4 @@ private:
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3.2.4  2006/11/30 20:10:36  souvorov
- * Implementation of proper mapping for prediction
- *
- * Revision 1.3.2.3  2006/11/28 19:50:34  souvorov
- * Introduction of CFrameShiftedSeqMap
- *
- * Revision 1.3.2.2  2006/10/12 19:08:22  chetvern
- * Changed hmm parameters reading
- *
- * Revision 1.3.2.1  2006/10/06 14:19:37  chetvern
- * Major overhaul. Single format for intermediate files.
- *
- * Revision 1.3  2005/10/20 19:34:12  souvorov
- * Penalty for nonconsensus starts/stops/splices
- *
- * Revision 1.2  2005/10/06 15:53:02  chetvern
- * removed dependency on hmm.hpp
- * moved CSeqScores::OpenNonCodingRegion implementation into the class definition to make it inline
- *
- * Revision 1.1  2005/09/15 21:28:07  chetvern
- * Sync with Sasha's working tree
- *
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_GNOMON___SCORE__HPP

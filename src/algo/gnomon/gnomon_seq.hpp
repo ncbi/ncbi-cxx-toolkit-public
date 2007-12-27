@@ -162,39 +162,4 @@ bool FindUpstreamStop(const vector<int>& stops, int start, int& stop);
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4.2.5  2006/12/21 15:51:59  souvorov
- *  CFrameShiftedSeqMap introduction
- *
- * Revision 1.4.2.4  2006/11/28 19:50:34  souvorov
- * Introduction of CFrameShiftedSeqMap
- *
- * Revision 1.4.2.3  2006/11/03 20:59:25  chetvern
- * Moved start/stop detection to gnomon_seq module
- *
- * Revision 1.4.2.2  2006/10/26 21:18:40  chetvern
- * Convert Deletions into Insertions
- *
- * Revision 1.4.2.1  2006/10/06 14:19:36  chetvern
- * Major overhaul. Single format for intermediate files.
- *
- * Revision 1.4  2005/10/24 17:38:52  souvorov
- * Case sensitive Complement
- *
- * Revision 1.3  2005/10/06 15:50:42  chetvern
- * moved TDVec definition from hmm.hpp to gnomon_seq.hpp
- * renamed template parameter VecIt to more exact BidirectionalIterator
- *
- * Revision 1.2  2005/09/30 19:08:34  chetvern
- * added in-place sequence Complement function
- *
- * Revision 1.1  2005/09/15 21:28:07  chetvern
- * Sync with Sasha's working tree
- *
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_GNOMON___GNOMON_SEQ__HPP

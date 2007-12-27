@@ -905,33 +905,3 @@ bool COrgParameters::RegisterParameter(const string& type, TParameterCreator cre
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.3.2.3  2006/12/21 15:51:59  souvorov
- *  CFrameShiftedSeqMap introduction
- *
- * Revision 1.3.2.2  2006/10/12 19:08:22  chetvern
- * Changed hmm parameters reading
- *
- * Revision 1.3.2.1  2006/10/06 14:19:36  chetvern
- * Major overhaul. Single format for intermediate files.
- *
- * Revision 1.4  2006/03/06 15:52:53  souvorov
- * Changes needed for ChanceOfIntronLongerThan(int l)
- *
- * Revision 1.3  2005/10/06 15:51:20  chetvern
- * moved methods that compiler doesn't make inline anyway from hmm_inlines.hpp to hmm.cpp and score.cpp
- *
- * Revision 1.2  2005/09/16 18:04:16  ucko
- * kBadScore has been replaced with an inline BadScore function that
- * always returns the same value to avoid lossage in optimized WorkShop
- * builds.
- *
- * Revision 1.1  2005/09/15 21:28:07  chetvern
- * Sync with Sasha's working tree
- *
- *
- * ==========================================================================
- */

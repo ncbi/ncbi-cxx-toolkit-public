@@ -668,38 +668,3 @@ TSignedSeqRange MapRangeToOrig(TSignedSeqPos start, TSignedSeqPos stop, const CF
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.1.2.8  2006/12/21 15:51:59  souvorov
- *  CFrameShiftedSeqMap introduction
- *
- * Revision 1.1.2.7  2006/11/30 20:10:35  souvorov
- * Implementation of proper mapping for prediction
- *
- * Revision 1.1.2.6  2006/11/28 19:50:34  souvorov
- * Introduction of CFrameShiftedSeqMap
- *
- * Revision 1.1.2.5  2006/11/17 15:33:02  souvorov
- * Template for IsProperStop
- *
- * Revision 1.1.2.4  2006/11/09 16:47:30  chetvern
- * Corrected asserts
- *
- * Revision 1.1.2.3  2006/11/03 20:59:25  chetvern
- * Moved start/stop detection to gnomon_seq module
- *
- * Revision 1.1.2.2  2006/10/26 21:18:39  chetvern
- * Convert Deletions into Insertions
- *
- * Revision 1.1.2.1  2006/10/06 14:19:36  chetvern
- * Major overhaul. Single format for intermediate files.
- *
- * Revision 1.1  2005/09/15 21:28:07  chetvern
- * Sync with Sasha's working tree
- *
- *
- * ==========================================================================
- */
-
