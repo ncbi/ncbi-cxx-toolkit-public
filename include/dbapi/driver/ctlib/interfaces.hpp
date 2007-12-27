@@ -471,6 +471,12 @@ protected:
         return GetConnection().IsMultibyteClientEncoding();
     }
 
+    EEncoding GetClientEncoding(void) const
+    {
+        return GetConnection().GetClientEncoding();
+    }
+
+
 protected:
     // Result-related ...
     void SetExecCntxInfo(const string& info)
@@ -827,6 +833,9 @@ protected:
 
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
+
+private:
+    CDB_ITDescriptor::ETDescriptorType m_DescrType;
 };
 
 

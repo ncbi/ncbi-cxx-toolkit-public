@@ -566,7 +566,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
-        char* v = fmt.maxlength < 2048
+        char* v = static_cast<unsigned int>(fmt.maxlength) < sizeof(buffer)
             ? buffer : new char[fmt.maxlength + 1];
         switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen, is_null) ) {
         case CS_SUCCEED:
@@ -631,7 +631,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
-        char* v = fmt.maxlength < 2048
+        char* v = static_cast<unsigned int>(fmt.maxlength) < sizeof(buffer)
             ? buffer : new char[fmt.maxlength + 1];
         switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen, is_null) ) {
         case CS_SUCCEED:
@@ -1023,7 +1023,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             :                                  (CDB_Stream*) new CDB_Image;
 
         for (;;) {
-            switch ( my_ct_get_data(cmd, item_no, buffer, 2048, &outlen, is_null) ) {
+            switch ( my_ct_get_data(cmd, item_no, buffer, sizeof(buffer), &outlen, is_null) ) {
             case CS_SUCCEED:
                 if (outlen != 0)
                     val->Append(buffer, outlen);

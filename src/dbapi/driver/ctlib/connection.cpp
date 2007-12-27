@@ -541,10 +541,10 @@ CTL_Connection::x_CmdAlloc(CS_COMMAND** cmd)
 }
 
 
-bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
+bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
                                 bool log_it)
 {
-    CS_INT size = (CS_INT) img.Size();
+    CS_INT size = (CS_INT) stream.Size();
     if ( !size )
         return false;
 
@@ -584,20 +584,50 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
         return false;
     }
 
+    char   buff[1800];
+    size_t len = 0;
+    size_t invalid_len = 0;
+    CDB_ITDescriptor::ETDescriptorType descr_type = CDB_ITDescriptor::eUnknown;
+
+    if (desc.m_Desc.datatype == CS_TEXT_TYPE) {
+        descr_type = CDB_ITDescriptor::eText;
+    } else if (desc.m_Desc.datatype == CS_IMAGE_TYPE) {
+        descr_type = CDB_ITDescriptor::eBinary;
+    }
+
     while (size > 0) {
-        char   buff[1800];
-        CS_INT n_read = (CS_INT) img.Read(buff, sizeof(buff));
-        if ( !n_read ) {
+        len = (CS_INT) stream.Read(buff + invalid_len, sizeof(buff) - invalid_len - 1);
+
+        if (!len) {
             Check(ct_cancel(0, cmd, CS_CANCEL_ALL));
             Check(ct_cmd_drop(cmd));
             DATABASE_DRIVER_ERROR( "Text/Image data corrupted." + GetDbgInfo(), 110032 );
         }
-        if (Check(ct_send_data(cmd, buff, n_read)) != CS_SUCCEED) {
-            Check(ct_cancel(0, cmd, CS_CANCEL_CURRENT));
-            Check(ct_cmd_drop(cmd));
-            DATABASE_DRIVER_ERROR( "ct_send_data failed." + GetDbgInfo(), 110033 );
+
+        if (GetClientEncoding() == eEncoding_UTF8 &&
+            descr_type == CDB_ITDescriptor::eText) {
+
+            size_t valid_len = CStringUTF8::GetValidBytesCount(buff, len);
+            invalid_len = len - valid_len;
+
+            if (Check(ct_send_data(cmd, buff, len)) != CS_SUCCEED) {
+                Check(ct_cancel(0, cmd, CS_CANCEL_CURRENT));
+                Check(ct_cmd_drop(cmd));
+                DATABASE_DRIVER_ERROR( "ct_send_data failed." + GetDbgInfo(), 110033 );
+            }
+
+            if (valid_len < len) {
+                memmove(buff, buff + valid_len, invalid_len);
+            }
+        } else {
+            if (Check(ct_send_data(cmd, buff, len)) != CS_SUCCEED) {
+                Check(ct_cancel(0, cmd, CS_CANCEL_CURRENT));
+                Check(ct_cmd_drop(cmd));
+                DATABASE_DRIVER_ERROR( "ct_send_data failed." + GetDbgInfo(), 110033 );
+            }
         }
-        size -= n_read;
+
+        size -= len;
     }
 
     if (Check(ct_send(cmd)) != CS_SUCCEED) {
@@ -799,6 +829,7 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
                                  bool log_it)
 : CTL_Cmd(conn)
 , impl::CSendDataCmd(conn, nof_bytes)
+, m_DescrType(CDB_ITDescriptor::eUnknown)
 {
     CHECK_DRIVER_ERROR(!nof_bytes, "Wrong (zero) data size." + GetDbgInfo(), 110092);
 
@@ -834,6 +865,13 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
     desc.m_Desc.total_txtlen  = (CS_INT)nof_bytes;
     desc.m_Desc.log_on_update = log_it ? CS_TRUE : CS_FALSE;
 
+    // Calculate descriptor type ...
+    if (desc.m_Desc.datatype == CS_TEXT_TYPE) {
+        m_DescrType = CDB_ITDescriptor::eText;
+    } else if (desc.m_Desc.datatype == CS_IMAGE_TYPE) {
+        m_DescrType = CDB_ITDescriptor::eBinary;
+    }
+
     if (Check(ct_data_info(x_GetSybaseCmd(),
                            CS_SET,
                            CS_UNUSED,
@@ -846,10 +884,10 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
 }
 
 
-size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
+size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 {
     CHECK_DRIVER_ERROR(
-        !pChunk  ||  !nof_bytes,
+        !chunk_ptr  ||  !nof_bytes,
         "Wrong (zero) arguments." + GetDbgInfo(),
         190000 );
 
@@ -859,7 +897,21 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if (nof_bytes > GetBytes2Go())
         nof_bytes = GetBytes2Go();
 
-    if (Check(ct_send_data(x_GetSybaseCmd(), (void*) pChunk, (CS_INT) nof_bytes)) != CS_SUCCEED){
+    if (GetClientEncoding() == eEncoding_UTF8 &&
+        m_DescrType == CDB_ITDescriptor::eText) {
+        size_t valid_len = 0;
+
+        valid_len = CStringUTF8::GetValidBytesCount(static_cast<const char*>(chunk_ptr),
+                                                    nof_bytes);
+
+        if (valid_len == 0) {
+            DATABASE_DRIVER_ERROR( "Invalid encoding of a text string." + GetDbgInfo(), 410055 );
+        }
+
+        nof_bytes = valid_len;
+    } 
+
+    if (Check(ct_send_data(x_GetSybaseCmd(), (void*) chunk_ptr, (CS_INT) nof_bytes)) != CS_SUCCEED){
         DATABASE_DRIVER_ERROR( "ct_send_data failed." + GetDbgInfo(), 190001 );
     }
 
