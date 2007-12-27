@@ -58,9 +58,9 @@ void CLocalFinderApp::Init(void)
     // Prepare command line descriptions
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
-    arg_desc->AddKey("input", "InputFile",
+    arg_desc->AddKey("input", "FastaFile",
                      "File containing FASTA-format sequence",
-                     CArgDescriptions::eString);
+                     CArgDescriptions::eInputFile);
 
     arg_desc->AddDefaultKey("from", "From",
                             "From",
@@ -74,12 +74,11 @@ void CLocalFinderApp::Init(void)
 
     arg_desc->AddKey("model", "ModelData",
                      "Model Data",
-                     CArgDescriptions::eString);
+                     CArgDescriptions::eInputFile);
 
-    arg_desc->AddDefaultKey("align", "Alignments",
+    arg_desc->AddOptionalKey("align", "Alignments",
                             "Alignments",
-                            CArgDescriptions::eString,
-                            "");
+                            CArgDescriptions::eInputFile);
 
     arg_desc->AddFlag("rep", "Repeats");
 
@@ -97,7 +96,6 @@ int CLocalFinderApp::Run(void)
 
     int left            = myargs["from"].AsInteger();
     int right           = myargs["to"].AsInteger();
-    string modeldata    = myargs["model"].AsString();
     bool repeats        = myargs["rep"];
 
 
@@ -122,24 +120,25 @@ int CLocalFinderApp::Run(void)
         seq.push_back(*i);
 
     // read the alignment information
-    TAlignList cls;
+    TAlignList alignments;
     if(myargs["align"]) {
         CNcbiIstream& alignmentfile = myargs["align"].AsInputFile();
         string our_contig = cntg->GetSeqIdString(true);
         string cur_contig; 
-        CAlignVec algn;
+        CGeneModel algn;
         
         while(alignmentfile >> algn >> getcontig(cur_contig)) {
             if (cur_contig==our_contig)
-                cls.push_back(algn);
+                alignments.push_back(algn);
         }
     }
 
     // create engine
-    CGnomonEngine gnomon(modeldata,seq,TSignedSeqRange(left, right));
+    CGnomonEngine::ReadOrgHMMParameters(myargs["model"].AsInputFile());
+    CGnomonEngine gnomon(seq, TSignedSeqRange(left, right));
 
     // run!
-    gnomon.Run(cls,repeats,true,true,10.0);
+    gnomon.Run(alignments, repeats, true, true, false, false, 10.0);
 
     // dump the annotation
     CRef<CSeq_annot> annot = gnomon.GetAnnot(*cntg);
@@ -160,24 +159,3 @@ int main(int argc, const char* argv[])
     return CLocalFinderApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4.2.1  2006/10/06 14:19:37  chetvern
- * Major overhaul. Single format for intermediate files.
- *
- * Revision 1.4  2005/09/15 21:22:13  chetvern
- * Updated to match new API
- *
- * Revision 1.3  2005/06/03 16:23:19  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.2  2004/05/21 21:41:03  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.1  2003/10/24 15:07:25  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
