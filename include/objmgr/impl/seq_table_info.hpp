@@ -64,9 +64,8 @@ public:
     CSeqTableColumnInfo(void)
         {
         }
-    explicit CSeqTableColumnInfo(const CSeqTable_column& column,
-                                 CConstRef<CSeqTableSetField> setter)
-        : m_Column(&column), m_Setter(setter)
+    CSeqTableColumnInfo(const CSeqTable_column& column)
+        : m_Column(&column)
         {
         }
     ~CSeqTableColumnInfo()
@@ -74,13 +73,6 @@ public:
         }
 
     DECLARE_OPERATOR_BOOL_REF(m_Column);
-
-    void SetColumn(const CSeqTable_column& column,
-                   CConstRef<CSeqTableSetField> setter)
-        {
-            m_Column = &column;
-            m_Setter = setter;
-        }
 
     const CSeqTable_column* Get(void) const
         {
@@ -136,18 +128,24 @@ public:
             return GetBytes(row, value, force);
         }
 
-    void UpdateSeq_loc(CSeq_loc& loc, size_t row) const;
-    void UpdateSeq_feat(CSeq_feat& feat, size_t row) const;
+    void UpdateSeq_loc(CSeq_loc& loc, size_t row,
+                       const CSeqTableSetLocField& setter) const;
     void UpdateSeq_loc(CSeq_loc& loc,
-                       const CSeqTable_single_data& data) const;
+                       const CSeqTable_single_data& data,
+                       const CSeqTableSetLocField& setter) const;
     bool UpdateSeq_loc(CSeq_loc& loc,
                        const CSeqTable_multi_data& data,
-                       size_t index) const;
+                       size_t index,
+                       const CSeqTableSetLocField& setter) const;
+    void UpdateSeq_feat(CSeq_feat& feat, size_t row,
+                        const CSeqTableSetFeatField& setter) const;
     void UpdateSeq_feat(CSeq_feat& feat,
-                        const CSeqTable_single_data& data) const;
+                        const CSeqTable_single_data& data,
+                        const CSeqTableSetFeatField& setter) const;
     bool UpdateSeq_feat(CSeq_feat& feat,
                         const CSeqTable_multi_data& data,
-                        size_t index) const;
+                        size_t index,
+                        const CSeqTableSetFeatField& setter) const;
 
 protected:
     // report unset value with exception
@@ -155,7 +153,6 @@ protected:
 
 private:
     CConstRef<CSeqTable_column> m_Column;
-    CConstRef<CSeqTableSetField> m_Setter;
 };
 
 class CSeqTableLocColumns
@@ -170,7 +167,7 @@ public:
     void SetColumn(CSeqTableColumnInfo& field,
                    const CSeqTable_column& column);
     void AddExtraColumn(const CSeqTable_column& column,
-                        const CSeqTableSetField* setter);
+                        const CSeqTableSetLocField* setter);
 
     void ParseDefaults(void);
 
@@ -204,13 +201,16 @@ private:
     bool m_Is_simple, m_Is_probably_simple;
     bool m_Is_simple_point, m_Is_simple_interval, m_Is_simple_whole;
 
+    typedef CSeqTableSetLocField TSetter;
+    typedef pair<CSeqTableColumnInfo, CConstRef<TSetter> > TColumnInfo;
+    typedef vector<TColumnInfo> TExtraColumns;
+
     CSeqTableColumnInfo m_Loc;
     CSeqTableColumnInfo m_Id;
     CSeqTableColumnInfo m_Gi;
     CSeqTableColumnInfo m_From;
     CSeqTableColumnInfo m_To;
     CSeqTableColumnInfo m_Strand;
-    typedef vector<CSeqTableColumnInfo> TExtraColumns;
     TExtraColumns m_ExtraColumns;
 
     CSeq_id_Handle m_DefaultIdHandle;
@@ -244,11 +244,15 @@ public:
     const CSeqTableColumnInfo& GetColumn(const string& field_name) const;
 
 private:
+    typedef CSeqTableSetFeatField TSetter;
+    typedef pair<CSeqTableColumnInfo, CConstRef<TSetter> > TColumnInfo;
+    typedef vector<TColumnInfo> TExtraColumns;
+
     CSeqTableLocColumns m_Location;
     CSeqTableLocColumns m_Product;
     CSeqTableColumnInfo m_Partial;
-    typedef vector<CSeqTableColumnInfo> TExtraColumns;
     TExtraColumns m_ExtraColumns;
+
     typedef map<int, CSeqTableColumnInfo> TColumnsById;
     typedef map<string, CSeqTableColumnInfo> TColumnsByName;
     TColumnsById m_ColumnsById;

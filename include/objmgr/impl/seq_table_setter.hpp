@@ -49,14 +49,22 @@ class CSeq_feat;
 // CSeq_feat and CSeq_loc field setters
 /////////////////////////////////////////////////////////////////////////////
 
-class CSeqTableSetField : public CObject
+class CSeqTableSetLocField : public CObject
 {
 public:
-    virtual ~CSeqTableSetField();
+    virtual ~CSeqTableSetLocField();
 
     virtual void SetInt(CSeq_loc& loc, int value) const;
     virtual void SetReal(CSeq_loc& loc, double value) const;
     virtual void SetString(CSeq_loc& loc, const string& value) const;
+};
+
+
+class CSeqTableSetFeatField : public CObject
+{
+public:
+    virtual ~CSeqTableSetFeatField();
+
     virtual void SetInt(CSeq_feat& feat, int value) const;
     virtual void SetReal(CSeq_feat& feat, double value) const;
     virtual void SetString(CSeq_feat& feat, const string& value) const;

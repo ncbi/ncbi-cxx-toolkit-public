@@ -134,17 +134,18 @@ CConstRef<CSeq_loc> CSeqTableColumnInfo::GetSeq_loc(size_t row,
 
 
 void CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc,
-                                        const CSeqTable_single_data& data) const
+                                        const CSeqTable_single_data& data,
+                                        const CSeqTableSetLocField& setter) const
 {
     switch ( data.Which() ) {
     case CSeqTable_single_data::e_Int:
-        m_Setter->SetInt(loc, data.GetInt());
+        setter.SetInt(loc, data.GetInt());
         return;
     case CSeqTable_single_data::e_Real:
-        m_Setter->SetReal(loc, data.GetReal());
+        setter.SetReal(loc, data.GetReal());
         return;
     case CSeqTable_single_data::e_String:
-        m_Setter->SetString(loc, data.GetString());
+        setter.SetString(loc, data.GetString());
         return;
     default:
         ERR_POST_X(1, "Bad field data type: "<<data.Which());
@@ -154,20 +155,21 @@ void CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc,
 
 
 void CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat,
-                                         const CSeqTable_single_data& data) const
+                                         const CSeqTable_single_data& data,
+                                         const CSeqTableSetFeatField& setter) const
 {
     switch ( data.Which() ) {
     case CSeqTable_single_data::e_Int:
-        m_Setter->SetInt(feat, data.GetInt());
+        setter.SetInt(feat, data.GetInt());
         return;
     case CSeqTable_single_data::e_Real:
-        m_Setter->SetReal(feat, data.GetReal());
+        setter.SetReal(feat, data.GetReal());
         return;
     case CSeqTable_single_data::e_String:
-        m_Setter->SetString(feat, data.GetString());
+        setter.SetString(feat, data.GetString());
         return;
     case CSeqTable_single_data::e_Bytes:
-        m_Setter->SetBytes(feat, data.GetBytes());
+        setter.SetBytes(feat, data.GetBytes());
         return;
     default:
         ERR_POST_X(2, "Bad field data type: "<<data.Which());
@@ -178,24 +180,25 @@ void CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat,
 
 bool CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc,
                                         const CSeqTable_multi_data& data,
-                                        size_t index) const
+                                        size_t index,
+                                        const CSeqTableSetLocField& setter) const
 {
     switch ( data.Which() ) {
     case CSeqTable_multi_data::e_Int:
         if ( index < data.GetInt().size() ) {
-            m_Setter->SetInt(loc, data.GetInt()[index]);
+            setter.SetInt(loc, data.GetInt()[index]);
             return true;
         }
         break;
     case CSeqTable_multi_data::e_Real:
         if ( index < data.GetReal().size() ) {
-            m_Setter->SetReal(loc, data.GetReal()[index]);
+            setter.SetReal(loc, data.GetReal()[index]);
             return true;
         }
         break;
     case CSeqTable_multi_data::e_String:
         if ( index < data.GetString().size() ) {
-            m_Setter->SetString(loc, data.GetString()[index]);
+            setter.SetString(loc, data.GetString()[index]);
             return true;
         }
         break;
@@ -207,7 +210,7 @@ bool CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc,
             const CCommonString_table::TStrings& strings = common.GetStrings();
             size_t string_index = indexes[index];
             if ( string_index < strings.size() ) {
-                m_Setter->SetString(loc, strings[string_index]);
+                setter.SetString(loc, strings[string_index]);
                 return true;
             }
             else {
@@ -227,30 +230,31 @@ bool CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc,
 
 bool CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat,
                                          const CSeqTable_multi_data& data,
-                                         size_t index) const
+                                         size_t index,
+                                         const CSeqTableSetFeatField& setter) const
 {
     switch ( data.Which() ) {
     case CSeqTable_multi_data::e_Int:
         if ( index < data.GetInt().size() ) {
-            m_Setter->SetInt(feat, data.GetInt()[index]);
+            setter.SetInt(feat, data.GetInt()[index]);
             return true;
         }
         break;
     case CSeqTable_multi_data::e_Real:
         if ( index < data.GetReal().size() ) {
-            m_Setter->SetReal(feat, data.GetReal()[index]);
+            setter.SetReal(feat, data.GetReal()[index]);
             return true;
         }
         break;
     case CSeqTable_multi_data::e_String:
         if ( index < data.GetString().size() ) {
-            m_Setter->SetString(feat, data.GetString()[index]);
+            setter.SetString(feat, data.GetString()[index]);
             return true;
         }
         break;
     case CSeqTable_multi_data::e_Bytes:
         if ( index < data.GetBytes().size() ) {
-            m_Setter->SetBytes(feat, *data.GetBytes()[index]);
+            setter.SetBytes(feat, *data.GetBytes()[index]);
             return true;
         }
         break;
@@ -262,7 +266,7 @@ bool CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat,
             const CCommonString_table::TStrings& strings = common.GetStrings();
             size_t string_index = indexes[index];
             if ( string_index < strings.size() ) {
-                m_Setter->SetString(feat, strings[string_index]);
+                setter.SetString(feat, strings[string_index]);
                 return true;
             }
             else {
@@ -280,7 +284,7 @@ bool CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat,
             const CCommonBytes_table::TBytes& bytes = common.GetBytes();
             size_t bytes_index = indexes[index];
             if ( bytes_index < bytes.size() ) {
-                m_Setter->SetBytes(feat, *bytes[bytes_index]);
+                setter.SetBytes(feat, *bytes[bytes_index]);
                 return true;
             }
             else {
@@ -298,58 +302,60 @@ bool CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat,
 }
 
 
-void CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc, size_t row) const
+void CSeqTableColumnInfo::UpdateSeq_loc(CSeq_loc& loc, size_t row,
+                                        const CSeqTableSetLocField& setter) const
 {
     size_t index = row;
     if ( m_Column->IsSetSparse() ) {
         index = m_Column->GetSparse().GetIndexAt(row);
         if ( index == CSeqTable_sparse_index::kSkipped ) {
             if ( m_Column->IsSetSparse_other() ) {
-                UpdateSeq_loc(loc, m_Column->GetSparse_other());
+                UpdateSeq_loc(loc, m_Column->GetSparse_other(), setter);
             }
             return;
         }
     }
 
     if ( m_Column->IsSetData() &&
-         UpdateSeq_loc(loc, m_Column->GetData(), index) ) {
+         UpdateSeq_loc(loc, m_Column->GetData(), index, setter) ) {
         return;
     }
 
     if ( m_Column->IsSetDefault() ) {
-        UpdateSeq_loc(loc, m_Column->GetDefault());
+        UpdateSeq_loc(loc, m_Column->GetDefault(), setter);
     }
     else if ( !m_Column->IsSetData() ) {
         // no multi or single data -> no value, but we need to touch the field
-        m_Setter->SetInt(loc, 0);
+        setter.SetInt(loc, 0);
     }
 }
 
 
-void CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat, size_t row) const
+void CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat, size_t row,
+                                         const CSeqTableSetFeatField& setter) const
 {
     size_t index = row;
     if ( m_Column->IsSetSparse() ) {
         index = m_Column->GetSparse().GetIndexAt(row);
         if ( index == CSeqTable_sparse_index::kSkipped ) {
             if ( m_Column->IsSetSparse_other() ) {
-                UpdateSeq_feat(feat, m_Column->GetSparse_other());
+                UpdateSeq_feat(feat, m_Column->GetSparse_other(), setter);
             }
             return;
         }
     }
 
     if ( m_Column->IsSetData() &&
-         UpdateSeq_feat(feat, m_Column->GetData(), index) ) {
+         UpdateSeq_feat(feat, m_Column->GetData(), index, setter) ) {
         return;
     }
 
     if ( m_Column->IsSetDefault() ) {
-        UpdateSeq_feat(feat, m_Column->GetDefault());
+        UpdateSeq_feat(feat, m_Column->GetDefault(), setter);
     }
     else if ( !m_Column->IsSetData() ) {
         // no multi or single data -> no value, but we need to touch the field
-        m_Setter->SetInt(feat, 0);
+        setter.SetInt(feat, 0);
     }
 }
 
@@ -386,15 +392,15 @@ void CSeqTableLocColumns::SetColumn(CSeqTableColumnInfo& field,
         NCBI_THROW_FMT(CAnnotException, eBadLocation,
                        "Duplicate "<<m_FieldName<<" column");
     }
-    field.SetColumn(column, null);
+    field = CSeqTableColumnInfo(column);
     m_Is_set = true;
 }
 
 
 void CSeqTableLocColumns::AddExtraColumn(const CSeqTable_column& column,
-                                         const CSeqTableSetField* setter)
+                                         const CSeqTableSetLocField* setter)
 {
-    m_ExtraColumns.push_back(CSeqTableColumnInfo(column, ConstRef(setter)));
+    m_ExtraColumns.push_back(TColumnInfo(column, ConstRef(setter)));
     m_Is_set = true;
 }
 
@@ -706,7 +712,7 @@ void CSeqTableLocColumns::UpdateSeq_loc(size_t row,
         }
     }
     ITERATE ( TExtraColumns, it, m_ExtraColumns ) {
-        it->UpdateSeq_loc(loc, row);
+        it->first.UpdateSeq_loc(loc, row, *it->second);
     }
 }
 
@@ -734,7 +740,7 @@ void CSeqTableLocColumns::SetTableKeyAndIndex(size_t row,
     if ( !simple && m_Is_probably_simple ) {
         simple = true;
         ITERATE ( TExtraColumns, it, m_ExtraColumns ) {
-            if ( it->IsSet(row) ) {
+            if ( it->first.IsSet(row) ) {
                 simple = false;
                 break;
             }
@@ -781,16 +787,16 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
             field_id = type.GetIdForName(field_name);
         }
         if ( field_id >= 0 ) {
-            m_ColumnsById[field_id].SetColumn(col, null);
+            m_ColumnsById.insert(TColumnsById::value_type(field_id, col));
         }
         if ( !field_name.empty() ) {
-            m_ColumnsByName[field_name].SetColumn(col, null);
+            m_ColumnsByName.insert(TColumnsByName::value_type(field_name, col));
         }
 
         if ( m_Location.AddColumn(col) || m_Product.AddColumn(col) ) {
             continue;
         }
-        CConstRef<CSeqTableSetField> setter;
+        CConstRef<CSeqTableSetFeatField> setter;
         if ( type.IsSetField_id() ) {
             int field = type.GetField_id();
             switch ( field ) {
@@ -799,7 +805,7 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
                     NCBI_THROW_FMT(CAnnotException, eOtherError,
                                    "Duplicate partial column");
                 }
-                m_Partial.SetColumn(col, null);
+                m_Partial = CSeqTableColumnInfo(col);
                 continue;
             case CSeqTable_column_info::eField_id_comment:
                 setter = new CSeqTableSetComment();
@@ -855,14 +861,14 @@ CSeqTableInfo::CSeqTableInfo(const CSeq_table& feat_table)
                     NCBI_THROW_FMT(CAnnotException, eOtherError,
                                    "Duplicate partial column");
                 }
-                m_Partial.SetColumn(col, null);
+                m_Partial = CSeqTableColumnInfo(col);
                 continue;
             }
             if ( !setter ) {
                 setter = new CSeqTableSetAnyFeatField(field);
             }
         }
-        m_ExtraColumns.push_back(CSeqTableColumnInfo(col, setter));
+        m_ExtraColumns.push_back(TColumnInfo(col, setter));
     }
 
     m_Location.ParseDefaults();
@@ -919,7 +925,7 @@ void CSeqTableInfo::UpdateSeq_feat(size_t row,
         }
     }
     ITERATE ( TExtraColumns, it, m_ExtraColumns ) {
-        it->UpdateSeq_feat(feat, row);
+        it->first.UpdateSeq_feat(feat, row, *it->second);
     }
 }
 

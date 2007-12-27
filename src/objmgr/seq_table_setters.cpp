@@ -48,59 +48,66 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CSeqTableSetField::~CSeqTableSetField()
+CSeqTableSetFeatField::~CSeqTableSetFeatField()
 {
 }
 
 
-void CSeqTableSetField::SetInt(CSeq_loc& loc, int value) const
-{
-    NCBI_THROW_FMT(CAnnotException, eOtherError,
-                   "Incompatible Seq-loc field value: "<<value);
-}
-
-
-void CSeqTableSetField::SetReal(CSeq_loc& loc, double value) const
-{
-    NCBI_THROW_FMT(CAnnotException, eOtherError,
-                   "Incompatible Seq-loc field value: "<<value);
-}
-
-
-void CSeqTableSetField::SetString(CSeq_loc& loc, const string& value) const
-{
-    NCBI_THROW_FMT(CAnnotException, eOtherError,
-                   "Incompatible Seq-loc field value: "<<value);
-}
-
-
-void CSeqTableSetField::SetInt(CSeq_feat& feat, int value) const
+void CSeqTableSetFeatField::SetInt(CSeq_feat& feat, int value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: "<<value);
 }
 
 
-void CSeqTableSetField::SetReal(CSeq_feat& feat, double value) const
+void CSeqTableSetFeatField::SetReal(CSeq_feat& feat, double value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: "<<value);
 }
 
 
-void CSeqTableSetField::SetString(CSeq_feat& feat, const string& value) const
+void CSeqTableSetFeatField::SetString(CSeq_feat& feat, const string& value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: "<<value);
 }
 
 
-void CSeqTableSetField::SetBytes(CSeq_feat& feat, const vector<char>& value) const
+void CSeqTableSetFeatField::SetBytes(CSeq_feat& feat, const vector<char>& value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: vector<char>");
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+CSeqTableSetLocField::~CSeqTableSetLocField()
+{
+}
+
+
+void CSeqTableSetLocField::SetInt(CSeq_loc& loc, int value) const
+{
+    NCBI_THROW_FMT(CAnnotException, eOtherError,
+                   "Incompatible Seq-loc field value: "<<value);
+}
+
+
+void CSeqTableSetLocField::SetReal(CSeq_loc& loc, double value) const
+{
+    NCBI_THROW_FMT(CAnnotException, eOtherError,
+                   "Incompatible Seq-loc field value: "<<value);
+}
+
+
+void CSeqTableSetLocField::SetString(CSeq_loc& loc, const string& value) const
+{
+    NCBI_THROW_FMT(CAnnotException, eOtherError,
+                   "Incompatible Seq-loc field value: "<<value);
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 void CSeqTableSetComment::SetString(CSeq_feat& feat, const string& value) const
 {
@@ -135,12 +142,6 @@ void CSeqTableSetLocFuzzFromLim::SetInt(CSeq_loc& loc, int value) const
 }
 
 
-void CSeqTableSetLocFuzzFromLim::SetInt(CSeq_feat& feat, int value) const
-{
-    SetInt(feat.SetLocation(), value);
-}
-
-
 void CSeqTableSetLocFuzzToLim::SetInt(CSeq_loc& loc, int value) const
 {
     if ( loc.IsInt() ) {
@@ -150,51 +151,6 @@ void CSeqTableSetLocFuzzToLim::SetInt(CSeq_loc& loc, int value) const
         NCBI_THROW_FMT(CAnnotException, eOtherError,
                        "Incompatible fuzz field");
     }
-}
-
-
-void CSeqTableSetLocFuzzToLim::SetInt(CSeq_feat& feat, int value) const
-{
-    SetInt(feat.SetLocation(), value);
-}
-
-
-void CSeqTableSetProdFuzzFromLim::SetInt(CSeq_loc& loc, int value) const
-{
-    if ( loc.IsPnt() ) {
-        loc.SetPnt().SetFuzz().SetLim(CInt_fuzz_Base::ELim(value));
-    }
-    else if ( loc.IsInt() ) {
-        loc.SetInt().SetFuzz_from().SetLim(CInt_fuzz_Base::ELim(value));
-    }
-    else {
-        NCBI_THROW_FMT(CAnnotException, eOtherError,
-                       "Incompatible fuzz field");
-    }
-}
-
-
-void CSeqTableSetProdFuzzFromLim::SetInt(CSeq_feat& feat, int value) const
-{
-    SetInt(feat.SetProduct(), value);
-}
-
-
-void CSeqTableSetProdFuzzToLim::SetInt(CSeq_loc& loc, int value) const
-{
-    if ( loc.IsInt() ) {
-        loc.SetInt().SetFuzz_to().SetLim(CInt_fuzz_Base::ELim(value));
-    }
-    else {
-        NCBI_THROW_FMT(CAnnotException, eOtherError,
-                       "Incompatible fuzz field");
-    }
-}
-
-
-void CSeqTableSetProdFuzzToLim::SetInt(CSeq_feat& feat, int value) const
-{
-    SetInt(feat.SetProduct(), value);
 }
 
 

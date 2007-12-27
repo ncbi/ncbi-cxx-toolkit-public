@@ -46,60 +46,42 @@ BEGIN_SCOPE(objects)
 // CSeq_feat and CSeq_loc field setters
 /////////////////////////////////////////////////////////////////////////////
 
-class CSeqTableSetComment : public CSeqTableSetField
+class CSeqTableSetComment : public CSeqTableSetFeatField
 {
 public:
     virtual void SetString(CSeq_feat& feat, const string& value) const;
 };
 
 
-class CSeqTableSetDataImpKey : public CSeqTableSetField
+class CSeqTableSetDataImpKey : public CSeqTableSetFeatField
 {
 public:
     virtual void SetString(CSeq_feat& feat, const string& value) const;
 };
 
 
-class CSeqTableSetDataRegion : public CSeqTableSetField
+class CSeqTableSetDataRegion : public CSeqTableSetFeatField
 {
 public:
     virtual void SetString(CSeq_feat& feat, const string& value) const;
 };
 
 
-class CSeqTableSetLocFuzzFromLim : public CSeqTableSetField
+class CSeqTableSetLocFuzzFromLim : public CSeqTableSetLocField
 {
 public:
     virtual void SetInt(CSeq_loc& loc, int value) const;
-    virtual void SetInt(CSeq_feat& feat, int value) const;
 };
 
 
-class CSeqTableSetLocFuzzToLim : public CSeqTableSetField
+class CSeqTableSetLocFuzzToLim : public CSeqTableSetLocField
 {
 public:
     virtual void SetInt(CSeq_loc& loc, int value) const;
-    virtual void SetInt(CSeq_feat& feat, int value) const;
 };
 
 
-class CSeqTableSetProdFuzzFromLim : public CSeqTableSetField
-{
-public:
-    virtual void SetInt(CSeq_loc& loc, int value) const;
-    virtual void SetInt(CSeq_feat& feat, int value) const;
-};
-
-
-class CSeqTableSetProdFuzzToLim : public CSeqTableSetField
-{
-public:
-    virtual void SetInt(CSeq_loc& loc, int value) const;
-    virtual void SetInt(CSeq_feat& feat, int value) const;
-};
-
-
-class CSeqTableSetQual : public CSeqTableSetField
+class CSeqTableSetQual : public CSeqTableSetFeatField
 {
 public:
     CSeqTableSetQual(const CTempString& name)
@@ -110,11 +92,11 @@ public:
     virtual void SetString(CSeq_feat& feat, const string& value) const;
 
 private:
-    CTempString name;
+    string name;
 };
 
 
-class CSeqTableSetExt : public CSeqTableSetField
+class CSeqTableSetExt : public CSeqTableSetFeatField
 {
 public:
     CSeqTableSetExt(const CTempString& name)
@@ -128,11 +110,11 @@ public:
     virtual void SetBytes(CSeq_feat& feat, const vector<char>& value) const;
 
 private:
-    CTempString name;
+    string name;
 };
 
 
-class CSeqTableSetDbxref : public CSeqTableSetField
+class CSeqTableSetDbxref : public CSeqTableSetFeatField
 {
 public:
     CSeqTableSetDbxref(const CTempString& name)
@@ -144,11 +126,11 @@ public:
     virtual void SetString(CSeq_feat& feat, const string& value) const;
 
 private:
-    CTempString name;
+    string name;
 };
 
 
-class CSeqTableSetExtType : public CSeqTableSetField
+class CSeqTableSetExtType : public CSeqTableSetFeatField
 {
 public:
     virtual void SetInt(CSeq_feat& feat, int value) const;
@@ -214,7 +196,7 @@ private:
 };
 
 
-class CSeqTableSetAnyObjField : public CSeqTableSetField
+class CSeqTableSetAnyObjField
 {
 public:
     CSeqTableSetAnyObjField(CObjectTypeInfo type, CTempString field);
@@ -233,7 +215,8 @@ private:
 };
 
 
-class CSeqTableSetAnyLocField : public CSeqTableSetAnyObjField
+class CSeqTableSetAnyLocField :  public CSeqTableSetLocField,
+                                 public CSeqTableSetAnyObjField
 {
 public:
     CSeqTableSetAnyLocField(const CTempString& field);
@@ -245,7 +228,8 @@ public:
 };
 
 
-class CSeqTableSetAnyFeatField : public CSeqTableSetAnyObjField
+class CSeqTableSetAnyFeatField : public CSeqTableSetFeatField,
+                                 public CSeqTableSetAnyObjField
 {
 public:
     CSeqTableSetAnyFeatField(const CTempString& field);
