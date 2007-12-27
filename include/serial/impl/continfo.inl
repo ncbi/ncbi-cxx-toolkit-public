@@ -146,10 +146,14 @@ void CContainerTypeInfo::CopyIterator(CConstIterator& dst,
                                       const CConstIterator& src) const
 {
     _ASSERT(src.m_ContainerType == this);
-    dst.Reset();
-    dst.m_ContainerType = this;
-    dst.m_ContainerPtr = src.m_ContainerPtr;
-    m_CopyIteratorConst(dst, src);
+    if ( dst.m_ContainerType != this ) {
+        InitIterator(dst, src.m_ContainerPtr);
+        m_CopyIteratorConst(dst, src);
+    }
+    else {
+        dst.m_ContainerPtr = src.m_ContainerPtr;
+        m_CopyIteratorConst(dst, src);
+    }
 }
 
 inline
@@ -189,9 +193,14 @@ void CContainerTypeInfo::CopyIterator(CIterator& dst,
                                       const CIterator& src) const
 {
     _ASSERT(src.m_ContainerType == this);
-    dst.Reset();
-    dst.m_ContainerType = this;
-    m_CopyIterator(dst, src);
+    if ( dst.m_ContainerType != this ) {
+        InitIterator(dst, src.m_ContainerPtr);
+        m_CopyIterator(dst, src);
+    }
+    else {
+        dst.m_ContainerPtr = src.m_ContainerPtr;
+        m_CopyIterator(dst, src);
+    }
 }
 
 inline
@@ -280,12 +289,13 @@ inline
 CContainerElementIterator& CContainerElementIterator::operator=(const CContainerElementIterator& src)
 {
     m_Valid = false;
-    m_Iterator.Reset();
     m_ElementType = src.m_ElementType;
     const CContainerTypeInfo* containerType =
         src.m_Iterator.GetContainerType();
     if ( containerType )
         containerType->CopyIterator(m_Iterator, src.m_Iterator);
+    else
+        m_Iterator.Reset();
     m_Valid = src.m_Valid;
     return *this;
 }
@@ -373,12 +383,13 @@ CConstContainerElementIterator&
 CConstContainerElementIterator::operator=(const CConstContainerElementIterator& src)
 {
     m_Valid = false;
-    m_Iterator.Reset();
     m_ElementType = src.m_ElementType;
     const CContainerTypeInfo* containerType =
         src.m_Iterator.GetContainerType();
     if ( containerType )
         containerType->CopyIterator(m_Iterator, src.m_Iterator);
+    else
+        m_Iterator.Reset();
     m_Valid = src.m_Valid;
     return *this;
 }
