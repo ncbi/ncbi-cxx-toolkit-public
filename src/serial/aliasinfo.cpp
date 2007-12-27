@@ -208,5 +208,7 @@ template class NCBI_XSERIAL_EXPORT CAliasBase<string>;
 template class NCBI_XSERIAL_EXPORT CStringAliasBase<string>;
 template class NCBI_XSERIAL_EXPORT CAliasBase< vector<char> >;
 template class NCBI_XSERIAL_EXPORT CStringAliasBase< vector<char> >;
+template class NCBI_XSERIAL_EXPORT CAliasBase< ncbi::CStringUTF8 >;
+template class NCBI_XSERIAL_EXPORT CStringAliasBase< ncbi::CStringUTF8 >;
 
 END_NCBI_SCOPE
