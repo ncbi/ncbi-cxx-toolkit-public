@@ -33,32 +33,33 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <algo/gnomon/gnomon_exception.hpp>
 #include "gnomon_seq.hpp"
-#include "parse.hpp"
+
+class CTerminal;
+class CCodingRegion;
+class CNonCodingRegion;
+class CSeqScores;
+class CParse;
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
-struct SGnomonEngineImplData {
-    SGnomonEngineImplData(const string& modeldatafilename, const string& seqname, const CResidueVec& sequence, TSignedSeqRange range) :
-        m_modeldatafilename(modeldatafilename), m_seqname(seqname), m_seq(sequence), m_range(range), m_gccontent(0)
-{}
+struct CGnomonEngine::SGnomonEngineImplData {
+    SGnomonEngineImplData(const CResidueVec& sequence, TSignedSeqRange range);
+    ~SGnomonEngineImplData();
 
-    string            m_modeldatafilename;
-    string            m_seqname;
     CResidueVec       m_seq;
     CDoubleStrandSeq  m_ds;
     TSignedSeqRange   m_range;
     int               m_gccontent;
 
-    auto_ptr<CTerminal>        m_acceptor;
-    auto_ptr<CTerminal>        m_donor;
-    auto_ptr<CTerminal>        m_start;
-    auto_ptr<CTerminal>        m_stop;
-    auto_ptr<CCodingRegion>    m_cdr;
-    auto_ptr<CNonCodingRegion> m_ncdr;
-    auto_ptr<CNonCodingRegion> m_intrg;
+    const CTerminal*        m_acceptor;
+    const CTerminal*        m_donor;
+    const CTerminal*        m_start;
+    const CTerminal*        m_stop;
+    const CCodingRegion*    m_cdr;
+    const CNonCodingRegion* m_ncdr;
+    const CNonCodingRegion* m_intrg;
 
     auto_ptr<CSeqScores>       m_ss;
     auto_ptr<CParse>           m_parse;
@@ -66,5 +67,21 @@ struct SGnomonEngineImplData {
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1.2.2  2006/10/12 19:08:22  chetvern
+ * Changed hmm parameters reading
+ *
+ * Revision 1.1.2.1  2006/10/06 14:19:36  chetvern
+ * Major overhaul. Single format for intermediate files.
+ *
+ * Revision 1.1  2005/09/15 21:28:07  chetvern
+ * Sync with Sasha's working tree
+ *
+ *
+ * ===========================================================================
+ */
 
 #endif  // ALGO_GNOMON___GNOMON_ENGINE__HPP

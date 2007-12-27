@@ -43,48 +43,38 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
-USING_SCOPE(objects);
-
-class NCBI_XALGOGNOMON_EXPORT CUniqNumber
-{
-    public:
-        CUniqNumber(int b = 1, int s = 0) : m_base(b), m_shift(s), m_local(0) {};
-        CUniqNumber& operator++() { ++m_local; return *this; }
-        operator int() const { return m_base*m_local+m_shift; } 
-    private:
-        int m_base, m_shift, m_local;
-};
-
-struct SGnomonEngineImplData;
+class CEResidueVec;
 
 class NCBI_XALGOGNOMON_EXPORT CGnomonEngine {
 public:
-    CGnomonEngine(const string& modeldatafilename, const string& seq_name, const CResidueVec& sequence, TSignedSeqRange range);
-
+    static void ReadOrgHMMParameters(CNcbiIstream& from);
+    CGnomonEngine(const CResidueVec& sequence, TSignedSeqRange range);
     ~CGnomonEngine();
 
     void ResetRange(TSignedSeqRange range);
     void ResetRange(TSignedSeqPos from, TSignedSeqPos to) { ResetRange(TSignedSeqRange(from,to)); }
 
+    const CResidueVec& GetSeq() const;
     int GetGCcontent() const;
-    string GetSeqName() const;
-    static int GetMinIntronLen();
-    static double GetChanceOfIntronLongerThan(int l);
+    int GetMinIntronLen() const;
+    double GetChanceOfIntronLongerThan(int l) const;
 
     // calculate gnomon score for a gene model
-    void GetScore(CAlignVec& model, bool uselims = false, bool allowopen = true) const;
+    void GetScore(CGeneModel& model) const;
+    double SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap,
+                                  TIVec starts[3],  TIVec stops[3], int& frame, int& best_start, int& best_stop) const;
 
     // run gnomon. return score
     double Run(bool repeats = true, bool leftwall = true, bool rightwall = true, double mpp = 10); // pure ab initio
 
-    double Run(const TAlignList& cls,
-               bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty = BadScore());
+    double Run(const TAlignList& chains,
+	       bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty = BadScore());
 
-    CRef<objects::CSeq_annot> GetAnnot(void);
+    CRef<objects::CSeq_annot> GetAnnot(const objects::CSeq_id& id);
 
-    list<CGene> GetGenes() const;
+    list<CGeneModel> GetGenes() const;
 
-    TSignedSeqPos PartialModelStepBack(list<CGene>& genes) const;
+    TSignedSeqPos PartialModelStepBack(list<CGeneModel>& genes) const;
     void PrintInfo() const;
 
 private:
@@ -92,33 +82,80 @@ private:
     CGnomonEngine(const CGnomonEngine& value);
     CGnomonEngine& operator= (const CGnomonEngine& value);
 
-    // delete all heap allocated members
-    void cleanup();
-
     // check range within sequence. throws exceptions. 
     void CheckRange();
 
-    void GenerateSeqAnnot();
-    
-    SGnomonEngineImplData* m_data;
-
-    // our resulting annotation
-    CRef<objects::CSeq_annot> m_Annot;
+    struct SGnomonEngineImplData;
+    auto_ptr<SGnomonEngineImplData> m_data;
 };
 
-NCBI_XALGOGNOMON_EXPORT
-void PrintGenes(const list<CGene>& genes, CUniqNumber& unumber, CNcbiOstream& to = cout, CNcbiOstream& toprot = cout);
+// NCBI_XALGOGNOMON_EXPORT
+// void PrintGenes(const list<CGene>& genes, CUniqNumber& unumber, CNcbiOstream& to = cout, CNcbiOstream& toprot = cout);
 
 class NCBI_XALGOGNOMON_EXPORT CCodingPropensity {
 public:
 
-    // calculates CodingPropensity score
-    static double GetScore(const string& modeldatafilename, const CSeq_loc& cds, CScope& scope, int *const gccontent, double *const startscore = 0);
+    // calculates CodingPropensity and start score
+    static double GetScore(const string& modeldatafilename, const objects::CSeq_loc& cds, objects::CScope& scope, int *const gccontent, double *const startscore = 0);
 
 };
 
-
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.7.2.6  2006/11/09 15:34:47  souvorov
+ * Start score evaluation
+ *
+ * Revision 1.7.2.5  2006/11/03 20:22:24  chetvern
+ * Removed unused parameter from GetScore
+ *
+ * Revision 1.7.2.4  2006/10/25 17:46:23  souvorov
+ * FirstStart out of GnomonEngine
+ *
+ * Revision 1.7.2.3  2006/10/24 19:42:39  souvorov
+ * Modification for open alignments
+ *
+ * Revision 1.7.2.2  2006/10/12 18:57:20  chetvern
+ * Changed hmm parameters reading
+ *
+ * Revision 1.7.2.1  2006/10/06 14:17:56  chetvern
+ * Major overhaul. Single format for intermediate files.
+ *
+ * Revision 1.10  2006/10/05 15:30:58  souvorov
+ * Implementation of anchors for intergenics
+ *
+ * Revision 1.9  2006/06/29 19:19:22  souvorov
+ * Confirmed start implementation
+ *
+ * Revision 1.8  2006/03/06 15:53:23  souvorov
+ * Changes needed for ChanceOfIntronLongerThan(int l)
+ *
+ * Revision 1.7  2005/11/29 15:21:37  jcherry
+ * Added export specifier
+ *
+ * Revision 1.6  2005/11/21 21:25:54  chetvern
+ * Extracted PartialModelStepBack from PrintGenes
+ *
+ * Revision 1.5  2005/10/20 19:34:46  souvorov
+ * Penalty for nonconsensus starts/stops/splices
+ *
+ * Revision 1.4  2005/10/06 14:34:25  souvorov
+ * CGnomonEngine::GetSeqName() introduced
+ *
+ * Revision 1.3  2005/09/15 21:16:01  chetvern
+ * redesigned API
+ *
+ * Revision 1.2  2004/03/16 15:37:43  vasilche
+ * Added required include
+ *
+ * Revision 1.1  2003/10/24 15:06:30  dicuccio
+ * Initial revision
+ *
+ * ===========================================================================
+ */
 
 #endif  // ALGO_GNOMON___GNOMON__HPP

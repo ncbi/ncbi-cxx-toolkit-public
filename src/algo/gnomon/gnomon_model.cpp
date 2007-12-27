@@ -32,166 +32,529 @@
 #include <ncbi_pch.hpp>
 #include <algo/gnomon/gnomon_model.hpp>
 #include "gnomon_seq.hpp"
+#include <set>
+#include <functional>
+#include <corelib/ncbiutil.hpp>
+#include <objects/general/Object_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
-int CAlignVec::FShiftedLen(TSignedSeqPos a, TSignedSeqPos b) const
+USING_SCOPE(objects);
+
+
+CRef<CSeq_id> CreateSeqid(const string& name, int score_func(const CRef<CSeq_id>&))
 {
-        unsigned int i;
-        for(i = 0; i < size() && (*this)[i].GetTo() < a; ++i);
-        int len = (*this)[i].GetTo()-a+1;
-        for(++i; i < size() && (*this)[i].GetFrom() <= b; ++i)
-        {
-            len += (*this)[i].GetTo()-(*this)[i].GetFrom()+1;
-        }
-        len -= (*this)[i-1].GetTo()-b;
-        
-        for(i = 0; i < m_fshifts.size(); ++i)
-        {
-            if(m_fshifts[i].IsDeletion()) {
-                if(m_fshifts[i].Loc() >= a && m_fshifts[i].Loc() <= b+1) len += m_fshifts[i].Len();
-            } else {
-                if(m_fshifts[i].Loc() > a && m_fshifts[i].Loc() < b) len -= m_fshifts[i].Len();
-            }
-        }
-        
-        return len;
+    int int_id = NStr::StringToInt(name, NStr::fConvErr_NoThrow);
+    if (int_id) {
+        return CreateSeqid(int_id);
+    }
+
+    CRef<CSeq_id> ps;
+    
+    try {
+        CBioseq::TId ids;
+        CSeq_id::ParseFastaIds(ids, name);
+        ps = FindBestChoice(ids, score_func); 
+
+        if(!ps) ps = new CSeq_id(CSeq_id::e_Local, name);
+    } catch(CException) {
+        ps.Reset (new CSeq_id(CSeq_id::e_Local, name)); 
+    }
+    return ps;
 }
 
-template <typename Vec>
-class vec_traits {
-public:
-    typedef typename Vec::value_type value_type;
-    static value_type _fromACGT(TResidue x)
-    { return x; }
-};
-template<>
-class vec_traits<CEResidueVec> {
-public:
-    typedef CEResidueVec::value_type value_type;
-    static value_type _fromACGT(TResidue x)
-    { return fromACGT(x); }
-};
-
-template <class Vec>
-void CAlignVec::GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap, bool cdsonly) const
+CRef<CSeq_id> CreateSeqid(int local_id)
 {
-    TSignedSeqRange lim = (cdsonly ? RealCdsLimits() : Limits());
-    int len = (cdsonly ? CdsLen() : AlignLen());
-    mrna.clear();
-
-    mrna.reserve(len);
-    if(mrnamap != 0)
-    {
-        mrnamap->clear();
-        mrnamap->reserve(len);
-    }
-    
-    TFrameShifts::const_iterator fsi = FrameShifts().begin();
-    ITERATE(CAlignVec, i, *this)
-    {
-        TSignedSeqPos start = i->GetFrom();
-        TSignedSeqPos stop = i->GetTo();
-        
-        if(stop < lim.GetFrom()) continue;
-        if(start > lim.GetTo()) break;
-        
-        start = max(start,lim.GetFrom());
-        stop = min(stop,lim.GetTo());
-        while(fsi != FrameShifts().end() && fsi->Loc() < start) ++fsi;    // skipping possible insertions before right exon boundary
-        for(TSignedSeqPos k = start; k <= stop; ++k) {
-            if (fsi != FrameShifts().end() && fsi->IsInsertion() && k == fsi->Loc()) {
-                k += fsi->Len()-1;
-                ++fsi;
-            } else if (fsi != FrameShifts().end() && fsi->IsDeletion() && k == fsi->Loc()) {
-                for(int j = 0; j < fsi->Len(); ++j) {
-                    mrna.push_back(vec_traits<Vec>::_fromACGT(fsi->DeletedValue()[j]));
-                    if(mrnamap != 0) mrnamap->push_back(-1);
-                }
-
-                --k;          // this position will be reconsidered next time (it still could be an insertion)
-                ++fsi;
-            } else {
-                mrna.push_back(seq[k]);
-                if(mrnamap != 0) mrnamap->push_back(k);
-            }
-        }
-        if(fsi != FrameShifts().end() && fsi->IsDeletion() && stop+1 == fsi->Loc())   // deletion at the right exon boundary
-        {
-            for(int j = 0; j < fsi->Len(); ++j)
-            {
-                mrna.push_back(vec_traits<Vec>::_fromACGT(fsi->DeletedValue()[j]));
-                if(mrnamap != 0) mrnamap->push_back(-1);
-            }
-        }
-    }
-    
-    if(Strand() == eMinus) {
-        Complement(mrna.begin(), mrna.end());
-        if(mrnamap != 0) reverse(mrnamap->begin(),mrnamap->end());
-    }
+    CRef<CSeq_id> ps(new CSeq_id(CSeq_id::e_Local, local_id)); 
+    return ps;
 }
 
-template
-void CAlignVec::GetSequence<CEResidueVec>(const CEResidueVec& seq, CEResidueVec& mrna, TIVec* mrnamap, bool cdsonly) const;
-template
-void CAlignVec::GetSequence<CResidueVec>(const CResidueVec& seq, CResidueVec& mrna, TIVec* mrnamap, bool cdsonly) const;
-
-
-TSignedSeqRange CAlignVec::RealCdsLimits() const
+void CGeneModel::Remap(const CRangeMapper& mapper)
 {
-    TSignedSeqRange cds_lim = CdsLimits();
-    
-    for(int i = 0; i < (int)size(); ++i) {
-        if (Include((*this)[i].Limits(),cds_lim.GetFrom())) {
-            if((*this)[i].GetFrom()+3 <= cds_lim.GetFrom()) {
-                cds_lim.SetFrom(cds_lim.GetFrom() - 3);
+    NON_CONST_ITERATE(TExons, e, MyExons()) {
+        e->Remap(mapper);
+    }
+    RecalculateLimits();
+
+    if(ReadingFrame().NotEmpty())
+        m_cds_info.Remap(mapper);
+}
+
+bool CCDSInfo::operator== (const CCDSInfo& a) const
+{
+    return 
+        m_start==a.m_start &&
+        m_stop==a.m_stop && 
+        m_reading_frame==a.m_reading_frame &&
+        m_reading_frame_from_proteins==a.m_reading_frame_from_proteins &&
+        m_max_cds_limits==a.m_max_cds_limits &&
+        m_confirmed_start==a.m_confirmed_start &&
+        m_p_stops==a.m_p_stops &&
+        m_open==a.m_open &&
+        m_score==a.m_score;
+}
+
+void CCDSInfo::SetReadingFrame(TSignedSeqRange r, bool protein)
+{
+    if (r.Empty())
+        Clear();
+    else {
+        m_reading_frame = r;
+        if (protein)
+            m_reading_frame_from_proteins = r;
+        if (m_max_cds_limits.Empty()) {
+            m_max_cds_limits = TSignedSeqRange::GetWhole();
+            m_open = true;
+        }
+    }
+    _ASSERT( Invariant() );
+}
+
+void CCDSInfo::SetStart(TSignedSeqRange r, bool confirmed)
+{
+    if (confirmed)
+        m_confirmed_start = true;
+    else if (m_confirmed_start && r != m_start) {
+        m_confirmed_start = false;
+    }
+    m_start = r;
+    _ASSERT( Invariant() );
+}
+
+void CCDSInfo::SetStop(TSignedSeqRange r)
+{
+    m_stop = r;
+    if (r.NotEmpty()) {
+        if (Precede(m_reading_frame,r))
+            m_max_cds_limits.SetTo(r.GetTo());
+        else
+            m_max_cds_limits.SetFrom(r.GetFrom());
+    }
+    _ASSERT( Invariant() );
+}
+
+void CCDSInfo::Clear5PrimeCdsLimit()
+{
+    if (HasStop()) {
+        if (Precede(ReadingFrame(),Stop()))
+            m_max_cds_limits.SetFrom( TSignedSeqRange::GetWholeFrom());
+        else
+            m_max_cds_limits.SetTo( TSignedSeqRange::GetWholeTo());
+    } else {
+        m_max_cds_limits = TSignedSeqRange::GetWhole();
+    }
+    _ASSERT( Invariant() );
+}
+
+void CCDSInfo::Set5PrimeCdsLimit(TSignedSeqPos p)
+{
+    if (p <= m_reading_frame.GetFrom())
+        m_max_cds_limits.SetFrom(p);
+    else
+        m_max_cds_limits.SetTo(p);
+
+    m_open = false;
+    _ASSERT( Invariant() );
+}
+
+void CCDSInfo::AddPStop(TSignedSeqRange r)
+{
+    m_p_stops.push_back(r);
+    _ASSERT( Invariant() );
+}
+
+void CCDSInfo::SetScore(double score, bool open)
+{
+    m_score = score;
+    m_open = open;
+    _ASSERT( Invariant() );
+}
+
+void CCDSInfo::Remap(const CRangeMapper& mapper)
+{
+    m_start = mapper(m_start, false);
+    m_stop = mapper(m_stop, false);
+    m_reading_frame = mapper(m_reading_frame, false);
+    m_reading_frame_from_proteins = mapper(m_reading_frame_from_proteins, false);
+    m_max_cds_limits = mapper(m_max_cds_limits, false);
+    NON_CONST_ITERATE( vector<TSignedSeqRange>, s, m_p_stops) {
+        *s = mapper(*s, false);
+    }
+    _ASSERT(Invariant());
+}
+
+void CCDSInfo::CombineWith(const CCDSInfo& another_cds_info)
+{
+    if (another_cds_info.m_reading_frame.Empty())
+        return;
+
+    CCDSInfo new_cds_info;
+
+    if (m_reading_frame.Empty()) {
+        new_cds_info = another_cds_info;
+    } else {
+        new_cds_info = *this;
+
+        new_cds_info.m_p_stops.insert(new_cds_info.m_p_stops.end(),another_cds_info.m_p_stops.begin(),another_cds_info.m_p_stops.end());
+        sort(new_cds_info.m_p_stops.begin(),new_cds_info.m_p_stops.end());
+        new_cds_info.m_p_stops.erase( unique(new_cds_info.m_p_stops.begin(),new_cds_info.m_p_stops.end()), new_cds_info.m_p_stops.end() ) ;
+
+        new_cds_info.m_reading_frame               += another_cds_info.m_reading_frame;
+        new_cds_info.m_reading_frame_from_proteins += another_cds_info.m_reading_frame_from_proteins;
+        new_cds_info.m_max_cds_limits        &= another_cds_info.m_max_cds_limits;
+
+        if (new_cds_info.m_confirmed_start && Include(new_cds_info.m_reading_frame_from_proteins,new_cds_info.m_start)) {
+            new_cds_info.m_start = TSignedSeqRange::GetEmpty();
+            new_cds_info.m_confirmed_start = false;
+        }
+        if (another_cds_info.m_confirmed_start && !Include(new_cds_info.m_reading_frame_from_proteins,another_cds_info.m_start)) {
+            new_cds_info.m_start = another_cds_info.m_start;
+            new_cds_info.m_confirmed_start = true;
+        }
+        if (new_cds_info.m_confirmed_start) {
+            if (Include(new_cds_info.m_reading_frame,new_cds_info.m_start)) {
+                if (Precede(new_cds_info.m_start,new_cds_info.m_reading_frame_from_proteins))
+                    new_cds_info.m_reading_frame.SetFrom( new_cds_info.m_reading_frame_from_proteins.GetFrom() );
+                else
+                    new_cds_info.m_reading_frame.SetTo( new_cds_info.m_reading_frame_from_proteins.GetTo() );
             }
-            else{
-                int remain = 3-(cds_lim.GetFrom()-(*this)[i].GetFrom());
-                while(remain > 0 && i > 0) {
-                    int exon_len = (*this)[i-1].GetTo()-(*this)[i-1].GetFrom()+1;
-                    if(exon_len >= remain) {
-                        cds_lim.SetFrom( (*this)[i-1].GetTo()-remain+1 );
-                        remain = 0;
-                    }
-                    else{
-                        remain -= exon_len;
-                        --i;
-                    }
-                }
+        } else {
+            if (new_cds_info.HasStart() && Include(new_cds_info.m_reading_frame,new_cds_info.m_start)) {
+                new_cds_info.m_start = TSignedSeqRange::GetEmpty();
+            }
+            if (another_cds_info.HasStart() && !Include(new_cds_info.m_reading_frame,another_cds_info.m_start)) {
+                new_cds_info.m_start = another_cds_info.m_start;
+            }
+        }
+
+        _ASSERT( !new_cds_info.HasStop() || !another_cds_info.HasStop() || new_cds_info.Stop() == another_cds_info.Stop() );
+        new_cds_info.m_stop += another_cds_info.m_stop;
+
+        new_cds_info.m_score = max(new_cds_info.m_score, another_cds_info.m_score);
+        if (!new_cds_info.HasStart()) {
+            if (new_cds_info.HasStop()) {
+                if (new_cds_info.m_max_cds_limits.GetFrom()!=TSignedSeqRange::GetWholeFrom() &&
+                    new_cds_info.m_max_cds_limits.GetTo()!=TSignedSeqRange::GetWholeTo())
+                    new_cds_info.m_open = false;
+                else
+                    new_cds_info.m_open = true;
+            } else if (new_cds_info.m_max_cds_limits.GetFrom()!=TSignedSeqRange::GetWholeFrom() ||
+                       new_cds_info.m_max_cds_limits.GetTo()!=TSignedSeqRange::GetWholeTo()) {
+                new_cds_info.m_open = false;
+            } else {
+                new_cds_info.m_open = true;
+            }
+        } else  if (Precede(new_cds_info.m_start,new_cds_info.m_reading_frame) &&
+                    new_cds_info.m_max_cds_limits.GetFrom()!=TSignedSeqRange::GetWholeFrom() ||
+                    Precede(new_cds_info.m_reading_frame,new_cds_info.m_start) &&
+                    new_cds_info.m_max_cds_limits.GetTo()!=TSignedSeqRange::GetWholeTo()) {
+            new_cds_info.m_open = false;
+        } else {
+            new_cds_info.m_open &= another_cds_info.m_open;
+        }
+    }
+
+    _ASSERT( new_cds_info.Invariant() );
+    *this = new_cds_info;
+}
+
+int CCDSInfo::Strand() const
+{
+    int strand = 0; //unknown
+    if (HasStart())
+        strand = Precede(Start(), ReadingFrame()) ? 1 : -1;
+    else if (HasStop())
+        strand = Precede(ReadingFrame(), Stop()) ? 1 : -1;
+    else if (m_max_cds_limits.GetFrom() != TSignedSeqRange::GetWholeFrom())
+        strand = 1;
+    else if (m_max_cds_limits.GetTo() != TSignedSeqRange::GetWholeTo())
+        strand = -1;
+    return strand;
+}
+
+void CCDSInfo::Clip(TSignedSeqRange limits)
+{
+    if (ReadingFrame().Empty())
+        return;
+
+    int strand = !m_open ? Strand() : 0;
+
+    m_reading_frame &= limits;
+
+    if (m_reading_frame.Empty()) {
+        Clear();
+        return;
+    }
+
+    m_start  &= limits;
+    m_confirmed_start &= HasStart();
+    m_stop  &= limits;
+    m_reading_frame_from_proteins &= limits;
+
+    if (m_max_cds_limits.GetFrom() < limits.GetFrom())
+        m_max_cds_limits.SetFrom(TSignedSeqRange::GetWholeFrom());
+    if (limits.GetTo() < m_max_cds_limits.GetTo())
+        m_max_cds_limits.SetTo(TSignedSeqRange::GetWholeTo());
+
+    for(TPStops::iterator s = m_p_stops.begin(); s != m_p_stops.end(); ) {
+        *s &= limits;
+        if (s->NotEmpty())
+            ++s;
+        else
+            s = m_p_stops.erase(s);
+    }
+
+    if (!m_open && !HasStart()) {
+        if (strand==1 && m_max_cds_limits.GetFrom() == TSignedSeqRange::GetWholeFrom() ||
+            strand==-1 && m_max_cds_limits.GetTo() == TSignedSeqRange::GetWholeTo())
+            m_open = true;
+    }
+
+    _ASSERT( Invariant() );
+}
+
+void CCDSInfo::Clear()
+{
+    m_start = m_stop = m_reading_frame = m_reading_frame_from_proteins = m_max_cds_limits = TSignedSeqRange::GetEmpty();
+    m_confirmed_start = false;
+    m_p_stops.clear();
+    m_open = false;
+    m_score = BadScore();
+}
+
+bool CGeneModel::GoodEnoughToBeAlternative(int minCdsLen, int maxcomposite) const
+{
+    int composite = 0;
+    ITERATE(CSupportInfoSet, s, Support()) {
+        if(s->CoreAlignment() && ++composite > maxcomposite) return false;
+    }
+    
+    return
+        GoodEnoughToBeAnnotation(minCdsLen) &&
+        !PStop() && FrameShifts().empty() &&
+        !isNMD();
+}
+
+
+bool CGeneModel::CdsInvariant(bool check_start_stop) const
+{
+    if (ReadingFrame().Empty())
+        return true;
+
+    _ASSERT( Include(MaxCdsLimits(),RealCdsLimits()) );
+
+#ifdef _DEBUG
+    CFrameShiftedSeqMap mrnamap(*this);
+#endif
+
+
+    if (check_start_stop && Score() != BadScore()) {
+        if (Strand()==ePlus) {
+            _ASSERT( mrnamap.FShiftedLen(Limits().GetFrom(),ReadingFrame().GetFrom(), false) < 4 ^ HasStart() );
+            _ASSERT( mrnamap.FShiftedLen(ReadingFrame().GetTo(),Limits().GetTo(), false) < 4 ^ HasStop() );
+        } else {
+            _ASSERT( mrnamap.FShiftedLen(ReadingFrame().GetTo(),Limits().GetTo(), false) < 4 ^ HasStart() );
+            _ASSERT( mrnamap.FShiftedLen(Limits().GetFrom(),ReadingFrame().GetFrom(), false) < 4 ^ HasStop() );
+        }
+    }
+
+    _ASSERT( !HasStart() || mrnamap.FShiftedLen(GetCdsInfo().Start(), false)==3 );
+    _ASSERT( mrnamap.FShiftedLen(ReadingFrame(), false)%3==0 );
+    _ASSERT( !HasStop() || mrnamap.FShiftedLen(GetCdsInfo().Stop(), false)==3 );
+
+    _ASSERT( GetCdsInfo().ProtReadingFrame().Empty() ||
+             mrnamap.FShiftedLen(GetCdsInfo().ProtReadingFrame(), false)%3==0 );
+
+    if (GetCdsInfo().MaxCdsLimits().GetFrom() < Limits().GetFrom())
+        _ASSERT( GetCdsInfo().MaxCdsLimits().GetFrom()==TSignedSeqRange::GetWholeFrom() );
+    if (Limits().GetTo() < GetCdsInfo().MaxCdsLimits().GetTo())
+        _ASSERT( GetCdsInfo().MaxCdsLimits().GetTo()==TSignedSeqRange::GetWholeTo() );
+    
+    _ASSERT(!(OpenCds() && !Open5primeEnd())); 
+
+    return true;
+}
+
+void CGeneModel::SetCdsInfo(const CCDSInfo& cds_info)
+{
+    m_cds_info = cds_info;
+    _ASSERT( CdsInvariant() );
+}
+
+void CGeneModel::SetCdsInfo(const CGeneModel& a)
+{
+    m_cds_info = a.m_cds_info;
+    _ASSERT( CdsInvariant() );
+}
+
+void CGeneModel::CombineCdsInfo(const CGeneModel& a, bool ensure_cds_invariant)
+{
+    CombineCdsInfo(a.m_cds_info, ensure_cds_invariant);
+}
+
+void CGeneModel::CombineCdsInfo(const CCDSInfo& cds_info, bool ensure_cds_invariant)
+{
+    _ASSERT( cds_info.ReadingFrame().Empty() || Include(Limits(),cds_info.ReadingFrame()) );
+    _ASSERT( cds_info.ReadingFrame().Empty() || CFrameShiftedSeqMap(*this).FShiftedLen(cds_info.ReadingFrame().GetFrom(), cds_info.ReadingFrame().GetTo(), false)%3==0 );
+
+    m_cds_info.CombineWith(cds_info);
+
+    _ASSERT( !ensure_cds_invariant || CdsInvariant(false) );
+}
+
+void CGeneModel::CutExons(TSignedSeqRange hole)
+{
+    for(size_t i = 0; i < MyExons().size(); ++i) {
+        TSignedSeqRange intersection = MyExons()[i].Limits() & hole;
+        if (intersection.Empty())
+            continue;
+        if (MyExons()[i].GetFrom()<hole.GetFrom()) {
+            MyExons()[i].Limits().SetTo(hole.GetFrom()-1);
+            if (i+1<MyExons().size())
+                MyExons()[i+1].m_fsplice=false;
+        } else if (hole.GetTo()<MyExons()[i].GetTo()) {
+            MyExons()[i].Limits().SetFrom(hole.GetTo()+1);
+            if (0<i)
+                MyExons()[i-1].m_ssplice=false;
+        } else {
+            if (0<i)
+                MyExons()[i-1].m_ssplice=false;
+            if (i+1<MyExons().size())
+                MyExons()[i+1].m_fsplice=false;
+            MyExons().erase( MyExons().begin()+i);
+            --i;
+        }
+    }
+    RemoveExtraFShifts();
+}
+
+void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_cds_invariant)
+{
+    if (ReadingFrame().NotEmpty()) {
+        TSignedSeqRange cds_clip_limits = Limits();
+        if (mode == eRemoveExons)
+            cds_clip_limits &= clip_limits;
+        else {
+            TSignedSeqRange intersection;
+            intersection = Exons().front().Limits() & clip_limits;
+            if (intersection.NotEmpty())
+                cds_clip_limits.SetFrom(intersection.GetFrom());
+            intersection = Exons().back().Limits() & clip_limits;
+            if (intersection.NotEmpty())
+                cds_clip_limits.SetTo(intersection.GetTo());
+        }
+
+        TSignedSeqRange precise_cds_clip_limits;
+        ITERATE(TExons, e, Exons())
+            precise_cds_clip_limits += e->Limits() & cds_clip_limits;
+        cds_clip_limits = precise_cds_clip_limits;
+
+        CFrameShiftedSeqMap mrnamap(*this);
+
+        if (RealCdsLimits().GetFrom() < cds_clip_limits.GetFrom() && cds_clip_limits.GetFrom() < ReadingFrame().GetFrom())
+            cds_clip_limits.SetFrom(ReadingFrame().GetFrom());
+        else if (ReadingFrame().GetFrom() < cds_clip_limits.GetFrom() && cds_clip_limits.GetFrom() <= RealCdsLimits().GetTo()) {
+            TSignedSeqRange tmp = mrnamap.ShrinkToRealPoints(TSignedSeqRange(cds_clip_limits.GetFrom(), ReadingFrame().GetTo()));
+            _ASSERT(tmp.GetTo() == ReadingFrame().GetTo());
+            int del = mrnamap.FShiftedLen(tmp, false)%3;
+            cds_clip_limits.SetFrom(mrnamap.FShiftedMove(tmp.GetFrom(), del));
+            _ASSERT(mrnamap.FShiftedLen(cds_clip_limits.GetFrom(), ReadingFrame().GetTo(), false)%3==0 );
+            if (cds_clip_limits.GetFrom() >= ReadingFrame().GetTo())
+                cds_clip_limits = TSignedSeqRange::GetEmpty();
+        }
+
+        if (RealCdsLimits().GetFrom() <= cds_clip_limits.GetTo() && cds_clip_limits.GetTo() < ReadingFrame().GetTo()) {
+            TSignedSeqRange tmp = mrnamap.ShrinkToRealPoints(TSignedSeqRange(ReadingFrame().GetFrom(),cds_clip_limits.GetTo()));
+            _ASSERT(tmp.GetFrom() == ReadingFrame().GetFrom());
+            int del = mrnamap.FShiftedLen(tmp, false)%3;
+            cds_clip_limits.SetTo(mrnamap.FShiftedMove(tmp.GetTo(), -del));
+            _ASSERT(mrnamap.FShiftedLen(ReadingFrame().GetFrom(),cds_clip_limits.GetTo(), false)%3==0 );
+            if (ReadingFrame().GetFrom() >= cds_clip_limits.GetTo())
+                cds_clip_limits = TSignedSeqRange::GetEmpty();
+        } else if (ReadingFrame().GetTo() < cds_clip_limits.GetTo() && cds_clip_limits.GetTo() < RealCdsLimits().GetTo())
+            cds_clip_limits.SetTo(ReadingFrame().GetTo());
+
+        m_cds_info.Clip(cds_clip_limits);
+    }
+
+    for (TExons::iterator e = MyExons().begin(); e != MyExons().end();) {
+        TSignedSeqRange clip = e->Limits() & clip_limits;
+        if (clip.NotEmpty())
+            e++->Limits() = clip;
+        else if (mode == eRemoveExons)
+            e = MyExons().erase(e);
+        else
+            ++e;
+    }
+
+    if (Exons().size()>0) {
+        MyExons().front().m_fsplice = false;
+        MyExons().back().m_ssplice = false;
+    }
+
+    RecalculateLimits();
+    RemoveExtraFShifts();
+    
+    _ASSERT( CdsInvariant(ensure_cds_invariant) );
+}
+
+void CGeneModel::RemoveExtraFShifts()
+{
+    for(TFrameShifts::iterator i = FrameShifts().begin(); i != FrameShifts().end();) {
+        bool belongs = false;
+        ITERATE(TExons, e, Exons()) {
+            if (i->IntersectingWith(e->GetFrom(),e->GetTo())) {
+                belongs = true;
                 break;
             }
         }
+        if (belongs)
+            ++i;
+        else
+            i = FrameShifts().erase(i);
     }
-    
-    for(int i = (int)size()-1; i >= 0; --i) {
-        if(Include((*this)[i].Limits(),cds_lim.GetTo())) {
-            if((*this)[i].GetTo() >= cds_lim.GetTo()+3) {
-                cds_lim.SetTo(cds_lim.GetTo() + 3);
-            }
-            else {
-                int remain = 3-((*this)[i].GetTo()-cds_lim.GetTo());
-                while(remain > 0 && i < (int)size()-1) {
-                    int exon_len = (*this)[i+1].GetTo() -(*this)[i+1].GetFrom() + 1;
-                    if(exon_len >= remain) {
-                        cds_lim.SetTo( (*this)[i+1].GetFrom()+remain-1 );
-                        remain = 0;
-                    }
-                    else {
-                        remain -= exon_len;
-                        ++i;
-                    }
-                }
-                break;
-            }
-        }
-    }
-    return cds_lim;
 }
 
-int CAlignVec::MutualExtension(const CAlignVec& a) const
+
+TFrameShifts  CGeneModel::FrameShifts(TSignedSeqPos a, TSignedSeqPos b) const
+{
+    TFrameShifts fshifts;
+
+    ITERATE(TFrameShifts, i, m_fshifts) {
+        if(i->IntersectingWith(a,b))
+            fshifts.push_back( *i );
+    }
+        
+    return fshifts;
+}
+
+int CGeneModel::FShiftedLen(TSignedSeqPos a, TSignedSeqPos b, bool withextras) const
+{
+    return FShiftedLen(TSignedSeqRange(a,b),withextras);
+}
+
+
+int CGeneModel::FShiftedLen(TSignedSeqRange ab, bool withextras) const
+{
+    if (ab.Empty())
+        return 0;
+
+    _ASSERT(Include(Limits(),ab));
+
+    CFrameShiftedSeqMap mrnamap(*this);
+    return mrnamap.FShiftedLen(ab, withextras);
+}
+
+TSignedSeqPos CGeneModel::FShiftedMove(TSignedSeqPos pos, int len) const
+{
+    CFrameShiftedSeqMap mrnamap(*this);
+
+    return mrnamap.FShiftedMove(pos, len);
+}
+
+
+int CGeneModel::MutualExtension(const CGeneModel& a) const
 {
     //    if(Strand() != a.Strand()) return 0;
     const TSignedSeqRange limits = Limits();
@@ -203,93 +566,76 @@ int CAlignVec::MutualExtension(const CAlignVec& a) const
     return isCompatible(a);
 }
 
-bool CAlignVec::Similar(const CAlignVec& a, int tolerance) const
+int CGeneModel::isCompatible(const CGeneModel& a) const
 {
-    if(Strand() != a.Strand() || !Limits().IntersectingWith(a.Limits())) return false;
-        
-    TSignedSeqPos mutual_min = max(Limits().GetFrom(),a.Limits().GetFrom());
-    TSignedSeqPos mutual_max = min(Limits().GetTo(),a.Limits().GetTo());
-        
-    int imin = 0;
-    while(imin < (int)size() && (*this)[imin].GetTo() < mutual_min) ++imin;
-    if(imin == (int)size()) return false;
-    
-    int imax = (int)size()-1;
-    while(imax >=0 && (*this)[imax].GetFrom() > mutual_max) --imax;
-    if(imax < 0) return false;
-    
-    int jmin = 0;
-    while(jmin < (int)a.size() && a[jmin].GetTo() < mutual_min) ++jmin;
-    if(jmin == (int)a.size()) return false;
-    int jmax = (int)a.size()-1;
-    while(jmax >=0 && a[jmax].GetFrom() > mutual_max) --jmax;
-    if(jmax < 0) return false;
-    
-    if(imax-imin != jmax-jmin) return false;
-    
-    for( ; imin <= imax; ++imin, ++jmin)
-    {
-        if(abs(int(max(mutual_min,(*this)[imin].GetFrom())-max(mutual_min,a[jmin].GetFrom()))) > tolerance) return false;
-        if(abs(int(min(mutual_max,(*this)[imin].GetTo())-min(mutual_max,a[jmin].GetTo()))) > tolerance) return false;
-    }
-    
-    return true;
-}
+    const CGeneModel& b = *this;  // shortcut to this alignment
 
-int CAlignVec::isCompatible(const CAlignVec& a) const
-{
-    const CAlignVec& b = *this;  // shortcut to this alignment
+    _ASSERT( b.Strand() == a.Strand() );
 
-    //    if(b.Strand() != a.Strand()) return 0;
     TSignedSeqRange intersect(a.Limits() & b.Limits());
-    if(intersect.Empty()) return 0;
+    if(intersect.GetLength() <= 1) return 0;     // intersection with 1 base is not legit
     
-    int anum = a.size()-1;   // exon containing left point or first exon on the left 
-    for(; intersect.GetFrom() < a[anum].GetFrom() ; --anum);
-    bool aexon = intersect.GetFrom() <= a[anum].GetTo();
-    if(!aexon && intersect.GetTo() < a[anum+1].GetFrom()) return 0;    // b is in intron
+    int anum = a.Exons().size()-1;   // exon containing left point or first exon on the left 
+    for(; intersect.GetFrom() < a.Exons()[anum].GetFrom() ; --anum);
+    bool aexon = intersect.GetFrom() <= a.Exons()[anum].GetTo();
+    if(!aexon && intersect.GetTo() < a.Exons()[anum+1].GetFrom()) return 0;    // b is in intron
     
-    int bnum = b.size()-1;   // exon containing left point or first exon on the left 
-    for(; intersect.GetFrom() < b[bnum].GetFrom(); --bnum);
-    bool bexon = intersect.GetFrom() <= b[bnum].GetTo();
-    if(!bexon && intersect.GetTo() < b[bnum+1].GetFrom()) return 0;    // a is in intron
+    int bnum = b.Exons().size()-1;   // exon containing left point or first exon on the left 
+    for(; intersect.GetFrom() < b.Exons()[bnum].GetFrom(); --bnum);
+    bool bexon = intersect.GetFrom() <= b.Exons()[bnum].GetTo();
+    if(!bexon && intersect.GetTo() < b.Exons()[bnum+1].GetFrom()) return 0;    // a is in intron
     
     TSignedSeqPos left = intersect.GetFrom();
+    TSignedSeqPos afirst = -1;
+    TSignedSeqPos bfirst = -1;
     int commonspl = 0;
-    int ashift = 0;
-    int bshift = 0;
-    bool count = false;
+    int firstcommonpoint = -1;
+
+    auto_ptr<CFrameShiftedSeqMap> pmapa(0), pmapb(0);
+
     while(left <= intersect.GetTo())
     {
-        TSignedSeqPos aright = aexon ? a[anum].GetTo() : a[anum+1].GetFrom()-1;
-        TSignedSeqPos bright = bexon ? b[bnum].GetTo() : b[bnum+1].GetFrom()-1;
+        TSignedSeqPos aright = aexon ? a.Exons()[anum].GetTo() : a.Exons()[anum+1].GetFrom()-1;
+        TSignedSeqPos bright = bexon ? b.Exons()[bnum].GetTo() : b.Exons()[bnum+1].GetFrom()-1;
         TSignedSeqPos right = min(aright,bright);
         
         if(!aexon && bexon)
         {
-            if(a[anum].m_ssplice && a[anum+1].m_fsplice) return 0;        // intron has both splices
-            if(left == a[anum].GetTo()+1 && a[anum].m_ssplice) return 0;   // intron has left splice and == left
-            if(right == aright && a[anum+1].m_fsplice) return 0;          // intron has right splice and == right
+            if(a.Exons()[anum].m_ssplice && a.Exons()[anum+1].m_fsplice) return 0;        // intron has both splices
+            if(left == a.Exons()[anum].GetTo()+1 && a.Exons()[anum].m_ssplice) return 0;   // intron has left splice and == left
+            if(right == aright && a.Exons()[anum+1].m_fsplice) return 0;          // intron has right splice and == right
         }
         if(aexon && !bexon)
         {
-            if(b[bnum].m_ssplice && b[bnum+1].m_fsplice) return 0;
-            if(left == b[bnum].GetTo()+1 && b[bnum].m_ssplice) return 0;
-            if(right == bright && b[bnum+1].m_fsplice) return 0; 
+            if(b.Exons()[bnum].m_ssplice && b.Exons()[bnum+1].m_fsplice) return 0;
+            if(left == b.Exons()[bnum].GetTo()+1 && b.Exons()[bnum].m_ssplice) return 0;
+            if(right == bright && b.Exons()[bnum+1].m_fsplice) return 0; 
         }
         
-        if(aexon && bexon) 
-        {
-            count = true;
+        if(aexon && bexon) {
+            if(firstcommonpoint < 0) {
+                firstcommonpoint = left; 
+            } else if((anum > 0 && left == a.Exons()[anum].GetFrom() && !a.Exons()[anum].m_fsplice) ||   // end of a-hole
+                      (bnum > 0 && left == b.Exons()[bnum].GetFrom() && !b.Exons()[bnum].m_fsplice))  {  // end of b-hole
+                
+                if(afirst < 0) {
+                    pmapa.reset(new CFrameShiftedSeqMap(a));
+                    pmapb.reset(new CFrameShiftedSeqMap(b));
+                    afirst = pmapa->MapOrigToEdited(firstcommonpoint);
+                    bfirst = pmapb->MapOrigToEdited(firstcommonpoint);
+                    if(afirst < 0 || bfirst < 0) return 0;
+                }
+
+                TSignedSeqPos asecond = pmapa->MapOrigToEdited(left);
+                TSignedSeqPos bsecond = pmapb->MapOrigToEdited(left);
+                if(asecond < 0 || bsecond < 0 || (asecond-afirst)%3 != (bsecond-bfirst)%3) return 0;
+            }
         }
-        if(aexon && count) ashift += a.FShiftedLen(left, right);
-        if(bexon && count) bshift += b.FShiftedLen(left, right);
-        if(aexon && bexon && ashift%3 != bshift%3) return 0;      // extension makes a frameshift 
-        
-        if(aexon && aright == right && a[anum].m_ssplice &&
-           bexon && bright == right && b[bnum].m_ssplice) ++commonspl;
-        if(!aexon && aright == right && a[anum+1].m_fsplice &&
-           !bexon && bright == right && b[bnum+1].m_fsplice) ++commonspl;
+
+        if(aexon && aright == right && a.Exons()[anum].m_ssplice &&
+           bexon && bright == right && b.Exons()[bnum].m_ssplice) ++commonspl;
+        if(!aexon && aright == right && a.Exons()[anum+1].m_fsplice &&
+           !bexon && bright == right && b.Exons()[bnum+1].m_fsplice) ++commonspl;
         
         left = right+1;
         
@@ -306,437 +652,914 @@ int CAlignVec::isCompatible(const CAlignVec& a) const
         }
     }
     
-    if(count) return commonspl+1;
-    else return 0;                  // theoretical case when there are no common points (mutually exclusive holes)
+    return firstcommonpoint >= 0 ? commonspl+1 : 0;
 }
 
-void CAlignVec::Insert(const CAlignExon& p)
+void CGeneModel::AddExon(TSignedSeqRange exon_range)
 {
-    m_limits += p.Limits();
-    push_back(p);
+    _ASSERT( (m_range & exon_range).Empty() );
+    m_range += exon_range;
+
+    CAlignExon e(exon_range.GetFrom(),exon_range.GetTo());
+    if (MyExons().empty())
+        MyExons().push_back(e);
+    else if (MyExons().back().GetTo()<exon_range.GetFrom()) {
+        if (!m_expecting_hole) {
+            MyExons().back().m_ssplice = true;
+            e.m_fsplice = true;
+        }
+        MyExons().push_back(e);
+    } else {
+        if (!m_expecting_hole) {
+            MyExons().front().m_fsplice = true;
+            e.m_ssplice = true;
+        }
+        MyExons().insert(MyExons().begin(),e);
+    }
+    m_expecting_hole = false;
 }
 
-void CAlignVec::Init()
+void CGeneModel::AddHole()
 {
-    clear();
-    m_limits = TSignedSeqRange::GetEmpty();
-    m_cds_limits = TSignedSeqRange::GetEmpty();
-    m_max_cds_limits = TSignedSeqRange::GetEmpty();
-    SetOpenCds(false);
-    SetPStop(false);
-    m_fshifts.clear();
+    m_expecting_hole = true;
 }
 
 void CAlignExon::Extend(const CAlignExon& e)
 {
-    m_limits.CombineWith(e.m_limits);
-    m_fsplice = m_fsplice || e.m_fsplice;
-    m_ssplice = m_ssplice || e.m_ssplice;
+    // spliced should include the other
+    _ASSERT(
+            (!m_fsplice || GetFrom() <= e.GetFrom()) &&
+            (!e.m_fsplice || GetFrom() >= e.GetFrom()) &&
+            (!m_ssplice || e.GetTo() <= GetTo()) &&
+            (!e.m_ssplice || e.GetTo() >= GetTo())
+            );
+
+    Limits().CombineWith(e.Limits());
+    m_fsplice =m_fsplice || e.m_fsplice;
+    m_ssplice =m_ssplice || e.m_ssplice;
 }
 
-void CAlignVec::Extend(const CAlignVec& a)
+void CGeneModel::TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps, bool ensure_cds_invariant)
 {
-    CAlignVec tmp(*this);
-    Init();
-    m_cds_limits = tmp.m_cds_limits.CombinationWith(a.m_cds_limits);
-    m_max_cds_limits = tmp.m_max_cds_limits.CombinationWith(a.m_max_cds_limits);
-    
-    int i;
-    for(i = 0; a[i].GetTo() < tmp.front().GetFrom(); ++i) push_back(a[i]);
-    if(a[i].GetFrom() <= tmp.front().GetFrom())
-        tmp.front().Extend( a[i] );
+    TSignedSeqPos left_edge = Limits().GetFrom();
+    TSignedSeqPos right_edge = Limits().GetTo();
+    CFrameShiftedSeqMap mrnamap(*this);
 
-    for(i = 0; i < (int)tmp.size(); ++i) push_back(tmp[i]);
-    
-    if(a.Limits().GetTo() > back().GetTo())
-    {
-        for(i = 0; a[i].GetTo() < back().GetFrom(); ++i);
-        if(a[i].GetTo() >= back().GetTo())
-            back().Extend( a[i] );
-        for(++i; i < (int)a.size(); ++i) push_back(a[i]);
+    for (int i = 0; i<int(exons_with_gaps.size())-1; ++i) {
+        if (exons_with_gaps[i].GetTo() < left_edge && left_edge < exons_with_gaps[i+1].GetFrom()) {
+            _ASSERT( !exons_with_gaps[i].m_ssplice && !exons_with_gaps[i+1].m_fsplice );
+            TSignedSeqPos rightmost_base_inside_gap = left_edge;
+            ITERATE(TExons, e, Exons()) {
+                if (e->GetTo() < exons_with_gaps[i+1].GetFrom()) {
+                    rightmost_base_inside_gap = e->GetTo();
+                } else if (e->GetFrom() < exons_with_gaps[i+1].GetFrom()) {
+                    rightmost_base_inside_gap = exons_with_gaps[i+1].GetFrom()-1;
+                    break;
+                } else {
+                    break;
+                }
+            }
+            TSignedSeqRange tmp = mrnamap.ShrinkToRealPoints(TSignedSeqRange(left_edge, rightmost_base_inside_gap));
+            int del = mrnamap.FShiftedLen(tmp, false)%3;
+            left_edge = mrnamap.FShiftedMove(tmp.GetFrom(), del);
+        }
+
+        if (exons_with_gaps[i].GetTo() < right_edge && right_edge < exons_with_gaps[i+1].GetFrom()) {
+            _ASSERT( !exons_with_gaps[i].m_ssplice && !exons_with_gaps[i+1].m_fsplice );
+            TSignedSeqPos leftmost_base_inside_gap = right_edge;
+            for (TExons::const_reverse_iterator e = Exons().rbegin(); e != Exons().rend(); ++e) {
+                if (exons_with_gaps[i].GetTo() < e->GetFrom()) {
+                    leftmost_base_inside_gap = e->GetFrom();
+                } else if (exons_with_gaps[i].GetTo() < e->GetTo()) {
+                    leftmost_base_inside_gap = exons_with_gaps[i].GetTo()+1;
+                    break;
+                } else {
+                    break;
+                }
+            }
+            TSignedSeqRange tmp = mrnamap.ShrinkToRealPoints(TSignedSeqRange(leftmost_base_inside_gap, right_edge));
+            int del = mrnamap.FShiftedLen(tmp, false)%3;
+            right_edge = mrnamap.FShiftedMove(tmp.GetTo(), -del);
+        }
     }
-    
+
+    TSignedSeqRange clip(left_edge,right_edge);
+
+    if (clip != Limits())
+        Clip(clip, eRemoveExons, ensure_cds_invariant );
+}
+
+void CGeneModel::Extend(const CGeneModel& align, bool ensure_cds_invariant)
+{
+    _ASSERT( align.Strand() == Strand() );
+
+    CGeneModel other_align = align;
+
+    if ( !other_align.Continuous() )
+        this->TrimEdgesToFrameInOtherAlignGaps(other_align.Exons(),ensure_cds_invariant);
+    if ( !this->Continuous() )
+        other_align.TrimEdgesToFrameInOtherAlignGaps(this->Exons(),ensure_cds_invariant);
+
+    TExons a = MyExons();
+    TExons b = other_align.Exons();
+
+    MyExons().clear();
+
+    size_t i,j;
+    for ( i=0,j=0; i<a.size() || j<b.size(); ) {
+        if (i==a.size())
+            MyExons().push_back(b[j++]);
+        else if (j==b.size())
+            MyExons().push_back(a[i++]);
+        else if (a[i].GetTo()+1<b[j].GetFrom())
+            MyExons().push_back(a[i++]);
+        else if (b[j].GetTo()+1<a[i].GetFrom())
+            MyExons().push_back(b[j++]);
+        else {
+            b[j].Extend(a[i++]);
+            while (j+1<b.size() && b[j].GetTo()+1>=b[j+1].GetFrom()) {
+                b[j+1].Extend(b[j]);
+                ++j;
+            }
+        }
+    }
+
     RecalculateLimits();
     
-    m_fshifts.swap(tmp.m_fshifts);
-    m_fshifts.insert(m_fshifts.end(),a.m_fshifts.begin(),a.m_fshifts.end());
-    if(!m_fshifts.empty())
-    {
+    m_fshifts.insert(m_fshifts.end(),align.m_fshifts.begin(),align.m_fshifts.end());
+    if(!m_fshifts.empty()) {
         sort(m_fshifts.begin(),m_fshifts.end());
-        int n = unique(m_fshifts.begin(),m_fshifts.end())-m_fshifts.begin();
-        m_fshifts.resize(n);
+        m_fshifts.erase( unique(m_fshifts.begin(),m_fshifts.end()), m_fshifts.end() );
     }
+    RemoveExtraFShifts();
+
+    SetType(Type() | (CGeneModel::eProt|CGeneModel::eEST|CGeneModel::emRNA)&align.Type());
+    CombineCdsInfo(align, ensure_cds_invariant);
 }
 
-int CAlignVec::AlignLen() const
+void CGeneModel::ExtendLeft(int amount)
 {
-    int len = 0;
-    for(int i = 0; i < (int)size(); ++i) len += (*this)[i].GetTo()-(*this)[i].GetFrom()+1;
-    for(int i = 0; i < (int)m_fshifts.size(); ++i)
-    {
-        len += (m_fshifts[i].IsDeletion() ? m_fshifts[i].Len() : -m_fshifts[i].Len());
-    }
-    return len;
+    _ASSERT(amount>0);
+    MyExons().front().AddFrom(-amount);
+    RecalculateLimits();
 }
 
-int CAlignVec::CdsLen() const
+void CGeneModel::ExtendRight(int amount)
 {
-    int len = 0;
-    if(CdsLimits().GetFrom() < 0) return len;
-    
-    TSignedSeqRange cds_lim = RealCdsLimits();
-    
-    for(int i = 0; i < (int)size(); ++i) 
-    {
-        if((*this)[i].GetTo() < cds_lim.GetFrom()) continue;
-        if((*this)[i].GetFrom() > cds_lim.GetTo()) break;
-        
-        len += min(cds_lim.GetTo(),(*this)[i].GetTo())-max(cds_lim.GetFrom(),(*this)[i].GetFrom())+1;
+    _ASSERT(amount>0);
+    MyExons().back().AddTo(amount);
+    RecalculateLimits();
+}
+
+int CGeneModel::AlignLen() const
+{
+    return FShiftedLen(Limits(), false);
+}
+
+TSignedSeqRange CGeneModel::RealCdsLimits() const
+{
+    TSignedSeqRange cds = MaxCdsLimits();
+    if (HasStart()) {
+        if (Strand()==ePlus)
+            cds.SetFrom(GetCdsInfo().Start().GetFrom());
+        else
+            cds.SetTo(GetCdsInfo().Start().GetTo());
     }
-    for(int i = 0; i < (int)m_fshifts.size(); ++i)
+    return cds;
+}
+
+int CGeneModel::RealCdsLen() const
+{
+    return FShiftedLen(RealCdsLimits(), false);
+}
+
+TSignedSeqRange CGeneModel::MaxCdsLimits() const
+{
+    if (ReadingFrame().Empty())
+        return TSignedSeqRange::GetEmpty();
+
+    return GetCdsInfo().MaxCdsLimits() & Limits();
+}   
+
+TConstSeqidRef CGeneModel::Seqid() const
+{
+    return TConstSeqidRef(new CSeq_id(CSeq_id::e_Local,ID()));
+}
+
+template< class T>
+class CStreamState {
+public:
+    CStreamState(const T& deflt) : m_deflt(deflt), m_index( ios_base::xalloc() ) {}
+
+    T& slot(ios_base& iob)
     {
-        if(m_fshifts[i].Loc() > cds_lim.GetFrom() && m_fshifts[i].Loc() < cds_lim.GetTo())
-        {
-            len += (m_fshifts[i].IsDeletion() ? m_fshifts[i].Len() : -m_fshifts[i].Len());
+        void *&p = iob.pword(m_index);
+        T *c = static_cast<T*>(p);
+        if (c == NULL) {
+            p = c = new T(m_deflt);
+            iob.register_callback(ios_callback, m_index);
+        }
+        return *c;
+    }
+
+private:
+    static void ios_callback(ios_base::event e, ios_base& iob, int index)
+    {
+        if (e == ios_base::erase_event) {
+            delete static_cast<T*>(iob.pword(index));
+        } else if (e == ios_base::copyfmt_event) {
+            void *&p = iob.pword(index);
+            try {
+                T *old = static_cast<T*>(p);
+                p = new T(*old);
+            } catch (...) {
+                p = NULL;
+            }
+        }
+    }
+
+    T   m_deflt;
+    int m_index;
+};
+
+CStreamState<pair<string,string> > line_buffer(make_pair(kEmptyStr,kEmptyStr));
+
+CNcbiIstream& Getline(CNcbiIstream& is, string& line)
+{
+    if (!line_buffer.slot(is).first.empty()) {
+        line = line_buffer.slot(is).first;
+        line_buffer.slot(is).first.erase();
+    } else {
+        NcbiGetlineEOL(is, line);
+    }
+    line_buffer.slot(is).second = line;
+    return is;
+}
+
+void Ungetline(CNcbiIstream& is)
+{
+    line_buffer.slot(is).first = line_buffer.slot(is).second;
+    is.clear();
+}
+
+CNcbiIstream& InputError(CNcbiIstream& is)
+{
+    is.clear();
+    ERR_POST( Error << "Input error. Last line: " <<  line_buffer.slot(is).second );
+    Ungetline(is);
+    is.setstate(ios::failbit);
+    return is;
+}
+
+CStreamState<string> contig_stream_state(kEmptyStr);
+
+CNcbiOstream& operator<<(CNcbiOstream& s, const setcontig& c)
+{
+    contig_stream_state.slot(s) = c.m_contig; return s;
+}
+CNcbiIstream& operator>>(CNcbiIstream& is, const getcontig& c)
+{
+    c.m_contig = contig_stream_state.slot(is); return is;
+}
+
+enum EModelFileFormat { eGnomonFileFormat, eGFF3FileFormat, eASNFileFormat };
+NCBI_XALGOGNOMON_EXPORT CNcbiOstream& operator<<(CNcbiOstream& s, EModelFileFormat f);
+
+CStreamState<EModelFileFormat> model_file_format_state(eGFF3FileFormat);
+
+CNcbiOstream& operator<<(CNcbiOstream& s, EModelFileFormat f)
+{
+    model_file_format_state.slot(s) = f; return s;
+}
+
+struct SGFFrec {
+    SGFFrec() : start(-1), end(-1), score(BadScore()), strand('.'), phase(-1), model(0) {}
+    string seqid;
+    string source;
+    string type;
+    int start;
+    int end;
+    double score;
+    char strand;
+    int phase;
+    int model;
+    map<string,string> attributes;
+
+    void print(CNcbiOstream& os) const;
+};
+
+CNcbiOstream& operator<<(CNcbiOstream& os, const SGFFrec& r)
+{
+    r.print(os); return os;
+}
+
+static const string dot = ".";
+
+void SGFFrec::print(CNcbiOstream& os) const
+{
+
+    os << (seqid.empty()?dot:seqid) << '\t';
+    os << (source.empty()?dot:source) << '\t';
+    os << (type.empty()?dot:type) << '\t';
+    os << (start+1) << '\t';
+    os << (end+1) << '\t';
+    if (score == BadScore()) os << dot; else os << score; os << '\t';
+    os << strand << '\t';
+    if (phase < 0) os << dot; else os << phase; os << '\t';
+
+    os << "model=" << model;
+    for (map<string,string>::const_iterator i = attributes.begin(); i != attributes.end(); ++i ) {
+        if (!i->second.empty())
+            os << ';' << i->first << '=' << i->second;
+    }
+
+    os << '\n';
+}
+
+CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
+{
+    string line;
+    do {
+        Getline(is, line);
+    } while (is && (line.empty() || NStr::StartsWith(line, "#")));
+    if (!is) {
+        return is;
+    }
+
+    vector<string> v;
+    NStr::Tokenize(line, "\t", v, NStr::eNoMergeDelims);
+    if (v.size()!=9)
+        return InputError(is);
+    SGFFrec rec;
+    try {
+        rec.seqid = v[0];
+        rec.source = v[1];
+        rec.type = v[2];
+        rec.start = NStr::StringToUInt(v[3])-1;
+        rec.end = NStr::StringToUInt(v[4])-1;
+        rec.score = v[5]==dot?BadScore():NStr::StringToDouble(v[5]);
+        rec.strand = v[6][0];
+        rec.phase = v[7]==dot?-1:NStr::StringToInt(v[7]);
+    } catch (...) {
+        return InputError(is);
+    }
+    bool model_id_present = false;
+    vector<string> attributes;
+    NStr::Tokenize(v[8], ";", attributes, NStr::eMergeDelims);
+    for (size_t i = 0; i < attributes.size(); ++i) {
+        string key, value;
+        if (NStr::SplitInTwo(attributes[i], "=", key, value) && !value.empty()) {
+            if (key == "model") {
+                rec.model = NStr::StringToInt(value);
+                model_id_present = true;
+            } else
+                rec.attributes[key] = value;
+        }
+    }
+    if (!model_id_present)
+        return InputError(is);
+    res = rec;
+    return is;
+}
+
+string BuildGFF3Gap(int& prev_pos, int pos, bool is_ins, int len)
+{
+    string gap;
+    if (prev_pos < pos)
+        gap += " M"+NStr::IntToString(pos-prev_pos);
+    gap += string(" ")+(is_ins?"D":"I")+NStr::IntToString(len);
+    prev_pos = pos+(is_ins?len:0);
+
+    return gap;
+}
+
+string BuildGFF3Gap(int start, int end, const TFrameShifts& indels)
+{
+    string gap;
+    string deletion_replacement;
+
+    int prev_pos = start;
+    ITERATE (TFrameShifts, indelp, indels) {
+        CFrameShiftInfo indel = *indelp;
+        indel.RestoreIfReplaced();
+        if (indel.IsInsertion()) {
+            _ASSERT( start <=indel.Loc() && indel.Loc()+indel.Len()-1 <= end );
+            gap += BuildGFF3Gap(prev_pos, indel.Loc(), true, indel.Len());
+        } else {
+            gap += BuildGFF3Gap(prev_pos, indel.Loc(), false, indel.Len());
+            deletion_replacement += " "+NStr::IntToString(indel.ReplacementLoc()+1);
+        }
+    }
+    if (!gap.empty()) {
+        gap.erase(0,1);
+        if (prev_pos < end+1)
+            gap += " M"+NStr::IntToString(end+1-prev_pos);
+        if (!deletion_replacement.empty()) {
+            deletion_replacement.erase(0,1);
+            gap += ";deletion_replacement="+deletion_replacement;
+        }
+    }
+
+    return gap;
+}
+
+void readGFF3Gap(const string& gap, const string& deletion_replacement, int start, int end, insert_iterator<TFrameShifts> iter)
+{
+    if (gap.empty())
+        return;
+    vector<string> operations;
+    NStr::Tokenize(gap, " ", operations);
+    vector<string> deletion_replacements;
+    NStr::Tokenize(deletion_replacement, " ", deletion_replacements);
+    vector<string>::const_iterator deletion_replacement_i = deletion_replacements.begin();
+    TSignedSeqPos loc = start;
+    ITERATE(vector<string>, o, operations) {
+        int len = NStr::StringToInt(*o,NStr::fConvErr_NoThrow|NStr::fAllowLeadingSymbols);
+        if ((*o)[0] == 'M') {
+            loc += len;
+        } else if ((*o)[0] == 'D') {
+            *iter++ = CFrameShiftInfo(loc,len);
+            loc += len;
+        } else if ((*o)[0] == 'I') {
+            CFrameShiftInfo deletion(loc,len,false);
+            
+            if (deletion_replacement_i != deletion_replacements.end()) {
+                int replacement_location = NStr::StringToInt(*deletion_replacement_i,NStr::fConvErr_NoThrow)-1;
+                if (replacement_location>-1) {
+                    deletion.ReplaceWithInsertion(replacement_location, 3 - len);
+                }
+                ++deletion_replacement_i;
+            }
+            *iter++ = deletion;
+        }
+    }
+    _ASSERT( loc == end+1 );
+}
+
+string CGeneModel::TypeToString(int type)
+{
+    if ((type & eGnomon)!=0) return "Gnomon";
+    if ((type & eChain)!=0) return  "Chainer";
+    if ((type & eProt)!=0) return  "ProSplign";
+    if ((type & (eEST|emRNA))!=0) return  "Splign";
+    return "Unknown";
+}
+
+CNcbiOstream& printGFF3(CNcbiOstream& os, const CGeneModel& a)
+{
+    CFrameShiftedSeqMap amap(a, CFrameShiftedSeqMap::eRealCdsOnly);
+    
+    SGFFrec templ;
+    templ.model = a.ID();
+    templ.seqid = contig_stream_state.slot(os);
+
+    templ.source = CGeneModel::TypeToString(a.Type());
+    templ.strand = a.Strand() == eMinus ? '-' : '+';
+
+    SGFFrec mrna = templ;
+    templ.attributes["Parent"] = mrna.attributes["ID"] = NStr::IntToString(a.ID());
+
+    mrna.type = "mRNA";
+    mrna.start = a.Limits().GetFrom();
+    mrna.end = a.Limits().GetTo();
+    mrna.score = a.Score();
+
+    if (a.GeneID()!=0)
+        mrna.attributes["Parent"] = "gene"+NStr::IntToString(a.GeneID());
+
+    ITERATE(CSupportInfoSet, i, a.Support()) {
+        mrna.attributes["support"] += ",";
+        if(i->CoreAlignment()) 
+            mrna.attributes["support"] += "*";
+        mrna.attributes["support"] += i->Seqid()->IsGi()? i->Seqid()->AsFastaString() : i->Seqid()->GetSeqIdString(true);
+    }
+
+    mrna.attributes["support"].erase(0,1);
+
+    if (!a.ProteinHit().empty())
+        mrna.attributes["protein_hit"] = a.ProteinHit();
+
+    if ((a.Type()&CGeneModel::eWall)!=0) mrna.attributes["flags"] += ",Wall";
+    if ((a.Type()&CGeneModel::eNested)!=0) mrna.attributes["flags"] += ",Nested";
+    if ((a.Type()&CGeneModel::eEST)!=0) mrna.attributes["flags"] += ",EST";
+    if ((a.Type()&CGeneModel::emRNA)!=0) mrna.attributes["flags"] += ",mRNA";
+    if ((a.Type()&CGeneModel::eProt)!=0) {
+        mrna.attributes["flags"] += ",Prot";
+    }
+
+    if ((a.Status()&CGeneModel::eSkipped)!=0) mrna.attributes["flags"] += ",Skip";
+
+    if (a.ReadingFrame().NotEmpty()) {
+        _ASSERT( amap.FShiftedLen(a.ReadingFrame(), false)%3==0 );
+
+        if (a.MaxCdsLimits()!=a.RealCdsLimits()) {
+            mrna.attributes["maxCDS"] = NStr::IntToString(a.MaxCdsLimits().GetFrom()+1)+" "+NStr::IntToString(a.MaxCdsLimits().GetTo()+1);
+        }
+        if ((a.Type()&CGeneModel::eProt)!=0 && a.GetCdsInfo().ProtReadingFrame()!=a.ReadingFrame()) {
+            mrna.attributes["protCDS"] =
+                NStr::IntToString(a.GetCdsInfo().ProtReadingFrame().GetFrom()+1)+" "+
+                NStr::IntToString(a.GetCdsInfo().ProtReadingFrame().GetTo()  +1);
+        }
+        if (a.HasStart()) {
+            mrna.attributes["flags"] += (a.ConfirmedStart() && (a.Type()&CGeneModel::eProt)!=0) ? ",ConfirmedStart" : ",Start";
+        }
+        if (a.HasStop()) {
+            mrna.attributes["flags"] += ",Stop";
+        }
+        if (a.OpenCds()) mrna.attributes["flags"] += ",Open";
+        if ((a.Status()&CGeneModel::eFullSupCDS)!=0) mrna.attributes["flags"] += ",FullSupCDS";
+        if ((a.Status()&CGeneModel::ePseudo)!=0) mrna.attributes["flags"] += ",Pseudo";
+
+        if (a.FrameShifts().size()>0)
+            mrna.attributes["flags"] += ",Frameshifts";
+
+        ITERATE(vector<TSignedSeqRange>, s, a.GetCdsInfo().PStops()) {
+            mrna.attributes["pstop"] += ","+NStr::IntToString(s->GetFrom()+1)+" "+NStr::IntToString(s->GetTo()+1);
+        }
+        mrna.attributes["pstop"].erase(0,1);
+    }
+
+    mrna.attributes["flags"].erase(0,1);
+
+    mrna.attributes["note"] = a.GetComment();
+
+    os << mrna;
+
+    int part = 0;
+    vector<SGFFrec> exons,cdss;
+
+    SGFFrec exon = templ;
+    exon.type = "exon";
+    SGFFrec cds = templ;
+    cds.type = "CDS";
+
+    int phase = 0;
+    if(a.ReadingFrame().NotEmpty()) {
+        TSignedSeqRange tmp = amap.ShrinkToRealPoints(TSignedSeqRange(a.RealCdsLimits().GetFrom(),a.ReadingFrame().GetFrom()));
+        _ASSERT(tmp.GetTo() == a.ReadingFrame().GetFrom());
+        phase = (amap.FShiftedLen(tmp, false)-1)%3;
+    }
+
+    ITERATE( CGeneModel::TExons, e, a.Exons()) {
+
+        exon.start = e->GetFrom();
+        exon.end = e->GetTo();
+
+        exon.attributes["Gap"] = BuildGFF3Gap(exon.start, exon.end, a.FrameShifts(exon.start, exon.end));
+        exons.push_back(exon);
+        exon.attributes["Gap"].erase();
+
+        TSignedSeqRange cds_limits = e->Limits() & a.RealCdsLimits();
+        if (cds_limits.NotEmpty()) {
+            cds.start = cds_limits.GetFrom();
+            cds.end = cds_limits.GetTo();
+            cdss.push_back(cds);
+        }
+
+        if (!e->m_ssplice) {
+            string suffix;
+            if (!a.Continuous()) {
+                SGFFrec rec = templ;
+                suffix= "."+NStr::IntToString(++part);
+                rec.start = exons.front().start;
+                rec.end = exons.back().end;
+                rec.type = "mRNA_part";
+                rec.attributes["ID"] = rec.attributes["Parent"]+suffix;
+                os << rec;
+            }
+            NON_CONST_ITERATE(vector<SGFFrec>, e, exons) {
+                e->attributes["Parent"] += suffix;
+                os << *e;
+            }
+            exons.clear();
+
+            NON_CONST_ITERATE(vector<SGFFrec>, e, cdss) {
+                if (a.Strand()==ePlus)
+                    e->phase = phase;
+                phase = (amap.FShiftedLen(e->start,e->end)-phase)%3;
+                if (a.Strand()==eMinus)
+                    e->phase = phase;
+                phase = (3-phase)%3;
+
+                e->attributes["Parent"] += suffix;
+                os << *e;
+            }
+            cdss.clear();
         }
     }
     
-    return len;
+    return os;
 }
 
-int CAlignVec::MaxCdsLen() const
+struct Precedence : public binary_function<TSignedSeqRange, TSignedSeqRange, bool>
 {
-    int len = 0;
-    if(MaxCdsLimits().Empty()) return len;
-    
-    TSignedSeqRange cds_lim = MaxCdsLimits();
-    
-    for(int i = 0; i < (int)size(); ++i) 
-    {
-        if((*this)[i].GetTo() < cds_lim.GetFrom()) continue;
-        if((*this)[i].GetFrom() > cds_lim.GetTo()) break;
-        
-        len += min(cds_lim.GetTo(),(*this)[i].GetTo())-max(cds_lim.GetFrom(),(*this)[i].GetFrom())+1;
+    bool operator()(const TSignedSeqRange& __x, const TSignedSeqRange& __y) const
+    { return Precede( __x, __y ); }
+};
+
+TSignedSeqRange operator- (TSignedSeqRange a, TSignedSeqRange b)
+{
+    b &= a;
+    if (b.Empty())
+        return a;
+    if (a.GetFrom()==b.GetFrom())
+        a.SetFrom(b.GetTo()+1);
+    else if (a.GetTo()==b.GetTo())
+        a.SetTo(b.GetFrom()-1);
+    return a;
+}
+
+TSignedSeqRange StringToRange(const string& s)
+{
+    string start, stop;
+    NStr::SplitInTwo(s, " ", start, stop);
+    return TSignedSeqRange(NStr::StringToInt(start)-1,NStr::StringToInt(stop)-1);
+}
+
+CNcbiIstream& readGFF3(CNcbiIstream& is, CGeneModel& align)
+{
+    SGFFrec rec;
+    is >> rec;
+    if (!is) {
+         return is;
     }
-    for(int i = 0; i < (int)m_fshifts.size(); ++i)
-    {
-        if(m_fshifts[i].Loc() > cds_lim.GetFrom() && m_fshifts[i].Loc() < cds_lim.GetTo())
-        {
-            len += (m_fshifts[i].IsDeletion() ? m_fshifts[i].Len() : -m_fshifts[i].Len());
-        }
-    }
-    
-    return len;
-}
 
-CNcbiIstream& InputError(CNcbiIstream& s, CT_POS_TYPE pos)
-{
-    s.clear();
-    s.seekg(pos);
-    s.setstate(ios::failbit);
-    return s;
-}
+    int id = rec.model;
+    if (id==0)
+        return InputError(is);
 
-CNcbiIstream& operator>>(CNcbiIstream& s, CAlignVec& a)
-{
-    CT_POS_TYPE pos = s.tellg();
-    
-    string strandname;
-    EStrand strand;
-    s >> strandname;
-    if(strandname == "+") strand = ePlus;
-    else if(strandname == "-") strand = eMinus;
-    else return InputError(s,pos);
-    
-    char c;
-    s >> c >> c;
-    int id;
-    if(!(s >> id)) return InputError(s,pos);
-    
-    string typenm;
-    s >> typenm;
-    
-    TSignedSeqRange cds_limits;
+    vector<SGFFrec> recs;
+
+    do {
+        recs.push_back(rec);
+    } while (is >> rec && rec.seqid == recs.front().seqid && rec.model == id);
+
+    Ungetline(is);
+
+    CGeneModel a;
+
+    a.SetID(id);
+#ifdef _DEBUG
+    a.oid = id;
+#endif
+
+    TSignedSeqRange cds;
+    int phase = 0;
+
+    vector<TSignedSeqRange> exons;
+    set<TSignedSeqRange,Precedence> mrna_parts;
+
+    rec = recs.front();
+
+    if (rec.source == "Gnomon") a.SetType(a.Type() | CGeneModel::eGnomon);
+    else if (rec.source == "Chainer") a.SetType(a.Type() | CGeneModel::eChain);
+    a.SetStrand(rec.strand=='-'?eMinus:ePlus);
+
+    CCDSInfo cds_info;
+    cds_info.SetReadingFrame(TSignedSeqRange::GetWhole());
+
+    TSignedSeqRange max_cds_limits;
     bool open_cds = false;
     bool confirmed_start = false;
-    if(typenm == "CDS" || typenm == "ConfCDS" || typenm == "OpenCDS") {
-        if(typenm == "OpenCDS") open_cds = true;
-        if(typenm == "ConfCDS") confirmed_start = true;
-        TSignedSeqPos x;
-        if(!(s >> x)) return InputError(s,pos);
-        cds_limits.SetFrom(x);
-        if(!(s >> x)) return InputError(s,pos);
-        cds_limits.SetTo(x);
-        s >> typenm;
-    }
-    
-    TSignedSeqRange max_cds_limits;
-    if(typenm == "MaxCDS")
-    {
-	TSignedSeqPos x;
-        if(!(s >> x)) return InputError(s,pos);
-	max_cds_limits.SetFrom(x);
-        if(!(s >> x)) return InputError(s,pos);
-	max_cds_limits.SetTo(x);
-        s >> typenm;
-    }
-    
-    int type;
-    if(typenm == "mRNA") type = CAlignVec::emRNA;
-    else if(typenm == "EST") type = CAlignVec::eEST;
-    else if(typenm == "Prot") type = CAlignVec::eProt;
-    else if(typenm == "Nested") type = CAlignVec::eNested;
-    else if(typenm == "Wall") type = CAlignVec::eWall;
-    else return InputError(s,pos);
-    
-    a.Init();
-    a.SetStrand(strand);
-    a.SetType(type);
-    a.SetID(id);
-    a.SetCdsLimits(cds_limits);
-    a.SetMaxCdsLimits(max_cds_limits);
-    a.SetOpenCds(open_cds);
-    a.SetConfirmedStart(confirmed_start);
-    
-    string line;
-    if(!getline(s,line)) return InputError(s,pos);
-    CNcbiIstrstream istr_line(line.c_str()); 
+    bool has_start = false;
+    bool has_stop = false;
+    string pstops, altstarts;
+    double score = BadScore();
 
-    string exon;
-    bool splice = false;
-    while(getline(istr_line,exon,')'))
-    {
-        int bracket = exon.find_first_not_of(' ');
-        if(exon[bracket] != '(') return InputError(s,pos);
-        exon = exon.substr(bracket+1);
-        CNcbiIstrstream istr(exon.c_str());
-        
-        int start = -1;
-        int stop = -1;
-        string word;
-        while(istr >> word)
-        {
-            if(word[0] == 'I')      // insertion
-            {
-                CNcbiIstrstream istr_w(word.c_str());
-                char c;
-                int left,right;
-                if(!(istr_w >> c >> left >> c >> right) || c != '-') return InputError(s,pos);
-                int len = right-left+1;
-                CFrameShiftInfo fsi(left,len,true);
-                a.FrameShifts().push_back(fsi);
-            }
-            else if(word[0] == 'D')      // deletion
-            {
-                unsigned int dash = word.find('-');
-                if(dash == string::npos) return InputError(s,pos);
-                string number = word.substr(dash+1);
-                int loc = atoi(number.c_str());
-                string del_v = word.substr(1,dash-1);
-                int len = del_v.size();
-                CFrameShiftInfo fsi(loc,len,false,del_v);
-                a.FrameShifts().push_back(fsi);
-            }
-            else
-            {
-                int left = atoi(word.c_str());
-                if(!(istr >> stop)) return InputError(s,pos);
-                if(start < 0) start = left;
-            }
-        }
-        a.Insert(CAlignExon(start,stop,splice,false));
+    NON_CONST_ITERATE(vector<SGFFrec>, r, recs) {
+        if (r->type == "mRNA") {
+            if (NStr::StartsWith(r->attributes["Parent"],"gene"))
+                a.SetGeneID(NStr::StringToInt(r->attributes["Parent"],NStr::fConvErr_NoThrow|NStr::fAllowLeadingSymbols));
 
-        if(istr_line >> c)
-        {
-            if(c == '(') 
-            {
-                istr_line.unget();
-                splice = true;
-                a.back().m_ssplice = splice;
+            vector<string> support;
+            NStr::Tokenize(r->attributes["support"], ",", support);
+            ITERATE(vector<string>, s, support) {
+                bool core = (*s)[0] == '*';
+                string id = core ? s->substr(1) : *s;
+                a.Support().insert(CSupportInfo(CreateSeqid(id), core));
             }
-            else if(c == '.')
-            {
-                if(!(istr_line >> c) || c != '.') return InputError(s,pos);
-                splice = false;
+
+            if (!r->attributes["protein_hit"].empty())
+                a.ProteinHit()=r->attributes["protein_hit"];
+
+            vector<string> flags;
+            NStr::Tokenize(r->attributes["flags"], ",", flags);
+            ITERATE(vector<string>, f, flags) {
+                     if (*f == "Wall")       a.SetType(a.Type()|  CGeneModel::eWall);
+                else if (*f == "Nested")     a.SetType(a.Type()|  CGeneModel::eNested);
+                else if (*f == "EST")        a.SetType(a.Type()|  CGeneModel::eEST);
+                else if (*f == "mRNA")       a.SetType(a.Type()|  CGeneModel::emRNA);
+                else if (*f == "Prot")       a.SetType(a.Type()|  CGeneModel::eProt);
+                else if (*f == "Open")       open_cds = true;
+                else if (*f == "Skip")       a.Status()        |= CGeneModel::eSkipped;
+                else if (*f == "FullSupCDS") a.Status()        |= CGeneModel::eFullSupCDS;
+                else if (*f == "Pseudo")     a.Status()        |= CGeneModel::ePseudo;
+                else if (*f == "ConfirmedStart")   { confirmed_start = true; has_start = true; }
+                else if (*f == "Start") has_start = true;
+                else if (*f == "Stop")  has_stop = true;
+           }
+           score = r->score;
+
+            a.SetComment(r->attributes["note"]);
+
+            if (!r->attributes["protein_hit"].empty())
+                a.ProteinHit() = r->attributes["protein_hit"];
+
+            if (!r->attributes["maxCDS"].empty()) {
+                max_cds_limits = StringToRange(r->attributes["maxCDS"]);
             }
-            else
-            {
-                return InputError(s,pos);
+            if (!r->attributes["protCDS"].empty()) {
+                cds_info.SetReadingFrame( StringToRange(r->attributes["protCDS"]), true );
             }
+            pstops = r->attributes["pstop"];
+            altstarts = r->attributes["altstart"];
+        } else if (r->type == "exon") {
+            exons.push_back(TSignedSeqRange(r->start,r->end));
+            readGFF3Gap(r->attributes["Gap"],r->attributes["deletion_replacement"],r->start,r->end,inserter(a.FrameShifts(),a.FrameShifts().end()));
+        } else if (r->type == "CDS") {
+            TSignedSeqRange cds_exon(r->start,r->end);
+            if (r->strand=='+') {
+                if (cds.Empty() || r->start < cds.GetFrom())
+                    phase = r->phase;
+            } else {
+                if (cds.Empty() || cds.GetTo() < r->end)
+                    phase = r->phase;
+            }
+            cds.CombineWith(cds_exon);
+        } else if (r->type == "mRNA_part") {
+            mrna_parts.insert(TSignedSeqRange(r->start,r->end));
         }
     }
-    
+
+    sort(exons.begin(),exons.end());
+    ITERATE(vector<TSignedSeqRange>, e, exons) {
+        if (a.Limits().IntersectingWith(*e)) {
+            return  InputError(is);
+        }
+        set<TSignedSeqRange,Precedence>::iterator p = mrna_parts.lower_bound(*e);
+        if (p != mrna_parts.end() && p->GetFrom()==e->GetFrom())
+            a.AddHole();
+        a.AddExon(*e);
+    }
+
     sort(a.FrameShifts().begin(),a.FrameShifts().end());
     
-    return s;
+    CFrameShiftedSeqMap amap(a);
+
+    if (max_cds_limits.Empty())
+        max_cds_limits = cds;
+
+    if (cds.NotEmpty()) {
+        if (a.Strand()==ePlus) {
+            if (has_start && phase!=0)
+                return  InputError(is);
+            cds.SetFrom(amap.FShiftedMove(cds.GetFrom(),phase));
+            if (has_stop && amap.FShiftedLen(cds, false)%3!=0)
+                return  InputError(is);
+            cds.SetTo(amap.FShiftedMove(cds.GetTo(), -amap.FShiftedLen(cds, false)%3));
+        } else {
+            if (has_start && phase!=0)
+                return  InputError(is);
+            cds.SetTo(amap.FShiftedMove(cds.GetTo(),-phase));
+            if (has_stop && amap.FShiftedLen(cds, false)%3!=0)
+                return  InputError(is);
+            cds.SetFrom(amap.FShiftedMove(cds.GetFrom(), +amap.FShiftedLen(cds, false)%3));
+        }
+    }
+
+    if (cds.Empty() && (has_start || has_stop || max_cds_limits.NotEmpty()) ||
+        max_cds_limits.NotEmpty() && !Include(max_cds_limits, cds))
+        return  InputError(is);
+
+    TSignedSeqRange start, stop;
+
+    if (a.Strand()==eMinus) swap(has_start, has_stop);
+    if (has_start) {
+        start = TSignedSeqRange(cds.GetFrom(),amap.FShiftedMove(cds.GetFrom(), +2));
+
+        if (amap.FShiftedLen(start, false) != 3)
+            return InputError(is);
+    }
+    if (has_stop) {
+        stop = TSignedSeqRange(amap.FShiftedMove(cds.GetTo(), -2), cds.GetTo());
+
+        if (amap.FShiftedLen(stop, false) != 3)
+            return InputError(is);
+    }
+
+    TSignedSeqRange reading_frame = cds;
+    if (start.NotEmpty())
+        reading_frame.SetFrom(amap.FShiftedMove(start.GetTo(),+1));
+    if (stop.NotEmpty())
+        reading_frame.SetTo(amap.FShiftedMove(stop.GetFrom(),-1));
+
+    if (a.Strand()==eMinus) swap(start, stop);
+
+    cds_info.SetReadingFrame(reading_frame, (a.Type()&CGeneModel::eProt)!=0 && cds_info.ProtReadingFrame().Empty());
+    cds_info.SetStart(start,confirmed_start);
+
+    if (max_cds_limits.NotEmpty()) {
+        if (a.Strand()==ePlus && a.Limits().GetFrom()<max_cds_limits.GetFrom())
+            cds_info.Set5PrimeCdsLimit(max_cds_limits.GetFrom());
+        else if (a.Strand()==eMinus && a.Limits().GetTo()>max_cds_limits.GetTo())
+            cds_info.Set5PrimeCdsLimit(max_cds_limits.GetTo());
+    }
+    cds_info.SetStop(stop);
+
+    {
+        vector<string> stops;
+        NStr::Tokenize(pstops, ",", stops);
+        ITERATE(vector<string>, s, stops)
+            cds_info.AddPStop(StringToRange(*s));
+    }
+
+    cds_info.SetScore(score, open_cds);
+
+    a.SetCdsInfo(cds_info);
+
+    align = a;
+    contig_stream_state.slot(is) = rec.seqid;
+    return is;
 }
 
-CNcbiOstream& operator<<(CNcbiOstream& s, const CAlignVec& a)
+CNcbiIstream& readGnomon(CNcbiIstream& is, CGeneModel& align)
 {
-    s << (a.Strand() == ePlus ? '+' : '-') << " ID" << a.ID() << ' ';
-    
-    if(a.CdsLimits().NotEmpty())
-    {
-        if(a.OpenCds()) s << "Open";
-        if(a.ConfirmedStart()) s << "Conf";
-        s << "CDS " << a.CdsLimits().GetFrom() << ' ' << a.CdsLimits().GetTo() << ' ';
-    }
-    
-    if(a.MaxCdsLimits().NotEmpty())
-    {
-        s << "MaxCDS " << a.MaxCdsLimits().GetFrom() << ' ' << a.MaxCdsLimits().GetTo() << ' ';
-    }
-    
-    switch(a.Type())
-    {
-        case CAlignVec::emRNA: s << "mRNA "; break;
-        case CAlignVec::eEST: s << "EST "; break;
-        case CAlignVec::eProt: s << "Prot "; break;
-        case CAlignVec::eNested: s << "Nested "; break;
-        case CAlignVec::eWall: s << "Wall "; break;
-    }
-    
-    const TFrameShifts& fshifts = a.FrameShifts();
-    TFrameShifts::const_iterator fsi = fshifts.begin(); 
-    
-    for(int i = 0; i < (int)a.size(); ++i) 
-    {
-        s << '(';
-        TSignedSeqPos aa = a[i].GetFrom();
-        string space;
-        for( ; fsi != fshifts.end() && fsi->Loc() <= aa; ++fsi)        // insertions/deletions after first splice
-        {
-            if(fsi->IsDeletion()) 
-            {
-                s << space << 'D' << fsi->DeletedValue() << '-' << fsi->Loc();
-            }
-            else
-            {
-                s << space << 'I' << fsi->Loc() << '-' << fsi->Loc()+fsi->Len()-1;
-            }
-            space = " ";
-        }
-        while(aa <= a[i].GetTo())
-        {
-            s << space << aa << ' ';
-            space = " ";
-            TSignedSeqPos bb = (fsi != fshifts.end() && fsi->Loc() <= a[i].GetTo()) ? fsi->Loc()-1 : a[i].GetTo();
-            s << bb;
-
-            for( ; fsi != fshifts.end() && fsi->Loc() == bb+1; ++fsi)    // insertions/deletions in the middle and before the GetTo() splice
-            {
-                if(fsi->IsDeletion()) 
-                {
-                    s << " D" << fsi->DeletedValue() << '-' << fsi->Loc();
-                }
-                else
-                {
-                    bb = fsi->Loc()+fsi->Len()-1;
-                    s << " I" << fsi->Loc() << '-' << bb;
-                }
-            }
-            aa = bb+1;
-        }
-        s << ')';
-
-        if(i < (int)a.size()-1)
-        {
-            if(a[i].m_ssplice) s << "  ";
-            else s << "..";
-        }
-    }
-    s << '\n';
-    
-    return s;
+    is.setstate(ios::failbit);
+    return is;
 }
 
-void CCluster::Insert(const CAlignVec& a)
+CNcbiOstream& printASN(CNcbiOstream& os, const CGeneModel& align)
+{
+    os.setstate(ios::failbit);
+    return os;
+}
+
+CNcbiIstream& readASN(CNcbiIstream& is, CGeneModel& align)
+{
+    is.setstate(ios::failbit);
+    return is;
+}
+
+CNcbiOstream& operator<<(CNcbiOstream& os, const CGeneModel& a)
+{
+    switch (model_file_format_state.slot(os)) {
+    case eGnomonFileFormat:
+        break;
+    case eGFF3FileFormat:
+        return printGFF3(os,a);
+    case eASNFileFormat:
+        break;
+    default:
+        break;
+    }
+
+    os.setstate(ios::failbit);
+    return os;
+}
+
+CNcbiIstream& operator>>(CNcbiIstream& is, CGeneModel& align)
+{
+    switch (model_file_format_state.slot(is)) {
+    case eGFF3FileFormat:
+        return readGFF3(is, align);
+    case eGnomonFileFormat:
+        return readGnomon(is, align);
+    case eASNFileFormat:
+        return readASN(is, align);
+    default:
+        is.setstate(ios::failbit);
+        break;
+    }
+    return is;
+}
+
+void CCluster::Insert(const CGeneModel& a)
 {
     m_limits.CombineWith(a.Limits());
-    m_type = max(m_type,a.Type());
     push_back(a);
-}
-
-void CCluster::Insert(const CCluster& c)
-{
-    m_limits.CombineWith(c.Limits());
-    for(TConstIt it = c.begin(); it != c.end(); ++it) Insert(*it);
 }
 
 void CCluster::Splice(CCluster& c)
 {
     m_limits.CombineWith(c.Limits());
-    m_type = max(m_type,c.Type());
     splice(end(),c);
 }
 
-void CCluster::Init(TSignedSeqPos first, TSignedSeqPos second, int t)
+void CCluster::Init(TSignedSeqPos first, TSignedSeqPos second //, int t
+                    )
 {
     clear();
     m_limits.SetFrom( first );
     m_limits.SetTo( second );
-    m_type = t;
 }
 
-CNcbiIstream& operator>>(CNcbiIstream& s, CCluster& c)
-{
-    CT_POS_TYPE pos = s.tellg();
-    
-    string cluster;
-    s >> cluster;
-    if(cluster != "Cluster") return InputError(s,pos);
-    
-    TSignedSeqPos first, second;
-    int size;
-    string typenm;
-    if(!(s >> first >> second >> size >> typenm)) return InputError(s,pos);
-    
-    int type;
-    if(typenm == "mRNA") type = CAlignVec::emRNA;
-    else if(typenm == "EST") type = CAlignVec::eEST;
-    else if(typenm == "Prot") type = CAlignVec::eProt;
-    else if(typenm == "Nested") type = CAlignVec::eNested;
-    else if(typenm == "Wall") type = CAlignVec::eWall;
-    else return InputError(s,pos);
-
-    c.Init(first,second,type);
-    for(int i = 0; i < size; ++i)
-    {
-        CAlignVec a;
-        if(!(s >> a)) return InputError(s,pos);
-        c.Insert(a);
-    }    
-        
-    return s;
-}
-
-CNcbiOstream& operator<<(CNcbiOstream& s, const CCluster& c)
-{
-    s << "Cluster ";
-    s << c.Limits().GetFrom() << ' ';
-    s << c.Limits().GetTo() << ' ';
-    s << (int)c.size() << ' ';
-    switch(c.Type())
-    {
-        case CAlignVec::emRNA: s << "mRNA "; break;
-        case CAlignVec::eEST: s << "EST "; break;
-        case CAlignVec::eProt: s << "Prot "; break;
-        case CAlignVec::eNested: s << "Nested "; break;
-        case CAlignVec::eWall: s << "Wall "; break;
-    }
-    s << '\n';
-    for(CCluster::TConstIt it = c.begin(); it != c.end(); ++it) s << *it; 
-    
-    return s;
-}
-
-void CClusterSet::InsertAlignment(const CAlignVec& a)
+void CClusterSet::Insert(const CGeneModel& a)
 {
     CCluster clust;
     clust.Insert(a);
 
-    pair<TIt,TIt> lim = equal_range(clust);
-    for(TIt it = lim.first; it != lim.second;) {
+    pair<iterator,iterator> lim = equal_range(clust);
+    for(iterator it = lim.first; it != lim.second;) {
         clust.Splice(const_cast<CCluster&>(*it));
         erase(it++);
     }
@@ -744,5 +1567,145 @@ void CClusterSet::InsertAlignment(const CAlignVec& a)
     const_cast<CCluster&>(*insert(lim.second,CCluster(clust.Limits()))).Splice(clust);
 }
 
+CSupportInfo::CSupportInfo(const TConstSeqidRef& s, bool core)
+    : m_core_align(core), m_type(0)
+{
+    SetSeqid(s);
+}
+TConstSeqidRef CSupportInfo::Seqid() const
+{
+    return m_local_id==-1?m_seq_id:CreateSeqid(m_local_id);
+}
+void CSupportInfo::SetSeqid(const TConstSeqidRef sid)
+{
+    if (sid->IsLocal() && sid->GetLocal().IsId()) {
+        m_local_id = sid->GetLocal().GetId();
+        m_seq_id.Reset();
+    } else {
+        m_local_id = -1;
+        m_seq_id = sid;
+    }
+    _ASSERT( !(m_local_id == -1 && m_seq_id.Empty()) );
+}
+bool CSupportInfo::operator==(const CSupportInfo& s) const
+{
+    return m_local_id == s.m_local_id && CoreAlignment() == s.CoreAlignment() && Type() == s.Type() && (m_local_id != -1 || m_seq_id->Match(*s.m_seq_id));
+}
+bool CSupportInfo::operator<(const CSupportInfo& s) const
+{
+    return (m_local_id == -1 && s.m_local_id == -1) ? *m_seq_id < *s.m_seq_id : m_local_id < s.m_local_id;
+}
+
+
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
+
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.9.2.12  2007/01/11 16:16:32  souvorov
+ * Implementation of the composite measure
+ *
+ * Revision 1.9.2.11  2006/12/21 15:51:58  souvorov
+ *  CFrameShiftedSeqMap introduction
+ *
+ * Revision 1.9.2.10  2006/11/30 20:10:35  souvorov
+ * Implementation of proper mapping for prediction
+ *
+ * Revision 1.9.2.9  2006/11/28 19:50:34  souvorov
+ * Introduction of CFrameShiftedSeqMap
+ *
+ * Revision 1.9.2.8  2006/11/17 15:32:10  souvorov
+ * Intersections by 1 base not compatible
+ *
+ * Revision 1.9.2.7  2006/11/14 15:58:17  chetvern
+ * Do not report ConfirmedStart on mRNA evidence
+ *
+ * Revision 1.9.2.6  2006/11/09 16:47:30  chetvern
+ * Corrected asserts
+ *
+ * Revision 1.9.2.5  2006/11/03 21:03:22  chetvern
+ * Various changes. Fixing failed assertions.
+ *
+ * Revision 1.9.2.4  2006/10/26 21:18:39  chetvern
+ * Convert Deletions into Insertions
+ *
+ * Revision 1.9.2.3  2006/10/24 19:47:24  souvorov
+ * Modification for open alignments
+ *
+ * Revision 1.9.2.2  2006/10/12 19:08:22  chetvern
+ * Changed hmm parameters reading
+ *
+ * Revision 1.9.2.1  2006/10/06 14:19:36  chetvern
+ * Major overhaul. Single format for intermediate files.
+ *
+ * Revision 1.11  2006/06/29 19:23:09  souvorov
+ * Confirmed start implementation
+ *
+ * Revision 1.10  2006/05/11 19:24:57  souvorov
+ * Cosmetical edit
+ *
+ * Revision 1.9  2006/02/03 20:24:32  souvorov
+ * Use methods for open_cds and pstop
+ *
+ * Revision 1.8  2005/11/21 21:34:25  chetvern
+ * Small changes in CAlignExon and CClusterSet interfaces
+ *
+ * Revision 1.7  2005/11/15 21:03:05  souvorov
+ * FShiftedLen is corrected
+ *
+ * Revision 1.6  2005/10/20 19:31:08  souvorov
+ * Formatting
+ *
+ * Revision 1.5  2005/10/14 21:59:54  souvorov
+ * Set Cluster type in Splice
+ *
+ * Revision 1.4  2005/10/13 19:05:53  chetvern
+ * added CCluster::Splice method and used it in CClusterSet::InsertCluster
+ *
+ * Revision 1.3  2005/10/06 15:50:07  chetvern
+ * fixed unnecessary Residue conversion in GetSequence
+ * removed strand comparison from CGeneModel's MutualExtension and isCompatible methods
+ * added precomputed limits to CGeneModel
+ *
+ * Revision 1.2  2005/09/30 19:07:15  chetvern
+ * removed m_contig from CClusterSet
+ * styling changes
+ *
+ * Revision 1.1  2005/09/15 21:28:07  chetvern
+ * Sync with Sasha's working tree
+ *
+ * Revision 1.4  2005/06/03 18:20:38  souvorov
+ * I/O of alignments with indels
+ *
+ * Revision 1.3  2005/03/21 16:28:51  souvorov
+ * minorf removed from GetScore
+ *
+ * Revision 1.2  2005/02/22 15:25:49  souvorov
+ * More accurate Open
+ *
+ * Revision 1.1  2005/02/18 15:18:31  souvorov
+ * First commit
+ *
+ * Revision 1.6  2004/07/28 17:29:05  ucko
+ * Use macros from ncbistre.hpp for portability.
+ *
+ * Revision 1.5  2004/07/28 12:33:18  dicuccio
+ * Sync with Sasha's working tree
+ *
+ * Revision 1.4  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
+ * Revision 1.3  2003/11/06 15:02:21  ucko
+ * Use iostream interface from ncbistre.hpp for GCC 2.95 compatibility.
+ *
+ * Revision 1.2  2003/11/06 02:47:22  ucko
+ * Fix usage of iterators -- be consistent about constness.
+ *
+ * Revision 1.1  2003/10/24 15:07:25  dicuccio
+ * Initial revision
+ *
+ * ===========================================================================
+ */

@@ -37,7 +37,8 @@
 #include <algo/gnomon/gnomon.hpp>
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
-
+#include <objtools/readers/fasta.hpp>
+#include <objmgr/object_manager.hpp>
 
 USING_SCOPE(ncbi);
 USING_SCOPE(ncbi::objects);
@@ -75,8 +76,8 @@ void CLocalFinderApp::Init(void)
                      "Model Data",
                      CArgDescriptions::eString);
 
-    arg_desc->AddDefaultKey("ap", "AprioriInfo",
-                            "A priori info",
+    arg_desc->AddDefaultKey("align", "Alignments",
+                            "Alignments",
                             CArgDescriptions::eString,
                             "");
 
@@ -94,46 +95,54 @@ int CLocalFinderApp::Run(void)
 {
     CArgs myargs = GetArgs();
 
-    string file         = myargs["input"].AsString();
     int left            = myargs["from"].AsInteger();
     int right           = myargs["to"].AsInteger();
     string modeldata    = myargs["model"].AsString();
-    string apriorifile  = myargs["ap"].AsString();
     bool repeats        = myargs["rep"];
 
 
     //
     // read our sequence data
     //
+    CRef<CSeq_entry> se = ReadFasta(myargs["input"].AsInputFile(),fReadFasta_AssumeNuc|fReadFasta_ForceType|fReadFasta_OneSeq|fReadFasta_RequireID);
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddTopLevelSeqEntry(*se);       
+
+    CRef<CSeq_id> cntg(new CSeq_id);
+    cntg->Assign(*se->GetSeq().GetFirstId());
+    CSeq_loc loc;
+    loc.SetWhole(*cntg);
+    CSeqVector vec(loc, scope);
+    vec.SetIupacCoding();
+
     CResidueVec seq;
-    {{
-	CNcbiIfstream from(file.c_str());
-	string line;
-	char c;
-	getline(from,line);
-	while(from >> c) seq.push_back(c);
-     }}
+    ITERATE(CSeqVector,i,vec)
+        seq.push_back(*i);
 
-    // create engine
-    CGnomonEngine gnomon(modeldata,file,seq,TSignedSeqRange(left, right));
-
-
-    // set the a priori information
+    // read the alignment information
     TAlignList cls;
-    if(myargs["ap"]) {
-        CNcbiIstream& apriorifile = myargs["ap"].AsInputFile();
+    if(myargs["align"]) {
+        CNcbiIstream& alignmentfile = myargs["align"].AsInputFile();
+        string our_contig = cntg->GetSeqIdString(true);
+        string cur_contig; 
         CAlignVec algn;
         
-        while(apriorifile >> algn) {
-            cls.push_back(algn);
+        while(alignmentfile >> algn >> getcontig(cur_contig)) {
+            if (cur_contig==our_contig)
+                cls.push_back(algn);
         }
     }
 
+    // create engine
+    CGnomonEngine gnomon(modeldata,seq,TSignedSeqRange(left, right));
+
     // run!
-    gnomon.Run(cls,repeats,true,true,false,false,10.0);
+    gnomon.Run(cls,repeats,true,true,10.0);
 
     // dump the annotation
-    CRef<CSeq_annot> annot = gnomon.GetAnnot();
+    CRef<CSeq_annot> annot = gnomon.GetAnnot(*cntg);
     auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText, cout));
     *os << *annot;
 
@@ -150,3 +159,25 @@ int main(int argc, const char* argv[])
 {
     return CLocalFinderApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.4.2.1  2006/10/06 14:19:37  chetvern
+ * Major overhaul. Single format for intermediate files.
+ *
+ * Revision 1.4  2005/09/15 21:22:13  chetvern
+ * Updated to match new API
+ *
+ * Revision 1.3  2005/06/03 16:23:19  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
+ * Revision 1.2  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
+ * Revision 1.1  2003/10/24 15:07:25  dicuccio
+ * Initial revision
+ *
+ * ===========================================================================
+ */

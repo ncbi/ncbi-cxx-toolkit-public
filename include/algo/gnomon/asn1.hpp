@@ -1,5 +1,5 @@
-#ifndef ALGO_GNOMON___GNOMON_EXCEPTION__HPP
-#define ALGO_GNOMON___GNOMON_EXCEPTION__HPP
+#ifndef ALGO_GNOMON___ASN1__HPP
+#define ALGO_GNOMON___ASN1__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,58 +26,32 @@
  *
  * ===========================================================================
  *
- * Authors:  Mike DiCuccio
+ * Authors:  Vyacheslav Chetvernin
  *
  * File Description:
+ * conversion to/from ASN1
  *
  */
 
-#include <corelib/ncbiexpt.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <algo/gnomon/gnomon_model.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
-class CGnomonException : EXCEPTION_VIRTUAL_BASE public CException
-{
+class CAnnotationASN1 {
 public:
-    // Enumerated list of document management errors
-    enum EErrCode {
-        eGenericError,
-        eMemoryLimit
-    };
+    CAnnotationASN1(const string& contig_name, const CResidueVec& seq);
+    ~CAnnotationASN1();
 
-    // Translate the specific error code into a string representations of
-    // that error code.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eGenericError: return "eGenericError";
-        case eMemoryLimit: return "eMemoryLimit";
-        default:            return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CGnomonException, CException);
+    void AddModel(const CGeneModel& model);
+    CRef<objects::CSeq_entry> GetASN1() const;
+private:
+    class CImplementationData;
+    auto_ptr<CImplementationData> m_data;
 };
-
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/09/15 21:16:01  chetvern
- * redesigned API
- *
- * Revision 1.2  2004/08/19 12:42:48  dicuccio
- * Dropped unnecessary export specifier
- *
- * Revision 1.1  2003/10/24 15:06:30  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
-#endif  // ALGO_GNOMON___GNOMON_EXCEPTION__HPP
+#endif // ALGO_GNOMON___ASN1__HPP

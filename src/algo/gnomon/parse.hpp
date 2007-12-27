@@ -46,8 +46,8 @@ class CParse
         CParse(const CSeqScores& ss, bool leftanchor, bool rightanchor);
         const CHMM_State* Path() const { return m_path; }
         void PrintInfo() const;
-        list<CGene> GetGenes() const;
-        typedef list<CGene>::iterator TGenIt;
+        list<CGeneModel> GetGenes() const;
+    //        typedef list<CGene>::iterator TGenIt;
     
     private:
         CParse& operator=(const CParse&);
@@ -67,5 +67,24 @@ void LogicalCheck(const CHMM_State& st, const CSeqScores& ss);
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.2.2.1  2006/10/06 14:19:37  chetvern
+ * Major overhaul. Single format for intermediate files.
+ *
+ * Revision 1.3  2006/10/05 15:32:06  souvorov
+ * Implementation of anchors for intergenics
+ *
+ * Revision 1.2  2005/11/21 21:33:46  chetvern
+ * Splitted CParse::PrintGenes into CGnomonEngine::PartialModelStepBack and PrintGenes function
+ *
+ * Revision 1.1  2005/09/15 21:28:07  chetvern
+ * Sync with Sasha's working tree
+ *
+ *
+ * ===========================================================================
+ */
 
 #endif  // ALGO_GNOMON___PARSE__HPP

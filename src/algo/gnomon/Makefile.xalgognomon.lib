@@ -1,8 +1,8 @@
 # $Id$
 
-ASN_DEP = seqset
+ASN_DEP = seq
 
-SRC = gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq
+SRC = gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1
 LIB = xalgognomon
 
 CXXFLAGS = $(FAST_CXXFLAGS)

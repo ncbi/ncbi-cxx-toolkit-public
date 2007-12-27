@@ -39,13 +39,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
-template<int order> void CMarkovChain<order>::InitScore(CNcbiIfstream& from)
+template<int order> void CMarkovChain<order>::InitScore(CNcbiIstream& from)
 {
     Init(from);
     if(from) toScore();
 }
 
-template<int order> void CMarkovChain<order>::Init(CNcbiIfstream& from)
+template<int order> void CMarkovChain<order>::Init(CNcbiIstream& from)
 {
     m_next[enA].Init(from);
     m_next[enC].Init(from);
@@ -84,7 +84,7 @@ template<int order> double CMarkovChainArray<order>::Score(const EResidue* seq) 
     return score;
 }
 
-template<int order> void CMarkovChainArray<order>::InitScore(int l, CNcbiIfstream& from)
+template<int order> void CMarkovChainArray<order>::InitScore(int l, CNcbiIstream& from)
 {
     m_length = l;
     m_mc.resize(m_length);
@@ -104,30 +104,24 @@ double CWAM_Donor<order>::Score(const CEResidueVec& seq, int i) const
 }
 
 template<int order>
-CWAM_Donor<order>::CWAM_Donor(const string& file, int cgcontent)
+CWAM_Donor<order>::CWAM_Donor(CNcbiIstream& from)
 {
-    CNcbiOstrstream ost;
-    ost << "[WAM_Donor_" << order << "]";
-    string label = CNcbiOstrstreamToString(ost);
-    CNcbiIfstream from(file.c_str());
-    pair<int,int> cgrange = FindContent(from,label,cgcontent);
-    if(cgrange.first < 0) Error(label);
 
     string str;
     from >> str;
-    if(str != "InExon:") Error(label);
+    if(str != "InExon:") Error(class_id());
     from >> m_inexon;
-    if(!from) Error(label);
+    if(!from) Error(class_id());
     from >> str;
-    if(str != "InIntron:") Error(label);
+    if(str != "InIntron:") Error(class_id());
     from >> m_inintron;
-    if(!from) Error(label);
+    if(!from) Error(class_id());
     
     m_left = m_inexon;
     m_right = m_inintron;
     
     m_matrix.InitScore(m_inexon+m_inintron,from);
-    if(!from) Error(label);
+    if(!from) Error(class_id());
 }
 
 
@@ -143,47 +137,33 @@ double CWAM_Acceptor<order>::Score(const CEResidueVec& seq, int i) const
 }
 
 template<int order>
-CWAM_Acceptor<order>::CWAM_Acceptor(const string& file, int cgcontent)
+CWAM_Acceptor<order>::CWAM_Acceptor(CNcbiIstream& from)
 {
-    CNcbiOstrstream ost;
-    ost << "[WAM_Acceptor_" << order << "]";
-    string label = CNcbiOstrstreamToString(ost);
-    CNcbiIfstream from(file.c_str());
-    pair<int,int> cgrange = FindContent(from,label,cgcontent);
-    if(cgrange.first < 0) Error(label);
-
     string str;
     from >> str;
-    if(str != "InExon:") Error(label);
+    if(str != "InExon:") Error(class_id());
     from >> m_inexon;
-    if(!from) Error(label);
+    if(!from) Error(class_id());
     from >> str;
-    if(str != "InIntron:") Error(label);
+    if(str != "InIntron:") Error(class_id());
     from >> m_inintron;
-    if(!from) Error(label);
+    if(!from) Error(class_id());
     
     m_left = m_inintron;
     m_right = m_inexon;
     
     m_matrix.InitScore(m_inexon+m_inintron,from);
-    if(!from) Error(label);
+    if(!from) Error(class_id());
 }
 
 
 template<int order>
-CMC3_CodingRegion<order>::CMC3_CodingRegion(const string& file, int cgcontent)
+CMC3_CodingRegion<order>::CMC3_CodingRegion(CNcbiIstream& from)
 {
-    CNcbiOstrstream ost;
-    ost << "[MC3_CodingRegion_" << order << "]";
-    string label = CNcbiOstrstreamToString(ost);
-    CNcbiIfstream from(file.c_str());
-    pair<int,int> cgrange = FindContent(from,label,cgcontent);
-    if(cgrange.first < 0) Error(label);
-
     m_matrix[0].InitScore(from);
     m_matrix[1].InitScore(from);
     m_matrix[2].InitScore(from);
-    if(!from) Error(label);
+    if(!from) Error(class_id());
 }
 
 template<int order>
@@ -195,17 +175,10 @@ double CMC3_CodingRegion<order>::Score(const CEResidueVec& seq, int i, int codon
 }
 
 template<int order>
-CMC_NonCodingRegion<order>::CMC_NonCodingRegion(const string& file, int cgcontent)
+CMC_NonCodingRegion<order>::CMC_NonCodingRegion(CNcbiIstream& from)
 {
-    CNcbiOstrstream ost;
-    ost << "[MC_NonCodingRegion_" << order << "]";
-    string label = CNcbiOstrstreamToString(ost);
-    CNcbiIfstream from(file.c_str());
-    pair<int,int> cgrange = FindContent(from,label,cgcontent);
-    if(cgrange.first < 0) Error(label);
-
     m_matrix.InitScore(from);
-    if(!from) Error(label);
+    if(!from) Error(class_id());
 }
 
 template<int order>
@@ -221,11 +194,13 @@ template<class State> void EvaluateInitialScore(State& r)
     if(len >= r.MaxLen() || r.StopInside()) return;   // >= makes sence here
     
     int minlen = 1;
+    /*
     if(!r.NoRightEnd())
     {
         if(r.isPlus()) minlen += r.TerminalPtr()->Left();
         else  minlen += r.TerminalPtr()->Right();
     }
+    */
     if(len < minlen) return;   // states can go beyon the start
                                // so we shouldn't enforce MinLen
 
@@ -257,5 +232,26 @@ template<class State> void EvaluateInitialScore(State& r)
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.3.2.1  2006/10/12 19:08:22  chetvern
+ * Changed hmm parameters reading
+ *
+ * Revision 1.3  2005/10/06 15:52:13  chetvern
+ * moved methods that compiler doesn't make inline anyway from hmm_inlines.hpp to hmm.cpp and score.cpp
+ *
+ * Revision 1.2  2005/09/16 18:04:16  ucko
+ * kBadScore has been replaced with an inline BadScore function that
+ * always returns the same value to avoid lossage in optimized WorkShop
+ * builds.
+ *
+ * Revision 1.1  2005/09/15 21:28:07  chetvern
+ * Sync with Sasha's working tree
+ *
+ *
+ * ===========================================================================
+ */
 
 #endif  // ALGO_GNOMON___HMM_INLINES__HPP

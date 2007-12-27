@@ -41,7 +41,19 @@ BEGIN_SCOPE(gnomon)
 
 typedef vector<double> TDVec;
 
-enum EResidue { enA, enC, enG, enT, enN };
+enum EResidueNames { enA, enC, enG, enT, enN };
+
+class EResidue {
+public :
+    EResidue() : data(enN) {}
+    EResidue(EResidueNames e) : data(e) {}
+
+    operator int() const { return int(data); }
+
+private:
+    unsigned char data;
+};
+
 class CEResidueVec : public vector<EResidue> {};
 
 class CDoubleStrandSeq {
@@ -57,7 +69,7 @@ void Convert(const CResidueVec& src, CEResidueVec& dst);
 void Convert(const CEResidueVec& src, CResidueVec& dst);
 void Convert(const CResidueVec& src, CDoubleStrandSeq& dst);
 
-void Complement(const CEResidueVec& src, CEResidueVec& dst);
+void ReverseComplement(const CEResidueVec& src, CEResidueVec& dst);
 
 inline EResidue fromACGT(TResidue c)
 {
@@ -78,6 +90,7 @@ inline EResidue fromACGT(TResidue c)
         default:
             return enN;
     }
+    
 }
 
 inline TResidue Complement(TResidue c)
@@ -114,7 +127,7 @@ inline EResidue Complement(EResidue c)
 }
 
 template <class BidirectionalIterator>
-void Complement(const BidirectionalIterator& first, const BidirectionalIterator& last)
+void ReverseComplement(const BidirectionalIterator& first, const BidirectionalIterator& last)
 {
     for (BidirectionalIterator i( first ); i != last; ++i)
         *i = Complement(*i);
@@ -139,7 +152,49 @@ inline TResidue toACGT(EResidue c)
     }
 }
 
+void FindAllStarts(TIVec codons[], const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap, TSignedSeqRange search_region, int fixed_frame);
+void FindAllStops(TIVec codons[], const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap, TSignedSeqRange search_region, int fixed_frame);
+void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap,
+                     TIVec starts[3],  TIVec stops[3], int& frame);
+bool FindUpstreamStop(const vector<int>& stops, int start, int& stop);
+
+
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.4.2.5  2006/12/21 15:51:59  souvorov
+ *  CFrameShiftedSeqMap introduction
+ *
+ * Revision 1.4.2.4  2006/11/28 19:50:34  souvorov
+ * Introduction of CFrameShiftedSeqMap
+ *
+ * Revision 1.4.2.3  2006/11/03 20:59:25  chetvern
+ * Moved start/stop detection to gnomon_seq module
+ *
+ * Revision 1.4.2.2  2006/10/26 21:18:40  chetvern
+ * Convert Deletions into Insertions
+ *
+ * Revision 1.4.2.1  2006/10/06 14:19:36  chetvern
+ * Major overhaul. Single format for intermediate files.
+ *
+ * Revision 1.4  2005/10/24 17:38:52  souvorov
+ * Case sensitive Complement
+ *
+ * Revision 1.3  2005/10/06 15:50:42  chetvern
+ * moved TDVec definition from hmm.hpp to gnomon_seq.hpp
+ * renamed template parameter VecIt to more exact BidirectionalIterator
+ *
+ * Revision 1.2  2005/09/30 19:08:34  chetvern
+ * added in-place sequence Complement function
+ *
+ * Revision 1.1  2005/09/15 21:28:07  chetvern
+ * Sync with Sasha's working tree
+ *
+ *
+ * ===========================================================================
+ */
 
 #endif  // ALGO_GNOMON___GNOMON_SEQ__HPP

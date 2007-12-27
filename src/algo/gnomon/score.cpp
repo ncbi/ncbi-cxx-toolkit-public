@@ -60,6 +60,24 @@ bool CSeqScores::isStop(int i, int strand) const
     else return true;
 }
 
+bool CSeqScores::isReadingFrameLeftEnd(int i, int strand) const
+{
+    if(strand == ePlus) {
+        return isStart(i-3, strand);
+    } else {
+        return isStop(i-1,strand);
+    }
+}
+
+bool CSeqScores::isReadingFrameRightEnd(int i, int strand) const
+{
+    if(strand == ePlus) {
+        return isStop(i+1, strand);
+    } else {
+        return isStart(i+3,strand);
+    }
+}
+
 bool CSeqScores::isAG(int i, int strand) const
 {
     const CEResidueVec& ss = m_seq[strand];
@@ -125,131 +143,133 @@ bool CSeqScores::OpenIntergenicRegion(int a, int b) const
 
 double CSeqScores::IntergenicScore(int a, int b, int strand) const
 {
+    _ASSERT(strand == 0 || strand == 1);
+    _ASSERT(b>= 0 && b < (int)m_ingscr[strand].size());
     double score = m_ingscr[strand][b];
-    if(a > 0) score -= m_ingscr[strand][a-1];
+    if(a > 0) {
+        _ASSERT(a-1 < (int)m_ingscr[strand].size()); 
+        score -= m_ingscr[strand][a-1];
+    }
     return score;
 }
 
-int CSeqScores::SeqMap(int i, EMove move, int* dellenp) const 
+CResidueVec CSeqScores::ConstructSequenceAndMaps(const TAlignList& aligns, const CResidueVec& original_sequence)
 {
-    if(dellenp != 0) *dellenp = 0;
-    int l = m_seq_map[i];
-    if(l >= 0) return l;
-    
-    if(i == 0)
-    {
-         NCBI_THROW(CGnomonException, eGenericError, "First base in sequence can not be a deletion");
+    TSignedSeqRange chunk(m_chunk_start, m_chunk_stop);
+    ITERATE(TAlignList, it, aligns) {
+        const CGeneModel& align = *it;
+        if (Include(chunk, align.MaxCdsLimits()))
+            m_fshifts.insert(m_fshifts.end(),align.FrameShifts().begin(),align.FrameShifts().end());
     }
-    if(i == (int)m_seq_map.size()-1)
-    {
-         NCBI_THROW(CGnomonException, eGenericError, "Last base in sequence can not be a deletion");
-    }
-    
-    switch(move)
-    {
-        case eMoveLeft:
-        {
-            int dl = 0;
-            while(i-dl > 0 && m_seq_map[i-dl] < 0) ++dl;
-            if(dellenp != 0) *dellenp = dl;
-            return m_seq_map[i-dl];
-        }
-        case eMoveRight:
-        {
-            int dl = 0;
-            while(i+dl < (int)m_seq_map.size()-1 && m_seq_map[i+dl] < 0) ++dl;
-            if(dellenp != 0) *dellenp = dl;
-            return m_seq_map[i+dl];
-        }
-        default:  return l;
-    }
-}
+    sort(m_fshifts.begin(),m_fshifts.end());
+    m_map = CFrameShiftedSeqMap(m_chunk_start, m_chunk_stop, m_fshifts.begin(), m_fshifts.end());
+    CResidueVec sequence;
+    m_map.EditedSequence(original_sequence, sequence);
 
-TSignedSeqPos CSeqScores::RevSeqMap(TSignedSeqPos i) const 
-{
-    int l = m_rev_seq_map[i-From()];
-    if(l >= 0) 
-    {
-        return l;
-    }
-    else
-    {
-         NCBI_THROW(CGnomonException, eGenericError, "Mapping of insertion");
-    }
-}
+    _ASSERT( m_map.MapEditedToOrig(0) == From() && m_map.MapOrigToEdited(From()) == 0 );
+    _ASSERT( m_map.MapEditedToOrig((int)sequence.size()-1) == To() && m_map.MapOrigToEdited(To()) == (int)sequence.size()-1 );
 
-double AddScores(double scr1, double scr2)
-{
-    if(scr1 == BadScore() || scr2 == BadScore()) return BadScore();
-    else return scr1+scr2;
+    return sequence;
 }
 
 struct SAlignOrder
 {
-    bool operator() (const CAlignVec& a, const CAlignVec& b) const
+    bool operator() (const CGeneModel& a, const CGeneModel& b) const
     {
-        if(a.CdsLimits().NotEmpty()) return a.CdsLimits().GetFrom() < b.CdsLimits().GetFrom();
-        else return a.Limits().GetFrom() < b.Limits().GetFrom();
+        TSignedSeqPos x = a.ReadingFrame().NotEmpty() ? a.ReadingFrame().GetFrom() : a.Limits().GetFrom();
+        TSignedSeqPos y = b.ReadingFrame().NotEmpty() ? b.ReadingFrame().GetFrom() : b.Limits().GetFrom();
+
+        if (x==y)
+            return a.ID()<b.ID();
+        return x < y;
     }
 };
 
-CSeqScores::CSeqScores (CTerminal& a, CTerminal& d, CTerminal& stt, CTerminal& stp, 
-CCodingRegion& cr, CNonCodingRegion& ncr, CNonCodingRegion& ing, CResidueVec& original_sequence, 
-TSignedSeqPos from, TSignedSeqPos to, const TAlignList& cls, const TFrameShifts& initial_fshifts, bool repeats, bool leftwall, 
-bool rightwall, string cntg, double mpp, double consensuspenalty)
-: m_acceptor(a), m_donor(d), m_start(stt), m_stop(stp), m_cdr(cr), m_ncdr(ncr), m_intrg(ing), 
-  m_align_list(cls), m_fshifts(initial_fshifts), m_chunk_start(from), m_chunk_stop(to), m_contig(cntg), m_mpp(mpp)
+typedef set<CGeneModel,SAlignOrder> TAlignSet;
+
+struct CIndelMapper: public CRangeMapper {
+    CIndelMapper(const CFrameShiftedSeqMap& seq_map):
+        m_seq_map(seq_map) {}
+
+    const CFrameShiftedSeqMap& m_seq_map;
+
+    TSignedSeqRange operator() (TSignedSeqRange r, bool withextras = true) const
+    {
+        return m_seq_map.MapRangeOrigToEdited(r, withextras);
+    }
+};
+
+struct Is_ID_equal {
+    int m_id;
+    Is_ID_equal(int id): m_id(id) {}
+    bool operator()(const CGeneModel& a)
+    {
+        return a.ID()==m_id;
+    }
+};
+
+TSignedSeqPos AlignLeftLimit(const CGeneModel& a)
 {
-    
-    for(TAlignListConstIt it = cls.begin(); it != cls.end(); ++it)
-    {
-        const CAlignVec& align = *it;
-        if (!Include(TSignedSeqRange(from,to),align.Limits())) continue;
-        m_fshifts.insert(m_fshifts.end(),align.FrameShifts().begin(),align.FrameShifts().end());
-    }
-    sort(m_fshifts.begin(),m_fshifts.end());
-    TFrameShifts::iterator fsi = m_fshifts.begin();
-    while(fsi != m_fshifts.end() && fsi->Loc() < from) ++fsi;
-    
-    CResidueVec sequence;
-    m_rev_seq_map.resize(to-from+1);
-    for(TSignedSeqPos i = from; i <= to; ++i)
-    {
-        if(fsi != m_fshifts.end() && fsi->IsInsertion() && i == fsi->Loc())
-        {
-            for(TSignedSeqPos k = i; k < fsi->Loc()+fsi->Len(); ++k)  m_rev_seq_map[k-m_chunk_start] = -1;
-            i = fsi->Loc()+fsi->Len()-1;
-            ++fsi;
-        }
-        else if(fsi != m_fshifts.end() && fsi->IsDeletion() && i == fsi->Loc())
-        {
-            for(int k = 0; k < fsi->Len(); ++k)
-            {
-                sequence.push_back(fsi->DeletedValue()[k]);
-                m_seq_map.push_back(-1);
+    return ( a.MaxCdsLimits().Empty() ? a.Limits().GetFrom() : a.MaxCdsLimits().GetFrom() );
+}
+
+static bool s_AlignLeftLimitOrder(const CGeneModel& ap, const CGeneModel& bp)
+{
+    return (AlignLeftLimit(ap) < AlignLeftLimit(bp));
+}
+
+
+CSeqScores::CSeqScores (const CTerminal& a, const CTerminal& d, const CTerminal& stt, const CTerminal& stp, 
+const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& ing,
+                        TSignedSeqPos from, TSignedSeqPos to, const TAlignList& cls, const TFrameShifts& initial_fshifts, double mpp, const CGnomonEngine& gnomon)
+: m_acceptor(a), m_donor(d), m_start(stt), m_stop(stp), m_cdr(cr), m_ncdr(ncr), m_intrg(ing), 
+  m_align_list(cls), m_fshifts(initial_fshifts), m_map(from,to), m_chunk_start(from), m_chunk_stop(to), m_mpp(mpp)
+{
+    m_align_list.sort(s_AlignLeftLimitOrder);
+    NON_CONST_ITERATE(TAlignList, it, m_align_list) {
+        CGeneModel& align = *it;
+        CCDSInfo cds_info = align.GetCdsInfo();
+        bool fixed = false;
+        for(unsigned int i = 1; i < align.Exons().size(); ++i) {
+            if (!align.Exons()[i-1].m_ssplice || !align.Exons()[i].m_fsplice) {
+                int hole_len = align.Exons()[i].GetFrom()-align.Exons()[i-1].GetTo()-1;
+                if(hole_len <= CIntron::MinIntron()) {
+                    fixed = true;
+                    TSignedSeqRange pstop(align.Exons()[i-1].GetTo(),align.Exons()[i].GetFrom());     // to make sure GetScore doesn't complain about "new" pstops
+                    cds_info.AddPStop(pstop);
+                    if(hole_len%3 != 0) {
+                        align.FrameShifts().push_back(CFrameShiftInfo((align.Exons()[i-1].GetTo()+align.Exons()[i].GetFrom())/2, hole_len%3, true));
+                    }
+
+                    CGeneModel a(align.Strand());
+                    a.AddExon(TSignedSeqRange(align.Exons()[i-1].GetTo(),align.Exons()[i].GetFrom()));
+                    align.Extend(a);
+
+                    --i;
+                }
             }
-
-            --i;          // this position will be reconsidered next time (it still could be an insertion)
-            ++fsi;
         }
-        else
-        {
-            sequence.push_back(original_sequence[i]);
-            m_rev_seq_map[i-m_chunk_start] = (int)m_seq_map.size();
-            m_seq_map.push_back(i);
+        if(fixed) {
+            align.SetCdsInfo(cds_info);
+            sort(align.FrameShifts().begin(),align.FrameShifts().end());
+            gnomon.GetScore(align);                                                        // calculate possible new pstops
         }
     }
+}
 
-    TSignedSeqPos len = m_seq_map.size();
+void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, 
+bool rightwall, double consensuspenalty )
+{
+    CResidueVec sequence = ConstructSequenceAndMaps(m_align_list,original_sequence);
+
+    TSignedSeqPos len = sequence.size();
     
-    try
-    {
+    try {
         m_notining.resize(len,-1);
         m_inalign.resize(len,numeric_limits<int>::max());
         m_protnum.resize(len,0);
 
-        for(int strand = 0; strand < 2; ++strand)
-        {
+        for(int strand = 0; strand < 2; ++strand) {
             m_seq[strand].resize(len);
             m_ascr[strand].resize(len,BadScore());
             m_dscr[strand].resize(len,BadScore());
@@ -258,29 +278,23 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
             m_ncdrscr[strand].resize(len,BadScore());
             m_ingscr[strand].resize(len,BadScore());
             m_notinintron[strand].resize(len,-1);
-            for(int frame = 0; frame < 3; ++frame)
-            {
+            for(int frame = 0; frame < 3; ++frame) {
                 m_cdrscr[strand][frame].resize(len,BadScore());
                 m_laststop[strand][frame].resize(len,-1);
                 m_notinexon[strand][frame].resize(len,-1);
             }
-            for(int ph = 0; ph < 2; ++ph)
-            {
+            for(int ph = 0; ph < 2; ++ph) {
                 m_asplit[strand][ph].resize(len,0);
                 m_dsplit[strand][ph].resize(len,0);
             }
         }
-    }
-    catch(bad_alloc)
-    {
+    } catch(bad_alloc) {
         NCBI_THROW(CGnomonException, eMemoryLimit, "Not enough memory in CSeqScores");
     } 
 
-    for(TSignedSeqPos i = 0; i < len; ++i)
-    {
+    for(TSignedSeqPos i = 0; i < len; ++i) {  // masking rpeats
         char c = sequence[i];
-        if(repeats && c != toupper((unsigned char) c))
-        {
+        if(repeats && c != toupper((unsigned char) c)) {
             m_laststop[ePlus][0][i] = i;
             m_laststop[ePlus][1][i] = i;
             m_laststop[ePlus][2][i] = i;
@@ -294,80 +308,169 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
         m_seq[eMinus][len-1-i] = k_toMinus[l];
     }
     
-    set<CAlignVec,SAlignOrder> allaligns; 
-    for(TAlignListConstIt it = cls.begin(); it != cls.end(); ++it)
+    const int NLimit = 6;
+    CEResidueVec::iterator it = search_n(m_seq[ePlus].begin(),m_seq[ePlus].end(),NLimit,enN);
+    while(it != m_seq[ePlus].end())           // masking big chunks of Ns
     {
-        const CAlignVec& origalign = *it;
-        if(origalign.Limits().GetFrom() < from || origalign.Limits().GetTo() > to) continue;
-
-        TSignedSeqRange limits = origalign.Limits();
-        if(origalign.MaxCdsLimits().NotEmpty())   // 7 for splitted start/stop evaluation
+        for(; it != m_seq[ePlus].end() && *it == enN; ++it) 
         {
-            limits.SetFrom( max(limits.GetFrom(),origalign.MaxCdsLimits().GetFrom()-7) );
-            limits.SetTo( min(limits.GetTo(),origalign.MaxCdsLimits().GetTo()+7) );
+            int j = it-m_seq[ePlus].begin();
+            m_laststop[ePlus][0][j] = j;
+            m_laststop[ePlus][1][j] = j;
+            m_laststop[ePlus][2][j] = j;
+            m_laststop[eMinus][0][j] = j;
+            m_laststop[eMinus][1][j] = j;
+            m_laststop[eMinus][2][j] = j;
         }
-        int a = -1;
-        int aa = limits.GetFrom();
-        while(a < 0) a = m_rev_seq_map[(aa--)-From()]; // just in case we stumbled on the insertion because of 7
-        int b = -1;
-        int bb = limits.GetTo();
-        while(b < 0) b = m_rev_seq_map[(bb++)-From()]; // just in case we stumbled on the insertion because of 7
-        limits.SetFrom(a );
-        limits.SetTo( b );
+        it = search_n(it,m_seq[ePlus].end(),NLimit,enN); 
+    } 
+    
+    CIndelMapper mapper(m_map);
+    
+    TAlignSet allaligns; 
 
-        if(origalign.Type() == CAlignVec::eWall)
-        {
+    TSignedSeqRange chunk(m_chunk_start, m_chunk_stop);
+
+    ITERATE(TAlignList, it, m_align_list) {
+        const CGeneModel& origalign = *it;
+        TSignedSeqRange limits = origalign.Limits() & chunk;
+        if (limits.Empty() || (origalign.MaxCdsLimits().NotEmpty() &&  !Include(limits, origalign.MaxCdsLimits())))
+            continue;
+
+        CGeneModel align = origalign;
+        align.Clip(chunk, CGeneModel::eRemoveExons);
+
+        bool opposite = false;
+        if((align.Type() & CGeneModel::eNested)!=0 || (align.Type() & CGeneModel::eWall)!=0) {
+            ITERATE(TAlignList, jt, m_align_list) {
+                if(it == jt) continue;
+                const CGeneModel& aa = *jt;
+                if((aa.Type() & CGeneModel::eWall)==0 && (aa.Type() & CGeneModel::eNested)==0 && 
+                   aa.MaxCdsLimits().NotEmpty() && aa.MaxCdsLimits().IntersectingWith(align.Limits())) {
+                    opposite = true;
+                    break;
+                }
+            }
+        }
+
+        align.Remap(mapper);
+        align.FrameShifts().clear();
+
+        EStrand strand = align.Strand();
+    
+        if((align.Type() & CGeneModel::eWall)==0 && (align.Type() & CGeneModel::eNested)==0) {
+            CGeneModel al = align;
+            int extrabases = m_start.Left()-3;   // bases before ATG needed for score;
+            int extraNs5p = 0;                   // extra Ns if too close to the end of contig
+            if(extrabases > al.Limits().GetFrom()) {
+                extraNs5p = extrabases - al.Limits().GetFrom();
+                if(al.Limits().GetFrom() > 0) al.ExtendLeft(al.Limits().GetFrom());
+            } else {
+                al.ExtendLeft(extrabases);
+            }
+            int extraNs3p = 0;                   // extra Ns if too close to the end of contig  
+            if(al.Limits().GetTo()+extrabases > len-1) {
+                extraNs3p = al.Limits().GetTo()+extrabases-(len-1);
+                if(al.Limits().GetTo() < len-1) al.ExtendRight(len-1-al.Limits().GetTo());
+            } else {
+                al.ExtendRight(extrabases);
+            }
+            if(strand == eMinus) swap(extraNs5p,extraNs3p); 
+            
+            CEResidueVec mRNA;
+            CFrameShiftedSeqMap mrnamap(al);
+            mrnamap.EditedSequence(m_seq[ePlus], mRNA);
+            mRNA.insert(mRNA.begin(),extraNs5p,enN);
+            mRNA.insert(mRNA.end(),extraNs3p,enN);
+
+            // Here we are after splitted start/stops but this loop will score nonsplitted starts/stops as well 
+            // "starts/stops" crossing a hole will get some score also but they will be ignored because a hole is alwais incide CDS 
+            for(int k = extraNs5p; k < (int)mRNA.size()-extraNs3p; ++k) {
+                int i;
+                if(strand == ePlus) {
+                    i = mrnamap.MapEditedToOrig(k-extraNs5p+1)-1;      // the position of G or right before the first coding exon if start is completely in another exon
+                    if(align.MaxCdsLimits().Empty() || Include(align.MaxCdsLimits(),i))
+                        m_sttscr[strand][i] = m_start.Score(mRNA,k);
+
+                    i = mrnamap.MapEditedToOrig(k-extraNs5p);             // the last position in the last coding exon (usually right before T)
+                    if(align.MaxCdsLimits().Empty() || Include(align.MaxCdsLimits(),i))
+                        m_stpscr[strand][i] = m_stop.Score(mRNA,k);   
+                } else {
+                    i = mrnamap.MapEditedToOrig(k-extraNs5p+1);           // the last position in the last coding exon (usually right before G)
+                    if(i >= 0 && (align.MaxCdsLimits().Empty() || Include(align.MaxCdsLimits(),i)))
+                        m_sttscr[strand][i] = m_start.Score(mRNA,k);
+
+                    i = mrnamap.MapEditedToOrig(k-extraNs5p)-1;        // the position of T or right before the first coding exon if stop is completely in another exon
+                    if(i >= 0 && (align.MaxCdsLimits().Empty() || Include(align.MaxCdsLimits(),i)))
+                        m_stpscr[strand][i] = m_stop.Score(mRNA,k);
+                }
+            }
+        }
+        
+        _ASSERT(align.FShiftedLen(align.ReadingFrame(), false)%3==0);
+
+        if(align.MaxCdsLimits().NotEmpty()) {
+            limits = align.MaxCdsLimits();
+            align.Clip(limits, CGeneModel::eRemoveExons);
+        } else {
+            limits = align.Limits();
+        }
+
+        _ASSERT( align.Exons().size() > 0 );
+
+        if((align.Type() & CGeneModel::eNested)!=0) {
             int a = max(0,int(limits.GetFrom())-CIntergenic::MinIntergenic()+1);
             int b = min(len-1,limits.GetTo()+CIntergenic::MinIntergenic()-1);
-            for(int pnt = a; pnt <= b; ++pnt)
-            {
-                m_notinexon[ePlus][0][pnt] = pnt;
-                m_notinexon[ePlus][1][pnt] = pnt;
-                m_notinexon[ePlus][2][pnt] = pnt;
-                m_notinexon[eMinus][0][pnt] = pnt;
-                m_notinexon[eMinus][1][pnt] = pnt;
-                m_notinexon[eMinus][2][pnt] = pnt;
+            
+            if(opposite) {
+                for(int pnt = a; pnt <= b; ++pnt) {           // allow prediction on the opposite strand of nested models   
+                    m_notinexon[strand][0][pnt] = pnt;
+                    m_notinexon[strand][1][pnt] = pnt;
+                    m_notinexon[strand][2][pnt] = pnt;
+                }
+            } else {
+                for(int pnt = a; pnt <= b; ++pnt) {
+                    m_notinexon[ePlus][0][pnt] = pnt;
+                    m_notinexon[ePlus][1][pnt] = pnt;
+                    m_notinexon[ePlus][2][pnt] = pnt;
+                    m_notinexon[eMinus][0][pnt] = pnt;
+                    m_notinexon[eMinus][1][pnt] = pnt;
+                    m_notinexon[eMinus][2][pnt] = pnt;
+                }
+            }
+            continue;
+        } else if((align.Type() & CGeneModel::eWall)!=0) {
+            int a = max(0,int(limits.GetFrom())-CIntergenic::MinIntergenic()+1);
+            int b = min(len-1,limits.GetTo()+CIntergenic::MinIntergenic()-1);
 
-                m_notinintron[ePlus][pnt] = pnt;
-                m_notinintron[eMinus][pnt] = pnt;
+            if(opposite) {
+                for(int pnt = a; pnt <= b; ++pnt) {           // allow prediction on the opposite strand of complete models
+                    m_notinexon[strand][0][pnt] = pnt;
+                    m_notinexon[strand][1][pnt] = pnt;
+                    m_notinexon[strand][2][pnt] = pnt;
+                    
+                    m_notinintron[strand][pnt] = pnt;
+                }
+            } else {
+                for(int pnt = a; pnt <= b; ++pnt) {
+                    m_notinexon[ePlus][0][pnt] = pnt;
+                    m_notinexon[ePlus][1][pnt] = pnt;
+                    m_notinexon[ePlus][2][pnt] = pnt;
+                    m_notinexon[eMinus][0][pnt] = pnt;
+                    m_notinexon[eMinus][1][pnt] = pnt;
+                    m_notinexon[eMinus][2][pnt] = pnt;
+
+                    m_notinintron[ePlus][pnt] = pnt;
+                    m_notinintron[eMinus][pnt] = pnt;
+                }
             }
             continue;
         }
 
-        if(origalign.Type() == CAlignVec::eNested)
-        {
-            int a = max(0,int(limits.GetFrom())-CIntergenic::MinIntergenic()+1);
-            int b = min(len-1,limits.GetTo()+CIntergenic::MinIntergenic()-1);
-            for(int pnt = a; pnt <= b; ++pnt)
-            {
-                m_notinexon[ePlus][0][pnt] = pnt;
-                m_notinexon[ePlus][1][pnt] = pnt;
-                m_notinexon[ePlus][2][pnt] = pnt;
-                m_notinexon[eMinus][0][pnt] = pnt;
-                m_notinexon[eMinus][1][pnt] = pnt;
-                m_notinexon[eMinus][2][pnt] = pnt;
-            }
-            continue;
-        }
+        allaligns.insert(align);
 
-
-        CAlignVec algn(origalign.Strand(),origalign.ID(),origalign.Type());
-        algn.SetConfirmedStart(origalign.ConfirmedStart());
-
-        for(unsigned int k = 0; k < origalign.size(); ++k)
-        {
-            TSignedSeqPos a = RevSeqMap(origalign[k].GetFrom());
-            while(a > 0 && m_seq_map[a-1] < 0) --a;
-            TSignedSeqPos b = RevSeqMap(origalign[k].GetTo());
-            while(b < len-1 && m_seq_map[b+1] < 0) ++b;
-            a = max(limits.GetFrom(),a);
-            b = min(limits.GetTo(),b);
-            if(a > b) continue;
-
-            algn.Insert(CAlignExon(a,b,origalign[k].m_fsplice,origalign[k].m_ssplice));
-
-            for(TSignedSeqPos i = a; i <= b; ++i)   // ignoring repeats in alignmnets
-            {
+        ITERATE(CGeneModel::TExons, e, align.Exons()) {
+            for(TSignedSeqPos i = e->GetFrom(); i <= e->GetTo(); ++i) {  // ignoring repeats and allowing Ns in alignmnets
                 m_laststop[ePlus][0][i] = -1;
                 m_laststop[ePlus][1][i] = -1;
                 m_laststop[ePlus][2][i] = -1;
@@ -376,75 +479,36 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
                 m_laststop[eMinus][2][i] = -1;
             }
         }
-        algn.front().m_fsplice = false;
-        algn.back().m_ssplice = false;
-
-        if(origalign.CdsLimits().NotEmpty())
-        {
-            TSignedSeqPos a = RevSeqMap(origalign.CdsLimits().GetFrom());
-            while(a > origalign.Limits().GetFrom())
-            {
-                TSignedSeqPos aprev = a-1;
-                for(unsigned int k = 1; k < origalign.size(); ++k)
-                {
-                    if(origalign[k].GetFrom() == a) aprev = origalign[k-1].GetTo();
-                    else if(origalign[k].GetFrom() > a) break;
-                }
-                if(m_seq_map[aprev] < 0) a = aprev;
-                else break;
-            }
-            
-            TSignedSeqPos b = RevSeqMap(origalign.CdsLimits().GetTo());
-            while(b < origalign.Limits().GetTo())
-            {
-                TSignedSeqPos bnext = b+1;
-                for(unsigned int k = 0; k < origalign.size()-1; ++k)
-                {
-                    if(origalign[k].GetTo() == b) bnext = origalign[k+1].GetFrom();
-                    else if(origalign[k].GetTo() > b) break;
-                }
-                if(m_seq_map[bnext] < 0) b = bnext;
-                else break;
-            }
-            
-            algn.SetCdsLimits(TSignedSeqRange(a,b));
-        }
-        if(origalign.MaxCdsLimits().NotEmpty())
-        {
-            algn.SetMaxCdsLimits(TSignedSeqRange(RevSeqMap(origalign.MaxCdsLimits().GetFrom()),RevSeqMap(origalign.MaxCdsLimits().GetTo())));
-        }
-
-        allaligns.insert(algn);
         
-        if(algn.Type() == CAlignVec::eProt) m_protnum[algn.CdsLimits().GetFrom()] = 1;
+        if((align.Type() & CGeneModel::eProt)!=0)
+            m_protnum[align.ReadingFrame().GetFrom()] = 1;
 
-        if(algn.CdsLimits().NotEmpty())   // enforcing frames of known CDSes and protein pieces
-        {
-            EStrand strand = algn.Strand();
-            TSignedSeqPos right = algn.CdsLimits().GetTo();
+        if(align.ReadingFrame().NotEmpty()) {  // enforcing frames of known CDSes and protein pieces
+            TSignedSeqPos right = align.ReadingFrame().GetTo();
             int ff = (strand == ePlus) ? 2-right%3 : right%3;               // see cdrscr
-            for(int frame = 0; frame < 3; ++frame)
-            {
-                if(frame != ff) m_notinexon[strand][frame][right] = right;
+            for(int frame = 0; frame < 3; ++frame) {
+                if(frame != ff)
+                    m_notinexon[strand][frame][right] = right;
             }
 
-            for(unsigned int i = 1; i < algn.size(); ++i)
-            {
-                right = algn[i-1].GetTo();
-                ff = (strand == ePlus) ? 2-right%3 : right%3;
-                for(int frame = 0; frame < 3; ++frame)
-                {
-                    if(frame != ff && !algn[i-1].m_ssplice) m_notinexon[strand][frame][right] = right;
+            ITERATE(CGeneModel::TExons, e, align.Exons()) {
+                right = e->GetTo();
+                if (!e->m_ssplice && right < align.Limits().GetTo()) {
+                    ff = (strand == ePlus) ? 2-right%3 : right%3;
+                    for(int frame = 0; frame < 3; ++frame) {
+                        if(frame != ff)
+                            m_notinexon[strand][frame][right] = right;
+                    }
                 }
             }
         }
 
-        if(algn.ConfirmedStart()) {
+        if(align.ConfirmedStart()) {        // enforcing confirmed start
             int pnt;
-            if(algn.Strand() == ePlus) {
-                pnt = algn.CdsLimits().GetFrom()-1;
+            if(align.Strand() == ePlus) {
+                pnt = align.ReadingFrame().GetFrom()-1;
             } else {
-                pnt = algn.CdsLimits().GetTo()+1;
+                pnt = align.ReadingFrame().GetTo()+1;
             }
             m_notinexon[ePlus][0][pnt] = pnt;
             m_notinexon[ePlus][1][pnt] = pnt;
@@ -457,84 +521,74 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
             m_notinintron[eMinus][pnt] = pnt;
         }
 
-        if(it->MaxCdsLimits().NotEmpty())
-        {
-            if(it->MaxCdsLimits().GetFrom() > it->Limits().GetFrom())
-            {
-                m_notinexon[ePlus][0][limits.GetFrom()] = limits.GetFrom();
-                m_notinexon[ePlus][1][limits.GetFrom()] = limits.GetFrom();
-                m_notinexon[ePlus][2][limits.GetFrom()] = limits.GetFrom();
-                m_notinintron[ePlus][limits.GetFrom()] = limits.GetFrom();
-                m_notinexon[eMinus][0][limits.GetFrom()] = limits.GetFrom();
-                m_notinexon[eMinus][1][limits.GetFrom()] = limits.GetFrom();
-                m_notinexon[eMinus][2][limits.GetFrom()] = limits.GetFrom();
-                m_notinintron[eMinus][limits.GetFrom()] = limits.GetFrom();
-            }
-            if(it->MaxCdsLimits().GetTo() < it->Limits().GetTo())
-            {
-                m_notinexon[ePlus][0][limits.GetTo()] = limits.GetTo();
-                m_notinexon[ePlus][1][limits.GetTo()] = limits.GetTo();
-                m_notinexon[ePlus][2][limits.GetTo()] = limits.GetTo();
-                m_notinintron[ePlus][limits.GetTo()] = limits.GetTo();
-                m_notinexon[eMinus][0][limits.GetTo()] = limits.GetTo();
-                m_notinexon[eMinus][1][limits.GetTo()] = limits.GetTo();
-                m_notinexon[eMinus][2][limits.GetTo()] = limits.GetTo();
-                m_notinintron[eMinus][limits.GetTo()] = limits.GetTo();
-            }
+        // restricting prediction to MaxCdsLimits if not infinite
+        if(TSignedSeqRange::GetWholeFrom() < align.GetCdsInfo().MaxCdsLimits().GetFrom()) {
+            m_notinexon[ePlus][0][limits.GetFrom()] = limits.GetFrom();
+            m_notinexon[ePlus][1][limits.GetFrom()] = limits.GetFrom();
+            m_notinexon[ePlus][2][limits.GetFrom()] = limits.GetFrom();
+            m_notinintron[ePlus][limits.GetFrom()] = limits.GetFrom();
+            m_notinexon[eMinus][0][limits.GetFrom()] = limits.GetFrom();
+            m_notinexon[eMinus][1][limits.GetFrom()] = limits.GetFrom();
+            m_notinexon[eMinus][2][limits.GetFrom()] = limits.GetFrom();
+            m_notinintron[eMinus][limits.GetFrom()] = limits.GetFrom();
+        }
+        if(align.GetCdsInfo().MaxCdsLimits().GetTo() < TSignedSeqRange::GetWholeTo()) {
+            m_notinexon[ePlus][0][limits.GetTo()] = limits.GetTo();
+            m_notinexon[ePlus][1][limits.GetTo()] = limits.GetTo();
+            m_notinexon[ePlus][2][limits.GetTo()] = limits.GetTo();
+            m_notinintron[ePlus][limits.GetTo()] = limits.GetTo();
+            m_notinexon[eMinus][0][limits.GetTo()] = limits.GetTo();
+            m_notinexon[eMinus][1][limits.GetTo()] = limits.GetTo();
+            m_notinexon[eMinus][2][limits.GetTo()] = limits.GetTo();
+            m_notinintron[eMinus][limits.GetTo()] = limits.GetTo();
         }
     }
     
     for(TSignedSeqPos i = 1; i < len; ++i)
-    {
         m_protnum[i] += m_protnum[i-1];
-    }
-    
-    if(!allaligns.empty())
+
+    TAlignSet::iterator it_prev = allaligns.end();
+
+    for(TAlignSet::iterator it = allaligns.begin(); it != allaligns.end(); ++it)
     {
-        set<CAlignVec,SAlignOrder>::iterator it_prev = allaligns.begin();
-        
-        for(set<CAlignVec,SAlignOrder>::iterator it = ++allaligns.begin(); it != allaligns.end(); it_prev = it, ++it)
-        {
-            const CAlignVec& algn_prev(*it_prev);
-            const CAlignVec& algn(*it);
-            
-            if(algn.Limits().IntersectingWith(algn_prev.Limits()))
-            {
+        const CGeneModel& algn(*it);
+
+        if (it_prev != allaligns.end()) {
+            const CGeneModel& algn_prev(*it_prev);
+            if(algn.Limits().IntersectingWith(algn_prev.Limits())) {
+                //we can not handle overlapping alignments - at this point it is input error
                 CNcbiOstrstream ost;
                 ost << "MaxCDS of alignment " << algn.ID() << " intersects MaxCDS of alignment " << algn_prev.ID();
                 NCBI_THROW(CGnomonException, eGenericError, CNcbiOstrstreamToString(ost));
             }
         }
-    }
-    
-    for(set<CAlignVec,SAlignOrder>::iterator it = allaligns.begin(); it != allaligns.end(); ++it)
-    {
-        const CAlignVec& algn(*it);
+        it_prev = it;
+
         int strand = algn.Strand();
         int otherstrand = (strand == ePlus) ? eMinus : ePlus;
                 
-        for(unsigned int k = 1; k < algn.size(); ++k)  // accept NONCONSENSUS alignment splices
+        for(unsigned int k = 1; k < algn.Exons().size(); ++k)  // accept NONCONSENSUS alignment splices
         {
-            if(algn[k-1].m_ssplice)
+            if(algn.Exons()[k-1].m_ssplice)
             {
-                int i = algn[k-1].GetTo();
+                int i = algn.Exons()[k-1].GetTo();
                 if(strand == ePlus) m_dscr[strand][i] = 0;  // donor score on the last base of exon
                 else m_ascr[strand][i] = 0;                 // acceptor score on the last base of exon
             }
-            if(algn[k].m_fsplice)
+            if(algn.Exons()[k].m_fsplice)
             {
-                int i = algn[k].GetFrom();
+                int i = algn.Exons()[k].GetFrom();
                 if(strand == ePlus) m_ascr[strand][i-1] = 0; // acceptor score on the last base of intron
                 else m_dscr[strand][i-1] = 0;                // donor score on the last base of intron 
             }
         }
             
-        for(unsigned int k = 1; k < algn.size(); ++k)
+        for(unsigned int k = 1; k < algn.Exons().size(); ++k) // enforsing introns
         {
-            int introna = algn[k-1].GetTo()+1;
-            int intronb = algn[k].GetFrom()-1;
+            int introna = algn.Exons()[k-1].GetTo()+1;
+            int intronb = algn.Exons()[k].GetFrom()-1;
             
-            if(algn[k-1].m_ssplice)
+            if(algn.Exons()[k-1].m_ssplice)
             {
                 int pnt = introna;
                 m_notinexon[strand][0][pnt] = pnt;
@@ -542,7 +596,7 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
                 m_notinexon[strand][2][pnt] = pnt;
             }
             
-            if(algn[k].m_fsplice)
+            if(algn.Exons()[k].m_fsplice)
             {
                 int pnt = intronb;
                 m_notinexon[strand][0][pnt] = pnt;
@@ -550,7 +604,7 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
                 m_notinexon[strand][2][pnt] = pnt;
             }
                     
-            if(algn[k-1].m_ssplice && algn[k].m_fsplice)
+            if(algn.Exons()[k-1].m_ssplice && algn.Exons()[k].m_fsplice)
             {            
                 for(int pnt = introna; pnt <= intronb; ++pnt)
                 {
@@ -561,10 +615,10 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
             }
         }
 
-        for(unsigned int k = 0; k < algn.size(); ++k)
+        for(unsigned int k = 0; k < algn.Exons().size(); ++k)  // enforcing exons
         {
-            int exona = algn[k].GetFrom();
-            int exonb = algn[k].GetTo();
+            int exona = algn.Exons()[k].GetFrom();
+            int exonb = algn.Exons()[k].GetTo();
             for(int pnt = exona; pnt <= exonb; ++pnt)
             {
                 m_notinintron[strand][pnt] = pnt;
@@ -576,8 +630,8 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
         
         for(TSignedSeqPos i = a; i <= b && i < len-1; ++i)  // first and last points are conserved to deal with intergenics going outside
         {
-            m_inalign[i] = max(TSignedSeqPos(1),a);
-            m_notinintron[otherstrand][i] = i;
+            m_inalign[i] = max(TSignedSeqPos(1),a);         // one CDS maximum per alignment
+            m_notinintron[otherstrand][i] = i;              // no other strand models
             m_notinexon[otherstrand][0][i] = i;
             m_notinexon[otherstrand][1][i] = i;
             m_notinexon[otherstrand][2][i] = i;
@@ -586,10 +640,10 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
         if(strand == ePlus) a += 3;    // start now is a part of intergenic!!!!
         else b -= 3;
             
-        m_notining[b] = a;
-        if(algn.CdsLimits().NotEmpty())
-        {
-            for(TSignedSeqPos i = algn.CdsLimits().GetFrom(); i <= algn.CdsLimits().GetTo(); ++i) m_notining[i] = i;
+        m_notining[b] = a;                                  // at least one CDS per alignment
+        if(algn.ReadingFrame().NotEmpty()) {
+            for(TSignedSeqPos i = algn.ReadingFrame().GetFrom(); i <= algn.ReadingFrame().GetTo(); ++i)
+                m_notining[i] = i;
         }
     }
     
@@ -628,25 +682,7 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
         }
     }
     
-    const int NLimit = 6;
-    CEResidueVec::iterator it = search_n(m_seq[ePlus].begin(),m_seq[ePlus].end(),NLimit,enN);
-    while(it != m_seq[ePlus].end())           // masking big chunks of Ns
-    {
-        for(; it != m_seq[ePlus].end() && *it == enN; ++it) 
-        {
-            int j = it-m_seq[ePlus].begin();
-            m_laststop[ePlus][0][j] = j;
-            m_laststop[ePlus][1][j] = j;
-            m_laststop[ePlus][2][j] = j;
-            m_laststop[eMinus][0][j] = j;
-            m_laststop[eMinus][1][j] = j;
-            m_laststop[eMinus][2][j] = j;
-        }
-        it = search_n(it,m_seq[ePlus].end(),NLimit,enN); 
-    } 
-    
-
-    if(leftwall) m_notinintron[ePlus][0] = m_notinintron[eMinus][0] = 0;
+    if(leftwall) m_notinintron[ePlus][0] = m_notinintron[eMinus][0] = 0;                  // no partials
     if(rightwall) m_notinintron[ePlus][len-1] = m_notinintron[eMinus][len-1] = len-1;
 
     for(int strand = 0; strand < 2; ++strand)
@@ -693,8 +729,8 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
                     if(s[i-1] == enT && s[i] == enA) m_dsplit[strand][1][i] |= stpTA;
                     if(s[i-1] == enT && s[i] == enG) m_dsplit[strand][1][i] |= stpTG;
                 }
-                m_sttscr[strand][i] = m_start.Score(s,i);
-                m_stpscr[strand][i] = m_stop.Score(s,i);
+                m_sttscr[strand][i] = max(m_sttscr[strand][i],m_start.Score(s,i));
+                m_stpscr[strand][i] = max(m_stpscr[strand][i],m_stop.Score(s,i));
                 if(m_ascr[strand][i] != BadScore()) ++m_anum[strand];
                 if(m_dscr[strand][i] != BadScore()) ++m_dnum[strand];
                 if(m_sttscr[strand][i] != BadScore()) ++m_sttnum[strand];
@@ -721,139 +757,59 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
                     if(s[ii-1] == enT && s[ii] == enA) m_dsplit[strand][1][i] |= stpTA;
                     if(s[ii-1] == enT && s[ii] == enG) m_dsplit[strand][1][i] |= stpTG;
                 }
-                m_sttscr[strand][i] = m_start.Score(s,ii);
-                m_stpscr[strand][i] = m_stop.Score(s,ii);
+                m_sttscr[strand][i] = max(m_sttscr[strand][i],m_start.Score(s,ii));
+                m_stpscr[strand][i] = max(m_stpscr[strand][i],m_stop.Score(s,ii));
                 if(m_ascr[strand][i] != BadScore()) ++m_anum[strand];
                 if(m_dscr[strand][i] != BadScore()) ++m_dnum[strand];
             }
         }
     }		
 
-    for(set<CAlignVec,SAlignOrder>::iterator it = allaligns.begin(); it != allaligns.end(); ++it)
+
+    for(TAlignSet::iterator it = allaligns.begin(); it != allaligns.end(); ++it)
     {
-        const CAlignVec& algn(*it);
+        const CGeneModel& algn(*it);
         int strand = algn.Strand();
-
-        CEResidueVec& s = m_seq[ePlus];
-        CEResidueVec mRNA;
-        mRNA.reserve(algn.AlignLen());
-        for(int k = 0; k < (int)algn.size(); ++k) 
-        {
-            int exona = algn[k].GetFrom();
-            int exonb = algn[k].GetTo();
-            copy(&s[exona],&s[exonb]+1,back_inserter(mRNA));
-        }
-                    
-        if(strand == ePlus)
-        {
-            int shft = algn.front().GetFrom();
-            for(int k = 0; k < (int)algn.size()-1; ++k) 
-            {
-                int exonb = algn[k].GetTo();
-                        
-                if(algn[k].m_ssplice && algn[k+1].m_fsplice)
-                {
-                    for(int i = max(0,exonb-2); i <= exonb; ++i)    // if i==exonb, the stop is in the next "exon"
-                    {
-                        m_stpscr[strand][i] = m_stop.Score(mRNA,i-shft);
-                    }
-                }
-                        
-                TSignedSeqPos exona = algn[k+1].GetFrom();   //next exon
-                shft += exona-exonb-1;         //intron length
-                        
-                if(algn[k].m_ssplice && algn[k+1].m_fsplice)
-                {
-                    for(TSignedSeqPos i = exona-1; i <= min(len-1,exona+1); ++i)
-                    {
-                        m_sttscr[strand][i] = m_start.Score(mRNA,i-shft);
-                    }
-                }
-            }
-        }
-        else
-        {
-            reverse(mRNA.begin(),mRNA.end());
-            for(int i = 0; i < (int)mRNA.size(); ++i) mRNA[i] = k_toMinus[(int)mRNA[i]];
-                    
-            int shft = algn.back().GetTo()-1;
-            for(int k = (int)algn.size()-1; k > 0; --k) 
-            {
-                TSignedSeqPos exona = algn[k].GetFrom();
-                        
-                if(algn[k-1].m_ssplice && algn[k].m_fsplice)
-                {
-                    for(TSignedSeqPos i = exona-1; i <= min(len-1,exona+1); ++i)
-                    {
-                        m_stpscr[strand][i] = m_stop.Score(mRNA,shft-i);
-                    }
-                }
-                        
-                TSignedSeqPos exonb = algn[k-1].GetTo();  //prev exon
-                shft -= exona-exonb-1;         //intron length
-
-                if(algn[k-1].m_ssplice && algn[k].m_fsplice)
-                {
-                    for(TSignedSeqPos i = max(0,int(exonb)-2); i <= exonb; ++i)
-                    {
-                        m_sttscr[strand][i] = m_start.Score(mRNA,shft-i);
-                    }
-                }
-            }
-        }
-    }
-
-
-    for(set<CAlignVec,SAlignOrder>::iterator it = allaligns.begin(); it != allaligns.end(); ++it)
-    {
-        const CAlignVec& algn(*it);
-        int strand = algn.Strand();
-        TSignedSeqRange cds_lim = algn.CdsLimits();
+        TSignedSeqRange cds_lim = algn.ReadingFrame();
         if(cds_lim.Empty()) continue;
         
         if(strand == ePlus)
         {
-            for(unsigned int k = 0; k < algn.size()-1; ++k)   // suppressing splitted STOPS in CDS
+            for(unsigned int k = 0; k < algn.Exons().size()-1; ++k)   // ignoring splitted STOPS in CDS
             {
-                TSignedSeqPos b = algn[k].GetTo();
-                if(algn[k].m_ssplice && algn[k+1].m_fsplice && b >= cds_lim.GetFrom() && b < cds_lim.GetTo())
+                TSignedSeqPos b = algn.Exons()[k].GetTo();
+                if(algn.Exons()[k].m_ssplice && algn.Exons()[k+1].m_fsplice && b >= cds_lim.GetFrom() && b <= cds_lim.GetTo())
                 {
                     m_dsplit[strand][0][b] = 0;
                     m_dsplit[strand][1][b] = 0;
                 }
             }
             
-            for(unsigned int k = 0; k < algn.size(); ++k)   // suppressing STOPS in CDS
-            {
-                TSignedSeqPos a = algn[k].GetFrom();
-                TSignedSeqPos b = algn[k].GetTo();
-                if(!algn[k].m_ssplice) --b;
+            for(unsigned int k = 0; k < algn.Exons().size(); ++k) {   // ignoring STOPS in CDS
+                TSignedSeqPos a = max(algn.Exons()[k].GetFrom(),cds_lim.GetFrom());
+                if(a > 0) --a;
+                TSignedSeqPos b = min(algn.Exons()[k].GetTo(),cds_lim.GetTo())-1;   // -1 don't touch the real stop
                 for(TSignedSeqPos i = a; i <= b; ++i)
-                {
-                    if(cds_lim.GetFrom() <= i && i < cds_lim.GetTo()) m_stpscr[strand][i] = BadScore();  // score on last coding base
-                }
+                    m_stpscr[strand][i] = BadScore();  // score on last coding base
             }
         }
         else
         {
-            for(unsigned int k = 1; k < algn.size(); ++k)   // suppressing splitted STOPS in CDS
+            for(unsigned int k = 1; k < algn.Exons().size(); ++k)   // ignoring splitted STOPS in CDS
             {
-                TSignedSeqPos a = algn[k].GetFrom();
-                if(algn[k-1].m_ssplice && algn[k].m_fsplice && a > cds_lim.GetFrom() && a < cds_lim.GetTo())
+                TSignedSeqPos a = algn.Exons()[k].GetFrom();
+                if(a > 0 && algn.Exons()[k-1].m_ssplice && algn.Exons()[k].m_fsplice && a >= cds_lim.GetFrom() && a <= cds_lim.GetTo())
                 {
-                    m_dsplit[strand][0][a] = 0;
-                    m_dsplit[strand][1][a] = 0;
+                    m_dsplit[strand][0][a-1] = 0;
+                    m_dsplit[strand][1][a-1] = 0;
                 }
             }
             
-            for(unsigned int k = 0; k < algn.size(); ++k)   // suppressing STOPS in CDS
-            {
-                TSignedSeqPos a = algn[k].GetFrom();
-                TSignedSeqPos b = algn[k].GetTo();
+            for(unsigned int k = 0; k < algn.Exons().size(); ++k) {   // ignoring STOPS in CDS
+                TSignedSeqPos a = max(algn.Exons()[k].GetFrom(),cds_lim.GetFrom());
+                TSignedSeqPos b = min(algn.Exons()[k].GetTo(),cds_lim.GetTo());
                 for(TSignedSeqPos i = a; i <= b; ++i)
-                {
-                    if(i >= cds_lim.GetFrom() && i <= cds_lim.GetTo()) m_stpscr[strand][i] = BadScore();  // score on last intergenic (first stop) base
-                }
+                    m_stpscr[strand][i] = BadScore();  // score on last intergenic (first stop) base
             }
         }
     }
@@ -950,50 +906,58 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
             int left, right;
             if(m_dscr[strand][i] != BadScore())
             {
-                CTerminal& t = m_donor;
+                const CTerminal& t = m_donor;
                 left = i+1-(strand==ePlus ? t.Left():t.Right());
                 right = i+(strand==ePlus ? t.Right():t.Left());
+                left = max(0,left);
+                right = min(len-1,right);
                 m_dscr[strand][i] -= NonCodingScore(left,right,strand);
             }
             if(m_ascr[strand][i] != BadScore())
             {
-                CTerminal& t = m_acceptor;
+                const CTerminal& t = m_acceptor;
                 left = i+1-(strand==ePlus ? t.Left():t.Right());
                 right = i+(strand==ePlus ? t.Right():t.Left());
+                left = max(0,left);
+                right = min(len-1,right);
                 m_ascr[strand][i] -= NonCodingScore(left,right,strand);
             }
             if(m_sttscr[strand][i] != BadScore())
             {
-                CTerminal& t = m_start;
+                const CTerminal& t = m_start;
                 left = i+1-(strand==ePlus ? t.Left():t.Right());
                 right = i+(strand==ePlus ? t.Right():t.Left());
+                left = max(0,left);
+                right = min(len-1,right);
                 m_sttscr[strand][i] -= NonCodingScore(left,right,strand);
             }
             if(m_stpscr[strand][i] != BadScore())
             {
-                CTerminal& t = m_stop;
+                const CTerminal& t = m_stop;
                 left = i+1-(strand==ePlus ? t.Left():t.Right());
                 right = i+(strand==ePlus ? t.Right():t.Left());
+                left = max(0,left);
+                right = min(len-1,right);
                 m_stpscr[strand][i] -= NonCodingScore(left,right,strand);
             }
         }
     }
     
     const int NonConsensusMargin = 1500;
-    for(set<CAlignVec,SAlignOrder>::iterator it = allaligns.begin(); consensuspenalty != BadScore() && it != allaligns.end(); ++it)
-    {
-        const CAlignVec& algn(*it);
-        if(algn.Type() != CAlignVec::eProt) continue;
+    if (consensuspenalty != BadScore())
+    ITERATE(TAlignSet, it, allaligns) {
+        const CGeneModel& algn(*it);
+        if((algn.Type() & CGeneModel::eProt) == 0) continue;
         
         int strand = algn.Strand();
         TSignedSeqRange lim = algn.Limits();
         
-        for(unsigned int k = 1; k < algn.size(); ++k)
+        for(unsigned int k = 1; k < algn.Exons().size(); ++k)
         {
-            if(algn[k-1].m_ssplice && algn[k].m_fsplice) continue;
+            if(algn.Exons()[k-1].m_ssplice && algn.Exons()[k].m_fsplice) continue;
             
-            int a = algn[k-1].GetTo();
-            int b = algn[k].GetFrom();
+            int a = algn.Exons()[k-1].GetTo();
+            int b = algn.Exons()[k].GetFrom();
             for(TSignedSeqPos i = a; i <= b; ++i)
             {
                 if(i <= a+NonConsensusMargin || i >= b-NonConsensusMargin)
@@ -1015,7 +979,7 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
         
         if(strand == ePlus)
         {
-            if(!algn.FullFiveP())
+            if(!algn.HasStart())
             {
                 int a = max(2,lim.GetFrom()-NonConsensusMargin);
                 int b = lim.GetFrom()-1;
@@ -1041,7 +1005,7 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
                 }
             }
             
-            if(!algn.FullThreeP())
+            if(!algn.HasStop())
             {
                 int a = lim.GetTo();
                 int b = min(len-4,lim.GetTo()+NonConsensusMargin);
@@ -1069,7 +1033,7 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
         }
         else
         {
-            if(!algn.FullFiveP())
+            if(!algn.HasStart())
             {
                 int a = lim.GetTo();
                 int b = min(len-4,lim.GetTo()+NonConsensusMargin);
@@ -1095,7 +1059,7 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
                 }
             }
             
-            if(!algn.FullThreeP())
+            if(!algn.HasStop())
             {
                 int a = max(2,lim.GetFrom()-NonConsensusMargin);
                 int b = lim.GetFrom()-1;
@@ -1125,27 +1089,7 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
     
 }
 
-namespace {
-    EResidue atg[3] = { enA, enT, enG };
-    EResidue taa[3] = { enT, enA, enA };
-    EResidue tag[3] = { enT, enA, enG };
-    EResidue tga[3] = { enT, enG, enA };
-    EResidue ag[2] = { enA, enG };
-}    
-
-bool SafeOpenEnd(const CEResidueVec& seq_strand, int start, int shift) {
-    int cds_start = start+shift;
-    for(int k = cds_start-2; k >= 0; k -= 1) {
-        if(k < start-1 && equal(ag,ag+2,&seq_strand[k])) return true;   // splice must be outside of alignment
-        if((cds_start-k)%3 != 0) continue;
-        if(equal(atg,atg+3,&seq_strand[k])) return true;
-        if(equal(taa,taa+3,&seq_strand[k]) || equal(tag,tag+3,&seq_strand[k]) || equal(tga,tga+3,&seq_strand[k])) return false;
-    }
-
-    return false;
-}
-
-void CGnomonEngine::GetScore(CAlignVec& model, bool uselims, bool allowopen) const
+double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, int& best_start, int& best_stop) const
 {
     const CTerminal& acceptor    = *m_data->m_acceptor;
     const CTerminal& donor       = *m_data->m_donor;
@@ -1153,110 +1097,26 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims, bool allowopen) con
     const CTerminal& stp         = *m_data->m_stop;
     const CCodingRegion& cdr     = *m_data->m_cdr;
     const CNonCodingRegion& ncdr = *m_data->m_ncdr;
-
-    int len = m_data->m_seq.size();
-    int num = model.size();
+    int contig_len = m_data->m_seq.size();
     EStrand strand = model.Strand();
-    const vector<CAlignExon>& exons = model;
+    const vector<CAlignExon>& exons = model.Exons();
+    int num_exons = model.Exons().size();
 
     const CDoubleStrandSeq& ds = m_data->m_ds;
-    CEResidueVec cds;
-    TIVec cdsmap;
-    model.GetSequence(ds[ePlus], cds, &cdsmap);   // due to historical reasons cds here is actually the whole mRNA
+    TDVec splicescr(mrna.size(),0);
 
-    int lim_start = -1;
-    int lim_stop = -1;
-    if(model.CdsLimits().Empty()) 
-    {
-        uselims = false;
-    }
-    else
-    {
-        for(unsigned int k = 0; k < cdsmap.size(); ++k)
-        {
-            if(int(model.CdsLimits().GetFrom()) == cdsmap[k]) lim_start = k;  
-            if(int(model.CdsLimits().GetTo()) == cdsmap[k]) lim_stop = k;
-        }
-    }
-    
-    if(strand == eMinus) std::swap(lim_start,lim_stop);
-
-    TIVec starts[3], stops[3];
-
-    if(uselims) {
-        for(int i = lim_start; i <= lim_stop-2; i += 3) {
-            if(equal(taa,taa+3,&cds[i]) || equal(tag,tag+3,&cds[i]) || equal(tga,tga+3,&cds[i])) model.SetPStop( true );
-        }
-    }
-
-    int lim_frame = lim_start%3;
-    int cds_start = (strand == ePlus) ? cdsmap[0] : len-1-cdsmap[0];
-    const CEResidueVec& seq_strand = ds[strand];
-
-    if(allowopen && !equal(atg,atg+3,&cds[0]) && (!uselims || lim_frame == 0) && SafeOpenEnd(seq_strand,cds_start,0)) starts[0].push_back(0);  // those with atg will be included in the below loop
-    if(allowopen && !equal(atg,atg+3,&cds[1]) && (!uselims || lim_frame == 1) && SafeOpenEnd(seq_strand,cds_start,1)) starts[1].push_back(1);
-    if(allowopen && !equal(atg,atg+3,&cds[2]) && (!uselims || lim_frame == 2) && SafeOpenEnd(seq_strand,cds_start,2)) starts[2].push_back(2);
-    
-    CEResidueVec::iterator pos;
-    pos = search(cds.begin(),cds.end(),atg,atg+3);
-    while(pos != cds.end()) {
-        int l = pos-cds.begin();
-        int frame = l%3;
-        if(!uselims || (frame == lim_frame && l <= lim_start)) starts[frame].push_back(l); // with uselims only earlier starts should be considered
-        pos = search(pos+1,cds.end(),atg,atg+3);
-    }
-
-
-    pos = search(cds.begin(),cds.end(),taa,taa+3);
-    while(pos != cds.end()) {
-        int l = pos-cds.begin();
-        int frame = l%3;
-        if(!uselims || l < lim_start || l > lim_stop) stops[frame].push_back(l);   // if uselims stops in CDS are ignored
-        pos = search(pos+1,cds.end(),taa,taa+3);
-    }
-    pos = search(cds.begin(),cds.end(),tag,tag+3);
-    while(pos != cds.end()) {
-        int l = pos-cds.begin();
-        int frame = l%3;
-        if(!uselims || l < lim_start || l > lim_stop) stops[frame].push_back(l);
-        pos = search(pos+1,cds.end(),tag,tag+3);
-    }
-    pos = search(cds.begin(),cds.end(),tga,tga+3);
-    while(pos != cds.end()) {
-        int l = pos-cds.begin();
-        int frame = l%3;
-        if(!uselims || l < lim_start || l > lim_stop) stops[frame].push_back(l);
-        pos = search(pos+1,cds.end(),tga,tga+3);
-    }
-    sort(stops[0].begin(),stops[0].end());    // three types of stops come independently in different order
-    sort(stops[1].begin(),stops[1].end());
-    sort(stops[2].begin(),stops[2].end());
-    stops[cds.size()%3].push_back(cds.size());
-    stops[(cds.size()-1)%3].push_back(cds.size()-1);
-    stops[(cds.size()-2)%3].push_back(cds.size()-2);
-    
-    
-    TDVec splicescr(cds.size(),0);
-    
-    if(strand == ePlus)
-    {
+    if(strand == ePlus) {
         int shift = -1;
-        for(int i = 1; i < num; ++i)
-        {
-            shift += model.FShiftedLen(exons[i-1].GetFrom(),exons[i-1].GetTo());
+        for(int i = 1; i < num_exons; ++i) {
+            shift += mrnamap.FShiftedLen(exons[i-1].GetFrom(),exons[i-1].GetTo());
             
-            if(exons[i-1].m_ssplice)
-            {
+            if(exons[i-1].m_ssplice) {
                 int l = exons[i-1].GetTo();
                 double scr = donor.Score(ds[ePlus],l);
-                if(scr == BadScore()) 
-                {
+                if(scr == BadScore()) {
                     scr = 0;
-                }
-                else
-                {
-                    for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k)
-                    {
+                } else {
+                    for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k) {
                         double s = ncdr.Score(ds[ePlus],k);
                         if(s == BadScore()) s = 0;
                         scr -= s;
@@ -1265,18 +1125,13 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims, bool allowopen) con
                 splicescr[shift] = scr;
             }
 
-            if(exons[i].m_fsplice)
-            {
+            if(exons[i].m_fsplice) {
                 int l = exons[i].GetFrom()-1;
                 double scr = acceptor.Score(ds[ePlus],l);
-                if(scr == BadScore()) 
-                {
+                if(scr == BadScore()) {
                     scr = 0;
-                }
-                else
-                {
-                    for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k)
-                    {
+                } else {
+                    for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k) {
                         double s = ncdr.Score(ds[ePlus],k);
                         if(s == BadScore()) s = 0;
                         scr -= s;
@@ -1285,26 +1140,18 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims, bool allowopen) con
                 splicescr[shift] += scr;
             }
         }
-    }
-    else
-    {
-        int shift = cds.size()-1;
-        for(int i = 1; i < num; ++i)
-        {
-            shift -= model.FShiftedLen(exons[i-1].GetFrom(),exons[i-1].GetTo());
+    } else {
+        int shift = mrna.size()-1;
+        for(int i = 1; i < num_exons; ++i) {
+            shift -= mrnamap.FShiftedLen(exons[i-1].GetFrom(),exons[i-1].GetTo());
             
-            if(exons[i-1].m_ssplice)
-            {
-                int l = len-2-exons[i-1].GetTo();
+            if(exons[i-1].m_ssplice) {
+                int l = contig_len-2-exons[i-1].GetTo();
                 double scr = acceptor.Score(ds[eMinus],l);
-                if(scr == BadScore()) 
-                {
+                if(scr == BadScore()) {
                     scr = 0;
-                }
-                else
-                {
-                    for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k)
-                    {
+                } else {
+                    for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k) {
                         double s = ncdr.Score(ds[eMinus],k);
                         if(s == BadScore()) s = 0;
                         scr -= s;
@@ -1313,18 +1160,13 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims, bool allowopen) con
                 splicescr[shift] = scr;
             }
 
-            if(exons[i].m_fsplice)
-            {
-                int l = len-1-exons[i].GetFrom();
+            if(exons[i].m_fsplice) {
+                int l = contig_len-1-exons[i].GetFrom();
                 double scr = donor.Score(ds[eMinus],l);
-                if(scr == BadScore()) 
-                {
+                if(scr == BadScore()) {
                     scr = 0;
-                }
-                else
-                {
-                    for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k)
-                    {
+                } else {
+                    for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k) {
                         double s = ncdr.Score(ds[eMinus],k);
                         if(s == BadScore()) s = 0;
                         scr -= s;
@@ -1336,124 +1178,274 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims, bool allowopen) con
     }
 
     TDVec cdrscr[3];
-    for(int frame = 0; frame < 3; ++frame)
-    {
-        cdrscr[frame].resize(cds.size(),BadScore());
-        for(int i = 0; i < (int)cds.size(); ++i)
-        {
-            int codonshift = (i-frame)%3;
-            if(codonshift < 0) codonshift += 3;
+    for(int frame = 0; frame < 3; ++frame) {
+        if (frame==best_frame || best_frame==-1) {
+            cdrscr[frame].resize(mrna.size(),BadScore());
+            for(int i = 0; i < (int)mrna.size(); ++i) {
+                int codonshift = (i-frame)%3;
+                if(codonshift < 0)
+                    codonshift += 3;
                 
-            double scr = cdr.Score(cds,i,codonshift);
-            if(scr == BadScore()) 
-            {
-                scr = 0;
-            }
-            else
-            {
-                double s = ncdr.Score(cds,i);
-                if(s == BadScore()) s = 0;
-                scr -= s;
-            }
+                double scr = cdr.Score(mrna,i,codonshift);
+                if(scr == BadScore())  {
+                    scr = 0;
+                } else {
+                    double s = ncdr.Score(mrna,i);
+                    if(s == BadScore()) s = 0;
+                    scr -= s;
+                }
 
-            cdrscr[frame][i] = scr+splicescr[i];
-            if(i > 0) cdrscr[frame][i] += cdrscr[frame][i-1];
+                cdrscr[frame][i] = scr+splicescr[i];
+                if(i > 0)
+                    cdrscr[frame][i] += cdrscr[frame][i-1];
+            }
         }
     }
-    
-    if(!uselims)
-    {
-        model.SetCdsLimits(TSignedSeqRange::GetEmpty());
-        model.SetMaxCdsLimits(TSignedSeqRange::GetEmpty());
-    }
-    model.SetScore(BadScore());
+
+    double best_score  = BadScore();
+    best_start = -1;
+    best_stop = -1;
+    CCDSInfo cds_info = model.GetCdsInfo();
 
     for(int frame = 0; frame < 3; ++frame) {
         for(int i = (int)starts[frame].size()-1; i >= 0; --i) {
             int start = starts[frame][i];
-            
-            if(model.ConfirmedStart() && start != lim_start-3) continue;
 
             TIVec::iterator it_stop = lower_bound(stops[frame].begin(),stops[frame].end(),start);
-            int stop = *it_stop-1;
+            int stop = *it_stop;
 
-            if(uselims && stop < lim_stop) continue;
-            if(stop-start+1 < 75) continue;
+            if (stop-start-(start>=0?0:3) < 75)
+                continue;
             
-            double s = cdrscr[frame][stop]-cdrscr[frame][start+2];
+            double s = cdrscr[frame][stop-1]-cdrscr[frame][start+2+(start>=0?0:3)];
             
             double stt_score = BadScore();
-            if(start >= stt.Left()+2) {   // 5 extra bases for ncdr
+            if(start >= stt.Left()+2) {    // 5 extra bases for ncdr
                 int pnt = start+2;
-                stt_score = stt.Score(cds,pnt);
+                stt_score = stt.Score(mrna,pnt);
                 if(stt_score != BadScore()) {
                     for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
-                        double sn = ncdr.Score(cds,k);
-                        if(sn != BadScore()) stt_score -= sn;
+                        double sn = ncdr.Score(mrna,k);
+                        if(sn != BadScore())
+                            stt_score -= sn;
                     }
                 }
             } else {
-                int pnt = (strand == ePlus) ? cdsmap[start]+2 : len-1-cdsmap[start]+2;
+                int pnt = mrnamap.MapEditedToOrig(start+(start>=0?0:3));
+                if(strand == eMinus) pnt = contig_len-1-pnt;
+                pnt += 2;
                 stt_score = stt.Score(ds[strand],pnt);
                 if(stt_score != BadScore()) {
                     for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
                         double sn = ncdr.Score(ds[strand],k);
-                        if(sn != BadScore()) stt_score -= sn;
+                        if(sn != BadScore())
+                            stt_score -= sn;
                     }
                 }
             }
-            if(stt_score != BadScore()) s += stt_score;
+            if(stt_score != BadScore())
+                s += stt_score;
             
-            double stp_score = stp.Score(cds,stop);
+            double stp_score = stp.Score(mrna,stop-1);
             if(stp_score != BadScore()) {
-                for(int k = stop-stp.Left()+1; k <= stop+stp.Right(); ++k) {
-                    double sn = ncdr.Score(cds,k);
-                    if(sn != BadScore()) stp_score -= sn;
+                for(int k = stop-stp.Left(); k < stop+stp.Right(); ++k) {
+                    double sn = ncdr.Score(mrna,k);
+                    if(sn != BadScore())
+                        stp_score -= sn;
                 }
                 s += stp_score;
             }
             
-            if(s > model.Score()) {
-                bool opencds = false;
-                if(!equal(atg,atg+3,&cds[start])) {
-                    opencds = true;
-                    if(starts[frame].size() > 1) {
-                        int new_start = starts[frame][1];
-                        int newlen = stop-new_start+1;
-                        if(newlen > 75) start = new_start;
-                    }
-                }
-                
-                if(equal(atg,atg+3,&cds[start])) start += 3;
             
-                model.SetOpenCds(opencds);
-                
-                int upstream_stop = -1;
-                if(it_stop != stops[frame].begin()) upstream_stop = *(--it_stop);
-                int utr_start = *lower_bound(starts[frame].begin(),starts[frame].end(),upstream_stop+1);
-                if(utr_start < 3) utr_start = 0;
-                int utr_stop = min((int)cds.size()-1,stop+3);
-                
-                if(strand == ePlus) {
-                    model.SetMaxCdsLimits(TSignedSeqRange(cdsmap[utr_start],cdsmap[utr_stop]));
-                } else {
-                    model.SetMaxCdsLimits(TSignedSeqRange(cdsmap[utr_stop],cdsmap[utr_start]));
-                }
-
-                model.SetScore(s);
-                
-                while(cdsmap[start] < 0 && start < (int)cds.size()-1) ++start;  // in case they point to deletion  
-                while(cdsmap[stop] < 0 && stop > 0) --stop; 
-                if(strand == ePlus) {
-                    model.SetCdsLimits(TSignedSeqRange(cdsmap[start],cdsmap[stop]));
-                } else {
-                    model.SetCdsLimits(TSignedSeqRange(cdsmap[stop],cdsmap[start]));
-                }
+            if(cds_info.ConfirmedStart() && i == int(starts[frame].size())-1) {
+                s += max(1.,0.1*s);        // in case s negative
+                //                s *= 1.1;
+            }
+            if(s > best_score) {
+                best_frame = frame;
+                best_score = s;
+                best_start = start;
+                best_stop = stop;
             }
         }
     }
+
+    if (cds_info.ConfirmedStart() && best_start == starts[best_frame].back())
+        best_score /= 1.1;
+
+    return best_score;
+}
+
+void CGnomonEngine::GetScore(CGeneModel& model) const
+{
+    CFrameShiftedSeqMap mrnamap(model);
+    CEResidueVec mrna;
+    mrnamap.EditedSequence(m_data->m_ds[ePlus], mrna);
+
+    int frame = -1;
+    TIVec starts[3], stops[3];
+
+    FindStartsStops(model, m_data->m_ds[model.Strand()], mrna, mrnamap, starts, stops, frame);
+
+    int best_start, best_stop;
+    double best_score = SelectBestReadingFrame(model, mrna, mrnamap, starts, stops, frame, best_start, best_stop);
+
+    CCDSInfo cds_info = model.GetCdsInfo();
+
+    if (best_score == BadScore()) {
+        cds_info.SetScore(BadScore(), cds_info.OpenCds());
+        model.SetCdsInfo( cds_info );
+        return;
+    }
+
+    bool is_open = false;
+    if( best_start<0) {
+        is_open = true;
+        if(starts[frame].size() > 1) {
+            int new_start = starts[frame][1];
+            int newlen = best_stop-new_start;
+            if(newlen > 75)
+                best_start = new_start;
+        }
+    }
+
+    if (cds_info.ConfirmedStart() && best_start != starts[frame].back()) {
+        cerr << "Ignored ConfirmedStart " << model;
+    }
+                
+    bool has_start = best_start>=0;
+
+    TSignedSeqRange best_reading_frame = MapRangeToOrig(best_start+3,best_stop-1,mrnamap);
+    if (Include(best_reading_frame, cds_info.Start()))
+        cds_info.SetStart(TSignedSeqRange::GetEmpty());
+
+    cds_info.ClearPStops();
+
+    if (cds_info.ProtReadingFrame().NotEmpty() && !Include(best_reading_frame, cds_info.ProtReadingFrame())) {
+        _ASSERT( best_start==0 );
+        cds_info.SetReadingFrame(best_reading_frame & cds_info.ProtReadingFrame(), true);
+    }
+    cds_info.SetReadingFrame(best_reading_frame);
+
+    //    cds_info.Clear5PrimeCdsLimit();
+    if(has_start) {
+        cds_info.SetStart(MapRangeToOrig(best_start,best_start+2,mrnamap));
+                
+        int upstream_stop;
+        if(FindUpstreamStop(stops[frame],best_start,upstream_stop)) {
+            int first_start = *lower_bound(starts[frame].begin(),starts[frame].end(),upstream_stop+3);
+            first_start = mrnamap.MapEditedToOrig(first_start);
+            _ASSERT( first_start >= 0 );
+            cds_info.Set5PrimeCdsLimit(first_start);
+        } else {
+#ifdef _DEBUG
+            for(int i = best_start; i >=0; i -= 3) {
+                _ASSERT(!IsProperStop(i,mrna,mrnamap));
+            }
+#endif
+        }
+    }
+
+    if ((int)mrna.size() - best_stop >=3)
+        cds_info.SetStop(MapRangeToOrig(best_stop,best_stop+2,mrnamap));
+
+#ifdef _DEBUG
+    const CCDSInfo::TPStops& pstops = model.GetCdsInfo().PStops();
+#endif
+    for(int i = best_start+3; i < best_stop; i += 3) {
+        if(IsProperStop(i,mrna,mrnamap)) {
+            TSignedSeqRange pstop = MapRangeToOrig(i,i+2,mrnamap);
+            cds_info.AddPStop(pstop);
+#ifdef _DEBUG
+            bool new_pstop = true;
+            ITERATE(CCDSInfo::TPStops, s, pstops) {
+                if (Include(*s,pstop)) {
+                    new_pstop = false;
+                    break;
+                }
+            }
+            //            _ASSERT( !new_pstop );
+#endif
+        }
+    }
+
+    cds_info.SetScore(best_score, is_open);
+    model.SetCdsInfo( cds_info );
 }
 
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
+
+/*
+ * ==========================================================================
+ * $Log$
+ * Revision 1.9.2.11  2006/12/21 15:51:59  souvorov
+ *  CFrameShiftedSeqMap introduction
+ *
+ * Revision 1.9.2.10  2006/11/30 20:10:36  souvorov
+ * Implementation of proper mapping for prediction
+ *
+ * Revision 1.9.2.9  2006/11/28 19:50:34  souvorov
+ * Introduction of CFrameShiftedSeqMap
+ *
+ * Revision 1.9.2.8  2006/11/17 15:36:18  souvorov
+ * ASSERT for new pstops
+ *
+ * Revision 1.9.2.7  2006/11/09 15:32:56  souvorov
+ * Accurate evaluation of splitted starts/stops in SeqScores
+ *
+ * Revision 1.9.2.6  2006/11/03 21:03:22  chetvern
+ * Various changes. Fixing failed assertions.
+ *
+ * Revision 1.9.2.5  2006/10/26 21:18:40  chetvern
+ * Convert Deletions into Insertions
+ *
+ * Revision 1.9.2.4  2006/10/25 17:45:44  souvorov
+ * FirstStart out of GnomonEngine
+ *
+ * Revision 1.9.2.3  2006/10/24 19:47:24  souvorov
+ * Modification for open alignments
+ *
+ * Revision 1.9.2.2  2006/10/12 19:08:22  chetvern
+ * Changed hmm parameters reading
+ *
+ * Revision 1.9.2.1  2006/10/06 14:19:37  chetvern
+ * Major overhaul. Single format for intermediate files.
+ *
+ * Revision 1.11  2006/06/29 19:25:50  souvorov
+ * Confirmed start and SafeOpenEnd implementation
+ *
+ * Revision 1.10  2006/05/11 19:23:07  souvorov
+ * Bug in detection of internal stops
+ *
+ * Revision 1.9  2006/02/03 20:31:20  souvorov
+ * Typo
+ *
+ * Revision 1.7  2005/11/15 21:04:08  souvorov
+ * NonConsensusMargin = 1500
+ *
+ * Revision 1.6  2005/10/20 19:34:12  souvorov
+ * Penalty for nonconsensus starts/stops/splices
+ *
+ * Revision 1.5  2005/10/06 16:00:20  chetvern
+ * removed commented out word 'inline'
+ *
+ * Revision 1.4  2005/10/06 15:52:13  chetvern
+ * moved methods that compiler doesn't make inline anyway from hmm_inlines.hpp to hmm.cpp and score.cpp
+ *
+ * Revision 1.3  2005/09/30 19:11:58  chetvern
+ * removed commented out remnants of CGeneModel::GetScore method
+ *
+ * Revision 1.2  2005/09/16 18:04:16  ucko
+ * kBadScore has been replaced with an inline BadScore function that
+ * always returns the same value to avoid lossage in optimized WorkShop
+ * builds.
+ *
+ * Revision 1.1  2005/09/15 21:28:07  chetvern
+ * Sync with Sasha's working tree
+ *
+ *
+ * ==========================================================================
+ */
+
