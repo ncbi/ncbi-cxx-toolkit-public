@@ -513,24 +513,18 @@ void CSeqMap::x_SetSegmentGap(size_t index,
                               TSeqPos length,
                               CSeq_data* gap_data)
 {
-    CMutexGuard guard(m_SeqMap_Mtx);
-    x_StartEditing();
-    CSegment& seg = x_SetSegment(index);
-    if ( seg.m_SegType != eSeqGap ) {
-        NCBI_THROW(CSeqMapException, eSegmentTypeError,
-                   "Invalid segment type");
-    }
     if ( gap_data && !gap_data->IsGap() ) {
         NCBI_THROW(CSeqMapException, eSegmentTypeError,
                    "SetSegmentGap: Seq-data is not gap");
     }
-    
+    CMutexGuard guard(m_SeqMap_Mtx);
+    x_StartEditing();
+    CSegment& seg = x_SetSegment(index);
     seg.m_SegType = seg.m_ObjType = eSeqGap;
     if ( gap_data ) {
         seg.m_ObjType = eSeqData;
         seg.m_RefObject = gap_data;
     }
-
     seg.m_Length = length;
     x_SetChanged(index);
 }
@@ -543,14 +537,9 @@ void CSeqMap::x_SetSegmentData(size_t index,
     CMutexGuard guard(m_SeqMap_Mtx);
     x_StartEditing();
     CSegment& seg = x_SetSegment(index);
-    if ( seg.m_SegType != eSeqData ) {
-        NCBI_THROW(CSeqMapException, eSegmentTypeError,
-                   "Invalid segment type");
-    }
-    
-    seg.m_SegType = seg.m_ObjType = eSeqData;
+    seg.m_SegType = data.IsGap()? eSeqGap: eSeqData;
+    seg.m_ObjType = eSeqData;
     seg.m_RefObject = &data;
-
     seg.m_Length = length;
     x_SetChanged(index);
 }
@@ -565,18 +554,12 @@ void CSeqMap::x_SetSegmentRef(size_t index,
     CMutexGuard guard(m_SeqMap_Mtx);
     x_StartEditing();
     CSegment& seg = x_SetSegment(index);
-    if ( seg.m_SegType != eSeqRef ) {
-        NCBI_THROW(CSeqMapException, eSegmentTypeError,
-                   "Invalid segment type");
-    }
-    
     seg.m_SegType = seg.m_ObjType = eSeqRef;
     CRef<CSeq_id> id(new CSeq_id);
     id->Assign(ref_id);
     seg.m_RefObject = id.GetPointer();
     seg.m_RefPosition = ref_pos;
     seg.m_RefMinusStrand = ref_minus_strand;
-
     seg.m_Length = length;
     x_SetChanged(index);
 }
