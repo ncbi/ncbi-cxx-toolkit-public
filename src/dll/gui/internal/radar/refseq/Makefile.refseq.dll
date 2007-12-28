@@ -4,7 +4,8 @@ DLL = refseq
 
 HOSTED_LIBS    = refseq 
 
-DEPENDENCIES   = connext
+DEPENDENCIES   = ncbi_core ncbi_dbapi ncbi_dbapi_driver ncbi_general ncbi_seq \
+                 ncbi_seqext ncbi_xcache_dbapi connext
 
 CPPFLAGS = -DNCBI_REFSEQ_EXPORTS
 
