@@ -2955,13 +2955,17 @@ ct_data_info(CS_COMMAND * cmd, CS_INT action, CS_INT colnum, CS_IODESC * iodesc)
 
         cmd->iodesc->iotype = CS_IODATA;
         
-        /* ssikorsk cmd->iodesc->datatype = iodesc->datatype; */
+        /* ssikorsk  */
+        /* cmd->iodesc->datatype = iodesc->datatype; */
         switch (iodesc->datatype) {
             case CS_IMAGE_TYPE:
                 cmd->iodesc->datatype = SYBIMAGE;
+                break;
             case CS_TEXT_TYPE:
                 cmd->iodesc->datatype = SYBTEXT;
+                break;
             default:
+                cmd->iodesc->datatype = iodesc->datatype;
                 break;
         };
         
@@ -2987,13 +2991,17 @@ ct_data_info(CS_COMMAND * cmd, CS_INT action, CS_INT colnum, CS_IODESC * iodesc)
 
         iodesc->iotype = cmd->iodesc->iotype;
         
-        /* ssikorsk iodesc->datatype = cmd->iodesc->datatype; */
+        /* ssikorsk  */
+        /* iodesc->datatype = cmd->iodesc->datatype; */
         switch (cmd->iodesc->datatype) {
             case SYBIMAGE:
                 iodesc->datatype = CS_IMAGE_TYPE;
+                break;
             case SYBTEXT:
                 iodesc->datatype = CS_TEXT_TYPE;
+                break;
             default:
+                iodesc->datatype = cmd->iodesc->datatype;
                 break;
         };
 

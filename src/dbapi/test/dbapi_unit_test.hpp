@@ -88,6 +88,11 @@ public:
         eOracle     //< ORACLE server
     };
 
+    enum ETestConfiguration {
+        eWithExceptions,
+        eWithoutExceptions
+    };
+
     string GetDriverName(void) const
     {
         return m_DriverName;
@@ -131,6 +136,10 @@ public:
         return !m_GatewayHost.empty();
     }
 
+    ETestConfiguration GetTestConfiguration(void) const
+    {
+        return m_TestConfiguration;
+    }
 
 private:
     void SetDatabaseParameters(void);
@@ -145,6 +154,7 @@ private:
     string m_TDSVersion;
     string m_GatewayHost;
     string m_GatewayPort;
+    ETestConfiguration  m_TestConfiguration;
     TDatabaseParameters m_DatabaseParameters;
 };
 

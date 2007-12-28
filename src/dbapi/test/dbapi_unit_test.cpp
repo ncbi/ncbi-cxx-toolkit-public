@@ -279,26 +279,26 @@ CDBAPIUnitTest::TestInit(void)
 
         I_DriverContext* drv_context = m_DS->GetDriverContext();
 
-        // drv_context->SetTimeout(1);
-
-        if (m_args.IsODBCBased()) {
-            drv_context->PushCntxMsgHandler(
-                new CDB_UserHandler_Exception_ODBC,
-                eTakeOwnership
-                );
-            drv_context->PushDefConnMsgHandler(
-                new CDB_UserHandler_Exception_ODBC,
-                eTakeOwnership
-                );
-        } else {
-            drv_context->PushCntxMsgHandler(
-                new CDB_UserHandler_Exception,
-                eTakeOwnership
-                );
-            drv_context->PushDefConnMsgHandler(
-                new CDB_UserHandler_Exception,
-                eTakeOwnership
-                );
+        if (m_args.GetTestConfiguration() == CTestArguments::eWithExceptions) {
+            if (m_args.IsODBCBased()) {
+                drv_context->PushCntxMsgHandler(
+                    new CDB_UserHandler_Exception_ODBC,
+                    eTakeOwnership
+                    );
+                drv_context->PushDefConnMsgHandler(
+                    new CDB_UserHandler_Exception_ODBC,
+                    eTakeOwnership
+                    );
+            } else {
+                drv_context->PushCntxMsgHandler(
+                    new CDB_UserHandler_Exception,
+                    eTakeOwnership
+                    );
+                drv_context->PushDefConnMsgHandler(
+                    new CDB_UserHandler_Exception,
+                    eTakeOwnership
+                    );
+            }
         }
 
         m_Conn.reset(m_DS->CreateConnection( CONN_OWNERSHIP ));
@@ -4934,14 +4934,14 @@ CDBAPIUnitTest::Test_Cursor2(void)
                 // blobRs should be destroyed before auto_cursor ...
                 auto_ptr<IResultSet> blobRs(auto_cursor->Open());
 //                 while(blobRs->Next()) {
-//                     ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-//                     out.write(clob, sizeof(clob) - 1);
+//                     ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob), eDisableLog);
+//                     out.write(clob, strlen(clob));
 //                     out.flush();
 //                 }
 
                 if (blobRs->Next()) {
-                    ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-                    out.write(clob, sizeof(clob) - 1);
+                    ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob), eDisableLog);
+                    out.write(clob, strlen(clob));
                     out.flush();
                 } else {
                     BOOST_FAIL( msg_record_expected );
@@ -4966,8 +4966,8 @@ CDBAPIUnitTest::Test_Cursor2(void)
                     BOOST_FAIL( msg_record_expected );
                 }
 
-                ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-                out.write(clob, sizeof(clob) - 1);
+                ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob), eDisableLog);
+                out.write(clob, strlen(clob));
                 out.flush();
             }
         }
@@ -11682,25 +11682,26 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         PutMsgDisabled("Test_BlobStore");
     }
 
-    // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
-    if ((args.GetDriverName() == ftds8_driver &&
-         !(Solaris && CompilerWorkShop) &&
-         !Irix
-         )
-        || (args.GetDriverName() == dblib_driver && args.GetServerType() == CTestArguments::eSybase)
-        || args.GetDriverName() == msdblib_driver
-        || (args.GetDriverName() == ctlib_driver && !Solaris)
-        || args.GetDriverName() == ftds64_driver
-        || args.GetDriverName() == ftds_odbc_driver
-        || args.GetDriverName() == odbc_driver
-        || args.GetDriverName() == odbcw_driver
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Timeout,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    } else {
-        PutMsgDisabled("Test_Timeout");
+    if (args.GetTestConfiguration() == CTestArguments::eWithExceptions) {
+        // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
+        if ( (args.GetDriverName() == ftds8_driver 
+            && !(Solaris && CompilerWorkShop) && !Irix
+            )
+            || (args.GetDriverName() == dblib_driver && args.GetServerType() == CTestArguments::eSybase)
+            || args.GetDriverName() == msdblib_driver
+            || (args.GetDriverName() == ctlib_driver && !Solaris)
+            || args.GetDriverName() == ftds64_driver
+            || args.GetDriverName() == ftds_odbc_driver
+            || args.GetDriverName() == odbc_driver
+            || args.GetDriverName() == odbcw_driver
+            ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Timeout,
+                                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        } else {
+            PutMsgDisabled("Test_Timeout");
+        }
     }
 
 
@@ -11800,9 +11801,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             PutMsgDisabled("Test_Bulk_Writing3");
         }
 
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
+        if ( !( args.GetTestConfiguration() == CTestArguments::eWithoutExceptions 
+                && args.GetDriverName() == ftds63_driver)
+                ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        }
     } else {
         PutMsgDisabled("Test_Bulk_Writing");
     }
@@ -12188,10 +12193,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                  &&  args.GetServerType() != CTestArguments::eSybase)
            )
         {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow,
-                    DBAPIInstance);
-            tc->depends_on(tc_init);
-            add(tc);
+            if ( !( args.GetTestConfiguration() == CTestArguments::eWithoutExceptions 
+                    && args.GetDriverName() == dblib_driver)
+                    ) {
+                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow,
+                        DBAPIInstance);
+                tc->depends_on(tc_init);
+                add(tc);
+            }
         } else {
             PutMsgDisabled("Test_Bulk_Overflow");
         }
@@ -12328,8 +12337,9 @@ CDBAPITestSuite::~CDBAPITestSuite(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-CTestArguments::CTestArguments(int argc, char * argv[]) :
-    m_Arguments(argc, argv)
+CTestArguments::CTestArguments(int argc, char * argv[]) 
+: m_Arguments(argc, argv)
+, m_TestConfiguration(eWithExceptions)
 {
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
 
@@ -12391,6 +12401,12 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
                             CArgDescriptions::eInteger,
                             "65534");
 
+    arg_desc->AddDefaultKey("conf", "configuration",
+                            "Configuration for testing",
+                            CArgDescriptions::eString, "with-exceptions");
+    arg_desc->SetConstraint("conf", &(*new CArgAllow_Strings,
+                            "with-exceptions", "without-exceptions"));
+
     auto_ptr<CArgs> args_ptr(arg_desc->CreateArgs(m_Arguments));
     const CArgs& args = *args_ptr;
 
@@ -12414,6 +12430,12 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
     }
 
     m_GatewayPort  = args["p"].AsString();
+
+    if (args["conf"].AsString() == "with-exceptions") {
+        m_TestConfiguration = CTestArguments::eWithExceptions;
+    } else if (args["conf"].AsString() == "without-exceptions") {
+        m_TestConfiguration = CTestArguments::eWithoutExceptions;
+    }
 
     SetDatabaseParameters();
 }
