@@ -2,12 +2,12 @@
 
 DLL = radar
 
-HOSTED_LIBS    = radar radar_cfg radar_alignment radar_gui radar_data refseq_handle
+HOSTED_LIBS    = radar_cfg radar_alignment radar_gui radar_data refseq_handle
 
-DEPENDENCIES   = refseq gui_config gui_objects gui_core ncbi_algo ncbi_seqext ncbi_seq \
-               ncbi_general ncbi_xcache_dbapi ncbi_dbapi ncbi_dbapi_driver \
-               ncbi_core gui_utils gui_widgets gui_widgets_aln \
-               gui_widgets_seq gui_dialogs connext
+DEPENDENCIES   = refseq gui_config gui_objects gui_core ncbi_algo ncbi_seqext \
+				 ncbi_seq ncbi_general ncbi_xcache_dbapi ncbi_dbapi \
+				 ncbi_dbapi_driver ncbi_core gui_utils gui_widgets \
+				 gui_widgets_aln gui_widgets_seq gui_dialogs connext
 
 CPPFLAGS = -DNCBI_RADAR_EXPORTS
 

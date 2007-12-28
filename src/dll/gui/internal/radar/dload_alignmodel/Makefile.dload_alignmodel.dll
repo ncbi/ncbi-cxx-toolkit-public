@@ -4,10 +4,9 @@ DLL = dload_alignmodel
 
 HOSTED_LIBS    = gui_doc_alignmodels
 
-DEPENDENCIES   = radar refseq \
-               gui_config gui_objects gui_core gui_widgets ncbi_algo ncbi_seqext \
-               ncbi_seq ncbi_general ncbi_xcache_dbapi ncbi_dbapi \
-               ncbi_dbapi_driver ncbi_core
+DEPENDENCIES   = radar refseq gui_config gui_objects gui_core gui_widgets \
+				 gui_utils ncbi_algo ncbi_seqext ncbi_seq ncbi_general \
+				 ncbi_xcache_dbapi ncbi_dbapi ncbi_dbapi_driver ncbi_core
 
 
 

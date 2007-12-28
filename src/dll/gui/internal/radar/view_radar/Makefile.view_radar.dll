@@ -4,9 +4,9 @@ DLL = view_radar
 
 HOSTED_LIBS    = gui_view_radar
 
-DEPENDENCIES   = radar refseq gui_config gui_objects gui_core ncbi_seqext \
-               ncbi_seq ncbi_general ncbi_xcache_dbapi ncbi_dbapi \
-               ncbi_dbapi_driver ncbi_core
+DEPENDENCIES   = refseq gui_config gui_objects gui_core ncbi_seqext \
+				 ncbi_seq ncbi_general ncbi_xcache_dbapi ncbi_dbapi \
+				 ncbi_dbapi_driver ncbi_core
 
 
 
