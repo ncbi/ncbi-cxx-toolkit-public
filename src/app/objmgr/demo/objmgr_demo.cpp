@@ -391,14 +391,22 @@ int test2()
     CSeq_id id("NT_029998.7");
     CBioseq_Handle bh = scope.GetBioseqHandle(id);
     CSeqMap& sm = bh.GetEditHandle().SetSeqMap();
-    CSeqMap_CI it = sm.RemoveSegment(sm.FindSegment(72470, &scope));
-    NcbiCout << "New seg: " << it.GetPosition() << " " << it.GetLength()
-             << NcbiEndl;
-    NcbiCout << "New len: " << bh.GetBioseqLength() << " "
-             << sm.GetLength(&scope)
-             << NcbiEndl;
-    NcbiCout << MSerial_AsnText << *bh.GetCompleteObject()
-             << NcbiEndl;
+    CSeqMap_CI it = sm.FindSegment(72470, &scope);
+    for ( int i = 0; i < 3; ++i ) {
+        NcbiCout << "Old seg: " << it.GetPosition() << " " << it.GetLength()
+                 << NcbiEndl;
+        NcbiCout << "Old len: " << bh.GetBioseqLength() << " "
+                 << sm.GetLength(&scope)
+                 << NcbiEndl;
+        it = sm.RemoveSegment(it);
+        NcbiCout << "New seg: " << it.GetPosition() << " " << it.GetLength()
+                 << NcbiEndl;
+        NcbiCout << "New len: " << bh.GetBioseqLength() << " "
+                 << sm.GetLength(&scope)
+                 << NcbiEndl;
+        NcbiCout << MSerial_AsnText << *bh.GetCompleteObject()
+                 << NcbiEndl;
+    }
     return 0;
 }
 

@@ -650,9 +650,14 @@ CSeqMap_CI CSeqMap::RemoveSegment(const CSeqMap_CI& seg0)
         NCBI_THROW(CSeqMapException, eSegmentTypeError,
                    "cannot remove end segment");
     }
+    _ASSERT(m_Resolved >= index);
     m_Segments.erase(m_Segments.begin() + index);
+    if ( m_Resolved > index ) {
+        --m_Resolved;
+    }
     x_SetSegment(index).m_Position = pos;
     x_SetChanged(index);
+    _ASSERT(m_Resolved == index);
     return CSeqMap_CI(seg0, *this, index, pos);
 }
 
