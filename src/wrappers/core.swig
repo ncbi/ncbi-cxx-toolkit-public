@@ -99,6 +99,11 @@ static bool IsSameTypeInfo( const CSerialObject& obj1,
 %ignore ncbi::CSerialObject::Assign;
 %ignore ncbi::CSerialObject::Equals;
 
+%newobject ncbi::CObjectIStream::Open;
+%newobject ncbi::CObjectIStream::Create;
+%newobject ncbi::CObjectIStream::CreateFromBuffer;
+%newobject ncbi::CObjectOStream::Open;
+
 %import serial/serialbase.hpp
 %template(CAliasBase_string) ncbi::CAliasBase<std::string>;
 %template(CStringAliasBase_string) ncbi::CStringAliasBase<std::string>;
