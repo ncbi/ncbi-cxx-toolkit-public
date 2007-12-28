@@ -631,7 +631,9 @@ CSeqMap_CI CSeqMap::InsertSegmentGap(const CSeqMap_CI& seg0,
     TSeqPos pos = x_GetSegmentPosition(index, 0);
     CMutexGuard guard(m_SeqMap_Mtx);
     x_StartEditing();
+    _ASSERT(m_Resolved >= index);
     m_Segments.insert(m_Segments.begin() + index, CSegment(eSeqGap, length));
+    ++m_Resolved;
     x_SetSegment(index).m_Position = pos;
     x_SetChanged(index);
     return CSeqMap_CI(seg0, *this, index, pos);
