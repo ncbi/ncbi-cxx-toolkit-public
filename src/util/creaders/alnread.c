@@ -345,15 +345,15 @@ s_ReportDefinitionLines
 
     eip->category = eAlnErr_BadData;
     if (list->string == NULL) {
-        eip->message = malloc (strlen (err_null_format)
-                               + kMaxPrintedIntLen + 1);
+        eip->message = (char*)malloc (strlen (err_null_format)
+                                      + kMaxPrintedIntLen + 1);
         if (eip->message != NULL) {
             sprintf (eip->message, err_null_format, list->num_appearances);
         }
     } else {
-        eip->message = malloc (strlen (err_format)
-                               + strlen (list->string)
-                               + kMaxPrintedIntLen + 1);
+        eip->message = (char*)malloc (strlen (err_format)
+                                      + strlen (list->string)
+                                      + kMaxPrintedIntLen + 1);
         if (eip->message != NULL) {
             sprintf (eip->message, err_format, list->string,
                      list->num_appearances);
@@ -432,7 +432,7 @@ s_ReportBlockLengthError
     eip->category = eAlnErr_BadFormat;
     eip->id = strdup (id);
     eip->line_num = line_num;
-    eip->message = malloc (strlen (err_format) + 2 * kMaxPrintedIntLen + 1);
+    eip->message = (char *)malloc (strlen (err_format) + 2 * kMaxPrintedIntLen + 1);
     if (eip->message != NULL) {
       sprintf (eip->message, err_format, expected_num, actual_num);
     }
@@ -518,7 +518,7 @@ s_ReportBadSequenceLength
     }
     eip->category = eAlnErr_BadFormat;
     eip->id = strdup (id);
-    eip->message = malloc (strlen (format_str) + 50);
+    eip->message = (char *)malloc (strlen (format_str) + 50);
     if (eip->message != NULL) {
         sprintf (eip->message, format_str, expected_length, actual_length);
     }
@@ -614,7 +614,7 @@ s_ReportRepeatedOrganismName
     if (id != NULL ) {
         eip->id = strdup (id);
     }
-    eip->message = malloc (strlen (err_format) + strlen (org_name)
+    eip->message = (char *)malloc (strlen (err_format) + strlen (org_name)
                            + kMaxPrintedIntLen + 1);
     if (eip->message != NULL) {
         sprintf (eip->message, err_format, org_name, second_line_num);
@@ -2411,7 +2411,7 @@ static char * s_ReplaceNexusTypeChar (char *str, char c)
         {
           free (str);
         }
-        str = malloc (2 * sizeof (char));
+        str = (char *)malloc (2 * sizeof (char));
         if (str != NULL)
         {
           str [0] = c;
@@ -2837,7 +2837,7 @@ static char * s_CreateOrderedOrgName (TCommentLocPtr org_clp)
         return NULL;
     }
 
-    ordered_org_name = malloc (org_clp->end - org_clp->start + 2);
+    ordered_org_name = (char *)malloc (org_clp->end - org_clp->start + 2);
     if (ordered_org_name == NULL) {
         return NULL;
     }
@@ -5349,7 +5349,7 @@ static char * s_GetIdFromString (char * str)
     if (len == 0) {
         return NULL;
     }
-    id = malloc (len + 1);
+    id = (char *)malloc (len + 1);
     if (id == NULL) {
         return NULL;
     }
