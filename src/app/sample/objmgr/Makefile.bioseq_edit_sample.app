@@ -14,7 +14,7 @@ SRC = bioseq_edit_sample file_db_engine
 ### BEGIN COPIED SETTINGS
 LOADER_PATCHER = ncbi_xloader_patcher
 
-LIB = xobjmgr $(LOADER_PATCHER) $(OBJMGR_LIBS)
+LIB = $(LOADER_PATCHER) $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
