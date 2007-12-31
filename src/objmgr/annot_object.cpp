@@ -247,26 +247,32 @@ CAnnotObject_Info::CAnnotObject_Info(const CAnnotObject_Info& info)
       m_ObjectIndex(info.m_ObjectIndex),
       m_Type(info.m_Type)
 {
-    if ( IsRegular() ) {
-        if ( IsFeat() ) {
+    if ( info.IsRegular() ) {
+        if ( info.IsFeat() ) {
             m_Iter.m_Feat.Construct();
             *m_Iter.m_Feat = *info.m_Iter.m_Feat;
+            _ASSERT(IsFeat());
         }
-        else if ( IsAlign() ) {
+        else if ( info.IsAlign() ) {
             m_Iter.m_Align.Construct();
             *m_Iter.m_Align = *info.m_Iter.m_Align;
+            _ASSERT(IsAlign());
         }
-        else if ( IsGraph() ) {
+        else if ( info.IsGraph() ) {
             m_Iter.m_Graph.Construct();
             *m_Iter.m_Graph = *info.m_Iter.m_Graph;
+            _ASSERT(IsGraph());
         }
-        else if ( IsLocs() ) {
+        else if ( info.IsLocs() ) {
             m_Iter.m_Locs.Construct();
             *m_Iter.m_Locs = *info.m_Iter.m_Locs;
+            _ASSERT(IsLocs());
         }
+        _ASSERT(IsRegular());
     }
     else {
         m_Iter.m_RawPtr = info.m_Iter.m_RawPtr;
+        _ASSERT(!IsRegular());
     }
 }
 
@@ -278,26 +284,32 @@ CAnnotObject_Info& CAnnotObject_Info::operator=(const CAnnotObject_Info& info)
         m_Seq_annot_Info = info.m_Seq_annot_Info;
         m_ObjectIndex = info.m_ObjectIndex;
         m_Type = info.m_Type;
-        if ( IsRegular() ) {
-            if ( IsFeat() ) {
+        if ( info.IsRegular() ) {
+            if ( info.IsFeat() ) {
                 m_Iter.m_Feat.Construct();
                 *m_Iter.m_Feat = *info.m_Iter.m_Feat;
+                _ASSERT(IsFeat());
             }
-            else if ( IsAlign() ) {
+            else if ( info.IsAlign() ) {
                 m_Iter.m_Align.Construct();
                 *m_Iter.m_Align = *info.m_Iter.m_Align;
+                _ASSERT(IsAlign());
             }
-            else if ( IsGraph() ) {
+            else if ( info.IsGraph() ) {
                 m_Iter.m_Graph.Construct();
                 *m_Iter.m_Graph = *info.m_Iter.m_Graph;
+                _ASSERT(IsGraph());
             }
-            else if ( IsLocs() ) {
+            else if ( info.IsLocs() ) {
                 m_Iter.m_Locs.Construct();
                 *m_Iter.m_Locs = *info.m_Iter.m_Locs;
+                _ASSERT(IsLocs());
             }
+            _ASSERT(IsRegular());
         }
         else {
             m_Iter.m_RawPtr = info.m_Iter.m_RawPtr;
+            _ASSERT(!IsRegular());
         }
     }
     return *this;
