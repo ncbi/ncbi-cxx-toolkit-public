@@ -139,6 +139,7 @@ EOF
 EOF
 
         RunTest "-d $driver -S $server"
+        RunTest "-d $driver -S $server -conf without-exceptions"
         done
 
     fi
