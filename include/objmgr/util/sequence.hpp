@@ -556,7 +556,7 @@ public:
     typedef int TFlags; ///< binary OR of EFlags
 
     CFastaOstream(CNcbiOstream& out) : m_Out(out), m_Width(70), m_Flags(0) { }
-    virtual ~CFastaOstream() { }
+    virtual ~CFastaOstream();
 
     /// Unspecified locations designate complete sequences
     virtual void Write        (const CSeq_entry_Handle& handle,

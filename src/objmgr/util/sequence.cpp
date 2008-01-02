@@ -1908,6 +1908,10 @@ CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
 END_SCOPE(sequence)
 
 
+CFastaOstream::~CFastaOstream() {
+    m_Out << flush;
+}
+
 void CFastaOstream::Write(const CSeq_entry_Handle& handle,
                           const CSeq_loc* location)
 {
