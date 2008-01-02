@@ -78,7 +78,6 @@ gui/config/feat_config_inherited.hpp
 // .cpp is no longer compiled
 //gui/config/feat_config_list.hpp
 gui/config/feat_show.hpp
-gui/config/settings.hpp
 gui/config/settings_set.hpp
 gui/config/theme_set.hpp
 
