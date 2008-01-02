@@ -79,10 +79,10 @@ void CSplignApp::Init()
 {
     HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-    SetVersion(CVersionInfo(1, 27, 0, "Splign"));  
+    SetVersion(CVersionInfo(1, 28, 0, "Splign"));
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-    string program_name ("Splign v.1.27");
+    string program_name ("Splign v.1.28");
 
 #ifdef GENOME_PIPELINE
     program_name += 'p';

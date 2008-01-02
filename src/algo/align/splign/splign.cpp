@@ -1750,7 +1750,12 @@ bool CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
             size_t max_ext ((idty < .96 || !consensus || exon_size < 16)? 
                             m_max_genomic_ext: (5000 *  kMinTermExonSize));
 
-            if(!consensus && exon_size < 10) {
+            if(consensus) {
+                if(exon_size < 5) {
+                    max_ext = 10 * exon_size;
+                }
+            }
+            else if(exon_size < 16) {
                 max_ext = 1;
             }
 
@@ -1788,14 +1793,9 @@ Uint4 CSplign::x_GetGenomicExtent(const Uint4 query_len, Uint4 max_ext) const
         rv = m_max_genomic_ext;
     }
     else {
-        if(query_len < 5) {
-            rv = 10 * query_len;
-        }
-        else {
-            const double k (pow(kNonCoveredEndThreshold, - 1. / kPower) * max_ext);
-            const double drv (k * pow(query_len, 1. / kPower));
-            rv = Uint4(drv);
-        }
+        const double k (pow(kNonCoveredEndThreshold, - 1. / kPower) * max_ext);
+        const double drv (k * pow(query_len, 1. / kPower));
+        rv = Uint4(drv);
     }
 
     return rv;
