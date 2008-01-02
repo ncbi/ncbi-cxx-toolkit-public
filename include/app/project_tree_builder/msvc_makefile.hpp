@@ -166,6 +166,7 @@ protected:
         typedef list<string> TDontUsePch;
         TDontUsePch    m_DontUsePchList;
 
+        string m_DefaultPch;
         string m_PchUsageDefine;
     };
     const SPchInfo& GetPchInfo(void) const;

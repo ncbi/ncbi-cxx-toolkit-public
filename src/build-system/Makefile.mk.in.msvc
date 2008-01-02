@@ -106,31 +106,13 @@ PreprocessorDefinitions=
 
 [UsePch]
 UsePch         = TRUE
-
-algo           = ncbi_pch.hpp
-app            = ncbi_pch.hpp
-bdb            = ncbi_pch.hpp
-cgi            = ncbi_pch.hpp
-connect        = ncbi_pch.hpp
-corelib        = ncbi_pch.hpp
-ctools         = ncbi_pch.hpp
-dbapi          = ncbi_pch.hpp
-gui            = ncbi_pch.hpp
-html           = ncbi_pch.hpp
-misc           = ncbi_pch.hpp
-objects        = ncbi_pch.hpp
-objmgr         = ncbi_pch.hpp
-objtools       = ncbi_pch.hpp
-serial         = ncbi_pch.hpp
-sqlite         = ncbi_pch.hpp
-util           = ncbi_pch.hpp
-internal/structure/CDTree2 = cdtree2_pch.hpp
-internal/structure/PubChem/PCView/PCView = PCView_pch.hpp
-internal/structure/PubChem/assay = assay_pch.hpp
-internal/gbench/plugins/proteus = ncbi_pch.hpp
-internal/gbench/plugins/radar = ncbi_pch.hpp
-internal/gbench/plugins/ncbi = ncbi_pch.hpp
-
-DoNotUsePch    = test_mt test_ncbidiag_p
 PchUsageDefine = NCBI_USE_PCH
+DefaultPch     = ncbi_pch.hpp
+
+internal/structure/CDTree2               = cdtree2_pch.hpp
+internal/structure/PubChem/PCView/PCView = PCView_pch.hpp
+internal/structure/PubChem/assay         = assay_pch.hpp
+internal/ID/utils                        = -
+
+DoNotUsePch = test_mt test_ncbidiag_p
 

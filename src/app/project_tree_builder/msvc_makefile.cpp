@@ -102,12 +102,19 @@ string CMsvcMetaMakefile::GetUsePchThroughHeader
 {
     const SPchInfo& pch_info = GetPchInfo();
 
+    if (find(pch_info.m_DontUsePchList.begin(),
+             pch_info.m_DontUsePchList.end(),
+             project_id) != pch_info.m_DontUsePchList.end()) {
+        return kEmptyStr;
+    }
+
     string source_file_dir;
     CDirEntry::SplitPath(source_file_full_path, &source_file_dir);
     source_file_dir = CDirEntry::AddTrailingPathSeparator(source_file_dir);
 
     size_t max_match = 0;
     string pch_file;
+    bool found = false;
     ITERATE(SPchInfo::TSubdirPchfile, p, pch_info.m_PchUsageMap) {
         const string& branch_subdir = p->first;
         string abs_branch_subdir = 
@@ -118,18 +125,14 @@ string CMsvcMetaMakefile::GetUsePchThroughHeader
             if ( branch_subdir.length() > max_match ) {
                 max_match = branch_subdir.length();
                 pch_file  = p->second;
+                found = true;
             }
         }
     }
-    if ( pch_file.empty() )
-        return "";
-    
-    if (find(pch_info.m_DontUsePchList.begin(),
-             pch_info.m_DontUsePchList.end(),
-             project_id) == pch_info.m_DontUsePchList.end())
+    if (found) {
         return pch_file;
-
-    return "";
+    }
+    return m_PchInfo->m_DefaultPch;
 }
 
 
@@ -140,30 +143,32 @@ const CMsvcMetaMakefile::SPchInfo& CMsvcMetaMakefile::GetPchInfo(void) const
 
     (const_cast<CMsvcMetaMakefile&>(*this)).m_PchInfo.reset(new SPchInfo);
 
-    string use_pch_str = m_MakeFile.GetString("UsePch", "UsePch");
-    m_PchInfo->m_UsePch = (NStr::CompareNocase(use_pch_str, "TRUE") == 0);
+    string use_pch_str          = m_MakeFile.GetString("UsePch", "UsePch", "TRUE");
+    m_PchInfo->m_UsePch = NStr::StringToBool(use_pch_str);
+    m_PchInfo->m_PchUsageDefine = m_MakeFile.GetString("UsePch", "PchUsageDefine");
+    m_PchInfo->m_DefaultPch     = m_MakeFile.GetString("UsePch", "DefaultPch");
+    string do_not_use_pch_str   = m_MakeFile.GetString("UsePch", "DoNotUsePch");
+    NStr::Split(do_not_use_pch_str, LIST_SEPARATOR, m_PchInfo->m_DontUsePchList);
+    string irrelevant[] = {"UsePch","PchUsageDefine","DefaultPch","DoNotUsePch",""};
 
     list<string> projects_with_pch_dirs;
     m_MakeFile.EnumerateEntries("UsePch", &projects_with_pch_dirs);
     ITERATE(list<string>, p, projects_with_pch_dirs) {
         const string& key = *p;
-        if (key == "DoNotUsePch")
+        bool ok = true;
+        for (int i=0; ok && !irrelevant[i].empty(); ++i) {
+            ok = key != irrelevant[i];
+        }
+        if (!ok)
             continue;
 
-        string val = m_MakeFile.GetString("UsePch", key);
-        if ( !val.empty() ) {
-            string tmp = CDirEntry::ConvertToOSPath(key);
-            m_PchInfo->m_PchUsageMap[tmp] = val;
+        string val = m_MakeFile.GetString("UsePch", key, "-");
+        if ( val == "-" ) {
+            val = "";
         }
+        string tmp = CDirEntry::ConvertToOSPath(key);
+        m_PchInfo->m_PchUsageMap[tmp] = val;
     }
-
-    string do_not_use_pch_str = 
-        m_MakeFile.GetString("UsePch", "DoNotUsePch");
-    NStr::Split(do_not_use_pch_str, LIST_SEPARATOR, m_PchInfo->m_DontUsePchList);
-
-    m_PchInfo->m_PchUsageDefine = 
-        m_MakeFile.GetString("UsePch", "PchUsageDefine");
-
     return *m_PchInfo;
 }
 
