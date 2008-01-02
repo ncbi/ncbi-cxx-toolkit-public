@@ -74,8 +74,16 @@ void ReverseComplement(const CEResidueVec& src, CEResidueVec& dst)
 
 const TResidue codons[4][4] = {"ATG", "TAA", "TAG", "TGA"};
 const TResidue rev_codons[4][4] = {"CAT", "TTA", "CTA", "TCA"};
-const EResidue ecodons[4][3] = {{ enA, enT, enG }, { enT, enA, enA }, { enT, enA, enG }, { enT, enG, enA }};
-const EResidue rev_ecodons[4][3] = {{enC, enA, enT}, {enT, enT, enA}, {enC, enT, enA}, {enT, enC, enA}};
+static const EResidue s_ecodons0 [3] = { enA, enT, enG };
+static const EResidue s_ecodons1 [3] = { enT, enA, enA };
+static const EResidue s_ecodons2 [3] = { enT, enA, enG };
+static const EResidue s_ecodons3 [3] = { enT, enG, enA };
+static const EResidue s_ecodons0r[3] = { enC, enA, enT };
+static const EResidue s_ecodons1r[3] = { enT, enT, enA };
+static const EResidue s_ecodons2r[3] = { enC, enT, enA };
+static const EResidue s_ecodons3r[3] = { enT, enC, enA };
+const EResidue *ecodons[4] = {s_ecodons0, s_ecodons1, s_ecodons2, s_ecodons3};
+const EResidue *rev_ecodons[4] = {s_ecodons0r, s_ecodons1r, s_ecodons2r, s_ecodons3r};
 
 template <typename Res>
 class res_traits {
