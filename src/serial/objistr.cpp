@@ -358,7 +358,7 @@ ESerialSkipUnknown CObjectIStream::UpdateSkipUnknownMembers(void)
     ESerialSkipUnknown skip = m_SkipUnknown;
     if ( skip == eSerialSkipUnknown_Default ) {
         skip = x_GetSkipUnknownDefault();
-        if ( skip = eSerialSkipUnknown_Default ) {
+        if ( skip == eSerialSkipUnknown_Default ) {
             skip = eSerialSkipUnknown_No;
         }
         m_SkipUnknown = skip;
@@ -372,7 +372,7 @@ ESerialSkipUnknown CObjectIStream::UpdateSkipUnknownVariants(void)
     ESerialSkipUnknown skip = m_SkipUnknownVariants;
     if ( skip == eSerialSkipUnknown_Default ) {
         skip = x_GetSkipUnknownVariantsDefault();
-        if ( skip = eSerialSkipUnknown_Default ) {
+        if ( skip == eSerialSkipUnknown_Default ) {
             skip = eSerialSkipUnknown_No;
         }
         m_SkipUnknownVariants = skip;
