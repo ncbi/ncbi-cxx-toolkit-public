@@ -12,7 +12,7 @@
 
 REPOS_DEVELOPMENT='https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++'
 REPOS_PRODUCTION='https://svn.ncbi.nlm.nih.gov/repos/toolkit/production/current/c++'
-GUI_URL='https://svn.ncbi.nlm.nih.gov/repos/gbench/branches/current'
+GUI_URL='https://svn.ncbi.nlm.nih.gov/repos/gbench/branches/c++-toolkit'
 REPOS=$REPOS_DEVELOPMENT
 
 ##  Cmd.-line args
