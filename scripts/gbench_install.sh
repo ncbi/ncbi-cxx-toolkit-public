@@ -63,14 +63,14 @@ FindDirPath()
 
 MakeDirs()
 {
-    COMMON_ExecRB mkdir -p $1
-    COMMON_ExecRB mkdir -p $1/bin
-    COMMON_ExecRB mkdir -p $1/lib
-    COMMON_ExecRB mkdir -p $1/etc
-    COMMON_ExecRB mkdir -p $1/plugins
-    COMMON_ExecRB mkdir -p $1/share
-    COMMON_ExecRB mkdir -p $1/executables
-    COMMON_ExecRB mkdir -p $1/etc/patterns
+    COMMON_InstallDirRB 'mkdir -p' "$1"
+    COMMON_InstallDirRB 'mkdir' "$1/bin"
+    COMMON_InstallDirRB 'mkdir' "$1/lib"
+    COMMON_InstallDirRB 'mkdir' "$1/etc"
+    COMMON_InstallDirRB 'mkdir' "$1/plugins"
+    COMMON_InstallDirRB 'mkdir' "$1/share"
+    COMMON_InstallDirRB 'mkdir' "$1/executables"
+    COMMON_InstallDirRB 'mkdir' "$1/etc/patterns"
 }
 
 
@@ -119,7 +119,7 @@ RelativePath()
 RelativeCP()
 {
     if [ "$copy_all" = "yes" ]; then
-        COMMON_ExecRB $BINCOPY $1 $2
+        COMMON_InstallRB "$BINCOPY" $1 $2
     else
         # trying to find the relative path
         path1=`dirname $1`
@@ -131,13 +131,13 @@ RelativeCP()
         fi
 
         if [ "$pdiff" = "" ]; then
-            COMMON_ExecRB $BINCOPY $1 $2
+            COMMON_InstallRB "$BINCOPY" $1 $2
         else
             path2=$2
             file2=`basename $1`
             old_path=`pwd`
             cd $path2
-            COMMON_ExecRB $BINCOPY $pdiff/$file2 $file2
+            COMMON_InstallRB "$BINCOPY" $pdiff/$file2 $file2
             cd $old_path
         fi
     fi
@@ -145,23 +145,26 @@ RelativeCP()
 
 DoCopy()
 {
-    RelativeCP $1 $2
-
     case `uname`:$1 in
-        Darwin*:*.so)
+    Darwin*:*.so)
         dylib_file=`echo $1 | sed "s,\.so$,.dylib",`
-        RelativeCP $dylib_file $2
+        COMMON_InstallRB RelativeCP $dylib_file $2
+        ;;
+    *)
+        COMMON_InstallRB RelativeCP $1 $2
         ;;
     esac
 }
 
 DoMove()
 {
-    $BINMOVE $1 $2
     case `uname`:$1 in
-        Darwin*:*.so)
+    Darwin*:*.so)
         dylib_file=`echo $1 | sed "s,\.so$,.dylib",`
-        $BINMOVE $dylib_file $2
+        COMMON_InstallRB "$BINMOVE" $dylib_file $2
+        ;;
+    *)
+        COMMON_InstallRB "$BINMOVE" $1 $2
         ;;
     esac
 }
@@ -173,9 +176,7 @@ CopyFiles()
         echo copying: $x
         src_file=$src_dir/bin/$x
         if [ -f $src_file ]; then
-            mv -f $target_dir/bin/$x $target_dir/bin/$x.old  2>/dev/null
-            rm -f $target_dir/bin/$x $target_dir/bin/$x.old
-            RelativeCP $src_file $target_dir/bin/
+            COMMON_InstallRB RelativeCP $src_file $target_dir/bin/
         else
             $x_common_rb
             COMMON_Error "File not found: $src_file"
@@ -302,7 +303,7 @@ CleanAfterFailure() {
         echo "Moving $bad_cache to $src_dir/status/bad-plugin-cache.$$"
         mv "$bad_cache" "$src_dir/status/bad-plugin-cache.$$"
     fi
-    rm -rf "$target_dir"
+    COMMON_RollbackInstall
 }
 x_common_rb="CleanAfterFailure"
 
@@ -314,30 +315,43 @@ CopyFiles
 
 echo "Preparing scripts"
 
-COMMON_ExecRB cp ${source_dir}/gbench_install/run-gbench.sh ${target_dir}/bin/run-gbench.sh
+COMMON_InstallRB cp ${source_dir}/gbench_install/run-gbench.sh ${target_dir}/bin/run-gbench.sh
 chmod 755 ${target_dir}/bin/run-gbench.sh
 
-COMMON_ExecRB cp ${source_dir}/gbench_install/gbench_remote_template.sh ${target_dir}/bin/gbench_remote_template.sh
-COMMON_ExecRB cp ${source_dir}/gbench_install/gbench_noremote_template.sh ${target_dir}/bin/gbench_noremote_template.sh
+COMMON_InstallRB cp ${source_dir}/gbench_install/gbench_remote_template.sh ${target_dir}/bin/gbench_remote_template.sh
+COMMON_InstallRB cp ${source_dir}/gbench_install/gbench_noremote_template.sh ${target_dir}/bin/gbench_noremote_template.sh
 
-COMMON_ExecRB cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
+COMMON_InstallRB 'cp -p' ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
 chmod 755 ${target_dir}/bin/move-gbench.sh
 
 COMMON_ExecRB ${target_dir}/bin/move-gbench.sh ${target_dir}
 
-find ${source_dir}/../res -type f | grep -v '/\.svn/' |
+for ftype in auto asntext asnbin xml fasta newick textalign project workspace message; do
+    COMMON_RegisterInstalled ${target_dir}/bin/gbench_remote_$ftype
+    COMMON_RegisterInstalled ${target_dir}/bin/gbench_noremote_$ftype
+done
+
+tmpdir=${TMPDIR-/tmp}
+tmpdir="$tmpdir/gbench_install.$RANDOM.$RANDOM.$RANDOM.$$"
+(umask 077 && mkdir "$tmpdir") || \
+    COMMON_RollbackAndError "Could not create temporary directory '$tmpdir'"
+
+resource_list="$tmpdir/resources.lst"
+find ${source_dir}/../res -type f | grep -v '/\.svn/' > "$resource_list"
 while read file
 do
     new_file=`echo $file | sed "s,^${source_dir}/../res/,,"`
     echo "Installing resource: $new_file"
     new_file=${target_dir}/${new_file}
-    mkdir -p `dirname $new_file`
-    COMMON_ExecRB cp $file $new_file
-done
+    COMMON_InstallDirRB 'mkdir -p' `dirname $new_file`
+    COMMON_InstallRB cp $file $new_file
+done < "$resource_list"
+
+rm -rf "$tmpdir"
 
 # Install miscellaneous scripts
-mkdir -p ${target_dir}/etc
-COMMON_ExecRB cp ${source_dir}/../../objects/seqloc/accguide.txt ${target_dir}/etc
+COMMON_InstallDirRB 'mkdir -p' ${target_dir}/etc
+COMMON_InstallRB cp ${source_dir}/../../objects/seqloc/accguide.txt ${target_dir}/etc
 
 echo "Configuring plugin cache"
 # COMMON_AddRunpath may interfere with compiled-in runpaths, so we
@@ -370,8 +384,12 @@ for f in ${source_dir}/patterns/*; do
     fi
 done
 
-[ "$setup_src" = yes ] || exit 0
+if [ "$setup_src" = yes ]; then
+    # Do this last, to be sure the symlink doesn't end up dangling.
+    rm -f ${src_dir}/bin/gbench
+    ln -s ${target_dir}/bin/run-gbench.sh ${src_dir}/bin/gbench
+fi
 
-# Do this last, to be sure the symlink doesn't end up dangling.
-rm -f ${src_dir}/bin/gbench
-ln -s ${target_dir}/bin/run-gbench.sh ${src_dir}/bin/gbench
+COMMON_CommitInstall
+
+exit 0
