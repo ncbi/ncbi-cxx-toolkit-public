@@ -162,7 +162,7 @@ void CAnnotationASN1::CImplementationData::AddModel(const CGeneModel& model)
 
 
     if (model.GeneID()) {
-        CImplementationData::TGeneMap::iterator gene = genes.find(model.GeneID());
+        TGeneMap::iterator gene = genes.find(model.GeneID());
         if (gene == genes.end()) {
             CRef<CSeq_feat> gene_feature = create_gene_feature(md);
             gene = genes.insert(make_pair(model.GeneID(), gene_feature)).first;

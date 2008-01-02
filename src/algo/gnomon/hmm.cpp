@@ -793,7 +793,7 @@ struct COrgParameters::SDetails {
 
     TCGContentList& GetCGList(const string& type)
     {
-        TParamMap::iterator i = params.insert(make_pair(type,SDetails::TCGContentList())).first;
+        TParamMap::iterator i = params.insert(make_pair(type,TCGContentList())).first;
         if (i->second.empty())
             i->second.push_back(make_pair<int,CInputModel*>(101,NULL));
 
