@@ -30,6 +30,8 @@
  */
 
 
+%ignore *::CFrameShiftedSeqMap_SMapRangeEdge;
+
 %ignore *::CDiagContext_CExtraArgs::Print;
 %ignore *::CDiagContext_CExtraArgs(const CExtraArgs&);
 
