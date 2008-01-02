@@ -848,6 +848,7 @@ TConstSeqidRef CGeneModel::Seqid() const
 
 template< class T>
 class CStreamState {
+#ifdef HAVE_IOS_REGISTER_CALLBACK
 public:
     CStreamState(const T& deflt) : m_deflt(deflt), m_index( ios_base::xalloc() ) {}
 
@@ -880,6 +881,30 @@ private:
 
     T   m_deflt;
     int m_index;
+#else
+    // Crude approximation for use by older compilers (notably GCC 2.95).
+    // In particular, this implementation has no way to find out when
+    // anything happens to the streams it tracks, so it leaks some
+    // amount of memory and disregards the possibility that multiple
+    // distinct tracked streams have the same address in sequence. :-/
+public:
+    CStreamState(const T& deflt) : m_deflt(deflt) {}
+
+    T& slot(IOS_BASE& iob)
+    {
+        TMap::iterator it = m_map.find(&iob);
+        if (it == m_map.end()) {
+            it = m_map.insert(make_pair(&iob, m_deflt)).first;
+        }
+        return it->second;
+    }
+
+private:
+    typedef map<IOS_BASE*, T> TMap;
+
+    T    m_deflt;
+    TMap m_map;
+#endif
 };
 
 CStreamState<pair<string,string> > line_buffer(make_pair(kEmptyStr,kEmptyStr));
