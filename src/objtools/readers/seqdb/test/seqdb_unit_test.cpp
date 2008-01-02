@@ -1525,14 +1525,15 @@ BOOST_AUTO_TEST_CASE(Offset2OidMonotony)
             double oid_ratio    = double(oid_here)     / num_oids;
             double percent_diff = 100.0 * fabs(oid_ratio - range_ratio);
             
-            // Up to 15 % slack will be permitted.  Normally this
-            // runs to a maximum under 5%.  This could break if
-            // the database were reorganized (as they are every
-            // day) and the reorganization moved a lot of heavy
-            // sequences to one end.
+            // Up to 30 % slack will be permitted.  Normally this runs
+            // to a maximum under 5%.  This can break when the db is
+            // reorganized (as they are every day) if reorganization
+            // moves a lot of heavy sequences to one end.
+            //
+            // This was 15% - changed on Jan 2, 2008.
             
             CHECK(prev_oid     <= oid_here);
-            CHECK(percent_diff <= 15.0);
+            CHECK(percent_diff <= 30.0);
             
             prev_oid = oid_here;
         }
