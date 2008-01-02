@@ -592,8 +592,6 @@ private:
 
 TSignedSeqRange MapRangeToOrig(TSignedSeqPos start, TSignedSeqPos stop, const CFrameShiftedSeqMap& mrnamap);
 
-bool CodonWithoutDeletions( const TFrameShifts& fshifts, size_t codon_start, const CFrameShiftedSeqMap& cdsmap);
-
 
 struct NCBI_XALGOGNOMON_EXPORT setcontig {
     const string& m_contig;
