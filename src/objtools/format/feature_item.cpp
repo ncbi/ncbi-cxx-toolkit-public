@@ -981,16 +981,20 @@ void CFeatureItem::x_AddQualExpInv(
     for ( CSeq_feat::TQual::iterator it = gbQuals.begin();
         it != gbQuals.end(); ++it ) 
     {
+        //
+        //  Idea:
+        //  If a gbqual specifying the inference exists then bail out and let
+        //  gbqual processing take care of this qualifier. If no such gbqual is
+        //  present then add a default inference qualifier.
+        //
         if (!(*it)->CanGetQual()  ||  !(*it)->CanGetVal()) {
             continue;
         }
-        if ( (*it)->GetQual() != "inference" ) {
-            continue;
-        }
-        value = (*it)->GetVal();
-        break;
+        if ( (*it)->GetQual() == "inference" ) {
+            return;
+        }          
     }
-    x_AddQual(eFQ_inference, new CFlatInferenceQVal( value ));
+    x_AddQual(eFQ_inference, new CFlatInferenceQVal( "" ));
 }
 
 //  ----------------------------------------------------------------------------
@@ -2480,9 +2484,6 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
                     x_AddQual(eFQ_inference, new CFlatInferenceQVal());
                 }
             }}
-            break;
-        case eFQ_inference:
-            x_AddQual(slot, new CFlatStringQVal(val));
             break;
 
         default:
