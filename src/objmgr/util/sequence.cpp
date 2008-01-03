@@ -1975,23 +1975,27 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
     whole.SetWhole().Assign(*handle.GetSeqId());
 
     if (location) {
-        mapper.Reset(new CSeq_loc_Mapper(*location, whole, &scope));
         CRef<CSeq_loc> merged
             = sequence::Seq_loc_Merge(*location, CSeq_loc::fMerge_All, &scope);
         v = CSeqVector(*merged, scope, CBioseq_Handle::eCoding_Iupac);
     } else {
-        // useful for filtering out locations on other sequences
-        mapper.Reset(new CSeq_loc_Mapper(whole, whole, &scope));
         v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     }
-    mapper->SetMergeAll();
-    mapper->TruncateNonmappingRanges();
 
     typedef map<TSeqPos, int> TMSMap;
     TMSMap                    masking_state;
     masking_state[0] = 0;
 
     if (m_SoftMask.NotEmpty()  ||  m_HardMask.NotEmpty()) {
+        if (location) {
+            mapper.Reset(new CSeq_loc_Mapper(*location, whole, &scope));
+        } else {
+            // still useful for filtering out locations on other sequences
+            mapper.Reset(new CSeq_loc_Mapper(whole, whole, &scope));
+        }
+        mapper->SetMergeAll();
+        mapper->TruncateNonmappingRanges();
+
         const CSeq_loc& mask        = m_SoftMask ? *m_SoftMask : *m_HardMask;
         int             type        = m_SoftMask ? eSoftMask : eHardMask;
         CRef<CSeq_loc>  mapped_mask = mapper->Map(mask);
