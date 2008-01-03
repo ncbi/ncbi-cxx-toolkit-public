@@ -622,6 +622,10 @@ bool CTL_BCPInCmd::Send(void)
 
 bool CTL_BCPInCmd::Cancel()
 {
+#ifndef FTDS_IN_USE
+    DATABASE_DRIVER_ERROR("Cancelling is not available in ctlib.", 125000);
+#endif
+
     if(WasSent()) {
         CS_INT outrow = 0;
 
@@ -696,7 +700,15 @@ CTL_BCPInCmd::Close(void)
         DetachInterface();
 
         try {
+
+#ifdef FTDS_IN_USE
             SetDead(!Cancel());
+#else
+            if (WasSent()) {
+                SetDead(!EndBCP());
+            }
+#endif
+
         } catch (...) {
             SetDead();
             throw;

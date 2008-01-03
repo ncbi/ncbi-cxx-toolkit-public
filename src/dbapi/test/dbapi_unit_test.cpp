@@ -12317,10 +12317,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // DBLIB has no cancel command, so this test doesn't work with DBLIB API
     if (args.IsBCPAvailable()
-        &&  args.GetDriverName() != dblib_driver
+        &&  args.GetDriverName() != dblib_driver  // dblib driver series have no bcp cancellation
         &&  args.GetDriverName() != msdblib_driver
-        &&  args.GetDriverName() != ctlib_driver // Disabled temporarily ...
         &&  args.GetDriverName() != ftds_dblib_driver
+        &&  args.GetDriverName() != ctlib_driver  // Cancel is not working in Sybase ctlib driver
         )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BCP_Cancel,
