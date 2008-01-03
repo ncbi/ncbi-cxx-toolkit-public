@@ -184,6 +184,18 @@ void CDFamily::getDescendants(set<CCdCore*>& cds, CCdCore* parentCd) const {
     }
 }
 
+void CDFamily::subfamily(CDFamilyIterator cit, CDFamily*& subfam, bool childrenOnly)
+{
+	vector<CCdCore*> cds;
+	cds.push_back(cit->cd);
+	if (childrenOnly)
+		getChildren(cds, cit);
+	else
+		getDescendants(cds,cit->cd);
+	vector<CDFamily*> families;
+	createFamilies(cds, families);
+	subfam = families[0];
+}
 
 CCdCore* CDFamily::getClassicalParent(CCdCore* childCD) const
 {
@@ -196,9 +208,6 @@ CCdCore* CDFamily::getClassicalParent(CCdCore* childCD) const
 	else
 		return 0;
 }
-
-
-
 
 void CDFamily::selectCDs(const vector< CCdCore* > & cds) 
 {
@@ -467,6 +476,7 @@ CDFamily* CDFamily::findFamily(CCdCore* cd, vector<CDFamily>& families)
 }
 
 //includeChildren = false
+/*
 int CDFamily::createFamilies(vector<CCdCore*>& cds, vector<CDFamily>& families)
 {
 	vector<CCdCore*>::iterator cdIterator = cds.begin();
@@ -485,7 +495,7 @@ int CDFamily::createFamilies(vector<CCdCore*>& cds, vector<CDFamily>& families)
 			++cdIterator;
 	}
 	return families.size(); //all cds should be added
-}
+}*/
 
 //  In the vector, pass back pointers to vs copies of the families.
 //  Requires that the caller cleans up the families after!!

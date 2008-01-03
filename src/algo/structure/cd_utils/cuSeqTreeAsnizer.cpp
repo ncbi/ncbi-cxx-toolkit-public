@@ -18,55 +18,18 @@ bool SeqTreeAsnizer::convertToTreeOption(const CRef< CAlgorithm_type >&  alg, Tr
     treeOption.distMethod = (EDistMethod)((alg->GetScoring_Scheme() >  CAlgorithm_type::eScoring_Scheme_aligned_score_ext) ?
         alg->GetScoring_Scheme() - 1 : alg->GetScoring_Scheme());
 
-	//treeOption.forFamily = true;
-	
-	treeOption.matrix = (EScoreMatrixType)(alg->GetScore_Matrix());
+	treeOption.scope = (CAlgorithm_type::ETree_scope)((alg->IsSetTree_scope()) ? 
+		alg->GetTree_scope() : CAlgorithm_type::eTree_scope_allDescendants);
+	treeOption.coloringScope = (CAlgorithm_type::EColoring_scope)((alg->IsSetColoring_scope()) ?
+		alg->GetColoring_scope() : CAlgorithm_type::eColoring_scope_allDescendants);
+    treeOption.matrix = (EScoreMatrixType)(
+		(alg->IsSetScore_Matrix()) ? alg->GetScore_Matrix(): CAlgorithm_type::eScore_Matrix_blosum62);
 
-    
-
-	/* the difference between ASN spec and treeOption
-			eScoring_Scheme_percent_id = 1,
-	        eScoring_Scheme_kimura_corrected = 2,
-	        eScoring_Scheme_aligned_score = 3,
-	        eScoring_Scheme_aligned_score_ext = 4,
-	        eScoring_Scheme_aligned_score_filled = 5,
-	        eScoring_Scheme_blast_footprint = 6,
-	        eScoring_Scheme_blast_full = 7,
-
-			ePercentIdentity,
-			ePercIdWithKimura,
-			eScoreAligned,
-			eScoreAlignedOptimal,
-			eScoreBlastFoot,
-			eScoreBlastFull
-
-			enum EScore_Matrix {
-          eScore_Matrix_unassigned = 0,
-          eScore_Matrix_blosum45 = 1,
-          eScore_Matrix_blosum62 = 2,
-          eScore_Matrix_blosum80 = 3,
-          eScore_Matrix_pam30 = 4,
-          eScore_Matrix_pam70 = 5,
-          eScore_Matrix_pam250 = 6,
-          eScore_Matrix_other = 255
-		};
-
-		enum EScoreMatrixType {
-    eInvalidMatrixType   = 0,
-    eBlosum45  = 1,
-    eBlosum62  = 2,
-    eBlosum80  = 3,
-    ePam30     = 4,
-    ePam70     = 5,
-    ePam250    = 6
-};
-	*/
 	return true;
 }
 
 bool SeqTreeAsnizer::convertToAlgType(const TreeOptions& treeOption, CRef< CAlgorithm_type >& alg)
-{
-	
+{	
 	alg->SetCTerminalExt(treeOption.cTermExt) ;
 	alg->SetNTerminalExt(treeOption.nTermExt);
 	alg->SetClustering_Method(treeOption.clusteringMethod);
@@ -84,6 +47,8 @@ bool SeqTreeAsnizer::convertToAlgType(const TreeOptions& treeOption, CRef< CAlgo
 		alg->SetScoring_Scheme(dm);
 
 	alg->SetScore_Matrix(treeOption.matrix);
+	alg->SetTree_scope(treeOption.scope);
+	alg->SetColoring_scope(treeOption.coloringScope);
 	return true;
 }
 

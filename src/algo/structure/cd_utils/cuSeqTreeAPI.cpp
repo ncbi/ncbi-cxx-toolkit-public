@@ -44,19 +44,31 @@ BEGIN_SCOPE(cd_utils)
 SeqTreeAPI::SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly)
 	: m_ma(), m_seqTree(0), m_useMembership(true),
 	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(), m_triedTreeMaking(false),
-	m_loadOnly(loadExistingTreeOnly), m_cd(0), m_taxClient(0)
+	m_loadOnly(loadExistingTreeOnly), m_cd(0), m_taxClient(0), m_family(0)
 {
-	vector<CDFamily> families;
+	vector<CDFamily*> families;
 	CDFamily::createFamilies(cds, families);
 	if(families.size() != 1 )
+	{
+		for (int i = 0 ; i <families.size(); i++)
+			delete families[i];
 		return;
-	m_ma.setAlignment(families[0]);
+	}
+	m_ma.setAlignment(*families[0]);
+	delete families[0];
 }
 
 SeqTreeAPI::SeqTreeAPI(CCdCore* cd)
 	: m_ma(), m_seqTree(0), m_useMembership(true),
 	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(), m_triedTreeMaking(false),
-	m_loadOnly(true), m_cd(cd), m_taxClient(0)
+	m_loadOnly(true), m_cd(cd), m_taxClient(0), m_family(0)
+{
+}
+
+SeqTreeAPI::SeqTreeAPI(CDFamily& cdfam, TreeOptions& option)
+: m_ma(), m_seqTree(0), m_useMembership(true),
+	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(option), m_triedTreeMaking(false),
+	m_loadOnly(false), m_cd(0), m_taxClient(0), m_family(&cdfam)
 {
 }
 
@@ -106,6 +118,37 @@ string SeqTreeAPI::layoutSeqTree(int maxX, vector<SeqTreeEdge>& edges, int yInt)
 		yInt = 2;
 	return layoutSeqTree(maxX, maxY, yInt, edges);
 }
+bool SeqTreeAPI::makeTree()
+{
+	if (m_triedTreeMaking) //if already tried, don't try again
+		return m_seqTree != 0;
+	if (m_seqTree != 0)
+	{
+		delete m_seqTree;
+		m_seqTree = 0;
+		m_seqTree = new SeqTree;
+	}
+	if (!m_loadOnly)
+	{
+		if (m_ma.getFirstCD() == 0)
+			m_ma.setAlignment(*m_family);
+		if(!m_ma.isBlockAligned())
+		{
+			ERR_POST("Sequence tree is not made for " <<m_ma.getFirstCD()->GetAccession()
+				<<" because it does not have a consistent block alognment.");
+		}
+		else
+		{
+			if ((m_treeOptions.distMethod == eScoreBlastFoot) || (m_treeOptions.distMethod == eScoreBlastFull))
+				m_treeOptions.distMethod = eScoreAligned;
+			m_seqTree = TreeFactory::makeTree(&m_ma, m_treeOptions);
+		}
+		if (m_seqTree)
+			m_seqTree->fixRowName(m_ma, SeqTree::eGI);
+	}
+	m_triedTreeMaking = true;
+	return m_seqTree != 0;
+}
 
 bool SeqTreeAPI::makeOrLoadTree()
 {
@@ -116,30 +159,12 @@ bool SeqTreeAPI::makeOrLoadTree()
 	if (m_cd)
 		loaded = loadExistingTree(m_cd, &m_treeOptions, m_seqTree);
 	else
-		loaded = loadAndValidateExistingTree(m_ma, &m_treeOptions, m_seqTree);
+		loaded = loadAndValidateExistingTree();
 	if (!loaded)
 	{
-		delete m_seqTree;
-		m_seqTree = 0;
-		if (!m_loadOnly)
-		{
-			if(!m_ma.isBlockAligned())
-			{
-				ERR_POST("Sequence tree is not made for " <<m_ma.getFirstCD()->GetAccession()
-					<<" because it does not have a consistent block alognment.");
-			}
-			else
-			{
-				if ((m_treeOptions.distMethod == eScoreBlastFoot) || (m_treeOptions.distMethod == eScoreBlastFull))
-					m_treeOptions.distMethod = eScoreAligned;
-				m_seqTree = TreeFactory::makeTree(&m_ma, m_treeOptions);
-			}
-			if (m_seqTree)
-				m_seqTree->fixRowName(m_ma, SeqTree::eGI);
-		}
+		return makeTree();
 	}
-	m_triedTreeMaking = true;
-	return m_seqTree != 0;
+	return loaded;
 }
 
 string SeqTreeAPI::layoutSeqTree(int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
@@ -258,42 +283,45 @@ void SeqTreeAPI::annotateLeafNode(const SeqItem& nodeData, SeqTreeNode& node)
 	}
 }
 
-bool SeqTreeAPI::loadAndValidateExistingTree(MultipleAlignment& ma, TreeOptions* treeOptions, SeqTree* seqTree)
+bool SeqTreeAPI::loadAndValidateExistingTree()
 {
-	CCdCore* cd = ma.getFirstCD();
+	if ( m_seqTree == 0)
+		m_seqTree = new SeqTree;
+	CCdCore* cd = 0;
+	if (m_family)
+	{
+		cd = m_family->getRootCD();
+	}
+	else
+		cd = m_ma.getFirstCD();
 	if (!cd->IsSetSeqtree())
 		return false;
-
-	//bool loaded = false;
-	SeqTree* tmpTree = 0;
-	TreeOptions* tmpOptions = 0;
-	SeqTree tmpTreeObj;
-	TreeOptions tmpOptionsObj;
-
-	if (seqTree)
-		tmpTree = seqTree;
-	else
-		tmpTree = &tmpTreeObj;
-	if (treeOptions)
-		tmpOptions = treeOptions;
-	else
-		tmpOptions = &tmpOptionsObj;
-
 	SeqLocToSeqItemMap liMap;
-	if (!SeqTreeAsnizer::convertToSeqTree(cd->SetSeqtree(), *tmpTree, liMap))
+	if (!SeqTreeAsnizer::convertToSeqTree(cd->SetSeqtree(), *m_seqTree, liMap))
 		return false;
 	CRef< CAlgorithm_type > algType(const_cast<CAlgorithm_type*> (&(cd->GetSeqtree().GetAlgorithm())));
-	SeqTreeAsnizer::convertToTreeOption(algType, *treeOptions);
+	SeqTreeAsnizer::convertToTreeOption(algType, m_treeOptions);
+	if (m_treeOptions.scope == CAlgorithm_type::eTree_scope_immediateChildrenOnly)
+	{
+		CDFamily *subfam;
+		m_family->subfamily(m_family->begin(),subfam, true); //childrenOnly = true
+		m_ma.setAlignment(*subfam);
+		delete subfam;
+	}
+	else
+	{
+		m_ma.setAlignment(*m_family);
+	}
 	bool validated = false;
-	if(tmpTree->isSequenceCompositionSame(ma))
+	if(m_seqTree->isSequenceCompositionSame(m_ma))
 		validated = true;
 	else //if not same, resolve RowID with SeqLoc
 	{
-		if (SeqTreeAsnizer::resolveRowId(ma, liMap))
-			validated = tmpTree->isSequenceCompositionSame(ma);
+		if (SeqTreeAsnizer::resolveRowId(m_ma, liMap))
+			validated = m_seqTree->isSequenceCompositionSame(m_ma);
 	}
 	if (validated)
-		SeqTreeAsnizer::refillAsnMembership(ma, liMap);
+		SeqTreeAsnizer::refillAsnMembership(m_ma, liMap);
 	return validated;
 }
 
