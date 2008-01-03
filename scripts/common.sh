@@ -283,7 +283,7 @@ COMMON_InstallRB()
         destpathname="$dest"
     fi
 
-    if test -e "$destpathname"; then
+    if env test -e "$destpathname"; then
         COMMON_ExecRB mv -f "$destpathname" "$destpathname.save"
     fi
 
@@ -358,7 +358,7 @@ COMMON_RollbackInstall()
 {
     x_RollbackFile()
     {
-        test -e "$1.save" && mv -f "$1.save" "$1" || rm -f "$1"
+        env test -e "$1.save" && mv -f "$1.save" "$1" || rm -f "$1"
     }
 
     COMMON_List_ForEach 'x_common_uninstall' x_RollbackFile 2> /dev/null
