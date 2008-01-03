@@ -278,10 +278,13 @@ string CFlatFileGenerator::GetSeqFeatText
     item_os.SetFormatter(formatter);
 
     CBioseqContext bctx(seq, *ctx);
+    CConstRef<IFlatItem> item;
     if (feat.GetData().IsBiosrc()) {
-        item_os << new CSourceFeatureItem(feat, bctx, &feat.GetLocation());
+        item.Reset( new CSourceFeatureItem(feat, bctx, &feat.GetLocation()) );
+        item_os << item;
     } else {
-        item_os << new CFeatureItem(feat, bctx, &feat.GetLocation());
+        item.Reset( new CFeatureItem(feat, bctx, &feat.GetLocation()) );
+        item_os << item;
     }
 
     string text;

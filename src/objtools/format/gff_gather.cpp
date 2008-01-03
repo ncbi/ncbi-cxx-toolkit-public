@@ -54,10 +54,17 @@ CGFFGatherer::CGFFGatherer(void)
 
 void CGFFGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 {
-    ItemOS() << new CStartSectionItem(ctx);
+    CConstRef<IFlatItem> item;
 
-    ItemOS() << new CDateItem(ctx);  // for UpdateDate
-    ItemOS() << new CLocusItem(ctx); // for strand
+    item.Reset( new CStartSectionItem(ctx) );
+    ItemOS() << item;
+
+    item.Reset( new CDateItem(ctx) );
+    ItemOS() << item;  // for UpdateDate
+
+    item.Reset( new CLocusItem(ctx) );
+    ItemOS() << item; // for strand
+
     if ( !ctx.Config().HideSourceFeatures() ) {
         x_GatherSourceFeatures();
     }
@@ -65,8 +72,11 @@ void CGFFGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     if ( ctx.Config().IsFormatGFF3() ) {
         x_GatherAlignments();
     }
-    ItemOS() << new CBaseCountItem(ctx);
-    ItemOS() << new CEndSectionItem(ctx);
+    item.Reset( new CBaseCountItem(ctx) );
+    ItemOS() << item;
+
+    item.Reset( new CEndSectionItem(ctx) );
+    ItemOS() << item;
 }
 
 

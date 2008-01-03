@@ -67,11 +67,11 @@ protected:
 
 
 inline
-CFlatItemOStream& operator<<(CFlatItemOStream& os, const IFlatItem* item)
+CFlatItemOStream& operator<<(CFlatItemOStream& os, CConstRef<IFlatItem>& item)
 {
-    if ( item != 0  &&  !item->Skip() ) {
-        os.AddItem(CConstRef<IFlatItem>(item));
-    }
+//    if ( item != 0  &&  !item->Skip() ) {
+//        os.AddItem(item);
+//    }
     return os;
 }
 

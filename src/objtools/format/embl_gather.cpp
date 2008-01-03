@@ -66,43 +66,56 @@ CEmblGatherer::CEmblGatherer(void)
 void CEmblGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 {
     const CFlatFileConfig& cfg = ctx.Config();
+    CConstRef<IFlatItem> item;
 
-    ItemOS() << new CStartSectionItem(ctx);
+    item.Reset( new CStartSectionItem(ctx) );
+    ItemOS() << item;
 
     // The ID Line
-    ItemOS() << new CLocusItem(ctx);
+    item.Reset( new CLocusItem(ctx) );
+    ItemOS() << item;
     // The AC Line
-    ItemOS() << new CAccessionItem(ctx);
+    item.Reset( new CAccessionItem(ctx) );
+    ItemOS() << item;
     // The SV Line
     if ( ctx.IsNuc() ) {
-        ItemOS() << new CVersionItem(ctx);
+        item.Reset( new CVersionItem(ctx) );
+        ItemOS() << item;
     }
     // The DT Line
-    ItemOS() << new CDateItem(ctx);
+    item.Reset( new CDateItem(ctx) );
+    ItemOS() << item;
     // The DE Line
-    ItemOS() << new CDeflineItem(ctx);
+    item.Reset( new CDeflineItem(ctx) );
+    ItemOS() << item;
     // The KW Line
-    ItemOS() << new CKeywordsItem(ctx);
+    item.Reset( new CKeywordsItem(ctx) );
+    ItemOS() << item;
     // The OS, OC, OG Lines
-    ItemOS() << new CSourceItem(ctx);
+    item.Reset( new CSourceItem(ctx) );
+    ItemOS() << item;
     // The Reference (RN, RC, RP, RX, RG, RA, RT, RL) lines
     x_GatherReferences();
     x_GatherComments();
 
     // Features
-    ItemOS() << new CFeatHeaderItem(ctx);
+    item.Reset( new CFeatHeaderItem(ctx) );
+    ItemOS() << item;
     if ( !cfg.HideSourceFeatures() ) {
         x_GatherSourceFeatures();
     }
     x_GatherFeatures();
     // Base count
     if ( ctx.IsNuc()  &&  (cfg.IsModeGBench()  ||  cfg.IsModeDump()) ) {
-        ItemOS() << new CBaseCountItem(ctx);
+        item.Reset( new CBaseCountItem(ctx) );
+        ItemOS() << item;
     }
     // Sequenece
     x_GatherSequence();
     
-    ItemOS() << new CEndSectionItem(ctx);
+    item.Reset( new CEndSectionItem(ctx) );
+    ItemOS() << item
+;
 }
 
 

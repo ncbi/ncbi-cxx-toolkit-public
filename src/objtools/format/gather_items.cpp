@@ -145,9 +145,12 @@ void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const
     m_ItemOS.Reset(&os);
     m_Context.Reset(&ctx);
 
-    os << new CStartItem();
+    CConstRef<IFlatItem> item;
+    item.Reset( new CStartItem() );
+    os << item;
     x_GatherSeqEntry(ctx.GetEntry());
-    os << new CEndItem();
+    item.Reset( new CEndItem() );
+    os << item;
 }
 
 
@@ -475,8 +478,10 @@ void CFlatGatherer::x_GatherReferences(void) const
     // re-sort references
     CReferenceItem::Rearrange(refs, *m_Current);
 
+    CConstRef<IFlatItem> item;
     ITERATE (TReferences, ref, refs) {
-        *m_ItemOS << *ref;
+        item.Reset( *ref );
+        *m_ItemOS << item;
     }
 }
 
@@ -569,12 +574,15 @@ void CFlatGatherer::x_FlushComments(void) const
     // add a period to a GSDB comment (if exist and not last)
     TCommentVec::iterator last = m_Comments.end();
     --last;
+    
+    CConstRef<IFlatItem> item;
     NON_CONST_ITERATE (TCommentVec, it, m_Comments) {
         CGsdbComment* gsdb = dynamic_cast<CGsdbComment*>(it->GetPointerOrNull());
         if ( gsdb != 0   &&  it != last ) {
             gsdb->AddPeriod();
         }
-        *m_ItemOS << *it;
+        item.Reset( *it );
+        *m_ItemOS << item;
     }
 
     m_Comments.clear();
@@ -894,14 +902,17 @@ void CFlatGatherer::x_FeatComments(CBioseqContext& ctx) const
 
 // We use multiple items to represent the sequence.
 void CFlatGatherer::x_GatherSequence(void) const
-{
+{ 
     static const TSeqPos kChunkSize = 4800;
     
     bool first = true;
     TSeqPos size = GetLength(m_Current->GetLocation(), &m_Current->GetScope());
+
+    CConstRef<IFlatItem> item;
     for ( TSeqPos start = 1; start <= size; start += kChunkSize ) {
         TSeqPos end = min(start + kChunkSize - 1, size);
-        *m_ItemOS << new CSequenceItem(start, end, first, *m_Current);
+        item.Reset( new CSequenceItem(start, end, first, *m_Current) );
+        *m_ItemOS << item;
         first = false;
     }
 }
@@ -1121,8 +1132,10 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
         }
     }
   
+    CConstRef<IFlatItem> item;
     ITERATE( TSourceFeatSet, it, srcs ) {
-        *m_ItemOS << *it;
+        item.Reset( *it );
+        *m_ItemOS << item;
     }
 }
 
@@ -1354,6 +1367,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
     CSeqMap_CI gap_it = s_CreateGapMapIter(loc, ctx);
 
     CSeq_feat_Handle prev_feat;
+    CConstRef<IFlatItem> item;
     for (CFeat_CI it(scope, loc, sel); it; ++it) {
         try {
             CSeq_feat_Handle feat = it->GetSeq_feat_Handle();
@@ -1385,7 +1399,8 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             while (gap_it) {
                 // if feature after gap first output the gap
                 if (feat_start >= gap_it.GetPosition()) {
-                    out << s_NewGapItem(gap_it, ctx);
+                    item.Reset( s_NewGapItem(gap_it, ctx) );
+                    out << item;
                     ++gap_it;
                 } else {
                     break;
@@ -1393,7 +1408,8 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             }
 
             // format feature
-            out << new CFeatureItem(original_feat, ctx, feat_loc);
+            item.Reset( new CFeatureItem(original_feat, ctx, feat_loc) );
+            out << item;
 
             // Add more features depending on user preferences
             switch (feat.GetFeatSubtype()) {
@@ -1426,7 +1442,8 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
     // when all features are done, output remaining gaps
     while (gap_it) {
-        out << s_NewGapItem(gap_it, ctx);
+        item.Reset( s_NewGapItem(gap_it, ctx) );
+        out << item;
         ++gap_it;
     }
 }
@@ -1451,8 +1468,10 @@ void CFlatGatherer::x_CopyCDSFromCDNA
                                &scope);
         CRef<CSeq_loc> cds_loc = mapper.Map(cds->GetLocation());
 
-        *m_ItemOS << new CFeatureItem(cds->GetOriginalFeature(), ctx, cds_loc,
-                                      CFeatureItem::eMapped_from_cdna);
+        CConstRef<IFlatItem> item( 
+            new CFeatureItem(cds->GetOriginalFeature(), ctx, cds_loc,
+                CFeatureItem::eMapped_from_cdna) );
+        *m_ItemOS << item;
     }
 }
 
@@ -1463,6 +1482,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
     const CFlatFileConfig& cfg = ctx.Config();
     CScope& scope = ctx.GetScope();
     CFlatItemOStream& out = *m_ItemOS;
+    CConstRef<IFlatItem> item;
 
     SAnnotSelector sel;
     SAnnotSelector* selp = &sel;
@@ -1480,8 +1500,9 @@ void CFlatGatherer::x_GatherFeatures(void) const
             if (gene) {
                 CRef<CSeq_loc> loc(new CSeq_loc);
                 loc->SetWhole(*ctx.GetPrimaryId());
-                out << new CFeatureItem(*gene, ctx, loc, 
-                                        CFeatureItem::eMapped_from_genomic);
+                item.Reset( 
+                    new CFeatureItem(*gene, ctx, loc, CFeatureItem::eMapped_from_genomic) );
+                out << item;
             }
         }
     }
@@ -1524,8 +1545,10 @@ void CFlatGatherer::x_GatherFeatures(void) const
         // look for the Cdregion feature for this protein
         const CSeq_feat* cds = GetCDSForProduct(ctx.GetHandle());
         if ( cds != 0 ) {
-            out << new CFeatureItem(*cds, ctx, &cds->GetProduct(), 
-                    CFeatureItem::eMapped_from_cdna);
+            item.Reset(
+                new CFeatureItem(*cds, ctx, &cds->GetProduct(), 
+                    CFeatureItem::eMapped_from_cdna) );
+            out << item;
         }
 
         // look for Prot features (only for RefSeq records or
@@ -1536,10 +1559,12 @@ void CFlatGatherer::x_GatherFeatures(void) const
             prod_sel.SetResolveMethod(SAnnotSelector::eResolve_TSE);
             prod_sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
             for (CFeat_CI it(ctx.GetHandle(), prod_sel); it; ++it) {  
-                out << new CFeatureItem(it->GetOriginalFeature(),
+                item.Reset( 
+                    new CFeatureItem(it->GetOriginalFeature(),
                                         ctx,
                                         &it->GetProduct(),
-                                        CFeatureItem::eMapped_from_prot);
+                                        CFeatureItem::eMapped_from_prot) );
+                out << item;
             }
         }
     }
@@ -1653,9 +1678,10 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
                 continue;
             }
         }
-        
-        *m_ItemOS << new CFeatureItem(*curr.GetSeq_feat(), ctx, 
-            loc, CFeatureItem::eMapped_from_prot);
+                    
+        CConstRef<IFlatItem> item( new CFeatureItem(*curr.GetSeq_feat(), ctx, 
+            loc, CFeatureItem::eMapped_from_prot) );
+        *m_ItemOS << item;
 
         prev = curr;
     }    
@@ -1671,11 +1697,14 @@ void CFlatGatherer::x_GatherAlignments(void) const
 {
     CBioseqContext&  ctx    = *m_Current;
     CSeq_loc_Mapper* mapper = ctx.GetMapper();
+    CConstRef<IFlatItem> item;
     for (CAlign_CI it(ctx.GetScope(), ctx.GetLocation());  it;  ++it) {
         if (mapper) {
-            *m_ItemOS << new CAlignmentItem(*mapper->Map(*it), ctx);
+            item.Reset( new CAlignmentItem(*mapper->Map(*it), ctx) );
+            *m_ItemOS << item;
         } else {
-            *m_ItemOS << new CAlignmentItem(const_cast<CSeq_align&>(*it), ctx);
+            item.Reset( new CAlignmentItem(const_cast<CSeq_align&>(*it), ctx) );
+            *m_ItemOS << item;
         }
     }
 }

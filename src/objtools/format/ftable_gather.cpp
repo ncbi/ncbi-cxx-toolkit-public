@@ -54,9 +54,13 @@ CFtableGatherer::CFtableGatherer(void)
 
 void CFtableGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 {
-    ItemOS() << new CStartSectionItem(ctx);
+    CConstRef<IFlatItem> item;
 
-    ItemOS() << new CFeatHeaderItem(ctx);
+    item.Reset( new CStartSectionItem(ctx) );
+    ItemOS() << item;
+
+    item.Reset( new CFeatHeaderItem(ctx) );
+    ItemOS() << item;
     if ( ctx.Config().ShowFtableRefs() ) {
         x_GatherReferences();
     }
@@ -65,7 +69,8 @@ void CFtableGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     }
     x_GatherFeatures();
     
-    ItemOS() << new CEndSectionItem(ctx);
+    item.Reset( new CEndSectionItem(ctx) );
+    ItemOS() << item;
 }
 
 

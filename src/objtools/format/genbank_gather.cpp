@@ -90,29 +90,42 @@ bool s_ShowContig(CBioseqContext& ctx)
 
 void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 {
+    CConstRef<IFlatItem> item;
     const CFlatFileConfig& cfg = ctx.Config();
 
-    ItemOS() << new CStartSectionItem(ctx);
+    item.Reset( new CStartSectionItem(ctx) );
+    ItemOS() << item;
+    item.Reset( new CLocusItem(ctx) );
+    ItemOS() << item;
+    item.Reset( new CDeflineItem(ctx) );
+    ItemOS() << item;
+    item.Reset( new CAccessionItem(ctx) );
+    ItemOS() << item;
+    item.Reset( new CVersionItem(ctx) );
+    ItemOS() << item;
 
-    ItemOS() << new CLocusItem(ctx);
-    ItemOS() << new CDeflineItem(ctx);
-    ItemOS() << new CAccessionItem(ctx);
-    ItemOS() << new CVersionItem(ctx);
     if ( ctx.IsGbGenomeProject() ) {
-        ItemOS() << new CGenomeProjectItem(ctx);
+        item.Reset( new CGenomeProjectItem(ctx) );
+        ItemOS() << item;
     }
     if ( ctx.IsProt() ) {
-        ItemOS() << new CDBSourceItem(ctx);
+        item.Reset( new CDBSourceItem(ctx) );
+        ItemOS() << item;
     }
-    ItemOS() << new CKeywordsItem(ctx);
+    item.Reset( new CKeywordsItem(ctx) );
+    ItemOS() << item;
     if ( ctx.IsPart() ) {
-        ItemOS() << new CSegmentItem(ctx);
+        item.Reset( new CSegmentItem(ctx) );
+        ItemOS() << item;
     }
-    ItemOS() << new CSourceItem(ctx);
+    item.Reset( new CSourceItem(ctx) );
+    ItemOS() << item;
     x_GatherReferences();
     x_GatherComments();
-    ItemOS() << new CPrimaryItem(ctx);
-    ItemOS() << new CFeatHeaderItem(ctx);
+    item.Reset( new CPrimaryItem(ctx) );
+    ItemOS() << item;
+    item.Reset( new CFeatHeaderItem(ctx) );
+    ItemOS() << item;
     if ( !cfg.HideSourceFeatures() ) {
         x_GatherSourceFeatures();
     }
@@ -122,27 +135,33 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         if ( cfg.ShowContigFeatures() ) {
             x_GatherFeatures();
         }
-        ItemOS() << new CContigItem(ctx);
+        item.Reset( new CContigItem(ctx) );
+        ItemOS() << item;
         if ( cfg.ShowContigAndSeq() ) {
             if ( ctx.IsNuc()  &&  s_ShowBaseCount(cfg) ) {
-                ItemOS() << new CBaseCountItem(ctx);
+                item.Reset( new CBaseCountItem(ctx) );
+                ItemOS() << item;
             }
-            ItemOS() << new COriginItem(ctx);
+            item.Reset( new COriginItem(ctx) );
+            ItemOS() << item;
             x_GatherSequence();
         }
     } else {
         x_GatherFeatures();
         if ( cfg.ShowContigAndSeq()  &&  s_ShowContig(ctx) ) {
-            ItemOS() << new CContigItem(ctx);
+            item.Reset( new CContigItem(ctx) );
+            ItemOS() << item;
         }
         if ( ctx.IsNuc()  &&  s_ShowBaseCount(cfg) ) {
-            ItemOS() << new CBaseCountItem(ctx);
+            item.Reset( new CBaseCountItem(ctx) );
+            ItemOS() << item;
         }
-        ItemOS() << new COriginItem(ctx);
+        item.Reset( new COriginItem(ctx) );
+        ItemOS() << item;
         x_GatherSequence();
     }
-        
-    ItemOS() << new CEndSectionItem(ctx);
+    item.Reset( new CEndSectionItem(ctx) );    
+    ItemOS() << item;
 }
 
 
@@ -186,7 +205,8 @@ void CGenbankGatherer::x_GatherWGS(CBioseqContext& ctx) const
         }
 
         if ( (first != 0)  &&  (last != 0) ) {
-            ItemOS() << new CWGSItem(wgs_type, *first, *last, uo, ctx);
+            CConstRef<IFlatItem> item( new CWGSItem(wgs_type, *first, *last, uo, ctx) );  
+            ItemOS() << item;
         }
     }    
 }
