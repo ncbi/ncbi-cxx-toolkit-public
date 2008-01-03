@@ -31,8 +31,8 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbimisc.hpp>
 #include <objmgr/util/autodef.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
