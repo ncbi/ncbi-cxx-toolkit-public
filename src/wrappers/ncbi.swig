@@ -193,11 +193,14 @@ void HandleException(void) {
 #endif
 
 %{
-namespace ncbi {namespace objects {namespace validator {}} namespace blast {}}
+namespace ncbi {namespace objects {namespace validator {}}
+                namespace blast {}
+                namespace gnomon {}}
 using namespace ncbi;
 using namespace ncbi::objects;
 using namespace ncbi::objects::validator;
 using namespace ncbi::blast;
+using namespace ncbi::gnomon;
 %}
 
 // SWIG is confused by recent CConstRef changes
