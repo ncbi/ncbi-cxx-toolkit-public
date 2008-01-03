@@ -38,6 +38,7 @@
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <algo/structure/cd_utils/cuTaxTree.hpp>
 #include <algo/structure/cd_utils/cuSeqtree.hpp>
+#include <algo/structure/cd_utils/cuCdFamily.hpp>
 #include <algo/structure/cd_utils/cuSeqTreeFactory.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -59,6 +60,7 @@ class NCBI_CDUTILS_EXPORT SeqTreeAPI
 public:
 	SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly=true);
 	SeqTreeAPI(CCdCore* cd);
+	SeqTreeAPI(CDFamily& cdfam, TreeOptions& option);
 	~SeqTreeAPI();
 
 	void annotateTreeByMembership();
@@ -78,12 +80,18 @@ public:
 	//lay out the tree with a fixed spacing between sequences
 	string layoutSeqTree(int maxX, vector<SeqTreeEdge>& edgs, int yInt = 3);
 	CCdCore* getRootCD(){return m_cd ? m_cd : m_ma.getFirstCD();}
-	
-	static bool loadAndValidateExistingTree(MultipleAlignment& ma, TreeOptions* treeOptions=0, SeqTree* seqTree=0);
+	bool makeOrLoadTree();
+	bool loadAndValidateExistingTree();
+	bool makeTree();
+	MultipleAlignment& getAlignment() {return m_ma;};
+	SeqTree* getTree() {return m_seqTree;};
+	TreeOptions& getOptions() {return m_treeOptions;}
+
 private:
 	//diffferent source of cd data
 	MultipleAlignment m_ma; //slow but validates the tree
 	CCdCore* m_cd; //fast, trust the tree without validating
+	CDFamily* m_family; //for changing scope
 
 	SeqTree* m_seqTree;
 	TaxTreeData* m_taxTree;
@@ -94,7 +102,6 @@ private:
 	bool m_triedTreeMaking;
 	bool m_loadOnly;
 
-	bool makeOrLoadTree();
 	string layoutSeqTree(int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges);
 	int getAllEdges(vector<SeqTreeEdge>& edges);
 	void getEgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqTreeEdge>& edges);

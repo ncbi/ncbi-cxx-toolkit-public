@@ -73,7 +73,7 @@ public:
 	void getChildren(vector<CDFamilyIterator>& cdITs, CDFamilyIterator pit)const;
 	void getDescendants(vector<CCdCore*>& cds, CCdCore* parentCD) const;
 	void getDescendants(set<CCdCore*>& cds, CCdCore* parentCD) const;
-
+	void subfamily(CDFamilyIterator cit, CDFamily*& subfam, bool childrenOnly=false);
     //   Was 'getParent'; component parents are stored in each CDNode and not
     //   represented in the tree structure.  Renamed to emphasize this.
     CCdCore* getClassicalParent(CCdCore* childCD) const;
@@ -128,7 +128,7 @@ public:
 	static int createFamilies(vector<CCdCore*>& cds, vector<CDFamily*>& families);
 
 	//CDs in cds will be extracted into families
-	static int createFamilies(vector<CCdCore*>& cds, vector<CDFamily>& families);
+	//static int createFamilies(vector<CCdCore*>& cds, vector<CDFamily>& families);
 	static void extractFamily(CCdCore* parentCD, CDFamily& cdFamily, vector<CCdCore*>& cds);
 	static bool findParent(CCdCore* cd, vector<CCdCore*>& cds);
 	static bool findChildren(CCdCore* cd, vector<CCdCore*>& cds, set<int>& children);

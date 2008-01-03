@@ -40,6 +40,7 @@
 #include <algo/structure/cd_utils/cuDistmat.hpp>
 #include <algo/structure/cd_utils/cuSeqTreeAlg.hpp>
 #include <algo/structure/cd_utils/cuScoringMatrix.hpp>
+#include <objects/cdd/Sequence_tree.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -51,14 +52,17 @@ struct TreeOptions
 		distMethod(GLOBAL_DEFAULT_DIST_METHOD),
 		matrix(GLOBAL_DEFAULT_SCORE_MATRIX),
 		nTermExt(DistanceMatrix::NO_EXTENSION),
-		cTermExt(DistanceMatrix::NO_EXTENSION){}
+		cTermExt(DistanceMatrix::NO_EXTENSION),
+		scope(CAlgorithm_type::eTree_scope_allDescendants),
+		coloringScope(CAlgorithm_type::eColoring_scope_allDescendants){}
 
 	ETreeMethod clusteringMethod;
 	EDistMethod distMethod;
 	EScoreMatrixType matrix; 
 	int nTermExt;
 	int cTermExt;
-
+	CAlgorithm_type::ETree_scope scope;
+	CAlgorithm_type::EColoring_scope coloringScope;
 };
 
 class NCBI_CDUTILS_EXPORT TreeFactory 
