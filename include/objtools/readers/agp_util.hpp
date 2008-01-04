@@ -116,10 +116,30 @@ public:
     } gap_type;
     bool linkage;
 
+    static bool IsGap(char c)
+    {
+        return c=='N' || c=='U';
+    }
+    static bool IsDraftComponent(char c)
+    {
+        // Active finishing, Draft HTG, Pre draft
+        return c=='A' || c=='D' || c=='P';
+    }
+    static bool GapValidAtObjectEnd(EGap gap_type)
+    {
+        return gap_type==eGapCentromere || gap_type==eGapTelomere || gap_type==eGapShort_arm;
+    }
+
+
     bool IsGap() const
     {
       return is_gap;
     }
+    bool IsDraftComponent()
+    {
+        return IsDraftComponent(component_type);
+    }
+
     bool GapEndsScaffold() const
     {
         if(gap_type==eGapFragment) return false;
@@ -127,7 +147,8 @@ public:
     }
     bool GapValidAtObjectEnd() const
     {
-        return gap_type==eGapCentromere || gap_type==eGapTelomere || gap_type==eGapShort_arm;
+        //return gap_type==eGapCentromere || gap_type==eGapTelomere || gap_type==eGapShort_arm;
+        return GapValidAtObjectEnd(gap_type);
     }
 
 protected:
@@ -150,6 +171,12 @@ private:
 public:
     CAgpErr* GetErrorHandler() { return m_AgpErr; }
     void SetErrorHandler(CAgpErr* arg);
+
+    static const char* GapTypeToString(int i)
+    {
+      if(i<0 || i>=eGapCount) return NcbiEmptyCStr;
+      return gap_types[i];
+    }
 };
 
 /// Detects scaffolds, object boundaries, errors that involve 2 consequitive lines.
@@ -234,9 +261,10 @@ protected:
     {
         // in m_line_skipped :
         // false: Non-fatal error, line saved to m_this_row.
-        //        Preceding callbacks might still be invoked.
-        //        They can check m_error_code, if they need to (which is unlikely).
+        //        All appropriate preceding callbacks were called before OnError() for this line.
+        //        They can check m_error_code, if they need to (not very likely).
         // true  : Syntax error; m_this_row most likely incomplete.
+        //         (or complete but inconsistent for E_ObjRangeNeGap, E_ObjRangeNeComp)
         //         No other callbacks invoked for this line.
         //         On the next iteration, m_prev_row will retain the last known valid line.
         // out m_line_skipped: copied to m_prev_line_skipped;
