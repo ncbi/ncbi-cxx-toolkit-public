@@ -12,6 +12,7 @@ html
 internal/align_model
 internal/contigdb
 internal/gbench
+internal/mapview
 misc/third_party
 misc/third_party_static
 objects
