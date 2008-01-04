@@ -19,7 +19,6 @@ SUB_PROJ =  \
 			view_phylotree \
 			view_snp \
 			view_table \
-			view_taxplot \
 			view_text \
 			view_validator
 

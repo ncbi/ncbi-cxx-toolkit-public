@@ -12,8 +12,7 @@ SUB_PROJ =  \
 			gui_dialogs \
 			gui_core \
 			gui_services \
-			plugins \
-			internal
+			plugins
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

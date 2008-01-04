@@ -3,7 +3,7 @@
 SUB_PROJ =  \
 			ncbi_gbench_contig \
 			ncbi_gbench_internal \
-			Proteus \
+			proteus \
 			radar
 
 srcdir = @srcdir@
