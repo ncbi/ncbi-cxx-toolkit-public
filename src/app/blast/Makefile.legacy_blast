@@ -7,8 +7,8 @@ SCRIPT_NAME = legacy_blast.pl
 
 all:
 	@if [ '$(BINCOPY)' != '@:' -a -d $(bindir) -a -w $(bindir) -a $(srcdir) != . ]; then \
-	        echo $(BINCOPY) $(SCRIPT_NAME) $(bindir)/ && \
-	        $(BINCOPY) $(SCRIPT_NAME) $(bindir)/ || exit $? ; \
+	        echo $(BINCOPY) $(srcdir)/$(SCRIPT_NAME) $(bindir) && \
+	        $(BINCOPY) $(srcdir)/$(SCRIPT_NAME) $(bindir) || exit $? ; \
 	fi
 
 purge:
