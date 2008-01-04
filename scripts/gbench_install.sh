@@ -17,7 +17,11 @@ export DYLD_BIND_AT_LAUNCH
 
 algos='align basic cn3d external gnomon linkout phylo validator web_page'
 docs='basic table'
-views='align graphic phylo_tree table taxplot text validator'
+views='align graphic phylo_tree table text validator'
+# Internal or (in the case of gui_view_taxplot) on the way out.
+optional_plugins='gui_doc_alignmodels gui_view_radar gui_view_taxplot'
+optional_plugins="$optional_plugins ncbi_gbench_contig ncbi_gbench_internal"
+optional_plugins="$optional_plugins proteus"
 PLUGINS="ncbi_init"
 for t in algo doc view; do
    eval l=\$${t}s
@@ -200,6 +204,14 @@ CopyFiles()
         rm -f $target_dir/plugins/libgui_$x.so
         rm -f $target_dir/plugins/libgui_$x.dylib
         DoMove $target_dir/lib/libgui_$x.so $target_dir/plugins/
+    done
+
+    for x in $optional_plugins; do
+        test -f "$target_dir/lib/lib$x.so" || continue
+        echo installing plugin: $x
+        rm -f $target_dir/plugins/lib$x.so
+        rm -f $target_dir/plugins/lib$x.dylib
+        DoMove $target_dir/lib/lib$x.so $target_dir/plugins/
     done
 
     for x in $src_dir/lib/lib*dbapi*.so; do
