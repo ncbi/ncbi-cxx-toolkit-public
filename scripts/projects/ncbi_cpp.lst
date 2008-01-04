@@ -11,7 +11,7 @@ html
 internal/align_model$
 internal/ID/utils$
 internal/mapview/objects
--internal/mapview/objects/util
+-internal/mapview/objects/cache
 misc
 objects
 objmgr
