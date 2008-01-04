@@ -2394,7 +2394,7 @@ bool CFeatList::GetItemByDescription(const string& desc, CFeatListItem& config_i
 {
     const_iterator ci_it = begin();
     for (; ci_it != end(); ++ci_it) {
-        if (ci_it->GetDescription() == desc) {
+        if (NStr::EqualNocase(ci_it->GetDescription(), desc)) {
             config_item = *ci_it;
             return true;
         }
