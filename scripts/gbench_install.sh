@@ -18,8 +18,8 @@ export DYLD_BIND_AT_LAUNCH
 algos='align basic cn3d external gnomon linkout phylo validator web_page'
 docs='basic table'
 views='align graphic phylo_tree table text validator'
-# Internal or (in the case of gui_view_taxplot) on the way out.
-optional_plugins='gui_doc_alignmodels gui_view_radar gui_view_taxplot'
+# Optional plugins
+optional_plugins='gui_doc_alignmodels gui_view_radar'
 optional_plugins="$optional_plugins ncbi_gbench_contig ncbi_gbench_internal"
 optional_plugins="$optional_plugins proteus"
 PLUGINS="ncbi_init"
