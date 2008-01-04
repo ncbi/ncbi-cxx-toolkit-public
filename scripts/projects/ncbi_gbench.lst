@@ -12,6 +12,7 @@ html
 internal/align_model
 internal/contigdb
 internal/gbench
+internal/mapview
 misc/third_party
 objects
 objmgr
