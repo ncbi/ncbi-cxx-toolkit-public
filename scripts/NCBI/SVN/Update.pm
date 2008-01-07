@@ -356,7 +356,7 @@ sub UpdateCWD
 
     $Self->CollectUpdates('.');
 
-    if (@{$Self->{NonRecursiveUpdates}})
+    if ($Self->{NonRecursiveUpdates})
     {
         print "Performing non-recursive updates:\n";
 
@@ -364,7 +364,7 @@ sub UpdateCWD
             @{$Self->{NonRecursiveUpdates}})
     }
 
-    if (@{$Self->{RecursiveUpdates}})
+    if ($Self->{RecursiveUpdates})
     {
         print "Performing recursive updates:\n";
 
