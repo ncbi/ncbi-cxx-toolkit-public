@@ -436,17 +436,17 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         case eDB_VarChar:
             outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
-            if ( outlen <= 0) item_buf->AssignNULL();
+            if ( outlen < 0) item_buf->AssignNULL();
             else *((CDB_VarChar*)  item_buf) = buffer;
             break;
         case eDB_Char:
             outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
-            if ( outlen <= 0) item_buf->AssignNULL();
+            if ( outlen < 0) item_buf->AssignNULL();
             else *((CDB_Char*)     item_buf) = buffer;
             break;
         case eDB_LongChar:
             outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
-            if ( outlen <= 0) item_buf->AssignNULL();
+            if ( outlen < 0) item_buf->AssignNULL();
             else *((CDB_LongChar*)     item_buf) = buffer;
             break;
         default:
@@ -478,17 +478,17 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         case eDB_VarChar:
             outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
-            if (outlen <= 0) item_buf->AssignNULL();
+            if (outlen < 0) item_buf->AssignNULL();
             else *((CDB_VarChar*)  item_buf) = buffer;
             break;
         case eDB_Char:
             outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
-            if (outlen <= 0) item_buf->AssignNULL();
+            if (outlen < 0) item_buf->AssignNULL();
             else *((CDB_Char*) item_buf) = buffer;
             break;
         case eDB_LongChar:
             outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
-            if (outlen <= 0) item_buf->AssignNULL();
+            if (outlen < 0) item_buf->AssignNULL();
             else *((CDB_LongChar*) item_buf) = buffer;
             break;
         default:

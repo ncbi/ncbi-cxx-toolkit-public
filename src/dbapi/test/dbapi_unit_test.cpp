@@ -8091,8 +8091,8 @@ CDBAPIUnitTest::Test_NULL(void)
         }
 
 
-        // Special case: empty strings.
-        if (false) {
+        // Special case: empty strings and strings with spaces.
+        if (true) {
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
             // Initialize data (strings are EMPTY) ...
@@ -8157,7 +8157,96 @@ CDBAPIUnitTest::Test_NULL(void)
                         BOOST_CHECK( int_field.IsNull() );
 
                         BOOST_CHECK( !vc1000_field.IsNull() );
-                        BOOST_CHECK_EQUAL( vc1000_field.GetString(), string() );
+                        // Old protocol version has this strange feature
+                        if (m_args.GetServerType() == CTestArguments::eSybase
+                            || m_args.GetDriverName() == dblib_driver
+                            || m_args.GetDriverName() == msdblib_driver
+                           )
+                        {
+                            BOOST_CHECK_EQUAL( vc1000_field.GetString(), string(" ") );
+                        }
+                        else {
+                            BOOST_CHECK_EQUAL( vc1000_field.GetString(), string() );
+                        }
+                    }
+                }
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // Initialize data (strings are full of spaces) ...
+            {
+                // Drop all records ...
+                sql  = " DELETE FROM " + GetTableName();
+                auto_stmt->ExecuteUpdate(sql);
+
+                sql  = " INSERT INTO " + GetTableName() +
+                    "(int_field, vc1000_field) "
+                    "VALUES(@int_field, @vc1000_field) \n";
+
+                // CVariant variant(eDB_Text);
+                // variant.Append(" ", 1);
+
+                // Insert data ...
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    if (ind % 2 == 0) {
+                        auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
+                        auto_stmt->SetParam(CVariant(eDB_VarChar), "@vc1000_field");
+                    } else {
+                        auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
+                        auto_stmt->SetParam( CVariant(string("    ")), "@vc1000_field" );
+                    }
+
+                    // Execute a statement with parameters ...
+                    auto_stmt->ExecuteUpdate( sql );
+
+                    // !!! Do not forget to clear a parameter list ....
+                    // Workaround for the ctlib driver ...
+                    auto_stmt->ClearParamList();
+                }
+
+                // Check record number ...
+                BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt,
+                                                                GetTableName()));
+            }
+
+            // Check ...
+            {
+                sql = "SELECT int_field, vc1000_field FROM " + GetTableName() +
+                    " ORDER BY id";
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    BOOST_CHECK(rs->Next());
+
+                    const CVariant& int_field = rs->GetVariant(1);
+                    const CVariant& vc1000_field = rs->GetVariant(2);
+
+                    if (ind % 2 == 0) {
+                        BOOST_CHECK( !int_field.IsNull() );
+                        BOOST_CHECK_EQUAL( int_field.GetInt4(), ind );
+
+                        BOOST_CHECK( vc1000_field.IsNull() );
+                    } else {
+                        BOOST_CHECK( int_field.IsNull() );
+
+                        BOOST_CHECK( !vc1000_field.IsNull() );
+                        // Old protocol version has this strange feature
+                        if (m_args.GetServerType() == CTestArguments::eSybase
+                            || m_args.GetDriverName() == dblib_driver
+                            || m_args.GetDriverName() == msdblib_driver
+                           )
+                        {
+                            BOOST_CHECK_EQUAL( vc1000_field.GetString(), string(" ") );
+                        }
+                        else {
+                            BOOST_CHECK_EQUAL( vc1000_field.GetString(), string("    ") );
+                        }
                     }
                 }
 
@@ -8165,6 +8254,83 @@ CDBAPIUnitTest::Test_NULL(void)
             }
         } else {
             PutMsgDisabled("Testing of NULL-value + empty string is disabled.");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         }
     }
     catch(const CException& ex) {
@@ -11778,11 +11944,25 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
 
+    if (!(args.GetDriverName() == ftds64_driver
+          && args.GetServerType() == CTestArguments::eSybase)
+        // ftds_dblib don't work with Sybase and gives very strange results with MS SQL
+        && args.GetDriverName() != ftds_dblib_driver
+       )
+    {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NULL, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+    else {
+        PutMsgDisabled("Test_NULL");
+    }
+
     if (args.GetDriverName() != ftds_dblib_driver
         && !(args.GetDriverName() == ftds64_driver
           && args.GetServerType() == CTestArguments::eSybase)
-        && !(args.GetDriverName() == ftds8_driver
-          && args.GetServerType() == CTestArguments::eSybase)
+        /*&& !(args.GetDriverName() == ftds8_driver
+          && args.GetServerType() == CTestArguments::eSybase)*/
         ) {
         boost::unit_test::test_case* tc_parameters =
             BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters,
@@ -11814,10 +11994,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         } else {
             PutMsgDisabled("Test_LOB_LowLevel");
         }
-
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NULL, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
 
         // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
         if (!(args.GetDriverName() == ftds8_driver
@@ -11912,7 +12088,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
     } else {
         PutMsgDisabled("Test_StatementParameters");
-        PutMsgDisabled("Test_NULL");
         PutMsgDisabled("Test_GetRowCount");
     }
 

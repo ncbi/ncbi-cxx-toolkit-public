@@ -2827,8 +2827,15 @@ ct_get_data(CS_COMMAND * cmd, CS_INT item, CS_VOID * buffer, CS_INT buflen, CS_I
      */
 
     srclen = curcol->column_cur_size;
-    if (srclen < 0)
-        srclen = 0;
+    if (srclen < 0) {
+        /* this is NULL */
+        if (outlen)
+            *outlen = srclen;
+        if (item < resinfo->num_cols)
+            return CS_END_ITEM;
+        return CS_END_DATA;
+    }
+
     src += cmd->get_data_bytes_returned;
     srclen -= cmd->get_data_bytes_returned;
 
@@ -4297,7 +4304,7 @@ paramrowalloc(TDSPARAMINFO * params, TDSCOLUMN * curcol, int param_num, void *va
     if (!row)
         return NULL;
 
-    if (size > 0 && value) {
+    if (value) {
         /* TODO check for BLOB and numeric */
         if (size > curcol->column_size)
             size = curcol->column_size;
@@ -4592,7 +4599,7 @@ _ct_fill_param(CS_INT cmd_type, CS_PARAM * param, CS_DATAFMT * datafmt, CS_VOID 
                     *(param->datalen) = (*datalen == CS_UNUSED) ? 0 : *datalen;
                 }
 
-                if (*(param->datalen) && data) {
+                if (data) {
                     if (*(param->datalen) == CS_NULLTERM) {
                         tdsdump_log(TDS_DBG_INFO1, " _ct_fill_param() about to strdup string %u bytes long\n",
                                 (unsigned int) strlen(data));

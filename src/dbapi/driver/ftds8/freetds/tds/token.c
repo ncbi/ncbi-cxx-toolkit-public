@@ -1078,17 +1078,17 @@ int len;
 					tds_get_n(tds,curcol->column_timestamp,8);
 					colsize = tds_get_int(tds);
 				} else {
-					colsize = 0;
+					colsize = -1;
 				}
 				break;
 			case 2: 
 				/* FIXME add support for empty no-NULL string*/
 				colsize = tds_get_smallint(tds);
-				if (colsize == -1)
-					colsize=0;
 				break;
 			case 1: 
 				colsize = tds_get_byte(tds);
+				if (colsize == 0)
+					colsize = -1;
 				break;
 			case 0: 
 				colsize = get_size_by_type(cur_col_type);
@@ -1097,7 +1097,7 @@ int len;
 
         tdsdump_log(TDS_DBG_INFO1, "%L processing row.  column size is %d \n", colsize);
 		/* set NULL flag in the row buffer */
-		if (colsize==0) {
+		if (colsize == -1) {
 			tds_set_null(info->current_row, i);
 		} else {
 			tds_clr_null(info->current_row, i);

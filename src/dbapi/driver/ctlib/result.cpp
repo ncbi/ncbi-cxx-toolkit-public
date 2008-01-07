@@ -338,7 +338,16 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd,
         CS_RETCODE rc = Check(ct_get_data(cmd, item, buffer, buflen, outlen));
         if ((rc == CS_END_ITEM || rc == CS_END_DATA)) {
             if (outlen) {
+#ifdef FTDS_IN_USE
+                if (*outlen == -1) {
+                    is_null = true;
+                    *outlen = 0;
+                }
+                else
+                    is_null = false;
+#else
                 is_null = (*outlen == 0);
+#endif
             }
         }
         return rc;

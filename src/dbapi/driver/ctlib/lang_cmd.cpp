@@ -285,7 +285,11 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
 //         param_fmt.datatype = CS_CHAR_TYPE;
 // #endif
 
+#ifdef FTDS_IN_USE
+        param_fmt.datatype = CS_VARCHAR_TYPE;
+#else
         param_fmt.datatype = CS_CHAR_TYPE;
+#endif
 
         if ( declare_only ) {
             break;
