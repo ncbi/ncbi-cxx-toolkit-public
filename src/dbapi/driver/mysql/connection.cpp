@@ -161,6 +161,8 @@ bool CMySQL_Connection::Close(void)
 
         mysql_close(&m_MySQL);
 
+        MarkClosed();
+
         m_IsOpen = false;
 
         return true;

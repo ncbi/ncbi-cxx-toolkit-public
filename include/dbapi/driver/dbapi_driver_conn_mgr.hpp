@@ -43,6 +43,7 @@ BEGIN_NCBI_SCOPE
 namespace impl
 {
     class CDriverContext;
+    class CConnection;
 }
 
 
@@ -156,7 +157,7 @@ private:
 
     // Friends
     friend class CSafeStaticPtr<CDbapiConnMgr>;
-    friend class impl::CDriverContext;
+    friend class impl::CConnection;
 };
 
 

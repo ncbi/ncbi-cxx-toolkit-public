@@ -751,6 +751,7 @@ bool CTL_Connection::Abort()
                           0)) == CS_SUCCEED) {
         if(fd >= 0) {
             close(fd);
+            MarkClosed();
             return true;
         }
     }
@@ -780,6 +781,8 @@ bool CTL_Connection::Close(void)
         // This method is often used as a destructor.
         // So, let's drop the connection handle.
         m_Handle.Drop();
+
+        MarkClosed();
 
         return true;
     }

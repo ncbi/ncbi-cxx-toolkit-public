@@ -185,8 +185,7 @@ CDB_Connection::~CDB_Connection()
 {
     try {
         if ( m_ConnImpl ) {
-            m_ConnImpl->Release();
-            m_ConnImpl = NULL;
+            Close();
         }
     }
     NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
@@ -196,14 +195,20 @@ CDB_Connection::~CDB_Connection()
 bool CDB_Connection::Abort()
 {
     CHECK_CONNECTION(m_ConnImpl);
-    return m_ConnImpl->Abort();
+    if (m_ConnImpl->Abort()) {
+        Close();
+        return true;
+    }
+    return false;
 }
 
 
 bool CDB_Connection::Close(void)
 {
     CHECK_CONNECTION(m_ConnImpl);
-    return m_ConnImpl->Close();
+    m_ConnImpl->Release();
+    m_ConnImpl = NULL;
+    return true;
 }
 
 void CDB_Connection::SetTimeout(size_t nof_secs)

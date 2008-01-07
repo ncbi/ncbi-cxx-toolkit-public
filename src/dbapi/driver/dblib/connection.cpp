@@ -225,7 +225,13 @@ bool CDBL_Connection::Abort()
     if(fdw != fdr && fdw >= 0) {
         close(fdw);
     }
-    return (fdr >= 0 || fdw >= 0);
+
+    if (fdr >= 0 || fdw >= 0) {
+        MarkClosed();
+        return true;
+    }
+
+    return false;
 }
 
 bool CDBL_Connection::Close(void)
@@ -238,6 +244,8 @@ bool CDBL_Connection::Close(void)
 
         dbclose(GetDBLibConnection());
         CheckFunctCall();
+
+        MarkClosed();
 
         m_Link = NULL;
 

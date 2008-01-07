@@ -482,6 +482,7 @@ CODBC_Connection::~CODBC_Connection()
 bool CODBC_Connection::Abort()
 {
     SQLDisconnect(m_Link);
+    MarkClosed();
     return false;
 }
 
@@ -500,6 +501,8 @@ bool CODBC_Connection::Close(void)
                 DATABASE_DRIVER_ERROR( err_message, 410009 );
             }
         }
+
+        MarkClosed();
 
         return true;
     }

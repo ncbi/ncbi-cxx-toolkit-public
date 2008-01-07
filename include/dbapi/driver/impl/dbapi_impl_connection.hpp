@@ -239,6 +239,9 @@ protected:
     //
     void DetachResultProcessor(void);
 
+    void CheckCanOpen(void);
+    void MarkClosed(void);
+
     //
     void SetServerName(const string& name)
     {
@@ -301,6 +304,7 @@ private:
     bool    m_Reusable;
     bool    m_BCPable;
     bool    m_SecureLogin;
+    bool    m_Opened;
     string  m_ExecCntxInfo;
 };
 

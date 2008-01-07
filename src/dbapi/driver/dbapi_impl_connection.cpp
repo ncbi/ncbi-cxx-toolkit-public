@@ -33,7 +33,14 @@
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
 
+#include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
+
+#include <dbapi/error_codes.hpp>
+
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Dbapi_ConnFactory
 
 
 BEGIN_NCBI_SCOPE
@@ -95,9 +102,12 @@ CConnection::CConnection(CDriverContext& dc,
 , m_Reusable(reusable)
 , m_BCPable(true) // BCP is enabled with all drivers by default. m_BCPable(isBCPable)
 , m_SecureLogin(hasSecureLogin)
+, m_Opened(false)
 {
     _ASSERT(m_MsgHandlers.GetSize() == dc.GetConnHandlerStack().GetSize());
     _ASSERT(m_MsgHandlers.GetSize() > 0);
+
+    CheckCanOpen();
 }
 
 CConnection::CConnection(CDriverContext& dc,
@@ -120,19 +130,46 @@ CConnection::CConnection(CDriverContext& dc,
 , m_Reusable(reusable)
 , m_BCPable(isBCPable)
 , m_SecureLogin(hasSecureLogin)
+, m_Opened(false)
 {
     _ASSERT(m_MsgHandlers.GetSize() == dc.GetConnHandlerStack().GetSize());
     _ASSERT(m_MsgHandlers.GetSize() > 0);
 
     SetExecCntxInfo("SERVER: '" + GetServerName() + "' USER: '" + GetUserName() + "'");
+
+    CheckCanOpen();
 }
 
 CConnection::~CConnection(void)
 {
     DetachResultProcessor();
 //         DetachInterface();
+    MarkClosed();
 }
 
+void CConnection::CheckCanOpen(void)
+{
+    MarkClosed();
+
+    // Check for maximum number of connections
+    if (!CDbapiConnMgr::Instance().AddConnect()) {
+        ERR_POST_X_ONCE(3, "Cannot create new connection: "
+                           "maximum connections amount ("
+                           << CDbapiConnMgr::Instance().GetMaxConnect()
+                           << ") is exceeded!!!");
+        DATABASE_DRIVER_ERROR( "Maximum connections amount is exceeded", 500000 );
+    }
+
+    m_Opened = true;
+}
+
+void CConnection::MarkClosed(void)
+{
+    if (m_Opened) {
+        CDbapiConnMgr::Instance().DelConnect();
+        m_Opened = false;
+    }
+}
 
 void CConnection::PushMsgHandler(CDB_UserHandler* h,
                                     EOwnership ownership)

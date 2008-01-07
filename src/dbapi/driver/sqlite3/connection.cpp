@@ -157,6 +157,7 @@ bool CSL3_Connection::Close(void)
     if (m_IsOpen) {
         Refresh();
         Check(sqlite3_close(m_SQLite3));
+        MarkClosed();
         m_IsOpen = false;
         return true;
     }

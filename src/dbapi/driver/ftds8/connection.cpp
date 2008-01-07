@@ -220,7 +220,13 @@ bool CTDS_Connection::Abort()
     if(fdw != fdr && fdw >= 0) {
         close(fdw);
     }
-    return (fdr >= 0 || fdw >= 0);
+
+    if (fdr >= 0 || fdw >= 0) {
+        MarkClosed();
+        return true;
+    }
+
+    return false;
 }
 
 bool CTDS_Connection::Close(void)
@@ -233,6 +239,8 @@ bool CTDS_Connection::Close(void)
 
         dbclose(GetDBLibConnection());
         CheckFunctCall();
+
+        MarkClosed();
 
         m_Link = NULL;
 
