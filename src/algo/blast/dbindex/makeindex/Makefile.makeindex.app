@@ -1,4 +1,4 @@
-APP = makeindex
+APP = makembindex
 SRC = main mkindex_app
 
 LIB_ = xalgoblastdbindex blast composition_adjustment seqdb blastdb \
