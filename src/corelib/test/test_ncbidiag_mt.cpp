@@ -209,7 +209,9 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
             pos = msg_text.find_last_of(" ");
             assert(pos != NPOS);
             tid = NStr::StringToUInt8(msg_text.substr(pos + 1));
+#if !defined(NCBI_NO_THREADS)
             assert(msg.m_TID != 0);
+#endif
             if ( msg.m_Function ) {
                 assert(strcmp(msg.m_Function, "Thread_Run") == 0);
             }
@@ -220,7 +222,9 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
             pos = msg_text.find_last_of(" ");
             assert(pos != NPOS);
             tid = NStr::StringToUInt8(msg_text.substr(pos + 1));
+#if !defined(NCBI_NO_THREADS)
             assert(msg.m_TID != 0);
+#endif
             if ( msg.m_Function ) {
                 assert(strcmp(msg.m_Function, "Thread_Run") == 0);
             }
