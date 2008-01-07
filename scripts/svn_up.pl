@@ -45,9 +45,9 @@ command. That is, it keeps track of which directories have been checked
 out non-recursively.
 
 Usage:
-    $ScriptName [-r REV] [-l FILE] dir/subdir dir/another/
+    $ScriptName [-l FILE] dir/subdir dir/another/
 
-    $ScriptName [-r REV]
+    $ScriptName
 
 Description:
     This script supports two modes of operation:
@@ -63,8 +63,6 @@ Description:
        current directory the same way it was initially updated.
 
 Options:
-    -r          Repository revision number to update to.
-
     -l          Pathname of the file containing directory names
                 to be updated. If this parameter is specified,
                 other directory names can be omitted from the
@@ -75,9 +73,9 @@ EOF
     exit $ExitCode
 }
 
-my ($Help, $Rev, $DirListing);
+my ($Help, $DirListing);
 
-GetOptions('help|h|?' => \$Help, 'r=i' => \$Rev, 'l=s' => \$DirListing)
+GetOptions('help|h|?' => \$Help, 'l=s' => \$DirListing)
     or Usage(1);
 
 # Print usage if the --help argument is passed.
@@ -100,6 +98,6 @@ if ($DirListing)
 
 my $Update = NCBI::SVN::Update->new(MyName => $ScriptName);
 
-@DirList ? $Update->UpdateDirList($Rev, @DirList) : $Update->UpdateCWD($Rev);
+@DirList ? $Update->UpdateDirList(@DirList) : $Update->UpdateCWD();
 
 exit 0

@@ -401,11 +401,9 @@ while (@ProjectQueue)
     ReadProjectListingFile(FindProjectListing($Project, $Context), $Context)
 }
 
-my $HEAD = $SVN->GetLatestRevision($RepositoryURL);
-
 if ($RepositoryURL)
 {
-    $SVN->RunSubversion(($NewCheckout ? 'co' : 'switch'), '-r', $HEAD,
+    $SVN->RunSubversion(($NewCheckout ? 'co' : 'switch'),
         '-N', $RepositoryURL, $BuildDir)
 }
 
@@ -435,7 +433,7 @@ if (@Branches)
     }
 }
 
-$Update->UpdateDirList($HEAD, @Paths);
+$Update->UpdateDirList(@Paths);
 
 NCBI::SVN::MultiSwitch->new(MyName => $ScriptName)->
     SwitchUsingMap($SwitchMap->GetSwitchPlan()) if $SwitchMap;

@@ -21,7 +21,7 @@ sub new
 
 sub SwitchToRecursive
 {
-    my ($Self, $Dir) = @_;
+    my ($Self, $DirsToUpdate, $Dir) = @_;
 
     my $RFile = "$Dir/.svn/ncbi-R";
 
@@ -29,86 +29,26 @@ sub SwitchToRecursive
     {
         print "L $Dir\n";
 
+        my @SubDirsToUpdate;
+
         for my $SubDir ($Self->{SVN}->ReadSubversionLines('list', $Dir))
         {
             if ($SubDir =~ m/^(.+)\/$/os)
             {
                 $SubDir = "$Dir/$1";
 
-                if (-d $SubDir)
+                unless (-d $SubDir)
                 {
-                    $Self->SwitchToRecursive($SubDir)
+                    push @SubDirsToUpdate, $1
                 }
                 else
                 {
-                    push @{$Self->{RecursiveUpdates}}, $SubDir
+                    $Self->SwitchToRecursive($DirsToUpdate, $SubDir)
                 }
             }
         }
-    }
-}
 
-sub IncludeNonExistingDir
-{
-    my ($Self, $Path, $Branch) = @_;
-
-    if (ref $Branch)
-    {
-        push @{$Self->{NonRecursiveUpdates}}, $Path;
-
-        while (my ($SubDir, $SubBranch) = each %$Branch)
-        {
-            $Self->IncludeNonExistingDir("$Path/$SubDir", $SubBranch)
-        }
-    }
-    else
-    {
-        push @{$Self->{RecursiveUpdates}}, $Path
-    }
-}
-
-sub IncludeExistingDir
-{
-    my ($Self, $Path, $ParentBranch, $Dir) = @_;
-
-    my $Branch = $ParentBranch->{$Dir};
-
-    unless (-d $Path)
-    {
-        $Self->IncludeNonExistingDir($Path, $Branch)
-    }
-    else
-    {
-        die "$Self->{MyName}: directory '$Path' is not under source control.\n"
-            unless -d "$Path/.svn";
-
-        unless (ref $Branch)
-        {
-            $Self->SwitchToRecursive($Path);
-
-            push @{$Self->{RecursiveUpdates}}, $Path
-        }
-        elsif (-f "$Path/.svn/ncbi-R")
-        {
-            $ParentBranch->{$Dir} = undef;
-
-            push @{$Self->{RecursiveUpdates}}, $Path
-        }
-        else
-        {
-            push @{$Self->{NonRecursiveUpdates}}, $Path;
-
-            for my $SubDir ($Self->ReadNFile("$Path/.svn/ncbi-N"))
-            {
-                $Self->CollectUpdates("$Path/$SubDir")
-                    unless exists $Branch->{$SubDir}
-            }
-
-            for my $SubDir (keys %$Branch)
-            {
-                $Self->IncludeExistingDir("$Path/$SubDir", $Branch, $SubDir)
-            }
-        }
+        push @$DirsToUpdate, [$Dir, @SubDirsToUpdate] if @SubDirsToUpdate
     }
 }
 
@@ -136,9 +76,7 @@ sub CreateNFiles
 {
     my ($Self, $Branch, $Path) = @_;
 
-    return unless ref $Branch;
-
-    unlink "$Path/.svn/ncbi-R";
+    return unless ref($Branch) || -f "$Path/.svn/ncbi-R";
 
     my $NFile = "$Path/.svn/ncbi-N";
 
@@ -162,45 +100,144 @@ sub CreateNFiles
     }
 }
 
-sub PerformUpdates
+sub CheckOutMissingExternals
 {
-    my ($Self, $Revision) = @_;
+    my ($Self, $NonRecursive, $ExistingSubDirs,
+        $NewExternalSubDirs, $Path, @SubDirs) = @_;
 
-    if ($Self->{NonRecursiveUpdates})
+    my @MissingSubDirs;
+
+    for my $SubDir (@SubDirs)
     {
-        print "Performing non-recursive updates:\n";
-
-        $Self->{SVN}->RunSubversion('update', '-r', $Revision,
-            '-N', @{$Self->{NonRecursiveUpdates}})
+        unless (-d "$Path/$SubDir")
+        {
+            push @MissingSubDirs, $SubDir
+        }
+        elsif ($ExistingSubDirs)
+        {
+            push @$ExistingSubDirs, $SubDir
+        }
     }
 
-    if ($Self->{RecursiveUpdates})
+    if (@MissingSubDirs)
     {
-        print "Performing recursive updates:\n";
+        my %ExternalURL;
 
-        $Self->{SVN}->RunSubversion('update', '-r', $Revision,
-            @{$Self->{RecursiveUpdates}})
+        for ($Self->{SVN}->ReadSubversionLines(qw(pg svn:externals), $Path))
+        {
+            if (my ($SubDir, $URL) = m/^\s*(.+?)\s+(?:-r\s*\d+\s+)?(.+?)\s*$/so)
+            {
+                $ExternalURL{$SubDir} = $URL
+            }
+        }
+
+        for my $SubDir (@MissingSubDirs)
+        {
+            my $SubDirPath = "$Path/$SubDir";
+
+            if (my $URL = $ExternalURL{$SubDir})
+            {
+                print "Checking out external '$SubDirPath':\n";
+
+                $Self->{SVN}->RunSubversion(
+                    ($NonRecursive ? qw(co -N) : qw(co)), $URL, $SubDirPath);
+
+                push @$NewExternalSubDirs, $SubDir if $NewExternalSubDirs
+            }
+            else
+            {
+                warn "WARNING: Could not check out '$SubDirPath'\n"
+            }
+        }
     }
 }
 
-sub GetLatestRevision
+sub CheckForNonRecursiveExternals
 {
-    my ($Self) = @_;
+    my ($Self, $Path, $Branch) = @_;
 
-    $Self->{SVN}->GetLatestRevision($Self->{SVN}->GetRootURL() or
-        confess('Unable to detect root URL'));
+    if (ref $Branch)
+    {
+        my (@ExistingSubDirs, @NewExternalSubDirs);
+
+        $Self->CheckOutMissingExternals('non-recursive',
+            \@ExistingSubDirs, \@NewExternalSubDirs, $Path, keys %$Branch);
+
+        $Self->CheckForNonRecursiveExternals("$Path/$_", $Branch->{$_})
+            for @ExistingSubDirs;
+
+        $Self->PerformNonRecursiveUpdates("$Path/$_", $Branch->{$_})
+            for @NewExternalSubDirs
+    }
+}
+
+sub PerformNonRecursiveUpdates
+{
+    my ($Self, $Path, $Tree) = @_;
+
+    sub BuildNonRecDirLists
+    {
+        my ($DirList, $Path, $Branch) = @_;
+
+        if (ref $Branch)
+        {
+            push @$DirList, $Path;
+
+            while (my ($SubDir, $SubBranch) = each %$Branch)
+            {
+                BuildNonRecDirLists($DirList, "$Path/$SubDir", $SubBranch)
+            }
+        }
+    }
+
+    my @DirList;
+
+    BuildNonRecDirLists(\@DirList, $Path, $Tree);
+
+    if (@DirList)
+    {
+        print "Performing non-recursive updates" .
+            ($Path eq '.' ? ":\n" : " (in '$Path'):\n");
+
+        $Self->{SVN}->RunSubversion(qw(update -N), @DirList);
+
+        $Self->CheckForNonRecursiveExternals($Path, $Tree)
+    }
+}
+
+sub BuildListOfDirsToUpdateRecursively
+{
+    my ($Self, $DirsToUpdate, $Path, $Branch) = @_;
+
+    my @SubDirsToUpdate;
+
+    while (my ($SubDir, $SubBranch) = each %$Branch)
+    {
+        unless (ref $SubBranch)
+        {
+            push @SubDirsToUpdate, $SubDir;
+
+            my $SubDirPath = "$Path/$SubDir";
+
+            $Self->SwitchToRecursive($DirsToUpdate, $SubDirPath)
+                if -d $SubDirPath
+        }
+        else
+        {
+            $Self->BuildListOfDirsToUpdateRecursively($DirsToUpdate,
+                "$Path/$SubDir", $SubBranch)
+        }
+    }
+
+    push @$DirsToUpdate, [$Path, @SubDirsToUpdate] if @SubDirsToUpdate
 }
 
 sub UpdateDirList
 {
-    my ($Self, $Revision, @Paths) = @_;
+    my ($Self, @Paths) = @_;
 
     confess 'List of directories to update is empty' unless @Paths;
     confess 'Not in a working copy directory' unless -d '.svn';
-
-    $Revision = $Self->GetLatestRevision() unless $Revision;
-
-    delete @$Self{qw(NonRecursiveUpdates RecursiveUpdates)};
 
     my %NewTree;
 
@@ -212,7 +249,7 @@ Path:
 
         $Path =~ s/\/\.(?=\/|$)//go;
 
-        $Path = './' . $Path unless $Path =~ m/^\.(?:\/|$)/o;
+        $Path =~ s/^(?:\.\/)+//o;
 
         my $Branch = \%NewTree;
 
@@ -237,29 +274,50 @@ Path:
         $Branch->{$Path} = undef if $Path
     }
 
-    $Self->IncludeExistingDir('.', \%NewTree, '.');
+    $Self->PerformNonRecursiveUpdates('.', \%NewTree);
 
-    $Self->PerformUpdates($Revision);
+    $Self->CreateNFiles(\%NewTree, '.');
 
-    $Self->CreateNFiles($NewTree{'.'}, '.');
+    my @DirsToUpdate;
 
-    # Create R files.
-    my @RecursiveUpdates = grep {-d $_} @{$Self->{RecursiveUpdates}};
+    $Self->BuildListOfDirsToUpdateRecursively(\@DirsToUpdate, '.', \%NewTree);
 
-    if (@RecursiveUpdates)
+    if (@DirsToUpdate)
     {
-        find(sub
+        my @DirList;
+
+        print "Performing recursive updates:\n";
+
+        for (@DirsToUpdate)
         {
-            if (m/^\.svn$/)
+            my ($Path, @SubDirs) = @$_;
+
+            push @DirList, map {"$Path/$_"} @SubDirs
+        }
+
+        $Self->{SVN}->RunSubversion('update', @DirList);
+
+        # Check for missing externals.
+        $Self->CheckOutMissingExternals(0, undef, undef, @$_) for @DirsToUpdate;
+
+        # Create R files.
+        my @RecursiveUpdates = grep {-d $_} @DirList;
+
+        if (@RecursiveUpdates)
+        {
+            find(sub
             {
-                unlink '.svn/ncbi-N';
-                unless (-f '.svn/ncbi-R')
+                if (m/^\.svn$/)
                 {
-                    open FILE, '>.svn/ncbi-R' or confess $!;
-                    close FILE
+                    unlink '.svn/ncbi-N';
+                    unless (-f '.svn/ncbi-R')
+                    {
+                        open FILE, '>.svn/ncbi-R' or confess $!;
+                        close FILE
+                    }
                 }
-            }
-        }, @RecursiveUpdates)
+            }, @RecursiveUpdates)
+        }
     }
 }
 
@@ -292,15 +350,26 @@ sub CollectUpdates
 
 sub UpdateCWD
 {
-    my ($Self, $Revision) = @_;
+    my ($Self) = @_;
 
     delete @$Self{qw(NonRecursiveUpdates RecursiveUpdates)};
 
-    $Revision = $Self->GetLatestRevision() unless $Revision;
-
     $Self->CollectUpdates('.');
 
-    $Self->PerformUpdates($Revision)
+    if (@{$Self->{NonRecursiveUpdates}})
+    {
+        print "Performing non-recursive updates:\n";
+
+        $Self->{SVN}->RunSubversion(qw(update -N),
+            @{$Self->{NonRecursiveUpdates}})
+    }
+
+    if (@{$Self->{RecursiveUpdates}})
+    {
+        print "Performing recursive updates:\n";
+
+        $Self->{SVN}->RunSubversion('update', @{$Self->{RecursiveUpdates}})
+    }
 }
 
 1
