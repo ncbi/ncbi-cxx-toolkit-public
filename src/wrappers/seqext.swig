@@ -88,11 +88,18 @@ public:
 %ignore ncbi::objects::SSeqMatch_Scope;
 
 // Flat file stream inserter
-%ignore *::operator<<(CFlatItemOStream& os, const IFlatItem* item);
+%ignore *::operator<<(CFlatItemOStream& os, CConstRef<IFlatItem>& item);
 %extend ncbi::objects::CFlatItemOStream {
+    // like new signature of non-member operator
+    ncbi::objects::CFlatItemOStream&
+    __lshift__(CConstRef<IFlatItem>& item) {
+        return *self << item;
+    }
+    // old, more convenient signature we've supported for a while
     ncbi::objects::CFlatItemOStream&
     __lshift__(const IFlatItem* item) {
-        return *self << item;
+        CConstRef<IFlatItem> item_ref(item);
+        return *self << item_ref;
     }
 };
 
