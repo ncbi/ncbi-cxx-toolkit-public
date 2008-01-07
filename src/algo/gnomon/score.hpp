@@ -42,15 +42,20 @@ BEGIN_SCOPE(gnomon)
 class CTerminal;
 class CCodingRegion;
 class CNonCodingRegion;
+class CIntronParameters;
+class CIntergenicParameters;
 
 class CSeqScores {
 public:
     CSeqScores (const CTerminal& a, const CTerminal& d,const  CTerminal& stt, const CTerminal& stp, 
                 const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& ing, 
+                const CIntronParameters& intron_params,
                 TSignedSeqPos from, TSignedSeqPos to, const TAlignList& cls, 
                 const TFrameShifts& initial_fshifts, double mpp, const CGnomonEngine& gnomon);
     void Init(CResidueVec& original_sequence, bool repeats, bool leftwall, 
-              bool rightwall, double consensuspenalty);
+              bool rightwall, double consensuspenalty,
+              const CIntergenicParameters& intergenic_params
+              );
         
     TSignedSeqPos From() const { return m_chunk_start; }
     TSignedSeqPos To() const { return m_chunk_stop; }

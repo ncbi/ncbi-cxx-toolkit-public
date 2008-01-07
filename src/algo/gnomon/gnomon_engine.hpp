@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
 struct CGnomonEngine::SGnomonEngineImplData {
-    SGnomonEngineImplData(const CResidueVec& sequence, TSignedSeqRange range);
+    SGnomonEngineImplData(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range);
     ~SGnomonEngineImplData();
 
     CResidueVec       m_seq;
@@ -53,13 +53,25 @@ struct CGnomonEngine::SGnomonEngineImplData {
     TSignedSeqRange   m_range;
     int               m_gccontent;
 
-    const CTerminal*        m_acceptor;
-    const CTerminal*        m_donor;
-    const CTerminal*        m_start;
-    const CTerminal*        m_stop;
-    const CCodingRegion*    m_cdr;
-    const CNonCodingRegion* m_ncdr;
-    const CNonCodingRegion* m_intrg;
+    CConstRef<CHMMParameters> m_hmm_params;
+
+    template<class C>
+    void GetHMMParameter(const C*& param)
+    {
+        param = dynamic_cast<const C*>( & m_hmm_params->GetParameter(C::class_id(),m_gccontent));
+    }
+
+    const CWAM_Acceptor<2>*       m_acceptor;
+    const CWAM_Donor<2>*          m_donor;
+    const CWMM_Start*             m_start;
+    const CWAM_Stop*              m_stop;
+    const CMC3_CodingRegion<5>*   m_cdr;
+    const CMC_NonCodingRegion<5>* m_ncdr;
+    const CMC_NonCodingRegion<5>* m_intrg;
+    const CIntronParameters*      m_intron_params;
+    const CIntergenicParameters*  m_intergenic_params;
+    const CExonParameters*        m_exon_params;
+
 
     auto_ptr<CSeqScores>       m_ss;
     auto_ptr<CParse>           m_parse;

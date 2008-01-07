@@ -318,9 +318,11 @@ static void s_CodingPropensity(const CSeq_id& id, const CSeqTestContext* ctx,
         return;
     }
     string model_file_name = (*ctx)["gnomon_model_file"];
+    CNcbiIfstream model_file(model_file_name.c_str());
+    CRef<CHMMParameters> hmm_params(new CHMMParameters(model_file));    
 
     int gccontent=0;
-    double score = CCodingPropensity::GetScore(model_file_name, cds,
+    double score = CCodingPropensity::GetScore(hmm_params, cds,
                                                ctx->GetScope(), &gccontent);
 
     // Record results

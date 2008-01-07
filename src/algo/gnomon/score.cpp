@@ -221,6 +221,7 @@ static bool s_AlignLeftLimitOrder(const CGeneModel& ap, const CGeneModel& bp)
 
 CSeqScores::CSeqScores (const CTerminal& a, const CTerminal& d, const CTerminal& stt, const CTerminal& stp, 
 const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& ing,
+               const CIntronParameters&     intron_params,
                         TSignedSeqPos from, TSignedSeqPos to, const TAlignList& cls, const TFrameShifts& initial_fshifts, double mpp, const CGnomonEngine& gnomon)
 : m_acceptor(a), m_donor(d), m_start(stt), m_stop(stp), m_cdr(cr), m_ncdr(ncr), m_intrg(ing), 
   m_align_list(cls), m_fshifts(initial_fshifts), m_map(from,to), m_chunk_start(from), m_chunk_stop(to), m_mpp(mpp)
@@ -233,7 +234,7 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
         for(unsigned int i = 1; i < align.Exons().size(); ++i) {
             if (!align.Exons()[i-1].m_ssplice || !align.Exons()[i].m_fsplice) {
                 int hole_len = align.Exons()[i].GetFrom()-align.Exons()[i-1].GetTo()-1;
-                if(hole_len <= CIntron::MinIntron()) {
+                if(hole_len <= intron_params.MinLen()) {
                     fixed = true;
                     TSignedSeqRange pstop(align.Exons()[i-1].GetTo(),align.Exons()[i].GetFrom());     // to make sure GetScore doesn't complain about "new" pstops
                     cds_info.AddPStop(pstop);
@@ -258,7 +259,8 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
 }
 
 void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, 
-bool rightwall, double consensuspenalty )
+                       bool rightwall, double consensuspenalty,
+                       const CIntergenicParameters& intergenic_params)
 {
     CResidueVec sequence = ConstructSequenceAndMaps(m_align_list,original_sequence);
 
@@ -419,8 +421,8 @@ bool rightwall, double consensuspenalty )
         _ASSERT( align.Exons().size() > 0 );
 
         if((align.Type() & CGeneModel::eNested)!=0) {
-            int a = max(0,int(limits.GetFrom())-CIntergenic::MinIntergenic()+1);
-            int b = min(len-1,limits.GetTo()+CIntergenic::MinIntergenic()-1);
+            int a = max(0,int(limits.GetFrom())-intergenic_params.MinLen()+1);
+            int b = min(len-1,limits.GetTo()+intergenic_params.MinLen()-1);
             
             if(opposite) {
                 for(int pnt = a; pnt <= b; ++pnt) {           // allow prediction on the opposite strand of nested models   
@@ -440,8 +442,8 @@ bool rightwall, double consensuspenalty )
             }
             continue;
         } else if((align.Type() & CGeneModel::eWall)!=0) {
-            int a = max(0,int(limits.GetFrom())-CIntergenic::MinIntergenic()+1);
-            int b = min(len-1,limits.GetTo()+CIntergenic::MinIntergenic()-1);
+            int a = max(0,int(limits.GetFrom())-intergenic_params.MinLen()+1);
+            int b = min(len-1,limits.GetTo()+intergenic_params.MinLen()-1);
 
             if(opposite) {
                 for(int pnt = a; pnt <= b; ++pnt) {           // allow prediction on the opposite strand of complete models

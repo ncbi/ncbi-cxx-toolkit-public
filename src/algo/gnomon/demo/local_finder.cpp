@@ -134,8 +134,8 @@ int CLocalFinderApp::Run(void)
     }
 
     // create engine
-    CGnomonEngine::ReadOrgHMMParameters(myargs["model"].AsInputFile());
-    CGnomonEngine gnomon(seq, TSignedSeqRange(left, right));
+    CRef<CHMMParameters> hmm_params(new CHMMParameters(myargs["model"].AsInputFile()));
+    CGnomonEngine gnomon(hmm_params, seq, TSignedSeqRange(left, right));
 
     // run!
     gnomon.Run(alignments, repeats, true, true, false, false, 10.0);

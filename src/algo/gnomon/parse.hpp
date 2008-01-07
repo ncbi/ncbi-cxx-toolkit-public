@@ -43,7 +43,11 @@ BEGIN_SCOPE(gnomon)
 class CParse
 {
     public:
-        CParse(const CSeqScores& ss, bool leftanchor, bool rightanchor);
+        CParse(const CSeqScores& ss,
+               const CIntronParameters&     intron_params,
+               const CIntergenicParameters& intergenic_params,
+               const CExonParameters&       exon_params,
+               bool leftanchor, bool rightanchor);
         const CHMM_State* Path() const { return m_path; }
         void PrintInfo() const;
         list<CGeneModel> GetGenes() const;

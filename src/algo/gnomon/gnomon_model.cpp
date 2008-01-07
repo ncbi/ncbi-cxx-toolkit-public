@@ -978,7 +978,9 @@ CNcbiOstream& operator<<(CNcbiOstream& os, const SGFFrec& r)
     r.print(os); return os;
 }
 
-static const string dot = ".";
+namespace {
+const string dot = ".";
+}
 
 void SGFFrec::print(CNcbiOstream& os) const
 {

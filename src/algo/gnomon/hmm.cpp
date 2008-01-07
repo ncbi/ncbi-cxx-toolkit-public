@@ -50,13 +50,11 @@ double CLorentz::ClosingScore(int l) const
     return log(dely/m_step*delx+m_clscore[i]);
 }
 
-CHMM_State::CHMM_State(EStrand strn, int point) : m_stop(point), m_strand(strn), 
-                                      m_score(BadScore()), m_leftstate(0), m_terminal(0) 
+CHMM_State::CHMM_State(EStrand strn, int point, const CSeqScores& seqscr)
+    : m_stop(point), m_strand(strn), 
+      m_score(BadScore()), m_leftstate(0), m_terminal(0),
+      m_seqscr(&seqscr)
 {
-    if(sm_seqscr == 0) 
-    {
-        NCBI_THROW(CGnomonException, eGenericError, "sm_seqscr is not initialised in HMM_State");
-    }
 }
 
 /*
@@ -88,13 +86,13 @@ int CHMM_State::RegionStart() const
         int a = m_leftstate->m_stop+1;
         if(isPlus()) a += m_leftstate->m_terminal->Right();
         else a += m_leftstate->m_terminal->Left();
-        return min(a,sm_seqscr->SeqLen()-1);
+        return min(a,m_seqscr->SeqLen()-1);
     }
 }
 
 int CHMM_State::RegionStop() const
 {
-    if(NoRightEnd()) return sm_seqscr->SeqLen()-1;
+    if(NoRightEnd()) return m_seqscr->SeqLen()-1;
     else 
     {
         int b = m_stop;
@@ -104,12 +102,12 @@ int CHMM_State::RegionStop() const
     }
 }
 
-const CExonParameters* CExon::sm_param = NULL;
-
-CExon::CExon(EStrand strn, int point, int ph) : CHMM_State(strn,point), m_phase(ph), 
-                                             m_prevexon(0), m_mscore(BadScore())
+CExon::CExon(EStrand strn, int point, int ph, const CSeqScores& seqscr, const CExonParameters& exon_params)
+    : CHMM_State(strn,point,seqscr), m_phase(ph), 
+      m_prevexon(0), m_mscore(BadScore()),
+      m_param(&exon_params)
 {    
-    if(!sm_param || !sm_param->m_initialised)
+    if(!m_param || !m_param->m_initialised)
         CInputModel::Error("CExon is not initialised\n");
 }
 
@@ -126,7 +124,7 @@ bool CExon::StopInside() const
         frame = (Phase()+Stop())%3;    // Stop()+Phase() is right codon end
     }
     
-    return sm_seqscr->StopInside(Start(),Stop(),Strand(),frame);
+    return m_seqscr->StopInside(Start(),Stop(),Strand(),frame);
 }
 
 bool CExon::OpenRgn() const
@@ -142,7 +140,7 @@ bool CExon::OpenRgn() const
         frame = (Phase()+Stop())%3;    // Stop()+Phase() is right codon end
     }
     
-    return sm_seqscr->OpenCodingRegion(Start(),Stop(),Strand(),frame);
+    return m_seqscr->OpenCodingRegion(Start(),Stop(),Strand(),frame);
 }
 
 double CExon::RgnScore() const
@@ -158,7 +156,7 @@ double CExon::RgnScore() const
         frame = (Phase()+Stop())%3;
     }
     
-    return sm_seqscr->CodingScore(RegionStart(),RegionStop(),Strand(),frame);
+    return m_seqscr->CodingScore(RegionStart(),RegionStop(),Strand(),frame);
 }
 
 void CExon::UpdatePrevExon(const CExon& e)
@@ -168,9 +166,10 @@ void CExon::UpdatePrevExon(const CExon& e)
     while(m_prevexon != 0 && m_prevexon->Score() <= Score()) m_prevexon = m_prevexon->m_prevexon;
 }
 
-CSingleExon::CSingleExon(EStrand strn, int point) : CExon(strn,point,2)
+CSingleExon::CSingleExon(EStrand strn, int point, const CSeqScores& seqscr, const CExonParameters& exon_params)
+    : CExon(strn,point,2,seqscr,exon_params)
 {
-    m_terminal = isPlus() ? &sm_seqscr->Stop() : &sm_seqscr->Start();
+    m_terminal = isPlus() ? &m_seqscr->Stop() : &m_seqscr->Start();
     if(isMinus()) m_phase = 0;
             
     EvaluateInitialScore(*this);
@@ -178,13 +177,13 @@ CSingleExon::CSingleExon(EStrand strn, int point) : CExon(strn,point,2)
         
 double CSingleExon::LengthScore() const 
 {
-    return sm_param->m_singlelen.Score(Stop()-Start()+1)+kLnThree;
+    return m_param->m_singlelen.Score(Stop()-Start()+1)+kLnThree;
 }
 
 double CSingleExon::TermScore() const
 {
-    if(isPlus()) return sm_seqscr->StopScore(Stop(),Strand());
-    else return sm_seqscr->StartScore(Stop(),Strand());
+    if(isPlus()) return m_seqscr->StopScore(Stop(),Strand());
+    else return m_seqscr->StartScore(Stop(),Strand());
 }
 
 double CSingleExon::BranchScore(const CIntergenic& next) const 
@@ -193,16 +192,17 @@ double CSingleExon::BranchScore(const CIntergenic& next) const
     else return BadScore();
 }
 
-CFirstExon::CFirstExon(EStrand strn, int ph, int point) : CExon(strn,point,ph)
+CFirstExon::CFirstExon(EStrand strn, int ph, int point, const CSeqScores& seqscr, const CExonParameters& exon_params)
+    : CExon(strn,point,ph,seqscr,exon_params)
 {
     if(isPlus())
     {
-        m_terminal = &sm_seqscr->Donor();
+        m_terminal = &m_seqscr->Donor();
     }
     else
     {
         m_phase = 0;
-        m_terminal = &sm_seqscr->Start();
+        m_terminal = &m_seqscr->Start();
     }
 
     EvaluateInitialScore(*this);
@@ -211,13 +211,13 @@ CFirstExon::CFirstExon(EStrand strn, int ph, int point) : CExon(strn,point,ph)
 double CFirstExon::LengthScore() const
 {
     int last = Stop()-Start();
-    return sm_param->m_firstlen.Score(last+1)+kLnThree+sm_param->m_firstphase[last%3];
+    return m_param->m_firstlen.Score(last+1)+kLnThree+m_param->m_firstphase[last%3];
 } 
 
 double CFirstExon::TermScore() const
 {
-    if(isPlus()) return sm_seqscr->DonorScore(Stop(),Strand());
-    else return sm_seqscr->StartScore(Stop(),Strand());
+    if(isPlus()) return m_seqscr->DonorScore(Stop(),Strand());
+    else return m_seqscr->StartScore(Stop(),Strand());
 }
 
 double CFirstExon::BranchScore(const CIntron& next) const
@@ -230,9 +230,10 @@ double CFirstExon::BranchScore(const CIntron& next) const
     else return BadScore();
 }
 
-CInternalExon::CInternalExon(EStrand strn, int ph, int point) : CExon(strn,point,ph)
+CInternalExon::CInternalExon(EStrand strn, int ph, int point, const CSeqScores& seqscr, const CExonParameters& exon_params)
+    : CExon(strn,point,ph,seqscr,exon_params)
 {
-    m_terminal = isPlus() ? &sm_seqscr->Donor() : &sm_seqscr->Acceptor();
+    m_terminal = isPlus() ? &m_seqscr->Donor() : &m_seqscr->Acceptor();
             
     EvaluateInitialScore(*this);
 }
@@ -253,25 +254,26 @@ double CInternalExon::LengthScore() const
         ph1 = (ph0+last)%3;
     }
 
-    return sm_param->m_internallen.Score(last+1)+kLnThree+sm_param->m_internalphase[ph0][ph1];
+    return m_param->m_internallen.Score(last+1)+kLnThree+m_param->m_internalphase[ph0][ph1];
 }
 
 double CInternalExon::TermScore() const
 {
-    if(isPlus()) return sm_seqscr->DonorScore(Stop(),Strand());
-    else return sm_seqscr->AcceptorScore(Stop(),Strand());
+    if(isPlus()) return m_seqscr->DonorScore(Stop(),Strand());
+    else return m_seqscr->AcceptorScore(Stop(),Strand());
 }
 
-CLastExon::CLastExon(EStrand strn, int ph, int point) : CExon(strn,point,ph)
+CLastExon::CLastExon(EStrand strn, int ph, int point, const CSeqScores& seqscr, const CExonParameters& exon_params)
+    : CExon(strn,point,ph,seqscr,exon_params)
 {
     if(isPlus())
     {
         m_phase = 2;
-        m_terminal = &sm_seqscr->Stop();
+        m_terminal = &m_seqscr->Stop();
     }
     else
     {
-        m_terminal = &sm_seqscr->Acceptor();
+        m_terminal = &m_seqscr->Acceptor();
     }
 
     EvaluateInitialScore(*this);
@@ -280,13 +282,13 @@ CLastExon::CLastExon(EStrand strn, int ph, int point) : CExon(strn,point,ph)
 double CLastExon::LengthScore() const 
 {
     int last = Stop()-Start();
-    return sm_param->m_lastlen.Score(last+1)+kLnThree;
+    return m_param->m_lastlen.Score(last+1)+kLnThree;
 }
 
 double CLastExon::TermScore() const
 {
-    if(isPlus()) return sm_seqscr->StopScore(Stop(),Strand());
-    else return sm_seqscr->AcceptorScore(Stop(),Strand());
+    if(isPlus()) return m_seqscr->StopScore(Stop(),Strand());
+    else return m_seqscr->AcceptorScore(Stop(),Strand());
 }
 
 double CLastExon::BranchScore(const CIntergenic& next) const 
@@ -295,19 +297,19 @@ double CLastExon::BranchScore(const CIntergenic& next) const
     else return BadScore(); 
 }
 
-const CIntronParameters* CIntron::sm_param = NULL;
-
-CIntron::CIntron(EStrand strn, int ph, int point) : CHMM_State(strn,point), m_phase(ph)
+CIntron::CIntron(EStrand strn, int ph, int point, const CSeqScores& seqscr, const CIntronParameters& intron_params)
+    : CHMM_State(strn,point,seqscr), m_phase(ph),
+      m_param(&intron_params)
 {
-    if(!sm_param || !sm_param->m_initialised) CInputModel::Error("Intron is not initialised\n");
-    m_terminal = isPlus() ? &sm_seqscr->Acceptor() : &sm_seqscr->Donor();
+    if(!m_param || !m_param->m_initialised) CInputModel::Error("Intron is not initialised\n");
+    m_terminal = isPlus() ? &m_seqscr->Acceptor() : &m_seqscr->Donor();
             
     EvaluateInitialScore(*this);
 }
 
 double CIntron::ClosingLengthScore() const 
 { 
-    return sm_param->m_intronlen.ClosingScore(Stop()-Start()+1); 
+    return m_param->m_intronlen.ClosingScore(Stop()-Start()+1); 
 }
 
 double CIntron::BranchScore(const CLastExon& next) const
@@ -317,49 +319,49 @@ double CIntron::BranchScore(const CLastExon& next) const
     if(isPlus())
     {
         int shift = next.Stop()-next.Start();
-        if((Phase()+shift)%3 == next.Phase()) return sm_param->m_lnTerminal;
+        if((Phase()+shift)%3 == next.Phase()) return m_param->m_lnTerminal;
     }
-    else if(Phase() == next.Phase()) return sm_param->m_lnTerminal;
+    else if(Phase() == next.Phase()) return m_param->m_lnTerminal;
             
     return BadScore();
 }
 
-const CIntergenicParameters* CIntergenic::sm_param = NULL;
-
-CIntergenic::CIntergenic(EStrand strn, int point) : CHMM_State(strn,point)
+CIntergenic::CIntergenic(EStrand strn, int point, const CSeqScores& seqscr, const CIntergenicParameters& intergenic_params)
+    : CHMM_State(strn,point,seqscr),
+      m_param(&intergenic_params)
 {
-    if(!sm_param || !sm_param->m_initialised) CInputModel::Error("Intergenic is not initialised\n");
-    m_terminal = isPlus() ? &sm_seqscr->Start() : &sm_seqscr->Stop();
+    if(!m_param || !m_param->m_initialised) CInputModel::Error("Intergenic is not initialised\n");
+    m_terminal = isPlus() ? &m_seqscr->Start() : &m_seqscr->Stop();
             
     EvaluateInitialScore(*this);
 }
 
 bool CIntergenic::OpenRgn() const
 {
-    return sm_seqscr->OpenIntergenicRegion(Start(),Stop());
+    return m_seqscr->OpenIntergenicRegion(Start(),Stop());
 }
 
 double CIntergenic::RgnScore() const
 {
-    return sm_seqscr->IntergenicScore(RegionStart(),RegionStop(),Strand());
+    return m_seqscr->IntergenicScore(RegionStart(),RegionStop(),Strand());
 }
 
 double CIntergenic::TermScore() const
 {
-    if(isPlus()) return sm_seqscr->StartScore(Stop(),Strand());
-    else return sm_seqscr->StopScore(Stop(),Strand());
+    if(isPlus()) return m_seqscr->StartScore(Stop(),Strand());
+    else return m_seqscr->StopScore(Stop(),Strand());
 }
 
 double CIntergenic::BranchScore(const CFirstExon& next) const 
 {
     if(&next == m_leftstate)
     {
-        if(next.isMinus()) return sm_param->m_lnMulti;
+        if(next.isMinus()) return m_param->m_lnMulti;
         else return BadScore();
     }
     else if(isPlus() && next.isPlus()) 
     {
-        if((next.Stop()-next.Start())%3 == next.Phase()) return sm_param->m_lnMulti;
+        if((next.Stop()-next.Start())%3 == next.Phase()) return m_param->m_lnMulti;
         else return BadScore();
     }
     else return BadScore();
@@ -369,11 +371,11 @@ double CIntergenic::BranchScore(const CSingleExon& next) const
 {
     if(&next == m_leftstate)
     {
-        if(next.isMinus()) return sm_param->m_lnSingle;
+        if(next.isMinus()) return m_param->m_lnSingle;
         else return BadScore();
     }
     else if(isPlus() && next.isPlus() && 
-              (next.Stop()-next.Start())%3 == 2) return sm_param->m_lnSingle;
+              (next.Stop()-next.Start())%3 == 2) return m_param->m_lnSingle;
     else return BadScore();
 }
 
@@ -534,7 +536,6 @@ double CWAM_Stop::Score(const CEResidueVec& seq, int i) const
     return m_matrix.Score(&seq[first]);
 }
 
-const CSeqScores* CHMM_State::sm_seqscr = 0;
 
 bool CLorentz::Init(CNcbiIstream& from, const string& label)
 {
@@ -760,87 +761,71 @@ namespace {
     }
 }
 
-struct COrgParameters::SDetails {
-    map<string,TParameterCreator> creators;
+CHMMParameters::SDetails::~SDetails()
+{
+    DeleteAllCreatedModels();
+}
+void CHMMParameters::SDetails::DeleteAllCreatedModels()
+{
+    ITERATE(vector<CInputModel*>, i, all_created_models)
+        delete *i;
+    all_created_models.clear();
+    params.clear();
+}
 
-    typedef vector< pair<int,CInputModel*> > TCGContentList;
-    typedef map<string, TCGContentList > TParamMap;
-    TParamMap params;
+CParametersFactory::TParameterCreator CParametersFactory::GetCreator(const string& type)
+{
+    map<string,TParameterCreator>::const_iterator i = creators.find(type);
+    
+    if (i ==  creators.end())
+        return CreateNull;
+    
+    return i->second;
+}
 
-    vector<CInputModel*> all_created_models;
+CHMMParameters::SDetails::TCGContentList& CHMMParameters::SDetails::GetCGList(const string& type)
+{
+    TParamMap::iterator i = params.insert(make_pair(type,TCGContentList())).first;
+    if (i->second.empty())
+        i->second.push_back(make_pair<int,CInputModel*>(101,NULL));
+    
+    return i->second;
+}
 
-    ~SDetails()
-    {
-        DeleteAllCreatedModels();
+void CHMMParameters::SDetails::StoreParam( const string& type, CInputModel* input_model, int low, int high )
+{
+    TCGContentList& list = GetCGList(type);
+    
+    int lowest = 0;
+    TCGContentList::iterator i = list.begin();
+    while( i->first <= low ) {
+        lowest = i->first;
+        ++i;
     }
-    void DeleteAllCreatedModels()
-    {
-        ITERATE(vector<CInputModel*>, i, all_created_models)
-            delete *i;
-        all_created_models.clear();
-        params.clear();
+    
+    if (lowest < low) {
+        i = list.insert(i, *i );
+        i->first = low;
+        ++i;
     }
-
-    TParameterCreator GetCreator(const string& type)
-    {
-        map<string,TParameterCreator>::const_iterator i = creators.find(type);
-        
-        if (i ==  creators.end())
-            return CreateNull;
-
-        return i->second;
+    
+    if (high < i->first) {
+        i = list.insert(i, *i );
+        i->first = high;
+    } else if (high > i->first) {
+        CInputModel::Error(type);
     }
+    
+    i->second = input_model;
+}
 
-    TCGContentList& GetCGList(const string& type)
-    {
-        TParamMap::iterator i = params.insert(make_pair(type,TCGContentList())).first;
-        if (i->second.empty())
-            i->second.push_back(make_pair<int,CInputModel*>(101,NULL));
-
-        return i->second;
-    }
-
-    void StoreParam( const string& type, CInputModel* input_model, int low, int high )
-    {
-        TCGContentList& list = GetCGList(type);
-
-        int lowest = 0;
-        TCGContentList::iterator i = list.begin();
-        while( i->first <= low ) {
-            lowest = i->first;
-            ++i;
-        }
-
-        if (lowest < low) {
-            i = list.insert(i, *i );
-            i->first = low;
-            ++i;
-        }
-
-        if (high < i->first) {
-            i = list.insert(i, *i );
-            i->first = high;
-        } else if (high > i->first) {
-            CInputModel::Error(type);
-        }
-
-        i->second = input_model;
-    }
-};
-
-COrgParameters::COrgParameters() : m_details( new SDetails() )
+CHMMParameters::CHMMParameters(CNcbiIstream& from) : m_details( new SDetails(from) )
 {
 }
 
-COrgParameters& COrgParameters::Instance()
+CHMMParameters::SDetails::SDetails(CNcbiIstream& from)
 {
-    static COrgParameters instance;
-    return instance;
-}
-
-void COrgParameters::Read(CNcbiIstream& from)
-{
-    m_details->DeleteAllCreatedModels();
+    DeleteAllCreatedModels();
 
     string type; 
     from >> type;
@@ -861,25 +846,30 @@ void COrgParameters::Read(CNcbiIstream& from)
         if(!from || !( 0<=low && low < high && high <= 100) )
             CInputModel::Error(type);
 
-        CInputModel* input_model( m_details->GetCreator(type)(from) );
+        CInputModel* input_model( CParametersFactory::Instance().GetCreator(type)(from) );
         if (input_model==NULL)
             continue;
         
-        m_details->all_created_models.push_back(input_model);
+        all_created_models.push_back(input_model);
 
-        m_details->StoreParam(type, input_model, low, high);
+        StoreParam(type, input_model, low, high);
     }
 }
 
-const CInputModel& COrgParameters::GetParameter(const string& type, int cgcontent)
+const CInputModel& CHMMParameters::GetParameter(const string& type, int cgcontent) const
+{
+    return m_details->GetParameter(type, cgcontent);
+} 
+
+const CInputModel& CHMMParameters::SDetails::GetParameter(const string& type, int cgcontent) const
 {
     if (cgcontent < 0)
         cgcontent = 0;
     else if (cgcontent >= 100)
         cgcontent = 99;
 
-    SDetails::TParamMap::const_iterator i_param = m_details->params.find(type);
-    if (i_param == m_details->params.end())
+    SDetails::TParamMap::const_iterator i_param = params.find(type);
+    if (i_param == params.end())
         CInputModel::Error( type );
     
     ITERATE( SDetails::TCGContentList, i, i_param->second) {
@@ -893,12 +883,22 @@ const CInputModel& COrgParameters::GetParameter(const string& type, int cgconten
 
     _ASSERT( false);
     CInputModel::Error( type );
-    return *m_details->params.begin()->second.front().second;
+    return *params.begin()->second.front().second;
 }
 
-bool COrgParameters::RegisterParameter(const string& type, TParameterCreator creator)
+CParametersFactory::CParametersFactory()
 {
-    return m_details->creators.insert(make_pair(type,creator)).second;
+}
+
+CParametersFactory& CParametersFactory::Instance()
+{
+    static CParametersFactory instance;
+    return instance;
+}
+
+bool CParametersFactory::RegisterParameter(const string& type, TParameterCreator creator)
+{
+    return creators.insert(make_pair(type,creator)).second;
 }
 
 

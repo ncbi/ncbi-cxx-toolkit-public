@@ -425,7 +425,7 @@ CRef<CSeq_annot> CGnomonEngine::GetAnnot(const CSeq_id& id)
 // This function deduces the frame from 5p coordinate of the CDS which should be on the 5p codon boundary
 //
 // 
-double CCodingPropensity::GetScore(const string& modeldatafilename, const CSeq_loc& cds, CScope& scope, int *const gccontent, double *const startscore)
+double CCodingPropensity::GetScore(CConstRef<CHMMParameters> hmm_params, const CSeq_loc& cds, CScope& scope, int *const gccontent, double *const startscore)
 {
     *gccontent = 0;
     const CSeq_id* seq_id = cds.GetId();
@@ -446,11 +446,8 @@ double CCodingPropensity::GetScore(const string& modeldatafilename, const CSeq_l
     }
     *gccontent = static_cast<unsigned int>(100.0 * gc_count / xcript_vec.size() + 0.5);
 	
-    // Load models from file
-    CNcbiIfstream from(modeldatafilename.c_str());
-    COrgParameters::Instance().Read(from);
-    const CMC3_CodingRegion<5>&   cdr = dynamic_cast<const CMC3_CodingRegion<5>&>(COrgParameters::Instance().GetParameter("CMC3_CodingRegion<5>", *gccontent));
-    const CMC_NonCodingRegion<5>& ncdr = dynamic_cast<const CMC_NonCodingRegion<5>&>(COrgParameters::Instance().GetParameter("CMC_NonCodingRegion<5>", *gccontent));
+    const CMC3_CodingRegion<5>&   cdr = dynamic_cast<const CMC3_CodingRegion<5>&>(hmm_params->GetParameter("CMC3_CodingRegion<5>", *gccontent));
+    const CMC_NonCodingRegion<5>& ncdr = dynamic_cast<const CMC_NonCodingRegion<5>&>(hmm_params->GetParameter("CMC_NonCodingRegion<5>", *gccontent));
 
     // Represent coding sequence as enum Nucleotides
     CSeqVector vec(cds, scope);
@@ -474,7 +471,7 @@ double CCodingPropensity::GetScore(const string& modeldatafilename, const CSeq_l
         // if there is not enough sequence it will be substituted by Ns which will degrade the score
         //
 
-        const CWMM_Start& start = dynamic_cast<const CWMM_Start&>(COrgParameters::Instance().GetParameter("CWMM_Start", *gccontent));
+        const CWMM_Start& start = dynamic_cast<const CWMM_Start&>(hmm_params->GetParameter("CWMM_Start", *gccontent));
 
         int totallen = xcript_vec.size();
         int left, right;

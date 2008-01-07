@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <algo/gnomon/gnomon_exception.hpp>
+#include <algo/gnomon/gnomon.hpp>
 #include "gnomon_seq.hpp"
 #include "score.hpp"
 
@@ -277,7 +278,7 @@ class CSeqScores;
 
 class CHMM_State {
 public:
-    CHMM_State(EStrand strn, int point);
+    CHMM_State(EStrand strn, int point, const CSeqScores& seqscr);
     virtual ~CHMM_State() {}
     const CHMM_State* LeftState() const { return m_leftstate; }
     const CTerminal* TerminalPtr() const { return m_terminal; }
@@ -294,13 +295,12 @@ public:
     int Start() const { return m_leftstate ? m_leftstate->m_stop+1 : 0; }
     bool NoRightEnd() const { return m_stop < 0; }
     bool NoLeftEnd() const { return m_leftstate == 0; }
-    int Stop() const { return NoRightEnd() ? sm_seqscr->SeqLen()-1 : m_stop; }
+    int Stop() const { return NoRightEnd() ? m_seqscr->SeqLen()-1 : m_stop; }
     int RegionStart() const;
     int RegionStop() const;
+    const CSeqScores& GetSeqScores() const { return *m_seqscr; }
     virtual SStateScores GetStateScores() const = 0;
     virtual string GetStateName() const = 0;
-    static void SetSeqScores(const CSeqScores& s) { sm_seqscr = &s; }
-    static const CSeqScores* GetSeqScores() { return sm_seqscr; }
 
     virtual bool isExon() const { return false; }
     virtual bool isGeneLeftEnd() const { return false; }
@@ -313,7 +313,7 @@ protected:
     double m_score;
     const CHMM_State* m_leftstate;
     const CTerminal* m_terminal;
-    static const CSeqScores* sm_seqscr;
+    const CSeqScores* m_seqscr;
 };
 
 class CIntron; 
@@ -332,48 +332,47 @@ public:
 
 class CExon : public CHMM_State
 {
-    public:
-    static const CExonParameters& SetParams(const CExonParameters& params) { sm_param = &params; return params; }
-    CExon(EStrand strn, int point, int ph);
+public:
+    CExon(EStrand strn, int point, int ph, const CSeqScores& seqscr, const CExonParameters& params);
     virtual ~CExon() {}
 
-        int Phase() const { return m_phase; }  // frame of right exon end relatively start-codon
-        bool StopInside() const;
-        bool OpenRgn() const;
-        double RgnScore() const;
-        double DenScore() const { return 0; }
-        double ThroughLengthScore() const { return BadScore(); } 
-        double InitialLengthScore() const { return BadScore(); }
-        double ClosingLengthScore() const { return BadScore(); }
-        void UpdatePrevExon(const CExon& e);
-        double MScore() const { return m_mscore; }
-        
+    int Phase() const { return m_phase; }  // frame of right exon end relatively start-codon
+    bool StopInside() const;
+    bool OpenRgn() const;
+    double RgnScore() const;
+    double DenScore() const { return 0; }
+    double ThroughLengthScore() const { return BadScore(); } 
+    double InitialLengthScore() const { return BadScore(); }
+    double ClosingLengthScore() const { return BadScore(); }
+    void UpdatePrevExon(const CExon& e);
+    double MScore() const { return m_mscore; }
+    
     virtual bool isExon() const { return true; }
     double ExonScore() const { return LeftState()->VirtTermScore() + VirtTermScore(); }
-        
-    protected:
-        int m_phase;
-        const CExon* m_prevexon;
-        double m_mscore;
+    
+protected:
+    int m_phase;
+    const CExon* m_prevexon;
+    double m_mscore;
 
-        static const CExonParameters* sm_param;
+    const CExonParameters* m_param;
 };
 
 class CSingleExon : public CExon
 {
-    public:
-        ~CSingleExon() {}
-        CSingleExon(EStrand strn, int point);
-        int MaxLen() const { return sm_param->m_singlelen.MaxLen(); }
-        int MinLen() const { return sm_param->m_singlelen.MinLen(); }
-        const CSingleExon* PrevExon() const { return static_cast<const CSingleExon*>(m_prevexon); }
-        double LengthScore() const; 
-        double TermScore() const;
+public:
+    ~CSingleExon() {}
+    CSingleExon(EStrand strn, int point, const CSeqScores& seqscr, const CExonParameters& params);
+    int MaxLen() const { return m_param->m_singlelen.MaxLen(); }
+    int MinLen() const { return m_param->m_singlelen.MinLen(); }
+    const CSingleExon* PrevExon() const { return static_cast<const CSingleExon*>(m_prevexon); }
+    double LengthScore() const; 
+    double TermScore() const;
     virtual double VirtTermScore() const { return TermScore(); }
-        double BranchScore(const CHMM_State& next) const { return BadScore(); }
-        double BranchScore(const CIntergenic& next) const;
-        SStateScores GetStateScores() const { return CalcStateScores(*this); }
-        string GetStateName() const { return "SingleExon"; }
+    double BranchScore(const CHMM_State& next) const { return BadScore(); }
+    double BranchScore(const CIntergenic& next) const;
+    SStateScores GetStateScores() const { return CalcStateScores(*this); }
+    string GetStateName() const { return "SingleExon"; }
 
     virtual bool isGeneLeftEnd() const { return true; }
     virtual bool isGeneRightEnd() const { return true; }
@@ -383,9 +382,9 @@ class CFirstExon : public CExon
 {
     public:
         ~CFirstExon() {}
-        CFirstExon(EStrand strn, int ph, int point);
-        int MaxLen() const { return sm_param->m_firstlen.MaxLen(); }
-        int MinLen() const { return sm_param->m_firstlen.MinLen(); }
+    CFirstExon(EStrand strn, int ph, int point, const CSeqScores& seqscr, const CExonParameters& params);
+        int MaxLen() const { return m_param->m_firstlen.MaxLen(); }
+        int MinLen() const { return m_param->m_firstlen.MinLen(); }
         const CFirstExon* PrevExon() const { return static_cast<const CFirstExon*>(m_prevexon); }
         double LengthScore() const;
         double TermScore() const;
@@ -403,9 +402,9 @@ class CInternalExon : public CExon
 {
     public:
         ~CInternalExon() {}
-        CInternalExon(EStrand strn, int ph, int point);
-        int MaxLen() const { return sm_param->m_internallen.MaxLen(); }
-        int MinLen() const { return sm_param->m_internallen.MinLen(); }
+        CInternalExon(EStrand strn, int ph, int point, const CSeqScores& seqscr, const CExonParameters& params);
+        int MaxLen() const { return m_param->m_internallen.MaxLen(); }
+        int MinLen() const { return m_param->m_internallen.MinLen(); }
         const CInternalExon* PrevExon() const { return static_cast<const CInternalExon*>(m_prevexon); }
         double LengthScore() const; 
         double TermScore() const;
@@ -420,9 +419,9 @@ class CLastExon : public CExon
 {
     public:
         ~CLastExon() {}
-        CLastExon(EStrand strn, int ph, int point);
-        int MaxLen() const { return sm_param->m_lastlen.MaxLen(); }
-        int MinLen() const { return sm_param->m_lastlen.MinLen(); }
+        CLastExon(EStrand strn, int ph, int point, const CSeqScores& seqscr, const CExonParameters& params);
+        int MaxLen() const { return m_param->m_lastlen.MaxLen(); }
+        int MinLen() const { return m_param->m_lastlen.MinLen(); }
         const CLastExon* PrevExon() const { return static_cast<const CLastExon*>(m_prevexon); }
         double LengthScore() const; 
         double TermScore() const;
@@ -443,6 +442,7 @@ public:
     ~CIntronParameters() {}
 
     void SetSeqLen(int seqlen) const;
+    int MinLen() const { return m_intronlen.MinLen(); }
 
     mutable double m_lnThrough[3];
     mutable double m_lnDen[3];
@@ -458,33 +458,28 @@ private:
 class CIntron : public CHMM_State
 {
 public:
-    static const CIntronParameters& SetParams(const CIntronParameters& params) { sm_param = &params; return params; }
-        
+    CIntron(EStrand strn, int ph, int point, const CSeqScores& seqscr,const CIntronParameters& params);
     virtual ~CIntron() {}
-    CIntron(EStrand strn, int ph, int point);
-    static int MinIntron() { return sm_param->m_intronlen.MinLen(); }   // used for introducing frameshifts
-    static int MaxIntron() { return sm_param->m_intronlen.MaxLen(); }
-    static double ChanceOfIntronLongerThan(int l) { return exp(sm_param->m_intronlen.ClosingScore(l)); } // used to eliminate "holes" in protein alignments
-    int MinLen() const { return sm_param->m_intronlen.MinLen(); }
-    int MaxLen() const { return sm_param->m_intronlen.MaxLen(); }
+    int MinLen() const { return m_param->MinLen(); }
+    int MaxLen() const { return m_param->m_intronlen.MaxLen(); }
     int Phase() const { return m_phase; }
-    bool OpenRgn() const { return sm_seqscr->OpenNonCodingRegion(Start(),Stop(),Strand()); }
+    bool OpenRgn() const { return m_seqscr->OpenNonCodingRegion(Start(),Stop(),Strand()); }
     double RgnScore() const { return 0; }   // Intron scores are substructed from all others
     double TermScore() const
     {
-        if(isPlus()) return sm_seqscr->AcceptorScore(Stop(),Strand());
-        else return sm_seqscr->DonorScore(Stop(),Strand());
+        if(isPlus()) return m_seqscr->AcceptorScore(Stop(),Strand());
+        else return m_seqscr->DonorScore(Stop(),Strand());
     }
     virtual double VirtTermScore() const { return TermScore(); }
-    double DenScore() const { return sm_param->m_lnDen[Phase()]; }
+    double DenScore() const { return m_param->m_lnDen[Phase()]; }
     double LengthScore() const
     {
         if(SplittedStop()) return BadScore();
-        else return sm_param->m_intronlen.Score(Stop()-Start()+1);
+        else return m_param->m_intronlen.Score(Stop()-Start()+1);
     }
     double ClosingLengthScore() const;
-    double ThroughLengthScore() const  { return sm_param->m_lnThrough[Phase()]; }
-    double InitialLengthScore() const { return sm_param->m_lnDen[Phase()]+ClosingLengthScore(); }  // theoretically we should substract log(AvLen) but it gives to much penalty to the first element
+    double ThroughLengthScore() const  { return m_param->m_lnThrough[Phase()]; }
+    double InitialLengthScore() const { return m_param->m_lnDen[Phase()]+ClosingLengthScore(); }  // theoretically we should substract log(AvLen) but it gives to much penalty to the first element
     double BranchScore(const CHMM_State& next) const { return BadScore(); }
     double BranchScore(const CLastExon& next) const;
     double BranchScore(const CInternalExon& next) const;
@@ -493,9 +488,9 @@ public:
         if(Phase() == 0 || NoLeftEnd() || NoRightEnd())
             return false;
         else if (isPlus())
-            return sm_seqscr->SplittedStop(LeftState()->Stop(),Stop(),Strand(),Phase()-1);
+            return m_seqscr->SplittedStop(LeftState()->Stop(),Stop(),Strand(),Phase()-1);
         else
-            return sm_seqscr->SplittedStop(Stop(),LeftState()->Stop(),Strand(),Phase()-1);
+            return m_seqscr->SplittedStop(Stop(),LeftState()->Stop(),Strand(),Phase()-1);
     }
 
 
@@ -504,7 +499,7 @@ public:
     
 protected:
     int m_phase;
-    static const CIntronParameters* sm_param;
+    const CIntronParameters* m_param;
 };
 
 inline double CIntron::BranchScore(const CInternalExon& next) const
@@ -514,9 +509,9 @@ inline double CIntron::BranchScore(const CInternalExon& next) const
     if(isPlus()) {
         int shift = next.Stop()-next.Start();
         if((Phase()+shift)%3 == next.Phase())
-            return sm_param->m_lnInternal;
+            return m_param->m_lnInternal;
     } else if(Phase() == next.Phase())
-        return sm_param->m_lnInternal;
+        return m_param->m_lnInternal;
             
     return BadScore();
 }
@@ -538,6 +533,7 @@ public:
     ~CIntergenicParameters() {}
 
     void SetSeqLen(int seqlen) const;
+    int MinLen() const { return m_intergeniclen.MinLen(); }
 
     mutable double m_lnThrough, m_lnDen;
     double m_lnSingle, m_lnMulti;
@@ -551,20 +547,17 @@ private:
 class CIntergenic : public CHMM_State
 {
     public:
-    static const CIntergenicParameters& SetParams(const CIntergenicParameters& params) { sm_param = &params; return params; }
-        
+    CIntergenic(EStrand strn, int point, const CSeqScores& seqscr, const CIntergenicParameters& params);
     virtual ~CIntergenic() {}
-        CIntergenic(EStrand strn, int point);
-        static int MinIntergenic() { return sm_param->m_intergeniclen.MinLen(); }   // used for making walls
         bool OpenRgn() const;
         double RgnScore() const;
         double TermScore() const;
     virtual double VirtTermScore() const { return TermScore(); }
-        double DenScore() const { return sm_param->m_lnDen; }
-        double LengthScore() const { return sm_param->m_intergeniclen.Score(Stop()-Start()+1); }
-        double ClosingLengthScore() const { return sm_param->m_intergeniclen.ClosingScore(Stop()-Start()+1); }
-        double ThroughLengthScore() const { return sm_param->m_lnThrough; }
-        double InitialLengthScore() const { return sm_param->m_lnDen+ClosingLengthScore(); }  // theoretically we should substract log(AvLen) but it gives to much penalty to the first element
+        double DenScore() const { return m_param->m_lnDen; }
+        double LengthScore() const { return m_param->m_intergeniclen.Score(Stop()-Start()+1); }
+        double ClosingLengthScore() const { return m_param->m_intergeniclen.ClosingScore(Stop()-Start()+1); }
+        double ThroughLengthScore() const { return m_param->m_lnThrough; }
+        double InitialLengthScore() const { return m_param->m_lnDen+ClosingLengthScore(); }  // theoretically we should substract log(AvLen) but it gives to much penalty to the first element
         double BranchScore(const CHMM_State& next) const { return BadScore(); }
         double BranchScore(const CFirstExon& next) const; 
         double BranchScore(const CSingleExon& next) const;
@@ -572,36 +565,44 @@ class CIntergenic : public CHMM_State
         string GetStateName() const { return "Intergenic"; }
 
     protected:
-        static const CIntergenicParameters* sm_param;
+        const CIntergenicParameters* m_param;
 };
 
-// Singleton Factory
-class COrgParameters {
+class CHMMParameters::SDetails : public CObject {
 public:
-    static COrgParameters& Instance();
+    SDetails(CNcbiIstream& from);
+    ~SDetails();
+    const CInputModel& GetParameter(const string& type, int cgcontent) const;
+private:
+    typedef vector< pair<int,CInputModel*> > TCGContentList;
+    typedef map<string, TCGContentList > TParamMap;
+    TParamMap params;
 
-    void Read(CNcbiIstream& from);
-    const CInputModel& GetParameter(const string& type, int cgcontent);
+    vector<CInputModel*> all_created_models;
 
+    void DeleteAllCreatedModels();
+    TCGContentList& GetCGList(const string& type);
+    void StoreParam( const string& type, CInputModel* input_model, int low, int high );
+};
+
+class CParametersFactory {
+public:
+    static CParametersFactory& Instance();
     typedef CInputModel* (*TParameterCreator)(CNcbiIstream& from);
     bool RegisterParameter(const string& type, TParameterCreator creator);
-
+    TParameterCreator GetCreator(const string& type);
 private:
-    COrgParameters();
-
-    struct SDetails;
-    auto_ptr<SDetails> m_details;
+    CParametersFactory();
+    map<string,TParameterCreator> creators;
 };
 
 #define    REGISTER_ORG_PARAMETER(Class) \
 CInputModel* Create##Class(CNcbiIstream& from) { return new Class(from); } \
-const bool Class##_registered = COrgParameters::Instance().RegisterParameter(Class::class_id(),Create##Class)
+const bool Class##_registered = CParametersFactory::Instance().RegisterParameter(Class::class_id(),Create##Class)
 
 #define    REGISTER_ORG_TMPL_PARAMETER(Class,Order) \
 CInputModel* Create##Class##Order(CNcbiIstream& from) { return new Class<Order>(from); } \
-const bool Class##Order##_registered = COrgParameters::Instance().RegisterParameter(Class<Order>::class_id(),Create##Class##Order)
-
-#define  GET_ORG_PARAMETER(C,gc) dynamic_cast<const C*>( &COrgParameters::Instance().GetParameter(C::class_id(), (gc)))
+const bool Class##Order##_registered = CParametersFactory::Instance().RegisterParameter(Class<Order>::class_id(),Create##Class##Order)
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE

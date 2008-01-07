@@ -44,21 +44,19 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
-void CGnomonEngine::ReadOrgHMMParameters(CNcbiIstream& from)
-{
-    COrgParameters::Instance().Read(from);
-}
-
-CGnomonEngine::SGnomonEngineImplData::SGnomonEngineImplData(const CResidueVec& sequence, TSignedSeqRange range) :
-    m_seq(sequence), m_range(range), m_gccontent(0)
+CGnomonEngine::SGnomonEngineImplData::SGnomonEngineImplData
+(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range) :
+    m_seq(sequence), m_range(range), m_gccontent(0), m_hmm_params(hmm_params)
 {}
+
 CGnomonEngine::SGnomonEngineImplData::~SGnomonEngineImplData() {}
 
-CGnomonEngine::CGnomonEngine(const CResidueVec& sequence, TSignedSeqRange range) : m_data(new SGnomonEngineImplData(sequence,range))
+CGnomonEngine::CGnomonEngine(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range)
+    : m_data(new SGnomonEngineImplData(hmm_params,sequence,range))
 {
     CheckRange();
     Convert(m_data->m_seq,m_data->m_ds);
-
+    
     ResetRange(m_data->m_range);
 }
 
@@ -66,12 +64,12 @@ CGnomonEngine::~CGnomonEngine() {}
 
 int CGnomonEngine::GetMinIntronLen() const
 {
-    return CIntron::MinIntron();
+    return m_data->m_intron_params->m_intronlen.MinLen();
 }
 
 double CGnomonEngine::GetChanceOfIntronLongerThan(int l) const
 {
-    return CIntron::ChanceOfIntronLongerThan(l);
+    return exp(m_data->m_intron_params->m_intronlen.ClosingScore(l));
 }
 
 void CGnomonEngine::CheckRange()
@@ -105,18 +103,20 @@ void CGnomonEngine::ResetRange(TSignedSeqRange range)
     m_data->m_gccontent = max(1,m_data->m_gccontent);
     m_data->m_gccontent = min(99,m_data->m_gccontent);
 
-    m_data->m_donor = GET_ORG_PARAMETER(CWAM_Donor<2>, m_data->m_gccontent);
-        
-    m_data->m_acceptor = GET_ORG_PARAMETER(CWAM_Acceptor<2>, m_data->m_gccontent);
-    m_data->m_start = GET_ORG_PARAMETER(CWMM_Start, m_data->m_gccontent);
-    m_data->m_stop = GET_ORG_PARAMETER(CWAM_Stop, m_data->m_gccontent);
-    m_data->m_cdr = GET_ORG_PARAMETER(CMC3_CodingRegion<5>, m_data->m_gccontent);
-    m_data->m_ncdr = GET_ORG_PARAMETER(CMC_NonCodingRegion<5>, m_data->m_gccontent);
-    m_data->m_intrg = GET_ORG_PARAMETER(CMC_NonCodingRegion<5>, m_data->m_gccontent);
 
-    CIntron::SetParams(*GET_ORG_PARAMETER(CIntronParameters, m_data->m_gccontent)).SetSeqLen( m_data->m_range.GetLength() );
-    CIntergenic::SetParams(*GET_ORG_PARAMETER(CIntergenicParameters, m_data->m_gccontent)).SetSeqLen( m_data->m_range.GetLength() );
-    CExon::SetParams(*GET_ORG_PARAMETER(CExonParameters, m_data->m_gccontent));
+    m_data->GetHMMParameter(m_data->m_donor);
+    m_data->GetHMMParameter(m_data->m_acceptor);
+    m_data->GetHMMParameter(m_data->m_start);
+    m_data->GetHMMParameter(m_data->m_stop);
+    m_data->GetHMMParameter(m_data->m_cdr);
+    m_data->GetHMMParameter(m_data->m_ncdr);
+    m_data->GetHMMParameter(m_data->m_intrg);
+
+    m_data->GetHMMParameter(m_data->m_intron_params);
+    m_data->m_intron_params->SetSeqLen( m_data->m_range.GetLength() );
+    m_data->GetHMMParameter(m_data->m_intergenic_params);
+    m_data->m_intergenic_params->SetSeqLen( m_data->m_range.GetLength() );
+    m_data->GetHMMParameter(m_data->m_exon_params);
 }
 
 const CResidueVec& CGnomonEngine::GetSeq() const
@@ -131,7 +131,7 @@ int CGnomonEngine::GetGCcontent() const
 
 double CGnomonEngine::Run(bool repeats, bool leftwall, bool rightwall, double mpp)
 {
-    static TAlignList cls;
+    TAlignList cls;
 
     return Run( cls, repeats,
                 leftwall, rightwall, false, false,
@@ -148,13 +148,17 @@ double CGnomonEngine::Run(const TAlignList& cls,
     TFrameShifts initial_fshifts;
 
     m_data->m_ss.reset( new CSeqScores(*m_data->m_acceptor, *m_data->m_donor, *m_data->m_start, *m_data->m_stop,
-                               *m_data->m_cdr, *m_data->m_ncdr, *m_data->m_intrg,
-                               m_data->m_range.GetFrom(),  m_data->m_range.GetTo(),
+                                       *m_data->m_cdr, *m_data->m_ncdr, *m_data->m_intrg,
+                                       *m_data->m_intron_params,
+                                       m_data->m_range.GetFrom(),  m_data->m_range.GetTo(),
                                        cls, initial_fshifts, mpp, *this)
                 );
-    m_data->m_ss->Init(m_data->m_seq, repeats, leftwall, rightwall, consensuspenalty);
-    CHMM_State::SetSeqScores(*m_data->m_ss);
-    m_data->m_parse.reset( new CParse(*m_data->m_ss, leftanchor, rightanchor) );
+    m_data->m_ss->Init(m_data->m_seq, repeats, leftwall, rightwall, consensuspenalty, *m_data->m_intergenic_params);
+    m_data->m_parse.reset( new CParse(*m_data->m_ss,
+                                      *m_data->m_intron_params,
+                                      *m_data->m_intergenic_params,
+                                      *m_data->m_exon_params,
+                                      leftanchor, rightanchor) );
     return m_data->m_parse->Path()->Score();
 }
 

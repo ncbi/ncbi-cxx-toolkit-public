@@ -44,11 +44,26 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
 class CEResidueVec;
+class CInputModel;
+
+/// HMM model parameters
+/// just create it and pass to a GNOMON engine
+class NCBI_XALGOGNOMON_EXPORT CHMMParameters : public CObject {
+public:
+    CHMMParameters(CNcbiIstream& hmm_param_istr);
+    const CInputModel& GetParameter(const string& type, int cgcontent) const;
+private:
+    struct SDetails;
+    CRef<SDetails> m_details;
+
+    // Prohibit copy constructor and assignment operator
+    CHMMParameters(const CGnomonEngine& value);
+    CHMMParameters& operator= (const CHMMParameters& value);
+};
 
 class NCBI_XALGOGNOMON_EXPORT CGnomonEngine {
 public:
-    static void ReadOrgHMMParameters(CNcbiIstream& from);
-    CGnomonEngine(const CResidueVec& sequence, TSignedSeqRange range);
+    CGnomonEngine(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range = TSignedSeqRange::GetWhole());
     ~CGnomonEngine();
 
     void ResetRange(TSignedSeqRange range);
@@ -89,73 +104,15 @@ private:
     auto_ptr<SGnomonEngineImplData> m_data;
 };
 
-// NCBI_XALGOGNOMON_EXPORT
-// void PrintGenes(const list<CGene>& genes, CUniqNumber& unumber, CNcbiOstream& to = cout, CNcbiOstream& toprot = cout);
-
 class NCBI_XALGOGNOMON_EXPORT CCodingPropensity {
 public:
 
     // calculates CodingPropensity and start score
-    static double GetScore(const string& modeldatafilename, const objects::CSeq_loc& cds, objects::CScope& scope, int *const gccontent, double *const startscore = 0);
+    static double GetScore(CConstRef<CHMMParameters> hmm_params, const objects::CSeq_loc& cds, objects::CScope& scope, int *const gccontent, double *const startscore = 0);
 
 };
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7.2.6  2006/11/09 15:34:47  souvorov
- * Start score evaluation
- *
- * Revision 1.7.2.5  2006/11/03 20:22:24  chetvern
- * Removed unused parameter from GetScore
- *
- * Revision 1.7.2.4  2006/10/25 17:46:23  souvorov
- * FirstStart out of GnomonEngine
- *
- * Revision 1.7.2.3  2006/10/24 19:42:39  souvorov
- * Modification for open alignments
- *
- * Revision 1.7.2.2  2006/10/12 18:57:20  chetvern
- * Changed hmm parameters reading
- *
- * Revision 1.7.2.1  2006/10/06 14:17:56  chetvern
- * Major overhaul. Single format for intermediate files.
- *
- * Revision 1.10  2006/10/05 15:30:58  souvorov
- * Implementation of anchors for intergenics
- *
- * Revision 1.9  2006/06/29 19:19:22  souvorov
- * Confirmed start implementation
- *
- * Revision 1.8  2006/03/06 15:53:23  souvorov
- * Changes needed for ChanceOfIntronLongerThan(int l)
- *
- * Revision 1.7  2005/11/29 15:21:37  jcherry
- * Added export specifier
- *
- * Revision 1.6  2005/11/21 21:25:54  chetvern
- * Extracted PartialModelStepBack from PrintGenes
- *
- * Revision 1.5  2005/10/20 19:34:46  souvorov
- * Penalty for nonconsensus starts/stops/splices
- *
- * Revision 1.4  2005/10/06 14:34:25  souvorov
- * CGnomonEngine::GetSeqName() introduced
- *
- * Revision 1.3  2005/09/15 21:16:01  chetvern
- * redesigned API
- *
- * Revision 1.2  2004/03/16 15:37:43  vasilche
- * Added required include
- *
- * Revision 1.1  2003/10/24 15:06:30  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
 
 #endif  // ALGO_GNOMON___GNOMON__HPP

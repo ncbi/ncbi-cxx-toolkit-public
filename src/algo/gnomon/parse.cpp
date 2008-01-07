@@ -125,7 +125,7 @@ inline bool s_ForwardStep(const L& left, R& right, int leftprot, int rightprot)
     if(!s_EvaluateNewScore(left,right,score,openrgn)) return false;
     else if(score == BadScore()) return true;
     
-    int protnum = right.GetSeqScores()->ProtNumber(left.Stop(),right.Stop());
+    int protnum = right.GetSeqScores().ProtNumber(left.Stop(),right.Stop());
     
     if(rightprot == 0 && (leftprot != 0 || protnum != 0))    // there is a protein 
     {
@@ -140,7 +140,7 @@ inline bool s_ForwardStep(const L& left, R& right, int leftprot, int rightprot)
     
     if(left.Score() != BadScore() && openrgn)
     {
-         double scr = score-protnum*right.GetSeqScores()->MultiProtPenalty()+left.Score();
+         double scr = score-protnum*right.GetSeqScores().MultiProtPenalty()+left.Score();
         if(scr > right.Score())
         {
             right.UpdateLeftState(left);
@@ -231,14 +231,14 @@ inline void s_MakeStep(vector<L>& lvec, vector<CIntron>& rvec)
 
 
 template<class L> 
-inline void s_MakeStep(vector<L>& lvec, vector<CIntergenic>& rvec, bool rightanchor = false)
+inline void s_MakeStep(const CSeqScores& seqscr, vector<L>& lvec, vector<CIntergenic>& rvec, bool rightanchor = false)
 {
     if(lvec.empty()) return;
     CIntergenic& right = rvec.back();
     int i = lvec.size()-1;
     int rlimit = right.Stop();
     if(lvec[i].Stop() == rlimit) --i;
-    while(i >= 0 && lvec[i].Stop() >= CHMM_State::GetSeqScores()->LeftAlignmentBoundary(right.Stop())) --i;  // no intergenics in alignment
+    while(i >= 0 && lvec[i].Stop() >= seqscr.LeftAlignmentBoundary(right.Stop())) --i;  // no intergenics in alignment
     int nearlimit = max(0,rlimit-kTooFarLen);
     while(i >= 0 && lvec[i].Stop() >= nearlimit) 
     {
@@ -251,21 +251,21 @@ inline void s_MakeStep(vector<L>& lvec, vector<CIntergenic>& rvec, bool rightanc
     }
 }
 
-inline void s_MakeStep(EStrand strand, int point, vector<CIntergenic>& lvec, vector<CSingleExon>& rvec)            // L - intergenic, R - single exon
+inline void s_MakeStep(const CSeqScores& seqscr, const CExonParameters& exon_params, EStrand strand, int point, vector<CIntergenic>& lvec, vector<CSingleExon>& rvec)            // L - intergenic, R - single exon
 {
-    rvec.push_back(CSingleExon(strand,point));
+    rvec.push_back(CSingleExon(strand, point, seqscr, exon_params));
     s_MakeStep(lvec, rvec, 0, -1);
     if(rvec.back().Score() == BadScore()) rvec.pop_back();
 }
 
 template<class R> 
-inline void s_MakeStep(EStrand strand, int point, vector<CIntergenic>& lvec, vector<R> rvec[][3])                 // L - intergenic, R - first/last exon
+inline void s_MakeStep(const CSeqScores& seqscr, const CExonParameters& exon_params, EStrand strand, int point, vector<CIntergenic>& lvec, vector<R> rvec[][3])                 // L - intergenic, R - first/last exon
 {
     for(int kr = 0; kr < 2; ++kr)
     {
         for(int phr = 0; phr < 3; ++phr)
         {
-            rvec[kr][phr].push_back(R(strand,phr,point));
+            rvec[kr][phr].push_back(R(strand,phr,point,seqscr,exon_params));
             s_MakeStep(lvec, rvec[kr][phr], 0, kr);
             if(rvec[kr][phr].back().Score() == BadScore()) rvec[kr][phr].pop_back();
         }
@@ -273,9 +273,9 @@ inline void s_MakeStep(EStrand strand, int point, vector<CIntergenic>& lvec, vec
 }
 
 template<class R> 
-inline void s_MakeStep(EStrand strand, int point, vector<CIntron> lvec[][3], vector<R>& rvec)                 // L - intron R - first/last exon
+inline void s_MakeStep(const CSeqScores& seqscr, const CExonParameters& exon_params, EStrand strand, int point, vector<CIntron> lvec[][3], vector<R>& rvec)                 // L - intron R - first/last exon
 {
-    rvec.push_back(R(strand,0,point));          // phase is bogus, it will be redefined in constructor
+    rvec.push_back(R(strand,0,point,seqscr,exon_params));          // phase is bogus, it will be redefined in constructor
     for(int kl = 0; kl < 2; ++kl)
     {
         for(int phl = 0; phl < 3; ++phl)
@@ -286,13 +286,13 @@ inline void s_MakeStep(EStrand strand, int point, vector<CIntron> lvec[][3], vec
     if(rvec.back().Score() == BadScore()) rvec.pop_back();
 }
 
-inline void s_MakeStep(EStrand strand, int point, vector<CIntron> lvec[][3], vector<CInternalExon> rvec[][3])   // L - intron, R - internal exon
+inline void s_MakeStep(const CSeqScores& seqscr, const CExonParameters& exon_params, EStrand strand, int point, vector<CIntron> lvec[][3], vector<CInternalExon> rvec[][3])   // L - intron, R - internal exon
 {
     for(int phr = 0; phr < 3; ++phr)
     {
         for(int kr = 0; kr < 2; ++kr)
         {
-            rvec[kr][phr].push_back(CInternalExon(strand,phr,point));
+            rvec[kr][phr].push_back(CInternalExon(strand,phr,point,seqscr,exon_params));
             for(int phl = 0; phl < 3; ++phl)
             {
                 for(int kl = 0; kl < 2; ++kl)
@@ -306,14 +306,14 @@ inline void s_MakeStep(EStrand strand, int point, vector<CIntron> lvec[][3], vec
 }
 
 template<class L1, class L2> 
-inline void s_MakeStep(EStrand strand, int point, vector<L1> lvec1[][3], vector<L2> lvec2[][3], vector<CIntron> rvec[][3], int shift)    // L1,L2 - exons, R -intron
+inline void s_MakeStep(const CSeqScores& seqscr, const CIntronParameters& intron_params, EStrand strand, int point, vector<L1> lvec1[][3], vector<L2> lvec2[][3], vector<CIntron> rvec[][3], int shift)    // L1,L2 - exons, R -intron
 {
     for(int k = 0; k < 2; ++k)
     {
         for(int phl = 0; phl < 3; ++phl)
         {
             int phr = (shift+phl)%3;
-            rvec[k][phr].push_back(CIntron(strand,phr,point));
+            rvec[k][phr].push_back(CIntron(strand,phr,point,seqscr,intron_params));
             if(k == 1) rvec[k][phr].back().UpdateScore(BadScore());   // proteins don't come from outside
             s_MakeStep(lvec1[k][phl], rvec[k][phr]);
             s_MakeStep(lvec2[k][phl], rvec[k][phr]);
@@ -330,7 +330,12 @@ double AddProbabilities(double scr1, double scr2)
     else return scr2+log(1+exp(scr1-scr2));
 }
 
-CParse::CParse(const CSeqScores& ss, bool leftanchor, bool rightanchor) : m_seqscr(ss)
+CParse::CParse(const CSeqScores& ss,
+               const CIntronParameters&     intron_params,
+               const CIntergenicParameters& intergenic_params,
+               const CExonParameters&       exon_params,
+               bool leftanchor, bool rightanchor)
+    : m_seqscr(ss)
 {
     try
     {
@@ -362,7 +367,7 @@ CParse::CParse(const CSeqScores& ss, bool leftanchor, bool rightanchor) : m_seqs
     
     double BigScore = 10000;
     if (leftanchor) {
-        m_seplus.push_back(CSingleExon(ePlus,0));
+        m_seplus.push_back(CSingleExon(ePlus,0,m_seqscr,exon_params));
         m_seplus.back().UpdateScore(BigScore);               // this is a bogus anchor to unforce intergenic start at 0
     }
 
@@ -370,76 +375,76 @@ CParse::CParse(const CSeqScores& ss, bool leftanchor, bool rightanchor) : m_seqs
     {
         if(m_seqscr.AcceptorScore(i,ePlus) != BadScore())
         {
-            s_MakeStep(ePlus,i,m_ieplus,m_feplus,m_inplus,1);
+            s_MakeStep(m_seqscr, intron_params, ePlus,i,m_ieplus,m_feplus,m_inplus,1);
         }
 
         if(m_seqscr.AcceptorScore(i,eMinus) != BadScore())
         {
-            s_MakeStep(eMinus,i,m_inminus,m_ieminus);
-            s_MakeStep(eMinus,i,m_igminus,m_leminus);
+            s_MakeStep(m_seqscr, exon_params, eMinus,i,m_inminus,m_ieminus);
+            s_MakeStep(m_seqscr, exon_params, eMinus,i,m_igminus,m_leminus);
         }
 
         if(m_seqscr.DonorScore(i,ePlus) != BadScore())
         {
-            s_MakeStep(ePlus,i,m_inplus,m_ieplus);
-            s_MakeStep(ePlus,i,m_igplus,m_feplus);
+            s_MakeStep(m_seqscr, exon_params, ePlus,i,m_inplus,m_ieplus);
+            s_MakeStep(m_seqscr, exon_params, ePlus,i,m_igplus,m_feplus);
         }
 
         if(m_seqscr.DonorScore(i,eMinus) != BadScore())
         {
-            s_MakeStep(eMinus,i,m_leminus,m_ieminus,m_inminus,0);
+            s_MakeStep(m_seqscr, intron_params, eMinus,i,m_leminus,m_ieminus,m_inminus,0);
         }
 
         if(m_seqscr.StartScore(i,ePlus) != BadScore())
         {
-            m_igplus.push_back(CIntergenic(ePlus,i));
-            s_MakeStep(m_seplus,m_igplus);
-            s_MakeStep(m_seminus,m_igplus);
-            s_MakeStep(m_leplus,m_igplus);
-            s_MakeStep(m_feminus,m_igplus);
+            m_igplus.push_back(CIntergenic(ePlus,i,m_seqscr,intergenic_params));
+            s_MakeStep(m_seqscr, m_seplus,m_igplus);
+            s_MakeStep(m_seqscr, m_seminus,m_igplus);
+            s_MakeStep(m_seqscr, m_leplus,m_igplus);
+            s_MakeStep(m_seqscr, m_feminus,m_igplus);
         }
 
         if(m_seqscr.StartScore(i,eMinus) != BadScore())
         {
-            s_MakeStep(eMinus,i,m_inminus,m_feminus);
-            s_MakeStep(eMinus,i,m_igminus,m_seminus);
+            s_MakeStep(m_seqscr, exon_params, eMinus,i,m_inminus,m_feminus);
+            s_MakeStep(m_seqscr, exon_params, eMinus,i,m_igminus,m_seminus);
         }
 
         if(m_seqscr.StopScore(i,ePlus) != BadScore())
         {
-            s_MakeStep(ePlus,i,m_inplus,m_leplus);
-            s_MakeStep(ePlus,i,m_igplus,m_seplus);
+            s_MakeStep(m_seqscr, exon_params, ePlus,i,m_inplus,m_leplus);
+            s_MakeStep(m_seqscr, exon_params, ePlus,i,m_igplus,m_seplus);
         }
 
         if(m_seqscr.StopScore(i,eMinus) != BadScore())
         {
-            m_igminus.push_back(CIntergenic(eMinus,i));
-            s_MakeStep(m_seplus,m_igminus);
-            s_MakeStep(m_seminus,m_igminus);
-            s_MakeStep(m_leplus,m_igminus);
-            s_MakeStep(m_feminus,m_igminus);
+            m_igminus.push_back(CIntergenic(eMinus,i,m_seqscr,intergenic_params));
+            s_MakeStep(m_seqscr, m_seplus,m_igminus);
+            s_MakeStep(m_seqscr, m_seminus,m_igminus);
+            s_MakeStep(m_seqscr, m_leplus,m_igminus);
+            s_MakeStep(m_seqscr, m_feminus,m_igminus);
         }
     }
 
-    m_igplus.push_back(CIntergenic(ePlus,-1));                // never is popped    
-    s_MakeStep(m_seplus,m_igplus,rightanchor);
-    s_MakeStep(m_seminus,m_igplus,rightanchor);
-    s_MakeStep(m_leplus,m_igplus,rightanchor);
-    s_MakeStep(m_feminus,m_igplus,rightanchor);
+    m_igplus.push_back(CIntergenic(ePlus,-1,m_seqscr,intergenic_params));                // never is popped    
+    s_MakeStep(m_seqscr, m_seplus,m_igplus,rightanchor);
+    s_MakeStep(m_seqscr, m_seminus,m_igplus,rightanchor);
+    s_MakeStep(m_seqscr, m_leplus,m_igplus,rightanchor);
+    s_MakeStep(m_seqscr, m_feminus,m_igplus,rightanchor);
 
-    m_igminus.push_back(CIntergenic(eMinus,-1));               // never is popped
-    s_MakeStep(m_seplus,m_igminus,rightanchor);
-    s_MakeStep(m_seminus,m_igminus,rightanchor);
-    s_MakeStep(m_leplus,m_igminus,rightanchor);
-    s_MakeStep(m_feminus,m_igminus,rightanchor);
+    m_igminus.push_back(CIntergenic(eMinus,-1,m_seqscr,intergenic_params));               // never is popped
+    s_MakeStep(m_seqscr, m_seplus,m_igminus,rightanchor);
+    s_MakeStep(m_seqscr, m_seminus,m_igminus,rightanchor);
+    s_MakeStep(m_seqscr, m_leplus,m_igminus,rightanchor);
+    s_MakeStep(m_seqscr, m_feminus,m_igminus,rightanchor);
     
     m_igplus.back().UpdateScore(AddProbabilities(m_igplus.back().Score(),m_igminus.back().Score()));
 
     const CHMM_State* p = &m_igplus.back();
 
     if (!rightanchor) {
-        s_MakeStep(ePlus,-1,m_ieplus,m_feplus,m_inplus,1);        // may be popped
-        s_MakeStep(eMinus,-1,m_leminus,m_ieminus,m_inminus,0);    // may be popped	
+        s_MakeStep(m_seqscr, intron_params, ePlus,-1,m_ieplus,m_feplus,m_inplus,1);        // may be popped
+        s_MakeStep(m_seqscr, intron_params, eMinus,-1,m_leminus,m_ieminus,m_inminus,0);    // may be popped	
 
         for(int k = 0; k < 2; ++k) {
             for(int ph = 0; ph < 3; ++ph) {
