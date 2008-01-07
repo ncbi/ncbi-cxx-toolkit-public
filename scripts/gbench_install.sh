@@ -147,28 +147,25 @@ RelativeCP()
     fi
 }
 
+# On Darwin, we want to move or copy *both* DLL types.
 DoCopy()
 {
+    COMMON_InstallRB RelativeCP $1 $2
     case `uname`:$1 in
     Darwin*:*.so)
         dylib_file=`echo $1 | sed "s,\.so$,.dylib",`
         COMMON_InstallRB RelativeCP $dylib_file $2
-        ;;
-    *)
-        COMMON_InstallRB RelativeCP $1 $2
         ;;
     esac
 }
 
 DoMove()
 {
+    COMMON_InstallRB "$BINMOVE" $1 $2
     case `uname`:$1 in
     Darwin*:*.so)
         dylib_file=`echo $1 | sed "s,\.so$,.dylib",`
         COMMON_InstallRB "$BINMOVE" $dylib_file $2
-        ;;
-    *)
-        COMMON_InstallRB "$BINMOVE" $1 $2
         ;;
     esac
 }
