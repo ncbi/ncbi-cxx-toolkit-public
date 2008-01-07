@@ -7906,6 +7906,9 @@ CDBAPIUnitTest::Test_StatementParameters(void)
 void
 CDBAPIUnitTest::Test_NULL(void)
 {
+    const string table_name = GetTableName();
+    // const string table_name("DBAPI_Sample..dbapi_unit_test");
+
     enum {rec_num = 10};
     string sql;
 
@@ -7916,10 +7919,10 @@ CDBAPIUnitTest::Test_NULL(void)
 
             {
                 // Drop all records ...
-                sql  = " DELETE FROM " + GetTableName();
+                sql  = " DELETE FROM " + table_name;
                 auto_stmt->ExecuteUpdate(sql);
 
-                sql  = " INSERT INTO " + GetTableName() +
+                sql  = " INSERT INTO " + table_name +
                     "(int_field, vc1000_field) "
                     "VALUES(@int_field, @vc1000_field) \n";
 
@@ -7948,7 +7951,7 @@ CDBAPIUnitTest::Test_NULL(void)
 
                 // Check record number ...
                 BOOST_CHECK_EQUAL(int(rec_num),
-                                  GetNumOfRecords(auto_stmt, GetTableName())
+                                  GetNumOfRecords(auto_stmt, table_name)
                                   );
             }
 
@@ -7980,48 +7983,8 @@ CDBAPIUnitTest::Test_NULL(void)
 
                 // Check record number ...
                 BOOST_CHECK_EQUAL(int(rec_num),
-                                  GetNumOfRecords(auto_stmt, GetTableName()));
+                                  GetNumOfRecords(auto_stmt, "#test_unicode_table"));
             }
-        }
-
-        if (false) {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-            // Drop all records ...
-            sql  = " DELETE FROM DBAPI_Sample..dbapi_unit_test";
-            auto_stmt->ExecuteUpdate(sql);
-
-            sql  = " INSERT INTO DBAPI_Sample..dbapi_unit_test"
-                "(int_field, vc1000_field) "
-                "VALUES(@int_field, @vc1000_field) \n";
-
-            // CVariant variant(eDB_Text);
-            // variant.Append(" ", 1);
-
-            // Insert data ...
-            for (long ind = 0; ind < rec_num; ++ind) {
-                if (ind % 2 == 0) {
-                    auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
-                    auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
-                } else {
-                    auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
-                    auto_stmt->SetParam( CVariant(NStr::IntToString(ind)),
-                                         "@vc1000_field"
-                                         );
-                }
-
-                // Execute a statement with parameters ...
-                auto_stmt->ExecuteUpdate( sql );
-
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
-            }
-
-            // Check record number ...
-            BOOST_CHECK_EQUAL(int(rec_num),
-                              GetNumOfRecords(auto_stmt, GetTableName())
-                              );
         }
 
         // Check ...
@@ -8029,7 +7992,7 @@ CDBAPIUnitTest::Test_NULL(void)
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
             {
-                sql = "SELECT int_field, vc1000_field FROM " + GetTableName() +
+                sql = "SELECT int_field, vc1000_field FROM " + table_name +
                     " ORDER BY id";
 
                 auto_stmt->SendSql( sql );
@@ -8135,10 +8098,10 @@ CDBAPIUnitTest::Test_NULL(void)
             // Initialize data (strings are EMPTY) ...
             {
                 // Drop all records ...
-                sql  = " DELETE FROM " + GetTableName();
+                sql  = " DELETE FROM " + table_name;
                 auto_stmt->ExecuteUpdate(sql);
 
-                sql  = " INSERT INTO " + GetTableName() +
+                sql  = " INSERT INTO " + table_name +
                     "(int_field, vc1000_field) "
                     "VALUES(@int_field, @vc1000_field) \n";
 
@@ -8165,12 +8128,12 @@ CDBAPIUnitTest::Test_NULL(void)
 
                 // Check record number ...
                 BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt,
-                                                                GetTableName()));
+                                                                table_name));
             }
 
             // Check ...
             {
-                sql = "SELECT int_field, vc1000_field FROM " + GetTableName() +
+                sql = "SELECT int_field, vc1000_field FROM " + table_name +
                     " ORDER BY id";
 
                 auto_stmt->SendSql( sql );
@@ -8200,6 +8163,8 @@ CDBAPIUnitTest::Test_NULL(void)
 
                 DumpResults(auto_stmt.get());
             }
+        } else {
+            PutMsgDisabled("Testing of NULL-value + empty string is disabled.");
         }
     }
     catch(const CException& ex) {
@@ -11690,7 +11655,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             || (args.GetDriverName() == dblib_driver && args.GetServerType() == CTestArguments::eSybase)
             || args.GetDriverName() == msdblib_driver
             || (args.GetDriverName() == ctlib_driver && !Solaris)
-            || args.GetDriverName() == ftds64_driver
+            || (args.GetDriverName() == ftds64_driver && args.GetServerType() != CTestArguments::eSybase)
             || args.GetDriverName() == ftds_odbc_driver
             || args.GetDriverName() == odbc_driver
             || args.GetDriverName() == odbcw_driver
