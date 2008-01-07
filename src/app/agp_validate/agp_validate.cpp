@@ -24,7 +24,7 @@
  * ===========================================================================
  *
  * Authors:
- *      Lou Friedman, Victor Sapojnikov
+ *      Victor Sapojnikov
  *
  * File Description:
  *      Validate AGP data. A command line option to chose either context
@@ -40,12 +40,13 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+#include <objtools/readers/agp_util.hpp>
 
 USING_NCBI_SCOPE;
 
 BEGIN_NCBI_SCOPE
 
-CAgpErr agpErr;
+CAgpErrEx agpErr;
 
 class CAgpValidateApplication : public CNcbiApplication
 {
@@ -109,11 +110,17 @@ public:
     /*
     "  -al, -at  Check component Accessions, Lengths (-al), Taxids (-at).\n"
     */
+    /*
+    "\n"
+    "  -fa  FILE (fasta)\n"
+    "  -len FILE (component_id and length, tab-separated)\n"
+    "    Check that each component_id from AGP can be found in the FILE(s),\n"
+    "    and component_end is within the sequence length. Multiple -fa and -len are allowed.\n"
+    */
     "\n"
     "  -list         List error and warning messages.\n"
     "  -limit COUNT  Print only the first COUNT messages of each type.\n"
     "                Default=10. To print all, use: -limit 0\n"
-    "\n"
     "  -skip  WHAT   Do not report lines with a particular error or warning message.\n"
     "  -only  WHAT   Report only this particular error or warning.\n"
     "  Multiple -skip or -only are allowed. 'WHAT' may be:\n"
@@ -186,7 +193,7 @@ int CAgpValidateApplication::Run(void)
   const CArgs& args = GetArgs();
 
   if( args["list"].HasValue() ) {
-     CAgpErr::PrintAllMessages(cout);
+     CAgpErrEx::PrintAllMessages(cout);
      exit(0);
    }
 
@@ -214,8 +221,6 @@ int CAgpValidateApplication::Run(void)
       m_AltValidator->m_out = &(args["out"].AsOutputFile());
     }
   }
-
-
 
   const CArgValue::TStringArray* err_warn=NULL;
   bool onlyNotSkip = args["only"].HasValue();
@@ -257,8 +262,6 @@ int CAgpValidateApplication::Run(void)
       }
     }
   }
-
-
 
   agpErr.m_MaxRepeat =
     args["limit"].HasValue() ? args["limit"].AsInteger() : 10;
@@ -320,142 +323,50 @@ void CAgpValidateApplication::x_ValidateFile(
 {
   int line_num = 0;
   string  line;
-  SDataLine data_line;  // strings
-  CAgpLine  agp_line ;  // successfuly parsed columns with non-contratictory data
-  vector<string> cols;
+  CAgpRow agp_row(&agpErr);
+
+  bool valid=false;
 
   // Allow Unix, DOS, Mac EOL characters
-  while( NcbiGetline(istr, line, "\r\n") )
-  {
+  while( NcbiGetline(istr, line, "\r\n") ) {
     line_num++;
 
-    string line_orig=line; // With EOL #comments
-    bool tabsStripped=false;
-    bool valid=false;
-    bool badCount=false;
     bool queued=false;
-    // Strip #comments
-    {
-      SIZE_TYPE pos = NStr::Find(line, "#");
-      if(pos==0) {
-        m_CommentLineCount++;
-        if( (m_ValidationType & VT_Acc) && m_AltValidator->m_out ) {
-          m_AltValidator->QueueLine(line_orig);
-          // do not need to set queued=true since we are not jumping to "NextLine" label
-        }
-        continue;
-      }
-      else if(pos != NPOS) {
-        m_EolComments++;
-        while( pos>0 && (line[pos-1]==' ' || line[pos-1]=='\t') ) {
-          if( line[pos-1]=='\t' ) tabsStripped=true;
-          pos--;
-        }
-        line.resize(pos);
-      }
+
+    int code=agp_row.FromString(line);
+    if(code==-1) {
+      m_CommentLineCount++;
+      continue;
     }
+    if(agp_row.pcomment!=NPOS) m_EolComments++;
 
-    if(line == "") {
-      agpErr.Msg(CAgpErr::E_EmptyLine);
-
-      // avoid suppressing the errors related to the previous line
-      // valid=true;
-      // ^^ can't do it that easily -- this variable affects
-      //    2 other things as well: 1) skipped line count
-      //    2) correct order of -alt messages
-
-      goto NextLine;
-    }
-
-
-    cols.clear();
-    NStr::Tokenize(line, "\t", cols);
-    if( cols.size()==10 && cols[9]=="") {
-      agpErr.Msg(CAgpErr::W_ExtraTab);
-    }
-    else if( cols.size() < 8 || cols.size() > 9 ) {
-      // skip this entire line, report an error
-      agpErr.Msg(CAgpErr::E_ColumnCount,
-        string(", found ") + NStr::IntToString(cols.size()) );
-      goto NextLine;
-    }
-
-    for(int i=0; i<8; i++) {
-      if(cols[i].size()==0) {
-        // skip this entire line, report an error
-        agpErr.Msg(CAgpErr::E_EmptyColumn,
-            NcbiEmptyString, AT_ThisLine, // defaults
-            NStr::IntToString(i+1)
-          );
-        goto NextLine; // cannor use "continue"
-      }
-    }
-
-    data_line.line_num = line_num;
-
-    // 5 common columns for components and gaps.
-    data_line.object         = cols[0];
-    data_line.begin          = cols[1];
-    data_line.end            = cols[2];
-    data_line.part_num       = cols[3];
-    data_line.component_type = cols[4];
-
-    // columns with different meaning for components and gaps.
-    data_line.component_id   = cols[5];
-    data_line.gap_length     = cols[5];
-
-    data_line.component_beg  = cols[6];
-    data_line.gap_type       = cols[6];
-
-    data_line.component_end   = cols[7];
-    data_line.linkage         = cols[7];
-
-    data_line.orientation = "";
-    if( cols.size() > 8 ) {
-      data_line.orientation = cols[8];
-    }
-    else {
-      if( ! CAgpLine::IsGapType(data_line.component_type) ) {
-        if(tabsStripped) {
-          agpErr.Msg(CAgpErr::E_EmptyColumn,
-            NcbiEmptyString, AT_ThisLine, // defaults
-            "9");
-          badCount=true;
-        }
-        else {
-          agpErr.Msg(CAgpErr::E_ColumnCount,
-            string(", found ") + NStr::IntToString(cols.size()) );
-          badCount=true;
-        }
-      }
-      else if(tabsStripped==false){
-        agpErr.Msg(CAgpErr::W_GapLineMissingCol9);
-      }
-    }
-
-    valid=agp_line.init(data_line);
-    if(badCount) valid=false; // make sure the line is skipped, as we said it is
-    if(valid) {
+    if(code==0) {
+      valid=true;
       if(m_ValidationType == VT_Context) {
-        m_ContextValidator->ValidateLine(data_line, agp_line);
+        m_ContextValidator->ValidateRow(agp_row, line_num);
       }
-      else if( !agp_line.is_gap ) {
-        m_AltValidator->QueueLine(line_orig,
-          data_line.component_id, line_num, agp_line.compSpan.end);
+      //else if( !agp_line.is_gap )
+      else if( !agp_row.IsGap() )
+      {
+        m_AltValidator->QueueLine(line,
+          agp_row.GetComponentId(), line_num, agp_row.component_end);
         queued=true;
       }
 
       if(istr.eof()) {
-        agpErr.Msg(CAgpErr::W_NoEolAtEof);
+        agpErr.Msg(CAgpErrEx::W_NoEolAtEof, NcbiEmptyString);
       }
     }
+    else valid=false; // the error message must be passed already via an error handler adaptor
 
-  NextLine:
     if(m_ValidationType & VT_Acc) {
       if(m_AltValidator->m_out && !queued) {
-        m_AltValidator->QueueLine(line_orig);
+        m_AltValidator->QueueLine(line); // line_orig
       }
-      if( !valid || m_AltValidator->QueueSize() >= 150 ) {
+      if(
+        !valid ||
+        m_AltValidator->QueueSize() >= 150
+      ) {
         // process the batch now so that error lines are printed in the correct order
         CNcbiOstrstream* tmp_messages = agpErr.m_messages;
         agpErr.m_messages =  new CNcbiOstrstream();
@@ -468,8 +379,9 @@ void CAgpValidateApplication::x_ValidateFile(
       }
     }
 
-    agpErr.LineDone(line_orig, line_num, !valid );
-    if(!valid && m_ValidationType == VT_Context) {
+    agpErr.LineDone(line, line_num, !valid );
+    if(!valid && m_ValidationType == VT_Context)
+    {
       // Adjust the context after an invalid line
       // (to suppress some spurious errors)
       m_ContextValidator->InvalidLine();

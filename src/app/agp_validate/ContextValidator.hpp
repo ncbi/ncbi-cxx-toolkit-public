@@ -34,8 +34,9 @@
  *
  */
 
-//#include "AgpErr.hpp"
-#include "LineValidator.hpp"
+#include "AgpErrEx.hpp"
+
+// #include "LineValidator.hpp"
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -59,6 +60,48 @@ private:
   static int x_byCount( value_type* a, value_type* b );
 };
 
+extern CAgpErrEx agpErr;
+class CCompVal
+{
+public:
+  int beg, end;
+  char ori;
+  int file_num, line_num;
+
+  enum { ORI_plus, ORI_minus, ORI_zero, ORI_na,  ORI_count };
+  // static TValuesMap validOri;
+  // CCompVal(); no validation needed
+
+  void init(const CAgpRow& row, int line_num_arg)
+  {
+    beg=row.component_beg;
+    end=row.component_end;
+    ori=row.orientation;
+
+    line_num=line_num_arg;
+    file_num=agpErr.GetFileNum();
+  }
+  int getLen() const { return end - beg + 1; }
+
+  string ToString() const
+  {
+    string s;
+    s += NStr::IntToString(beg);
+    s += "..";
+    s += NStr::IntToString(end);
+    s += " at ";
+    if(file_num) {
+      s += agpErr.GetFile(file_num);
+      s += ":";
+    }
+    else {
+      s += "line ";
+    }
+    s += NStr::IntToString(line_num);
+    return s;
+  }
+};
+
 // To save memory, this is a vector instead of a map.
 // Multiple spans on one component are uncommon.
 class CCompSpans : public vector<CCompVal>
@@ -74,17 +117,20 @@ public:
   // or the first span out of order and CAgpErr::W_SpansOrder,
   // or begin() and CAgpErr::W_DuplicateComp.
   // The caller can ignore the last 2 warnings for draft seqs.
-  typedef pair<iterator, CAgpErr::TCode> TCheckSpan;
+  typedef pair<iterator, int> TCheckSpan;
   TCheckSpan CheckSpan(int span_beg, int span_end, bool isPlus);
   void AddSpan(const CCompVal& span); // CCompSpans::iterator it,
 
 };
 
+
 class CAgpContextValidator
 {
 public:
   CAgpContextValidator();
-  void ValidateLine(const SDataLine& dl, const CAgpLine& cl);
+  //void ValidateLine(const SDataLine& dl, const CAgpLine& cl);
+  void ValidateRow(CAgpRow& row, int line_num);
+
   void EndOfObject(bool afterLastLine=false);
 
   // Adjust the context after an invalid line
@@ -95,13 +141,18 @@ public:
   void PrintTotals();
 
 protected:
-  // Vars assigned in ValidateLine(),
-  // further validated in x_OnGapLine() x_OnCompLine()
+  // Assigned in ValidateRow(), used in x_OnGapRow() x_OnCompRow()
   bool new_obj;
 
+  // Private subroutines for ValidateRow()
+  void x_OnGapRow (CAgpRow& row);
+  void x_OnCompRow(CAgpRow& row, int line_num);
+
+  /*
   // Private subroutines for ValidateLine()
   void x_OnGapLine(const SDataLine& dl, const CGapVal& gap);
   void x_OnCompLine(const SDataLine& dl, const CCompVal& comp);
+  */
 
   int m_ObjCount;
   int m_ScaffoldCount;
@@ -109,9 +160,11 @@ protected:
   int m_SingleCompObjects;
   int m_CompCount;
   int m_GapCount;
-  int m_CompOri[CCompVal::ORI_count];
+  //int m_CompOri[CCompVal::ORI_count];
+  int m_CompOri[4];
 
-  int m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_yes_count];
+  //int m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_yes_count];
+  int m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapYes_count];
   // Count component types and N/U gap types.
   CValuesCount m_TypeCompCnt; // column 5: A, D, F, ..., N, U
 
@@ -128,6 +181,7 @@ protected:
   TCompId2Spans m_CompId2Spans;
 
   string prev_object;
+  //CAgpRow::EGap
   int prev_line_gap_type;
 
   // Used for the first component in a scaffold.

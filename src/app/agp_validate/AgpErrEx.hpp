@@ -1,5 +1,5 @@
-#ifndef AGP_VALIDATE_AgpErr
-#define AGP_VALIDATE_AgpErr
+#ifndef AGP_VALIDATE_AgpErrEx
+#define AGP_VALIDATE_AgpErrEx
 
 /*  $Id$
  * ===========================================================================
@@ -39,6 +39,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <iostream>
+#include <objtools/readers/agp_util.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -49,7 +50,7 @@ BEGIN_NCBI_SCOPE
 // Skip selected and repetitive errors; count skipped errors.
 
 /* Basic usage:
-   CAgpErr agpErr;
+   CAgpErrEx agpErr;
 
    // Apply options (normally specified in the command-line)
    agpErr.m_MaxRepeat = 0; // Print all
@@ -63,69 +64,33 @@ BEGIN_NCBI_SCOPE
      for(...) {
        . . .
        // The order of the calls below is not very significant:
-       if(error_in_the_previous_line) agpErr.Msg(code, "", CAgpErr::AT_PrevLine);
-       if(error_in_this_line        ) agpErr.Msg(code, "", CAgpErr::AT_ThisLine);
+       if(error_in_the_previous_line) agpErr.Msg(code, "", CAgpErrEx::CAgpErr::fAtPrevLine);
+       if(error_in_this_line        ) agpErr.Msg(code, "", CAgpErrEx::CAgpErr::fAtThisLine);
        if(error_in_the_last_pair_of_lines) // E.g. 2 conseq. gap lines
-         agpErr.Msg(code, "", CAgpErr::AT_ThisLine|CAgpErr::AT_PrevLine);
+         agpErr.Msg(code, "", CAgpErrEx::CAgpErr::fAtThisLine|CAgpErrEx::CAgpErr::fAtPrevLine);
        . . .
      }
    }
 */
 
+/*
 enum TAppliesTo{
-  //AT_Unknown=0, -- just print the message without the content line
-  AT_ThisLine=1,     // Accumulate messages
-  AT_SkipAfterBad=2, // Suppress this error if the previous line was invalid
+  //CAgpErr::fAtUnknown=0, -- just print the message without the content line
+  CAgpErr::fAtThisLine=1,     // Accumulate messages
+  CAgpErrEx::fAtSkipAfterBad=2, // Suppress this error if the previous line was invalid
                      // (e.g. had wrong # of columns)
-  AT_PrevLine    =4  // Print the previous line if it was not printed;
+  CAgpErr::fAtPrevLine    =4  // Print the previous line if it was not printed;
                      // print the message now
-  // AT_ThisLine|AT_PrevLine -- both lines are involved:
+  // CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine -- both lines are involved:
   // print the previous line now (if it was not printed already)
 };
+*/
 
-class CAgpErr
+class CAgpErrEx : public CAgpErr
 {
 public:
-
-  // When adding entries to enum TCode, also update msg[]
-  enum TCode {
-    E_ColumnCount=1 ,
-    E_EmptyColumn,
-    E_EmptyLine,
-    E_InvalidValue  ,
-    E_InvalidYes   ,
-
-    E_MustBePositive,
-    E_ObjEndLtBegin ,
-    E_CompEndLtBeg,
-    E_ObjRangeNeGap ,
-    E_ObjRangeNeComp,
-
-    E_DuplicateObj  ,
-    E_ObjMustBegin1 ,
-    E_PartNumberNot1,
-    E_PartNumberNotPlus1,
-    E_UnknownOrientation,
-
-    E_ObjBegNePrevEndPlus1,
-    E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
-
-    W_GapObjEnd=21 ,
-    W_GapObjBegin ,
-    W_ConseqGaps ,
-    W_ObjNoComp,
-    W_SpansOverlap,
-
-    W_SpansOrder ,
-    W_DuplicateComp,
-    W_LooksLikeGap,
-    W_LooksLikeComp,
-    W_ExtraTab,
-
-    W_GapLineMissingCol9,
-    W_NoEolAtEof,
-    W_Last, W_First = 21,
-
+  // When adding entries to this enum, also update msg_ex[]
+  enum {
     G_InvalidCompId=41,
     G_NotInGenbank,
     G_NeedVersion,
@@ -144,7 +109,13 @@ public:
     CODE_First=1, CODE_Last=G_Last
   };
 
-  static const char* GetMsg(TCode code);
+  // Must be dropped after switch to CAgpReader -
+  // skipping conditionals are checked outside of CAgpErr.
+  enum EAppliesToEx{
+    fAtSkipAfterBad=2 // Suppress this error if the previous line was invalid
+  };
+
+  static const char* GetMsgEx(int code);
   static string GetPrintableCode(int code); // Returns a string like e01 w12
   static void PrintAllMessages(CNcbiOstream& out);
 
@@ -167,19 +138,18 @@ public:
   // Print the message by code, prepended by \tERROR: or \tWARNING:
   // details: append at the end of the message
   // substX : substitute it instead of the word "X" in msg[code]
-  static void PrintMessage(CNcbiOstream& ostr, TCode code,
-    const string& details=NcbiEmptyString,
-    const string& substX=NcbiEmptyString);
+  static void PrintMessage(CNcbiOstream& ostr, int code,
+    const string& details=NcbiEmptyString);
 
   // Construct a readable message on total error & warning counts
   static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count=0);
 
-  CAgpErr();
+  CAgpErrEx();
 
-  // Can skip unwanted messages, record a message for printing (AT_ThisLine),
-  // print it immediately if it applies to the previous line (AT_PrevLine),
+  // Can skip unwanted messages, record a message for printing (CAgpErr::fAtThisLine),
+  // print it immediately if it applies to the previous line (CAgpErr::fAtPrevLine),
   // print the previous line and record the message
-  // if it applies to the 2 last lines (AT_PrevLine|AT_ThisLine).
+  // if it applies to the 2 last lines (CAgpErr::fAtPrevLine|CAgpErr::fAtThisLine).
   //
   // The resulting output format works well when:
   // 1)there are multiple errors in one line:
@@ -196,19 +166,19 @@ public:
   // (e.g. intersecting component spans), we do not print the first line involved.
   // This is still possible to do as follows:
   //   // Print the first line involved
-  //   if( !agpErr.MustSkip(code) ) CAgpErr::PrintLine(...);
+  //   if( !agpErr.MustSkip(code) ) CAgpErrEx::PrintLine(...);
   //   // Print the current line, then the message
-  //   agpErr.Msg(..AT_ThisLine..);
+  //   agpErr.Msg(..CAgpErr::fAtThisLine..);
   //
   // The worst could happen when there are 2 errors involving
   // different pairs of lines: (N-1, N) (N-M, N)
 
-  void Msg(TCode code, const string& details=NcbiEmptyString,
-    int appliesTo=AT_ThisLine, const string& substX=NcbiEmptyString);
+  // we override Msg() that comes from CAgpErr
+  virtual void Msg(int code, const string& details, int appliesTo=fAtThisLine);
 
   // Print any accumulated messages.
   // invalid_line=true: for the next line, suppress
-  //   CAgpErr::AT_ThisLine|CAgpErr::AT_PrevLine messages
+  //   CAgpErrEx::CAgpErr::fAtThisLine|CAgpErrEx::CAgpErr::fAtPrevLine messages
   void LineDone(const string& s, int line_num, bool invalid_line=false);
 
   // No invocations are needed when reading from cin,
@@ -225,22 +195,22 @@ public:
   // Note: call SkipMsg("all") nefore SkipMsg(smth, true)
   string SkipMsg(const string& str, bool skip_other=false);
 
-  bool MustSkip(TCode code);
+  bool MustSkip(int code);
 
   // 1 argument:
   //   E_Last: count errors
   //   W_Last: count warnings
   //   G_Last: count GenBank errors
   //   other: errors/warnings of one given type
-  // 2 arguments: range of TCode-s
-  int CountTotals(TCode from, TCode to=E_First);
+  // 2 arguments: range of int-s
+  int CountTotals(int from, int to=E_First);
 
   // Print individual error counts (important if we skipped some errors)
-  void PrintMessageCounts(CNcbiOstream& ostr, TCode from, TCode to=E_First);
+  void PrintMessageCounts(CNcbiOstream& ostr, int from, int to=E_First);
 
 private:
   typedef const char* TStr;
-  static const TStr msg[];
+  static const TStr msg_ex[];
 
   // Total # of errors for each type, including skipped ones.
   int m_MsgCount[CODE_Last];
@@ -294,5 +264,5 @@ public:
 
 END_NCBI_SCOPE
 
-#endif /* AGP_VALIDATE_AgpErr */
+#endif /* AGP_VALIDATE_AgpErrEx */
 

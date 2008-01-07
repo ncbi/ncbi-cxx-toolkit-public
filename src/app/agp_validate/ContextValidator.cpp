@@ -34,7 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include "ContextValidator.hpp"
-#include "AccessionPatterns.hpp"
+//#include "AccessionPatterns.hpp"
 
 #include <algorithm>
 
@@ -49,7 +49,7 @@ CAgpContextValidator::CAgpContextValidator()
   componentsInLastScaffold = 0;
   componentsInLastObject = 0;
   prev_orientation_unknown=false;
-  prev_line_gap_type=-1;
+  prev_line_gap_type = -1;
 
   m_ObjCount = 0;
   m_ScaffoldCount = 0;
@@ -65,21 +65,18 @@ CAgpContextValidator::CAgpContextValidator()
 void CAgpContextValidator::EndOfObject(bool afterLastLine)
 {
   if(m_ObjCount && componentsInLastObject==0) agpErr.Msg(
-    CAgpErr::W_ObjNoComp, string(" ") + prev_object,
-    AT_PrevLine
-    //afterLastLine ? AT_PrevLine : (AT_ThisLine|AT_PrevLine)
+    CAgpErrEx::W_ObjNoComp, string(" ") + prev_object,
+    CAgpErr::fAtPrevLine
+    //afterLastLine ? CAgpErr::fAtPrevLine : (CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine)
   );
   if(componentsInLastScaffold==1) m_SingleCompScaffolds++;
   if(componentsInLastObject  ==1) m_SingleCompObjects++;
 
   if( prev_line_gap_type>=0 ) {
     // The previous line was a gap at the end of a scaffold & object
-    CGapVal gap;
-    gap.type=prev_line_gap_type;
-
-    if(! gap.validAtObjectEnd() ) {
-      agpErr.Msg( CAgpErr::W_GapObjEnd, prev_object,
-        AT_PrevLine);
+    if(! CAgpRow::GapValidAtObjectEnd( (CAgpRow::EGap)prev_line_gap_type ) ) {
+      agpErr.Msg( CAgpErrEx::W_GapObjEnd, prev_object,
+        CAgpErr::fAtPrevLine);
     }
     if(componentsInLastScaffold==0) m_ScaffoldCount--;
   }
@@ -91,79 +88,78 @@ void CAgpContextValidator::EndOfObject(bool afterLastLine)
 void CAgpContextValidator::InvalidLine()
 {
   prev_orientation_unknown=false;
+  prev_line_gap_type = -1;
 }
 
 
-void CAgpContextValidator::ValidateLine(
-  const SDataLine& dl, const CAgpLine& cl)
+void CAgpContextValidator::ValidateRow(CAgpRow& row, int line_num)
 {
-  //// Context-sensetive code common for GAPs and components.
+  //// Context-sensitive code common for GAPs and components.
   //// Checks and statistics.
 
   // Local variable shared with x_OnGapLine(), x_OnCompLine()
-  new_obj = (dl.object != prev_object);
+  new_obj = (row.GetObject() != prev_object);
 
   if(new_obj) {
     m_ObjCount++;
-    m_ScaffoldCount++; // to do: detect or avoid scaffold with 0 components?
+    m_ScaffoldCount++;
 
     // Do not call when we are at the first line of the first object
     if( prev_object.size() ) EndOfObject();
-    prev_object = dl.object; // Must be after EndOfObject()
+    prev_object = row.GetObject(); // Must be after EndOfObject()
 
-    TObjSetResult obj_insert_result = m_ObjIdSet.insert(dl.object);
+    TObjSetResult obj_insert_result = m_ObjIdSet.insert(row.GetObject());
     if (obj_insert_result.second == false) {
-      agpErr.Msg(CAgpErr::E_DuplicateObj, dl.object,
-        AT_ThisLine|AT_PrevLine);
+      agpErr.Msg(CAgpErrEx::E_DuplicateObj, row.GetObject(),
+        CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
     }
 
     // object_beg and part_num: must be 1
-    if(cl.obj_begin != 1) {
-      agpErr.Msg(CAgpErr::E_ObjMustBegin1,
+    if(row.object_beg != 1) {
+      agpErr.Msg(CAgpErrEx::E_ObjMustBegin1,
         NcbiEmptyString,
-        AT_ThisLine|AT_PrevLine|AT_SkipAfterBad
+        CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErrEx::fAtSkipAfterBad
       );
     }
-    if(cl.part_num != 1) {
-      agpErr.Msg( CAgpErr::E_PartNumberNot1,
-        NcbiEmptyString, AT_ThisLine|AT_PrevLine|AT_SkipAfterBad );
+    if(row.part_number != 1) {
+      agpErr.Msg( CAgpErrEx::E_PartNumberNot1,
+        NcbiEmptyString, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErrEx::fAtSkipAfterBad );
     }
   }
   else {
     // object range and part_num: compare to prev line
-    if(cl.obj_begin != prev_end+1) {
-      agpErr.Msg(CAgpErr::E_ObjBegNePrevEndPlus1,
+    if(row.object_beg != prev_end+1) {
+      agpErr.Msg(CAgpErrEx::E_ObjBegNePrevEndPlus1,
         NcbiEmptyString,
-        AT_ThisLine|AT_PrevLine|AT_SkipAfterBad
+        CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErrEx::fAtSkipAfterBad
       );
     }
-    if(cl.part_num != prev_part_num+1) {
-      agpErr.Msg( CAgpErr::E_PartNumberNotPlus1,
-        NcbiEmptyString, AT_ThisLine|AT_PrevLine|AT_SkipAfterBad );
+    if(row.part_number != prev_part_num+1) {
+      agpErr.Msg( CAgpErrEx::E_PartNumberNotPlus1,
+        NcbiEmptyString, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErrEx::fAtSkipAfterBad );
     }
   }
 
-  m_TypeCompCnt.add( dl.component_type );
+  m_TypeCompCnt.add( row.GetComponentType() );
 
   //// Gap- or component-specific code.
-  if( cl.is_gap ) {
-    x_OnGapLine(dl, cl.gap);
-    prev_line_gap_type = cl.gap.type;
+  if( row.IsGap() ) {
+    x_OnGapRow(row);
+    prev_line_gap_type = row.gap_type;
   }
   else {
-    x_OnCompLine(dl, cl.compSpan);
+    x_OnCompRow(row, line_num);
     prev_line_gap_type = -1;
   }
 
-  prev_end = cl.obj_end;
-  prev_part_num = cl.part_num;
+  prev_end = row.object_end; // cl.obj_end;
+  prev_part_num = row.part_number;
 }
 
-void CAgpContextValidator::x_OnGapLine(
-  const SDataLine& dl, const CGapVal& gap)
+void CAgpContextValidator::x_OnGapRow(CAgpRow& row)
 {
-  int i = gap.type;
-  if(gap.linkage==CGapVal::LINKAGE_yes) i+= CGapVal::GAP_count;
+  int i = row.gap_type;
+  if(row.linkage) i+= CAgpRow::eGapCount;
   NCBI_ASSERT( i < (int)sizeof(m_GapTypeCnt)/sizeof(m_GapTypeCnt[0]),
     "m_GapTypeCnt[] index out of bounds" );
   m_GapTypeCnt[i]++;
@@ -172,45 +168,51 @@ void CAgpContextValidator::x_OnGapLine(
   //// Check the gap context: is it a start of a new object,
   //// does it follow another gap, is it the end of a scaffold.
   if(new_obj) {
-    if(! gap.validAtObjectEnd() ) {
-      agpErr.Msg(CAgpErr::W_GapObjBegin,
-        dl.object, AT_ThisLine|AT_SkipAfterBad);
+    if(! row.GapValidAtObjectEnd() ) {
+      agpErr.Msg(CAgpErrEx::W_GapObjBegin,
+        row.GetObject(), CAgpErr::fAtThisLine|CAgpErrEx::fAtSkipAfterBad);
     }
   }
   else if( prev_line_gap_type>=0 ) {
-    agpErr.Msg( CAgpErr::W_ConseqGaps, NcbiEmptyString,
-      AT_ThisLine|AT_PrevLine|AT_SkipAfterBad );
+    agpErr.Msg( CAgpErrEx::W_ConseqGaps, NcbiEmptyString,
+      CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErrEx::fAtSkipAfterBad );
   }
-  else if( gap.endsScaffold() ) {
-    // A breaking gap after a component.
-    // Previous line is the last component of a scaffold
-    m_ScaffoldCount++; // to do: detect or do not count scaffold with 0 components?
-    if(componentsInLastScaffold==1) {
-      m_SingleCompScaffolds++;
+  else if( row.GapEndsScaffold() ) {
+    if(componentsInLastScaffold>0) {
+      // A breaking gap after a component; prev line is the last component of a scaffold.
+      m_ScaffoldCount++;
+      if(componentsInLastScaffold==1) {
+        m_SingleCompScaffolds++;
+      }
     }
+    // else: a breaking gap following the start of the object
   }
   else {
     // a non-breaking gap after a component
     if(prev_orientation_unknown && componentsInLastScaffold==1) {
                              // ^^^can probably ASSERT this^^^
-      agpErr.Msg(CAgpErr::E_UnknownOrientation,
-        NcbiEmptyString, AT_PrevLine);
+      agpErr.Msg(CAgpErrEx::E_UnknownOrientation,
+        NcbiEmptyString, CAgpErr::fAtPrevLine);
       prev_orientation_unknown=false;
     }
   }
-  if( gap.endsScaffold() ) {
+  if( row.GapEndsScaffold() ) {
     componentsInLastScaffold=0;
   }
 }
 
-void CAgpContextValidator::x_OnCompLine(
-  const SDataLine& dl, const CCompVal& comp )
+void CAgpContextValidator::x_OnCompRow(CAgpRow& row, int line_num)
 {
   //// Statistics
   m_CompCount++;
   componentsInLastScaffold++;
   componentsInLastObject++;
-  m_CompOri[comp.ori]++;
+  switch(row.orientation) {
+    case '+': m_CompOri[CCompVal::ORI_plus ]++; break;
+    case '-': m_CompOri[CCompVal::ORI_minus]++; break;
+    case '0': m_CompOri[CCompVal::ORI_zero ]++; break;
+    case 'n': m_CompOri[CCompVal::ORI_na   ]++; break;
+  }
 
   //// Orientation "0" or "na" only for singletons
   // A saved potential error
@@ -218,13 +220,13 @@ void CAgpContextValidator::x_OnCompLine(
     // Make sure that prev_orientation_unknown
     // is not a leftover from the preceding singleton.
     if( componentsInLastScaffold==2 ) {
-      agpErr.Msg(CAgpErr::E_UnknownOrientation,
-        NcbiEmptyString, AT_PrevLine);
+      agpErr.Msg(CAgpErrEx::E_UnknownOrientation,
+        NcbiEmptyString, CAgpErr::fAtPrevLine);
     }
     prev_orientation_unknown=false;
   }
 
-  if( comp.ori != CCompVal::ORI_plus && comp.ori != CCompVal::ORI_minus ) {
+  if( row.orientation != '+' && row.orientation != '-' ) {
     if(componentsInLastScaffold==1) {
       // Report an error later if the current scaffold
       // turns out not a singleton. Only singletons can have
@@ -237,14 +239,16 @@ void CAgpContextValidator::x_OnCompLine(
     }
     else {
       // This error is real, not "potential"; report it now.
-      agpErr.Msg(CAgpErr::E_UnknownOrientation);
+      agpErr.Msg(CAgpErrEx::E_UnknownOrientation, NcbiEmptyString);
     }
   }
 
   //// Check that component spans do not overlap and are in correct order
 
   // Try to insert to the span as a new entry
-  TCompIdSpansPair value_pair( dl.component_id, CCompSpans(comp) );
+  CCompVal comp;
+  comp.init(row, line_num);
+  TCompIdSpansPair value_pair( row.GetComponentId(), CCompSpans(comp) );
   pair<TCompId2Spans::iterator, bool> id_insert_result =
       m_CompId2Spans.insert(value_pair);
 
@@ -252,23 +256,19 @@ void CAgpContextValidator::x_OnCompLine(
     // Not inserted - the key already exists.
     CCompSpans& spans = (id_insert_result.first)->second;
 
-    // Chose one most important warning amongst:
+    // Chose the most specific warning among:
     //   W_SpansOverlap W_SpansOrder W_DuplicateComp
     // The last 2 are omitted for draft seqs.
     CCompSpans::TCheckSpan check_sp = spans.CheckSpan(
-      comp.beg, comp.end, comp.ori!=CCompVal::ORI_minus
+      // can reploace with row.component_beg, etc
+      comp.beg, comp.end, row.orientation!='-'
     );
-    if( check_sp.second == CAgpErr::W_SpansOverlap  ) {
-      agpErr.Msg(CAgpErr::W_SpansOverlap,
+    if( check_sp.second == CAgpErrEx::W_SpansOverlap  ) {
+      agpErr.Msg(CAgpErrEx::W_SpansOverlap,
         string(": ")+ check_sp.first->ToString()
       );
     }
-    else if(
-      dl.component_type!="A" && // Active Finishing
-      dl.component_type!="D" && // Draft HTG
-      dl.component_type!="P"    // Pre Draft
-    ) {
-      // Non-draft sequence
+    else if( ! row.IsDraftComponent() ) {
       agpErr.Msg(check_sp.second, // W_SpansOrder or W_DuplicateComp
         string("; preceding span: ")+ check_sp.first->ToString()
       );
@@ -283,8 +283,8 @@ void CAgpContextValidator::x_OnCompLine(
 void CAgpContextValidator::PrintTotals()
 {
   //// Counts of errors and warnings
-  int e_count=agpErr.CountTotals(CAgpErr::E_Last);
-  int w_count=agpErr.CountTotals(CAgpErr::W_Last);
+  int e_count=agpErr.CountTotals(CAgpErrEx::E_Last);
+  int w_count=agpErr.CountTotals(CAgpErrEx::W_Last);
   if(e_count || w_count || m_ObjCount) {
     cout << "\n";
     agpErr.PrintTotals(cout, e_count, w_count, agpErr.m_msg_skipped);
@@ -294,7 +294,7 @@ void CAgpContextValidator::PrintTotals()
     cout << ".";
     if(agpErr.m_MaxRepeat && (e_count+w_count) ) {
       cout << "\n";
-      agpErr.PrintMessageCounts(cout, CAgpErr::CODE_First, CAgpErr::CODE_Last);
+      agpErr.PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last);
     }
     cout << "\n";
   }
@@ -321,7 +321,7 @@ void CAgpContextValidator::PrintTotals()
     it != comp_cnt.end();
     ++it
   ) {
-    string *s = CAgpLine::IsGapType((*it)->first) ? &s_gap : &s_comp;
+    string *s = CAgpRow::IsGap((*it)->first[0]) ? &s_gap : &s_comp;
 
     if( s->size() ) *s+= ", ";
     *s+= (*it)->first;
@@ -379,32 +379,32 @@ void CAgpContextValidator::PrintTotals()
     }
 
     int linkageYesCnt =
-      m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_clone   ]+
-      m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_fragment]+
-      m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_repeat  ];
+      m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ]+
+      m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment]+
+      m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ];
     int linkageNoCnt = m_GapCount - linkageYesCnt;
 
-    int doNotBreakCnt= linkageYesCnt + m_GapTypeCnt[CGapVal::GAP_fragment];
-    int breakCnt     = linkageNoCnt  - m_GapTypeCnt[CGapVal::GAP_fragment];
+    int doNotBreakCnt= linkageYesCnt + m_GapTypeCnt[CAgpRow::eGapFragment];
+    int breakCnt     = linkageNoCnt  - m_GapTypeCnt[CAgpRow::eGapFragment];
 
     cout<< "\n- do not break scaffold: "<<ALIGN_W(doNotBreakCnt);
     if(doNotBreakCnt) {
       cout<< "\n  clone   , linkage yes: "<<
-            ALIGN_W(m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_clone   ]);
+            ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ]);
       cout<< "\n  fragment, linkage yes: "<<
-            ALIGN_W(m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_fragment]);
+            ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment]);
       cout<< "\n  fragment, linkage no : "<<
-            ALIGN_W(m_GapTypeCnt[                   CGapVal::GAP_fragment]);
+            ALIGN_W(m_GapTypeCnt[                   CAgpRow::eGapFragment]);
       cout<< "\n  repeat  , linkage yes: "<<
-            ALIGN_W(m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_repeat  ]);
+            ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]);
     }
 
     cout<< "\n- break it, linkage no : "<<ALIGN_W(breakCnt);
     if(breakCnt) {
-      for(int i=0; i<CGapVal::GAP_count; i++) {
-        if(i==CGapVal::GAP_fragment) continue;
+      for(int i=0; i<CAgpRow::eGapCount; i++) {
+        if(i==CAgpRow::eGapFragment) continue;
         cout<< "\n\t"
-            << setw(15) << setiosflags(IOS_BASE::left) << CGapVal::typeIntToStr[i]
+            << setw(15) << setiosflags(IOS_BASE::left) << CAgpRow::GapTypeToString(i)
             << ": " << ALIGN_W( m_GapTypeCnt[i] );
       }
     }
@@ -547,19 +547,19 @@ int CValuesCount::x_byCount( value_type* a, value_type* b )
 CCompSpans::TCheckSpan CCompSpans::CheckSpan(int span_beg, int span_end, bool isPlus)
 {
   // The lowest priority warning (to be ignored for draft seqs)
-  TCheckSpan res( begin(), CAgpErr::W_DuplicateComp );
+  TCheckSpan res( begin(), CAgpErrEx::W_DuplicateComp );
 
   for(iterator it = begin();  it != end(); ++it) {
     // A high priority warning
     if( it->beg <= span_beg && span_beg <= it->end )
-      return TCheckSpan(it, CAgpErr::W_SpansOverlap);
+      return TCheckSpan(it, CAgpErrEx::W_SpansOverlap);
 
     // A lower priority warning (to be ignored for draft seqs)
     if( ( isPlus && span_beg < it->beg) ||
         (!isPlus && span_end > it->end)
     ) {
       res.first  = it;
-      res.second = CAgpErr::W_SpansOrder;
+      res.second = CAgpErrEx::W_SpansOrder;
     }
   }
 

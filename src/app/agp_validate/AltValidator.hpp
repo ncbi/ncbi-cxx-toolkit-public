@@ -34,9 +34,12 @@
  *
  */
 
-#include "LineValidator.hpp"
+//#include "LineValidator.hpp"
+#include <objtools/readers/agp_util.hpp>
+#include "AgpErrEx.hpp"
 
 BEGIN_NCBI_SCOPE
+extern CAgpErrEx agpErr;
 
 class CAltValidator
 {
