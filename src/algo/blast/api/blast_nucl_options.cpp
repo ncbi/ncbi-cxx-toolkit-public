@@ -46,8 +46,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CBlastNucleotideOptionsHandle::CBlastNucleotideOptionsHandle(EAPILocality locality)
-    : CBlastOptionsHandle(locality),
-      m_FactorySetting(eMegablast)
+    : CBlastOptionsHandle(locality)
 {
     SetDefaults();
 }
@@ -57,7 +56,6 @@ CBlastNucleotideOptionsHandle::SetDefaults()
 {
     m_Opts->SetDefaultsMode(true);
     SetTraditionalMegablastDefaults();
-    m_Opts->SetProgram(eBlastn);
     m_Opts->SetDefaultsMode(false);
 }
 
@@ -66,7 +64,7 @@ CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
 {
     m_Opts->SetDefaultsMode(true);
     m_Opts->SetRemoteProgramAndService_Blast3("blastn", "plain");
-    m_FactorySetting = eBlastn;
+    m_Opts->SetProgram(eBlastn);
     
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
         return;
@@ -89,7 +87,7 @@ CBlastNucleotideOptionsHandle::SetTraditionalMegablastDefaults()
 {
     m_Opts->SetDefaultsMode(true);
     m_Opts->SetRemoteProgramAndService_Blast3("blastn", "megablast");
-    m_FactorySetting = eMegablast;
+    m_Opts->SetProgram(eMegablast);
     
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
         return;

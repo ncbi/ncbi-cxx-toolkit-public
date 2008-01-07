@@ -31,9 +31,9 @@
 /// Implementation of the BlastSeqSrc interface for a query factory
 
 #include <ncbi_pch.hpp>
+#include "seqsrc_query_factory.hpp"
 #include <objects/seqloc/Seq_id.hpp>
 #include <algo/blast/api/blast_exception.hpp>
-#include <algo/blast/api/seqsrc_query_factory.hpp>
 #include <algo/blast/core/blast_seqsrc_impl.h>
 #include "bioseq_extract_data_priv.hpp"
 
@@ -74,20 +74,26 @@ private:
     unsigned int m_AvgLength; ///< Average length of sequences in this set
     /// local query data obtained from the query factory
     CRef<IBlastQuerySource> m_QuerySource;
+    Uint4 m_NumSeqs;    ///< Number of sequences
 };
 
 /// Constructor
 CQueryFactoryInfo::CQueryFactoryInfo(CRef<IQueryFactory> query_factory, 
                                      EBlastProgramType program)
 : m_IsProt(Blast_SubjectIsProtein(program) ? true : false), m_MaxLength(0),
-      m_AvgLength(0), m_QuerySource(0)
+      m_AvgLength(0), m_QuerySource(0), m_NumSeqs(0)
 {
     CRef<IRemoteQueryData> query_data(query_factory->MakeRemoteQueryData());
     CRef<CBioseq_set> bss(query_data->GetBioseqSet());
     _ASSERT(bss.NotEmpty());
     m_QuerySource.Reset(new CBlastQuerySourceBioseqSet(*bss, m_IsProt));
+    if ( !m_QuerySource ) {
+        NCBI_THROW(CBlastException, eSeqSrcInit,
+                   "Failed to initialize sequences for IQueryFactory");
+    }
 
     SetupSubjects_OMF(*m_QuerySource, program, &m_SeqBlkVector, &m_MaxLength);
+    m_NumSeqs = static_cast<Uint4>(m_QuerySource->Size());
     _ASSERT(!m_SeqBlkVector.empty());
 }
 
@@ -98,6 +104,7 @@ CQueryFactoryInfo::~CQueryFactoryInfo()
         *itr = BlastSequenceBlkFree(*itr);
     }
     m_SeqBlkVector.clear();
+    m_QuerySource.Reset();
 }
 
 
@@ -128,7 +135,7 @@ inline bool CQueryFactoryInfo::GetIsProtein()
 /// Returns number of sequences
 inline Uint4 CQueryFactoryInfo::GetNumSeqs()
 {
-    return static_cast<Uint4>(m_QuerySource->Size());
+    return m_NumSeqs;
 }
 
 /// Returns sequence block structure for one of the sequences
@@ -153,9 +160,10 @@ extern "C" {
 static Int4 
 s_QueryFactoryGetMaxLength(void* multiseq_handle, void*)
 {
-    CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
+    CRef<CQueryFactoryInfo>* seq_info = 
+        static_cast<CRef<CQueryFactoryInfo>*>(multiseq_handle);
     _ASSERT(seq_info);
-    return seq_info->GetMaxLength();
+    return (*seq_info)->GetMaxLength();
 }
 
 /// Retrieves the average length of the sequence in the BlastSeqSrc.
@@ -163,19 +171,20 @@ s_QueryFactoryGetMaxLength(void* multiseq_handle, void*)
 static Int4 
 s_QueryFactoryGetAvgLength(void* multiseq_handle, void*)
 {
-    CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
+    CRef<CQueryFactoryInfo>* seq_info = 
+        static_cast<CRef<CQueryFactoryInfo>*>(multiseq_handle);
     _ASSERT(seq_info);
 
-    if (seq_info->GetAvgLength() == 0) {
-        const Uint4 num_seqs(seq_info->GetNumSeqs());
-        _ASSERT(seq_info->GetNumSeqs() > 0);
+    if ((*seq_info)->GetAvgLength() == 0) {
+        const Uint4 num_seqs((*seq_info)->GetNumSeqs());
+        _ASSERT(num_seqs > 0);
 
         Int8 total_length(0);
         for (Uint4 index = 0; index < num_seqs; ++index) 
-            total_length += (Int8) seq_info->GetSeqBlk(index)->length;
-        seq_info->SetAvgLength((Uint4) (total_length / num_seqs));
+            total_length += (Int8) (*seq_info)->GetSeqBlk(index)->length;
+        (*seq_info)->SetAvgLength((Uint4) (total_length / num_seqs));
     }
-    return seq_info->GetAvgLength();
+    return (*seq_info)->GetAvgLength();
 }
 
 /// Retrieves the number of sequences in the BlastSeqSrc.
@@ -183,9 +192,10 @@ s_QueryFactoryGetAvgLength(void* multiseq_handle, void*)
 static Int4 
 s_QueryFactoryGetNumSeqs(void* multiseq_handle, void*)
 {
-    CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
+    CRef<CQueryFactoryInfo>* seq_info = 
+        static_cast<CRef<CQueryFactoryInfo>*>(multiseq_handle);
     _ASSERT(seq_info);
-    return seq_info->GetNumSeqs();
+    return (*seq_info)->GetNumSeqs();
 }
 
 
@@ -211,7 +221,6 @@ s_QueryFactoryGetTotLenStats(void* /*multiseq_handle*/, void*)
 }
 
 /// Always returns NcbiEmptyCStr
-/// Always returns NcbiEmptyCStr
 static const char* 
 s_QueryFactoryGetName(void* /*multiseq_handle*/, void*)
 {
@@ -223,9 +232,10 @@ s_QueryFactoryGetName(void* /*multiseq_handle*/, void*)
 static Boolean 
 s_QueryFactoryGetIsProt(void* multiseq_handle, void*)
 {
-    CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
+    CRef<CQueryFactoryInfo>* seq_info = 
+        static_cast<CRef<CQueryFactoryInfo>*>(multiseq_handle);
     _ASSERT(seq_info);
-    return (Boolean) seq_info->GetIsProtein();
+    return (Boolean) (*seq_info)->GetIsProtein();
 }
 
 /// Retrieves the sequence for a given index, in a given encoding.
@@ -236,17 +246,18 @@ s_QueryFactoryGetIsProt(void* multiseq_handle, void*)
 static Int2 
 s_QueryFactoryGetSequence(void* multiseq_handle, void* args)
 {
-    CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
+    CRef<CQueryFactoryInfo>* seq_info = 
+        static_cast<CRef<CQueryFactoryInfo>*>(multiseq_handle);
     BlastSeqSrcGetSeqArg* seq_args = (BlastSeqSrcGetSeqArg*) args;
 
     _ASSERT(seq_info);
     _ASSERT(args);
 
-    if (seq_info->GetNumSeqs() == 0 || !seq_args)
+    if ((*seq_info)->GetNumSeqs() == 0 || !seq_args)
         return BLAST_SEQSRC_ERROR;
 
     BLAST_SequenceBlk* seq_blk(0);
-    try { seq_blk = seq_info->GetSeqBlk(seq_args->oid); }
+    try { seq_blk = (*seq_info)->GetSeqBlk(seq_args->oid); }
     catch (const std::out_of_range&) {
         return BLAST_SEQSRC_EOF;
     }
@@ -286,14 +297,15 @@ s_QueryFactoryReleaseSequence(void* /*multiseq_handle*/, void* args)
 static Int4 
 s_QueryFactoryGetSeqLen(void* multiseq_handle, void* args)
 {
-    CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*)multiseq_handle;
+    CRef<CQueryFactoryInfo>* seq_info = 
+        static_cast<CRef<CQueryFactoryInfo>*>(multiseq_handle);
     Int4 index;
 
     _ASSERT(seq_info);
     _ASSERT(args);
 
     index = *((Int4*) args);
-    return seq_info->GetSeqBlk(index)->length;
+    return (*seq_info)->GetSeqBlk(index)->length;
 }
 
 /// Mirrors the database iteration interface. Next chunk of indices retrieval 
@@ -308,7 +320,8 @@ s_QueryFactoryGetSeqLen(void* multiseq_handle, void* args)
 static Int2 
 s_QueryFactoryGetNextChunk(void* multiseq_handle, BlastSeqSrcIterator* itr)
 {
-    CQueryFactoryInfo* seq_info = (CQueryFactoryInfo*) multiseq_handle;
+    CRef<CQueryFactoryInfo>* seq_info = 
+        static_cast<CRef<CQueryFactoryInfo>*>(multiseq_handle);
 
     _ASSERT(itr);
 
@@ -316,7 +329,7 @@ s_QueryFactoryGetNextChunk(void* multiseq_handle, BlastSeqSrcIterator* itr)
         itr->current_pos = 0;
     }
 
-    if (itr->current_pos >= seq_info->GetNumSeqs())
+    if (itr->current_pos >= (*seq_info)->GetNumSeqs())
         return BLAST_SEQSRC_EOF;
 
     return BLAST_SEQSRC_SUCCESS;
@@ -354,15 +367,14 @@ s_QueryFactoryIteratorNext(void* multiseq_handle, BlastSeqSrcIterator* itr)
 
 /// Encapsulates the arguments needed to initialize multi-sequence source.
 struct SQueryFactorySrcNewArgs {
-    CRef<IQueryFactory> query_factory;
+    CRef<IQueryFactory> query_factory;  ///< The query factory
     EBlastProgramType program; ///< BLAST program
     /// Constructor
     SQueryFactorySrcNewArgs(CRef<IQueryFactory> qf, EBlastProgramType p)
         : query_factory(qf), program(p) {}
 };
 
-/// Multi sequence source destructor: frees its internal data structure and the
-/// BlastSeqSrc structure itself.
+/// Multi sequence source destructor: frees its internal data structure
 /// @param seq_src BlastSeqSrc structure to free [in]
 /// @return NULL
 static BlastSeqSrc* 
@@ -370,11 +382,28 @@ s_QueryFactorySrcFree(BlastSeqSrc* seq_src)
 {
     if (!seq_src) 
         return NULL;
-    CQueryFactoryInfo* seq_info = static_cast<CQueryFactoryInfo*>
-                                (_BlastSeqSrcImpl_GetDataStructure(seq_src));
-
+    CRef<CQueryFactoryInfo>* seq_info = static_cast<CRef<CQueryFactoryInfo>*>
+        (_BlastSeqSrcImpl_GetDataStructure(seq_src));
     delete seq_info;
     return NULL;
+}
+
+/// Multi-sequence sequence source copier: creates a new reference to the
+/// CQueryFactoryInfo object and copies the rest of the BlastSeqSrc structure.
+/// @param seq_src BlastSeqSrc structure to copy [in]
+/// @return Pointer to the new BlastSeqSrc.
+static BlastSeqSrc* 
+s_QueryFactorySrcCopy(BlastSeqSrc* seq_src)
+{
+    if (!seq_src) 
+        return NULL;
+    CRef<CQueryFactoryInfo>* seq_info = static_cast<CRef<CQueryFactoryInfo>*>
+        (_BlastSeqSrcImpl_GetDataStructure(seq_src));
+    CRef<CQueryFactoryInfo>* seq_info2 = new CRef<CQueryFactoryInfo>(*seq_info);
+
+    _BlastSeqSrcImpl_SetDataStructure(seq_src, (void*) seq_info2);
+    
+    return seq_src;
 }
 
 /// Multi-sequence source constructor 
@@ -389,10 +418,10 @@ s_QueryFactorySrcNew(BlastSeqSrc* retval, void* args)
 
     SQueryFactorySrcNewArgs* seqsrc_args = (SQueryFactorySrcNewArgs*) args;
     
-    CQueryFactoryInfo* seq_info =  NULL;
+    CRef<CQueryFactoryInfo>* seq_info =  new CRef<CQueryFactoryInfo>(NULL);
     try {
-        seq_info = new CQueryFactoryInfo(seqsrc_args->query_factory, 
-                                         seqsrc_args->program);
+        seq_info->Reset(new CQueryFactoryInfo(seqsrc_args->query_factory, 
+                                              seqsrc_args->program));
     } catch (const ncbi::CException& e) {
         _BlastSeqSrcImpl_SetInitErrorStr(retval, strdup(e.ReportAll().c_str()));
     } catch (const std::exception& e) {
@@ -405,8 +434,7 @@ s_QueryFactorySrcNew(BlastSeqSrc* retval, void* args)
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seq_info */
     _BlastSeqSrcImpl_SetDeleteFnPtr(retval, &s_QueryFactorySrcFree);
-    /// @todo FIXME Must there be a copy function in this implementation?
-    ///       If so, should CQueryFactoryInfo* be changed to a CRef
+    _BlastSeqSrcImpl_SetCopyFnPtr(retval, &s_QueryFactorySrcCopy);
     _BlastSeqSrcImpl_SetDataStructure(retval, (void*) seq_info);
     _BlastSeqSrcImpl_SetGetNumSeqs(retval, &s_QueryFactoryGetNumSeqs);
     _BlastSeqSrcImpl_SetGetNumSeqsStats(retval, &s_QueryFactoryGetNumSeqsStats);

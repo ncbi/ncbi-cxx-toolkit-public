@@ -154,6 +154,15 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
                               BlastSeqSrc* seqsrc,
                               bool is_multi_threaded);
 
+void
+BuildBlastAncillaryData(EBlastProgramType program,
+                        const vector< CConstRef<CSeq_id> >& query_ids,
+                        const BlastScoreBlk* sbp,
+                        const BlastQueryInfo* qinfo,
+                        const TSeqAlignVector& alignments,
+                        const EResultType result_type,
+                        CSearchResultSet::TAncillaryVector& retval);
+
 /// Build a CSearchResultSet from internal BLAST data structures
 CRef<CSearchResultSet>
 BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
@@ -163,7 +172,7 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                           const TSeqAlignVector& alignments,
                           TSearchMessages& messages,
                           const TSeqLocInfoVector* query_masks = NULL,
-                          const EResultType result_type = ncbi::blast::eDatabaseSearch);
+          const EResultType result_type = ncbi::blast::eDatabaseSearch);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

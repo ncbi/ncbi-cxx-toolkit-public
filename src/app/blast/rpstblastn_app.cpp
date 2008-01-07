@@ -138,16 +138,18 @@ int CRPSTBlastnApp::Run(void)
                                m_CmdLineArgs->GetOutputStream(),
                                fmt_args->GetNumDescriptions(),
                                fmt_args->GetNumAlignments(),
+                               *scope,
                                opt.GetMatrixName(),
                                fmt_args->ShowGis(),
                                fmt_args->DisplayHtmlOutput(),
                                opt.GetQueryGeneticCode(),
                                opt.GetDbGeneticCode(),
                                opt.GetSumStatisticsMode());
+
         formatter.PrintProlog();
 
         /*** Process the input ***/
-        for (; !input.End(); scope->ResetHistory()) {
+        for (; !input.End(); formatter.ResetScopeHistory()) {
 
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
@@ -170,7 +172,7 @@ int CRPSTBlastnApp::Run(void)
             }
 
             ITERATE(CSearchResultSet, result, *results) {
-                formatter.PrintOneResultSet(**result, *scope, query_batch);
+                formatter.PrintOneResultSet(**result, query_batch);
             }
 
         }

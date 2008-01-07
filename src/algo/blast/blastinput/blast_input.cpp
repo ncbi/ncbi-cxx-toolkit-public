@@ -60,7 +60,14 @@ CBlastInputSourceConfig::CBlastInputSourceConfig
   m_RetrieveSeqData(retrieve_seq_data),
   m_LocalIdCounter(local_id_counter),
   m_SeqLenThreshold2Guess(seqlen_thresh2guess)
-{}
+{
+    // Set an appropriate default for the strand
+    if (m_Strand == eNa_strand_other) {
+        m_Strand = (m_DLConfig.m_IsLoadingProteins)
+            ? eNa_strand_unknown
+            : eNa_strand_both;
+    }
+}
 
 CBlastInput::CBlastInput(const CBlastInput& rhs)
 {

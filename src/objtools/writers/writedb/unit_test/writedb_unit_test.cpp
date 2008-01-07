@@ -224,6 +224,8 @@ public:
 
 #define CHECK_CUTPOINT(X) if (cutpoint == X) throw CNonException()
 
+int g_NuclJ_OidCount = 99;
+
 static void
 s_DupIdsBioseq(CWriteDB      & w,
                CSeqDB        & s,
@@ -271,6 +273,10 @@ s_DupIdsBioseq(CWriteDB      & w,
         
         if (count1 > 3) {
             CHECK_CUTPOINT(9);
+        }
+        
+        if (count1 > g_NuclJ_OidCount) {
+            CHECK_CUTPOINT(10);
         }
     }
 }
@@ -681,6 +687,7 @@ static void s_NuclBioseqDupSwitch(int cutpoint)
     CHECK_CUTPOINT(14);
 }
 
+#if 0
 BOOST_AUTO_TEST_CASE(NuclBioseqDupZ)
 {
     START;
@@ -779,6 +786,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupH)
     catch(CNonException &) {
     }
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupI)
 {
@@ -786,6 +794,227 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupI)
 
     try {
         s_NuclBioseqDupSwitch(9);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ4)
+{
+    START;
+    
+    g_NuclJ_OidCount = 4;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ8)
+{
+    START;
+
+    g_NuclJ_OidCount = 8;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ12)
+{
+    START;
+
+    g_NuclJ_OidCount = 12;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ16)
+{
+    START;
+    
+    g_NuclJ_OidCount = 16;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ20)
+{
+    START;
+    
+    g_NuclJ_OidCount = 20;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ24)
+{
+    START;
+    
+    g_NuclJ_OidCount = 24;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ28)
+{
+    START;
+    
+    g_NuclJ_OidCount = 28;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ32)
+{
+    START;
+    
+    g_NuclJ_OidCount = 32;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ36)
+{
+    START;
+    
+    g_NuclJ_OidCount = 36;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ40)
+{
+    START;
+    
+    g_NuclJ_OidCount = 40;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ44)
+{
+    START;
+    
+    g_NuclJ_OidCount = 44;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ45)
+{
+    START;
+    
+    g_NuclJ_OidCount = 45;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ46)
+{
+    START;
+    
+    g_NuclJ_OidCount = 46;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ47)
+{
+    START;
+    
+    g_NuclJ_OidCount = 47;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ48)
+{
+    START;
+    
+    g_NuclJ_OidCount = 48;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ49)
+{
+    START;
+    
+    g_NuclJ_OidCount = 49;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ50)
+{
+    START;
+    
+    g_NuclJ_OidCount = 50;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
     }
     catch(CNonException &) {
     }
@@ -813,6 +1042,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupK)
     }
 }
 
+#if 0
 BOOST_AUTO_TEST_CASE(NuclBioseqDupL)
 {
     START;
@@ -845,6 +1075,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupN)
     catch(CNonException &) {
     }
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDup)
 {

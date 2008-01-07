@@ -38,6 +38,9 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include "blast_input_aux.hpp"
+/* for CBlastFastaInputSource */
+#include <algo/blast/blastinput/blast_fasta_input.hpp>  
+#include <algo/blast/blastinput/blast_scope_src.hpp> /* for CBlastScopeSource */
 #include <algo/blast/blastinput/psiblast_args.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -70,7 +73,7 @@ SetUpCommandLineArguments(TBlastCmdLineArgs& args)
 }
 
 int
-GetQueryBatchSize(EBlastProgramType program)
+GetQueryBatchSize(EProgram program)
 {
     int retval = 0;
 
@@ -83,23 +86,27 @@ GetQueryBatchSize(EBlastProgramType program)
     }
 
     switch (program) {
-    case eBlastTypeBlastn:
+    case eBlastn:
         retval = 1000000;
         break;
-    case eBlastTypeTblastn:
+    case eMegablast:
+    case eDiscMegablast:
+        retval = 5000000;
+        break;
+    case eTblastn:
         retval = 20000;
         break;
     // if the query will be translated, round the chunk size up to the next
     // multiple of 3, that way, when the nucleotide sequence(s) get(s)
     // split, context N%6 in one chunk will have the same frame as context N%6
     // in the next chunk
-    case eBlastTypeBlastx:
-    case eBlastTypeTblastx:
+    case eBlastx:
+    case eTblastx:
         // N.B.: the splitting is done on the nucleotide query sequences, then
         // each of these chunks is translated
         retval = 10002;
         break;
-    case eBlastTypeBlastp:
+    case eBlastp:
     default:
         retval = 10000;
         break;
@@ -107,6 +114,24 @@ GetQueryBatchSize(EBlastProgramType program)
 
     _TRACE("Using query batch size " << retval);
     return retval;
+}
+
+CRef<CScope>
+ReadSequencesToBlast(CNcbiIstream& in, 
+                     bool read_proteins, 
+                     const TSeqRange& range, 
+                     CRef<CBlastQueryVector>& sequences)
+{
+    const SDataLoaderConfig dlconfig(read_proteins);
+    CBlastInputSourceConfig iconfig(dlconfig);
+    iconfig.SetRange(range);
+    iconfig.SetLocalIdCounterInitValue(1<<16);
+
+    CRef<CBlastFastaInputSource> fasta(new CBlastFastaInputSource(in, iconfig));
+    CRef<CBlastInput> input(new CBlastInput(fasta));
+    CRef<CScope> scope = CBlastScopeSource(dlconfig).NewScope();
+    sequences = input->GetAllSeqs(*scope);
+    return scope;
 }
 
 END_SCOPE(blast)

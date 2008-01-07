@@ -39,7 +39,7 @@ static char const rcsid[] =
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <algo/blast/api/seqsrc_seqdb.hpp>  // for SeqDbBlastSeqSrcInit
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>  // for CSeqDbSeqInfoSrc
-#include <algo/blast/api/seqsrc_query_factory.hpp>  // for QueryFactoryBlastSeqSrcInit
+#include "seqsrc_query_factory.hpp"  // for QueryFactoryBlastSeqSrcInit
 #include "psiblast_aux_priv.hpp"    // for CPsiBlastValidate
 #include "seqinfosrc_bioseq.hpp"    // for CBioseqInfoSrc
 
@@ -77,8 +77,10 @@ CLocalDbAdapter::CLocalDbAdapter(CRef<IQueryFactory> subject_sequences,
     if (opts_handle.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, "Missing options");
     }
-    CPsiBlastValidate::QueryFactory(subject_sequences, *opts_handle,
-                                    CPsiBlastValidate::eQFT_Subject);
+    if (opts_handle->GetOptions().GetProgram() == ePSIBlast) {
+        CPsiBlastValidate::QueryFactory(subject_sequences, *opts_handle,
+                                        CPsiBlastValidate::eQFT_Subject);
+    }
 }
 
 CLocalDbAdapter::~CLocalDbAdapter()

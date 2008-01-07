@@ -366,6 +366,15 @@ BOOST_AUTO_TEST_CASE(ProteinBlastSelfHit)
         CBlastFormatUtil::GetPercentIdentity(*sar, *sl->scope, false);
     BOOST_CHECK_EQUAL(1, (int) percent_identity);
 */
+
+    // Check the ancillary results
+    CSearchResultSet::TAncillaryVector ancillary_data;
+    blaster.GetAncillaryResults(ancillary_data);
+    BOOST_CHECK_EQUAL((size_t)1, ancillary_data.size());
+    BOOST_CHECK( ancillary_data.front()->GetGappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetUngappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetSearchSpace() != (Int8)0 );
+
 }
 
 BOOST_AUTO_TEST_CASE(TBlastn2Seqs)
@@ -392,6 +401,14 @@ o << MSerial_AsnText << *sar ;
 o.close();
 #endif
     BOOST_CHECK_EQUAL(5, num_ident);
+
+    // Check the ancillary results
+    CSearchResultSet::TAncillaryVector ancillary_data;
+    blaster.GetAncillaryResults(ancillary_data);
+    BOOST_CHECK_EQUAL((size_t)1, ancillary_data.size());
+    BOOST_CHECK( ancillary_data.front()->GetGappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetUngappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetSearchSpace() != (Int8)0 );
 }
 
 BOOST_AUTO_TEST_CASE(TBlastn2SeqsCompBasedStats)
@@ -421,6 +438,14 @@ o.close();
     // N.B.: because we used composition based statistics, this field was not
     // calculated as it's not implemented
     BOOST_CHECK_EQUAL(0, num_ident);
+
+    // Check the ancillary results
+    CSearchResultSet::TAncillaryVector ancillary_data;
+    blaster.GetAncillaryResults(ancillary_data);
+    BOOST_CHECK_EQUAL((size_t)1, ancillary_data.size());
+    BOOST_CHECK( ancillary_data.front()->GetGappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetUngappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetSearchSpace() != (Int8)0 );
 }
 
 #if 0
@@ -487,6 +512,14 @@ BOOST_AUTO_TEST_CASE(IdenticalProteins)
         CBlastFormatUtil::GetPercentIdentity(*sar, *query->scope, false);
     BOOST_CHECK_EQUAL(1, (int) percent_identity);
 */
+
+    // Check the ancillary results
+    CSearchResultSet::TAncillaryVector ancillary_data;
+    blaster.GetAncillaryResults(ancillary_data);
+    BOOST_CHECK_EQUAL((size_t)1, ancillary_data.size());
+    BOOST_CHECK( ancillary_data.front()->GetGappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetUngappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetSearchSpace() != (Int8)0 );
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

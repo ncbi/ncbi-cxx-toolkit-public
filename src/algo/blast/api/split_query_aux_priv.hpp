@@ -67,10 +67,10 @@ SplitQuery_ShouldSplit(EBlastProgramType program,
 size_t 
 SplitQuery_GetOverlapChunkSize(EBlastProgramType program);
 
-/// Returns the optimal chunk size for a given program
-/// @param program BLAST program type [in]
+/// Returns the optimal chunk size for a given task
+/// @param program BLAST task [in]
 size_t
-SplitQuery_GetChunkSize(EBlastProgramType program);
+SplitQuery_GetChunkSize(EProgram program);
 
 /// Calculate the number of chunks that a query will be split into
 /// @param program BLAST program type [in]

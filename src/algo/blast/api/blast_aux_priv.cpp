@@ -241,6 +241,47 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
     return retval;
 }
 
+void
+BuildBlastAncillaryData(EBlastProgramType program,
+                        const vector< CConstRef<CSeq_id> >& query_ids,
+                        const BlastScoreBlk* sbp,
+                        const BlastQueryInfo* qinfo,
+                        const TSeqAlignVector& alignments,
+                        const EResultType result_type,
+                        CSearchResultSet::TAncillaryVector& retval)
+{
+    retval.clear();
+
+    if (Blast_ProgramIsPhiBlast(program)) {
+        CRef<CBlastAncillaryData> s(new CBlastAncillaryData(program, 0, sbp,
+                                                            qinfo));
+        
+        for(unsigned i = 0; i < alignments.size(); i++) {
+            retval.push_back(s);
+        }
+    } else {
+        if (result_type == ncbi::blast::eSequenceComparison) {
+            const size_t num_subjects = alignments.size()/query_ids.size();
+            for(size_t i = 0; i < alignments.size(); i += num_subjects) {
+                CRef<CBlastAncillaryData> s
+                    (new CBlastAncillaryData(program, i/num_subjects, sbp, 
+                                             qinfo));
+                for (size_t j = 0; j < num_subjects; j++) {
+                    retval.push_back(s);
+                }
+            }
+        } else {
+            for(size_t i = 0; i < alignments.size(); i++) {
+                CRef<CBlastAncillaryData> s(new CBlastAncillaryData(program, i,
+                                                                    sbp,
+                                                                    qinfo));
+                retval.push_back(s);
+            }
+        }
+    }
+    
+}
+
 CRef<CSearchResultSet>
 BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                           const BlastScoreBlk* sbp,
@@ -276,35 +317,9 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
     
     // Collect ancillary data
     
-    vector< CRef<CBlastAncillaryData> > ancillary_data;
-    
-    if (is_phi) {
-        CRef<CBlastAncillaryData> s(new CBlastAncillaryData(program, 0, sbp,
-                                                            qinfo));
-        
-        for(unsigned i = 0; i < alignments.size(); i++) {
-            ancillary_data.push_back(s);
-        }
-    } else {
-        if (result_type == ncbi::blast::eSequenceComparison) {
-            const size_t num_subjects = alignments.size()/query_ids.size();
-            for(size_t i = 0; i < alignments.size(); i += num_subjects) {
-                CRef<CBlastAncillaryData> s
-                    (new CBlastAncillaryData(program, i/num_subjects, sbp, 
-                                             qinfo));
-                for (size_t j = 0; j < num_subjects; j++) {
-                    ancillary_data.push_back(s);
-                }
-            }
-        } else {
-            for(size_t i = 0; i < alignments.size(); i++) {
-                CRef<CBlastAncillaryData> s(new CBlastAncillaryData(program, i,
-                                                                    sbp,
-                                                                    qinfo));
-                ancillary_data.push_back(s);
-            }
-        }
-    }
+    CSearchResultSet::TAncillaryVector ancillary_data;
+    BuildBlastAncillaryData(program, query_ids, sbp, qinfo, alignments,
+                            result_type, ancillary_data);
     
     // Adjust the query masks for bl2seq searches
 

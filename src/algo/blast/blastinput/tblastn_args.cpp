@@ -142,7 +142,7 @@ CTblastnAppArgs::SetInputPssm(CRef<objects::CPssmWithParameters> pssm)
 int
 CTblastnAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(eBlastTypeTblastn);
+    return blast::GetQueryBatchSize(eTblastn);
 }
 
 END_SCOPE(blast)

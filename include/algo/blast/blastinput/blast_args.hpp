@@ -43,6 +43,7 @@
 #include <algo/blast/api/setup_factory.hpp> // for CThreadable
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 
+#include <objmgr/scope.hpp>     // for CScope
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
 
@@ -582,12 +583,18 @@ public:
                                          CBlastOptions& opts);
 
     /// Is the database/subject protein?
-    bool IsProtein() const;
+    bool IsProtein() const { return m_IsProtein; }
+
     /// Get the gi list file name
     /// The return value of this should be set in the CSeqDb ctor
     string GetGiListFileName() const { return m_GiListFileName; }
+
     /// Get the BLAST database name
-    string GetDatabaseName() const { return m_SearchDb->GetDatabaseName(); }
+    /// @return empty string in the case of BLAST2Sequences, otherwise the
+    /// BLAST database name
+    string GetDatabaseName() const { 
+        return m_SearchDb.Empty() ? kEmptyStr : m_SearchDb->GetDatabaseName(); 
+    }
 
     /// Retrieve the search database information
     CRef<CSearchDatabase> GetSearchDatabase() const { return m_SearchDb; }
@@ -596,14 +603,15 @@ public:
         m_SearchDb = search_db;
     }
 
-    /// Is subject sequence provided instead of a database?
-    bool IsSubjectProvided() const {return m_IsSubjectProvided;}
-
-    /// Get the subject sequence input stream (only if subject is provided)
-    CNcbiIstream& GetSubjectInputStream() const;
-
-    /// Get subject sequence range restriction
-    TSeqRange GetSubjectRange() const {return m_SubjectRange;}
+    /// Retrieve subject sequences, if provided
+    /// @return empty CRef<> if no subjects were provided, otherwise a properly
+    /// initialized IQueryFactory object
+    CRef<IQueryFactory> GetSubjects(CRef<objects::CScope>* scope = NULL) const {
+        if (scope) {
+            *scope = m_Scope;
+        }
+        return m_Subjects; 
+    }
 
 private:
     CRef<CSearchDatabase> m_SearchDb;/**< Description of the BLAST database */
@@ -614,9 +622,10 @@ private:
                                       */
     bool m_IsRpsBlast;              /**< true if the search is RPS-BLAST */
 
-    bool m_IsSubjectProvided;               /**< Is subject sequence argument provided */
-    CNcbiIstream* m_SubjectInputStream;     /**< Input stream for the subject sequence */
-    TSeqRange m_SubjectRange;               /**< Range to restrict the subject sequence(s) */
+    bool m_IsProtein;               /**< Is the database/subject(s) protein? */
+    CRef<IQueryFactory> m_Subjects; /**< The subject sequences */
+    CRef<objects::CScope> m_Scope;  /**< CScope object in which all subject
+                                      sequences read are kept */
 };
 
 /// Argument class to collect formatting options, use this to create a 

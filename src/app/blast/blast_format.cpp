@@ -58,6 +58,7 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
                  bool believe_query, CNcbiOstream& outfile,
                  int num_summary, 
                  int num_alignments, 
+                 CScope & scope,
                  const char *matrix_name /* = BLAST_DEFAULT_MATRIX */,
                  bool show_gi /* = false */, 
                  bool is_html /* = false */,
@@ -72,11 +73,13 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
           m_DbName(dbname),
           m_QueryGenCode(qgencode), m_DbGenCode(dbgencode),
           m_ShowGi(show_gi), m_ShowLinkedSetSize(show_linked),
-          m_IsDbAvailable(dbname.length() > 0),
           m_IsUngappedSearch(!options.GetGappedMode()),
-          m_MatrixName(matrix_name)
+          m_MatrixName(matrix_name),
+          m_Scope(& scope),
+          m_IsBl2Seq(false)
 {
-    if (m_IsDbAvailable) {
+    m_IsBl2Seq = static_cast<bool>(dbname == kEmptyStr);
+    if ( !m_IsBl2Seq ) {
         x_FillDbInfo();
     }
     if (m_FormatType == CFormattingArgs::eXml) {
@@ -128,13 +131,10 @@ CBlastFormat::PrintProlog()
 
     CBlastFormatUtil::BlastPrintVersionInfo(m_Program, m_IsHTML, 
                                             m_Outfile);
-    m_Outfile << endl << endl;
-
-    CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
-                                          m_Outfile);
-
-    if (m_IsDbAvailable)
-    {
+    if ( !m_IsBl2Seq ) {
+        m_Outfile << endl << endl;
+        CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
+                                              m_Outfile);
         CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
                                         m_Outfile, true);
     }
@@ -168,7 +168,6 @@ CBlastFormat::x_PrintOneQueryFooter(const CBlastAncillaryData& summary)
 
 void
 CBlastFormat::PrintOneResultSet(const CSearchResults& results,
-                                CScope& scope,
                                 CConstRef<CBlastQueryVector> queries,
                                 unsigned int itr_num
                                 /* = numeric_limits<unsigned int>::max() */)
@@ -207,8 +206,8 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
     }
 
     // other output types will need a bioseq handle
-    CBioseq_Handle bhandle = scope.GetBioseqHandle(*results.GetSeqId(),
-                                                  CScope::eGetBioseq_All);
+    CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(),
+                                                      CScope::eGetBioseq_All);
 
     // tabular formatting just prints each alignment in turn
     // (plus a header)
@@ -224,7 +223,7 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
         if (results.HasAlignments()) {
             ITERATE(CSeq_align_set::Tdata, itr, aln_set->Get()) {
                     const CSeq_align& s = **itr;
-                    tabinfo.SetFields(s, scope);
+                    tabinfo.SetFields(s, *m_Scope);
                     tabinfo.Print();
             }
         }
@@ -264,24 +263,26 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
 
     //-------------------------------------------------
     // print 1-line summaries
-    m_Outfile << endl;
+    if ( !m_IsBl2Seq ) {
+        m_Outfile << endl;
 
-    CShowBlastDefline showdef(*aln_set, scope, 
-                              kFormatLineLength,
-                              m_NumSummary);
+        CShowBlastDefline showdef(*aln_set, *m_Scope, 
+                                  kFormatLineLength,
+                                  m_NumSummary);
 
-    flags = 0;
-    if (m_ShowLinkedSetSize)
-        flags |= CShowBlastDefline::eShowSumN;
-    if (m_IsHTML)
-        flags |= CShowBlastDefline::eHtml;
-    if (m_ShowGi)
-        flags |= CShowBlastDefline::eShowGi;
+        flags = 0;
+        if (m_ShowLinkedSetSize)
+            flags |= CShowBlastDefline::eShowSumN;
+        if (m_IsHTML)
+            flags |= CShowBlastDefline::eHtml;
+        if (m_ShowGi)
+            flags |= CShowBlastDefline::eShowGi;
 
-    showdef.SetOption(flags);
-    showdef.SetDbName(m_DbName);
-    showdef.SetDbType(!m_DbIsAA);
-    showdef.DisplayBlastDefline(m_Outfile);
+        showdef.SetOption(flags);
+        showdef.SetDbName(m_DbName);
+        showdef.SetDbType(!m_DbIsAA);
+        showdef.DisplayBlastDefline(m_Outfile);
+    }
 
     //-------------------------------------------------
     // print the alignments
@@ -293,7 +294,7 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
     CSeq_align_set copy_aln_set;
     CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_NumAlignments);
 
-    CDisplaySeqalign display(copy_aln_set, scope, &masklocs, NULL,
+    CDisplaySeqalign display(copy_aln_set, *m_Scope, &masklocs, NULL,
                              m_MatrixName);
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
@@ -369,8 +370,7 @@ CBlastFormat::PrintEpilog(const CBlastOptions& options)
     }
 
     m_Outfile << endl << endl;
-    if (m_IsDbAvailable)
-    {
+    if ( !m_IsBl2Seq ) {
         CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
                                         m_Outfile, false);
     }
@@ -402,3 +402,18 @@ CBlastFormat::PrintEpilog(const CBlastOptions& options)
         m_Outfile << kHTML_Suffix << endl;
     }
 }
+
+void CBlastFormat::ResetScopeHistory()
+{
+    // Our current XML/ASN.1 libraries do not have provisions for
+    // incremental object input/output, so with XML output format we
+    // need to accumulate the whole document before writing any data.
+    
+    // This means that XML output requires more memory than other
+    // output formats.
+    
+    if (m_FormatType != CFormattingArgs::eXml) {
+        m_Scope->ResetHistory();
+    }
+}
+

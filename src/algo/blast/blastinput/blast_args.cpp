@@ -44,6 +44,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp> /* for CObjMgrQueryFactory */
 #include <algo/blast/core/blast_nalookup.h>
 #include <objtools/blast_format/blastfmtutil.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
@@ -1060,6 +1061,20 @@ CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("");
 }
 
+static void s_TokenizeSequenceRange(const string& locations, 
+                                    TSeqRange& range,
+                                    const string& msg)
+{
+    static const string delimiters("-");
+    vector<string> tokens;
+    NStr::Tokenize(locations, delimiters, tokens);
+    if (tokens.size() != 2) {
+        NCBI_THROW(CBlastException, eInvalidArgument, msg);
+    }
+    range.SetFrom(NStr::StringToInt(tokens.front()));
+    range.SetToOpen(NStr::StringToInt(tokens.back()));
+}
+
 void
 CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args, 
                                            CBlastOptions& opt)
@@ -1084,15 +1099,8 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     // set the sequence range
     if (args[kArgQueryLocation]) {
-        const string delimiters("-");
-        vector<string> tokens;
-        NStr::Tokenize(args[kArgQueryLocation].AsString(), delimiters, tokens);
-        if (tokens.size() != 2) {
-            NCBI_THROW(CBlastException, eInvalidArgument, 
-                       "Invalid specification of query location");
-        }
-        m_Range.SetFrom(NStr::StringToInt(tokens.front()));
-        m_Range.SetToOpen(NStr::StringToInt(tokens.back()));
+        s_TokenizeSequenceRange(args[kArgQueryLocation].AsString(), m_Range, 
+                                "Invalid specification of query location");
     }
 
     m_UseLCaseMask = static_cast<bool>(args[kArgUseLCaseMasking]);
@@ -1102,7 +1110,7 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
 CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
                                        bool is_rpsblast /* = false */)
     : m_RequestMoleculeType(request_mol_type), m_IsRpsBlast(is_rpsblast),
-    m_IsSubjectProvided(false), m_SubjectInputStream(0)
+    m_IsProtein(true)
 {}
 
 bool
@@ -1178,6 +1186,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
     EMoleculeType mol_type = Blast_SubjectIsNucleotide(opts.GetProgramType())
         ? CSearchDatabase::eBlastDbIsNucleotide
         : CSearchDatabase::eBlastDbIsProtein;
+    m_IsProtein = (mol_type == CSearchDatabase::eBlastDbIsProtein);
     
     if (args.Exist(kArgDb) && args[kArgDb]) {
 
@@ -1201,27 +1210,22 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
                "Please visit the NCBI web site to submit your search");
         }
         else {
-            m_IsSubjectProvided = true;
-            m_SubjectInputStream = &args[kArgSubject].AsInputFile();
+            CNcbiIstream& subj_input_stream = args[kArgSubject].AsInputFile();
+            TSeqRange subj_range;
+            if (args.Exist(kArgSubjectLocation) && args[kArgSubjectLocation]) {
+                s_TokenizeSequenceRange(args[kArgSubjectLocation].AsString(), 
+                                subj_range,
+                                "Invalid specification of subject location");
+            }
+
+            CRef<blast::CBlastQueryVector> subjects;
+            m_Scope = ReadSequencesToBlast(subj_input_stream, IsProtein(),
+                                           subj_range, subjects);
+            m_Subjects.Reset(new blast::CObjMgr_QueryFactory(*subjects));
         }
     } else {
         NCBI_THROW(CBlastException, eInvalidArgument,
            "Either a BLAST database or subject sequence(s) must be specified");
-    }
-
-    if (m_IsSubjectProvided &&
-        args.Exist(kArgSubjectLocation) && args[kArgSubjectLocation]) {
-
-        // set the sequence range
-        const string delimiters("-");
-        vector<string> tokens;
-        NStr::Tokenize(args[kArgSubjectLocation].AsString(), delimiters, tokens);
-        if (tokens.size() != 2) {
-            NCBI_THROW(CBlastException, eInvalidArgument, 
-                       "Invalid specification of subject location");
-        }
-        m_SubjectRange.SetFrom(NStr::StringToInt(tokens.front()));
-        m_SubjectRange.SetToOpen(NStr::StringToInt(tokens.back()));
     }
 
     if (opts.GetEffectiveSearchSpace() != 0) {
@@ -1233,19 +1237,6 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         opts.SetDbLength(args[kArgDbSize].AsInt8());
     }
 
-}
-
-bool
-CBlastDatabaseArgs::IsProtein() const
-{
-    return m_SearchDb->GetMoleculeType() == CSearchDatabase::eBlastDbIsProtein;
-}
-
-CNcbiIstream&
-CBlastDatabaseArgs::GetSubjectInputStream() const
-{
-    _ASSERT(m_SubjectInputStream); 
-    return *m_SubjectInputStream;
 }
 
 void

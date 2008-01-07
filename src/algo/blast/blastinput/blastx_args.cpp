@@ -126,7 +126,7 @@ CBlastxAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 int
 CBlastxAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(eBlastTypeBlastx);
+    return blast::GetQueryBatchSize(eBlastx);
 }
 
 END_SCOPE(blast)

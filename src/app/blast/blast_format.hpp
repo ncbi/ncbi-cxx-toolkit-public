@@ -73,6 +73,8 @@ public:
     /// @param num_summary The number of 1-line summaries at the top of
     ///                   the blast report (for output types that have
     ///                   1-line summaries) [in]
+    /// @param scope The scope to use for retrieving sequence data
+    ///              (must contain query and database sequences) [in]
     /// @param matrix_name Name of protein score matrix (BLOSUM62 if
     ///                    empty, ignored for nucleotide formatting) [in]
     /// @param show_gi When printing database sequence identifiers, 
@@ -92,7 +94,8 @@ public:
                  blast::CFormattingArgs::EOutputFormat format_type, 
                  bool db_is_aa, bool believe_query, CNcbiOstream& outfile,
                  int num_summary, 
-                 int num_alignments, 
+                 int num_alignments,
+                 CScope & scope,
                  const char *matrix_name = BLAST_DEFAULT_MATRIX,
                  bool show_gi = false, 
                  bool is_html = false, 
@@ -107,12 +110,9 @@ public:
     /// any errors or warnings (errors are deemed fatal)
     /// @param results Object containing alignments, mask regions, and
     ///                ancillary data to be output [in]
-    /// @param scope The scope to use for retrieving sequence data
-    ///              (must contain query and database sequences) [in]
     /// @param queries Query sequences (cached for XML formatting) [in]
     /// @param itr_num iteration number being performed (for PSI-BLAST) [in]
     void PrintOneResultSet(const blast::CSearchResults& results,
-                           objects::CScope& scope,
                            CConstRef<blast::CBlastQueryVector> queries,
                            unsigned int itr_num =
                            numeric_limits<unsigned int>::max());
@@ -121,7 +121,17 @@ public:
     /// @param options Options used for performing the blast search [in]
     ///
     void PrintEpilog(const blast::CBlastOptions& options);
-
+    
+    /// Resets the scope history for some output formats.
+    ///
+    /// This method tries to release memory no longer needed after
+    /// each query sequence is processed.  For XML formatting, all
+    /// data must be kept until the Epilog stage, so for XML this
+    /// method has no effect.  Searches with multiple queries will
+    /// therefore require more memory to produce XML format output
+    /// than when using other output formats.
+    void ResetScopeHistory();
+    
 private:
     /// Format type
     blast::CFormattingArgs::EOutputFormat m_FormatType;
@@ -137,10 +147,13 @@ private:
     int m_DbGenCode;            ///< database genetic code
     bool m_ShowGi;              ///< add GI number of database sequence IDs
     bool m_ShowLinkedSetSize;   ///< show size of linked set in 1-line summary
-    bool m_IsDbAvailable;       ///< true if a database is available
     bool m_IsUngappedSearch;    ///< true if the search was ungapped
     const char* m_MatrixName;   ///< name of scoring matrix
-
+    /** Scope containing query and subject sequences */
+    CRef<CScope> m_Scope;       
+    /** True if we are formatting for BLAST2Sequences */
+    bool m_IsBl2Seq;            
+    
     /// internal representation of database information
     list<CBlastFormatUtil::SDbInfo> m_DbInfo;
 

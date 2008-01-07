@@ -104,7 +104,7 @@ CRPSBlastAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 int
 CRPSBlastAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(eBlastTypeRpsBlast);
+    return blast::GetQueryBatchSize(eRPSBlast);
 }
 
 END_SCOPE(blast)

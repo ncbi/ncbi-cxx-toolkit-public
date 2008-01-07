@@ -74,7 +74,7 @@ SplitQuery_GetOverlapChunkSize(EBlastProgramType program)
 }
 
 size_t
-SplitQuery_GetChunkSize(EBlastProgramType program)
+SplitQuery_GetChunkSize(EProgram program)
 {
     size_t retval = 0;
 
@@ -87,23 +87,27 @@ SplitQuery_GetChunkSize(EBlastProgramType program)
     }
 
     switch (program) {
-    case eBlastTypeBlastn:
+    case eBlastn:
         retval = 1000000;
         break;
-    case eBlastTypeTblastn:
+    case eMegablast:
+    case eDiscMegablast:
+        retval = 5000000;
+        break;
+    case eTblastn:
         retval = 20000;
         break;
     // if the query will be translated, round the chunk size up to the next
     // multiple of 3, that way, when the nucleotide sequence(s) get(s)
     // split, context N%6 in one chunk will have the same frame as context N%6
     // in the next chunk
-    case eBlastTypeBlastx:
-    case eBlastTypeTblastx:
+    case eBlastx:
+    case eTblastx:
         // N.B.: the splitting is done on the nucleotide query sequences, then
         // each of these chunks is translated
         retval = 10002;
         break;
-    case eBlastTypeBlastp:
+    case eBlastp:
     default:
         retval = 10000;
         break;

@@ -154,7 +154,7 @@ CPsiBlastAppArgs::SetInputPssm(CRef<objects::CPssmWithParameters> pssm)
 int 
 CPsiBlastAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(eBlastTypePsiBlast);
+    return blast::GetQueryBatchSize(ePSIBlast);
 }
 
 bool

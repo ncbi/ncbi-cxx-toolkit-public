@@ -34,6 +34,7 @@
 #ifndef ALGO_BLAST_BLASTINPUT__BLAST_INPUT_AUX__HPP
 #define ALGO_BLAST_BLASTINPUT__BLAST_INPUT_AUX__HPP
 
+#include <algo/blast/api/sseqloc.hpp>   /* for CBlastQueryVector */
 #include <algo/blast/blastinput/blast_args.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -51,9 +52,26 @@ NCBI_XBLAST_EXPORT
 CArgDescriptions* 
 SetUpCommandLineArguments(TBlastCmdLineArgs& args);
 
+/** Retrieve the appropriate batch size for the specified task 
+ * @program BLAST task [in]
+ */
 NCBI_XBLAST_EXPORT
 int
-GetQueryBatchSize(EBlastProgramType program);
+GetQueryBatchSize(EProgram program);
+
+/** Read sequence input for BLAST 
+ * @param in input stream from which to read [in]
+ * @param read_proteins expect proteins or nucleotides as input [in]
+ * @param range range restriction to apply to sequences read [in]
+ * @param sequences output will be placed here [in|out]
+ * @return CScope object which contains all the sequences read
+ */
+NCBI_XBLAST_EXPORT
+CRef<objects::CScope>
+ReadSequencesToBlast(CNcbiIstream& in, 
+                     bool read_proteins, 
+                     const TSeqRange& range, 
+                     CRef<CBlastQueryVector>& sequences);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -191,11 +191,6 @@ public:
     /// Sets TraditionalMegablastDefaults
     void SetTraditionalMegablastDefaults();
     
-    EProgram GetFactorySetting()
-    {
-        return m_FactorySetting;
-    }
-    
 protected:
     /// Set the program and service name for remote blast.
     virtual void SetRemoteProgramAndService_Blast3()
@@ -235,8 +230,6 @@ private:
     CBlastNucleotideOptionsHandle(const CBlastNucleotideOptionsHandle& rhs);
     /// Disallow assignment operator
     CBlastNucleotideOptionsHandle& operator=(const CBlastNucleotideOptionsHandle& rhs);
-    
-    EProgram m_FactorySetting;
 };
 
 END_SCOPE(blast)

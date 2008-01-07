@@ -126,7 +126,19 @@ CBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 int
 CBlastnAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(eBlastTypeBlastn);
+    EProgram p;
+    if (NStr::StartsWith(m_Task, "blastn")) {
+        p = eBlastn;
+    } else if (m_Task == "megablast") {
+        p = eMegablast;
+    } else if (m_Task == "dc-megablast") {
+        p = eDiscMegablast;
+    } else {
+        cerr << "Cannot determine query batch size for task '" << m_Task 
+             << "'" << endl;
+        abort();
+    }
+    return blast::GetQueryBatchSize(p);
 }
 
 END_SCOPE(blast)

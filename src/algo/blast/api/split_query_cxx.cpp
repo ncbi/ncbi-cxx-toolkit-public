@@ -55,7 +55,7 @@ CQuerySplitter::CQuerySplitter(CRef<IQueryFactory> query_factory,
     : m_QueryFactory(query_factory), m_Options(options), m_NumChunks(0),
     m_LocalQueryData(0), m_TotalQueryLength(0), m_ChunkSize(0)
 {
-    m_ChunkSize = SplitQuery_GetChunkSize(m_Options->GetProgramType());
+    m_ChunkSize = SplitQuery_GetChunkSize(m_Options->GetProgram());
     m_LocalQueryData = m_QueryFactory->MakeLocalQueryData(m_Options);
     m_TotalQueryLength = m_LocalQueryData->GetSumOfSequenceLengths();
     m_NumChunks = SplitQuery_CalculateNumChunks(m_Options->GetProgramType(), 

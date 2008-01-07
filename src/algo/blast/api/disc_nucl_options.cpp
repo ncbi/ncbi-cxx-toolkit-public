@@ -48,7 +48,7 @@ CDiscNucleotideOptionsHandle::CDiscNucleotideOptionsHandle(EAPILocality locality
     : CBlastNucleotideOptionsHandle(locality)
 {
     SetDefaults();
-    m_Opts->SetProgram(eBlastn);
+    m_Opts->SetProgram(eDiscMegablast);
 }
 
 void 

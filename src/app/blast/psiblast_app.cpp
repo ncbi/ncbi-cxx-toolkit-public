@@ -233,12 +233,14 @@ int CPsiBlastApp::Run(void)
                                out_stream,
                                fmt_args->GetNumDescriptions(),
                                fmt_args->GetNumAlignments(),
+                               *scope,
                                opt.GetMatrixName(),
                                fmt_args->ShowGis(),
                                fmt_args->DisplayHtmlOutput(),
                                opt.GetQueryGeneticCode(),
                                opt.GetDbGeneticCode(),
                                opt.GetSumStatisticsMode());
+
         formatter.PrintProlog();
 
         SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl, 
@@ -261,7 +263,7 @@ int CPsiBlastApp::Run(void)
 
             CRef<CSearchResultSet> results = rmt_psiblast->GetResultSet();
             ITERATE(CSearchResultSet, result, *results) {
-                formatter.PrintOneResultSet(**result, *scope, query);
+                formatter.PrintOneResultSet(**result, query);
             }
 
             SavePssmToCheckpoint(rmt_psiblast->GetPSSM());
@@ -285,7 +287,7 @@ int CPsiBlastApp::Run(void)
 
                 CRef<CSearchResultSet> results = psiblast->Run();
                 ITERATE(CSearchResultSet, result, *results) {
-                    formatter.PrintOneResultSet(**result, *scope, query,
+                    formatter.PrintOneResultSet(**result, query,
                                                 itr.GetIterationNumber());
                 }
 

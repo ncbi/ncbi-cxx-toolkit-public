@@ -110,7 +110,7 @@ int CBlastxApp::Run(void)
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
         CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
 
-        /*** Initialize the database ***/
+        /*** Initialize the database/subject ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
         CRef<CLocalDbAdapter> db_adapter;   /* needed for local searches */
         CRef<CSearchDatabase> search_db;    /* needed for remote searches and
@@ -119,9 +119,18 @@ int CBlastxApp::Run(void)
         search_db = db_args->GetSearchDatabase();
         CRef<CScope> scope = CBlastScopeSource(dlconfig).NewScope();
         if ( !m_CmdLineArgs->ExecuteRemotely() ) {
-            CRef<CSeqDB> seqdb = GetSeqDB(db_args);
-            db_adapter.Reset(new CLocalDbAdapter(seqdb));
-            scope->AddDataLoader(RegisterOMDataLoader(m_ObjMgr, seqdb));
+            if (db_args->GetSubjects()) {
+                _ASSERT(search_db.Empty());
+                CRef<CScope> subj_scope;
+                db_adapter.Reset
+                    (new CLocalDbAdapter(db_args->GetSubjects(&subj_scope), 
+                                         opts_hndl));
+                scope->AddScope(*subj_scope);
+            } else {
+                CRef<CSeqDB> seqdb = GetSeqDB(db_args);
+                db_adapter.Reset(new CLocalDbAdapter(seqdb));
+                scope->AddDataLoader(RegisterOMDataLoader(m_ObjMgr, seqdb));
+            }
         }
 
         /*** Get the formatting options ***/
@@ -134,16 +143,18 @@ int CBlastxApp::Run(void)
                                m_CmdLineArgs->GetOutputStream(),
                                fmt_args->GetNumDescriptions(),
                                fmt_args->GetNumAlignments(),
+                               *scope,
                                opt.GetMatrixName(),
                                fmt_args->ShowGis(),
                                fmt_args->DisplayHtmlOutput(),
                                opt.GetQueryGeneticCode(),
                                opt.GetDbGeneticCode(),
                                opt.GetSumStatisticsMode());
+        
         formatter.PrintProlog();
 
         /*** Process the input ***/
-        for (; !input.End(); scope->ResetHistory()) {
+        for (; !input.End(); formatter.ResetScopeHistory()) {
 
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
@@ -166,9 +177,8 @@ int CBlastxApp::Run(void)
             }
 
             ITERATE(CSearchResultSet, result, *results) {
-                formatter.PrintOneResultSet(**result, *scope, query_batch);
+                formatter.PrintOneResultSet(**result, query_batch);
             }
-
         }
 
         formatter.PrintEpilog(opt);
@@ -189,7 +199,6 @@ int CBlastxApp::Run(void)
     }
     return status;
 }
-
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)

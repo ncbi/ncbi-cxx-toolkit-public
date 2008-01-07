@@ -44,7 +44,7 @@
  */
 
 #ifdef __cplusplus
-extern "C" {
+NCBI_XBLAST_EXPORT extern "C" {
 #endif
 
 /** Different types of sequence encodings for sequence retrieval from the 

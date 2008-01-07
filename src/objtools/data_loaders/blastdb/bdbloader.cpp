@@ -432,19 +432,21 @@ int CBlastDbDataLoader::GetOid(const CSeq_id_Handle& idh)
     // this Seq-id.  If there are other data loaders installed, they
     // will have an opportunity to resolve the Seq-id.
     
-    bool found = false;
-    
-    list< CRef<CSeq_id> > filtered = m_SeqDB->GetSeqIDs(oid);
-    
-    ITERATE(list< CRef<CSeq_id> >, id, filtered) {
-        if (seqid->Compare(**id) == CSeq_id::e_YES) {
-            found = true;
-            break;
-        }
-    }
+    bool found = m_SeqDB->GetIdSet().Blank();
     
     if (! found) {
-        return -1;
+        list< CRef<CSeq_id> > filtered = m_SeqDB->GetSeqIDs(oid);
+        
+        ITERATE(list< CRef<CSeq_id> >, id, filtered) {
+            if (seqid->Compare(**id) == CSeq_id::e_YES) {
+                found = true;
+                break;
+            }
+        }
+        
+        if (! found) {
+            return -1;
+        }
     }
     
     m_Ids.insert(TIds::value_type(idh, oid));

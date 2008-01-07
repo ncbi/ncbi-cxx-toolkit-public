@@ -90,7 +90,7 @@ void CGeneFileWriter::
         m_seqDb->GetTaxInfo(nTaxId, taxInfo);
         strName = taxInfo.scientific_name;
     }
-    catch (CException& e)
+    catch (CException)
     {
         strName = "unknown";
     }

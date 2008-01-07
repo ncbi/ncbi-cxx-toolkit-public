@@ -171,6 +171,7 @@ CBl2Seq::x_ResetSubjectDs()
     mi_pSeqSrc = BlastSeqSrcFree(mi_pSeqSrc);
     mi_pResults = Blast_HSPResultsFree(mi_pResults);
     mi_pDiagnostics = Blast_DiagnosticsFree(mi_pDiagnostics);
+    m_AncillaryData.clear();
 }
 
 TSeqAlignVector
@@ -180,7 +181,31 @@ CBl2Seq::Run()
     m_OptsHandle->GetOptions().Validate();  // throws an exception on failure
     SetupSearch();
     RunFullSearch();
-    return x_Results2SeqAlign();
+    TSeqAlignVector retval = x_Results2SeqAlign();
+    x_BuildAncillaryData(retval);
+    return retval;
+}
+
+void
+CBl2Seq::x_BuildAncillaryData(const TSeqAlignVector& alignments)
+{
+    vector< CConstRef<CSeq_id> > query_ids;
+    x_SimplifyTSeqLocVector(m_tQueries, query_ids);
+    BuildBlastAncillaryData(m_OptsHandle->GetOptions().GetProgramType(),
+                            query_ids, mi_pScoreBlock, mi_clsQueryInfo, 
+                            alignments, 
+                            ncbi::blast::eSequenceComparison,
+                            m_AncillaryData);
+}
+
+void
+CBl2Seq::x_SimplifyTSeqLocVector(const TSeqLocVector& slv,
+                                 vector< CConstRef<CSeq_id> >& query_ids)
+{
+    query_ids.clear();
+    for (size_t i = 0; i < slv.size(); i++) {
+        query_ids.push_back(CConstRef<CSeq_id>(slv[i].seqloc->GetId()));
+    }
 }
 
 CRef<CSearchResultSet>
@@ -190,16 +215,21 @@ CBl2Seq::RunEx()
     TSeqLocInfoVector masks = GetFilteredQueryRegions();
 
     vector< CConstRef<CSeq_id> > query_ids;
-    query_ids.reserve(alignments.size());
-    for (size_t i = 0; i < m_tQueries.size(); i++) {
-        query_ids.push_back(CConstRef<CSeq_id>(m_tQueries[i].seqloc->GetId()));
+    x_SimplifyTSeqLocVector(m_tQueries, query_ids);
+
+    CRef<CSearchResultSet> retval = 
+        BlastBuildSearchResultSet(query_ids, mi_pScoreBlock,
+                                  mi_clsQueryInfo,
+                                  m_OptsHandle->GetOptions().GetProgramType(),
+                                  alignments, m_Messages, &masks,
+                                  ncbi::blast::eSequenceComparison);
+
+    m_AncillaryData.reserve(retval->size());
+    ITERATE(CSearchResultSet, result, *retval) {
+        m_AncillaryData.push_back((*result)->GetAncillaryData());
     }
 
-    return BlastBuildSearchResultSet(query_ids, mi_pScoreBlock,
-                                 mi_clsQueryInfo,
-                                 m_OptsHandle->GetOptions().GetProgramType(),
-                                 alignments, m_Messages, &masks,
-                                 ncbi::blast::eSequenceComparison);
+    return retval;
 }
 
 void

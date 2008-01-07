@@ -148,6 +148,10 @@ public:
     /// Retrieves the diagnostics information returned from the engine
     BlastDiagnostics* GetDiagnostics() const;
 
+    /// Get the ancillary results for a BLAST search (to be used with the Run()
+    /// method)
+    void GetAncillaryResults(CSearchResultSet::TAncillaryVector& retval) const;
+
     /// Returns error messages/warnings.
     void GetMessages(TSearchMessages& messages) const;
 
@@ -176,6 +180,16 @@ protected:
     /// (q1 s1 q1 s2 ... q1 sM, ..., qN s1 qN s2 ... qN sM)
     /// this method only reorganizes the seqalign sets, does not copy them.
     TSeqAlignVector x_TransposeSeqAlignVector(const TSeqAlignVector& alnvec);
+
+    /// Convert the TSeqLocVector to a vector of Seq-ids
+    /// @param slv TSeqLocVector used as source [in]
+    /// @param query_ids output of this method [in|out]
+    static void x_SimplifyTSeqLocVector(const TSeqLocVector& slv,
+                           vector< CConstRef<objects::CSeq_id> >& query_ids);
+
+    /// Populate the internal m_AncillaryData member
+    /// @param alignments aligments to use
+    void x_BuildAncillaryData(const TSeqAlignVector& alignments);
 
 private:
     // Data members received from client code
@@ -216,6 +230,8 @@ private:
     TInterruptFnPtr                     m_fnpInterrupt;
     /// Structure to aid in progress monitoring/interruption
     CSBlastProgress                     m_ProgressMonitor;
+    /// Ancillary BLAST data
+    CSearchResultSet::TAncillaryVector  m_AncillaryData;
 
     /// Resets query data structures
     void x_ResetQueryDs();
@@ -316,6 +332,12 @@ CBl2Seq::SetInterruptCallback(TInterruptFnPtr fnptr, void* user_data)
     swap(m_fnpInterrupt, fnptr);
     m_ProgressMonitor.Reset(SBlastProgressNew(user_data));
     return fnptr;
+}
+
+inline void 
+CBl2Seq::GetAncillaryResults(CSearchResultSet::TAncillaryVector& retval) const
+{
+    retval = m_AncillaryData;
 }
 
 END_SCOPE(blast)
