@@ -1575,37 +1575,17 @@ const string CSeq_id::AsFastaString(void) const
 //
 string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
 {
+    if (fmt == eFormat_FastA) {
+        CNcbiOstrstream ostr;
+        WriteAsFasta(ostr, bioseq);
+        return CNcbiOstrstreamToString(ostr);
+    }
+
     bool is_na            = bioseq.GetInst().GetMol() != CSeq_inst::eMol_aa;
     CRef<CSeq_id> best_id = FindBestChoice(bioseq.GetId(),
                                            is_na ? CSeq_id::FastaNARank
                                            : CSeq_id::FastaAARank);
     switch (fmt) {
-    case eFormat_FastA:
-        {
-            // FastA format
-            // Here we have something like:
-            //      gi|###|SOME_ACCESSION|title
-            bool found_gi = false;
-
-            CNcbiOstrstream out_str;
-            ITERATE (CBioseq::TId, id, bioseq.GetId()) {
-                if ((*id)->IsGi()) {
-                    (*id)->WriteAsFasta(out_str);
-                    found_gi = true;
-                    break;
-                }
-            }
-
-            if (best_id.NotEmpty()  &&  !best_id->IsGi() ) {
-                if (found_gi) {
-                    out_str << '|';
-                }
-                best_id->WriteAsFasta(out_str);
-            }
-
-            return CNcbiOstrstreamToString(out_str);
-        }
-
     case eFormat_ForceGI:
         // eForceGI produces a string containing only the GI in FastA format
         // so we have:
@@ -1643,6 +1623,37 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
 
     // catch-all for unusual events
     return "";
+}
+
+CNcbiOstream& CSeq_id::WriteAsFasta(CNcbiOstream& ostr, const CBioseq& bioseq)
+{
+    bool is_na            = bioseq.GetInst().GetMol() != CSeq_inst::eMol_aa;
+    CRef<CSeq_id> best_id = FindBestChoice(bioseq.GetId(),
+                                           is_na ? CSeq_id::FastaNARank
+                                           : CSeq_id::FastaAARank);
+
+    // FastA format
+    // Here we have something like:
+    //      gi|###|SOME_ACCESSION|title
+    bool found_gi = false;
+
+    ITERATE (CBioseq::TId, id, bioseq.GetId()) {
+        if ((*id)->IsGi()) {
+            (*id)->WriteAsFasta(ostr);
+            found_gi = true;
+            break;
+        }
+    }
+
+    if (best_id.NotEmpty()  &&  !best_id->IsGi() ) {
+        if (found_gi) {
+            ostr << '|';
+        }
+
+        best_id->WriteAsFasta(ostr);
+    }
+
+    return ostr;
 }
 
 

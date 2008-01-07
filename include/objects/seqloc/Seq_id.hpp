@@ -377,6 +377,16 @@ public:
     };
     static string GetStringDescr(const CBioseq& bioseq, EStringFormat fmt);
 
+    /// Write a bioseq's IDs in FASTA format
+    /// @param ostr
+    ///    Stream to write to
+    /// @param bioseq
+    ///    Bioseq to get IDs from
+    /// @return
+    ///    The stream that was passed in, after all writes occurred
+    static CNcbiOstream& WriteAsFasta(CNcbiOstream& ostr,
+                                      const CBioseq& bioseq);
+
     /// Parse an entire set of |-delimited FASTA-style IDs, appending
     /// the results to IDS.
     /// @param ids

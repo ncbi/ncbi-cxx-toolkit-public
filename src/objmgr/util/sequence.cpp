@@ -1944,8 +1944,9 @@ void CFastaOstream::Write(const CBioseq_Handle& handle,
 void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
                                const CSeq_loc* location)
 {
-    m_Out << '>' << CSeq_id::GetStringDescr(*handle.GetBioseqCore(),
-                                            CSeq_id::eFormat_FastA);
+    m_Out << '>';
+    CSeq_id::WriteAsFasta(m_Out, *handle.GetBioseqCore());
+
     if (location != NULL  &&  !location->IsWhole() ) {
         char delim = ':';
         for (CSeq_loc_CI it(*location);  it;  ++it) {
