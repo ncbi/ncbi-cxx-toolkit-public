@@ -161,7 +161,7 @@ double CExon::RgnScore() const
 
 void CExon::UpdatePrevExon(const CExon& e)
 {
-    m_mscore = max(Score(),e.MScore());
+    m_mscore = max(e.Score(),e.MScore());
     m_prevexon = &e;
     while(m_prevexon != 0 && m_prevexon->Score() <= Score()) m_prevexon = m_prevexon->m_prevexon;
 }
