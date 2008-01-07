@@ -868,11 +868,11 @@ const CInputModel& CHMMParameters::SDetails::GetParameter(const string& type, in
     else if (cgcontent >= 100)
         cgcontent = 99;
 
-    SDetails::TParamMap::const_iterator i_param = params.find(type);
+    TParamMap::const_iterator i_param = params.find(type);
     if (i_param == params.end())
         CInputModel::Error( type );
     
-    ITERATE( SDetails::TCGContentList, i, i_param->second) {
+    ITERATE( TCGContentList, i, i_param->second) {
         if (cgcontent < i->first) {
             if (i->second == NULL) {
                 CInputModel::Error( type );
