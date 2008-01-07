@@ -336,9 +336,24 @@ UsageError('Too many command line arguments') if @ARGV > 2;
 
 my ($MainProject, $BuildDir) = @ARGV;
 
+$MainProject = FindProjectListing($MainProject, $ScriptName);
+
+ReadProjectListingFile($MainProject, $ScriptName);
+
+my $InternalBuild;
+
+for my $Path (@Paths)
+{
+    if ($Path =~ m/^internal\//so)
+    {
+        $InternalBuild = 1;
+        last
+    }
+}
+
 unless ($ToolkitLocation)
 {
-    $DefaultRepos .= '/trunk/c++'
+    $DefaultRepos .= $InternalBuild ? '/trunk/internal/c++' : '/trunk/c++'
 }
 elsif ($ToolkitLocation =~ m/:\/\//)
 {
@@ -350,9 +365,14 @@ else
     $DefaultRepos .= '/' . $ToolkitLocation
 }
 
-$MainProject = FindProjectListing($MainProject, $ScriptName);
+# For each project included by an ampersand reference.
+while (@ProjectQueue)
+{
+    my $Project = shift @ProjectQueue;
+    my $Context = shift @ProjectQueue;
 
-ReadProjectListingFile($MainProject, $ScriptName);
+    ReadProjectListingFile(FindProjectListing($Project, $Context), $Context)
+}
 
 my $NewCheckout;
 
@@ -390,15 +410,6 @@ else
         unless -d '.svn' && -e 'projects';
 
     $BuildDir = '.'
-}
-
-# For each project included by an ampersand reference.
-while (@ProjectQueue)
-{
-    my $Project = shift @ProjectQueue;
-    my $Context = shift @ProjectQueue;
-
-    ReadProjectListingFile(FindProjectListing($Project, $Context), $Context)
 }
 
 if ($RepositoryURL)
