@@ -280,9 +280,9 @@ protected:
         return m_TableName;
     }
     static void DumpResults(IStatement* const stmt);
-    static int GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
-                               const string& table_name);
-    static int GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt);
+    static size_t GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
+                                  const string& table_name);
+    static size_t GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt);
     static Int8 GetIdentity(const auto_ptr<IStatement>& auto_stmt);
     void Connect(const auto_ptr<IConnection>& conn) const;
 
