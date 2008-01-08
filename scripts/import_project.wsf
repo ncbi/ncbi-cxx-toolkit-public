@@ -13,7 +13,7 @@ function Usage()
     var usage_str;
     //usage_str  = "Usage:\n";
     //usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
-    usage_str  = "USAGE: cscript import_project.wsf <tree_path> [builddir] [-t branch] [-dll [-b] [-r] [-v]\n";
+    usage_str  = "USAGE: cscript import_project.wsf <tree_path> [builddir] [-t branch] [-dll [-b] [-r] [-v] [-noload]\n";
     usage_str += "SYNOPSIS:\n";
     usage_str += "    Retrieve project (with all sub-projects) located in the NCBI C++ toolkit\n";
 	usage_str += "    SVN tree at:\n";
@@ -39,6 +39,7 @@ function Usage()
     usage_str += "    [-b]             -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
     usage_str += "    [-r]             -- copy NCBI C++ gui resources\n";
     usage_str += "    [-v]             -- show details about what is being made\n";
+    usage_str += "    [-noload]        -- do not open generated solution\n";
     usage_str += "EXAMPLES:\n";
     usage_str += "    cscript import_project.wsf objmgr/test\n";
     usage_str += "    cscript import_project.wsf objmgr/test -dll\n";
@@ -53,7 +54,7 @@ function VerifyArguments(oArgs)
     if (oArgs.Length < 1) {
         return false;
     }
-    if (oArgs.Length > 8) {
+    if (oArgs.Length > 9) {
         return false;
     }
 
@@ -109,6 +110,7 @@ function Task()
         WScript.Quit(1);
     }
     SetVerbose(oArgs, "-v", false);
+    SetLoadSolution(oArgs, "-noload", false);
     SetBranch(oArgs, "-t")
 
 
@@ -207,7 +209,9 @@ function RunPtb(oShell, oTree, oTask)
     if ( oTask.DllBuild ) {
         ptb_command_line += " -dll";
     }
-    ptb_command_line += " -cfg";
+    if (GetVerbose()) {
+        ptb_command_line += " -cfg";
+    }
     ptb_command_line += " -nobuildptb";
     ptb_command_line += " -ext -nws -extroot \"";
     var lib_dir = oTask.ToolkitPath + "\\lib\\";
@@ -254,7 +258,12 @@ function LoadSolution(oShell, oTree, oTask)
     }
     sln_path += "\\build\\" + SolutionName(oTask) + ".sln\"";
 
-    execute(oShell, "start \"\" " + sln_path);
+    if (GetLoadSolution()) {
+        execute(oShell, "start \"\" " + sln_path);
+    } else {
+        WScript.Echo("Generated solution file:");
+        WScript.Echo(sln_path);
+    }
 }
 
 function FillMakefileinTree(oShell, oTree, oTask)

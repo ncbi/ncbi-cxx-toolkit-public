@@ -4,7 +4,8 @@
 // global settings
 var g_verbose = false;
 var g_usefilecopy = true;
-var g_branch = "toolkit/trunk/c++";
+var g_branch = "toolkit/trunk/internal/c++";
+var g_load_solution = true;
 var g_def_msvcver = 71;
 var g_msvcver = 71;
 
@@ -330,6 +331,16 @@ function SetVerbose(oArgs, flag, default_val)
 function GetVerbose()
 {
     return g_verbose;
+}
+
+function SetLoadSolution(oArgs, flag, default_val)
+{
+    g_load_solution = !GetFlagValue(oArgs, flag, default_val);
+}
+
+function GetLoadSolution()
+{
+    return g_load_solution;
 }
 
 function SetBranch(oArgs, flag)
