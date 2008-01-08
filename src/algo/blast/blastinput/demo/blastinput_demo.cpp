@@ -144,9 +144,7 @@ int CBlastInputDemoApplication::Run(void)
         CNcbiOstream& out = args[kArgOutput].AsOutputFile();
         bool collect_stats = args["collect_stats"].AsBoolean();
         bool is_prot = static_cast<bool>(args["mol_type"].AsString() == "prot");
-        const EBlastProgramType kProgram = is_prot 
-            ? eBlastTypeBlastp 
-            : eBlastTypeBlastn;
+        const EProgram kProgram = is_prot ? eBlastp : eBlastn;
 
         const SDataLoaderConfig dlconfig(is_prot);
         CBlastInputSourceConfig iconfig(dlconfig); // use defaults
