@@ -53,12 +53,6 @@
 #  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
 #endif
 
-#ifdef NCBI_OS_DARWIN
-#include <corelib/plugin_manager_store.hpp>
-#include <objmgr/data_loader_factory.hpp>
-#include <objtools/data_loaders/genbank/processors.hpp>
-#endif
-
 #include <common/test_assert.h>  /* This header must go last */
 
 //==========================================================================//
@@ -480,24 +474,5 @@ BOOST_AUTO_TEST_CASE(s_FailedWritingTest)
                                             strOutputDirPath),
                         CGeneInfoException);
 }
-
-#ifdef NCBI_OS_DARWIN
-// nonsense to work around linker screwiness (horribly kludgy)
-class CDummyDLF : public CDataLoaderFactory {
-public:
-    CDummyDLF() : CDataLoaderFactory(kEmptyStr) { }
-    CDataLoader* CreateAndRegister(CObjectManager&,
-                                   const TPluginManagerParamTree*) const
-        { return 0; }
-};
-
-void s_ForceSymbolDefinitions(CReadDispatcher& rd)
-{
-    auto_ptr<CDataLoaderFactory> dlf(new CDummyDLF);
-    CRef<CProcessor> pid2(new CProcessor_ID2(rd));
-    CPluginManagerGetterImpl::GetBase(kEmptyStr);
-}
-#endif
-//==========================================================================//
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
