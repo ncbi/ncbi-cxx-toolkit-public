@@ -823,6 +823,10 @@ CHMMParameters::CHMMParameters(CNcbiIstream& from) : m_details( new SDetails(fro
 {
 }
 
+CHMMParameters::~CHMMParameters()
+{
+}
+
 CHMMParameters::SDetails::SDetails(CNcbiIstream& from)
 {
     DeleteAllCreatedModels();

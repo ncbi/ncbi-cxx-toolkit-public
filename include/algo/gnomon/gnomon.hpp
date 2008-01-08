@@ -51,13 +51,14 @@ class CInputModel;
 class NCBI_XALGOGNOMON_EXPORT CHMMParameters : public CObject {
 public:
     CHMMParameters(CNcbiIstream& hmm_param_istr);
+    ~CHMMParameters();
     const CInputModel& GetParameter(const string& type, int cgcontent) const;
 private:
-    struct SDetails;
+    class SDetails;
     CRef<SDetails> m_details;
 
     // Prohibit copy constructor and assignment operator
-    CHMMParameters(const CGnomonEngine& value);
+    CHMMParameters(const CHMMParameters& value);
     CHMMParameters& operator= (const CHMMParameters& value);
 };
 
