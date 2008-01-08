@@ -114,62 +114,75 @@ NCBI_PARAM_DEF_EX(bool, Diag, Print_System_TID, false, eParam_NoThread,
 typedef NCBI_PARAM_TYPE(Diag, Print_System_TID) TPrintSystemTID;
 
 
-typedef list<SDiagMessage> TTraceCollection;
-static size_t s_TraceCollectionSize = 0;
-
-TTraceCollection& GetTraceCollection(void)
+CDiagCollectGuard::CDiagCollectGuard(void)
 {
-    static CSafeStaticPtr<TTraceCollection> s_TraceCollection;
-    return s_TraceCollection.Get();
+    // the severities will be adjusted by x_Init()
+    x_Init(eDiag_Critical, eDiag_Fatal, eDiscard);
 }
 
 
-CAtomicCounter& GetTraceCollectCounter(void)
+CDiagCollectGuard::CDiagCollectGuard(EDiagSev print_severity)
 {
-    static CAtomicCounter s_TraceCollectCounter;
-    return s_TraceCollectCounter;
+    // the severities will be adjusted by x_Init()
+    x_Init(eDiag_Critical, print_severity, eDiscard);
 }
 
 
-void StartTraceCollect(void)
+CDiagCollectGuard::CDiagCollectGuard(EDiagSev print_severity,
+                                     EDiagSev collect_severity,
+                                     EAction  action)
 {
-    GetTraceCollectCounter().Add(1);
+    // the severities will be adjusted by x_Init()
+    x_Init(print_severity, collect_severity, action);
 }
 
 
-void StopTraceCollect(ETraceCollectAction action)
+void CDiagCollectGuard::x_Init(EDiagSev print_severity,
+                               EDiagSev collect_severity,
+                               EAction  action)
 {
-    GetTraceCollectCounter().Add(-1);
-    if (action == eTrace_Print) {
+    // Get current print severity
+    EDiagSev psev, csev;
+    CDiagContextThreadData& thr_data =
+        CDiagContextThreadData::GetThreadData();
+    if ( thr_data.GetCollectGuard() ) {
+        psev = thr_data.GetCollectGuard()->GetPrintSeverity();
+        csev = thr_data.GetCollectGuard()->GetCollectSeverity();
+    }
+    else {
         CMutexGuard LOCK(s_DiagMutex);
-        TTraceCollection& coll = GetTraceCollection();
-        CDiagHandler* handler = GetDiagHandler();
-        if ( handler ) {
-            ITERATE(TTraceCollection, it, coll) {
-                handler->Post(*it);
-            }
-        }
-        coll.clear();
-        s_TraceCollectionSize = 0;
+        psev = CDiagBuffer::sm_PostSeverity;
+        csev = CDiagBuffer::sm_PostSeverity;
     }
-    // Discard only at the top level
-    else if (GetTraceCollectCounter().Get() <= 0) {
-        CMutexGuard LOCK(s_DiagMutex);
-        GetTraceCollection().clear();
-        s_TraceCollectionSize = 0;
-    }
+    psev = CompareDiagPostLevel(psev, print_severity) > 0
+        ? psev : print_severity;
+    csev = CompareDiagPostLevel(csev, collect_severity) < 0
+        ? csev : collect_severity;
+
+    m_PrintSev = psev;
+    m_CollectSev = csev;
+    m_Action = action;
+    thr_data.AddCollectGuard(this);
 }
 
 
-void CollectTraceMessage(const SDiagMessage& mess)
+CDiagCollectGuard::~CDiagCollectGuard(void)
 {
-    static const size_t kTraceCollectionMaxSize = 1000;
-    TTraceCollection& coll = GetTraceCollection();
-    if (s_TraceCollectionSize >= kTraceCollectionMaxSize) {
-        coll.erase(coll.begin());
-    }
-    coll.push_back(mess);
-    s_TraceCollectionSize++;
+    Release();
+}
+
+
+void CDiagCollectGuard::Release(void)
+{
+    CDiagContextThreadData& thr_data = CDiagContextThreadData::GetThreadData();
+    thr_data.RemoveCollectGuard(this);
+}
+
+
+void CDiagCollectGuard::Release(EAction action)
+{
+    SetAction(action);
+    Release();
 }
 
 
@@ -413,7 +426,8 @@ CDiagContextThreadData::CDiagContextThreadData(void)
       m_StopWatch(NULL),
       m_DiagBuffer(new CDiagBuffer),
       m_TID(s_GetThreadId()),
-      m_ThreadPostNumber(0)
+      m_ThreadPostNumber(0),
+      m_DiagCollectionSize(0)
 {
 }
 
@@ -546,6 +560,68 @@ int CDiagContextThreadData::GetThreadPostNumber(EPostNumberIncrement inc)
 {
     return inc == ePostNumber_Increment ?
         ++m_ThreadPostNumber : m_ThreadPostNumber;
+}
+
+
+void CDiagContextThreadData::AddCollectGuard(CDiagCollectGuard* guard)
+{
+    m_CollectGuards.push_front(guard);
+}
+
+
+void CDiagContextThreadData::RemoveCollectGuard(CDiagCollectGuard* guard)
+{
+    TCollectGuards::iterator it = find(
+        m_CollectGuards.begin(), m_CollectGuards.end(), guard);
+    if (it == m_CollectGuards.end()) {
+        return; // The guard has been already released
+    }
+    m_CollectGuards.erase(it);
+    if ( !m_CollectGuards.empty() ) {
+        return;
+        // Previously printing was done for each guard, discarding - only for
+        // the last guard.
+    }
+    // If this is the last guard, perform its action
+    CMutexGuard LOCK(s_DiagMutex);
+    if (guard->GetAction() == CDiagCollectGuard::ePrint) {
+        CDiagHandler* handler = GetDiagHandler();
+        if ( handler ) {
+            ITERATE(TDiagCollection, it, m_DiagCollection) {
+                handler->Post(*it);
+            }
+            size_t discarded = m_DiagCollectionSize - m_DiagCollection.size();
+            if (discarded > 0) {
+                ERR_POST(Warning << "Discarded " << discarded <<
+                    " messages due to collection limit. Set "
+                    "DIAG_COLLECT_LIMIT to increase the limit.");
+            }
+        }
+    }
+    m_DiagCollection.clear();
+    m_DiagCollectionSize = 0;
+}
+
+
+CDiagCollectGuard* CDiagContextThreadData::GetCollectGuard(void)
+{
+    return m_CollectGuards.empty() ? NULL : m_CollectGuards.front();
+}
+
+
+NCBI_PARAM_DECL(int, Diag, Collect_Limit);
+NCBI_PARAM_DEF_EX(int, Diag, Collect_Limit, 1000, eParam_NoThread,
+                  DIAG_COLLECT_LIMIT);
+typedef NCBI_PARAM_TYPE(Diag, Collect_Limit) TDiagCollectLimit;
+
+
+void CDiagContextThreadData::CollectDiagMessage(const SDiagMessage& mess)
+{
+    if (m_DiagCollectionSize >= TDiagCollectLimit::GetDefault()) {
+        m_DiagCollection.erase(m_DiagCollection.begin());
+    }
+    m_DiagCollection.push_back(mess);
+    m_DiagCollectionSize++;
 }
 
 
@@ -1765,6 +1841,49 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
     GetDiagContext().PushMessage(mess);
 }
 
+
+inline
+bool CDiagBuffer::SeverityDisabled(EDiagSev sev)
+{
+    CDiagContextThreadData& thr_data =
+        CDiagContextThreadData::GetThreadData();
+    CDiagCollectGuard* guard = thr_data.GetCollectGuard();
+    EDiagSev post_sev = sm_PostSeverity;
+    bool allow_trace = GetTraceEnabled();
+    if ( guard ) {
+        EDiagSev gpsev = guard->GetPrintSeverity();
+        EDiagSev gcsev = guard->GetCollectSeverity();
+        post_sev = CompareDiagPostLevel(gpsev, gcsev) < 0 ? gpsev : gcsev;
+        allow_trace = post_sev == eDiag_Trace;
+    }
+    if (sev == eDiag_Trace  &&  !allow_trace) {
+        return true; // trace is disabled
+    }
+    if (post_sev == eDiag_Trace  &&  allow_trace) {
+        return false; // everything is enabled
+    }
+    return (sev < post_sev)  &&  (sev < sm_DieSeverity  ||  sm_IgnoreToDie);
+}
+
+
+inline
+bool CDiagBuffer::SeverityPrintable(EDiagSev sev)
+{
+    CDiagContextThreadData& thr_data =
+        CDiagContextThreadData::GetThreadData();
+    CDiagCollectGuard* guard = thr_data.GetCollectGuard();
+    EDiagSev post_sev = guard ? guard->GetPrintSeverity() : sm_PostSeverity;
+    bool allow_trace = guard ? post_sev == eDiag_Trace : GetTraceEnabled();
+    if (sev == eDiag_Trace  &&  !allow_trace) {
+        return false; // trace is disabled
+    }
+    if (post_sev == eDiag_Trace  &&  allow_trace) {
+        return true; // everything is enabled
+    }
+    return !((sev < post_sev)  &&  (sev < sm_DieSeverity  ||  sm_IgnoreToDie));
+}
+
+
 bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
 {
     if ( m_InUse  ||  !m_Stream ) {
@@ -1777,9 +1896,7 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
     }
 
     EDiagSev sev = diag.GetSeverity();
-    if ((sev < sm_PostSeverity  &&  (sev < sm_DieSeverity  ||  sm_IgnoreToDie))
-        ||  (sev == eDiag_Trace  &&  !GetTraceEnabled()
-        &&  GetTraceCollectCounter().Get() <= 0)) {
+    if ( SeverityDisabled(sev) ) {
         return false;
     }
 
@@ -1814,10 +1931,7 @@ void CDiagBuffer::Flush(void)
     EDiagSev sev = m_Diag->GetSeverity();
 
     // Do nothing if diag severity is lower than allowed
-    if (!m_Diag  ||
-        (sev < sm_PostSeverity  &&  (sev < sm_DieSeverity  ||  sm_IgnoreToDie))
-        ||  (sev == eDiag_Trace  &&  !GetTraceEnabled()
-        &&  GetTraceCollectCounter().Get() <= 0)) {
+    if (!m_Diag  ||  SeverityDisabled(sev)) {
         return;
     }
 
@@ -1864,8 +1978,8 @@ void CDiagBuffer::Flush(void)
                           ePostNumber_Increment),
                           thr_data.GetThreadPostNumber(ePostNumber_Increment),
                           thr_data.GetRequestId());
-        if (sev == eDiag_Trace  &&  !GetTraceEnabled()) {
-            CollectTraceMessage(mess);
+        if ( !SeverityPrintable(sev) ) {
+            thr_data.CollectDiagMessage(mess);
             Reset(*m_Diag);
             return;
         }

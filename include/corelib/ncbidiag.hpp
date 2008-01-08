@@ -1057,26 +1057,90 @@ extern void SetDiagTraceFlag(EDiagPostFlag flag);
 NCBI_XNCBI_EXPORT
 extern void UnsetDiagTraceFlag(EDiagPostFlag flag);
 
+class CDiagContextThreadData;
 
-/// Action to perform in StopTraceCollect()
-enum ETraceCollectAction {
-    eTrace_Print,   ///< Print all collected trace messages
-    eTrace_Discard  ///< Discard collected trace messages
+/// Guard for collecting diag messages (affects the current thread only).
+///
+/// Messages with the severity equal or above 'print' severity will be
+/// printed but not collected. Messages having severity below 'print'
+/// severity and equal or above 'collect' severity will be collected,
+/// and later can be either discarded or printed out upon the guard
+/// destruction or when Release() is called.
+/// @note
+///  Nested guards are allowed. Each guard takes care to restore the
+///  severity thresholds set by the previous one.
+class NCBI_XNCBI_EXPORT CDiagCollectGuard
+{
+public:
+    /// Action to perform in guard's destructor
+    enum EAction {
+        ePrint,   ///< Print all collected messages
+        eDiscard  ///< Discard collected messages, default
+    };
+
+    /// Set collectable severity to the current post level,
+    /// print severity is set to critical.
+    /// The default action is eDiscard.
+    CDiagCollectGuard(void);
+
+    /// Set collectable severity to the current post level,
+    /// print severity is set to the specified value but can be ignored
+    /// if it's lower than the currently set post level (or print severity
+    /// set by a higher level guard).
+    /// The default action is eDiscard.
+    CDiagCollectGuard(EDiagSev print_severity);
+
+    /// Create diag collect guard with the given severities and action.
+    /// The guard will not set print severity below the current diag
+    /// post level (or print severity of a higher level guard).
+    /// Collect severity should be equal or lower than the current
+    /// diag post level or collect severity.
+    /// The default action is eDiscard.
+    CDiagCollectGuard(EDiagSev print_severity,
+                      EDiagSev collect_severity,
+                      EAction  action = eDiscard);
+
+    /// Destroy the guard, return post level to the one set before the
+    /// guard initialization. Depending on the currently set action
+    /// print or discard the messages.
+    /// On ePrint all collected messages are printed (if there is no
+    /// higher level guard) and removed from the collection.
+    /// On eDiscard the messages are silently discarded (only when the
+    /// last of several nested guards is destroyed).
+    ~CDiagCollectGuard(void);
+
+    /// Get current print severity
+    EDiagSev GetPrintSeverity(void) const { return m_PrintSev; }
+    /// Set new print severity.
+    void SetPrintSeverity(EDiagSev sev);
+
+    /// Get current collect severity
+    EDiagSev GetCollectSeverity(void) const { return m_CollectSev; }
+    /// Set new collect severity.
+    void SetCollectSeverity(EDiagSev sev);
+
+    /// Get selected on-destroy action
+    EAction GetAction(void) const { return m_Action; }
+    /// Specify on-destroy action.
+    void SetAction(EAction action) { m_Action = action; }
+
+    /// Release the guard. Perform the currently set action, stop collecting
+    /// messages, reset severities set by this guard.
+    void Release(void);
+
+    /// Release the guard. Perform the specified action, stop collecting
+    /// messages, reset severities set by this guard.
+    void Release(EAction action);
+
+private:
+    void x_Init(EDiagSev print_severity,
+                EDiagSev collect_severity,
+                EAction  action);
+
+    EDiagSev           m_PrintSev;
+    EDiagSev           m_CollectSev;
+    EAction            m_Action;
 };
-
-/// Start collecting trace messages even if trace is turned off.
-/// Nested starts are allowed, see note to StopTraceCollect().
-NCBI_XNCBI_EXPORT
-void StartTraceCollect(void);
-
-/// Stop collecting trace messages and perform the specified action.
-/// On eTrace_Print all collected messages are printed and removed
-/// from the collection. On eTrace_Discard the messages are silently
-/// discarded only if the call matches the first call to StartTraceCollect,
-/// otherwise the messages are still kept in the collection and can be
-/// printed by another StopTraceMessages().
-NCBI_XNCBI_EXPORT
-void StopTraceCollect(ETraceCollectAction action);
 
 
 /// Specify a string to prefix all subsequent error postings with.
@@ -1479,9 +1543,22 @@ public:
     /// Get thread post number
     int GetThreadPostNumber(EPostNumberIncrement inc);
 
+    void AddCollectGuard(CDiagCollectGuard* guard);
+    void RemoveCollectGuard(CDiagCollectGuard* guard);
+    CDiagCollectGuard* GetCollectGuard(void);
+
+    void CollectDiagMessage(const SDiagMessage& mess);
+
 private:
     CDiagContextThreadData(const CDiagContextThreadData&);
     CDiagContextThreadData& operator=(const CDiagContextThreadData&);
+
+    // Guards override the global post level and define severity
+    // for collecting messages.
+    typedef list<CDiagCollectGuard*> TCollectGuards;
+
+    // Collected diag messages
+    typedef list<SDiagMessage>       TDiagCollection;
 
     auto_ptr<TProperties> m_Properties;       // Per-thread properties
     int                   m_RequestId;        // Per-thread request ID
@@ -1489,6 +1566,9 @@ private:
     auto_ptr<CDiagBuffer> m_DiagBuffer;       // Thread's diag buffer
     TTID                  m_TID;              // Cached thread ID
     int                   m_ThreadPostNumber; // Number of posted messages
+    TCollectGuards        m_CollectGuards;
+    TDiagCollection       m_DiagCollection;
+    size_t                m_DiagCollectionSize; // cached size of m_DiagCollection
 };
 
 

@@ -110,6 +110,7 @@ class CDiagBuffer
 private:
     friend class CDiagRestorer;
     friend class CDiagContext;
+    friend class CDiagCollectGuard;
 
     const CNcbiDiag*   m_Diag;    // present user
     CNcbiOstream*      m_Stream;  // storage for the diagnostic message
@@ -177,6 +178,9 @@ private:
                                            // directly
     static bool GetTraceEnabledFirstTime(void);
     static bool GetSeverityChangeEnabledFirstTime(void);
+    // Anything not disabled but also not printable is collectable.
+    static bool SeverityDisabled(EDiagSev sev); // ignore this severity
+    static bool SeverityPrintable(EDiagSev sev); // print this severity
 
     // call the current diagnostics handler directly
     static void DiagHandler(SDiagMessage& mess);
