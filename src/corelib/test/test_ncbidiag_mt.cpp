@@ -86,9 +86,11 @@ bool CTestDiagApp::Thread_Init(int idx)
 
 bool CTestDiagApp::Thread_Run(int idx)
 {
-    if (!s_LogLine) s_LogLine = __LINE__ + 1;
+    if (!s_LogLine)
+        s_LogLine = __LINE__ + 1;
     LOG_POST("LOG message from thread " + NStr::IntToString(idx));
-    if (!s_ErrLine) s_ErrLine = __LINE__ + 1;
+    if (!s_ErrLine)
+        s_ErrLine = __LINE__ + 1;
     ERR_POST("ERROR message from thread " + NStr::IntToString(idx));
     for ( int i = 0; i < 1000000; ++i ) {
         CThreadSystemID::GetCurrent();
@@ -112,7 +114,6 @@ bool CTestDiagApp::TestApp_Init(void)
              << NcbiEndl;
     // Output to the string stream -- to verify the result
     SetDiagStream(&s_Sout);
-
     return true;
 }
 
@@ -191,6 +192,9 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
     int other_msg_count = 0;
 
     ITERATE(TStringList, it, messages) {
+        if ( it->empty() ) {
+            continue;
+        }
         SDiagMessage msg(*it);
         assert(msg.GetUID() == uid);
         assert(msg.m_PID == pid);
@@ -259,5 +263,5 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
 int main(int argc, const char* argv[]) 
 {
     CTestDiagApp app;
-    return app.AppMain(argc, argv, 0, eDS_ToStdlog, 0);
+    return app.AppMain(argc, argv);
 }
