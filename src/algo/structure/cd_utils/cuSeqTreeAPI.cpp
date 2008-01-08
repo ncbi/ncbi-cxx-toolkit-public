@@ -55,7 +55,7 @@ SeqTreeAPI::SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly)
 		return;
 	}
 	m_ma.setAlignment(*families[0]);
-	delete families[0];
+	m_family = families[0];
 }
 
 SeqTreeAPI::SeqTreeAPI(CCdCore* cd)
@@ -70,6 +70,7 @@ SeqTreeAPI::SeqTreeAPI(CDFamily& cdfam, TreeOptions& option)
 	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(option), m_triedTreeMaking(false),
 	m_loadOnly(false), m_cd(0), m_taxClient(0), m_family(&cdfam)
 {
+	m_family = new CDFamily(cdfam);
 }
 
 SeqTreeAPI::~SeqTreeAPI()
@@ -77,6 +78,7 @@ SeqTreeAPI::~SeqTreeAPI()
 	if (m_seqTree) delete m_seqTree;
 	if (m_taxTree) delete m_taxTree;
 	if (m_taxClient) delete m_taxClient;
+	if (m_family) delete m_family;
 }
 
 void SeqTreeAPI::annotateTreeByMembership()
@@ -303,7 +305,7 @@ bool SeqTreeAPI::loadAndValidateExistingTree()
 	SeqTreeAsnizer::convertToTreeOption(algType, m_treeOptions);
 	if (m_treeOptions.scope == CAlgorithm_type::eTree_scope_immediateChildrenOnly)
 	{
-		CDFamily *subfam;
+		CDFamily *subfam = new CDFamily;
 		m_family->subfamily(m_family->begin(),subfam, true); //childrenOnly = true
 		m_ma.setAlignment(*subfam);
 		delete subfam;

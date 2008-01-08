@@ -577,8 +577,7 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd)
 				int joined = taxServer.Join(comTax, taxid);
 				if (joined == 0)
 				{
-					LOG_POST("Failed to join two taxids:"<<comTax<<" and "<<taxid<<". This error is "<<taxServer.GetLastError());
-					return orgRef;
+					LOG_POST("Failed to join two taxids:"<<comTax<<" and "<<taxid<<". The latter one is ignored.");
 				}
 				else
 					comTax = joined;
