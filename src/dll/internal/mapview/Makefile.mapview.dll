@@ -3,7 +3,7 @@
 DLL = mapview
 
 HOSTED_LIBS = mapdata mapview mapviewcli mv_admin mv_admincli mv_align \
-			  mv_entrez mv_entrezcli mv_meta mv_metacli mv_types \
+			  mv_entrez mv_entrezcli mv_markup mv_meta mv_metacli mv_types \
 			  mvobjutil
 
 
