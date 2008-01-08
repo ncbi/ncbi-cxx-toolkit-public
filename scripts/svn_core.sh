@@ -122,7 +122,7 @@ echo 'Retrieving source files from Subversion:'
 
 ## Initial checkout
 $svn_cmd checkout -N -r "$revision" $REPOS $target_dir || \
-	Usage "Cannot checkout $REPOS"
+        Usage "Cannot checkout $REPOS"
 need_cleanup="yes"
 
 cd "$target_dir"  ||  Usage "Cannot cd to $target_dir"
@@ -300,32 +300,12 @@ if test "$with_gui" != "no" ; then
     $svn_cmd $cmd_for_externals $GUI_URL/src/gui src/gui
 fi
 
-## Generate serialization code from ASN.1 specs
+## Generate serialization code from ASN.1 and XML specs
 if test "$with_objects" = "yes" ; then
     echo
-    echo 'Generating serialization code from ASN.1 specs:'
-    cd src/objects  ||  Usage "Failed:  cd src/objects"
-    { make -f Makefile.sources builddir=$NCBI/c++.metastable/Release/build  ||  Usage "Failed to generate serialization classes" ; } \
-    | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.asn ' \
-    | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.asn\).*%  \1%g'
-    cd ../../src/app/sample/soap   ||  Usage "Failed:  cd ../../src/app/sample/soap (from src/objects)" ;
-    { $NCBI/c++.metastable/Release/build/new_module.sh --xsd soap_dataobj  ||  Usage "Failed to generate serialization classes" ; } \
-        | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.dtd ' \
-        | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.dtd\).*%  \1%g'
-    cd ../../../..  ||  Usage "Failed:  cd ../../../..  (from src/app/sample/soap)"
-    if test "$with_gui" != "no"; then
-        cd src/gui/objects  ||  Usage "Failed:  cd src/gui/objects"
-        for x in *.asn; do
-            { $NCBI/c++.metastable/Release/build/new_module.sh `basename $x .asn`  ||  Usage "Failed to generate serialization classes" ; } \
-                | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.asn ' \
-                | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.asn\).*%  \1%g'
-        done
-        cd ../dialogs/edit/feature  ||  Usage "Failed:  cd ../dialogs/edit/feature (from src/gui/core)"
-        { $NCBI/c++.metastable/Release/build/new_module.sh  ||  Usage "Failed to generate serialization classes" ; } \
-            | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.asn ' \
-            | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.asn\).*%  \1%g'
-        cd ../../../../..  ||  Usage "Failed:  cd ../../../../..  (from src/gui/dialogs/edit/feature)"
-    fi
+    echo 'Generating serialization code from ASN.1 and XML specs:'
+    scripts/generate_all_objects.sh || \
+        Usage "Failed to generate serialization classes"
 fi
 
 
