@@ -156,39 +156,35 @@ sub CheckForNonRecursiveExternals
 {
     my ($Self, $Path, $Branch) = @_;
 
-    if (ref $Branch)
+    my (@ExistingSubDirs, @NewExternalSubDirs);
+
+    $Self->CheckOutMissingExternals('non-recursive',
+        \@ExistingSubDirs, \@NewExternalSubDirs, $Path,
+            grep {ref $Branch->{$_}} keys %$Branch);
+
+    $Self->CheckForNonRecursiveExternals("$Path/$_", $Branch->{$_})
+        for @ExistingSubDirs;
+
+    $Self->PerformNonRecursiveUpdates("$Path/$_", $Branch->{$_})
+        for @NewExternalSubDirs
+}
+
+sub BuildNonRecDirLists
+{
+    my ($DirList, $Path, $Branch) = @_;
+
+    push @$DirList, $Path;
+
+    while (my ($SubDir, $SubBranch) = each %$Branch)
     {
-        my (@ExistingSubDirs, @NewExternalSubDirs);
-
-        $Self->CheckOutMissingExternals('non-recursive',
-            \@ExistingSubDirs, \@NewExternalSubDirs, $Path, keys %$Branch);
-
-        $Self->CheckForNonRecursiveExternals("$Path/$_", $Branch->{$_})
-            for @ExistingSubDirs;
-
-        $Self->PerformNonRecursiveUpdates("$Path/$_", $Branch->{$_})
-            for @NewExternalSubDirs
+        BuildNonRecDirLists($DirList, "$Path/$SubDir", $SubBranch)
+            if ref $SubBranch
     }
 }
 
 sub PerformNonRecursiveUpdates
 {
     my ($Self, $Path, $Tree) = @_;
-
-    sub BuildNonRecDirLists
-    {
-        my ($DirList, $Path, $Branch) = @_;
-
-        if (ref $Branch)
-        {
-            push @$DirList, $Path;
-
-            while (my ($SubDir, $SubBranch) = each %$Branch)
-            {
-                BuildNonRecDirLists($DirList, "$Path/$SubDir", $SubBranch)
-            }
-        }
-    }
 
     my @DirList;
 
@@ -282,6 +278,7 @@ Path:
 
     $Self->BuildListOfDirsToUpdateRecursively(\@DirsToUpdate, '.', \%NewTree);
 
+    # Perform recursive updates.
     if (@DirsToUpdate)
     {
         my @DirList;
