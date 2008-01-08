@@ -92,12 +92,12 @@ class NCBI_SEQFEAT_EXPORT CSeqFeatData : public CSeqFeatData_Base
 {
     typedef CSeqFeatData_Base Tparent;
 public:
-    // constructor
+    /// constructor
     CSeqFeatData(void);
-    // destructor
+    /// destructor
     ~CSeqFeatData(void);
 
-    // ASCII representation of subtype (GenBank feature key, e.g.)
+    /// ASCII representation of subtype (GenBank feature key, e.g.)
     enum EVocabulary {
         eVocabulary_full,
         eVocabulary_genbank
@@ -105,8 +105,8 @@ public:
     string GetKey(EVocabulary vocab = eVocabulary_full) const;
 
     enum ESubtype {
-        // These no longer need to match the FEATDEF values in the
-        // C toolkit's objfdef.h
+        /// These no longer need to match the FEATDEF values in the
+        /// C toolkit's objfdef.h
         eSubtype_bad = 0,
         eSubtype_gene,
         eSubtype_org,
@@ -209,15 +209,15 @@ public:
     };
     ESubtype GetSubtype(void) const;
     
-    // Call after changes that could affect the subtype
+    /// Call after changes that could affect the subtype
     void InvalidateSubtype(void);
 
     static E_Choice GetTypeFromSubtype (ESubtype subtype);
 
-    // List of available qualifiers for feature keys.
-    // For more information see: 
-    //   The DDBJ/EMBL/GenBank Feature Table: Definition
-    //   (http://www.ncbi.nlm.nih.gov/projects/collab/FT/index.html)
+    /// List of available qualifiers for feature keys.
+    /// For more information see: 
+    ///   The DDBJ/EMBL/GenBank Feature Table: Definition
+    ///   (http://www.ncbi.nlm.nih.gov/projects/collab/FT/index.html)
     enum EQualifier
     {
         eQual_bad = 0,
@@ -315,19 +315,19 @@ public:
     };
     typedef vector<EQualifier> TQualifiers;
 
-    // Test wheather a certain qualifier is legal for the feature
+    /// Test wheather a certain qualifier is legal for the feature
     bool IsLegalQualifier(EQualifier qual) const;
     static bool IsLegalQualifier(ESubtype subtype, EQualifier qual);
 
-    // Get a list of all the legal qualifiers for the feature.
+    /// Get a list of all the legal qualifiers for the feature.
     const TQualifiers& GetLegalQualifiers(void) const;
     static const TQualifiers& GetLegalQualifiers(ESubtype subtype);
 
-    // Get the list of all mandatory qualifiers for the feature.
+    /// Get the list of all mandatory qualifiers for the feature.
     const TQualifiers& GetMandatoryQualifiers(void) const;
     static const TQualifiers& GetMandatoryQualifiers(ESubtype subtype);
     
-    // Convert a qualifier from an enumerated value to a string representation.
+    /// Convert a qualifier from an enumerated value to a string representation.
     static const string& GetQualifierAsString(EQualifier qual);
 
     NCBI_DEPRECATED
@@ -338,8 +338,26 @@ public:
     static const CBondList* GetBondList();
     static const CSiteList* GetSiteList();
 
+    // Internal structure to hold additional info
+    struct SFeatDataInfo
+    {
+        SFeatDataInfo(void) : m_Subtype(CSeqFeatData::eSubtype_any) {}
+        SFeatDataInfo(CSeqFeatData::ESubtype subtype,
+                      const char*            key_full,
+                      const char*            key_gb)
+                      : m_Subtype(subtype),
+                        m_Key_full(key_full),
+                        m_Key_gb(key_gb) {}
+
+        CSeqFeatData::ESubtype m_Subtype;
+        string                 m_Key_full;
+        string                 m_Key_gb;
+    };
+
 private:
-    mutable ESubtype m_Subtype; // cached
+    void x_InitFeatDataInfo(void) const;
+
+    mutable SFeatDataInfo m_FeatDataInfo; // cached
 
     static void s_InitSubtypesTable(void);
     static void s_InitLegalQuals(void);
@@ -356,15 +374,16 @@ private:
 
 // constructor
 inline
-CSeqFeatData::CSeqFeatData(void) : m_Subtype(eSubtype_any)
+CSeqFeatData::CSeqFeatData(void)
 {
+    m_FeatDataInfo.m_Subtype = eSubtype_any;
 }
 
 
 inline
 void CSeqFeatData::InvalidateSubtype(void)
 {
-    m_Subtype = eSubtype_any;
+    m_FeatDataInfo.m_Subtype = eSubtype_any;
 }
 
 

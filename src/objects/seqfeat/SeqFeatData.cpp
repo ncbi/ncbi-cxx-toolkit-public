@@ -53,114 +53,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-// destructor
-CSeqFeatData::~CSeqFeatData(void)
-{
-}
-
-
-// ASCII representation of subtype (GenBank feature key, e.g.)
-string CSeqFeatData::GetKey(EVocabulary vocab) const
-{
-    bool genbank = (vocab == eVocabulary_genbank);
-    if (genbank) {
-        switch (Which()) {
-        case e_Gene:
-            return "gene";
-        case e_Org:
-        case e_Biosrc:
-            return "source";
-        case e_Prot:
-            switch (GetProt().GetProcessed()) {
-            case CProt_ref::eProcessed_preprotein:
-                return "proprotein";
-            case CProt_ref::eProcessed_mature:
-                return "mat_peptide";
-            case CProt_ref::eProcessed_signal_peptide:
-                return "sig_peptide";
-            case CProt_ref::eProcessed_transit_peptide:
-                return "transit_peptide";
-            default:
-                return "Protein";
-            }
-        case e_Site: // Is this correct, or are these encoded as Imp?
-            switch (GetSite()) {
-            case CSeqFeatData::eSite_binding:
-            case CSeqFeatData::eSite_metal_binding:
-            case CSeqFeatData::eSite_lipid_binding:
-                return "misc_binding";
-            case CSeqFeatData::eSite_np_binding:
-                return "protein_bind";
-            case CSeqFeatData::eSite_dna_binding:
-                return "primer_bind"; // ?
-            case CSeqFeatData::eSite_signal_peptide:
-                return "sig_peptide";
-            case CSeqFeatData::eSite_transit_peptide:
-                return "transit_peptide";
-            default:
-                return "misc_feature";
-            }
-        case e_Txinit:
-            return "promoter"; // ?
-        case e_Het:
-            return "misc_binding"; // ?
-        case e_Cdregion:
-        case e_Rna:
-        case e_Imp:
-            break;
-        default:
-            return "misc_feature"; // ???
-        }
-    }
-
-    switch (Which()) {
-    case e_Gene:            return "Gene";
-    case e_Org:             return "Org";
-    case e_Cdregion:        return "CDS";
-    case e_Prot:            return "Prot";
-    case e_Rna:
-        switch (GetRna().GetType()) {
-        case CRNA_ref::eType_premsg:  return "precursor_RNA";
-        case CRNA_ref::eType_mRNA:    return "mRNA";
-        case CRNA_ref::eType_tRNA:    return "tRNA";
-        case CRNA_ref::eType_rRNA:    return "rRNA";
-        case CRNA_ref::eType_snRNA:   return "snRNA";
-        case CRNA_ref::eType_scRNA:   return "scRNA";
-        case CRNA_ref::eType_snoRNA:  return "snoRNA"; // ok for GenBank?
-        case CRNA_ref::eType_other:
-        {
-            bool can_get_name = ( !genbank /* through Dec. 15, 2007 */
-                                 &&  GetRna().CanGetExt()
-                                 &&  GetRna().GetExt().IsName());
-            const string& ext_name = (can_get_name ? GetRna().GetExt().GetName()
-                                      : kEmptyStr);
-            if (ext_name == "ncRNA"  ||  ext_name == "tmRNA") {
-                return ext_name;
-            } else if (genbank) {
-                return "misc_RNA";
-            } else {
-                return "RNA";
-            }
-        }
-        default:                      return "misc_RNA";
-        }
-    case e_Imp:             return GetImp().GetKey(); // "Imp"?
-    case e_Region:          return "Region";
-    case e_Comment:         return "Comment";
-    case e_Bond:            return "Bond";
-    case e_Site:            return "Site";
-    case e_Rsite:           return "Rsite";
-    case e_User:            return "User";
-    case e_Txinit:          return "TxInit";
-    case e_Num:             return "Num";
-    case e_Psec_str:        return "SecStr";
-    case e_Non_std_residue: return "NonStdRes";
-    case e_Het:             return "Het";
-    case e_Biosrc:          return "Src";
-    default:                return "???";
-    }
-}
-
 
 struct SImportEntry {
     const char*            m_Name;
@@ -241,91 +133,215 @@ static const SImportEntry kImportTable[] = {
 static const SImportEntry* kImportTableEnd
     = kImportTable + sizeof(kImportTable)/sizeof(SImportEntry);
 
+// Feat info table
+typedef pair<CSeqFeatData::E_Choice, CSeqFeatData::SFeatDataInfo> TInfoPair;
+
+#define FEAT_INFO_PAIR(type, subtype, key_full, key_gb) \
+    TInfoPair(CSeqFeatData::e_##type, CSeqFeatData::SFeatDataInfo( \
+              CSeqFeatData::eSubtype_##subtype, key_full, key_gb))
+
+static const TInfoPair kInfoPairs[] = {
+    FEAT_INFO_PAIR(Gene, gene, "Gene", "gene"),
+    FEAT_INFO_PAIR(Org, org, "Org", "source"),
+    FEAT_INFO_PAIR(Cdregion, cdregion, "CDS", "CDS"),
+    FEAT_INFO_PAIR(Pub, pub, "???", "misc_feature"),
+    FEAT_INFO_PAIR(Seq, seq, "???", "misc_feature"),
+    FEAT_INFO_PAIR(Region, region, "Region", "misc_feature"),
+    FEAT_INFO_PAIR(Comment, comment, "Comment", "misc_feature"),
+    FEAT_INFO_PAIR(Bond, bond, "Bond", "misc_feature"),
+    FEAT_INFO_PAIR(Rsite, rsite, "Rsite", "misc_feature"),
+    FEAT_INFO_PAIR(User, user, "User", "misc_feature"),
+    FEAT_INFO_PAIR(Txinit, txinit, "TxInit", "promoter"),
+    FEAT_INFO_PAIR(Num, num, "Num", "misc_feature"),
+    FEAT_INFO_PAIR(Psec_str, psec_str, "SecStr", "misc_feature"),
+    FEAT_INFO_PAIR(Non_std_residue, non_std_residue, "NonStdRes", "misc_feature"),
+    FEAT_INFO_PAIR(Het, het, "Het", "misc_binding"),
+    FEAT_INFO_PAIR(Biosrc, biosrc, "Src", "source")
+};
+
+typedef CStaticArrayMap<CSeqFeatData::E_Choice,
+                        CSeqFeatData::SFeatDataInfo> TInfoMap;
+DEFINE_STATIC_ARRAY_MAP(TInfoMap, sc_InfoPairs, kInfoPairs);
+
+
+// e_Prot info table
+typedef pair<CProt_ref::EProcessed, CSeqFeatData::SFeatDataInfo> TProtInfoPair;
+
+#define PROT_INFO_PAIR(proc, subtype, key_full, key_gb) \
+    TProtInfoPair(CProt_ref::eProcessed_##proc, CSeqFeatData::SFeatDataInfo( \
+              CSeqFeatData::eSubtype_##subtype, key_full, key_gb))
+
+static const TProtInfoPair kProtInfoPairs[] = {
+    PROT_INFO_PAIR(preprotein, preprotein, "Prot", "proprotein"),
+    PROT_INFO_PAIR(mature, mat_peptide_aa, "Prot", "mat_peptide"),
+    PROT_INFO_PAIR(signal_peptide, sig_peptide_aa, "Prot", "sig_peptide"),
+    PROT_INFO_PAIR(transit_peptide, transit_peptide_aa, "Prot", "transit_peptide")
+};
+
+typedef CStaticArrayMap<CProt_ref::EProcessed,
+                        CSeqFeatData::SFeatDataInfo> TProtInfoMap;
+DEFINE_STATIC_ARRAY_MAP(TProtInfoMap, sc_ProtInfoPairs, kProtInfoPairs);
+
+
+// e_Site info table
+typedef pair<CSeqFeatData::ESite, CSeqFeatData::SFeatDataInfo> TSiteInfoPair;
+
+#define SITE_INFO_PAIR(site, subtype, key_full, key_gb) \
+    TSiteInfoPair(CSeqFeatData::eSite_##site, CSeqFeatData::SFeatDataInfo( \
+              CSeqFeatData::eSubtype_##subtype, key_full, key_gb))
+
+static const TSiteInfoPair kSiteInfoPairs[] = {
+    SITE_INFO_PAIR(binding, site, "Site", "misc_binding"),
+    SITE_INFO_PAIR(metal_binding, site, "Site", "misc_binding"),
+    SITE_INFO_PAIR(lipid_binding, site, "Site", "misc_binding"),
+    SITE_INFO_PAIR(np_binding, site, "Site", "protein_bind"),
+    SITE_INFO_PAIR(dna_binding, site, "Site", "primer_bind"),
+    SITE_INFO_PAIR(signal_peptide, site, "Site", "sig_peptide"),
+    SITE_INFO_PAIR(transit_peptide, site, "Site", "transit_peptide")
+};
+
+typedef CStaticArrayMap<CSeqFeatData::ESite,
+                        CSeqFeatData::SFeatDataInfo> TSiteInfoMap;
+DEFINE_STATIC_ARRAY_MAP(TSiteInfoMap, sc_SiteInfoPairs, kSiteInfoPairs);
+
+
+// e_Rna info table
+typedef pair<CRNA_ref::EType, CSeqFeatData::SFeatDataInfo> TRnaInfoPair;
+
+#define RNA_INFO_PAIR(rna, subtype, key_full, key_gb) \
+    TRnaInfoPair(CRNA_ref::eType_##rna, CSeqFeatData::SFeatDataInfo( \
+              CSeqFeatData::eSubtype_##subtype, key_full, key_gb))
+
+static const TRnaInfoPair kRnaInfoPairs[] = {
+    RNA_INFO_PAIR(premsg, preRNA, "precursor_RNA", "precursor_RNA"),
+    RNA_INFO_PAIR(mRNA, mRNA, "mRNA", "mRNA"),
+    RNA_INFO_PAIR(tRNA, tRNA, "tRNA", "tRNA"),
+    RNA_INFO_PAIR(rRNA, rRNA, "rRNA", "rRNA"),
+    RNA_INFO_PAIR(snRNA, snRNA, "snRNA", "snRNA"),
+    RNA_INFO_PAIR(scRNA, scRNA, "scRNA", "scRNA"),
+    RNA_INFO_PAIR(snoRNA, snoRNA, "snoRNA", "snoRNA")
+};
+
+typedef CStaticArrayMap<CRNA_ref::EType,
+                        CSeqFeatData::SFeatDataInfo> TRnaInfoMap;
+DEFINE_STATIC_ARRAY_MAP(TRnaInfoMap, sc_RnaInfoPairs, kRnaInfoPairs);
+
+
+void CSeqFeatData::x_InitFeatDataInfo(void) const
+{
+    m_FeatDataInfo.m_Key_gb = "misc_feature"; // ???
+    m_FeatDataInfo.m_Key_full = "???";
+    switch (Which()) {
+    case e_Prot:
+        {
+            TProtInfoMap::const_iterator it =
+                sc_ProtInfoPairs.find(GetProt().GetProcessed());
+            if (it != sc_ProtInfoPairs.end()) {
+                m_FeatDataInfo = it->second;
+            }
+            else {
+                m_FeatDataInfo.m_Subtype = eSubtype_prot;
+                m_FeatDataInfo.m_Key_full = "Prot";
+                m_FeatDataInfo.m_Key_gb = "Protein";
+            }
+            break;
+        }
+    case e_Site: // Is this correct, or are these encoded as Imp?
+        {
+            TSiteInfoMap::const_iterator it = sc_SiteInfoPairs.find(GetSite());
+            if (it != sc_SiteInfoPairs.end()) {
+                m_FeatDataInfo = it->second;
+            }
+            else {
+                m_FeatDataInfo.m_Subtype = eSubtype_site;
+                m_FeatDataInfo.m_Key_full = "Site";
+                m_FeatDataInfo.m_Key_gb = "misc_feature";
+            }
+            break;
+        }
+    case e_Rna:
+        {
+            TRnaInfoMap::const_iterator it =
+                sc_RnaInfoPairs.find(GetRna().GetType());
+            if (it != sc_RnaInfoPairs.end()) {
+                m_FeatDataInfo = it->second;
+            }
+            else {
+                bool other = Which() != CRNA_ref::eType_other;
+                bool can_get_name = (GetRna().CanGetExt()
+                                    &&  GetRna().GetExt().IsName());
+                const string& ext_name = (can_get_name
+                                        ? GetRna().GetExt().GetName()
+                                        : kEmptyStr);
+                if (ext_name == "ncRNA") {
+                    m_FeatDataInfo.m_Subtype = eSubtype_ncRNA;
+                    m_FeatDataInfo.m_Key_full = other ? ext_name : "misc_RNA";
+                } else if (ext_name == "tmRNA") {
+                    m_FeatDataInfo.m_Subtype = eSubtype_tmRNA;
+                    m_FeatDataInfo.m_Key_full = other ? ext_name : "misc_RNA";
+                } else {
+                    m_FeatDataInfo.m_Subtype = eSubtype_otherRNA;
+                    m_FeatDataInfo.m_Key_full = other ? "RNA" : "misc_RNA";
+                }
+                m_FeatDataInfo.m_Key_gb = "misc_RNA";
+            }
+            break;
+        }
+    case e_Imp:
+    {
+        const string& key    = GetImp().GetKey();
+        SImportEntry  key2   = { key.c_str(), eSubtype_imp };
+        const SImportEntry* result = lower_bound(kImportTable,
+                                                 kImportTableEnd,
+                                                 key2);
+        if (strcmp(key2.m_Name, result->m_Name)) {
+            m_FeatDataInfo.m_Subtype = eSubtype_imp;
+        } else {
+            m_FeatDataInfo.m_Subtype = result->m_Subtype;
+        }
+        m_FeatDataInfo.m_Key_gb = key; // "Imp"?;
+        m_FeatDataInfo.m_Key_full = key;
+        break;
+    }
+    default:
+        {
+            TInfoMap::const_iterator it = sc_InfoPairs.find(Which());
+            if (it != sc_InfoPairs.end()) {
+                m_FeatDataInfo = it->second;
+            }
+            else {
+                m_FeatDataInfo.m_Subtype = eSubtype_bad;
+                m_FeatDataInfo.m_Key_full = "???";
+                m_FeatDataInfo.m_Key_gb = "misc_feature"; // ???
+            }
+        }
+    }
+}
+
+
+// destructor
+CSeqFeatData::~CSeqFeatData(void)
+{
+}
+
+
+// ASCII representation of subtype (GenBank feature key, e.g.)
+string CSeqFeatData::GetKey(EVocabulary vocab) const
+{
+    if (m_FeatDataInfo.m_Key_gb.empty()  &&  m_FeatDataInfo.m_Key_full.empty()) {
+        x_InitFeatDataInfo();
+    }
+    return (vocab == eVocabulary_genbank) ?
+        m_FeatDataInfo.m_Key_gb : m_FeatDataInfo.m_Key_full;
+}
+
 
 CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
 {
-    if (m_Subtype == eSubtype_any) { // unknown
-        switch (Which()) {
-        case e_Gene:       m_Subtype = eSubtype_gene;     break;
-        case e_Org:        m_Subtype = eSubtype_org;      break;
-        case e_Cdregion:   m_Subtype = eSubtype_cdregion; break;
-        case e_Prot:
-            switch (GetProt().GetProcessed()) {
-            case CProt_ref::eProcessed_preprotein:
-                m_Subtype = eSubtype_preprotein;
-                break;
-            case CProt_ref::eProcessed_mature:
-                m_Subtype = eSubtype_mat_peptide_aa;
-                break;
-            case CProt_ref::eProcessed_signal_peptide:
-                m_Subtype = eSubtype_sig_peptide_aa;
-                break;
-            case CProt_ref::eProcessed_transit_peptide:
-                m_Subtype = eSubtype_transit_peptide_aa;
-                break;
-            default:
-                m_Subtype = eSubtype_prot;
-                break;
-            }
-            break;
-        case e_Rna:
-            switch (GetRna().GetType()) {
-            case CRNA_ref::eType_premsg: m_Subtype = eSubtype_preRNA;   break;
-            case CRNA_ref::eType_mRNA:   m_Subtype = eSubtype_mRNA;     break;
-            case CRNA_ref::eType_tRNA:   m_Subtype = eSubtype_tRNA;     break;
-            case CRNA_ref::eType_rRNA:   m_Subtype = eSubtype_rRNA;     break;
-            case CRNA_ref::eType_snRNA:  m_Subtype = eSubtype_snRNA;    break;
-            case CRNA_ref::eType_scRNA:  m_Subtype = eSubtype_scRNA;    break;
-            case CRNA_ref::eType_snoRNA: m_Subtype = eSubtype_snoRNA;   break;
-            default:
-            {
-                bool can_get_name = (GetRna().CanGetExt()
-                                     &&  GetRna().GetExt().IsName());
-                const string& ext_name = (can_get_name
-                                          ? GetRna().GetExt().GetName()
-                                          : kEmptyStr);
-                if (ext_name == "ncRNA") {
-                    m_Subtype = eSubtype_ncRNA;
-                } else if (ext_name == "tmRNA") {
-                    m_Subtype = eSubtype_tmRNA;
-                } else {
-                    m_Subtype = eSubtype_otherRNA;
-                }
-            }
-            }
-            break;
-        case e_Pub:        m_Subtype = eSubtype_pub;      break;
-        case e_Seq:        m_Subtype = eSubtype_seq;      break;
-        case e_Imp:
-        {
-            const string&       key    = GetImp().GetKey();
-            SImportEntry        key2   = { key.c_str(), eSubtype_imp };
-            const SImportEntry* result = lower_bound(kImportTable,
-                                                     kImportTableEnd,
-                                                     key2);
-            if (strcmp(key2.m_Name, result->m_Name)) {
-                m_Subtype = eSubtype_imp;
-            } else {
-                m_Subtype = result->m_Subtype;
-            }
-            break;
-        }
-        case e_Region:          m_Subtype = eSubtype_region;          break;
-        case e_Comment:         m_Subtype = eSubtype_comment;         break;
-        case e_Bond:            m_Subtype = eSubtype_bond;            break;
-        case e_Site:            m_Subtype = eSubtype_site;            break;
-        case e_Rsite:           m_Subtype = eSubtype_rsite;           break;
-        case e_User:            m_Subtype = eSubtype_user;            break;
-        case e_Txinit:          m_Subtype = eSubtype_txinit;          break;
-        case e_Num:             m_Subtype = eSubtype_num;             break;
-        case e_Psec_str:        m_Subtype = eSubtype_psec_str;        break;
-        case e_Non_std_residue: m_Subtype = eSubtype_non_std_residue; break;
-        case e_Het:             m_Subtype = eSubtype_het;             break;
-        case e_Biosrc:          m_Subtype = eSubtype_biosrc;          break;
-        default:                m_Subtype = eSubtype_bad;             break;
-        }
-    } 
-    return m_Subtype;
+    if (m_FeatDataInfo.m_Subtype == eSubtype_any) { // unknown
+        x_InitFeatDataInfo();
+    }
+    return m_FeatDataInfo.m_Subtype;
 }
 
 
@@ -2219,7 +2235,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_transposon, "transposon"),
     TQualPair(CSeqFeatData::eQual_usedin, "usedin"),
     TQualPair(CSeqFeatData::eQual_variety, "variety"),
-    TQualPair(CSeqFeatData::eQual_virion, "virion"),
+    TQualPair(CSeqFeatData::eQual_virion, "virion")
 };
 
 typedef CStaticArrayMap<CSeqFeatData::EQualifier, string> TQualsMap;
@@ -2234,7 +2250,6 @@ const string& CSeqFeatData::GetQualifierAsString(EQualifier qual)
 /////////////////// end of CSeqFeatData methods
 
 
- 
 const CFeatList* CSeqFeatData::GetFeatList()
 {
     static auto_ptr<CFeatList> theFeatList;
