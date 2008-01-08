@@ -7,7 +7,7 @@ software is in the public domain, as per the notice at the end of this file.
 
 Currently the program supports files the in format of Cn3D and the Conserved
 Domain Database (CD format).  A preliminary version of an MFASTA -> CD converter
-('fasta2cd') is also provided.
+('fa2cd') is also provided.
 
 The Linux binary names end in '_LX' and PC binary names end in '.exe'.  
 
