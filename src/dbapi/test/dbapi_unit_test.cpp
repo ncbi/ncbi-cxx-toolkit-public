@@ -1961,7 +1961,7 @@ CDBAPIUnitTest::Test_LOB(void)
                 }
 
                 // Check record number ...
-                BOOST_CHECK_EQUAL(int(rec_num),
+                BOOST_CHECK_EQUAL(size_t(rec_num),
                                   GetNumOfRecords(auto_stmt, GetTableName())
                                   );
             }
@@ -3440,7 +3440,7 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         // Retrieve data ...
         // Block 3 ...
         if (true) {
-            BOOST_CHECK_EQUAL( GetNumOfRecords(auto_stmt, "#test_bcp_cancel"), 10 );
+            BOOST_CHECK_EQUAL( GetNumOfRecords(auto_stmt, "#test_bcp_cancel"), size_t(10) );
         }
 
         // Initialize ...
@@ -3477,7 +3477,7 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         // Retrieve data ...
         // Block 6 ...
         if (true) {
-            BOOST_CHECK_EQUAL( GetNumOfRecords(auto_stmt, "#test_bcp_cancel"), 20 );
+            BOOST_CHECK_EQUAL( GetNumOfRecords(auto_stmt, "#test_bcp_cancel"), size_t(20) );
         }
     }
     catch(const CException& ex) {
@@ -4597,11 +4597,11 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-int
+size_t
 CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
                                 const string& table_name)
 {
-    int cur_rec_num = 0;
+    size_t cur_rec_num = 0;
 
     DumpResults(auto_stmt.get());
     auto_stmt->ClearParamList();
@@ -4620,10 +4620,10 @@ CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
     return cur_rec_num;
 }
 
-int
+size_t
 CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt)
 {
-    int rec_num = 0;
+    size_t rec_num = 0;
 
     BOOST_CHECK(auto_stmt->HasMoreResults());
     BOOST_CHECK(auto_stmt->HasRows());
@@ -4669,7 +4669,7 @@ CDBAPIUnitTest::GetIdentity(const auto_ptr<IStatement>& auto_stmt)
 void
 CDBAPIUnitTest::Test_Cursor(void)
 {
-    const long rec_num = 2;
+    const size_t rec_num = 2;
     string sql;
 
     try {
@@ -4688,7 +4688,7 @@ CDBAPIUnitTest::Test_Cursor(void)
             // CVariant variant(eDB_Text);
             // variant.Append(" ", 1);
 
-            for (long i = 0; i < rec_num; ++i) {
+            for (size_t i = 0; i < rec_num; ++i) {
                 auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
                 // Execute a statement with parameters ...
                 auto_stmt->ExecuteUpdate( sql );
@@ -4879,7 +4879,7 @@ CDBAPIUnitTest::Test_Cursor(void)
                 auto_cursor->Delete("#Objects");
 
                 auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-                BOOST_CHECK_EQUAL(1, GetNumOfRecords(auto_stmt, "#Objects"));
+                BOOST_CHECK_EQUAL(size_t(1), GetNumOfRecords(auto_stmt, "#Objects"));
             }
         } else {
             PutMsgDisabled("Test_Cursor Second test");
@@ -4894,7 +4894,7 @@ CDBAPIUnitTest::Test_Cursor(void)
 void
 CDBAPIUnitTest::Test_Cursor2(void)
 {
-    const long rec_num = 2;
+    const size_t rec_num = 2;
     string sql;
 
     try {
@@ -4913,7 +4913,7 @@ CDBAPIUnitTest::Test_Cursor2(void)
             // CVariant variant(eDB_Text);
             // variant.Append(" ", 1);
 
-            for (long i = 0; i < rec_num; ++i) {
+            for (size_t i = 0; i < rec_num; ++i) {
                 auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
                 // Execute a statement with parameters ...
                 auto_stmt->ExecuteUpdate( sql );
@@ -4982,7 +4982,7 @@ void
 CDBAPIUnitTest::Test_Cursor_Param(void)
 {
     string sql;
-    const long rec_num = 2;
+    const size_t rec_num = 2;
 
     try {
          // Initialize a test table ...
@@ -5000,7 +5000,7 @@ CDBAPIUnitTest::Test_Cursor_Param(void)
             // CVariant variant(eDB_Text);
             // variant.Append(" ", 1);
 
-            for (long i = 0; i < rec_num; ++i) {
+            for (size_t i = 0; i < rec_num; ++i) {
                 auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
                 // Execute a statement with parameters ...
                 auto_stmt->ExecuteUpdate( sql );
@@ -7346,9 +7346,9 @@ CDBAPIUnitTest::Test_Procedure(void)
                 auto_stmt->Execute();
 
                 if (m_args.GetServerType() == CTestArguments::eSybase) {
-                    BOOST_CHECK_EQUAL( 30, GetNumOfRecords(auto_stmt) );
+                    BOOST_CHECK_EQUAL( size_t(30), GetNumOfRecords(auto_stmt) );
                 } else {
-                    BOOST_CHECK_EQUAL( 29, GetNumOfRecords(auto_stmt) );
+                    BOOST_CHECK_EQUAL( size_t(29), GetNumOfRecords(auto_stmt) );
                 }
 
                 // !!! Do not forget to clear a parameter list ....
@@ -7359,7 +7359,7 @@ CDBAPIUnitTest::Test_Procedure(void)
                 auto_stmt->SetParam( CVariant( Int4(1) ), "@attribute_id" );
                 auto_stmt->Execute();
 
-                BOOST_CHECK_EQUAL( 1, GetNumOfRecords(auto_stmt) );
+                BOOST_CHECK_EQUAL( size_t(1), GetNumOfRecords(auto_stmt) );
             }
 
             // Doesn't work for some reason ...
@@ -7950,7 +7950,7 @@ CDBAPIUnitTest::Test_NULL(void)
                 }
 
                 // Check record number ...
-                BOOST_CHECK_EQUAL(int(rec_num),
+                BOOST_CHECK_EQUAL(size_t(rec_num),
                                   GetNumOfRecords(auto_stmt, table_name)
                                   );
             }
@@ -7982,7 +7982,7 @@ CDBAPIUnitTest::Test_NULL(void)
                 }
 
                 // Check record number ...
-                BOOST_CHECK_EQUAL(int(rec_num),
+                BOOST_CHECK_EQUAL(size_t(rec_num),
                                   GetNumOfRecords(auto_stmt, "#test_unicode_table"));
             }
         }
@@ -8070,9 +8070,9 @@ CDBAPIUnitTest::Test_NULL(void)
                 auto_stmt->Execute();
 
                 if (m_args.GetServerType() == CTestArguments::eSybase) {
-                    BOOST_CHECK_EQUAL( 30, GetNumOfRecords(auto_stmt) );
+                    BOOST_CHECK_EQUAL( size_t(30), GetNumOfRecords(auto_stmt) );
                 } else {
-                    BOOST_CHECK_EQUAL( 29, GetNumOfRecords(auto_stmt) );
+                    BOOST_CHECK_EQUAL( size_t(29), GetNumOfRecords(auto_stmt) );
                 }
 
                 // !!! Do not forget to clear a parameter list ....
@@ -8083,7 +8083,7 @@ CDBAPIUnitTest::Test_NULL(void)
                 auto_stmt->SetParam( CVariant( Int4(1) ), "@attribute_id" );
                 auto_stmt->Execute();
 
-                BOOST_CHECK_EQUAL( 1, GetNumOfRecords(auto_stmt) );
+                BOOST_CHECK_EQUAL( size_t(1), GetNumOfRecords(auto_stmt) );
             }
 
             {
@@ -8127,7 +8127,7 @@ CDBAPIUnitTest::Test_NULL(void)
                 }
 
                 // Check record number ...
-                BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt,
+                BOOST_CHECK_EQUAL(size_t(rec_num), GetNumOfRecords(auto_stmt,
                                                                 table_name));
             }
 
@@ -8206,7 +8206,7 @@ CDBAPIUnitTest::Test_NULL(void)
                 }
 
                 // Check record number ...
-                BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt,
+                BOOST_CHECK_EQUAL(size_t(rec_num), GetNumOfRecords(auto_stmt,
                                                                 GetTableName()));
             }
 
@@ -10809,7 +10809,7 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
 
             auto_stmt->Execute();
 
-            BOOST_CHECK_EQUAL( GetNumOfRecords(auto_stmt), 1 );
+            BOOST_CHECK_EQUAL( GetNumOfRecords(auto_stmt), size_t(1) );
         }
     }
     catch(const CException& ex) {
@@ -11281,34 +11281,100 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
         // Check selecting from a huge table ...
         if (false) {
-            size_t num = 0;
+            const string table_name("#huge_table");
+            const size_t rec_num = 1000000;
+            string sql;
+            const char* str_value = "Oops ...";
 
-            timeout = dc->GetTimeout();
-            dc->SetTimeout(600);
+            // Create table ...
+            {
+                sql  = " CREATE TABLE " + table_name + "( \n";
+                sql += "    id INT PRIMARY KEY, \n";
+                sql += "    vc8000_field VARCHAR(8000) NOT NULL, \n";
+                sql += " )";
 
-            auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
-
-            local_conn->Connect(
-                "*****",
-                "******",
-                "GEOWRITE",
-                "GeoDb"
-                );
-
-            auto_ptr<IStatement> auto_stmt(local_conn->GetStatement());
-            auto_stmt->SendSql("SELECT * FROM Sample");
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-            BOOST_CHECK( rs.get() != NULL );
-
-            while (rs->Next()) {
-                ++num;
+                // Create the table
+                auto_stmt->ExecuteUpdate(sql);
             }
 
-            dc->SetTimeout(timeout);
+            // Populate table with data ...
+            {
+                if (m_args.IsBCPAvailable()) {
+                    CVariant col1(eDB_Int);
+                    CVariant col2(eDB_VarChar);
 
-            BOOST_CHECK(num > 0);
+                    auto_ptr<IBulkInsert> bi(
+                            auto_conn->GetBulkInsert(table_name, 2)
+                            );
+
+                    bi->Bind(1, &col1);
+                    bi->Bind(2, &col2);
+
+                    col2 = str_value;
+
+                    for (size_t i = 0; i < rec_num; ++i) {
+                        col1 = Int4(i);
+
+                        bi->AddRow();
+
+                        if (i % 1000 == 0) {
+                            bi->StoreBatch();
+                        }
+                    }
+                    bi->Complete();
+                } else {
+                    sql = "INSERT INTO " + table_name +
+                        "(id, vc8000_field) VALUES(@id, @vc_val)";
+
+                    auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
+
+                    for (size_t i = 0; i < rec_num; ++i) {
+                        auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
+                        auto_stmt->SetParam( CVariant::VarChar(str_value), "@vc_val");
+
+                        auto_stmt->ExecuteUpdate( sql );
+
+                        if (i % 1000 == 0) {
+                            auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
+                            auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
+                        }
+                    }
+                    
+                    auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
+                }
+            }
+            
+            BOOST_CHECK(GetNumOfRecords(auto_stmt, table_name) == rec_num);
+
+            // Read data ...
+            {
+                size_t num = 0;
+
+                auto_conn->SetTimeout(1);
+
+                auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                
+                CTime begin_time(CTime::eCurrent);
+                
+                auto_stmt->SendSql("SELECT * FROM " + table_name);
+                
+                while (auto_stmt->HasMoreResults()) {
+                    if (auto_stmt->HasRows()) {
+                        auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                        BOOST_CHECK( rs.get() != NULL );
+
+                        while (rs->Next()) {
+                            ++num;
+                        }
+                    }
+                }
+
+                CTime end_time(CTime::eCurrent);
+                CTimeSpan time_span = end_time - begin_time;
+                cout << time_span.AsString() << " sec." << endl;
+
+                BOOST_CHECK(num == rec_num);
+            }
         }
     }
     catch(const CException& ex) {
