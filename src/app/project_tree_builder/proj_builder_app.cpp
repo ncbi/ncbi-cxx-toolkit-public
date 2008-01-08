@@ -138,7 +138,7 @@ public:
         case eDiag_Info:
         case eDiag_Trace:
             /// FIXME: find out how to get this in the messages tab
-            cerr << "warning ";
+            cerr << "info ";
             break;
         }
 

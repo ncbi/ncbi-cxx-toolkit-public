@@ -128,8 +128,8 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
                 }
             }
         } else {
-            PTB_WARNING_EX(module_path, ePTB_FileNotFound,
-                           "Datatool module file not found");
+            PTB_INFO_EX(module_path, ePTB_FileNotFound,
+                        "Datatool module file not found");
         }
     }}
 
@@ -183,8 +183,8 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
             if (p != fc.m_Contents.end())
                 src->m_SkippedCppLocal = p->second;
         } else {
-            PTB_WARNING_EX(files_path, ePTB_FileNotFound,
-                           "Datatool-generated file not found");
+            PTB_INFO_EX(files_path, ePTB_FileNotFound,
+                        "Datatool-generated file not found");
         }
 
 
