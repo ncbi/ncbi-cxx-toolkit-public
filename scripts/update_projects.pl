@@ -244,6 +244,8 @@ my $RepositoryURL;
 
 my @ProjectQueue;
 
+my $InternalBuild;
+
 # Load project listing files, which were either found in the project search
 # paths by names of projects they described or were explicitly specified in
 # the previously read project listing files using the #include directive.
@@ -281,6 +283,8 @@ sub ReadProjectListingFile
         elsif (!m/^\s*-/)
         {
             $AllProjects{$_} = 1;
+
+            $InternalBuild = 1 if m/^internal\//so;
 
             if (m{(?:corelib|dbapi/driver|objects/objmgr|objmgr|serial)/$}o)
             {
@@ -339,17 +343,6 @@ my ($MainProject, $BuildDir) = @ARGV;
 $MainProject = FindProjectListing($MainProject, $ScriptName);
 
 ReadProjectListingFile($MainProject, $ScriptName);
-
-my $InternalBuild;
-
-for my $Path (@Paths)
-{
-    if ($Path =~ m/^internal\//so)
-    {
-        $InternalBuild = 1;
-        last
-    }
-}
 
 unless ($ToolkitLocation)
 {
