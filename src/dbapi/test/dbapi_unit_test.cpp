@@ -11277,7 +11277,6 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
         BOOST_CHECK(timeout_was_reported);
 
-        dc->SetTimeout(timeout);
 
         // Check selecting from a huge table ...
         if (false) {
@@ -11299,6 +11298,8 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
             // Populate table with data ...
             {
+                CTime begin_time(CTime::eCurrent);
+
                 if (m_args.IsBCPAvailable()) {
                     CVariant col1(eDB_Int);
                     CVariant col2(eDB_VarChar);
@@ -11342,6 +11343,10 @@ void CDBAPIUnitTest::Test_Timeout(void)
                     
                     auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
                 }
+
+                CTime end_time(CTime::eCurrent);
+                CTimeSpan time_span = end_time - begin_time;
+                cout << "Inserted in " << time_span.AsString() << " sec." << endl;
             }
             
             BOOST_CHECK(GetNumOfRecords(auto_stmt, table_name) == rec_num);
@@ -11349,8 +11354,6 @@ void CDBAPIUnitTest::Test_Timeout(void)
             // Read data ...
             {
                 size_t num = 0;
-
-                auto_conn->SetTimeout(1);
 
                 auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
                 
@@ -11371,11 +11374,13 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
                 CTime end_time(CTime::eCurrent);
                 CTimeSpan time_span = end_time - begin_time;
-                cout << time_span.AsString() << " sec." << endl;
+                cout << "Selected in " << time_span.AsString() << " sec." << endl;
 
                 BOOST_CHECK(num == rec_num);
             }
         }
+
+        dc->SetTimeout(timeout);
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
