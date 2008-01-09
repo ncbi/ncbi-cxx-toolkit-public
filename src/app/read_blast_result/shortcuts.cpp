@@ -1,0 +1,350 @@
+/*
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Author of the template:  Aaron Ucko
+*
+* File Description:
+*   Simple program demonstrating the use of serializable objects (in this
+*   case, biological sequences).  Does NOT use the object manager.
+*
+* Modified: Azat Badretdinov
+*   reads seq-submit file, blast file and optional tagmap file to produce list of potential candidates
+*
+* ===========================================================================
+*/
+#include <ncbi_pch.hpp>
+#include "read_blast_result.h"
+
+string CReadBlastApp::GetProtName(const CBioseq& seq)
+{
+  ITERATE(CBioseq::TAnnot, annot, seq.GetAnnot())
+    {
+    if( ! (*annot)->GetData().IsFtable() ) continue;
+    ITERATE(CSeq_annot::TData::TFtable, feat, (*annot)->GetData().GetFtable())
+      {
+      if ( ! (*feat)->GetData().IsProt() ) continue;
+      if ( ! (*feat)->GetData().GetProt().CanGetName() ) continue;
+      return *( (*feat)->GetData().GetProt().GetName().begin() );
+      }
+    }
+  return "default name";
+}
+int CReadBlastApp::getQueryLen(const CBioseq& seq)
+{
+  return seq.GetInst().GetLength();
+}
+
+string GetRRNAtype(const CRNA_ref& rna)
+{
+   string type =  "unknown rRNA";
+   if(!rna.CanGetExt()) return type;
+   if(!rna.GetExt().IsName()) return type;
+   string name = rna.GetExt().GetName();
+   if(name.find("5S") != string::npos) return "5S";
+   if(name.find("16S") != string::npos) return "16S";
+   if(name.find("23S") != string::npos) return "23S";
+   if(name.find("SSU") != string::npos) return "16S";
+   if(name.find("LSU") != string::npos) return "23S";
+   return type;
+}
+
+string Get3type(const CRNA_ref& rna)
+{
+  string type;
+
+  if(!rna.CanGetExt()) throw;
+  if(!rna.GetExt().IsTRNA()) throw;
+  if(!rna.GetExt().GetTRNA().CanGetAa()) throw;
+  CTrna_ext::C_Aa::E_Choice choice = rna.GetExt().GetTRNA().GetAa().Which();
+
+  char let1;
+  switch(choice)
+    {
+    case CTrna_ext::C_Aa::e_Ncbieaa:
+      let1 = rna.GetExt().GetTRNA().GetAa().GetNcbieaa();
+      type = let1_2_let3(let1);
+      break;
+    case CTrna_ext::C_Aa::e_Iupacaa:
+      let1 = rna.GetExt().GetTRNA().GetAa().GetIupacaa();
+      type = let1_2_let3(let1);
+      break;
+    case CTrna_ext::C_Aa::e_Ncbi8aa:
+      NcbiCerr << "Get3type(FATAL)::type e_Ncbi8aa(" << rna.GetExt().GetTRNA().GetAa().GetNcbi8aa() << ") is not handled now" << NcbiEndl;
+      throw;
+      break;
+    case CTrna_ext::C_Aa::e_Ncbistdaa:
+      NcbiCerr << "Get3type(FATAL)::type e_Ncbistdaa (" << rna.GetExt().GetTRNA().GetAa().GetNcbistdaa() << ") is not handled now" << NcbiEndl;
+      throw;
+      break;
+    default:
+      NcbiCerr << "Get3type: INTERNAL FATAL:: you should never be here" << NcbiEndl;
+      break;
+    }
+  return type;
+}
+EMyFeatureType get_my_seq_type(const CBioseq& seq)
+{
+  string name = GetStringDescr(seq);
+  EMyFeatureType type = eMyFeatureType_unknown;
+
+  string descr="";
+  if(seq.CanGetDescr())
+    {
+    ITERATE(CSeq_descr::Tdata, desc, seq.GetDescr().Get())
+      {
+      if( (*desc)->IsTitle() )
+        {
+        descr=(*desc)->GetTitle(); break;
+        }
+      }
+    }
+
+  if( descr.find("hypothetical") != string::npos)
+    {
+    type = eMyFeatureType_hypo_CDS;
+    }
+  else
+    {
+    type = eMyFeatureType_normal_CDS;
+    }
+  if(CReadBlastApp::PrintDetails()) NcbiCerr << "get_my_seq_type: " << name << ", "
+                              << "descr " << descr << ", "
+                              << "type= " << type
+                              << NcbiEndl;
+  return type;
+}
+string get_trna_string(const CSeq_feat& feat)
+{
+  string trna_string="";
+  bool isPseudo=false;
+  char aa=0;
+
+  if(!feat.GetData().IsRna()) return trna_string;
+  if(!feat.GetData().GetRna().CanGetType()) return trna_string;
+  CRNA_ref::EType rna_type = feat.GetData().GetRna().GetType();
+  if(rna_type != CRNA_ref::eType_tRNA) return trna_string;
+  if(feat.GetData().GetRna().CanGetPseudo())
+     {
+     isPseudo=feat.GetData().GetRna().GetPseudo();
+     }
+  if(feat.GetData().GetRna().CanGetExt() &&
+     feat.GetData().GetRna().GetExt().IsTRNA() &&
+     feat.GetData().GetRna().GetExt().GetTRNA().CanGetAa() &&
+     feat.GetData().GetRna().GetExt().GetTRNA().GetAa().IsNcbieaa())
+     {
+     aa  = feat.GetData().GetRna().GetExt().GetTRNA().GetAa().GetNcbieaa();
+     }
+  trna_string = isPseudo ? "pseudo-tRNA-":"tRNA-";
+  switch(aa)
+    {
+    case 0: trna_string+="unknown"; break;
+    case 'X': trna_string+="other"; break;
+    default: trna_string+=aa; break;
+    }
+  return trna_string;
+
+}
+
+string GetRNAname(const CSeq_feat& feat)
+{
+  string trna_string="";
+
+  if(!feat.GetData().IsRna()) return trna_string;
+  if(!feat.GetData().GetRna().CanGetType()) return trna_string;
+  CRNA_ref::EType rna_type = feat.GetData().GetRna().GetType();
+  if(rna_type != CRNA_ref::eType_rRNA) return trna_string;
+  if(feat.GetData().GetRna().CanGetExt() &&
+     feat.GetData().GetRna().GetExt().IsName())
+     {
+     trna_string = feat.GetData().GetRna().GetExt().GetName();
+     }
+  return trna_string;
+
+}
+
+EMyFeatureType get_my_feat_type(const CSeq_feat& feat, const LocMap& loc_map)
+{
+  EMyFeatureType feat_type = eMyFeatureType_unknown;
+  string name = GetLocusTag(feat, loc_map);
+
+//  need to get product name from sequence. Bummer.
+
+  if(feat.GetData().IsRna())
+    {
+    if(feat.GetData().GetRna().CanGetType())
+      {
+      CRNA_ref::EType rna_type = feat.GetData().GetRna().GetType();
+      if(CReadBlastApp::PrintDetails()) NcbiCerr << "get_my_feat_type: " << name
+                              << ", rna_type= " << rna_type
+                              << NcbiEndl;
+      if(rna_type == CRNA_ref::eType_tRNA)
+        {
+        if(feat.GetData().GetRna().CanGetPseudo() && feat.GetData().GetRna().GetPseudo() == true)
+          {
+          feat_type = eMyFeatureType_pseudo_tRNA;
+          }
+        else if(feat.GetData().GetRna().CanGetExt() &&
+                feat.GetData().GetRna().GetExt().IsTRNA() &&
+                feat.GetData().GetRna().GetExt().GetTRNA().CanGetAa() &&
+                feat.GetData().GetRna().GetExt().GetTRNA().GetAa().IsNcbieaa())
+          {
+          int aa = feat.GetData().GetRna().GetExt().GetTRNA().GetAa().GetNcbieaa();
+          if( aa=='A' ||
+              (aa>='C' && aa<='I') ||
+              (aa>='K' && aa<='N') ||
+              (aa>='P' && aa<='T') ||
+              aa=='V' ||
+              aa=='W' ||
+              aa=='Y'
+            )
+            {
+            feat_type = eMyFeatureType_normal_tRNA;
+            }
+          else
+            {
+            feat_type = eMyFeatureType_atypical_tRNA;
+            }
+          if(CReadBlastApp::PrintDetails()) NcbiCerr << "get_my_feat_type: " << name
+                              << ", aa= " << aa
+                              << ", type= " << feat_type
+                              << NcbiEndl;
+          }
+        }
+      }
+    }
+  if(CReadBlastApp::PrintDetails()) NcbiCerr << "get_my_feat_type: " << name
+                              << ", type= " << feat_type
+                              << NcbiEndl;
+  return feat_type;
+}
+string GetStringDescr(const CBioseq& bioseq)
+{
+  string result = CSeq_id::GetStringDescr (bioseq, CSeq_id::eFormat_FastA);
+  string locus_tag = CReadBlastApp::getLocusTag(bioseq);
+  if(locus_tag != "") result += "|" + locus_tag;
+  return result;
+}
+
+string printed_range(const TSimpleSeqs::iterator& ext_rna)
+{
+   int from = ext_rna->exons[0].from;
+   int to   = ext_rna->exons[ext_rna->exons.size()-1].to;
+   strstream ext_rna_range_stream; ext_rna_range_stream << from << "..." << to << '\0';
+   string ext_rna_range = ext_rna_range_stream.str();
+   return ext_rna_range;
+}
+
+string printed_range(const TSimpleSeqs::iterator& ext_rna, const TSimpleSeqs::iterator& end)
+{
+   if(ext_rna==end) return "beyond end...beyond end";
+   return printed_range(ext_rna);
+}
+
+string printed_range(const TSimpleSeqs::iterator& ext_rna, TSimpleSeqs& seqs)
+{
+   return printed_range(ext_rna, seqs.end());
+}
+
+
+int CReadBlastApp::getLenScore( CBioseq::TAnnot::const_iterator& annot)
+{
+  int len=-1;
+  if(!(*annot)->GetData().IsAlign()) return len;
+
+  ITERATE(CSeq_align::TScore, score, (*(*annot)->GetData().GetAlign().begin())->GetScore())
+    {
+    string name = (*score)->GetId().GetStr();
+    if(name!="sbjLen") continue;
+    len = (*score)->GetValue().GetInt();
+    return len;
+    }
+  return len;
+}
+void CReadBlastApp::getBounds
+  (
+  CBioseq::TAnnot::const_iterator& annot,
+  int* qFrom, int* qTo, int* sFrom, int* sTo
+  )
+{
+  int i=0;
+  ITERATE(CSeq_align::TBounds, bounds, (*(*annot)->GetData().GetAlign().begin())->GetBounds() )
+    {
+    if(!i)
+      {
+      *qFrom = (*bounds)->GetInt().GetFrom();
+      *qTo   = (*bounds)->GetInt().GetTo();
+      }
+    else if (i==1)
+      {
+      *sFrom = (*bounds)->GetInt().GetFrom();
+      *sTo   = (*bounds)->GetInt().GetTo();
+      break;
+      }
+    i++;
+    }
+
+}
+
+string CReadBlastApp::getAnnotName(CBioseq::TAnnot::const_iterator& annot)
+{
+ ITERATE(CAnnot_descr::Tdata, desc, (*annot)->GetDesc().Get())
+    {
+    if( (*desc)->IsName() )
+      {
+      return  (*desc)->GetName();
+      }
+    }
+ return "cannot get name";
+}
+
+string CReadBlastApp::getAnnotComment(CBioseq::TAnnot::const_iterator& annot)
+{
+ ITERATE(CAnnot_descr::Tdata, desc, (*annot)->GetDesc().Get())
+    {
+    if( (*desc)->IsComment() )
+      {
+      return  (*desc)->GetComment();
+      }
+    }
+ return "cannot get comment";
+}
+
+/*
+* $Log: shortcuts.cpp,v $
+* Revision 1.4  2008/01/09 17:53:55  badrazat
+* update
+*
+* Revision 1.3  2007/11/13 20:21:04  badrazat
+* fixing broken individiual alignment links for CDD html output
+*
+* Revision 1.2  2007/11/08 15:49:04  badrazat
+* 1. added locus tags
+* 2. fixed bugs in detecting RNA problems (simple seq related)
+*
+* Revision 1.1  2007/10/04 16:35:00  badrazat
+* split
+*
+*/
+
