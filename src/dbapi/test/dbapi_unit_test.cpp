@@ -12142,7 +12142,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         if (args.GetDriverName() == odbcw_driver
             // || args.GetDriverName() == ftds63_driver
             // || args.GetDriverName() == ftds_odbc_driver
-            // || args.GetDriverName() == ftds64_driver
+            || args.GetDriverName() == ftds64_driver
             ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode,
                                        DBAPIInstance);

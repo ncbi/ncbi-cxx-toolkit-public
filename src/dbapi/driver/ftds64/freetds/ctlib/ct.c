@@ -1950,8 +1950,10 @@ _ct_get_client_type(CS_CONTEXT *ctx, int datatype, int usertype, int size)
         return CS_BIT_TYPE;
         break;
     case SYBCHAR:
-    case SYBVARCHAR:
         return CS_CHAR_TYPE;
+        break;
+    case SYBVARCHAR:
+        return CS_VARCHAR_TYPE;
         break;
     case SYBINT8:
         return CS_LONG_TYPE;
@@ -2119,11 +2121,11 @@ _ct_get_server_type(int datatype)
         return SYBLONGBINARY;
         break;
     case CS_UNICHAR_TYPE:
-        return SYBVARCHAR;
+        return SYBNVARCHAR;
     case CS_LONGCHAR_TYPE:    /* ssikorsk */
-        return SYBVARCHAR;
+        return SYBNVARCHAR;
     case CS_VARCHAR_TYPE:     /* ssikorsk */
-        return SYBVARCHAR;
+        return SYBNVARCHAR;
     default:
         /*
         CS_SENSITIVITY_TYPE
@@ -4308,9 +4310,15 @@ paramrowalloc(TDSPARAMINFO * params, TDSCOLUMN * curcol, int param_num, void *va
         /* TODO check for BLOB and numeric */
         if (size > curcol->column_size)
             size = curcol->column_size;
-        /* TODO blobs */
-        if (!is_blob_type(curcol->column_type))
+
+        if (is_blob_type(curcol->column_type)) {
+            TDSBLOB *blob = &params->current_row[curcol->column_offset];
+            blob->textvalue = (TDS_CHAR *) malloc(size);
+            memcpy(blob->textvalue, value, size);
+        }
+        else {
             memcpy(&params->current_row[curcol->column_offset], value, size);
+        }
         curcol->column_cur_size = size;
     } else {
         tdsdump_log(TDS_DBG_FUNC, "paramrowalloc(): setting parameter #%d to NULL\n", param_num);

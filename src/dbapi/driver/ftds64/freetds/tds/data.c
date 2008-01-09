@@ -71,6 +71,9 @@ tds_set_param_type(TDSSOCKET * tds, TDSCOLUMN * curcol, TDS_SERVER_TYPE type)
 {
 	if (IS_TDS7_PLUS(tds)) {
 		switch (type) {
+		case SYBNVARCHAR:
+			type = XSYBNVARCHAR;
+			break;
 		case SYBVARCHAR:
 			type = XSYBVARCHAR;
 			break;

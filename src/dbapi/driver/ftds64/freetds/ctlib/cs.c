@@ -454,6 +454,8 @@ CS_RETCODE ret;
         case SYBCHAR:
         case SYBVARCHAR:
         case SYBTEXT:
+        case SYBNVARCHAR:
+        case SYBNTEXT:
             tdsdump_log(TDS_DBG_FUNC, "cs_convert() desttype = character\n");
             if (src_len > destlen) {
                 _csclient_msg(ctx, "cs_convert", 2, 1, 10, 25, "");
@@ -467,6 +469,8 @@ CS_RETCODE ret;
                 } else {
                     memcpy(dest, srcdata, src_len);
                     dest[src_len] = '\0';
+                    if (is_unicode_type(desttype))
+                        dest[src_len + 1] = '\0';
                     if (resultlen != NULL)
                         *resultlen = src_len + 1;
                     ret = CS_SUCCEED;
@@ -475,8 +479,13 @@ CS_RETCODE ret;
 
             case CS_FMT_PADBLANK:
                 memcpy(dest, srcdata, src_len);
-                for (i = src_len; i < destlen; i++)
+                for (i = src_len; i < destlen; i++) {
                     dest[i] = ' ';
+                    if (is_unicode_type(desttype)) {
+                        dest[i + 1] = '\0';
+                        ++i;
+                    }
+                }
                 if (resultlen != NULL)
                     *resultlen = destlen;
                 ret = CS_SUCCEED;
