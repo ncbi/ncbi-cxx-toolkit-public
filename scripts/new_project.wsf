@@ -65,7 +65,7 @@
             if (oArgs.Length < 2) {
                 return false;
             }
-            if (oArgs.Length > 6) {
+            if (oArgs.Length > 5) {
                 return false;
             }
             
@@ -128,7 +128,7 @@
             var usage_str;
             //usage_str  = "Usage:\n";
             //usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
-            usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-dll] [-v] [-noload]\n";
+            usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-dll] [-v]\n";
             usage_str += "SYNOPSIS:\n";
             usage_str += "    Create new MSVC7.1 application project from sample template:\n";
             usage_str += "      Create local build tree structure. Fill-in the local tree.\n";
@@ -155,7 +155,6 @@
 //            usage_str += "    [-msvc nn]  -- MSVC version: 71 or 80; default is " + GetDefaultMsvcVer() + "\n";
             usage_str += "    [-dll]      -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
             usage_str += "    [-v]        -- show details about what is being made\n";
-            usage_str += "    [-noload]   -- do not open generated solution\n";
             usage_str += "EXAMPLES:\n";
             usage_str += "    cscript new_project.wsf my_app app/basic\n";
             usage_str += "    cscript new_project.wsf my_app app/basic -dll -v\n";
@@ -173,7 +172,6 @@
             var run_interactive = GetFlagValue(oArgs, "-i", false);
             if ( !run_interactive && VerifyArguments(oArgs) ) {
                 SetVerbose(oArgs, "-v", false);
-                SetLoadSolution(oArgs, "-noload", false);
                 this.ProjectName = GetPositionalValue(oArgs, 0);
                 this.ProjectType = GetPositionalValue(oArgs, 1);
                 this.DllBuild    = GetFlagValue(oArgs, "-dll", false);
@@ -440,12 +438,7 @@
             }
             sln_path += "\\build\\" + oTask.ProjectName + ".sln\"";
 
-            if (GetLoadSolution()) {
-                execute(oShell, "start \"\" " + sln_path);
-            } else {
-                WScript.Echo("Generated solution file:");
-                WScript.Echo(sln_path);
-            }
+            execute(oShell, "start \"\" " + sln_path);
         }
         
         </script>
