@@ -311,6 +311,29 @@ static void s_TestMisc(void)
         assert(ts.GetAsDouble() == double(t2.TimeZoneDiff()));
     }}
 
+    // Per CXX-195
+    {{
+        CTime time1("12/31/2007 20:00", "M/D/Y h:m");
+        CTime time2("1/1/2008 20:00", "M/D/Y h:m");
+        CTime time3("12/31/2007", "M/D/Y");
+        CTime time4("1/1/2008", "M/D/Y");
+        LOG_POST("time1=" << time1.AsString("M/D/Y h:m:s")
+                 << "  time_t=" << time1.GetTimeT()
+                 << "  time-zone: " << time1.TimeZoneDiff());
+        LOG_POST("time2=" << time2.AsString("M/D/Y h:m:s")
+                 << "  time_t=" << time2.GetTimeT()
+                 << "  time-zone: " << time2.TimeZoneDiff());
+        assert(time1.TimeZoneDiff() == time2.TimeZoneDiff());
+        LOG_POST("time3=" << time3.AsString("M/D/Y h:m:s")
+                 << "  time_t=" << time3.GetTimeT()
+                 << "  time-zone: " << time3.TimeZoneDiff());
+        assert(time2.TimeZoneDiff() == time3.TimeZoneDiff());
+        LOG_POST("time4=" << time4.AsString("M/D/Y h:m:s")
+                 << "  time_t=" << time4.GetTimeT()
+                 << "  time-zone: " << time4.TimeZoneDiff());
+        assert(time3.TimeZoneDiff() == time4.TimeZoneDiff());
+    }}
+
     // Datebase formats conversion
     {{
         CTime t1(2000, 1, 1, 1, 1, 1, 10000000);
