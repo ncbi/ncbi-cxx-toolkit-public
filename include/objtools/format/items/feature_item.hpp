@@ -28,6 +28,7 @@
 *
 * Author:  Aaron Ucko, NCBI
 *          Mati Shomrat
+* Maintainer: Frank Ludwig
 *
 * File Description:
 *   new (early 2003) flat-file generator -- representation of features
@@ -160,59 +161,65 @@ private:
     void x_AddQualCitation();
     void x_AddQualExt();
     void x_AddQualExpInv( CBioseqContext& );
-    void x_AddQualGeneXref( const CGene_ref*, const CConstRef<CSeq_feat>& ) const;
+    void x_AddQualGeneXref( const CGene_ref*, const CConstRef<CSeq_feat>& );
     void x_AddQualOperon( CBioseqContext&, CSeqFeatData::ESubtype );
     void x_AddQualPseudo( CBioseqContext&, CSeqFeatData::E_Choice, 
         CSeqFeatData::ESubtype, bool );
-    void x_AddQualExceptions( CBioseqContext& ) const;
-    void x_AddQualNote( CConstRef<CSeq_feat> ) const;
-    void x_AddQualOldLocusTag( CConstRef<CSeq_feat> ) const;
-    void x_AddQualDb( const CGene_ref* ) const;
+    void x_AddQualExceptions( CBioseqContext& );
+    void x_AddQualNote( CConstRef<CSeq_feat> );
+    void x_AddQualOldLocusTag( CConstRef<CSeq_feat> );
+    void x_AddQualDb( const CGene_ref* );
     void x_AddQualSeqfeatNote();
+    void x_AddQualTranslation( CBioseq_Handle&, CBioseqContext&, bool );
+    void x_AddQualTranslationTable( const CCdregion&, CBioseqContext& );
+    void x_AddQualCodonStart( const CCdregion&, CBioseqContext& );
+    void x_AddQualCodeBreak( const CCdregion&, CBioseqContext& );
+    void x_AddQualTranslationException( const CCdregion&, CBioseqContext& );
+    void x_AddQualProteinConflict( const CCdregion&, CBioseqContext& );
+    void x_AddQualCodedBy( CBioseqContext& );
     void x_AddQualsGb( CBioseqContext& );
     bool x_GetPseudo(  const CGene_ref* =0, const CSeq_feat* =0 ) const;
 
     // qualifier collection
-    void x_AddQualsExt( const CSeq_feat::TExt& ) const;
-    void x_AddQualsBond( CBioseqContext& ) const;
-    void x_AddQualsSite( CBioseqContext& ) const;
-    void x_AddQualsRegion( CBioseqContext& ) const;
-    void x_AddQualsProt( CBioseqContext&, bool ) const;
+    void x_AddQualsCdregion(const CSeq_feat& cds, CBioseqContext& ctx,
+        bool pseudo);
+    void x_AddQualsRna(const CSeq_feat& feat, CBioseqContext& ctx,
+         bool pseudo);
+   void x_AddQualsExt( const CSeq_feat::TExt& );
+    void x_AddQualsBond( CBioseqContext& );
+    void x_AddQualsSite( CBioseqContext& );
+    void x_AddQualsRegion( CBioseqContext& );
+    void x_AddQualsProt( CBioseqContext&, bool );
 
     void x_AddQuals( CBioseqContext& ctx );
-    void x_AddQuals(const CCdregion& cds)  const;
-    void x_AddQuals(const CProt_ref& prot) const;
-    void x_AddCdregionQuals(const CSeq_feat& cds, CBioseqContext& ctx,
-        bool pseudo) const;
-    const CProt_ref* x_AddProteinQuals(CBioseq_Handle& prot) const;
-    void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot) const;
-    void x_AddRnaQuals(const CSeq_feat& feat, CBioseqContext& ctx,
-        bool pseudo) const;
+    void x_AddQuals(const CProt_ref& prot);
+    const CProt_ref* x_AddProteinQuals(CBioseq_Handle& prot);
+    void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot);
     void x_AddQualsGene(const CGene_ref*, CConstRef<CSeq_feat>&,
-        bool from_overlap) const;
-    void x_AddGoQuals(const CUser_object& uo) const;
-    void x_ImportQuals(CBioseqContext& ctx) const;
-    void x_AddRptUnitQual(const string& rpt_unit) const;
-    void x_AddRptTypeQual(const string& rpt_type, bool check_qual_syntax) const;
+        bool from_overlap);
+    void x_AddGoQuals(const CUser_object& uo);
+    void x_ImportQuals(CBioseqContext& ctx);
+    void x_AddRptUnitQual(const string& rpt_unit);
+    void x_AddRptTypeQual(const string& rpt_type, bool check_qual_syntax);
     void x_CleanQuals( const CGene_ref* );
     const CFlatStringQVal* x_GetStringQual(EFeatureQualifier slot) const;
     CFlatStringListQVal* x_GetStringListQual(EFeatureQualifier slot) const;
     // feature table quals
     typedef vector< CRef<CFormatQual> > TQualVec;
-    void x_AddFTableQuals(CBioseqContext& ctx) const;
-    bool x_AddFTableGeneQuals(const CSeqFeatData::TGene& gene) const;
-    void x_AddFTableRnaQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
-    void x_AddFTableCdregionQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
-    void x_AddFTableProtQuals(const CSeq_feat& prot) const;
-    void x_AddFTableRegionQuals(const CSeqFeatData::TRegion& region) const;
-    void x_AddFTableBondQuals(const CSeqFeatData::TBond& bond) const;
-    void x_AddFTableSiteQuals(const CSeqFeatData::TSite& site) const;
-    void x_AddFTablePsecStrQuals(const CSeqFeatData::TPsec_str& psec_str) const;
-    void x_AddFTablePsecStrQuals(const CSeqFeatData::THet& het) const;
-    void x_AddFTableBiosrcQuals(const CBioSource& src) const;
-    void x_AddFTableDbxref(const CSeq_feat::TDbxref& dbxref) const;
-    void x_AddFTableExtQuals(const CSeq_feat::TExt& ext) const;
-    void x_AddFTableQual(const string& name, const string& val = kEmptyStr) const {
+    void x_AddFTableQuals(CBioseqContext& ctx);
+    bool x_AddFTableGeneQuals(const CSeqFeatData::TGene& gene);
+    void x_AddFTableRnaQuals(const CSeq_feat& feat, CBioseqContext& ctx);
+    void x_AddFTableCdregionQuals(const CSeq_feat& feat, CBioseqContext& ctx);
+    void x_AddFTableProtQuals(const CSeq_feat& prot);
+    void x_AddFTableRegionQuals(const CSeqFeatData::TRegion& region);
+    void x_AddFTableBondQuals(const CSeqFeatData::TBond& bond);
+    void x_AddFTableSiteQuals(const CSeqFeatData::TSite& site);
+    void x_AddFTablePsecStrQuals(const CSeqFeatData::TPsec_str& psec_str);
+    void x_AddFTablePsecStrQuals(const CSeqFeatData::THet& het);
+    void x_AddFTableBiosrcQuals(const CBioSource& src);
+    void x_AddFTableDbxref(const CSeq_feat::TDbxref& dbxref);
+    void x_AddFTableExtQuals(const CSeq_feat::TExt& ext);
+    void x_AddFTableQual(const string& name, const string& val = kEmptyStr) {
         CFormatQual::EStyle style = val.empty() ? CFormatQual::eEmpty : CFormatQual::eQuoted;
         m_FTableQuals.push_back(CRef<CFormatQual>(new CFormatQual(name, val, style)));
     }
@@ -222,9 +229,9 @@ private:
     typedef TQuals::iterator                  TQI;
     typedef TQuals::const_iterator            TQCI;
     typedef IFlatQVal::TFlags                 TQualFlags;
-    
+     
     // qualifiers container
-    void x_AddQual(EFeatureQualifier slot, const IFlatQVal* value) const {
+    void x_AddQual(EFeatureQualifier slot, const IFlatQVal* value) {
         m_Quals.AddQual(slot, value);
     }
     void x_RemoveQuals(EFeatureQualifier slot) const {
@@ -317,7 +324,7 @@ private:
 
 //  ----------------------------------------------------------------------------
 inline void CFeatureItem::x_AddQualDb(
-    const CGene_ref* gene_ref ) const
+    const CGene_ref* gene_ref )
 //  ----------------------------------------------------------------------------
 {
     if ( ! gene_ref || ! gene_ref->CanGetDb() ) {
