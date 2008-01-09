@@ -133,6 +133,8 @@ protected:
     ///          false - if not
     virtual bool Close(void);
 
+    virtual void SetTimeout(size_t nof_secs);
+
 private:
     sqlite3*    m_SQLite3;
 

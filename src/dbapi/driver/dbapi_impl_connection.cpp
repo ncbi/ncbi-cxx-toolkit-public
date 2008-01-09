@@ -273,11 +273,6 @@ void CConnection::ReleaseInterface(void)
 }
 
 
-void CConnection::SetTimeout(size_t nof_secs)
-{
-}
-
-
 void CConnection::SetTextImageSize(size_t nof_bytes)
 {
 }

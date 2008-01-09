@@ -426,6 +426,8 @@ protected:
         return " " + GetExecCntxInfo();
     }
 
+    virtual void SetTimeout(size_t nof_secs);
+
 private:
     void x_CmdAlloc(CS_COMMAND** cmd);
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);

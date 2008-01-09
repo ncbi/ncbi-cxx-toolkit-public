@@ -73,6 +73,14 @@ bool CDBL_Connection::IsAlive()
 }
 
 
+void 
+CDBL_Connection::SetTimeout(size_t nof_secs)
+{
+    // DATABASE_DRIVER_ERROR( "SetTimeout is not supported.", 100011 );
+    ERR_POST_X_ONCE(3, "SetTimeout is not supported.");
+}
+
+
 CDB_LangCmd* CDBL_Connection::LangCmd(const string& lang_query,
                                       unsigned int nof_parms)
 {

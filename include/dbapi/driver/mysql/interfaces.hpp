@@ -133,6 +133,8 @@ protected:
     ///          false - if not
     virtual bool Close(void);
 
+    virtual void SetTimeout(size_t nof_secs);
+
 private:
     friend class CMySQL_LangCmd;
     friend class CMySQL_RowResult;

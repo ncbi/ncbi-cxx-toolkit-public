@@ -80,6 +80,14 @@ bool CMySQL_Connection::IsAlive()
 }
 
 
+void 
+CMySQL_Connection::SetTimeout(size_t nof_secs)
+{
+    // DATABASE_DRIVER_ERROR( "SetTimeout is not supported.", 100011 );
+    ERR_POST_X_ONCE(2, "SetTimeout is not supported.");
+}
+
+
 CDB_SendDataCmd* CMySQL_Connection::SendDataCmd(I_ITDescriptor& /*descr_in*/,
                                                 size_t          /*data_size*/,
                                                 bool            /*log_it*/)

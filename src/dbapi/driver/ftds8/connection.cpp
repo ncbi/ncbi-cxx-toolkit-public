@@ -454,7 +454,13 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
 
 void CTDS_Connection::TDS_SetTimeout(void)
 {
-    GetDBLibConnection()->tds_socket->timeout= (TDS_INT)(Context()->GetTimeout());
+    SetTimeout(Context()->GetTimeout());
+}
+
+void 
+CTDS_Connection::SetTimeout(size_t nof_secs)
+{
+    GetDBLibConnection()->tds_socket->timeout = TDS_INT(nof_secs);
 }
 
 RETCODE CTDS_Connection::CheckDead(RETCODE rc)

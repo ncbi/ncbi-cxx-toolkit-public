@@ -282,9 +282,10 @@ CDBConnectionFactory::MakeDBConnection(
     ctx.SetTimeout(query_timeout);
 
     // Restore original query timeout ...
-    if (t_con) {
-        t_con->SetTimeout(query_timeout);
-    }
+    // The method below is NOT supported by almost all drivers.
+    // if (t_con) {
+    //     t_con->SetTimeout(query_timeout);
+    // }
 
     return t_con;
 }

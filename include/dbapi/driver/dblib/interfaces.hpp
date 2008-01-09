@@ -319,6 +319,8 @@ protected:
     ///          false - if not
     virtual bool Close(void);
 
+    virtual void SetTimeout(size_t nof_secs);
+
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
@@ -343,7 +345,7 @@ private:
     void CheckFunctCall(const string& extra_msg);
 
 #ifdef FTDS_IN_USE
-    /// Function name keept same as with ftds.
+    /// Function name keept the same as with ftds.
     void TDS_SetTimeout(void);
 #endif
 
