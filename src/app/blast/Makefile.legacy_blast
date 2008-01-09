@@ -12,7 +12,7 @@ all:
 	fi
 
 purge:
-	( cd $(bindir)  &&  -$(RM) $(SCRIPT_NAME) )
+	-$(RM) $(bindir)/$(SCRIPT_NAME)
 
 clean:
 	;
