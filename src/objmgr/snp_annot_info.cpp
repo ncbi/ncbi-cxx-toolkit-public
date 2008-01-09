@@ -427,7 +427,7 @@ CRef<CSeq_feat> SSNP_Info::x_CreateSeq_feat(void) const
     CRef<CSeq_feat> feat_ref(new CSeq_feat);
     {
         CSeq_feat& feat = *feat_ref;
-        { // data
+        if ( 0 ) { // data
             CPackString::Assign(feat.SetData().SetImp().SetKey(),
                                 kId_variation);
         }
@@ -442,7 +442,7 @@ CRef<CSeq_feat> SSNP_Info::x_CreateSeq_feat(void) const
             CPackString::Assign(user_field.SetLabel().SetStr(),
                                 kId_weight);
         }
-        { // snpid
+        if ( 0 ) { // snpid - will create in x_UpdateSeq_featData
             CSeq_feat::TDbxref& dbxref = feat.SetDbxref();
             dbxref.resize(1);
             dbxref[0].Reset(new CDbtag);
@@ -458,6 +458,8 @@ CRef<CSeq_feat> SSNP_Info::x_CreateSeq_feat(void) const
 void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
                                      const CSeq_annot_SNP_Info& annot_info) const
 {
+    CPackString::Assign(feat.SetData().SetImp().SetKey(),
+                        kId_variation);
     { // comment
         if ( m_CommentIndex == kNo_CommentIndex ) {
             feat.ResetComment();
@@ -562,8 +564,13 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
 
     { // snpid
         CSeq_feat::TDbxref& dbxref = feat.SetDbxref();
-        _ASSERT(dbxref.size() == 1);
+        dbxref.resize(1);
+        if ( !dbxref.front() ) {
+            dbxref.front().Reset(new CDbtag);
+        }
         CDbtag& dbtag = *dbxref[0];
+        CPackString::Assign(dbtag.SetDb(),
+                            kId_dbSNP);
         dbtag.SetTag().SetId(m_SNP_Id);
     }
 }
