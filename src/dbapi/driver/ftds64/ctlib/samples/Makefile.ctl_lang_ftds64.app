@@ -10,5 +10,5 @@ CPPFLAGS = -I$(includedir)/dbapi/driver/ftds64 $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS
 
 # CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64
 CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S MS_DEV1 -v 80
-CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S TAPER -v 42
-CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S TAPER -v 46
+CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S SCHUMANN -v 42
+CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S SCHUMANN -v 46

@@ -8,8 +8,8 @@ ulimit -n 1536 > /dev/null 2>&1
 
 # driver_list="ftds64_dblib"
 driver_list="ctlib dblib ftds odbc msdblib ftds8 odbcw ftds_odbc ftds63"
-# server_list="MS_DEV2 STRAUSS"
-server_list="MS_DEV1 TAPER MSSQL67"
+# server_list="MS_DEV2"
+server_list="MS_DEV1 THALBERG MSSQL67"
 # server_mssql="MS_DEV2"
 server_mssql="MS_DEV1"
 server_mssql2005="MSSQL67"
@@ -228,8 +228,14 @@ EOF
                     RunSimpleTest "dbapi_bcp"
                 fi
 
-                cmd="dbapi_testspeed -lb random -d $driver -S $server"
-                RunSimpleTest "dbapi_testspeed"
+                # do not run dbapi_testspeed 
+                # on Sybase databases with the "ftds" driver
+                if test \( $driver = "ftds" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
+                    sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped)"
+                else
+                    cmd="dbapi_testspeed -lb random -d $driver -S $server"
+                    RunSimpleTest "dbapi_testspeed"
+                fi
             fi
 
             # Do not run dbapi_cursor on SunOS Intel

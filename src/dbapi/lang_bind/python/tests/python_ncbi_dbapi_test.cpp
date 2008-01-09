@@ -876,7 +876,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
                       "odbcw", "gateway", "ftds8", "ftds_odbc"
 #else
-#define DEF_SERVER    "TAPER"
+#define DEF_SERVER    "THALBERG"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
                       "ftds8", "ftds_odbc"
@@ -925,6 +925,7 @@ CTestArguments::GetServerType(void) const
          || NStr::CompareNocase(GetServerName(), "MOZART") == 0
          || NStr::CompareNocase(GetServerName(), "OBERON") == 0
          || NStr::CompareNocase(GetServerName(), "TAPER") == 0
+         || NStr::CompareNocase(GetServerName(), "THALBERG") == 0
          || NStr::CompareNocase(GetServerName(), "SCHUMANN") == 0
          || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
          ) {

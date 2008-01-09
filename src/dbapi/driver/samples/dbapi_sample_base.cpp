@@ -116,6 +116,7 @@ CDbapiSampleApp::GetServerType(void) const
          GetServerName() == "SCHUMANN" ||
          GetServerName() == "OBERON" ||
          GetServerName() == "TAPER" ||
+         GetServerName() == "THALBERG" ||
          NStr::StartsWith(GetServerName(), "BARTOK") ) {
         return eSybase;
     } else if (NStr::StartsWith(GetServerName(), "MS_DEV") ||
@@ -145,7 +146,7 @@ CDbapiSampleApp::Init()
                       "gateway", "odbc", "odbcw", "ftds_odbc", \
                       "ftds64_dblib", "ftds8"
 #elif defined(HAVE_LIBSYBASE)
-#define DEF_SERVER    "TAPER"
+#define DEF_SERVER    "SCHUMANN"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
                       "odbc", "odbcw", "ftds_odbc", "ftds64_dblib", \
