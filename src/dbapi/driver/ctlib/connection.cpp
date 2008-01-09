@@ -50,6 +50,9 @@ inline int close(int fd)
 #  include <unistd.h>
 #endif
 
+#ifdef FTDS_IN_USE
+#  include <ctlib.h>
+#endif
 
 #define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Conn
 
@@ -294,7 +297,11 @@ void
 CTL_Connection::SetTimeout(size_t nof_secs)
 {
     // DATABASE_DRIVER_ERROR( "SetTimeout is not supported.", 100011 );
+#ifdef FTDS_IN_USE
+    x_GetSybaseConn()->tds_socket->query_timeout = nof_secs;
+#else
     ERR_POST_X_ONCE(3, "SetTimeout is not supported.");
+#endif
 }
 
 
