@@ -125,6 +125,8 @@ private:
     void    x_ReadSeqLens  (CNcbiIstream& istr);
     size_t  x_GetSeqLength (const string& id);
 
+    int     x_DoWithExternalHits(void);
+
     size_t  GetExonCont(void);
     size_t  GetMatchCount(void);
 

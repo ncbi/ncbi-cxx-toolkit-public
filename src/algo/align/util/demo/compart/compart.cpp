@@ -25,24 +25,21 @@
  *
  * Author:  Yuri Kapustin
  *
- * File Description:  Compartmentization demo
- *                   
+ * File Description: cDNA-to-Genomic local alignment (same species)
+ *                   and compartmentization utility
 */
 
 #include <ncbi_pch.hpp>
 
 #include "compart.hpp"
+#include "em.hpp"
+
 #include <algo/align/util/compartment_finder.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
 #include <math.h>
-
-namespace {
-    const size_t g_MinIntronLength (25);
-    const size_t g_MinExonLength   (10);
-}
 
 BEGIN_NCBI_SCOPE
 
@@ -53,10 +50,21 @@ void CCompartApp::Init()
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "Compart v.1.0.1. Input must be sorted "
-                              "by query and subject (on Unix: sort -k 1,1 -k 2,2).");
+                              "Compart v.1.0.2. Unless -qdb and -sdb are specified, "
+                              "the tool expects tabular blast hits at stdin collated "
+                              "by query and subject, e.g. with 'sort -k 1,1 -k 2,2'");
 
-    argdescr->AddDefaultKey("penalty", "penalty", 
+    argdescr->AddOptionalKey ("qdb", "qdb",
+                              "cDNA BLAST database", 
+                              CArgDescriptions::eString);
+
+    argdescr->AddOptionalKey ("sdb", "sdb",
+                              "Genomic BLAST database", 
+                              CArgDescriptions::eString);
+
+    argdescr->AddFlag ("ho", "Print raw hits only - no compartments");
+
+    argdescr->AddDefaultKey("penalty", "penalty",
                             "Per-compartment penalty",
                             CArgDescriptions::eDouble, "0.55");
     
@@ -76,24 +84,32 @@ void CCompartApp::Init()
                             "in base pairs. Default = parameter disabled.",
                             CArgDescriptions::eInteger, "9999999");
 
-    argdescr->AddFlag("noxf", 
-                      "Suppress overlap x-filtering: print all "
-                      "compartment hits intact");
+    argdescr->AddFlag("noxf", "Suppress overlap x-filtering: print all "
+                              "compartment hits intact");
     
     argdescr->AddDefaultKey("N", "N", 
                             "Max number of compartments per query (0 = All).",
                             CArgDescriptions::eInteger, "0");
     
+    argdescr->AddDefaultKey ("maxvol", "maxvol", 
+                             "Maximum index volume size in MB (approximate)",
+                             CArgDescriptions::eInteger,
+                             "512");
+
     argdescr->AddOptionalKey("seqlens", "seqlens", 
                              "Two-column file with sequence IDs and their lengths. "
-                             "If no supplied, the program will attempt fetching "
-                             "sequence lengths from GenBank.",
+                             "If none supplied, the program will attempt fetching "
+                             "the lengths from GenBank.",
                              CArgDescriptions::eInputFile);
 
     CArgAllow* constrain01 = new CArgAllow_Doubles(0.0, 1.0);
     argdescr->SetConstraint("penalty", constrain01);
     argdescr->SetConstraint("min_idty", constrain01);
     argdescr->SetConstraint("min_singleton_idty", constrain01);
+
+    CArgAllow_Integers* constrain_maxvol = new CArgAllow_Integers(128,1024);
+    argdescr->SetConstraint("maxvol", constrain_maxvol);
+
 
     SetupArgDescriptions(argdescr.release());
 }
@@ -144,27 +160,68 @@ size_t CCompartApp::x_GetSeqLength(const string& id)
 
 int CCompartApp::Run()
 {   
-    const CArgs& args = GetArgs();
+    const CArgs& args (GetArgs());
 
-    m_NoXF = args["noxf"];
+    const bool is_qdb     (args["qdb"]);
+    const bool is_sdb     (args["sdb"]);
+    const bool is_seqlens (args["seqlens"]);
+    const bool is_ho      (args["ho"]);
+    const bool is_maxvol  (args["maxvol"]);
+    const bool is_n       (args["N"]);
+    
+    bool invalid_args (false);
+    if(is_qdb ^ is_sdb)        { invalid_args = true; }
+    if(is_qdb  && is_seqlens)  { invalid_args = true; }
+    if(is_qdb  && is_n)        { invalid_args = true; }
+    if(!is_qdb && is_ho)       { invalid_args = true; }
+    if(!is_qdb && is_maxvol)   { invalid_args = true; }
 
-    if(args["seqlens"]) {
-        x_ReadSeqLens(args["seqlens"].AsInputFile());
-    }
-    else {
-        USING_SCOPE(objects);    
-        CRef<CObjectManager> objmgr (CObjectManager::GetInstance());
-        CGBDataLoader::RegisterInObjectManager(*objmgr);
-        m_Scope = new CScope(*objmgr);
-        m_Scope->AddDefaults();
-    }
-
+    m_NoXF                     = args["noxf"];
     m_penalty                  = args["penalty"].AsDouble();
     m_min_idty                 = args["min_idty"].AsDouble();
     m_min_singleton_idty       = args["min_singleton_idty"].AsDouble();
     m_min_singleton_idty_bps   = args["min_singleton_idty_bps"].AsInteger();
-    m_MaxCompsPerQuery         = args["N"].AsInteger();
 
+    int rv (0);
+    if(!is_qdb) {
+        if(is_seqlens) {
+            x_ReadSeqLens(args["seqlens"].AsInputFile());
+        }
+        else {
+            USING_SCOPE(objects);    
+            CRef<CObjectManager> objmgr (CObjectManager::GetInstance());
+            CGBDataLoader::RegisterInObjectManager(*objmgr);
+            m_Scope = new CScope(*objmgr);
+            m_Scope->AddDefaults();
+        }
+        m_MaxCompsPerQuery         = args["N"].AsInteger();
+        rv = x_DoWithExternalHits();
+    }
+    else {
+        CRef<CElementaryMatching> matcher (
+                     new CElementaryMatching(args["qdb"].AsString(),
+                                             args["sdb"].AsString()));
+
+        matcher->SetPenalty(args["compartment_penalty"].AsDouble());
+        matcher->SetMinIdty(args["min_compartment_idty"].AsDouble());
+        matcher->SetMinSingletonIdty(args["min_singleton_idty"].AsDouble());
+
+        matcher->SetHitsOnly(args["ho"]);
+        matcher->SetMaxVolSize(1024 * 1024 * (args["maxvol"].AsInteger()));
+
+        try { matcher->Run(); }
+        catch(std::bad_alloc&) {
+            NCBI_THROW(CException, eUnknown, 
+                       "Not enough memory available to run this program");
+        }      
+    }
+
+    return rv;
+}
+
+
+int CCompartApp::x_DoWithExternalHits(void)
+{
     m_CompartmentsPermanent.resize(0);
     m_Allocated = 0;
 
@@ -467,6 +524,9 @@ bool operator < (const CCompartApp::TCompartRef& lhs,
 // - m_MatchCount
 void CCompartApp::CCompartment::x_EvalExons(void)
 {
+    const size_t kMinIntronLength (25);
+    const size_t kMinExonLength   (10);
+
     size_t exons (1);
     THitRef& h (m_HitRefs.front());
     double matches ( h->GetLength() * h->GetIdentity() );
@@ -482,11 +542,11 @@ void CCompartApp::CCompartment::x_EvalExons(void)
                 if(prev.NotEmpty()) {
 
                     const THit::TCoord q0 (prev->GetQueryStop());
-                    if(q0 + g_MinExonLength <= h->GetQueryStop()) {
+                    if(q0 + kMinExonLength <= h->GetQueryStop()) {
 
                         const THit::TCoord s0 (h->GetSubjStart() 
                                                - (h->GetQueryStart() - q0));
-                        if(prev->GetSubjStop() + g_MinIntronLength <= s0) {
+                        if(prev->GetSubjStop() + kMinIntronLength <= s0) {
                             ++exons;
                         }
                         const THit::TCoord q0max (max(q0,h->GetQueryStart()));
@@ -505,11 +565,11 @@ void CCompartApp::CCompartment::x_EvalExons(void)
                 if(prev.NotEmpty()) {
 
                     const THit::TCoord q0 (prev->GetQueryStop());
-                    if(q0 + g_MinExonLength <= h->GetQueryStop()) {
+                    if(q0 + kMinExonLength <= h->GetQueryStop()) {
 
                         const THit::TCoord s0 (h->GetSubjStart() 
                                                + h->GetQueryStart() - q0);
-                        if(s0 + g_MinIntronLength <= prev->GetSubjStop()) {
+                        if(s0 + kMinIntronLength <= prev->GetSubjStop()) {
                             ++exons;
                         }
                         const THit::TCoord q0max (max(q0,h->GetQueryStart()));
