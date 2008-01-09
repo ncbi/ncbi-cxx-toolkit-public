@@ -2,12 +2,15 @@
 // Shared part of new_project.wsf and import_project.wsf
 
 // global settings
-var g_verbose = false;
-var g_usefilecopy = true;
-var g_branch = "toolkit/trunk/internal/c++";
-var g_load_solution = true;
+var g_verbose       = false;
+var g_usefilecopy   = true;
+var g_make_solution = true;
+
+var g_def_branch = "toolkit/trunk/internal/c++";
+var g_branch     = "toolkit/trunk/internal/c++";
+
 var g_def_msvcver = 71;
-var g_msvcver = 71;
+var g_msvcver     = 71;
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
@@ -79,7 +82,7 @@ function Tree(oShell, oTask)
     this.BinPathDll            = this.CompilersBranchDll + "\\bin";
 
     this.IncludeRootBranch     = this.TreeRoot + "\\include";
-    this.IncludeConfig         = this.IncludeRootBranch + "\\corelib\\config";
+    this.IncludeConfig         = this.IncludeRootBranch + "\\common\\config";
     this.IncludeProjectBranch  = this.IncludeRootBranch + "\\" + BackSlashes(oTask.ProjectName);
 
     this.SrcRootBranch         = this.TreeRoot + "\\src";
@@ -158,6 +161,7 @@ function CreateTreeStructure(oTree, oTask)
 
     CreateFolderIfAbsent(oFso, oTree.IncludeRootBranch     );
     CreateFolderIfAbsent(oFso, oTree.IncludeConfig         );
+    CreateFolderIfAbsent(oFso, oTree.IncludeConfig + "\\msvc");
     CreateFolderIfAbsent(oFso, oTree.IncludeProjectBranch  );
 
     CreateFolderIfAbsent(oFso, oTree.SrcRootBranch         );
@@ -169,6 +173,9 @@ function CreateTreeStructure(oTree, oTask)
 // fill-in tree structure
 function FillTreeStructure(oShell, oTree)
 {
+    if (!GetMakeSolution()) {
+        return;
+    }
     var temp_dir = oTree.TreeRoot + "\\temp";
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
 
@@ -333,14 +340,14 @@ function GetVerbose()
     return g_verbose;
 }
 
-function SetLoadSolution(oArgs, flag, default_val)
+function SetMakeSolution(oArgs, flag, default_val)
 {
-    g_load_solution = !GetFlagValue(oArgs, flag, default_val);
+    g_make_solution = !GetFlagValue(oArgs, flag, default_val);
 }
 
-function GetLoadSolution()
+function GetMakeSolution()
 {
-    return g_load_solution;
+    return g_make_solution;
 }
 
 function SetBranch(oArgs, flag)
@@ -355,6 +362,11 @@ function SetBranch(oArgs, flag)
 function GetBranch()
 {
 	return g_branch;
+}
+
+function GetDefaultBranch()
+{
+	return g_def_branch;
 }
 
 function IsFileCopyAllowed()
@@ -575,8 +587,8 @@ function SearchRepository(oShell, abs_path, rel_path)
 //            return repo;
         }
     }
-    WScript.Echo("Warning: repository not found: " + abs_path);
-    return abs_path;
+    WScript.Echo("WARNING: repository not found: " + abs_path);
+    return "";
 }
 
 function GetRepository(oShell, relative_path)
@@ -587,7 +599,16 @@ function GetRepository(oShell, relative_path)
     }
     VerboseEcho("Looking for " + rel_path);
     var abs_path = GetRepositoryRoot() + "/" + rel_path;
-    return SearchRepository(oShell, abs_path, rel_path)
+    var result = SearchRepository(oShell, abs_path, rel_path)
+    if (result.length > 0) {
+        return result;
+    }
+    abs_path = GetSvnRepositoryRoot() + GetDefaultBranch() + "/" + rel_path;
+    result = SearchRepository(oShell, abs_path, rel_path)
+    if (result.length > 0) {
+        return result;
+    }
+    return abs_path;
 }
 
 // Get files from SVN tree

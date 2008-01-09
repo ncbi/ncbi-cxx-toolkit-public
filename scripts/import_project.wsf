@@ -13,7 +13,7 @@ function Usage()
     var usage_str;
     //usage_str  = "Usage:\n";
     //usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
-    usage_str  = "USAGE: cscript import_project.wsf <tree_path> [builddir] [-t branch] [-dll [-b] [-r] [-v] [-noload]\n";
+    usage_str  = "USAGE: cscript import_project.wsf <tree_path> [builddir] [-t branch] [-dll [-b] [-r] [-v] [-nosln]\n";
     usage_str += "SYNOPSIS:\n";
     usage_str += "    Retrieve project (with all sub-projects) located in the NCBI C++ toolkit\n";
 	usage_str += "    SVN tree at:\n";
@@ -39,7 +39,9 @@ function Usage()
     usage_str += "    [-b]             -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
     usage_str += "    [-r]             -- copy NCBI C++ gui resources\n";
     usage_str += "    [-v]             -- show details about what is being made\n";
-    usage_str += "    [-noload]        -- do not open generated solution\n";
+    usage_str += "    [-nosln]         -- do not generate solution\n";
+    usage_str += "        Save time - use this option when importing several projects.\n";
+    usage_str += "        Generate solution only when importing the last one.\n";
     usage_str += "EXAMPLES:\n";
     usage_str += "    cscript import_project.wsf objmgr/test\n";
     usage_str += "    cscript import_project.wsf objmgr/test -dll\n";
@@ -110,7 +112,7 @@ function Task()
         WScript.Quit(1);
     }
     SetVerbose(oArgs, "-v", false);
-    SetLoadSolution(oArgs, "-noload", false);
+    SetMakeSolution(oArgs, "-nosln", false);
     SetBranch(oArgs, "-t")
 
 
@@ -158,6 +160,9 @@ function DumpTask(oTask)
     WScript.Echo("CopyDlls       = " + oTask.CopyDlls.toString());
     WScript.Echo("CopyRes        = " + oTask.CopyRes.toString());
     WScript.Echo("RepositoryRoot = " + GetRepositoryRoot());
+    if (!GetMakeSolution()) {
+        WScript.Echo("NO SOLUTION REQUESTED");
+    }
 }
 
 // Fill local tree
@@ -185,6 +190,9 @@ function SolutionName(oTask)
 // Run project tree builder
 function RunPtb(oShell, oTree, oTask)
 {
+    if (!GetMakeSolution()) {
+        return;
+    }
     var ptb;
     if ((typeof(oTask.RemotePtb) == "undefined") || oTask.RemotePtb.length == 0) {
         var conf = GetConfigs(oTask)[0];
@@ -258,11 +266,8 @@ function LoadSolution(oShell, oTree, oTask)
     }
     sln_path += "\\build\\" + SolutionName(oTask) + ".sln\"";
 
-    if (GetLoadSolution()) {
+    if (GetMakeSolution()) {
         execute(oShell, "start \"\" " + sln_path);
-    } else {
-        WScript.Echo("Generated solution file:");
-        WScript.Echo(sln_path);
     }
 }
 
@@ -272,7 +277,7 @@ function FillMakefileinTree(oShell, oTree, oTask)
     var dir_cvs_start   = "src/"  + ForwardSlashes(oTask.ProjectName);
     var dir_here_start  = oTree.SrcRootBranch + "\\" + BackSlashes(oTask.ProjectName);
     var dir_cvs = oFso.GetParentFolderName(dir_cvs_start);
-    var dir_here = oFso.GetParentFolderName(dir_here_start);
+    var dir_here = dir_here_start; //oFso.GetParentFolderName(dir_here_start);
     while (dir_here != oTree.SrcRootBranch) {
         GetFileFromTree(oShell, oTree, oTask, "/" + dir_cvs + "/Makefile.in", dir_here);
         AdjustMakefilein(oFso, dir_here);
@@ -295,6 +300,17 @@ function AdjustMakefilein(oFso, dir_here)
     var mkfile = dir_here + "\\Makefile.in";
     var mkfile_old = mkfile + ".old";
     VerboseEcho("Verifying      " + mkfile);
+    if (!oFso.FileExists(mkfile)) {
+        WScript.Echo("WARNING: File not found, creating: " + mkfile);
+        var new_file = oFso.CreateTextFile(mkfile, true);
+        var proj_line = "";
+        for (var idir = 0; idir < all_subdir.length; ++idir) {
+            proj_line += " " + all_subdir[idir];
+        }
+        new_file.WriteLine("SUB_PROJ = " + proj_line);
+        new_file.Close();
+        return;
+    }
 
     oFso.CopyFile(mkfile, mkfile_old);
     var old_file = oFso.OpenTextFile(mkfile_old, 1);
