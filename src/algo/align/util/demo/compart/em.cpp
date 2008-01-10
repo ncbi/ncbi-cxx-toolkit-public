@@ -689,7 +689,7 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
 
                 for(Uint4 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
 
-                    const Uint8 loword (ui8 & kUI8_LoWord);
+                    const Uint8 loword = ui8 & kUI8_LoWord;
                     if(m_Mers.get_at(strand? (loword >> 4): (loword & kUI4_Lo28)))
                     {
                         MersAndCoords[mcidx++] = (loword << 32) | gccur;
@@ -713,7 +713,7 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
 
                     for(Uint4 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
 
-                        const Uint8 loword (ui8 & kUI8_LoWord);
+                        const Uint8 loword = ui8 & kUI8_LoWord;
                         if(m_Mers.get_at(strand? (loword >> 4):
                                          (loword & kUI4_Lo28)))
                         {
@@ -738,7 +738,7 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
                                 + (gccur - current_offset - gcbase) / 4);
                 size_t k (0);
                 do {
-                    const Uint8 loword (fivebytes & kUI8_LoWord);
+                    const Uint8 loword = fivebytes & kUI8_LoWord;
 
                     if(m_Mers.get_at(strand? (loword >> 4):
                                        (loword & kUI4_Lo28)))
@@ -1035,11 +1035,11 @@ void CElementaryMatching::x_Search(bool strand)
 
                 for(size_t idx_s (hie.m_SubjOfs); idx_s < idx_s_max; ++idx_s) {
 
-                    Uint8 hiword (pos_s[idx_s - map_offset_s/4]);
+                    Uint8 hiword = pos_s[idx_s - map_offset_s/4];
                     hiword <<= 32;
                     for(size_t idx_q (hie.m_QueryOfs); idx_q < idx_q_max; ++idx_q) {
 
-                        const Uint8 loword (pos_q[idx_q - map_offset_q/4]);
+                        const Uint8 loword = pos_q[idx_q - map_offset_q/4];
                         hits[hidx++] = (hiword | loword);
                     }
                 }
@@ -1191,11 +1191,11 @@ void CElementaryMatching::x_CompartVolume(vector<Uint8>* phits)
             
             if(gc_q < gc_q_min || gc_q >= gc_q_max) {
                 
-                const THit::TCoord min_matches1 (THit::TCoord(
-                      round(m_MinCompartmentIdty * ii_cdna->m_Length)));
+                const THit::TCoord min_matches1 = THit::TCoord(
+                      round(m_MinCompartmentIdty * ii_cdna->m_Length));
 
-                const THit::TCoord min_matches2 (THit::TCoord(
-                      round(m_MinSingletonIdty * ii_cdna->m_Length)));
+                const THit::TCoord min_matches2 = THit::TCoord(
+                      round(m_MinSingletonIdty * ii_cdna->m_Length));
 
                 const THit::TCoord min_matches (min(min_matches1,min_matches2));
 
@@ -1234,11 +1234,11 @@ void CElementaryMatching::x_CompartVolume(vector<Uint8>* phits)
             }
         }
         
-        const THit::TCoord min_matches1 (THit::TCoord(
-                      round(m_MinCompartmentIdty * ii_cdna->m_Length)));
+        const THit::TCoord min_matches1 = THit::TCoord(
+                      round(m_MinCompartmentIdty * ii_cdna->m_Length));
 
-        const THit::TCoord min_matches2 (THit::TCoord(
-                      round(m_MinSingletonIdty * ii_cdna->m_Length)));
+        const THit::TCoord min_matches2 = THit::TCoord(
+                      round(m_MinSingletonIdty * ii_cdna->m_Length));
 
         const THit::TCoord min_matches (min(min_matches1,min_matches2));
 
@@ -1586,13 +1586,13 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
         // identify compartments
         const Uint4 qlen (m_ii_cdna->m_Length);
 
-        const THit::TCoord min_matches1 (THit::TCoord(
-                      round(m_MinCompartmentIdty * qlen)));
+        const THit::TCoord min_matches1 = THit::TCoord(
+                      round(m_MinCompartmentIdty * qlen));
 
-        const THit::TCoord min_matches2 (THit::TCoord(
-                      round(m_MinSingletonIdty * qlen)));
+        const THit::TCoord min_matches2 = THit::TCoord(
+                      round(m_MinSingletonIdty * qlen));
 
-        const THit::TCoord penalty (THit::TCoord(round(m_Penalty * qlen)));
+        const THit::TCoord penalty = THit::TCoord(round(m_Penalty * qlen));
 
         CCompartmentAccessor<THit> ca (hitrefs.begin(), hitrefs.end(),
                                        penalty,
