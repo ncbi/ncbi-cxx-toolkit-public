@@ -156,6 +156,8 @@ private:
     bool x_ExceptionIsLegalForFeature() const;
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
         CConstRef<CSeq_feat>& );
+    void x_GetAssociatedProtInfo( CBioseqContext&, CBioseq_Handle&,
+        const CProt_ref*&, CConstRef<CSeq_feat>&, CConstRef<CSeq_id>& );
     void x_AddQualPartial( CBioseqContext& );
     void x_AddQualDbXref();
     void x_AddQualCitation();
@@ -177,6 +179,14 @@ private:
     void x_AddQualTranslationException( const CCdregion&, CBioseqContext& );
     void x_AddQualProteinConflict( const CCdregion&, CBioseqContext& );
     void x_AddQualCodedBy( CBioseqContext& );
+    void x_AddQualProteinId( CBioseqContext&, const CBioseq_Handle&, CConstRef<CSeq_id> );  
+    void x_AddQualProtComment( const CBioseq_Handle& );
+    void x_AddQualProtMethod( const CBioseq_Handle& );
+    void x_AddQualProtNote( const CProt_ref*, CConstRef<CSeq_feat> );
+    void x_AddQualCdsProduct( CBioseqContext&, const CProt_ref* );
+    void x_AddQualProtDesc( const CProt_ref* );
+    void x_AddQualProtActivity( const CProt_ref* );
+    void x_AddQualProtEcNumber( CBioseqContext&, const CProt_ref* );
     void x_AddQualsGb( CBioseqContext& );
     bool x_GetPseudo(  const CGene_ref* =0, const CSeq_feat* =0 ) const;
 
@@ -193,8 +203,8 @@ private:
 
     void x_AddQuals( CBioseqContext& ctx );
     void x_AddQuals(const CProt_ref& prot);
-    const CProt_ref* x_AddProteinQuals(CBioseq_Handle& prot);
     void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot);
+    void x_AddQualsProductId( CBioseq_Handle& );
     void x_AddQualsGene(const CGene_ref*, CConstRef<CSeq_feat>&,
         bool from_overlap);
     void x_AddGoQuals(const CUser_object& uo);
