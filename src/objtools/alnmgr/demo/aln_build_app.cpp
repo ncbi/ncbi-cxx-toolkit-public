@@ -243,6 +243,10 @@ int CAlnBuildApp::Run(void)
     CAlnUserOptions aln_user_options;
 
 
+    /// Choose the first seq to be the anchor
+    aln_user_options.SetAnchorId(aln_stats.GetIdVec()[0]);
+
+
     /// Optionally, choose to filter a direction
     aln_user_options.m_Direction = 
         (CAlnUserOptions::EDirection) GetArgs()["dir"].AsInteger();
