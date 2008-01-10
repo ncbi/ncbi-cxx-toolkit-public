@@ -68,7 +68,7 @@ public:
     typedef vector<TAlnSeqIdIRef> TIdVec;
 
     void operator()(const CSeq_align& seq_align, //< Input aln
-                    TIdVec& id_vec) const     //< Output (ids for that aln)
+                    TIdVec& id_vec) const        //< Output (ids for that aln)
     {
         _ASSERT(id_vec.empty());
 
@@ -91,7 +91,7 @@ public:
                         /// Need to make sure ids are identical across all alignments
                         TIdVec next_id_vec;
                         this->operator()(**sa_it, next_id_vec);
-                        if (id_vec != next_id_vec) {
+                        if ( !IdVecEqual(id_vec, next_id_vec) ) {
                             NCBI_THROW(CAlnException, eInvalidSeqId,
                                        "Inconsistent Seq-ids across the disc alignments.");
                         }
@@ -272,6 +272,11 @@ public:
         }
     
     }
+
+    static bool IdVecEqual(const TIdVec& x, const TIdVec& y) {
+        return x.size() == y.size()  &&
+            equal(x.begin(), x.end(), y.begin(), SAlnSeqIdRefEqual());
+    }
 };
 
 
@@ -283,3 +288,4 @@ typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
 END_NCBI_SCOPE
 
 #endif  // OBJTOOLS_ALNMGR___SEQIDS_EXTRACTOR__HPP
+
