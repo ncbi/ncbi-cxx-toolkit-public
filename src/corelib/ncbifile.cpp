@@ -1186,7 +1186,7 @@ bool s_FileTimeToCTime(const FILETIME& filetime, CTime& t)
                   t.GetTimeZonePrecision());
 
     // And assign it
-    if ( t.GetTimeZoneFormat() == CTime::eLocal ) {
+    if ( t.GetTimeZone() == CTime::eLocal ) {
         t = newtime;
     } else {
         t = newtime.GetGmtTime();
