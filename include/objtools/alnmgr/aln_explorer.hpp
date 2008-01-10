@@ -83,16 +83,17 @@ class IAlnSegment
 public:
     typedef IAlnExplorer::TSignedRange TSignedRange;
 
-    enum EType  {
+    typedef unsigned TSegTypeFlags; // binary OR of ESegTypeFlags
+    enum ESegTypeFlags  {
         fAligned  = 0x01,
         fGap      = 0x02,
         fReversed = 0x04,
-        fInvalid  = 0x80000000
+        fInvalid  = (TSegTypeFlags) 0x80000000
     };
 
     virtual ~IAlnSegment()  {}
 
-    virtual int   GetType() const = 0;
+    virtual TSegTypeFlags GetType() const = 0;
     virtual const TSignedRange& GetAlnRange() const = 0;
     virtual const TSignedRange& GetRange() const = 0;
 

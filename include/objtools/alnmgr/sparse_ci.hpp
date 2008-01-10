@@ -50,18 +50,18 @@ public:
 
     CSparseSegment();
     void    Init(TSignedSeqPos aln_from, TSignedSeqPos aln_to,
-                 TSignedSeqPos from, TSignedSeqPos to, int type);
+                 TSignedSeqPos from, TSignedSeqPos to, TSegTypeFlags type);
     virtual operator bool() const;
 
-    virtual int   GetType() const;
+    virtual TSegTypeFlags GetType() const;
     virtual const TSignedRange&    GetAlnRange() const;
     virtual const TSignedRange&    GetRange() const;
 
 protected:
-    TSignedRange    m_AlnRange;
-    TSignedRange    m_Range;
-    bool    m_Reversed;
-    int     m_Type;
+    TSignedRange  m_AlnRange;
+    TSignedRange  m_Range;
+    bool          m_Reversed;
+    TSegTypeFlags m_Type;
 };
 
 

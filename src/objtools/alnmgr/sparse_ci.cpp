@@ -45,7 +45,7 @@ CSparseSegment::CSparseSegment()
 
 
 void CSparseSegment::Init(TSignedSeqPos aln_from, TSignedSeqPos aln_to,
-                          TSignedSeqPos from, TSignedSeqPos to, int type)
+                          TSignedSeqPos from, TSignedSeqPos to, TSegTypeFlags type)
 {
     m_AlnRange.Set(aln_from, aln_to);
     m_Range.Set(from, to);
@@ -59,7 +59,7 @@ CSparseSegment::operator bool() const
 }
 
 
-int CSparseSegment::GetType() const
+CSparseSegment::TSegTypeFlags CSparseSegment::GetType() const
 {
     return m_Type;
 }
@@ -85,7 +85,7 @@ inline void CSparse_CI::x_InitSegment()
     if( ! (bool)*this)   {
         m_Segment.Init(-1, -1, -1, -1, IAlnSegment::fInvalid); // invalid
     } else {
-        int dir_flag = m_It_1->IsDirect() ? 0 : IAlnSegment::fReversed;
+        IAlnSegment::TSegTypeFlags dir_flag = m_It_1->IsDirect() ? 0 : IAlnSegment::fReversed;
 
         if(m_It_1 == m_It_2)  {   // aligned segment
             if(m_Clip  &&  (m_It_1 == m_Clip->m_First_It  ||  m_It_1 == m_Clip->m_Last_It_1))  {
@@ -95,11 +95,13 @@ inline void CSparse_CI::x_InitSegment()
                 r.IntersectWith(clip);
 
                 m_Segment.Init(r.GetFirstFrom(), r.GetFirstTo(),
-                           r.GetSecondFrom(), r.GetSecondTo(), IAlnSegment::fAligned | dir_flag);
+                               r.GetSecondFrom(), r.GetSecondTo(),
+                               IAlnSegment::fAligned | dir_flag);
             } else {
                 const TAlignRange& r = *m_It_1;
                 m_Segment.Init(r.GetFirstFrom(), r.GetFirstTo(),
-                               r.GetSecondFrom(), r.GetSecondTo(), IAlnSegment::fAligned | dir_flag);
+                               r.GetSecondFrom(), r.GetSecondTo(),
+                               IAlnSegment::fAligned | dir_flag);
             }
         } else {  // gap
             TSignedSeqPos from = m_It_2->GetSecondToOpen();
