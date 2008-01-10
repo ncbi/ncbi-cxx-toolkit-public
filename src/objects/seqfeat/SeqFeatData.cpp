@@ -267,7 +267,7 @@ void CSeqFeatData::x_InitFeatDataInfo(void) const
                 m_FeatDataInfo = it->second;
             }
             else {
-                bool other = Which() != CRNA_ref::eType_other;
+                bool other = GetRna().GetType() != CRNA_ref::eType_other;
                 bool can_get_name = (GetRna().CanGetExt()
                                     &&  GetRna().GetExt().IsName());
                 const string& ext_name = (can_get_name
