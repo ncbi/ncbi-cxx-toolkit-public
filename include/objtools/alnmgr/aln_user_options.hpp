@@ -121,9 +121,9 @@ public:
     }
 
 
+    objects::CBioseq_Handle  m_Anchor; // if null then a multiple alignment shall be built    
 private:
     TAlnSeqIdIRef m_AnchorId;
-    //objects::CBioseq_Handle  m_Anchor; // if null then a multiple alignment shall be built    
     
 
 
