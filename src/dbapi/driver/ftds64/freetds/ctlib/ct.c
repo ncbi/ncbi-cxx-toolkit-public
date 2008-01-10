@@ -41,8 +41,6 @@
 TDS_RCSID(var, "$Id$");
 
 
-int g_tds_version = CS_VERSION_110;
-
 static char * ct_describe_cmd_state(CS_INT state);
 /**
  * Read a row of data
@@ -255,8 +253,6 @@ ct_init(CS_CONTEXT * ctx, CS_INT version)
     tdsdump_log(TDS_DBG_FUNC, "ct_init()\n");
     ctx->tds_ctx->msg_handler = _ct_handle_server_message;
     ctx->tds_ctx->err_handler = _ct_handle_client_message;
-
-    g_tds_version = version;
 
     return CS_SUCCEED;
 }
@@ -607,39 +603,6 @@ ct_connect(CS_CONNECTION * con, CS_CHAR * servername, CS_INT snamelen)
         con->tds_socket = NULL;
         return CS_FAIL;
     }
-
-    /* override TDS version */
-    /* CS_VERSION_125 is not defined with FreeTDS */
-    switch ( g_tds_version ) {
-    case 42:
-        connection->major_version = 4;
-        connection->minor_version = 2;
-        break;
-    case 46:
-        connection->major_version = 4;
-        connection->minor_version = 6;
-        break;
-    case 50:
-        connection->major_version = 5;
-        connection->minor_version = 0;
-        break;
-    case 70:
-        connection->major_version = 7;
-        connection->minor_version = 0;
-        break;
-    case 80:
-        connection->major_version = 8;
-        connection->minor_version = 0;
-        break;
-    case CS_VERSION_100:
-        connection->major_version = 4;
-        connection->minor_version = 6;
-        break;
-    case CS_VERSION_110:
-        connection->major_version = 5;
-        connection->minor_version = 0;
-        break;
-    };
 
     /* Timeouts ... */
     con->tds_socket->query_timeout_param = con;

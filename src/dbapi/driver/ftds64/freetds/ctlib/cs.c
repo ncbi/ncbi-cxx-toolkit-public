@@ -49,8 +49,6 @@
 
 TDS_RCSID(var, "$Id$");
 
-extern int g_tds_version;
-
 static int _cs_datatype_length(int dtype);
 static CS_INT cs_diag_storemsg(CS_CONTEXT *context, CS_CLIENTMSG *message);
 static CS_INT cs_diag_clearmsg(CS_CONTEXT *context, CS_INT type);
@@ -242,8 +240,6 @@ TDSCONTEXT *tds_ctx;
 
     (*ctx)->login_timeout = -1;
     (*ctx)->query_timeout = -1;
-
-    g_tds_version = version;
 
     return CS_SUCCEED;
 }

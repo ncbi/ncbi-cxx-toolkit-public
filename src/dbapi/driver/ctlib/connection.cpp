@@ -71,6 +71,30 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 , m_Cntx(&cntx)
 , m_Handle(cntx, *this)
 {
+#ifdef FTDS_IN_USE
+    int tds_version = 0;
+    switch (GetCTLibContext().GetTDSVersion()) {
+        case 40:
+            tds_version = CS_TDS_40;
+            break;
+        case 42:
+            tds_version = CS_TDS_42;
+            break;
+        case 46:
+            tds_version = CS_TDS_46;
+            break;
+        case 50:
+            tds_version = CS_TDS_50;
+            break;
+        case 70:
+            tds_version = CS_TDS_70;
+            break;
+        case 80:
+            tds_version = CS_TDS_80;
+            break;
+    }
+#endif
+
     string extra_msg = " SERVER: " + conn_attr.srv_name + "; USER: " + conn_attr.user_name;
     SetExtraMsg(extra_msg);
 
@@ -119,9 +143,16 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                    (void*) hostname,
                                    CS_NULLTERM,
                                    NULL)) != CS_SUCCEED
-        // Future development ...
-//         || GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(), CS_SET, CS_TDS_VERSION, &m_TDSVersion,
-//                      CS_UNUSED, NULL)) != CS_SUCCEED
+#ifdef FTDS_IN_USE
+        || GetCTLibContext().Check(ct_con_props(
+                    x_GetSybaseConn(), 
+                    CS_SET, 
+                    CS_TDS_VERSION, 
+                    &tds_version,
+                    CS_UNUSED, 
+                NULL)
+                ) != CS_SUCCEED
+#endif
         )
     {
         DATABASE_DRIVER_ERROR( "Cannot connection's properties." + GetDbgInfo(), 100011 );
