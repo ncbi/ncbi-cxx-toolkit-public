@@ -23,19 +23,14 @@
 *
 * ===========================================================================
 *
-* Author of the template:  Aaron Ucko
+* Author: Azat Badretdin
 *
 * File Description:
-*   Simple program demonstrating the use of serializable objects (in this
-*   case, biological sequences).  Does NOT use the object manager.
-*
-* Modified: Azat Badretdinov
-*   reads seq-submit file, blast file and optional tagmap file to produce list of potential candidates
 *
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
-#include "read_blast_result.h"
+#include "read_blast_result.hpp"
 void CReadBlastApp::getFromTo(const CSeq_loc& loc, TSeqPos& from, TSeqPos& to, ENa_strand& strand)
 {
   if(loc.IsInt())
@@ -247,16 +242,3 @@ template <typename interval_type> string GetLocationString ( const interval_type
 
 }
 
-/*
-* $Log: locations.cpp,v $
-* Revision 1.3  2007/11/13 20:21:04  badrazat
-* fixing broken individiual alignment links for CDD html output
-*
-* Revision 1.2  2007/11/08 15:49:04  badrazat
-* 1. added locus tags
-* 2. fixed bugs in detecting RNA problems (simple seq related)
-*
-* Revision 1.1  2007/10/04 16:01:25  badrazat
-* split
-*
-*/

@@ -25,16 +25,11 @@
 * Author: Azat Badretdin
 *
 * File Description:
-*   Simple program demonstrating the use of serializable objects (in this
-*   case, biological sequences).  Does NOT use the object manager.
-*
-* Modified: Azat Badretdinov
-*   reads seq-submit file, blast file and optional tagmap file to produce list of potential candidates
 *
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
-#include "read_blast_result.h"
+#include "read_blast_result.hpp"
 int CReadBlastApp::CopyInfoFromGenesToProteins(void)
 {
        

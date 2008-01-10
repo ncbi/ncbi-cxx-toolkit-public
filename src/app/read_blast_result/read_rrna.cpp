@@ -23,19 +23,14 @@
 *
 * ===========================================================================
 *
-* Author of the template:  Aaron Ucko
+* Author: Azat Badretdin
 *
 * File Description:
-*   Simple program demonstrating the use of serializable objects (in this
-*   case, biological sequences).  Does NOT use the object manager.
-*
-* Modified: Azat Badretdinov
-*   reads seq-submit file, blast file and optional tagmap file to produce list of potential candidates
 *
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
-#include "read_blast_result.h"
+#include "read_blast_result.hpp"
 
 int CReadBlastApp::ReadRRNA2(const string& file)
 {
@@ -126,19 +121,3 @@ int CReadBlastApp::ReadRRNA2(const string& file)
 }
 
 
-/*
-* ===========================================================================
-*
-* $Log: read_rrna.cpp,v $
-* Revision 1.3  2007/10/03 16:28:52  badrazat
-* update
-*
-* Revision 1.2  2007/09/20 17:15:42  badrazat
-* more editing
-*
-* Revision 1.1  2007/09/20 15:27:41  badrazat
-* init
-*
-*
-* ===========================================================================
-*/

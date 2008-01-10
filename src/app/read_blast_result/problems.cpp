@@ -23,19 +23,14 @@
 *
 * ===========================================================================
 * 
-* Author of the template:  Aaron Ucko
+* Author: Azat Badretdin
 *   
 * File Description:            
-*   Simple program demonstrating the use of serializable objects (in this
-*   case, biological sequences).  Does NOT use the object manager.
-*   
-* Modified: Azat Badretdinov
-*   reads seq-submit file, blast file and optional tagmap file to produce list of potential candidates
 *     
 * ===========================================================================
 */  
 #include <ncbi_pch.hpp>
-#include "read_blast_result.h"
+#include "read_blast_result.hpp"
 
 void CReadBlastApp::reportProblems(const bool report_and_forget, diagMap& diag, ostream& out,
    const CBioseq::TAnnot& annots, const EProblem type)
@@ -622,15 +617,3 @@ void CReadBlastApp::append_misc_feature(CBioseq_set::TSeq_set& seqs, const strin
 
 
 
-/*
- * $Log: problems.cpp,v $
- * Revision 1.3  2007/11/13 20:21:04  badrazat
- * fixing broken individiual alignment links for CDD html output
- *
- * Revision 1.2  2007/10/04 16:35:43  badrazat
- * splits
- *
- * Revision 1.1  2007/10/04 15:55:51  badrazat
- * another split
- *
- */

@@ -23,19 +23,14 @@
 *
 * ===========================================================================
 *
-* Author of the template:  Aaron Ucko
+* Author: Azat Badretdin
 *
 * File Description:
-*   Simple program demonstrating the use of serializable objects (in this
-*   case, biological sequences).  Does NOT use the object manager.
-*
-* Modified: Azat Badretdinov
-*   reads seq-submit file, blast file and optional tagmap file to produce list of potential candidates
 *
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
-#include "read_blast_result.h"
+#include "read_blast_result.hpp"
 
 bool CReadBlastApp::fit_blast
   (     
@@ -352,12 +347,3 @@ bool CReadBlastApp::has_blast_hits(const CBioseq& seq)
 
 
 
-/*
-* $Log: fit_blast.cpp,v $
-* Revision 1.2  2007/10/04 16:35:43  badrazat
-* splits
-*
-* Revision 1.1  2007/10/04 16:18:35  badrazat
-* split
-*
-*/
