@@ -84,9 +84,19 @@ typedef CIRef<IAlnSeqId> TAlnSeqIdIRef;
 struct SAlnSeqIdIRefComp :
     public binary_function<TAlnSeqIdIRef, TAlnSeqIdIRef, bool>
 {
-    bool operator()(const ncbi::TAlnSeqIdIRef& l_id_ref,
-                    const ncbi::TAlnSeqIdIRef& r_id_ref) const {
+    bool operator()(const TAlnSeqIdIRef& l_id_ref,
+                    const TAlnSeqIdIRef& r_id_ref) const {
         return *l_id_ref < *r_id_ref; 
+    }
+};
+
+
+struct SAlnSeqIdRefEqual :
+    public binary_function<TAlnSeqIdIRef, TAlnSeqIdIRef, bool>
+{
+    bool operator()(const TAlnSeqIdIRef& l_id_ref,
+                    const TAlnSeqIdIRef& r_id_ref) const {
+        return *l_id_ref == *r_id_ref; 
     }
 };
 
