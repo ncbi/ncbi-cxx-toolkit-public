@@ -11281,7 +11281,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
         // Check selecting from a huge table ...
         if (true) {
             const string table_name("#huge_table");
-            const size_t rec_num = 150000;
+            size_t rec_num = 150000;
             string sql;
             const char* str_value = "Oops ...";
 
@@ -11324,10 +11324,11 @@ void CDBAPIUnitTest::Test_Timeout(void)
                     }
                     bi->Complete();
                 } else {
+                    rec_num = 15000;
                     sql = "INSERT INTO " + table_name +
                         "(id, vc8000_field) VALUES(@id, @vc_val)";
 
-                    auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
+                    //auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
 
                     for (size_t i = 0; i < rec_num; ++i) {
                         auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
@@ -11335,13 +11336,13 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
                         auto_stmt->ExecuteUpdate( sql );
 
-                        if (i % 1000 == 0) {
+                        /*if (i % 100 == 0) {
                             auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
                             auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
-                        }
+                        }*/
                     }
                     
-                    auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
+                    //auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
                 }
 
                 LOG_POST( "Huge table inserted in " << timer.Elapsed() << " sec." );
