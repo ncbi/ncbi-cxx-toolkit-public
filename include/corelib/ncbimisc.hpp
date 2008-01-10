@@ -36,7 +36,7 @@
 
 
 #include <corelib/ncbistl.hpp>
-#ifdef NCBI_OS_UNIX
+#ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
 #endif
 #ifdef NCBI_COMPILER_ICC
