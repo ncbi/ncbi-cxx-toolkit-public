@@ -158,9 +158,8 @@ sub CheckForNonRecursiveExternals
 
     my (@ExistingSubDirs, @NewExternalSubDirs);
 
-    $Self->CheckOutMissingExternals('non-recursive',
-        \@ExistingSubDirs, \@NewExternalSubDirs, $Path,
-            grep {ref $Branch->{$_}} keys %$Branch);
+    $Self->CheckOutMissingExternals(1, \@ExistingSubDirs, \@NewExternalSubDirs,
+        $Path, grep {ref $Branch->{$_}} keys %$Branch);
 
     $Self->CheckForNonRecursiveExternals("$Path/$_", $Branch->{$_})
         for @ExistingSubDirs;
@@ -295,7 +294,13 @@ Path:
         $Self->{SVN}->RunSubversion('update', @DirList);
 
         # Check for missing externals.
-        $Self->CheckOutMissingExternals(0, undef, undef, @$_) for @DirsToUpdate;
+        for (@DirsToUpdate)
+        {
+            my ($Path, @SubDirs) = @$_;
+
+            $Self->CheckOutMissingExternals(0, undef, undef, $Path, @SubDirs)
+                if -d "$Path/.svn"
+        }
 
         # Create R files.
         my @RecursiveUpdates = grep {-d $_} @DirList;
