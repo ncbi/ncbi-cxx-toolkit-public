@@ -49,7 +49,9 @@ USING_SCOPE(objects);
 class CAlnContainer
 {
 public:
-    CAlnContainer() {};
+    CAlnContainer() :
+        m_SplitDisc(false)
+    {};
 
     virtual ~CAlnContainer() {};
 
@@ -63,6 +65,18 @@ public:
     typedef TAlnSet::const_iterator const_iterator;
     typedef TAlnSet::const_reverse_iterator const_reverse_iterator;
 
+
+    /// Split Disc alignments?
+    void SetSplitDisc() {
+        m_SplitDisc = true;
+    }
+    void UnsetSplitDisc() {
+        m_SplitDisc = false;
+    }
+    bool IsSetSplitDisc() {
+        return m_SplitDisc;
+    }
+
     const_iterator insert(const CSeq_align& seq_align)
     {
 #if _DEBUG
@@ -70,12 +84,14 @@ public:
 #endif
         switch (seq_align.GetSegs().Which()) {
         case TSegs::e_Disc:
-            ITERATE(CSeq_align_set::Tdata,
-                    seq_align_it,
-                    seq_align.GetSegs().GetDisc().Get()) {
-                return insert(**seq_align_it);
+            if (m_SplitDisc) {
+                ITERATE(CSeq_align_set::Tdata,
+                        seq_align_it,
+                        seq_align.GetSegs().GetDisc().Get()) {
+                    return insert(**seq_align_it);
+                }
+                break;
             }
-            break;
         case TSegs::e_Dendiag:
         case TSegs::e_Denseg:
         case TSegs::e_Std:
@@ -118,6 +134,8 @@ public:
         return m_AlnSet.empty();
     }
 
+private:
+    bool m_SplitDisc;
 };
 
 
