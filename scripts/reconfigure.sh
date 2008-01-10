@@ -26,7 +26,7 @@ method="$1"
 
 ###  Checks
 
-if test -z "$builddir"  -o  ! -x "$top_srcdir/scripts/hello.sh"  || \
+if test -z "$builddir"  -o  ! -x "$top_srcdir/scripts/if_diff.sh"  || \
    test ! -f "$builddir/../inc/ncbiconf_unix.h" -a ! -f "$builddir/../inc/ncbiconf.h" ; then
   cat <<EOF
 
