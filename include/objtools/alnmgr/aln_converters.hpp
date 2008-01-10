@@ -126,8 +126,16 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
 {
     typedef typename TAlnStats::TDim TDim;
     TDim dim = aln_stats.GetDimForAln(aln_idx);
-    TDim anchor_row = aln_stats.GetRowVecVec()[0][aln_idx];
+
+    /// Anchor row
+    TDim anchor_row = 
+        aln_stats.GetRowVecVec()
+        [options.GetAnchorId() ?
+         aln_stats.GetIdMap().find(options.GetAnchorId())->second[0] :
+         0]
+        [aln_idx];
     _ASSERT(anchor_row >= 0);
+
     TDim target_row;
     TDim target_anchor_row = dim - 1; ///< anchor row goes at the last row (TODO: maybe a candidate for a user option?)
 

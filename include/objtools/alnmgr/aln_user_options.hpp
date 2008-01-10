@@ -78,8 +78,6 @@ public:
         eShowAllUnaligned
     };
 
-    objects::CBioseq_Handle  m_Anchor; // if null then a multiple alignment shall be built    
-    
     bool    m_ClipAlignment;
     objects::CBioseq_Handle  m_ClipSeq;
     TPos m_ClipStart;
@@ -104,6 +102,16 @@ public:
     {
     }
 
+    void SetAnchorId(const TAlnSeqIdIRef& anchor_id) {
+        m_AnchorId = anchor_id;
+    }
+
+
+    const TAlnSeqIdIRef& GetAnchorId() const {
+        return m_AnchorId;
+    }
+
+
     void    SetMergeFlags(TMergeFlags flags, bool set)  {
         if(set) {
             m_MergeFlags |= flags;
@@ -111,6 +119,13 @@ public:
             m_MergeFlags &= ~flags;
         }
     }
+
+
+private:
+    TAlnSeqIdIRef m_AnchorId;
+    //objects::CBioseq_Handle  m_Anchor; // if null then a multiple alignment shall be built    
+    
+
 
 //     enum EAddFlags {
 //         // Determine score of each aligned segment in the process of mixing
