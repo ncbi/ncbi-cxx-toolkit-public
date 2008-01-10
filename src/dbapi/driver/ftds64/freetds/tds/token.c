@@ -2404,6 +2404,8 @@ tds_process_end(TDSSOCKET * tds, int marker, int *flags_parm)
         /* reset of in_cancel should must done before setting IDLE */
         tds->in_cancel = 0;
         tds_set_state(tds, TDS_IDLE);
+        if (!tds->query_timeout  &&  tds->save_query_timeout)
+            tds->query_timeout = tds->save_query_timeout;
     }
 
     if (IS_TDSDEAD(tds))

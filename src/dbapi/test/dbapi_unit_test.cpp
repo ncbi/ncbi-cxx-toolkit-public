@@ -11279,9 +11279,9 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
 
         // Check selecting from a huge table ...
-        if (false) {
+        if (true) {
             const string table_name("#huge_table");
-            const size_t rec_num = 1000000;
+            const size_t rec_num = 150000;
             string sql;
             const char* str_value = "Oops ...";
 
@@ -11289,7 +11289,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
             {
                 sql  = " CREATE TABLE " + table_name + "( \n";
                 sql += "    id INT PRIMARY KEY, \n";
-                sql += "    vc8000_field VARCHAR(8000) NOT NULL, \n";
+                sql += "    vc8000_field VARCHAR(1500) NOT NULL, \n";
                 sql += " )";
 
                 // Create the table
@@ -11298,7 +11298,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
             // Populate table with data ...
             {
-                CTime begin_time(CTime::eCurrent);
+                CStopWatch timer(CStopWatch::eStart);
 
                 if (m_args.IsBCPAvailable()) {
                     CVariant col1(eDB_Int);
@@ -11344,9 +11344,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
                     auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
                 }
 
-                CTime end_time(CTime::eCurrent);
-                CTimeSpan time_span = end_time - begin_time;
-                cout << "Inserted in " << time_span.AsString() << " sec." << endl;
+                LOG_POST( "Huge table inserted in " << timer.Elapsed() << " sec." );
             }
             
             BOOST_CHECK(GetNumOfRecords(auto_stmt, table_name) == rec_num);
@@ -11357,7 +11355,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
                 auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
                 
-                CTime begin_time(CTime::eCurrent);
+                CStopWatch timer(CStopWatch::eStart);
                 
                 auto_stmt->SendSql("SELECT * FROM " + table_name);
                 
@@ -11372,9 +11370,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
                     }
                 }
 
-                CTime end_time(CTime::eCurrent);
-                CTimeSpan time_span = end_time - begin_time;
-                cout << "Selected in " << time_span.AsString() << " sec." << endl;
+                LOG_POST( "Huge table selected in " << timer.Elapsed() << " sec." );
 
                 BOOST_CHECK(num == rec_num);
             }

@@ -1187,6 +1187,7 @@ struct tds_socket
     int rows_affected;
     /* timeout stuff from Jeff */
     TDS_INT query_timeout;
+    TDS_INT save_query_timeout;
     int (*query_timeout_func) (void *param, unsigned int total_timeout);
     void *query_timeout_param;
     time_t query_start_time;

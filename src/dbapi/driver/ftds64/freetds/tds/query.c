@@ -2100,6 +2100,7 @@ tds_send_cancel(TDSSOCKET * tds)
 
     /* disable timeout */
     tds->query_start_time = 0;
+    tds->save_query_timeout = tds->query_timeout;
     tds->query_timeout = 0;
 
     tds->out_flag = TDS_CANCEL;

@@ -35,6 +35,10 @@
 # endif
 #endif
 
+#ifdef NCBI_OS_MSWIN
+#  include <windows.h>
+#endif
+
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
@@ -275,6 +279,39 @@ tds_close_socket(TDSSOCKET * tds)
 	return rc;
 }
 
+/* Function from CStopWatch */
+double GetTimeMark(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    /* For Win32, we use QueryPerformanceCounter() */
+
+    LARGE_INTEGER bigint;
+    static double freq;
+    static int first = 1;
+
+    if ( first ) {
+        LARGE_INTEGER nfreq;
+        QueryPerformanceFrequency(&nfreq);
+        freq  = (double)nfreq.QuadPart;
+        first = 0;
+    }
+
+    if ( !QueryPerformanceCounter(&bigint) ) {
+        return 0.0;
+    }
+    return (double)bigint.QuadPart / freq;
+
+#else
+    /* For Unixes, we use gettimeofday() */
+
+    struct timeval time;
+    if ( gettimeofday (&time, 0) ) {
+        return 0.0;
+    }
+    return (double)time.tv_sec + (double)time.tv_usec / 1e6;
+#endif
+}
+
 /**
  * Loops until we have received buflen characters
  * return -1 on failure
@@ -282,7 +319,7 @@ tds_close_socket(TDSSOCKET * tds)
 static int
 tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfinished)
 {
-	time_t start, global_start;
+	double start, global_start;
 	int timeout = 0;
 	int got = 0;
 	fd_set rfds;
@@ -293,12 +330,12 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 	if (buf == NULL || buflen < 1 || tds == NULL)
 		return 0;
 
-	global_start = start = tds->query_start_time ? tds->query_start_time : time(NULL);
+	global_start = start = GetTimeMark();
 
 	while (buflen > 0) {
 
 		int len;
-		time_t now = time(NULL);
+		double now = GetTimeMark();
 
 		if (IS_TDSDEAD(tds))
 			return -1;
@@ -308,7 +345,7 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 
 		timeout = 0;
 		if (tds->query_timeout > 0) {
-			timeout = tds->query_timeout - (now - start);
+			timeout = tds->query_timeout - (int)(now - start);
 			if (timeout < 1)
 				timeout = 1;
 		}
@@ -346,15 +383,15 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 		buflen -= len;
 		got += len;
 
-		now = time(NULL);
-		if (tds->query_timeout > 0 && now - start >= tds->query_timeout) {
+		now = GetTimeMark();
+		if (tds->query_timeout > 0 && (int)now - start >= tds->query_timeout) {
 
 			int timeout_action = TDS_INT_CONTINUE;
 
 			tdsdump_log(TDS_DBG_NETWORK, "exceeded query timeout: %d\n", tds->query_timeout);
 
 			if (tds->query_timeout_func && tds->query_timeout)
-				timeout_action = (*tds->query_timeout_func) (tds->query_timeout_param, now - global_start);
+				timeout_action = (*tds->query_timeout_func) (tds->query_timeout_param, (int)(now - global_start));
 
 			switch (timeout_action) {
 			case TDS_INT_EXIT:
