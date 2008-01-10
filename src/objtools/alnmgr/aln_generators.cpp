@@ -39,6 +39,10 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Sparse_seg.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Prot_pos.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -246,6 +250,73 @@ CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln)
     ds->Validate(true);
 #endif
     return ds;
+}
+
+
+CRef<CSpliced_seg>
+CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln)
+{
+    _ASSERT(anchored_aln.GetDim() == 2);
+
+    /// Create a spliced_seg
+    CRef<CSpliced_seg> spliced_seg(new CSpliced_seg);
+
+    const CPairwiseAln& pairwise = *anchored_aln.GetPairwiseAlns()[0];
+    _ASSERT(pairwise.GetSecondBaseWidth() == 1  ||
+            pairwise.GetSecondBaseWidth() == 3);
+    _ASSERT(pairwise.GetSecondBaseWidth() == 1);
+    bool prot = pairwise.GetFirstBaseWidth() == 3;
+
+    /// Ids
+    CRef<CSeq_id> product_id(new CSeq_id); 
+    SerialAssign<CSeq_id>(*product_id, pairwise.GetFirstId()->GetSeqId());
+    spliced_seg->SetProduct_id(*product_id);
+    CRef<CSeq_id> genomic_id(new CSeq_id); 
+    SerialAssign<CSeq_id>(*genomic_id, pairwise.GetFirstId()->GetSeqId());
+    spliced_seg->SetGenomic_id(*genomic_id);
+
+
+    /// Product type
+    spliced_seg->SetProduct_type(prot ?
+                                 CSpliced_seg::eProduct_type_protein :
+                                 CSpliced_seg::eProduct_type_transcript);
+
+
+    /// Exons
+    CSpliced_seg::TExons& exons = spliced_seg->SetExons();
+
+    typedef TSignedSeqPos                  TPos;
+    typedef CRange<TPos>                   TRng; 
+    typedef CAlignRange<TPos>              TAlnRng;
+    typedef CAlignRangeCollection<TAlnRng> TAlnRngColl;
+
+    ITERATE (CPairwiseAln::TAlnRngColl, rng_it, pairwise) {
+        const CPairwiseAln::TAlnRng& rng = *rng_it;
+        CRef<CSpliced_exon> exon(new CSpliced_exon);
+        if (prot) {
+            exon->SetProduct_start().SetProtpos().SetAmin(rng.GetFirstFrom() / 3);
+            exon->SetProduct_start().SetProtpos().SetFrame(rng.GetFirstFrom() % 3 + 1);
+            exon->SetProduct_end().SetProtpos().SetAmin(rng.GetFirstTo() / 3);
+            exon->SetProduct_end().SetProtpos().SetFrame(rng.GetFirstTo() % 3 + 1);
+        } else {
+            exon->SetProduct_start().SetNucpos(rng.GetFirstFrom());
+            exon->SetProduct_end().SetNucpos(rng.GetFirstTo());
+        }
+        exon->SetGenomic_start(rng.GetSecondFrom());
+        exon->SetGenomic_end(rng.GetSecondTo());
+
+        exon->SetProduct_strand(eNa_strand_plus);
+        exon->SetGenomic_strand(rng.IsDirect() ?
+                                eNa_strand_plus :
+                                eNa_strand_minus);
+        exons.push_back(exon);
+    }
+    
+
+#ifdef _DEBUG
+    spliced_seg->Validate(true);
+#endif
+    return spliced_seg;
 }
 
 
