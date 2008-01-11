@@ -34,9 +34,11 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <algo/align/splign/splign.hpp>
+#include <objects/seqalign/seqalign__.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
+USING_SCOPE(objects);
 
 class NCBI_XALGOALIGN_EXPORT CCompartOptions {
 public:
@@ -69,6 +71,9 @@ struct NCBI_XALGOALIGN_EXPORT SCompartment {
 typedef vector<SCompartment> TCompartments;
 
 /// Makes compartments. Hits should be for a single protein-genomic pair.
+CRef<CSeq_align_set> SelectCompartmentsHits(CSplign::THitRefs& hitrefs, CCompartOptions compart_options);
+TCompartments MakeCompartments(const CSeq_align_set& compartments_hits, CCompartOptions compart_options);
+/// Composition of above two functions
 TCompartments MakeCompartments(CSplign::THitRefs& hitrefs, CCompartOptions compart_options, int protein_len);
 
 END_SCOPE(prosplign)
