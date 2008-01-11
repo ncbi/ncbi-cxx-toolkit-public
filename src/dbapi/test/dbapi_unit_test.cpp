@@ -11279,7 +11279,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
 
         // Check selecting from a huge table ...
-        if (true) {
+        if (m_args.GetDriverName() != ftds8_driver) {
             const string table_name("#huge_table");
             size_t rec_num = 150000;
             string sql;

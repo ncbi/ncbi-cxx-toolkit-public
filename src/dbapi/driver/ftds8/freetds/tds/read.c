@@ -31,6 +31,40 @@ static void *no_unused_var_warn[] = {software_version,
                                      no_unused_var_warn};
 
 
+/* Function from CStopWatch */
+static double
+GetTimeMark(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    /* For Win32, we use QueryPerformanceCounter() */
+
+    LARGE_INTEGER bigint;
+    static double freq;
+    static int first = 1;
+
+    if ( first ) {
+        LARGE_INTEGER nfreq;
+        QueryPerformanceFrequency(&nfreq);
+        freq  = (double)nfreq.QuadPart;
+        first = 0;
+    }
+
+    if ( !QueryPerformanceCounter(&bigint) ) {
+        return 0.0;
+    }
+    return (double)bigint.QuadPart / freq;
+
+#else
+    /* For Unixes, we use gettimeofday() */
+
+    struct timeval time;
+    if ( gettimeofday (&time, 0) ) {
+        return 0.0;
+    }
+    return (double)time.tv_sec + (double)time.tv_usec / 1e6;
+#endif
+}
+
 /**
  * Loops until we have received buflen characters
  * return -1 on failure
@@ -41,12 +75,12 @@ goodread (TDSSOCKET *tds, unsigned char *buf, int buflen)
 int got = 0;
 int len, retcode;
 fd_set fds;
-time_t start, now;
+double start, now;
 struct timeval selecttimeout;
 
 	FD_ZERO (&fds);
 	if (tds->timeout > 0) {
-		start = time(NULL);
+		start = GetTimeMark();
 		now = start;
 
 		/* FIXME return even if not finished read if timeout */
@@ -64,7 +98,7 @@ struct timeval selecttimeout;
 				if (retcode < 0 && errno == EINTR)
 					retcode = 0;
 
-				now = time (NULL);
+				now = GetTimeMark();
 				timeleft = tds->timeout - (now-start);
 			} while((retcode == 0) && timeleft > 0);
 			len = READSOCKET(tds->s, buf+got, buflen);

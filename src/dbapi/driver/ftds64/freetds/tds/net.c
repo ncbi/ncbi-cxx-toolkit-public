@@ -280,7 +280,8 @@ tds_close_socket(TDSSOCKET * tds)
 }
 
 /* Function from CStopWatch */
-double GetTimeMark(void)
+static double
+GetTimeMark(void)
 {
 #if defined(NCBI_OS_MSWIN)
     /* For Win32, we use QueryPerformanceCounter() */
