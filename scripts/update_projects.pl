@@ -257,6 +257,8 @@ sub ReadProjectListingFile
 
     while (<FILE>)
     {
+        next if m/\s*#/so;
+
         s/\s*$//so;
         s/\s+update-only$//so;
         s/\$$/\//so;
