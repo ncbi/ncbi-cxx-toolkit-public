@@ -216,8 +216,9 @@
 >
 <!--This is the actual data encoded using base64. Byte order must be network. The order of the pairs must be m/z intensity.-->
 <!ELEMENT peaks (#PCDATA)>
+<!-- precision is (32 | 64) -->
 <!ATTLIST peaks
-	precision (32 | 64) #REQUIRED
+	precision NMTOKEN #REQUIRED
 	byteOrder CDATA #FIXED "network"
 	pairOrder CDATA #FIXED "m/z-int"
 >
