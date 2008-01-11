@@ -92,6 +92,12 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         case 80:
             tds_version = CS_TDS_80;
             break;
+        case CS_VERSION_100:
+            tds_version = CS_TDS_46;
+            break;
+        case CS_VERSION_110:
+            tds_version = CS_TDS_50;
+            break;
     }
 #endif
 
