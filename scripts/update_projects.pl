@@ -238,7 +238,7 @@ sub UsageError
 
 my @Paths;
 
-my %AllProjects;
+my %TopProjectDirs;
 
 my $RepositoryURL;
 
@@ -284,16 +284,18 @@ sub ReadProjectListingFile
         }
         elsif (!m/^\s*-/)
         {
-            $AllProjects{$_} = 1;
-
-            $InternalBuild = 1 if m/^internal\//so;
-
             if (m{(?:corelib|dbapi/driver|objects/objmgr|objmgr|serial)/$}o)
             {
                 push @Paths, 'include/' . $_ . 'impl'
             }
 
-            push @Paths, 'include/' . $_, 'src/' . $_
+            push @Paths, 'include/' . $_, 'src/' . $_;
+
+            my ($ProjectDir) = m/^([^\/]+)/so;
+
+            $TopProjectDirs{$ProjectDir} = 1;
+
+            $InternalBuild = 1 if $ProjectDir eq 'internal'
         }
     }
 
@@ -563,7 +565,7 @@ unless (@ExistingBuilds)
 
     for my $OptProject (qw(dbapi serial objects app internal))
     {
-        push @ConfigOptions, ($AllProjects{$OptProject} ?
+        push @ConfigOptions, ($TopProjectDirs{$OptProject} ?
             '--with-' : '--without-') . $OptProject
     }
 
