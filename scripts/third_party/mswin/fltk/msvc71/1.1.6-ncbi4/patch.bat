@@ -1,8 +1,0 @@
-bash -c "patch -p0 -i unix-build-1.1.6.patch"
-bash -c "patch -p0 -i focus-1.1.6.patch"
-bash -c "patch -p0 -i compiler-warn-1.1.6.patch"
-bash -c "patch -p0 -i opengl-swap-1.1.6.patch"
-bash -c "patch -p0 -i cxx-correctness-1.1.6.patch"
-bash -c "patch -p0 -i opengl-macos-delete-context-1.1.6.patch"
-bash -c "patch -p0 -i browser-1.1.6.patch"
-bash -c "patch -p0 -i event-loop-1.1.6.patch"
