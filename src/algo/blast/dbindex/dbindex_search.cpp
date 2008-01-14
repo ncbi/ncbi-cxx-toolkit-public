@@ -2147,7 +2147,7 @@ bool CTrackedSeeds< subject_map_t, TWO_HIT >::CheckAndSaveSeed(
         const TTrackedSeed & seed )
 {
     if( (seed.second_hit_ > 0 && 
-                seed.qright_ - seed.len_ - window_ <= seed.second_hit_) ||
+                seed.qright_ <= seed.second_hit_ + seed.len_ + window_ ) ||
         seed.len_ >= contig_len_ ) {
         SaveSeed( seed );
         return true;
@@ -2177,7 +2177,8 @@ bool CTrackedSeeds< subject_map_t, TWO_HIT >::EvalAndUpdate(
         TSeqPos it_soff_corr = this->it_->soff_ + step;
         if( it_soff_corr > seed.soff_ ) return true;
 
-        if( this->it_->qright_ + word_size_ + window_ < seed.qright_ ) {
+        if( this->it_->qright_ + seed.len_ + window_ + 3*CDbIndex::STRIDE 
+                < seed.qright_ ) {
             CheckAndSaveSeed( *this->it_ );
             this->it_ = this->seeds_.erase( this->it_ );
         }
@@ -2185,7 +2186,8 @@ bool CTrackedSeeds< subject_map_t, TWO_HIT >::EvalAndUpdate(
             if( CheckAndSaveSeed( *this->it_ ) ) {
                 this->it_ = this->seeds_.erase( this->it_ );
             }
-            else if( it_soff_corr == seed.soff_ ) {
+            else if( it_soff_corr == seed.soff_ &&
+                     this->it_->len_ > 0 ) {
                 seed.second_hit_ = this->it_->qright_;
                 ++this->it_;
             }
