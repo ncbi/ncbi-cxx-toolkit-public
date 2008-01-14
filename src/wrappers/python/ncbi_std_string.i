@@ -98,7 +98,7 @@ namespace std {
     public:
         // Used by some functions
         // System-dependent, but hopefully unsigned long will suffice
-        typedef unsigned long size_type;  
+        typedef size_t size_type;  
                     
         string(void);
         string(const string& rhs);
@@ -109,9 +109,9 @@ namespace std {
         string(const char* cstr, size_type len);
         ~string();
 
-        unsigned int size(void) const;
+        size_type size(void) const;
         %extend {
-            int __len__(void) {
+            size_t __len__(void) {
                 return self->size();
             }
         }
@@ -121,8 +121,8 @@ namespace std {
         string substr(size_type start, size_type length) const;
 
         %extend {
-            char __getitem__(int i) {
-                int size = self->size();
+            char __getitem__(ssize_t i) {
+                std::string::size_type size = self->size();
                 AdjustIndex(i, size);
                 if (i < 0 || i >= size) {
                     throw std::out_of_range("index out of range");
@@ -131,8 +131,8 @@ namespace std {
                 }
             }
 
-            std::string __getslice__(int i, int j) const {
-                int size = int(self->size());
+            std::string __getslice__(ssize_t i, ssize_t j) const {
+                ssize_t size = self->size();
                 AdjustSlice(i, j, size);
                 std::string rv;
                 rv.reserve(j - i);

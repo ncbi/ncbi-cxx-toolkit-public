@@ -50,8 +50,8 @@ namespace std {
                 && vec) {
                 $1 = *vec;
             } else if (IsListOrTuple($input)) {
-                unsigned int size = SizeListOrTuple($input);
-                for (unsigned int i = 0; i < size; ++i) {
+                ssize_t size = SizeListOrTuple($input);
+                for (ssize_t i = 0; i < size; ++i) {
                     PyObject* pobj = PySequence_GetItem($input, i);
                     T* obj;
                     if (SWIG_ConvertPtr(pobj, (void **) &obj,
@@ -79,9 +79,9 @@ namespace std {
                 && vec) {
                 $1 = vec;
             } else if (IsListOrTuple($input)) {
-                unsigned int size = SizeListOrTuple($input);
+                ssize_t size = SizeListOrTuple($input);
                 $1 = &tmp;
-                for (unsigned int i = 0; i < size; ++i) {
+                for (ssize_t i = 0; i < size; ++i) {
                     PyObject* pobj = PySequence_GetItem($input, i);
                     T* obj;
                     if (SWIG_ConvertPtr(pobj, (void **) &obj,
@@ -105,7 +105,7 @@ namespace std {
 
         %typemap(out) list<T> {
             $result = PyList_New($1.size());
-            unsigned int i = 0;
+            ssize_t i = 0;
             for (std::list<T >::iterator it = $1.begin();
                  it != $1.end(); ++it) {
                 T* ptr = new T(*it);
@@ -145,11 +145,11 @@ namespace std {
 
     public:
         list(void);
-        list(unsigned int size, const T& value);
+        list(size_t size, const T& value);
         list(const list<T>& other);
 
         void clear(void);
-        unsigned int size(void);
+        size_t size(void);
         void push_back(const T& item);
         //T pop_back(void);
         T& front(void);
@@ -159,7 +159,7 @@ namespace std {
             bool __nonzero__(void) {
                 return !self->empty();
             }
-            unsigned int __len__(void) {return self->size();}
+            size_t __len__(void) {return self->size();}
             void append(const T& item) {self->push_back(item);}
 
             T pop(void) {
@@ -171,8 +171,8 @@ namespace std {
                 return rv;
             }
 
-            std::list<T > __getslice__(int i, int j) {
-                int size = self->size();
+            std::list<T > __getslice__(ssize_t i, ssize_t j) {
+                size_t size = self->size();
                 AdjustSlice(i, j, size);
                 std::list<T > rv;
                 std::list<T >::iterator start = self->begin();
@@ -199,8 +199,8 @@ namespace std {
                 && vec) {
                 $1 = *vec;
             } else if (IsListOrTuple($input)) {
-                unsigned int size = SizeListOrTuple($input);
-                for (unsigned int i = 0; i < size; ++i) {
+                ssize_t size = SizeListOrTuple($input);
+                for (ssize_t i = 0; i < size; ++i) {
                     PyObject* pobj = PySequence_GetItem($input, i);
                     if (CHECK(pobj)) {
                         // cast is necessary here for enums
@@ -226,9 +226,9 @@ namespace std {
                 && vec) {
                 $1 = vec;
             } else if (IsListOrTuple($input)) {
-                unsigned int size = SizeListOrTuple($input);
+                ssize_t size = SizeListOrTuple($input);
                 $1 = &tmp;
-                for (unsigned int i = 0; i < size; ++i) {
+                for (ssize_t i = 0; i < size; ++i) {
                     PyObject* pobj = PySequence_GetItem($input, i);
                     if (CHECK(pobj)) {
                         // cast is necessary here for enums
@@ -250,7 +250,7 @@ namespace std {
 
         %typemap(out) list<T > {
             $result = PyList_New($1.size());
-            unsigned int i = 0;
+            ssize_t i = 0;
             for (std::list<T >::iterator it = $1.begin();
                  it != $1.end();  ++it) {
                 PyList_SetItem($result, i, FROM_CPP(*it));
@@ -287,12 +287,12 @@ namespace std {
         }
 
     public:
-        list(unsigned int size = 0);   // requires default ctor
-        list(unsigned int size, const T& value);
+        list(size_t size = 0);   // requires default ctor
+        list(size_t size, const T& value);
         list(const list<T >& other);
 
         void clear(void);
-        unsigned int size(void);
+        size_t size(void);
         void push_back(const T& item);
         //T pop_back(void);
         T front(void);
@@ -302,7 +302,7 @@ namespace std {
             bool __nonzero__(void) {
                 return !self->empty();
             }
-            unsigned int __len__(void) {return self->size();}
+            size_t __len__(void) {return self->size();}
             void append(const T& item) {self->push_back(item);}
 
             T pop(void) {
@@ -314,8 +314,8 @@ namespace std {
                 return rv;
             }
 
-            std::list<T > __getslice__(int i, int j) {
-                int size = self->size();
+            std::list<T > __getslice__(ssize_t i, ssize_t j) {
+                size_t size = self->size();
                 AdjustSlice(i, j, size);
                 std::list<T > rv;
                 std::list<T >::iterator start = self->begin();

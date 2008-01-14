@@ -42,6 +42,7 @@
     }
 %enddef
 
+typedef long ssize_t;  // This should correspond to Py_ssize_t (PEP 353)
 
 %{
 
@@ -50,7 +51,7 @@ bool IsListOrTuple(PyObject* obj)
     return PyList_Check(obj) || PyTuple_Check(obj);
 }
 
-unsigned int SizeListOrTuple(PyObject* obj)
+ssize_t SizeListOrTuple(PyObject* obj)
 {
     return PyList_Check(obj) ? PyList_Size(obj) : PyTuple_Size(obj);
 }
@@ -111,7 +112,7 @@ static PyObject* StringFromCpp(const std::string& s)
 
 
 // Treat negative indices the way Python does
-inline void AdjustIndex(int& i, unsigned int size)
+inline void AdjustIndex(ssize_t& i, size_t size)
 {
     if (i < 0) {
         i += size;
@@ -119,7 +120,7 @@ inline void AdjustIndex(int& i, unsigned int size)
 }
 
 // Python negative indices, plus limit to allowable range
-inline void AdjustSlice(int& i, int& j, unsigned int size)
+inline void AdjustSlice(ssize_t& i, ssize_t& j, size_t size)
 {
     if (i < 0) {
         i += size;

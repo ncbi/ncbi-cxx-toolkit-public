@@ -53,9 +53,9 @@ namespace std {
                 && vec) {
                 $1 = *vec;
             } else if (IsListOrTuple($input)) {
-                unsigned int size = SizeListOrTuple($input);
+                ssize_t size = SizeListOrTuple($input);
                 $1.reserve(size);
-                for (unsigned int i = 0; i < size; ++i) {
+                for (ssize_t i = 0; i < size; ++i) {
                     PyObject* pobj = PySequence_GetItem($input, i);
                     T* obj;
                     if (SWIG_ConvertPtr(pobj, (void **) &obj,
@@ -83,10 +83,10 @@ namespace std {
                 && vec) {
                 $1 = vec;
             } else if (IsListOrTuple($input)) {
-                unsigned int size = SizeListOrTuple($input);
+                ssize_t size = SizeListOrTuple($input);
                 $1 = &tmp;
                 tmp.reserve(size);
-                for (unsigned int i = 0; i < size; ++i) {
+                for (ssize_t i = 0; i < size; ++i) {
                     PyObject* pobj = PySequence_GetItem($input, i);
                     T* obj;
                     if (SWIG_ConvertPtr(pobj, (void **) &obj,
@@ -110,7 +110,7 @@ namespace std {
 
         %typemap(out) vector<T> {
             $result = PyList_New($1.size());
-            for (unsigned int i = 0; i < $1.size(); ++i) {
+            for (ssize_t i = 0; i < $1.size(); ++i) {
                 T* obj = new T($1[i]);
                 PyList_SetItem($result, i,
                                SWIG_NewPointerObj((void *) obj,
@@ -148,11 +148,11 @@ namespace std {
 
     public:
         vector(void);
-        vector(unsigned int size, const T& value);
+        vector(size_t size, const T& value);
         vector(const vector<T>& other);
 
         void clear(void);
-        unsigned int size(void);
+        size_t size(void);
         void push_back(const T& item);
         //T pop_back(void);
         T& front(void);
@@ -162,7 +162,7 @@ namespace std {
             bool __nonzero__(void) {
                 return !self->empty();
             }
-            unsigned int __len__(void) {return self->size();}
+            size_t __len__(void) {return self->size();}
             void append(const T& item) {self->push_back(item);}
 
             T pop(void) {
@@ -174,18 +174,18 @@ namespace std {
                 return rv;
             }
 
-            T& __getitem__(int i) {
-                int size = self->size();
+            T& __getitem__(ssize_t i) {
+                size_t size = self->size();
                 AdjustIndex(i, size);
-                if (i < 0 || i >= size) {
+                if (i < 0 || size_t(i) >= size) {
                     throw std::out_of_range("index out of range");
                 } else {
                     return (*self)[i];
                 }
             }
 
-            std::vector<T> __getslice__(int i, int j) {
-                int size = self->size();
+            std::vector<T> __getslice__(ssize_t i, ssize_t j) {
+                size_t size = self->size();
                 AdjustSlice(i, j, size);
                 std::vector<T > rv;
                 rv.reserve(j - i);
@@ -193,18 +193,19 @@ namespace std {
                 return rv;
             }
 
-            void __setitem__(int i, const T& value) {
-                int size = self->size();
+            void __setitem__(ssize_t i, const T& value) {
+                size_t size = self->size();
                 AdjustIndex(i, size);
-                if (i < 0 || i >= size) {
+                if (i < 0 || size_t(i) >= size) {
                     throw std::out_of_range("index out of range");
                 } else {
                     (*self)[i] = value;
                 }
             }
 
-            void __setslice__(int i, int j, const std::vector<T>& values) {
-                int size = self->size();
+            void __setslice__(ssize_t i, ssize_t j,
+                              const std::vector<T>& values) {
+                size_t size = self->size();
                 AdjustSlice(i, j, size);
                 if (values.size() == j - i) {
                     std::copy(values.begin(), values.end(),
@@ -221,18 +222,18 @@ namespace std {
                 }
             }
 
-            void __delitem__(int i) {
-                int size = self->size();
+            void __delitem__(ssize_t i) {
+                size_t size = self->size();
                 AdjustIndex(i, size);
-                if (i < 0 || i >= size) {
+                if (i < 0 || size_t(i) >= size) {
                     throw std::out_of_range("index out of range");
                 } else {
                     self->erase(self->begin() + i);
                 }
             }
 
-            void __delslice__(int i, int j) {
-                int size = self->size();
+            void __delslice__(ssize_t i, ssize_t j) {
+                size_t size = self->size();
                 AdjustSlice(i, j, size);
                 self->erase(self->begin() + i, self->begin() + j);
             }
@@ -252,9 +253,9 @@ namespace std {
                 && vec) {
                 $1 = *vec;
             } else if (IsListOrTuple($input)) {
-                unsigned int size = SizeListOrTuple($input);
+                ssize_t size = SizeListOrTuple($input);
                 $1.reserve(size);
-                for (unsigned int i = 0; i < size; ++i) {
+                for (ssize_t i = 0; i < size; ++i) {
                     PyObject* pobj = PySequence_GetItem($input, i);
                     if (CHECK(pobj)) {
                         // cast is necessary here for enums
@@ -280,10 +281,10 @@ namespace std {
                 && vec) {
                 $1 = vec;
             } else if (IsListOrTuple($input)) {
-                unsigned int size = SizeListOrTuple($input);
+                ssize_t size = SizeListOrTuple($input);
                 $1 = &tmp;
                 tmp.reserve(size);
-                for (unsigned int i = 0; i < size; ++i) {
+                for (ssize_t i = 0; i < size; ++i) {
                     PyObject* pobj = PySequence_GetItem($input, i);
                     if (CHECK(pobj)) {
                         // cast is necessary here for enums
@@ -305,7 +306,7 @@ namespace std {
 
         %typemap(out) vector<T > {
             $result = PyList_New($1.size());
-            for (unsigned int i = 0; i < $1.size(); ++i) {
+            for (ssize_t i = 0; i < $1.size(); ++i) {
                 PyList_SetItem($result, i, FROM_CPP($1[i]));
             }
         }
@@ -339,12 +340,12 @@ namespace std {
         }
 
     public:
-        vector(unsigned int size = 0);   // requires default ctor
-        vector(unsigned int size, const T& value);
+        vector(size_t size = 0);   // requires default ctor
+        vector(size_t size, const T& value);
         vector(const vector<T >& other);
 
         void clear(void);
-        unsigned int size(void);
+        size_t size(void);
         void push_back(const T& item);
         //T pop_back(void);
         T front(void);
@@ -354,7 +355,7 @@ namespace std {
             bool __nonzero__(void) {
                 return !self->empty();
             }
-            unsigned int __len__(void) {return self->size();}
+            size_t __len__(void) {return self->size();}
             void append(const T& item) {self->push_back(item);}
 
             T pop(void) {
@@ -366,18 +367,18 @@ namespace std {
                 return rv;
             }
 
-            T __getitem__(int i) {
-                int size = self->size();
+            T __getitem__(ssize_t i) {
+                size_t size = self->size();
                 AdjustIndex(i, size);
-                if (i < 0 || i >= size) {
+                if (i < 0 || size_t(i) >= size) {
                     throw std::out_of_range("index out of range");
                 } else {
                     return (*self)[i];
                 }
             }
 
-            std::vector<T > __getslice__(int i, int j) {
-                int size = self->size();
+            std::vector<T > __getslice__(ssize_t i, ssize_t j) {
+                size_t size = self->size();
                 AdjustSlice(i, j, size);
                 std::vector<T > rv;
                 rv.reserve(j - i);
@@ -385,18 +386,19 @@ namespace std {
                 return rv;
             }
 
-            void __setitem__(int i, T value) {
-                int size = self->size();
+            void __setitem__(ssize_t i, T value) {
+                size_t size = self->size();
                 AdjustIndex(i, size);
-                if (i < 0 || i >= size) {
+                if (i < 0 || size_t(i) >= size) {
                     throw std::out_of_range("index out of range");
                 } else {
                     (*self)[i] = value;
                 }
             }
 
-            void __setslice__(int i, int j, const std::vector<T >& values) {
-                int size = self->size();
+            void __setslice__(ssize_t i, ssize_t j,
+                              const std::vector<T >& values) {
+                size_t size = self->size();
                 AdjustSlice(i, j, size);
                 if (values.size() == j - i) {
                     std::copy(values.begin(), values.end(),
@@ -413,18 +415,18 @@ namespace std {
                 }
             }
 
-            void __delitem__(int i) {
-                int size = self->size();
+            void __delitem__(ssize_t i) {
+                size_t size = self->size();
                 AdjustIndex(i, size);
-                if (i < 0 || i >= size) {
+                if (i < 0 || size_t(i) >= size) {
                     throw std::out_of_range("index out of range");
                 } else {
                     self->erase(self->begin() + i);
                 }
             }
 
-            void __delslice__(int i, int j) {
-                int size = self->size();
+            void __delslice__(ssize_t i, ssize_t j) {
+                size_t size = self->size();
                 AdjustSlice(i, j, size);
                 self->erase(self->begin() + i, self->begin() + j);
             }
