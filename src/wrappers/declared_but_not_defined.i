@@ -31,6 +31,9 @@
  */
 
 
+%ignore ncbi::CDiagCollectGuard::SetPrintSeverity;
+%ignore ncbi::CDiagCollectGuard::SetCollectSeverity;
+
 %ignore ncbi::objects::CAnnotObject_Ref::IsTableFeat;
 %ignore ncbi::objects::CSeq_annot_EditHandle::Update;
 
