@@ -158,7 +158,6 @@ algo/blast/api/rpstblastn_options.hpp
 algo/blast/api/seqinfosrc_seqdb.hpp
 algo/blast/api/seqinfosrc_seqvec.hpp
 algo/blast/api/seqsrc_multiseq.hpp
-algo/blast/api/seqsrc_query_factory.hpp
 algo/blast/api/seqsrc_seqdb.hpp
 algo/blast/api/setup_factory.hpp
 algo/blast/api/sseqloc.hpp
