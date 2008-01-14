@@ -87,42 +87,6 @@ public:
         return m_SecondId;
     }
 
-    /// Dump in human readable text format
-    template <class TOutStream>
-    void Dump(TOutStream& os) const {
-        os << "CPairwiseAln" << endl;
-
-        os << GetFirstId()->AsString() << " (base_width=" << GetFirstId()->GetBaseWidth() << ") , "
-           << GetSecondId()->AsString() << " (base_width=" << GetSecondId()->GetBaseWidth() << ") ";
-
-        os << " Flags = " << NStr::UIntToString(GetFlags(), 0, 2)
-           << ":" << endl;
-
-        if (m_Flags & fKeepNormalized) os << "fKeepNormalized" << endl;
-        if (m_Flags & fAllowMixedDir) os << "fAllowMixedDir" << endl;
-        if (m_Flags & fAllowOverlap) os << "fAllowOverlap" << endl;
-        if (m_Flags & fAllowAbutting) os << "fAllowAbutting" << endl;
-        if (m_Flags & fNotValidated) os << "fNotValidated" << endl;
-        if (m_Flags & fInvalid) os << "fInvalid" << endl;
-        if (m_Flags & fUnsorted) os << "fUnsorted" << endl;
-        if (m_Flags & fDirect) os << "fDirect" << endl;
-        if (m_Flags & fReversed) os << "fReversed" << endl;
-        if ((m_Flags & fMixedDir) == fMixedDir) os << "fMixedDir" << endl;
-        if (m_Flags & fOverlap) os << "fOverlap" << endl;
-        if (m_Flags & fAbutting) os << "fAbutting" << endl;
-        
-        ITERATE (TAlnRngColl, rng_it, *this) {
-            const TAlnRng& rng = *rng_it;
-            os << "[" 
-               << rng.GetFirstFrom() << ", " 
-               << rng.GetSecondFrom() << ", "
-               << rng.GetLength() << ", " 
-               << (rng.IsDirect() ? "direct" : "reverse") 
-               << "]";
-        }
-        os << endl;
-    }
-
 private:
     TAlnSeqIdIRef m_FirstId;
     TAlnSeqIdIRef m_SecondId;
@@ -240,18 +204,6 @@ public:
     /// Non-const access to the total score
     int& SetScore() {
         return m_Score;
-    }
-
-
-    /// Dump in human readable text format:
-    template <class TOutStream>
-    void Dump(TOutStream& os) const {
-        os << "CAnchorAln has score of " << m_Score << " and contains " 
-           << m_PairwiseAlns.size() << " pair(s) of rows:" << endl;
-        ITERATE(TPairwiseAlnVector, pairwise_aln_i, m_PairwiseAlns) {
-            (*pairwise_aln_i)->Dump(os);
-        }
-        os << endl;
     }
 
 

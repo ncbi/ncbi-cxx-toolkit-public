@@ -60,6 +60,7 @@
 #include <objtools/alnmgr/aln_builders.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
 #include <objtools/alnmgr/seqids_extractor.hpp>
+#include <objtools/alnmgr/serial.hpp>
 
 using namespace ncbi;
 using namespace objects;
@@ -259,7 +260,7 @@ int CAlnBuildApp::Run(void)
     ReportTime("TAnchoredAlnVec");
     {
         ITERATE(TAnchoredAlnVec, aln_vec_it, anchored_aln_vec) {
-            (*aln_vec_it)->Dump(cout);
+            cout << *aln_vec_it;
         }
         m_StopWatch.Restart();
     }
@@ -277,7 +278,7 @@ int CAlnBuildApp::Run(void)
              aln_user_options);
     ReportTime("BuildAln");
     {
-        out_anchored_aln.Dump(cout);
+        cout << out_anchored_aln;
         m_StopWatch.Restart();
     }
 

@@ -42,6 +42,7 @@
 #include <objtools/alnmgr/aln_stats.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
 #include <objtools/alnmgr/aln_rng_coll_oper.hpp>
+#include <objtools/alnmgr/serial.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -58,20 +59,16 @@ MergeAlnRngColl(CPairwiseAln& existing,
                               difference);
 #define _TRACE_MergeAlnRngColl
 #ifdef _TRACE_MergeAlnRngColl
-    cerr << endl << "existing:" << endl;
-    existing.Dump(cerr);
-    cerr << endl<< "addition:" << endl;
-    addition.Dump(cerr);
-    cerr << endl << "difference = addition - existing:" << endl;
-    difference.Dump(cerr);
+    cerr << endl;
+    cerr << "existing:" << endl << existing << endl;
+    cerr << "addition:" << endl << addition << endl;
+    cerr << "difference = addition - existing:" << endl << difference << endl;
 #endif
     ITERATE(CPairwiseAln, rng_it, difference) {
         existing.insert(*rng_it);
     }
 #ifdef _TRACE_MergeAlnRngColl
-    cerr << endl << "result = existing + difference:" << endl;
-    existing.Dump(cerr);
-    cerr << endl;
+    cerr << "result = existing + difference:" << endl << existing << endl;
 #endif
 }
 
