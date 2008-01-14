@@ -116,7 +116,7 @@ public:
   void QueueLine(
     const string& orig_line, const string& comp_id,
     int line_num, int comp_end);
-  // line for m_out that needs not be processed - comment, gap, invalid line
+  // line for m_out that needs not be processed - comment, gap, invalid line, etc
   void QueueLine(const string& orig_line);
   int QueueSize()
   {
@@ -125,6 +125,9 @@ public:
   void ProcessQueue();
 };
 
+// This really should be in agp_validate.cpp, but gcc inexplicably balks, saying:
+//   `CSeq_id' undeclared! `CBioseq' has not been declared!
+string ExtractAccession(const string& long_acc);
 
 END_NCBI_SCOPE
 

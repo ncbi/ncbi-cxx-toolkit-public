@@ -35,12 +35,14 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "ContextValidator.hpp"
-#include "AltValidator.hpp"
 
 #include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <objtools/readers/agp_util.hpp>
+
+#include "ContextValidator.hpp"
+#include "AltValidator.hpp"
+
 
 USING_NCBI_SCOPE;
 
@@ -48,10 +50,18 @@ BEGIN_NCBI_SCOPE
 
 CAgpErrEx agpErr;
 
+typedef map<string, int> TMapStrInt ;
+class CMapCompLen : public TMapStrInt
+{
+public:
+  typedef pair<TMapStrInt::iterator, bool> TMapStrIntResult;
+  // returns 0 on success, or a previous length not equal to the new one
+  int AddCompLen(const string& acc, int len);
+};
+
 class CAgpValidateApplication : public CNcbiApplication
 {
 private:
-
   virtual void Init(void);
   virtual int  Run(void);
   virtual void Exit(void);
@@ -79,6 +89,10 @@ private:
   void x_ValidateUsingFiles(const CArgs& args);
   void x_ValidateFile(CNcbiIstream& istr);
 
+  CMapCompLen m_comp2len;
+  void x_LoadLen  (CNcbiIstream& istr, const string& filename);
+  void x_LoadLenFa(CNcbiIstream& istr, const string& filename);
+
   int m_CommentLineCount;
   int m_EolComments;
 };
@@ -93,11 +107,15 @@ public:
     "http://www.ncbi.nlm.nih.gov/genome/guide/Assembly/AGP_Specification.html\n"
     //"http://www.ncbi.nlm.nih.gov/Genbank/WGS.agpformat.html\n"
     "\n"
-    "USAGE: agp_validate [-options] [input files...]\n"
+    "USAGE: agp_validate [-options] [FASTA files...] [AGP files...]\n"
     "\n"
     "agp_validate without any options performs all validation checks except\n"
     "for those that require the component sequences to be available in GenBank.\n"
     "It also reports component, gap, scaffold and object statistics.\n"
+    "\n"
+    "If component FASTA files are provided in front of AGP files, it checks that:\n"
+    "- component_id from AGP is present in FASTA;\n"
+    "- component_end does not exceed sequence length.\n"
     "\n"
     "OPTIONS:\n"
     "  -alt       Check component Accessions, Lengths and Taxonomy ID using GenBank data.\n"
@@ -107,9 +125,7 @@ public:
     "  -out FILE  Save the AGP file, adding missing version 1 to the component accessions\n"
     "             (use with -a or -alt).\n"
     "  The above options require that the components are available in GenBank.\n"
-    /*
-    "  -al, -at  Check component Accessions, Lengths (-al), Taxids (-at).\n"
-    */
+    //"  -al, -at  Check component Accessions, Lengths (-al), Taxids (-at).\n"
     /*
     "\n"
     "  -fa  FILE (fasta)\n"
@@ -118,15 +134,20 @@ public:
     "    and component_end is within the sequence length. Multiple -fa and -len are allowed.\n"
     */
     "\n"
-    "  -list         List error and warning messages.\n"
-    "  -limit COUNT  Print only the first COUNT messages of each type.\n"
-    "                Default=10. To print all, use: -limit 0\n"
+    "  -list              List error and warning messages.\n"
+    "  -limit COUNT       Print only the first COUNT messages of each type.\n"
+    "                     Default=10. To print all, use: -limit 0\n"
+    "  -skip, -only WHAT  Skip, or report only a particular error or warning.\n"
+    "  'WHAT' could be an error code (e11 w22 etc - see -list), a part of the message text,\n"
+    "  or one of these keywords: all, warn, err, alt.\n"
+    /*
     "  -skip  WHAT   Do not report lines with a particular error or warning message.\n"
     "  -only  WHAT   Report only this particular error or warning.\n"
     "  Multiple -skip or -only are allowed. 'WHAT' may be:\n"
     "  - an error code (e01,.. w21,..; see '-list')\n"
     "  - a part of the actual message\n"
     "  - a keyword: all, warn[ings], err[ors], alt\n"
+    */
     "\n"
     ;
     return str;
@@ -157,6 +178,15 @@ void CAgpValidateApplication::Init(void)
     "add missing version 1 to component accessions",
     CArgDescriptions::eOutputFile);
 
+  /*
+  arg_desc->AddOptionalKey( "fa", "FILE",
+    "read component accessions and sequence lengths, compare to AGP",
+    CArgDescriptions::eInputFile, CArgDescriptions::fAllowMultiple );
+
+  arg_desc->AddOptionalKey( "len", "FILE",
+    "read component accessions and sequence lengths, compare to AGP",
+    CArgDescriptions::eString, CArgDescriptions::fAllowMultiple );
+  */
 
   arg_desc->AddOptionalKey( "skip", "error_or_warning",
     "Message or message code to skip",
@@ -193,9 +223,33 @@ int CAgpValidateApplication::Run(void)
   const CArgs& args = GetArgs();
 
   if( args["list"].HasValue() ) {
-     CAgpErrEx::PrintAllMessages(cout);
-     exit(0);
-   }
+    CAgpErrEx::PrintAllMessages(cout);
+    exit(0);
+  }
+
+  /*
+  // 2 iterations
+  string arg_name="len";
+  for(;;) {
+
+    if( args[arg_name].HasValue() ) {
+      // Load component accessions and lengths
+      CArgValue::TStringArray args_len = args[arg_name].GetStringList();
+      for(CArgValue::TStringArray::iterator it = args_len.begin();  it != args_len.end(); ++it) {
+        CNcbiIfstream istr_len( it->c_str() );
+        if(!istr_len.good()) {
+          cerr<<"ERROR - cannot read " << *it << "\n";
+          exit(1);
+        }
+        if(arg_name!="fa") x_LoadLen(istr_len, *it );
+        else             x_LoadLenFa(istr_len, *it );
+      }
+    }
+
+    if(arg_name=="fa") break;
+    arg_name="fa";
+  }
+  */
 
   if( args["alt"].HasValue() || args["species"].HasValue() )
     m_ValidationType = VT_AccLenTaxid;
@@ -296,6 +350,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
       x_ValidateFile(cin);
   }
   else {
+    bool allowFasta=true;
     for (unsigned int i = 1; i <= args.GetNExtra(); i++) {
 
       m_CurrentFileName =
@@ -308,7 +363,19 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
           cerr << "Unable to open file : " << m_CurrentFileName;
           exit (0);
       }
-      x_ValidateFile(istr);
+
+      char ch=0;
+      if(allowFasta) {
+        istr.get(ch); istr.putback(ch);
+      }
+      if(ch=='>') {
+        x_LoadLenFa(istr, m_CurrentFileName);
+      }
+      else {
+        x_ValidateFile(istr);
+        allowFasta=false;
+      }
+
       args['#' + NStr::IntToString(i)].CloseFile();
     }
   }
@@ -342,11 +409,36 @@ void CAgpValidateApplication::x_ValidateFile(
 
     if(code==0) {
       valid=true;
+
+      //// begin: -len -fa
+      if( m_comp2len.size() && !agp_row.IsGap() ) {
+        TMapStrInt::iterator it = m_comp2len.find( agp_row.GetComponentId() );
+        if( it==m_comp2len.end() ) {
+          if(m_ValidationType == VT_Context) {
+            agpErr.Msg(CAgpErrEx::G_InvalidCompId, string(": ")+agp_row.GetComponentId());
+          }
+          // else: will try GenBank
+        }
+        else {
+          CAltValidator::ValidateLength(
+            agp_row.GetComponentId(),
+            agp_row.component_end,
+            it->second );
+          if(m_ValidationType != VT_Context) {
+            // Skip regular genbank-based validation for this line.
+            // We could print it verbatim, same as comment or a gap line.
+            m_AltValidator->QueueLine(line);
+            queued=true;
+          }
+        }
+      }
+      //// end: -len -fa
+
       if(m_ValidationType == VT_Context) {
         m_ContextValidator->ValidateRow(agp_row, line_num);
       }
       //else if( !agp_line.is_gap )
-      else if( !agp_row.IsGap() )
+      else if( !agp_row.IsGap() && !queued )
       {
         m_AltValidator->QueueLine(line,
           agp_row.GetComponentId(), line_num, agp_row.component_end);
@@ -395,6 +487,119 @@ void CAgpValidateApplication::Exit(void)
 {
   SetDiagStream(0);
 }
+
+/*
+void CAgpValidateApplication::x_LoadLen(CNcbiIstream& istr, const string& filename)
+{
+  string line;
+  int line_num=0;
+  int acc_count=0;
+  char buf[65];
+  int len;
+
+  while( NcbiGetline(istr, line, "\r\n") ) {
+    line_num++;
+    if(line.size()==0) continue;
+
+    if( 2 != sscanf(line.c_str(), "%64s %i", buf, &len) || len<=0 ) {
+      cerr<< "ERROR - invalid line at " << filename << ":" << line_num << ":\n"
+          << line.substr(0, 100) << "\n"
+          << "\tExpecting: component_id length.\n";
+      exit(1);
+    }
+
+    int prev_len =  m_comp2len.AddCompLen(buf, len);
+    if(prev_len) {
+      cerr<< "ERROR - component length redefined from " << prev_len << " to " << len << "\n"
+          << "  component_id: " << buf << "\n"
+          << "  File: " << filename << "\n"
+          << "  Line: " <<  line_num << "\n\n";
+      exit(1);
+    }
+
+    acc_count++;
+  }
+
+  if(acc_count==0) {
+    cerr<< "WARNING - empty file " << filename << "\n";
+  }
+}
+*/
+
+void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& filename)
+{
+  string line;
+  string acc, acc_long;
+  int line_num=0;
+  int acc_count=0;
+  int len;
+  int header_line_num, prev_len;
+
+  while( NcbiGetline(istr, line, "\r\n") ) {
+    line_num++;
+    //if(line.size()==0) continue;
+
+    if(line[0]=='>') {
+      if( acc.size() ) {
+        prev_len =  m_comp2len.AddCompLen(acc, len);
+        if(acc_long!=acc) prev_len =  m_comp2len.AddCompLen(acc_long, len);
+        if(prev_len) goto LengthRedefinedFa;
+      }
+
+      // Get first word, trim final '|' (if any).
+      SIZE_TYPE pos1=line.find(' ' , 1);
+      SIZE_TYPE pos2=line.find('\t', 1);
+      if(pos2<pos1) pos1 = pos2;
+      if(pos1!=NPOS) {
+        pos1--;
+        while(pos1>0 && line[pos1-1]=='|') pos1--;
+      }
+
+      acc_long=line.substr(1, pos1);
+      acc=ExtractAccession( acc_long );
+      len=0;
+      header_line_num=line_num;
+      acc_count++;
+    }
+    else {
+      if(acc.size()==0) {
+        cerr<< "ERROR - expecting >fasta_header at start of file " << filename << ", got:\n"
+            << line.substr(0, 100) << "\n\n";
+        exit(1);
+      }
+      len+=line.size();
+    }
+  }
+
+  if( acc.size() ) {
+    prev_len =  m_comp2len.AddCompLen(acc, len);
+    if(acc_long!=acc) prev_len =  m_comp2len.AddCompLen(acc_long, len);
+    if(prev_len) goto LengthRedefinedFa;
+  }
+  if(acc_count==0) {
+    cerr<< "WARNING - empty file " << filename << "\n";
+  }
+  return;
+
+LengthRedefinedFa:
+  cerr<< "ERROR - component length redefined from " << prev_len << " to " << len << "\n"
+      << "  component_id: " << acc_long << "\n"
+      << "  File: " << filename << "\n"
+      << "  Lines: "<< header_line_num << ".." << line_num << "\n\n";
+  exit(1);
+}
+
+int CMapCompLen::AddCompLen(const string& acc, int len)
+{
+  TMapStrInt::value_type acc_len(acc, len);
+  TMapStrIntResult insert_result = insert(acc_len);
+  if(insert_result.second == false) {
+    if(insert_result.first->second != len)
+      return insert_result.first->second; // error: already have a different length
+  }
+  return 0; // success
+}
+
 END_NCBI_SCOPE
 
 

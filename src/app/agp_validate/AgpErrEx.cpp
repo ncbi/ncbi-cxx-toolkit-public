@@ -50,13 +50,11 @@ const CAgpErrEx::TStr CAgpErrEx::msg_ex[]= {
   "sequence data is invalid or unavailable",
 
   "taxonomic data is not available",
-
   kEmptyCStr  // G_Last
 
   // "cannot retrieve the taxonomic id",
   // "cannot retrieve taxonomic data for taxid",
   // "taxid X is above species level",
-
 };
 
 const char* CAgpErrEx::GetMsgEx(int code)

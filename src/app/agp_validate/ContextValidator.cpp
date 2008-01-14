@@ -284,6 +284,8 @@ void CAgpContextValidator::PrintTotals()
 {
   //// Counts of errors and warnings
   int e_count=agpErr.CountTotals(CAgpErrEx::E_Last);
+  // In case -fa or -len was used, add counts for G_InvalidCompId and G_CompEndGtLength.
+  e_count+=agpErr.CountTotals(CAgpErrEx::G_Last);
   int w_count=agpErr.CountTotals(CAgpErrEx::W_Last);
   if(e_count || w_count || m_ObjCount) {
     cout << "\n";

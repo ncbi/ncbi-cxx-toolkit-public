@@ -630,5 +630,34 @@ void CAltValidator::ProcessQueue()
   lineQueue.clear();
 }
 
+string ExtractAccession(const string& long_acc)
+{
+  SIZE_TYPE pos1=long_acc.find('|');
+  if(pos1==NPOS) return long_acc;
+
+  SIZE_TYPE pos2=long_acc.find('|', pos1+1);
+  if(pos2==NPOS) return long_acc.substr(pos1+1);
+
+  if( long_acc.substr(0,pos1) == "gi" ) {
+    // trim "gi|xxx|" prefix off
+    pos2++;
+  }
+  else {
+    // Do not trim off the first and the second fields
+    pos2=0;
+  }
+
+  CBioseq::TId ids;
+  try{
+    CSeq_id::ParseFastaIds(ids, long_acc.substr(pos2));
+    return ids.front()->GetSeqIdString(true);
+  }
+  catch(CException e){
+    return long_acc;
+  }
+}
+
+
+
 END_NCBI_SCOPE
 
