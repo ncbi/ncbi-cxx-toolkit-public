@@ -279,9 +279,10 @@ unsigned int CCdFromFasta::GetColumnsReadFromFile(map<unsigned int, string>& col
 
     string result = "";
     string rowSequence, columnString;
-    unsigned int nColumns, col, nonLetterPosition;  
+    unsigned int nColumns, col;  
     unsigned int row = 0, nNoSuchColumn = 0;
     unsigned int nRead = (m_fastaIO) ? m_fastaIO->GetNumRead() : 0;
+    ncbi::SIZE_TYPE nonLetterPosition;
     map<unsigned int, string> activeSequences;
 
     columns.clear();
@@ -311,7 +312,7 @@ unsigned int CCdFromFasta::GetColumnsReadFromFile(map<unsigned int, string>& col
 
         if (skipGappedColumns) {
             nonLetterPosition = columnString.find_first_not_of(letters);
-            if (nonLetterPosition != string::npos) {
+            if (nonLetterPosition != ncbi::NPOS) {
 //                cerr << "found gap in column " << col << " (" << columnString[nonLetterPosition] << " at position " << nonLetterPosition << "); column string:\n" << columnString << endl;
                 columnString.erase();
             }
