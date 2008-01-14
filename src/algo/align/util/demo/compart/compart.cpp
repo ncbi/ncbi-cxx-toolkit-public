@@ -202,8 +202,8 @@ int CCompartApp::Run()
                      new CElementaryMatching(args["qdb"].AsString(),
                                              args["sdb"].AsString()));
 
-        matcher->SetPenalty(args["compartment_penalty"].AsDouble());
-        matcher->SetMinIdty(args["min_compartment_idty"].AsDouble());
+        matcher->SetPenalty(args["penalty"].AsDouble());
+        matcher->SetMinIdty(args["min_idty"].AsDouble());
         matcher->SetMinSingletonIdty(args["min_singleton_idty"].AsDouble());
 
         matcher->SetHitsOnly(args["ho"]);
