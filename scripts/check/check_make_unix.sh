@@ -253,7 +253,7 @@ case "\$method" in
 #----------------------------------------------------------
    report_err )
       # This method works inside NCBI only 
-      test "\$NCBI_CHECK_MAILTO_AUTHORS." == 'Y.'  ||  exit 0;
+      test "\$NCBI_CHECK_MAILTO_AUTHORS." = 'Y.'  ||  exit 0;
       if [ -x /usr/sbin/sendmail ]; then
          sendmail="/usr/sbin/sendmail -oi"
       elif [ -x /usr/lib/sendmail ]; then
