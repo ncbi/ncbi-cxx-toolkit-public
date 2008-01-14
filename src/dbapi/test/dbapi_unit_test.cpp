@@ -545,15 +545,15 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
                    "Suchprotokoll entfernen");
 
     // Russian phrase in WINDOWS-1251 encoding ...
-    const unsigned char str_rus[] = 
+    const unsigned char str_rus[] =
     {
         0xcc, 0xe0, 0xec, 0xe0, 0x20, 0xec, 0xfb, 0xeb, 0xe0, 0x20, 0xf0, 0xe0,
         0xec, 0xf3, 0x00
     };
 
     // Russian phrase in UTF8 encoding ...
-    const unsigned char str_rus_utf8[] = 
-    {   
+    const unsigned char str_rus_utf8[] =
+    {
         0xd0, 0x9c, 0xd0, 0xb0, 0xd0, 0xbc, 0xd0, 0xb0, 0x20, 0xd0, 0xbc, 0xd1,
         0x8b, 0xd0, 0xbb, 0xd0, 0xb0, 0x20, 0xd1, 0x80, 0xd0, 0xb0, 0xd0, 0xbc,
         0xd1, 0x83, 0x00
@@ -565,7 +565,7 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
     try {
         // Create table ...
         if (false) {
-            string sql = 
+            string sql =
                 "CREATE TABLE " + table_name + "( \n"
                 "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n"
                 "    nvc255_field NVARCHAR(255) NULL \n"
@@ -629,7 +629,7 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
 
             // Read ...
             if (isValueInUTF8) {
-                // 
+                //
                 BOOST_CHECK( rs->Next() );
                 nvc255_value = rs->GetVariant(1).GetString();
                 BOOST_CHECK( nvc255_value.size() > 0);
@@ -641,7 +641,7 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
                     utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
                 BOOST_CHECK_EQUAL( str_ger, value_ger );
 
-                // 
+                //
                 BOOST_CHECK( rs->Next() );
                 nvc255_value = rs->GetVariant(1).GetString();
                 BOOST_CHECK( nvc255_value.size() > 0);
@@ -649,7 +649,7 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
                 BOOST_CHECK_EQUAL( utf8_str_rus.size(), nvc255_value.size() );
                 BOOST_CHECK_EQUAL( utf8_str_rus, nvc255_value );
             } else {
-                // 
+                //
                 BOOST_CHECK( rs->Next() );
                 nvc255_value = rs->GetVariant(1).GetString();
                 BOOST_CHECK( nvc255_value.size() > 0);
@@ -657,7 +657,7 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
                 BOOST_CHECK_EQUAL( str_ger.size(), nvc255_value.size() );
                 BOOST_CHECK_EQUAL( str_ger, nvc255_value );
 
-                // 
+                //
                 BOOST_CHECK( rs->Next() );
                 nvc255_value = rs->GetVariant(1).GetString();
                 BOOST_CHECK( nvc255_value.size() > 0);
@@ -3552,14 +3552,14 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-   
+
             BOOST_CHECK( rs.get() );
             BOOST_CHECK( rs->Next() );
-   
+
             const CVariant& value = rs->GetVariant(1);
-   
+
             BOOST_CHECK( !value.IsNull() );
-   
+
             string str_value = value.GetString();
             BOOST_CHECK_EQUAL( string::size_type(column_size), str_value.size() );
         }
@@ -11230,7 +11230,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
         I_DriverContext* dc = m_DS->GetDriverContext();
         unsigned int timeout = dc->GetTimeout();
 
-        dc->SetTimeout(1);
+        dc->SetTimeout(2);
 
         auto_conn.reset(m_DS->CreateConnection());
         BOOST_CHECK(auto_conn.get() != NULL);
@@ -11244,7 +11244,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
         if(m_args.GetDriverName() == ftds8_driver) {
             try {
-                auto_stmt->SendSql("waitfor delay '0:00:03'");
+                auto_stmt->SendSql("waitfor delay '0:00:04'");
                 BOOST_CHECK(auto_stmt->HasMoreResults());
             } catch(const CDB_Exception&) {
                 timeout_was_reported = true;
@@ -11252,7 +11252,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
             }
         } else {
             try {
-                auto_stmt->SendSql("waitfor delay '0:00:03'");
+                auto_stmt->SendSql("waitfor delay '0:00:04'");
                 BOOST_CHECK(auto_stmt->HasMoreResults());
             } catch(const CDB_TimeoutEx&) {
                 timeout_was_reported = true;
@@ -11281,7 +11281,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
         // Check selecting from a huge table ...
         if (m_args.GetDriverName() != ftds8_driver) {
             const string table_name("#huge_table");
-            size_t rec_num = 150000;
+            size_t rec_num = 200000;
             string sql;
             const char* str_value = "Oops ...";
 
@@ -11341,13 +11341,13 @@ void CDBAPIUnitTest::Test_Timeout(void)
                             auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
                         }*/
                     }
-                    
+
                     //auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
                 }
 
                 LOG_POST( "Huge table inserted in " << timer.Elapsed() << " sec." );
             }
-            
+
             BOOST_CHECK(GetNumOfRecords(auto_stmt, table_name) == rec_num);
 
             // Read data ...
@@ -11355,11 +11355,11 @@ void CDBAPIUnitTest::Test_Timeout(void)
                 size_t num = 0;
 
                 auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-                
+
                 CStopWatch timer(CStopWatch::eStart);
-                
+
                 auto_stmt->SendSql("SELECT * FROM " + table_name);
-                
+
                 while (auto_stmt->HasMoreResults()) {
                     if (auto_stmt->HasRows()) {
                         auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
@@ -11855,7 +11855,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.GetServerType() == CTestArguments::eSybase) {
         if (args.GetDriverName() != dblib_driver // Cannot connect to the server ...
-            && args.GetDriverName() != ftds_dblib_driver // Cannot connect to the server ... 
+            && args.GetDriverName() != ftds_dblib_driver // Cannot connect to the server ...
             && args.GetDriverName() != ftds8_driver
            ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
@@ -11883,7 +11883,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.GetTestConfiguration() == CTestArguments::eWithExceptions) {
         // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
-        if ( (args.GetDriverName() == ftds8_driver 
+        if ( (args.GetDriverName() == ftds8_driver
             && !(Solaris && CompilerWorkShop) && !Irix
             )
             || (args.GetDriverName() == dblib_driver && args.GetServerType() == CTestArguments::eSybase)
@@ -12000,7 +12000,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             PutMsgDisabled("Test_Bulk_Writing3");
         }
 
-        if ( !( args.GetTestConfiguration() == CTestArguments::eWithoutExceptions 
+        if ( !( args.GetTestConfiguration() == CTestArguments::eWithoutExceptions
                 && args.GetDriverName() == ftds63_driver)
                 ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
@@ -12401,7 +12401,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                  &&  args.GetServerType() != CTestArguments::eSybase)
            )
         {
-            if ( !( args.GetTestConfiguration() == CTestArguments::eWithoutExceptions 
+            if ( !( args.GetTestConfiguration() == CTestArguments::eWithoutExceptions
                     && args.GetDriverName() == dblib_driver)
                     ) {
                 tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow,
@@ -12545,7 +12545,7 @@ CDBAPITestSuite::~CDBAPITestSuite(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-CTestArguments::CTestArguments(int argc, char * argv[]) 
+CTestArguments::CTestArguments(int argc, char * argv[])
 : m_Arguments(argc, argv)
 , m_TestConfiguration(eWithExceptions)
 {
