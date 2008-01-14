@@ -85,7 +85,7 @@ struct timeval selecttimeout;
 
 		/* FIXME return even if not finished read if timeout */
 		while ((buflen > 0) && ((now-start) < tds->timeout)) {
-			int timeleft = tds->timeout;
+			int timeleft = tds->timeout - (now-start);
 			len = 0;
 			retcode = 0;
 
@@ -109,7 +109,7 @@ struct timeval selecttimeout;
 
 			buflen -= len;
 			got += len;
-			now = time (NULL);
+			now = GetTimeMark();
 
 			if (tds->queryStarttime && tds->longquery_timeout) {
 				if ((now-(tds->queryStarttime)) >= tds->longquery_timeout) {
