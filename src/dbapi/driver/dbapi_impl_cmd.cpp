@@ -210,7 +210,7 @@ CBaseCmd::OpenCursor(void)
 }
 
 bool
-CBaseCmd::Update(const string& table_name, const string& upd_query)
+CBaseCmd::Update(const string& /* table_name */, const string& /* upd_query */)
 {
     _ASSERT(false);
     return false;
@@ -218,9 +218,10 @@ CBaseCmd::Update(const string& table_name, const string& upd_query)
 
 
 bool
-CBaseCmd::UpdateTextImage(unsigned int item_num,
-                          CDB_Stream& data,
-                          bool log_it)
+CBaseCmd::UpdateTextImage(unsigned int /* item_num */,
+                          CDB_Stream& /* data */,
+                          bool /* log_it */
+                          )
 {
     _ASSERT(false);
     return false;
@@ -228,9 +229,10 @@ CBaseCmd::UpdateTextImage(unsigned int item_num,
 
 
 CDB_SendDataCmd*
-CBaseCmd::SendDataCmd(unsigned int item_num,
-                      size_t size,
-                      bool log_it)
+CBaseCmd::SendDataCmd(unsigned int /* item_num */,
+                      size_t /* size */,
+                      bool /* log_it */
+                      )
 {
     _ASSERT(false);
     return NULL;
@@ -238,7 +240,7 @@ CBaseCmd::SendDataCmd(unsigned int item_num,
 
 
 bool
-CBaseCmd::Delete(const string& table_name)
+CBaseCmd::Delete(const string& /* table_name */)
 {
     _ASSERT(false);
     return false;

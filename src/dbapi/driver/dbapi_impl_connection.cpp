@@ -89,7 +89,7 @@ CDB_SendDataCmd* CConnection::Create_SendDataCmd(CSendDataCmd& senddata_cmd)
 
 
 CConnection::CConnection(CDriverContext& dc,
-                         bool isBCPable,
+                         bool /* isBCPable */,
                          bool reusable,
                          const string& pool_name,
                          bool hasSecureLogin
@@ -273,7 +273,7 @@ void CConnection::ReleaseInterface(void)
 }
 
 
-void CConnection::SetTextImageSize(size_t nof_bytes)
+void CConnection::SetTextImageSize(size_t /* nof_bytes */)
 {
 }
 

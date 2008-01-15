@@ -110,9 +110,9 @@ public:
         const map<string, string>* attr = NULL);
 
 private:
-    typedef I_DriverContext* (*FDBAPI_CreateContext)(const map<string,string>* attr);
-
     struct SDrivers {
+	typedef I_DriverContext* (*FDBAPI_CreateContext)(const map<string,string>* attr);
+
         SDrivers(const string& name, FDBAPI_CreateContext func) :
             drv_name(name),
             drv_func(func)
@@ -236,7 +236,7 @@ static CSafeStaticPtr<C_xDriverMgr> s_DrvMgr;
 
 
 ////////////////////////////////////////////////////////////////////////////////
-C_DriverMgr::C_DriverMgr(unsigned int nof_drivers)
+C_DriverMgr::C_DriverMgr(unsigned int /* nof_drivers */)
 {
 }
 
@@ -246,7 +246,7 @@ C_DriverMgr::~C_DriverMgr()
 }
 
 I_DriverContext* C_DriverMgr::GetDriverContext(const string&       driver_name,
-                                               string*             err_msg,
+                                               string*             /* err_msg */,
                                                const map<string,string>* attr)
 {
     return s_DrvMgr->GetDriverContext( driver_name, attr );

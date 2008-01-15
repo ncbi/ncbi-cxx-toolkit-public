@@ -263,7 +263,7 @@ protected:
     {
         m_Reusable = flag;
     }
-    void SetBCPable(bool flag = true)
+    void SetBCPable(bool /* flag = true */)
     {
         // m_BCPable = flag;
         // BCP is enabled with all drivers by default.
