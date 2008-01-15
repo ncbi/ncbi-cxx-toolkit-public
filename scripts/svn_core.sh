@@ -276,13 +276,14 @@ fi
 if test "$export" = "yes" ; then
     for dir in $non_recursive_dirs
     do
-        $svn_cmd export -r "$revision" -N $REPOS/$dir $dir
+        $svn_cmd export -r "$revision" -N $REPOS/$dir $dir || \
+            Usage "Cannot checkout $REPOS/$dir"
     done
     for dir in $recursive_dirs
     do
-        $svn_cmd export -r "$revision" $REPOS/$dir $dir
+        $svn_cmd export -r "$revision" $REPOS/$dir $dir || \
+            Usage "Cannot checkout $REPOS/$dir"
     done
-
     cmd_for_externals='export'
 else
     dirs=''
@@ -290,14 +291,16 @@ else
     do
         dirs="$dirs $dir/"
     done
-    $script_dir/svn_up.pl $dirs $recursive_dirs
-
+    $script_dir/svn_up.pl $dirs $recursive_dirs || \
+        Usage "svn_up.pl failed"
     cmd_for_externals='co'
 fi
 
 if test "$with_gui" != "no" ; then
-    $svn_cmd $cmd_for_externals $GUI_URL/include/gui include/gui
-    $svn_cmd $cmd_for_externals $GUI_URL/src/gui src/gui
+    $svn_cmd $cmd_for_externals $GUI_URL/include/gui include/gui || \
+        Usage "Cannot checkout $GUI_URL/include/gui"
+    $svn_cmd $cmd_for_externals $GUI_URL/src/gui src/gui || \
+        Usage "Cannot checkout $GUI_URL/src/gui"
 fi
 
 ## Generate serialization code from ASN.1 and XML specs
@@ -316,11 +319,13 @@ case "$platform" in
     rm -f src/connect/ncbi_lbsmd.c src/connect/ncbi_lbsm.c src/connect/ncbi_lbsm_ipc.c \
           include/connect/ext/ncbi_ifconf.h src/connect/ext/ncbi_ifconf.c \
           src/connect/ext/test/test_ncbi_ifconf.c \
-          src/cgi/fcgi_run.cpp src/cgi/fcgibuf.cpp
+          src/cgi/fcgi_run.cpp src/cgi/fcgibuf.cpp || \
+        Usage "Cannot remove unused files"
     # scripts and aux. files (mostly "objects/"-related) 
     if test "$with_objects" = "yes" ; then
         rm -f src/objects/add_asn.sh \
-              src/objects/nt_sources.sh src/objects/nt_sources.cmd
+              src/objects/nt_sources.sh src/objects/nt_sources.cmd || \
+        Usage "Cannot remove unused files"
     fi
     ;;
 esac
