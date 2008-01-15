@@ -19,7 +19,7 @@ LOCAL_CPPFLAGS = -I.
 
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
-APP = $(OSTYPE)/read_blast_result
+APP = $(OSTYPE)/subcheck
 SRC = read_blast_result tbl read_blast_result_lib read_tag_map read_parents read_trna \
       read_blast read_rrna collect_simple overlaps missing copy_loc problems locations \
       analyze fit_blast match shortcuts
@@ -48,5 +48,5 @@ MAKEFILE = Makefile.read_blast_result_app
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) HERE
 
 installframe: all
-	cp $(OSTYPE)/read_blast_result /net/coleman/vol/export3/frameshifts/ASNProjects/read_blast_result/.Linux-i686/
+	cp $(OSTYPE)/subcheck /net/coleman/vol/export3/frameshifts/ASNProjects/read_blast_result/.Linux-i686/read_blast_result
 
