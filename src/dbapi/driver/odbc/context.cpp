@@ -627,45 +627,40 @@ public:
 
 
 ///////////////////////////////////////////////////////////////////////////////
-extern "C"
+NCBI_DBAPIDRIVER_ODBC_EXPORT
+void
+NCBI_EntryPoint_xdbapi_odbc(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
+    CHostEntryPointImpl<CDbapiOdbcCF>::NCBI_EntryPointImpl( info_list, method );
+}
 
-    NCBI_DBAPIDRIVER_ODBC_EXPORT
-    void
-    NCBI_EntryPoint_xdbapi_odbc(
-        CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-        CPluginManager<I_DriverContext>::EEntryPointRequest method)
-    {
-        CHostEntryPointImpl<CDbapiOdbcCF>::NCBI_EntryPointImpl( info_list, method );
-    }
+NCBI_DBAPIDRIVER_ODBC_EXPORT
+void
+NCBI_EntryPoint_xdbapi_ftds_odbc(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiOdbcCF_ftds64>::NCBI_EntryPointImpl( info_list, method );
+}
 
-    NCBI_DBAPIDRIVER_ODBC_EXPORT
-    void
-    NCBI_EntryPoint_xdbapi_ftds_odbc(
-        CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-        CPluginManager<I_DriverContext>::EEntryPointRequest method)
-    {
-        CHostEntryPointImpl<CDbapiOdbcCF_ftds64>::NCBI_EntryPointImpl( info_list, method );
-    }
+NCBI_DBAPIDRIVER_ODBC_EXPORT
+void
+NCBI_EntryPoint_xdbapi_odbcw(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiOdbcCF_odbcw>::NCBI_EntryPointImpl( info_list, method );
+}
 
-    NCBI_DBAPIDRIVER_ODBC_EXPORT
-    void
-    NCBI_EntryPoint_xdbapi_odbcw(
-        CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-        CPluginManager<I_DriverContext>::EEntryPointRequest method)
-    {
-        CHostEntryPointImpl<CDbapiOdbcCF_odbcw>::NCBI_EntryPointImpl( info_list, method );
-    }
-
-    NCBI_DBAPIDRIVER_ODBC_EXPORT
-    void
-    DBAPI_RegisterDriver_ODBC(void)
-    {
-        RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbc );
-        RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds_odbc );
-        RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbcw );
-    }
-
+NCBI_DBAPIDRIVER_ODBC_EXPORT
+void
+DBAPI_RegisterDriver_ODBC(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbc );
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds_odbc );
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbcw );
 }
 
 END_NCBI_SCOPE
