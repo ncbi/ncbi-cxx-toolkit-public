@@ -668,28 +668,6 @@ extern "C"
 
 }
 
-///////////////////////////////////////////////////////////////////////////////
-NCBI_DBAPIDRIVER_ODBC_EXPORT
-void DBAPI_RegisterDriver_ODBC(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("odbc", ODBC_CreateContext);
-    DBAPI_RegisterDriver_ODBC();
-}
-
-void DBAPI_RegisterDriver_ODBC_old(I_DriverMgr& mgr)
-{
-    DBAPI_RegisterDriver_ODBC( mgr );
-}
-
-extern "C" {
-    NCBI_DBAPIDRIVER_ODBC_EXPORT
-    void* DBAPI_E_odbc()
-    {
-        return (void*)DBAPI_RegisterDriver_ODBC_old;
-    }
-}
-
-
 END_NCBI_SCOPE
 
 

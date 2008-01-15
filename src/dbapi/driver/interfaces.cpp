@@ -212,21 +212,6 @@ I_Connection::~I_Connection(void)
     return;
 }
 
-
-////////////////////////////////////////////////////////////////////////////
-//  I_DriverMgr::
-//
-
-I_DriverMgr::I_DriverMgr(void)
-{
-}
-
-I_DriverMgr::~I_DriverMgr(void)
-{
-    return;
-}
-
-
 END_NCBI_SCOPE
 
 

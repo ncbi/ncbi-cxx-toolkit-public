@@ -1233,33 +1233,6 @@ DBAPI_RegisterDriver_FTDS(void)
 //        provide a default, but also to prevent from accidental linking
 //        of more than one version of FreeTDS driver to the same application
 
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver(NCBI_FTDS_DRV_NAME, FTDS_CreateContext);
-    mgr.RegisterDriver("ftds",             FTDS_CreateContext);
-    DBAPI_RegisterDriver_FTDS();
-}
-
-void DBAPI_RegisterDriver_FTDS_old(I_DriverMgr& mgr)
-{
-    DBAPI_RegisterDriver_FTDS(mgr);
-}
-
-extern "C" {
-    void* NCBI_FTDS_ENTRY_POINT()
-    {
-        if (dbversion())  return 0;  /* to prevent linking to Sybase dblib */
-        return (void*) DBAPI_RegisterDriver_FTDS_old;
-    }
-
-    NCBI_DBAPIDRIVER_DBLIB_EXPORT
-    void* DBAPI_E_ftds()
-    {
-        return NCBI_FTDS_ENTRY_POINT();
-    }
-}
-
 #else
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1380,27 +1353,6 @@ void
 DBAPI_RegisterDriver_DBLIB(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_dblib );
-}
-
-///////////////////////////////////////////////////////////////////////////////
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("dblib", DBLIB_CreateContext);
-    DBAPI_RegisterDriver_DBLIB();
-}
-
-void DBAPI_RegisterDriver_DBLIB_old(I_DriverMgr& mgr)
-{
-    DBAPI_RegisterDriver_DBLIB(mgr);
-}
-
-extern "C" {
-    NCBI_DBAPIDRIVER_DBLIB_EXPORT
-    void* DBAPI_E_dblib()
-    {
-        return (void*)DBAPI_RegisterDriver_DBLIB_old;
-    }
 }
 
 #endif

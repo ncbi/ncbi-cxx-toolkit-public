@@ -72,11 +72,6 @@ CMySQLContext::MakeIConnection(const SConnAttr& conn_attr)
 // DriverManager related functions
 //
 
-static I_DriverContext* MYSQL_CreateContext(const map<string,string>* /*attr*/)
-{
-    return new CMySQLContext();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 class CDbapiMySqlCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CMySQLContext>
 {
@@ -114,27 +109,6 @@ void
 DBAPI_RegisterDriver_MYSQL(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_mysql );
-}
-
-///////////////////////////////////////////////////////////////////////////////
-NCBI_DBAPIDRIVER_MYSQL_EXPORT
-void DBAPI_RegisterDriver_MYSQL(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("mysql", MYSQL_CreateContext);
-    DBAPI_RegisterDriver_MYSQL();
-}
-
-void DBAPI_RegisterDriver_MYSQL_old(I_DriverMgr& mgr)
-{
-    DBAPI_RegisterDriver_MYSQL(mgr);
-}
-
-extern "C" {
-    NCBI_DBAPIDRIVER_MYSQL_EXPORT
-    void* DBAPI_E_mysql()
-    {
-        return (void*) DBAPI_RegisterDriver_MYSQL_old;
-    }
 }
 
 

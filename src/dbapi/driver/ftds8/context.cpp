@@ -959,37 +959,6 @@ DBAPI_RegisterDriver_FTDS(void)
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds8 );
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// NOTE:  we define a generic ("ftds") driver name here -- in order to
-//        provide a default, but also to prevent from accidental linking
-//        of more than one version of FreeTDS driver to the same application
-
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("ftds",  FTDS_CreateContext);
-    mgr.RegisterDriver("ftds8", FTDS_CreateContext);
-    DBAPI_RegisterDriver_FTDS();
-}
-
-void DBAPI_RegisterDriver_FTDS_old(I_DriverMgr& mgr)
-{
-    DBAPI_RegisterDriver_FTDS(mgr);
-}
-extern "C" {
-    void* NCBI_FTDS_ENTRY_POINT()
-    {
-        if (dbversion())  return 0;  /* to prevent linking to Sybase dblib */
-        return (void*) DBAPI_RegisterDriver_FTDS_old;
-    }
-
-    NCBI_DBAPIDRIVER_DBLIB_EXPORT
-    void* DBAPI_E_ftds()
-    {
-        return NCBI_FTDS_ENTRY_POINT();
-    }
-}
-
 
 END_NCBI_SCOPE
 

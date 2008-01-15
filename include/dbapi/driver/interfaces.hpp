@@ -637,23 +637,6 @@ protected:
 };
 
 
-typedef I_DriverContext* (*FDBAPI_CreateContext)(const map<string,string>*
-attr);
-
-class NCBI_DBAPIDRIVER_EXPORT I_DriverMgr
-{
-public:
-    I_DriverMgr(void);
-    virtual ~I_DriverMgr(void);
-
-public:
-    /// @deprecated
-    NCBI_DEPRECATED
-    virtual void RegisterDriver(const string& driver_name,
-                                FDBAPI_CreateContext driver_ctx_func) = 0;
-};
-
-
 END_NCBI_SCOPE
 
 

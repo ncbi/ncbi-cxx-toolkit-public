@@ -1596,15 +1596,6 @@ DBAPI_RegisterDriver_FTDS(void)
 }
 
 
-NCBI_DBAPIDRIVER_CTLIB_EXPORT
-void
-DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("ftds", ftds64_ctlib::CTLIB_CreateContext);
-    mgr.RegisterDriver("ftds64", ftds64_ctlib::CTLIB_CreateContext);
-    DBAPI_RegisterDriver_FTDS();
-}
-
 #else // defined(FTDS_IN_USE)
 
 void
@@ -1622,27 +1613,6 @@ DBAPI_RegisterDriver_CTLIB(void)
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ctlib );
 }
 
-NCBI_DBAPIDRIVER_CTLIB_EXPORT
-void DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("ctlib", CTLIB_CreateContext);
-    DBAPI_RegisterDriver_CTLIB();
-}
-
-
-void DBAPI_RegisterDriver_CTLIB_old(I_DriverMgr& mgr)
-{
-    DBAPI_RegisterDriver_CTLIB( mgr );
-}
-
-
-extern "C" {
-    NCBI_DBAPIDRIVER_CTLIB_EXPORT
-    void* DBAPI_E_ctlib()
-    {
-        return (void*)DBAPI_RegisterDriver_CTLIB_old;
-    }
-}
 
 #endif // defined(FTDS_IN_USE)
 

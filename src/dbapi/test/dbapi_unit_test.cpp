@@ -567,7 +567,7 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
         if (false) {
             string sql =
                 "CREATE TABLE " + table_name + "( \n"
-                "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n"
+                "    id NUMERIC(18, 0) IDENTITY PRIMARY KEY, \n"
                 "    nvc255_field NVARCHAR(255) NULL \n"
                 ") ";
 

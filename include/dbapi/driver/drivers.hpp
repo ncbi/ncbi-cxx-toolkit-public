@@ -41,17 +41,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class I_DriverMgr;
-
-// Old and deprecated.
-// Please use functions below instead.
-NCBI_DEPRECATED extern void DBAPI_RegisterDriver_CTLIB   (I_DriverMgr& mgr);
-NCBI_DEPRECATED extern void DBAPI_RegisterDriver_DBLIB   (I_DriverMgr& mgr);
-NCBI_DEPRECATED extern void DBAPI_RegisterDriver_FTDS    (I_DriverMgr& mgr);
-NCBI_DEPRECATED extern void DBAPI_RegisterDriver_ODBC    (I_DriverMgr& mgr);
-NCBI_DEPRECATED extern void DBAPI_RegisterDriver_MSDBLIB (I_DriverMgr& mgr);
-NCBI_DEPRECATED extern void DBAPI_RegisterDriver_MYSQL   (I_DriverMgr& mgr);
-
 // New and recommended.
 extern void DBAPI_RegisterDriver_CTLIB   (void);
 extern void DBAPI_RegisterDriver_DBLIB   (void);
