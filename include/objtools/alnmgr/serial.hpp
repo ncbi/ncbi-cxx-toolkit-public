@@ -40,14 +40,19 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+NCBI_XALNMGR_EXPORT
 ostream& operator<<(ostream& out, CPairwiseAln::TAlnRng aln_rng);
 
+NCBI_XALNMGR_EXPORT
 ostream& operator<<(ostream& out, CPairwiseAln::EFlags flags);
 
+NCBI_XALNMGR_EXPORT
 ostream& operator<<(ostream& out, TAlnSeqIdIRef& aln_seq_id_iref);
 
+NCBI_XALNMGR_EXPORT
 ostream& operator<<(ostream& out, CPairwiseAln pairwise_aln);
 
+NCBI_XALNMGR_EXPORT
 ostream& operator<<(ostream& out, CAnchoredAln anchored_aln);
 
 
