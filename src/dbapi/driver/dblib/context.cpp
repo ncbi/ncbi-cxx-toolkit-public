@@ -1015,27 +1015,6 @@ DBAPI_RegisterDriver_MSDBLIB(void)
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_msdblib );
 }
 
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("msdblib", MSDBLIB_CreateContext);
-    DBAPI_RegisterDriver_MSDBLIB();
-}
-
-void DBAPI_RegisterDriver_MSDBLIB_old(I_DriverMgr& mgr)
-{
-    DBAPI_RegisterDriver_MSDBLIB( mgr );
-}
-
-extern "C" {
-    NCBI_DBAPIDRIVER_DBLIB_EXPORT
-    void* DBAPI_E_msdblib()
-    {
-        return (void*)DBAPI_RegisterDriver_MSDBLIB_old;
-    }
-}
-
-
 #elif defined(FTDS_IN_USE)
 
 #define NCBI_FTDS 8
