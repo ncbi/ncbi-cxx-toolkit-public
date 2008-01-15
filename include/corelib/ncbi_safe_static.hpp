@@ -269,14 +269,14 @@ public:
         if ( !m_Ptr ) {
             Init();
         }
-        return static_cast<CRef<T>*> (m_Ptr)->GetObject();
+        return *static_cast<T*>(m_Ptr);
     }
     T& Get(FUserCreate user_create)
     {
         if ( !m_Ptr ) {
             Init(user_create);
         }
-        return static_cast<CRef<T>*> (m_Ptr)->GetObject();
+        return *static_cast<T*>(m_Ptr);
     }
 
     T* operator -> (void) { return &Get(); }
@@ -295,9 +295,11 @@ private:
     // "virtual" cleanup function
     static void SelfCleanup(void** ptr)
     {
-        CRef<T>* tmp = static_cast< CRef<T>* > (*ptr);
-        *ptr = 0;
-        delete tmp;
+        T* tmp = static_cast<T*>(*ptr);
+        if ( tmp ) {
+            tmp->ReleaseReference();
+            *ptr = 0;
+        }
     }
 };
 
@@ -448,8 +450,11 @@ void CSafeStaticRef<T>::Set(T* object)
     if ( Init_Lock(&mutex_locked) ) {
         // Set the new object and register for cleanup
         try {
-            m_Ptr = new CRef<T> (object);
-            CSafeStaticGuard::Register(this);
+            if ( object ) {
+                object->AddReference();
+                m_Ptr = object;
+                CSafeStaticGuard::Register(this);
+            }
         }
         catch (CException& e) {
             Init_Unlock(mutex_locked);
@@ -473,7 +478,9 @@ void CSafeStaticRef<T>::Init(void)
     if ( Init_Lock(&mutex_locked) ) {
         // Create the object and register for cleanup
         try {
-            m_Ptr = new CRef<T>(new T);
+            T* ptr = new T;
+            ptr->AddReference();
+            m_Ptr = ptr;
             CSafeStaticGuard::Register(this);
         }
         catch (CException& e) {
@@ -498,9 +505,10 @@ void CSafeStaticRef<T>::Init(FUserCreate user_create)
     if ( Init_Lock(&mutex_locked) ) {
         // Create the object and register for cleanup
         try {
-            CRef<T> ptr(user_create());
-            if ( ptr ) {
-                m_Ptr = new CRef<T>(ptr);
+            CRef<T> ref(user_create());
+            if ( ref ) {
+                ref->AddReference();
+                m_Ptr = ref.Release();
                 CSafeStaticGuard::Register(this);
             }
         }
