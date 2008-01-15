@@ -57,7 +57,6 @@ MergeAlnRngColl(CPairwiseAln& existing,
     SubtractAlnRngCollections(addition, // minuend
                               existing, // subtrahend
                               difference);
-#define _TRACE_MergeAlnRngColl
 #ifdef _TRACE_MergeAlnRngColl
     cerr << endl;
     cerr << "existing:" << endl << existing << endl;
