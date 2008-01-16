@@ -1,0 +1,210 @@
+<?xml version="1.0" ?>
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns="ncbi:application"
+  targetNamespace="ncbi:application"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified">
+
+<xs:annotation>
+  <xs:documentation>
+
+    $Id$
+  ===========================================================================
+ 
+                             PUBLIC DOMAIN NOTICE
+                National Center for Biotechnology Information
+ 
+   This software/database is a "United States Government Work" under the
+   terms of the United States Copyright Act.  It was written as part of
+   the author's official duties as a United States Government employee and
+   thus cannot be copyrighted.  This software/database is freely available
+   to the public for use. The National Library of Medicine and the U.S.
+   Government have not placed any restriction on its use or reproduction.
+ 
+   Although all reasonable efforts have been taken to ensure the accuracy
+   and reliability of the software and data, the NLM and the U.S.
+   Government do not and cannot warrant the performance or results that
+   may be obtained by using this software or data. The NLM and the U.S.
+   Government disclaim all warranties, express or implied, including
+   warranties of performance, merchantability or fitness for any particular
+   purpose.
+ 
+   Please cite the author in any work or product based on this material.
+ 
+  ===========================================================================
+ 
+  Author:  Andrei Gourianov
+ 
+  File Description:
+      Description of NCBI application and its arguments.
+      Defines format of 'xmlhelp' output.
+
+  </xs:documentation>
+</xs:annotation>
+
+<xs:element name="ncbi_application">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="program"/>
+      <xs:element ref="arguments"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="program">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="version" type="xs:string" minOccurs="0"/>
+      <xs:element name="description" type="xs:string"/>
+    </xs:sequence>
+    <xs:attribute name="type" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="regular"/>
+          <xs:enumeration value="cgi"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="arguments">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="positional" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element ref="key" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element ref="flag" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element ref="extra" minOccurs="0"/>
+      <xs:element ref="dependencies" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="positional_mode" use="optional" default="strict">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="strict"/>
+          <xs:enumeration value="loose"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+</xs:element>
+
+<xs:complexType name="arg_base">
+  <xs:sequence>
+    <xs:element name="description" type="xs:string"/>
+    <xs:element name="group" type="xs:unsignedInt" minOccurs="0" default="0"/>
+    <xs:element name="synopsis" type="xs:string" minOccurs="0"/>
+    <xs:element name="constraint" minOccurs="0">
+      <xs:complexType>
+        <xs:simpleContent>
+          <xs:extension base="xs:string">
+            <xs:attribute name="inverted" type="xs:boolean" use="optional" default="false"/>
+          </xs:extension>
+        </xs:simpleContent>
+      </xs:complexType>
+    </xs:element>
+    <xs:element name="flags" minOccurs="0">
+      <xs:complexType>
+        <xs:sequence>
+          <xs:element name="preOpen" minOccurs="0"/>
+          <xs:element name="binary" minOccurs="0"/>
+          <xs:element name="append" minOccurs="0"/>
+          <xs:element name="allowMultiple" minOccurs="0"/>
+          <xs:element name="ignoreInvalidValue" minOccurs="0"/>
+          <xs:element name="warnOnInvalidValue" minOccurs="0"/>
+          <xs:element name="optionalSeparator" minOccurs="0"/>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:element>
+  </xs:sequence>
+  <xs:attribute name="name" type="xs:string" use="required"/>
+  <xs:attribute name="type" use="optional">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="String"/>
+        <xs:enumeration value="Boolean"/>
+        <xs:enumeration value="Int8"/>
+        <xs:enumeration value="Integer"/>
+        <xs:enumeration value="Real"/>
+        <xs:enumeration value="File_In"/>
+        <xs:enumeration value="File_Out"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:attribute name="use" use="optional" default="optional">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="optional"/>
+        <xs:enumeration value="mandatory"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="arg_da">
+  <xs:complexContent>
+    <xs:extension base="arg_base">
+      <xs:sequence>
+        <xs:element name="default" type="xs:string" minOccurs="0"/>
+        <xs:element name="alias" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="arg_flag">
+  <xs:complexContent>
+    <xs:extension base="arg_base">
+      <xs:sequence>
+        <xs:element name="setvalue" type="xs:boolean" minOccurs="0" default="true"/>
+        <xs:element name="alias" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="negated_alias" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="arg_extra">
+  <xs:complexContent>
+    <xs:extension base="arg_base">
+      <xs:sequence>
+        <xs:element name="min_occurs" type="xs:unsignedInt"/>
+        <xs:element name="max_occurs" type="xs:unsignedInt"/>
+      </xs:sequence>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:element name="positional" type="arg_da"/>
+
+<xs:element name="key" type="arg_da"/>
+
+<xs:element name="flag" type="arg_flag"/>
+
+<xs:element name="extra" type="arg_extra"/>
+
+<xs:element name="dependencies">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="first_requires_second" minOccurs="0" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="arg1" type="xs:string"/>
+            <xs:element name="arg2" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="first_excludes_second" minOccurs="0" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="arg1" type="xs:string"/>
+            <xs:element name="arg2" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+</xs:schema>

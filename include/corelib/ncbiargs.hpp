@@ -156,7 +156,8 @@ public:
     /// Error type for help exception.
     enum EErrCode {
         eHelp,          ///< Error code for short help message
-        eHelpFull       ///< Error code for detailed help message
+        eHelpFull,      ///< Error code for detailed help message
+        eHelpXml        ///< Error code for XML formatted help message
     };
 
     /// Translate from the error code value to its string representation.
@@ -782,6 +783,14 @@ public:
     ///   Appended "str"
     virtual string& PrintUsage(string& str, bool detailed = false) const;
 
+    /// Print argument description in XML format
+    ///
+    /// @param out
+    ///   Print into this output stream
+    /// @return
+    ///   output stream
+    void PrintUsageXml(CNcbiOstream& out) const;
+
     /// Verify if argument "name" is spelled correctly.
     ///
     /// Argument name can contain only alphanumeric characters, dashes ('-')
@@ -834,6 +843,9 @@ private:
     CRef<CArgErrorHandler> m_ErrorHandler; ///< Global error handler or NULL
 
     // Internal methods
+
+    void x_PrintAliasesAsXml(CNcbiOstream& out, const string& name,
+                                                bool negated=false) const;
 
     /// Helper method to find named parameter.
     /// 'negative' (if provided) will indicate if the name refered to a
@@ -1352,6 +1364,9 @@ public:
 
     /// Get argument flags
     virtual CArgDescriptions::TFlags GetFlags(void) const { return 0; }
+
+    /// Print description in XML format
+    string PrintXml(CNcbiOstream& out) const;
 
 private:
     string m_Name;      ///< Argument name

@@ -325,6 +325,8 @@ public:
     virtual CArgValue* ProcessDefault(void) const;
     virtual size_t GetGroup(void) const { return m_Group; }
     virtual void SetGroup(size_t group) { m_Group = group; }
+    
+    bool GetSetValue(void) const { return m_SetValue;}
 
 private:
     size_t  m_Group;

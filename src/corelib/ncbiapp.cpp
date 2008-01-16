@@ -478,11 +478,15 @@ int CNcbiApplication::AppMain
                 }
             }
             // Print USAGE
-            string str;
-            m_ArgDesc->PrintUsage
-                (str, e.GetErrCode() == CArgHelpException::eHelpFull);
+            if (e.GetErrCode() == CArgHelpException::eHelpXml) {
+                m_ArgDesc->PrintUsageXml(cout);
+            } else {
+                string str;
+                m_ArgDesc->PrintUsage
+                    (str, e.GetErrCode() == CArgHelpException::eHelpFull);
+                cout << str;
             // LOG_POST_X(5, str);
-            cout << str;
+            }
             exit_code = 0;
         }
         catch (CArgException& e) {

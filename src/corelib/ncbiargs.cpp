@@ -35,6 +35,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/error_codes.hpp>
@@ -68,6 +69,7 @@ BEGIN_NCBI_SCOPE
 
 static const char* s_AutoHelp     = "h";
 static const char* s_AutoHelpFull = "help";
+static const char* s_AutoHelpXml  = "xmlhelp";
 static const char* s_ExtraName    = "....";
 
 
@@ -81,6 +83,52 @@ string s_ArgExptMsg(const string& name, const string& what, const string& attr)
         "\". " + what + (attr.empty() ? attr : ":  `" + attr + "'");
 }
 
+void s_WriteEscapedStr(CNcbiOstream& out, const char* s)
+{
+//  http://www.w3.org/TR/2000/REC-xml-20001006#NT-Char
+    for ( ; *s; ++s) {
+        switch ( *s ) {
+        case '&':
+            out << "&amp;";
+            break;
+        case '<':
+            out << "&lt;";
+            break;
+        case '>':
+            out << "&gt;";
+            break;
+        case '\'':
+            out << "&apos;";
+            break;
+        case '"':
+            out << "&quot;";
+            break;
+        default:
+            if ((unsigned int)(*s) < 0x20) {
+                const char* charmap = "0123456789abcdef";
+                out << "&#x";
+                Uint1 ch = *s;
+                unsigned hi = ch >> 4;
+                unsigned lo = ch & 0xF;
+                if ( hi ) {
+                    out << charmap[hi];
+                }
+                out << charmap[lo] << ';';
+            } else {
+                out << *s;
+            }
+            break;
+        }
+    }
+}
+
+void s_WriteXmlLine(CNcbiOstream& out, const string& tag, const string& data)
+{
+    CStringUTF8 u(data,eEncoding_Unknown);
+    out << "<"  << tag << ">";
+    s_WriteEscapedStr(out, u.c_str());
+    out << "</" << tag << ">" << endl;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CArg_***::   classes representing various types of argument value
@@ -484,6 +532,45 @@ void CArg_OutputFile::CloseFile(void) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+//  Aux.functions to figure out various arg. features
+//
+//    s_IsPositional(arg)
+//    s_IsOptional(arg)
+//    s_IsFlag(arg)
+//
+
+class CArgDesc;
+
+inline bool s_IsKey(const CArgDesc& arg)
+{
+    return (dynamic_cast<const CArgDescSynopsis*> (&arg) != 0);
+}
+
+
+inline bool s_IsPositional(const CArgDesc& arg)
+{
+    return dynamic_cast<const CArgDesc_Pos*> (&arg) &&  !s_IsKey(arg);
+}
+
+
+inline bool s_IsOptional(const CArgDesc& arg)
+{
+    return (dynamic_cast<const CArgDescOptional*> (&arg) != 0);
+}
+
+
+inline bool s_IsFlag(const CArgDesc& arg)
+{
+    return (dynamic_cast<const CArgDesc_Flag*> (&arg) != 0);
+}
+
+
+inline bool s_IsAlias(const CArgDesc& arg)
+{
+    return (dynamic_cast<const CArgDesc_Alias*> (&arg) != 0);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CArgDesc***::   abstract base classes for argument descriptions
@@ -560,6 +647,98 @@ inline bool operator< (const AutoPtr<CArgDesc>& x, const AutoPtr<CArgDesc>& y)
     return x->GetName() < y->GetName();
 }
 
+string CArgDesc::PrintXml(CNcbiOstream& out) const
+// note: I open 'role' tag, but do not close it here
+{
+    string role;
+    if (s_IsKey(*this)) {
+        role = "key";
+    } else if (s_IsPositional(*this)) {
+        role = GetName().empty() ? "extra" : "positional";
+    } else if (s_IsFlag(*this)) {
+        role = "flag";
+    } else {
+        role = "UNKNOWN";
+    }
+
+// name
+    out << "<" << role << " name=\"";
+    string name = CStringUTF8(GetName(),eEncoding_Unknown);
+    s_WriteEscapedStr(out,name.c_str());
+    out  << "\"";
+// type
+    const CArgDescMandatory* am =
+        dynamic_cast<const CArgDescMandatory*>(this);
+    if (am) {
+        out << " type=\"" << CArgDescriptions::GetTypeName(am->GetType()) << "\"";
+    }
+// use (Flags are always optional)
+    if (s_IsOptional(*this) || s_IsFlag(*this)) {
+        out << " optional=\"true\"";
+    }
+    out << ">" << endl;
+
+    s_WriteXmlLine(         out, "description", GetComment());
+    size_t group = GetGroup();
+    if (group != 0) {
+        s_WriteXmlLine(     out, "group", NStr::UIntToString(group));
+    }
+    const CArgDescSynopsis* syn = 
+        dynamic_cast<const CArgDescSynopsis*>(this);
+    if (syn && !syn->GetSynopsis().empty()) {
+        s_WriteXmlLine( out, "synopsis", syn->GetSynopsis());
+    }
+
+// constraint
+    string constraint = CStringUTF8(GetUsageConstraint(),eEncoding_Unknown);
+    if (!constraint.empty()) {
+        out << "<" << "constraint";
+        if (IsConstraintInverted()) {
+            out << " inverted=\"true\"";
+        }
+        out << ">";
+        s_WriteEscapedStr(out,constraint.c_str());
+        out << "</" << "constraint" << ">" << endl;
+    }
+
+// flags
+    CArgDescriptions::TFlags flags = GetFlags();
+    if (flags != 0) {
+        out << "<" << "flags" << ">";
+        if (flags & CArgDescriptions::fPreOpen) {
+            out << "<" << "preOpen" << "/>";
+        }
+        if (flags & CArgDescriptions::fBinary) {
+            out << "<" << "binary" << "/>";
+        }
+        if (flags & CArgDescriptions::fAppend) {
+            out << "<" << "append" << "/>";
+        }
+        if (flags & CArgDescriptions::fAllowMultiple) {
+            out << "<" << "allowMultiple" << "/>";
+        }
+        if (flags & CArgDescriptions::fIgnoreInvalidValue) {
+            out << "<" << "ignoreInvalidValue" << "/>";
+        }
+        if (flags & CArgDescriptions::fWarnOnInvalidValue) {
+            out << "<" << "warnOnInvalidValue" << "/>";
+        }
+        if (flags & CArgDescriptions::fOptionalSeparator) {
+            out << "<" << "optionalSeparator" << "/>";
+        }
+        out << "</" << "flags" << ">" << endl;
+    }
+    const CArgDescDefault* def = dynamic_cast<const CArgDescDefault*>(this);
+    if (def) {
+        s_WriteXmlLine(     out, "default", def->GetDefaultValue());
+    } else if (s_IsFlag(*this)) {
+        const CArgDesc_Flag* fl = dynamic_cast<const CArgDesc_Flag*>(this);
+        if (fl && !fl->GetSetValue()) {
+            s_WriteXmlLine( out, "setvalue", "false");
+        }
+    }
+    return role;
+}
 
 
 ///////////////////////////////////////////////////////
@@ -1111,46 +1290,6 @@ CArgValue* CArgDesc_Alias::ProcessDefault(void) const
 }
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-//  Aux.functions to figure out various arg. features
-//
-//    s_IsPositional(arg)
-//    s_IsOptional(arg)
-//    s_IsFlag(arg)
-//
-
-inline bool s_IsKey(const CArgDesc& arg)
-{
-    return (dynamic_cast<const CArgDescSynopsis*> (&arg) != 0);
-}
-
-
-inline bool s_IsPositional(const CArgDesc& arg)
-{
-    return dynamic_cast<const CArgDesc_Pos*> (&arg) &&  !s_IsKey(arg);
-}
-
-
-inline bool s_IsOptional(const CArgDesc& arg)
-{
-    return (dynamic_cast<const CArgDescOptional*> (&arg) != 0);
-}
-
-
-inline bool s_IsFlag(const CArgDesc& arg)
-{
-    return (dynamic_cast<const CArgDesc_Flag*> (&arg) != 0);
-}
-
-
-inline bool s_IsAlias(const CArgDesc& arg)
-{
-    return (dynamic_cast<const CArgDesc_Alias*> (&arg) != 0);
-}
-
-
-
 /////////////////////////////////////////////////////////////////////////////
 //  CArgs::
 //
@@ -1380,6 +1519,8 @@ CArgDescriptions::CArgDescriptions(bool auto_help,
                 "Print USAGE and DESCRIPTION;  ignore other arguments");
         AddFlag(s_AutoHelpFull,
                 "Print USAGE, DESCRIPTION and ARGUMENTS description;  ignore other arguments");
+        AddFlag(s_AutoHelpXml,
+                "Print USAGE, DESCRIPTION and ARGUMENTS description in XML format;  ignore other arguments");
     }
 }
 
@@ -1410,7 +1551,9 @@ void CArgDescriptions::SetArgsType(EArgSetType args_type)
             if ( s_IsFlag(arg) ) {
                 const string& name = arg.GetName();
 
-                if (name == s_AutoHelp || name == s_AutoHelpFull)  // help
+                if (name == s_AutoHelp ||
+                    name == s_AutoHelpFull ||
+                    name == s_AutoHelpXml)  // help
                     continue;
 
                 NCBI_THROW(CArgException, eInvalidArg,
@@ -1434,7 +1577,7 @@ const char* CArgDescriptions::GetTypeName(EType type)
     static const char* s_TypeName[k_EType_Size] = {
         "String",
         "Boolean",
-        "Int8r",
+        "Int8",
         "Integer",
         "Real",
         "File_In",
@@ -1836,6 +1979,9 @@ void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
     }
     if (arg.compare(string("-") + s_AutoHelpFull) == 0) {
         NCBI_THROW(CArgHelpException,eHelpFull,kEmptyStr);
+    }
+    if (arg.compare(string("-") + s_AutoHelpXml) == 0) {
+        NCBI_THROW(CArgHelpException,eHelpXml,kEmptyStr);
     }
 }
 
@@ -2571,6 +2717,113 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
     return str;
 }
 
+void CArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
+{
+    out << "<" << "ncbi_application" << ">" << endl;
+
+    out << "<" << "program" << " type=\"";
+    if (m_ArgsType == eRegularArgs) {
+        out << "regular";
+    } else if (m_ArgsType == eCgiArgs) {
+        out << "cgi";
+    } else {
+        out << "UNKNOWN";
+    }
+    out << "\"" << ">" << endl;    
+    s_WriteXmlLine(out, "name", m_UsageName);
+    s_WriteXmlLine(out, "version", 
+        CNcbiApplication::Instance()->GetVersion().Print());
+    s_WriteXmlLine(out, "description", m_UsageDescription);
+    out << "</" << "program" << ">" << endl;
+
+    out << "<" << "arguments";
+    if (GetPositionalMode() == ePositionalMode_Loose) {
+        out << " positional_mode=\"loose\"";
+    }
+    out << ">" << endl;
+
+    string tag;
+// positional
+    ITERATE(TPosArgs, p, m_PosArgs) {
+        ITERATE (TArgs, a, m_Args) {
+            if ((**a).GetName() == *p) {
+                tag = (*a)->PrintXml(out);
+                x_PrintAliasesAsXml(out, (*a)->GetName());
+                out << "</" << tag << ">" << endl;
+            }
+        }
+    }
+// keys
+    ITERATE (TArgs, a, m_Args) {
+        if (s_IsKey(**a)) {
+            tag = (*a)->PrintXml(out);
+            x_PrintAliasesAsXml(out, (*a)->GetName());
+            out << "</" << tag << ">" << endl;
+        }
+    }
+// flags
+    ITERATE (TArgs, a, m_Args) {
+        if (s_IsFlag(**a)) {
+            tag = (*a)->PrintXml(out);
+            x_PrintAliasesAsXml(out, (*a)->GetName());
+            x_PrintAliasesAsXml(out, (*a)->GetName(), true);
+            out << "</" << tag << ">" << endl;
+        }
+    }
+// extra positional
+    ITERATE (TArgs, a, m_Args) {
+        if (s_IsPositional(**a) && (**a).GetName().empty()) {
+            tag = (*a)->PrintXml(out);
+            s_WriteXmlLine(out, "min_occurs", NStr::UIntToString(m_nExtra));
+            s_WriteXmlLine(out, "max_occurs", NStr::UIntToString(m_nExtraOpt));
+            out << "</" << tag << ">" << endl;
+        }
+    }
+    if (!m_Dependencies.empty()) {
+        out << "<" << "dependencies" << ">" << endl;
+        ITERATE(TDependencies, dep, m_Dependencies) {
+            if (dep->second.m_Dep == eRequires) {
+                out << "<" << "first_requires_second" << ">" << endl;
+                s_WriteXmlLine(out, "arg1", dep->first);
+                s_WriteXmlLine(out, "arg2", dep->second.m_Arg);
+                out << "</" << "first_requires_second" << ">" << endl;
+            }
+        }
+        ITERATE(TDependencies, dep, m_Dependencies) {
+            if (dep->second.m_Dep == eExcludes) {
+                out << "<" << "first_excludes_second" << ">" << endl;
+                s_WriteXmlLine(out, "arg1", dep->first);
+                s_WriteXmlLine(out, "arg2", dep->second.m_Arg);
+                out << "</" << "first_excludes_second" << ">" << endl;
+            }
+        }
+        out << "</" << "dependencies" << ">" << endl;
+    }
+
+
+
+    out << "</" << "arguments" << ">" << endl;
+
+    out << "</" << "ncbi_application" << ">" << endl;
+}
+
+void CArgDescriptions::x_PrintAliasesAsXml( CNcbiOstream& out,
+    const string& name, bool negated /* =false*/) const
+{
+    ITERATE (TArgs, a, m_Args) {
+        if (s_IsAlias(**a)) {
+            const CArgDesc_Alias& alias =
+                dynamic_cast<const CArgDesc_Alias&>(**a);
+            if (negated == alias.GetNegativeFlag()) {
+                string tag = negated ? "negated_alias" : "alias";
+                if (alias.GetAliasedName() == name) {
+                    s_WriteXmlLine(out, tag, alias.GetName());
+                }
+            }
+        }
+    }
+}
+
 
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
@@ -2876,6 +3129,7 @@ const char* CArgHelpException::GetErrCodeString(void) const
     switch (GetErrCode()) {
     case eHelp:     return "eHelp";
     case eHelpFull: return "eHelpFull";
+    case eHelpXml:  return "eHelpXml";
     default:    return CException::GetErrCodeString();
     }
 }
