@@ -70,6 +70,9 @@ static const char* msdblib_driver = "msdblib";
 
 BEGIN_NCBI_SCOPE
 
+string GetSybaseClientVersion(void);
+
+
 /////////////////////////////////////////////////////////////////////////////
 inline
 CDiagCompileInfo GetBlankCompileInfo(void)
@@ -8156,6 +8159,18 @@ CDBAPIUnitTest::Test_NULL(void)
                     } else {
                         BOOST_CHECK( int_field.IsNull() );
 
+#ifdef NCBI_OS_SOLARIS
+                        // Another version of Sybase client is used on Solaris,
+                        // ctlib driver works there differently
+                        if (m_args.GetDriverName() == ctlib_driver) {
+                            const string sybase_version = GetSybaseClientVersion();
+                            if (NStr::CompareNocase(sybase_version, 0, 4, "12.0") == 0) {
+                                BOOST_CHECK( vc1000_field.IsNull() );
+                                continue;
+                            }
+                        }
+#endif
+
                         BOOST_CHECK( !vc1000_field.IsNull() );
                         // Old protocol version has this strange feature
                         if (m_args.GetServerType() == CTestArguments::eSybase
@@ -8254,83 +8269,6 @@ CDBAPIUnitTest::Test_NULL(void)
             }
         } else {
             PutMsgDisabled("Testing of NULL-value + empty string is disabled.");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         }
     }
     catch(const CException& ex) {
