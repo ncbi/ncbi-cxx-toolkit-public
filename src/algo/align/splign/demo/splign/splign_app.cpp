@@ -77,7 +77,9 @@ BEGIN_NCBI_SCOPE
 
 void CSplignApp::Init()
 {
-    HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
+#ifndef GENOME_PIPELINE
+    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
+#endif
 
     SetVersion(CVersionInfo(1, 28, 0, "Splign"));
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
