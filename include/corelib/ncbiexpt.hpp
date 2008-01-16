@@ -574,7 +574,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 #define NCBI_RETHROW(prev_exception, exception_class, err_code, message) \
     throw NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message)
 
-/// The same as NCBI_RETHROW but with message pricessed as output to ostream.
+/// The same as NCBI_RETHROW but with message processed as output to ostream.
 #define NCBI_RETHROW_FMT(prev_exception, exception_class, err_code, message) \
     NCBI_RETHROW(prev_exception, exception_class, err_code, FORMAT(message))
 
