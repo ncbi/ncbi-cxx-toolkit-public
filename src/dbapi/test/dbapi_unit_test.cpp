@@ -70,6 +70,7 @@ static const char* msdblib_driver = "msdblib";
 
 BEGIN_NCBI_SCOPE
 
+static
 string GetSybaseClientVersion(void);
 
 
