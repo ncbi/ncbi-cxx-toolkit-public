@@ -512,43 +512,35 @@ template<class Interface>
 class CInterfaceObjectLocker
 {
 public:
-    CInterfaceObjectLocker(void)
-        : m_ObjectPtr(0)
+    void Lock(const Interface* object) const
         {
-        }
-
-    void Lock(const Interface* object)
-        {
-            _ASSERT(!m_ObjectPtr);
-            m_ObjectPtr = dynamic_cast<const CObject*>(object);
-            if ( !m_ObjectPtr ) {
+            const CObject* cobject = dynamic_cast<const CObject*>(object);
+            if ( !cobject ) {
                 CObjectCounterLocker::ReportIncompatibleType(typeid(*object));
             }
-            m_ObjectPtr->AddReference();
+            cobject->AddReference();
         }
 
-    void Relock(const Interface* _DEBUG_ARG(object))
+    void Relock(const Interface* object) const
         {
-            _ASSERT(m_ObjectPtr == dynamic_cast<const CObject*>(object));
-            m_ObjectPtr->AddReference();
+            const CObject* cobject = dynamic_cast<const CObject*>(object);
+            _ASSERT(cobject);
+            cobject->AddReference();
         }
 
-    void Unlock(const Interface* _DEBUG_ARG(object))
+    void Unlock(const Interface* object) const
         {
-            _ASSERT(m_ObjectPtr == dynamic_cast<const CObject*>(object));
-            m_ObjectPtr->RemoveReference();
-            m_ObjectPtr = 0;
+            const CObject* cobject = dynamic_cast<const CObject*>(object);
+            _ASSERT(cobject);
+            cobject->RemoveReference();
         }
 
-    void UnlockRelease(const Interface* _DEBUG_ARG(object))
+    void UnlockRelease(const Interface* object) const
         {
-            _ASSERT(m_ObjectPtr == dynamic_cast<const CObject*>(object));
-            m_ObjectPtr->ReleaseReference();
-            m_ObjectPtr = 0;
+            const CObject* cobject = dynamic_cast<const CObject*>(object);
+            _ASSERT(cobject);
+            cobject->ReleaseReference();
         }
-
-private:
-    const CObject* m_ObjectPtr;
 };
 
 
@@ -582,14 +574,20 @@ public:
     /// Constructor for explicit type conversion from pointer to object.
     explicit CRef(TObjectType* ptr)
         {
-            x_Set(ptr);
+            if ( ptr ) {
+                m_Data.first().Lock(ptr);
+                m_Data.second() = ptr;
+            }
         }
 
     /// Constructor for explicit type conversion from pointer to object.
     CRef(TObjectType* ptr, const locker_type& locker_value)
         : m_Data(locker_value, 0)
         {
-            x_Set(ptr);
+            if ( ptr ) {
+                m_Data.first().Lock(ptr);
+                m_Data.second() = ptr;
+            }
         }
 
     /// Copy constructor from an existing CRef object, 
@@ -699,11 +697,13 @@ public:
         {
             TObjectType* oldPtr = m_Data.second();
             if ( newPtr != oldPtr ) {
+                if ( newPtr ) {
+                    m_Data.first().Lock(newPtr);
+                }
+                m_Data.second() = newPtr;
                 if ( oldPtr ) {
-                    m_Data.second() = 0;
                     m_Data.first().Unlock(oldPtr);
                 }
-                x_Set(newPtr);
             }
         }
 
@@ -802,19 +802,7 @@ public:
     /// Assignment operator for references.
     TThisType& operator=(const TThisType& ref)
         {
-            TObjectType* oldPtr = m_Data.second();
-            TObjectType* newPtr = ref.m_Data.second();
-            if ( newPtr != oldPtr ) {
-                if ( oldPtr ) {
-                    m_Data.second() = 0;
-                    m_Data.first().Unlock(oldPtr);
-                }
-                if ( newPtr ) {
-                    m_Data.first() = ref.m_Data.first();
-                    m_Data.first().Relock(newPtr);
-                    m_Data.second() = newPtr;
-                }
-            }
+            Reset(ref.m_Data.second());
             return *this;
         }
 
@@ -1077,17 +1065,6 @@ private:
                               ptr));
         }
 
-    // Opposite to Reset().
-    // Change CRef<> state from null to ptr.
-    // Preconditions: m_Data.second() == 0
-    void x_Set(TObjectType* ptr)
-        {
-            if ( ptr ) {
-                m_Data.first().Lock(ptr);
-                m_Data.second() = ptr;
-            }
-        }
-    
     pair_base_member<locker_type, TObjectType*> m_Data; ///< Pointer to object
     
 private:
@@ -1128,14 +1105,20 @@ public:
     /// Constructor for explicit type conversion from pointer to object.
     explicit CConstRef(TObjectType* ptr)
         {
-            x_Set(ptr);
+            if ( ptr ) {
+                m_Data.first().Lock(ptr);
+                m_Data.second() = ptr;
+            }
         }
 
     /// Constructor for explicit type conversion from pointer to object.
     CConstRef(TObjectType* ptr, const locker_type& locker_value)
         : m_Data(locker_value, 0)
         {
-            x_Set(ptr);
+            if ( ptr ) {
+                m_Data.first().Lock(ptr);
+                m_Data.second() = ptr;
+            }
         }
 
     /// Constructor from an existing CConstRef object, 
@@ -1256,11 +1239,13 @@ public:
         {
             TObjectType* oldPtr = m_Data.second();
             if ( newPtr != oldPtr ) {
+                if ( newPtr ) {
+                    m_Data.first().Lock(newPtr);
+                }
+                m_Data.second() = newPtr;
                 if ( oldPtr ) {
-                    m_Data.second() = 0;
                     m_Data.first().Unlock(oldPtr);
                 }
-                x_Set(newPtr);
             }
         }
 
@@ -1359,19 +1344,7 @@ public:
     /// Assignment operator for const references.
     TThisType& operator=(const TThisType& ref)
         {
-            TObjectType* oldPtr = m_Data.second();
-            TObjectType* newPtr = ref.m_Data.second();
-            if ( newPtr != oldPtr ) {
-                if ( oldPtr ) {
-                    m_Data.second() = 0;
-                    m_Data.first().Unlock(oldPtr);
-                }
-                if ( newPtr ) {
-                    m_Data.first() = ref.m_Data.first();
-                    m_Data.first().Relock(newPtr);
-                    m_Data.second() = newPtr;
-                }
-            }
+            Reset(ref.m_Data.second());
             return *this;
         }
 
@@ -1496,17 +1469,6 @@ private:
                               const_cast<C*>(ptr)));
         }
 
-    // Opposite to Reset().
-    // Change CRef<> state from null to ptr.
-    // Preconditions: m_Data.second() == 0
-    void x_Set(TObjectType* ptr)
-        {
-            if ( ptr ) {
-                m_Data.first().Lock(ptr);
-                m_Data.second() = ptr;
-            }
-        }
-    
     pair_base_member<locker_type, TObjectType*> m_Data; ///< Pointer to object
     
 private:
