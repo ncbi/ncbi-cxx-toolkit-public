@@ -38,7 +38,7 @@ mail_limit=199
 script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
-. ${script_dir}/../../scripts/common.sh
+. ${script_dir}/../../scripts/common/common.sh
 
 
 ####  MISC

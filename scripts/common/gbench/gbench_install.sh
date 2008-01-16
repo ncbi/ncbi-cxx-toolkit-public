@@ -12,7 +12,7 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 DYLD_BIND_AT_LAUNCH=1
 export DYLD_BIND_AT_LAUNCH
 
-. ${script_dir}/common.sh
+. ${script_dir}/../common.sh
 
 
 algos='align basic cn3d external gnomon linkout phylo validator web_page'
@@ -250,7 +250,7 @@ while :; do
         --hardlink)
             copy_all="yes"
             BINCOPY="ln -f"
-            MAC_BINCOPY="$script_dir/ln_mac.sh"
+            MAC_BINCOPY="$script_dir/../impl/ln_mac.sh"
             MAC_BINMOVE="/Developer/Tools/MvMac"
             ;;
         --setup-src)
@@ -372,7 +372,7 @@ sqlite_libdir=`sed -ne 's/SQLITE_LIBS *= *-L\([^ ]*\).*/\1/p' ${src_dir}/build/M
 COMMON_AddRunpath ${src_dir}/lib:${fltk_libdir}:${bdb_libdir}:${sqlite_libdir}
 CHECK_TIMEOUT=600
 export CHECK_TIMEOUT
-COMMON_ExecRB ${script_dir}/check/check_exec_test.sh ${target_dir}/bin/gbench_plugin_scan -strict ${target_dir}/plugins
+COMMON_ExecRB ${script_dir}/../check/check_exec_test.sh ${target_dir}/bin/gbench_plugin_scan -strict ${target_dir}/plugins
 
 echo "Copying executable plugins:"
 for f in ${source_dir}/../plugins/algo/executables/*; do

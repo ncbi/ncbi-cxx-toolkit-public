@@ -11,7 +11,7 @@ SUB_MF_IN = $(ALL_SUB_PROJ:%=$(srcdir)/%/Makefile.in)
 ROOT_CONFIGURABLES  = $(builddir)/Makefile* $(builddir)/*.sh
 CONFIGURABLES = $(ROOT_CONFIGURABLES) $(LOCAL_CONFIGURABLES)
 
-UPDATE_CONFIGURABLE = $(abs_top_srcdir)/scripts/update_configurable.sh $(build_root)
+UPDATE_CONFIGURABLE = $(abs_top_srcdir)/scripts/common/impl/update_configurable.sh $(build_root)
 
 config_status = $(build_root)/status/config.status
 
@@ -54,7 +54,7 @@ $(builddir)/Makefile.meta: $(build_sys_dir)/Makefile.meta.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
 
 $(config_status): $(build_sys_dir)/configure $(build_sys_dir)/config.h.in
-	$(abs_top_srcdir)/scripts/maybe_reconfigure.sh $(builddir)
+	$(abs_top_srcdir)/scripts/common/impl/maybe_reconfigure.sh $(builddir)
 
 .PHONY: configurables
 .PRECIOUS: $(CONFIGURABLES) $(SUB_MF_IN)

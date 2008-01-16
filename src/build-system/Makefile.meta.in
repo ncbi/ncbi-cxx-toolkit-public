@@ -27,12 +27,12 @@ abs_srcdir = `echo $(srcdir) | sed -e 's,^$(top_srcdir),$(abs_top_srcdir),'`
 
 ### Protect against two MAKE processes running in the same dir
 
-RWL = $(abs_top_srcdir)/scripts/run_with_lock.sh
+RWL = $(abs_top_srcdir)/scripts/common/impl/run_with_lock.sh
 
 ### Tests config variables
 
-check_run = $(abs_top_srcdir)/scripts/check/check_run.sh
-check_add = $(abs_top_srcdir)/scripts/check/check_add.sh
+check_run = $(abs_top_srcdir)/scripts/common/check/check_run.sh
+check_add = $(abs_top_srcdir)/scripts/common/check/check_add.sh
 
 ### One-level build -- [USR_PROJ] makefiles
 

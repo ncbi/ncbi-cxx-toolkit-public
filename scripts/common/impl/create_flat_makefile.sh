@@ -18,7 +18,7 @@ script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
 
-. ${script_dir}/common.sh
+. ${script_dir}/../common.sh
 
 
 # has one optional argument: error message

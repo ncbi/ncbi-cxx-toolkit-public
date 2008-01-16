@@ -11,7 +11,7 @@
 #
 #   Note:  non-configurable headers, sources, makefiles, scripts and docs
 #          (which can be shared by several builds) must be installed
-#          separately, using script "scripts/install.sh".
+#          separately, using script "scripts/common/impl/install.sh".
 #
 ###########################################################################
 
@@ -45,7 +45,7 @@ Usage:
 Synopsis:
    Install NCBI C++ build tree -- built libs, apps, and configured headers
    and makefiles.
-   (Hint: to install the source tree, use "c++/scripts/install.sh".)
+   (Hint: to install the source tree, use "c++/scripts/common/impl/install.sh".)
 
 Arguments:
    <install_dir>       -- where to install (this can be either a name of

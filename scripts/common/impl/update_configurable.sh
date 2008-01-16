@@ -2,9 +2,9 @@
 script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
-. ${script_dir}/common.sh
+. ${script_dir}/../common.sh
 
-top_srcdir=`dirname $script_dir`
+top_srcdir=`(cd "$script_dir/../../.." && pwd)`
 build_root=$1
 builddir=$build_root/build
 output=$2

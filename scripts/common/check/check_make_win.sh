@@ -249,11 +249,11 @@ top_srcdir="\$root_dir"
 export top_srcdir
 
 # Add current, build and scripts directories to PATH
-PATH=".:\${build_dir}:\${root_dir}/scripts:\${PATH}"
+PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl:\${PATH}"
 export PATH
 
 # Define time-guard script to run tests from other scripts
-CHECK_EXEC="\${root_dir}/scripts/check/check_exec_test.sh"
+CHECK_EXEC="\${root_dir}/scripts/common/check/check_exec_test.sh"
 CHECK_EXEC_STDIN="\$CHECK_EXEC -stdin"
 export CHECK_EXEC
 export CHECK_EXEC_STDIN
@@ -330,7 +330,7 @@ RunTest() {
    CHECK_TIMEOUT="\$x_timeout"
    export CHECK_TIMEOUT
    start_time="\`date\`"
-   check_exec="\$root_dir/scripts/check/check_exec.sh"
+   check_exec="\$root_dir/scripts/common/check/check_exec.sh"
    \$check_exec time.exe -p \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
    result=\$?
    stop_time="\`date\`"

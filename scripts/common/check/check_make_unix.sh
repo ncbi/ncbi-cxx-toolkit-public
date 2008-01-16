@@ -280,7 +280,7 @@ if [ -z "\$NCBI_CHECK_TOOLS" ]; then
 fi
 
 # Valgrind configuration
-VALGRIND_SUP="\${root_dir}/scripts/check/valgrind.supp"
+VALGRIND_SUP="\${root_dir}/scripts/common/check/valgrind.supp"
 VALGRIND_CMD="--tool=memcheck --suppressions=\$VALGRIND_SUP"
 
 # Export some global vars
@@ -290,7 +290,7 @@ FEATURES="$x_features"
 export FEATURES
 
 # Add current, build and scripts directories to PATH
-PATH=".:\${build_dir}:\${root_dir}/scripts:\${PATH}"
+PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl:\${PATH}"
 export PATH
 
 # Export bin and lib pathes
@@ -299,8 +299,8 @@ CFG_LIB="\${conf_dir}/lib"
 export CFG_BIN CFG_LIB
 
 # Define time-guard script to run tests from other scripts
-check_exec="\$root_dir/scripts/check/check_exec.sh"
-CHECK_EXEC="\${root_dir}/scripts/check/check_exec_test.sh"
+check_exec="\$root_dir/scripts/common/check/check_exec.sh"
+CHECK_EXEC="\${root_dir}/scripts/common/check/check_exec_test.sh"
 CHECK_EXEC_STDIN="\$CHECK_EXEC -stdin"
 export CHECK_EXEC
 export CHECK_EXEC_STDIN
@@ -314,7 +314,7 @@ EOF
 if [ -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib" ];  then
    cat >> $x_out <<EOF
 # Add a library path for running tests
-. \$root_dir/scripts/common.sh
+. \$root_dir/scripts/common/common.sh
 COMMON_AddRunpath "\$conf_dir/lib"
 EOF
 else

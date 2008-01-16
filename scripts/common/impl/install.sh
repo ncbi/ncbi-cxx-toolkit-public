@@ -26,7 +26,7 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 run_dir=`pwd`
 run_cmd="$0 $*"
 
-top_srcdir=`(cd "${script_dir}/.." ; pwd)`
+top_srcdir=`(cd "${script_dir}/../../.." ; pwd)`
 install_dir="$1"
 
 

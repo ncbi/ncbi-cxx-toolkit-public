@@ -9,7 +9,7 @@ bindir=$build_root/bin
 libdir=$build_root/lib
 
 # Some useful common functions (such as COMMON_AddRunpath)
-. ${top_srcdir}/scripts/common.sh
+. ${top_srcdir}/scripts/common/common.sh
 
 # detect root directory of current tree (which may be incomplete!)
 p="`pwd`"

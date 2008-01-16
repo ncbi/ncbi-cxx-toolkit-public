@@ -1145,7 +1145,7 @@ _ACEOF
   exit 0
 fi
 
-if $srcdir/scripts/get_lock.sh configure $$; then
+if $srcdir/scripts/common/impl/get_lock.sh configure $$; then
     ac_clean_files=configure.lock
 else
     exit 1
@@ -4313,8 +4313,8 @@ CXX_PATH="`dirname $x_CXX`"
 x_CXX=
 
 if test "$with_static_exe" = "yes"; then
-   C_LINK='$(top_srcdir)/scripts/favor-static $(CC)'
-   LINK='$(top_srcdir)/scripts/favor-static $(CXX)'
+   C_LINK='$(top_srcdir)/scripts/common/impl/favor-static $(CC)'
+   LINK='$(top_srcdir)/scripts/common/impl/favor-static $(CXX)'
 else
    C_LINK='$(CC)'
    LINK='$(CXX)'
@@ -7655,10 +7655,10 @@ echo "$as_me:$LINENO: result: $ncbi_cv_sys_xdir_ln" >&5
 echo "${ECHO_T}$ncbi_cv_sys_xdir_ln" >&6
    if test "$ncbi_cv_sys_xdir_ln" = "yes"; then
       BINCOPY="ln -f"
-      MAC_BINCOPY="\$(top_srcdir)/scripts/ln_mac.sh"
+      MAC_BINCOPY="\$(top_srcdir)/scripts/common/impl/ln_mac.sh"
    fi
 fi
-ifdiff="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh"
+ifdiff="${CONFIG_SHELL} \$(top_srcdir)/scripts/common/impl/if_diff.sh"
 if test "$OSTYPE" = "darwin" -a -x /Developer/Tools/CpMac; then
    BINCOPY="$ifdiff \"$MAC_BINCOPY\""
 else
@@ -31709,7 +31709,7 @@ if test "$with_flat_makefile" = "yes"; then
       no | '' ) ;;
       *       ) cfm_flags="$cfm_flags -p $with_projects" ;;
    esac
-   if $real_srcdir/scripts/create_flat_makefile.sh "$build_root" \
+   if $real_srcdir/scripts/common/impl/create_flat_makefile.sh "$build_root" \
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
       build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
    fi

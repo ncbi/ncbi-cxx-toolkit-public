@@ -41,9 +41,10 @@ internal: $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
 #
 
 compress_tests:
-	$(top_srcdir)/scripts/compress_tests.sh --$(DEBUG_SFX) $(bindir)
+	$(top_srcdir)/scripts/common/impl/compress_tests.sh --$(DEBUG_SFX) \
+	    $(bindir)
 
-sfi=$(top_srcdir)/scripts/strip_for_install.sh
+sfi=$(top_srcdir)/scripts/common/impl/strip_for_install.sh
 strip_for_install:
 	$(sfi) --dirs $(COMPILER)-$(DEBUG_SFX) \
 	    $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) check dll wrappers

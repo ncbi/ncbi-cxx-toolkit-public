@@ -26,7 +26,7 @@ for x_arg in "$@" ; do
   esac
 done
 
-if test -x "$src_tree/scripts/if_diff.sh"  &&  test -f "$bld_tree/inc/ncbiconf_unix.h" ; then
+if test -x "$src_tree/scripts/common/impl/if_diff.sh"  &&  test -f "$bld_tree/inc/ncbiconf_unix.h" ; then
    cat <<EOF
 Adjusting makefiles for:
   - source tree:  $src_tree
