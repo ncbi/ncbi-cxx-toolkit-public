@@ -160,14 +160,19 @@ string CCgiSession_NetCache::GetAttribute(const string& name) const
     TBlobs::const_iterator i = m_Blobs.find(name);
     if (i == m_Blobs.end()) {
         NCBI_THROW(CCgiSessionException, eAttrNotFound, " : " + name);
-        //        return "";
     }
-    return m_Storage->GetBlobAsString(i->second);
+    try {
+        return m_Storage->GetBlobAsString(i->second);
+    }
+    catch (CException& e) {
+        NCBI_RETHROW(e, CCgiSessionException, eImplException,
+            "; causal exception attached");
+    }
 }
 
 void CCgiSession_NetCache::RemoveAttribute(const string& name)
 {
-     x_CheckStatus();
+    x_CheckStatus();
     TBlobs::iterator i = m_Blobs.find(name);
     if (i == m_Blobs.end())
         return;           

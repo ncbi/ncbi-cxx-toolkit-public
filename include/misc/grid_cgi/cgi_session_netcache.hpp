@@ -124,7 +124,15 @@ public:
     /// @param[in] name
     ///  Name of the attribute to retrieve
     /// @return
-    ///  Attribute's data, or empty string if the attribute does not exist.
+    ///  Data of the attribute, if set.
+    /// @throw CCgiSessionException with error code eNotLoaded
+    ///  if the session has not been loaded yet;
+    ///  CCgiSessionException with error code eAttrNotFound if
+    ///  attribute with the specified name was not found;
+    ///  CCgiSessionException with error code eImplException if
+    ///  an error occured during attribute retrieval -- in the
+    ///  latter case, more information can be obtained from the
+    ///  embedded exception.
     virtual string GetAttribute(const string& name) const;  
 
     /// Remove attribute from the session.
