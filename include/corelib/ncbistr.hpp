@@ -1657,6 +1657,11 @@ public:
     /// @sa PrintableString, CEncode
     static string JavaScriptEncode(const string& str);
 
+    /// Encode a string for XML.
+    ///
+    /// Replace relevant characters by predefined entities.
+    static string XmlEncode(const string& str);
+
     /// Wrap the specified string into lines of a specified width -- prefix,
     /// prefix1 default version.
     ///

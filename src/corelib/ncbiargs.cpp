@@ -83,43 +83,10 @@ string s_ArgExptMsg(const string& name, const string& what, const string& attr)
         "\". " + what + (attr.empty() ? attr : ":  `" + attr + "'");
 }
 
+inline
 void s_WriteEscapedStr(CNcbiOstream& out, const char* s)
 {
-//  http://www.w3.org/TR/2000/REC-xml-20001006#NT-Char
-    for ( ; *s; ++s) {
-        switch ( *s ) {
-        case '&':
-            out << "&amp;";
-            break;
-        case '<':
-            out << "&lt;";
-            break;
-        case '>':
-            out << "&gt;";
-            break;
-        case '\'':
-            out << "&apos;";
-            break;
-        case '"':
-            out << "&quot;";
-            break;
-        default:
-            if ((unsigned int)(*s) < 0x20) {
-                const char* charmap = "0123456789abcdef";
-                out << "&#x";
-                Uint1 ch = *s;
-                unsigned hi = ch >> 4;
-                unsigned lo = ch & 0xF;
-                if ( hi ) {
-                    out << charmap[hi];
-                }
-                out << charmap[lo] << ';';
-            } else {
-                out << *s;
-            }
-            break;
-        }
-    }
+    out << NStr::XmlEncode(s);
 }
 
 void s_WriteXmlLine(CNcbiOstream& out, const string& tag, const string& data)

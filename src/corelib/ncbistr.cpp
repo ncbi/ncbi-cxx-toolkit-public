@@ -1920,6 +1920,49 @@ string NStr::JavaScriptEncode(const string& str)
     return s_PrintableString(str, eNewLine_Quote, eLanguage_Javascript);
 }
 
+string NStr::XmlEncode(const string& str)
+// http://www.w3.org/TR/2000/REC-xml-20001006#sec-predefined-ent
+{
+    string result;
+    SIZE_TYPE i, j = 0;
+    for (i = 0;  i < str.size();  i++) {
+        char c = str[i];
+        switch ( c ) {
+        case '&':
+            result.append("&amp;");
+            break;
+        case '<':
+            result.append("&lt;");
+            break;
+        case '>':
+            result.append("&gt;");
+            break;
+        case '\'':
+            result.append("&apos;");
+            break;
+        case '"':
+            result.append("&quot;");
+            break;
+        default:
+            if ((unsigned int)(c) < 0x20) {
+                const char* charmap = "0123456789abcdef";
+                result.append("&#x");
+                Uint1 ch = c;
+                unsigned hi = ch >> 4;
+                unsigned lo = ch & 0xF;
+                if ( hi ) {
+                    result.append(1, charmap[hi]);
+                }
+                result.append(1, charmap[lo]).append(1, ';');
+            } else {
+                result.append(1, c);
+            }
+            break;
+        }
+    }
+    return result;
+}
+
 
 string NStr::ParseEscapes(const string& str)
 {
