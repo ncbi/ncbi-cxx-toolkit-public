@@ -132,14 +132,7 @@
       </xs:restriction>
     </xs:simpleType>
   </xs:attribute>
-  <xs:attribute name="use" use="optional" default="optional">
-    <xs:simpleType>
-      <xs:restriction base="xs:string">
-        <xs:enumeration value="optional"/>
-        <xs:enumeration value="mandatory"/>
-      </xs:restriction>
-    </xs:simpleType>
-  </xs:attribute>
+  <xs:attribute name="optional" type="xs:boolean" use="optional" default="false"/>
 </xs:complexType>
 
 <xs:complexType name="arg_da">
