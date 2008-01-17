@@ -36,6 +36,7 @@
 
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_explorer.hpp>
+#include <objtools/alnmgr/aln_stats.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -64,6 +65,9 @@ ostream& operator<<(ostream& out, const CPairwiseAln& pairwise_aln);
 
 NCBI_XALNMGR_EXPORT
 ostream& operator<<(ostream& out, const CAnchoredAln& anchored_aln);
+
+NCBI_XALNMGR_EXPORT
+ostream& operator<<(ostream& out, const TAlnStats& aln_stats);
 
 
 END_NCBI_SCOPE

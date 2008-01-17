@@ -227,7 +227,7 @@ int CAlnBuildApp::Run(void)
     TAlnStats aln_stats(aln_id_map);
     ReportTime("TAlnStats");
     {
-        aln_stats.Dump(cout);
+        cout << aln_stats;
         m_StopWatch.Restart();
     }
 

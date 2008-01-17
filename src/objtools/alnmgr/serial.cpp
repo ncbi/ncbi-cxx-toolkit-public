@@ -149,6 +149,35 @@ ostream& operator<<(ostream& out, const CAnchoredAln& anchored_aln)
 }
 
 
+ostream& operator<<(ostream& out, const TAlnStats& aln_stats)
+{
+    out << "Number of alignments: " << aln_stats.GetAlnCount() << endl;
+    out << "IsCanonicalQueryAnchored:" << aln_stats.IsCanonicalQueryAnchored() << endl;
+    out << "IsCanonicalMultiple:" << aln_stats.IsCanonicalMultiple() << endl;
+    out << endl;
+    out << "IdVec (" << aln_stats.GetIdVec().size() << "):" << endl;
+    ITERATE(TAlnStats::TIdVec, it, aln_stats.GetIdVec()) {
+        out << (*it)->AsString() << " (base_width=" << (*it)->GetBaseWidth() << ")" << endl;
+    }
+    out << endl;
+    out << "IdMap (" << aln_stats.GetIdMap().size() << "):" << endl;
+    ITERATE(TAlnStats::TIdMap, it, aln_stats.GetIdMap()) {
+        out << it->first->AsString() << " (base_width=" << it->first->GetBaseWidth() << ")" << endl;
+    }
+    out << endl;
+    for (size_t aln_idx = 0;  aln_idx < aln_stats.GetAlnCount();  ++aln_idx) {
+        TAlnStats::TDim dim = aln_stats.GetDimForAln(aln_idx);
+        out << "Alignment " << aln_idx << " has " 
+            << dim << " rows:" << endl;
+        for (TAlnStats::TDim row = 0;  row < dim;  ++row) {
+            out << aln_stats.GetSeqIdsForAln(aln_idx)[row]->AsString();
+            out << endl;
+        }
+        out << endl;
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
