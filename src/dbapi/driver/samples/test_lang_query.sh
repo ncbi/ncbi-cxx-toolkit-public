@@ -7,7 +7,7 @@ ulimit -n 1536 > /dev/null 2>&1
 
 
 # driver_list="ftds64_dblib"
-driver_list="ctlib dblib ftds odbc msdblib ftds8 odbcw ftds_odbc ftds63"
+driver_list="ctlib dblib ftds odbc ftds8 odbcw ftds_odbc"
 # server_list="MS_DEV2"
 server_list="MS_DEV1 SCHUMANN MSSQL67"
 # server_mssql="MS_DEV2"
@@ -168,7 +168,7 @@ EOF
                 continue
             fi
 
-            if test \( $driver = "ftds64" -o $driver = "odbc" -o $driver = "odbcw" -o $driver = "ftds_odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
+            if test \( $driver = "ftds64" -o $driver = "odbc" -o $driver = "odbcw" -o $driver = "ftds_odbc" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 continue
             fi
              
@@ -185,14 +185,11 @@ EOF
         # lang_query
 
             cmd="lang_query -lb random -d $driver -S $server -Q"
-            if test $driver != "ftds63" ; then
-                if test $driver != 'dblib' -o \( $driver = 'dblib' -a $server != $server_mssql -a $server != $server_mssql2005 \) ; then
-                    RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
-                fi
-                RunTest2 'select qq = convert(real, 57.55 + 0.0033)' '<ROW><qq>57\.5533<'
-            else
-                sum_list="$sum_list XXX_SEPARATOR #  $cmd select qq = 57.55 + 0.0033 (skipped)"
+            if test $driver != 'dblib' -o \( $driver = 'dblib' -a $server != $server_mssql -a $server != $server_mssql2005 \) ; then
+                RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
             fi
+
+            RunTest2 'select qq = convert(real, 57.55 + 0.0033)' '<ROW><qq>57\.5533<'
             RunTest2 'select qq = 57 + 33' '<ROW><qq>90<'
             RunTest2 'select qq = GETDATE()' '<ROW><qq>../../.... ..:..:..<'
             RunTest2 'select name, type from sysobjects' '<ROW><name>'
@@ -215,7 +212,7 @@ EOF
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
-            elif test $driver = "msdblib" -o $driver = "ftds8" -o $driver = "ftds_odbc" -o $driver = "odbcw" ; then
+            elif test $driver = "ftds8" -o $driver = "ftds_odbc" -o $driver = "odbcw" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped)"
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped)"
             else
@@ -242,7 +239,7 @@ EOF
             cmd="dbapi_cursor -lb random -d $driver -S $server"
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
-            elif test $driver = "msdblib" -o $driver = "ftds_odbc" -o $driver = "odbcw" -o $driver = "ftds63" ; then
+            elif test $driver = "ftds_odbc" -o $driver = "odbcw" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
             elif test \( $driver = "ftds8" -o $driver = "ftds" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"

@@ -5,7 +5,7 @@
 ulimit -n 1024 > /dev/null 2>&1
 
 # Declare drivers and servers
-driver_list="ctlib dblib ftds ftds63 odbc odbcw msdblib ftds_odbc ftds_dblib ftds8" # mysql
+driver_list="ctlib dblib ftds odbc odbcw ftds_odbc ftds_dblib ftds8" # mysql
 server_list="MS_DEV1 SCHUMANN MSSQL67"
 # "MSSQL67 THALBERG"
 server_mssql="MS_DEV1"
@@ -117,18 +117,13 @@ EOF
                 continue
             fi
 
-            if test \( $driver = "ftds_odbc" -o $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
+            if test \( $driver = "ftds_odbc" -o $driver = "odbc" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 continue
             fi
 
             ## Do not test odbc driver on FreeBSD 4.x. 
             if test \( $driver = "ftds_odbc" -o $driver = "odbc" \) -a $SYSTEM_NAME = "FreeBSD" -a $SYSTEM_MAJOR_RELEASE = 4 ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_unit_test -d $driver -S $server (skipped because of problems with a host name to IP resolution)"
-                continue
-            fi
-
-            if test $driver = "ftds63" ; then
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_unit_test -d $driver -S $server (skipped)"
                 continue
             fi
 
