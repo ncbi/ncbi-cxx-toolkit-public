@@ -151,6 +151,7 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
         CPairwiseAln::fAllowAbutting;
 
     int flags = 
+        CPairwiseAln::fKeepNormalized |
         CPairwiseAln::fAllowMixedDir |
         CPairwiseAln::fAllowOverlap |
         CPairwiseAln::fAllowAbutting;
