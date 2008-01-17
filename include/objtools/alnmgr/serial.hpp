@@ -45,7 +45,7 @@ NCBI_XALNMGR_EXPORT
 ostream& operator<<(ostream& out, const CPairwiseAln::TRng& rng);
 
 NCBI_XALNMGR_EXPORT
-ostream& operator<<(ostream& out, const IAlnSegment::TSegTypeFlags& flags);
+ostream& operator<<(ostream& out, const IAlnSegment::ESegTypeFlags& flags);
 
 NCBI_XALNMGR_EXPORT
 ostream& operator<<(ostream& out, const IAlnSegment& aln_seg);
