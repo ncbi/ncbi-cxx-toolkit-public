@@ -35,25 +35,35 @@
 
 
 #include <objtools/alnmgr/pairwise_aln.hpp>
+#include <objtools/alnmgr/aln_explorer.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
 NCBI_XALNMGR_EXPORT
-ostream& operator<<(ostream& out, CPairwiseAln::TAlnRng aln_rng);
+ostream& operator<<(ostream& out, const CPairwiseAln::TRng& rng);
 
 NCBI_XALNMGR_EXPORT
-ostream& operator<<(ostream& out, CPairwiseAln::EFlags flags);
+ostream& operator<<(ostream& out, const IAlnSegment::TSegTypeFlags& flags);
 
 NCBI_XALNMGR_EXPORT
-ostream& operator<<(ostream& out, TAlnSeqIdIRef& aln_seq_id_iref);
+ostream& operator<<(ostream& out, const IAlnSegment& aln_seg);
 
 NCBI_XALNMGR_EXPORT
-ostream& operator<<(ostream& out, CPairwiseAln pairwise_aln);
+ostream& operator<<(ostream& out, const CPairwiseAln::TAlnRng& aln_rng);
 
 NCBI_XALNMGR_EXPORT
-ostream& operator<<(ostream& out, CAnchoredAln anchored_aln);
+ostream& operator<<(ostream& out, const CPairwiseAln::EFlags& flags);
+
+NCBI_XALNMGR_EXPORT
+ostream& operator<<(ostream& out, const TAlnSeqIdIRef& aln_seq_id_iref);
+
+NCBI_XALNMGR_EXPORT
+ostream& operator<<(ostream& out, const CPairwiseAln& pairwise_aln);
+
+NCBI_XALNMGR_EXPORT
+ostream& operator<<(ostream& out, const CAnchoredAln& anchored_aln);
 
 
 END_NCBI_SCOPE

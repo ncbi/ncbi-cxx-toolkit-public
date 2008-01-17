@@ -40,9 +40,49 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-ostream& operator<<(ostream& out, CPairwiseAln::TAlnRng aln_rng)
+ostream& operator<<(ostream& out, const CPairwiseAln::TRng& rng)
 {
-    return out << "["
+    if (rng.GetFrom() < rng.GetToOpen()) {
+        out << "["
+            << rng.GetFrom() << ", " 
+            << rng.GetToOpen()
+            << ")"
+            << " len: "
+            << rng.GetLength();
+    } else {
+        out << "<"
+            << rng.GetFrom() << ", " 
+            << rng.GetTo()
+            << ">"
+            << " len: "
+            << rng.GetLength();
+    }
+    return out;
+}
+
+
+ostream& operator<<(ostream& out, const IAlnSegment::ESegTypeFlags& flags)
+{
+    return out
+        << (flags & IAlnSegment::fAligned ? "fAligned " : "")
+        << (flags & IAlnSegment::fGap ? "fGap " : "")
+        << (flags & IAlnSegment::fReversed ? "fReversed " : "")
+        << (flags & IAlnSegment::fInvalid ? "fInvalid " : "");
+}
+
+
+ostream& operator<<(ostream& out, const IAlnSegment& aln_seg)
+{
+    return out
+        << " Rng: " << aln_seg.GetRange()
+        << " type: " << (IAlnSegment::ESegTypeFlags) aln_seg.GetType();
+}
+
+
+ostream& operator<<(ostream& out, const CPairwiseAln::TAlnRng& aln_rng)
+{
+    return out 
+        << "["
         << aln_rng.GetFirstFrom() << ", " 
         << aln_rng.GetSecondFrom() << ", "
         << aln_rng.GetLength() << ", " 
@@ -51,7 +91,7 @@ ostream& operator<<(ostream& out, CPairwiseAln::TAlnRng aln_rng)
 }
 
 
-ostream& operator<<(ostream& out, CPairwiseAln::EFlags flags)
+ostream& operator<<(ostream& out, const CPairwiseAln::EFlags& flags)
 {
     out << " Flags = " << NStr::UIntToString(flags, 0, 2)
         << ":" << endl;
@@ -73,7 +113,7 @@ ostream& operator<<(ostream& out, CPairwiseAln::EFlags flags)
 }
 
 
-ostream& operator<<(ostream& out, TAlnSeqIdIRef& aln_seq_id_iref)
+ostream& operator<<(ostream& out, const TAlnSeqIdIRef& aln_seq_id_iref)
 {
     out << aln_seq_id_iref->AsString()
         << " (base_width=" << aln_seq_id_iref->GetBaseWidth() 
@@ -82,7 +122,7 @@ ostream& operator<<(ostream& out, TAlnSeqIdIRef& aln_seq_id_iref)
 }        
 
 
-ostream& operator<<(ostream& out, CPairwiseAln pairwise_aln)
+ostream& operator<<(ostream& out, const CPairwiseAln& pairwise_aln)
 {
     out << "CPairwiseAln" << endl;
 
@@ -98,12 +138,12 @@ ostream& operator<<(ostream& out, CPairwiseAln pairwise_aln)
 }
 
 
-ostream& operator<<(ostream& out, CAnchoredAln anchored_aln)
+ostream& operator<<(ostream& out, const CAnchoredAln& anchored_aln)
 {
     out << "CAnchorAln has score of " << anchored_aln.GetScore() << " and contains " 
         << anchored_aln.GetDim() << " pair(s) of rows:" << endl;
     ITERATE(CAnchoredAln::TPairwiseAlnVector, pairwise_aln_i, anchored_aln.GetPairwiseAlns()) {
-        out << *pairwise_aln_i;
+        out << **pairwise_aln_i;
     }
     return out << endl;
 }
