@@ -217,23 +217,23 @@ public:
     /// Dump in human readable text format:
     template <class TOutStream>
     void Dump(TOutStream& os) const {
-        os << "Number of alignments: " << GetAlnCount() << endl;
+        os << "Number of alignments: " << (unsigned long)GetAlnCount() << endl;
         os << "IsCanonicalQueryAnchored:" << IsCanonicalQueryAnchored() << endl;
         os << "IsCanonicalMultiple:" << IsCanonicalMultiple() << endl;
         os << endl;
-        os << "IdVec (" << GetIdVec().size() << "):" << endl;
+        os << "IdVec (" << (unsigned long)GetIdVec().size() << "):" << endl;
         ITERATE(typename TIdVec, it, GetIdVec()) {
             os << (*it)->AsString() << " (base_width=" << (*it)->GetBaseWidth() << ")" << endl;
         }
         os << endl;
-        os << "IdMap (" << GetIdMap().size() << "):" << endl;
+        os << "IdMap (" << (unsigned long)GetIdMap().size() << "):" << endl;
         ITERATE(TIdMap, it, GetIdMap()) {
             os << it->first->AsString() << " (base_width=" << it->first->GetBaseWidth() << ")" << endl;
         }
         os << endl;
         for (size_t aln_idx = 0;  aln_idx < GetAlnCount();  ++aln_idx) {
             TDim dim = GetDimForAln(aln_idx);
-            os << "Alignment " << aln_idx << " has " 
+            os << "Alignment " << (unsigned long)aln_idx << " has " 
                << dim << " rows:" << endl;
             for (TDim row = 0;  row < dim;  ++row) {
                 os << GetSeqIdsForAln(aln_idx)[row]->AsString();
