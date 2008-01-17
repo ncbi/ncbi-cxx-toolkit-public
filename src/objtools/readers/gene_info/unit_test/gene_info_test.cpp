@@ -64,6 +64,8 @@
 
 //==========================================================================//
 
+#ifndef WORDS_BIGENDIAN
+
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
@@ -537,3 +539,5 @@ void s_ForceSymbolDefinitions(CReadDispatcher& rd)
     CPluginManagerGetterImpl::GetBase(kEmptyStr);
 }
 #endif
+
+#endif /* WORDS_BIGENDIAN */
