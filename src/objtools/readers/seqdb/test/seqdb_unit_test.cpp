@@ -1548,9 +1548,9 @@ BOOST_AUTO_TEST_CASE(GiLists)
     
     names.push_back("p,nr");
     names.push_back("n,nt");
-    names.push_back("n,genomes/corn");
-    names.push_back("n,genomes/corn");
-    names.push_back("n,genomes/barley");
+    names.push_back("n,genomes/rice");
+    names.push_back("p,genomes/rice");
+    names.push_back("n,genomes/tomato");
     
     ITERATE(vector<string>, s, names) {
         CHECK(s->length() > 2);
