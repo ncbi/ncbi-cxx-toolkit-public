@@ -61,7 +61,7 @@
 #include <objtools/alnmgr/aln_builders.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
 #include <objtools/alnmgr/seqids_extractor.hpp>
-#include <objtools/alnmgr/serial.hpp>
+#include <objtools/alnmgr/aln_serial.hpp>
 
 using namespace ncbi;
 using namespace objects;

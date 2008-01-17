@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS_ALNMGR___SERIAL__HPP
-#define OBJTOOLS_ALNMGR___SERIAL__HPP
+#ifndef OBJTOOLS_ALNMGR___ALN_SERIAL__HPP
+#define OBJTOOLS_ALNMGR___ALN_SERIAL__HPP
 /*  $Id$
 * ===========================================================================
 *
@@ -28,7 +28,7 @@
 * Author:  Kamen Todorov, NCBI
 *
 * File Description:
-*   Serialization
+*   Alignments Serialization
 *
 * ===========================================================================
 */
@@ -72,4 +72,4 @@ ostream& operator<<(ostream& out, const TAlnStats& aln_stats);
 
 END_NCBI_SCOPE
 
-#endif  // OBJTOOLS_ALNMGR___PAIRWISE_ALN__HPP
+#endif  // OBJTOOLS_ALNMGR___ALN_SERIAL__HPP

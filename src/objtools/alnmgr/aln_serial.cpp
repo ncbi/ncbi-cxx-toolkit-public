@@ -26,14 +26,14 @@
 * Author:  Kamen Todorov, NCBI
 *
 * File Description:
-*   Serialization
+*   Alignments Serialization
 *
 * ===========================================================================
 */
 
 
 #include <ncbi_pch.hpp>
-#include <objtools/alnmgr/serial.hpp>
+#include <objtools/alnmgr/aln_serial.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -175,6 +175,7 @@ ostream& operator<<(ostream& out, const TAlnStats& aln_stats)
         }
         out << endl;
     }
+    return out;
 }
 
 

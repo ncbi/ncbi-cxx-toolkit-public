@@ -42,7 +42,7 @@
 #include <objtools/alnmgr/aln_stats.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
 #include <objtools/alnmgr/aln_rng_coll_oper.hpp>
-#include <objtools/alnmgr/serial.hpp>
+#include <objtools/alnmgr/aln_serial.hpp>
 
 
 BEGIN_NCBI_SCOPE
