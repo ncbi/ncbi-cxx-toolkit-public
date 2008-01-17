@@ -32,4 +32,17 @@ ios& MSerial_VerifyDefValue(ios& io);
 %ignore ncbi::MSerial_VerifyDefault;
 %ignore ncbi::MSerial_VerifyDefValue;
 
+#ifdef SWIGPYTHON
+// support operator>> and operator<< for manipulators with arguments
+%extend ncbi::MSerial_Flags {
+    std::istream& __rrshift__(std::istream& istr) {
+        return istr >> *self;
+    };
+    // support opeator<< with streams
+    std::ostream& __rlshift__(std::ostream& ostr) {
+        return ostr << *self;
+    };
+}
+#endif
+
 #endif
