@@ -50,7 +50,7 @@ class CAlnContainer
 {
 public:
     CAlnContainer() :
-        m_SplitDisc(false)
+        m_SplitDisc(true)
     {};
 
     virtual ~CAlnContainer() {};
@@ -82,13 +82,14 @@ public:
 #if _DEBUG
         seq_align.Validate(true);
 #endif
+        const_iterator ret_it = end();
         switch (seq_align.GetSegs().Which()) {
         case TSegs::e_Disc:
             if (m_SplitDisc) {
                 ITERATE(CSeq_align_set::Tdata,
                         seq_align_it,
                         seq_align.GetSegs().GetDisc().Get()) {
-                    return insert(**seq_align_it);
+                    ret_it = insert(**seq_align_it);
                 }
                 break;
             }
@@ -97,7 +98,7 @@ public:
         case TSegs::e_Std:
         case TSegs::e_Packed:
         case TSegs::e_Spliced:
-            return
+            ret_it =
                 m_AlnSet.insert(CConstRef<CSeq_align>(&seq_align)).first;
             break;
         case TSegs::e_not_set:
@@ -107,7 +108,7 @@ public:
             NCBI_THROW(CSeqalignException, eUnsupported,
                        "Unsupported alignment type.");
         }
-        return end();
+        return ret_it;
     }
 
     const_iterator begin() const {
