@@ -104,8 +104,15 @@ inline void CSparse_CI::x_InitSegment()
                                IAlnSegment::fAligned | dir_flag);
             }
         } else {  // gap
-            TSignedSeqPos from = m_It_2->GetSecondToOpen();
-            TSignedSeqPos to = m_It_1->GetSecondFrom() - 1;
+            _ASSERT(m_It_1->IsDirect() == m_It_2->IsDirect());
+            TSignedSeqPos from, to;
+            if (m_It_1->IsDirect()) {
+                from = m_It_2->GetSecondToOpen();
+                to = m_It_1->GetSecondFrom() - 1;
+            } else {
+                from = m_It_1->GetSecondToOpen();
+                to = m_It_2->GetSecondFrom() - 1;
+            }
 
             if(m_Clip  &&  (m_It_1 == m_Clip->m_First_It  ||  m_It_1 == m_Clip->m_Last_It_1))  {
                 TSignedRange r(m_It_2->GetFirstToOpen(), m_It_1->GetFirstFrom() - 1);
