@@ -44,27 +44,58 @@ void CReadBlastApp::Init(void)
     // Specify USAGE context
     arg_desc->SetUsageContext
         (GetArguments().GetProgramBasename(),
-         "Reads seq-submit file, blast file and optional tagmap file to produce list of potential FS candidates");
+         "Microbial Genome Submission Check Tool (subcheck) is for the validation of "
+         "genome records prior to submission to GenBank. It utilizes a series of "
+         "self-consistency checks as well as comparison of submitted annotations to "
+         "computed annotations. Some of specified computed annotations could be "
+         "pre-computed using BLAST and its modifications and tRNAscanSE. Currently "
+         "there is no specific tool for predicting rRNA annotations. Please use the "
+         "format specified in documentation"
+         );
 
     // Describe the expected command-line arguments
-    arg_desc->AddDefaultKey
-        ("in", "InputFile",
-         "name of file to read from (standard input by default)",
-         CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
-
-    arg_desc->AddOptionalKey
-        ("aligndir", "AlignDir",
-         "directory to store selected alignments",
-         CArgDescriptions::eString);
-
-    arg_desc->AddOptionalKey
-        ("inblast", "InputBlastFile",
-         "name of BLAST output to read from",
+    arg_desc->AddKey
+        ("in", "input_asn",
+         "input file in the ASN.1 format, must be either Seq-entry or Seq-submit",
          CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
 
     arg_desc->AddOptionalKey
-        ("inblastcdd", "InputCDDBlastFile",
-         "name of CDD BLAST output to read from",
+        ("out", "output_asn",
+         "output file in the ASN.1 format, of the same type (Seq-entry or Seq-submit)",
+         CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
+
+    arg_desc->AddOptionalKey
+        ("inblast", "blast_res_proteins",
+         "input file which contains the standard BLAST output results (ran with -IT option) "
+         "for all query proteins "
+         "sequences specified in the input genome against a protein database (recommended: bact_prot "
+         "database of Refseq proteins supplied with the distributed standalone version of this tool)",
+         CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
+
+    arg_desc->AddOptionalKey
+        ("inblastcdd", "blast_res_cdd",
+         "input file which contains the standard BLAST output results for all query proteins "
+         "sequences specified in input_asn against the CDD database",
+         CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
+
+    arg_desc->AddOptionalKey
+        ("intrna", "input_trna",
+         "input tRNAscan predictions in default output format, default value is <-in parameter>.nfsa.tRNA",
+         CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
+
+    arg_desc->AddOptionalKey
+        ("inrrna", "input_rrna",
+         "input ribosomal RNA predictions (5S, 16S, 23S), see the manual for format, default value is <-in parameter>.nfsa.rRNA",
+         CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
+
+    arg_desc->AddOptionalKey(
+         "parentacc", "parent_genome_accession",
+         "Refseq accession of the genome which protein annotations need to be excluded from BLAST output results",
+         CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey(
+         "inparents", "InputParentsFile",
+         "contains a list of all protein accessions/GIs for each Refseq accession/GI",
          CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
 
     arg_desc->AddOptionalKey(
@@ -72,25 +103,10 @@ void CReadBlastApp::Init(void)
          "use the file to map tags in BLAST",
          CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
 
-    arg_desc->AddOptionalKey(
-         "inparents", "InputParentsFile",
-         "contains the parent ID for the genomic sequences containing given GI",
-         CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
-
-    arg_desc->AddOptionalKey(
-         "parentacc", "ParentAccessionNumber",
-         "disregard all BLAST hits with this parent_acc number",
-         CArgDescriptions::eString);
-
     arg_desc->AddDefaultKey("infmt", "InputFormat", "format of input file",
                             CArgDescriptions::eString, "asn");
     arg_desc->SetConstraint
         ("infmt", &(*new CArgAllow_Strings, "asn", "asnb", "xml"));
-
-    arg_desc->AddOptionalKey
-        ("out", "OutputFile",
-         "name of file to write to (standard output by default)",
-         CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
 
     arg_desc->AddOptionalKey
         ("outTbl", "OutputTblFile",
@@ -123,7 +139,7 @@ void CReadBlastApp::Init(void)
          CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey("outfmt", "OutputFormat", "format of output file",
-                            CArgDescriptions::eString, "xml");
+                            CArgDescriptions::eString, "asn");
     arg_desc->SetConstraint
         ("outfmt", &(*new CArgAllow_Strings, "asn", "asnb", "xml"));
 
@@ -136,7 +152,8 @@ void CReadBlastApp::Init(void)
 // put numerical algorithm related tuning parameters here
     arg_desc->AddDefaultKey(
          "small_tails_threshold", "small_tails_threshold",
-         "the sum of the left and right tails outside the aligned region for the given sum less than this threshold will make it \"small tails\"",
+         "the sum of the left and right tails outside the aligned region for "
+         "the given sum less than this threshold will make it \"small tails\"",
          CArgDescriptions::eDouble, "0.1");
 
     arg_desc->AddDefaultKey(
@@ -322,16 +339,32 @@ int CReadBlastApp::Run(void)
       }
 
     // Read TRNA
-    string tRNA_file = base;
-    tRNA_file += ".nfsa.tRNA";
+    string tRNA_file;
+    if(args["intrna"].HasValue())
+      {
+      tRNA_file = args["intrna"].AsString();
+      }
+    else
+      {
+      tRNA_file = base;
+      tRNA_file += ".nfsa.tRNA";
+      }
     int ntrna = ReadTRNA2(tRNA_file); // to m_extRNAtable2
     NcbiCerr << "Read TRNAs: " << ntrna << NcbiEndl;
 
     // end Read TRNA
 
     // Read RRNA
-    string rRNA_file = base;
-    rRNA_file += ".nfsa.rRNA";
+    string rRNA_file ;
+    if(args["inrrna"].HasValue())
+      {
+      rRNA_file =args["inrrna"].AsString();
+      }
+    else
+      {  
+      rRNA_file = base;
+      rRNA_file += ".nfsa.rRNA";
+      }
     int nrrna = ReadRRNA2(rRNA_file); // to m_extRNAtable2
     NcbiCerr << "Read RRNAs: " << nrrna << NcbiEndl;
           
