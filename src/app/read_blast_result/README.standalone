@@ -25,11 +25,13 @@ Microbial Genome Submission Check Tool
 
 Command line version
 
-Microbial Genome Submission Check Tool (subcheck) is for the validation of 
-genome submissions for submission to GenBank. It utilizes a series of self-
-consistency checks as well as comparison of submitted annotations to computed 
-annotations. Annotations are computed using BLAST, tRNAscanSE, INFERNAL and NCBI 
-rRNA prediction tools.
+Microbial Genome Submission Check Tool (subcheck) is for the validation of
+genome records prior to submission to GenBank. It utilizes a series of
+self-consistency checks as well as comparison of submitted annotations to
+computed annotations. Some of specified computed annotations could be
+pre-computed using BLAST and its modifications and tRNAscanSE. Currently
+there is no specific tool for predicting rRNA annotations. Please use the
+format specified in documentation
 
 DOWNLOAD
 
@@ -64,10 +66,10 @@ OPTIONAL ARGUMENTS
  -out <File_Out>
    output file in the ASN.1 format, of the same type (Seq-entry or Seq-submit)
  -inblast <File_In>
-   input file which contains formatted BLAST output results for all query
-   proteins sequences specified in the input genome against a protein database
-   (recommended: bact_prot database of Refseq proteins supplied with the
-   distributed standalone version of this tool)
+   input file which contains the standard BLAST output results (ran with -IT
+   option) for all query proteins sequences specified in the input genome
+   against a protein database (recommended: bact_prot database of Refseq
+   proteins supplied with the distributed standalone version of this tool)
  -inblastcdd <File_In>
    input file which contains the standard BLAST output results for all query
    proteins sequences specified in input_asn against the CDD database
