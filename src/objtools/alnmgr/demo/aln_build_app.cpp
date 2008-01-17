@@ -57,6 +57,7 @@
 #include <objtools/alnmgr/aln_converters.hpp>
 #include <objtools/alnmgr/aln_generators.hpp>
 #include <objtools/alnmgr/sparse_aln.hpp>
+#include <objtools/alnmgr/sparse_ci.hpp>
 #include <objtools/alnmgr/aln_builders.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
 #include <objtools/alnmgr/seqids_extractor.hpp>
@@ -130,6 +131,11 @@ void CAlnBuildApp::Init(void)
          "eReverse        = 2  ///< Use only sequences whose strand is opposite to that of the anchor\n",
          CArgDescriptions::eInteger, "0");
     arg_desc->SetConstraint("dir", new CArgAllow_Integers(0,2));
+
+
+    arg_desc->AddDefaultKey
+        ("anchor", "anchor", "Anchor row",
+         CArgDescriptions::eInteger, "0");
 
 
     // Merge option
@@ -245,7 +251,7 @@ int CAlnBuildApp::Run(void)
 
 
     /// Choose the first seq to be the anchor
-    aln_user_options.SetAnchorId(aln_stats.GetIdVec()[0]);
+    aln_user_options.SetAnchorId(aln_stats.GetIdVec()[GetArgs()["anchor"].AsInteger()]);
 
 
     /// Optionally, choose to filter a direction
@@ -260,7 +266,7 @@ int CAlnBuildApp::Run(void)
     ReportTime("TAnchoredAlnVec");
     {
         ITERATE(TAnchoredAlnVec, aln_vec_it, anchored_aln_vec) {
-            cout << *aln_vec_it;
+            cout << **aln_vec_it;
         }
         m_StopWatch.Restart();
     }
@@ -288,6 +294,8 @@ int CAlnBuildApp::Run(void)
     ReportTime("CSparseAln");
     if (GetArgs()["print"].AsBoolean()) {
         for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
+            cout << "Row: " << row << endl;
+
             string sequence;
             sparse_aln.GetAlnSeqString
                 (row, 
@@ -295,6 +303,15 @@ int CAlnBuildApp::Run(void)
                  sparse_aln.GetSeqAlnRange(row));
             cout << sparse_aln.GetSeqId(row).AsFastaString() << "\t"
                  << sequence << endl;
+
+            auto_ptr<IAlnSegmentIterator> sparse_ci
+                (sparse_aln.CreateSegmentIterator(row,
+                                                  sparse_aln.GetAlnRange(),
+                                                  IAlnSegmentIterator::eAllSegments));
+            while (*sparse_ci) {
+                cout << **sparse_ci << endl;
+                ++(*sparse_ci);
+            }            
         }
         ReportTime("GetAlnSeqString");
     }
