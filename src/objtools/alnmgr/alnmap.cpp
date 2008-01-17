@@ -126,10 +126,16 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
 {
     TSegTypeFlags flags = 0;
     TNumseg       l_seg, r_seg, l_index, r_index, index;
+    TNumseg       l_anchor_index, r_anchor_index, anchor_index;
     TSeqPos       cont_next_start = 0, cont_prev_stop = 0;
+    TSeqPos       anchor_cont_next_start = 0, anchor_cont_prev_stop = 0;
+    TSignedSeqPos anchor_start;
 
     l_seg = r_seg = seg;
     l_index = r_index = index = seg * m_NumRows + row;
+    if (IsSetAnchor()) {
+        l_anchor_index = r_anchor_index = anchor_index = seg * m_NumRows + m_Anchor;
+    }
 
     TSignedSeqPos start = m_Starts[index];
 
@@ -143,8 +149,11 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
     // is it aligned to sequence on the anchor?
     if (IsSetAnchor()) {
         flags |= fNotAlignedToSeqOnAnchor;
-        if (m_Starts[seg * m_NumRows + m_Anchor] >= 0) {
+        anchor_start = m_Starts[anchor_index];
+        if (anchor_start >= 0) {
             flags &= ~(flags & fNotAlignedToSeqOnAnchor);
+            anchor_cont_next_start = anchor_start + x_GetLen(m_Anchor, seg);
+            anchor_cont_prev_stop  = anchor_start;
         }
     }
 
@@ -167,6 +176,21 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
             break;
         }
     }
+    if (IsSetAnchor()  && 
+        !(flags & fNotAlignedToSeqOnAnchor)) {
+        r_seg = seg;
+        while (++r_seg < m_NumSegs) {
+            r_anchor_index += m_NumRows;
+            if ((anchor_start = m_Starts[r_anchor_index]) >= 0) {
+                if (IsPositiveStrand(m_Anchor) ?
+                    anchor_start != (TSignedSeqPos)anchor_cont_next_start :
+                    anchor_start + x_GetLen(m_Anchor, r_seg) != anchor_cont_prev_stop) {
+                    flags |= fUnalignedOnRightOnAnchor;
+                }
+                break;
+            }
+        }
+    }
 
     // what's on the left?
     if (l_seg > 0) {
@@ -185,6 +209,21 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
             }
             flags &= ~(flags & fNoSeqOnLeft);
             break;
+        }
+    }
+    if (IsSetAnchor()  && 
+        !(flags & fNotAlignedToSeqOnAnchor)) {
+        l_seg = seg;
+        while (--l_seg >= 0) {
+            l_anchor_index -= m_NumRows;
+            if ((anchor_start = m_Starts[l_anchor_index]) >= 0) {
+                if (IsPositiveStrand(m_Anchor) ?
+                    anchor_start + x_GetLen(m_Anchor, l_seg) != anchor_cont_prev_stop :
+                    anchor_start != (TSignedSeqPos)anchor_cont_next_start) {
+                    flags |= fUnalignedOnLeftOnAnchor;
+                }
+                break;
+            }
         }
     }
         
@@ -936,7 +975,8 @@ CAlnMap::x_CompareAdjacentSegTypes(TSegTypeFlags left_type,
         return false;
     }
     if (!(flags & fIgnoreUnaligned)  &&
-        (left_type & fUnalignedOnRight || right_type & fUnalignedOnLeft)) {
+        (left_type & fUnalignedOnRight || right_type & fUnalignedOnLeft ||
+         left_type & fUnalignedOnRightOnAnchor || right_type & fUnalignedOnLeftOnAnchor)) {
         return false;
     }
     if ((left_type & fNotAlignedToSeqOnAnchor) ==

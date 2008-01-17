@@ -145,6 +145,8 @@ void CAlnMapPrinter::Segments()
             if (type & CAlnMap::fNoSeqOnLeft) *m_Out << "(NoSeqOnLeft)";
             if (type & CAlnMap::fEndOnRight) *m_Out << "(EndOnRight)";
             if (type & CAlnMap::fEndOnLeft) *m_Out << "(EndOnLeft)";
+            if (type & CAlnMap::fUnalignedOnRightOnAnchor) *m_Out << "(UnalignedOnRightOnAnchor)";
+            if (type & CAlnMap::fUnalignedOnLeftOnAnchor) *m_Out << "(UnalignedOnLeftOnAnchor)";
 
             *m_Out << NcbiEndl;
         }
@@ -188,6 +190,8 @@ void CAlnMapPrinter::Chunks(CAlnMap::TGetChunkFlags flags)
             if (chunk->GetType() & CAlnMap::fEndOnRight) *m_Out << "(EndOnRight)";
             if (chunk->GetType() & CAlnMap::fEndOnLeft) *m_Out << "(EndOnLeft)";
             if (chunk->GetType() & CAlnMap::fUnaligned) *m_Out << "(Unaligned)";
+            if (chunk->GetType() & CAlnMap::fUnalignedOnRightOnAnchor) *m_Out << "(UnalignedOnRightOnAnchor)";
+            if (chunk->GetType() & CAlnMap::fUnalignedOnLeftOnAnchor) *m_Out << "(UnalignedOnLeftOnAnchor)";
             *m_Out << NcbiEndl;
         }
     }

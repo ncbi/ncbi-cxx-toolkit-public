@@ -48,16 +48,18 @@ public:
     // data types
     typedef unsigned int TSegTypeFlags; // binary OR of ESegTypeFlags
     enum ESegTypeFlags {
-        fSeq                     = 0x0001,
-        fNotAlignedToSeqOnAnchor = 0x0002,
-        fInsert                  = fSeq | fNotAlignedToSeqOnAnchor,
-        fUnalignedOnRight        = 0x0004, // unaligned region on the right
-        fUnalignedOnLeft         = 0x0008,
-        fNoSeqOnRight            = 0x0010, // maybe gaps on the right but no seq
-        fNoSeqOnLeft             = 0x0020,
-        fEndOnRight              = 0x0040, // this is the last segment
-        fEndOnLeft               = 0x0080,
-        fUnaligned               = 0x0100, // this is an unaligned region
+        fSeq                      = 0x0001,
+        fNotAlignedToSeqOnAnchor  = 0x0002,
+        fInsert                   = fSeq | fNotAlignedToSeqOnAnchor,
+        fUnalignedOnRight         = 0x0004, // unaligned region to the right of this segment
+        fUnalignedOnLeft          = 0x0008,
+        fNoSeqOnRight             = 0x0010, // maybe gaps on the right but no seq
+        fNoSeqOnLeft              = 0x0020,
+        fEndOnRight               = 0x0040, // this is the last segment
+        fEndOnLeft                = 0x0080,
+        fUnaligned                = 0x0100, // this is an unaligned region
+        fUnalignedOnRightOnAnchor = 0x0200, // unaligned region to the right of the corresponding segment on the anchor
+        fUnalignedOnLeftOnAnchor  = 0x0400,
         // reserved for internal use
         fTypeIsSet            = (TSegTypeFlags) 0x80000000
     };
