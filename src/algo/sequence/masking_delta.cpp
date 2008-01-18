@@ -48,7 +48,7 @@ namespace {
     };
 
     template<typename Iter, typename Less>
-    bool is_sorted(Iter begin, Iter end, Less less)
+    bool s_is_sorted(Iter begin, Iter end, Less less)
     {
         if ( begin == end ) {
             return true;
@@ -67,12 +67,12 @@ CRef<CBioseq> MakeMaskingBioseq(const CSeq_id& new_id,
                                 const CSeq_id& original_id,
                                 const vector<CRange<TSeqPos> >& mask_ranges)
 {
-    if ( !is_sorted(mask_ranges.begin(), mask_ranges.end(), ByFrom()) ) {
+    if ( !s_is_sorted(mask_ranges.begin(), mask_ranges.end(), ByFrom()) ) {
         vector<CRange<TSeqPos> > ranges(mask_ranges);
         sort(ranges.begin(), ranges.end(), ByFrom());
         return MakeMaskingBioseq(new_id, seq_length, original_id, ranges);
     }
-    _ASSERT(is_sorted(mask_ranges.begin(), mask_ranges.end(), ByFrom()));
+    _ASSERT(s_is_sorted(mask_ranges.begin(), mask_ranges.end(), ByFrom()));
 
     CRef<CBioseq> seq(new CBioseq);
     CRef<CSeq_id> seq_id(new CSeq_id);
