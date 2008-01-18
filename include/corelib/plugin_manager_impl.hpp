@@ -151,12 +151,12 @@ protected:
     /// (or returns the deafult value)
     Uint8
     GetParamDataSize(const TPluginManagerParamTree* params,
-                const string&                  param_name,
-                bool                           /* mandatory */,
-                unsigned int                   default_value) const
+                     const string&                  param_name,
+                     bool                           /* mandatory */,
+                     unsigned int                   default_value) const
     {
         CConfig conf(params);
-        return (unsigned)conf.GetDataSize(m_DriverName,
+        return conf.GetDataSize(m_DriverName,
                                 param_name,
                                 CConfig::eErr_NoThrow,
                                 default_value);
