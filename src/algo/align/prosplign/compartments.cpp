@@ -145,16 +145,21 @@ CRef<CSeq_align> MakeCompartment(THitRefs& hitrefs)
     return result;
 }
 
-CRef<CSeq_align_set> SelectCompartmentsHits(THitRefs& hitrefs, CCompartOptions compart_options)
+CRef<CSeq_align_set> SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptions compart_options)
 {
     CRef<CSeq_align_set> results (new CSeq_align_set);
-    if (hitrefs.empty())
+    if (orig_hitrefs.empty())
         return results;
 
-    NON_CONST_ITERATE(THitRefs, it, hitrefs) {
-        (*it)->SetQueryMax(((*it)->GetQueryMax()+1)*3-1);
-        (*it)->SetQueryMin((*it)->GetQueryMin()*3);
-        (*it)->SetIdentity(0.99);
+    THitRefs hitrefs;
+
+    ITERATE(THitRefs, it, orig_hitrefs) {
+        THitRef hitref(new THit(**it));
+        hitref->SetQueryMax((hitref->GetQueryMax()+1)*3-1);
+        hitref->SetQueryMin(hitref->GetQueryMin()*3);
+        hitref->SetIdentity(0.99);
+
+        hitrefs.push_back(hitref);
     }
 
     //count 'pseudo' length	
@@ -227,7 +232,7 @@ TCompartments MakeCompartments(const CSeq_align_set& compartments, CCompartOptio
     return results;
 }
 
-TCompartments MakeCompartments(CSplign::THitRefs& hitrefs, CCompartOptions compart_options, int protein_len)
+TCompartments MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options, int protein_len)
 {
     TCompartments results = MakeCompartments(*SelectCompartmentsHits(hitrefs, compart_options), compart_options);
     
