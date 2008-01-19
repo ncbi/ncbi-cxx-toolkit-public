@@ -31,7 +31,7 @@ tmp_dir=${2:-`pwd`}
 date_time=${3:+"--date=$3"}
 svn_tree=${4:-'--development'}
 
-svn_core='/am/ncbiapdata/svn/scripts/svn_core.sh'
+svn_core='/am/ncbiapdata/scripts/common/svn_core.sh'
 src_dir="$tmp_dir/c++.checklist"
 conf_name="TEST_CONF"
 
