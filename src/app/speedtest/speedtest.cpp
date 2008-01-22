@@ -58,7 +58,7 @@ private:
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
-    void CMytestApplication::DoProcess (
+    void DoProcess (
         CNcbiIstream& ip,
         CNcbiOstream& op,
         CRef<CSeq_entry>& se
