@@ -1924,7 +1924,7 @@ string NStr::XmlEncode(const string& str)
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-predefined-ent
 {
     string result;
-    SIZE_TYPE i, j = 0;
+    SIZE_TYPE i;
     for (i = 0;  i < str.size();  i++) {
         char c = str[i];
         switch ( c ) {
