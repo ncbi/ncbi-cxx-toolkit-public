@@ -261,7 +261,7 @@ EXTRA_RESOURCES : $(SRCDIR)\objects\seqloc\accguide.txt
 #
 # Target: Copy the pattern files
 #
-$(PATTERNS) : $(SRCDIR)\gui\gbench\patterns\$(*B).ini
+$(PATTERNS) : $(SRCDIR)\gui\res\etc\patterns\$(*B).ini
     @if exist $** echo Updating $(*B).ini...
     @if exist $** $(COPY) $** $(GBENCH)\etc\patterns > NUL
 

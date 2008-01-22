@@ -5491,7 +5491,7 @@ fi
 
 ## Genome Workbench
 
-if test "$with_gbench" != "no"  -a  -d ${real_srcdir}/src/gui/gbench \
+if test "$with_gbench" != "no"  -a  -d ${real_srcdir}/src/gui/app/gbench \
     -a  -d ${real_srcdir}/src/gui/plugins; then
    reason=""
    sep=
