@@ -7,7 +7,7 @@ SUB_PROJ = sample asn2asn asn2fasta asn2flat id1_fetch blast convert_seq \
            nmer_repeats objmgr gi2taxid netcache netschedule \
 		   winmasker dustmasker segmasker \
            agpconvert id2_fetch agp_validate objextract netbvstore lds_indexer \
-           bdb_env_keeper nw_aligner project_tree_builder
+           bdb_env_keeper nw_aligner project_tree_builder speedtest
 
 REQUIRES = app
 
