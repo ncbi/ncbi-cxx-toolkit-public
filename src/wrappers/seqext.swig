@@ -129,6 +129,24 @@ public:
 };
 #endif
 
+// alnmgr stream inserters
+%ignore ncbi::operator<<;
+#ifdef SWIGPYTHON
+%define ADD_STREAM_INSERTER(class_name)
+%extend class_name {
+    std::ostream&
+    __rlshift__(std::ostream& ostr) {
+        return ostr << *self;
+    }
+};
+%enddef
+//ADD_STREAM_INSERTER(CPairwiseAln::TAlnRng)  // CAlignRange<TPos>
+//ADD_STREAM_INSERTER(CPairwiseAln::EFlags)
+//ADD_STREAM_INSERTER(TAlnSeqIdIRef)  // CIRef<IAlnSeqId>
+ADD_STREAM_INSERTER(ncbi::CPairwiseAln)
+ADD_STREAM_INSERTER(ncbi::CAnchoredAln)
+#endif
+
 %%
 
 // Obsolescent
@@ -158,6 +176,7 @@ objtools/alnmgr/aln_explorer.hpp
 objtools/alnmgr/aln_generators.hpp
 objtools/alnmgr/aln_rng_coll_oper.hpp
 objtools/alnmgr/aln_seqid.hpp
+objtools/alnmgr/aln_serial.hpp
 objtools/alnmgr/aln_stats.hpp
 objtools/alnmgr/aln_tests.hpp
 objtools/alnmgr/aln_user_options.hpp
@@ -348,7 +367,7 @@ objtools/format/items/wgs_item.hpp
 %extend ncbi::objects::CSeqVector {
 public:
 #ifdef SWIGPYTHON
-    std::string __getslice__(int i, int j) const {
+    std::string __getslice__(ssize_t i, ssize_t j) const {
 #else
     std::string getslice(int i, int j) const {
 #endif
