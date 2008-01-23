@@ -321,54 +321,126 @@ public:
     virtual ~I_Result(void);
 
 public:
-    /// Get type of the result
+    /// @brief 
+    ///   Get type of the result
+    /// 
+    /// @return 
+    ///   Result type
     virtual EDB_ResType ResultType(void) const = 0;
 
-    /// Get # of items (columns) in the result
+    /// @brief 
+    ///   Get # of items (columns) in the result.
+    /// 
+    /// @return 
+    ///   Number of items (columns) in the result.
     virtual unsigned int NofItems(void) const = 0;
 
-    /// Get name of a result item.
-    /// Return NULL if "item_num" >= NofItems().
+    /// @brief 
+    ///   Get name of a result item.
+    /// 
+    /// @param item_num 
+    ///   Number of item, starting from 0.
+    ///
+    /// @return 
+    ///    NULL if "item_num" >= NofItems(), otherwise item name.
     virtual const char* ItemName(unsigned int item_num) const = 0;
 
-    /// Get size (in bytes) of a result item.
-    /// Return zero if "item_num" >= NofItems().
+    /// @brief 
+    ///   Get size (in bytes) of a result item.
+    /// 
+    /// @param item_num 
+    ///   Number of item, starting from 0.
+    /// 
+    /// @return 
+    ///   Return zero if "item_num" >= NofItems().
     virtual size_t ItemMaxSize(unsigned int item_num) const = 0;
 
-    /// Get datatype of a result item.
-    /// Return 'eDB_UnsupportedType' if "item_num" >= NofItems().
+    /// @brief 
+    ///   Get datatype of a result item.
+    /// 
+    /// @param item_num 
+    ///   Number of item, starting from 0.
+    /// 
+    /// @return 
+    ///   Return 'eDB_UnsupportedType' if "item_num" >= NofItems().
     virtual EDB_Type ItemDataType(unsigned int item_num) const = 0;
 
-    /// Fetch next row
+    /// @brief 
+    ///   Fetch next row
+    /// 
+    /// @return
+    ///   - true if a record was fetched.
+    ///   - false if no more record can be fetched.
     virtual bool Fetch(void) = 0;
 
-    /// Return current item number we can retrieve (0,1,...)
-    /// Return "-1" if no more items left (or available) to read.
+    /// @brief 
+    ///   Return current item number we can retrieve (0,1,...)
+    /// 
+    /// @return 
+    ///   Return current item number we can retrieve (0,1,...)
+    ///   Return "-1" if no more items left (or available) to read.
     virtual int CurrentItemNo(void) const = 0;
 
-    /// Return number of columns in the recordset.
+    /// @brief 
+    ///   Return number of columns in the recordset.
+    /// 
+    /// @return 
+    ///   number of columns in the recordset.
     virtual int GetColumnNum(void) const = 0;
 
-    /// Get a result item (you can use either GetItem or ReadItem).
-    /// If "item_buf" is not NULL, then use "*item_buf" (its type should be
-    /// compatible with the type of retrieved item!) to retrieve the item to;
-    /// otherwise allocate new "CDB_Object".
+    /// @brief 
+    ///   Get a result item (you can use either GetItem or ReadItem).
+    /// 
+    /// @param item_buf 
+    ///   If "item_buf" is not NULL, then use "*item_buf" (its type should be
+    ///   compatible with the type of retrieved item!) to retrieve the item to;
+    ///   otherwise allocate new "CDB_Object".
+    /// 
+    /// @return 
+    ///   a result item
+    ///
+    /// @sa
+    ///   ReadItem, SkipItem
     virtual CDB_Object* GetItem(CDB_Object* item_buf = 0) = 0;
 
-    /// Read a result item body (for text/image mostly).
-    /// Return number of successfully read bytes.
-    /// Set "*is_null" to TRUE if the item is <NULL>.
-    /// Throw an exception on any error.
+    /// @brief 
+    ///   Read a result item body (for text/image mostly).
+    ///   Throw an exception on any error.
+    /// 
+    /// @param buffer 
+    ///   Buffer to fill with data.
+    /// @param buffer_size 
+    ///   Buffere size.
+    /// @param is_null 
+    ///   Set "*is_null" to TRUE if the item is <NULL>.
+    /// 
+    /// @return 
+    ///   number of successfully read bytes.
+    ///
+    /// @sa
+    ///   GetItem, SkipItem
     virtual size_t ReadItem(void* buffer, size_t buffer_size,
                             bool* is_null = 0) = 0;
 
-    /// Get a descriptor for text/image column (for SendData).
-    /// Return NULL if this result doesn't (or can't) have img/text descriptor.
-    /// NOTE: you need to call ReadItem (maybe even with buffer_size == 0)
-    ///       before calling this method!
+    /// @brief 
+    ///   Get a descriptor for text/image column (for SendData).
+    /// 
+    /// @return 
+    ///   Return NULL if this result doesn't (or can't) have img/text descriptor.
+    ///
+    /// @note
+    ///   You need to call ReadItem (maybe even with buffer_size == 0)
+    ///   before calling this method!
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void) = 0;
 
+    /// @brief 
     /// Skip result item
+    /// 
+    /// @return 
+    ///   TRUE on success.
+    /// 
+    /// @sa
+    ///   GetItem, ReadItem
     virtual bool SkipItem(void) = 0;
 };
 
@@ -390,60 +462,124 @@ public:
 
     /// Connection mode
     enum EConnectionMode {
-        fBcpIn             = 0x1,
-        fPasswordEncrypted = 0x2,
+        fBcpIn             = 0x1,  //< Enable BCP
+        fPasswordEncrypted = 0x2,  //< Encript password
         fDoNotConnect      = 0x4   //< Use just connections from NotInUse pool
         // all driver-specific mode flags > 0x100
     };
-    typedef int TConnectionMode;  //< holds a binary OR of "EConnectionMode"
 
+    typedef int TConnectionMode;   //< holds a binary OR of "EConnectionMode"
+
+    /// Arguments for Connect()
+    /// @sa I_DriverContext::Connect()
     struct NCBI_DBAPIDRIVER_EXPORT SConnAttr {
         SConnAttr(void);
 
-        string          srv_name;
-        string          user_name;
-        string          passwd;
-        TConnectionMode mode;
-        bool            reusable;
-        string          pool_name;
+        string          srv_name;  //< Server (or service) name
+        string          user_name; //< User name
+        string          passwd;    //< Password
+        TConnectionMode mode;      //< Connection mode
+        bool            reusable;  //< Use connection pool with this connection
+        string          pool_name; //< Pool name to be used with this connection
     };
 
-    /// Set login and connection timeouts.
-    /// NOTE:  if "nof_secs" is zero or is "too big" (depends on the underlying
-    ///        DB API), then set the timeout to infinite.
-    /// Return FALSE on error.
-    virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
-    virtual bool SetTimeout      (unsigned int nof_secs = 0);
+    /// Set login timeout.
+    ///
+    /// @param nof_secs
+    ///   Timeout in seconds. If "nof_secs" is zero or is "too big" 
+    ///    (depends on the underlying DB API), then set the timeout to infinite.
+    /// @return
+    ///   FALSE on error.
+    ///
+    /// @sa
+    ///   GetLoginTimeout()
+    virtual bool SetLoginTimeout(unsigned int nof_secs = 0);
 
-    /// Methods below may be overrided in order to return a value taken directly
-    /// from the API.
+    /// Set connection timeouts.
+    ///
+    /// @param nof_secs
+    ///   Timeout in seconds. If "nof_secs" is zero or is "too big" 
+    ///   (depends on the underlying DB API), then set the timeout to infinite.
+    /// @return
+    ///   FALSE on error.
+    ///
+    /// @sa
+    ///   GetTimeout()
+    virtual bool SetTimeout(unsigned int nof_secs = 0);
+
+    /// Get login timeout
+    ///
+    /// @return
+    ///   Login timeout.
+    /// @sa
+    ///   SetLoginTimeout()
     virtual unsigned int GetLoginTimeout(void) const { return m_LoginTimeout; }
-    virtual unsigned int GetTimeout     (void) const { return m_Timeout;      }
 
-    /// Set maximal size for Text and Image objects. Text and Image objects
-    /// exceeding this size will be truncated.
-    /// Return FALSE on error (e.g. if "nof_bytes" is too big).
+    /// Get connection timeout
+    ///
+    /// @return
+    ///   Connection timeout.
+    ///
+    /// @sa
+    ///   SetTimeout()
+    virtual unsigned int GetTimeout(void) const { return m_Timeout; }
+
+    /// Set maximal size for Text and Image objects. 
+    ///
+    /// @param nof_bytes
+    ///   Maximal size for Text and Image objects. Text and Image objects 
+    ///   exceeding this size will be truncated.
+    /// @return 
+    ///   FALSE on error (e.g. if "nof_bytes" is too big).
     virtual bool SetMaxTextImageSize(size_t nof_bytes) = 0;
 
-    /// Create new connection to specified server (within this context).
+
+    /// @brief 
+    ///   Create new connection to specified server (or service) within this context.
+    /// 
+    /// @param srv_name
+    ///   Server/Service name. This parameter can be a SERVER name (host name,
+    ///   DNS alias name, or one of the names found in interfaces file) or an
+    ///   IP address. This parameter can also be a SERVICE name, which is
+    ///   defined by Load Balancer framework. In order to enable using of LB
+    ///   service names you have to call DBLB_INSTALL_DEFAULT() macro before
+    ///   any other DBAPI method.
+    /// @param user_name
+    ///   User name.
+    /// @param passwd 
+    ///   User password.
+    /// @param mode 
+    ///   Connection mode.
+    /// @param reusable 
+    ///   If set to TRUE, then return connection into a connection pool on deletion.
+    /// @param pool_name 
+    ///   Name of a pool to which this connection is going to belong.
+    /// 
+    /// @return 
+    ///   Connection object on success, NULL on error.
+    ///
+    /// NOTE:
+    ///
     /// It is your responsibility to delete the returned connection object.
     /// reusable - controls connection pooling mechanism. If it is set to true
     /// then a connection will be added to a pool  of connections instead of
     /// closing.
-    ///
-    /// pool_name - name of a pool to which this connection is going to belong.
-    ///
+    /// 
     /// srv_name, user_name and passwd may be set to empty string.
     ///
     /// If pool_name is provided then connection will be taken from a pool
     /// having this name if a pool is not empty.
+    ///
     /// It is your responsibility to put connections with the same
     /// server/user/password values in a pool.
+    ///
     /// If a pool name is not provided but a server name (srv_name) is provided
     /// instead then connection with the same name will be taken from a pool of
     /// connections if a pool is not empty.
+    /// 
     /// If a pool is empty then new connection will be created unless you passed
     /// mode = fDoNotConnect. In this case NULL will be returned.
+    ///
     /// If you did not provide either a pool name or a server name then NULL will
     /// be returned.
     virtual CDB_Connection* Connect
@@ -454,25 +590,55 @@ public:
      bool            reusable  = false,
      const string&   pool_name = kEmptyStr) = 0;
 
-    /// Create new connection to specified server (within this context).
+    
+    /// @brief 
+    ///   Create new connection to specified server (within this context).
+    /// 
+    /// @param srv_name 
+    ///   Server/Service name. This parameter can be a SERVER name (host name,
+    ///   DNS alias name, or one of the names found in interfaces file) or an
+    ///   IP address. This parameter can also be a SERVICE name, which is
+    ///   defined by Load Balancer framework. In order to enable using of LB
+    ///   service names you have to call DBLB_INSTALL_DEFAULT() macro before
+    ///   any other DBAPI method.
+    /// @param user_name 
+    ///   User name.
+    /// @param passwd
+    ///   User password.
+    /// @param validator
+    ///   Connection validation object.
+    /// @param mode 
+    ///   Connection mode.
+    /// @param reusable 
+    ///   If set to true put connection into a connection pool on deletion.
+    /// @param pool_name 
+    ///   Name of a pool to which this connection is going to belong.
+    /// 
+    /// @return 
+    ///   Connection object on success, NULL on error.
+    ///
+    /// NOTE:
+    /// 
     /// It is your responsibility to delete the returned connection object.
     /// reusable - controls connection pooling mechanism. If it is set to true
     /// then a connection will be added to a pool  of connections instead of
     /// closing.
     ///
-    /// pool_name - name of a pool to which this connection is going to belong.
-    ///
     /// srv_name, user_name and passwd may be set to empty string.
     ///
     /// If pool_name is provided then connection will be taken from a pool
     /// having this name if a pool is not empty.
+    /// 
     /// It is your responsibility to put connections with the same
     /// server/user/password values in a pool.
+    ///
     /// If a pool name is not provided but a server name (srv_name) is provided
     /// instead then connection with the same name will be taken from a pool of
     /// connections if a pool is not empty.
+    ///
     /// If a pool is empty then new connection will be created unless you passed
     /// mode = fDoNotConnect. In this case NULL will be returned.
+    ///
     /// If you did not provide either a pool name or a server name then NULL will
     /// be returned.
     virtual CDB_Connection* ConnectValidated
@@ -484,60 +650,160 @@ public:
      bool            reusable  = false,
      const string&   pool_name = kEmptyStr) = 0;
 
-    /// Return number of currently open connections in this context.
-    /// If "srv_name" is not NULL, then return # of conn. open to that server.
+    /// @brief 
+    ///   Return number of currently open connections in this context.
+    /// 
+    /// @param srv_name 
+    ///   Server/Service name. If not empty, then return # of connection 
+    ///   open to that server.
+    /// @param pool_name 
+    ///   Name of connection pool.
+    /// 
+    /// @return 
+    ///   Return number of currently open connections in this context.
+    ///   If "srv_name" is not NULL, then return # of conn. open to that server.
     virtual unsigned int NofConnections(const string& srv_name  = kEmptyStr,
                                         const string& pool_name = kEmptyStr)
         const = 0;
 
-    /// Add message handler "h" to process 'context-wide' (not bound
-    /// to any particular connection) error messages.
+    /// @brief 
+    ///   Add message handler "h" to process 'context-wide' (not bound
+    ///   to any particular connection) error messages.
+    /// 
+    /// @param h 
+    ///   Error message handler.
+    /// @param ownership 
+    ///   If set to eNoOwnership, it is user's responsibility to unregister
+    ///   and delete the error message handler.
+    ///   If set to eTakeOwnership, then DBAPI will take ownership of the
+    ///   error message handler and delete it itself.
+    ///
+    /// @sa 
+    ///   PopCntxMsgHandler()
     virtual void PushCntxMsgHandler(CDB_UserHandler* h,
                             EOwnership ownership = eNoOwnership) = 0;
 
-    /// Remove message handler "h" and all handlers above it in the stack
+    /// @brief 
+    ///   Remove message handler "h" and all handlers above it in the stack.
+    /// 
+    /// @param h 
+    ///   Error message handler to be removed.
+    ///
+    /// @sa 
+    ///   PushCntxMsgHandler()
     virtual void PopCntxMsgHandler(CDB_UserHandler* h) = 0;
 
-    /// Add `per-connection' err.message handler "h" to the stack of default
-    /// handlers which are inherited by all newly created connections.
+    /// @brief 
+    ///   Add `per-connection' err.message handler "h" to the stack of default
+    ///   handlers which are inherited by all newly created connections.
+    /// 
+    /// @param h 
+    ///   Error message handler.
+    /// @param ownership 
+    ///   If set to eNoOwnership, it is user's responsibility to unregister
+    ///   and delete the error message handler.
+    ///   If set to eTakeOwnership, then DBAPI will take ownership of the
+    ///   error message handler and delete it itself.
+    ///
+    /// @sa
+    ///   PopDefConnMsgHandler()
     virtual void PushDefConnMsgHandler(CDB_UserHandler* h,
                                EOwnership ownership = eNoOwnership) = 0;
 
-    /// Remove `per-connection' mess. handler "h" and all above it in the stack.
+    /// @brief 
+    ///   Remove `per-connection' mess. handler "h" and all above it in the stack.
+    /// 
+    /// @param h 
+    ///   Error message handler.
+    ///
+    /// @sa
+    ///   PushDefConnMsgHandler()
     virtual void PopDefConnMsgHandler(CDB_UserHandler* h) = 0;
 
     /// Report if the driver supports this functionality
     enum ECapability {
-        eBcp,
-        eReturnITDescriptors,
-        eReturnComputeResults
+        eBcp,                 //< Is able to run BCP operations.
+        eReturnITDescriptors, //< Is able to return ITDescriptor.
+        eReturnComputeResults //< Is able to return compute results.
     };
+
+    /// @brief
+    ///   Check if a driver is acle to provide necessary functionality.
+    /// 
+    /// @param cpb 
+    ///   Functionality to query about.
+    /// 
+    /// @return 
+    ///   - true if functionality is present
+    ///   - false if no such functionality.
     virtual bool IsAbleTo(ECapability cpb) const = 0;
 
-    /// close reusable deleted connections for specified server and/or pool
+    /// @brief 
+    ///   Close reusable deleted connections for specified server and/or pool.
+    /// 
+    /// @param srv_name 
+    ///   Server/Service name.
+    /// @param pool_name 
+    ///   Name of connection pool.
     virtual void CloseUnusedConnections(const string& srv_name  = kEmptyStr,
                                 const string& pool_name = kEmptyStr) = 0;
 
-    /// app_name defines the application name that a connection will use when
-    /// connecting to a server.
+    /// @brief
+    ///   Set application name.
+    /// 
+    /// @param app_name 
+    ///   defines the application name that a connection will use when
+    ///   connecting to a server.
+    ///
+    /// @sa
+    ///   GetApplicationName()
     void SetApplicationName(const string& app_name);
+    
+    /// @brief 
+    ///   Return application name.
+    /// 
+    /// @return
+    ///   Application name.
+    ///
+    /// @sa
+    ///   SetApplicationName()
     const string& GetApplicationName(void) const;
 
+    /// @brief 
+    ///   Set host name.
+    /// 
+    /// @param host_name
+    ///   Host name
+    ///
+    /// @sa
+    ///   GetHostName()
     void SetHostName(const string& host_name);
+    
+    /// @brief 
+    ///  Get host name.
+    /// 
+    /// @return 
+    ///  Host name.
+    ///
+    /// @sa
+    ///   SetHostName()
     const string& GetHostName(void) const;
 
 protected:
     virtual CDB_Connection* MakePooledConnection(const SConnAttr& conn_attr) = 0;
 
 private:
-    unsigned int    m_LoginTimeout;
-    unsigned int    m_Timeout;
+    unsigned int    m_LoginTimeout; //< Login timeout.
+    unsigned int    m_Timeout;      //< Connection timeout.
 
-    string          m_AppName;
-    string          m_HostName;
+    string          m_AppName;  //< Application name.
+    string          m_HostName; //< Host name
 
     friend class IDBConnectionFactory;
 };
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -551,9 +817,16 @@ public:
     virtual ~I_Connection(void);
 
 protected:
-    /// Check out if connection is alive (this function doesn't ping the server,
+    /// @brief 
+    /// Check out if connection is alive. 
+    ///
+    /// This function doesn't ping the server,
     /// it just checks the status of connection which was set by the last
-    /// i/o operation)
+    /// i/o operation.
+    /// 
+    /// @return 
+    ///   - true if connection is alive
+    ///   - false in other case.
     virtual bool IsAlive(void) = 0;
 
     /// These methods:  LangCmd(), RPC(), BCPIn(), Cursor() and SendDataCmd()
@@ -576,63 +849,185 @@ protected:
                                   const string& query,
                                   unsigned int  nof_params,
                                   unsigned int  batch_size = 1) = 0;
-    /// "Send-data" command
+    /// @brief 
+    ///   Create send-data command.
+    /// 
+    /// @param desc 
+    ///   Lob descriptor.
+    /// @param data_size 
+    ///   Maximal data size.
+    /// @param log_it 
+    ///   Log LOB operation if this value is set to true.
+    /// 
+    /// @return 
+    ///   Newly created send-data object.
+    ///
+    /// @sa SendData
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
                                          bool            log_it = true) = 0;
 
-    /// Shortcut to send text and image to the server without using the
-    /// "Send-data" command (SendDataCmd)
+    /// @brief 
+    ///   Shortcut to send text and image to the server without using the
+    ///   "Send-data" command (SendDataCmd)
+    /// 
+    /// @param desc 
+    ///   Lob descriptor.
+    /// @param txt 
+    ///   Text object.
+    /// @param log_it 
+    ///   Log LOB operation if this value is set to true.
+    /// 
+    /// @return 
+    ///   - true on success.
+    ///
+    /// @sa
+    ///   SendDataCmd
     virtual bool SendData(I_ITDescriptor& desc, CDB_Text& txt,
                           bool log_it = true) = 0;
+    
+    /// @brief 
+    ///   Shortcut to send text and image to the server without using the
+    ///   "Send-data" command (SendDataCmd)
+    /// 
+    /// @param desc 
+    ///   Lob descriptor.
+    /// @param img 
+    ///   Image object.
+    /// @param log_it 
+    ///   Log LOB operation if this value is set to true.
+    /// 
+    /// @return 
+    ///   - true on success.
+    ///
+    /// @sa
+    ///   SendDataCmd
     virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
                           bool log_it = true) = 0;
 
+    /// @brief 
     /// Reset the connection to the "ready" state (cancel all active commands)
+    /// 
+    /// @return 
+    ///   - true on success.
     virtual bool Refresh(void) = 0;
 
-    /// Get the server name, user login name, and password
+    /// @brief 
+    ///   Get the server name.
+    /// 
+    /// @return
+    ///   Server/Service name.
     virtual const string& ServerName(void) const = 0;
+    
+    /// @brief 
+    ///   Get the user user.
+    /// 
+    /// @return
+    ///   User name.
     virtual const string& UserName(void) const = 0;
+
+    /// @brief 
+    ///   Get the  password.
+    /// 
+    /// @return 
+    ///   Password value.
     virtual const string& Password(void) const = 0;
 
+    /// @brief 
     /// Get the bitmask for the connection mode (BCP, secure login, ...)
+    /// 
+    /// @return 
+    ///  bitmask for the connection mode (BCP, secure login, ...)
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const = 0;
 
-    /// Check if this connection is a reusable one
+    /// @brief 
+    ///   Check if this connection is a reusable one
+    /// 
+    /// @return 
+    ///   - true if this connection is a reusable one.
     virtual bool IsReusable(void) const = 0;
 
-    /// Find out which connection pool this connection belongs to
+    /// @brief 
+    ///   Find out which connection pool this connection belongs to
+    /// 
+    /// @return 
+    ///   connection pool
     virtual const string& PoolName(void) const = 0;
 
-    /// Get pointer to the driver context
+    /// @brief 
+    ///   Get pointer to the driver context
+    /// 
+    /// @return 
+    ///   pointer to the driver context
     virtual I_DriverContext* Context(void) const = 0;
 
-    /// Put the message handler into message handler stack
+    /// @brief 
+    ///   Put the message handler into message handler stack
+    /// 
+    /// @param h 
+    ///   Error message handler.
+    /// @param ownership 
+    ///   If set to eNoOwnership, it is user's responsibility to unregister
+    ///   and delete the error message handler.
+    ///   If set to eTakeOwnership, then DBAPI will take ownership of the
+    ///   error message handler and delete it itself.
+    ///
+    /// @sa
+    ///   PopMsgHandler
     virtual void PushMsgHandler(CDB_UserHandler* h,
                                 EOwnership ownership = eNoOwnership) = 0;
 
-    /// Remove the message handler (and all above it) from the stack
+    /// @brief 
+    ///   Remove the message handler (and all above it) from the stack
+    /// 
+    /// @param h 
+    ///   Error message handler.
+    /// @sa
+    ///   PushMsgHandler
     virtual void PopMsgHandler(CDB_UserHandler* h) = 0;
 
+    /// @brief 
+    ///   Set new result-processor.
+    /// 
+    /// @param rp 
+    ///   New result-processor.
+    /// 
+    /// @return 
+    ///   Old result-processor
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp) = 0;
 
-    /// abort the connection
-    /// Attention: it is not recommended to use this method unless you absolutely have to.
-    /// The expected implementation is - close underlying file descriptor[s] without
-    /// destroing any objects associated with a connection.
-    /// Returns: true - if succeed
-    ///          false - if not
+    /// Abort the connection
+    /// 
+    /// @return 
+    ///  TRUE - if succeeded, FALSE if not
+    ///
+    /// @note
+    ///   Attention: it is not recommended to use this method unless you 
+    ///   absolutely have to.  The expected implementation is - close 
+    ///   underlying file descriptor[s] without destroing any objects 
+    ///   associated with a connection.
+    ///
+    /// @sa
+    ///   Close
     virtual bool Abort(void) = 0;
 
-    /// Close an open connection.
-    /// Returns: true - if successfully closed an open connection.
-    ///          false - if not
+    ///  Close an open connection.
+    ///  This method will return connection (if it is created as reusable) to 
+    ///  its connection pool
+    ///   
+    /// @return 
+    ///  TRUE - if succeeded, FALSE if not
+    ///
+    /// @sa
+    ///   Abort, I_DriverContext::Connect
     virtual bool Close(void) = 0;
 
-    /// Set connection timeout.
-    /// NOTE:  if "nof_secs" is zero or is "too big" (depends on the underlying
-    ///        DB API), then set the timeout to infinite.
+    /// @brief 
+    ///   Set connection timeout.    
+    /// 
+    /// @param nof_secs 
+    ///   Number of seconds.  If "nof_secs" is zero or is "too big" 
+    ///   (depends on the underlying DB API), then set the timeout to infinite.
     virtual void SetTimeout(size_t nof_secs) = 0;
 };
 
