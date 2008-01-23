@@ -1,0 +1,10 @@
+<!--    
+                This is the DTD for uilist report for all dbs
+$Id$
+-->
+<!-- ================================================================= -->
+
+<!ELEMENT	Id		(#PCDATA)>
+<!ELEMENT	IdList		(Id*)>
+
+

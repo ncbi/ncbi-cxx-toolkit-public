@@ -1,0 +1,4 @@
+# $Id$
+
+SRC = uilist__ uilist___
+LIB = uilist
