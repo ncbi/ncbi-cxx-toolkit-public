@@ -686,11 +686,10 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
 void CDBAPIUnitTest::Test_Unicode(void)
 {
     string table_name("#test_unicode_table");
-    // string table_name("DBAPI_Sample..test_nstring_table");
+    // string table_name("DBAPI_Sample..test_unicode_table");
 
     string sql;
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-    string str_rus("坚坚 假结 俞家");
     string str_ger("Au遝rdem k鰊nen Sie einzelne Eintr鋑e aus Ihrem "
                    "Suchprotokoll entfernen");
 
@@ -698,7 +697,15 @@ void CDBAPIUnitTest::Test_Unicode(void)
     string str_utf8("\xD0\x9F\xD1\x83\xD0\xBF\xD0\xBA\xD0\xB8\xD0\xBD");
 //     string str_utf8("HELLO");
 
-    CStringUTF8 utf8_str_1252_rus(str_rus, eEncoding_Windows_1252);
+    // Russian phrase in UTF8 encoding ...
+    const unsigned char str_rus_utf8[] =
+    {
+        0xd0, 0x9c, 0xd0, 0xb0, 0xd0, 0xbc, 0xd0, 0xb0, 0x20, 0xd0, 0xbc, 0xd1,
+        0x8b, 0xd0, 0xbb, 0xd0, 0xb0, 0x20, 0xd1, 0x80, 0xd0, 0xb0, 0xd0, 0xbc,
+        0xd1, 0x83, 0x00
+    };
+
+    CStringUTF8 utf8_str_1252_rus(reinterpret_cast<const char*>(str_rus_utf8), eEncoding_UTF8);
     CStringUTF8 utf8_str_1252_ger(str_ger, eEncoding_Windows_1252);
     CStringUTF8 utf8_str_utf8(str_utf8, eEncoding_UTF8);
 
@@ -763,7 +770,6 @@ void CDBAPIUnitTest::Test_Unicode(void)
             BOOST_CHECK( nvc255_value.size() > 0);
             BOOST_CHECK_EQUAL( utf8_str_utf8.size(), nvc255_value.size() );
             BOOST_CHECK_EQUAL( utf8_str_utf8, nvc255_value );
-            CStringUTF8 utf8_utf8(nvc255_value, eEncoding_UTF8);
 
             // Read utf8_str_1252_rus ...
             BOOST_CHECK( rs->Next() );
@@ -771,10 +777,6 @@ void CDBAPIUnitTest::Test_Unicode(void)
             BOOST_CHECK( nvc255_value.size() > 0);
             BOOST_CHECK_EQUAL( utf8_str_1252_rus.size(), nvc255_value.size() );
             BOOST_CHECK_EQUAL( utf8_str_1252_rus, nvc255_value );
-            CStringUTF8 utf8_rus(nvc255_value, eEncoding_UTF8);
-            string value_rus =
-                utf8_rus.AsSingleByteString(eEncoding_Windows_1252);
-            BOOST_CHECK_EQUAL( str_rus, value_rus );
 
             // Read utf8_str_1252_ger ...
             BOOST_CHECK( rs->Next() );
