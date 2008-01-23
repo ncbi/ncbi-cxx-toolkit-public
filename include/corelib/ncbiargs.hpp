@@ -1056,7 +1056,7 @@ public:
     string GetUsage(void) const = 0;
 
     /// Print constraints in XML format
-    virtual void PrintUsageXml(CNcbiOstream& out) const = 0;
+    virtual void PrintUsageXml(CNcbiOstream& out) const;
 
 protected:
     /// Protected destructor.
