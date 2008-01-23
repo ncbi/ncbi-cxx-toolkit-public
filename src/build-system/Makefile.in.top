@@ -16,6 +16,8 @@ INSTALL      = @INSTALL@
 lbindir      = $(build_root)/bin
 llibdir      = $(build_root)/lib
 
+PROJECTS     = @PROJECTS@
+
 all: $(PROJECTS)
 	if test -s "$(PROJECTS)"; then \
 	    cd $(builddir) && $(MAKE) $(MFLAGS) all_p; \
