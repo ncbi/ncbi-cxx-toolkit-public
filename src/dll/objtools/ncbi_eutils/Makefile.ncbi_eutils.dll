@@ -3,7 +3,7 @@
 DLL = ncbi_eutils
 
 HOSTED_LIBS    = eutils egquery elink epost esearch espell esummary linkout \
-                 einfo
+                 einfo uilist
                  
 # pubmed nlmsharedcatcit nlmcommon nlmmedline nlmmedlinecitation
 

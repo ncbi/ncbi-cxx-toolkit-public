@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/eutils/api/eutils.hpp>
+#include <objtools/eutils/uilist/IdList.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -95,6 +96,10 @@ public:
     /// Get serial stream format for reading data
     virtual ESerialDataFormat GetSerialDataFormat(void) const;
 
+protected:
+    // Fully implemented only for literature and taxonomy databases.
+    CRef<uilist::CIdList> x_FetchIdList(int chunk_size);
+
 private:
     typedef CEUtils_Request TParent;
 
@@ -144,6 +149,12 @@ public:
 
     /// Get CGI script query string
     virtual string GetQueryString(void) const;
+
+    /// Get IdList using the currently set DB, WebEnv, retstart, retmax etc.
+    /// The method changes rettype to uilist and retmode to xml, all other
+    /// parameters are unchanged.
+    /// Limit number of ids in a single request to chunk_size if it's > 0.
+    CRef<uilist::CIdList> FetchIdList(int chunk_size = 10000);
 
 private:
     typedef CEFetch_Request TParent;
@@ -283,6 +294,12 @@ public:
 
     /// Get CGI script query string
     virtual string GetQueryString(void) const;
+
+    /// Get IdList using the currently set DB, WebEnv, retstart, retmax etc.
+    /// The method changes rettype to uilist and retmode to xml, all other
+    /// parameters are unchanged.
+    /// Limit number of ids in a single request to chunk_size if it's > 0.
+    CRef<uilist::CIdList> FetchIdList(int chunk_size = 10000);
 
 private:
     typedef CEFetch_Request TParent;

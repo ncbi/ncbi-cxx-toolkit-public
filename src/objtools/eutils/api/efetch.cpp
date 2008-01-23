@@ -101,6 +101,31 @@ ESerialDataFormat CEFetch_Request::GetSerialDataFormat(void) const
 }
 
 
+CRef<uilist::CIdList> CEFetch_Request::x_FetchIdList(int chunk_size)
+{
+    int retstart = GetRetStart();
+    int retmax = GetRetMax();
+    if (chunk_size <= 0) {
+        chunk_size = retmax;
+    }
+    // Get in XML mode
+    SetRetMode(eRetMode_xml);
+    // Get chunks
+    CRef<uilist::CIdList> id_list(new uilist::CIdList);
+    uilist::CIdList::TId& ids = id_list->SetId();
+    uilist::CIdList tmp;
+    for (int i = retstart; i < retmax; i += chunk_size) {
+        SetRetStart(i);
+        SetRetMax(chunk_size < (retmax - i) ? chunk_size : (retmax - i));
+        *GetObjectIStream() >> tmp;
+        ids.splice(ids.end(), tmp.SetId());
+    }
+    SetRetStart(retstart);
+    SetRetMax(retmax);
+    return id_list;
+}
+
+
 CEFetch_Literature_Request::
 CEFetch_Literature_Request(ELiteratureDB db,
                            CRef<CEUtils_ConnContext>& ctx)
@@ -128,10 +153,18 @@ string CEFetch_Literature_Request::GetQueryString(void) const
 {
     string args = TParent::GetQueryString();
     if (m_RetType != eRetType_none) {
-        args = "&rettype=";
+        args += "&rettype=";
         args += x_GetRetTypeName();
     }
     return args;
+}
+
+
+CRef<uilist::CIdList>
+CEFetch_Literature_Request::FetchIdList(int chunk_size)
+{
+    SetRetType(eRetType_uilist);
+    return x_FetchIdList(chunk_size);
 }
 
 
@@ -168,7 +201,7 @@ string CEFetch_Sequence_Request::GetQueryString(void) const
 {
     string args = TParent::GetQueryString();
     if (m_RetType != eRetType_none) {
-        args = "&rettype=";
+        args += "&rettype=";
         args += x_GetRetTypeName();
     }
     if (m_Complexity != eComplexity_none) {
@@ -214,10 +247,18 @@ string CEFetch_Taxonomy_Request::GetQueryString(void) const
 {
     string args = TParent::GetQueryString();
     if (m_Report != eReport_none) {
-        args = "&report=";
+        args += "&report=";
         args += x_GetReportName();
     }
     return args;
+}
+
+
+CRef<uilist::CIdList>
+CEFetch_Taxonomy_Request::FetchIdList(int chunk_size)
+{
+    SetReport(eReport_uilist);
+    return x_FetchIdList(chunk_size);
 }
 
 

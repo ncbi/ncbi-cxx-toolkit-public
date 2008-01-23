@@ -565,4 +565,4 @@ QOBJMGR_STATIC_LIBS = $(QOBJMGR_ONLY_LIBS:%=%$(STATIC)) qall
 
 # EUtils
 EUTILS_LIBS = eutils egquery elink epost esearch espell esummary linkout \
-              einfo
+              einfo uilist

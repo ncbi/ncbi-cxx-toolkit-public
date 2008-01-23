@@ -40,6 +40,13 @@
 BEGIN_NCBI_SCOPE
 
 
+CEUtils_Request::CEUtils_Request(CRef<CEUtils_ConnContext>& ctx)
+    : m_Context(ctx),
+      m_Stream(0)
+{
+}
+
+
 CRef<CEUtils_ConnContext>& CEUtils_Request::GetConnContext(void) const
 {
     if ( !m_Context ) {

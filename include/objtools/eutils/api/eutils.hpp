@@ -113,7 +113,7 @@ class NCBI_EUTILS_EXPORT CEUtils_Request
 public:
     /// Create request. If the context is NULL, a new empty context will be
     /// created for the request.
-    CEUtils_Request(CRef<CEUtils_ConnContext>& ctx) : m_Context(ctx) {}
+    CEUtils_Request(CRef<CEUtils_ConnContext>& ctx);
     virtual ~CEUtils_Request(void) {}
 
     /// Get CGI script name (e.g. efetch.fcgi).
