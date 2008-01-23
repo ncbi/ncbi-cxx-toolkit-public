@@ -297,11 +297,7 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                     continue;
                 }
             }
-            if (isSimpleSeq || hasNotag) {
-                member.PrintXMLSchema(out, indent, true);
-            } else {
-                member.PrintXMLSchema(out, indent);
-            }
+            member.PrintXMLSchema(out, indent, isSimpleSeq);
         }
     }
     ITERATE ( list<string>, s, closetag1 ) {

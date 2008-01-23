@@ -88,15 +88,24 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
     if (!use.empty()) {
         out << " use=\"" << use << "\"";
     } else {
-        const CBoolDataType* bt = dynamic_cast<const CBoolDataType*>(this);
-        if (mem && optional) {
-            if (bt) {
+        if (GetXmlSourceSpec()) {
+            if (optional) {
                 out << " minOccurs=\"0\"";
-            } else {
-                if (mem->GetDefault()) {
-                    out << " default=\"" << mem->GetDefault()->GetXmlString() << "\"";
-                } else {
+            }
+            if (mem && mem->GetDefault()) {
+                out << " default=\"" << mem->GetDefault()->GetXmlString() << "\"";
+            }
+        } else {
+            const CBoolDataType* bt = dynamic_cast<const CBoolDataType*>(this);
+            if (mem && optional) {
+                if (bt) {
                     out << " minOccurs=\"0\"";
+                } else {
+                    if (mem->GetDefault()) {
+                        out << " default=\"" << mem->GetDefault()->GetXmlString() << "\"";
+                    } else {
+                        out << " minOccurs=\"0\"";
+                    }
                 }
             }
         }
@@ -224,6 +233,9 @@ const char* CBoolDataType::GetXMLContents(void) const
 
 string CBoolDataType::GetSchemaTypeString(void) const
 {
+    if (GetXmlSourceSpec()) {
+        return "xs:boolean";
+    }
     if (GetParentType() && 
         GetParentType()->GetDataMember() &&
         GetParentType()->GetDataMember()->Attlist()) {
