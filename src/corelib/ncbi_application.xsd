@@ -90,20 +90,93 @@
   </xs:complexType>
 </xs:element>
 
+<xs:simpleType name="char_type">
+  <xs:restriction base="xs:string">
+    <xs:enumeration value="Alnum"/>
+    <xs:enumeration value="Alpha"/>
+    <xs:enumeration value="Cntrl"/>
+    <xs:enumeration value="Digit"/>
+    <xs:enumeration value="Graph"/>
+    <xs:enumeration value="Lower"/>
+    <xs:enumeration value="Print"/>
+    <xs:enumeration value="Punct"/>
+    <xs:enumeration value="Space"/>
+    <xs:enumeration value="Upper"/>
+    <xs:enumeration value="Xdigit"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:complexType name="arg_constraint">
+  <xs:sequence>
+    <xs:element name="description" type="xs:string"/>
+    <xs:choice>
+      <xs:element name="Symbols">
+        <xs:complexType>
+          <xs:choice>
+            <xs:element name="type" type="char_type"/>
+            <xs:element name="value" maxOccurs="unbounded">
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:length value="1"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:element>
+          </xs:choice>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="String">
+        <xs:complexType>
+          <xs:choice>
+            <xs:element name="type" type="char_type"/>
+            <xs:element name="charset" type="xs:string"/>
+          </xs:choice>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Strings">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="value" type="xs:string" maxOccurs="unbounded"/>
+          </xs:sequence>
+          <xs:attribute name="case_sensitive" type="xs:boolean" use="required"/>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Int8s">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="min" type="xs:long"/>
+            <xs:element name="max" type="xs:long"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Integers">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="min" type="xs:int"/>
+            <xs:element name="max" type="xs:int"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Doubles">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="min" type="xs:double"/>
+            <xs:element name="max" type="xs:double"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Regexp" type="xs:string">
+      </xs:element>
+    </xs:choice>
+  </xs:sequence>
+  <xs:attribute name="inverted" type="xs:boolean" use="optional" default="false"/>
+</xs:complexType>
+
 <xs:complexType name="arg_base">
   <xs:sequence>
     <xs:element name="description" type="xs:string"/>
     <xs:element name="group" type="xs:unsignedInt" minOccurs="0" default="0"/>
     <xs:element name="synopsis" type="xs:string" minOccurs="0"/>
-    <xs:element name="constraint" minOccurs="0">
-      <xs:complexType>
-        <xs:simpleContent>
-          <xs:extension base="xs:string">
-            <xs:attribute name="inverted" type="xs:boolean" use="optional" default="false"/>
-          </xs:extension>
-        </xs:simpleContent>
-      </xs:complexType>
-    </xs:element>
+    <xs:element name="constraint" type="arg_constraint" minOccurs="0"/>
     <xs:element name="flags" minOccurs="0">
       <xs:complexType>
         <xs:sequence>

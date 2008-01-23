@@ -62,6 +62,12 @@ string CArgAllow_Regexp::GetUsage(void) const
     return "to match Perl regular expression: '" + m_Pattern + "'";
 }
 
+void CArgAllow_Regexp::PrintUsageXml(CNcbiOstream& out) const
+{
+    out << "<" << "Regexp" << ">" << endl;
+    out << m_Pattern;
+    out << "</" << "Regexp" << ">" << endl;
+}
 
 CArgAllow_Regexp::~CArgAllow_Regexp(void)
 {

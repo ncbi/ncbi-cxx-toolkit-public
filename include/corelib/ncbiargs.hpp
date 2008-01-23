@@ -1055,6 +1055,9 @@ public:
     virtual 
     string GetUsage(void) const = 0;
 
+    /// Print constraints in XML format
+    virtual void PrintUsageXml(CNcbiOstream& out) const = 0;
+
 protected:
     /// Protected destructor.
     ///
@@ -1114,6 +1117,9 @@ protected:
     /// Get usage information.
     virtual string GetUsage(void) const;
 
+    /// Print constraints in XML format
+    virtual void PrintUsageXml(CNcbiOstream& out) const;
+
     /// Protected destructor.
     virtual ~CArgAllow_Symbols(void);
 
@@ -1152,6 +1158,9 @@ protected:
 
     /// Get usage information.
     virtual string GetUsage(void) const;
+
+    /// Print constraints in XML format
+    virtual void PrintUsageXml(CNcbiOstream& out) const;
 };
 
 
@@ -1198,6 +1207,9 @@ protected:
     /// Get usage information.
     virtual string GetUsage(void) const;
 
+    /// Print constraints in XML format
+    virtual void PrintUsageXml(CNcbiOstream& out) const;
+
     /// Protected destructor.
     virtual ~CArgAllow_Strings(void);
 
@@ -1234,6 +1246,9 @@ protected:
 
     /// Get usage information.
     virtual string GetUsage(void) const;
+
+    /// Print constraints in XML format
+    virtual void PrintUsageXml(CNcbiOstream& out) const;
 
 private:
     Int8 m_Min;  ///< Minimum value of range
@@ -1285,6 +1300,9 @@ protected:
 
     /// Get usage information.
     virtual string GetUsage(void) const;
+
+    /// Print constraints in XML format
+    virtual void PrintUsageXml(CNcbiOstream& out) const;
 
 private:
     double m_Min;   ///< Minimum value of range

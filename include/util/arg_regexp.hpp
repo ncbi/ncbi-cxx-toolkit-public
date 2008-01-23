@@ -74,6 +74,9 @@ protected:
     /// Get usage information.
     virtual string GetUsage(void) const;
 
+    /// Print constraints in XML format
+    virtual void PrintUsageXml(CNcbiOstream& out) const;
+
     /// Protected destructor.
     virtual ~CArgAllow_Regexp(void);
 

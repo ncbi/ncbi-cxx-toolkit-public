@@ -663,8 +663,9 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
         if (IsConstraintInverted()) {
             out << " inverted=\"true\"";
         }
-        out << ">";
-        s_WriteEscapedStr(out,constraint.c_str());
+        out << ">" << endl;
+        s_WriteXmlLine( out, "description", constraint.c_str());
+        GetConstraint()->PrintUsageXml(out);
         out << "</" << "constraint" << ">" << endl;
     }
 
@@ -2813,8 +2814,6 @@ CArgAllow::~CArgAllow(void)
     return;
 }
 
-
-
 ///////////////////////////////////////////////////////
 //  s_IsSymbol() -- check if the symbol belongs to one of standard character
 //                  classes from <ctype.h>, or to user-defined symbol set
@@ -2864,6 +2863,25 @@ static string s_GetUsageSymbol(CArgAllow_Symbols::ESymbolClass symbol_class,
     _TROUBLE;  return kEmptyStr;
 }
 
+static string s_GetSymbolClass(CArgAllow_Symbols::ESymbolClass symbol_class)
+{
+    switch ( symbol_class ) {
+    case CArgAllow_Symbols::eAlnum:   return "Alnum";
+    case CArgAllow_Symbols::eAlpha:   return "Alpha";
+    case CArgAllow_Symbols::eCntrl:   return "Cntrl";
+    case CArgAllow_Symbols::eDigit:   return "Digit";
+    case CArgAllow_Symbols::eGraph:   return "Graph";
+    case CArgAllow_Symbols::eLower:   return "Lower";
+    case CArgAllow_Symbols::ePrint:   return "Print";
+    case CArgAllow_Symbols::ePunct:   return "Punct";
+    case CArgAllow_Symbols::eSpace:   return "Space";
+    case CArgAllow_Symbols::eUpper:   return "Upper";
+    case CArgAllow_Symbols::eXdigit:  return "Xdigit";
+    case CArgAllow_Symbols::eUser:    return "User";
+    }
+    _TROUBLE;  return kEmptyStr;
+}
+
 
 
 ///////////////////////////////////////////////////////
@@ -2900,6 +2918,19 @@ string CArgAllow_Symbols::GetUsage(void) const
     return "one symbol: " + s_GetUsageSymbol(m_SymbolClass, m_SymbolSet);
 }
 
+void CArgAllow_Symbols::PrintUsageXml(CNcbiOstream& out) const
+{
+    out << "<" << "Symbols" << ">" << endl;
+    if (m_SymbolClass != eUser) {
+        s_WriteXmlLine( out, "type", s_GetSymbolClass(m_SymbolClass).c_str());
+    } else {
+        ITERATE( string, p, m_SymbolSet) {
+            string c;
+            s_WriteXmlLine( out, "value", c.append(1,*p).c_str());
+        }
+    }
+    out << "</" << "Symbols" << ">" << endl;
+}
 
 CArgAllow_Symbols::~CArgAllow_Symbols(void)
 {
@@ -2940,6 +2971,18 @@ string CArgAllow_String::GetUsage(void) const
 {
     return "to contain only symbols: " +
         s_GetUsageSymbol(m_SymbolClass, m_SymbolSet);
+}
+
+
+void CArgAllow_String::PrintUsageXml(CNcbiOstream& out) const
+{
+    out << "<" << "String" << ">" << endl;
+    if (m_SymbolClass != eUser) {
+        s_WriteXmlLine( out, "type", s_GetSymbolClass(m_SymbolClass).c_str());
+    } else {
+        s_WriteXmlLine( out, "charset", m_SymbolSet.c_str());
+    }
+    out << "</" << "String" << ">" << endl;
 }
 
 
@@ -2997,6 +3040,23 @@ CArgAllow_Strings::GetUsage(void) const
 }
 
 
+void CArgAllow_Strings::PrintUsageXml(CNcbiOstream& out) const
+{
+    out << "<" << "Strings";
+    out << " case_sensitive=\"";
+    if ( m_Strings.key_comp()("a", "A") ) {
+        out << "false";
+    } else {
+        out << "true";
+    }
+    out << "\">" << endl;
+    ITERATE( TStrings, p, m_Strings) {
+        s_WriteXmlLine( out, "value", (*p).c_str());
+    }
+    out << "</" << "Strings" << ">" << endl;
+}
+
+
 CArgAllow_Strings::~CArgAllow_Strings(void)
 {
     return;
@@ -3031,6 +3091,19 @@ bool CArgAllow_Int8s::Verify(const string& value) const
 string CArgAllow_Int8s::GetUsage(void) const
 {
     return NStr::Int8ToString(m_Min) + ".." + NStr::Int8ToString(m_Max);
+}
+
+
+void CArgAllow_Int8s::PrintUsageXml(CNcbiOstream& out) const
+{
+    string tag("Int8s");
+    if (dynamic_cast<const CArgAllow_Integers*>(this) != 0) {
+        tag = "Integers";
+    }
+    out << "<" << tag << ">" << endl;
+    s_WriteXmlLine( out, "min", NStr::Int8ToString(m_Min).c_str());
+    s_WriteXmlLine( out, "max", NStr::Int8ToString(m_Max).c_str());
+    out << "</" << tag << ">" << endl;
 }
 
 
@@ -3073,6 +3146,15 @@ bool CArgAllow_Doubles::Verify(const string& value) const
 string CArgAllow_Doubles::GetUsage(void) const
 {
     return NStr::DoubleToString(m_Min) + ".." + NStr::DoubleToString(m_Max);
+}
+
+
+void CArgAllow_Doubles::PrintUsageXml(CNcbiOstream& out) const
+{
+    out << "<" << "Doubles" << ">" << endl;
+    s_WriteXmlLine( out, "min", NStr::DoubleToString(m_Min).c_str());
+    s_WriteXmlLine( out, "max", NStr::DoubleToString(m_Max).c_str());
+    out << "</" << "Doubles" << ">" << endl;
 }
 
 const char* CArgException::GetErrCodeString(void) const
