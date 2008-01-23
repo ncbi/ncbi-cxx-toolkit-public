@@ -109,7 +109,7 @@
 <xs:complexType name="arg_constraint">
   <xs:sequence>
     <xs:element name="description" type="xs:string"/>
-    <xs:choice>
+    <xs:choice minOccurs="0">
       <xs:element name="Symbols">
         <xs:complexType>
           <xs:choice>
@@ -164,8 +164,7 @@
           </xs:sequence>
         </xs:complexType>
       </xs:element>
-      <xs:element name="Regexp" type="xs:string">
-      </xs:element>
+      <xs:element name="Regexp" type="xs:string"/>
     </xs:choice>
   </xs:sequence>
   <xs:attribute name="inverted" type="xs:boolean" use="optional" default="false"/>
