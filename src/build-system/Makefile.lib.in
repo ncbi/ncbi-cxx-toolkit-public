@@ -75,7 +75,9 @@ clean:
 purge: clean purge-headers deactivate
 
 deactivate:
-	-$(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) \
-	    $(libdir)/$(XLIBLINK) $(status_dir)/$(XLIBDEPLINK)
+	-if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
+	    $(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) \
+	        $(libdir)/$(XLIBLINK) $(status_dir)/$(XLIBDEPLINK); \
+	fi
 
 .PHONY: default_rule all clean purge deactivate

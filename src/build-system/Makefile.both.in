@@ -130,8 +130,11 @@ clean:
 purge: clean purge-headers deactivate
 
 deactivate:
-	-$(RM) $(libdir)/$(XLIB) $(libdir)/$(XDLL) $(libdir)/$(XLIBLINK) \
-		$(status_dir)/$(XLIBDEP) $(status_dir)/$(XDLLDEP)
-	@has_dll_loadable@-$(RM) $(libdir)/$(XDLL_LOADABLE)
+	-if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
+	    $(RM) $(libdir)/$(XLIB) $(libdir)/$(XDLL) $(libdir)/$(XLIBLINK) \
+	        $(status_dir)/$(XLIBDEP) $(status_dir)/$(XDLLDEP); \
+	    [ '@has_dll_loadable@' = '@# ' ]  ||  \
+	        $(RM) $(libdir)/$(XDLL_LOADABLE); \
+	fi
 
 .PHONY: default_rule all clean purge deactivate
