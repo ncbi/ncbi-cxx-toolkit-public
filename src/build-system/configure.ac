@@ -829,7 +829,7 @@ case "$host_os:$compiler" in
       -a "$with_strip" = "yes" ; then
       LDFLAGS="-s $LDFLAGS"
    fi
-   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
+   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/unix/cxx_filter.$compiler.sh"
    LINK_FILTER="$CXX_FILTER"
    AR_FILTER="$CXX_FILTER"
    serial_ws50_rtti_kludge="rtti"
@@ -850,7 +850,7 @@ case "$host_os:$compiler" in
    : ${CXXCPP:="$CXX -E -LANG:std"}
    LDFLAGS="-LANG:std -G0 -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section $LDFLAGS"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
-   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
+   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/unix/cxx_filter.$compiler.sh"
    ;;
 
  cygwin*:GCC )
@@ -1444,20 +1444,6 @@ if test "$compiler" = "KCC" ; then
    case "$host_os" in
       solaris* )  CPPFLAGS="-D__EXTENSIONS__ -D__STDC__=0 $CPPFLAGS" ;;
    esac
-   # Often hangs for no good reason :-/; limit time to ~17 minutes per instance
-   if test -x compilers/wrapper.KCC.sh; then
-      wrap="compilers/wrapper.KCC.sh"
-      CC_WRAPPER="$CC_WRAPPER $wrap"
-      CXX_WRAPPER="$CXX_WRAPPER $wrap"
-      AR_WRAPPER="$AR_WRAPPER $wrap"
-      CXXCPP="$CXX -E" # Don't double-wrap...
-   fi
-   if test -n "$kcc_license" ; then
-      kcc_CC="$CC"
-      kcc_CXX="$CXX"
-      CC="./compilers/cxx_filter.KCC.sh $CC"
-      CXX="./compilers/cxx_filter.KCC.sh $CXX"
-   fi
 fi
 
 
@@ -1466,8 +1452,8 @@ if test "$compiler" = "ICC" ; then
    if test -n "$icc_license" ; then
       icc_CC="$CC"
       icc_CXX="$CXX"
-      CC="./compilers/cxx_filter.ICC.sh $CC"
-      CXX="./compilers/cxx_filter.ICC.sh $CXX"
+      CC="./compilers/unix/cxx_filter.ICC.sh $CC"
+      CXX="./compilers/unix/cxx_filter.ICC.sh $CXX"
    fi
 fi
 
@@ -5635,10 +5621,10 @@ case "$AR"     in compilers/*)     AR="\$(top_srcdir)/$AR"     ;; esac
 ### Get Insure++ to honor the Toolkit's psrc file
 case "$CC" in
    */insure*)
-      CC="$CC -Zop \$(top_srcdir)/compilers/psrc -D__INSURE__"
-      CXX="$CXX -Zop \$(top_srcdir)/compilers/psrc -D__INSURE__"
-      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/compilers/psrc -D__INSURE__"
-      LINK_DLL=`echo "$LINK_DLL" | sed -e 's:insure:& -Zop \$(top_srcdir)/compilers/psrc:'`
+      CC="$CC -Zop \$(top_srcdir)/compilers/unix/psrc -D__INSURE__"
+      CXX="$CXX -Zop \$(top_srcdir)/compilers/unix/psrc -D__INSURE__"
+      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/compilers/unix/psrc -D__INSURE__"
+      LINK_DLL=`echo "$LINK_DLL" | sed -e 's:insure:& -Zop \$(top_srcdir)/compilers/unix/psrc:'`
    ;;
 esac
 
