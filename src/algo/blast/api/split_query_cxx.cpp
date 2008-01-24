@@ -574,9 +574,7 @@ CQuerySplitter::x_ComputeContextOffsets_NonTranslatedQueries()
 #ifdef DEBUG_COMPARE_SEQUENCES
     const BLAST_SequenceBlk* global_seq = m_LocalQueryData->GetSequenceBlk();
 #endif
-    const size_t kOverlapSize =
-        SplitQuery_GetOverlapChunkSize(m_Options->GetProgramType());
-    const size_t kOverlap = kOverlapSize;
+    const size_t kOverlap = SplitQuery_GetOverlapChunkSize(kProgram);
     CContextTranslator ctx_translator(*m_SplitBlk, &m_QueryChunkFactories,
                                       m_Options);
     vector<const BlastQueryInfo*> chunk_qinfo(m_NumChunks, 0);
