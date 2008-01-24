@@ -76,6 +76,9 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
     case CProjKey::eLib:
         path += ".lib";
         break;
+    case CProjKey::eDll:
+        path += ".dll";
+        break;
     default:
         break;
     }
@@ -94,6 +97,8 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
     }
     if (failed == m_Configs.size()) {
         prj.m_MakeType = eMakeType_ExcludedByReq;
+        PTB_WARNING_EX(path, ePTB_ConfigurationError,
+                       "All build configurations are invalid, project excluded: " << prj.m_Name);
     }
     
     // Attributes:

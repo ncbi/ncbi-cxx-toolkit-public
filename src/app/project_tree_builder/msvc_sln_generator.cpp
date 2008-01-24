@@ -121,6 +121,10 @@ void CMsvcSolutionGenerator::VerifyProjectDependencies(void)
                     const CPrjContext& prj_i = n->second;
                     if (prj_i.m_Project.m_MakeType == eMakeType_ExcludedByReq) {
                         project.m_Project.m_MakeType = eMakeType_ExcludedByReq;
+                        PTB_WARNING_EX(project.m_ProjectPath,
+                            ePTB_ConfigurationError,
+                            "Project excluded because of dependent project: " <<
+                            prj_i.m_ProjectName);
                         changed = true;
                         break;
                     }
