@@ -5,4 +5,7 @@
 ASN_DEP = seqset
 
 LIB = xalnmgr
-SRC = alnmap alnvec alnmix alnseq alnsegments alnmatch alnmerger alndiag alnmapprint alnvecprint alnpos_ci aln_seqid sparse_aln sparse_ci aln_converters aln_generators aln_serial
+SRC = aln_converters aln_generators aln_seqid aln_serial alndiag alnmap \
+      alnmapprint alnmatch alnmerger alnmix alnpos_ci alnsegments alnseq \
+      alnvec alnvec_iterator alnvecprint sparse_aln sparse_ci
+
