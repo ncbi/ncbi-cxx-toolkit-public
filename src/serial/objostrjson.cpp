@@ -424,8 +424,8 @@ void CObjectOStreamJson::WriteSeparator(void)
 
 void CObjectOStreamJson::WriteMemberId(const CMemberId& id)
 {
-    string name;
-    name += id.GetName();
+    string name = id.GetName();
+    NStr::ReplaceInPlace(name,"-","_");
     x_WriteString(name);
     NameSeparator();
     m_SkippedMemberId.erase();
