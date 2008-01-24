@@ -1,0 +1,8 @@
+# $Id$
+
+APP_PROJ = subcheck
+
+REQUIRES = objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
