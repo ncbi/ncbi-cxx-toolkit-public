@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include "read_blast_result.hpp"
 
+
 // static members definition
 // algorithm control
 double CReadBlastApp::m_small_tails_threshold;
@@ -755,7 +756,7 @@ bool CReadBlastApp::skip_to_valid_seq_cand(
 // ReadPreviousAcc(args["parentacc"].AsString(), m_previous_genome)
 bool CReadBlastApp::ReadPreviousAcc(const string& file, list<long>& input_acc)
 {
-   const int max_acc_len=0xF;
+   const unsigned int max_acc_len=0xF;
    ifstream in(file.c_str());
    if(!in.is_open()) return false; // the input parameter is not a file
    list<long> scratch_acc;

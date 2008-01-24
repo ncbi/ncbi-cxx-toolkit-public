@@ -1,3 +1,6 @@
+#ifndef APP__READ_BLAST_RESULT__TBL__HPP
+#define APP__READ_BLAST_RESULT__TBL__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -31,15 +34,10 @@
 * ===========================================================================
 */
 
-#include <stdio.h>
-
-using namespace std;
-
-class Ctbl;
-class Ctbl_feat;
-class Ctbl_seg;
-
 #include <corelib/ncbiobj.hpp>
+#include <istream>
+
+USING_NCBI_SCOPE;
 
 
 class Ctbl_seg : public CObject
@@ -82,6 +80,8 @@ private:
   Ttbl_qual m_qual;
 };
 
+
+
 class Ctbl_feat : public CObject
 {
 public:
@@ -106,6 +106,8 @@ private:
   string   m_table_name;
 };
 
+
+
 class Ctbl
 {
 public:
@@ -119,3 +121,5 @@ private:
   Ttbl_feat m_feat;
 };
 
+
+#endif /* APP__READ_BLAST_RESULT__TBL__HPP */

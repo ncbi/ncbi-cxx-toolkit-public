@@ -30,16 +30,12 @@
 * ===========================================================================
 */
 
+
 #include <ncbi_pch.hpp>
-#include <string.h>
-
 #include <corelib/ncbienv.hpp>
-
-
-
-USING_SCOPE(ncbi);
-
 #include "tbl.hpp"
+
+
 
 bool Ctbl::Read(istream& in)
 {

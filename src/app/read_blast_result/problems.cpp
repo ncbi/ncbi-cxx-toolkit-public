@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include "read_blast_result.hpp"
 
+
 void CReadBlastApp::reportProblems(const bool report_and_forget, diagMap& diag, ostream& out,
    const CBioseq::TAnnot& annots, const EProblem type)
 {
@@ -590,7 +591,7 @@ void CReadBlastApp::append_misc_feature(CBioseq_set::TSeq_set& seqs, const strin
         strand = problem->strand;
         message = problem->misc_feat_message;
         if(message.size()==0) continue; // do not print empty misc_feat, they are empty for a reason
-        int pos;
+        SIZE_TYPE pos;
         while((pos=message.find_first_of("\n\r"))!=string::npos)
           {
           message[pos]=' ';

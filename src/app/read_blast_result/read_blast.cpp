@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include "read_blast_result.hpp"
 
+
 int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
 /* original: Dima Dernovoy */
 {
@@ -322,7 +323,7 @@ int CReadBlastApp::StoreBlast(map<string, blastStr>& blastMap)
                 << m_parent.size() << NcbiEndl;
      }
    IncreaseVerbosity();
-   for(int ihit=0; ihit < blastMap[qname].hits.size(); ihit++)
+   for(unsigned int ihit=0; ihit < blastMap[qname].hits.size(); ihit++)
      {
      bool prev_version=false;
      if(m_previous_genome.size() && m_parent.size())
@@ -476,7 +477,7 @@ int CReadBlastApp::ProcessCDD(map<string, blastStr>& blastMap)
    // const blastStr& thisStr = blastMap[qname];
    int qLen = blastMap[qname].qLen;
    vector<problemStr> problems;
-   for(int ihit=0; ihit < thisStr.hits.size(); ihit++)
+   for(unsigned int ihit=0; ihit < thisStr.hits.size(); ihit++)
      {
      const hitStr& thisHitStr = thisStr.hits[ihit];
      int q_ali_len = thisHitStr.q_end - thisHitStr.q_start+1;
