@@ -53,6 +53,9 @@ CTblastnAppArgs::CTblastnAppArgs()
     const bool kQueryIsProtein = true;
     m_Args.push_back(arg);
 
+    static const string kDefaultTask = "tblastn";
+    SetTask(kDefaultTask);
+
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);

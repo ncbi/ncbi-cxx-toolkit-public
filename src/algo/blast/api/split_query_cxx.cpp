@@ -59,8 +59,54 @@ CQuerySplitter::CQuerySplitter(CRef<IQueryFactory> query_factory,
     m_LocalQueryData = m_QueryFactory->MakeLocalQueryData(m_Options);
     m_TotalQueryLength = m_LocalQueryData->GetSumOfSequenceLengths();
     m_NumChunks = SplitQuery_CalculateNumChunks(m_Options->GetProgramType(), 
-        m_ChunkSize, m_TotalQueryLength, m_LocalQueryData->GetNumQueries());
+        &m_ChunkSize, m_TotalQueryLength, m_LocalQueryData->GetNumQueries());
     x_ExtractCScopesAndMasks();
+}
+
+ostream& operator<<(ostream& out, const CQuerySplitter& rhs)
+{
+    ILocalQueryData* query_data = 
+        const_cast<ILocalQueryData*>(&*rhs.m_LocalQueryData);
+    const size_t kNumQueries = query_data->GetNumQueries();
+    const size_t kNumChunks = rhs.GetNumberOfChunks();
+
+    out << endl << "; This is read by x_ReadQueryBoundsPerChunk" 
+        << endl << "; Format: query start, query end, strand" << endl;
+
+    // for all query indices {
+    //     iterate every chunk and collect the coords, print them out
+    // }
+    for (size_t query_index = 0; query_index < kNumQueries; query_index++) {
+        CConstRef<CSeq_id> query_id
+            (query_data->GetSeq_loc(query_index)->GetId());
+        _ASSERT(query_id);
+        
+        for (size_t chunk_index = 0; chunk_index < kNumChunks; chunk_index++) {
+            CRef<CBlastQueryVector> queries_in_chunk = 
+                rhs.m_SplitQueriesInChunk[chunk_index];
+
+            for (size_t qidx = 0; qidx < queries_in_chunk->Size(); qidx++) {
+                CConstRef<CSeq_loc> query_loc_in_chunk =
+                    queries_in_chunk->GetQuerySeqLoc(qidx);
+                _ASSERT(query_loc_in_chunk);
+                CConstRef<CSeq_id> query_id_in_chunk
+                    (query_loc_in_chunk->GetId());
+                _ASSERT(query_id_in_chunk);
+
+                if (query_id->Match(*query_id_in_chunk)) {
+                    const CSeq_loc::TRange& range = 
+                        query_loc_in_chunk->GetTotalRange();
+                    out << "Chunk" << chunk_index << "Query" << query_index
+                        << " = " << range.GetFrom() << ", " 
+                        << range.GetToOpen() << ", " 
+                        << (int)query_loc_in_chunk->GetStrand() << endl;
+                }
+            }
+        }
+        out << endl;
+    }
+
+    return out;
 }
 
 void
@@ -101,7 +147,14 @@ CQuerySplitter::x_ComputeChunkRanges()
         SplitQuery_GetOverlapChunkSize(m_Options->GetProgramType());
     for (size_t chunk_num = 0; chunk_num < m_NumChunks; chunk_num++) {
         size_t chunk_end = chunk_start + m_ChunkSize;
-        if (chunk_end >= m_TotalQueryLength) {
+
+        // if the chunk end is larger than the sequence ...
+        if (chunk_end >= m_TotalQueryLength ||
+            // ... or this is the last chunk and it didn't make it to the end
+            // of the sequence
+            (chunk_end < m_TotalQueryLength && (chunk_num + 1) == m_NumChunks))
+        {
+            // ... assign this chunk's end to the end of the sequence
             chunk_end = m_TotalQueryLength;
         }
 
@@ -400,9 +453,34 @@ s_GetAbsoluteContextLength(const vector<const BlastQueryInfo*>& chunk_qinfo,
     return 0;
 }
 
+//#define DEBUG_COMPARE_SEQUENCES 1
+
 #ifdef DEBUG_COMPARE_SEQUENCES
-/** Auxiliary function to validate the context offset corrections */
-static bool cmp_sequence(const Uint1* global, const Uint1* chunk, size_t len)
+
+/// Convert a sequence into its printable representation
+/// @param seq sequence data [in]
+/// @param len length of sequence to print [in]
+/// @param is_prot whether the sequence is protein or not [in]
+static string s_GetPrintableSequence(const Uint1* seq, size_t len, bool is_prot)
+{
+    string retval;
+    for (size_t i = 0; i < len; i++) {
+        retval.append(1, (is_prot 
+                      ? NCBISTDAA_TO_AMINOACID[seq[i]] 
+                      : BLASTNA_TO_IUPACNA[seq[i]]));
+    }
+    return retval;
+}
+
+/** Auxiliary function to validate the context offset corrections 
+ * @param global global query sequence data [in]
+ * @param chunk sequence data for chunk [in]
+ * @param len length of the data to compare [in] 
+ * @param is_prot whether the sequence is protein or not [in]
+ * @return true if sequence data is identical, false otherwise
+ */
+static bool cmp_sequence(const Uint1* global, const Uint1* chunk, size_t len,
+                         bool is_prot)
 {
     bool retval = true;
 
@@ -412,6 +490,14 @@ static bool cmp_sequence(const Uint1* global, const Uint1* chunk, size_t len)
             break;
         }
     }
+
+    if (retval == false) {
+        _TRACE("Comparing global: '" 
+               << s_GetPrintableSequence(global, len, is_prot) << "'");
+        _TRACE("with chunk: '" 
+               << s_GetPrintableSequence(chunk, len, is_prot) << "'");
+    }
+
     return retval;
 }
 #endif
@@ -483,15 +569,16 @@ CQuerySplitter::x_ComputeContextOffsets_NonTranslatedQueries()
     _ASSERT( !m_QueryChunkFactories.empty() );
 
     const EBlastProgramType kProgram = m_Options->GetProgramType();
+    _ASSERT( !Blast_QueryIsTranslated(kProgram) );
     const BlastQueryInfo* global_qinfo = m_LocalQueryData->GetQueryInfo();
 #ifdef DEBUG_COMPARE_SEQUENCES
     const BLAST_SequenceBlk* global_seq = m_LocalQueryData->GetSequenceBlk();
 #endif
     const size_t kOverlapSize =
         SplitQuery_GetOverlapChunkSize(m_Options->GetProgramType());
-    const size_t kOverlap = Blast_QueryIsTranslated(kProgram) 
-        ? kOverlapSize / CODON_LENGTH : kOverlapSize;
-    CContextTranslator ctx_translator(*m_SplitBlk);
+    const size_t kOverlap = kOverlapSize;
+    CContextTranslator ctx_translator(*m_SplitBlk, &m_QueryChunkFactories,
+                                      m_Options);
     vector<const BlastQueryInfo*> chunk_qinfo(m_NumChunks, 0);
 
     for (size_t chunk_num = 0; chunk_num < m_NumChunks; chunk_num++) {
@@ -572,7 +659,8 @@ CQuerySplitter::x_ComputeContextOffsets_NonTranslatedQueries()
         correction;
     int chunk_offset = chunk_qinfo[chunk_num]->contexts[ctx].query_offset;
     if (!cmp_sequence(&global_seq->sequence[global_offset], 
-                      &chunk_seq->sequence[chunk_offset], 10)) {
+                      &chunk_seq->sequence[chunk_offset], 10,
+                      Blast_QueryIsProtein(kProgram))) {
         cerr << "Failed to compare sequence data!" << endl;
     }
 }
@@ -580,6 +668,7 @@ CQuerySplitter::x_ComputeContextOffsets_NonTranslatedQueries()
 
         }
     }
+    _TRACE("CContextTranslator contents: " << ctx_translator);
 }
 
 void
@@ -595,7 +684,8 @@ CQuerySplitter::x_ComputeContextOffsets_TranslatedQueries()
 #endif
     const size_t kOverlap = 
         SplitQuery_GetOverlapChunkSize(kProgram) / CODON_LENGTH;
-    CContextTranslator ctx_translator(*m_SplitBlk);
+    CContextTranslator ctx_translator(*m_SplitBlk, &m_QueryChunkFactories,
+                                      m_Options);
     CQueryDataPerChunk qdpc(*m_SplitBlk, kProgram, m_LocalQueryData);
     vector<const BlastQueryInfo*> chunk_qinfo(m_NumChunks, 0);
 
@@ -742,7 +832,7 @@ error_check:
         min(10, chunk_qinfo[chunk_num]->contexts[ctx].query_length);
     if (!cmp_sequence(&global_seq->sequence[global_offset], 
                       &chunk_seq->sequence[chunk_offset], 
-                      num_bases2compare)) {
+                      num_bases2compare, Blast_QueryIsProtein(kProgram))) {
         cerr << "Failed to compare sequence data for chunk " << chunk_num
              << ", context " << ctx << endl;
     }
@@ -750,6 +840,7 @@ error_check:
 #endif
         }
     }
+    _TRACE("CContextTranslator contents: " << ctx_translator);
 }
 
 CRef<CSplitQueryBlk>
@@ -778,6 +869,9 @@ CQuerySplitter::Split()
 
         x_ComputeContextOffsetsForChunks();
     }
+
+    _TRACE("CSplitQuerBlk contents: " << *m_SplitBlk);
+    _TRACE("CQuerySplitter contents: " << *this);
 
     return m_SplitBlk;
 }

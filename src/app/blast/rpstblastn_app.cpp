@@ -87,7 +87,7 @@ void CRPSTBlastnApp::Init()
 
 int CRPSTBlastnApp::Run(void)
 {
-    int status = 0;
+    int status = BLAST_EXIT_SUCCESS;
 
     try {
         // Limit the amount of memory used by CSeqDB so that the RPS-BLAST
@@ -121,11 +121,14 @@ int CRPSTBlastnApp::Run(void)
                                                for exporting the search
                                                strategy */
         search_db = db_args->GetSearchDatabase();
-        CRef<CScope> scope = CBlastScopeSource(dlconfig).NewScope();
+        CRef<CScope> scope(new CScope(*m_ObjMgr));
         if ( !m_CmdLineArgs->ExecuteRemotely() ) {
             CRef<CSeqDB> seqdb = GetSeqDB(db_args);
             db_adapter.Reset(new CLocalDbAdapter(seqdb));
             scope->AddDataLoader(RegisterOMDataLoader(m_ObjMgr, seqdb));
+        } else {
+            // needed to fetch sequences remotely for formatting
+            scope = CBlastScopeSource(dlconfig).NewScope();
         }
 
         /*** Get the formatting options ***/
@@ -144,7 +147,8 @@ int CRPSTBlastnApp::Run(void)
                                fmt_args->DisplayHtmlOutput(),
                                opt.GetQueryGeneticCode(),
                                opt.GetDbGeneticCode(),
-                               opt.GetSumStatisticsMode());
+                               opt.GetSumStatisticsMode(),
+                               m_CmdLineArgs->ExecuteRemotely());
 
         formatter.PrintProlog();
 
@@ -183,16 +187,7 @@ int CRPSTBlastnApp::Run(void)
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
 
-    } catch (const CBlastException& exptn) {
-        cerr << "Error: " << exptn.GetMsg() << endl;
-        status = exptn.GetErrCode();
-    } catch (const exception& e) {
-        cerr << "Error: " << e.what() << endl;
-        status = -1;
-    } catch (...) {
-        cerr << "Unknown exception" << endl;
-        status = -1;
-    }
+    } CATCH_ALL(status)
     return status;
 }
 

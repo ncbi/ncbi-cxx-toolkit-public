@@ -38,6 +38,7 @@ static char const rcsid[] =
 #include "split_query_blk.hpp"
 #include <algo/blast/core/blast_def.h>      // for sfree
 #include <algo/blast/api/blast_exception.hpp>
+#include "split_query_aux_priv.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -217,6 +218,29 @@ CSplitQueryBlk::GetChunkOverlapSize() const
         ERR_POST(Warning << "Query-splitting Chunk overlap size was not set");
     }
     return retval;
+}
+
+ostream& operator<<(ostream& out, const CSplitQueryBlk& rhs)
+{
+    const size_t kNumChunks = rhs.GetNumChunks();
+
+    out << endl << "NumChunks = " << kNumChunks << endl;
+    for (size_t chunk_num = 0; chunk_num < kNumChunks; chunk_num++) {
+        out << "Chunk" << chunk_num << "Queries = " 
+            << s_PrintVector(rhs.GetQueryIndices(chunk_num)) << endl;
+    }
+    out << endl;
+    for (size_t chunk_num = 0; chunk_num < kNumChunks; chunk_num++) {
+        out << "Chunk" << chunk_num << "Contexts = " 
+            << s_PrintVector(rhs.GetQueryContexts(chunk_num)) << endl;
+    }
+    out << endl;
+    for (size_t chunk_num = 0; chunk_num < kNumChunks; chunk_num++) {
+        out << "Chunk" << chunk_num << "ContextOffsets = " 
+            << s_PrintVector(rhs.GetContextOffsets(chunk_num)) << endl;
+    }
+
+    return out;
 }
 
 END_SCOPE(blast)

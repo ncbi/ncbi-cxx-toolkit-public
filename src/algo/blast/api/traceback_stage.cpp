@@ -239,7 +239,7 @@ CBlastTracebackSearch::Run()
 
     // For PHI BLAST we need to pass the pattern search items structure to the
     // traceback code
-    bool is_phi = Blast_ProgramIsPhiBlast(m_OptsMemento->m_ProgramType);
+    bool is_phi = !! Blast_ProgramIsPhiBlast(m_OptsMemento->m_ProgramType);
     
     if (is_phi) {
         _ASSERT(m_InternalData->m_LookupTable);

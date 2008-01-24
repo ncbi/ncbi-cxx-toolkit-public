@@ -83,37 +83,45 @@ SplitQuery_GetChunkSize(EProgram program)
     if (chunk_sz_str) {
         retval = NStr::StringToInt(chunk_sz_str);
         _TRACE("DEBUG: Using query chunk size " << retval);
-        return retval;
+    } else {
+
+        switch (program) {
+        case eBlastn:
+            retval = 1000000;
+            break;
+        case eMegablast:
+        case eDiscMegablast:
+            retval = 5000000;
+            break;
+        case eTblastn:
+            retval = 20000;
+            break;
+        // if the query will be translated, round the chunk size up to the next
+        // multiple of 3, that way, when the nucleotide sequence(s) get(s)
+        // split, context N%6 in one chunk will have the same frame as context
+        // N%6 in the next chunk
+        case eBlastx:
+        case eTblastx:
+            // N.B.: the splitting is done on the nucleotide query sequences,
+            // then each of these chunks is translated
+            retval = 10002;
+            break;
+        case eBlastp:
+        default:
+            retval = 10000;
+            break;
+        }
+
+        _TRACE("Using query chunk size " << retval);
     }
 
-    switch (program) {
-    case eBlastn:
-        retval = 1000000;
-        break;
-    case eMegablast:
-    case eDiscMegablast:
-        retval = 5000000;
-        break;
-    case eTblastn:
-        retval = 20000;
-        break;
-    // if the query will be translated, round the chunk size up to the next
-    // multiple of 3, that way, when the nucleotide sequence(s) get(s)
-    // split, context N%6 in one chunk will have the same frame as context N%6
-    // in the next chunk
-    case eBlastx:
-    case eTblastx:
-        // N.B.: the splitting is done on the nucleotide query sequences, then
-        // each of these chunks is translated
-        retval = 10002;
-        break;
-    case eBlastp:
-    default:
-        retval = 10000;
-        break;
+    const EBlastProgramType prog_type(EProgramToEBlastProgramType(program));
+    if (Blast_QueryIsTranslated(prog_type) && !Blast_SubjectIsPssm(prog_type) &&
+        (retval % CODON_LENGTH) != 0) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "Split query chunk size must be divisible by 3");
     }
 
-    _TRACE("Using query chunk size " << retval);
     return retval;
 }
 
@@ -140,20 +148,40 @@ SplitQuery_ShouldSplit(EBlastProgramType program,
 
 Uint4 
 SplitQuery_CalculateNumChunks(EBlastProgramType program,
-                              size_t chunk_size, 
+                              size_t *chunk_size, 
                               size_t concatenated_query_length,
                               size_t num_queries)
 {
-    if ( !SplitQuery_ShouldSplit(program, chunk_size, 
+    if ( !SplitQuery_ShouldSplit(program, *chunk_size, 
                                  concatenated_query_length, num_queries)) {
         _TRACE("Not splitting queries");
         return 1;
     }
-    const size_t overlap = SplitQuery_GetOverlapChunkSize(program);
-    Uint4 divisor = concatenated_query_length - overlap;
-    Uint4 dividend = chunk_size - overlap;
-    Uint4 retval = divisor / dividend;
-    return (divisor % dividend == 0) ?  retval : retval + 1;
+    size_t target_chunk_size = *chunk_size;
+    const int kChunkOverflowFactor = 5; 
+    Uint4 num_chunks = 
+        (concatenated_query_length + target_chunk_size/kChunkOverflowFactor) 
+        / target_chunk_size;
+    // adjusted length to include one overlap for each chunk
+    Uint4 adjusted_concatenated_length = concatenated_query_length +
+        (num_chunks * SplitQuery_GetOverlapChunkSize(program));
+    // recalculate with adjustment.
+    num_chunks = 
+        (adjusted_concatenated_length + target_chunk_size/kChunkOverflowFactor)
+        / target_chunk_size;
+    *chunk_size = adjusted_concatenated_length / num_chunks;
+
+    // For translated queries the chunk size should be divisible by CODON_LENGTH
+    if (Blast_QueryIsTranslated(program)) {
+        *chunk_size -= (*chunk_size) % CODON_LENGTH;
+        _ASSERT((*chunk_size % CODON_LENGTH) == 0);
+    }
+
+    _TRACE("Number of chunks: " << num_chunks << "; "
+           "Target chunk size: " << target_chunk_size << "; "
+           "Returned chunk size: " << *chunk_size);
+
+    return num_chunks;
 }
 
 
@@ -213,11 +241,32 @@ SplitQuery_CreateChunkData(CRef<IQueryFactory> qf,
     return setup_data->m_InternalData;
 }
 
-CContextTranslator::CContextTranslator(const CSplitQueryBlk& sqb)
+CContextTranslator::CContextTranslator(const CSplitQueryBlk& sqb,
+           vector< CRef<IQueryFactory> >* query_chunk_factories /* = NULL */,
+           const CBlastOptions* options /* = NULL */)
 {
-    m_ContextsPerChunk.reserve(sqb.GetNumChunks());
-    for (size_t i = 0; i < sqb.GetNumChunks(); i++) {
+    const size_t kNumChunks(sqb.GetNumChunks());
+    m_ContextsPerChunk.reserve(kNumChunks);
+    for (size_t i = 0; i < kNumChunks; i++) {
         m_ContextsPerChunk.push_back(sqb.GetQueryContexts(i));
+    }
+
+    if (query_chunk_factories == NULL || options == NULL) {
+        return;
+    }
+
+    /// Populate the data to print out
+    m_StartingChunks.resize(kNumChunks);
+    m_AbsoluteContexts.resize(kNumChunks);
+    for (size_t i = 0; i < kNumChunks; i++) {
+        CRef<IQueryFactory> chunk_qf((*query_chunk_factories)[i]);
+        CRef<ILocalQueryData> chunk_qd(chunk_qf->MakeLocalQueryData(options));
+        BlastQueryInfo* chunk_qinfo = chunk_qd->GetQueryInfo();
+        for (Int4 ctx = chunk_qinfo->first_context;
+             ctx <= chunk_qinfo->last_context; ctx++) {
+            m_StartingChunks[i].push_back(GetStartingChunk(i, ctx));
+            m_AbsoluteContexts[i].push_back(GetAbsoluteContext(i, ctx));
+        }
     }
 }
 
@@ -264,6 +313,30 @@ CContextTranslator::GetStartingChunk(size_t curr_chunk,
         retval = curr_chunk;
     }
     return static_cast<int>(retval);
+}
+
+ostream& operator<<(ostream& out, const CContextTranslator& rhs)
+{
+    if (rhs.m_StartingChunks.front().empty() ||
+        rhs.m_AbsoluteContexts.front().empty()) {
+        return out;
+    }
+
+    const size_t kNumChunks = rhs.m_ContextsPerChunk.size();
+    out << endl << "NumChunks = " << kNumChunks << endl;
+
+    for (size_t i = 0; i < kNumChunks; i++) {
+        out << "Chunk" << i << "StartingChunks = "
+            << s_PrintVector(rhs.m_StartingChunks[i]) << endl;
+    }
+    out << endl;
+    for (size_t i = 0; i < kNumChunks; i++) {
+        out << "Chunk" << i << "AbsoluteContexts = "
+            << s_PrintVector(rhs.m_AbsoluteContexts[i]) << endl;
+    }
+    out << endl;
+
+    return out;
 }
 
 CQueryDataPerChunk::CQueryDataPerChunk(const CSplitQueryBlk& sqb,

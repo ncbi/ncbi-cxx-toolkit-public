@@ -586,8 +586,14 @@ public:
     bool IsProtein() const { return m_IsProtein; }
 
     /// Get the gi list file name
-    /// The return value of this should be set in the CSeqDb ctor
+    /// The return value of this should be set in the CSeqDB ctor
     string GetGiListFileName() const { return m_GiListFileName; }
+
+    /// Get the inverted gi list file name
+    /// The return value of this should be set in the CSeqDB ctor
+    string GetNegativeGiListFileName() const { 
+        return m_NegativeGiListFileName; 
+    }
 
     /// Get the BLAST database name
     /// @return empty string in the case of BLAST2Sequences, otherwise the
@@ -601,6 +607,7 @@ public:
     /// Set the search database information
     void SetSearchDatabase(CRef<CSearchDatabase> search_db) {
         m_SearchDb = search_db;
+        m_IsProtein = search_db->IsProtein();
     }
 
     /// Retrieve subject sequences, if provided
@@ -616,6 +623,8 @@ public:
 private:
     CRef<CSearchDatabase> m_SearchDb;/**< Description of the BLAST database */
     string m_GiListFileName;        /**< File name of gi list DB restriction */
+    /**< File name of GIs to exclude from BLAST database */
+    string m_NegativeGiListFileName;
     bool m_RequestMoleculeType;     /**< Determines whether the database's
                                       molecule type should be requested in the
                                       command line, true in case of PSI-BLAST
@@ -812,6 +821,15 @@ public:
     /// Set the command line arguments
     CArgDescriptions* SetCommandLine();
 
+    /// Get the task for this object
+    string  GetTask() const {
+        return m_Task;
+    }
+
+    /// Set the task for this object
+    /// @param task task name to set [in]
+    void SetTask(const string& task);
+
     /// Extract the command line arguments into a CBlastOptionsHandle object
     /// @param args Commad line arguments [in]
     CRef<CBlastOptionsHandle> SetOptions(const CArgs& args);
@@ -910,6 +928,8 @@ protected:
     /// The BLAST options handle, only non-NULL if assigned via
     /// SetOptionsHandle, i.e.: from a saved search strategy
     CRef<CBlastOptionsHandle> m_OptsHandle;
+    /// Task specified in the command line
+    string m_Task;
 
     /// Create the options handle based on the command line arguments
     /// @param locality whether the search will be executed locally or remotely

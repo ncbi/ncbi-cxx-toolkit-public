@@ -71,6 +71,7 @@
 USING_NCBI_SCOPE;
 using boost::unit_test::test_suite;
 
+
 // Use macros rather than inline functions to get accurate line number reports
 
 #define CHECK_NO_THROW(statement)                                       \

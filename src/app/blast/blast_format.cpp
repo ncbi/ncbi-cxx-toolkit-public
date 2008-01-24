@@ -42,6 +42,7 @@ Author: Jason Papadopoulos
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include <algo/blast/core/blast_stat.h>
 #include <objtools/blast_format/blastxml_format.hpp>
+#include <algo/blast/api/remote_services.hpp>   // for CRemoteServices
 #include "blast_format.hpp"
 #include "data4xmlformat.hpp"
 
@@ -64,7 +65,8 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
                  bool is_html /* = false */,
                  int qgencode /* = BLAST_GENETIC_CODE */, 
                  int dbgencode /* = BLAST_GENETIC_CODE */,
-                 bool show_linked /* = false */)
+                 bool use_sum_statistics /* = false */,
+                 bool is_remote_search /* = false */)
         : m_FormatType(format_type), m_IsHTML(is_html), 
           m_DbIsAA(db_is_aa), m_BelieveQuery(believe_query),
           m_Outfile(outfile), m_NumSummary(num_summary),
@@ -72,11 +74,12 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
           m_Program(Blast_ProgramNameFromType(options.GetProgramType())), 
           m_DbName(dbname),
           m_QueryGenCode(qgencode), m_DbGenCode(dbgencode),
-          m_ShowGi(show_gi), m_ShowLinkedSetSize(show_linked),
+          m_ShowGi(show_gi), m_ShowLinkedSetSize(false),
           m_IsUngappedSearch(!options.GetGappedMode()),
           m_MatrixName(matrix_name),
           m_Scope(& scope),
-          m_IsBl2Seq(false)
+          m_IsBl2Seq(false),
+          m_IsRemoteSearch(is_remote_search)
 {
     m_IsBl2Seq = static_cast<bool>(dbname == kEmptyStr);
     if ( !m_IsBl2Seq ) {
@@ -85,26 +88,78 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
     if (m_FormatType == CFormattingArgs::eXml) {
         m_AccumulatedQueries.Reset(new CBlastQueryVector());
     }
+    if (use_sum_statistics && m_IsUngappedSearch) {
+        m_ShowLinkedSetSize = true;
+    }
 }
 
+bool 
+CBlastFormat::x_FillDbInfoRemotely(const string& dbname,
+                                   CBlastFormatUtil::SDbInfo& info) const
+{
+    CRef<CBlast4_database> blastdb(new CBlast4_database);
+    blastdb->SetName(dbname);
+    blastdb->SetType() = m_DbIsAA
+        ? eBlast4_residue_type_protein : eBlast4_residue_type_nucleotide;
+    CRef<CBlast4_database_info> dbinfo = 
+        CRemoteServices().GetDatabaseInfo(blastdb);
+
+    info.name = dbname;
+    if ( !dbinfo ) {
+        ERR_POST(Warning << "BLAST database '" << dbname 
+                 << "' not found on server.");
+        return false;
+    }
+    info.definition = dbinfo->GetDescription();
+    if (info.definition.empty())
+        info.definition = info.name;
+    info.date = dbinfo->GetLast_updated();
+    info.total_length = dbinfo->GetTotal_length();
+    info.number_seqs = dbinfo->GetNum_sequences();
+    return true;
+}
+
+bool
+CBlastFormat::x_FillDbInfoLocally(const string& dbname,
+                                  CBlastFormatUtil::SDbInfo& info) const
+{
+    CRef<CSeqDB> seqdb(new CSeqDB(dbname, m_DbIsAA 
+                          ? CSeqDB::eProtein : CSeqDB::eNucleotide));
+    if ( !seqdb ) {
+        ERR_POST(Warning << "BLAST database '" << dbname << "' not found.");
+        return false;
+    }
+    info.name = seqdb->GetDBNameList();
+    info.definition = seqdb->GetTitle();
+    if (info.definition.empty())
+        info.definition = info.name;
+    info.date = seqdb->GetDate();
+    info.total_length = seqdb->GetTotalLength();
+    info.number_seqs = seqdb->GetNumSeqs();
+    return true;
+}
 
 void
 CBlastFormat::x_FillDbInfo()
 {
-    m_DbInfo.push_back(CBlastFormatUtil::SDbInfo());
-    CBlastFormatUtil::SDbInfo& info = m_DbInfo.front();
+    vector<string> dbnames;
+    NStr::Tokenize(m_DbName, " ", dbnames);
 
-    CSeqDB seqdb(m_DbName, m_DbIsAA ? CSeqDB::eProtein : CSeqDB::eNucleotide);
+    m_DbInfo.reserve(dbnames.size());
+    ITERATE(vector<string>, dbname, dbnames) {
+        CBlastFormatUtil::SDbInfo info;
+        info.is_protein = m_DbIsAA;
 
-    info.is_protein = m_DbIsAA;
-    info.name = seqdb.GetDBNameList();
-    info.definition = seqdb.GetTitle();
-    if (info.definition.empty())
-        info.definition = info.name;
-    info.date = seqdb.GetDate();
-    info.total_length = seqdb.GetTotalLength();
-    info.number_seqs = seqdb.GetNumSeqs();
-    info.subset = false;
+        bool success = false;
+        if (m_IsRemoteSearch) {
+            success = x_FillDbInfoRemotely(*dbname, info);
+        } else {
+            success = x_FillDbInfoLocally(*dbname, info);
+        }
+        if (success) {
+            m_DbInfo.push_back(info);
+        }
+    }
 }
 
 static const string kHTML_Prefix =
@@ -216,9 +271,8 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
         CBlastTabularInfo tabinfo(m_Outfile);
 
         if (m_FormatType == CFormattingArgs::eTabularWithComments)
-             tabinfo.PrintHeader(m_Program,
-                                 *(bhandle.GetBioseqCore()),
-                                 m_DbName, 0, aln_set);
+             tabinfo.PrintHeader(m_Program, *(bhandle.GetBioseqCore()),
+                                 m_DbName, results.GetRID(), itr_num, aln_set);
                                  
         if (results.HasAlignments()) {
             ITERATE(CSeq_align_set::Tdata, itr, aln_set->Get()) {
@@ -241,7 +295,8 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
     m_Outfile << endl << endl;
     CBlastFormatUtil::AcknowledgeBlastQuery(*bioseq, kFormatLineLength,
                                             m_Outfile, m_BelieveQuery,
-                                            m_IsHTML, false);
+                                            m_IsHTML, false,
+                                            results.GetRID());
 
     // quit early if there are no hits
     if ( !results.HasAlignments() ) {

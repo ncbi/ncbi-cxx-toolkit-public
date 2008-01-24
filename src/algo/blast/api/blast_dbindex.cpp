@@ -1103,7 +1103,6 @@ static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args )
         CIndexedDb::Thread_Data_Set.push_back( idb );
         s_IDbSrcInit( retval, idb );
     }else {
-        ERR_POST( "Index load operation failed." );
         delete idb;
     }
 

@@ -205,12 +205,22 @@ public:
     /// @param errs error messages for this query sequence [in]
     /// @param ancillary_data Miscellaneous output from the blast engine [in]
     /// @param query_masks Mask locations for this query [in]
+    /// @param rid RID (if applicable, else empty string) [in]
     CSearchResults(CConstRef<objects::CSeq_id>     query,
                    CRef<objects::CSeq_align_set>   align, 
                    const TQueryMessages          & errs,
                    CRef<CBlastAncillaryData>       ancillary_data,
-                   const TMaskedQueryRegions     * query_masks = NULL);
+                   const TMaskedQueryRegions     * query_masks = NULL,
+                   const string                  & rid = kEmptyStr);
         
+    /// Sets the RID for these results
+    /// @param rid RID to set [in]
+    void SetRID(const string& rid) { m_RID.assign(rid); }
+
+    /// Returns the RID for these results (if applicable), otherwise returns an
+    /// empty string
+    string GetRID() const { return m_RID; }
+    
     /// Accessor for the Seq-align results
     CConstRef<objects::CSeq_align_set> GetSeqAlign() const
     {
@@ -269,6 +279,9 @@ private:
 
     /// non-alignment ancillary data for this query
     CRef<CBlastAncillaryData> m_AncillaryData;
+
+    /// The RID, if applicable (otherwise it's empty)
+    string m_RID;
 };
 
 
@@ -319,7 +332,7 @@ public:
                      TAncillaryVector(),
                      const TSeqLocInfoVector* masks = NULL,
                      EResultType res_type = eDatabaseSearch);
-    
+
     /// Allow array-like access with integer indices to CSearchResults 
     /// contained by this object
     /// @param i query sequence index if result type is eDatabaseSearch,
@@ -398,8 +411,13 @@ public:
     /// @param element element to add [in]
     void push_back(value_type& element);
 
+    /// Get the type of results contained in this object
     EResultType GetResultType() const { return m_ResultType; }
     
+    /// Sets the RID for these results
+    /// @param rid RID to set [in]
+    void SetRID(const string& rid);
+
 private:    
     /// Initialize the result set.
     void x_Init(TQueryIdVector& queries,

@@ -131,10 +131,11 @@ ecked_GI\" VALUE=\"%d\">  ";
 ///@param cdd_rid: CDD RID
 ///@param entrez_term: entrez query term
 ///@param is_na: is this sequence nucleotide or not
+///@param cur_align: index of the current alignment
 ///
 static list<string> s_GetLinkoutString(int linkout, int gi, string& rid, 
                                        string& cdd_rid, string& entrez_term,
-                                       bool is_na)
+                                       bool is_na, int cur_align)
 {
     list<string> linkout_list;
     char molType[8]={""};
@@ -150,25 +151,27 @@ static list<string> s_GetLinkoutString(int linkout, int gi, string& rid,
     if (linkout & eUnigene) {
       string l_UnigeneUrl = CBlastFormatUtil::GetURLFromRegistry("UNIGEN");
         sprintf(buf, l_UnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
-                is_na ? "nucleotide" : "protein", gi, rid.c_str());
+                is_na ? "nucleotide" : "protein", gi, rid.c_str(),
+                "top", cur_align);
         linkout_list.push_back(buf);
     }
     if (linkout & eStructure){
         sprintf(buf, kStructureUrl.c_str(), rid.c_str(), gi, gi, 
                 cdd_rid.c_str(), "onegroup", 
                 (entrez_term == NcbiEmptyString) ? 
-                "none":((char*) entrez_term.c_str()));
+                "none":((char*) entrez_term.c_str()),
+                "top", cur_align);
         linkout_list.push_back(buf);
     }
     if (linkout & eGeo){
       string l_GeoUrl = CBlastFormatUtil::GetURLFromRegistry("GEO");
-        sprintf(buf, l_GeoUrl.c_str(), gi, rid.c_str());
+        sprintf(buf, l_GeoUrl.c_str(), gi, rid.c_str(), "top", cur_align);
         linkout_list.push_back(buf);
     }
     if(linkout & eGene){
       string l_GeneUrl = CBlastFormatUtil::GetURLFromRegistry("GENE");
         sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID",
-                rid.c_str(), "top");
+                rid.c_str(), "top", cur_align);
         linkout_list.push_back(buf);
     }
     return linkout_list;
@@ -183,29 +186,36 @@ static list<string> s_GetLinkoutString(int linkout, int gi, string& rid,
 ///@param open_new_window: click the url to open a new window?
 ///@param rid: RID
 ///@param query_number: the query number
+///@param cur_align: index of the current alignment
 ///
 static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
                          bool is_db_na, string& db_name, bool open_new_window, 
-                         string& rid, int query_number, int taxid)
+                         string& rid, int query_number, int taxid, int cur_align)
 {
     string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
     char dopt[32], db[32];
+    char logstr_moltype[32], logstr_location[32];
     if(user_url == NcbiEmptyString ||
        (gi > 0 && user_url.find("dumpgnl.cgi") != string::npos)){ 
         //use entrez or dbtag specified
         if(is_db_na) {
             strcpy(dopt, "GenBank");
             strcpy(db, "Nucleotide");
+            strcpy(logstr_moltype, "nucl");
         } else {
             strcpy(dopt, "GenPept");
             strcpy(db, "Protein");
+            strcpy(logstr_moltype, "prot");
         }    
         
+        strcpy(logstr_location, "top");
+
         char url_buf[2048];
         if (gi > 0) {
-	  string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");
+	        string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");
             sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
+                    logstr_moltype, logstr_location, cur_align,
                     open_new_window ? "TARGET=\"EntrezView\"" : "");
             url_link = url_buf;
         } else {//seqid general, dbtag specified
@@ -226,7 +236,8 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
         string url_with_parameters = CBlastFormatUtil::BuildUserUrl(ids, taxid, user_url,
                                                                     db_name,
                                                                     is_db_na, rid,
-                                                                    query_number);
+                                                                    query_number,
+                                                                    false);
         if (url_with_parameters != NcbiEmptyString) {
             url_link += "<a href=\"";
             url_link += url_with_parameters;
@@ -246,14 +257,17 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
 ///@param open_new_window: click the url to open a new window?
 ///@param rid: RID
 ///@param query_number: the query number
+///@param cur_align: index of the current alignment
 ///
 static string s_GetIdUrlNew(const CBioseq::TId& ids, int gi, string& user_url,
                          bool is_db_na, string& db_name, bool open_new_window, 
-                         string& rid, int query_number, int taxid, int linkout)
+                         string& rid, int query_number, int taxid, int linkout,
+                         int cur_align)
 {
     string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
     char dopt[32], db[32];
+    char logstr_moltype[32], logstr_location[32];
  
     bool hit_not_in_mapviewer = !(linkout & eHitInMapviewer);
     
@@ -265,7 +279,8 @@ static string s_GetIdUrlNew(const CBioseq::TId& ids, int gi, string& user_url,
             CBlastFormatUtil::BuildUserUrl(ids, taxid, user_url,
                                            db_name,
                                            is_db_na, rid,
-                                           query_number);
+                                           query_number,
+                                           false);
         if (url_with_parameters != NcbiEmptyString) {
             url_link += "<a href=\"";
             url_link += url_with_parameters;
@@ -278,12 +293,17 @@ static string s_GetIdUrlNew(const CBioseq::TId& ids, int gi, string& user_url,
             if(is_db_na) {
                 strcpy(dopt, "GenBank");
                 strcpy(db, "Nucleotide");
+                strcpy(logstr_moltype, "nucl");
             } else {
                 strcpy(dopt, "GenPept");
                 strcpy(db, "Protein");
+                strcpy(logstr_moltype, "prot");
             }    
-	  string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");            
-	  sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
+            strcpy(logstr_location, "top");
+
+	        string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");            
+	        sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
+                    logstr_moltype, logstr_location, cur_align,
                     open_new_window ? "TARGET=\"EntrezView\"" : "");
             url_link = url_buf;
         } else {//seqid general, dbtag specified
@@ -512,7 +532,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            sdl->gi, m_Rid, 
                                            m_CddRid, 
                                            m_EntrezTerm, 
-                                           handle.GetBioseqCore()->IsNa());
+                                           handle.GetBioseqCore()->IsNa(),
+                                           m_cur_align);
                     break;
                 }
             } else {
@@ -524,7 +545,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                                cur_gi, m_Rid,
                                                m_CddRid,
                                                m_EntrezTerm,
-                                               handle.GetBioseqCore()->IsNa());
+                                               handle.GetBioseqCore()->IsNa(),
+                                               m_cur_align);
                         linkout_not_found = false;
                         break;
                     }
@@ -558,7 +580,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         sdl->id_url = s_GetIdUrl(*ids, sdl->gi, user_url,
                                  m_IsDbNa, m_Database, 
                                  (m_Option & eNewTargetWindow) ? true : false,
-                                 m_Rid, m_QueryNumber, taxid);
+                                 m_Rid, m_QueryNumber, taxid,
+                                 m_cur_align);
     }
 
   
@@ -714,7 +737,7 @@ void CShowBlastDefline::x_FillDeflineAndIdNew(const CBioseq_Handle& handle,
                                       taxid, m_CddRid, 
                                       m_EntrezTerm, 
                                       handle.GetBioseqCore()->IsNa(), user_url,
-                                      m_IsDbNa, 0, true, false);
+                                      m_IsDbNa, 0, true, false, m_cur_align);
                 }
                 break;
             }
@@ -730,7 +753,7 @@ void CShowBlastDefline::x_FillDeflineAndIdNew(const CBioseq_Handle& handle,
                                           taxid, m_CddRid, 
                                           m_EntrezTerm,
                                           handle.GetBioseqCore()->IsNa(), user_url,
-                                          m_IsDbNa, 0, true, false);
+                                          m_IsDbNa, 0, true, false, m_cur_align);
                     }
                     linkout_not_found = false;
                     break;
@@ -761,7 +784,8 @@ void CShowBlastDefline::x_FillDeflineAndIdNew(const CBioseq_Handle& handle,
         sdl->id_url = s_GetIdUrlNew(*ids, sdl->gi, tool_url,
                                  m_IsDbNa, m_Database, 
                                  (m_Option & eNewTargetWindow) ? true : false,
-                                 m_Rid, m_QueryNumber, tax_id, sdl->linkout);
+                                 m_Rid, m_QueryNumber, tax_id, sdl->linkout,
+                                 m_cur_align);
     }
 
   
@@ -903,6 +927,7 @@ void CShowBlastDefline::x_InitDefline(void)
              iter = actual_aln_list.Get().begin(); 
          iter != actual_aln_list.Get().end() && num_align < m_NumToShow; 
          iter++){
+        m_cur_align = num_align + 1;
         if (is_first_aln) {
             master_is_na = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).
                 GetBioseqCore()->IsNa();
@@ -1185,6 +1210,9 @@ void CShowBlastDefline::x_InitDeflineTable(void)
              iter = actual_aln_list.Get().begin(); 
          iter != actual_aln_list.Get().end() && num_align < m_NumToShow; 
          iter++){
+
+        m_cur_align = num_align + 1;
+
         if (is_first_aln) {
             m_QueryLength = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).
                 GetBioseqLength();
@@ -1681,7 +1709,8 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
             sdl->id_url = s_GetIdUrl(ids, sdl->gi, user_url,
                                      m_IsDbNa, m_Database, 
                                      (m_Option & eNewTargetWindow) ? 
-                                     true : false, m_Rid, m_QueryNumber, 0);
+                                     true : false, m_Rid, m_QueryNumber, 0,
+                                     m_cur_align);
             sdl->score_url = NcbiEmptyString;
         }
     }
@@ -1794,7 +1823,7 @@ CShowBlastDefline::x_GetHitDeflineInfo(const CSeq_align_set& aln)
             sdl->id_url = s_GetIdUrlNew(ids, sdl->gi, user_url,
                                      m_IsDbNa, m_Database, 
                                      (m_Option & eNewTargetWindow) ? 
-                                     true : false, m_Rid, m_QueryNumber, 0, sdl->linkout);
+                                     true : false, m_Rid, m_QueryNumber, 0, sdl->linkout, m_cur_align);
             sdl->score_url = NcbiEmptyString;
         }
     }

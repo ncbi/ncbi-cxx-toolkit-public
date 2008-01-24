@@ -111,6 +111,10 @@ CSearchDatabase::GetEntrezQueryLimitation() const
 void 
 CSearchDatabase::SetGiListLimitation(const TGiList& gilist) 
 {
+    if ( !m_NegativeGiListLimitation.empty() ) {
+        NCBI_THROW(CBlastException, eInvalidArgument,
+               "Cannot have a negative and a regular gi list simultaneously");
+    }
     m_GiListLimitation = gilist; 
 }
 
@@ -118,6 +122,22 @@ const CSearchDatabase::TGiList&
 CSearchDatabase::GetGiListLimitation() const 
 { 
     return m_GiListLimitation; 
+}
+
+void 
+CSearchDatabase::SetNegativeGiListLimitation(const TGiList& gilist) 
+{
+    if ( !m_GiListLimitation.empty() ) {
+        NCBI_THROW(CBlastException, eInvalidArgument,
+               "Cannot have a regular and a negative gi list simultaneously");
+    }
+    m_NegativeGiListLimitation = gilist; 
+}
+
+const CSearchDatabase::TGiList& 
+CSearchDatabase::GetNegativeGiListLimitation() const 
+{ 
+    return m_NegativeGiListLimitation; 
 }
 
 END_SCOPE(blast)

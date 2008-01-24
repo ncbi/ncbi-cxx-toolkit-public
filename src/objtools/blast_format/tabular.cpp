@@ -537,22 +537,24 @@ void CBlastTabularInfo::x_PrintFieldNames()
 
 void 
 CBlastTabularInfo::PrintHeader(const string& program_in, 
-                               const CBioseq& bioseq, 
-                               const string& dbname, int iteration,
-                               const CSeq_align_set* align_set)
+       const CBioseq& bioseq, 
+       const string& dbname, 
+       const string& rid /* = kEmptyStr */,
+       unsigned int iteration /* = numeric_limits<unsigned int>::max() */,
+       const CSeq_align_set* align_set /* = 0 */)
 {
     m_Ostream << "# ";
     string program(program_in);
     CBlastFormatUtil::BlastPrintVersionInfo(NStr::ToUpper(program), false, 
                                             m_Ostream);
 
-    if (iteration > 0)
+    if (iteration != numeric_limits<unsigned int>::max())
         m_Ostream << "# Iteration: " << iteration << endl;
 
     // Print the query defline with no html; there is no need to set the 
     // line length restriction, since it's ignored for the tabular case.
     CBlastFormatUtil::AcknowledgeBlastQuery(bioseq, 0, m_Ostream, false, false,
-                                            true);
+                                            true, rid);
     
     m_Ostream << endl << "# Database: " << dbname << endl;
 

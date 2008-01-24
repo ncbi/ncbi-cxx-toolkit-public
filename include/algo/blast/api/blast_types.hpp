@@ -70,6 +70,36 @@ enum EProgram {
     eBlastProgramMax    ///< Undefined program
 };
 
+/** Convert a EProgram enumeration value to a task name (as those used in the
+ * BLAST command line binaries)
+ * @param p EProgram enumeration value to convert [in]
+ */
+NCBI_XBLAST_EXPORT 
+string EProgramToTaskName(EProgram p);
+
+/// Map a string into an element of the ncbi::blast::EProgram enumeration 
+/// (except eBlastProgramMax).
+/// @param program_name [in]
+/// @return an element of the ncbi::blast::EProgram enumeration, except
+/// eBlastProgramMax
+/// @throws CBlastException if the string does not map into any of the EProgram
+/// elements
+NCBI_XBLAST_EXPORT
+EProgram ProgramNameToEnum(const std::string& program_name);
+
+/// Validates that the task provided is indeed a valid task, otherwise throws a
+/// CBlastException
+/// @param task task name to validate [in]
+NCBI_XBLAST_EXPORT
+void ThrowIfInvalidTask(const string& task);
+
+/// Convert EProgram to EBlastProgramType.
+/// @param p Program expressed as an api layer EProgram.
+/// @return Same program using the core enumeration.
+NCBI_XBLAST_EXPORT
+EBlastProgramType
+EProgramToEBlastProgramType(EProgram p);
+
 /// Error or Warning Message from search.
 /// 
 /// This class encapsulates a single error or warning message returned

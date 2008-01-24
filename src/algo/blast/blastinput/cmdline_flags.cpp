@@ -57,6 +57,7 @@ const string kArgDbSize("dbsize");
 const string kArgDbType("dbtype");
 
 const string kArgGiList("gilist");
+const string kArgNegativeGiList("negative_gilist");
 
 const string kTask("task");
 

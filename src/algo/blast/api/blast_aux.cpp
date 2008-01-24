@@ -47,12 +47,14 @@
 #include <objects/seq/NCBIstdaa.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <algo/blast/api/blast_aux.hpp>
+#include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/core/blast_seqsrc_impl.h>
 #include <algo/blast/api/sseqloc.hpp>
 #include "blast_setup.hpp"
 #include "blast_aux_priv.hpp"
 
 #include <algorithm>
+#include <sstream>
 
 /** @addtogroup AlgoBlast
  *
@@ -588,6 +590,48 @@ CAutomaticGenCodeSingleton::~CAutomaticGenCodeSingleton()
     }
 }
 
+void ThrowIfInvalidTask(const string& task)
+{
+    static set<string> valid_tasks;
+    if (valid_tasks.empty()) {
+        valid_tasks = CBlastOptionsFactory::GetTasks();
+    }
+
+    if (valid_tasks.find(task) == valid_tasks.end()) {
+        ostringstream os;
+        os << "'" << task << "' is not a supported task";
+        NCBI_THROW(CBlastException, eInvalidArgument, os.str());
+    }
+}
+
+string EProgramToTaskName(EProgram p)
+{
+    string retval;
+    switch (p) {
+    case eBlastn:           retval.assign("blastn"); break;
+    case eMegablast:        retval.assign("megablast"); break;
+    case eDiscMegablast:    retval.assign("dc-megablast"); break;
+    case eBlastp:           retval.assign("blastp"); break;
+    case eBlastx:           retval.assign("blastx"); break;
+    case eTblastn:          retval.assign("tblastn"); break;
+    case eTblastx:          retval.assign("tblastx"); break;
+    case eRPSBlast:         retval.assign("rpsblast"); break;
+    case eRPSTblastn:       retval.assign("rpstblastn"); break;
+    case ePSIBlast:         retval.assign("psiblast"); break;
+    case ePHIBlastp:        retval.assign("phiblastp"); break;
+    case ePHIBlastn:        retval.assign("phiblastn"); break;
+    default:
+        cerr << "Invalid EProgram value: " << (int)p << endl;
+        abort();
+    }
+
+#if _DEBUG
+    ThrowIfInvalidTask(retval);
+#endif
+
+    return retval;
+}
+
 EBlastProgramType
 EProgramToEBlastProgramType(EProgram p)
 {
@@ -636,9 +680,13 @@ EProgram ProgramNameToEnum(const std::string& program_name)
     string lowercase_program_name(program_name);
     lowercase_program_name = NStr::ToLower(lowercase_program_name);
 
-    if (lowercase_program_name == "blastn") {
+#if _DEBUG
+    ThrowIfInvalidTask(lowercase_program_name);
+#endif
+
+    if (NStr::StartsWith(lowercase_program_name, "blastn")) {
         return eBlastn;
-    } else if (lowercase_program_name == "blastp") {
+    } else if (NStr::StartsWith(lowercase_program_name, "blastp")) {
         return eBlastp;
     } else if (lowercase_program_name == "blastx") {
         return eBlastx;
@@ -654,15 +702,8 @@ EProgram ProgramNameToEnum(const std::string& program_name)
         return eMegablast; 
     } else if (lowercase_program_name == "psiblast") {
         return ePSIBlast;
-    } else {
-        // Handle discontiguous megablast (no established convention AFAIK)
-        string::size_type idx_mb = lowercase_program_name.find("megablast");
-        string::size_type idx_disco = lowercase_program_name.find("disc");
-        if (idx_mb != string::npos && idx_disco != string::npos) {
-            return eDiscMegablast;
-        }
-        
-        // Handle others ...
+    } else if (lowercase_program_name == "dc-megablast") {
+        return eDiscMegablast;
     }
     NCBI_THROW(CBlastException, eNotSupported, 
                "Program type '" + program_name + "' not supported");

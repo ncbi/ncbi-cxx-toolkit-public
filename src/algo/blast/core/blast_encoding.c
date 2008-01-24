@@ -77,6 +77,16 @@ const Uint1 BLASTNA_TO_NCBI4NA[BLASTNA_SIZE] = {
      0      /* Gap, 15 */
 };
 
+const char BLASTNA_TO_IUPACNA[BLASTNA_SIZE] = {
+    'A', 'C', 'G', 'T', 'R', 'Y', 'M', 'K', 
+    'W', 'S', 'B', 'D', 'H', 'V', 'N', '-'
+};
+
+const char NCBI4NA_TO_IUPACNA[BLASTNA_SIZE] = {
+    '-', 'A', 'C', 'M', 'G', 'R', 'S', 'V',
+    'T', 'W', 'Y', 'H', 'K', 'D', 'B', 'N'
+};
+
 const Uint1 IUPACNA_TO_BLASTNA[128]={
 15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
 15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,

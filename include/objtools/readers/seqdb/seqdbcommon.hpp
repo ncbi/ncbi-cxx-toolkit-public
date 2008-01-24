@@ -947,7 +947,6 @@ public:
     /// not cause any filtering to occur.  This is represented here as
     /// a negative ID list with no elements.
     ///
-    /// @param other The object to copy.
     CSeqDBIdSet();
     
     /// Build a computed ID list given an initial set of IDs.

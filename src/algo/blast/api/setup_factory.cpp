@@ -377,7 +377,7 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
             NCBI_THROW( CIndexedDbException, eIndexInitError, errstr );
         }
         else {
-            ERR_POST( Warning << errstr << " Database index will not be used." );
+            ERR_POST_EX(1, 1, Info << errstr << " Database index will not be used." );
             options->SetUseIndex( false );
             return;
         }

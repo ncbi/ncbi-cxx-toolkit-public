@@ -82,6 +82,12 @@ NCBI_XBLAST_EXPORT extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 /** Translates between ncbieaa and ncbistdaa. */
 NCBI_XBLAST_EXPORT extern const char NCBISTDAA_TO_AMINOACID[];
 
+/** Translates between blastna and iupacna. */
+NCBI_XBLAST_EXPORT extern const char BLASTNA_TO_IUPACNA[];
+
+/** Translates between ncbi4na and iupacna. */
+NCBI_XBLAST_EXPORT extern const char NCBI4NA_TO_IUPACNA[];
+
 #define BLAST2NA_SIZE 4     /**< Size of compressed nucleic acid alphabet */
 #define BLASTNA_SIZE 16     /**< Size of nucleic acid alphabet */
 #define BLASTAA_SIZE 28     /**< Size of aminoacid alphabet */

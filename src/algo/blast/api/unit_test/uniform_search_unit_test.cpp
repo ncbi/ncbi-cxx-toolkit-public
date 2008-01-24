@@ -23,40 +23,48 @@
  *
  * ===========================================================================
  *
- * Author: Christiam Camacho
+ * Authors: Christiam Camacho
  *
  */
 
-/** @file blastn_args.hpp
- * Main argument class for BLASTN application
+/** @file uniform_search_unit_test.cpp
+ * Unit tests for the uniform search API
  */
 
-#ifndef ALGO_BLAST_BLASTINPUT___BLASTN_ARGS__HPP
-#define ALGO_BLAST_BLASTINPUT___BLASTN_ARGS__HPP
+#include <ncbi_pch.hpp>
+#include <algo/blast/api/uniform_search.hpp>
 
-#include <algo/blast/blastinput/blast_args.hpp>
+// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
+#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
+#  undef numeric_limits
+#endif
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(blast)
+#include <boost/test/auto_unit_test.hpp>
 
-/// Handles command line arguments for blastn binary
-class NCBI_XBLAST_EXPORT CBlastnAppArgs : public CBlastAppArgs
+#ifndef BOOST_AUTO_TEST_CASE
+#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
+#endif
+
+#ifndef SKIP_DOXYGEN_PROCESSING
+
+USING_NCBI_SCOPE;
+USING_SCOPE(blast);
+USING_SCOPE(objects);
+
+BOOST_AUTO_TEST_CASE(SearchDatabase_RestrictionGiList)
 {
-public:
-    /// Constructor
-    CBlastnAppArgs();
+    CSearchDatabase::TGiList gis(1, 5);
+    CSearchDatabase db("junk", CSearchDatabase::eBlastDbIsProtein);
+    db.SetGiListLimitation(gis);
+    BOOST_REQUIRE_THROW(db.SetNegativeGiListLimitation(gis), CBlastException);
+}
 
-    virtual int GetQueryBatchSize() const;
+BOOST_AUTO_TEST_CASE(SearchDatabase_Restriction)
+{
+    CSearchDatabase::TGiList gis(1, 5);
+    CSearchDatabase db("junk", CSearchDatabase::eBlastDbIsProtein);
+    db.SetNegativeGiListLimitation(gis);
+    BOOST_REQUIRE_THROW(db.SetGiListLimitation(gis), CBlastException);
+}
 
-protected:
-    virtual CRef<CBlastOptionsHandle>
-    x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
-                          const CArgs& args);
-
-};
-
-
-END_SCOPE(blast)
-END_NCBI_SCOPE
-
-#endif  /* ALGO_BLAST_BLASTINPUT___BLASTN_ARGS__HPP */
+#endif /* SKIP_DOXYGEN_PROCESSING */

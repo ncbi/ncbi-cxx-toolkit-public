@@ -66,6 +66,9 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
                                           "Position-Specific Initiated BLAST"));
     m_Args.push_back(arg);
 
+    static const string kDefaultTask = "psiblast";
+    SetTask(kDefaultTask);
+
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
@@ -160,7 +163,7 @@ CPsiBlastAppArgs::GetQueryBatchSize() const
 bool
 CPsiBlastAppArgs::SaveCheckpoint() const
 {
-    return static_cast<bool>(m_PsiBlastArgs->GetCheckPointOutputStream());
+    return static_cast<bool>(m_PsiBlastArgs->GetCheckPointOutputStream() != 0);
 }
 
 CNcbiOstream*

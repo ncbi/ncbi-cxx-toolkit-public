@@ -125,11 +125,17 @@ public:
     /// @param program Program name to show in the header [in]
     /// @param bioseq Query Bioseq [in]
     /// @param dbname Search database name [in]
-    /// @param iteration Iteration number (for PSI-BLAST) [in]
+    /// @param rid the search RID (if not applicable, it should be empty
+    /// the string) [in]
+    /// @param iteration Iteration number (for PSI-BLAST), use default
+    /// parameter value when not applicable [in]
     /// @param align_set All alignments for this query [in]
     virtual void PrintHeader(const string& program, 
                              const CBioseq& bioseq, 
-                             const string& dbname, int iteration,
+                             const string& dbname, 
+                             const string& rid = kEmptyStr,
+                             unsigned int iteration = 
+                                numeric_limits<unsigned int>::max(),
                              const CSeq_align_set* align_set=0); 
     /// Enumeration for all fields that are supported in the tabular output
     enum ETabularField {

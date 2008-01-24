@@ -54,6 +54,9 @@ CRPSBlastAppArgs::CRPSBlastAppArgs()
                                           "Reverse Position Specific BLAST"));
     m_Args.push_back(arg);
 
+    static const string kDefaultTask = "rpsblast";
+    SetTask(kDefaultTask);
+
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs(false, kIsRpsBlast));
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);

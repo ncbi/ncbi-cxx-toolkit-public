@@ -54,9 +54,11 @@ CBlastnAppArgs::CBlastnAppArgs()
     const bool kQueryIsProtein = false;
     m_Args.push_back(arg);
 
+    static const string kDefaultTask = "megablast";
+    SetTask(kDefaultTask);
     set<string> tasks
         (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eNuclNucl));
-    arg.Reset(new CTaskCmdLineArgs(tasks, "megablast"));
+    arg.Reset(new CTaskCmdLineArgs(tasks, kDefaultTask));
     m_Args.push_back(arg);
 
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
@@ -117,8 +119,8 @@ CBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                                       const CArgs& args)
 {
     CRef<CBlastOptionsHandle> retval;
-    m_Task.assign(args[kTask].AsString());
-    retval.Reset(CBlastOptionsFactory::CreateTask(m_Task, locality));
+    SetTask(args[kTask].AsString());
+    retval.Reset(CBlastOptionsFactory::CreateTask(GetTask(), locality));
     _ASSERT(retval.NotEmpty());
     return retval;
 }
@@ -126,19 +128,7 @@ CBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 int
 CBlastnAppArgs::GetQueryBatchSize() const
 {
-    EProgram p;
-    if (NStr::StartsWith(m_Task, "blastn")) {
-        p = eBlastn;
-    } else if (m_Task == "megablast") {
-        p = eMegablast;
-    } else if (m_Task == "dc-megablast") {
-        p = eDiscMegablast;
-    } else {
-        cerr << "Cannot determine query batch size for task '" << m_Task 
-             << "'" << endl;
-        abort();
-    }
-    return blast::GetQueryBatchSize(p);
+    return blast::GetQueryBatchSize(ProgramNameToEnum(GetTask()));
 }
 
 END_SCOPE(blast)

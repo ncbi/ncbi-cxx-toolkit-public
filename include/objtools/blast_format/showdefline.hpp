@@ -324,6 +324,9 @@ private:
     int m_QueryLength;
     ///Indicates if 'Related structures' link should show
     bool m_StructureLinkout;
+
+    /// Current alignment index (added to the linkout and entrez URL's)
+    int m_cur_align;
     
     CCgiContext* m_Ctx;
 

@@ -266,6 +266,7 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
         
         const CDense_seg& kDenseg = (final_aln ? final_aln->GetSegs().GetDenseg() :
                                 kAlign.GetSegs().GetDenseg());
+
         CRef<CAlnVec> aln_vec;
 
         // For non-transalted reverse strand alignments, show plus strand on 

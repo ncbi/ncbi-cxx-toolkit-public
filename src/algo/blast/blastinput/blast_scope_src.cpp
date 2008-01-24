@@ -131,7 +131,8 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(const string& dbname,
         // data loader will be the fallback (just issue a warning)
 
         if (e.GetMsg().find("No alias or index file found ") != NPOS) {
-            ERR_POST(Warning << e.GetMsg());
+            ERR_POST(Warning << "Error initializing local BLAST database data "
+                             << "loader: '" << e.GetMsg() << "'");
         }
 
     }
@@ -158,9 +159,8 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(CRef<CSeqDB> db_handle)
             // in case of error when initializing the BLAST database, just
             // ignore the exception as the Genbank data loader will be the 
             // fallback (just issue a warning)
-            ERR_POST(Warning << "Error initializing BLAST database data loader"
-                     << e.what());
-
+            ERR_POST(Warning << "Error initializing local BLAST database data "
+                             << "loader: '" << e.what() << "'");
         }
     }
 }
@@ -180,7 +180,8 @@ CBlastScopeSource::x_InitGenbankDataLoader()
             .GetLoader()->GetName();
     } catch (const CException& e) {
         m_GbLoaderName.erase();
-        ERR_POST(Warning << e.GetMsg());
+        ERR_POST(Warning << "Error initializing Genbank data loader: " 
+                         << e.GetMsg());
     }
 }
 

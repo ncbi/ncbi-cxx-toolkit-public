@@ -46,7 +46,6 @@
 #include <algo/blast/api/psiblast_options.hpp>
 #include <algo/blast/api/phiblast_nucl_options.hpp>
 #include <algo/blast/api/phiblast_prot_options.hpp>
-#include <sstream>
 
 /** @addtogroup AlgoBlast
  *
@@ -182,6 +181,7 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
         retval.insert("psiblast");
         retval.insert("phiblast");
         retval.insert("rpsblast");
+        retval.insert("rpstblastn");
         retval.insert("blastx");
         retval.insert("tblastn");
         retval.insert("tblastx");
@@ -224,6 +224,9 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
         retval += "a protein database";
     } else if (task == "rpsblast") {
         retval.assign("Search of a protein query against a database of motifs");
+    } else if (task == "rpstblastn") {
+        retval.assign("Search of a (translated) nucleotide query against ");
+        retval.append("a database of motifs");
     } else if (task == "tblastn") {
         retval.assign("Search of a protein query against a (translated) ");
         retval += "nucleotide database";
@@ -241,19 +244,15 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
 {
     CBlastOptionsHandle* retval = NULL;
 
-    // Sanity check to force updating of GetTasks() method
-    set<string> allowed_tasks = GetTasks();
     string lc_task(NStr::ToLower(task));
-    if (allowed_tasks.find(lc_task) == allowed_tasks.end()) {
-        ostringstream os;
-        os << "'" << task << "' is not a supported task";
-        NCBI_THROW(CBlastException, eInvalidArgument, os.str());
-    }
+    ThrowIfInvalidTask(lc_task);
 
-    if (!NStr::CompareNocase(task, "blastn") || !NStr::CompareNocase(task, "blastn-short"))
+    if (!NStr::CompareNocase(task, "blastn") || 
+        !NStr::CompareNocase(task, "blastn-short"))
     {
         CBlastNucleotideOptionsHandle* opts = 
-             dynamic_cast<CBlastNucleotideOptionsHandle*> (CBlastOptionsFactory::Create(eBlastn, locality));
+             dynamic_cast<CBlastNucleotideOptionsHandle*>
+                (CBlastOptionsFactory::Create(eBlastn, locality));
         _ASSERT(opts);
         if (!NStr::CompareNocase(task, "blastn-short"))
         {
@@ -273,10 +272,12 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     {
          retval = CBlastOptionsFactory::Create(eDiscMegablast, locality);
     }
-    else if (!NStr::CompareNocase(task, "blastp") || !NStr::CompareNocase(task, "blastp-short"))
+    else if (!NStr::CompareNocase(task, "blastp") || 
+             !NStr::CompareNocase(task, "blastp-short"))
     {
          CBlastAdvancedProteinOptionsHandle* opts =
-               dynamic_cast<CBlastAdvancedProteinOptionsHandle*> (CBlastOptionsFactory::Create(eBlastp, locality));
+               dynamic_cast<CBlastAdvancedProteinOptionsHandle*> 
+                (CBlastOptionsFactory::Create(eBlastp, locality));
          if (task == "blastp-short")
          {
             opts->SetMatrixName("PAM30");
@@ -299,6 +300,10 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     else if (!NStr::CompareNocase(task, "rpsblast"))
     {
          retval = CBlastOptionsFactory::Create(eRPSBlast, locality);
+    }
+    else if (!NStr::CompareNocase(task, "rpstblastn"))
+    {
+         retval = CBlastOptionsFactory::Create(eRPSTblastn, locality);
     }
     else if (!NStr::CompareNocase(task, "blastx"))
     {

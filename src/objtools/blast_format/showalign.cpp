@@ -1019,9 +1019,11 @@ void CDisplaySeqalign::x_PrintFeatures(list<SAlnFeatureInfo*> feature,
 
 string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi, 
                                   int row, int taxid, int linkout) const
+                                  
 {
     string urlLink = NcbiEmptyString;
     char dopt[32], db[32];
+    char logstr_moltype[32], logstr_location[32];
     bool hit_not_in_mapviewer = !(linkout & eHitInMapviewer);
     
     gi = (gi == 0) ? s_GetGiForSeqIdList(ids):gi;
@@ -1043,14 +1045,20 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
             if(m_IsDbNa) {
                 strcpy(dopt, "GenBank");
                 strcpy(db, "Nucleotide");
+                strcpy(logstr_moltype, "nucl");
             } else {
                 strcpy(dopt, "GenPept");
                 strcpy(db, "Protein");
-            }    
-	  string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");            
+                strcpy(logstr_moltype, "prot");
+            }   
+
+            strcpy(logstr_location, "align");
+
+            string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");            
             sprintf(urlBuf, l_EntrezUrl.c_str(), 
                     (m_AlignOption & eShowInfoOnMouseOverSeqid) ? 
                     temp_class_info.c_str() : "", db, gi, dopt, m_Rid.c_str(),
+                    logstr_moltype, logstr_location, m_cur_align,
                     (m_AlignOption & eNewTargetWindow) ? 
                     "TARGET=\"EntrezView\"" : "");
             urlLink = urlBuf;
@@ -1101,24 +1109,28 @@ void CDisplaySeqalign::x_AddLinkout(const CBioseq& cbsp,
                 sprintf(buf, l_UnigeneUrl.c_str(), 
                         !cbsp.IsAa() ? "nucleotide" : "protein", 
                         !cbsp.IsAa() ? "nucleotide" : "protein", gi,
-                        m_Rid.c_str());
+                        m_Rid.c_str(),
+                        "align", m_cur_align);
                 out << buf;
             }
             if ((*iter) & eStructure){
                 sprintf(buf, kStructureUrl.c_str(), m_Rid.c_str(), first_gi,
                         gi, m_CddRid.c_str(), "onepair", 
                         (m_EntrezTerm == NcbiEmptyString) ? 
-                        "none":((char*) m_EntrezTerm.c_str()));
+                        "none":((char*) m_EntrezTerm.c_str()),
+                        "align", m_cur_align);
                 out << buf;
             }
             if ((*iter) & eGeo){
 
-                sprintf(buf, l_GeoUrl.c_str(), gi, m_Rid.c_str());
+                sprintf(buf, l_GeoUrl.c_str(), gi, m_Rid.c_str(),
+                        "align", m_cur_align);
                 out << buf;
             }
             if((*iter) & eGene){
                 sprintf(buf, l_GeneUrl.c_str(), gi, cbsp.IsAa() ? 
-                        "PUID" : "NUID", m_Rid.c_str());
+                        "PUID" : "NUID", m_Rid.c_str(),
+                        "align", m_cur_align);
                 out << buf;
             }
         }
@@ -1571,6 +1583,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     }
     //begin to display
     int num_align = 0;
+    m_cur_align = 0;
     string toolUrl = NcbiEmptyString;
     if(m_AlignOption & eHtml){
         toolUrl = m_Reg->Get(m_BlastType, "TOOL_URL");
@@ -1593,6 +1606,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                      iter =  actual_aln_list.Get().begin(); 
                  iter != actual_aln_list.Get().end() 
                      && num_align<m_NumAlignToShow; iter++, num_align++) {
+
                 //make alnvector
                 CRef<CAlnVec> avRef = x_GetAlnVecForSeqalign(**iter);
                 string idString = avRef->GetSeqId(1).GetSeqIdString();
@@ -1636,6 +1650,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                  iter =  actual_aln_list.Get().begin(); 
              iter != actual_aln_list.Get().end() 
                  && num_align<m_NumAlignToShow; iter++, num_align++) {
+
             //make alnvector
             CRef<CAlnVec> avRef = x_GetAlnVecForSeqalign(**iter);
             
@@ -1699,6 +1714,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                  alnIter = actual_aln_list.Get().begin(); 
              alnIter != actual_aln_list.Get().end() 
                  && num_align<m_NumAlignToShow; alnIter ++, num_align++) {
+
             const CBioseq_Handle& subj_handle = 
                 m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1));
             if(subj_handle){
@@ -1868,6 +1884,8 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
         const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
         bool isFirst = true;
         int firstGi = 0;
+
+        m_cur_align++;
     
         if(bdl.empty()){ //no blast defline struct, should be no such case now
             //actually not so fast...as we now fetch from entrez even when it's not in blast db
@@ -2001,7 +2019,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                                               bsp_handle.
                                               GetBioseqCore()->IsNa(), 
                                               user_url, m_IsDbNa, firstGi,
-                                              false, true);
+                                              false, true, m_cur_align);
                             out <<" ";
                             ITERATE(list<string>, iter_linkout, linkout_url){
                                 out << *iter_linkout;
@@ -2678,7 +2696,8 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
     }
     url_with_parameters = CBlastFormatUtil::BuildUserUrl(ids, taxid, toolUrl,
                                                          m_DbName,
-                                                         m_IsDbNa, m_Rid, m_QueryNumber);
+                                                         m_IsDbNa, m_Rid, m_QueryNumber,
+                                                         true);
     if (url_with_parameters != NcbiEmptyString) {
         
         link +=  (m_AlignOption & eShowInfoOnMouseOverSeqid) ? 
@@ -2809,7 +2828,9 @@ string CDisplaySeqalign::x_GetGeneLinkUrl(int gene_id)
     char* buf = new char[strGeneLinkUrl.size() + 1024];
     sprintf(buf, strGeneLinkUrl.c_str(), 
                  gene_id,
-                 m_Rid.c_str());
+                 m_Rid.c_str(),
+                 m_IsDbNa ? "nucl" : "prot",
+                 m_cur_align);
     strGeneLinkUrl = string(buf);
     delete [] buf;
     return strGeneLinkUrl;

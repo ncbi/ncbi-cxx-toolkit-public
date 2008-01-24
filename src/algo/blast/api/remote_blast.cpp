@@ -1119,28 +1119,52 @@ void CRemoteBlast::x_Init(CRef<CBlastOptionsHandle>   opts_handle,
     
     SetDatabase(db.GetDatabaseName());
     SetEntrezQuery(db.GetEntrezQueryLimitation().c_str());
-    CSearchDatabase::TGiList tmplist = db.GetGiListLimitation();
-    if ( !tmplist.empty() ) {
-        list<Int4> gilist;
-        ITERATE(CSearchDatabase::TGiList, itr, tmplist) {
-            gilist.push_back(list<Int4>::value_type(*itr));
+    // Set the GI list restriction
+    {{
+        const CSearchDatabase::TGiList& tmplist = db.GetGiListLimitation();
+        if ( !tmplist.empty() ) {
+            list<Int4> gilist;
+            copy(tmplist.begin(), tmplist.end(), back_inserter(gilist));
+            SetGIList(gilist);
         }
-        SetGIList(gilist);
-    }
+    }}
+
+    // Set the negative GI list
+    {{
+        const CSearchDatabase::TGiList& tmplist = 
+            db.GetNegativeGiListLimitation();
+        if ( !tmplist.empty() ) {
+            list<Int4> gilist;
+            copy(tmplist.begin(), tmplist.end(), back_inserter(gilist));
+            SetNegativeGIList(gilist);
+        }
+    }}
 }
 
 CRemoteBlast::~CRemoteBlast()
 {
 }
 
-void CRemoteBlast::SetGIList(list<Int4> & gi_list)
+void CRemoteBlast::SetGIList(const list<Int4> & gi_list)
 {
     if (gi_list.empty()) {
         return;
     }
     x_SetOneParam(B4Param_GiList, & gi_list);
     
-    m_GiList = gi_list;
+    m_GiList.clear();
+    copy(gi_list.begin(), gi_list.end(), back_inserter(m_GiList));
+}
+
+void CRemoteBlast::SetNegativeGIList(const list<Int4> & gi_list)
+{
+    if (gi_list.empty()) {
+        return;
+    }
+    x_SetOneParam(B4Param_NegativeGiList, & gi_list);
+    
+    m_NegativeGiList.clear();
+    copy(gi_list.begin(), gi_list.end(), back_inserter(m_NegativeGiList));
 }
 
 void CRemoteBlast::SetDatabase(const string & x)
@@ -1835,11 +1859,19 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             found = false;
         }
         break;
+
+    case 'N':
+        if (B4Param_NegativeGiList.Match(p)) {
+            m_NegativeGiList = v.GetInteger_list();
+        } else {
+            found = false;
+        }
+        break;
         
     case 'P':
         if (B4Param_PHIPattern.Match(p)) {
             if (v.GetString() != "") {
-                bool is_na = Blast_QueryIsNucleotide(bo.GetProgramType());
+                bool is_na = !! Blast_QueryIsNucleotide(bo.GetProgramType());
                 bo.SetPHIPattern(v.GetString().c_str(), is_na);
             }
         } else if (B4Param_PercentIdentity.Match(p)) {
@@ -2009,7 +2041,8 @@ CBlastOptionsBuilder::AdjustProgram(const TValueList * L,
 
 CRef<CBlastOptionsHandle> CBlastOptionsBuilder::
 GetSearchOptions(const objects::CBlast4_parameters * aopts,
-                 const objects::CBlast4_parameters * popts)
+                 const objects::CBlast4_parameters * popts,
+                 string *task_name)
 {
     EProgram program = ComputeProgram(m_Program, m_Service);
     
@@ -2020,6 +2053,9 @@ GetSearchOptions(const objects::CBlast4_parameters * aopts,
     
     CRef<CBlastOptionsHandle>
         cboh(CBlastOptionsFactory::Create(program, m_Locality));
+    
+    if (task_name != NULL) 
+        *task_name = EProgramToTaskName(program);
     
     x_ProcessOptions(*cboh, (aopts == NULL ? 0 : &aopts->Get()));
     x_ProcessOptions(*cboh, (popts == NULL ? 0 : &popts->Get()));
@@ -2069,6 +2105,16 @@ list<int> CBlastOptionsBuilder::GetGiList()
     return m_GiList.Get();
 }
 
+bool CBlastOptionsBuilder::HaveNegativeGiList()
+{
+    return m_NegativeGiList.Have();
+}
+
+list<int> CBlastOptionsBuilder::GetNegativeGiList()
+{
+    return m_NegativeGiList.Get();
+}
+
 CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
 {
     if (m_CBOH.Empty()) {
@@ -2077,7 +2123,8 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
         
         CBlastOptionsBuilder bob(program_s, service_s);
         
-        m_CBOH = bob.GetSearchOptions(m_AlgoOpts, m_ProgramOpts);
+        string task;
+        m_CBOH = bob.GetSearchOptions(m_AlgoOpts, m_ProgramOpts, &task);
         
         if (bob.HaveEntrezQuery()) {
             m_EntrezQuery = bob.GetEntrezQuery();
@@ -2094,9 +2141,56 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
         if (bob.HaveGiList()) {
             m_GiList = bob.GetGiList();
         }
+
+        if (bob.HaveNegativeGiList()) {
+            m_NegativeGiList = bob.GetNegativeGiList();
+        }
     }
     
     return m_CBOH;
+}
+
+/// Extract the query IDs from a CBioseq_set
+/// @param bss CBioseq_set object used as source [in]
+/// @param query_ids where the query_ids will be added [in|out]
+static void s_ExtractQueryIdsFromBioseqSet(const CBioseq_set& bss,
+                                           CSearchResultSet::TQueryIdVector&
+                                           query_ids)
+{
+    // sacrifice speed for protection against infinite loops
+    CTypeConstIterator<objects::CBioseq> itr(ConstBegin(bss, eDetectLoops)); 
+    for (; itr; ++itr) {
+        query_ids.push_back(FindBestChoice(itr->GetId(), CSeq_id::BestRank));
+    }
+}
+
+void 
+CRemoteBlast::x_ExtractQueryIds(CSearchResultSet::TQueryIdVector& query_ids)
+{
+    query_ids.clear();
+    CRef<CBlast4_queries> queries = GetQueries();
+    query_ids.reserve(queries->GetNumQueries());
+    _ASSERT(queries);
+
+    if (queries->IsPssm()) {
+        const CSeq_entry& seq_entry = queries->GetPssm().GetQuery();
+        if (seq_entry.IsSeq()) {
+            query_ids.push_back(FindBestChoice(seq_entry.GetSeq().GetId(), 
+                                               CSeq_id::BestRank));
+        } else {
+            _ASSERT(seq_entry.IsSet());
+            s_ExtractQueryIdsFromBioseqSet(seq_entry.GetSet(), query_ids);
+        }
+    } else if (queries->IsSeq_loc_list()) {
+        query_ids.reserve(queries->GetSeq_loc_list().size());
+        ITERATE(CBlast4_queries::TSeq_loc_list, i, queries->GetSeq_loc_list()) {
+            CConstRef<CSeq_id> id((*i)->GetId());
+            query_ids.push_back(id);
+        }
+    } else {
+        _ASSERT(queries->IsBioseq_set());
+        s_ExtractQueryIdsFromBioseqSet(queries->GetBioseq_set(), query_ids);
+    }
 }
 
 // const string & CRemoteBlast::GetEntrezQuery()
@@ -2172,13 +2266,8 @@ CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
     if (alignments.empty()) {
         // this is required by the CSearchResultSet ctor
         alignments.resize(1);    
-        try {
-            CRef<CBlast4_queries> queries = GetQueries();
-            for (CTypeConstIterator<CSeq_id> itr(ConstBegin(*m_Queries)); 
-                 itr; ++itr) {
-                query_ids.push_back(CConstRef<CSeq_id>(&*itr));
-            }
-        } catch (const CRemoteBlastException& e) {
+        try { x_ExtractQueryIds(query_ids); } 
+        catch (const CRemoteBlastException& e) {
             if (e.GetMsg() == kNoRIDSpecified) {
                 retval.Reset(new CSearchResultSet(alignments, search_messages));
                 return retval;
@@ -2234,6 +2323,7 @@ CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
     
     retval.Reset(new CSearchResultSet(query_ids, alignments, search_messages,
                                       ancill_vector));
+    retval->SetRID(GetRID());
     return retval;
 }
 

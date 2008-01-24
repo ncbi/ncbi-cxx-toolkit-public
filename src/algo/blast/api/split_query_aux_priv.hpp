@@ -40,6 +40,7 @@
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/setup_factory.hpp>
 #include "split_query_blk.hpp"
+#include <sstream>
 
 /** @addtogroup AlgoBlast
  *
@@ -74,12 +75,12 @@ SplitQuery_GetChunkSize(EProgram program);
 
 /// Calculate the number of chunks that a query will be split into
 /// @param program BLAST program type [in]
-/// @param chunk_size size of each of the query chunks [in]
+/// @param chunk_size size of each of the query chunks, may be adjusted [in|out]
 /// @param concatenated_query_length length of the concatenated query [in]
 /// @param num_queries number of queries to split [in]
 Uint4 
 SplitQuery_CalculateNumChunks(EBlastProgramType program,
-                              size_t chunk_size, 
+                              size_t *chunk_size, 
                               size_t concatenated_query_length,
                               size_t num_queries);
 
@@ -106,7 +107,13 @@ class CContextTranslator {
 public:
     /// Constructor
     /// @param sqb Split query block structure [in]
-    CContextTranslator(const CSplitQueryBlk& sqb);
+    /// @param query_chunk_factories query factories corresponding to each of
+    /// the chunks needed to report unit testing data (optional) [in]
+    /// @param options BLAST options, also needed to report unit test data
+    /// (optional) [in]
+    CContextTranslator(const CSplitQueryBlk& sqb,
+               vector< CRef<IQueryFactory> >* query_chunk_factories = NULL,
+               const CBlastOptions* options = NULL);
 
     /** 
      * @brief Get the context number in the absolute (i.e.: unsplit) query
@@ -146,10 +153,19 @@ public:
      */
     int GetStartingChunk(size_t curr_chunk, Int4 context_in_chunk) const;
 
+    /// Print this object so that its contents can be directly used to update
+    /// split_query.ini (for unit testing)
+    /// @param out stream to print this object [in|out]
+    /// @param rhs object to print [in]
+    friend ostream& operator<<(ostream& out, const CContextTranslator& rhs);
+
 private:
     /// Each element in this vector represents a chunk, and it contains the
     /// contexts numbers that correspond in the full concatenated query
     vector< vector<int> > m_ContextsPerChunk;
+
+    vector< vector<int> > m_StartingChunks;
+    vector< vector<int> > m_AbsoluteContexts;
 };
 
 /// Auxiliary class to determine information about the query that was split
@@ -234,6 +250,24 @@ private:
     /// Initial value of all entries in the above cache
     enum { kUninitialized = -1 };
 };
+
+/// Auxiliary function to print a vector
+/// @param data2print vector to print [in]
+template <class T>
+string s_PrintVector(const vector<T>& data2print) 
+{
+    ostringstream os;
+
+    if (data2print.empty()) {
+        return kEmptyStr;
+    }
+
+    os << data2print.front();
+    for (size_t i = 1; i < data2print.size(); i++) {
+        os << ", " << data2print[i];
+    }
+    return os.str();
+}
 
 END_SCOPE(BLAST)
 END_NCBI_SCOPE

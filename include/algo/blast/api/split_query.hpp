@@ -86,6 +86,12 @@ public:
     /// @param chunk_num chunk number to retrieve (< GetNumberOfChunks())
     CRef<IQueryFactory> GetQueryFactoryForChunk(Uint4 chunk_num);
 
+    /// Print this object so that its contents can be directly used to update
+    /// split_query.ini (for unit testing)
+    /// @param out stream to print this object [in|out]
+    /// @param rhs object to print [in]
+    friend ostream& operator<<(ostream& out, const CQuerySplitter& rhs);
+
 private:
     /// Definition of a vector of CBlastQueryVectors, each element corresponds
     /// to a query chunk

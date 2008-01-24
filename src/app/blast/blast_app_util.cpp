@@ -46,6 +46,7 @@ static char const rcsid[] =
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>  // for blast::CInputException
+#include <objtools/readers/seqdb/seqdbcommon.hpp>   // for CSeqDBException
 #include <algo/blast/blastinput/psiblast_args.hpp>
 #include <algo/blast/blastinput/tblastn_args.hpp>
 #include <algo/blast/blastinput/blast_scope_src.hpp>
@@ -56,24 +57,58 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(blast);
 
+/** 
+ * @brief Read a gi list by resolving the file name
+ * 
+ * @param filename name of file containing the gi list
+ * 
+ * @return CRef containing the gi list
+ *
+ * @throw CSeqDBException if the filename is not found
+ */
+static CRef<CSeqDBGiList> s_ReadGiList(const string& filename)
+{
+    CRef<CSeqDBGiList> retval;
+    _ASSERT( !filename.empty() );
+
+    string file2open(SeqDB_ResolveDbPath(filename));
+    if (file2open.empty()) {
+        NCBI_THROW(CSeqDBException, eFileErr, 
+                   "File '" + filename + "' not found");
+    } 
+    retval.Reset(new CSeqDBFileGiList(file2open));
+    _ASSERT(retval);
+    return retval;
+}
+
 CRef<CSeqDB> GetSeqDB(CRef<CBlastDatabaseArgs> db_args)
 {
+    CRef<CSeqDB> retval;
     const CSeqDB::ESeqType seq_type = db_args->IsProtein()
         ? CSeqDB::eProtein
         : CSeqDB::eNucleotide;
 
-    // Process the optional gi list file
-    CRef<CSeqDBGiList> gi_list;
     string gi_list_restriction = db_args->GetGiListFileName();
-    if ( !gi_list_restriction.empty() ) {
-        gi_list_restriction.assign(SeqDB_ResolveDbPath(gi_list_restriction));
-        if ( !gi_list_restriction.empty() ) {
-            gi_list.Reset(new CSeqDBFileGiList(gi_list_restriction));
+    string negative_gi_list = db_args->GetNegativeGiListFileName();
+    _ASSERT(gi_list_restriction.empty() || negative_gi_list.empty());
 
-        }
+    if ( !gi_list_restriction.empty() ) {
+        CRef<CSeqDBGiList> gi_list = s_ReadGiList(gi_list_restriction);
+        _ASSERT(gi_list);
+        retval.Reset(new CSeqDB(db_args->GetDatabaseName(), seq_type, gi_list));
+    } else if ( !negative_gi_list.empty() ) {
+        CRef<CSeqDBGiList> gi_list = s_ReadGiList(negative_gi_list);
+        _ASSERT(gi_list);
+        vector<int> gis;
+        gi_list->GetGiList(gis);
+        CSeqDBIdSet idset(gis, CSeqDBIdSet::eGi, false);
+        retval.Reset(new CSeqDB(db_args->GetDatabaseName(), seq_type,
+                                idset));
+    } else {
+        retval.Reset(new CSeqDB(db_args->GetDatabaseName(), seq_type));
     }
-    return CRef<CSeqDB>(new CSeqDB(db_args->GetDatabaseName(), 
-                                   seq_type, gi_list));
+    _ASSERT(retval.NotEmpty());
+    return retval;
 }
 
 string RegisterOMDataLoader(CRef<CObjectManager> objmgr, 
@@ -191,7 +226,9 @@ s_ImportSearchStrategy(CNcbiIstream* in,
             prog_opts = &req.GetProgram_options();
         }
 
-        opts_hndl = opts_builder.GetSearchOptions(algo_opts, prog_opts);
+        string task;
+        opts_hndl = opts_builder.GetSearchOptions(algo_opts, prog_opts, &task);
+        cmdline_args->SetTask(task);
     }}
     _ASSERT(opts_hndl.NotEmpty());
     cmdline_args->SetOptionsHandle(opts_hndl);
@@ -228,9 +265,8 @@ s_ImportSearchStrategy(CNcbiIstream* in,
 
             if (opts_builder.HaveGiList()) {
                 CSearchDatabase::TGiList limit;
-                ITERATE (list<int>, it, opts_builder.GetGiList()) {
-                    limit.push_back(*it);
-                }
+                const list<int>& gilist = opts_builder.GetGiList();
+                copy(gilist.begin(), gilist.end(), back_inserter(limit));
                 search_db->SetGiListLimitation(limit);
             }
 
@@ -281,7 +317,8 @@ s_ImportSearchStrategy(CNcbiIstream* in,
                                   (CTmpFile::eIfExists_Throw));
                 out.SetFlag(CFastaOstream::eAssembleParts);
                 
-                CBlastScopeSource scope_src(Blast_QueryIsProtein(prog));
+                CBlastScopeSource scope_src
+                    (static_cast<bool>(Blast_QueryIsProtein(prog)));
                 CRef<CScope> scope(scope_src.NewScope());
 
                 ITERATE(CBlast4_queries::TSeq_loc_list, itr, seqlocs) {

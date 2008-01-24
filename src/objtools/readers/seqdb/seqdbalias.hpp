@@ -787,7 +787,7 @@ private:
     /// @param this_name
     ///   The name of this node
     /// @param prot_nucl
-    ///   Indicates whether this is a protein or nucleotide database
+    ///   Indicates whether this is a protein or nucleotide database.
     /// @param recurse
     ///   Set of all ancestor nodes for this node.
     /// @param locked
@@ -902,6 +902,24 @@ private:
     ///
     /// @param dbnames Space seperated list of database names.
     void x_Tokenize(const string & dbnames);
+    
+    /// Append a subnode to this alias node.
+    ///
+    /// This method appends a new subnode to this node of the alias
+    /// node tree.  It is called by the x_ExpandAliases method.
+    ///
+    /// @param node_path
+    ///   The base path of the new node's volume.
+    /// @param prot_nucl
+    ///   Indicates whether this is a protein or nucleotide database.
+    /// @param recurse
+    ///   Set of all ancestor nodes for this node.
+    /// @param locked
+    ///   The lock holder object for this thread. [in]
+    void x_AppendSubNode(CSeqDB_BasePath  & node_path,
+                         char               prot_nucl,
+                         CSeqDBAliasStack & recurse,
+                         CSeqDBLockHold   & locked);
     
     /// Type used to store a set of volume names for each node
     typedef vector<CSeqDB_BasePath> TVolNames;

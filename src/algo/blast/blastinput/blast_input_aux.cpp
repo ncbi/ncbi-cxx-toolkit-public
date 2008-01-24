@@ -40,7 +40,6 @@ static char const rcsid[] =
 #include "blast_input_aux.hpp"
 /* for CBlastFastaInputSource */
 #include <algo/blast/blastinput/blast_fasta_input.hpp>  
-#include <algo/blast/blastinput/blast_scope_src.hpp> /* for CBlastScopeSource */
 #include <algo/blast/blastinput/psiblast_args.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -129,7 +128,7 @@ ReadSequencesToBlast(CNcbiIstream& in,
 
     CRef<CBlastFastaInputSource> fasta(new CBlastFastaInputSource(in, iconfig));
     CRef<CBlastInput> input(new CBlastInput(fasta));
-    CRef<CScope> scope = CBlastScopeSource(dlconfig).NewScope();
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     sequences = input->GetAllSeqs(*scope);
     return scope;
 }

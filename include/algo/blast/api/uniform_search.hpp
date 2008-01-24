@@ -170,11 +170,19 @@ public:
     /// Accessor for the gi list
     const TGiList& GetGiListLimitation() const;
 
+    /// Mutator for the negative gi list
+    /// @param gilist list of gis [in]
+    void SetNegativeGiListLimitation(const TGiList& gilist);
+    /// Accessor for the negative gi list
+    const TGiList& GetNegativeGiListLimitation() const;
+
 private:
     string          m_DbName;                   ///< database name
     EMoleculeType   m_MolType;                  ///< molecule type
     string          m_EntrezQueryLimitation;    ///< entrez query
+    // N.B.: only one of the 2 below should be specified
     TGiList         m_GiListLimitation;         ///< gi list
+    TGiList         m_NegativeGiListLimitation; ///< negative gi list
 };
 
 

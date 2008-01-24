@@ -52,9 +52,11 @@ CBlastpAppArgs::CBlastpAppArgs()
     const bool kQueryIsProtein = true;
     m_Args.push_back(arg);
 
+    static const string kDefaultTask = "blastp";
+    SetTask(kDefaultTask);
     set<string> tasks
         (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eProtProt));
-    arg.Reset(new CTaskCmdLineArgs(tasks, "blastp"));
+    arg.Reset(new CTaskCmdLineArgs(tasks, kDefaultTask));
     m_Args.push_back(arg);
 
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);

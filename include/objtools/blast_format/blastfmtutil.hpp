@@ -59,7 +59,7 @@ const static string kClassInfo = "class=\"info\"";
 ///entrez
 // .ncbirc alias: ENTREZ
 const string kEntrezUrl = "<a %shref=\"http://www.ncbi.nlm.nih.gov/entre\
-z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s&RID=%s\" %s>";
+z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s&RID=%s&log$=%s%s&blast_rank=%d\" %s>";
 
 ///trace db
 //.ncbirc alias: TRACE
@@ -77,14 +77,15 @@ using the Entrez Genomes MapViewer</td></tr></table><p>";
 
 ///unigene
 // .ncbirc alias: UNIGEN
-const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=%s&cmd=Display&dopt=%s_unigene&from_uid=%d&RID=%s\"><img border=0 h\
+const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?\
+db=%s&cmd=Display&dopt=%s_unigene&from_uid=%d&RID=%s&log$=unigene%s&blast_rank=%d\"><img border=0 h\
 eight=16 width=16 src=\"images/U.gif\" alt=\"UniGene info\"></a>";
 
 ///structure
 // .ncbirc alias: STRUCTURE_URL
 const string kStructureUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/St\
 ructure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_RID=%s\
-&blast_view=%s&hsp=0&taxname=%s&client=blast\"><img border=0 height=16 width=\
+&blast_view=%s&hsp=0&taxname=%s&client=blast&log$=structure%s&blast_rank=%d\"><img border=0 height=16 width=\
 16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Re\
 lated structures\"></a>";
 
@@ -96,20 +97,20 @@ RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
 ///Geo
 // .ncbirc alias: GEO
 const string kGeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
-query.fcgi?db=geo&term=%d[gi]&RID=%s\"><img border=0 height=16 width=16 src=\
+query.fcgi?db=geo&term=%d[gi]&RID=%s&log$=geo%s&blast_rank=%d\"><img border=0 height=16 width=16 src=\
 \"images/E.gif\" alt=\"Geo\"></a>";
 
 ///Gene
 // .ncbirc alias: GENE
 const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
-query.fcgi?db=gene&cmd=search&term=%d[%s]&RID=%s&value=%s\"><img border=0 height=16 width=16 \
+query.fcgi?db=gene&cmd=search&term=%d[%s]&RID=%s&log$=gene%s&blast_rank=%d\"><img border=0 height=16 width=16 \
 src=\"images/G.gif\" alt=\"Gene info\"></a>";
 
 ///mapviewer linkout
 // .ncbirc alias: MAPVIEWER
 /*const string kMapviwerUrl = "<a href=\"%s\"><img border=0 height=16 width=16 \
   src=\"images/M.gif\" alt=\"Genome view with mapviewer\"></a>";*/
-const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=%d&THE_BLAST_RID=%s\"><img border=0 height=16 width=16 \
+const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=%d&THE_BLAST_RID=%s&log$=map%s&blast_rank=%d\"><img border=0 height=16 width=16 \
 src=\"images/M.gif\" alt=\"Genome view with mapviewer\"></a>";
 
 ///Sub-sequence
@@ -157,7 +158,8 @@ name=\"tree%s%d\" target=\"trv%s\"> \
 <input type=\"hidden\" name=\"sequenceSet\" value=\"\"><input type=\"hidden\" name=\"screenWidth\" value=\"\"></form>";
 
 // .ncbirc alias: GENE_INFO
-const string kGeneInfoUrl = "http://www.ncbi.nlm.nih.gov/sites/entrez?db=gene&cmd=search&term=%d&RID=%s";
+const string kGeneInfoUrl =
+"http://www.ncbi.nlm.nih.gov/sites/entrez?db=gene&cmd=search&term=%d&RID=%s&log$=geneexplicit%s&blast_rank=%d";
 
 // .ncbirc alias: TREEVIEW_CGI
 const string kGetTreeViewCgi="http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi";
@@ -244,6 +246,9 @@ public:
         Int8   total_length;
         int    number_seqs;
         bool   subset;	
+
+        /// Default constructor
+        SDbInfo();
     };
 
     enum DbSortOrder {
@@ -311,8 +316,10 @@ public:
     ///@param line_length: length of each line desired
     ///@param out: stream to ouput
     ///@param top Is this top or bottom part of the BLAST report?
-    static void PrintDbReport(list<SDbInfo>& dbinfo_list, size_t line_length, 
-                              CNcbiOstream& out, bool top=false);
+    static void PrintDbReport(const vector<SDbInfo>& dbinfo_list, 
+                              size_t line_length, 
+                              CNcbiOstream& out, 
+                              bool top=false);
     
     ///Print out kappa, lamda blast parameters
     ///@param lambda
@@ -343,12 +350,14 @@ public:
     /// @param line_len length of each line desired
     /// @param out stream to ouput
     /// @param believe_query use user id or not
-    /// @param html in html format or not
-    /// @param tabular Is this done for tabular formatting? 
+    /// @param html in html format or not [in]
+    /// @param tabular Is this done for tabular formatting? [in]
+    /// @param rid the RID to acknowledge (if not empty) [in]
     ///
     static void AcknowledgeBlastQuery(const CBioseq& cbs, size_t line_len,
                                       CNcbiOstream& out, bool believe_query,
-                                      bool html, bool tabular=false);
+                                      bool html, bool tabular=false,
+                                      const string& rid = kEmptyStr);
     
     ///Get blast defline
     ///@param handle: bioseq handle to extract blast defline from
@@ -509,10 +518,11 @@ public:
     ///@param db_is_na:  is db nucleotide?
     ///@param rid: blast rid
     ///@param query_number: the blast query number.
+    ///@param for_alignment: is the URL generated for an alignment or a top defline?
     ///
     static string BuildUserUrl(const CBioseq::TId& ids, int taxid, string user_url,
                                string database, bool db_is_na, string rid,
-                               int query_number);
+                               int query_number, bool for_alignment);
     
     ///transforms a string so that it becomes safe to be used as part of URL
     ///the function converts characters with special meaning (such as
@@ -644,7 +654,7 @@ public:
                                       bool is_na, string& user_url,
                                       const bool db_is_na, int first_gi,
                                       bool structure_linkout_as_group,
-                                      bool for_alignment);
+                                      bool for_alignment, int cur_align);
 
     static int GetMasterCoverage(const CSeq_align_set& alnset);
     ///retrieve URL from .ncbirc file combining host/port and format strings values.

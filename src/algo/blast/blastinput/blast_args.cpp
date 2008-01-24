@@ -44,6 +44,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp> /* for CObjMgrQueryFactory */
 #include <algo/blast/core/blast_nalookup.h>
 #include <objtools/blast_format/blastfmtutil.hpp>
@@ -393,7 +394,8 @@ CFilteringArgs::x_TokenizeFilteringArgs(const string& filtering_args,
 void
 CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
 {
-    if (args[kArgLookupTableMaskingOnly]) {
+    if (args[kArgLookupTableMaskingOnly] && 
+        args[kArgLookupTableMaskingOnly].AsBoolean()) {
         opt.SetMaskAtHash(true);
     }
 
@@ -1024,7 +1026,7 @@ CPhiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         string pattern("FIXME - NOT VALID");
         // FIXME: need to port code from pssed3.c get_pat function
         opt.SetPHIPattern(pattern.c_str(), 
-                          Blast_QueryIsNucleotide(opt.GetProgramType()));
+              static_cast<bool>(Blast_QueryIsNucleotide(opt.GetProgramType())));
         throw runtime_error("Reading of pattern file not implemented");
     }
 }
@@ -1140,6 +1142,9 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                &(*new CArgAllow_Strings, "prot", "nucl"));
     }
 
+    const string* kDatabaseArgs[] =  
+        { &kArgDb, &kArgGiList, &kArgNegativeGiList, NULL };
+
     // DB size
     arg_desc.SetCurrentGroup("Statistical options");
     arg_desc.AddOptionalKey(kArgDbSize, "num_letters", 
@@ -1151,32 +1156,73 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.SetCurrentGroup("Restrict search or results");
         // GI list
         arg_desc.AddOptionalKey(kArgGiList, "filename", 
-                                "Restrict search of database to list of GI's",
+                                "Restrict search of database to list of GIs",
                                 CArgDescriptions::eString);
+        arg_desc.AddOptionalKey(kArgNegativeGiList, "filename", 
+            "Restrict search of database to everything except the listed GIs",
+            CArgDescriptions::eString);
+        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+                               kArgNegativeGiList);
+
+        // For now, disable pairing -remote with either -gilist or
+        // -negative_gilist as this is not implemented in the BLAST server
+        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+                               kArgRemote);
+        arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes, 
+                               kArgRemote);
 
         arg_desc.SetCurrentGroup("BLAST-2-Sequences options");
         // subject sequence input (for bl2seq)
         arg_desc.AddOptionalKey(kArgSubject, "subject_input_file",
                                 "Subject sequence(s) to search",
                                 CArgDescriptions::eInputFile);
-        arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes, 
-                               kArgDb);
-        arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes, 
-                               kArgGiList);
+        for (size_t i = 0; kDatabaseArgs[i] != NULL; i++) {
+            arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes, 
+                                   *kDatabaseArgs[i]);
+        }
+
         // subject location
         arg_desc.AddOptionalKey(kArgSubjectLocation, "range", 
                                 "Location on the subject sequence "
                                 "(Format: start-stop)",
                                 CArgDescriptions::eString);
-        arg_desc.SetDependency(kArgSubjectLocation, 
-                               CArgDescriptions::eExcludes, kArgDb);
-        arg_desc.SetDependency(kArgSubjectLocation, 
-                               CArgDescriptions::eExcludes, 
-                               kArgGiList);
-
+        for (size_t i = 0; kDatabaseArgs[i] != NULL; i++) {
+            arg_desc.SetDependency(kArgSubjectLocation, 
+                                   CArgDescriptions::eExcludes, 
+                                   *kDatabaseArgs[i]);
+        }
     }
 
     arg_desc.SetCurrentGroup("");
+}
+
+/** 
+ * @brief Process gi lists command line arguments
+ * 
+ * @param args CArgs object representing command line arguments read [in]
+ * @param argument_name name of the command line option [in]
+ * @param filename the value of the option [out]
+ * @param gis the contents of the file, if a remote BLAST search is needed (if
+ * not, this will be empty upon function exit [out]
+ */
+static void
+s_ProcessGiListArgument(const CArgs& args, 
+                        const string& argument_name, 
+                        string& filename, 
+                        vector<int>& gis)
+{
+    gis.clear();
+    if (args.Exist(argument_name) && args[argument_name]) {
+        filename.assign(args[argument_name].AsString());
+        /// This is only needed if the gi list is to be submitted remotely as
+        /// it needs to be sent over the network OR if we need to export the
+        /// object as a search strategy
+        if ((args.Exist(kArgRemote) && args[kArgRemote] && 
+            CFile(filename).Exists()) ||
+            (args[kArgOutputSearchStrategy].HasValue())) {
+            SeqDB_ReadGiList(filename, gis);
+        }
+    }
 }
 
 void
@@ -1192,16 +1238,17 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 
         m_SearchDb.Reset(new CSearchDatabase(args[kArgDb].AsString(), 
                                              mol_type));
-        if (args.Exist(kArgGiList) && args[kArgGiList]) {
-            m_GiListFileName.assign(args[kArgGiList].AsString());
-            /// This is only needed if the gi list is to be submitted remotely
-            if (args.Exist(kArgRemote) && args[kArgRemote] && 
-                CFile(m_GiListFileName).Exists()) {
-                vector<int> gis;
-                SeqDB_ReadGiList(m_GiListFileName, gis);
-                m_SearchDb->SetGiListLimitation(gis);
-            }
-        }
+
+        vector<int> gis;
+        s_ProcessGiListArgument(args, kArgGiList, m_GiListFileName, gis);
+        if ( !gis.empty() ) 
+            m_SearchDb->SetGiListLimitation(gis);
+
+        s_ProcessGiListArgument(args, kArgNegativeGiList,
+                                m_NegativeGiListFileName, gis);
+        if ( !gis.empty() ) 
+            m_SearchDb->SetNegativeGiListLimitation(gis);
+
     } else if (args.Exist(kArgSubject) && args[kArgSubject]) {
 
         if (args.Exist(kArgRemote) && args[kArgRemote]) {
@@ -1311,8 +1358,10 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     if (m_NumDescriptions == 0 && m_NumAlignments == 0) {
-        NCBI_THROW(CBlastException, eInvalidArgument,
-                     "Either -num_descriptions or -num_alignments must be non-zero");
+        string msg("Either -");
+        msg += kArgNumDescriptions + " or -" + kArgNumAlignments + " must ";
+        msg += "be non-zero";
+        NCBI_THROW(CBlastException, eInvalidArgument, msg);
     }
     else
         opt.SetHitlistSize(MAX(m_NumDescriptions, m_NumAlignments));
@@ -1619,6 +1668,14 @@ CBlastAppArgs::SetOptions(const CArgs& args)
         (*arg)->ExtractAlgorithmOptions(args, opts);
     }
     return handle;
+}
+
+void CBlastAppArgs::SetTask(const string& task)
+{
+#if _DEBUG
+    ThrowIfInvalidTask(task);
+#endif
+    m_Task.assign(task);
 }
 
 END_SCOPE(blast)

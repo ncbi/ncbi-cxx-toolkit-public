@@ -259,8 +259,8 @@ sub handle_blastall($)
     $retval .= "-num_alignments $opt_b "    if (defined $opt_b);
     $retval .= "-query_gencode $opt_Q "     if (defined $opt_Q);
     $retval .= "-db_gencode $opt_D "        if (defined $opt_D);
-    $retval .= "-mismatch_penalty $opt_q "  if (defined $opt_q);
-    $retval .= "-match_reward $opt_r "      if (defined $opt_r);
+    $retval .= "-penalty $opt_q "           if (defined $opt_q);
+    $retval .= "-reward $opt_r "            if (defined $opt_r);
     $retval .= "-culling_limit $opt_K "     if (defined $opt_K);
     $retval .= "-max_intron_length $opt_t " if (defined $opt_t);
     $retval .= "-frame_shift_penalty $opt_w " if (defined $opt_w);
@@ -380,8 +380,8 @@ sub handle_megablast($)
     $retval .= "-evalue $opt_e "            if (defined $opt_e);
     $retval .= "-xdrop_gap $opt_X "         if (defined $opt_X);
     $retval .= "-gilist $opt_l "            if (defined $opt_l);
-    $retval .= "-mismatch_penalty $opt_q "  if (defined $opt_q);
-    $retval .= "-match_reward $opt_r "      if (defined $opt_r);
+    $retval .= "-penalty $opt_q "           if (defined $opt_q);
+    $retval .= "-reward $opt_r "            if (defined $opt_r);
     $retval .= "-gapopen $opt_G "           if (defined $opt_G);
     $retval .= "-gapextend $opt_E "         if (defined $opt_E);
     $retval .= "-out $opt_o "               if (defined $opt_o);
@@ -741,8 +741,8 @@ sub handle_bl2seq
     $retval .= "-gapextend $opt_E "         if (defined $opt_E);
     $retval .= "-word_size $opt_W "         if (defined $opt_W);
     $retval .= "-matrix $opt_M "            if (defined $opt_M);
-    $retval .= "-mismatch_penalty $opt_q "  if (defined $opt_q);
-    $retval .= "-match_reward $opt_r "      if (defined $opt_r);
+    $retval .= "-penalty $opt_q "           if (defined $opt_q);
+    $retval .= "-reward $opt_r "            if (defined $opt_r);
     $retval .= &convert_strand($opt_S)      if (defined $opt_S);
     $retval .= "-max_intron_length $opt_t " if (defined $opt_t);
     $retval .= "-dbsize $opt_d "            if (defined $opt_d);
@@ -877,7 +877,7 @@ toolkit's implementation to NCBI C++ toolkit's implementation.
 
 =head1 SYNOPSIS
 
-legacy_blast.pl [--print_only] <C toolkit command line program and arguments>
+legacy_blast.pl <C toolkit command line program and arguments> [--print_only] 
 
 =head1 OPTIONS
 
@@ -885,7 +885,8 @@ legacy_blast.pl [--print_only] <C toolkit command line program and arguments>
 
 =item B<--print_only>
 
-Print the equivalent command line option instead of running the command (default: false).
+Print the equivalent command line option instead of running the command
+(default: false). This option MUST be the last argument to the script.
 
 =head1 DESCRIPTION
 

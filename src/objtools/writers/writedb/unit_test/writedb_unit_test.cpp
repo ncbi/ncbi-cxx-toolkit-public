@@ -903,6 +903,45 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ32)
     }
 }
 
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ33)
+{
+    START;
+    
+    g_NuclJ_OidCount = 33;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ34)
+{
+    START;
+    
+    g_NuclJ_OidCount = 34;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NuclBioseqDupJ35)
+{
+    START;
+    
+    g_NuclJ_OidCount = 35;
+    
+    try {
+        s_NuclBioseqDupSwitch(10);
+    }
+    catch(CNonException &) {
+    }
+}
+
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ36)
 {
     START;

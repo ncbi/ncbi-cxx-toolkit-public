@@ -85,11 +85,9 @@ public:
     ///                 (if applicable) [in]
     /// @param dbgencode Genetic code used to translate database sequences
     ///                 (if applicable) [in]
-    /// @param show_linked If the output format supports 1-line summaries,
-    ///                    and the alignments have had HSP linking performed,
-    ///                    append the number of hits in the linked set of
-    ///                    the best alignment to each database sequence [in]
-    ///
+    /// @param use_sum_statistics Were sum statistics used in this search? [in]
+    /// @param is_remote_search is this formatting the results of a remote
+    /// search [in]
     CBlastFormat(const blast::CBlastOptions& opts, const string& dbname, 
                  blast::CFormattingArgs::EOutputFormat format_type, 
                  bool db_is_aa, bool believe_query, CNcbiOstream& outfile,
@@ -101,7 +99,8 @@ public:
                  bool is_html = false, 
                  int qgencode = BLAST_GENETIC_CODE,
                  int dbgencode = BLAST_GENETIC_CODE,
-                 bool show_linked = false);
+                 bool use_sum_statistics = false,
+                 bool is_remote_search = false);
 
     /// Print the header of the blast report
     void PrintProlog();
@@ -146,16 +145,21 @@ private:
     int m_QueryGenCode;         ///< query genetic code
     int m_DbGenCode;            ///< database genetic code
     bool m_ShowGi;              ///< add GI number of database sequence IDs
-    bool m_ShowLinkedSetSize;   ///< show size of linked set in 1-line summary
+    /// If the output format supports 1-line summaries, the search is ungapped
+    /// and the alignments have had HSP linking performed, append the number of
+    /// hits in the linked set of the best alignment to each database sequence
+    bool m_ShowLinkedSetSize;
     bool m_IsUngappedSearch;    ///< true if the search was ungapped
     const char* m_MatrixName;   ///< name of scoring matrix
     /** Scope containing query and subject sequences */
     CRef<CScope> m_Scope;       
     /** True if we are formatting for BLAST2Sequences */
     bool m_IsBl2Seq;            
+    /// True if this object is formatting the results of a remote search
+    bool m_IsRemoteSearch;
     
     /// internal representation of database information
-    list<CBlastFormatUtil::SDbInfo> m_DbInfo;
+    vector<CBlastFormatUtil::SDbInfo> m_DbInfo;
 
     /// Queries are required for XML format only
     CRef<blast::CBlastQueryVector> m_AccumulatedQueries;
@@ -170,6 +174,23 @@ private:
 
     /// Initialize database statistics
     void x_FillDbInfo();
+
+    /// Initialize database statistics with data from BLAST servers
+    /// @param dbname name of a single BLAST database [in]
+    /// @param info structure to fill [in|out]
+    /// @return true if successfully filled, false otherwise (and a warning is
+    /// printed out)
+    bool x_FillDbInfoRemotely(const string& dbname, 
+                              CBlastFormatUtil::SDbInfo& info) const;
+
+    /// Initialize database statistics with data obtained from local BLAST
+    /// databases
+    /// @param dbname name of a single BLAST database [in]
+    /// @param info structure to fill [in|out]
+    /// @return true if successfully filled, false otherwise (and a warning is
+    /// printed out)
+    bool x_FillDbInfoLocally(const string& dbname, 
+                             CBlastFormatUtil::SDbInfo& info) const;
 };
 
 END_NCBI_SCOPE

@@ -2,7 +2,7 @@
 
 APP = blast_unit_test
 SRC = test_objmgr blast_test_util bl2seq_unit_test gencode_singleton_unit_test \
-	blastoptions_unit_test blastfilter_unit_test
+	blastoptions_unit_test blastfilter_unit_test uniform_search_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 

@@ -53,6 +53,9 @@ CBlastxAppArgs::CBlastxAppArgs()
     const bool kQueryIsProtein = false;
     m_Args.push_back(arg);
 
+    static const string kDefaultTask = "blastx";
+    SetTask(kDefaultTask);
+
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);

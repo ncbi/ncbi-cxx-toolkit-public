@@ -292,7 +292,7 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                           const TSeqLocInfoVector* query_masks,
                           const EResultType result_type)
 {
-    const bool is_phi = Blast_ProgramIsPhiBlast(program);
+    const bool is_phi = static_cast<bool>(Blast_ProgramIsPhiBlast(program));
 
     // Collect query Seq-locs
     

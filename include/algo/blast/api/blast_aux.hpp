@@ -42,7 +42,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <util/range.hpp>       // For TSeqRange
 
-// NewBlast includes
+// BLAST includes
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/core/blast_query_info.h>
@@ -98,23 +98,6 @@ TYPEDEF_AUTOPTR_CDELETER(Char);
 TYPEDEF_AUTOPTR_ARRAYDELETER(Uint1);
 #endif
 
-/// Convert EProgram to EBlastProgramType.
-/// @param p Program expressed as an api layer EProgram.
-/// @return Same program using the core enumeration.
-NCBI_XBLAST_EXPORT
-EBlastProgramType
-EProgramToEBlastProgramType(EProgram p);
-
-/// Map a string into an element of the ncbi::blast::EProgram enumeration 
-/// (except eBlastProgramMax).
-/// @param program_name [in]
-/// @return an element of the ncbi::blast::EProgram enumeration, except
-/// eBlastProgramMax
-/// @throws CBlastException if the string does not map into any of the EProgram
-/// elements
-NCBI_XBLAST_EXPORT
-EProgram ProgramNameToEnum(const std::string& program_name);
-
 /// Returns a string program name, given a blast::EBlastProgramType enumeration.
 /// @param program Enumerated program value [in]
 /// @return String program name.
@@ -156,6 +139,7 @@ public:
     { SetFrame(frame); }
 
     const objects::CSeq_interval& GetInterval() const { return *m_Interval; }
+    const objects::CSeq_id& GetSeqId() const { return m_Interval->GetId(); }
     void SetInterval(objects::CSeq_interval* interval) 
     { m_Interval.Reset(interval); }
     int GetFrame() const { return (int) m_Frame; }
@@ -166,7 +150,7 @@ public:
         return retval;
     }
 private:
-    CRef <objects::CSeq_interval> m_Interval; 
+    CRef<objects::CSeq_interval> m_Interval; 
     ETranslationFrame m_Frame;         // For translated nucleotide sequence
 };
 

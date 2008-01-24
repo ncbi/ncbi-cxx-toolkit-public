@@ -675,6 +675,27 @@ void CSeqDBAliasNode::x_ReadValues(const CSeqDB_Path & path,
 }
 
 
+void CSeqDBAliasNode::x_AppendSubNode(CSeqDB_BasePath  & node_path,
+                                      char               prot_nucl,
+                                      CSeqDBAliasStack & recurse,
+                                      CSeqDBLockHold   & locked)
+{
+    CSeqDB_DirName  dirname (node_path.FindDirName());
+    CSeqDB_BaseName basename(node_path.FindBaseName());
+    
+    CRef<CSeqDBAliasNode>
+        subnode( new CSeqDBAliasNode(m_Atlas,
+                                     dirname,
+                                     basename,
+                                     prot_nucl,
+                                     recurse,
+                                     locked,
+                                     m_AliasSets) );
+    
+    m_SubNodes.push_back(subnode);
+}
+
+
 void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
                                       char                    prot_nucl,
                                       CSeqDBAliasStack      & recurse,
@@ -738,26 +759,39 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         if ( m_AliasSets.FindAliasPath(new_db_path, 0, locked) ||
              m_Atlas.DoesFileExist(new_db_path.GetPathS(), locked) ) {
             
-            CSeqDB_DirName  dirname (new_db_path.FindDirName());
-            CSeqDB_BaseName basename(new_db_path.FindBaseName());
-            
-            CRef<CSeqDBAliasNode>
-                subnode( new CSeqDBAliasNode(m_Atlas,
-                                             dirname,
-                                             basename,
-                                             prot_nucl,
-                                             recurse,
-                                             locked,
-                                             m_AliasSets) );
-            
-            m_SubNodes.push_back(subnode);
-        } else {
-            // If the name is not found as an alias file, it is
-            // assumed to be a volume name.
-            
+            x_AppendSubNode(base, prot_nucl, recurse, locked);
+            continue;
+        }
+        
+        // The name was not found as an alias file, so check for the
+        // existence of a volume file at the same location.
+        
+        CSeqDB_Path new_vol_path( base, prot_nucl, 'i', 'n' );
+        
+        if (m_Atlas.DoesFileExist(new_vol_path.GetPathS(), locked)) {
             CSeqDB_BasePath bp( new_db_path.FindBasePath() );
             m_VolNames.push_back( bp );
+            continue;
         }
+        
+        // If all that failed, "restart" the search using the blast DB
+        // path configuration.  This allows an alias file to reference
+        // a database like nr without specifying the full path.
+        
+        CSeqDB_BasePath result;
+        CSeqDB_BasePath restart(m_DBList[i]);
+        
+        if (m_AliasSets.FindBlastDBPath(restart, prot_nucl, result, locked)) {
+            x_AppendSubNode( result, prot_nucl, recurse, locked );
+            continue;
+        }
+        
+        ostringstream oss;
+        oss << "Could not find volume or alias file ("
+            << m_DBList[i].GetBasePathS() << ") referenced in alias file ("
+            << this_name.GetBasePathS() << ").";
+        
+        NCBI_THROW(CSeqDBException, eFileErr, oss.str());
     }
 }
 

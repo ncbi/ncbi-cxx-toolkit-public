@@ -56,7 +56,8 @@ CSearchResults::CSearchResults(CConstRef<objects::CSeq_id> query,
                                CRef<objects::CSeq_align_set> align,
                                const TQueryMessages& errs,
                                CRef<CBlastAncillaryData> ancillary_data,
-                               const TMaskedQueryRegions* query_masks)
+                               const TMaskedQueryRegions* query_masks,
+                               const string& rid /* = kEmptyStr */)
 : m_QueryId(query), m_Alignment(align), m_Errors(errs), 
   m_AncillaryData(ancillary_data)
 {
@@ -341,6 +342,14 @@ CSearchResultSet::push_back(CSearchResultSet::value_type& element)
 {
     m_Results.push_back(element);
     m_NumQueries++;
+}
+
+void 
+CSearchResultSet::SetRID(const string& rid)
+{
+    NON_CONST_ITERATE(vector<CSearchResultSet::value_type>, itr, m_Results) {
+        (*itr)->SetRID(rid);
+    }
 }
 
 END_SCOPE(blast)

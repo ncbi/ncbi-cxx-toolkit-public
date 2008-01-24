@@ -108,6 +108,12 @@ public:
     /// Gets the size (# of bases/residues) of overlap between query chunks
     size_t GetChunkOverlapSize() const;
 
+    /// Print this object so that its contents can be directly used to update
+    /// split_query.ini (for unit testing)
+    /// @param out stream to print this object [in|out]
+    /// @param rhs object to print [in]
+    friend ostream& operator<<(ostream& out, const CSplitQueryBlk& rhs);
+
 private:
     /// The structure this object manages
     SSplitQueryBlk* m_SplitQueryBlk;

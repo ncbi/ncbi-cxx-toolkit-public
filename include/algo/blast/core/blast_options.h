@@ -132,7 +132,7 @@ extern "C" {
 /** default dropoff for the final gapped extension with traceback */
 #define BLAST_GAP_X_DROPOFF_FINAL_PROT 25 /**< default dropoff (all protein-
                                                based gapped extensions) */
-#define BLAST_GAP_X_DROPOFF_FINAL_NUCL 50 /**< default dropoff for nucleotide
+#define BLAST_GAP_X_DROPOFF_FINAL_NUCL 100 /**< default dropoff for nucleotide
                                                gapped extensions) */
 #define BLAST_GAP_X_DROPOFF_FINAL_TBLASTX 0 /**< default dropoff for tblastx */
 

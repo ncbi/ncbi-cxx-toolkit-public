@@ -63,6 +63,8 @@ NCBI_XBLAST_EXPORT extern const string kArgDbType;
 
 /// gi list file name to restrict BLAST database
 NCBI_XBLAST_EXPORT extern const string kArgGiList;
+/// argument for gi list to exclude from a BLAST database search
+NCBI_XBLAST_EXPORT extern const string kArgNegativeGiList;
 
 /// Task to perform
 NCBI_XBLAST_EXPORT extern const string kTask;

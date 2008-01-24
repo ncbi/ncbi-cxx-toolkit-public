@@ -397,6 +397,9 @@ private:
     /// Gene info reader object, reads Gene info entries from files.
     auto_ptr<CGeneInfoFileReader> m_GeneInfoReader;
 
+    /// Current alignment index (added to the linkout and entrez URL's)
+    mutable int m_cur_align;
+
     ///Display the current alnvec
     ///@param out: stream for display
     ///

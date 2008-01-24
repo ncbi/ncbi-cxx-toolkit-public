@@ -119,7 +119,13 @@ public:
     
     /// This restricts the subject database to this list of GIs (this is not
     /// supported yet on the server end).
-    void SetGIList(list<Int4> & gi_list);
+    /// @param gi_list list of GIs to restrict the search to [in]
+    void SetGIList(const list<Int4> & gi_list);
+
+    /// This excludes the provided GIs from the subject database (this is not
+    /// supported yet on the server end).
+    /// @param gi_list list of GIs to exclude [in]
+    void SetNegativeGIList(const list<Int4> & gi_list);
     
     /// Set the name of the database to search against.
     void SetDatabase(const string & x);
@@ -553,6 +559,10 @@ private:
     
     /// Fetch the request info (wait for completion if necessary).
     void x_GetRequestInfo();
+
+    /// Extract the query IDs from the CBlast4_queries for a given search
+    /// @param query_ids the query IDs to be returned [in|out]
+    void x_ExtractQueryIds(CSearchResultSet::TQueryIdVector& query_ids);
     
     /// Set the masking locations AFTER the queries have been set in the 
     /// m_QSR field
@@ -669,6 +679,9 @@ private:
     
     /// GI list.
     list<Int4> m_GiList;
+
+    /// Negative GI list.
+    list<Int4> m_NegativeGiList;
 };
 
 
@@ -704,11 +717,13 @@ public:
     ///
     /// A CBlastOptionsHandle is constructed and returned.
     ///
-    /// @param aopts List of algorithm options.
-    /// @param popts List of program options.
+    /// @param aopts List of algorithm options [in].
+    /// @param popts List of program options [in].
+    /// @param task_name name of the task deduced from the arguments [in|out]
     CRef<CBlastOptionsHandle>
     GetSearchOptions(const objects::CBlast4_parameters * aopts,
-                     const objects::CBlast4_parameters * popts);
+                     const objects::CBlast4_parameters * popts,
+                     string *task_name=NULL);
     
     /// Check whether an Entrez query is specified.
     bool HaveEntrezQuery();
@@ -734,6 +749,12 @@ public:
     /// Get the GI list.
     list<int> GetGiList();
     
+    /// Check whether a negative GI list is specified.
+    bool HaveNegativeGiList();
+    
+    /// Get the negative GI list.
+    list<int> GetNegativeGiList();
+
     /// Compute the EProgram value to use for this search.
     ///
     /// The blast4 protocol uses a notion of program and service to
@@ -865,6 +886,9 @@ private:
     /// The GI list (or none).
     SOptional< list<int> > m_GiList;
     
+    /// The negative GI list (or none).
+    SOptional< list<int> > m_NegativeGiList;
+
     /// API Locality of resulting options.
     CBlastOptions::EAPILocality m_Locality;
 };

@@ -78,6 +78,15 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE (ncbi);
 USING_SCOPE(objects);
 
+CBlastFormatUtil::SDbInfo::SDbInfo()
+{
+    is_protein = true;
+    name = definition = date = "Unknown";
+    total_length = 0;
+    number_seqs = 0;
+    subset = false;
+}
+
 bool kTranslation;
 CRef<CScope> kScope;
 
@@ -231,42 +240,62 @@ void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
     }
 }
 
-void CBlastFormatUtil::PrintDbReport(list<SDbInfo>& 
-                                     dbinfo_list,
-                                     size_t line_length,  CNcbiOstream& out,
+void CBlastFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
+                                     size_t line_length, 
+                                     CNcbiOstream& out,
                                      bool top) 
 {
 
-    CBlastFormatUtil::SDbInfo* dbinfo = &(dbinfo_list.front());
-
     if (top) {
+        const CBlastFormatUtil::SDbInfo* dbinfo = &(dbinfo_list.front());
         out << "Database: ";
-        WrapOutputLine(dbinfo->definition, line_length, out);
+
+        string db_titles = dbinfo->definition;
+        Int8 tot_num_seqs = static_cast<Int8>(dbinfo->number_seqs);
+        Int8 tot_length = dbinfo->total_length;
+
+        for (size_t i = 1; i < dbinfo_list.size(); i++) {
+            db_titles += "; " + dbinfo_list[i].definition;
+            tot_num_seqs += static_cast<Int8>(dbinfo_list[i].number_seqs);
+            tot_length += dbinfo_list[i].total_length;
+        }
+
+        WrapOutputLine(db_titles, line_length, out);
         out << endl;
         CBlastFormatUtil::AddSpace(out, 11);
-        out << NStr::IntToString(dbinfo->number_seqs, NStr::fWithCommas) << 
+        out << NStr::Int8ToString(tot_num_seqs, NStr::fWithCommas) << 
             " sequences; " <<
-            NStr::Int8ToString(dbinfo->total_length, NStr::fWithCommas) << 
+            NStr::Int8ToString(tot_length, NStr::fWithCommas) << 
             " total letters" << endl << endl;
-    } else if (dbinfo->subset == false){
-        out << "  Database: ";
-        WrapOutputLine(dbinfo->definition, line_length, out);
-        out << endl;
+        return;
+    }
 
-        out << "    Posted date:  ";
-        out << dbinfo->date << endl;
-	       
-        out << "  Number of letters in database: "; 
-        out << NStr::Int8ToString(dbinfo->total_length, NStr::fWithCommas) << endl;
-        out << "  Number of sequences in database:  ";
-        out << NStr::IntToString(dbinfo->number_seqs, NStr::fWithCommas) << endl;
-        
-    } else {
-        out << "  Subset of the database(s) listed below" << endl;
-        out << "  Number of letters searched: "; 
-        out << NStr::Int8ToString(dbinfo->total_length, NStr::fWithCommas) << endl;
-        out << "  Number of sequences searched:  ";
-        out << NStr::IntToString(dbinfo->number_seqs, NStr::fWithCommas) << endl;
+    ITERATE(vector<SDbInfo>, dbinfo, dbinfo_list) {
+        if (dbinfo->subset == false) {
+            out << "  Database: ";
+            WrapOutputLine(dbinfo->definition, line_length, out);
+            out << endl;
+
+            out << "    Posted date:  ";
+            out << dbinfo->date << endl;
+               
+            out << "  Number of letters in database: "; 
+            out << NStr::Int8ToString(dbinfo->total_length, 
+                                      NStr::fWithCommas) << endl;
+            out << "  Number of sequences in database:  ";
+            out << NStr::IntToString(dbinfo->number_seqs, 
+                                     NStr::fWithCommas) << endl;
+            
+        } else {
+            out << "  Subset of the database(s) listed below" << endl;
+            out << "  Number of letters searched: "; 
+            out << NStr::Int8ToString(dbinfo->total_length, 
+                                      NStr::fWithCommas) << endl;
+            out << "  Number of sequences searched:  ";
+            out << NStr::IntToString(dbinfo->number_seqs, 
+                                     NStr::fWithCommas) << endl;
+        }
+        out << endl;
     }
 
 }
@@ -349,7 +378,9 @@ void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs,
                                              size_t line_len,
                                              CNcbiOstream& out,
                                              bool believe_query,
-                                             bool html, bool tabular) 
+                                             bool html, 
+                                             bool tabular /* = false */,
+                                             const string& rid /* = kEmptyStr*/)
 {
 
     if (html) {
@@ -372,10 +403,16 @@ void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs,
         WrapOutputLine(all_id_str, line_len, out);
         out << endl;
         if(cbs.IsSetInst() && cbs.GetInst().CanGetLength()){
-            //out << "          (";
             out << "Length=";
             out << cbs.GetInst().GetLength() <<endl;
-            // out << " letters)" << endl;
+        }
+    }
+
+    if (rid != kEmptyStr) {
+        if (tabular) {
+            out << endl << "# RID: " << rid;
+        } else {
+            out << endl << "RID: " << rid << endl;
         }
     }
 }
@@ -1328,7 +1365,8 @@ string CBlastFormatUtil::MakeURLSafe(char* src) {
 
 string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid, 
                                       string user_url, string database,
-                                      bool db_is_na, string rid, int query_number) {
+                                      bool db_is_na, string rid, int query_number,
+                                      bool for_alignment) {
                                       
     string link = NcbiEmptyString;  
     CConstRef<CSeq_id> id_general = GetSeq_idByType(ids, CSeq_id::e_General);
@@ -1430,6 +1468,13 @@ string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid,
     
     if (query_number > 0){
         link += "&QUERY_NUMBER=" + NStr::IntToString(query_number);
+    }
+
+    if (user_url.find("dumpgnl.cgi") ==string::npos){
+        if (for_alignment)
+            link += "&log$=nuclalign";
+        else
+            link += "&log$=nucltop";
     }
    
     if(nodb_path){
@@ -1624,7 +1669,7 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
                                              bool is_na, string& user_url,
                                              const bool db_is_na, int first_gi,
                                              bool structure_linkout_as_group,
-                                             bool for_alignment)
+                                             bool for_alignment, int cur_align)
 {
     list<string> linkout_list;
     int gi = FindGi(ids);
@@ -1641,26 +1686,28 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
     if (linkout & eUnigene) {
       string l_UnigeneUrl = CBlastFormatUtil::GetURLFromRegistry("UNIGEN");
         sprintf(buf, l_UnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
-                is_na ? "nucleotide" : "protein", gi, rid.c_str());
+                is_na ? "nucleotide" : "protein", gi, rid.c_str(),
+                for_alignment? "align" : "top", cur_align);
         linkout_list.push_back(buf);
     }
     if (linkout & eStructure){
         sprintf(buf, kStructureUrl.c_str(), rid.c_str(), first_gi == 0 ? gi : first_gi,
                 gi, cdd_rid.c_str(), structure_linkout_as_group ? "onegroup" : "onepair",
-                
                 (entrez_term == NcbiEmptyString) ? 
-                "none":((char*) entrez_term.c_str()));
+                "none":((char*) entrez_term.c_str()),
+                for_alignment? "align" : "top", cur_align);
         linkout_list.push_back(buf);
     }
     if (linkout & eGeo){
-      string l_GeoUrl = CBlastFormatUtil::GetURLFromRegistry("GEO");
-       sprintf(buf, l_GeoUrl.c_str(), gi, rid.c_str());
+        string l_GeoUrl = CBlastFormatUtil::GetURLFromRegistry("GEO");
+        sprintf(buf, l_GeoUrl.c_str(), gi, rid.c_str(),
+                for_alignment? "align" : "top", cur_align);
         linkout_list.push_back(buf);
     }
     if(linkout & eGene){
       string l_GeneUrl = CBlastFormatUtil::GetURLFromRegistry("GENE");
         sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID",
-                rid.c_str(), for_alignment ? "aln" : "top");
+                rid.c_str(), for_alignment ? "align" : "top", cur_align);
         linkout_list.push_back(buf);
     }
 
@@ -1671,7 +1718,8 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
                                            db_is_na, rid,
                                            query_number);
                                            if (url_with_parameters != NcbiEmptyString) { */
-        sprintf(buf, kMapviwerUrl.c_str(), gi, rid.c_str());
+        sprintf(buf, kMapviwerUrl.c_str(), gi, rid.c_str(),
+                for_alignment? "align" : "top", cur_align);
         linkout_list.push_back(buf);
         // }
     }
