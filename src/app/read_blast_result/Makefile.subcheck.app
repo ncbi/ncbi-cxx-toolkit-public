@@ -8,4 +8,6 @@ SRC = read_blast_result tbl read_blast_result_lib read_tag_map \
 
 LIB  = submit seqset $(SEQ_LIBS) pub medline biblio general xobjutil xobjmgr xser xutil xncbi
 
+LIBS = $(DL_LIBS) $(ORIG_LIBS)
+
 REQUIRES = objects
