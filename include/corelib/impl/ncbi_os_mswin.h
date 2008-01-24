@@ -48,6 +48,9 @@
 #if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
 #  define WIN32_LEAN_AND_MEAN
 #endif
+#ifndef NOMINMAX
+#  define NOMINMAX
+#endif
 
 
 #include <windows.h>
