@@ -522,14 +522,14 @@ COMPRESS_LDEP = $(CMPRS_LIB)
 COMPRESS_LIBS = xcompress $(COMPRESS_LDEP)
 
 GENBANK_LDEP = \
-	ncbi_xreader_id1 ncbi_xreader_id2 xconnect ncbi_xreader_cache \
-	ncbi_xreader_pubseqos dbapi_driver $(GENBANK_READER_LIBS)
+	ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_cache \
+	ncbi_xreader_pubseqos xconnext xconnect dbapi_driver $(GENBANK_READER_LIBS)
 GENBANK_LIBS = ncbi_xloader_genbank $(GENBANK_LDEP)
 
 GENBANK_READER_LDEP = id1 id2 seqsplit $(COMPRESS_LIBS) $(SOBJMGR_LIBS)
 GENBANK_READER_LIBS = ncbi_xreader $(GENBANK_READER_LDEP)
 
-GENBANK_READER_PUBSEQOS_LDEP = dbapi_driver $(GENBANK_READER_LIBS)
+GENBANK_READER_PUBSEQOS_LDEP = xconnext xconnect dbapi_driver $(GENBANK_READER_LIBS)
 GENBANK_READER_PUBSEQOS_LIBS = ncbi_xreader_pubseqos $(GENBANK_READER_PUBSEQOS_LDEP)
 
 GENBANK_READER_ID1_LDEP = xconnect id1 $(GENBANK_READER_LIBS)
