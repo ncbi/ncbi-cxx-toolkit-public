@@ -36,6 +36,8 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
+#include <serial/serial.hpp>
+#include <serial/objostr.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Date.hpp>
@@ -132,6 +134,8 @@ void CAgpconvertApplication::Init(void)
                              "(default is \".ent\" for Seq-entry "
                              "or \".sqn\" for Seq-submit",
                              CArgDescriptions::eString);
+    arg_desc->AddFlag("stdout", "Write to stdout rather than files.  "
+                      "Implies -no_testval.");
     arg_desc->AddFlag("gap-info",
                       "Set Seq-gap (gap type and linkage) in delta sequence");
 
@@ -542,7 +546,21 @@ int CAgpconvertApplication::Run(void)
     // Should we make Seq-gap's?
     use_gap_info = args["gap-info"];
 
+    // Preliminary stuff for -stdout
+    bool write_stdout = args["stdout"];
+    if (write_stdout && output_seq_submit) {
+        throw runtime_error("can't write Seq-submit to stdout");
+    }
+    string kBssBegin = "Bioseq-set ::= {\n  seq-set {\n";
+    string kBssEnd = "\n  }\n}\n";
+    auto_ptr<CObjectOStream> obj_ostr;
+    if (write_stdout) {
+        cout << kBssBegin;
+        obj_ostr.reset(CObjectOStream::Open(eSerial_AsnText, cout));
+    }
+
     // Iterate over AGP files
+    bool any_written = false;
     for (unsigned int i = 1; i <= args.GetNExtra(); ++i) {
 
         CNcbiIstream& istr = args[i].AsInputFile();
@@ -666,48 +684,64 @@ int CAgpconvertApplication::Run(void)
             new_entry.SetSeq().SetDescr().Set().push_back(create_date);
 
             // write the entry in asn text
-            string outfpath;
-            string testval_type_flag;
-            if (!output_seq_submit) {
-                // write a Seq-entry
-                string suffix;
-                if (!args["ofs"]) {
-                    suffix = "ent";
+            if (!write_stdout) {
+                string outfpath;
+                string testval_type_flag;
+                if (!output_seq_submit) {
+                    // write a Seq-entry
+                    string suffix;
+                    if (!args["ofs"]) {
+                        suffix = "ent";
+                    } else {
+                        suffix = args["ofs"].AsString();
+                    }
+                    outfpath = CDirEntry::MakePath(outdir, id_str, suffix);
+                    testval_type_flag = "-e";
+                    CNcbiOfstream ostr(outfpath.c_str());
+                    ostr << MSerial_AsnText << new_entry;
                 } else {
-                    suffix = args["ofs"].AsString();
+                    // write a Seq-submit
+                    string suffix;
+                    if (!args["ofs"]) {
+                        suffix = "sqn";
+                    } else {
+                        suffix = args["ofs"].AsString();
+                    }
+                    outfpath = CDirEntry::MakePath(outdir, id_str, suffix);
+                    testval_type_flag = "-s";
+                    CSeq_submit new_submit;
+                    new_submit.Assign(*submit_templ);
+                    new_submit.SetData().SetEntrys().front().Reset(&new_entry);
+                    CNcbiOfstream ostr(outfpath.c_str());
+                    ostr << MSerial_AsnText << new_submit;
                 }
-                outfpath = CDirEntry::MakePath(outdir, id_str, suffix);
-                testval_type_flag = "-e";
-                CNcbiOfstream ostr(outfpath.c_str());
-                ostr << MSerial_AsnText << new_entry;
-            } else {
-                // write a Seq-submit
-                string suffix;
-                if (!args["ofs"]) {
-                    suffix = "sqn";
-                } else {
-                    suffix = args["ofs"].AsString();
-                }
-                outfpath = CDirEntry::MakePath(outdir, id_str, suffix);
-                testval_type_flag = "-s";
-                CSeq_submit new_submit;
-                new_submit.Assign(*submit_templ);
-                new_submit.SetData().SetEntrys().front().Reset(&new_entry);
-                CNcbiOfstream ostr(outfpath.c_str());
-                ostr << MSerial_AsnText << new_submit;
-            }
 
-            if (!args["no_testval"]) {
-                // verify using testval
-                string cmd = "testval " + testval_type_flag
-                    + " -q 2 -i \"" + outfpath + "\"";
-                cout << cmd << endl;
-                CExec::SpawnLP(CExec::eWait, "testval",
-                               testval_type_flag.c_str(),
-                               "-q", "2", "-i", outfpath.c_str(), 0);
+                if (!args["no_testval"]) {
+                    // verify using testval
+                    string cmd = "testval " + testval_type_flag
+                        + " -q 2 -i \"" + outfpath + "\"";
+                    cout << cmd << endl;
+                    CExec::SpawnLP(CExec::eWait, "testval",
+                                   testval_type_flag.c_str(),
+                                   "-q", "2", "-i", outfpath.c_str(), 0);
+                }
+            } else {
+                // write_stdout
+                if (any_written) {
+                    cout << ",\n";
+                }
+                any_written = true;
+                obj_ostr->WriteObject(&new_entry, new_entry.GetThisTypeInfo());
+                obj_ostr->Flush();
             }
         }
     }
+
+    if (write_stdout) {
+        obj_ostr->Flush();
+        cout << kBssEnd;
+    }
+
     return 0;
 }
 
