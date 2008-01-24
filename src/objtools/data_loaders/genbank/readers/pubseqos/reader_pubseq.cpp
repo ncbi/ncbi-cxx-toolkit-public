@@ -43,6 +43,7 @@
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include <dbapi/driver/drivers.hpp>
+#include <dbapi/driver/dbapi_svc_mapper.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -60,7 +61,7 @@
 
 #define ALLOW_GZIPPED 1
 
-#define DEFAULT_DB_SERVER   "PUBSEQ_OS"
+#define DEFAULT_DB_SERVER   "PUBSEQ_OS_PUBLIC"
 #define DEFAULT_DB_USER     "anyone"
 #define DEFAULT_DB_PASSWORD "allowed"
 #define MAX_MT_CONN         5
@@ -247,6 +248,7 @@ CDB_Connection* CPubseqReader::x_NewConnection(TConn conn_)
 {
     WaitBeforeNewConnection(conn_);
     if ( !m_Context ) {
+        DBLB_INSTALL_DEFAULT();
         C_DriverMgr drvMgr;
         //DBAPI_RegisterDriver_CTLIB(drvMgr);
         //DBAPI_RegisterDriver_DBLIB(drvMgr);
@@ -580,6 +582,7 @@ namespace {
                         size_t  count,
                         size_t* bytes_read)
             {
+                _TRACE("CDB_Result_Reader::Read("<<count<<")");
                 if ( !count ) {
                     if ( bytes_read ) {
                         *bytes_read = 0;
@@ -588,9 +591,11 @@ namespace {
                 }
                 size_t ret;
                 while ( (ret = m_DB_Result->ReadItem(buf, count)) == 0 ) {
+                    _TRACE("CDB_Result_Reader::Read("<<count<<") -> Fetch");
                     if ( !m_DB_Result->Fetch() )
                         break;
                 }
+                _TRACE("CDB_Result_Reader::Read("<<count<<") = "<<ret);
                 if ( bytes_read ) {
                     *bytes_read = ret;
                 }
