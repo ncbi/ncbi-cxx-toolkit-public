@@ -1322,7 +1322,6 @@ s_BlastHSPListInsertHSPInHeap(BlastHSPList* hsp_list,
     }
 }
 
-#if _DEBUG
 /** Verifies that the best_evalue field on the BlastHSPList is correct.
  * @param hsp_list object to check [in]
  * @return TRUE if OK, FALSE otherwise.
@@ -1347,7 +1346,6 @@ s_BlastCheckBestEvalue(const BlastHSPList* hsp_list)
 
     return TRUE;
 }
-#endif
 
 /** Gets the best (lowest) evalue from the BlastHSPList.
  * @param hsp_list object containing the evalues [in]
