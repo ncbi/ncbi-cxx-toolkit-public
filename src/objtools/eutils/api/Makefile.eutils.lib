@@ -5,4 +5,4 @@ SRC = eutils efetch einfo esearch egquery epost elink esummary espell
 LIB = eutils
 
 # sic; applies equally well to DTDs
-ASN_DEP = einfo esearch egquery epost elink esummary espell
+ASN_DEP = einfo esearch egquery epost elink esummary espell uilist
