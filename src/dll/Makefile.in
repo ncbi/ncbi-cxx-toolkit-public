@@ -9,7 +9,6 @@ SUB_PROJ =  \
     gbench \
     internal \
     ncbi_core \
-    ncbi_sqlite \
     ncbi_web \
     ncbi_xgrid2cgi \
     objects \
