@@ -58,7 +58,7 @@ int CReadBlastApp::find_overlap(TSimpleSeqs::iterator& seq, const TSimpleSeqs::i
          for(;seq2!=seqs.end(); seq2++)
            {
            int from2 = seq2->exons[0].from;
-           int to2   = seq2->exons[seq->exons.size()-1].to;
+           // int to2   = seq2->exons[seq->exons.size()-1].to;
            string ext_rna_range2 = printed_range(seq2);
            if(PrintDetails()) NcbiCerr << "\tfind_overlap" 
               << "[" << ext_rna_range << "]" 
@@ -210,7 +210,7 @@ bool CReadBlastApp::overlaps_prot_na
    bool hasLoc = hasGenomicInterval(seq);
    const CSeq_interval& seq_interval = getGenomicInterval(seq);
 */
-   bool hasLoc = hasGenomicLocation(seq);
+   // bool hasLoc = hasGenomicLocation(seq);
    const CSeq_loc& seq_interval = getGenomicLocation(seq);
    TSeqPos from2, to2;
    ENa_strand strand2;
@@ -221,7 +221,7 @@ bool CReadBlastApp::overlaps_prot_na
      if( !(*f1)->GetData().IsRna() ) continue;
 //     bool lres=overlaps_prot_na(n2, seq_interval, **f1, overlap);
      bool lres=overlaps(seq_interval, (*f1)->GetLocation(), overlap);
-     CSeqFeatData::E_Choice esite = (*f1)->GetData().Which();
+     // CSeqFeatData::E_Choice esite = (*f1)->GetData().Which();
      if(lres && overlap >= m_rna_overlapThreshold)
        {
        string n1  =  GetLocusTag(**f1, loc_map);
@@ -362,7 +362,7 @@ bool CReadBlastApp::overlaps_na
        type1 = GetRRNAtype((*f1)->GetData().GetRna());
        }
      if(type1.size()==0) continue;
-     bool absent =  match_na(**f1, type1);
+     match_na(**f1, type1);
      }
    result = true;
    DecreaseVerbosity();

@@ -330,7 +330,7 @@ int CReadBlastApp::get_neighboring_sequences(
 int CReadBlastApp::sequence_proximity(const int target_from, const int target_to, 
     const int from, const int to, const int key)
 {
-  int proximity = 0;
+  // int proximity = 0;
   int range_scale = target_to - target_from;
   int max_distance = get_max_distance(range_scale);
   return sequence_proximity(target_from, target_to, from, to, key, max_distance);

@@ -119,7 +119,7 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
   TSimpleSeqs::iterator seq = seqs.begin();
   for(TSimpleSeqs::iterator gene = genes.begin(); gene!=genes.end(); )
     {
-    int seq_from;
+    int seq_from=0;
     int gene_from = gene->exons[0].from;
     for(;seq!=seqs.end(); seq++)
        {
@@ -249,6 +249,8 @@ int CReadBlastApp::CollectSimpleSeqs(TSimpleSeqs& seqs)
     }
    
 // simple seqs collected
+
+  return 1;
 
 }
 
