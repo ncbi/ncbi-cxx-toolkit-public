@@ -94,7 +94,8 @@ inline bool GetLinkage(const CSeqMap_CI& iter,
                        const bool* default_linkage)
 {
     try {
-        return iter.GetData().GetGap().GetLinkage();
+        return iter.GetData().GetGap().GetLinkage()
+            == CSeq_gap::eLinkage_linked;
     } catch (CSeqMapException&) {
         // no Seq-data for this gap
     }
