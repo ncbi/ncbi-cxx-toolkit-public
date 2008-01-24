@@ -51,7 +51,6 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
     // use only first id of the set, since it is submission that have only new sequences.
     CBioseq::TId::iterator id;
 
-    bool first=true;
     int ihit=0;
     seq  = Begin(); 
     skip_toprot(seq);
@@ -207,7 +206,7 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             s = strstr(s, "/"); s++;
             // int alilen2 = atoi(s);
             s = strstr(s, "("); s++;
-            double ppos = atof(s);                ////////////////////////////
+            int ppos = atoi(s);                ////////////////////////////
             blastMap[qName].hits[ihit].ppos = ppos;
 
 // Skip to the alignment 
@@ -221,7 +220,7 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             long sbjstart =0 ,sbjend, ret;              ////////////////////
             long q_start, q_end;                 ///////////////////////////
 // read first subkect line of the alignment
-            ret = sscanf(str, "%s%d%s%d", label, &q_start, seqal, &q_end);
+            ret = sscanf(str, "%s%ld%s%ld", label, &q_start, seqal, &q_end);
             if(ret != 4) { printf("\nERROR line: %s", str); return 0;}
 
             fgets(str, MAXSTR, fpt);
@@ -236,7 +235,7 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             while(1)
               {
                long  tmpstart;
-               ret = sscanf(str, "%s%d%s%d", label, &tmpstart, seqal, &sbjend);
+               ret = sscanf(str, "%s%ld%s%ld", label, &tmpstart, seqal, &sbjend);
                if(ret != 4) { printf("\nERROR line: %s", str); return 0;}
 
                if(sbjstart == 0)  sbjstart = tmpstart;         
@@ -248,7 +247,7 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
                
                if(strstr(str, "Query: ")) 
                  {
-                   ret = sscanf(str, "%s%d%s%d", label, &tmpstart, seqal, &q_end);
+                   ret = sscanf(str, "%s%ld%s%ld", label, &tmpstart, seqal, &q_end);
                    if(ret != 4) { printf("\nERROR line: %s", str); return 0;}
                    fgets(str, MAXSTR, fpt);
                    alignment+=str;
@@ -411,7 +410,7 @@ int CReadBlastApp::StoreBlast(map<string, blastStr>& blastMap)
      scores[iscore]->SetValue().SetReal(blastMap[qname].hits[ihit].bitscore);
      iscore++; scores[iscore]=new CScore;       //
      scores[iscore]->SetId().SetStr("e_value");
-     scores[iscore]->SetValue().SetInt(blastMap[qname].hits[ihit].eval);
+     scores[iscore]->SetValue().SetReal(blastMap[qname].hits[ihit].eval);
      iscore++; scores[iscore]=new CScore;       //
      scores[iscore]->SetId().SetStr("num_ident");
      scores[iscore]->SetValue().SetInt(blastMap[qname].hits[ihit].nident);
