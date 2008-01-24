@@ -504,6 +504,7 @@ int CReadBlastApp::SetParents(CSeq_entry* parent, CBioseq_set::TSeq_set& where)
        }
      }
 */
+    return 0;
 }
 
 // TSimpleSeq
