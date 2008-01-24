@@ -123,8 +123,10 @@ void CAgpconvertApplication::Init(void)
                              "Mapping of col. 1 names to chromsome "
                              "names, for use as SubSource",
                              CArgDescriptions::eInputFile);
+    arg_desc->AddFlag("no_asnval",
+                      "Do not validate using asnval");
     arg_desc->AddFlag("no_testval",
-                      "Do not validate using testval");
+                      "Equivalent to -no_asnval, for backward compatibility");
     arg_desc->AddOptionalKey("outdir", "output_directory",
                              "Directory for output files "
                              "(defaults to current directory)",
@@ -135,7 +137,7 @@ void CAgpconvertApplication::Init(void)
                              "or \".sqn\" for Seq-submit",
                              CArgDescriptions::eString);
     arg_desc->AddFlag("stdout", "Write to stdout rather than files.  "
-                      "Implies -no_testval.");
+                      "Implies -no_asnval.");
     arg_desc->AddFlag("gap-info",
                       "Set Seq-gap (gap type and linkage) in delta sequence");
 
@@ -686,7 +688,6 @@ int CAgpconvertApplication::Run(void)
             // write the entry in asn text
             if (!write_stdout) {
                 string outfpath;
-                string testval_type_flag;
                 if (!output_seq_submit) {
                     // write a Seq-entry
                     string suffix;
@@ -696,7 +697,6 @@ int CAgpconvertApplication::Run(void)
                         suffix = args["ofs"].AsString();
                     }
                     outfpath = CDirEntry::MakePath(outdir, id_str, suffix);
-                    testval_type_flag = "-e";
                     CNcbiOfstream ostr(outfpath.c_str());
                     ostr << MSerial_AsnText << new_entry;
                 } else {
@@ -708,7 +708,6 @@ int CAgpconvertApplication::Run(void)
                         suffix = args["ofs"].AsString();
                     }
                     outfpath = CDirEntry::MakePath(outdir, id_str, suffix);
-                    testval_type_flag = "-s";
                     CSeq_submit new_submit;
                     new_submit.Assign(*submit_templ);
                     new_submit.SetData().SetEntrys().front().Reset(&new_entry);
@@ -716,14 +715,13 @@ int CAgpconvertApplication::Run(void)
                     ostr << MSerial_AsnText << new_submit;
                 }
 
-                if (!args["no_testval"]) {
-                    // verify using testval
-                    string cmd = "testval " + testval_type_flag
-                        + " -q 2 -i \"" + outfpath + "\"";
+                if (!args["no_asnval"] && !args["no_testval"]) {
+                    // verify using asnval
+                    string cmd = "asnval -Q 2 -o stdout -i \""
+                        + outfpath + "\"";
                     cout << cmd << endl;
-                    CExec::SpawnLP(CExec::eWait, "testval",
-                                   testval_type_flag.c_str(),
-                                   "-q", "2", "-i", outfpath.c_str(), 0);
+                    CExec::SpawnLP(CExec::eWait, "asnval", "-Q", "2",
+                                   "-o", "stdout", "-i", outfpath.c_str(), 0);
                 }
             } else {
                 // write_stdout
