@@ -1,25 +1,35 @@
-// cppspeedtest.cpp
-
-/*
-
-(.bash_profile)
-
-MyNewProject() {
-  /netopt/ncbi_tools/c++.stable/scripts/new_project.sh $1 $2 \
-    /netopt/ncbi_tools/c++.stable/GCC401-DebugMTUniv/build/
-}
-alias newproject='MyNewProject'
-
-(terminal)
-
-newproject cppspeedtest app/objects
-
-modify Makefile.cppspeedtest_app by adding xobjutil xobjmgr to
-
-LIB = xobjutil xobjmgr seqset $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
-
-make
-
+/*  $Id$
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Author:  Jonathan Kans, NCBI
+*          Frank Ludwig, NCBI
+*
+* File Description:
+*   C++ toolkit profiling module
+*
+* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
@@ -47,7 +57,6 @@ make
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -122,21 +131,29 @@ void CMytestApplication::Init(void)
         ("K", "Cleanup",
          "b Basic, s Serious",
          CArgDescriptions::eString);
+    arg_desc->SetConstraint
+        ("K", &(*new CArgAllow_Strings, "b", "s"));
 
     arg_desc->AddOptionalKey
         ("I", "Indexing",
          "f Feature Indexing",
          CArgDescriptions::eString);
+    arg_desc->SetConstraint
+        ("I", &(*new CArgAllow_Strings, "f"));
 
     arg_desc->AddOptionalKey
         ("S", "Sequence",
          "s FASTA, r No Defline, f By Feature, t Translation, v Visit, o Ostream",
          CArgDescriptions::eString);
+    arg_desc->SetConstraint
+        ("S", &(*new CArgAllow_Strings, "s", "r", "f", "t", "v", "o"));
 
     arg_desc->AddOptionalKey
         ("F", "Feature",
          "v Visit, g Gene by Overlap, x Xref, o Operon",
          CArgDescriptions::eString);
+    arg_desc->SetConstraint
+        ("F", &(*new CArgAllow_Strings, "v", "g", "x", "o"));
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -154,10 +171,8 @@ void CMytestApplication::DoProcess (
 
 {
     if (m_bsec) {
-        /*
         CCleanup Cleanup;
         Cleanup.BasicCleanup( se.GetObject() );
-        */
     }
     if (m_ssec) {
         // need to implement
@@ -199,7 +214,8 @@ void CMytestApplication::DoProcess (
         }
     }
     if (m_goverlap) {
-        // need to implement
+        /*fl: work on next */
+
     }
     if (m_gxref) {
         // need to implement
@@ -297,13 +313,13 @@ int CMytestApplication::Run(void)
     }
 
     int ct;
-    CTime t1, t2;
-    TSeconds tx;
+    CStopWatch sw;
+    sw.Start();
+    double lastInterval( 0 );
 
     // read line at a time if indicated
     if (NStr::Equal(tp, "l")) {
         string str;
-        t1.SetCurrent();
 
         while (NcbiGetlineEOL (ip, str)) {
             if (! str.empty ()) {
@@ -311,32 +327,25 @@ int CMytestApplication::Run(void)
             }
         }
 
-        t2.SetCurrent();
-        tx = t2.DiffSecond (t1);
-        NcbiCout << "Read by line time is " << tx << " seconds" << endl;
+        lastInterval = sw.Elapsed() - lastInterval;
+        NcbiCout << "Read by line time is " << lastInterval << " seconds" << endl;
         return 0;
     }
-
-    t1.SetCurrent();
 
     // otherwise read ASN.1
     auto_ptr<CObjectIStream> is (CObjectIStream::Open (eSerial_AsnText, ip));
     CRef<CSeq_entry> se(new CSeq_entry);
     *is >> *se;
 
-    t2.SetCurrent();
-    tx = t2.DiffSecond (t1);
-    NcbiCout << "ASN reading time is " << tx << " seconds" << endl;
-
-    t1.SetCurrent();
+    lastInterval = sw.Elapsed() - lastInterval;
+    NcbiCout << "ASN reading time is " << lastInterval << " seconds" << endl;
 
     for (ct = 0; ct < mx; ct++) {
         DoProcess (ip, op, se);
     }
 
-    t2.SetCurrent();
-    tx = t2.DiffSecond (t1);
-    NcbiCout << "Internal processing time is " << tx << " seconds" << endl;
+    lastInterval = sw.Elapsed() - lastInterval;
+    NcbiCout << "Internal processing time is " << lastInterval << " seconds" << endl;
 
     // write ASN.1
     /*
