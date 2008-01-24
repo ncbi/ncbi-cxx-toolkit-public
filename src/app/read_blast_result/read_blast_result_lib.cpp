@@ -123,10 +123,10 @@ void CReadBlastApp::dump_fasta_for_pretty_blast(diagMap& diag)
    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
    CScope scope(*objmgr);
 
-   CNcbiOfstream *out2 = new CNcbiOfstream (fn.c_str());
+   auto_ptr<CNcbiOfstream> out2  (new CNcbiOfstream (fn.c_str()));
    CFastaOstream fasta_out(*out2);
 
-   CNcbiOfstream *out2_cdd = new CNcbiOfstream (fncdd.c_str());
+   auto_ptr<CNcbiOfstream> out2_cdd ( new CNcbiOfstream (fncdd.c_str()));
    CFastaOstream fasta_out_cdd(*out2_cdd);
 
    for (CTypeConstIterator<CBioseq> seq = ConstBegin();  seq;  ++seq)
@@ -141,7 +141,6 @@ void CReadBlastApp::dump_fasta_for_pretty_blast(diagMap& diag)
         }
       }
   
-   delete out2;
 }
 
 void CReadBlastApp::printOverlapReport

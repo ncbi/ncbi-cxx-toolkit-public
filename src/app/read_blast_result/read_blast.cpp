@@ -58,7 +58,13 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
     id  = seq->SetId().begin();
 //    string prefix = CSeq_id::GetStringDescr (*seq, CSeq_id::eFormat_FastA);
     string prefix = GetStringDescr (*seq);
+
+// this was before Dima's decision to drop contig ids as part of locus tags or protein ids
+/*
     string::size_type ipos = prefix.find('_');
+    if(ipos != string::npos) prefix.erase(ipos+1);
+*/
+    string::size_type ipos = prefix.find('|');
     if(ipos != string::npos) prefix.erase(ipos+1);
 
     IncreaseVerbosity();
