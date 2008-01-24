@@ -242,3 +242,4 @@ template <typename interval_type> string GetLocationString ( const interval_type
 
 }
 
+template string GetLocationString<CSeq_loc>(const CSeq_loc& loc);
