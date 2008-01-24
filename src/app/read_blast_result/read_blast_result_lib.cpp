@@ -585,7 +585,7 @@ ECoreDataType CReadBlastApp::getCoreDataType(istream& in)
     return eUndefined;
     }
   if(result=="Seq-submit") return eSubmit;
-  if(result.compare(0,8, ">Feature")) return eTbl;
+  if(NStr::StartsWith(result, ">Feature")) return eTbl;
   return eUndefined;
 }
 
@@ -638,7 +638,7 @@ char *CReadBlastApp::skip_space(char *w)
 int CReadBlastApp::skip_toprot(CTypeIterator<CBioseq>& seq)
 {
     int nums=0;
-    for(nums=0 ;seq; ++seq, nums++) 
+    for(nums=0 ;seq.IsValid(); ++seq, nums++) 
       {
       const CSeq_inst& inst = seq->GetInst();
       if(!inst.IsAa()) continue;

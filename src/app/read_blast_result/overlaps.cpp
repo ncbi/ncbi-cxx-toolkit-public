@@ -263,7 +263,7 @@ bool CReadBlastApp::overlaps_prot_na
     report->right_frame    = right_frame;
 
     char bufferchar[20480];  memset(bufferchar, 0, 20480);
-    strstream buffer(bufferchar, 20480, ios_base::out);
+    strstream buffer(bufferchar, 20480, IOS_BASE::out);
     printOverlapReport(report, buffer);
          strstream buffer2;
        buffer2 << "RNA location " << n1
@@ -436,7 +436,7 @@ CReadBlastApp::overlaps
 {
   bool result = false;
   overlap=0;
-  for (CTypeConstIterator<CSeq_interval> i1 = ::ConstBegin(l1); i1; ++i1)
+  for (CTypeConstIterator<CSeq_interval> i1 = ncbi::ConstBegin(l1); i1; ++i1)
     {
     TSeqPos from1, to1, from2, to2;
     ENa_strand strand1, strand2;
@@ -444,7 +444,7 @@ CReadBlastApp::overlaps
     getFromTo( *i1, from1, to1, strand1);
     min1 = min(from1, to1);
     max1 = max(from1, to1);
-    for (CTypeConstIterator<CSeq_interval> i2 = ::ConstBegin(l2); i2; ++i2)
+    for (CTypeConstIterator<CSeq_interval> i2 = ncbi::ConstBegin(l2); i2; ++i2)
       {
       getFromTo( *i2, from2, to2, strand2);
       min2 = min(from2, to2);
@@ -615,7 +615,7 @@ bool CReadBlastApp::overlaps
     report->right_frame    = right_frame;
 
     char bufferchar[20480];  memset(bufferchar, 0, 20480);
-    strstream buffer(bufferchar, 20480, ios_base::out);
+    strstream buffer(bufferchar, 20480, IOS_BASE::out);
     printOverlapReport(report, buffer);
     strstream misc_feat;
     misc_feat << buffer.str() << '\0';

@@ -77,7 +77,7 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
            
             s = next_w(s);
 // printing the name of the sequence 
-            qName.clear(); //////////////////////
+            qName.erase(); //////////////////////
             qLen = 0;      
             while(!isspace(*s)&& *s) 
               {
@@ -496,7 +496,7 @@ int CReadBlastApp::ProcessCDD(map<string, blastStr>& blastMap)
         (double)q_ali_len/qLen > m_entireThreshold  )
         {
         char bufferchar[2048];  memset(bufferchar, 0, 2048);
-        strstream buffer(bufferchar, 2048, ios_base::out);
+        strstream buffer(bufferchar, 2048, IOS_BASE::out);
         buffer.flush();
         buffer << "Query" << "\t"
                << qname << "\t"
@@ -529,7 +529,7 @@ int CReadBlastApp::ProcessCDD(map<string, blastStr>& blastMap)
        m_diag[qname].problems.push_back(*problem);
        }
      char bufferchar[2048];  memset(bufferchar, 0, 2048);
-     strstream buffer(bufferchar, 2048, ios_base::out);
+     strstream buffer(bufferchar, 2048, IOS_BASE::out);
      buffer.flush();
      NcbiCerr << qname  << "(" << qLen << ")"
                  << " is a potential partial annotation." << NcbiEndl;

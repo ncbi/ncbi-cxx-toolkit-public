@@ -33,12 +33,9 @@
 #include <ncbi_pch.hpp>
 #include <string.h>
 
-#include <ncbi_pch.hpp>
 #include <corelib/ncbienv.hpp>
 
 
-#include <string>
-#include <istream>
 
 USING_SCOPE(ncbi);
 

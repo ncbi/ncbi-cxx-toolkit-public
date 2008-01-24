@@ -35,8 +35,6 @@
 
 using namespace std;
 
-#include <istream>
-
 class Ctbl;
 class Ctbl_feat;
 class Ctbl_seg;

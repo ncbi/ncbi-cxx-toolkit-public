@@ -184,7 +184,7 @@ int CReadBlastApp::AnalyzeSeqs(CBioseq_set::TSeq_set& seqs)
       tblFile = args["outTbl"].AsString();
    else
       tblFile = "/dev/null";
-   ofstream tblOut(tblFile.c_str(), ios_base::app | ios_base::out );
+   ofstream tblOut(tblFile.c_str(), IOS_BASE::app | IOS_BASE::out );
    NON_CONST_ITERATE( CBioseq_set::TSeq_set, left, seqs)
      {
      if((*left)->IsSet())
