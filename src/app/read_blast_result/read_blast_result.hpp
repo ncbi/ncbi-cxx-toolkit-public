@@ -1,3 +1,6 @@
+#ifndef READ_BLAST_RESULT__HPP
+#define READ_BLAST_RESULT__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -276,8 +279,10 @@ private:
 
     int SortSeqs(void);
     int CollectSimpleSeqs(TSimpleSeqs& seqs);
-    static bool less_seq(CRef<CSeq_entry>first, CRef<CSeq_entry>second);
-    static bool less_simple_seq(TSimpleSeq first, TSimpleSeq second);
+    static bool less_seq(const CRef<CSeq_entry>& first,
+                         const CRef<CSeq_entry>& second);
+    static bool less_simple_seq(const TSimpleSeq& first,
+                                const TSimpleSeq& second);
     int SortSeqs(CBioseq_set::TSeq_set& seqs);
     int AnalyzeSeqs(void);
     int AnalyzeSeqs(CBioseq_set::TSeq_set& seqs);
@@ -570,5 +575,4 @@ EMyFeatureType get_my_feat_type(const CSeq_feat& feat, const LocMap& loc_map);
 string get_trna_string(const CSeq_feat& feat);
 string GetRNAname(const CSeq_feat& feat);
 
-
-
+#endif // READ_BLAST_RESULT__HPP

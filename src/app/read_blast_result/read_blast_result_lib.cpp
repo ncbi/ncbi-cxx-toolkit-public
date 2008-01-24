@@ -508,14 +508,16 @@ int CReadBlastApp::SetParents(CSeq_entry* parent, CBioseq_set::TSeq_set& where)
 
 // TSimpleSeq
 
-bool CReadBlastApp::less_simple_seq(TSimpleSeq first, TSimpleSeq second)
+bool CReadBlastApp::less_simple_seq(const TSimpleSeq& first,
+                                    const TSimpleSeq& second)
 {
    return first.key < second.key;
 } // less_seq
 
 
 
-bool CReadBlastApp::less_seq(CRef<CSeq_entry>first, CRef<CSeq_entry>second)
+bool CReadBlastApp::less_seq(const CRef<CSeq_entry>& first,
+                             const CRef<CSeq_entry>& second)
 {
   if(PrintDetails()) NcbiCerr << "less_seq start" << NcbiEndl;
   if (first->IsSet() || second->IsSet()) 
