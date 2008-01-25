@@ -35,15 +35,15 @@ void CReadBlastApp::getFromTo(const CSeq_loc& loc, TSeqPos& from, TSeqPos& to, E
 {
   if(loc.IsInt())
     {
-    return getFromTo(loc.GetInt(), from, to, strand);
+    getFromTo(loc.GetInt(), from, to, strand);
     }
   else if (loc.IsMix())
     {
-    return getFromTo(loc.GetMix(), from, to, strand);
+    getFromTo(loc.GetMix(), from, to, strand);
     }
   else if (loc.IsPacked_int())
     {
-    return getFromTo(loc.GetPacked_int(), from, to, strand);
+    getFromTo(loc.GetPacked_int(), from, to, strand);
     }
   else if (loc.IsNull())
     {

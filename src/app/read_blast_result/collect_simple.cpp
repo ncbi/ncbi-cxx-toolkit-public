@@ -269,7 +269,8 @@ void CReadBlastApp::addLoctoSimpleSeq(TSimpleSeq& seq, const CSeq_loc&  loc)
 {
     seq.exons.clear();
     seq.key=0x0FFFFFFF;
-    for(CTypeConstIterator<CSeq_interval> inter = ::Begin(loc); inter; ++inter)
+    for(CTypeConstIterator<CSeq_interval> inter = ncbi::ConstBegin(loc);
+        inter; ++inter)
        {
        TSeqPos  from, to;
        ENa_strand strand;
