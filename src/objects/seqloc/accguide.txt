@@ -446,4 +446,4 @@ special  CAN88845-CAN88848  embl_tpa_prot
 special  CAO03085-CAO03089  embl_tpa_prot
 # Err on the side of caution on as yet unassigned IDs, and hope that
 # there's not *too* much more backfilling.
-special  CAP40272-CZZ99999  unreserved_prot
+special  CAP72056-CZZ99999  unreserved_prot
