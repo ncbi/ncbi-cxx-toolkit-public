@@ -4,7 +4,6 @@ DLL = gui_widgets_aln
 
 HOSTED_LIBS    = w_aln_crossaln \
                  w_aln_multi    \
-                 w_aln_text     \
                  w_hit_matrix   \
                  w_aln_table 
 
