@@ -12,7 +12,7 @@ html
 internal/align_model
 internal/contigdb
 internal/gbench
-internal/ID
+internal/ID/utils$
 internal/mapview/objects
 -internal/mapview/objects/cache
 misc/third_party
