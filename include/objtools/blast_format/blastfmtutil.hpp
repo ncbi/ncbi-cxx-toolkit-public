@@ -248,7 +248,13 @@ public:
         bool   subset;	
 
         /// Default constructor
-        SDbInfo();
+        SDbInfo() {
+            is_protein = true;
+            name = definition = date = "Unknown";
+            total_length = 0;
+            number_seqs = 0;
+            subset = false;
+        }
     };
 
     enum DbSortOrder {

@@ -78,14 +78,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE (ncbi);
 USING_SCOPE(objects);
 
-CBlastFormatUtil::SDbInfo::SDbInfo()
-{
-    is_protein = true;
-    name = definition = date = "Unknown";
-    total_length = 0;
-    number_seqs = 0;
-    subset = false;
-}
 
 bool kTranslation;
 CRef<CScope> kScope;
