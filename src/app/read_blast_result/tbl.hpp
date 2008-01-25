@@ -35,7 +35,6 @@
 */
 
 #include <corelib/ncbiobj.hpp>
-#include <istream>
 
 USING_NCBI_SCOPE;
 
