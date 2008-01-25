@@ -57,16 +57,28 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
     skip_toprot(seq);
     if(!seq) return 1;
     id  = seq->SetId().begin();
-//    string prefix = CSeq_id::GetStringDescr (*seq, CSeq_id::eFormat_FastA);
-    string prefix = GetStringDescr (*seq);
+    string prefix = CSeq_id::GetStringDescr (*seq, CSeq_id::eFormat_FastA);
+//    string prefix = GetStringDescr (*seq);
+    if(PrintDetails()) NcbiCerr<< "CReadBlastApp::ReadBlast: "
+        << "CSeq_id::GetStringDescr for prefix = "
+        <<  CSeq_id::GetStringDescr (*seq, CSeq_id::eFormat_FastA)
+        << ", "
+        << "GetStringDescr for prefix = "
+        <<  GetStringDescr (*seq)
+        << NcbiEndl;
+
 
 // this was before Dima's decision to drop contig ids as part of locus tags or protein ids
 /*
     string::size_type ipos = prefix.find('_');
     if(ipos != string::npos) prefix.erase(ipos+1);
 */
-    string::size_type ipos = prefix.find('|');
+    string::size_type ipos = prefix.rfind('|');
     if(ipos != string::npos) prefix.erase(ipos+1);
+    if(PrintDetails()) NcbiCerr<< "CReadBlastApp::ReadBlast: " 
+        << "prefix = "
+        << prefix
+        << NcbiEndl;
 
     IncreaseVerbosity();
     while(fgets(str, MAXSTR, fpt))
@@ -90,7 +102,15 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
               {
               if( m_tagmap.find(qName) != m_tagmap.end()) 
                  {
+                 if(PrintDetails()) NcbiCerr<< "CReadBlastApp::ReadBlast: " 
+                                       << "before applying tagmap = "
+                                       << qName 
+                                       << NcbiEndl;
                  qName = prefix+m_tagmap[qName];
+                 if(PrintDetails()) NcbiCerr<< "CReadBlastApp::ReadBlast: " 
+                                       << "after applying tagmap = "
+                                       << qName 
+                                       << NcbiEndl;
                  }
               }
 
@@ -105,7 +125,9 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             qLen = strtol(s+1, &rest, 10); ////////////////////
             blastMap[qName].qLen  = qLen;
             blastMap[qName].qName = qName;
-            if(PrintDetails()) NcbiCerr<< qName << ":" << qLen << NcbiEndl;
+            if(PrintDetails()) NcbiCerr<< "CReadBlastApp::ReadBlast: " 
+                                       << "final qname = "
+                                       << qName << ":" << qLen << NcbiEndl;
 
             continue;
         } // end reading query part, header of the file

@@ -268,7 +268,7 @@ int gene_feat_fit(TSimpleSeqs::iterator& seq, int from, int to)
 void CReadBlastApp::addLoctoSimpleSeq(TSimpleSeq& seq, const CSeq_loc&  loc)
 {
     seq.exons.clear();
-    seq.key=0xFFFFFFFF;
+    seq.key=0x0FFFFFFF;
     for(CTypeConstIterator<CSeq_interval> inter = ::Begin(loc); inter; ++inter)
        {
        TSeqPos  from, to;
