@@ -108,7 +108,7 @@ namespace impl {
 
 class CDB_Params;
 
-class CDBBindedParams : public CDBParams
+class NCBI_DBAPIDRIVER_EXPORT CDBBindedParams : public CDBParams
 {
 public:
     CDBBindedParams(impl::CDB_Params& bindings);

@@ -61,10 +61,9 @@ BEGIN_NCBI_SCOPE
 
 CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection& conn,
                                SQLHDBC           cmd,
-                               const string&     table_name,
-                               unsigned int      nof_columns) :
+                               const string&     table_name) :
     CStatementBase(conn),
-    impl::CBaseCmd(conn, table_name, nof_columns),
+    impl::CBaseCmd(conn, table_name),
     m_Cmd(cmd),
     m_HasTextImage(false),
     m_WasBound(false)
@@ -84,7 +83,7 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection& conn,
 
 bool CODBC_BCPInCmd::Bind(unsigned int column_num, CDB_Object* param_ptr)
 {
-    return GetParams().BindParam(column_num,  kEmptyStr, param_ptr);
+    return GetBindParamsImpl().BindParam(column_num,  kEmptyStr, param_ptr);
 }
 
 
@@ -231,12 +230,12 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
     RETCODE r;
 
     if (!m_WasBound) {
-        for (unsigned int i = 0; i < GetParams().NofParams(); ++i) {
-            if (GetParams().GetParamStatus(i) == 0) {
+        for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); ++i) {
+            if (GetBindParamsImpl().GetParamStatus(i) == 0) {
                 r = bcp_bind(GetHandle(), (BYTE*) pb, 0, SQL_VARLEN_DATA, 0, 0, 0, i + 1);
             }
             else {
-                CDB_Object& param = *GetParams().GetParam(i);
+                CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
                 EDB_Type data_type = param.GetType();
                 r = bcp_bind(GetHandle(),
@@ -258,12 +257,12 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         }
         m_WasBound = true;
     }
-    for (unsigned int i = 0; i < GetParams().NofParams(); i++) {
-        if (GetParams().GetParamStatus(i) == 0) {
+    for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); i++) {
+        if (GetBindParamsImpl().GetParamStatus(i) == 0) {
             r = bcp_collen(GetHandle(), SQL_NULL_DATA, i + 1);
         }
         else {
-            CDB_Object& param = *GetParams().GetParam(i);
+            CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             switch ( param.GetType() ) {
             case eDB_Int: {
@@ -510,11 +509,11 @@ bool CODBC_BCPInCmd::Send(void)
     if (m_HasTextImage) { // send text/image data
         char buff[1800]; // text/image page size
 
-        for (unsigned int i = 0; i < GetParams().NofParams(); ++i) {
-            if (GetParams().GetParamStatus(i) == 0)
+        for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); ++i) {
+            if (GetBindParamsImpl().GetParamStatus(i) == 0)
                 continue;
 
-            CDB_Object& param = *GetParams().GetParam(i);
+            CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             if (param.GetType() != eDB_Image &&
                 (param.GetType() != eDB_Text  ||  param.IsNULL()))

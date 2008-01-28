@@ -37,10 +37,14 @@
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/error_codes.hpp>
-#include <dbapi/driver/odbc/unix_odbc/sqlext.h>
+
+#ifdef NCBI_OS_MSWIN
+    #include <sqlext.h>
+#else
+    #include <dbapi/driver/odbc/unix_odbc/sqlext.h>
+#endif
 
 #include <stdio.h>
-
 
 #define NCBI_USE_ERRCODE_X   Dbapi_DrvrUtil
 

@@ -139,7 +139,7 @@ private:
 ///
 ///  CDBParams
 
-class CDBParams
+class NCBI_DBAPIDRIVER_EXPORT CDBParams
 {
 public:
     virtual ~CDBParams(void);

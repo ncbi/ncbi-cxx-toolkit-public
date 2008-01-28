@@ -594,8 +594,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd :
 protected:
     CODBC_BCPInCmd(CODBC_Connection& conn,
                    SQLHDBC cmd,
-                   const string& table_name,
-                   unsigned int nof_columns);
+                   const string& table_name);
     virtual ~CODBC_BCPInCmd(void);
 
 protected:
