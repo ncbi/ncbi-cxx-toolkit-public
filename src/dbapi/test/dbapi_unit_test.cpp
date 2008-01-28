@@ -11870,6 +11870,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.GetDriverName() != dblib_driver
         && !(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
         && args.GetDriverName() != ftds_dblib_driver
+        && args.GetDriverName() != ctlib_driver
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StmtMetaData,
                 DBAPIInstance);

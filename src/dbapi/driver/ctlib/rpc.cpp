@@ -63,12 +63,19 @@ CDBParams&
 CTL_RPCCmd::GetBindParams(void)
 {
     if (m_InParams.get() == NULL) {
+#ifdef FTDS_IN_USE
         m_InParams.reset(new impl::CRowInfo_SP_SQL_Server(
                     GetQuery(), 
                     GetConnImpl(), 
                     GetBindParamsImpl()
                     )
                 );
+#else
+        m_InParams.reset(new impl::CCachedRowInfo(
+                    GetBindParamsImpl()
+                    )
+                );
+#endif
     }
 
     return *m_InParams;
