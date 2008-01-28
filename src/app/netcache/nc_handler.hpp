@@ -83,42 +83,42 @@ public:
 
     /// Process request
     virtual
-    void ProcessRequest(string&               request,
-                        const string&         auth,
-                        NetCache_RequestStat& stat,
-                        NetCache_RequestInfo* info);
+    void ProcessRequest(string&                request,
+                        SNetCache_RequestStat& stat);
     virtual
     bool ProcessTransmission(const char* buf, size_t buf_size,
                              ETransmission eot);
     virtual
     bool ProcessWrite();
 
+    bool ProcessWriteAndReport(unsigned blob_size);
+
     // NetCache request processing
 
     /// Process "PUT" request
     void ProcessPut(CSocket&              sock, 
                     SNC_Request&          req,
-                    NetCache_RequestStat& stat);
+                    SNetCache_RequestStat& stat);
 
     /// Process "PUT2" request
     void ProcessPut2(CSocket&              sock, 
                      SNC_Request&          req,
-                     NetCache_RequestStat& stat);
+                     SNetCache_RequestStat& stat);
 
     /// Process "PUT3" request
     void ProcessPut3(CSocket&              sock, 
                      SNC_Request&          req,
-                     NetCache_RequestStat& stat);
+                     SNetCache_RequestStat& stat);
 
     /// Process "GET" request
     void ProcessGet(CSocket&              sock, 
                     const SNC_Request&    req,
-                    NetCache_RequestStat& stat);
+                    SNetCache_RequestStat& stat);
 
     /// Process "GET2" request
     void ProcessGet2(CSocket&              sock,
                      const SNC_Request&    req,
-                     NetCache_RequestStat& stat);
+                     SNetCache_RequestStat& stat);
 
     /// Process "VERSION" request
     void ProcessVersion(CSocket& sock, const SNC_Request& req);

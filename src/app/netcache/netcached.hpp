@@ -32,8 +32,6 @@
  *
  */
 
-#include <util/logrotate.hpp>
-
 #include <connect/server.hpp>
 #include <connect/server_monitor.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -52,78 +50,143 @@
 
 BEGIN_NCBI_SCOPE
 
-
 /// @internal
 ///
-/// Netcache request info for logging and monitoring
-///
-struct NetCache_RequestInfo
+class CCounterGuard
 {
-    string type;    ///< NC or IC
-    string blob_id; ///< NC blob id or IC synthetic id
-    string details; ///< readable cache id, blob id etc.
-    void Init() {
-        type = "Unknown";
-        blob_id = "";
-        details = "";
+public:
+    CCounterGuard(CAtomicCounter& counter) :
+        m_Counter(counter)
+    {
+        m_Counter.Add(1);
     }
+    ~CCounterGuard() {
+        m_Counter.Add(-1);
+    }
+private:
+    CAtomicCounter& m_Counter;
+};
+
+
+struct STraceEvent
+{
+    STraceEvent(double t, const char*m) :
+        time_mark(t), message(m)
+    { }
+    double time_mark;
+    string message;
 };
 
 /// @internal
 ///
 /// Netcache server side request statistics
 ///
-struct NetCache_RequestStat
+struct SNetCache_RequestStat
 {
     CTime        conn_time;    ///< request incoming time in seconds
     unsigned     req_code;     ///< 'P' put, 'G' get
     SBDB_CacheUnitStatistics::EErrGetPut op_code; /// error opcode for BDB
-    size_t       blob_size;    ///< BLOB size
+    CStopWatch   elapsed_watch; /// watch for request elapsed time
     double       elapsed;      ///< total time in seconds to process request
     double       comm_elapsed; ///< time spent reading/sending data
+    double       lock_elapsed; ///< time to wait until blob is unlocked
+    double       db_elapsed;   ///< time to store/retrieve data
+    unsigned     db_accesses;  ///< number of db hits
+    size_t       blob_size;    ///< BLOB size
     string       peer_address; ///< Client's IP address
     unsigned     io_blocks;    ///< Number of IO blocks translated
-};
+    // fields from NetCache_RequestInfo
+    string request; ///< saved request
+    string type;    ///< NC or IC
+    string blob_id; ///< NC blob id or IC synthetic id
+    string details; ///< readable cache id, blob id etc.
+#ifdef _DEBUG
+    vector<STraceEvent> events;
+    void AddEvent(const char* m) {
+        double t = elapsed_watch.Elapsed();
+        events.push_back(STraceEvent(t, m));
+    }
+#else
+    void AddEvent(const char*) {}
+#endif
 
+    void InitSession(const CTime& t, const string& pa) {
+        conn_time = t;
+        peer_address = pa;
+        // get only host name
+        string::size_type offs = peer_address.find_first_of(":");
+        if (offs != string::npos) {
+            peer_address.erase(offs, peer_address.length());
+        }
+    }
+    void InitRequest() {
+        elapsed_watch.Restart();
+#ifdef _DEBUG
+        events.clear();
+#endif
+        req_code = '?';
+        elapsed = 0;
+        blob_size = 0;
+        comm_elapsed = 0;
+        lock_elapsed = 0;
+        db_elapsed = 0;
+        db_accesses = 0;
+        io_blocks = 0;
 
-/// @internal
-class CNetCacheLogStream : public CRotatingLogStream
-{
-public:
-    typedef CRotatingLogStream TParent;
-public:
-    CNetCacheLogStream(const string&    filename, 
-                       CNcbiStreamoff   limit)
-    : TParent(filename, limit)
-    {}
-protected:
-    virtual string x_BackupName(string& name)
-    {
-        return kEmptyStr;
+        type = "Unknown";
+        blob_id.clear();
+        details.clear();
+    }
+    void EndRequest() {
+        elapsed_watch.Stop();
+        elapsed = elapsed_watch.Elapsed();
     }
 };
 
 
 /// @internal
 ///
-/// Netcache logger
-///
-class CNetCache_Logger
-{
+/// Guard to record elapsed times in the presence of exceptions
+class CTimeGuard {
 public:
-    CNetCache_Logger(const string&    filename, 
-                     CNcbiStreamoff   limit)
-      : m_Log(filename, limit)
-    {}
-
-    void Put(const string&               auth, 
-             const NetCache_RequestStat& stat,
-             const string&               blob_key);
-
-    void Rotate() { m_Log.Rotate(); }
+    CTimeGuard(double& elapsed, CStopWatch::EStart state = CStopWatch::eStart) :
+        m_StopWatch(state), m_State(state), m_Elapsed(&elapsed), m_Stat(0)
+    { }
+    CTimeGuard(double& elapsed, SNetCache_RequestStat* stat,
+        CStopWatch::EStart state = CStopWatch::eStart) :
+        m_StopWatch(state), m_State(state), m_Elapsed(&elapsed), m_Stat(0) // DEBUG: turn off detailed stat
+    {
+        if (m_Stat)
+            m_Stat->AddEvent("Start");
+    }
+    ~CTimeGuard() {
+        Release();
+    }
+    void Start() {
+        m_StopWatch.Start();
+        m_State = CStopWatch::eStart;
+    }
+    void Stop() {
+        m_StopWatch.Stop();
+        if (m_State == CStopWatch::eStart) {
+            if (m_Stat)
+                m_Stat->AddEvent("Stop");
+        }
+        m_State = CStopWatch::eStop;
+    }
+    void Release() {
+        if (!m_Elapsed) return;
+        Stop();
+        *m_Elapsed += m_StopWatch.Elapsed();
+        m_Elapsed = NULL;
+    }
 private:
-    CNetCacheLogStream m_Log;
+    CStopWatch m_StopWatch;
+    CStopWatch::EStart m_State;
+    double*    m_Elapsed;
+    SNetCache_RequestStat*  m_Stat;
 };
+
 
 class CBDB_Cache;
 
@@ -177,6 +240,9 @@ public:
     /// Get server-monitor class
     CServer_Monitor& GetMonitor() { return m_Monitor; }
 
+    ///
+    CAtomicCounter& GetRequestCounter() { return m_PendingRequests; }
+
     ///////////////////////////////////////////////////////////////////
     // Service for handlers
     ///
@@ -224,54 +290,53 @@ public:
 
     CFastLocalTime& GetTimer();
 
-    /// Get logger instance
-    CNetCache_Logger* GetLogger();
-    /// TRUE if logging is ON
+    bool IsLogForced() const;
     bool IsLog() const;
 
 private:
-    void x_CreateLog();
-
     /// Read the registry for icache_XXXX entries
     void x_GetICacheNames(TLocalCacheMap* cache_map);
 
 private:
     /// Host name and port where server runs
-    string             m_Host;
-    unsigned           m_Port;
+    string           m_Host;
+    unsigned         m_Port;
 
     /// ID counter
-    unsigned           m_MaxId;
+    unsigned         m_MaxId;
     /// Set of ids in use (PUT)
-    bm::bvector<>      m_UsedIds;
-    CBDB_Cache*        m_Cache;
+    bm::bvector<>    m_UsedIds;
+    CBDB_Cache*      m_Cache;
     /// Flags that server received a shutdown request
-    volatile bool      m_Shutdown; 
+    volatile bool    m_Shutdown; 
     /// Matches signal, if server got one
-    int                m_Signal;
+    int              m_Signal;
     /// Time to wait for the client (seconds)
-    unsigned           m_InactivityTimeout;
-    /// Log writer
-    auto_ptr<CNetCache_Logger>  m_Logger;
+    unsigned         m_InactivityTimeout;
     /// Logging ON/OFF
-    bool                        m_LogFlag;
-    
+    bool             m_LogFlag;       ///< From config file
+    bool             m_LogForcedFlag; ///< Set by command
+
     /// Accept timeout for threaded server
-    STimeout                     m_ThrdSrvAcceptTimeout;
+    STimeout         m_ThrdSrvAcceptTimeout;
     /// Quick local timer
-    CFastLocalTime               m_LocalTimer;
+    CFastLocalTime   m_LocalTimer;
     /// Configuration
-    const IRegistry&             m_Reg;
+    const IRegistry& m_Reg;
 
     /// Map of local ICache instances
-    TLocalCacheMap                  m_LocalCacheMap;
-    CFastMutex                      m_LocalCacheMap_Lock;
+    TLocalCacheMap   m_LocalCacheMap;
+    CFastMutex       m_LocalCacheMap_Lock;
 
     /// Session management
-    CRef<CSessionManagementThread>  m_SessionMngThread;
+    CRef<CSessionManagementThread>
+                     m_SessionMngThread;
 
     /// Monitor
-    CServer_Monitor                 m_Monitor;
+    CServer_Monitor  m_Monitor;
+
+    /// Pending requests
+    CAtomicCounter   m_PendingRequests;
 };
 
 

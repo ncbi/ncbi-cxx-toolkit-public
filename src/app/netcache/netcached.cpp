@@ -86,38 +86,6 @@ private:
 };
 
 
-
-void CNetCache_Logger::Put(const string&               auth, 
-                           const NetCache_RequestStat& stat,
-                           const string&               blob_key)
-{
-    string msg, tmp;
-    msg += auth;
-    msg += ';';
-    msg += stat.peer_address;
-    msg += ';';
-    msg += stat.conn_time.AsString();
-    msg += ';';
-    msg += (char)stat.req_code;
-    msg += ';';
-    NStr::UInt8ToString(tmp, stat.blob_size);
-    msg += tmp;
-    msg += ';';
-    msg += NStr::DoubleToString(stat.elapsed, 5);
-    msg += ';';
-    msg += NStr::DoubleToString(stat.comm_elapsed, 5);
-    msg += ';';
-    msg += blob_key;
-    msg += "\n";
-
-    m_Log << msg;
-
-    if (stat.req_code == 'V') {
-        m_Log << NcbiFlush;
-    }
-}
-
-
 static CNetCacheServer* s_netcache_server = 0;
 
 
@@ -135,6 +103,7 @@ CNetCacheServer::CNetCacheServer(unsigned int     port,
     m_Signal(0),
     m_InactivityTimeout(network_timeout),
     m_LogFlag(is_log),
+    m_LogForcedFlag(false),
     m_Reg(reg)
 {
     if (use_hostname) {
@@ -152,9 +121,8 @@ CNetCacheServer::CNetCacheServer(unsigned int     port,
         m_Host = ipaddr;
     }
 
-    x_CreateLog();
-
     s_netcache_server = this;
+    m_PendingRequests.Set(0);
 }
 
 CNetCacheServer::~CNetCacheServer()
@@ -432,24 +400,8 @@ void CNetCacheServer::WriteBuf(CSocket& sock,
 
 void CNetCacheServer::SwitchLog(bool on)
 {
-    if (on) {
-        CFastMutexGuard guard(x_NetCacheMutex);
-        if (!m_LogFlag) {
-            m_LogFlag = true;
-            m_Logger->Rotate();
-        }
-    } else {
-        CFastMutexGuard guard(x_NetCacheMutex);
-        m_LogFlag = false;
-    }
-}
-
-
-CNetCache_Logger* CNetCacheServer::GetLogger()
-{
     CFastMutexGuard guard(x_NetCacheMutex);
-
-    return m_Logger.get();
+    m_LogForcedFlag = on;
 }
 
 
@@ -460,22 +412,10 @@ bool CNetCacheServer::IsLog() const
 }
 
 
-void CNetCacheServer::x_CreateLog()
+bool CNetCacheServer::IsLogForced() const
 {
     CFastMutexGuard guard(x_NetCacheMutex);
-
-    if (m_Logger.get()) {
-        return; // nothing to do
-    }
-
-    string log_path = 
-            m_Reg.GetString("server", "log_path", kEmptyStr, 
-                            CNcbiRegistry::eReturn);
-    log_path = CDirEntry::AddTrailingPathSeparator(log_path);
-    log_path += "netcached.log";
-
-    m_Logger.reset(
-        new CNetCache_Logger(log_path, 100 * 1024 * 1024));
+    return m_LogForcedFlag;
 }
 
 
@@ -615,8 +555,6 @@ protected:
 
 private:
     CRef<CCacheCleanerThread>  m_PurgeThread;
-    /// Error message logging
-    auto_ptr<CNetCacheLogStream> m_ErrLog;
 
     // Need to keep instance because of STimeout requirements
     STimeout m_ServerAcceptTimeout;
@@ -683,25 +621,11 @@ int CNetCacheDApp::Run(void)
         }
         }}
 
-        /* This piece interferes with standard log conventions/procedures
-        string log_path = 
-                reg.GetString("server", "log_path", kEmptyStr, 
-                              CNcbiRegistry::eReturn);
-        log_path = CDirEntry::AddTrailingPathSeparator(log_path);
-        log_path += "nc_err.log";
-        m_ErrLog.reset(new CNetCacheLogStream(log_path, 25 * 1024 * 1024));
-        // All errors redirected to rotated log
-        // from this moment on the server is silent...
-        SetDiagStream(m_ErrLog.get());
-        */
-
         if (!is_port_free) {
             LOG_POST(("Startup problem: listening port is busy. Port=" + 
                 NStr::IntToString(port)));
             return 1;
         }
-
-
 
         // Mount BDB Cache
 
@@ -886,5 +810,6 @@ int CNetCacheDApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CNetCacheDApp().AppMain(argc, argv, 0, eDS_Default);
+    GetDiagContext().SetOldPostFormat(false);
+    return CNetCacheDApp().AppMain(argc, argv, 0, eDS_ToStdlog);
 }

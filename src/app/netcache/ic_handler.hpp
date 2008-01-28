@@ -92,10 +92,8 @@ public:
 
     /// Process ICache request
     virtual
-    void ProcessRequest(string&               request,
-                        const string&         auth,
-                        NetCache_RequestStat& stat,
-                        NetCache_RequestInfo* info);
+    void ProcessRequest(string&                request,
+                        SNetCache_RequestStat& stat);
     virtual
     bool ProcessTransmission(const char* buf, size_t buf_size,
                              ETransmission eot);

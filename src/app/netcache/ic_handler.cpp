@@ -261,16 +261,12 @@ void CICacheHandler::ParseRequest(const string& reqstr, SIC_Request* req)
 }
 
 
-void CICacheHandler::ProcessRequest(string&               request,
-                                    const string&         auth,
-                                    NetCache_RequestStat& stat,
-                                    NetCache_RequestInfo* info)
+void CICacheHandler::ProcessRequest(string&                request,
+                                    SNetCache_RequestStat& stat)
 {
     CSocket& socket = GetSocket();
     SIC_Request req;
     ParseRequest(request, &req);
-
-    m_Auth = &auth;
 
     ICache* ic = m_Server->GetLocalCache(req.cache_name);
     if (ic == 0) {
@@ -280,16 +276,16 @@ void CICacheHandler::ProcessRequest(string&               request,
         return;
     }
 
-    if (info) {
-        info->type = "IC";
-        info->blob_id = req.key + ":" +
+    if (1) { // was conditional, may be it still makes sense
+        stat.type = "IC";
+        stat.blob_id = req.key + ":" +
             NStr::IntToString(req.version) + ":" +
             req.subkey;
-        info->details = "Cache=\"";
-        info->details += req.cache_name + "\"";
-        info->details += " key=\"" + req.key;
-        info->details += "\" version=" + NStr::IntToString(req.version);
-        info->details += " subkey=\"" + req.subkey +"\"";
+        stat.details = "Cache=\"";
+        stat.details += req.cache_name + "\"";
+        stat.details += " key=\"" + req.key;
+        stat.details += "\" version=" + NStr::IntToString(req.version);
+        stat.details += " subkey=\"" + req.subkey +"\"";
     }
 
 
@@ -523,12 +519,19 @@ bool CICacheHandler::ProcessWrite()
 {
     char buf[4096];
     size_t bytes_read;
-    ERW_Result io_res = m_Reader->Read(buf, sizeof(buf), &bytes_read);
-    if (io_res != eRW_Success || !bytes_read) {
+    ERW_Result res;
+    {{
+        CTimeGuard time_guard(m_Stat->db_elapsed);
+        res = m_Reader->Read(buf, sizeof(buf), &bytes_read);
+    }}
+    if (res != eRW_Success || !bytes_read) {
         m_Reader.reset(0);
         return false;
     }
-    CNetCacheServer::WriteBuf(GetSocket(), buf, bytes_read);
+    {{
+        CTimeGuard time_guard(m_Stat->comm_elapsed);
+        CNetCacheServer::WriteBuf(GetSocket(), buf, bytes_read);
+    }}
     return true;
 }
 
@@ -552,8 +555,7 @@ void CICacheHandler::Process_IC_Read(ICache&              ic,
         WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
         return;
     }
-
-
+ 
     // re-translate reader to the network
 
     m_Reader.reset(ba_descr.reader.release());

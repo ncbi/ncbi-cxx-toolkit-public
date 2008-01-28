@@ -34,6 +34,8 @@
 
 BEGIN_NCBI_SCOPE
 
+const size_t kNetworkBufferSize = 64 * 1024;
+
 // NetCache request handler host
 class CNetCache_RequestHandlerHost
 {
@@ -42,6 +44,8 @@ public:
     virtual void BeginReadTransmission() = 0;
     virtual void BeginDelayedWrite() = 0;
     virtual CNetCacheServer* GetServer() = 0;
+    virtual SNetCache_RequestStat* GetStat() = 0;
+    virtual const string* GetAuth() = 0;
 };
 
 // NetCache request handler
@@ -56,10 +60,8 @@ public:
     virtual ~CNetCache_RequestHandler() {}
     /// Process request
     virtual
-    void ProcessRequest(string&               request,
-                        const string&         auth,
-                        NetCache_RequestStat& stat,
-                        NetCache_RequestInfo* info) = 0;
+    void ProcessRequest(string&                request,
+                        SNetCache_RequestStat& stat) = 0;
     // Optional for transmission reader, to start reading
     // transmission call m_Host->BeginReadTransmission()
     virtual bool ProcessTransmission(const char* buf, size_t buf_size,
@@ -81,7 +83,8 @@ protected:
     }
 protected:
     CNetCache_RequestHandlerHost* m_Host;
-    CNetCacheServer* m_Server;
+    CNetCacheServer*              m_Server;
+    SNetCache_RequestStat*        m_Stat;
     // Transitional - do not hold ownership
     const string*    m_Auth;
 private:

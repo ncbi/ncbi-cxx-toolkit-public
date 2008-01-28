@@ -264,21 +264,17 @@ void CNetCacheHandler::ParseRequest(const string& reqstr, SNC_Request* req)
 }
 
 
-void CNetCacheHandler::ProcessRequest(string&               request,
-                                      const string&         auth,
-                                      NetCache_RequestStat& stat,
-                                      NetCache_RequestInfo* info)
+void CNetCacheHandler::ProcessRequest(string&                request,
+                                      SNetCache_RequestStat& stat)
 {
     CSocket& socket = GetSocket();
     SNC_Request req;
     ParseRequest(request, &req);
 
-    m_Auth = &auth;
-
-    if (info) {
-        info->type = "NC";
-        info->blob_id = req.req_id;
-        info->details = req.req_id;
+    if (1) { // was conditional, may be it still makes sense
+        stat.type = "NC";
+        stat.blob_id = req.req_id;
+        stat.details = req.req_id;
     }
 
     stat.op_code = SBDB_CacheUnitStatistics::eErr_Unknown;
@@ -462,22 +458,54 @@ void CNetCacheHandler::ProcessLog(CSocket&  sock, const SNC_Request&  req)
 
 bool CNetCacheHandler::ProcessWrite()
 {
-    char buf[4096];
+    return ProcessWriteAndReport(0);
+}
+
+
+bool CNetCacheHandler::ProcessWriteAndReport(unsigned blob_size)
+{
+    char buf[kNetworkBufferSize];
     size_t bytes_read;
-    ERW_Result io_res = m_Reader->Read(buf, sizeof(buf), &bytes_read);
-    if (io_res != eRW_Success || !bytes_read) {
+    ERW_Result res;
+    {{
+        CTimeGuard time_guard(m_Stat->db_elapsed, m_Stat);
+        res = m_Reader->Read(buf, sizeof(buf), &bytes_read);
+    }}
+    if (res != eRW_Success || !bytes_read) {
+        if (blob_size) {
+            string msg("BLOB not found. ");
+            //msg += req_id;
+            WriteMsg(GetSocket(), "ERR:", msg);
+        }
         m_Reader.reset(0);
         return false;
     }
-    // CStopWatch  sw(CStopWatch::eStart);
-    CNetCacheServer::WriteBuf(GetSocket(), buf, bytes_read);
+    if (blob_size) {
+        string msg("BLOB found. SIZE=");
+        string sz;
+        NStr::UIntToString(sz, blob_size);
+        msg += sz;
+        WriteMsg(GetSocket(), "OK:", msg);
+    }
+    {{
+        CTimeGuard time_guard(m_Stat->comm_elapsed, m_Stat);
+        CNetCacheServer::WriteBuf(GetSocket(), buf, bytes_read);
+    }}
+    ++(m_Stat->io_blocks);
+
+    // TODO: Check here that bytes_read is less than sizeof(buf)
+    // and optimize out delayed write?
+    // This code does not work properly, that is why it is commented
+//    if (blob_size && (blob_size <= bytes_read))
+//        return false;
+
     return true;
 }
 
 
 void CNetCacheHandler::ProcessGet(CSocket&               sock, 
                                   const SNC_Request&     req,
-                                  NetCache_RequestStat&  stat)
+                                  SNetCache_RequestStat&  stat)
 {
     const string& req_id = req.req_id;
 
@@ -503,6 +531,7 @@ void CNetCacheHandler::ProcessGet(CSocket&               sock,
 
     CBDB_Cache* bdb_cache = m_Server->GetCache();
     for (int repeats = 0; repeats < 1000; ++repeats) {
+        CTimeGuard time_guard(stat.db_elapsed, &stat);
         bdb_cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
 
         if (!ba_descr.blob_found) {
@@ -549,40 +578,16 @@ void CNetCacheHandler::ProcessGet(CSocket&               sock,
     }
 
     // Write first chunk right here
-    char buf[4096];
-    size_t bytes_read;
-    ERW_Result io_res = m_Reader->Read(buf, sizeof(buf), &bytes_read);
-    if (io_res != eRW_Success || !bytes_read) { // TODO: should we check here for bytes_read?
-        string msg = "BLOB not found. ";
-        msg += req_id;
-        WriteMsg(sock, "ERR:", msg);
-        m_Reader.reset(0);
+    if (!ProcessWriteAndReport(ba_descr.blob_size))
         return;
-    }
-    string msg("BLOB found. SIZE=");
-    string sz;
-    NStr::UIntToString(sz, ba_descr.blob_size);
-    msg += sz;
-    WriteMsg(sock, "OK:", msg);
-    
-    // translate BLOB fragment to the network
-    CStopWatch  sw(CStopWatch::eStart);
 
-    CNetCacheServer::WriteBuf(sock, buf, bytes_read);
-
-    // TODO: stat should be exposed to ProcessWrite somehow
-    stat.comm_elapsed += sw.Elapsed();
-    ++stat.io_blocks;
-
-    // TODO: Can we check here that bytes_read is less than sizeof(buf)
-    // and optimize out delayed write?
     m_Host->BeginDelayedWrite();
 }
 
 
 void CNetCacheHandler::ProcessPut(CSocket&              sock, 
                                   SNC_Request&          req,
-                                  NetCache_RequestStat& stat)
+                                  SNetCache_RequestStat& stat)
 {
     WriteMsg(sock, "ERR:", "Obsolete");
 }
@@ -590,7 +595,7 @@ void CNetCacheHandler::ProcessPut(CSocket&              sock,
 
 void CNetCacheHandler::ProcessPut2(CSocket&              sock, 
                                    SNC_Request&          req,
-                                   NetCache_RequestStat& stat)
+                                   SNetCache_RequestStat& stat)
 {
     string& rid = req.req_id;
     bool do_id_lock = true;
@@ -599,28 +604,36 @@ void CNetCacheHandler::ProcessPut2(CSocket&              sock,
     unsigned int id = 0;
     _TRACE("Getting an id, socket " << &sock);
     if (req.req_id.empty()) {
+        CTimeGuard time_guard(stat.db_elapsed, &stat);
         id = bdb_cache->GetNextBlobId(do_id_lock);
+        time_guard.Stop();
         CNetCache_Key::GenerateBlobKey(&rid, id,
             m_Server->GetHost(), m_Server->GetPort());
         do_id_lock = false;
     } else {
-        id = CNetCache_Key::GetBlobId(req.req_id);
+        id = CNetCache_Key::GetBlobId(rid);
     }
+    stat.blob_id = rid;
     _TRACE("Got id " << id);
 
     // BLOB already locked, it is safe to return BLOB id
     if (!do_id_lock) {
+        CTimeGuard time_guard(stat.comm_elapsed, &stat);
         WriteMsg(sock, "ID:", rid);
     }
 
     // create the reader up front to guarantee correct BLOB locking
     // the possible problem (?) here is that we have to do double buffering
     // of the input stream
-    m_Writer.reset(
-        bdb_cache->GetWriteStream(id, rid, 0, kEmptyStr, do_id_lock,
-                                  req.timeout, *m_Auth));
+    {{
+        CTimeGuard time_guard(stat.db_elapsed, &stat);
+        m_Writer.reset(
+            bdb_cache->GetWriteStream(id, rid, 0, kEmptyStr, do_id_lock,
+                                    req.timeout, *m_Auth));
+    }}
 
     if (do_id_lock) {
+        CTimeGuard time_guard(stat.comm_elapsed, &stat);
         WriteMsg(sock, "ID:", rid);
     }
 
@@ -633,8 +646,12 @@ bool CNetCacheHandler::ProcessTransmission(
     const char* buf, size_t buf_size, ETransmission eot)
 {
     size_t bytes_written;
-    ERW_Result res = 
-        m_Writer->Write(buf, buf_size, &bytes_written);
+    ERW_Result res;
+    {{
+        CTimeGuard time_guard(m_Stat->db_elapsed, m_Stat);
+        res = m_Writer->Write(buf, buf_size, &bytes_written);
+    }}
+    m_Stat->blob_size += buf_size;
     if (res != eRW_Success) {
         _TRACE("Transmission failed, socket " << &GetSocket());
         WriteMsg(GetSocket(), "ERR:", "Server I/O error");
@@ -646,10 +663,14 @@ bool CNetCacheHandler::ProcessTransmission(
     }
     if (eot == eTransmissionLastBuffer) {
         _TRACE("Flushing transmission, socket " << &GetSocket());
-        m_Writer->Flush();
-        m_Writer.reset(0);
+        {{
+            CTimeGuard time_guard(m_Stat->db_elapsed, m_Stat);
+            m_Writer->Flush();
+            m_Writer.reset(0);
+        }}
         if (m_PutOK) {
             _TRACE("OK, socket " << &GetSocket());
+            CTimeGuard time_guard(m_Stat->comm_elapsed, m_Stat);
             WriteMsg(GetSocket(), "OK:", "");
             m_PutOK = false;
         }
@@ -660,7 +681,7 @@ bool CNetCacheHandler::ProcessTransmission(
 
 void CNetCacheHandler::ProcessPut3(CSocket&              sock, 
                                    SNC_Request&          req,
-                                   NetCache_RequestStat& stat)
+                                   SNetCache_RequestStat& stat)
 {
     m_PutOK = true;
     ProcessPut2(sock, req, stat);

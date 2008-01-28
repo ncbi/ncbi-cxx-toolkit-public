@@ -41,6 +41,8 @@ CNetCache_RequestHandler::CNetCache_RequestHandler(
 {
     // convenience
     m_Server = m_Host->GetServer();
+    m_Stat   = m_Host->GetStat();
+    m_Auth   = m_Host->GetAuth();
 }
 
 END_NCBI_SCOPE
