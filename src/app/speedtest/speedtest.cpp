@@ -57,6 +57,7 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+USING_SCOPE(sequence);
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -67,11 +68,16 @@ private:
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
-    void DoProcess (
-        CNcbiIstream& ip,
-        CNcbiOstream& op,
-        CRef<CSeq_entry>& se
-    );
+
+    void DoProcess ( CNcbiIstream& ip, CNcbiOstream& op, CScope&, CRef<CSeq_entry>& se );
+
+    void DoProcessStreamFasta ( CNcbiIstream& ip, CNcbiOstream& op, CRef<CSeq_entry>& se );
+
+    int DoProcessFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_entry>& );
+    int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CBioseq& );
+    int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CSeq_annot& );
+    int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CSeq_feat& );
+
     // data
     bool  m_bsec;
     bool  m_ssec;
@@ -163,9 +169,145 @@ void CMytestApplication::Init(void)
 
 /////////////////////////////////////////////////////////////////////////////
 
+void CMytestApplication::DoProcessStreamFasta (
+    CNcbiIstream& ip,
+    CNcbiOstream& op,
+    CRef<CSeq_entry>& se
+)
+{
+    CFastaOstream fo (op);
+    for (CTypeConstIterator<CBioseq> bit (*se); bit; ++bit) {
+        fo.Write (*bit);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+string s_AsString( const CSeq_feat_Base::TLocation& loc ) 
+{
+    static string locstr;
+    bool complement( false );
+
+    const CSeq_id* id = loc.GetId();
+    if ( ! id ) {
+        return "?";
+    }
+    locstr = "[gi|" + NStr::IntToString( id->GetGi() ) + ":";
+
+    switch ( loc.Which() ) {
+
+        case CSeq_feat_Base::TLocation::e_Int: {
+            const CSeq_loc_Base::TInt& intv = loc.GetInt();
+            complement = ( intv.GetStrand() == eNa_strand_minus );
+            if ( ! complement ) {
+                locstr +=  NStr::IntToString( intv.GetFrom()+1 ) + "-" +  
+                    NStr::IntToString( intv.GetTo()+1 ) + "]";
+            }
+            else {
+                locstr +=  'c' + NStr::IntToString( intv.GetTo()+1 ) + "-" +  
+                    NStr::IntToString( intv.GetFrom()+1 ) + "]";
+            }
+            break;
+        }
+        default:
+            locstr = "?";
+            break;
+    }
+    return locstr;
+}
+
+int CMytestApplication::TestFeatureGeneOverlap (
+    CNcbiIstream& ip,
+    CNcbiOstream& op,
+    CScope& scope,
+    CSeq_feat& f )
+{
+    if ( f.GetData().Which() == CSeqFeatData::e_Gene ) {
+        return 1;
+    }
+    const CSeq_feat_Base::TLocation& locbase = f.GetLocation();
+    CConstRef<CSeq_feat> ol;
+    if ( ! ol ) {
+        return 1;
+    }
+    op << s_AsString( locbase ) << " -> " << s_AsString( ol->GetLocation() ) << endl;
+    op.flush();
+    return 1;
+}
+
+int CMytestApplication::TestFeatureGeneOverlap (
+    CNcbiIstream& ip,
+    CNcbiOstream& op,
+    CScope& scope,
+    CSeq_annot& sa )
+{
+    int count = 0;
+    if ( sa.IsSetData()  &&  sa.GetData().IsFtable() ) {
+        NON_CONST_ITERATE( CSeq_annot::TData::TFtable, it, sa.SetData().SetFtable() ) {
+            count += TestFeatureGeneOverlap( ip, op, scope, **it );
+        }
+    }
+    return count;
+}
+
+int CMytestApplication::TestFeatureGeneOverlap (
+    CNcbiIstream& ip,
+    CNcbiOstream& op,
+    CScope& scope,
+    CBioseq& bs )
+{
+    int count = 0;
+    if (bs.IsSetAnnot()) {
+        NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
+            count += TestFeatureGeneOverlap( ip, op, scope, **it );
+        }
+    }
+    return count;
+}
+
+int CMytestApplication::DoProcessFeatureGeneOverlap (
+    CNcbiIstream& ip,
+    CNcbiOstream& op,
+    CScope& scope, 
+    CRef<CSeq_entry>& se )
+{
+    int count = 0;
+    switch (se->Which()) {
+
+        case CSeq_entry::e_Seq:
+            count += TestFeatureGeneOverlap( ip, op, scope, se->SetSeq() );
+            break;
+
+        case CSeq_entry::e_Set: {
+            CBioseq_set& bss( se->SetSet() );
+            if (bss.IsSetAnnot()) {
+                NON_CONST_ITERATE (CBioseq::TAnnot, it, bss.SetAnnot()) {
+                    count += TestFeatureGeneOverlap( ip, op, scope, **it );
+                }
+            }
+
+            if (bss.IsSetSeq_set()) {
+                NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
+                    CBioseq_set::TSeq_set::iterator it2 = it;
+                    count += DoProcessFeatureGeneOverlap( ip, op, scope, *it );
+                }
+            }
+            break;
+        }
+
+        case CSeq_entry::e_not_set:
+        default:
+            break;
+    }
+    return count;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 void CMytestApplication::DoProcess (
     CNcbiIstream& ip,
     CNcbiOstream& op,
+    CScope& scope,
     CRef<CSeq_entry>& se
 )
 
@@ -183,10 +325,7 @@ void CMytestApplication::DoProcess (
     }
 
     if (m_fasta) {
-        CFastaOstream fo (op);
-        for (CTypeConstIterator<CBioseq> bit (*se); bit; ++bit) {
-            fo.Write (*bit);
-        }
+        DoProcessStreamFasta( ip, op, se );
     }
     if (m_nodef) {
         // need to implement
@@ -214,8 +353,7 @@ void CMytestApplication::DoProcess (
         }
     }
     if (m_goverlap) {
-        /*fl: work on next */
-
+        DoProcessFeatureGeneOverlap( ip, op, scope, se );
     }
     if (m_gxref) {
         // need to implement
@@ -337,11 +475,22 @@ int CMytestApplication::Run(void)
     CRef<CSeq_entry> se(new CSeq_entry);
     *is >> *se;
 
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    if ( !objmgr ) {
+        /* raise hell */;
+    }
+    CRef<CScope> scope( new CScope( *objmgr ) );
+    if ( !scope ) {
+        /* raise hell */;
+    }
+    scope->AddDefaults();
+    scope->AddTopLevelSeqEntry(*se);
+
     lastInterval = sw.Elapsed() - lastInterval;
     NcbiCout << "ASN reading time is " << lastInterval << " seconds" << endl;
 
     for (ct = 0; ct < mx; ct++) {
-        DoProcess (ip, op, se);
+        DoProcess (ip, op, *scope, se);
     }
 
     lastInterval = sw.Elapsed() - lastInterval;
