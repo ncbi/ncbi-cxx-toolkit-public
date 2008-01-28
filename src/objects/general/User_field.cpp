@@ -101,6 +101,7 @@ CUser_field& CUser_field::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
+    field->SetNum(value.size());
     field->SetData().SetStrs() = value;
     SetData().SetFields().push_back(field);
     return *this;
@@ -112,6 +113,7 @@ CUser_field& CUser_field::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
+    field->SetNum(value.size());
     field->SetData().SetInts() = value;
     SetData().SetFields().push_back(field);
     return *this;
@@ -123,6 +125,7 @@ CUser_field& CUser_field::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
+    field->SetNum(value.size());
     field->SetData().SetReals() = value;
     SetData().SetFields().push_back(field);
     return *this;
@@ -145,6 +148,7 @@ CUser_field& CUser_field::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
+    field->SetNum(value.size());
     field->SetData().SetObjects() = value;
     SetData().SetFields().push_back(field);
     return *this;
@@ -156,6 +160,7 @@ CUser_field& CUser_field::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
+    field->SetNum(value.size());
     field->SetData().SetFields() = value;
     SetData().SetFields().push_back(field);
     return *this;
