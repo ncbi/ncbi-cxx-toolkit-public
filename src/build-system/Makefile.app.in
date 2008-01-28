@@ -93,4 +93,6 @@ clean:
 	-$(RM) ir.out
 
 purge: clean
-	-$(RM) $(bindir)/$(XAPP)
+	-if [ '$(BINCOPY)' != '@:' -a -d $(bindir) -a -w $(bindir) -a $(srcdir) != . ]; then \
+	    $(RM) $(bindir)/$(XAPP); \
+	fi
