@@ -226,7 +226,7 @@ public:
     }
 
 protected:
-    virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
+    virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
 
 private:
     short                  m_PacketSize;
@@ -236,10 +236,7 @@ private:
     unsigned int           m_BufferSize;
 
 
-    DBPROCESS* x_ConnectToServer(const string&   srv_name,
-                                 const string&   user_name,
-                                 const string&   passwd,
-                                 TConnectionMode mode);
+    DBPROCESS* x_ConnectToServer(const CDBConnParams& params);
     void x_AddToRegistry(void);
     void x_RemoveFromRegistry(void);
     void x_SetRegistry(CDblibContextRegistry* registry);

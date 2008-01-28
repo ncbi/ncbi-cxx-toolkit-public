@@ -55,22 +55,22 @@ class CDBServer : public CObject
 public:
     CDBServer(void);
     CDBServer(const string& name,
-              const string& host = kEmptyStr,
+              Uint4         host = 0,
               Uint2         port = 0);
 
     const string& GetName(void) const { return m_Name; }
-    const string& GetHost(void) const { return m_Host; }
+    Uint4         GetHost(void) const { return m_Host; }
     Uint2         GetPort(void) const { return m_Port; }
 
     bool IsValid(void) const
     {
-        return !m_Name.empty()  ||  !m_Host.empty();
+        return !GetName().empty() || GetHost() != 0;
     }
 
 private:
-    string m_Name;
-    string m_Host;
-    Uint2  m_Port;
+    const string m_Name;
+    const Uint4  m_Host;
+    const Uint2  m_Port;
 };
 typedef CRef<CDBServer> TSvrRef;
 
@@ -147,7 +147,7 @@ inline
 bool operator< (const CDBServer& l, const CDBServer& r)
 {
     return (l.GetName().compare(r.GetName()) < 0 ||
-            l.GetHost().compare(r.GetHost()) < 0 ||
+            l.GetHost() < r.GetHost() ||
             l.GetPort() < r.GetPort());
 }
 
@@ -155,13 +155,14 @@ bool operator< (const CDBServer& l, const CDBServer& r)
 
 inline
 CDBServer::CDBServer(void) :
+    m_Host(0),
     m_Port(0)
 {
 }
 
 inline
 CDBServer::CDBServer(const string& name,
-                     const string& host,
+                     Uint4         host,
                      Uint2         port) :
 m_Name(name),
 m_Host(host),

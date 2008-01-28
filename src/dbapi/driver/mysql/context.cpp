@@ -61,10 +61,9 @@ bool CMySQLContext::IsAbleTo(ECapability /*cpb*/) const
 
 
 impl::CConnection*
-CMySQLContext::MakeIConnection(const SConnAttr& conn_attr)
+CMySQLContext::MakeIConnection(const CDBConnParams& params)
 {
-    return new CMySQL_Connection(*this, conn_attr.srv_name, conn_attr.user_name,
-                                 conn_attr.passwd);
+    return new CMySQL_Connection(*this, params);
 }
 
 

@@ -97,16 +97,15 @@ public:
 protected:
     /// Create new connection object for the given context
     /// and connection attributes.
-    virtual CDB_Connection* MakeDBConnection
-    (I_DriverContext&                  ctx,
-     const I_DriverContext::SConnAttr& conn_attr,
-     IConnValidator* validator = NULL) = 0;
+    virtual CDB_Connection* MakeDBConnection(
+            I_DriverContext& ctx,
+            const CDBConnParams& params) = 0;
 
     /// Helper method to provide access to a protected method in I_DriverContext
     /// for child classses.
-    static CDB_Connection* CtxMakeConnection
-    (I_DriverContext&                  ctx,
-     const I_DriverContext::SConnAttr& conn_attr);
+    static CDB_Connection* CtxMakeConnection(
+            I_DriverContext& ctx,
+            const CDBConnParams& params);
 
 private:
     // Friends
@@ -166,9 +165,9 @@ inline
 CDB_Connection*
 IDBConnectionFactory::CtxMakeConnection
 (I_DriverContext&                  ctx,
- const I_DriverContext::SConnAttr& conn_attr)
+ const CDBConnParams& params)
 {
-    return ctx.MakePooledConnection(conn_attr);
+    return ctx.MakePooledConnection(params);
 }
 
 END_NCBI_SCOPE

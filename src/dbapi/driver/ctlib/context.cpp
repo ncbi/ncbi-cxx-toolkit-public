@@ -258,14 +258,51 @@ Connection::GetCTLConn(void)
 }
 
 
-bool Connection::Open(const string& srv_name)
+bool Connection::Open(const CDBConnParams& params)
 {
     if (!IsOpen() || Close()) {
         CS_RETCODE rc;
 
+        string server_name;
+
+#if defined(FTDS_IN_USE)
+        if (params.GetHost()) {
+            server_name = impl::ConvertN2A(params.GetHost());
+            if (params.GetPort()) {
+                server_name += ":" + NStr::IntToString(params.GetPort());
+            }
+        } else {
+            server_name = params.GetServerName();
+        }
+
         rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
-                                const_cast<char*> (srv_name.c_str()),
+                                const_cast<char*> (server_name.c_str()),
                                 CS_NULLTERM));
+#else
+#if defined(CS_SERVERADDR)
+        server_name = impl::ConvertN2A(params.GetHost());
+        if (params.GetPort()) {
+            server_name += " " + NStr::IntToString(params.GetPort());
+        }
+
+        GetCTLContext().Check(ct_con_props(GetNativeHandle(),
+                            CS_SET,
+                            CS_SERVERADDR,
+                            (CS_VOID*)server_name.c_str(),
+                            server_name.size(),
+                            NULL));
+
+        rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
+                                NULL,
+                                CS_UNUSED));
+#else
+        server_name = params.GetServerName();
+
+        rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
+                                const_cast<char*> (server_name.c_str()),
+                                CS_NULLTERM));
+#endif
+#endif
 
         if (rc == CS_SUCCEED) {
             m_IsOpen = true;
@@ -723,9 +760,9 @@ bool CTLibContext::ConnectedToMSSQLServer(void) const
 
 
 impl::CConnection*
-CTLibContext::MakeIConnection(const SConnAttr& conn_attr)
+CTLibContext::MakeIConnection(const CDBConnParams& params)
 {
-    return new CTL_Connection(*this, conn_attr);
+    return new CTL_Connection(*this, params);
 }
 
 

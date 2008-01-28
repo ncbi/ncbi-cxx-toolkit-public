@@ -65,7 +65,7 @@ public:
     virtual ~CSL3Context(void);
 
 public:
-    virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
+    virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
 
     virtual bool IsAbleTo(ECapability cpb) const;
 };
@@ -89,9 +89,7 @@ public:
 
 protected:
     CSL3_Connection(CSL3Context&  cntx,
-                    const string& srv_name,
-                    const string& user_name,
-                    const string& passwd);
+                    const CDBConnParams& params);
     virtual ~CSL3_Connection();
 
 protected:

@@ -71,7 +71,7 @@ public:
     virtual ~CMySQLContext();
 
 public:
-    virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
+    virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
 
     virtual bool IsAbleTo(ECapability cpb) const;
 };
@@ -88,10 +88,7 @@ class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_Connection : public impl::CConnection
     friend class CMySQLContext;
 
 protected:
-    CMySQL_Connection(CMySQLContext& cntx,
-                      const string&  srv_name,
-                      const string&  user_name,
-                      const string&  passwd);
+    CMySQL_Connection(CMySQLContext& cntx, const CDBConnParams& params);
     virtual ~CMySQL_Connection();
 
 protected:

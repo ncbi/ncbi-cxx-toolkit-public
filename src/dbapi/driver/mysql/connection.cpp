@@ -42,9 +42,7 @@ BEGIN_NCBI_SCOPE
 
 
 CMySQL_Connection::CMySQL_Connection(CMySQLContext& cntx,
-                                     const string&  srv_name,
-                                     const string&  user_name,
-                                     const string&  passwd) :
+                                     const CDBConnParams& params) :
     impl::CConnection(cntx),
     m_IsOpen(false)
 {
@@ -53,9 +51,14 @@ CMySQL_Connection::CMySQL_Connection(CMySQLContext& cntx,
     }
 
     if ( !mysql_real_connect(&m_MySQL,
-                             srv_name.c_str(),
-                             user_name.c_str(), passwd.c_str(),
-                             NULL, 0, NULL, 0)) {
+                             params.GetServerName().c_str(),
+                             params.GetUserName().c_str(), 
+                             params.GetPassword().c_str(),
+                             NULL, 
+                             0, 
+                             NULL, 
+                             0)) 
+    {
         DATABASE_DRIVER_WARNING( "Failed: mysql_real_connect", 800002 );
     }
 

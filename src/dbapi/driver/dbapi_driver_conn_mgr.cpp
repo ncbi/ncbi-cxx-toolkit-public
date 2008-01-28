@@ -49,8 +49,7 @@ public:
     virtual void Configure(const IRegistry* registry = NULL);
     virtual CDB_Connection* MakeDBConnection(
         I_DriverContext& ctx,
-        const I_DriverContext::SConnAttr& conn_attr,
-        IConnValidator* validator = NULL);
+        const CDBConnParams& params);
 };
 
 CDefaultConnectPolicy::~CDefaultConnectPolicy(void)
@@ -66,14 +65,13 @@ CDefaultConnectPolicy::Configure(const IRegistry*)
 CDB_Connection*
 CDefaultConnectPolicy::MakeDBConnection(
     I_DriverContext& ctx,
-    const I_DriverContext::SConnAttr& conn_attr,
-    IConnValidator* validator)
+    const CDBConnParams& params)
 {
-    auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, conn_attr));
+    auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
 
     if (conn.get() &&
-        validator &&
-        validator->Validate(*conn) == IConnValidator::eInvalidConn) {
+        params.GetConnValidator() &&
+        params.GetConnValidator()->Validate(*conn) == IConnValidator::eInvalidConn) {
         return NULL;
     }
     return conn.release();

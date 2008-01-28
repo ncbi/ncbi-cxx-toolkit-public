@@ -60,8 +60,8 @@ static bool ODBC_xSendDataGetId(CStatementBase& stmt,
                                 SQLPOINTER* id);
 
 CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
-                                   const I_DriverContext::SConnAttr& conn_attr) :
-    impl::CConnection(cntx, false, conn_attr.reusable, conn_attr.pool_name),
+                                   const CDBConnParams& params) :
+    impl::CConnection(cntx, false, params.IsPooled(), params.GetPoolName()),
     m_Link(NULL),
     m_Reporter(0, SQL_HANDLE_DBC, NULL, &cntx.GetReporter()),
     m_query_timeout(cntx.GetTimeout())
@@ -79,22 +79,22 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
     // This might look strange, but in current design all errors related to
     // opening of a connection to a database are reported by a DriverContext.
     // Have fun.
-    cntx.SetupErrorReporter(conn_attr);
+    cntx.SetupErrorReporter(params);
 
-    x_SetupErrorReporter(conn_attr);
+    x_SetupErrorReporter(params);
 
-    x_SetConnAttributesBefore(cntx, conn_attr);
+    x_SetConnAttributesBefore(cntx, params);
 
-    x_Connect(cntx, conn_attr);
+    x_Connect(cntx, params);
 
-    x_SetConnAttributesAfter(conn_attr);
+    x_SetConnAttributesAfter(params);
 }
 
 
 void
-CODBC_Connection::x_SetupErrorReporter(const I_DriverContext::SConnAttr& conn_attr)
+CODBC_Connection::x_SetupErrorReporter(const CDBConnParams& params)
 {
-    string extra_msg = " SERVER: " + conn_attr.srv_name + "; USER: " + conn_attr.user_name;
+    string extra_msg = " SERVER: " + params.GetServerName() + "; USER: " + params.GetUserName();
 
     _ASSERT(m_Link);
 
@@ -105,18 +105,37 @@ CODBC_Connection::x_SetupErrorReporter(const I_DriverContext::SConnAttr& conn_at
 
 void CODBC_Connection::x_Connect(
     CODBCContext& cntx,
-    const I_DriverContext::SConnAttr& conn_attr) const
+    const CDBConnParams& params) const
 {
     SQLRETURN rc;
+    string server_name;
+
+    if (params.GetHost()) {
+        server_name = impl::ConvertN2A(params.GetHost());
+    } else {
+        server_name = params.GetServerName();
+    }
 
     if(!cntx.GetUseDSN()) {
         string connect_str;
-        const string conn_str_suffix(";SERVER=" +
-                                     conn_attr.srv_name +
-                                     ";UID=" +
-                                     conn_attr.user_name +
-                                     ";PWD=" +
-                                     conn_attr.passwd);
+        string conn_str_suffix;
+
+        if (params.GetHost() && params.GetPort()) {
+            conn_str_suffix = 
+                ";SERVER=" + server_name +
+                ";ADDRESS=" + server_name +
+                "," + NStr::IntToString(params.GetPort()) +
+                ";NETWORK=DBMSSOCN" +
+                ";UID=" + params.GetUserName() +
+                ";PWD=" + params.GetPassword()
+                ;
+        } else {
+            conn_str_suffix = 
+                ";SERVER=" + server_name +
+                ";UID=" + params.GetUserName() +
+                ";PWD=" + params.GetPassword()
+                ;
+        }
 
 #ifndef FTDS_IN_USE
         CNcbiApplication* app = CNcbiApplication::Instance();
@@ -156,19 +175,19 @@ void CODBC_Connection::x_Connect(
     }
     else {
         rc = SQLConnect(m_Link,
-                        CODBCString(conn_attr.srv_name, GetClientEncoding()),
+                        CODBCString(server_name, GetClientEncoding()),
                         SQL_NTS,
-                        CODBCString(conn_attr.user_name, GetClientEncoding()),
+                        CODBCString(params.GetUserName(), GetClientEncoding()),
                         SQL_NTS,
-                        CODBCString(conn_attr.passwd, GetClientEncoding()),
+                        CODBCString(params.GetPassword(), GetClientEncoding()),
                         SQL_NTS);
     }
 
     if (!cntx.CheckSIE(rc, m_Link)) {
         string err;
 
-        err += "Cannot connect to the server '" + conn_attr.srv_name;
-        err += "' as user '" + conn_attr.user_name + "'" + m_Reporter.GetExtraMsg();
+        err += "Cannot connect to the server '" + server_name;
+        err += "' as user '" + params.GetUserName() + "'" + m_Reporter.GetExtraMsg();
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 }
@@ -177,7 +196,7 @@ void CODBC_Connection::x_Connect(
 void
 CODBC_Connection::x_SetConnAttributesBefore(
     const CODBCContext& cntx,
-    const I_DriverContext::SConnAttr& conn_attr)
+    const CDBConnParams& params)
 {
     if(GetCDriverContext().GetTimeout()) {
         SQLSetConnectAttr(m_Link,
@@ -213,13 +232,13 @@ CODBC_Connection::x_SetConnAttributesBefore(
 
 
 void
-CODBC_Connection::x_SetConnAttributesAfter(const I_DriverContext::SConnAttr& conn_attr)
+CODBC_Connection::x_SetConnAttributesAfter(const CDBConnParams& params)
 {
-    SetServerName(conn_attr.srv_name);
-    SetUserName(conn_attr.user_name);
-    SetPassword(conn_attr.passwd);
-    SetBCPable((conn_attr.mode & I_DriverContext::fBcpIn) != 0);
-    SetSecureLogin((conn_attr.mode & I_DriverContext::fPasswordEncrypted) != 0);
+    SetServerName(params.GetServerName());
+    SetUserName(params.GetUserName());
+    SetPassword(params.GetPassword());
+    SetBCPable(true);
+    SetSecureLogin(params.IsPasswordEncrypted());
 }
 
 string

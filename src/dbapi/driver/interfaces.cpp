@@ -32,10 +32,16 @@
 #include <ncbi_pch.hpp>
 
 #include <dbapi/driver/interfaces.hpp>
+#include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
+
+////////////////////////////////////////////////////////////////////////////
+CDBConnParams::~CDBConnParams(void)
+{
+}
 
 ////////////////////////////////////////////////////////////////////////////
 // C_ITDescriptorGuard
@@ -140,15 +146,6 @@ I_Result::~I_Result(void)
 
 
 ////////////////////////////////////////////////////////////////////////////
-//  I_DriverContext::SConnAttr::
-//
-
-I_DriverContext::SConnAttr::SConnAttr(void)
-: mode(fDoNotConnect)
-{
-}
-
-////////////////////////////////////////////////////////////////////////////
 //  I_DriverContext::
 //
 
@@ -201,6 +198,144 @@ bool I_DriverContext::SetTimeout      (unsigned int nof_secs)
 
     return true;
 }
+
+CDB_Connection* 
+I_DriverContext::Connect(
+        const string&   srv_name,
+        const string&   user_name,
+        const string&   passwd,
+        TConnectionMode mode,
+        bool            reusable,
+        const string&   pool_name)
+{
+    const CDBDefaultConnParams params(
+            srv_name,
+            user_name,
+            passwd,
+            CRef<IConnValidator>(),
+            0,
+            0,
+            mode,
+            reusable,
+            pool_name
+            );
+
+    return MakeConnection(params);
+}
+
+CDB_Connection* 
+I_DriverContext::ConnectValidated(
+        const string&   srv_name,
+        const string&   user_name,
+        const string&   passwd,
+        IConnValidator& validator,
+        TConnectionMode mode,
+        bool            reusable,
+        const string&   pool_name)
+{
+    CDBDefaultConnParams params(
+            srv_name,
+            user_name,
+            passwd,
+            CRef<IConnValidator>(&validator),
+            0,
+            0,
+            mode,
+            reusable,
+            pool_name
+            );
+
+    return MakeConnection(params);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CDBDefaultConnParams::CDBDefaultConnParams(
+        const string&   srv_name,
+        const string&   user_name,
+        const string&   passwd,
+        const CRef<IConnValidator>& validator,
+        Uint4 host,
+        Uint2 port,
+        I_DriverContext::TConnectionMode mode,
+        bool            reusable,
+        const string&   pool_name)
+: m_ServerName(srv_name)
+, m_UserName(user_name)
+, m_Password(passwd)
+, m_Host(host)
+, m_PortNumber(port)
+, m_Validator(validator)
+, m_PoolName(pool_name)
+, m_IsPasswordEncrypted((mode & I_DriverContext::fPasswordEncrypted) != 0)
+, m_IsPooled(reusable)
+, m_IsDoNotConnect((mode & I_DriverContext::fDoNotConnect) != 0)
+{
+}
+
+CDBDefaultConnParams::~CDBDefaultConnParams(void)
+{
+}
+
+string 
+CDBDefaultConnParams::GetServerName(void) const
+{
+    return m_ServerName;
+}
+
+string 
+CDBDefaultConnParams::GetUserName(void) const
+{
+    return m_UserName;
+}
+
+string 
+CDBDefaultConnParams::GetPassword(void) const
+{
+    return m_Password;
+}
+
+Uint4 
+CDBDefaultConnParams::GetHost(void) const
+{
+    return m_Host;
+}
+
+Uint2 
+CDBDefaultConnParams::GetPort(void) const
+{
+    return m_PortNumber;
+}
+
+CRef<IConnValidator> 
+CDBDefaultConnParams::GetConnValidator(void) const
+{
+    return m_Validator;
+}
+
+bool 
+CDBDefaultConnParams::IsPasswordEncrypted(void) const
+{
+    return m_IsPasswordEncrypted;
+}
+
+bool 
+CDBDefaultConnParams::IsPooled(void) const
+{
+    return m_IsPooled;
+}
+
+bool 
+CDBDefaultConnParams::IsDoNotConnect(void) const
+{
+    return m_IsDoNotConnect;
+}
+
+string 
+CDBDefaultConnParams::GetPoolName(void) const
+{
+    return m_PoolName;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////
 I_Connection::I_Connection(void)

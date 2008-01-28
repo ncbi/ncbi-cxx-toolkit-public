@@ -196,10 +196,10 @@ public:
     }
 
     bool CheckSIE(int rc, SQLHDBC con);
-    void SetupErrorReporter(const I_DriverContext::SConnAttr& conn_attr);
+    void SetupErrorReporter(const CDBConnParams& params);
 
 protected:
-    virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
+    virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
 
 private:
     SQLHENV         m_Context;
@@ -241,7 +241,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public impl::CConnection
 
 protected:
     CODBC_Connection(CODBCContext& cntx,
-                     const I_DriverContext::SConnAttr& conn_attr);
+                     const CDBConnParams& params);
     virtual ~CODBC_Connection(void);
 
 protected:
@@ -307,11 +307,11 @@ private:
     static string x_MakeFreeTDSVersion(int version);
     static string x_GetDriverName(const IRegistry& registry);
     void x_SetConnAttributesBefore(const CODBCContext& cntx,
-                                   const I_DriverContext::SConnAttr& conn_attr);
-    void x_SetConnAttributesAfter(const I_DriverContext::SConnAttr& conn_attr);
+                                   const CDBConnParams& params);
+    void x_SetConnAttributesAfter(const CDBConnParams& params);
     void x_Connect(CODBCContext& cntx,
-                   const I_DriverContext::SConnAttr& conn_attr) const;
-    void x_SetupErrorReporter(const I_DriverContext::SConnAttr& conn_attr);
+                   const CDBConnParams& params) const;
+    void x_SetupErrorReporter(const CDBConnParams& params);
 
     const SQLHDBC   m_Link;
 

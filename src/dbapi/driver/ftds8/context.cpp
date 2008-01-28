@@ -331,34 +331,31 @@ void CTDSContext::SetClientCharset(const string& charset)
 }
 
 impl::CConnection*
-CTDSContext::MakeIConnection(const SConnAttr& conn_attr)
+CTDSContext::MakeIConnection(const CDBConnParams& params)
 {
     CMutexGuard mg(m_CtxMtx);
 
-    DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name,
-                                         conn_attr.user_name,
-                                         conn_attr.passwd,
-                                         conn_attr.mode);
+    DBPROCESS* dbcon = x_ConnectToServer(params);
 
     if (!dbcon) {
         string err;
 
-        err += "Cannot connect to the server '" + conn_attr.srv_name;
-        err += "' as user '" + conn_attr.user_name + "'";
+        err += "Cannot connect to the server '" + params.GetServerName();
+        err += "' as user '" + params.GetUserName() + "'";
         DATABASE_DRIVER_ERROR( err, 200011 );
     }
 
     CTDS_Connection* t_con = NULL;
     t_con = new CTDS_Connection(*this,
                                 dbcon,
-                                conn_attr.reusable,
-                                conn_attr.pool_name);
+                                params.IsPooled(),
+                                params.GetPoolName());
 
-    t_con->SetServerName(conn_attr.srv_name);
-    t_con->SetUserName(conn_attr.user_name);
-    t_con->SetPassword(conn_attr.passwd);
-    t_con->SetBCPable((conn_attr.mode & fBcpIn) != 0);
-    t_con->SetSecureLogin((conn_attr.mode & fPasswordEncrypted) != 0);
+    t_con->SetServerName(params.GetServerName());
+    t_con->SetUserName(params.GetUserName());
+    t_con->SetPassword(params.GetPassword());
+    t_con->SetBCPable(true);
+    t_con->SetSecureLogin(params.IsPasswordEncrypted());
 
     return t_con;
 }
@@ -669,10 +666,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
 }
 
 
-DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
-                                          const string&   user_name,
-                                          const string&   passwd,
-                                          TConnectionMode mode)
+DBPROCESS* CTDSContext::x_ConnectToServer(const CDBConnParams& params)
 {
     if (!GetHostName().empty())
         DBSETLHOST(m_Login, (char*) GetHostName().c_str());
@@ -680,14 +674,12 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
         DBSETLPACKET(m_Login, m_PacketSize);
     if (DBSETLAPP (m_Login, (char*) GetApplicationName().c_str())
         != SUCCEED ||
-        DBSETLUSER(m_Login, (char*) user_name.c_str())
+        DBSETLUSER(m_Login, (char*) params.GetUserName().c_str())
         != SUCCEED ||
-        DBSETLPWD (m_Login, (char*) passwd.c_str())
+        DBSETLPWD (m_Login, (char*) params.GetPassword().c_str())
         != SUCCEED)
         return 0;
 
-//     if (mode & fBcpIn)
-        // Always enable BCP ...
         BCP_SETL(m_Login, TRUE);
 #if 0
     if (mode & fPasswordEncrypted)
@@ -695,10 +687,21 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
 #endif
 
 
+    string server_name;
+
+    if (params.GetHost()) {
+        server_name = impl::ConvertN2A(params.GetHost());
+        if (params.GetPort()) {
+            server_name += ":" + NStr::IntToString(params.GetPort());
+        }
+    } else {
+        server_name = params.GetServerName();
+    }
+
     tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)GetLoginTimeout(),
                      (int)GetTimeout(), 0 /*(int)m_Timeout*/);
     tds_setTDS_version((tds_login*)(m_Login->tds_login), m_TDSVersion);
-    DBPROCESS* dbprocess = Check(dbopen(m_Login, (char*) srv_name.c_str()));
+    DBPROCESS* dbprocess = Check(dbopen(m_Login, (char*) server_name.c_str()));
 
     // It doesn't work correclty (buffer is full) ...
 //     if (dbprocess) {

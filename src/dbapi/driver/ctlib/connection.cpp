@@ -66,8 +66,8 @@ namespace ftds64_ctlib
 
 ////////////////////////////////////////////////////////////////////////////
 CTL_Connection::CTL_Connection(CTLibContext& cntx,
-                               const I_DriverContext::SConnAttr& conn_attr)
-: impl::CConnection(cntx, false, conn_attr.reusable, conn_attr.pool_name)
+                               const CDBConnParams& params)
+: impl::CConnection(cntx, false, params.IsPooled(), params.GetPoolName())
 , m_Cntx(&cntx)
 , m_Handle(cntx, *this)
 {
@@ -101,7 +101,8 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     }
 #endif
 
-    string extra_msg = " SERVER: " + conn_attr.srv_name + "; USER: " + conn_attr.user_name;
+    string extra_msg = " SERVER: " + params.GetServerName() + 
+        "; USER: " + params.GetUserName();
     SetExtraMsg(extra_msg);
 
     GetCTLibContext().Check(ct_callback(NULL,
@@ -128,13 +129,13 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     if (GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_USERNAME,
-                                (void*) conn_attr.user_name.c_str(),
+                                (void*) params.GetUserName().c_str(),
                                 CS_NULLTERM,
                                 NULL)) != CS_SUCCEED
         || GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                    CS_SET,
                                    CS_PASSWORD,
-                                   (void*) conn_attr.passwd.c_str(),
+                                   (void*) params.GetPassword().c_str(),
                                    CS_NULLTERM,
                                    NULL)) != CS_SUCCEED
         || GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
@@ -233,7 +234,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         SetBCPable(true);
 //     }
 
-    if ((conn_attr.mode & I_DriverContext::fPasswordEncrypted) != 0) {
+    if (params.IsPasswordEncrypted()) {
         GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_SEC_ENCRYPTION,
@@ -243,11 +244,11 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         SetSecureLogin(true);
     }
 
-    if (!m_Handle.Open(conn_attr.srv_name)) {
+    if (!m_Handle.Open(params)) {
         string err;
 
-        err += "Cannot connect to the server '" + conn_attr.srv_name;
-        err += "' as user '" + conn_attr.user_name + "'";
+        err += "Cannot connect to the server '" + params.GetServerName();
+        err += "' as user '" + params.GetUserName() + "'";
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 
@@ -259,9 +260,9 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                             (CS_INT) sizeof(link),
                             NULL));
 
-    SetServerName(conn_attr.srv_name);
-    SetUserName(conn_attr.user_name);
-    SetPassword(conn_attr.passwd);
+    SetServerName(params.GetServerName());
+    SetUserName(params.GetUserName());
+    SetPassword(params.GetPassword());
 }
 
 

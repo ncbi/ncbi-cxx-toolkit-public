@@ -32,10 +32,12 @@
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <corelib/ncbiapp.hpp>
+// #include <connect/ncbi_socket.h>
 #include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
+
 
 //////////////////////////////////////////////////////////////////////////////
 static
@@ -44,8 +46,9 @@ make_server(const string& specification, double& preference)
 {
     vector<string> server_attr;
     string server;
-    string host;
-    unsigned int port = 0;
+    // string host;
+    Uint4 host = 0;
+    Uint2 port = 0;
     string::size_type pos = 0;
 
     pos = specification.find_first_of("@(", pos);
@@ -53,10 +56,12 @@ make_server(const string& specification, double& preference)
         server = specification.substr(0, pos);
 
         if (specification[pos] == '@') {
-            string::size_type old_pos = pos + 1;
+            // string::size_type old_pos = pos + 1;
             pos = specification.find_first_of(":(", pos + 1);
             if (pos != string::npos) {
-                host = specification.substr(old_pos, pos - old_pos);
+                // string host_str = specification.substr(old_pos, pos - old_pos);
+                // Ignore host in order to avoid dependebcy on libconnect.
+                // SOCK_StringToHostPort(specification.c_str() + old_pos, &host, &port);
                 if (specification[pos] == ':') {
                     port = NStr::StringToUInt(specification.c_str() + pos + 1,
                                               NStr::fAllowLeadingSpaces |
@@ -80,7 +85,9 @@ make_server(const string& specification, double& preference)
                         NStr::fConvErr_NoThrow);
                 }
             } else {
-                host = specification.substr(old_pos);
+                // host = specification.substr(old_pos);
+                // Ignore host in order to avoid dependebcy on libconnect.
+                // SOCK_StringToHostPort(specification.c_str() + old_pos, &host, &port);
             }
         } else {
             // preference = NStr::StringToDouble(
@@ -94,12 +101,9 @@ make_server(const string& specification, double& preference)
         server = specification;
     }
 
-    if (server.empty() && host.empty()) {
+    if (server.empty() && host == 0) {
         DATABASE_DRIVER_ERROR("Either server name or host name expected.",
                               110100 );
-    }
-    if (server.empty() && !host.empty()) {
-        server = host;
     }
 
     return TSvrRef(new CDBServer(server, host, port));

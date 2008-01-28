@@ -123,7 +123,7 @@ public:
     {
         return m_IsOpen;
     }
-    bool Open(const string& srv_name);
+    bool Open(const CDBConnParams& params);
     bool Close(void);
     // cancel all pending commands
     bool Cancel(void);
@@ -298,7 +298,7 @@ public:
     CS_RETCODE Check(CS_RETCODE rc) const;
 
 protected:
-    virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
+    virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
 
 private:
     CS_CONTEXT* m_Context;
@@ -337,7 +337,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public impl::CConnection
 
 protected:
     CTL_Connection(CTLibContext& cntx,
-                   const I_DriverContext::SConnAttr& conn_attr);
+                   const CDBConnParams& params);
     virtual ~CTL_Connection(void);
 
 public:

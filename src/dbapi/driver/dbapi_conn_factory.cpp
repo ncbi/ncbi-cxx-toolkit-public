@@ -178,7 +178,7 @@ CDBConnectionFactory::CalculateLoginTimeout(const I_DriverContext& ctx) const
 }
 
 CDBConnectionFactory::CRuntimeData&
-CDBConnectionFactory::GetRuntimeData(IConnValidator* validator)
+CDBConnectionFactory::GetRuntimeData(const CRef<IConnValidator> validator)
 {
     string validator_name;
 
@@ -197,17 +197,171 @@ CDBConnectionFactory::GetRuntimeData(IConnValidator* validator)
         )).first->second;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+class CDBConnParamsDelegate : public CDBConnParams
+{
+public:
+    CDBConnParamsDelegate(const CDBConnParams& other);
+    virtual ~CDBConnParamsDelegate(void);
+
+public:
+    virtual string GetServerName(void) const;
+    virtual string GetUserName(void) const;
+    virtual string GetPassword(void) const;
+
+    virtual Uint4  GetHost(void) const;
+    virtual Uint2  GetPort(void) const;
+
+    virtual CRef<IConnValidator> GetConnValidator(void) const;
+    virtual bool IsPasswordEncrypted(void) const;
+
+    // Connection pool related methods.
+
+    /// Use connection pool with this connection.
+    virtual bool IsPooled(void) const;
+    /// Use connections from NotInUse pool
+    virtual bool IsDoNotConnect(void) const;  
+    /// Pool name to be used with this connection
+    virtual string GetPoolName(void) const; 
+
+private:
+    const CDBConnParams& m_Other;
+};
+
+
+CDBConnParamsDelegate::CDBConnParamsDelegate(const CDBConnParams& other)
+: m_Other(other)
+{
+}
+
+CDBConnParamsDelegate::~CDBConnParamsDelegate(void)
+{
+}
+
+
+string CDBConnParamsDelegate::GetServerName(void) const
+{
+    return m_Other.GetServerName();
+}
+
+string CDBConnParamsDelegate::GetUserName(void) const
+{
+    return m_Other.GetUserName();
+}
+
+string CDBConnParamsDelegate::GetPassword(void) const
+{
+    return m_Other.GetPassword();
+}
+
+Uint4 CDBConnParamsDelegate::GetHost(void) const
+{
+    return m_Other.GetHost();
+}
+
+Uint2 CDBConnParamsDelegate::GetPort(void) const
+{
+    return m_Other.GetPort();
+}
+
+CRef<IConnValidator> 
+CDBConnParamsDelegate::GetConnValidator(void) const
+{
+    return m_Other.GetConnValidator();
+}
+
+bool CDBConnParamsDelegate::IsPasswordEncrypted(void) const
+{
+    return m_Other.IsPasswordEncrypted();
+}
+
+
+bool CDBConnParamsDelegate::IsPooled(void) const
+{
+    return m_Other.IsPooled();
+}
+
+bool CDBConnParamsDelegate::IsDoNotConnect(void) const
+{
+    return m_Other.IsDoNotConnect();
+}
+
+string CDBConnParamsDelegate::GetPoolName(void) const
+{
+    return m_Other.GetPoolName();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+class CDB_DBLB_Delegate : public CDBConnParamsDelegate
+{
+public:
+    CDB_DBLB_Delegate(
+            const string& srv_name, 
+            Uint4 host,
+            Uint2 port,
+            const CDBConnParams& other);
+    virtual ~CDB_DBLB_Delegate(void);
+
+public:
+    virtual string GetServerName(void) const;
+    virtual Uint4 GetHost(void) const;
+    virtual Uint2  GetPort(void) const;
+
+private:
+    const string m_ServerName;
+    const Uint4  m_Host;
+    const Uint2  m_Port;
+};
+
+
+CDB_DBLB_Delegate::CDB_DBLB_Delegate(
+        const string& srv_name, 
+        Uint4 host,
+        Uint2 port,
+        const CDBConnParams& other)
+: CDBConnParamsDelegate(other)
+, m_ServerName(srv_name)
+, m_Host(host)
+, m_Port(port)
+{
+}
+
+CDB_DBLB_Delegate::~CDB_DBLB_Delegate(void)
+{
+}
+
+
+string CDB_DBLB_Delegate::GetServerName(void) const
+{
+    return m_ServerName;
+}
+
+
+Uint4 CDB_DBLB_Delegate::GetHost(void) const
+{
+    return m_Host;
+}
+
+
+Uint2 CDB_DBLB_Delegate::GetPort(void) const
+{
+    return m_Port;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 CDB_Connection*
 CDBConnectionFactory::MakeDBConnection(
     I_DriverContext& ctx,
-    const I_DriverContext::SConnAttr& conn_attr,
-    IConnValidator* validator)
+    const CDBConnParams& params)
 {
     CFastMutexGuard mg(m_Mtx);
 
     CDB_Connection* t_con = NULL;
-    CRuntimeData& rt_data = GetRuntimeData(validator);
-    TSvrRef dsp_srv = rt_data.GetDispatchedServer(conn_attr.srv_name);
+    CRuntimeData& rt_data = GetRuntimeData(params.GetConnValidator());
+    TSvrRef dsp_srv = rt_data.GetDispatchedServer(params.GetServerName());
 
     // Store original query timeout ...
     unsigned int query_timeout = ctx.GetTimeout();
@@ -221,18 +375,18 @@ CDBConnectionFactory::MakeDBConnection(
         // because a named coonnection pool has been used before.
         // Dispatch server name ...
 
-        t_con = DispatchServerName(ctx, conn_attr, validator);
+        t_con = DispatchServerName(ctx, params);
     } else {
         // Server name is already dispatched ...
 
         // We probably need to redispatch it ...
         if (GetMaxNumOfDispatches() &&
-            rt_data.GetNumOfDispatches(conn_attr.srv_name) >= GetMaxNumOfDispatches()) {
+            rt_data.GetNumOfDispatches(params.GetServerName()) >= GetMaxNumOfDispatches()) {
             // We definitely need to redispatch it ...
 
             // Clean previous info ...
-            rt_data.SetDispatchedServer(conn_attr.srv_name, TSvrRef());
-            t_con = DispatchServerName(ctx, conn_attr, validator);
+            rt_data.SetDispatchedServer(params.GetServerName(), TSvrRef());
+            t_con = DispatchServerName(ctx, params);
         } else {
             // We do not need to redispatch it ...
 
@@ -241,20 +395,24 @@ CDBConnectionFactory::MakeDBConnection(
 
             // Try to connect.
             try {
-                I_DriverContext::SConnAttr cur_conn_attr(conn_attr);
-
-                cur_conn_attr.srv_name = dsp_srv->GetName();
+                // I_DriverContext::SConnAttr cur_conn_attr(conn_attr);
+                // cur_conn_attr.srv_name = dsp_srv->GetName();
+                CDB_DBLB_Delegate cur_params(
+                        dsp_srv->GetName(), 
+                        dsp_srv->GetHost(), 
+                        dsp_srv->GetPort(), 
+                        params);
 
                 // MakeValidConnection may return NULL here because a newly
                 // created connection may not pass validation.
                 t_con = MakeValidConnection(ctx,
-                                            cur_conn_attr,
-                                            validator,
+                                            // cur_conn_attr,
+                                            cur_params,
                                             conn_status);
 
             } catch(const CDB_Exception& ex) {
-                if (validator) {
-                    conn_status = validator->ValidateException(ex);
+                if (params.GetConnValidator()) {
+                    conn_status = params.GetConnValidator()->ValidateException(ex);
                 }
             }
 
@@ -264,16 +422,16 @@ CDBConnectionFactory::MakeDBConnection(
                 // Server might be temporarily unavailable ...
                 // Check conn_status ...
                 if (conn_status == IConnValidator::eTempInvalidConn) {
-                    rt_data.IncNumOfValidationFailures(conn_attr.srv_name,
+                    rt_data.IncNumOfValidationFailures(params.GetServerName(),
                                                        dsp_srv);
                 }
 
                 // Redispach ...
-                t_con = DispatchServerName(ctx, conn_attr, validator);
+                t_con = DispatchServerName(ctx, params);
             } else {
                 // Dispatched server is already set, but calling of this method
                 // will increase number of succesful dispatches.
-                rt_data.SetDispatchedServer(conn_attr.srv_name, dsp_srv);
+                rt_data.SetDispatchedServer(params.GetServerName(), dsp_srv);
             }
         }
     }
@@ -293,13 +451,16 @@ CDBConnectionFactory::MakeDBConnection(
 CDB_Connection*
 CDBConnectionFactory::DispatchServerName(
     I_DriverContext& ctx,
-    const I_DriverContext::SConnAttr& conn_attr,
-    IConnValidator* validator)
+    const CDBConnParams& params)
 {
     CDB_Connection* t_con = NULL;
-    I_DriverContext::SConnAttr curr_conn_attr(conn_attr);
+    // I_DriverContext::SConnAttr curr_conn_attr(conn_attr);
+    const string service_name(params.GetServerName());
+    string cur_srv_name;
+    Uint4 cur_host = 0;
+    Uint2  cur_port = 0;
 
-    CRuntimeData& rt_data = GetRuntimeData(validator);
+    CRuntimeData& rt_data = GetRuntimeData(params.GetConnValidator());
 
     // Try to connect up to a given number of alternative servers ...
     unsigned int alternatives = GetMaxNumOfServerAlternatives();
@@ -309,17 +470,26 @@ CDBConnectionFactory::DispatchServerName(
         // It is possible that a server name won't be provided.
         // This is possible when somebody uses a named connection pool.
         // In this case we even won't try to map it.
-        if (!conn_attr.srv_name.empty()) {
-            dsp_srv = rt_data.GetDBServiceMapper().GetServer(conn_attr.srv_name);
+        if (!service_name.empty()) {
+            dsp_srv = rt_data.GetDBServiceMapper().GetServer(service_name);
 
             if (dsp_srv.Empty()) {
                 return NULL;
             }
 
-            curr_conn_attr.srv_name = dsp_srv->GetName();
-        } else if (conn_attr.pool_name.empty()) {
+            // curr_conn_attr.srv_name = dsp_srv->GetName();
+            cur_srv_name = dsp_srv->GetName();
+            cur_host = dsp_srv->GetHost();
+            cur_port = dsp_srv->GetPort();
+        } else if (params.GetPoolName().empty()) {
             DATABASE_DRIVER_ERROR
                 ("Neither server name nor pool name provided.", 111000);
+        } else {
+            // Old-fashioned connection pool.
+            // We do not change anything ...
+            cur_srv_name = params.GetServerName();
+            cur_host = params.GetHost();
+            cur_port = params.GetPort();
         }
 
         // Try to connect up to a given number of attempts ...
@@ -330,31 +500,33 @@ CDBConnectionFactory::DispatchServerName(
         // We don't check value of conn_status inside of a loop below by design.
         for (; !t_con && attepmpts > 0; --attepmpts) {
             try {
+                const CDB_DBLB_Delegate cur_params(
+                        cur_srv_name, 
+                        cur_host,
+                        cur_port,
+                        params);
                 t_con = MakeValidConnection(ctx,
-                                            curr_conn_attr,
-                                            validator,
+                                            // curr_conn_attr,
+                                            cur_params,
                                             conn_status);
             } catch(const CDB_Exception& ex) {
-                if (validator) {
-                    conn_status = validator->ValidateException(ex);
+                if (params.GetConnValidator()) {
+                    conn_status = params.GetConnValidator()->ValidateException(ex);
                 }
             }
         }
 
         if (!t_con) {
-            // Restore previous server name.
-            curr_conn_attr.srv_name = conn_attr.srv_name;
-
             // Server might be temporarily unavailable ...
             // Check conn_status ...
             if (conn_status == IConnValidator::eTempInvalidConn) {
-                rt_data.IncNumOfValidationFailures(conn_attr.srv_name, dsp_srv);
+                rt_data.IncNumOfValidationFailures(service_name, dsp_srv);
             } else {
                 // conn_status == IConnValidator::eInvalidConn
-                 rt_data.GetDBServiceMapper().Exclude(conn_attr.srv_name, dsp_srv);
+                 rt_data.GetDBServiceMapper().Exclude(service_name, dsp_srv);
             }
         } else {
-            rt_data.SetDispatchedServer(conn_attr.srv_name, dsp_srv);
+            rt_data.SetDispatchedServer(service_name, dsp_srv);
         }
     }
 
@@ -364,32 +536,31 @@ CDBConnectionFactory::DispatchServerName(
 CDB_Connection*
 CDBConnectionFactory::MakeValidConnection(
     I_DriverContext& ctx,
-    const I_DriverContext::SConnAttr& conn_attr,
-    IConnValidator* validator,
+    const CDBConnParams& params,
     IConnValidator::EConnStatus& conn_status) const
 {
-    auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, conn_attr));
+    auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
 
-    if (conn.get() && validator) {
+    if (conn.get() && params.GetConnValidator()) {
         try {
-            conn_status = validator->Validate(*conn);
+            conn_status = params.GetConnValidator()->Validate(*conn);
             if (conn_status != IConnValidator::eValidConn) {
                 return NULL;
             }
         } catch (const CDB_Exception& ex) {
-            conn_status = validator->ValidateException(ex);
+            conn_status = params.GetConnValidator()->ValidateException(ex);
             if (conn_status != IConnValidator::eValidConn) {
                 return NULL;
             }
         } catch (const CException& ex) {
             ERR_POST_X(1, Warning << ex.ReportAll() << " when trying to connect to "
-                       << "server '" << conn_attr.srv_name << "' as user '"
-                       << conn_attr.user_name << "'");
+                       << "server '" << params.GetServerName() << "' as user '"
+                       << params.GetUserName() << "'");
             return NULL;
         } catch (...) {
             ERR_POST_X(2, Warning << "Unknown exception when trying to connect to "
-                       << "server '" << conn_attr.srv_name << "' as user '"
-                       << conn_attr.user_name << "'");
+                       << "server '" << params.GetServerName() << "' as user '"
+                       << params.GetUserName() << "'");
             throw;
         }
     }

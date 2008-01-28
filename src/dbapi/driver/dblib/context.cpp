@@ -56,7 +56,6 @@
 #include <algorithm>
 #include <stdio.h>
 
-
 #define NCBI_USE_ERRCODE_X   Dbapi_Dblib_Context
 
 BEGIN_NCBI_SCOPE
@@ -387,20 +386,17 @@ void CDBLibContext::SetClientCharset(const string& charset)
 }
 
 impl::CConnection*
-CDBLibContext::MakeIConnection(const SConnAttr& conn_attr)
+CDBLibContext::MakeIConnection(const CDBConnParams& params)
 {
     CMutexGuard mg(m_CtxMtx);
 
-    DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name,
-                                         conn_attr.user_name,
-                                         conn_attr.passwd,
-                                         conn_attr.mode);
+    DBPROCESS* dbcon = x_ConnectToServer(params);
 
     if (!dbcon) {
         string err;
 
-        err += "Cannot connect to the server '" + conn_attr.srv_name;
-        err += "' as user '" + conn_attr.user_name + "'";
+        err += "Cannot connect to the server '" + params.GetServerName();
+        err += "' as user '" + params.GetUserName() + "'";
         DATABASE_DRIVER_ERROR( err, 200011 );
     }
 
@@ -413,14 +409,14 @@ CDBLibContext::MakeIConnection(const SConnAttr& conn_attr)
     CDBL_Connection* t_con = NULL;
     t_con = new CDBL_Connection(*this,
                                 dbcon,
-                                conn_attr.reusable,
-                                conn_attr.pool_name);
+                                params.IsPooled(),
+                                params.GetPoolName());
 
-    t_con->SetServerName(conn_attr.srv_name);
-    t_con->SetUserName(conn_attr.user_name);
-    t_con->SetPassword(conn_attr.passwd);
-    t_con->SetBCPable((conn_attr.mode & fBcpIn) != 0);
-    t_con->SetSecureLogin((conn_attr.mode & fPasswordEncrypted) != 0);
+    t_con->SetServerName(params.GetServerName());
+    t_con->SetUserName(params.GetUserName());
+    t_con->SetPassword(params.GetPassword());
+    t_con->SetBCPable(true);
+    t_con->SetSecureLogin(params.IsPasswordEncrypted());
 
     return t_con;
 }
@@ -545,6 +541,13 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     string server_name;
     string user_name;
     string message = dberrstr;
+
+    /*
+    if (dberr == 20015) {
+        // "Couldn't find interface file"
+        return INT_CANCEL;
+    }
+    */
 
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*> (dbgetuserdata(dblink)) : 0;
@@ -751,10 +754,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 }
 
 
-DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
-                                            const string&   user_name,
-                                            const string&   passwd,
-                                            TConnectionMode mode)
+DBPROCESS* CDBLibContext::x_ConnectToServer(const CDBConnParams& params)
 {
     if (!GetHostName().empty())
         DBSETLHOST(m_Login, (char*) GetHostName().c_str());
@@ -762,9 +762,9 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
         DBSETLPACKET(m_Login, m_PacketSize);
     if (DBSETLAPP (m_Login, (char*) GetApplicationName().c_str())
         != SUCCEED ||
-        DBSETLUSER(m_Login, (char*) user_name.c_str())
+        DBSETLUSER(m_Login, (char*) params.GetUserName().c_str())
         != SUCCEED ||
-        DBSETLPWD (m_Login, (char*) passwd.c_str())
+        DBSETLPWD (m_Login, (char*) params.GetPassword().c_str())
         != SUCCEED)
         return 0;
 
@@ -773,11 +773,51 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
         BCP_SETL(m_Login, TRUE);
 
 #ifndef MS_DBLIB_IN_USE
-    if (mode & fPasswordEncrypted)
+    if (params.IsPasswordEncrypted())
         DBSETLENCRYPT(m_Login, TRUE);
 #endif
 
-    DBPROCESS* dbprocess = Check(dbopen(m_Login, (char*) srv_name.c_str()));
+    string server_name;
+
+#if defined(FTDS_IN_USE)
+    if (params.GetHost()) {
+        server_name = impl::ConvertN2A(params.GetHost());
+        if (params.GetPort()) {
+            server_name += ":" + NStr::IntToString(params.GetPort());
+        }
+    } else {
+        server_name = params.GetServerName();
+    }
+#else
+    server_name = params.GetServerName();
+#endif
+
+    DBPROCESS* dbprocess = Check(dbopen(m_Login, (char*) server_name.c_str()));
+
+
+    /*
+    DBPROCESS* dbprocess = NULL; 
+
+    if (params.GetHost()) {
+        server_name = impl::ConvertN2A(params.GetHost());
+        string port_str = NStr::IntToString(params.GetPort());
+
+        RETCODE rc = dbsetconnect(
+                "query", 
+                "tcp", 
+                "ether", 
+                (char*)server_name.c_str(), 
+                (char*)port_str.c_str());
+
+        CHECK_DRIVER_ERROR(rc != SUCCEED, "dbsetconnect failed.", 200001);
+
+        dbprocess = Check(dbopen(m_Login, NULL));
+    } else {
+        server_name = params.GetServerName();
+        dbprocess = Check(dbopen(m_Login, (char*) server_name.c_str()));
+    }
+    */
+
 
     // It doesn't work currently ...
 //     if (dbprocess) {

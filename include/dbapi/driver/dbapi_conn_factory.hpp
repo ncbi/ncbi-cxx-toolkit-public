@@ -135,25 +135,22 @@ protected:
 
     friend class CRuntimeData;
 
-    CRuntimeData& GetRuntimeData(IConnValidator* validator);
+    CRuntimeData& GetRuntimeData(const CRef<IConnValidator> validator);
 
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
     virtual CDB_Connection* MakeDBConnection(
         I_DriverContext& ctx,
-        const I_DriverContext::SConnAttr& conn_attr,
-        IConnValidator* validator = NULL);
+        const CDBConnParams& params);
 
 private:
     // Methods
     CDB_Connection* DispatchServerName(
         I_DriverContext& ctx,
-        const I_DriverContext::SConnAttr& conn_attr,
-        IConnValidator* validator);
+        const CDBConnParams& params);
 
     CDB_Connection* MakeValidConnection(
         I_DriverContext& ctx,
-        const I_DriverContext::SConnAttr& conn_attr,
-        IConnValidator* validator,
+        const CDBConnParams& params,
         IConnValidator::EConnStatus& conn_status) const;
 
     unsigned int CalculateConnectionTimeout(const I_DriverContext& ctx) const;

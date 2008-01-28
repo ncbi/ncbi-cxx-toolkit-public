@@ -347,11 +347,11 @@ CODBCContext::x_SetRegistry(CODBCContextRegistry* registry)
 
 
 impl::CConnection*
-CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
+CODBCContext::MakeIConnection(const CDBConnParams& params)
 {
     CMutexGuard mg(m_CtxMtx);
 
-    return new CODBC_Connection(*this, conn_attr);
+    return new CODBC_Connection(*this, params);
 }
 
 CODBCContext::~CODBCContext()
@@ -404,9 +404,9 @@ CODBCContext::x_Close(bool delete_conn)
 
 
 void
-CODBCContext::SetupErrorReporter(const I_DriverContext::SConnAttr& conn_attr)
+CODBCContext::SetupErrorReporter(const CDBConnParams& params)
 {
-    string extra_msg = " SERVER: " + conn_attr.srv_name + "; USER: " + conn_attr.user_name;
+    string extra_msg = " SERVER: " + params.GetServerName() + "; USER: " + params.GetUserName();
 
     CMutexGuard mg(m_CtxMtx);
     m_Reporter.SetExtraMsg( extra_msg );

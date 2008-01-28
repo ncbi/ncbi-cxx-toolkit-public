@@ -62,10 +62,9 @@ bool CSL3Context::IsAbleTo(ECapability /*cpb*/) const
 
 
 impl::CConnection*
-CSL3Context::MakeIConnection(const SConnAttr& conn_attr)
+CSL3Context::MakeIConnection(const CDBConnParams& params)
 {
-    return new CSL3_Connection(*this, conn_attr.srv_name, conn_attr.user_name,
-                                 conn_attr.passwd);
+    return new CSL3_Connection(*this, params);
 }
 
 

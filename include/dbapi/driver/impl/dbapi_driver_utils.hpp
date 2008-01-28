@@ -102,6 +102,14 @@ private:
     I* m_Interface;
 };
 
+namespace impl 
+{
+
+NCBI_DBAPIDRIVER_EXPORT
+string ConvertN2A(Uint4 host);
+
+}
+
 END_NCBI_SCOPE
 
 
