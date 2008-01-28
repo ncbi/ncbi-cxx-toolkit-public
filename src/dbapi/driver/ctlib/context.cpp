@@ -279,6 +279,7 @@ bool Connection::Open(const CDBConnParams& params)
                                 const_cast<char*> (server_name.c_str()),
                                 CS_NULLTERM));
 #else
+/* Temporarily disabled ...
 #if defined(CS_SERVERADDR)
         server_name = impl::ConvertN2A(params.GetHost());
         if (params.GetPort()) {
@@ -296,12 +297,15 @@ bool Connection::Open(const CDBConnParams& params)
                                 NULL,
                                 CS_UNUSED));
 #else
+*/
         server_name = params.GetServerName();
 
         rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
                                 const_cast<char*> (server_name.c_str()),
                                 CS_NULLTERM));
+/*
 #endif
+*/
 #endif
 
         if (rc == CS_SUCCEED) {
