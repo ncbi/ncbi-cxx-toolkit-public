@@ -228,11 +228,17 @@ version  1 # of file format
 2+6  EW  gb_est
 2+6  EX  gb_est
 2+6  EY  gb_est
-2+6  EZ  gb_other_nuc
+2+6  EZ  gb_cdna    # fallback definition for older clients, which
+2+6  EZ  gb_tsa_nuc # will (noisily) ignore this more precise one.
 2+6  FA  gb_con
 2+6  FB  embl_patent
 2+6  FC  gb_est
 2+6  FD  gb_est
+2+6  FM  embl_other_nuc
+2+6  FN  embl_other_nuc
+2+6  FP  embl_other_nuc
+2+6  FQ  embl_other_nuc
+2+6  FR  embl_other_nuc
 2+6  ??  unreserved_nuc
 
 # SPECIAL CASES
