@@ -68,6 +68,7 @@ public:
     virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
 
     virtual bool IsAbleTo(ECapability cpb) const;
+    virtual EServerType GetSupportedDBType(void) const;
 };
 
 
@@ -95,18 +96,14 @@ protected:
 protected:
     virtual bool IsAlive();
 
-    virtual CDB_LangCmd*     LangCmd(const string& lang_query,
-                                     unsigned int  nof_params = 0);
+    virtual CDB_LangCmd*     LangCmd(const string& lang_query);
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
                                          bool            log_it = true);
-    virtual CDB_RPCCmd*      RPC(const string& rpc_name,
-                                 unsigned int  nof_args);
-    virtual CDB_BCPInCmd*    BCPIn(const string& table_name,
-                                   unsigned int  nof_columns);
+    virtual CDB_RPCCmd*      RPC(const string& rpc_name);
+    virtual CDB_BCPInCmd*    BCPIn(const string& table_name);
     virtual CDB_CursorCmd*   Cursor(const string& cursor_name,
                                     const string& query,
-                                    unsigned int  nof_params,
                                     unsigned int  batch_size = 1);
 
 
@@ -177,11 +174,13 @@ public:
 
 protected:
     CSL3_LangCmd(CSL3_Connection& conn,
-                 const string&    lang_query,
-                 unsigned int     nof_params);
+                 const string&    lang_query);
     virtual ~CSL3_LangCmd(void);
 
 protected:
+    /// Get meta-information about binded parameters. 
+    virtual CDBParams& GetBindParams(void);
+
     virtual bool        Send(void);
     virtual bool        Cancel(void);
     virtual CDB_Result* Result(void);
@@ -189,25 +188,56 @@ protected:
     virtual bool        HasFailed(void) const;
     virtual int         RowCount(void) const;
     long long int       LastInsertId(void) const;
+    static sqlite3_stmt* MakeSQLiteStmt(CSL3_Connection& conn, 
+                                        const string& sql);
 
     string GetDbgInfo(void) const
     {
         return " " + GetConnection().GetExecCntxInfo();
     }
 
+    class CParamInfo : public impl::CDBBindedParams
+    {
+    public:
+        CParamInfo(sqlite3_stmt* stmt, impl::CDB_Params& bindings);
+        virtual ~CParamInfo(void);
+
+    public:
+        virtual unsigned int GetNum(void) const;
+
+        virtual string GetName(
+            const CDBParamVariant& param, 
+            CDBParamVariant::ENameFormat format = 
+                CDBParamVariant::eSQLServerName) const;
+        virtual unsigned int GetIndex(const CDBParamVariant& param) const;
+
+        virtual EDirection GetDirection(const CDBParamVariant& param) const;
+
+    private:
+        sqlite3_stmt* x_GetSQLite3stmt(void) const
+        {
+            _ASSERT(m_SQLite3stmt);
+            return m_SQLite3stmt;
+        }
+
+    private:
+        sqlite3_stmt*   m_SQLite3stmt;
+    };
+
 private:
     bool x_AssignParams(void);
     bool AssignCmdParam(CDB_Object& param,
                         int         param_num);
 
+    CSL3_Connection*     m_Connect;
+    bool                 m_HasMoreResults;
+    int                  m_RowCount;
 
-    CSL3_Connection*    m_Connect;
-    bool                m_HasMoreResults;
-    int                 m_RowCount;
+    sqlite3_stmt*        m_SQLite3stmt;
+    CSL3_RowResult*      m_Res;
+    int                  m_RC;
 
-    sqlite3_stmt*       m_SQLite3stmt;
-    CSL3_RowResult*     m_Res;
-    int                 m_RC;
+    CParamInfo           m_InParams;
 };
 
 
@@ -218,8 +248,7 @@ class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_BCPInCmd : public CSL3_LangCmd
 
 protected:
     CSL3_BCPInCmd(CSL3_Connection& conn,
-                  const string&    table_name,
-                  unsigned int     nof_params);
+                  const string&    table_name);
     virtual ~CSL3_BCPInCmd(void);
 
 protected:
@@ -230,6 +259,12 @@ protected:
 private:
     void ExecuteSQL(const string& sql);
     static string MakePlaceholders(size_t num);
+    static size_t GetTableColumnNum(
+            CSL3_Connection& conn, 
+            const string& table_name);
+    static string MakeInsertStmt(
+            CSL3_Connection& conn, 
+            const string& table_name);
 };
 
 
@@ -248,10 +283,9 @@ protected:
 
 protected:
     virtual EDB_ResType     ResultType() const;
-    virtual unsigned int    NofItems() const;
-    virtual const char*     ItemName(unsigned int item_num) const;
-    virtual size_t          ItemMaxSize(unsigned int item_num) const;
-    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
+
+    virtual const CDBParams& GetDefineParams(void) const;
+
     virtual bool            Fetch();
     virtual int             CurrentItemNo() const;
     virtual int             GetColumnNum(void) const;
@@ -260,6 +294,38 @@ protected:
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor();
     virtual bool            SkipItem();
+
+protected:
+    class CRowInfo : public CDBParams
+    {
+    public:
+        CRowInfo(sqlite3_stmt* stmt);
+        virtual ~CRowInfo(void);
+
+    public:
+        virtual unsigned int GetNum(void) const;
+
+        virtual string GetName(
+            const CDBParamVariant& param, 
+            CDBParamVariant::ENameFormat format = 
+                CDBParamVariant::eSQLServerName) const;
+        virtual unsigned int GetIndex(const CDBParamVariant& param) const;
+
+        virtual size_t GetMaxSize(const CDBParamVariant& param) const;
+        virtual EDB_Type GetDataType(const CDBParamVariant& param) const;
+        virtual EDirection GetDirection(const CDBParamVariant& param) const;
+
+    private:
+        sqlite3_stmt* x_GetSQLite3stmt(void) const
+        {
+            _ASSERT(m_SQLite3stmt);
+            return m_SQLite3stmt;
+        }
+
+    private:
+        sqlite3_stmt*   m_SQLite3stmt;
+        unsigned int    m_NofCols;
+    };
 
 private:
     sqlite3_stmt* x_GetSQLite3stmt(void) const
@@ -275,11 +341,11 @@ private:
     }
 
     CSL3_LangCmd*       m_Cmd;
-    unsigned int        m_NofCols;
     int                 m_CurrItem;
     sqlite3_stmt*       m_SQLite3stmt;
     int                 m_RC;
     bool                m_FetchDone;
+    CRowInfo            m_RowInfo;
 };
 
 

@@ -71,29 +71,27 @@ bool CTDS_Connection::IsAlive()
 }
 
 
-CDB_LangCmd* CTDS_Connection::LangCmd(const string& lang_query,
-                                      unsigned int nof_parms)
+CDB_LangCmd* CTDS_Connection::LangCmd(const string& lang_query)
 {
     string extra_msg = "SQL Command: \"" + lang_query + "\"";
     SetExtraMsg(extra_msg);
 
-    CTDS_LangCmd* lcmd = new CTDS_LangCmd(*this, GetDBLibConnection(), lang_query, nof_parms);
+    CTDS_LangCmd* lcmd = new CTDS_LangCmd(*this, GetDBLibConnection(), lang_query);
     return Create_LangCmd(*lcmd);
 }
 
 
-CDB_RPCCmd* CTDS_Connection::RPC(const string& rpc_name, unsigned int nof_args)
+CDB_RPCCmd* CTDS_Connection::RPC(const string& rpc_name)
 {
     string extra_msg = "RPC Command: " + rpc_name;
     SetExtraMsg(extra_msg);
 
-    CTDS_RPCCmd* rcmd = new CTDS_RPCCmd(*this, GetDBLibConnection(), rpc_name, nof_args);
+    CTDS_RPCCmd* rcmd = new CTDS_RPCCmd(*this, GetDBLibConnection(), rpc_name);
     return Create_RPCCmd(*rcmd);
 }
 
 
-CDB_BCPInCmd* CTDS_Connection::BCPIn(const string& table_name,
-                                     unsigned int nof_cols)
+CDB_BCPInCmd* CTDS_Connection::BCPIn(const string& table_name)
 {
     if (!IsBCPable()) {
         DATABASE_DRIVER_ERROR( "No bcp on this connection." + GetDbgInfo(),  210003 );
@@ -102,14 +100,13 @@ CDB_BCPInCmd* CTDS_Connection::BCPIn(const string& table_name,
     string extra_msg = "BCP Table: " + table_name;
     SetExtraMsg(extra_msg);
 
-    CTDS_BCPInCmd* bcmd = new CTDS_BCPInCmd(*this, GetDBLibConnection(), table_name, nof_cols);
+    CTDS_BCPInCmd* bcmd = new CTDS_BCPInCmd(*this, GetDBLibConnection(), table_name);
     return Create_BCPInCmd(*bcmd);
 }
 
 
 CDB_CursorCmd* CTDS_Connection::Cursor(const string& cursor_name,
                                        const string& query,
-                                       unsigned int nof_params,
                                        unsigned int)
 {
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
@@ -117,7 +114,7 @@ CDB_CursorCmd* CTDS_Connection::Cursor(const string& cursor_name,
     SetExtraMsg(extra_msg);
 
     CTDS_CursorCmd* ccmd = new CTDS_CursorCmd(*this, GetDBLibConnection(), cursor_name,
-                                              query, nof_params);
+                                              query);
     return Create_CursorCmd(*ccmd);
 }
 
@@ -338,7 +335,7 @@ I_ITDescriptor* CTDS_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
     q += descr_in.SearchConditions();
     q += " \nset rowcount 0";
 
-    CDB_LangCmd* lcmd= LangCmd(q, 0);
+    CDB_LangCmd* lcmd= LangCmd(q);
     if(!lcmd->Send()) {
         DATABASE_DRIVER_ERROR( "Cannot send the language command." + GetDbgInfo(), 210035 );
     }

@@ -130,23 +130,20 @@ I_DriverContext::TConnectionMode CMySQL_Connection::ConnectMode() const
 }
 
 
-CDB_LangCmd* CMySQL_Connection::LangCmd(const string& lang_query,
-                                        unsigned int  nof_parms)
+CDB_LangCmd* CMySQL_Connection::LangCmd(const string& lang_query)
 {
-    return Create_LangCmd(*new CMySQL_LangCmd(*this, lang_query, nof_parms));
+    return Create_LangCmd(*new CMySQL_LangCmd(*this, lang_query));
 
 }
 
 
-CDB_RPCCmd *CMySQL_Connection::RPC(const string& /*rpc_name*/,
-                                   unsigned int  /*nof_args*/)
+CDB_RPCCmd *CMySQL_Connection::RPC(const string& /*rpc_name*/)
 {
     return NULL;
 }
 
 
-CDB_BCPInCmd* CMySQL_Connection::BCPIn(const string& /*table_name*/,
-                                       unsigned int  /*nof_columns*/)
+CDB_BCPInCmd* CMySQL_Connection::BCPIn(const string& /*table_name*/)
 {
     return NULL;
 }
@@ -154,7 +151,6 @@ CDB_BCPInCmd* CMySQL_Connection::BCPIn(const string& /*table_name*/,
 
 CDB_CursorCmd *CMySQL_Connection::Cursor(const string& /*cursor_name*/,
                                          const string& /*query*/,
-                                         unsigned int  /*nof_params*/,
                                          unsigned int  /*batch_size*/)
 {
     return NULL;

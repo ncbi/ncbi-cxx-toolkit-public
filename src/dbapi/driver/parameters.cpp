@@ -33,6 +33,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <dbapi/driver/util/parameters.hpp>
 #include <dbapi/error_codes.hpp>
+#include <dbapi/driver/exception.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Dbapi_DrvrUtil
@@ -40,161 +41,131 @@
 
 BEGIN_NCBI_SCOPE
 
+namespace impl {
 
-CDB_Params::CDB_Params(unsigned int nof_params)
+////////////////////////////////////////////////////////////////////////////////
+CDB_Params::SParam::SParam(void) : 
+    m_Param(NULL), 
+    m_Status(0)
 {
-    m_NofParams = nof_params;
-    m_Params= 0;
-    if (m_NofParams != 0) {
-        m_Params = new SParam[m_NofParams];
-        for (unsigned int i = 0;  i < m_NofParams;  m_Params[i++].status = 0)
-            continue;
+}
+
+CDB_Params::SParam::~SParam(void)
+{
+    DeleteParam();
+}
+
+
+void 
+CDB_Params::SParam::Bind(const string& param_name, CDB_Object* param, bool is_out)
+{
+    DeleteParam();
+
+    m_Param = param;
+    m_Name = param_name;
+    m_Status |= fBound | (is_out ? fOutput : 0) ;
+}
+
+void 
+CDB_Params::SParam::Set(const string& param_name, CDB_Object* param, bool is_out)
+{
+    if ((m_Status & fSet) != 0) {
+        if (m_Param->GetType() == param->GetType()) {
+            // types are the same
+            m_Param->AssignValue(*param);
+        } else { 
+            // we need to delete the old one
+            DeleteParam();
+
+            m_Param = param->Clone();
+        }
+    } else {
+        m_Param = param->Clone();
     }
+
+    m_Name = param_name;
+    m_Status |= fSet | (is_out ? fOutput : 0);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+CDB_Params::CDB_Params(void)
+{
+}
+
+
+bool 
+CDB_Params::GetParamNumInternal(const string& param_name, unsigned int& param_num) const
+{
+    // try to find this name
+    for (param_num = 0;  param_num < m_Params.size(); ++param_num) {
+        const SParam& param = m_Params[param_num];
+        const string cur_param_name = param.m_Name;
+        if (param.m_Status != 0 && param_name == param.m_Name) {
+            // We found it ...
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+unsigned int 
+CDB_Params::GetParamNum(const string& param_name) const
+{
+    unsigned int param_no = 0;
+
+    if (!GetParamNumInternal(param_name, param_no)) {
+        // Parameter not found ...
+        DATABASE_DRIVER_ERROR("Invalid parameter's name: " + param_name, 122510 );
+    }
+
+    return param_no;
+}
+
+unsigned int 
+CDB_Params::GetParamNum(unsigned int param_no, const string& param_name)
+{
+    if (param_no == CDB_Params::kNoParamNumber) {
+        if (!param_name.empty()) {
+            // try to find this name
+            if (!GetParamNumInternal(param_name, param_no)) {
+                // Parameter not found ...
+                m_Params.resize(m_Params.size() + 1);
+                return m_Params.size() - 1;
+            }
+        }
+    } else {
+        if (param_no >= m_Params.size()) {
+            m_Params.resize(param_no + 1);
+        }
+    }
+
+    return param_no;
 }
 
 
 bool CDB_Params::BindParam(unsigned int param_no, const string& param_name,
                            CDB_Object* param, bool is_out)
 {
-    if (param_no >= m_NofParams) {
-        // try to find the place for this param
-        param_no = m_NofParams;
-        if ( !param_name.empty() ) {
-            // try to find this name
-            for (param_no = 0;  param_no < m_NofParams;  param_no++) {
-                if (m_Params[param_no].status != 0  &&
-                    param_name.compare(m_Params[param_no].name) == 0)
-                    break;
-            }
-        }
-        if (param_no >= m_NofParams) {
-            for (param_no = 0;
-                 param_no < m_NofParams  &&  m_Params[param_no].status != 0;
-                 ++param_no)
-                continue;
-        }
-    }
-
-    if(param_no >= m_NofParams) { // we need more memory
-        SParam* t= new SParam[param_no + 1];
-        unsigned int i;
-        if(m_Params) {
-            for(i= 0; i < m_NofParams; i++) {
-                t[i]= m_Params[i];
-            }
-            delete [] m_Params;
-        }
-        m_Params= t;
-        for(i= m_NofParams; i <= param_no; m_Params[i++].status = 0);
-        m_NofParams= param_no + 1;
-    }
-
-    if (param_no < m_NofParams) {
-        // we do have a param number
-        if ((m_Params[param_no].status & fSet) != 0) {
-            // we need to free the old one
-            delete m_Params[param_no].param;
-            m_Params[param_no].status ^= fSet;
-        }
-        if ( !param_name.empty() ) {
-            if (param_name.compare(m_Params[param_no].name) != 0) {
-                m_Params[param_no].name = param_name;
-            }
-        } else {
-            if(m_Params[param_no].status) {
-                string n= m_Params[param_no].name;
-                if(!n.empty()) m_Params[param_no].name.erase();
-            }
-        }
-        m_Params[param_no].param = param;
-        m_Params[param_no].status |= fBound | (is_out ? fOutput : 0) ;
-        return true;
-    }
-
-    return false;
+    param_no = GetParamNum(param_no, param_name);
+    m_Params[param_no].Bind(param_name, param, is_out);
+    return true;
 }
 
 
 bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
                           CDB_Object* param, bool is_out)
 {
-    if (param_no >= m_NofParams) {
-        // try to find the place for this param
-        param_no = m_NofParams;
-        if ( !param_name.empty() ) {
-            // try to find this name
-            for (param_no = 0;  param_no < m_NofParams;  param_no++) {
-                if (m_Params[param_no].status != 0  &&
-                    m_Params[param_no].name.compare(param_name) == 0)
-                    break;
-            }
-        }
-        if (param_no >= m_NofParams) {
-            for (param_no = 0;
-                 param_no < m_NofParams  &&  m_Params[param_no].status != 0;
-                 ++param_no);
-        }
-    }
-
-    if(param_no >= m_NofParams) { // we need more memory
-        SParam* t= new SParam[param_no + 1];
-        unsigned int i;
-        if(m_Params) {
-            for(i= 0; i < m_NofParams; i++) {
-                t[i]= m_Params[i];
-            }
-            delete [] m_Params;
-        }
-        m_Params= t;
-        for(i= m_NofParams; i <= param_no; m_Params[i++].status = 0);
-        m_NofParams= param_no + 1;
-    }
-
-    if (param_no < m_NofParams) {
-        // we do have a param number
-        if ((m_Params[param_no].status & fSet) != 0) {
-            if (m_Params[param_no].param->GetType() == param->GetType()) {
-                // types are the same
-                m_Params[param_no].param->AssignValue(*param);
-            }
-            else
-                { // we need to delete the old one
-                    delete m_Params[param_no].param;
-                    m_Params[param_no].param = param->Clone();
-                }
-        }
-        else {
-            m_Params[param_no].param = param->Clone();
-        }
-        if ( !param_name.empty()) {
-            if (m_Params[param_no].name.compare(param_name) != 0) {
-                m_Params[param_no].name = param_name;
-            }
-        }
-        else {
-            if(!m_Params[param_no].name.empty()) m_Params[param_no].name.erase();
-        }
-        m_Params[param_no].status |= fSet | (is_out ? fOutput : 0);
-        return true;
-    }
-
-    return false;
+    param_no = GetParamNum(param_no, param_name);
+    m_Params[param_no].Set(param_name, param, is_out);
+    return true;
 }
 
 
 CDB_Params::~CDB_Params()
 {
-    try {
-        if ( !m_NofParams  || !m_Params)
-            return;
-
-        for (unsigned int i = 0;  i < m_NofParams;  i++) {
-            if ((m_Params[i].status & fSet) != 0)
-                delete m_Params[i].param;
-        }
-        delete [] m_Params;
-    }
-    NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -230,6 +201,7 @@ g_SubstituteParam(const string& query, const string& name, const string& val)
     return result;
 }
 
+}
 
 END_NCBI_SCOPE
 

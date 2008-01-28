@@ -44,13 +44,11 @@ class CBulkInsert : public CActiveObject,
                     public IBulkInsert
 {
 public:
-    CBulkInsert(const string& table,
-                unsigned int cols,
-                CConnection* conn);
+    CBulkInsert(const string& table, CConnection* conn);
 
     virtual ~CBulkInsert();
 
-    virtual void Bind(unsigned int col,
+    virtual void Bind(const CDBParamVariant& param,
                       CVariant *v);
 
     virtual void AddRow();
@@ -69,7 +67,6 @@ protected:
     void FreeResources();
 
 private:
-    int m_nofCols;
     CDB_BCPInCmd* m_cmd;
     CConnection* m_conn;
   

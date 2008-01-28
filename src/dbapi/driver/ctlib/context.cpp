@@ -757,11 +757,15 @@ unsigned int CTLibContext::GetTimeout(void) const
 }
 
 
-bool CTLibContext::ConnectedToMSSQLServer(void) const
+impl::CDriverContext::EServerType 
+CTLibContext::GetSupportedDBType(void) const
 {
-    return (m_TDSVersion == 70 || m_TDSVersion == 80);
-}
+    if (m_TDSVersion == 70 || m_TDSVersion == 80) {
+        return eMsSql;
+    }
 
+    return eSybase;
+}
 
 impl::CConnection*
 CTLibContext::MakeIConnection(const CDBConnParams& params)

@@ -44,9 +44,7 @@ class CCallableStatement : public CStatement,
                            public ICallableStatement
 {
 public:
-    CCallableStatement(const string& proc,
-                       int nofArgs,
-                       CConnection* conn);
+    CCallableStatement(const string& proc, CConnection* conn);
 
     virtual ~CCallableStatement();
 
@@ -54,9 +52,10 @@ public:
 
     virtual int GetReturnStatus();
     virtual void SetParam(const CVariant& v, 
-                          const string& name);
+                          const CDBParamVariant& param);
 
-    virtual void SetOutputParam(const CVariant& v, const string& name);
+    virtual void SetOutputParam(const CVariant& v, 
+            const CDBParamVariant& param);
 
     virtual void Execute();
     virtual void ExecuteUpdate();
@@ -66,17 +65,13 @@ protected:
 
     CDB_RPCCmd* GetRpcCmd();
 
-	virtual void SendSql(const string& /*sql*/) {}
+    virtual void SendSql(const string& /*sql*/) {}
     virtual void Execute(const string& /*sql*/) {}
     virtual void ExecuteUpdate(const string& /*sql*/) {}
     virtual IResultSet* ExecuteQuery(const string& /*sql*/) { return 0; }
 
 private:
     int m_status;
-    int m_nofParams;
-    //typedef map<string, CVariant> ParamList;
-    //ParamList m_paramList;
-  
 };
 
 //====================================================================

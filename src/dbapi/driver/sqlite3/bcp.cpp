@@ -41,11 +41,9 @@ BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
 CSL3_BCPInCmd::CSL3_BCPInCmd(CSL3_Connection& conn,
-                             const string&    table_name,
-                             unsigned int     nof_params) :
-    CSL3_LangCmd(conn, "INSERT INTO " + table_name, nof_params)
+                             const string&    table_name) 
+: CSL3_LangCmd(conn, MakeInsertStmt(conn, table_name))
 {
-    More(" VALUES(" + MakePlaceholders(nof_params) + ")");
     ExecuteSQL("BEGIN TRANSACTION");
 }
 
@@ -116,7 +114,8 @@ void CSL3_BCPInCmd::ExecuteSQL(const string& sql)
     Check(sqlite3_finalize(stmt));
 }
 
-string CSL3_BCPInCmd::MakePlaceholders(size_t num)
+string 
+CSL3_BCPInCmd::MakePlaceholders(size_t num)
 {
     string result;
 
@@ -130,6 +129,44 @@ string CSL3_BCPInCmd::MakePlaceholders(size_t num)
 
     return result;
 }
+
+size_t 
+CSL3_BCPInCmd::GetTableColumnNum(
+        CSL3_Connection& conn, 
+        const string& table_name)
+{
+    size_t result = 0;
+    const string sql("SELECT * FROM " + table_name);
+    sqlite3_stmt* stmt = MakeSQLiteStmt(conn, sql);
+    
+    int rc = sqlite3_step(stmt);
+    switch (rc) {
+    case SQLITE_DONE:
+        break;
+    case SQLITE_ROW:
+        break;
+    default:
+        DATABASE_DRIVER_ERROR("Invalid return code in SQL statement '" + sql + "'", 100000);
+    }
+    result = sqlite3_column_count(stmt);
+
+    sqlite3_finalize(stmt);
+
+    return result;
+}
+
+string CSL3_BCPInCmd::MakeInsertStmt(
+        CSL3_Connection& conn, 
+        const string& table_name)
+{
+    string sql("INSERT INTO " + table_name + " VALUES(");
+    
+    sql += MakePlaceholders(GetTableColumnNum(conn, table_name));
+    sql += ")";
+
+    return sql;
+}
+
 
 END_NCBI_SCOPE
 

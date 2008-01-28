@@ -75,28 +75,22 @@ public:
     // New part begin
 
     virtual IStatement* GetStatement();
-    virtual ICallableStatement* GetCallableStatement(const string& proc,
-                                                     int nofArgs = 0);
+    virtual ICallableStatement* GetCallableStatement(const string& proc);
     virtual ICursor* GetCursor(const string& name,
                                const string& sql,
-                               int nofArgs,
                                int batchSize);
 
-    virtual IBulkInsert* GetBulkInsert(const string& table_name,
-                                       unsigned int nof_cols);
+    virtual IBulkInsert* GetBulkInsert(const string& table_name);
 
     // New part end
 
     virtual IStatement* CreateStatement();
-    virtual ICallableStatement* PrepareCall(const string& proc,
-                                            int nofArgs = 0);
+    virtual ICallableStatement* PrepareCall(const string& proc);
     virtual ICursor* CreateCursor(const string& name,
                                   const string& sql,
-                                  int nofArgs,
                                   int batchSize);
 
-    virtual IBulkInsert* CreateBulkInsert(const string& table_name,
-                                          unsigned int nof_cols);
+    virtual IBulkInsert* CreateBulkInsert(const string& table_name);
 
     virtual void Close();
     virtual void Abort();

@@ -48,15 +48,13 @@ BEGIN_NCBI_SCOPE
 // implementation
 CCursor::CCursor(const string& name,
                  const string& sql,
-                 int nofArgs,
                  int batchSize,
                  CConnection* conn)
-    : m_nofArgs(nofArgs), m_cmd(0), m_conn(conn), m_ostr(0), m_wr(0)
+    : m_cmd(0), m_conn(conn), m_ostr(0), m_wr(0)
 {
     SetIdent("CCursor");
 
-    m_cmd = m_conn->GetCDB_Connection()->Cursor(name, sql,
-                                                nofArgs, batchSize);
+    m_cmd = m_conn->GetCDB_Connection()->Cursor(name, sql, batchSize);
 }
 
 CCursor::~CCursor()
@@ -77,24 +75,14 @@ IConnection* CCursor::GetParentConn()
 }
 
 void CCursor::SetParam(const CVariant& v, 
-                       const string& name)
+                       const CDBParamVariant& param)
 {
-
-
-    Parameters::iterator cur = m_params.find(name);
-    if( cur != m_params.end() ) {
-        *((*cur).second) = v;
+    if (param.IsPositional()) {
+        // Decrement position by ONE.
+        GetCursorCmd()->GetBindParams().Set(param.GetPosition() - 1, v.GetData());
+    } else {
+        GetCursorCmd()->GetBindParams().Set(param, v.GetData());
     }
-    else {
-        pair<Parameters::iterator, bool> 
-            ins = m_params.insert(make_pair(name, new CVariant(v)));
-
-        cur = ins.first;
-    }
-
-
-    GetCursorCmd()->BindParam((*cur).first,
-                              (*cur).second->GetData());
 }
 		
 		
@@ -159,13 +147,6 @@ void CCursor::Close()
 
 void CCursor::FreeResources() 
 {
-
-    Parameters::iterator i = m_params.begin();
-    for( ; i != m_params.end(); ++i ) {
-        delete (*i).second;
-    }
-
-    m_params.clear();
     delete m_cmd;
     m_cmd = 0;
     delete m_ostr;

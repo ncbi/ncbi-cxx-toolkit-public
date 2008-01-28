@@ -220,12 +220,12 @@ class CCallableStmtHelper
 {
 public:
     CCallableStmtHelper(CTransaction* trans);
-    CCallableStmtHelper(CTransaction* trans, const CStmtStr& stmt, int num_arg);
+    CCallableStmtHelper(CTransaction* trans, const CStmtStr& stmt);
     ~CCallableStmtHelper(void);
 
 public:
     // void SetStr(const string& stmt, int num_arg, EStatementType default_type = estFunction);
-    void SetStr(const CStmtStr& stmt, int num_arg);
+    void SetStr(const CStmtStr& stmt);
     void SetParam(const string& name, const CVariant& value);
 
     void Execute(void);
@@ -246,7 +246,6 @@ private:
 
 private:
     CTransaction* const             m_ParentTransaction; //< A transaction to which belongs this cursor object
-    int                             m_NumOfArgs;         //< Number of arguments in a callable statement
     auto_ptr<ICallableStatement>    m_Stmt;     //< DBAPI SQL statement interface
     IResultSet*                     m_RS;
     CStmtStr                        m_StmtStr;

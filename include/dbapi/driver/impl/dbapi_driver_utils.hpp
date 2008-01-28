@@ -102,6 +102,123 @@ private:
     I* m_Interface;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+namespace impl {
+
+class CDB_Params;
+
+class CDBBindedParams : public CDBParams
+{
+public:
+    CDBBindedParams(impl::CDB_Params& bindings);
+
+public:
+    virtual unsigned int GetNum(void) const;
+    virtual string GetName(
+            const CDBParamVariant& param, 
+            CDBParamVariant::ENameFormat format = 
+                CDBParamVariant::eSQLServerName) const;
+    virtual unsigned int GetIndex(const CDBParamVariant& param) const;
+    virtual size_t GetMaxSize(const CDBParamVariant& param) const;
+    virtual EDB_Type GetDataType(const CDBParamVariant& param) const;
+    virtual EDirection GetDirection(const CDBParamVariant& param) const;
+
+    /// This method stores pointer to data.
+    virtual CDBParams& Bind(
+        const CDBParamVariant& param, 
+        CDB_Object* value, 
+        bool out_param = false
+        );
+    /// This method stores copy of data.
+    virtual CDBParams& Set(
+        const CDBParamVariant& param, 
+        CDB_Object* value, 
+        bool out_param = false
+        );
+
+private:
+    impl::CDB_Params* m_Bindings;
+};
+
+class NCBI_DBAPIDRIVER_EXPORT CCachedRowInfo : public CDBBindedParams
+{
+public:
+    CCachedRowInfo(impl::CDB_Params& bindings);
+    virtual ~CCachedRowInfo(void);
+
+public:
+    virtual unsigned int GetNum(void) const;
+
+    virtual string GetName(
+            const CDBParamVariant& param, 
+            CDBParamVariant::ENameFormat format = 
+                CDBParamVariant::eSQLServerName) const;
+    virtual unsigned int GetIndex(const CDBParamVariant& param) const;
+    
+    virtual size_t GetMaxSize(const CDBParamVariant& param) const;
+    virtual EDB_Type GetDataType(const CDBParamVariant& param) const;
+    virtual EDirection GetDirection(const CDBParamVariant& param) const;
+
+    inline
+    void Add(const string& name,
+            size_t max_size,
+            EDB_Type data_type = eDB_UnsupportedType,
+            EDirection direction = eOut
+            );
+
+private:
+    // Inline version of virtual function GetNum() ...
+    unsigned int GetNumInternal(void) const
+    {
+        return m_Info.size();
+    }
+
+private:
+    struct SInfo
+    {
+        SInfo(void);
+        SInfo(const string& name,
+                size_t max_size,
+                EDB_Type data_type = eDB_UnsupportedType,
+                EDirection direction = eOut
+                );
+
+        string m_Name;
+        size_t m_MaxSize;
+        EDB_Type m_DataType;
+        EDirection m_Direction;
+    };
+
+    vector<SInfo> m_Info;
+};
+
+
+class NCBI_DBAPIDRIVER_EXPORT CRowInfo_SP_SQL_Server : public CCachedRowInfo
+{
+public:
+    CRowInfo_SP_SQL_Server(
+            const string& name,
+            impl::CConnection& conn, 
+            impl::CDB_Params& bindings
+            );
+    virtual ~CRowInfo_SP_SQL_Server(void);
+};
+
+inline
+void
+CCachedRowInfo::Add(const string& name,
+        size_t max_size,
+        EDB_Type data_type,
+        EDirection direction
+        )
+{
+    m_Info.push_back(SInfo(name, max_size, data_type, direction));
+}
+
+} // namespace impl
+
+
 namespace impl 
 {
 
@@ -109,6 +226,7 @@ NCBI_DBAPIDRIVER_EXPORT
 string ConvertN2A(Uint4 host);
 
 }
+
 
 END_NCBI_SCOPE
 

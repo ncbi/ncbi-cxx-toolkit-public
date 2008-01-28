@@ -33,18 +33,16 @@
  */
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
+#include <dbapi/driver/util/parameters.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
-class CDB_Result;
-
-namespace impl
-{
+namespace impl {
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-///  I_Result::
+///  CResult::
 ///
 
 class NCBI_DBAPIDRIVER_EXPORT CResult
@@ -59,20 +57,7 @@ public:
     /// Get type of the result
     virtual EDB_ResType ResultType(void) const = 0;
 
-    /// Get # of items (columns) in the result
-    virtual unsigned int NofItems(void) const = 0;
-
-    /// Get name of a result item.
-    /// Return NULL if "item_num" >= NofItems().
-    virtual const char* ItemName(unsigned int item_num) const = 0;
-
-    /// Get size (in bytes) of a result item.
-    /// Return zero if "item_num" >= NofItems().
-    virtual size_t ItemMaxSize(unsigned int item_num) const = 0;
-
-    /// Get datatype of a result item.
-    /// Return 'eDB_UnsupportedType' if "item_num" >= NofItems().
-    virtual EDB_Type ItemDataType(unsigned int item_num) const = 0;
+    virtual const CDBParams& GetDefineParams(void) const;
 
     /// Fetch next row
     virtual bool Fetch(void) = 0;
@@ -106,7 +91,23 @@ public:
     /// Skip result item
     virtual bool SkipItem(void) = 0;
 
-    void AttachTo(CDB_Result* interface);
+    void AttachTo(CDB_Result* interface)
+    {
+        m_Interface = interface;
+    }
+
+    const CDB_Params& GetDefineParamsImpl(void) const
+    {
+        return m_DefineParams;
+    }
+    CDB_Params& GetDefineParamsImpl(void)
+    {
+        return m_DefineParams;
+    }
+
+protected:
+    CDB_Params     m_DefineParams;
+    CCachedRowInfo m_CachedRowInfo;
 
 private:
     void Release(void)
@@ -115,9 +116,13 @@ private:
         DetachInterface();
     }
 
-    void DetachInterface(void);
+    void DetachInterface(void)
+    {
+        m_Interface.DetachInterface();
+    }
 
     CInterfaceHook<CDB_Result> m_Interface;
+
 };
 
 

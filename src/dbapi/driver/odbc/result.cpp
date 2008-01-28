@@ -95,14 +95,14 @@ CODBC_RowResult::CODBC_RowResult(
     , m_HasMoreData(false)
 {
     odbc::TSqlChar column_name_buff[eODBC_Column_Name_Size];
-    m_NofCols = nof_cols;
+
     if(m_RowCountPtr) *m_RowCountPtr = 0;
 
     SQLSMALLINT actual_name_size;
     SQLSMALLINT nullable;
 
-    m_ColFmt = new SODBC_ColDescr[m_NofCols];
-    for (unsigned int n = 0; n < m_NofCols; ++n) {
+    m_ColFmt = new SODBC_ColDescr[nof_cols];
+    for (unsigned int n = 0; n < (unsigned int)nof_cols; ++n) {
         // SQLDescribeCol takes a pointer to a buffer.
         switch(SQLDescribeCol(GetHandle(),
                               n + 1,
@@ -119,7 +119,7 @@ CODBC_RowResult::CODBC_RowResult(
             m_ColFmt[n].ColumnName =
                 CODBCString(column_name_buff,
                             actual_name_size).ConvertTo(GetClientEncoding());
-            continue;
+            break;
         case SQL_ERROR:
             ReportErrors();
             {
@@ -131,7 +131,15 @@ CODBC_RowResult::CODBC_RowResult(
                 string err_message = "SQLDescribeCol failed (memory corruption suspected)." + GetDbgInfo();
                 DATABASE_DRIVER_ERROR( err_message, 420021 );
             }
-       }
+        }
+
+        m_CachedRowInfo.Add(
+            m_ColFmt[n].ColumnName,
+            m_ColFmt[n].ColumnSize,
+            s_GetDataType(m_ColFmt[n].DataType,
+                          m_ColFmt[n].DecimalDigits,
+                          m_ColFmt[n].ColumnSize)
+            );
     }
 }
 
@@ -139,32 +147,6 @@ CODBC_RowResult::CODBC_RowResult(
 EDB_ResType CODBC_RowResult::ResultType() const
 {
     return eDB_RowResult;
-}
-
-
-unsigned int CODBC_RowResult::NofItems() const
-{
-    return m_NofCols;
-}
-
-
-const char* CODBC_RowResult::ItemName(unsigned int item_num) const
-{
-    return item_num < m_NofCols ? m_ColFmt[item_num].ColumnName.c_str() : 0;
-}
-
-
-size_t CODBC_RowResult::ItemMaxSize(unsigned int item_num) const
-{
-    return item_num < m_NofCols ? m_ColFmt[item_num].ColumnSize : 0;
-}
-
-
-EDB_Type CODBC_RowResult::ItemDataType(unsigned int item_num) const
-{
-    return item_num < m_NofCols ?
-        s_GetDataType(m_ColFmt[item_num].DataType, m_ColFmt[item_num].DecimalDigits,
-            m_ColFmt[item_num].ColumnSize) :  eDB_UnsupportedType;
 }
 
 
@@ -211,7 +193,7 @@ int CODBC_RowResult::CurrentItemNo() const
 
 int CODBC_RowResult::GetColumnNum(void) const
 {
-    return static_cast<int>(m_NofCols);
+    return static_cast<int>(GetDefineParams().GetNum());
 }
 
 int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
@@ -948,7 +930,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
 
 CDB_Object* CODBC_RowResult::GetItem(CDB_Object* item_buf)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols  ||  m_CurrItem == -1) {
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()  ||  m_CurrItem == -1) {
         return 0;
     }
 
@@ -961,7 +943,7 @@ CDB_Object* CODBC_RowResult::GetItem(CDB_Object* item_buf)
 
 size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols  ||  m_CurrItem == -1 ||
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()  ||  m_CurrItem == -1 ||
         buffer == 0 || buffer_size == 0) {
         return 0;
     }
@@ -1143,7 +1125,7 @@ I_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor()
 
 bool CODBC_RowResult::SkipItem()
 {
-    if ((unsigned int) m_CurrItem < m_NofCols) {
+    if ((unsigned int) m_CurrItem < GetDefineParams().GetNum()) {
         ++m_CurrItem;
         return true;
     }
@@ -1247,27 +1229,10 @@ EDB_ResType CODBC_CursorResult::ResultType() const
 }
 
 
-unsigned int CODBC_CursorResult::NofItems() const
+const CDBParams& CODBC_CursorResult::GetDefineParams(void) const
 {
-    return m_Res ? m_Res->NofItems() : 0;
-}
-
-
-const char* CODBC_CursorResult::ItemName(unsigned int item_num) const
-{
-    return m_Res ? m_Res->ItemName(item_num) : 0;
-}
-
-
-size_t CODBC_CursorResult::ItemMaxSize(unsigned int item_num) const
-{
-    return m_Res ? m_Res->ItemMaxSize(item_num) : 0;
-}
-
-
-EDB_Type CODBC_CursorResult::ItemDataType(unsigned int item_num) const
-{
-    return m_Res ? m_Res->ItemDataType(item_num) : eDB_UnsupportedType;
+    _ASSERT(m_Res);
+    return m_Res->GetDefineParams();
 }
 
 

@@ -197,7 +197,7 @@ public:
             "SELECT datalength(\"data\"), data FROM dbo.cache_data WHERE ";
         s_MakeKeyCondition(key, version, subkey, &sel_blob_sql);
 
-        ICursor* cur = m_Conn->GetCursor("sel_cur", sel_blob_sql);
+        ICursor* cur = m_Conn->GetCursor("sel_cur", sel_blob_sql, 1);
         CDBAPI_CursorGuard cg(cur);
         IResultSet *rs = cur->Open();
 
@@ -471,7 +471,7 @@ private:
         s_MakeKeyCondition(m_Key, m_Version, m_SubKey, &upd_blob_sql);
         upd_blob_sql += " FOR UPDATE";
 
-        ICursor* cur(m_Conn->GetCursor("wrt_upd_cur", upd_blob_sql));
+        ICursor* cur(m_Conn->GetCursor("wrt_upd_cur", upd_blob_sql, 1));
         CDBAPI_CursorGuard cg(cur);
         IResultSet *rs = cur->Open();
 
@@ -504,7 +504,7 @@ private:
 //            ins_blob_sql += ", NULL)";
             stmt->ExecuteUpdate(ins_blob_sql);
 
-            cg.Reset(cur = m_Conn->GetCursor("wrt_upd_cur", upd_blob_sql));
+            cg.Reset(cur = m_Conn->GetCursor("wrt_upd_cur", upd_blob_sql, 1));
             rs = cur->Open();
             while (rs->Next()) {
                 ERW_Result ret = x_SaveBlob(*cur);
@@ -735,7 +735,7 @@ size_t CDBAPI_Cache::GetSize(const string&  key,
     string sel_blob_sql = "SELECT datalength(\"data\") FROM dbo.cache_data WHERE ";
     s_MakeKeyCondition(key, version, subkey, &sel_blob_sql);
 
-    ICursor* cur=m_Conn->GetCursor("sel_cur", sel_blob_sql);
+    ICursor* cur=m_Conn->GetCursor("sel_cur", sel_blob_sql, 1);
     CDBAPI_CursorGuard cg(cur);
     IResultSet *rs = cur->Open();
 
@@ -787,7 +787,7 @@ bool CDBAPI_Cache::Read(const string& key,
         "SELECT datalength(\"data\"), data FROM dbo.cache_data WHERE ";
     s_MakeKeyCondition(key, version, subkey, &sel_blob_sql);
 
-    ICursor* cur = m_Conn->GetCursor("sel_cur", sel_blob_sql);
+    ICursor* cur = m_Conn->GetCursor("sel_cur", sel_blob_sql, 1);
     CDBAPI_CursorGuard cg(cur);
     IResultSet *rs = cur->Open();
 
@@ -1075,7 +1075,7 @@ void CDBAPI_Cache::x_CleanOrphantBlobs(IStatement& stmt)
     // and then delete all in a separate transaction
 
     {{
-    ICursor* cur = m_Conn->GetCursor("sel_cur", sel_sql);
+    ICursor* cur = m_Conn->GetCursor("sel_cur", sel_sql, 1);
     CDBAPI_CursorGuard cg(cur);
     IResultSet *rs = cur->Open();
 
@@ -1155,7 +1155,7 @@ bool CDBAPI_Cache::x_RetrieveTimeStamp(IStatement&   /* stmt */,
 
     string sel_blob_sql = "SELECT cache_timestamp FROM dbo.cache_attr WHERE ";
     s_MakeKeyCondition(key, version, subk, &sel_blob_sql);
-    ICursor* cur = m_Conn->GetCursor("attr_cur", sel_blob_sql);
+    ICursor* cur = m_Conn->GetCursor("attr_cur", sel_blob_sql, 1);
     CDBAPI_CursorGuard cg(cur);
     IResultSet *rs = cur->Open();
 
@@ -1204,7 +1204,7 @@ bool CDBAPI_Cache::x_UpdateBlob(IStatement&    stmt,
     s_MakeKeyCondition(key, version, subkey, &upd_blob_sql);
     upd_blob_sql += " FOR UPDATE";
 
-    ICursor* cur(m_Conn->GetCursor("upd_cur", upd_blob_sql));
+    ICursor* cur(m_Conn->GetCursor("upd_cur", upd_blob_sql, 1));
     CDBAPI_CursorGuard cg(cur);
     IResultSet *rs = cur->Open();
 

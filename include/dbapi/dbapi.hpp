@@ -353,7 +353,7 @@ public:
     /// @param sql
     ///   SQL statement to execute.
     /// @return
-    ///   Pointer to result set. Ownership of IResultSet* belong to IStatement.
+    ///   Pointer to result set. Ownership of IResultSet* belongs to IStatement.
     ///   It is not allowed to use auto_ptr<> to manage life-time of
     ///   IResultSet*.
     virtual IResultSet* ExecuteQuery(const string& sql) = 0;
@@ -368,7 +368,7 @@ public:
     /// @param name
     ///   Parameter name.
     virtual void SetParam(const CVariant& v,
-              const string& name) = 0;
+                          const string& name) = 0;
 
     /// Clear parameter list.
     virtual void ClearParamList() = 0;
@@ -426,6 +426,11 @@ public:
     ///   auto-clear input parameter flag value
     virtual bool IsAutoClearInParams(void) const = 0;
 
+    /// Get nput parameters metadata.
+    ///
+    /// @return
+    ///   Pointer to result metadata.
+    virtual const IResultSetMetaData& GetParamsMetaData(void) = 0;
 };
 
 
@@ -459,7 +464,7 @@ public:
     /// @param name
     ///   Parameter name.
     virtual void SetParam(const CVariant& v,
-                          const string& name) = 0;
+                          const CDBParamVariant& param) = 0;
 
     /// Set output parameter, which will be returned as resultset.
     ///
@@ -470,7 +475,8 @@ public:
     ///   Parameter value.
     /// @param name
     ///   Parameter name.
-    virtual void SetOutputParam(const CVariant& v, const string& name) = 0;
+    virtual void SetOutputParam(const CVariant& v, 
+            const CDBParamVariant& param) = 0;
 
 protected:
     // Mask unused methods
@@ -501,7 +507,7 @@ public:
     /// @param name
     ///   Parameter name.
     virtual void SetParam(const CVariant& v,
-            const string& name) = 0;
+                          const CDBParamVariant& param) = 0;
 
     /// Open cursor and get corresponding resultset.
     virtual IResultSet* Open() = 0;
@@ -581,7 +587,7 @@ public:
     ///   Column number.
     /// @param v
     ///   Variant value.
-    virtual void Bind(unsigned int col, CVariant* v) = 0;
+    virtual void Bind(const CDBParamVariant& param, CVariant* v) = 0;
 
     /// Add row to the batch
     virtual void AddRow() = 0;
@@ -718,14 +724,30 @@ public:
     ///   Stored procedure name.
     /// @param nofArgs
     ///   Number of arguments.
-    virtual ICallableStatement* GetCallableStatement(const string& proc,
-                                                     int nofArgs = 0) = 0;
+    virtual ICallableStatement* GetCallableStatement(const string& proc) = 0;
+    NCBI_DEPRECATED 
+    ICallableStatement* GetCallableStatement(const string& proc, int) 
+    {
+        return GetCallableStatement(proc);
+    }
 
     /// Get cursor object.
     virtual ICursor* GetCursor(const string& name,
                                const string& sql,
-                               int nofArgs = 0,
-                               int batchSize = 1) = 0;
+                               int batchSize) = 0;
+    ICursor* GetCursor(const string& name,
+                       const string& sql) 
+    {
+        return GetCursor(name, sql, 1);
+    }
+    NCBI_DEPRECATED 
+    ICursor* GetCursor(const string& name,
+                       const string& sql,
+                       int,
+                       int batchSize) 
+    {
+        return GetCursor(name, sql, batchSize);
+    }
 
     /// Create bulk insert object.
     ///
@@ -733,27 +755,53 @@ public:
     ///   table name.
     /// @param nof_cols
     ///   Number of columns.
-    virtual IBulkInsert* GetBulkInsert(const string& table_name,
-                                       unsigned int nof_cols) = 0;
+    virtual IBulkInsert* GetBulkInsert(const string& table_name) = 0;
+    NCBI_DEPRECATED 
+    IBulkInsert* GetBulkInsert(const string& table_name, unsigned int)
+    {
+        return GetBulkInsert(table_name);
+    }
+
     // END OF NEW INTERFACE
 
     /// Get statement object for regular SQL queries.
     virtual IStatement* CreateStatement() = 0;
 
     /// Get callable statement object for stored procedures.
-    virtual ICallableStatement* PrepareCall(const string& proc,
-                                            int nofArgs = 0) = 0;
+    virtual ICallableStatement* PrepareCall(const string& proc) = 0;
+    NCBI_DEPRECATED 
+    ICallableStatement* PrepareCall(const string& proc, int)
+    {
+        return PrepareCall(proc);
+    }
 
     /// Get cursor object.
     virtual ICursor* CreateCursor(const string& name,
                                   const string& sql,
-                                  int nofArgs = 0,
-                                  int batchSize = 1) = 0;
+                                  int batchSize) = 0;
+    ICursor* CreateCursor(const string& name,
+                          const string& sql) 
+    {
+        return CreateCursor(name, sql, 1);
+    }
+    NCBI_DEPRECATED 
+    ICursor* CreateCursor(const string& name,
+                          const string& sql,
+                          int,
+                          int batchSize)
+    {
+        return CreateCursor(name, sql, batchSize);
+    }
 
     /// Create bulk insert object.
-    virtual IBulkInsert* CreateBulkInsert(const string& table_name,
-                                          unsigned int nof_cols) = 0;
-    /// Close connection.
+    virtual IBulkInsert* CreateBulkInsert(const string& table_name) = 0;
+    NCBI_DEPRECATED 
+    IBulkInsert* CreateBulkInsert(const string& table_name, unsigned int)
+    {
+        return CreateBulkInsert(table_name);
+    }
+
+    /// Close connecti
     virtual void Close() = 0;
 
     /// Abort connection.

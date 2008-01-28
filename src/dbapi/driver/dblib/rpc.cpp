@@ -50,14 +50,29 @@ BEGIN_NCBI_SCOPE
 
 CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection& conn,
                          DBPROCESS* cmd,
-                         const string& proc_name,
-                         unsigned int nof_params) :
+                         const string& proc_name) :
     CDBL_Cmd(conn, cmd),
-    impl::CBaseCmd(conn, proc_name, nof_params),
+    impl::CBaseCmd(conn, proc_name),
     m_Res(0),
     m_Status(0)
 {
     SetExecCntxInfo("RPC Command: " + proc_name);
+}
+
+
+CDBParams& 
+CDBL_RPCCmd::GetBindParams(void)
+{
+    if (m_InParams.get() == NULL) {
+        m_InParams.reset(new impl::CRowInfo_SP_SQL_Server(
+                    GetQuery(), 
+                    GetConnImpl(), 
+                    GetBindParamsImpl()
+                    )
+                );
+    }
+
+    return *m_InParams;
 }
 
 
@@ -239,39 +254,39 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
 {
     RETCODE r;
 
-    for (unsigned int i = 0; i < GetParams().NofParams(); i++) {
-        if(GetParams().GetParamStatus(i) == 0) continue;
-        CDB_Object& param = *GetParams().GetParam(i);
+    for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); i++) {
+        if(GetBindParamsImpl().GetParamStatus(i) == 0) continue;
+        CDB_Object& param = *GetBindParamsImpl().GetParam(i);
         BYTE status =
-            (GetParams().GetParamStatus(i) & CDB_Params::fOutput)
+            (GetBindParamsImpl().GetParamStatus(i) & impl::CDB_Params::fOutput)
             ? DBRPCRETURN : 0;
         bool is_null = param.IsNULL();
 
         switch (param.GetType()) {
         case eDB_Int: {
             CDB_Int& val = dynamic_cast<CDB_Int&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBINT4, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_SmallInt: {
             CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBINT2, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_TinyInt: {
             CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBINT1, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_Bit: {
             CDB_Bit& val = dynamic_cast<CDB_Bit&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBBIT, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
@@ -282,7 +297,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
             Int8 v8 = val.Value();
             if (longlong_to_numeric(v8, 18, DBNUMERIC_val(v)) == 0)
                 return false;
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBNUMERIC, -1,
                            is_null ? 0 : -1, (BYTE*) v));
             param_buff = (char*) (v + 1);
@@ -290,7 +305,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         }
         case eDB_Char: {
             CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBCHAR, -1,
                            is_null ? 0 : (DBINT) val.Size(),
                            (BYTE*) val.Value()));
@@ -298,7 +313,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         }
         case eDB_LongChar: {
             CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBCHAR, -1,
                            is_null ? 0 : (DBINT) val.Size(),
                            (BYTE*) val.Value()));
@@ -306,7 +321,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         }
         case eDB_VarChar: {
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBCHAR, -1,
                            is_null ? 0 : (DBINT) val.Size(),
                            (BYTE*) val.Value()));
@@ -314,7 +329,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         break;
         case eDB_Binary: {
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBBINARY, -1,
                            is_null ? 0 : (DBINT) val.Size(),
                            (BYTE*) val.Value()));
@@ -322,7 +337,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         }
         case eDB_VarBinary: {
             CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBBINARY, -1,
                            is_null ? 0 : (DBINT) val.Size(),
                            (BYTE*) val.Value()));
@@ -330,14 +345,14 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         break;
         case eDB_Float: {
             CDB_Float& val = dynamic_cast<CDB_Float&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBREAL, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_Double: {
             CDB_Double& val = dynamic_cast<CDB_Double&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBFLT8, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
@@ -354,7 +369,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
                 DBDATETIME4_mins(dt) = val.GetMinutes();
             }
 
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBDATETIME4, -1,
                            is_null ? 0 : -1, (BYTE*) dt));
             param_buff = (char*) (dt + 1);
@@ -372,7 +387,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
                 dt->dttime = val.Get300Secs();
             }
 
-            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBDATETIME, -1,
                            is_null ? 0 : -1, (BYTE*) dt));
             param_buff = (char*) (dt + 1);

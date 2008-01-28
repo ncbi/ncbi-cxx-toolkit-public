@@ -283,7 +283,7 @@ CDBAPIUnitTest::TestInit(void)
 
         I_DriverContext* drv_context = m_DS->GetDriverContext();
 
-        if (m_args.GetTestConfiguration() == CTestArguments::eWithExceptions) {
+        if (m_args.GetTestConfiguration() != CTestArguments::eWithoutExceptions) {
             if (m_args.IsODBCBased()) {
                 drv_context->PushCntxMsgHandler(
                     new CDB_UserHandler_Exception_ODBC,
@@ -1346,8 +1346,7 @@ CDBAPIUnitTest::Test_DateTime(void)
                 {
                     sql = "SELECT * FROM #test_datetime";
 
-                    // !!! Do not forget to clear a parameter list ....
-                    // Workaround for the ctlib driver ...
+                    // ClearParamList is necessary here ...
                     auto_stmt->ClearParamList();
 
                     auto_stmt->SendSql( sql );
@@ -1392,8 +1391,7 @@ CDBAPIUnitTest::Test_DateTime(void)
                 {
                     sql = "SELECT * FROM #test_datetime";
 
-                    // !!! Do not forget to clear a parameter list ....
-                    // Workaround for the ctlib driver ...
+                    // ClearParamList is necessary here ...
                     auto_stmt->ClearParamList();
 
                     auto_stmt->SendSql( sql );
@@ -1449,7 +1447,7 @@ CDBAPIUnitTest::Test_DateTime(void)
                     auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
 
                     auto_ptr<ICallableStatement> call_auto_stmt(
-                        m_Conn->GetCallableStatement("sp_test_datetime", 1)
+                        m_Conn->GetCallableStatement("sp_test_datetime")
                         );
 
                     call_auto_stmt->SetParam( value, "@dt_val" );
@@ -1467,7 +1465,7 @@ CDBAPIUnitTest::Test_DateTime(void)
 
                     // !!! Do not forget to clear a parameter list ....
                     // Workaround for the ctlib driver ...
-                    auto_stmt->ClearParamList();
+                    // auto_stmt->ClearParamList();
 
                     auto_stmt->SendSql( sql );
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
@@ -1502,7 +1500,7 @@ CDBAPIUnitTest::Test_DateTime(void)
                     auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
 
                     auto_ptr<ICallableStatement> call_auto_stmt(
-                        m_Conn->GetCallableStatement("sp_test_datetime", 1)
+                        m_Conn->GetCallableStatement("sp_test_datetime")
                         );
 
                     call_auto_stmt->SetParam( null_date, "@dt_val" );
@@ -1516,7 +1514,7 @@ CDBAPIUnitTest::Test_DateTime(void)
 
                     // !!! Do not forget to clear a parameter list ....
                     // Workaround for the ctlib driver ...
-                    auto_stmt->ClearParamList();
+                    // auto_stmt->ClearParamList();
 
                     auto_stmt->SendSql( sql );
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
@@ -1575,7 +1573,7 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
                 auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name);
 
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert(table_name, 2)
+                    m_Conn->GetBulkInsert(table_name)
                     );
 
                 bi->Bind(1, &col1);
@@ -1598,7 +1596,7 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
 
                 // !!! Do not forget to clear a parameter list ....
                 // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
+                // auto_stmt->ClearParamList();
 
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
@@ -1636,7 +1634,7 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
                 auto_stmt->ExecuteUpdate("DELETE FROM " + table_name);
 
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert(table_name, 2)
+                    m_Conn->GetBulkInsert(table_name)
                     );
 
                 bi->Bind(1, &col1);
@@ -2295,7 +2293,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(table_name, 4));
+                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(table_name));
                 // auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(table_name, 1));
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
@@ -2342,7 +2340,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(table_name, 4));
+                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(table_name));
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
                 CVariant col3(eDB_VarChar);
@@ -2413,7 +2411,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
         {
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 3));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
@@ -2489,7 +2487,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 3));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
@@ -2562,7 +2560,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 3));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
@@ -2657,7 +2655,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 3));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
@@ -2744,7 +2742,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
             // Insert data ...
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 3));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 CDB_Int geneIdVal;
                 CDB_Text dataTextVal;
@@ -2882,7 +2880,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
         // Insert data ...
         if (true) {
 
-            auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, first_ind + 2));
+            auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
             // Declare data-holders ...
             CDB_Int vkeyVal;
@@ -2957,7 +2955,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
         // Insert data again ...
         if (true) {
 
-            auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, first_ind + 2));
+            auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
             // Declare data-holders ...
             CDB_Int vkeyVal;
@@ -3081,7 +3079,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
 
             // case 1: text data is null;
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, first_ind + 2));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 if (first_ind) {
                     bcp->Bind(0, &vkeyVal);
@@ -3107,7 +3105,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
 
             // case 2: text data is not null
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, first_ind + 2));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 if (first_ind) {
                     bcp->Bind(0, &vkeyVal);
@@ -3138,7 +3136,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
 
             // case 3: text data is null but img is not null
             {
-                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, first_ind + 2));
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name));
 
                 if (first_ind) {
                     bcp->Bind(0, &vkeyVal);
@@ -3424,7 +3422,7 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         // Block 2 ...
         {
             auto_ptr<IBulkInsert> bi(
-                conn->GetBulkInsert("#test_bcp_cancel", 1)
+                conn->GetBulkInsert("#test_bcp_cancel")
                 );
 
             CVariant col1(eDB_Int);
@@ -3461,7 +3459,7 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
         // Block 5 ...
         if (true) {
             auto_ptr<IBulkInsert> bi(
-                conn->GetBulkInsert("#test_bcp_cancel", 1)
+                conn->GetBulkInsert("#test_bcp_cancel")
                 );
 
             CVariant col1(eDB_Int);
@@ -3516,7 +3514,7 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
         {
             bool exception_catched = false;
             auto_ptr<IBulkInsert> bi(
-                m_Conn->GetBulkInsert("#test_bulk_overflow", 1)
+                m_Conn->GetBulkInsert("#test_bulk_overflow")
                 );
 
             CVariant col1(eDB_VarChar, data_size);
@@ -3588,7 +3586,7 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
         {
             bool exception_catched = false;
             auto_ptr<IBulkInsert> bi(
-                m_Conn->GetBulkInsert("#test_bulk_overflow", 1)
+                m_Conn->GetBulkInsert("#test_bulk_overflow")
                 );
 
             CVariant col1(eDB_VarBinary, data_size);
@@ -3646,7 +3644,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             // Insert data ...
             {
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert("#bin_bulk_insert_table", 2)
+                    m_Conn->GetBulkInsert("#bin_bulk_insert_table")
                     );
 
                 CVariant col1(eDB_Int);
@@ -3719,8 +3717,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 // Insert data ...
                 {
                     auto_ptr<IBulkInsert> bi(
-                        m_Conn->GetBulkInsert("#bulk_insert_table",
-                                  m_args.GetServerType() == CTestArguments::eSybase? 3: 4)
+                        m_Conn->GetBulkInsert("#bulk_insert_table")
                         );
 
                     CVariant col1(eDB_Int);
@@ -3774,7 +3771,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 // Insert data ...
                 {
                     auto_ptr<IBulkInsert> bi(
-                        m_Conn->GetBulkInsert("#bulk_insert_table", 4)
+                        m_Conn->GetBulkInsert("#bulk_insert_table")
                         );
 
                     CVariant col1(eDB_Int);
@@ -3842,7 +3839,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             // First test ...
             {
                 auto_ptr<IBulkInsert> blki(
-                    m_Conn->CreateBulkInsert("#__blki_test", 2)
+                    m_Conn->CreateBulkInsert("#__blki_test")
                     );
 
                 CVariant col1(eDB_Char,32);
@@ -3911,8 +3908,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             // Insert data ...
             {
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert("#bulk_insert_table",
-                              m_args.GetServerType() == CTestArguments::eSybase? 3: 4)
+                    m_Conn->GetBulkInsert("#bulk_insert_table")
                     );
 
                 CVariant col1(eDB_Int);
@@ -4047,7 +4043,7 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
         // Insert data ...
         {
             auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert("#SbSubs", 7)
+                    m_Conn->GetBulkInsert("#SbSubs")
                     );
 
             CVariant col1(eDB_Int);
@@ -4095,7 +4091,7 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
             auto_stmt->ExecuteUpdate(sql);
 
             auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert("#SbSubs", 7)
+                    m_Conn->GetBulkInsert("#SbSubs")
                     );
 
             CVariant col1(eDB_Int);
@@ -4186,7 +4182,7 @@ CDBAPIUnitTest::Test_Bulk_Writing3(void)
         // Tmp table ...
         auto_ptr<IBulkInsert> bi_tmp(
             // m_Conn->CreateBulkInsert(table_name2, 1)
-            m_Conn->GetBulkInsert(table_name2, 1)
+            m_Conn->GetBulkInsert(table_name2)
             );
 
         CVariant col_tmp(eDB_Int);
@@ -4209,7 +4205,7 @@ CDBAPIUnitTest::Test_Bulk_Writing3(void)
             //
             auto_ptr<IBulkInsert> bi(
                 // m_Conn->CreateBulkInsert(table_name, 2)
-                m_Conn->GetBulkInsert(table_name, 2)
+                m_Conn->GetBulkInsert(table_name)
                 );
 
             CVariant col1(eDB_Int);
@@ -4272,7 +4268,7 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
         {
             //
             auto_ptr<IBulkInsert> bi(
-                m_Conn->CreateBulkInsert(table_name, 7)
+                m_Conn->CreateBulkInsert(table_name)
                 );
 
             CVariant b_idnwparams(eDB_Int);
@@ -6186,7 +6182,7 @@ CDBAPIUnitTest::Test_Recordset(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-CDBAPIUnitTest::Test_MetaData(void)
+CDBAPIUnitTest::Test_ResultsetMetaData(void)
 {
     try {
         auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
@@ -6503,6 +6499,104 @@ CDBAPIUnitTest::Test_MetaData(void)
         // Second test ...
         {
         }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+void 
+CDBAPIUnitTest::Test_StmtMetaData(void)
+{
+    try {
+        auto_ptr<ICallableStatement> auto_stmt;
+        unsigned int col_num = 0;
+
+        {
+            auto_stmt.reset(
+                    m_Conn->GetCallableStatement("sp_columns")
+                    );
+
+            const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
+
+            col_num = mi.GetTotalColumns();
+            if (m_args.GetServerType() == CTestArguments::eSybase) {
+                BOOST_CHECK_EQUAL(col_num, 5U);
+            } else {
+                BOOST_CHECK_EQUAL(col_num, 6U);
+            }
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        {
+            auto_stmt.reset(
+                    m_Conn->GetCallableStatement("sp_sproc_columns")
+                    );
+
+            const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
+
+            col_num = mi.GetTotalColumns();
+            switch (m_args.GetServerType()) {
+                case CTestArguments::eSybase:
+                    BOOST_CHECK_EQUAL(col_num, 5U);
+                    break;
+                case CTestArguments::eMsSql2005:
+                    BOOST_CHECK_EQUAL(col_num, 7U);
+                    break;
+                case CTestArguments::eMsSql:
+                    BOOST_CHECK_EQUAL(col_num, 6U);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        {
+            auto_stmt.reset(
+                    m_Conn->GetCallableStatement("sp_server_info")
+                    );
+
+            const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
+
+            col_num = mi.GetTotalColumns();
+            BOOST_CHECK_EQUAL(col_num, 2U);
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        {
+            auto_stmt.reset(
+                    m_Conn->GetCallableStatement("sp_tables")
+                    );
+
+            const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
+
+            col_num = mi.GetTotalColumns();
+            if (m_args.GetServerType() == CTestArguments::eMsSql2005) {
+                BOOST_CHECK_EQUAL(col_num, 6U);
+            } else {
+                BOOST_CHECK_EQUAL(col_num, 5U);
+            }
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        {
+            auto_stmt.reset(
+                    m_Conn->GetCallableStatement("sp_stored_procedures")
+                    );
+
+            const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
+
+            col_num = mi.GetTotalColumns();
+            if (m_args.GetServerType() == CTestArguments::eMsSql2005) {
+                BOOST_CHECK_EQUAL(col_num, 5U);
+            } else {
+                BOOST_CHECK_EQUAL(col_num, 4U);
+            }
+        }
+
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -7291,7 +7385,7 @@ CDBAPIUnitTest::Test_Procedure(void)
                 int num = 0;
                 // Execute it first time ...
                 auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_databases", 3)
+                    m_Conn->GetCallableStatement("sp_databases")
                     );
 
                 auto_stmt->Execute();
@@ -7316,7 +7410,7 @@ CDBAPIUnitTest::Test_Procedure(void)
             {
                 int num = 0;
                 auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_server_info", 3)
+                    m_Conn->GetCallableStatement("sp_server_info")
                     );
 
                 auto_stmt->Execute();
@@ -7344,7 +7438,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         {
             {
                 auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_server_info", 1)
+                    m_Conn->GetCallableStatement("sp_server_info")
                     );
 
                 // Set parameter to NULL ...
@@ -7425,7 +7519,7 @@ CDBAPIUnitTest::Test_Procedure(void)
             drv_context->PushDefConnMsgHandler(handler);
 
             auto_ptr<ICallableStatement> auto_stmt(
-                m_Conn->GetCallableStatement("DBAPI_Sample..SampleProc3", 3)
+                m_Conn->GetCallableStatement("DBAPI_Sample..SampleProc3")
                 );
             auto_stmt->SetParam(CVariant(1), "@id");
             auto_stmt->SetParam(CVariant(2.0), "@f");
@@ -8068,7 +8162,7 @@ CDBAPIUnitTest::Test_NULL(void)
         {
             {
                 auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_server_info", 1)
+                    m_Conn->GetCallableStatement("sp_server_info")
                     );
 
                 // Set parameter to NULL ...
@@ -10545,7 +10639,7 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
             auto_ptr<CDB_RPCCmd> pRpc( NULL );
 
     //         pRpc.reset( m_Connect->RPC("FindAccount",20) );
-            pRpc.reset( m_Connect->RPC("FindAccountMatchAll",20) );
+            pRpc.reset( m_Connect->RPC("FindAccountMatchAll") );
 
             db_login.SetValue( "lsroot" );
             // db_last.SetValue( "%" );
@@ -10676,7 +10770,7 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
         //
         {
             auto_ptr<ICallableStatement> auto_stmt(
-                auto_conn->GetCallableStatement("FindAccount", 20)
+                auto_conn->GetCallableStatement("FindAccount")
                 );
 
             auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
@@ -10712,7 +10806,7 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
         //
         {
             auto_ptr<ICallableStatement> auto_stmt(
-                auto_conn->GetCallableStatement("FindAccountMatchAll", 20)
+                auto_conn->GetCallableStatement("FindAccountMatchAll")
                 );
 
             auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
@@ -11246,7 +11340,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
                     CVariant col2(eDB_VarChar);
 
                     auto_ptr<IBulkInsert> bi(
-                            auto_conn->GetBulkInsert(table_name, 2)
+                            auto_conn->GetBulkInsert(table_name)
                             );
 
                     bi->Bind(1, &col1);
@@ -11742,69 +11836,88 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(args));
     boost::unit_test::test_case* tc = NULL;
 
-    // Test DriverContext
-    if (args.GetDriverName() == ftds8_driver ||
-        args.GetDriverName() == ftds63_driver ||
-        args.GetDriverName() == ftds_dblib_driver ||
-        // args.GetDriverName() == dblib_driver ||
-        args.GetDriverName() == msdblib_driver
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One,
-                                   DBAPIInstance);
-        add(tc);
+    if (args.GetTestConfiguration() != CTestArguments::eFast) {
+        // Test DriverContext
+        if (args.GetDriverName() == ftds8_driver ||
+                args.GetDriverName() == ftds63_driver ||
+                args.GetDriverName() == ftds_dblib_driver ||
+                // args.GetDriverName() == dblib_driver ||
+                args.GetDriverName() == msdblib_driver
+           ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One,
+                    DBAPIInstance);
+            add(tc);
+        }
+
+        if (args.GetDriverName() == ctlib_driver
+            || args.GetDriverName() == ftds64_driver
+            || args.GetDriverName() == ftds_odbc_driver
+            || args.GetDriverName() == odbc_driver
+            || args.GetDriverName() == odbcw_driver
+            ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many,
+                                    DBAPIInstance);
+            add(tc);
+        }
     }
 
-    if (args.GetDriverName() == ctlib_driver
-        || args.GetDriverName() == ftds64_driver
-        || args.GetDriverName() == ftds_odbc_driver
-        || args.GetDriverName() == odbc_driver
-        || args.GetDriverName() == odbcw_driver
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many,
-                                   DBAPIInstance);
-        add(tc);
-    }
 
     boost::unit_test::test_case* tc_init =
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
 
     add(tc_init);
 
-    if (args.GetServerType() == CTestArguments::eMsSql ||
-        args.GetServerType() == CTestArguments::eMsSql2005
+    if (args.GetDriverName() != dblib_driver
+        && !(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
+        && args.GetDriverName() != ftds_dblib_driver
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ConnFactory,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    } else {
-        PutMsgDisabled("Test_ConnFactory");
-    }
-
-    if (!(args.GetDriverName() == ftds64_driver
-          && args.GetServerType() == CTestArguments::eSybase)
-        && args.GetDriverName() != msdblib_driver
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ConnPool,
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StmtMetaData,
                 DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
-    } else {
-        PutMsgDisabled("Test_ConnPool");
     }
 
-
-    if (args.GetServerType() == CTestArguments::eSybase) {
-        if (args.GetDriverName() != dblib_driver // Cannot connect to the server ...
-            && args.GetDriverName() != ftds_dblib_driver // Cannot connect to the server ...
-            && args.GetDriverName() != ftds8_driver
+    if (args.GetTestConfiguration() != CTestArguments::eFast) {
+        if (args.GetServerType() == CTestArguments::eMsSql ||
+                args.GetServerType() == CTestArguments::eMsSql2005
            ) {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ConnFactory,
                     DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
         } else {
-            PutMsgDisabled("Test_DropConnection");
+            PutMsgDisabled("Test_ConnFactory");
+        }
+    }
+
+    if (args.GetTestConfiguration() != CTestArguments::eFast) {
+        if (!(args.GetDriverName() == ftds64_driver
+                    && args.GetServerType() == CTestArguments::eSybase)
+                && args.GetDriverName() != msdblib_driver
+           ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ConnPool,
+                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        } else {
+            PutMsgDisabled("Test_ConnPool");
+        }
+    }
+
+
+    if (args.GetTestConfiguration() != CTestArguments::eFast) {
+        if (args.GetServerType() == CTestArguments::eSybase) {
+            if (args.GetDriverName() != dblib_driver // Cannot connect to the server ...
+                    && args.GetDriverName() != ftds_dblib_driver // Cannot connect to the server ...
+                    && args.GetDriverName() != ftds8_driver
+               ) {
+                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
+                        DBAPIInstance);
+                tc->depends_on(tc_init);
+                add(tc);
+            } else {
+                PutMsgDisabled("Test_DropConnection");
+            }
         }
     }
 
@@ -11822,7 +11935,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         PutMsgDisabled("Test_BlobStore");
     }
 
-    if (args.GetTestConfiguration() == CTestArguments::eWithExceptions) {
+    if (args.GetTestConfiguration() != CTestArguments::eWithoutExceptions 
+        && args.GetTestConfiguration() != CTestArguments::eFast
+        ) {
         // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
         if ( (args.GetDriverName() == ftds8_driver
             && !(Solaris && CompilerWorkShop) && !Irix
@@ -11869,17 +11984,19 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
 
-    if ((args.GetServerType() == CTestArguments::eMsSql
-         || args.GetServerType() == CTestArguments::eMsSql2005) &&
-        (args.GetDriverName() == ftds_odbc_driver
-         || args.GetDriverName() == ftds64_driver)
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    } else {
-        PutMsgDisabled("Test_Authentication");
+    if (args.GetTestConfiguration() != CTestArguments::eFast) {
+        if ((args.GetServerType() == CTestArguments::eMsSql
+            || args.GetServerType() == CTestArguments::eMsSql2005) &&
+            (args.GetDriverName() == ftds_odbc_driver
+            || args.GetDriverName() == ftds64_driver)
+            ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication,
+                                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        } else {
+            PutMsgDisabled("Test_Authentication");
+        }
     }
 
     //
@@ -12160,23 +12277,25 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     */
 
     // Test_UserErrorHandler depends on Test_Exception_Safety ...
-    if (!(args.GetDriverName() == ftds64_driver
-              && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
-        ) {
-        boost::unit_test::test_case* except_safety_tc =
-            BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety,
-                                  DBAPIInstance);
-        except_safety_tc->depends_on(tc_init);
-        add(except_safety_tc);
+    if (args.GetTestConfiguration() != CTestArguments::eFast) {
+        if (!(args.GetDriverName() == ftds64_driver
+                    && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+           ) {
+            boost::unit_test::test_case* except_safety_tc =
+                BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety,
+                        DBAPIInstance);
+            except_safety_tc->depends_on(tc_init);
+            add(except_safety_tc);
 
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UserErrorHandler,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        tc->depends_on(except_safety_tc);
-        add(tc);
-    } else {
-        PutMsgDisabled("Test_Exception_Safety");
-        PutMsgDisabled("Test_UserErrorHandler");
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UserErrorHandler,
+                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(except_safety_tc);
+            add(tc);
+        } else {
+            PutMsgDisabled("Test_Exception_Safety");
+            PutMsgDisabled("Test_UserErrorHandler");
+        }
     }
 
     {
@@ -12209,13 +12328,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
             //
             if (false) {
-                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_MetaData,
+                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ResultsetMetaData,
                                            DBAPIInstance);
                 tc->depends_on(tc_init);
                 tc->depends_on(select_stmt_tc);
                 add(tc);
             } else {
-                PutMsgDisabled("Test_MetaData");
+                PutMsgDisabled("Test_ResultsetMetaData");
             }
 
             //
@@ -12400,10 +12519,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
 
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SetLogStream,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
+        if (args.GetTestConfiguration() != CTestArguments::eFast) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SetLogStream,
+                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        }
     } else {
         PutMsgDisabled("Test_Decimal");
         PutMsgDisabled("Test_SetLogStream");
@@ -12428,19 +12549,23 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UserErrorHandler_LT,
-                               DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
-
-
-    if (!(args.GetDriverName() == ftds64_driver
-            &&  args.GetServerType() == CTestArguments::eSybase))
-    {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_N_Connections,
-                                   DBAPIInstance);
+    if (args.GetTestConfiguration() != CTestArguments::eFast) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UserErrorHandler_LT,
+                                DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    }
+
+
+    if (args.GetTestConfiguration() != CTestArguments::eFast) {
+        if (!(args.GetDriverName() == ftds64_driver
+                    &&  args.GetServerType() == CTestArguments::eSybase))
+        {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_N_Connections,
+                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        }
     }
 
 //     if (args.GetServerType() == CTestArguments::eMsSql
@@ -12554,7 +12679,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
                             "Configuration for testing",
                             CArgDescriptions::eString, "with-exceptions");
     arg_desc->SetConstraint("conf", &(*new CArgAllow_Strings,
-                            "with-exceptions", "without-exceptions"));
+                            "with-exceptions", "without-exceptions", "fast"));
 
     auto_ptr<CArgs> args_ptr(arg_desc->CreateArgs(m_Arguments));
     const CArgs& args = *args_ptr;
@@ -12584,6 +12709,8 @@ CTestArguments::CTestArguments(int argc, char * argv[])
         m_TestConfiguration = CTestArguments::eWithExceptions;
     } else if (args["conf"].AsString() == "without-exceptions") {
         m_TestConfiguration = CTestArguments::eWithoutExceptions;
+    } else if (args["conf"].AsString() == "fast") {
+        m_TestConfiguration = CTestArguments::eFast;
     }
 
     SetDatabaseParameters();

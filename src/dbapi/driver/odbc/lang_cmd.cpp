@@ -50,11 +50,10 @@ BEGIN_NCBI_SCOPE
 
 CODBC_LangCmd::CODBC_LangCmd(
     CODBC_Connection& conn,
-    const string& lang_query,
-    unsigned int nof_params
+    const string& lang_query
     ) :
     CStatementBase(conn),
-    impl::CBaseCmd(conn, lang_query, nof_params),
+    impl::CBaseCmd(conn, lang_query),
     m_Res(NULL)
 {
 /* This logic is not working for some reason
@@ -77,9 +76,9 @@ bool CODBC_LangCmd::Send(void)
     CMemPot bindGuard;
     string q_str;
 
-    if(GetParams().NofParams() > 0) {
+    if(GetBindParamsImpl().NofParams() > 0) {
         SQLLEN* indicator = (SQLLEN*)
-                bindGuard.Alloc(GetParams().NofParams() * sizeof(SQLLEN));
+                bindGuard.Alloc(GetBindParamsImpl().NofParams() * sizeof(SQLLEN));
 
         if (!x_AssignParams(q_str, bindGuard, indicator)) {
             ResetParams();
@@ -248,10 +247,10 @@ CODBC_LangCmd::~CODBC_LangCmd()
 
 bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* indicator)
 {
-    for (unsigned int n = 0; n < GetParams().NofParams(); ++n) {
-        if(GetParams().GetParamStatus(n) == 0) continue;
-        const string& name  =  GetParams().GetParamName(n);
-        const CDB_Object& param = *GetParams().GetParam(n);
+    for (unsigned int n = 0; n < GetBindParamsImpl().NofParams(); ++n) {
+        if(GetBindParamsImpl().GetParamStatus(n) == 0) continue;
+        const string& name  =  GetBindParamsImpl().GetParamName(n);
+        const CDB_Object& param = *GetBindParamsImpl().GetParam(n);
 
         const string type = Type2String(param);
         if (!x_BindParam_ODBC(param, bind_guard, indicator, n)) {

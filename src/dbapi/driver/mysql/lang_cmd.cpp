@@ -42,9 +42,8 @@ BEGIN_NCBI_SCOPE
 
 
 CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection& conn,
-                               const string&      lang_query,
-                               unsigned int       nof_params) :
-    impl::CBaseCmd(conn, lang_query, nof_params),
+                               const string&      lang_query) :
+    impl::CBaseCmd(conn, lang_query),
     m_Connect(&conn),
     m_HasMoreResults(false)
 {

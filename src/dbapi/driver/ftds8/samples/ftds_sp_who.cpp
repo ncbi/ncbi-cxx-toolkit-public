@@ -62,7 +62,7 @@ CDemoeApp::Run(void)
                                                         "allowed",
                                                         0));
 
-        auto_ptr<CDB_RPCCmd> rcmd( con->RPC("sp_who", 0));
+        auto_ptr<CDB_RPCCmd> rcmd( con->RPC("sp_who"));
         rcmd->Send();
 
         while (rcmd->HasMoreResults()) {

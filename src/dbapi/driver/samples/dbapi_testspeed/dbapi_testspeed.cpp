@@ -290,7 +290,7 @@ CDbapiTestSpeedApp::RunSample(void)
 
             if ( col_count > 4 ) {
                 // "Bulk copy in" command
-                bcp.reset(GetConnection().BCPIn(GetTableName(), col_count));
+                bcp.reset(GetConnection().BCPIn(GetTableName()));
             } else {
                 string s  = "insert into ";
                 s += GetTableName();

@@ -1432,7 +1432,6 @@ CStmtHelper::NextRS(void)
 //////////////////////////////////////////////////////////////////////////////
 CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans)
 : m_ParentTransaction( trans )
-, m_NumOfArgs( 0 )
 , m_RS(NULL)
 , m_Executed( false )
 , m_ResultStatus( 0 )
@@ -1443,9 +1442,8 @@ CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans)
     }
 }
 
-CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans, const CStmtStr& stmt, int num_arg)
+CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans, const CStmtStr& stmt)
 : m_ParentTransaction( trans )
-, m_NumOfArgs( num_arg )
 , m_RS(NULL)
 , m_StmtStr( stmt )
 , m_Executed( false )
@@ -1514,13 +1512,12 @@ CCallableStmtHelper::CreateStmt(void)
     _ASSERT( m_StmtStr.GetType() == estFunction );
 
     ReleaseStmt();
-    m_Stmt.reset( m_ParentTransaction->CreateDMLConnection()->GetCallableStatement(m_StmtStr.GetStr(), m_NumOfArgs) );
+    m_Stmt.reset( m_ParentTransaction->CreateDMLConnection()->GetCallableStatement(m_StmtStr.GetStr()) );
 }
 
 void
-CCallableStmtHelper::SetStr(const CStmtStr& stmt, int num_arg)
+CCallableStmtHelper::SetStr(const CStmtStr& stmt)
 {
-    m_NumOfArgs = num_arg;
     m_StmtStr = stmt;
 
     DumpResult();
@@ -1804,7 +1801,6 @@ CCursor::callproc(const pythonpp::CTuple& args)
     if ( args_size == 0 ) {
         throw CProgrammingError("A stored procedure name is expected as a parameter");
     } else if ( args_size > 0 ) {
-        int num_of_arguments = 0;
         pythonpp::CObject obj(args[0]);
 
         if ( pythonpp::CString::HasSameType(obj) ) {
@@ -1822,8 +1818,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
             if ( pythonpp::CDict::HasSameType(obj) ) {
                 const pythonpp::CDict dict = obj;
 
-                num_of_arguments = dict.size();
-                m_CallableStmtHelper.SetStr(m_StmtStr, num_of_arguments);
+                m_CallableStmtHelper.SetStr(m_StmtStr);
                 SetupParameters(dict, m_CallableStmtHelper);
             } else  {
                 // Curently, NCBI DBAPI supports pameter binding by name only ...
@@ -1835,7 +1830,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
                 throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
             }
         } else {
-            m_CallableStmtHelper.SetStr(m_StmtStr, num_of_arguments);
+            m_CallableStmtHelper.SetStr(m_StmtStr);
         }
     }
 

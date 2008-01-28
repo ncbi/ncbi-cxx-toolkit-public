@@ -51,12 +51,27 @@ namespace ftds64_ctlib
 //
 
 CTL_RPCCmd::CTL_RPCCmd(CTL_Connection& conn,
-                       const string& proc_name,
-                       unsigned int nof_params
+                       const string& proc_name
                        )
-: CTL_LRCmd(conn, proc_name, nof_params)
+: CTL_LRCmd(conn, proc_name)
 {
-    SetExecCntxInfo("RPC Command: " + proc_name);
+    SetExecCntxInfo("RPC Command: " + GetQuery());
+}
+
+
+CDBParams& 
+CTL_RPCCmd::GetBindParams(void)
+{
+    if (m_InParams.get() == NULL) {
+        m_InParams.reset(new impl::CRowInfo_SP_SQL_Server(
+                    GetQuery(), 
+                    GetConnImpl(), 
+                    GetBindParamsImpl()
+                    )
+                );
+    }
+
+    return *m_InParams;
 }
 
 
@@ -127,15 +142,15 @@ bool CTL_RPCCmd::x_AssignParams()
     param_fmt.namelen = CS_NULLTERM;
     param_fmt.format = CS_FMT_UNUSED;
 
-    for (unsigned int i = 0;  i < GetParams().NofParams();  i++) {
+    for (unsigned int i = 0;  i < GetBindParamsImpl().NofParams();  i++) {
 
-        if(GetParams().GetParamStatus(i) == 0) continue;
-        CDB_Object&   param      = *GetParams().GetParam(i);
-        const string& param_name = GetParams().GetParamName(i);
+        if(GetBindParamsImpl().GetParamStatus(i) == 0) continue;
+        CDB_Object&   param      = *GetBindParamsImpl().GetParam(i);
+        const string& param_name = GetBindParamsImpl().GetParamName(i);
         CS_SMALLINT   indicator  = param.IsNULL() ? -1 : 0;
 
         param_fmt.status =
-            ((GetParams().GetParamStatus(i) & CDB_Params::fOutput) == 0)
+            ((GetBindParamsImpl().GetParamStatus(i) & impl::CDB_Params::fOutput) == 0)
             ? CS_INPUTVALUE : CS_RETURN;
 
         if ( !AssignCmdParam(param,

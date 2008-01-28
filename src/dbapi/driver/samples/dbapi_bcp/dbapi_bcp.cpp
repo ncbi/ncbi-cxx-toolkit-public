@@ -102,7 +102,7 @@ CDbapiBcpApp::RunSample(void)
         }
 
         //"Bulk copy in" command
-        auto_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(GetTableName(), 5));
+        auto_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(GetTableName()));
 
         CDB_Int int_val;
         CDB_Float fl_val;

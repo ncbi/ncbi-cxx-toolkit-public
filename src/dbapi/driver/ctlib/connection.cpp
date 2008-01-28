@@ -343,40 +343,35 @@ CTL_Connection::SetTimeout(size_t nof_secs)
 }
 
 
-CDB_LangCmd* CTL_Connection::LangCmd(const string& lang_query,
-                                     unsigned int  nof_params)
+CDB_LangCmd* CTL_Connection::LangCmd(const string& lang_query)
 {
     string extra_msg = "SQL Command: \"" + lang_query + "\"";
     SetExtraMsg(extra_msg);
 
     CTL_LangCmd* lcmd = new CTL_LangCmd(
         *this,
-        lang_query,
-        nof_params
+        lang_query
         );
 
     return Create_LangCmd(*lcmd);
 }
 
 
-CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name,
-                                unsigned int  nof_args)
+CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name)
 {
     string extra_msg = "RPC Command: " + rpc_name;
     SetExtraMsg(extra_msg);
 
     CTL_RPCCmd* rcmd = new CTL_RPCCmd(
         *this,
-        rpc_name,
-        nof_args
+        rpc_name
         );
 
     return Create_RPCCmd(*rcmd);
 }
 
 
-CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
-                                    unsigned int  nof_columns)
+CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name)
 {
     CHECK_DRIVER_ERROR( !IsBCPable(), "No bcp on this connection." + GetDbgInfo(), 110003 );
 
@@ -385,8 +380,7 @@ CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
 
     CTL_BCPInCmd* bcmd = new CTL_BCPInCmd(
         *this,
-        table_name,
-        nof_columns
+        table_name
         );
 
     return Create_BCPInCmd(*bcmd);
@@ -395,7 +389,6 @@ CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
 
 CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
                                       const string& query,
-                                      unsigned int  nof_params,
                                       unsigned int  batch_size)
 {
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
@@ -410,7 +403,6 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
         *this,
         cursor_name,
         query,
-        nof_params,
         batch_size
         );
 
@@ -483,13 +475,12 @@ CTL_Connection::~CTL_Connection()
 
 
 CTL_LangCmd* 
-CTL_Connection::xLangCmd(const string& lang_query,
-                         unsigned int  nof_params)
+CTL_Connection::xLangCmd(const string& lang_query)
 {
     string extra_msg = "SQL Command: \"" + lang_query + "\"";
     SetExtraMsg( extra_msg );
 
-    CTL_LangCmd* lcmd = new CTL_LangCmd(*this, lang_query, nof_params);
+    CTL_LangCmd* lcmd = new CTL_LangCmd(*this, lang_query);
     return lcmd;
 }
 
@@ -768,7 +759,7 @@ CTL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
     q += descr_in.SearchConditions();
     q += " \nset rowcount 0";
 
-    lcmd.reset(LangCmd(q, 0));
+    lcmd.reset(LangCmd(q));
     rc = !lcmd->Send();
     CHECK_DRIVER_ERROR( rc, "Cannot send the language command." + GetDbgInfo(), 110035 );
 

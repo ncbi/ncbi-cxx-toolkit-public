@@ -45,36 +45,106 @@ BEGIN_NCBI_SCOPE
 
 
 ///////////////////////////////////////////////////////////////////////////////
-CSL3_LangCmd::CSL3_LangCmd(CSL3_Connection& conn,
-                           const string&    lang_query,
-                           unsigned int     nof_params)
-: impl::CBaseCmd(conn, lang_query, nof_params)
-, m_Connect(&conn)
-, m_HasMoreResults(false)
-, m_RowCount(0)
-, m_SQLite3stmt(NULL)
-, m_Res(NULL)
-, m_RC(SQLITE_ERROR)
+CSL3_LangCmd::CParamInfo::CParamInfo(sqlite3_stmt* stmt, impl::CDB_Params& bindings)
+: impl::CDBBindedParams(bindings)
+, m_SQLite3stmt(stmt)
 {
 }
 
 
-bool CSL3_LangCmd::Send()
+CSL3_LangCmd::CParamInfo::~CParamInfo(void)
+{
+}
+
+
+unsigned int 
+CSL3_LangCmd::CParamInfo::GetNum(void) const
+{
+    return sqlite3_bind_parameter_count(x_GetSQLite3stmt());
+}
+
+
+string 
+CSL3_LangCmd::CParamInfo::GetName(
+    const CDBParamVariant& param, 
+    CDBParamVariant::ENameFormat format) const
+{
+    if (param.IsPositional()) {
+        return sqlite3_bind_parameter_name(x_GetSQLite3stmt(), param.GetPosition());
+    } else {
+        return param.GetName(format);
+    }
+
+    return "";
+}
+
+unsigned int 
+CSL3_LangCmd::CParamInfo::GetIndex(const CDBParamVariant& param) const
+{
+    if (param.IsPositional()) {
+        return param.GetPosition();
+    } else {
+        return sqlite3_bind_parameter_index(x_GetSQLite3stmt(), param.GetName().c_str());
+    }
+
+    return 0;
+}
+
+
+CDBParams::EDirection 
+CSL3_LangCmd::CParamInfo::GetDirection(const CDBParamVariant& /* param */) const
+{
+    return CDBParams::eIn;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+CSL3_LangCmd::CSL3_LangCmd(CSL3_Connection& conn,
+                           const string&    lang_query)
+: impl::CBaseCmd(conn, lang_query)
+, m_Connect(&conn)
+, m_HasMoreResults(false)
+, m_RowCount(0)
+, m_SQLite3stmt(MakeSQLiteStmt(conn, GetQuery()))
+, m_Res(NULL)
+, m_RC(SQLITE_ERROR)
+, m_InParams(x_GetSQLite3stmt(), GetBindParamsImpl())
+{
+}
+
+
+CDBParams& 
+CSL3_LangCmd::GetBindParams(void)
+{
+    return m_InParams;
+}
+
+sqlite3_stmt* 
+CSL3_LangCmd::MakeSQLiteStmt(CSL3_Connection& conn, const string& sql)
 {
     const char* sql_tail = NULL;
+    sqlite3_stmt* stmt = NULL;
 
-    Cancel();
-
-    // m_HasFailed = false;
-
-    int rc = Check(sqlite3_prepare(GetConnection().GetSQLite3(),
-                                   GetQuery().c_str(),
-                                   GetQuery().size(),
-                                   &m_SQLite3stmt,
+    int rc = conn.Check(sqlite3_prepare(conn.GetSQLite3(),
+                                   sql.c_str(),
+                                   sql.size(),
+                                   &stmt,
                                    &sql_tail
                                    ));
+
     CHECK_DRIVER_ERROR(rc != SQLITE_OK,
-                       "Failed to prepare a statement." + GetDbgInfo(),
+                       "Failed to prepare a statement." + sql,
+                       100000);
+
+    return stmt;
+}
+
+bool CSL3_LangCmd::Send()
+{
+    int rc = Check(sqlite3_reset(m_SQLite3stmt));
+
+    CHECK_DRIVER_ERROR(rc != SQLITE_OK,
+                       "Failed to reset a statement." + GetDbgInfo(),
                        100000);
 
     if (!x_AssignParams()) {
@@ -95,9 +165,7 @@ bool CSL3_LangCmd::Send()
     case SQLITE_ERROR:
     case SQLITE_MISUSE:
         m_HasMoreResults = false;
-        CHECK_DRIVER_ERROR(rc != SQLITE_OK,
-                           "Failed to execute a statement." + GetDbgInfo(),
-                           100000);
+        DATABASE_DRIVER_ERROR( "Failed to execute a statement." + GetDbgInfo(), 100000);
         break;
     default:
         DATABASE_DRIVER_ERROR("Invalid return code." + GetDbgInfo(), 100000);
@@ -170,10 +238,10 @@ int CSL3_LangCmd::RowCount() const
 
 bool CSL3_LangCmd::x_AssignParams(void)
 {
-    for (unsigned int i = 0;  i < GetParams().NofParams();  ++i) {
-        if(GetParams().GetParamStatus(i) == 0) continue;
+    for (unsigned int i = 0;  i < GetBindParamsImpl().NofParams();  ++i) {
+        if(GetBindParamsImpl().GetParamStatus(i) == 0) continue;
 
-        CDB_Object& param = *GetParams().GetParam(i);
+        CDB_Object& param = *GetBindParamsImpl().GetParam(i);
         if ( !AssignCmdParam(param, i + 1) ) {
             return false;
         }

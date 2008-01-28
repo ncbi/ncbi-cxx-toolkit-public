@@ -317,16 +317,22 @@ CDBLibContext::x_SetRegistry(CDblibContextRegistry* registry)
     m_Registry = registry;
 }
 
-bool CDBLibContext::ConnectedToMSSQLServer(void) const
+impl::CDriverContext::EServerType 
+CDBLibContext::GetSupportedDBType(void) const
 {
 #if defined(MS_DBLIB_IN_USE)
-    return true;
+    return eMsSql;
 #elif defined(FTDS_IN_USE)
-    return (m_TDSVersion == DBVERSION_70 ||
-            m_TDSVersion == DBVERSION_80 ||
-            m_TDSVersion == DBVERSION_UNKNOWN);
+    if (m_TDSVersion == DBVERSION_70 ||
+        m_TDSVersion == DBVERSION_80 ||
+        m_TDSVersion == DBVERSION_UNKNOWN) {
+        return eMsSql;
+    }
+
+    return eSybase;
 #else
-    return false;
+    // We may use TDS v4.2 and v4.6 against Microsoft and Sybase servers.
+    return eUnknown;
 #endif
 }
 

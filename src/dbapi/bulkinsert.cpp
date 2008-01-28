@@ -44,11 +44,10 @@ BEGIN_NCBI_SCOPE
 
 // implementation
 CBulkInsert::CBulkInsert(const string& name,
-                         unsigned int cols,
                          CConnection* conn)
-    : m_nofCols(cols), m_cmd(0), m_conn(conn)
+    : m_cmd(0), m_conn(conn)
 {
-    m_cmd = m_conn->GetCDB_Connection()->BCPIn(name, cols);
+    m_cmd = m_conn->GetCDB_Connection()->BCPIn(name);
     SetIdent("CBulkInsert");
 }
 
@@ -80,9 +79,16 @@ void CBulkInsert::FreeResources()
     }
 }
  
-void CBulkInsert::Bind(unsigned int col, CVariant* v)
+void CBulkInsert::Bind(const CDBParamVariant& param, CVariant* v)
 {
-    GetBCPInCmd()->Bind(col - 1, v->GetData());
+    // GetBCPInCmd()->GetBindParams().Bind(col - 1, v->GetData());
+
+    if (param.IsPositional()) {
+        // Decrement position by ONE.
+        GetBCPInCmd()->GetBindParams().Bind(param.GetPosition() - 1, v->GetData());
+    } else {
+        GetBCPInCmd()->GetBindParams().Bind(param, v->GetData());
+    }
 }
 		
 		

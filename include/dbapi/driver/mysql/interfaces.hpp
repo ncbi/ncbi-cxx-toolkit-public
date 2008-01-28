@@ -74,6 +74,7 @@ public:
     virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
 
     virtual bool IsAbleTo(ECapability cpb) const;
+    virtual EServerType GetSupportedDBType(void) const;
 };
 
 
@@ -94,18 +95,14 @@ protected:
 protected:
     virtual bool IsAlive();
 
-    virtual CDB_LangCmd*     LangCmd(const string& lang_query,
-                                     unsigned int  nof_params = 0);
+    virtual CDB_LangCmd*     LangCmd(const string& lang_query);
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
                                          bool            log_it = true);
-    virtual CDB_RPCCmd*      RPC(const string& rpc_name,
-                                 unsigned int  nof_args);
-    virtual CDB_BCPInCmd*    BCPIn(const string& table_name,
-                                   unsigned int  nof_columns);
+    virtual CDB_RPCCmd*      RPC(const string& rpc_name);
+    virtual CDB_BCPInCmd*    BCPIn(const string& table_name);
     virtual CDB_CursorCmd* Cursor(const string& cursor_name,
                                   const string& query,
-                                  unsigned int nof_params,
                                   unsigned int batch_size = 1);
 
 
@@ -153,8 +150,7 @@ class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_LangCmd : public impl::CBaseCmd
 
 protected:
     CMySQL_LangCmd(CMySQL_Connection& conn,
-                   const string&      lang_query,
-                   unsigned int       nof_params);
+                   const string&      lang_query);
     virtual ~CMySQL_LangCmd();
 
 protected:
@@ -181,21 +177,6 @@ private:
 };
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  SMySQL_ColDescr::
-//
-
-struct SMySQL_ColDescr
-{
-    unsigned long max_length;
-    EDB_Type      data_type;
-    string        col_name;
-};
-
-
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CMySQL_RowResult::
@@ -211,10 +192,6 @@ protected:
 
 protected:
     virtual EDB_ResType     ResultType() const;
-    virtual unsigned int    NofItems() const;
-    virtual const char*     ItemName(unsigned int item_num) const;
-    virtual size_t          ItemMaxSize(unsigned int item_num) const;
-    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
     virtual bool            Fetch();
     virtual int             CurrentItemNo() const;
     virtual int             GetColumnNum(void) const;
@@ -230,8 +207,7 @@ private:
     unsigned long*     m_Lengths;
     CMySQL_Connection* m_Connect;
     int                m_CurrItem;
-    unsigned int       m_NofCols;
-    SMySQL_ColDescr*   m_ColFmt;
+    // SMySQL_ColDescr*   m_ColFmt;
 };
 
 /////////////////////////////////////////////////////////////////////////////

@@ -120,7 +120,7 @@ public:
         return m_ExecCntxInfo;
     }
 
-protected:
+public:
     /// Check out if connection is alive (this function doesn't ping the server,
     /// it just checks the status of connection which was set by the last
     /// i/o operation)
@@ -133,18 +133,13 @@ protected:
     /// It is the user's responsibility to delete the returned "command" object.
 
     /// Language command
-    virtual CDB_LangCmd* LangCmd(const string& lang_query,
-                                 unsigned int  nof_params = 0) = 0;
+    virtual CDB_LangCmd* LangCmd(const string& lang_query) = 0;
     /// Remote procedure call
-    virtual CDB_RPCCmd* RPC(const string& rpc_name,
-                            unsigned int  nof_args) = 0;
+    virtual CDB_RPCCmd* RPC(const string& rpc_name) = 0;
     /// "Bulk copy in" command
-    virtual CDB_BCPInCmd* BCPIn(const string& table_name,
-                                unsigned int  nof_columns) = 0;
-    /// Cursor
+    virtual CDB_BCPInCmd* BCPIn(const string& table_name) = 0; /// Cursor
     virtual CDB_CursorCmd* Cursor(const string& cursor_name,
                                   const string& query,
-                                  unsigned int  nof_params,
                                   unsigned int  batch_size = 1) = 0;
     /// "Send-data" command
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
@@ -187,15 +182,6 @@ protected:
 
     CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
 
-    /// These methods to allow the children of CConnection to create
-    /// various command-objects
-    CDB_LangCmd*     Create_LangCmd     (CBaseCmd&     lang_cmd    );
-    CDB_RPCCmd*      Create_RPCCmd      (CBaseCmd&     rpc_cmd     );
-    CDB_BCPInCmd*    Create_BCPInCmd    (CBaseCmd&     bcpin_cmd   );
-//     CDB_CursorCmd*   Create_CursorCmd   (CCursorCmd&   cursor_cmd  );
-    CDB_CursorCmd*   Create_CursorCmd   (CBaseCmd&     cursor_cmd  );
-    CDB_SendDataCmd* Create_SendDataCmd (CSendDataCmd& senddata_cmd);
-
     /// abort the connection
     /// Attention: it is not recommended to use this method unless you absolutely have to.
     /// The expected implementation is - close underlying file descriptor[s] without
@@ -212,6 +198,15 @@ protected:
     virtual void SetTimeout(size_t nof_secs) = 0;
     virtual void SetTextImageSize(size_t nof_bytes);
 
+protected:
+    /// These methods to allow the children of CConnection to create
+    /// various command-objects
+    CDB_LangCmd*     Create_LangCmd     (CBaseCmd&     lang_cmd    );
+    CDB_RPCCmd*      Create_RPCCmd      (CBaseCmd&     rpc_cmd     );
+    CDB_BCPInCmd*    Create_BCPInCmd    (CBaseCmd&     bcpin_cmd   );
+//     CDB_CursorCmd*   Create_CursorCmd   (CCursorCmd&   cursor_cmd  );
+    CDB_CursorCmd*   Create_CursorCmd   (CBaseCmd&     cursor_cmd  );
+    CDB_SendDataCmd* Create_SendDataCmd (CSendDataCmd& senddata_cmd);
 
 protected:
     void Release(void);

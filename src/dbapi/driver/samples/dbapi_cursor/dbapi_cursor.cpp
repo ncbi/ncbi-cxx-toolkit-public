@@ -102,7 +102,7 @@ CDbapiCursorApp::CreateTable (const string& table_name)
 
     lcmd.reset();
 
-    auto_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(table_name, 5));
+    auto_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(table_name));
 
     CDB_Int int_val;
     CDB_Float fl_val;

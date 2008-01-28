@@ -389,11 +389,6 @@ void CDriverContext::DestroyConnImpl(CConnection* impl)
     }
 }
 
-bool CDriverContext::ConnectedToMSSQLServer(void) const
-{
-    return false;
-}
-
 void CDriverContext::SetClientCharset(const string& charset)
 {
     CMutexGuard mg(m_CtxMtx);

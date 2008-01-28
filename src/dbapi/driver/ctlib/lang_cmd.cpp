@@ -468,10 +468,9 @@ void CTL_Cmd::GetRowCount(int* cnt)
 //
 
 CTL_LRCmd::CTL_LRCmd(CTL_Connection& conn,
-                     const string& query,
-                     unsigned int nof_params)
+                     const string& query)
 : CTL_Cmd(conn)
-, impl::CBaseCmd(conn, query, nof_params)
+, impl::CBaseCmd(conn, query)
 {
 }
 
@@ -510,8 +509,8 @@ CTL_LRCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
     return rc;
 }
 
-CDB_Result*
-CTL_LRCmd::MakeResult(void)
+CTL_RowResult*
+CTL_LRCmd::MakeResultInternal(void)
 {
     DeleteResult();
 
@@ -599,8 +598,17 @@ CTL_LRCmd::MakeResult(void)
             DATABASE_DRIVER_WARNING( "Unexpected result type has arrived", 120020 );
         }
 
-        return Create_Result(static_cast<impl::CResult&>(GetResult()));
+        return &GetResult();
     }
+}
+
+
+CDB_Result*
+CTL_LRCmd::MakeResult(void)
+{
+    CTL_RowResult* result = MakeResultInternal();
+
+    return result ? Create_Result(*result) : NULL;
 }
 
 
@@ -675,10 +683,9 @@ CTL_LRCmd::SendInternal(void)
 //
 
 CTL_LangCmd::CTL_LangCmd(CTL_Connection& conn,
-                         const string& lang_query,
-                         unsigned int nof_params
+                         const string& lang_query
                          )
-: CTL_LRCmd(conn, lang_query, nof_params)
+: CTL_LRCmd(conn, lang_query)
 {
     SetExecCntxInfo("SQL Command: \"" + lang_query + "\"");
 }
@@ -753,11 +760,11 @@ bool CTL_LangCmd::x_AssignParams()
     param_fmt.namelen = CS_NULLTERM;
     param_fmt.status  = CS_INPUTVALUE;
 
-    for (unsigned int i = 0;  i < GetParams().NofParams();  i++) {
-        if(GetParams().GetParamStatus(i) == 0) continue;
+    for (unsigned int i = 0;  i < GetBindParamsImpl().NofParams();  i++) {
+        if(GetBindParamsImpl().GetParamStatus(i) == 0) continue;
 
-        CDB_Object&   param      = *GetParams().GetParam(i);
-        const string& param_name = GetParams().GetParamName(i);
+        CDB_Object&   param      = *GetBindParamsImpl().GetParam(i);
+        const string& param_name = GetBindParamsImpl().GetParamName(i);
         CS_SMALLINT   indicator  = param.IsNULL() ? -1 : 0;
 
         if ( !AssignCmdParam(param,

@@ -121,33 +121,29 @@ I_DriverContext::TConnectionMode CSL3_Connection::ConnectMode() const
 }
 
 
-CDB_LangCmd* CSL3_Connection::LangCmd(const string& lang_query,
-                                      unsigned int  nof_parms)
+CDB_LangCmd* CSL3_Connection::LangCmd(const string& lang_query)
 {
-    CSL3_LangCmd* cmd = new CSL3_LangCmd(*this, lang_query, nof_parms);
+    CSL3_LangCmd* cmd = new CSL3_LangCmd(*this, lang_query);
     return Create_LangCmd(*cmd);
 }
 
 
-CDB_RPCCmd *CSL3_Connection::RPC(const string& rpc_name,
-                                 unsigned int  nof_args)
+CDB_RPCCmd *CSL3_Connection::RPC(const string& rpc_name)
 {
-    CSL3_LangCmd* cmd = new CSL3_LangCmd(*this, rpc_name, nof_args);
+    CSL3_LangCmd* cmd = new CSL3_LangCmd(*this, rpc_name);
     return Create_RPCCmd(*cmd);
 }
 
 
-CDB_BCPInCmd* CSL3_Connection::BCPIn(const string& table_name,
-                                     unsigned int  nof_columns)
+CDB_BCPInCmd* CSL3_Connection::BCPIn(const string& table_name)
 {
-    CSL3_BCPInCmd* cmd = new CSL3_BCPInCmd(*this, table_name, nof_columns);
+    CSL3_BCPInCmd* cmd = new CSL3_BCPInCmd(*this, table_name);
     return Create_BCPInCmd(*cmd);
 }
 
 
 CDB_CursorCmd *CSL3_Connection::Cursor(const string& /*cursor_name*/,
                                          const string& /*query*/,
-                                         unsigned int  /*nof_params*/,
                                          unsigned int  /*batch_size*/)
 {
     return NULL;

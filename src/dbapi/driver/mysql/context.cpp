@@ -60,6 +60,13 @@ bool CMySQLContext::IsAbleTo(ECapability /*cpb*/) const
 }
 
 
+impl::CDriverContext::EServerType 
+CMySQLContext::GetSupportedDBType(void) const
+{
+    return eMySQL;
+}
+
+
 impl::CConnection*
 CMySQLContext::MakeIConnection(const CDBConnParams& params)
 {

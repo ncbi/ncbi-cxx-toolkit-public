@@ -70,6 +70,7 @@ public:
 
 class CConnection;
 
+
 class NCBI_DBAPIDRIVER_EXPORT CCmdBase : public CCommand
 {
 public:
@@ -89,7 +90,7 @@ protected:
     }
 
     //
-    CConnection& GetConnImpl(void) const
+    impl::CConnection& GetConnImpl(void) const
     {
         _ASSERT(m_ConnImpl);
         return *m_ConnImpl;
@@ -101,6 +102,7 @@ private:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CBaseCmd :
     public CCmdBase
 {
@@ -111,13 +113,10 @@ class NCBI_DBAPIDRIVER_EXPORT CBaseCmd :
 
 public:
     CBaseCmd(impl::CConnection& conn,
-             const string& query,
-             unsigned int nof_params);
+             const string& query);
     CBaseCmd(impl::CConnection& conn,
              const string& cursor_name,
-             const string& query,
-             unsigned int nof_params);
-    // Destructor
+             const string& query);
     virtual ~CBaseCmd(void);
 
 public:
@@ -151,14 +150,14 @@ public:
     /// each result set
     void DumpResults(void);
 
-    /// Binding
-    virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
-    virtual bool BindParam(const string& name, CDB_Object* param_ptr,
-                           bool out_param = false);
 
-    /// Setting
-    virtual bool SetParam(const string& name, CDB_Object* param_ptr,
-                          bool out_param = false);
+    /// Binding
+
+    /// Get meta-information about binded parameters. 
+    virtual CDBParams& GetBindParams(void);
+    /// Get meta-information about defined parameters. 
+    virtual CDBParams& GetDefineParams(void);
+
 
     /// Add more text to the language command
     bool More(const string& query_text)
@@ -171,16 +170,6 @@ public:
     const string& GetQuery(void) const
     {
         return m_Query;
-    }
-
-    //
-    const CDB_Params& GetParams(void) const
-    {
-        return m_Params;
-    }
-    CDB_Params& GetParams(void)
-    {
-        return m_Params;
     }
 
     //
@@ -216,6 +205,26 @@ protected:
     void SetHasFailed(bool flag = true)
     {
         m_HasFailed = flag;
+    }
+
+    //
+    const CDB_Params& GetBindParamsImpl(void) const
+    {
+        return m_BindParams;
+    }
+    CDB_Params& GetBindParamsImpl(void)
+    {
+        return m_BindParams;
+    }
+
+    //
+    const CDB_Params& GetDefineParamsImpl(void) const
+    {
+        return m_DefineParams;
+    }
+    CDB_Params& GetDefineParamsImpl(void)
+    {
+        return m_DefineParams;
     }
 
 protected:
@@ -280,7 +289,10 @@ private:
     CInterfaceHook<CDB_CursorCmd>   m_InterfaceCursor;
 
     string          m_Query;
-    CDB_Params      m_Params;
+    CDB_Params      m_BindParams;
+    CDBBindedParams m_InParams;
+    CDB_Params      m_DefineParams;
+    CDBBindedParams m_OutParams;
     bool            m_Recompile; // Temporary. Should be deleted.
     bool            m_HasFailed;
 

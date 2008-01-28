@@ -61,6 +61,12 @@ bool CSL3Context::IsAbleTo(ECapability /*cpb*/) const
 }
 
 
+impl::CDriverContext::EServerType 
+CSL3Context::GetSupportedDBType(void) const
+{
+    return eSqlite;
+}
+
 impl::CConnection*
 CSL3Context::MakeIConnection(const CDBConnParams& params)
 {

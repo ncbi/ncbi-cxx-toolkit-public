@@ -51,14 +51,15 @@ BEGIN_NCBI_SCOPE
 
 // implementation
 CStatement::CStatement(CConnection* conn)
-    : m_conn(conn)
-    , m_cmd(0)
-    , m_rowCount(-1)
-    , m_failed(false)
-    , m_irs(0)
-    , m_wr(0)
-    , m_ostr(0)
-    , m_AutoClearInParams(false)
+: m_conn(conn)
+, m_cmd(NULL)
+, m_InParams(m_cmd)
+, m_rowCount(-1)
+, m_failed(false)
+, m_irs(0)
+, m_wr(0)
+, m_ostr(0)
+, m_AutoClearInParams(false)
 {
     SetIdent("CStatement");
 }
@@ -131,7 +132,6 @@ bool CStatement::HasMoreResults()
 void CStatement::SetParam(const CVariant& v,
                           const string& name)
 {
-
     ParamList::iterator i = m_params.find(name);
     if( i != m_params.end() ) {
         *((*i).second) = v;
@@ -173,7 +173,7 @@ void CStatement::x_Send(const string& sql)
     SetFailed(false);
 
     _TRACE("Sending SQL: " + sql);
-    m_cmd = m_conn->GetCDB_Connection()->LangCmd(sql, m_params.size());
+    m_cmd = m_conn->GetCDB_Connection()->LangCmd(sql);
 
     ExecuteLast();
 
@@ -204,9 +204,53 @@ void CStatement::ExecuteLast()
 {
     ParamList::iterator i = m_params.begin();
     for( ; i != m_params.end(); ++i ) {
-        GetLangCmd()->SetParam((*i).first, (*i).second->GetData());
+        GetLangCmd()->GetBindParams().Bind((*i).first, (*i).second->GetData());
     }
+
     m_cmd->Send();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+CStatement::CStmtParamsMetaData::CStmtParamsMetaData(I_BaseCmd*& cmd)
+: m_Cmd(cmd)
+{
+}
+
+CStatement::CStmtParamsMetaData::~CStmtParamsMetaData()
+{
+}
+
+
+unsigned int CStatement::CStmtParamsMetaData::GetTotalColumns() const
+{
+    _ASSERT(m_Cmd);
+    return m_Cmd->GetBindParams().GetNum();
+}
+
+EDB_Type CStatement::CStmtParamsMetaData::GetType(unsigned int idx) const
+{
+    _ASSERT(m_Cmd);
+    return m_Cmd->GetBindParams().GetDataType(idx);
+}
+
+int CStatement::CStmtParamsMetaData::GetMaxSize(unsigned int idx) const
+{
+    _ASSERT(m_Cmd);
+    return m_Cmd->GetBindParams().GetDataType(idx);
+}
+
+string CStatement::CStmtParamsMetaData::GetName(unsigned int idx) const
+{
+    _ASSERT(m_Cmd);
+    return m_Cmd->GetBindParams().GetName(idx);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+const IResultSetMetaData& 
+CStatement::GetParamsMetaData(void)
+{
+    return m_InParams;
 }
 
 bool CStatement::HasRows()
@@ -276,6 +320,7 @@ void CStatement::FreeResources()
 
 void CStatement::PurgeResults()
 {
+//    if( GetBaseCmd() != 0 )
     if( GetBaseCmd() != 0 )
         GetBaseCmd()->DumpResults();
 }

@@ -47,11 +47,10 @@ BEGIN_NCBI_SCOPE
 
 CODBC_CursorCmdBase::CODBC_CursorCmdBase(CODBC_Connection& conn,
                                          const string& cursor_name,
-                                         const string& query,
-                                         unsigned int nof_params)
+                                         const string& query)
 : CStatementBase(conn)
-, impl::CBaseCmd(conn, cursor_name, query, nof_params)
-, m_CursCmd(conn, query, nof_params)
+, impl::CBaseCmd(conn, cursor_name, query)
+, m_CursCmd(conn, query)
 {
 }
 
@@ -59,10 +58,14 @@ CODBC_CursorCmdBase::~CODBC_CursorCmdBase(void)
 {
 }
 
-bool CODBC_CursorCmdBase::BindParam(const string& param_name, CDB_Object* param_ptr,
-                                    bool out_param)
+CDBParams& CODBC_CursorCmdBase::GetBindParams(void)
 {
-    return m_CursCmd.BindParam(param_name, param_ptr, out_param);
+    return m_CursCmd.GetBindParams();
+}
+
+CDBParams& CODBC_CursorCmdBase::GetDefineParams(void)
+{
+    return m_CursCmd.GetDefineParams();
 }
 
 int CODBC_CursorCmdBase::RowCount(void) const
@@ -78,9 +81,8 @@ int CODBC_CursorCmdBase::RowCount(void) const
 
 CODBC_CursorCmd::CODBC_CursorCmd(CODBC_Connection& conn,
                                  const string& cursor_name,
-                                 const string& query,
-                                 unsigned int nof_params)
-: CODBC_CursorCmdBase(conn, cursor_name, query, nof_params)
+                                 const string& query)
+: CODBC_CursorCmdBase(conn, cursor_name, query)
 {
 }
 
@@ -218,12 +220,10 @@ CODBC_CursorCmd::~CODBC_CursorCmd()
 ///////////////////////////////////////////////////////////////////////////////
 CODBC_CursorCmdExpl::CODBC_CursorCmdExpl(CODBC_Connection& conn,
                                          const string& cursor_name,
-                                         const string& query,
-                                         unsigned int nof_params) :
+                                         const string& query) :
     CODBC_CursorCmd(conn,
                     cursor_name,
-                    "declare " + cursor_name + " cursor for " + query,
-                    nof_params)
+                    "declare " + cursor_name + " cursor for " + query)
 {
 }
 

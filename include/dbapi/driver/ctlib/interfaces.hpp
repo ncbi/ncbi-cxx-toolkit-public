@@ -60,6 +60,7 @@
 #    define CTL_ComputeResult       CTDS_ComputeResult
 #    define CTL_StatusResult        CTDS_StatusResult
 #    define CTL_CursorResult        CTDS_CursorResult
+#    define CTL_CursorResultExpl    CTDS_CursorResultExpl
 #    define CTL_BlobResult          CTDS_BlobResult
 #    define CTL_ITDescriptor        CTDS_ITDescriptor
 #    define CTLibContextRegistry    CTDSContextRegistry
@@ -238,7 +239,7 @@ public:
     virtual unsigned int GetLoginTimeout(void) const;
     virtual unsigned int GetTimeout     (void) const;
 
-    virtual bool ConnectedToMSSQLServer(void) const;
+    virtual EServerType GetSupportedDBType(void) const;
 
     //
     // CTLIB specific functionality
@@ -372,15 +373,11 @@ public:
     }
 
 protected:
-    virtual CDB_LangCmd*     LangCmd     (const string&   lang_query,
-                                          unsigned int    nof_params = 0);
-    virtual CDB_RPCCmd*      RPC         (const string&   rpc_name,
-                                          unsigned int    nof_args);
-    virtual CDB_BCPInCmd*    BCPIn       (const string&   table_name,
-                                          unsigned int    nof_columns);
+    virtual CDB_LangCmd*     LangCmd     (const string&   lang_query);
+    virtual CDB_RPCCmd*      RPC         (const string&   rpc_name);
+    virtual CDB_BCPInCmd*    BCPIn       (const string&   table_name);
     virtual CDB_CursorCmd*   Cursor      (const string&   cursor_name,
                                           const string&   query,
-                                          unsigned int    nof_params,
                                           unsigned int    batch_size = 1);
     virtual CDB_SendDataCmd* SendDataCmd (I_ITDescriptor& desc,
                                           size_t          data_size,
@@ -394,8 +391,7 @@ protected:
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
 
     // This method is required for CTL_CursorCmdExpl only ...
-    CTL_LangCmd* xLangCmd(const string&   lang_query,
-                          unsigned int    nof_params = 0);
+    CTL_LangCmd* xLangCmd(const string&   lang_query);
 
     // abort the connection
     // Attention: it is not recommended to use this method unless you absolutely have to.
@@ -582,11 +578,11 @@ class CTL_LRCmd : public CTL_Cmd, public impl::CBaseCmd
 {
 public:
     CTL_LRCmd(CTL_Connection& conn,
-              const string& query,
-              unsigned int nof_params);
+              const string& query);
     virtual ~CTL_LRCmd(void);
 
 public:
+    CTL_RowResult* MakeResultInternal(void);
     CDB_Result* MakeResult(void);
     virtual bool Cancel(void);
 
@@ -611,8 +607,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : public CTL_LRCmd
 
 protected:
     CTL_LangCmd(CTL_Connection& conn,
-                const string& lang_query,
-                unsigned int nof_params);
+                const string& lang_query);
     virtual ~CTL_LangCmd(void);
 
     void Close(void);
@@ -622,9 +617,6 @@ protected:
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
     virtual int  RowCount(void) const;
-
-    // Temporarily ...
-//     CDB_Result* CreateResult(impl::CResult& result);
 
 private:
     bool x_AssignParams(void);
@@ -643,12 +635,13 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RPCCmd : CTL_LRCmd
 
 protected:
     CTL_RPCCmd(CTL_Connection& con,
-               const string& proc_name,
-               unsigned int nof_params
+               const string& proc_name
                );
     virtual ~CTL_RPCCmd(void);
 
 protected:
+    virtual CDBParams& GetBindParams(void);
+
     virtual bool Send(void);
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
@@ -657,6 +650,8 @@ protected:
 private:
     bool x_AssignParams(void);
     void x_Close(void);
+
+    auto_ptr<CDBParams> m_InParams;
 };
 
 
@@ -676,7 +671,6 @@ protected:
     CTL_CursorCmd(CTL_Connection& conn,
                   const string& cursor_name,
                   const string& query,
-                  unsigned int nof_params,
                   unsigned int fetch_size
                   );
     virtual ~CTL_CursorCmd(void);
@@ -723,7 +717,6 @@ protected:
     CTL_CursorCmdExpl(CTL_Connection& con,
                       const string& cursor_name,
                       const string& query,
-                      unsigned int nof_params,
                       unsigned int fetch_size);
     virtual ~CTL_CursorCmdExpl(void);
 
@@ -771,9 +764,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BCPInCmd :
 
 protected:
     CTL_BCPInCmd(CTL_Connection& con,
-                 const string& table_name,
-                 unsigned int nof_columns
-                 );
+                 const string& table_name);
     virtual ~CTL_BCPInCmd(void);
 
     void Close(void);
@@ -808,8 +799,21 @@ private:
     };
 
     CS_BLKDESC*         m_Cmd;
-    AutoArray<SBcpBind> m_Bind;
+    AutoArray<SBcpBind> m_BindArray;
     int                 m_RowCount;
+
+    AutoArray<SBcpBind>& GetBind(void)
+    {
+        unsigned int param_num = GetBindParamsImpl().NofParams();
+        _ASSERT(param_num);
+
+        if (!m_BindArray) {
+            m_BindArray = AutoArray<SBcpBind>(param_num);
+        }
+
+        return m_BindArray;
+    }
+
 };
 
 
@@ -853,6 +857,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RowResult : public impl::CResult
     friend class CTL_Cmd;
     friend class CTL_CursorCmd;
     friend class CTL_CursorCmdExpl;
+    friend class CTL_CursorResultExpl;
 
 protected:
     CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn);
@@ -862,10 +867,6 @@ protected:
 
 protected:
     virtual EDB_ResType     ResultType(void) const;
-    virtual unsigned int    NofItems(void) const;
-    virtual const char*     ItemName    (unsigned int item_num) const;
-    virtual size_t          ItemMaxSize (unsigned int item_num) const;
-    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
@@ -910,6 +911,8 @@ protected:
         return " " + GetConnection().GetExecCntxInfo();
     }
 
+    static EDB_Type ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt);
+
 protected:
     enum ENullValue {eNullUnknown, eIsNull, eIsNotNull};
 
@@ -918,7 +921,6 @@ protected:
     CS_COMMAND*             m_Cmd;
     int                     m_CurrItem;
     bool                    m_EOR;
-    unsigned int            m_NofCols;
     AutoArray<CS_DATAFMT>   m_ColFmt;
     int                     m_BindedCols;
     AutoArray<CS_VOID*>     m_BindItem;
@@ -926,7 +928,6 @@ protected:
     AutoArray<CS_SMALLINT>  m_Indicator;
     AutoArray<ENullValue>   m_NullValue;
     unsigned char           m_BindBuff[2048];
-
 };
 
 
@@ -1019,10 +1020,7 @@ protected:
 
 protected:
     virtual EDB_ResType     ResultType(void) const;
-    virtual unsigned int    NofItems(void) const;
-    virtual const char*     ItemName    (unsigned int item_num) const;
-    virtual size_t          ItemMaxSize (unsigned int item_num) const;
-    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
+    virtual const CDBParams& GetDefineParams(void) const;
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
@@ -1056,8 +1054,9 @@ private:
 
 private:
     // data
-    CTL_LangCmd* m_Cmd;
-    CDB_Result*  m_Res;
+    CTL_LangCmd*   m_Cmd;
+    // CTL_RowResult* m_Res;
+    CDB_Result*    m_Res;
 };
 
 

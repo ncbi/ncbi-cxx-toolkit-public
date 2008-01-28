@@ -90,7 +90,8 @@ public:
 
     enum ETestConfiguration {
         eWithExceptions,
-        eWithoutExceptions
+        eWithoutExceptions,
+        eFast
     };
 
     string GetDriverName(void) const
@@ -201,7 +202,8 @@ public:
     void Test_SelectStmt(void);
     void Test_SelectStmtXML(void);
     void Test_Recordset(void);
-    void Test_MetaData(void);
+    void Test_ResultsetMetaData(void);
+    void Test_StmtMetaData(void);
     void Test_Cursor(void);
     void Test_Cursor2(void);
     void Test_Cursor_Param(void);

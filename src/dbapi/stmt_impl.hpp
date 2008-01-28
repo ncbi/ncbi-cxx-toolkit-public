@@ -74,6 +74,7 @@ public:
                           const string& name);
 
     virtual void ClearParamList();
+    virtual const IResultSetMetaData& GetParamsMetaData(void);
 
     virtual IConnection* GetParentConn();
 
@@ -104,7 +105,7 @@ public:
     }
 
 protected:    
-	void x_Send(const string& sql);
+    void x_Send(const string& sql);
     void SetBaseCmd(I_BaseCmd *cmd) { m_cmd = cmd; }
     I_BaseCmd* GetBaseCmd() { return m_cmd; }
 
@@ -117,19 +118,36 @@ protected:
     void FreeResources();
 
 private:
+
+    class CStmtParamsMetaData : public IResultSetMetaData
+    {
+    public: 
+        CStmtParamsMetaData(I_BaseCmd*& cmd);
+
+        virtual ~CStmtParamsMetaData();
+
+        virtual unsigned int GetTotalColumns() const;
+        virtual EDB_Type GetType(unsigned int idx) const;
+        virtual int GetMaxSize(unsigned int idx) const;
+        virtual string GetName(unsigned int idx) const;
+        
+    private:
+        I_BaseCmd*& m_Cmd;
+    };
+
+
+private:
     typedef map<string, CVariant*> ParamList;
 
     class CConnection*  m_conn;
     I_BaseCmd*          m_cmd;
-    //CDB_Result *m_rs;
+    CStmtParamsMetaData m_InParams;
     int                 m_rowCount;
     bool                m_failed;
     ParamList           m_params;
-    //typedef set<CDB_Result*> RequestedRsList;
-    //RequestedRsList m_requestedRsList;
     class CResultSet*   m_irs;
     class IWriter*      m_wr;
-	class CWStream*	    m_ostr;
+    class CWStream*	m_ostr;
     bool                m_AutoClearInParams;
 };
 

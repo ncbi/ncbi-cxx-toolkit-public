@@ -163,6 +163,7 @@ public:
     //
 
     virtual bool IsAbleTo(ECapability cpb) const {return false;}
+    virtual EServerType GetSupportedDBType(void) const;
 
     //
     // ODBC specific functionality
@@ -247,15 +248,11 @@ protected:
 protected:
     virtual bool IsAlive(void);
 
-    virtual CDB_LangCmd*     LangCmd     (const string&   lang_query,
-                                          unsigned int    nof_params = 0);
-    virtual CDB_RPCCmd*      RPC         (const string&   rpc_name,
-                                          unsigned int    nof_args);
-    virtual CDB_BCPInCmd*    BCPIn       (const string&   table_name,
-                                          unsigned int    nof_columns);
+    virtual CDB_LangCmd*     LangCmd     (const string&   lang_query);
+    virtual CDB_RPCCmd*      RPC         (const string&   rpc_name);
+    virtual CDB_BCPInCmd*    BCPIn       (const string&   table_name);
     virtual CDB_CursorCmd*   Cursor      (const string&   cursor_name,
                                           const string&   query,
-                                          unsigned int    nof_params,
                                           unsigned int    batch_size = 1);
     virtual CDB_SendDataCmd* SendDataCmd (I_ITDescriptor& desc,
                                           size_t          data_size,
@@ -268,8 +265,7 @@ protected:
     virtual bool Refresh(void);
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
 
-    CODBC_LangCmd* xLangCmd(const string&   lang_query,
-                            unsigned int    nof_params = 0);
+    CODBC_LangCmd* xLangCmd(const string&   lang_query);
 
     // abort the connection
     // Attention: it is not recommended to use this method unless you absolutely have to.
@@ -427,8 +423,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd :
 protected:
     CODBC_LangCmd(
         CODBC_Connection& conn,
-        const string& lang_query,
-        unsigned int nof_params
+        const string& lang_query
         );
 
 public:
@@ -467,11 +462,12 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RPCCmd :
 
 protected:
     CODBC_RPCCmd(CODBC_Connection& conn,
-                 const string& proc_name,
-                 unsigned int nof_params);
+                 const string& proc_name);
     virtual ~CODBC_RPCCmd(void);
 
 protected:
+    virtual CDBParams& GetBindParams(void);
+
     virtual bool Send(void);
     virtual bool Cancel(void);
     virtual CDB_Result* Result(void);
@@ -486,6 +482,8 @@ private:
     bool              m_HasStatus;
     bool              m_HasMoreResults;
     impl::CResult*    m_Res;
+
+    auto_ptr<CDBParams> m_InParams;
 };
 
 
@@ -501,13 +499,12 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmdBase :
 protected:
     CODBC_CursorCmdBase(CODBC_Connection& conn,
                         const string& cursor_name,
-                        const string& query,
-                        unsigned int nof_params);
+                        const string& query);
     virtual ~CODBC_CursorCmdBase(void);
 
 protected:
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
-                           bool out_param = false);
+    virtual CDBParams& GetBindParams(void);
+    virtual CDBParams& GetDefineParams(void);
     virtual int  RowCount(void) const;
 
 protected:
@@ -527,8 +524,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmd :
 protected:
     CODBC_CursorCmd(CODBC_Connection& conn,
                     const string& cursor_name,
-                    const string& query,
-                    unsigned int nof_params);
+                    const string& query);
     virtual ~CODBC_CursorCmd(void);
 
 protected:
@@ -555,8 +551,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmdExpl :
 protected:
     CODBC_CursorCmdExpl(CODBC_Connection& conn,
                         const string& cursor_name,
-                        const string& query,
-                        unsigned int nof_params);
+                        const string& query);
     virtual ~CODBC_CursorCmdExpl(void);
 
 protected:
@@ -698,10 +693,6 @@ protected:
 
 protected:
     virtual EDB_ResType     ResultType(void) const;
-    virtual unsigned int    NofItems(void) const;
-    virtual const char*     ItemName    (unsigned int item_num) const;
-    virtual size_t          ItemMaxSize (unsigned int item_num) const;
-    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
@@ -745,7 +736,6 @@ private:
     CStatementBase&   m_Stmt;
     int               m_CurrItem;
     bool              m_EOR;
-    unsigned int      m_NofCols;
     unsigned int      m_CmdNum;
     enum {eODBC_Column_Name_Size = 80};
 
@@ -813,10 +803,7 @@ protected:
 
 protected:
     virtual EDB_ResType     ResultType(void) const;
-    virtual unsigned int    NofItems(void) const;
-    virtual const char*     ItemName    (unsigned int item_num) const;
-    virtual size_t          ItemMaxSize (unsigned int item_num) const;
-    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
+    virtual const CDBParams& GetDefineParams(void) const;
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;

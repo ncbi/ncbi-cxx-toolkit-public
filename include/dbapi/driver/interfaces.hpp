@@ -82,6 +82,98 @@ namespace impl
 }
 
 
+class NCBI_DBAPIDRIVER_EXPORT CDBParamVariant
+{
+public:
+    enum ENameFormat {
+        ePlainName,
+        eQMarkName,    // '...WHERE name=?'
+        eNumericName,  // '...WHERE name=:1'
+        eNamedName,    // '...WHERE name=:name'
+        eFormatName,   // ANSI C printf format codes, e.g. '...WHERE name=%s'
+        eSQLServerName // '...WHERE name=@name'
+    };
+
+public:
+    CDBParamVariant(unsigned int pos);
+    CDBParamVariant(const char* name);
+    CDBParamVariant(const string& name);
+    ~CDBParamVariant(void);
+
+public:
+    bool IsPositional(void) const
+    {
+        return m_IsPositional;
+    }
+    unsigned int GetPosition(void) const
+    {
+        return m_Pos;
+    }
+
+    
+    ENameFormat GetFormat(void) const 
+    {
+        return m_Format;
+    }
+    string GetName(void) const
+    {
+        return m_Name;
+    }
+    string GetName(ENameFormat format) const;
+    
+    static string MakePlainName(const char* name);
+
+private:
+    static string MakeName(const char* name, ENameFormat& format);
+
+private:
+    bool         m_IsPositional;
+    unsigned int m_Pos;
+    ENameFormat  m_Format;
+    const string m_Name;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CDBParams
+
+class CDBParams
+{
+public:
+    virtual ~CDBParams(void);
+
+public:
+    enum EDirection {eIn, eOut, eInOut};
+
+    virtual unsigned int GetNum(void) const = 0;
+
+    virtual string GetName(
+        const CDBParamVariant& param, 
+        CDBParamVariant::ENameFormat format = 
+            CDBParamVariant::eSQLServerName) const = 0;
+    virtual unsigned int GetIndex(const CDBParamVariant& param) const = 0;
+    
+    virtual size_t GetMaxSize(const CDBParamVariant& param) const = 0;
+    virtual EDB_Type GetDataType(const CDBParamVariant& param) const = 0;
+    virtual EDirection GetDirection(const CDBParamVariant& param) const = 0;
+
+    /// This method stores pointer to data.
+    virtual CDBParams& Bind(
+        const CDBParamVariant& param, 
+        CDB_Object* value, 
+        bool out_param = false
+        );
+    /// This method stores copy of data.
+    virtual CDBParams& Set(
+        const CDBParamVariant& param, 
+        CDB_Object* value, 
+        bool out_param = false
+        );
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 ///  I_ITDescriptor::
@@ -95,19 +187,6 @@ public:
     virtual int DescriptorType(void) const = 0;
     virtual ~I_ITDescriptor(void);
 };
-
-
-/// auto_ptr<I_ITDescriptor> does the same job ...
-class NCBI_DBAPIDRIVER_EXPORT C_ITDescriptorGuard
-{
-public:
-    NCBI_DEPRECATED_CTOR(C_ITDescriptorGuard(I_ITDescriptor* d));
-    NCBI_DEPRECATED ~C_ITDescriptorGuard(void);
-
-private:
-    I_ITDescriptor* m_D;
-};
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -128,16 +207,48 @@ enum EDB_ResType {
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+///  CParamStmt::
+///  Parametrized statement.
+
+class CParamStmt
+{
+public:
+    CParamStmt(void);
+    virtual ~CParamStmt(void);
+
+public:
+    /// Get meta-information about binded parameters. 
+    virtual CDBParams& GetBindParams(void) = 0;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CParamRecordset::
+///  Parametrized recordset.
+
+class CParamRecordset : public CParamStmt
+{
+public:
+    CParamRecordset(void);
+    virtual ~CParamRecordset(void);
+
+public:
+    /// Get meta-information about defined parameters. 
+    virtual CDBParams& GetDefineParams(void) = 0;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 ///  I_BaseCmd::
 ///
 /// Abstract base class for most "command" interface classes.
 ///
 
-class NCBI_DBAPIDRIVER_EXPORT I_BaseCmd
+class NCBI_DBAPIDRIVER_EXPORT I_BaseCmd : public CParamRecordset
 {
 public:
     I_BaseCmd(void);
-    // Destructor
     virtual ~I_BaseCmd(void);
 
 public:
@@ -166,9 +277,8 @@ public:
     /// Dump the results of the command
     /// if result processor is installed for this connection, it will be called for
     /// each result set
-    virtual void DumpResults(void)= 0;
+    virtual void DumpResults(void) = 0;
 };
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -192,12 +302,6 @@ public:
 protected:
     /// Add more text to the language command
     virtual bool More(const string& query_text) = 0;
-
-    /// Bind cmd parameter with name "name" to the object pointed by "value"
-    virtual bool BindParam(const string& name, CDB_Object* param_ptr) = 0;
-
-    /// Set cmd parameter with name "name" to the object pointed by "value"
-    virtual bool SetParam(const string& name, CDB_Object* param_ptr) = 0;
 };
 
 
@@ -209,14 +313,6 @@ public:
     virtual ~I_RPCCmd(void);
 
 protected:
-    /// Binding
-    virtual bool BindParam(const string& name, CDB_Object* param_ptr,
-                           bool out_param = false) = 0;
-
-    /// Setting
-    virtual bool SetParam(const string& name, CDB_Object* param_ptr,
-                          bool out_param = false) = 0;
-
     /// Set the "recompile before execute" flag for the stored proc
     /// Implementation-specific.
     virtual void SetRecompile(bool recompile = true) = 0;
@@ -227,16 +323,13 @@ protected:
 
 
 
-class NCBI_DBAPIDRIVER_EXPORT I_BCPInCmd
+class NCBI_DBAPIDRIVER_EXPORT I_BCPInCmd : public CParamStmt
 {
 public:
     I_BCPInCmd(void);
     virtual ~I_BCPInCmd(void);
 
 protected:
-    /// Binding
-    virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr) = 0;
-
     /// Send row to the server
     virtual bool SendRow(void) = 0;
 
@@ -254,16 +347,13 @@ protected:
 
 
 
-class NCBI_DBAPIDRIVER_EXPORT I_CursorCmd
+class NCBI_DBAPIDRIVER_EXPORT I_CursorCmd : public CParamRecordset
 {
 public:
     I_CursorCmd(void);
     virtual ~I_CursorCmd(void);
 
 protected:
-    /// Binding
-    virtual bool BindParam(const string& name, CDB_Object* param_ptr) = 0;
-
     /// Open the cursor.
     /// Return NULL if cursor resulted in no data.
     /// Throw exception on error.
@@ -328,6 +418,10 @@ public:
     ///   Result type
     virtual EDB_ResType ResultType(void) const = 0;
 
+    /// Get meta-information about rows in resultset. 
+    virtual const CDBParams& GetDefineParams(void) const = 0;
+
+    /// Get # of items (columns) in the result
     /// @brief 
     ///   Get # of items (columns) in the result.
     /// 
@@ -927,19 +1021,43 @@ protected:
     /// It is the user's responsibility to delete the returned "command" object.
 
     /// Language command
-    virtual CDB_LangCmd* LangCmd(const string& lang_query,
-                                 unsigned int  nof_params = 0) = 0;
+    virtual CDB_LangCmd* LangCmd(const string& lang_query) = 0;
+    NCBI_DEPRECATED 
+    CDB_LangCmd* LangCmd(const string& lang_query, unsigned int)
+    {
+        return LangCmd(lang_query);
+    }
     /// Remote procedure call
-    virtual CDB_RPCCmd* RPC(const string& rpc_name,
-                            unsigned int  nof_args) = 0;
+    virtual CDB_RPCCmd* RPC(const string& rpc_name) = 0;
+    NCBI_DEPRECATED 
+    CDB_RPCCmd* RPC(const string& rpc_name, unsigned int)
+    {
+        return RPC(rpc_name);
+    }
     /// "Bulk copy in" command
-    virtual CDB_BCPInCmd* BCPIn(const string& table_name,
-                                unsigned int  nof_columns) = 0;
+    virtual CDB_BCPInCmd* BCPIn(const string& table_name) = 0;
+    NCBI_DEPRECATED 
+    CDB_BCPInCmd* BCPIn(const string& table_name, unsigned int)
+    {
+        return BCPIn(table_name);
+    }
     /// Cursor
     virtual CDB_CursorCmd* Cursor(const string& cursor_name,
                                   const string& query,
-                                  unsigned int  nof_params,
-                                  unsigned int  batch_size = 1) = 0;
+                                  unsigned int  batch_size) = 0;
+    CDB_CursorCmd* Cursor(const string& cursor_name,
+                          const string& query)
+    {
+        return Cursor(cursor_name, query, 1);
+    }
+    NCBI_DEPRECATED 
+    CDB_CursorCmd* Cursor(const string& cursor_name,
+                                  const string& query,
+                                  unsigned int,
+                                  unsigned int  batch_size)
+    {
+        return Cursor(cursor_name, query, batch_size);
+    }
     /// @brief 
     ///   Create send-data command.
     /// 

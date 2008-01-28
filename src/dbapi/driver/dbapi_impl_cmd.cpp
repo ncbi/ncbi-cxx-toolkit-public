@@ -66,11 +66,11 @@ CCmdBase::~CCmdBase()
 
 ///////////////////////////////////////////////////////////////////////////
 CBaseCmd::CBaseCmd(impl::CConnection& conn,
-                   const string& query,
-                   unsigned int nof_params)
+                   const string& query)
 : CCmdBase(conn)
 , m_Query(query)
-, m_Params(nof_params)
+, m_InParams(GetBindParamsImpl())
+, m_OutParams(GetDefineParamsImpl())
 , m_Recompile(false)
 , m_HasFailed(false)
 , m_IsOpen(false)
@@ -80,11 +80,11 @@ CBaseCmd::CBaseCmd(impl::CConnection& conn,
 
 CBaseCmd::CBaseCmd(impl::CConnection& conn,
                    const string& cursor_name,
-                   const string& query,
-                   unsigned int nof_params)
+                   const string& query)
 : CCmdBase(conn)
 , m_Query(query)
-, m_Params(nof_params)
+, m_InParams(GetBindParamsImpl())
+, m_OutParams(GetDefineParamsImpl())
 , m_Recompile(false)
 , m_HasFailed(false)
 , m_IsOpen(false)
@@ -98,6 +98,16 @@ CBaseCmd::~CBaseCmd(void)
     return;
 }
 
+
+CDBParams& CBaseCmd::GetBindParams(void)
+{
+    return m_InParams;
+}
+
+CDBParams& CBaseCmd::GetDefineParams(void)
+{
+    return m_OutParams;
+}
 
 bool
 CBaseCmd::Send(void)
@@ -155,38 +165,6 @@ CBaseCmd::DumpResults(void)
         }
     }
 }
-
-
-bool
-CBaseCmd::Bind(unsigned int column_num, CDB_Object* pVal)
-{
-    return m_Params.BindParam(column_num, kEmptyStr, pVal);
-}
-
-
-bool
-CBaseCmd::BindParam(const string& param_name,
-                         CDB_Object* param_ptr,
-                         bool out_param)
-{
-    return m_Params.BindParam(CDB_Params::kNoParamNumber,
-                              param_name,
-                              param_ptr,
-                              out_param);
-}
-
-
-bool
-CBaseCmd::SetParam(const string& param_name,
-                   CDB_Object* param_ptr,
-                   bool out_param)
-{
-    return m_Params.SetParam(CDB_Params::kNoParamNumber,
-                             param_name,
-                             param_ptr,
-                             out_param);
-}
-
 
 bool
 CBaseCmd::CommitBCPTrans(void)

@@ -48,14 +48,29 @@ BEGIN_NCBI_SCOPE
 
 CTDS_RPCCmd::CTDS_RPCCmd(CTDS_Connection& conn,
                          DBPROCESS* cmd,
-                         const string& proc_name,
-                         unsigned int nof_params) :
+                         const string& proc_name) :
     CDBL_Cmd(conn, cmd),
-    impl::CBaseCmd(conn, proc_name, nof_params),
+    impl::CBaseCmd(conn, proc_name),
     m_Res(0),
     m_Status(0)
 {
     SetExecCntxInfo("RPC Command: " + proc_name);
+}
+
+
+CDBParams& 
+CTDS_RPCCmd::GetBindParams(void)
+{
+    if (m_InParams.get() == NULL) {
+        m_InParams.reset(new impl::CRowInfo_SP_SQL_Server(
+                    GetQuery(), 
+                    GetConnImpl(), 
+                    GetBindParamsImpl()
+                    )
+                );
+    }
+
+    return *m_InParams;
 }
 
 
@@ -376,12 +391,12 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
 bool CTDS_RPCCmd::x_AssignOutputParams()
 {
     char buffer[64];
-    for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
-        if ((GetParams().GetParamStatus(n) & CDB_Params::fOutput) == 0)
+    for (unsigned int n = 0; n < GetBindParamsImpl().NofParams(); n++) {
+        if ((GetBindParamsImpl().GetParamStatus(n) & impl::CDB_Params::fOutput) == 0)
             continue;
 
-        const string& name  =  GetParams().GetParamName(n);
-        CDB_Object&   param = *GetParams().GetParam(n);
+        const string& name  =  GetBindParamsImpl().GetParamName(n);
+        CDB_Object&   param = *GetBindParamsImpl().GetParam(n);
         const char*   type;
         string        cmd;
 
@@ -452,12 +467,12 @@ bool CTDS_RPCCmd::x_AssignOutputParams()
 
 bool CTDS_RPCCmd::x_AssignParams()
 {
-    for (unsigned int i = 0;  i < GetParams().NofParams();  i++) {
-      if(!GetParams().GetParamStatus(i)) continue;
-        CDB_Object& param = *GetParams().GetParam(i);
+    for (unsigned int i = 0;  i < GetBindParamsImpl().NofParams();  i++) {
+      if(!GetBindParamsImpl().GetParamStatus(i)) continue;
+        CDB_Object& param = *GetBindParamsImpl().GetParam(i);
         bool is_output =
-            (GetParams().GetParamStatus(i) & CDB_Params::fOutput) != 0;
-        const string& name  = GetParams().GetParamName(i);
+            (GetBindParamsImpl().GetParamStatus(i) & impl::CDB_Params::fOutput) != 0;
+        const string& name  = GetBindParamsImpl().GetParamName(i);
         string cmd= i? ", " : " ";
 
         if(!name.empty()) {

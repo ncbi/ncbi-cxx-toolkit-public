@@ -50,10 +50,9 @@ BEGIN_NCBI_SCOPE
 CDBL_CursorCmd::CDBL_CursorCmd(CDBL_Connection& conn,
                                DBPROCESS* cmd,
                                const string& cursor_name,
-                               const string& query,
-                               unsigned int nof_params) :
+                               const string& query) :
     CDBL_Cmd(conn, cmd),
-    impl::CBaseCmd(conn, cursor_name, query, nof_params),
+    impl::CBaseCmd(conn, cursor_name, query),
     m_LCmd(0),
     m_Res(0)
 {
@@ -79,7 +78,9 @@ static bool for_update_of(const string& q)
 
 CDB_Result* CDBL_CursorCmd::OpenCursor()
 {
-    const bool connected_to_MSSQLServer = GetConnection().GetCDriverContext().ConnectedToMSSQLServer();
+    const bool connected_to_MSSQLServer = 
+        GetConnection().GetCDriverContext().GetSupportedDBType() ==
+        impl::CDriverContext::eMsSql;
 
     // We need to close it first
     CloseCursor();
@@ -325,7 +326,9 @@ bool CDBL_CursorCmd::CloseCursor()
 
     if (CursorIsDeclared()) {
         string buff;
-        const bool connected_to_MSSQLServer = GetConnection().GetCDriverContext().ConnectedToMSSQLServer();
+        const bool connected_to_MSSQLServer = 
+            GetConnection().GetCDriverContext().GetSupportedDBType() ==
+            impl::CDriverContext::eMsSql;
 
         if ( connected_to_MSSQLServer ) {
             buff = "deallocate " + GetCmdName();
@@ -377,11 +380,11 @@ bool CDBL_CursorCmd::x_AssignParams()
 
     m_CombinedQuery = GetQuery();
 
-    for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
-        const string& name = GetParams().GetParamName(n);
+    for (unsigned int n = 0; n < GetBindParamsImpl().NofParams(); n++) {
+        const string& name = GetBindParamsImpl().GetParamName(n);
         if (name.empty())
             continue;
-        CDB_Object& param = *GetParams().GetParam(n);
+        CDB_Object& param = *GetBindParamsImpl().GetParam(n);
         char val_buffer[16*1024];
 
         if (!param.IsNULL()) {
@@ -523,7 +526,7 @@ bool CDBL_CursorCmd::x_AssignParams()
             strcpy(val_buffer, "NULL");
 
         // substitute the param
-        m_CombinedQuery = g_SubstituteParam(m_CombinedQuery, name, val_buffer);
+        m_CombinedQuery = impl::g_SubstituteParam(m_CombinedQuery, name, val_buffer);
     }
 
     return true;

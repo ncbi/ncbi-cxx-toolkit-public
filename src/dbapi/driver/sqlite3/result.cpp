@@ -39,7 +39,10 @@
 
 BEGIN_NCBI_SCOPE
 
-static EDB_Type s_GetDataType(const char* type)
+////////////////////////////////////////////////////////////////////////////////
+static
+EDB_Type
+s_GetDataType(const char* type)
 {
     if (NStr::CompareNocase(type, "INTEGER") == 0) {
         return eDB_Int;
@@ -55,15 +58,111 @@ static EDB_Type s_GetDataType(const char* type)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+CSL3_RowResult::CRowInfo::CRowInfo(sqlite3_stmt* stmt)
+: m_SQLite3stmt(stmt)
+, m_NofCols(sqlite3_column_count(x_GetSQLite3stmt()))
+{
+}
+
+CSL3_RowResult::CRowInfo::~CRowInfo(void)
+{
+}
+
+unsigned int
+CSL3_RowResult::CRowInfo::GetNum(void) const
+{
+    return m_NofCols;
+}
+
+string
+CSL3_RowResult::CRowInfo::GetName(
+        const CDBParamVariant& param, 
+        CDBParamVariant::ENameFormat format) const
+{
+    if (param.IsPositional()) {
+        unsigned int num = param.GetPosition();
+        
+        if (num < m_NofCols) {
+            return sqlite3_column_name(x_GetSQLite3stmt(), num);
+        }
+    }
+
+    return NULL;
+}
+
+
+unsigned int CSL3_RowResult::CRowInfo::GetIndex(const CDBParamVariant& param) const
+{
+    if (param.IsPositional()) {
+        return param.GetPosition();
+    } else {
+        for (unsigned int i = 0; i < GetNum(); ++i) {
+            if (param.GetName().compare(sqlite3_column_name(x_GetSQLite3stmt(), i)) == 0) {
+                return i;
+            }
+        }
+    }
+
+    DATABASE_DRIVER_ERROR("Parameter name not found.", 1);
+
+    return 0;
+}
+
+
+size_t
+CSL3_RowResult::CRowInfo::GetMaxSize(const CDBParamVariant& param) const
+{
+    if (param.IsPositional()) {
+        unsigned int num = param.GetPosition();
+        
+        if (num < m_NofCols) {
+            switch (sqlite3_column_type(x_GetSQLite3stmt(), num)) {
+            case SQLITE_INTEGER:
+                return sizeof(int);
+            case SQLITE_FLOAT:
+                return sizeof(double);
+            case SQLITE_TEXT:
+            case SQLITE_BLOB:
+                return sqlite3_column_bytes(x_GetSQLite3stmt(), num);
+            default:
+                return 0;
+            }
+        }
+    }
+
+    return 0;
+}
+
+EDB_Type
+CSL3_RowResult::CRowInfo::GetDataType(const CDBParamVariant& param) const
+{
+    if (param.IsPositional()) {
+        unsigned int num = param.GetPosition();
+        
+        if (num < m_NofCols) {
+            return s_GetDataType(sqlite3_column_decltype(x_GetSQLite3stmt(), num));
+        }
+    }
+
+    return eDB_UnsupportedType;
+}
+
+CDBParams::EDirection
+CSL3_RowResult::CRowInfo::GetDirection(const CDBParamVariant& param) const
+{
+    return eOut;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 CSL3_RowResult::CSL3_RowResult(CSL3_LangCmd* cmd, bool fetch_done) :
     m_Cmd(cmd),
-    m_NofCols(0),
     m_CurrItem(-1),
     m_SQLite3stmt(cmd->x_GetSQLite3stmt()),
     m_RC(SQLITE_DONE),
-    m_FetchDone(fetch_done)
+    m_FetchDone(fetch_done),
+    m_RowInfo(cmd->x_GetSQLite3stmt())
 {
-    m_NofCols = sqlite3_column_count(x_GetSQLite3stmt());
 }
 
 
@@ -77,53 +176,11 @@ EDB_ResType CSL3_RowResult::ResultType() const
     return eDB_RowResult;
 }
 
-
-unsigned int CSL3_RowResult::NofItems() const
+const CDBParams& 
+CSL3_RowResult::GetDefineParams(void) const
 {
-    return m_NofCols;
+    return m_RowInfo;
 }
-
-
-const char* CSL3_RowResult::ItemName(unsigned int item_num) const
-{
-    if (item_num < m_NofCols) {
-        return sqlite3_column_name(x_GetSQLite3stmt(), item_num);
-    }
-
-    return NULL;
-}
-
-
-size_t CSL3_RowResult::ItemMaxSize(unsigned int item_num) const
-{
-    if (item_num < m_NofCols) {
-        switch (sqlite3_column_type(x_GetSQLite3stmt(), item_num)) {
-        case SQLITE_INTEGER:
-            return sizeof(int);
-        case SQLITE_FLOAT:
-            return sizeof(double);
-        case SQLITE_TEXT:
-        case SQLITE_BLOB:
-            return sqlite3_column_bytes(x_GetSQLite3stmt(), item_num);
-        default:
-            return 0;
-        }
-    }
-
-    return 0;
-}
-
-
-EDB_Type CSL3_RowResult::ItemDataType(unsigned int item_num) const
-{
-    if (item_num < m_NofCols) {
-        return s_GetDataType(sqlite3_column_decltype(x_GetSQLite3stmt(),
-                                                     item_num));
-    }
-
-    return eDB_UnsupportedType;
-}
-
 
 bool CSL3_RowResult::Fetch()
 {
@@ -161,13 +218,13 @@ int CSL3_RowResult::CurrentItemNo() const
 
 int CSL3_RowResult::GetColumnNum(void) const
 {
-    return static_cast<int>(m_NofCols);
+    return static_cast<int>(GetDefineParams().GetNum());
 }
 
 
 CDB_Object* CSL3_RowResult::GetItem(CDB_Object* item_buf)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols) {
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         ++m_CurrItem;
         return 0;
     }
@@ -176,7 +233,7 @@ CDB_Object* CSL3_RowResult::GetItem(CDB_Object* item_buf)
 
     if (sqlite_type == SQLITE_NULL) {
         if (!item_buf) {
-            switch (ItemDataType(m_CurrItem)) {
+            switch (GetDefineParams().GetDataType(m_CurrItem)) {
             case eDB_Int:
                 item_buf = new CDB_BigInt;
                 break;

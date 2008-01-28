@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 11, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 13, 0, 0);
 
 
 namespace impl
@@ -78,20 +78,46 @@ public:
     // On error, an exception will be thrown (they never return NULL!).
     // It is the user's responsibility to delete the returned "command" object.
 
-    // Language command
-    virtual CDB_LangCmd*     LangCmd(const string& lang_query,
-                                     unsigned int  nof_params = 0);
-    // Remote procedure call
-    virtual CDB_RPCCmd*      RPC(const string& rpc_name,
-                                 unsigned int  nof_args);
-    // "Bulk copy in" command
-    virtual CDB_BCPInCmd*    BCPIn(const string& table_name,
-                                   unsigned int  nof_columns);
-    // Cursor
+    /// Make language command
+    virtual CDB_LangCmd*     LangCmd(const string& lang_query);
+    NCBI_DEPRECATED 
+    CDB_LangCmd* LangCmd(const string& lang_query, unsigned int)
+    {
+        return LangCmd(lang_query);
+    }
+    /// Make remote procedure call command
+    virtual CDB_RPCCmd*      RPC(const string& rpc_name);
+    NCBI_DEPRECATED 
+    CDB_RPCCmd* RPC(const string& rpc_name, unsigned int)
+    {
+        return RPC(rpc_name);
+    }
+    /// Make "bulk copy in" command
+    virtual CDB_BCPInCmd*    BCPIn(const string& table_name);
+    NCBI_DEPRECATED 
+    CDB_BCPInCmd* BCPIn(const string& table_name, unsigned int)
+    {
+        return BCPIn(table_name);
+    }
+    /// Make cursor command
     virtual CDB_CursorCmd*   Cursor(const string& cursor_name,
                                     const string& query,
-                                    unsigned int  nof_params,
-                                    unsigned int  batch_size = 1);
+                                    unsigned int  batch_size);
+    CDB_CursorCmd* Cursor(const string& cursor_name,
+                          const string& query)
+    {
+        return Cursor(cursor_name, query, 1);
+    }
+    NCBI_DEPRECATED 
+    CDB_CursorCmd* Cursor(const string& cursor_name,
+                          const string& query,
+                          unsigned int,
+                          unsigned int  batch_size)
+    {
+        return Cursor(cursor_name, query, batch_size);
+    }
+
+    /// Make "send-data" command
     /// @brief 
     ///   Create send-data command.
     /// 
@@ -297,7 +323,6 @@ private:
 };
 
 
-
 class NCBI_DBAPIDRIVER_EXPORT CDB_Result : public I_Result
 {
 public:
@@ -308,6 +333,10 @@ public:
     ///   Result type
     virtual EDB_ResType ResultType() const;
 
+    /// Get meta-information about rows in resultset. 
+    virtual const CDBParams& GetDefineParams(void) const;
+
+    /// Get # of items (columns) in the result
     /// @brief 
     ///   Get # of items (columns) in the result.
     /// 
@@ -463,40 +492,52 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_LangCmd : public I_LangCmd
 {
 public:
-    // Add more text to the language command
+    /// Add more text to the language command
     virtual bool More(const string& query_text);
 
+    /// Get meta-information about parameters. 
+    virtual CDBParams& GetBindParams(void);
+    virtual CDBParams& GetDefineParams(void);
+
     // Bind cmd parameter with name "name" to the object pointed by "value"
-    virtual bool BindParam(const string& name, CDB_Object* value);
+    bool BindParam(const string& name, CDB_Object* value)
+    {
+        GetBindParams().Bind(name, value);
+        return true;
+    }
 
     // Set cmd parameter with name "name" to the object pointed by "value"
-    virtual bool SetParam(const string& name, CDB_Object* value);
+    bool SetParam(const string& name, CDB_Object* value)
+    {
+        GetBindParams().Set(name, value);
+        return true;
+    }
 
-    // Send command to the server
+    /// Send command to the server
     virtual bool Send();
     /// Implementation-specific.
     NCBI_DEPRECATED virtual bool WasSent() const;
 
-    // Cancel the command execution
+    /// Cancel the command execution
     virtual bool Cancel();
     /// Implementation-specific.
     NCBI_DEPRECATED virtual bool WasCanceled() const;
 
-    // Get result set
+    /// Get result set
     virtual CDB_Result* Result();
     virtual bool HasMoreResults() const;
 
-    // Check if command has failed
+    /// Check if command has failed
     virtual bool HasFailed() const;
 
-    // Get the number of rows affected by the command.
-    // Special case:  negative on error or if there is no way that this
-    //                command could ever affect any rows (like PRINT).
+    /// Get the number of rows affected by the command.
+    /// Special case:  negative on error or if there is no way that this
+    ///                command could ever affect any rows (like PRINT).
     virtual int RowCount() const;
 
-    // Dump the results of the command
-    // If result processor is installed for this connection, then it will be
-    // called for each result set
+    /// Dump the results of the command
+    /// If result processor is installed for this connection, then it will be
+    /// called for each result set
     virtual void DumpResults();
 
     // Destructor
@@ -527,47 +568,64 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_RPCCmd : public I_RPCCmd
 {
 public:
+    /// Get meta-information about parameters. 
+    virtual CDBParams& GetBindParams(void);
+    virtual CDBParams& GetDefineParams(void);
+
     // Binding
-    virtual bool BindParam(const string& name, CDB_Object* value,
-                           bool out_param = false);
+    bool BindParam(
+            const string& name, 
+            CDB_Object* value, 
+            bool out_param = false
+            )
+    {
+        GetBindParams().Bind(name, value, out_param);
+        return true;
+    }
 
     // Setting
-    virtual bool SetParam(const string& name, CDB_Object* value,
-                          bool out_param = false);
+    bool SetParam(
+            const string& name, 
+            CDB_Object* value, 
+            bool out_param = false
+            )
+    {
+        GetBindParams().Set(name, value, out_param);
+        return true;
+    }
 
-
-    // Send command to the server
+    /// Send command to the server
     virtual bool Send();
     /// Implementation-specific.
     NCBI_DEPRECATED virtual bool WasSent() const;
 
-    // Cancel the command execution
+    /// Cancel the command execution
     virtual bool Cancel();
     /// Implementation-specific.
     NCBI_DEPRECATED virtual bool WasCanceled() const;
 
-    // Get result set.
-    // Return NULL if no more results left to read.
-    // Throw exception on error or if attempted to read after NULL was returned
+    /// Get result set.
+    /// Return NULL if no more results left to read.
+    /// Throw exception on error or if attempted to read after NULL was returned
     virtual CDB_Result* Result();
 
-    // Return TRUE if it makes sense (at all) to call Result()
+    /// Return TRUE if it makes sense (at all) to call Result()
     virtual bool HasMoreResults() const;
 
-    // Check if command has failed
+    /// Check if command has failed
     virtual bool HasFailed() const;
 
-    // Get the number of rows affected by the command
-    // Special case:  negative on error or if there is no way that this
-    //                command could ever affect any rows (like PRINT).
+    /// Get the number of rows affected by the command
+    /// Special case:  negative on error or if there is no way that this
+    ///                command could ever affect any rows (like PRINT).
     virtual int RowCount() const;
 
-    // Dump the results of the command
-    // If result processor is installed for this connection, then it will be
-    // called for each result set
+    /// Dump the results of the command
+    /// If result processor is installed for this connection, then it will be
+    /// called for each result set
     virtual void DumpResults();
 
-    // Set the "recompile before execute" flag for the stored proc
+    /// Set the "recompile before execute" flag for the stored proc
     /// Implementation-specific.
     NCBI_DEPRECATED virtual void SetRecompile(bool recompile = true);
 
@@ -592,7 +650,7 @@ private:
         m_CmdImpl = NULL;;
     }
 
-    // The constructor should be called by "I_Connection" only!
+    // Constructor should be called by "I_Connection" only!
     friend class impl::CConnection;
     friend class CInterfaceHook<CDB_RPCCmd>;
 };
@@ -602,21 +660,28 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_BCPInCmd : public I_BCPInCmd
 {
 public:
-    // Binding
-    virtual bool Bind(unsigned int column_num, CDB_Object* value);
+    /// Get meta-information about parameters. 
+    virtual CDBParams& GetBindParams(void);
 
-    // Send row to the server
+    // Binding
+    bool Bind(unsigned int column_num, CDB_Object* value)
+    {
+        GetBindParams().Bind(column_num, value);
+        return true;
+    }
+
+    /// Send row to the server
     virtual bool SendRow();
 
-    // Complete batch -- to store all rows transferred by far in this batch
-    // into the table
+    /// Complete batch -- to store all rows transferred by far in this batch
+    /// into the table
     virtual bool CompleteBatch();
 
-    // Cancel the BCP command
+    /// Cancel the BCP command
     virtual bool Cancel();
 
-    // Complete the BCP and store all rows transferred in last batch into
-    // the table
+    /// Complete the BCP and store all rows transferred in last batch into
+    /// the table
     virtual bool CompleteBCP();
 
     // Destructor
@@ -647,33 +712,41 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_CursorCmd : public I_CursorCmd
 {
 public:
-    // Binding
-    virtual bool BindParam(const string& name, CDB_Object* value);
+    /// Get meta-information about parameters. 
+    virtual CDBParams& GetBindParams(void);
+    virtual CDBParams& GetDefineParams(void);
 
-    // Open the cursor.
-    // Return NULL if cursor resulted in no data.
-    // Throw exception on error.
+    // Binding
+    bool BindParam(const string& name, CDB_Object* value)
+    {
+        GetBindParams().Bind(name, value);
+        return true;
+    }
+        
+    /// Open the cursor.
+    /// Return NULL if cursor resulted in no data.
+    /// Throw exception on error.
     virtual CDB_Result* Open();
 
-    // Update the last fetched row.
-    // NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
+    /// Update the last fetched row.
+    /// NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                                  bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true);
 
-    // Delete the last fetched row.
-    // NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
+    /// Delete the last fetched row.
+    /// NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
     virtual bool Delete(const string& table_name);
 
-    // Get the number of fetched rows
-    // Special case:  negative on error or if there is no way that this
-    //                command could ever affect any rows (like PRINT).
+    /// Get the number of fetched rows
+    /// Special case:  negative on error or if there is no way that this
+    ///                command could ever affect any rows (like PRINT).
     virtual int RowCount() const;
 
-    // Close the cursor.
-    // Return FALSE if the cursor is closed already (or not opened yet)
+    /// Close the cursor.
+    /// Return FALSE if the cursor is closed already (or not opened yet)
     virtual bool Close();
 
     // Destructor
@@ -704,8 +777,8 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_SendDataCmd : public I_SendDataCmd
 {
 public:
-    // Send chunk of data to the server.
-    // Return number of bytes actually transferred to server.
+    /// Send chunk of data to the server.
+    /// Return number of bytes actually transferred to server.
     virtual size_t SendChunk(const void* data, size_t size);
     virtual bool Cancel(void);
 
@@ -778,8 +851,8 @@ public:
     CDB_ResultProcessor(CDB_Connection* c);
     virtual ~CDB_ResultProcessor();
 
-    // The default implementation just dumps all rows.
-    // To get the data you will need to override this method.
+    /// The default implementation just dumps all rows.
+    /// To get the data you will need to override this method.
     virtual void ProcessResult(CDB_Result& res);
 
 private:

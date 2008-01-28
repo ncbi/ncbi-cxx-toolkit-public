@@ -357,7 +357,7 @@ bool CSimpleBlobStore::Init(CDB_Connection* con)
     m_Con= con;
     m_ImageNum= 0;
     if(m_Key.IsNULL() || (m_nofDataCols < 1)) return false;
-    m_Cmd= m_Con->LangCmd(m_sCMD, 2);
+    m_Cmd= m_Con->LangCmd(m_sCMD);
     m_Cmd->SetParam("@key", &m_Key);
     m_Cmd->BindParam("@n", &m_RowNum);
     m_Cmd->Send(); // sending command to update/insert row
@@ -410,12 +410,12 @@ bool CSimpleBlobStore::Fini(void)
             s+= " where " + m_KeyColName + " = @key AND " + m_NumColName +
                 " = @n delete " + m_TableName + " where " + m_KeyColName +
                 " = @key AND " + m_NumColName + " > @n";
-            m_Cmd= m_Con->LangCmd(s, 2);
+            m_Cmd= m_Con->LangCmd(s);
         }
         else {
             string s= "delete " + m_TableName + " where " + m_KeyColName +
                 " = @key AND " + m_NumColName + " > @n";
-            m_Cmd= m_Con->LangCmd(s, 2);
+            m_Cmd= m_Con->LangCmd(s);
         }
         m_Cmd->SetParam("@key", &m_Key);
         m_Cmd->BindParam("@n", &m_RowNum);
@@ -555,7 +555,7 @@ CBlobStoreBase::SetTextSizeServerSide(CDB_Connection* pConn, size_t textSize)
 {
     string s("set TEXTSIZE ");
     s += NStr::UIntToString(textSize);
-    auto_ptr<CDB_LangCmd> lcmd(pConn->LangCmd(s.c_str(), 0));
+    auto_ptr<CDB_LangCmd> lcmd(pConn->LangCmd(s.c_str()));
 
     if(!lcmd->Send())
     {
@@ -659,7 +659,7 @@ istream* CBlobStoreBase::OpenForRead(const string& blob_id)
         GenReadQuery();
     }
 
-    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(m_ReadQuery, 1));
+    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(m_ReadQuery));
     CDB_VarChar blob_key(blob_id);
     lcmd->BindParam("@blob_id", &blob_key);
 

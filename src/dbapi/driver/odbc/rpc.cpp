@@ -50,16 +50,31 @@ BEGIN_NCBI_SCOPE
 //
 
 CODBC_RPCCmd::CODBC_RPCCmd(CODBC_Connection& conn,
-                           const string& proc_name,
-                           unsigned int nof_params) :
+                           const string& proc_name) :
     CStatementBase(conn),
-    impl::CBaseCmd(conn, proc_name, nof_params),
+    impl::CBaseCmd(conn, proc_name),
     m_Res(0)
 {
     string extra_msg = "Procedure Name: " + proc_name;
     SetDbgInfo( extra_msg );
 
     return;
+}
+
+
+CDBParams& 
+CODBC_RPCCmd::GetBindParams(void)
+{
+    if (m_InParams.get() == NULL) {
+        m_InParams.reset(new impl::CRowInfo_SP_SQL_Server(
+                    GetQuery(), 
+                    GetConnImpl(), 
+                    GetBindParamsImpl()
+                    )
+                );
+    }
+
+    return *m_InParams;
 }
 
 
@@ -78,9 +93,9 @@ bool CODBC_RPCCmd::Send()
     CMemPot bindGuard;
     string q_str;
 
-    if(GetParams().NofParams() > 0) {
+    if(GetBindParamsImpl().NofParams() > 0) {
         SQLLEN* indicator = (SQLLEN*)
-                bindGuard.Alloc(GetParams().NofParams() * sizeof(SQLLEN));
+                bindGuard.Alloc(GetBindParamsImpl().NofParams() * sizeof(SQLLEN));
 
         if (!x_AssignParams(q_str, main_exec_query, param_result_query,
                           bindGuard, indicator)) {
@@ -282,12 +297,12 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
 {
     char p_nm[16];
     // check if we do have a named parameters (first named - all named)
-    bool param_named = !GetParams().GetParamName(0).empty();
+    bool param_named = !GetBindParamsImpl().GetParamName(0).empty();
 
-    for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
-        if(GetParams().GetParamStatus(n) == 0) continue;
-        const string& name  =  GetParams().GetParamName(n);
-        CDB_Object&   param = *GetParams().GetParam(n);
+    for (unsigned int n = 0; n < GetBindParamsImpl().NofParams(); n++) {
+        if(GetBindParamsImpl().GetParamStatus(n) == 0) continue;
+        const string& name  =  GetBindParamsImpl().GetParamName(n);
+        CDB_Object&   param = *GetBindParamsImpl().GetParam(n);
 
         if (!x_BindParam_ODBC(param, bind_guard, indicator, n)) {
             return false;
@@ -316,7 +331,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             indicator[n] = SQL_NULL_DATA;
         }
 
-        if ((GetParams().GetParamStatus(n) & CDB_Params::fOutput) != 0) {
+        if ((GetBindParamsImpl().GetParamStatus(n) & impl::CDB_Params::fOutput) != 0) {
             q_exec += " output";
             const char* p_name = param_named? name.c_str() : p_nm;
             if(!q_select.empty()) q_select += ',';

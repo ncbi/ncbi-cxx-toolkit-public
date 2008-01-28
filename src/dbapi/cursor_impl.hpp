@@ -51,14 +51,13 @@ class CCursor : public CActiveObject,
 public:
     CCursor(const string& name,
             const string& sql,
-            int nofArgs,
             int batchSize,
             CConnection* conn);
 
     virtual ~CCursor();
 
     virtual void SetParam(const CVariant& v, 
-                          const string& name);
+                          const CDBParamVariant& param);
 
     virtual IResultSet* Open();
     CNcbiOstream& GetBlobOStream(unsigned int col,
@@ -87,9 +86,7 @@ protected:
     void FreeResources();
 
 private:
-    int m_nofArgs;
     typedef map<string, CVariant*> Parameters;
-    Parameters m_params;
     CDB_CursorCmd* m_cmd;
     CConnection* m_conn;
     ostream *m_ostr;

@@ -130,7 +130,7 @@ CDemoeApp::Run(void)
             CDB_TinyInt value3;
             CDB_DateTime value4;
 
-            auto_ptr<CDB_BCPInCmd> cmd(con->BCPIn("BulkSample", 4));
+            auto_ptr<CDB_BCPInCmd> cmd(con->BCPIn("BulkSample"));
 
             cmd->Bind(0, &value1);
             cmd->Bind(1, &value2);

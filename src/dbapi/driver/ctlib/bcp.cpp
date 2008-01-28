@@ -54,11 +54,9 @@ namespace ftds64_ctlib
 //
 
 CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection& conn,
-                           const string& table_name,
-                           unsigned int nof_columns)
+                           const string& table_name)
 : CTL_CmdBase(conn)
-, impl::CBaseCmd(conn, table_name, nof_columns)
-, m_Bind(nof_columns)
+, impl::CBaseCmd(conn, table_name)
 , m_RowCount(0)
 {
     CheckSF(
@@ -133,7 +131,7 @@ CTL_BCPInCmd::CheckSentSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 
 bool CTL_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
 {
-    return GetParams().BindParam(column_num, kEmptyStr, pVal);
+    return GetBindParamsImpl().BindParam(column_num, kEmptyStr, pVal);
 }
 
 
@@ -190,14 +188,15 @@ bool CTL_BCPInCmd::x_AssignParams()
     param_fmt.format = CS_FMT_UNUSED;
     param_fmt.count  = 1;
 
-    for (unsigned int i = 0;  i < GetParams().NofParams();  i++) {
+    for (unsigned int i = 0;  i < GetBindParamsImpl().NofParams();  i++) {
 
-        if (GetParams().GetParamStatus(i) == 0)
+        if (GetBindParamsImpl().GetParamStatus(i) == 0)
             continue;
 
-        CDB_Object& param = *GetParams().GetParam(i);
-        m_Bind[i].indicator = param.IsNULL() ? -1 : 0;
-        m_Bind[i].datalen   = (m_Bind[i].indicator == 0) ? CS_UNUSED : 0;
+        CDB_Object& param = *GetBindParamsImpl().GetParam(i);
+        SBcpBind& bind = GetBind()[i];
+        bind.indicator = param.IsNULL() ? -1 : 0;
+        bind.datalen   = (bind.indicator == 0) ? CS_UNUSED : 0;
 
         CS_RETCODE ret_code;
 
@@ -206,33 +205,33 @@ bool CTL_BCPInCmd::x_AssignParams()
             CDB_Int& par = dynamic_cast<CDB_Int&> (param);
             param_fmt.datatype = CS_INT_TYPE;
             CS_INT value = (CS_INT) par.Value();
-            memcpy(m_Bind[i].buffer, &value, sizeof(CS_INT));
+            memcpy(bind.buffer, &value, sizeof(CS_INT));
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      (CS_VOID*) m_Bind[i].buffer,
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      (CS_VOID*) bind.buffer,
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_SmallInt: {
             CDB_SmallInt& par = dynamic_cast<CDB_SmallInt&> (param);
             param_fmt.datatype = CS_SMALLINT_TYPE;
             CS_SMALLINT value = (CS_SMALLINT) par.Value();
-            memcpy(m_Bind[i].buffer, &value, sizeof(CS_SMALLINT));
+            memcpy(bind.buffer, &value, sizeof(CS_SMALLINT));
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      (CS_VOID*) m_Bind[i].buffer,
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      (CS_VOID*) bind.buffer,
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_TinyInt: {
             CDB_TinyInt& par = dynamic_cast<CDB_TinyInt&> (param);
             param_fmt.datatype = CS_TINYINT_TYPE;
             CS_TINYINT value = (CS_TINYINT) par.Value();
-            memcpy(m_Bind[i].buffer, &value, sizeof(CS_TINYINT));
+            memcpy(bind.buffer, &value, sizeof(CS_TINYINT));
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      (CS_VOID*) m_Bind[i].buffer,
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      (CS_VOID*) bind.buffer,
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_BigInt: {
@@ -248,44 +247,44 @@ bool CTL_BCPInCmd::x_AssignParams()
                 return false;
             param_fmt.scale     = 0;
             param_fmt.precision = 20;
-            memcpy(m_Bind[i].buffer, &value, sizeof(CS_NUMERIC));
-            m_Bind[i].datalen = sizeof(CS_NUMERIC);
+            memcpy(bind.buffer, &value, sizeof(CS_NUMERIC));
+            bind.datalen = sizeof(CS_NUMERIC);
             */
 
             param_fmt.datatype = CS_LONG_TYPE;
             Int8 value = par.Value();
-            memcpy(m_Bind[i].buffer, &value, sizeof(value));
+            memcpy(bind.buffer, &value, sizeof(value));
 
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      (CS_VOID*) m_Bind[i].buffer,
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      (CS_VOID*) bind.buffer,
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_Char: {
             CDB_Char& par = dynamic_cast<CDB_Char&> (param);
             param_fmt.datatype  = CS_CHAR_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
-            m_Bind[i].datalen   =
-                (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.Size();
+            bind.datalen   =
+                (bind.indicator == -1) ? 0 : (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                                      par.IsNULL()? (CS_VOID*)bind.buffer :
                                           x_GetValue(par),
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_LongChar: {
             CDB_LongChar& par = dynamic_cast<CDB_LongChar&> (param);
             param_fmt.datatype  = CS_LONGCHAR_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
-            m_Bind[i].datalen   =
-                (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.DataSize();
+            bind.datalen   =
+                (bind.indicator == -1) ? 0 : (CS_INT) par.DataSize();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                                      par.IsNULL()? (CS_VOID*)bind.buffer :
                                         (CS_VOID*) par.Value(),
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_VarChar: {
@@ -299,75 +298,75 @@ bool CTL_BCPInCmd::x_AssignParams()
 #endif
             // param_fmt.maxlength = (CS_INT) par.Size() + 1;
             param_fmt.maxlength = (CS_INT) par.Size();
-            m_Bind[i].datalen   = (CS_INT) par.Size();
+            bind.datalen   = (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                                      par.IsNULL()? (CS_VOID*)bind.buffer :
                                           x_GetValue(par),
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_Binary: {
             CDB_Binary& par = dynamic_cast<CDB_Binary&> (param);
             param_fmt.datatype  = CS_BINARY_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
-            m_Bind[i].datalen   =
-                (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.Size();
+            bind.datalen   =
+                (bind.indicator == -1) ? 0 : (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                                      par.IsNULL()? (CS_VOID*)bind.buffer :
                                         (CS_VOID*) par.Value(),
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_LongBinary: {
             CDB_LongBinary& par = dynamic_cast<CDB_LongBinary&> (param);
             param_fmt.datatype  = CS_LONGBINARY_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size();
-            m_Bind[i].datalen   =
-                (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.DataSize();
+            bind.datalen   =
+                (bind.indicator == -1) ? 0 : (CS_INT) par.DataSize();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                         // par.Value() may return NULL. But NULL has a special
                         // meaning for this parameter. So, it is replaced a by
-                        // a fake pointer (m_Bind[i].buffer).
-                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                        // a fake pointer (bind.buffer).
+                                      par.IsNULL()? (CS_VOID*)bind.buffer :
                                         (CS_VOID*) par.Value(),
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_VarBinary: {
             CDB_VarBinary& par = dynamic_cast<CDB_VarBinary&> (param);
             param_fmt.datatype  = CS_BINARY_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
-            m_Bind[i].datalen   = (CS_INT) par.Size();
+            bind.datalen   = (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                                      par.IsNULL()? (CS_VOID*)bind.buffer :
                                         (CS_VOID*) par.Value(),
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_Float: {
             CDB_Float& par = dynamic_cast<CDB_Float&> (param);
             param_fmt.datatype = CS_REAL_TYPE;
             CS_REAL value = (CS_REAL) par.Value();
-            memcpy(m_Bind[i].buffer, &value, sizeof(CS_REAL));
+            memcpy(bind.buffer, &value, sizeof(CS_REAL));
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      (CS_VOID*) m_Bind[i].buffer,
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      (CS_VOID*) bind.buffer,
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_Double: {
             CDB_Double& par = dynamic_cast<CDB_Double&> (param);
             param_fmt.datatype = CS_FLOAT_TYPE;
             CS_FLOAT value = (CS_FLOAT) par.Value();
-            memcpy(m_Bind[i].buffer, &value, sizeof(CS_FLOAT));
+            memcpy(bind.buffer, &value, sizeof(CS_FLOAT));
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      (CS_VOID*) m_Bind[i].buffer,
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      (CS_VOID*) bind.buffer,
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_SmallDateTime: {
@@ -383,11 +382,11 @@ bool CTL_BCPInCmd::x_AssignParams()
                 dt.minutes = par.GetMinutes();
             }
 
-            memcpy(m_Bind[i].buffer, &dt, sizeof(CS_DATETIME4));
+            memcpy(bind.buffer, &dt, sizeof(CS_DATETIME4));
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      (CS_VOID*) m_Bind[i].buffer,
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      (CS_VOID*) bind.buffer,
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_DateTime: {
@@ -404,31 +403,31 @@ bool CTL_BCPInCmd::x_AssignParams()
             }
 
             _ASSERT(sizeof(CS_NUMERIC) >= sizeof(CS_DATETIME));
-            memcpy(m_Bind[i].buffer, &dt, sizeof(CS_DATETIME));
+            memcpy(bind.buffer, &dt, sizeof(CS_DATETIME));
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      (CS_VOID*) m_Bind[i].buffer,
-                                      &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      (CS_VOID*) bind.buffer,
+                                      &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_Text: {
             CDB_Text& par = dynamic_cast<CDB_Text&> (param);
             param_fmt.datatype  = CS_TEXT_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size();
-            m_Bind[i].datalen   = (CS_INT) par.Size();
+            bind.datalen   = (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      0, &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      0, &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         case eDB_Image: {
             CDB_Image& par = dynamic_cast<CDB_Image&> (param);
             param_fmt.datatype  = CS_IMAGE_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size();
-            m_Bind[i].datalen   = (CS_INT) par.Size();
+            bind.datalen   = (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
-                                      0, &m_Bind[i].datalen,
-                                      &m_Bind[i].indicator));
+                                      0, &bind.datalen,
+                                      &bind.indicator));
             break;
         }
         default:
@@ -488,8 +487,8 @@ bool CTL_BCPInCmd::Send(void)
         // check what needs to be default
         CS_DATAFMT fmt;
 
-        for (i = 0;  i < GetParams().NofParams();  i++) {
-            if (GetParams().GetParamStatus(i) != 0) {
+        for (i = 0;  i < GetBindParamsImpl().NofParams();  i++) {
+            if (GetBindParamsImpl().GetParamStatus(i) != 0) {
                 continue;
             }
 
@@ -511,11 +510,11 @@ bool CTL_BCPInCmd::Send(void)
 
     switch ( Check(blk_rowxfer(x_GetSybaseCmd())) ) {
     case CS_BLK_HAS_TEXT:
-        for (i = 0;  i < GetParams().NofParams();  i++) {
-            if (GetParams().GetParamStatus(i) == 0)
+        for (i = 0;  i < GetBindParamsImpl().NofParams();  i++) {
+            if (GetBindParamsImpl().GetParamStatus(i) == 0)
                 continue;
 
-            CDB_Object& param = *GetParams().GetParam(i);
+            CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             if (param.GetType() == eDB_Text) {
                 size_t valid_len = 0;

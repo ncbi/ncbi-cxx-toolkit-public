@@ -33,10 +33,11 @@
  */
 
 #include <dbapi/driver/types.hpp>
-
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 
+namespace impl {
 
 NCBI_DBAPIDRIVER_EXPORT
 string
@@ -45,9 +46,9 @@ g_SubstituteParam(const string& query, const string& name, const string& val);
 class NCBI_DBAPIDRIVER_EXPORT  CDB_Params
 {
 public:
-    CDB_Params(unsigned int nof_params = 0);
+    CDB_Params(void);
+    ~CDB_Params();
 
-    // static const unsigned int kNoParamNumber = kMax_UInt; <<=not compatible with MS compiler
     enum { kNoParamNumber = kMax_UInt };
 
     bool BindParam(unsigned int param_no, const string& param_name,
@@ -56,17 +57,22 @@ public:
                   CDB_Object* param, bool is_out = false);
 
     unsigned int NofParams() const {
-        return m_NofParams;
+        return m_Params.size();
     }
 
     CDB_Object* GetParam(unsigned int param_no) const {
-        return (param_no >= m_NofParams) ? 0 : m_Params[param_no].param;
+        return (param_no >= NofParams()) ? 0 : m_Params[param_no].m_Param;
     }
 
     const string& GetParamName(unsigned int param_no) const {
-        return (param_no >= m_NofParams) ? kEmptyStr : m_Params[param_no].name;
+        return (param_no >= NofParams()) ? kEmptyStr : m_Params[param_no].m_Name;
     }
 
+    // This method will throw an exception if parameter's name doesn't exist.
+    unsigned int GetParamNum(const string& param_name) const;
+    // This method will create a parameter if it doesn't exist.
+    unsigned int GetParamNum(unsigned int param_no, const string& param_name);
+    
     enum EStatus {
         fBound  = 0x1,  // the parameter is bound to some pointer
         fSet    = 0x2,  // the parameter is set (value copied)
@@ -75,22 +81,36 @@ public:
     typedef int TStatus;
 
     TStatus GetParamStatus(unsigned int param_no) const {
-        return (param_no >= m_NofParams) ? 0 : m_Params[param_no].status;
+        return (param_no >= NofParams()) ? 0 : m_Params[param_no].m_Status;
     }
 
-    ~CDB_Params();
-
 private:
-    unsigned int m_NofParams;
-
+    // No exceptions are thrown ...
+    bool GetParamNumInternal(const string& param_name, unsigned int& param_num) const;
+    
     struct SParam {
-        string       name;
-        CDB_Object*  param;
-        TStatus      status;
+        SParam(void);
+        ~SParam(void);
+
+        void Bind(const string& param_name, CDB_Object* param, bool is_out = false);
+        void Set(const string& param_name, CDB_Object* param, bool is_out = false);
+        void DeleteParam(void)
+        {
+            if ((m_Status & fSet) != 0) {
+                delete m_Param;
+                m_Status ^= fSet;
+            }
+        }
+
+        string       m_Name;
+        CDB_Object*  m_Param;
+        TStatus      m_Status;
     };
-    SParam* m_Params;
+
+    deque<SParam> m_Params;
 };
 
+}
 
 END_NCBI_SCOPE
 

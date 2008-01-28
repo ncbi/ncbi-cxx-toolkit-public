@@ -52,6 +52,7 @@
 #    define CDBL_BCPInCmd           CMSDBL_BCPInCmd
 #    define CDBL_SendDataCmd        CMSDBL_SendDataCmd
 #    define CDBL_Result             CMSDBL_Result
+#    define CDBL_ResultBase         CMSDBL_ResultBase
 #    define CDBL_RowResult          CMSDBL_RowResult
 #    define CDBL_ParamResult        CMSDBL_ParamResult
 #    define CDBL_ComputeResult      CMSDBL_ComputeResult
@@ -76,6 +77,7 @@
 #    define CDBL_BCPInCmd           CTDS_BCPInCmd
 #    define CDBL_SendDataCmd        CTDS_SendDataCmd
 #    define CDBL_Result             CTDS_Result
+#    define CDBL_ResultBase         CTDS_ResultBase
 #    define CDBL_RowResult          CTDS_RowResult
 #    define CDBL_ParamResult        CTDS_ParamResult
 #    define CDBL_ComputeResult      CTDS_ComputeResult
@@ -212,7 +214,7 @@ public:
     CDBLibContext* GetContext(void) const;
 
 public:
-    virtual bool ConnectedToMSSQLServer(void) const;
+    virtual EServerType GetSupportedDBType(void) const;
     int GetTDSVersion(void) const;
 
     //
@@ -282,15 +284,11 @@ protected:
 protected:
     virtual bool IsAlive(void);
 
-    virtual CDB_LangCmd*     LangCmd(const string&       lang_query,
-                                     unsigned int        nof_params = 0);
-    virtual CDB_RPCCmd*      RPC(const string&           rpc_name,
-                                 unsigned int            nof_args);
-    virtual CDB_BCPInCmd*    BCPIn(const string&         table_name,
-                                   unsigned int          nof_columns);
+    virtual CDB_LangCmd*     LangCmd(const string&       lang_query);
+    virtual CDB_RPCCmd*      RPC(const string&           rpc_name);
+    virtual CDB_BCPInCmd*    BCPIn(const string&         table_name);
     virtual CDB_CursorCmd*   Cursor(const string&        cursor_name,
                                     const string&        query,
-                                    unsigned int         nof_params,
                                     unsigned int         batch_size = 1);
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
@@ -442,8 +440,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd :
 protected:
     CDBL_LangCmd(CDBL_Connection& conn,
                  DBPROCESS* cmd,
-                 const string& lang_query,
-                 unsigned int nof_params);
+                 const string& lang_query);
     virtual ~CDBL_LangCmd(void);
 
 protected:
@@ -479,11 +476,12 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd :
     friend class CDBL_Connection;
 
 protected:
-    CDBL_RPCCmd(CDBL_Connection& con, DBPROCESS* cmd,
-                const string& proc_name, unsigned int nof_params);
+    CDBL_RPCCmd(CDBL_Connection& con, DBPROCESS* cmd, const string& proc_name);
     ~CDBL_RPCCmd(void);
 
 protected:
+    virtual CDBParams& GetBindParams(void);
+
     virtual bool Send(void);
     virtual bool Cancel(void);
     virtual CDB_Result* Result(void);
@@ -506,6 +504,8 @@ private:
 
     impl::CResult*   m_Res;
     unsigned int     m_Status;
+
+    auto_ptr<CDBParams> m_InParams;
 };
 
 
@@ -523,8 +523,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd :
 
 protected:
     CDBL_CursorCmd(CDBL_Connection& con, DBPROCESS* cmd,
-                   const string& cursor_name, const string& query,
-                   unsigned int nof_params);
+                   const string& cursor_name, const string& query);
     virtual ~CDBL_CursorCmd(void);
 
 protected:
@@ -570,8 +569,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd :
     friend class CDBL_Connection;
 
 protected:
-    CDBL_BCPInCmd(CDBL_Connection& con, DBPROCESS* cmd,
-                  const string& table_name, unsigned int nof_columns);
+    CDBL_BCPInCmd(CDBL_Connection& con, DBPROCESS* cmd, const string& table_name);
     ~CDBL_BCPInCmd(void);
 
 protected:
@@ -698,12 +696,41 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+///  CDBL_ResultBase::
+///
+
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ResultBase :
+    public CDBL_Result,
+    public impl::CResult
+{
+protected:
+    CDBL_ResultBase(
+            CDBL_Connection& conn, 
+            DBPROCESS* cmd, 
+            unsigned int* res_status = NULL
+            );
+    virtual ~CDBL_ResultBase(void);
+
+protected:
+    virtual int             CurrentItemNo(void) const;
+    virtual int             GetColumnNum(void) const;
+    virtual bool            SkipItem(void);
+
+protected: 
+    int            m_CurrItem;
+    size_t         m_Offset;
+    int            m_CmdNum;
+    SDBL_ColDescr* m_ColFmt;
+    unsigned int*  m_ResStatus;
+    bool           m_EOR;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+///
 ///  CDBL_RowResult::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RowResult :
-    public CDBL_Result,
-    public impl::CResult
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RowResult : CDBL_ResultBase
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
@@ -718,27 +745,11 @@ protected:
 
 protected:
     virtual EDB_ResType     ResultType(void) const;
-    virtual unsigned int    NofItems(void) const;
-    virtual const char*     ItemName    (unsigned int item_num) const;
-    virtual size_t          ItemMaxSize (unsigned int item_num) const;
-    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
     virtual bool            Fetch(void);
-    virtual int             CurrentItemNo(void) const;
-    virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
-    virtual bool            SkipItem(void);
-
-    // data
-    int            m_CurrItem;
-    bool           m_EOR;
-    unsigned int   m_NofCols;
-    int            m_CmdNum;
-    unsigned int*  m_ResStatus;
-    size_t         m_Offset;
-    SDBL_ColDescr* m_ColFmt;
 };
 
 
@@ -760,10 +771,6 @@ protected:
 
 protected:
     virtual EDB_ResType     ResultType(void) const;
-    virtual unsigned int    NofItems(void) const;
-    virtual const char*     ItemName    (unsigned int item_num) const;
-    virtual size_t          ItemMaxSize (unsigned int item_num) const;
-    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
@@ -790,7 +797,7 @@ protected:
 ///  CDBL_ParamResult::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ParamResult : public CDBL_RowResult
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ParamResult : public CDBL_ResultBase
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
@@ -818,7 +825,7 @@ protected:
 ///  CDBL_ComputeResult::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ComputeResult : public CDBL_RowResult
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ComputeResult : public CDBL_ResultBase
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
@@ -862,10 +869,6 @@ protected:
 
 protected:
     virtual EDB_ResType     ResultType(void) const;
-    virtual unsigned int    NofItems(void) const;
-    virtual const char*     ItemName    (unsigned int item_num) const;
-    virtual size_t          ItemMaxSize (unsigned int item_num) const;
-    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const ;
     virtual int             GetColumnNum(void) const;
@@ -897,10 +900,7 @@ protected:
 
 protected:
     virtual EDB_ResType     ResultType(void) const;
-    virtual unsigned int    NofItems(void) const;
-    virtual const char*     ItemName    (unsigned int item_num) const;
-    virtual size_t          ItemMaxSize (unsigned int item_num) const;
-    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
+    virtual const CDBParams& GetDefineParams(void) const;
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;

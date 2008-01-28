@@ -306,8 +306,7 @@ IStatement* CConnection::GetStatement()
 }
 
 ICallableStatement*
-CConnection::GetCallableStatement(const string& proc,
-                                  int nofArgs)
+CConnection::GetCallableStatement(const string& proc)
 {
     CHECK_NCBI_DBAPI(
         m_connUsed,
@@ -318,12 +317,12 @@ CConnection::GetCallableStatement(const string& proc,
         //m_cstmt->PurgeResults();
         delete m_cstmt;
     }
-    m_cstmt = new CCallableStatement(proc, nofArgs, this);
+    m_cstmt = new CCallableStatement(proc, this);
     AddListener(m_cstmt);
     m_cstmt->AddListener(this);
     return m_cstmt;
 */
-    CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, this);
+    CCallableStatement *cstmt = new CCallableStatement(proc, this);
     AddListener(cstmt);
     cstmt->AddListener(this);
     return cstmt;
@@ -331,7 +330,6 @@ CConnection::GetCallableStatement(const string& proc,
 
 ICursor* CConnection::GetCursor(const string& name,
                                 const string& sql,
-                                int nofArgs,
                                 int batchSize)
 {
 //    if( m_connUsed )
@@ -340,19 +338,18 @@ ICursor* CConnection::GetCursor(const string& name,
     if( m_cursor != 0 ) {
         delete m_cursor;
     }
-    m_cursor = new CCursor(name, sql, nofArgs, batchSize, this);
+    m_cursor = new CCursor(name, sql, batchSize, this);
     AddListener(m_cursor);
     m_cursor->AddListener(this);
     return m_cursor;
 */
-    CCursor *cursor = new CCursor(name, sql, nofArgs, batchSize, this);
+    CCursor *cursor = new CCursor(name, sql, batchSize, this);
     AddListener(cursor);
     cursor->AddListener(this);
     return cursor;
 }
 
-IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
-                                        unsigned int nof_cols)
+IBulkInsert* CConnection::GetBulkInsert(const string& table_name)
 {
 //    if( m_connUsed )
 //        throw CDbapiException("CConnection::GetBulkInsert(): Connection taken, cannot use this method");
@@ -365,7 +362,7 @@ IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
     m_bulkInsert->AddListener(this);
     return m_bulkInsert;
 */
-    CBulkInsert *bulkInsert = new CBulkInsert(table_name, nof_cols, this);
+    CBulkInsert *bulkInsert = new CBulkInsert(table_name, this);
     AddListener(bulkInsert);
     bulkInsert->AddListener(this);
     return bulkInsert;
@@ -385,13 +382,12 @@ IStatement* CConnection::CreateStatement()
 }
 
 ICallableStatement*
-CConnection::PrepareCall(const string& proc,
-                         int nofArgs)
+CConnection::PrepareCall(const string& proc)
 {
 //    if( m_getUsed )
 //        throw CDbapiException("CConnection::CreateCallableStatement(): Get...() methods used");
 
-    CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, GetAuxConn());
+    CCallableStatement *cstmt = new CCallableStatement(proc, GetAuxConn());
     AddListener(cstmt);
     cstmt->AddListener(this);
     return cstmt;
@@ -399,25 +395,23 @@ CConnection::PrepareCall(const string& proc,
 
 ICursor* CConnection::CreateCursor(const string& name,
                                    const string& sql,
-                                   int nofArgs,
                                    int batchSize)
 {
  //   if( m_getUsed )
  //       throw CDbapiException("CConnection::CreateCursor(): Get...() methods used");
 
-    CCursor *cur = new CCursor(name, sql, nofArgs, batchSize, GetAuxConn());
+    CCursor *cur = new CCursor(name, sql, batchSize, GetAuxConn());
     AddListener(cur);
     cur->AddListener(this);
     return cur;
 }
 
-IBulkInsert* CConnection::CreateBulkInsert(const string& table_name,
-                                           unsigned int nof_cols)
+IBulkInsert* CConnection::CreateBulkInsert(const string& table_name)
 {
 //    if( m_getUsed )
 //        throw CDbapiException("CConnection::CreateBulkInsert(): Get...() methods used");
 
-    CBulkInsert *bcp = new CBulkInsert(table_name, nof_cols, GetAuxConn());
+    CBulkInsert *bcp = new CBulkInsert(table_name, GetAuxConn());
     AddListener(bcp);
     bcp->AddListener(this);
     return bcp;

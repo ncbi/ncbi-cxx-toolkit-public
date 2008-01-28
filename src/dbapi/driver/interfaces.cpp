@@ -43,23 +43,8 @@ CDBConnParams::~CDBConnParams(void)
 {
 }
 
-////////////////////////////////////////////////////////////////////////////
-// C_ITDescriptorGuard
-C_ITDescriptorGuard::C_ITDescriptorGuard(I_ITDescriptor* d)
-{
-    m_D = d;
-}
-
-C_ITDescriptorGuard::~C_ITDescriptorGuard(void)
-{
-    if ( m_D )
-        delete m_D;
-}
 
 ////////////////////////////////////////////////////////////////////////////
-//  I_ITDescriptor::
-//
-
 I_ITDescriptor::~I_ITDescriptor(void)
 {
     return;
@@ -67,7 +52,39 @@ I_ITDescriptor::~I_ITDescriptor(void)
 
 
 ////////////////////////////////////////////////////////////////////////////
+//  CDBParams::
+//
+
+CDBParams::~CDBParams(void) 
+{
+}
+
+
+CDBParams& CDBParams::Bind(
+    const CDBParamVariant& param, 
+    CDB_Object* value, 
+    bool out_param
+    ) 
+{
+    DATABASE_DRIVER_ERROR( "Methods Bind and Set of class CDBParams are not implemented yet.", 122002 );
+    return *this;
+}
+
+
+CDBParams& CDBParams::Set(
+    const CDBParamVariant& param, 
+    CDB_Object* value, 
+    bool out_param
+    ) 
+{
+    DATABASE_DRIVER_ERROR( "Methods Bind and Set of class CDBParams are not implemented yet.", 122002 );
+    return *this;
+}
+
+
+////////////////////////////////////////////////////////////////////////////
 //  I_BaseCmd::
+//  CParametrizedStmt::
 //  I_LangCmd::
 //  I_RPCCmd::
 //  I_BCPInCmd::
@@ -84,6 +101,22 @@ I_BaseCmd::~I_BaseCmd(void)
     return;
 }
 
+CParamRecordset::CParamRecordset(void)
+{
+}
+
+CParamRecordset::~CParamRecordset(void)
+{
+}
+    
+CParamStmt::CParamStmt(void)
+{
+}
+
+CParamStmt::~CParamStmt(void)
+{
+}
+    
 I_LangCmd::I_LangCmd(void)
 {
 }

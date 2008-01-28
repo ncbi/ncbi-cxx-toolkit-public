@@ -45,11 +45,10 @@ BEGIN_NCBI_SCOPE
 
 // implementation
 CCallableStatement::CCallableStatement(const string& proc,
-                       int nofArgs,
                        CConnection* conn)
-  : CStatement(conn), m_status(0), m_nofParams(nofArgs)
+  : CStatement(conn), m_status(0)
 {
-    SetBaseCmd(conn->GetCDB_Connection()->RPC(proc.c_str(), nofArgs));
+    SetBaseCmd(conn->GetCDB_Connection()->RPC(proc.c_str()));
     SetIdent("CCallableStatement");
 }
 
@@ -92,16 +91,25 @@ bool CCallableStatement::HasMoreResults()
 }
 
 void CCallableStatement::SetParam(const CVariant& v,
-                  const string& name)
+                  const CDBParamVariant& param)
 {
-
-  GetRpcCmd()->SetParam(name, v.GetData(), false);
+    if (param.IsPositional()) {
+        // Decrement position by ONE.
+        GetRpcCmd()->GetBindParams().Set(param.GetPosition() - 1, v.GetData());
+    } else {
+        GetRpcCmd()->GetBindParams().Set(param, v.GetData());
+    }
 }
 
 void CCallableStatement::SetOutputParam(const CVariant& v,
-                    const string& name)
+                    const CDBParamVariant& param)
 {
-  GetRpcCmd()->SetParam(name, v.GetData(), true);
+    if (param.IsPositional()) {
+        // Decrement position by ONE.
+        GetRpcCmd()->GetBindParams().Set(param.GetPosition() - 1, v.GetData(), true);
+    } else {
+        GetRpcCmd()->GetBindParams().Set(param, v.GetData(), true);
+    }
 }
 
 

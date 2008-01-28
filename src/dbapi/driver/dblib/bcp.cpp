@@ -51,10 +51,9 @@ BEGIN_NCBI_SCOPE
 
 CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection& conn,
                              DBPROCESS*       cmd,
-                             const string&    table_name,
-                             unsigned int     nof_columns) :
+                             const string&    table_name) :
     CDBL_Cmd(conn, cmd),
-    impl::CBaseCmd(conn, table_name, nof_columns),
+    impl::CBaseCmd(conn, table_name),
     m_HasTextImage(false),
     m_WasBound(false)
 {
@@ -70,7 +69,7 @@ CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection& conn,
 bool CDBL_BCPInCmd::Bind(unsigned int column_num, CDB_Object* param_ptr)
 {
     m_WasBound = false;
-    return GetParams().BindParam(column_num,  kEmptyStr, param_ptr);
+    return GetBindParamsImpl().BindParam(column_num,  kEmptyStr, param_ptr);
 }
 
 
@@ -79,11 +78,11 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
     RETCODE r;
 
     if (!m_WasBound) {
-        for (unsigned int i = 0; i < GetParams().NofParams(); i++) {
-            if (GetParams().GetParamStatus(i) == 0)
+        for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); i++) {
+            if (GetBindParamsImpl().GetParamStatus(i) == 0)
                 continue;
 
-            CDB_Object& param = *GetParams().GetParam(i);
+            CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             switch ( param.GetType() ) {
             case eDB_Int: {
@@ -240,11 +239,11 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
         }
         m_WasBound = true;
     } else {
-        for (unsigned int i = 0; i < GetParams().NofParams(); i++) {
-            if (GetParams().GetParamStatus(i) == 0)
+        for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); i++) {
+            if (GetBindParamsImpl().GetParamStatus(i) == 0)
                 continue;
 
-            CDB_Object& param = *GetParams().GetParam(i);
+            CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             switch ( param.GetType() ) {
             case eDB_Int: {
@@ -440,11 +439,11 @@ bool CDBL_BCPInCmd::Send(void)
     if (m_HasTextImage) { // send text/image data
         char buff[1800]; // text/image page size
 
-        for (unsigned int i = 0; i < GetParams().NofParams(); i++) {
-            if (GetParams().GetParamStatus(i) == 0)
+        for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); i++) {
+            if (GetBindParamsImpl().GetParamStatus(i) == 0)
                 continue;
 
-            CDB_Object& param = *GetParams().GetParam(i);
+            CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             if (param.GetType() != eDB_Text &&
                 param.GetType() != eDB_Image)

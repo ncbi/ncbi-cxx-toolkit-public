@@ -55,11 +55,10 @@ namespace ftds64_ctlib
 CTL_CursorCmd::CTL_CursorCmd(CTL_Connection& conn,
                              const string& cursor_name,
                              const string& query,
-                             unsigned int nof_params,
                              unsigned int fetch_size
                              )
 : CTL_Cmd(conn)
-, impl::CBaseCmd(conn, cursor_name, query, nof_params)
+, impl::CBaseCmd(conn, cursor_name, query)
 , m_FetchSize(fetch_size)
 {
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
@@ -176,7 +175,7 @@ CTL_CursorCmd::OpenCursor()
                            CS_UNUSED),
                  "ct_cursor(DECLARE) failed", 122001);
 
-        if (GetParams().NofParams() > 0) {
+        if (GetBindParamsImpl().NofParams() > 0) {
             // we do have the parameters
             // check if query is a select statement or a function call
             if (GetQuery().find("select") != string::npos  ||
@@ -216,7 +215,7 @@ CTL_CursorCmd::OpenCursor()
                        CursorIsDeclared() ? CS_RESTORE_OPEN : CS_UNUSED),
              "ct_cursor(open) failed", 122005);
 
-    if (GetParams().NofParams() > 0) {
+    if (GetBindParamsImpl().NofParams() > 0) {
         // we do have parameters
         SetHasFailed(!x_AssignParams(false));
         CHECK_DRIVER_ERROR( HasFailed(), "Cannot assign the params." + GetDbgInfo(), 122003 );
@@ -482,11 +481,11 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
     param_fmt.namelen = CS_NULLTERM;
     param_fmt.status  = CS_INPUTVALUE;
 
-    for (unsigned int i = 0;  i < GetParams().NofParams();  i++) {
-        if(GetParams().GetParamStatus(i) == 0) continue;
+    for (unsigned int i = 0;  i < GetBindParamsImpl().NofParams();  i++) {
+        if(GetBindParamsImpl().GetParamStatus(i) == 0) continue;
 
-        CDB_Object&   param = *GetParams().GetParam(i);
-        const string& param_name = GetParams().GetParamName(i);
+        CDB_Object&   param = *GetBindParamsImpl().GetParam(i);
+        const string& param_name = GetBindParamsImpl().GetParamName(i);
         CS_SMALLINT   indicator = (!declare_only  &&  param.IsNULL()) ? -1 : 0;
 
         if ( !AssignCmdParam(param, param_name, param_fmt, indicator, declare_only) ) {
@@ -506,10 +505,9 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
 CTL_CursorCmdExpl::CTL_CursorCmdExpl(CTL_Connection& conn,
                                      const string& cursor_name,
                                      const string& query,
-                                     unsigned int nof_params,
                                      unsigned int fetch_size)
     : CTL_Cmd(conn),
-      impl::CBaseCmd(conn, cursor_name, query, nof_params),
+      impl::CBaseCmd(conn, cursor_name, query),
       m_LCmd(NULL),
       m_Res(NULL)
 {
@@ -535,7 +533,9 @@ static bool for_update_of(const string& q)
 
 CDB_Result* CTL_CursorCmdExpl::OpenCursor()
 {
-    const bool connected_to_MSSQLServer = GetConnection().GetCDriverContext().ConnectedToMSSQLServer();
+    const bool connected_to_MSSQLServer = 
+        GetConnection().GetCDriverContext().GetSupportedDBType() ==
+        impl::CDriverContext::eMsSql;
 
     // need to close it first
     CloseCursor();
@@ -809,11 +809,11 @@ bool CTL_CursorCmdExpl::x_AssignParams()
 
     m_CombinedQuery = GetQuery();
 
-    for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
-        const string& name = GetParams().GetParamName(n);
+    for (unsigned int n = 0; n < GetBindParamsImpl().NofParams(); n++) {
+        const string& name = GetBindParamsImpl().GetParamName(n);
         if (name.empty())
             continue;
-        CDB_Object& param = *GetParams().GetParam(n);
+        CDB_Object& param = *GetBindParamsImpl().GetParam(n);
         char val_buffer[16*1024];
 
         if (!param.IsNULL()) {
@@ -955,7 +955,7 @@ bool CTL_CursorCmdExpl::x_AssignParams()
             strcpy(val_buffer, "NULL");
 
         // substitute the param
-        m_CombinedQuery = g_SubstituteParam(m_CombinedQuery, name, val_buffer);
+        m_CombinedQuery = impl::g_SubstituteParam(m_CombinedQuery, name, val_buffer);
     }
 
     return true;

@@ -44,6 +44,161 @@ BEGIN_NCBI_SCOPE
 
 
 ////////////////////////////////////////////////////////////////////////////
+//  CDBParamVariant::
+//
+
+
+CDBParamVariant::CDBParamVariant(unsigned int pos)
+: m_IsPositional(true)
+, m_Pos(pos)
+{
+}
+
+
+CDBParamVariant::CDBParamVariant(const char* name)
+: m_IsPositional(false)
+, m_Pos(0)
+, m_Name(MakeName(name, m_Format))
+{
+}
+
+CDBParamVariant::CDBParamVariant(const string& name)
+: m_IsPositional(false)
+, m_Pos(0)
+, m_Name(MakeName(name.c_str(), m_Format))
+{
+}
+
+
+CDBParamVariant::~CDBParamVariant(void)
+{
+}
+
+// Not finished yet ...
+string 
+CDBParamVariant::GetName(CDBParamVariant::ENameFormat format) const
+{
+    if (format != GetFormat()) {
+        switch (format) {
+        case ePlainName:
+            return MakePlainName(m_Name.c_str());
+        case eQMarkName:    // '...WHERE name=?'
+            return "?";
+        case eNumericName:  // '...WHERE name=:1'
+        case eNamedName:    // '...WHERE name=:name'
+            return ':' + MakePlainName(m_Name.c_str());
+        case eFormatName:   // ANSI C printf format codes, e.g. '...WHERE name=%s'
+            return '%' + MakePlainName(m_Name.c_str());
+        case eSQLServerName: // '...WHERE name=@name'
+            return '@' + MakePlainName(m_Name.c_str());
+        }
+    } else {
+    }
+
+    return m_Name;
+}
+
+
+string CDBParamVariant::MakeName(const char* name, CDBParamVariant::ENameFormat& format)
+{
+    // Do not make copy of name to process it ...
+
+    string new_name;
+    const char* begin_str = NULL;
+    const char* c = name;
+
+    format = ePlainName;
+
+    for (; c != NULL && *c != '\0'; ++c) {
+        char ch = *c;
+        if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
+            if (begin_str == NULL) {
+                // Remove whitespaces ...
+                continue;
+            } else {
+                // Remove trailing whaitspaces ...
+                break;
+            }
+        }
+        // Check for leading symbol ...
+        if (begin_str == NULL) {
+            begin_str = c;
+
+            switch (ch) {
+                case '?' :
+                    format = eQMarkName;
+                    break;
+                case ':' :
+                    if (*(c + 1)) {
+                        if (isdigit(*(c + 1))) {
+                            format = eNumericName;
+                        } else {
+                            format = eNamedName;
+                        }
+                    } else {
+                        DATABASE_DRIVER_ERROR("Invalid parameter format.", 1);
+                    }
+                    break;
+                case '@' :
+                    format = eSQLServerName;
+                    break;
+                case '%' :
+                    format = eFormatName;
+                    break;
+                case '$' :
+                    // !!!!
+                    format = eFormatName;
+                    break;
+            }
+        }
+    }
+
+    if (begin_str != NULL) {
+        new_name = string(begin_str, c);
+    }
+
+    return new_name;
+}
+
+
+string CDBParamVariant::MakePlainName(const char* name)
+{
+    // Do not make copy of name to process it ...
+
+    string plain_name;
+    const char* begin_str = NULL;
+    const char* c = name;
+
+    for (; c != NULL; ++c) {
+        char ch = *c;
+        if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
+            if (begin_str == NULL) {
+                // Remove whitespaces ...
+                continue;
+            } else {
+                // Remove trailing whaitspaces ...
+                break;
+            }
+        }
+        // Check for leading symbol ...
+        if (begin_str == NULL) {
+            begin_str = c;
+            if (ch == ':' || ch == '@' || ch == '$' || ch == '%') {
+                // Skip leading symbol ...
+                ++begin_str;
+            }
+        }
+    }
+
+    if (begin_str != NULL) {
+        plain_name = string(begin_str, c);
+    }
+
+    return plain_name;
+}
+
+
+////////////////////////////////////////////////////////////////////////////
 //  CCDB_Connection::
 //
 
@@ -65,34 +220,30 @@ bool CDB_Connection::IsAlive()
 #define CHECK_CONNECTION( conn ) \
     CHECK_DRIVER_WARNING( !conn, "Connection has been closed", 200002 )
 
-CDB_LangCmd* CDB_Connection::LangCmd(const string& lang_query,
-                                     unsigned int  nof_params)
+CDB_LangCmd* CDB_Connection::LangCmd(const string& lang_query)
 {
     CHECK_CONNECTION(m_ConnImpl);
-    return m_ConnImpl->LangCmd(lang_query, nof_params);
+    return m_ConnImpl->LangCmd(lang_query);
 }
 
-CDB_RPCCmd* CDB_Connection::RPC(const string& rpc_name,
-                                unsigned int  nof_args)
+CDB_RPCCmd* CDB_Connection::RPC(const string& rpc_name)
 {
     CHECK_CONNECTION(m_ConnImpl);
-    return m_ConnImpl->RPC(rpc_name, nof_args);
+    return m_ConnImpl->RPC(rpc_name);
 }
 
-CDB_BCPInCmd* CDB_Connection::BCPIn(const string& table_name,
-                                    unsigned int  nof_columns)
+CDB_BCPInCmd* CDB_Connection::BCPIn(const string& table_name)
 {
     CHECK_CONNECTION(m_ConnImpl);
-    return m_ConnImpl->BCPIn(table_name, nof_columns);
+    return m_ConnImpl->BCPIn(table_name);
 }
 
 CDB_CursorCmd* CDB_Connection::Cursor(const string& cursor_name,
                                       const string& query,
-                                      unsigned int  nof_params,
                                       unsigned int  batch_size)
 {
     CHECK_CONNECTION(m_ConnImpl);
-    return m_ConnImpl->Cursor(cursor_name, query, nof_params, batch_size);
+    return m_ConnImpl->Cursor(cursor_name, query, batch_size);
 }
 
 CDB_SendDataCmd* CDB_Connection::SendDataCmd(I_ITDescriptor& desc,
@@ -240,28 +391,36 @@ EDB_ResType CDB_Result::ResultType() const
     return GetIResult().ResultType();
 }
 
+
+const CDBParams& CDB_Result::GetDefineParams(void) const
+{
+    CHECK_RESULT( GetIResultPtr() );
+    return GetIResult().GetDefineParams();
+}
+
+
 unsigned int CDB_Result::NofItems() const
 {
     CHECK_RESULT( GetIResultPtr() );
-    return GetIResult().NofItems();
+    return GetIResult().GetDefineParams().GetNum();
 }
 
 const char* CDB_Result::ItemName(unsigned int item_num) const
 {
     CHECK_RESULT( GetIResultPtr() );
-    return GetIResult().ItemName(item_num);
+    return GetIResult().GetDefineParams().GetName(item_num).c_str();
 }
 
 size_t CDB_Result::ItemMaxSize(unsigned int item_num) const
 {
     CHECK_RESULT( GetIResultPtr() );
-    return GetIResult().ItemMaxSize(item_num);
+    return GetIResult().GetDefineParams().GetMaxSize(item_num);
 }
 
 EDB_Type CDB_Result::ItemDataType(unsigned int item_num) const
 {
     CHECK_RESULT( GetIResultPtr() );
-    return GetIResult().ItemDataType(item_num);
+    return GetIResult().GetDefineParams().GetDataType(item_num);
 }
 
 bool CDB_Result::Fetch()
@@ -347,16 +506,17 @@ bool CDB_LangCmd::More(const string& query_text)
     return m_CmdImpl->More(query_text);
 }
 
-bool CDB_LangCmd::BindParam(const string& param_name, CDB_Object* pVal)
+CDBParams& CDB_LangCmd::GetBindParams(void)
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->BindParam(param_name, pVal);
+    return m_CmdImpl->GetBindParams();
 }
 
-bool CDB_LangCmd::SetParam(const string& param_name, CDB_Object* pVal)
+
+CDBParams& CDB_LangCmd::GetDefineParams(void)
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->SetParam(param_name, pVal);
+    return m_CmdImpl->GetDefineParams();
 }
 
 bool CDB_LangCmd::Send()
@@ -437,19 +597,19 @@ CDB_RPCCmd::CDB_RPCCmd(impl::CBaseCmd* c)
 }
 
 
-bool CDB_RPCCmd::BindParam(const string& param_name, CDB_Object* pVal,
-                           bool out_param)
+CDBParams& CDB_RPCCmd::GetBindParams(void)
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->BindParam(param_name, pVal, out_param);
+    return m_CmdImpl->GetBindParams();
 }
 
-bool CDB_RPCCmd::SetParam(const string& param_name, CDB_Object* pVal,
-                          bool out_param)
+
+CDBParams& CDB_RPCCmd::GetDefineParams(void)
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->SetParam(param_name, pVal, out_param);
+    return m_CmdImpl->GetDefineParams();
 }
+
 
 bool CDB_RPCCmd::Send()
 {
@@ -543,11 +703,12 @@ CDB_BCPInCmd::CDB_BCPInCmd(impl::CBaseCmd* c)
 }
 
 
-bool CDB_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
+CDBParams& CDB_BCPInCmd::GetBindParams(void)
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->Bind(column_num, pVal);
+    return m_CmdImpl->GetBindParams();
 }
+
 
 bool CDB_BCPInCmd::SendRow()
 {
@@ -598,10 +759,17 @@ CDB_CursorCmd::CDB_CursorCmd(impl::CBaseCmd* c)
 }
 
 
-bool CDB_CursorCmd::BindParam(const string& param_name, CDB_Object* pVal)
+CDBParams& CDB_CursorCmd::GetBindParams(void)
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->BindParam(param_name, pVal);
+    return m_CmdImpl->GetBindParams();
+}
+
+
+CDBParams& CDB_CursorCmd::GetDefineParams(void)
+{
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->GetDefineParams();
 }
 
 

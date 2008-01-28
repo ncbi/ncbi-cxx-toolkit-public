@@ -57,7 +57,6 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
     m_Cmd(cmd),
     m_CurrItem(-1),
     m_EOR(false),
-    m_NofCols(0),
     m_BindedCols(0)
 {
     CS_INT outlen;
@@ -71,39 +70,43 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
                != CS_SUCCEED);
     CHECK_DRIVER_ERROR( rc, "ct_res_info(CS_NUMDATA) failed." + GetDbgInfo(), 130001 );
 
-    m_NofCols = nof_cols;
-
     CS_INT bind_len = 0;
     m_BindedCols = 0;
     bool buff_is_full = false;
 
-    m_ColFmt = AutoArray<CS_DATAFMT>(m_NofCols);
-    m_NullValue = AutoArray<ENullValue>(m_NofCols);
+    m_ColFmt = AutoArray<CS_DATAFMT>(nof_cols);
+    m_NullValue = AutoArray<ENullValue>(nof_cols);
 
-    for (unsigned int nof_items = 0;  nof_items < m_NofCols;  nof_items++) {
+    for (unsigned int nof_item = 0;  nof_item < (unsigned int) nof_cols;  nof_item++) {
         rc = (Check(ct_describe(x_GetSybaseCmd(),
-                                (CS_INT) nof_items + 1,
-                                &m_ColFmt[nof_items]))
+                                (CS_INT) nof_item + 1,
+                                &m_ColFmt[nof_item]))
             != CS_SUCCEED);
         CHECK_DRIVER_ERROR( rc, "ct_describe failed." + GetDbgInfo(), 130002 );
 
-        m_NullValue[nof_items] = eNullUnknown;
+        m_NullValue[nof_item] = eNullUnknown;
 
 #ifdef FTDS_IN_USE
         // Seems like FreeTDS reports wrong maxlength in
         // ct_describe() - fix this when binding to a buffer.
-        if (m_ColFmt[nof_items].datatype == CS_NUMERIC_TYPE
-            || m_ColFmt[nof_items].datatype == CS_DECIMAL_TYPE
+        if (m_ColFmt[nof_item].datatype == CS_NUMERIC_TYPE
+            || m_ColFmt[nof_item].datatype == CS_DECIMAL_TYPE
             ) {
-            m_ColFmt[nof_items].maxlength = sizeof(CS_NUMERIC);
+            m_ColFmt[nof_item].maxlength = sizeof(CS_NUMERIC);
         }
 #endif
 
+        m_CachedRowInfo.Add(
+                string(m_ColFmt[nof_item].name, m_ColFmt[nof_item].namelen),
+                m_ColFmt[nof_item].maxlength,
+                ConvDataType_Ctlib2DBAPI(m_ColFmt[nof_item])
+                );
+
         if (!buff_is_full) {
-            if (m_ColFmt[nof_items].maxlength > 2048) {
+            if (m_ColFmt[nof_item].maxlength > 2048) {
                 buff_is_full = true;
             } else {
-                bind_len += m_ColFmt[nof_items].maxlength;
+                bind_len += m_ColFmt[nof_item].maxlength;
                 if (bind_len <= 2048) {
                     m_BindedCols++;
                 } else {
@@ -113,21 +116,24 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
         }
     }
 
+
+
     if(m_BindedCols) {
         m_BindItem = AutoArray<CS_VOID*>(m_BindedCols);
         m_Copied = AutoArray<CS_INT>(m_BindedCols);
         m_Indicator = AutoArray<CS_SMALLINT>(m_BindedCols);
 
         for(int i= 0; i < m_BindedCols; i++) {
-          m_BindItem[i]= i? ((unsigned char*)(m_BindItem[i-1])) + m_ColFmt[i-1].maxlength : m_BindBuff;
+          m_BindItem[i] = (i ? ((unsigned char*)(m_BindItem[i-1])) + m_ColFmt[i-1].maxlength : m_BindBuff);
           rc = (Check(ct_bind(x_GetSybaseCmd(),
                               i+1,
                               &m_ColFmt[i],
                               m_BindItem[i],
                               &m_Copied[i],
                               &m_Indicator[i]) )
-             != CS_SUCCEED);
-          CHECK_DRIVER_ERROR( rc, "ct_bind failed." + GetDbgInfo(), 130042 );
+                    != CS_SUCCEED);
+
+            CHECK_DRIVER_ERROR( rc, "ct_bind failed." + GetDbgInfo(), 130042 );
         }
     }
 }
@@ -138,107 +144,9 @@ EDB_ResType CTL_RowResult::ResultType() const
     return eDB_RowResult;
 }
 
-
-unsigned int CTL_RowResult::NofItems() const
+EDB_Type
+CTL_RowResult::ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt)
 {
-    return m_NofCols;
-}
-
-
-const char* CTL_RowResult::ItemName(unsigned int item_num) const
-{
-    return (item_num < m_NofCols  &&  m_ColFmt[item_num].namelen > 0)
-        ? m_ColFmt[item_num].name : 0;
-}
-
-
-size_t CTL_RowResult::ItemMaxSize(unsigned int item_num) const
-{
-    return (item_num < m_NofCols) ? m_ColFmt[item_num].maxlength : 0;
-}
-
-
-// New development. Not finished yet ...
-// EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
-// {
-//     if (item_num >= m_NofCols) {
-//         return eDB_UnsupportedType;
-//     }
-//
-//     const CS_DATAFMT& fmt = m_ColFmt[item_num];
-//     switch ( fmt.datatype ) {
-//     case CS_VARBINARY_TYPE:
-//     case CS_BINARY_TYPE:
-//         switch (fmt.usertype) {
-//         case 3:
-//             return eDB_Binary; // BINARY
-//         case 4:
-//             return eDB_VarBinary; // VARBINARY
-//         }
-//     case CS_BIT_TYPE:           return eDB_Bit;
-//     case CS_VARCHAR_TYPE:
-//     case CS_CHAR_TYPE:
-//         switch (fmt.usertype) {
-//         case 1:
-//             return eDB_Char; // CHAR
-//         case 2:
-//             return eDB_VarChar; // VARCHAR
-//         case 18:
-//             return eDB_VarChar; // SYSNAME
-// #if !defined(FTDS_IN_USE)
-//         case 24:
-//             return eDB_Char; // NCHAR
-//         case 23:
-//             return eDB_VarChar; // NVARCHAR
-// #endif
-//         default:
-//             return eDB_VarChar; // Report all user-defined types as VARCHAR ...
-//         }
-//         break;
-//     // Char/Varchar may be longer than 255 characters ...
-// //     case CS_CHAR_TYPE:          return eDB_LongChar;
-//     case CS_DATETIME_TYPE:      return eDB_DateTime;
-//     case CS_DATETIME4_TYPE:     return eDB_SmallDateTime;
-//     case CS_TINYINT_TYPE:       return eDB_TinyInt;
-//     case CS_SMALLINT_TYPE:      return eDB_SmallInt;
-//     case CS_INT_TYPE:           return eDB_Int;
-//     case CS_LONG_TYPE:          return eDB_BigInt;
-//     case CS_DECIMAL_TYPE:
-//     case CS_NUMERIC_TYPE:       return (fmt.scale == 0  &&  fmt.precision < 20)
-//                                 ? eDB_BigInt : eDB_Numeric;
-// //     case CS_FLOAT_TYPE:         return eDB_Double;
-//     case CS_FLOAT_TYPE:         return eDB_Float;
-//     case CS_REAL_TYPE:          return eDB_Float;
-//     case CS_TEXT_TYPE:          return eDB_Text;
-//     case CS_IMAGE_TYPE:         return eDB_Image;
-//     case CS_LONGCHAR_TYPE:      return eDB_LongChar;
-//     case CS_LONGBINARY_TYPE:    return eDB_LongBinary;
-//
-// #ifdef FTDS_IN_USE
-//     case CS_UNIQUE_TYPE:        return eDB_VarBinary;
-// #endif
-//
-// //     case CS_MONEY_TYPE:
-// //     case CS_MONEY4_TYPE:
-// //     case CS_SENSITIVITY_TYPE:
-// //     case CS_BOUNDARY_TYPE:
-// //     case CS_VOID_TYPE:
-// //     case CS_USHORT_TYPE:
-// //     case CS_UNICHAR_TYPE:
-//     }
-//
-//     return eDB_UnsupportedType;
-// }
-
-
-
-EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
-{
-    if (item_num >= m_NofCols) {
-        return eDB_UnsupportedType;
-    }
-
-    const CS_DATAFMT& fmt = m_ColFmt[item_num];
     switch ( fmt.datatype ) {
     case CS_VARBINARY_TYPE:
     case CS_BINARY_TYPE:        return eDB_VarBinary;
@@ -279,7 +187,6 @@ EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
     return eDB_UnsupportedType;
 }
 
-
 bool CTL_RowResult::Fetch()
 {
     m_CurrItem = -1;
@@ -288,7 +195,7 @@ bool CTL_RowResult::Fetch()
     }
 
     // Reset NullValue flags ...
-    for (unsigned int nof_items = 0;  nof_items < m_NofCols;  ++nof_items) {
+    for (unsigned int nof_items = 0;  nof_items < GetDefineParams().GetNum();  ++nof_items) {
         m_NullValue[nof_items] = eNullUnknown;
     }
 
@@ -321,7 +228,7 @@ int CTL_RowResult::CurrentItemNo() const
 
 int CTL_RowResult::GetColumnNum(void) const
 {
-    return static_cast<int>(m_NofCols);
+    return static_cast<int>(GetDefineParams().GetNum());
 }
 
 CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd,
@@ -1067,7 +974,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
 CDB_Object* CTL_RowResult::GetItem(CDB_Object* item_buf)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols  ||  m_CurrItem == -1) {
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()  ||  m_CurrItem == -1) {
         return 0;
     }
 
@@ -1082,7 +989,7 @@ CDB_Object* CTL_RowResult::GetItem(CDB_Object* item_buf)
 size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
                                bool* is_null)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols || m_CurrItem == -1) {
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum() || m_CurrItem == -1) {
         return 0;
     }
 
@@ -1094,11 +1001,11 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
 
     bool is_null_tmp;
     const CS_RETCODE rc = my_ct_get_data(
-            x_GetSybaseCmd(), 
-            m_CurrItem + 1, 
-            buffer, 
+            x_GetSybaseCmd(),
+            m_CurrItem + 1,
+            buffer,
             (CS_INT) buffer_size,
-            &outlen, 
+            &outlen,
             is_null_tmp
             );
 
@@ -1121,7 +1028,7 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
 
 #ifdef FTDS_IN_USE
         if (rc == CS_END_ITEM) {
-            ++m_CurrItem; 
+            ++m_CurrItem;
         }
 #else
         ++m_CurrItem; // That won't work with the ftds64 driver
@@ -1153,7 +1060,7 @@ CTL_RowResult::GetImageOrTextDescriptor(int item_num)
 {
     bool is_null = false;
 
-    if ((unsigned int) item_num >= NofItems()  ||  item_num < 0) {
+    if ((unsigned int) item_num >= GetDefineParams().GetNum()  ||  item_num < 0) {
         return 0;
     }
 
@@ -1184,7 +1091,7 @@ CTL_RowResult::GetImageOrTextDescriptor(int item_num)
 
 bool CTL_RowResult::SkipItem()
 {
-    if (m_CurrItem < (int) m_NofCols) {
+    if (m_CurrItem < (int) GetDefineParams().GetNum()) {
         ++m_CurrItem;
         return true;
     }
@@ -1260,7 +1167,7 @@ EDB_ResType CTL_CursorResult::ResultType() const
 
 bool CTL_CursorResult::SkipItem()
 {
-    if (m_CurrItem < (int) m_NofCols) {
+    if (m_CurrItem < (int) GetDefineParams().GetNum()) {
         ++m_CurrItem;
         char dummy[4];
         bool is_null = false;
@@ -1324,21 +1231,23 @@ CTL_ITDescriptor::~CTL_ITDescriptor()
 CTL_CursorResultExpl::CTL_CursorResultExpl(CTL_LangCmd* cmd) :
     CTL_CursorResult(cmd->x_GetSybaseCmd(), cmd->GetConnection()),
     m_Cmd(cmd),
-    m_Res(0)
+    m_Res(NULL)
 {
     try {
         GetCmd().Send();
         while (GetCmd().HasMoreResults()) {
             m_Res = GetCmd().Result();
-            if (m_Res  &&  m_Res->ResultType() == eDB_RowResult) {
+
+            if (m_Res && m_Res->ResultType() == eDB_RowResult) {
                 return;
             }
+
             if (m_Res) {
                 while (m_Res->Fetch()) {
                     continue;
                 }
                 delete m_Res;
-                m_Res = 0;
+                m_Res = NULL;
             }
         }
     } catch ( const CDB_Exception& e ) {
@@ -1352,27 +1261,10 @@ EDB_ResType CTL_CursorResultExpl::ResultType() const
 }
 
 
-unsigned int CTL_CursorResultExpl::NofItems() const
+const CDBParams& CTL_CursorResultExpl::GetDefineParams(void) const
 {
-    return m_Res? m_Res->NofItems() : 0;
-}
-
-
-const char* CTL_CursorResultExpl::ItemName(unsigned int item_num) const
-{
-    return m_Res ? m_Res->ItemName(item_num) : 0;
-}
-
-
-size_t CTL_CursorResultExpl::ItemMaxSize(unsigned int item_num) const
-{
-    return m_Res ? m_Res->ItemMaxSize(item_num) : 0;
-}
-
-
-EDB_Type CTL_CursorResultExpl::ItemDataType(unsigned int item_num) const
-{
-    return m_Res ? m_Res->ItemDataType(item_num) : eDB_UnsupportedType;
+    _ASSERT(m_Res);
+    return m_Res->GetDefineParams();
 }
 
 
@@ -1389,7 +1281,7 @@ bool CTL_CursorResultExpl::Fetch()
     }
     catch (CDB_ClientEx& ex) {
         if (ex.GetDBErrCode() == 200003) {
-            m_Res = 0;
+            m_Res = NULL;
         } else {
             DATABASE_DRIVER_ERROR( "Failed to fetch the results." + GetDbgInfo(), 122511 );
         }
@@ -1398,11 +1290,10 @@ bool CTL_CursorResultExpl::Fetch()
     // try to get next cursor result
     try {
         // finish this command
-        if (m_Res) {
-            delete m_Res;
-            m_Res = NULL;
-        }
+        delete m_Res;
+        m_Res = NULL;
 
+        // Looks like DumpResult() to me ...
         while (GetCmd().HasMoreResults()) {
             auto_ptr<CDB_Result> res( GetCmd().Result() );
             if (res.get()) {
@@ -1410,13 +1301,16 @@ bool CTL_CursorResultExpl::Fetch()
                     continue;
             }
         }
+
         // send the another "fetch cursor_name" command
         GetCmd().Send();
         while (GetCmd().HasMoreResults()) {
             m_Res = GetCmd().Result();
+
             if (m_Res  &&  m_Res->ResultType() == eDB_RowResult) {
                 return m_Res->Fetch();
             }
+
             if (m_Res) {
                 while (m_Res->Fetch()) {
                     continue;

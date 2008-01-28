@@ -47,10 +47,9 @@ BEGIN_NCBI_SCOPE
 
 CTDS_LangCmd::CTDS_LangCmd(CTDS_Connection& conn,
                            DBPROCESS* cmd,
-                           const string& lang_query,
-                           unsigned int nof_params) :
+                           const string& lang_query) :
     CDBL_Cmd(conn, cmd),
-    impl::CBaseCmd(conn, lang_query, nof_params)
+    impl::CBaseCmd(conn, lang_query)
 {
     SetExecCntxInfo("SQL Command: \"" + lang_query + "\"");
 
@@ -226,10 +225,10 @@ bool CTDS_LangCmd::x_AssignParams()
 {
     static const char s_hexnum[] = "0123456789ABCDEF";
 
-    for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
-        if(GetParams().GetParamStatus(n) == 0) continue;
-        const string& name  =  GetParams().GetParamName(n);
-        CDB_Object&   param = *GetParams().GetParam(n);
+    for (unsigned int n = 0; n < GetBindParamsImpl().NofParams(); n++) {
+        if(GetBindParamsImpl().GetParamStatus(n) == 0) continue;
+        const string& name  =  GetBindParamsImpl().GetParamName(n);
+        CDB_Object&   param = *GetBindParamsImpl().GetParam(n);
         char          val_buffer[16*1024];
         const char*   type;
         string        cmd;

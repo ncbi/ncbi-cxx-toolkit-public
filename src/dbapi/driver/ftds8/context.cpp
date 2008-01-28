@@ -282,11 +282,16 @@ CTDSContext::x_SetRegistry(CDblibContextRegistry* registry)
     m_Registry = registry;
 }
 
-bool CTDSContext::ConnectedToMSSQLServer(void) const
+impl::CDriverContext::EServerType 
+CDBLibContext::GetSupportedDBType(void) const
 {
-    return (m_TDSVersion == DBVERSION_70 ||
-            m_TDSVersion == DBVERSION_80 ||
-            m_TDSVersion == DBVERSION_UNKNOWN);
+    if (m_TDSVersion == DBVERSION_70 ||
+        m_TDSVersion == DBVERSION_80 ||
+        m_TDSVersion == DBVERSION_UNKNOWN) {
+        return eMsSql;
+    }
+
+    return eSybase;
 }
 
 int CTDSContext::GetTDSVersion(void) const

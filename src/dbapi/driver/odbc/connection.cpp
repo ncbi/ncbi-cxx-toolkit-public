@@ -341,36 +341,32 @@ bool CODBC_Connection::IsAlive(void)
 }
 
 
-CODBC_LangCmd* CODBC_Connection::xLangCmd(const string& lang_query,
-                                          unsigned int  nof_params)
+CODBC_LangCmd* CODBC_Connection::xLangCmd(const string& lang_query)
 {
     string extra_msg = "SQL Command: \"" + lang_query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
 
-    CODBC_LangCmd* lcmd = new CODBC_LangCmd(*this, lang_query, nof_params);
+    CODBC_LangCmd* lcmd = new CODBC_LangCmd(*this, lang_query);
     return lcmd;
 }
 
-CDB_LangCmd* CODBC_Connection::LangCmd(const string& lang_query,
-                                     unsigned int  nof_params)
+CDB_LangCmd* CODBC_Connection::LangCmd(const string& lang_query)
 {
-    return Create_LangCmd(*(xLangCmd(lang_query, nof_params)));
+    return Create_LangCmd(*(xLangCmd(lang_query)));
 }
 
 
-CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name,
-                                unsigned int  nof_args)
+CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name)
 {
     string extra_msg = "RPC Command: " + rpc_name;
     m_Reporter.SetExtraMsg( extra_msg );
 
-    CODBC_RPCCmd* rcmd = new CODBC_RPCCmd(*this, rpc_name, nof_args);
+    CODBC_RPCCmd* rcmd = new CODBC_RPCCmd(*this, rpc_name);
     return Create_RPCCmd(*rcmd);
 }
 
 
-CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
-                                    unsigned int  nof_columns)
+CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name)
 {
 #ifdef FTDS_IN_USE
     return NULL; // not implemented yet
@@ -383,7 +379,7 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
     string extra_msg = "BCP Table: " + table_name;
     m_Reporter.SetExtraMsg( extra_msg );
 
-    CODBC_BCPInCmd* bcmd = new CODBC_BCPInCmd(*this, m_Link, table_name, nof_columns);
+    CODBC_BCPInCmd* bcmd = new CODBC_BCPInCmd(*this, m_Link, table_name);
     return Create_BCPInCmd(*bcmd);
 #endif
 }
@@ -391,7 +387,6 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
 
 CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
                                       const string& query,
-                                      unsigned int  nof_params,
                                       unsigned int  batch_size)
 {
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
@@ -401,13 +396,11 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
 #if 1 // defined(FTDS_IN_USE)
     CODBC_CursorCmdExpl* ccmd = new CODBC_CursorCmdExpl(*this,
                                                         cursor_name,
-                                                        query,
-                                                        nof_params);
+                                                        query);
 #else
     CODBC_CursorCmd* ccmd = new CODBC_CursorCmd(*this,
                                                 cursor_name,
-                                                query,
-                                                nof_params);
+                                                query);
 #endif
 
     return Create_CursorCmd(*ccmd);

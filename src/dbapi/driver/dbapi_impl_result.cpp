@@ -39,8 +39,10 @@ BEGIN_NCBI_SCOPE
 
 namespace impl
 {
-
+    
+////////////////////////////////////////////////////////////////////////////////
 CResult::CResult(void)
+: m_CachedRowInfo(GetDefineParamsImpl())
 {
     return;
 }
@@ -53,16 +55,12 @@ CResult::~CResult(void)
     NCBI_CATCH_ALL_X( 1, kEmptyStr )
 }
 
-
-void CResult::AttachTo(CDB_Result* interface)
+const CDBParams& 
+CResult::GetDefineParams(void) const
 {
-    m_Interface = interface;
+    return m_CachedRowInfo;
 }
 
-void CResult::DetachInterface(void)
-{
-    m_Interface.DetachInterface();
-}
 
 } // namespace impl
 

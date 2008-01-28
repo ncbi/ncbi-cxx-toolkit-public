@@ -345,6 +345,55 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
 
 /////////////////////////////////////////////////////////////////////////////
 //
+//  CDBL_ResultBase::
+//
+
+
+CDBL_ResultBase::CDBL_ResultBase(
+        CDBL_Connection& conn, 
+        DBPROCESS* cmd,
+        unsigned int* res_status
+        ) :
+    CDBL_Result(conn, cmd),
+    m_CurrItem(-1),
+    m_Offset(0),
+    m_CmdNum(0),
+    m_ColFmt(NULL),
+    m_ResStatus(res_status),
+    m_EOR(false)
+{
+}
+
+
+CDBL_ResultBase::~CDBL_ResultBase(void) 
+{
+}
+
+
+int CDBL_ResultBase::CurrentItemNo() const
+{
+    return m_CurrItem;
+}
+
+
+int CDBL_ResultBase::GetColumnNum(void) const
+{
+    return static_cast<int>(GetDefineParams().GetNum());
+}
+
+
+bool CDBL_ResultBase::SkipItem()
+{
+    if ((unsigned int) m_CurrItem < GetDefineParams().GetNum()) {
+        ++m_CurrItem;
+        m_Offset = 0;
+        return true;
+    }
+    return false;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
 //  CDBL_RowResult::
 //
 
@@ -353,24 +402,26 @@ CDBL_RowResult::CDBL_RowResult(CDBL_Connection& conn,
                                DBPROCESS* cmd,
                                unsigned int* res_status,
                                bool need_init) :
-    CDBL_Result(conn, cmd),
-    m_CurrItem(-1),
-    m_EOR(false),
-    m_ResStatus(res_status),
-    m_Offset(0)
+    CDBL_ResultBase(conn, cmd, res_status)
 {
     if (!need_init)
         return;
 
-    m_NofCols = Check(dbnumcols(cmd));
+    unsigned int col_num = Check(dbnumcols(cmd));
     m_CmdNum = DBCURCMD(cmd);
 
-    m_ColFmt = new SDBL_ColDescr[m_NofCols];
-    for (unsigned int n = 0; n < m_NofCols; n++) {
+    m_ColFmt = new SDBL_ColDescr[col_num];
+    for (unsigned int n = 0; n < col_num; n++) {
         m_ColFmt[n].max_length = Check(dbcollen(GetCmd(), n + 1));
         m_ColFmt[n].data_type = GetDataType(n + 1);
         const char* s = Check(dbcolname(GetCmd(), n + 1));
         m_ColFmt[n].col_name = s ? s : "";
+
+        m_CachedRowInfo.Add(
+            s ? s : "",
+            Check(dbcollen(GetCmd(), n + 1)),
+            GetDataType(n + 1)
+            );
     }
 }
 
@@ -378,31 +429,6 @@ CDBL_RowResult::CDBL_RowResult(CDBL_Connection& conn,
 EDB_ResType CDBL_RowResult::ResultType() const
 {
     return eDB_RowResult;
-}
-
-
-unsigned int CDBL_RowResult::NofItems() const
-{
-    return m_NofCols;
-}
-
-
-const char* CDBL_RowResult::ItemName(unsigned int item_num) const
-{
-    return item_num < m_NofCols ? m_ColFmt[item_num].col_name.c_str() : 0;
-}
-
-
-size_t CDBL_RowResult::ItemMaxSize(unsigned int item_num) const
-{
-    return item_num < m_NofCols ? m_ColFmt[item_num].max_length : 0;
-}
-
-
-EDB_Type CDBL_RowResult::ItemDataType(unsigned int item_num) const
-{
-    return item_num < m_NofCols
-        ? m_ColFmt[item_num].data_type : eDB_UnsupportedType;
 }
 
 
@@ -432,21 +458,9 @@ bool CDBL_RowResult::Fetch()
 }
 
 
-int CDBL_RowResult::CurrentItemNo() const
-{
-    return m_CurrItem;
-}
-
-
-int CDBL_RowResult::GetColumnNum(void) const
-{
-    return static_cast<int>(m_NofCols);
-}
-
-
 CDB_Object* CDBL_RowResult::GetItem(CDB_Object* item_buff)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols) {
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         return 0;
     }
     CDB_Object* r = GetItemInternal(m_CurrItem + 1,
@@ -460,7 +474,7 @@ CDB_Object* CDBL_RowResult::GetItem(CDB_Object* item_buff)
 
 size_t CDBL_RowResult::ReadItem(void* buffer, size_t buffer_size,bool* is_null)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols) {
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         if (is_null)
             *is_null = true;
         return 0;
@@ -497,20 +511,9 @@ size_t CDBL_RowResult::ReadItem(void* buffer, size_t buffer_size,bool* is_null)
 
 I_ITDescriptor* CDBL_RowResult::GetImageOrTextDescriptor()
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols)
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum())
         return 0;
     return new CDBL_ITDescriptor(GetConnection(), GetCmd(), m_CurrItem+1);
-}
-
-
-bool CDBL_RowResult::SkipItem()
-{
-    if ((unsigned int) m_CurrItem < m_NofCols) {
-        ++m_CurrItem;
-        m_Offset = 0;
-        return true;
-    }
-    return false;
 }
 
 
@@ -540,40 +543,19 @@ CDBL_BlobResult::CDBL_BlobResult(CDBL_Connection& conn, DBPROCESS* cmd) :
     m_EOR(false)
 {
     m_CmdNum = DBCURCMD(cmd);
-
-    m_ColFmt.max_length = Check(dbcollen(GetCmd(), 1));
-    m_ColFmt.data_type = GetDataType(1);
     const char* s = Check(dbcolname(GetCmd(), 1));
-    m_ColFmt.col_name = s ? s : "";
+
+    m_CachedRowInfo.Add(
+        s ? s : "",
+        Check(dbcollen(GetCmd(), 1)),
+        GetDataType(1)
+        );
 }
+
 
 EDB_ResType CDBL_BlobResult::ResultType() const
 {
     return eDB_RowResult;
-}
-
-
-unsigned int CDBL_BlobResult::NofItems() const
-{
-    return 1;
-}
-
-
-const char* CDBL_BlobResult::ItemName(unsigned int item_num) const
-{
-    return item_num ? 0 : m_ColFmt.col_name.c_str();
-}
-
-
-size_t CDBL_BlobResult::ItemMaxSize(unsigned int item_num) const
-{
-    return item_num ? 0 : m_ColFmt.max_length;
-}
-
-
-EDB_Type CDBL_BlobResult::ItemDataType(unsigned int) const
-{
-    return m_ColFmt.data_type;
 }
 
 
@@ -768,18 +750,22 @@ CDBL_BlobResult::~CDBL_BlobResult()
 CDBL_ParamResult::CDBL_ParamResult(CDBL_Connection& conn,
                                    DBPROCESS* cmd,
                                    int nof_params) :
-    CDBL_RowResult(conn, cmd, 0, false)
+    CDBL_ResultBase(conn, cmd)
 {
-
-    m_NofCols = nof_params;
     m_CmdNum = DBCURCMD(cmd);
 
-    m_ColFmt = new SDBL_ColDescr[m_NofCols];
-    for (unsigned int n = 0; n < m_NofCols; n++) {
+    m_ColFmt = new SDBL_ColDescr[nof_params];
+    for (unsigned int n = 0; n < (unsigned int)nof_params; n++) {
         m_ColFmt[n].max_length = 255;
         m_ColFmt[n].data_type = RetGetDataType(n + 1);
         const char* s = Check(dbretname(GetCmd(), n + 1));
         m_ColFmt[n].col_name = s ? s : "";
+
+        m_CachedRowInfo.Add(
+            s ? s : "",
+            255,
+            RetGetDataType(n + 1)
+            );
     }
     m_1stFetch = true;
 }
@@ -805,7 +791,7 @@ bool CDBL_ParamResult::Fetch()
 
 CDB_Object* CDBL_ParamResult::GetItem(CDB_Object* item_buff)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols) {
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         return 0;
     }
 
@@ -821,7 +807,7 @@ CDB_Object* CDBL_ParamResult::GetItem(CDB_Object* item_buff)
 size_t CDBL_ParamResult::ReadItem(void* buffer, size_t buffer_size,
                                   bool* is_null)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols) {
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         if (is_null)
             *is_null = true;
         return 0;
@@ -880,25 +866,35 @@ CDBL_ParamResult::~CDBL_ParamResult()
 CDBL_ComputeResult::CDBL_ComputeResult(CDBL_Connection& conn,
                                        DBPROCESS* cmd,
                                        unsigned int* res_stat) :
-    CDBL_RowResult(conn, cmd, res_stat, false)
+    CDBL_ResultBase(conn, cmd, res_stat)
 {
     m_ComputeId = DBROWTYPE(cmd);
     if (m_ComputeId == REG_ROW || m_ComputeId == NO_MORE_ROWS) {
         DATABASE_DRIVER_ERROR( "No compute row found." + GetDbgInfo(), 270000 );
     }
-    m_NofCols = Check(dbnumalts(cmd, m_ComputeId));
-    if (m_NofCols < 1) {
+
+    unsigned int col_num = Check(dbnumalts(cmd, m_ComputeId));
+
+    if (col_num < 1) {
         DATABASE_DRIVER_ERROR( "Compute id is invalid." + GetDbgInfo(), 270001 );
     }
+
     m_CmdNum = DBCURCMD(cmd);
-    m_ColFmt = new SDBL_ColDescr[m_NofCols];
-    for (unsigned int n = 0; n < m_NofCols; n++) {
+    m_ColFmt = new SDBL_ColDescr[col_num];
+    for (unsigned int n = 0; n < col_num; n++) {
         m_ColFmt[n].max_length = Check(dbaltlen(GetCmd(), m_ComputeId, n+1));
         m_ColFmt[n].data_type = AltGetDataType(m_ComputeId, n + 1);
         int op = Check(dbaltop(GetCmd(), m_ComputeId, n + 1));
         const char* s = op != -1 ? Check(dbprtype(op)) : "Unknown";
         m_ColFmt[n].col_name = s ? s : "";
+
+        m_CachedRowInfo.Add(
+            s ? s : "",
+            Check(dbaltlen(GetCmd(), m_ComputeId, n+1)),
+            AltGetDataType(m_ComputeId, n + 1)
+            );
     }
+
     m_1stFetch = true;
 }
 
@@ -918,6 +914,7 @@ bool CDBL_ComputeResult::Fetch()
     }
 
     STATUS s = Check(dbnextrow(GetCmd()));
+
     switch (s) {
     case REG_ROW:
     case NO_MORE_ROWS:
@@ -930,6 +927,7 @@ bool CDBL_ComputeResult::Fetch()
     default:
         break;
     }
+
     m_EOR = true;
     m_CurrItem= -1;
     return false;
@@ -944,7 +942,7 @@ int CDBL_ComputeResult::CurrentItemNo() const
 
 CDB_Object* CDBL_ComputeResult::GetItem(CDB_Object* item_buff)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols) {
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         return 0;
     }
     CDB_Object* r = AltGetItem(m_ComputeId,
@@ -960,7 +958,7 @@ CDB_Object* CDBL_ComputeResult::GetItem(CDB_Object* item_buff)
 size_t CDBL_ComputeResult::ReadItem(void* buffer, size_t buffer_size,
                                     bool* is_null)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols) {
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         if (is_null)
             *is_null = true;
         return 0;
@@ -1025,36 +1023,14 @@ CDBL_StatusResult::CDBL_StatusResult(CDBL_Connection& conn, DBPROCESS* cmd) :
     m_1stFetch(true)
 {
     m_Val = Check(dbretstatus(cmd));
+
+    m_CachedRowInfo.Add("", sizeof(DBINT), eDB_Int);
 }
 
 
 EDB_ResType CDBL_StatusResult::ResultType() const
 {
     return eDB_StatusResult;
-}
-
-
-unsigned int CDBL_StatusResult::NofItems() const
-{
-    return 1;
-}
-
-
-const char* CDBL_StatusResult::ItemName(unsigned int) const
-{
-    return 0;
-}
-
-
-size_t CDBL_StatusResult::ItemMaxSize(unsigned int) const
-{
-    return sizeof(DBINT);
-}
-
-
-EDB_Type CDBL_StatusResult::ItemDataType(unsigned int) const
-{
-    return eDB_Int;
 }
 
 
@@ -1169,27 +1145,10 @@ EDB_ResType CDBL_CursorResult::ResultType() const
 }
 
 
-unsigned int CDBL_CursorResult::NofItems() const
+const CDBParams& CDBL_CursorResult::GetDefineParams(void) const
 {
-    return GetResultSet()? GetResultSet()->NofItems() : 0;
-}
-
-
-const char* CDBL_CursorResult::ItemName(unsigned int item_num) const
-{
-    return GetResultSet() ? GetResultSet()->ItemName(item_num) : 0;
-}
-
-
-size_t CDBL_CursorResult::ItemMaxSize(unsigned int item_num) const
-{
-    return GetResultSet() ? GetResultSet()->ItemMaxSize(item_num) : 0;
-}
-
-
-EDB_Type CDBL_CursorResult::ItemDataType(unsigned int item_num) const
-{
-    return GetResultSet() ? GetResultSet()->ItemDataType(item_num) : eDB_UnsupportedType;
+    _ASSERT(m_Res);
+    return m_Res->GetDefineParams();
 }
 
 

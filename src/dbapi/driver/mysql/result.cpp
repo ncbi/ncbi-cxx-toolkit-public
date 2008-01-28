@@ -74,51 +74,28 @@ CMySQL_RowResult::CMySQL_RowResult(CMySQL_Connection& conn)
         DATABASE_DRIVER_WARNING( "Failed: mysql_use_result", 800004 );
     }
 
-    m_NofCols = mysql_num_fields(m_Result);
-    m_ColFmt = new SMySQL_ColDescr[m_NofCols];
+    unsigned int col_num = mysql_num_fields(m_Result);
+
     MYSQL_FIELD* fields = mysql_fetch_fields(m_Result);
-    for (unsigned int n = 0;  n < m_NofCols;  n++) {
-        m_ColFmt[n].max_length = fields[n].max_length;
-        m_ColFmt[n].data_type  = s_GetDataType(fields[n].type);
-        m_ColFmt[n].col_name   = fields[n].name;
+
+    for (unsigned int n = 0;  n < col_num;  n++) {
+        m_CachedRowInfo.Add(
+            fields[n].name,
+            fields[n].max_length,
+            s_GetDataType(fields[n].type)
+            );
     }
 }
 
 
 CMySQL_RowResult::~CMySQL_RowResult()
 {
-    delete [] m_ColFmt;
 }
 
 
 EDB_ResType CMySQL_RowResult::ResultType() const
 {
     return eDB_RowResult;
-}
-
-
-unsigned int CMySQL_RowResult::NofItems() const
-{
-    return m_NofCols;
-}
-
-
-const char* CMySQL_RowResult::ItemName(unsigned int item_num) const
-{
-    return item_num < m_NofCols ? m_ColFmt[item_num].col_name.c_str() : 0;
-}
-
-
-size_t CMySQL_RowResult::ItemMaxSize(unsigned int item_num) const
-{
-    return item_num < m_NofCols ? m_ColFmt[item_num].max_length : 0;
-}
-
-
-EDB_Type CMySQL_RowResult::ItemDataType(unsigned int item_num) const
-{
-    return item_num < m_NofCols ?
-        m_ColFmt[item_num].data_type : eDB_UnsupportedType;
 }
 
 
@@ -144,7 +121,7 @@ int CMySQL_RowResult::CurrentItemNo() const
 
 int CMySQL_RowResult::GetColumnNum(void) const
 {
-    return static_cast<int>(m_NofCols);
+    return static_cast<int>(GetDefineParams().GetNum());
 }
 
 
@@ -303,12 +280,12 @@ static CDB_Object* s_GetItem(EDB_Type    data_type,
 
 CDB_Object* CMySQL_RowResult::GetItem(CDB_Object* item_buf)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols) {
+    if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         return 0;
     }
 
     CDB_Object* r =
-        s_GetItem(m_ColFmt[m_CurrItem].data_type, item_buf,
+        s_GetItem(GetDefineParams().GetDataType(m_CurrItem), item_buf,
                   item_buf ? item_buf->GetType() : eDB_UnsupportedType,
                   m_Row[m_CurrItem], m_Lengths[m_CurrItem]);
     ++m_CurrItem;
