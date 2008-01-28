@@ -11754,7 +11754,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (false && args.GetDriverName() == ctlib_driver
+    if (args.GetDriverName() == ctlib_driver
         || args.GetDriverName() == ftds64_driver
         || args.GetDriverName() == ftds_odbc_driver
         || args.GetDriverName() == odbc_driver
