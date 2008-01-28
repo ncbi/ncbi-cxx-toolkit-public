@@ -7,6 +7,6 @@
 
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
-#builddir = /netopt/ncbi_tools/c++/Debug/build
-builddir = /netopt/ncbi_tools/c++/Release/build
+builddir = /netopt/ncbi_tools/c++/Debug/build
+#builddir = /netopt/ncbi_tools/c++/Release/build
 # builddir = $(NCBI)/c++/Release/build
