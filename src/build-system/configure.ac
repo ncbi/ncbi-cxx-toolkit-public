@@ -3834,9 +3834,18 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
    if test -d `echo $BOOST_INCLUDE | sed -e 's/^-I//'`/boost-${ncbi_cv_lib_boost_version}/boost; then
       BOOST_INCLUDE=$BOOST_INCLUDE/boost-${ncbi_cv_lib_boost_version}
    fi
-   if test "$ncbi_compiler" = "MIPSPRO"; then
-      BOOST_INCLUDE="$BOOST_INCLUDE $BOOST_INCLUDE/boost/compatibility/cpp_c_headers"
-   fi
+   case "$ncbi_compiler" in
+      MIPSPRO)
+         BOOST_INCLUDE="$BOOST_INCLUDE $BOOST_INCLUDE/boost/compatibility/cpp_c_headers"
+         ;;
+      WORKSHOP)
+         # Boost.Test's macros yield a *lot* of spurious "should not initialize
+         # a non-const reference with a temporary" warnings, to the point of
+         # overwhelming the compiler in some cases; turn them off altogether
+         # when using Boost at all.
+         BOOST_INCLUDE="$BOOST_INCLUDE -erroff=reftotemp"
+         ;;
+   esac
    AC_MSG_CHECKING([for Boost library name tag])
    case "$ncbi_cv_lib_boost_version" in
       0_* | 1_[[0-9]] | 1_[[0-9]]_* | 1_[[0-2]][[0-9]] | 1_[[0-2]][[0-9]]_* ) ;;
@@ -4406,8 +4415,7 @@ if test "$with_wxwidgets" != "no" ; then
       ncbi_cv_lib_wxwidgets,
       [if test -x "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
-          NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf --libs std,richtext],
-             [$libsed; ])
+          NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf --libs], [$libsed; ])
 
           CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIDGETS_LIBS $orig_LIBS"
@@ -4434,16 +4442,20 @@ if test "$with_wxwidgets" = "no" ; then
 else
    NCBI_PACKAGE(wxWidgets)
    case "`$wxconf --version`" in
-     2.[[89]].* | 2.[[0-9]][[0-9]]* ) NCBI_PACKAGE(wx2.8) ;;
+      2.[[89]].* | 2.[[0-9]][[0-9]]* )
+         NCBI_PACKAGE(wx2.8)
+	 wxlibs=std,richtext
+	 ;;
+      *)
+         wxlibs=std
+	 ;;
    esac
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
       WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
-      NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf --libs std,richtext],
-         [$libsed; ])
    fi
-   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static std,richtext |\
-      sed -e "$basesed"`
+   NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf --libs $wxlibs], [$libsed; ])
+   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static $wxlibs | sed -e "$basesed"`
    WXWIDGETS_GL_LIBS=`$wxconf --gl-libs | sed -e "$basesed"`
    WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static | sed -e "$basesed"`
    WXWIDGETS_POST_LINK=`$wxconf --rezflags 2>/dev/null`
