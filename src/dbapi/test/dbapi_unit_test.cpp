@@ -6514,6 +6514,11 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
         auto_ptr<ICallableStatement> auto_stmt;
         unsigned int col_num = 0;
 
+        if (false) {
+            auto_ptr<IStatement> auto_stmt01(m_Conn->GetStatement());
+            auto_stmt01->ExecuteUpdate("USE DBAPI_Sample");
+        }
+
         {
             auto_stmt.reset(
                     m_Conn->GetCallableStatement("sp_columns")

@@ -361,18 +361,25 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
 : CCachedRowInfo(bindings)
 {
     string db_name;
+    const CDriverContext::EServerType server_type = 
+        conn.GetCDriverContext().GetSupportedDBType();
 
-    if (conn.GetCDriverContext().GetSupportedDBType() == impl::CDriverContext::eSybase) {
-        // Things are more complicated in case of Sybase ...
-        static const char* sql = 
+    if (server_type == impl::CDriverContext::eSybase
+        || server_type == impl::CDriverContext::eMsSql) {
+        string sql( 
             "SELECT '' from sysobjects WHERE name = @name \n"
             "UNION \n"
             "SELECT 'master' from master..sysobjects WHERE name = @name \n"
-            "UNION \n"
-            "SELECT 'sybsystemprocs' from sybsystemprocs..sysobjects WHERE name = @name \n"
-            "UNION \n"
-            "SELECT 'sybsystemdb' from sybsystemdb..sysobjects WHERE name = @name"
-            ;
+            );
+
+        if (server_type == impl::CDriverContext::eSybase) {
+            sql +=
+                "UNION \n"
+                "SELECT 'sybsystemprocs' from sybsystemprocs..sysobjects WHERE name = @name \n"
+                "UNION \n"
+                "SELECT 'sybsystemdb' from sybsystemdb..sysobjects WHERE name = @name"
+                ;
+        }
 
         auto_ptr<CDB_LangCmd> cmd(conn.LangCmd(sql));
         CDB_VarChar sp_name_value(name);
