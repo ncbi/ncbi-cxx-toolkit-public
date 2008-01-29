@@ -127,6 +127,11 @@ for i in 'DLL' '' ; do
   fi
 done
 
+
+# Install additional files (scripts and etc) into binary directory
+cp -p "$builddir"/src/app/blast/legacy_blast.pl "$bindir"
+
+
 # Gbench public installation
 echo "[`basename $script`] Installing Gbench..."
 for i in ReleaseDLL DebugDLL; do
