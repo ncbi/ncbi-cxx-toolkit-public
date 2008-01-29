@@ -611,6 +611,8 @@ struct SAccGuide
 
     SAccGuide(void) : count(0) { }
     void AddRule(const CTempString& rule);
+    TAccInfo Find(TFormatCode fmt, const string& acc_or_pfx,
+                  string* key_used = NULL);
     static TFormatCode s_Key(unsigned short letters, unsigned short digits)
         { return TFormatCode(letters) << 16 | digits; }
 
@@ -649,8 +651,21 @@ void SAccGuide::AddRule(const CTempString& rule)
                     NStr::StringToUInt(tmp2, NStr::fConvErr_NoThrow));
         TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2].c_str());
         if (it == sc_AccInfoMap.end()) {
-            ERR_POST_X(3, "SAccGuide::AddRule: " << count
-                          << ": unrecognized accession type " << tokens[2]);
+            string   key_used;
+            TAccInfo old = Find(fmt, tokens[1], &key_used);
+            if (old != CSeq_id::eAcc_unknown) {
+                if ( !key_used.empty() ) {
+                    key_used = " (per " + key_used + ')';
+                }
+                ERR_POST_X(8, Warning << "SAccGuide::AddRule: " << count
+                           << ": ignoring refinement of " << tokens[1]
+                           << " from " << old << key_used
+                           << " to unrecognized accession type " << tokens[2]);
+            } else {
+                ERR_POST_X(3, "SAccGuide::AddRule: " << count
+                           << ": unrecognized accession type " << tokens[2]
+                           << " for " << tokens[1]);
+            }
         } else {
             TAccInfo value = it->second;
             if (tokens.size() == 4) {
@@ -663,19 +678,32 @@ void SAccGuide::AddRule(const CTempString& rule)
             }
         }
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "special")) {
+        pos  = tokens[1].find_first_of(kDigits);
+        pos2 = tokens[1].find('-', pos);
+        TFormatCode fmt
+            = s_Key(pos, ((pos2 == NPOS) ? tokens[1].size() : pos2) - pos);
         TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2].c_str());
         if (it == sc_AccInfoMap.end()) {
-            ERR_POST_X(4, "SAccGuide::AddRule: " << count
-                          << ": unrecognized accession type " << tokens[2]);
+            string   key_used;
+            TAccInfo old = Find(fmt, tokens[1], &key_used);
+            if (old) {
+                if ( !key_used.empty() ) {
+                    key_used = " (per " + key_used + ')';
+                }
+                ERR_POST_X(4, Warning << "SAccGuide::AddRule: " << count
+                           << ": unrecognized accession type " << tokens[2]
+                           << " for special case " << tokens[1]
+                           << "; falling back to " << old << key_used);
+            } else {
+                ERR_POST_X(9, Warning << "SAccGuide::AddRule: " << count
+                           << ": unrecognized accession type " << tokens[2]
+                           << " for stray(!) special case " << tokens[1]);
+            }
         } else {
             TAccInfo value = it->second;
-            pos  = tokens[1].find_first_of(kDigits);
-            pos2 = tokens[1].find('-', pos);
             if (pos2 == NPOS) {
-                TFormatCode fmt = s_Key(pos, tokens[1].size() - pos);
                 rules[fmt].specials[tokens[1]] = TPair(tokens[1], value);
             } else {
-                TFormatCode fmt = s_Key(pos, pos2 - pos);
                 // _VERIFY(NStr::SplitInTwo(tokens[1], "-", tmp1, tmp2));
                 tmp1.assign(tokens[1], 0, pos2);
                 tmp2.assign(tokens[1], pos2 + 1, NPOS);
@@ -685,6 +713,50 @@ void SAccGuide::AddRule(const CTempString& rule)
     } else {
         ERR_POST_X(5, Warning << "SAccGuide::AddRule: " << count
                       << ": ignoring invalid line: " << rule);
+    }
+}
+
+SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt, const string& acc_or_pfx,
+                                    string* key_used)
+{
+    TMainMap::const_iterator it = rules.find(fmt);
+    if (it == rules.end()) {
+        return CSeq_id::eAcc_unknown;
+    }
+
+    const SSubMap&            rules  = it->second;
+    TAccInfo                  result = CSeq_id::eAcc_unknown;
+    string                    pfx     (acc_or_pfx, 0, fmt >> 16);
+    TPrefixes::const_iterator pit    = rules.prefixes.find(pfx);
+    if (pit != rules.prefixes.end()) {
+        result = pit->second;
+    } else {
+        ITERATE (TPairs, wit, rules.wildcards) {
+            if (NStr::MatchesMask(pfx, wit->first)) {
+                if (key_used  &&  acc_or_pfx != wit->first) {
+                    *key_used = wit->first;
+                }
+                result = wit->second;
+                break;
+            }
+        }
+    }
+    if (acc_or_pfx != pfx  &&  result & CSeq_id::fAcc_specials) {
+        TSpecialMap::const_iterator sit
+            = rules.specials.lower_bound(acc_or_pfx);
+        if (sit != rules.specials.end()  &&  sit->second.first <= acc_or_pfx) {
+            if (key_used) {
+                key_used->erase();
+            }
+            return sit->second.second;
+        } else {
+            if (key_used  &&  key_used->empty()) {
+                *key_used = pfx;
+            }
+            return TAccInfo(result & ~CSeq_id::fAcc_specials);
+        }
+    } else /* if (result != CSeq_id::eAcc_unknown) */ {
+        return result;
     }
 }
 
@@ -1214,10 +1286,6 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         }
     }
 
-    if ( !s_Guide.count ) {
-        s_LoadGuide();
-    }
-
     if (digit_pos == 0) {
         if (acc.find_first_not_of(kDigits) == NPOS) { // just digits
             return eAcc_gi;
@@ -1225,36 +1293,13 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             return eAcc_unknown; // PDB already handled
         }
     }
-    SAccGuide::TMainMap::const_iterator it
-        = s_Guide.rules.find(SAccGuide::s_Key(digit_pos,
-                                              main_size - digit_pos));
-    if (it == s_Guide.rules.end()) {
-        return eAcc_unknown;
+
+    if ( !s_Guide.count ) {
+        s_LoadGuide();
     }
-    const SAccGuide::SSubMap&            rules  = it->second;
-    EAccessionInfo                       result = eAcc_unknown;
-    SAccGuide::TPrefixes::const_iterator pit    = rules.prefixes.find(pfx);
-    if (pit != rules.prefixes.end()) {
-        result = pit->second;
-    } else {
-        ITERATE (SAccGuide::TPairs, wit, rules.wildcards) {
-            if (NStr::MatchesMask(pfx, wit->first)) {
-                result = wit->second;
-                break;
-            }
-        }
-    }
-    if (result & fAcc_specials) {
-        SAccGuide::TSpecialMap::const_iterator sit
-            = rules.specials.lower_bound(acc.substr(0, main_size));
-        if (sit != rules.specials.end()  &&  sit->second.first <= acc) {
-            return sit->second.second;
-        } else {
-            return EAccessionInfo(result & ~fAcc_specials);
-        }
-    } else /* if (result != eAcc_unknown) */ {
-        return result;
-    }
+
+    return s_Guide.Find(SAccGuide::s_Key(digit_pos, main_size - digit_pos),
+                        acc.substr(0, main_size));
 }
 
 
