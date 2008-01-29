@@ -64,12 +64,21 @@ CDBParams&
 CDBL_RPCCmd::GetBindParams(void)
 {
     if (m_InParams.get() == NULL) {
+#ifdef FTDS_IN_USE
         m_InParams.reset(new impl::CRowInfo_SP_SQL_Server(
                     GetQuery(), 
                     GetConnImpl(), 
                     GetBindParamsImpl()
                     )
                 );
+#else
+        // It can be either Open Server or SQL Server ...
+        // Open Server doesn't have functionality to support CRowInfo_SP_SQL_Server.
+        m_InParams.reset(new impl::CCachedRowInfo(
+                    GetBindParamsImpl()
+                    )
+                );
+#endif
     }
 
     return *m_InParams;
