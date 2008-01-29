@@ -96,10 +96,10 @@ CDemoeApp::Run(void)
 
         // Drop a table if any ...
         {
-            auto_ptr<CDB_LangCmd>
-                lcmd(con->LangCmd("DROP TABLE table01"));
-
             try {
+                auto_ptr<CDB_LangCmd>
+                    lcmd(con->LangCmd("DROP TABLE table01"));
+
                 lcmd->Send();
             }
             catch(const CDB_Exception&) {
