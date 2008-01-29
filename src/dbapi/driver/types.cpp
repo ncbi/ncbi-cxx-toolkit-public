@@ -483,6 +483,12 @@ void CheckBinaryTruncation(size_t cur_len, size_t max_len)
 //  CDB_Object::
 //
 
+CDB_Object::CDB_Object(bool is_null) : 
+    m_Null(is_null)
+{ 
+    return; 
+}
+
 CDB_Object::~CDB_Object()
 {
     return;
@@ -554,6 +560,25 @@ const char* CDB_Object::GetTypeName(EDB_Type db_type)
 //  CDB_Int::
 //
 
+CDB_Int::CDB_Int() : 
+    CDB_Object(true),
+    m_Val(0)
+{ 
+    return; 
+}
+
+CDB_Int::CDB_Int(const Int4& i) : 
+    CDB_Object(false), 
+    m_Val(i)
+{ 
+    return; 
+}
+
+CDB_Int::~CDB_Int()
+{ 
+    return; 
+}
+
 EDB_Type CDB_Int::GetType() const
 {
     return eDB_Int;
@@ -581,6 +606,25 @@ void CDB_Int::AssignValue(CDB_Object& v)
 //  CDB_SmallInt::
 //
 
+CDB_SmallInt::CDB_SmallInt() : 
+    CDB_Object(true),
+    m_Val(0)
+{ 
+    return; 
+}
+
+CDB_SmallInt::CDB_SmallInt(const Int2& i) : 
+    CDB_Object(false), 
+    m_Val(i)
+{ 
+    return; 
+}
+
+CDB_SmallInt::~CDB_SmallInt()
+{ 
+    return; 
+}
+
 EDB_Type CDB_SmallInt::GetType() const
 {
     return eDB_SmallInt;
@@ -606,6 +650,25 @@ void CDB_SmallInt::AssignValue(CDB_Object& v)
 //  CDB_TinyInt::
 //
 
+CDB_TinyInt::CDB_TinyInt() : 
+    CDB_Object(true),
+    m_Val(0)
+{ 
+    return; 
+}
+
+CDB_TinyInt::CDB_TinyInt(const Uint1& i) : 
+    CDB_Object(false), 
+    m_Val(i)
+{ 
+    return; 
+}
+
+CDB_TinyInt::~CDB_TinyInt()
+{ 
+    return; 
+}
+
 EDB_Type CDB_TinyInt::GetType() const
 {
     return eDB_TinyInt;
@@ -627,6 +690,25 @@ void CDB_TinyInt::AssignValue(CDB_Object& v)
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_BigInt::
 //
+
+CDB_BigInt::CDB_BigInt() : 
+    CDB_Object(true),
+    m_Val(0)  
+{ 
+    return; 
+}
+
+CDB_BigInt::CDB_BigInt(const Int8& i) : 
+    CDB_Object(false), 
+    m_Val(i)  
+{ 
+    return; 
+}
+
+CDB_BigInt::~CDB_BigInt()
+{ 
+    return; 
+}
 
 EDB_Type CDB_BigInt::GetType() const
 {
@@ -1203,6 +1285,24 @@ CDB_LongChar::~CDB_LongChar()
 //
 
 
+CDB_VarBinary::CDB_VarBinary(void) : 
+    CDB_Object(true),
+    m_Size(0)
+{ 
+    return; 
+}
+
+CDB_VarBinary::CDB_VarBinary(const void* v, size_t l)  : 
+    m_Size(0)
+{ 
+    SetValue(v, l); 
+}
+
+CDB_VarBinary::~CDB_VarBinary(void)
+{ 
+    return; 
+}
+
 void CDB_VarBinary::SetValue(const void* v, size_t l)
 {
     if (v  &&  l) {
@@ -1438,6 +1538,25 @@ CDB_LongBinary::~CDB_LongBinary()
 //
 
 
+CDB_Float::CDB_Float() : 
+    CDB_Object(true),
+    m_Val(0.0)  
+{ 
+    return; 
+}
+
+CDB_Float::CDB_Float(float i) : 
+    CDB_Object(false), 
+    m_Val(i)  
+{ 
+    return; 
+}
+
+CDB_Float::~CDB_Float(void)
+{
+}
+
+
 CDB_Float& CDB_Float::operator= (const float& i)
 {
     SetNULL(false);
@@ -1471,6 +1590,24 @@ void CDB_Float::AssignValue(CDB_Object& v)
 //  CDB_Double::
 //
 
+
+CDB_Double::CDB_Double() : 
+    CDB_Object(true),
+    m_Val(0.0)  
+{ 
+    return; 
+}
+
+CDB_Double::CDB_Double(double i) : 
+    CDB_Object(false), 
+    m_Val(i)  
+{ 
+    return; 
+}
+
+CDB_Double::~CDB_Double(void)
+{
+}
 
 CDB_Double& CDB_Double::operator= (const double& i)
 {
@@ -1587,6 +1724,14 @@ CDB_Stream::~CDB_Stream()
 //  CDB_Image::
 //
 
+CDB_Image::CDB_Image(void)
+{
+}
+
+CDB_Image::~CDB_Image(void)
+{
+}
+
 CDB_Image& CDB_Image::operator= (const CDB_Image& image)
 {
     return dynamic_cast<CDB_Image&> (Assign(image));
@@ -1612,6 +1757,14 @@ CDB_Object* CDB_Image::Clone() const
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Text::
 //
+
+CDB_Text::CDB_Text(void)
+{
+}
+
+CDB_Text::~CDB_Text(void)
+{
+}
 
 size_t CDB_Text::Append(const void* buff, size_t nof_bytes)
 {
@@ -1680,6 +1833,10 @@ CDB_SmallDateTime::CDB_SmallDateTime(Uint2 days, Uint2 minutes)
     SetNULL(false);
 }
 
+
+CDB_SmallDateTime::~CDB_SmallDateTime(void)
+{
+}
 
 CDB_SmallDateTime& CDB_SmallDateTime::Assign(Uint2 days, Uint2 minutes)
 {
@@ -1788,6 +1945,11 @@ CDB_DateTime::CDB_DateTime(Int4 d, Int4 s300)
 }
 
 
+CDB_DateTime::~CDB_DateTime(void)
+{
+}
+
+
 CDB_DateTime& CDB_DateTime::operator= (const CTime& t)
 {
     m_NCBITime = t;
@@ -1863,6 +2025,29 @@ void CDB_DateTime::AssignValue(CDB_Object& v)
 //
 
 
+CDB_Bit::CDB_Bit() : 
+    CDB_Object(true),
+    m_Val(0)
+{ 
+    return; 
+}
+
+CDB_Bit::CDB_Bit(int i) : 
+    CDB_Object(false)  
+{ 
+    m_Val = i ? 1 : 0; 
+}
+
+CDB_Bit::CDB_Bit(bool i) : 
+    CDB_Object(false)  
+{ 
+    m_Val = i ? 1 : 0; 
+}
+
+CDB_Bit::~CDB_Bit(void)
+{
+}
+
 CDB_Bit& CDB_Bit::operator= (const int& i)
 {
     SetNULL(false);
@@ -1905,28 +2090,31 @@ void CDB_Bit::AssignValue(CDB_Object& v)
 //
 
 
-CDB_Numeric::CDB_Numeric() : CDB_Object(true)
+CDB_Numeric::CDB_Numeric() : 
+    CDB_Object(true),
+    m_Precision(0),
+    m_Scale(0)
 {
-    m_Precision = m_Scale= 0;
     return;
 }
 
 
 CDB_Numeric::CDB_Numeric(unsigned int precision, unsigned int scale)
-    : CDB_Object(false)
+    : CDB_Object(false),
+    m_Precision(precision),
+    m_Scale(scale)
 {
-    m_Precision = precision;
-    m_Scale     = scale;
     memset(m_Body, 0, sizeof(m_Body));
 }
 
 
 CDB_Numeric::CDB_Numeric(unsigned int precision,
                          unsigned int scale,
-                         const unsigned char* arr) : CDB_Object(false)
+                         const unsigned char* arr) : 
+    CDB_Object(false),
+    m_Precision(precision),
+    m_Scale(scale)
 {
-    m_Precision = precision;
-    m_Scale     = scale;
     memcpy(m_Body, arr, sizeof(m_Body));
 }
 
@@ -1934,26 +2122,34 @@ CDB_Numeric::CDB_Numeric(unsigned int precision,
 CDB_Numeric::CDB_Numeric(unsigned int precision,
                          unsigned int scale,
                          bool is_negative,
-                         const unsigned char* arr) : CDB_Object(false)
+                         const unsigned char* arr) : 
+    CDB_Object(false),
+    m_Precision(precision),
+    m_Scale(scale)
 {
-    m_Precision = precision;
-    m_Scale     = scale;
     m_Body[0]= is_negative? 1 : 0;
     memcpy(m_Body+1, arr, sizeof(m_Body)-1);
 }
 
 
 CDB_Numeric::CDB_Numeric(unsigned int precision, unsigned int scale, const char* val)
-    : m_Precision(0), m_Scale(0)
+    : m_Precision(0), 
+    m_Scale(0)
 {
     x_MakeFromString(precision, scale, val);
 }
 
 
 CDB_Numeric::CDB_Numeric(unsigned int precision, unsigned int scale, const string& val)
-    : m_Precision(0), m_Scale(0)
+    : m_Precision(0), 
+    m_Scale(0)
 {
     x_MakeFromString(precision, scale, val.c_str());
+}
+
+
+CDB_Numeric::~CDB_Numeric(void)
+{
 }
 
 

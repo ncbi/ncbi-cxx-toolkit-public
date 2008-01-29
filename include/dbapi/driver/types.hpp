@@ -229,7 +229,7 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_Object
 {
 public:
-    CDB_Object(bool is_null = true) : m_Null(is_null)  { return; }
+    CDB_Object(bool is_null = true);
     virtual ~CDB_Object();
 
     bool IsNULL() const  { return m_Null; }
@@ -282,8 +282,9 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_Int : public CDB_Object
 {
 public:
-    CDB_Int()              : CDB_Object(true)             { return; }
-    CDB_Int(const Int4& i) : CDB_Object(false), m_Val(i)  { return; }
+    CDB_Int();
+    CDB_Int(const Int4& i);
+    virtual ~CDB_Int(void);
 
     CDB_Int& operator= (const Int4& i) {
         SetNULL(false);
@@ -307,8 +308,9 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_SmallInt : public CDB_Object
 {
 public:
-    CDB_SmallInt()              : CDB_Object(true)             { return; }
-    CDB_SmallInt(const Int2& i) : CDB_Object(false), m_Val(i)  { return; }
+    CDB_SmallInt();
+    CDB_SmallInt(const Int2& i);
+    virtual ~CDB_SmallInt(void);
 
     CDB_SmallInt& operator= (const Int2& i) {
         SetNULL(false);
@@ -332,8 +334,9 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_TinyInt : public CDB_Object
 {
 public:
-    CDB_TinyInt()               : CDB_Object(true)             { return; }
-    CDB_TinyInt(const Uint1& i) : CDB_Object(false), m_Val(i)  { return; }
+    CDB_TinyInt();
+    CDB_TinyInt(const Uint1& i);
+    virtual ~CDB_TinyInt(void);
 
     CDB_TinyInt& operator= (const Uint1& i) {
         SetNULL(false);
@@ -357,8 +360,9 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_BigInt : public CDB_Object
 {
 public:
-    CDB_BigInt()              : CDB_Object(true)             { return; }
-    CDB_BigInt(const Int8& i) : CDB_Object(false), m_Val(i)  { return; }
+    CDB_BigInt();
+    CDB_BigInt(const Int8& i);
+    virtual ~CDB_BigInt(void);
 
     CDB_BigInt& operator= (const Int8& i) {
         SetNULL(false);
@@ -446,6 +450,7 @@ public:
                 EEncoding enc = eEncoding_Unknown);
     virtual ~CDB_VarChar(void);
 
+public:
     // assignment operators
     CDB_VarChar& operator= (const string& s)  { return SetValue(s); }
     CDB_VarChar& operator= (const char*   s)  { return SetValue(s); }
@@ -485,7 +490,9 @@ public:
              const char* str,
              EEncoding enc = eEncoding_Unknown);
     CDB_Char(const CDB_Char& v);
+    virtual ~CDB_Char(void);
 
+public:
     CDB_Char& operator= (const CDB_Char& v);
     CDB_Char& operator= (const string& v);
     // This operator copies a string.
@@ -504,7 +511,6 @@ public:
     virtual CDB_Object* Clone()   const;
 
     virtual void AssignValue(CDB_Object& v);
-    virtual ~CDB_Char(void);
 
 private:
     void SetValue(const char* str);
@@ -531,7 +537,9 @@ public:
                  const char* str,
                  EEncoding enc = eEncoding_Unknown);
     CDB_LongChar(const CDB_LongChar& v);
+    virtual ~CDB_LongChar();
 
+public:
     CDB_LongChar& operator= (const CDB_LongChar& v);
     CDB_LongChar& operator= (const string& v);
     // This operator copies a string.
@@ -551,7 +559,6 @@ public:
     virtual CDB_Object* Clone()   const;
 
     virtual void AssignValue(CDB_Object& v);
-    virtual ~CDB_LongChar();
 
 protected:
     size_t      m_Size;
@@ -565,9 +572,11 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_VarBinary : public CDB_Object
 public:
     enum { kMaxVarBinarySize = 8000 };
 
-    CDB_VarBinary()                         : CDB_Object(true)  { return; }
-    CDB_VarBinary(const void* v, size_t l)  { SetValue(v, l); }
+    CDB_VarBinary();
+    CDB_VarBinary(const void* v, size_t l);
+    virtual ~CDB_VarBinary(void);
 
+public:
     void SetValue(const void* v, size_t l);
 
     //
@@ -593,7 +602,9 @@ public:
     CDB_Binary(size_t s = 1);
     CDB_Binary(size_t s, const void* v, size_t v_size);
     CDB_Binary(const CDB_Binary& v);
+    virtual ~CDB_Binary();
 
+public:
     void SetValue(const void* v, size_t v_size);
 
     CDB_Binary& operator= (const CDB_Binary& v);
@@ -606,7 +617,6 @@ public:
     virtual CDB_Object* Clone()   const;
 
     virtual void AssignValue(CDB_Object& v);
-    virtual ~CDB_Binary();
 
 protected:
     size_t         m_Size;
@@ -620,7 +630,9 @@ public:
     CDB_LongBinary(size_t s = K8_1);
     CDB_LongBinary(size_t s, const void* v, size_t v_size);
     CDB_LongBinary(const CDB_LongBinary& v);
+    virtual ~CDB_LongBinary();
 
+public:
     void SetValue(const void* v, size_t v_size);
 
     CDB_LongBinary& operator= (const CDB_LongBinary& v);
@@ -634,7 +646,6 @@ public:
     virtual CDB_Object* Clone()   const;
 
     virtual void AssignValue(CDB_Object& v);
-    virtual ~CDB_LongBinary();
 
 protected:
     size_t         m_Size;
@@ -646,10 +657,12 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_Float : public CDB_Object
 {
 public:
-    CDB_Float()        : CDB_Object(true)             { return; }
-    CDB_Float(float i) : CDB_Object(false), m_Val(i)  { return; }
+    CDB_Float();
+    CDB_Float(float i);
+    virtual ~CDB_Float(void);
 
     CDB_Float& operator= (const float& i);
+public:
 
     float Value()   const { return IsNULL() ? 0 : m_Val; }
     void* BindVal() const { return (void*) &m_Val; }
@@ -667,9 +680,11 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_Double : public CDB_Object
 {
 public:
-    CDB_Double()         : CDB_Object(true)             { return; }
-    CDB_Double(double i) : CDB_Object(false), m_Val(i)  { return; }
+    CDB_Double();
+    CDB_Double(double i);
+    virtual ~CDB_Double(void);
 
+public:
     CDB_Double& operator= (const double& i);
 
     //
@@ -720,6 +735,10 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_Image : public CDB_Stream
 {
 public:
+    CDB_Image(void);
+    virtual ~CDB_Image(void);
+
+public:
     CDB_Image& operator= (const CDB_Image& image);
 
     virtual EDB_Type    GetType() const;
@@ -730,6 +749,10 @@ public:
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Text : public CDB_Stream
 {
+public:
+    CDB_Text(void);
+    virtual ~CDB_Text(void);
+
 public:
     virtual size_t Append(const void* buff, size_t nof_bytes = 0/*strlen*/);
     virtual size_t Append(const string& s);
@@ -748,7 +771,9 @@ public:
     CDB_SmallDateTime(CTime::EInitMode mode= CTime::eEmpty);
     CDB_SmallDateTime(const CTime& t);
     CDB_SmallDateTime(Uint2 days, Uint2 minutes);
+    virtual ~CDB_SmallDateTime(void);
 
+public:
     CDB_SmallDateTime& operator= (const CTime& t);
 
     CDB_SmallDateTime& Assign(Uint2 days, Uint2 minutes);
@@ -775,7 +800,9 @@ public:
     CDB_DateTime(CTime::EInitMode mode= CTime::eEmpty);
     CDB_DateTime(const CTime& t);
     CDB_DateTime(Int4 d, Int4 s300);
+    virtual ~CDB_DateTime(void);
 
+public:
     CDB_DateTime& operator= (const CTime& t);
 
     CDB_DateTime& Assign(Int4 d, Int4 s300);
@@ -800,10 +827,12 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_Bit : public CDB_Object
 {
 public:
-    CDB_Bit()       : CDB_Object(true)   { return; }
-    CDB_Bit(int  i) : CDB_Object(false)  { m_Val = i ? 1 : 0; }
-    CDB_Bit(bool i) : CDB_Object(false)  { m_Val = i ? 1 : 0; }
+    CDB_Bit();
+    CDB_Bit(int  i);
+    CDB_Bit(bool i);
+    virtual ~CDB_Bit(void);
 
+public:
     CDB_Bit& operator= (const int& i);
     CDB_Bit& operator= (const bool& i);
 
@@ -831,7 +860,9 @@ public:
                 const unsigned char* arr);
     CDB_Numeric(unsigned int precision, unsigned int scale, const char* val);
     CDB_Numeric(unsigned int precision, unsigned int scale, const string& val);
+    virtual ~CDB_Numeric(void);
 
+public:
     CDB_Numeric& Assign(unsigned int precision, unsigned int scale,
                         const unsigned char* arr);
     CDB_Numeric& Assign(unsigned int precision, unsigned int scale,
