@@ -6,6 +6,9 @@
 svn_revision=`echo '$Revision$' | sed "s%\\$[R]evision: *\\([^$][^$]*\\) \\$.*%\\1%"`
 def_builddir="$NCBI/c++/Debug/build"
 
+repository_url='https://svn.ncbi.nlm.nih.gov/repos/toolkit'
+tmp_app_checkout_dir='tmp_app_sample'
+
 script=`basename $0`
 timestamp=`date`
 ws='[ 	]' # The brackets contain a space and a tab.
@@ -315,9 +318,7 @@ case "${proj_type}" in
     proj_subdir=`echo ${proj_type} | sed -e 's@^app/@@'`
     proj_subtype=`echo ${proj_subdir} | tr / _`
     proj_type=app
-    if test ! -d $src/app/sample/$proj_subdir; then
-      Usage "Unsupported application type ${proj_subdir}"
-    elif test $proj_subtype = asn; then
+    if test $proj_subtype = asn; then
       extra_inc="-I../../include -I../../include/$proj_name"
     fi
     ;;
@@ -337,6 +338,17 @@ esac
 
 if test "$proj_name" != `basename $proj_name` ; then
   Usage "Invalid project name:  \"$proj_name\""
+fi
+
+if test ! -d "$src/app/sample/$proj_subdir"; then
+  svn co "$repository_url/trunk/c++/src/app/sample/$proj_subdir" \
+    "$tmp_app_checkout_dir/app/sample/$proj_subdir"
+  if test ! -d "$tmp_app_checkout_dir/app/sample/$proj_subdir"; then
+    rm -rf "$tmp_app_checkout_dir"
+    Usage "Unsupported application type ${proj_subdir}"
+  fi
+  src="`cd "$tmp_app_checkout_dir" && pwd`"
+  cleanup='yes'
 fi
 
 makefile_name="Makefile.${proj_name}_${proj_type}"
@@ -465,6 +477,7 @@ CopySources()
                 $this_proj_name
             ;;
         */Makefile.in)
+            touch "$output"
             output=$new_dir$1/Makefile
             CreateMakefile_Meta $output $proj_name $proj_subdir$1 $old_proj_name
             test -r $new_dir$1/Makefile.builddir || \
@@ -486,3 +499,4 @@ CopySources()
 
 CopySources ""
 test -f $def_makefile  ||  ln -s `basename $makefile_name` $def_makefile
+test -n "$cleanup" && rm -rf "$tmp_app_checkout_dir"
