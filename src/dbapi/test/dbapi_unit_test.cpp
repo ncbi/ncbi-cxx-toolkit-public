@@ -4316,14 +4316,18 @@ void
 CDBAPIUnitTest::Test_Bulk_Writing5(void)
 {
     string sql;
-    string table_name("#blk_table5");
+    const string table_name("#blk_table5");
+    // const string table_name("DBAPI_Sample..blk_table5");
+    const string str_data_128(128, 'c');
+    const string str_data_512(512, 'a');
+    const string str_data_8000(8000, 'b');
 
     try {
         CDB_Connection* conn(m_Conn->GetCDB_Connection());
 
 
         // Create table ...
-        {
+        if (true) {
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
                 "    id bigint NULL, \n"
@@ -4410,36 +4414,36 @@ CDBAPIUnitTest::Test_Bulk_Writing5(void)
             vBcp->Bind(pos++, &s_error);
             vBcp->Bind(pos++, &s_warning); 
 
-            int i = 1;
+            int i = 2000;
             while (i-- > 0) {
                 n_id = i;
-                s_file_name = "oops";
+                s_file_name = str_data_512;
                 n_line_num = 12;
                 n_pid = 12345;
                 n_tid = 67890;
                 n_iteration = 23;
                 n_proc_sn = 34;
                 n_thread_sn = 45;
-                s_host = "host_name";
+                s_host = str_data_128;
                 n_guid = 987654321;
-                s_session_id = "session_id";
-                s_app_name = "app_name";
-                s_req_type = "req_type";
+                s_session_id = str_data_128;
+                s_app_name = str_data_128;
+                s_req_type = str_data_128;
                 n_client_ip = 12345;
                 dt_date = CTime();
                 f_exec_time_secs = 1.2;
                 n_bytes_in = 45678;
                 n_bytes_out = 987;
                 n_status = 90;
-                s_params_unparsed = "oop&oops";
-                s_extra = "extra";
-                s_error = "error";
-                s_warning = "warning"; 
+                s_params_unparsed = str_data_8000;
+                s_extra = str_data_8000;
+                s_error = str_data_8000;
+                s_warning = str_data_8000; 
 
                 vBcp->SendRow();
-
-                vBcp->CompleteBCP(); 
             }
+
+            vBcp->CompleteBCP(); 
         }
     }
     catch(const CException& ex) {
@@ -12203,7 +12207,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             add(tc);
         }
 
-        if (false && args.GetServerType() != CTestArguments::eSybase) {
+        if (args.GetServerType() == CTestArguments::eMsSql2005) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing5, DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
