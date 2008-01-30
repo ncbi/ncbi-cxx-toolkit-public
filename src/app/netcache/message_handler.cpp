@@ -483,7 +483,8 @@ void CNetCache_MessageHandler::OnRequestEnd()
                 / m_Stat.elapsed * 100.0);
 #endif
         unsigned pending_requests = m_Server->GetRequestCounter().Get();
-        LOG_POST(Error << "client=" << m_Auth
+        ostrstream msg;
+        msg << m_Auth
             << " peer=" << m_Stat.peer_address
             << " request='" << m_Stat.request << "'"
             << " blob=" << m_Stat.blob_id
@@ -501,7 +502,8 @@ void CNetCache_MessageHandler::OnRequestEnd()
 #ifdef _DEBUG
 //            << "\n" << trace
 #endif
-        );
+        ;
+        LOG_POST(Error << (string) CNcbiOstrstreamToString(msg));
     }
 }
 
