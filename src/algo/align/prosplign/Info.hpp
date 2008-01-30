@@ -70,7 +70,7 @@ public:
 };
 
 list<CNPiece> FindGoodParts(const string& match, const string& protein, CProSplignOutputOptionsExt m_options);
-void RefineAlignment(objects::CSeq_align& seq_align, const list<CNPiece>& good_parts);
+void RefineAlignment(objects::CScope& scope, objects::CSeq_align& seq_align, const list<CNPiece>& good_parts);
 void SeekStartStop(objects::CSeq_align& seq_align, objects::CScope& scope);
 
 // class CAli;

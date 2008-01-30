@@ -680,7 +680,7 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
     CRef<CSeq_align> refined_align(new CSeq_align);
     refined_align->Assign(seq_align);
 
-    prosplign::RefineAlignment(*refined_align, good_parts);
+    prosplign::RefineAlignment(scope, *refined_align, good_parts);
 
     if (good_parts.size()!=1 || !IsProteinSpanWhole(refined_align->GetSegs().GetSpliced())) {
         refined_align->SetType(CSeq_align::eType_disc);

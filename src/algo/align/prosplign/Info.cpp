@@ -275,20 +275,29 @@ bool CProSplignOutputOptionsExt::BackCheck(list<prosplign::CNPiece>::iterator it
     return true;
 }
 
-CRef<CSeq_loc> GetGenomicBounds(const objects::CSeq_align& seqalign)
+CRef<CSeq_loc> GetGenomicBounds(CScope& scope, const CSeq_align& seqalign)
 {
+    CRef<CSeq_loc> genomic(new CSeq_loc);
+
     const CSpliced_seg& sps = seqalign.GetSegs().GetSpliced();
     const CSeq_id& nucid = sps.GetGenomic_id();
+
     if (seqalign.CanGetBounds()) {
         ITERATE(CSeq_align::TBounds, b,seqalign.GetBounds()) {
             if ((*b)->GetId() != NULL && (*b)->GetId()->Match(nucid)) {
+
+                genomic->Assign(**b);
+                if (genomic->IsWhole()) {
+                    // change to Interval, because Whole doesn't allow strand change - it's always unknown.
+                    genomic->SetInt().SetFrom(0);
+                    genomic->SetInt().SetTo(sequence::GetLength(nucid, &scope)-1);
+                }
+                genomic->SetStrand(sps.GetGenomic_strand());
                 
-                return *b;
+                return genomic;
             }
         }
     }
-
-    CRef<CSeq_loc> genomic(new CSeq_loc);
 
     if (sps.GetExons().empty()) {
         genomic->SetNull();
@@ -507,7 +516,7 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
     CSeqVector protein_seqvec(scope.GetBioseqHandle(protid), CBioseq_Handle::eCoding_Iupac);
     CSeqVector_CI protein_ci(protein_seqvec);
 
-    CRef<CSeq_loc> genomic_seqloc = prosplign::GetGenomicBounds(seqalign);
+    CRef<CSeq_loc> genomic_seqloc = prosplign::GetGenomicBounds(scope, seqalign);
     CSeqVector genomic_seqvec(*genomic_seqloc, scope, CBioseq_Handle::eCoding_Iupac);
     CSeqVector_CI genomic_ci(genomic_seqvec);
 
@@ -631,7 +640,7 @@ void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& 
     int compartment_id = GetCompNum(seqalign);
     string contig_name = seqalign.GetSegs().GetSpliced().GetGenomic_id().GetSeqIdString(true);
     string prot_id = seqalign.GetSegs().GetSpliced().GetProduct_id().GetSeqIdString(true);
-    TSeqRange bounds = prosplign::GetGenomicBounds(seqalign)->GetTotalRange();
+    TSeqRange bounds = prosplign::GetGenomicBounds(scope, seqalign)->GetTotalRange();
     int nuc_from = bounds.GetFrom();
     int nuc_to = bounds.GetTo();
     bool is_plus_strand = seqalign.GetSegs().GetSpliced().GetGenomic_strand()==eNa_strand_plus;
@@ -837,11 +846,11 @@ typedef list<CAliChunk> TAliChunkCollection;
 typedef TAliChunkCollection::iterator TAliChunkIterator;
 
 
-TAliChunkCollection ExtractChunks(CSeq_align& seq_align)
+TAliChunkCollection ExtractChunks(CScope& scope, CSeq_align& seq_align)
 {
     CSpliced_seg& sps = seq_align.SetSegs().SetSpliced();
     ENa_strand strand = sps.GetGenomic_strand();
-    TSeqRange bounds = GetGenomicBounds(seq_align)->GetTotalRange();
+    TSeqRange bounds = GetGenomicBounds(scope, seq_align)->GetTotalRange();
     int nuc_from = bounds.GetFrom();
     int nuc_to = bounds.GetTo();
     int prot_from = 0;
@@ -1056,10 +1065,10 @@ void SplitExon(CSpliced_seg::TExons& exons, TAliChunkIterator chunk_iter, bool g
 
 }
 
-void prosplign::RefineAlignment(CSeq_align& seq_align, const list<CNPiece>& good_parts)
+void prosplign::RefineAlignment(CScope& scope, CSeq_align& seq_align, const list<CNPiece>& good_parts)
 {
     CSpliced_seg& sps = seq_align.SetSegs().SetSpliced();
-    TAliChunkCollection chunks = ExtractChunks(seq_align);
+    TAliChunkCollection chunks = ExtractChunks(scope, seq_align);
 
     if (chunks.empty())
         return;
