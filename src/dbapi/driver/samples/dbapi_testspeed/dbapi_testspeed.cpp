@@ -541,10 +541,8 @@ CDbapiTestSpeedApp::FetchResults (const string& table_name, bool readItems)
                 for ( unsigned int j = 0;  j < r->NofItems(); ++j ) {
                     //    Determination of data type:
                     EDB_Type rt = r->ItemDataType(j);
-                    const char* iname= r->ItemName(j);
+                    const string iname = r->ItemName(j);
 
-                    //    Printing to stdout:
-                    if ( iname == 0 ) iname= "";
                     // cout << iname << '=';
 
                     if ( readItems && rt!=eDB_Numeric &&

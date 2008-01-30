@@ -351,8 +351,8 @@ public:
     ///   Number of item, starting from 0.
     ///
     /// @return 
-    ///    NULL if "item_num" >= NofItems(), otherwise item name.
-    virtual const char* ItemName(unsigned int item_num) const;
+    ///   Empty string if "item_num" >= NofItems(), otherwise item name.
+    virtual string ItemName(unsigned int item_num) const;
 
     /// @brief 
     ///   Get size (in bytes) of a result item.

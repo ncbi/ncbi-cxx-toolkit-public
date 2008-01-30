@@ -450,8 +450,7 @@ CDbapiSampleApp::ShowResults (const string& query)
                 cout << "<ROW>";
                 for ( unsigned int j = 0;  j < r->NofItems(); j++ ) {
                     EDB_Type rt = r->ItemDataType(j);
-                    const char* iname= r->ItemName(j);
-                    if ( iname == 0 ) iname= "";
+                    const string iname = r->ItemName(j);
                     cout << '<' << iname << '>';
                     if ( rt == eDB_Char || rt == eDB_VarChar ) {
                         CDB_VarChar v;

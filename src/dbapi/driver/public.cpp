@@ -405,10 +405,10 @@ unsigned int CDB_Result::NofItems() const
     return GetIResult().GetDefineParams().GetNum();
 }
 
-const char* CDB_Result::ItemName(unsigned int item_num) const
+string CDB_Result::ItemName(unsigned int item_num) const
 {
     CHECK_RESULT( GetIResultPtr() );
-    return GetIResult().GetDefineParams().GetName(item_num).c_str();
+    return GetIResult().GetDefineParams().GetName(item_num);
 }
 
 size_t CDB_Result::ItemMaxSize(unsigned int item_num) const

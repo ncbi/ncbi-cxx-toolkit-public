@@ -66,14 +66,18 @@ private:
 
   struct SColMetaData 
   {
-    SColMetaData(const char* name,
+    SColMetaData(const string& name,
 		 EDB_Type type,
 		 int maxSize)
-      : m_name(name), m_type(type), m_maxSize(maxSize) {}
+      : m_name(name), 
+      m_type(type), 
+      m_maxSize(maxSize) 
+      {
+      }
 
-    const char* m_name;
+    string   m_name;
     EDB_Type m_type;
-    int m_maxSize;
+    int      m_maxSize;
   };
   
   vector<SColMetaData> m_colInfo;
