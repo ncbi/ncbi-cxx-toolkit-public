@@ -4181,7 +4181,6 @@ CDBAPIUnitTest::Test_Bulk_Writing3(void)
         // Side-effect ...
         // Tmp table ...
         auto_ptr<IBulkInsert> bi_tmp(
-            // m_Conn->CreateBulkInsert(table_name2, 1)
             m_Conn->GetBulkInsert(table_name2)
             );
 
@@ -4202,9 +4201,7 @@ CDBAPIUnitTest::Test_Bulk_Writing3(void)
 
         // Insert data ...
         {
-            //
             auto_ptr<IBulkInsert> bi(
-                // m_Conn->CreateBulkInsert(table_name, 2)
                 m_Conn->GetBulkInsert(table_name)
                 );
 
@@ -4309,7 +4306,141 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
             bi->Complete();
         }
 
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
 
+void
+CDBAPIUnitTest::Test_Bulk_Writing5(void)
+{
+    string sql;
+    string table_name("#blk_table5");
+
+    try {
+        CDB_Connection* conn(m_Conn->GetCDB_Connection());
+
+
+        // Create table ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "    id bigint NULL, \n"
+                "    file_name varchar(512) NULL, \n"
+                "    line_num int NULL, \n"
+                "    pid int NULL, \n"
+                "    tid int NULL, \n"
+                "    iteration int NULL, \n"
+                "    proc_sn int NULL, \n"
+                "    thread_sn int NULL, \n"
+                "    host varchar(128) NULL, \n"
+                "    guid bigint NULL, \n"
+                "    session_id varchar(128) NULL, \n"
+                "    app_name varchar(128) NULL, \n"
+                "    req_type varchar(128) NULL, \n"
+                "    client_ip int NULL, \n"
+                "    date datetime NULL, \n"
+                "    exec_time_sec float NULL, \n"
+                "    bytes_in bigint NULL, \n"
+                "    bytes_out bigint NULL, \n"
+                "    status bigint NULL, \n"
+                "    params_unparsed varchar(8000) NULL, \n"
+                "    extra varchar(8000) NULL, \n"
+                "    error varchar(8000) NULL, \n"
+                "    warning varchar(8000) NULL \n"
+                ") \n"
+                ;
+
+            auto_ptr<CDB_LangCmd> cmd(conn->LangCmd(sql));
+            cmd->Send();
+            cmd->DumpResults();
+        }
+
+        // Insert data ...
+        {
+            auto_ptr<CDB_BCPInCmd> vBcp(conn->BCPIn(table_name)); 
+
+            CDB_BigInt      n_id;
+            CDB_VarChar     s_file_name;
+            CDB_Int         n_line_num;
+            CDB_Int         n_pid;
+            CDB_Int         n_tid;
+            CDB_Int         n_iteration;
+            CDB_Int         n_proc_sn;
+            CDB_Int         n_thread_sn;
+            CDB_VarChar     s_host;
+            CDB_BigInt      n_guid;
+            CDB_VarChar     s_session_id;
+            CDB_VarChar     s_app_name;
+            CDB_VarChar     s_req_type;
+            CDB_Int         n_client_ip;
+            CDB_DateTime    dt_date;
+            CDB_Float       f_exec_time_secs;
+            CDB_BigInt      n_bytes_in;
+            CDB_BigInt      n_bytes_out;
+            CDB_BigInt      n_status;
+            CDB_VarChar     s_params_unparsed;
+            CDB_VarChar     s_extra;
+            CDB_VarChar     s_error;
+            CDB_VarChar     s_warning;
+
+            Uint2 pos = 0;
+            vBcp->Bind(pos++, &n_id);
+            vBcp->Bind(pos++, &s_file_name);
+            vBcp->Bind(pos++, &n_line_num);
+            vBcp->Bind(pos++, &n_pid);
+            vBcp->Bind(pos++, &n_tid);
+            vBcp->Bind(pos++, &n_iteration);
+            vBcp->Bind(pos++, &n_proc_sn);
+            vBcp->Bind(pos++, &n_thread_sn);
+            vBcp->Bind(pos++, &s_host);
+            vBcp->Bind(pos++, &n_guid);
+            vBcp->Bind(pos++, &s_session_id);
+            vBcp->Bind(pos++, &s_app_name);
+            vBcp->Bind(pos++, &s_req_type);
+            vBcp->Bind(pos++, &n_client_ip);
+            vBcp->Bind(pos++, &dt_date);
+            vBcp->Bind(pos++, &f_exec_time_secs);
+            vBcp->Bind(pos++, &n_bytes_in);
+            vBcp->Bind(pos++, &n_bytes_out);
+            vBcp->Bind(pos++, &n_status);
+            vBcp->Bind(pos++, &s_params_unparsed);
+            vBcp->Bind(pos++, &s_extra);
+            vBcp->Bind(pos++, &s_error);
+            vBcp->Bind(pos++, &s_warning); 
+
+            int i = 1;
+            while (i-- > 0) {
+                n_id = i;
+                s_file_name = "oops";
+                n_line_num = 12;
+                n_pid = 12345;
+                n_tid = 67890;
+                n_iteration = 23;
+                n_proc_sn = 34;
+                n_thread_sn = 45;
+                s_host = "host_name";
+                n_guid = 987654321;
+                s_session_id = "session_id";
+                s_app_name = "app_name";
+                s_req_type = "req_type";
+                n_client_ip = 12345;
+                dt_date = CTime();
+                f_exec_time_secs = 1.2;
+                n_bytes_in = 45678;
+                n_bytes_out = 987;
+                n_status = 90;
+                s_params_unparsed = "oop&oops";
+                s_extra = "extra";
+                s_error = "error";
+                s_warning = "warning"; 
+
+                vBcp->SendRow();
+
+                vBcp->CompleteBCP(); 
+            }
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -12068,6 +12199,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 && args.GetDriverName() == ftds63_driver)
                 ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        }
+
+        if (false && args.GetServerType() != CTestArguments::eSybase) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing5, DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
         }

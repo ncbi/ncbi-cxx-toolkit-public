@@ -208,11 +208,14 @@ public:
     void Test_Cursor2(void);
     void Test_Cursor_Param(void);
     void Test_Procedure(void);
+
     void Test_Bulk_Writing(void);
     void Test_Bulk_Writing2(void);
     void Test_Bulk_Writing3(void);
     void Test_Bulk_Writing4(void);
+    void Test_Bulk_Writing5(void);
     void Test_Bulk_Overflow(void);
+    
     void Test_GetTotalColumns(void);
     void Test_LOB(void);
     void Test_LOB_LowLevel(void);
