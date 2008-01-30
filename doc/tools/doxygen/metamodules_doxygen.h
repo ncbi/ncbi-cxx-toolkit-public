@@ -465,6 +465,9 @@
  *  @ingroup UTIL
  */
 
+/** @defgroup BlastFormatting BLAST Formatting
+ *  @ingroup UTIL
+ */
 
 /* ========================================================================= */
 
