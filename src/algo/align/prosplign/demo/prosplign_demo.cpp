@@ -66,7 +66,6 @@ void CProSplignApp::Init(void)
     arg_desc->AddKey("stop", "stop",
                      "genomic region stop",
                      CArgDescriptions::eInteger);
-    arg_desc->AddFlag("reverse", "align to reverse strand");
     
     arg_desc->AddFlag("full", "do not remove bad pieces");
 
@@ -94,14 +93,16 @@ int CProSplignApp::Run()
     CScope scope(*obj_mgr);
     scope.AddDefaults();
     /* examples
-prosplign_demo -protein NP_002346.1 -genomic NT_009714.16 -start 1851937 -stop 1861227 -reverse
-
+plus strand:
 prosplign_demo -protein EAT35703.1 -genomic NW_001262488.1 -start 10353 -stop 12115
+minus strand:
+prosplign_demo -protein NP_002346.1 -genomic NT_009714.16 -start 1851937 -stop 1861227
+
     */
 
     CSeq_id protein(args["protein"].AsString());
     CSeq_id genomic(args["genomic"].AsString());
-    CSeq_loc seqloc(genomic, args["start"].AsInteger(), args["stop"].AsInteger(),args["reverse"]?eNa_strand_minus:eNa_strand_plus);
+    CSeq_loc seqloc(genomic, args["start"].AsInteger(), args["stop"].AsInteger(),eNa_strand_unknown);
 
     CProSplign prosplign;
     CRef<CSeq_align> alignment = prosplign.FindAlignment(scope, protein, seqloc,

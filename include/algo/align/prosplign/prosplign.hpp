@@ -231,13 +231,10 @@ class NCBI_XALGOALIGN_EXPORT CProSplign: public CObject
 {
 public:
 
-    CProSplign( CProSplignScoring scoring = CProSplignScoring() );
-    ~CProSplign();
-
     /// By default ProSplign looks for introns.
     /// Set intronless mode for protein to mRNA alignments, many viral genomes, etc.
-    void SetIntronlessMode(bool intronless);
-    bool GetIntronlessMode() const;
+    CProSplign( CProSplignScoring scoring = CProSplignScoring(), bool intronless=false );
+    ~CProSplign();
 
     /// Aligns protein to a region on genomic sequence.
     /// genomic seq_loc should be a continuous region - an interval or a whole sequence
@@ -275,16 +272,18 @@ public:
     CProSplignText GetProsplignText(objects::CScope& scope, const objects::CSeq_align& seqalign);
 
     /// deprecated internals
-    void SetMode(bool one_stage, bool just_second_stage, bool old);
+    CProSplign( CProSplignScoring scoring, bool intronless, bool one_stage, bool just_second_stage, bool old);
     const vector<pair<int, int> >& GetExons() const;
     vector<pair<int, int> >& SetExons();
     void GetFlanks(bool& lgap, bool& rgap) const;
     void SetFlanks(bool lgap, bool rgap);
 
+public:
+    class CImplementation;
 private:
-    struct SImplData;
-    auto_ptr<SImplData> m_data;
+    auto_ptr<CImplementation> m_implementation;
     
+private:
     /// forbidden
     CProSplign(const CProSplign&);
     CProSplign& operator=(const CProSplign&);

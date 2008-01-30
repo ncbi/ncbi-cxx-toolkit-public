@@ -288,13 +288,13 @@ CRef<CSeq_loc> GetGenomicBounds(const objects::CSeq_align& seqalign)
     }
 
     CRef<CSeq_loc> genomic(new CSeq_loc);
-    genomic->SetId(nucid);
 
     if (sps.GetExons().empty()) {
         genomic->SetNull();
     } else {
         genomic->SetPacked_int().AddInterval(nucid,sps.GetExons().front()->GetGenomic_start(),sps.GetExons().front()->GetGenomic_end(),sps.GetGenomic_strand());
         genomic->SetPacked_int().AddInterval(nucid,sps.GetExons().back()->GetGenomic_start(),sps.GetExons().back()->GetGenomic_end(),sps.GetGenomic_strand());
+
         genomic = sequence::Seq_loc_Merge(*genomic, CSeq_loc::fMerge_SingleRange, NULL);
     }
 
@@ -628,7 +628,7 @@ void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& 
     int compartment_id = GetCompNum(seqalign);
     string contig_name = seqalign.GetSegs().GetSpliced().GetGenomic_id().GetSeqIdString(true);
     string prot_id = seqalign.GetSegs().GetSpliced().GetProduct_id().GetSeqIdString(true);
-    TSeqRange bounds = seqalign.GetBounds().back()->GetTotalRange();
+    TSeqRange bounds = GetGenomicBounds(seqalign)->GetTotalRange();
     int nuc_from = bounds.GetFrom();
     int nuc_to = bounds.GetTo();
     bool is_plus_strand = seqalign.GetSegs().GetSpliced().GetGenomic_strand()==eNa_strand_plus;
@@ -838,9 +838,9 @@ TAliChunkCollection ExtractChunks(CSeq_align& seq_align)
 {
     CSpliced_seg& sps = seq_align.SetSegs().SetSpliced();
     ENa_strand strand = sps.GetGenomic_strand();
-    CRef<CSeq_loc> genomic_seqloc = GetGenomicBounds(seq_align);
-    int nuc_from = genomic_seqloc->GetTotalRange().GetFrom();
-    int nuc_to = genomic_seqloc->GetTotalRange().GetTo();
+    TSeqRange bounds = GetGenomicBounds(seq_align)->GetTotalRange();
+    int nuc_from = bounds.GetFrom();
+    int nuc_to = bounds.GetTo();
     int prot_from = 0;
 
     int alignment_pos = 0;
