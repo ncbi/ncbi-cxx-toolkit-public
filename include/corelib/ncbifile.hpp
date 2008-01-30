@@ -2457,7 +2457,7 @@ template<class TPathIterator,
 TFindFunc FindFiles(TPathIterator         path_begin,
                     TPathIterator         path_end,
                     const vector<string>& masks,
-                    TFindFunc             find_func,
+                    TFindFunc&            find_func,
                     TFindFiles            flags = fFF_Default)
 {
     vector<string> masks_empty;
@@ -2476,7 +2476,7 @@ TFindFunc FindFiles2(TPathIterator         path_begin,
                      TPathIterator         path_end,
                      const vector<string>& masks,
                      const vector<string>& masks_subdir,
-                     TFindFunc             find_func,
+                     TFindFunc&            find_func,
                      TFindFiles            flags = fFF_Default)
 {
     for (; path_begin != path_end; ++path_begin) {
@@ -2506,7 +2506,7 @@ TFindFunc FindFiles(TPathIterator path_begin,
                     TPathIterator path_end,
                     TMaskIterator mask_begin,
                     TMaskIterator mask_end,
-                    TFindFunc     find_func,
+                    TFindFunc&    find_func,
                     TFindFiles    flags = fFF_Default)
 {
     vector<string> masks;
@@ -2532,7 +2532,7 @@ template<class TPathIterator,
 TFindFunc FindFiles(TPathIterator path_begin,
                     TPathIterator path_end,
                     const CMask&  masks,
-                    TFindFunc     find_func,
+                    TFindFunc&    find_func,
                     TFindFiles    flags = fFF_Default)
 {
     CMask masks_empty;
@@ -2551,7 +2551,7 @@ TFindFunc FindFiles2(TPathIterator path_begin,
                      TPathIterator path_end,
                      const CMask&  masks,
                      const CMask&  masks_subdir,
-                     TFindFunc     find_func,
+                     TFindFunc&    find_func,
                      TFindFiles    flags = fFF_Default)
 {
     for (; path_begin != path_end; ++path_begin) {
