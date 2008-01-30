@@ -2336,7 +2336,7 @@ template<class TFindFunc>
 TFindFunc FindFilesInDir(const CDir&            dir,
                          const vector<string>&  masks,
                          const vector<string>&  masks_subdir,
-                         TFindFunc              find_func,
+                         TFindFunc&             find_func,
                          TFindFiles             flags = fFF_Default)
 {
     TFindFiles find_type = flags & (fFF_Dir | fFF_File);
@@ -2375,7 +2375,7 @@ TFindFunc FindFilesInDir(const CDir&            dir,
              CDirEntry::MatchesMask(name, masks_subdir, use_case) &&
              (entry_type == fFF_Dir || dir_entry.IsDir()) /*real dir*/ ) {
             CDir nested_dir(dir_entry.GetPath());
-            find_func = FindFilesInDir(nested_dir, masks,masks_subdir,
+            find_func = FindFilesInDir(nested_dir, masks, masks_subdir,
                                        find_func, flags);
         }
     } // ITERATE
@@ -2388,7 +2388,7 @@ template<class TFindFunc>
 TFindFunc FindFilesInDir(const CDir&   dir,
                          const CMask&  masks,
                          const CMask&  masks_subdir,
-                         TFindFunc     find_func,
+                         TFindFunc&    find_func,
                          TFindFiles    flags = fFF_Default)
 {
     TFindFiles find_type = flags & (fFF_Dir | fFF_File);
@@ -2427,7 +2427,7 @@ TFindFunc FindFilesInDir(const CDir&   dir,
              masks_subdir.Match(name, use_case) &&
              (entry_type == fFF_Dir || dir_entry.IsDir()) /*real dir*/ ) {
             CDir nested_dir(dir_entry.GetPath());
-            find_func = FindFilesInDir(nested_dir, masks,masks_subdir,
+            find_func = FindFilesInDir(nested_dir, masks, masks_subdir,
                                        find_func, flags);
         }
     } // ITERATE entries
@@ -2448,7 +2448,8 @@ TFindFunc FindFilesInDir(const CDir&   dir,
 /// The difference between FindFiles<> and FileFiles2<> is that last one
 /// use two different masks - one for dir entries (files and/or subdirs)
 /// and second for subdirectories, that will be used for recursive
-/// search. FindFiles<> use all subdirectories for recursive search.
+/// search. FindFiles<> use one set of masks for all subdirectories with
+/// recursive search.
 ///
 
 template<class TPathIterator, 
