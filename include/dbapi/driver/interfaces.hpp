@@ -149,7 +149,9 @@ public:
 
     virtual unsigned int GetNum(void) const = 0;
 
-    virtual string GetName(
+    // This method is returning const reference because meta-info MUST be
+    // cached for performance reasons.
+    virtual const string& GetName(
         const CDBParamVariant& param, 
         CDBParamVariant::ENameFormat format = 
             CDBParamVariant::eSQLServerName) const = 0;
@@ -436,8 +438,8 @@ public:
     ///   Number of item, starting from 0.
     ///
     /// @return 
-    ///    empty string if "item_num" >= NofItems(), otherwise item name.
-    virtual string ItemName(unsigned int item_num) const = 0;
+    ///    NULL if "item_num" >= NofItems(), otherwise item name.
+    virtual const char* ItemName(unsigned int item_num) const = 0;
 
     /// @brief 
     ///   Get size (in bytes) of a result item.

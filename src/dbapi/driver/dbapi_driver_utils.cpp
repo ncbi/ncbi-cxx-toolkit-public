@@ -149,12 +149,14 @@ unsigned int CDBBindedParams::GetNum(void) const
     return 0;
 }
 
-string CDBBindedParams::GetName(
+const string& 
+CDBBindedParams::GetName(
         const CDBParamVariant& param, 
         CDBParamVariant::ENameFormat format) const
 {
     DATABASE_DRIVER_ERROR( "Methods GetName is not implemented yet.", 122002 );
-    return string();
+
+    return kEmptyStr;
 }
 
 unsigned int CDBBindedParams::GetIndex(const CDBParamVariant& param) const
@@ -273,7 +275,7 @@ CCachedRowInfo::GetNum(void) const
     return num;
 }
 
-string 
+const string& 
 CCachedRowInfo::GetName(
         const CDBParamVariant& param, 
         CDBParamVariant::ENameFormat format) const
@@ -286,7 +288,7 @@ CCachedRowInfo::GetName(
         }
     }
 
-    return string();
+    return kEmptyStr;
 }
 
 

@@ -163,6 +163,9 @@ CSL3_RowResult::CSL3_RowResult(CSL3_LangCmd* cmd, bool fetch_done) :
     m_FetchDone(fetch_done),
     m_RowInfo(cmd->x_GetSQLite3stmt())
 {
+    const unsigned int col_num = sqlite3_column_count(x_GetSQLite3stmt());
+    for (unsigned int i = 0; i < col_num; ++i) {
+    }
 }
 
 

@@ -115,7 +115,7 @@ public:
 
 public:
     virtual unsigned int GetNum(void) const;
-    virtual string GetName(
+    virtual const string& GetName(
             const CDBParamVariant& param, 
             CDBParamVariant::ENameFormat format = 
                 CDBParamVariant::eSQLServerName) const;
@@ -150,7 +150,7 @@ public:
 public:
     virtual unsigned int GetNum(void) const;
 
-    virtual string GetName(
+    virtual const string& GetName(
             const CDBParamVariant& param, 
             CDBParamVariant::ENameFormat format = 
                 CDBParamVariant::eSQLServerName) const;

@@ -263,6 +263,51 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     SetServerName(params.GetServerName());
     SetUserName(params.GetUserName());
     SetPassword(params.GetPassword());
+    /*
+    string db_name;
+    const CDriverContext::EServerType server_type = 
+        conn.GetCDriverContext().GetSupportedDBType();
+
+    if (server_type == impl::CDriverContext::eSybase
+        || server_type == impl::CDriverContext::eMsSql) {
+        string sql( 
+            "SELECT '' from sysobjects WHERE name = @name \n"
+            "UNION \n"
+            "SELECT 'master' from master..sysobjects WHERE name = @name \n"
+            );
+
+        if (server_type == impl::CDriverContext::eSybase) {
+            sql +=
+                "UNION \n"
+                "SELECT 'sybsystemprocs' from sybsystemprocs..sysobjects WHERE name = @name \n"
+                "UNION \n"
+                "SELECT 'sybsystemdb' from sybsystemdb..sysobjects WHERE name = @name"
+                ;
+        }
+
+        auto_ptr<CDB_LangCmd> cmd(conn.LangCmd(sql));
+        CDB_VarChar sp_name_value(name);
+
+        cmd->GetBindParams().Bind("@name", &sp_name_value);
+        cmd->Send();
+
+        while (cmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> res(cmd->Result());
+
+            if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
+                CDB_VarChar db_name_value;
+
+                while (res->Fetch()) {
+                    res->GetItem(&db_name_value);
+
+                    if (!db_name_value.IsNULL()) {
+                        db_name = db_name_value.Value();
+                    }
+                }
+            }
+        }
+    }
+    */
 }
 
 

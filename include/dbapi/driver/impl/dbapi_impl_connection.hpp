@@ -198,6 +198,13 @@ public:
     virtual void SetTimeout(size_t nof_secs) = 0;
     virtual void SetTextImageSize(size_t nof_bytes);
 
+    /*
+    virtual CDriverContext::EServerType GetDBType(void) const
+    {
+        return CDriverContext::eUnlnown;
+    }
+    */
+    
 protected:
     /// These methods to allow the children of CConnection to create
     /// various command-objects
