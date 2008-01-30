@@ -723,7 +723,13 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
         ex.SetSybaseSeverity(severity);
 
         GetDBLExceptionStorage().Accept(ex);
-    } else {
+    }
+    else if (msgno == 1708  ||  msgno == 1771) {
+        // "Maximum row size exceeds allowable width. It is being rounded down to 32767 bytes."
+        // "Row size (32767 bytes) could exceed row size limit, which is 1962 bytes."
+        ERR_POST_X(6, Warning << msgtxt);
+    }
+    else {
         EDiagSev sev =
             severity <  10 ? eDiag_Info :
             severity == 10 ? eDiag_Warning :

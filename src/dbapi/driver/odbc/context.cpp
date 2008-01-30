@@ -235,6 +235,9 @@ void CODBC_Reporter::ReportErrors(void) const
                                     err_msg.c_str());
                     m_HStack->PostMsg(&dl);
                 }
+                else if (NativeError == 1708  ||  NativeError == 1771) {
+                    ERR_POST_X(3, Warning << err_msg);
+                }
                 else if(NativeError != 5701
                     && NativeError != 5703 ){
                     CDB_SQLEx se(GetBlankCompileInfo(),

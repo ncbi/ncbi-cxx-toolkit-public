@@ -1270,6 +1270,15 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
 
             PassException(ex, server_name, user_name, msg->severity);
         }
+        else if (msg->msgnumber == 1771  ||  msg->msgnumber == 1708) {
+            // "Maximum row size exceeds allowable width. It is being rounded down to 32767 bytes."
+            // "Row size (32767 bytes) could exceed row size limit, which is 1962 bytes."
+            // and in ftds
+            // "The table has been created but its maximum row size exceeds the maximum number of bytes
+            //  per row (8060). INSERT or UPDATE of a row in this table will fail if the resulting row
+            //  length exceeds 8060 bytes."
+            ERR_POST_X(11, Warning << message);
+        }
         else {
             EDiagSev sev =
                 msg->severity <  10 ? eDiag_Info :

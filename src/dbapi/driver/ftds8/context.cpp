@@ -634,7 +634,14 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
         ex.SetSybaseSeverity(severity);
 
         GetFTDS8ExceptionStorage().Accept(ex);
-    } else {
+    }
+    else if (msgno == 1708) {
+        // "The table has been created but its maximum row size exceeds the maximum number of bytes
+        //  per row (8060). INSERT or UPDATE of a row in this table will fail if the resulting row
+        //  length exceeds 8060 bytes."
+        ERR_POST_X(5, Warning << msgtxt);
+    }
+    else {
         EDiagSev sev =
             severity <  10 ? eDiag_Info :
             severity == 10 ? eDiag_Warning :
