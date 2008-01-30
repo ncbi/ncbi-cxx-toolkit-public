@@ -1962,6 +1962,17 @@ if test -n "$with_fake_root"; then
 fi
 
 
+#### Ensure that all explicitly requested subtrees actually exist
+NCBI_CHECK_SUBTREE(algo)
+NCBI_CHECK_SUBTREE(app)
+dnl NCBI_CHECK_SUBTREE(bdb) # deferred until end, as --with-bdb does double duty
+NCBI_CHECK_SUBTREE(ctools)
+NCBI_CHECK_SUBTREE(dbapi)
+NCBI_CHECK_SUBTREE(gui)
+NCBI_CHECK_SUBTREE(objects)
+NCBI_CHECK_SUBTREE(serial)
+
+
 #### Source, include, and build directories
 ncbiconf="$build_root/inc/ncbiconf_unix.h"
 ncbiconf_old="$build_root/inc/ncbiconf.h"
@@ -3119,6 +3130,8 @@ fi
 ## SYBASE libraries
 
 NETWORK_PURE_LIBS="$NETWORK_LIBS"
+ncbi_xreader_pubseqos=
+IF_PUBSEQOS='#'
 if test "$with_sybase" != "no" ; then
    net_sybase_root="/netopt/Sybase/clients"
    local_sybase_root="/export/home/sybase/clients"
@@ -3311,15 +3324,20 @@ if test "$with_sybase" != "no" ; then
          AC_DEFINE(HAVE_SYBASE_REENTRANT, 1,
                    [Define to 1 if SYBASE has reentrant libraries.])
       fi
-      AC_CACHE_CHECK([for PubSeq service availability], ncbi_cv_db_pubseq,
-         [if grep PUBSEQ_OS $SYBASE_PATH/interfaces >/dev/null; then
-             ncbi_cv_db_pubseq=yes
-          else
-             ncbi_cv_db_pubseq=no
-          fi])
-      if test "$ncbi_cv_db_pubseq" = yes; then
-         AC_DEFINE(HAVE_PUBSEQ_OS, 1,
-                   [Define to 1 if the PUBSEQ service is available.])
+      if test "$with_dbapi" != no -a -f ${real_srcdir}/src/objtools/data_loaders/genbank/readers/pubseqos/Makefile.in; then
+         AC_CACHE_CHECK([for PubSeq service availability], ncbi_cv_db_pubseq,
+            [if grep PUBSEQ_OS $SYBASE_PATH/interfaces >/dev/null; then
+                ncbi_cv_db_pubseq=yes
+             else
+                ncbi_cv_db_pubseq=no
+             fi])
+         if test "$ncbi_cv_db_pubseq" = yes; then
+            AC_DEFINE(HAVE_PUBSEQ_OS, 1,
+                      [Define to 1 if the PUBSEQ service is available.])
+            NCBI_FEATURE(PubSeqOS)
+            ncbi_xreader_pubseqos=ncbi_xreader_pubseqos
+            IF_PUBSEQOS=
+         fi
       fi
 
       SYBASE_DBLIBS="$SYBASE_LPATH -lsybdb${bit64_sfx}"
@@ -3607,6 +3625,9 @@ ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PAT
    fi
 fi
 if test "$with_bdb" = "no" ; then
+   if test -n "$with_bdb"; then
+      AC_MSG_ERROR([--with-bdb:  Berkeley DB library is missing or too old])
+   fi
    BERKELEYDB_PATH="No_BerkeleyDB"
    BERKELEYDB_INCLUDE=
    BERKELEYDB_LIBS=
@@ -4056,6 +4077,9 @@ if test "$with_ncbi_c" != "no" ; then
    fi
 fi
 if test "$with_ncbi_c" = "no" ; then
+   if test -n "$with_ctools"; then
+      AC_MSG_ERROR([--with-ctools:  NCBI C Toolkit is missing])
+   fi
    NCBI_C_PATH="No_NCBI_CToolkit"
    NCBI_C_INCLUDE=
    NCBI_C_LIBPATH=
@@ -5265,18 +5289,6 @@ fi
 ## `serial' projects
 
 if test "$with_serial" = "no" ; then
-   NoConfProjects="$NoConfProjects serial"
-fi
-
-if test ! -f ${real_srcdir}/src/serial/Makefile.in  -o  \
-        ! -d ${real_srcdir}/include/serial ; then
-   if test "$with_serial" = "yes" ; then
-      AC_MSG_ERROR([--with-serial:  SERIAL sources are missing])
-   fi
-   with_serial="no"
-fi
-
-if test "$with_serial" = "no" ; then
    serial=
 else
    NCBI_PROJECT(serial)
@@ -5285,18 +5297,6 @@ fi
 
 
 ## `objects' projects
-
-if test "$with_objects" = "no" ; then
-   NoConfProjects="$NoConfProjects objects"
-fi
-
-if test ! -f ${real_srcdir}/src/objects/Makefile.in  -o  \
-        ! -d ${real_srcdir}/include/objects ; then
-   if test "$with_objects" = "yes" ; then
-      AC_MSG_ERROR([--with-objects:  OBJECTS sources are missing])
-   fi
-   with_objects="no"
-fi
 
 if test "$with_objects" = "no"  -o  -z "$serial" ; then
    objects=
@@ -5308,17 +5308,7 @@ fi
 
 ## `bdb' projects
 
-if test "$with_bdb" = "no" ; then
-   NoConfProjects="$NoConfProjects bdb"
-fi
-
-if test ! -f ${real_srcdir}/src/bdb/Makefile.in  -o  ! -d ${real_srcdir}/include/bdb
-then
-   if test "$with_bdb" = "yes" ; then
-      AC_MSG_ERROR([--with-bdb:  BDB sources are missing])
-   fi
-   with_bdb="no"
-fi
+NCBI_CHECK_SUBTREE(bdb)
 
 if test "$with_bdb" = "no" ; then
    bdb=
@@ -5340,18 +5330,6 @@ fi
 ## `dbapi' projects
 
 if test "$with_dbapi" = "no" ; then
-   NoConfProjects="$NoConfProjects dbapi"
-fi
-
-if test ! -f ${real_srcdir}/src/dbapi/Makefile.in  -o  \
-        ! -d ${real_srcdir}/include/dbapi ; then
-   if test "$with_dbapi" = "yes" ; then
-      AC_MSG_ERROR([--with-dbapi:  DBAPI sources are missing])
-   fi
-   with_dbapi="no"
-fi
-
-if test "$with_dbapi" = "no" ; then
    dbapi=
 else
    NCBI_PROJECT(dbapi)
@@ -5360,18 +5338,6 @@ fi
 
 
 ## `app' projects
-
-if test "$with_app" = "no" ; then
-   NoConfProjects="$NoConfProjects app"
-fi
-
-if test ! -f ${real_srcdir}/src/app/Makefile.in  -o  \
-        ! -d ${real_srcdir}/include/app ; then
-   if test "$with_app" = "yes" ; then
-      AC_MSG_ERROR([--with-app:  APP sources are missing])
-   fi
-   with_app="no"
-fi
 
 if test "$with_app" = "no" ; then
    app=
@@ -5383,41 +5349,12 @@ fi
 
 ## `ctools' project cluster
 
-if test "$with_ctools" = "no" ; then
-   NoConfProjects="$NoConfProjects ctools"
-fi
-
-if test ! -f ${real_srcdir}/src/ctools/Makefile.in  -o  \
-        ! -d ${real_srcdir}/include/ctools  -o  "$with_ncbi_c" = "no"
-then
-   if test "$with_ctools" = "yes" ; then
-      if test "$with_ncbi_c" = "no" ; then
-         AC_MSG_ERROR([--with-ctools:  NCBI C Toolkit is missing])
-      else
-         AC_MSG_ERROR([--with-ctools:  CTOOLS sources are missing])
-      fi
-   fi
-   with_ctools="no"
-fi
-
 if test "$with_ctools" != "no" ; then
    NCBI_PROJECT(ctools)
 fi
 
 
 ## `gui' projects
-
-if test "$with_gui" = "no" ; then
-   NoConfProjects="$NoConfProjects gui"
-fi
-
-if test ! -f ${real_srcdir}/src/gui/Makefile.in \
-   -o  ! -d ${real_srcdir}/include/gui; then
-   if test "$with_gui" = "yes" ; then
-      AC_MSG_ERROR([--with-gui:  GUI sources are missing])
-   fi
-   with_gui="no"
-fi
 
 if test "$with_gui" = "no" ; then
    gui=
@@ -5428,18 +5365,6 @@ fi
 
 
 ## `algo' projects
-
-if test "$with_algo" = "no" ; then
-   NoConfProjects="$NoConfProjects algo"
-fi
-
-if test ! -f ${real_srcdir}/src/algo/Makefile.in  -o  ! -d ${real_srcdir}/include/algo
-then
-   if test "$with_algo" = "yes" ; then
-      AC_MSG_ERROR([--with-algo:  ALGO sources are missing])
-   fi
-   with_algo="no"
-fi
 
 if test "$with_algo" = "no" ; then
    algo=
@@ -5870,6 +5795,8 @@ AC_SUBST(XALAN_LIBS)
 AC_SUBST(XALAN_STATIC_LIBS)
 AC_SUBST(FREETYPE_INCLUDE)
 AC_SUBST(FREETYPE_LIBS)
+AC_SUBST(ncbi_xreader_pubseqos)
+AC_SUBST(IF_PUBSEQOS)
 
 AC_SUBST(NCBI_C_ncbi)
 

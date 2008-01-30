@@ -1,6 +1,6 @@
 # $Id$
 
-REQUIRES = dbapi
+REQUIRES = PubSeqOS
 
 LIB_PROJ = ncbi_xreader_pubseqos
 SUB_PROJ =

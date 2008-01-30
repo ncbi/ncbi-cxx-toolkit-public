@@ -400,3 +400,17 @@ AC_DEFUN(NCBI_LOCAL_FTDS,
       FTDS$1[_LIBS]='$(FTDS$1[_CTLIB_LIBS])'
       FTDS$1[_INCLUDE]='$(FTDS$1[_CTLIB_INCLUDE])'
 ])
+
+AC_DEFUN(NCBI_CHECK_SUBTREE,
+[if test "$with_$1" = "no" ; then
+   NoConfProjects="$NoConfProjects $1"
+fi
+
+if test ! -f ${real_srcdir}/src/$1/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/$1 ; then
+   if test "${with_$1-no}" != "no" ; then
+      AC_MSG_ERROR([--with-]$1[:  ]m4_toupper($1)[ sources are missing])
+   fi
+   with_$1="no"
+fi
+])
