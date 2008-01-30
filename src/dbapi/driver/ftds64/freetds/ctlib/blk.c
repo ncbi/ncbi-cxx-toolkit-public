@@ -2075,10 +2075,10 @@ int blk_is_binded(TDSCOLUMN * colinfo)
             if (colinfo->column_lenbind != NULL) {
                 if (*colinfo->column_lenbind == 0) {
                     if (colinfo->column_nullbind != NULL) {
-                        if (*colinfo->column_nullbind == -1) {
+                        //if (*colinfo->column_nullbind == -1) {
                             // null-value for blk_textxfer ...
                             result = 1;
-                        }
+                        //}
                     } 
                 } else {
                     result = 1;
@@ -2088,10 +2088,10 @@ int blk_is_binded(TDSCOLUMN * colinfo)
             if (colinfo->column_lenbind != NULL) {
                 if (*colinfo->column_lenbind == 0) {
                     if (colinfo->column_nullbind != NULL) {
-                        if (*colinfo->column_nullbind == -1) {
+                        //if (*colinfo->column_nullbind == -1) {
                             // null-value for blk_textxfer ...
                             result = 1;
-                        }
+                        //}
                     } 
                 } else {
                     result = 1;
