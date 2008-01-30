@@ -664,11 +664,7 @@ public:
     virtual CDBParams& GetBindParams(void);
 
     // Binding
-    bool Bind(unsigned int column_num, CDB_Object* value)
-    {
-        GetBindParams().Bind(column_num, value);
-        return true;
-    }
+    bool Bind(unsigned int column_num, CDB_Object* value);
 
     /// Send row to the server
     virtual bool SendRow();
