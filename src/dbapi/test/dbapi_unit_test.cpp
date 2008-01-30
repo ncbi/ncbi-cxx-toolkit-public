@@ -7763,6 +7763,52 @@ CDBAPIUnitTest::Test_Procedure(void)
             int status = auto_stmt->GetReturnStatus();
             status = status; // Get rid of warnings.
         }
+
+        // Temporary test ...
+        if (false && m_args.GetServerType() != CTestArguments::eSybase) {
+            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+            BOOST_CHECK( conn.get() != NULL );
+
+            conn->Connect(
+                "pmcupdate",
+                "*******",
+                "PMC3QA",
+                "PMC3QA"
+                );
+
+            auto_ptr<ICallableStatement> auto_stmt(
+                conn->PrepareCall("id_new_id")
+                );
+            auto_stmt->SetParam(CVariant("tsub2"), "@IdName");
+
+            auto_stmt->Execute();
+
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                    switch( rs->GetResultType() ) {
+                    case eDB_RowResult:
+                        while(rs->Next()) {
+                            // retrieve row results
+                        }
+                        break;
+                    case eDB_ParamResult:
+                        _ASSERT(false);
+                        while(rs->Next()) {
+                            // Retrieve parameter row
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+
+            // Get status
+            int status = auto_stmt->GetReturnStatus();
+            status = status; // Get rid of warnings.
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
