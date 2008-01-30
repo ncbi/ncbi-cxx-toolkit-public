@@ -284,7 +284,7 @@ int CReadBlastApp::Run(void)
     PopVerbosity();
     // Write the entry
     if( args["out"].HasValue() )
-    {   
+    {  {
         auto_ptr<CObjectOStream> out
             (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
                                   args["out"].AsOutputFile()));
@@ -292,7 +292,7 @@ int CReadBlastApp::Run(void)
           *out << m_Submit;
         else
           *out << m_Entry;
-    }
+    }}
 
 
     if(args["intagmap"].HasValue())
@@ -547,7 +547,7 @@ int CReadBlastApp::Run(void)
 
     // Write the entry
     if( args["out"].HasValue() )
-    {
+    {{
         args["out"].AsOutputFile().seekp(0);
         auto_ptr<CObjectOStream> out
             (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
@@ -556,7 +556,7 @@ int CReadBlastApp::Run(void)
           *out << m_Submit;
         else
           *out << m_Entry;
-    }
+    }}
 
 
 
