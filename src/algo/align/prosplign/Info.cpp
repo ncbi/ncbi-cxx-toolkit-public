@@ -62,13 +62,13 @@ const char BAD_OR_MISMATCH[] = {BAD_PIECE_CHAR,MISMATCH_CHAR,0};
 const char MATCH_CHAR='|';
 const char POSIT_CHAR='+';
 
+BEGIN_SCOPE(prosplign)
+
 CProSplignOutputOptionsExt::CProSplignOutputOptionsExt(const CProSplignOutputOptions& options) : CProSplignOutputOptions(options)
 {
     drop = GetTotalPositives() - GetFlankPositives();
     splice_cost = GetFlankPositives()?((100 - GetFlankPositives())*GetMinFlankingExonLen())/GetFlankPositives():0;
 }
-
-BEGIN_SCOPE(prosplign)
 
 list<CNPiece> FindGoodParts(const string& orig_match, const string& outp, CProSplignOutputOptionsExt m_options)
 {
@@ -210,7 +210,6 @@ CNPiece::CNPiece(string::size_type obeg, string::size_type oend, int oposit, int
         posit = oposit;
         efflen = oefflen;
     }
-END_SCOPE(prosplign)
 
 bool CProSplignOutputOptionsExt::Bad(list<prosplign::CNPiece>::iterator it)
 {
@@ -282,8 +281,10 @@ CRef<CSeq_loc> GetGenomicBounds(const objects::CSeq_align& seqalign)
     const CSeq_id& nucid = sps.GetGenomic_id();
     if (seqalign.CanGetBounds()) {
         ITERATE(CSeq_align::TBounds, b,seqalign.GetBounds()) {
-            if ((*b)->GetId() != NULL && (*b)->GetId()->Match(nucid))
+            if ((*b)->GetId() != NULL && (*b)->GetId()->Match(nucid)) {
+                
                 return *b;
+            }
         }
     }
 
@@ -300,6 +301,8 @@ CRef<CSeq_loc> GetGenomicBounds(const objects::CSeq_align& seqalign)
 
     return genomic;
 }
+
+END_SCOPE(prosplign)
 
 void CProSplignText::AddSpliceText(CSeqVector_CI& genomic_ci, int& nuc_prev, char match)
 {
@@ -504,7 +507,7 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
     CSeqVector protein_seqvec(scope.GetBioseqHandle(protid), CBioseq_Handle::eCoding_Iupac);
     CSeqVector_CI protein_ci(protein_seqvec);
 
-    CRef<CSeq_loc> genomic_seqloc = GetGenomicBounds(seqalign);
+    CRef<CSeq_loc> genomic_seqloc = prosplign::GetGenomicBounds(seqalign);
     CSeqVector genomic_seqvec(*genomic_seqloc, scope, CBioseq_Handle::eCoding_Iupac);
     CSeqVector_CI genomic_ci(genomic_seqvec);
 
@@ -628,7 +631,7 @@ void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& 
     int compartment_id = GetCompNum(seqalign);
     string contig_name = seqalign.GetSegs().GetSpliced().GetGenomic_id().GetSeqIdString(true);
     string prot_id = seqalign.GetSegs().GetSpliced().GetProduct_id().GetSeqIdString(true);
-    TSeqRange bounds = GetGenomicBounds(seqalign)->GetTotalRange();
+    TSeqRange bounds = prosplign::GetGenomicBounds(seqalign)->GetTotalRange();
     int nuc_from = bounds.GetFrom();
     int nuc_to = bounds.GetTo();
     bool is_plus_strand = seqalign.GetSegs().GetSpliced().GetGenomic_strand()==eNa_strand_plus;

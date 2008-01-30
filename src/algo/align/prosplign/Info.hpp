@@ -44,6 +44,31 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 
+class CNPiece {//AKA 'good hit'
+public:
+    int beg, end;  //represents [beg, end) interval IN ALIGNMENT COORD.
+    int posit, efflen;
+
+    CNPiece(string::size_type obeg, string::size_type oend, int oposit, int oefflen);
+};
+
+/// Extended output filtering parameters
+/// deprecated, used in older programs
+class CProSplignOutputOptionsExt : public CProSplignOutputOptions {
+public:
+    CProSplignOutputOptionsExt(const CProSplignOutputOptions& options);
+
+    int drop;
+    int splice_cost;
+
+    bool Dropof(int efflen, int posit, list<prosplign::CNPiece>::iterator it);
+    void Join(list<prosplign::CNPiece>::iterator it, list<prosplign::CNPiece>::iterator last);
+    bool Perc(list<prosplign::CNPiece>::iterator it, int efflen, int posit, list<prosplign::CNPiece>::iterator last);
+    bool Bad(list<prosplign::CNPiece>::iterator it);
+    bool ForwCheck(list<prosplign::CNPiece>::iterator it1, list<prosplign::CNPiece>::iterator it2);
+    bool BackCheck(list<prosplign::CNPiece>::iterator it1, list<prosplign::CNPiece>::iterator it2);
+};
+
 list<CNPiece> FindGoodParts(const string& match, const string& protein, CProSplignOutputOptionsExt m_options);
 void RefineAlignment(objects::CSeq_align& seq_align, const list<CNPiece>& good_parts);
 void SeekStartStop(objects::CSeq_align& seq_align, objects::CScope& scope);
