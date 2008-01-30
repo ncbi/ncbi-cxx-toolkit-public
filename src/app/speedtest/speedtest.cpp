@@ -226,7 +226,7 @@ int CMytestApplication::TestFeatureGeneOverlap (
         return 1;
     }
     const CSeq_feat_Base::TLocation& locbase = f.GetLocation();
-    CConstRef<CSeq_feat> ol;
+    CConstRef<CSeq_feat> ol = GetOverlappingGene( locbase, scope );
     if ( ! ol ) {
         return 1;
     }
