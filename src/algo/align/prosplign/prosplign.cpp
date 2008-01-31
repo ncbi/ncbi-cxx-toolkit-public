@@ -546,7 +546,7 @@ vector<pair<int, int> >& CProSplign::SetExons()
 
 void CProSplign::GetFlanks(bool& lgap, bool& rgap) const
 {
-    return m_implementation->GetFlanks(lgap, rgap);
+    m_implementation->GetFlanks(lgap, rgap);
 }
 
 void CProSplign::SetFlanks(bool lgap, bool rgap)
