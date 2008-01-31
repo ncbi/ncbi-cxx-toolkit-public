@@ -724,14 +724,14 @@ SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt, const string& acc_or_pfx,
         return CSeq_id::eAcc_unknown;
     }
 
-    const SSubMap&            rules  = it->second;
+    const SSubMap&            submap = it->second;
     TAccInfo                  result = CSeq_id::eAcc_unknown;
     string                    pfx     (acc_or_pfx, 0, fmt >> 16);
-    TPrefixes::const_iterator pit    = rules.prefixes.find(pfx);
-    if (pit != rules.prefixes.end()) {
+    TPrefixes::const_iterator pit    = submap.prefixes.find(pfx);
+    if (pit != submap.prefixes.end()) {
         result = pit->second;
     } else {
-        ITERATE (TPairs, wit, rules.wildcards) {
+        ITERATE (TPairs, wit, submap.wildcards) {
             if (NStr::MatchesMask(pfx, wit->first)) {
                 if (key_used  &&  acc_or_pfx != wit->first) {
                     *key_used = wit->first;
@@ -743,8 +743,8 @@ SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt, const string& acc_or_pfx,
     }
     if (acc_or_pfx != pfx  &&  result & CSeq_id::fAcc_specials) {
         TSpecialMap::const_iterator sit
-            = rules.specials.lower_bound(acc_or_pfx);
-        if (sit != rules.specials.end()  &&  sit->second.first <= acc_or_pfx) {
+            = submap.specials.lower_bound(acc_or_pfx);
+        if (sit != submap.specials.end()  &&  sit->second.first <= acc_or_pfx) {
             if (key_used) {
                 key_used->erase();
             }
