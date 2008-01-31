@@ -1,7 +1,6 @@
 # $Id$
 
 
-REQUIRES = dbapi
 
 APP = test_reader_id1
 SRC = test_reader_id1

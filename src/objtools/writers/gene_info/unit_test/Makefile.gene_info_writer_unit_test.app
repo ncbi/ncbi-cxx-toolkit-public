@@ -13,8 +13,6 @@ LIB = $(LIB_:%=%$(STATIC))
 
 LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) \
        $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
-       
-REQUIRES = objects
 
 CHECK_CMD = gene_info_writer_unit_test
 CHECK_COPY = data

@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-REQUIRES = objects dbapi
+REQUIRES = objects 
 
 APP = bioseq_edit_sample
 SRC = bioseq_edit_sample file_db_engine

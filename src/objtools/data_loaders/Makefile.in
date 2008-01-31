@@ -1,7 +1,5 @@
 # $Id$
 
-REQUIRES = objects
-
 SUB_PROJ = genbank lds blastdb cdd trace patcher
 
 srcdir = @srcdir@

@@ -1,6 +1,6 @@
 # $Id$
 
-REQUIRES = dbapi objects algo
+REQUIRES = algo
 
 ASN_DEP = seq
 

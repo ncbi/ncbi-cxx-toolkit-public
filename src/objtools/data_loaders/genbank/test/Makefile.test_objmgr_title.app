@@ -6,7 +6,6 @@
 # Build title-computation test application "test_title"
 #################################
 
-REQUIRES = dbapi
 
 APP = test_objmgr_title
 SRC = test_objmgr_title

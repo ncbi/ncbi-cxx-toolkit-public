@@ -5,7 +5,5 @@
 
 APP_PROJ = gene_info_reader
 
-REQUIRES = objects
-
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

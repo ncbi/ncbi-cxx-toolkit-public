@@ -18,4 +18,4 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 #CXXFLAGS = $(FAST_CXXFLAGS) -D GENOME_PIPELINE
 LDFLAGS  = $(FAST_LDFLAGS)
 
-REQUIRES = BerkeleyDB dbapi objects -Cygwin
+REQUIRES = BerkeleyDB objects -Cygwin

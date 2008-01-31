@@ -10,5 +10,5 @@ LIB = entrez2cli entrez2 taxon1 xobjutil $(OBJMGR_LIBS:%=%$(STATIC))\
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects dbapi -Cygwin
+REQUIRES = objects -Cygwin
 

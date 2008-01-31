@@ -2,8 +2,6 @@
 # $Id$
 #################################
 
-REQUIRES = objects
-
 APP = pacc
 SRC = pacc
 

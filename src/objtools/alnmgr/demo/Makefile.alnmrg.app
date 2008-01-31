@@ -1,6 +1,5 @@
 # $Id$
 
-REQUIRES = dbapi
 
 APP = alnmrg
 SRC = alnmrg

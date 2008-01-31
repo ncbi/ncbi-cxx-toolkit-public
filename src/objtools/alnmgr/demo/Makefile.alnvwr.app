@@ -1,6 +1,5 @@
 # $Id$
 
-REQUIRES = dbapi
 
 APP = alnvwr
 SRC = alnvwrapp

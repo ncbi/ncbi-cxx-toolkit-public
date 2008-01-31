@@ -6,7 +6,6 @@
 # Build relative-location-computation test application "test_relloc"
 #################################
 
-REQUIRES = dbapi
 
 APP = test_relloc
 SRC = test_relloc

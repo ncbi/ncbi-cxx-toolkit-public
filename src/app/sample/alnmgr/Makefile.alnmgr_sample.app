@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-REQUIRES = objects dbapi
+REQUIRES = objects 
 
 APP = alnmgr_sample
 SRC = alnmgr_sample

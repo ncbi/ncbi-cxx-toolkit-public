@@ -6,7 +6,6 @@
 # Build object manager test application "test_objmgr_mem"
 #################################
 
-REQUIRES = dbapi
 
 APP = test_objmgr_mem
 SRC = test_objmgr_mem

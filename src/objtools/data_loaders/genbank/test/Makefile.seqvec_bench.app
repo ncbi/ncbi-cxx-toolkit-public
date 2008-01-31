@@ -2,7 +2,6 @@
 # $Id$
 #################################
 
-REQUIRES = dbapi
 
 APP = seqvec_bench
 SRC = seqvec_bench

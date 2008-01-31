@@ -12,5 +12,5 @@ LIB = xformat xobjutil submit gbseq xalnmgr xcleanup entrez2cli entrez2 tables $
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = dbapi objects -Cygwin
+REQUIRES = objects -Cygwin
 

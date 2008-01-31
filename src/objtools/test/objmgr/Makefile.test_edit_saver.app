@@ -3,8 +3,6 @@
 # Author:  Maxim Didenko (didenko@ncbi.nlm.nih.gov)
 #################################
 
-REQUIRES = objects dbapi
-
 APP = test_edit_saver
 SRC = test_edit_saver
 LIB = xobjmgr xobjutil ncbi_xloader_patcher $(OBJMGR_LIBS)

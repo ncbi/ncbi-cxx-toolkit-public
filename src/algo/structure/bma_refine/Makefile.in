@@ -1,7 +1,6 @@
 # $Id$
 #################################
 
-REQUIRES = dbapi
 
 LIB_PROJ = xbma_refiner
 SUB_PROJ = bma_refiner_app

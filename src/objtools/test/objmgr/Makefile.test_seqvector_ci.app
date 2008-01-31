@@ -6,7 +6,6 @@
 # Build object manager test application "test_objmgr"
 #################################
 
-REQUIRES = dbapi
 
 APP = test_seqvector_ci
 SRC = test_seqvector_ci

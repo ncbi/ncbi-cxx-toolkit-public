@@ -1,6 +1,6 @@
 # $Id$
 
-REQUIRES = dbapi objects algo
+REQUIRES = objects algo
 
 APP_PROJ = blast_sample blast_demo remote_blast_demo
 

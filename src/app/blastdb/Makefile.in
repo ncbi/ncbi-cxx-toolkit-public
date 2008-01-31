@@ -3,7 +3,7 @@
 # Meta-makefile("APP" project)
 #################################
 
-REQUIRES = dbapi objects algo
+REQUIRES = objects algo
 
 APP_PROJ = blastdbcmd makeblastdb blastdb_aliastool
 

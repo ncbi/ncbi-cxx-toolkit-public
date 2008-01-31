@@ -3,7 +3,6 @@
 # Meta-makefile (algo/align/util)
 #################################
 
-REQUIRES = dbapi
 
 LIB_PROJ = xalgoalignutil
 SUB_PROJ = demo

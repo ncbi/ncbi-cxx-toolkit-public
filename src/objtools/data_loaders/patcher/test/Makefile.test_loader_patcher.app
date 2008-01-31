@@ -2,8 +2,6 @@
 # $Id$
 #################################
 
-REQUIRES = objects dbapi
-
 APP = test_loader_patcher
 SRC = test_loader_patcher
 

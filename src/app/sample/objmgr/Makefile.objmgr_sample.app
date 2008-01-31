@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-REQUIRES = objects dbapi
+REQUIRES = objects 
 
 APP = objmgr_sample
 SRC = objmgr_sample

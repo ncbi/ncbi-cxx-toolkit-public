@@ -6,7 +6,6 @@
 # Build seq-annot iterators test application "test_annot_ci"
 #################################
 
-REQUIRES = dbapi
 
 APP = test_annot_ci
 SRC = test_annot_ci

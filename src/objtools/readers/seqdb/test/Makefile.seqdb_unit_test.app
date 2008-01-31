@@ -11,7 +11,6 @@ LIB_ = seqdb xobjutil blastdb $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = dbapi
 CHECK_CMD = seqdb_unit_test
 CHECK_COPY = data
 

@@ -6,7 +6,6 @@
 # Build title-computation test application "test_title"
 #################################
 
-REQUIRES = dbapi
 
 APP = test_feat_overlap
 SRC = test_feat_overlap
