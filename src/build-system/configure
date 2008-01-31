@@ -21393,6 +21393,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_berkeley_db" >&5
 echo "${ECHO_T}$ncbi_cv_lib_berkeley_db" >&6
    if test "$ncbi_cv_lib_berkeley_db" = "no"; then
+      if test -n "$with_bdb"; then
+         { { echo "$as_me:$LINENO: error: --with-bdb:  Berkeley DB library is missing" >&5
+echo "$as_me: error: --with-bdb:  Berkeley DB library is missing" >&2;}
+   { (exit 1); exit 1; }; }
+      fi
       with_bdb="no"
    else
       echo "$as_me:$LINENO: checking Berkeley DB version (4.3 or newer required)" >&5
@@ -21423,6 +21428,11 @@ echo "${ECHO_T}$ncbi_cv_lib_berkeley_db_version" >&6
          1.* | 2.* | 3.* | 4.[0-2].* )
             { echo "$as_me:$LINENO: WARNING: Your Berkeley DB version is too old to use.  (Needed >= 4.3.)" >&5
 echo "$as_me: WARNING: Your Berkeley DB version is too old to use.  (Needed >= 4.3.)" >&2;}
+            if test -n "$with_bdb"; then
+               { { echo "$as_me:$LINENO: error: --with-bdb:  Berkeley DB library is too old" >&5
+echo "$as_me: error: --with-bdb:  Berkeley DB library is too old" >&2;}
+   { (exit 1); exit 1; }; }
+            fi
             with_bdb=no
             ;;
          4.[3-6].* ) ;;
@@ -21436,11 +21446,6 @@ echo "$as_me: WARNING: If so, please re-run this script with the flag --without-
    fi
 fi
 if test "$with_bdb" = "no" ; then
-   if test -n "$with_bdb"; then
-      { { echo "$as_me:$LINENO: error: --with-bdb:  Berkeley DB library is missing or too old" >&5
-echo "$as_me: error: --with-bdb:  Berkeley DB library is missing or too old" >&2;}
-   { (exit 1); exit 1; }; }
-   fi
    BERKELEYDB_PATH="No_BerkeleyDB"
    BERKELEYDB_INCLUDE=
    BERKELEYDB_LIBS=

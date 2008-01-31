@@ -3595,6 +3595,9 @@ if test "$with_bdb" != "no" ; then
           [[ DB* dbp;  db_create(&dbp, NULL, 0);  dbp->app_private = 0; ]])],
           [ncbi_cv_lib_berkeley_db=yes], [ncbi_cv_lib_berkeley_db=no])])
    if test "$ncbi_cv_lib_berkeley_db" = "no"; then
+      if test -n "$with_bdb"; then
+         AC_MSG_ERROR([--with-bdb:  Berkeley DB library is missing])
+      fi
       with_bdb="no"
    else
       AC_CACHE_CHECK([Berkeley DB version (4.3 or newer required)],
@@ -3612,6 +3615,9 @@ ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PAT
          1.* | 2.* | 3.* | 4.[[0-2]].* )
             AC_MSG_WARN(
                [Your Berkeley DB version is too old to use.  (Needed >= 4.3.)])
+            if test -n "$with_bdb"; then
+               AC_MSG_ERROR([--with-bdb:  Berkeley DB library is too old])
+            fi
             with_bdb=no
             ;;
          4.[[3-6]].* ) ;;
@@ -3625,9 +3631,6 @@ ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PAT
    fi
 fi
 if test "$with_bdb" = "no" ; then
-   if test -n "$with_bdb"; then
-      AC_MSG_ERROR([--with-bdb:  Berkeley DB library is missing or too old])
-   fi
    BERKELEYDB_PATH="No_BerkeleyDB"
    BERKELEYDB_INCLUDE=
    BERKELEYDB_LIBS=
