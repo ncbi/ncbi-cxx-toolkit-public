@@ -6,7 +6,7 @@
 # Build serialization test application "serialtest"
 #################################
 
-REQUIRES = dbapi
+REQUIRES = PubSeqOS
 
 APP = test_reader_pubseq
 SRC = test_reader_pubseq
