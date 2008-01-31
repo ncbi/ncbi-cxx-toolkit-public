@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
     CRef<CSeq_id> id;
 
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN00123")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("BN000123")));
+    CHECK_NO_THROW(id.Reset(new CSeq_id("bn000123")));
     CHECK(id->IsTpe());
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN00012B")));
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN0000123")));
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromSPAcc)
     CRef<CSeq_id> id;
 
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJ")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("Q7CQJ0")));
+    CHECK_NO_THROW(id.Reset(new CSeq_id("q7cqj0")));
     CHECK(id->IsSwissprot());
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJO")));
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJ01")));
