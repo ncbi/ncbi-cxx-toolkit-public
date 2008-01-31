@@ -1262,8 +1262,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         return eAcc_unknown; // non-numeric "version"
     }
     SIZE_TYPE digit_pos = acc.find_first_of(kDigits);
-    string pfx = acc.substr(0, digit_pos);
-    NStr::ToUpper(pfx);
+    string main_acc = acc.substr(0, main_size);
+    NStr::ToUpper(main_acc);
     if (digit_pos == NPOS) {
         return eAcc_unknown;
     } else {
@@ -1274,8 +1274,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
                 &&  (main_size <= 5  ||  ispunct(ucdata[4]))) {
                 return eAcc_pdb; // must be unversioned
             } else if (digit_pos == 1  &&  main_size == 6
-                       &&  (pfx[0] == 'O'  ||  pfx[0] == 'P'  ||  pfx[0] == 'Q'
-                            ||  isalpha(ucdata[2]))
+                       &&  (main_acc[0] == 'O'  ||  main_acc[0] == 'P'
+                            ||  main_acc[0] == 'Q' ||  isalpha(ucdata[2]))
                        &&  isdigit(ucdata[1]) &&  isalnum(ucdata[2])
                        &&  isalnum(ucdata[3]) &&  isalnum(ucdata[4])
                        &&  isdigit(ucdata[5])) {
@@ -1299,7 +1299,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
     }
 
     return s_Guide.Find(SAccGuide::s_Key(digit_pos, main_size - digit_pos),
-                        acc.substr(0, main_size));
+                        main_acc);
 }
 
 
