@@ -45,6 +45,8 @@ BEGIN_NCBI_SCOPE
 
 
 ///////////////////////////////////////////////////////////////////////////////
+/* Should not be used till design changes.
+
 CSL3_LangCmd::CParamInfo::CParamInfo(sqlite3_stmt* stmt, impl::CDB_Params& bindings)
 : impl::CDBBindedParams(bindings)
 , m_SQLite3stmt(stmt)
@@ -92,11 +94,12 @@ CSL3_LangCmd::CParamInfo::GetIndex(const CDBParamVariant& param) const
 
 
 CDBParams::EDirection 
-CSL3_LangCmd::CParamInfo::GetDirection(const CDBParamVariant& /* param */) const
+CSL3_LangCmd::CParamInfo::GetDirection(const CDBParamVariant&) const
 {
     return CDBParams::eIn;
 }
 
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 CSL3_LangCmd::CSL3_LangCmd(CSL3_Connection& conn,
@@ -108,8 +111,24 @@ CSL3_LangCmd::CSL3_LangCmd(CSL3_Connection& conn,
 , m_SQLite3stmt(MakeSQLiteStmt(conn, GetQuery()))
 , m_Res(NULL)
 , m_RC(SQLITE_ERROR)
-, m_InParams(x_GetSQLite3stmt(), GetBindParamsImpl())
+, m_InParams(GetBindParamsImpl())
 {
+    // TODO: Named parameters can be used to build an insert SQL statement.
+
+    _ASSERT(x_GetSQLite3stmt());
+    const unsigned int param_num = sqlite3_bind_parameter_count(x_GetSQLite3stmt());
+
+    for (unsigned int i = 0; i < param_num; ++i) {
+        const char* name = sqlite3_bind_parameter_name(x_GetSQLite3stmt(), i + 1);
+        const string param_name = (name ? name : kEmptyStr);
+
+        m_InParams.Add(
+                param_name,
+                0,
+                eDB_UnsupportedType,
+                CDBParams::eIn
+                );
+    }
 }
 
 

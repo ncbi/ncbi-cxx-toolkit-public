@@ -132,10 +132,11 @@ CDemoeApp::Run(void)
 
             auto_ptr<CDB_BCPInCmd> cmd(con->BCPIn("BulkSample"));
 
-            cmd->Bind(0, &value1);
-            cmd->Bind(1, &value2);
-            cmd->Bind(2, &value3);
-            cmd->Bind(3, &value4);
+	    unsigned int pos = 0;
+            cmd->Bind(pos++, &value1);
+            cmd->Bind(pos++, &value2);
+            cmd->Bind(pos++, &value3);
+            cmd->Bind(pos++, &value4);
 
             for(int i = 0; i < 10; ++i ) {
                 value1 = i;

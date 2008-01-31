@@ -196,6 +196,7 @@ protected:
         return " " + GetConnection().GetExecCntxInfo();
     }
 
+    /* Shouldn't be used till design changes.
     class CParamInfo : public impl::CDBBindedParams
     {
     public:
@@ -223,6 +224,7 @@ protected:
     private:
         sqlite3_stmt*   m_SQLite3stmt;
     };
+    */
 
 private:
     bool x_AssignParams(void);
@@ -237,7 +239,7 @@ private:
     CSL3_RowResult*      m_Res;
     int                  m_RC;
 
-    CParamInfo           m_InParams;
+    impl::CCachedRowInfo m_InParams;
 };
 
 
@@ -284,8 +286,6 @@ protected:
 protected:
     virtual EDB_ResType     ResultType() const;
 
-    virtual const CDBParams& GetDefineParams(void) const;
-
     virtual bool            Fetch();
     virtual int             CurrentItemNo() const;
     virtual int             GetColumnNum(void) const;
@@ -296,6 +296,7 @@ protected:
     virtual bool            SkipItem();
 
 protected:
+    /* Shouldn't be used till design changes ...
     class CRowInfo : public CDBParams
     {
     public:
@@ -326,6 +327,7 @@ protected:
         sqlite3_stmt*   m_SQLite3stmt;
         unsigned int    m_NofCols;
     };
+    */
 
 private:
     sqlite3_stmt* x_GetSQLite3stmt(void) const
@@ -345,7 +347,6 @@ private:
     sqlite3_stmt*       m_SQLite3stmt;
     int                 m_RC;
     bool                m_FetchDone;
-    CRowInfo            m_RowInfo;
 };
 
 

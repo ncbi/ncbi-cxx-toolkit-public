@@ -57,8 +57,33 @@ s_GetDataType(const char* type)
     return eDB_UnsupportedType;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+static
+size_t
+s_GetMaxDataSize(sqlite3_stmt* stmt, unsigned int pos)
+{
+    size_t max_size = 0;
+
+    switch (sqlite3_column_type(stmt, pos)) {
+        case SQLITE_INTEGER:
+            max_size = sizeof(int);
+            break;
+        case SQLITE_FLOAT:
+            max_size = sizeof(double);
+            break;
+        case SQLITE_TEXT:
+        case SQLITE_BLOB:
+            max_size = 1000000000;
+            break;
+        default:
+            max_size = 0;
+    }
+
+    return max_size;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
+/* Shouldn't be used till design changes ...
 CSL3_RowResult::CRowInfo::CRowInfo(sqlite3_stmt* stmt)
 : m_SQLite3stmt(stmt)
 , m_NofCols(sqlite3_column_count(x_GetSQLite3stmt()))
@@ -124,7 +149,7 @@ CSL3_RowResult::CRowInfo::GetMaxSize(const CDBParamVariant& param) const
                 return sizeof(double);
             case SQLITE_TEXT:
             case SQLITE_BLOB:
-                return sqlite3_column_bytes(x_GetSQLite3stmt(), num);
+                return 1000000000;
             default:
                 return 0;
             }
@@ -154,17 +179,27 @@ CSL3_RowResult::CRowInfo::GetDirection(const CDBParamVariant& param) const
     return eOut;
 }
 
+*/
+
 ////////////////////////////////////////////////////////////////////////////////
 CSL3_RowResult::CSL3_RowResult(CSL3_LangCmd* cmd, bool fetch_done) :
     m_Cmd(cmd),
     m_CurrItem(-1),
     m_SQLite3stmt(cmd->x_GetSQLite3stmt()),
     m_RC(SQLITE_DONE),
-    m_FetchDone(fetch_done),
-    m_RowInfo(cmd->x_GetSQLite3stmt())
+    m_FetchDone(fetch_done)
 {
     const unsigned int col_num = sqlite3_column_count(x_GetSQLite3stmt());
+
     for (unsigned int i = 0; i < col_num; ++i) {
+        const char* name = sqlite3_column_name(x_GetSQLite3stmt(), i);
+        const string col_name = (name ? name : kEmptyStr);
+
+        m_CachedRowInfo.Add(
+                col_name,
+                s_GetMaxDataSize(x_GetSQLite3stmt(), i),
+                s_GetDataType(sqlite3_column_decltype(x_GetSQLite3stmt(), i))
+                );
     }
 }
 
@@ -177,12 +212,6 @@ CSL3_RowResult::~CSL3_RowResult()
 EDB_ResType CSL3_RowResult::ResultType() const
 {
     return eDB_RowResult;
-}
-
-const CDBParams& 
-CSL3_RowResult::GetDefineParams(void) const
-{
-    return m_RowInfo;
 }
 
 bool CSL3_RowResult::Fetch()
