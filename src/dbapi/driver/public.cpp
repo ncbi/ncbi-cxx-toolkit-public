@@ -409,7 +409,14 @@ const char*
 CDB_Result::ItemName(unsigned int item_num) const
 {
     CHECK_RESULT( GetIResultPtr() );
-    return GetIResult().GetDefineParams().GetName(item_num).c_str();
+    
+    const string& name = GetIResult().GetDefineParams().GetName(item_num);
+    
+    if (!name.empty()) {
+        return name.c_str();
+    }
+
+    return NULL;
 }
 
 size_t CDB_Result::ItemMaxSize(unsigned int item_num) const

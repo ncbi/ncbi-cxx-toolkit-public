@@ -51,16 +51,21 @@ CResultSetMetaData::CResultSetMetaData(CDB_Result *rs)
 {
     SetIdent("CResultSetMetaData");
 
-  // Fill out column metadata
-    for(unsigned int i = 0; i < rs->NofItems(); ++i ) {
-  
-    SColMetaData md(rs->ItemName(i) == 0 ? "" : rs->ItemName(i),
-		    rs->ItemDataType(i),
-		    rs->ItemMaxSize(i));
+    // Fill out column metadata
+    const CDBParams& params = rs->GetDefineParams();
+    const unsigned int param_num = params.GetNum();
 
-    m_colInfo.push_back(md);
-    
-  }
+    for (unsigned int i = 0; i < param_num; ++i) {
+
+        SColMetaData md(
+                params.GetName(i),
+                params.GetDataType(i),
+                params.GetMaxSize(i)
+                );
+
+        m_colInfo.push_back(md);
+
+    }
 }
 
 CResultSetMetaData::~CResultSetMetaData()
