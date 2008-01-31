@@ -54,7 +54,7 @@ void
 CBlastAdvancedProteinOptionsHandle::SetGappedExtensionDefaults()
 {
     CBlastProteinOptionsHandle::SetGappedExtensionDefaults();
-    m_Opts->SetCompositionBasedStats(eCompositionBasedStats);
+    m_Opts->SetCompositionBasedStats(eCompositionMatrixAdjust);
     m_Opts->SetSmithWatermanMode(false);
 }
 

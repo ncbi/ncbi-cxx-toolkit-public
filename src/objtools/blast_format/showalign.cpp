@@ -1574,9 +1574,10 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     if(m_AlignOption & eHtml){  
         out<<"<script src=\"blastResult.js\"></script>";
     }
-    //get sequence 
+    //get sequence
     if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){ 
-        out<<s_GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber, 
+        if(m_Ctx->GetRequestValue("NEW_DESIGN").GetValue()!="on")
+            out<<s_GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber, 
                           x_GetDbType(actual_aln_list),m_DbName, m_Rid.c_str(),
                           s_GetQueryIDFromSeqAlign(actual_aln_list).c_str(),m_AlignOption & eDisplayTreeView);                          
         out<<"<form name=\"getSeqAlignment"<<m_QueryNumber<<"\">\n";
@@ -1822,7 +1823,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     }
     if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){
         out<<"</form>\n";        
-        out<<s_GetSeqForm((char*)"submitterBottom", m_IsDbNa, m_QueryNumber, 
+        if(m_Ctx->GetRequestValue("NEW_DESIGN").GetValue()!="on")
+            out<<s_GetSeqForm((char*)"submitterBottom", m_IsDbNa, m_QueryNumber, 
                           x_GetDbType(actual_aln_list),m_DbName, m_Rid.c_str(),
                           s_GetQueryIDFromSeqAlign(actual_aln_list).c_str(),m_AlignOption & eDisplayTreeView);                         
     }

@@ -166,12 +166,28 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
                    "Missing scores and frequency ratios in PSSM");
     }
 
-    if ((options->GetCompositionBasedStats() == eCompositionBasedStats) &&
+    _ASSERT(options->GetCompositionBasedStats() < eNumCompoAdjustModes);
+    if ((options->GetCompositionBasedStats() != eNoCompositionBasedStats) &&
         freq_ratios_all_zeros) {
         ostringstream os;
         os << "Frequency ratios for PSSM are all zeros, frequency ratios for ";
         os << options->GetMatrixName() << " will be used during traceback ";
         os << "in composition based statistics";
+        CRef<CSearchMessage> sm(new CSearchMessage(eBlastSevWarning, 0,
+                                                   os.str()));
+        _ASSERT(messages.size() == 1); // PSI-BLAST only works with one query
+        messages.front().push_back(sm);
+    }
+
+    if (options->GetCompositionBasedStats() > eCompositionBasedStats) {
+        // ugly, but necessary
+        const_cast<CBlastOptions*>(&*options)
+            ->SetCompositionBasedStats(eCompositionBasedStats);
+        ostringstream os;
+        os << "Composition-based score adjustment conditioned on "
+           << "sequence properties and unconditional composition-based score "
+           << "adjustment is not supported with PSSMs, resetting to default "
+           << "value of standard composition-based statistics";
         CRef<CSearchMessage> sm(new CSearchMessage(eBlastSevWarning, 0,
                                                    os.str()));
         _ASSERT(messages.size() == 1); // PSI-BLAST only works with one query

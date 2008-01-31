@@ -51,6 +51,7 @@ static char const rcsid[] =
 
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
         const LookupTableOptions* lookup_options,	
+        const QuerySetUpOptions* query_options,
         BlastSeqLoc* lookup_segments, BlastScoreBlk* sbp, 
         LookupTableWrap** lookup_wrap_ptr, const BlastRPSInfo *rps_info,
         Blast_Message* *error_msg)
@@ -120,7 +121,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
           else if (lookup_wrap->lut_type == eSmallNaLookupTable) {
              status = BlastSmallNaLookupTableNew(query, lookup_segments,
                             (BlastSmallNaLookupTable* *) &(lookup_wrap->lut), 
-                             lookup_options, lut_width);
+                             lookup_options, query_options, lut_width);
              if (status != 0) {
                 lookup_wrap->lut_type = eNaLookupTable;
                 status = BlastNaLookupTableNew(query, lookup_segments,

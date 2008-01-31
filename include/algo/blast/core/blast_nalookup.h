@@ -74,7 +74,7 @@ typedef struct BlastSmallNaLookupTable {
     Int4  overflow_size;   /**< Number of elements in the overflow array */
     void *scansub_callback;  /**< function for scanning subject sequences */
     void *extend_callback;  /**< function for extending hits */
-    BlastSeqLoc* locations; /**< masked locations. */
+    BlastSeqLoc* masked_locations; /**< masked locations, only non-NULL for soft-masking. */
 } BlastSmallNaLookupTable;
 
 /** Create a new small nucleotide lookup table.
@@ -84,6 +84,7 @@ typedef struct BlastSmallNaLookupTable {
  *        e.g. [0,length-1] for full sequence. NULL means no sequence. [in]
  * @param lut Pointer to the lookup table to be created [out]
  * @param opt Options for lookup table creation [in]
+ * @param query_options query options used to get filtering options [in]
  * @param lut_width The number of nucleotides in one lookup table word [in]
  * @return 0 if successful, nonzero on failure
  */
@@ -91,6 +92,7 @@ Int4 BlastSmallNaLookupTableNew(BLAST_SequenceBlk* query,
                                 BlastSeqLoc* locations,
                                 BlastSmallNaLookupTable * *lut,
                                 const LookupTableOptions * opt,
+                                const QuerySetUpOptions* query_options,
                                 Int4 lut_width);
 
 /** Free a small nucleotide lookup table.

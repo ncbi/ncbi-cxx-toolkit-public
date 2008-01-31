@@ -65,6 +65,7 @@ typedef struct LookupTableWrap {
 NCBI_XBLAST_EXPORT
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
         const LookupTableOptions* lookup_options,	
+        const QuerySetUpOptions* query_options,
         BlastSeqLoc* lookup_segments, BlastScoreBlk* sbp, 
         LookupTableWrap** lookup_wrap_ptr, const BlastRPSInfo *rps_info,
         Blast_Message* *error_msg);

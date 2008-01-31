@@ -1172,14 +1172,12 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
 /** Check that word just found is not part of a soft-masked region.
  * This check only happens for soft masking for certain word sizes
  * @param locations not masked regions [in]
- * @param word_size size of the word [in]
  * @param offset query offset for for word [in]
  * @param left_extend how far extended to left by mini-extension [in]
  * @param right_extend how far extended to right by mini-extension [in]
  */
 Boolean 
 s_SmallBlastnCheckLocations(BlastSeqLoc* locations,
-                            Int4 word_size,
                             Int4 offset,
                             Int4 left_extend,
                             Int4 right_extend)
@@ -1189,7 +1187,8 @@ s_SmallBlastnCheckLocations(BlastSeqLoc* locations,
     Int4 q_end = offset + right_extend;
     while (locations)
     {
-       if (MIN(locations->ssr->right, q_end) - MAX(locations->ssr->left, q_start)  >= word_size)
+       if ((q_end > locations->ssr->left && q_end < locations->ssr->right) ||
+          (q_start > locations->ssr->left && q_start < locations->ssr->right))
        {
           retval = TRUE;
           break;
@@ -1302,8 +1301,8 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             continue;
 
         /* Check that the exact match was not masked out. */
-        if (word_length > lut_word_length && lut->locations)
-            if (s_SmallBlastnCheckLocations(lut->locations, word_length, q_off, extended_left, extended_right) == FALSE)
+        if (word_length > lut_word_length && lut->masked_locations)
+            if (s_SmallBlastnCheckLocations(lut->masked_locations, q_off, extended_left, extended_right) == TRUE)
                 continue; 
         
 

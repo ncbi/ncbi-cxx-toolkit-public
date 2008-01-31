@@ -70,10 +70,11 @@ class TSearchMessages;
 // Function prototypes/Class definitions
 
 /** Setup CORE BLAST score block structure with data from the scoremat PSSM.
+ * @note this function might modify the composition based statistics settings.
  * @param score_blk BlastScoreBlk structure to set up [in|out]
  * @param pssm scoremat PSSM [in]
  * @param messages Error/warning messages [in|out]
- * @param options PSI-BLAST options [in]
+ * @param options PSI-BLAST options [in|out]
  */
 void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
                              CConstRef<objects::CPssmWithParameters> pssm,

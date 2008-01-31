@@ -1133,8 +1133,6 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk,
     ASSERT(query_info);
     ASSERT(filter_maskloc);
 
-    query_blk->hard_masking = TRUE;
-
     for (context = query_info->first_context;
          context <= query_info->last_context; ++context) {
       

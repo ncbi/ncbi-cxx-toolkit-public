@@ -188,6 +188,10 @@ NCBI_XBLAST_EXPORT extern const string kArgUngapped;
 /// Argument to specify the composition based statistics mode to sue
 NCBI_XBLAST_EXPORT extern const string kArgCompBasedStats;
 
+/// Default argument to specify no filtering
+NCBI_XBLAST_EXPORT extern const string kDfltArgNoFiltering;
+/// Default argument to specify filtering
+NCBI_XBLAST_EXPORT extern const string kDfltArgApplyFiltering;
 
 /// Argument to specify SEG filtering on query sequence(s)
 NCBI_XBLAST_EXPORT extern const string kArgSegFiltering;

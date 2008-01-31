@@ -285,6 +285,7 @@ CBl2Seq::SetupSearch()
 
         st = LookupTableWrapInit(mi_clsQueries, 
                             m_OptsHandle->GetOptions().GetLutOpts(),
+                            m_OptsHandle->GetOptions().GetQueryOpts(),
                             mi_pLookupSegments, mi_pScoreBlock, 
                             &mi_pLookupTable, NULL, &blmsg);
         const string error_msg2(blmsg 

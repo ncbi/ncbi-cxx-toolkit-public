@@ -209,15 +209,24 @@ CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len,
                                       CNcbiOstream& out, 
                                       blast::CReference::EPublication pub) 
 {
+    string reference("Reference");
+    if (pub == blast::CReference::eCompAdjustedMatrices) {
+        reference += " for compositional score matrix adjustment";
+    } else if (pub == blast::CReference::eCompBasedStats) {
+        reference += " for composition-based statistics starting in round 2";
+    }
+
+    ostringstream str;
     if(html)
-        out << "<b><a href=\""
+        str << "<b><a href=\""
             << blast::CReference::GetPubmedUrl(pub)
-            << "\">Reference</a>:</b>"
+            << "\">" << reference << "</a>:</b>"
             << endl;
     else
-        out << "Reference: ";
+        str << reference << ": ";
 
-    WrapOutputLine(blast::CReference::GetString(pub), line_len, out);
+    WrapOutputLine(str.str() + blast::CReference::GetString(pub), 
+                   line_len, out);
     out << endl;
 }
 
@@ -1824,6 +1833,61 @@ CBlastFormatUtil::SortSeqalignForSortableFormat(CCgiContext& /* ctx */,
        
     return HitListToHspList(seqalign_hit_total_list);
 }
+
+CRef<CSeq_align_set> CBlastFormatUtil::FilterSeqalignByEval(CSeq_align_set& source_aln,
+                                     double evalueLow,
+                                     double evalueHigh)
+{
+    int score, sum_n, num_ident;
+    double bits, evalue;
+    list<int> use_this_gi;
+
+    CRef<CSeq_align_set> new_aln(new CSeq_align_set);
+    
+    ITERATE(CSeq_align_set::Tdata, iter, source_aln.Get()){ 
+        CBlastFormatUtil::GetAlnScores(**iter, score, bits, evalue,
+                                       sum_n, num_ident, use_this_gi);
+        if(evalue >= evalueLow && evalue <= evalueHigh) {
+            new_aln->Set().push_back(*iter);
+        }
+    }   
+    return new_aln;
+
+}
+
+
+CRef<CSeq_align_set> CBlastFormatUtil::LimitSeqalignByHsps(CSeq_align_set& source_aln,
+                                                           int maxAligns,
+                                                           int maxHsps)                                                           
+{
+    CRef<CSeq_align_set> new_aln(new CSeq_align_set);    
+    
+    CConstRef<CSeq_id> prevQueryId,prevSubjectId;
+    int alignCount = 0,hspCount = 0;
+    ITERATE(CSeq_align_set::Tdata, iter, source_aln.Get()){
+        const CSeq_id& newQueryId = (*iter)->GetSeq_id(0);
+        if(prevQueryId.Empty() || !newQueryId.Match(*prevQueryId)){
+            if (hspCount >= maxHsps) {
+                break;
+            }
+            alignCount = 0;            
+            prevQueryId = &newQueryId;            
+        } 
+        if (alignCount < maxAligns) {            
+            const CSeq_id& newSubjectId = (*iter)->GetSeq_id(1);
+            // Increment alignments count if subject sequence is different
+            if(prevSubjectId.Empty() || !newSubjectId.Match(*prevSubjectId)){                        
+                ++alignCount;
+                prevSubjectId = &newSubjectId;
+            }
+            // Increment HSP count if the alignments limit is not reached            
+            ++hspCount;                        
+        }
+        new_aln->Set().push_back(*iter);
+    }
+    return new_aln;
+}
+
 //
 // get given url from registry file or return corresponding kNAME
 // value as default to preserve compatibility.

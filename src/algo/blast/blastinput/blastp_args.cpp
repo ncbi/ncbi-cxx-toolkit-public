@@ -50,6 +50,7 @@ CBlastpAppArgs::CBlastpAppArgs()
     CRef<IBlastCmdLineArgs> arg;
     arg.Reset(new CProgramDescriptionArgs("blastp", "Protein-Protein BLAST"));
     const bool kQueryIsProtein = true;
+    bool const kFilterByDefault = false;
     m_Args.push_back(arg);
 
     static const string kDefaultTask = "blastp";
@@ -70,7 +71,7 @@ CBlastpAppArgs::CBlastpAppArgs()
     arg.Reset(new CGenericSearchArgs(kQueryIsProtein));
     m_Args.push_back(arg);
 
-    arg.Reset(new CFilteringArgs(kQueryIsProtein));
+    arg.Reset(new CFilteringArgs(kQueryIsProtein, kFilterByDefault));
     m_Args.push_back(arg);
 
     arg.Reset(new CMatrixNameArg);

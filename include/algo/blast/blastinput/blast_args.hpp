@@ -245,10 +245,13 @@ public:
     /** 
      * @brief Constructor
      * 
-     * @param query_is_protein is the query sequence(s) protein?
+     * @param query_is_protein is the query sequence(s) protein? [in]
+     * @param filter_by_default should filtering be applied by default? [in]
      */
-    CFilteringArgs(bool query_is_protein = true)
-        : m_QueryIsProtein(query_is_protein) {}
+    CFilteringArgs(bool query_is_protein = true,
+                   bool filter_by_default = true)
+        : m_QueryIsProtein(query_is_protein), 
+          m_FilterByDefault(filter_by_default) {}
 
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -257,6 +260,7 @@ public:
                                          CBlastOptions& options);
 private:
     bool m_QueryIsProtein;  /**< true if the query is protein */
+    bool m_FilterByDefault; /**< Should filtering be applied by default? */
 
     /** 
      * @brief Auxiliary method to tokenize the filtering string.

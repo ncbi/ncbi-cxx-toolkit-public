@@ -256,7 +256,7 @@ public:
             subset = false;
         }
     };
-
+    
     enum DbSortOrder {
         eNonGenomicFirst = 1,
         eGenomicFirst
@@ -642,6 +642,33 @@ public:
                                int db_order,
                                int hit_order,
                                int hsp_order);
+
+    ///function for Filtering seqalign by expect value
+    ///@param source_aln
+    /// CSeq_align_set original seqalign
+    ///@param evalueLow 
+    /// double min expect value
+    ///@param evalueHigh 
+    /// double max expect value
+    ///@return
+    /// CRef<CSeq_align_set> - filtered seq align
+    static CRef<CSeq_align_set> FilterSeqalignByEval(CSeq_align_set& source_aln,                                      
+                                     double evalueLow,
+                                     double evalueHigh);
+
+    ///function for Limitting seqalign by hsps number
+    ///(by default results are not cut off within the query)
+    ///@param source_aln
+    /// CSeq_align_set original seqalign
+    ///@param maxAligns 
+    /// double max number of alignments (per query)
+    ///@param maxHsps 
+    /// double max number of Hsps (for all qeuries)    
+    ///@return
+    /// CRef<CSeq_align_set> - filtered seq align
+    static CRef<CSeq_align_set> LimitSeqalignByHsps(CSeq_align_set& source_aln,
+                                                    int maxAligns,
+                                                    int maxHsps);                                                    
     
     static void BuildFormatQueryString (CCgiContext& ctx, 
                                        string& cgi_query);

@@ -306,15 +306,19 @@ s_GetInitialWordParameters(EBlastProgramType program_number,
    LookupTableWrap* lookup_wrap = NULL;
    LookupTableOptions* lookup_options = NULL;
    BlastSeqLoc* blast_seq_loc = BlastSeqLocNew(NULL, 0, query_info->contexts[0].query_length-1);
+   QuerySetUpOptions* query_options = NULL;
+   BlastQuerySetUpOptionsNew(&query_options);
 
    LookupTableOptionsNew(program_number, &lookup_options);
-   LookupTableWrapInit(query_blk, lookup_options, blast_seq_loc, sbp, &lookup_wrap, NULL, NULL);
+   LookupTableWrapInit(query_blk, lookup_options, query_options, blast_seq_loc,
+                       sbp, &lookup_wrap, NULL, NULL);
    BlastInitialWordParametersNew(program_number, word_options, hit_params,
       lookup_wrap, sbp, query_info, subject_length, &word_params);
 
    blast_seq_loc = BlastSeqLocFree(blast_seq_loc);
    lookup_wrap = LookupTableWrapFree(lookup_wrap);
    lookup_options = LookupTableOptionsFree(lookup_options);
+   query_options = BlastQuerySetUpOptionsFree(query_options);
 
    return word_params;
 }

@@ -186,13 +186,26 @@ CBlastFormat::PrintProlog()
 
     CBlastFormatUtil::BlastPrintVersionInfo(m_Program, m_IsHTML, 
                                             m_Outfile);
-    if ( !m_IsBl2Seq ) {
+    if (m_IsBl2Seq) {
+        return;
+    }
+
+    m_Outfile << endl << endl;
+    CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
+                                          m_Outfile);
+
+    if (m_Program == "psiblast") {
         m_Outfile << endl << endl;
         CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
-                                              m_Outfile);
-        CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
-                                        m_Outfile, true);
+                              m_Outfile, CReference::eCompAdjustedMatrices);
+        m_Outfile << endl << endl;
+        CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
+                              m_Outfile, CReference::eCompBasedStats);
     }
+
+    m_Outfile << endl << endl;
+    CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
+                                    m_Outfile, true);
 }
 
 void

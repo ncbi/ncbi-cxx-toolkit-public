@@ -362,16 +362,22 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     if (m_QueryIsProtein) {
         arg_desc.AddDefaultKey(kArgSegFiltering, "SEG_options",
                         "Filter query sequence with SEG "
-                        "(Format: 'window locut hicut', or 'no' to disable)",
-                        CArgDescriptions::eString, kDfltArgSegFiltering);
+                        "(Format: '" + kDfltArgApplyFiltering + "', " +
+                        "'window locut hicut', or '" + kDfltArgNoFiltering +
+                        "' to disable)",
+                        CArgDescriptions::eString, m_FilterByDefault
+                        ? kDfltArgSegFiltering : kDfltArgNoFiltering);
         arg_desc.AddDefaultKey(kArgLookupTableMaskingOnly, "soft_masking",
                         "Apply filtering locations as soft masks",
                         CArgDescriptions::eBoolean, "false");
     } else {
         arg_desc.AddDefaultKey(kArgDustFiltering, "DUST_options",
                         "Filter query sequence with DUST "
-                        "(Format: 'level window linker', or 'no' to disable)",
-                        CArgDescriptions::eString, kDfltArgDustFiltering);
+                        "(Format: '" + kDfltArgApplyFiltering + "', " + 
+                        "'level window linker', or '" + kDfltArgNoFiltering +
+                        "' to disable)",
+                        CArgDescriptions::eString, m_FilterByDefault
+                        ? kDfltArgDustFiltering : kDfltArgNoFiltering);
         arg_desc.AddOptionalKey(kArgFilteringDb, "filtering_database",
                 "BLAST database containing filtering elements (i.e.: repeats)",
                 CArgDescriptions::eString);
@@ -403,8 +409,10 @@ CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
 
     if (m_QueryIsProtein && args[kArgSegFiltering]) {
         const string& seg_opts = args[kArgSegFiltering].AsString();
-        if (seg_opts == "no") {
+        if (seg_opts == kDfltArgNoFiltering) {
             opt.SetSegFiltering(false);
+        } else if (seg_opts == kDfltArgApplyFiltering) {
+            opt.SetSegFiltering(true);
         } else {
             x_TokenizeFilteringArgs(seg_opts, tokens);
             opt.SetSegFilteringWindow(NStr::StringToInt(tokens[0]));
@@ -415,8 +423,10 @@ CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
 
     if ( !m_QueryIsProtein && args[kArgDustFiltering]) {
         const string& dust_opts = args[kArgDustFiltering].AsString();
-        if (dust_opts == "no") {
+        if (dust_opts == kDfltArgNoFiltering) {
             opt.SetDustFiltering(false);
+        } else if (dust_opts == kDfltArgApplyFiltering) {
+            opt.SetDustFiltering(true);
         } else {
             x_TokenizeFilteringArgs(dust_opts, tokens);
             opt.SetDustFilteringLevel(NStr::StringToInt(tokens[0]));
@@ -639,11 +649,11 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // composition based statistics
     arg_desc.AddDefaultKey(kArgCompBasedStats, "compo", 
                       "Use composition-based statistics for blastp / tblastn:\n"
-                      "    D or d: default (equivalent to 1)\n"
+                      "    D or d: default (equivalent to 2)\n"
                       "    0 or F or f: no composition-based statistics\n"
-                      "    1 or T or t: Composition-based statistics "
+                      "    1: Composition-based statistics "
                                       "as in NAR 29:2994-3005, 2001\n"
-                      "    2: Composition-based score adjustment as in "
+                      "    2 or T or t : Composition-based score adjustment as in "
                                       "Bioinformatics 21:902-911,\n"
                       "    2005, conditioned on sequence properties\n"
                       "    3: Composition-based score adjustment as in "
@@ -651,7 +661,7 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                       "    2005, unconditionally\n"
                       "For programs other than tblastn, must either be "
                       "absent or be D, F or 0",
-                      CArgDescriptions::eString, "1");
+                      CArgDescriptions::eString, "2");
 
     arg_desc.SetCurrentGroup("misc");
     // Use Smith-Waterman algorithm in traceback stage
@@ -688,14 +698,14 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
         ECompoAdjustModes compo_mode = eNoCompositionBasedStats;
     
         switch (comp_stat_string[0]) {
-            case 'D': case 'd':
             case '0': case 'F': case 'f':
                 compo_mode = eNoCompositionBasedStats;
                 break;
-            case '1': case 'T': case 't':
+            case '1':
                 compo_mode = eCompositionBasedStats;
                 break;
-            case '2':
+            case 'D': case 'd':
+            case '2': case 'T': case 't':
                 compo_mode = eCompositionMatrixAdjust;
                 break;
             case '3':
@@ -858,12 +868,15 @@ CGeneticCodeArgs::ExtractAlgorithmOptions(const CArgs& args,
 void
 CGapTriggerArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
+    arg_desc.SetCurrentGroup("Extension options");
+
     const double default_value = m_QueryIsProtein
         ? BLAST_GAP_TRIGGER_PROT : BLAST_GAP_TRIGGER_NUCL;
     arg_desc.AddDefaultKey(kArgGapTrigger, "float_value", 
                            "Number of bits to trigger gapping",
                            CArgDescriptions::eDouble,
                            NStr::DoubleToString(default_value));
+    arg_desc.SetCurrentGroup("");
 }
 
 void

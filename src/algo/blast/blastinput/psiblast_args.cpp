@@ -61,6 +61,7 @@ USING_SCOPE(objects);
 CPsiBlastAppArgs::CPsiBlastAppArgs()
 {
     bool const kQueryIsProtein = true;
+    bool const kFilterByDefault = false;
     CRef<IBlastCmdLineArgs> arg;
     arg.Reset(new CProgramDescriptionArgs("psiblast", 
                                           "Position-Specific Initiated BLAST"));
@@ -80,7 +81,7 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     arg.Reset(new CGenericSearchArgs(kQueryIsProtein));
     m_Args.push_back(arg);
 
-    arg.Reset(new CFilteringArgs(kQueryIsProtein));
+    arg.Reset(new CFilteringArgs(kQueryIsProtein, kFilterByDefault));
     m_Args.push_back(arg);
 
     arg.Reset(new CMatrixNameArg);
@@ -119,6 +120,9 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
 
     m_PsiBlastArgs.Reset(new CPsiBlastArgs(CPsiBlastArgs::eProteinDb));
     arg.Reset(m_PsiBlastArgs);
+    m_Args.push_back(arg);
+
+    arg.Reset(new CPssmEngineArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CPhiBlastArgs);

@@ -207,16 +207,12 @@ sub handle_blastall($)
         die "-p must be provided\n";
     }
 
-    #if (defined $opt_n and $opt_n =~ /t/i) {
-    #    return &handle_megablast($print_only);
-    #}
-
     my $retval;
     if (defined $opt_p) {
         if (defined $opt_R) {
             $retval .= "./tblastn -in_pssm $opt_R ";
         } elsif (defined $opt_n and $opt_n =~ /t/i) {
-            $retval .= "./blastn ";
+            $retval .= "./blastn -task megablast ";
         } else {
             $retval .= "./$opt_p ";                 
             $retval .= "-task blastn " if ($opt_p eq "blastn");
@@ -252,7 +248,7 @@ sub handle_blastall($)
             print STDERR "Warning: -f is not supported for blastn\n";
         }
     }
-    if (defined $opt_I and $opt_I =~ /t/i) {
+    if (defined $opt_I and (length($opt_I) == 0 or $opt_I =~ /t/i)) {
         $retval .= "-show_gis ";
     }
     $retval .= "-num_descriptions $opt_v "  if (defined $opt_v);
@@ -291,22 +287,22 @@ sub handle_blastall($)
             print STDERR "Warning: overriding output format\n";
         }
     }
-    if (defined $opt_T and $opt_T =~ /t/i) {
+    if (defined $opt_T and (length($opt_T) == 0 or $opt_T =~ /t/i)) {
         $retval .= "-html "                     
     }
 
     $retval .= &convert_sequence_locations($opt_L, "query") if ($opt_L);
-    if (defined $opt_U and $opt_U =~ /t/i) {
+    if (defined $opt_U and (length($opt_U) == 0 or $opt_U =~ /t/i)) {
         $retval .= "-lcase_masking ";
     }
     if (defined $opt_g and $opt_g =~ /f/i) {
         $retval .= "-ungapped ";
     }
-    if (defined $opt_J and $opt_J =~ /t/i) {
+    if (defined $opt_J and (length($opt_J) == 0 or $opt_J =~ /t/i)) {
         $retval .= "-parse_query_defline ";
     }
     $retval .= &convert_strand($opt_S) if (defined $opt_S);
-    if (defined $opt_s and $opt_s =~ /t/i) {
+    if (defined $opt_s and (length($opt_s) == 0 or $opt_s =~ /t/i)) {
         $retval .= "-use_sw_tback ";
     }
 
@@ -403,7 +399,7 @@ sub handle_megablast($)
             print STDERR "Warning: overriding output format\n";
         }
     }
-    if (defined $opt_T and $opt_T =~ /t/i) {
+    if (defined $opt_T and (length($opt_T) == 0 or $opt_T =~ /t/i)) {
         $retval .= "-html "                     
     }
     $retval .= "-num_descriptions $opt_v "  if (defined $opt_v);
@@ -424,10 +420,10 @@ sub handle_megablast($)
     if (defined $opt_F) {
         $retval .= &convert_filter_string($opt_F, "blastn");
     }
-    if (defined $opt_I and $opt_I =~ /t/i) {
+    if (defined $opt_I and (length($opt_I) == 0 or $opt_I =~ /t/i)) {
         $retval .= "-show_gis ";
     }
-    if (defined $opt_J and $opt_J =~ /t/i) {
+    if (defined $opt_J and (length($opt_J) == 0 or $opt_J =~ /t/i)) {
         $retval .= "-parse_query_defline ";
     }
 
@@ -436,10 +432,10 @@ sub handle_megablast($)
     $retval .= "-min_raw_gapped_score $opt_s " if (defined $opt_s);
     $retval .= &convert_strand($opt_S) if (defined $opt_S);
     $retval .= &convert_sequence_locations($opt_L, "query") if ($opt_L);
-    if (defined $opt_U and $opt_U =~ /t/i) {
+    if (defined $opt_U and (length($opt_U) == 0 or $opt_U =~ /t/i)) {
         $retval .= "-lcase_masking ";
     }
-    if (defined $opt_n and $opt_n =~ /t/i) {
+    if (defined $opt_n and (length($opt_n) == 0 or $opt_n =~ /t/i)) {
         $retval .= "-no_greedy ";
     }
 
@@ -594,19 +590,19 @@ sub handle_blastpgp($)
             print STDERR "Warning: overriding output format\n";
         }
     }
-    if (defined $opt_T and $opt_T =~ /t/i) {
+    if (defined $opt_T and (length($opt_T) == 0 or $opt_T =~ /t/i)) {
         $retval .= "-html "                     
     }
-    if (defined $opt_I and $opt_I =~ /t/i) {
+    if (defined $opt_I and (length($opt_I) == 0 or $opt_I =~ /t/i)) {
         $retval .= "-show_gis ";
     }
-    if (defined $opt_J and $opt_J =~ /t/i) {
+    if (defined $opt_J and (length($opt_J) == 0 or $opt_J =~ /t/i)) {
         $retval .= "-parse_query_defline ";
     }
-    if (defined $opt_s and $opt_s =~ /t/i) {
+    if (defined $opt_s and (length($opt_s) == 0 or $opt_s =~ /t/i)) {
         $retval .= "-use_sw_tback ";
     }
-    if (defined $opt_U and $opt_U =~ /t/i) {
+    if (defined $opt_U and (length($opt_U) == 0 or $opt_U =~ /t/i)) {
         $retval .= "-lcase_masking ";
     }
     if (defined $opt_F) {
@@ -628,7 +624,6 @@ sub handle_blastpgp($)
         $location .= ",-1" unless (defined $opt_H);
         $retval .= &convert_sequence_locations($location, "query");
     }
-
 
     # Checkpoint file recovery
     if (defined $opt_R) {
@@ -733,7 +728,7 @@ sub handle_bl2seq
             print STDERR "Warning: overriding output format\n";
         }
     }
-    if (defined $opt_T and $opt_T =~ /t/i) {
+    if (defined $opt_T and (length($opt_T) == 0 or $opt_T =~ /t/i)) {
         $retval .= "-html "                     
     }
     $retval .= "-evalue $opt_e "            if (defined $opt_e);
@@ -748,8 +743,11 @@ sub handle_bl2seq
     $retval .= "-dbsize $opt_d "            if (defined $opt_d);
     $retval .= "-xdrop_gap $opt_X "         if (defined $opt_X);
     $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
-    if (defined $opt_U and $opt_U =~ /t/i) {
+    if (defined $opt_U and (length($opt_U) == 0 or $opt_U =~ /t/i)) {
         $retval .= "-lcase_masking ";
+    }
+    if (defined $opt_m and (length($opt_m) == 0 or $opt_m =~ /t/i)) {
+        $retval .= "-task megablast ";
     }
     if (defined $opt_g and $opt_g =~ /f/i) {
         $retval .= "-ungapped ";
@@ -759,9 +757,6 @@ sub handle_bl2seq
 
     if (defined $opt_F) {
         $retval .= &convert_filter_string($opt_F, $opt_p);
-    }
-    if (defined $opt_m) {
-        print STDERR "-m is not handled yet in $0 for bl2seq!\n";
     }
     if (defined $opt_D) {
         die "Tabular is not handled yet in new C++ binaries!\n";
@@ -845,7 +840,7 @@ sub handle_rpsblast
             print STDERR "Warning: overriding output format\n";
         }
     }
-    if (defined $opt_T and $opt_T =~ /t/i) {
+    if (defined $opt_T and (length($opt_T) == 0 or $opt_T =~ /t/i)) {
         $retval .= "-html "                     
     }
     if (defined $opt_P and $opt_P eq "1") {
@@ -854,13 +849,13 @@ sub handle_rpsblast
     if (defined $opt_F) {
         $retval .= &convert_filter_string($opt_F, "blastp");
     }
-    if (defined $opt_I and $opt_I =~ /t/i) {
+    if (defined $opt_I and (length($opt_I) == 0 or $opt_I =~ /t/i)) {
         $retval .= "-show_gis ";
     }
-    if (defined $opt_J and $opt_J =~ /t/i) {
+    if (defined $opt_J and (length($opt_J) == 0 or $opt_J =~ /t/i)) {
         $retval .= "-parse_query_defline ";
     }
-    if (defined $opt_U and $opt_U =~ /t/i) {
+    if (defined $opt_U and (length($opt_U) == 0 or $opt_U =~ /t/i)) {
         $retval .= "-lcase_masking ";
     }
     $retval .= &convert_sequence_locations($opt_L, "query") if ($opt_L);

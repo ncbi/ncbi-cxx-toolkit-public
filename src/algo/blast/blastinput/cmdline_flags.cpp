@@ -123,6 +123,9 @@ const string kArgUngapped("ungapped");
 
 const string kArgCompBasedStats("comp_based_stats");
 
+const string kDfltArgNoFiltering("no");
+const string kDfltArgApplyFiltering("yes");
+
 const string kArgSegFiltering("seg");
 const string kDfltArgSegFiltering =
     NStr::IntToString(kSegWindow) + string(" ") +

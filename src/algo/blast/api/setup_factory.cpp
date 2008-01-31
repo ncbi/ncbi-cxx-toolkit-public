@@ -190,6 +190,7 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
 
     Int2 status = LookupTableWrapInit(queries,
                                       opts_memento->m_LutOpts,
+                                      opts_memento->m_QueryOpts,
                                       lookup_segments,
                                       score_blk,
                                       &retval,
