@@ -4,7 +4,7 @@ SRC = reader_pubseq2
 
 LIB = ncbi_xreader_pubseqos2
 
-ASN_DEP = seq seqset
+ASN_DEP = seq seqset id2
 
 # Build shared version when possible
 LIB_OR_DLL = both
