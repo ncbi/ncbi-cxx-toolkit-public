@@ -48,9 +48,9 @@ BEGIN_NCBI_SCOPE
 //
 
 
-CDBParamVariant::CDBParamVariant(unsigned int pos)
+CDBParamVariant::CDBParamVariant(int pos)
 : m_IsPositional(true)
-, m_Pos(pos)
+, m_Pos(static_cast<unsigned int>(pos))
 {
 }
 

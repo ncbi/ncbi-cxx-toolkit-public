@@ -95,7 +95,9 @@ public:
     };
 
 public:
-    CDBParamVariant(unsigned int pos);
+    // We use signed type here because conversion from unsigned type is ambiguous
+    // between two constructors in case of 0 (zero) value.
+    CDBParamVariant(int pos);
     CDBParamVariant(const char* name);
     CDBParamVariant(const string& name);
     ~CDBParamVariant(void);
