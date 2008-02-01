@@ -153,11 +153,12 @@ PLUGINS = \
 # Resource files
 #
 RESOURCES = \
-        share\gbench\*.png              \
+        share\gbench\*.png                  \
         \
         etc\algo_urls                       \
         etc\gbench.asn                      \
         etc\gbench_cache_agent.ini          \
+        etc\gbench-objmgr.ini               \
         etc\news.ini                        \
         etc\plugin_config.asn               \
         etc\web_pages.ini                   \
