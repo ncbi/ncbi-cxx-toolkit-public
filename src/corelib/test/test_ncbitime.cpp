@@ -1197,13 +1197,16 @@ static void s_DemoStopWatch(void)
     
     CStopWatch sw;
     sw.SetFormat("S.n");
+    assert(!sw.IsRunning());
     sw.Start();
 
     CNcbiOstrstream s;
     for (int i=0; i<10; i++) {
         s  << sw << endl;
     }
+    assert(sw.IsRunning());
     sw.Stop();
+    assert(!sw.IsRunning());
     SleepMilliSec(500);
     sw.Start();
     for (int i=0; i<10; i++) {

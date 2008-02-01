@@ -1485,6 +1485,13 @@ public:
     /// Result is undefined if Start() or Restart() wasn't previously called.
     double Restart(void);
 
+    /// Check state of stopwatch.
+    /// @return
+    ///   TRUE if stopwatch is "running", FALSE otherwise.
+    /// @sa
+    ///   Start, Stop
+    bool IsRunning(void);
+
     /// Set the current stopwatch time format.
     ///
     /// The default format is: "-S.n".
@@ -2297,6 +2304,12 @@ double CStopWatch::Restart()
     m_Total = 0;
     m_State = eStart;
     return elapsed;
+}
+
+inline
+bool CStopWatch::IsRunning(void)
+{
+    return m_State == eStart;
 }
 
 
