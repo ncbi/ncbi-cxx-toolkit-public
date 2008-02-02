@@ -3131,7 +3131,7 @@ fi
 
 NETWORK_PURE_LIBS="$NETWORK_LIBS"
 ncbi_xreader_pubseqos=
-IF_PUBSEQOS='#'
+UNLESS_PUBSEQOS=
 if test "$with_sybase" != "no" ; then
    net_sybase_root="/netopt/Sybase/clients"
    local_sybase_root="/export/home/sybase/clients"
@@ -3336,7 +3336,7 @@ if test "$with_sybase" != "no" ; then
                       [Define to 1 if the PUBSEQ service is available.])
             NCBI_FEATURE(PubSeqOS)
             ncbi_xreader_pubseqos=ncbi_xreader_pubseqos
-            IF_PUBSEQOS=
+            UNLESS_PUBSEQOS=\#
          fi
       fi
 
@@ -5799,7 +5799,7 @@ AC_SUBST(XALAN_STATIC_LIBS)
 AC_SUBST(FREETYPE_INCLUDE)
 AC_SUBST(FREETYPE_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
-AC_SUBST(IF_PUBSEQOS)
+AC_SUBST(UNLESS_PUBSEQOS)
 
 AC_SUBST(NCBI_C_ncbi)
 
