@@ -126,7 +126,7 @@ public:
     /// "get me anything". 
     /// @sa kAny
     bool IsAny() const 
-       { return (!m_Major && !m_Minor && !m_PatchLevel); }
+        { return !(m_Major | m_Minor | m_PatchLevel); }
 
     /// Check if version is all -1 (major, minor, patch)
     /// Convention is that -1 version used in requests as 
