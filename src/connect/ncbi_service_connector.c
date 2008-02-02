@@ -200,8 +200,8 @@ static int/*bool*/ s_IsContentTypeDefined(const SConnNetInfo* net_info,
             if (net_info->debug_printout                      &&
                 mime_t != SERV_MIME_TYPE_UNDEFINED            &&
                 mime_t != eMIME_T_Unknown                     &&
-                MIME_ParseContentTypeEx(s, &m_t, &m_s, &m_e)  &&
-                (mime_t != m_t
+                (!MIME_ParseContentTypeEx(s, &m_t, &m_s, &m_e)
+                 ||   mime_t != m_t
                  ||  (mime_s != SERV_MIME_SUBTYPE_UNDEFINED  &&
                       mime_s != eMIME_Unknown                &&
                       m_s    != eMIME_Unknown  &&  mime_s != m_s)
@@ -229,12 +229,14 @@ static int/*bool*/ s_IsContentTypeDefined(const SConnNetInfo* net_info,
                 }
                 CORE_LOGF_X(3, eLOG_Warning,
                             ("[SERVICE]  Content-Type mismatch for \"%s\" "
-                             "%s%s%s%s%s", net_info->service,
-                             t  &&  *t           ? "specified="  : "",
-                             t  &&  *t           ? t             : "",
-                             t  &&  *t  &&  *c_t ? ", "          : "",
-                             *c_t                ? "configured=" : "",
-                             *c_t                ? c_t           : ""));
+                             "%s%s%s%s%s%s%s", net_info->service,
+                             t  &&  *t           ? "specified=<"  : "",
+                             t  &&  *t           ? t              : "",
+                             t  &&  *t           ? ">"            : "",
+                             t  &&  *t  &&  *c_t ? ", "           : "",
+                             *c_t                ? "configured=<" : "",
+                             *c_t                ? c_t            : "",
+                             *c_t                ? ">"            : ""));
                 if (t)
                     free(t);
             }
