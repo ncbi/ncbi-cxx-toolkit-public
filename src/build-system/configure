@@ -23316,7 +23316,7 @@ echo "${ECHO_T}$ncbi_cv_lib_ctools" >&6
    fi
 fi
 if test "$with_ncbi_c" = "no" ; then
-   if test -n "$with_ctools"; then
+   if test "$with_ctools" = "yes"; then
       { { echo "$as_me:$LINENO: error: --with-ctools:  NCBI C Toolkit is missing" >&5
 echo "$as_me: error: --with-ctools:  NCBI C Toolkit is missing" >&2;}
    { (exit 1); exit 1; }; }

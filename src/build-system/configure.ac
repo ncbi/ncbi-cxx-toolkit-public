@@ -4080,7 +4080,7 @@ if test "$with_ncbi_c" != "no" ; then
    fi
 fi
 if test "$with_ncbi_c" = "no" ; then
-   if test -n "$with_ctools"; then
+   if test "$with_ctools" = "yes"; then
       AC_MSG_ERROR([--with-ctools:  NCBI C Toolkit is missing])
    fi
    NCBI_C_PATH="No_NCBI_CToolkit"
