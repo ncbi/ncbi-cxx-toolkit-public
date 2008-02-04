@@ -46,11 +46,24 @@ BEGIN_NCBI_SCOPE
 ////////////////////////////////////////////////////////////////////////////
 //  CDBParamVariant::
 //
+inline
+unsigned int ConvertI2UI(int value)
+{
+    CHECK_DRIVER_ERROR( (value < 0), "Negative parameter's position not allowed.", 200001 );
 
+    return static_cast<unsigned int>(value);
+}
 
 CDBParamVariant::CDBParamVariant(int pos)
 : m_IsPositional(true)
-, m_Pos(static_cast<unsigned int>(pos))
+, m_Pos(ConvertI2UI(pos))
+{
+}
+
+
+CDBParamVariant::CDBParamVariant(unsigned int pos)
+: m_IsPositional(true)
+, m_Pos(pos)
 {
 }
 
@@ -92,7 +105,6 @@ CDBParamVariant::GetName(CDBParamVariant::ENameFormat format) const
         case eSQLServerName: // '...WHERE name=@name'
             return '@' + MakePlainName(m_Name.c_str());
         }
-    } else {
     }
 
     return m_Name;

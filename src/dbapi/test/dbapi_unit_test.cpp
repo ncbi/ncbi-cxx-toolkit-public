@@ -12944,7 +12944,9 @@ CTestArguments::IsBCPAvailable(void) const
         return false;
     } else if ( GetDriverName() == ftds_odbc_driver
          || GetDriverName() == msdblib_driver
-         || ((GetDriverName() == ftds64_driver || GetDriverName() == ftds8_driver) && GetServerType() == CTestArguments::eSybase)
+         || ((GetDriverName() == ftds64_driver || GetDriverName() == ftds8_driver) 
+             && GetServerType() == CTestArguments::eSybase
+             )
          ) {
         return false;
     }
