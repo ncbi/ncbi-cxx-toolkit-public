@@ -101,6 +101,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
 
     string server_name;
 
+    
 #if defined(FTDS_IN_USE)
     if (params.GetHost()) {
         server_name = impl::ConvertN2A(params.GetHost());
@@ -115,28 +116,33 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
 #endif
 
     m_Link = GetDBLibCtx().Check(dbopen(m_Login, (char*) server_name.c_str()));
+    
 
-
-    /*
-    DBPROCESS* dbprocess = NULL; 
-
+    /*  Error: Could not open interface file.
+     *  This is a development code. DO NOT DELETE IT !!!
     if (params.GetHost()) {
         server_name = impl::ConvertN2A(params.GetHost());
+        // server_name = NStr::IntToString(params.GetHost());
         string port_str = NStr::IntToString(params.GetPort());
 
         RETCODE rc = dbsetconnect(
                 "query", 
+                // "master", 
                 "tcp", 
                 "ether", 
-                (char*)server_name.c_str(), 
-                (char*)port_str.c_str());
+                // (char*)server_name.c_str(), 
+                //"130.14.24.38",
+                "sybdev",
+                // (char*)port_str.c_str()
+                "2158"
+                );
 
         CHECK_DRIVER_ERROR(rc != SUCCEED, "dbsetconnect failed.", 200001);
 
-        dbprocess = GetDBLibCtx().Check(dbopen(m_Login, NULL));
+        m_Link = GetDBLibCtx().Check(dbopen(m_Login, NULL));
     } else {
         server_name = params.GetServerName();
-        dbprocess = GetDBLibCtx().Check(dbopen(m_Login, (char*) server_name.c_str()));
+        m_Link = GetDBLibCtx().Check(dbopen(m_Login, (char*) server_name.c_str()));
     }
     */
 
