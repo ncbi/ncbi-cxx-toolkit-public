@@ -1,0 +1,12 @@
+# $Id$
+
+DLL = dload_assn_study
+
+HOSTED_LIBS    = gui_doc_assn_study
+
+DEPENDENCIES   = gui_objects gui_core gui_widgets gui_utils gui_widgets \
+                 ncbi_algo ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_lds \
+                 ncbi_misc ncbi_seq ncbi_seqext
+
+
+
