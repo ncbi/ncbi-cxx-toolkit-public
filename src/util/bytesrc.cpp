@@ -193,9 +193,11 @@ bool CStreamByteSourceReader::EndOfData(void) const
 
 bool CStreamByteSourceReader::Pushback(const char* data, size_t size)
 {
-    CStreamUtils::Pushback(*m_Stream, data, size);
+    CStreamUtils::Stepback(*m_Stream, (CT_CHAR_TYPE*) data, (streamsize) size);
+    m_Stream->clear();
     return true;
 }
+
 
 void CStreamByteSourceReader::Seekg(CNcbiStreampos pos)
 {

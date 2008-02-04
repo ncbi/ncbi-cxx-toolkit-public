@@ -56,7 +56,7 @@ enum EConfidence {
 
 static unsigned char symbol_type_table[256];
 
-static void do_init_symbol_type_table(void)
+static void init_symbol_type_table(void)
 {
     if ( symbol_type_table[0] == 0 ) {
         for ( const char* s = "ATGCN"; *s; ++s ) {
@@ -87,12 +87,6 @@ static void do_init_symbol_type_table(void)
     }
 }
 
-static inline void init_symbol_type_table(void)
-{
-    if ( symbol_type_table[0] == 0 ) {
-        do_init_symbol_type_table();
-    }
-}
 
 static bool x_SplitLines( const char* byte_buf, size_t byte_count,
                           list< string>& lines )
@@ -1239,7 +1233,7 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
     input.read((char*)buf, sizeof(buf));
     size_t count = input.gcount();
     input.clear();  // in case we reached eof
-    CStreamUtils::Pushback(input, (const CT_CHAR_TYPE*)buf, (streamsize)count);
+    CStreamUtils::Stepback(input, (CT_CHAR_TYPE*)buf, (streamsize)count);
 
     return Format(buf, count);
 }
@@ -1406,15 +1400,14 @@ CFormatGuess::EnsureTestBuffer()
     if ( m_pTestBuffer ) {
         return true;
     }
-    if ( ! m_Stream.is_open() || ! m_Stream.good() ) {
+    if ( ! m_Stream.is_open()  ||  ! m_Stream.good() ) {
         return false;
     }
     m_pTestBuffer = new char[ s_iTestBufferSize ];
     m_Stream.read( m_pTestBuffer, s_iTestBufferSize );
     m_iTestDataSize = m_Stream.gcount();
     m_Stream.clear();  // in case we reached eof
-    CStreamUtils::Pushback( m_Stream, (const CT_CHAR_TYPE*)m_pTestBuffer, 
-        m_iTestDataSize);
+    CStreamUtils::Stepback( m_Stream, m_pTestBuffer, m_iTestDataSize );
     return true;
 }
 
