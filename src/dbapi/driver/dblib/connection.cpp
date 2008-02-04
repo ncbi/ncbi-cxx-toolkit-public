@@ -56,14 +56,123 @@ BEGIN_NCBI_SCOPE
 
 
 CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
-                                 DBPROCESS* con,
-                                 bool reusable,
-                                 const string& pool_name) :
-    impl::CConnection(cntx, false, reusable, pool_name),
-    m_Link(con)
-{
+                                 const CDBConnParams& params) :
+    impl::CConnection(cntx, true, params.IsPooled(), params.GetPoolName()),
+    m_DBLibCtx(&cntx),
+    m_Login(NULL),
+    m_Link(NULL)
+{    
+    m_Login = GetDBLibCtx().Check(dblogin());
+    _ASSERT(m_Login);
+
+    const string err_str(
+        "Cannot connect to the server '" + params.GetServerName() +
+        "' as user '" + params.GetUserName() + "'"
+        );
+
+    if (!GetCDriverContext().GetHostName().empty())
+        DBSETLHOST(m_Login, (char*) GetCDriverContext().GetHostName().c_str());
+    if (GetDBLibCtx().GetPacketSize() > 0)
+        DBSETLPACKET(m_Login, GetDBLibCtx().GetPacketSize());
+    if (DBSETLAPP (m_Login, (char*) GetCDriverContext().GetApplicationName().c_str())
+        != SUCCEED ||
+        DBSETLUSER(m_Login, (char*) params.GetUserName().c_str())
+        != SUCCEED ||
+        DBSETLPWD (m_Login, (char*) params.GetPassword().c_str())
+        != SUCCEED) 
+    {
+        DATABASE_DRIVER_ERROR( err_str, 200011 );
+    }
+
+#ifndef MS_DBLIB_IN_USE
+    DBSETLCHARSET( 
+            m_Login, 
+            const_cast<char*>(
+                GetCDriverContext().GetClientCharset().c_str()
+                ) 
+            );
+#endif
+    BCP_SETL(m_Login, TRUE);
+
+#ifndef MS_DBLIB_IN_USE
+    if (params.IsPasswordEncrypted())
+        DBSETLENCRYPT(m_Login, TRUE);
+#endif
+
+    string server_name;
+
+#if defined(FTDS_IN_USE)
+    if (params.GetHost()) {
+        server_name = impl::ConvertN2A(params.GetHost());
+        if (params.GetPort()) {
+            server_name += ":" + NStr::IntToString(params.GetPort());
+        }
+    } else {
+        server_name = params.GetServerName();
+    }
+#else
+    server_name = params.GetServerName();
+#endif
+
+    m_Link = GetDBLibCtx().Check(dbopen(m_Login, (char*) server_name.c_str()));
+
+
+    /*
+    DBPROCESS* dbprocess = NULL; 
+
+    if (params.GetHost()) {
+        server_name = impl::ConvertN2A(params.GetHost());
+        string port_str = NStr::IntToString(params.GetPort());
+
+        RETCODE rc = dbsetconnect(
+                "query", 
+                "tcp", 
+                "ether", 
+                (char*)server_name.c_str(), 
+                (char*)port_str.c_str());
+
+        CHECK_DRIVER_ERROR(rc != SUCCEED, "dbsetconnect failed.", 200001);
+
+        dbprocess = GetDBLibCtx().Check(dbopen(m_Login, NULL));
+    } else {
+        server_name = params.GetServerName();
+        dbprocess = GetDBLibCtx().Check(dbopen(m_Login, (char*) server_name.c_str()));
+    }
+    */
+
+
+    // It doesn't work currently ...
+//     if (dbprocess) {
+//         CHECK_DRIVER_ERROR(
+//             GetDBLibCtx().Check(dbsetopt(
+//                 dbprocess,
+//                 DBBUFFER,
+//                 const_cast<char*>(NStr::UIntToString(GetBufferSize()).c_str()),
+//                 -1)) != SUCCEED,
+//             "dbsetopt failed",
+//             200001
+//             );
+//     }
+
+    if (!m_Link) {
+        DATABASE_DRIVER_ERROR( err_str, 200011 );
+    }
+
+
+#ifdef MS_DBLIB_IN_USE
+    GetDBLibCtx().Check(dbsetopt(GetDBLibConnection(), DBTEXTLIMIT, "0" )); // No limit
+    GetDBLibCtx().Check(dbsetopt(GetDBLibConnection(), DBTEXTSIZE , "2147483647" )); // 0x7FFFFFFF
+#endif
+
+    SetServerName(params.GetServerName());
+    SetUserName(params.GetUserName());
+    SetPassword(params.GetPassword());
+    SetSecureLogin(params.IsPasswordEncrypted());
+
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();
+
+    SetServerType(CalculateServerType(params));
 }
 
 
@@ -251,6 +360,14 @@ bool CDBL_Connection::Close(void)
         CheckFunctCall();
 
         MarkClosed();
+
+#ifdef MS_DBLIB_IN_USE
+                dbfreelogin(m_Login);
+                CheckFunctCall();
+#else
+                dbloginfree(m_Login);
+                CheckFunctCall();
+#endif
 
         m_Link = NULL;
 

@@ -77,8 +77,8 @@ static bool for_update_of(const string& q)
 CDB_Result* CTDS_CursorCmd::OpenCursor()
 {
     const bool connected_to_MSSQLServer = 
-        GetConnection().GetCDriverContext().GetSupportedDBType() ==
-        impl::CDriverContext::eMsSql;
+        GetConnection().GetServerType() ==
+        CDBConnParams::eMSSqlServer;
 
     // need to close it first
     CloseCursor();

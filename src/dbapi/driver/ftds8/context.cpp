@@ -254,7 +254,6 @@ CTDSContext::CTDSContext(DBINT version)
     Check(dbmsghandle(s_TDS_msg_callback));
 
     g_pTDSContext = this;
-    m_Login = Check(dblogin());
 
     m_Registry = &CDblibContextRegistry::Instance();
     x_AddToRegistry();
@@ -280,18 +279,6 @@ void
 CTDSContext::x_SetRegistry(CDblibContextRegistry* registry)
 {
     m_Registry = registry;
-}
-
-impl::CDriverContext::EServerType 
-CDBLibContext::GetSupportedDBType(void) const
-{
-    if (m_TDSVersion == DBVERSION_70 ||
-        m_TDSVersion == DBVERSION_80 ||
-        m_TDSVersion == DBVERSION_UNKNOWN) {
-        return eMsSql;
-    }
-
-    return eSybase;
 }
 
 int CTDSContext::GetTDSVersion(void) const
@@ -324,46 +311,12 @@ bool CTDSContext::SetMaxTextImageSize(size_t nof_bytes)
 }
 
 
-void CTDSContext::SetClientCharset(const string& charset)
-{
-    _ASSERT( m_Login );
-    _ASSERT( !charset.empty() );
-
-    impl::CDriverContext::SetClientCharset(charset);
-
-    CMutexGuard mg(m_CtxMtx);
-    DBSETLCHARSET( m_Login, const_cast<char*>(charset.c_str()) );
-}
-
 impl::CConnection*
 CTDSContext::MakeIConnection(const CDBConnParams& params)
 {
-    CMutexGuard mg(m_CtxMtx);
-
-    DBPROCESS* dbcon = x_ConnectToServer(params);
-
-    if (!dbcon) {
-        string err;
-
-        err += "Cannot connect to the server '" + params.GetServerName();
-        err += "' as user '" + params.GetUserName() + "'";
-        DATABASE_DRIVER_ERROR( err, 200011 );
-    }
-
-    CTDS_Connection* t_con = NULL;
-    t_con = new CTDS_Connection(*this,
-                                dbcon,
-                                params.IsPooled(),
-                                params.GetPoolName());
-
-    t_con->SetServerName(params.GetServerName());
-    t_con->SetUserName(params.GetUserName());
-    t_con->SetPassword(params.GetPassword());
-    t_con->SetBCPable(true);
-    t_con->SetSecureLogin(params.IsPasswordEncrypted());
-
-    return t_con;
+    return new CTDS_Connection(*this, params);
 }
+
 
 bool CTDSContext::IsAbleTo(ECapability cpb) const
 {
@@ -412,8 +365,6 @@ CTDSContext::x_Close(bool delete_conn)
                 NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 
                 // Finalize client library even if we cannot close connections.
-                dbloginfree(m_Login);
-                CheckFunctCall();
                 dbexit();
                 CheckFunctCall();
             }
@@ -677,59 +628,6 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
     }
 }
 
-
-DBPROCESS* CTDSContext::x_ConnectToServer(const CDBConnParams& params)
-{
-    if (!GetHostName().empty())
-        DBSETLHOST(m_Login, (char*) GetHostName().c_str());
-    if (m_PacketSize > 0)
-        DBSETLPACKET(m_Login, m_PacketSize);
-    if (DBSETLAPP (m_Login, (char*) GetApplicationName().c_str())
-        != SUCCEED ||
-        DBSETLUSER(m_Login, (char*) params.GetUserName().c_str())
-        != SUCCEED ||
-        DBSETLPWD (m_Login, (char*) params.GetPassword().c_str())
-        != SUCCEED)
-        return 0;
-
-        BCP_SETL(m_Login, TRUE);
-#if 0
-    if (mode & fPasswordEncrypted)
-        DBSETLENCRYPT(m_Login, TRUE);
-#endif
-
-
-    string server_name;
-
-    if (params.GetHost()) {
-        server_name = impl::ConvertN2A(params.GetHost());
-        if (params.GetPort()) {
-            server_name += ":" + NStr::IntToString(params.GetPort());
-        }
-    } else {
-        server_name = params.GetServerName();
-    }
-
-    tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)GetLoginTimeout(),
-                     (int)GetTimeout(), 0 /*(int)m_Timeout*/);
-    tds_setTDS_version((tds_login*)(m_Login->tds_login), m_TDSVersion);
-    DBPROCESS* dbprocess = Check(dbopen(m_Login, (char*) server_name.c_str()));
-
-    // It doesn't work correclty (buffer is full) ...
-//     if (dbprocess) {
-//         CHECK_DRIVER_ERROR(
-//             Check(dbsetopt(
-//                 dbprocess,
-//                 DBBUFFER,
-//                 const_cast<char*>(NStr::UIntToString(GetBufferSize()).c_str()),
-//                 -1)) != SUCCEED,
-//             "dbsetopt failed",
-//             200001
-//             );
-//     }
-
-    return dbprocess;
-}
 
 void CTDSContext::CheckFunctCall(void)
 {

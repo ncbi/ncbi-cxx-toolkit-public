@@ -54,14 +54,86 @@ BEGIN_NCBI_SCOPE
 
 
 CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
-                                 DBPROCESS* con,
-                                 bool reusable,
-                                 const string& pool_name) :
-    impl::CConnection(cntx, false, reusable, pool_name),
-    m_Link(con)
+                                 const CDBConnParams& params) :
+    impl::CConnection(cntx, true, params.IsPooled(), params.GetPoolName()),
+    m_DBLibCtx(&cntx),
+    m_Login(NULL),
+    m_Link(NULL)
 {
+    m_Login = GetDBLibCtx().Check(dblogin());
+    _ASSERT(m_Login);
+
+    const string err_str(
+        "Cannot connect to the server '" + params.GetServerName() +
+        "' as user '" + params.GetUserName() + "'"
+        );
+
+    if (!GetCDriverContext().GetHostName().empty())
+        DBSETLHOST(m_Login, (char*) GetCDriverContext().GetHostName().c_str());
+    if (GetDBLibCtx().GetPacketSize() > 0)
+        DBSETLPACKET(m_Login, GetDBLibCtx().GetPacketSize());
+    if (DBSETLAPP (m_Login, (char*) GetCDriverContext().GetApplicationName().c_str())
+        != SUCCEED ||
+        DBSETLUSER(m_Login, (char*) params.GetUserName().c_str())
+        != SUCCEED ||
+        DBSETLPWD (m_Login, (char*) params.GetPassword().c_str())
+        != SUCCEED) 
+    {
+        DATABASE_DRIVER_ERROR( err_str, 200011 );
+    }
+
+    DBSETLCHARSET( 
+            m_Login, 
+            const_cast<char*>(
+                GetCDriverContext().GetClientCharset().c_str()
+                ) 
+            );
+
+    BCP_SETL(m_Login, TRUE);
+
+    string server_name;
+
+    if (params.GetHost()) {
+        server_name = impl::ConvertN2A(params.GetHost());
+        if (params.GetPort()) {
+            server_name += ":" + NStr::IntToString(params.GetPort());
+        }
+    } else {
+        server_name = params.GetServerName();
+    }
+
+    tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)GetCDriverContext().GetLoginTimeout(),
+                     (int)GetCDriverContext().GetTimeout(), 0 /*(int)m_Timeout*/);
+    tds_setTDS_version((tds_login*)(m_Login->tds_login), GetDBLibCtx().GetTDSVersion());
+    m_Link = GetDBLibCtx().Check(dbopen(m_Login, (char*) server_name.c_str()));
+
+    // It doesn't work correclty (buffer is full) ...
+//     if (dbprocess) {
+//         CHECK_DRIVER_ERROR(
+//             GetDBLibCtx().Check(dbsetopt(
+//                 dbprocess,
+//                 DBBUFFER,
+//                 const_cast<char*>(NStr::UIntToString(GetBufferSize()).c_str()),
+//                 -1)) != SUCCEED,
+//             "dbsetopt failed",
+//             200001
+//             );
+//     }
+
+
+    if (!m_Link) {
+        DATABASE_DRIVER_ERROR( err_str, 200011 );
+    }
+
+    SetServerName(params.GetServerName());
+    SetUserName(params.GetUserName());
+    SetPassword(params.GetPassword());
+    SetSecureLogin(params.IsPasswordEncrypted());
+
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();
+
+    SetServerType(CalculateServerType(params));
 }
 
 
@@ -238,6 +310,9 @@ bool CTDS_Connection::Close(void)
         CheckFunctCall();
 
         MarkClosed();
+
+        dbloginfree(m_Login);
+        CheckFunctCall();
 
         m_Link = NULL;
 

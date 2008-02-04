@@ -89,7 +89,7 @@ CDB_SendDataCmd* CConnection::Create_SendDataCmd(CSendDataCmd& senddata_cmd)
 
 
 CConnection::CConnection(CDriverContext& dc,
-                         bool /* isBCPable */,
+                         bool isBCPable,
                          bool reusable,
                          const string& pool_name,
                          bool hasSecureLogin
@@ -98,9 +98,10 @@ CConnection::CConnection(CDriverContext& dc,
 , m_MsgHandlers(dc.GetConnHandlerStack())
 , m_Interface(NULL)
 , m_ResProc(NULL)
+, m_ServerType(CDBConnParams::eUnknown)
 , m_Pool(pool_name)
 , m_Reusable(reusable)
-, m_BCPable(true) // BCP is enabled with all drivers by default. m_BCPable(isBCPable)
+, m_BCPable(isBCPable)
 , m_SecureLogin(hasSecureLogin)
 , m_Opened(false)
 {
@@ -170,6 +171,56 @@ void CConnection::MarkClosed(void)
         m_Opened = false;
     }
 }
+
+
+CDBConnParams::EServerType 
+CConnection::CalculateServerType(const CDBConnParams& params)
+{
+    CDBConnParams::EServerType server_type = params.GetServerType();
+
+    if (server_type == CDBConnParams::eUnknown) {
+        try {
+            auto_ptr<CDB_LangCmd> cmd(LangCmd("SELECT @@version"));
+            cmd->Send();
+
+            while (cmd->HasMoreResults()) {
+                auto_ptr<CDB_Result> res(cmd->Result());
+
+                if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
+                    CDB_VarChar version;
+
+                    while (res->Fetch()) {
+                        res->GetItem(&version);
+
+                        if (!version.IsNULL()) {
+                            if (NStr::Compare(
+                                        version.Value(), 
+                                        0, 
+                                        15, 
+                                        "Adaptive Server"
+                                        ) == 0) {
+                                server_type = CDBConnParams::eSybaseSQLServer;
+                            } else if (NStr::Compare(
+                                        version.Value(), 
+                                        0, 
+                                        20, 
+                                        "Microsoft SQL Server"
+                                        ) == 0) {
+                                server_type = CDBConnParams::eMSSqlServer;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch(const CException& ex) {
+            server_type = CDBConnParams::eSybaseOpenServer;
+        }
+    }
+
+    return server_type;
+}
+
 
 void CConnection::PushMsgHandler(CDB_UserHandler* h,
                                     EOwnership ownership)

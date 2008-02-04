@@ -69,15 +69,6 @@ public:
     virtual ~CDriverContext(void);
 
 public:
-    enum EServerType {
-        eUnknown,   //< Server type is not known
-        eMySQL,     //< MySQL server
-        eSybase,    //< Sybase server
-        eMsSql,     //< Microsoft SQL server
-        eSqlite     //< SQLITE3 server
-    };
-
-
     virtual bool SetTimeout(unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
 
@@ -108,8 +99,6 @@ public:
     /// close reusable deleted connections for specified server and/or pool
     void CloseUnusedConnections(const string& srv_name  = kEmptyStr,
                                 const string& pool_name = kEmptyStr);
-
-    virtual EServerType GetSupportedDBType(void) const = 0;
 
     const CDBHandlerStack& GetConnHandlerStack(void) const
     {

@@ -163,7 +163,6 @@ public:
     //
 
     virtual bool IsAbleTo(ECapability cpb) const {return false;}
-    virtual EServerType GetSupportedDBType(void) const;
 
     //
     // ODBC specific functionality

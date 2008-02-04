@@ -79,8 +79,7 @@ static bool for_update_of(const string& q)
 CDB_Result* CDBL_CursorCmd::OpenCursor()
 {
     const bool connected_to_MSSQLServer = 
-        GetConnection().GetCDriverContext().GetSupportedDBType() ==
-        impl::CDriverContext::eMsSql;
+        GetConnection().GetServerType() == CDBConnParams::eMSSqlServer;
 
     // We need to close it first
     CloseCursor();
@@ -327,8 +326,7 @@ bool CDBL_CursorCmd::CloseCursor()
     if (CursorIsDeclared()) {
         string buff;
         const bool connected_to_MSSQLServer = 
-            GetConnection().GetCDriverContext().GetSupportedDBType() ==
-            impl::CDriverContext::eMsSql;
+            GetConnection().GetServerType() == CDBConnParams::eMSSqlServer;
 
         if ( connected_to_MSSQLServer ) {
             buff = "deallocate " + GetCmdName();

@@ -223,16 +223,12 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 #endif
 
     CS_BOOL flag = CS_TRUE;
-//     if ((conn_attr.mode & I_DriverContext::fBcpIn) != 0) {
-        // Enable BCP all the time ...
-        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
-                                CS_SET,
-                                CS_BULK_LOGIN,
-                                &flag,
-                                CS_UNUSED,
-                                NULL));
-        SetBCPable(true);
-//     }
+    GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+                            CS_SET,
+                            CS_BULK_LOGIN,
+                            &flag,
+                            CS_UNUSED,
+                            NULL));
 
     if (params.IsPasswordEncrypted()) {
         GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
@@ -263,51 +259,8 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     SetServerName(params.GetServerName());
     SetUserName(params.GetUserName());
     SetPassword(params.GetPassword());
-    /*
-    string db_name;
-    const CDriverContext::EServerType server_type = 
-        conn.GetCDriverContext().GetSupportedDBType();
 
-    if (server_type == impl::CDriverContext::eSybase
-        || server_type == impl::CDriverContext::eMsSql) {
-        string sql( 
-            "SELECT '' from sysobjects WHERE name = @name \n"
-            "UNION \n"
-            "SELECT 'master' from master..sysobjects WHERE name = @name \n"
-            );
-
-        if (server_type == impl::CDriverContext::eSybase) {
-            sql +=
-                "UNION \n"
-                "SELECT 'sybsystemprocs' from sybsystemprocs..sysobjects WHERE name = @name \n"
-                "UNION \n"
-                "SELECT 'sybsystemdb' from sybsystemdb..sysobjects WHERE name = @name"
-                ;
-        }
-
-        auto_ptr<CDB_LangCmd> cmd(conn.LangCmd(sql));
-        CDB_VarChar sp_name_value(name);
-
-        cmd->GetBindParams().Bind("@name", &sp_name_value);
-        cmd->Send();
-
-        while (cmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> res(cmd->Result());
-
-            if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
-                CDB_VarChar db_name_value;
-
-                while (res->Fetch()) {
-                    res->GetItem(&db_name_value);
-
-                    if (!db_name_value.IsNULL()) {
-                        db_name = db_name_value.Value();
-                    }
-                }
-            }
-        }
-    }
-    */
+    SetServerType(CalculateServerType(params));
 }
 
 
@@ -418,8 +371,6 @@ CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name)
 
 CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name)
 {
-    CHECK_DRIVER_ERROR( !IsBCPable(), "No bcp on this connection." + GetDbgInfo(), 110003 );
-
     string extra_msg = "BCP Table: " + table_name;
     SetExtraMsg(extra_msg);
 
@@ -499,10 +450,8 @@ bool CTL_Connection::Refresh()
 
 I_DriverContext::TConnectionMode CTL_Connection::ConnectMode() const
 {
-    I_DriverContext::TConnectionMode mode = 0;
-    if ( IsBCPable() ) {
-        mode |= I_DriverContext::fBcpIn;
-    }
+    I_DriverContext::TConnectionMode mode = I_DriverContext::fBcpIn;
+
     if ( HasSecureLogin() ) {
         mode |= I_DriverContext::fPasswordEncrypted;
     }

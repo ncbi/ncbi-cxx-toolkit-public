@@ -918,10 +918,20 @@ public:
     virtual ~CDBConnParams(void);
 
 public:
+    enum EServerType {
+        eUnknown,          //< Server type is not known
+        eMySQL,            //< MySQL server
+        eSybaseOpenServer, //< Sybase Open server
+        eSybaseSQLServer,  //< Sybase SQL server
+        eMSSqlServer,      //< Microsoft SQL server
+        eSqlite            //< SQLITE3 server
+    };
+
     virtual string GetServerName(void) const = 0;
     virtual string GetUserName(void) const = 0;
     virtual string GetPassword(void) const = 0;
 
+    virtual EServerType GetServerType(void) const = 0;
     virtual Uint4  GetHost(void) const = 0;
     virtual Uint2  GetPort(void) const = 0;
 
@@ -963,6 +973,7 @@ public:
     virtual string GetUserName(void) const;
     virtual string GetPassword(void) const;
 
+    virtual EServerType GetServerType(void) const;
     virtual Uint4 GetHost(void) const;
     virtual Uint2 GetPort(void) const;
 

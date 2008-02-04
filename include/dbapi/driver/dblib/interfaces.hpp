@@ -192,8 +192,10 @@ public:
     /// the values will affect the new connections only
 
     /// Deprecated. Use SetApplicationName instead.
+    NCBI_DEPRECATED
     virtual void DBLIB_SetApplicationName(const string& a_name);
     /// Deprecated. Use SetHostName instead.
+    NCBI_DEPRECATED
     virtual void DBLIB_SetHostName(const string& host_name);
     virtual void DBLIB_SetPacketSize(int p_size);
     virtual bool DBLIB_SetMaxNofConns(int n);
@@ -210,11 +212,9 @@ public:
                                      const string& procname,
                                      int           line);
 
-    virtual void SetClientCharset(const string& charset);
     CDBLibContext* GetContext(void) const;
 
 public:
-    virtual EServerType GetSupportedDBType(void) const;
     int GetTDSVersion(void) const;
 
     //
@@ -227,23 +227,10 @@ public:
         m_BufferSize = size;
     }
 
-protected:
-    virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
-
-private:
-    short                  m_PacketSize;
-    LOGINREC*              m_Login;
-    int                    m_TDSVersion;
-    CDblibContextRegistry* m_Registry;
-    unsigned int           m_BufferSize;
-
-
-    DBPROCESS* x_ConnectToServer(const CDBConnParams& params);
-    void x_AddToRegistry(void);
-    void x_RemoveFromRegistry(void);
-    void x_SetRegistry(CDblibContextRegistry* registry);
-    void x_Close(bool delete_conn = true);
-    bool x_SafeToFinalize(void) const;
+    short GetPacketSize(void) const
+    {
+        return m_PacketSize;
+    }
 
     template <typename T>
     T Check(T rc)
@@ -253,6 +240,22 @@ private:
     }
 
     void CheckFunctCall(void);
+
+protected:
+    virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
+
+private:
+    short                  m_PacketSize;
+    int                    m_TDSVersion;
+    CDblibContextRegistry* m_Registry;
+    unsigned int           m_BufferSize;
+
+
+    void x_AddToRegistry(void);
+    void x_RemoveFromRegistry(void);
+    void x_SetRegistry(CDblibContextRegistry* registry);
+    void x_Close(bool delete_conn = true);
+    bool x_SafeToFinalize(void) const;
 
     friend class CDblibContextRegistry;
 };
@@ -277,8 +280,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_Connection : public impl::CConnection
     friend class CDBL_SendDataCmd;
 
 protected:
-    CDBL_Connection(CDBLibContext& cntx, DBPROCESS* con,
-                    bool reusable, const string& pool_name);
+    CDBL_Connection( CDBLibContext& cntx, const CDBConnParams& params);
     virtual ~CDBL_Connection(void);
 
 protected:
@@ -320,6 +322,12 @@ private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
     RETCODE x_Results(DBPROCESS* pLink);
+    
+    CDBLibContext& GetDBLibCtx(void) const
+    {
+        _ASSERT(m_DBLibCtx);
+        return *m_DBLibCtx;
+    }
     DBPROCESS* GetDBLibConnection(void) const { return m_Link; }
 
     template <typename T>
@@ -350,7 +358,9 @@ private:
     }
 
 private:
-    DBPROCESS*              m_Link;
+    CDBLibContext* m_DBLibCtx;
+    LOGINREC*      m_Login;
+    DBPROCESS*     m_Link;
 };
 
 

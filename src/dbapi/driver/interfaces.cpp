@@ -327,6 +327,45 @@ CDBDefaultConnParams::GetPassword(void) const
     return m_Password;
 }
 
+CDBConnParams::EServerType 
+CDBDefaultConnParams::GetServerType(void) const
+{
+    if (   NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 7, "OAMSDEV") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 6, "BLASTQ") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 4, "GENE") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 5, "GPIPE") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 7, "MAPVIEW") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 5, "MSSNP") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 4, "STRC") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 4, "SUBS") == 0
+        )
+    {
+        return eMSSqlServer;
+    } else if ( NStr::CompareNocase(GetServerName(), "TAPER") == 0
+        || NStr::CompareNocase(GetServerName(), "THALBERG") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 8, "SCHUMANN") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 6, "BARTOK") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 8, "SCHUBERT") == 0
+        ) 
+    {
+        return eSybaseSQLServer;
+    } else if ( NStr::CompareNocase(GetServerName(), 0, 7, "LINK_OS") == 0 
+        || NStr::CompareNocase(GetServerName(), 0, 7, "MAIL_OS") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 9, "PUBSEQ_OS") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 7, "TEST_OS") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 8, "TRACE_OS") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 7, "TROS_OS") == 0
+        ) 
+    {
+        return eSybaseOpenServer;
+    }
+
+    return eUnknown;
+}
+
 Uint4 
 CDBDefaultConnParams::GetHost(void) const
 {

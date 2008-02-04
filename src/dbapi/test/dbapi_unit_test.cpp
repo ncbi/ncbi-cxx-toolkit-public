@@ -1463,10 +1463,6 @@ CDBAPIUnitTest::Test_DateTime(void)
                 {
                     sql = "SELECT * FROM #test_datetime";
 
-                    // !!! Do not forget to clear a parameter list ....
-                    // Workaround for the ctlib driver ...
-                    // auto_stmt->ClearParamList();
-
                     auto_stmt->SendSql( sql );
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
                     BOOST_CHECK( auto_stmt->HasRows() );
@@ -1511,10 +1507,6 @@ CDBAPIUnitTest::Test_DateTime(void)
                 // Retrieve data ...
                 {
                     sql = "SELECT * FROM #test_datetime";
-
-                    // !!! Do not forget to clear a parameter list ....
-                    // Workaround for the ctlib driver ...
-                    // auto_stmt->ClearParamList();
 
                     auto_stmt->SendSql( sql );
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
@@ -1594,10 +1586,6 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
             {
                 sql = "SELECT * FROM " + table_name;
 
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                // auto_stmt->ClearParamList();
-
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
@@ -1653,10 +1641,6 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
             // Retrieve data ...
             {
                 sql = "SELECT * FROM " + table_name;
-
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
 
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
@@ -1918,10 +1902,6 @@ CDBAPIUnitTest::Test_LOB(void)
 
                     // Execute a statement with parameters ...
                     auto_stmt->ExecuteUpdate(sql);
-
-                    // !!! Do not forget to clear a parameter list ....
-                    // Workaround for the ctlib driver ...
-                    auto_stmt->ClearParamList();
 
                     if (false) {
                         // Use cursor with parameters.
@@ -4724,6 +4704,7 @@ CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
     size_t cur_rec_num = 0;
 
     DumpResults(auto_stmt.get());
+    // ClearParamList is necessary here ...
     auto_stmt->ClearParamList();
     auto_stmt->SendSql( "select count(*) FROM " + table_name );
     while (auto_stmt->HasMoreResults()) {
@@ -4768,6 +4749,7 @@ CDBAPIUnitTest::GetIdentity(const auto_ptr<IStatement>& auto_stmt)
     Int8 identity = 0;
 
     DumpResults(auto_stmt.get());
+    // ClearParamList is necessary here ...
     auto_stmt->ClearParamList();
     auto_stmt->SendSql( "select CONVERT(NUMERIC(18, 0), @@identity)");
     while (auto_stmt->HasMoreResults()) {
@@ -7574,10 +7556,6 @@ CDBAPIUnitTest::Test_Procedure(void)
                     BOOST_CHECK_EQUAL( size_t(29), GetNumOfRecords(auto_stmt) );
                 }
 
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
-
                 // Set parameter to 1 ...
                 auto_stmt->SetParam( CVariant( Int4(1) ), "@attribute_id" );
                 auto_stmt->Execute();
@@ -7604,10 +7582,6 @@ CDBAPIUnitTest::Test_Procedure(void)
                     BOOST_CHECK(rs->Next());
                     DumpResults(auto_stmt.get());
                 }
-
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
 
                 // Execute it second time ...
                 auto_stmt->SetParam(CVariant("#bulk_insert_table"), "@table_name");
@@ -8105,6 +8079,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
 
                 // !!! Do not forget to clear a parameter list ....
                 // Workaround for the ctlib driver ...
+                // ClearParamList is necessary here ...
                 auto_stmt->ClearParamList();
             }
 
@@ -8129,6 +8104,11 @@ CDBAPIUnitTest::Test_StatementParameters(void)
 
             // Read first inserted value back ...
             {
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                // ClearParamList is necessary here ...
+                auto_stmt->ClearParamList();
+
                 auto_stmt->SetParam( CVariant(0), "@value" );
                 auto_stmt->SendSql( " SELECT int_field FROM " + table_name +
                                     " WHERE int_field = @value");
@@ -8138,13 +8118,15 @@ CDBAPIUnitTest::Test_StatementParameters(void)
                 BOOST_CHECK( rs->Next() );
                 BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 0 );
                 DumpResults(auto_stmt.get());
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
             }
 
             // Read second inserted value back ...
             {
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                // ClearParamList is necessary here ...
+                auto_stmt->ClearParamList();
+
                 auto_stmt->SetParam( CVariant(1), "@value" );
                 auto_stmt->SendSql( " SELECT int_field FROM " + table_name +
                                     " WHERE int_field = @value");
@@ -8154,13 +8136,15 @@ CDBAPIUnitTest::Test_StatementParameters(void)
                 BOOST_CHECK( rs->Next() );
                 BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 1 );
                 DumpResults(auto_stmt.get());
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
             }
 
             // Clean previously inserted data ...
             {
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                // ClearParamList is necessary here ...
+                auto_stmt->ClearParamList();
+
                 auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name );
             }
         }
@@ -8212,10 +8196,6 @@ CDBAPIUnitTest::Test_NULL(void)
 
                     // Execute a statement with parameters ...
                     auto_stmt->ExecuteUpdate( sql );
-
-                    // !!! Do not forget to clear a parameter list ....
-                    // Workaround for the ctlib driver ...
-                    auto_stmt->ClearParamList();
                 }
 
                 // Check record number ...
@@ -8225,6 +8205,10 @@ CDBAPIUnitTest::Test_NULL(void)
             }
 
             {
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+
                 // Drop all records ...
                 sql  = " DELETE FROM #test_unicode_table";
                 auto_stmt->ExecuteUpdate(sql);
@@ -8244,10 +8228,6 @@ CDBAPIUnitTest::Test_NULL(void)
 
                     // Execute a statement with parameters ...
                     auto_stmt->ExecuteUpdate( sql );
-
-                    // !!! Do not forget to clear a parameter list ....
-                    // Workaround for the ctlib driver ...
-                    auto_stmt->ClearParamList();
                 }
 
                 // Check record number ...
@@ -8344,10 +8324,6 @@ CDBAPIUnitTest::Test_NULL(void)
                     BOOST_CHECK_EQUAL( size_t(29), GetNumOfRecords(auto_stmt) );
                 }
 
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
-
                 // Set parameter to 1 ...
                 auto_stmt->SetParam( CVariant( Int4(1) ), "@attribute_id" );
                 auto_stmt->Execute();
@@ -8361,7 +8337,7 @@ CDBAPIUnitTest::Test_NULL(void)
 
 
         // Special case: empty strings and strings with spaces.
-        if (true) {
+        if (m_args.GetDriverName() != ftds_odbc_driver) {
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
             // Initialize data (strings are EMPTY) ...
@@ -8389,10 +8365,6 @@ CDBAPIUnitTest::Test_NULL(void)
 
                     // Execute a statement with parameters ...
                     auto_stmt->ExecuteUpdate( sql );
-
-                    // !!! Do not forget to clear a parameter list ....
-                    // Workaround for the ctlib driver ...
-                    auto_stmt->ClearParamList();
                 }
 
                 // Check record number ...
@@ -8468,6 +8440,10 @@ CDBAPIUnitTest::Test_NULL(void)
                 // CVariant variant(eDB_Text);
                 // variant.Append(" ", 1);
 
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+
                 // Insert data ...
                 for (long ind = 0; ind < rec_num; ++ind) {
                     if (ind % 2 == 0) {
@@ -8480,10 +8456,6 @@ CDBAPIUnitTest::Test_NULL(void)
 
                     // Execute a statement with parameters ...
                     auto_stmt->ExecuteUpdate( sql );
-
-                    // !!! Do not forget to clear a parameter list ....
-                    // Workaround for the ctlib driver ...
-                    auto_stmt->ClearParamList();
                 }
 
                 // Check record number ...
@@ -11901,6 +11873,99 @@ CDBAPIUnitTest::Test_Identity(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void 
+CDBAPIUnitTest::Test_ClearParamList(void)
+{
+    const long rec_num  = 10;
+    const string table_name = GetTableName();
+    const string str_value = "asdfghjkl";
+    string sql;
+
+    // Initialize data (strings are full of spaces) ...
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // First test ...
+        {
+            {
+                // Drop all records ...
+                sql  = " DELETE FROM " + GetTableName();
+                auto_stmt->ExecuteUpdate(sql);
+            }
+
+            {
+                sql  = " INSERT INTO " + GetTableName() +
+                    "(int_field, vc1000_field) "
+                    "VALUES(@int_field, @vc1000_field) \n";
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+
+                auto_stmt->SetParam( CVariant(string(str_value)), "@vc1000_field" );
+
+                // Insert data ...
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    if (ind % 2 == 0) {
+                        auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
+                    } else {
+                        auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
+                    }
+
+                    // Execute a statement with parameters ...
+                    auto_stmt->ExecuteUpdate( sql );
+                }
+
+                // Check record number ...
+                BOOST_CHECK_EQUAL(size_t(rec_num), GetNumOfRecords(auto_stmt,
+                            GetTableName()));
+            }
+
+            // Check ...
+            {
+                sql = "SELECT int_field, vc1000_field FROM " + table_name +
+                    " ORDER BY id";
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    BOOST_CHECK(rs->Next());
+
+                    // const CVariant& int_field = rs->GetVariant(1);
+                    const CVariant& vc1000_field = rs->GetVariant(2);
+
+                    BOOST_CHECK( !vc1000_field.IsNull() );
+                    BOOST_CHECK_EQUAL(vc1000_field.GetString(), str_value);
+                    /*
+                    if (ind % 2 == 0) {
+                        BOOST_CHECK( !int_field.IsNull() );
+                        BOOST_CHECK_EQUAL( int_field.GetInt4(), ind );
+
+                        BOOST_CHECK( vc1000_field.IsNull() );
+                    } else {
+                        BOOST_CHECK( int_field.IsNull() );
+
+                        BOOST_CHECK( !vc1000_field.IsNull() );
+                        BOOST_CHECK_EQUAL( vc1000_field.GetString(),
+                                           NStr::IntToString(ind) );
+                    }
+                    */
+                }
+
+                DumpResults(auto_stmt.get());
+            }
+        }
+    }
+    catch(const CDB_Exception& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Bind(void)
 {
@@ -12036,12 +12101,18 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
-    if (args.GetDriverName() != dblib_driver
-        && !(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
+    if (!(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
         && args.GetDriverName() != ftds_dblib_driver
-        && args.GetDriverName() != ctlib_driver
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StmtMetaData,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+
+    if (!(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ClearParamList,
                 DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);

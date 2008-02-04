@@ -287,9 +287,6 @@ CDBLibContext::CDBLibContext(DBINT version)
     Check(dbmsghandle(s_DBLIB_msg_callback));
 
     g_pContext = this;
-    m_Login = NULL;
-    m_Login = Check(dblogin());
-    _ASSERT(m_Login);
 
     m_Registry = &CDblibContextRegistry::Instance();
     x_AddToRegistry();
@@ -315,25 +312,6 @@ void
 CDBLibContext::x_SetRegistry(CDblibContextRegistry* registry)
 {
     m_Registry = registry;
-}
-
-impl::CDriverContext::EServerType 
-CDBLibContext::GetSupportedDBType(void) const
-{
-#if defined(MS_DBLIB_IN_USE)
-    return eMsSql;
-#elif defined(FTDS_IN_USE)
-    if (m_TDSVersion == DBVERSION_70 ||
-        m_TDSVersion == DBVERSION_80 ||
-        m_TDSVersion == DBVERSION_UNKNOWN) {
-        return eMsSql;
-    }
-
-    return eSybase;
-#else
-    // We may use TDS v4.2 and v4.6 against Microsoft and Sybase servers.
-    return eUnknown;
-#endif
 }
 
 int CDBLibContext::GetTDSVersion(void) const
@@ -378,53 +356,10 @@ bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
 #endif
 }
 
-void CDBLibContext::SetClientCharset(const string& charset)
-{
-    _ASSERT( m_Login );
-    _ASSERT( !charset.empty() );
-
-    impl::CDriverContext::SetClientCharset(charset);
-
-    CMutexGuard mg(m_CtxMtx);
-#ifndef MS_DBLIB_IN_USE
-    DBSETLCHARSET( m_Login, const_cast<char*>(charset.c_str()) );
-#endif
-}
-
 impl::CConnection*
 CDBLibContext::MakeIConnection(const CDBConnParams& params)
 {
-    CMutexGuard mg(m_CtxMtx);
-
-    DBPROCESS* dbcon = x_ConnectToServer(params);
-
-    if (!dbcon) {
-        string err;
-
-        err += "Cannot connect to the server '" + params.GetServerName();
-        err += "' as user '" + params.GetUserName() + "'";
-        DATABASE_DRIVER_ERROR( err, 200011 );
-    }
-
-
-#ifdef MS_DBLIB_IN_USE
-    Check(dbsetopt(dbcon, DBTEXTLIMIT, "0" )); // No limit
-    Check(dbsetopt(dbcon, DBTEXTSIZE , "2147483647" )); // 0x7FFFFFFF
-#endif
-
-    CDBL_Connection* t_con = NULL;
-    t_con = new CDBL_Connection(*this,
-                                dbcon,
-                                params.IsPooled(),
-                                params.GetPoolName());
-
-    t_con->SetServerName(params.GetServerName());
-    t_con->SetUserName(params.GetUserName());
-    t_con->SetPassword(params.GetPassword());
-    t_con->SetBCPable(true);
-    t_con->SetSecureLogin(params.IsPasswordEncrypted());
-
-    return t_con;
+    return new CDBL_Connection(*this, params);
 }
 
 
@@ -476,13 +411,9 @@ CDBLibContext::x_Close(bool delete_conn)
                 NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 
 #ifdef MS_DBLIB_IN_USE
-                dbfreelogin(m_Login);
-                CheckFunctCall();
                 dbwinexit();
                 CheckFunctCall();
 #else
-                dbloginfree(m_Login);
-                CheckFunctCall();
                 try {
                     // This function can fail if we try to connect to MS SQL server
                     // using Sybase client.
@@ -547,13 +478,6 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     string server_name;
     string user_name;
     string message = dberrstr;
-
-    /*
-    if (dberr == 20015) {
-        // "Couldn't find interface file"
-        return INT_CANCEL;
-    }
-    */
 
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*> (dbgetuserdata(dblink)) : 0;
@@ -763,88 +687,6 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
             GetDBLExceptionStorage().Accept(ex);
         }
     }
-}
-
-
-DBPROCESS* CDBLibContext::x_ConnectToServer(const CDBConnParams& params)
-{
-    if (!GetHostName().empty())
-        DBSETLHOST(m_Login, (char*) GetHostName().c_str());
-    if (m_PacketSize > 0)
-        DBSETLPACKET(m_Login, m_PacketSize);
-    if (DBSETLAPP (m_Login, (char*) GetApplicationName().c_str())
-        != SUCCEED ||
-        DBSETLUSER(m_Login, (char*) params.GetUserName().c_str())
-        != SUCCEED ||
-        DBSETLPWD (m_Login, (char*) params.GetPassword().c_str())
-        != SUCCEED)
-        return 0;
-
-//     if (mode & fBcpIn)
-        // Always enable BCP ...
-        BCP_SETL(m_Login, TRUE);
-
-#ifndef MS_DBLIB_IN_USE
-    if (params.IsPasswordEncrypted())
-        DBSETLENCRYPT(m_Login, TRUE);
-#endif
-
-    string server_name;
-
-#if defined(FTDS_IN_USE)
-    if (params.GetHost()) {
-        server_name = impl::ConvertN2A(params.GetHost());
-        if (params.GetPort()) {
-            server_name += ":" + NStr::IntToString(params.GetPort());
-        }
-    } else {
-        server_name = params.GetServerName();
-    }
-#else
-    server_name = params.GetServerName();
-#endif
-
-    DBPROCESS* dbprocess = Check(dbopen(m_Login, (char*) server_name.c_str()));
-
-
-    /*
-    DBPROCESS* dbprocess = NULL; 
-
-    if (params.GetHost()) {
-        server_name = impl::ConvertN2A(params.GetHost());
-        string port_str = NStr::IntToString(params.GetPort());
-
-        RETCODE rc = dbsetconnect(
-                "query", 
-                "tcp", 
-                "ether", 
-                (char*)server_name.c_str(), 
-                (char*)port_str.c_str());
-
-        CHECK_DRIVER_ERROR(rc != SUCCEED, "dbsetconnect failed.", 200001);
-
-        dbprocess = Check(dbopen(m_Login, NULL));
-    } else {
-        server_name = params.GetServerName();
-        dbprocess = Check(dbopen(m_Login, (char*) server_name.c_str()));
-    }
-    */
-
-
-    // It doesn't work currently ...
-//     if (dbprocess) {
-//         CHECK_DRIVER_ERROR(
-//             Check(dbsetopt(
-//                 dbprocess,
-//                 DBBUFFER,
-//                 const_cast<char*>(NStr::UIntToString(GetBufferSize()).c_str()),
-//                 -1)) != SUCCEED,
-//             "dbsetopt failed",
-//             200001
-//             );
-//     }
-
-    return dbprocess;
 }
 
 

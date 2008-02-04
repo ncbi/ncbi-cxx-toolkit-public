@@ -757,16 +757,6 @@ unsigned int CTLibContext::GetTimeout(void) const
 }
 
 
-impl::CDriverContext::EServerType 
-CTLibContext::GetSupportedDBType(void) const
-{
-    if (m_TDSVersion == 70 || m_TDSVersion == 80) {
-        return eMsSql;
-    }
-
-    return eSybase;
-}
-
 impl::CConnection*
 CTLibContext::MakeIConnection(const CDBConnParams& params)
 {

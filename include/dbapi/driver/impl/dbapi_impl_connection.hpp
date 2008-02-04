@@ -198,12 +198,10 @@ public:
     virtual void SetTimeout(size_t nof_secs) = 0;
     virtual void SetTextImageSize(size_t nof_bytes);
 
-    /*
-    virtual CDriverContext::EServerType GetDBType(void) const
+    CDBConnParams::EServerType GetServerType(void) const
     {
-        return CDriverContext::eUnlnown;
+        return m_ServerType;
     }
-    */
     
 protected:
     /// These methods to allow the children of CConnection to create
@@ -245,6 +243,9 @@ protected:
     void MarkClosed(void);
 
     //
+    CDBConnParams::EServerType CalculateServerType(const CDBConnParams& params);
+
+    //
     void SetServerName(const string& name)
     {
         m_Server = name;
@@ -265,12 +266,6 @@ protected:
     {
         m_Reusable = flag;
     }
-    void SetBCPable(bool /* flag = true */)
-    {
-        // m_BCPable = flag;
-        // BCP is enabled with all drivers by default.
-        m_BCPable = true;
-    }
     bool IsBCPable(void) const
     {
         return m_BCPable;
@@ -289,6 +284,10 @@ protected:
         m_ExecCntxInfo = info;
     }
 
+    void SetServerType(CDBConnParams::EServerType type)
+    {
+        m_ServerType = type;
+    }
 
 private:
     typedef deque<impl::CCommand*>  TCommandList;
@@ -298,13 +297,14 @@ private:
     TCommandList                    m_CMDs;
     CInterfaceHook<CDB_Connection>  m_Interface;
     CDB_ResultProcessor*            m_ResProc;
+    CDBConnParams::EServerType      m_ServerType;
 
     string  m_Server;
     string  m_User;
     string  m_Passwd;
     string  m_Pool;
     bool    m_Reusable;
-    bool    m_BCPable;
+    bool    m_BCPable; //< Does this connection support BCP (It is related to Context, actually)
     bool    m_SecureLogin;
     bool    m_Opened;
     string  m_ExecCntxInfo;

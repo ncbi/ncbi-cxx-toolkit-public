@@ -68,7 +68,6 @@ public:
     virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
 
     virtual bool IsAbleTo(ECapability cpb) const;
-    virtual EServerType GetSupportedDBType(void) const;
 };
 
 

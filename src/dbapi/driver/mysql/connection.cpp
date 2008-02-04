@@ -46,6 +46,8 @@ CMySQL_Connection::CMySQL_Connection(CMySQLContext& cntx,
     impl::CConnection(cntx),
     m_IsOpen(false)
 {
+    SetServerType(CDBConnParams::eMySQL);
+
     if ( !mysql_init(&m_MySQL) ) {
         DATABASE_DRIVER_WARNING( "Failed: mysql_init", 800001 );
     }

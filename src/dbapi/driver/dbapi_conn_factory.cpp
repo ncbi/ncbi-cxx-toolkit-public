@@ -210,6 +210,7 @@ public:
     virtual string GetUserName(void) const;
     virtual string GetPassword(void) const;
 
+    virtual EServerType GetServerType(void) const;
     virtual Uint4  GetHost(void) const;
     virtual Uint2  GetPort(void) const;
 
@@ -253,6 +254,12 @@ string CDBConnParamsDelegate::GetUserName(void) const
 string CDBConnParamsDelegate::GetPassword(void) const
 {
     return m_Other.GetPassword();
+}
+
+CDBConnParams::EServerType 
+CDBConnParamsDelegate::GetServerType(void) const
+{
+    return m_Other.GetServerType();
 }
 
 Uint4 CDBConnParamsDelegate::GetHost(void) const

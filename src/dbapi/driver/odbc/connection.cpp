@@ -48,6 +48,16 @@
 
 BEGIN_NCBI_SCOPE
 
+inline
+bool IsBCPCapable(void)
+{
+#ifndef FTDS_IN_USE
+    return false;
+#else
+    return true;
+#endif
+}
+
 static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
                                   CDB_ITDescriptor& descr_in,
                                   SQLLEN size,
@@ -61,11 +71,18 @@ static bool ODBC_xSendDataGetId(CStatementBase& stmt,
 
 CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
                                    const CDBConnParams& params) :
-    impl::CConnection(cntx, false, params.IsPooled(), params.GetPoolName()),
+    impl::CConnection(
+            cntx, 
+            IsBCPCapable(), 
+            params.IsPooled(), 
+            params.GetPoolName()
+            ),
     m_Link(NULL),
     m_Reporter(0, SQL_HANDLE_DBC, NULL, &cntx.GetReporter()),
     m_query_timeout(cntx.GetTimeout())
 {
+    SetServerType(CDBConnParams::eMSSqlServer);
+
     SQLRETURN rc;
 
     rc = SQLAllocHandle(SQL_HANDLE_DBC,
@@ -237,7 +254,6 @@ CODBC_Connection::x_SetConnAttributesAfter(const CDBConnParams& params)
     SetServerName(params.GetServerName());
     SetUserName(params.GetUserName());
     SetPassword(params.GetPassword());
-    SetBCPable(true);
     SetSecureLogin(params.IsPasswordEncrypted());
 }
 

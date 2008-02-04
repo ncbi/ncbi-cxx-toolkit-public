@@ -239,8 +239,6 @@ public:
     virtual unsigned int GetLoginTimeout(void) const;
     virtual unsigned int GetTimeout     (void) const;
 
-    virtual EServerType GetSupportedDBType(void) const;
-
     //
     // CTLIB specific functionality
     //

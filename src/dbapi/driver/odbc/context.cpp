@@ -349,12 +349,6 @@ CODBCContext::x_SetRegistry(CODBCContextRegistry* registry)
 }
 
 
-impl::CDriverContext::EServerType 
-CODBCContext::GetSupportedDBType(void) const
-{
-    return eMsSql;
-}
-
 impl::CConnection*
 CODBCContext::MakeIConnection(const CDBConnParams& params)
 {

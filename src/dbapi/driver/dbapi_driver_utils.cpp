@@ -362,19 +362,20 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
         )
 : CCachedRowInfo(bindings)
 {
-    string db_name;
-    const CDriverContext::EServerType server_type = 
-        conn.GetCDriverContext().GetSupportedDBType();
+    const CDBConnParams::EServerType server_type = conn.GetServerType();
 
-    if (server_type == impl::CDriverContext::eSybase
-        || server_type == impl::CDriverContext::eMsSql) {
+    if (server_type == CDBConnParams::eSybaseSQLServer
+        || server_type == CDBConnParams::eMSSqlServer) 
+    {
+        string db_name;
+
         string sql( 
             "SELECT '' from sysobjects WHERE name = @name \n"
             "UNION \n"
             "SELECT 'master' from master..sysobjects WHERE name = @name \n"
             );
 
-        if (server_type == impl::CDriverContext::eSybase) {
+        if (server_type == CDBConnParams::eSybaseSQLServer) {
             sql +=
                 "UNION \n"
                 "SELECT 'sybsystemprocs' from sybsystemprocs..sysobjects WHERE name = @name \n"
@@ -404,117 +405,117 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
                 }
             }
         }
-    }
 
-    // auto_ptr<CDB_RPCCmd> sp(conn.RPC("sp_sproc_columns"));
-    // We cannot use CDB_RPCCmd here because of recursion ...
-    string sql = "exec " + db_name + "..sp_sproc_columns @procedure_name";
-    auto_ptr<CDB_LangCmd> cmd(conn.LangCmd(sql));
-    CDB_VarChar name_value(name);
+        // auto_ptr<CDB_RPCCmd> sp(conn.RPC("sp_sproc_columns"));
+        // We cannot use CDB_RPCCmd here because of recursion ...
+        sql = "exec " + db_name + "..sp_sproc_columns @procedure_name";
+        cmd.reset(conn.LangCmd(sql));
+        CDB_VarChar name_value(name);
 
-    cmd->GetBindParams().Bind("@procedure_name", &name_value);
-    cmd->Send();
-    while (cmd->HasMoreResults()) {
-        auto_ptr<CDB_Result> res(cmd->Result());
+        cmd->GetBindParams().Bind("@procedure_name", &name_value);
+        cmd->Send();
+        while (cmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> res(cmd->Result());
 
-        if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
-            CDB_VarChar column_name;
-            CDB_SmallInt column_type;
-            CDB_SmallInt data_type;
-            CDB_Int data_len = 0;
-            
-            while (res->Fetch()) {
-                res->SkipItem();
-                res->SkipItem();
-                res->SkipItem();
-                res->GetItem(&column_name);
-                res->GetItem(&column_type);
-                res->GetItem(&data_type);
-                res->SkipItem();
-                res->SkipItem();
-                res->GetItem(&data_len);
-
-                // Decode data_type
-                EDB_Type edb_data_type(eDB_UnsupportedType);
-                switch (column_type.Value()) {
-                    case SQL_LONGVARCHAR:
-                        edb_data_type = eDB_VarChar;
-                        break;
-                    case SQL_BINARY:
-                        edb_data_type = eDB_Binary;
-                        break;
-                    case SQL_VARBINARY:
-                        edb_data_type = eDB_VarBinary;
-                        break;
-                    case SQL_LONGVARBINARY:
-                        edb_data_type = eDB_Binary;
-                        break;
-                    case SQL_BIGINT:
-                        edb_data_type = eDB_BigInt;
-                        break;
-                    case SQL_TINYINT:
-                        edb_data_type = eDB_TinyInt;
-                        break;
-                    case SQL_BIT:
-                        edb_data_type = eDB_Bit;
-                        break;
-                    // case SQL_GUID:
-                    case -9:
-                        edb_data_type = eDB_VarChar;
-                        break;
-                    case SQL_CHAR:
-                        edb_data_type = eDB_Char;
-                        break;
-                    case SQL_NUMERIC:
-                    case SQL_DECIMAL:
-                        edb_data_type = eDB_Numeric;
-                        break;
-                    case SQL_INTEGER:
-                        edb_data_type = eDB_Int;
-                        break;
-                    case SQL_SMALLINT:
-                        edb_data_type = eDB_SmallInt;
-                        break;
-                    case SQL_FLOAT:
-                    case SQL_REAL:
-                        edb_data_type = eDB_Float;
-                        break;
-                    case SQL_DOUBLE:
-                        edb_data_type = eDB_Double;
-                        break;
-                    case SQL_DATETIME:
-                    case SQL_TIME:
-                    case SQL_TIMESTAMP:
-                        edb_data_type = eDB_DateTime;
-                        break;
-                    case SQL_VARCHAR:
-                        edb_data_type = eDB_VarChar;
-                        break;
-
-                    // case SQL_TYPE_DATE:
-                    // case SQL_TYPE_TIME:
-                    // case SQL_TYPE_TIMESTAMP:
-                    default:
-                        edb_data_type = eDB_UnsupportedType;
-                }
-
-                EDirection direction = CDBParams::eIn;
+            if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
+                CDB_VarChar column_name;
+                CDB_SmallInt column_type;
+                CDB_SmallInt data_type;
+                CDB_Int data_len = 0;
                 
-                if (column_type.Value() == 2 /*SQL_PARAM_TYPE_OUTPUT*/ ||
-                    column_type.Value() == 4 /*SQL_PARAM_OUTPUT*/ ||
-                    column_type.Value() == 5 /*SQL_RETURN_VALUE*/ ) 
-                {
-                    direction = CDBParams::eOut;
+                while (res->Fetch()) {
+                    res->SkipItem();
+                    res->SkipItem();
+                    res->SkipItem();
+                    res->GetItem(&column_name);
+                    res->GetItem(&column_type);
+                    res->GetItem(&data_type);
+                    res->SkipItem();
+                    res->SkipItem();
+                    res->GetItem(&data_len);
+
+                    // Decode data_type
+                    EDB_Type edb_data_type(eDB_UnsupportedType);
+                    switch (column_type.Value()) {
+                        case SQL_LONGVARCHAR:
+                            edb_data_type = eDB_VarChar;
+                            break;
+                        case SQL_BINARY:
+                            edb_data_type = eDB_Binary;
+                            break;
+                        case SQL_VARBINARY:
+                            edb_data_type = eDB_VarBinary;
+                            break;
+                        case SQL_LONGVARBINARY:
+                            edb_data_type = eDB_Binary;
+                            break;
+                        case SQL_BIGINT:
+                            edb_data_type = eDB_BigInt;
+                            break;
+                        case SQL_TINYINT:
+                            edb_data_type = eDB_TinyInt;
+                            break;
+                        case SQL_BIT:
+                            edb_data_type = eDB_Bit;
+                            break;
+                        // case SQL_GUID:
+                        case -9:
+                            edb_data_type = eDB_VarChar;
+                            break;
+                        case SQL_CHAR:
+                            edb_data_type = eDB_Char;
+                            break;
+                        case SQL_NUMERIC:
+                        case SQL_DECIMAL:
+                            edb_data_type = eDB_Numeric;
+                            break;
+                        case SQL_INTEGER:
+                            edb_data_type = eDB_Int;
+                            break;
+                        case SQL_SMALLINT:
+                            edb_data_type = eDB_SmallInt;
+                            break;
+                        case SQL_FLOAT:
+                        case SQL_REAL:
+                            edb_data_type = eDB_Float;
+                            break;
+                        case SQL_DOUBLE:
+                            edb_data_type = eDB_Double;
+                            break;
+                        case SQL_DATETIME:
+                        case SQL_TIME:
+                        case SQL_TIMESTAMP:
+                            edb_data_type = eDB_DateTime;
+                            break;
+                        case SQL_VARCHAR:
+                            edb_data_type = eDB_VarChar;
+                            break;
+
+                        // case SQL_TYPE_DATE:
+                        // case SQL_TYPE_TIME:
+                        // case SQL_TYPE_TIMESTAMP:
+                        default:
+                            edb_data_type = eDB_UnsupportedType;
+                    }
+
+                    EDirection direction = CDBParams::eIn;
+                    
+                    if (column_type.Value() == 2 /*SQL_PARAM_TYPE_OUTPUT*/ ||
+                        column_type.Value() == 4 /*SQL_PARAM_OUTPUT*/ ||
+                        column_type.Value() == 5 /*SQL_RETURN_VALUE*/ ) 
+                    {
+                        direction = CDBParams::eOut;
+                    }
+                    
+                    Add(column_name.Value(),
+                            size_t(data_len.Value()),
+                            edb_data_type,
+                            direction
+                            );
                 }
-                
-                Add(column_name.Value(),
-                        size_t(data_len.Value()),
-                        edb_data_type,
-                        direction
-                        );
-            }
-        }
-    }
+            } // if ...
+        } // while HasMoreresults ...
+    } // if server_type
 }
 
 

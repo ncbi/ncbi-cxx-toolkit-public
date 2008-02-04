@@ -251,6 +251,7 @@ public:
     void Test_ConnFactory(void);
     void Test_ConnPool(void);
     void Test_BCP_Cancel(void);
+    void Test_ClearParamList(void);
 
 public:
     typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)
