@@ -191,8 +191,8 @@ int CBlastDemoApplication::Run(void)
          throw std::runtime_error("Could not initialize object manager");
     }
 
-    const bool is_protein = static_cast<bool>
-        (Blast_QueryIsProtein(opts->GetOptions().GetProgramType()));
+    const bool is_protein = 
+        !!Blast_QueryIsProtein(opts->GetOptions().GetProgramType());
     SDataLoaderConfig dlconfig(is_protein);
     CBlastInputSourceConfig iconfig(dlconfig, objects::eNa_strand_other, false, 
                               args["parse"].AsBoolean());

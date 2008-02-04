@@ -1249,8 +1249,7 @@ public:
         Int2 status = BlastFilteringOptionsFromString(kProgram, NULL, &filtering_options, NULL);
         BOOST_REQUIRE(status == 0);
         BOOST_REQUIRE(filtering_options != NULL);
-        BOOST_REQUIRE_EQUAL(false, 
-                            static_cast<bool>(filtering_options->mask_at_hash));
+        BOOST_REQUIRE_EQUAL(false, !!filtering_options->mask_at_hash);
         BOOST_REQUIRE(filtering_options->segOptions == NULL);
         BOOST_REQUIRE(filtering_options->dustOptions == NULL);
         filtering_options = SBlastFilterOptionsFree(filtering_options);
@@ -1262,8 +1261,7 @@ public:
         SBlastFilterOptions* filtering_options;
         Int2 status = BlastFilteringOptionsFromString(kProgram, (char*) "m D", &filtering_options, NULL);
         BOOST_REQUIRE(status == 0);
-        BOOST_REQUIRE_EQUAL(true, 
-                            static_cast<bool>(filtering_options->mask_at_hash));
+        BOOST_REQUIRE_EQUAL(true, !!filtering_options->mask_at_hash);
         BOOST_REQUIRE(filtering_options->dustOptions);
         BOOST_REQUIRE(filtering_options->segOptions == NULL);
         filtering_options = SBlastFilterOptionsFree(filtering_options);
@@ -1275,8 +1273,7 @@ public:
         SBlastFilterOptions* filtering_options;
         Int2 status = BlastFilteringOptionsFromString(kProgram, (char*) "D", &filtering_options, NULL);
         BOOST_REQUIRE(status == 0);
-        BOOST_REQUIRE_EQUAL(false, 
-                            static_cast<bool>(filtering_options->mask_at_hash));
+        BOOST_REQUIRE_EQUAL(false, !!filtering_options->mask_at_hash);
         BOOST_REQUIRE(filtering_options->dustOptions);
         BOOST_REQUIRE(filtering_options->segOptions == NULL);
         filtering_options = SBlastFilterOptionsFree(filtering_options);
@@ -1288,8 +1285,7 @@ public:
         SBlastFilterOptions* filtering_options;
         Int2 status = BlastFilteringOptionsFromString(kProgram, (char*) "S 10 1.0 1.5", &filtering_options, NULL);
         BOOST_REQUIRE(status == 0);
-        BOOST_REQUIRE_EQUAL(false, 
-                            static_cast<bool>(filtering_options->mask_at_hash));
+        BOOST_REQUIRE_EQUAL(false, !!filtering_options->mask_at_hash);
         BOOST_REQUIRE(filtering_options->dustOptions == NULL);
         BOOST_REQUIRE(filtering_options->segOptions);
         BOOST_REQUIRE_EQUAL(10, filtering_options->segOptions->window);
@@ -1314,8 +1310,7 @@ public:
         SBlastFilterOptions* filtering_options;
         Int2 status = BlastFilteringOptionsFromString(kProgram, (char*) "L", &filtering_options, NULL);
         BOOST_REQUIRE(status == 0);
-        BOOST_REQUIRE_EQUAL(false, 
-                            static_cast<bool>(filtering_options->mask_at_hash));
+        BOOST_REQUIRE_EQUAL(false, !!filtering_options->mask_at_hash);
         BOOST_REQUIRE(filtering_options->dustOptions);
         BOOST_REQUIRE(filtering_options->segOptions == NULL);
         filtering_options = SBlastFilterOptionsFree(filtering_options);
@@ -1326,8 +1321,7 @@ public:
         SBlastFilterOptions* filtering_options;
         Int2 status = BlastFilteringOptionsFromString(kProgram, (char*) "L", &filtering_options, NULL);
         BOOST_REQUIRE(status == 0);
-        BOOST_REQUIRE_EQUAL(false, 
-                            static_cast<bool>(filtering_options->mask_at_hash));
+        BOOST_REQUIRE_EQUAL(false, !!filtering_options->mask_at_hash);
         BOOST_REQUIRE(filtering_options->dustOptions == NULL);
         BOOST_REQUIRE(filtering_options->segOptions);
         filtering_options = SBlastFilterOptionsFree(filtering_options);
@@ -1352,7 +1346,7 @@ public:
           Int2 status = SBlastFilterOptionsMerge(&result, opt1, opt2);
           BOOST_REQUIRE_EQUAL(0, (int) status);
           BOOST_REQUIRE(result);
-          BOOST_REQUIRE_EQUAL(true, static_cast<bool>(result->mask_at_hash));
+          BOOST_REQUIRE_EQUAL(true, !!result->mask_at_hash);
           BOOST_REQUIRE_EQUAL(kNewLevel, result->dustOptions->level);
           BOOST_REQUIRE_EQUAL(kNewWindow, result->dustOptions->window);
           BOOST_REQUIRE(result->repeatFilterOptions);
@@ -1368,7 +1362,7 @@ public:
           status = SBlastFilterOptionsMerge(&result, NULL, opt2);
           BOOST_REQUIRE_EQUAL(0, (int) status);
           BOOST_REQUIRE(result);
-          BOOST_REQUIRE_EQUAL(true, static_cast<bool>(result->mask_at_hash));
+          BOOST_REQUIRE_EQUAL(true, !!result->mask_at_hash);
           BOOST_REQUIRE(result->repeatFilterOptions);
           result = SBlastFilterOptionsFree(result);
 

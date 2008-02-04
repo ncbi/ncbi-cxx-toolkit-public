@@ -317,8 +317,7 @@ s_ImportSearchStrategy(CNcbiIstream* in,
                                   (CTmpFile::eIfExists_Throw));
                 out.SetFlag(CFastaOstream::eAssembleParts);
                 
-                CBlastScopeSource scope_src
-                    (static_cast<bool>(Blast_QueryIsProtein(prog)));
+                CBlastScopeSource scope_src(!!Blast_QueryIsProtein(prog));
                 CRef<CScope> scope(scope_src.NewScope());
 
                 ITERATE(CBlast4_queries::TSeq_loc_list, itr, seqlocs) {

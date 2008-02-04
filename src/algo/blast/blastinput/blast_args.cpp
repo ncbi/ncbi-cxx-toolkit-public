@@ -1039,7 +1039,7 @@ CPhiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         string pattern("FIXME - NOT VALID");
         // FIXME: need to port code from pssed3.c get_pat function
         opt.SetPHIPattern(pattern.c_str(), 
-              static_cast<bool>(Blast_QueryIsNucleotide(opt.GetProgramType())));
+              !!Blast_QueryIsNucleotide(opt.GetProgramType()));
         throw runtime_error("Reading of pattern file not implemented");
     }
 }
