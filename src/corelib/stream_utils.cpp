@@ -44,7 +44,7 @@
 #  define CPushback_StreambufBase CNcbiStreambuf
 #endif //NCBI_COMPILER_MIPSPRO
 
-#ifdef HAVE_GOOD_IOS_CALLBACKS
+#ifdef    HAVE_GOOD_IOS_CALLBACKS
 #  undef  HAVE_GOOD_IOS_CALLBACKS
 #endif
 #if defined(HAVE_IOS_REGISTER_CALLBACK)  &&  \
@@ -228,6 +228,7 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             size_t n       = (size_t) m;
             size_t n_avail = (size_t) (egptr() - gptr());
             size_t n_read  = (n <= n_avail) ? n : n_avail;
+            // if (buf != gptr()) // can happen but no harm not to check
             memcpy(buf, gptr(), n_read);
             gbump((int) n_read);
             m       -= (streamsize) n_read;
@@ -343,55 +344,71 @@ void CPushback_Streambuf::x_DropBuffer()
 }
 
 
-/*****************************************************************************
- *  Public interface
- */
-
-
-void CStreamUtils::Pushback(CNcbiIstream& is,
-                            CT_CHAR_TYPE* buf,
-                            streamsize    buf_size,
-                            void*         del_ptr)
+void CStreamUtils::x_Pushback(CNcbiIstream& is,
+                              CT_CHAR_TYPE* buf,
+                              streamsize    buf_size,
+                              void*         del_ptr,
+                              EPushback_How how)
 {
-    CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (is.rdbuf());
+    _ASSERT(!buf_size  ||  buf);
     _ASSERT(del_ptr <= buf);
+
+    CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (is.rdbuf());
     if ( sb ) {
         // We may not need to create another streambuf,
-        //     just recycle the existing one here...
-        _ASSERT(del_ptr < (sb->m_DelPtr ? sb->m_DelPtr : sb->m_Buf)  ||
+        //    just recycle the existing one here...
+        _ASSERT(del_ptr <= (sb->m_DelPtr ? sb->m_DelPtr : sb->m_Buf)  ||
                 sb->m_Buf + sb->m_BufSize <= del_ptr);
-        // 1/ points to a (adjacent) part of the internal buffer we just read?
-        if (sb->m_Buf <= buf  &&  buf + buf_size == sb->gptr()) {
+        // 1/ points to the adjacent part of the internal buffer we just read?
+        if (how == ePushback_NoCopy  &&
+            sb->m_Buf <= buf  &&  buf + buf_size == sb->gptr()) {
             _ASSERT(!del_ptr  ||  del_ptr == sb->m_DelPtr);
             sb->setg(buf, buf, sb->m_Buf + sb->m_BufSize);
             return;
         }
-        // 2/ equal to a (adjacent) part of the internal buffer we just read?
-        if ((streamsize)(sb->gptr() - sb->m_Buf) >= buf_size) {
-            CT_CHAR_TYPE* bp = sb->gptr() - buf_size;
-            if (memcmp(buf, bp, buf_size) == 0) {
-                sb->setg(bp, bp, sb->egptr());
-                if ( del_ptr ) {
-                    delete[] (CT_CHAR_TYPE*) del_ptr;
-                }
-                return;
+
+        CT_CHAR_TYPE* bp = 0;
+        // 2/ equal to the (reasonably-sized) adjacent part
+        //    of the internal buffer with the data that have just been read?
+        if (how == ePushback_Stepback/*fast track: no checks, dangerous!*/) {
+            streamsize available = (streamsize)(sb->gptr() - sb->m_Buf);
+            if (buf_size <= available) {
+                bp = sb->gptr() - buf_size;
+                buf_size = 0;
+            } else {
+                bp = sb->m_Buf;
+                buf_size -= available;
             }
+        } else if (buf_size <= (del_ptr
+                                ? CPushback_Streambuf::k_MinBufSize
+                                : CPushback_Streambuf::k_MinBufSize >> 4)  &&
+                   buf_size <= (streamsize)(sb->gptr() - sb->m_Buf)) {
+            bp = sb->gptr() - buf_size;
+            if (memcmp(bp, buf, buf_size) == 0)
+                buf_size = 0;
+            else
+                bp = 0;
         }
+        if (bp)
+            sb->setg(bp, bp, sb->egptr());
     }
 
+    if (!buf_size) {
+        delete[] (CT_CHAR_TYPE*) del_ptr;
+        return;
+    }
+    if (!del_ptr  &&  how != ePushback_NoCopy) {
+        del_ptr = new CT_CHAR_TYPE[buf_size];
+        buf = (CT_CHAR_TYPE*) memcpy(del_ptr, buf, buf_size);
+    }
     (void) new CPushback_Streambuf(is, buf, buf_size, del_ptr);
 }
 
 
-void CStreamUtils::Pushback(CNcbiIstream&       is,
-                            const CT_CHAR_TYPE* buf,
-                            streamsize          buf_size)
-{
-    CT_CHAR_TYPE* buf_copy = new CT_CHAR_TYPE[buf_size];
-    memcpy(buf_copy, buf, buf_size);
-    Pushback(is, buf_copy, buf_size, buf_copy);
-}
 
+/*****************************************************************************
+ *  Public interface
+ */
 
 #ifdef   NCBI_NO_READSOME
 #  undef NCBI_NO_READSOME

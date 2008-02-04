@@ -34,6 +34,7 @@
 #include "pbacktest.hpp"
 #include <corelib/ncbidbg.hpp>
 #include <corelib/stream_utils.hpp>
+#include <vector>
 #include <stdlib.h>
 #include <time.h>
 
@@ -41,6 +42,11 @@
 
 #define _STR(a) #a
 #define  STR(a) _STR(a)
+
+#ifdef   max
+#  undef max
+#endif
+#define  max(a, b) ((a) > (b) ? (a) : (b))
 
 
 BEGIN_NCBI_SCOPE
@@ -75,11 +81,13 @@ extern int TEST_StreamPushback(iostream&    ios,
                                bool         rewind)
 {
     size_t i, j, k;
+    vector<CT_CHAR_TYPE*> v;
 
-    LOG_POST("Generating array of random data");
     unsigned int seed = seed_in ? seed_in : (unsigned int) time(0);
     LOG_POST("Seed = " << seed);
     srand(seed);
+
+    LOG_POST("Generating array of random data");
     char *buf1 = new char[kBufferSize + 1];
     char *buf2 = new char[kBufferSize + 2];
     for (j = 0; j < kBufferSize/1024; j++) {
@@ -97,15 +105,17 @@ extern int TEST_StreamPushback(iostream&    ios,
     if (rewind)
         ios.seekg(0);
 
-    LOG_POST("Doing random reads and pushbacks of the reply");
+    LOG_POST("Doing random reads and {push|step}backs of the reply");
+    int d = 0;
     char c = 0;
+    size_t busy = 0;
     size_t buflen = 0;
 #ifdef NCBI_COMPILER_MSVC
     bool first_pushback_done = false;
 #endif
-    for (k = 0; buflen < kBufferSize; k++) {
+    for (k = 0;  buflen < kBufferSize;  k++) {
         size_t m = kBufferSize + 1 - buflen;
-        if (m > 10)
+        if (m >= 10)
             m /= 10;
         i = rand() % m + 1;
 
@@ -115,21 +125,22 @@ extern int TEST_StreamPushback(iostream&    ios,
         // Force at least minimal blocking, since Readsome might not
         // block at all and accepting 0-byte reads could lead to spinning.
         ios.peek();
-        j = CStreamUtils::Readsome(ios, &buf2[buflen], i);
+        j = CStreamUtils::Readsome(ios, buf2 + buflen, i);
         if (!ios.good()) {
             ERR_POST("Error receiving data");
             return 2;
         }
         if (j != i)
-            LOG_POST("Bytes requested: " << i << ", received: " << j);
+            LOG_POST("Received " << j << " byte" << (j == 1 ? "" : "s"));
         assert(j > 0);
-        if (c && buf2[buflen] != c) {
+        if (c  &&  c != buf2[buflen]) {
             LOG_POST(Error <<
                      "Mismatch, putback: " << c << ", read: " << buf2[buflen]);
             return 2;
         } else
             c = 0;
         buflen += j;
+        LOG_POST("Obtained so far " << buflen << " out of " << kBufferSize);
 
         bool pback = false;
         if (rewind  &&  rand() % 7 == 0  &&  buflen < kBufferSize) {
@@ -147,7 +158,7 @@ extern int TEST_StreamPushback(iostream&    ios,
             }
         } else if (ios.good()  &&  rand() % 5 == 0  &&  j > 1) {
 #ifdef NCBI_COMPILER_MSVC
-            if (!rewind || first_pushback_done) {
+            if (!rewind  ||  first_pushback_done) {
 #endif
                 c = buf2[--buflen];
                 if (rand() & 1) {
@@ -168,13 +179,68 @@ extern int TEST_StreamPushback(iostream&    ios,
 #endif
         }
 
-        i = rand() % j + 1;
-        if (i != j || --i) {
+        if (!(rand() % 101)  &&  d++ < 5)
+            i = rand() % buflen + 1;
+        else
+            i = rand() % j      + 1;
+
+        if ((i != buflen  &&  i != j)  ||  --i) {
             buflen -= i;
-            LOG_POST(Info << "Pushing back " << i <<
-                     " byte" << (i == 1 ? "" : "s"));
-            CStreamUtils::Pushback(ios, &buf2[buflen], i);
+            int how = rand() & 0x0F;
+            int pushback = how & 0x01;
+            int longform = how & 0x02;
+            int original = how & 0x04;
+            int passthru = how & 0x08;  // meaningful only if !original
+            CT_CHAR_TYPE* p = buf2 + buflen;
+            size_t slack = 0;
+            if (!original) {
+                slack = rand() & 0x7FF;  // slack space filled with garbage
+                p = new CT_CHAR_TYPE[i + (slack << 1)];
+                for (size_t ii = 0;  ii < slack;  ii++) {
+                    p[            ii] = rand() % 26 + 'A';
+                    p[slack + i + ii] = rand() % 26 + 'a';
+                }
+                memcpy(p + slack, buf2 + buflen, i);
+            } else
+                passthru = 0;
+            LOG_POST(Info << (pushback ? "Pushing" : "Stepping") << " back "
+                     << i << " byte" << &"s"[i == 1]
+                     << (!longform
+                         ? (original
+                            ? ""
+                            : " (copy)")
+                         : (original
+                            ? " (original)"
+                            : (passthru
+                               ? " (passthru copy)"
+                               : " (retained copy)"))));
+            switch (how &= 3) {
+            case 0:
+                CStreamUtils::Stepback(ios, p + slack, i);
+                break;
+            case 1:
+                CStreamUtils::Pushback(ios, p + slack, i);
+                break;
+            case 2:
+                CStreamUtils::Stepback(ios, p + slack, i, passthru ? p : 0);
+                break;
+            case 3:
+                CStreamUtils::Pushback(ios, p + slack, i, passthru ? p : 0);
+                if (!original  &&  !passthru)
+                    v.push_back(p);
+                break;
+            }
             c = buf2[buflen];
+            if (how ^ 3) {
+                if (!original  &&  (!longform  ||  !passthru)) {
+                    for (size_t ii = slack;  ii < slack + i;  ii++)
+                        p[ii] = "%*-+="[rand() % 5];
+                    delete[] p;
+                }
+                for (size_t ii = max(busy, buflen);  ii < buflen + i;  ii++)
+                    buf2[ii] = "!@#$&"[rand() % 5];
+            } else if (original  &&  busy < buflen + i)
+                busy = buflen + i;
 #ifdef NCBI_COMPILER_MSVC
             first_pushback_done = true;
 #endif
@@ -183,7 +249,7 @@ extern int TEST_StreamPushback(iostream&    ios,
 
         if (rewind  &&  rand() % 9 == 0  &&  buflen < kBufferSize) {
             if (pback) {
-                buflen++;
+                buf2[buflen++] = c;
                 c = 0;
             }
             if (rand() & 1) {
@@ -207,9 +273,9 @@ extern int TEST_StreamPushback(iostream&    ios,
              (ios.eof() ? " (EOF)" : ""));
     buf2[buflen] = '\0';
 
-    for (i = 0; i < kBufferSize; i++) {
+    for (i = 0;  i < kBufferSize;  i++) {
         if (!buf2[i]) {
-            ERR_POST("Zero byte within encountered at position " << i + 1);
+            ERR_POST("Zero byte encountered at position " << i + 1);
             return 1;
         }
         if (buf2[i] != buf1[i]) {
@@ -226,6 +292,9 @@ extern int TEST_StreamPushback(iostream&    ios,
 
     delete[] buf1;
     delete[] buf2;
+
+    for (i = 0;  i < v.size();  i++)
+        delete[] v[i];
 
     return 0/*okay*/;
 }
