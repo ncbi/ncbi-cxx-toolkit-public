@@ -8991,7 +8991,12 @@ void CDBAPIUnitTest::Test_DropConnection(void)
                 auto_ptr<IConnection> auto_conn(
                     m_DS->CreateConnection(CONN_OWNERSHIP)
                     );
-                auto_conn->Connect("anyone","allowed","LINK_OS");
+                auto_conn->Connect(
+                        "anyone",
+                        "allowed",
+                        // "LINK_OS"
+                        "LINK_OS_INTERNAL"
+                        );
 
                 // kill connection ...
                 try {

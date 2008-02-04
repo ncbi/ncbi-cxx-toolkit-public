@@ -279,33 +279,38 @@ bool Connection::Open(const CDBConnParams& params)
                                 const_cast<char*> (server_name.c_str()),
                                 CS_NULLTERM));
 #else
-/* Temporarily disabled ...
 #if defined(CS_SERVERADDR)
-        server_name = impl::ConvertN2A(params.GetHost());
-        if (params.GetPort()) {
-            server_name += " " + NStr::IntToString(params.GetPort());
+        if (params.GetHost()) {
+            server_name = impl::ConvertN2A(params.GetHost());
+            if (params.GetPort()) {
+                server_name += " " + NStr::IntToString(params.GetPort());
+            }
+
+            GetCTLContext().Check(ct_con_props(GetNativeHandle(),
+                                CS_SET,
+                                CS_SERVERADDR,
+                                (CS_VOID*)server_name.c_str(),
+                                server_name.size(),
+                                NULL));
+
+            rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
+                                    NULL,
+                                    CS_UNUSED));
+        } else {
+            server_name = params.GetServerName();
+
+            rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
+                        const_cast<char*> (server_name.c_str()),
+                        CS_NULLTERM));
         }
-
-        GetCTLContext().Check(ct_con_props(GetNativeHandle(),
-                            CS_SET,
-                            CS_SERVERADDR,
-                            (CS_VOID*)server_name.c_str(),
-                            server_name.size(),
-                            NULL));
-
-        rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
-                                NULL,
-                                CS_UNUSED));
 #else
-*/
         server_name = params.GetServerName();
 
         rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
                                 const_cast<char*> (server_name.c_str()),
                                 CS_NULLTERM));
-/*
+
 #endif
-*/
 #endif
 
         if (rc == CS_SUCCEED) {
