@@ -226,6 +226,7 @@ AC_DEFUN(NCBI_RPATHIFY_OUTPUT,
 [if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     $1=`$2 | sed -e "$3"`
  else
+    $1=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"

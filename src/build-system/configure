@@ -21159,6 +21159,7 @@ fi
     if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     MYSQL_LIBS=`$mysql_config --libs | sed -e "s/'//g; "`
  else
+    MYSQL_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -22635,6 +22636,7 @@ else
           if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     CPPUNIT_LIBS=`$CPPUNIT_BINPATH/cppunit-config --libs | sed -e ""`
  else
+    CPPUNIT_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -22736,6 +22738,7 @@ else
       if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     CPPUNIT_LIBS=`$CPPUNIT_CONFIG --libs | sed -e ""`
  else
+    CPPUNIT_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -25335,6 +25338,7 @@ else
           if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags | sed -e "$extrased"`
  else
+    FLTK_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -25430,6 +25434,7 @@ else
       if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags | sed -e "$extrased"`
  else
+    FLTK_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -25455,6 +25460,7 @@ else
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl | sed -e "$extrased"`
  else
+    FLTK_LIBS_GL=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -25479,6 +25485,7 @@ else
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     FLTK_LIBS_IMAGES=`$FLTK_BINPATH/fltk-config --ldflags --use-images | sed -e "$extrased"`
  else
+    FLTK_LIBS_IMAGES=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -25503,6 +25510,7 @@ else
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     FLTK_LIBS_ALL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl --use-images | sed -e "$extrased"`
  else
+    FLTK_LIBS_ALL=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -25529,6 +25537,7 @@ else
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     FLTK_STATIC_LIBS=`$FLTK_BINPATH/fltk-config --ldstaticflags | sed -e "$extrased"`
  else
+    FLTK_STATIC_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -25553,6 +25562,7 @@ else
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     FLTK_STATIC_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldstaticflags --use-gl | sed -e "$extrased"`
  else
+    FLTK_STATIC_LIBS_GL=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -25577,6 +25587,7 @@ else
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     FLTK_STATIC_LIBS_IMAGES=`$FLTK_BINPATH/fltk-config --ldstaticflags --use-images | sed -e "$extrased"`
  else
+    FLTK_STATIC_LIBS_IMAGES=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -25601,6 +25612,7 @@ else
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     FLTK_STATIC_LIBS_ALL=`$FLTK_BINPATH/fltk-config --ldstaticflags --use-gl --use-images | sed -e "$extrased"`
  else
+    FLTK_STATIC_LIBS_ALL=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -25834,6 +25846,7 @@ else
           if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     WXWIDGETS_LIBS=`$wxconf --libs | sed -e "$libsed; "`
  else
+    WXWIDGETS_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -25941,6 +25954,7 @@ else
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     WXWIDGETS_LIBS=`$wxconf --libs $wxlibs | sed -e "$libsed; "`
  else
+    WXWIDGETS_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -26746,6 +26760,7 @@ else
           if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     ICU_LIBS=`$ICU_CONFIG --ldflags | sed -e ""`
  else
+    ICU_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -26841,6 +26856,7 @@ else
       if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     ICU_LIBS=`$ICU_CONFIG --ldflags | sed -e ""`
  else
+    ICU_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
@@ -29209,6 +29225,7 @@ fi
     if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     FREETYPE_LIBS=`$freetype_config --libs | sed -e ""`
  else
+    FREETYPE_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
