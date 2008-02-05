@@ -472,6 +472,25 @@ if test "$with_extra_action" = "no" ; then
    AC_MSG_ERROR([--without-extra-action is not allowed])
 fi
 
+case "$with_projects" in
+ "") if test -r projects; then
+        AC_MSG_NOTICE([using default projects file "projects".])
+        with_projects=projects
+        AC_SUBST(PROJECTS, "\$(top_srcdir)/projects")
+     else
+        AC_SUBST(PROJECTS, "")
+        if test -f projects; then
+           AC_MSG_WARN([default projects file "projects" is unreadable.])
+        elif test -h projects; then
+           AC_MSG_WARN([default projects file "projects" is a dangling link.])
+        fi
+     fi
+     ;;
+ no) with_projects="" ;  AC_SUBST(PROJECTS, "") ;;
+ /*) AC_SUBST(PROJECTS, $with_projects) ;;
+ * ) AC_SUBST(PROJECTS, "\$(top_srcdir)/$with_projects") ;;
+esac
+
 
 #### Always define this
 AC_DEFINE(NCBI_CXX_TOOLKIT, 1, [This is the NCBI C++ Toolkit.])
@@ -5476,25 +5495,6 @@ esac
 case "$with_deactivation" in
   no) IF_DEACTIVATING=": " ;;
   * ) IF_DEACTIVATING=""   ;;
-esac
-
-case "$with_projects" in
- "") if test -r projects; then
-        AC_MSG_NOTICE([using default projects file "projects".])
-        with_projects=projects
-        AC_SUBST(PROJECTS, "\$(top_srcdir)/projects")
-     else
-        AC_SUBST(PROJECTS, "")
-        if test -f projects; then
-           AC_MSG_WARN([default projects file "projects" is unreadable.])
-        elif test -h projects; then
-           AC_MSG_WARN([default projects file "projects" is a dangling link.])
-        fi
-     fi
-     ;;
- no) with_projects="" ;  AC_SUBST(PROJECTS, "") ;;
- /*) AC_SUBST(PROJECTS, $with_projects) ;;
- * ) AC_SUBST(PROJECTS, "\$(top_srcdir)/$with_projects") ;;
 esac
 
 
