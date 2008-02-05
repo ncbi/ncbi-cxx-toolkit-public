@@ -127,9 +127,10 @@ private:
         virtual ~CStmtParamsMetaData();
 
         virtual unsigned int GetTotalColumns() const;
-        virtual EDB_Type GetType(unsigned int idx) const;
-        virtual int GetMaxSize(unsigned int idx) const;
-        virtual string GetName(unsigned int idx) const;
+        virtual EDB_Type GetType(const CDBParamVariant& param) const;
+        virtual int GetMaxSize(const CDBParamVariant& param) const;
+        virtual string GetName(const CDBParamVariant& param) const;
+	virtual CDBParams::EDirection GetDirection(const CDBParamVariant& param) const;
         
     private:
         I_BaseCmd*& m_Cmd;

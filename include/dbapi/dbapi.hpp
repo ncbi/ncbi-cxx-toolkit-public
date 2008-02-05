@@ -89,28 +89,34 @@ public:
     /// Destructor.
     ///
     /// Clean up the metadata for the resultset.
-    virtual ~IResultSetMetaData();
+    virtual ~IResultSetMetaData(void);
 
     /// Get total number of columns in resultset.
-    virtual unsigned int GetTotalColumns() const = 0;
+    virtual unsigned int  GetTotalColumns(void) const = 0;
 
     /// Get data type for column in the resultset.
     ///
     /// @param col
     ///   Column number
-    virtual EDB_Type     GetType    (unsigned int col) const = 0;
+    virtual EDB_Type GetType(const CDBParamVariant& param) const = 0;
 
     /// Get maximum size for column.
     ///
     /// @param col
     ///   Column number
-    virtual int          GetMaxSize (unsigned int col) const = 0;
+    virtual int GetMaxSize (const CDBParamVariant& param) const = 0;
 
     /// Get name of column.
     ///
     /// @param col
     ///   Column number
-    virtual string       GetName    (unsigned int col) const = 0;
+    virtual string GetName (const CDBParamVariant& param) const = 0;
+
+    /// Get parameter's direction (in/out/inout).
+    ///
+    /// @param col
+    ///   Column number
+    virtual CDBParams::EDirection GetDirection(const CDBParamVariant& param) const = 0;
 };
 
 

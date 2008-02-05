@@ -1544,7 +1544,11 @@ CCallableStmtHelper::SetParam(const string& name, const CVariant& value)
     }
 
     try {
-        m_Stmt->SetParam( value, param_name );
+	if (m_Stmt->GetParamsMetaData().GetDirection(name) == CDBParams::eIn) {
+		m_Stmt->SetParam( value, param_name );
+	} else {
+		m_Stmt->SetOutputParam( value, param_name );
+	}
     }
     catch(const CDB_Exception& e) {
         throw CDatabaseError( e.GetMsg() );

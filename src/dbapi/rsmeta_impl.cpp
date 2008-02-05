@@ -77,6 +77,57 @@ CResultSetMetaData::~CResultSetMetaData()
     NCBI_CATCH_ALL_X( 7, kEmptyStr )
 }
 
+unsigned int CResultSetMetaData::FindParamPosInternal(const string& name) const
+{
+    const size_t param_num = m_colInfo.size();
+
+    for (size_t i = 0; i < param_num; ++i) {
+        if (m_colInfo[i].m_name == name) {
+            return i;
+        }
+    }
+
+    DATABASE_DRIVER_ERROR("Invalid parameter name " + name, 20001);
+    return 0;
+}
+
+unsigned int CResultSetMetaData::GetTotalColumns() const 
+{
+    return m_colInfo.size();
+}
+
+EDB_Type CResultSetMetaData::GetType(const CDBParamVariant& param) const 
+{
+    if (param.IsPositional()) {
+        return m_colInfo[param.GetPosition() - 1].m_type;
+    }
+    
+    return m_colInfo[FindParamPosInternal(param.GetName())].m_type;
+}
+
+int CResultSetMetaData::GetMaxSize(const CDBParamVariant& param) const 
+{
+    if (param.IsPositional()) {
+        return m_colInfo[param.GetPosition() - 1].m_maxSize;
+    }
+    
+    return m_colInfo[FindParamPosInternal(param.GetName())].m_maxSize;
+}
+
+string CResultSetMetaData::GetName(const CDBParamVariant& param) const 
+{
+    if (param.IsPositional()) {
+        return m_colInfo[param.GetPosition() - 1].m_name;
+    }
+    
+    return m_colInfo[FindParamPosInternal(param.GetName())].m_name;
+}
+
+CDBParams::EDirection CResultSetMetaData::GetDirection(const CDBParamVariant&) const
+{
+    return CDBParams::eOut;
+}
+
 void CResultSetMetaData::Action(const CDbapiEvent& e) 
 {
     _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 

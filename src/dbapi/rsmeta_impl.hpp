@@ -55,14 +55,16 @@ public:
   virtual ~CResultSetMetaData();
   
   virtual unsigned int GetTotalColumns() const;
-  virtual EDB_Type GetType(unsigned int idx) const;
-  virtual int GetMaxSize(unsigned int idx) const;
-  virtual string GetName(unsigned int idx) const;
+  virtual EDB_Type GetType(const CDBParamVariant& param) const;
+  virtual int GetMaxSize(const CDBParamVariant& param) const;
+  virtual string GetName(const CDBParamVariant& param) const;
+  virtual CDBParams::EDirection GetDirection(const CDBParamVariant& param) const;
 
   // Interface IEventListener implementation
   virtual void Action(const CDbapiEvent& e);
 
 private:
+  unsigned int FindParamPosInternal(const string& name) const;
 
   struct SColMetaData 
   {
@@ -84,31 +86,6 @@ private:
 
 };
 
-//====================================================================
-inline
-unsigned int CResultSetMetaData::GetTotalColumns() const 
-{
-    return m_colInfo.size();
-}
-
-inline
-EDB_Type CResultSetMetaData::GetType(unsigned int idx) const 
-{
-  return m_colInfo[idx-1].m_type;
-}
-
-inline
-int CResultSetMetaData::GetMaxSize(unsigned int idx) const 
-{
-  return m_colInfo[idx-1].m_maxSize;
-}
-
-inline
-string CResultSetMetaData::GetName(unsigned int idx) const 
-{
-  return string(m_colInfo[idx-1].m_name);
-}
-//====================================================================
 
 END_NCBI_SCOPE
 

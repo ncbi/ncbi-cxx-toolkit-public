@@ -227,24 +227,29 @@ unsigned int CStatement::CStmtParamsMetaData::GetTotalColumns() const
     return m_Cmd->GetBindParams().GetNum();
 }
 
-EDB_Type CStatement::CStmtParamsMetaData::GetType(unsigned int idx) const
+EDB_Type CStatement::CStmtParamsMetaData::GetType(const CDBParamVariant& param) const
 {
     _ASSERT(m_Cmd);
-    return m_Cmd->GetBindParams().GetDataType(idx);
+    return m_Cmd->GetBindParams().GetDataType(param);
 }
 
-int CStatement::CStmtParamsMetaData::GetMaxSize(unsigned int idx) const
+int CStatement::CStmtParamsMetaData::GetMaxSize(const CDBParamVariant& param) const
 {
     _ASSERT(m_Cmd);
-    return m_Cmd->GetBindParams().GetDataType(idx);
+    return m_Cmd->GetBindParams().GetDataType(param);
 }
 
-string CStatement::CStmtParamsMetaData::GetName(unsigned int idx) const
+string CStatement::CStmtParamsMetaData::GetName(const CDBParamVariant& param) const
 {
     _ASSERT(m_Cmd);
-    return m_Cmd->GetBindParams().GetName(idx);
+    return m_Cmd->GetBindParams().GetName(param);
 }
 
+CDBParams::EDirection CStatement::CStmtParamsMetaData::GetDirection(const CDBParamVariant& param) const
+{
+    _ASSERT(m_Cmd);
+    return m_Cmd->GetBindParams().GetDirection(param);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 const IResultSetMetaData& 
