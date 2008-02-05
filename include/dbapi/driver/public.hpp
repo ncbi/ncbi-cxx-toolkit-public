@@ -493,6 +493,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_LangCmd : public I_LangCmd
 {
 public:
     /// Add more text to the language command
+    NCBI_DEPRECATED
     virtual bool More(const string& query_text);
 
     /// Get meta-information about parameters. 
