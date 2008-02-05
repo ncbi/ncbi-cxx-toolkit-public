@@ -4414,6 +4414,57 @@ CDBAPIUnitTest::Test_Bulk_Writing5(void)
     }
 }
 
+void
+CDBAPIUnitTest::Test_Bulk_Late_Bind(void)
+{
+    string sql;
+    const string table_name("#blk_late_bind_table");
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Create table ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "    id int NULL, \n"
+                "    name varchar(200) NULL \n"
+                ")"
+                ;
+
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+        // Check that data cannot be binded after rows sending
+        {
+            auto_ptr<IBulkInsert> bi(
+                m_Conn->CreateBulkInsert(table_name)
+                );
+
+            CVariant  id(eDB_Int);
+            CVariant  name(eDB_VarChar);
+
+            bi->Bind(1, &id);
+
+            id = 5;
+            bi->AddRow();
+
+            try {
+                bi->Bind(2, &name);
+                BOOST_FAIL("Exception after late binding wasn't thrown");
+            }
+            catch (CDB_Exception&) {
+                // ok
+            }
+
+            bi->Cancel();
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Variant2(void)
@@ -12313,6 +12364,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
 
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing5, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Late_Bind, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     } else {
