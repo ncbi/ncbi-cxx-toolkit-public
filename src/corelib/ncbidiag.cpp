@@ -2459,7 +2459,7 @@ void SDiagMessage::ParseDiagStream(CNcbiIstream& in,
         if (line.size() < 15) {
             if ( !line.empty() ) {
                 msg_str += "\n" + line;
-                line.clear();
+                line.erase();
             }
             continue;
         }
@@ -2468,7 +2468,7 @@ void SDiagMessage::ParseDiagStream(CNcbiIstream& in,
                 if (line[i] != '/'  &&  (line[i] < '0'  ||  line[i] > '9')) {
                     // Not a valid prefix - append to the previous message
                     msg_str += "\n" + line;
-                    line.clear();
+                    line.erase();
                     break;
                 }
             }
