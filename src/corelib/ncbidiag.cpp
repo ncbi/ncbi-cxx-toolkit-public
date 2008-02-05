@@ -186,6 +186,22 @@ void CDiagCollectGuard::Release(EAction action)
 }
 
 
+void CDiagCollectGuard::SetPrintSeverity(EDiagSev sev)
+{
+    if ( CompareDiagPostLevel(m_PrintSev, sev) < 0 ) {
+        m_PrintSev = sev;
+    }
+}
+
+
+void CDiagCollectGuard::SetCollectSeverity(EDiagSev sev)
+{
+    if ( CompareDiagPostLevel(m_CollectSev, sev) < 0 ) {
+        m_CollectSev = sev;
+    }
+}
+
+
 ///////////////////////////////////////////////////////
 //  Static variables for Trace and Post filters
 
@@ -609,8 +625,8 @@ CDiagCollectGuard* CDiagContextThreadData::GetCollectGuard(void)
 }
 
 
-NCBI_PARAM_DECL(int, Diag, Collect_Limit);
-NCBI_PARAM_DEF_EX(int, Diag, Collect_Limit, 1000, eParam_NoThread,
+NCBI_PARAM_DECL(size_t, Diag, Collect_Limit);
+NCBI_PARAM_DEF_EX(size_t, Diag, Collect_Limit, 1000, eParam_NoThread,
                   DIAG_COLLECT_LIMIT);
 typedef NCBI_PARAM_TYPE(Diag, Collect_Limit) TDiagCollectLimit;
 
@@ -934,14 +950,14 @@ void CDiagContext::PrintExtra(const string& message)
 
 
 CDiagContext_Extra::CDiagContext_Extra(void)
-    : m_Message(0),
+    : m_Args(0),
       m_Counter(new int(1))
 {
 }
 
 
 CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
-    : m_Message(const_cast<CDiagContext_Extra&>(args).m_Message),
+    : m_Args(const_cast<CDiagContext_Extra&>(args).m_Args),
       m_Counter(const_cast<CDiagContext_Extra&>(args).m_Counter)
 {
     (*m_Counter)++;
@@ -950,11 +966,29 @@ CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
 
 void CDiagContext_Extra::Flush(void)
 {
-    if ( m_Message  &&  !m_Message->empty() ) {
-        GetDiagContext().
-            x_PrintMessage(SDiagMessage::eEvent_Extra, *m_Message);
-        m_Message->erase();
+    CDiagContext& ctx = GetDiagContext();
+    if ( !m_Args  ||  m_Args->empty()  ||  ctx.IsSetOldPostFormat() ) {
+        return;
     }
+
+    CDiagContextThreadData& thr_data =
+        CDiagContextThreadData::GetThreadData();
+    SDiagMessage mess(eDiag_Info,
+                      "", 0, // no message
+                      0, 0, // file, line
+                      eDPF_OmitInfoSev | eDPF_OmitSeparator | eDPF_AppLog,
+                      NULL,
+                      0, 0, // err code/subcode
+                      NULL,
+                      0, 0, 0, // module/class/function
+                      ctx.GetPID(), thr_data.GetTID(),
+                      ctx.GetProcessPostNumber(ePostNumber_Increment),
+                      thr_data.GetThreadPostNumber(ePostNumber_Increment),
+                      thr_data.GetRequestId());
+    mess.m_Event = SDiagMessage::eEvent_Extra;
+    mess.m_ExtraArgs = *m_Args;
+    m_Args->clear();
+    GetDiagBuffer().DiagHandler(mess);
 }
 
 
@@ -962,8 +996,8 @@ void CDiagContext_Extra::x_Release(void)
 {
     if ( m_Counter  &&  --(*m_Counter) == 0) {
         Flush();
-        delete m_Message;
-        m_Message = 0;
+        delete m_Args;
+        m_Args = 0;
     }
 }
 
@@ -973,7 +1007,7 @@ CDiagContext_Extra::operator=(const CDiagContext_Extra& args)
 {
     if (this != &args) {
         x_Release();
-        m_Message = const_cast<CDiagContext_Extra&>(args).m_Message;
+        m_Args = const_cast<CDiagContext_Extra&>(args).m_Args;
         m_Counter = const_cast<CDiagContext_Extra&>(args).m_Counter;
         (*m_Counter)++;
     }
@@ -994,59 +1028,10 @@ CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name,
                           const string& value)
 {
-    static const char s_EncodeChars[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
-        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
-        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
-        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
-        "+",   "%21", "%22", "%23", "%24", "%25", "%26", "%27",
-        "%28", "%29", "%2A", "%2B", "%2C", "%2D", "%2E", "%2F",
-        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
-        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
-        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
-        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "_",
-        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
-        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
-        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
-        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
-        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
-        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
-        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
-        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
-        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
-        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
-        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
-        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
-        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
-        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
-        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
-        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
-    };
-
-    if ( !m_Message ) {
-        m_Message = new string;
+    if ( !m_Args ) {
+        m_Args = new TExtraArgs;
     }
-    if ( !m_Message->empty() ) {
-        *m_Message += "&";
-    }
-    ITERATE(string, c, name) {
-        const char* enc = s_EncodeChars[(unsigned char)(*c)];
-        if (enc[1] != 0  ||  enc[0] != *c) {
-            NCBI_THROW(CCoreException, eInvalidArg,
-                "Invalid char in CExtraArgs name: " + name);
-        }
-        *m_Message += *c;
-    }
-    *m_Message += "=";
-    ITERATE(string, c, value) {
-        *m_Message += s_EncodeChars[(unsigned char)(*c)];
-    }
+    m_Args->push_back(TExtraArg(name, value));
     return *this;
 }
 
@@ -1143,7 +1128,8 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
     string client = GetProperty(kProperty_ClientIP);
     string session = GetProperty(kProperty_SessionID);
     string app = GetProperty(kProperty_AppName);
-    string app_state = GetProperty(kProperty_AppState);
+    string app_state = (msg  &&  *msg->m_AppState) ? msg->m_AppState
+        : GetProperty(kProperty_AppState);
     if ( !app_state.empty() ) {
         app_state = "/" + app_state;
     }
@@ -2124,7 +2110,7 @@ string s_ParseStr(const string& message,
 }
 
 
-SDiagMessage::SDiagMessage(const string& message)
+SDiagMessage::SDiagMessage(const string& message, bool* result)
     : m_Severity(eDiagSevMin),
       m_Buffer(0),
       m_BufferLen(0),
@@ -2146,6 +2132,10 @@ SDiagMessage::SDiagMessage(const string& message)
       m_Data(0),
       m_Format(eFormat_Auto)
 {
+    if ( result ) {
+        *result = false;
+    }
+    memset(m_AppState, 0, 3);
     size_t pos = 0;
     m_Data = new SDiagMessageData;
 
@@ -2154,7 +2144,9 @@ SDiagMessage::SDiagMessage(const string& message)
         m_PID = s_ParseInt(message, pos, 0, '/');
         m_TID = s_ParseInt(message, pos, 0, '/');
         m_RequestId = s_ParseInt(message, pos, 0, '/');
-        s_ParseStr(message, pos, ' ', true);
+        string app_state = s_ParseStr(message, pos, ' ', true);
+        strncpy(m_AppState, app_state.c_str(), 2);
+        m_AppState[2] = '\0';
 
         if (message[pos + kDiagW_UID] != ' ') {
             return;
@@ -2248,6 +2240,7 @@ SDiagMessage::SDiagMessage(const string& message)
             else {
                 return;
             }
+            m_Flags |= eDPF_AppLog;
             // The rest is the message (do not parse status, bytes etc.)
             if (pos < message.length()) {
                 m_Data->m_Message = message.substr(pos, message.length());
@@ -2255,6 +2248,9 @@ SDiagMessage::SDiagMessage(const string& message)
                 m_BufferLen = m_Data->m_Message.length();
             }
             m_Format = eFormat_New;
+            if ( result ) {
+                *result = true;
+            }
             return;
         }
 
@@ -2370,6 +2366,9 @@ SDiagMessage::SDiagMessage(const string& message)
     }
 
     m_Format = eFormat_New;
+    if ( result ) {
+        *result = true;
+    }
 }
 
 
@@ -2430,6 +2429,7 @@ SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
         m_ThrPost = message.m_ThrPost;
         m_RequestId = message.m_RequestId;
         m_Event = message.m_Event;
+        strncpy(m_AppState, message.m_AppState, 3);
 
         m_Buffer = m_Data->m_Message.empty() ? 0 : m_Data->m_Message.c_str();
         m_BufferLen = m_Data->m_Message.empty() ?
@@ -2443,6 +2443,85 @@ SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
         m_ErrText = m_Data->m_ErrText.empty() ? 0 : m_Data->m_ErrText.c_str();
     }
     return *this;
+}
+
+
+void SDiagMessage::ParseDiagStream(CNcbiIstream& in,
+                                   INextDiagMessage& func)
+{
+    string msg_str, line, last_msg_str;
+    bool res = false;
+    auto_ptr<SDiagMessage> msg;
+    auto_ptr<SDiagMessage> last_msg;
+    while ( in.good() ) {
+        getline(in, line);
+        // Dirty check for PID/TID/RID
+        if (line.size() < 15) {
+            if ( !line.empty() ) {
+                msg_str += "\n" + line;
+                line.clear();
+            }
+            continue;
+        }
+        else {
+            for (size_t i = 0; i < 15; i++) {
+                if (line[i] != '/'  &&  (line[i] < '0'  ||  line[i] > '9')) {
+                    // Not a valid prefix - append to the previous message
+                    msg_str += "\n" + line;
+                    line.clear();
+                    break;
+                }
+            }
+            if ( line.empty() ) {
+                continue;
+            }
+        }
+        if ( msg_str.empty() ) {
+            msg_str = line;
+            continue;
+        }
+        msg.reset(new SDiagMessage(msg_str, &res));
+        if ( res ) {
+            if ( last_msg.get() ) {
+                func(*last_msg);
+            }
+            last_msg_str = msg_str;
+            last_msg.reset(msg.release());
+        }
+        else if ( !last_msg_str.empty() ) {
+            last_msg_str += "\n" + msg_str;
+            last_msg.reset(new SDiagMessage(last_msg_str, &res));
+            if ( !res ) {
+                ERR_POST(Error << "Failed to parse message: " << last_msg_str);
+            }
+        }
+        else {
+            ERR_POST(Error << "Failed to parse message: " << msg_str);
+        }
+        msg_str = line;
+    }
+    if ( !msg_str.empty() ) {
+        msg.reset(new SDiagMessage(msg_str, &res));
+        if ( res ) {
+            if ( last_msg.get() ) {
+                func(*last_msg);
+            }
+            func(*msg);
+        }
+        else if ( !last_msg_str.empty() ) {
+            last_msg_str += "\n" + msg_str;
+            msg.reset(new SDiagMessage(last_msg_str, &res));
+            if ( res ) {
+                func(*msg);
+            }
+            else {
+                ERR_POST(Error << "Failed to parse message: " << last_msg_str);
+            }
+        }
+        else {
+            ERR_POST(Error << "Failed to parse message: " << msg_str);
+        }
+    }
 }
 
 
@@ -2553,6 +2632,65 @@ string SDiagMessage::x_GetModule(void) const
         sep = next_sep;
     }
     return kEmptyStr;
+}
+
+
+string SDiagMessage::FormatExtraMessage(void) const
+{
+    static const char s_EncodeChars[256][4] = {
+        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
+        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
+        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
+        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
+        "+",   "%21", "%22", "%23", "%24", "%25", "%26", "%27",
+        "%28", "%29", "%2A", "%2B", "%2C", "%2D", "%2E", "%2F",
+        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
+        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
+        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
+        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
+        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
+        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "_",
+        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
+        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
+        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
+        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
+        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
+        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
+        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
+        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
+        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
+        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
+        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
+        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
+        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
+        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
+        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
+        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
+        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
+        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
+        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
+        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
+    };
+
+    string msg;
+    ITERATE(TExtraArgs, it, m_ExtraArgs) {
+        if ( !msg.empty() ) {
+            msg += "&";
+        }
+        ITERATE(string, c, it->first) {
+            const char* enc = s_EncodeChars[(unsigned char)(*c)];
+            if (enc[1] != 0  ||  enc[0] != *c) {
+                NCBI_THROW(CCoreException, eInvalidArg,
+                    "Invalid char in extra args name: " + it->first);
+            }
+            msg += *c;
+        }
+        msg += "=";
+        ITERATE(string, c, it->second) {
+            msg += s_EncodeChars[(unsigned char)(*c)];
+        }
+    }
+    return msg;
 }
 
 
@@ -2800,7 +2938,8 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
         }
     }
 
-    if ( !IsSetDiagPostFlag(eDPF_OmitSeparator, m_Flags)) {
+    if ( !IsSetDiagPostFlag(eDPF_OmitSeparator, m_Flags)  &&
+        !IsSetDiagPostFlag(eDPF_AppLog, m_Flags) ) {
         os << "--- ";
     }
 
@@ -2811,6 +2950,10 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     // <message>
     if (m_BufferLen)
         os.write(m_Buffer, m_BufferLen);
+
+    if ( m_Event == eEvent_Extra  &&  !m_ExtraArgs.empty() ) {
+        os << ' ' << FormatExtraMessage();
+    }
 
     // <err_code_message> and <err_code_explanation>
     if (have_description) {

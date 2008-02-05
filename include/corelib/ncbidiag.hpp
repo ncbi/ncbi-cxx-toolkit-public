@@ -42,6 +42,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <list>
+#include <vector>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -1111,12 +1112,14 @@ public:
 
     /// Get current print severity
     EDiagSev GetPrintSeverity(void) const { return m_PrintSev; }
-    /// Set new print severity.
+    /// Set new print severity. The new print severity can not be
+    /// lower than the current one.
     void SetPrintSeverity(EDiagSev sev);
 
     /// Get current collect severity
     EDiagSev GetCollectSeverity(void) const { return m_CollectSev; }
-    /// Set new collect severity.
+    /// Set new collect severity. The new collect severity can not be
+    /// higher than the current one.
     void SetCollectSeverity(EDiagSev sev);
 
     /// Get selected on-destroy action
@@ -1310,6 +1313,18 @@ class CTime;
 /// Internal structure to hold diag message string data.
 struct SDiagMessageData;
 
+struct SDiagMessage;
+
+/// Callback interface for stream parser. Called for every message read
+/// from the input stream.
+/// @sa SDiagMessage
+class INextDiagMessage
+{
+public:
+    virtual void operator()(SDiagMessage& msg) = 0;
+    virtual ~INextDiagMessage(void) {}
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -1355,9 +1370,16 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     /// Assignment of messages
     SDiagMessage& operator=(const SDiagMessage& message);
 
-    /// Parse a string back into SDiagMessage
-    SDiagMessage(const string& message);
+    /// Parse a string back into SDiagMessage. Optional bool argument is
+    /// set to true if the message was parsed successfully.
+    SDiagMessage(const string& message, bool* result = 0);
+
     ~SDiagMessage(void);
+
+    /// Stream parser. Reads messages from a stream and calls the callback
+    /// for each message.
+    static void ParseDiagStream(CNcbiIstream& in,
+                                INextDiagMessage& func);
 
     /// Type of event to report
     enum EEventType {
@@ -1389,9 +1411,19 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     int              m_ProcPost;   ///< Number of the post in the process
     int              m_ThrPost;    ///< Number of the post in the thread
     int              m_RequestId;  ///< FastCGI iteration or request ID
+    char             m_AppState[3]; ///< Application state (AB|A|AE|RB|R|RE)
 
     /// If the severity is eDPF_AppLog, m_Event contains event type.
     EEventType       m_Event;
+
+    typedef pair<string, string> TExtraArg;
+    typedef vector<TExtraArg>    TExtraArgs;
+
+    /// If event type is "extra", contains the list of arguments
+    TExtraArgs       m_ExtraArgs;
+
+    /// Convert extra arguments to string
+    string FormatExtraMessage(void) const;
 
     /// Get UID from current context or parsed from a string
     TUID GetUID(void) const;
@@ -1599,8 +1631,11 @@ private:
     CDiagContext_Extra(void);
     friend class CDiagContext;
 
-    string* m_Message;
-    int*    m_Counter;
+    typedef SDiagMessage::TExtraArg  TExtraArg;
+    typedef SDiagMessage::TExtraArgs TExtraArgs;
+
+    TExtraArgs* m_Args;
+    int*        m_Counter;
 };
 
 

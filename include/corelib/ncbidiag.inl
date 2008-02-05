@@ -54,6 +54,7 @@ class CDiagBuffer
     CDiagBuffer& operator= (const CDiagBuffer&);
 
     friend class CDiagContextThreadData;
+    friend class CDiagContext_Extra;
 
     // Flags
     friend bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags);
@@ -516,6 +517,7 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     m_ProcPost   = proc_post;
     m_ThrPost    = thr_post;
     m_RequestId  = iter;
+    memset(m_AppState, 0, 3);
 }
 
 
