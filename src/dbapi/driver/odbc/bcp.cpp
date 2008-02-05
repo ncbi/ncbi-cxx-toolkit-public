@@ -255,8 +255,11 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 return false;
             }
         }
+
+	GetBindParamsImpl().LockBinding();
         m_WasBound = true;
     }
+
     for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); i++) {
         if (GetBindParamsImpl().GetParamStatus(i) == 0) {
             r = bcp_collen(GetHandle(), SQL_NULL_DATA, i + 1);
@@ -483,6 +486,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             return false;
         }
     }
+
     return true;
 }
 

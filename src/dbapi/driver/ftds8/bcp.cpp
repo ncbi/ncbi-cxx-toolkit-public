@@ -223,6 +223,7 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 return false;
         }
         m_WasBound = true;
+	GetBindParamsImpl().LockBinding();
     } else {
         for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); i++) {
             if (GetBindParamsImpl().GetParamStatus(i) == 0)

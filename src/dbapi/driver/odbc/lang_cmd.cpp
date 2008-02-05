@@ -263,6 +263,8 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* ind
             indicator[n] = SQL_NULL_DATA;
         }
     }
+
+    GetBindParamsImpl().LockBinding();
     return true;
 }
 

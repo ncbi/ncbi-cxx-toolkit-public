@@ -432,6 +432,8 @@ bool CTDS_LangCmd::x_AssignParams()
         if (Check(dbcmd(GetCmd(), (char*) cmd.c_str())) != SUCCEED)
             return false;
     }
+
+    GetBindParamsImpl().LockBinding();
     return true;
 }
 

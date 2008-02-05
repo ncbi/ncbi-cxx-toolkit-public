@@ -68,20 +68,29 @@ public:
         return (param_no >= NofParams()) ? kEmptyStr : m_Params[param_no].m_Name;
     }
 
-    // This method will throw an exception if parameter's name doesn't exist.
+    /// This method will throw an exception if parameter's name doesn't exist.
     unsigned int GetParamNum(const string& param_name) const;
-    // This method will create a parameter if it doesn't exist.
+    /// This method will create a parameter if it doesn't exist.
     unsigned int GetParamNum(unsigned int param_no, const string& param_name);
     
     enum EStatus {
-        fBound  = 0x1,  // the parameter is bound to some pointer
-        fSet    = 0x2,  // the parameter is set (value copied)
-        fOutput = 0x4   // it is "output" parameter
+        fBound  = 0x1,  //< the parameter is bound to some pointer
+        fSet    = 0x2,  //< the parameter is set (value copied)
+        fOutput = 0x4   //< it is "output" parameter
     };
     typedef int TStatus;
 
     TStatus GetParamStatus(unsigned int param_no) const {
         return (param_no >= NofParams()) ? 0 : m_Params[param_no].m_Status;
+    }
+
+    void LockBinding(void)
+    {
+	m_Locked = true;
+    }
+    bool IsLocked(void) const
+    {
+	return m_Locked;
     }
 
 private:
@@ -108,6 +117,7 @@ private:
     };
 
     deque<SParam> m_Params;
+    bool	  m_Locked;
 };
 
 }

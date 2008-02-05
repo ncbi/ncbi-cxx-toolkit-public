@@ -105,6 +105,7 @@ CDB_Result* CODBC_CursorCmd::OpenCursor(void)
     SetCursorDeclared();
 
     SetCursorOpen();
+    GetBindParamsImpl().LockBinding();
 
     m_Res.reset(new CODBC_CursorResult(&m_CursCmd));
 
@@ -268,6 +269,7 @@ CDB_Result* CODBC_CursorCmdExpl::OpenCursor(void)
     }
 
     SetCursorOpen();
+    GetBindParamsImpl().LockBinding();
 
     m_LCmd.reset(GetConnection().xLangCmd("fetch " + GetCmdName()));
     m_Res.reset(new CODBC_CursorResultExpl(m_LCmd.get()));

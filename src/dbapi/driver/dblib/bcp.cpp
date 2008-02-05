@@ -237,6 +237,8 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             if (r != CS_SUCCEED)
                 return false;
         }
+
+        GetBindParamsImpl().LockBinding();
         m_WasBound = true;
     } else {
         for (unsigned int i = 0; i < GetBindParamsImpl().NofParams(); i++) {

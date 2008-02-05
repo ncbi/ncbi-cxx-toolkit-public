@@ -56,6 +56,7 @@ bool CMySQL_LangCmd::Send()
         (&m_Connect->m_MySQL, GetQuery().c_str(), GetQuery().length()) != 0) {
         DATABASE_DRIVER_WARNING( "Failed: mysql_real_query", 800003 );
     }
+    GetBindParamsImpl().LockBinding();
 
     my_ulonglong nof_Rows = mysql_affected_rows(&this->m_Connect->m_MySQL);
     // There is not too much sence in comparing unsigned value with -1.

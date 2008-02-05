@@ -493,6 +493,7 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
         }
     }
 
+    GetBindParamsImpl().LockBinding();
     return true;
 }
 

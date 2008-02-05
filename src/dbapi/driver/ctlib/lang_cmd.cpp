@@ -776,6 +776,7 @@ bool CTL_LangCmd::x_AssignParams()
         }
     }
 
+    GetBindParamsImpl().LockBinding();
     return true;
 }
 

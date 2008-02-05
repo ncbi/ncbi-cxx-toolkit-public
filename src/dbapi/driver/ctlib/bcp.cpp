@@ -439,6 +439,7 @@ bool CTL_BCPInCmd::x_AssignParams()
         }
     }
 
+    GetBindParamsImpl().LockBinding();
     return true;
 }
 

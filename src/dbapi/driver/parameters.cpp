@@ -90,6 +90,7 @@ CDB_Params::SParam::Set(const string& param_name, CDB_Object* param, bool is_out
 
 ////////////////////////////////////////////////////////////////////////////////
 CDB_Params::CDB_Params(void)
+: m_Locked(false)
 {
 }
 
@@ -100,7 +101,6 @@ CDB_Params::GetParamNumInternal(const string& param_name, unsigned int& param_nu
     // try to find this name
     for (param_num = 0;  param_num < m_Params.size(); ++param_num) {
         const SParam& param = m_Params[param_num];
-        const string cur_param_name = param.m_Name;
         if (param.m_Status != 0 && param_name == param.m_Name) {
             // We found it ...
             return true;
@@ -132,12 +132,14 @@ CDB_Params::GetParamNum(unsigned int param_no, const string& param_name)
             // try to find this name
             if (!GetParamNumInternal(param_name, param_no)) {
                 // Parameter not found ...
+		CHECK_DRIVER_ERROR(IsLocked(), "Parameters are locked. New bindins are not allowed.", 20001);
                 m_Params.resize(m_Params.size() + 1);
                 return m_Params.size() - 1;
             }
         }
     } else {
         if (param_no >= m_Params.size()) {
+	    CHECK_DRIVER_ERROR(IsLocked(), "Parameters are locked. New bindins are not allowed.", 20001);
             m_Params.resize(param_no + 1);
         }
     }

@@ -266,6 +266,7 @@ bool CSL3_LangCmd::x_AssignParams(void)
         }
     }
 
+    GetBindParamsImpl().LockBinding();
     return true;
 }
 

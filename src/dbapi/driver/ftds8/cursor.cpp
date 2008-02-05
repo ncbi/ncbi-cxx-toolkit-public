@@ -516,6 +516,7 @@ bool CTDS_CursorCmd::x_AssignParams()
         m_CombinedQuery = impl::g_SubstituteParam(m_CombinedQuery, name, val_buffer);
     }
 
+    GetBindParamsImpl().LockBinding();
     return true;
 }
 
