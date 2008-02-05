@@ -4457,7 +4457,7 @@ CDBAPIUnitTest::Test_Bulk_Late_Bind(void)
                 // ok
             }
 
-            bi->Cancel();
+            // bi->Cancel();
         }
     }
     catch(const CException& ex) {
