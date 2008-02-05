@@ -4419,6 +4419,7 @@ CDBAPIUnitTest::Test_Bulk_Late_Bind(void)
 {
     string sql;
     const string table_name("#blk_late_bind_table");
+    bool exception_thrown = false;
 
     try {
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
@@ -4454,10 +4455,11 @@ CDBAPIUnitTest::Test_Bulk_Late_Bind(void)
                 BOOST_FAIL("Exception after late binding wasn't thrown");
             }
             catch (CDB_Exception&) {
+                exception_thrown = true;
                 // ok
             }
 
-            // bi->Cancel();
+            BOOST_CHECK(exception_thrown);
         }
     }
     catch(const CException& ex) {
