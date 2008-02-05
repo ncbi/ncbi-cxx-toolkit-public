@@ -62,6 +62,16 @@ void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
     in.Read(object, type.Get());
 }
 
+void Write(CObjectOStream& out, TConstObjectPtr object, TTypeInfo type)
+{
+    out.Write(object, type);
+}
+
+void Read(CObjectIStream& in, TObjectPtr object, TTypeInfo type)
+{
+    in.Read(object, type);
+}
+
 DEFINE_STATIC_FAST_MUTEX(s_ModuleNameMutex);
 
 static const string& GetModuleName(const char* moduleName)

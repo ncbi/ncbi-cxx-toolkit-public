@@ -84,12 +84,18 @@ void Write(CObjectOStream& out, TConstObjectPtr object, const CTypeRef& type);
 NCBI_XSERIAL_EXPORT
 void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type);
 
+NCBI_XSERIAL_EXPORT
+void Write(CObjectOStream& out, TConstObjectPtr object, TTypeInfo type);
+
+NCBI_XSERIAL_EXPORT
+void Read(CObjectIStream& in, TObjectPtr object, TTypeInfo type);
+
 // reader/writer
 template<typename T>
 inline
 CObjectOStream& Write(CObjectOStream& out, const T& object)
 {
-    Write(out, &object, GetTypeRef(&object));
+    Write(out, &object,object.GetThisTypeInfo());
     return out;
 }
 
@@ -97,7 +103,7 @@ template<typename T>
 inline
 CObjectIStream& Read(CObjectIStream& in, T& object)
 {
-    Read(in, &object, GetTypeRef(&object));
+    Read(in,&object,object.GetThisTypeInfo());
     return in;
 }
 
