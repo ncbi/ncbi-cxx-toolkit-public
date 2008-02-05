@@ -732,9 +732,6 @@ CDBParams& CDB_BCPInCmd::GetBindParams(void)
 
 bool CDB_BCPInCmd::Bind(unsigned int column_num, CDB_Object* value)
 {
-    CHECK_DRIVER_ERROR(!m_CmdImpl  ||  m_CmdImpl->WasSent(),
-                       "Columns can be bound only before insertion of any row.",
-                       200100);
     GetBindParams().Bind(column_num, value);
     return true;
 }
