@@ -4256,13 +4256,14 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
             CVariant b_idty4(eDB_Float);
             CVariant b_trans(eDB_Text);
 
-            bi->Bind(1, &b_idnwparams);
-            bi->Bind(2, &b_gi1);
-            bi->Bind(3, &b_gi2);
-            bi->Bind(4, &b_idty);
-            bi->Bind(5, &b_trans);
-            bi->Bind(6, &b_idty2);
-            bi->Bind(7, &b_idty4);
+            Uint2 pos = 0;
+            bi->Bind(++pos, &b_idnwparams);
+            bi->Bind(++pos, &b_gi1);
+            bi->Bind(++pos, &b_gi2);
+            bi->Bind(++pos, &b_idty);
+            bi->Bind(++pos, &b_trans);
+            bi->Bind(++pos, &b_idty2);
+            bi->Bind(++pos, &b_idty4);
 
             b_idnwparams = 123456;
 
@@ -4407,6 +4408,98 @@ CDBAPIUnitTest::Test_Bulk_Writing5(void)
             }
 
             vBcp->CompleteBCP(); 
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+void
+CDBAPIUnitTest::Test_Bulk_Writing6(void)
+{
+    string sql;
+    string table_name("#blk_table6");
+    const string& str_value("Oops ...");
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        const string test_data("Test, test, tEST.");
+
+        // Create table ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "[ctg_id] INT NOT NULL, \n"
+                "[ctg_name] VARCHAR(64) NOT NULL, \n"
+                "[ctg_gi] INT NOT NULL, \n"
+                "[ctg_acc] VARCHAR(20) NULL, \n"
+                "[ctg_ver] TINYINT NOT NULL, \n"
+                "[chrm] VARCHAR(64) NOT NULL, \n"
+                "[start] INT NOT NULL, \n"
+                "[stop] INT NOT NULL, \n"
+                "[orient] CHAR(1) NOT NULL, \n"
+                "[group_term] VARCHAR(64) NOT NULL, \n"
+                "[group_label] VARCHAR(64) NOT NULL, \n"
+                "[ctg_label] VARCHAR(64) NOT NULL \n"
+                ")"
+                ;
+
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+        // Insert data ...
+        {
+            //
+            auto_ptr<IBulkInsert> stmt(
+                m_Conn->GetBulkInsert(table_name)
+                );
+
+            // Declare variables ...
+            CVariant ctg_id(eDB_Int);
+            CVariant ctg_name(eDB_VarChar);
+            CVariant ctg_gi(eDB_Int);
+            CVariant ctg_acc(eDB_VarChar);
+            CVariant ctg_ver(eDB_TinyInt);
+            CVariant chrm(eDB_VarChar);
+            CVariant ctg_start(eDB_Int);
+            CVariant ctg_stop(eDB_Int);
+            CVariant ctg_orient(eDB_VarChar);
+            CVariant group_term(eDB_VarChar);
+            CVariant group_label(eDB_VarChar);
+            CVariant ctg_label(eDB_VarChar);
+
+            // Bind ...
+            int idx(0);
+            stmt->Bind(++idx, &ctg_id);
+            stmt->Bind(++idx, &ctg_name);
+            stmt->Bind(++idx, &ctg_gi);
+            stmt->Bind(++idx, &ctg_acc);
+            stmt->Bind(++idx, &ctg_ver);
+            stmt->Bind(++idx, &chrm);
+            stmt->Bind(++idx, &ctg_start);
+            stmt->Bind(++idx, &ctg_stop);
+            stmt->Bind(++idx, &ctg_orient);
+            stmt->Bind(++idx, &group_term);
+            stmt->Bind(++idx, &group_label);
+            stmt->Bind(++idx, &ctg_label);
+
+            // Assign values ...
+            ctg_id = 1;
+            ctg_name = str_value;
+            ctg_gi = 2;
+            ctg_acc = str_value;
+            ctg_ver = Uint1(3);
+            chrm = str_value;
+            ctg_start = 4;
+            ctg_stop = 5;
+            ctg_orient = "V";
+            group_term = str_value;
+            group_label = str_value;
+            ctg_label = str_value;
+
+            stmt->AddRow();
+            stmt->Complete();
         }
     }
     catch(const CException& ex) {
@@ -12372,6 +12465,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Late_Bind, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+
+        if (args.GetDriverName() != ftds_driver) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing6, DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        }
     } else {
         PutMsgDisabled("Test_Bulk_Writing");
     }

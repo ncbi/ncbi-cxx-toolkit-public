@@ -214,6 +214,7 @@ public:
     void Test_Bulk_Writing3(void);
     void Test_Bulk_Writing4(void);
     void Test_Bulk_Writing5(void);
+    void Test_Bulk_Writing6(void);
     void Test_Bulk_Late_Bind(void);
     void Test_Bulk_Overflow(void);
     
