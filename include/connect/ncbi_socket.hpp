@@ -89,7 +89,7 @@ private:
 class NCBI_XCONNECT_EXPORT CTrigger : public CPollable
 {
 public:
-    CTrigger(ESwitch log);
+    CTrigger(ESwitch log = eDefault);
     virtual ~CTrigger();
 
     EIO_Status Set(void);
