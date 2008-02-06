@@ -275,6 +275,20 @@ CCachedRowInfo::GetNum(void) const
     return num;
 }
 
+unsigned int CCachedRowInfo::FindParamPosInternal(const string& name) const
+{
+    const size_t param_num = m_Info.size();
+
+    for (size_t i = 0; i < param_num; ++i) {
+        if (m_Info[i].m_Name == name) {
+            return i;
+        }
+    }
+
+    DATABASE_DRIVER_ERROR("Invalid parameter name " + name, 20001);
+    return 0;
+}
+
 const string& 
 CCachedRowInfo::GetName(
         const CDBParamVariant& param, 
@@ -286,6 +300,8 @@ CCachedRowInfo::GetName(
         if (num < GetNumInternal()) {
             return m_Info[num].m_Name;
         }
+    } else {
+        return m_Info[FindParamPosInternal(param.GetName(format))].m_Name;
     }
 
     return kEmptyStr;
@@ -298,11 +314,7 @@ CCachedRowInfo::GetIndex(const CDBParamVariant& param) const
     if (param.IsPositional()) {
         return param.GetPosition();
     } else {
-        for (unsigned int i = 0; i < GetNum(); ++i) {
-            if (param.GetName() == m_Info[i].m_Name) {
-                return i;
-            }
-        }
+        return FindParamPosInternal(param.GetName());
     }
 
     DATABASE_DRIVER_ERROR("Parameter name not found.", 1);
@@ -320,6 +332,8 @@ CCachedRowInfo::GetMaxSize(const CDBParamVariant& param) const
         if (num < GetNumInternal()) {
             return m_Info[num].m_MaxSize;
         }
+    } else {
+        return m_Info[FindParamPosInternal(param.GetName())].m_MaxSize;
     }
 
     return 0;
@@ -334,6 +348,8 @@ CCachedRowInfo::GetDataType(const CDBParamVariant& param) const
         if (num < GetNumInternal()) {
             return m_Info[num].m_DataType;
         }
+    } else {
+        return m_Info[FindParamPosInternal(param.GetName())].m_DataType;
     }
 
     return eDB_UnsupportedType;
@@ -348,6 +364,8 @@ CCachedRowInfo::GetDirection(const CDBParamVariant& param) const
         if (num < GetNumInternal()) {
             return m_Info[num].m_Direction;
         }
+    } else {
+        return m_Info[FindParamPosInternal(param.GetName())].m_Direction;
     }
 
     return eOut;

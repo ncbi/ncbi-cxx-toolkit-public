@@ -174,6 +174,8 @@ private:
         return m_Info.size();
     }
 
+  unsigned int FindParamPosInternal(const string& name) const;
+
 private:
     struct SInfo
     {
