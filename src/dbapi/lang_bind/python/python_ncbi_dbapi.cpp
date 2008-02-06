@@ -36,6 +36,7 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <dbapi/error_codes.hpp>
+#include <dbapi/driver/dbapi_svc_mapper.hpp>
 
 #include "python_ncbi_dbapi.hpp"
 #include "pythonpp/pythonpp_pdt.hpp"
@@ -2898,6 +2899,8 @@ static struct PyMethodDef python_ncbi_dbapi_methods[] = {
 static
 void init_common(const string& module_name)
 {
+    DBLB_INSTALL_DEFAULT();
+
     char* rev_str = "$Revision$";
     PyObject *module;
 

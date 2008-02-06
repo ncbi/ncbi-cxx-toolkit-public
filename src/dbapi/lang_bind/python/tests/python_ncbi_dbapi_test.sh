@@ -3,8 +3,8 @@
 
 # Declare drivers and servers
 driver_list="ctlib dblib ftds odbc odbcw ftds_odbc ftds8" # mysql
-server_list="MS_DEV1 THALBERG"
-server_mssql="MS_DEV1"
+server_list="MS_TEST SYB_TEST"
+server_mssql="MS_TEST"
 
 # DBLIB does not work (on Linux at least) when this limit is > 1024
 ulimit -n 1024 > /dev/null 2>&1

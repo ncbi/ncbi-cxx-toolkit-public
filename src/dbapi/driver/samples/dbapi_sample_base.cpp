@@ -111,16 +111,21 @@ CDbapiSampleApp::ExitSample(void)
 CDbapiSampleApp::EServerType
 CDbapiSampleApp::GetServerType(void) const
 {
-    if ( GetServerName() == "STRAUSS" ||
-         GetServerName() == "MOZART" ||
-         GetServerName() == "SCHUMANN" ||
-         GetServerName() == "OBERON" ||
-         GetServerName() == "TAPER" ||
-         GetServerName() == "THALBERG" ||
-         NStr::StartsWith(GetServerName(), "BARTOK") ) {
+    if ( GetServerName() == "STRAUSS"
+         || GetServerName() == "MOZART"
+         || GetServerName() == "SCHUMANN"
+         || GetServerName() == "OBERON"
+         || GetServerName() == "TAPER"
+         || GetServerName() == "THALBERG"
+         || GetServerName() == "SYB_TEST"
+         || NStr::StartsWith(GetServerName(), "DBAPI_DEV") 
+         || NStr::StartsWith(GetServerName(), "BARTOK") 
+         ) {
         return eSybase;
-    } else if (NStr::StartsWith(GetServerName(), "MS_DEV") ||
-               NStr::StartsWith(GetServerName(), "MSSQL")) {
+    } else if (NStr::StartsWith(GetServerName(), "MS_DEV")
+               || NStr::StartsWith(GetServerName(), "MSSQL")
+               || GetServerName() == "MS_TEST"
+               ) {
         return eMsSql;
     }
 

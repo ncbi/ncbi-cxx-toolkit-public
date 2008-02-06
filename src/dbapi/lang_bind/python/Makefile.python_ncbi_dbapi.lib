@@ -10,5 +10,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(PYTHON_INCLUDE)
 LIB_OR_DLL = dll
 
 # Dependencies for shared library
-DLL_LIB = dbapi dbapi_driver xutil xncbi
+DLL_LIB = dbapi dbapi_driver xconnext xconnect xutil xncbi
 LIBS    = $(RUNPATH_ORIGIN)/python_ncbi_dbapi/1.6 $(ORIG_LIBS)

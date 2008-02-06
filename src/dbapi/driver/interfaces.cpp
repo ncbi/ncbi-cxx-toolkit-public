@@ -349,6 +349,7 @@ CDBDefaultConnParams::GetServerType(void) const
         || NStr::CompareNocase(GetServerName(), 0, 8, "SCHUMANN") == 0
         || NStr::CompareNocase(GetServerName(), 0, 6, "BARTOK") == 0
         || NStr::CompareNocase(GetServerName(), 0, 8, "SCHUBERT") == 0
+        || NStr::CompareNocase(GetServerName(), 0, 8, "SYB_TEST") == 0
         ) 
     {
         return eSybaseSQLServer;

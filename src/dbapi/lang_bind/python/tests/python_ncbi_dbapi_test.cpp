@@ -400,7 +400,7 @@ CPythonDBAPITest::Test_callproc(void)
         // Check output parameters ...
         if (false) {
             // ExecuteStr("cursor.callproc('sp_server_info', {'@attribute_id':1}) \n");
-            ExecuteStr("cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
+            ExecuteStr("print cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
             ExecuteStr("print cursor.fetchall()\n");
             ExecuteStr("while cursor.nextset() : \n"
                        "    print cursor.fetchall() "
@@ -928,12 +928,15 @@ CTestArguments::GetServerType(void) const
          || NStr::CompareNocase(GetServerName(), "THALBERG") == 0
          || NStr::CompareNocase(GetServerName(), "SCHUMANN") == 0
          || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
+         || NStr::CompareNocase(GetServerName(), "SYB_TEST") == 0
+	 || NStr::StartsWith(GetServerName(), "DBAPI_DEV") == 0
          ) {
         return eSybase;
-    } else if ( NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
-                || NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
-                || NStr::CompareNocase(GetServerName(), 0, 7, "OAMSDEV") == 0
-                || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0
+    } else if ( NStr::StartsWith(GetServerName(), "MS_DEV") == 0
+                || NStr::StartsWith(GetServerName(), "MSSQL") == 0
+                || NStr::StartsWith(GetServerName(), "OAMSDEV") == 0
+                || NStr::StartsWith(GetServerName(), "QMSSQL") == 0
+		|| NStr::CompareNocase(GetServerName(), "MS_TEST") == 0
                 ) {
         return eMsSql;
     }

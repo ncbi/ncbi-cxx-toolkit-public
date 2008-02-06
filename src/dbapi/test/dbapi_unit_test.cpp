@@ -13035,6 +13035,8 @@ CTestArguments::GetServerType(void) const
          || NStr::CompareNocase(GetServerName(), "LINK_OS") == 0
          || NStr::CompareNocase(GetServerName(), "SCHUMANN") == 0
          || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
+         || NStr::CompareNocase(GetServerName(), "SYB_TEST") == 0
+         || NStr::CompareNocase(GetServerName(), 0, 9, "DBAPI_DEV") == 0
          ) {
         return eSybase;
     } else if ( NStr::CompareNocase(GetServerName(), 0, 7, "MSSQL67") == 0
@@ -13045,7 +13047,9 @@ CTestArguments::GetServerType(void) const
     } else if (NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 7, "OAMSDEV") == 0
-                || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0) {
+                || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0
+                || NStr::CompareNocase(GetServerName(), "MS_TEST") == 0
+                ) {
         return eMsSql;
     }
 
