@@ -12457,6 +12457,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             add(tc);
         }
+        else {
+            PutMsgDisabled("Test_Bulk_Writing4");
+        }
 
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing5, DBAPIInstance);
         tc->depends_on(tc_init);
@@ -12491,8 +12494,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.GetDriverName() != ftds_dblib_driver
         && !(args.GetDriverName() == ftds64_driver
           && args.GetServerType() == CTestArguments::eSybase)
-        /*&& !(args.GetDriverName() == ftds8_driver
-          && args.GetServerType() == CTestArguments::eSybase)*/
         ) {
         boost::unit_test::test_case* tc_parameters =
             BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters,
