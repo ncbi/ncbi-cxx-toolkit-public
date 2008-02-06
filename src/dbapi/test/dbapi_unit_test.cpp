@@ -12466,11 +12466,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
 
-        if (args.GetDriverName() != ftds_driver) {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing6, DBAPIInstance);
-            tc->depends_on(tc_init);
-            add(tc);
-        }
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing6, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
     } else {
         PutMsgDisabled("Test_Bulk_Writing");
     }

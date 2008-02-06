@@ -1913,7 +1913,7 @@ _ct_get_client_type(CS_CONTEXT *ctx, int datatype, int usertype, int size)
         return CS_BIT_TYPE;
         break;
     case SYBCHAR:
-        return CS_CHAR_TYPE;
+        return CS_VARCHAR_TYPE;
         break;
     case SYBVARCHAR:
         return CS_VARCHAR_TYPE;
