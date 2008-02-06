@@ -7,28 +7,31 @@ $Id$
 <!ELEMENT       ERROR           (#PCDATA)>	<!-- .+ -->
 <!ELEMENT       Info            (#PCDATA)>	<!-- .+ -->
 
-<!ELEMENT	Id		(#PCDATA)>	<!-- \d+ -->
-<!ATTLIST	Id		
-			HasLinkOut  (Y|N)	#IMPLIED	
-			HasNeighbor (Y|N)	#IMPLIED
+<!ELEMENT	    Id		(#PCDATA)>	<!-- \d+ -->
+<!ATTLIST	    Id		
+			    HasLinkOut  (Y|N)	#IMPLIED	
+			    HasNeighbor (Y|N)	#IMPLIED
 			>
 			
-<!ELEMENT	Score		(#PCDATA)>	<!-- \d+ -->
-<!ELEMENT	DbFrom		(#PCDATA)>	<!-- \S+ -->
-<!ELEMENT	DbTo		(#PCDATA)>	<!-- \S+ -->
-<!ELEMENT	LinkName	(#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	    Score		(#PCDATA)>	<!-- \d+ -->
+<!ELEMENT	    DbFrom		(#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	    DbTo		(#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	    LinkName	(#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	    MenuTag     (#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	    HtmlTag     (#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	    Priority    (#PCDATA)>	<!-- \S+ -->
 
-<!ELEMENT	IdList		(Id*)>
+<!ELEMENT	    IdList		(Id*)>
 
 <!-- cmd=neighbor -->
-<!ELEMENT	Link		(Id, Score?)>
+<!ELEMENT	    Link		(Id, Score?)>
 
-<!ELEMENT	LinkSetDb	(DbTo, LinkName, (Link*|Info), ERROR?)>
+<!ELEMENT	    LinkSetDb	(DbTo, LinkName, (Link*|Info), ERROR?)>
 
 <!-- cmd=links -->
 
-<!ELEMENT	Url		(#PCDATA)>	<!-- \S+ -->
-<!ELEMENT	IconUrl		(#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	    Url		    (#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	    IconUrl		(#PCDATA)>	<!-- \S+ -->
 <!ELEMENT       SubjectType	(#PCDATA)>	<!-- .+ -->
 <!ELEMENT       Attribute	(#PCDATA)>	<!-- .+ -->
 <!ELEMENT       Name		(#PCDATA)>	<!-- .+ -->
@@ -42,28 +45,34 @@ $Id$
 				IconUrl?
 			)>
 
-
 <!ELEMENT	ObjUrl	(
 				Url,
 				IconUrl?,
 				LinkName?,
-                                SubjectType*,
-                                Attribute*,
-                               Provider			
+                SubjectType*,
+                Attribute*,
+                Provider			
 			)>
 
 <!ELEMENT	IdUrlSet	(Id,(ObjUrl+|Info))>
 
-<!ELEMENT	IdUrlList	(IdUrlSet*,ERROR?)>
+
+<!ELEMENT	IdUrlList	(IdUrlSet*, ERROR?)>
+
+<!ELEMENT	LinkInfo	(DbTo, LinkName, MenuTag, HtmlTag, Url?, Priority)> 
+
+<!ELEMENT	IdLinkSet	(Id, LinkInfo*)> 
+
+<!-- cmd=ncheck, lcheck & acheck -->
+<!ELEMENT	IdCheckList	((Id | IdLinkSet)*, ERROR?)>
 
 
-<!-- cmd=ncheck & lcheck -->
-<!ELEMENT	IdCheckList	(Id*,ERROR?)>
-
+<!-- cmd=neighbor_history -->
+<!ELEMENT	QueryKey     (#PCDATA)>	<!-- \d+ -->
+<!ELEMENT	WebEnv       (#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	LinkSetDbHistory (DbTo, LinkName, (QueryKey | ERROR))>
 
 <!-- Common -->
-<!ELEMENT	LinkSet		(DbFrom, 
-				((IdList?, LinkSetDb*) | IdUrlList | IdCheckList | ERROR)  
-				)>
+<!ELEMENT LinkSet (DbFrom,  ((IdList?, (LinkSetDb* | (LinkSetDbHistory*, WebEnv) ) ) | IdUrlList | IdCheckList | ERROR))>  
 
 <!ELEMENT	eLinkResult	(LinkSet*, ERROR?)>
