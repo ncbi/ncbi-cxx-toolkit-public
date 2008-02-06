@@ -69,8 +69,25 @@ CSeq_align::TDim CSeq_align::CheckNumRows(void) const
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().CheckNumRows();
+
+    case C_Segs::e_Disc:
+        {{
+            TSegs::TDisc::Tdata::const_iterator iter = GetSegs().GetDisc().Get().begin();
+            TSegs::TDisc::Tdata::const_iterator end  = GetSegs().GetDisc().Get().end();
+            TDim num_rows = (*iter)->CheckNumRows();
+            for (++iter;  iter != end;  ++iter) {
+                TDim tmp = (*iter)->CheckNumRows();
+                if (tmp != num_rows) {
+                    NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                               "CSeq_align::CheckNumRows(): Number of rows "
+                               "is not the same for each std seg.");
+                }
+            }
+            return num_rows;
+        }}
+
     case C_Segs::e_Std:
-        {
+        {{
             TDim numrows = 0;
             ITERATE (C_Segs::TStd, std_i, GetSegs().GetStd()) {
                 const TDim& seg_numrows = (*std_i)->CheckNumRows();
@@ -85,7 +102,8 @@ CSeq_align::TDim CSeq_align::CheckNumRows(void) const
                 }
             }
             return numrows;
-        }
+        }}
+
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::CheckNumRows() currently does not handle "
