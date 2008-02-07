@@ -56,17 +56,6 @@
 #  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
 #endif
 
-#ifdef NCBI_OS_DARWIN
-#include <corelib/plugin_manager_store.hpp>
-#include <corelib/rwstream.hpp>
-#include <util/compress/reader_zlib.hpp>
-#include <util/compress/stream.hpp>
-#include <serial/objectinfo.hpp>
-#include <objects/id1/ID1server_back.hpp>
-#include <objects/id2/ID2_Reply_Data.hpp>
-#include <objmgr/data_loader_factory.hpp>
-#endif
-
 #include <common/test_assert.h> // Must be last include directive.
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -3552,29 +3541,4 @@ BOOST_AUTO_TEST_CASE(VersionedSparseId)
     CHECK(o3.size() == 1);
 }
 
-
-#ifdef NCBI_OS_DARWIN
-// nonsense to work around linker screwiness (horribly kludgy)
-class CDummyDLF : public CDataLoaderFactory {
-public:
-    CDummyDLF() : CDataLoaderFactory(kEmptyStr) { }
-    CDataLoader* CreateAndRegister(CObjectManager&,
-                                   const TPluginManagerParamTree*) const
-        { return 0; }
-};
-
-void s_ForceSymbolDefinitions(CObjectIStream& ois,
-                              CReadContainerElementHook& rceh)
-{
-    auto_ptr<CDataLoaderFactory> dlf(new CDummyDLF);
-    auto_ptr<CRWStream> rws(new CRWStream(NULL));
-    auto_ptr<CCompressionStream> cs(new CCompressionStream(*rws, NULL, NULL));
-    auto_ptr<CNlmZipReader> nzr(new CNlmZipReader(NULL));
-    auto_ptr<CObjectInfo> oi(new CObjectInfo);
-    oi->ReadContainer(ois, rceh);
-    CRef<CID1server_back> id1b(new CID1server_back);
-    CRef<CID2_Reply_Data> id2rd(new CID2_Reply_Data);
-    CPluginManagerGetterImpl::GetBase(kEmptyStr);
-}
-#endif
 #endif /* SKIP_DOXYGEN_PROCESSING */
