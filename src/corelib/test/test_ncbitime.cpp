@@ -300,6 +300,9 @@ static void s_TestMisc(void)
         assert(t2.DiffSecond(t1) == 96676);
         LOG_POST("DiffNanoSecond = " +
                  NStr::DoubleToString(t2.DiffNanoSecond(t1),0));
+        assert(t1.DiffSecond(t2) == -96676);
+        LOG_POST("DiffNanoSecond = " +
+                 NStr::DoubleToString(t2.DiffNanoSecond(t1),0));
         LOG_POST("DiffTimeSpan   = " + ts.AsString());
         assert(t2.DiffTimeSpan(t1) ==  ts);
         assert(t1.DiffTimeSpan(t2) == -ts);
