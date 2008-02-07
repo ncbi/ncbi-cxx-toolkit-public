@@ -105,6 +105,7 @@ void
 CPythonDBAPITest::TestBasic(void)
 {
     try {
+        ExecuteStr("cursor.execute('select name, type from sysobjects where type = @type_par', {'type_par':'S'})\n");
         ExecuteStr("version = dbapi.__version__ \n");
         ExecuteStr("apilevel = dbapi.apilevel \n");
         ExecuteStr("threadsafety = dbapi.threadsafety \n");
@@ -929,13 +930,13 @@ CTestArguments::GetServerType(void) const
          || NStr::CompareNocase(GetServerName(), "SCHUMANN") == 0
          || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
          || NStr::CompareNocase(GetServerName(), "SYB_TEST") == 0
-	 || NStr::StartsWith(GetServerName(), "DBAPI_DEV") == 0
+	 || NStr::StartsWith(GetServerName(), "DBAPI_DEV")
          ) {
         return eSybase;
-    } else if ( NStr::StartsWith(GetServerName(), "MS_DEV") == 0
-                || NStr::StartsWith(GetServerName(), "MSSQL") == 0
-                || NStr::StartsWith(GetServerName(), "OAMSDEV") == 0
-                || NStr::StartsWith(GetServerName(), "QMSSQL") == 0
+    } else if ( NStr::StartsWith(GetServerName(), "MS_DEV")
+                || NStr::StartsWith(GetServerName(), "MSSQL")
+                || NStr::StartsWith(GetServerName(), "OAMSDEV")
+                || NStr::StartsWith(GetServerName(), "QMSSQL")
 		|| NStr::CompareNocase(GetServerName(), "MS_TEST") == 0
                 ) {
         return eMsSql;
