@@ -597,7 +597,25 @@ bool CProcess::KillGroup(unsigned long timeout) const
     // Convert the process handle to process ID if needed
     TPid pid = 0;
     if (m_Type == eHandle) {
-        pid = GetProcessId((TProcessHandle)m_Process);
+        // Some OS like Windows 2000 and WindowsXP (w/o SP1) don't
+        // have GetProcessId() function. Try to load it directy from 
+        // KERNEL32.DLL
+        static bool  s_TryGetProcessId = true;
+        typedef DWORD (STDMETHODCALLTYPE FAR* LPFN_GETPROCESSID)(HANDLE process);
+        static LPFN_GETPROCESSID s_GetProcessId = NULL;
+
+        if ( s_TryGetProcessId  &&  !s_GetProcessId ) {
+            s_GetProcessId  = (LPFN_GETPROCESSID)GetProcAddress(
+                                    GetModuleHandle("KERNEL32.DLL"),
+                                    "GetProcessId");
+            s_TryGetProcessId = false;
+        }
+        if ( !s_GetProcessId ) {
+            // GetProcessId() is not available on this platform
+            return false;
+        }
+        pid = s_GetProcessId((TProcessHandle)m_Process);
+
     } else {  // m_Type == ePid
         pid = (TPid)m_Process;
     }
