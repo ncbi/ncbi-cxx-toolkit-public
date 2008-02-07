@@ -41,35 +41,15 @@
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_stats.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
-#include <objtools/alnmgr/aln_rng_coll_oper.hpp>
-#include <objtools/alnmgr/aln_serial.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 
 void 
-MergeAlnRngColl(CPairwiseAln& existing,
-                const CPairwiseAln& addition,
-                const CAlnUserOptions::TMergeFlags& flags)
-{
-    CPairwiseAln difference(existing.GetFirstId(), existing.GetSecondId());
-    SubtractAlnRngCollections(addition, // minuend
-                              existing, // subtrahend
-                              difference);
-#ifdef _TRACE_MergeAlnRngColl
-    cerr << endl;
-    cerr << "existing:" << endl << existing << endl;
-    cerr << "addition:" << endl << addition << endl;
-    cerr << "difference = addition - existing:" << endl << difference << endl;
-#endif
-    ITERATE(CPairwiseAln, rng_it, difference) {
-        existing.insert(*rng_it);
-    }
-#ifdef _TRACE_MergeAlnRngColl
-    cerr << "result = existing + difference:" << endl << existing << endl;
-#endif
-}
+MergePairwiseAlns(CPairwiseAln& existing,
+                  const CPairwiseAln& addition,
+                  const CAlnUserOptions::TMergeFlags& flags);
 
 
 template <class TAnchoredAlns>
@@ -102,9 +82,9 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
             _ASSERT(aln.GetAnchorRow() == aln.GetDim()-1);
             for (TDim row = 0; row < aln.GetDim(); ++row) {
                 if (row == aln.GetAnchorRow()) {
-                    MergeAlnRngColl(*out_aln.SetPairwiseAlns().back(),
-                                    *aln.GetPairwiseAlns()[row],
-                                    CAlnUserOptions::fTruncateOverlaps);
+                    MergePairwiseAlns(*out_aln.SetPairwiseAlns().back(),
+                                      *aln.GetPairwiseAlns()[row],
+                                      CAlnUserOptions::fTruncateOverlaps);
                 } else {
                     // swap the anchor row with the new one
                     CRef<CPairwiseAln> anchor_pairwise(out_aln.GetPairwiseAlns().back());
@@ -125,11 +105,11 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
             _ASSERT(aln.GetDim() == out_aln.GetDim());
             _ASSERT(aln.GetAnchorRow() == out_aln.GetAnchorRow());
             for (TDim row = 0; row < aln.GetDim(); ++row) {
-                MergeAlnRngColl(*out_aln.SetPairwiseAlns()[row],
-                                *aln.GetPairwiseAlns()[row],
-                                row == aln.GetAnchorRow() ?
-                                CAlnUserOptions::fTruncateOverlaps :
-                                options.m_MergeFlags);
+                MergePairwiseAlns(*out_aln.SetPairwiseAlns()[row],
+                                  *aln.GetPairwiseAlns()[row],
+                                  row == aln.GetAnchorRow() ?
+                                  CAlnUserOptions::fTruncateOverlaps :
+                                  options.m_MergeFlags);
             }
         }
         break;
@@ -164,11 +144,11 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
                         }
 
                     } else {
-                        MergeAlnRngColl(*pairwise,
-                                        *aln.GetPairwiseAlns()[row],
-                                        row == aln.GetAnchorRow() ?
-                                        CAlnUserOptions::fTruncateOverlaps :
-                                        options.m_MergeFlags);
+                        MergePairwiseAlns(*pairwise,
+                                          *aln.GetPairwiseAlns()[row],
+                                          row == aln.GetAnchorRow() ?
+                                          CAlnUserOptions::fTruncateOverlaps :
+                                          options.m_MergeFlags);
                     }
                 }
             }
