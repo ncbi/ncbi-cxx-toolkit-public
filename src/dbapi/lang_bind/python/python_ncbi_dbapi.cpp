@@ -1648,6 +1648,80 @@ CCallableStmtHelper::NextRS(void)
 }
 
 //////////////////////////////////////////////////////////////////////////////
+pythonpp::CObject
+ConvertCVariant2PCObject(const CVariant& value)
+{
+    if ( value.IsNull() ) {
+	return pythonpp::CObject();
+    }
+
+    switch ( value.GetType() ) {
+	case eDB_Int :
+	    return pythonpp::CInt( value.GetInt4() );
+	case eDB_SmallInt :
+	    return pythonpp::CInt( value.GetInt2() );
+	case eDB_TinyInt :
+	    return pythonpp::CInt( value.GetByte() );
+	case eDB_BigInt :
+	    return pythonpp::CLong( value.GetInt8() );
+	case eDB_Float :
+	    return pythonpp::CFloat( value.GetFloat() );
+	case eDB_Double :
+	    return pythonpp::CFloat( value.GetDouble() );
+	case eDB_Bit :
+	    // BIT --> BOOL ...
+	    return pythonpp::CBool( value.GetBit() );
+#if PY_VERSION_HEX >= 0x02040000
+	case eDB_DateTime :
+	case eDB_SmallDateTime :
+	    {
+		const CTime& cur_time = value.GetCTime();
+		return pythonpp::CDateTime(
+			cur_time.Year(),
+			cur_time.Month(),
+			cur_time.Day(),
+			cur_time.Hour(),
+			cur_time.Minute(),
+			cur_time.Second(),
+			cur_time.NanoSecond() / 1000
+			);
+	    }
+#endif
+	case eDB_VarChar :
+	case eDB_Char :
+	case eDB_LongChar :
+	    {
+		string str = value.GetString();
+		return pythonpp::CString( str );
+	    }
+	case eDB_LongBinary :
+	case eDB_VarBinary :
+	case eDB_Binary :
+	case eDB_Numeric :
+	    return pythonpp::CString( value.GetString() );
+	case eDB_Text :
+	case eDB_Image :
+	    {
+		size_t lob_size = value.GetBlobSize();
+		string tmp_str;
+
+		tmp_str.resize(lob_size);
+		value.Read( (void*)tmp_str.c_str(), lob_size );
+		return pythonpp::CString(tmp_str);
+	    }
+	case eDB_UnsupportedType :
+	    break;
+	default:
+	    // All cases are supposed to be handled.
+	    // In case of PY_VERSION_HEX < 0x02040000 eDB_DateTime and
+	    // eDB_SmallDateTime will be missed.
+	    break;
+    }
+
+    return pythonpp::CObject();
+}
+
+//////////////////////////////////////////////////////////////////////////////
 pythonpp::CTuple
 MakeTupleFromResult(IResultSet& rs)
 {
@@ -1663,89 +1737,7 @@ MakeTupleFromResult(IResultSet& rs)
     for ( int i = 0; i < col_num; ++i) {
         const CVariant& value = rs.GetVariant (i + 1);
 
-        if ( value.IsNull() ) {
-            continue;
-        }
-
-        switch ( value.GetType() ) {
-        case eDB_Int :
-            tuple[i] = pythonpp::CInt( value.GetInt4() );
-            break;
-        case eDB_SmallInt :
-            tuple[i] = pythonpp::CInt( value.GetInt2() );
-            break;
-        case eDB_TinyInt :
-            tuple[i] = pythonpp::CInt( value.GetByte() );
-            break;
-        case eDB_BigInt :
-            tuple[i] = pythonpp::CLong( value.GetInt8() );
-            break;
-        case eDB_Float :
-            tuple[i] = pythonpp::CFloat( value.GetFloat() );
-            break;
-        case eDB_Double :
-            tuple[i] = pythonpp::CFloat( value.GetDouble() );
-            break;
-        /*
-        case eDB_Numeric :
-            tuple[i] = pythonpp::CFloat( value.GetDouble() );
-            break;
-        */
-        case eDB_Bit :
-            // BIT --> BOOL ...
-            tuple[i] = pythonpp::CBool( value.GetBit() );
-            break;
-#if PY_VERSION_HEX >= 0x02040000
-        case eDB_DateTime :
-        case eDB_SmallDateTime :
-            {
-                const CTime& cur_time = value.GetCTime();
-                tuple[i] = pythonpp::CDateTime(
-                    cur_time.Year(),
-                    cur_time.Month(),
-                    cur_time.Day(),
-                    cur_time.Hour(),
-                    cur_time.Minute(),
-                    cur_time.Second(),
-                    cur_time.NanoSecond() / 1000
-                    );
-            }
-            break;
-#endif
-        case eDB_VarChar :
-        case eDB_Char :
-        case eDB_LongChar :
-            {
-                string str = value.GetString();
-                tuple[i] = pythonpp::CString( str );
-            }
-            // tuple[i] = pythonpp::CString( value.GetString() );
-            break;
-        case eDB_LongBinary :
-        case eDB_VarBinary :
-        case eDB_Binary :
-        case eDB_Numeric :
-            tuple[i] = pythonpp::CString( value.GetString() );
-            break;
-        case eDB_Text :
-        case eDB_Image :
-            {
-                size_t lob_size = value.GetBlobSize();
-                string tmp_str;
-
-                tmp_str.resize(lob_size);
-                value.Read( (void*)tmp_str.c_str(), lob_size );
-                tuple[i] = pythonpp::CString(tmp_str);
-            }
-            break;
-        case eDB_UnsupportedType :
-            break;
-        default:
-            // All cases are supposed to be handled.
-            // In case of PY_VERSION_HEX < 0x02040000 eDB_DateTime and
-            // eDB_SmallDateTimewill be missed.
-            break;
-        }
+	tuple[i] = ConvertCVariant2PCObject(value);
     }
 
     return tuple;
@@ -1842,17 +1834,49 @@ CCursor::callproc(const pythonpp::CTuple& args)
     m_CallableStmtHelper.Execute();
     m_RowsNum = m_StmtHelper.GetRowCount();
 
-    if ( m_CallableStmtHelper.HasRS() ) {
-        IResultSet& rs = m_CallableStmtHelper.GetRS();
+    if ( args_size > 1 ) {
+	// If we have input parameters ...
+	pythonpp::CObject output_args( args[1] );
+	
+	if ( m_CallableStmtHelper.HasRS() ) {
+	    // We can have out/inout arguments ...
+	    IResultSet& rs = m_CallableStmtHelper.GetRS();
 
-        if ( rs.GetResultType() == eDB_ParamResult ) {
-            if ( rs.Next() ) {
-                return MakeTupleFromResult( rs );
-            }
-        }
+	    if ( rs.GetResultType() == eDB_ParamResult ) {
+		// We've got ParamResult with output arguments ...
+		if ( rs.Next() ) {
+		    int col_num = rs.GetTotalColumns();
+		    const IResultSetMetaData* md_ptr = rs.GetMetaData();
+
+		    for ( int i = 0; i < col_num; ++i) {
+			const CVariant& value = rs.GetVariant (i + 1);
+
+			if ( pythonpp::CDict::HasSameType(output_args) ) {
+			    // Dictionary ...
+			    pythonpp::CDict dict = output_args;
+			    const string param_name = md_ptr->GetName(i + 1);
+
+			    dict.SetItem(param_name, ConvertCVariant2PCObject(value));
+			} else  {
+			    // tuple[i] = ConvertCVariant2PCObject(value);
+			    // Curently, NCBI DBAPI supports pameter binding by name only ...
+			    //            pythonpp::CSequence sequence;
+			    //            if ( pythonpp::CList::HasSameType(obj) ) {
+			    //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
+			    //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
+			    //            }
+			    throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
+			}
+		    }
+		}
+	    }
+	}
+
+	return output_args;
     }
 
     return pythonpp::CTuple();
+
 }
 
 pythonpp::CObject
@@ -1881,14 +1905,14 @@ CCursor::execute(const pythonpp::CTuple& args)
 
     // Process function's arguments ...
     if ( args_size == 0 ) {
-        throw CProgrammingError("A SQL statement string is expected as a parameter");
+        throw CProgrammingError("An SQL statement string is expected as a parameter");
     } else if ( args_size > 0 ) {
         pythonpp::CObject obj(args[0]);
 
         if ( pythonpp::CString::HasSameType(obj) ) {
             m_StmtStr.SetStr(pythonpp::CString(args[0]), estSelect);
         } else {
-            throw CProgrammingError("A SQL statement string is expected as a parameter");
+            throw CProgrammingError("An SQL statement string is expected as a parameter");
         }
 
         m_CallableStmtHelper.Close();
@@ -1901,7 +1925,7 @@ CCursor::execute(const pythonpp::CTuple& args)
             if ( pythonpp::CDict::HasSameType(obj) ) {
                 SetupParameters(obj, m_StmtHelper);
             } else  {
-                // Curently, NCBI DBAPI supports pameter binding by name only ...
+                // Curently, NCBI DBAPI supports parameter binding by name only ...
 //            pythonpp::CSequence sequence;
 //            if ( pythonpp::CList::HasSameType(obj) ) {
 //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
@@ -2915,7 +2939,7 @@ void init_common(const string& module_name)
     // Define module attributes ...
     pythonpp::CModuleExt::AddConst("apilevel", "2.0");
     pythonpp::CModuleExt::AddConst("__version__", string( rev_str + 11, strlen( rev_str + 11 ) - 2 ));
-    pythonpp::CModuleExt::AddConst("threadsafety", 0);
+    pythonpp::CModuleExt::AddConst("threadsafety", 1);
     pythonpp::CModuleExt::AddConst("paramstyle", "named");
 
     module = pythonpp::CModuleExt::GetPyModule();

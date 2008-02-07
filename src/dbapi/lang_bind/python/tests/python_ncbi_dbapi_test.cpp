@@ -105,7 +105,6 @@ void
 CPythonDBAPITest::TestBasic(void)
 {
     try {
-        ExecuteStr("cursor.execute('select name, type from sysobjects where type = @type_par', {'type_par':'S'})\n");
         ExecuteStr("version = dbapi.__version__ \n");
         ExecuteStr("apilevel = dbapi.apilevel \n");
         ExecuteStr("threadsafety = dbapi.threadsafety \n");
@@ -402,14 +401,14 @@ CPythonDBAPITest::Test_callproc(void)
         if (false) {
             // ExecuteStr("cursor.callproc('sp_server_info', {'@attribute_id':1}) \n");
             ExecuteStr("print cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
-            ExecuteStr("print cursor.fetchall()\n");
+            ExecuteStr("cursor.fetchall()\n");
             ExecuteStr("while cursor.nextset() : \n"
                        "    print cursor.fetchall() "
                     );
         }
         
         // CALL stored procedure ...
-        ExecuteStr("cursor.callproc('sp_databases')\n");
+        ExecuteStr("print cursor.callproc('sp_databases')\n");
         BOOST_CHECK_THROW(
             ExecuteStr("rc = cursor.get_proc_return_status()\n"),
             string
@@ -425,15 +424,15 @@ CPythonDBAPITest::Test_callproc(void)
         ExecuteStr("cursor.fetchmany(5)\n");
         ExecuteStr("rc = cursor.get_proc_return_status()\n");
 
-        ExecuteStr("cursor.callproc('sp_server_info')\n");
+        ExecuteStr("print cursor.callproc('sp_server_info')\n");
         ExecuteStr("cursor.fetchall()\n");
         ExecuteStr("rc = cursor.get_proc_return_status()\n");
 
         // Check output parameters ...
         if (false) {
             // ExecuteStr("cursor.callproc('sp_server_info', {'@attribute_id':1}) \n");
-            ExecuteStr("cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
-            ExecuteStr("print cursor.fetchall()\n");
+            ExecuteStr("print cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
+            ExecuteStr("cursor.fetchall()\n");
             ExecuteStr("while cursor.nextset() : \n"
                        "    print cursor.fetchall() "
                     );
