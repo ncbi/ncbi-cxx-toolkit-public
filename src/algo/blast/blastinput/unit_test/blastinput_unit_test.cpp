@@ -1099,16 +1099,17 @@ BOOST_AUTO_TEST_CASE(ReadMultipleTis)
     const string db("ti");
     for (size_t i = 0; i < kNumQueries; i++) {
 
-        blast::SSeqLoc& ssl = query_vector[i];
+        const blast::SSeqLoc& ssl = query_vector[i];
+        CHECK(ssl.seqloc->IsInt());
+        const CSeq_interval& seqint = ssl.seqloc->GetInt();
         CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetStrand());
-        CHECK_EQUAL((TSeqPos)ti_lengths[i].second - 1, 
-                    ssl.seqloc->GetInt().GetTo());
+        CHECK_EQUAL((TSeqPos)ti_lengths[i].second - 1, seqint.GetTo());
 
-        CHECK(ssl.seqloc->GetInt().IsSetId() == true);
-        CHECK_EQUAL(CSeq_id::e_General, ssl.seqloc->GetInt().GetId().Which());
-        CHECK_EQUAL(db, ssl.seqloc->GetInt().GetId().GetGeneral().GetDb());
+        CHECK(seqint.IsSetId() == true);
+        CHECK_EQUAL(CSeq_id::e_General, seqint.GetId().Which());
+        CHECK_EQUAL(db, seqint.GetId().GetGeneral().GetDb());
         CHECK_EQUAL(ti_lengths[i].first,
-                    ssl.seqloc->GetInt().GetId().GetGeneral().GetTag().GetId());
+                    seqint.GetId().GetGeneral().GetTag().GetId());
         CHECK(!ssl.mask);
     }
 
