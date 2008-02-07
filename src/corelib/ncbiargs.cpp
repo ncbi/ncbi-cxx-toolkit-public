@@ -913,10 +913,11 @@ CArgDescDefault::CArgDescDefault(const string&            name,
                                  const string&            comment,
                                  CArgDescriptions::EType  type,
                                  CArgDescriptions::TFlags flags,
-                                 const string&            default_value)
+                                 const string&            default_value,
+                                 const string&            env_var)
     : CArgDescMandatory(name, comment, type, flags),
       CArgDescOptional(name, comment, type, flags),
-      m_DefaultValue(default_value)
+      m_DefaultValue(default_value), m_EnvVar(env_var)
 {
     return;
 }
@@ -927,6 +928,17 @@ CArgDescDefault::~CArgDescDefault(void)
     return;
 }
 
+const string& CArgDescDefault::GetDefaultValue(void) const
+{
+    if (!m_EnvVar.empty() && CNcbiApplication::Instance()) {
+        const string& value =
+            CNcbiApplication::Instance()->GetEnvironment().Get(m_EnvVar);
+        if (!value.empty()) {
+            return value;
+        }
+    }
+    return m_DefaultValue;
+}
 
 CArgValue* CArgDescDefault::ProcessDefault(void) const
 {
@@ -1090,10 +1102,11 @@ CArgDesc_PosDef::CArgDesc_PosDef(const string&            name,
                                  const string&            comment,
                                  CArgDescriptions::EType  type,
                                  CArgDescriptions::TFlags flags,
-                                 const string&            default_value)
+                                 const string&            default_value,
+                                 const string&            env_var)
     : CArgDescMandatory (name, comment, type, flags),
       CArgDescOptional  (name, comment, type, flags),
-      CArgDescDefault   (name, comment, type, flags, default_value),
+      CArgDescDefault   (name, comment, type, flags, default_value, env_var),
       CArgDesc_PosOpt   (name, comment, type, flags)
 {
     return;
@@ -1188,10 +1201,11 @@ CArgDesc_KeyDef::CArgDesc_KeyDef(const string&            name,
                                  CArgDescriptions::EType  type,
                                  CArgDescriptions::TFlags flags,
                                  const string&            synopsis,
-                                 const string&            default_value)
+                                 const string&            default_value,
+                                 const string&            env_var)
     : CArgDescMandatory(name, comment, type, flags),
       CArgDescOptional (name, comment, type, flags),
-      CArgDesc_PosDef  (name, comment, type, flags, default_value),
+      CArgDesc_PosDef  (name, comment, type, flags, default_value, env_var),
       CArgDescSynopsis(synopsis)
 {
     return;
@@ -1597,10 +1611,11 @@ void CArgDescriptions::AddDefaultKey
  const string& comment,
  EType         type,
  const string& default_value,
- TFlags        flags)
+ TFlags        flags,
+ const string& env_var)
 {
     auto_ptr<CArgDesc_KeyDef> arg(new CArgDesc_KeyDef(name,
-        comment, type, flags, synopsis, default_value));
+        comment, type, flags, synopsis, default_value, env_var));
 
     x_AddDesc(*arg);
     arg.release();
@@ -1651,10 +1666,11 @@ void CArgDescriptions::AddDefaultPositional
  const string& comment,
  EType         type,
  const string& default_value,
- TFlags        flags)
+ TFlags        flags,
+ const string& env_var)
 {
     auto_ptr<CArgDesc_PosDef> arg(new CArgDesc_PosDef(name,
-        comment, type, flags, default_value));
+        comment, type, flags, default_value, env_var));
 
     x_AddDesc(*arg);
     arg.release();

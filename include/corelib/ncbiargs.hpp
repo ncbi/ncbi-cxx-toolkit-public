@@ -563,7 +563,9 @@ public:
                        const string& comment,       ///< Argument description
                        EType         type,          ///< Argument type
                        const string& default_value, ///< Default value
-                       TFlags        flags = 0      ///< Optional file flags
+                       TFlags        flags = 0,     ///< Optional file flags
+    /// Optional name of environment variable that contains default value
+                       const string& env_var = kEmptyStr
                       );
 
     /// Add description for flag argument.
@@ -653,7 +655,9 @@ public:
                               const string& comment,///< Argument description
                               EType         type,   ///< Argument type
                               const string& default_value, ///< Default value
-                              TFlags        flags = 0 ///< Optional file flags
+                              TFlags        flags = 0, ///< Optional file flags
+    /// Optional name of environment variable that contains default value
+                              const string& env_var = kEmptyStr
                              );
 
     /// Add description for the extra, unnamed positional arguments.
@@ -787,8 +791,6 @@ public:
     ///
     /// @param out
     ///   Print into this output stream
-    /// @return
-    ///   output stream
     void PrintUsageXml(CNcbiOstream& out) const;
 
     /// Verify if argument "name" is spelled correctly.

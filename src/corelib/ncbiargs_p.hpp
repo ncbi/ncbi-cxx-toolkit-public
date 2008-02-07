@@ -266,16 +266,18 @@ public:
                     const string&            comment,
                     CArgDescriptions::EType  type,
                     CArgDescriptions::TFlags flags,
-                    const string&            default_value);
+                    const string&            default_value,
+                    const string&            env_var);
     virtual ~CArgDescDefault(void);
 
-    const string& GetDefaultValue(void) const { return m_DefaultValue; }
+    const string& GetDefaultValue(void) const;
 
     virtual CArgValue* ProcessDefault(void) const;
     virtual void       VerifyDefault (void) const;
 
 private:
     string m_DefaultValue;
+    string m_EnvVar;
 };
 
 
@@ -369,7 +371,8 @@ public:
                     const string&            comment,
                     CArgDescriptions::EType  type,
                     CArgDescriptions::TFlags flags,
-                    const string&            default_value);
+                    const string&            default_value,
+                    const string&            env_var);
     virtual ~CArgDesc_PosDef(void);
 };
 
@@ -411,7 +414,8 @@ public:
                     CArgDescriptions::EType  type,
                     CArgDescriptions::TFlags flags,
                     const string&            synopsis,
-                    const string&            default_value);
+                    const string&            default_value,
+                    const string&            env_var);
     virtual ~CArgDesc_KeyDef(void);
     virtual string GetUsageSynopsis(bool name_only = false) const;
 };
