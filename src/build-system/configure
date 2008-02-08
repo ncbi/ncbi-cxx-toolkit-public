@@ -22006,8 +22006,8 @@ esac
 ## Python
 if test "$with_python" != "no" ; then
    case "$with_python" in
-      yes | "" ) : ${PYTHON_PATH:="/usr/local/python-2.4.4"} ;;
-      */*      ) PYTHON_PATH=$with_python                    ;;
+      yes | "" ) ;;
+      */*      ) PYTHON_PATH=$with_python ;;
    esac
    # Extract the first word of "python", so it can be a program name with args.
 set dummy python; ac_word=$2
@@ -22309,6 +22309,7 @@ _ACEOF
 
 
 
+   : ${PYTHON_PATH:="/usr/local/python-2.4.4"}
    # Extract the first word of "python2.4", so it can be a program name with args.
 set dummy python2.4; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5

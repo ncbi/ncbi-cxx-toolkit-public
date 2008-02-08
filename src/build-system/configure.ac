@@ -3759,11 +3759,12 @@ esac
 ## Python
 if test "$with_python" != "no" ; then
    case "$with_python" in
-      yes | "" ) : ${PYTHON_PATH:="/usr/local/python-2.4.4"} ;;
-      */*      ) PYTHON_PATH=$with_python                    ;;
+      yes | "" ) ;;
+      */*      ) PYTHON_PATH=$with_python ;;
    esac
    NCBI_CHECK_PYTHON()
    NCBI_CHECK_PYTHON(2.3)
+   : ${PYTHON_PATH:="/usr/local/python-2.4.4"}
    NCBI_CHECK_PYTHON(2.4)
    NCBI_CHECK_PYTHON(2.5)
    if test "$ncbi_cv_lib_python" = "no"; then
