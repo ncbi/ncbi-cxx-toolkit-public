@@ -46,7 +46,8 @@
 BEGIN_NCBI_SCOPE
 
 
-void 
+NCBI_XALNMGR_EXPORT
+void
 MergePairwiseAlns(CPairwiseAln& existing,
                   const CPairwiseAln& addition,
                   const CAlnUserOptions::TMergeFlags& flags);
