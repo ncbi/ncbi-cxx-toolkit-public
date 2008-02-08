@@ -48,6 +48,6 @@ install-gbench:
 install:
 	if test -f $(lbindir)/gbench; then \
 	    $(MAKE) $(MFLAGS) install-gbench; \
-	else
+	else \
 	    $(MAKE) $(MFLAGS) install-toolkit; \
 	fi
