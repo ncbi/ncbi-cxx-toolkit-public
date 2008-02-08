@@ -1339,11 +1339,11 @@ case "$compiler:$compiler_version:$with_bin_release" in
         esac
     done
     if test "$found" = "true" -a -n "$CONF_f_runpath"; then
-        LDFLAGS="$CONF_f_runpath$dir:/usr/local/lib $LDFLAGS"
+        LDFLAGS="$CONF_f_runpath$dir $LDFLAGS"
         case "$host_os" in
            osf*)
               # the linker doesn't merge -rpath flags...
-              CONF_f_runpath="$CONF_f_runpath$dir:/usr/local/lib:"
+              CONF_f_runpath="$CONF_f_runpath$dir:"
               ;;
         esac
     fi
