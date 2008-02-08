@@ -100,6 +100,9 @@
 #  include <netinet/in.h>
 #  ifndef NCBI_COMPILER_METROWERKS
 #    include <netinet/tcp.h>
+#    if defined(NCBI_OS_LINUX)  &&  !defined(IP_MTU)
+#      define IP_MTU 14
+#    endif
 #  endif
 #  if !defined(NCBI_OS_BEOS) && !defined(NCBI_COMPILER_MW_MSL)
 #    include <arpa/inet.h>
@@ -1414,6 +1417,18 @@ static EIO_Status s_IsConnected(SOCK                  sock,
                             x_errno, SOCK_STRERROR(x_errno),
                             ("%s[SOCK::s_IsConnected]  Failed "
                              "setsockopt(REUSEADDR)", s_ID(sock, _id)));
+    } else {
+        int    mtu;
+        char   _id[32];
+#ifdef IP_MTU
+        size_t mtulen = sizeof(mtu);
+        if (getsockopt(sock->sock, SOL_IP, IP_MTU, &mtu, &mtulen) != 0)
+#endif
+            mtu = -1;
+        if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
+            CORE_TRACEF(("%sConnection established, MTU = %d",
+                         s_ID(sock, _id), mtu));
+        }
     }
     return status;
 }
