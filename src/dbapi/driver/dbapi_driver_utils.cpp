@@ -373,6 +373,26 @@ CCachedRowInfo::GetDirection(const CDBParamVariant& param) const
 
 
 ////////////////////////////////////////////////////////////////////////////////
+class CMsgHandlerGuard
+{
+public:
+    CMsgHandlerGuard(impl::CConnection& conn)
+    : m_Conn(conn)
+    , m_Handler(new CDB_UserHandler_Exception())
+    {
+        m_Conn.PushMsgHandler(m_Handler);
+    }
+    ~CMsgHandlerGuard(void)
+    {
+        m_Conn.PopMsgHandler(m_Handler);
+    }
+
+private:
+    impl::CConnection& m_Conn;
+    CRef<CDB_UserHandler> m_Handler;
+};
+
+
 CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
         const string& name,
         impl::CConnection& conn, 
@@ -381,25 +401,6 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
 : CCachedRowInfo(bindings)
 {
     const CDBConnParams::EServerType server_type = conn.GetServerType();
-
-    class CMsgHandlerGuard
-    {
-    public:
-        CMsgHandlerGuard(impl::CConnection& conn)
-        : m_Conn(conn)
-        , m_Handler(new CDB_UserHandler_Exception())
-        {
-            m_Conn.PushMsgHandler(m_Handler);
-        }
-        ~CMsgHandlerGuard(void)
-        {
-            m_Conn.PopMsgHandler(m_Handler);
-        }
-
-    private:
-        impl::CConnection& m_Conn;
-        CRef<CDB_UserHandler> m_Handler;
-    };
 
     if (server_type == CDBConnParams::eSybaseSQLServer
         || server_type == CDBConnParams::eMSSqlServer) 
