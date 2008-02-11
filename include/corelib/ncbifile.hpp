@@ -934,9 +934,9 @@ public:
     /// @sa
     ///   SetMode
     bool GetMode(TMode*            user_mode,
-                 TMode*            group_mode   = 0,
-                 TMode*            other_mode   = 0,
-                 TSpecialModeBits* special_bits = 0) const;
+                 TMode*            group_mode = 0,
+                 TMode*            other_mode = 0,
+                 TSpecialModeBits* special    = 0) const;
 
     /// Set permission mode(s) of a directory entry.
     ///
@@ -948,9 +948,9 @@ public:
     /// @sa
     ///   SetDefaultMode, SetDefaultModeGlobal, GetMode
     bool SetMode(TMode            user_mode,  // e.g. fDefault
-                 TMode            group_mode   = fDefault,
-                 TMode            other_mode   = fDefault,
-                 TSpecialModeBits special_bits = 0) const;
+                 TMode            group_mode  = fDefault,
+                 TMode            other_mode  = fDefault,
+                 TSpecialModeBits special     = 0) const;
 
     /// Construct mode_t value.
     static mode_t MakeModeT(TMode            usr_mode,
@@ -977,20 +977,22 @@ public:
     /// If other_mode is "fDefault", then the default is to take
     /// - "fDefaultDirOther" if this is a directory, or
     /// - "fDefaultOther" if this is a file.
-    static void SetDefaultModeGlobal(EType entry_type,
-                                     TMode user_mode,  // e.g. fDefault
-                                     TMode group_mode = fDefault,
-                                     TMode other_mode = fDefault);
+    static void SetDefaultModeGlobal(EType            entry_type,
+                                     TMode            user_mode, // e.g. fDefault
+                                     TMode            group_mode = fDefault,
+                                     TMode            other_mode = fDefault,
+                                     TSpecialModeBits special    = 0);
 
     /// Set default mode(s) for this entry only.
     ///
     /// When "fDefault" is passed as a value of the parameters,
     /// the corresponding mode will be taken and set from the global mode
     /// as specified by SetDefaultModeGlobal().
-    virtual void SetDefaultMode(EType entry_type,
-                                TMode user_mode,  // e.g. fDefault
-                                TMode group_mode = fDefault,
-                                TMode other_mode = fDefault);
+    virtual void SetDefaultMode(EType            entry_type,
+                                TMode            user_mode, // e.g. fDefault
+                                TMode            group_mode = fDefault,
+                                TMode            other_mode = fDefault,
+                                TSpecialModeBits special    = 0);
                                 
     /// Check access rights.
     ///
@@ -1019,17 +1021,19 @@ protected:
     /// Get the default global mode.
     ///
     /// For use in derived classes like CDir and CFile.
-    static void GetDefaultModeGlobal(EType  entry_type,
-                                     TMode* user_mode,
-                                     TMode* group_mode,
-                                     TMode* other_mode);
+    static void GetDefaultModeGlobal(EType             entry_type,
+                                     TMode*            user_mode,
+                                     TMode*            group_mode,
+                                     TMode*            other_mode,
+                                     TSpecialModeBits* special);
 
     /// Get the default mode.
     ///
     /// For use by derived classes like CDir and CFile.
-    void GetDefaultMode(TMode* user_mode,
-                        TMode* group_mode,
-                        TMode* other_mode) const;
+    void GetDefaultMode(TMode*            user_mode,
+                        TMode*            group_mode,
+                        TMode*            other_mode,
+                        TSpecialModeBits* special) const;
 
 private:
     string        m_Path;    ///< Full path of this directory entry
@@ -1041,14 +1045,15 @@ private:
     enum EWho {
         eUser = 0,           ///< User mode
         eGroup,              ///< Group mode
-        eOther               ///< Other mode
+        eOther,              ///< Other mode
+        eSpecial             ///< Special bits
     };
 
     /// Holds default mode values
-    TMode         m_DefaultMode[3/*EWho*/];
+    TMode         m_DefaultMode[4/*EWho + Special bits*/];
 
     /// Holds default mode global values, per entry type
-    static TMode  m_DefaultModeGlobal[eUnknown][3/*EWho*/];
+    static TMode  m_DefaultModeGlobal[eUnknown][4/*EWho + Special bits*/];
 
     /// Backup suffix
     static char*  m_BackupSuffix;

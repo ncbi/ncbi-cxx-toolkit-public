@@ -200,32 +200,32 @@ void CDirEntry::Reset(const string& path)
 }
 
 
-CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
+CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][4] =
 {
     // eFile
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther },
+          CDirEntry::fDefaultOther, 0 },
     // eDir
     { CDirEntry::fDefaultDirUser, CDirEntry::fDefaultDirGroup, 
-          CDirEntry::fDefaultDirOther },
+          CDirEntry::fDefaultDirOther, 0 },
     // ePipe
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther },
+          CDirEntry::fDefaultOther, 0 },
     // eLink
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther },
+          CDirEntry::fDefaultOther, 0 },
     // eSocket
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther },
+          CDirEntry::fDefaultOther, 0 },
     // eDoor
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther },
+          CDirEntry::fDefaultOther, 0 },
     // eBlockSpecial
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther },
+          CDirEntry::fDefaultOther, 0 },
     // eCharSpecial
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther }
+          CDirEntry::fDefaultOther, 0 }
 };
 
 
@@ -878,7 +878,8 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode,
 
 
 void CDirEntry::SetDefaultModeGlobal(EType entry_type, TMode user_mode, 
-                                     TMode group_mode, TMode other_mode)
+                                     TMode group_mode, TMode other_mode,
+                                     TSpecialModeBits special)
 {
     if ( entry_type >= eUnknown ) {
         return;
@@ -904,14 +905,19 @@ void CDirEntry::SetDefaultModeGlobal(EType entry_type, TMode user_mode,
             other_mode = fDefaultOther;
         }
     }
-    m_DefaultModeGlobal[entry_type][eUser]  = user_mode;
-    m_DefaultModeGlobal[entry_type][eGroup] = group_mode;
-    m_DefaultModeGlobal[entry_type][eOther] = other_mode;
+    if ( special == 0 ) {
+        special = m_DefaultModeGlobal[entry_type][eSpecial];
+    }
+    m_DefaultModeGlobal[entry_type][eUser]    = user_mode;
+    m_DefaultModeGlobal[entry_type][eGroup]   = group_mode;
+    m_DefaultModeGlobal[entry_type][eOther]   = other_mode;
+    m_DefaultModeGlobal[entry_type][eSpecial] = special;
 }
 
 
 void CDirEntry::SetDefaultMode(EType entry_type, TMode user_mode, 
-                               TMode group_mode, TMode other_mode)
+                               TMode group_mode, TMode other_mode,
+                               TSpecialModeBits special)
 {
     if ( user_mode == fDefault ) {
         user_mode  = m_DefaultModeGlobal[entry_type][eUser];
@@ -922,14 +928,19 @@ void CDirEntry::SetDefaultMode(EType entry_type, TMode user_mode,
     if ( other_mode == fDefault ) {
         other_mode = m_DefaultModeGlobal[entry_type][eOther];
     }
-    m_DefaultMode[eUser]  = user_mode;
-    m_DefaultMode[eGroup] = group_mode;
-    m_DefaultMode[eOther] = other_mode;
+    if ( special == 0 ) {
+        special = m_DefaultModeGlobal[entry_type][eSpecial];
+    }
+    m_DefaultMode[eUser]    = user_mode;
+    m_DefaultMode[eGroup]   = group_mode;
+    m_DefaultMode[eOther]   = other_mode;
+    m_DefaultMode[eSpecial] = special;
 }
 
 
 void CDirEntry::GetDefaultModeGlobal(EType  entry_type, TMode* user_mode,
-                                     TMode* group_mode, TMode* other_mode)
+                                     TMode* group_mode, TMode* other_mode,
+                                     TSpecialModeBits* special)
 {
     if ( user_mode ) {
         *user_mode  = m_DefaultModeGlobal[entry_type][eUser];
@@ -940,11 +951,15 @@ void CDirEntry::GetDefaultModeGlobal(EType  entry_type, TMode* user_mode,
     if ( other_mode ) {
         *other_mode = m_DefaultModeGlobal[entry_type][eOther];
     }
+    if ( special ) {
+        *special  = m_DefaultModeGlobal[entry_type][eSpecial];
+    }
 }
 
 
 void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
-                               TMode* other_mode) const
+                               TMode* other_mode,
+                               TSpecialModeBits* special) const
 {
     if ( user_mode ) {
         *user_mode  = m_DefaultMode[eUser];
@@ -954,6 +969,9 @@ void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
     }
     if ( other_mode ) {
         *other_mode = m_DefaultMode[eOther];
+    }
+    if ( special ) {
+        *special   = m_DefaultMode[eSpecial];
     }
 }
 
@@ -966,6 +984,7 @@ mode_t CDirEntry::MakeModeT(TMode            usr_mode,
                             TSpecialModeBits special)
 {
     mode_t mode = (
+    // special bits
 #ifdef S_ISUID
                    (special & fSetUID   ? S_ISUID    : 0) |
 #endif
@@ -975,6 +994,7 @@ mode_t CDirEntry::MakeModeT(TMode            usr_mode,
 #ifdef S_ISVTX
                    (special & fSticky   ? S_ISVTX    : 0) |
 #endif
+    // modes
 #if   defined(S_IRUSR)
                    (usr_mode & fRead    ? S_IRUSR    : 0) |
 #elif defined(S_IREAD)
@@ -2904,24 +2924,27 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
 bool CDir::Create(void) const
 {
     TMode user_mode, group_mode, other_mode;
-    GetDefaultMode(&user_mode, &group_mode, &other_mode);
-    mode_t mode = MakeModeT(user_mode, group_mode, other_mode, 0);
+    TSpecialModeBits special;
+    GetDefaultMode(&user_mode, &group_mode, &other_mode, &special);
+    mode_t mode = MakeModeT(user_mode, group_mode, other_mode, special);
 
 #if defined(NCBI_OS_MSWIN)
     errno = 0;
     if ( mkdir(GetPath().c_str()) != 0  &&  errno != EEXIST ) {
         return false;
     }
-    return chmod(GetPath().c_str(), mode) == 0;
 
 #elif defined(NCBI_OS_UNIX)
     errno = 0;
+    // The permissions for the created directory are (mode & ~umask & 0777).
     if ( mkdir(GetPath().c_str(), mode) != 0  &&  errno != EEXIST ) {
         return false;
     }
-    return true;
+    // so we need to call chmod() directly
 #endif
+    return chmod(GetPath().c_str(), mode) == 0;
 }
+
 
 bool CDir::CreatePath(void) const
 {
@@ -2935,18 +2958,18 @@ bool CDir::CreatePath(void) const
     if ( path[path.length()-1] == GetPathSeparator() ) {
         path.erase(path.length() - 1);
     }
-    CDir dir_this(path);
-    if ( dir_this.Exists() ) {
-        return true;
-    }
-    string path_up = dir_this.GetDir();
+    string path_up = GetDir();
     if ( path_up == path ) {
-        // special case: is this a disk name?
-        return true;
+        // special case: unknown disk name
+        return false;
     } 
-    CDir dir_up(path_up);
+    // Create a copy for this object to derive creation mode
+    CDir dir_up(*this);
+    dir_up.Reset(path_up);
+    // Create upper level path
     if ( dir_up.CreatePath() ) {
-        return dir_this.Create();
+        // Create current subdirectory
+        return Create();
     }
     return false;
 }
