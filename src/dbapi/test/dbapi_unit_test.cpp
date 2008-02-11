@@ -432,7 +432,7 @@ public:
     static CDB_UserHandler* SetDefault(CDB_UserHandler* h);
 
 public:
-    EDB_Severity getMaxSeverity() {
+    EDiagSev getMaxSeverity() {
         return m_max_severity;
     }
     bool GetSucceed(void) const
@@ -445,13 +445,13 @@ public:
     }
 
 private:
-    EDB_Severity    m_max_severity;
-    bool            m_Succeed;
+    EDiagSev m_max_severity;
+    bool     m_Succeed;
 };
 
 
 CTestErrHandler::CTestErrHandler()
-: m_max_severity(eDB_Info)
+: m_max_severity(eDiag_Info)
 , m_Succeed(false)
 {
 }
@@ -467,9 +467,9 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 {
     m_Succeed = true;
 
-    if (ex && ex->Severity() > m_max_severity)
+    if (ex && ex->GetSeverity() > m_max_severity)
     {
-        m_max_severity = ex->Severity();
+        m_max_severity = ex->GetSeverity();
     }
 
     // return false to find the next handler on the stack.
@@ -10804,9 +10804,8 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
                     BOOST_FAIL("Unable to send sql command "+ sUseDb);
                 }
             } catch( CDB_Exception& dbe ) {
-                sErr = "CDB Exception from "+dbe.OriginatedFrom()+":"+
-                    dbe.SeverityString(dbe.Severity())+": "+
-                    dbe.Message();
+                sErr = "CDB Exception from "+dbe.OriginatedFrom()+":" +
+                    dbe.SeverityString()+": " + dbe.Message();
 
                 BOOST_FAIL(sErr);
             }
@@ -10993,9 +10992,8 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
                     bFetchErr = true;
                 }
             }  catch( CDB_Exception& dbe ) {
-                sError = "CDB Exception from "+dbe.OriginatedFrom()+":"+
-                    dbe.SeverityString(dbe.Severity())+": "+
-                    dbe.Message();
+                sError = "CDB Exception from " + dbe.OriginatedFrom() + ":" +
+                    dbe.SeverityString() + ": " + dbe.Message();
                 bFetchErr = true;
             }
 

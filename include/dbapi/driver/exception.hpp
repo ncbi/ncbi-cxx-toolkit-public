@@ -125,11 +125,13 @@ public:
 
     // access
     // DEPRECATED, Will be removed soon.
+    NCBI_DEPRECATED
     EDB_Severity        Severity(void) const;
     int                 GetDBErrCode(void) const { return m_DBErrCode; }
 
     const char*         SeverityString(void) const;
     // DEPRECATED, Will be removed soon.
+    NCBI_DEPRECATED
     static const char*  SeverityString(EDB_Severity sev);
     virtual const char* GetErrCodeString(void) const;
 

@@ -1875,7 +1875,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
 	return output_args;
     }
 
-    return pythonpp::CTuple();
+    return pythonpp::CNone();
 
 }
 
