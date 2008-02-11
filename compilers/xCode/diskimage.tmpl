@@ -43,12 +43,21 @@ done
 
 
 
-EXECS="
- gbench_monitor
- gbench_feedback_agent
+EXECS1="
  gbench_plugin_scan
  gbench_cache_agent"
-for exe in $EXECS; do
+for exe in $EXECS1; do
+	echo Patching: $exe
+	for j in `otool -L $exe | awk '/(netopt)|(sw)|(Users)/ {print $1}'`; do
+	        install_name_tool -change $j $EXEC_PATH/`basename $j` $exe
+	done	
+done
+
+cd bin
+EXECS2="
+ gbench_monitor
+ gbench_feedback_agent"
+for exe in $EXECS2; do
 	echo Patching: $exe
 	for j in `otool -L $exe | awk '/(netopt)|(sw)|(Users)/ {print $1}'`; do
 	        install_name_tool -change $j $EXEC_PATH/`basename $j` $exe
@@ -57,8 +66,7 @@ done
 
 
 
-
-cd ../../../../
+cd ../../../../../
 echo Creating disk image
 hdiutil create -srcfolder tmp  -volname GBENCH gbench.dmg
 
