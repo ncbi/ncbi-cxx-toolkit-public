@@ -38,6 +38,8 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/sequence.hpp>
+
+#include <objects/general/Dbtag.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -49,6 +51,7 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/alnmgr/alnmix.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
@@ -89,15 +92,15 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         mix.Add(align);
         mix.Merge(CAlnMix::fGapJoin);
 
-        /// make sure we only have two rows
-        /// anything else represents a mixed-strand case or more than
-        /// two sequences
-        if (mix.GetDenseg().GetIds().size() != 2) {
-            NCBI_THROW(CException, eUnknown,
-                "CreateGeneModelFromAlign(): failed to create consistent alignment");
-        }
-
         ds.Reset(&mix.GetDenseg());
+    }
+
+    /// make sure we only have two rows
+    /// anything else represents a mixed-strand case or more than
+    /// two sequences
+    if (ds->GetIds().size() != 2) {
+        NCBI_THROW(CException, eUnknown,
+            "CreateGeneModelFromAlign(): failed to create consistent alignment");
     }
 
     /// we use CAlnMap, not CAlnVec, to avoid some overhead
@@ -268,8 +271,8 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         ///
         /// create our gene feature
         ///
+        CRef<CSeq_feat> gene_feat;
         if (flags & fCreateGene) {
-            CRef<CSeq_feat> gene_feat;
             if (flags & fPropagateOnly) {
                 //
                 // only create a gene feature if one exists on the mRNA feature
@@ -285,6 +288,16 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     gene_loc.SetInt().SetTo  (new_loc->GetTotalRange().GetTo());
                     gene_loc.SetStrand(sequence::GetStrand(*new_loc, &scope));
                     gene_loc.SetId(sequence::GetId(*new_loc, &scope));
+
+                    if (mrna_feat  &&
+                        !mrna_feat->IsSetDbxref()  &&
+                        gene_feat->IsSetDbxref()) {
+                        ITERATE (CSeq_feat::TDbxref, xref_it, gene_feat->GetDbxref()) {
+                            CRef<CDbtag> tag(new CDbtag);
+                            tag->Assign(**xref_it);
+                            mrna_feat->SetDbxref().push_back(tag);
+                        }
+                    }
                 }
             } else {
                 //
@@ -311,17 +324,39 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
             annot.SetData().SetFtable().push_back(mrna_feat);
         }
 
+        CRef<CSeq_feat> cds_feat;
         if (flags & fCreateCdregion) {
             //
-            // only create a gene feature if one exists on the mRNA feature
+            // only create a CDS feature if one exists on the mRNA feature
             //
             CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
             if (feat_iter  &&  feat_iter.GetSize()) {
-                CRef<CSeq_feat> cds_feat(new CSeq_feat());
+                cds_feat.Reset(new CSeq_feat());
                 cds_feat->Assign(feat_iter->GetOriginalFeature());
                 CRef<CSeq_loc> new_loc =
                     mapper.Map(feat_iter->GetLocation());
                 cds_feat->SetLocation(*new_loc);
+
+                /// copy any existing dbxrefs
+                if (cds_feat  &&
+                    !cds_feat->IsSetDbxref()  &&
+                    gene_feat->IsSetDbxref()) {
+                    ITERATE (CSeq_feat::TDbxref, xref_it, gene_feat->GetDbxref()) {
+                        CRef<CDbtag> tag(new CDbtag);
+                        tag->Assign(**xref_it);
+                        cds_feat->SetDbxref().push_back(tag);
+                    }
+                }
+
+                /// also copy the code break if it exists
+                if (cds_feat->GetData().GetCdregion().IsSetCode_break()) {
+                    CSeqFeatData::TCdregion& cds = cds_feat->SetData().SetCdregion();
+                    NON_CONST_ITERATE(CCdregion::TCode_break, it, cds.SetCode_break()) {
+                        CRef<CSeq_loc> new_cb_loc = mapper.Map((*it)->GetLoc());
+                        (*it)->SetLoc(*new_cb_loc);
+                    }
+                }
+
                 annot.SetData().SetFtable().push_back(cds_feat);
 
                 if (flags & fForceTranslateCds) {
