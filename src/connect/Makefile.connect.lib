@@ -12,4 +12,4 @@ UNIX_SRC = $(LOCAL_LBSM)
 
 LIB      = connect
 
-LIBS     = $(NETWORK_LIBS)
+LIBS     = $(NETWORK_LIBS) $(ORIG_C_LIBS)

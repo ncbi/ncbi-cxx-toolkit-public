@@ -12,4 +12,4 @@ SRC     = $(SRC_CXX)
 
 LIB     = xxconnect
 
-LIBS    = $(NETWORK_LIBS)
+LIBS    = $(NETWORK_LIBS) $(ORIG_LIBS)
