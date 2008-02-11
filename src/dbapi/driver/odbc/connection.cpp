@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 inline
 bool IsBCPCapable(void)
 {
-#ifndef FTDS_IN_USE
+#ifdef FTDS_IN_USE
     return false;
 #else
     return true;
