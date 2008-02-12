@@ -393,9 +393,6 @@ script ProjBuilder
 		set buildSettings to {|PRODUCT_NAME|:fullToolName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot}
 		if toolName is "gbench_plugin_scan" or toolName is "gbench_monitor" or toolName is "gbench_feedback_agent" or toolName is "gbench_cache_agent" then
 			set symRoot to TheOUTPath & "/bin/$(CONFIGURATION)/Genome Workbench.app/Contents/MacOS"
-			if toolName is "gbench_monitor" or toolName is "gbench_feedback_agent" then
-				set symRoot to symRoot & "/bin"
-			end if
 			set |SYMROOT| of buildSettings to symRoot
 			set buildSettings to buildSettings & {|TARGET_BUILD_DIR|:symRoot}
 		end if
