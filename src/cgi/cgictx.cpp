@@ -290,8 +290,21 @@ const string& CCgiContext::GetSelfURL(ESelfUrlPort use_port)
     }
     // (replace adjacent '//' to work around a bug in the "www.ncbi" proxy;
     //  it should not hurt, and may help with similar proxies outside NCBI)
-    m_SelfURL += NStr::Replace
-        (GetRequest().GetProperty(eCgi_ScriptName), "//", "/");
+    string script_uri;
+    string caf = GetRequest().GetRandomProperty("CAF");
+    bool have_script_uri = false;
+    if (!caf.empty()  &&  atoi(caf.c_str()) >= 119289) {
+        script_uri = GetRequest().GetRandomProperty("X_FORWARDED_URI");
+        have_script_uri = !script_uri.empty();
+        size_t arg_pos = script_uri.find('?');
+        if (arg_pos != NPOS) {
+            script_uri = script_uri.substr(0, arg_pos - 1);
+        }
+    }
+    if ( !have_script_uri ) {
+        script_uri = GetRequest().GetProperty(eCgi_ScriptName);
+    }
+    m_SelfURL += NStr::Replace(script_uri, "//", "/");
 
     return m_SelfURL;
 }
