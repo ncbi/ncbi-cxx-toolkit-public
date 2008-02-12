@@ -678,6 +678,7 @@ struct SDiagMessageData
     string m_Client;
     string m_Session;
     string m_AppName;
+    string m_AppState;
 };
 
 
@@ -751,17 +752,18 @@ string CDiagContext::GetStringUID(TUID uid) const
 }
 
 
-const string CDiagContext::x_GetHost(void) const
+const string& CDiagContext::GetHost(void) const
 {
     // Check context properties
-    string ret = GetDiagContext().GetProperty(
+    const string& name_prop = GetDiagContext().GetProperty(
         CDiagContext::kProperty_HostName);
-    if ( !ret.empty() )
-        return ret;
+    if ( !name_prop.empty() )
+        return name_prop;
 
-    ret = GetDiagContext().GetProperty(CDiagContext::kProperty_HostIP);
-    if ( !ret.empty() )
-        return ret;
+    const string& ip_prop =
+        GetDiagContext().GetProperty(CDiagContext::kProperty_HostIP);
+    if ( !ip_prop.empty() )
+        return ip_prop;
 
     if ( m_Host.empty() ) {
 #if defined(NCBI_OS_UNIX)
@@ -790,9 +792,6 @@ const string CDiagContext::x_GetHost(void) const
             m_Host = servaddr;
             return m_Host;
         }
-
-        // Can not get hostname
-        m_Host = "UNK_HOST";
     }
     return m_Host;
 }
@@ -802,7 +801,7 @@ void CDiagContext::x_CreateUID(void) const
 {
     Int8 pid = GetPID();
     time_t t = time(0);
-    string host = x_GetHost();
+    const string& host = GetHost();
     TUID h = 201;
     ITERATE(string, s, host) {
         h = (h*15 + *s) & 0xFFFF;
@@ -856,8 +855,8 @@ void CDiagContext::SetProperty(const string& name,
 }
 
 
-string CDiagContext::GetProperty(const string& name,
-                                 EPropertyMode mode) const
+const string& CDiagContext::GetProperty(const string& name,
+                                        EPropertyMode mode) const
 {
     if (mode == eProp_Thread  ||
         (mode == eProp_Default  &&  !IsGlobalProperty(name))) {
@@ -971,8 +970,6 @@ void CDiagContext_Extra::Flush(void)
         return;
     }
 
-    CDiagContextThreadData& thr_data =
-        CDiagContextThreadData::GetThreadData();
     SDiagMessage mess(eDiag_Info,
                       "", 0, // no message
                       0, 0, // file, line
@@ -980,11 +977,7 @@ void CDiagContext_Extra::Flush(void)
                       NULL,
                       0, 0, // err code/subcode
                       NULL,
-                      0, 0, 0, // module/class/function
-                      ctx.GetPID(), thr_data.GetTID(),
-                      ctx.GetProcessPostNumber(ePostNumber_Increment),
-                      thr_data.GetThreadPostNumber(ePostNumber_Increment),
-                      thr_data.GetRequestId());
+                      0, 0, 0); // module/class/function
     mess.m_Event = SDiagMessage::eEvent_Extra;
     mess.m_ExtraArgs = *m_Args;
     m_Args->clear();
@@ -1110,70 +1103,38 @@ static const int   kDiagW_Session  = 24;
 
 
 void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
-                                  const SDiagMessage* msg) const
+                                  const SDiagMessage& msg) const
 {
     CDiagContextThreadData& thr_data =
         CDiagContextThreadData::GetThreadData();
 
-    SDiagMessage::TPID pid = msg ? msg->m_PID : GetPID();
-    SDiagMessage::TTID tid = msg ? msg->m_TID : thr_data.GetTID();
-    string uid = GetStringUID(msg ? msg->GetUID() : 0);
-    int rid = msg ? msg->m_RequestId : thr_data.GetRequestId();
-    int psn = msg ? msg->m_ProcPost :
-        GetProcessPostNumber(ePostNumber_Increment);
-    int tsn = msg ?
-        msg->m_ThrPost : thr_data.GetThreadPostNumber(ePostNumber_Increment);
-    CTime timestamp = msg ? msg->GetTime() : GetFastLocalTime();
-    string host = x_GetHost();
-    string client = GetProperty(kProperty_ClientIP);
-    string session = GetProperty(kProperty_SessionID);
-    string app = GetProperty(kProperty_AppName);
-    string app_state = (msg  &&  *msg->m_AppState) ? msg->m_AppState
-        : GetProperty(kProperty_AppState);
-    if ( !app_state.empty() ) {
-        app_state = "/" + app_state;
-    }
-
-    if ( msg ) {
-        // When flushing collected messages, m_Messages should be NULL.
-        if ( m_Messages.get() ) {
-            msg->x_SaveProperties(host, client, session, app);
-        }
-        else if ( msg->m_Data ) {
-            // Restore saved properties from the message
-            host = msg->m_Data->m_Host.empty() ?
-                "UNK_HOST" : msg->m_Data->m_Host;
-            client = msg->m_Data->m_Client;
-            session = msg->m_Data->m_Session;
-            app = msg->m_Data->m_AppName;
-        }
-    }
-    if ( client.empty() ) {
-        client = "UNK_CLIENT";
-    }
-    if ( session.empty() ) {
-        session = "UNK_SESSION";
-    }
-    if ( app.empty() ) {
-        app = "UNK_APP";
-    }
+    string uid = GetStringUID(msg.GetUID());
+    const string& host = msg.GetHost();
+    const string& client = msg.GetClient();
+    const string& session = msg.GetSession();
+    const string& app = msg.GetAppName();
+    const string& app_state = msg.GetAppState();
 
     // Print common fields
-    ostr << setfill('0') << setw(kDiagW_PID) << pid << '/'
-         << setw(kDiagW_TID) << tid << '/'
-         << setw(kDiagW_RID) << rid
-         << setfill(' ') << setw(kDiagW_AppState+1) << setiosflags(IOS_BASE::left)
+    ostr << setfill('0') << setw(kDiagW_PID) << msg.m_PID << '/'
+         << setw(kDiagW_TID) << msg.m_TID << '/'
+         << setw(kDiagW_RID) << msg.m_RequestId
+         << (!app_state.empty() ? "/" : "")
+         << setfill(' ') << setw(kDiagW_AppState) << setiosflags(IOS_BASE::left)
          << app_state << resetiosflags(IOS_BASE::left)
          << ' ' << setw(0) << setfill(' ') << uid << ' '
-         << setfill('0') << setw(kDiagW_SN) << psn << '/'
-         << setw(kDiagW_SN) << tsn << ' '
-         << setw(0) << timestamp.AsString(kDiagTimeFormat) << ' '
+         << setfill('0') << setw(kDiagW_SN) << msg.m_ProcPost << '/'
+         << setw(kDiagW_SN) << msg.m_ThrPost << ' '
+         << setw(0) << msg.GetTime().AsString(kDiagTimeFormat) << ' '
          << setfill(' ') << setiosflags(IOS_BASE::left)
-         << setw(kDiagW_Host) << host << ' '
-         << setw(kDiagW_Client) << client << ' '
-         << setw(kDiagW_Session) << session << ' '
+         << setw(kDiagW_Host)
+         << (host.empty() ? "UNK_HOST" : host.c_str()) << ' '
+         << setw(kDiagW_Client)
+         << (client.empty() ? "UNK_CLIENT" : client.c_str()) << ' '
+         << setw(kDiagW_Session)
+         << (session.empty() ? "UNK_SESSION" : session.c_str()) << ' '
          << resetiosflags(IOS_BASE::left) << setw(0)
-         << app << ' ';
+         << (app.empty() ? "UNK_APP" : app.c_str()) << ' ';
 }
 
 
@@ -1274,8 +1235,6 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         }
         ostr << message;
     }
-    CDiagContextThreadData& thr_data =
-        CDiagContextThreadData::GetThreadData();
     SDiagMessage mess(eDiag_Info,
                       ostr.str(), ostr.pcount(),
                       0, 0, // file, line
@@ -1283,11 +1242,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                       NULL,
                       0, 0, // err code/subcode
                       NULL,
-                      0, 0, 0, // module/class/function
-                      GetPID(), thr_data.GetTID(),
-                      GetProcessPostNumber(ePostNumber_Increment),
-                      thr_data.GetThreadPostNumber(ePostNumber_Increment),
-                      thr_data.GetRequestId());
+                      0, 0, 0); // module/class/function
     mess.m_Event = event;
     buf.DiagHandler(mess);
     ostr.rdbuf()->freeze(false);
@@ -1958,12 +1913,7 @@ void CDiagBuffer::Flush(void)
                           NULL,
                           m_Diag->GetModule(),
                           m_Diag->GetClass(),
-                          m_Diag->GetFunction(),
-                          CDiagContext::GetPID(), thr_data.GetTID(),
-                          CDiagContext::GetProcessPostNumber(
-                          ePostNumber_Increment),
-                          thr_data.GetThreadPostNumber(ePostNumber_Increment),
-                          thr_data.GetRequestId());
+                          m_Diag->GetFunction());
         if ( !SeverityPrintable(sev) ) {
             thr_data.CollectDiagMessage(mess);
             Reset(*m_Diag);
@@ -2043,6 +1993,43 @@ void CDiagBuffer::UpdatePrefix(void)
 
 ///////////////////////////////////////////////////////
 //  CDiagMessage::
+
+
+SDiagMessage::SDiagMessage(EDiagSev severity,
+                           const char* buf, size_t len,
+                           const char* file, size_t line,
+                           TDiagPostFlags flags, const char* prefix,
+                           int err_code, int err_subcode,
+                           const char* err_text,
+                           const char* module, 
+                           const char* nclass, 
+                           const char* function)
+    : m_Data(0),
+      m_Format(eFormat_Auto)
+{
+    m_Severity   = severity;
+    m_Buffer     = buf;
+    m_BufferLen  = len;
+    m_File       = file;
+    m_Line       = line;
+    m_Flags      = flags;
+    m_Prefix     = prefix;
+    m_ErrCode    = err_code;
+    m_ErrSubCode = err_subcode;
+    m_ErrText    = err_text;
+    m_Module     = module;
+    m_Class      = nclass;
+    m_Function   = function;
+
+    CDiagContext& ctx = GetDiagContext();
+    CDiagContextThreadData& thr_data =
+        CDiagContextThreadData::GetThreadData();
+    m_PID = ctx.GetPID();
+    m_TID = thr_data.GetTID();
+    m_RequestId = thr_data.GetRequestId();
+    m_ProcPost = ctx.GetProcessPostNumber(ePostNumber_Increment);
+    m_ThrPost = thr_data.GetThreadPostNumber(ePostNumber_Increment);
+}
 
 
 int s_ParseInt(const string& message,
@@ -2135,7 +2122,6 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
     if ( result ) {
         *result = false;
     }
-    memset(m_AppState, 0, 3);
     size_t pos = 0;
     m_Data = new SDiagMessageData;
 
@@ -2144,9 +2130,7 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
         m_PID = s_ParseInt(message, pos, 0, '/');
         m_TID = s_ParseInt(message, pos, 0, '/');
         m_RequestId = s_ParseInt(message, pos, 0, '/');
-        string app_state = s_ParseStr(message, pos, ' ', true);
-        strncpy(m_AppState, app_state.c_str(), 2);
-        m_AppState[2] = '\0';
+        m_Data->m_AppState = s_ParseStr(message, pos, ' ', true);
 
         if (message[pos + kDiagW_UID] != ' ') {
             return;
@@ -2392,6 +2376,11 @@ SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
         m_Format = message.m_Format;
         if ( message.m_Data ) {
             m_Data = new SDiagMessageData(*message.m_Data);
+            m_Data->m_Host = message.m_Data->m_Host;
+            m_Data->m_Client = message.m_Data->m_Client;
+            m_Data->m_Session = message.m_Data->m_Session;
+            m_Data->m_AppName = message.m_Data->m_AppName;
+            m_Data->m_AppState = message.m_Data->m_AppState;
         }
         else {
             m_Data = new SDiagMessageData;
@@ -2429,7 +2418,6 @@ SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
         m_ThrPost = message.m_ThrPost;
         m_RequestId = message.m_RequestId;
         m_Event = message.m_Event;
-        strncpy(m_AppState, message.m_AppState, 3);
 
         m_Buffer = m_Data->m_Message.empty() ? 0 : m_Data->m_Message.c_str();
         m_BufferLen = m_Data->m_Message.empty() ?
@@ -2643,7 +2631,7 @@ string SDiagMessage::FormatExtraMessage(void) const
         "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
         "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
         "+",   "%21", "%22", "%23", "%24", "%25", "%26", "%27",
-        "%28", "%29", "%2A", "%2B", "%2C", "%2D", "%2E", "%2F",
+        "%28", "%29", "%2A", "%2B", "%2C", "%2D", ".", "%2F",
         "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
         "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
         "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
@@ -2849,7 +2837,7 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
                                        TDiagWriteFlags flags) const
 {
     if ((flags & fNoPrefix) == 0) {
-        GetDiagContext().WriteStdPrefix(os, this);
+        GetDiagContext().WriteStdPrefix(os, *this);
     }
 
     // Get error code description
@@ -3010,25 +2998,68 @@ void SDiagMessage::x_InitData(void) const
 }
 
 
-void SDiagMessage::x_SaveProperties(const string& host,
-                                    const string& client,
-                                    const string& session,
-                                    const string& app_name) const
+void SDiagMessage::x_SaveContextData(void) const
 {
+    CDiagContext& ctx = GetDiagContext();
+    if ( m_Data  ||  !ctx.IsCollectingMessages() ) {
+        return;
+    }
     x_InitData();
-    // Do not update properties if already set
-    if ( m_Data->m_Host.empty() ) {
-        m_Data->m_Host = host;
+    m_Data->m_Host = ctx.GetHost();
+    m_Data->m_Client = ctx.GetProperty(CDiagContext::kProperty_ClientIP);
+    m_Data->m_Session = ctx.GetProperty(CDiagContext::kProperty_SessionID);
+    m_Data->m_AppName = ctx.GetProperty(CDiagContext::kProperty_AppName);
+    m_Data->m_AppState = ctx.GetProperty(CDiagContext::kProperty_AppState);
+}
+
+
+const string& SDiagMessage::GetHost(void) const
+{
+    x_SaveContextData();
+    if ( m_Data ) {
+        return m_Data->m_Host;
     }
-    if ( m_Data->m_Client.empty() ) {
-        m_Data->m_Client = client;
+    return GetDiagContext().GetHost();
+}
+
+
+const string& SDiagMessage::GetClient(void) const
+{
+    x_SaveContextData();
+    if ( m_Data ) {
+        return m_Data->m_Client;
     }
-    if ( m_Data->m_Session.empty() ) {
-        m_Data->m_Session = session;
+    return GetDiagContext().GetProperty(CDiagContext::kProperty_ClientIP);
+}
+
+
+const string& SDiagMessage::GetSession(void) const
+{
+    x_SaveContextData();
+    if ( m_Data ) {
+        return m_Data->m_Session;
     }
-    if ( m_Data->m_AppName.empty() ) {
-        m_Data->m_AppName = app_name;
+    return GetDiagContext().GetProperty(CDiagContext::kProperty_SessionID);
+}
+
+
+const string& SDiagMessage::GetAppName(void) const
+{
+    x_SaveContextData();
+    if ( m_Data ) {
+        return m_Data->m_AppName;
     }
+    return GetDiagContext().GetProperty(CDiagContext::kProperty_AppName);
+}
+
+
+const string& SDiagMessage::GetAppState(void) const
+{
+    x_SaveContextData();
+    if ( m_Data ) {
+        return m_Data->m_AppState;
+    }
+    return GetDiagContext().GetProperty(CDiagContext::kProperty_AppState);
 }
 
 

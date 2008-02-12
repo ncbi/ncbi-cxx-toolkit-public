@@ -477,50 +477,6 @@ bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags) {
 }
 
 
-
-///////////////////////////////////////////////////////
-//  CDiagMessage::
-
-inline
-SDiagMessage::SDiagMessage(EDiagSev severity,
-                           const char* buf, size_t len,
-                           const char* file, size_t line,
-                           TDiagPostFlags flags, const char* prefix,
-                           int err_code, int err_subcode,
-                           const char* err_text,
-                           const char* module, 
-                           const char* nclass, 
-                           const char* function,
-                           TPID        pid,
-                           TTID        tid,
-                           int         proc_post,
-                           int         thr_post,
-                           int         iter)
-    : m_Data(0),
-      m_Format(eFormat_Auto)
-{
-    m_Severity   = severity;
-    m_Buffer     = buf;
-    m_BufferLen  = len;
-    m_File       = file;
-    m_Line       = line;
-    m_Flags      = flags;
-    m_Prefix     = prefix;
-    m_ErrCode    = err_code;
-    m_ErrSubCode = err_subcode;
-    m_ErrText    = err_text;
-    m_Module     = module;
-    m_Class      = nclass;
-    m_Function   = function;
-    m_PID        = pid;
-    m_TID        = tid;
-    m_ProcPost   = proc_post;
-    m_ThrPost    = thr_post;
-    m_RequestId  = iter;
-    memset(m_AppState, 0, 3);
-}
-
-
 ///////////////////////////////////////////////////////
 //  CDiagErrCodeInfo::
 

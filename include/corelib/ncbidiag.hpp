@@ -1356,12 +1356,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
                  const char* err_text  = 0,
                  const char* module    = 0,
                  const char* nclass    = 0,
-                 const char* function  = 0,
-                 TPID        pid       = 0,
-                 TTID        tid       = 0,
-                 int         proc_post = 0,
-                 int         thr_post  = 0,
-                 int         iter      = 0);
+                 const char* function  = 0);
 
     /// Copy constructor required to store the messages and flush them when
     /// the diagnostics setup is finished.
@@ -1411,7 +1406,6 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     int              m_ProcPost;   ///< Number of the post in the process
     int              m_ThrPost;    ///< Number of the post in the thread
     int              m_RequestId;  ///< FastCGI iteration or request ID
-    char             m_AppState[3]; ///< Application state (AB|A|AE|RB|R|RE)
 
     /// If the severity is eDPF_AppLog, m_Event contains event type.
     EEventType       m_Event;
@@ -1449,6 +1443,13 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     /// Write to stream.
     CNcbiOstream& Write  (CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
 
+    /// Access to strings stored in SDiagMessageData.
+    const string& GetHost(void) const;
+    const string& GetClient(void) const;
+    const string& GetSession(void) const;
+    const string& GetAppName(void) const;
+    const string& GetAppState(void) const;
+
     /// For compatibility x_Write selects old or new message formatting
     /// depending on DIAG_OLD_POST_FORMAT parameter.
     CNcbiOstream& x_Write(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
@@ -1469,10 +1470,7 @@ private:
     // Initialize data with the current values
     void x_InitData(void) const;
     // Save current context properties
-    void x_SaveProperties(const string& host,
-                          const string& client,
-                          const string& session,
-                          const string& app_name) const;
+    void x_SaveContextData(void) const;
 
     mutable SDiagMessageData* m_Data;
     mutable EFormatFlag       m_Format;
@@ -1681,8 +1679,8 @@ public:
     /// Get application context property by name, return empty string if the
     /// property is not set. If mode is eProp_Default and the property is
     /// not a known one, check thread-local properties first.
-    string GetProperty(const string& name,
-                       EPropertyMode mode = eProp_Default) const;
+    const string& GetProperty(const string& name,
+                              EPropertyMode mode = eProp_Default) const;
 
     /// Delete a property by name. If mode is eProp_Default and the property
     /// is not a known one, check thread-local properties first.
@@ -1776,11 +1774,10 @@ public:
     /// @sa SetDiagUserAndHost
     void SetHostname(const string& hostname);
 
-    /// Write standard prefix to the stream. If SDiagMessage is provided,
-    /// take values from the message (PID/TID/RID etc.), otherwise use
-    /// other sources (e.g. current diag buffer).
+    /// Write standard prefix to the stream. Use values from the message
+    /// (PID/TID/RID etc.).
     void WriteStdPrefix(CNcbiOstream& ostr,
-                        const SDiagMessage* msg) const;
+                        const SDiagMessage& msg) const;
 
     /// Start collecting all messages (the collected messages can be flushed
     /// to a new destination later). Stop collecting messages when max_size
@@ -1793,6 +1790,8 @@ public:
     void FlushMessages(CDiagHandler& handler);
     /// Discard the collected messages without printing them.
     void DiscardMessages(void);
+    /// Check if message collecting is on
+    bool IsCollectingMessages(void) const { return m_Messages.get() != 0; }
 
     /// Get log file truncation flag
     static bool GetLogTruncate(void);
@@ -1815,6 +1814,10 @@ public:
     /// Return process post number (incrementing depends on the flag).
     static int GetProcessPostNumber(EPostNumberIncrement inc);
 
+    /// Get host name. The order is: hostname property, hostIP property,
+    /// uname or COMPUTERNAME, SERVER_ADDR, empty string.
+    const string& GetHost(void) const;
+
     /// Internal function, should be used only by CNcbiApplication.
     static void x_FinalizeSetupDiag(void);
 
@@ -1827,8 +1830,6 @@ private:
     // Write message to the log using current handler
     void x_PrintMessage(SDiagMessage::EEventType event,
                         const string&            message);
-
-    const string x_GetHost(void) const;
 
     typedef map<string, string> TProperties;
     friend void ThreadDataTlsCleanup(CDiagContextThreadData* value,
