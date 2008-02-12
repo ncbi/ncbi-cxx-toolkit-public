@@ -4679,7 +4679,10 @@ void CDBAPIUnitTest::Test_Numeric(void)
                 BOOST_CHECK( !value1.IsNull() );
                 BOOST_CHECK( !value2.IsNull() );
 
-                if (m_args.GetDriverName() == ftds_odbc_driver) {
+                if (m_args.GetDriverName() == ftds_odbc_driver
+                    || m_args.GetDriverName() == odbc_driver
+                    || m_args.GetDriverName() == odbcw_driver
+                    ) {
                     BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value_short);
                     BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value_short);
                 } else {
@@ -4725,7 +4728,10 @@ void CDBAPIUnitTest::Test_Numeric(void)
                 BOOST_CHECK( !value1.IsNull() );
                 BOOST_CHECK( !value2.IsNull() );
 
-                if (m_args.GetDriverName() == ftds_odbc_driver) {
+                if (m_args.GetDriverName() == ftds_odbc_driver
+                    || m_args.GetDriverName() == odbc_driver
+                    || m_args.GetDriverName() == odbcw_driver
+                    ) {
                     BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value_short);
                     BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value_short);
                 } else {
@@ -5999,7 +6005,10 @@ CDBAPIUnitTest::Test_Recordset(void)
                             {
                                 CDB_Numeric* data = static_cast<CDB_Numeric*>(variant.GetData());
 
-                                if (m_args.GetDriverName() == ftds_odbc_driver) {
+                                if (m_args.GetDriverName() == ftds_odbc_driver
+                                    || m_args.GetDriverName() == odbc_driver
+                                    || m_args.GetDriverName() == odbcw_driver
+                                    ) {
                                     BOOST_CHECK_EQUAL(data->Value(), string("2843113322"));
                                 } else {
                                     BOOST_CHECK_EQUAL(data->Value(), string("2843113322.00"));
