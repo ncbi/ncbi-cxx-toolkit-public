@@ -24986,24 +24986,11 @@ else
 fi
 
          X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
-         ogl_lib_sfx=
-         case "${with_opengl:=yes}" in
-            yes)
-               # Check for NCBI's oddly located in-house installations.
-               case "$OSTYPE:$host_cpu:$bit64_sfx" in
-                  solaris:sparc:64)
-                     with_opengl=/usr/ncbi/lib/OpenGL64/openwin
-                     ogl_lib_sfx=/sparcv9
-                     ;;
-                  solaris:i386:) with_opengl=$NCBI/OpenGL ;;
-               esac
-               ;;
-         esac
          if test -d "$with_opengl/include/GL"; then
             X_CFLAGS="-I$with_opengl/include $X_CFLAGS"
          fi
-         if test -d "$with_opengl/lib$ogl_lib_sfx"; then
-            l=$with_opengl/lib$ogl_lib_sfx
+         if test -d "$with_opengl/lib"; then
+            l=$with_opengl/lib
             ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then

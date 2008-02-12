@@ -4142,24 +4142,11 @@ if test "$with_opengl" != "no"; then
          AC_CHECK_LIB(Xmu, XmuMakeAtom, Xmu="-lXmu", Xmu=,
             [$Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
          X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
-         ogl_lib_sfx=
-         case "${with_opengl:=yes}" in
-            yes)
-               # Check for NCBI's oddly located in-house installations.
-               case "$OSTYPE:$host_cpu:$bit64_sfx" in
-                  solaris:sparc:64)
-                     with_opengl=/usr/ncbi/lib/OpenGL64/openwin
-                     ogl_lib_sfx=/sparcv9
-                     ;;
-                  solaris:i386:) with_opengl=$NCBI/OpenGL ;;
-               esac
-               ;;
-         esac
          if test -d "$with_opengl/include/GL"; then
             X_CFLAGS="-I$with_opengl/include $X_CFLAGS"
          fi
-         if test -d "$with_opengl/lib$ogl_lib_sfx"; then
-            l=$with_opengl/lib$ogl_lib_sfx
+         if test -d "$with_opengl/lib"; then
+            l=$with_opengl/lib
             NCBI_RPATHIFY(X_LIBS, $l, [ ]$X_LIBS)
          fi
          LDFLAGS="$orig_LDFLAGS $X_LIBS"
