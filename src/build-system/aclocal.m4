@@ -324,7 +324,7 @@ AC_DEFUN(_NCBI_CHECK_PYTHON,
  fi
  if test -n "[$]$1_VERSION"; then
     $1_INCLUDE=`[$]$1 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
-    $1_LIBPATH=`[$]$1 -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
+    $1_LIBPATH=`[$]$1 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL"))'`
     $1_DEPS=`[$]$1 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
     NCBI_RPATHIFY($1_LIBS, [$]$1_LIBPATH, [ ]-lpython[$]$1_VERSION [$]$1_DEPS)
     CPPFLAGS="[$]$1_INCLUDE $orig_CPPFLAGS"

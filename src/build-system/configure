@@ -22057,7 +22057,7 @@ fi
  fi
  if test -n "$PYTHON_VERSION"; then
     PYTHON_INCLUDE=`$PYTHON -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
-    PYTHON_LIBPATH=`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
+    PYTHON_LIBPATH=`$PYTHON -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL"))'`
     PYTHON_DEPS=`$PYTHON -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
@@ -22207,7 +22207,7 @@ fi
  fi
  if test -n "$PYTHON23_VERSION"; then
     PYTHON23_INCLUDE=`$PYTHON23 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
-    PYTHON23_LIBPATH=`$PYTHON23 -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
+    PYTHON23_LIBPATH=`$PYTHON23 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL"))'`
     PYTHON23_DEPS=`$PYTHON23 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
@@ -22358,7 +22358,7 @@ fi
  fi
  if test -n "$PYTHON24_VERSION"; then
     PYTHON24_INCLUDE=`$PYTHON24 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
-    PYTHON24_LIBPATH=`$PYTHON24 -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
+    PYTHON24_LIBPATH=`$PYTHON24 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL"))'`
     PYTHON24_DEPS=`$PYTHON24 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
@@ -22508,7 +22508,7 @@ fi
  fi
  if test -n "$PYTHON25_VERSION"; then
     PYTHON25_INCLUDE=`$PYTHON25 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
-    PYTHON25_LIBPATH=`$PYTHON25 -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
+    PYTHON25_LIBPATH=`$PYTHON25 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL"))'`
     PYTHON25_DEPS=`$PYTHON25 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
