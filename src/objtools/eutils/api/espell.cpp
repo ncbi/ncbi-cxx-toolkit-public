@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 CESpell_Request::CESpell_Request(const string& db,
                                  CRef<CEUtils_ConnContext>& ctx)
-    : CEUtils_Request(ctx)
+    : CEUtils_Request(ctx, "espell.fcgi")
 {
     SetDatabase(db);
 }
@@ -48,12 +48,6 @@ CESpell_Request::CESpell_Request(const string& db,
 
 CESpell_Request::~CESpell_Request(void)
 {
-}
-
-
-string CESpell_Request::GetScriptName(void) const
-{
-    return "espell.fcgi";
 }
 
 

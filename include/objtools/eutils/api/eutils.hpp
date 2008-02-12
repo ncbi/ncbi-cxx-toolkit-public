@@ -113,11 +113,12 @@ class NCBI_EUTILS_EXPORT CEUtils_Request
 public:
     /// Create request. If the context is NULL, a new empty context will be
     /// created for the request.
-    CEUtils_Request(CRef<CEUtils_ConnContext>& ctx);
+    CEUtils_Request(CRef<CEUtils_ConnContext>& ctx,
+                    const string&              script_name);
     virtual ~CEUtils_Request(void) {}
 
     /// Get CGI script name (e.g. efetch.fcgi).
-    virtual string GetScriptName(void) const { return kEmptyStr; }
+    const string& GetScriptName(void) const { return m_ScriptName; }
 
     /// Get CGI script query string.
     virtual string GetQueryString(void) const;
@@ -165,12 +166,22 @@ public:
     /// Reset requests's query_key, use the one from the connectiono context.
     void ResetQueryKey(void);
 
+    /// Add/change custom argument. Remove the argument if the value is empty.
+    void SetArgument(const string& name, const string& value);
+
+    /// Get argument by name.
+    const string& GetArgument(const string& name) const;
+
 private:
+    typedef map<string, string> TRequestArgs;
+
     mutable CRef<CEUtils_ConnContext> m_Context;
     auto_ptr<CConn_HttpStream>        m_Stream;
 
+    string           m_ScriptName;
     string           m_QueryKey; // empty = use value from ConnContext
     string           m_Database;
+    TRequestArgs     m_Args;     // user-defined arguments
 };
 
 

@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 
 CEFetch_Request::CEFetch_Request(CRef<CEUtils_ConnContext>& ctx)
-    : CEUtils_Request(ctx),
+    : CEUtils_Request(ctx, "efetch.fcgi"),
       m_RetStart(0),
       m_RetMax(0),
       m_RetMode(eRetMode_none)
@@ -59,12 +59,6 @@ const char* CEFetch_Request::x_GetRetModeName(void) const
         "none", "xml", "html", "text", "asn.1"
     };
     return s_RetModeName[m_RetMode];
-}
-
-
-string CEFetch_Request::GetScriptName(void) const
-{
-    return "efetch.fcgi";
 }
 
 
@@ -101,10 +95,11 @@ ESerialDataFormat CEFetch_Request::GetSerialDataFormat(void) const
 }
 
 
-CRef<uilist::CIdList> CEFetch_Request::x_FetchIdList(int chunk_size)
+CRef<uilist::CIdList> CEFetch_Request::FetchIdList(int chunk_size)
 {
     int retstart = GetRetStart();
-    int retmax = GetRetMax();
+    int orig_retmax = GetRetMax();
+    int retmax = orig_retmax > 0 ? orig_retmax : numeric_limits<int>::max();
     if (chunk_size <= 0) {
         chunk_size = retmax;
     }
@@ -114,14 +109,26 @@ CRef<uilist::CIdList> CEFetch_Request::x_FetchIdList(int chunk_size)
     CRef<uilist::CIdList> id_list(new uilist::CIdList);
     uilist::CIdList::TId& ids = id_list->SetId();
     uilist::CIdList tmp;
-    for (int i = retstart; i < retmax; i += chunk_size) {
-        SetRetStart(i);
-        SetRetMax(chunk_size < (retmax - i) ? chunk_size : (retmax - i));
-        *GetObjectIStream() >> tmp;
-        ids.splice(ids.end(), tmp.SetId());
+    try {
+        for (int i = retstart; i < retmax; i += chunk_size) {
+            SetRetStart(i);
+            SetRetMax(chunk_size < (retmax - i) ? chunk_size : (retmax - i));
+            *GetObjectIStream() >> tmp;
+            if ( tmp.SetId().empty() ) {
+                break;
+            }
+            ids.splice(ids.end(), tmp.SetId());
+        }
+    }
+    catch (CSerialException) {
+    }
+    catch (...) {
+        SetRetStart(retstart);
+        SetRetMax(orig_retmax);
+        throw;
     }
     SetRetStart(retstart);
-    SetRetMax(retmax);
+    SetRetMax(orig_retmax);
     return id_list;
 }
 
@@ -164,7 +171,7 @@ CRef<uilist::CIdList>
 CEFetch_Literature_Request::FetchIdList(int chunk_size)
 {
     SetRetType(eRetType_uilist);
-    return x_FetchIdList(chunk_size);
+    return TParent::FetchIdList(chunk_size);
 }
 
 
@@ -258,7 +265,7 @@ CRef<uilist::CIdList>
 CEFetch_Taxonomy_Request::FetchIdList(int chunk_size)
 {
     SetReport(eReport_uilist);
-    return x_FetchIdList(chunk_size);
+    return TParent::FetchIdList(chunk_size);
 }
 
 

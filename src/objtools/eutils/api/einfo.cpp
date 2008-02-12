@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 CEInfo_Request::CEInfo_Request(const string& db,
                                CRef<CEUtils_ConnContext>& ctx)
-    : CEUtils_Request(ctx)
+    : CEUtils_Request(ctx, "einfo.fcgi")
 {
     SetDatabase(db);
 }
@@ -47,12 +47,6 @@ CEInfo_Request::CEInfo_Request(const string& db,
 
 CEInfo_Request::~CEInfo_Request(void)
 {
-}
-
-
-string CEInfo_Request::GetScriptName(void) const
-{
-    return "einfo.fcgi";
 }
 
 

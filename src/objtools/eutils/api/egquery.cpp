@@ -39,19 +39,13 @@ BEGIN_NCBI_SCOPE
 
 
 CEGQuery_Request::CEGQuery_Request(CRef<CEUtils_ConnContext>& ctx)
-    : CEUtils_Request(ctx)
+    : CEUtils_Request(ctx, "egquery.fcgi")
 {
 }
 
 
 CEGQuery_Request::~CEGQuery_Request(void)
 {
-}
-
-
-string CEGQuery_Request::GetScriptName(void) const
-{
-    return "egquery.fcgi";
 }
 
 

@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 CESummary_Request::CESummary_Request(const string& db,
                                      CRef<CEUtils_ConnContext>& ctx)
-    : CEUtils_Request(ctx),
+    : CEUtils_Request(ctx, "esummary.fcgi"),
       m_RetStart(0),
       m_RetMax(0)
 {
@@ -49,12 +49,6 @@ CESummary_Request::CESummary_Request(const string& db,
 
 CESummary_Request::~CESummary_Request(void)
 {
-}
-
-
-string CESummary_Request::GetScriptName(void) const
-{
-    return "esummary.fcgi";
 }
 
 

@@ -62,9 +62,6 @@ public:
     CESpell_Request(const string& db, CRef<CEUtils_ConnContext>& ctx);
     virtual ~CESpell_Request(void);
 
-    /// Get CGI script name (espell.fcgi)
-    virtual string GetScriptName(void) const;
-
     /// Get CGI script query string.
     virtual string GetQueryString(void) const;
 

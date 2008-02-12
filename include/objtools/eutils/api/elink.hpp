@@ -62,9 +62,6 @@ public:
     CELink_Request(const string& db, CRef<CEUtils_ConnContext>& ctx);
     virtual ~CELink_Request(void);
 
-    /// Get CGI script name (elink.fcgi).
-    virtual string GetScriptName(void) const;
-
     /// Get CGI script query string.
     virtual string GetQueryString(void) const;
 

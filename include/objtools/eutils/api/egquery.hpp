@@ -60,9 +60,6 @@ public:
     CEGQuery_Request(CRef<CEUtils_ConnContext>& ctx);
     virtual ~CEGQuery_Request(void);
 
-    /// Get CGI script name (egquery.fcgi).
-    virtual string GetScriptName(void) const;
-
     /// Get CGI script query string.
     virtual string GetQueryString(void) const;
 

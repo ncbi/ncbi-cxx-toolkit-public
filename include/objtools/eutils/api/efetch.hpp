@@ -61,9 +61,6 @@ public:
     CEFetch_Request(CRef<CEUtils_ConnContext>& ctx);
     virtual ~CEFetch_Request(void);
 
-    /// Get CGI script name (efetch.fcgi).
-    virtual string GetScriptName(void) const;
-
     /// Get CGI script query string.
     virtual string GetQueryString(void) const;
 
@@ -96,9 +93,15 @@ public:
     /// Get serial stream format for reading data
     virtual ESerialDataFormat GetSerialDataFormat(void) const;
 
+    /// Get IdList using the currently set DB, WebEnv, retstart, retmax etc.
+    /// Limit number of ids in a single request to chunk_size if it's > 0.
+    /// Stream format is set to XML.
+    /// Data type should be set before calling this method. The method does
+    /// not check returned data type, an exception will be thrown if reading
+    /// fails.
+    virtual CRef<uilist::CIdList> FetchIdList(int chunk_size);
+
 protected:
-    // Fully implemented only for literature and taxonomy databases.
-    CRef<uilist::CIdList> x_FetchIdList(int chunk_size);
 
 private:
     typedef CEUtils_Request TParent;
@@ -154,7 +157,7 @@ public:
     /// The method changes rettype to uilist and retmode to xml, all other
     /// parameters are unchanged.
     /// Limit number of ids in a single request to chunk_size if it's > 0.
-    CRef<uilist::CIdList> FetchIdList(int chunk_size = 10000);
+    virtual CRef<uilist::CIdList> FetchIdList(int chunk_size);
 
 private:
     typedef CEFetch_Request TParent;
@@ -296,10 +299,10 @@ public:
     virtual string GetQueryString(void) const;
 
     /// Get IdList using the currently set DB, WebEnv, retstart, retmax etc.
-    /// The method changes rettype to uilist and retmode to xml, all other
+    /// The method changes report to uilist and retmode to xml, all other
     /// parameters are unchanged.
     /// Limit number of ids in a single request to chunk_size if it's > 0.
-    CRef<uilist::CIdList> FetchIdList(int chunk_size = 10000);
+    virtual CRef<uilist::CIdList> FetchIdList(int chunk_size);
 
 private:
     typedef CEFetch_Request TParent;

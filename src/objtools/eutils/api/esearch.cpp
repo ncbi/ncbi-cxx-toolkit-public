@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 CESearch_Request::CESearch_Request(const string& db,
                                    CRef<CEUtils_ConnContext>& ctx)
-    : CEUtils_Request(ctx),
+    : CEUtils_Request(ctx, "esearch.fcgi"),
       m_UseHistory(true),
       m_RelDate(0),
       m_RetStart(0),
@@ -54,12 +54,6 @@ CESearch_Request::CESearch_Request(const string& db,
 
 CESearch_Request::~CESearch_Request(void)
 {
-}
-
-
-string CESearch_Request::GetScriptName(void) const
-{
-    return "esearch.fcgi";
 }
 
 

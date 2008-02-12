@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 CEPost_Request::CEPost_Request(const string& db,
                                CRef<CEUtils_ConnContext>& ctx)
-    : CEUtils_Request(ctx)
+    : CEUtils_Request(ctx, "epost.fcgi")
 {
     SetDatabase(db);
 }
@@ -48,12 +48,6 @@ CEPost_Request::CEPost_Request(const string& db,
 
 CEPost_Request::~CEPost_Request(void)
 {
-}
-
-
-string CEPost_Request::GetScriptName(void) const
-{
-    return "epost.fcgi";
 }
 
 

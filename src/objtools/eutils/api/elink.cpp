@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 CELink_Request::CELink_Request(const string& db,
                                CRef<CEUtils_ConnContext>& ctx)
-    : CEUtils_Request(ctx),
+    : CEUtils_Request(ctx, "elink.fcgi"),
       m_RelDate(0),
       m_RetMode(eRetMode_none),
       m_Cmd(eCmd_none)
@@ -51,12 +51,6 @@ CELink_Request::CELink_Request(const string& db,
 
 CELink_Request::~CELink_Request(void)
 {
-}
-
-
-string CELink_Request::GetScriptName(void) const
-{
-    return "elink.fcgi";
 }
 
 

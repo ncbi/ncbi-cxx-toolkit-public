@@ -40,9 +40,11 @@
 BEGIN_NCBI_SCOPE
 
 
-CEUtils_Request::CEUtils_Request(CRef<CEUtils_ConnContext>& ctx)
+CEUtils_Request::CEUtils_Request(CRef<CEUtils_ConnContext>& ctx,
+                                 const string& script_name)
     : m_Context(ctx),
-      m_Stream(0)
+      m_Stream(0),
+      m_ScriptName(script_name)
 {
 }
 
@@ -87,6 +89,26 @@ void CEUtils_Request::Connect(void)
 }
 
 
+void CEUtils_Request::SetArgument(const string& name, const string& value)
+{
+    if ( value.empty() ) {
+        TRequestArgs::iterator it = m_Args.find(name);
+        if (it != m_Args.end()) {
+            m_Args.erase(it);
+            return;
+        }
+    }
+    m_Args[name] = value;
+}
+
+
+const string& CEUtils_Request::GetArgument(const string& name) const
+{
+    TRequestArgs::const_iterator it = m_Args.find(name);
+    return (it != m_Args.end()) ? it->second : kEmptyStr;
+}
+
+
 string CEUtils_Request::GetQueryString(void) const
 {
     string args = "db=" + m_Database;
@@ -108,6 +130,10 @@ string CEUtils_Request::GetQueryString(void) const
     if ( !email.empty() ) {
         args += "&email=" +
             URL_EncodeString(email, eUrlEncode_ProcessMarkChars);
+    }
+    ITERATE(TRequestArgs, it, m_Args) {
+        args += "&" + it->first + "=" +
+            URL_EncodeString(it->second, eUrlEncode_ProcessMarkChars);
     }
     return args;
 }

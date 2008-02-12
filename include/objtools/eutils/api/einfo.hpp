@@ -61,9 +61,6 @@ public:
     CEInfo_Request(const string& db, CRef<CEUtils_ConnContext>& ctx);
     virtual ~CEInfo_Request(void);
 
-    /// Get CGI script name (einfo.fcgi).
-    virtual string GetScriptName(void) const;
-
     /// Get serial stream format for reading data.
     virtual ESerialDataFormat GetSerialDataFormat(void) const;
 
