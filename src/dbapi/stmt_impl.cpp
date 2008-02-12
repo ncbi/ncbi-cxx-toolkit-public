@@ -205,6 +205,7 @@ void CStatement::ExecuteLast()
     ParamList::iterator i = m_params.begin();
     for( ; i != m_params.end(); ++i ) {
         GetLangCmd()->GetBindParams().Bind((*i).first, (*i).second->GetData());
+        // GetLangCmd()->GetBindParams().Set((*i).first, (*i).second->GetData());
     }
 
     m_cmd->Send();

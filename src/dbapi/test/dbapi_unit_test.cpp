@@ -4693,18 +4693,43 @@ void CDBAPIUnitTest::Test_Numeric(void)
 
             // Insert data using parameters ...
             {
-                const CVariant value1(static_cast<double>(value));
-                const CVariant value2(static_cast<double>(value));
+                CVariant value1(eDB_Double);
+                CVariant value2(eDB_Double);
 
                 auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name );
-
-                auto_stmt->SetParam( value1, "@value1" );
-                auto_stmt->SetParam( value2, "@value2" );
 
                 sql = "INSERT INTO " + table_name + "(num_field1, num_field2) "
                     "VALUES(@value1, @value2)";
 
-                auto_stmt->ExecuteUpdate( sql );
+                // 
+                {
+                    //
+                    value1 = static_cast<double>(value);
+                    value2 = static_cast<double>(value);
+
+                    auto_stmt->SetParam( value1, "@value1" );
+                    auto_stmt->SetParam( value2, "@value2" );
+
+                    auto_stmt->ExecuteUpdate( sql );
+
+                    //
+                    value1 = 98.79;
+                    value2 = 98.79;
+
+                    auto_stmt->SetParam( value1, "@value1" );
+                    auto_stmt->SetParam( value2, "@value2" );
+
+                    auto_stmt->ExecuteUpdate( sql );
+
+                    //
+                    value1 = 1.21;
+                    value2 = 1.21;
+
+                    auto_stmt->SetParam( value1, "@value1" );
+                    auto_stmt->SetParam( value2, "@value2" );
+
+                    auto_stmt->ExecuteUpdate( sql );
+                }
                 
                 // ClearParamList is necessary here ...
                 auto_stmt->ClearParamList();
@@ -4712,7 +4737,8 @@ void CDBAPIUnitTest::Test_Numeric(void)
 
             // Retrieve data again ...
             {
-                sql = "SELECT num_field1, num_field2 FROM " + table_name;
+                sql = "SELECT num_field1, num_field2 FROM " + table_name +
+                    " ORDER BY id";
 
                 auto_stmt->SendSql( sql );
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
@@ -4720,23 +4746,69 @@ void CDBAPIUnitTest::Test_Numeric(void)
                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
                 BOOST_CHECK( rs.get() != NULL );
-                BOOST_CHECK( rs->Next() );
 
-                const CVariant& value1 = rs->GetVariant(1);
-                const CVariant& value2 = rs->GetVariant(2);
+                //
+                {
+                    BOOST_CHECK( rs->Next() );
 
-                BOOST_CHECK( !value1.IsNull() );
-                BOOST_CHECK( !value2.IsNull() );
+                    const CVariant& value1 = rs->GetVariant(1);
+                    const CVariant& value2 = rs->GetVariant(2);
 
-                if (m_args.GetDriverName() == ftds_odbc_driver
-                    || m_args.GetDriverName() == odbc_driver
-                    || m_args.GetDriverName() == odbcw_driver
-                    ) {
-                    BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value_short);
-                    BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value_short);
-                } else {
-                    BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value);
-                    BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value);
+                    BOOST_CHECK( !value1.IsNull() );
+                    BOOST_CHECK( !value2.IsNull() );
+
+                    if (m_args.GetDriverName() == ftds_odbc_driver
+                        || m_args.GetDriverName() == odbc_driver
+                        || m_args.GetDriverName() == odbcw_driver
+                       ) {
+                        BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value_short);
+                        BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value_short);
+                    } else {
+                        BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value);
+                        BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value);
+                    }
+                }
+
+                //
+                {
+                    BOOST_CHECK( rs->Next() );
+
+                    const CVariant& value1 = rs->GetVariant(1);
+                    const CVariant& value2 = rs->GetVariant(2);
+
+                    BOOST_CHECK( !value1.IsNull() );
+                    BOOST_CHECK( !value2.IsNull() );
+
+                    if (m_args.GetDriverName() != ftds_odbc_driver
+                        && m_args.GetDriverName() != odbc_driver
+                        && m_args.GetDriverName() != odbcw_driver
+                       ) {
+                        BOOST_CHECK_EQUAL(value1.GetNumeric(), "98.79");
+                        BOOST_CHECK_EQUAL(value2.GetNumeric(), "98.79");
+                    } else {
+                        PutMsgDisabled("Test_Numeric - part 2");
+                    }
+                }
+
+                //
+                {
+                    BOOST_CHECK( rs->Next() );
+
+                    const CVariant& value1 = rs->GetVariant(1);
+                    const CVariant& value2 = rs->GetVariant(2);
+
+                    BOOST_CHECK( !value1.IsNull() );
+                    BOOST_CHECK( !value2.IsNull() );
+
+                    if (m_args.GetDriverName() != ftds_odbc_driver
+                        && m_args.GetDriverName() != odbc_driver
+                        && m_args.GetDriverName() != odbcw_driver
+                       ) {
+                        BOOST_CHECK_EQUAL(value1.GetNumeric(), "1.21");
+                        BOOST_CHECK_EQUAL(value2.GetNumeric(), "1.21");
+                    } else {
+                        PutMsgDisabled("Test_Numeric - part 3");
+                    }
                 }
             }
         }
