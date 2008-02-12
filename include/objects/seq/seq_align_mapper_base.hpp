@@ -45,6 +45,8 @@ BEGIN_SCOPE(objects)
 class CDense_seg;
 class CPacked_seg;
 class CSeq_align_set;
+class CSpliced_seg;
+class CSparse_seg;
 class CMappingRange;
 class CSeq_loc_Mapper_Base;
 
@@ -64,6 +66,7 @@ struct NCBI_SEQ_EXPORT SAlignment_Segment
         ENa_strand     m_Strand;
         int            m_Width; ///< not stored in ASN.1, width of a character
         bool           m_Mapped;
+        int            m_Frame;
     };
     typedef vector<SAlignment_Row> TRows;
 
@@ -76,13 +79,15 @@ struct NCBI_SEQ_EXPORT SAlignment_Segment
                            int            start,
                            bool           is_set_strand,
                            ENa_strand     strand,
-                           int            width);
+                           int            width,
+                           int            frame);
     SAlignment_Row& AddRow(size_t                idx,
                            const CSeq_id_Handle& id,
                            int                   start,
                            bool                  is_set_strand,
                            ENa_strand            strand,
-                           int                   width);
+                           int                   width,
+                           int                   frame);
 
     typedef vector< CRef<CScore> >     TScores;
 
@@ -146,6 +151,8 @@ private:
     void x_Init(const TStd& sseg);
     void x_Init(const CPacked_seg& pseg);
     void x_Init(const CSeq_align_set& align_set);
+    void x_Init(const CSpliced_seg& spliced);
+    void x_Init(const CSparse_seg& sparse);
 
     // Mapping through CSeq_loc_Mapper
     void x_ConvertAlign(CSeq_loc_Mapper_Base& mapper, size_t* row);
@@ -163,6 +170,9 @@ private:
     void x_GetDstStd(CRef<CSeq_align>& dst) const;
     void x_GetDstPacked(CRef<CSeq_align>& dst) const;
     void x_GetDstDisc(CRef<CSeq_align>& dst) const;
+    void x_GetDstSpliced(CRef<CSeq_align>& dst) const;
+    void x_GetDstSparse(CRef<CSeq_align>& dst) const;
+
     // Special case: have to convert multi-id alignments to disc.
     void x_ConvToDstDisc(CRef<CSeq_align>& dst) const;
     int x_GetPartialDenseg(CRef<CSeq_align>& dst,

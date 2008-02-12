@@ -59,6 +59,8 @@ class CPacked_seqpnt;
 class CDense_seg;
 class CDense_diag;
 class CPacked_seg;
+class CSpliced_seg;
+class CSparse_seg;
 
 class COneSeqRange
 {
@@ -135,7 +137,8 @@ public:
     void Add(const CDense_seg& denseg);
     void Add(const CDense_diag& diag);
     void Add(const CPacked_seg& packed);
-
+    void Add(const CSpliced_seg& spliced);
+    void Add(const CSparse_seg& sparse);
 
 private:
     TRanges m_Ranges;

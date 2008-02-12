@@ -193,7 +193,9 @@ public:
     enum EMapOptions {
         //< ignore internal dense-seg structure - map each
         //< dense-seg according to the total ranges involved
-        fAlign_Dense_seg_TotalRange = 0x01
+        fAlign_Dense_seg_TotalRange = 0x01,
+        fAlign_Sparse_ToFirst       = 0x00, ///< map to first-id
+        fAlign_Sparse_ToSecond      = 0x02  ///< map to second-id
     };
     typedef int TMapOptions;
 
@@ -219,6 +221,9 @@ public:
     CSeq_loc_Mapper_Base(const CSeq_align& map_align,
                          const CSeq_id&    to_id,
                          TMapOptions       opts = 0);
+    /// Sparse alignments require special row indexing since each
+    /// row contains two seq-ids. Use options to specify mapping
+    /// direction.
     CSeq_loc_Mapper_Base(const CSeq_align& map_align,
                          size_t            to_row,
                          TMapOptions       opts = 0);
@@ -389,6 +394,11 @@ private:
                      TMapOptions opts);
     void x_InitAlign(const CStd_seg& sseg, size_t to_row);
     void x_InitAlign(const CPacked_seg& pseg, size_t to_row);
+    void x_InitSpliced(const CSpliced_seg& spliced,
+                       const CSeq_id&      to_id);
+    void x_InitSpliced(const CSpliced_seg& spliced, int to_row);
+    void x_InitSparse(const CSparse_seg& sparse, int to_row,
+                      TMapOptions opts);
 
     bool x_MapNextRange(const TRange&     src_rg,
                         bool              is_set_strand,

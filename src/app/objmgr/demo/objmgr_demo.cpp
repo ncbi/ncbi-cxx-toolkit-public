@@ -81,6 +81,10 @@
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
+#include <objtools/alnmgr/aln_converters.hpp>
+#include <objtools/alnmgr/aln_seqid.hpp>
+#include <objtools/alnmgr/pairwise_aln.hpp>
+
 #ifdef HAVE_BDB
 #  define HAVE_LDS 1
 #elif defined(HAVE_LDS)
@@ -428,7 +432,6 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const vector<char>& v)
 
 int CDemoApp::Run(void)
 {
-    //SetDiagPostLevel(eDiag_Warning);
     // Process command line args: get GI to load
     const CArgs& args = GetArgs();
 
@@ -619,6 +622,25 @@ int CDemoApp::Run(void)
     CScope scope(*pOm);
     // Add default loaders (GB loader in this demo) to the scope.
     scope.AddDefaults();
+
+    {{
+        CNcbiIfstream in("sparse_test.asn");
+        CSeq_loc loc1, loc2;
+        CSeq_align aln;
+        in >> MSerial_AsnText >> loc1;
+        in >> MSerial_AsnText >> loc2;
+        in >> MSerial_AsnText >> aln;
+        //CSeq_loc_Mapper mapper1(aln, 0, &scope, CSeq_loc_Mapper::fAlign_Sparse_ToFirst);
+        //CSeq_loc_Mapper mapper2(aln, 0, &scope, CSeq_loc_Mapper::fAlign_Sparse_ToSecond);
+        //CRef<CSeq_loc> loc1m = mapper1.Map(loc1);
+        //CRef<CSeq_loc> loc2m = mapper2.Map(loc2);
+        //cout << MSerial_AsnText << *loc1m;
+        //cout << MSerial_AsnText << *loc2m;
+        CSeq_loc_Mapper mapper(loc1, loc2, &scope);
+        CRef<CSeq_align> aln2 = mapper.Map(aln);
+        cout << MSerial_AsnText << *aln2;
+        return 0;
+    }}
 
     CSeq_entry_Handle added_entry;
     CSeq_annot_Handle added_annot;
@@ -1459,7 +1481,6 @@ int CDemoApp::Run(void)
 
 
 END_NCBI_SCOPE
-
 
 
 /////////////////////////////////////////////////////////////////////////////

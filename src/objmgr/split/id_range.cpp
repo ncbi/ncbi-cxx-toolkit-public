@@ -43,6 +43,12 @@
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Packed_seg.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Sparse_seg.hpp>
+#include <objects/seqalign/Sparse_align.hpp>
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Prot_pos.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 
 
@@ -237,6 +243,9 @@ void CSeqsRange::Add(const CSeq_align& obj)
             Add(**it);
         }
         break;
+    case CSeq_align::C_Segs::e_Spliced:
+        Add(segs.GetSpliced());
+        break;
     default:
         break;
     }
@@ -322,6 +331,79 @@ void CSeqsRange::Add(const CPacked_seg& packed)
                 ++it_start;
             }
         }
+    }
+}
+
+
+void CSeqsRange::Add(const CSpliced_seg& spliced)
+{
+    const CSeq_id* gen_id = spliced.IsSetGenomic_id() ?
+        &spliced.GetGenomic_id() : 0;
+    const CSeq_id* prod_id = spliced.IsSetProduct_id() ?
+        &spliced.GetProduct_id() : 0;
+    ITERATE ( CSpliced_seg::TExons, it, spliced.GetExons() ) {
+        const CSpliced_exon& ex = **it;
+        const CSeq_id* ex_gen_id = ex.IsSetGenomic_id() ?
+            &ex.GetGenomic_id() : gen_id;
+        if ( ex_gen_id ) {
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*ex_gen_id);
+            m_Ranges[idh].Add(ex.GetGenomic_start(), ex.GetGenomic_end());
+        }
+        const CSeq_id* ex_prod_id = ex.IsSetProduct_id() ?
+            &ex.GetProduct_id() : prod_id;
+        if ( ex_prod_id ) {
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*ex_prod_id);
+            m_Ranges[idh].Add(ex.GetProduct_start().IsNucpos() ?
+                ex.GetProduct_start().GetNucpos()
+                : ex.GetProduct_start().GetProtpos().GetAmin(),
+                ex.GetProduct_end().IsNucpos() ?
+                ex.GetProduct_end().GetNucpos()
+                : ex.GetProduct_end().GetProtpos().GetAmin());
+        }
+    }
+}
+
+
+void CSeqsRange::Add(const CSparse_seg& sparse)
+{
+    size_t dim = sparse.GetRows().size();
+    size_t row = 0;
+    ITERATE ( CSparse_seg::TRows, it, sparse.GetRows() ) {
+        const CSparse_align& aln_row = **it;
+        size_t numseg = aln_row.GetNumseg();
+        if (numseg != aln_row.GetFirst_starts().size()) {
+            ERR_POST_X(6, Warning <<
+                "Invalid size of 'first-starts' in sparse-align");
+            numseg = min(numseg, aln_row.GetFirst_starts().size());
+        }
+        if (numseg != aln_row.GetSecond_starts().size()) {
+            ERR_POST_X(7, Warning <<
+                "Invalid size of 'second-starts' in sparse-align");
+            numseg = min(numseg, aln_row.GetSecond_starts().size());
+        }
+        if (numseg != aln_row.GetLens().size()) {
+            ERR_POST_X(8, Warning <<
+                "Invalid size of 'lens' in sparse-align");
+            numseg = min(numseg, aln_row.GetLens().size());
+        }
+        if (aln_row.IsSetSecond_strands()  &&
+            numseg != aln_row.GetSecond_strands().size()) {
+            ERR_POST_X(9, Warning <<
+                "Invalid size of 'second-strands' in sparse-align");
+            numseg = min(numseg, aln_row.GetSecond_strands().size());
+        }
+
+        for (int seg = 0; seg < seg; ++seg) {
+            TSeqPos len = aln_row.GetLens()[seg];
+            CSeq_id_Handle idh =
+                CSeq_id_Handle::GetHandle(aln_row.GetFirst_id());
+            m_Ranges[idh].Add(aln_row.GetFirst_starts()[seg],
+                aln_row.GetFirst_starts()[seg] + len - 1);
+            idh = CSeq_id_Handle::GetHandle(aln_row.GetSecond_id());
+            m_Ranges[idh].Add(aln_row.GetSecond_starts()[seg],
+                aln_row.GetSecond_starts()[seg] + len - 1);
+        }
+        row++;
     }
 }
 

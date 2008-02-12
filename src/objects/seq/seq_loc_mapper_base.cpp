@@ -596,6 +596,27 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
             }
             break;
         }
+    case CSeq_align::C_Segs::e_Spliced:
+        {
+            x_InitSpliced(map_align.GetSegs().GetSpliced(), to_id);
+            break;
+        }
+    case CSeq_align::C_Segs::e_Sparse:
+        {
+            const CSparse_seg& sparse = map_align.GetSegs().GetSparse();
+            size_t row = 0;
+            ITERATE(CSparse_seg::TRows, it, sparse.GetRows()) {
+                // Prefer to map from second to first subrow if their
+                // IDs are the same.
+                if ((*it)->GetFirst_id().Equals(to_id)) {
+                    x_InitSparse(sparse, row, fAlign_Sparse_ToFirst);
+                }
+                else if ((*it)->GetSecond_id().Equals(to_id)) {
+                    x_InitSparse(sparse, row, fAlign_Sparse_ToSecond);
+                }
+            }
+            break;
+        }
     default:
         NCBI_THROW(CAnnotMapperException, eBadAlignment,
                    "Unsupported alignment type");
@@ -643,6 +664,22 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
             ITERATE(CSeq_align_set::Tdata, aln, aln_set.Get()) {
                 x_InitializeAlign(**aln, to_row, opts);
             }
+            break;
+        }
+    case CSeq_align::C_Segs::e_Spliced:
+        {
+            if (to_row == 0  ||  to_row == 1) {
+                x_InitSpliced(map_align.GetSegs().GetSpliced(), to_row);
+            }
+            else {
+                NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                    "Invalid row number in spliced-seg alignment");
+            }
+            break;
+        }
+    case CSeq_align::C_Segs::e_Sparse:
+        {
+            x_InitSparse(map_align.GetSegs().GetSparse(), to_row, opts);
             break;
         }
     default:
@@ -909,6 +946,208 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
                 0, 0, src_width_rel);
             _ASSERT(!src_len  &&  !dst_len);
         }
+    }
+}
+
+
+void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
+                                         const CSeq_id&      to_id)
+{
+    // Assume the same ID can not be used in both genomic and product rows,
+    // try find the correct row.
+    if (spliced.IsSetGenomic_id()  &&  spliced.GetGenomic_id().Equals(to_id)) {
+        x_InitSpliced(spliced, 0);
+        return;
+    }
+    if (spliced.IsSetProduct_id()  &&  spliced.GetProduct_id().Equals(to_id)) {
+        x_InitSpliced(spliced, 1);
+        return;
+    }
+    // Global IDs are not set or not equal to to_id
+    ITERATE(CSpliced_seg::TExons, it, spliced.GetExons()) {
+        const CSpliced_exon& ex = **it;
+        if (ex.IsSetGenomic_id()  &&  ex.GetGenomic_id().Equals(to_id)) {
+            x_InitSpliced(spliced, 0);
+            return;
+        }
+        if (ex.IsSetProduct_id()  &&  ex.GetProduct_id().Equals(to_id)) {
+            x_InitSpliced(spliced, 1);
+            return;
+        }
+    }
+}
+
+
+void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
+                                         int                 to_row)
+{
+    bool have_gen_strand = spliced.IsSetGenomic_strand();
+    ENa_strand gen_strand = have_gen_strand ?
+        spliced.GetGenomic_strand() : eNa_strand_unknown;
+    bool have_prod_strand = spliced.IsSetProduct_strand();
+    ENa_strand prod_strand = have_prod_strand ?
+        spliced.GetProduct_strand() : eNa_strand_unknown;
+
+    const CSeq_id* gen_id = spliced.IsSetGenomic_id() ?
+        &spliced.GetGenomic_id() : 0;
+    const CSeq_id* prod_id = spliced.IsSetProduct_id() ?
+        &spliced.GetProduct_id() : 0;
+
+    int src_width;
+    switch ( spliced.GetProduct_type() ) {
+    case CSpliced_seg::eProduct_type_protein:
+        if ( to_row == 1 ) {
+            src_width = 3;
+            m_Dst_width = 1;
+        }
+        else {
+            src_width = 1;
+            m_Dst_width = 3;
+        }
+        m_UseWidth = true;
+        break;
+    case CSpliced_seg::eProduct_type_transcript:
+        src_width = 1;
+        m_Dst_width = 1;
+        m_UseWidth = false;
+        break;
+    default:
+        ERR_POST_X(14, Error << "Unknown product type in spliced-seg");
+        return;
+    }
+    int dst_width = m_UseWidth ? m_Dst_width : 1;
+
+    ITERATE(CSpliced_seg::TExons, it, spliced.GetExons()) {
+        const CSpliced_exon& ex = **it;
+        const CSeq_id* ex_gen_id = ex.IsSetGenomic_id() ?
+            &ex.GetGenomic_id() : gen_id;
+        const CSeq_id* ex_prod_id = ex.IsSetProduct_id() ?
+            &ex.GetProduct_id() : prod_id;
+        if (!ex_gen_id  ||  !ex_prod_id) {
+            ERR_POST_X(15, Error << "Missing id in spliced-exon");
+            continue;
+        }
+        ENa_strand ex_gen_strand = ex.IsSetGenomic_strand() ?
+            ex.GetGenomic_strand() : gen_strand;
+        ENa_strand ex_prod_strand = ex.IsSetProduct_strand() ?
+            ex.GetProduct_strand() : prod_strand;
+        TSeqPos gen_from = ex.GetGenomic_start();
+        TSeqPos gen_to = ex.GetGenomic_end();
+        TSeqPos prod_from, prod_to;
+        if (m_UseWidth != ex.GetProduct_start().IsProtpos()  ||
+            m_UseWidth != ex.GetProduct_end().IsProtpos()) {
+            ERR_POST_X(16, Error <<
+                "Invalid product position type in spliced-exon");
+            continue;
+        }
+        if ( m_UseWidth ) {
+            const CProt_pos& from_pos = ex.GetProduct_start().GetProtpos();
+            const CProt_pos& to_pos = ex.GetProduct_end().GetProtpos();
+            prod_from = from_pos.GetAmin()*3;
+            if ( from_pos.GetFrame() ) {
+                prod_from += from_pos.GetFrame() - 1;
+            }
+            prod_to = to_pos.GetAmin()*3;
+            if ( to_pos.GetFrame() ) {
+                prod_to += to_pos.GetFrame() - 1;
+            }
+        }
+        else {
+            prod_from = ex.GetProduct_start().IsNucpos() ?
+                ex.GetProduct_start().GetNucpos()
+                : ex.GetProduct_start().GetProtpos().GetAmin();
+            prod_to = ex.GetProduct_end().IsNucpos() ?
+                ex.GetProduct_end().GetNucpos()
+                : ex.GetProduct_end().GetProtpos().GetAmin();
+        }
+        TSeqPos gen_len = gen_to - gen_from + 1;
+        TSeqPos prod_len = prod_to - prod_from + 1;
+        if ( to_row == 1 ) {
+            x_NextMappingRange(
+                *ex_gen_id, gen_from, gen_len, ex_gen_strand,
+                *ex_prod_id, prod_from, prod_len, prod_strand,
+                0, 0, src_width);
+        }
+        else {
+            x_NextMappingRange(
+                *ex_prod_id, prod_from, prod_len, ex_prod_strand,
+                *ex_gen_id, gen_from, gen_len, gen_strand,
+                0, 0, src_width);
+        }
+        if (gen_len  ||  prod_len) {
+            ERR_POST_X(17, Error <<
+                "Genomic vs product length mismatch in spliced-exon");
+        }
+    }
+}
+
+
+void CSeq_loc_Mapper_Base::x_InitSparse(const CSparse_seg& sparse,
+                                        int to_row,
+                                        TMapOptions opts)
+{
+    _ASSERT(size_t(to_row) < sparse.GetRows().size());
+    const CSparse_align& row = *sparse.GetRows()[to_row];
+    bool to_second = (opts & fAlign_Sparse_ToSecond) != 0;
+
+    size_t numseg = row.GetNumseg();
+    // claimed dimension may not be accurate :-/
+    if (numseg != row.GetFirst_starts().size()) {
+        ERR_POST_X(18, Warning <<
+            "Invalid 'first-starts' size in sparse-align");
+        numseg = min(numseg, row.GetFirst_starts().size());
+    }
+    if (numseg != row.GetSecond_starts().size()) {
+        ERR_POST_X(19, Warning <<
+            "Invalid 'second-starts' size in sparse-align");
+        numseg = min(numseg, row.GetSecond_starts().size());
+    }
+    if (numseg != row.GetLens().size()) {
+        ERR_POST_X(20, Warning << "Invalid 'lens' size in sparse-align");
+        numseg = min(numseg, row.GetLens().size());
+    }
+    bool have_strands = row.IsSetSecond_strands();
+    if (have_strands  &&  numseg != row.GetSecond_strands().size()) {
+        ERR_POST_X(21, Warning <<
+            "Invalid 'second-strands' size in sparse-align");
+        numseg = min(numseg, row.GetSecond_strands().size());
+    }
+
+    const CSeq_id& first_id = row.GetFirst_id();
+    const CSeq_id& second_id = row.GetSecond_id();
+
+    // Destination width must be checked first
+    m_Dst_width = CheckSeqWidth(to_second ? second_id : first_id, m_Dst_width);
+    int src_width = CheckSeqWidth(to_second ? first_id : second_id, 0);
+    int first_width = to_second ? src_width : m_Dst_width;
+    int second_width = to_second ? m_Dst_width : src_width;
+    // Always use widths because another pair of rows may have different widths
+    m_UseWidth = true;
+
+    const CSparse_align::TFirst_starts& first_starts = row.GetFirst_starts();
+    const CSparse_align::TSecond_starts& second_starts = row.GetSecond_starts();
+    const CSparse_align::TLens& lens = row.GetLens();
+    const CSparse_align::TSecond_strands& strands = row.GetSecond_strands();
+
+    for (size_t i = 0; i < numseg; i++) {
+        TSeqPos first_start = first_starts[i]*second_width;
+        TSeqPos second_start = second_starts[i]*first_width;
+        TSeqPos first_len = lens[i]*first_width*second_width;
+        TSeqPos second_len = first_len;
+        ENa_strand strand = have_strands ? strands[i] : eNa_strand_unknown;
+        if ( to_second ) {
+            x_NextMappingRange(
+                first_id, first_start, first_len, eNa_strand_unknown,
+                second_id, second_start, second_len, strand,
+                0, 0, src_width);
+        }
+        else {
+            x_NextMappingRange(
+                second_id, second_start, second_len, strand,
+                first_id, first_start, first_len, eNa_strand_unknown,
+                0, 0, src_width);
+        }
+        _ASSERT(!first_len  &&  !second_len);
     }
 }
 

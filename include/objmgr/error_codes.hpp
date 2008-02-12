@@ -48,11 +48,11 @@ NCBI_DEFINE_ERRCODE_X(ObjMgr_ScopeTrans,   1203,  8);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_SeqAnnot,     1204,  7);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_TSEinfo,      1205,  3);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_DataSource,   1206,  3);
-NCBI_DEFINE_ERRCODE_X(ObjMgr_AnnotObject,  1207,  8);
+NCBI_DEFINE_ERRCODE_X(ObjMgr_AnnotObject,  1207,  12);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_AnnotCollect, 1208,  1);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_Sniffer,      1209,  5);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_SeqUtil,      1210,  9);
-NCBI_DEFINE_ERRCODE_X(ObjMgr_IdRange,      1211,  5);
+NCBI_DEFINE_ERRCODE_X(ObjMgr_IdRange,      1211,  9);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_BlobSplit,    1212, 12);
 NCBI_DEFINE_ERRCODE_X(ObjMgr_SeqTable,     1213, 12);
 
