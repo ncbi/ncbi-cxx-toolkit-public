@@ -178,6 +178,7 @@ public:
     void Test_CDB_Object(void);
     void Test_Variant(void);
     void Test_Variant2(void);
+    void Test_Numeric(void);
 
     void Test_CDB_Exception(void);
 

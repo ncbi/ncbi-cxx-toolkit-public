@@ -4627,6 +4627,119 @@ CDBAPIUnitTest::Test_Variant2(void)
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_Numeric(void)
+{
+    const string table_name("#test_numeric");
+    const string str_value("2843113322.00");
+    const string str_value_short("2843113322");
+    const Uint8 value = 2843113322U;
+    string sql;
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Initialization ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "   id NUMERIC(18, 0) IDENTITY NOT NULL, \n"
+                "   num_field1 NUMERIC(18, 2) NULL, \n"
+                "   num_field2 NUMERIC(35, 2) NULL \n"
+                ") \n";
+
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        {
+            // Initialization ...
+            {
+                sql = "INSERT INTO " + table_name + "(num_field1, num_field2) "
+                    "VALUES(" + str_value + ", " + str_value + " )";
+
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            // Retrieve data ...
+            {
+                sql = "SELECT num_field1, num_field2 FROM " + table_name;
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+
+                const CVariant value1 = rs->GetVariant(1);
+                const CVariant value2 = rs->GetVariant(2);
+
+                BOOST_CHECK( !value1.IsNull() );
+                BOOST_CHECK( !value2.IsNull() );
+
+                if (m_args.GetDriverName() == ftds_odbc_driver) {
+                    BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value_short);
+                    BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value_short);
+                } else {
+                    BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value);
+                    BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value);
+                }
+            }
+
+            // Insert data using parameters ...
+            {
+                const CVariant value1(static_cast<double>(value));
+                const CVariant value2(static_cast<double>(value));
+
+                auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name );
+
+                auto_stmt->SetParam( value1, "@value1" );
+                auto_stmt->SetParam( value2, "@value2" );
+
+                sql = "INSERT INTO " + table_name + "(num_field1, num_field2) "
+                    "VALUES(@value1, @value2)";
+
+                auto_stmt->ExecuteUpdate( sql );
+                
+                // ClearParamList is necessary here ...
+                auto_stmt->ClearParamList();
+            }
+
+            // Retrieve data again ...
+            {
+                sql = "SELECT num_field1, num_field2 FROM " + table_name;
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+
+                const CVariant& value1 = rs->GetVariant(1);
+                const CVariant& value2 = rs->GetVariant(2);
+
+                BOOST_CHECK( !value1.IsNull() );
+                BOOST_CHECK( !value2.IsNull() );
+
+                if (m_args.GetDriverName() == ftds_odbc_driver) {
+                    BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value_short);
+                    BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value_short);
+                } else {
+                    BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value);
+                    BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value);
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_CDB_Exception(void)
 {
@@ -5571,13 +5684,27 @@ CDBAPIUnitTest::Test_Recordset(void)
             // numeric
             if (m_args.GetDriverName() != dblib_driver  ||  m_args.GetServerType() == CTestArguments::eSybase)
             {
-                rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
-                BOOST_CHECK(rs != NULL);
+                //
+                {
+                    rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
+                    BOOST_CHECK(rs != NULL);
 
-                BOOST_CHECK(rs->Next());
-                BOOST_CHECK(!rs->Next());
+                    BOOST_CHECK(rs->Next());
+                    BOOST_CHECK(!rs->Next());
 
-                DumpResults(auto_stmt.get());
+                    DumpResults(auto_stmt.get());
+                }
+
+                //
+                {
+                    rs = auto_stmt->ExecuteQuery("select convert(numeric(18, 2), 2843113322)");
+                    BOOST_CHECK(rs != NULL);
+
+                    BOOST_CHECK(rs->Next());
+                    BOOST_CHECK(!rs->Next());
+
+                    DumpResults(auto_stmt.get());
+                }
             }
 
             // decimal
@@ -5829,37 +5956,70 @@ CDBAPIUnitTest::Test_Recordset(void)
             // numeric
             if (m_args.GetDriverName() != dblib_driver  ||  m_args.GetServerType() == CTestArguments::eSybase)
             {
-                rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
-                BOOST_CHECK(rs != NULL);
+                //
+                {
+                    rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
+                    BOOST_CHECK(rs != NULL);
 
-                BOOST_CHECK(rs->Next());
-                const CVariant& variant = rs->GetVariant(1);
+                    BOOST_CHECK(rs->Next());
+                    const CVariant& variant = rs->GetVariant(1);
 
-                switch(variant.GetData()->GetType()) {
-                    case eDB_Numeric:
-                        {
-                            CDB_Numeric* data = static_cast<CDB_Numeric*>(variant.GetData());
-                            BOOST_CHECK_EQUAL(data->Value(), string("1"));
-                        }
-                        break;
-                    case eDB_Double:
-                        {
-                            PutMsgExpected("CDB_Numeric", "CDB_Double");
+                    switch(variant.GetData()->GetType()) {
+                        case eDB_Numeric:
+                            {
+                                CDB_Numeric* data = static_cast<CDB_Numeric*>(variant.GetData());
+                                BOOST_CHECK_EQUAL(data->Value(), string("1"));
+                            }
+                            break;
+                        case eDB_Double:
+                            {
+                                PutMsgExpected("CDB_Numeric", "CDB_Double");
 
-                            CDB_Double* data = static_cast<CDB_Double*>(variant.GetData());
-                            BOOST_CHECK_EQUAL(data->Value(), 1);
-                        }
-                        break;
-                    default:
-                        BOOST_FAIL("Invalid data type.");
+                                CDB_Double* data = static_cast<CDB_Double*>(variant.GetData());
+                                BOOST_CHECK_EQUAL(data->Value(), 1);
+                            }
+                            break;
+                        default:
+                            BOOST_FAIL("Invalid data type.");
+                    }
+
+                    DumpResults(auto_stmt.get());
                 }
 
-                // CDB_Numeric* data = dynamic_cast<CDB_Numeric*>(variant.GetData());
-                // BOOST_CHECK(data);
+                //
+                {
+                    rs = auto_stmt->ExecuteQuery("select convert(numeric(18, 2), 2843113322)");
+                    BOOST_CHECK(rs != NULL);
 
-                // BOOST_CHECK_EQUAL(data->Value(), string("1"));
+                    BOOST_CHECK(rs->Next());
+                    const CVariant& variant = rs->GetVariant(1);
 
-                DumpResults(auto_stmt.get());
+                    switch(variant.GetData()->GetType()) {
+                        case eDB_Numeric:
+                            {
+                                CDB_Numeric* data = static_cast<CDB_Numeric*>(variant.GetData());
+
+                                if (m_args.GetDriverName() == ftds_odbc_driver) {
+                                    BOOST_CHECK_EQUAL(data->Value(), string("2843113322"));
+                                } else {
+                                    BOOST_CHECK_EQUAL(data->Value(), string("2843113322.00"));
+                                }
+                            }
+                            break;
+                        case eDB_Double:
+                            {
+                                PutMsgExpected("CDB_Numeric", "CDB_Double");
+
+                                CDB_Double* data = static_cast<CDB_Double*>(variant.GetData());
+                                BOOST_CHECK_EQUAL(data->Value(), 2843113322U);
+                            }
+                            break;
+                        default:
+                            BOOST_FAIL("Invalid data type.");
+                    }
+
+                    DumpResults(auto_stmt.get());
+                }
             }
 
             // decimal
@@ -5929,18 +6089,37 @@ CDBAPIUnitTest::Test_Recordset(void)
 
             // double
             {
-                rs = auto_stmt->ExecuteQuery("select convert(double precision, 1)");
-                BOOST_CHECK(rs != NULL);
+                //
+                {
+                    rs = auto_stmt->ExecuteQuery("select convert(double precision, 1)");
+                    BOOST_CHECK(rs != NULL);
 
-                BOOST_CHECK(rs->Next());
-                const CVariant& variant = rs->GetVariant(1);
+                    BOOST_CHECK(rs->Next());
+                    const CVariant& variant = rs->GetVariant(1);
 
-                CDB_Double* data = dynamic_cast<CDB_Double*>(variant.GetData());
-                BOOST_CHECK(data);
+                    CDB_Double* data = dynamic_cast<CDB_Double*>(variant.GetData());
+                    BOOST_CHECK(data);
 
-                BOOST_CHECK_EQUAL(data->Value(), 1);
+                    BOOST_CHECK_EQUAL(data->Value(), 1);
 
-                DumpResults(auto_stmt.get());
+                    DumpResults(auto_stmt.get());
+                }
+
+                //
+                {
+                    rs = auto_stmt->ExecuteQuery("select convert(double precision, 2843113322)");
+                    BOOST_CHECK(rs != NULL);
+
+                    BOOST_CHECK(rs->Next());
+                    const CVariant& variant = rs->GetVariant(1);
+
+                    CDB_Double* data = dynamic_cast<CDB_Double*>(variant.GetData());
+                    BOOST_CHECK(data);
+
+                    BOOST_CHECK_EQUAL(data->Value(), 2843113322U);
+
+                    DumpResults(auto_stmt.get());
+                }
             }
 
             // real
@@ -6493,15 +6672,31 @@ CDBAPIUnitTest::Test_ResultsetMetaData(void)
 
             // numeric
             {
-                rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
-                BOOST_CHECK(rs != NULL);
-                md = rs->GetMetaData();
-                BOOST_CHECK(md);
+                //
+                {
+                    rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
+                    BOOST_CHECK(rs != NULL);
+                    md = rs->GetMetaData();
+                    BOOST_CHECK(md);
 
-                EDB_Type curr_type = md->GetType(1);
-                BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
+                    EDB_Type curr_type = md->GetType(1);
+                    BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
 
-                DumpResults(auto_stmt.get());
+                    DumpResults(auto_stmt.get());
+                }
+
+                //
+                {
+                    rs = auto_stmt->ExecuteQuery("select convert(numeric(18, 2), 2843113322)");
+                    BOOST_CHECK(rs != NULL);
+                    md = rs->GetMetaData();
+                    BOOST_CHECK(md);
+
+                    EDB_Type curr_type = md->GetType(1);
+                    BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
+
+                    DumpResults(auto_stmt.get());
+                }
             }
 
             // decimal
@@ -12394,6 +12589,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception,
                               DBAPIInstance));
+
+    if (!(args.GetDriverName() == ftds64_driver
+          && args.GetServerType() == CTestArguments::eSybase)
+        && args.GetDriverName() != ftds8_driver
+        && args.GetDriverName() != ftds_dblib_driver
+        && args.GetDriverName() != dblib_driver
+       ) {
+        add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Numeric, DBAPIInstance));
+    }
 
     if (!(args.GetDriverName() == ftds64_driver
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
