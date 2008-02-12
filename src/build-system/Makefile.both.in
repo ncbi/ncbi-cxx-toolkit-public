@@ -92,8 +92,8 @@ XDLL_LIBDEP = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
 $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL)
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
-	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(XDLLOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
-	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(XLIBOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
+	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
+	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XLIBOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
 	@if [ ! -r $(XDLLDEP) ]; then \
 	    echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP); \
 	    $(TOUCH) -r $(XDLL) $(XDLLDEP); \

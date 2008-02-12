@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECTS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX DLL_LIB_SETTING STATIC USUAL_AND_DLL USUAL_AND_LIB LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT DISTCC CCACHE TAIL EGREP VALGRIND_PATH CXXCPP AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS LZO2_INCLUDE LZO2_LIBS LZO_INCLUDE LZO_LIBS PCRE_INCLUDE PCRE_LIBS GNUTLS_INCLUDE GNUTLS_LIBS OPENSSL_INCLUDE OPENSSL_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS63_INCLUDE FTDS63_LIBS FTDS63_LIB FTDS64_INCLUDE FTDS64_LIBS FTDS64_LIB FTDS64_CTLIB_INCLUDE FTDS64_CTLIB_LIBS FTDS64_CTLIB_LIB FTDS64_DBLIB_INCLUDE FTDS64_DBLIB_LIBS FTDS64_DBLIB_LIB FTDS64_ODBC_INCLUDE FTDS64_ODBC_LIBS FTDS64_ODBC_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds8 ftds63 ftds64 mysql_config PYTHON PYTHON_INCLUDE PYTHON_LIBS PYTHON23 PYTHON23_INCLUDE PYTHON23_LIBS PYTHON24 PYTHON24_INCLUDE PYTHON24_LIBS PYTHON25 PYTHON25_INCLUDE PYTHON25_LIBS X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS SQLITE_INCLUDE SQLITE_LIBS SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH RUNPATH_ORIGIN D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL ALLOW_UNDEF FORBID_UNDEF OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal check CHECK_ARG CHECK_TOOLS script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NCBIATOMIC_LIB NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS DEMANGLE_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB TLS_INCLUDE TLS_LIBS SYBASE_PATH SYBASE_LCL_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_REGEX_LIBS BOOST_REGEX_STATIC_LIBS BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS BOOST_THREAD_LIBS BOOST_THREAD_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_STATIC_LIBS WXWIN_GL_LIBS WXWIN_GL_STATIC_LIBS WXWIN_POST_LINK WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS ncbi_xreader_pubseqos UNLESS_PUBSEQOS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY IF_DEACTIVATING CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECTS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX DLL_LIB_SETTING STATIC USUAL_AND_DLL USUAL_AND_LIB LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT DISTCC CCACHE TAIL EGREP VALGRIND_PATH CXXCPP AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS LZO2_INCLUDE LZO2_LIBS LZO_INCLUDE LZO_LIBS PCRE_INCLUDE PCRE_LIBS GNUTLS_INCLUDE GNUTLS_LIBS OPENSSL_INCLUDE OPENSSL_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS63_INCLUDE FTDS63_LIBS FTDS63_LIB FTDS64_INCLUDE FTDS64_LIBS FTDS64_LIB FTDS64_CTLIB_INCLUDE FTDS64_CTLIB_LIBS FTDS64_CTLIB_LIB FTDS64_DBLIB_INCLUDE FTDS64_DBLIB_LIBS FTDS64_DBLIB_LIB FTDS64_ODBC_INCLUDE FTDS64_ODBC_LIBS FTDS64_ODBC_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds8 ftds63 ftds64 mysql_config PYTHON PYTHON_INCLUDE PYTHON_LIBS PYTHON23 PYTHON23_INCLUDE PYTHON23_LIBS PYTHON24 PYTHON24_INCLUDE PYTHON24_LIBS PYTHON25 PYTHON25_INCLUDE PYTHON25_LIBS X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS SQLITE_INCLUDE SQLITE_LIBS SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS APP_LDFLAGS DLL_LDFLAGS C_LIBS GCCPCH RUNPATH_ORIGIN D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL ALLOW_UNDEF FORBID_UNDEF OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal check CHECK_ARG CHECK_TOOLS script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NCBIATOMIC_LIB NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS DEMANGLE_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB TLS_INCLUDE TLS_LIBS SYBASE_PATH SYBASE_LCL_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_REGEX_LIBS BOOST_REGEX_STATIC_LIBS BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS BOOST_THREAD_LIBS BOOST_THREAD_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_STATIC_LIBS WXWIN_GL_LIBS WXWIN_GL_STATIC_LIBS WXWIN_POST_LINK WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS ncbi_xreader_pubseqos UNLESS_PUBSEQOS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY IF_DEACTIVATING CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -4407,17 +4407,20 @@ CFLAGS="$MT_FLAG $CFLAGS"
 CXXFLAGS="$MT_FLAG $CXXFLAGS"
 LDFLAGS="$MT_FLAG $LDFLAGS"
 
+APP_LDFLAGS=
+DLL_LDFLAGS=
+
 case "$compiler" in
    GCC | ICC )
-      orig_LDFLAGS=$LDFLAGS
-      LDFLAGS="-Wl,-E $LDFLAGS"
 
 echo "$as_me:$LINENO: checking whether $CC supports -Wl,-E" >&5
 echo $ECHO_N "checking whether $CC supports -Wl,-E... $ECHO_C" >&6
 if test "${ncbi_cv_prog_cc_wl_e+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  cat >conftest.$ac_ext <<_ACEOF
+  orig_LDFLAGS=$LDFLAGS
+          LDFLAGS="-Wl,-E $LDFLAGS"
+          cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -4463,10 +4466,11 @@ ncbi_cv_prog_cc_wl_e=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
+          LDFLAGS=$orig_LDFLAGS
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_prog_cc_wl_e" >&5
 echo "${ECHO_T}$ncbi_cv_prog_cc_wl_e" >&6
-      test "$ncbi_cv_prog_cc_wl_e" = yes  ||  LDFLAGS=$orig_LDFLAGS
+      test "$ncbi_cv_prog_cc_wl_e" = no  ||  APP_LDFLAGS="-Wl,-E $APP_LDFLAGS"
       ;;
 esac
 
@@ -5093,16 +5097,15 @@ echo "$as_me: WARNING: Unable to find static libstdc++ requested by --with-bin-r
     LDFLAGS="-static-libcxa $LDFLAGS"
     ;;
   ICC:8* )
-    # Back to the runpath approach, since ICC now ignores -static-libcxa
-    # when building shared libraries; ideally, it would be possible to
-    # counteract this with -nodefaultlibs as with ICC 9, but that
-    # doesn't actually work, at least when using -cxxlib-icc.
-    # (Unloading plugins takes out symbols the program needs.)
-    LDFLAGS="$CONF_f_runpath$compiler_root/lib $LDFLAGS"
+    APP_LDFLAGS="-static-libcxa $APP_LDFLAGS"
+    DLL_LDFLAGS="-nodefaultlibs $DLL_LDFLAGS"
     ;;
   ICC:9* )
-    # Actually workable now, perhaps thanks to forcing -cxxlib-gcc.
-    LDFLAGS="-i-static $LDFLAGS"
+    # -i-static moved from common LDFLAGS to accommodate those few
+    # DLLs (plugins for external programs such as Python) that need to
+    # link ICC's libraries dynamically.
+    APP_LDFLAGS="-i-static $APP_LDFLAGS"
+    DLL_LDFLAGS="-i-static -nodefaultlibs $DLL_LDFLAGS"
     # Running icpc on a bunch of object files doesn't always ensure that
     # the C++ standard library is actually linked in, and we shouldn't
     # rely on help from wrapper scripts.
@@ -7158,14 +7161,11 @@ case "$compiler" in
       linux* | *gnu* ) # | *bsd*
         case "$compiler:$compiler_version" in
            ICC:9* )
-	     # Take care not to link dynamic libraries against ICC's
-	     # libraries, as linking them dynamically yields unwanted
-	     # dependencies and linking them statically can lead to
-	     # incorrect behavior (segfaults or infinite loops).
              ncbi_cv_prog_cc_wl_no_asu=no
-             LINK_DLL="$LINK $ARCH_CFLAGS -nodefaultlibs -shared -o"
              LIBS="$LIBS -lc"
              C_LIBS="$C_LIBS -lc"
+             ;;
+           ICC:* )
              ;;
            * )
              FORBID_UNDEF='-Wl,--no-undefined'
@@ -7180,14 +7180,14 @@ case "$compiler" in
         FORBID_UNDEF='-Wl,-error_unresolved'
         ;;
    esac
-   orig_LDFLAGS=$LDFLAGS
-   LDFLAGS="-shared -Wl,--no-allow-shlib-undefined $LDFLAGS"
    echo "$as_me:$LINENO: checking whether $CC supports -Wl,--no-allow-shlib-undefined" >&5
 echo $ECHO_N "checking whether $CC supports -Wl,--no-allow-shlib-undefined... $ECHO_C" >&6
 if test "${ncbi_cv_prog_cc_wl_no_asu+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  cat >conftest.$ac_ext <<_ACEOF
+  orig_LDFLAGS=$LDFLAGS
+       LDFLAGS="-shared -Wl,--no-allow-shlib-undefined $LDFLAGS"
+       cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -7233,13 +7233,13 @@ ncbi_cv_prog_cc_wl_no_asu=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
+       LDFLAGS=$orig_LDFLAGS
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_prog_cc_wl_no_asu" >&5
 echo "${ECHO_T}$ncbi_cv_prog_cc_wl_no_asu" >&6
    if test "$ncbi_cv_prog_cc_wl_no_asu" = yes; then
       FORBID_UNDEF="$FORBID_UNDEF -Wl,--no-allow-shlib-undefined"
    fi
-   LDFLAGS=$orig_LDFLAGS
   ;;
  MIPSpro73 )
    LINK_DLL="$LINK $ARCH_CFLAGS -shared -o"
@@ -25969,11 +25969,11 @@ else
    case "`$wxconf --version`" in
       2.[89].* | 2.[0-9][0-9]* )
          	  WithPackages="$WithPackages${WithPackagesSep}wx2.8"; WithPackagesSep=" "
-	 wxlibs=std,richtext
-	 ;;
+         wxlibs=std,richtext
+         ;;
       *)
          wxlibs=std
-	 ;;
+         ;;
    esac
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
@@ -30093,6 +30093,8 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -30911,6 +30913,8 @@ s,@FAST_CXXFLAGS@,$FAST_CXXFLAGS,;t t
 s,@DEPFLAGS@,$DEPFLAGS,;t t
 s,@DEPFLAGS_POST@,$DEPFLAGS_POST,;t t
 s,@FAST_LDFLAGS@,$FAST_LDFLAGS,;t t
+s,@APP_LDFLAGS@,$APP_LDFLAGS,;t t
+s,@DLL_LDFLAGS@,$DLL_LDFLAGS,;t t
 s,@C_LIBS@,$C_LIBS,;t t
 s,@GCCPCH@,$GCCPCH,;t t
 s,@RUNPATH_ORIGIN@,$RUNPATH_ORIGIN,;t t

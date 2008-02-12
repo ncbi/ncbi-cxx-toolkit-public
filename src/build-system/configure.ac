@@ -800,14 +800,18 @@ CFLAGS="$MT_FLAG $CFLAGS"
 CXXFLAGS="$MT_FLAG $CXXFLAGS"
 LDFLAGS="$MT_FLAG $LDFLAGS"
 
+APP_LDFLAGS=
+DLL_LDFLAGS=
+
 case "$compiler" in
    GCC | ICC )
-      orig_LDFLAGS=$LDFLAGS
-      LDFLAGS="-Wl,-E $LDFLAGS"
       AC_CACHE_CHECK([whether $CC supports -Wl,-E], ncbi_cv_prog_cc_wl_e,
-         [AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
-             [ncbi_cv_prog_cc_wl_e=yes], [ncbi_cv_prog_cc_wl_e=no])])
-      test "$ncbi_cv_prog_cc_wl_e" = yes  ||  LDFLAGS=$orig_LDFLAGS
+         [orig_LDFLAGS=$LDFLAGS
+          LDFLAGS="-Wl,-E $LDFLAGS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+             [ncbi_cv_prog_cc_wl_e=yes], [ncbi_cv_prog_cc_wl_e=no])
+          LDFLAGS=$orig_LDFLAGS])
+      test "$ncbi_cv_prog_cc_wl_e" = no  ||  APP_LDFLAGS="-Wl,-E $APP_LDFLAGS"
       ;;
 esac
 
@@ -1358,16 +1362,15 @@ case "$compiler:$compiler_version:$with_bin_release" in
     LDFLAGS="-static-libcxa $LDFLAGS"
     ;;
   ICC:8* )
-    # Back to the runpath approach, since ICC now ignores -static-libcxa
-    # when building shared libraries; ideally, it would be possible to
-    # counteract this with -nodefaultlibs as with ICC 9, but that
-    # doesn't actually work, at least when using -cxxlib-icc.
-    # (Unloading plugins takes out symbols the program needs.)
-    LDFLAGS="$CONF_f_runpath$compiler_root/lib $LDFLAGS"
+    APP_LDFLAGS="-static-libcxa $APP_LDFLAGS"
+    DLL_LDFLAGS="-nodefaultlibs $DLL_LDFLAGS"
     ;;
   ICC:9* )
-    # Actually workable now, perhaps thanks to forcing -cxxlib-gcc.
-    LDFLAGS="-i-static $LDFLAGS"
+    # -i-static moved from common LDFLAGS to accommodate those few
+    # DLLs (plugins for external programs such as Python) that need to
+    # link ICC's libraries dynamically.
+    APP_LDFLAGS="-i-static $APP_LDFLAGS"
+    DLL_LDFLAGS="-i-static -nodefaultlibs $DLL_LDFLAGS"
     # Running icpc on a bunch of object files doesn't always ensure that
     # the C++ standard library is actually linked in, and we shouldn't
     # rely on help from wrapper scripts.
@@ -1872,14 +1875,11 @@ case "$compiler" in
       linux* | *gnu* ) # | *bsd*
         case "$compiler:$compiler_version" in
            ICC:9* )
-	     # Take care not to link dynamic libraries against ICC's
-	     # libraries, as linking them dynamically yields unwanted
-	     # dependencies and linking them statically can lead to
-	     # incorrect behavior (segfaults or infinite loops).
              ncbi_cv_prog_cc_wl_no_asu=no
-             LINK_DLL="$LINK $ARCH_CFLAGS -nodefaultlibs -shared -o"
              LIBS="$LIBS -lc"
              C_LIBS="$C_LIBS -lc"
+             ;;
+           ICC:* )
              ;;
            * )
              FORBID_UNDEF='-Wl,--no-undefined'
@@ -1894,16 +1894,16 @@ case "$compiler" in
         FORBID_UNDEF='-Wl,-error_unresolved'
         ;;
    esac
-   orig_LDFLAGS=$LDFLAGS
-   LDFLAGS="-shared -Wl,--no-allow-shlib-undefined $LDFLAGS"
    AC_CACHE_CHECK([whether $CC supports -Wl,--no-allow-shlib-undefined],
       ncbi_cv_prog_cc_wl_no_asu,
-      [AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
-          [ncbi_cv_prog_cc_wl_no_asu=yes], [ncbi_cv_prog_cc_wl_no_asu=no])])
+      [orig_LDFLAGS=$LDFLAGS
+       LDFLAGS="-shared -Wl,--no-allow-shlib-undefined $LDFLAGS"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+          [ncbi_cv_prog_cc_wl_no_asu=yes], [ncbi_cv_prog_cc_wl_no_asu=no])
+       LDFLAGS=$orig_LDFLAGS])
    if test "$ncbi_cv_prog_cc_wl_no_asu" = yes; then
       FORBID_UNDEF="$FORBID_UNDEF -Wl,--no-allow-shlib-undefined"
    fi
-   LDFLAGS=$orig_LDFLAGS
   ;;
  MIPSpro73 )
    LINK_DLL="$LINK $ARCH_CFLAGS -shared -o"
@@ -4491,11 +4491,11 @@ else
    case "`$wxconf --version`" in
       2.[[89]].* | 2.[[0-9]][[0-9]]* )
          NCBI_PACKAGE(wx2.8)
-	 wxlibs=std,richtext
-	 ;;
+         wxlibs=std,richtext
+         ;;
       *)
          wxlibs=std
-	 ;;
+         ;;
    esac
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
@@ -5632,6 +5632,8 @@ AC_SUBST(DEPFLAGS)
 AC_SUBST(DEPFLAGS_POST)
 AC_SUBST(LDFLAGS)
 AC_SUBST(FAST_LDFLAGS)
+AC_SUBST(APP_LDFLAGS)
+AC_SUBST(DLL_LDFLAGS)
 AC_SUBST(LIBS)
 AC_SUBST(C_LIBS)
 AC_SUBST(GCCPCH)
