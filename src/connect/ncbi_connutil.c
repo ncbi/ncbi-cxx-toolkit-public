@@ -26,7 +26,7 @@
  * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *   Auxiliary API, mostly CONN-, URL-/BASE64-, and MIME-related
+ *   Auxiliary API, mostly CONN-, URL-, and MIME-related
  *   (see in "ncbi_connutil.h" for more details).
  *
  */
