@@ -234,6 +234,16 @@ void SequenceViewerWidget_SequenceArea::SetCharacterFont(wxFont *font)
 {
     if (!font) return;
 
+//  On Macs (PPC, Intel and PPC Mac binaries run on an Intel Mac):
+//  'W' and 'M' are too big for the space available and are not drawn.
+//  Could use "W" in call to GetTextExtent but the alignment looks too spread out;
+//  visually it looks better by adding the extra pixel.
+#ifdef(__WXMAC__) 
+    static const int cellWidthSpacer = 2;
+#else
+    static const int cellWidthSpacer = 1;
+#endif
+
     wxClientDC dc(this);
     dc.SetFont(wxNullFont);
 
@@ -244,7 +254,7 @@ void SequenceViewerWidget_SequenceArea::SetCharacterFont(wxFont *font)
     wxCoord chW, chH;
     dc.SetMapMode(wxMM_TEXT);
     dc.GetTextExtent("A", &chW, &chH);
-    cellWidth = chW + 1;
+    cellWidth = chW + cellWidthSpacer;
 	cellHeight = chH;
 
     // need to reset scrollbars and virtual area size
