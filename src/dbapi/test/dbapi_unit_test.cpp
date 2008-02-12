@@ -4783,8 +4783,8 @@ void CDBAPIUnitTest::Test_Numeric(void)
                         && m_args.GetDriverName() != odbc_driver
                         && m_args.GetDriverName() != odbcw_driver
                        ) {
-                        BOOST_CHECK_EQUAL(value1.GetNumeric(), "98.79");
-                        BOOST_CHECK_EQUAL(value2.GetNumeric(), "98.79");
+                        BOOST_CHECK_EQUAL(value1.GetNumeric(), string("98.79"));
+                        BOOST_CHECK_EQUAL(value2.GetNumeric(), string("98.79"));
                     } else {
                         PutMsgDisabled("Test_Numeric - part 2");
                     }
@@ -4804,8 +4804,8 @@ void CDBAPIUnitTest::Test_Numeric(void)
                         && m_args.GetDriverName() != odbc_driver
                         && m_args.GetDriverName() != odbcw_driver
                        ) {
-                        BOOST_CHECK_EQUAL(value1.GetNumeric(), "1.21");
-                        BOOST_CHECK_EQUAL(value2.GetNumeric(), "1.21");
+                        BOOST_CHECK_EQUAL(value1.GetNumeric(), string("1.21"));
+                        BOOST_CHECK_EQUAL(value2.GetNumeric(), string("1.21"));
                     } else {
                         PutMsgDisabled("Test_Numeric - part 3");
                     }
