@@ -70,7 +70,7 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
         s += sizeof(DEF_CONN_REG_SECTION) - 1;
         *s++ = '_';
         memcpy(s, param, plen);
-        if ((val = getenv(strupr(buf))) != 0)
+        if ((val = getenv(buf)) != 0  ||  (val = getenv(strupr(buf))) != 0)
             return strncpy0(value, val, value_size - 1);
 
         /* Next, search for 'CONN_param' in '[service]' registry section */
@@ -717,15 +717,20 @@ static int/*bool*/ s_IsSufficientAddress(const char* addr)
 }
 
 
-static const char* s_ClientAddress(const char* client_host, int/*bool*/ local)
+static const char* s_ClientAddress(const char* client_host,
+                                   int/*bool*/ local_host)
 {
+    const char* c = client_host;
     unsigned int ip;
-    char addr[64];
+    char addr[80];
     char* s;
 
     assert(client_host);
+    strncpy0(addr, client_host, sizeof(addr) - 1);
+    if (UTIL_NcbiLocalHostName(addr)  &&  (s = strdup(addr)) != 0)
+        client_host = s;
     if (s_IsSufficientAddress(client_host)                          ||
-        !(ip = *client_host  &&  !local
+        !(ip = *client_host  &&  !local_host
           ? SOCK_gethostbyname(client_host)
           : SOCK_GetLocalHostAddress(eDefault))                     ||
         SOCK_ntoa(ip, addr, sizeof(addr)) != 0                      ||
@@ -733,6 +738,8 @@ static const char* s_ClientAddress(const char* client_host, int/*bool*/ local)
         return client_host;
     }
     sprintf(s, "%s(%s)", client_host, addr);
+    if (c != client_host)
+        free((void*) client_host);
     return s;
 }
 
@@ -742,7 +749,7 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info)
     static const char service[]  = "service";
     static const char address[]  = "address";
     static const char platform[] = "platform";
-    int/*bool*/ local;
+    int/*bool*/ local_host;
     const char* arch;
     const char* addr;
 
@@ -757,12 +764,12 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info)
         ConnNetInfo_DeleteArg(info, platform);
     else
         ConnNetInfo_PreOverrideArg(info, platform, arch);
-    local = !info->client_host[0];
-    if (local  &&
+    local_host = !info->client_host[0];
+    if (local_host  &&
         !SOCK_gethostbyaddr(0, info->client_host, sizeof(info->client_host))) {
         SOCK_gethostname(info->client_host, sizeof(info->client_host));
     }
-    if (!(addr = s_ClientAddress(info->client_host, local))  ||  !*addr)
+    if (!(addr = s_ClientAddress(info->client_host, local_host))  ||  !*addr)
         ConnNetInfo_DeleteArg(info, address);
     else
         ConnNetInfo_PreOverrideArg(info, address, addr);
