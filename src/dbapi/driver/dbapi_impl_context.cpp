@@ -250,55 +250,56 @@ CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection)
 CDB_Connection*
 CDriverContext::MakePooledConnection(const CDBConnParams& params)
 {
-    CMutexGuard mg(m_CtxMtx);
+    if (params.IsPooled()) {
+	CMutexGuard mg(m_CtxMtx);
 
-    if (params.IsPooled() && !m_NotInUse.empty()) {
-        // try to get a connection from the pot
-        if (!params.GetPoolName().empty()) {
-            // use a pool name
-            for (TConnPool::iterator it = m_NotInUse.begin(); it != m_NotInUse.end(); ) {
-                CConnection* t_con(*it);
+	if (!m_NotInUse.empty()) {
+	    if (!params.GetPoolName().empty()) {
+		// use a pool name
+		for (TConnPool::iterator it = m_NotInUse.begin(); it != m_NotInUse.end(); ) {
+			CConnection* t_con(*it);
 
-                // There is no pool name check here. We assume that a connection
-                // pool contains connections with appropriate server names only.
-                if (params.GetPoolName().compare(t_con->PoolName()) == 0) {
-                    it = m_NotInUse.erase(it);
-                    if(t_con->Refresh()) {
-                        return MakeCDBConnection(t_con);
-                    }
-                    else {
-                        delete t_con;
-                    }
-                }
-                else {
-                    ++it;
-                }
-            }
-        }
-        else {
+			// There is no pool name check here. We assume that a connection
+			// pool contains connections with appropriate server names only.
+			if (params.GetPoolName().compare(t_con->PoolName()) == 0) {
+				it = m_NotInUse.erase(it);
+				if(t_con->Refresh()) {
+					return MakeCDBConnection(t_con);
+				}
+				else {
+					delete t_con;
+				}
+			}
+			else {
+				++it;
+			}
+		}
+	    }
+	    else {
 
-            if ( params.GetServerName().empty() ) {
-                return NULL;
-            }
+		if ( params.GetServerName().empty() ) {
+			return NULL;
+		}
 
-            // try to use a server name
-            for (TConnPool::iterator it = m_NotInUse.begin(); it != m_NotInUse.end(); ) {
-                CConnection* t_con(*it);
+		// try to use a server name
+		for (TConnPool::iterator it = m_NotInUse.begin(); it != m_NotInUse.end(); ) {
+			CConnection* t_con(*it);
 
-                if (params.GetServerName().compare(t_con->ServerName()) == 0) {
-                    it = m_NotInUse.erase(it);
-                    if(t_con->Refresh()) {
-                        return MakeCDBConnection(t_con);
-                    }
-                    else {
-                        delete t_con;
-                    }
-                }
-                else {
-                    ++it;
-                }
-            }
-        }
+			if (params.GetServerName().compare(t_con->ServerName()) == 0) {
+				it = m_NotInUse.erase(it);
+				if(t_con->Refresh()) {
+					return MakeCDBConnection(t_con);
+				}
+				else {
+					delete t_con;
+				}
+			}
+			else {
+				++it;
+			}
+		}
+	    }
+	}
     }
 
     if (params.IsDoNotConnect()) {
