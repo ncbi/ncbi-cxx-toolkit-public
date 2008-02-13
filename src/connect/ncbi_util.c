@@ -175,9 +175,9 @@ inline
 #endif /*__GNUC__*/
 static int/*bool*/ s_IsQuoted(unsigned char c)
 {
-    return (c == '\t'  ||   c == '\v'  ||  c == '\b'  ||
-            c == '\r'  ||   c == '\f'  ||  c == '\a'  ||
-            c == '\n'  ||   c == '\\'  ||  c == '\''  ||
+    return (c == '\t'  ||  c == '\v'  ||  c == '\b'  ||
+            c == '\r'  ||  c == '\f'  ||  c == '\a'  ||
+            c == '\n'  ||  c == '\\'  ||  c == '\''  ||
             c == '"' ? 1/*true*/ : 0/*false*/);
 }
 
@@ -938,4 +938,32 @@ extern int/*bool*/ UTIL_MatchesMaskEx(const char* name, const char* mask,
 extern int/*bool*/ UTIL_MatchesMask(const char* name, const char* mask)
 {
     return UTIL_MatchesMaskEx(name, mask, 1/*ignore case*/);
+}
+
+
+extern char* UTIL_NcbiLocalHostName(char* hostname)
+{
+    static const struct {
+        const char* text;
+        size_t      len;
+    } kEndings[] = {
+        { ".ncbi.nlm.nih.gov", 17},
+        { ".ncbi.nih.gov", 13}
+    };
+    size_t len = hostname ? strlen(hostname) : 0;
+
+    if (len) {
+        size_t i;
+        for (i = 0;  i < sizeof(kEndings) / sizeof(kEndings[0]);  i++) {
+            assert(strlen(kEndings[i].text) == kEndings[i].len);
+            if (len > kEndings[i].len) {
+                size_t prefix = len - kEndings[i].len;
+                if (strcasecmp(hostname + prefix, kEndings[i].text) == 0) {
+                    hostname[prefix] = '\0';
+                    return hostname;
+                }
+            }
+        }
+    }
+    return 0;
 }

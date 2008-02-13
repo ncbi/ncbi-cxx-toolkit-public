@@ -54,6 +54,7 @@
  *
  * 4. Miscellaneous:
  *       UTIL_MatchesMask[Ex]()
+ *       UTIL_NcbiLocalHostName()
  *
  */
 
@@ -491,11 +492,21 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMaskEx
  *  TODO!
  * @param mask
  *  TODO!
-*/
+ */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMask
 (const char* name,
  const char* mask
 );
+
+
+/** Cut off well-known NCBI domain suffix out of the passed "hostname".
+ * @param hostname
+ *  Hostname to shorten (if possible)
+ * @return 0 if the hostname wasn't modified, otherwise return "hostname".
+ */
+extern char* UTIL_NcbiLocalHostName
+(char*       hostname
+ );
 
 
 #ifdef __cplusplus
