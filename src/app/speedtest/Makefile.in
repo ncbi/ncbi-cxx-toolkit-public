@@ -1,3 +1,6 @@
+# $Id$
+
 APP_PROJ = speedtest
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
