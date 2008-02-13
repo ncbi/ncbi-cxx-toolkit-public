@@ -306,15 +306,15 @@ RELEVANT_DIR = pwd | $(RELEVANT)
 RELEVANT_SUB_FILE = $(builddir)/relevant.prefixes
 # IRRELEVANT_SUB_FILE = $(builddir)/irrelevant.prefixes
 $(builddir)/%.prefixes: $(builddir)/%.patterns
-	while read path; do \
+	@while read path; do \
 	    echo $$path; \
 	    while [ "$$path" != build ]; do \
 	        path=`dirname $$path` ; \
-	        echo $$path/; \
+	        echo "$$path/\$$"; \
 	    done; \
 	done < $< | sort -u > $@
 
-RELEVANT_SUBS = pwd | sed -e 's:$$:/:' | @EGREP@ -f $(RELEVANT_SUB_FILE)
+RELEVANT_SUBS = pwd | sed -e 's:$$:/:' | @EGREP_Q@ -f $(RELEVANT_SUB_FILE)
 
 SUB_BRA_P = \
 if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
