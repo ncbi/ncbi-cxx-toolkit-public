@@ -108,7 +108,7 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
             info = 0;
         }
         sprintf(buf, "%s_" REG_CONN_LOCAL_SERVER "_%d", name, n);
-        if (!(c = getenv(strupr(buf)))) {
+        if (!(c = getenv(buf))  &&  !(c = getenv(strupr(buf)))) {
             char*  b = buf + strlen(name);
             size_t len;
             *b++ = '\0';
