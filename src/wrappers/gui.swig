@@ -188,13 +188,11 @@ gui/objutils/alignment_smear_layout.hpp
 gui/objutils/bookmark.hpp
 gui/objutils/comment.hpp
 gui/objutils/density_map.hpp
-gui/objutils/edit.hpp
 gui/objutils/edit_event.hpp
 gui/objutils/feat_label.hpp
 gui/objutils/feat_pack.hpp
 gui/objutils/feature.hpp
 gui/objutils/feature_conf_params.hpp
-gui/objutils/feature_edit.hpp
 gui/objutils/filter.hpp
 gui/objutils/graph.hpp
 gui/objutils/histogram.hpp

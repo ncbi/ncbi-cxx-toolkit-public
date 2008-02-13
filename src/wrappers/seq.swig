@@ -118,6 +118,8 @@ objects/seq/Seq_literal.hpp
 objects/seq/Seq_literal_.hpp
 objects/seq/Seqdesc.hpp
 objects/seq/Seqdesc_.hpp
+objects/seq/annot_mapper_exception.hpp
+objects/seq/seq_align_mapper_base.hpp
 objects/seq/seqport_util.hpp
 objects/seq/NCBI_Sequence_module.hpp
 
@@ -305,6 +307,26 @@ objects/seqset/Bioseq_set_.hpp
 objects/seqset/Seq_entry.hpp
 objects/seqset/Seq_entry_.hpp
 objects/seqset/NCBI_Seqset_module.hpp
+//objects/seqset/gb_release_file.hpp
+objects/seqset/seqset_exception.hpp
+
+objects/seqtable/CommonBytes_table.hpp
+objects/seqtable/CommonBytes_table_.hpp
+objects/seqtable/CommonString_table.hpp
+objects/seqtable/CommonString_table_.hpp
+objects/seqtable/SeqTable_column.hpp
+objects/seqtable/SeqTable_column_.hpp
+objects/seqtable/SeqTable_column_info.hpp
+objects/seqtable/SeqTable_column_info_.hpp
+objects/seqtable/SeqTable_multi_data.hpp
+objects/seqtable/SeqTable_multi_data_.hpp
+objects/seqtable/SeqTable_single_data.hpp
+objects/seqtable/SeqTable_single_data_.hpp
+objects/seqtable/SeqTable_sparse_index.hpp
+objects/seqtable/SeqTable_sparse_index_.hpp
+objects/seqtable/Seq_table.hpp
+objects/seqtable/Seq_table_.hpp
+objects/seqtable/NCBI_SeqTable_module.hpp
 
 objects/submit/Contact_info.hpp
 objects/submit/Contact_info_.hpp
@@ -360,6 +382,8 @@ objects/blast/Blas_get_searc_strat_reque.hpp
 objects/blast/Blas_get_searc_strat_reque_.hpp
 objects/blast/Blas_queu_searc_reque_lite.hpp
 objects/blast/Blas_queu_searc_reque_lite_.hpp
+objects/blast/Blast4_alignment_for_query.hpp
+objects/blast/Blast4_alignment_for_query_.hpp
 objects/blast/Blast4_common_options.hpp
 objects/blast/Blast4_common_options_.hpp
 objects/blast/Blast4_cutoff.hpp
@@ -420,6 +444,8 @@ objects/blast/Blast4_queue_search_reply.hpp
 objects/blast/Blast4_queue_search_reply_.hpp
 objects/blast/Blast4_queue_search_reques.hpp
 objects/blast/Blast4_queue_search_reques_.hpp
+objects/blast/Blast4_range.hpp
+objects/blast/Blast4_range_.hpp
 objects/blast/Blast4_reply.hpp
 objects/blast/Blast4_reply_.hpp
 objects/blast/Blast4_reply_body.hpp
@@ -430,8 +456,14 @@ objects/blast/Blast4_request_body.hpp
 objects/blast/Blast4_request_body_.hpp
 objects/blast/Blast4_residue_type.hpp
 objects/blast/Blast4_residue_type_.hpp
+objects/blast/Blast4_segment.hpp
+objects/blast/Blast4_segment_.hpp
 objects/blast/Blast4_seqtech.hpp
 objects/blast/Blast4_seqtech_.hpp
+objects/blast/Blast4_simple_alignment.hpp
+objects/blast/Blast4_simple_alignment_.hpp
+objects/blast/Blast4_simple_results.hpp
+objects/blast/Blast4_simple_results_.hpp
 objects/blast/Blast4_strand_type.hpp
 objects/blast/Blast4_strand_type_.hpp
 objects/blast/Blast4_subject.hpp
@@ -497,12 +529,7 @@ objects/id2/ID2_Blob_State.hpp
 objects/id2/ID2_Blob_State_.hpp
 objects/id2/ID2_Error.hpp
 objects/id2/ID2_Error_.hpp
-// objects/seqsplit/ID2_Id_Range.hpp
-// objects/seqsplit/ID2_Id_Range_.hpp
-// objects/seqsplit/ID2_Interval.hpp
-// objects/seqsplit/ID2_Interval_.hpp
-// objects/seqsplit/ID2_Packed_Seq_ints.hpp
-// objects/seqsplit/ID2_Packed_Seq_ints_.hpp
+
 objects/id2/ID2_Param.hpp
 objects/id2/ID2_Param_.hpp
 objects/id2/ID2_Params.hpp
@@ -521,49 +548,11 @@ objects/id2/ID2_Request_Get_Packages.hpp
 objects/id2/ID2_Request_Get_Packages_.hpp
 objects/id2/ID2_Request_Packet.hpp
 objects/id2/ID2_Request_Packet_.hpp
-// objects/seqsplit/ID2_Seq_loc.hpp
-// objects/seqsplit/ID2_Seq_loc_.hpp
-// objects/seqsplit/ID2_Seq_range.hpp
-// objects/seqsplit/ID2_Seq_range_.hpp
-// objects/seqsplit/ID2S_Bioseq_Info.hpp
-// objects/seqsplit/ID2S_Bioseq_Info_.hpp
-// objects/seqsplit/ID2S_Bioseqs_Info.hpp
-// objects/seqsplit/ID2S_Bioseqs_Info_.hpp
-
-// objects/seqsplit/ID2S_Chunk.hpp
-// objects/seqsplit/ID2S_Chunk_.hpp
-// objects/seqsplit/ID2S_Chunk_Content.hpp
-// objects/seqsplit/ID2S_Chunk_Content_.hpp
-// objects/seqsplit/ID2S_Chunk_Data.hpp
-// objects/seqsplit/ID2S_Chunk_Data_.hpp
-// objects/seqsplit/ID2S_Chunk_Id.hpp
-// objects/seqsplit/ID2S_Chunk_Id_.hpp
-// objects/seqsplit/ID2S_Chunk_Info.hpp
-// objects/seqsplit/ID2S_Chunk_Info_.hpp
-// objects/seqsplit/ID2S_Feat_type_Info.hpp
-// objects/seqsplit/ID2S_Feat_type_Info_.hpp
 
 objects/id2/ID2S_Reply_Get_Chunk.hpp
 objects/id2/ID2S_Reply_Get_Chunk_.hpp
 objects/id2/ID2S_Request_Get_Chunks.hpp
 objects/id2/ID2S_Request_Get_Chunks_.hpp
-
-// objects/seqsplit/ID2S_Seq_annot_Info.hpp
-// objects/seqsplit/ID2S_Seq_annot_Info_.hpp
-// objects/seqsplit/ID2S_Seq_annot_place_Info.hpp
-// objects/seqsplit/ID2S_Seq_annot_place_Info_.hpp
-// objects/seqsplit/ID2S_Seq_assembly_Info.hpp
-// objects/seqsplit/ID2S_Seq_assembly_Info_.hpp
-// objects/seqsplit/ID2S_Seq_data_Info.hpp
-// objects/seqsplit/ID2S_Seq_data_Info_.hpp
-// objects/seqsplit/ID2S_Seq_descr_Info.hpp
-// objects/seqsplit/ID2S_Seq_descr_Info_.hpp
-// objects/seqsplit/ID2S_Seq_map_Info.hpp
-// objects/seqsplit/ID2S_Seq_map_Info_.hpp
-// objects/seqsplit/ID2S_Sequence_Split_Info.hpp
-// objects/seqsplit/ID2S_Sequence_Split_Info_.hpp
-// objects/seqsplit/ID2S_Split_Info.hpp
-// objects/seqsplit/ID2S_Split_Info_.hpp
 
 objects/id2/ID2_Blob_Id.hpp
 objects/id2/ID2_Blob_Id_.hpp
@@ -635,6 +624,8 @@ objects/seqsplit/ID2S_Seq_data_Info.hpp
 objects/seqsplit/ID2S_Seq_data_Info_.hpp
 objects/seqsplit/ID2S_Seq_descr_Info.hpp
 objects/seqsplit/ID2S_Seq_descr_Info_.hpp
+objects/seqsplit/ID2S_Seq_feat_Ids_Info.hpp
+objects/seqsplit/ID2S_Seq_feat_Ids_Info_.hpp
 objects/seqsplit/ID2S_Seq_id_Interval.hpp
 objects/seqsplit/ID2S_Seq_id_Interval_.hpp
 objects/seqsplit/ID2S_Seq_id_Ints.hpp

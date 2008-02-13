@@ -30,6 +30,8 @@
  */
 
 
+%ignore *::CSeqTable_sparse_index_CConstIterator;
+
 %ignore *::CFrameShiftedSeqMap_SMapRangeEdge;
 
 %ignore *::CDiagContext_CExtraArgs::Print;
