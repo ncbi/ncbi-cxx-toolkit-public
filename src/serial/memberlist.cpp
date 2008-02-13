@@ -271,7 +271,13 @@ const CItemInfo* CItemsInfo::FindNextMandatory(const CItemInfo* info)
 
             const CItemInfo* item = classType->GetItems().GetItemInfo(i);
             ETypeFamily item_family = item->GetTypeInfo()->GetTypeFamily();
-
+            if (item_family == eTypeFamilyPointer) {
+                const CPointerTypeInfo* ptr =
+                    dynamic_cast<const CPointerTypeInfo*>(item->GetTypeInfo());
+                if (ptr) {
+                    item_family = ptr->GetPointedType()->GetTypeFamily();
+                }
+            }
             if (item_family == eTypeFamilyContainer) {
                 if (item->NonEmpty()) {
                     found = FindNextMandatory( item );

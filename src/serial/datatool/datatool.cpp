@@ -79,7 +79,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,8,9) );
+    SetVersion( CVersionInfo(1,9,0) );
 }
 
 void CDataTool::Init(void)
@@ -141,6 +141,9 @@ void CDataTool::Init(void)
                       CArgDescriptions::eOutputFile);
     d->AddOptionalKey("px", "valueFile",
                       "write value in XML format",
+                      CArgDescriptions::eOutputFile);
+    d->AddOptionalKey("pj", "valueFile",
+                      "write value in JSON format",
                       CArgDescriptions::eOutputFile);
     d->AddOptionalKey("xmlns", "namespaceName",
                       "XML namespace name",
@@ -392,6 +395,9 @@ bool CDataTool::ProcessData(void)
             use_nsName = true;
             nsName = px_ns.AsString();
         }
+    }
+    else if ( const CArgValue& px = args["pj"] ) {
+        outFormat = eSerial_Json;
     }
     else if ( const CArgValue& e = args["e"] ) {
         outFormat = eSerial_AsnBinary;
