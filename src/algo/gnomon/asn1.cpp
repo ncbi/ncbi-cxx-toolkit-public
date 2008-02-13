@@ -40,6 +40,9 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include "gnomon_seq.hpp"
 
+#include <objmgr/object_manager.hpp>
+#include <objmgr/util/sequence.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 USING_SCOPE(ncbi::objects);
@@ -76,8 +79,8 @@ private:
 
     CRef<CSeq_feat> create_gene_feature(const SModelData& md) const;
     void update_gene_feature(CSeq_feat& gene, CSeq_feat& mrna_feat) const;
-    CRef<CSeq_entry>  create_prot_seq_entry(const SModelData& md) const;
-    CRef<CSeq_entry> create_mrna_seq_entry(SModelData& md);
+    CRef<CSeq_entry>  create_prot_seq_entry(const SModelData& md, const CSeq_entry& mrna_seq_entry, const CSeq_feat& cdregion_feature) const;
+    CRef<CSeq_entry> create_mrna_seq_entry(SModelData& md, CRef<CSeq_feat> cdregion_feature);
     CRef<CSeq_feat> create_mrna_feature(SModelData& md);
     enum EWhere { eOnGenome, eOnMrna };
     CRef<CSeq_feat> create_cdregion_feature(SModelData& md,EWhere onWhat);
@@ -139,9 +142,11 @@ void CAnnotationASN1::CImplementationData::AddModel(const CGeneModel& model)
     nucprots->push_back(model_products);
     model_products->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
 
+    CRef<CSeq_feat> cdregion_feature = create_cdregion_feature(md,eOnMrna);
+    CRef<CSeq_entry> mrna_seq_entry = create_mrna_seq_entry(md, cdregion_feature);
+    model_products->SetSet().SetSeq_set().push_back(mrna_seq_entry);
 
-    model_products->SetSet().SetSeq_set().push_back(create_mrna_seq_entry(md));
-    model_products->SetSet().SetSeq_set().push_back(create_prot_seq_entry(md));
+    model_products->SetSet().SetSeq_set().push_back(create_prot_seq_entry(md, *mrna_seq_entry, *cdregion_feature));
 
     CRef<CSeq_feat> mrna_feat = create_mrna_feature(md);
     feature_table->push_back(mrna_feat);
@@ -240,7 +245,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
     int frame = 0;
     if(!model.HasStart()) {
         _ASSERT(altstart == 0);
-        frame = start;
+        frame = start%3;
         start = 0;
     }
     CCdregion::EFrame ncbi_frame = CCdregion::eFrame_one;
@@ -423,7 +428,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
 
 
 
-CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(const SModelData& md) const
+CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(const SModelData& md, const CSeq_entry& mrna_seq_entry, const CSeq_feat& cdregion_feature) const
 {
     const CGeneModel& model = md.model;
 
@@ -432,11 +437,23 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
 
     CRef<CSeqdesc> desc(new CSeqdesc);
     desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+    desc->SetMolinfo().SetCompleteness(model.HasStart()?
+                                       (model.HasStop()?
+                                        CMolInfo::eCompleteness_complete:
+                                        CMolInfo::eCompleteness_has_left):
+                                       (model.HasStop()?
+                                        CMolInfo::eCompleteness_has_right:
+                                        CMolInfo::eCompleteness_no_ends));
     sprot->SetSeq().SetDescr().Set().push_back(desc);
 
 
-    string strprot(model.GetProtein(contig_seq));
-    if(model.HasStop()) strprot.resize(strprot.size() - 1);
+    string strprot;
+    {
+        CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
+        CScope scope(*obj_mgr);
+        scope.AddTopLevelSeqEntry(mrna_seq_entry);
+        CCdregion_translate::TranslateCdregion(strprot, cdregion_feature, scope, false);
+    }
 
     sprot->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     sprot->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
@@ -446,7 +463,7 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
     return sprot;
 }
 
-CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SModelData& md)
+CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SModelData& md, CRef<CSeq_feat> cdregion_feature)
 {
     const CGeneModel& model = md.model;
 
@@ -456,6 +473,14 @@ CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SMo
     CRef<CSeqdesc> mdes(new CSeqdesc);
     smrna->SetSeq().SetDescr().Set().push_back(mdes);
     mdes->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+
+    mdes->SetMolinfo().SetCompleteness(model.HasStart()?
+                                       (model.HasStop()?
+                                        CMolInfo::eCompleteness_unknown:
+                                        CMolInfo::eCompleteness_no_right):
+                                       (model.HasStop()?
+                                        CMolInfo::eCompleteness_no_left:
+                                        CMolInfo::eCompleteness_no_ends));
 
     smrna->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     smrna->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
@@ -471,7 +496,7 @@ CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SMo
 
     CRef<CSeq_annot> annot(new CSeq_annot);
     smrna->SetSeq().SetAnnot().push_back(annot);
-    annot->SetData().SetFtable().push_back(create_cdregion_feature(md,eOnMrna));
+    annot->SetData().SetFtable().push_back(cdregion_feature);
 
     if (!model.Open5primeEnd()) {
         CRef<CSeq_feat> stop = create_5prime_stop_feature(md);
