@@ -302,7 +302,19 @@ $(IRRELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/build-system/Makefile.meta.in
 RELEVANT = sed -e 's:$$:/:' | @EGREP@ -f $(RELEVANT_FILE) | \
     @EGREP_Q@ -v -f $(IRRELEVANT_FILE)
 RELEVANT_DIR = pwd | $(RELEVANT)
-RELEVANT_SUBS = find "`pwd`"/* -type d | $(RELEVANT)
+
+RELEVANT_SUB_FILE = $(builddir)/relevant.prefixes
+# IRRELEVANT_SUB_FILE = $(builddir)/irrelevant.prefixes
+$(builddir)/%.prefixes: $(builddir)/%.patterns
+	while read path; do \
+	    echo $$path; \
+	    while [ "$$path" != build ]; do \
+	        path=`dirname $$path` ; \
+	        echo $$path/; \
+	    done; \
+	done < $< | sort -u > $@
+
+RELEVANT_SUBS = pwd | sed -e 's:$$:/:' | @EGREP@ -f $(RELEVANT_SUB_FILE)
 
 SUB_BRA_P = \
 if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
@@ -323,7 +335,7 @@ purge_p:     purge_p.needs-reqs
 check_p:     check_p.needs-reqs
 check_add_p: check_add_p.needs-reqs
 
-all_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
+all_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_FILE)
 	@-rm -f .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
 	@+if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) all; else true; fi
@@ -331,18 +343,18 @@ all_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@-rm -f .building
 	@-echo "`date`: recursive build succeeded in `pwd`" > .built_r
 
-clean_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
+clean_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) clean; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) clean_p $(SUB_KET_P); else true; fi
 
-purge_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
+purge_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) purge; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) purge_p $(SUB_KET_P); else true; fi
 
-check_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
+check_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_FILE)
 	@$(CHECK_BRA) check_add_p $(CHECK_KET)
 
-check_add_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
+check_add_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(CHECK_ADD_BRA) $(CHECK_ADD_KET); else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) check_add_p $(SUB_KET_P); else true; fi
 
