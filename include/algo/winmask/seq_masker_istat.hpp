@@ -228,9 +228,11 @@ protected:
                               << "N-mer counts (" << arg_min_count << ")."
                               << "The value " << arg_min_count 
                               << " will be used." );
+            min_count = arg_min_count;
         }
-
-        min_count = arg_min_count; 
+        else if( min_count == 0 ) {
+            min_count = arg_min_count;
+        }
     }
 
 public:

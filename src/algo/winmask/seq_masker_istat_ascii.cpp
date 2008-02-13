@@ -178,7 +178,7 @@ Uint4 CSeqMaskerIstatAscii::at( Uint4 unit ) const
 {
   Uint4 res = uset.get_info( unit );
 
-  if( res == 0 )
+  if( res == 0 || res < get_min_count() )
     return get_use_min_count();
 
   return (res > get_max_count()) ? get_use_max_count() : res;
