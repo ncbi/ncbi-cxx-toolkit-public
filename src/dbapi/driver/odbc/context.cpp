@@ -352,8 +352,6 @@ CODBCContext::x_SetRegistry(CODBCContextRegistry* registry)
 impl::CConnection*
 CODBCContext::MakeIConnection(const CDBConnParams& params)
 {
-    CMutexGuard mg(m_CtxMtx);
-
     return new CODBC_Connection(*this, params);
 }
 
