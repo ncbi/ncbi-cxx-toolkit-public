@@ -4,7 +4,7 @@
 #################################
 
 SUB_PROJ = egquery elink epost esearch espell esummary linkout einfo uilist \
-           api
+           ehistory api
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

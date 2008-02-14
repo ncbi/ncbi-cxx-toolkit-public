@@ -49,12 +49,14 @@
 #include <objtools/eutils/api/elink.hpp>
 #include <objtools/eutils/api/esummary.hpp>
 #include <objtools/eutils/api/espell.hpp>
+#include <objtools/eutils/api/ehistory.hpp>
 #include <objtools/eutils/einfo/einfo__.hpp>
 #include <objtools/eutils/esearch/esearch__.hpp>
 #include <objtools/eutils/egquery/egquery__.hpp>
 #include <objtools/eutils/elink/elink__.hpp>
 #include <objtools/eutils/esummary/esummary__.hpp>
 #include <objtools/eutils/espell/espell__.hpp>
+#include <objtools/eutils/ehistory/ehistory__.hpp>
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -82,6 +84,7 @@ private:
     void CallESummary(const CArgs& args);
     void CallEFetch(const CArgs& args);
     void CallESpell(const CArgs& args);
+    void CallEHistory(const CArgs& args);
 
     CEFetch_Request* x_CreateLitRequest(const CArgs& args);
     CEFetch_Request* x_CreateSeqRequest(const CArgs& args);
@@ -119,6 +122,7 @@ void CEUtilsApp::Init(void)
     arg_desc->AddFlag("egquery", "Call egquery utility", true);
     arg_desc->AddFlag("esummary", "Call esummary utility", true);
     arg_desc->AddFlag("espell", "Call espell utility", true);
+    arg_desc->AddFlag("ehistory", "Call ehistory utility", true);
 
     // Context setup
     arg_desc->AddOptionalKey("webenv", "WebEnv", "Web environment",
@@ -184,6 +188,8 @@ void CEUtilsApp::Init(void)
     // ESpell
     arg_desc->SetDependency("espell", CArgDescriptions::eRequires, "db");
     arg_desc->SetDependency("espell", CArgDescriptions::eRequires, "term");
+    // EHistory
+    arg_desc->SetDependency("ehistory", CArgDescriptions::eRequires, "db");
 
     // elink arguments
     // dbfrom
@@ -406,6 +412,21 @@ void CEUtilsApp::CallESpell(const CArgs& args)
 
     // Get and show the results
     CRef<espell::CESpellResult> result = req.GetESpellResult();
+    _ASSERT(result);
+    cout << MSerial_Xml << *result << endl;
+}
+
+
+void CEUtilsApp::CallEHistory(const CArgs& args)
+{
+    // Prepare request
+    CEHistory_Request req(args["db"].AsString(), x_GetCtx());
+
+    // Print query string
+    cout << req.GetScriptName() << "?" << req.GetQueryString() << endl;
+
+    // Get and show the results
+    CRef<ehistory::CEHistoryResult> result = req.GetEHistoryResult();
     _ASSERT(result);
     cout << MSerial_Xml << *result << endl;
 }
@@ -689,6 +710,10 @@ int CEUtilsApp::Run(void)
     }
     if ( args["efetch"] ) {
         CallEFetch(args);
+    }
+    // EHistory is the last one - shows all other requests if any
+    if ( args["ehistory"] ) {
+        CallEHistory(args);
     }
     return 0;
 }

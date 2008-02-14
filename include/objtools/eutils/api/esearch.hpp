@@ -72,7 +72,7 @@ public:
     /// persent in the results, they are stored in the context.
     CRef<esearch::CESearchResult> GetESearchResult(void);
 
-    /// History update flag> on by default. If set, WebEnv and query_key
+    /// History update flag, on by default. If set, WebEnv and query_key
     /// are updated to include the results in the history.
     bool GetUseHistory(void) const { return m_UseHistory; }
     void SetUseHistory(bool value) { Disconnect(); m_UseHistory = value; }
