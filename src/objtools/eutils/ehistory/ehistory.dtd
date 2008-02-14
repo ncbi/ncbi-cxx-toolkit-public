@@ -1,0 +1,28 @@
+<!--    
+                This is the Current DTD for Entrez eHistory
+$Id$
+-->
+<!-- ================================================================= -->
+
+<!ELEMENT       QueryKey        (#PCDATA)>	<!-- \d+ -->
+<!ELEMENT       QueryName       (#PCDATA)>	<!-- .* -->
+<!ELEMENT       DbName          (#PCDATA)>	<!-- .+ -->
+<!ELEMENT       Title           (#PCDATA)>	<!-- .+ -->
+<!ELEMENT       Time            (#PCDATA)>	<!-- PmTime -->
+<!ELEMENT       Count           (#PCDATA)>	<!-- \d+ -->
+<!ELEMENT       WebEnv          (#PCDATA)>	<!-- \S+ -->
+
+<!ELEMENT       eHistoryItem    (
+					QueryKey,
+					QueryName,
+					DbName,
+					Title,
+					Time,
+					Count
+				)*>
+
+<!ELEMENT       eHistoryResult   (
+					WebEnv?,    
+					eHistoryItem*
+				)>
+

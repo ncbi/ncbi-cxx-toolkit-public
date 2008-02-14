@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = ehistory
+SRC = ehistory__ ehistory___
