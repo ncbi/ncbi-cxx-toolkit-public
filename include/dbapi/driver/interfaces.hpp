@@ -928,6 +928,9 @@ public:
         eSqlite            //< SQLITE3 server
     };
 
+    virtual string GetDriverName(void) const = 0;
+    virtual Uint4  GetProtocolVersion(void) const = 0;
+
     virtual string GetServerName(void) const = 0;
     virtual string GetUserName(void) const = 0;
     virtual string GetPassword(void) const = 0;
@@ -947,61 +950,6 @@ public:
     virtual bool IsDoNotConnect(void) const = 0;  
     /// Pool name to be used with this connection
     virtual string GetPoolName(void) const = 0; 
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-///  CDBDefaultConnParams::
-///
-
-class CDBDefaultConnParams : public CDBConnParams 
-{
-public:
-    CDBDefaultConnParams(const string&   srv_name,
-                         const string&   user_name,
-                         const string&   passwd,
-                         const CRef<IConnValidator>& validator,
-                         Uint4 host = 0,
-                         Uint2 port = 0,
-                         I_DriverContext::TConnectionMode mode = 0,
-                         bool            reusable = false,
-                         const string&   pool_name = kEmptyStr);
-    virtual ~CDBDefaultConnParams(void);
-
-public:
-    virtual string GetServerName(void) const;
-    virtual string GetUserName(void) const;
-    virtual string GetPassword(void) const;
-
-    virtual EServerType GetServerType(void) const;
-    virtual Uint4 GetHost(void) const;
-    virtual Uint2 GetPort(void) const;
-
-    virtual CRef<IConnValidator> GetConnValidator(void) const;
-    virtual bool IsSequreLogin(void) const;
-
-    // Connection pool related methods.
-
-    /// Use connection pool with this connection.
-    virtual bool IsPooled(void) const;
-    /// Use connections from NotInUse pool
-    virtual bool IsDoNotConnect(void) const;  
-    /// Pool name to be used with this connection
-    virtual string GetPoolName(void) const; 
-
-private:
-    const string m_ServerName;
-    const string m_UserName;
-    const string m_Password;
-    const Uint4  m_Host;
-    const Uint2  m_PortNumber;
-    const CRef<IConnValidator> m_Validator;
-
-    const string m_PoolName;
-    const bool m_IsSequreLogin;
-    const bool m_IsPooled;
-    const bool m_IsDoNotConnect;  
 };
 
 

@@ -206,6 +206,9 @@ public:
     virtual ~CDBConnParamsDelegate(void);
 
 public:
+    virtual string GetDriverName(void) const;
+    virtual Uint4  GetProtocolVersion(void) const;
+
     virtual string GetServerName(void) const;
     virtual string GetUserName(void) const;
     virtual string GetPassword(void) const;
@@ -240,6 +243,16 @@ CDBConnParamsDelegate::~CDBConnParamsDelegate(void)
 {
 }
 
+
+string CDBConnParamsDelegate::GetDriverName(void) const
+{
+    return m_Other.GetDriverName();
+}
+
+Uint4  CDBConnParamsDelegate::GetProtocolVersion(void) const
+{
+    return m_Other.GetProtocolVersion();
+}
 
 string CDBConnParamsDelegate::GetServerName(void) const
 {
