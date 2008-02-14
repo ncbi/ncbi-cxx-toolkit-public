@@ -1808,6 +1808,9 @@ CSeq_id& CSeq_id::Set(const string& the_id_in)
         switch (type) {
         case e_not_set:
             NCBI_THROW(CSeqIdException, eFormat, "Malformatted ID " + the_id);
+        case e_Prf:
+            // technically a name/locus, not an accession!
+            return Set(type, kEmptyStr, the_id);
         case e_Pdb:
         {
             string mol(the_id, 0, 4), chain;

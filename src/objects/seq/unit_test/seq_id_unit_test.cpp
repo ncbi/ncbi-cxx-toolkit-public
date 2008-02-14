@@ -181,6 +181,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPRFAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("806162C")));
     CHECK_NO_THROW(id.Reset(new CSeq_id("0806162C")));
     CHECK(id->IsPrf());
+    CHECK(!id->GetPrf().IsSetAccession());
+    CHECK_EQUAL(id->GetPrf().GetName(), string("0806162C"));
     CHECK_NO_THROW(id.Reset(new CSeq_id("080616AC")));
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("080616C2")));
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("00806162C")));
