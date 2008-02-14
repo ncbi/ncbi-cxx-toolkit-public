@@ -213,7 +213,7 @@ CConnection::CalculateServerType(const CDBConnParams& params)
                 }
             }
         }
-        catch(const CException& ex) {
+        catch(const CException&) {
             server_type = CDBConnParams::eSybaseOpenServer;
         }
     }
