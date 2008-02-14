@@ -299,7 +299,7 @@ CDBDefaultConnParams::CDBDefaultConnParams(
 , m_PortNumber(port)
 , m_Validator(validator)
 , m_PoolName(pool_name)
-, m_IsPasswordEncrypted((mode & I_DriverContext::fPasswordEncrypted) != 0)
+, m_IsSequreLogin((mode & I_DriverContext::fPasswordEncrypted) != 0)
 , m_IsPooled(reusable)
 , m_IsDoNotConnect((mode & I_DriverContext::fDoNotConnect) != 0)
 {
@@ -386,9 +386,9 @@ CDBDefaultConnParams::GetConnValidator(void) const
 }
 
 bool 
-CDBDefaultConnParams::IsPasswordEncrypted(void) const
+CDBDefaultConnParams::IsSequreLogin(void) const
 {
-    return m_IsPasswordEncrypted;
+    return m_IsSequreLogin;
 }
 
 bool 

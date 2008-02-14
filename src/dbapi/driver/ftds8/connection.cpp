@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 
 CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
                                  const CDBConnParams& params) :
-    impl::CConnection(cntx, true, params.IsPooled(), params.GetPoolName()),
+    impl::CConnection(cntx, params, true),
     m_DBLibCtx(&cntx),
     m_Login(NULL),
     m_Link(NULL)
@@ -124,11 +124,6 @@ CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
     if (!m_Link) {
         DATABASE_DRIVER_ERROR( err_str, 200011 );
     }
-
-    SetServerName(params.GetServerName());
-    SetUserName(params.GetUserName());
-    SetPassword(params.GetPassword());
-    SetSecureLogin(params.IsPasswordEncrypted());
 
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();

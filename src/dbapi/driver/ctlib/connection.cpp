@@ -67,7 +67,7 @@ namespace ftds64_ctlib
 ////////////////////////////////////////////////////////////////////////////
 CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                const CDBConnParams& params)
-: impl::CConnection(cntx, false, params.IsPooled(), params.GetPoolName())
+: impl::CConnection(cntx, params, true)
 , m_Cntx(&cntx)
 , m_Handle(cntx, *this)
 {
@@ -230,14 +230,13 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                             CS_UNUSED,
                             NULL));
 
-    if (params.IsPasswordEncrypted()) {
+    if (params.IsSequreLogin()) {
         GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_SEC_ENCRYPTION,
                                 &flag,
                                 CS_UNUSED,
                                 NULL));
-        SetSecureLogin(true);
     }
 
     if (!m_Handle.Open(params)) {
@@ -255,10 +254,6 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                             &link,
                             (CS_INT) sizeof(link),
                             NULL));
-
-    SetServerName(params.GetServerName());
-    SetUserName(params.GetUserName());
-    SetPassword(params.GetPassword());
 
     SetServerType(CalculateServerType(params));
 }

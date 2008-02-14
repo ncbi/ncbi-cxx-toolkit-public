@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 
 CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
                                  const CDBConnParams& params) :
-    impl::CConnection(cntx, true, params.IsPooled(), params.GetPoolName()),
+    impl::CConnection(cntx, params, true),
     m_DBLibCtx(&cntx),
     m_Login(NULL),
     m_Link(NULL)
@@ -95,7 +95,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     BCP_SETL(m_Login, TRUE);
 
 #ifndef MS_DBLIB_IN_USE
-    if (params.IsPasswordEncrypted())
+    if (params.IsSequreLogin())
         DBSETLENCRYPT(m_Login, TRUE);
 #endif
 
@@ -169,11 +169,6 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     GetDBLibCtx().Check(dbsetopt(GetDBLibConnection(), DBTEXTLIMIT, "0" )); // No limit
     GetDBLibCtx().Check(dbsetopt(GetDBLibConnection(), DBTEXTSIZE , "2147483647" )); // 0x7FFFFFFF
 #endif
-
-    SetServerName(params.GetServerName());
-    SetUserName(params.GetUserName());
-    SetPassword(params.GetPassword());
-    SetSecureLogin(params.IsPasswordEncrypted());
 
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();

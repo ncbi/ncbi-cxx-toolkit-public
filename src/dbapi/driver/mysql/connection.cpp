@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 CMySQL_Connection::CMySQL_Connection(CMySQLContext& cntx,
                                      const CDBConnParams& params) :
-    impl::CConnection(cntx),
+    impl::CConnection(cntx, params),
     m_IsOpen(false)
 {
     SetServerType(CDBConnParams::eMySQL);

@@ -303,7 +303,6 @@ private:
     static string x_GetDriverName(const IRegistry& registry);
     void x_SetConnAttributesBefore(const CODBCContext& cntx,
                                    const CDBConnParams& params);
-    void x_SetConnAttributesAfter(const CDBConnParams& params);
     void x_Connect(CODBCContext& cntx,
                    const CDBConnParams& params) const;
     void x_SetupErrorReporter(const CDBConnParams& params);

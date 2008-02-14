@@ -89,54 +89,25 @@ CDB_SendDataCmd* CConnection::Create_SendDataCmd(CSendDataCmd& senddata_cmd)
 
 
 CConnection::CConnection(CDriverContext& dc,
-                         bool isBCPable,
-                         bool reusable,
-                         const string& pool_name,
-                         bool hasSecureLogin
+			 const CDBConnParams& params,
+                         bool isBCPable
                          )
 : m_DriverContext(&dc)
 , m_MsgHandlers(dc.GetConnHandlerStack())
 , m_Interface(NULL)
 , m_ResProc(NULL)
 , m_ServerType(CDBConnParams::eUnknown)
-, m_Pool(pool_name)
-, m_Reusable(reusable)
+, m_Server(params.GetServerName())
+, m_User(params.GetUserName())
+, m_Passwd(params.GetPassword())
+, m_Pool(params.GetPoolName())
+, m_Reusable(params.IsPooled())
 , m_BCPable(isBCPable)
-, m_SecureLogin(hasSecureLogin)
+, m_SecureLogin(params.IsSequreLogin())
 , m_Opened(false)
 {
     _ASSERT(m_MsgHandlers.GetSize() == dc.GetConnHandlerStack().GetSize());
     _ASSERT(m_MsgHandlers.GetSize() > 0);
-
-    CheckCanOpen();
-}
-
-CConnection::CConnection(CDriverContext& dc,
-                         const string&   srv_name,
-                         const string&   user_name,
-                         const string&   passwd,
-                         bool            isBCPable,
-                         bool            reusable,
-                         const string&   pool_name,
-                         bool            hasSecureLogin
-                         )
-: m_DriverContext(&dc)
-, m_MsgHandlers(dc.GetConnHandlerStack())
-, m_Interface(NULL)
-, m_ResProc(NULL)
-, m_Server(srv_name)
-, m_User(user_name)
-, m_Passwd(passwd)
-, m_Pool(pool_name)
-, m_Reusable(reusable)
-, m_BCPable(isBCPable)
-, m_SecureLogin(hasSecureLogin)
-, m_Opened(false)
-{
-    _ASSERT(m_MsgHandlers.GetSize() == dc.GetConnHandlerStack().GetSize());
-    _ASSERT(m_MsgHandlers.GetSize() > 0);
-
-    SetExecCntxInfo("SERVER: '" + GetServerName() + "' USER: '" + GetUserName() + "'");
 
     CheckCanOpen();
 }

@@ -46,14 +46,12 @@ BEGIN_NCBI_SCOPE
 
 CSL3_Connection::CSL3_Connection(CSL3Context&  cntx,
                                  const CDBConnParams& params) :
-    impl::CConnection(cntx, true),
+    impl::CConnection(cntx, params, true),
     m_SQLite3(NULL),
     m_IsOpen(false)
 {
     SetServerType(CDBConnParams::eSqlite);
 
-    SetServerName(params.GetServerName());
-    
     Check(sqlite3_open(params.GetServerName().c_str(), &m_SQLite3));
 
     m_IsOpen = true;

@@ -937,7 +937,7 @@ public:
     virtual Uint2  GetPort(void) const = 0;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const = 0;
-    virtual bool IsPasswordEncrypted(void) const = 0;
+    virtual bool IsSequreLogin(void) const = 0;
 
     // Connection pool related methods.
 
@@ -979,7 +979,7 @@ public:
     virtual Uint2 GetPort(void) const;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const;
-    virtual bool IsPasswordEncrypted(void) const;
+    virtual bool IsSequreLogin(void) const;
 
     // Connection pool related methods.
 
@@ -999,7 +999,7 @@ private:
     const CRef<IConnValidator> m_Validator;
 
     const string m_PoolName;
-    const bool m_IsPasswordEncrypted;
+    const bool m_IsSequreLogin;
     const bool m_IsPooled;
     const bool m_IsDoNotConnect;  
 };

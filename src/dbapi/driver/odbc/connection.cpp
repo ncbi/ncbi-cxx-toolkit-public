@@ -73,9 +73,8 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
                                    const CDBConnParams& params) :
     impl::CConnection(
             cntx, 
-            IsBCPCapable(), 
-            params.IsPooled(), 
-            params.GetPoolName()
+	    params,
+            IsBCPCapable()
             ),
     m_Link(NULL),
     m_Reporter(0, SQL_HANDLE_DBC, NULL, &cntx.GetReporter()),
@@ -103,8 +102,6 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
     x_SetConnAttributesBefore(cntx, params);
 
     x_Connect(cntx, params);
-
-    x_SetConnAttributesAfter(params);
 }
 
 
@@ -247,15 +244,6 @@ CODBC_Connection::x_SetConnAttributesBefore(
 #endif
 }
 
-
-void
-CODBC_Connection::x_SetConnAttributesAfter(const CDBConnParams& params)
-{
-    SetServerName(params.GetServerName());
-    SetUserName(params.GetUserName());
-    SetPassword(params.GetPassword());
-    SetSecureLogin(params.IsPasswordEncrypted());
-}
 
 string
 CODBC_Connection::x_GetDriverName(const IRegistry& registry)

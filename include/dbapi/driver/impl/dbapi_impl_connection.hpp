@@ -64,19 +64,8 @@ class NCBI_DBAPIDRIVER_EXPORT CConnection
 
 public:
     CConnection(CDriverContext& dc,
-                bool isBCPable  = false,
-                bool reusable   = false,
-                const string&   pool_name = kEmptyStr,
-                bool            hasSecureLogin = false
-                );
-    CConnection(CDriverContext& dc,
-                const string&   srv_name,
-                const string&   user_name,
-                const string&   passwd,
-                bool isBCPable  = false,
-                bool reusable   = false,
-                const string&   pool_name = kEmptyStr,
-                bool            hasSecureLogin = false
+                const CDBConnParams& params,
+                bool isBCPable  = false
                 );
     virtual ~CConnection(void);
 
@@ -246,33 +235,9 @@ protected:
     CDBConnParams::EServerType CalculateServerType(const CDBConnParams& params);
 
     //
-    void SetServerName(const string& name)
-    {
-        m_Server = name;
-    }
-    void SetUserName(const string& name)
-    {
-        m_User = name;
-    }
-    void SetPassword(const string& pswd)
-    {
-        m_Passwd = pswd;
-    }
-    void SetPoolName(const string& name)
-    {
-        m_Pool = name;
-    }
-    void SetReusable(bool flag = true)
-    {
-        m_Reusable = flag;
-    }
     bool IsBCPable(void) const
     {
         return m_BCPable;
-    }
-    void SetSecureLogin(bool flag = true)
-    {
-        m_SecureLogin = flag;
     }
     bool HasSecureLogin(void) const
     {
@@ -299,15 +264,15 @@ private:
     CDB_ResultProcessor*            m_ResProc;
     CDBConnParams::EServerType      m_ServerType;
 
-    string  m_Server;
-    string  m_User;
-    string  m_Passwd;
-    string  m_Pool;
-    bool    m_Reusable;
-    bool    m_BCPable; //< Does this connection support BCP (It is related to Context, actually)
-    bool    m_SecureLogin;
-    bool    m_Opened;
-    string  m_ExecCntxInfo;
+    const string  m_Server;
+    const string  m_User;
+    const string  m_Passwd;
+    const string  m_Pool;
+    const bool    m_Reusable;
+    const bool    m_BCPable; //< Does this connection support BCP (It is related to Context, actually)
+    const bool    m_SecureLogin;
+    bool          m_Opened;
+    string        m_ExecCntxInfo;
 };
 
 } // namespace impl
