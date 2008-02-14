@@ -323,6 +323,8 @@ bool CGeneModel::GoodEnoughToBeAlternative(int minCdsLen, int maxcomposite) cons
 
 bool CGeneModel::CdsInvariant(bool check_start_stop) const
 {
+    _ASSERT( !(ConfirmedStart() && OpenCds()) );
+
     if (ReadingFrame().Empty())
         return true;
 

@@ -705,8 +705,6 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
     }
     for(TSignedSeqPos i = 1; i < len; ++i) m_notining[i] = max(m_notining[i-1],m_notining[i]);
 
-    const int stpT = 1, stpTA = 2, stpTG = 4;
-
     for(int strand = 0; strand < 2; ++strand)
     {
         CEResidueVec& s = m_seq[strand];
@@ -721,21 +719,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             for(TSignedSeqPos i = 0; i < len; ++i)
             {
                 m_ascr[strand][i] = max(m_ascr[strand][i],m_acceptor.Score(s,i));
-                if(m_ascr[strand][i] != BadScore())
-                {
-                    if(s[i+1] == enA && s[i+2] == enA) m_asplit[strand][0][i] |= stpT;
-                    if(s[i+1] == enA && s[i+2] == enG) m_asplit[strand][0][i] |= stpT; 
-                    if(s[i+1] == enG && s[i+2] == enA) m_asplit[strand][0][i] |= stpT;
-                    if(s[i+1] == enA) m_asplit[strand][1][i] |= stpTA|stpTG;
-                    if(s[i+1] == enG) m_asplit[strand][1][i] |= stpTA;
-                }
                 m_dscr[strand][i] = max(m_dscr[strand][i],m_donor.Score(s,i));
-                if(m_dscr[strand][i] != BadScore())
-                {
-                    if(s[i] == enT) m_dsplit[strand][0][i] |= stpT;
-                    if(s[i-1] == enT && s[i] == enA) m_dsplit[strand][1][i] |= stpTA;
-                    if(s[i-1] == enT && s[i] == enG) m_dsplit[strand][1][i] |= stpTG;
-                }
                 m_sttscr[strand][i] = max(m_sttscr[strand][i],m_start.Score(s,i));
                 m_stpscr[strand][i] = max(m_stpscr[strand][i],m_stop.Score(s,i));
                 if(m_ascr[strand][i] != BadScore()) ++m_anum[strand];
@@ -749,21 +733,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             {
                 int ii = len-2-i;   // extra -1 because ii is point on the "right"
                 m_ascr[strand][i] = max(m_ascr[strand][i],m_acceptor.Score(s,ii));
-                if(m_ascr[strand][i] != BadScore())
-                {
-                    if(s[ii+1] == enA && s[ii+2] == enA) m_asplit[strand][0][i] |= stpT;
-                    if(s[ii+1] == enA && s[ii+2] == enG) m_asplit[strand][0][i] |= stpT; 
-                    if(s[ii+1] == enG && s[ii+2] == enA) m_asplit[strand][0][i] |= stpT;
-                    if(s[ii+1] == enA) m_asplit[strand][1][i] |= stpTA|stpTG;
-                    if(s[ii+1] == enG) m_asplit[strand][1][i] |= stpTA;
-                }
                 m_dscr[strand][i] = max(m_dscr[strand][i],m_donor.Score(s,ii));
-                if(m_dscr[strand][i] != BadScore())
-                {
-                    if(s[ii] == enT) m_dsplit[strand][0][i] |= stpT;
-                    if(s[ii-1] == enT && s[ii] == enA) m_dsplit[strand][1][i] |= stpTA;
-                    if(s[ii-1] == enT && s[ii] == enG) m_dsplit[strand][1][i] |= stpTG;
-                }
                 m_sttscr[strand][i] = max(m_sttscr[strand][i],m_start.Score(s,ii));
                 m_stpscr[strand][i] = max(m_stpscr[strand][i],m_stop.Score(s,ii));
                 if(m_ascr[strand][i] != BadScore()) ++m_anum[strand];
@@ -1093,6 +1063,46 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             }
         }
     }
+    
+    const int stpT = 1, stpTA = 2, stpTG = 4;
+
+    for(int strand = 0; strand < 2; ++strand)
+    {
+        CEResidueVec& s = m_seq[strand];
+        
+        if(strand == ePlus) {
+            for(TSignedSeqPos i = 0; i < len; ++i) {
+                if(m_ascr[strand][i] != BadScore()) {
+                    if(s[i+1] == enA && s[i+2] == enA) m_asplit[strand][0][i] |= stpT;
+                    if(s[i+1] == enA && s[i+2] == enG) m_asplit[strand][0][i] |= stpT; 
+                    if(s[i+1] == enG && s[i+2] == enA) m_asplit[strand][0][i] |= stpT;
+                    if(s[i+1] == enA) m_asplit[strand][1][i] |= stpTA|stpTG;
+                    if(s[i+1] == enG) m_asplit[strand][1][i] |= stpTA;
+                }
+                if(m_dscr[strand][i] != BadScore()) {
+                    if(s[i] == enT) m_dsplit[strand][0][i] |= stpT;
+                    if(s[i-1] == enT && s[i] == enA) m_dsplit[strand][1][i] |= stpTA;
+                    if(s[i-1] == enT && s[i] == enG) m_dsplit[strand][1][i] |= stpTG;
+                }
+            }
+        } else {
+            for(TSignedSeqPos i = 0; i < len; ++i) {
+                int ii = len-2-i;   // extra -1 because ii is point on the "right"
+                if(m_ascr[strand][i] != BadScore()) {
+                    if(s[ii+1] == enA && s[ii+2] == enA) m_asplit[strand][0][i] |= stpT;
+                    if(s[ii+1] == enA && s[ii+2] == enG) m_asplit[strand][0][i] |= stpT; 
+                    if(s[ii+1] == enG && s[ii+2] == enA) m_asplit[strand][0][i] |= stpT;
+                    if(s[ii+1] == enA) m_asplit[strand][1][i] |= stpTA|stpTG;
+                    if(s[ii+1] == enG) m_asplit[strand][1][i] |= stpTA;
+                }
+                if(m_dscr[strand][i] != BadScore()) {
+                    if(s[ii] == enT) m_dsplit[strand][0][i] |= stpT;
+                    if(s[ii-1] == enT && s[ii] == enA) m_dsplit[strand][1][i] |= stpTA;
+                    if(s[ii-1] == enT && s[ii] == enG) m_dsplit[strand][1][i] |= stpTG;
+                }
+            }
+        }
+    }		
     
 }
 
