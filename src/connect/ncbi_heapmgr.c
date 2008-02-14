@@ -116,9 +116,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #define NCBI_USE_ERRCODE_X   Connect_HeapMgr
-
 
 #if defined(NCBI_OS_MSWIN)  &&  defined(_WIN64)
 /* Disable ptr->long conversion warning (even on explicit cast!) */

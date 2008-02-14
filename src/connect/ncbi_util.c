@@ -58,9 +58,9 @@
 #  include <windows.h>
 #endif
 
-#define NCBI_USE_PRECOMPILED_CRC32_TABLES 1
-
 #define NCBI_USE_ERRCODE_X   Connect_Util
+
+#define NCBI_USE_PRECOMPILED_CRC32_TABLES 1
 
 
 /* Static function pre-declarations to avoid C++ compiler warnings

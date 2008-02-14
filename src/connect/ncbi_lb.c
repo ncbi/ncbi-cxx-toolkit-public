@@ -34,7 +34,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-
 #define NCBI_USE_ERRCODE_X   Connect_LB
 
 

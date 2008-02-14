@@ -38,13 +38,14 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
+
+#define NCBI_USE_ERRCODE_X   Connect_Sendmail
+
 #ifdef NCBI_CXX_TOOLKIT
 #define NCBI_SENDMAIL_TOOLKIT "C++"
 #else
 #define NCBI_SENDMAIL_TOOLKIT "C"
 #endif
-
-#define NCBI_USE_ERRCODE_X   Connect_Sendmail
 
 #define MX_MAGIC_NUMBER 0xBA8ADEDA
 #define MX_CRLF         "\r\n"

@@ -40,6 +40,8 @@
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_socket_unix.h>
 
+#define NCBI_USE_ERRCODE_X   Connect_Socket
+
 /* OS must be specified in the command-line ("-D....") or in the conf. header
  */
 #if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_MAC)
@@ -57,7 +59,6 @@
 /* #define HAVE_GETADDRINFO 1 */
 /* #define HAVE_GETNAMEINFO 1 */
 
-
 /* Uncomment this (or specify "-DHAVE_GETHOSTBY***_R=") only if:
  * 0) you are compiling this outside of the NCBI C or C++ Toolkits
  *    (USE_NCBICONF is not #define'd), and
@@ -74,7 +75,6 @@
 /* #define HAVE_GETHOSTBYNAME_R 6 */
 /* #define HAVE_GETHOSTBYADDR_R 8 */
 
-
 /* Uncomment this (or specify "-DHAVE_SIN_LEN") only if:
  * 0) you are compiling this outside of the NCBI C or C++ Toolkits
  *    (USE_NCBICONF is not #define'd), and
@@ -82,7 +82,6 @@
  */
 
 /* #define HAVE_SIN_LEN 1 */
-
 
 /* Platform-specific system headers
  */
@@ -149,9 +148,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-
-
-#define NCBI_USE_ERRCODE_X   Connect_Socket
 
 
 /******************************************************************************

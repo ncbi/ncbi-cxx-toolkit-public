@@ -45,14 +45,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #define NCBI_USE_ERRCODE_X   Connect_FTP
 
 
 /***********************************************************************
  *  INTERNAL -- Auxiliary types and static functions
  ***********************************************************************/
-
 
 typedef enum {
     eFtpFeature_None = 0,

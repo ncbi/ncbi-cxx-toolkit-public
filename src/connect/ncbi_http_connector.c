@@ -41,7 +41,6 @@
 #include <errno.h>
 #include <stdlib.h>
 
-
 #define NCBI_USE_ERRCODE_X   Connect_HTTP
 
 
@@ -59,7 +58,6 @@ typedef enum {
 
 typedef unsigned EBCanConnect;
 typedef unsigned TBHCC_Flags;
-
 
 typedef enum {
     eRM_Regular    = 0,

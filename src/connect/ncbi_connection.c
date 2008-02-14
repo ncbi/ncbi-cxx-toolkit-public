@@ -37,13 +37,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define NCBI_USE_ERRCODE_X   Connect_Connection
+
 
 /***********************************************************************
  *  INTERNAL
  ***********************************************************************/
-
-#define NCBI_USE_ERRCODE_X   Connect_Connection
-
 
 /* Standard logging message
  */

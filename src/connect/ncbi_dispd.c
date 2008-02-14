@@ -43,13 +43,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define NCBI_USE_ERRCODE_X   Connect_Dispd
+
 /* Lower bound of up-to-date/out-of-date ratio */
 #define DISPD_STALE_RATIO_OK  0.8
 /* Default rate increase 20% if svc runs locally */
 #define DISPD_LOCAL_BONUS 1.2
-
-
-#define NCBI_USE_ERRCODE_X   Connect_Dispd
 
 
 #ifdef __cplusplus
