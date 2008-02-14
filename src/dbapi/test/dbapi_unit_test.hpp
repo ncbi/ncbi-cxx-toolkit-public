@@ -256,6 +256,8 @@ public:
     void Test_BCP_Cancel(void);
     void Test_ClearParamList(void);
 
+    void Test_Truncation(void);
+
 public:
     typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)
                 (IDBServiceMapper::TFactory svc_mapper_factory);

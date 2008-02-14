@@ -12391,6 +12391,34 @@ CDBAPIUnitTest::Test_ClearParamList(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_Truncation(void)
+{
+    string sql;
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // There should be no problems with TDS version 7, 8, and 12.5
+        {
+            sql = "SELECT replicate('x', 255)+'y'" ;
+
+            auto_stmt->SendSql( sql );
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            BOOST_CHECK(rs.get() != NULL);
+            BOOST_CHECK(rs->Next());
+            const CVariant& str_field = rs->GetVariant(1);
+            BOOST_CHECK_EQUAL(str_field.GetString().size(), 256U);
+            DumpResults(auto_stmt.get());
+        }
+    }
+    catch(const CDB_Exception& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Bind(void)
 {
@@ -12538,6 +12566,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (!(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ClearParamList,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+    // Under development ...
+    if (false) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Truncation,
                 DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
