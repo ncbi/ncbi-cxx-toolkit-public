@@ -1270,7 +1270,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
     } else {
         SIZE_TYPE non_dig_pos = acc.find_first_not_of(kDigits, digit_pos);
         const unsigned char* ucdata = (const unsigned char*)acc.data();
-        if (non_dig_pos != NPOS  &&  non_dig_pos != main_size) {
+        if (non_dig_pos < main_size  &&  non_dig_pos != NPOS) {
             if (digit_pos == 0  &&  main_size >= 4  &&  main_size == acc.size()
                 &&  (main_size <= 5  ||  ispunct(ucdata[4]))) {
                 return eAcc_pdb; // must be unversioned
@@ -1281,6 +1281,11 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
                        &&  isalnum(ucdata[3]) &&  isalnum(ucdata[4])
                        &&  isdigit(ucdata[5])) {
                 return eAcc_swissprot;
+            } else if (digit_pos == 0  &&  main_size == 8
+                       &&  main_size == acc.size()  &&  non_dig_pos >= 6
+                       &&  isalpha(ucdata[7])
+                       /* &&  (main_acc[0] == '1' || main_acc[0] == '2') */) {
+                return eAcc_prf;
             } else {
                 return eAcc_unknown;
             }

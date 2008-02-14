@@ -174,6 +174,20 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("ABCD12345678901")));
 }
 
+BOOST_AUTO_TEST_CASE(s_TestInitFromPRFAcc)
+{
+    CRef<CSeq_id> id;
+
+    CHECK_THROW_SEQID(id.Reset(new CSeq_id("806162C")));
+    CHECK_NO_THROW(id.Reset(new CSeq_id("0806162C")));
+    CHECK(id->IsPrf());
+    CHECK_NO_THROW(id.Reset(new CSeq_id("080616AC")));
+    CHECK_THROW_SEQID(id.Reset(new CSeq_id("080616C2")));
+    CHECK_THROW_SEQID(id.Reset(new CSeq_id("00806162C")));
+    CHECK_THROW_SEQID(id.Reset(new CSeq_id("0806162C3")));
+    CHECK_THROW_SEQID(id.Reset(new CSeq_id("0806162CD")));
+}
+
 BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
 {
     CRef<CSeq_id> id;
