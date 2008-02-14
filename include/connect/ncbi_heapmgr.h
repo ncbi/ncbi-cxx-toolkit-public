@@ -84,7 +84,7 @@ typedef void* (*FHEAP_Resize)
 
 
 /* Create new heap.
- * NOTE: the initial heap base must be aligned with a 'double' boundary!
+ * NOTE: the initial heap base must be aligned at a 'double' boundary!
  */
 extern NCBI_XCONNECT_EXPORT HEAP HEAP_Create
 (void*        base,        /* initial heap base (use "resize" if NULL) */
