@@ -1362,8 +1362,12 @@ case "$compiler:$compiler_version:$with_bin_release" in
     LDFLAGS="-static-libcxa $LDFLAGS"
     ;;
   ICC:8* )
-    APP_LDFLAGS="-static-libcxa $APP_LDFLAGS"
-    DLL_LDFLAGS="-nodefaultlibs $DLL_LDFLAGS"
+    # In principle, these settings should work, and avoid the need to
+    # depend on Intel's libraries at runtime.
+    #  APP_LDFLAGS="-static-libcxa $APP_LDFLAGS"
+    #  DLL_LDFLAGS="-nodefaultlibs $DLL_LDFLAGS"
+    # In practice, they can break applications that use plugins. :-/
+    LDFLAGS="$CONF_f_runpath$compiler_root/lib $LDFLAGS"
     ;;
   ICC:9* )
     # -i-static moved from common LDFLAGS to accommodate those few
