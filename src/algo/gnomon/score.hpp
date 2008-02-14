@@ -50,7 +50,7 @@ public:
     CSeqScores (const CTerminal& a, const CTerminal& d,const  CTerminal& stt, const CTerminal& stp, 
                 const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& ing, 
                 const CIntronParameters& intron_params,
-                TSignedSeqPos from, TSignedSeqPos to, const TAlignList& cls, 
+                TSignedSeqPos from, TSignedSeqPos to, const TGeneModelList& cls, 
                 const TFrameShifts& initial_fshifts, double mpp, const CGnomonEngine& gnomon);
     void Init(CResidueVec& original_sequence, bool repeats, bool leftwall, 
               bool rightwall, double consensuspenalty,
@@ -71,7 +71,7 @@ public:
     const CTerminal& Donor() const { return m_donor; }
     const CTerminal& Start() const { return m_start; }
     const CTerminal& Stop() const { return m_stop; }
-    const TAlignList& Alignments() const { return m_align_list; }
+    const TGeneModelList& Alignments() const { return m_align_list; }
     const TFrameShifts& SeqTFrameShifts() const { return m_fshifts; }
     const CFrameShiftedSeqMap& FrameShiftedSeqMap() const { return m_map; }
     bool StopInside(int a, int b, int strand, int frame) const;
@@ -101,7 +101,7 @@ private:
     const CTerminal &m_acceptor, &m_donor, &m_start, &m_stop;
     const CCodingRegion &m_cdr;
     const CNonCodingRegion &m_ncdr, &m_intrg;
-    TAlignList m_align_list;
+    TGeneModelList m_align_list;
     TFrameShifts m_fshifts;
     CEResidueVec m_seq[2];
     TIVec m_laststop[2][3], m_notinexon[2][3], m_notinintron[2], m_notining;
@@ -114,7 +114,7 @@ private:
     TSignedSeqPos m_chunk_start, m_chunk_stop;
     double m_mpp;
 
-    CResidueVec ConstructSequenceAndMaps(const TAlignList& aligns, const CResidueVec& original_sequence);
+    CResidueVec ConstructSequenceAndMaps(const TGeneModelList& aligns, const CResidueVec& original_sequence);
 };
 
 END_SCOPE(gnomon)

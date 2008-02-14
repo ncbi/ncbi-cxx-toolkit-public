@@ -131,7 +131,7 @@ int CGnomonEngine::GetGCcontent() const
 
 double CGnomonEngine::Run(bool repeats, bool leftwall, bool rightwall, double mpp)
 {
-    TAlignList cls;
+    TGeneModelList cls;
 
     return Run( cls, repeats,
                 leftwall, rightwall, false, false,
@@ -139,7 +139,7 @@ double CGnomonEngine::Run(bool repeats, bool leftwall, bool rightwall, double mp
               );
 }
 
-double CGnomonEngine::Run(const TAlignList& cls,
+double CGnomonEngine::Run(const TGeneModelList& cls,
                           bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty)
 {
     m_data->m_parse.reset();

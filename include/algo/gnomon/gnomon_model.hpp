@@ -120,7 +120,7 @@ public:
     bool IsInsertion() const { return m_is_insert; }
     bool IsDeletion() const { return !m_is_insert; }
     const string& DeletedValue() const { return m_delet_value; }
-    bool IntersectingWith(TSignedSeqPos a, TSignedSeqPos b) const
+    bool IntersectingWith(TSignedSeqPos a, TSignedSeqPos b) const    // insertion at least partially inside, deletion inside or flanking
     {
         return IsDeletion() && Loc() >= a && Loc() <= b+1 ||
             IsInsertion() && Loc() <= b && a <= Loc()+Len()-1;
@@ -164,26 +164,26 @@ public:
     virtual TSignedSeqRange operator()(TSignedSeqRange r, bool withextras = true) const = 0;
 };
 
-class NCBI_XALGOGNOMON_EXPORT CAlignExon {
+class NCBI_XALGOGNOMON_EXPORT CModelExon {
 public:
-    CAlignExon(TSignedSeqPos f = 0, TSignedSeqPos s = 0, bool fs = false, bool ss = false) : m_fsplice(fs), m_ssplice(ss), m_range(f,s) {};
+    CModelExon(TSignedSeqPos f = 0, TSignedSeqPos s = 0, bool fs = false, bool ss = false) : m_fsplice(fs), m_ssplice(ss), m_range(f,s) {};
 
-    bool operator==(const CAlignExon& p) const 
+    bool operator==(const CModelExon& p) const 
     { 
         return (m_range==p.m_range && m_fsplice == p.m_fsplice && m_ssplice == p.m_ssplice); 
     }
-    bool operator!=(const CAlignExon& p) const
+    bool operator!=(const CModelExon& p) const
     {
         return !(*this == p);
     }
-    bool operator<(const CAlignExon& p) const { return Precede(Limits(),p.Limits()); }
+    bool operator<(const CModelExon& p) const { return Precede(Limits(),p.Limits()); }
     
     operator TSignedSeqRange() const { return m_range; }
     const TSignedSeqRange& Limits() const { return m_range; }
           TSignedSeqRange& Limits()       { return m_range; }
     TSignedSeqPos GetFrom() const { return m_range.GetFrom(); }
     TSignedSeqPos GetTo() const { return m_range.GetTo(); }
-    void Extend(const CAlignExon& e);
+    void Extend(const CModelExon& e);
     void AddFrom(int d) { m_range.SetFrom( m_range.GetFrom() +d ); }
     void AddTo(int d) { m_range.SetTo( m_range.GetTo() +d ); }
 
@@ -274,34 +274,10 @@ public:
 
         if (ConfirmedStart()) {
             _ASSERT( HasStart() );
-            if (Precede(Start(), ReadingFrame())) {
-                 _ASSERT( ProtReadingFrame().GetFrom()==ReadingFrame().GetFrom() );
-            } else {
-                 _ASSERT( ProtReadingFrame().GetTo()==ReadingFrame().GetTo() );
-            }
         }
 
         ITERATE( vector<TSignedSeqRange>, s, PStops())
             _ASSERT( Include(ReadingFrame(), *s) );
-
-        if (OpenCds()) {
-            if (HasStart()) {
-                if (Precede(Start(), ReadingFrame())) {
-                    _ASSERT( MaxCdsLimits().GetFrom()==TSignedSeqRange::GetWholeFrom() );
-                } else {
-                    _ASSERT( MaxCdsLimits().GetTo()==TSignedSeqRange::GetWholeTo() );
-                }
-            } else if (HasStop()) {
-                if (Precede(ReadingFrame(), Stop())) {
-                    _ASSERT( MaxCdsLimits().GetFrom()==TSignedSeqRange::GetWholeFrom() );
-                } else {
-                    _ASSERT( MaxCdsLimits().GetTo()==TSignedSeqRange::GetWholeTo() );
-                }
-            } else {
-                _ASSERT( MaxCdsLimits().GetFrom()==TSignedSeqRange::GetWholeFrom() );
-                _ASSERT( MaxCdsLimits().GetTo()==TSignedSeqRange::GetWholeTo() );
-            }
-        }
 
         return true;
     }
@@ -320,6 +296,33 @@ private:
     double m_score;
 };
 
+class CTranscriptExon {
+public:
+    CTranscriptExon(TSignedSeqPos f = 0, TSignedSeqPos s = 0) :  m_range(f,s) {};
+
+    bool operator==(const CTranscriptExon& p) const 
+    { 
+        return (m_range==p.m_range); 
+    }
+    bool operator!=(const CTranscriptExon& p) const
+    {
+        return !(*this == p);
+    }
+    bool operator<(const CTranscriptExon& p) const { return Precede(Limits(),p.Limits()); }
+    
+    operator TSignedSeqRange() const { return m_range; }
+    const TSignedSeqRange& Limits() const { return m_range; }
+          TSignedSeqRange& Limits()       { return m_range; }
+    TSignedSeqPos GetFrom() const { return m_range.GetFrom(); }
+    TSignedSeqPos GetTo() const { return m_range.GetTo(); }
+    void AddFrom(int d) { m_range.SetFrom( m_range.GetFrom() +d ); }
+    void AddTo(int d) { m_range.SetTo( m_range.GetTo() +d ); }
+
+private:
+    TSignedSeqRange m_range;
+};
+
+
 class NCBI_XALGOGNOMON_EXPORT CGeneModel
 {
 public:
@@ -335,6 +338,7 @@ public:
     static string TypeToString(int type);
 
     enum EStatus {
+        eReversed = 2,
         eSkipped = 4,
         eLeftTrimmed = 8,
         eRightTrimmed = 16,
@@ -344,14 +348,16 @@ public:
 
     CGeneModel(EStrand s = ePlus, int id = 0, int type = 0) :
         m_type(type), m_id(id), m_status(0), m_expecting_hole(false), m_strand(s), m_geneid(0) {}
-    CGeneModel(const objects::CSeq_align& seq_align);
     virtual ~CGeneModel() {}
 
     void AddExon(TSignedSeqRange exon);
     void AddHole(); // between model and next exons
 
-    typedef vector<CAlignExon> TExons;
+    typedef vector<CModelExon> TExons;
     const TExons& Exons() const { return m_exons; }
+
+    typedef vector<CTranscriptExon> TTranscriptExons;
+    virtual const TTranscriptExons* TranscriptExonsP() const { return 0; }
 
     void Remap(const CRangeMapper& mapper);
     enum EClipMode { eRemoveExons, eDontRemoveExons };
@@ -433,6 +439,7 @@ public:
 
     bool GoodEnoughToBeAnnotation(int minCdsLen) const
     {
+        _ASSERT( !(OpenCds()&&ConfirmedStart()) );
         return !OpenCds() && FullCds() && RealCdsLen() >= minCdsLen;
     }
     bool GoodEnoughToBeAlternative(int minCdsLen, int maxcomposite) const;
@@ -477,6 +484,8 @@ public:
     // move along mrna skipping introns
     TSignedSeqPos FShiftedMove(TSignedSeqPos pos, int len) const;
     
+    string SupportName() const;
+
     /*
     template <class Vec>
     void GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap = 0, bool cdsonly = false) const;                     
@@ -525,13 +534,33 @@ private:
 };
 
 
+
+class CAlignModel : public CGeneModel {
+public:
+    CAlignModel(const objects::CSeq_align& seq_align);
+    CAlignModel(EStrand s = ePlus, int id = 0, int type = 0) : CGeneModel(s, id, type) {}
+    CAlignModel(const CGeneModel& g) : CGeneModel(g) {}
+    TTranscriptExons& TranscriptExons() { return m_transcript_exons; }
+    const TTranscriptExons& TranscriptExons() const { return m_transcript_exons; }
+    bool IdenticalAlign(const CAlignModel& a) const
+    { return CGeneModel::IdenticalAlign(a) && TranscriptExons() == a.TranscriptExons(); }
+    void AddExon(TSignedSeqRange exon, TSignedSeqRange transcript_exon);
+    void TrimTranscriptExons(int left_trim, int right_trim);
+    void CutTranscriptExons(TSignedSeqRange hole);
+    virtual const TTranscriptExons* TranscriptExonsP() const { return m_transcript_exons.empty() ? 0 : &m_transcript_exons; }
+private:
+    TTranscriptExons& MyTranscriptExons() { return m_transcript_exons; }
+    TTranscriptExons m_transcript_exons;
+};
+
+
 class CFrameShiftedSeqMap {
 public:
-    CFrameShiftedSeqMap(TSignedSeqPos orig_a, TSignedSeqPos orig_b) : m_strand(ePlus) {
+    CFrameShiftedSeqMap(TSignedSeqPos orig_a, TSignedSeqPos orig_b) : m_orientation(ePlus) {
         m_orig_ranges.push_back(SMapRange(SMapRangeEdge(orig_a), SMapRangeEdge(orig_b)));
         m_edited_ranges = m_orig_ranges;
 }
-    CFrameShiftedSeqMap(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TFrameShifts::const_iterator fsi_begin, const TFrameShifts::const_iterator fsi_end) : m_strand(ePlus) { InsertIndelRangesForInterval(orig_a, orig_b, 0, fsi_begin, fsi_end); }
+    CFrameShiftedSeqMap(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TFrameShifts::const_iterator fsi_begin, const TFrameShifts::const_iterator fsi_end) : m_orientation(ePlus) { InsertIndelRangesForInterval(orig_a, orig_b, 0, fsi_begin, fsi_end); }
     enum EMapLimit{ eNoLimit, eCdsOnly, eRealCdsOnly };
     CFrameShiftedSeqMap(const CGeneModel& align, EMapLimit limit = eNoLimit);
     TSignedSeqPos MapOrigToEdited(TSignedSeqPos orig_pos) const;
@@ -543,7 +572,7 @@ public:
     bool EditedRangeIncludesTransformedDeletion(TSignedSeqRange edited_range) const;
     int FShiftedLen(TSignedSeqRange ab, bool withextras = true) const { return MapRangeOrigToEdited(ab, withextras).GetLength(); }
     int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b, bool withextras = true) const { return FShiftedLen(TSignedSeqRange(a,b), withextras); }
-    TSignedSeqRange ShrinkToRealPoints(TSignedSeqRange orig_range) const;
+    TSignedSeqRange ShrinkToRealPoints(TSignedSeqRange orig_range, bool snap_to_codons = false) const;
     TSignedSeqPos FShiftedMove(TSignedSeqPos orig_pos, int len) const;
 // private: // breaks SMapRange on WorkShop. :-/
     struct SMapRangeEdge {
@@ -587,7 +616,7 @@ private:
     TSignedSeqPos InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TSignedSeqPos edit_a, TFrameShifts::const_iterator fsi_begin, TFrameShifts::const_iterator fsi_end);
 
     vector<SMapRange> m_orig_ranges, m_edited_ranges;
-    EStrand m_strand;
+    EStrand m_orientation;
 };
 
 TSignedSeqRange MapRangeToOrig(TSignedSeqPos start, TSignedSeqPos stop, const CFrameShiftedSeqMap& mrnamap);
@@ -604,163 +633,65 @@ struct NCBI_XALGOGNOMON_EXPORT getcontig {
 NCBI_XALGOGNOMON_EXPORT CNcbiOstream& operator<<(CNcbiOstream& s, const setcontig& c);
 NCBI_XALGOGNOMON_EXPORT CNcbiIstream& operator>>(CNcbiIstream& s, const getcontig& c);
 
-NCBI_XALGOGNOMON_EXPORT CNcbiIstream& operator>>(CNcbiIstream& s, CGeneModel& a);
-NCBI_XALGOGNOMON_EXPORT CNcbiOstream& operator<<(CNcbiOstream& s, const CGeneModel& a);
+NCBI_XALGOGNOMON_EXPORT CNcbiIstream& operator>>(CNcbiIstream& s, CAlignModel& a);
+NCBI_XALGOGNOMON_EXPORT CNcbiOstream& operator<<(CNcbiOstream& s, const CAlignModel& a);
 
-typedef list<CGeneModel> TAlignList;
 
-class NCBI_XALGOGNOMON_EXPORT CCluster : public TAlignList
-{
- public:
-    CCluster(int f = numeric_limits<int>::max(), int s = 0) : m_limits(f,s) {}
-    CCluster(TSignedSeqRange limits) : m_limits(limits) {}
-    void Insert(const CGeneModel& a);
-    void Splice(CCluster& c); // elements removed from c and inserted into *this
+template<class Model> 
+class NCBI_XALGOGNOMON_EXPORT CModelCluster : public list<Model> {
+public:
+    typedef Model TModel;
+    CModelCluster(int f = numeric_limits<int>::max(), int s = 0) : m_limits(f,s) {}
+    CModelCluster(TSignedSeqRange limits) : m_limits(limits) {}
+    void Insert(const Model& a) {
+        m_limits.CombineWith(a.Limits());
+        push_back(a);
+    }
+    void Splice(CModelCluster& c) { // elements removed from c and inserted into *this
+        m_limits.CombineWith(c.Limits());
+        splice(list<Model>::end(),c);
+    }
     TSignedSeqRange Limits() const { return m_limits; }
-    bool operator<(const CCluster& c) const { return Precede(m_limits, c.m_limits); }
-    void Init(TSignedSeqPos first, TSignedSeqPos second);
+    bool operator<(const CModelCluster& c) const { return Precede(m_limits, c.m_limits); }
+    void Init(TSignedSeqPos first, TSignedSeqPos second) {
+        list<Model>::clear();
+        m_limits.SetFrom( first );
+        m_limits.SetTo( second );
+    }
 
-    //    CNcbiOstream& print(CNcbiOstream& s) const;
-
- private:
+private:
     TSignedSeqRange m_limits;
 };
 
-class NCBI_XALGOGNOMON_EXPORT CClusterSet : public set<CCluster>
-{
+typedef CModelCluster<CGeneModel> TGeneModelCluster;
+typedef CModelCluster<CAlignModel> TAlignModelCluster;
+
+typedef list<CGeneModel> TGeneModelList;
+typedef list<CAlignModel> TAlignModelList;
+
+
+template<class Cluster> 
+class NCBI_XALGOGNOMON_EXPORT CModelClusterSet : public set<Cluster> {
  public:
-    CClusterSet() {}
-    void Insert(const CGeneModel& a);
+    typedef typename set<Cluster>::iterator Titerator;
+    CModelClusterSet() {}
+    void Insert(const typename Cluster::TModel& a) {
+        Cluster clust;
+        clust.Insert(a);
+        pair<Titerator,Titerator> lim = equal_range(clust);
+        for(Titerator it = lim.first; it != lim.second;) {
+            clust.Splice(const_cast<Cluster&>(*it));
+            erase(it++);
+        }
+        const_cast<Cluster&>(*insert(lim.second,Cluster(clust.Limits()))).Splice(clust);
+    }
 };
+
+typedef CModelClusterSet<TGeneModelCluster> TGeneModelClusterSet;
+typedef CModelClusterSet<TAlignModelCluster> TAlignModelClusterSet;
+
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.16.2.8  2007/01/11 16:15:02  souvorov
- * Implementation of the composite measure
- *
- * Revision 1.16.2.7  2006/12/21 15:44:22  souvorov
- *  CFrameShiftedSeqMap introduction
- *
- * Revision 1.16.2.6  2006/11/30 20:10:02  souvorov
- * Implementation of proper mapping for prediction
- *
- * Revision 1.16.2.5  2006/11/28 19:48:40  souvorov
- * Introduction of CFrameShiftedSeqMap
- *
- * Revision 1.16.2.4  2006/11/03 20:24:58  chetvern
- * Added start/stop codon test functions
- *
- * Revision 1.16.2.3  2006/10/26 21:18:22  chetvern
- * Convert Deletions into Insertions
- *
- * Revision 1.16.2.2  2006/10/24 19:42:39  souvorov
- * Modification for open alignments
- *
- * Revision 1.16.2.1  2006/10/06 14:17:56  chetvern
- * Major overhaul. Single format for intermediate files.
- *
- * Revision 1.20  2006/06/29 19:19:22  souvorov
- * Confirmed start implementation
- *
- * Revision 1.19  2006/05/11 19:25:44  souvorov
- * ConfirmedStart added
- *
- * Revision 1.18  2006/05/11 17:40:07  souvorov
- * NMD test and GeneID for CGeneModel
- *
- * Revision 1.17  2006/04/24 13:53:47  dicuccio
- * FIx compiler warning on MSVC
- *
- * Revision 1.16  2006/02/03 20:25:46  souvorov
- * Use flags for CGeneModel properties
- *
- * Revision 1.15  2005/12/16 14:29:13  chetvern
- * remove extra method declaration
- *
- * Revision 1.14  2005/11/21 21:28:38  chetvern
- * Small changes in CAlignExon and CClusterSet interfaces
- *
- * Revision 1.13  2005/10/21 15:21:46  souvorov
- * CGeneModel::SetLimits deleted
- *
- * Revision 1.12  2005/10/21 13:35:19  chetvern
- * Implemented CGeneModel::operator==
- *
- * Revision 1.11  2005/10/20 19:24:50  souvorov
- * SetLimits for CGeneModel
- *
- * Revision 1.10  2005/10/20 18:10:02  chetvern
- * Fixed CGeneModel::IdenticalAlign method
- *
- * Revision 1.9  2005/10/14 20:09:53  chetvern
- * added CGeneModel::SetCdsInfo method
- *
- * Revision 1.8  2005/10/13 19:04:37  chetvern
- * added CCluster::Splice method
- *
- * Revision 1.7  2005/10/06 18:08:39  ucko
- * Tweak RecalculateLimits, as some compiler versions took issue with
- * its use of ?:.
- *
- * Revision 1.6  2005/10/06 15:49:21  chetvern
- * added precomputed limits to CGeneModel
- *
- * Revision 1.5  2005/10/06 14:36:03  souvorov
- * Editorial corrections
- *
- * Revision 1.4  2005/09/30 18:57:53  chetvern
- * added m_status and m_name to CGeneModel
- * removed m_contig from CClusterSet
- * moved frameshifts from CExonData to CGene
- *
- * Revision 1.3  2005/09/16 20:22:28  ucko
- * Whoops, MIPSpro also needs operator!= for CFrameShiftInfo.
- *
- * Revision 1.2  2005/09/16 18:02:31  ucko
- * Formal portability fixes:
- * - Replace kBadScore with an inline BadScore function that always
- *   returns the same value to avoid lossage in optimized WorkShop builds.
- * - Use <corelib/ncbi_limits.hpp> rather than <limits> for GCC 2.95.
- * - Supply CAlignExon::operator!= to satisfy SGI's MIPSpro compiler.
- * Don't bother explicitly including STL headers already pulled in by
- * ncbistd.hpp.
- *
- * Revision 1.1  2005/09/15 21:16:01  chetvern
- * redesigned API
- *
- * Revision 1.6  2005/06/03 18:17:03  souvorov
- * Change to indels mapping
- *
- * Revision 1.5  2005/04/13 19:02:37  souvorov
- * Score output for exons
- *
- * Revision 1.4  2005/04/07 15:25:30  souvorov
- * Output for supported length
- *
- * Revision 1.3  2005/03/23 20:50:02  souvorov
- * Mulpiprot penalty introduction
- *
- * Revision 1.2  2005/03/21 16:27:39  souvorov
- * Added check for holes in alignments
- *
- * Revision 1.1  2005/02/18 15:18:31  souvorov
- * First commit
- *
- * Revision 1.3  2004/07/28 12:33:18  dicuccio
- * Sync with Sasha's working tree
- *
- * Revision 1.2  2003/11/06 15:02:21  ucko
- * Use iostream interface from ncbistre.hpp for GCC 2.95 compatibility.
- *
- * Revision 1.1  2003/10/24 15:07:25  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
 
 #endif  // ALGO_GNOMON___GNOMON_MODEL__HPP

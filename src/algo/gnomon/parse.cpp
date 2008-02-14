@@ -76,7 +76,7 @@ bool s_EvaluateNewScore(const Left& left, const Right& right, double& rscore, bo
     int len = right.Stop()-left.Stop();
     if(len > right.MaxLen()) return false;
     if(!right.NoRightEnd() && len < right.MinLen()) return true;
-    
+
     double scr, score = 0;
     if(left.isPlus())
     {
@@ -201,7 +201,7 @@ inline void s_MakeStep(vector<L>& lvec, vector<R>& rvec, int leftprot, int right
     typename vector<L>::reverse_iterator i = lvec.rbegin();
     if(i->Stop() == rvec.back().Stop()) ++i;
     for(;i != lvec.rend() && s_ForwardStep(*i,rvec.back(),leftprot,rightprot);++i);
-    
+
     if(rvec.size() > 1) {
         rvec.back().UpdatePrevExon(rvec[rvec.size()-2]);
     }
@@ -483,13 +483,13 @@ void Out(double t, int w, CNcbiOstream& to = cout, int prec = 1)
     else to << t;
 }
 
-void AddSupport(const TAlignList& align_list, TSignedSeqRange inside_range, CGeneModel& gene, TSignedSeqRange reading_frame)
+void AddSupport(const TGeneModelList& align_list, TSignedSeqRange inside_range, CGeneModel& gene, TSignedSeqRange reading_frame)
 {
     CGeneModel support;
     support.SetStrand(gene.Strand());
     const CGeneModel* supporting_align = NULL;
 
-    ITERATE(TAlignList, it, align_list) {
+    ITERATE(TGeneModelList, it, align_list) {
         const CGeneModel& algn(*it);
             
         if ((algn.Type() & (CGeneModel::eWall | CGeneModel::eNested))!=0) continue;
@@ -518,7 +518,7 @@ void AddSupport(const TAlignList& align_list, TSignedSeqRange inside_range, CGen
         }
     }
 #ifdef _DEBUG
-    ITERATE(TAlignList, it, align_list) {
+    ITERATE(TGeneModelList, it, align_list) {
         const CGeneModel& algn(*it);
             
         if ((algn.Type() & (CGeneModel::eWall | CGeneModel::eNested))!=0) continue;

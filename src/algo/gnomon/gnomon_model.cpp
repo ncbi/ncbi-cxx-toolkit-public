@@ -70,6 +70,14 @@ CRef<CSeq_id> CreateSeqid(int local_id)
     return ps;
 }
 
+string CGeneModel::SupportName() const {
+    ITERATE(CSupportInfoSet, i, Support()) {
+        if (!i->Seqid()->IsLocal() || !i->Seqid()->GetLocal().IsId())
+            return i->Seqid()->GetSeqIdString(true);
+    }
+    return Support().begin()->Seqid()->GetSeqIdString(true);
+}
+
 void CGeneModel::Remap(const CRangeMapper& mapper)
 {
     NON_CONST_ITERATE(TExons, e, MyExons()) {
@@ -105,7 +113,6 @@ void CCDSInfo::SetReadingFrame(TSignedSeqRange r, bool protein)
             m_reading_frame_from_proteins = r;
         if (m_max_cds_limits.Empty()) {
             m_max_cds_limits = TSignedSeqRange::GetWhole();
-            m_open = true;
         }
     }
     _ASSERT( Invariant() );
@@ -154,7 +161,6 @@ void CCDSInfo::Set5PrimeCdsLimit(TSignedSeqPos p)
     else
         m_max_cds_limits.SetTo(p);
 
-    m_open = false;
     _ASSERT( Invariant() );
 }
 
@@ -167,17 +173,23 @@ void CCDSInfo::AddPStop(TSignedSeqRange r)
 void CCDSInfo::SetScore(double score, bool open)
 {
     m_score = score;
+    _ASSERT( !(open && !HasStart()) );
     m_open = open;
     _ASSERT( Invariant() );
 }
 
 void CCDSInfo::Remap(const CRangeMapper& mapper)
 {
-    m_start = mapper(m_start, false);
-    m_stop = mapper(m_stop, false);
-    m_reading_frame = mapper(m_reading_frame, false);
-    m_reading_frame_from_proteins = mapper(m_reading_frame_from_proteins, false);
-    m_max_cds_limits = mapper(m_max_cds_limits, false);
+    if(m_start.NotEmpty())
+        m_start = mapper(m_start, false);
+    if(m_stop.NotEmpty())
+        m_stop = mapper(m_stop, false);
+    if(m_reading_frame.NotEmpty())
+        m_reading_frame = mapper(m_reading_frame, false);
+    if(m_reading_frame_from_proteins.NotEmpty())
+        m_reading_frame_from_proteins = mapper(m_reading_frame_from_proteins, false);
+    if(m_max_cds_limits.NotEmpty())
+        m_max_cds_limits = mapper(m_max_cds_limits, false);
     NON_CONST_ITERATE( vector<TSignedSeqRange>, s, m_p_stops) {
         *s = mapper(*s, false);
     }
@@ -231,28 +243,7 @@ void CCDSInfo::CombineWith(const CCDSInfo& another_cds_info)
         _ASSERT( !new_cds_info.HasStop() || !another_cds_info.HasStop() || new_cds_info.Stop() == another_cds_info.Stop() );
         new_cds_info.m_stop += another_cds_info.m_stop;
 
-        new_cds_info.m_score = max(new_cds_info.m_score, another_cds_info.m_score);
-        if (!new_cds_info.HasStart()) {
-            if (new_cds_info.HasStop()) {
-                if (new_cds_info.m_max_cds_limits.GetFrom()!=TSignedSeqRange::GetWholeFrom() &&
-                    new_cds_info.m_max_cds_limits.GetTo()!=TSignedSeqRange::GetWholeTo())
-                    new_cds_info.m_open = false;
-                else
-                    new_cds_info.m_open = true;
-            } else if (new_cds_info.m_max_cds_limits.GetFrom()!=TSignedSeqRange::GetWholeFrom() ||
-                       new_cds_info.m_max_cds_limits.GetTo()!=TSignedSeqRange::GetWholeTo()) {
-                new_cds_info.m_open = false;
-            } else {
-                new_cds_info.m_open = true;
-            }
-        } else  if (Precede(new_cds_info.m_start,new_cds_info.m_reading_frame) &&
-                    new_cds_info.m_max_cds_limits.GetFrom()!=TSignedSeqRange::GetWholeFrom() ||
-                    Precede(new_cds_info.m_reading_frame,new_cds_info.m_start) &&
-                    new_cds_info.m_max_cds_limits.GetTo()!=TSignedSeqRange::GetWholeTo()) {
-            new_cds_info.m_open = false;
-        } else {
-            new_cds_info.m_open &= another_cds_info.m_open;
-        }
+        new_cds_info.SetScore( BadScore(), false );
     }
 
     _ASSERT( new_cds_info.Invariant() );
@@ -277,8 +268,6 @@ void CCDSInfo::Clip(TSignedSeqRange limits)
 {
     if (ReadingFrame().Empty())
         return;
-
-    int strand = !m_open ? Strand() : 0;
 
     m_reading_frame &= limits;
 
@@ -305,11 +294,7 @@ void CCDSInfo::Clip(TSignedSeqRange limits)
             s = m_p_stops.erase(s);
     }
 
-    if (!m_open && !HasStart()) {
-        if (strand==1 && m_max_cds_limits.GetFrom() == TSignedSeqRange::GetWholeFrom() ||
-            strand==-1 && m_max_cds_limits.GetTo() == TSignedSeqRange::GetWholeTo())
-            m_open = true;
-    }
+    SetScore( BadScore(), false );
 
     _ASSERT( Invariant() );
 }
@@ -319,8 +304,7 @@ void CCDSInfo::Clear()
     m_start = m_stop = m_reading_frame = m_reading_frame_from_proteins = m_max_cds_limits = TSignedSeqRange::GetEmpty();
     m_confirmed_start = false;
     m_p_stops.clear();
-    m_open = false;
-    m_score = BadScore();
+    SetScore( BadScore(), false );
 }
 
 bool CGeneModel::GoodEnoughToBeAlternative(int minCdsLen, int maxcomposite) const
@@ -371,8 +355,6 @@ bool CGeneModel::CdsInvariant(bool check_start_stop) const
     if (Limits().GetTo() < GetCdsInfo().MaxCdsLimits().GetTo())
         _ASSERT( GetCdsInfo().MaxCdsLimits().GetTo()==TSignedSeqRange::GetWholeTo() );
     
-    _ASSERT(!(OpenCds() && !Open5primeEnd())); 
-
     return true;
 }
 
@@ -504,7 +486,12 @@ void CGeneModel::RemoveExtraFShifts()
     for(TFrameShifts::iterator i = FrameShifts().begin(); i != FrameShifts().end();) {
         bool belongs = false;
         ITERATE(TExons, e, Exons()) {
-            if (i->IntersectingWith(e->GetFrom(),e->GetTo())) {
+            CModelExon exon = *e;
+            if(!exon.m_fsplice)     // no flanking deletions
+                exon.AddFrom(1);
+            if(!exon.m_ssplice)
+                exon.AddTo(-1);
+            if (i->IntersectingWith(exon.GetFrom(),exon.GetTo())) {
                 belongs = true;
                 break;
             }
@@ -660,7 +647,7 @@ void CGeneModel::AddExon(TSignedSeqRange exon_range)
     _ASSERT( (m_range & exon_range).Empty() );
     m_range += exon_range;
 
-    CAlignExon e(exon_range.GetFrom(),exon_range.GetTo());
+    CModelExon e(exon_range.GetFrom(),exon_range.GetTo());
     if (MyExons().empty())
         MyExons().push_back(e);
     else if (MyExons().back().GetTo()<exon_range.GetFrom()) {
@@ -679,12 +666,108 @@ void CGeneModel::AddExon(TSignedSeqRange exon_range)
     m_expecting_hole = false;
 }
 
+void CAlignModel::CutTranscriptExons(TSignedSeqRange hole) {
+
+    _ASSERT(!MyTranscriptExons().empty());
+
+    bool notreversed = (Status()&CGeneModel::eReversed) == 0;
+    bool plusstrand = Strand() == ePlus;
+    EStrand orientation = (notreversed == plusstrand) ? ePlus : eMinus;
+
+    CAlignModel::TTranscriptExons new_transcript_exons;
+    ITERATE(CAlignModel::TTranscriptExons, e, MyTranscriptExons()) {
+        if(e->GetTo() < hole.GetFrom() || e->GetFrom() > hole.GetTo()) {  //not overlapping
+            new_transcript_exons.push_back(*e);
+        } else if(orientation == ePlus) {
+            if(e->GetFrom() < hole.GetFrom())
+                new_transcript_exons.push_back(CTranscriptExon(e->GetFrom(),hole.GetFrom()-1));
+            if(e->GetTo() > hole.GetTo())
+                new_transcript_exons.push_back(CTranscriptExon(hole.GetTo()+1,e->GetTo()));
+        } else {
+            if(e->GetTo() > hole.GetTo())
+                new_transcript_exons.push_back(CTranscriptExon(hole.GetTo()+1,e->GetTo()));
+            if(e->GetFrom() < hole.GetFrom())
+                new_transcript_exons.push_back(CTranscriptExon(e->GetFrom(),hole.GetFrom()-1));
+        }
+    }
+    MyTranscriptExons() = new_transcript_exons;
+}
+
+
+void CAlignModel::TrimTranscriptExons(int left_trim, int right_trim) {
+
+#ifdef _DEBUG
+    _ASSERT(!MyTranscriptExons().empty());
+    int totallen = 0;
+    ITERATE(CAlignModel::TTranscriptExons, e, MyTranscriptExons()) {
+        totallen += e->GetTo()-e->GetFrom()+1;
+    }
+    _ASSERT(totallen > left_trim+right_trim);
+#endif
+
+    bool reversed = (Status()&CGeneModel::eReversed)!=0;
+
+    if(left_trim > 0) {
+        reverse(MyTranscriptExons().begin(),MyTranscriptExons().end());
+        int llen = 0;
+        for(int i = (int)MyTranscriptExons().size()-1; i >= 0; --i) {
+            int exonlen = MyTranscriptExons()[i].GetTo()-MyTranscriptExons()[i].GetFrom()+1;
+            if(llen+exonlen <= left_trim) {
+                MyTranscriptExons().pop_back();
+                llen += exonlen;
+            } else {
+                int extra = left_trim-llen;          // this ammount should be trimmed  
+                if((Strand() == ePlus && !reversed) || (Strand() == eMinus && reversed)) {
+                    MyTranscriptExons()[i].AddFrom(extra);
+                } else {
+                    MyTranscriptExons()[i].AddTo(-extra);
+                }
+                break;
+            }
+        }
+        reverse(MyTranscriptExons().begin(),MyTranscriptExons().end());
+    }
+
+    if(right_trim > 0) {
+        int rlen = 0;
+        for(int i = (int)MyTranscriptExons().size()-1; i >= 0; --i) {
+            int exonlen = MyTranscriptExons()[i].GetTo()-MyTranscriptExons()[i].GetFrom()+1;
+            if(rlen+exonlen <= right_trim) {
+                MyTranscriptExons().pop_back();
+                rlen += exonlen;
+            } else {
+                int extra = right_trim-rlen;          // this ammount should be trimmed     
+                if((Strand() == ePlus && !reversed) || (Strand() == eMinus && reversed)) {
+                    MyTranscriptExons()[i].AddTo(-extra);
+                } else {
+                    MyTranscriptExons()[i].AddFrom(extra);
+                }
+                break;
+            }
+        }
+    }
+}
+
+void CAlignModel::AddExon(TSignedSeqRange exon_range, TSignedSeqRange transcript_exon_range) {
+    
+    if(transcript_exon_range.NotEmpty()) {
+        CTranscriptExon e(transcript_exon_range.GetFrom(),transcript_exon_range.GetTo());
+        if (Exons().empty() || Exons().back().GetTo()<exon_range.GetFrom()) {
+            MyTranscriptExons().push_back(e);
+        } else {
+            MyTranscriptExons().insert(MyTranscriptExons().begin(),e);
+        }
+    }
+
+    CGeneModel::AddExon(exon_range);
+}
+
 void CGeneModel::AddHole()
 {
     m_expecting_hole = true;
 }
 
-void CAlignExon::Extend(const CAlignExon& e)
+void CModelExon::Extend(const CModelExon& e)
 {
     // spliced should include the other
     _ASSERT(
@@ -958,7 +1041,7 @@ CNcbiOstream& operator<<(CNcbiOstream& s, EModelFileFormat f)
 }
 
 struct SGFFrec {
-    SGFFrec() : start(-1), end(-1), score(BadScore()), strand('.'), phase(-1), model(0) {}
+    SGFFrec() : start(-1), end(-1), score(BadScore()), strand('.'), phase(-1), model(0), tstart(-1), tend(-2), tstrand('+') {}
     string seqid;
     string source;
     string type;
@@ -968,6 +1051,9 @@ struct SGFFrec {
     char strand;
     int phase;
     int model;
+    int tstart;
+    int tend;
+    char tstrand;
     map<string,string> attributes;
 
     void print(CNcbiOstream& os) const;
@@ -1039,6 +1125,13 @@ CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
             if (key == "model") {
                 rec.model = NStr::StringToInt(value);
                 model_id_present = true;
+            } else if(key == "Target") {
+                vector<string> tt;
+                NStr::Tokenize(value, " \t", tt);
+                rec.tstart = NStr::StringToUInt(tt[1])-1;
+                rec.tend = NStr::StringToUInt(tt[2])-1;
+                if(tt.size() > 3 && tt[3] == "-")
+                    rec.tstrand = '-';
             } else
                 rec.attributes[key] = value;
         }
@@ -1132,8 +1225,22 @@ string CGeneModel::TypeToString(int type)
     return "Unknown";
 }
 
-CNcbiOstream& printGFF3(CNcbiOstream& os, const CGeneModel& a)
+CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
 {
+#ifdef _DEBUG
+    if(!a.TranscriptExons().empty()) {
+        _ASSERT(a.TranscriptExons().size() == a.Exons().size());
+        int diff = 0;
+        for(unsigned int i = 0; i < a.Exons().size(); ++i) {
+            diff += a.Exons()[i].GetTo()-a.Exons()[i].GetFrom()-a.TranscriptExons()[i].GetTo()+a.TranscriptExons()[i].GetFrom();
+        }
+        ITERATE(TFrameShifts, f, a.FrameShifts()) {
+            diff += (f->IsDeletion()) ? f->Len() : -f->Len();
+        }
+        _ASSERT(diff == 0);
+    }
+#endif
+
     CFrameShiftedSeqMap amap(a, CFrameShiftedSeqMap::eRealCdsOnly);
     
     SGFFrec templ;
@@ -1182,18 +1289,23 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CGeneModel& a)
         if (a.MaxCdsLimits()!=a.RealCdsLimits()) {
             mrna.attributes["maxCDS"] = NStr::IntToString(a.MaxCdsLimits().GetFrom()+1)+" "+NStr::IntToString(a.MaxCdsLimits().GetTo()+1);
         }
-        if ((a.Type()&CGeneModel::eProt)!=0 && a.GetCdsInfo().ProtReadingFrame()!=a.ReadingFrame()) {
+        if (a.GetCdsInfo().ProtReadingFrame().NotEmpty() && a.GetCdsInfo().ProtReadingFrame()!=a.ReadingFrame()) {
             mrna.attributes["protCDS"] =
                 NStr::IntToString(a.GetCdsInfo().ProtReadingFrame().GetFrom()+1)+" "+
                 NStr::IntToString(a.GetCdsInfo().ProtReadingFrame().GetTo()  +1);
         }
         if (a.HasStart()) {
-            mrna.attributes["flags"] += (a.ConfirmedStart() && (a.Type()&CGeneModel::eProt)!=0) ? ",ConfirmedStart" : ",Start";
+            _ASSERT( !(a.ConfirmedStart() && a.OpenCds()) );
+            string adj;
+            if (a.ConfirmedStart())
+                adj = "Confirmed";
+            else if (a.OpenCds())
+                adj = "Putative";
+            mrna.attributes["flags"] += ","+adj+"Start";
         }
         if (a.HasStop()) {
             mrna.attributes["flags"] += ",Stop";
         }
-        if (a.OpenCds()) mrna.attributes["flags"] += ",Open";
         if ((a.Status()&CGeneModel::eFullSupCDS)!=0) mrna.attributes["flags"] += ",FullSupCDS";
         if ((a.Status()&CGeneModel::ePseudo)!=0) mrna.attributes["flags"] += ",Pseudo";
 
@@ -1227,10 +1339,22 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CGeneModel& a)
         phase = (amap.FShiftedLen(tmp, false)-1)%3;
     }
 
-    ITERATE( CGeneModel::TExons, e, a.Exons()) {
+    for(unsigned int i = 0; i < a.Exons().size(); ++i) {
+        const CModelExon *e = &a.Exons()[i]; 
 
         exon.start = e->GetFrom();
         exon.end = e->GetTo();
+
+        if(!a.TranscriptExons().empty()) {
+            string target = a.SupportName();
+            target += " "+NStr::IntToString(a.TranscriptExons()[i].GetFrom()+1)+" "+NStr::IntToString(a.TranscriptExons()[i].GetTo()+1);
+            if((a.Status() & CGeneModel::eReversed)!=0) {
+                target += " -";
+            } else {
+                target += " +";
+            }
+            exon.attributes["Target"] = target;
+        }
 
         exon.attributes["Gap"] = BuildGFF3Gap(exon.start, exon.end, a.FrameShifts(exon.start, exon.end));
         exons.push_back(exon);
@@ -1303,7 +1427,8 @@ TSignedSeqRange StringToRange(const string& s)
     return TSignedSeqRange(NStr::StringToInt(start)-1,NStr::StringToInt(stop)-1);
 }
 
-CNcbiIstream& readGFF3(CNcbiIstream& is, CGeneModel& align)
+
+CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
 {
     SGFFrec rec;
     is >> rec;
@@ -1323,7 +1448,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CGeneModel& align)
 
     Ungetline(is);
 
-    CGeneModel a;
+    CAlignModel a;
 
     a.SetID(id);
 #ifdef _DEBUG
@@ -1333,7 +1458,8 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CGeneModel& align)
     TSignedSeqRange cds;
     int phase = 0;
 
-    vector<TSignedSeqRange> exons;
+    typedef pair<TSignedSeqRange,TSignedSeqRange> TSignedSeqRangePair;
+    vector<TSignedSeqRangePair> exons;
     set<TSignedSeqRange,Precedence> mrna_parts;
 
     rec = recs.front();
@@ -1347,11 +1473,11 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CGeneModel& align)
 
     TSignedSeqRange max_cds_limits;
     bool open_cds = false;
+    double score = BadScore();
     bool confirmed_start = false;
     bool has_start = false;
     bool has_stop = false;
     string pstops, altstarts;
-    double score = BadScore();
 
     NON_CONST_ITERATE(vector<SGFFrec>, r, recs) {
         if (r->type == "mRNA") {
@@ -1377,11 +1503,11 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CGeneModel& align)
                 else if (*f == "EST")        a.SetType(a.Type()|  CGeneModel::eEST);
                 else if (*f == "mRNA")       a.SetType(a.Type()|  CGeneModel::emRNA);
                 else if (*f == "Prot")       a.SetType(a.Type()|  CGeneModel::eProt);
-                else if (*f == "Open")       open_cds = true;
                 else if (*f == "Skip")       a.Status()        |= CGeneModel::eSkipped;
                 else if (*f == "FullSupCDS") a.Status()        |= CGeneModel::eFullSupCDS;
                 else if (*f == "Pseudo")     a.Status()        |= CGeneModel::ePseudo;
                 else if (*f == "ConfirmedStart")   { confirmed_start = true; has_start = true; }
+                else if (*f == "PutativeStart")   { open_cds = true; has_start = true; }
                 else if (*f == "Start") has_start = true;
                 else if (*f == "Stop")  has_stop = true;
            }
@@ -1401,7 +1527,9 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CGeneModel& align)
             pstops = r->attributes["pstop"];
             altstarts = r->attributes["altstart"];
         } else if (r->type == "exon") {
-            exons.push_back(TSignedSeqRange(r->start,r->end));
+            if(r->tstart >= 0 && r->tstrand == '-')
+                a.Status() |= CGeneModel::eReversed;
+            exons.push_back(make_pair(TSignedSeqRange(r->start,r->end),TSignedSeqRange(r->tstart,r->tend)));
             readGFF3Gap(r->attributes["Gap"],r->attributes["deletion_replacement"],r->start,r->end,inserter(a.FrameShifts(),a.FrameShifts().end()));
         } else if (r->type == "CDS") {
             TSignedSeqRange cds_exon(r->start,r->end);
@@ -1419,14 +1547,14 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CGeneModel& align)
     }
 
     sort(exons.begin(),exons.end());
-    ITERATE(vector<TSignedSeqRange>, e, exons) {
-        if (a.Limits().IntersectingWith(*e)) {
+    ITERATE(vector<TSignedSeqRangePair>, e, exons) {
+        if (a.Limits().IntersectingWith(e->first)) {
             return  InputError(is);
         }
-        set<TSignedSeqRange,Precedence>::iterator p = mrna_parts.lower_bound(*e);
-        if (p != mrna_parts.end() && p->GetFrom()==e->GetFrom())
+        set<TSignedSeqRange,Precedence>::iterator p = mrna_parts.lower_bound(e->first);
+        if (p != mrna_parts.end() && p->GetFrom()==e->first.GetFrom())
             a.AddHole();
-        a.AddExon(*e);
+        a.AddExon(e->first,e->second);
     }
 
     sort(a.FrameShifts().begin(),a.FrameShifts().end());
@@ -1527,7 +1655,7 @@ CNcbiIstream& readASN(CNcbiIstream& is, CGeneModel& align)
     return is;
 }
 
-CNcbiOstream& operator<<(CNcbiOstream& os, const CGeneModel& a)
+CNcbiOstream& operator<<(CNcbiOstream& os, const CAlignModel& a)
 {
     switch (model_file_format_state.slot(os)) {
     case eGnomonFileFormat:
@@ -1544,7 +1672,7 @@ CNcbiOstream& operator<<(CNcbiOstream& os, const CGeneModel& a)
     return os;
 }
 
-CNcbiIstream& operator>>(CNcbiIstream& is, CGeneModel& align)
+CNcbiIstream& operator>>(CNcbiIstream& is, CAlignModel& align)
 {
     switch (model_file_format_state.slot(is)) {
     case eGFF3FileFormat:
@@ -1558,40 +1686,6 @@ CNcbiIstream& operator>>(CNcbiIstream& is, CGeneModel& align)
         break;
     }
     return is;
-}
-
-void CCluster::Insert(const CGeneModel& a)
-{
-    m_limits.CombineWith(a.Limits());
-    push_back(a);
-}
-
-void CCluster::Splice(CCluster& c)
-{
-    m_limits.CombineWith(c.Limits());
-    splice(end(),c);
-}
-
-void CCluster::Init(TSignedSeqPos first, TSignedSeqPos second //, int t
-                    )
-{
-    clear();
-    m_limits.SetFrom( first );
-    m_limits.SetTo( second );
-}
-
-void CClusterSet::Insert(const CGeneModel& a)
-{
-    CCluster clust;
-    clust.Insert(a);
-
-    pair<iterator,iterator> lim = equal_range(clust);
-    for(iterator it = lim.first; it != lim.second;) {
-        clust.Splice(const_cast<CCluster&>(*it));
-        erase(it++);
-    }
-
-    const_cast<CCluster&>(*insert(lim.second,CCluster(clust.Limits()))).Splice(clust);
 }
 
 CSupportInfo::CSupportInfo(const TConstSeqidRef& s, bool core)

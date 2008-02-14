@@ -388,11 +388,24 @@ TSignedSeqPos CFrameShiftedSeqMap::InsertIndelRangesForInterval(TSignedSeqPos or
 
 CFrameShiftedSeqMap::CFrameShiftedSeqMap(const CGeneModel& align, EMapLimit limit)
 {
-    m_strand = align.Strand();
+    m_orientation = align.Strand();
+
+    int first_aligned = 0;
+    if(align.TranscriptExonsP() != 0) {
+        _ASSERT(align.TranscriptExonsP()->size() == align.Exons().size());
+
+        bool notreversed = (align.Status()&CGeneModel::eReversed) == 0;
+        bool plusstrand = align.Strand() == ePlus;
+        m_orientation = (notreversed == plusstrand) ? ePlus : eMinus;
+
+        first_aligned = (m_orientation == ePlus) ? align.TranscriptExonsP()->front().GetFrom() : align.TranscriptExonsP()->back().GetFrom();
+    }
+    
     TFrameShifts::const_iterator fsi_begin = align.FrameShifts().begin();
     TFrameShifts::const_iterator fsi_end = align.FrameShifts().end();
     TSignedSeqRange lim = align.Limits();
     if(limit != eNoLimit) {
+        first_aligned = 0;
         lim = (limit == eCdsOnly) ? align.GetCdsInfo().Cds() : align.RealCdsLimits();
         while(fsi_begin != align.FrameShifts().end() && fsi_begin->Loc() <= lim.GetFrom()) {
             _ASSERT(!fsi_begin->IntersectingWith(lim.GetFrom(),lim.GetTo()));
@@ -406,10 +419,10 @@ CFrameShiftedSeqMap::CFrameShiftedSeqMap(const CGeneModel& align, EMapLimit limi
     m_orig_ranges.reserve(align.Exons().size()+fsi_end-fsi_begin);
     m_edited_ranges.reserve(align.Exons().size()+fsi_end-fsi_begin);
     
-    TSignedSeqPos estart = 0;
-    ITERATE(CGeneModel::TExons, i, align.Exons()) {
-        TSignedSeqPos start = i->GetFrom();
-        TSignedSeqPos stop = i->GetTo();
+    TSignedSeqPos estart = first_aligned;
+    for(unsigned int i = 0; i < align.Exons().size(); ++i) {
+        TSignedSeqPos start = align.Exons()[i].GetFrom();
+        TSignedSeqPos stop = align.Exons()[i].GetTo();
         
         if(stop < lim.GetFrom()) continue;
         if(lim.GetTo() < start) break;
@@ -418,7 +431,18 @@ CFrameShiftedSeqMap::CFrameShiftedSeqMap(const CGeneModel& align, EMapLimit limi
         stop = min(stop,lim.GetTo());
 
         estart = InsertIndelRangesForInterval(start, stop, estart, fsi_begin, fsi_end);
+        if(i != align.Exons().size()-1 && align.TranscriptExonsP() != 0) {
+            if(m_orientation == ePlus) {
+                estart += (*align.TranscriptExonsP())[i+1].GetFrom()-(*align.TranscriptExonsP())[i].GetTo()-1;
+            } else {
+                estart += (*align.TranscriptExonsP())[i].GetFrom()-(*align.TranscriptExonsP())[i+1].GetTo()-1;
+            }
+        }
     }
+
+    _ASSERT(m_edited_ranges.size() == m_orig_ranges.size());
+    //    _ASSERT(m_edited_ranges.empty() || (m_edited_ranges.front().GetExtraFrom() == 0 && m_edited_ranges.back().GetExtraTo() == 0));
+    //    _ASSERT(m_orig_ranges.empty() || (m_orig_ranges.front().GetExtraFrom() == 0 && m_orig_ranges.back().GetExtraTo() == 0));
 }
 
 template <class Vec>
@@ -437,7 +461,7 @@ void CFrameShiftedSeqMap::EditedSequence(const Vec& original_sequence, Vec& edit
         }
     }
     
-    if(m_strand == eMinus) 
+    if(m_orientation == eMinus) 
         ReverseComplement(edited_sequence.begin(), edited_sequence.end());
 }
 
@@ -453,6 +477,13 @@ void CFrameShiftedSeqMap::EditedSequence<CEResidueVec>(const CEResidueVec& origi
 
 bool CFrameShiftedSeqMap::EditedRangeIncludesTransformedDeletion(TSignedSeqRange edited_range) const {
 
+    if(m_orientation == eMinus) {
+        int left = edited_range.GetTo();
+        int right = edited_range.GetFrom();
+        int offset = m_edited_ranges.front().GetFrom()+m_edited_ranges.back().GetTo();
+        edited_range = TSignedSeqRange(offset-left,offset-right);
+    }
+
     _ASSERT(edited_range.NotEmpty() && Include(TSignedSeqRange(m_edited_ranges.front().GetFrom(),m_edited_ranges.back().GetTo()), edited_range));
 
     TSignedSeqPos a = edited_range.GetFrom();
@@ -460,10 +491,8 @@ bool CFrameShiftedSeqMap::EditedRangeIncludesTransformedDeletion(TSignedSeqRange
     _ASSERT(Include(TSignedSeqRange(m_edited_ranges[numa].GetFrom(),m_edited_ranges[numa].GetTo()), a));
 
     TSignedSeqPos b = edited_range.GetTo();
-    int numb = lower_bound(m_edited_ranges.begin(), m_edited_ranges.end(), CFrameShiftedSeqMap::SMapRange(b+1,b+1))-m_edited_ranges.begin()-1;
+    int numb = FindLowerRange(m_edited_ranges, b);
     _ASSERT(Include(TSignedSeqRange(m_edited_ranges[numb].GetFrom(),m_edited_ranges[numb].GetTo()), b));
-
-    if(m_strand == eMinus) swap(numa, numb);
 
     for(int i = numa; i < numb; ++i) {
         if(m_orig_ranges[i].RightEndIsTransformedDeletion() || m_orig_ranges[i+1].LeftEndIsTransformedDeletion()) return true;
@@ -472,20 +501,50 @@ bool CFrameShiftedSeqMap::EditedRangeIncludesTransformedDeletion(TSignedSeqRange
     return false;
 }
 
-TSignedSeqRange CFrameShiftedSeqMap::ShrinkToRealPoints(TSignedSeqRange orig_range) const {
+TSignedSeqRange CFrameShiftedSeqMap::ShrinkToRealPoints(TSignedSeqRange orig_range, bool snap_to_codons) const {
 
     _ASSERT(orig_range.NotEmpty() && Include(TSignedSeqRange(m_orig_ranges.front().GetExtendedFrom(),m_orig_ranges.back().GetExtendedTo()), orig_range));
 
     TSignedSeqPos a = orig_range.GetFrom();
     int numa =  FindLowerRange(m_orig_ranges, a);
-    if(a > m_orig_ranges[numa].GetTo()) {
-        a = m_orig_ranges[numa+1].GetFrom();
+
+    if(numa < 0 || a > m_orig_ranges[numa].GetTo()) {   // a was insertion on the genome, moved to first projectable point
+        ++numa;
+        if((int)m_orig_ranges.size() == numa)
+            return TSignedSeqRange::GetEmpty();
+        a = m_orig_ranges[numa].GetFrom();
     }
+    if(snap_to_codons) {
+        while((m_edited_ranges[numa].GetFrom()+a-m_orig_ranges[numa].GetFrom())%3 != 0) {  // not a codon boundary, assumes that initial alignment was snapped
+            if(a < m_orig_ranges[numa].GetTo()) {      // can move in this interval
+                ++a;
+            } else {                                   // moved to next interval
+                ++numa;
+                if((int)m_orig_ranges.size() == numa)
+                    return TSignedSeqRange::GetEmpty();
+                a = m_orig_ranges[numa].GetFrom();
+            }
+        }
+    }
+    
 
     TSignedSeqPos b = orig_range.GetTo();
     int numb =  FindLowerRange(m_orig_ranges, b);
-    if(b > m_orig_ranges[numb].GetTo()) {
-        b = m_orig_ranges[numb].GetTo();
+
+    if(b > m_orig_ranges[numb].GetTo()) {   // a was insertion on the genome, moved to first projectable point
+       b = m_orig_ranges[numb].GetTo();
+    }
+    if(snap_to_codons) {
+        while((m_edited_ranges[numb].GetFrom()+b-m_orig_ranges[numb].GetFrom())%3 != 2) {  // not a codon boundary
+            if(b > m_orig_ranges[numb].GetFrom()) {      // can move in this interval        
+                --b;
+            } else {                                   // moved to next interval
+                --numb;
+                if(numb < 0)
+                    return TSignedSeqRange::GetEmpty();
+                b = m_orig_ranges[numb].GetTo();
+            }
+        }
     }
 
     return TSignedSeqRange(a, b);
@@ -494,7 +553,7 @@ TSignedSeqRange CFrameShiftedSeqMap::ShrinkToRealPoints(TSignedSeqRange orig_ran
 TSignedSeqPos CFrameShiftedSeqMap::FShiftedMove(TSignedSeqPos orig_pos, int len) const {
     orig_pos = MapOrigToEdited(orig_pos);
     _ASSERT(orig_pos >= 0);
-    if(m_strand == ePlus)
+    if(m_orientation == ePlus)
         orig_pos += len;
     else
         orig_pos -= len;
@@ -560,19 +619,15 @@ TSignedSeqPos CFrameShiftedSeqMap::MapAtoB(const vector<CFrameShiftedSeqMap::SMa
 TSignedSeqPos CFrameShiftedSeqMap::MapOrigToEdited(TSignedSeqPos orig_pos)  const {
     TSignedSeqPos p = MapAtoB(m_orig_ranges, m_edited_ranges, orig_pos, eSinglePoint);
     
-    if(m_strand == eMinus && p >= 0) {
-        _ASSERT(m_edited_ranges.front().GetExtendedFrom() == 0);
-        int last = m_edited_ranges.back().GetExtendedTo();
-        p = last-p;
+    if(m_orientation == eMinus && p >= 0) {
+        p = m_edited_ranges.front().GetFrom()+m_edited_ranges.back().GetTo()-p;
     }
     return p;
 }
 
 TSignedSeqPos CFrameShiftedSeqMap::MapEditedToOrig(TSignedSeqPos edited_pos)  const {
-    if(m_strand == eMinus) {
-        _ASSERT(m_edited_ranges.front().GetExtendedFrom() == 0);
-        int last = m_edited_ranges.back().GetExtendedTo();
-        edited_pos = last-edited_pos;
+    if(m_orientation == eMinus) {
+        edited_pos = m_edited_ranges.front().GetFrom()+m_edited_ranges.back().GetTo()-edited_pos;
     }
 
     return MapAtoB(m_edited_ranges, m_orig_ranges, edited_pos, eSinglePoint);
@@ -609,24 +664,22 @@ TSignedSeqRange CFrameShiftedSeqMap::MapRangeOrigToEdited(TSignedSeqRange orig_r
 
     TSignedSeqRange er = MapRangeAtoB(m_orig_ranges, m_edited_ranges, orig_range, withextras);
 
-    if(m_strand == ePlus) return er;
+    if(m_orientation == ePlus) return er;
 
-    _ASSERT(m_edited_ranges.front().GetExtendedFrom() == 0);
-    int last = m_edited_ranges.back().GetExtendedTo();
-    
+    int offset = m_edited_ranges.front().GetFrom()+m_edited_ranges.back().GetTo();
     TSignedSeqPos left = er.GetTo();
     TSignedSeqPos right = er.GetFrom();
     
     if(left == TSignedSeqRange::GetWholeTo()) {
         left = TSignedSeqRange::GetWholeFrom();
     } else {
-        left = last-left;
+        left = offset-left;
     }
 
     if(right == TSignedSeqRange::GetWholeFrom()) {
         right = TSignedSeqRange::GetWholeTo();
     } else {
-        right = last-right;
+        right = offset-right;
     }
 
     return TSignedSeqRange(left, right);
@@ -636,23 +689,21 @@ TSignedSeqRange CFrameShiftedSeqMap::MapRangeEditedTodOrig(TSignedSeqRange edite
     
     if(edited_range.Empty()) return TSignedSeqRange::GetEmpty();
 
-    if(m_strand == eMinus) {
-        _ASSERT(m_edited_ranges.front().GetExtendedFrom() == 0);
-        int last = m_edited_ranges.back().GetExtendedTo();
-        
+    if(m_orientation == eMinus) {
+        int offset = m_edited_ranges.front().GetFrom()+m_edited_ranges.back().GetTo();
         TSignedSeqPos left = edited_range.GetTo();
         TSignedSeqPos right = edited_range.GetFrom();
         
         if(left == TSignedSeqRange::GetWholeTo()) {
             left = TSignedSeqRange::GetWholeFrom();
         } else {
-            left = last-left;
+            left = offset-left;
         }
 
         if(right == TSignedSeqRange::GetWholeFrom()) {
             right = TSignedSeqRange::GetWholeTo();
         } else {
-            right = last-right;
+            right = offset-right;
         }
 
         edited_range = TSignedSeqRange(left, right);

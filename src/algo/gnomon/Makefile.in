@@ -3,7 +3,7 @@
 # Meta-makefile("GNOMON" project)
 #################################
 
-LIB_PROJ = xalgognomon
+ASN_PROJ = xalgognomon
 
 SUB_PROJ = demo
 

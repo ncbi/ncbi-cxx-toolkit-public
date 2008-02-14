@@ -120,12 +120,12 @@ int CLocalFinderApp::Run(void)
         seq.push_back(*i);
 
     // read the alignment information
-    TAlignList alignments;
+    TGeneModelList alignments;
     if(myargs["align"]) {
         CNcbiIstream& alignmentfile = myargs["align"].AsInputFile();
         string our_contig = cntg->GetSeqIdString(true);
         string cur_contig; 
-        CGeneModel algn;
+        CAlignModel algn;
         
         while(alignmentfile >> algn >> getcontig(cur_contig)) {
             if (cur_contig==our_contig)
@@ -156,6 +156,6 @@ int CLocalFinderApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CLocalFinderApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CLocalFinderApp().AppMain(argc, argv);
 }
 

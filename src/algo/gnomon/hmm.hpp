@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <algo/gnomon/gnomon_exception.hpp>
 #include <algo/gnomon/gnomon.hpp>
+#include <algo/gnomon/xalgognomon__.hpp>
 #include "gnomon_seq.hpp"
 #include "score.hpp"
 
@@ -50,7 +51,7 @@ template<int order> class CMarkovChain
 {
     public:
         typedef CMarkovChain<order> Type;
-        void InitScore(CNcbiIstream& from);
+        void InitScore(const objects::CMarkov_chain_params& hmm_param_asn);
         double& Score(const EResidue* seq) { return m_next[(int)*(seq-order)].Score(seq); }
         const double& Score(const EResidue* seq) const { return m_next[(int)*(seq-order)].Score(seq); }
         CMarkovChain<order-1>& SubChain(int i) { return m_next[i]; }
@@ -59,7 +60,7 @@ template<int order> class CMarkovChain
     
     private:
         friend class CMarkovChain<order+1>;
-        void Init(CNcbiIstream& from);
+        void Init(const objects::CMarkov_chain_params& hmm_param_asn);
         
         CMarkovChain<order-1> m_next[5];
 };
@@ -68,7 +69,7 @@ template<> class CMarkovChain<0>
 {
     public:
         typedef CMarkovChain<0> Type;
-        void InitScore(CNcbiIstream& from);
+        void InitScore(const objects::CMarkov_chain_params& from);
         double& Score(const EResidue* seq) { return m_score[(int)*seq]; }
         const double& Score(const EResidue* seq) const { return m_score[(int)*seq]; }
         double& SubChain(int i) { return m_score[i]; }
@@ -76,7 +77,7 @@ template<> class CMarkovChain<0>
         void toScore();
     private:
         friend class CMarkovChain<1>;
-        void Init(CNcbiIstream& from);
+        void Init(const objects::CMarkov_chain_params& from);
         
         double m_score[5];
 };
@@ -84,7 +85,7 @@ template<> class CMarkovChain<0>
 template<int order> class CMarkovChainArray
 {
     public:
-        void InitScore(int l, CNcbiIstream& from);
+        void InitScore(int l, const objects::CMarkov_chain_array& from);
         double Score(const EResidue* seq) const;
     private:
         int m_length;
@@ -118,25 +119,12 @@ class CTerminal : public CInputModel
 };
 
 
-class CMDD_Donor : public CTerminal
-{
-public:
-    static string class_id() { return "MDD_Donor"; }
-    CMDD_Donor(CNcbiIstream& from);
-    ~CMDD_Donor() {}
-    double Score(const CEResidueVec& seq, int i) const;
-    
-private:
-    TIVec m_position, m_consensus;
-    vector< CMarkovChainArray<0> > m_matrix;
-};
-
 template<int order> class CWAM_Donor : public CTerminal
 {
     public:
     ~CWAM_Donor() {}
     static string class_id() { return "WAM_Donor_"+NStr::IntToString(order); }
-        CWAM_Donor(CNcbiIstream& from);
+        CWAM_Donor(const objects::CGnomon_param::C_Param& from);
         double Score(const CEResidueVec& seq, int i) const;
     
     private:
@@ -147,7 +135,7 @@ template<int order> class CWAM_Acceptor : public CTerminal
 {
     public:
     static string class_id() { return "WAM_Acceptor_"+NStr::IntToString(order); }
-        CWAM_Acceptor(CNcbiIstream& from);
+        CWAM_Acceptor(const objects::CGnomon_param::C_Param& from);
     ~CWAM_Acceptor() {}
         double Score(const CEResidueVec& seq, int i) const;
     
@@ -160,7 +148,7 @@ class CWMM_Start : public CTerminal
 {
     public:
     static string class_id() { return "WMM_Start"; }
-        CWMM_Start(CNcbiIstream& from);
+        CWMM_Start(const objects::CGnomon_param::C_Param& from);
     ~CWMM_Start() {}
         double Score(const CEResidueVec& seq, int i) const;
     
@@ -172,7 +160,7 @@ class CWAM_Stop : public CTerminal
 {
     public:
     static string class_id() { return "WAM_Stop_1"; }
-        CWAM_Stop(CNcbiIstream& from);
+        CWAM_Stop(const objects::CGnomon_param::C_Param& from);
     ~CWAM_Stop() {}
         double Score(const CEResidueVec& seq, int i) const;
     
@@ -192,7 +180,7 @@ template<int order> class CMC3_CodingRegion : public CCodingRegion
 {
     public:
     static string class_id() { return "MC3_CodingRegion_"+NStr::IntToString(order); }
-        CMC3_CodingRegion(CNcbiIstream& from);
+        CMC3_CodingRegion(const objects::CGnomon_param::C_Param& from);
     ~CMC3_CodingRegion() {}
         double Score(const CEResidueVec& seq, int i, int codonshift) const;
     
@@ -212,7 +200,7 @@ template<int order> class CMC_NonCodingRegion : public CNonCodingRegion
 {
     public:
     static string class_id() { return "MC_NonCodingRegion_"+NStr::IntToString(order); }
-        CMC_NonCodingRegion(CNcbiIstream& from);
+        CMC_NonCodingRegion(const objects::CGnomon_param::C_Param& from);
     ~CMC_NonCodingRegion() {}
         double Score(const CEResidueVec& seq, int i) const;
     
@@ -260,7 +248,7 @@ template<class State> SStateScores CalcStateScores(const State& st)
 class CLorentz
 {
     public:
-        bool Init(CNcbiIstream& from, const string& label);
+        void Init(const objects::CLength_distribution_params& from);
         double Score(int l) const { return m_score[(l-1)/m_step]; }
         double ClosingScore(int l) const;
         int MinLen() const { return m_minl; }
@@ -322,7 +310,7 @@ class CIntergenic;
 class CExonParameters: public CInputModel {
 public:
     static string class_id() { return "Exon"; }
-    CExonParameters(CNcbiIstream& from);
+    CExonParameters(const objects::CGnomon_param::C_Param& from);
     ~CExonParameters() {}
 
     double m_firstphase[3], m_internalphase[3][3];
@@ -438,7 +426,7 @@ class CLastExon : public CExon
 class CIntronParameters : public CInputModel {
 public:
     static string class_id() { return "Intron"; }
-    CIntronParameters(CNcbiIstream& from);
+    CIntronParameters(const objects::CGnomon_param::C_Param& from);
     ~CIntronParameters() {}
 
     void SetSeqLen(int seqlen) const;
@@ -529,7 +517,7 @@ inline double CInternalExon::BranchScore(const CIntron& next) const
 class CIntergenicParameters : public CInputModel {
 public:
     static string class_id() { return "Intergenic"; }
-    CIntergenicParameters(CNcbiIstream& from);
+    CIntergenicParameters(const objects::CGnomon_param::C_Param& from);
     ~CIntergenicParameters() {}
 
     void SetSeqLen(int seqlen) const;
@@ -570,10 +558,12 @@ class CIntergenic : public CHMM_State
 
 class CHMMParameters::SDetails : public CObject {
 public:
-    SDetails(CNcbiIstream& from);
+    SDetails(const objects::CGnomon_params& hmm_params_asn);
     ~SDetails();
     const CInputModel& GetParameter(const string& type, int cgcontent) const;
 private:
+    template <class CParam>
+    void ReadParameters(const objects::CGnomon_params& hmm_params_asn, objects::CGnomon_param::C_Param::E_Choice choice);
     typedef vector< pair<int,CInputModel*> > TCGContentList;
     typedef map<string, TCGContentList > TParamMap;
     TParamMap params;
@@ -584,25 +574,6 @@ private:
     TCGContentList& GetCGList(const string& type);
     void StoreParam( const string& type, CInputModel* input_model, int low, int high );
 };
-
-class CParametersFactory {
-public:
-    static CParametersFactory& Instance();
-    typedef CInputModel* (*TParameterCreator)(CNcbiIstream& from);
-    bool RegisterParameter(const string& type, TParameterCreator creator);
-    TParameterCreator GetCreator(const string& type);
-private:
-    CParametersFactory();
-    map<string,TParameterCreator> creators;
-};
-
-#define    REGISTER_ORG_PARAMETER(Class) \
-CInputModel* Create##Class(CNcbiIstream& from) { return new Class(from); } \
-const bool Class##_registered = CParametersFactory::Instance().RegisterParameter(Class::class_id(),Create##Class)
-
-#define    REGISTER_ORG_TMPL_PARAMETER(Class,Order) \
-CInputModel* Create##Class##Order(CNcbiIstream& from) { return new Class<Order>(from); } \
-const bool Class##Order##_registered = CParametersFactory::Instance().RegisterParameter(Class<Order>::class_id(),Create##Class##Order)
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE

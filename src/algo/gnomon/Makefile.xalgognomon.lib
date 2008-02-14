@@ -1,9 +1,10 @@
 # $Id$
 
 ASN_DEP = seq
-
-SRC = gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1
+ASN = xalgognomon
+SRC = $(ASN:%=%__) $(ASN:%=%___) gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1
 LIB = xalgognomon
+LIB_OR_DLL = lib
 
 # Work around an ICC 8 optimizer bug that produced dangling references
 # to internally generated symbols.  (There's no ready way to test the
@@ -15,3 +16,4 @@ FAST_CXXFLAGS_icc32   = $(ORIG_CXXFLAGS)
 
 CXXFLAGS = $($(FAST_CXXFLAGS_NAME))
 LDFLAGS  = $(FAST_LDFLAGS)
+

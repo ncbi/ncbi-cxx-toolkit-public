@@ -34,9 +34,13 @@
 #include <algo/gnomon/gnomon.hpp>
 #include "hmm.hpp"
 #include "hmm_inlines.hpp"
+#include <serial/serial.hpp>
+#include <serial/objistr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
+
+USING_SCOPE(objects);
 
 const double kLnHalf = log(0.5);
 const double kLnThree = log(3.);
@@ -379,18 +383,23 @@ double CIntergenic::BranchScore(const CSingleExon& next) const
     else return BadScore();
 }
 
-void CMarkovChain<0>::InitScore(CNcbiIstream& from)
+void CMarkovChain<0>::InitScore(const CMarkov_chain_params& from)
 {
     Init(from);
-    if(from) toScore();
+    toScore();
 }
 
-void CMarkovChain<0>::Init(CNcbiIstream& from)
+void CMarkovChain<0>::Init(const CMarkov_chain_params& from)
 {
-    from >> m_score[enA];
-    from >> m_score[enC];
-    from >> m_score[enG];
-    from >> m_score[enT];
+    if (from.GetOrder() != 0)
+        CInputModel::Error("Wrong Markov Chain order");
+    CMarkov_chain_params::TProbabilities::const_iterator i = from.GetProbabilities().begin();
+    m_score[enA] = (*i++)->GetValue();
+    m_score[enC] = (*i++)->GetValue();
+    m_score[enG] = (*i++)->GetValue();
+    m_score[enT] = (*i++)->GetValue();
+    if (i != from.GetProbabilities().end())
+        CInputModel::Error("Too many values in Markov Chain");
     m_score[enN] = 0.25*(m_score[enA]+m_score[enC]+m_score[enG]+m_score[enT]);
 }
 
@@ -414,83 +423,15 @@ void CMarkovChain<0>::toScore()
 
 CInputModel::~CInputModel() {}
 
-double CMDD_Donor::Score(const CEResidueVec& seq, int i) const
+CWMM_Start::CWMM_Start(const CGnomon_param::C_Param& from)
 {
-    int first = i-m_left+1;
-    int last = i+m_right;
-    if(first < 0 || last >= (int)seq.size()) return BadScore();    // out of range
-    if(seq[i+1] != enG || seq[i+2] != enT) return BadScore();   // no GT
-    
-    int mat = 0;
-    for(int j = 0; j < (int)m_position.size(); ++j)
-    {
-        if(seq[first+m_position[j]] != m_consensus[j]) break;
-        ++mat;
-    }
-    
-    return m_matrix[mat].Score(&seq[first]);
-}
-
-CMDD_Donor::CMDD_Donor(CNcbiIstream& from)
-{
-    string str;
-    from >> str;
-    if(str != "InExon:") Error(class_id());
-    from >> m_inexon;
-    if(!from) Error(class_id());
-    from >> str;
-    if(str != "InIntron:") Error(class_id());
-    from >> m_inintron;
-    if(!from) Error(class_id());
-    
-    m_left = m_inexon;
-    m_right = m_inintron;
-    
-    do
-    {
-        from >> str;
-        if(!from) Error(class_id());
-        if(str == "Position:")
-        {
-            int i;
-            from >> i;
-            if(!from) Error(class_id());
-            m_position.push_back(i);
-            from >> str;
-            if(!from) Error(class_id());
-            if(str != "Consensus:") Error(class_id());
-            char c;
-            from >> c;
-            if(!from) Error(class_id());
-            i = fromACGT(c);
-            if(i == enN) Error(class_id()); 
-            m_consensus.push_back(i);
-        }
-        m_matrix.push_back(CMarkovChainArray<0>());
-        m_matrix.back().InitScore(m_inexon+m_inintron,from);
-        if(!from) Error(class_id());
-    }
-    while(str != "End");
-}
-
-CWMM_Start::CWMM_Start(CNcbiIstream& from)
-{
-    const string label = class_id();
-    string str;
-    from >> str;
-    if(str != "InExon:") Error(label);
-    from >> m_inexon;
-    if(!from) Error(label);
-    from >> str;
-    if(str != "InIntron:") Error(label);
-    from >> m_inintron;
-    if(!from) Error(label);
+    m_inexon = from.GetStart().GetIn_exon();
+    m_inintron = from.GetStart().GetIn_intron();
     
     m_left = m_inintron;
     m_right = m_inexon;
     
-    m_matrix.InitScore(m_inexon+m_inintron,from);
-    if(!from) Error(label);
+    m_matrix.InitScore(m_inexon+m_inintron,from.GetStart());
 }
 
 double CWMM_Start::Score(const CEResidueVec& seq, int i) const
@@ -503,25 +444,15 @@ double CWMM_Start::Score(const CEResidueVec& seq, int i) const
     return m_matrix.Score(&seq[first]);
 }
 
-CWAM_Stop::CWAM_Stop(CNcbiIstream& from)
+CWAM_Stop::CWAM_Stop(const CGnomon_param::C_Param& from)
 {
-    const string label = class_id();
-
-    string str;
-    from >> str;
-    if(str != "InExon:") Error(label);
-    from >> m_inexon;
-    if(!from) Error(label);
-    from >> str;
-    if(str != "InIntron:") Error(label);
-    from >> m_inintron;
-    if(!from) Error(label);
+    m_inexon = from.GetStop().GetIn_exon();
+    m_inintron = from.GetStop().GetIn_intron();
     
     m_left = m_inexon;
     m_right = m_inintron;
     
-    m_matrix.InitScore(m_inexon+m_inintron,from);
-    if(!from) Error(label);
+    m_matrix.InitScore(m_inexon+m_inintron,from.GetStop());
 }
 
 double CWAM_Stop::Score(const CEResidueVec& seq, int i) const
@@ -537,31 +468,13 @@ double CWAM_Stop::Score(const CEResidueVec& seq, int i) const
 }
 
 
-bool CLorentz::Init(CNcbiIstream& from, const string& label)
+void CLorentz::Init(const CLength_distribution_params& from)
 {
-    string s;
-    from >> s;
-    if(s != label) return false;
-    
-    from >> s;
-    if(s != "A:") return false;
-    if(!(from >> m_A)) return false;
-    
-    from >> s;
-    if(s != "L:") return false;
-    if(!(from >> m_L)) return false;
-    
-    from >> s;
-    if(s != "MinL:") return false;
-    if(!(from >> m_minl)) return false;
-    
-    from >> s;
-    if(s != "MaxL:") return false;
-    if(!(from >> m_maxl)) return false;
-    
-    from >> s;
-    if(s != "Step:") return false;
-    if(!(from >> m_step)) return false;
+    m_A = from.GetA();
+    m_L = from.GetL();
+    m_minl = from.GetRange().GetMin();
+    m_maxl = from.GetRange().GetMax();
+    m_step = from.GetStep();
     
     int num = (m_maxl-1)/m_step+1;
     m_maxl = (num-1)*m_step+1;
@@ -573,20 +486,20 @@ bool CLorentz::Init(CNcbiIstream& from, const string& label)
     }
     catch(bad_alloc)
     {
-        NCBI_THROW(CGnomonException, eMemoryLimit, "Not enough memory in CLorentz");
+        NCBI_THROW(CGnomonException, eMemoryLimit, "Not enough memory for CLorentz");
     }
     
     int i = 0;
-    while(from >> m_score[i]) 
-    {
-        if((i+1)*m_step < m_minl) m_score[i] = 0;
-        i++;
+    ITERATE(CLength_distribution_params::TP, s, from.GetP()) {
+        m_score[i] = *s;
+        if((i+1)*m_step < m_minl)
+            m_score[i] = 0;
+        ++i;
     }
-    from.clear();
     while(i < num) 
     {
         m_score[i] = m_A/(m_L*m_L+pow((i+0.5)*m_step,2));
-        i++;
+        ++i;
     }
 
     double sum = 0;
@@ -602,11 +515,11 @@ bool CLorentz::Init(CNcbiIstream& from, const string& label)
     for(int i = 0; i < num; ++i) m_score[i] /= sum;
 
     m_clscore[num-1] = 0;
-    for(int i = num-2; i >= 0; --i) m_clscore[i] = m_clscore[i+1]+m_score[i+1]*m_step;
+    for(int i = num-2; i >= 0; --i)
+        m_clscore[i] = m_clscore[i+1]+m_score[i+1]*m_step;
 
-    for(int i = 0; i < num; ++i) m_score[i] = (m_score[i] == 0) ? BadScore() : log(m_score[i]);
-    
-    return true;
+    for(int i = 0; i < num; ++i)
+        m_score[i] = (m_score[i] == 0) ? BadScore() : log(m_score[i]);
 }
 
 double CLorentz::Through(int seqlen) const
@@ -642,62 +555,56 @@ double CLorentz::Through(int seqlen) const
     return through;
 }
 
-CExonParameters::CExonParameters(CNcbiIstream& from)
+CExonParameters::CExonParameters(const CGnomon_param::C_Param& from)
 {
     string label = class_id();
-    
-    string str;
-    from >> str;
-    if(str != "FirstExonPhase:") Error(label+" 2");
-    for(int i = 0; i < 3; ++i) 
-    {
-        from >> m_firstphase[i];
-        if(!from) Error(label);
-        m_firstphase[i] = log(m_firstphase[i]);
+
+    int i = 0;
+    ITERATE(CExon_params::TFirst_exon_phase_probabilities, p, from.GetExon().GetFirst_exon_phase_probabilities()) {
+        if (i<3)
+            m_firstphase[i] = log(*p);
+        else
+            Error(label+" Too long First_exon_phase_probabilities");
+        ++i;
     }
 
-    from >> str;
-    if(str != "InternalExonPhase:") Error(label+" 3");
-    for(int i = 0; i < 3; ++i)
-    {
-        for(int j = 0; j < 3; ++j) 
-        {
-            from >> m_internalphase[i][j];
-            if(!from) Error(label+" 4");
-            m_internalphase[i][j] = log(m_internalphase[i][j]);
+    CExon_params::TInternal_exon_phase_probabilities::const_iterator p = from.GetExon().GetInternal_exon_phase_probabilities().begin();
+    for(int i = 0; i < 3; ++i) {
+        for(int j = 0; j < 3; ++j)  {
+            m_internalphase[i][j] = log(*p++);
         }
     }
-
-    if(!m_firstlen.Init(from,"FirstExonDistribution:")) Error(label+" 5");
-    if(!m_internallen.Init(from,"InternalExonDistribution:")) Error(label+" 6");
-    if(!m_lastlen.Init(from,"LastExonDistribution:")) Error(label+" 7");
-    if(!m_singlelen.Init(from,"SingleExonDistribution:")) Error(label+" 8");
+    if (p != from.GetExon().GetInternal_exon_phase_probabilities().end())
+        Error(label+" Too long Internal_exon_phase_probabilities");
+    
+    m_firstlen.Init(from.GetExon().GetFirst_exon_length());
+    m_internallen.Init(from.GetExon().GetInternal_exon_length());
+    m_lastlen.Init(from.GetExon().GetLast_exon_length());
+    m_singlelen.Init(from.GetExon().GetSingle_exon_length());
     
     m_initialised = true;
 }
 
 
-CIntronParameters::CIntronParameters(CNcbiIstream& from)
+CIntronParameters::CIntronParameters(const CGnomon_param::C_Param& from)
 {
-    string label = class_id();
-
-    string str;
-    from >> str;
-    if(str != "InitP:") Error(label);
-
-    from >> m_initp >> m_phasep[0] >> m_phasep[1] >> m_phasep[2];
-    if(!from) Error(label);
+    m_initp = from.GetIntron().GetInitp();
     m_initp = m_initp/2;      // two strands
 
-    from >> str;
-    if(str != "toTerm:") Error(label);
-    double toterm;
-    from >> toterm;
-    if(!from) Error(label);
+    int i = 0;
+    ITERATE(CIntron_params::TPhase_probabilities, p, from.GetIntron().GetPhase_probabilities()) {
+        if (i<3)
+            m_phasep[i] = *p;
+        else
+            Error(class_id()+" Too long Phase_probabilities");
+        ++i;
+    }
+
+    double toterm =  from.GetIntron().GetTo_term();
     m_lnTerminal = log(toterm);
     m_lnInternal = log(1-toterm);
 
-    if(!m_intronlen.Init(from,"IntronDistribution:")) Error(label);
+    m_intronlen.Init(from.GetIntron().GetLength());
 }
 
 void CIntronParameters::SetSeqLen(int seqlen) const
@@ -713,26 +620,17 @@ void CIntronParameters::SetSeqLen(int seqlen) const
 }
 
 
-CIntergenicParameters::CIntergenicParameters(CNcbiIstream& from)
+CIntergenicParameters::CIntergenicParameters(const CGnomon_param::C_Param& from)
 {
-    string label = class_id();
-    
-    string str;
-    from >> str;
-    if(str != "InitP:") Error(label);
-    from >> m_initp;
-    if(!from) Error(label);
+    m_initp = from.GetIntergenic().GetInitp();
     m_initp = m_initp/2;      // two strands
 
-    from >> str;
-    if(str != "toSingle:") Error(label);
-    double tosingle;
-    from >> tosingle;
-    if(!from) Error(label);
+    double tosingle =  from.GetIntergenic().GetTo_single();
+
     m_lnSingle = log(tosingle);
     m_lnMulti = log(1-tosingle);
 
-    if(!m_intergeniclen.Init(from,"IntergenicDistribution:")) Error(label);
+    m_intergeniclen.Init(from.GetIntergenic().GetLength());
 }
 
 void CIntergenicParameters::SetSeqLen(int seqlen) const
@@ -742,23 +640,6 @@ void CIntergenicParameters::SetSeqLen(int seqlen) const
     m_lnThrough = (lnthrough == BadScore()) ? BadScore() : m_lnDen+lnthrough;
     
     m_initialised = true;
-}
-
-namespace {
-    REGISTER_ORG_TMPL_PARAMETER(CWAM_Donor,2);
-    REGISTER_ORG_TMPL_PARAMETER(CWAM_Acceptor,2);
-    REGISTER_ORG_PARAMETER(CWMM_Start);
-    REGISTER_ORG_PARAMETER(CWAM_Stop);
-    REGISTER_ORG_TMPL_PARAMETER(CMC3_CodingRegion,5);
-    REGISTER_ORG_TMPL_PARAMETER(CMC_NonCodingRegion,5);
-    REGISTER_ORG_PARAMETER(CIntronParameters);
-    REGISTER_ORG_PARAMETER(CIntergenicParameters);
-    REGISTER_ORG_PARAMETER(CExonParameters);
-
-    CInputModel* CreateNull(CNcbiIstream& from)
-    {
-        return NULL;
-    }
 }
 
 CHMMParameters::SDetails::~SDetails()
@@ -771,16 +652,6 @@ void CHMMParameters::SDetails::DeleteAllCreatedModels()
         delete *i;
     all_created_models.clear();
     params.clear();
-}
-
-CParametersFactory::TParameterCreator CParametersFactory::GetCreator(const string& type)
-{
-    map<string,TParameterCreator>::const_iterator i = creators.find(type);
-    
-    if (i ==  creators.end())
-        return CreateNull;
-    
-    return i->second;
 }
 
 CHMMParameters::SDetails::TCGContentList& CHMMParameters::SDetails::GetCGList(const string& type)
@@ -819,45 +690,60 @@ void CHMMParameters::SDetails::StoreParam( const string& type, CInputModel* inpu
     i->second = input_model;
 }
 
-CHMMParameters::CHMMParameters(CNcbiIstream& from) : m_details( new SDetails(from) )
+CHMMParameters::CHMMParameters(const CGnomon_params& hmm_params_asn) : m_details( new SDetails(hmm_params_asn) )
 {
+}
+
+CHMMParameters::CHMMParameters(CNcbiIstream& hmm_params_istr, ESerialDataFormat format)
+{
+    auto_ptr<CObjectIStream> inp(CObjectIStream::Open(format,hmm_params_istr));
+    CRef<CGnomon_params> params_asn(new CGnomon_params);
+    *inp >> *params_asn;
+    m_details.Reset( new SDetails(*params_asn) );
 }
 
 CHMMParameters::~CHMMParameters()
 {
 }
 
-CHMMParameters::SDetails::SDetails(CNcbiIstream& from)
+namespace {
+template <class CParam>
+void CHMMParameters::SDetails::ReadParameters(const CGnomon_params& hmm_params_asn, CGnomon_param::C_Param::E_Choice choice)
 {
-    DeleteAllCreatedModels();
-
-    string type; 
-    from >> type;
-    string str;
-    while(from >> str) {
-        if(str != "CG:") {
-            type = str;
+    ITERATE(CGnomon_params::Tdata, p, hmm_params_asn.Get()) {
+        if ((*p)->GetParam().Which() != choice)
             continue;
-        }
 
-        if (type[0]!='[' || type[type.length()-1]!=']')
-            CInputModel::Error(type);
+        int low = (*p)->GetGc_content_range().GetFrom();
+        int high = (*p)->GetGc_content_range().GetTo();
+        if (!( 0<=low && low < high && high <= 100) )
+            CInputModel::Error(CParam::class_id());
 
-        type = type.substr(1,type.length()-2);
-
-        int low,high;
-        from >> low >> high;
-        if(!from || !( 0<=low && low < high && high <= 100) )
-            CInputModel::Error(type);
-
-        CInputModel* input_model( CParametersFactory::Instance().GetCreator(type)(from) );
+        CInputModel* input_model( new CParam((*p)->GetParam()) );
         if (input_model==NULL)
             continue;
         
         all_created_models.push_back(input_model);
 
-        StoreParam(type, input_model, low, high);
+        StoreParam(CParam::class_id(), input_model, low, high);
     }
+}
+}
+
+CHMMParameters::SDetails::SDetails(const CGnomon_params& hmm_params_asn)
+{
+    DeleteAllCreatedModels();
+
+    ReadParameters<CWAM_Donor<2> >(hmm_params_asn, CGnomon_param::C_Param::e_Donor);
+    ReadParameters<CWAM_Acceptor<2> >(hmm_params_asn, CGnomon_param::C_Param::e_Acceptor);
+    ReadParameters<CWMM_Start>(hmm_params_asn, CGnomon_param::C_Param::e_Start);
+    ReadParameters<CWAM_Stop>(hmm_params_asn, CGnomon_param::C_Param::e_Stop);
+    ReadParameters<CMC3_CodingRegion<5> >(hmm_params_asn, CGnomon_param::C_Param::e_Coding_region);
+    ReadParameters<CMC_NonCodingRegion<5> >(hmm_params_asn, CGnomon_param::C_Param::e_Non_coding_region);
+    ReadParameters<CIntronParameters>(hmm_params_asn, CGnomon_param::C_Param::e_Intron);
+    ReadParameters<CIntergenicParameters>(hmm_params_asn, CGnomon_param::C_Param::e_Intergenic);
+    ReadParameters<CExonParameters>(hmm_params_asn, CGnomon_param::C_Param::e_Exon);
+
 }
 
 const CInputModel& CHMMParameters::GetParameter(const string& type, int cgcontent) const
@@ -872,11 +758,11 @@ const CInputModel& CHMMParameters::SDetails::GetParameter(const string& type, in
     else if (cgcontent >= 100)
         cgcontent = 99;
 
-    TParamMap::const_iterator i_param = params.find(type);
+    SDetails::TParamMap::const_iterator i_param = params.find(type);
     if (i_param == params.end())
         CInputModel::Error( type );
     
-    ITERATE( TCGContentList, i, i_param->second) {
+    ITERATE( SDetails::TCGContentList, i, i_param->second) {
         if (cgcontent < i->first) {
             if (i->second == NULL) {
                 CInputModel::Error( type );
@@ -889,22 +775,6 @@ const CInputModel& CHMMParameters::SDetails::GetParameter(const string& type, in
     CInputModel::Error( type );
     return *params.begin()->second.front().second;
 }
-
-CParametersFactory::CParametersFactory()
-{
-}
-
-CParametersFactory& CParametersFactory::Instance()
-{
-    static CParametersFactory instance;
-    return instance;
-}
-
-bool CParametersFactory::RegisterParameter(const string& type, TParameterCreator creator)
-{
-    return creators.insert(make_pair(type,creator)).second;
-}
-
 
 
 END_SCOPE(gnomon)

@@ -83,19 +83,15 @@ int GetCompartmentNum(const CSeq_align& sa)
 }
 }
 
-CGeneModel::CGeneModel(const CSeq_align& seq_align) :
-    m_id(GetCompartmentNum(seq_align)), m_status(0), m_expecting_hole(false), m_geneid(0) 
+CAlignModel::CAlignModel(const CSeq_align& seq_align) :
+    CGeneModel(seq_align.GetSegs().GetSpliced().GetGenomic_strand()==eNa_strand_minus?eMinus:ePlus,
+               GetCompartmentNum(seq_align),
+               seq_align.GetSegs().GetSpliced().GetProduct_type()==CSpliced_seg::eProduct_type_protein? eProt:emRNA) 
 {
     const CSpliced_seg& sps = seq_align.GetSegs().GetSpliced();
-    switch (sps.GetProduct_type()) {
-    case CSpliced_seg::eProduct_type_transcript:
-        m_type = emRNA;
-        break;
-    case CSpliced_seg::eProduct_type_protein:
-        m_type = eProt;
-        break;
-    }
-    SetStrand( sps.GetGenomic_strand()==eNa_strand_minus?eMinus:ePlus );
+    if(sps.CanGetProduct_strand() && sps.GetProduct_strand()==eNa_strand_minus) 
+        Status() |= CGeneModel::eReversed;
+    
 
     CRef<CSeq_id> product_idref(new CSeq_id);
     product_idref->Assign( sps.GetProduct_id() );
@@ -105,33 +101,33 @@ CGeneModel::CGeneModel(const CSeq_align& seq_align) :
     bool is_protein = sps.GetProduct_type()==CSpliced_seg::eProduct_type_protein;
     if (is_protein)
         product_len *=3;
-    int prot_prev = -1;
+    int prod_prev = -1;
     bool prev_splice = false;
 
     ITERATE(CSpliced_seg::TExons, e_it, sps.GetExons()) {
         const CSpliced_exon& exon = **e_it;
-        int prot_cur_start = GetProdPosInBases(exon.GetProduct_start());
-        int prot_cur_end = GetProdPosInBases(exon.GetProduct_end());
+        int prod_cur_start = GetProdPosInBases(exon.GetProduct_start());
+        int prod_cur_end = GetProdPosInBases(exon.GetProduct_end());
         if (is_product_reversed) {
-            int tmp = prot_cur_start;
-            prot_cur_start = product_len - prot_cur_end -1;
-            prot_cur_end = product_len - tmp -1;
+            int tmp = prod_cur_start;
+            prod_cur_start = product_len - prod_cur_end -1;
+            prod_cur_end = product_len - tmp -1;
         }
         int nuc_cur_start = exon.GetGenomic_start();
         int nuc_cur_end = exon.GetGenomic_end();
 
         bool hole_before =
-            prot_prev+1 != prot_cur_start || 
+            prod_prev+1 != prod_cur_start || 
             !prev_splice || 
             !(exon.CanGetSplice_5_prime() && exon.GetSplice_5_prime().CanGetBases() && exon.GetSplice_5_prime().GetBases().size()==2);
         if (hole_before)
             AddHole();
         prev_splice = exon.CanGetSplice_3_prime() && exon.GetSplice_3_prime().CanGetBases() && exon.GetSplice_3_prime().GetBases().size()==2;
 
-        AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end));
+        AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end),TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),GetProdPosInBases(exon.GetProduct_end())));
 
         int pos = 0;
-        int prod_pos = prot_cur_start;
+        int prod_pos = prod_cur_start;
         ITERATE(CSpliced_exon::TParts, p_it, exon.GetParts()) {
             const CSpliced_exon_chunk& chunk = **p_it;
             if (chunk.IsProduct_ins()) {
@@ -182,16 +178,20 @@ CGeneModel::CGeneModel(const CSeq_align& seq_align) :
             }
         }
 
-        if (is_protein && hole_before && prot_cur_start%3!=0) {
+        if (is_protein && hole_before && prod_cur_start%3!=0) {
             if (Strand()==ePlus) {
-                nuc_cur_start = FShiftedMove(nuc_cur_start,3-prot_cur_start%3);
+                nuc_cur_start = FShiftedMove(nuc_cur_start,3-prod_cur_start%3);
             } else {
-                nuc_cur_end = FShiftedMove(nuc_cur_end,-(3-prot_cur_start%3));
+                nuc_cur_end = FShiftedMove(nuc_cur_end,-(3-prod_cur_start%3));
             }
-            Clip(TSignedSeqRange(nuc_cur_start,nuc_cur_end), CGeneModel::eDontRemoveExons);
+            CFrameShiftedSeqMap mrnamap(*this);
+            TSignedSeqRange range_on_genome(nuc_cur_start,nuc_cur_end);
+            TSignedSeqRange range_on_transcript = mrnamap.MapRangeOrigToEdited(range_on_genome,false);
+            Clip(range_on_genome, CGeneModel::eDontRemoveExons);
+            
         }
 
-        prot_prev = prot_cur_end;
+        prod_prev = prod_cur_end;
     }
 
     
@@ -272,7 +272,6 @@ CGeneModel::CGeneModel(const CSeq_align& seq_align) :
         cds_info.SetReadingFrame( reading_frame, true);
         if (start.NotEmpty()) {
             cds_info.SetStart(start, GetProdPosInBases(sps.GetExons().front()->GetProduct_start()) == 0);
-            cds_info.SetScore(cds_info.Score(),false);
         }
         if (stop.NotEmpty())
             cds_info.SetStop(stop);
@@ -282,6 +281,10 @@ CGeneModel::CGeneModel(const CSeq_align& seq_align) :
 
 string CGeneModel::GetProtein (const CResidueVec& contig_sequence) const
 {
+    string prot_seq;
+    if(ReadingFrame().Empty())
+        return prot_seq;
+
     CFrameShiftedSeqMap cdsmap(*this, CFrameShiftedSeqMap::eRealCdsOnly);
     CResidueVec cds;
     cdsmap.EditedSequence(contig_sequence, cds);
@@ -290,7 +293,6 @@ string CGeneModel::GetProtein (const CResidueVec& contig_sequence) const
     int bshift = ((int)cds.size()-ashift)%3;
 
     string cds_seq((char*)&cds[ashift],cds.size()-ashift-bshift);
-    string prot_seq;
     objects::CSeqTranslator::Translate(cds_seq,prot_seq);
     return prot_seq;
 }

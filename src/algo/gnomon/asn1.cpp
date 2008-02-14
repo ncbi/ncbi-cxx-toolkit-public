@@ -86,7 +86,7 @@ private:
     CRef<CSeq_feat> create_cdregion_feature(SModelData& md,EWhere onWhat);
     CRef<CSeq_feat> create_5prime_stop_feature(SModelData& md) const;
     CRef<CSeq_align> model2spliced_seq_align(SModelData& md);
-    CRef<CSpliced_exon> spliced_exon (const CAlignExon& e, EStrand strand) const;
+    CRef<CSpliced_exon> spliced_exon (const CModelExon& e, EStrand strand) const;
     CRef<CSeq_loc> create_packed_int_seqloc(const CGeneModel& model, TSignedSeqRange limits = TSignedSeqRange::GetWhole());
 
     CRef<CSeq_id> contig_sid;
@@ -234,11 +234,11 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
     int start, stop, altstart;
     if (strand==ePlus) {
         altstart = md.mrna_map.MapOrigToEdited(model.MaxCdsLimits().GetFrom());
-        start = md.mrna_map.MapOrigToEdited(model.RealCdsLimits().GetFrom());
+        start = md.mrna_map.MapOrigToEdited(model.GetCdsInfo().Cds().GetFrom());
         stop = md.mrna_map.MapOrigToEdited(model.MaxCdsLimits().GetTo());
     } else {
         altstart = md.mrna_map.MapOrigToEdited(model.MaxCdsLimits().GetTo());
-        start = md.mrna_map.MapOrigToEdited(model.RealCdsLimits().GetTo());
+        start = md.mrna_map.MapOrigToEdited(model.GetCdsInfo().Cds().GetTo());
         stop = md.mrna_map.MapOrigToEdited(model.MaxCdsLimits().GetFrom());
     }
 
@@ -285,12 +285,13 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
         break;
     }
 
-    if (!model.HasStart() || model.OpenCds())
+    if (!model.HasStart())
         cdregion_location->SetPartialStart(true,eExtreme_Biological);
     if (!model.HasStop())
         cdregion_location->SetPartialStop(true,eExtreme_Biological);
     cdregion_feature->SetLocation(*cdregion_location);
-    if (!model.HasStart() || model.OpenCds() || !model.HasStop())
+
+    if (!model.HasStart() || !model.HasStop())
         cdregion_feature->SetPartial(true);
 
     return cdregion_feature;
@@ -411,12 +412,21 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
             if (s->Type()&CGeneModel::eEST)
                 ests.push_back(accession);
         }
-        if (!proteins.empty())
+        if (!proteins.empty()) {
             support_field->AddField("Proteins",proteins);
-        if (!mrnas.empty())
+            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
+            support_field->SetData().SetFields().back()->SetNum(proteins.size());
+        }
+        if (!mrnas.empty()) {
             support_field->AddField("mRNAs",mrnas);
-        if (!ests.empty())
+            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
+            support_field->SetData().SetFields().back()->SetNum(mrnas.size());
+        }
+        if (!ests.empty()) {
             support_field->AddField("ESTs",ests);
+            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
+            support_field->SetData().SetFields().back()->SetNum(ests.size());
+        }
     }
 
     if(!model.ProteinHit().empty())
@@ -547,7 +557,7 @@ void CAnnotationASN1::CImplementationData::update_gene_feature(CSeq_feat& gene, 
         gene.SetPartial(true);
 }
 
-CRef<CSpliced_exon> CAnnotationASN1::CImplementationData::spliced_exon (const CAlignExon& e, EStrand strand) const
+CRef<CSpliced_exon> CAnnotationASN1::CImplementationData::spliced_exon (const CModelExon& e, EStrand strand) const
 {
     CRef<CSpliced_exon> se(new CSpliced_exon());
     // se->SetProduct_start(...); se->SetProduct_end(...); don't fill in here

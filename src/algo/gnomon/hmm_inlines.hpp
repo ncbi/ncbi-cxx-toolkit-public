@@ -39,19 +39,26 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
-template<int order> void CMarkovChain<order>::InitScore(CNcbiIstream& from)
+USING_SCOPE(objects);
+
+template<int order> void CMarkovChain<order>::InitScore(const CMarkov_chain_params& from)
 {
     Init(from);
-    if(from) toScore();
+    toScore();
 }
 
-template<int order> void CMarkovChain<order>::Init(CNcbiIstream& from)
+template<int order> void CMarkovChain<order>::Init(const CMarkov_chain_params& from)
 {
-    m_next[enA].Init(from);
-    m_next[enC].Init(from);
-    m_next[enG].Init(from);
-    m_next[enT].Init(from);
-    if(from) m_next[enN].Average(m_next[enA],m_next[enC],m_next[enG],m_next[enT]);
+    if (from.GetOrder() != order)
+        CInputModel::Error("Wrong Markov Chain order");
+    CMarkov_chain_params::TProbabilities::const_iterator i = from.GetProbabilities().begin();
+    m_next[enA].Init((*i++)->GetPrev_order());
+    m_next[enC].Init((*i++)->GetPrev_order());
+    m_next[enG].Init((*i++)->GetPrev_order());
+    m_next[enT].Init((*i++)->GetPrev_order());
+    if (i != from.GetProbabilities().end())
+        CInputModel::Error("Too many values in Markov Chain");
+    m_next[enN].Average(m_next[enA],m_next[enC],m_next[enG],m_next[enT]);
 }
 
 template<int order> void CMarkovChain<order>::Average(Type& mc0, Type& mc1, Type& mc2, Type& mc3)
@@ -84,11 +91,14 @@ template<int order> double CMarkovChainArray<order>::Score(const EResidue* seq) 
     return score;
 }
 
-template<int order> void CMarkovChainArray<order>::InitScore(int l, CNcbiIstream& from)
+template<int order> void CMarkovChainArray<order>::InitScore(int l, const CMarkov_chain_array& from)
 {
     m_length = l;
     m_mc.resize(m_length);
-    for(int i = 0; i < m_length; ++i) m_mc[i].InitScore(from);
+    CMarkov_chain_array::TMatrix::const_iterator mc = from.GetMatrix().begin();
+    for(int i = 0; i < m_length; ++i) m_mc[i].InitScore(**mc++);
+    if (mc != from.GetMatrix().end())
+        CInputModel::Error("Too many elements in Markov Chain array");
 }
 
 template<int order>
@@ -104,24 +114,15 @@ double CWAM_Donor<order>::Score(const CEResidueVec& seq, int i) const
 }
 
 template<int order>
-CWAM_Donor<order>::CWAM_Donor(CNcbiIstream& from)
+CWAM_Donor<order>::CWAM_Donor(const CGnomon_param::C_Param& from)
 {
-
-    string str;
-    from >> str;
-    if(str != "InExon:") Error(class_id());
-    from >> m_inexon;
-    if(!from) Error(class_id());
-    from >> str;
-    if(str != "InIntron:") Error(class_id());
-    from >> m_inintron;
-    if(!from) Error(class_id());
+    m_inexon = from.GetDonor().GetIn_exon();
+    m_inintron = from.GetDonor().GetIn_intron();
     
     m_left = m_inexon;
     m_right = m_inintron;
     
-    m_matrix.InitScore(m_inexon+m_inintron,from);
-    if(!from) Error(class_id());
+    m_matrix.InitScore(m_inexon+m_inintron,from.GetDonor());
 }
 
 
@@ -137,33 +138,28 @@ double CWAM_Acceptor<order>::Score(const CEResidueVec& seq, int i) const
 }
 
 template<int order>
-CWAM_Acceptor<order>::CWAM_Acceptor(CNcbiIstream& from)
+CWAM_Acceptor<order>::CWAM_Acceptor(const CGnomon_param::C_Param& from)
 {
-    string str;
-    from >> str;
-    if(str != "InExon:") Error(class_id());
-    from >> m_inexon;
-    if(!from) Error(class_id());
-    from >> str;
-    if(str != "InIntron:") Error(class_id());
-    from >> m_inintron;
-    if(!from) Error(class_id());
+    m_inexon = from.GetAcceptor().GetIn_exon();
+    m_inintron = from.GetAcceptor().GetIn_intron();
     
     m_left = m_inintron;
     m_right = m_inexon;
     
-    m_matrix.InitScore(m_inexon+m_inintron,from);
-    if(!from) Error(class_id());
+    m_matrix.InitScore(m_inexon+m_inintron,from.GetAcceptor());
 }
 
 
 template<int order>
-CMC3_CodingRegion<order>::CMC3_CodingRegion(CNcbiIstream& from)
+CMC3_CodingRegion<order>::CMC3_CodingRegion(const CGnomon_param::C_Param& from)
 {
-    m_matrix[0].InitScore(from);
-    m_matrix[1].InitScore(from);
-    m_matrix[2].InitScore(from);
-    if(!from) Error(class_id());
+    int i=0;
+    ITERATE(CGnomon_param::C_Param::TCoding_region, p, from.GetCoding_region()) {
+        if (i < 3)
+            m_matrix[i++].InitScore(**p);
+        else
+            Error(class_id());
+    }
 }
 
 template<int order>
@@ -175,10 +171,9 @@ double CMC3_CodingRegion<order>::Score(const CEResidueVec& seq, int i, int codon
 }
 
 template<int order>
-CMC_NonCodingRegion<order>::CMC_NonCodingRegion(CNcbiIstream& from)
+CMC_NonCodingRegion<order>::CMC_NonCodingRegion(const CGnomon_param::C_Param& from)
 {
-    m_matrix.InitScore(from);
-    if(!from) Error(class_id());
+    m_matrix.InitScore(from.GetNon_coding_region());
 }
 
 template<int order>

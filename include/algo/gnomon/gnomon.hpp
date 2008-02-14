@@ -41,6 +41,9 @@
 #include <algo/gnomon/gnomon_model.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+    class CGnomon_params;
+END_SCOPE(objects)
 BEGIN_SCOPE(gnomon)
 
 class CEResidueVec;
@@ -50,7 +53,8 @@ class CInputModel;
 /// just create it and pass to a GNOMON engine
 class NCBI_XALGOGNOMON_EXPORT CHMMParameters : public CObject {
 public:
-    CHMMParameters(CNcbiIstream& hmm_param_istr);
+    CHMMParameters(const objects::CGnomon_params& hmm_params_asn);
+    CHMMParameters(CNcbiIstream& hmm_params_istr, ESerialDataFormat format=eSerial_AsnText);
     ~CHMMParameters();
     const CInputModel& GetParameter(const string& type, int cgcontent) const;
 private:
@@ -83,7 +87,7 @@ public:
     // run gnomon. return score
     double Run(bool repeats = true, bool leftwall = true, bool rightwall = true, double mpp = 10); // pure ab initio
 
-    double Run(const TAlignList& chains,
+    double Run(const TGeneModelList& chains,
 	       bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty = BadScore());
 
     CRef<objects::CSeq_annot> GetAnnot(const objects::CSeq_id& id);
