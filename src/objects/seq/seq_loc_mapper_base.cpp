@@ -1015,7 +1015,6 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
         ERR_POST_X(14, Error << "Unknown product type in spliced-seg");
         return;
     }
-    int dst_width = m_UseWidth ? m_Dst_width : 1;
 
     ITERATE(CSpliced_seg::TExons, it, spliced.GetExons()) {
         const CSpliced_exon& ex = **it;

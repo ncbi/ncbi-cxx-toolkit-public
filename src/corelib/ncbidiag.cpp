@@ -1105,9 +1105,6 @@ static const int   kDiagW_Session  = 24;
 void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
                                   const SDiagMessage& msg) const
 {
-    CDiagContextThreadData& thr_data =
-        CDiagContextThreadData::GetThreadData();
-
     string uid = GetStringUID(msg.GetUID());
     const string& host = msg.GetHost();
     const string& client = msg.GetClient();
