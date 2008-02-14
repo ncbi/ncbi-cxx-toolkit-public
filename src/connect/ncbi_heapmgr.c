@@ -907,12 +907,15 @@ void HEAP_Detach(HEAP heap)
 
 void HEAP_Destroy(HEAP heap)
 {
+    char _id[32];
+
     if (!heap)
         return;
     assert(!heap->base == !heap->size);
-    if (!heap->chunk  &&  !heap->refc)
-        CORE_LOG_X(33, eLOG_Error, "Heap Destroy: Heap read-only");
-    else if (heap->resize/*NB: NULL for heap copies*/)
+    if (!heap->chunk  &&  !heap->refc) {
+        CORE_LOGF_X(33, eLOG_Error,
+                    ("Heap Destroy%s: Heap read-only", s_HEAP_Id(_id, heap)));
+    } else if (heap->resize/*NB: NULL for heap copies*/)
         verify(heap->resize(heap->base, 0, heap->arg) == 0);
     HEAP_Detach(heap);
 }
