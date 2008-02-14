@@ -51,7 +51,7 @@ static char const rcsid[] = "$Id$";
 
 #include <map>
 
-/** @addtogroup BlastFormat
+/** @addtogroup BlastFormatting
  *
  * @{
  */

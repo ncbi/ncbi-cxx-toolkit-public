@@ -1,5 +1,5 @@
-#ifndef BLASTFMTUTIL_HPP
-#define BLASTFMTUTIL_HPP
+#ifndef OBJTOOLS_BLAST_FORMAT___BLASTFMTUTIL_HPP
+#define OBJTOOLS_BLAST_FORMAT___BLASTFMTUTIL_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -46,6 +46,11 @@
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <util/math/matrix.hpp>
+
+/** @addtogroup BlastFormatting
+ *
+ * @{
+ */
 
 /**setting up scope*/
 BEGIN_NCBI_SCOPE
@@ -303,11 +308,12 @@ public:
     ///@param line_len: length of each line desired
     ///@param out: stream to ouput
     ///@param publication Which publication to show reference for? [in]
-    ///
+    ///@param is_psiblast: is this reference for psiblast? [in]
     static void BlastPrintReference(bool html, size_t line_len, 
                                     CNcbiOstream& out, 
                                     blast::CReference::EPublication publication =
-                                    blast::CReference::eGappedBlast);
+                                    blast::CReference::eGappedBlast,
+                                    bool is_psiblast = false);
 
     ///Print out misc information separated by "~"
     ///@param str:  input information
@@ -726,4 +732,6 @@ public:
 
 END_NCBI_SCOPE
 
-#endif
+/* @} */
+
+#endif /* OBJTOOLS_BLAST_FORMAT___BLASTFMTUTIL_HPP */

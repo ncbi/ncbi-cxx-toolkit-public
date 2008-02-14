@@ -260,14 +260,7 @@ sub handle_blastall($)
     $retval .= "-culling_limit $opt_K "     if (defined $opt_K);
     $retval .= "-max_intron_length $opt_t " if (defined $opt_t);
     $retval .= "-frame_shift_penalty $opt_w " if (defined $opt_w);
-    if (defined $opt_C) {
-        $retval .= "-comp_based_stats $opt_C ";
-    } elsif ($opt_p eq "blastp" or $opt_p eq "tblastn") {
-        # this is needed b/c blastall -p blastp has CBS turned off by default 
-        # while the CBlastAdvancedProteinOptionsHandle has it on by default
-        $retval .= "-comp_based_stats F ";
-    }
-
+    $retval .= "-comp_based_stats $opt_C "  if (defined $opt_C);
     $retval .= "-out $opt_o "               if (defined $opt_o);
     if (defined $opt_m) {
         if ($opt_m == 5 or $opt_m == 6) {

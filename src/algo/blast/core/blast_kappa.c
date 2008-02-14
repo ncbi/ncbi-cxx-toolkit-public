@@ -2072,8 +2072,10 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         return -1;   /* Unsupported matrix */
     }
     /*****************/
-    inclusion_ethresh =
-        (psiOptions != NULL) ? psiOptions->inclusion_ethresh : 0;
+    inclusion_ethresh = (psiOptions /* this can be NULL for CBl2Seq */
+                         ? psiOptions->inclusion_ethresh 
+                         : PSI_INCLUSION_ETHRESH);
+    ASSERT(inclusion_ethresh != 0.0);
 
     /* Initialize savedParams */
     savedParams =

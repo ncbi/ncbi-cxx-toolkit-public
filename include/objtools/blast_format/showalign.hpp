@@ -1,5 +1,5 @@
-#ifndef SHOWALIGN_HPP
-#define SHOWALIGN_HPP
+#ifndef OBJTOOLS_BLAST_FORMAT___SHOWALIGN_HPP
+#define OBJTOOLS_BLAST_FORMAT___SHOWALIGN_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -44,6 +44,11 @@
 #include <cgi/cgictx.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <objtools/readers/gene_info/gene_info_reader.hpp>
+
+/** @addtogroup BlastFormatting
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -626,4 +631,6 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif
+/* @} */
+
+#endif /* OBJTOOLS_BLAST_FORMAT___SHOWALIGN__HPP */

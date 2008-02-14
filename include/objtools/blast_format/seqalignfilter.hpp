@@ -1,5 +1,5 @@
-#ifndef ___SEQALIGN_FILTER__HPP
-#define ___SEQALIGN_FILTER__HPP
+#ifndef OBJTOOLS_BLAST_FORMAT___SEQALIGN_FILTER__HPP
+#define OBJTOOLS_BLAST_FORMAT___SEQALIGN_FILTER__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -45,7 +45,7 @@
 
 #include <objtools/readers/seqdb/seqdb.hpp>
 
-/** @addtogroup BlastFormat
+/** @addtogroup BlastFormatting
  *
  * @{
  */
@@ -228,4 +228,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-#endif  /* ___SEQALIGN_FILTER__HPP */
+#endif  /* OBJTOOLS_BLAST_FORMAT___SEQALIGN_FILTER__HPP */

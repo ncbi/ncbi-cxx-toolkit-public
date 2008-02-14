@@ -198,9 +198,12 @@ CBlastFormat::PrintProlog()
         m_Outfile << endl << endl;
         CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
                               m_Outfile, CReference::eCompAdjustedMatrices);
+    }
+    if (m_Program == "psiblast" || m_Program == "blastp") {
         m_Outfile << endl << endl;
         CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
-                              m_Outfile, CReference::eCompBasedStats);
+                              m_Outfile, CReference::eCompBasedStats,
+                              (bool)(m_Program == "psiblast"));
     }
 
     m_Outfile << endl << endl;

@@ -2406,6 +2406,15 @@ s_EvalueCompareHSPLists(const void* v1, const void* v2)
    return 0;
 }
 
+/** Callback for sorting hsp lists by their best e-value/score, in 
+ * reverse order - from higher e-value to lower (lower score to higher).
+*/
+static int
+s_EvalueCompareHSPListsRev(const void* v1, const void* v2)
+{
+   return s_EvalueCompareHSPLists(v2, v1);
+}
+
 /********************************************************************************
           Functions manipulating BlastHitList's
 ********************************************************************************/
@@ -2661,6 +2670,22 @@ Int2 Blast_HSPResultsSortByEvalue(BlastHSPResults* results)
       if (hit_list && hit_list->hsplist_count > 1) {
          qsort(hit_list->hsplist_array, hit_list->hsplist_count, 
                   sizeof(BlastHSPList*), s_EvalueCompareHSPLists);
+      }
+      s_BlastHitListPurge(hit_list);
+   }
+   return 0;
+}
+
+Int2 Blast_HSPResultsReverseSort(BlastHSPResults* results)
+{
+   Int4 index;
+   BlastHitList* hit_list;
+
+   for (index = 0; index < results->num_queries; ++index) {
+      hit_list = results->hitlist_array[index];
+      if (hit_list && hit_list->hsplist_count > 1) {
+         qsort(hit_list->hsplist_array, hit_list->hsplist_count, 
+               sizeof(BlastHSPList*), s_EvalueCompareHSPListsRev);
       }
       s_BlastHitListPurge(hit_list);
    }

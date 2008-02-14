@@ -95,20 +95,12 @@ CRef<CPacked_seqint> s_LocalQueryData2Packed_seqint(ILocalQueryData& query_data)
 
     CRef<CPacked_seqint> retval(new CPacked_seqint);
     for (int i = 0; i < kNumQueries; i++) {
-
         CConstRef<CSeq_id> id(query_data.GetSeq_loc(i)->GetId());
-        if (query_data.IsValidQuery(i)) {
-
-            if (query_data.GetSeq_loc(i)->IsInt()) {
-                retval->AddInterval(query_data.GetSeq_loc(i)->GetInt());
-            } else if (id.NotEmpty()) {
-                retval->AddInterval(*id, 0, query_data.GetSeqLength(i));
-            }
-
-        } else {
-            retval->AddInterval(*id, 0, 0);
+        if (query_data.GetSeq_loc(i)->IsInt()) {
+            retval->AddInterval(query_data.GetSeq_loc(i)->GetInt());
+        } else if (id.NotEmpty()) {
+            retval->AddInterval(*id, 0, query_data.GetSeqLength(i));
         }
-
     }
 
     return retval;
@@ -287,11 +279,13 @@ CSetupFactory::x_CreateHspStream(const CBlastOptionsMemento* opts_memento,
     if (is_multi_threaded) {
         return Blast_HSPListCollectorInitMT(opts_memento->m_ProgramType,
                                             blast_hit_params,
+                                            opts_memento->m_ExtnOpts, TRUE,
                                             number_of_queries,
                                             Blast_CMT_LOCKInit());
     } else {
         return Blast_HSPListCollectorInit(opts_memento->m_ProgramType,
                                           blast_hit_params,
+                                          opts_memento->m_ExtnOpts, TRUE,
                                           number_of_queries);
     }
 }

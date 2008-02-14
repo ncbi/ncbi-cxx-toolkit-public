@@ -45,7 +45,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-/** @addtogroup BlastFormat
+/** @addtogroup BlastFormatting
  *
  * @{
  */

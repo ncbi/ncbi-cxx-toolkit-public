@@ -1,5 +1,5 @@
-#ifndef VECTORSCREEN_HPP
-#define VECTORSCREEN_HPP
+#ifndef OBJTOOLS_BLAST_FORMAT___VECTORSCREEN_HPP
+#define OBJTOOLS_BLAST_FORMAT___VECTORSCREEN_HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -43,7 +43,7 @@
 class CVecscreenTest;  //For internal test only
 
 
-/** @addtogroup BlastFormat
+/** @addtogroup BlastFormatting
  *
  * @{
  */
@@ -212,4 +212,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-#endif
+#endif /* OBJTOOLS_BLAST_FORMAT___VECTORSCREEN_HPP */

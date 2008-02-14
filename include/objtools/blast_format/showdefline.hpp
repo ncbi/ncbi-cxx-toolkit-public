@@ -1,5 +1,5 @@
-#ifndef SHOWDEFLINE_HPP
-#define SHOWDEFLINE_HPP
+#ifndef OBJTOOLS_BLAST_FORMAT___SHOWDEFLINE_HPP
+#define OBJTOOLS_BLAST_FORMAT___SHOWDEFLINE_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -39,6 +39,11 @@
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
 #include <cgi/cgictx.hpp>
+
+/** @addtogroup BlastFormatting
+ *
+ * @{
+ */
 
 //forward declarations
 class CShowBlastDeflineTest;  //For internal test only
@@ -89,7 +94,8 @@ public:
                       CScope& scope,
                       size_t line_length = 65,
                       size_t deflines_to_show = blast::kDfltArgNumDescriptions,
-                      bool translated_nuc_alignment = false);
+                      bool translated_nuc_alignment = false,
+                      CRange<TSeqPos>* master_range = NULL);
     
     ~CShowBlastDefline();
     
@@ -328,6 +334,9 @@ private:
     /// Current alignment index (added to the linkout and entrez URL's)
     int m_cur_align;
     
+    ///blast sub-sequnce query
+    CRange<TSeqPos>* m_MasterRange;
+    
     CCgiContext* m_Ctx;
 
     ///Internal function to return defline info
@@ -383,4 +392,6 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif
+/* @} */
+
+#endif /* OBJTOOLS_BLAST_FORMAT___SHOWDEFLINE_HPP */

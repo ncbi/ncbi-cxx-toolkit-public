@@ -61,6 +61,7 @@ s_BlastHSPListCollectorFree(BlastHSPStream* hsp_stream)
         stream_data->sorted_hsplists[index] =
             Blast_HSPListFree(stream_data->sorted_hsplists[index]);
    }
+   sfree(stream_data->sort_by_score);
    sfree(stream_data->sorted_hsplists);
    sfree(stream_data);
    sfree(hsp_stream);
@@ -95,6 +96,19 @@ s_BlastHSPListCollectorClose(BlastHSPStream* hsp_stream)
 
    if (stream_data->results == NULL || stream_data->results_sorted)
       return;
+
+   if (stream_data->sort_by_score) {
+       if (stream_data->sort_by_score->sort_on_read) {
+           Blast_HSPResultsReverseSort(stream_data->results);
+       } else {
+           /* Reverse the order of HSP lists, because they will be returned
+              starting from end, for the sake of convenience */
+           Blast_HSPResultsReverseOrder(stream_data->results);
+       }
+       stream_data->results_sorted = TRUE;
+       stream_data->x_lock = MT_LOCK_Delete(stream_data->x_lock);
+       return;
+   }
 
    results = stream_data->results;
    num_hsplists = stream_data->num_hsplists;
@@ -174,13 +188,47 @@ s_BlastHSPListCollectorRead(BlastHSPStream* hsp_stream,
    if (!stream_data->results_sorted)
       s_BlastHSPListCollectorClose(hsp_stream);
 
-   /* return the next HSPlist out of the collection stored */
+   if (stream_data->sort_by_score) {
+       Int4 last_hsplist_index = -1, index = 0;
+       BlastHitList* hit_list = NULL;
+       BlastHSPResults* results = stream_data->results;
 
-   if (!stream_data->num_hsplists)
-      return kBlastHSPStream_Eof;
+       /* Find index of the first query that has results. */
+       for (index = stream_data->sort_by_score->first_query_index; 
+            index < results->num_queries; ++index) {
+          if (results->hitlist_array[index] && 
+              results->hitlist_array[index]->hsplist_count > 0)
+             break;
+       }
+       if (index >= results->num_queries)
+          return kBlastHSPStream_Eof;
 
-   *hsp_list_out = stream_data->sorted_hsplists[--stream_data->num_hsplists];
+       stream_data->sort_by_score->first_query_index = index;
 
+       hit_list = results->hitlist_array[index];
+       last_hsplist_index = hit_list->hsplist_count - 1;
+
+       *hsp_list_out = hit_list->hsplist_array[last_hsplist_index];
+       /* Assign the query index here so the caller knows which query this HSP 
+          list comes from */
+       (*hsp_list_out)->query_index = index;
+       /* Dequeue this HSP list by decrementing the HSPList count */
+       --hit_list->hsplist_count;
+       if (hit_list->hsplist_count == 0) {
+          /* Advance the first query index, without checking that the next
+           * query has results - that will be done on the next call. */
+          ++stream_data->sort_by_score->first_query_index;
+       }
+   } else {
+       /* return the next HSPlist out of the collection stored */
+
+       if (!stream_data->num_hsplists)
+          return kBlastHSPStream_Eof;
+
+       *hsp_list_out = 
+           stream_data->sorted_hsplists[--stream_data->num_hsplists];
+
+   }
    return kBlastHSPStream_Success;
 }
 
@@ -487,6 +535,8 @@ s_BlastHSPListCollectorNew(BlastHSPStream* hsp_stream, void* args)
 BlastHSPStream* 
 Blast_HSPListCollectorInitMT(EBlastProgramType program, 
                              SBlastHitsParameters* blasthit_params,
+                             const BlastExtensionOptions* extn_opts,
+                             Boolean sort_on_read,
                              Int4 num_queries, MT_LOCK lock)
 {
     BlastHSPListCollectorData* stream_data = 
@@ -504,6 +554,18 @@ Blast_HSPListCollectorInitMT(EBlastProgramType program,
     stream_data->results = Blast_HSPResultsNew(num_queries);
 
     stream_data->results_sorted = FALSE;
+
+    /* This is needed to meet a pre-condition of the composition-based
+     * statistics code */
+    if ((Blast_QueryIsProtein(program) || Blast_QueryIsPssm(program)) &&
+        extn_opts->compositionBasedStats != 0) {
+        stream_data->sort_by_score = 
+            (SSortByScoreStruct*)calloc(0, sizeof(SSortByScoreStruct));
+        stream_data->sort_by_score->sort_on_read = sort_on_read;
+        stream_data->sort_by_score->first_query_index = 0;
+    } else {
+        stream_data->sort_by_score = NULL;
+    }
     stream_data->x_lock = lock;
 
     info.constructor = &s_BlastHSPListCollectorNew;
@@ -515,9 +577,11 @@ Blast_HSPListCollectorInitMT(EBlastProgramType program,
 BlastHSPStream* 
 Blast_HSPListCollectorInit(EBlastProgramType program, 
                            SBlastHitsParameters* blasthit_params,
+                           const BlastExtensionOptions* extn_opts,
+                           Boolean sort_on_read,
                            Int4 num_queries)
 {
-   return Blast_HSPListCollectorInitMT(program, blasthit_params, 
-                                       num_queries, NULL);
+   return Blast_HSPListCollectorInitMT(program, blasthit_params, extn_opts,
+                                       sort_on_read, num_queries, NULL);
 }
 

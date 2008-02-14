@@ -451,10 +451,10 @@ public:
     
     /// Returns the list of frame values for which this object
     /// contains masking information.
-    vector<ETranslationFrame> ListFrames() const;
+    const set<ETranslationFrame>& ListFrames();
     
     /// Returns true if this object contains any masking information.
-    bool Empty() const;
+    bool Empty();
     
     /// Adjusts all stored masks from nucleotide to protein offsets.
     ///
@@ -467,6 +467,9 @@ public:
     /// @param dna_length The query length in nucleotide bases.
     void UseProteinCoords(TSeqPos dna_length);
     
+    size_t GetNumFrames() const {
+        return BLAST_GetNumberOfContexts(m_Program);
+    }
 private:
     /// Prevent copy construction.
     CBlastQueryFilteredFrames(CBlastQueryFilteredFrames & f);
@@ -490,6 +493,9 @@ private:
     TFrameSet m_Seqlocs;
     /// Frame and tail of BlastSeqLoc* linked list (to speed up appending)
     TFrameSet m_SeqlocTails;
+    
+    /// Frames for masked locations
+    set<ETranslationFrame> m_Frames;
     
     /// True if this object's masked regions store DNA coordinates
     /// that will later be translated into protein coordinates.

@@ -49,7 +49,7 @@
 #include <html/html.hpp>
 
 
-/** @addtogroup blast_format
+/** @addtogroup BlastFormatting
  *
  * @{
  */

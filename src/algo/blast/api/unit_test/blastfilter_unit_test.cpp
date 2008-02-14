@@ -509,6 +509,7 @@ public:
         nucl_handle.SetRepeatFiltering(true);
         Blast_FindRepeatFilterLoc(query_v, &nucl_handle);
 
+        BOOST_REQUIRE(query_v[0].mask.NotEmpty());
         BOOST_REQUIRE(query_v[0].mask->IsPacked_int());
         const CPacked_seqint::Tdata& seqinterval_list = 
             query_v[0].mask->GetPacked_int().Get();
@@ -754,6 +755,7 @@ public:
 
         int loc_index = 0;
 
+        BOOST_REQUIRE(query_v[0].mask.NotEmpty());
         ITERATE(list< CRef<CSeq_interval> >, itr, 
                 query_v[0].mask->GetPacked_int().Get()) {
             BOOST_REQUIRE_EQUAL(kStarts[loc_index], (int)(*itr)->GetFrom());
@@ -786,6 +788,7 @@ public:
 
         int loc_index = 0;
 
+        BOOST_REQUIRE(query_v[0].mask.NotEmpty());
         ITERATE(list< CRef<CSeq_interval> >, itr,
                 query_v[0].mask->GetPacked_int().Get()) {
             BOOST_REQUIRE_EQUAL(kStarts[loc_index], (int)(*itr)->GetFrom());

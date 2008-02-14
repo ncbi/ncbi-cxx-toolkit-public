@@ -344,6 +344,9 @@ BOOST_AUTO_TEST_CASE(ProteinBlastSelfHit)
 
     CBl2Seq blaster(*sl, *sl, eBlastp);
     TSeqAlignVector sav(blaster.Run());
+    BOOST_REQUIRE(sav[0].NotEmpty());
+    BOOST_REQUIRE( !sav[0]->IsEmpty() );
+    BOOST_REQUIRE(sav[0]->Get().begin()->NotEmpty());
     CRef<CSeq_align> sar = *(sav[0]->Get().begin());
     BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
     testBlastHitCounts(blaster, eBlastp_129295_129295);
@@ -406,6 +409,7 @@ o.close();
     CSearchResultSet::TAncillaryVector ancillary_data;
     blaster.GetAncillaryResults(ancillary_data);
     BOOST_CHECK_EQUAL((size_t)1, ancillary_data.size());
+    BOOST_REQUIRE( ancillary_data.front().NotEmpty() );
     BOOST_CHECK( ancillary_data.front()->GetGappedKarlinBlk() != NULL );
     BOOST_CHECK( ancillary_data.front()->GetUngappedKarlinBlk() != NULL );
     BOOST_CHECK( ancillary_data.front()->GetSearchSpace() != (Int8)0 );

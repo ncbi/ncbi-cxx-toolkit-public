@@ -251,6 +251,10 @@ CPSIBlastOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
         return;
 
     ddc.Log("pseudo_count", m_Ptr->pseudo_count);
+    ddc.Log("inclusion_ethresh", m_Ptr->inclusion_ethresh);
+    ddc.Log("use_best_alignment", m_Ptr->use_best_alignment);
+    ddc.Log("nsg_compatibility_mode", m_Ptr->nsg_compatibility_mode);
+    ddc.Log("impala_scaling_factor", m_Ptr->impala_scaling_factor);
 }
 
 void

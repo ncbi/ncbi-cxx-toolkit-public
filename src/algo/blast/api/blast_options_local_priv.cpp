@@ -61,11 +61,9 @@ CBlastOptionsLocal::CBlastOptionsLocal()
     m_HitSaveOpts.Reset((BlastHitSavingOptions*)calloc(1, sizeof(BlastHitSavingOptions)));
     m_ScoringOpts.Reset((BlastScoringOptions*)calloc(1, sizeof(BlastScoringOptions)));
 
-    BlastEffectiveLengthsOptions* eff_len_opts = NULL;
-    BlastEffectiveLengthsOptionsNew(&eff_len_opts);
-    m_EffLenOpts.Reset(eff_len_opts);
-    m_DbOpts.Reset((BlastDatabaseOptions*)calloc(1, sizeof(BlastDatabaseOptions)));
-    m_PSIBlastOpts.Reset((PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions)));
+    BlastEffectiveLengthsOptionsNew(&m_EffLenOpts);
+    BlastDatabaseOptionsNew(&m_DbOpts);
+    PSIBlastOptionsNew(&m_PSIBlastOpts);
     m_Program = eBlastNotSet;
     m_UseMBIndex = false;
     m_MBIndexLoaded = false;

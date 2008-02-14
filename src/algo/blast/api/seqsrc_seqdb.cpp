@@ -65,6 +65,7 @@ s_SeqDbGetGiList(void* seqdb_handle, void* args)
 
     Blast_GiList* retval = Blast_GiListNewEx(gis.size());
     copy(gis.begin(), gis.end(), retval->data);
+    retval->num_used = gis.size();
 
     return retval;
 }

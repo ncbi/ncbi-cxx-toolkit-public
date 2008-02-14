@@ -46,6 +46,15 @@
 extern "C" {
 #endif
 
+/** Auxiliary structure to allow sorting the results by score for the
+ * composition-based statistics code */
+typedef struct SSortByScoreStruct {
+    Boolean sort_on_read;    /**< Should the results be sorted on the first read
+                               call? */
+    Int4 first_query_index;  /**< Index of the first query to try getting
+                               results from */
+} SSortByScoreStruct;
+
 /** Default implementation of BlastHSPStream */
 typedef struct BlastHSPListCollectorData {
    EBlastProgramType program;           /**< BLAST program type */
@@ -59,6 +68,10 @@ typedef struct BlastHSPListCollectorData {
    BlastHSPResults* results;/**< Structure for saving HSP lists */
    Boolean results_sorted;  /**< Have the results already been sorted? 
                                Set to true after the first read call. */
+   /**< Non-NULL if the results should be sorted by score as opposed to subject
+    * OID. This is necessary to meet a pre-condition of the composition-based
+    * statistics processing */
+   SSortByScoreStruct* sort_by_score;
    MT_LOCK x_lock;   /**< Mutex for writing and reading results. */
                                   
 } BlastHSPListCollectorData;
@@ -67,6 +80,10 @@ typedef struct BlastHSPListCollectorData {
  * locking facility must be instantiated before this function is called. 
  * @param program Type of BlAST program [in]
  * @param blasthit_params Specifies how many hits to save etc. [in]
+ * @param extn_opts Extension options to determine composition-based statistics
+ * mode [in]
+ * @param sort_on_read Should results be sorted on the first read call? Only
+ * applicable if composition-based statistics is on [in]
  * @param num_queries Number of query sequences in this BLAST search [in]
  * @param lock        Pointer to locking structure for writing by multiple
  *                    threads. Locking will not be performed if NULL. [in]
@@ -74,17 +91,25 @@ typedef struct BlastHSPListCollectorData {
 BlastHSPStream* 
 Blast_HSPListCollectorInitMT(EBlastProgramType program, 
                              SBlastHitsParameters* blasthit_params, 
+                             const BlastExtensionOptions* extn_opts,
+                             Boolean sort_on_read,
                              Int4 num_queries, MT_LOCK lock);
 
 /** Initialize the collector HSP stream for a single-threaded search, i.e. 
  * no locking is done when reading/writing from/to the stream.
  * @param program Type of BlAST program [in]
  * @param blasthit_params Specifies how many hits to save etc. [in]
+ * @param extn_opts Extension options to determine composition-based statistics
+ * mode [in]
+ * @param sort_on_read Should results be sorted on the first read call? Only
+ * applicable if composition-based statistics is on [in]
  * @param num_queries Number of query sequences in this BLAST search [in]
  */
 BlastHSPStream* 
 Blast_HSPListCollectorInit(EBlastProgramType program, 
                            SBlastHitsParameters* blasthit_params, 
+                           const BlastExtensionOptions* extn_opts,
+                           Boolean sort_on_read,
                            Int4 num_queries);
 
 #ifdef __cplusplus

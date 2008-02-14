@@ -258,14 +258,14 @@ s_FillMaskLocFromBlastResults(CBlastQueryVector& query,
         CRef<CBlastQueryFilteredFrames> frames
             (new CBlastQueryFilteredFrames(program, mqr));
         
-        vector<CBlastQueryFilteredFrames::ETranslationFrame> used
-            = frames->ListFrames();
+        typedef set<CSeqLocInfo::ETranslationFrame> TFrameSet;
+        const TFrameSet& used = frames->ListFrames();
         
         BlastSeqLoc* loc_list = 0;
         
-        for (size_t frame_i = 0; frame_i < used.size(); frame_i++) {
+        ITERATE(TFrameSet, itr, used) {
             // Pick frame +1 for nucleotide, or 0 (the only one) for protein.
-            int pframe = used[frame_i];
+            int pframe = *itr;
             
             BlastSeqLoc* locs1 = *(*frames)[pframe];
             frames->Release(pframe);

@@ -838,12 +838,14 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
                                      CScope& scope,
                                      size_t line_length,
                                      size_t num_defline_to_show,
-                                     bool translated_nuc_alignment):
+                                     bool translated_nuc_alignment,
+                                     CRange<TSeqPos>* master_range):
     m_AlnSetRef(&seqalign), 
     m_ScopeRef(&scope),
     m_LineLen(line_length),
     m_NumToShow(num_defline_to_show),
-    m_TranslatedNucAlignment(translated_nuc_alignment)
+    m_TranslatedNucAlignment(translated_nuc_alignment),
+    m_MasterRange(master_range)
 {
     
     m_Option = 0;
@@ -857,6 +859,11 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
     m_SeqStatus = NULL;
     m_Ctx = NULL;
     m_StructureLinkout = false;
+    if(m_MasterRange) {
+        if(m_MasterRange->GetFrom() >= m_MasterRange->GetTo()) {
+            m_MasterRange = NULL;
+        }
+    }
 }
 
 CShowBlastDefline::~CShowBlastDefline()
@@ -1214,8 +1221,9 @@ void CShowBlastDefline::x_InitDeflineTable(void)
         m_cur_align = num_align + 1;
 
         if (is_first_aln) {
-            m_QueryLength = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).
-                GetBioseqLength();
+            m_QueryLength = m_MasterRange ? 
+                                m_MasterRange->GetTo() - m_MasterRange->GetFrom() :
+                                    m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).GetBioseqLength();
             master_is_na = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).
                 GetBioseqCore()->IsNa();
         }

@@ -420,37 +420,31 @@ s_RestrictSeqLocs_OneFrame(BlastSeqLoc             ** bsl,
                            int                        query_index,
                            const BlastQueryInfo     * qinfo)
 {
-    for(int ci = qinfo->first_context; ci <= qinfo->last_context; ci++) {
-        if (qinfo->contexts[ci].query_index == query_index) {
-            CConstRef<CSeq_loc> qseqloc = queries.GetSeqLoc(query_index);
-            
-            BlastSeqLoc_RestrictToInterval(bsl,
-                                           qseqloc->GetStart(eExtreme_Positional),
-                                           qseqloc->GetStop (eExtreme_Positional));
-            
-            break;
-        }
-    }
+    CConstRef<CSeq_loc> qseqloc = queries.GetSeqLoc(query_index);
+    BlastSeqLoc_RestrictToInterval(bsl,
+                                   qseqloc->GetStart(eExtreme_Positional),
+                                   qseqloc->GetStop (eExtreme_Positional));
 }
 
-void
+static void
 s_RestrictSeqLocs_Multiframe(CBlastQueryFilteredFrames & frame_to_bsl,
                              const IBlastQuerySource   & queries,
                              int                         query_index,
                              const BlastQueryInfo      * qinfo)
 {
-    typedef vector<CSeqLocInfo::ETranslationFrame> TFrameVec;
+    typedef set<CSeqLocInfo::ETranslationFrame> TFrameSet;
+    const TFrameSet& frames = frame_to_bsl.ListFrames();
+    const size_t kNumFrames = frame_to_bsl.GetNumFrames();
+    _ASSERT(kNumFrames != 0);
+    const int first_ctx = kNumFrames * query_index;
+    const int last_ctx = kNumFrames * (query_index + 1);
     
-    TFrameVec frames = frame_to_bsl.ListFrames();
-    
-    ITERATE(TFrameVec, iter, frames) {
+    ITERATE(TFrameSet, iter, frames) {
         int seqloc_frame = *iter;
         BlastSeqLoc ** bsl = frame_to_bsl[seqloc_frame];
         
-        for(int ci = qinfo->first_context; ci <= qinfo->last_context; ci++) {
-            if (qinfo->contexts[ci].query_index != query_index)
-                continue;
-            
+        for(int ci = first_ctx; ci <= last_ctx; ci++) {
+            _ASSERT(qinfo->contexts[ci].query_index == query_index);
             int context_frame = qinfo->contexts[ci].frame;
             
             if (context_frame == seqloc_frame) {
@@ -466,7 +460,7 @@ s_RestrictSeqLocs_Multiframe(CBlastQueryFilteredFrames & frame_to_bsl,
     }
 }
 
-CRef<CBlastQueryFilteredFrames>
+static CRef<CBlastQueryFilteredFrames>
 s_GetRestrictedBlastSeqLocs(IBlastQuerySource & queries,
                             int                       query_index,
                             const BlastQueryInfo    * qinfo,
@@ -827,7 +821,8 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
 
     *buf_var++ = GetSentinelByte(eBlastEncodingProtein);
     if (warnings && replaced_residues.size() > 0) {
-        *warnings += "One or more U or O characters replaced by X at positions ";
+        *warnings += "One or more U or O characters replaced by X for ";
+        *warnings += "alignment score calculations at positions ";
         *warnings += NStr::IntToString(replaced_residues[0]);
         for (i = 1; i < replaced_residues.size(); i++) {
             *warnings += ", " + NStr::IntToString(replaced_residues[i]);
@@ -1511,25 +1506,22 @@ void CBlastQueryFilteredFrames::UseProteinCoords(TSeqPos dna_length)
     }
 }
 
-vector<CBlastQueryFilteredFrames::ETranslationFrame>
-CBlastQueryFilteredFrames::ListFrames() const
+const set<CBlastQueryFilteredFrames::ETranslationFrame>&
+CBlastQueryFilteredFrames::ListFrames()
 {
-    vector<ETranslationFrame> rv;
-    
-    ITERATE(TFrameSet, iter, m_Seqlocs) {
-        if ((*iter).second != 0) {
-            rv.push_back((*iter).first);
+    if (m_Frames.empty()) {
+        ITERATE(TFrameSet, iter, m_Seqlocs) {
+            if ((*iter).second != 0) {
+                m_Frames.insert((*iter).first);
+            }
         }
     }
-    
-    return rv;
+    return m_Frames;
 }
 
-bool CBlastQueryFilteredFrames::Empty() const
+bool CBlastQueryFilteredFrames::Empty()
 {
-    vector<ETranslationFrame> rv = ListFrames();
-    
-    return rv.empty();
+    return ListFrames().empty();
 }
 
 void CBlastQueryFilteredFrames::x_VerifyFrame(int frame)
@@ -1608,6 +1600,7 @@ bool CBlastQueryFilteredFrames::QueryHasMultipleFrames() const
 void CBlastQueryFilteredFrames::AddSeqLoc(const objects::CSeq_interval & intv, 
                                           int frame)
 {
+    _ASSERT( m_Frames.empty() );
     if ((frame == 0) && (m_Program == eBlastTypeBlastn)) {
         x_VerifyFrame(CSeqLocInfo::eFramePlus1);
         x_VerifyFrame(CSeqLocInfo::eFrameMinus1);

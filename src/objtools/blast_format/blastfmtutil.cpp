@@ -207,13 +207,17 @@ void CBlastFormatUtil::BlastPrintVersionInfo(const string program, bool html,
 void 
 CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len, 
                                       CNcbiOstream& out, 
-                                      blast::CReference::EPublication pub) 
+                                      blast::CReference::EPublication pub,
+                                      bool is_psiblast /* = false */) 
 {
     string reference("Reference");
     if (pub == blast::CReference::eCompAdjustedMatrices) {
         reference += " for compositional score matrix adjustment";
     } else if (pub == blast::CReference::eCompBasedStats) {
-        reference += " for composition-based statistics starting in round 2";
+        reference += " for composition-based statistics";
+        if (is_psiblast) { 
+            reference += " starting in round 2";
+        }
     }
 
     ostringstream str;

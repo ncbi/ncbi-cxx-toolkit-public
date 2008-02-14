@@ -673,6 +673,10 @@ BlastHSPResults* Blast_HSPResultsFree(BlastHSPResults* results);
 /** Sort each hit list in the BLAST results by best e-value */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsSortByEvalue(BlastHSPResults* results);
+/** Sort each hit list in the BLAST results by best e-value, in reverse
+    order. */
+NCBI_XBLAST_EXPORT
+Int2 Blast_HSPResultsReverseSort(BlastHSPResults* results);
 
 /** Reverse order of HSP lists in each hit list in the BLAST results. 
  * This allows to return HSP lists from the end of the arrays when reading

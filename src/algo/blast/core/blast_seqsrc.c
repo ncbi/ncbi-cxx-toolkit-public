@@ -259,8 +259,6 @@ BlastSeqSrcReleaseSequence(const BlastSeqSrc* seq_src,
 #ifdef KAPPA_PRINT_DIAGNOSTICS
 
 static const size_t kInitialGiListSize = 10;
-const Int2 kBadParameter = -1;
-const Int2 kOutOfMemory = -2;
 
 Blast_GiList*
 Blast_GiListNew(void)
@@ -280,7 +278,7 @@ Blast_GiListNewEx(size_t list_size)
     if ( !retval->data ) {
         return Blast_GiListFree(retval);
     }
-    retval->num_allocated = kInitialGiListSize;
+    retval->num_allocated = list_size;
 
     return retval;
 }
