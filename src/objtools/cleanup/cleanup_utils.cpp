@@ -58,7 +58,138 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+#define IS_LOWER(c)     ('a'<=(c) && (c)<='z')
+#define IS_UPPER(c)     ('A'<=(c) && (c)<='Z')
+
 using namespace sequence;
+
+//  ----------------------------------------------------------------------------
+//  File scope helper functions:
+//  ----------------------------------------------------------------------------
+bool s_IsAllUpperCase( const string& str )
+{
+    for(string::size_type i=0; i<str.length(); i++) {
+        if( !IS_UPPER(str[i])) return false;
+    }
+    return true;
+}
+
+string s_NormalizeInitials( const string& raw_initials )
+{
+    //
+    //  Note:
+    //  Periods _only_ after CAPs to avoid decorating hyphens (which _are_ 
+    //  legal in the "initials" part.
+    //
+    string normal_initials;
+    for ( const char* p=raw_initials.c_str(); *p != 0; ++p ) {
+        normal_initials += *p;
+        if ( IS_UPPER(*p) ) {
+            normal_initials += '.';
+        }
+    }
+    return normal_initials;
+}
+
+string s_NormalizeSuffix( const string& raw_suffix )
+{
+    //
+    //  Note: (2008-02-13) Suffixes I..VI no longer have trailing periods.
+    //
+    if ( raw_suffix == "1d" || raw_suffix == "1st" ) {
+        return "I";
+    }
+    if ( raw_suffix == "2d" || raw_suffix == "2nd" ) {
+        return "II";
+    }
+    if ( raw_suffix == "3d" || raw_suffix == "3rd" ) {
+        return "III";
+    }
+    if ( raw_suffix == "4th" ) {
+        return "IV";
+    }
+    if ( raw_suffix == "5th" ) {
+        return "V";
+    }
+    if ( raw_suffix == "6th" ) {
+        return "VI";
+    }
+    if ( raw_suffix == "Sr" ) {
+        return "Sr.";
+    }
+    if ( raw_suffix == "Jr" ) {
+        return "Jr.";
+    }
+    
+    return raw_suffix;
+}
+
+void s_SplitMLAuthorName(string name, string& last, string& initials, string& suffix)
+{
+    NStr::TruncateSpacesInPlace( name );
+    if ( name.empty() ) {
+        return;
+    }
+
+    vector<string> parts;
+    NStr::Tokenize( name, " ", parts, NStr::eMergeDelims );
+    if ( parts.empty() ) {
+        return;
+    }
+    if ( parts.size() == 1 ) {
+        //
+        //  Designate the only part we have as the last name.
+        //
+        last = parts[0];
+        return;
+    }
+
+    
+    const string& last_part = parts[ parts.size()-1 ];
+    const string& second_to_last_part = parts[ parts.size()-2 ];
+
+    if ( parts.size() == 2 ) {
+        //
+        //  Designate the first part as the last name and the second part as the
+        //  initials.
+        //
+        last = parts[0];
+        initials = s_NormalizeInitials( last_part );
+        return;
+    }
+
+    //
+    //  At least three parts.
+    //
+    //  If the second to last part is all CAPs then those are the initials. The 
+    //  last part is the suffix, and everything up to the initials is the last 
+    //  name.
+    //
+    if ( s_IsAllUpperCase( second_to_last_part ) ) {
+        last = NStr::Join( vector<string>( parts.begin(), parts.end()-2 ), " " );
+        initials = s_NormalizeInitials( second_to_last_part );
+        suffix = s_NormalizeSuffix( last_part );
+        return;
+    }
+
+    //
+    //  Fall through:
+    //  Guess that the last part is the initials and everything leading up to it 
+    //  is a (rather unusual) last name.
+    //
+    last = NStr::Join( vector<string>( parts.begin(), parts.end()-1 ), " " );
+    initials = s_NormalizeInitials( last_part );
+    return;
+
+    //  ------------------------------------------------------------------------
+    //  CASE NOT HANDLED:
+    //
+    //  (1) Initials with a blank in them. UNFIXABLE!
+    //  (2) Initials with non CAPs in them. Probably fixable through a 
+    //      white list of allowable exceptions. Tedious, better let the indexers
+    //      fix it.
+    //  ------------------------------------------------------------------------
+}
 
 bool CleanString(string& str, bool rm_trailing_period)
 {
@@ -1046,6 +1177,36 @@ bool IsArtificialSyntheticConstruct (CBioseq_set_Handle bsh)
     return IsArtificialSyntheticConstruct (GetAssociatedBioSource(bsh));
 }
 
+CRef<CAuthor> ConvertMltoSTD( const string& token)
+{
+    string last, initials, suffix;
+    s_SplitMLAuthorName(token, last, initials, suffix);
+
+    if ( ! last.empty() ) {
+        CRef < CAuthor > au(new CAuthor); 
+        au->SetName().SetName().SetLast(last);
+        if(initials.size()) {
+            au->SetName().SetName().SetInitials(initials);
+        }
+        if(suffix.size()) {
+            au->SetName().SetName().SetSuffix(suffix);
+        }
+        return au;
+    }
+    return CRef<CAuthor>( 0 );
+}
+
+
+bool ConvertAuthorContainerMlToStd( CAuth_list& authors )
+{
+    CAuth_list::C_Names* names = new CAuth_list::C_Names;
+    CAuth_list::C_Names::TStd& names_std = names->SetStd();
+    NON_CONST_ITERATE( CAuth_list::C_Names::TMl, author, authors.SetNames().SetMl() ) {
+        names_std.push_back( ConvertMltoSTD( *author ) );
+    }
+    authors.SetNames( *names );
+    return true;
+}
 
 
 END_SCOPE(objects)

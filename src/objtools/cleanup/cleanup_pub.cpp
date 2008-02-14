@@ -72,9 +72,28 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
 // CPubdesc cleanup
 
+
+static bool s_FixInitials(const CPub_equiv& equiv)
+{
+    bool has_id  = false, 
+    has_art = false;
+    
+    ITERATE (CPub_equiv::Tdata, it, equiv.Get()) {
+        if ((*it)->IsPmid()  ||  (*it)->IsMuid()) {
+            has_id = true;
+        } else if ((*it)->IsArticle()) {
+            has_art = true;
+        }
+    }
+    return !(has_art  &&  has_id);
+}
+
+
+//  ----------------------------------------------------------------------------
+//  CCleanup implementation:
+//  ----------------------------------------------------------------------------
 void CCleanup_imp::BasicCleanup(CPubdesc& pd)
 {
     if (pd.IsSetPub()) {
@@ -91,22 +110,6 @@ void CCleanup_imp::BasicCleanup(CPubdesc& pd)
     } else {
         CLEAN_STRING_MEMBER(pd, Comment);
     }
-}
-
-
-static bool s_FixInitials(const CPub_equiv& equiv)
-{
-    bool has_id  = false, 
-    has_art = false;
-    
-    ITERATE (CPub_equiv::Tdata, it, equiv.Get()) {
-        if ((*it)->IsPmid()  ||  (*it)->IsMuid()) {
-            has_id = true;
-        } else if ((*it)->IsArticle()) {
-            has_art = true;
-        }
-    }
-    return !(has_art  &&  has_id);
 }
 
 
@@ -161,7 +164,9 @@ void CCleanup_imp::BasicCleanup(CPub& pub, bool fix_initials)
     case CPub::e_Man:
         BasicCleanup(pub.SetMan(), fix_initials);
         break;
-        
+    case CPub::e_Medline:
+        BasicCleanup(pub.SetMedline(), fix_initials);
+        break;
     default:
         break;
     }
@@ -282,6 +287,15 @@ void CCleanup_imp::BasicCleanup(CCit_book& cb, bool fix_initials)
     if (cb.IsSetAuthors()) {
         BasicCleanup(cb.SetAuthors(), fix_initials);
     }
+}
+
+
+void CCleanup_imp::BasicCleanup(CMedline_entry& ml, bool fix_initials)
+{
+    if ( ! ml.IsSetCit() || ! ml.GetCit().IsSetAuthors() ) {
+        return;
+    }
+    BasicCleanup( ml.SetCit().SetAuthors(), fix_initials);
 }
 
 
@@ -413,11 +427,7 @@ void CCleanup_imp::BasicCleanup(CAuth_list& al, bool fix_initials)
             }}
             case TNames::e_Ml:
             {{
-                if (CleanStringContainer(names.SetMl())) {
-                    ChangeMade(CCleanupChange::eChangePublication);
-                }
-                if (names.GetMl().empty()) {
-                    names.Reset();
+                if (ConvertAuthorContainerMlToStd(al)) {
                     ChangeMade(CCleanupChange::eChangePublication);
                 }
                 break;

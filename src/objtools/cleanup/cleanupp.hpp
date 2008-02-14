@@ -78,6 +78,8 @@ class CCit_book;
 class CCit_pat;
 class CCit_let;
 class CCit_proc;
+class CMedline_entry;
+class CPubMedId;
 class CAuth_list;
 class CAuthor;
 class CAffil;
@@ -175,6 +177,8 @@ private:
     void BasicCleanup(CCit_art& ca, bool fix_initials);
     void BasicCleanup(CCit_book& cb, bool fix_initials);
     void BasicCleanup(CCit_pat&  cp, bool fix_initials);
+    void BasicCleanup(CMedline_entry& ml, bool fix_initials);
+    void BasicCleanup(CPubMedId& pm, bool fix_initials);
     void BasicCleanup(CCit_let&  cl, bool fix_initials);
     void BasicCleanup(CCit_proc& cp, bool fix_initials);
     void BasicCleanup(CAuth_list& al, bool fix_initials);

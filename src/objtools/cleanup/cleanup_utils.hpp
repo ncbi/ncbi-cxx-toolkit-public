@@ -48,6 +48,8 @@ BEGIN_SCOPE(objects)
 
 class CCit_sub;
 class CPubdesc;
+class CAuthor;
+class CAuth_list;
 
 /// Cleaning functions may return true if they have changed something.
 /// false if no change was needed.
@@ -96,6 +98,9 @@ bool IsOnlinePub(const CPubdesc& pd);
 /// remove all spaces from a string
 bool RemoveSpaces(string& str);
 
+/// convert medline names to standard names
+CRef<CAuthor> ConvertMltoSTD(const string& token);
+
 /// clean a container of strings, remove blanks and repeats.
 template<typename C>
 bool CleanStringContainer(C& str_cont, bool rm_trailing_junk = false)
@@ -116,6 +121,8 @@ bool CleanStringContainer(C& str_cont, bool rm_trailing_junk = false)
     return changed;
 }
 
+// convert a container of authors, medline names to standard names
+bool ConvertAuthorContainerMlToStd( CAuth_list& authors );
 
 struct SCaseInsensitiveStrComp {
     SCaseInsensitiveStrComp(const string& str) : m_Target(str) { }
