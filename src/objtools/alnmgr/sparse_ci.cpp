@@ -192,7 +192,7 @@ void CSparse_CI::x_InitIterator()
         } else {
             ++m_It_1;
         }
-        if( ! x_IsInsert()) {
+        if((bool)*this  &&  ! x_IsInsert()) {
             ++(*this);
         }
         break;

@@ -147,14 +147,14 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
     anchored_aln->SetDim(dim);
 
     int anchor_flags =
-        CPairwiseAln::fKeepNormalized |
-        CPairwiseAln::fAllowAbutting;
+        CPairwiseAln::fKeepNormalized;
+//        CPairwiseAln::fAllowAbutting;
 
     int flags = 
-        CPairwiseAln::fKeepNormalized |
-        CPairwiseAln::fAllowMixedDir |
-        CPairwiseAln::fAllowOverlap |
-        CPairwiseAln::fAllowAbutting;
+        CPairwiseAln::fKeepNormalized;
+        //CPairwiseAln::fAllowMixedDir |
+        //CPairwiseAln::fAllowOverlap |
+        //CPairwiseAln::fAllowAbutting;
 
     for (TDim row = 0;  row < dim;  ++row) {
         /// Determine where the row goes to (in the target anchored

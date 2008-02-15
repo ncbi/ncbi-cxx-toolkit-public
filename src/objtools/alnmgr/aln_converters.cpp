@@ -461,19 +461,27 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
                               true));
                     }
                 } else {
-                    _ASSERT(row_1 != row_2);
                     if (product_len != 0  &&  product_len == genomic_len  &&
                         (direction == CAlnUserOptions::eBothDirections  ||
-                         (direct ?
-                          direction == CAlnUserOptions::eDirect :
-                          direction == CAlnUserOptions::eReverse))) {
+                        (direct ?
+                         direction == CAlnUserOptions::eDirect :
+                         direction == CAlnUserOptions::eReverse))) {
                         /// insert the range
-                        pairwise_aln.insert
-                            (CPairwiseAln::TAlnRng
-                             (product_plus ? product_pos : product_pos - product_len + 1,
-                              genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
-                              genomic_len,
-                              direct));
+                        if (row_1 == 0) {
+                            pairwise_aln.insert
+                                (CPairwiseAln::TAlnRng
+                                (product_plus ? product_pos : product_pos - product_len + 1,
+                                genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
+                                genomic_len,
+                                direct));
+                        } else {
+                            pairwise_aln.insert
+                                (CPairwiseAln::TAlnRng
+                                (genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
+                                product_plus ? product_pos : product_pos - product_len + 1,
+                                genomic_len,
+                                direct));
+                        }
                     }
                 }
             }
