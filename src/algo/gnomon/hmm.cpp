@@ -706,7 +706,6 @@ CHMMParameters::~CHMMParameters()
 {
 }
 
-namespace {
 template <class CParam>
 void CHMMParameters::SDetails::ReadParameters(const CGnomon_params& hmm_params_asn, CGnomon_param::C_Param::E_Choice choice)
 {
@@ -727,7 +726,6 @@ void CHMMParameters::SDetails::ReadParameters(const CGnomon_params& hmm_params_a
 
         StoreParam(CParam::class_id(), input_model, low, high);
     }
-}
 }
 
 CHMMParameters::SDetails::SDetails(const CGnomon_params& hmm_params_asn)
@@ -758,11 +756,11 @@ const CInputModel& CHMMParameters::SDetails::GetParameter(const string& type, in
     else if (cgcontent >= 100)
         cgcontent = 99;
 
-    SDetails::TParamMap::const_iterator i_param = params.find(type);
+    TParamMap::const_iterator i_param = params.find(type);
     if (i_param == params.end())
         CInputModel::Error( type );
     
-    ITERATE( SDetails::TCGContentList, i, i_param->second) {
+    ITERATE( TCGContentList, i, i_param->second) {
         if (cgcontent < i->first) {
             if (i->second == NULL) {
                 CInputModel::Error( type );
