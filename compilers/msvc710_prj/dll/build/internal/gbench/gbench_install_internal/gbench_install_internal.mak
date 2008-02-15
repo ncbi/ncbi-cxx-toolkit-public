@@ -66,6 +66,7 @@ INTERNAL_PLUGINS = \
         proteus \
         radar \
         contig \
+        mview \
         ncbi
 
 #
@@ -137,3 +138,13 @@ contig :
     @if exist $(DLLBIN)\dload_contig.pdb copy $(DLLBIN)\dload_contig.pdb $(GBENCH)\extra\contig\dload_contig.pdb
     @if exist $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn copy $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn $(GBENCH)\extra\contig\contig-config.asn
     @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\contig
+
+mview :
+    @echo Installing MapView...
+    @if not exist $(GBENCH)\extra\mview mkdir $(GBENCH)\extra\mview
+    @if exist $(DLLBIN)\ncbi_gbench_mapview.dll copy $(DLLBIN)\mapview.dll $(GBENCH)\extra\mview\mapview.dll
+    @if exist $(DLLBIN)\ncbi_gbench_mapview.pdb copy $(DLLBIN)\mapview.pdb $(GBENCH)\extra\mview\mapview.pdb    
+    @if exist $(DLLBIN)\ncbi_gbench_mapview.dll copy $(DLLBIN)\ncbi_gbench_mapview.dll $(GBENCH)\extra\mview\ncbi_gbench_mapview.dll
+    @if exist $(DLLBIN)\ncbi_gbench_mapview.pdb copy $(DLLBIN)\ncbi_gbench_mapview.pdb $(GBENCH)\extra\mview\ncbi_gbench_mapview.pdb
+    @if exist $(SRCDIR)\internal\gbench\plugins\mview\mview-config.asn copy $(SRCDIR)\internal\gbench\plugins\mview\mview-config.asn $(GBENCH)\extra\mview\mview-config.asn
+    @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\mview
