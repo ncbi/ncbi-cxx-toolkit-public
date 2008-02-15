@@ -20441,11 +20441,18 @@ if test "$with_sybase" != "no" ; then
    resolve_sybase=true
    default_pointer=default-${NCBI_PLATFORM_BITS}bit
    : ${with_sybase_new:="no"}
-   if test -d "$net_sybase_root" ; then
-      : ${with_sybase_local:="no"}
-   else
-      : ${with_sybase_local:="yes"}
-   fi
+   case "$host_os" in
+      linux* )
+         : ${with_sybase_local:=yes}
+         ;;
+      * )
+         if test -d "$net_sybase_root" ; then
+            : ${with_sybase_local:=no}
+         else
+            : ${with_sybase_local:=yes}
+         fi
+         ;;
+   esac
 
    if test "$with_sybase_local" != "no" ; then
       if test "$with_sybase_local" = "yes" ; then
