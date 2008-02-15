@@ -1210,22 +1210,39 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     }
     const list<string> asn_names = k->second;
 
-    string parent_dir_abs = ParentDir(source_base_dir);
     list<CDataToolGeneratedSrc> datatool_sources;
     ITERATE(list<string>, p, asn_names) {
         const string& asn = *p;
-        // one level up
-        string asn_dir_abs = CDirEntry::ConcatPath(parent_dir_abs, asn);
-        asn_dir_abs = CDirEntry::NormalizePath(asn_dir_abs);
-        asn_dir_abs = CDirEntry::AddTrailingPathSeparator(asn_dir_abs);
-    
-        string asn_path_abs = CDirEntry::ConcatPath(asn_dir_abs, asn);
+        
+        // this dir
+        string asn_path_abs = CDirEntry::NormalizePath(source_base_dir);
+        asn_path_abs = CDirEntry::AddTrailingPathSeparator(asn_path_abs);
+        asn_path_abs = CDirEntry::ConcatPath(asn_path_abs, asn);
         if ( CDirEntry(asn_path_abs + ".asn").Exists() )
             asn_path_abs += ".asn";
-        else if ( CDirEntry(asn_dir_abs + ".dtd").Exists() )
+        else if ( CDirEntry(asn_path_abs + ".dtd").Exists() )
             asn_path_abs += ".dtd";
-        else if ( CDirEntry(asn_dir_abs + ".xsd").Exists() )
+        else if ( CDirEntry(asn_path_abs + ".xsd").Exists() )
             asn_path_abs += ".xsd";
+        else {
+            // one level up
+            string parent_dir_abs = ParentDir(source_base_dir);
+            string asn_dir_abs = CDirEntry::ConcatPath(parent_dir_abs, asn);
+            asn_dir_abs = CDirEntry::NormalizePath(asn_dir_abs);
+            asn_dir_abs = CDirEntry::AddTrailingPathSeparator(asn_dir_abs);
+        
+            asn_path_abs = CDirEntry::ConcatPath(asn_dir_abs, asn);
+            if ( CDirEntry(asn_path_abs + ".asn").Exists() )
+                asn_path_abs += ".asn";
+            else if ( CDirEntry(asn_path_abs + ".dtd").Exists() )
+                asn_path_abs += ".dtd";
+            else if ( CDirEntry(asn_path_abs + ".xsd").Exists() )
+                asn_path_abs += ".xsd";
+            else {
+                PTB_ERROR_EX(asn_path_abs, ePTB_FileNotFound,
+                            "ASN spec file not found");
+            }
+        }
 
         CDataToolGeneratedSrc data_tool_src;
         CDataToolGeneratedSrc::LoadFrom(asn_path_abs, &data_tool_src);
