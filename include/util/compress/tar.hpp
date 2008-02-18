@@ -154,8 +154,9 @@ public:
         eSymLink     = CDirEntry::eLink,        ///< Symbolic link
         eUnknown     = CDirEntry::eUnknown,     ///< Unknown type
         eHardLink    = eUnknown + 1,            ///< Hard link
-        eGNULongName = eUnknown + 2,            ///< GNU long name
-        eGNULongLink = eUnknown + 3             ///< GNU long link
+        ePAXHeader,                             ///< POSIX extended header
+        eGNULongName,                           ///< GNU long name
+        eGNULongLink                            ///< GNU long link
     };
 
     // Constructor
@@ -169,8 +170,14 @@ public:
     // thus are done directly from CTar for the sake of performance.
 
     // Getters only!
-    const string& GetName(void)             const { return m_Name;          }
     EType         GetType(void)             const { return m_Type;          }
+    const string& GetName(void)             const { return m_Name;          }
+    const string& GetLinkName(void)         const { return m_LinkName;      }
+    const string& GetUserName(void)         const { return m_UserName;      }
+    const string& GetGroupName(void)        const { return m_GroupName;     }
+    time_t        GetModificationTime(void) const { return m_Stat.st_mtime; }
+    time_t        GetLastAccessTime(void)   const { return m_Stat.st_atime; }
+    time_t        GetCreationTime(void)     const { return m_Stat.st_ctime; }
     Uint8         GetSize(void)             const { return m_Stat.st_size;  }
     TTarMode      GetMode(void)             const; // Raw mode as stored in tar
     void          GetMode(CDirEntry::TMode*            user_mode,
@@ -179,20 +186,14 @@ public:
                           CDirEntry::TSpecialModeBits* special_bits = 0) const;
     int           GetUserId(void)           const { return m_Stat.st_uid;   }
     int           GetGroupId(void)          const { return m_Stat.st_gid;   }
-    const string& GetLinkName(void)         const { return m_LinkName;      }
-    const string& GetUserName(void)         const { return m_UserName;      }
-    const string& GetGroupName(void)        const { return m_GroupName;     }
-    time_t        GetModificationTime(void) const { return m_Stat.st_mtime; }
-    time_t        GetLastAccessTime(void)   const { return m_Stat.st_atime; }
-    time_t        GetCreationTime(void)     const { return m_Stat.st_ctime; }
     Uint8         GetPosition(void)         const { return m_Pos;           }
 
 private:
-    string       m_Name;       ///< Entry name
     EType        m_Type;       ///< Type
+    string       m_Name;       ///< Entry name
+    string       m_LinkName;   ///< Link name if type is e{Sym|Hard}Link
     string       m_UserName;   ///< User name
     string       m_GroupName;  ///< Group name (empty string for MSWin)
-    string       m_LinkName;   ///< Link name if type is e{Sym|Hard}Link
     struct stat  m_Stat;       ///< Dir-entry compatible info
     Uint8        m_Pos;        ///< Position within archive
 
@@ -371,8 +372,7 @@ public:
 
     /// Verify archive integrity.
     ///
-    /// Simulate extracting files from the archive without actually
-    /// creating them on disk.
+    /// Read through the archive without actually extracting anything from it.
     void Test(void);
 
     /// Return archive size as if all specified input entries were put in it.
@@ -466,6 +466,7 @@ protected:
     enum EStatus {
         eFailure = -1,
         eSuccess =  0,
+        eContinue,
         eZeroBlock,
         eEOF
     };
@@ -482,6 +483,9 @@ protected:
 
     // Backspace the archive.
     void x_Backspace(EAction action, size_t blocks);
+
+    // Parse in extended entry information (POSIX) for the next entry.
+    EStatus x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer);
 
     // Read information about next entry in the archive.
     EStatus x_ReadEntryInfo(CTarEntryInfo& info, bool dump = false);
@@ -505,7 +509,7 @@ protected:
     bool x_ExtractEntry(const CTarEntryInfo& info, Uint8& size,
                         const CDirEntry* dst, const CDirEntry* src = 0);
 
-    // Restore attributes of an entry in the file system.
+    // Restore attributes of an entry on the file system.
     // If 'dst' not specified, then the destination path will be constructed
     // from 'info', and the base directory (if any).  Otherwise, 'dst' will
     // be used "as is", assuming it corresponds to the specified 'info'.
@@ -612,8 +616,8 @@ inline
 void CTar::SetMask(CMask *mask, EOwnership if_to_own)
 {
     UnsetMask();
-    m_Mask        = mask;
-    m_MaskOwned   = if_to_own;
+    m_Mask      = mask;
+    m_MaskOwned = if_to_own;
 }
 
 inline

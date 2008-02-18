@@ -633,7 +633,12 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         tname = "global extended header";
         break;
     case 'x':
-        tname = "extended header";
+        if (fmt == eTar_Ustar) {
+            ok = true;
+            tname = "extended (PAX) header - not FULLY supported";
+        } else {
+            tname = "extended header";
+        }
         break;
     case 'A':
         tname = "Solaris ACL";
@@ -682,13 +687,13 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         }
         break;
     case 'X':
-        tname = "POSIX 1003.1-2001 extended";
+        tname = "extended (POSIX 1003.1-2001) header";
         break;
     default:
         break;
     }
     if (!tname  &&  h->typeflag[0] >= 'A'  &&  h->typeflag[0] <= 'Z') {
-        tname = "user-defined expansion";
+        tname = "user-defined extension";
     }
     dump += (" [" + string(tname ? tname : "reserved") +
              (ok
@@ -927,8 +932,9 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
     // user's code (outside of this class) before each archive operation.
     if (!m_FileStream) {
         if (m_IsModified  &&  action != eAppend) {
-            TAR_POST(1, Warning, "Pending changes may be discarded"
-                                 " upon reopen of in-stream archive");
+            TAR_POST(1, Warning,
+                     "Pending changes may be discarded"
+                     " upon reopen of in-stream archive");
             m_IsModified = false;
             m_BufferPos = 0;
             m_StreamPos = 0;
@@ -1152,6 +1158,133 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
 }
 
 
+// PAX (Portable Archive Interchange) extraction support
+
+// Define bitmasks for extended numeric information
+typedef enum {
+    fPAXNone  = 0,
+    fPAXMtime = 1 << 0,
+    fPAXAtime = 1 << 1,
+    fPAXCtime = 1 << 2,
+    fPAXSize  = 1 << 3,
+    fPAXUid   = 1 << 4,
+    fPAXGid   = 1 << 5
+} EPAXBit;
+typedef unsigned int TPAXBits;  // Bitwise-OR of EPAXBit(s)
+
+
+static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len)
+{
+    char* e;
+    errno = 0;
+    unsigned long val = strtoul(str, &e, 10);
+    if (errno  ||  (size_t)(e - str) > len  ||  (*e != '.'  &&  *e != '\n')) {
+        return false;
+    }
+    if (*e++ == '.') {
+        strtoul(e, &e, 10);
+        if (errno  ||  (size_t)(e - str) != len  ||  *e != '\n') {
+            return false;
+        }
+    }
+    *valp = val;
+    return true;
+}
+
+
+static bool s_AllLowerCase(const char* str, size_t len)
+{
+    for (size_t i = 0;  i < len;  i++) {
+        if (!islower(str[i]))
+            return false;
+    }
+    return true;
+}
+
+
+CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
+{
+    Uint8 mtime = 0, atime = 0, ctime = 0, size = 0, uid = 0, gid = 0;
+    string path, linkpath, uname, gname;
+    const struct SPAXParseTable {
+        const char* key;
+        EPAXBit     bit;
+        string*     str;
+        Uint8*      val;
+    } parser[] = {
+        { "mtime",    fPAXMtime, 0,         &mtime },
+        { "atime",	  fPAXAtime, 0,         &atime },
+        { "ctime",	  fPAXCtime, 0,         &ctime },
+        { "size",	  fPAXSize,  0,         &size  },
+        { "uid",      fPAXUid,   0,         &uid   },
+        { "gid",      fPAXGid,   0,         &gid   },
+        { "path",     fPAXNone,  &path,     0      },
+        { "linkpath", fPAXNone,  &linkpath, 0      },
+        { "uname",    fPAXNone,  &uname,    0      },
+        { "gname",    fPAXNone,  &gname,    0      },
+        { "comment",  fPAXNone,  0,         0      },
+        { "charset",  fPAXNone,  0,         0      }
+    };
+    const char* str = buffer.c_str();
+    TPAXBits parsed = fPAXNone;
+
+    do {
+        unsigned long len;
+        size_t klen, vlen;
+        char *k, *e, *v;
+
+        errno = 0;
+        if (!(e = strchr(str, '\n'))  ||  !(len = strtoul(str, &k, 10))
+            ||  str + len - 1 != e  ||  *k++ != ' '
+            ||  !(v = (char*) memchr(k, '=', (size_t)(e - k)))
+            ||  !(klen = (size_t)(v++ - k))  ||  memchr(k, ' ', klen)
+            ||  !(vlen = (size_t)(e - v))) {
+            TAR_POST(74, Error, "Skipping malformed PAX header");
+            return eFailure;
+        }
+        bool done = false;
+        for (size_t n = 0;  n < sizeof(parser) / sizeof(parser[0]);  n++) {
+            if (strlen(parser[n].key) == klen
+                &&  strncmp(parser[n].key, k, klen) == 0) {
+                if (parser[n].bit == fPAXNone) {
+                    if (parser[n].str) {
+                        parser[n].str->assign(v, vlen);
+                    }
+                } else if (!s_ParsePAXInt(parser[n].val, v, vlen)) {
+                    TAR_POST(75, Warning,
+                             "Ignoring bad numeric '" + string(v, vlen)
+                             + "' in PAX value '" + string(k, klen) + '\'');
+                } else {
+                    parsed |= parser[n].bit;
+                }
+                done = true;
+                break;
+            }
+        }
+        if (!done  &&  s_AllLowerCase(k, klen)/*&&  !memchr(k, '.', klen)*/) {
+            TAR_POST(76, Warning,
+                     "Ignoring unrecognized PAX value '"
+                     + string(k, klen) + '\'');
+        }
+        str = ++e;
+    } while (*str);
+
+    info.m_Name.swap(path);
+    info.m_LinkName.swap(linkpath);
+    info.m_UserName.swap(uname);
+    info.m_GroupName.swap(gname);
+    info.m_Stat.st_mtime = mtime;
+    info.m_Stat.st_atime = atime;
+    info.m_Stat.st_ctime = ctime;
+    info.m_Stat.st_size  = size;
+    info.m_Stat.st_uid   = uid;
+    info.m_Stat.st_gid   = gid;
+    info.m_Pos = parsed;
+
+    return eContinue;
+}
+
+
 static void s_Dump(const string& file, Uint8 pos, size_t recsize,
                    const string* entry, const SHeader* h, ETar_Format fmt,
                    Uint8 datasize)
@@ -1237,10 +1370,10 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
         TAR_THROW_EX(eChecksum, message, h, fmt);
     }
 
-    // Set info members now
+    // Set info members now (thus, validating the header block)
 
     // Name
-    if (fmt == eTar_Ustar  &&  h->prefix[0]) {
+    if (fmt == eTar_Ustar  &&  h->prefix[0]  &&  h->typeflag[0] != 'x') {
         info.m_Name =
             CDirEntry::ConcatPath(string(h->prefix,
                                          s_Length(h->prefix,
@@ -1285,6 +1418,33 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     }
     info.m_Stat.st_mtime = value;
 
+    if (fmt == eTar_Ustar  ||  fmt == eTar_OldGNU) {
+        // User name
+        info.m_UserName.assign(h->uname, s_Length(h->uname, sizeof(h->uname)));
+
+        // Group name
+        info.m_GroupName.assign(h->gname, s_Length(h->gname,sizeof(h->gname)));
+    }
+
+    if (fmt == eTar_OldGNU) {
+        // Name prefix cannot be used because there are times, and other stuff
+        // NB: times are valid for incremental archive only, so checks relaxed
+        if (!s_OctalToNum(value, h->gt.atime, sizeof(h->gt.atime))) {
+            if (memcchr(h->gt.atime, '\0', sizeof(h->gt.atime))) {
+                TAR_THROW_EX(eUnsupportedTarFormat,
+                             "Bad last access time", h, fmt);
+            }
+        } else
+            info.m_Stat.st_atime = value;
+        if (!s_OctalToNum(value, h->gt.ctime, sizeof(h->gt.ctime))) {
+            if (memcchr(h->gt.ctime, '\0', sizeof(h->gt.ctime))) {
+                TAR_THROW_EX(eUnsupportedTarFormat,
+                             "Bad creation time", h, fmt);
+            }
+        } else
+            info.m_Stat.st_ctime = value;
+    }
+
     // Entry type
     switch (h->typeflag[0]) {
     case '\0':
@@ -1312,76 +1472,89 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
         info.m_Type = CTarEntryInfo::eDir;
         info.m_Stat.st_size = 0;
         break;
+    case 'x':
     case 'K':
     case 'L':
-        if (fmt == eTar_OldGNU) {
+        if ((h->typeflag[0] == 'x'  &&  fmt == eTar_Ustar)  ||
+            (h->typeflag[0] != 'x'  &&  fmt == eTar_OldGNU)) {
             size_t size = (size_t) info.GetSize();
             if (dump) {
                 s_Dump(m_FileName, m_StreamPos, m_BufferSize, m_Current,
                        h, fmt, size);
             }
             m_StreamPos += ALIGN_SIZE(nread);
-            info.m_Type = (h->typeflag[0] == 'K'
-                           ? CTarEntryInfo::eGNULongLink
-                           : CTarEntryInfo::eGNULongName);
-            // Read the long name in
-            info.m_Name.erase();
+            switch (h->typeflag[0]) {
+            case 'x':
+                info.m_Type = CTarEntryInfo::ePAXHeader;
+                break;
+            case 'K':
+                info.m_Type = CTarEntryInfo::eGNULongLink;
+                break;
+            case 'L':
+                info.m_Type = CTarEntryInfo::eGNULongName;
+                break;
+            }
+            // Read in the extended information
+            string buffer;
             while (size) {
                 nread = size;
                 const char* xbuf = x_ReadArchive(nread);
                 if (!xbuf) {
-                    m_Current = &info.GetName();
-                    TAR_THROW(eRead, string("Unexpected EOF in reading long ")
-                              + (info.GetType() == CTarEntryInfo::eGNULongName
-                                 ? "name" : "link"));
+                    TAR_THROW(eRead,
+                              string("Unexpected EOF in ") +
+                              (info.GetType() == CTarEntryInfo::ePAXHeader
+                               ? "PAX header" :
+                               info.GetType() == CTarEntryInfo::eGNULongName
+                               ? "long name"
+                               : "long link"));
                 }
-                info.m_Name.append(xbuf, nread);
+                buffer.append(xbuf, nread);
                 m_StreamPos += ALIGN_SIZE(nread);
                 size -= nread;
             }
-            // Make sure there's no embedded '\0's
-            info.m_Name.resize(strlen(info.m_Name.c_str()));
+            // Make sure there's no embedded '\0'(s)
+            buffer.resize(strlen(buffer.c_str()));
             if (dump) {
-                string what(info.GetType() == CTarEntryInfo::eGNULongName
-                            ? "Long name:      " : "Long link name: ");
+                string what(info.GetType() == CTarEntryInfo::ePAXHeader
+                            ? "PAX header:\n" :
+                            info.GetType() == CTarEntryInfo::eGNULongName
+                            ? "Long name:      \""
+                            : "Long link name: \"");
                 LOG_POST_X(3, what +
-                         '"' + NStr::PrintableString(info.GetName()) + "\"\n");
+                           NStr::PrintableString(buffer,
+                                                 info.GetType()
+                                                 == CTarEntryInfo::ePAXHeader
+                                                 ? NStr::fNewLine_Passthru
+                                                 : NStr::fNewLine_Quote) +
+                           (info.GetType() == CTarEntryInfo::ePAXHeader ?
+                            buffer.size()  &&  buffer[buffer.size()-1] == '\n'
+                            ? kEmptyStr : "\n"
+                            : "\"\n"));
             }
+            size = info.GetSize();
             info.m_Stat.st_size = 0;
-            // NB: Input buffers may be trashed, so return right here
-            return eSuccess;
+            if (!size  ||  !buffer.size()) {
+                TAR_POST(77, Error, "Skipping zero-sized extended header");
+                return eFailure;
+            }
+            if (info.GetType() == CTarEntryInfo::ePAXHeader) {
+                if (size != buffer.size()) {
+                    TAR_POST(78, Error,
+                             "Skipping truncated ("
+                             + NStr::UInt8ToString(info.GetSize()) + "->"
+                             + NStr::UInt8ToString(buffer.size())
+                             + ") PAX header");
+                    return eFailure;
+                }
+                return x_ParsePAXHeader(info, buffer);
+            }
+            info.m_Name.swap(buffer);
+            return eContinue;
         }
         /*FALLTHRU*/
     default:
         info.m_Type = CTarEntryInfo::eUnknown;
         break;
-    }
-
-    if (fmt == eTar_Ustar  ||  fmt == eTar_OldGNU) {
-        // User name
-        info.m_UserName.assign(h->uname, s_Length(h->uname, sizeof(h->uname)));
-
-        // Group name
-        info.m_GroupName.assign(h->gname, s_Length(h->gname,sizeof(h->gname)));
-    }
-
-    if (fmt == eTar_OldGNU) {
-        // Name prefix cannot be used because there are times, and other stuff
-        // NB: times are valid for incremental archive only, so checks relaxed
-        if (!s_OctalToNum(value, h->gt.atime, sizeof(h->gt.atime))) {
-            if (memcchr(h->gt.atime, '\0', sizeof(h->gt.atime))) {
-                TAR_THROW_EX(eUnsupportedTarFormat,
-                             "Bad last access time", h, fmt);
-            }
-        } else
-            info.m_Stat.st_atime = value;
-        if (!s_OctalToNum(value, h->gt.ctime, sizeof(h->gt.ctime))) {
-            if (memcchr(h->gt.ctime, '\0', sizeof(h->gt.ctime))) {
-                TAR_THROW_EX(eUnsupportedTarFormat,
-                             "Bad creation time", h, fmt);
-            }
-        } else
-            info.m_Stat.st_ctime = value;
     }
 
     if (dump) {
@@ -1574,7 +1747,8 @@ void CTar::x_Backspace(EAction action, size_t blocks)
         return;
     }
     if (!m_FileStream) {
-        TAR_POST(4, Warning, "In-stream update may result in gapped tar archive");
+        TAR_POST(4, Warning,
+                 "In-stream update may result in gapped tar archive");
         return;
     }
 
@@ -1620,22 +1794,25 @@ void CTar::x_Backspace(EAction action, size_t blocks)
 auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 {
     auto_ptr<TEntries> done(new TEntries);
-    string nextLongName, nextLongLink;
     size_t zeroblock_count = 0;
     Uint8 pos = m_StreamPos;
+    CTarEntryInfo xinfo;
 
+    xinfo.m_Type = CTarEntryInfo::eUnknown;
     for (;;) {
         // Next block is supposed to be a header
         CTarEntryInfo info(pos);
-        m_Current = nextLongName.empty() ? 0 : &nextLongName;
+        m_Current = xinfo.GetName().empty() ? 0 : &xinfo.GetName();
         EStatus status = x_ReadEntryInfo(info, action == eTest
                                          &&  (m_Flags & fDumpBlockHeaders));
         switch (status) {
         case eSuccess:
+        case eFailure:
+        case eContinue:
             if (zeroblock_count  &&  !(m_Flags & fIgnoreZeroBlocks)) {
                 TAR_POST(5, Error, "Interspersing single zero block ignored");
             }
-            // processed below
+            /*FALLTHRU*/
             break;
 
         case eZeroBlock:
@@ -1648,62 +1825,112 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             /*FALLTHRU*/
 
         case eEOF:
-            if (!nextLongName.empty()) {
-                TAR_POST(6, Error,
-                         "Orphaned long name '" + nextLongName + "' ignored");
-            }
-            if (!nextLongLink.empty()) {
-                TAR_POST(7, Error,
-                         "Orphaned long link '" + nextLongLink + "' ignored");
+            if (xinfo.GetType() != CTarEntryInfo::eUnknown) {
+                TAR_POST(6, Error, "Orphaned extended information ignored");
             }
             x_Backspace(action, zeroblock_count);
             return done;
-
-        default:
-            NCBI_THROW(CCoreException, eCore, "Unknown error");
         }
         zeroblock_count = 0;
 
         //
         // Process entry
         //
-        switch (info.GetType()) {
-        case CTarEntryInfo::eGNULongName:
-            if (!nextLongName.empty()) {
-                TAR_POST(8, Error,
-                         "Unused long name '" + nextLongName + "' replaced");
+        if (status == eContinue) {
+            // Extended header information read
+            switch (info.GetType()) {
+            case CTarEntryInfo::ePAXHeader:
+                if (xinfo.GetType() != CTarEntryInfo::eUnknown) {
+                    TAR_POST(7, Error, "Unused extended header replaced");
+                }
+                xinfo.m_Type = CTarEntryInfo::ePAXHeader;
+                xinfo.m_Name.swap(info.m_Name);
+                xinfo.m_UserName.swap(info.m_UserName);
+                xinfo.m_GroupName.swap(info.m_GroupName);
+                xinfo.m_LinkName.swap(info.m_LinkName);
+                memcpy(&xinfo.m_Stat, &info.m_Stat, sizeof(xinfo.m_Stat));
+                continue;
+
+            case CTarEntryInfo::eGNULongName:
+                if (xinfo.GetType() == CTarEntryInfo::ePAXHeader  ||
+                    !xinfo.GetName().empty()) {
+                    TAR_POST(8, Error,
+                             "Unused long name '" + xinfo.GetName()
+                             + "' replaced");
+                }
+                // Latch next long name here then just skip
+                xinfo.m_Type = CTarEntryInfo::eGNULongName;
+                xinfo.m_Name.swap(info.m_Name);
+                continue;
+
+            case CTarEntryInfo::eGNULongLink:
+                if (xinfo.GetType() == CTarEntryInfo::ePAXHeader  ||
+                    !xinfo.GetLinkName().empty()) {
+                    TAR_POST(9, Error,
+                             "Unused long link '" + xinfo.GetLinkName()
+                             + "' replaced");
+                }
+                // Latch next long link here then just skip
+                xinfo.m_Type = CTarEntryInfo::eGNULongLink;
+                xinfo.m_LinkName.swap(info.m_Name);
+                continue;
+
+            default:
+                NCBI_THROW(CCoreException, eCore, "Internal error");
             }
-            // Latch next long name here then just skip
-            info.m_Name.swap(nextLongName);
-            continue;
-        case CTarEntryInfo::eGNULongLink:
-            if (!nextLongLink.empty()) {
-                TAR_POST(9, Error,
-                         "Unused long link '" + nextLongLink + "' replaced");
-            }
-            // Latch next long link here then just skip
-            info.m_Name.swap(nextLongLink);
-            continue;
-        default:
-            // Otherwise process the entry as usual
-            break;
         }
 
-        // Fixup 'info' if long names have been previously defined
-        if (!nextLongName.empty()) {
-            info.m_Name.swap(nextLongName);
-            nextLongName.erase();
+        // Fixup current 'info' with extended information obtained previously
+        if (!xinfo.GetName().empty()) {
+            xinfo.m_Name.swap(info.m_Name);
+            xinfo.m_Name.erase();
         }
-        if (!nextLongLink.empty()) {
+        if (!xinfo.GetLinkName().empty()) {
             if (info.GetType() == CTarEntryInfo::eSymLink  ||
                 info.GetType() == CTarEntryInfo::eHardLink) {
-                info.m_LinkName.swap(nextLongLink);
+                info.m_LinkName.swap(xinfo.m_LinkName);
+            } else if (status != eFailure) {
+                TAR_POST(79, Warning,
+                         "Non-empty long link '" + xinfo.m_LinkName
+                         + "' for non-matching entry");
             }
-            nextLongLink.erase();
+            xinfo.m_LinkName.erase();
         }
+        if (xinfo.GetType() == CTarEntryInfo::ePAXHeader) {
+            TPAXBits parsed = (TPAXBits) xinfo.m_Pos;
+            if (!xinfo.GetUserName().empty()) {
+                xinfo.m_UserName.swap(info.m_UserName);
+                xinfo.m_UserName.erase();
+            }
+            if (!xinfo.GetGroupName().empty()) {
+                xinfo.m_GroupName.swap(info.m_GroupName);
+                xinfo.m_GroupName.erase();
+            }
+            if (parsed & fPAXMtime) {
+                info.m_Stat.st_mtime = xinfo.m_Stat.st_mtime;
+            }
+            if (parsed & fPAXAtime) {
+                info.m_Stat.st_atime = xinfo.m_Stat.st_atime;
+            }
+            if (parsed & fPAXCtime) {
+                info.m_Stat.st_ctime = xinfo.m_Stat.st_ctime;
+            }
+            if (parsed & fPAXSize) {
+                info.m_Stat.st_size = xinfo.m_Stat.st_size;
+            }
+            if (parsed & fPAXUid) {
+                info.m_Stat.st_uid = xinfo.m_Stat.st_uid;
+            }
+            if (parsed & fPAXGid) {
+                info.m_Stat.st_gid = xinfo.m_Stat.st_gid;
+            }
+        }
+        xinfo.m_Type = CTarEntryInfo::eUnknown;
+        _ASSERT(status == eFailure  ||  status == eSuccess);
 
         // Match file name with the set of masks
-        bool match = (m_Mask  &&  (action == eList     ||
+        bool match = (status == eFailure ? false :
+                      m_Mask  &&  (action == eList     ||
                                    action == eExtract  ||
                                    action == eInternal)
                       ? m_Mask->Match(info.GetName(),
@@ -1712,9 +1939,11 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                                       : NStr::eCase)
                       : true);
 
+        // NB: match is 'false' when processing a failing entry
         if ((match  &&  action == eInternal)  ||
             x_ProcessEntry(info, match  &&  action == eExtract, done.get())  ||
             (match  &&  !(int(action) & ((eExtract | eInternal) & ~eRW)))) {
+            _ASSERT(status == eSuccess);
             done->push_back(info);
             if (action == eInternal) {
                 break;
@@ -1990,12 +2219,10 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
     // Set the time before permissions because on some platforms
     // this setting can also affect file permissions.
     if (m_Flags & fPreserveTime) {
-        time_t modification = info.GetModificationTime();
-        time_t last_access = info.GetLastAccessTime();
-        time_t creation = info.GetCreationTime();
-        if (!dst->SetTimeT(&modification,
-                           last_access ? &last_access : 0,
-                           creation    ? &creation    : 0)) {
+        time_t modification(info.GetModificationTime());
+        time_t last_access(info.GetLastAccessTime());
+        time_t creation(info.GetCreationTime());
+        if (!dst->SetTimeT(&modification, &last_access, &creation)) {
             int x_errno = errno;
             TAR_THROW(eRestoreAttrs,
                       "Cannot restore date/time for '" + dst->GetPath() + '\''
