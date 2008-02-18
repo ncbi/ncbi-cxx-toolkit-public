@@ -1427,8 +1427,8 @@ static EIO_Status s_IsConnected(SOCK                  sock,
             CORE_TRACEF(("%sConnection established, MTU = %d",
                          s_ID(sock, _id), mtu));
         }
-#endif /*_DEBUG && !NDEBUG*/
     }
+#endif /*_DEBUG && !NDEBUG*/
     return status;
 }
 
