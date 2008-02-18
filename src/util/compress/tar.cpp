@@ -1173,7 +1173,7 @@ typedef enum {
 typedef unsigned int TPAXBits;  // Bitwise-OR of EPAXBit(s)
 
 
-static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len)
+static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
 {
     char* e;
     errno = 0;
@@ -1182,6 +1182,9 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len)
         return false;
     }
     if (*e++ == '.') {
+        if (!dot) {
+            return false;
+        }
         strtoul(e, &e, 10);
         if (errno  ||  (size_t)(e - str) != len  ||  *e != '\n') {
             return false;
@@ -1206,6 +1209,7 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
 {
     Uint8 mtime = 0, atime = 0, ctime = 0, size = 0, uid = 0, gid = 0;
     string path, linkpath, uname, gname;
+    string* dummy = (string*)(~0UL);
     const struct SPAXParseTable {
         const char* key;
         EPAXBit     bit;
@@ -1215,9 +1219,9 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
         { "mtime",    fPAXMtime, 0,         &mtime },
         { "atime",	  fPAXAtime, 0,         &atime },
         { "ctime",	  fPAXCtime, 0,         &ctime },
-        { "size",	  fPAXSize,  0,         &size  },
-        { "uid",      fPAXUid,   0,         &uid   },
-        { "gid",      fPAXGid,   0,         &gid   },
+        { "size",	  fPAXSize,  dummy,     &size  },
+        { "uid",      fPAXUid,   dummy,     &uid   },
+        { "gid",      fPAXGid,   dummy,     &gid   },
         { "path",     fPAXNone,  &path,     0      },
         { "linkpath", fPAXNone,  &linkpath, 0      },
         { "uname",    fPAXNone,  &uname,    0      },
@@ -1234,7 +1238,7 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
         char *k, *e, *v;
 
         errno = 0;
-        if (!(e = strchr(str, '\n'))  ||  !(len = strtoul(str, &k, 10))
+        if (!(e = (char*) strchr(str, '\n'))  ||  !(len = strtoul(str, &k, 10))
             ||  str + len - 1 != e  ||  *k++ != ' '
             ||  !(v = (char*) memchr(k, '=', (size_t)(e - k)))
             ||  !(klen = (size_t)(v++ - k))  ||  memchr(k, ' ', klen)
@@ -1250,7 +1254,8 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
                     if (parser[n].str) {
                         parser[n].str->assign(v, vlen);
                     }
-                } else if (!s_ParsePAXInt(parser[n].val, v, vlen)) {
+                } else if (!s_ParsePAXInt(parser[n].val, v, vlen,
+                                          !parser[n].str ? true : false)) {
                     TAR_POST(75, Warning,
                              "Ignoring bad numeric '" + string(v, vlen)
                              + "' in PAX value '" + string(k, klen) + '\'');
@@ -1273,12 +1278,12 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
     info.m_LinkName.swap(linkpath);
     info.m_UserName.swap(uname);
     info.m_GroupName.swap(gname);
-    info.m_Stat.st_mtime = mtime;
-    info.m_Stat.st_atime = atime;
-    info.m_Stat.st_ctime = ctime;
-    info.m_Stat.st_size  = size;
-    info.m_Stat.st_uid   = uid;
-    info.m_Stat.st_gid   = gid;
+    info.m_Stat.st_mtime = (time_t) mtime;
+    info.m_Stat.st_atime = (time_t) atime;
+    info.m_Stat.st_ctime = (time_t) ctime;
+    info.m_Stat.st_size  = /*(?)*/  size;
+    info.m_Stat.st_uid   = (uid_t)  uid;
+    info.m_Stat.st_gid   = (gid_t)  gid;
     info.m_Pos = parsed;
 
     return eContinue;
