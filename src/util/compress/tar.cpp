@@ -1531,10 +1531,13 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
                             ? kEmptyStr : "\n"
                             : "\"\n"));
             }
-            size = info.GetSize();
+            // Reset size because the data blocks have been all read
+            size = (size_t) info.GetSize();
             info.m_Stat.st_size = 0;
             if (!size  ||  !buffer.size()) {
-                TAR_POST(77, Error, "Skipping zero-sized extended header");
+                TAR_POST(77, Error,
+                         "Skipping " + string(size ? "empty" : "zero-sized")
+                         + " extended header");
                 return eFailure;
             }
             if (info.GetType() == CTarEntryInfo::ePAXHeader) {
@@ -1542,7 +1545,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
                     TAR_POST(78, Error,
                              "Skipping truncated ("
                              + NStr::UInt8ToString(info.GetSize()) + "->"
-                             + NStr::UInt8ToString(buffer.size())
+                             + NStr::UInt8ToString((Uint8) buffer.size())
                              + ") PAX header");
                     return eFailure;
                 }
