@@ -1375,7 +1375,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
         status = eIO_Unknown;
     }
 #endif /*NCBI_OS_UNIX || NCBI_OS_MSWIN*/
-#if defined(_DEBUG) && !defined(NDEBUG)
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
     if (status == eIO_Success) {
 #  ifdef NCBI_OS_UNIX
         if (!sock->path[0])
@@ -1413,18 +1413,21 @@ static EIO_Status s_IsConnected(SOCK                  sock,
                             x_errno, SOCK_STRERROR(x_errno),
                             ("%s[SOCK::s_IsConnected]  Failed "
                              "setsockopt(REUSEADDR)", s_ID(sock, _id)));
-    } else {
+    }
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
+    else {
         int    mtu;
         char   _id[32];
-#ifdef IP_MTU
+#  ifdef IP_MTU
         size_t mtulen = sizeof(mtu);
         if (getsockopt(sock->sock, SOL_IP, IP_MTU, &mtu, &mtulen) != 0)
-#endif
+#  endif
             mtu = -1;
         if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
             CORE_TRACEF(("%sConnection established, MTU = %d",
                          s_ID(sock, _id), mtu));
         }
+#endif /*_DEBUG && !NDEBUG*/
     }
     return status;
 }
