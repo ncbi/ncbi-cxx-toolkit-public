@@ -93,6 +93,9 @@ void CTarTest::Init(void)
     if (args->Exist("h")) {
         args->Delete("h");
     }
+    if (args->Exist("xmlhelp")) {
+        args->Delete("xmlhelp");
+    }
     args->AddFlag("c", "Create archive");
     args->AddFlag("r", "Append archive");
     args->AddFlag("u", "Update archive");
