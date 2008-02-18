@@ -90,6 +90,7 @@ CTarTest::CTarTest()
 void CTarTest::Init(void)
 {
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
+    args->PrintUsageIfNoArgs();
     if (args->Exist("h")) {
         args->Delete("h");
     }
@@ -114,7 +115,7 @@ void CTarTest::Init(void)
                         CArgDescriptions::eInteger, "20");
     args->SetConstraint("b", new CArgAllow_Integers(1, (1 << 22) - 1));
     args->AddFlag("i", "Ignore zero blocks");
-    args->AddFlag("h", "Follow links");
+    args->AddFlag("L", "Follow links");
     args->AddFlag("p", "Preserve all permissions");
     args->AddFlag("m", "Don't extract modification times");
     args->AddFlag("O", "Don't extract file ownerships");
@@ -207,7 +208,7 @@ int CTarTest::Run(void)
     if (args["i"].HasValue()) {
         m_Flags |=  CTar::fIgnoreZeroBlocks;
     }
-    if (args["h"].HasValue()) {
+    if (args["L"].HasValue()) {
         m_Flags |=  CTar::fFollowLinks;
     }
     if (args["p"].HasValue()) {
