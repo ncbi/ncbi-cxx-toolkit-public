@@ -130,8 +130,8 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
                       g_CORE_Sprintf fmt_args)
 
 #ifdef _DEBUG
-#  define CORE_TRACE(message)    CORE_LOG_X(0, eLOG_Trace, message)
-#  define CORE_TRACEF(fmt_args)  CORE_LOGF_X(0, eLOG_Trace, fmt_args)
+#  define CORE_TRACE(message)    CORE_LOG(eLOG_Trace, message)
+#  define CORE_TRACEF(fmt_args)  CORE_LOGF(eLOG_Trace, fmt_args)
 #  define CORE_DEBUG_ARG(arg)    arg
 #else
 #  define CORE_TRACE(message)    ((void) 0)
