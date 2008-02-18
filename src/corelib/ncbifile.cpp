@@ -1289,11 +1289,10 @@ bool CDirEntry::SetTime(CTime* modification,
                         CTime* last_access,
                         CTime* creation) const
 {
+#ifdef NCBI_OS_MSWIN
     if ( !modification  &&  !last_access  &&  !creation ) {
         return true;
     }
-
-#ifdef NCBI_OS_MSWIN
 
     FILETIME   x_modification,        x_last_access,        x_creation;
     LPFILETIME p_modification = NULL, p_last_access = NULL, p_creation = NULL;
@@ -1331,22 +1330,27 @@ bool CDirEntry::SetTime(CTime* modification,
     return true;
 
 #else // NCBI_OS_UNIX
+    if ( !modification  &&  !last_access  /*&&  !creation*/ ) {
+        return true;
+    }
 
 #  ifdef HAVE_UTIMES
     // Get current times
     CTime x_modification, x_last_access;
-    GetTime(modification ? &x_modification : 0,
-            last_access  ? &x_last_access  : 0,
-            0 /* creation/change */);
 
-    if ( !modification ) {
-        x_modification.SetCurrent();
-        modification = &x_modification;
+    if ( !modification  ||  !last_access ) {
+        if ( !GetTime(modification ? 0 : &x_modification,
+                      last_access  ? 0 : &x_last_access,
+                      0 /* creation */) ) {
+            return false;
+        }
+        if (!modification) {
+            modification = &x_modification;
+        } else {
+            last_access = &x_last_access;
+        }
     }
-    if ( !last_access ) {
-        x_last_access.SetCurrent();
-        last_access = &x_last_access;
-    }
+
     // Change times
     struct timeval tvp[2];
     tvp[0].tv_sec  = last_access->GetTimeT();
@@ -1366,7 +1370,13 @@ bool CDirEntry::SetTime(CTime* modification,
 
     // Get current times
     time_t x_modification, x_last_access;
-    GetTimeT(&x_modification, &x_last_access, 0 /* creation/change */);
+
+    if ((!modification  ||  !last_access)
+        &&  !GetTimeT(&x_modification,
+                      &x_last_access,
+                      0 /* creation */)) {
+        return false;
+    }
 
     // Change times to new
     struct utimbuf times;
@@ -1405,11 +1415,10 @@ bool CDirEntry::SetTimeT(time_t* modification,
                          time_t* last_access,
                          time_t* creation) const
 {
+#ifdef NCBI_OS_MSWIN
     if ( !modification  &&  !last_access  &&  !creation ) {
         return true;
     }
-
-#ifdef NCBI_OS_MSWIN
 
     FILETIME   x_modification,        x_last_access,        x_creation;
     LPFILETIME p_modification = NULL, p_last_access = NULL, p_creation = NULL;
@@ -1444,14 +1453,21 @@ bool CDirEntry::SetTimeT(time_t* modification,
     return true;
 
 #else // NCBI_OS_UNIX
-    // Get current times
+    if ( !modification  &&  !last_access  /*&&  !creation*/ )
+        return true;
+
     time_t x_modification, x_last_access;
-    GetTimeT(&x_modification, &x_last_access, 0 /* creation/change */);
+    if ((!modification  ||  !last_access)
+        &&  !GetTimeT(&x_modification,
+                      &x_last_access,
+                      0 /* creation */)) {
+        return false;
+    }
 
     // Change times to new
     struct utimbuf times;
-    times.modtime  = modification ? *modification : x_modification;
-    times.actime   = last_access  ? *last_access  : x_last_access;
+    times.modtime = modification ? *modification : x_modification;
+    times.actime  = last_access  ? *last_access  : x_last_access;
     return utime(GetPath().c_str(), &times) == 0;
 
 #endif
