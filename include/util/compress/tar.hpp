@@ -41,6 +41,8 @@
  *   files (devices, FIFOs), multivolume / incremental archives, etc,
  *   but just regular files, directories, and links:  can extract
  *   both hard- and symlinks, but can store only symlinks.
+ *   This version is only minimally PAX (Partable Archive Interchange) aware
+ *   for file extractions (but cannot use PAX extensions to store files).
  *
  */
 
@@ -154,7 +156,7 @@ public:
         eSymLink     = CDirEntry::eLink,        ///< Symbolic link
         eUnknown     = CDirEntry::eUnknown,     ///< Unknown type
         eHardLink    = eUnknown + 1,            ///< Hard link
-        ePAXHeader,                             ///< POSIX extended header
+        ePAXHeader,                             ///< PAX extended header
         eGNULongName,                           ///< GNU long name
         eGNULongLink                            ///< GNU long link
     };
