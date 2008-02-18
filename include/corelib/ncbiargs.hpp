@@ -423,9 +423,9 @@ public:
         eCgiArgs       ///< CGI application
     };
 
-    /// Set type of argument set.
-    /// Method performs verisifation of arguments, 
-    /// throws an exception if positional args were set for a CGI
+    /// Set type of argument description (cmdline vs CGI).
+    /// Method performs verification of arguments, 
+    /// throws an exception if it finds positional args set for a CGI
     void SetArgsType(EArgSetType args_type);
 
     EArgSetType GetArgsType() const { return m_ArgsType; }
