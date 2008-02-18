@@ -1891,14 +1891,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             xinfo.m_Name.erase();
         }
         if (!xinfo.GetLinkName().empty()) {
-            if (info.GetType() == CTarEntryInfo::eSymLink  ||
-                info.GetType() == CTarEntryInfo::eHardLink) {
-                info.m_LinkName.swap(xinfo.m_LinkName);
-            } else if (status != eFailure) {
-                TAR_POST(79, Warning,
-                         "Non-empty long link name '" + xinfo.m_LinkName
-                         + "' for non-matching entry");
-            }
+            xinfo.m_LinkName.swap(info.m_LinkName);
             xinfo.m_LinkName.erase();
         }
         if (xinfo.GetType() == CTarEntryInfo::ePAXHeader) {
