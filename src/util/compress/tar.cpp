@@ -1209,25 +1209,26 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
 {
     Uint8 mtime = 0, atime = 0, ctime = 0, size = 0, uid = 0, gid = 0;
     string path, linkpath, uname, gname;
-    string* dummy = (string*)(~0UL);
+    string* nodot = (string*)(~0UL);
     const struct SPAXParseTable {
         const char* key;
-        EPAXBit     bit;
-        string*     str;
-        Uint8*      val;
+        Uint8*      val;  // non-null for numeric, else do as string
+        string*     str;  // null for check only (numeric: non-null for no '.')
+        EPAXBit     bit;  // for numerics only (NB: ePAXNone if check only)
     } parser[] = {
-        { "mtime",    fPAXMtime, 0,         &mtime },
-        { "atime",	  fPAXAtime, 0,         &atime },
-        { "ctime",	  fPAXCtime, 0,         &ctime },
-        { "size",	  fPAXSize,  dummy,     &size  },
-        { "uid",      fPAXUid,   dummy,     &uid   },
-        { "gid",      fPAXGid,   dummy,     &gid   },
-        { "path",     fPAXNone,  &path,     0      },
-        { "linkpath", fPAXNone,  &linkpath, 0      },
-        { "uname",    fPAXNone,  &uname,    0      },
-        { "gname",    fPAXNone,  &gname,    0      },
-        { "comment",  fPAXNone,  0,         0      },
-        { "charset",  fPAXNone,  0,         0      }
+        { "mtime",    &mtime, 0,         fPAXMtime},   // numeric w/dot: assign
+        { "atime",	  &atime, 0,         fPAXAtime},
+        { "ctime",	  &ctime, 0,         fPAXCtime},
+        { "size",	  &size,  nodot,     fPAXSize},    // num.-no-dot: assign
+        { "uid",      &uid,   nodot,     fPAXUid},
+        { "gid",      &gid,   nodot,     fPAXGid},
+     /* { "dummy",    &dummy, nodot,     fPAXNone}, */ // num.-no-dot: ck.only
+        { "path",     0,      &path,     fPAXNone},    // string: assign
+        { "linkpath", 0,      &linkpath, fPAXNone},
+        { "uname",    0,      &uname,    fPAXNone},
+        { "gname",    0,      &gname,    fPAXNone},
+        { "comment",  0,      0,         fPAXNone},    // string: check only
+        { "charset",  0,      0,         fPAXNone}     // string: check only
     };
     const char* str = buffer.c_str();
     TPAXBits parsed = fPAXNone;
@@ -1250,10 +1251,9 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
         for (size_t n = 0;  n < sizeof(parser) / sizeof(parser[0]);  n++) {
             if (strlen(parser[n].key) == klen
                 &&  strncmp(parser[n].key, k, klen) == 0) {
-                if (parser[n].bit == fPAXNone) {
-                    if (parser[n].str) {
+                if (!parser[n].val) {
+                    if (parser[n].str)
                         parser[n].str->assign(v, vlen);
-                    }
                 } else if (!s_ParsePAXInt(parser[n].val, v, vlen,
                                           !parser[n].str ? true : false)) {
                     TAR_POST(75, Warning,
