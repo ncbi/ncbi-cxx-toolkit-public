@@ -1809,8 +1809,8 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         EStatus status = x_ReadEntryInfo(info, action == eTest
                                          &&  (m_Flags & fDumpBlockHeaders));
         switch (status) {
-        case eSuccess:
         case eFailure:
+        case eSuccess:
         case eContinue:
             if (zeroblock_count  &&  !(m_Flags & fIgnoreZeroBlocks)) {
                 TAR_POST(5, Error, "Interspersing single zero block ignored");
@@ -1840,7 +1840,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         // Process entry
         //
         if (status == eContinue) {
-            // Extended header information read
+            // Extended header information has been read
             switch (info.GetType()) {
             case CTarEntryInfo::ePAXHeader:
                 if (xinfo.GetType() != CTarEntryInfo::eUnknown) {
@@ -1848,15 +1848,16 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 }
                 xinfo.m_Type = CTarEntryInfo::ePAXHeader;
                 xinfo.m_Name.swap(info.m_Name);
+                xinfo.m_LinkName.swap(info.m_LinkName);
                 xinfo.m_UserName.swap(info.m_UserName);
                 xinfo.m_GroupName.swap(info.m_GroupName);
-                xinfo.m_LinkName.swap(info.m_LinkName);
-                memcpy(&xinfo.m_Stat, &info.m_Stat, sizeof(xinfo.m_Stat));
-                continue;
+                xinfo.m_Stat = info.m_Stat;
+                xinfo.m_Pos = info.m_Pos;
+                break;
 
             case CTarEntryInfo::eGNULongName:
-                if (xinfo.GetType() == CTarEntryInfo::ePAXHeader  ||
-                    !xinfo.GetName().empty()) {
+                if (xinfo.GetType() == CTarEntryInfo::ePAXHeader
+                    ||  !xinfo.GetName().empty()) {
                     TAR_POST(8, Error,
                              "Unused long name '" + xinfo.GetName()
                              + "' replaced");
@@ -1864,11 +1865,11 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 // Latch next long name here then just skip
                 xinfo.m_Type = CTarEntryInfo::eGNULongName;
                 xinfo.m_Name.swap(info.m_Name);
-                continue;
+                break;
 
             case CTarEntryInfo::eGNULongLink:
-                if (xinfo.GetType() == CTarEntryInfo::ePAXHeader  ||
-                    !xinfo.GetLinkName().empty()) {
+                if (xinfo.GetType() == CTarEntryInfo::ePAXHeader
+                    ||  !xinfo.GetLinkName().empty()) {
                     TAR_POST(9, Error,
                              "Unused long link '" + xinfo.GetLinkName()
                              + "' replaced");
@@ -1876,11 +1877,12 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 // Latch next long link here then just skip
                 xinfo.m_Type = CTarEntryInfo::eGNULongLink;
                 xinfo.m_LinkName.swap(info.m_Name);
-                continue;
+                break;
 
             default:
                 NCBI_THROW(CCoreException, eCore, "Internal error");
             }
+            continue;
         }
 
         // Fixup current 'info' with extended information obtained previously
@@ -1894,7 +1896,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 info.m_LinkName.swap(xinfo.m_LinkName);
             } else if (status != eFailure) {
                 TAR_POST(79, Warning,
-                         "Non-empty long link '" + xinfo.m_LinkName
+                         "Non-empty long link name '" + xinfo.m_LinkName
                          + "' for non-matching entry");
             }
             xinfo.m_LinkName.erase();
@@ -2187,9 +2189,10 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
         }}
         break;
 
+    case CTarEntryInfo::ePAXHeader:
     case CTarEntryInfo::eGNULongName:
     case CTarEntryInfo::eGNULongLink:
-        // Long name/link should have already been processed and not be here
+        // Extended headers should have already been processed and not be here
         _TROUBLE;
         /*FALLTHRU*/
 
