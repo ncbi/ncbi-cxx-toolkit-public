@@ -503,8 +503,8 @@ bool CAgpReader::ProcessThisRow()
     m_new_obj=prev_row->GetObject() != this_row->GetObject();
     if(m_new_obj) {
         if(!m_prev_line_skipped) {
-            if(this_row->object_beg !=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_ObjMustBegin1, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
-            if(this_row->part_number!=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_PartNumberNot1, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
+            if(this_row->object_beg !=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_ObjMustBegin1, CAgpErr::fAtThisLine);
+            if(this_row->part_number!=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_PartNumberNot1, CAgpErr::fAtThisLine);
             if(prev_row->is_gap && !prev_row->GapValidAtObjectEnd()) {
                 m_AgpErr->Msg(CAgpErr::W_GapObjEnd, prev_row->GetObject(), CAgpErr::fAtPrevLine);
             }
