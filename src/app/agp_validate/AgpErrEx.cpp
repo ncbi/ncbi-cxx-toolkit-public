@@ -165,6 +165,7 @@ CAgpErrEx::CAgpErrEx()
   m_msg_skipped=0;
   m_lines_skipped=0;
   m_line_num=1;
+  m_filenum_prev=-1;
 
   m_line_num_prev=0;
   m_prev_printed=false;
@@ -193,7 +194,8 @@ CAgpErrEx::CAgpErrEx()
   NCBI_ASSERT( string(GetMsgEx(G_Last))=="",
     "CAgpErrEx -- GetMsgEx(G_Last) not empty" );
   NCBI_ASSERT( string(GetMsgEx( (G_Last-1) ))!="",
-    "CAgpErrEx -- GetMsgEx(G_Last-1) is empty" );}
+    "CAgpErrEx -- GetMsgEx(G_Last-1) is empty" );
+}
 
 
 //// class CAgpErrEx - non-static functions
@@ -219,7 +221,10 @@ void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
     // Print the previous line if it was not printed
     if( !m_prev_printed && m_line_prev.size() ) {
       if( !m_two_lines_involved ) cerr << "\n";
-      PrintLine(cerr, m_filename_prev, m_line_num_prev, m_line_prev);
+      PrintLine(cerr,
+        //m_filename_prev,
+        m_filenum_prev>=0 ? m_InputFiles[m_filenum_prev] : NcbiEmptyString,
+        m_line_num_prev, m_line_prev);
     }
     m_prev_printed=true;
   }
@@ -253,6 +258,8 @@ void CAgpErrEx::LineDone(const string& s, int line_num, bool invalid_line)
 
   m_line_num_prev = line_num;
   m_line_prev = s;
+  m_filenum_prev=m_InputFiles.size()-1;
+
   if(invalid_line) {
     m_invalid_prev = true;
     m_lines_skipped++;
@@ -266,7 +273,9 @@ void CAgpErrEx::LineDone(const string& s, int line_num, bool invalid_line)
 
 void CAgpErrEx::StartFile(const string& s)
 {
-  m_filename_prev=m_filename;
+  //m_filename_prev=m_filename;
+  // might need to set it here in case some file is empty and LineDone() is never called
+  m_filenum_prev=m_InputFiles.size()-1;
   m_filename=s;
   m_InputFiles.push_back(s);
 }

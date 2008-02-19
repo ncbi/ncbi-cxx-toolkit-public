@@ -216,7 +216,8 @@ private:
   int m_MsgCount[CODE_Last];
   bool m_MustSkip[CODE_Last];
 
-  string m_filename_prev;
+  //string m_filename_prev;
+  int m_filenum_prev;
   // Not m_line_num-1 when the previous line:
   // - was in the different file;
   // - was a skipped comment line.
