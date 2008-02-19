@@ -448,8 +448,8 @@ double CCodingPropensity::GetScore(CConstRef<CHMMParameters> hmm_params, const C
     }
     *gccontent = static_cast<unsigned int>(100.0 * gc_count / xcript_vec.size() + 0.5);
 	
-    const CMC3_CodingRegion<5>&   cdr = dynamic_cast<const CMC3_CodingRegion<5>&>(hmm_params->GetParameter("CMC3_CodingRegion<5>", *gccontent));
-    const CMC_NonCodingRegion<5>& ncdr = dynamic_cast<const CMC_NonCodingRegion<5>&>(hmm_params->GetParameter("CMC_NonCodingRegion<5>", *gccontent));
+    const CMC3_CodingRegion<5>&   cdr = dynamic_cast<const CMC3_CodingRegion<5>&>(hmm_params->GetParameter(CMC3_CodingRegion<5>::class_id(), *gccontent));
+    const CMC_NonCodingRegion<5>& ncdr = dynamic_cast<const CMC_NonCodingRegion<5>&>(hmm_params->GetParameter(CMC_NonCodingRegion<5>::class_id(), *gccontent));
 
     // Represent coding sequence as enum Nucleotides
     CSeqVector vec(cds, scope);
@@ -473,7 +473,7 @@ double CCodingPropensity::GetScore(CConstRef<CHMMParameters> hmm_params, const C
         // if there is not enough sequence it will be substituted by Ns which will degrade the score
         //
 
-        const CWMM_Start& start = dynamic_cast<const CWMM_Start&>(hmm_params->GetParameter("CWMM_Start", *gccontent));
+        const CWMM_Start& start = dynamic_cast<const CWMM_Start&>(hmm_params->GetParameter(CWMM_Start::class_id(), *gccontent));
 
         int totallen = xcript_vec.size();
         int left, right;
