@@ -4126,6 +4126,7 @@ fi
 
 ## OpenGL
 if test "$with_opengl" != "no"; then
+   : ${with_opengl:=yes}
    case "$OSTYPE" in
       darwin) # Use native interface
          OPENGL_LIBS="-framework Carbon -framework AGL -framework OpenGL"
