@@ -396,8 +396,9 @@ bool CDataTool::ProcessData(void)
             nsName = px_ns.AsString();
         }
     }
-    else if ( const CArgValue& px = args["pj"] ) {
+    else if ( const CArgValue& pj = args["pj"] ) {
         outFormat = eSerial_Json;
+        outFileName = pj.AsString();
     }
     else if ( const CArgValue& e = args["e"] ) {
         outFormat = eSerial_AsnBinary;
