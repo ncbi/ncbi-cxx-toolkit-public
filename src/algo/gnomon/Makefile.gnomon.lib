@@ -1,7 +1,7 @@
 # $Id$
 
 ASN_DEP = seq
-ASN = xalgognomon
+ASN = gnomon
 SRC = $(ASN:%=%__) $(ASN:%=%___) gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1
 LIB = xalgognomon
 LIB_OR_DLL = lib
