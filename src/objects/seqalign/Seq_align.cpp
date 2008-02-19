@@ -70,6 +70,12 @@ CSeq_align::TDim CSeq_align::CheckNumRows(void) const
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().CheckNumRows();
 
+    case C_Segs::e_Spliced:
+        {{
+            // spliced seg always has two rows: genomic and protein/transcript
+            return 2;
+        }}
+
     case C_Segs::e_Disc:
         {{
             TSegs::TDisc::Tdata::const_iterator iter = GetSegs().GetDisc().Get().begin();
@@ -240,15 +246,16 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
 {
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
-        {
+        {{
             if ( GetSegs().GetDenseg().IsSetIds()  &&
                  (size_t)row < GetSegs().GetDenseg().GetIds().size()) {
                 return *GetSegs().GetDenseg().GetIds()[row];
             }
-            break;
-        }
+        }}
+        break;
+
     case C_Segs::e_Dendiag:
-        {
+        {{
             // If segments have different number of rows, this will try
             // to find the segment with enough rows to get the id.
             ITERATE(CSeq_align::C_Segs::TDendiag, seg, GetSegs().GetDendiag()) {
@@ -258,9 +265,10 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
                 }
             }
             break;
-        }
+        }}
+
     case C_Segs::e_Std:
-        {
+        {{
             // If segments have different number of rows, this will try
             // to find the segment with enough rows to get the id.
             ITERATE(CSeq_align::C_Segs::TStd, seg, GetSegs().GetStd()) {
@@ -270,10 +278,11 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
                     return loc_iter.GetSeq_id();
                 }
             }
-            break;
-        }
+        }}
+        break;
+
     case C_Segs::e_Disc:
-        {
+        {{
             // Try to find a sub-alignment for which we can get a
             // Seq-id for this row.
             ITERATE (CSeq_align_set::Tdata, sub_aln, GetSegs().GetDisc().Get()) {
@@ -284,13 +293,30 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
                 catch (const CSeqalignException&) {
                 }
             }
-            break;
-        }
+        }}
+        break;
+
+    case C_Segs::e_Spliced:
+        {{
+            // Technically, there is no row order for product and product.
+            // However, in spliced seg, since product comes first, we assign it
+            // as row 0.
+            // Hence, the genomic is assigned to row 1.
+            const C_Segs::TSpliced& spliced_seg = GetSegs().GetSpliced();
+            if (row == 0 && spliced_seg.IsSetProduct_id()) {
+                return spliced_seg.GetProduct_id();
+            } else if (row == 1 && spliced_seg.IsSetGenomic_id()) {
+                return spliced_seg.GetGenomic_id();
+            }
+        }}
+        break;
+
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::GetSeq_id() currently does not handle "
                    "this type of alignment.");
-   }
+    }
+
     NCBI_THROW(CSeqalignException, eInvalidRowNumber,
                "CSeq_align::GetSeq_id(): "
                "can not get seq-id for the row requested.");
