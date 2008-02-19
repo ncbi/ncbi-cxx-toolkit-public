@@ -80,6 +80,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
 
     "gap line missing column 9 (null)",
     "missing line separator at the end of file",
+    "extra text in the column 9 of the gap line",
     kEmptyCStr // W_Last
 };
 
@@ -314,6 +315,9 @@ int CAgpRow::FromString(const string& line)
             is_gap=true;
             if(cols.size()==8 && tabsStripped==false) {
                 m_AgpErr->Msg(CAgpErr::W_GapLineMissingCol9);
+            }
+            if(cols.size()==9 && cols[8].size()>0) {
+                m_AgpErr->Msg(CAgpErr::W_GapLineIgnoredCol9);
             }
 
             int code=ParseGapCols();
@@ -649,7 +653,7 @@ void CAgpReader::SetErrorHandler(CAgpErr* arg)
 string CAgpReader::GetErrorMessage(const string& filename)
 {
     string msg;
-    if( m_AgpErr->AppliesTo(CAgpErr::fAtPrevLine) ) {
+    if( m_AgpErr->AppliesTo(CAgpErr::fAtPrevLine) && m_prev_line_num>0 ) {
         if(filename.size()){
             msg+=filename;
             msg+=":";

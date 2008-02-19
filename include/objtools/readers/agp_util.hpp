@@ -358,6 +358,7 @@ public:
 
         W_GapLineMissingCol9,   // CAgpRow
         W_NoEolAtEof,           // CAgpReader
+        W_GapLineIgnoredCol9,   // CAgpRow
         W_Last, W_First = 21
     };
 
