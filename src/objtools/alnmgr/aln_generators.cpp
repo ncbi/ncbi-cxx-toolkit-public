@@ -50,6 +50,8 @@
 #include <objtools/alnmgr/aln_generators.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
 
+#include <objtools/alnmgr/range_coll.hpp>
+
 #include <serial/typeinfo.hpp> // for SerialAssign
 
 BEGIN_NCBI_SCOPE
@@ -90,28 +92,70 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
 }
 
 
+class CSegmentedRangeCollection : public CRangeCollection<CPairwiseAln::TPos>
+{
+public:
+    typedef ncbi::CRangeCollection<CPairwiseAln::TPos> TParent;
+
+    const_iterator find(position_type pos) {
+        PRangeLessPos<TRange, position_type> p;
+        return lower_bound(TParent::begin(), TParent::end(), pos, p);
+    }
+
+    const_iterator CutAtPosition(position_type pos) {
+        iterator ret_it = TParent::m_vRanges.end();
+        iterator it = find_nc(pos);
+        if (it != TParent::end()  &&  it->GetFrom() < pos) {
+            TRange left_clip_r(it->GetFrom(), pos-1);
+            TRange right_clip_r(pos, it->GetTo());
+            ret_it = TParent::m_vRanges.insert(TParent::m_vRanges.erase(it),
+                                               right_clip_r);
+            TParent::m_vRanges.insert(ret_it, left_clip_r);
+        }
+        return ret_it;
+    }
+
+    void insert(const TRange& r) {
+        // Cut
+        CutAtPosition(r.GetFrom());
+        CutAtPosition(r.GetToOpen());
+        
+        // Find the diff if any
+        TParent addition;
+        addition.CombineWith(r);
+        addition.Subtract(*this);
+        
+        // Insert the diff
+        iterator it = find_nc(addition.begin()->GetToOpen());
+        ITERATE(TParent, add_it, addition) {
+            TRange rr(add_it->GetFrom(), add_it->GetTo());
+            it = TParent::m_vRanges.insert(it, rr);
+            ++it;
+        }
+    }
+};
+
+
 CRef<CDense_seg>
 CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln) 
 {
     const CAnchoredAln::TPairwiseAlnVector& pairwises = anchored_aln.GetPairwiseAlns();
 
-    /// Extract all anchor starts
-    set<CPairwiseAln::TPos> anchor_starts_set;
+    //typedef CRangeCollection<CPairwiseAln::TPos> TAnchorSegments;
+    typedef CSegmentedRangeCollection TAnchorSegments;
+    TAnchorSegments anchor_segments;
     ITERATE(CAnchoredAln::TPairwiseAlnVector, pairwise_aln_i, pairwises) {
         ITERATE (CPairwiseAln::TAlnRngColl, rng_i, **pairwise_aln_i) {
-            anchor_starts_set.insert(rng_i->GetFirstFrom());
+            anchor_segments.insert(CPairwiseAln::TRng(rng_i->GetFirstFrom(), rng_i->GetFirstTo()));
         }
     }
-    vector<CPairwiseAln::TPos> anchor_starts(anchor_starts_set.size());
-    copy(anchor_starts_set.begin(), anchor_starts_set.end(), anchor_starts.begin());
-    anchor_starts_set.clear();
 
     /// Create a dense-seg
     CRef<CDense_seg> ds(new CDense_seg);
 
     /// Determine dimensions
     CDense_seg::TNumseg& numseg = ds->SetNumseg();
-    numseg = anchor_starts.size();
+    numseg = anchor_segments.size();
     CDense_seg::TDim& dim = ds->SetDim();
     dim = anchored_aln.GetDim();
 
@@ -130,64 +174,55 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln)
     /// Lens
     CDense_seg::TLens& lens = ds->SetLens();
     lens.resize(numseg);
-    CPairwiseAln::TAlnRngColl::const_iterator 
-        aln_rng_i = pairwises[anchored_aln.GetAnchorRow()]->begin();
-    for (seg = 0;  seg < numseg;  ++seg) {
-        if (seg == numseg - 1  || // last or...
-            aln_rng_i->GetFirstToOpen() < anchor_starts[seg+1]) { // ...unaligned in-between
-
-            lens[seg] = aln_rng_i->GetFirstToOpen() - anchor_starts[seg];
-            ++aln_rng_i;
-            _ASSERT(seg < numseg - 1  ||  aln_rng_i == pairwises[anchored_aln.GetAnchorRow()]->end());
-
-        } else {
-            lens[seg] = anchor_starts[seg+1] - anchor_starts[seg];
-            if (aln_rng_i->GetFirstToOpen() == anchor_starts[seg+1]) {
-                ++aln_rng_i;
-            }
-        }
+    TAnchorSegments::const_iterator seg_i = anchor_segments.begin();
+    for (seg = 0; seg < numseg; ++seg, ++seg_i) {
+        lens[seg] = seg_i->GetLength();
     }
 
     int matrix_size = dim * numseg;
 
     /// Strands (just resize, will set while setting starts)
     CDense_seg::TStrands& strands = ds->SetStrands();
-    strands.resize(matrix_size, eNa_strand_minus);
+    strands.resize(matrix_size, eNa_strand_unknown);
 
-    /// Starts
+    /// Starts and strands
     CDense_seg::TStarts& starts = ds->SetStarts();
     starts.resize(matrix_size, -1);
     for (row = 0;  row < dim;  ++row) {
-        CDense_seg::TNumseg seg = 0;
+        seg = 0;
+        int matrix_row_pos = row;  // optimization to eliminate multiplication
+        seg_i = anchor_segments.begin();
         CPairwiseAln::TAlnRngColl::const_iterator aln_rng_i = pairwises[row]->begin();
-        while (seg < numseg  &&  aln_rng_i != pairwises[row]->end()) {
-            while (anchor_starts[seg] < aln_rng_i->GetFirstFrom()) {
-                ++seg;
-                _ASSERT(seg < numseg);
+        TSignedSeqPos left_delta = 0;
+        TSignedSeqPos right_delta = aln_rng_i->GetLength();
+        bool direct = aln_rng_i->IsDirect();
+        while (seg_i != anchor_segments.end()) {
+            _ASSERT(seg < numseg);
+            _ASSERT(matrix_row_pos == row + dim * seg);
+            if (aln_rng_i != pairwises[row]->end()  &&
+                seg_i->GetFrom() >= aln_rng_i->GetFirstFrom()) {
+                starts[matrix_row_pos] = 
+                    (direct ?
+                     aln_rng_i->GetSecondFrom() + left_delta :
+                     aln_rng_i->GetSecondToOpen() - right_delta);
+                left_delta += seg_i->GetLength();
+                _ASSERT(right_delta >= seg_i->GetLength());
+                right_delta -= seg_i->GetLength();
+                if (right_delta == 0) {
+                    ++aln_rng_i;
+                    if (aln_rng_i != pairwises[row]->end()) {
+                        left_delta = 0;
+                        right_delta = aln_rng_i->GetLength();
+                        direct = aln_rng_i->IsDirect();
+                    }
+                }
             }
-            bool direct = aln_rng_i->IsDirect();
-            CPairwiseAln::TPos start = 
-                (direct ?
-                 aln_rng_i->GetSecondFrom() :
-                 aln_rng_i->GetSecondToOpen() - lens[seg]);
-            while (seg < numseg  &&  anchor_starts[seg] < aln_rng_i->GetFirstToOpen()) {
-                _ASSERT(row + seg * dim < matrix_size);
-                starts[row + seg * dim] = start;
-                if (direct) {
-                    strands[row + seg * dim] = eNa_strand_plus;
-                }
-                if (direct) {
-                    start += lens[seg];
-                }
-                ++seg;
-                if ( !direct  &&  seg < numseg) {
-                    start -= lens[seg];
-                }
-            }
-            ++aln_rng_i;
+            strands[matrix_row_pos] = (direct ? eNa_strand_plus : eNa_strand_minus);
+            ++seg_i;
+            ++seg;
+            matrix_row_pos += dim;
         }
     }
-
 #if _DEBUG
     ds->Validate(true);
 #endif    
