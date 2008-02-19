@@ -115,7 +115,8 @@ public:
     // returns iterator pointing to the TRange that has ToOpen > pos
     const_iterator  find(position_type pos)   const
     {
-        return x_Find(pos);
+        PRangeLessPos<TRange, position_type> p;
+        return lower_bound(begin(), end(), pos, p);
     }
     position_type   GetFrom() const
     {
@@ -243,6 +244,10 @@ protected:
     {   
         return m_vRanges.end(); 
     }    
+    iterator find_nc(position_type pos) {
+        PRangeLessPos<TRange, position_type> p;
+        return lower_bound(begin_nc(), end_nc(), pos, p);
+    }        
     pair<const_iterator, bool>    x_Find(position_type pos) const
     {
         PRangeLessPos<TRange, position_type>    p;
