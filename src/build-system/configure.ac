@@ -4453,8 +4453,8 @@ if test "$with_wxwidgets" != "no" ; then
          ;;
       * )
          baseflags=`$gtkconf --cflags 2>/dev/null`
-         basesed=''
-         libsed=''
+         basesed='s,-L/usr/lib[[^/]]* ,,g'
+         libsed=$basesed
          ;;
    esac
    AC_CACHE_CHECK([for wxWidgets in $WXWIDGETS_ARCH_PATH],
@@ -5174,7 +5174,8 @@ if test "$with_freetype" != "no" ; then
    if test -n "$freetype_config" ; then
       : ${FREETYPE_BINPATH=`dirname $freetype_config`}
       : ${FREETYPE_INCLUDE=`$freetype_config --cflags`}
-      NCBI_RPATHIFY_OUTPUT_COND(FREETYPE_LIBS, $freetype_config --libs)
+      NCBI_RPATHIFY_OUTPUT_COND(FREETYPE_LIBS, $freetype_config --libs,
+         [s,-L/usr/lib[[^/]]* ,,g])
       AC_CACHE_CHECK([whether FREETYPE_INCLUDE needs doctoring],
                      ncbi_cv_lib_freetype_fix_include,
          [CPPFLAGS="$FREETYPE_INCLUDE $orig_CPPFLAGS"

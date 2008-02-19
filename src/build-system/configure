@@ -25859,8 +25859,8 @@ if test "$with_wxwidgets" != "no" ; then
          ;;
       * )
          baseflags=`$gtkconf --cflags 2>/dev/null`
-         basesed=''
-         libsed=''
+         basesed='s,-L/usr/lib[^/]* ,,g'
+         libsed=$basesed
          ;;
    esac
    echo "$as_me:$LINENO: checking for wxWidgets in $WXWIDGETS_ARCH_PATH" >&5
@@ -29250,13 +29250,13 @@ fi
       : ${FREETYPE_INCLUDE=`$freetype_config --cflags`}
       if test -z "${FREETYPE_LIBS+set}"; then
     if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    FREETYPE_LIBS=`$freetype_config --libs | sed -e ""`
+    FREETYPE_LIBS=`$freetype_config --libs | sed -e "s,-L/usr/lib[^/]* ,,g"`
  else
     FREETYPE_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in `$freetype_config --libs | sed -e ""`; do
+    for x in `$freetype_config --libs | sed -e "s,-L/usr/lib[^/]* ,,g"`; do
        case "$x" in
           -L*)
              FREETYPE_LIBS="$FREETYPE_LIBS${ncbi_rp_L_sep}$x"
