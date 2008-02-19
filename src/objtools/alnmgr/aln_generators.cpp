@@ -50,7 +50,7 @@
 #include <objtools/alnmgr/aln_generators.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
 
-#include <objtools/alnmgr/range_coll.hpp>
+#include <util/range_coll.hpp>
 
 #include <serial/typeinfo.hpp> // for SerialAssign
 
@@ -133,6 +133,11 @@ public:
             ++it;
         }
     }
+protected:
+    iterator find_nc(position_type pos) {
+        PRangeLessPos<TRange, position_type> p;
+        return lower_bound(begin_nc(), end_nc(), pos, p);
+    }        
 };
 
 
