@@ -35,7 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <algo/gnomon/gnomon_exception.hpp>
 #include <algo/gnomon/gnomon.hpp>
-#include <algo/gnomon/xalgognomon__.hpp>
+#include <algo/gnomon/gnomon__.hpp>
 #include "gnomon_seq.hpp"
 #include "score.hpp"
 
