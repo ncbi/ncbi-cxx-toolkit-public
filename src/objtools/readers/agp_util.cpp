@@ -505,7 +505,7 @@ bool CAgpReader::ProcessThisRow()
         if(!m_prev_line_skipped) {
             if(this_row->object_beg !=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_ObjMustBegin1, CAgpErr::fAtThisLine);
             if(this_row->part_number!=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_PartNumberNot1, CAgpErr::fAtThisLine);
-            if(prev_row->is_gap && !prev_row->GapValidAtObjectEnd()) {
+            if(prev_row->is_gap && !prev_row->GapValidAtObjectEnd() && !m_at_beg) {
                 m_AgpErr->Msg(CAgpErr::W_GapObjEnd, prev_row->GetObject(), CAgpErr::fAtPrevLine);
             }
         }
@@ -530,7 +530,7 @@ bool CAgpReader::ProcessThisRow()
             if( m_new_obj && !this_row->GapValidAtObjectEnd() ) {
                 m_AgpErr->Msg(CAgpErr::W_GapObjBegin, this_row->GetObject()); // , CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine
             }
-            else if(prev_row->is_gap) {
+            else if(prev_row->is_gap && !m_at_beg) {
                 m_AgpErr->Msg(CAgpErr::W_ConseqGaps, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
             }
         }
@@ -564,15 +564,15 @@ int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
     if(m_at_beg) {
         //// The first line
         m_line_num=0;
-        m_prev_line_skipped=true;
+        m_prev_line_skipped=false;
 
-        // A fictitous empty row that ends with scaffold-breaking gap.
+        // A fictitous empty row that ends with a scaffold-breaking gap.
         // Used to:
         // - prevent the two-row checks;
         // - prevent OnScaffoldEnd();
         // - trigger OnObjectChange().
         m_prev_row->cols.clear();
-        m_prev_row->cols.push_back(NcbiEmptyString);
+        m_prev_row->cols.push_back(NcbiEmptyString); // Empty object name
         m_prev_row->is_gap=true;
         m_prev_row->gap_type=CAgpRow::eGapContig; // eGapCentromere
         m_prev_row->linkage=false;
