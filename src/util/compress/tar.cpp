@@ -1198,7 +1198,7 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
 static bool s_AllLowerCase(const char* str, size_t len)
 {
     for (size_t i = 0;  i < len;  i++) {
-        if (!islower(str[i]))
+        if (!islower((unsigned char) str[i]))
             return false;
     }
     return true;
