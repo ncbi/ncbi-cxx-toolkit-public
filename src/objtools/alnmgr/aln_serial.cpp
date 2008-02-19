@@ -74,6 +74,7 @@ ostream& operator<<(ostream& out, const IAlnSegment::ESegTypeFlags& flags)
 ostream& operator<<(ostream& out, const IAlnSegment& aln_seg)
 {
     return out
+        << " Anchor Rng: " << aln_seg.GetAlnRange()
         << " Rng: " << aln_seg.GetRange()
         << " type: " << (IAlnSegment::ESegTypeFlags) aln_seg.GetType();
 }
