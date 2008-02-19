@@ -97,11 +97,6 @@ class CSegmentedRangeCollection : public CRangeCollection<CPairwiseAln::TPos>
 public:
     typedef ncbi::CRangeCollection<CPairwiseAln::TPos> TParent;
 
-    const_iterator find(position_type pos) {
-        PRangeLessPos<TRange, position_type> p;
-        return lower_bound(TParent::begin(), TParent::end(), pos, p);
-    }
-
     const_iterator CutAtPosition(position_type pos) {
         iterator ret_it = TParent::m_vRanges.end();
         iterator it = find_nc(pos);
@@ -133,11 +128,6 @@ public:
             ++it;
         }
     }
-protected:
-    iterator find_nc(position_type pos) {
-        PRangeLessPos<TRange, position_type> p;
-        return lower_bound(begin_nc(), end_nc(), pos, p);
-    }        
 };
 
 
