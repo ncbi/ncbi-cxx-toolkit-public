@@ -228,14 +228,17 @@ CSymDustMasker::operator()( const sequence_type & seq,
     {
         // initializations
         P.clear();
-        triplet_type t
-            = (converter_( seq[start] )<<2) 
-            + converter_( seq[start + 1] );
         triplets w( window_, low_k_, P, thresholds_ );
-        seq_citer_type it = seq.begin() + start + w.stop() + 2;
-        const seq_citer_type seq_end = seq.begin() + stop + 1;
 
-        while( it != seq_end )
+        seq_citer_type it(seq, start);
+
+        char c1 = *it, c2 = *++it;
+        triplet_type t = (converter_( c1 )<<2) + converter_( c2 );
+
+        it.SetPos(start + w.stop() + 2);
+
+        bool done = false;
+        while( !done && it.GetPos() <= stop )
         {
             save_masked_regions( *res.get(), w.start(), start );
 
@@ -248,12 +251,12 @@ CSymDustMasker::operator()( const sequence_type & seq,
                     w.find_perfect();
                 }
             }else {
-                while( it != seq_end ) {
+                while( it.GetPos() <= stop ) {
                     save_masked_regions( *res.get(), w.start(), start );
                     t = ((t<<2)&TRIPLET_MASK) + (converter_( *it )&0x3);
 
                     if( w.shift_window( t ) ) {
-                        it = seq_end;
+                        done = true;
                         break;
                     }
 
