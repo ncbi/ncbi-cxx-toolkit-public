@@ -1,0 +1,12 @@
+# $Id$
+
+DLL = gui_widgets_snp
+
+HOSTED_LIBS    = w_snp
+
+DEPENDENCIES   = ncbi_core ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general \
+                 ncbi_image \
+                 gui_utils gui_widgets
+
+CPPFLAGS = -DNCBI_GUIWIDGETS_SNP_EXPORTS
+
