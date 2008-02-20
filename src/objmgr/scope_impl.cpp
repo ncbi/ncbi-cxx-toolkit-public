@@ -829,6 +829,7 @@ void CScope_Impl::x_ReportNewDataConflict(const CSeq_id_Handle* conflict_id)
 
 void CScope_Impl::x_ClearCacheOnNewData(const CTSE_Info& new_tse)
 {
+    //if ( 1 ) return;
     // Clear unresolved bioseq handles
     // Clear annot cache
     TIds seq_ids, annot_ids;
@@ -840,6 +841,7 @@ void CScope_Impl::x_ClearCacheOnNewData(const CTSE_Info& new_tse)
 void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
                                         const TIds& annot_ids)
 {
+    //if ( 1 ) return;
     const CSeq_id_Handle* conflict_id = 0;
     if ( !m_Seq_idMap.empty() && !seq_ids.empty() ) {
         // scan for conflicts and mark new seq-ids for new scan if unresolved
@@ -958,12 +960,14 @@ void CScope_Impl::x_ClearAnnotCache(void)
 
 void CScope_Impl::x_ClearCacheOnNewAnnot(const CTSE_Info& new_tse)
 {
+    //if ( 1 ) return;
     x_ClearAnnotCache();
 }
 
 
 void CScope_Impl::x_ClearCacheOnNewDS(void)
 {
+    if ( 1 ) return;
     // Clear unresolved bioseq handles
     // Clear annot cache
     if ( !m_Seq_idMap.empty() ) {
@@ -1657,7 +1661,7 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandle(const CBioseq_Info& seq,
 
 void CScope_Impl::x_UpdateHandleSeq_id(CBioseq_Handle& bh)
 {
-    if ( bh.m_Handle_Seq_id ) {
+    if ( 1 || bh.m_Handle_Seq_id ) {
         return;
     }
     ITERATE ( CBioseq_Handle::TId, id, bh.GetId() ) {

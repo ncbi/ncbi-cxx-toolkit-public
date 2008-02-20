@@ -919,27 +919,60 @@ void CBioseq_EditHandle::SetInst_Hist(TInst_Hist& v) const
 }
 
 
+CSeq_id_Handle CBioseq_Handle::GetAccessSeq_id_Handle(void) const
+{
+    CSeq_id_Handle id = GetSeq_id_Handle();
+    // First try original id
+    if ( id ) {
+        return id;
+    }
+    // Then try to find gi
+    ITERATE ( TId, it, GetId() ) {
+        if ( it->IsGi() ) {
+            CBioseq_Handle bh =
+                GetScope().GetBioseqHandleFromTSE(*it, GetTSE_Handle());
+            if ( bh == *this ) {
+                id = *it;
+                _ASSERT(id);
+                return id;
+            }
+        }
+    }
+    // Then try to find accession
+    ITERATE ( TId, it, GetId() ) {
+        if ( !it->IsGi() && it->GetSeqId()->GetTextseq_Id() ) {
+            CBioseq_Handle bh =
+                GetScope().GetBioseqHandleFromTSE(*it, GetTSE_Handle());
+            if ( bh == *this ) {
+                id = *it;
+                _ASSERT(id);
+                return id;
+            }
+        }
+    }
+    // Then try to find any other id
+    ITERATE ( TId, it, GetId() ) {
+        if ( !it->IsGi() && !it->GetSeqId()->GetTextseq_Id() ) {
+            CBioseq_Handle bh =
+                GetScope().GetBioseqHandleFromTSE(*it, GetTSE_Handle());
+            if ( bh == *this ) {
+                id = *it;
+                _ASSERT(id);
+                return id;
+            }
+        }
+    }
+    NCBI_THROW(CObjMgrException, eOtherError,
+               "CBioseq_Handle::GetAccessSeq_id_Handle "
+               "can not find seq-id to access this bioseq");
+}
+
+
 CRef<CSeq_loc> CBioseq_Handle::GetRangeSeq_loc(TSeqPos start,
                                                TSeqPos stop,
                                                ENa_strand strand) const
 {
-    CSeq_id_Handle orig_id = GetSeq_id_Handle();
-    if ( !orig_id ) {
-        ITERATE ( TId, it, GetId() ) {
-            CBioseq_Handle bh =
-                GetScope().GetBioseqHandleFromTSE(*it, GetTSE_Handle());
-            if ( bh == *this ) {
-                orig_id = bh.GetSeq_id_Handle();
-                _ASSERT(orig_id);
-                break;
-            }
-        }
-        if ( !orig_id ) {
-            NCBI_THROW(CObjMgrException, eOtherError,
-                       "CRangeSeq_loc -- "
-                       "can not get seq-id to create seq-loc");
-        }
-    }
+    CSeq_id_Handle orig_id = GetAccessSeq_id_Handle();
     CRef<CSeq_id> id(new CSeq_id);
     id->Assign(*orig_id.GetSeqId());
     CRef<CSeq_loc> res(new CSeq_loc);

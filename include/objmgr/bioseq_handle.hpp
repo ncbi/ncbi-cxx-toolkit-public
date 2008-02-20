@@ -109,6 +109,10 @@ public:
     /// Get handle of id used to obtain this bioseq handle
     const CSeq_id_Handle& GetSeq_id_Handle(void) const;
 
+    /// Get any CSeq_id_Handle handle that can be used to access this bioseq
+    /// Use GetSeq_id_Handle() if it's non-null
+    CSeq_id_Handle GetAccessSeq_id_Handle(void) const;
+
     /// State of bioseq handle.
     enum EBioseqStateFlags {
         fState_none          = 0,
