@@ -281,6 +281,7 @@ CBioseq_Handle CSeqMap::x_GetBioseqHandle(const CSegment& seg,
     }
     CBioseq_Handle bh = scope->GetBioseqHandle(seq_id);
     if ( !bh ) {
+        bh = scope->GetBioseqHandle(seq_id);
         NCBI_THROW(CSeqMapException, eFail,
                    "Cannot resolve "+
                    seq_id.AsFastaString()+": unknown");
@@ -892,30 +893,75 @@ CRef<CSeqMap> CSeqMap::CloneFor(const CBioseq& seq) const
 CRef<CSeqMap> CSeqMap::CreateSeqMapForSeq_loc(const CSeq_loc& loc,
                                               CScope* scope)
 {
+    TMol mol = CSeq_inst::eMol_not_set;
     CRef<CSeqMap> ret(new CSeqMap(loc));
-    if ( scope ) {
-        CSeqMap_CI i(ret, scope, SSeqMapSelector(fFindData, kMax_UInt));
-        for ( ; i; ++i ) {
-            _ASSERT(i.GetType() == eSeqData);
-            switch ( i.GetRefData().Which() ) {
-            case CSeq_data::e_Ncbi2na:
-            case CSeq_data::e_Ncbi4na:
-            case CSeq_data::e_Ncbi8na:
-            case CSeq_data::e_Ncbipna:
-            case CSeq_data::e_Iupacna:
-                ret->m_Mol = CSeq_inst::eMol_na;
-                break;
-            case CSeq_data::e_Ncbi8aa:
-            case CSeq_data::e_Ncbieaa:
-            case CSeq_data::e_Ncbipaa:
-            case CSeq_data::e_Ncbistdaa:
-            case CSeq_data::e_Iupacaa:
-                ret->m_Mol = CSeq_inst::eMol_aa;
-                break;
-            default:
-                ret->m_Mol = CSeq_inst::eMol_not_set;
+    if ( scope && ret->m_Mol == CSeq_inst::eMol_not_set ) {
+        if ( mol == CSeq_inst::eMol_not_set ) {
+            for ( size_t i = 1; ; ++i ) {
+                const CSegment& seg = ret->x_GetSegment(i);
+                if ( seg.m_SegType == eSeqEnd ) {
+                    break;
+                }
+                else if ( seg.m_SegType == eSeqRef ) {
+                    CBioseq_Handle bh =
+                        scope->GetBioseqHandle(ret->x_GetRefSeqid(seg));
+                    if ( bh ) {
+                        mol = bh.GetSequenceType();
+                        break;
+                    }
+                }
             }
         }
+        ret->m_Mol = mol;
+    }
+    return ret;
+}
+
+
+CConstRef<CSeqMap> CSeqMap::GetSeqMapForSeq_loc(const CSeq_loc& loc,
+                                                CScope* scope)
+{
+    TMol mol = CSeq_inst::eMol_not_set;
+    if ( scope ) {
+        if ( loc.IsInt() ) {
+            const CSeq_interval& locint = loc.GetInt();
+            if ( locint.GetFrom() == 0 &&
+                 (!locint.IsSetStrand() || IsForward(locint.GetStrand())) ) {
+                CBioseq_Handle bh = scope->GetBioseqHandle(locint.GetId());
+                if ( bh ) {
+                    if ( bh.GetBioseqLength() == locint.GetTo()+1 ) {
+                        return ConstRef(&bh.GetSeqMap());
+                    }
+                    mol = bh.GetSequenceType();
+                }
+            }
+        }
+        else if ( loc.IsWhole() ) {
+            CBioseq_Handle bh = scope->GetBioseqHandle(loc.GetWhole());
+            if ( bh ) {
+                return ConstRef(&bh.GetSeqMap());
+            }
+        }
+    }
+    CRef<CSeqMap> ret(new CSeqMap(loc));
+    if ( scope && ret->m_Mol == CSeq_inst::eMol_not_set ) {
+        if ( mol == CSeq_inst::eMol_not_set ) {
+            for ( size_t i = 1; ; ++i ) {
+                const CSegment& seg = ret->x_GetSegment(i);
+                if ( seg.m_SegType == eSeqEnd ) {
+                    break;
+                }
+                else if ( seg.m_SegType == eSeqRef ) {
+                    CBioseq_Handle bh =
+                        scope->GetBioseqHandle(ret->x_GetRefSeqid(seg));
+                    if ( bh ) {
+                        mol = bh.GetSequenceType();
+                        break;
+                    }
+                }
+            }
+        }
+        ret->m_Mol = mol;
     }
     return ret;
 }
@@ -954,7 +1000,11 @@ void CSeqMap::x_AddSegment(ESegmentType type,
 
 void CSeqMap::x_AddEnd(void)
 {
-    TSeqPos pos = m_Segments.empty()? 0: kInvalidSeqPos;
+    TSeqPos pos = kInvalidSeqPos;
+    if ( m_Segments.empty() ) {
+        m_Segments.reserve(3);
+        pos = 0;
+    }
     x_AddSegment(eSeqEnd, 0);
     CSegment& ret = m_Segments.back();
     ret.m_Position = pos;

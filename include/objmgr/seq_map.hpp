@@ -171,6 +171,8 @@ public:
     static CRef<CSeqMap> CreateSeqMapForBioseq(const CBioseq& seq);
     static CRef<CSeqMap> CreateSeqMapForSeq_loc(const CSeq_loc& loc,
                                                 CScope* scope);
+    static CConstRef<CSeqMap> GetSeqMapForSeq_loc(const CSeq_loc& loc,
+                                                  CScope* scope);
     virtual CRef<CSeqMap> CloneFor(const CBioseq& seq) const;
 
     // copy map for editing
