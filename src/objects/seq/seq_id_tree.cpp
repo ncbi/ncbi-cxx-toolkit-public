@@ -116,10 +116,65 @@ void CSeq_id_Which_Tree::FindReverseMatch(const CSeq_id_Handle& id,
 }
 
 
+static inline void s_AssignTextseq_id(CTextseq_id& new_tid,
+                                      const CTextseq_id& old_tid)
+{
+    if (old_tid.IsSetAccession()) {
+        new_tid.SetAccession(old_tid.GetAccession());
+    }
+    if (old_tid.IsSetVersion()) {
+        new_tid.SetVersion(old_tid.GetVersion());
+    }
+    if (old_tid.IsSetName()) {
+        new_tid.SetName(old_tid.GetName());
+    }
+    if (old_tid.IsSetRelease()) {
+        new_tid.SetRelease(old_tid.GetRelease());
+    }
+}
+
+
 CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(const CSeq_id& id)
 {
     CRef<CSeq_id> id_ref(new CSeq_id);
-    id_ref->Assign(id);
+    switch (id.Which()) {
+    case CSeq_id::e_Gi:
+        id_ref->SetGi(id.GetGi());
+        break;
+
+    case CSeq_id::e_Local:
+        if ( id.GetLocal().IsStr() ) {
+            id_ref->SetLocal().SetStr(id.GetLocal().GetStr());
+        }
+        else {
+            id_ref->SetLocal().SetId(id.GetLocal().GetId());
+        }
+        break;
+
+    case CSeq_id::e_Other:
+        s_AssignTextseq_id(id_ref->SetOther(), id.GetOther());
+        break;
+
+    case CSeq_id::e_Genbank:
+        s_AssignTextseq_id(id_ref->SetGenbank(), id.GetGenbank());
+        break;
+
+    case CSeq_id::e_Embl:
+        s_AssignTextseq_id(id_ref->SetEmbl(), id.GetEmbl());
+        break;
+
+    case CSeq_id::e_Ddbj:
+        s_AssignTextseq_id(id_ref->SetDdbj(), id.GetDdbj());
+        break;
+
+    case CSeq_id::e_Gpipe:
+        s_AssignTextseq_id(id_ref->SetGpipe(), id.GetGpipe());
+        break;
+
+    default:
+        id_ref->Assign(id);
+        break;
+    }
     return new CSeq_id_Info(id_ref, m_Mapper);
 }
 
