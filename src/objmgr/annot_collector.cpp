@@ -959,7 +959,7 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
             x_GetTSE_Info();
         }
 
-        const CSeq_id_Handle& master_id = bh.GetAccessSeq_id_Handle();
+        CSeq_id_Handle master_id = bh.GetAccessSeq_id_Handle();
         CHandleRange master_range;
         master_range.AddRange(range, strand);
 
