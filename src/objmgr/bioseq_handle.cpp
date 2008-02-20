@@ -117,9 +117,14 @@ const CBioseq_Info& CBioseq_Handle::x_GetInfo(void) const
 }
 
 
-CConstRef<CSeq_id> CBioseq_Handle::GetSeqId(void) const
+CConstRef<CSeq_id> CBioseq_Handle::GetInitialSeqIdOrNull(void) const
 {
     return GetSeq_id_Handle().GetSeqIdOrNull();
+}
+
+CConstRef<CSeq_id> CBioseq_Handle::GetSeqId(void) const
+{
+    return GetAccessSeq_id_Handle().GetSeqId();
 }
 
 const CBioObjectId& CBioseq_Handle::GetBioObjectId(void) const

@@ -99,8 +99,11 @@ public:
     /// Get scope this handle belongs to
     CScope& GetScope(void) const;
 
-    /// Get id used to obtain this bioseq handle
+    /// Get id which can be used to access this bioseq handle
+    /// Throws an exception if none is available
     CConstRef<CSeq_id> GetSeqId(void) const;
+    /// Get id used to obtain this bioseq handle
+    CConstRef<CSeq_id> GetInitialSeqIdOrNull(void) const;
     
     /// Get unique object id
     const CBioObjectId& GetBioObjectId(void) const;
