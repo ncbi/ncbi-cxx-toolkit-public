@@ -38,7 +38,8 @@ BEGIN_NCBI_SCOPE
 
 namespace impl {
 
-class CDBConnParamsBase : public CDBConnParams 
+class NCBI_DBAPIDRIVER_EXPORT CDBConnParamsBase : 
+    public CDBConnParams 
 {
 public:
     CDBConnParamsBase(void);
@@ -164,7 +165,8 @@ private:
 ///  CDBDefaultConnParams::
 ///
 
-class CDBDefaultConnParams : public impl::CDBConnParamsBase 
+class NCBI_DBAPIDRIVER_EXPORT CDBDefaultConnParams : 
+    public impl::CDBConnParamsBase 
 {
 public:
     CDBDefaultConnParams(const string&   srv_name,
@@ -195,7 +197,8 @@ public:
 
 
 /////////////////////////////////////////////////////////////////////////////
-class CDBUriConnParams : public impl::CDBConnParamsBase 
+class NCBI_DBAPIDRIVER_EXPORT CDBUriConnParams : 
+    public impl::CDBConnParamsBase 
 {
 public:
     CDBUriConnParams(const string& params);
@@ -217,7 +220,8 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-class CDB_ODBC_ConnParams : public impl::CDBConnParamsBase 
+class NCBI_DBAPIDRIVER_EXPORT CDB_ODBC_ConnParams : 
+    public impl::CDBConnParamsBase 
 {
 public:
     CDB_ODBC_ConnParams(const string& params);
