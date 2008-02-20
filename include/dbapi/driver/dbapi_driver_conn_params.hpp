@@ -32,7 +32,7 @@
  *
  */
 
-#include <dbapi/driver/interfaces.hpp>
+#include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
 BEGIN_NCBI_SCOPE
 
