@@ -531,20 +531,6 @@ CConnParam::CConnParam(
             db_type_uc == "MS SQL") {
         m_ServerType = eMsSql;
     }
-
-    if ( GetDriverName() == "ctlib" ) {
-        m_DatabaseParameters["version"] = "125";
-    } else if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
-        // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
-        // BcpIn to it using protocol version other than "100".
-        m_DatabaseParameters["version"] = "125";
-    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63")  &&
-                GetServerType() == eSybase ) {
-        // ftds forks with Sybase databases using protocol v42 only ...
-        m_DatabaseParameters["version"] = "42";
-        // m_DatabaseParameters["version"] = "46";
-    }
-
 }
 
 CConnParam::~CConnParam(void)
