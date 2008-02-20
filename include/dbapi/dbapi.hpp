@@ -679,6 +679,12 @@ public:
              const string& server,
              const string& database = kEmptyStr) = 0;
 
+    /// Connect to a database.
+    ///
+    /// @param params
+    ///   Connection parameters.
+    virtual void Connect(const CDBConnParams& params) = 0;
+
     /// Connect to a database using connect validator
     ///
     /// @param validator

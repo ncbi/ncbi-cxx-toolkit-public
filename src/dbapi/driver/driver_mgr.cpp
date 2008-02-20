@@ -62,6 +62,33 @@ MakePluginManagerParamTree(const string& driver_name, const map<string, string>*
     return tr;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+TPluginManagerParamTree*
+MakePluginManagerParamTree(const CDBConnParams& params)
+{
+    auto_ptr<TPluginManagerParamTree> tr(new TPluginManagerParamTree);
+
+    tr->GetKey() = params.GetDriverName();
+
+    tr->AddNode(CConfig::TParamValue("reuse_context" , "false"));
+    if (params.GetProtocolVersion() != 0) {
+	tr->AddNode(CConfig::TParamValue("version" , 
+	    NStr::IntToString(params.GetProtocolVersion())));
+    }
+
+    switch (params.GetEncoding()) {
+	case eEncoding_UTF8:
+	    tr->AddNode(CConfig::TParamValue("client_charset" , "UTF8"));
+	    break;
+	default:
+	    break;
+    };
+
+    return tr.release();
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 CPluginManager_DllResolver*
 CDllResolver_Getter<I_DriverContext>::operator()(void)
@@ -339,6 +366,43 @@ Get_I_DriverContext(const string& driver_name, const map<string, string>* attr)
 
     return drv;
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+I_DriverContext* MakeDriverContext(const CDBConnParams& params)
+{
+    typedef CPluginManager<I_DriverContext> TReaderManager;
+    typedef CPluginManagerGetter<I_DriverContext> TReaderManagerStore;
+    I_DriverContext* drv = NULL;
+
+    CRef<TReaderManager> ReaderManager(TReaderManagerStore::Get());
+    _ASSERT(ReaderManager);
+
+    try {
+        auto_ptr<TPluginManagerParamTree> pt;
+
+	pt.reset(MakePluginManagerParamTree(params));
+	_ASSERT( pt.get() );
+
+        drv = ReaderManager->CreateInstance(
+            params.GetDriverName(),
+            NCBI_INTERFACE_VERSION(I_DriverContext),
+            pt.get()
+            );
+    }
+    catch( const CPluginManagerException& ) {
+        throw;
+    }
+    catch ( const exception& e ) {
+        DATABASE_DRIVER_ERROR( params.GetDriverName() + " is not available :: " + e.what(), 300 );
+    }
+    catch ( ... ) {
+        DATABASE_DRIVER_ERROR( params.GetDriverName() + " was unable to load due an unknown error", 300 );
+    }
+
+    return drv;
+}
+
 
 END_NCBI_SCOPE
 

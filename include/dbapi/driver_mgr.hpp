@@ -80,6 +80,8 @@ public:
     IDataSource* CreateDsFrom(const string& drivers,
                     const IRegistry* reg = 0);
 
+    IDataSource* MakeDs(const CDBConnParams& params);
+
     // Destroy datasource object
     void DestroyDs(const string& driver_name);
     void DestroyDs(const IDataSource* ds);

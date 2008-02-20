@@ -930,8 +930,10 @@ public:
 
     virtual string GetDriverName(void) const = 0;
     virtual Uint4  GetProtocolVersion(void) const = 0;
+    virtual EEncoding GetEncoding(void) const = 0;
 
     virtual string GetServerName(void) const = 0;
+    virtual string GetDatabaseName(void) const = 0;
     virtual string GetUserName(void) const = 0;
     virtual string GetPassword(void) const = 0;
 

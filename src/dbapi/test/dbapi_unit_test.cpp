@@ -41,6 +41,7 @@
 
 #include "dbapi_unit_test.hpp"
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
+#include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -900,7 +901,7 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
         // Destroy a statement before a connection get destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -912,7 +913,7 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
         // Do not destroy statement, let it be destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -928,7 +929,7 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
         // Destroy a statement before a connection get destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -940,7 +941,7 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
         // Do not destroy statement, let it be destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -964,7 +965,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
         // Destroy a statement before a connection get destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -984,7 +985,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1005,7 +1006,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
         // Do not destroy a statement, let it be destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1025,7 +1026,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1050,7 +1051,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
         // Destroy a statement before a connection get destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1070,7 +1071,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1091,7 +1092,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
         // Do not destroy a statement, let it be destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1111,7 +1112,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection( CONN_OWNERSHIP )
+                m_DS->CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -12418,6 +12419,195 @@ void CDBAPIUnitTest::Test_Truncation(void)
     }
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_ConnParams(void)
+{
+    // Checking parser ...
+    if (false) {
+
+        // CDBUriConnParams ...
+        {
+            CDBUriConnParams params("dbapi:ctlib://myuser:mypswd@MAPVIEW_LOAD:1433/AlignModel?tds_version=42&client_charset=UTF8");
+
+            BOOST_CHECK_EQUAL(params.GetDriverName(), string("ctlib"));
+            BOOST_CHECK_EQUAL(params.GetUserName(), string("myuser"));
+            BOOST_CHECK_EQUAL(params.GetPassword(), string("mypswd"));
+            BOOST_CHECK_EQUAL(params.GetServerName(), string("MAPVIEW_LOAD"));
+            BOOST_CHECK_EQUAL(params.GetPort(), 1433U);
+            BOOST_CHECK_EQUAL(params.GetDatabaseName(), string("AlignModel"));
+        }
+
+        {
+            CDBUriConnParams params("dbapi:ftds://myuser@MAPVIEW_LOAD/AlignModel");
+
+            BOOST_CHECK_EQUAL(params.GetDriverName(), string("ftds"));
+            BOOST_CHECK_EQUAL(params.GetUserName(), string("myuser"));
+            BOOST_CHECK_EQUAL(params.GetPassword(), string("allowed"));
+            BOOST_CHECK_EQUAL(params.GetServerName(), string("MAPVIEW_LOAD"));
+            BOOST_CHECK_EQUAL(params.GetPort(), 1433U);
+            BOOST_CHECK_EQUAL(params.GetDatabaseName(), string("AlignModel"));
+        }
+
+        {
+            CDBUriConnParams params("dbapi://myuser@MAPVIEW_LOAD/AlignModel");
+
+            BOOST_CHECK_EQUAL(params.GetUserName(), string("myuser"));
+            BOOST_CHECK_EQUAL(params.GetPassword(), string("allowed"));
+            BOOST_CHECK_EQUAL(params.GetServerName(), string("MAPVIEW_LOAD"));
+            BOOST_CHECK_EQUAL(params.GetPort(), 1433U);
+            BOOST_CHECK_EQUAL(params.GetDatabaseName(), string("AlignModel"));
+        }
+
+        {
+            CDBUriConnParams params("dbapi://myuser:allowed@MAPVIEW_LOAD/AlignModel");
+
+            BOOST_CHECK_EQUAL(params.GetUserName(), string("myuser"));
+            BOOST_CHECK_EQUAL(params.GetPassword(), string("allowed"));
+            BOOST_CHECK_EQUAL(params.GetServerName(), string("MAPVIEW_LOAD"));
+            BOOST_CHECK_EQUAL(params.GetPort(), 1433U);
+            BOOST_CHECK_EQUAL(params.GetDatabaseName(), string("AlignModel"));
+        }
+
+        {
+            CDBUriConnParams params("dbapi://myuser:allowed@MAPVIEW_LOAD");
+
+            BOOST_CHECK_EQUAL(params.GetUserName(), string("myuser"));
+            BOOST_CHECK_EQUAL(params.GetPassword(), string("allowed"));
+            BOOST_CHECK_EQUAL(params.GetServerName(), string("MAPVIEW_LOAD"));
+            BOOST_CHECK_EQUAL(params.GetPort(), 1433U);
+            BOOST_CHECK_EQUAL(params.GetDatabaseName(), string(""));
+        }
+
+        // CDB_ODBC_ConnParams ..
+        {
+            CDB_ODBC_ConnParams params("Driver={SQLServer};Server=MS_TEST;Database=DBAPI_Sample;Uid=anyone;Pwd=allowed;");
+
+            BOOST_CHECK_EQUAL(params.GetDriverName(), string("{SQLServer}"));
+            BOOST_CHECK_EQUAL(params.GetUserName(), string("anyone"));
+            BOOST_CHECK_EQUAL(params.GetPassword(), string("allowed"));
+            BOOST_CHECK_EQUAL(params.GetServerName(), string("MS_TEST"));
+            BOOST_CHECK_EQUAL(params.GetPort(), 1433U);
+            BOOST_CHECK_EQUAL(params.GetDatabaseName(), string("DBAPI_Sample"));
+        }
+    }
+
+
+    // Checking ability to connect using different connection-parameter classes ...
+    if (true) {
+        // CDBUriConnParams ...
+        {
+            {
+                CDBUriConnParams params(
+                        "dbapi:" + m_args.GetDriverName() + 
+                        "://" + m_args.GetUserName() + 
+                        ":" + m_args.GetUserPassword() + 
+                        "@" + m_args.GetServerName()
+                        );
+
+                IDataSource* ds = m_DM.MakeDs(params);
+                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                conn->Connect(params);
+                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                auto_stmt->ExecuteUpdate("SELECT @@version");
+                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // crash application.
+            }
+
+            {
+                CDBUriConnParams params(
+                        "dbapi:" // No driver name ...
+                        "//" + m_args.GetUserName() + 
+                        ":" + m_args.GetUserPassword() + 
+                        "@" + m_args.GetServerName()
+                        );
+
+                IDataSource* ds = m_DM.MakeDs(params);
+                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                conn->Connect(params);
+                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                auto_stmt->ExecuteUpdate("SELECT @@version");
+                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // crash application.
+            }
+
+            {
+                CDBUriConnParams params(
+                        "dbapi:" // No driver name ...
+                        "//" + m_args.GetUserName() + 
+                        // No password ...
+                        "@" + m_args.GetServerName()
+                        );
+
+                IDataSource* ds = m_DM.MakeDs(params);
+                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                conn->Connect(params);
+                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                auto_stmt->ExecuteUpdate("SELECT @@version");
+                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // crash application.
+            }
+
+        }
+
+        // CDB_ODBC_ConnParams ...
+        {
+            {
+                CDB_ODBC_ConnParams params(
+                        "DRIVER=" + m_args.GetDriverName() + 
+                        ";UID=" + m_args.GetUserName() + 
+                        ";PWD=" + m_args.GetUserPassword() + 
+                        ";SERVER=" + m_args.GetServerName()
+                        );
+
+                IDataSource* ds = m_DM.MakeDs(params);
+                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                conn->Connect(params);
+                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                auto_stmt->ExecuteUpdate("SELECT @@version");
+                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // crash application.
+            }
+
+            {
+                CDB_ODBC_ConnParams params(
+                        // No driver ...
+                        ";UID=" + m_args.GetUserName() + 
+                        ";PWD=" + m_args.GetUserPassword() + 
+                        ";SERVER=" + m_args.GetServerName()
+                        );
+
+                IDataSource* ds = m_DM.MakeDs(params);
+                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                conn->Connect(params);
+                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                auto_stmt->ExecuteUpdate("SELECT @@version");
+                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // crash application.
+            }
+
+            {
+                CDB_ODBC_ConnParams params(
+                        // No driver ...
+                        ";UID=" + m_args.GetUserName() + 
+                        // No password ...
+                        ";SERVER=" + m_args.GetServerName()
+                        );
+
+                IDataSource* ds = m_DM.MakeDs(params);
+                auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+                conn->Connect(params);
+                auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+                auto_stmt->ExecuteUpdate("SELECT @@version");
+                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // crash application.
+            }
+
+        }
+    }
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Bind(void)
@@ -12579,6 +12769,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    if (!(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
+       && !(args.GetDriverName() == dblib_driver && args.GetServerType() == CTestArguments::eSybase)
+       ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ConnParams,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
     if (args.GetTestConfiguration() != CTestArguments::eFast) {
         if (args.GetServerType() == CTestArguments::eMsSql ||
                 args.GetServerType() == CTestArguments::eMsSql2005
@@ -12717,14 +12916,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (!(args.GetDriverName() == ftds64_driver
-          && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+        && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
         && !(args.GetDriverName() == ftds8_driver
-          && args.GetServerType() == CTestArguments::eSybase)
+        && args.GetServerType() == CTestArguments::eSybase)
         && !(args.GetDriverName() == ftds_dblib_driver
-          && args.GetServerType() == CTestArguments::eSybase)
+        && args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Create_Destroy,
-                                   DBAPIInstance);
+                                DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     } else {

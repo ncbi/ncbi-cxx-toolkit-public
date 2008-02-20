@@ -36,40 +36,21 @@
 
 BEGIN_NCBI_SCOPE
 
-/////////////////////////////////////////////////////////////////////////////
-///
-///  CDBDefaultConnParams::
-///
+namespace impl {
 
-class CDBDefaultConnParams : public CDBConnParams 
+class CDBConnParamsBase : public CDBConnParams 
 {
 public:
-    CDBDefaultConnParams(const string&   srv_name,
-                         const string&   user_name,
-                         const string&   passwd,
-                         const CRef<IConnValidator>& validator,
-                         Uint4 host = 0,
-                         Uint2 port = 0,
-                         I_DriverContext::TConnectionMode mode = 0,
-                         bool            reusable = false,
-                         const string&   pool_name = kEmptyStr);
-    virtual ~CDBDefaultConnParams(void);
-
-public:
-    void SetDriverName(const string& name)
-    {
-        m_DriverName = name;
-    }
-    void SetProtocolVersion(Uint4 version)
-    {
-        m_ProtocolVersion = version;
-    }
+    CDBConnParamsBase(void);
+    virtual ~CDBConnParamsBase(void);
 
 public:
     virtual string GetDriverName(void) const;
     virtual Uint4  GetProtocolVersion(void) const;
+    virtual EEncoding GetEncoding(void) const;
 
     virtual string GetServerName(void) const;
+    virtual string GetDatabaseName(void) const;
     virtual string GetUserName(void) const;
     virtual string GetPassword(void) const;
 
@@ -89,21 +70,167 @@ public:
     /// Pool name to be used with this connection
     virtual string GetPoolName(void) const; 
 
+protected:
+    void SetDriverName(const string& name)
+    {
+        m_DriverName = name;
+    }
+    void SetProtocolVersion(Uint4 version)
+    {
+        m_ProtocolVersion = version;
+    }
+    void SetEncoding(EEncoding encoding)
+    {
+	m_Encoding = encoding;
+    }
+
+    void SetServerName(const string& name)
+    {
+	m_ServerName = name;
+    }
+    void SetDatabaseName(const string& name)
+    {
+	m_DatabaseName = name;
+    }
+    void SetUserName(const string& name)
+    {
+	m_UserName = name;
+    }
+    void SetPassword(const string& passwd)
+    {
+	m_Password = passwd;
+    }
+
+    void SetServerType(EServerType type)
+    {
+	m_ServerType = type;
+    }
+    void SetHost(Uint4 host)
+    {
+	m_Host = host;
+    }
+    void SetPort(Uint2 port)
+    {
+	m_PortNumber = port;
+    }
+
+    void SetConnValidator(const CRef<IConnValidator>& validator)
+    {
+	m_Validator = validator;
+    }
+    void SetSequreLogin(bool flag = true)
+    {
+	m_IsSequreLogin = flag;
+    }
+
+    void SetPooled(bool flag = true)
+    {
+	m_IsPooled = flag;
+    }
+    void SetDoNotConnect(bool flag = true)
+    {
+	m_IsDoNotConnect = flag;
+    }
+    void SetPoolName(const string& name)
+    {
+	m_PoolName = name;
+    }
+
 private:
-    string m_DriverName;
-    Uint4  m_ProtocolVersion;
+    string    m_DriverName;
+    Uint4     m_ProtocolVersion;
+    EEncoding m_Encoding;
 
-    const string m_ServerName;
-    const string m_UserName;
-    const string m_Password;
-    const Uint4  m_Host;
-    const Uint2  m_PortNumber;
-    const CRef<IConnValidator> m_Validator;
+    string                m_ServerName;
+    string                m_DatabaseName;
+    string                m_UserName;
+    string                m_Password;
+    EServerType           m_ServerType;
+    Uint4                 m_Host;
+    Uint2                 m_PortNumber;
+    CRef<IConnValidator>  m_Validator;
 
-    const string m_PoolName;
-    const bool m_IsSequreLogin;
-    const bool m_IsPooled;
-    const bool m_IsDoNotConnect;  
+    string  m_PoolName;
+    bool    m_IsSequreLogin;
+    bool    m_IsPooled;
+    bool    m_IsDoNotConnect;
+};
+
+} // namespace impl
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CDBDefaultConnParams::
+///
+
+class CDBDefaultConnParams : public impl::CDBConnParamsBase 
+{
+public:
+    CDBDefaultConnParams(const string&   srv_name,
+                         const string&   user_name,
+                         const string&   passwd,
+                         const CRef<IConnValidator>& validator,
+                         Uint4 host = 0,
+                         Uint2 port = 0,
+                         I_DriverContext::TConnectionMode mode = 0,
+                         bool            reusable = false,
+                         const string&   pool_name = kEmptyStr);
+    virtual ~CDBDefaultConnParams(void);
+
+public:
+    void SetDriverName(const string& name)
+    {
+        impl::CDBConnParamsBase::SetDriverName(name);
+    }
+    void SetProtocolVersion(Uint4 version)
+    {
+        impl::CDBConnParamsBase::SetProtocolVersion(version);
+    }
+    void SetEncoding(EEncoding encoding)
+    {
+        impl::CDBConnParamsBase::SetEncoding(encoding);
+    }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+class CDBUriConnParams : public impl::CDBConnParamsBase 
+{
+public:
+    CDBUriConnParams(const string& params);
+    virtual ~CDBUriConnParams(void);
+
+public:
+    void SetPassword(const string& passwd)
+    {
+        impl::CDBConnParamsBase::SetPassword(passwd);
+    }
+
+private:
+    void ParseServer(const string& params, size_t cur_pos);
+    void ParseSlash(const string& params, size_t cur_pos);
+    void ParseParamPairs(const string& param_pairs, size_t cur_pos);
+
+    void x_MapPairToParam(const string& key, const string& value);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+class CDB_ODBC_ConnParams : public impl::CDBConnParamsBase 
+{
+public:
+    CDB_ODBC_ConnParams(const string& params);
+    virtual ~CDB_ODBC_ConnParams(void);
+
+public:
+    void SetPassword(const string& passwd)
+    {
+        impl::CDBConnParamsBase::SetPassword(passwd);
+    }
+
+private:
+    void x_MapPairToParam(const string& key, const string& value);
 };
 
 

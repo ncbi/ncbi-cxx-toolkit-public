@@ -97,6 +97,10 @@ I_DriverContext*
 Get_I_DriverContext(const string&              driver_name,
                     const map<string, string>* attr = NULL);
 
+
+NCBI_DBAPIDRIVER_EXPORT
+I_DriverContext* MakeDriverContext(const CDBConnParams& params);
+
 END_NCBI_SCOPE
 
 

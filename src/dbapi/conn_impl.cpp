@@ -115,11 +115,25 @@ void CConnection::Connect(const string& user,
                                     password,
                                     m_modeMask,
                                     m_ds->IsPoolUsed());
-    if(GetCDB_Connection()) {
+    
+    if (GetCDB_Connection()) {
         SetDbName(database);
     }
 
 }
+
+
+void CConnection::Connect(const CDBConnParams& params)
+{
+    CHECK_NCBI_DBAPI(m_connection != 0, "Connection is already open");
+
+    m_connection = m_ds->GetDriverContext()->MakeConnection(params);
+    
+    if (GetCDB_Connection()) {
+        SetDbName(params.GetDatabaseName());
+    }
+}
+
 
 void CConnection::ConnectValidated(IConnValidator& validator,
                                    const string& user,
@@ -136,7 +150,8 @@ void CConnection::ConnectValidated(IConnValidator& validator,
                                     validator,
                                     m_modeMask,
                                     m_ds->IsPoolUsed());
-    if(GetCDB_Connection()) {
+    
+    if (GetCDB_Connection()) {
         SetDbName(database);
     }
 

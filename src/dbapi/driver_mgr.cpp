@@ -149,6 +149,27 @@ IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
     return 0;
 }
 
+
+IDataSource* CDriverManager::MakeDs(const CDBConnParams& params)
+{
+    CMutexGuard mg(m_Mutex);
+
+    TDsContainer::iterator i_ds = m_ds_list.find(params.GetDriverName());
+    if (i_ds != m_ds_list.end()) {
+        return (*i_ds).second;
+    }
+
+    I_DriverContext* ctx = MakeDriverContext(params);
+
+    CHECK_NCBI_DBAPI(
+        !ctx,
+        "CDriverManager::CreateDs() -- Failed to get context for driver: " + params.GetDriverName()
+        );
+
+    return RegisterDs(params.GetDriverName(), ctx);
+}
+
+
 IDataSource* CDriverManager::RegisterDs(const string& driver_name,
                                         I_DriverContext* ctx)
 {

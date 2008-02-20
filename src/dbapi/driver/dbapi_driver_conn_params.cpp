@@ -35,35 +35,25 @@
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-CDBDefaultConnParams::CDBDefaultConnParams(
-        const string&   srv_name,
-        const string&   user_name,
-        const string&   passwd,
-        const CRef<IConnValidator>& validator,
-        Uint4 host,
-        Uint2 port,
-        I_DriverContext::TConnectionMode mode,
-        bool            reusable,
-        const string&   pool_name)
+namespace impl {
+
+CDBConnParamsBase::CDBConnParamsBase(void)
 : m_ProtocolVersion(0)
-, m_ServerName(srv_name)
-, m_UserName(user_name)
-, m_Password(passwd)
-, m_Host(host)
-, m_PortNumber(port)
-, m_Validator(validator)
-, m_PoolName(pool_name)
-, m_IsSequreLogin((mode & I_DriverContext::fPasswordEncrypted) != 0)
-, m_IsPooled(reusable)
-, m_IsDoNotConnect((mode & I_DriverContext::fDoNotConnect) != 0)
+, m_Encoding(eEncoding_Unknown)
+, m_ServerType(eUnknown)
+, m_Host(0)
+, m_PortNumber(0)
+, m_IsSequreLogin(false)
+, m_IsPooled(false)
+, m_IsDoNotConnect(false)
 {
 }
 
-CDBDefaultConnParams::~CDBDefaultConnParams(void)
+CDBConnParamsBase::~CDBConnParamsBase(void)
 {
 }
 
-string CDBDefaultConnParams::GetDriverName(void) const
+string CDBConnParamsBase::GetDriverName(void) const
 {
     if (m_DriverName.empty()) {
         // Return blessed driver name ...
@@ -81,7 +71,7 @@ string CDBDefaultConnParams::GetDriverName(void) const
     return m_DriverName;
 }
 
-Uint4  CDBDefaultConnParams::GetProtocolVersion(void) const
+Uint4  CDBConnParamsBase::GetProtocolVersion(void) const
 {
     if (!m_ProtocolVersion) {
 	// Artificial intelligence ...
@@ -111,105 +101,406 @@ Uint4  CDBDefaultConnParams::GetProtocolVersion(void) const
     return m_ProtocolVersion;
 }
 
+
+EEncoding 
+CDBConnParamsBase::GetEncoding(void) const
+{
+    if (m_Encoding == eEncoding_Unknown) {
+    	return eEncoding_ISO8859_1;
+    }
+
+    return m_Encoding;
+}
+
+
 string 
-CDBDefaultConnParams::GetServerName(void) const
+CDBConnParamsBase::GetServerName(void) const
 {
     return m_ServerName;
 }
 
-string 
-CDBDefaultConnParams::GetUserName(void) const
+string CDBConnParamsBase::GetDatabaseName(void) const
 {
+    return m_DatabaseName;
+}
+
+string 
+CDBConnParamsBase::GetUserName(void) const
+{
+    if (m_UserName.empty()) {
+	return "anyone";
+    }
+
     return m_UserName;
 }
 
 string 
-CDBDefaultConnParams::GetPassword(void) const
+CDBConnParamsBase::GetPassword(void) const
 {
+    if (m_Password.empty()) {
+	return "allowed";
+    }
+
     return m_Password;
 }
 
 CDBConnParams::EServerType 
-CDBDefaultConnParams::GetServerType(void) const
+CDBConnParamsBase::GetServerType(void) const
 {
-    // Artificial intelligence ...
-    if (   NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 7, "OAMSDEV") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 6, "BLASTQ") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 4, "GENE") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 5, "GPIPE") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 7, "MAPVIEW") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 5, "MSSNP") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 4, "STRC") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 4, "SUBS") == 0
-        )
-    {
-        return eMSSqlServer;
-    } else if ( NStr::CompareNocase(GetServerName(), "TAPER") == 0
-        || NStr::CompareNocase(GetServerName(), "THALBERG") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 8, "SCHUMANN") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 6, "BARTOK") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 8, "SCHUBERT") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 8, "SYB_TEST") == 0
-        ) 
-    {
-        return eSybaseSQLServer;
-    } else if ( NStr::CompareNocase(GetServerName(), 0, 7, "LINK_OS") == 0 
-        || NStr::CompareNocase(GetServerName(), 0, 7, "MAIL_OS") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 9, "PUBSEQ_OS") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 7, "TEST_OS") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 8, "TRACE_OS") == 0
-        || NStr::CompareNocase(GetServerName(), 0, 7, "TROS_OS") == 0
-        ) 
-    {
-        return eSybaseOpenServer;
+    if (m_ServerType == eUnknown) {
+	// Artificial intelligence ...
+	if (   NStr::CompareNocase(GetServerName(), 0, 3, "MS_") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 7, "OAMSDEV") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 6, "BLASTQ") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 4, "GENE") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 5, "GPIPE") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 7, "MAPVIEW") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 5, "MSSNP") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 4, "STRC") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 4, "SUBS") == 0
+	    )
+	{
+	    return eMSSqlServer;
+	} else if ( NStr::CompareNocase(GetServerName(), "TAPER") == 0
+	    || NStr::CompareNocase(GetServerName(), "THALBERG") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 8, "SCHUMANN") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 6, "BARTOK") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 8, "SCHUBERT") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 8, "SYB_TEST") == 0
+	    ) 
+	{
+	    return eSybaseSQLServer;
+	} else if ( NStr::CompareNocase(GetServerName(), 0, 7, "LINK_OS") == 0 
+	    || NStr::CompareNocase(GetServerName(), 0, 7, "MAIL_OS") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 9, "PUBSEQ_OS") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 7, "TEST_OS") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 8, "TRACE_OS") == 0
+	    || NStr::CompareNocase(GetServerName(), 0, 7, "TROS_OS") == 0
+	    ) 
+	{
+	    return eSybaseOpenServer;
+	}
     }
 
-    return eUnknown;
+    return m_ServerType;
 }
 
 Uint4 
-CDBDefaultConnParams::GetHost(void) const
+CDBConnParamsBase::GetHost(void) const
 {
     return m_Host;
 }
 
 Uint2 
-CDBDefaultConnParams::GetPort(void) const
+CDBConnParamsBase::GetPort(void) const
 {
+    if (!m_PortNumber) {
+	// Artificial intelligence ...
+	switch (GetServerType()) {
+	case eSybaseOpenServer:
+	    return 2133U;
+	case eSybaseSQLServer:
+	    return 2158U;
+	case eMSSqlServer:
+	    return 1433U;
+	default:
+	    break;
+	}
+    }
+
     return m_PortNumber;
 }
 
 CRef<IConnValidator> 
-CDBDefaultConnParams::GetConnValidator(void) const
+CDBConnParamsBase::GetConnValidator(void) const
 {
     return m_Validator;
 }
 
 bool 
-CDBDefaultConnParams::IsSequreLogin(void) const
+CDBConnParamsBase::IsSequreLogin(void) const
 {
     return m_IsSequreLogin;
 }
 
 bool 
-CDBDefaultConnParams::IsPooled(void) const
+CDBConnParamsBase::IsPooled(void) const
 {
     return m_IsPooled;
 }
 
 bool 
-CDBDefaultConnParams::IsDoNotConnect(void) const
+CDBConnParamsBase::IsDoNotConnect(void) const
 {
     return m_IsDoNotConnect;
 }
 
 string 
-CDBDefaultConnParams::GetPoolName(void) const
+CDBConnParamsBase::GetPoolName(void) const
 {
     return m_PoolName;
+}
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CDBDefaultConnParams::CDBDefaultConnParams(
+        const string&   srv_name,
+        const string&   user_name,
+        const string&   passwd,
+        const CRef<IConnValidator>& validator,
+        Uint4 host,
+        Uint2 port,
+        I_DriverContext::TConnectionMode mode,
+        bool            reusable,
+        const string&   pool_name)
+{
+    SetServerName(srv_name);
+    SetUserName(user_name);
+    SetPassword(passwd);
+    SetHost(host);
+    SetPort(port);
+    SetConnValidator(validator);
+    SetPoolName(pool_name);
+    SetSequreLogin((mode & I_DriverContext::fPasswordEncrypted) != 0);
+    SetPooled(reusable);
+    SetDoNotConnect((mode & I_DriverContext::fDoNotConnect) != 0);
+}
+
+
+CDBDefaultConnParams::~CDBDefaultConnParams(void)
+{
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+CDBUriConnParams::CDBUriConnParams(const string& params)
+{
+    string::size_type pos = 0;
+    string::size_type cur_pos = 0;
+
+    // Check for 'dbapi:' ...
+    pos = params.find_first_of(":", pos);
+    if (pos == string::npos) {
+	DATABASE_DRIVER_ERROR("Invalid database locator format, should start with 'dbapi:'", 20001);
+    }
+
+    if (! NStr::StartsWith(params, "dbapi:", NStr::eNocase)) {
+	DATABASE_DRIVER_ERROR("Invalid database locator format, should start with 'dbapi:'", 20001);
+    }
+
+    cur_pos = pos + 1;
+
+    // Check for driver name ...
+    pos = params.find("//", cur_pos);
+    if (pos == string::npos) {
+	DATABASE_DRIVER_ERROR("Invalid database locator format, should contain driver name", 20001);
+    }
+
+    if (pos != cur_pos) {
+	string driver_name = params.substr(cur_pos, pos - cur_pos - 1);
+	SetDriverName(driver_name);
+    }
+
+    cur_pos = pos + 2;
+
+    // Check for user name and password ...
+    pos = params.find_first_of(":@", cur_pos);
+    if (pos != string::npos) {
+	string user_name = params.substr(cur_pos, pos - cur_pos);
+
+	if (params[pos] == '@') {
+	    SetUserName(user_name);
+	    
+	    cur_pos = pos + 1;
+
+	    ParseServer(params, cur_pos);
+	} else {
+	    // Look ahead, we probably found a host name ...
+	    cur_pos = pos + 1;
+
+	    pos = params.find_first_of("@", cur_pos);
+
+	    if (pos != string::npos) {
+		// Previous value was an user name ...
+		SetUserName(user_name);
+
+		string password = params.substr(cur_pos, pos - cur_pos);
+		SetPassword(password);
+
+		cur_pos = pos + 1;
+	    }
+
+	    ParseServer(params, cur_pos);
+	}
+    } else {
+	ParseServer(params, cur_pos);
+    }
+
+}
+
+
+CDBUriConnParams::~CDBUriConnParams(void)
+{
+}
+
+
+void CDBUriConnParams::ParseServer(const string& params, size_t cur_pos)
+{
+    string::size_type pos = 0;
+    pos = params.find_first_of(":/?", cur_pos);
+
+    if (pos != string::npos) {
+	string param_pairs;
+	string server_name = params.substr(cur_pos, pos - cur_pos);
+	SetServerName(server_name);
+
+	switch (params[pos]) {
+	    case ':':
+		cur_pos = pos + 1;
+		pos = params.find_first_of("/?", cur_pos);
+
+		if (pos != string::npos) {
+		    string port = params.substr(cur_pos, pos - cur_pos);
+		    SetPort(static_cast<Uint2>(NStr::StringToInt(port)));
+
+		    switch (params[pos]) {
+			case '/':
+			    cur_pos = pos + 1;
+			    ParseSlash(params, cur_pos);
+
+			    break;
+			case '?':
+			    param_pairs = params.substr(cur_pos);
+			    break;
+		    }
+		} else {
+		    string port = params.substr(cur_pos);
+		    SetPort(static_cast<Uint2>(NStr::StringToInt(port)));
+		}
+
+		break;
+	    case '/':
+		cur_pos = pos + 1;
+		ParseSlash(params, cur_pos);
+
+		break;
+	    case '?':
+		param_pairs = params.substr(cur_pos);
+
+		break;
+	    default:
+		break;
+	}
+    } else {
+	string server_name = params.substr(cur_pos);
+	SetServerName(server_name);
+	// No parameter pairs. We are at the end ...
+    }
+}
+
+void CDBUriConnParams::ParseSlash(const string& params, size_t cur_pos)
+{
+    string::size_type pos = 0;
+    string param_pairs;
+
+    pos = params.find_first_of("?", cur_pos);
+    if (pos != string::npos) {
+	string database_name = params.substr(cur_pos, pos - cur_pos);
+
+	SetDatabaseName(database_name);
+
+	cur_pos = pos + 1;
+	param_pairs = params.substr(cur_pos);
+    } else {
+	string database_name = params.substr(cur_pos);
+
+	SetDatabaseName(database_name);
+    }
+}
+
+void CDBUriConnParams::ParseParamPairs(const string& param_pairs, size_t cur_pos)
+{
+    vector<string> arr_param;
+    string key;
+    string value;
+
+    NStr::Tokenize(param_pairs, "&", arr_param);
+
+    ITERATE(vector<string>, it, arr_param) {
+	if (NStr::SplitInTwo(*it, "=", key, value)) {
+	    NStr::TruncateSpacesInPlace(key);
+	    NStr::TruncateSpacesInPlace(value);
+	    x_MapPairToParam(NStr::ToUpper(key), value);
+	} else {
+	    key = *it;
+	    NStr::TruncateSpacesInPlace(key);
+	    x_MapPairToParam(NStr::ToUpper(key), key);
+	}
+    }
+}
+
+
+void CDBUriConnParams::x_MapPairToParam(const string& key, const string& value)
+{
+    // Not ready yet ...
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CDB_ODBC_ConnParams::CDB_ODBC_ConnParams(const string& params)
+{
+    vector<string> arr_param;
+    string key;
+    string value;
+
+    NStr::Tokenize(params, ";", arr_param);
+
+    ITERATE(vector<string>, it, arr_param) {
+	if (NStr::SplitInTwo(*it, "=", key, value)) {
+	    NStr::TruncateSpacesInPlace(key);
+	    NStr::TruncateSpacesInPlace(value);
+	    x_MapPairToParam(NStr::ToUpper(key), value);
+	} else {
+	    key = *it;
+	    NStr::TruncateSpacesInPlace(key);
+	    x_MapPairToParam(NStr::ToUpper(key), key);
+	}
+    }
+}
+
+
+void CDB_ODBC_ConnParams::x_MapPairToParam(const string& key, const string& value)
+{
+    // MS SQL Server related attributes ...
+    if (NStr::Equal(key, "SERVER")) {
+	SetServerName(value);
+    } else if (NStr::Equal(key, "UID")) {
+	SetUserName(value);
+    } else if (NStr::Equal(key, "PWD")) {
+	SetPassword(value);
+    } else if (NStr::Equal(key, "DRIVER")) {
+	SetDriverName(value);
+    } else if (NStr::Equal(key, "DATABASE")) {
+	SetDatabaseName(value);
+    } else if (NStr::Equal(key, "ADDRESS")) {
+	string host;
+	string port;
+
+	NStr::SplitInTwo(value, ",", host, port);
+	NStr::TruncateSpacesInPlace(host);
+	NStr::TruncateSpacesInPlace(port);
+
+	// SetHost(host);
+	SetPort(static_cast<Uint2>(NStr::StringToInt(port)));
+    }
+}
+
+
+CDB_ODBC_ConnParams::~CDB_ODBC_ConnParams(void)
+{
 }
 
 

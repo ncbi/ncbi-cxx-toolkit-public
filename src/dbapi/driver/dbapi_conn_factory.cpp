@@ -208,8 +208,10 @@ public:
 public:
     virtual string GetDriverName(void) const;
     virtual Uint4  GetProtocolVersion(void) const;
+    virtual EEncoding GetEncoding(void) const;
 
     virtual string GetServerName(void) const;
+    virtual string GetDatabaseName(void) const;
     virtual string GetUserName(void) const;
     virtual string GetPassword(void) const;
 
@@ -254,9 +256,19 @@ Uint4  CDBConnParamsDelegate::GetProtocolVersion(void) const
     return m_Other.GetProtocolVersion();
 }
 
+EEncoding CDBConnParamsDelegate::GetEncoding(void) const
+{
+    return m_Other.GetEncoding();
+}
+
 string CDBConnParamsDelegate::GetServerName(void) const
 {
     return m_Other.GetServerName();
+}
+
+string CDBConnParamsDelegate::GetDatabaseName(void) const
+{
+    return m_Other.GetDatabaseName();
 }
 
 string CDBConnParamsDelegate::GetUserName(void) const

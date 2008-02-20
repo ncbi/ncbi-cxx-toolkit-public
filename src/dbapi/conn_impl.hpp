@@ -64,6 +64,8 @@ public:
                          const string& server,
                          const string& database = kEmptyStr);
 
+    virtual void Connect(const CDBConnParams& params);
+
     virtual void ConnectValidated(IConnValidator& validator,
                                   const string& user,
                                   const string& password,

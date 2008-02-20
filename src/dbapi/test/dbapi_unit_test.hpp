@@ -258,6 +258,8 @@ public:
 
     void Test_Truncation(void);
 
+    void Test_ConnParams(void);
+
 public:
     typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)
                 (IDBServiceMapper::TFactory svc_mapper_factory);
