@@ -145,7 +145,6 @@ void CAsn2FastaApp::Init(void)
             CArgDescriptions::eString, "any" );
         arg_desc->SetConstraint( "type", 
             &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set" ) );
-        
     }}
 
     // batch processing
@@ -164,13 +163,6 @@ void CAsn2FastaApp::Init(void)
             "Output file name", CArgDescriptions::eOutputFile);
     }}
     
-    // report
-    {{
-    }}
-    
-    // misc
-    {{
-    }}
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -186,9 +178,6 @@ int CAsn2FastaApp::Run(void)
     m_Objmgr = CObjectManager::GetInstance();
     if ( !m_Objmgr ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
-    }
-    if (args["gbload"]) {
-        CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
     }
 
     // open the output stream
@@ -218,9 +207,7 @@ int CAsn2FastaApp::Run(void)
             //  Implies gbload; otherwise this feature would be pretty 
             //  useless...
             //
-            if ( ! args[ "gbload" ] ) {
-                CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-            }   
+            CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
             string seqID = args["id"].AsString();
             HandleSeqID( seqID );
             
@@ -439,23 +426,10 @@ bool CAsn2FastaApp::HandleSeqID( const string& seq_id )
     //
     CArgs args = GetArgs();
     CSeq_entry_Handle seh = bsh.GetTopLevelEntry();
-    if (!args["nocleanup"]) {
-        CCleanup Cleanup;
-        Cleanup.BasicCleanup( seh );
-    }
 
     CFastaOstream FastaOut( *m_Os );
     try {
-        if ( args["from"]  ||  args["to"] ) {
-            CSeq_loc loc;
-            x_GetLocation( seh, args, loc );
-            FastaOut.Write( seh, &loc );
-        } else {
-            int count = args["count"].AsInteger();
-            for ( int i = 0; i < count; ++i ) {
-                FastaOut.Write( seh );
-            }
-        }
+        FastaOut.Write( seh );
     } catch (CException& ) {
         ERR_POST( Fatal << "FastA generation failed on " << id.DumpAsFasta() );
         return false;
