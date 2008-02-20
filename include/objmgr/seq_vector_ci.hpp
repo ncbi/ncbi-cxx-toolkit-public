@@ -104,6 +104,9 @@ public:
     CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos = 0);
     CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos,
                   ECaseConversion case_cvt);
+    // Use the same CSeqVector source object, but with different strand.
+    CSeqVector_CI(const CSeqVector& seq_vector, ENa_strand strand,
+                  TSeqPos pos = 0, ECaseConversion = eCaseConversion_none);
     CSeqVector_CI(const CSeqVector_CI& sv_it);
     CSeqVector_CI& operator=(const CSeqVector_CI& sv_it);
 
@@ -173,6 +176,11 @@ public:
 
     TCoding GetCoding(void) const;
     void SetCoding(TCoding coding);
+
+    // The CSeqVector_CI strand is relative to the CSeqVector's base object.
+    // Dafault CSeqVector_CI string is equal to the strand in the CSeqVector.
+    ENa_strand GetStrand(void) const;
+    void SetStrand(ENa_strand strand);
 
     void SetRandomizeAmbiguities(void);
     void SetRandomizeAmbiguities(Uint4 seed);
@@ -280,6 +288,13 @@ inline
 CSeqVector_CI::TCoding CSeqVector_CI::GetCoding(void) const
 {
     return m_Coding;
+}
+
+
+inline
+ENa_strand CSeqVector_CI::GetStrand(void) const
+{
+    return m_Strand;
 }
 
 

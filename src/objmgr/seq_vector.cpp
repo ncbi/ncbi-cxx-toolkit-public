@@ -198,7 +198,7 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, const CTSE_Handle& top_tse,
 CSeqVector::CSeqVector(const CSeq_loc& loc, CScope& scope,
                        EVectorCoding coding, ENa_strand strand)
     : m_Scope(&scope),
-      m_SeqMap(CSeqMap::CreateSeqMapForSeq_loc(loc, &scope)),
+      m_SeqMap(CSeqMap::GetSeqMapForSeq_loc(loc, &scope)),
       m_Strand(strand),
       m_Coding(CSeq_data::e_not_set)
 {
@@ -212,7 +212,7 @@ CSeqVector::CSeqVector(const CSeq_loc& loc, CScope& scope,
 CSeqVector::CSeqVector(const CSeq_loc& loc, const CTSE_Handle& top_tse,
                        EVectorCoding coding, ENa_strand strand)
     : m_Scope(top_tse.GetScope()),
-      m_SeqMap(CSeqMap::CreateSeqMapForSeq_loc(loc, &top_tse.GetScope())),
+      m_SeqMap(CSeqMap::GetSeqMapForSeq_loc(loc, &top_tse.GetScope())),
       m_TSE(top_tse),
       m_Strand(strand),
       m_Coding(CSeq_data::e_not_set)
@@ -1144,6 +1144,15 @@ CSeqVectorTypes::sx_GetConvertTable(TCoding src, TCoding dst,
         return 0;
     }
     return &table[0];
+}
+
+
+void CSeqVector::SetStrand(ENa_strand strand)
+{
+    if ( strand != m_Strand ) {
+        m_Strand = strand;
+        m_Iterator.SetStrand(strand);
+    }
 }
 
 

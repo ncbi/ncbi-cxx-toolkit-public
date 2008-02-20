@@ -161,6 +161,33 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos,
 }
 
 
+CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, ENa_strand strand,
+                             TSeqPos pos, ECaseConversion case_cvt)
+    : m_Scope(seq_vector.m_Scope),
+      m_SeqMap(seq_vector.m_SeqMap),
+      m_TSE(seq_vector.m_TSE),
+      m_Strand(strand),
+      m_Coding(seq_vector.m_Coding),
+      m_CaseConversion(case_cvt),
+      m_Cache(0),
+      m_CachePos(0),
+      m_CacheData(0),
+      m_CacheEnd(0),
+      m_BackupPos(0),
+      m_BackupData(0),
+      m_BackupEnd(0),
+      m_Randomizer(seq_vector.m_Randomizer)
+{
+    try {
+        x_SetPos(pos);
+    }
+    catch (...) {
+        x_DestroyCache();
+        throw;
+    }
+}
+
+
 void CSeqVector_CI::x_SetVector(CSeqVector& seq_vector)
 {
     if ( m_SeqMap ) {
@@ -214,6 +241,26 @@ void CSeqVector_CI::SetCoding(TCoding coding)
             if ( m_Seg ) {
                 x_SetPos(pos);
             }
+        }
+    }
+}
+
+
+void CSeqVector_CI::SetStrand(ENa_strand strand)
+{
+    if ( IsReverse(m_Strand) == IsReverse(strand) ) {
+        m_Strand = strand;
+        return;
+    }
+
+    TSeqPos pos = GetPos();
+    m_Strand = strand;
+    x_ResetBackup();
+    if ( x_CacheSize() ) {
+        x_ResetCache();
+        if ( m_Seg ) {
+            m_Seg = CSeqMap_CI();
+            x_SetPos(pos);
         }
     }
 }

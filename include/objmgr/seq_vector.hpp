@@ -119,6 +119,7 @@ public:
     CScope& GetScope(void) const;
     const CSeqMap& GetSeqMap(void) const;
     ENa_strand GetStrand(void) const;
+    void SetStrand(ENa_strand strand);
 
     /// Target sequence coding. CSeq_data::e_not_set -- do not
     /// convert sequence (use GetCoding() to check the real coding).
