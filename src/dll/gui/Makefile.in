@@ -9,7 +9,6 @@ SUB_PROJ =  \
 			gui_widgets_seq \
 			gui_widgets_aln \
 			gui_widgets_misc \
-			gui_widgets_snp \
 			gui_dialogs \
 			gui_core \
 			gui_services \

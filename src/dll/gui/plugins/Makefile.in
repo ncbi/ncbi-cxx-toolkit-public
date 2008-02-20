@@ -12,7 +12,6 @@ SUB_PROJ =  \
 			algo_submit \
 			algo_validator \
 			algo_web_page \
-			dload_analysis \
 			dload_basic \
 			dload_table \
 			dload_assn_study \
