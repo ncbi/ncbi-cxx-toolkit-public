@@ -183,37 +183,38 @@ void CMytestApplication::DoProcessStreamFasta (
 
 /////////////////////////////////////////////////////////////////////////////
 
-string s_AsString( const CSeq_feat_Base::TLocation& loc ) 
+struct s_AsString
 {
-    static string locstr;
-    bool complement( false );
+    s_AsString(const CSeq_loc& loc) : loc(loc) {}
+    const CSeq_loc& loc;
+};
 
+CNcbiOstream& operator<<(CNcbiOstream& out, const s_AsString& as)
+{
+    const CSeq_loc& loc = as.loc;
     const CSeq_id* id = loc.GetId();
     if ( ! id ) {
-        return "?";
+        return out << "?";
     }
-    locstr = "[gi|" + NStr::IntToString( id->GetGi() ) + ":";
 
+    out << "[gi|" << id->GetGi() << ":";
     switch ( loc.Which() ) {
-
         case CSeq_feat_Base::TLocation::e_Int: {
             const CSeq_loc_Base::TInt& intv = loc.GetInt();
-            complement = ( intv.GetStrand() == eNa_strand_minus );
+            bool complement = ( intv.GetStrand() == eNa_strand_minus );
             if ( ! complement ) {
-                locstr +=  NStr::IntToString( intv.GetFrom()+1 ) + "-" +  
-                    NStr::IntToString( intv.GetTo()+1 ) + "]";
+                out << intv.GetFrom()+1 << "-" << intv.GetTo()+1 << "]";
             }
             else {
-                locstr +=  'c' + NStr::IntToString( intv.GetTo()+1 ) + "-" +  
-                    NStr::IntToString( intv.GetFrom()+1 ) + "]";
+                out << 'c' << intv.GetTo()+1 << "-" << intv.GetFrom()+1 << "]";
             }
             break;
         }
         default:
-            locstr = "?";
+            out << "?";
             break;
     }
-    return locstr;
+    return out;
 }
 
 int CMytestApplication::TestFeatureGeneOverlap (
@@ -230,8 +231,7 @@ int CMytestApplication::TestFeatureGeneOverlap (
     if ( ! ol ) {
         return 1;
     }
-    op << s_AsString( locbase ) << " -> " << s_AsString( ol->GetLocation() ) << endl;
-    op.flush();
+    op << s_AsString( locbase ) << " -> " << s_AsString( ol->GetLocation() ) << '\n';
     return 1;
 }
 
