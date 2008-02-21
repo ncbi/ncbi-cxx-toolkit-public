@@ -34,12 +34,12 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
-#include <algo/structure/struct_util/struct_util.hpp>
-
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/scoremat/scoremat__.hpp>
+#include <objects/Cdd/Cdd_id.hpp>
+#include <objects/Cdd/Cdd_id_set.hpp>
 
 #include "remove_header_conflicts.hpp"
 
@@ -60,8 +60,10 @@
 #include "cn3d_blast.hpp"
 #include "style_manager.hpp"
 #include "cn3d_ba_interface.hpp"
-#include "cn3d_refiner_interface.hpp"
 #include "cn3d_pssm.hpp"
+
+#include <algo/structure/bma_refine/Interface.hpp>
+#include <algo/structure/bma_refine/InterfaceGUI.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -1165,13 +1167,10 @@ void AlignmentManager::ExtendUpdate(BlockMultipleAlignment *single)
     }
 }
 
-void AlignmentManager::RefineAlignment(void)
+void AlignmentManager::RefineAlignment(bool setUpOptionsOnly)
 {
     // TODO:  selection dialog for realigning specific rows
     // <can add this afterwards; refiner supports this sort of thing but need to improve api>
-//    wxString *titleStrs = new wxString[multiple->NRows() - 1];
-//    for (unsigned int i=1; i<multiple->NRows(); ++i)
-//        titleStrs[i - 1] = multiple->GetSequenceOfRow(i)->identifier->ToString().c_str();
 
     // get info on current multiple alignment
     const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
@@ -1180,63 +1179,93 @@ void AlignmentManager::RefineAlignment(void)
         return;
     }
 
-    // construct Seq-entry from sequences in current alignment
-    struct_util::AlignmentUtility::SeqEntryList seqEntries;
-    seqEntries.push_back(CRef<CSeq_entry>(new CSeq_entry));
+    // construct CDD from inputs
+    CRef < CCdd > cdd(new CCdd);
+    cdd->SetName("CDD input to refiner from Cn3D");
+    CRef < CCdd_id > uid(new CCdd_id);
+    uid->SetUid(0);
+    cdd->SetId().Set().push_back(uid);
+
+    // construct Seq-entry from sequences in current alignment, starting with master
     CRef < CSeq_entry > seq(new CSeq_entry);
     seq->SetSeq().Assign(multiple->GetMaster()->bioseqASN.GetObject());
-    seqEntries.back()->SetSet().SetSeq_set().push_back(seq);
+    cdd->SetSequences().SetSet().SetSeq_set().push_back(seq);
 
     // construct Seq-annot from rows in the alignment
-    struct_util::AlignmentUtility::SeqAnnotList seqAnnots;
-    seqAnnots.push_back(CRef<CSeq_annot>(new CSeq_annot));
+    CRef < CSeq_annot > seqAnnot(new CSeq_annot);
+    cdd->SetSeqannot().push_back(seqAnnot);
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
     multiple->GetUngappedAlignedBlocks(&blocks);
     vector < unsigned int > rowOrder;
     sequenceViewer->GetCurrentDisplay()->GetRowOrder(multiple, &rowOrder);
+
+    // other info used by the refiner
     vector < string > rowTitles(multiple->NRows());
+    vector < bool > rowIsStructured(multiple->NRows());
+    vector < bool > blocksToRealign;
 
     // fill out Seq-entry and Seq-annot based on current row ordering of the display (which may be different from BMA)
     for (unsigned int i=1; i<multiple->NRows(); ++i) {
         seq.Reset(new CSeq_entry);
         seq->SetSeq().Assign(multiple->GetSequenceOfRow(rowOrder[i])->bioseqASN.GetObject());
-        seqEntries.back()->SetSet().SetSeq_set().push_back(seq);
+        cdd->SetSequences().SetSet().SetSeq_set().push_back(seq);
         CRef < CSeq_align > seqAlign(CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, rowOrder[i]));
-        seqAnnots.back()->SetData().SetAlign().push_back(seqAlign);
-        if (multiple->GetSequenceOfRow(i)->identifier->pdbID.size() == 0)   // only include non-PDB sequences
-            rowTitles[i] = multiple->GetSequenceOfRow(i)->identifier->ToString();
+        seqAnnot->SetData().SetAlign().push_back(seqAlign);
+        rowTitles[i] = multiple->GetSequenceOfRow(rowOrder[i])->identifier->ToString();
+        rowIsStructured[i] = (multiple->GetSequenceOfRow(rowOrder[i])->identifier->pdbID.size() > 0);
     }
-
-    // create AlignmentUtility and BMARefiner
-    auto_ptr < struct_util::AlignmentUtility > au(new struct_util::AlignmentUtility(seqEntries, seqAnnots));
-    BMARefiner bmaRefiner;
 
     // set blocks to realign, using marked blocks, if any; no marks -> realign all blocks
     vector < unsigned int > marks;
     multiple->GetMarkedBlockNumbers(&marks);
-    for (unsigned int i=0; i<marks.size(); ++i)
+    blocksToRealign.resize(blocks.size(), (marks.size() == 0));
+    for (unsigned int i=0; i<marks.size(); ++i) {
         TRACEMSG("refining block " << (marks[i]+1));
-    if (marks.size() > 0)
-        bmaRefiner.SetBlocksToRealign(marks, true);
+        blocksToRealign[marks[i]] = true;
+    }
 
-    // actually run the refiner
-    BMARefiner::AlignmentUtilityList resultAUs;
-    bool okay = bmaRefiner.RefineMultipleAlignment(au.get(), &resultAUs, NULL, rowTitles);
+    // set up refiner
+    align_refine::BMARefinerInterface interface;
+    static auto_ptr < align_refine::BMARefinerOptions > options;
+    if ((options.get() && !interface.SetOptions(*options)) ||   // set these first since some are overridden by alignment inputs
+        !interface.SetInitialAlignment(*cdd, blocks.size(), multiple->NRows()) ||
+        !interface.SetRowTitles(rowTitles) ||
+        !interface.SetRowsWithStructure(rowIsStructured) ||
+        !interface.SetBlocksToRealign(blocksToRealign))
+    {
+        ERRORMSG("AlignmentManager::RefineAlignment() - failed to set up BMARefinerInterface");
+        return;
+    }
+    if (!options.get() || setUpOptionsOnly) {
+        if (!align_refine::BMARefinerOptionsDialog::SetRefinerOptionsViaDialog(NULL, interface))
+        {
+            WARNINGMSG("AlignmentManager::RefineAlignment() - failed to set refiner options via dialog, probably cancelled");
+            return;
+        }
+        options.reset(interface.GetOptions());
+    }
+    if (setUpOptionsOnly)
+        return;
+
+    // actually run the refiner algorithm
+    CCdd::TSeqannot results;
+    SetDialogSevereErrors(false);
+    bool okay = interface.Run(results);
+    SetDialogSevereErrors(true);
+    SetDiagPostLevel(eDiag_Info);   // may be changed by refiner
 
     if (okay) {
 
-        if (resultAUs.size() > 0 && resultAUs.front() != NULL) {
+        // unpack results
+        if (results.size() > 0 && results.front().NotEmpty()) {
 
             // just use first returned alignment for now; convert asn data into BlockMultipleAlignment
             PairwiseAlignmentList pairs;
-            struct_util::AlignmentUtility::SeqAnnotList::const_iterator a, ae = resultAUs.front()->GetSeqAnnots().end();
-            for (a=resultAUs.front()->GetSeqAnnots().begin(); a!=ae; ++a) {
-                if (!(*a)->IsSetData() || !(*a)->GetData().IsAlign()) {
-                    WARNINGMSG("AlignmentManager::RefineAlignment() - got result Seq-annot in unexpected format");
-                    continue;
-                }
-                CSeq_annot::C_Data::TAlign::const_iterator l, le = (*a)->GetData().GetAlign().end();
-                for (l=(*a)->GetData().GetAlign().begin(); l!=le; ++l)
+            if (!results.front()->IsSetData() || !results.front()->GetData().IsAlign()) {
+                WARNINGMSG("AlignmentManager::RefineAlignment() - got result Seq-annot in unexpected format");
+            } else {
+                CSeq_annot::C_Data::TAlign::const_iterator l, le = results.front()->GetData().GetAlign().end();
+                for (l=results.front()->GetData().GetAlign().begin(); l!=le; ++l)
                     pairs.push_back(new MasterDependentAlignment(NULL, multiple->GetMaster(), **l));
             }
             auto_ptr < BlockMultipleAlignment > refined(CreateMultipleFromPairwiseWithIBM(pairs));
@@ -1247,6 +1276,7 @@ void AlignmentManager::RefineAlignment(void)
                 sequenceViewer->ReplaceAlignment(multiple, refined.release());
             else
                 ERRORMSG("AlignmentManager::RefineAlignment() - problem converting refinement result");
+
         } else {
             WARNINGMSG("AlignmentManager::RefineAlignment() - failed to make a refined alignment. Alignment unchanged.");
         }
@@ -1254,8 +1284,6 @@ void AlignmentManager::RefineAlignment(void)
     } else {
         ERRORMSG("AlignmentManager::RefineAlignment() - refinement failed. Alignment unchanged.");
     }
-
-//    DELETE_ALL_AND_CLEAR(resultAUs, BMARefiner::AlignmentUtilityList);    // apparently deleted by the refiner engine
 }
 
 END_SCOPE(Cn3D)

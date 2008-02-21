@@ -238,7 +238,7 @@ void SequenceViewerWidget_SequenceArea::SetCharacterFont(wxFont *font)
 //  'W' and 'M' are too big for the space available and are not drawn.
 //  Could use "W" in call to GetTextExtent but the alignment looks too spread out;
 //  visually it looks better by adding the extra pixel.
-#ifdef(__WXMAC__) 
+#if defined(__WXMAC__) 
     static const int cellWidthSpacer = 2;
 #else
     static const int cellWidthSpacer = 1;

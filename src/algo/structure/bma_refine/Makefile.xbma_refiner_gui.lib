@@ -1,0 +1,11 @@
+# $Id$
+#
+# GUI to set options for Block Multiple Alignment Refiner library
+#
+##########################################
+
+REQUIRES = wxWidgets
+
+LIB =   xbma_refiner_gui
+
+SRC =   InterfaceGUI wx_tools

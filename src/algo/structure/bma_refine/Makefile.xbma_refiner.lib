@@ -1,7 +1,7 @@
 # $Id$
 #
 # Block Multiple Alignment Refiner library
-# 
+#
 ##########################################
 
 REQUIRES = objects
@@ -19,4 +19,5 @@ SRC =   RowSelector \
         RefinerPhase \
         RefinerCycle \
         RefinerTrial \
-        RefinerEngine
+        RefinerEngine \
+        Interface

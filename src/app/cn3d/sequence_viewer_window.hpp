@@ -90,7 +90,8 @@ private:
             MID_SORT_SELF_HIT,
             MID_PROXIMITY_SORT,
             MID_SORT_LOOPS,
-        MID_SQ_REFINER,
+        MID_SQ_REFINER_OPTIONS,
+        MID_SQ_REFINER_RUN,
         // mouse mode
         MID_MOVE_ROW,
         // update menu

@@ -141,7 +141,7 @@ public:
     void PurgeSequence(const MoleculeIdentifier *identifier);
 
     // run the alignment refiner
-    void RefineAlignment(void);
+    void RefineAlignment(bool setUpOptionsOnly);
 
     // show sequence/alignment/update viewer
     void ShowSequenceViewer(bool showNow) const;

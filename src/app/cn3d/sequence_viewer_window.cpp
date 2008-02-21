@@ -77,7 +77,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU      (MID_SELF_HIT,                        SequenceViewerWindow::OnSelfHit)
     EVT_MENU_RANGE(MID_TAXONOMY_FULL, MID_TAXONOMY_ABBR,    SequenceViewerWindow::OnTaxonomy)
     EVT_MENU_RANGE(MID_HIGHLIGHT_BLOCKS, MID_CLEAR_HIGHLIGHTS,  SequenceViewerWindow::OnHighlight)
-    EVT_MENU      (MID_SQ_REFINER,                      SequenceViewerWindow::OnRefineAlignment)
+    EVT_MENU_RANGE(MID_SQ_REFINER_OPTIONS, MID_SQ_REFINER_RUN,  SequenceViewerWindow::OnRefineAlignment)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
@@ -120,7 +120,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     editMenu->Append(MID_SORT_ROWS, "Sort &Rows...", subMenu);
     editMenu->Append(MID_DELETE_ROW, "De&lete Row", "", true);
     editMenu->AppendSeparator();
-    editMenu->Append(MID_SQ_REFINER, "Alignment Re&finer...");
+    editMenu->Append(MID_SQ_REFINER_OPTIONS, "Set &up Alignment Refiner");
+    editMenu->Append(MID_SQ_REFINER_RUN, "Run Alignment Re&finer");
 
     mouseModeMenu->Append(MID_MOVE_ROW, "&Move Row", "", true);
 
@@ -190,7 +191,8 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_EXPORT, editable);
         menuBar->Enable(MID_EXPAND_HIGHLIGHTS, editable);
         menuBar->Enable(MID_RESTRICT_HIGHLIGHTS, editable);
-        menuBar->Enable(MID_SQ_REFINER, enabled);
+        menuBar->Enable(MID_SQ_REFINER_OPTIONS, enabled);
+        menuBar->Enable(MID_SQ_REFINER_RUN, enabled);
         if (!enabled) CancelDerivedSpecialModesExcept(-1);
     }
 }
@@ -604,8 +606,9 @@ void SequenceViewerWindow::OnRefineAlignment(wxCommandEvent& event)
         ERRORMSG("SequenceViewerWindow::OnRefineAlignment() - no alignment!");
         return;
     }
-    ProcessCommand(MID_HIGHLIGHT_BLOCKS);
-    sequenceViewer->alignmentManager->RefineAlignment();
+    if (event.GetId() == MID_SQ_REFINER_RUN)
+        ProcessCommand(MID_HIGHLIGHT_BLOCKS);
+    sequenceViewer->alignmentManager->RefineAlignment(event.GetId() == MID_SQ_REFINER_OPTIONS);
 }
 
 END_SCOPE(Cn3D)
