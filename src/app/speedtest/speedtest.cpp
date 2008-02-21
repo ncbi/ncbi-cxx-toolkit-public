@@ -73,10 +73,10 @@ private:
 
     void DoProcessStreamFasta ( CNcbiIstream& ip, CNcbiOstream& op, CRef<CSeq_entry>& se );
 
-    int DoProcessFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_entry>& );
-    int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CBioseq& );
-    int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CSeq_annot& );
-    int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CSeq_feat& );
+    int DoProcessFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_entry>&, bool do_format );
+    int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CBioseq&, bool do_format );
+    int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CSeq_annot&, bool do_format );
+    int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CSeq_feat&, bool do_format );
 
     // data
     bool  m_bsec;
@@ -93,6 +93,7 @@ private:
 
     bool  m_fvisit;
     bool  m_goverlap;
+    bool  m_hoverlap;
     bool  m_gxref;
     bool  m_ooverlap;
 };
@@ -156,10 +157,10 @@ void CMytestApplication::Init(void)
 
     arg_desc->AddOptionalKey
         ("F", "Feature",
-         "v Visit, g Gene by Overlap, x Xref, o Operon",
+         "v Visit, g Gene Overlap Print, h Gene Overlap Speed, x Xref, o Operon",
          CArgDescriptions::eString);
     arg_desc->SetConstraint
-        ("F", &(*new CArgAllow_Strings, "v", "g", "x", "o"));
+        ("F", &(*new CArgAllow_Strings, "v", "g", "h", "x", "o"));
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -221,7 +222,8 @@ int CMytestApplication::TestFeatureGeneOverlap (
     CNcbiIstream& ip,
     CNcbiOstream& op,
     CScope& scope,
-    CSeq_feat& f )
+    CSeq_feat& f,
+    bool do_format )
 {
     if ( f.GetData().Which() == CSeqFeatData::e_Gene ) {
         return 1;
@@ -231,7 +233,9 @@ int CMytestApplication::TestFeatureGeneOverlap (
     if ( ! ol ) {
         return 1;
     }
-    op << s_AsString( locbase ) << " -> " << s_AsString( ol->GetLocation() ) << '\n';
+    if (do_format) {
+        op << s_AsString( locbase ) << " -> " << s_AsString( ol->GetLocation() ) << '\n';
+    }
     return 1;
 }
 
@@ -239,12 +243,13 @@ int CMytestApplication::TestFeatureGeneOverlap (
     CNcbiIstream& ip,
     CNcbiOstream& op,
     CScope& scope,
-    CSeq_annot& sa )
+    CSeq_annot& sa,
+    bool do_format )
 {
     int count = 0;
     if ( sa.IsSetData()  &&  sa.GetData().IsFtable() ) {
         NON_CONST_ITERATE( CSeq_annot::TData::TFtable, it, sa.SetData().SetFtable() ) {
-            count += TestFeatureGeneOverlap( ip, op, scope, **it );
+            count += TestFeatureGeneOverlap( ip, op, scope, **it, do_format );
         }
     }
     return count;
@@ -254,12 +259,13 @@ int CMytestApplication::TestFeatureGeneOverlap (
     CNcbiIstream& ip,
     CNcbiOstream& op,
     CScope& scope,
-    CBioseq& bs )
+    CBioseq& bs,
+    bool do_format )
 {
     int count = 0;
     if (bs.IsSetAnnot()) {
         NON_CONST_ITERATE (CBioseq::TAnnot, it, bs.SetAnnot()) {
-            count += TestFeatureGeneOverlap( ip, op, scope, **it );
+            count += TestFeatureGeneOverlap( ip, op, scope, **it, do_format );
         }
     }
     return count;
@@ -269,27 +275,28 @@ int CMytestApplication::DoProcessFeatureGeneOverlap (
     CNcbiIstream& ip,
     CNcbiOstream& op,
     CScope& scope, 
-    CRef<CSeq_entry>& se )
+    CRef<CSeq_entry>& se,
+    bool do_format )
 {
     int count = 0;
     switch (se->Which()) {
 
         case CSeq_entry::e_Seq:
-            count += TestFeatureGeneOverlap( ip, op, scope, se->SetSeq() );
+            count += TestFeatureGeneOverlap( ip, op, scope, se->SetSeq(), do_format );
             break;
 
         case CSeq_entry::e_Set: {
             CBioseq_set& bss( se->SetSet() );
             if (bss.IsSetAnnot()) {
                 NON_CONST_ITERATE (CBioseq::TAnnot, it, bss.SetAnnot()) {
-                    count += TestFeatureGeneOverlap( ip, op, scope, **it );
+                    count += TestFeatureGeneOverlap( ip, op, scope, **it, do_format );
                 }
             }
 
             if (bss.IsSetSeq_set()) {
                 NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
                     CBioseq_set::TSeq_set::iterator it2 = it;
-                    count += DoProcessFeatureGeneOverlap( ip, op, scope, *it );
+                    count += DoProcessFeatureGeneOverlap( ip, op, scope, *it, do_format );
                 }
             }
             break;
@@ -353,7 +360,10 @@ void CMytestApplication::DoProcess (
         }
     }
     if (m_goverlap) {
-        DoProcessFeatureGeneOverlap( ip, op, scope, se );
+        DoProcessFeatureGeneOverlap( ip, op, scope, se, true );
+    }
+    if (m_hoverlap) {
+        DoProcessFeatureGeneOverlap( ip, op, scope, se, false );
     }
     if (m_gxref) {
         // need to implement
@@ -392,6 +402,7 @@ int CMytestApplication::Run(void)
 
     m_fvisit = false;
     m_goverlap = false;
+    m_hoverlap = false;
     m_gxref = false;
     m_ooverlap = false;
 
@@ -441,6 +452,9 @@ int CMytestApplication::Run(void)
         }
         if (NStr::Find (fm, "g") != NPOS) {
             m_goverlap = true;
+        }
+        if (NStr::Find (fm, "h") != NPOS) {
+            m_hoverlap = true;
         }
         if (NStr::Find (fm, "x") != NPOS) {
             m_gxref = true;
