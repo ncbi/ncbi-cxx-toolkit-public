@@ -28,7 +28,6 @@ SRC =	aaa_dummy_pch \
 	cn3d_glcanvas \
 	cn3d_png_nowin \
 	cn3d_pssm \
-	cn3d_refiner_interface \
 	cn3d_threader \
 	cn3d_tools \
 	command_processor \
