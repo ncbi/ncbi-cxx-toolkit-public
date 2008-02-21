@@ -4,7 +4,9 @@
 #
 ##########################################
 
-REQUIRES = wxWidgets
+REQUIRES = wxWidgets objects
+
+ASN_DEP = cdd
 
 LIB =   xbma_refiner_gui
 
