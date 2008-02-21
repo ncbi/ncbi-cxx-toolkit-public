@@ -38,8 +38,8 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/scoremat/scoremat__.hpp>
-#include <objects/Cdd/Cdd_id.hpp>
-#include <objects/Cdd/Cdd_id_set.hpp>
+#include <objects/cdd/Cdd_id.hpp>
+#include <objects/cdd/Cdd_id_set.hpp>
 
 #include "remove_header_conflicts.hpp"
 

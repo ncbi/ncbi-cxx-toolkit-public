@@ -36,7 +36,7 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include <objects/Cdd/Cdd.hpp>
+#include <objects/cdd/Cdd.hpp>
 
 #include <vector>
 #include <string>
@@ -71,6 +71,9 @@ public:
 
     // the derived class will probably have some options structure, which will be specific to
     // that class, so there's not much that can be put in this interface for that...
+
+protected:
+    virtual ~MSAAInterface(void) { }
 };
 
 END_NCBI_SCOPE

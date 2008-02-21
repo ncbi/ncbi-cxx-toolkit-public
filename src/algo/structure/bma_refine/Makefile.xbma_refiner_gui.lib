@@ -9,3 +9,5 @@ REQUIRES = wxWidgets
 LIB =   xbma_refiner_gui
 
 SRC =   InterfaceGUI wx_tools
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(WXWIDGETS_INCLUDE)
