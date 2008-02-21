@@ -550,8 +550,8 @@ END_SCOPE(sequence)
 class NCBI_XOBJUTIL_EXPORT CFastaOstream {
 public:
     enum EFlags {
-        eAssembleParts   = 0x1,
-        eInstantiateGaps = 0x2
+        eAssembleParts      = 0x01,
+        eInstantiateGaps    = 0x02
     };
     typedef int TFlags; ///< binary OR of EFlags
 
@@ -568,7 +568,8 @@ public:
     virtual void WriteSequence(const CBioseq_Handle& handle,
                                const CSeq_loc* location = 0);
 
-    /// These versions set up a temporary object manager scope
+    /// These versions may set up a temporary object manager scope
+    /// In the common case of a raw bioseq, no scope is needed
     void Write(const CSeq_entry& entry, const CSeq_loc* location = 0);
     void Write(const CBioseq&    seq,   const CSeq_loc* location = 0);
 
@@ -604,6 +605,19 @@ private:
     CConstRef<CSeq_loc> m_HardMask;
     TSeqPos             m_Width;
     TFlags              m_Flags;
+
+    void x_WriteSeqIds  (const CBioseq& bioseq,
+                         const CSeq_loc* location);
+    void x_WriteSeqTitle(const CBioseq& bioseq,
+                         CScope* scope);
+
+    typedef map<TSeqPos, int> TMSMap;
+    void x_GetMaskingStates(TMSMap& masking_states,
+                            const CSeq_id* base_seq_id,
+                            const CSeq_loc* location,
+                            CScope* scope);
+    void x_WriteSequence(const CSeqVector& vec,
+                         const TMSMap& masking_state);
 };
 
 
