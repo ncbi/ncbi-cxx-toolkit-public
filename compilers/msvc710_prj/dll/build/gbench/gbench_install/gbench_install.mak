@@ -90,6 +90,7 @@ CORELIBS = \
         $(GBENCH)\bin\gui_widgets_aln.dll       \
         $(GBENCH)\bin\gui_widgets_misc.dll      \
         $(GBENCH)\bin\gui_widgets_seq.dll       \
+        $(GBENCH)\bin\gui_widgets_snp.dll       \
         $(GBENCH)\bin\ncbi_algo.dll             \
         $(GBENCH)\bin\ncbi_bdb.dll              \
         $(GBENCH)\bin\ncbi_core.dll             \
@@ -139,6 +140,7 @@ PLUGINS = \
         $(GBENCH)\plugins\algo_submit.dll       \
         $(GBENCH)\plugins\algo_validator.dll    \
         $(GBENCH)\plugins\algo_web_page.dll     \
+        $(GBENCH)\plugins\dload_assn_study.dll  \
         $(GBENCH)\plugins\dload_basic.dll       \
         $(GBENCH)\plugins\dload_table.dll       \
         $(GBENCH)\plugins\view_align.dll        \
