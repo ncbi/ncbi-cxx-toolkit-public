@@ -1209,7 +1209,7 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
 {
     Uint8 mtime = 0, atime = 0, ctime = 0, size = 0, uid = 0, gid = 0;
     string path, linkpath, uname, gname;
-    string* nodot = (string*)(~0UL);
+    string* nodot = (string*)(-1);
     const struct SPAXParseTable {
         const char* key;
         Uint8*      val;  // non-null for numeric, else do as string
@@ -1217,9 +1217,9 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
         EPAXBit     bit;  // for numerics only (NB: ePAXNone if check only)
     } parser[] = {
         { "mtime",    &mtime, 0,         fPAXMtime},   // numeric w/dot: assign
-        { "atime",	  &atime, 0,         fPAXAtime},
-        { "ctime",	  &ctime, 0,         fPAXCtime},
-        { "size",	  &size,  nodot,     fPAXSize},    // num.-no-dot: assign
+        { "atime",    &atime, 0,         fPAXAtime},
+        { "ctime",    &ctime, 0,         fPAXCtime},
+        { "size",     &size,  nodot,     fPAXSize},    // num.-no-dot: assign
         { "uid",      &uid,   nodot,     fPAXUid},
         { "gid",      &gid,   nodot,     fPAXGid},
      /* { "dummy",    &dummy, nodot,     fPAXNone}, */ // num.-no-dot: ck.only
