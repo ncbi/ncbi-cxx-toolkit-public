@@ -451,8 +451,9 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
     else if (!heap->resize)
         return 0;
     else {
-        TNCBI_Size hsize = ((size + (heap->size << _HEAP_ALIGNSHIFT)
-                             + heap->chunk - 1) / heap->chunk) * heap->chunk;
+        TNCBI_Size dsize = heap->size << _HEAP_ALIGNSHIFT;
+        TNCBI_Size hsize = ((dsize + size + heap->chunk - 1)
+                            / heap->chunk) * heap->chunk;
         SHEAP_HeapBlock* base = (SHEAP_HeapBlock*)
             heap->resize(heap->base, (size_t) hsize, heap->arg);
         if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
@@ -462,6 +463,8 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
         }
         if (!base)
             return 0;
+        dsize = hsize - dsize;
+        memset(base + heap->size, 0, (size_t) dsize); /* security */
 
         b = base + heap->last;
         if (!heap->base) {
@@ -478,7 +481,7 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
                 /* New block is at the very top on the heap */
                 b = base + heap->size;
                 b->head.flag = HEAP_FREE | HEAP_LAST;
-                b->head.size = hsize - (heap->size << _HEAP_ALIGNSHIFT);
+                b->head.size = dsize;
                 heap->last   = heap->size;
                 if (heap->free < heap->size) {
                     assert(HEAP_ISFREE(base + heap->free));
@@ -490,11 +493,11 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
                     b->prevfree = heap->size;
                     b->nextfree = heap->size;
                 }
-                heap->free  = heap->size;
+                heap->free = heap->size;
             } else {
                 /* Extend last free block */
                 assert(HEAP_ISFREE(b));
-                b->head.size += hsize - (heap->size << _HEAP_ALIGNSHIFT);
+                b->head.size += dsize;
             }
         }
         heap->base = base;
