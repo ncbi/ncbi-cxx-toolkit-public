@@ -3,12 +3,14 @@
 APP = dbapi_driver_test_ftds_ctlib
 SRC = dbapi_driver_test_ftds_ctlib
 
-LIB  = dbapi$(STATIC) dbapi_driver$(STATIC) xncbi
-LIBS = $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
+LIB  = dbapi$(STATIC) ncbi_xdbapi_ftds$(STATIC) $(FTDS_LIB) ncbi_xdbapi_ctlib$(STATIC) dbapi_driver$(STATIC) xncbi
+LIBS = $(FTDS_LIBS) $(SYBASE_LIBS) $(SYBASE_DLLS) $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
+# A line below causes this test to crash ...
+# LIBS = $(SYBASE_DBLIBS) $(SYBASE_LIBS) $(SYBASE_DLLS) $(FTDS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 
 CHECK_CMD = run_sybase_app.sh dbapi_driver_test_ftds_ctlib
 
-CHECK_REQUIRES = Sybase DLL
+CHECK_REQUIRES = Sybase
 

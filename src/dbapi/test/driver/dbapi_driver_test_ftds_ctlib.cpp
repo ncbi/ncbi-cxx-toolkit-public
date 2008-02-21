@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <dbapi/dbapi.hpp>
+#include <dbapi/driver/drivers.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -49,20 +50,25 @@ int CDriverTest::Run()
 	IConnection *conSyb, *conMS;
 
 	{
+		DBAPI_RegisterDriver_CTLIB();
+		DBAPI_RegisterDriver_FTDS();
+	}
+
+	if (true) {
+		 IDataSource *ds = 0;
+		 CDriverManager &dm = CDriverManager::GetInstance();
+		 ds = dm.CreateDs("ftds");
+		 conMS = ds->CreateConnection();
+		 conMS->Connect("anyone", "allowed", "GPIPE_QA", "GPIPE_INIT");
+	}
+
+	{
 		IDataSource *ds = 0;
 		CDriverManager &dm = CDriverManager::GetInstance();
 		ds = dm.CreateDs("ctlib");
 		conSyb = ds->CreateConnection();
 		conSyb->Connect("anyone", "allowed", "REFTRACK_DEV", "locusXref");
 	}
-
-	{
-		 IDataSource *ds = 0;
-		 CDriverManager &dm = CDriverManager::GetInstance();
-		 ds = dm.CreateDs("ftds");
-		 conMS = ds->CreateConnection();
-		 conMS->Connect("anyone", "allowed", "GPIPE_QA", "GPIPE_INIT");
-	 }
 
 	conMS->Close();
 	conSyb->Close();
