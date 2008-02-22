@@ -1970,7 +1970,15 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
             }
         }
     }
-    if (safe_title.empty()  &&  scope) {
+    if ( !safe_title.empty() ) {
+        // originally further down, but moved up to match the C version
+        while ( !safe_title.empty() &&
+                (safe_title[safe_title.size()-1] == '.' ||
+                 safe_title[safe_title.size()-1] == ' ') ) {
+            safe_title.erase(safe_title.size() - 1);
+        }
+    }
+    else if (scope) {
         CBioseq_Handle bsh = scope->GetBioseqHandle(bioseq);
         safe_title = sequence::GetTitle(bsh);
     }
