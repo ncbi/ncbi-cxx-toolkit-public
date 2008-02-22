@@ -8769,6 +8769,7 @@ _ACEOF
    UNIX_SRC='$(UNIX_SRC)'
    UNIX_USR_PROJ='$(UNIX_USR_PROJ)'
    	  WithFeatures="$WithFeatures${WithFeaturesSep}unix"; WithFeaturesSep=" "
+   	  WithFeatures="$WithFeatures${WithFeaturesSep}WinMain"; WithFeaturesSep=" " # to accommodate a PTB-specific (ab)use of REQUIRES
 
    # Extra defines for variants we care about
    case "$OSTYPE" in
@@ -29750,7 +29751,7 @@ CHECK_TOOLS=$with_check_tools
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in MT DLL MSWin unix AIX BSD Cygwin CygwinMT Darwin IRIX Linux OSF Solaris MacOS PubSeqOS check; do
+for x in MT DLL MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin IRIX Linux OSF Solaris MacOS PubSeqOS check; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
@@ -29832,7 +29833,7 @@ esac
 { echo "$as_me:$LINENO: looking for configurables below $real_srcdir..." >&5
 echo "$as_me: looking for configurables below $real_srcdir..." >&6;}
 tmp_sed="`pwd`/config.tmp.$$"
-for x in $NoConfProjects; do
+for x in $NoConfProjects dll; do
    echo "/^\\.\\/$x/d"
 done > $tmp_sed
 cat >>$tmp_sed <<EOF

@@ -2145,6 +2145,7 @@ elif test "$x_have_unistd" = "yes" ; then
    UNIX_SRC='$(UNIX_SRC)'
    UNIX_USR_PROJ='$(UNIX_USR_PROJ)'
    NCBI_FEATURE(unix)
+   NCBI_FEATURE(WinMain) # to accommodate a PTB-specific (ab)use of REQUIRES
 
    # Extra defines for variants we care about
    case "$OSTYPE" in
@@ -5578,7 +5579,7 @@ esac
 
 AC_MSG_NOTICE([looking for configurables below $real_srcdir...])
 tmp_sed="`pwd`/config.tmp.$$"
-for x in $NoConfProjects; do
+for x in $NoConfProjects dll; do
    echo "/^\\.\\/$x/d"
 done > $tmp_sed
 cat >>$tmp_sed <<EOF
