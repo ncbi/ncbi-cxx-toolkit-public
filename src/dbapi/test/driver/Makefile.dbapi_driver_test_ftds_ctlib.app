@@ -12,5 +12,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS)
 
 CHECK_CMD = run_sybase_app.sh dbapi_driver_test_ftds_ctlib
 
-CHECK_REQUIRES = Sybase
-
+REQUIRES = Sybase
