@@ -1908,8 +1908,7 @@ CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
 END_SCOPE(sequence)
 
 
-CFastaOstream::~CFastaOstream()
-{
+CFastaOstream::~CFastaOstream() {
     m_Out << flush;
 }
 
@@ -1942,11 +1941,11 @@ void CFastaOstream::Write(const CBioseq_Handle& handle,
 }
 
 
-void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
-                                  const CSeq_loc* location)
+void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
+                               const CSeq_loc* location)
 {
     m_Out << '>';
-    CSeq_id::WriteAsFasta(m_Out, bioseq);
+    CSeq_id::WriteAsFasta(m_Out, *handle.GetBioseqCore());
 
     if (location != NULL  &&  !location->IsWhole() ) {
         char delim = ':';
@@ -1956,75 +1955,44 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
             delim = ',';
         }
     }
-}
-
-void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
-                                    CScope* scope)
-{
     string safe_title;
-    if (bioseq.IsSetDescr()) {
-        ITERATE (CBioseq::TDescr::Tdata, iter, bioseq.GetDescr().Get()) {
-            if ((*iter)->Which() == CSeqdesc::e_Title) {
-                safe_title = (*iter)->GetTitle();
-                break;
-            }
-        }
-    }
-    if ( !safe_title.empty() ) {
-        // originally further down, but moved up to match the C version
-        while ( !safe_title.empty() &&
-                (safe_title[safe_title.size()-1] == '.' ||
-                 safe_title[safe_title.size()-1] == ' ') ) {
-            safe_title.erase(safe_title.size() - 1);
-        }
-    }
-    else if (scope) {
-        CBioseq_Handle bsh = scope->GetBioseqHandle(bioseq);
-        safe_title = sequence::GetTitle(bsh);
-    }
-
-    NON_CONST_ITERATE (string, it, safe_title) {
-        switch (*it) {
-        case '>':
-            *it = '_';
-            break;
-
-        default:
-            break;
-        }
-    }
-
-    if ( !safe_title.empty() ) {
-        m_Out << ' ' << safe_title << '\n';
-    }
+    NStr::Replace(sequence::GetTitle(handle), ">", "_", safe_title);
+    m_Out << ' ' << safe_title << '\n';
 }
 
 
-void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
-                               const CSeq_loc* location)
+void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
+                                  const CSeq_loc* location)
 {
-    x_WriteSeqIds(*handle.GetBioseqCore(), location);
-    x_WriteSeqTitle(*handle.GetBioseqCore(), &handle.GetScope());
-}
+    if ( !(m_Flags & eAssembleParts)  &&  !handle.IsSetInst_Seq_data() ) {
+        return; // XXX - too extreme?
+    }
 
-
-void CFastaOstream::x_GetMaskingStates(TMSMap& masking_state,
-                                       const CSeq_id* base_seq_id,
-                                       const CSeq_loc* location,
-                                       CScope* scope)
-{
+    CScope&               scope = handle.GetScope();
+    CSeq_loc              whole;
     CRef<CSeq_loc_Mapper> mapper;
+    CSeqVector            v;
+
+    whole.SetWhole().Assign(*handle.GetSeqId());
+
+    if (location) {
+        CRef<CSeq_loc> merged
+            = sequence::Seq_loc_Merge(*location, CSeq_loc::fMerge_All, &scope);
+        v = CSeqVector(*merged, scope, CBioseq_Handle::eCoding_Iupac);
+    } else {
+        v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    }
+
+    typedef map<TSeqPos, int> TMSMap;
+    TMSMap                    masking_state;
     masking_state[0] = 0;
 
     if (m_SoftMask.NotEmpty()  ||  m_HardMask.NotEmpty()) {
-        _ASSERT(base_seq_id);
-        CSeq_loc whole;
         if (location) {
-            mapper.Reset(new CSeq_loc_Mapper(*location, whole, scope));
+            mapper.Reset(new CSeq_loc_Mapper(*location, whole, &scope));
         } else {
-            whole.SetWhole().Assign(*base_seq_id);
             // still useful for filtering out locations on other sequences
-            mapper.Reset(new CSeq_loc_Mapper(whole, whole, scope));
+            mapper.Reset(new CSeq_loc_Mapper(whole, whole, &scope));
         }
         mapper->SetMergeAll();
         mapper->TruncateNonmappingRanges();
@@ -2072,14 +2040,9 @@ void CFastaOstream::x_GetMaskingStates(TMSMap& masking_state,
             }
         }
     }
-}
 
-
-void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
-                                    const TMSMap& masking_state)
-{
     TSeqPos                 rem_line      = m_Width;
-    CSeqVector_CI           it(vec);
+    CSeqVector_CI           it(v);
     TMSMap::const_iterator  ms_it         = masking_state.begin();
     TSeqPos                 rem_state     = ms_it->first;
     int                     current_state = 0;
@@ -2152,29 +2115,6 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
 }
 
 
-void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
-                                  const CSeq_loc* location)
-{
-    if ( !(m_Flags & eAssembleParts)  &&  !handle.IsSetInst_Seq_data() ) {
-        return; // XXX - too extreme?
-    }
-
-    CScope&               scope = handle.GetScope();
-    CSeqVector            v;
-    if (location) {
-        CRef<CSeq_loc> merged
-            = sequence::Seq_loc_Merge(*location, CSeq_loc::fMerge_All, &scope);
-        v = CSeqVector(*merged, scope, CBioseq_Handle::eCoding_Iupac);
-    } else {
-        v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-    }
-
-    TMSMap masking_state;
-    x_GetMaskingStates(masking_state, handle.GetSeqId(), location, &scope);
-    x_WriteSequence(v, masking_state);
-}
-
-
 void CFastaOstream::Write(const CSeq_entry& entry, const CSeq_loc* location)
 {
     CScope scope(*CObjectManager::GetInstance());
@@ -2185,48 +2125,9 @@ void CFastaOstream::Write(const CSeq_entry& entry, const CSeq_loc* location)
 
 void CFastaOstream::Write(const CBioseq& seq, const CSeq_loc* location)
 {
-    if (location) {
-        CScope scope(*CObjectManager::GetInstance());
-        Write(scope.AddBioseq(seq), location);
-    } else {
-        /// write our title
-        x_WriteSeqIds(seq, NULL);
-        x_WriteSeqTitle(seq, NULL);
+    CScope scope(*CObjectManager::GetInstance());
 
-        /// write the sequence
-        TMSMap masking_state;
-        x_GetMaskingStates(masking_state, NULL, NULL, NULL);
-
-        /// check to see if all of our segments are resolvable
-        bool is_raw = true;
-        switch (seq.GetInst().GetRepr()) {
-        case CSeq_inst::eRepr_raw:
-            break;
-        case CSeq_inst::eRepr_delta:
-            ITERATE (CSeq_inst::TExt::TDelta::Tdata, iter,
-                     seq.GetInst().GetExt().GetDelta().Get()) {
-                if ((*iter)->Which() == CDelta_seq::e_Loc) {
-                    is_raw = false;
-                    break;
-                }
-            }
-            break;
-        default:
-            is_raw = false;
-            break;
-        }
-
-        if (is_raw) {
-            CSeqVector vec(seq, NULL, CBioseq_Handle::eCoding_Iupac);
-            x_WriteSequence(vec, masking_state);
-        } else {
-            /// we require far-pointer resolution
-            CScope scope(*CObjectManager::GetInstance());
-            CBioseq_Handle bsh = scope.AddBioseq(seq);
-            CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-            x_WriteSequence(vec, masking_state);
-        }
-    }
+    Write(scope.AddBioseq(seq), location);
 }
 
 
