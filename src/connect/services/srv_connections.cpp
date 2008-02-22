@@ -429,10 +429,16 @@ void CNetServerConnectors::x_TakeConnector(CNetServerConnector* connector)
        // if it has not then we have to close the connection
         STimeout to = {0, 0};
         CSocket* socket = connector->m_Socket.get();
-        if (socket && socket->Wait(eIO_Read, &to) == eIO_Success)
-            connector->Disconnect(true /* Abort */);
+        if (socket && socket->GetStatus(eIO_Open) == eIO_Success)
+            if (socket->Wait(eIO_Read, &to) == eIO_Success)
+                connector->Disconnect(true /* Abort */);
+            else {
+                m_ServerConnectorPool->Put(connector);
+                return;
+            }
     }
-    m_ServerConnectorPool->Put(connector);
+
+    m_ServerConnectorFactory.Delete(connector);
 }
 
 CNetServerConnectorHolder CNetServerConnectors::GetConnector()
