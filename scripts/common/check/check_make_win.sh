@@ -341,7 +341,7 @@ RunTest() {
       }' \$x_test_out.\$\$ >> \$x_test_out
 
    # Get application execution time
-   exec_time=\`tail -3 \$x_test_out.\$\$\`
+   exec_time=\`tail -3 \$x_test_out.\$\$\ | tr '\r' ' '`
    exec_time=\`echo \$exec_time | tr '\n' '?'\`
    echo \$exec_time | grep 'real [0-9]\|Maximum execution .* is exceeded' > /dev/null 2>&1 
    if [ \$? -eq 0 ] ;  then
@@ -399,7 +399,7 @@ for build_tree in \$build_trees; do
    fi
 
    # Features detection
-   fs=\`cat \${build_dir}/\${build_tree}/\${x_conf}/features_and_packages.txt\`
+   fs=\`cat \${build_dir}/\${build_tree}/\${x_conf}/features_and_packages.txt\ | tr '\r' ' '`
    FEATURES=""
    for f in \$fs; do
       FEATURES="\$FEATURES\$f "
