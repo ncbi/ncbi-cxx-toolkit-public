@@ -12424,7 +12424,7 @@ void CDBAPIUnitTest::Test_Truncation(void)
 void CDBAPIUnitTest::Test_ConnParams(void)
 {
     // Checking parser ...
-    if (false) {
+    if (true) {
 
         // CDBUriConnParams ...
         {
@@ -12510,7 +12510,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
-                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
             }
 
@@ -12527,7 +12527,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
-                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
             }
 
@@ -12544,7 +12544,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
-                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
             }
 
@@ -12565,7 +12565,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
-                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
             }
 
@@ -12582,7 +12582,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
-                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
             }
 
@@ -12599,7 +12599,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
                 conn->Connect(params);
                 auto_ptr<IStatement> auto_stmt(conn->GetStatement());
                 auto_stmt->ExecuteUpdate("SELECT @@version");
-                // m_DM.DestroyDs(ds); // DO NOT destroy dat source! That will
+                // m_DM.DestroyDs(ds); // DO NOT destroy data source! That will
                 // crash application.
             }
 
