@@ -184,14 +184,11 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
             if (need_defline) {
                 ParseDefLine(*++GetLineReader());
                 need_defline = false;
+                continue;
             } else {
                 // start of the next sequence
                 break;
             }
-        } else if (strchr("#!\n\r", c)) {
-            // no content, just a comment or blank line
-            ++GetLineReader();
-            continue;
         } else if (c == '[') {
             return x_ReadSegSet();
         } else if (c == ']') {
@@ -202,26 +199,38 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
             } else {
                 break;
             }
+        }
+
+        CTempString line = NStr::TruncateSpaces(*++GetLineReader());
+        if (line.empty()) {
+            continue; // ignore lines containing only whitespace
+        }
+        c = line[0];
+
+        if (c == '!'  ||  c == '#') {
+            // no content, just a comment or blank line
+            continue;
         } else if (need_defline) {
             if (TestFlag(fDLOptional)) {
                 ParseDefLine(">");
                 need_defline = false;
             } else {
+                GetLineReader().UngetLine();
                 NCBI_THROW2(CObjReaderParseException, eNoDefline,
                             "CFastaReader: Input doesn't start with"
                             " a defline or comment",
                             StreamPosition());
             }
-        } else if (TestFlag(fNoSeqData)) {
-            ++GetLineReader();
-        } else {
-            ParseDataLine(*++GetLineReader());
+        }
+
+        if ( !TestFlag(fNoSeqData) ) {
+            ParseDataLine(line);
         }
     }
 
     if (need_defline  &&  GetLineReader().AtEOF()) {
         NCBI_THROW2(CObjReaderParseException, eEOF,
-                    "CFastaReader: reached end of file",
+                    "CFastaReader: reached end of input",
                     StreamPosition());
     }
 
