@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:  NetSchedule client test
  *
@@ -40,10 +40,12 @@
 #include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_types.h>
 
+#include "test_netschedule_data.hpp"
+
 
 USING_NCBI_SCOPE;
 
-    
+
 ///////////////////////////////////////////////////////////////////////
 
 
@@ -62,6 +64,8 @@ public:
 
 void CTestNetScheduleClient::Init(void)
 {
+    InitOutputBuffer();
+
     CONNECT_Init();
     SetDiagPostFlag(eDPF_Trace);
     SetDiagPostLevel(eDiag_Info);
@@ -108,6 +112,7 @@ int CTestNetScheduleClient::Run(void)
     }
     CNetScheduleAPI::EJobStatus status;
     CNetScheduleAPI cl(service, "client_test", queue_name);
+    cl.SetConnMode(CNetScheduleAPI::eKeepConnection);
 
     CNetScheduleSubmitter submitter = cl.GetSubmitter();
 
@@ -122,7 +127,7 @@ int CTestNetScheduleClient::Run(void)
     {{
 
     NcbiCout << "SubmitAndWait..." << NcbiEndl;
-    unsigned wait_time = 60;
+    unsigned wait_time = 3;
     CNetScheduleJob j1(input);
     status = submitter.SubmitJobAndWait(j1, wait_time, 9112);
     if (status == CNetScheduleAPI::eDone) {
@@ -152,7 +157,8 @@ int CTestNetScheduleClient::Run(void)
     double avg = elapsed / jcount;
 
     NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
-    NcbiCout << "Avg time:" << avg << " sec." << NcbiEndl;
+    NcbiCout << "Avg time: " << (elapsed / jcount) << " sec, "
+             << (jcount/elapsed) << " jobs/sec" << NcbiEndl;
     }}
 
 
@@ -164,7 +170,7 @@ int CTestNetScheduleClient::Run(void)
     
     unsigned last_jobs = 0;
     unsigned no_jobs_executes_cnt = 0;
-    
+
     while (jobs.size()) {
         NON_CONST_ITERATE(vector<string>, it, jobs) {
             const string& jk = *it;
@@ -174,10 +180,17 @@ int CTestNetScheduleClient::Run(void)
                 CNetScheduleJob job;
                 job.job_id = *it;
                 status = submitter.GetJobDetails(job);
-                string expected_output = "DONE " + queue_name;
-                if (job.output != expected_output || job.ret_code != 0) {
-                    ERR_POST("Unexpected output or return code:" +
-                             job.output);
+                int last_char_index = job.output.length() - 1;
+                if (last_char_index < 0 ||
+                    memcmp(job.output.c_str(), output_buffer,
+                    last_char_index) != 0 ||
+                    job.output[last_char_index] != '\n') {
+                    ERR_POST("Unexpected job output:\n" + job.output +
+                        "\nVS\n" + string(output_buffer, job.output.length() - 1) +
+                        "\n");
+                }
+                if (job.ret_code != 0) {
+                    ERR_POST("Unexpected job return code:" << job.ret_code);
                 }
                 jobs.erase(it);
                 ++cnt;
@@ -189,9 +202,9 @@ int CTestNetScheduleClient::Run(void)
                 }
                 jobs.erase(it);
                 ++cnt;
-                break;                
+                break;
             }
-            
+
             ++cnt;
             if (cnt % 1000 == 0) {
                 NcbiCout << "Waiting for " 

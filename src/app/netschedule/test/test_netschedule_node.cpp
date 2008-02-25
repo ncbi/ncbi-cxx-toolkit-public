@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:  NetSchedule client test
  *
@@ -37,16 +37,166 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
 
+#include <util/random_gen.hpp>
+
+#include "test_netschedule_data.hpp"
 
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
-    
+NCBI_PARAM_DECL(string, output, size_distr);
+typedef NCBI_PARAM_TYPE(output, size_distr) TParam_SizeDistr;
+
+NCBI_PARAM_DECL(string, output, time_distr);
+typedef NCBI_PARAM_TYPE(output, time_distr) TParam_TimeDistr;
+
+NCBI_PARAM_DECL(double, output, failure_rate);
+typedef NCBI_PARAM_TYPE(output, failure_rate) TParam_FailureRate;
+
+/// @internal
+class CInvalidParamException : public CException
+{
+public:
+    enum EErrCode {
+        eUndefined = 1,
+        eNotANumber,
+        eInvalidCharacter
+    };
+
+    /// Translate from an error code value to its string representation.
+    virtual const char* GetErrCodeString(void) const;
+
+    // Standard exception boilerplate code.
+    NCBI_EXCEPTION_DEFAULT(CInvalidParamException, CException);
+};
+
+const char* CInvalidParamException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eUndefined:
+        return "eUndefined";
+
+    case eNotANumber:
+        return "eNotANumber";
+
+    case eInvalidCharacter:
+        return "eInvalidCharacter";
+
+    default:
+        return CException::GetErrCodeString();
+    }
+}
+
+static CRandom s_Random;
+
 ///////////////////////////////////////////////////////////////////////
+// This class generates a random integer from a series of ranges
+// defined like this: 5, 6 - 9, 10 - 50
+class CDistribution
+{
+public:
+    void LoadFromParameter(const char* parameter_name,
+        const char* parameter_value);
+
+    unsigned GetNextValue() const;
+
+private:
+    typedef std::pair<unsigned, unsigned> TRange;
+    typedef std::vector<TRange> TRangeVector;
+
+    const char* SkipSpaces(const char* input_string);
+
+    TRangeVector m_RangeVector;
+};
+
+void CDistribution::LoadFromParameter(const char* parameter_name,
+    const char* parameter_value)
+{
+    if (*parameter_value == '\0') {
+        NCBI_THROW(CInvalidParamException, eUndefined,
+            string("Configuration parameter '") + parameter_name +
+                "' was not defined.");
+    }
+
+    m_RangeVector.clear();
+
+    const char* pos = parameter_value;
+
+    TRange new_range;
+
+    unsigned* current_bound_ptr = &new_range.first;
+    new_range.second = 0;
+
+    for (;;) {
+        pos = SkipSpaces(pos);
+
+        unsigned bound = (unsigned) (*pos - '0');
+
+        if (bound > 9) {
+            NCBI_THROW(CInvalidParamException, eNotANumber,
+                string("In configuration parameter '") + parameter_name +
+                    "': not a number at position " +
+                        NStr::UIntToString(pos - parameter_value + 1) + ".");
+        }
+
+        unsigned digit;
+
+        while ((digit = (unsigned) (*++pos - '0')) <= 9)
+            bound = bound * 10 + digit;
+
+        *current_bound_ptr = bound;
+
+        pos = SkipSpaces(pos);
+
+        switch (*pos) {
+        case '\0':
+            m_RangeVector.push_back(new_range);
+            return;
+
+        case ',':
+            m_RangeVector.push_back(new_range);
+            ++pos;
+            current_bound_ptr = &new_range.first;
+            new_range.second = 0;
+            break;
+
+        case '-':
+            ++pos;
+            current_bound_ptr = &new_range.second;
+            break;
+
+        default:
+            NCBI_THROW(CInvalidParamException, eInvalidCharacter,
+                string("In configuration parameter '") + parameter_name +
+                    "': invalid character at position " +
+                        NStr::UIntToString(pos - parameter_value + 1) + ".");
+        }
+    }
+}
+
+unsigned CDistribution::GetNextValue() const
+{
+    CRandom::TValue random_number = s_Random.GetRand();
+
+    TRangeVector::const_iterator random_range =
+        m_RangeVector.begin() + (random_number % m_RangeVector.size());
+
+    return random_range->second == 0 ? random_range->first :
+        random_range->first +
+            (random_number % (random_range->second - random_range->first + 1));
+}
+
+const char* CDistribution::SkipSpaces(const char* input_string)
+{
+    while (*input_string == ' ' || *input_string == '\t')
+        ++input_string;
+
+    return input_string;
+}
 
 
 /// Test application
@@ -58,12 +208,24 @@ class CTestNetScheduleNode : public CNcbiApplication
 public:
     void Init(void);
     int Run(void);
+
+private:
+    CDistribution m_SizeDistr;
+    CDistribution m_TimeDistr;
 };
 
 
+NCBI_PARAM_DEF_EX(string, output, size_distr, kEmptyStr,
+    eParam_NoThread, NS_OUTPUT_SIZE_DISTR);
+NCBI_PARAM_DEF_EX(string, output, time_distr, kEmptyStr,
+    eParam_NoThread, NS_OUTPUT_TIME_DISTR);
+NCBI_PARAM_DEF_EX(double, output, failure_rate, 0.0,
+    eParam_NoThread, NS_OUTPUT_FAILURE_RATE);
 
 void CTestNetScheduleNode::Init(void)
 {
+    InitOutputBuffer();
+
     SetDiagPostFlag(eDPF_Trace);
     SetDiagPostLevel(eDiag_Info);
 
@@ -74,174 +236,134 @@ void CTestNetScheduleNode::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "NetSchedule node");
-    
-    arg_desc->AddPositional("hostname", 
-                            "NetCache host name.", CArgDescriptions::eString);
+        "NetSchedule node");
 
-    arg_desc->AddPositional("port", "Server port number.", 
-                            CArgDescriptions::eInteger);
-    arg_desc->AddPositional("queue", 
-                            "NetSchedule queue name (like: noname).",
-                            CArgDescriptions::eString);
+    arg_desc->AddPositional("service", "NetSchedule service name.",
+        CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("udp_port", 
-                             "udp_port",
-                             "Incoming UDP port",
-                             CArgDescriptions::eInteger);
+    arg_desc->AddPositional("queue", "NetSchedule queue name (like: noname).",
+        CArgDescriptions::eString);
 
-    arg_desc->AddFlag("kc", 
-                      "Keep permanent connection");
-    
+    arg_desc->AddOptionalKey("udp_port", "udp_port",
+        "Incoming UDP port", CArgDescriptions::eInteger);
+
+    arg_desc->AddFlag("verbose", "Log progress.");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
 
-
 int CTestNetScheduleNode::Run(void)
 {
+    m_SizeDistr.LoadFromParameter("size_distr",
+        TParam_SizeDistr::GetDefault().c_str());
+    m_TimeDistr.LoadFromParameter("time_distr",
+        TParam_TimeDistr::GetDefault().c_str());
+
     CArgs args = GetArgs();
-    const string&  host       = args["hostname"].AsString();
-    unsigned short port       = args["port"].AsInteger();
-    const string&  queue_name = args["queue"].AsString();  
+
+    string service = args["service"].AsString();
+    string queue_name = args["queue"].AsString();
 
     unsigned short udp_port = 9111;
-    if (args["udp_port"]) {
+
+    if (args["udp_port"])
         udp_port = args["udp_port"].AsInteger();
-    }
-    NcbiCout << "Incoming UDP port:" << udp_port << NcbiEndl;
 
-    bool keep_conn = args["kc"];
+    bool verbose = args["verbose"];
 
+    string program_name = GetProgramDisplayName();
 
-    CNetScheduleClient cl(host, port, "node_test", queue_name);
+    LOG_POST(Info << program_name << " started");
+    LOG_POST(Info << "UDP port: " << udp_port);
+    LOG_POST(Info << "Failure rate: " << TParam_FailureRate::GetDefault());
 
+    CNetScheduleAPI ns_api(service, program_name, queue_name);
 
-    // Configure permanent connection mode
-    //
-    if (keep_conn) {
-        // Permanent connection is used when we want to avoid 
-        // network latency overhead.
-        // It make sense to use permanent connection when jobs
-        // can be executed fast and there are many of them.
-        // 
-        // Every permanent holds server resources (thread per connection), 
-        // so this mode should be used in special cases, together
-        // with the careful server configuration
+    ns_api.SetConnMode(CNetScheduleAPI::eKeepConnection);
 
-        cl.SetConnMode(CNetScheduleClient::eKeepConnection);
+    CNetScheduleExecuter ns_exec = ns_api.GetExecuter();
 
-        // don't need rate control for permanent connection
-        cl.ActivateRequestRateControl(false);
-
-        // client side inactivity timeout
-        cl.SetCommunicationTimeout().sec = 20;
-    }
-
-    string    job_key;
-    string    input;
-    bool      job_exists;
-    int       no_jobs_counter = 0;
-    unsigned  jobs_done = 0;
-
-    int       node_status; 
-    bool      first_try = true;
-
+    string job_key;
+    string input;
 
     set<string> jobs_processed;
 
-    // The main job processing loop, polls the 
+    // The main job processing loop, polls the
     // queue for available jobs
-    // 
+    //
     // There is no payload algorithm here, node just
-    // sleeps and reports the processing result back to server
-    // as string "DONE ...". Practical application should use
-    // netcache as result storage
+    // sleeps and reports the processing result back to server.
+    // Practical application should use NetCache as result storage
     //
     // Well behaved node should not constantly poll the queue for
     // jobs (GetJob()).
     // When NetSchedule Server reports there are no more jobs: worker node
-    // should take a brake and do not poll for a while... 
-    // Or use WaitJob(), it receives notification messages from the 
+    // should take a brake and do not poll for a while...
+    // Or use WaitJob(), it receives notification messages from the
     // server using stateless UDP protocol.
     // It is strongly suggested that there is just one program using
     // specified UDP port on the machine.
 
-    while (1) {
-        string jout, jerr;
-        if (keep_conn) {
-            job_exists = cl.GetJob(&job_key, &input, 0, &jout, &jerr);
-        } else {
-            job_exists = cl.WaitJob(&job_key, &input, 180, udp_port, 
-                                    CNetScheduleClient::eWaitNotification,
-                                    &jout, &jerr);
-        }
-        if (job_exists) {
-            if (first_try) {
-                NcbiCout << "\nProcessing." << NcbiEndl;
-                node_status = 0; first_try = false;
-            } else 
-            if (node_status != 0) {
-                NcbiCout << "\nProcessing." << NcbiEndl;
-                node_status = 0;
-            }
-//            NcbiCout << job_key << NcbiEndl;
-            string expected_input = "Hello " + queue_name;
-            if (expected_input != input) {
-                ERR_POST("Unexpected input: " + input);
-            }
+    CNetScheduleJob job;
 
-            if (jout != "out.txt") {
-                LOG_POST(Warning << "Unexpected out: " + jout);
-            }
-            if (jerr != "err.txt") {
-                LOG_POST(Warning << "Unexpected err: " + jerr);
-            }
+    string expected_input = "Hello " + queue_name;
 
-            if (jobs_processed.find(job_key) != jobs_processed.end()) {
-                LOG_POST(Error << "Job: " << job_key 
-                               << " has already been processed.");
-            } else {
-                jobs_processed.insert(job_key);
+    bool done = false;
+
+    while (!done) {
+        if (ns_exec.WaitJob(job, 180, udp_port)) {
+            if (job.input == "DIE") {
+                LOG_POST(Info << "Got poison pill, exiting.");
+                done = true;
+            } else if (job.input != expected_input) {
+                LOG_POST(Error << "Unexpected input: " + input);
             }
 
             // do no job here, just delay for a little while
-            // SleepMilliSec(50);
-            string out = "DONE " + queue_name;
-            cl.PutResult(job_key, 0, out);
+            unsigned delay = m_TimeDistr.GetNextValue();
+            if (delay > 0)
+                SleepMilliSec(delay);
 
-            no_jobs_counter = 0;
-            ++jobs_done;
+            unsigned output_size = m_SizeDistr.GetNextValue();
+            if (output_size > 0) {
+                if (output_size > MAX_OUTPUT_SIZE)
+                    output_size = MAX_OUTPUT_SIZE;
 
-            if (jobs_done % 50 == 0) {
-                NcbiCout << "*" << flush;
-            }
+                job.output.assign(output_buffer, output_size);
+                job.output[output_size - 1] = '\n';
+            } else
+                job.output.clear();
 
-        } else {
-            if (first_try) {
-                NcbiCout << "\nWaiting." << NcbiEndl;
-                node_status = 1; first_try = false;
-            } else 
-            if (node_status != 1) {
-                NcbiCout << "\nWaiting." << NcbiEndl;
-                node_status = 1;
-            }
+            job.ret_code = 0;
 
-            if (++no_jobs_counter > 7) { // no new jobs coming
-                NcbiCout << "\nNo new jobs arriving. Processing closed." << NcbiEndl;
-                break;
+            if (s_Random.GetRand() <
+                TParam_FailureRate::GetDefault() * s_Random.GetMax())
+                ns_exec.PutFailure(job);
+            else
+                ns_exec.PutResult(job);
+
+            if (jobs_processed.find(job.job_id) == jobs_processed.end()) {
+                jobs_processed.insert(job.job_id);
+                if (verbose) {
+                    LOG_POST(Info << "Job " << job.job_id << " is done.");
+                }
+            } else {
+                LOG_POST(Error << "Job: " << job.job_id <<
+                    " has already been processed.");
             }
         }
-
     }
-    NcbiCout << NcbiEndl << "Jobs done: " 
-             << jobs_processed.size() << NcbiEndl;
 
     return 0;
 }
 
+END_NCBI_SCOPE
+
+
+USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
-    return CTestNetScheduleNode().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestNetScheduleNode().AppMain(argc, argv, 0, eDS_Default);
 }
