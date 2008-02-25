@@ -33,6 +33,8 @@
 
 #include <objects/general/general__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
+#include <objects/seq/seq__.hpp>
+
 #include <algo/align/prosplign/compartments.hpp>
 
 #include <algo/align/util/hit_comparator.hpp>
@@ -83,7 +85,7 @@ void RemoveOverlaps(THitRefs& hitrefs)
 
 double TotalScore(THitRefs& hitrefs)
 {
-    double result;
+    double result = 0;
     ITERATE(THitRefs, i, hitrefs) {
         result += (*i)->GetScore();
     }
@@ -116,11 +118,12 @@ CRef<CScore> RealScore(const string& id, double value)
     return result;
 }
 
-CRef<CSeq_align> MakeCompartment(THitRefs& hitrefs)
+CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
 {
     _ASSERT( !hitrefs.empty() );
-    CRef<CSeq_align> result(new CSeq_align);
-    CSeq_align& compartment = *result;
+
+    CRef<CSeq_align> seq_align(new CSeq_align);
+    CSeq_align& compartment = *seq_align;
     
     compartment.SetType(CSeq_align::eType_partial);
     CSeq_align::TSegs::TStd& std_segs = compartment.SetSegs().SetStd();
@@ -142,12 +145,16 @@ CRef<CSeq_align> MakeCompartment(THitRefs& hitrefs)
 
         std_segs.push_back(std_seg);
     }
+
+    CRef<CSeq_annot> result(new CSeq_annot);
+    result->SetData().SetAlign().push_back(seq_align);
+
     return result;
 }
 
-CRef<CSeq_align_set> SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptions compart_options)
+TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptions compart_options)
 {
-    CRef<CSeq_align_set> results (new CSeq_align_set);
+    TCompartments results;
     if (orig_hitrefs.empty())
         return results;
 
@@ -174,24 +181,32 @@ CRef<CSeq_align_set> SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompa
         do {
             RemoveOverlaps(comphits);
 
-            CRef<CSeq_align> compartment = MakeCompartment(comphits);
+            CRef<CSeq_annot> compartment = MakeCompartment(comphits);
 
-            compartment->SetNamedScore(CSeq_align::eScore_BitScore, TotalScore(comphits));
-            compartment->SetNamedScore("num_covered_aa", CountQueryCoverage(comphits)/3);
+            CRef<CUser_object> uo(new CUser_object);
+            uo->SetType().SetStr("Compart Scores");
+            uo->AddField("bit_score", TotalScore(comphits));
+            uo->AddField("num_covered_aa", CountQueryCoverage(comphits)/3);
+            compartment->AddUserObject( *uo );
 
             const THit::TCoord* boxPtr = comps.GetBox(i);
 
             CRef<CSeq_id> qry_id(new CSeq_id);
             qry_id->Assign(*hitrefs.front()->GetQueryId());
-            CRef<CSeq_loc> qry_loc(new CSeq_loc(*qry_id,boxPtr[0],boxPtr[1],eNa_strand_plus));
-            compartment->SetBounds().push_back(qry_loc);
+            CRef<CAnnotdesc> align(new CAnnotdesc);
+            align->SetAlign().SetAlign_type(CAlign_def::eAlign_type_ref);
+            align->SetAlign().SetIds().push_back( qry_id );
+            compartment->SetDesc().Set().push_back( align );
+
 
             CRef<CSeq_id> subj_id(new CSeq_id);
             subj_id->Assign(*hitrefs.front()->GetSubjId());
             CRef<CSeq_loc> subj_loc(new CSeq_loc(*subj_id,boxPtr[2],boxPtr[3],comps.GetStrand(i)?eNa_strand_plus:eNa_strand_minus));
-            compartment->SetBounds().push_back(subj_loc);
+            CRef<CAnnotdesc> region(new CAnnotdesc);
+            region->SetRegion(*subj_loc);
+            compartment->SetDesc().Set().push_back(region);
 
-            results->Set().push_back(compartment);
+            results.push_back(compartment);
             ++i;
         } while (comps.GetNext(comphits));
     }
@@ -199,19 +214,29 @@ CRef<CSeq_align_set> SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompa
     return results;
 }
 
-TCompartments MakeCompartments(const CSeq_align_set& compartments, CCompartOptions compart_options)
+TCompartmentStructs MakeCompartments(const TCompartments& compartments, CCompartOptions compart_options)
 {
-    TCompartments results;
+    TCompartmentStructs results;
 
-    ITERATE(CSeq_align_set::Tdata, i, compartments.Get()) {
-        const CSeq_align& comp = **i;
-        const CSeq_loc& subj_loc = *comp.GetBounds().back();
+    ITERATE(TCompartments, i, compartments) {
+        const CSeq_annot& comp = **i;
+        const CSeq_loc* subj_loc = NULL;
         int covered_aa = 0;
-        comp.GetNamedScore("num_covered_aa", covered_aa);
         double score = 0;
-        comp.GetNamedScore(CSeq_align::eScore_BitScore, score);
-        results.push_back(SCompartment(subj_loc.GetStart(eExtreme_Positional),subj_loc.GetStop(eExtreme_Positional),subj_loc.GetStrand()!=eNa_strand_minus,
-                                       covered_aa, score));
+        ITERATE (CAnnot_descr::Tdata, desc_it, comp.GetDesc().Get()) {
+            const CAnnotdesc& desc = **desc_it;
+            if (desc.IsRegion()) {
+                subj_loc = &desc.GetRegion();
+            } else if (desc.IsUser() && desc.GetUser().GetType().IsStr() && desc.GetUser().GetType().GetStr()=="Compart Scores") {
+                covered_aa = desc.GetUser().GetField("num_covered_aa").GetData().GetInt();
+                score = desc.GetUser().GetField("bit_score").GetData().GetReal();
+            }
+        }
+        if (subj_loc)
+            results.push_back(SCompartment(subj_loc->GetStart(eExtreme_Positional),
+                                           subj_loc->GetStop(eExtreme_Positional),
+                                           subj_loc->GetStrand()!=eNa_strand_minus,
+                                           covered_aa, score));
     }
     sort(results.begin(),results.end());
 
@@ -232,13 +257,13 @@ TCompartments MakeCompartments(const CSeq_align_set& compartments, CCompartOptio
     return results;
 }
 
-TCompartments MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options, int protein_len)
+TCompartmentStructs MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options, int protein_len)
 {
-    TCompartments results = MakeCompartments(*SelectCompartmentsHits(hitrefs, compart_options), compart_options);
+    TCompartmentStructs results = MakeCompartments(SelectCompartmentsHits(hitrefs, compart_options), compart_options);
     
     const int required_aa = int(protein_len * compart_options.m_MinProteinCoverage);
 
-    TCompartments::iterator new_end = remove_if(results.begin(),results.end(),NotEnoughAA(required_aa));
+    TCompartmentStructs::iterator new_end = remove_if(results.begin(),results.end(),NotEnoughAA(required_aa));
     results.erase(new_end, results.end());
     
     return results;

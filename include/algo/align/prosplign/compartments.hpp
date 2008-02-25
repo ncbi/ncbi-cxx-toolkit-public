@@ -68,13 +68,14 @@ struct NCBI_XALGOALIGN_EXPORT SCompartment {
     }
 };
 
-typedef vector<SCompartment> TCompartments;
+typedef vector<SCompartment> TCompartmentStructs;
+typedef list<CRef<CSeq_annot> > TCompartments;
 
 /// Makes compartments. Hits should be for a single protein-genomic pair.
-CRef<CSeq_align_set> SelectCompartmentsHits(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options);
-TCompartments MakeCompartments(const CSeq_align_set& compartments_hits, CCompartOptions compart_options);
+TCompartments SelectCompartmentsHits(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options);
+TCompartmentStructs MakeCompartments(const TCompartments& compartments_hits, CCompartOptions compart_options);
 /// Composition of above two functions
-TCompartments MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options, int protein_len);
+TCompartmentStructs MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options, int protein_len);
 
 END_SCOPE(prosplign)
 END_NCBI_SCOPE
