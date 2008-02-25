@@ -57,7 +57,7 @@ CDemoeApp::Run(void)
 
         CODBCContext my_context(SQL_OV_ODBC3, false);
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("MS_DEV1",
+        auto_ptr<CDB_Connection> con(my_context.Connect("mssql51.nac.ncbi.nlm.nih.gov",
                                                         "anyone",
                                                         "allowed",
                                                         0));

@@ -9763,8 +9763,8 @@ CDBAPIUnitTest::Test_ConnFactory(void)
     enum {num_of_tests = 128};
 
     try {
-        TSvrRef server01(new CDBServer("MS_DEV1"));
-        TSvrRef server02(new CDBServer("MS_DEV2"));
+        TSvrRef server01(new CDBServer("mssql51.nac.ncbi.nlm.nih.gov"));
+        TSvrRef server02(new CDBServer("mssql51.nac.ncbi.nlm.nih.gov"));
         TSvrRef server03(new CDBServer("MSSQL67"));
 
         // Check CDBUDPriorityMapper ...
