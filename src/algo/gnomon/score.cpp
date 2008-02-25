@@ -752,16 +752,6 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         
         if(strand == ePlus)
         {
-            for(unsigned int k = 0; k < algn.Exons().size()-1; ++k)   // ignoring splitted STOPS in CDS
-            {
-                TSignedSeqPos b = algn.Exons()[k].GetTo();
-                if(algn.Exons()[k].m_ssplice && algn.Exons()[k+1].m_fsplice && b >= cds_lim.GetFrom() && b <= cds_lim.GetTo())
-                {
-                    m_dsplit[strand][0][b] = 0;
-                    m_dsplit[strand][1][b] = 0;
-                }
-            }
-            
             for(unsigned int k = 0; k < algn.Exons().size(); ++k) {   // ignoring STOPS in CDS
                 TSignedSeqPos a = max(algn.Exons()[k].GetFrom(),cds_lim.GetFrom());
                 if(a > 0) --a;
@@ -772,16 +762,6 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         }
         else
         {
-            for(unsigned int k = 1; k < algn.Exons().size(); ++k)   // ignoring splitted STOPS in CDS
-            {
-                TSignedSeqPos a = algn.Exons()[k].GetFrom();
-                if(a > 0 && algn.Exons()[k-1].m_ssplice && algn.Exons()[k].m_fsplice && a >= cds_lim.GetFrom() && a <= cds_lim.GetTo())
-                {
-                    m_dsplit[strand][0][a-1] = 0;
-                    m_dsplit[strand][1][a-1] = 0;
-                }
-            }
-            
             for(unsigned int k = 0; k < algn.Exons().size(); ++k) {   // ignoring STOPS in CDS
                 TSignedSeqPos a = max(algn.Exons()[k].GetFrom(),cds_lim.GetFrom());
                 TSignedSeqPos b = min(algn.Exons()[k].GetTo(),cds_lim.GetTo());
@@ -1104,6 +1084,39 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         }
     }		
     
+    for(TAlignSet::iterator it = allaligns.begin(); it != allaligns.end(); ++it)
+    {
+        const CGeneModel& algn(*it);
+        int strand = algn.Strand();
+        TSignedSeqRange cds_lim = algn.ReadingFrame();
+        if(cds_lim.Empty()) continue;
+        
+        if(strand == ePlus)
+        {
+            for(unsigned int k = 0; k < algn.Exons().size()-1; ++k)   // ignoring splitted STOPS in CDS
+            {
+                TSignedSeqPos b = algn.Exons()[k].GetTo();
+                if(algn.Exons()[k].m_ssplice && algn.Exons()[k+1].m_fsplice && b >= cds_lim.GetFrom() && b <= cds_lim.GetTo())
+                {
+                    m_dsplit[strand][0][b] = 0;
+                    m_dsplit[strand][1][b] = 0;
+                }
+            }
+        }
+        else
+        {
+            for(unsigned int k = 1; k < algn.Exons().size(); ++k)   // ignoring splitted STOPS in CDS
+            {
+                TSignedSeqPos a = algn.Exons()[k].GetFrom();
+                if(a > 0 && algn.Exons()[k-1].m_ssplice && algn.Exons()[k].m_fsplice && a >= cds_lim.GetFrom() && a <= cds_lim.GetTo())
+                {
+                    m_dsplit[strand][0][a-1] = 0;
+                    m_dsplit[strand][1][a-1] = 0;
+                }
+            }
+        }
+    }
+    
 }
 
 double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CFrameShiftedSeqMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, int& best_start, int& best_stop) const
@@ -1372,26 +1385,6 @@ void CGnomonEngine::GetScore(CGeneModel& model) const
 
     if ((int)mrna.size() - best_stop >=3)
         cds_info.SetStop(MapRangeToOrig(best_stop,best_stop+2,mrnamap));
-
-#ifdef _DEBUG
-    const CCDSInfo::TPStops& pstops = model.GetCdsInfo().PStops();
-#endif
-    for(int i = best_start+3; i < best_stop; i += 3) {
-        if(IsProperStop(i,mrna,mrnamap)) {
-            TSignedSeqRange pstop = MapRangeToOrig(i,i+2,mrnamap);
-            cds_info.AddPStop(pstop);
-#ifdef _DEBUG
-            bool new_pstop = true;
-            ITERATE(CCDSInfo::TPStops, s, pstops) {
-                if (Include(*s,pstop)) {
-                    new_pstop = false;
-                    break;
-                }
-            }
-            //            _ASSERT( !new_pstop );
-#endif
-        }
-    }
 
     cds_info.SetScore(best_score, is_open);
     model.SetCdsInfo( cds_info );
