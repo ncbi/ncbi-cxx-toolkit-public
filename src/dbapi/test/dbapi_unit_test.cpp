@@ -12807,7 +12807,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
 
     if (args.GetTestConfiguration() != CTestArguments::eFast) {
-        if (args.GetServerType() == CTestArguments::eSybase) {
+        if (args.GetServerType() == CTestArguments::eSybase && !Solaris) {
+            // Solaris has an outdated version of Sybase client installed ...
             if (args.GetDriverName() != dblib_driver // Cannot connect to the server ...
                     && args.GetDriverName() != ftds_dblib_driver // Cannot connect to the server ...
                     && args.GetDriverName() != ftds8_driver
