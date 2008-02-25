@@ -47,7 +47,8 @@ private:
 
 int CDriverTest::Run()
 {
-	IConnection *conSyb, *conMS;
+	auto_ptr<IConnection> conSyb;
+	auto_ptr<IConnection> conMS;
 
 	{
 		DBAPI_RegisterDriver_CTLIB();
@@ -58,7 +59,7 @@ int CDriverTest::Run()
 		 IDataSource *ds = 0;
 		 CDriverManager &dm = CDriverManager::GetInstance();
 		 ds = dm.CreateDs("ftds");
-		 conMS = ds->CreateConnection();
+		 conMS.reset(ds->CreateConnection());
 		 conMS->Connect("anyone", "allowed", "GPIPE_QA", "GPIPE_INIT");
 	}
 
@@ -66,12 +67,9 @@ int CDriverTest::Run()
 		IDataSource *ds = 0;
 		CDriverManager &dm = CDriverManager::GetInstance();
 		ds = dm.CreateDs("ctlib");
-		conSyb = ds->CreateConnection();
+		conSyb.reset(ds->CreateConnection());
 		conSyb->Connect("anyone", "allowed", "REFTRACK_DEV", "locusXref");
 	}
-
-	conMS->Close();
-	conSyb->Close();
 
 	return 0;
 }
