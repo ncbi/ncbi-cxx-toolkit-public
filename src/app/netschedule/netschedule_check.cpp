@@ -80,7 +80,7 @@ void CNetScheduleCheck::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-class CQueueFinder : public INetServiceAPI::ISink
+class CQueueFinder : public CNetServiceAPI_Base::ISink
 {
 public:
     typedef map<string, int> TQueueCounter;

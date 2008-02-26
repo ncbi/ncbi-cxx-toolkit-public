@@ -101,7 +101,7 @@ void CNetCacheControl::Init(void)
 }
 
 
-class CSimpleSink : public INetServiceAPI::ISink
+class CSimpleSink : public CNetServiceAPI_Base::ISink
 {
 public:
     CSimpleSink(CNcbiOstream& os) : m_Os(os) {}

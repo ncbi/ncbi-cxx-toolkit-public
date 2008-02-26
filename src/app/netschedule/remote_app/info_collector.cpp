@@ -182,7 +182,7 @@ CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)
 }
 
 
-class ISimpleSink : public INetServiceAPI::ISink
+class ISimpleSink : public CNetServiceAPI_Base::ISink
 {
 public:
     ISimpleSink() : m_Str(new CNcbiStrstream) {}
