@@ -58,6 +58,7 @@ public:
     enum EDbtagType {
         eDbtagType_bad,
         
+        eDbtagType_AFTOL,
         eDbtagType_ASAP,
         eDbtagType_ATCC,
         eDbtagType_ATCC_dna,
@@ -106,8 +107,10 @@ public:
         eDbtagType_MIM,
         eDbtagType_MaizeGDB,
         eDbtagType_NMPDR,
+        eDbtagType_NRESTdb,
         eDbtagType_NextDB,
         eDbtagType_PDB,
+        eDbtagType_PFAM,
         eDbtagType_PGN,
         eDbtagType_PID,
         eDbtagType_PIDd,
@@ -115,7 +118,9 @@ public:
         eDbtagType_PIDg,
         eDbtagType_PIR,
         eDbtagType_PSEUDO,
+        eDbtagType_Pathema,
         eDbtagType_RATMAP,
+        eDbtagType_RFAM,
         eDbtagType_RGD,
         eDbtagType_RZPD,
         eDbtagType_RiceGenes,
@@ -123,6 +128,7 @@ public:
         eDbtagType_SGD,
         eDbtagType_SoyBase,
         eDbtagType_SubtiList,
+        eDbtagType_TIGRFAM,
         eDbtagType_UniGene,
         eDbtagType_UniProt_SwissProt,
         eDbtagType_UniProt_TrEMBL,
@@ -131,6 +137,7 @@ public:
         eDbtagType_VectorBase,
         eDbtagType_WorfDB,
         eDbtagType_WormBase,
+        eDbtagType_Xenbase,
         eDbtagType_ZFIN,
         eDbtagType_axeldb,
         eDbtagType_dbClone,
@@ -153,7 +160,9 @@ public:
         eDbtagType_ECOCYC,
         eDbtagType_HPRD,
         eDbtagType_miRBase,
-        eDbtagType_PBR
+        eDbtagType_PBR,
+        eDbtagType_TAIR,
+        eDbtagType_VBRC
     };
 
     // constructor

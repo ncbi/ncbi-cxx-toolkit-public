@@ -53,6 +53,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 typedef pair<const char*, CDbtag::EDbtagType> TDbxrefPair;
 static const TDbxrefPair kApprovedDbXrefs[] = {
+    TDbxrefPair("AFTOL", CDbtag::eDbtagType_AFTOL),
     TDbxrefPair("ASAP", CDbtag::eDbtagType_ASAP),
     TDbxrefPair("ATCC", CDbtag::eDbtagType_ATCC),
     TDbxrefPair("ATCC(dna)", CDbtag::eDbtagType_ATCC_dna),
@@ -80,6 +81,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("GI", CDbtag::eDbtagType_GI),
     TDbxrefPair("GO", CDbtag::eDbtagType_GO),
     TDbxrefPair("GOA", CDbtag::eDbtagType_GOA),
+    TDbxrefPair("GRIN", CDbtag::eDbtagType_GRIN),
     TDbxrefPair("GeneDB", CDbtag::eDbtagType_GeneDB),
     TDbxrefPair("GeneID", CDbtag::eDbtagType_GeneID),
 //    TDbxrefPair("Genew", CDbtag::eDbtagType_Genew),
@@ -101,6 +103,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("MaizeGDB", CDbtag::eDbtagType_MaizeGDB),
     TDbxrefPair("NBRC", CDbtag::eDbtagType_IFO),
     TDbxrefPair("NMPDR", CDbtag::eDbtagType_NMPDR),
+    TDbxrefPair("NRESTdb", CDbtag::eDbtagType_NRESTdb),
     TDbxrefPair("NextDB", CDbtag::eDbtagType_NextDB),
     TDbxrefPair("PDB", CDbtag::eDbtagType_PDB),
     TDbxrefPair("PGN", CDbtag::eDbtagType_PGN),
@@ -110,7 +113,9 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("PIDg", CDbtag::eDbtagType_PIDg),
     TDbxrefPair("PIR", CDbtag::eDbtagType_PIR),
     TDbxrefPair("PSEUDO", CDbtag::eDbtagType_PSEUDO),
+    TDbxrefPair("Pathema", CDbtag::eDbtagType_Pathema),
     TDbxrefPair("RATMAP", CDbtag::eDbtagType_RATMAP),
+    TDbxrefPair("RFAM", CDbtag::eDbtagType_RFAM),
     TDbxrefPair("RGD", CDbtag::eDbtagType_RGD),
     TDbxrefPair("RZPD", CDbtag::eDbtagType_RZPD),
     TDbxrefPair("RiceGenes", CDbtag::eDbtagType_RiceGenes),
@@ -118,6 +123,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("SGD", CDbtag::eDbtagType_SGD),
     TDbxrefPair("SoyBase", CDbtag::eDbtagType_SoyBase),
     TDbxrefPair("SubtiList", CDbtag::eDbtagType_SubtiList),
+    TDbxrefPair("TIGRFAM", CDbtag::eDbtagType_TIGRFAM),
     TDbxrefPair("UniGene", CDbtag::eDbtagType_UniGene),
     TDbxrefPair("UniProtKB/Swiss-Prot", CDbtag::eDbtagType_UniProt_SwissProt),
     TDbxrefPair("UniProtKB/TrEMBL", CDbtag::eDbtagType_UniProt_TrEMBL),
@@ -126,6 +132,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("VectorBase", CDbtag::eDbtagType_VectorBase),
     TDbxrefPair("WorfDB", CDbtag::eDbtagType_WorfDB),
     TDbxrefPair("WormBase", CDbtag::eDbtagType_WormBase),
+    TDbxrefPair("Xenbase", CDbtag::eDbtagType_Xenbase),
     TDbxrefPair("ZFIN", CDbtag::eDbtagType_ZFIN),
     TDbxrefPair("axeldb", CDbtag::eDbtagType_axeldb),
     TDbxrefPair("cdd", CDbtag::eDbtagType_CDD), // all-caps preferred, though
@@ -150,7 +157,9 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("HPRD", CDbtag::eDbtagType_HPRD),
     TDbxrefPair("PBR", CDbtag::eDbtagType_PBR),
     TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE),
-    TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase)
+    TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase),
+    TDbxrefPair("TAIR", CDbtag::eDbtagType_TAIR),
+    TDbxrefPair("VBRC", CDbtag::eDbtagType_VBRC)
 };
 
 // case sensetive
@@ -287,6 +296,7 @@ typedef pair<CDbtag::EDbtagType, string>    TDbtUrl;
 static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_ASAP, "https://asap.ahabs.wisc.edu/annotation/php/feature_info.php?FeatureID="),
     TDbtUrl(CDbtag::eDbtagType_AceView_WormGenes, "http://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q="), 
+    TDbtUrl(CDbtag::eDbtagType_AFTOL, "http://aftol.biology.duke.edu/pub/displayTaxonInfo?aftol_id="), 
     TDbtUrl(CDbtag::eDbtagType_ApiDB, "http://www.apidb.org/apidb/showRecord.do?name=GeneRecordClasses.ApiDBGeneRecordClass&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_CryptoDB, "http://cryptodb.org/cryptodb/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_PlasmoDB, "http://www.plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
@@ -322,11 +332,14 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_MIM, "http://www.ncbi.nlm.nih.gov/entrez/dispomim.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_MaizeGDB, "http://www.maizegdb.org/"),
     TDbtUrl(CDbtag::eDbtagType_NMPDR, "http://www.nmpdr.org/linkin.cgi?id="),
+    TDbtUrl(CDbtag::eDbtagType_NRESTdb, "http://genome.ukm.my/nrestdb/db/single_view_est.php?id="),
     TDbtUrl(CDbtag::eDbtagType_NextDB, "http://nematode.lab.nig.ac.jp/cgi-bin/db/ShowGeneInfo.sh?celk="),
     TDbtUrl(CDbtag::eDbtagType_PDB, "http://www.rcsb.org/pdb/cgi/explore.cgi?pdbId="),
     TDbtUrl(CDbtag::eDbtagType_PGN, "http://pgn.cornell.edu/cgi-bin/search/seq_search_result.pl?identifier="),
     TDbtUrl(CDbtag::eDbtagType_PID, "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?"),
+    TDbtUrl(CDbtag::eDbtagType_Pathema, "http://pathema.jcvi.org/cgi-bin/Burkholderia/shared/GenePage.cgi?all=1&locus="),
     TDbtUrl(CDbtag::eDbtagType_RATMAP, "http://ratmap.gen.gu.se/ShowSingleLocus.htm?accno="),
+    TDbtUrl(CDbtag::eDbtagType_RFAM, "http://www.sanger.ac.uk/cgi-bin/Rfam/getacc?"),
     TDbtUrl(CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/query/query.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object="),
     TDbtUrl(CDbtag::eDbtagType_SEED, "http://www.theseed.org/linkin.cgi?id="),
@@ -335,10 +348,12 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_UniProt_SwissProt, "http://www.uniprot.org/entry/"),
     TDbtUrl(CDbtag::eDbtagType_UniProt_TrEMBL, "http://www.uniprot.org/entry/"),
     TDbtUrl(CDbtag::eDbtagType_UniSTS, "http://www.ncbi.nlm.nih.gov/genome/sts/sts.cgi?uid="),
+    TDbtUrl(CDbtag::eDbtagType_TIGRFAM, "http://cmr.tigr.org/tigr-scripts/CMR/HmmReport.cgi?hmm_acc="),
     TDbtUrl(CDbtag::eDbtagType_VBASE2, "http://www.dnaplot.de/vbase2/vgene.php?id="),
     TDbtUrl(CDbtag::eDbtagType_VectorBase, "http://www.vectorbase.org/Genome/BRCGene/?"),
     TDbtUrl(CDbtag::eDbtagType_WorfDB, "http://worfdb.dfci.harvard.edu/search.pl?form=1&search="),
     TDbtUrl(CDbtag::eDbtagType_WormBase, "http://www.wormbase.org/db/gene/gene?class=CDS;name="),
+    TDbtUrl(CDbtag::eDbtagType_Xenbase, "http://www.xenbase.org/gene/showgene.do?method=display&geneId="),
     TDbtUrl(CDbtag::eDbtagType_ZFIN, "http://zfin.org/cgi-bin/webdriver?MIval=aa-markerview.apg&OID="),
     TDbtUrl(CDbtag::eDbtagType_axeldb, "http://www.dkfz-heidelberg.de/tbi/services/axeldb/clone/xenopus?name="),
     TDbtUrl(CDbtag::eDbtagType_dbClone, "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=clone&cmd=Retrieve&list_uids="),
@@ -357,7 +372,9 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object="),
     TDbtUrl(CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/"),
     TDbtUrl(CDbtag::eDbtagType_miRBase, "http://microrna.sanger.ac.uk/cgi-bin/sequences/mirna_entry.pl?acc="),
-    TDbtUrl(CDbtag::eDbtagType_PBR, "http://www.poxvirus.org/gene_detail.asp?gene_id=")
+    TDbtUrl(CDbtag::eDbtagType_PBR, "http://www.poxvirus.org/gene_detail.asp?gene_id="),
+    TDbtUrl(CDbtag::eDbtagType_TAIR, "http://www.arabidopsis.org/servlets/TairObject?type=locus&name"),
+    TDbtUrl(CDbtag::eDbtagType_VBRC, "http://vbrc.org/query.asp?web_view=curation&web_id=")
 };
 typedef CStaticArrayMap<CDbtag::EDbtagType, string> TUrlPrefixMap;
 DEFINE_STATIC_ARRAY_MAP(TUrlPrefixMap, sc_UrlMap, sc_url_prefix);
@@ -382,7 +399,7 @@ string CDbtag::GetUrl(void) const
     }
 
     // URLs are constructed by catenating the URL prefix with the specific tag
-    // except in a few cases handaled below.
+    // except in a few cases handled below.
     switch (GetType()) {
         case CDbtag::eDbtagType_FLYBASE:
             if (NStr::Find(tag, "FBan") != NPOS) {
