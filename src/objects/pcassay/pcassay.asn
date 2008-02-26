@@ -244,14 +244,22 @@ PC-ResultType ::= SEQUENCE {
                          none           (254),
                          unspecified    (255)
                      }                           OPTIONAL,
+  
+    -- ATTENTION: sunit field is DEPRECATED. It is no longer
+    --            supported and remains for legacy data only.
     sunit            VisibleString               OPTIONAL, -- Unit Type (as a String)
-
+  
+  
     -- Value Transform information qualifies the values reported for this TID.  For example, if the values
     --   reported for this TID are "-Log10 GI50", you may want to consider setting
     --   the "nlog" value below.  In doing so, PubChem would know that the value, e.g., "5.0" 
     --   is actually "1.0e-5".  If the transformation applied is not listed, you may represent
     --   this transformation as a string in the "stransform" (see below) for eventual inclusion 
     --   in the enumerated transform list below.
+    --
+    --
+    -- ATTENTION: transform field is DEPRECATED. It is no longer
+    --            supported and remains for legacy data only.
     transform        INTEGER {                              -- Value Type Details
                          linear           (1),              -- Linear Scale (x)
                          ln               (2),              -- Natural Log Scale (ln x)
@@ -260,8 +268,13 @@ PC-ResultType ::= SEQUENCE {
                          negative         (5),              -- Negative Linear Scale (-x)
                          nlog             (6),              -- Negative Log Base 10 Scale (-log10 x)
                          nln              (7)               -- Negative Natural Log Scane (-ln x)
-                     }                           OPTIONAL,
+			     }                           OPTIONAL,
+  
+    -- ATTENTION: stransform field is DEPRECATED. It is no longer
+    --            supported and remains for legacy data only.
     stransform       VisibleString               OPTIONAL,  -- Value Transform Type (as a String)
+  
+  
     tc               PC-ConcentrationAttr        OPTIONAL,  -- Tested concentration attribute
     ac               BOOLEAN                     OPTIONAL   -- if true, indicates that this TID field 
                                                             -- provides active concentration summary by 
@@ -277,18 +290,7 @@ PC-ConcentrationAttr ::= SEQUENCE {
     concentration    REAL,
     unit             INTEGER {                             -- Units for Concentration
 
-                         mm               (4),             -- milliM
-                         um               (5),             -- microM
-                         nm               (6),             -- nanoM
-                         pm               (7),             -- picoM
-                         fm               (8),             -- femtoM
-                         mgml             (9),             -- milligrams per mL
-                         ugml            (10),             -- micrograms per mL
-                         ngml            (11),             -- nanograms per mL
-                         pgml            (12),             -- picograms per mL
-                         fgml            (13),             -- femtograms per mL
-                         m               (14),             -- Molar
-                         unspecified    (255)
+                         um               (5)              -- microM
                      },                       
    dr-id             INTEGER                     OPTIONAL  -- Dose-Response Attribution ID (if applicable)
 }
