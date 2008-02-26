@@ -333,7 +333,7 @@ int CTestNetScheduleNode::Run(void)
                 job.output.assign(output_buffer, output_size);
                 job.output[output_size - 1] = '\n';
             } else
-                job.output.clear();
+                job.output.erase();
 
             job.ret_code = 0;
 
