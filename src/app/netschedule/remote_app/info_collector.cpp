@@ -200,7 +200,7 @@ public:
     
 private:
 
-    virtual void ParseStream(CNcbiIstream& strm, CNetServerConnector& conn) = 0;
+    virtual void ParseStream(CNcbiIstream& strm, CNetServerConnection conn) = 0;
 
     auto_ptr<CNcbiStrstream> m_Str;
     
@@ -220,7 +220,7 @@ private:
     CNSInfoCollector::IAction<CNSJobInfo>& m_Action;
     CNSInfoCollector& m_Collector;
     
-    virtual void ParseStream(CNcbiIstream& str, CNetServerConnector&)
+    virtual void ParseStream(CNcbiIstream& str, CNetServerConnection)
     {
         while (str.good()) {
             string line;
@@ -280,7 +280,7 @@ public:
 private:
     CNSInfoCollector::TQueueCont& m_Queues;
     
-    virtual void ParseStream(CNcbiIstream& str, CNetServerConnector& conn)
+    virtual void ParseStream(CNcbiIstream& str, CNetServerConnection conn)
     {
         string line;
         NcbiGetlineEOL(str, line);
@@ -315,7 +315,7 @@ private:
     CNSInfoCollector& m_Collector;
     std::set<pair<string, unsigned short> > m_Unique;
     
-    virtual void ParseStream(CNcbiIstream& ios, CNetServerConnector& conn)
+    virtual void ParseStream(CNcbiIstream& ios, CNetServerConnection conn)
     {
         bool nodes_info = false;        
         string str;
