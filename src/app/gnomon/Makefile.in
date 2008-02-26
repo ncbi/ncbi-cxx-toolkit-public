@@ -1,9 +1,0 @@
-# $Id$
-
-# Meta-makefile("GNOMON" project)
-#################################
-
-APP_PROJ = gnomon_local
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
