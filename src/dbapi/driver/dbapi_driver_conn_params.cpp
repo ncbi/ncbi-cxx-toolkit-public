@@ -58,11 +58,13 @@ string CDBConnParamsBase::GetDriverName(void) const
     if (m_DriverName.empty()) {
         // Return blessed driver name ...
 	switch (GetServerType()) {
-	    case eMSSqlServer:
-		return "ftds";
 	    case eSybaseOpenServer:
 	    case eSybaseSQLServer:
+#ifdef HAVE_LIBSYBASE
 		return "ctlib";
+#endif
+	    case eMSSqlServer:
+		return "ftds";
 	    default:
 		return "unknown_driver";
 	}
