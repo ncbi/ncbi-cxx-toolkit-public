@@ -488,7 +488,6 @@ static void s_FixPages( string& pages )
     else {
         it = pages.begin();
         while ( it != pages.end() ) {
-            char c = *it;
             if ( ::isalpha( *it ) || ' ' == *it ) {
                 firstText += *it;
             }
@@ -520,7 +519,6 @@ static void s_FixPages( string& pages )
         }
 
         while ( it != pages.end() ) {
-            char c = *it;
             if ( ::isalpha( *it ) || ' ' == *it ) {
                 lastText += *it;
             }

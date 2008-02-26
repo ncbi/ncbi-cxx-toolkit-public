@@ -378,6 +378,7 @@ static bool s_CheckMandatoryQuals(const CSeq_feat& feat, const CSeq_loc& loc, CB
     return true;
 }
 
+/* "not used"
 
 static bool s_SuppressCommentFeature
 (const CSeq_feat& feat,
@@ -403,7 +404,7 @@ static bool s_SuppressCommentFeature
     }
     return false;
 }
-
+*/
 
 static bool s_SkipFeature(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqContext& ctx)
 {
@@ -1210,7 +1211,6 @@ void CFeatureItem::x_AddQualGeneXref(
 {
     const CSeqFeatData& data  = m_Feat->GetData();
     CSeqFeatData::E_Choice type = data.Which();
-    CSeqFeatData::ESubtype subtype = data.GetSubtype();
     
     if ( type == CSeqFeatData::e_Cdregion || type == CSeqFeatData::e_Rna ) {    
         if ( ! gene_ref && gene_feat ) {
@@ -1304,7 +1304,6 @@ void CFeatureItem::x_AddQuals(
     //  Collect/Compute data that will be shared between several qualifier
     //  collectors:
     //
-    CScope& scope = ctx.GetScope();
     const CSeqFeatData& data  = m_Feat->GetData();
     CSeqFeatData::E_Choice type = data.Which();
     CSeqFeatData::ESubtype subtype = data.GetSubtype();
@@ -1590,8 +1589,6 @@ void CFeatureItem::x_AddQualCodeBreak(
     if ( ! cdr.IsSetCode_break() ) {
         return;
     }
-
-    CCdregion::TFrame frame = cdr.GetFrame();
 
     ITERATE ( CCdregion::TCode_break, it, cdr.GetCode_break() ) {
         if ( !(*it)->IsSetAa() ) {
@@ -1915,8 +1912,6 @@ void CFeatureItem::x_AddQualsCdregion(
     bool pseudo)
 //  ----------------------------------------------------------------------------
 {
-    CScope& scope = ctx.GetScope();
-    const CFlatFileConfig& cfg = ctx.Config();
     const CCdregion& cdr = cds.GetData().GetCdregion();
 
     const CProt_ref* protRef = 0;
@@ -2222,7 +2217,6 @@ void CFeatureItem::x_AddQualsGene(
 //  ----------------------------------------------------------------------------
 {
     const CSeqFeatData& data = m_Feat->GetData();
-    CSeqFeatData::E_Choice type = data.Which();
     CSeqFeatData::ESubtype subtype = data.GetSubtype();
 
     if ( subtype == CSeqFeatData::eSubtype_primer_bind ) {

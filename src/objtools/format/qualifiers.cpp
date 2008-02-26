@@ -68,9 +68,9 @@ static void s_StripTags( string& str )
 {
     // Purpose: Strip HTML like tags from the given string
     string stripped;
-    unsigned int gt = str.find('<');
+    string::size_type gt = str.find('<');
     while ( gt != string::npos ) {
-        unsigned int lt = str.find( '>', gt );
+        string::size_type lt = str.find( '>', gt );
         if ( lt != string::npos ) {
             stripped += str.substr( 0, gt );
             str = str.substr( lt+1 );

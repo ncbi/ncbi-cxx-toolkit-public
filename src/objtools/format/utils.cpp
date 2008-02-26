@@ -78,7 +78,7 @@ bool IsPartOfUrl(
     //
     //  Find the start of the "word" that surrounds the given position:
     //
-    size_t left_edge = sentence.find_last_of( separators, pos );
+    string::size_type left_edge = sentence.find_last_of( separators, pos );
     if ( left_edge == string::npos ) {
         left_edge = 0;
     }
