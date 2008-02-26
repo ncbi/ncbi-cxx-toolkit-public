@@ -45,10 +45,11 @@
 
 BEGIN_NCBI_SCOPE
 
-CNetCacheReader::CNetCacheReader(CNetServerConnectorHolder& connector, size_t blob_size)
-    : m_Connector(connector), m_BlobBytesToRead(blob_size)
+CNetCacheReader::CNetCacheReader(
+    CNetServerConnection connection, size_t blob_size)
+    : m_Connection(connection), m_BlobBytesToRead(blob_size)
 {
-    m_Reader.reset(new CSocketReaderWriter(&m_Connector->GetSocket()));
+    m_Reader.reset(new CSocketReaderWriter(m_Connection.GetSocket()));
 }
 
 CNetCacheReader::~CNetCacheReader()
@@ -62,8 +63,7 @@ void CNetCacheReader::Close()
 {
     m_Reader.reset();
     if (m_BlobBytesToRead != 0)
-        m_Connector->Disconnect(true /* CSocket::Abort instead of Close */);
-    m_Connector.reset();
+        m_Connection.Abort();
 }
 
 ERW_Result CNetCacheReader::Read(void*   buf,
@@ -87,7 +87,7 @@ ERW_Result CNetCacheReader::Read(void*   buf,
     if ( count ) {
         res = m_Reader->Read(buf, count, &nn_read);
     }
-    
+
     if ( bytes_read ) {
         *bytes_read = nn_read;
     }
@@ -112,13 +112,14 @@ ERW_Result CNetCacheReader::PendingCount(size_t* count)
 
 
 /////////////////////////////////////////////////
-CNetCacheWriter::CNetCacheWriter(const CNetCacheAPI& api, CNetServerConnectorHolder& connector,
-                                  CTransmissionWriter::ESendEofPacket send_eof)
-    : m_API(api), m_Connector(connector)
+CNetCacheWriter::CNetCacheWriter(const CNetCacheAPI& api,
+    CNetServerConnection connection,
+    CTransmissionWriter::ESendEofPacket send_eof)
+    : m_API(api), m_Connection(connection)
 {
-    //m_Socket->DisableOSSendDelay(false);
-    m_Writer.reset(new CTransmissionWriter(new CSocketReaderWriter(&m_Connector->GetSocket()), 
-                                           eTakeOwnership, send_eof));
+    m_Writer.reset(new CTransmissionWriter(
+        new CSocketReaderWriter(m_Connection.GetSocket()),
+        eTakeOwnership, send_eof));
 }
 
 CNetCacheWriter::~CNetCacheWriter()
@@ -139,12 +140,9 @@ void CNetCacheWriter::Close()
 
     try {
         m_Writer.reset();
-        //CStopWatch w(CStopWatch::eStart);
-        m_API.WaitResponse(m_Connector);
-        //w.Stop();
-        //cerr << string(w) << endl;
+        m_API.WaitResponse(m_Connection);
     } catch (...) {
-        m_Connector->Disconnect(true /* CSocket::Abort */);
+        m_Connection.Abort();
         x_Shutdown();
         throw;
     }
@@ -161,12 +159,12 @@ ERW_Result CNetCacheWriter::Write(const void* buf,
 
     ERW_Result res = m_Writer->Write(buf, count, bytes_written);
     if (res == eRW_Success) {
-        if ( !x_IsStreamOk() ) 
+        if ( !x_IsStreamOk() )
             return eRW_Error;
     }
     return res;
 }
- 
+
 ERW_Result CNetCacheWriter::Flush(void)
 {
     if (!m_Writer.get())
@@ -174,7 +172,7 @@ ERW_Result CNetCacheWriter::Flush(void)
 
     ERW_Result res = m_Writer->Flush();
     if (res == eRW_Success) {
-        if ( !x_IsStreamOk() ) 
+        if ( !x_IsStreamOk() )
             return eRW_Error;
     }
     return res;
@@ -183,16 +181,16 @@ ERW_Result CNetCacheWriter::Flush(void)
 bool CNetCacheWriter::x_IsStreamOk()
 {
     STimeout to = {0, 0};
-    EIO_Status io_st = m_Connector->GetSocket().Wait(eIO_Read, &to);
+    EIO_Status io_st = m_Connection.GetSocket()->Wait(eIO_Read, &to);
     string msg;
     switch (io_st) {
     case eIO_Success:
         {
-            io_st = m_Connector->GetSocket().ReadLine(msg);
+            io_st = m_Connection.GetSocket()->ReadLine(msg);
             if (io_st == eIO_Closed) {
                 m_LastError = "Server closed communication channel (timeout?)";
             } else  if (!msg.empty()) {
-                INetServiceAPI::TrimErr(msg);
+                CNetServiceAPI_Base::TrimErr(msg);
                 m_LastError = msg;
             } else {
             }
@@ -204,7 +202,7 @@ bool CNetCacheWriter::x_IsStreamOk()
         break;
     }
     if (!m_LastError.empty()) {
-        m_Connector->Disconnect(true /* CSocket::Abort */);
+        m_Connection.Abort();
         x_Shutdown();
         return false;
     }
@@ -214,7 +212,6 @@ bool CNetCacheWriter::x_IsStreamOk()
 void CNetCacheWriter::x_Shutdown()
 {
     m_Writer.reset();
-    m_Connector.reset();
 }
 
 END_NCBI_SCOPE

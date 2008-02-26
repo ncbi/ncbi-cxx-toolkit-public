@@ -31,7 +31,7 @@
  */
 
 /// @file grid_client.hpp
-/// NetSchedule Framework specs. 
+/// NetSchedule Framework specs.
 ///
 
 
@@ -60,16 +60,16 @@ public:
 
     ~CGridJobSubmitter();
 
-    /// Set a job's input This string will be sent to 
+    /// Set a job's input This string will be sent to
     /// then the job is submitted.
     ///
     /// This method can be used to send a short data to the worker node.
-    /// To send a large data use GetOStream method. Don't call this 
+    /// To send a large data use GetOStream method. Don't call this
     /// method after GetOStream method is called.
     ///
     void SetJobInput(const string& input);
 
-    /// Get a stream where a client can write an input 
+    /// Get a stream where a client can write an input
     /// data for the remote job
     ///
     CNcbiOstream& GetOStream();
@@ -115,16 +115,16 @@ public:
 
     ~CGridJobBatchSubmitter();
 
-    /// Set a job's input This string will be sent to 
+    /// Set a job's input This string will be sent to
     /// then the job is submitted.
     ///
     /// This method can be used to send a short data to the worker node.
-    /// To send a large data use GetOStream method. Don't call this 
+    /// To send a large data use GetOStream method. Don't call this
     /// method after GetOStream method is called.
     ///
     void SetJobInput(const string& input);
 
-    /// Get a stream where a client can write an input 
+    /// Get a stream where a client can write an input
     /// data for the remote job
     ///
     CNcbiOstream& GetOStream();
@@ -182,11 +182,11 @@ public:
     /// 1. It can be an output data from a remote job (if that data is short)
     ///    If it is so don't use GetIStream method.
     /// 2. It holds a key to a data stored in an external data storage.
-    ///    (NetCache)  In this case use GetIStream method to get a stream with 
-    ///    a job's result. 
+    ///    (NetCache)  In this case use GetIStream method to get a stream with
+    ///    a job's result.
     ///
     const string& GetJobOutput() const;
-    
+
     /// Get a job's input sting
     const string& GetJobInput() const;
 
@@ -204,10 +204,10 @@ public:
     CNetScheduleAPI::EJobStatus GetStatus();
 
     /// Get a stream with a job's result. Stream is based on network
-    /// data storage (NetCache). Size of the input data can be determined 
+    /// data storage (NetCache). Size of the input data can be determined
     /// using GetInputBlobSize
     ///
-    CNcbiIstream& GetIStream(IBlobStorage::ELockMode = 
+    CNcbiIstream& GetIStream(IBlobStorage::ELockMode =
                              IBlobStorage::eLockWait);
 
     /// Get the size of an input stream
@@ -252,7 +252,7 @@ public:
         eAutomaticCleanup = 0,
         eManualCleanup
     };
-    
+
     enum EProgressMsg {
         eProgressMsgOn = 0,
         eProgressMsgOff
@@ -269,7 +269,7 @@ public:
     ///     a job's input data from a storage when the job is
     ///     done or canceled
     ///
-    CGridClient(const CNetScheduleSubmitter& ns_client, 
+    CGridClient(const CNetScheduleSubmitter& ns_client,
                 IBlobStorage& storage,
                 ECleanUp cleanup,
                 EProgressMsg progress_msg,

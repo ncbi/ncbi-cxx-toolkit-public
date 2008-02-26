@@ -68,7 +68,7 @@ public:
 
     void CheckInfinitLoop();
 
-private:        
+private:
     unsigned int m_JobsStarted;
     unsigned int m_JobsSucceed;
     unsigned int m_JobsFailed;
@@ -97,7 +97,7 @@ class NCBI_XCONNECT_EXPORT CGridGlobals
 {
 public:
     ~CGridGlobals();
-    
+
     static CGridGlobals& GetInstance();
 
     unsigned int GetNewJobNumber();
@@ -108,25 +108,25 @@ public:
 
 
     /// Request node shutdown
-    void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level) 
+    void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level)
                       { m_ShutdownLevel = level; }
 
 
     /// Check if shutdown was requested.
     ///
-    CNetScheduleAdmin::EShutdownLevel GetShutdownLevel(void) 
+    CNetScheduleAdmin::EShutdownLevel GetShutdownLevel(void)
                       { return m_ShutdownLevel; }
 
     CWNJobsWatcher& GetJobsWatcher();
 
     const CTime& GetStartTime() const { return m_StartTime; }
-    
+
     void KillNode();
 
 private:
 
     CGridGlobals();
-    static auto_ptr<CGridGlobals> sm_Instance;  
+    static auto_ptr<CGridGlobals> sm_Instance;
 
     CAtomicCounter m_JobsStarted;
     bool m_ReuseJobObject;
@@ -138,7 +138,7 @@ private:
 
     CGridGlobals(const CGridGlobals&);
     CGridGlobals& operator=(const CGridGlobals&);
-    
+
 };
 
 

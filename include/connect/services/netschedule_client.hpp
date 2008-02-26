@@ -34,13 +34,13 @@
  */
 
 /// @file netschedule_client.hpp
-/// NetSchedule client specs. 
+/// NetSchedule client specs.
 ///
 
 #include <connect/services/netservice_client.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <connect/services/netschedule_api_expt.hpp> // for CNetScheduleException
-#include <connect/services/netschedule_api_const.hpp>  
+#include <connect/services/netschedule_api_const.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -94,20 +94,20 @@ public:
 
     /// Connection management options
     enum EConnectionMode {
-        /// Close connection after each call (default). 
+        /// Close connection after each call (default).
         /// This mode frees server side resources, but reconnection can be
         /// costly because of the network overhead
-        eCloseConnection,  
+        eCloseConnection,
 
         /// Keep connection open.
-        /// This mode occupies server side resources(session thread), 
+        /// This mode occupies server side resources(session thread),
         /// use this mode very carefully
-        eKeepConnection    
+        eKeepConnection
     };
 
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
-    /// job key 
+    /// job key
     ///
     /// @param client_name
     ///    Name of the client program(project)
@@ -124,8 +124,8 @@ public:
 
     /// Contruction based on existing TCP/IP socket
     /// @param sock
-    ///    Connected socket to the primary server. 
-    ///    CNetScheduleClient does not take socket ownership 
+    ///    Connected socket to the primary server.
+    ///    CNetScheduleClient does not take socket ownership
     ///    and does not change communication parameters (like timeout)
     ///
     CNetScheduleClient(CSocket*      sock,
@@ -144,7 +144,7 @@ public:
     /// Important!
     /// Rate control unit is shared between different instances of
     /// CNetScheduleClient and NOT thread syncronized. Disable it if
-    /// you need competing threads all use CNetScheduleClient 
+    /// you need competing threads all use CNetScheduleClient
     /// (even separate instances).
     ///
     void ActivateRequestRateControl(bool on_off);
@@ -153,7 +153,7 @@ public:
     bool RequestRateControl() const { return m_RequestRateControl; }
 
     /// Returns current connection mode
-    /// @sa SetConnMode 
+    /// @sa SetConnMode
     EConnectionMode GetConnMode() const { return m_ConnMode; }
 
     /// Set connection mode
@@ -208,7 +208,7 @@ public:
     ///    encodes input data for the job. It is suggested to use NetCache
     ///    to keep the actual data and pass NetCache key as job input.
     /// @param progress_msg
-    ///    Initial progress message (in most cases a NetCache key for 
+    ///    Initial progress message (in most cases a NetCache key for
     ///    message exchange)
     /// @param out
     ///    Output (cout) (in most cases file name)
@@ -220,7 +220,7 @@ public:
     ///     Job mask
     /// @return job key
     virtual
-    string SubmitJob(const string& input, 
+    string SubmitJob(const string& input,
                      const string& progress_msg   = kEmptyStr,
                      const string& affinity_token = kEmptyStr,
                      const string& out            = kEmptyStr,
@@ -238,7 +238,7 @@ public:
 
         SBatchSubm() : job_id(0) {}
         SBatchSubm(const string& inp) : input(inp), job_id(0) {}
-        SBatchSubm(const string& inp, const string& aff) 
+        SBatchSubm(const string& inp, const string& aff)
             : input(inp), affinity_token(aff), job_id(0) {}
     };
 
@@ -247,7 +247,7 @@ public:
 
     /// Job batch.
     /// SubmitJobBatch fills host address, port and submission list (job ids)
-    /// 
+    ///
     struct SJobBatch
     {
         string               host;
@@ -259,7 +259,7 @@ public:
     /// Method automatically splits the submission into reasonable sized
     /// transactions, so there is no limit on the input batch size.
     ///
-    /// Every job in the job list receives job id, which can be 
+    /// Every job in the job list receives job id, which can be
     /// converted into a valid job key using MakeJobKey
     ///
     /// SJobBatch::host and SJobBatch::port are assigned by the SubmitJobBatch
@@ -269,8 +269,8 @@ public:
 
     /// Submit job to server and wait for the result.
     /// This function should be used if we expect that job execution
-    /// infrastructure is capable of finishing job in the specified 
-    /// time frame. This method can save a lot of roundtrips with the 
+    /// infrastructure is capable of finishing job in the specified
+    /// time frame. This method can save a lot of roundtrips with the
     /// netschedule server (comparing to series of GetStatus calls).
     ///
     /// @param input
@@ -293,7 +293,7 @@ public:
     ///    string.
     ///
     /// @param udp_port
-    ///    UDP port to listen for queue notifications. Try to avoid many 
+    ///    UDP port to listen for queue notifications. Try to avoid many
     ///    client programs (or threads) listening on the same port. Message
     ///    is going to be delivered to just only one listener.
     ///
@@ -316,17 +316,17 @@ public:
     virtual
     void CancelJob(const string& job_key);
 
-    /// Get a pending job. 
+    /// Get a pending job.
     /// When function returns TRUE and job_key job receives running status,
-    /// client(worker node) becomes responsible for execution or returning 
-    /// the job. If there are no jobs in the queue function returns FALSE 
+    /// client(worker node) becomes responsible for execution or returning
+    /// the job. If there are no jobs in the queue function returns FALSE
     /// immediately and you have to repeat the call (after a delay).
     /// Consider WaitJob method as an alternative.
     ///
     /// @param job_key
     ///     Job key
     /// @param input
-    ///     Job input data (NetCache key). 
+    ///     Job input data (NetCache key).
     /// @param udp_port
     ///     Used to instruct server that specified client does NOT
     ///     listen to notifications (opposed to WaitJob)
@@ -346,8 +346,8 @@ public:
     /// @sa WaitJob
     ///
     virtual
-    bool GetJob(string*   job_key, 
-                string*   input, 
+    bool GetJob(string*   job_key,
+                string*   input,
                 unsigned short udp_port = 0,
                 string*   jout = 0,
                 string*   jerr = 0,
@@ -359,18 +359,18 @@ public:
         eNoWaitNotification  ///< Register for notofication but do not wait
     };
 
-    /// Wait for a job to come. 
-    /// Variant of GetJob method. The difference is that if there no 
+    /// Wait for a job to come.
+    /// Variant of GetJob method. The difference is that if there no
     /// pending jobs, method waits for a notification from the server.
-    /// 
-    /// NetSchedule server sends UDP packets with queue notification 
+    ///
+    /// NetSchedule server sends UDP packets with queue notification
     /// information. This is unreliable protocol, some notification may be
     /// lost. WaitJob internally makes an attempt to connect the server using
     /// reliable statefull TCP/IP, so even if some UDP notifications are
     /// lost jobs will be still delivered (with a delay).
-    /// 
+    ///
     /// When new job arrives to the queue server may not send the notification
-    /// to all clients immediately, it depends on specific queue notification 
+    /// to all clients immediately, it depends on specific queue notification
     /// timeout
     ///
     /// @param wait_time
@@ -380,7 +380,7 @@ public:
     ///    UDP notification loss. (60-320 seconds should be a reasonable value)
     ///
     /// @param udp_port
-    ///    UDP port to listen for queue notifications. Try to avoid many 
+    ///    UDP port to listen for queue notifications. Try to avoid many
     ///    client programs (or threads) listening on the same port. Message
     ///    is going to be delivered to just only one listener.
     ///
@@ -397,8 +397,8 @@ public:
     /// @sa GetJob, WaitNotification
     ///
     virtual
-    bool WaitJob(string*        job_key, 
-                 string*        input, 
+    bool WaitJob(string*        job_key,
+                 string*        input,
                  unsigned       wait_time,
                  unsigned short udp_port,
                  EWaitMode      wait_mode = eWaitNotification,
@@ -407,13 +407,13 @@ public:
                  TJobMask*      job_mask = 0);
 
 
-    /// Wait for queue notification message 
+    /// Wait for queue notification message
     /// (signal that queue has pending jobs)
     /// Method made static so it does not interfere with the client instance.
     ///
-    /// @return TRUE if message has been received. 
+    /// @return TRUE if message has been received.
     ///    If method returns FALSE does NOT mean queue has no jobs.
-    /// 
+    ///
     /// @sa WaitJob
     static
     bool WaitNotification(const string& queue_name,
@@ -422,36 +422,36 @@ public:
 
 
     /// Put job result (job should be received by GetJob() or WaitJob())
-    /// 
+    ///
     /// @param job_key
     ///     Job key
     /// @param ret_code
     ///     Job return code
     /// @param output
-    ///     Job output data (NetCache key). 
+    ///     Job output data (NetCache key).
     ///
     virtual
-    void PutResult(const string& job_key, 
-                   int           ret_code, 
+    void PutResult(const string& job_key,
+                   int           ret_code,
                    const string& output);
 
     /// Put job result, get new job from the queue
-    /// If this is the first call and there is no previous job 
+    /// If this is the first call and there is no previous job
     /// (done_job_key is empty) this is equivalent to GetJob
     ///
     /// @sa PutResult, GetJob
     virtual
-    bool PutResultGetJob(const string& done_job_key, 
-                         int           done_ret_code, 
+    bool PutResultGetJob(const string& done_job_key,
+                         int           done_ret_code,
                          const string& done_output,
-                         string*       new_job_key, 
+                         string*       new_job_key,
                          string*       new_input,
                          string*       jout = 0,
                          string*       jerr = 0,
                          TJobMask*     job_mask = 0);
 
     /// Put job interim (progress) message
-    /// 
+    ///
     /// @param job_key
     ///     Job key
     /// @param progress_msg
@@ -459,7 +459,7 @@ public:
     /// @sa GetProgressMsg
     ///
     virtual
-    void PutProgressMsg(const string& job_key, 
+    void PutProgressMsg(const string& job_key,
                         const string& progress_msg);
 
     /// Get progress message
@@ -474,7 +474,7 @@ public:
 
     /// Submit job failure diagnostics. This method indicates that
     /// job failed because of some fatal, unrecoverable error.
-    /// 
+    ///
     /// @param job_key
     ///     Job key
     /// @param err_msg
@@ -484,13 +484,13 @@ public:
     /// @param ret_code
     ///     Return code
     virtual
-    void PutFailure(const string& job_key, 
+    void PutFailure(const string& job_key,
                     const string& err_msg,
                     const string& output = kEmptyStr,
                     int           ret_code = 0);
 
     /// Request of current job status
-    /// eJobNotFound is returned if job status cannot be found 
+    /// eJobNotFound is returned if job status cannot be found
     /// (job record timed out)
     ///
     /// @param ret_code
@@ -504,11 +504,11 @@ public:
     ///    (if it is a reference to an external BLOB it can be deleted,
     ///     since it is no longer needed)
     /// @param progress_msg
-    ///    While job is running on the backend, worker node can 
+    ///    While job is running on the backend, worker node can
     ///    submit progress messages
     ///
     virtual
-    EJobStatus GetStatus(const string& job_key, 
+    EJobStatus GetStatus(const string& job_key,
                          int*          ret_code,
                          string*       output,
                          string*       err_msg = 0,
@@ -527,7 +527,7 @@ public:
                         const string& affinity_token);
 
     /// Transfer job to the "Returned" status. It will be
-    /// re-executed after a while. 
+    /// re-executed after a while.
     ///
     /// Node may decide to return the job if it cannot process it right
     /// now (does not have resources, being asked to shutdown, etc.)
@@ -542,11 +542,11 @@ public:
     /// Set job execution timeout
     ///
     /// When node picks up the job for execution it may evaluate what time it
-    /// takes for computation and report it to the queue. If job does not 
-    /// finish in the specified timeframe (because of a failure) 
+    /// takes for computation and report it to the queue. If job does not
+    /// finish in the specified timeframe (because of a failure)
     /// it is going to be rescheduled
     ///
-    /// Default value for the run timeout specified in the queue settings on 
+    /// Default value for the run timeout specified in the queue settings on
     /// the server side.
     ///
     /// @param time_to_run
@@ -559,12 +559,12 @@ public:
     ///
     /// When node picks up the job for execution it may peridically
     /// communicate to the server that job is still alive and
-    /// prolong job execution timeout, so job server does not try to 
+    /// prolong job execution timeout, so job server does not try to
     /// reschedule.
     ///
     ///
     /// @param runtime_inc
-    ///    Estimated time in seconds(from the current moment) to 
+    ///    Estimated time in seconds(from the current moment) to
     ///    finish the job.
     ///
     /// @sa SetRunTimeout
@@ -603,7 +603,7 @@ public:
     virtual
     void DeleteQueue(const string& qname);
 
-    /// Printable status type 
+    /// Printable status type
     static
     string StatusToString(EJobStatus status);
 
@@ -634,7 +634,7 @@ public:
 
     /// Return Connection Information string
     ///
-    virtual string GetConnectionInfo() const; 
+    virtual string GetConnectionInfo() const;
 
 
     /// Make job key string out of job id and server address
@@ -645,8 +645,8 @@ public:
     /// @param port     NetSchedule port
     ///
     static
-    void MakeJobKey(string*       job_key, 
-                    unsigned      job_id, 
+    void MakeJobKey(string*       job_key,
+                    unsigned      job_id,
                     const string& host,
                     unsigned      port);
 
@@ -660,16 +660,16 @@ protected:
     ///
     void DropQueue();
 
-    enum EStatisticsOptions 
+    enum EStatisticsOptions
     {
         eStatisticsAll,
         eStaticticsBrief
     };
 
-    void PrintStatistics(CNcbiOstream&      out, 
+    void PrintStatistics(CNcbiOstream&      out,
                          EStatisticsOptions opt = eStaticticsBrief);
 
-    void DumpQueue(CNcbiOstream& out, 
+    void DumpQueue(CNcbiOstream& out,
                    const string& job_key = kEmptyStr);
 
     void PrintQueue(CNcbiOstream& out,
@@ -696,10 +696,10 @@ protected:
 
     /// Adds trailing: "client\r\n queue\r\n COMMAND"
     ///
-    /// @param connected 
-    ///    connection established 
+    /// @param connected
+    ///    connection established
     ///
-    void MakeCommandPacket(string*       out_str, 
+    void MakeCommandPacket(string*       out_str,
                            const string& cmd_str);
 
     /// check string for "OK:" prefix, throws an exception if "ERR:"
@@ -708,12 +708,12 @@ protected:
     /// Error processing
     virtual void ProcessServerError(string* response, ETrimErr trim_err);
 
-    void CommandInitiate(const string& command, 
+    void CommandInitiate(const string& command,
                          const string& job_key,
                          string*       answer);
 
-    void ParseGetJobResponse(string*        job_key, 
-                             string*        input, 
+    void ParseGetJobResponse(string*        job_key,
+                             string*        input,
                              string*        jout,
                              string*        jerr,
                              TJobMask*      job_mask,
@@ -727,8 +727,8 @@ protected:
                              unsigned       job_id);
 
     /// Get job with wait notification (no immediate wait)
-    bool GetJobWaitNotify(string*    job_key, 
-                          string*    input, 
+    bool GetJobWaitNotify(string*    job_key,
+                          string*    input,
                           unsigned   wait_time,
                           unsigned short udp_port,
                           string*    jout = 0,
@@ -737,7 +737,7 @@ protected:
 
     /// Try to read ENDF from the socket to check if connection is still alive
     ///
-    /// @return TRUE if disconnected 
+    /// @return TRUE if disconnected
     bool CheckConnExpired();
 
     void RegUnregClient(const string& cmd, unsigned short udp_port);
@@ -760,14 +760,14 @@ protected:
 
 /// Client API for NetSchedule server.
 ///
-/// The same API as provided by CNetScheduleClient, 
+/// The same API as provided by CNetScheduleClient,
 /// only integrated with NCBI load balancer.
 ///
 /// Rebalancing is based on a combination of rebalance parameters.
-/// When rebalance parameter is not zero and parameter criteria has been 
-/// satisfied client connects to NCBI load balancing service (could be a 
+/// When rebalance parameter is not zero and parameter criteria has been
+/// satisfied client connects to NCBI load balancing service (could be a
 /// daemon or a network instance) and obtains the most available server.
-/// 
+///
 /// The intended use case for this client is long living programs like
 /// services or fast CGIs or any other program running a lot of NetSchedule
 /// requests.
@@ -794,7 +794,7 @@ public:
     /// @param rebalance_time
     ///    Number of seconds after which client is rebalanced
     /// @param rebalance_requests
-    ///    Number of requests before rebalancing. 
+    ///    Number of requests before rebalancing.
     ///    0 value means this criteria will not be evaluated.
     ///
     CNetScheduleClient_LB(const string& client_name,
@@ -805,8 +805,8 @@ public:
 
     virtual ~CNetScheduleClient_LB();
 
-    /// Add service address. This function turns off load balancing 
-    /// service discovery. 
+    /// Add service address. This function turns off load balancing
+    /// service discovery.
     /// Services list should be supplied by AddServiceAddress
     ///
     void AddServiceAddress(const string&  hostname,
@@ -822,11 +822,11 @@ public:
     /// This mode is strictly for use in worker nodes
     /// Do not submit jobs using this option.
     ///
-    void DiscoverLowPriorityServers(bool on_off) 
+    void DiscoverLowPriorityServers(bool on_off)
         { m_DiscoverLowPriorityServers = on_off; }
 
     virtual
-    string SubmitJob(const string& input, 
+    string SubmitJob(const string& input,
                      const string& progress_msg = kEmptyStr,
                      const string& affinity_token = kEmptyStr,
                      const string& out            = kEmptyStr,
@@ -837,15 +837,15 @@ public:
     void SubmitJobBatch(SJobBatch& subm);
 
     virtual
-    bool GetJob(string*        job_key, 
-                string*        input, 
+    bool GetJob(string*        job_key,
+                string*        input,
                 unsigned short udp_port = 0,
                 string*        jout = 0,
                 string*        jerr = 0,
                 TJobMask*      job_mask = 0);
 
-    bool WaitJob(string*        job_key, 
-                 string*        input, 
+    bool WaitJob(string*        job_key,
+                 string*        input,
                  unsigned       wait_time,
                  unsigned short udp_port,
                  EWaitMode      wait_mode = eWaitNotification,
@@ -862,7 +862,7 @@ public:
 
     /// Return Connection Information string
     ///
-    virtual string GetConnectionInfo() const; 
+    virtual string GetConnectionInfo() const;
 
 protected:
     virtual bool CheckConnect(const string& key);
@@ -897,15 +897,15 @@ protected:
 
 private:
     bool x_TryGetJob(SServiceAddress& sa,
-                     string* job_key, 
-                     string* input, 
+                     string* job_key,
+                     string* input,
                      unsigned short udp_port,
                      string*  jout,
                      string*  jerr,
                      TJobMask* job_mask);
     bool x_GetJobWaitNotify(SServiceAddress& sa,
-                            string*    job_key, 
-                            string*    input, 
+                            string*    job_key,
+                            string*    input,
                             unsigned   wait_time,
                             unsigned short udp_port,
                             string*    jout,
@@ -937,7 +937,7 @@ private:
 
 NCBI_DECLARE_INTERFACE_VERSION(CNetScheduleClient,  "xnetschedule", 1, 1, 0);
 
-/* moved to netschedule_api.hpp 
+/* moved to netschedule_api.hpp
 /// NetSchedule internal exception
 ///
 class CNetScheduleException : public CNetServiceException
@@ -1008,13 +1008,13 @@ unsigned CNetSchedule_GetJobId(const string&  key_str);
 /// Generate job key string
 ///
 /// Please note that "id" is an integer issued by the scheduling server.
-/// Clients should not use this function with custom ids. 
+/// Clients should not use this function with custom ids.
 /// Otherwise it may disrupt the communication protocol.
 ///
 extern NCBI_XCONNECT_EXPORT
-void CNetSchedule_GenerateJobKey(string*        key, 
-                                  unsigned       id, 
-                                  const string&  host, 
+void CNetSchedule_GenerateJobKey(string*        key,
+                                  unsigned       id,
+                                  const string&  host,
                                   unsigned short port);
 
 /// @internal

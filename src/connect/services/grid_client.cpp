@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
 //
-CGridClient::CGridClient(const CNetScheduleSubmitter& ns_client, 
+CGridClient::CGridClient(const CNetScheduleSubmitter& ns_client,
                          IBlobStorage& storage,
                          ECleanUp cleanup,
                          EProgressMsg progress_msg,
@@ -50,11 +50,11 @@ CGridClient::CGridClient(const CNetScheduleSubmitter& ns_client,
     m_JobSubmitter.reset(new CGridJobSubmitter(*this,
                                              progress_msg == eProgressMsgOn));
     m_JobBatchSubmitter.reset(new CGridJobBatchSubmitter(*this));
-    m_JobStatus.reset(new CGridJobStatus(*this, 
+    m_JobStatus.reset(new CGridJobStatus(*this,
                                          cleanup == eAutomaticCleanup,
                                          progress_msg == eProgressMsgOn));
 }
- 
+
 CGridClient::~CGridClient()
 {
 }
@@ -91,7 +91,7 @@ size_t CGridClient::GetMaxServerInputSize()
 
 //////////////////////////////////////////////////////////////////////////////
 //
-CGridJobSubmitter::CGridJobSubmitter(CGridClient& grid_client, 
+CGridJobSubmitter::CGridJobSubmitter(CGridClient& grid_client,
                                      bool use_progress)
     : m_GridClient(grid_client), m_UseProgress(use_progress)
 {
@@ -119,12 +119,12 @@ void CGridJobSubmitter::SetJobAffinity(const string& affinity)
 
 CNcbiOstream& CGridJobSubmitter::GetOStream()
 {
-    IWriter* writer = 
+    IWriter* writer =
         new CStringOrBlobStorageWriter(m_GridClient.GetMaxServerInputSize(),
                                        m_GridClient.GetStorage(),
                                        m_Job.input);
- 
-    m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter 
+
+    m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter
                                              | CRWStreambuf::fLogExceptions ));
     m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     return *m_WStream;
@@ -151,7 +151,7 @@ CGridJobBatchSubmitter::~CGridJobBatchSubmitter()
 void CGridJobBatchSubmitter::SetJobInput(const string& input)
 {
     if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted, 
+        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
                    "The Batch has already been submitted. Use Reset() method to start the a one");
     if( m_Jobs.empty() )
         PrepareNextJob();
@@ -159,19 +159,19 @@ void CGridJobBatchSubmitter::SetJobInput(const string& input)
 }
 
 CNcbiOstream& CGridJobBatchSubmitter::GetOStream()
-{   
+{
     if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted, 
+        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
                    "The Batch has already been submitted. Use Reset() method to start the a one");
 
     if ( m_Jobs.empty() )
         PrepareNextJob();
-    IWriter* writer = 
+    IWriter* writer =
         new CStringOrBlobStorageWriter(m_GridClient.GetMaxServerInputSize(),
                                        m_GridClient.GetStorage(),
                                        m_Jobs[m_JobIndex].input);
 
-    m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter 
+    m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter
                                              | CRWStreambuf::fLogExceptions ));
     m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     return *m_WStream;
@@ -180,7 +180,7 @@ CNcbiOstream& CGridJobBatchSubmitter::GetOStream()
 void CGridJobBatchSubmitter::SetJobMask(CNetScheduleAPI::TJobMask mask)
 {
     if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted, 
+        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
                    "The Batch has already been submitted. Use Reset() method to start the a one");
     if( m_Jobs.empty() )
         PrepareNextJob();
@@ -190,7 +190,7 @@ void CGridJobBatchSubmitter::SetJobMask(CNetScheduleAPI::TJobMask mask)
 void CGridJobBatchSubmitter::SetJobTags(const CNetScheduleAPI::TJobTags& tags)
 {
     if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted, 
+        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
                    "The Batch has already been submitted. Use Reset() method to start the a one");
     if( m_Jobs.empty() )
         PrepareNextJob();
@@ -200,7 +200,7 @@ void CGridJobBatchSubmitter::SetJobTags(const CNetScheduleAPI::TJobTags& tags)
 void CGridJobBatchSubmitter::SetJobAffinity(const string& affinity)
 {
     if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted, 
+        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
                    "The Batch has already been submitted. Use Reset() method to start the a one");
     if( m_Jobs.empty() )
         PrepareNextJob();
@@ -210,7 +210,7 @@ void CGridJobBatchSubmitter::SetJobAffinity(const string& affinity)
 void CGridJobBatchSubmitter::PrepareNextJob()
 {
     if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted, 
+        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
                    "The Batch has already been submitted. Use Reset() method to start the a one");
     m_WStream.reset();
     if( !m_Jobs.empty() )
@@ -221,7 +221,7 @@ void CGridJobBatchSubmitter::PrepareNextJob()
 void CGridJobBatchSubmitter::Submit()
 {
     if (m_HasBeenSubmitted)
-        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted, 
+        NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted,
                    "The Batch has already been submitted. Use Reset() method to start the a one");
     m_WStream.reset();
     if( !m_Jobs.empty() ) {
@@ -248,10 +248,10 @@ CGridJobBatchSubmitter::CGridJobBatchSubmitter(CGridClient& grid_client)
 //////////////////////////////////////////////////////////////////////////////
 //
 
-CGridJobStatus::CGridJobStatus(CGridClient& grid_client, 
-                               bool auto_cleanup, 
+CGridJobStatus::CGridJobStatus(CGridClient& grid_client,
+                               bool auto_cleanup,
                                bool use_progress)
-    : m_GridClient(grid_client), m_BlobSize(0), 
+    : m_GridClient(grid_client), m_BlobSize(0),
       m_AutoCleanUp(auto_cleanup), m_UseProgress(use_progress),
       m_JobDetailsRead(false)
 {
@@ -263,10 +263,10 @@ CGridJobStatus::~CGridJobStatus()
 
 CNetScheduleAPI::EJobStatus CGridJobStatus::GetStatus()
 {
-    CNetScheduleAPI::EJobStatus status = 
+    CNetScheduleAPI::EJobStatus status =
         m_GridClient.GetNSClient().GetJobStatus(m_Job.job_id);
     if ( m_AutoCleanUp && (
-              status == CNetScheduleAPI::eDone || 
+              status == CNetScheduleAPI::eDone ||
               status == CNetScheduleAPI::eCanceled) ) {
         x_GetJobDetails();
         m_GridClient.RemoveDataBlob(m_Job.input);
@@ -292,7 +292,7 @@ CNcbiIstream& CGridJobStatus::GetIStream(IBlobStorage::ELockMode mode)
 }
 
 string CGridJobStatus::GetProgressMessage() const
-{    
+{
     if (m_UseProgress) {
         m_GridClient.GetNSClient().GetProgressMsg(m_Job);
         if (!m_Job.progress_msg.empty())
@@ -303,7 +303,7 @@ string CGridJobStatus::GetProgressMessage() const
 
 void CGridJobStatus::x_SetJobKey(const string& job_key)
 {
-    m_Job.Reset();    
+    m_Job.Reset();
     m_Job.job_id = job_key;
     m_RStream.reset();
     m_BlobSize = 0;
@@ -318,27 +318,27 @@ void CGridJobStatus::x_GetJobDetails() const
     m_JobDetailsRead = true;
 }
 
-const string& CGridJobStatus::GetJobOutput() const  
+const string& CGridJobStatus::GetJobOutput() const
 {
     x_GetJobDetails();
-    return m_Job.output; 
-}
-    
-const string& CGridJobStatus::GetJobInput() const    
-{ 
-    x_GetJobDetails();
-    return m_Job.input; 
-}
-int CGridJobStatus::GetReturnCode() const   
-{ 
-    x_GetJobDetails();
-    return m_Job.ret_code; 
+    return m_Job.output;
 }
 
-const string& CGridJobStatus::GetErrorMessage() const 
-{ 
+const string& CGridJobStatus::GetJobInput() const
+{
     x_GetJobDetails();
-    return m_Job.error_msg; 
+    return m_Job.input;
+}
+int CGridJobStatus::GetReturnCode() const
+{
+    x_GetJobDetails();
+    return m_Job.ret_code;
+}
+
+const string& CGridJobStatus::GetErrorMessage() const
+{
+    x_GetJobDetails();
+    return m_Job.error_msg;
 }
 
 

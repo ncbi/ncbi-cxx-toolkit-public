@@ -107,7 +107,7 @@ CNetBVStoreClient::CNetBVStoreClient(const string&  host,
 }
 
 
-bool CNetBVStoreClient::ReadRealloc(unsigned id, 
+bool CNetBVStoreClient::ReadRealloc(unsigned id,
                                     vector<char>& buffer, size_t* buf_size,
                                     unsigned from,
                                     unsigned to)
@@ -140,13 +140,13 @@ bool CNetBVStoreClient::ReadRealloc(unsigned id,
         if (pos != string::npos) {
             const char* ch = answer.c_str() + pos + 5;
             bsize = (size_t)atoi(ch);
-        
+
             if (buf_size) {
                 *buf_size = bsize;
             }
         }
     } else {
-        NCBI_THROW(CNetServiceException, 
+        NCBI_THROW(CNetServiceException,
                    eCommunicationError, "Communication error");
     }
     if (bsize > buffer.size()) {
@@ -157,7 +157,7 @@ bool CNetBVStoreClient::ReadRealloc(unsigned id,
     while (bsize) {
         size_t nn_read = 0;
         EIO_Status io_st = m_Sock->Read(ptr, bsize, &nn_read);
-        switch (io_st) 
+        switch (io_st)
         {
         case eIO_Success:
             break;
@@ -199,7 +199,7 @@ bool CNetBVStoreClient::CheckConnect()
         CSocketAPI::SetReuseAddress(eOn);
         CreateSocket(m_Host, m_Port);
         m_Sock->SetReuseAddress(eOn);
-        
+
         WriteStr(m_ClientName.c_str(), m_ClientName.length() + 1);
 
         WriteStr(m_StoreName.c_str(), m_StoreName.length() + 1);

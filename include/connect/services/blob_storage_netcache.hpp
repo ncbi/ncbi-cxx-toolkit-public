@@ -64,7 +64,7 @@ public:
 
     CBlobStorage_NetCache();
 
-    /// Create Blob Storage 
+    /// Create Blob Storage
     /// @param[in] nc_client
     ///  NetCache client. Session Storage will delete it when
     ///  it goes out of scope.
@@ -73,14 +73,14 @@ public:
     ///  before they are accessed for read/write.
     /// @param[in[ temp_dir
     ///  Specifies where on a local fs those blobs will be cached
-    CBlobStorage_NetCache(CNetCacheAPI* nc_client, 
+    CBlobStorage_NetCache(CNetCacheAPI* nc_client,
                           TCacheFlags flags = 0x0,
                           const string& temp_dir = ".");
-    CBlobStorage_NetCache(CNetCacheClient* nc_client, 
+    CBlobStorage_NetCache(CNetCacheClient* nc_client,
                           TCacheFlags flags = 0x0,
                           const string& temp_dir = ".");
 
-    virtual ~CBlobStorage_NetCache(); 
+    virtual ~CBlobStorage_NetCache();
 
 
     virtual bool IsKeyValid(const string& str);
@@ -114,8 +114,8 @@ public:
                                         ELockMode lock_mode = eLockNoWait);
 
     /// Create an new blob
-    /// 
-    /// @return 
+    ///
+    /// @return
     ///     Newly create blob key
     virtual string CreateEmptyBlob();
 
@@ -124,13 +124,13 @@ public:
     /// @param[in] blob_key
     ///    Blob key to read
     virtual void DeleteBlob(const string& data_id);
-    
+
     /// Close all streams and connections.
     virtual void Reset();
 
 private:
     auto_ptr<IBlobStorage> m_Impl;
-    
+
     CBlobStorage_NetCache(const CBlobStorage_NetCache&);
     CBlobStorage_NetCache& operator=(CBlobStorage_NetCache&);
 };

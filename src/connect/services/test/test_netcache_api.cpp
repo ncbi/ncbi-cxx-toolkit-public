@@ -45,7 +45,7 @@
 
 USING_NCBI_SCOPE;
 
-    
+
 ///////////////////////////////////////////////////////////////////////
 
 
@@ -74,7 +74,7 @@ struct STransactionInfo
 
 
 /// @internal
-static 
+static
 bool s_CheckExists(const string&  key,
                    unsigned char* buf = 0,
                    size_t         buf_size = 0,
@@ -96,7 +96,7 @@ bool s_CheckExists(const string&  key,
     }
 
     try {
-        CNetCacheAPI::EReadResult rres = 
+        CNetCacheAPI::EReadResult rres =
             nc_client.GetData(key, buf, buf_size);
         if (rres == CNetCacheAPI::eNotFound)
             return false;
@@ -115,7 +115,7 @@ bool s_CheckExists(const string&  key,
             memcpy(buf, bdata.blob.get(), bdata.blob_size);
         }
         */
-    } 
+    }
     catch (CNetCacheException& ex)
     {
         cout << ex.what() << endl;
@@ -128,8 +128,8 @@ bool s_CheckExists(const string&  key,
 /// @internal
 static
 string s_PutBlob(const string&           service,
-               const void*               buf, 
-               size_t                    size, 
+               const void*               buf,
+               size_t                    size,
                vector<STransactionInfo>* log)
 {
     STransactionInfo info;
@@ -156,7 +156,7 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
     NcbiCout << "Statistical records=" << log.size() << NcbiEndl;
     double sum, sum_conn, sum_tran;
     sum = sum_conn = sum_tran = 0.0;
-    
+
     double max_time = 0.0;
 
     ITERATE(vector<STransactionInfo>, it, log) {
@@ -195,9 +195,9 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
     NcbiCout << "Avg, Conn, Trans" << endl;
     NcbiCout << avg << ", " << avg_conn << ", " << avg_tran << NcbiEndl;
 
-    NcbiCout << "Max(slowest) turnaround time:" << max_time 
-             << "  " << slow_cnt << " transactions in [" 
-             << max_time << " .. " << slow_median << "]" 
+    NcbiCout << "Max(slowest) turnaround time:" << max_time
+             << "  " << slow_cnt << " transactions in ["
+             << max_time << " .. " << slow_median << "]"
              << " out of " << log.size()
              << NcbiEndl;
 }
@@ -207,7 +207,7 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
 /// @internal
 static
 void s_StressTest(const string&             service,
-                  size_t                    size, 
+                  size_t                    size,
                   unsigned int              repeats,
                   vector<STransactionInfo>* log_write,
                   vector<STransactionInfo>* log_read,
@@ -216,7 +216,7 @@ void s_StressTest(const string&             service,
                   unsigned                  key_factor // repr. choose factor
                   )
 {
-    cout << "Stress test. BLOB size = " << size 
+    cout << "Stress test. BLOB size = " << size
          << " Repeats = " << repeats
          << ". Please wait... " << endl;
 
@@ -234,7 +234,7 @@ void s_StressTest(const string&             service,
 
     string key;
     for (unsigned i = 0; i < repeats; ) {
-        
+
         vector<string> keys;
         vector<unsigned> idx0;
         vector<unsigned> idx1;
@@ -255,7 +255,7 @@ void s_StressTest(const string&             service,
             idx0.push_back(i0);
             idx1.push_back(i1);
 
-            // take every "key_factor" key, 
+            // take every "key_factor" key,
             // so we have evenly (across db pages)
             // distributed slice of the database
             if (i % key_factor == 0 && rep_keys) {
@@ -264,7 +264,7 @@ void s_StressTest(const string&             service,
 
             ch[i0] = ch[i1] = 0;
 
-            if (i % 1000 == 0) 
+            if (i % 1000 == 0)
                 cout << "." << flush;
         }
 
@@ -279,7 +279,7 @@ void s_StressTest(const string&             service,
             ch[i0] = 10;
             ch[i1] = 127;
 
-            bool exists = 
+            bool exists =
                 s_CheckExists(key, (unsigned char*)buf2.get(), size, log_read);
             if (!exists) {
                 cerr << "Not found: " << key << endl;
@@ -309,7 +309,7 @@ void s_TestKeysRead(vector<string>&           rep_keys,
 
     ITERATE(vector<string>, it, rep_keys) {
         const string& key = *it;
-        bool exists = 
+        bool exists =
             s_CheckExists( key, (unsigned char*)buf.get(), size, log_read);
         assert(exists);
     }
@@ -326,11 +326,11 @@ void CTestNetCacheClient::Init(void)
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Net cache client");
-    
-    arg_desc->AddPositional("service", 
+
+    arg_desc->AddPositional("service",
                             "NetCache service.", CArgDescriptions::eString);
 
-    
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
@@ -372,7 +372,7 @@ void s_ReadUpdateCharTest(const string& service)
 
     z = 0;
     size_t blob_size = 0;
-    CNetCacheAPI::EReadResult rr =  
+    CNetCacheAPI::EReadResult rr =
         nc.GetData(key, &z, 1, &blob_size);
 
     assert(rr == CNetCacheAPI::eReadComplete);
@@ -388,7 +388,7 @@ void s_ReadUpdateCharTest(const string& service)
 
         z = 0;
         size_t blob_size = 0;
-        CNetCacheAPI::EReadResult rr =  
+        CNetCacheAPI::EReadResult rr =
             nc.GetData(key, &z, 1, &blob_size);
 
         assert(rr == CNetCacheAPI::eReadComplete);
@@ -423,7 +423,7 @@ int CTestNetCacheClient::Run(void)
         assert(!key.empty());
 
         SleepMilliSec(700);
-       
+
 
         size_t bsize;
         auto_ptr<IReader> rdr(nc_client.GetData(key, &bsize));
@@ -475,7 +475,7 @@ int CTestNetCacheClient::Run(void)
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
 
-        CNetCacheAPI::EReadResult rres = 
+        CNetCacheAPI::EReadResult rres =
             nc_client.GetData(key, dataBuf, sizeof(dataBuf));
         assert(rres == CNetCacheAPI::eReadComplete);
 
@@ -493,7 +493,7 @@ int CTestNetCacheClient::Run(void)
         CNetCacheAPI nc_client(service, "test");
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
-        CNetCacheAPI::EReadResult rres = 
+        CNetCacheAPI::EReadResult rres =
             nc_client.GetData(key, dataBuf, sizeof(dataBuf));
         assert(rres == CNetCacheAPI::eReadComplete);
         int res = strcmp(dataBuf, test_data2);
@@ -528,7 +528,7 @@ int CTestNetCacheClient::Run(void)
     s_ReadUpdateCharTest(service);
 
 //    s_TestClientLB("NetCache_shared");
-    
+
     NcbiCout << "Testing IsAlive()... ";
 //    s_TestAlive(host, port);
     NcbiCout << "Ok." << NcbiEndl;
@@ -543,7 +543,7 @@ int CTestNetCacheClient::Run(void)
     assert(!exists);
 */
 
-  
+
 
     vector<STransactionInfo> log;
     vector<STransactionInfo> log_read;
@@ -572,7 +572,7 @@ int CTestNetCacheClient::Run(void)
     unsigned repeats = 1000;
 
     for (int i=0; i < 20; ++i)
-    {   
+    {
         s_StressTest(service, 256, repeats, &log, &log_read, &rep_keys, 10);
         NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
         s_ReportStatistics(log);
@@ -603,15 +603,15 @@ int CTestNetCacheClient::Run(void)
         NcbiCout << NcbiEndl;
 
         log_read.resize(0);
-        NcbiCout << NcbiEndl << "Random BLOB read statistics. Number of BLOBs=" 
-                 << rep_keys.size() 
+        NcbiCout << NcbiEndl << "Random BLOB read statistics. Number of BLOBs="
+                 << rep_keys.size()
                  << NcbiEndl;
         s_TestKeysRead(rep_keys, 1024 * 1024 * 10, &log_read);
         s_ReportStatistics(log_read);
         NcbiCout << NcbiEndl;
 
         SleepSec(10);
-    
+
     }
 
 
@@ -624,7 +624,7 @@ int CTestNetCacheClient::Run(void)
         CNetCacheClient nc_client(host, port);
         nc_client.ShutdownServer();
     }}
-*/    
+*/
     return 0;
 }
 

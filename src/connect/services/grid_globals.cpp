@@ -51,11 +51,11 @@ CWNJobsWatcher::CWNJobsWatcher()
       m_InfinitLoopTime(0)
 {
 }
-CWNJobsWatcher::~CWNJobsWatcher() 
+CWNJobsWatcher::~CWNJobsWatcher()
 {
 }
 
-void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job, 
+void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
                             EEvent event)
 {
     switch(event) {
@@ -65,9 +65,9 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
             m_ActiveJobs[&job] = make_pair(CStopWatch(CStopWatch::eStart), false);
             ++m_JobsStarted;
             if (m_MaxJobsAllowed > 0 && m_JobsStarted > m_MaxJobsAllowed - 1) {
-                LOG_POST_X(1, CTime(CTime::eCurrent).AsString() 
-                              << " The maximum number of allowed jobs (" 
-                              << m_MaxJobsAllowed << ") has been reached.\n" 
+                LOG_POST_X(1, CTime(CTime::eCurrent).AsString()
+                              << " The maximum number of allowed jobs ("
+                              << m_MaxJobsAllowed << ") has been reached.\n"
                               << "Sending the shutdown request." );
                 CGridGlobals::GetInstance().
                     RequestShutdown(CNetScheduleAdmin::eNormalShutdown);
@@ -83,9 +83,9 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
     case eJobFailed :
         ++m_JobsFailed;
         if (m_MaxFailuresAllowed > 0 && m_JobsFailed > m_MaxFailuresAllowed - 1) {
-                LOG_POST_X(2, CTime(CTime::eCurrent).AsString() 
-                              << " The maximum number of failed jobs (" 
-                              << m_MaxFailuresAllowed << ") has been reached.\n" 
+                LOG_POST_X(2, CTime(CTime::eCurrent).AsString()
+                              << " The maximum number of failed jobs ("
+                              << m_MaxFailuresAllowed << ") has been reached.\n"
                               << "Sending the shutdown request." );
                 CGridGlobals::GetInstance().
                     RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
@@ -115,7 +115,7 @@ void CWNJobsWatcher::Print(CNcbiOstream& os) const
        << "Jobs Returned: "<< m_JobsReturned << endl
        << "Jobs Canceled: "<< m_JobsCanceled << endl
        << "Jobs Lost: "    << m_JobsLost << endl;
-    
+
     CMutexGuard guard(m_ActiveJobsMutex);
     os << "Jobs Running: " << m_ActiveJobs.size() << endl;
     ITERATE(TActiveJobs, it, m_ActiveJobs) {
@@ -136,10 +136,10 @@ void CWNJobsWatcher::CheckInfinitLoop()
         NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
             if (!it->second.second) {
                 if ( it->second.first.Elapsed() > m_InfinitLoopTime) {
-                    ERR_POST_X(3, CTime(CTime::eCurrent).AsString() 
-                                  << " An infinit loop is detected in job " 
+                    ERR_POST_X(3, CTime(CTime::eCurrent).AsString()
+                                  << " An infinit loop is detected in job "
                                   << it->first->GetJobKey());
-                    it->second.second = true;      
+                    it->second.second = true;
                     CGridGlobals::GetInstance().
                         RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
                 }
@@ -148,7 +148,7 @@ void CWNJobsWatcher::CheckInfinitLoop()
         }
         if( count > 0 && count == m_ActiveJobs.size()) {
             ERR_POST_X(4, CTime(CTime::eCurrent).AsString()
-                          << " All jobs are in the infinit loops." 
+                          << " All jobs are in the infinit loops."
                           << " SERVER IS COMMITTING SUICIDE!!");
             CGridGlobals::GetInstance().KillNode();
         }
@@ -185,10 +185,10 @@ CGridGlobals::CGridGlobals()
 {
 }
 
-CGridGlobals::~CGridGlobals() 
+CGridGlobals::~CGridGlobals()
 {
 }
-    
+
 /* static */
 CGridGlobals& CGridGlobals::GetInstance()
 {
@@ -214,7 +214,7 @@ void CGridGlobals::KillNode()
 {
     _ASSERT(m_Worker);
     if( m_Worker )
-        GetJobsWatcher().x_KillNode(*m_Worker);    
+        GetJobsWatcher().x_KillNode(*m_Worker);
 }
 
 END_NCBI_SCOPE

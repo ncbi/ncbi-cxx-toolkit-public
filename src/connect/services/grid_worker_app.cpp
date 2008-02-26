@@ -36,11 +36,11 @@
 # include <signal.h>
 
 /// @internal
-extern "C" 
+extern "C"
 void GridWorker_SignalHandler( int )
 {
     try {
-        ncbi::CGridWorkerApp* app = 
+        ncbi::CGridWorkerApp* app =
             dynamic_cast<ncbi::CGridWorkerApp*>(ncbi::CNcbiApplication::Instance());
         if (app) {
             app->RequestShutdown();
@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 //
 
-CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory, 
+CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
                                IBlobStorageFactory*   storage_factory,
                                INetScheduleClientFactory* client_factory,
                                ESignalHandling signal_handling)
@@ -68,7 +68,7 @@ CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
     if (signal_handling == eStandardSignalHandling) {
     // attempt to get server gracefully shutdown on signal
         signal(SIGINT,  GridWorker_SignalHandler);
-        signal(SIGTERM, GridWorker_SignalHandler);    
+        signal(SIGTERM, GridWorker_SignalHandler);
     }
 #endif
 }
@@ -85,22 +85,22 @@ void CGridWorkerApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Worker Node"); 
+                              "Worker Node");
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
-    m_AppImpl->Init();   
+    m_AppImpl->Init();
     m_AppImpl->GetJobFactory().Init(GetInitContext());
 }
 
 void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
-    arg_desc->AddOptionalKey("control_port", 
+    arg_desc->AddOptionalKey("control_port",
                              "control_port",
                              "A TCP port number",
                              CArgDescriptions::eInteger);
 
-    arg_desc->AddOptionalKey("logfile", 
+    arg_desc->AddOptionalKey("logfile",
                              "file_name",
                              "File to which the program log should be redirected",
                              CArgDescriptions::eOutputFile);
@@ -108,11 +108,11 @@ void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
     CNcbiApplication::SetupArgDescriptions(arg_desc);
 }
 
-const IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext() const 
+const IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext() const
 {
     if ( !m_WorkerNodeInitContext.get() )
         m_WorkerNodeInitContext.reset(
-                       new CDefalutWorkerNodeInitContext(*this));
+                       new CDefaultWorkerNodeInitContext(*this));
     return *m_WorkerNodeInitContext;
 }
 

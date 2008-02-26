@@ -47,7 +47,7 @@
 #include <vector>
 
 /// @file netschedule_client.hpp
-/// NetSchedule client specs. 
+/// NetSchedule client specs.
 ///
 
 
@@ -96,15 +96,15 @@ public:
 
     CNetScheduleKeys() {}
 
-    class const_iterator 
+    class const_iterator
     {
     public:
         typedef typename CNetScheduleKeys<TBVector>::TKeysMap TKeysMap;
         typedef typename TBVector::enumerator TBVEnumerator;
-        
-        const_iterator(const TKeysMap& keys, bool end) : m_Keys(&keys) 
+
+        const_iterator(const TKeysMap& keys, bool end) : m_Keys(&keys)
         {
-            if (end) 
+            if (end)
                 m_SrvIter = m_Keys->end();
             else {
                 for (m_SrvIter = m_Keys->begin(); m_SrvIter != m_Keys->end(); ++m_SrvIter) {
@@ -118,7 +118,7 @@ public:
         }
         bool operator == (const const_iterator& other) const
         {
-            return m_Keys == other.m_Keys && m_SrvIter == other.m_SrvIter 
+            return m_Keys == other.m_Keys && m_SrvIter == other.m_SrvIter
                 && m_BVEnum == other.m_BVEnum;
         }
         bool operator != (const const_iterator& other) const

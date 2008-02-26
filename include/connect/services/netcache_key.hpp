@@ -34,7 +34,7 @@
  */
 
 /// @file netcache_client.hpp
-/// NetCache client specs. 
+/// NetCache client specs.
 ///
 
 #include <connect/connect_export.h>
@@ -66,9 +66,9 @@ public:
     operator string() const;
 
     unsigned     id;        ///< BLOB id
-    string       host;      ///< server name 
+    string       host;      ///< server name
     unsigned     port;      ///< TCP/IP port number
-    unsigned     version;   ///< Key version 
+    unsigned     version;   ///< Key version
 };
 
 

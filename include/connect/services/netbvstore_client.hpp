@@ -34,7 +34,7 @@
  */
 
 /// @file netcache_client.hpp
-/// NetCache client specs. 
+/// NetCache client specs.
 ///
 
 #include <connect/ncbi_conn_reader_writer.hpp>
@@ -105,7 +105,7 @@ public:
 };
 
 
-/// Client to NetBVStore server 
+/// Client to NetBVStore server
 ///
 /// @note This implementation is thread safe and syncronized
 ///
@@ -121,7 +121,7 @@ public:
                       const string&  client_name);
     virtual ~CNetBVStoreClient();
 
-    bool ReadRealloc(unsigned id, 
+    bool ReadRealloc(unsigned id,
                      vector<char>& buffer, size_t* buf_size,
                      unsigned  from,
                      unsigned  to);
@@ -140,4 +140,4 @@ private:
 
 END_NCBI_SCOPE
 
-#endif  
+#endif

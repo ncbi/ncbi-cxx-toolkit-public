@@ -9,6 +9,7 @@ SRC     = netschedule_client netschedule_client_lb \
           grid_globals grid_rw_impl remote_app remote_app_impl \
           remote_app_mb remote_app_sb \
           ra_dispatcher_client srv_connections netservice_api \
+          srv_discovery netservice_params \
           netschedule_api netschedule_api_submitter netschedule_api_executer \
           netschedule_api_admin netschedule_key netschedule_api_expt \
           netcache_key netcache_rw netcache_api netcache_api_admin

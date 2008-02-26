@@ -1,6 +1,3 @@
-#ifndef CONNECT_SERVICES__REMOTE_JOB_HPP
-#define CONNECT_SERVICES__REMOTE_JOB_HPP
-
 /*  $Id$
  * ===========================================================================
  *
@@ -26,23 +23,48 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didneko,
- *
  * File Description:
+ *   Definitions of the configuration parameters for connect/services.
+ *
+ * Authors:
+ *   Dmitry Kazimirov
  *
  */
 
-// This file is DEPRECATED
+#include <ncbi_pch.hpp>
 
-#include <connect/services/remote_app_mb.hpp>
+#include <connect/services/netservice_params.hpp>
 
 BEGIN_NCBI_SCOPE
 
-#define CRemoteAppRequest CRemoteAppRequestMB
-#define CRemoteAppRequest_Executer CRemoteAppRequestMB_Executer
-#define CRemoteAppResult CRemoteAppResultMB
-#define CRemoteAppResult_Executer CRemoteAppResultMB_Executer
+
+NCBI_PARAM_DEF(bool, netservice_api, use_linger2, false);
+NCBI_PARAM_DEF(unsigned int, netservice_api, connection_max_retries, 10);
+NCBI_PARAM_DEF(double, netservice_api, communication_timeout, 12.0);
+NCBI_PARAM_DEF(int, netservice_api, max_find_lbname_retries, 3);
+NCBI_PARAM_DEF(string, netcache_api, fallback_server, kEmptyStr);
+NCBI_PARAM_DEF(string, netcache_client, fallback_servers, kEmptyStr);
+NCBI_PARAM_DEF(int, netservice_api, max_connection_pool_size, 0); // unlimited
+
+
+static bool s_DefaultCommTimeout_Initialized = false;
+static STimeout s_DefaultCommTimeout;
+
+STimeout s_GetDefaultCommTimeout()
+{
+    if (s_DefaultCommTimeout_Initialized)
+        return s_DefaultCommTimeout;
+    double ftm = TServConn_CommTimeout::GetDefault();
+    NcbiMsToTimeout(&s_DefaultCommTimeout, (unsigned long)(ftm * 1000.0 + 0.5));
+    s_DefaultCommTimeout_Initialized = true;
+    return s_DefaultCommTimeout;
+}
+
+void s_SetDefaultCommTimeout(const STimeout& tm)
+{
+    s_DefaultCommTimeout = tm;
+    s_DefaultCommTimeout_Initialized = true;
+}
+
 
 END_NCBI_SCOPE
-
-#endif // CONNECT_SERVICES__REMOTE_JOB_HPP

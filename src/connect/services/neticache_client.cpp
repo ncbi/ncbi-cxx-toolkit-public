@@ -117,7 +117,7 @@ bool CNetICacheClient::CheckConnect()
 
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
 		// check if netcache session is in OK state
-		// we have to do that, because if client program failed to 
+		// we have to do that, because if client program failed to
 		// read the whole BLOB (deserialization error?) the network protocol
 		// stucks in an incorrect state (needs to be closed)
 		try {
@@ -131,7 +131,7 @@ bool CNetICacheClient::CheckConnect()
 				delete m_Sock; m_Sock = 0;
 				return CheckConnect();
 			}
-		} 
+		}
 		catch (exception& ) {
 			delete m_Sock; m_Sock = 0;
 			return CheckConnect();
@@ -151,23 +151,23 @@ bool CNetICacheClient::CheckConnect()
 }
 
 
-void CNetICacheClient::MakeCommandPacket(string* out_str, 
+void CNetICacheClient::MakeCommandPacket(string* out_str,
                                          const string& cmd_str,
                                          bool          connected) const
 {
     _ASSERT(out_str);
 
     if (m_ClientName.length() < 3) {
-        NCBI_THROW(CNetCacheException, 
+        NCBI_THROW(CNetCacheException,
                    eAuthenticationError, "Client name is too small or empty");
     }
     if (m_CacheName.empty()) {
-        NCBI_THROW(CNetCacheException, 
+        NCBI_THROW(CNetCacheException,
                    eAuthenticationError, "Cache name unknown");
     }
 
     if (connected) {
-        // connection has been re-established, 
+        // connection has been re-established,
         //   need to send authentication line
         *out_str = m_ClientName;
         const string& client_name_comment = GetClientNameComment();
@@ -227,11 +227,11 @@ struct CStackGuard
 */
 
 
-void CNetICacheClient::RegisterSession(unsigned pid) 
+void CNetICacheClient::RegisterSession(unsigned pid)
 {
     CFastMutexGuard guard(m_Lock);
     bool reconnected = CheckConnect();
-    if (reconnected) { 
+    if (reconnected) {
         // connection reestablished
         string auth = m_ClientName;
         const string& client_name_comment = GetClientNameComment();
@@ -249,7 +249,7 @@ void CNetICacheClient::UnRegisterSession(unsigned pid)
 {
     CFastMutexGuard guard(m_Lock);
     bool reconnected = CheckConnect();
-    if (reconnected) { 
+    if (reconnected) {
         // connection reestablished
         string auth = m_ClientName;
         const string& client_name_comment = GetClientNameComment();
@@ -284,7 +284,7 @@ void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags policy,
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckOK(&m_Tmp);
@@ -305,7 +305,7 @@ ICache::TTimeStampFlags CNetICacheClient::GetTimeStampPolicy() const
     cl->WriteStr(cmd.c_str(), cmd.length() + 1);
     cl->WaitForServer();
     if (!cl->ReadStr(*m_Sock, &cl->m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&cl->m_Tmp);
@@ -328,7 +328,7 @@ int CNetICacheClient::GetTimeout() const
     cl->WriteStr(cmd.c_str(), cmd.length() + 1);
     cl->WaitForServer();
     if (!cl->ReadStr(*m_Sock, &cl->m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&cl->m_Tmp);
@@ -342,7 +342,7 @@ bool CNetICacheClient::IsOpen() const
 {
     CFastMutexGuard guard(m_Lock);
 
-    // need this trick to get over intrinsic non-const-ness of 
+    // need this trick to get over intrinsic non-const-ness of
     // the network protocol
     CNetICacheClient* cl = const_cast<CNetICacheClient*>(this);
     bool reconnected = cl->CheckConnect();
@@ -354,7 +354,7 @@ bool CNetICacheClient::IsOpen() const
     cl->WaitForServer();
     string answer;
     if (!cl->ReadStr(*m_Sock, &answer)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&answer);
@@ -389,7 +389,7 @@ void CNetICacheClient::SetVersionRetention(EKeepVersions policy)
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckOK(&m_Tmp);
@@ -410,7 +410,7 @@ ICache::EKeepVersions CNetICacheClient::GetVersionRetention() const
     cl->WaitForServer();
     string answer;
     if (!cl->ReadStr(*m_Sock, &answer)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&answer);
@@ -442,7 +442,7 @@ void CNetICacheClient::Store(const string&  key,
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&m_Tmp);
@@ -460,7 +460,7 @@ void CNetICacheClient::Store(const string&  key,
     while (size) {
         ERW_Result res = writer->Write(ptr, size, &bytes_written);
         if (res != eRW_Success) {
-            NCBI_THROW(CNetServiceException, eCommunicationError, 
+            NCBI_THROW(CNetServiceException, eCommunicationError,
                        "Communication error");
         }
         ptr += bytes_written;
@@ -486,7 +486,7 @@ size_t CNetICacheClient::GetSize(const string&  key,
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&m_Tmp);
@@ -512,7 +512,7 @@ void CNetICacheClient::GetBlobOwner(const string&  key,
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&m_Tmp);
@@ -534,7 +534,7 @@ bool CNetICacheClient::Read(const string& key,
         rdr.reset((GetReadStream_NoLock(key, version, subkey)));
         blob_size = m_BlobSize;
     }}
-    
+
 
     if (rdr.get() == 0) {
         return false;
@@ -547,7 +547,7 @@ bool CNetICacheClient::Read(const string& key,
 
     while (buf_avail && blob_size) {
         size_t bytes_read;
-        ERW_Result rw_res = 
+        ERW_Result rw_res =
             rdr->Read(buf_ptr, buf_avail, &bytes_read);
         switch (rw_res) {
         case eRW_Success:
@@ -590,11 +590,11 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
             char* buf_ptr = blob_descr->buf;
             while (to_read) {
                 size_t nn_read;
-                ERW_Result rw_res = 
+                ERW_Result rw_res =
                     blob_descr->reader->Read(buf_ptr, to_read, &nn_read);
                 if (!nn_read || rw_res != eRW_Success) {
                     blob_descr->reader.reset(0);
-                    NCBI_THROW(CNetServiceException, eCommunicationError, 
+                    NCBI_THROW(CNetServiceException, eCommunicationError,
                                "Communication error");
                 }
                 buf_ptr += nn_read;
@@ -627,7 +627,7 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&m_Tmp);
@@ -671,7 +671,7 @@ void CNetICacheClient::Remove(const string& key)
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckOK(&m_Tmp);
@@ -693,7 +693,7 @@ void CNetICacheClient::Remove(const string&    key,
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckOK(&m_Tmp);
@@ -715,7 +715,7 @@ time_t CNetICacheClient::GetAccessTime(const string&  key,
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&m_Tmp);
@@ -739,7 +739,7 @@ bool CNetICacheClient::HasBlobs(const string&  key,
 
     string& answer = m_Tmp;
     if (!ReadStr(*m_Sock, &answer)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&answer);
@@ -762,7 +762,7 @@ void CNetICacheClient::Purge(time_t           access_timeout,
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckOK(&m_Tmp);
@@ -777,7 +777,7 @@ void CNetICacheClient::Purge(const string&    key,
 }
 
 
-IReader* 
+IReader*
 CNetICacheClient::GetReadStream_NoLock(const string&  key,
                                        int            version,
                                        const string&  subkey)
@@ -792,7 +792,7 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
     WaitForServer();
     string& answer = m_Tmp;
     if (!ReadStr(*m_Sock, &answer)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
 
@@ -811,7 +811,7 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
 
     sg.Release();
     auto_ptr<CNetCacheSock_RW> rw(new CNetCacheSock_RW(m_Sock, m_BlobSize));
-    
+
     rw->OwnSocket();
     DetachSocket();
     rw->SetSocketParent(this);
@@ -844,7 +844,7 @@ IReader* CNetICacheClient::GetReadStream(const string&  key,
 }
 
 
-void CNetICacheClient::AddKVS(string*          out_str, 
+void CNetICacheClient::AddKVS(string*          out_str,
                               const string&    key,
                               int              version,
                               const string&    subkey) const
@@ -939,7 +939,7 @@ ICache* CNetICacheCF::CreateInstance(
     try {
         host =
             GetParam(params, kCFParam_server, true);
-    } 
+    }
     catch (exception&)
     {
         host =
@@ -947,11 +947,11 @@ ICache* CNetICacheCF::CreateInstance(
     }
     int port =
         GetParamInt(params,kCFParam_port, true, 9000);
-    string cache_name; 
+    string cache_name;
     try {
         cache_name =
             GetParam(params, kCFParam_cache_name, true);
-    } 
+    }
     catch (exception&)
     {
         cache_name =

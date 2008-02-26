@@ -28,7 +28,7 @@
  *
  * Authors:  Maxim Didneko,
  *
- * File Description:  
+ * File Description:
  *
  */
 

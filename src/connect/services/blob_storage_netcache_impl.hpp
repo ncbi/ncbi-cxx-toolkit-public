@@ -64,7 +64,7 @@ public:
 
     CBlobStorage_NetCache_Impl();
 
-    /// Create Blob Storage 
+    /// Create Blob Storage
     /// @param[in] nc_client
     ///  NetCache client. Session Storage will delete it when
     ///  it goes out of scope.
@@ -73,11 +73,11 @@ public:
     ///  before they are accessed for read/write.
     /// @param[in[ temp_dir
     ///  Specifies where on a local fs those blobs will be cached
-    CBlobStorage_NetCache_Impl(T* nc_client, 
+    CBlobStorage_NetCache_Impl(T* nc_client,
                           TCacheFlags flags = 0x0,
                           const string& temp_dir = ".");
 
-    virtual ~CBlobStorage_NetCache_Impl(); 
+    virtual ~CBlobStorage_NetCache_Impl();
 
 
     virtual bool IsKeyValid(const string& str);
@@ -111,8 +111,8 @@ public:
                                         ELockMode lock_mode = eLockNoWait);
 
     /// Create an new blob
-    /// 
-    /// @return 
+    ///
+    /// @return
     ///     Newly create blob key
     virtual string CreateEmptyBlob();
 
@@ -121,7 +121,7 @@ public:
     /// @param[in] blob_key
     ///    Blob key to read
     virtual void DeleteBlob(const string& data_id);
-    
+
     /// Close all streams and connections.
     virtual void Reset();
 
@@ -161,7 +161,7 @@ template <class T>
 CBlobStorage_NetCache_Impl<T>::CBlobStorage_NetCache_Impl(T* nc_client,
                                                     TCacheFlags flags,
                                                     const string&  temp_dir)
-    : m_NCClient(nc_client), 
+    : m_NCClient(nc_client),
       m_CacheFlags(flags),
       m_TempDir(temp_dir)
 {
@@ -176,7 +176,7 @@ CBlobStorage_NetCache_Impl<T>::CBlobStorage_NetCache_Impl()
 
 
 template <class T>
-CBlobStorage_NetCache_Impl<T>::~CBlobStorage_NetCache_Impl() 
+CBlobStorage_NetCache_Impl<T>::~CBlobStorage_NetCache_Impl()
 {
     try {
         Reset();
@@ -186,7 +186,7 @@ CBlobStorage_NetCache_Impl<T>::~CBlobStorage_NetCache_Impl()
 template <class T>
 void CBlobStorage_NetCache_Impl<T>::x_Check(const string& where)
 {
-    if ( (m_IStream.get() && !(m_CacheFlags & eCacheInput)) || 
+    if ( (m_IStream.get() && !(m_CacheFlags & eCacheInput)) ||
          (m_OStream.get() && !(m_CacheFlags & eCacheOutput)) )
         NCBI_THROW(CBlobStorageException,
                    eBusy, "Communication channel is already in use." + where);
@@ -197,13 +197,13 @@ auto_ptr<IReader> CBlobStorage_NetCache_Impl<T>::x_GetReader(const string& key,
                                                   size_t& blob_size,
                                                   ELockMode lockMode)
 {
-    typename T::ELockMode mode = lockMode == eLockNoWait ? 
+    typename T::ELockMode mode = lockMode == eLockNoWait ?
         T::eLockNoWait : T::eLockWait;
     x_Check("GetReader");
     blob_size = 0;
 
     auto_ptr<IReader> reader;
-    if (key.empty()) 
+    if (key.empty())
         NCBI_THROW(CBlobStorageException,
                    eBlobNotFound, "Requested blob is not found: " + key);
     int try_count = 0;
@@ -212,16 +212,16 @@ auto_ptr<IReader> CBlobStorage_NetCache_Impl<T>::x_GetReader(const string& key,
             reader.reset(m_NCClient->GetData(key, &blob_size, mode));
             break;
         } catch(CNetCacheException& ex1) {
-            if(ex1.GetErrCode() != CNetCacheException::eBlobLocked) 
+            if(ex1.GetErrCode() != CNetCacheException::eBlobLocked)
                 throw;
 
-            NCBI_RETHROW(ex1, CBlobStorageException, eBlocked, 
+            NCBI_RETHROW(ex1, CBlobStorageException, eBlocked,
                        "Requested blob(" + key + ") is blocked by another process.");
 
         } catch (CNetServiceException& ex) {
-            if (ex.GetErrCode() != CNetServiceException::eTimeout) 
+            if (ex.GetErrCode() != CNetServiceException::eTimeout)
                 throw;
-            
+
             ERR_POST_XX(ConnServ_NetCache, 4,
                         "Communication Error : " << ex.what());
             if (++try_count >= 2)
@@ -261,7 +261,7 @@ CNcbiIstream& CBlobStorage_NetCache_Impl<T>::GetIStream(const string& key,
         auto_ptr<fstream> fstr(CFile::CreateTmpFileEx(m_TempDir,sm_InputBlobCachePrefix));
         if( !fstr.get() || !fstr->good()) {
             fstr.reset();
-            NCBI_THROW(CBlobStorageException, eReader, 
+            NCBI_THROW(CBlobStorageException, eReader,
                        "Reader couldn't create a temporary file. BlobKey: " + key);
         }
 
@@ -273,8 +273,8 @@ CNcbiIstream& CBlobStorage_NetCache_Impl<T>::GetIStream(const string& key,
         fstr->flush();
         fstr->seekg(0);
         m_IStream.reset(fstr.release());
-    } else {    
-        m_IStream.reset(new CRStream(reader.release(), 0,0, 
+    } else {
+        m_IStream.reset(new CRStream(reader.release(), 0,0,
                                      CRWStreambuf::fOwnReader));
         if( !m_IStream.get() || !m_IStream->good()) {
             m_IStream.reset();
@@ -309,7 +309,7 @@ string CBlobStorage_NetCache_Impl<T>::GetBlobAsString(const string& data_id)
                        eReader, "Reader couldn't read a blob. BlobKey: " + data_id);
         } // switch
     } // for
-   
+
     return buf;
 }
 
@@ -328,7 +328,7 @@ CNcbiOstream& CBlobStorage_NetCache_Impl<T>::CreateOStream(string& key,
                 break;
             }
             catch (CNetServiceException& ex) {
-                if (ex.GetErrCode() != CNetServiceException::eTimeout) 
+                if (ex.GetErrCode() != CNetServiceException::eTimeout)
                     throw;
 
                 ERR_POST_XX(ConnServ_NetCache, 5,
@@ -342,7 +342,7 @@ CNcbiOstream& CBlobStorage_NetCache_Impl<T>::CreateOStream(string& key,
             NCBI_THROW(CBlobStorageException,
                        eWriter, "Writer couldn't be created. BlobKey: " + key);
         }
-        m_OStream.reset( new CWStream(writer.release(), 0,0, 
+        m_OStream.reset( new CWStream(writer.release(), 0,0,
                                       CRWStreambuf::fOwnWriter));
         if( !m_OStream.get() || !m_OStream->good()) {
             m_OStream.reset();
@@ -357,7 +357,7 @@ CNcbiOstream& CBlobStorage_NetCache_Impl<T>::CreateOStream(string& key,
         if( !m_OStream.get() || !m_OStream->good()) {
             m_OStream.reset();
             NCBI_THROW(CBlobStorageException,
-                       eWriter, 
+                       eWriter,
                        "Writer couldn't create a temporary file in \"" + m_TempDir + "\" dir. "
                        "Check \"tmp_dir\" parameter in the registry for netcache client.");
         }
@@ -378,7 +378,7 @@ template <class T>
 void CBlobStorage_NetCache_Impl<T>::DeleteBlob(const string& data_id)
 {
     x_Check("DeleteBlob");
-    if (!data_id.empty() && m_NCClient.get()) 
+    if (!data_id.empty() && m_NCClient.get())
         m_NCClient->Remove(data_id);
 }
 
@@ -396,7 +396,7 @@ void CBlobStorage_NetCache_Impl<T>::Reset()
                     break;
                 }
                 catch (CNetServiceException& ex) {
-                    if (ex.GetErrCode() != CNetServiceException::eTimeout) 
+                    if (ex.GetErrCode() != CNetServiceException::eTimeout)
                         throw;
                     ERR_POST_XX(ConnServ_NetCache, 6,
                                 "Communication Error : " << ex.what());
@@ -405,7 +405,7 @@ void CBlobStorage_NetCache_Impl<T>::Reset()
                     SleepMilliSec(1000 + try_count*2000);
                 }
             }
-            if (!writer.get()) { 
+            if (!writer.get()) {
                 NCBI_THROW(CBlobStorageException,
                            eWriter, "Writer couldn't be created.");
             }
@@ -425,7 +425,7 @@ void CBlobStorage_NetCache_Impl<T>::Reset()
                            eWriter, "Wrong cast.");
             }
             m_CreatedBlobId = "";
-            
+
         }
         if (m_OStream.get() && !(m_CacheFlags & eCacheOutput)) {
             m_OStream->flush();

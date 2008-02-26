@@ -31,12 +31,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_param.hpp>
 
 #include "../ncbi_servicep.h"
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/error_codes.hpp>
+#include <connect/services/netservice_params.hpp>
 #include <memory>
 
 
@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 /// @internal
 static
-bool s_ConnectClient(CNetCacheClient* nc_client, 
+bool s_ConnectClient(CNetCacheClient* nc_client,
                      unsigned int     host,
                      unsigned short   port,
                      STimeout&        to)
@@ -64,7 +64,7 @@ bool s_ConnectClient(CNetCacheClient* nc_client,
 
 /// @internal
 static
-bool s_ConnectClient(CNetCacheClient* nc_client, 
+bool s_ConnectClient(CNetCacheClient* nc_client,
                      const string&    host,
                      unsigned short   port,
                      STimeout&        to)
@@ -80,13 +80,9 @@ bool s_ConnectClient(CNetCacheClient* nc_client,
 }
 
 
-NCBI_PARAM_DECL(string, netcache_client, fallback_servers); 
-typedef NCBI_PARAM_TYPE(netcache_client, fallback_servers) TCGI_NetCacheFallbackServers;
-NCBI_PARAM_DEF(string, netcache_client, fallback_servers, kEmptyStr);
-
 /// @internal
 static
-bool s_ConnectClient_Reserve(CNetCacheClient* nc_client, 
+bool s_ConnectClient_Reserve(CNetCacheClient* nc_client,
                              const string&    service_name,
                              STimeout&        to,
                              string*          err_msg)
@@ -110,7 +106,7 @@ bool s_ConnectClient_Reserve(CNetCacheClient* nc_client,
                            << " reserve service used "
                            << host << ":" << port);
                 return true;
-            }            
+            }
         } catch (exception& /*ex*/) {
         }
         servers.pop_front();
@@ -128,14 +124,14 @@ bool s_ConnectClient_Reserve(CNetCacheClient* nc_client,
 ///
 /// @note Please note that it should be done only when we place a new
 /// BLOB to the netcache storage. When retriving you should directly connect
-/// to the service without any load balancing 
+/// to the service without any load balancing
 /// (service infomation encoded in the BLOB key)
 ///
 /// @internal
 ///
-static void 
+static void
 NetCache_ConfigureWithLB(
-                    CNetCacheClient* nc_client, 
+                    CNetCacheClient* nc_client,
                     const string&    service_name,
                     int              backup_mode_mask)
 {
@@ -149,7 +145,7 @@ NetCache_ConfigureWithLB(
     STimeout& to = nc_client->SetCommunicationTimeout();
     string err_msg = "Cannot connect to netcache service (";
 
-    CNetCacheClient_LB::TServiceBackupMode failure_diag = 
+    CNetCacheClient_LB::TServiceBackupMode failure_diag =
                                 CNetCacheClient_LB::ENoBackup;
 
     if (srv_it == 0) {
@@ -168,7 +164,7 @@ NetCache_ConfigureWithLB(
                 }
                 SERV_Close(srv_it);
                 return;
-                
+
             } catch(exception&){
                 // try another server
             }
@@ -187,10 +183,10 @@ NetCache_ConfigureWithLB(
     // lets try to call "emergency numbers"
 
     if (backup_mode_mask & failure_diag) {
-        
-        if (s_ConnectClient_Reserve(nc_client, 
+
+        if (s_ConnectClient_Reserve(nc_client,
                                     service_name,
-                                    to, 
+                                    to,
                                     &err_msg)) {
             return;
         }
@@ -268,8 +264,8 @@ string CNetCacheClient_LB::PutData(const string& key,
     if (!key.empty()) {
         CNetCache_Key blob_key(key);
         //CNetCache_ParseBlobKey(&blob_key, key);
-    
-        if ((blob_key.hostname == m_Host) && 
+
+        if ((blob_key.hostname == m_Host) &&
             (blob_key.port == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
@@ -298,8 +294,8 @@ IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
     if (!key->empty()) {
         CNetCache_Key blob_key(*key);
 //        CNetCache_ParseBlobKey(&blob_key, *key);
-    
-        if ((blob_key.hostname == m_Host) && 
+
+        if ((blob_key.hostname == m_Host) &&
             (blob_key.port == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
@@ -325,8 +321,8 @@ IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
                 } else {
                     _ASSERT(0);
                 }
-            } else {  
-                                
+            } else {
+
                 // for protocol ver 1 (0)
                 CNetCacheSock_RW* rw = dynamic_cast<CNetCacheSock_RW*>(wrt);
                 if (rw) {
@@ -348,17 +344,17 @@ IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
 }
 
 
-IReader* CNetCacheClient_LB::GetData(const string& key, 
+IReader* CNetCacheClient_LB::GetData(const string& key,
                                      size_t*       blob_size,
                                      ELockMode     lock_mode)
 {
     if (!key.empty()) {
         CNetCache_Key blob_key(key);
-    
+
         size_t bsize = 0;
         IReader* rdr;
 
-        if ((blob_key.hostname == m_Host) && 
+        if ((blob_key.hostname == m_Host) &&
             (blob_key.port == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
@@ -390,7 +386,7 @@ IReader* CNetCacheClient_LB::GetData(const string& key,
 }
 
 
-CNetCacheClient::EReadResult 
+CNetCacheClient::EReadResult
 CNetCacheClient_LB::GetData(const string& key, SBlobData& blob_to_read)
 {
     return TParent::GetData(key, blob_to_read);
@@ -445,7 +441,7 @@ void CNetCacheClient_LB::Remove(const string& key)
 {
     if (!key.empty()) {
         CNetCache_Key blob_key(key);
-        if ((blob_key.hostname == m_Host) && 
+        if ((blob_key.hostname == m_Host) &&
             (blob_key.port == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
@@ -460,17 +456,17 @@ void CNetCacheClient_LB::Remove(const string& key)
 }
 
 
-CNetCacheClient::EReadResult 
+CNetCacheClient::EReadResult
 CNetCacheClient_LB::GetData(const string&  key,
-                    void*          buf, 
-                    size_t         buf_size, 
+                    void*          buf,
+                    size_t         buf_size,
                     size_t*        n_read,
                     size_t*        blob_size)
 {
     if (!key.empty()) {
         CNetCache_Key blob_key(key);
 
-        if ((blob_key.hostname == m_Host) && 
+        if ((blob_key.hostname == m_Host) &&
             (blob_key.port == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
@@ -499,16 +495,16 @@ void CNetCacheClient_LB::CheckConnect(const string& key)
 
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
         return; // we are connected, nothing to do
-    } 
+    }
 
-    // in this implimentaion Get requests should be intercepted 
+    // in this implimentaion Get requests should be intercepted
     // on the upper level
-    _ASSERT(key.empty()); 
+    _ASSERT(key.empty());
 
     time_t curr = time(0);
 
     if ((m_LastRebalanceTime == 0) ||
-        (m_RebalanceTime && 
+        (m_RebalanceTime &&
           (int(curr - m_LastRebalanceTime) >= int(m_RebalanceTime)))||
         (m_RebalanceRequests && (m_Requests >= m_RebalanceRequests)) ||
         (m_RebalanceBytes && (m_RWBytes >= m_RebalanceBytes))

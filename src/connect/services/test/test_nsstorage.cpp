@@ -41,7 +41,7 @@
 
 USING_NCBI_SCOPE;
 
-    
+
 ///////////////////////////////////////////////////////////////////////
 
 
@@ -68,16 +68,16 @@ void CTestNSStorage::Init(void)
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NetSchedule storage");
-    
-    arg_desc->AddPositional("service", 
+
+    arg_desc->AddPositional("service",
                             "NetCache service name.", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("protocol",
                              "protocol",
                              "NetCache client protocl",
                              CArgDescriptions::eString);
-    arg_desc->SetConstraint("protocol", 
-                            &(*new CArgAllow_Strings(NStr::eNocase), 
+    arg_desc->SetConstraint("protocol",
+                            &(*new CArgAllow_Strings(NStr::eNocase),
                               "simple", "persistent")
                             );
 
@@ -104,7 +104,7 @@ int CTestNSStorage::Run(void)
 	reg.Set(kDriverName, "protocol", args["protocol"].AsString());
 
     CBlobStorageFactory factory(reg);
-    auto_ptr<IBlobStorage> storage1(factory.CreateInstance()); 
+    auto_ptr<IBlobStorage> storage1(factory.CreateInstance());
     auto_ptr<IBlobStorage> storage2(factory.CreateInstance());
 
     string blobid;
@@ -123,7 +123,7 @@ int CTestNSStorage::Run(void)
             throw;
         }
     }
-    
+
 
     storage1.reset(0);
 

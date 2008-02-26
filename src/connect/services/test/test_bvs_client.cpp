@@ -46,7 +46,7 @@
 
 USING_NCBI_SCOPE;
 
-    
+
 ///////////////////////////////////////////////////////////////////////
 
 
@@ -72,16 +72,16 @@ void CTestBVSClient::Init(void)
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Network ICache client test");
-    
-    arg_desc->AddPositional("hostname", 
+
+    arg_desc->AddPositional("hostname",
                             "NetCache host name.", CArgDescriptions::eString);
 
     arg_desc->AddPositional("port",
-                            "Port number.", 
+                            "Port number.",
                             CArgDescriptions::eInteger);
 
     arg_desc->AddPositional("bvsname",
-                            "BVStore name.", 
+                            "BVStore name.",
                             CArgDescriptions::eString);
 
 
@@ -93,7 +93,7 @@ void CTestBVSClient::Init(void)
     SetDiagPostLevel(eDiag_Info);
     SetDiagTrace(eDT_Enable);
 }
-        
+
 
 
 int CTestBVSClient::Run(void)

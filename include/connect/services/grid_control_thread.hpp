@@ -42,19 +42,19 @@ BEGIN_NCBI_SCOPE
 
 class CGridWorkerNode;
 /////////////////////////////////////////////////////////////////////////////
-// 
+//
 /// @internal
 class NCBI_XCONNECT_EXPORT CWorkerNodeControlThread : public CServer
 {
 public:
 
-    class IRequestProcessor 
+    class IRequestProcessor
     {
     public:
         virtual ~IRequestProcessor() {}
 
         virtual bool Authenticate(const string& host,
-                                  const string& auth, 
+                                  const string& auth,
                                   const string& queue,
                                   CNcbiOstream& replay,
                                   const CGridWorkerNode& node) { return true; }
@@ -73,7 +73,7 @@ public:
     virtual bool ShutdownRequested(void);
 
     void RequestShutdown() { m_ShutdownRequested = true; }
-    
+
     unsigned int GetControlPort() const { return m_Port; }
 
     static IRequestProcessor* MakeProcessor(const string& cmd);
@@ -92,7 +92,7 @@ private:
 
 
 //////////////////////////////////////////////////////////////
-class NCBI_XCONNECT_EXPORT CWNCTConnectionHandler 
+class NCBI_XCONNECT_EXPORT CWNCTConnectionHandler
     : public IServer_LineMessageHandler
 {
 public:
@@ -104,9 +104,9 @@ public:
 
     virtual void OnWrite() {}
     virtual void OnClose() {}
-    
+
 private:
-    
+
     CWorkerNodeControlThread& m_Server;
     string m_Auth;
     string m_Queue;

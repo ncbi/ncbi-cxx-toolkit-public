@@ -30,103 +30,126 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/services/netservice_api.hpp>
+#include <connect/services/error_codes.hpp>
+#include <connect/services/srv_connections_expt.hpp>
 #include <connect/services/netservice_api_expt.hpp>
+#include <connect/services/netservice_params.hpp>
+#include <corelib/ncbi_system.hpp>
 
+#define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
 BEGIN_NCBI_SCOPE
 
-class CNetServiceAuthenticator : public INetServerConnectorEventListener
+
+class CNetServiceAuthenticator : public INetServerConnectionListener
 {
 public:
-    explicit CNetServiceAuthenticator(const INetServiceAPI& net_srv_client)
+    explicit CNetServiceAuthenticator(const CNetServiceAPI_Base& net_srv_client)
         : m_NetSrvClient(net_srv_client) {}
-    
-    virtual void OnConnected(CNetServerConnector& conn) {
-        m_NetSrvClient.DoAuthenticate(conn);
-    }
-    
-private:            
-    const INetServiceAPI& m_NetSrvClient;
+
+    virtual void OnConnected(CNetServerConnection conn);
+    virtual void OnDisconnected(CNetServerConnectionPool* pool);
+
+private:
+    const CNetServiceAPI_Base& m_NetSrvClient;
 };
 
+void CNetServiceAuthenticator::OnConnected(CNetServerConnection conn)
+{
+    m_NetSrvClient.DoAuthenticate(conn);
+}
 
-INetServiceAPI::INetServiceAPI(const string& service_name, const string& client_name)
-    : m_ServiceName(service_name), m_ClientName(client_name), 
-      m_ConnMode(eCloseConnection), m_LPServices(eOff), m_RebalanceStrategy(NULL)
+void CNetServiceAuthenticator::OnDisconnected(CNetServerConnectionPool*)
 {
 }
 
-INetServiceAPI::~INetServiceAPI()
+
+CNetServiceAPI_Base::CNetServiceAPI_Base(
+    const string& service_name,
+    const string& client_name) :
+    m_ServiceName(service_name),
+    m_ClientName(client_name),
+    m_ConnMode(eCloseConnection),
+    m_RebalanceStrategy(NULL),
+    m_IsLoadBalanced(false),
+    m_DiscoverLowPriorityServers(eOff),
+    m_Timeout(s_GetDefaultCommTimeout()),
+    m_MaxRetries(TServConn_ConnMaxRetries::GetDefault()),
+    m_PermanentConnection(eOff)
 {
+    if (!m_Authenticator.get())
+        m_Authenticator.reset(new CNetServiceAuthenticator(*this));
+
+    if (!m_RebalanceStrategy) {
+        m_RebalanceStrategyGuard.reset(CreateDefaultRebalanceStrategy());
+        m_RebalanceStrategy = m_RebalanceStrategyGuard.get();
+    }
+
+    string sport, host;
+
+    if (NStr::SplitInTwo(service_name, ":", host, sport)) {
+       unsigned int port = NStr::StringToInt(sport);
+       host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
+       CWriteLockGuard g(m_ServersLock);
+       m_Servers.push_back(TServerAddress(host, port));
+    } else {
+       m_IsLoadBalanced = true;
+    }
+
+    SetRebalanceStrategy(m_RebalanceStrategy);
+    PermanentConnection(m_ConnMode == eKeepConnection ? eOn : eOff);
 }
-INetServiceAPI::EConnectionMode INetServiceAPI::GetConnMode() const
+
+CNetServiceAPI_Base::~CNetServiceAPI_Base()
+{
+    CFastMutexGuard g(m_ConnectionMutex);
+    ITERATE(TServerAddressToConnectionPool, it,
+            m_ServerAddressToConnectionPool) {
+        delete it->second;
+    }
+}
+
+CNetServiceAPI_Base::EConnectionMode CNetServiceAPI_Base::GetConnMode() const
 {
     return m_ConnMode;
 }
 
-void INetServiceAPI::SetConnMode(EConnectionMode conn_mode)
+void CNetServiceAPI_Base::SetConnMode(EConnectionMode conn_mode)
 {
-    if (m_ConnMode == conn_mode )
+    if (m_ConnMode == conn_mode)
         return;
+
     m_ConnMode = conn_mode;
-    if (m_Connector.get())
-        m_Connector->PermanentConnection(conn_mode == eKeepConnection ? eOn : eOff);
+
+    PermanentConnection(conn_mode == eKeepConnection ? eOn : eOff);
 }
 
-void INetServiceAPI::DiscoverLowPriorityServers(ESwitch on_off)
+void CNetServiceAPI_Base::DiscoverLowPriorityServers(ESwitch on_off)
 {
-    if (m_LPServices == on_off)
-        return;
-    m_LPServices = on_off;
-    if (m_Connector.get())
-        m_Connector->DiscoverLowPriorityServers(on_off);
+    if (m_DiscoverLowPriorityServers != on_off) {
+        m_DiscoverLowPriorityServers = on_off;
+
+        if (m_RebalanceStrategy)
+            m_RebalanceStrategy->Reset();
+    }
 }
 
-void INetServiceAPI::SetRebalanceStrategy(IRebalanceStrategy* strategy, EOwnership owner)
+void CNetServiceAPI_Base::SetRebalanceStrategy(IRebalanceStrategy* strategy, EOwnership owner)
 {
     m_RebalanceStrategy = strategy;
     if (owner == eTakeOwnership)
         m_RebalanceStrategyGuard.reset(m_RebalanceStrategy);
     else
         m_RebalanceStrategyGuard.reset();
-    if (m_Connector.get()) 
-        m_Connector->SetRebalanceStrategy(m_RebalanceStrategy);    
 }
 
-void  INetServiceAPI::x_CreateConnector()
-{
-    if (!m_Authenticator.get())
-        m_Authenticator.reset(new CNetServiceAuthenticator(*this));
-    if (!m_RebalanceStrategy ) {
-        m_RebalanceStrategyGuard.reset(CreateDefaultRebalanceStrategy());
-        m_RebalanceStrategy = m_RebalanceStrategyGuard.get();
-    }
-    m_Connector.reset(new CNetServiceConnector(m_ServiceName, m_Authenticator.get()));
-    m_Connector->SetRebalanceStrategy(m_RebalanceStrategy);
-    m_Connector->PermanentConnection(m_ConnMode == eKeepConnection ? eOn : eOff);
-    m_Connector->DiscoverLowPriorityServers(m_LPServices);
-}
-
-CNetServiceConnector& INetServiceAPI::GetConnector() 
-{
-    if (!m_Connector.get()) {
-        x_CreateConnector();
-    }
-    return *m_Connector;
-}
-CNetServiceConnector& INetServiceAPI::GetConnector() const
-{
-    return const_cast<INetServiceAPI&>(*this).GetConnector();
-}
-
-
-string INetServiceAPI::GetConnectionInfo(CNetServerConnector& conn) const
+string CNetServiceAPI_Base::GetConnectionInfo(CNetServerConnection& conn) const
 {
     return GetServiceName();
 }
 
 /* static */
-void INetServiceAPI::TrimErr(string& err_msg)
+void CNetServiceAPI_Base::TrimErr(string& err_msg)
 {
     if (err_msg.find("ERR:") == 0) {
         err_msg.erase(0, 4);
@@ -135,11 +158,12 @@ void INetServiceAPI::TrimErr(string& err_msg)
 }
 
 
-void INetServiceAPI::PrintServerOut(CNetServerConnector& conn, CNcbiOstream& out) const
+void CNetServiceAPI_Base::PrintServerOut(
+    CNetServerConnection conn, CNcbiOstream& out) const
 {
     conn.WaitForServer();
     string response;
-    while (1) {
+    for (;;) {
         if (!conn.ReadStr(response))
             break;
         CheckServerOK(response);
@@ -150,7 +174,7 @@ void INetServiceAPI::PrintServerOut(CNetServerConnector& conn, CNcbiOstream& out
 }
 
 
-void INetServiceAPI::CheckServerOK(string& response) const
+void CNetServiceAPI_Base::CheckServerOK(string& response) const
 {
     if (NStr::StartsWith(response, "OK:")) {
         response.erase(0, 3); // "OK:"
@@ -160,25 +184,26 @@ void INetServiceAPI::CheckServerOK(string& response) const
 }
 
 
-void INetServiceAPI::ProcessServerError(string& response, ETrimErr trim_err) const
+void CNetServiceAPI_Base::ProcessServerError(string& response, ETrimErr trim_err) const
 {
     if (trim_err == eTrimErr)
         TrimErr(response);
     NCBI_THROW(CNetServiceException, eCommunicationError, response);
 }
 
-string INetServiceAPI::SendCmdWaitResponse(CNetServerConnector& conn, const string& cmd) const
+string CNetServiceAPI_Base::SendCmdWaitResponse(
+    CNetServerConnection conn, const string& cmd) const
 {
     conn.WriteStr(cmd + "\r\n");
     return WaitResponse(conn);
 }
 
-string INetServiceAPI::WaitResponse(CNetServerConnector& conn) const
+string CNetServiceAPI_Base::WaitResponse(CNetServerConnection conn) const
 {
     conn.WaitForServer();
     string tmp;
     if (!conn.ReadStr(tmp)) {
-        conn.Disconnect(true /* Abort */);
+        conn.Abort();
         NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error reading from server " +
                    GetHostDNSName(conn.GetHost()) + ":" +
@@ -190,18 +215,18 @@ string INetServiceAPI::WaitResponse(CNetServerConnector& conn) const
 
 struct SNetServiceStreamCollector
 {
-    SNetServiceStreamCollector(const INetServiceAPI& api, const string& cmd, 
-                               INetServiceAPI::ISink& sink, 
-                               INetServiceAPI::EStreamCollectorType type)
+    SNetServiceStreamCollector(const CNetServiceAPI_Base& api, const string& cmd,
+                               CNetServiceAPI_Base::ISink& sink,
+                               CNetServiceAPI_Base::EStreamCollectorType type)
         : m_API(api), m_Cmd(cmd), m_Sink(sink), m_Type(type)
     {}
 
-    void operator()(CNetServerConnector& conn)
+    void operator()(CNetServerConnection conn)
     {
-        if ( m_Type == INetServiceAPI::eSendCmdWaitResponse ) {  
+        if (m_Type == CNetServiceAPI_Base::eSendCmdWaitResponse) {
             CNcbiOstream& os = m_Sink.GetOstream(conn);
             os << m_API.SendCmdWaitResponse(conn, m_Cmd);
-        } else if ( m_Type == INetServiceAPI::ePrintServerOut ) {
+        } else if (m_Type == CNetServiceAPI_Base::ePrintServerOut) {
             CNcbiOstream& os = m_Sink.GetOstream(conn);
             conn.WriteStr(m_Cmd + "\r\n");
             m_API.PrintServerOut(conn, os);
@@ -211,32 +236,155 @@ struct SNetServiceStreamCollector
         m_Sink.EndOfData(conn);
     }
 
-    const INetServiceAPI& m_API;
+    const CNetServiceAPI_Base& m_API;
     const string& m_Cmd;
-    INetServiceAPI::ISink& m_Sink;
-    INetServiceAPI::EStreamCollectorType m_Type;
+    CNetServiceAPI_Base::ISink& m_Sink;
+    CNetServiceAPI_Base::EStreamCollectorType m_Type;
 
 };
 
-void INetServiceAPI::x_CollectStreamOutput(const string& cmd, ISink& sink, INetServiceAPI::EStreamCollectorType type) const
+void CNetServiceAPI_Base::x_CollectStreamOutput(const string& cmd, ISink& sink, CNetServiceAPI_Base::EStreamCollectorType type)
 {
-    GetConnector().ForEach(SNetServiceStreamCollector(*this, cmd, sink, type));
-    /*
-    for (CNetSrvConnectorPoll::iterator it = GetPoll().begin(); 
-         it != GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-        if ( type == eSendCmdWaitResponse ) {  
-            CNcbiOstream& os = sink.GetOstream(ch);
-            os << SendCmdWaitResponse(ch, cmd);
-        } else if ( type == ePrintServerOut ) {
-            CNcbiOstream& os = sink.GetOstream(ch);
-            ch->WriteStr(cmd + "\r\n");
-            PrintServerOut(ch, os);
-        } else {
-            _ASSERT(false);
+    ForEach(SNetServiceStreamCollector(*this, cmd, sink, type));
+}
+
+CNetServerConnection CNetServiceAPI_Base::GetBest(
+    const TServerAddress* backup, const string& hit)
+{
+    if (!m_IsLoadBalanced) {
+        CReadLockGuard g(m_ServersLock);
+        if (m_Servers.empty())
+            NCBI_THROW(CNetSrvConnException, eSrvListEmpty, "The service is not set.");
+        return x_FindOrCreateConnectionPool(m_Servers[0]).GetConnection();
+    }
+    try {
+        x_Rebalance();
+    } catch (CNetSrvConnException& ex) {
+        if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound || !backup)
+            throw;
+        ERR_POST_X(5, "Connecting to backup server " <<
+            backup->first << ":" <<
+            backup->second << ".");
+        return x_FindOrCreateConnectionPool(*backup).GetConnection();
+    }
+    CReadLockGuard g(m_ServersLock);
+    TDiscoveredServers servers_copy(m_Servers);
+    g.Release();
+    ITERATE(TDiscoveredServers, it, servers_copy) {
+        CNetServerConnection conn =
+            x_FindOrCreateConnectionPool(*it).GetConnection();
+        try {
+            conn.CheckConnect();
+            return conn;
+        } catch (CNetSrvConnException& ex) {
+            if (ex.GetErrCode() == CNetSrvConnException::eConnectionFailure) {
+                ERR_POST_X(2, ex.what());
+            }
+            else
+                throw;
         }
-        sink.EndOfData(ch);
-    } */
+    }
+    if (backup) {
+        ERR_POST_X(3, "Couldn't find any availbale servers for " <<
+            m_ServiceName << " service. Connecting to backup server " <<
+            backup->first << ":" << backup->second << ".");
+        return x_FindOrCreateConnectionPool(*backup).GetConnection();
+    }
+    NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
+        "Couldn't find any availbale servers for " +
+        m_ServiceName + " service.");
+}
+
+CNetServerConnection CNetServiceAPI_Base::GetSpecific(const string& host, unsigned int port)
+{
+    string x_host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
+    return x_FindOrCreateConnectionPool(TServerAddress(x_host,port)).GetConnection();
+}
+
+void CNetServiceAPI_Base::SetCommunicationTimeout(const STimeout& to)
+{
+    CFastMutexGuard g(m_ConnectionMutex);
+    m_Timeout = to;
+    NON_CONST_ITERATE(TServerAddressToConnectionPool,
+        it, m_ServerAddressToConnectionPool) {
+        it->second->SetCommunicationTimeout(to);
+    }
+}
+const STimeout& CNetServiceAPI_Base::GetCommunicationTimeout() const
+{
+    return m_Timeout;
+}
+
+void CNetServiceAPI_Base::SetCreateSocketMaxRetries(unsigned int retries)
+{
+    CFastMutexGuard g(m_ConnectionMutex);
+    m_MaxRetries = retries;
+    NON_CONST_ITERATE(TServerAddressToConnectionPool,
+        it, m_ServerAddressToConnectionPool) {
+        it->second->SetCreateSocketMaxRetries(retries);
+    }
+}
+
+unsigned int CNetServiceAPI_Base::GetCreateSocketMaxRetries() const
+{
+    return m_MaxRetries;
+}
+
+void CNetServiceAPI_Base::PermanentConnection(ESwitch type)
+{
+    CFastMutexGuard g(m_ConnectionMutex);
+    m_PermanentConnection = type;
+    NON_CONST_ITERATE(TServerAddressToConnectionPool,
+        it, m_ServerAddressToConnectionPool) {
+        it->second->PermanentConnection(type);
+    }
+}
+
+CNetServerConnectionPool& CNetServiceAPI_Base::x_FindOrCreateConnectionPool(
+    const TServerAddress& srv) const
+{
+    CFastMutexGuard g(m_ConnectionMutex);
+    TServerAddressToConnectionPool::iterator it =
+        m_ServerAddressToConnectionPool.find(srv);
+    CNetServerConnectionPool* pool = NULL;
+    if (it != m_ServerAddressToConnectionPool.end())
+        pool = it->second;
+    if (pool == NULL) {
+        pool = new CNetServerConnectionPool(srv.first,
+            srv.second, m_Authenticator.get());
+        pool->SetCommunicationTimeout(m_Timeout);
+        pool->PermanentConnection(m_PermanentConnection);
+        m_ServerAddressToConnectionPool[srv] = pool;
+    }
+    g.Release();
+    if (m_RebalanceStrategy)
+        m_RebalanceStrategy->OnResourceRequested(*pool);
+    return *pool;
+}
+
+void CNetServiceAPI_Base::x_Rebalance()
+{
+    if (!m_IsLoadBalanced)
+        return;
+    if (!m_RebalanceStrategy || m_RebalanceStrategy->NeedRebalance()) {
+        CWriteLockGuard g(m_ServersLock);
+        m_Servers.clear();
+        int try_count = 0;
+        for (;;) {
+            try {
+                DiscoverLBServices(m_ServiceName, m_Servers,
+                    m_DiscoverLowPriorityServers == eOn);
+                break;
+            } catch (CNetSrvConnException& ex) {
+                if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound)
+                    throw;
+                ERR_POST_X(4, "Communication Error : " << ex.what());
+                if (++try_count > TServConn_MaxFineLBNameRetries::GetDefault())
+                    throw;
+                SleepMilliSec(1000 + try_count*2000);
+            }
+        }
+    }
 }
 
 

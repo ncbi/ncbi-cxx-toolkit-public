@@ -34,7 +34,7 @@
  */
 
 /// @file netcache_client.hpp
-/// NetCache client specs. 
+/// NetCache client specs.
 ///
 
 #include <connect/services/netservice_api.hpp>
@@ -62,13 +62,13 @@ class CNetCacheAdmin;
 /// is closed (part of NetCache protocol implemenation)
 ///
 ///
-class NCBI_XCONNECT_EXPORT CNetCacheAPI : public INetServiceAPI
+class NCBI_XCONNECT_EXPORT CNetCacheAPI : public CNetServiceAPI_Base
 {
 public:
 
     explicit CNetCacheAPI(const string&  client_name);
 
-    /// Construct client, working with the specified service 
+    /// Construct client, working with the specified service
     CNetCacheAPI(const string& service,
                  const string&  client_name);
 
@@ -78,9 +78,9 @@ public:
     /// Put BLOB to server
     ///
     /// @param time_to_live
-    ///    BLOB time to live value in seconds. 
+    ///    BLOB time to live value in seconds.
     ///    0 - server side default is assumed.
-    /// 
+    ///
     /// Please note that time_to_live is controlled by the server-side
     /// parameter so if you set time_to_live higher than server-side value,
     /// server side TTL will be in effect.
@@ -88,27 +88,27 @@ public:
     /// @return NetCache access key
     string PutData(const void*   buf,
                    size_t        size,
-                   unsigned int  time_to_live = 0) const;
+                   unsigned int  time_to_live = 0);
 
     /// Put BLOB to server
     ///
     /// @param key
     ///    NetCache key, if empty new key is created
-    ///    
+    ///
     /// @param time_to_live
-    ///    BLOB time to live value in seconds. 
+    ///    BLOB time to live value in seconds.
     ///    0 - server side default is assumed.
-    /// 
+    ///
     /// @return
-    ///    IReader* (caller must delete this). 
-    IWriter* PutData(string* key, unsigned int  time_to_live = 0) const;
+    ///    IReader* (caller must delete this).
+    IWriter* PutData(string* key, unsigned int  time_to_live = 0);
 
     /// Update an existing BLOB
     ///
     string PutData(const string& key,
                    const void*   buf,
                    size_t        size,
-                   unsigned int  time_to_live = 0) const;
+                   unsigned int  time_to_live = 0);
 
     /// Check if the BLOB identified by the key "key" exists.
     ///
@@ -117,7 +117,7 @@ public:
     ///
     /// @return
     ///    True, if the BLOB exists; false otherwise.
-    bool HasBlob(const string& key) const;
+    bool HasBlob(const string& key);
 
     /// BLOB locking mode
     enum ELockMode {
@@ -131,8 +131,8 @@ public:
     /// Caller is responsible for deletion of the IReader*
     /// IReader* MUST be deleted before destruction of CNetCacheAPI.
     ///
-    /// @note 
-    ///   IReader implementation used here is TCP/IP socket 
+    /// @note
+    ///   IReader implementation used here is TCP/IP socket
     ///   based, so when reading the BLOB please remember to check
     ///   IReader::Read return codes, it may not be able to read
     ///   the whole BLOB in one call because of network delays.
@@ -144,11 +144,11 @@ public:
     /// @param lock_mode
     ///    Blob locking mode
     /// @return
-    ///    IReader* (caller must delete this). 
+    ///    IReader* (caller must delete this).
     ///    NULL means that BLOB was not found (expired).
-    IReader* GetData(const string& key, 
+    IReader* GetData(const string& key,
                      size_t*       blob_size = 0,
-                     ELockMode     lock_mode = eLockWait) const;
+                     ELockMode     lock_mode = eLockWait);
 
     /// Status of GetData() call
     /// @sa GetData
@@ -163,40 +163,40 @@ public:
     /// @note
     ///    Function waits for enough data to arrive.
     EReadResult GetData(const string&  key,
-                        void*          buf, 
-                        size_t         buf_size, 
+                        void*          buf,
+                        size_t         buf_size,
                         size_t*        n_read    = 0,
-                        size_t*        blob_size = 0) const;
+                        size_t*        blob_size = 0);
 
     /// Retrieve BLOB from server by key
     /// This method retrives BLOB size, allocates memory and gets all
     /// the data from the server.
     ///
     /// Blob size and binary data is placed into blob_to_read structure.
-    /// Do not use this method if you are not sure you have memory 
+    /// Do not use this method if you are not sure you have memory
     /// to load the whole BLOB.
-    /// 
+    ///
     /// @return
     ///    eReadComplete if BLOB found (eNotFound otherwise)
-    EReadResult GetData(const string& key, CSimpleBuffer& buffer) const;
+    EReadResult GetData(const string& key, CSimpleBuffer& buffer);
 
 
-    /// NetCache server locks BLOB so only one client can 
+    /// NetCache server locks BLOB so only one client can
     /// work with one BLOB at a time. Method returns TRUE
-    /// if BLOB is locked at the moment. 
+    /// if BLOB is locked at the moment.
     ///
     /// @return TRUE if BLOB exists and locked by another client
     /// FALSE if BLOB not found or not locked
-    bool IsLocked(const string& key) const;
+    bool IsLocked(const string& key);
 
     /// Retrieve BLOB's owner information as registered by the server
-    string GetOwner(const string& key) const;
+    string GetOwner(const string& key);
 
     /// Remove BLOB by key
-    void Remove(const string& key) const;
+    void Remove(const string& key);
 
 
-    CNetCacheAdmin     GetAdmin() const;
+    CNetCacheAdmin     GetAdmin();
 
 protected:
     virtual void ProcessServerError(string& response, ETrimErr trim_err) const;
@@ -204,16 +204,18 @@ protected:
 private:
     friend class CNetCacheAdmin;
 
-    virtual void x_SendAuthetication(CNetServerConnector& conn) const;
-    
+    virtual void x_SendAuthetication(CNetServerConnection& conn) const;
+
     static EReadResult x_ReadBuffer( IReader& reader,
-                                     void*          buf, 
-                                     size_t         buf_size, 
+                                     void*          buf,
+                                     size_t         buf_size,
                                      size_t*        n_read,
                                      size_t         blob_size);
 
-    CNetServerConnectorHolder x_GetConnector(const string& bid = kEmptyStr) const;
-    CNetServerConnectorHolder x_PutInitiate(string*  key, unsigned  time_to_live) const;
+    CNetServerConnection x_GetConnection(
+        const string& bid = kEmptyStr);
+    CNetServerConnection x_PutInitiate(
+        string*  key, unsigned  time_to_live);
 
     CNetCacheAPI(const CNetCacheAPI&);
     CNetCacheAPI& operator=(const CNetCacheAPI&);
@@ -231,38 +233,37 @@ public:
     ///
     /// @note
     ///  Protected to avoid a temptation to call it from time to time. :)
-    void ShutdownServer() const;
+    void ShutdownServer();
 
     /// Turn server-side logging on(off)
     ///
     void Logging(bool on_off) const;
 
     /// Print ini file
-    void PrintConfig(INetServiceAPI::ISink& sink) const;
+    void PrintConfig(CNetServiceAPI_Base::ISink& sink) const;
 
     /// Print server statistics
-    void PrintStat(INetServiceAPI::ISink& sink) const;
+    void PrintStat(CNetServiceAPI_Base::ISink& sink) const;
 
     /// Reinit server side statistics collector
     void DropStat() const;
 
     void Monitor(CNcbiOstream & out) const;
 
-    void GetServerVersion(INetServiceAPI::ISink& sink) const;
+    void GetServerVersion(CNetServiceAPI_Base::ISink& sink) const;
 
 private:
     friend class CNetCacheAPI;
-    explicit CNetCacheAdmin(const CNetCacheAPI& api) : m_API(&api) {}
+    explicit CNetCacheAdmin(CNetCacheAPI* api) : m_API(api) {}
 
-    const CNetCacheAPI* m_API;
+    CNetCacheAPI* m_API;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-inline CNetCacheAdmin CNetCacheAPI::GetAdmin() const
+inline CNetCacheAdmin CNetCacheAPI::GetAdmin()
 {
-    //DiscoverLowPriorityServers(true);
-    return CNetCacheAdmin(*this);
+    return CNetCacheAdmin(this);
 }
 
 

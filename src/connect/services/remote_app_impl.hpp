@@ -28,7 +28,7 @@
  *
  * Authors:  Maxim Didneko,
  *
- * File Description:  
+ * File Description:
  *
  */
 
@@ -49,7 +49,7 @@ protected:
 
 public:
 
-    virtual ~IRemoteAppRequest_Impl() 
+    virtual ~IRemoteAppRequest_Impl()
     {
         Reset();
     }
@@ -67,20 +67,20 @@ public:
 
     void SetAppRunTimeout(unsigned int sec) { m_AppRunTimeout = sec; }
     unsigned int GetAppRunTimeout() const { return m_AppRunTimeout; }
-   
-    void AddFileForTransfer(const string& fname, IRemoteAppRequest::ETrasferType tt) 
-    { 
-        m_Files[fname] = tt; 
+
+    void AddFileForTransfer(const string& fname, IRemoteAppRequest::ETrasferType tt)
+    {
+        m_Files[fname] = tt;
     }
     const string& GetWorkingDir() const { return m_TmpDirName; }
 
 
     static void SetTempDir(const string& path);
     static const string& GetTempDir();
-        
+
 protected:
     typedef map<string, IRemoteAppRequest::ETrasferType> TFiles;
-    
+
     IBlobStorage& GetInBlob() { return *m_InBlob; }
     const TFiles& GetFileNames() const { return m_Files; }
 
@@ -90,7 +90,7 @@ protected:
 private:
     static CAtomicCounter sm_DirCounter;
     static string sm_TmpDirPath;
-   
+
     auto_ptr<IBlobStorage> m_InBlob;
     string m_CmdLine;
     unsigned int m_AppRunTimeout;
@@ -112,7 +112,7 @@ protected:
     }
 
 public:
-    virtual ~IRemoteAppResult_Impl() 
+    virtual ~IRemoteAppResult_Impl()
     {
         Reset();
     };
@@ -134,7 +134,7 @@ public:
 protected:
     IBlobStorage& GetOutBlob() { return *m_OutBlob; }
     IBlobStorage& GetErrBlob() { return *m_ErrBlob; }
-    
+
 private:
     auto_ptr<IBlobStorage> m_OutBlob;
     auto_ptr<IBlobStorage> m_ErrBlob;

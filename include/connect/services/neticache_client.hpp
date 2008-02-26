@@ -34,7 +34,7 @@
  */
 
 /// @file neticache_client.hpp
-/// NetCache ICache client specs. 
+/// NetCache ICache client specs.
 ///
 
 #include <corelib/plugin_manager_store.hpp>
@@ -77,7 +77,7 @@ public:
 	virtual
     void ReturnSocket(CSocket* sock, const string& blob_comments);
 
-    void RegisterSession(unsigned pid); 
+    void RegisterSession(unsigned pid);
     void UnRegisterSession(unsigned pid);
 
     // ICache interface implementation
@@ -149,10 +149,10 @@ protected:
     /// throws an exception if it cannot establish connection
     bool CheckConnect();
 
-    void MakeCommandPacket(string* out_str, 
+    void MakeCommandPacket(string* out_str,
                            const string& cmd_str,
                            bool          connected) const;
-    void AddKVS(string*          out_str, 
+    void AddKVS(string*          out_str,
                 const string&    key,
                 int              version,
                 const string&    subkey) const;

@@ -34,7 +34,7 @@
  */
 
 /// @file netservice_client.hpp
-/// Network service utilities. 
+/// Network service utilities.
 ///
 
 #include <corelib/ncbistd.hpp>
@@ -51,13 +51,13 @@ BEGIN_NCBI_SCOPE
 
 /// Client API for NCBI NetService server
 ///
-/// 
+///
 class NCBI_XCONNECT_EXPORT CNetServiceClient : virtual protected CConnIniter
 {
 public:
     /// Construct the client without connecting to any particular
     /// server. Actual server (host and port) will be extracted from the
-    /// job key 
+    /// job key
     ///
     /// @param client_name
     ///    Name of the client program(project)
@@ -70,8 +70,8 @@ public:
 
     /// Contruction based on existing TCP/IP socket
     /// @param sock
-    ///    Connected socket to the primary server. 
-    ///    Client does not take socket ownership 
+    ///    Connected socket to the primary server.
+    ///    Client does not take socket ownership
     ///    and does not change communication parameters (like timeout)
     ///
     CNetServiceClient(CSocket*      sock,
@@ -86,11 +86,11 @@ public:
     };
 
     /// Set an application-wide name for NetCache clients, and if to use
-    /// instance specific name too    
+    /// instance specific name too
     ///
     /// @note
     ///   Global name should be established before creating service clients
-    static 
+    static
     void SetGlobalName(const string&  global_name,
                  EUseName       use_name  = eUseName_Both);
 
@@ -109,9 +109,9 @@ public:
     STimeout& SetCommunicationTimeout();
     STimeout  GetCommunicationTimeout() const;
 
-    static 
+    static
     void SetDefaultCreateSocketMaxReties(unsigned int retires);
-        
+
     void SetCreateSocketMaxRetries(unsigned int retries) { m_MaxRetries = retries; }
     unsigned int GetCreateSocketMaxRetries() const { return m_MaxRetries; }
 
@@ -120,7 +120,7 @@ public:
     /// Set socket (connected to the server)
     ///
     /// @param sock
-    ///    Connected socket to the server. 
+    ///    Connected socket to the server.
     ///    Communication timeouts of the socket won't be changed
     /// @param own
     ///    Socket ownership
@@ -164,7 +164,7 @@ protected:
     void WriteStr(const char* str, size_t len);
     void CreateSocket(const string& hostname, unsigned port);
     void WaitForServer(unsigned wait_sec=0);
-    /// Remove "ERR:" prefix 
+    /// Remove "ERR:" prefix
     static
     void TrimErr(string* err_msg);
     void PrintServerOut(CNcbiOstream & out);
@@ -212,33 +212,6 @@ private:
     CFastMutex              m_SockPool_Lock;
 };
 
-
-/*
-/// Net Service exception
-///
-class CNetServiceException : public CException
-{
-public:
-    enum EErrCode {
-        eTimeout,
-        eCommunicationError,
-        eProtocolError
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eTimeout:            return "eTimeout";
-        case eCommunicationError: return "eCommunicationError";
-        case eProtocolError:      return "eProtocolError";
-        default:                  return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CNetServiceException, CException);
-};
-*/
 
 /* @} */
 

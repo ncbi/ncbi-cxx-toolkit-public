@@ -93,9 +93,9 @@ CNetScheduleClient_LB::~CNetScheduleClient_LB()
 bool CNetScheduleClient_LB::NeedRebalance(time_t curr) const
 {
     if ((m_LastRebalanceTime == 0) || (m_ServList.size() == 0) ||
-        (m_RebalanceTime && 
+        (m_RebalanceTime &&
           (int(curr - m_LastRebalanceTime) >= int(m_RebalanceTime)))||
-        (m_RebalanceRequests && (m_Requests >= m_RebalanceRequests)) 
+        (m_RebalanceRequests && (m_Requests >= m_RebalanceRequests))
         ) {
         return true;
     }
@@ -111,7 +111,7 @@ bool CNetScheduleClient_LB::CheckConnect(const string& key)
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
         m_AuthenticationSent = false;
         return true; // we are connected, nothing to do
-    } 
+    }
 
     time_t curr = time(0);
 
@@ -134,7 +134,7 @@ bool CNetScheduleClient_LB::CheckConnect(const string& key)
 
         if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
             return false; // we are connected
-        } 
+        }
 
         string warn = "Failed to discover the service ";
         warn += m_LB_ServiceName;
@@ -144,7 +144,7 @@ bool CNetScheduleClient_LB::CheckConnect(const string& key)
         CreateSocket("netschedule", 9051);
         if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
             return true; // we are connected
-        } 
+        }
 
         NCBI_THROW(CNetServiceException,
                    eCommunicationError,
@@ -162,14 +162,14 @@ bool CNetScheduleClient_LB::CheckConnect(const string& key)
     for (;m_ServListCurr < m_ServList.size(); ++m_ServListCurr) {
         const SServiceAddress& sa = m_ServList[m_ServListCurr];
         string sa_host = CSocketAPI::gethostbyaddr(sa.host);
-        if (sa.port != m_Port || 
+        if (sa.port != m_Port ||
             sa_host != m_Host) {
             EIO_Status st = Connect(sa.host, sa.port);
             if (st == eIO_Success) {
                 if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
                     m_AuthenticationSent = false;
                     return true; // we are connected
-                } 
+                }
             }
         } else {
             break;
@@ -188,7 +188,7 @@ void CNetScheduleClient_LB::ObtainServerList(const string& service_name)
 
     if (!m_LB_ServiceDiscovery) {
         if (m_ServList.size() == 0) {
-            NCBI_THROW(CNetServiceException, eCommunicationError, 
+            NCBI_THROW(CNetServiceException, eCommunicationError,
                        "Incorrect or empty service address list");
         }
         // shuffle server list to imitate load-balancing
@@ -204,7 +204,7 @@ void CNetScheduleClient_LB::ObtainServerList(const string& service_name)
             if (first == second) {
                 return;
             }
-            
+
             swap(m_ServList[first], m_ServList[second]);
         }
         return;
@@ -249,7 +249,7 @@ void CNetScheduleClient_LB::AddServiceAddress(const string&  hostname,
     m_LB_ServiceDiscovery = false;
     unsigned addr = CSocketAPI::gethostbyname(hostname);
     if (!addr) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Incorrect host name: " + hostname);
     }
 
@@ -276,10 +276,10 @@ string CNetScheduleClient_LB::SubmitJob(const string& input,
         try {
             return TParent::SubmitJob(
                 input, progress_msg, affinity_token, out, err, mask);
-        } 
+        }
         catch (CNetScheduleException& ex) {
             CNetScheduleException::TErrCode ec = ex.GetErrCode();
-            if (ec == CNetScheduleException::eUnknownQueue || 
+            if (ec == CNetScheduleException::eUnknownQueue ||
                 ec == CNetScheduleException::eTooManyPendingJobs) {
 
                 // try another server
@@ -305,8 +305,8 @@ void CNetScheduleClient_LB::SubmitJobBatch(SJobBatch& subm)
 }
 
 
-bool CNetScheduleClient_LB::GetJob(string* job_key, 
-                                   string* input, 
+bool CNetScheduleClient_LB::GetJob(string* job_key,
+                                   string* input,
                                    unsigned short udp_port,
                                    string*        jout,
                                    string*        jerr,
@@ -324,7 +324,7 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
     unsigned serv_size = m_ServList.size();
 
     // pick a random pivot element, so we do not always
-    // fetch jobs using the same lookup order and some servers do 
+    // fetch jobs using the same lookup order and some servers do
     // not get equally "milked"
     // also get random list lookup direction
 
@@ -350,8 +350,8 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
                     }
                 }
                 try {
-                    bool job_received = 
-                        x_TryGetJob(sa, job_key, 
+                    bool job_received =
+                        x_TryGetJob(sa, job_key,
                                     input, udp_port, jout, jerr, job_mask);
                     if (job_received) {
                         return job_received;
@@ -378,8 +378,8 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
                     }
                 }
                 try {
-                    bool job_received = 
-                        x_TryGetJob(sa, job_key, input, udp_port, 
+                    bool job_received =
+                        x_TryGetJob(sa, job_key, input, udp_port,
                                     jout, jerr, job_mask);
                     if (job_received) {
                         return job_received;
@@ -405,8 +405,8 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
 
 
 bool CNetScheduleClient_LB::x_TryGetJob(SServiceAddress& sa,
-                                        string*          job_key, 
-                                        string*          input, 
+                                        string*          job_key,
+                                        string*          input,
                                         unsigned short   udp_port,
                                         string*          jout,
                                         string*          jerr,
@@ -421,15 +421,15 @@ bool CNetScheduleClient_LB::x_TryGetJob(SServiceAddress& sa,
     }
 
     CJS_BoolGuard bg(&m_StickToHost);
-    bool job_received = 
+    bool job_received =
         TParent::GetJob(job_key, input, udp_port, jout, jerr, job_mask);
     return job_received;
 }
 
 
 
-bool CNetScheduleClient_LB::WaitJob(string*        job_key, 
-                                    string*        input, 
+bool CNetScheduleClient_LB::WaitJob(string*        job_key,
+                                    string*        input,
                                     unsigned       wait_time,
                                     unsigned short udp_port,
                                     EWaitMode      wait_mode,
@@ -449,7 +449,7 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
     unsigned serv_size = m_ServList.size();
 
     // waiting time increased by the number of watched instances
-    unsigned notification_time = wait_time + serv_size; 
+    unsigned notification_time = wait_time + serv_size;
 
     unsigned pivot = rand() % serv_size;
 
@@ -471,9 +471,9 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                     }
                 }
                 try {
-                    bool job_received = 
-                        x_GetJobWaitNotify(sa, 
-                            job_key, input, notification_time, udp_port, 
+                    bool job_received =
+                        x_GetJobWaitNotify(sa,
+                            job_key, input, notification_time, udp_port,
                             jout, jerr, job_mask);
                     if (job_received) {
                         return job_received;
@@ -500,8 +500,8 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
                     }
                 }
                 try {
-                    bool job_received = 
-                        x_GetJobWaitNotify(sa, 
+                    bool job_received =
+                        x_GetJobWaitNotify(sa,
                             job_key, input, notification_time, udp_port,
                             jout, jerr, job_mask);
                     if (job_received) {
@@ -534,7 +534,7 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
 }
 
 
-void CNetScheduleClient_LB::RegUnregClient(const string&  cmd, 
+void CNetScheduleClient_LB::RegUnregClient(const string&  cmd,
                                            unsigned short udp_port)
 {
     time_t curr = time(0);
@@ -572,8 +572,8 @@ void CNetScheduleClient_LB::UnRegisterClient(unsigned short udp_port)
 }
 
 bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
-                                               string*    job_key, 
-                                               string*    input, 
+                                               string*    job_key,
+                                               string*    input,
                                                unsigned   wait_time,
                                                unsigned short udp_port,
                                                string* jout,
@@ -589,8 +589,8 @@ bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
     }
 
     CJS_BoolGuard bg(&m_StickToHost);
-    bool job_received = 
-        TParent::GetJobWaitNotify(job_key, input, wait_time, udp_port, 
+    bool job_received =
+        TParent::GetJobWaitNotify(job_key, input, wait_time, udp_port,
                                   jout, jerr, job_mask);
     return job_received;
 }
@@ -649,31 +649,31 @@ public:
                                 != CVersionInfo::eNonCompatible) {
 
             CConfig conf(params);
-            string client_name = 
-                conf.GetString(m_DriverName, 
+            string client_name =
+                conf.GetString(m_DriverName,
                                "client_name", CConfig::eErr_Throw, "noname");
-            string queue_name = 
-                conf.GetString(m_DriverName, 
+            string queue_name =
+                conf.GetString(m_DriverName,
                                "queue_name", CConfig::eErr_Throw, "noname");
-            string service = 
-                conf.GetString(m_DriverName, 
+            string service =
+                conf.GetString(m_DriverName,
                                "service", CConfig::eErr_NoThrow, "");
             NStr::TruncateSpacesInPlace(service);
 
             if (!service.empty()) {
-                unsigned int rebalance_time = conf.GetInt(m_DriverName, 
+                unsigned int rebalance_time = conf.GetInt(m_DriverName,
                                                 "rebalance_time",
                                                 CConfig::eErr_NoThrow, 10);
                 unsigned int rebalance_requests = conf.GetInt(m_DriverName,
                                                 "rebalance_requests",
                                                 CConfig::eErr_NoThrow, 100);
                 CNetScheduleClient_LB* lb_drv =
-                      new CNetScheduleClient_LB(client_name, 
+                      new CNetScheduleClient_LB(client_name,
                                                 service, queue_name,
-                                                rebalance_time, 
+                                                rebalance_time,
                                                 rebalance_requests);
                 drv.reset(lb_drv);
-                unsigned max_retry = conf.GetInt(m_DriverName, 
+                unsigned max_retry = conf.GetInt(m_DriverName,
                                                  "max_retry",
                                                  CConfig::eErr_NoThrow, 0);
                 if (max_retry) {
@@ -681,7 +681,7 @@ public:
                 }
 
                 bool discover_lp_servers =
-                    conf.GetBool(m_DriverName, "discover_low_priority_servers", 
+                    conf.GetBool(m_DriverName, "discover_low_priority_servers",
                                 CConfig::eErr_NoThrow, false);
 
                 lb_drv->DiscoverLowPriorityServers(discover_lp_servers);
@@ -702,8 +702,8 @@ public:
                     }
                 }
             } else { // non lb client
-                string host = 
-                    conf.GetString(m_DriverName, 
+                string host =
+                    conf.GetString(m_DriverName,
                                    "host", CConfig::eErr_Throw, kEmptyStr);
                 NStr::TruncateSpacesInPlace(host);
                 if( host.empty()) {
@@ -715,10 +715,10 @@ public:
                                                "port",
                                                CConfig::eErr_Throw, 9100);
 
-                drv.reset(new CNetScheduleClient(host, port, 
+                drv.reset(new CNetScheduleClient(host, port,
                                              client_name, queue_name));
             }
-            }                               
+            }
         }
         return drv.release();
     }

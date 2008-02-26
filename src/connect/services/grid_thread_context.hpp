@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
-// 
+//
 ///@internal
 class CGridThreadContext
 {
@@ -67,7 +67,7 @@ public:
     void ReturnJob();
     void PutFailure(const string& msg);
     bool IsJobCanceled();
-   
+
     IWorkerNodeJob* GetJob();
 private:
 
@@ -82,9 +82,9 @@ private:
     auto_ptr<CNcbiOstream>        m_WStream;
 
     auto_ptr<IBlobStorage>        m_ProgressWriter;
-    CRequestRateControl           m_MsgThrottler; 
+    CRequestRateControl           m_MsgThrottler;
     long                          m_CheckStatusPeriod;
-    CRequestRateControl           m_StatusThrottler; 
+    CRequestRateControl           m_StatusThrottler;
 
     CGridThreadContext(const CGridThreadContext&);
     CGridThreadContext& operator=(const CGridThreadContext&);

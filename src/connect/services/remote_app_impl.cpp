@@ -48,8 +48,8 @@ void IRemoteAppRequest_Impl::SetTempDir(const string& path)
     if (CDirEntry::IsAbsolutePath(path))
         sm_TmpDirPath = path;
     else {
-        string tmp = CDir::GetCwd() 
-            + CDirEntry::GetPathSeparator() 
+        string tmp = CDir::GetCwd()
+            + CDirEntry::GetPathSeparator()
             + path;
         sm_TmpDirPath = CDirEntry::NormalizePath(tmp);
     }
@@ -90,7 +90,7 @@ void IRemoteAppRequest_Impl::Reset()
     m_InBlob->Reset();
     m_CmdLine = "";
     m_Files.clear();
-    m_AppRunTimeout = 0;   
+    m_AppRunTimeout = 0;
     x_RemoveWDir();
 }
 

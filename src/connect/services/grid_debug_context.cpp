@@ -55,7 +55,7 @@ CGridDebugContext* CGridDebugContext::GetInstance()
     return sm_Instance.get();
 }
 
-CGridDebugContext::CGridDebugContext(eMode mode, 
+CGridDebugContext::CGridDebugContext(eMode mode,
                                      IBlobStorageFactory& factory)
     : m_Mode(mode), m_StorageFactory(factory)
 {
@@ -89,7 +89,7 @@ int CGridDebugContext::SetExecuteList(const string& files)
         while( !ifile.eof() ) {
             ifile.read(buf, sizeof(buf));
             os.write(buf, ifile.gcount());
-        }       
+        }
         storage->Reset();
         m_Blobs[blob_id] = fname;
     }
@@ -116,7 +116,7 @@ string CGridDebugContext::GetLogFileName() const
     if (m_Mode == eGDC_Gather) {
         log_file_name = m_RunName + '.' + m_SPid + ".log";
     } else if (m_Mode == eGDC_Execute) {
-        log_file_name = m_RunName + '.' + m_SPid + ".execute.log";       
+        log_file_name = m_RunName + '.' + m_SPid + ".execute.log";
     }
     return log_file_name;
 }
@@ -126,22 +126,22 @@ void CGridDebugContext::DumpInput(const string& blob_id, unsigned int job_number
 {
     if (m_Mode != eGDC_Gather)
         return;
-    string fname = m_RunName + '.' + m_SPid + '.' + 
+    string fname = m_RunName + '.' + m_SPid + '.' +
                    NStr::UIntToString(job_number) + ".inp";
     x_DumpBlob(blob_id, fname);
 }
 
 void CGridDebugContext::DumpOutput(const string& job_key,
-                                   const string& blob_id, 
+                                   const string& blob_id,
                                    unsigned int job_number)
 {
     string fname;
     if (m_Mode == eGDC_Gather) {
-        fname = m_RunName + '.' + m_SPid + '.' + 
+        fname = m_RunName + '.' + m_SPid + '.' +
             NStr::UIntToString(job_number) + ".out";
     }
     else if (m_Mode == eGDC_Execute) {
-        if (job_key.find("DBG_") == 0) 
+        if (job_key.find("DBG_") == 0)
             fname = job_key.substr(4) + "__";
         else
             fname = "???_" + m_RunName + '.';
@@ -152,16 +152,16 @@ void CGridDebugContext::DumpOutput(const string& job_key,
 }
 
 void CGridDebugContext::DumpProgressMessage(const string& job_key,
-                                            const string& msg, 
+                                            const string& msg,
                                             unsigned int job_number)
 {
     string fname;
     if (m_Mode == eGDC_Gather) {
-        fname= m_RunName + '.' + m_SPid + '.' + 
+        fname= m_RunName + '.' + m_SPid + '.' +
                    NStr::UIntToString(job_number) + ".msg";
     }
     else if (m_Mode == eGDC_Execute) {
-        if (job_key.find("DBG_") == 0) 
+        if (job_key.find("DBG_") == 0)
             fname = job_key.substr(4) + "__";
         else
             fname = "???_" + m_RunName + '.';
@@ -176,7 +176,7 @@ void CGridDebugContext::x_DumpBlob(const string& blob_id, const string& fname)
 {
     auto_ptr<IBlobStorage> storage(CreateStorage());
     size_t blob_size = 0;
-    CNcbiIstream& is = storage->GetIStream(blob_id, &blob_size, 
+    CNcbiIstream& is = storage->GetIStream(blob_id, &blob_size,
                                            IBlobStorage::eLockWait);
     CNcbiOfstream ofile( fname.c_str() );
     char buf[1024];

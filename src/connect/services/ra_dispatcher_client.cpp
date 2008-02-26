@@ -53,7 +53,7 @@ void CRADispatcherClient::StartJob(CRemoteAppRequestSB& request)
                    "Another job is being processed an its result has not been read yet.");
     m_Request.Reset(&request);
     m_Stream << eNewJobCmd << " ";
-    if (!m_Stream.good()) 
+    if (!m_Stream.good())
         NCBI_THROW(CRADispatcherClientException, eIOError,
                    "Can not read/write to/from the communication stream.");
     m_Request->Send(m_Stream);
@@ -79,7 +79,7 @@ CRADispatcherClient::EJobState CRADispatcherClient::GetJobState()
                    "JID is not found. Protocol error.");
 
     m_Stream << eGetStatusCmd << " ";
-    if (!m_Stream.good()) 
+    if (!m_Stream.good())
         NCBI_THROW(CRADispatcherClientException, eIOError,
                    "Can not read/write to/from the communication stream.");
 
@@ -101,14 +101,14 @@ CRemoteAppResultSB& CRADispatcherClient::GetResult()
                        "Job is not ready yet.");
     }
     m_WasGetResultCalled = true;
-    return *m_Result;    
+    return *m_Result;
 }
-    
+
 void CRADispatcherClient::Reset()
 {
     if (m_Request && !m_Result) {
         m_Stream << eCancelJobCmd << " ";
-        if (!m_Stream.good()) 
+        if (!m_Stream.good())
             NCBI_THROW(CRADispatcherClientException, eIOError,
                        "Can not read/write to/from the communication stream.");
 
@@ -124,11 +124,11 @@ void CRADispatcherClient::Reset()
     m_Jid = "";
 }
 
-CRADispatcherClient::EJobState 
+CRADispatcherClient::EJobState
 CRADispatcherClient::x_ProcessResponse()
 {
     EJobState st = eRunning;
-    
+
     int tmp;
     m_Stream >> tmp;
     CNetScheduleAPI::EJobStatus njstatus = (CNetScheduleAPI::EJobStatus)tmp;
@@ -170,7 +170,7 @@ CRADispatcherClient::EResId CRADispatcherClient::x_ReadResponseId()
     int tmp;
     string error;
     m_Stream >> tmp;
-    if (!m_Stream.good()) 
+    if (!m_Stream.good())
         NCBI_THROW(CRADispatcherClientException, eIOError,
                    "Can not read/write to/from the communication stream.");
     EResId res = (EResId) tmp;

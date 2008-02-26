@@ -35,7 +35,7 @@
  */
 
 /// @file grid_worker_app.hpp
-/// NetSchedule worker node application. 
+/// NetSchedule worker node application.
 ///
 
 
@@ -52,16 +52,16 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
-/// Default implementation of a worker node initialization 
+/// Default implementation of a worker node initialization
 /// interface
-class CDefalutWorkerNodeInitContext : public IWorkerNodeInitContext
+class CDefaultWorkerNodeInitContext : public IWorkerNodeInitContext
 {
 public:
-    CDefalutWorkerNodeInitContext(const CNcbiApplication& app)
-        : m_App(app) 
+    CDefaultWorkerNodeInitContext(const CNcbiApplication& app)
+        : m_App(app)
     {}
 
-    virtual ~CDefalutWorkerNodeInitContext() {}
+    virtual ~CDefaultWorkerNodeInitContext() {}
 
     virtual const IRegistry&        GetConfig() const
     { return m_App.GetConfig(); }
@@ -75,8 +75,8 @@ public:
 private:
     const CNcbiApplication& m_App;
 
-    CDefalutWorkerNodeInitContext(const CDefalutWorkerNodeInitContext&);
-    CDefalutWorkerNodeInitContext& operator=(const CDefalutWorkerNodeInitContext&);
+    CDefaultWorkerNodeInitContext(const CDefaultWorkerNodeInitContext&);
+    CDefaultWorkerNodeInitContext& operator=(const CDefaultWorkerNodeInitContext&);
 };
 
 /// Main Worker Node application
@@ -94,14 +94,14 @@ public:
         eManualSignalHandling
     };
 
-    CGridWorkerApp(IWorkerNodeJobFactory* job_factory, 
+    CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
                    IBlobStorageFactory*   storage_factory = NULL,
                    INetScheduleClientFactory* client_factory = NULL,
                    ESignalHandling signal_handling = eStandardSignalHandling);
     virtual ~CGridWorkerApp();
 
     /// If you override this method, do call CGridWorkerApp::Init()
-    /// from inside your overriding method.    
+    /// from inside of your overriding method.
     virtual void Init(void);
 
     /// Do not override this method yourself! It includes all the Worker Node

@@ -54,11 +54,11 @@ CNetScheduleAPI* CNetScheduleClientFactory::CreateInstance(void)
 
     CConfig conf(m_Registry);
     const CConfig::TParamTree* param_tree = conf.GetTree();
-    const TPluginManagerParamTree* netschedule_tree = 
+    const TPluginManagerParamTree* netschedule_tree =
             param_tree->FindSubNode(kNetScheduleAPIDriverName);
 
     if (netschedule_tree) {
-        ret.reset( 
+        ret.reset(
             m_PM_NetSchedule.CreateInstance(
                     kNetScheduleAPIDriverName,
                     TPMNetSchedule::GetDefaultDrvVers(),
@@ -67,7 +67,7 @@ CNetScheduleAPI* CNetScheduleClientFactory::CreateInstance(void)
     }
     if (!ret.get())
         NCBI_THROW(CNSClientFactoryException,
-                   eNSClientIsNotCreated, 
+                   eNSClientIsNotCreated,
                    "Couldn't create NetSchedule client."
                    "Check registry.");
 

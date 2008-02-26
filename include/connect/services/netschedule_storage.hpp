@@ -28,7 +28,7 @@
  *
  * Authors:  Maxim Didneko, Anatoliy Kuznetsov
  *
- * File Description:  
+ * File Description:
  *      DEPRECATED
  *
  */

@@ -41,35 +41,7 @@
 #define NCBI_USE_ERRCODE_X   ConnServ_NetSchedule
 
 BEGIN_NCBI_SCOPE
-/*
-inline
-bool s_SendCmdWaitResponse(const CNetScheduleAPI& api, CNetSrvConnector& con,
-                           const string& cmd, size_t& err_count, string* resp = NULL)
-{
-    string r;
-    try {
-        r = api.SendCmdWaitResponse(con, cmd);
-    } catch (CNetServiceException& ex) {
-        ERR_POST_X(1, con.GetHost() << ":" << con.GetPort()
-                   << " returned error: \"" << ex.what() << "\"");
-        if (ex.GetErrCode() == CNetServiceException::eCommunicationError) {
-            if( ++err_count >= api.GetPoll().GetServersNumber() )
-                NCBI_THROW(CNetServiceException, eCommunicationError,
-                           "Communication error");
-            return false;
-        } else throw;
-    } catch (CIO_Exception& ex) {
-        ERR_POST_X(2, con.GetHost() << ":" << con.GetPort()
-                   << " returned error: \"" << ex.what() << "\"");
-        if( ++err_count >= api.GetPoll().GetServersNumber() )
-            NCBI_THROW(CNetServiceException, eCommunicationError,
-                       "Communication error");
-        return false;
-    }
-    if (resp) *resp = r;
-    return true;
-}
-*/
+
 static
 void s_ParseGetJobResponse(string*        job_key,
                            string*        input,
@@ -179,19 +151,19 @@ struct SNSJobGetter
     SNSJobGetter(const CNetScheduleAPI& api, const string& cmd, CNetScheduleJob& job)
         : m_API(api), m_Cmd(cmd), m_Job(job)
     {}
-    bool operator()(CNetServerConnector& con, bool isLast);
+    bool operator()(CNetServerConnection conn, bool isLast);
     const CNetScheduleAPI& m_API;
     const string& m_Cmd;
     CNetScheduleJob& m_Job;
 };
 
-bool SNSJobGetter::operator()(CNetServerConnector& con, bool isLast)
+bool SNSJobGetter::operator()(CNetServerConnection conn, bool isLast)
 {
     string resp;
     try {
-        resp = m_API.SendCmdWaitResponse(con, m_Cmd);
+        resp = m_API.SendCmdWaitResponse(conn, m_Cmd);
     } catch (CNetServiceException& ex) {
-        ERR_POST_X(9, con.GetHost() << ":" << con.GetPort()
+        ERR_POST_X(9, conn.GetHost() << ":" << conn.GetPort()
                       << " returned error: \"" << ex.what() << "\"");
         if (ex.GetErrCode() == CNetServiceException::eCommunicationError) {
             if( isLast )
@@ -200,7 +172,7 @@ bool SNSJobGetter::operator()(CNetServerConnector& con, bool isLast)
             return false;
         } else throw;
     } catch (CIO_Exception& ex) {
-        ERR_POST_X(10, con.GetHost() << ":" << con.GetPort()
+        ERR_POST_X(10, conn.GetHost() << ":" << conn.GetPort()
                        << " returned error: \"" << ex.what() << "\"");
         if( isLast )
             NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -239,24 +211,7 @@ bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job,
     if (udp_port != 0)
         cmd += ' ' + NStr::IntToString(udp_port);
 
-    return m_API->GetConnector().Find(SNSJobGetter(*m_API, cmd, job));
-/*
-    for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().random_begin();
-         it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-
-        if (!s_SendCmdWaitResponse(*m_API, ch, cmd, err_count, &resp))
-            continue;
-
-        if (!resp.empty()) {
-            job.mask = CNetScheduleAPI::eEmptyMask;
-            string tmp;
-            x_ParseGetJobResponse(&job.job_id, &job.input, &tmp, &tmp, &job.mask, resp);
-            return true;
-        }
-    }
-    return false;
-    */
+    return m_API->Find(SNSJobGetter(*m_API, cmd, job));
 }
 
 
@@ -268,23 +223,7 @@ bool CNetScheduleExecuter::GetJobWaitNotify(CNetScheduleJob& job,
     string cmd = "WGET";
     cmd += ' ' + NStr::IntToString(udp_port) + ' ' + NStr::IntToString(wait_time);
 
-    return m_API->GetConnector().Find(SNSJobGetter(*m_API, cmd, job));
-/*
-    for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().random_begin();
-         it != m_API->GetPoll().end(); ++it) {
-
-        string resp;
-        if (!s_SendCmdWaitResponse(*m_API,*it, cmd, err_count, &resp))
-            continue;
-
-        if (!resp.empty()) {
-            job.mask = CNetScheduleAPI::eEmptyMask;
-            string tmp;
-            x_ParseGetJobResponse(&job.job_id, &job.input, &tmp, &tmp, &job.mask, resp);
-            return true;
-        }
-    }
-    return false;*/
+    return m_API->Find(SNSJobGetter(*m_API, cmd, job));
 }
 
 
@@ -422,17 +361,8 @@ void CNetScheduleExecuter::ReturnJob(const string& job_key) const
 void CNetScheduleExecuter::x_RegUnregClient(const string&  cmd,
                                             unsigned short udp_port) const
 {
-    //ze_t err_count = 0;
     string tmp = cmd + ' ' + NStr::IntToString(udp_port);
-    m_API->GetConnector().ForEach(SNSSendCmd(*m_API, tmp, SNSSendCmd::eLogExceptions | SNSSendCmd::eIgnoreCommunicationError));
- /*
-    for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin();
-         it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-
-        s_SendCmdWaitResponse(*m_API, ch, tmp, err_count);
-    }
-    */
+    m_API->ForEach(SNSSendCmd(*m_API, tmp, SNSSendCmd::eLogExceptions | SNSSendCmd::eIgnoreCommunicationError));
 }
 
 

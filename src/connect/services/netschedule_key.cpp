@@ -59,7 +59,7 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
     ++ch;
 
     if (prefix != kNetScheduleKeyPrefix) {
-        NCBI_THROW(CNetScheduleException, eKeyFormatError, 
+        NCBI_THROW(CNetScheduleException, eKeyFormatError,
                                        "Key syntax error. Invalid prefix.");
     }
 
@@ -97,17 +97,17 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
     port = atoi(ch);
 }
 
-CNetScheduleKey::operator string() const 
+CNetScheduleKey::operator string() const
 {
     string tmp;
-    string key = "JSID_01";  
+    string key = "JSID_01";
 
     NStr::IntToString(tmp, id);
     key += "_";
     key += tmp;
 
     key += "_";
-    key += host;    
+    key += host;
 
     NStr::IntToString(tmp, port);
     key += "_";

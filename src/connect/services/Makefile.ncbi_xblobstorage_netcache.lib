@@ -8,5 +8,5 @@ LIB = ncbi_xblobstorage_netcache
 #LIB_OR_DLL = both
 DLL_LIB = xconnserv xconnect xutil xncbi
 
-CPPFLAGS = $(ORIG_CPPFLAGS) 
+CPPFLAGS = $(ORIG_CPPFLAGS)
 LIBS = $(ORIG_LIBS)

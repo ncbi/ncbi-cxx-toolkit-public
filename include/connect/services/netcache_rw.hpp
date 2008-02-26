@@ -34,7 +34,7 @@
  */
 
 /// @file netcache_client.hpp
-/// NetCache client specs. 
+/// NetCache client specs.
 ///
 
 #include <connect/connect_export.h>
@@ -54,13 +54,12 @@ BEGIN_NCBI_SCOPE
  */
 
 
-class CNetSrvConnector;
 class CSocket;
 
 class NCBI_XCONNECT_EXPORT CNetCacheReader : public IReader
 {
 public:
-    CNetCacheReader(CNetServerConnectorHolder& connector, 
+    CNetCacheReader(CNetServerConnection connection,
                     size_t blob_size);
     virtual ~CNetCacheReader();
 
@@ -68,17 +67,17 @@ public:
                                 size_t  count,
                             size_t* bytes_read = 0);
     virtual ERW_Result PendingCount(size_t* count);
-    
+
     void Close();
 
 private:
-    CNetServerConnectorHolder m_Connector;
+    CNetServerConnection m_Connection;
     auto_ptr<CSocketReaderWriter> m_Reader;
     /// Remaining BLOB size to be read
     size_t              m_BlobBytesToRead;
 
     CNetCacheReader(const CNetCacheReader&);
-    CNetCacheReader& operator= (const CNetCacheReader&);    
+    CNetCacheReader& operator= (const CNetCacheReader&);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,7 +87,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IWriter
 {
 public:
     CNetCacheWriter(const CNetCacheAPI& api,
-                    CNetServerConnectorHolder& connector, 
+                    CNetServerConnection connection,
                     CTransmissionWriter::ESendEofPacket send_eof =
                             CTransmissionWriter::eDontSendEofPacket);
 
@@ -97,7 +96,7 @@ public:
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
                              size_t*     bytes_written = 0);
- 
+
      /// Flush pending data (if any) down to output device.
     virtual ERW_Result Flush(void);
 
@@ -105,7 +104,7 @@ public:
 
 private:
     const CNetCacheAPI& m_API;
-    CNetServerConnectorHolder m_Connector;
+    CNetServerConnection m_Connection;
     auto_ptr<CTransmissionWriter> m_Writer;
     string m_LastError;
 
@@ -113,7 +112,7 @@ private:
     void x_Shutdown();
 
     CNetCacheWriter(const CNetCacheWriter&);
-    CNetCacheWriter& operator= (const CNetCacheWriter&);    
+    CNetCacheWriter& operator= (const CNetCacheWriter&);
 
 };
 

@@ -58,7 +58,7 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 //
 /// @internal
-class NCBI_XCONNECT_EXPORT CNetScheduleClientFactory 
+class NCBI_XCONNECT_EXPORT CNetScheduleClientFactory
     : public INetScheduleClientFactory
 {
 public:

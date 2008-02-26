@@ -69,7 +69,7 @@ CBlobStorage_NetCache::CBlobStorage_NetCache()
 }
 
 
-CBlobStorage_NetCache::~CBlobStorage_NetCache() 
+CBlobStorage_NetCache::~CBlobStorage_NetCache()
 {
 }
 
@@ -119,7 +119,7 @@ void CBlobStorage_NetCache::Reset()
 const char* kBlobStorageNetCacheDriverName = "netcache";
 
 
-class CBlobStorageNetCacheCF 
+class CBlobStorageNetCacheCF
     : public CSimpleClassFactoryImpl<IBlobStorage,CBlobStorage_NetCache>
 {
 public:
@@ -156,7 +156,7 @@ IBlobStorage* CBlobStorageNetCacheCF::CreateInstance(
             masks.push_back( TBSNCPersitent::sm_InputBlobCachePrefix + "*" );
             masks.push_back( TBSNCPersitent::sm_OutputBlobCachePrefix + "*" );
             CDir curr_dir(temp_dir);
-            CDir::TEntries dir_entries = curr_dir.GetEntries(masks, 
+            CDir::TEntries dir_entries = curr_dir.GetEntries(masks,
                                                              CDir::eIgnoreRecursive);
             ITERATE( CDir::TEntries, it, dir_entries) {
                 (*it)->Remove(CDirEntry::eNonRecursive);
@@ -181,9 +181,9 @@ IBlobStorage* CBlobStorageNetCacheCF::CreateInstance(
                                                 TPMNetCache::GetDefaultDrvVers(),
                                                 params)
                             );
-                if (nc_client.get()) 
+                if (nc_client.get())
                     return new CBlobStorage_NetCache(nc_client.release(),
-                                                 flags, 
+                                                 flags,
                                                  temp_dir);
                 else return NULL;
 
@@ -198,9 +198,9 @@ IBlobStorage* CBlobStorageNetCacheCF::CreateInstance(
                                                 TPMNetCache::GetDefaultDrvVers(),
                                                 params)
                             );
-                if (nc_client.get()) 
+                if (nc_client.get())
                     return new CBlobStorage_NetCache(nc_client.release(),
-                                                 flags, 
+                                                 flags,
                                                  temp_dir);
                 else return NULL;
             } else {

@@ -35,7 +35,7 @@
  */
 
 /// @file grid_worker.hpp
-/// NetSchedule Framework specs. 
+/// NetSchedule Framework specs.
 ///
 
 #include <corelib/ncbistre.hpp>
@@ -65,7 +65,7 @@ class CNcbiEnvironment;
 ///
 /// An instance of a class which implements this interface
 /// is passed to a constructor of a worker node job class
-/// The worker node job class can use this class to get 
+/// The worker node job class can use this class to get
 /// configuration parameters.
 ///
 class NCBI_XCONNECT_EXPORT IWorkerNodeInitContext
@@ -89,8 +89,8 @@ public:
 class CWorkerNodeJobContext;
 class CWorkerNodeControlThread;
 /// Worker Node Job interface.
-/// 
-/// This interface is a worker node workhorse. 
+///
+/// This interface is a worker node workhorse.
 /// Job is executed by method Do of this interface.
 /// Worker node application may be configured to execute several jobs at once
 /// using threads, so implementation must be thread safe.
@@ -103,9 +103,9 @@ public:
     virtual ~IWorkerNodeJob() {}
     /// Execute the job.
     ///
-    /// Job is considered successfull if method calls 
+    /// Job is considered successfull if method calls
     /// CommitJob (see CWorkerNodeJobContext).
-    /// If method does not call CommitJob job is considered unresolved 
+    /// If method does not call CommitJob job is considered unresolved
     /// and returned back to the queue.
     /// Method can throw an exception (derived from std::exception),
     /// in this case job is considered failed (error message will be
@@ -147,25 +147,25 @@ public:
     /// 1. It can be an input data for a job (if that data is short)
     ///    If it is so don't use GetIStream method.
     /// 2. It holds a key to a data stored in an external data storage.
-    ///    (NetCache)  In this case use GetIStream method to get a stream with 
+    ///    (NetCache)  In this case use GetIStream method to get a stream with
     ///    an input data for the job
     ///
     const string& GetJobInput() const      { return m_Job.input; }
 
     /// Set a job's output. This string will be sent to
     /// the queue when job is done.
-    /// 
+    ///
     /// This method can be used to send a short data back to the client.
-    /// To send a large result use GetOStream method. Don't call this 
+    /// To send a large result use GetOStream method. Don't call this
     /// method after GetOStream method is called.
     ///
     void          SetJobOutput(const string& output) { m_Job.output = output; }
 
     /// Get a stream with input data for a job. Stream is based on network
-    /// data storage (NetCache). Size of the input data can be determined 
-    /// using GetInputBlobSize. Will throw a CNetCacheStorageException 
-    /// exception with code eBlocked if the mode parameter is set to 
-    /// IBlobStorage::eLockNoWait and a blob is blocked by 
+    /// data storage (NetCache). Size of the input data can be determined
+    /// using GetInputBlobSize. Will throw a CNetCacheStorageException
+    /// exception with code eBlocked if the mode parameter is set to
+    /// IBlobStorage::eLockNoWait and a blob is blocked by
     /// another process.
     ///
     CNcbiIstream& GetIStream(IBlobStorage::ELockMode mode =
@@ -177,46 +177,46 @@ public:
 
     /// Put progress message
     ///
-    void          PutProgressMessage(const string& msg, 
+    void          PutProgressMessage(const string& msg,
                                      bool send_immediately = false);
 
     /// Get a stream where a job can write its result
     ///
     CNcbiOstream& GetOStream();
 
-    /// Confirm that a job is done and result is ready to be sent 
-    /// back to the client. 
+    /// Confirm that a job is done and result is ready to be sent
+    /// back to the client.
     ///
-    /// This method should be called at the end of IWorkerNodeJob::Do 
-    /// method. If this method or CommitJobWithFailure are not called 
-    /// the job's result will NOT be sent 
-    /// to the queue (job is returned back to the NetSchedule queue 
+    /// This method should be called at the end of IWorkerNodeJob::Do
+    /// method. If this method or CommitJobWithFailure are not called
+    /// the job's result will NOT be sent
+    /// to the queue (job is returned back to the NetSchedule queue
     /// and re-executed in a while)
     ///
     void CommitJob() { m_JobCommitted = eDone; }
 
-    /// Confirm that a job is finished, but an error has happend during its 
-    /// execution. 
+    /// Confirm that a job is finished, but an error has happend during its
+    /// execution.
     ///
-    /// This method should be called at the end of IWorkerNodeJob::Do 
-    /// method. If this method or CommitJob are not called 
-    /// the job's result will NOT be sent 
-    /// to the queue (job is returned back to the NetSchedule queue 
+    /// This method should be called at the end of IWorkerNodeJob::Do
+    /// method. If this method or CommitJob are not called
+    /// the job's result will NOT be sent
+    /// to the queue (job is returned back to the NetSchedule queue
     /// and re-executed in a while)
     ///
-    void CommitJobWithFailure(const string& err_msg) 
+    void CommitJobWithFailure(const string& err_msg)
     { m_JobCommitted = eFailure; m_Job.error_msg = err_msg; }
 
     /// Check if node application shutdown was requested.
     ///
-    /// If job takes a long time it should periodically call 
-    /// this method during the execution and check if node shutdown was 
+    /// If job takes a long time it should periodically call
+    /// this method during the execution and check if node shutdown was
     /// requested and gracefully finish its work.
     ///
     /// Shutdown level eNormal means job can finish the job and exit,
-    /// eImmidiate means node should exit immediately 
+    /// eImmidiate means node should exit immediately
     /// (unfinished jobs are returned back to the queue)
-    /// 
+    ///
     CNetScheduleAdmin::EShutdownLevel GetShutdownLevel(void) const;
 
     /// Get a name of a queue where this node is connected to.
@@ -230,11 +230,11 @@ public:
     /// Set job execution timeout
     ///
     /// When node picks up the job for execution it may evaluate what time it
-    /// takes for computation and report it to the queue. If job does not 
-    /// finish in the specified timeframe (because of a failure) 
+    /// takes for computation and report it to the queue. If job does not
+    /// finish in the specified timeframe (because of a failure)
     /// it is going to be rescheduled
     ///
-    /// Default value for the run timeout specified in the queue settings on 
+    /// Default value for the run timeout specified in the queue settings on
     /// the server side.
     ///
     /// @param time_to_run
@@ -246,12 +246,12 @@ public:
     ///
     /// When node picks up the job for execution it may peridically
     /// communicate to the server that job is still alive and
-    /// prolong job execution timeout, so job server does not try to 
+    /// prolong job execution timeout, so job server does not try to
     /// reschedule.
     ///
     ///
     /// @param runtime_inc
-    ///    Estimated time in seconds(from the current moment) to 
+    ///    Estimated time in seconds(from the current moment) to
     ///    finish the job.
     ///
     /// @sa SetRunTimeout
@@ -268,13 +268,13 @@ public:
     void RequestExclusiveMode();
 
     const string& GetJobOutput() const { return m_Job.output; }
-    
+
     CNetScheduleAPI::TJobMask GetJobMask() const { return m_Job.mask; }
 
     size_t GetMaxServerOutputSize() const;
 
 
-private:    
+private:
     enum ECommitStatus {
         eDone,
         eFailure,
@@ -287,11 +287,11 @@ private:
     size_t& SetJobInputBlobSize()      { return m_InputBlobSize; }
     bool IsJobExclusive() const        { return m_ExclusiveJob; }
     const string& GetErrMsg() const    { return m_Job.error_msg; }
-    
+
     friend class CWorkerNodeRequest;
     CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
-    bool IsJobCommitted() const    { return m_JobCommitted != eNotCommitted; }   
-    ECommitStatus GetCommitStatus() const    { return m_JobCommitted; }   
+    bool IsJobCommitted() const    { return m_JobCommitted != eNotCommitted; }
+    ECommitStatus GetCommitStatus() const    { return m_JobCommitted; }
     unsigned int GetJobNumber() const  { return m_JobNumber; }
 
     /// Only a CGridWorkerNode can create an instance of this class
@@ -350,12 +350,12 @@ private:
 ///
 ///  @sa IWorkerNodeJobFactory, CWorkerNodeIdleTaskContext
 ///
-class IWorkerNodeIdleTask 
+class IWorkerNodeIdleTask
 {
 public:
     virtual ~IWorkerNodeIdleTask() {};
-    
-    /// Do an Idle Taks here. 
+
+    /// Do an Idle Taks here.
     /// It should not take a lot time, because while it is running
     /// no real jobs will be processed.
     virtual void Run(CWorkerNodeIdleTaskContext&) = 0;
@@ -392,9 +392,9 @@ template <typename TWorkerNodeJob>
 class CSimpleJobFactory : public IWorkerNodeJobFactory
 {
 public:
-    virtual void Init(const IWorkerNodeInitContext& context) 
+    virtual void Init(const IWorkerNodeInitContext& context)
     {
-        m_WorkerNodeInitContext = &context;       
+        m_WorkerNodeInitContext = &context;
     }
     virtual IWorkerNodeJob* CreateInstance(void)
     {
@@ -420,7 +420,7 @@ template <typename TWorkerNodeJob, typename TWorkerNodeIdleTask>
 class CSimpleJobFactoryEx : public IWorkerNodeJobFactory
 {
 public:
-    virtual void Init(const IWorkerNodeInitContext& context) 
+    virtual void Init(const IWorkerNodeInitContext& context)
     {
         //CMutexGuard guard(s_CreateJobMutex);
         m_WorkerNodeInitContext = &context;
@@ -481,7 +481,7 @@ public:
 
 class CWNJobsWatcher;
 /// Grid Worker Node
-/// 
+///
 /// It gets jobs from a NetSchedule server and runs them simultaneously
 /// in the different threads (thread pool is used).
 ///
@@ -505,21 +505,21 @@ public:
 
     /// Set the maximum threads running simultaneously
     ///
-    void SetMaxThreads(unsigned int max_threads) 
+    void SetMaxThreads(unsigned int max_threads)
                       { m_MaxThreads = max_threads; }
 
     /// Get the maximum threads running simultaneously
     //
     unsigned int GetMaxThreads() const { return m_MaxThreads; }
 
-    void SetInitThreads(unsigned int init_threads) 
+    void SetInitThreads(unsigned int init_threads)
                       { m_InitThreads = init_threads; }
 
     void SetNSTimeout(unsigned int timeout) { m_NSTimeout = timeout; }
     void SetThreadsPoolTimeout(unsigned int timeout)
                       { m_ThreadsPoolTimeout = timeout; }
 
-    void ActivateServerLog(bool on_off) 
+    void ActivateServerLog(bool on_off)
                       { m_LogRequested = on_off; }
 
     void SetMasterWorkerNodes(const string& hosts);
@@ -560,7 +560,7 @@ public:
     CNetScheduleExecuter GetNSExecuter() const;
 
     bool IsExclusiveMode();
-   
+
 private:
     IWorkerNodeJobFactory&       m_JobFactory;
     IBlobStorageFactory&         m_NSStorageFactory;
@@ -609,11 +609,11 @@ private:
 
     struct SHost {
         SHost(string h, unsigned int p) : host(h), port(p) {}
-        bool operator== (const SHost& h) const 
+        bool operator== (const SHost& h) const
         { return host == h.host && port == h.port; }
-        bool operator< (const SHost& h) const 
+        bool operator< (const SHost& h) const
         { return (host == h.host ? (port < h.port) : (host < h.host)); }
-        
+
         string host;
         unsigned int port;
     };

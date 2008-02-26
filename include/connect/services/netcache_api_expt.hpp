@@ -34,7 +34,7 @@
  */
 
 /// @file netcache_client.hpp
-/// NetCache client specs. 
+/// NetCache client specs.
 ///
 
 #include <connect/services/netservice_api_expt.hpp>

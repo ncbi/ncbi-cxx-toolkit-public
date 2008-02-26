@@ -67,22 +67,22 @@ public:
     virtual void Notify(const CWorkerNodeJobContext& job, EEvent event)
     {
         NON_CONST_ITERATE(TCont, it, m_Watchers) {
-            IWorkerNodeJobWatcher* watcher = 
+            IWorkerNodeJobWatcher* watcher =
                 const_cast<IWorkerNodeJobWatcher*>(it->first);
             watcher->Notify(job, event);
-        }        
+        }
     }
 
     void AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher, EOwnership owner)
     {
         TCont::const_iterator it = m_Watchers.find(&job_watcher);
         if (it == m_Watchers.end()) {
-            if (owner == eTakeOwnership) 
+            if (owner == eTakeOwnership)
                 m_Watchers[&job_watcher] = AutoPtr<IWorkerNodeJobWatcher>(&job_watcher);
             else
                 m_Watchers[&job_watcher] = AutoPtr<IWorkerNodeJobWatcher>();
         }
-    } 
+    }
 
 private:
     typedef map<IWorkerNodeJobWatcher*, AutoPtr<IWorkerNodeJobWatcher> > TCont;
@@ -104,7 +104,7 @@ public:
         if (event == eJobStopped) {
             if (m_Os) {
                 if (!IsDiagStream(m_Os)) {
-                    *m_Os << "The Diag Stream was hijacked (probably by job : " << 
+                    *m_Os << "The Diag Stream was hijacked (probably by job : " <<
                         job.GetJobKey() << ")" << endl;
                     m_Os->flush();
                     m_Os = NULL;
@@ -125,7 +125,7 @@ private:
 class CGridWorkerNodeThread : public CThread
 {
 public:
-    CGridWorkerNodeThread(CGridWorkerNode& worker_node) 
+    CGridWorkerNodeThread(CGridWorkerNode& worker_node)
         : m_WorkerNode(worker_node) {}
 
     ~CGridWorkerNodeThread() {}
@@ -155,7 +155,7 @@ private:
 class CGridControlThread : public CThread
 {
 public:
-    CGridControlThread(unsigned int start_port, unsigned int end_port, CGridWorkerNode& wnode) 
+    CGridControlThread(unsigned int start_port, unsigned int end_port, CGridWorkerNode& wnode)
         : m_Control(new CWorkerNodeControlThread(start_port, end_port, wnode)) {}
 
     ~CGridControlThread() {}
@@ -184,42 +184,42 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//     CWorkerNodeIdleThread      -- 
+//     CWorkerNodeIdleThread      --
 class CWorkerNodeIdleThread : public CThread
 {
 public:
-    CWorkerNodeIdleThread(IWorkerNodeIdleTask*, 
+    CWorkerNodeIdleThread(IWorkerNodeIdleTask*,
                           CGridWorkerNode& worker_node,
                           unsigned run_delay,
                           //bool exclusive_mode,
                           unsigned int auto_shutdown);
 
-    void RequestShutdown() 
-    { 
-        m_ShutdownFlag = true; 
-        m_Wait1.Post(); 
-        m_Wait2.Post(); 
+    void RequestShutdown()
+    {
+        m_ShutdownFlag = true;
+        m_Wait1.Post();
+        m_Wait2.Post();
     }
-    void Schedule() 
-    { 
+    void Schedule()
+    {
         CFastMutexGuard guard(m_Mutext);
         m_AutoShutdownSW.Restart();
         if (m_StopFlag) {
-            m_StopFlag = false; 
-            m_Wait1.Post(); 
+            m_StopFlag = false;
+            m_Wait1.Post();
         }
     }
-    void Suspend() 
-    { 
+    void Suspend()
+    {
         CFastMutexGuard guard(m_Mutext);
         m_AutoShutdownSW.Restart();
         m_AutoShutdownSW.Stop();
         if (!m_StopFlag) {
-            m_StopFlag = true; 
-            m_Wait2.Post(); 
+            m_StopFlag = true;
+            m_Wait2.Post();
         }
     }
-    
+
     bool IsShutdownRequested() const { return m_ShutdownFlag; }
 
 
@@ -228,22 +228,22 @@ protected:
     virtual void OnExit(void);
 
     CWorkerNodeIdleTaskContext& GetContext();
-    
+
 private:
 
-    unsigned int x_GetInterval() const 
+    unsigned int x_GetInterval() const
     {
         CFastMutexGuard guard(m_Mutext);
         return  m_AutoShutdown > 0 ?
-                min( m_AutoShutdown - (unsigned int)m_AutoShutdownSW.Elapsed(), m_RunInterval ) 
+                min( m_AutoShutdown - (unsigned int)m_AutoShutdownSW.Elapsed(), m_RunInterval )
                 : m_RunInterval;
     }
-    bool x_GetStopFlag() const 
-    { 
+    bool x_GetStopFlag() const
+    {
         CFastMutexGuard guard(m_Mutext);
-        return m_StopFlag; 
+        return m_StopFlag;
     }
-    bool x_IsAutoShutdownTime() const 
+    bool x_IsAutoShutdownTime() const
     {
         CFastMutexGuard guard(m_Mutext);
         return m_AutoShutdown > 0 ? m_AutoShutdownSW.Elapsed() > m_AutoShutdown : false;
@@ -252,8 +252,8 @@ private:
     IWorkerNodeIdleTask* m_Task;
     CGridWorkerNode& m_WorkerNode;
     auto_ptr<CWorkerNodeIdleTaskContext> m_TaskContext;
-    mutable CSemaphore  m_Wait1; 
-    mutable CSemaphore  m_Wait2; 
+    mutable CSemaphore  m_Wait1;
+    mutable CSemaphore  m_Wait2;
     volatile bool       m_StopFlag;
     volatile bool       m_ShutdownFlag;
     unsigned int        m_RunInterval;
@@ -282,32 +282,32 @@ void* CWorkerNodeIdleThread::Main()
 {
     while (!m_ShutdownFlag) {
         if ( x_IsAutoShutdownTime() ) {
-            LOG_POST_X(47, CTime(CTime::eCurrent).AsString() 
+            LOG_POST_X(47, CTime(CTime::eCurrent).AsString()
                        << " There are no more jobs to be done. Exiting.");
             CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
             break;
-        }            
+        }
         unsigned int interval = m_AutoShutdown > 0 ? min (m_RunInterval,m_AutoShutdown) : m_RunInterval;
         if (m_Wait1.TryWait(interval, 0)) {
             if (m_ShutdownFlag)
                 continue;
             interval = x_GetInterval();
             if (m_Wait2.TryWait(interval, 0)) {
-                continue; 
+                continue;
             }
-        } 
+        }
         if (m_Task && !x_GetStopFlag()) {
             //if (m_ExclusiveMode)
             //    m_WorkerNode.PutOnHold(true);
             try {
                 do {
                     if ( x_IsAutoShutdownTime() ) {
-                        LOG_POST_X(48, CTime(CTime::eCurrent).AsString() 
+                        LOG_POST_X(48, CTime(CTime::eCurrent).AsString()
                                    << " There are no more jobs to be done. Exiting.");
                         CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
                         m_ShutdownFlag = true;
                         break;
-                    }            
+                    }
                     GetContext().Reset();
                     m_Task->Run(GetContext());
                 } while( GetContext().NeedRunAgain() && !m_ShutdownFlag);
@@ -333,7 +333,7 @@ CWorkerNodeIdleTaskContext& CWorkerNodeIdleThread::GetContext()
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//     CWorkerNodeIdleTaskContext      -- 
+//     CWorkerNodeIdleTaskContext      --
 CWorkerNodeIdleTaskContext::
 CWorkerNodeIdleTaskContext(CWorkerNodeIdleThread& thread)
     : m_Thread(thread), m_RunAgain(false)
@@ -362,7 +362,7 @@ void CWorkerNodeIdleTaskContext::RequestShutdown()
 class CIdleWatcher : public IWorkerNodeJobWatcher
 {
 public:
-    CIdleWatcher(CWorkerNodeIdleThread& idle) 
+    CIdleWatcher(CWorkerNodeIdleThread& idle)
         : m_Idle(idle), m_RunningJobs(0) {}
     virtual ~CIdleWatcher() {};
     virtual void Notify(const CWorkerNodeJobContext& job, EEvent event)
@@ -388,7 +388,7 @@ private:
 
 CGridWorkerApp_Impl::CGridWorkerApp_Impl(
                                CNcbiApplication&          app,
-                               IWorkerNodeJobFactory*     job_factory, 
+                               IWorkerNodeJobFactory*     job_factory,
                                IBlobStorageFactory*       storage_factory,
                                INetScheduleClientFactory* client_factory)
 : m_JobFactory(job_factory), m_StorageFactory(storage_factory),
@@ -396,7 +396,7 @@ CGridWorkerApp_Impl::CGridWorkerApp_Impl(
   m_App(app), m_SingleThreadForced(false)
 {
     if (!m_JobFactory.get())
-        NCBI_THROW(CGridWorkerAppException, 
+        NCBI_THROW(CGridWorkerAppException,
                  eJobFactoryIsNotSet, "The JobFactory is not set.");
 
 }
@@ -409,13 +409,13 @@ void CGridWorkerApp_Impl::Init()
 {
     //    SetDiagPostLevel(eDiag_Info);
     //    SetDiagPostFlag(eDPF_DateTime);
-  
+
     IRWRegistry& reg = m_App.GetConfig();
     reg.Set(kNetScheduleAPIDriverName, "discover_low_priority_servers", "true");
 
-    if (!m_StorageFactory.get()) 
+    if (!m_StorageFactory.get())
         m_StorageFactory.reset(new CBlobStorageFactory(reg));
-    if (!m_ClientFactory.get()) 
+    if (!m_ClientFactory.get())
         m_ClientFactory.reset(new CNetScheduleClientFactory(reg));
 }
 
@@ -432,7 +432,7 @@ static void s_ParseControlPorts(const string& sports, unsigned int& start_port, 
 
 int CGridWorkerApp_Impl::Run()
 {
-    LOG_POST_X(50, GetJobFactory().GetJobVersion() << WN_BUILD_DATE); 
+    LOG_POST_X(50, GetJobFactory().GetJobVersion() << WN_BUILD_DATE);
 
     const IRegistry& reg = m_App.GetConfig();
     //unsigned int udp_port =
@@ -440,7 +440,7 @@ int CGridWorkerApp_Impl::Run()
     unsigned int max_threads = 1;
     unsigned int init_threads = 1;
     if (!m_SingleThreadForced) {
-        string s_max_threads = 
+        string s_max_threads =
             reg.GetString(kServerSec,"max_threads","auto");
         if (NStr::CompareNocase(s_max_threads, "auto") == 0 )
             max_threads = GetCpuCount();
@@ -449,22 +449,22 @@ int CGridWorkerApp_Impl::Run()
                 max_threads = NStr::StringToUInt(s_max_threads);
             } catch (...) {
                 max_threads = GetCpuCount();
-                ERR_POST_X(51, "Could not convert [" << kServerSec 
-                           << "] max_threads parameter to number.\n" 
+                ERR_POST_X(51, "Could not convert [" << kServerSec
+                           << "] max_threads parameter to number.\n"
                            << "Using \'auto\' option (" << max_threads << ").");
             }
         }
-        init_threads = 
+        init_threads =
             reg.GetInt(kServerSec,"init_threads",1,0,IRegistry::eReturn);
     }
-    if (init_threads > max_threads) 
+    if (init_threads > max_threads)
         init_threads = max_threads;
 
-    unsigned int ns_timeout = 
+    unsigned int ns_timeout =
         reg.GetInt(kServerSec,"job_wait_timeout",30,0,IRegistry::eReturn);
-    unsigned int threads_pool_timeout = 
+    unsigned int threads_pool_timeout =
         reg.GetInt(kServerSec,"thread_pool_timeout",30,0,IRegistry::eReturn);
-    string scontrol_port = 
+    string scontrol_port =
         reg.GetString(kServerSec,"control_port","9300");
 
     unsigned int start_port, end_port;
@@ -476,13 +476,13 @@ int CGridWorkerApp_Impl::Run()
         s_ParseControlPorts(scontrol_port, start_port, end_port);
     }
 
-    bool server_log = 
+    bool server_log =
         reg.GetBool(kServerSec,"log",false,0,IRegistry::eReturn);
 
-    unsigned int idle_run_delay = 
+    unsigned int idle_run_delay =
         reg.GetInt(kServerSec,"idle_run_delay",30,0,IRegistry::eReturn);
 
-    unsigned int auto_shutdown = 
+    unsigned int auto_shutdown =
         reg.GetInt(kServerSec,"auto_shutdown_if_idle",0,0,IRegistry::eReturn);
 
     unsigned int infinit_loop_time = 0;
@@ -490,31 +490,31 @@ int CGridWorkerApp_Impl::Run()
         infinit_loop_time = reg.GetInt(kServerSec,"infinite_loop_time",0,0,IRegistry::eReturn);
     else
         infinit_loop_time = reg.GetInt(kServerSec,"infinit_loop_time",0,0,IRegistry::eReturn);
-                             
+
     //bool idle_exclusive =
-    //    reg.GetBool(kServerSec, "idle_exclusive", true, 0, 
+    //    reg.GetBool(kServerSec, "idle_exclusive", true, 0,
     //                CNcbiRegistry::eReturn);
 
 
     bool reuse_job_object =
-        reg.GetBool(kServerSec, "reuse_job_object", false, 0, 
+        reg.GetBool(kServerSec, "reuse_job_object", false, 0,
                     CNcbiRegistry::eReturn);
 
-    unsigned int max_total_jobs = 
+    unsigned int max_total_jobs =
         reg.GetInt(kServerSec,"max_total_jobs",0,0,IRegistry::eReturn);
 
-    unsigned int max_failed_jobs = 
+    unsigned int max_failed_jobs =
         reg.GetInt(kServerSec,"max_failed_jobs",0,0,IRegistry::eReturn);
 
     bool is_daemon =
         reg.GetBool(kServerSec, "daemon", false, 0, CNcbiRegistry::eReturn);
 
-    string masters = 
+    string masters =
             reg.GetString(kServerSec, "master_nodes", kEmptyStr);
-    string admin_hosts = 
+    string admin_hosts =
             reg.GetString(kServerSec, "admin_hosts", kEmptyStr);
 
-    unsigned int check_status_period = 
+    unsigned int check_status_period =
         reg.GetInt(kServerSec,"check_status_period",2,0,IRegistry::eReturn);
 
     if (reg.HasEntry(kServerSec,"wait_server_timeout")) {
@@ -525,11 +525,11 @@ int CGridWorkerApp_Impl::Run()
     bool use_embedded_input = false;
     if (reg.HasEntry(kNetScheduleAPIDriverName, "use_embedded_storage"))
         use_embedded_input = reg.
-            GetBool(kNetScheduleAPIDriverName, "use_embedded_storage", false, 0, 
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_storage", false, 0,
                     CNcbiRegistry::eReturn);
     else
         use_embedded_input = reg.
-            GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0, 
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0,
                     CNcbiRegistry::eReturn);
 
     CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
@@ -540,16 +540,16 @@ int CGridWorkerApp_Impl::Run()
         debug_mode = CGridDebugContext::eGDC_Execute;
     }
     if (debug_mode != CGridDebugContext::eGDC_NoDebug) {
-        CGridDebugContext& debug_context = 
+        CGridDebugContext& debug_context =
             CGridDebugContext::Create(debug_mode,GetStorageFactory());
-        string run_name = 
+        string run_name =
             reg.GetString("gw_debug", "run_name", m_App.GetProgramDisplayName());
         debug_context.SetRunName(run_name);
         if (debug_mode == CGridDebugContext::eGDC_Gather) {
             max_total_jobs =
                 reg.GetInt("gw_debug","gather_nrequests",1,0,IRegistry::eReturn);
         } else if (debug_mode == CGridDebugContext::eGDC_Execute) {
-            string files = 
+            string files =
                 reg.GetString("gw_debug", "execute_requests", kEmptyStr);
             max_total_jobs = 0;
             debug_context.SetExecuteList(files);
@@ -569,8 +569,8 @@ int CGridWorkerApp_Impl::Run()
 #endif
 
     AttachJobWatcher(CGridGlobals::GetInstance().GetJobsWatcher());
-    m_WorkerNode.reset(new CGridWorkerNode(GetJobFactory(), 
-                                           GetStorageFactory(), 
+    m_WorkerNode.reset(new CGridWorkerNode(GetJobFactory(),
+                                           GetStorageFactory(),
                                            GetClientFactory(),
                                            m_JobWatchers.get())
                        );
@@ -594,7 +594,7 @@ int CGridWorkerApp_Impl::Run()
     if (idle_run_delay > 0)
         task = GetJobFactory().GetIdleTask();
     if (task || auto_shutdown > 0 ) {
-        m_IdleThread.Reset(new CWorkerNodeIdleThread(task, *m_WorkerNode, 
+        m_IdleThread.Reset(new CWorkerNodeIdleThread(task, *m_WorkerNode,
                                                      task ? idle_run_delay : auto_shutdown,
                                                      //idle_exclusive,
                                                      auto_shutdown));
@@ -617,11 +617,11 @@ int CGridWorkerApp_Impl::Run()
     SleepMilliSec(500);
     if (CGridGlobals::GetInstance().
         GetShutdownLevel() == CNetScheduleAdmin::eNoShutdown) {
-        LOG_POST_X(54, "\n=================== NEW RUN : " 
+        LOG_POST_X(54, "\n=================== NEW RUN : "
                    << CGridGlobals::GetInstance().GetStartTime().AsString()
                    << " ===================\n"
                    << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
-                   << "Waiting for control commands on " 
+                   << "Waiting for control commands on "
                    << CSocketAPI::gethostname() << ":" << control_thread->GetControlPort() << "\n"
                    << "Queue name: " << m_WorkerNode->GetQueueName() << "\n"
                    << "Maximum job threads: " << max_threads << "\n");
@@ -645,7 +645,7 @@ int CGridWorkerApp_Impl::Run()
     }
     }}
 
-    m_WorkerNode.reset(0);    
+    m_WorkerNode.reset(0);
     // give sometime the thread to shutdown
     //SleepMilliSec(500);
     return 0;
@@ -658,7 +658,7 @@ void CGridWorkerApp_Impl::RequestShutdown()
 }
 
 
-void CGridWorkerApp_Impl::AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher, 
+void CGridWorkerApp_Impl::AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher,
                                            EOwnership owner)
 {
     if (!m_JobWatchers.get())

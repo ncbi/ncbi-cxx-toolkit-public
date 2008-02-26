@@ -28,7 +28,7 @@
  *
  * Authors:  Maxim Didneko,
  *
- * File Description:  
+ * File Description:
  *
  */
 
@@ -61,7 +61,7 @@ public:
         eErrorRes,
         eJobStatusRes
     };
-    
+
     enum EJobState {
         eSendingRequest,
         ePending,           ///< Waiting for execution
@@ -71,14 +71,14 @@ public:
         eReady              ///< Job is ready (computed successfully)
     };
 
-    
+
     CRADispatcherClient(IBlobStorageFactory&, CNcbiIostream&);
     ~CRADispatcherClient();
 
     /// Start new job.
     /// Throw exception if at least one of the following is true:
     ///   - there is already a job being processed, with no failures so far
-    ///   - there is a job in "eReady" status for which GetResult() has not been 
+    ///   - there is a job in "eReady" status for which GetResult() has not been
     ///     called at least once
     ///   - an unrecoverable error has occured in strating the new job
     void StartJob(CRemoteAppRequestSB&);
@@ -90,7 +90,7 @@ public:
     /// Get the job's result
     /// Throw an exception if the result is not ready yet.
     CRemoteAppResultSB& GetResult();
-    
+
     /// Release request and result objects, if any.
     /// Cancel current job, if any.
     void Reset();
@@ -104,11 +104,11 @@ private:
     CRef<CRemoteAppResultSB>  m_Result;
     bool   m_WasGetResultCalled;
     string m_Jid;
-   
+
     EJobState x_ProcessResponse();
 
     EResId     x_ReadResponseId();
-private:   
+private:
     CRADispatcherClient(const CRADispatcherClient&);
     CRADispatcherClient& operator=(const CRADispatcherClient&);
 };

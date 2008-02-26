@@ -64,9 +64,9 @@ public:
                              size_t*     bytes_written = 0);
 
     virtual ERW_Result Flush(void);
-    
+
 private:
-    
+
     ERW_Result x_WriteToStream(const void* buf,
                                size_t      count,
                                size_t*     bytes_written = 0);
@@ -88,26 +88,26 @@ private:
 /// String or Blob Strorage Reader
 ///
 /// An implementaion of the IReader interface with a dual behavior.
-/// If "data_or_key" parameter can be interpered as Blob Storage key and 
-/// a blob with given key is found in the storage, then the storage is 
+/// If "data_or_key" parameter can be interpered as Blob Storage key and
+/// a blob with given key is found in the storage, then the storage is
 /// used as data source. Otherwise "data_or_key" is a data source.
 ///
 class NCBI_XCONNECT_EXPORT CStringOrBlobStorageReader : public IReader
 {
 public:
-    CStringOrBlobStorageReader(const string& data_or_key, 
+    CStringOrBlobStorageReader(const string& data_or_key,
                                IBlobStorage& storage,
                                size_t* data_size = NULL,
-                               IBlobStorage::ELockMode lock_mode 
+                               IBlobStorage::ELockMode lock_mode
                                          = IBlobStorage::eLockWait);
-    CStringOrBlobStorageReader(const string& data_or_key, 
+    CStringOrBlobStorageReader(const string& data_or_key,
                                IBlobStorage* storage,
                                size_t* data_size = NULL,
-                               IBlobStorage::ELockMode lock_mode 
+                               IBlobStorage::ELockMode lock_mode
                                          = IBlobStorage::eLockWait);
 
     virtual ~CStringOrBlobStorageReader();
-   
+
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read = 0);

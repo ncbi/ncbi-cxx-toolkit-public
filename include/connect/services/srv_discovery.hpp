@@ -1,5 +1,5 @@
-#ifndef CONNECT_SERVICES__REMOTE_JOB_HPP
-#define CONNECT_SERVICES__REMOTE_JOB_HPP
+#ifndef CONNECT_SERVICES___SRV_DISCOVERY__HPP
+#define CONNECT_SERVICES___SRV_DISCOVERY__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,23 +26,42 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didneko,
- *
  * File Description:
+ *   Contains definitions related to server discovery by the load balancer.
+ *
+ * Authors:
+ *   Dmitry Kazimirov
  *
  */
 
-// This file is DEPRECATED
-
-#include <connect/services/remote_app_mb.hpp>
+#include <connect/services/srv_connections.hpp>
 
 BEGIN_NCBI_SCOPE
 
-#define CRemoteAppRequest CRemoteAppRequestMB
-#define CRemoteAppRequest_Executer CRemoteAppRequestMB_Executer
-#define CRemoteAppResult CRemoteAppResultMB
-#define CRemoteAppResult_Executer CRemoteAppResultMB_Executer
+///////////////////////////////////////////////////////////////////////////
+//
+class IRebalanceStrategy
+{
+public:
+    virtual bool NeedRebalance() = 0;
+    virtual void OnResourceRequested(const CNetServerConnectionPool&) = 0;
+    virtual void Reset() = 0;
+
+    virtual ~IRebalanceStrategy() {}
+};
+
+class CConfig;
+
+NCBI_XCONNECT_EXPORT IRebalanceStrategy* CreateSimpleRebalanceStrategy(
+    CConfig& conf, const string& driver_name);
+
+NCBI_XCONNECT_EXPORT IRebalanceStrategy* CreateDefaultRebalanceStrategy();
+
+NCBI_XCONNECT_EXPORT void DiscoverLBServices(
+    const string& service_name,
+    vector<pair<string,unsigned short> >& services,
+    bool all_services);
 
 END_NCBI_SCOPE
 
-#endif // CONNECT_SERVICES__REMOTE_JOB_HPP
+#endif  /* CONNECT_SERVICES___SRV_DISCOVERY__HPP */

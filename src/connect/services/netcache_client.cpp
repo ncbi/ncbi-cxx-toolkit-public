@@ -72,7 +72,7 @@ void CNetCache_Key::ParseBlobKey(const string& key_str)
     ++ch;
 
     if (prefix != kNetCache_KeyPrefix) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, 
+        NCBI_THROW(CNetCacheException, eKeyFormatError,
                                        "Key syntax error. Invalid prefix.");
     }
 
@@ -123,13 +123,13 @@ void CNetCache_Key::GenerateBlobKey(string*        key,
     *key += tmp;
 
     *key += "_";
-    *key += host;    
+    *key += host;
 
     NStr::IntToString(tmp, port);
     *key += "_";
     *key += tmp;
 
-    NStr::IntToString(tmp, time(0));
+    NStr::IntToString(tmp, (long) time(0));
     *key += "_";
     *key += tmp;
 }
@@ -194,7 +194,7 @@ void CNetCacheClientBase::RegisterSession(unsigned pid)
     string host;
     int status = SOCK_gethostname(hostname, sizeof(hostname));
     if (status != 0) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Cannot get host name");
     }
     string cmd = "SMR ";
@@ -204,7 +204,7 @@ void CNetCacheClientBase::RegisterSession(unsigned pid)
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckOK(&m_Tmp);
@@ -219,7 +219,7 @@ void CNetCacheClientBase::UnRegisterSession(unsigned pid)
     string host;
     int status = SOCK_gethostname(hostname, sizeof(hostname));
     if (status != 0) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Cannot get host name");
     }
     string cmd = "SMU ";
@@ -229,7 +229,7 @@ void CNetCacheClientBase::UnRegisterSession(unsigned pid)
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckOK(&m_Tmp);
@@ -287,7 +287,7 @@ CNetCacheClient::CNetCacheClient(const string&  host,
 }
 
 
-CNetCacheClient::CNetCacheClient(CSocket*      sock, 
+CNetCacheClient::CNetCacheClient(CSocket*      sock,
                                  const string& client_name)
     : CNetServiceClient(sock, client_name),
       m_PutVersion(2)
@@ -333,7 +333,7 @@ string CNetCacheClient::PutData(const void*  buf,
 }
 
 
-void CNetCacheClient::PutInitiate(string*   key, 
+void CNetCacheClient::PutInitiate(string*   key,
                                   unsigned  time_to_live,
                                   unsigned  put_version)
 {
@@ -347,17 +347,17 @@ void CNetCacheClient::PutInitiate(string*   key,
     put_str.push_back(' ');
 
     MakeCommandPacket(&request, put_str);
-    
+
     request += NStr::IntToString(time_to_live);
     request += " ";
     request += *key;
-   
+
     WriteStr(request.c_str(), request.length() + 1);
     WaitForServer();
 
     // Read BLOB_ID answer from the server
     if (!ReadStr(*m_Sock, key)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
 
@@ -368,9 +368,9 @@ void CNetCacheClient::PutInitiate(string*   key,
         NCBI_THROW(CNetServiceException, eCommunicationError, msg);
     }
     key->erase(0, 3);
-    
+
     if (key->empty()) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Invalid server response. Empty key.");
     }
 }
@@ -390,7 +390,7 @@ string  CNetCacheClient::PutData(const string& key,
     PutInitiate(&k, time_to_live , m_PutVersion);
 
     m_Sock->DisableOSSendDelay(false);
-    
+
     if (m_PutVersion == 2) {
         TransmitBuffer((const char*) buf, size);
     } else {
@@ -418,7 +418,7 @@ IWriter* CNetCacheClient::PutData(string* key, unsigned int time_to_live)
         CNetCache_WriterErrCheck* err_writer =
             new CNetCache_WriterErrCheck(writer, eTakeOwnership, this);
 /*
-        CTransmissionWriter* twriter = 
+        CTransmissionWriter* twriter =
             new CTransmissionWriter(writer, eTakeOwnership);
 */
         return err_writer;
@@ -449,7 +449,7 @@ void CNetCacheClient::Monitor(CNcbiOstream & out)
     string line;
     while (1) {
 
-        EIO_Status st = m_Sock->ReadLine(line);       
+        EIO_Status st = m_Sock->ReadLine(line);
         if (st == eIO_Success) {
             if (m_Tmp == "END")
                 break;
@@ -472,7 +472,7 @@ string CNetCacheClient::ServerVersion()
     string version;
 
     MakeCommandPacket(&request, "VERSION ");
-    
+
     WriteStr(request.c_str(), request.length() + 1);
     WaitForServer();
 
@@ -526,7 +526,7 @@ void CNetCacheClient::SendClientName()
 {
     unsigned client_len = m_ClientName.length();
     if (client_len < 3) {
-        NCBI_THROW(CNetCacheException, 
+        NCBI_THROW(CNetCacheException,
                    eAuthenticationError, "Client name too small or empty");
     }
     const char* client = m_ClientName.c_str();
@@ -534,13 +534,13 @@ void CNetCacheClient::SendClientName()
 }
 
 
-void CNetCacheClient::MakeCommandPacket(string* out_str, 
+void CNetCacheClient::MakeCommandPacket(string* out_str,
                                         const string& cmd_str)
 {
     _ASSERT(out_str);
 
     if (m_ClientName.length() < 3) {
-        NCBI_THROW(CNetCacheException, 
+        NCBI_THROW(CNetCacheException,
                    eAuthenticationError, "Client name is too small or empty");
     }
 
@@ -561,7 +561,7 @@ void CNetCacheClient::Remove(const string& key)
     CSockGuard sg(*m_Sock);
 
     string& request = m_Tmp;
-    MakeCommandPacket(&request, "REMOVE ");    
+    MakeCommandPacket(&request, "REMOVE ");
     request += key;
     WriteStr(request.c_str(), request.length() + 1);
 }
@@ -581,7 +581,7 @@ bool CNetCacheClient::IsLocked(const string& key)
     WaitForServer();
 
     string& answer = m_Tmp;
-    
+
     bool locked = false;
 
     bool res = ReadStr(*m_Sock, &answer);
@@ -595,7 +595,7 @@ bool CNetCacheClient::IsLocked(const string& key)
             locked = true;
         }
     } else {
-        NCBI_THROW(CNetServiceException, 
+        NCBI_THROW(CNetServiceException,
                    eCommunicationError, "Communication error");
     }
 
@@ -621,14 +621,14 @@ string CNetCacheClient::GetOwner(const string& key)
         x_CheckErrTrim(answer);
         return answer;
     } else {
-        NCBI_THROW(CNetServiceException, 
+        NCBI_THROW(CNetServiceException,
                    eCommunicationError, "Communication error");
     }
     return kEmptyStr;
 }
 
 
-IReader* CNetCacheClient::GetData(const string& key, 
+IReader* CNetCacheClient::GetData(const string& key,
                                   size_t*       blob_size,
                                   ELockMode     lock_mode)
 {
@@ -637,7 +637,7 @@ IReader* CNetCacheClient::GetData(const string& key,
 
     string& request = m_Tmp;
     MakeCommandPacket(&request, "GET2 ");
-    
+
     request += key;
 
     switch (lock_mode) {
@@ -668,13 +668,13 @@ IReader* CNetCacheClient::GetData(const string& key,
         if (pos != string::npos) {
             const char* ch = answer.c_str() + pos + 5;
             bsize = (size_t)atoi(ch);
-        
+
             if (blob_size) {
                 *blob_size = bsize;
             }
         }
     } else {
-        NCBI_THROW(CNetServiceException, 
+        NCBI_THROW(CNetServiceException,
                    eCommunicationError, "Communication error");
     }
 
@@ -683,7 +683,7 @@ IReader* CNetCacheClient::GetData(const string& key,
 }
 
 
-CNetCacheClient::EReadResult 
+CNetCacheClient::EReadResult
 CNetCacheClient::GetData(const string& key, SBlobData& blob_to_read)
 {
     size_t blob_size;
@@ -691,14 +691,14 @@ CNetCacheClient::GetData(const string& key, SBlobData& blob_to_read)
     auto_ptr<IReader> reader(GetData(key, &blob_size));
     if (reader.get() == 0)
         return eNotFound;
-    
+
     // allocate
 
     blob_to_read.blob.reset(new unsigned char[blob_size + 1]);
 
     unsigned char* ptr = blob_to_read.blob.get();
     size_t to_read = blob_size;
-    
+
     for (;;) {
         size_t bytes_read;
         ERW_Result res = reader->Read(ptr, to_read, &bytes_read);
@@ -713,7 +713,7 @@ CNetCacheClient::GetData(const string& key, SBlobData& blob_to_read)
         case eRW_Eof:
             goto ret;
         default:
-            NCBI_THROW(CNetServiceException, eCommunicationError, 
+            NCBI_THROW(CNetServiceException, eCommunicationError,
                        "Error while reading BLOB");
         } // switch
     } // for
@@ -725,8 +725,8 @@ ret:
 
 CNetCacheClient::EReadResult
 CNetCacheClient::GetData(const string&  key,
-                         void*          buf, 
-                         size_t         buf_size, 
+                         void*          buf,
+                         size_t         buf_size,
                          size_t*        n_read,
                          size_t*        blob_size)
 {
@@ -776,7 +776,7 @@ CNetCacheClient::GetData(const string&  key,
             } // switch
         } // while
 
-    } 
+    }
     catch (CNetCacheException& ex) {
         const string& str = ex.what();
         if (str.find_first_of("BLOB not found") > 0) {
@@ -814,7 +814,7 @@ void CNetCacheClient::PrintConfig(CNcbiOstream& out)
 
     const char command[] = "GETCONF";
     WriteStr(command, sizeof(command));
-    PrintServerOut(out);    
+    PrintServerOut(out);
 }
 
 
@@ -915,7 +915,7 @@ bool CNetCacheClient::x_CheckErrTrim(string& answer)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock) 
+CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock)
 : CSocketReaderWriter(sock),
   m_Parent(0),
   m_BlobSizeControl(false),
@@ -923,7 +923,7 @@ CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock)
 {
 }
 
-CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock, size_t blob_size) 
+CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock, size_t blob_size)
 : CSocketReaderWriter(sock),
   m_Parent(0),
   m_BlobSizeControl(true),
@@ -932,7 +932,7 @@ CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock, size_t blob_size)
 }
 
 
-CNetCacheSock_RW::~CNetCacheSock_RW() 
+CNetCacheSock_RW::~CNetCacheSock_RW()
 {
     try {
         FinishTransmission();
@@ -944,8 +944,8 @@ CNetCacheSock_RW::~CNetCacheSock_RW()
 }
 
 void CNetCacheSock_RW::FinishTransmission()
-{ 
-    if (m_Sock) { 
+{
+    if (m_Sock) {
         if (m_Parent) {
             m_Parent->ReturnSocket(m_Sock, m_BlobComment);
             m_Sock = 0;
@@ -957,9 +957,9 @@ void CNetCacheSock_RW::FinishTransmission()
 }
 
 
-void CNetCacheSock_RW::OwnSocket() 
-{ 
-    m_IsOwned = eTakeOwnership; 
+void CNetCacheSock_RW::OwnSocket()
+{
+    m_IsOwned = eTakeOwnership;
 }
 
 
@@ -981,8 +981,8 @@ ERW_Result CNetCacheSock_RW::PendingCount(size_t* count)
     if ( m_BlobSizeControl && m_BlobBytesToRead == 0) {
         *count = 0;
         return eRW_Success;
-    } 
-    return TParent::PendingCount(count);       
+    }
+    return TParent::PendingCount(count);
 }
 
 ERW_Result CNetCacheSock_RW::Read(void*   buf,
@@ -1007,7 +1007,7 @@ ERW_Result CNetCacheSock_RW::Read(void*   buf,
     if ( count ) {
         res = TParent::Read(buf, count, &nn_read);
     }
-    
+
     if ( bytes_read ) {
         *bytes_read = nn_read;
     }
@@ -1023,7 +1023,7 @@ ERW_Result CNetCacheSock_RW::Read(void*   buf,
 
 
 CNetCache_WriterErrCheck::CNetCache_WriterErrCheck
-                                        (CNetCacheSock_RW* wrt, 
+                                        (CNetCacheSock_RW* wrt,
                                          EOwnership        own_writer,
                                          CNetCacheClient*  parent,
                                          CTransmissionWriter::ESendEofPacket send_eof)
@@ -1133,7 +1133,7 @@ public:
     /// @param patch_level
     ///   Patch level implemented by the driver.
     ///   By default corresponds to interface patch level.
-    CNetCacheClientCF(const string& driver_name = kNetCacheDriverName, 
+    CNetCacheClientCF(const string& driver_name = kNetCacheDriverName,
                       int patch_level = -1)
         : m_DriverVersionInfo
         (ncbi::CInterfaceVersion<IFace>::eMajor,
@@ -1157,11 +1157,11 @@ public:
                                 != CVersionInfo::eNonCompatible) {
 
             CConfig conf(params);
-            string client_name = 
-                conf.GetString(m_DriverName, 
+            string client_name =
+                conf.GetString(m_DriverName,
                                "client_name", CConfig::eErr_Throw, "noname");
-            string service = 
-                conf.GetString(m_DriverName, 
+            string service =
+                conf.GetString(m_DriverName,
                                "service", CConfig::eErr_NoThrow, kEmptyStr);
             NStr::TruncateSpacesInPlace(service);
             string sport, host;
@@ -1173,7 +1173,7 @@ public:
 
 
             if (!service.empty()) {
-                unsigned int rebalance_time = conf.GetInt(m_DriverName, 
+                unsigned int rebalance_time = conf.GetInt(m_DriverName,
                                                 "rebalance_time",
                                                 CConfig::eErr_NoThrow, 10);
                 unsigned int rebalance_requests = conf.GetInt(m_DriverName,
@@ -1183,14 +1183,14 @@ public:
                                                 "rebalance_bytes",
                                                 CConfig::eErr_NoThrow, 5*1024000);
                 drv = new CNetCacheClient_LB(client_name, service,
-                                             rebalance_time, 
+                                             rebalance_time,
                                              rebalance_requests,
                                              rebalance_bytes );
 		
             } else { // non lb client
 		if (host.empty()) {
-		   host = 
-                       conf.GetString(m_DriverName, 
+		   host =
+                       conf.GetString(m_DriverName,
                                   "host", CConfig::eErr_Throw, kEmptyStr);
                    NStr::TruncateSpacesInPlace(host);
                    if( host.empty()) {
@@ -1210,7 +1210,7 @@ public:
                                                        CConfig::eErr_NoThrow, 12);
             STimeout tm = { communication_timeout, 0 };
 	    drv->SetCommunicationTimeout(tm);
-            }                               
+            }
         }
         return drv;
     }

@@ -56,15 +56,15 @@ const char* kNetSchedule_KeyPrefix = "JSID";
 ///
 class CNetScheduleThrottler {
 public:
-    CNetScheduleThrottler(void) 
+    CNetScheduleThrottler(void)
         : m_Throttler(20000, CTimeSpan(60,0)) { }
-    bool Approve(CRequestRateControl::EThrottleAction action 
+    bool Approve(CRequestRateControl::EThrottleAction action
                  = CRequestRateControl::eDefault) {
         return m_Throttler.Approve(action);
     }
     CRequestRateControl m_Throttler;
 };
-static CSafeStaticPtr<CNetScheduleThrottler> s_Throttler; 
+static CSafeStaticPtr<CNetScheduleThrottler> s_Throttler;
 
 
 unsigned CNetSchedule_GetJobId(const string&  key_str)
@@ -76,7 +76,7 @@ unsigned CNetSchedule_GetJobId(const string&  key_str)
         job_id = (unsigned) atoi(ch);
         if (job_id) {
             return job_id;
-        }        
+        }
     }
 
     for (;*ch != 0 && *ch != '_'; ++ch) {
@@ -115,7 +115,7 @@ void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str)
     ++ch;
 
     if (key->prefix != kNetSchedule_KeyPrefix) {
-        NCBI_THROW(CNetScheduleException, eKeyFormatError, 
+        NCBI_THROW(CNetScheduleException, eKeyFormatError,
                                        "Key syntax error. Invalid prefix.");
     }
 
@@ -154,20 +154,20 @@ void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str)
 }
 
 
-void CNetSchedule_GenerateJobKey(string*        key, 
-                                  unsigned       id, 
-                                  const string&  host, 
+void CNetSchedule_GenerateJobKey(string*        key,
+                                  unsigned       id,
+                                  const string&  host,
                                   unsigned short port)
 {
     string tmp;
-    *key = "JSID_01";  
+    *key = "JSID_01";
 
     NStr::IntToString(tmp, id);
     *key += "_";
     *key += tmp;
 
     *key += "_";
-    *key += host;    
+    *key += host;
 
     NStr::IntToString(tmp, port);
     *key += "_";
@@ -262,7 +262,7 @@ string CNetScheduleClient::StatusToString(EJobStatus status)
     return kEmptyStr;
 }
 
-CNetScheduleClient::EJobStatus 
+CNetScheduleClient::EJobStatus
 CNetScheduleClient::StringToStatus(const string& status_str)
 {
     if (NStr::CompareNocase(status_str, "Pending") == 0) {
@@ -326,7 +326,7 @@ string CNetScheduleClient::SubmitJob(const string& input,
                                      unsigned      job_mask)
 {
     if (input.length() > kNetScheduleMaxDataSize) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+        NCBI_THROW(CNetScheduleException, eDataTooLong,
             "Input data too long.");
     }
     if (m_RequestRateControl) {
@@ -377,13 +377,13 @@ string CNetScheduleClient::SubmitJob(const string& input,
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&m_Tmp);
 
     if (m_Tmp.empty()) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Invalid server response. Empty key.");
     }
 
@@ -401,7 +401,7 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
         const string& input = it->input;
 
         if (input.length() > kNetScheduleMaxDataSize) {
-            NCBI_THROW(CNetScheduleException, eDataTooLong, 
+            NCBI_THROW(CNetScheduleException, eDataTooLong,
                 "Input data too long.");
         }
     }
@@ -421,7 +421,7 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
     // check if server is ready for the batch submit
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&m_Tmp);
@@ -450,11 +450,11 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
             const string& aff = subm.job_list[i].affinity_token;
             if (aff[0]) {
                 if (aff == aff_prev) { // exactly same affinity(sorted jobs)
-                    sprintf(buf, "\"%s\" affp", 
+                    sprintf(buf, "\"%s\" affp",
                             input.c_str()
                             );
                 } else {
-                    sprintf(buf, "\"%s\" aff=\"%s\"", 
+                    sprintf(buf, "\"%s\" aff=\"%s\"",
                             input.c_str(),
                             aff.c_str()
                             );
@@ -471,13 +471,13 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
 
         WaitForServer();
         if (!ReadStr(*m_Sock, &m_Tmp)) {
-            NCBI_THROW(CNetServiceException, eCommunicationError, 
+            NCBI_THROW(CNetServiceException, eCommunicationError,
                     "Communication error");
         }
         TrimPrefix(&m_Tmp);
 
         if (m_Tmp.empty()) {
-            NCBI_THROW(CNetServiceException, eProtocolError, 
+            NCBI_THROW(CNetServiceException, eProtocolError,
                     "Invalid server response. Empty key.");
         }
 
@@ -492,31 +492,31 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
         if (subm.host.empty()) {
             for (; *s != ' '; ++s) {
                 if (*s == 0) {
-                    NCBI_THROW(CNetServiceException, eProtocolError, 
+                    NCBI_THROW(CNetServiceException, eProtocolError,
                             "Invalid server response. Batch answer format.");
                 }
             }
             ++s;
             if (*s == 0) {
-                NCBI_THROW(CNetServiceException, eProtocolError, 
+                NCBI_THROW(CNetServiceException, eProtocolError,
                         "Invalid server response. Batch answer format.");
             }
             for (; *s != ' '; ++s) {
                 if (*s == 0) {
-                    NCBI_THROW(CNetServiceException, eProtocolError, 
+                    NCBI_THROW(CNetServiceException, eProtocolError,
                             "Invalid server response. Batch answer format.");
                 }
                 subm.host.push_back(*s);
             }
             ++s;
             if (*s == 0) {
-                NCBI_THROW(CNetServiceException, eProtocolError, 
+                NCBI_THROW(CNetServiceException, eProtocolError,
                         "Invalid server response. Batch answer format.");
             }
 
-            subm.port = atoi(s); 
+            subm.port = atoi(s);
             if (subm.port == 0) {
-                NCBI_THROW(CNetServiceException, eProtocolError, 
+                NCBI_THROW(CNetServiceException, eProtocolError,
                         "Invalid server response. Port=0.");
             }
         }
@@ -529,7 +529,7 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
             ++first_job_id;
             ++batch_start;
         }
-        
+
 
         }}
 
@@ -542,11 +542,11 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
 }
 
 
-CNetScheduleClient::EJobStatus 
+CNetScheduleClient::EJobStatus
 CNetScheduleClient::SubmitJobAndWait(const string&  input,
                                      string*        job_key,
                                      int*           ret_code,
-                                     string*        output, 
+                                     string*        output,
                                      string*        err_msg,
                                      unsigned       wait_time,
                                      unsigned short udp_port)
@@ -558,7 +558,7 @@ CNetScheduleClient::SubmitJobAndWait(const string&  input,
     _ASSERT(udp_port);
 
     if (input.length() > kNetScheduleMaxDataSize) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+        NCBI_THROW(CNetScheduleException, eDataTooLong,
             "Input data too long.");
     }
     if (m_RequestRateControl) {
@@ -579,14 +579,14 @@ CNetScheduleClient::SubmitJobAndWait(const string&  input,
         WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
         WaitForServer();
         if (!ReadStr(*m_Sock, &m_Tmp)) {
-            NCBI_THROW(CNetServiceException, eCommunicationError, 
+            NCBI_THROW(CNetServiceException, eCommunicationError,
                        "Communication error");
         }
     }}
     TrimPrefix(&m_Tmp);
 
     if (m_Tmp.empty()) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Invalid server response. Empty key.");
     }
 
@@ -636,7 +636,7 @@ void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
 
     for (;;) {
         curr_time = time(0);
-        to.sec = end_time - curr_time;  // remaining
+        to.sec = (unsigned int) (end_time - curr_time);  // remaining
         if (to.sec <= 0) {
             break;
         }
@@ -657,7 +657,7 @@ void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
             if (notif_job_id == job_id) {
                 return;
             }
-        } 
+        }
     } // for
 }
 
@@ -702,7 +702,7 @@ void CNetScheduleClient::Logging(bool on_off)
 }
 
 
-void CNetScheduleClient::SetRunTimeout(const string& job_key, 
+void CNetScheduleClient::SetRunTimeout(const string& job_key,
                                        unsigned      time_to_run)
 {
     if (m_RequestRateControl) {
@@ -720,7 +720,7 @@ void CNetScheduleClient::SetRunTimeout(const string& job_key,
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
 
@@ -728,7 +728,7 @@ void CNetScheduleClient::SetRunTimeout(const string& job_key,
 }
 
 
-void CNetScheduleClient::JobDelayExpiration(const string& job_key, 
+void CNetScheduleClient::JobDelayExpiration(const string& job_key,
                                             unsigned      runtime_inc)
 {
     if (m_RequestRateControl) {
@@ -746,7 +746,7 @@ void CNetScheduleClient::JobDelayExpiration(const string& job_key,
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
 
@@ -754,7 +754,7 @@ void CNetScheduleClient::JobDelayExpiration(const string& job_key,
 }
 
 
-CNetScheduleClient::EJobStatus 
+CNetScheduleClient::EJobStatus
 CNetScheduleClient::GetStatus(const string& job_key,
                               int*          ret_code,
                               string*       output,
@@ -776,14 +776,14 @@ CNetScheduleClient::GetStatus(const string& job_key,
     if (m_JobKey.id) {
         char command[2048];
         sprintf(command, "%s\r\n%s\r\nSTATUS %u",
-                m_ClientName.c_str(), 
+                m_ClientName.c_str(),
                 m_Queue.c_str(),
                 m_JobKey.id);
         WriteStr(command, strlen(command)+1);
-        
+
         WaitForServer();
         if (!ReadStr(*m_Sock, &m_Tmp)) {
-            NCBI_THROW(CNetServiceException, eCommunicationError, 
+            NCBI_THROW(CNetServiceException, eCommunicationError,
                     "Communication error");
         }
     } else {
@@ -795,7 +795,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
     TrimPrefix(&m_Tmp);
 
     if (m_Tmp.empty()) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Invalid server response. Empty key.");
     }
 
@@ -804,8 +804,8 @@ CNetScheduleClient::GetStatus(const string& job_key,
     int st = atoi(str);
     status = (EJobStatus) st;
 
-    if (status == eDone || status == eFailed 
-        || status == eRunning || status == ePending 
+    if (status == eDone || status == eFailed
+        || status == eRunning || status == ePending
         || status == eCanceled || status == eReturned
         || status == eFailed) {
         //cerr << str <<endl;
@@ -845,7 +845,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
 
             for (++str; *str && isspace((unsigned char)(*str)); ++str) {
             }
-            
+
             if (!*str)
                 return status;
 
@@ -868,7 +868,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
 
             for (++str; *str && isspace((unsigned char)(*str)); ++str) {
             }
-            
+
             if (!*str)
                 return status;
 
@@ -888,7 +888,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
 }
 
 
-bool CNetScheduleClient::GetJob(string*        job_key, 
+bool CNetScheduleClient::GetJob(string*        job_key,
                                 string*        input,
                                 unsigned short udp_port,
                                 string*        jout,
@@ -916,7 +916,7 @@ bool CNetScheduleClient::GetJob(string*        job_key,
         WaitForServer();
 
         if (!ReadStr(*m_Sock, &m_Tmp)) {
-            NCBI_THROW(CNetServiceException, eCommunicationError, 
+            NCBI_THROW(CNetServiceException, eCommunicationError,
                     "Communication error");
         }
     }
@@ -933,8 +933,8 @@ bool CNetScheduleClient::GetJob(string*        job_key,
         ParseGetJobResponse(job_key, input, jout, jerr, &j_mask, m_Tmp);
     } else {
         string tmp;
-        ParseGetJobResponse(job_key, input, 
-                            jout ? jout : &tmp, jerr ? jerr : &tmp, &j_mask, 
+        ParseGetJobResponse(job_key, input,
+                            jout ? jout : &tmp, jerr ? jerr : &tmp, &j_mask,
                             m_Tmp);
     }
     if (job_mask) {
@@ -949,8 +949,8 @@ bool CNetScheduleClient::GetJob(string*        job_key,
 }
 
 
-bool CNetScheduleClient::GetJobWaitNotify(string*    job_key, 
-                                          string*    input, 
+bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
+                                          string*    input,
                                           unsigned   wait_time,
                                           unsigned short udp_port,
                                           string*    jout,
@@ -978,7 +978,7 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
     WaitForServer();
 
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
 
@@ -991,8 +991,8 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
             ParseGetJobResponse(job_key, input, jout, jerr, &j_mask, m_Tmp);
         } else {
             string tmp;
-            ParseGetJobResponse(job_key, input, 
-                                jout ? jout : &tmp, jerr ? jerr : &tmp, &j_mask, 
+            ParseGetJobResponse(job_key, input,
+                                jout ? jout : &tmp, jerr ? jerr : &tmp, &j_mask,
                                 m_Tmp);
         }
         if (job_mask) {
@@ -1011,8 +1011,8 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
 }
 
 
-bool CNetScheduleClient::WaitJob(string*    job_key, 
-                                 string*    input, 
+bool CNetScheduleClient::WaitJob(string*    job_key,
+                                 string*    input,
                                  unsigned   wait_time,
                                  unsigned short udp_port,
                                  EWaitMode      wait_mode,
@@ -1021,8 +1021,8 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
                                  TJobMask*      job_mask)
 {
     //cerr << ">>WaitJob" << endl;
-    bool job_received = 
-        GetJobWaitNotify(job_key, input, wait_time, udp_port, 
+    bool job_received =
+        GetJobWaitNotify(job_key, input, wait_time, udp_port,
                          jout, jerr, job_mask);
     if (job_received) {
         return job_received;
@@ -1040,16 +1040,16 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
     bool ret = GetJob(job_key, input, udp_port, jout, jerr, job_mask);
     /*
     cerr << ">>WaitJob";
-    if (ret) 
+    if (ret)
         cerr << "++" << endl;
-    else 
+    else
         cerr << "--" << endl;
     */
     return ret;
 
 }
 
-bool 
+bool
 CNetScheduleClient::WaitNotification(const string&  queue_name,
                                      unsigned       wait_time,
                                      unsigned short udp_port)
@@ -1095,7 +1095,7 @@ CNetScheduleClient::WaitNotification(const string&  queue_name,
             //cerr << "WaitNotification :  for(;;) break" <<  endl;
             break;
         }
-        to.sec = end_time - curr_time;  // remaining
+        to.sec = (unsigned int) (end_time - curr_time);  // remaining
 
         //cerr << "WaitNotification : " << start_time << " " << curr_time << " " << end_time << endl;
         status = udp_socket.Wait(&to);
@@ -1122,10 +1122,10 @@ CNetScheduleClient::WaitNotification(const string&  queue_name,
             const char* queue = chr_buf + 9;
             //cerr << "WaitNotification : " << chr_buf << endl;
             if (strncmp(queue_name.c_str(), queue, queue_name.length()) == 0) {
-                // Message from our queue 
+                // Message from our queue
                 return true;
             }
-        } 
+        }
     } // for
 
     return false;
@@ -1140,7 +1140,7 @@ void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
 }
 
 
-void CNetScheduleClient::ParseGetJobResponse(string*        job_key, 
+void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
                                              string*        input,
                                              string*        jout,
                                              string*        jerr,
@@ -1166,7 +1166,7 @@ void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
         ++str;
     if (*str == 0) {
     throw_err:
-        NCBI_THROW(CNetScheduleException, eProtocolSyntaxError, 
+        NCBI_THROW(CNetScheduleException, eProtocolSyntaxError,
                    "Internal error. Cannot parse server output.");
     }
 
@@ -1236,12 +1236,12 @@ void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
 }
 
 
-void CNetScheduleClient::PutResult(const string& job_key, 
-                                   int           ret_code, 
+void CNetScheduleClient::PutResult(const string& job_key,
+                                   int           ret_code,
                                    const string& output)
 {
     if (output.length() > kNetScheduleMaxDataSize) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+        NCBI_THROW(CNetScheduleException, eDataTooLong,
             "Output data too long.");
     }
 
@@ -1268,24 +1268,24 @@ void CNetScheduleClient::PutResult(const string& job_key,
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckServerOK(&m_Tmp);
 }
 
 
-bool CNetScheduleClient::PutResultGetJob(const string& done_job_key, 
-                                         int           done_ret_code, 
+bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
+                                         int           done_ret_code,
                                          const string& done_output,
-                                         string*       new_job_key, 
+                                         string*       new_job_key,
                                          string*       new_input,
                                          string*       jout,
                                          string*       jerr,
                                          TJobMask*     job_mask)
 {
     if (done_job_key.empty()) {
-        return GetJob(new_job_key, new_input, 
+        return GetJob(new_job_key, new_input,
                       0, jout, jerr,
                       job_mask);
     }
@@ -1294,7 +1294,7 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
     _ASSERT(new_input);
 
     if (done_output.length() > kNetScheduleMaxDataSize) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+        NCBI_THROW(CNetScheduleException, eDataTooLong,
             "Output data too long.");
     }
 
@@ -1319,7 +1319,7 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
 
@@ -1331,11 +1331,11 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
 
     TJobMask j_mask = eEmptyMask;
     if (jout != 0 && jerr != 0) {
-        ParseGetJobResponse(new_job_key, new_input, jout, jerr, &j_mask, 
+        ParseGetJobResponse(new_job_key, new_input, jout, jerr, &j_mask,
                             m_Tmp);
     } else {
         string tmp;
-        ParseGetJobResponse(new_job_key, new_input, 
+        ParseGetJobResponse(new_job_key, new_input,
                             jout ? jout : &tmp, jerr ? jerr : &tmp, &j_mask,
                             m_Tmp);
     }
@@ -1349,14 +1349,14 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
 }
 
 
-void CNetScheduleClient::PutProgressMsg(const string& job_key, 
+void CNetScheduleClient::PutProgressMsg(const string& job_key,
                                         const string& progress_msg)
 {
     if (m_RequestRateControl) {
         s_Throttler->Approve(CRequestRateControl::eSleep);
     }
     if (progress_msg.length() >= kNetScheduleMaxDataSize) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+        NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Progress message too long");
     }
 
@@ -1373,7 +1373,7 @@ void CNetScheduleClient::PutProgressMsg(const string& job_key,
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckServerOK(&m_Tmp);
@@ -1396,7 +1396,7 @@ string CNetScheduleClient::GetProgressMsg(const string& job_key)
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&m_Tmp);
@@ -1405,7 +1405,7 @@ string CNetScheduleClient::GetProgressMsg(const string& job_key)
 }
 
 
-void CNetScheduleClient::PutFailure(const string& job_key, 
+void CNetScheduleClient::PutFailure(const string& job_key,
                                     const string& err_msg,
                                     const string& output,
                                     int           ret_code)
@@ -1415,15 +1415,15 @@ void CNetScheduleClient::PutFailure(const string& job_key,
     }
 
     if (output.length() > kNetScheduleMaxDataSize) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+        NCBI_THROW(CNetScheduleException, eDataTooLong,
             "Output data too long.");
     }
 
     if (err_msg.length() >= kNetScheduleMaxErrSize) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+        NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Error message too long");
     }
-    
+
     CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
@@ -1442,7 +1442,7 @@ void CNetScheduleClient::PutFailure(const string& job_key,
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckServerOK(&m_Tmp);
@@ -1504,13 +1504,13 @@ void CNetScheduleClient::ReturnJob(const string& job_key)
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckServerOK(&m_Tmp);
 }
 
-void CNetScheduleClient::RegUnregClient(const string&  cmd, 
+void CNetScheduleClient::RegUnregClient(const string&  cmd,
                                         unsigned short udp_port)
 {
     if (m_RequestRateControl) {
@@ -1524,7 +1524,7 @@ void CNetScheduleClient::RegUnregClient(const string&  cmd,
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckServerOK(&m_Tmp);
@@ -1558,15 +1558,15 @@ void CNetScheduleClient::ShutdownServer(CNetScheduleClient::EShutdownLevel level
     default:
         break;
     }
-                                
+
     MakeCommandPacket(&m_Tmp, cmd);
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     if (level == eDie)
         return;
-    
+
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     CheckServerOK(&m_Tmp);
@@ -1586,7 +1586,7 @@ void CNetScheduleClient::ReloadServerConfig()
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&m_Tmp);
@@ -1607,14 +1607,14 @@ string CNetScheduleClient::ServerVersion()
     WaitForServer();
 
     if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
     TrimPrefix(&m_Tmp);
 
     if (m_Tmp.empty()) {
-        NCBI_THROW(CNetServiceException, 
-                   eCommunicationError, 
+        NCBI_THROW(CNetServiceException,
+                   eCommunicationError,
                    "Invalid server response. Empty version.");
     }
     return m_Tmp;
@@ -1737,7 +1737,7 @@ void CNetScheduleClient::Monitor(CNcbiOstream & out)
     string line;
     while (1) {
 
-        EIO_Status st = m_Sock->ReadLine(line);       
+        EIO_Status st = m_Sock->ReadLine(line);
         if (st == eIO_Success) {
             if (m_Tmp == "END")
                 break;
@@ -1775,7 +1775,7 @@ void CNetScheduleClient::DropQueue()
 }
 
 
-void CNetScheduleClient::CommandInitiate(const string& command, 
+void CNetScheduleClient::CommandInitiate(const string& command,
                                          const string& job_key,
                                          string*       answer)
 {
@@ -1785,7 +1785,7 @@ void CNetScheduleClient::CommandInitiate(const string& command,
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, answer)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Communication error");
     }
 }
@@ -1828,11 +1828,11 @@ void CNetScheduleClient::MakeCommandPacket(string*       out_str,
     // command with full connection establishment
 
     if (m_ClientName.length() < 3) {
-        NCBI_THROW(CNetScheduleException, 
+        NCBI_THROW(CNetScheduleException,
                    eAuthenticationError, "Client name too short or empty");
     }
     if (m_Queue.empty()) {
-        NCBI_THROW(CNetScheduleException, 
+        NCBI_THROW(CNetScheduleException,
                    eAuthenticationError, "Empty queue name");
     }
 
@@ -1877,7 +1877,7 @@ bool CNetScheduleClient::CheckConnect(const string& key)
             } else {
                 return false;
             }
-            
+
         } else {
             m_Sock->Close();
             m_AuthenticationSent = false;
@@ -1950,8 +1950,8 @@ bool CNetScheduleClient::IsError(const char* str)
 }
 
 
-void CNetScheduleClient::MakeJobKey(string*       job_key, 
-                                    unsigned      job_id, 
+void CNetScheduleClient::MakeJobKey(string*       job_key,
+                                    unsigned      job_id,
                                     const string& host,
                                     unsigned      port)
 {
@@ -1963,7 +1963,7 @@ void CNetScheduleClient::MakeJobKey(string*       job_key,
 }
 
 
-EIO_Status CNetScheduleClient::Connect(unsigned int   addr, 
+EIO_Status CNetScheduleClient::Connect(unsigned int   addr,
                                        unsigned short port)
 {
     m_AuthenticationSent = false;

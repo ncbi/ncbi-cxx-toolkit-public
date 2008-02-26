@@ -47,10 +47,10 @@
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
-// 
+//
 ///@internal
 
-class CGetVersionProcessor : public CWorkerNodeControlThread::IRequestProcessor 
+class CGetVersionProcessor : public CWorkerNodeControlThread::IRequestProcessor
 {
 public:
     virtual ~CGetVersionProcessor() {}
@@ -63,16 +63,16 @@ public:
     }
 };
 
-class CShutdownProcessor : public CWorkerNodeControlThread::IRequestProcessor 
+class CShutdownProcessor : public CWorkerNodeControlThread::IRequestProcessor
 {
 public:
     virtual ~CShutdownProcessor() {}
 
     virtual bool Authenticate(const string& host,
-                              const string& auth, 
+                              const string& auth,
                               const string& queue,
                               CNcbiOstream& os,
-                              const CGridWorkerNode& node) 
+                              const CGridWorkerNode& node)
     {
         m_Host = host;
         size_t pos = m_Host.find_first_of(':');
@@ -83,7 +83,7 @@ public:
             return true;
         }
         os << "ERR:Shutdown access denied.";
-        LOG_POST_X(10, Warning << CTime(CTime::eCurrent).AsString() 
+        LOG_POST_X(10, Warning << CTime(CTime::eCurrent).AsString()
                    << " Shutdown access denied: " << m_Host);
         return false;
     }
@@ -93,20 +93,20 @@ public:
                          CGridWorkerNode& )
     {
         if (request.find("SUICIDE") != NPOS) {
-            LOG_POST_X(11, Warning << CTime(CTime::eCurrent).AsString() 
+            LOG_POST_X(11, Warning << CTime(CTime::eCurrent).AsString()
                        << " DIE request has been received from host: " << m_Host);
-            LOG_POST_X(12, Warning << CTime(CTime::eCurrent).AsString() 
+            LOG_POST_X(12, Warning << CTime(CTime::eCurrent).AsString()
                        << " SERVER IS COMMITTING SUICIDE!!");
             CGridGlobals::GetInstance().KillNode();
         } else {
             CNetScheduleAdmin::EShutdownLevel level =
                 CNetScheduleAdmin::eNormalShutdown;
-            if (request.find("IMMEDIATE") != NPOS) 
+            if (request.find("IMMEDIATE") != NPOS)
                 level = CNetScheduleAdmin::eShutdownImmediate;
             os << "OK:";
             CGridGlobals::GetInstance().
                 RequestShutdown(level);
-            LOG_POST_X(13, CTime(CTime::eCurrent).AsString() 
+            LOG_POST_X(13, CTime(CTime::eCurrent).AsString()
                        << " Shutdown request has been received from host: " << m_Host);
         }
     }
@@ -114,7 +114,7 @@ private:
     string m_Host;
 };
 
-class CGetStatisticsProcessor : public CWorkerNodeControlThread::IRequestProcessor 
+class CGetStatisticsProcessor : public CWorkerNodeControlThread::IRequestProcessor
 {
 public:
     CGetStatisticsProcessor() {}
@@ -123,12 +123,12 @@ public:
     virtual void Process(const string& request,
                          CNcbiOstream& os,
                          CGridWorkerNode& node)
-    {       
+    {
         os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE << endl;
         os << "Node started at: " << CGridGlobals::GetInstance().GetStartTime().AsString() << endl;
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app)
-            os << "Executable path: " << app->GetProgramExecutablePath() 
+            os << "Executable path: " << app->GetProgramExecutablePath()
                << "; PID: " << CProcess::GetCurrentPid() << endl;
 
         os << "Queue name: " << node.GetQueueName() << endl;
@@ -150,32 +150,32 @@ public:
     }
 };
 
-class CGetLoadProcessor : public CWorkerNodeControlThread::IRequestProcessor 
+class CGetLoadProcessor : public CWorkerNodeControlThread::IRequestProcessor
 {
 public:
     CGetLoadProcessor()  {}
     virtual ~CGetLoadProcessor() {}
-   
+
     virtual bool Authenticate(const string& host,
-                              const string& auth, 
+                              const string& auth,
                               const string& queue,
                               CNcbiOstream& os,
-                              const CGridWorkerNode& node) 
+                              const CGridWorkerNode& node)
     {
         string cmp = node.GetClientName() + " prog='" + node.GetJobVersion() + '\'';
         if (auth != cmp) {
-            os <<"ERR:Wrong Program. Required: " << node.GetJobVersion() 
+            os <<"ERR:Wrong Program. Required: " << node.GetJobVersion()
                << endl << auth << endl << cmp;
             return false;
-        } 
+        }
         string qname, connection_info;
         NStr::SplitInTwo(queue, ";", qname, connection_info);
         if (qname != node.GetQueueName()) {
             os << "ERR:Wrong Queue. Required: " << node.GetQueueName();
             return false;
-        } 
+        }
         if (connection_info != node.GetServiceName()) {
-            os << "ERR:Wrong Connection Info. Required: "                     
+            os << "ERR:Wrong Connection Info. Required: "
                << node.GetServiceName();
             return false;
         }
@@ -188,13 +188,13 @@ public:
     {
         int load = 0;
         //if (!node.IsOnHold())
-            load = node.GetMaxThreads() 
+            load = node.GetMaxThreads()
                 - CGridGlobals::GetInstance().GetJobsWatcher().GetJobsRunningNumber();
         os << "OK:" << load;
     }
 };
 
-class CUnknownProcessor : public CWorkerNodeControlThread::IRequestProcessor 
+class CUnknownProcessor : public CWorkerNodeControlThread::IRequestProcessor
 {
 public:
     virtual ~CUnknownProcessor() {}
@@ -213,11 +213,11 @@ const string STAT_CMD = "STAT";
 const string GETLOAD_CMD = "GETLOAD";
 
 /////////////////////////////////////////////////////////////////////////////
-// 
+//
 ///@internal
 
 /* static */
-CWorkerNodeControlThread::IRequestProcessor* 
+CWorkerNodeControlThread::IRequestProcessor*
 CWorkerNodeControlThread::MakeProcessor(const string& cmd)
 {
     if (NStr::StartsWith(cmd, SHUTDOWN_CMD))
@@ -241,9 +241,9 @@ public:
         return new CWNCTConnectionHandler(m_Server);
     }
     virtual EListenAction OnFailure(unsigned short* port )
-    { 
+    {
         if (*port >= m_EndPort)
-            return eLAFail; 
+            return eLAFail;
         m_Port = ++(*port);
         return eLARetry;
     }
@@ -263,7 +263,7 @@ CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int start_port, unsi
     params.init_threads = 1;
     params.max_threads = 3;
     params.accept_timeout = &kAcceptTimeout;
-    SetParameters(params);    
+    SetParameters(params);
     AddListener(new CWNCTConnectionFactory(*this, m_Port, end_port),m_Port);
 }
 
@@ -271,7 +271,7 @@ CWorkerNodeControlThread::~CWorkerNodeControlThread()
 {
     LOG_POST_X(14, CTime(CTime::eCurrent).AsString() << " Control server stopped.");
 }
-bool CWorkerNodeControlThread::ShutdownRequested(void) 
+bool CWorkerNodeControlThread::ShutdownRequested(void)
 {
     //    return CGridGlobals::GetInstance().
     //        GetShutdownLevel() != CNetScheduleClient::eNoShutdown;
@@ -294,7 +294,7 @@ static string s_ReadStrFromBUF(BUF buf)
     return ret;
 }
 
-CWNCTConnectionHandler::CWNCTConnectionHandler(CWorkerNodeControlThread& server) 
+CWNCTConnectionHandler::CWNCTConnectionHandler(CWorkerNodeControlThread& server)
     : m_Server(server)
 {}
 
@@ -311,7 +311,7 @@ void CWNCTConnectionHandler::OnOpen(void)
 
 static void s_HandleError(CSocket& socket, const string& msg)
 {
-    ERR_POST_X(15, CTime(CTime::eCurrent).AsString() 
+    ERR_POST_X(15, CTime(CTime::eCurrent).AsString()
                << " Exception in the control server : " << msg);
     string err = "ERR:" + NStr::PrintableString(msg);
     socket.Write(&err[0], err.size());
@@ -327,7 +327,7 @@ void CWNCTConnectionHandler::OnMessage(BUF buffer)
         s_HandleError(GetSocket(), "Unknown Error");
     }
 }
-    
+
 void CWNCTConnectionHandler::x_ProcessAuth(BUF buffer)
 {
     m_Auth = s_ReadStrFromBUF(buffer);
@@ -344,11 +344,11 @@ void CWNCTConnectionHandler::x_ProcessRequest(BUF buffer)
 
     CSocket& socket = GetSocket();
     string host = socket.GetPeerAddress();
-        
+
     CNcbiOstrstream os;
-    auto_ptr<CWorkerNodeControlThread::IRequestProcessor> 
+    auto_ptr<CWorkerNodeControlThread::IRequestProcessor>
         processor(m_Server.MakeProcessor(request));
-    if (processor->Authenticate(host, m_Auth, m_Queue, os, 
+    if (processor->Authenticate(host, m_Auth, m_Queue, os,
                                 m_Server.GetWorkerNode()))
         processor->Process(request, os, m_Server.GetWorkerNode());
 

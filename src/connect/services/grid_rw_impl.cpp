@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 
 static const int s_FlagsLen = 2;
-static const char *s_Flags[s_FlagsLen] = { 
+static const char *s_Flags[s_FlagsLen] = {
     "D ",
     "K " };
 
@@ -71,7 +71,7 @@ void CStringOrBlobStorageWriter::x_Init(size_t max_string_size)
     }
 }
 
-CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter() 
+CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()
 {
     try {
         m_Storage.Reset();
@@ -82,11 +82,11 @@ CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()
 }
 
 namespace {
-class CIOBytesCountGuard 
+class CIOBytesCountGuard
 {
 public:
     CIOBytesCountGuard(size_t* ret, const size_t& count)
-        : m_Ret(ret), m_Count(count) 
+        : m_Ret(ret), m_Count(count)
     {}
 
     ~CIOBytesCountGuard() { if (m_Ret) *m_Ret = m_Count; }
@@ -103,10 +103,10 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
     size_t written = 0;
     CIOBytesCountGuard guard(bytes_written, written);
 
-    if (count == 0) 
+    if (count == 0)
         return eRW_Success;
 
-    if (m_BlobOstr) 
+    if (m_BlobOstr)
         return x_WriteToStream(buf,count, &written);
     //cerr << "before " << m_Data.size() << " " <<count << endl;
     if (m_Data.size()+count > m_MaxBuffSize) {
@@ -124,7 +124,7 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
                 return ret;
             }
         }
-        return x_WriteToStream(buf,count, &written);            
+        return x_WriteToStream(buf,count, &written);
     }
     m_Data.append( (const char*)buf, count);
     //cerr << "after " << m_Data.size() << " " <<count << endl;
@@ -136,7 +136,7 @@ ERW_Result CStringOrBlobStorageWriter::Flush(void)
 {
     if (m_BlobOstr)
         m_BlobOstr->flush();
-    return eRW_Success;       
+    return eRW_Success;
 }
 
 
@@ -159,7 +159,7 @@ ERW_Result CStringOrBlobStorageWriter::x_WriteToStream(const void* buf,
 //
 
 CStringOrBlobStorageReader::
-CStringOrBlobStorageReader(const string& data, IBlobStorage& storage, 
+CStringOrBlobStorageReader(const string& data, IBlobStorage& storage,
                            size_t* data_size,
                            IBlobStorage::ELockMode lock_mode)
     : m_Data(data), m_Storage(storage), m_BlobIstr(NULL)
@@ -167,10 +167,10 @@ CStringOrBlobStorageReader(const string& data, IBlobStorage& storage,
     x_Init(data_size,lock_mode);
 }
 CStringOrBlobStorageReader::
-CStringOrBlobStorageReader(const string& data, IBlobStorage* storage, 
+CStringOrBlobStorageReader(const string& data, IBlobStorage* storage,
                            size_t* data_size,
                            IBlobStorage::ELockMode lock_mode)
-    : m_Data(data), m_Storage(*storage), m_StorageGuard(storage), 
+    : m_Data(data), m_Storage(*storage), m_StorageGuard(storage),
       m_BlobIstr(NULL)
 {
     x_Init(data_size,lock_mode);
@@ -194,7 +194,7 @@ void CStringOrBlobStorageReader::x_Init(size_t* data_size,
     } else {
         if (!m_Data.empty())
             NCBI_THROW(CStringOrBlobStorageRWException, eInvalidFlag,
-                       "Unknown data type " + 
+                       "Unknown data type " +
                        string(m_Data.begin(),m_Data.begin()+s_FlagsLen));
         else {
             m_CurPos = m_Data.begin();
@@ -209,7 +209,7 @@ CStringOrBlobStorageReader::~CStringOrBlobStorageReader()
         m_Storage.Reset();
     } NCBI_CATCH_ALL_X(2, "CStringOrBlobStorageReader::~CStringOrBlobStorageReader()");
 }
-   
+
 ERW_Result CStringOrBlobStorageReader::Read(void*   buf,
                                             size_t  count,
                                             size_t* bytes_read)
@@ -218,7 +218,7 @@ ERW_Result CStringOrBlobStorageReader::Read(void*   buf,
     CIOBytesCountGuard guard(bytes_read, read);
     if (count == 0)
         return eRW_Success;
-        
+
     if (m_BlobIstr) {
         if (m_BlobIstr->eof()) {
             return eRW_Eof;
@@ -247,10 +247,10 @@ ERW_Result CStringOrBlobStorageReader::PendingCount(size_t* count)
     if (m_BlobIstr) {
         if (m_BlobIstr->good() && !m_BlobIstr->eof())
             *count = m_BlobIstr->rdbuf()->in_avail();
-        else 
+        else
             *count = 0;
     }
-    else 
+    else
         *count = m_Data.end() - m_CurPos;
     return eRW_Success;
 }

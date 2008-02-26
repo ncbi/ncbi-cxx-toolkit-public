@@ -35,7 +35,7 @@
  */
 
 /// @file grid_worker_app.hpp
-/// NetSchedule worker node application. 
+/// NetSchedule worker node application.
 ///
 
 
@@ -65,7 +65,7 @@ class NCBI_XCONNECT_EXPORT CGridWorkerApp_Impl
 public:
 
     CGridWorkerApp_Impl(CNcbiApplication& app,
-                        IWorkerNodeJobFactory* job_factory, 
+                        IWorkerNodeJobFactory* job_factory,
                         IBlobStorageFactory*   storage_factory = NULL,
                         INetScheduleClientFactory* client_factory = NULL);
 
@@ -77,7 +77,7 @@ public:
 
     void ForceSingleThread(){ m_SingleThreadForced = true; }
 
-    void AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher, 
+    void AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher,
                           EOwnership owner = eNoOwnership);
 
 

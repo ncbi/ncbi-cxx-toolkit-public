@@ -77,9 +77,9 @@ void TokenizeCmdLine(const string& cmdline, vector<string>& args)
                 ++i;
                 continue;
             }
-            arg += cmdline[i++];                
+            arg += cmdline[i++];
         }
-        if( !arg.empty() ) 
+        if( !arg.empty() )
             args.push_back(arg);
     }
 }

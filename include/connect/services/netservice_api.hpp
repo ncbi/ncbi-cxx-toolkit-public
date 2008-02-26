@@ -33,32 +33,95 @@
  *
  */
 
-#include <connect/services/srv_connections.hpp>
+#include <connect/services/srv_discovery.hpp>
 
 BEGIN_NCBI_SCOPE
 
 class CNetSrvAuthenticator;
-class NCBI_XCONNECT_EXPORT INetServiceAPI
+
+class NCBI_XCONNECT_EXPORT CNetServiceAPI_Base
 {
 public:
-    INetServiceAPI(const string& service_name, const string& client_name);
-    virtual ~INetServiceAPI();
+    CNetServiceAPI_Base(const string& service_name, const string& client_name);
+    virtual ~CNetServiceAPI_Base();
 
+    typedef pair<string, unsigned short> TServerAddress;
+    typedef map<TServerAddress,
+        CNetServerConnectionPool*> TServerAddressToConnectionPool;
+    typedef vector<TServerAddress> TDiscoveredServers;
+
+    CNetServerConnection GetBest(const TServerAddress* backup = NULL,
+        const string& hit = "");
+    CNetServerConnection GetSpecific(const string& host, unsigned int port);
+
+    void SetCommunicationTimeout(const STimeout& to);
+    const STimeout& GetCommunicationTimeout() const;
+
+    void SetCreateSocketMaxRetries(unsigned int retries);
+    unsigned int GetCreateSocketMaxRetries() const;
+
+    void PermanentConnection(ESwitch type);
+
+    bool IsLoadBalanced() const { return m_IsLoadBalanced; }
+
+    template<class Pred>
+    bool Find(Pred func) {
+        x_Rebalance();
+        CReadLockGuard g(m_ServersLock);
+        TDiscoveredServers servers_copy(m_Servers);
+        g.Release();
+        // pick a random pivot element, so we do not always
+        // fetch jobs using the same lookup order and some servers do
+        // not get equally "milked"
+        // also get random list lookup direction
+        unsigned servers_size = servers_copy.size();
+        unsigned pivot = rand() % servers_size;
+        unsigned pivot_plus_servers_size = pivot + servers_size;
+
+        for (unsigned i = pivot; i < pivot_plus_servers_size; ++i) {
+            unsigned j = i % servers_size;
+            const TServerAddress& srv = servers_copy[j];
+
+            CNetServerConnection conn =
+                x_FindOrCreateConnectionPool(srv).GetConnection();
+
+            if (func(conn, i == pivot_plus_servers_size - 1))
+                return true;
+        }
+        return false;
+    }
+
+    template<class Func>
+    Func ForEach(Func func) {
+        x_Rebalance();
+        CReadLockGuard g(m_ServersLock);
+        TDiscoveredServers servers_copy(m_Servers);
+        g.Release();
+        NON_CONST_ITERATE(TDiscoveredServers, it, servers_copy) {
+            CNetServerConnection conn =
+                x_FindOrCreateConnectionPool(*it).GetConnection();
+
+            func(conn);
+        }
+        return func;
+    }
+
+    void DiscoverLowPriorityServers(ESwitch on_off);
 
     /// Connection management options
     enum EConnectionMode {
-        /// Close connection after each call (default). 
+        /// Close connection after each call (default).
         /// This mode frees server side resources, but reconnection can be
         /// costly because of the network overhead
-        eCloseConnection,  
+        eCloseConnection,
 
         /// Keep connection open.
-        /// This mode occupies server side resources(session thread), 
+        /// This mode occupies server side resources(session thread),
         /// use this mode very carefully
-        eKeepConnection    
+        eKeepConnection
     };
     /// Returns current connection mode
-    /// @sa SetConnMode 
+    /// @sa SetConnMode
     EConnectionMode GetConnMode() const;
 
     /// Set connection mode
@@ -68,22 +131,12 @@ public:
     const string& GetClientName() const { return m_ClientName; }
     const string& GetServiceName() const { return m_ServiceName; }
 
-    void DiscoverLowPriorityServers(ESwitch on_off);
-
-    void SetRebalanceStrategy( IRebalanceStrategy* strategy, 
+    void SetRebalanceStrategy( IRebalanceStrategy* strategy,
                                EOwnership owner = eTakeOwnership);
 
-    string WaitResponse(CNetServerConnector& conn) const;
-    string SendCmdWaitResponse(CNetServerConnector& conn, const string& cmd) const;
-
-    CNetServiceConnector& GetConnector();
-    CNetServiceConnector& GetConnector() const;
-
-    void SetCommunicationTimeout(const STimeout& to) { GetConnector().SetCommunicationTimeout(to); }
-    STimeout GetCommunicationTimeout() const { return GetConnector().GetCommunicationTimeout(); }
-
-    void SetCreateSocketMaxRetries(unsigned int retries) { GetConnector().SetCreateSocketMaxRetries(retries); }
-    unsigned int GetCreateSocketMaxRetries() const { return GetConnector().GetCreateSocketMaxRetries(); }
+    string WaitResponse(CNetServerConnection conn) const;
+    string SendCmdWaitResponse(CNetServerConnection conn,
+        const string& cmd) const;
 
     //protected:
     void CheckServerOK(string& response) const;
@@ -91,20 +144,21 @@ public:
     //protected:
     static void TrimErr(string& err_msg);
 
-    
-    class ISink 
+
+    class ISink
     {
     public:
         virtual ~ISink() {};
-        virtual CNcbiOstream& GetOstream(CNetServerConnector& conn) = 0;
-        virtual void EndOfData(CNetServerConnector& conn) {}
+        virtual CNcbiOstream& GetOstream(CNetServerConnection conn) = 0;
+        virtual void EndOfData(CNetServerConnection /* conn */) = 0;
     };
     enum EStreamCollectorType {
         eSendCmdWaitResponse,
         ePrintServerOut
     };
-    void x_CollectStreamOutput(const string& cmd, ISink& sink, EStreamCollectorType type) const;
-    void PrintServerOut(CNetServerConnector& conn, CNcbiOstream& out) const;
+    void x_CollectStreamOutput(const string& cmd, ISink& sink, EStreamCollectorType type);
+    void PrintServerOut(CNetServerConnection conn,
+        CNcbiOstream& out) const;
 
 protected:
     enum ETrimErr {
@@ -114,31 +168,43 @@ protected:
 
     virtual void ProcessServerError(string& response, ETrimErr trim_err) const;
 
-    string GetConnectionInfo(CNetServerConnector& conn) const;
+    string GetConnectionInfo(CNetServerConnection& conn) const;
 
 
 private:
     friend class CNetServiceAuthenticator;
-    void DoAuthenticate(CNetServerConnector& conn) const {
+    void DoAuthenticate(CNetServerConnection& conn) const {
         x_SendAuthetication(conn);
     }
-    virtual void x_SendAuthetication(CNetServerConnector& conn) const = 0;
-
-    void x_CreateConnector();
+    virtual void x_SendAuthetication(CNetServerConnection& conn) const = 0;
 
     string m_ServiceName;
     string m_ClientName;
 
-    auto_ptr<INetServerConnectorEventListener> m_Authenticator;
-    auto_ptr<CNetServiceConnector> m_Connector;
+    auto_ptr<INetServerConnectionListener> m_Authenticator;
     EConnectionMode m_ConnMode;
-    ESwitch m_LPServices;
     IRebalanceStrategy* m_RebalanceStrategy;
     auto_ptr<IRebalanceStrategy> m_RebalanceStrategyGuard;
 
-    INetServiceAPI(const INetServiceAPI&);
-    INetServiceAPI& operator=(const INetServiceAPI&);
+    CNetServiceAPI_Base(const CNetServiceAPI_Base&);
+    CNetServiceAPI_Base& operator=(const CNetServiceAPI_Base&);
 
+    TDiscoveredServers m_Servers;
+    CRWLock m_ServersLock;
+    mutable TServerAddressToConnectionPool m_ServerAddressToConnectionPool;
+    mutable CFastMutex m_ConnectionMutex;
+
+    bool    m_IsLoadBalanced;
+    ESwitch m_DiscoverLowPriorityServers;
+
+    STimeout                          m_Timeout;
+    unsigned int                      m_MaxRetries;
+    ESwitch                           m_PermanentConnection;
+
+    CNetServerConnectionPool&
+        x_FindOrCreateConnectionPool(const TServerAddress& srv) const;
+
+    void x_Rebalance();
 };
 
 

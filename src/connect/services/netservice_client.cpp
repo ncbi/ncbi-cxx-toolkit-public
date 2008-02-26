@@ -37,44 +37,11 @@
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netservice_client.hpp>
 #include <connect/services/netservice_api_expt.hpp>
-#include <corelib/ncbi_param.hpp>
+#include <connect/services/netservice_params.hpp>
 #include <memory>
 
 
 BEGIN_NCBI_SCOPE
-
-NCBI_PARAM_DECL(bool,   service_connector, use_linger2);
-//NCBI_PARAM_DEF (bool,   service_connector, use_linger2, false);
-typedef NCBI_PARAM_TYPE(service_connector, use_linger2) TServConn_UserLinger2;
-
-NCBI_PARAM_DECL(double, service_connector, communication_timeout);
-//NCBI_PARAM_DEF (double, service_connector, communication_timeout, 12.0);
-typedef NCBI_PARAM_TYPE(service_connector, communication_timeout) TServConn_CommTimeout;
-
-NCBI_PARAM_DECL(unsigned int, service_connector, connection_max_retries);
-//NCBI_PARAM_DEF (unsigned int, service_connector, connection_max_retries, 10);
-typedef NCBI_PARAM_TYPE(      service_connector, connection_max_retries) TServConn_ConnMaxRetries;
-
-static bool s_DefaultCommTimeout_Initialized = false;
-static STimeout s_DefaultCommTimeout;
-
-static STimeout s_GetDefaultCommTimeout()
-{
-    if (s_DefaultCommTimeout_Initialized)
-        return s_DefaultCommTimeout;
-    double ftm = TServConn_CommTimeout::GetDefault();
-    NcbiMsToTimeout(&s_DefaultCommTimeout, (unsigned long)(ftm * 1000.0 + 0.5));
-    s_DefaultCommTimeout_Initialized = true;
-    return s_DefaultCommTimeout;
-}
-
-static void s_SetDefaultCommTimeout(const STimeout& tm)
-{
-    s_DefaultCommTimeout = tm;
-    s_DefaultCommTimeout_Initialized = true;
-}
-
-//static unsigned int s_DefaultMaxRetries = 10;
 
 
 static CSafeStaticPtr<string> s_GlobalClientName;
@@ -184,14 +151,14 @@ void CNetServiceClient::SetCommunicationTimeout(const STimeout& to)
 }
 
 
-STimeout& CNetServiceClient::SetCommunicationTimeout() 
-{ 
-    return m_Timeout; 
+STimeout& CNetServiceClient::SetCommunicationTimeout()
+{
+    return m_Timeout;
 }
 
 
 STimeout CNetServiceClient::GetCommunicationTimeout() const
-{ 
+{
     return m_Timeout;
 }
 
@@ -244,9 +211,9 @@ EIO_Status CNetServiceClient::Connect(unsigned int addr, unsigned short port)
 }
 
 
-CSocket* CNetServiceClient::DetachSocket() 
+CSocket* CNetServiceClient::DetachSocket()
 {
-    CSocket* s = m_Sock; m_Sock = 0; return s; 
+    CSocket* s = m_Sock; m_Sock = 0; return s;
 }
 
 
@@ -255,7 +222,7 @@ bool CNetServiceClient::ReadStr(CSocket& sock, string* str)
     _ASSERT(str);
 
     EIO_Status io_st = sock.ReadLine(*str);
-    switch (io_st) 
+    switch (io_st)
     {
     case eIO_Success:
         return true;
@@ -269,7 +236,7 @@ bool CNetServiceClient::ReadStr(CSocket& sock, string* str)
         return false;
     }
 
-    return true;    
+    return true;
 }
 
 
@@ -301,29 +268,29 @@ void CNetServiceClient::CreateSocket(const string& hostname,
     } //else {
 
     unsigned conn_repeats = 0;
-    
+
     do {
         io_st = m_Sock->Connect(hostname, port, &m_Timeout, eOn);
         if (io_st != eIO_Success) {
             if (io_st == eIO_Unknown) {
 
                 m_Sock->Close();
-                
-                // most likely this is an indication we have too many 
-                // open ports on the client side 
+
+                // most likely this is an indication we have too many
+                // open ports on the client side
                 // (this kernel limitation manifests itself on Linux)
                 //
-                
+
                 if (++conn_repeats > m_MaxRetries) {
                     if ( io_st != eIO_Success) {
                         throw CIO_Exception(DIAG_COMPILE_INFO,
-                        0, (CIO_Exception::EErrCode)io_st, 
+                        0, (CIO_Exception::EErrCode)io_st,
                             "IO error. Failed to connect to server.");
-                    } 
+                    }
                     //NCBI_IO_CHECK(io_st);
                 }
                 // give system a chance to recover
-                
+
                 SleepMilliSec(1000 * conn_repeats);
             } else {
                 NCBI_IO_CHECK(io_st);
@@ -331,11 +298,11 @@ void CNetServiceClient::CreateSocket(const string& hostname,
         } else {
             break;
         }
-        
+
     } while (1);
-    
+
     m_Sock->SetDataLogging(eDefault);
-        
+
 //    }
     m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
     m_Sock->DisableOSSendDelay();
@@ -353,7 +320,7 @@ void CNetServiceClient::WaitForServer(unsigned wait_sec)
     while (true) {
         EIO_Status io_st = m_Sock->Wait(eIO_Read, &to);
         if (io_st == eIO_Timeout) {
-            NCBI_THROW(CNetServiceException, eTimeout, 
+            NCBI_THROW(CNetServiceException, eTimeout,
                        "No response from the server for " + NStr::IntToString(to.sec) + " sec.");
         }
         else {
@@ -405,7 +372,7 @@ void CNetServiceClient::ProcessServerError(string* response, ETrimErr trim_err)
 }
 
 
-void CNetServiceClient::ReturnSocket(CSocket* sock, 
+void CNetServiceClient::ReturnSocket(CSocket* sock,
                                      const string& /* blob_comment */)
 {
     _ASSERT(sock);

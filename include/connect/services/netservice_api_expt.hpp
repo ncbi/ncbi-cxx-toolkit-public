@@ -32,9 +32,9 @@
  *
  */
 
-#include <connect/ncbi_connutil.h>
-#include <corelib/ncbistl.hpp>
+#include <connect/ncbi_core.h>
 
+#include <corelib/ncbistl.hpp>
 #include <corelib/ncbiexpt.hpp>
 
 BEGIN_NCBI_SCOPE

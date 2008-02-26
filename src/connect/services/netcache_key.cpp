@@ -63,7 +63,7 @@ CNetCacheKey::CNetCacheKey(const string& key_str)
     ++ch;
 
     if (prefix != kNetCache_KeyPrefix) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, 
+        NCBI_THROW(CNetCacheException, eKeyFormatError,
                                        "Key syntax error. Invalid prefix.");
     }
 
@@ -101,7 +101,7 @@ CNetCacheKey::CNetCacheKey(const string& key_str)
 }
 
 
-CNetCacheKey::operator string() const 
+CNetCacheKey::operator string() const
 {
     string tmp;
     string key = "NCID_01";    // NetCacheId prefix plus version
@@ -111,13 +111,13 @@ CNetCacheKey::operator string() const
     key += tmp;
 
     key += "_";
-    key += host;    
+    key += host;
 
     NStr::IntToString(tmp, port);
     key += "_";
     key += tmp;
 
-    NStr::IntToString(tmp, time(0));
+    NStr::IntToString(tmp, (long) time(0));
     key += "_";
     key += tmp;
     return key;

@@ -46,7 +46,7 @@
 
 USING_NCBI_SCOPE;
 
-    
+
 ///////////////////////////////////////////////////////////////////////
 
 
@@ -74,16 +74,16 @@ void CTestICClient::Init(void)
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Network ICache client test");
-    
-    arg_desc->AddPositional("hostname", 
+
+    arg_desc->AddPositional("hostname",
                             "NetCache host name.", CArgDescriptions::eString);
 
     arg_desc->AddPositional("port",
-                            "Port number.", 
+                            "Port number.",
                             CArgDescriptions::eInteger);
 
     arg_desc->AddPositional("cache",
-                            "Cache name.", 
+                            "Cache name.",
                             CArgDescriptions::eString);
 
 
@@ -98,7 +98,7 @@ void CTestICClient::Init(void)
 
 
 
-        
+
 
 
 int CTestICClient::Run(void)
@@ -114,7 +114,7 @@ int CTestICClient::Run(void)
 
     CNetICacheClient cl(host, port, cache_name, "test_icache");
 
-    ICache::TTimeStampFlags flags = 
+    ICache::TTimeStampFlags flags =
         ICache::fTimeStampOnRead | ICache::fTrackSubKey;
     cl.SetTimeStampPolicy(flags, 1800, 0);
 
@@ -190,7 +190,7 @@ int CTestICClient::Run(void)
 
 
     cl.Read(key, version, subkey, test_buf, test_size);
-    
+
     for (size_t i = 0; i < test_size; ++i) {
         if (test_buf[i] != 127) {
             assert(0);

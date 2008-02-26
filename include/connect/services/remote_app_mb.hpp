@@ -28,7 +28,7 @@
  *
  * Authors:  Maxim Didneko,
  *
- * File Description:  
+ * File Description:
  *
  */
 
@@ -52,10 +52,10 @@ enum EStdOutErrStorageType {
 /// Remote Application Request (client side)
 ///
 /// It is used by a client application which wants to run a remote application
-/// through NetSchedule infrastructure and should be used in conjunction with 
+/// through NetSchedule infrastructure and should be used in conjunction with
 /// CGridJobSubmitter class
 ///
-class NCBI_XCONNECT_EXPORT CRemoteAppRequestMB : 
+class NCBI_XCONNECT_EXPORT CRemoteAppRequestMB :
     public CObject,
     public IRemoteAppRequest
 {
@@ -66,19 +66,19 @@ public:
     /// Get an output stream to write data to a remote application stdin
     CNcbiOstream& GetStdIn();
 
-    /// Set a remote application command line. 
+    /// Set a remote application command line.
     /// Cmdline should not contain a remote program name, just its arguments
     void SetCmdLine(const string& cmd);
 
     void SetAppRunTimeout(unsigned int sec);
     //    void RequestExclusiveMode();
-    
+
     /// Transfer a file to an application executer side.
     /// It only makes sense to transfer a file if its name also mentioned in
-    /// the command line for the remote application. When the file is transfered 
+    /// the command line for the remote application. When the file is transfered
     /// the the executer side it gets stored to a temprary directory and then its
     /// original name in the command line will be replaced with the new temprary name.
-    void AddFileForTransfer(const string& fname, 
+    void AddFileForTransfer(const string& fname,
                             ETrasferType tt = eBlobStorage);
 
     void SetStdOutErrFileNames(const string& stdout_fname,
@@ -100,7 +100,7 @@ private:
 };
 
 /// Remote Application Request (application executer side)
-/// 
+///
 /// It is used by a grid worker node to get parameters for a remote application.
 ///
 class NCBI_XCONNECT_EXPORT CRemoteAppRequestMB_Executer : public IRemoteAppRequest_Executer
@@ -146,7 +146,7 @@ class CRemoteAppResultMB_Impl;
 /// It is used by a client application to get results for a remote applicaion
 /// and should be used in conjunction with CGridJobStatus
 ///
-class NCBI_XCONNECT_EXPORT CRemoteAppResultMB : 
+class NCBI_XCONNECT_EXPORT CRemoteAppResultMB :
     public CObject,
     public IRemoteAppResult
 {
@@ -178,8 +178,8 @@ private:
 };
 
 /// Remote Application Result (application executer side)
-/// 
-/// It is used by a grid worker node to send results of a 
+///
+/// It is used by a grid worker node to send results of a
 /// finished remote application to the clien.
 class NCBI_XCONNECT_EXPORT CRemoteAppResultMB_Executer : public IRemoteAppResult_Executer
 {
@@ -192,7 +192,7 @@ public:
 
     /// Get a stream to put remote application's stderr to
     CNcbiOstream& GetStdErr();
-    
+
     /// Set a remote application's return code
     void SetRetCode(int ret_code);
 

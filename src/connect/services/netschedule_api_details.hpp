@@ -80,7 +80,7 @@ static bool s_WaitNotification(unsigned       wait_time,
         curr_time = time(0);
         if (curr_time >= end_time)
             break;
-        to.sec = end_time - curr_time;
+        to.sec = (unsigned int) (end_time - curr_time);
 
         status = udp_socket.Wait(&to);
         if (eIO_Success != status) {
@@ -116,34 +116,32 @@ struct SNSSendCmd
     {}
     virtual ~SNSSendCmd() {}
 
-    void operator()(CNetServerConnector& con)
+    void operator()(CNetServerConnection conn)
     {
         string resp;
         try {
-           resp = m_API->SendCmdWaitResponse(con, m_Cmd);
+           resp = m_API->SendCmdWaitResponse(conn, m_Cmd);
         } catch (CNetScheduleException& ex) {
             if (m_Flags & eLogExceptions) {
-                ERR_POST_X(11, con.GetHost() << ":" << con.GetPort()
+                ERR_POST_X(11, conn.GetHost() << ":" << conn.GetPort()
                                << " returned error: \"" << ex.what() << "\"");
             }
-            if (!(m_Flags & eIgnoreDuplicateNameError && ex.GetErrCode() == CNetScheduleException::eDuplicateName))
+            if (!(m_Flags & eIgnoreDuplicateNameError &&
+                ex.GetErrCode() == CNetScheduleException::eDuplicateName))
                 throw;
         } catch (CNetServiceException& ex) {
             if (m_Flags & eLogExceptions) {
-                ERR_POST_X(12, con.GetHost() << ":" << con.GetPort()
+                ERR_POST_X(12, conn.GetHost() << ":" << conn.GetPort()
                                << " returned error: \"" << ex.what() << "\"");
             }
-            if (!(m_Flags & eIgnoreCommunicationError && ex.GetErrCode() == CNetServiceException::eCommunicationError))
+            if (!(m_Flags & eIgnoreCommunicationError &&
+                ex.GetErrCode() == CNetServiceException::eCommunicationError))
                 throw;
-        } /*catch (CIO_Exception& ex) {
-            if (m_Flags & eLogExceptions) {
-                     ERR_POST_X(13, con.GetHost() << ":" << con.GetPort()
-                                << " returned error: \"" << ex.what() << "\"");
-            }
-        }*/
-        ProcessResponse(resp, con);
+        }
+        ProcessResponse(resp, conn);
     }
-    virtual void ProcessResponse(const string& resp, CNetServerConnector& conn) {}
+    virtual void ProcessResponse(const string& /* resp */,
+        CNetServerConnection /* conn */) {}
 
     const CNetScheduleAPI* m_API;
     string m_Cmd;

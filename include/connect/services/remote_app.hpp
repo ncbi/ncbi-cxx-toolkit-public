@@ -28,7 +28,7 @@
  *
  * Authors:  Maxim Didneko,
  *
- * File Description:  
+ * File Description:
  *
  */
 
@@ -44,7 +44,7 @@ const string kLocalFSSign = "LFS";
 /// Remote Application Request (client side)
 ///
 /// It is used by a client application which wants to run a remote application
-/// through NetSchedule infrastructure and should be used in conjunction with 
+/// through NetSchedule infrastructure and should be used in conjunction with
 /// CGridJobSubmitter class
 ///
 class NCBI_XCONNECT_EXPORT IRemoteAppRequest
@@ -60,16 +60,16 @@ public:
     /// Get an output stream to write data to a remote application stdin
     virtual CNcbiOstream& GetStdIn() = 0;
 
-    /// Set a remote application command line. 
+    /// Set a remote application command line.
     /// Cmdline should not contain a remote program name, just its arguments
     virtual void SetCmdLine(const string& cmd) = 0;
-  
+
     /// Transfer a file to an application executer side.
     /// It only makes sense to transfer a file if its name also mentioned in
-    /// the command line for the remote application. When the file is transfered 
+    /// the command line for the remote application. When the file is transfered
     /// the the executer side it gets stored to a temprary directory and then its
     /// original name in the command line will be replaced with the new temprary name.
-    virtual void AddFileForTransfer(const string& fname, 
+    virtual void AddFileForTransfer(const string& fname,
                                     ETrasferType tt = eBlobStorage ) = 0;
 
     virtual void SetAppRunTimeout(unsigned int sec) = 0;
@@ -80,7 +80,7 @@ public:
 };
 
 /// Remote Application Request (application executer side)
-/// 
+///
 /// It is used by a grid worker node to get parameters for a remote application.
 ///
 class NCBI_XCONNECT_EXPORT IRemoteAppRequest_Executer
@@ -100,7 +100,7 @@ public:
     virtual void Receive(CNcbiIstream& is) = 0;
 
     virtual void Reset() = 0;
-    
+
     virtual void Log(const string& prefix) = 0;
 };
 
@@ -129,8 +129,8 @@ public:
 };
 
 /// Remote Application Result (application executer side)
-/// 
-/// It is used by a grid worker node to send results of a 
+///
+/// It is used by a grid worker node to send results of a
 /// finished remote application to the clien.
 class NCBI_XCONNECT_EXPORT IRemoteAppResult_Executer
 {
@@ -142,7 +142,7 @@ public:
 
     /// Get a stream to put remote application's stderr to
     virtual CNcbiOstream& GetStdErr() = 0;
-    
+
     /// Set a remote application's return code
     virtual void SetRetCode(int ret_code) = 0;
 

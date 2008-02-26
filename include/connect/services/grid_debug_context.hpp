@@ -45,9 +45,9 @@
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
-// 
+//
 ///@internal
-class NCBI_XCONNECT_EXPORT CGridDebugContext 
+class NCBI_XCONNECT_EXPORT CGridDebugContext
 {
 public:
     enum eMode {
@@ -66,15 +66,15 @@ public:
     eMode GetDebugMode() const { return m_Mode; }
 
     bool GetNextJob(string& job_key, string& blob_id);
-    
+
     string GetLogFileName() const;
 
     void DumpInput(const string& blob_id, unsigned int job_number);
     void DumpOutput(const string& job_key,
-                    const string& blob_id, 
+                    const string& blob_id,
                     unsigned int job_number);
     void DumpProgressMessage(const string& job_key,
-                             const string& msg, 
+                             const string& msg,
                              unsigned int job_number);
 
 
@@ -86,7 +86,7 @@ private:
     string m_RunName;
     string m_SPid;
 
-    CMutex                      m_StorageFactoryMutex;  
+    CMutex                      m_StorageFactoryMutex;
     IBlobStorageFactory&        m_StorageFactory;
 
     map<string,string> m_Blobs;

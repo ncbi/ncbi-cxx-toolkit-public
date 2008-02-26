@@ -35,7 +35,7 @@
 
 
 /// @file netschedule_client.hpp
-/// NetSchedule client specs. 
+/// NetSchedule client specs.
 ///
 
 #include <corelib/ncbistl.hpp>

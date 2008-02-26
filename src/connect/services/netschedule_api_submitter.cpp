@@ -44,10 +44,10 @@ BEGIN_NCBI_SCOPE
 //////////////////////////////////////////////////////////////////////////////
 static void s_SerializeJob(string& cmd, const CNetScheduleJob& job, string& aff_prev)
 {
-    
+
     //ofstream o1("/tmp/sb_job_out_before_ps.txt", ios_base::binary);
     //o1.write(&job.input[0],job.input.size());
-    
+
     cmd.append("\"");
     string ps_input = NStr::PrintableString(job.input);
     //ofstream o2("/tmp/sb_job_out_after_ps.txt", ios_base::binary);
@@ -68,7 +68,7 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job, string& aff_
             cmd.append(" aff=\"");
             cmd.append(job.affinity);
             cmd.append("\"");
-            aff_prev = job.affinity;  
+            aff_prev = job.affinity;
         }
     }
 
@@ -76,7 +76,7 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job, string& aff_
         cmd.append(" msk=");
         cmd.append(NStr::UIntToString(job.mask));
     }
-    
+
     if( !job.tags.empty() ) {
         string tags;
         ITERATE(CNetScheduleAPI::TJobTags, tag, job.tags) {
@@ -90,14 +90,14 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job, string& aff_
         cmd.append(NStr::PrintableString(tags));
         cmd.append("\"");
     }
-    
+
 }
 
 inline
 void static s_CheckInputSize(const string& input, size_t max_input_size)
 {
     if (input.length() >  max_input_size) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+        NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Input data too long.");
     }
 }
@@ -113,10 +113,10 @@ string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job) const
     string aff_prev;
     s_SerializeJob(cmd, job, aff_prev);
 
-    job.job_id = m_API->SendCmdWaitResponse(m_API->x_GetConnector(), cmd);
+    job.job_id = m_API->SendCmdWaitResponse(m_API->x_GetConnectioin(), cmd);
 
     if (job.job_id.empty()) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Invalid server response. Empty key.");
     }
 
@@ -132,15 +132,10 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
         s_CheckInputSize(input, max_input_size);
     }
 
-    CNetServerConnector& conn = m_API->x_GetConnector();
-
-    //    m_Sock->DisableOSSendDelay(true);
+    CNetServerConnection conn = m_API->x_GetConnectioin();
 
     // batch command
-    
     m_API->SendCmdWaitResponse(conn, "BSUB");
-
-    //m_Sock->DisableOSSendDelay(false);
 
     string cmd;
     cmd.reserve(max_input_size * 6);
@@ -168,34 +163,14 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
         for (unsigned j = 0; j < batch_size; ++j,++i) {
             cmd.erase();
             s_SerializeJob(cmd, jobs[i], aff_prev);
-            /*
-            string input = NStr::PrintableString(jobs[i].input);
-            const string& aff = jobs[i].affinity;
-            if (aff[0]) {
-                if (aff == aff_prev) { // exactly same affinity(sorted jobs)
-                    sprintf(buf, "\"%s\" affp", 
-                            input.c_str()
-                            );
-                } else {
-                    sprintf(buf, "\"%s\" aff=\"%s\"", 
-                            input.c_str(),
-                            aff.c_str()
-                            );
-                    aff_prev = aff;
-                }
-            } else {
-                aff_prev.erase();
-                sprintf(buf, "\"%s\"", input.c_str());
-            }
-            conn.WriteBuf(buf, strlen(buf)+1);
-            */
+
             conn.WriteStr(cmd + "\r\n");
         }
 
         string resp = m_API->SendCmdWaitResponse(conn, "ENDB");
 
         if (resp.empty()) {
-            NCBI_THROW(CNetServiceException, eProtocolError, 
+            NCBI_THROW(CNetServiceException, eProtocolError,
                     "Invalid server response. Empty key.");
         }
 
@@ -210,31 +185,31 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
         if (host.empty()) {
             for (; *s != ' '; ++s) {
                 if (*s == 0) {
-                    NCBI_THROW(CNetServiceException, eProtocolError, 
+                    NCBI_THROW(CNetServiceException, eProtocolError,
                             "Invalid server response. Batch answer format.");
                 }
             }
             ++s;
             if (*s == 0) {
-                NCBI_THROW(CNetServiceException, eProtocolError, 
+                NCBI_THROW(CNetServiceException, eProtocolError,
                         "Invalid server response. Batch answer format.");
             }
             for (; *s != ' '; ++s) {
                 if (*s == 0) {
-                    NCBI_THROW(CNetServiceException, eProtocolError, 
+                    NCBI_THROW(CNetServiceException, eProtocolError,
                             "Invalid server response. Batch answer format.");
                 }
                 host.push_back(*s);
             }
             ++s;
             if (*s == 0) {
-                NCBI_THROW(CNetServiceException, eProtocolError, 
+                NCBI_THROW(CNetServiceException, eProtocolError,
                         "Invalid server response. Batch answer format.");
             }
 
-            port = atoi(s); 
+            port = atoi(s);
             if (port == 0) {
-                NCBI_THROW(CNetServiceException, eProtocolError, 
+                NCBI_THROW(CNetServiceException, eProtocolError,
                         "Invalid server response. Port=0.");
             }
         }
@@ -242,35 +217,31 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
         // assign job ids, protocol guarantees all jobs in batch will
         // receive sequential numbers, so server sends only first job id
         //
-        for (unsigned j = 0; j < batch_size; ++j) {            
+        for (unsigned j = 0; j < batch_size; ++j) {
             CNetScheduleKey key(first_job_id, host, port);
             jobs[batch_start].job_id = string(key);
             ++first_job_id;
             ++batch_start;
         }
-        
 
         }}
 
 
     } // for
 
-    //m_Sock->DisableOSSendDelay(true);
-
     m_API->SendCmdWaitResponse(conn, "ENDS");
-    //conn.WriteBuf("ENDS", 5); //???? do we need to wait for the last reponse?
 }
 
 struct SWaitJobPred {
     SWaitJobPred(unsigned int job_id) : m_JobId(job_id) {}
-    bool operator()(const string& buf) 
+    bool operator()(const string& buf)
     {
         static const char* sign = "JNTF";
         static size_t min_len = 5;
         if ((buf.size() < min_len) || ((buf[0] ^ sign[0]) | (buf[1] ^ sign[1])) ) {
             return false;
         }
-        
+
         const char* job = buf.data() + 5;
         unsigned notif_job_id = (unsigned)::atoi(job);
         if (notif_job_id == m_JobId) {
@@ -282,10 +253,10 @@ struct SWaitJobPred {
 };
 
 
-CNetScheduleAPI::EJobStatus 
+CNetScheduleAPI::EJobStatus
 CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
                                         unsigned       wait_time,
-                                        unsigned short udp_port) const
+                                        unsigned short udp_port)
 {
     _ASSERT(wait_time);
     _ASSERT(udp_port);

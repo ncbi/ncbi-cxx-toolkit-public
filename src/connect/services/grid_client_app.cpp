@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 
-CGridClientApp::CGridClientApp(CNetScheduleAPI* ns_client, 
+CGridClientApp::CGridClientApp(CNetScheduleAPI* ns_client,
                                IBlobStorage*       storage)
     : m_NSClient(ns_client), m_NSStorage(storage)
 {
@@ -65,7 +65,7 @@ void CGridClientApp::Init(void)
         CBlobStorageFactory cf(GetConfig());
         m_NSStorage.reset(cf.CreateInstance());
     }
-    CGridClient::ECleanUp cleanup = UseAutomaticCleanup() ? 
+    CGridClient::ECleanUp cleanup = UseAutomaticCleanup() ?
         CGridClient::eAutomaticCleanup :
         CGridClient::eManualCleanup;
     CGridClient::EProgressMsg pmsg = UseProgressMessage() ?
@@ -75,11 +75,11 @@ void CGridClientApp::Init(void)
     bool use_embedded_input = false;
     if (!GetConfig().Get(kNetScheduleAPIDriverName, "use_embedded_storage").empty())
         use_embedded_input = GetConfig().
-            GetBool(kNetScheduleAPIDriverName, "use_embedded_storage", false, 0, 
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_storage", false, 0,
                     CNcbiRegistry::eReturn);
     else
         use_embedded_input = GetConfig().
-            GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0, 
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0,
                     CNcbiRegistry::eReturn);
 
     m_GridClient.reset(new CGridClient(m_NSClient->GetSubmitter(), *m_NSStorage,

@@ -35,7 +35,7 @@
 
 
 /// @file netschedule_client.hpp
-/// NetSchedule client specs. 
+/// NetSchedule client specs.
 ///
 
 #include <connect/services/netservice_api_expt.hpp>

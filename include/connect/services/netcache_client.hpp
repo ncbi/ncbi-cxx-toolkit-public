@@ -34,7 +34,7 @@
  */
 
 /// @file netcache_client.hpp
-/// NetCache client specs. 
+/// NetCache client specs.
 ///
 
 #include <connect/ncbi_conn_reader_writer.hpp>
@@ -89,10 +89,10 @@ public:
 
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
-    /// BLOB key 
+    /// BLOB key
     ///
     /// @param client_name
-    ///    local name of the client program 
+    ///    local name of the client program
     ///    (used for server access logging and authentication)
     CNetCacheClient(const string&  client_name);
 
@@ -103,8 +103,8 @@ public:
 
     /// Construction.
     /// @param sock
-    ///    Connected socket to the primary server. 
-    ///    CNetCacheCleint does not take socket ownership and does not change 
+    ///    Connected socket to the primary server.
+    ///    CNetCacheCleint does not take socket ownership and does not change
     ///    communication parameters (like timeout)
     /// @param client_name
     ///    Identification name of the connecting client
@@ -118,15 +118,15 @@ public:
     /// Put BLOB to server
     ///
     /// @param time_to_live
-    ///    BLOB time to live value in seconds. 
+    ///    BLOB time to live value in seconds.
     ///    0 - server side default is assumed.
-    /// 
+    ///
     /// Please note that time_to_live is controlled by the server-side
     /// parameter so if you set time_to_live higher than server-side value,
     /// server side TTL will be in effect.
     ///
     /// @return NetCache access key
-    virtual 
+    virtual
     string PutData(const void*   buf,
                    size_t        size,
                    unsigned int  time_to_live = 0);
@@ -135,19 +135,19 @@ public:
     ///
     /// @param key
     ///    NetCache key, if empty new key is created
-    ///    
+    ///
     /// @param time_to_live
-    ///    BLOB time to live value in seconds. 
+    ///    BLOB time to live value in seconds.
     ///    0 - server side default is assumed.
-    /// 
+    ///
     /// @return
-    ///    IReader* (caller must delete this). 
+    ///    IReader* (caller must delete this).
     virtual
     IWriter* PutData(string* key, unsigned int  time_to_live = 0);
 
     /// Update an existing BLOB
     ///
-    virtual 
+    virtual
     string PutData(const string& key,
                    const void*   buf,
                    size_t        size,
@@ -166,8 +166,8 @@ public:
     /// IReader* MUST be deleted before calling any other
     /// method and before destruction of CNetCacheClient.
     ///
-    /// @note 
-    ///   IReader implementation used here is TCP/IP socket 
+    /// @note
+    ///   IReader implementation used here is TCP/IP socket
     ///   based, so when reading the BLOB please remember to check
     ///   IReader::Read return codes, it may not be able to read
     ///   the whole BLOB in one call because of network delays.
@@ -179,16 +179,16 @@ public:
     /// @param lock_mode
     ///    Blob locking mode
     /// @return
-    ///    IReader* (caller must delete this). 
+    ///    IReader* (caller must delete this).
     ///    NULL means that BLOB was not found (expired).
-    virtual 
-    IReader* GetData(const string& key, 
+    virtual
+    IReader* GetData(const string& key,
                      size_t*       blob_size = 0,
                      ELockMode     lock_mode = eLockWait);
 
-    /// NetCache server locks BLOB so only one client can 
+    /// NetCache server locks BLOB so only one client can
     /// work with one BLOB at a time. Method returns TRUE
-    /// if BLOB is locked at the moment. 
+    /// if BLOB is locked at the moment.
     ///
     /// @return TRUE if BLOB exists and locked by another client
     /// FALSE if BLOB not found or not locked
@@ -210,7 +210,7 @@ public:
     /// Structure to read BLOB in memory
     struct SBlobData
     {
-        AutoPtr<unsigned char, 
+        AutoPtr<unsigned char,
                 ArrayDeleter<unsigned char> >  blob;      ///< blob data
         size_t                                 blob_size; ///< blob size
 
@@ -222,16 +222,16 @@ public:
     /// the data from the server.
     ///
     /// Blob size and binary data is placed into blob_to_read structure.
-    /// Do not use this method if you are not sure you have memory 
+    /// Do not use this method if you are not sure you have memory
     /// to load the whole BLOB.
-    /// 
+    ///
     /// @return
     ///    eReadComplete if BLOB found (eNotFound otherwise)
     virtual
     EReadResult GetData(const string& key, SBlobData& blob_to_read);
 
     /// Remove BLOB by key
-    virtual 
+    virtual
     void Remove(const string& key);
 
 
@@ -240,7 +240,7 @@ public:
     /// IReader/IWriter because they sometimes cannot throw exceptions
     /// (intercepted by C++ stream library)
     ///
-    /// This method can be called once to get error, repeated call 
+    /// This method can be called once to get error, repeated call
     /// returns empty string
     virtual
     string GetCommErrMsg();
@@ -250,10 +250,10 @@ public:
     ///
     /// @note
     ///    Function waits for enough data to arrive.
-    virtual 
+    virtual
     EReadResult GetData(const string&  key,
-                        void*          buf, 
-                        size_t         buf_size, 
+                        void*          buf,
+                        size_t         buf_size,
                         size_t*        n_read    = 0,
                         size_t*        blob_size = 0);
 
@@ -301,10 +301,10 @@ protected:
     /// command
     void MakeCommandPacket(string* out_str, const string& cmd_str);
 
-    /// If client is not already connected to the primary server it 
+    /// If client is not already connected to the primary server it
     /// tries to connect to the server specified in the BLOB key
     /// (all infomation is encoded in there)
-    virtual 
+    virtual
     void CheckConnect(const string& key);
 
     /// @return netcache key
@@ -317,7 +317,7 @@ protected:
     friend class CNetCache_WriterErrCheck;
 
 public:
-    static 
+    static
     bool CheckErrTrim(string& answer) { return x_CheckErrTrim(answer); }
 
 protected:
@@ -342,14 +342,14 @@ protected:
 
 /// Client API for NetCache server.
 ///
-/// The same API as provided by CNetCacheClient, 
+/// The same API as provided by CNetCacheClient,
 /// only integrated with NCBI load balancer
 ///
 /// Rebalancing is based on a combination of rebalance parameters,
-/// when rebalance parameter is not zero and that parameter has been 
-/// reached client connects to NCBI load balancing service (could be a 
+/// when rebalance parameter is not zero and that parameter has been
+/// reached client connects to NCBI load balancing service (could be a
 /// daemon or a network instance) and obtains the most available server.
-/// 
+///
 /// The intended use case for this client is long living programs like
 /// services or fast CGIs or any other program running a lot of NetCache
 /// requests.
@@ -372,7 +372,7 @@ public:
     /// @param rebalance_time
     ///    Number of seconds after which client is rebalanced
     /// @param rebalance_requests
-    ///    Number of requests before rebalancing. 
+    ///    Number of requests before rebalancing.
     /// @param rebalance_bytes
     ///    Read/Write bytes before rebalancing occures
     ///
@@ -403,11 +403,11 @@ public:
     void EnableServiceBackup(TServiceBackupMode backup_mode = EFullBackup);
 
 
-    virtual 
+    virtual
     string PutData(const void*   buf,
                    size_t        size,
                    unsigned int  time_to_live = 0);
-    virtual 
+    virtual
     string PutData(const string& key,
                    const void*   buf,
                    size_t        size,
@@ -415,8 +415,8 @@ public:
     virtual
     IWriter* PutData(string* key, unsigned int  time_to_live = 0);
 
-    virtual 
-    IReader* GetData(const string& key, 
+    virtual
+    IReader* GetData(const string& key,
                      size_t*       blob_size = 0,
                      ELockMode     lock_mode = eLockWait);
     virtual
@@ -426,19 +426,19 @@ public:
     string GetOwner(const string& key);
 
 
-    virtual 
+    virtual
     void Remove(const string& key);
-    virtual 
+    virtual
     EReadResult GetData(const string&  key,
-                        void*          buf, 
-                        size_t         buf_size, 
+                        void*          buf,
+                        size_t         buf_size,
                         size_t*        n_read    = 0,
                         size_t*        blob_size = 0);
     virtual
     EReadResult GetData(const string& key, SBlobData& blob_to_read);
 
 protected:
-    virtual 
+    virtual
     void CheckConnect(const string& key);
 
 private:
@@ -488,7 +488,7 @@ public:
                          unsigned short port);
 
     /// Parse blob key, extract id
-    static 
+    static
     unsigned int GetBlobId(const string& key_str);
 
 public:
@@ -501,7 +501,7 @@ public:
 
 
 
-/// IReader/IWriter implementation 
+/// IReader/IWriter implementation
 ///
 /// @internal
 ///
@@ -542,7 +542,7 @@ public:
     void FinishTransmission();
 
     /// Set BLOB diagnostic comments
-    void SetBlobComment(const string& comment) 
+    void SetBlobComment(const string& comment)
     {
         m_BlobComment = comment;
     }
@@ -565,25 +565,25 @@ protected:
 /// IWriter with error checking
 ///
 /// @internal
-class NCBI_XCONNECT_EXPORT CNetCache_WriterErrCheck 
+class NCBI_XCONNECT_EXPORT CNetCache_WriterErrCheck
 					: public CTransmissionWriter
 {
 public:
     typedef CTransmissionWriter TParent;
 
-    CNetCache_WriterErrCheck(CNetCacheSock_RW* wrt, 
+    CNetCache_WriterErrCheck(CNetCacheSock_RW* wrt,
                              EOwnership        own_writer,
                              CNetCacheClient*  parent,
                              CTransmissionWriter::ESendEofPacket send_eof =
                                  CTransmissionWriter::eDontSendEofPacket);
     virtual ~CNetCache_WriterErrCheck();
 
-    virtual 
+    virtual
     ERW_Result Write(const void* buf,
                      size_t      count,
                      size_t*     bytes_written = 0);
 
-    virtual 
+    virtual
     ERW_Result Flush(void);
 
 protected:

@@ -50,7 +50,7 @@ static inline void s_CopyStream(CNcbiIstream& is, CNcbiOstream& os, size_t bytes
         size_t bytes_to_read = min(bytes, kBufSize);
         is.read(&buf[0], bytes_to_read);
         size_t bytes_to_write = is.gcount();
-        os.write(&buf[0], bytes_to_write);        
+        os.write(&buf[0], bytes_to_write);
         bytes -= bytes_to_write;
     }
 }
@@ -66,7 +66,7 @@ static inline string s_ReadBlob(CNcbiIstream& is, IBlobStorage& storage)
     return blob_key;
 }
 
-static inline void s_WriteBlob(CNcbiOstream& os, const string& blobkey, 
+static inline void s_WriteBlob(CNcbiOstream& os, const string& blobkey,
                                IBlobStorage& storage)
 {
     if (!blobkey.empty()) {
@@ -84,26 +84,26 @@ static inline void s_WriteBlob(CNcbiOstream& os, const string& blobkey,
 class CRemoteAppRequestSB_Impl : public IRemoteAppRequest_Impl
 {
 public:
-    explicit CRemoteAppRequestSB_Impl(IBlobStorage* storage)  
-        : IRemoteAppRequest_Impl(storage), 
+    explicit CRemoteAppRequestSB_Impl(IBlobStorage* storage)
+        : IRemoteAppRequest_Impl(storage),
           m_EmptyStream((const char*)"",0)
     {
         m_EmptyStream.setstate(IOS_BASE::eofbit);
     }
 
-    ~CRemoteAppRequestSB_Impl() 
+    ~CRemoteAppRequestSB_Impl()
     {
         try {
             Reset();
         } NCBI_CATCH_ALL_X(17, "CRemoteAppRequestSB_Impl::~CRemoteAppRequestSB_Impl()");
     }
 
-    CNcbiOstream& GetStdInForWrite() 
-    {         
+    CNcbiOstream& GetStdInForWrite()
+    {
         return GetInBlob().CreateOStream(m_StdInKey);
     }
-    CNcbiIstream& GetStdInForRead() 
-    { 
+    CNcbiIstream& GetStdInForRead()
+    {
         if (!m_StdInKey.empty())
             return GetInBlob().GetIStream(m_StdInKey);
         return m_EmptyStream;
@@ -118,7 +118,7 @@ public:
     void Deserialize(CNcbiIstream& is);
 
     void Reset();
-       
+
 private:
     string                 m_StdInKey;
     CNcbiIstrstream m_EmptyStream;
@@ -157,8 +157,8 @@ void CRemoteAppRequestSB_Impl::Serialize(CNcbiOstream& os)
         ifstream ifstr(fname.c_str());
         WriteStrWithLen(os, fname);
         os << len << " ";
-        if (len > 0) os << ifstr.rdbuf();        
-    }    
+        if (len > 0) os << ifstr.rdbuf();
+    }
 
     Reset();
 }
@@ -166,7 +166,7 @@ void CRemoteAppRequestSB_Impl::Serialize(CNcbiOstream& os)
 void CRemoteAppRequestSB_Impl::Deserialize(CNcbiIstream& is)
 {
     Reset();
-    
+
     ReadStrWithLen(is,m_AppName);
     string cmdline; ReadStrWithLen(is,cmdline); SetCmdLine(cmdline);
     int timeout; is >> timeout; SetAppRunTimeout(timeout);
@@ -190,7 +190,7 @@ void CRemoteAppRequestSB_Impl::Deserialize(CNcbiIstream& is)
         size_t len;
         is >> len;
         CFile file(fname);
-        string nfname = GetWorkingDir() + CDirEntry::GetPathSeparator() 
+        string nfname = GetWorkingDir() + CDirEntry::GetPathSeparator()
             + file.GetName();
         CNcbiOfstream of(nfname.c_str());
         char c; is.read(&c,1); // read delemiter between data size and data itself
@@ -313,25 +313,25 @@ public:
         m_EmptyStream.setstate(IOS_BASE::eofbit);
     }
 
-    ~CRemoteAppResultSB_Impl() 
+    ~CRemoteAppResultSB_Impl()
     {
         try {
             Reset();
         } NCBI_CATCH_ALL_X(18, "CRemoteAppResultSB_Impl::~CRemoteAppResultSB_Impl()");
     }
 
-    CNcbiIstream& GetStdOutForRead() 
-    { 
-        if (!m_StdOutKey.empty()) 
-            return GetOutBlob().GetIStream(m_StdOutKey); 
+    CNcbiIstream& GetStdOutForRead()
+    {
+        if (!m_StdOutKey.empty())
+            return GetOutBlob().GetIStream(m_StdOutKey);
         return m_EmptyStream;
     }
     CNcbiOstream& GetStdOutForWrite() { return GetOutBlob().CreateOStream(m_StdOutKey); }
 
-    CNcbiIstream& GetStdErrForRead() 
+    CNcbiIstream& GetStdErrForRead()
     {
         if (!m_StdErrKey.empty())
-            return GetErrBlob().GetIStream(m_StdErrKey); 
+            return GetErrBlob().GetIStream(m_StdErrKey);
         return m_EmptyStream;
     }
     CNcbiOstream& GetStdErrForWrite() { return GetErrBlob().CreateOStream(m_StdErrKey); }
@@ -345,7 +345,7 @@ private:
 
     string m_StdOutKey;
     string m_StdErrKey;
-    
+
     CNcbiIstrstream m_EmptyStream;
 };
 
@@ -353,10 +353,10 @@ void CRemoteAppResultSB_Impl::Serialize(CNcbiOstream& os)
 {
     GetOutBlob().Reset();
     GetErrBlob().Reset();
-    s_WriteBlob(os, m_StdOutKey, GetOutBlob());       
-    s_WriteBlob(os, m_StdErrKey, GetErrBlob());       
+    s_WriteBlob(os, m_StdOutKey, GetOutBlob());
+    s_WriteBlob(os, m_StdErrKey, GetErrBlob());
     os << GetRetCode();
-    Reset();    
+    Reset();
 }
 void CRemoteAppResultSB_Impl::Deserialize(CNcbiIstream& is)
 {
@@ -424,7 +424,7 @@ CNcbiOstream& CRemoteAppResultSB_Executer::GetStdErr()
 {
     return m_Impl->GetStdErrForWrite();
 }
-   
+
 void CRemoteAppResultSB_Executer::SetRetCode(int ret_code)
 {
     m_Impl->SetRetCode(ret_code);

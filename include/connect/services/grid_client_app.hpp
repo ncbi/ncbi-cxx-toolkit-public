@@ -42,7 +42,7 @@
 
 
 /// @file grid_client_app.hpp
-/// NetSchedule Framework specs. 
+/// NetSchedule Framework specs.
 ///
 
 BEGIN_NCBI_SCOPE
@@ -53,15 +53,15 @@ BEGIN_NCBI_SCOPE
  */
 
 /// Grid Client Application
-/// 
+///
 class NCBI_XCONNECT_EXPORT CGridClientApp : public CNcbiApplication
 {
 public:
-    CGridClientApp(CNetScheduleAPI* ns_client = NULL, 
+    CGridClientApp(CNetScheduleAPI* ns_client = NULL,
                    IBlobStorage*       storage = NULL);
 
     /// If you override this method, do call CGridClientApp::Init()
-    /// from inside your overriding method.    
+    /// from inside your overriding method.
     virtual void Init(void);
 
     virtual ~CGridClientApp();

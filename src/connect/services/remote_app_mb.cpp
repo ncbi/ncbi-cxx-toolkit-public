@@ -65,37 +65,37 @@ public:
         } NCBI_CATCH_ALL_X(14, "CBlobStreamHelper::~CBlobStreamHelper()");
     }
 
-    CNcbiOstream& GetOStream(const string& fname = "", 
+    CNcbiOstream& GetOStream(const string& fname = "",
                              EStdOutErrStorageType type = eBlobStorage,
                              size_t max_inline_size = kMaxBlobInlineSize)
     {
         if (!m_OStream.get()) {
             _ASSERT(!m_IStream.get());
-            auto_ptr<IWriter> writer( 
+            auto_ptr<IWriter> writer(
                         new CStringOrBlobStorageWriter(max_inline_size,
                                                        *m_Storage,
                                                        *m_Data)
                         );
-            m_OStream.reset(new CWStream(writer.release(), 
+            m_OStream.reset(new CWStream(writer.release(),
                                          0, 0, CRWStreambuf::fOwnWriter
                                              | CRWStreambuf::fLogExceptions));
             m_OStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
             *m_OStream << (int) type << " ";
             WriteStrWithLen(*m_OStream, fname);
-            if (!fname.empty() && type == eLocalFile) {                   
+            if (!fname.empty() && type == eLocalFile) {
                 m_OStream.reset(new CNcbiOfstream(fname.c_str()));
                 if (!m_OStream->good()) {
-                    NCBI_THROW(CFileException, eRelativePath, 
+                    NCBI_THROW(CFileException, eRelativePath,
                                "Cannot open " + fname + " for output");
                 }
                 m_OStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
             }
         }
-        return *m_OStream; 
+        return *m_OStream;
     }
 
-    CNcbiIstream& GetIStream(string* fname = NULL, 
-                             EStdOutErrStorageType* type = NULL) 
+    CNcbiIstream& GetIStream(string* fname = NULL,
+                             EStdOutErrStorageType* type = NULL)
     {
         if (!m_IStream.get()) {
             _ASSERT(!m_OStream.get());
@@ -125,7 +125,7 @@ public:
                 }
                 return *m_IStream;
             }
-            
+
             if (fname) *fname = name;
             if (type) *type = (EStdOutErrStorageType)tmp;
             if (!name.empty() && (EStdOutErrStorageType)tmp == eLocalFile) {
@@ -134,13 +134,13 @@ public:
                     m_IStream.reset(fstr.release());
                     m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
                 } else {
-                    msg = "Can not open " + name + " of input";                   
+                    msg = "Can not open " + name + " of input";
                     ERR_POST_X(2, msg);
                     m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
                 }
             }
         }
-        return *m_IStream; 
+        return *m_IStream;
     }
     void Reset()
     {
@@ -160,19 +160,19 @@ private:
 class CRemoteAppRequestMB_Impl : public IRemoteAppRequest_Impl
 {
 public:
-    explicit CRemoteAppRequestMB_Impl(IBlobStorage* storage, size_t max_inline_size) 
+    explicit CRemoteAppRequestMB_Impl(IBlobStorage* storage, size_t max_inline_size)
         : IRemoteAppRequest_Impl(storage),
           m_StdInDataSize(0),
           m_StorageType(eBlobStorage),
           m_ExlusiveMode(false),
           m_MaxInlineSize(max_inline_size)
     {
-        m_StdIn.reset(new CBlobStreamHelper(GetInBlob(), 
+        m_StdIn.reset(new CBlobStreamHelper(GetInBlob(),
                                             m_InBlobIdOrData,
                                             m_StdInDataSize));
     }
 
-    ~CRemoteAppRequestMB_Impl() 
+    ~CRemoteAppRequestMB_Impl()
     {
         try {
             Reset();
@@ -180,16 +180,16 @@ public:
 
     }
 
-    CNcbiOstream& GetStdInForWrite() 
-    { 
+    CNcbiOstream& GetStdInForWrite()
+    {
         return m_StdIn->GetOStream("", eBlobStorage, m_MaxInlineSize);
     }
-    CNcbiIstream& GetStdInForRead() 
-    { 
+    CNcbiIstream& GetStdInForRead()
+    {
         return m_StdIn->GetIStream();
     }
 
-    
+
     void SetExclusiveMode(bool on_off) { m_ExlusiveMode = on_off; }
     bool IsExclusiveMode() const { return m_ExlusiveMode; }
 
@@ -199,7 +199,7 @@ public:
                                EStdOutErrStorageType type)
     {
         m_StdOutFileName = stdout_fname;
-        m_StdErrFileName = stderr_fname;         
+        m_StdErrFileName = stderr_fname;
         m_StorageType = type;
     }
 
@@ -217,9 +217,9 @@ public:
 
     void Reset();
 
-        
+
 private:
-    
+
     size_t                   m_StdInDataSize;
     mutable auto_ptr<CBlobStreamHelper>   m_StdIn;
 
@@ -259,7 +259,7 @@ void CRemoteAppRequestMB_Impl::Serialize(CNcbiOstream& os)
             LOG_POST_X(4, Warning << "File :\"" << fname << "\" is not found in cmdline. Skipping.");
             continue;
         }
-        
+
         CNcbiIfstream inf(fname.c_str());
         if (inf.good()) {
             CNcbiOstream& of = GetInBlob().CreateOStream(blobid);
@@ -305,7 +305,7 @@ static void s_ReplaceArg( vector<string>& args, const string& old_fname,
 void CRemoteAppRequestMB_Impl::Deserialize(CNcbiIstream& is)
 {
     Reset();
-    
+
     string cmdline; ReadStrWithLen(is,cmdline); SetCmdLine(cmdline);
     ReadStrWithLen(is,m_InBlobIdOrData);
 
@@ -327,10 +327,10 @@ void CRemoteAppRequestMB_Impl::Deserialize(CNcbiIstream& is)
         if (!is.good()) return;
         if (blobid == kLocalFSSign) {
             string nfname;
-            if ( x_CopyLocalFile(fname, nfname) ) 
+            if ( x_CopyLocalFile(fname, nfname) )
                 s_ReplaceArg(args, fname, nfname);
         } else {
-            string nfname = GetWorkingDir() + CDirEntry::GetPathSeparator() 
+            string nfname = GetWorkingDir() + CDirEntry::GetPathSeparator()
                 + blobid;
             CNcbiOfstream of(nfname.c_str());
             if (of.good()) {
@@ -352,14 +352,13 @@ void CRemoteAppRequestMB_Impl::Deserialize(CNcbiIstream& is)
     is >> tmp;
     m_StorageType = (EStdOutErrStorageType)tmp;
     if (!is.good()) return;
-    is >> tmp; SetAppRunTimeout(tmp); 
+    is >> tmp; SetAppRunTimeout(tmp);
     if (!is.good()) return;
     is >> tmp;
-    m_ExlusiveMode = (bool)tmp;
-
+    m_ExlusiveMode = tmp != 0;
 }
 
-bool CRemoteAppRequestMB_Impl::x_CopyLocalFile(const string& old_fname, 
+bool CRemoteAppRequestMB_Impl::x_CopyLocalFile(const string& old_fname,
                                                string& new_fname)
 {
     return false;
@@ -391,11 +390,11 @@ void CRemoteAppRequestMB::AddFileForTransfer(const string& fname, ETrasferType t
 
 void CRemoteAppRequestMB::Send(CNcbiOstream& os)
 {
-    m_Impl->Serialize(os);    
+    m_Impl->Serialize(os);
 }
 
 /*
-void CRemoteAppRequestMB::RequestExclusiveMode() 
+void CRemoteAppRequestMB::RequestExclusiveMode()
 {
     m_Impl->SetExclusiveMode(true);
 }
@@ -438,26 +437,26 @@ CNcbiIstream& CRemoteAppRequestMB_Executer::GetStdIn()
 {
     return m_Impl->GetStdInForRead();
 }
-const string& CRemoteAppRequestMB_Executer::GetCmdLine() const 
+const string& CRemoteAppRequestMB_Executer::GetCmdLine() const
 {
     return m_Impl->GetCmdLine();
 }
-unsigned int CRemoteAppRequestMB_Executer::GetAppRunTimeout() const 
+unsigned int CRemoteAppRequestMB_Executer::GetAppRunTimeout() const
 {
     return m_Impl->GetAppRunTimeout();
 }
 
-const string& CRemoteAppRequestMB_Executer::GetWorkingDir() const 
-{ 
-    return m_Impl->GetWorkingDir(); 
+const string& CRemoteAppRequestMB_Executer::GetWorkingDir() const
+{
+    return m_Impl->GetWorkingDir();
 }
 
-const string& CRemoteAppRequestMB_Executer::GetStdOutFileName() const 
-{ 
-    return m_Impl->GetStdOutFileName(); 
+const string& CRemoteAppRequestMB_Executer::GetStdOutFileName() const
+{
+    return m_Impl->GetStdOutFileName();
 }
-const string& CRemoteAppRequestMB_Executer::GetStdErrFileName() const 
-{ 
+const string& CRemoteAppRequestMB_Executer::GetStdErrFileName() const
+{
     return m_Impl->GetStdErrFileName();
 }
 /*
@@ -467,8 +466,8 @@ bool CRemoteAppRequest_Executer::IsExclusiveModeRequested() const
 }
 */
 EStdOutErrStorageType CRemoteAppRequestMB_Executer::GetStdOutErrStorageType() const
-{ 
-    return m_Impl->GetStdOutErrStorageType(); 
+{
+    return m_Impl->GetStdOutErrStorageType();
 }
 
 const string& CRemoteAppRequestMB_Executer::GetInBlobIdOrData() const
@@ -530,23 +529,23 @@ public:
         try {
             Reset();
         } NCBI_CATCH_ALL_X(16, "CRemoteAppResultMB_Impl::~CRemoteAppResultMB_Impl()");
-    }    
+    }
 
-    CNcbiOstream& GetStdOutForWrite() 
-    { 
+    CNcbiOstream& GetStdOutForWrite()
+    {
         return m_StdOut->GetOStream(m_StdOutFileName,m_StorageType, m_MaxInlineSize);
     }
-    CNcbiIstream& GetStdOutForRead() 
-    { 
+    CNcbiIstream& GetStdOutForRead()
+    {
         return m_StdOut->GetIStream(&m_StdOutFileName,&m_StorageType);
     }
 
-    CNcbiOstream& GetStdErrForWrite() 
-    { 
+    CNcbiOstream& GetStdErrForWrite()
+    {
         return m_StdErr->GetOStream(m_StdErrFileName,m_StorageType, m_MaxInlineSize);
     }
-    CNcbiIstream& GetStdErrForRead() 
-    { 
+    CNcbiIstream& GetStdErrForRead()
+    {
         return m_StdErr->GetIStream(&m_StdErrFileName,&m_StorageType);
     }
 
@@ -561,7 +560,7 @@ public:
                                EStdOutErrStorageType type)
     {
         m_StdOutFileName = stdout_fname;
-        m_StdErrFileName = stderr_fname;         
+        m_StdErrFileName = stderr_fname;
         m_StorageType = type;
     }
     const string& GetStdOutFileName() const { return m_StdOutFileName; }
@@ -624,7 +623,7 @@ void CRemoteAppResultMB_Impl::Reset()
 
 CRemoteAppResultMB_Executer::
 CRemoteAppResultMB_Executer(IBlobStorageFactory& factory)
-    : m_Impl(new CRemoteAppResultMB_Impl(factory.CreateInstance(), 
+    : m_Impl(new CRemoteAppResultMB_Impl(factory.CreateInstance(),
                                          factory.CreateInstance(),
                                          kMaxBlobInlineSize))
 {
@@ -691,7 +690,7 @@ void CRemoteAppResultMB_Executer::SetMaxOutputSize(size_t max_output_size)
 
 CRemoteAppResultMB::
 CRemoteAppResultMB(IBlobStorageFactory& factory)
-    : m_Impl(new CRemoteAppResultMB_Impl(factory.CreateInstance(), 
+    : m_Impl(new CRemoteAppResultMB_Impl(factory.CreateInstance(),
                                          factory.CreateInstance(),
                                          kMaxBlobInlineSize))
 {
@@ -713,17 +712,17 @@ int CRemoteAppResultMB::GetRetCode() const
     return m_Impl->GetRetCode();
 }
 
-const string& CRemoteAppResultMB::GetStdOutFileName() const 
-{ 
-    return m_Impl->GetStdOutFileName(); 
+const string& CRemoteAppResultMB::GetStdOutFileName() const
+{
+    return m_Impl->GetStdOutFileName();
 }
-const string& CRemoteAppResultMB::GetStdErrFileName() const 
-{ 
+const string& CRemoteAppResultMB::GetStdErrFileName() const
+{
     return m_Impl->GetStdErrFileName();
 }
 EStdOutErrStorageType CRemoteAppResultMB::GetStdOutErrStorageType() const
-{ 
-    return m_Impl->GetStdOutErrStorageType(); 
+{
+    return m_Impl->GetStdOutErrStorageType();
 }
 
 void CRemoteAppResultMB::Receive(CNcbiIstream& is)
