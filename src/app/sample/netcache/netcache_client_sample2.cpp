@@ -99,7 +99,7 @@ int CSampleNetCacheClient::Run(void)
     nc_client.reset(
             new CNetCacheAPI(service_name, "nc_client_sample2"));
 
-    nc_client->SetConnMode(INetServiceAPI::eKeepConnection);
+    nc_client->SetConnMode(CNetCacheAPI::eKeepConnection);
 
     //const char test_data[] = "A quick brown fox, jumps over lazy dog.";
     const char test_data[] = "1234565 y dog.";

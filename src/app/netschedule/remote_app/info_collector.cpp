@@ -173,7 +173,7 @@ CNSInfoCollector::CNSInfoCollector(const string& queue,
       m_Factory(factory)
 {
     m_Services->DiscoverLowPriorityServers(eOn);
-    m_Services->SetConnMode(INetServiceAPI::eKeepConnection);
+    m_Services->SetConnMode(CNetScheduleAPI::eKeepConnection);
 }
 
 CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)

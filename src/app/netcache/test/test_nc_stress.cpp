@@ -535,7 +535,7 @@ int CTestNetCacheStressApp::Run(void)
 
 
     auto_ptr<CNetCacheAPI> nc(new CNetCacheAPI(service_name, "stress_test"));
-    nc->SetConnMode(INetServiceAPI::eKeepConnection);
+    nc->SetConnMode(CNetCacheAPI::eKeepConnection);
     STimeout to = {timeout/1000, timeout*1000};
     nc->SetCommunicationTimeout(to);
 

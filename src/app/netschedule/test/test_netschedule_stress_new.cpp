@@ -220,7 +220,7 @@ void TestBatchSubmit(const string& service,
 {
     CNetScheduleAPI cl(service, "stress_test", queue_name);
     cl.SetProgramVersion("test 1.0.0");
-    cl.SetConnMode(INetServiceAPI::eKeepConnection);
+    cl.SetConnMode(CNetScheduleAPI::eKeepConnection);
    
     typedef vector<CNetScheduleJob> TJobs;
     TJobs jobs;
@@ -331,8 +331,8 @@ int CTestNetScheduleStress::Run(void)
     CNetScheduleAPI::EJobStatus status;
     CNetScheduleAPI cl(service, "stress_test", queue);
     cl.SetProgramVersion("test wn 1.0.1");
-    cl.SetConnMode(keepconn? INetServiceAPI::eKeepConnection 
-                           : INetServiceAPI::eCloseConnection);
+    cl.SetConnMode(keepconn? CNetScheduleAPI::eKeepConnection 
+                           : CNetScheduleAPI::eCloseConnection);
 
     {
         CNetScheduleAdmin admin = cl.GetAdmin();

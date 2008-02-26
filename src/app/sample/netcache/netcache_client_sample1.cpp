@@ -102,7 +102,7 @@ int CSampleNetCacheClient::Run(void)
         // create load balanced client
         string service_name = args["service"].AsString();
         nc_client.reset(new CNetCacheAPI(service_name, "nc_client_sample1"));
-        nc_client->SetConnMode(INetServiceAPI::eKeepConnection);
+        nc_client->SetConnMode(CNetCacheAPI::eKeepConnection);
     } 
     else {
         ERR_POST("Invalid network address. Use -service option.");
