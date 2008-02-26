@@ -51,6 +51,9 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+// When adding to these lists, please take care to keep them in
+// case-sensitive sorted order (lowercase entries last).
+
 typedef pair<const char*, CDbtag::EDbtagType> TDbxrefPair;
 static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("AFTOL", CDbtag::eDbtagType_AFTOL),
@@ -157,9 +160,9 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("HPRD", CDbtag::eDbtagType_HPRD),
     TDbxrefPair("PBR", CDbtag::eDbtagType_PBR),
     TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE),
-    TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase),
     TDbxrefPair("TAIR", CDbtag::eDbtagType_TAIR),
-    TDbxrefPair("VBRC", CDbtag::eDbtagType_VBRC)
+    TDbxrefPair("VBRC", CDbtag::eDbtagType_VBRC),
+    TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase)
 };
 
 // case sensetive
@@ -291,12 +294,13 @@ static const string kFBan = "http://www.fruitfly.org/cgi-bin/annot/fban?";
 static const string kHInvDbHIT = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=30&KEN_STR=";
 static const string kHInvDbHIX = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=31&KEN_STR=";
 
-// mapping of DB to its URL
+// mapping of DB to its URL; please sort these by tag name (mostly in
+// case-sensitive ASCII-betical order as above)
 typedef pair<CDbtag::EDbtagType, string>    TDbtUrl;
 static const TDbtUrl sc_url_prefix[] = {
+    TDbtUrl(CDbtag::eDbtagType_AFTOL, "http://aftol.biology.duke.edu/pub/displayTaxonInfo?aftol_id="), 
     TDbtUrl(CDbtag::eDbtagType_ASAP, "https://asap.ahabs.wisc.edu/annotation/php/feature_info.php?FeatureID="),
     TDbtUrl(CDbtag::eDbtagType_AceView_WormGenes, "http://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q="), 
-    TDbtUrl(CDbtag::eDbtagType_AFTOL, "http://aftol.biology.duke.edu/pub/displayTaxonInfo?aftol_id="), 
     TDbtUrl(CDbtag::eDbtagType_ApiDB, "http://www.apidb.org/apidb/showRecord.do?name=GeneRecordClasses.ApiDBGeneRecordClass&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_CryptoDB, "http://cryptodb.org/cryptodb/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_PlasmoDB, "http://www.plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
@@ -345,10 +349,10 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_SEED, "http://www.theseed.org/linkin.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_SGD, "http://db.yeastgenome.org/cgi-bin/SGD/locus.pl?locus="),
     TDbtUrl(CDbtag::eDbtagType_SubtiList, "http://genolist.pasteur.fr/SubtiList/genome.cgi?external_query+"),
+    TDbtUrl(CDbtag::eDbtagType_TIGRFAM, "http://cmr.tigr.org/tigr-scripts/CMR/HmmReport.cgi?hmm_acc="),
     TDbtUrl(CDbtag::eDbtagType_UniProt_SwissProt, "http://www.uniprot.org/entry/"),
     TDbtUrl(CDbtag::eDbtagType_UniProt_TrEMBL, "http://www.uniprot.org/entry/"),
     TDbtUrl(CDbtag::eDbtagType_UniSTS, "http://www.ncbi.nlm.nih.gov/genome/sts/sts.cgi?uid="),
-    TDbtUrl(CDbtag::eDbtagType_TIGRFAM, "http://cmr.tigr.org/tigr-scripts/CMR/HmmReport.cgi?hmm_acc="),
     TDbtUrl(CDbtag::eDbtagType_VBASE2, "http://www.dnaplot.de/vbase2/vgene.php?id="),
     TDbtUrl(CDbtag::eDbtagType_VectorBase, "http://www.vectorbase.org/Genome/BRCGene/?"),
     TDbtUrl(CDbtag::eDbtagType_WorfDB, "http://worfdb.dfci.harvard.edu/search.pl?form=1&search="),
