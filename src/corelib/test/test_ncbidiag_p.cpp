@@ -59,8 +59,9 @@ private:
     void x_TestPathes(void);
     void x_TestFormats(void);
     void x_CheckDiag(CNcbiDiag *diag, const string& desc, bool module_expected);
-    void x_TestDiagCompileInfo();
-    void x_TestSeverity();
+    void x_TestDiagCompileInfo(void);
+    void x_TestSeverity(void);
+    void x_TestErrCode(void);
 
     int        m_Result;
     TNcbiDiags m_Diags;
@@ -120,7 +121,7 @@ void CTest::x_TestString(const char* str, int expects[])
         NcbiCout << setw(45) << (string) CNcbiOstrstreamToString(out) << " "
                  << ( expects[i] ? "accept" : "reject" ) << " expected - ";
         if ( (tester.Check(*m_Diags[i], eDiag_Fatal) == eDiagFilter_Accept)
-             == bool(expects[i])) {
+             == (expects[i] != 0)) {
             NcbiCout << "PASS";
         } else {
             NcbiCout << "FAIL";
@@ -340,6 +341,51 @@ void CTest::x_TestSeverity()
     LOG_POST(Info    << MDiagModule("module3") << "Test error 4");
 }
 
+void CTest::x_TestErrCode()
+{
+    NcbiCout << "Testing ErrCodes\n";
+
+    CNcbiDiag p1( CDiagCompileInfo("", 0, NCBI_CURRENT_FUNCTION) );
+    p1.SetErrorCode(-6,-10);
+    m_Diags.push_back(&p1);
+
+    CNcbiDiag p2( CDiagCompileInfo("", 0, NCBI_CURRENT_FUNCTION) );
+    p2.SetErrorCode(-6,10);
+    m_Diags.push_back(&p2);
+
+    CNcbiDiag p3( CDiagCompileInfo("", 0, NCBI_CURRENT_FUNCTION) );
+    p3.SetErrorCode(20,1);
+    m_Diags.push_back(&p3);
+
+    CNcbiDiag p4( CDiagCompileInfo("", 0, NCBI_CURRENT_FUNCTION) );
+    p4.SetErrorCode(21,1);
+    m_Diags.push_back(&p4);
+ 
+    CNcbiDiag p5( CDiagCompileInfo("", 0, NCBI_CURRENT_FUNCTION) );
+    p5.SetErrorCode(31,21);
+    m_Diags.push_back(&p5);
+
+    CNcbiDiag p6( CDiagCompileInfo("", 0, NCBI_CURRENT_FUNCTION) );
+    p6.SetErrorCode(40,1);
+    m_Diags.push_back(&p6);
+   
+    {
+        int expects[] = { 1, 1, 1, 0, 0, 1 };
+        x_TestString("(-10--5,20,30-40.) !(31.1-100)",expects);
+    }
+
+    {
+        int expects[] = { 1, 0, 0, 1, 1, 0 };
+        x_TestString("!(-10--5,20,30-40.1-20)",expects);
+    }
+
+    {
+        int expects[] = { 1, 0, 0, 1, 1, 0 };
+        x_TestString("!(20.) !(30-40.1-20) !(-6.1-100)",expects);
+    }
+    m_Diags.clear();
+}
+
 int CTest::Run(void)
 {
     x_TestBadFormats();
@@ -347,6 +393,7 @@ int CTest::Run(void)
     x_TestFormats();
     x_TestDiagCompileInfo();
     x_TestSeverity();
+    x_TestErrCode();
 
     NcbiCout << "**********************************************************************" 
              << NcbiEndl;

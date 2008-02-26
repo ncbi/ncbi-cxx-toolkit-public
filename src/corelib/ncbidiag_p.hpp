@@ -102,7 +102,7 @@ public:
 ///
 /// CDiagStrStringMatcher --
 ///
-/// Specialization of CDiagStrMatcher that macthes a given string.
+/// Specialization of CDiagStrMatcher that matches a given string.
 ///
 
 class CDiagStrStringMatcher : public CDiagStrMatcher
@@ -127,7 +127,7 @@ private:
 ///
 /// CDiagStrPathMatcher --
 ///
-/// Specialization of CDiagStrMatcher that macthes a path to the source file
+/// Specialization of CDiagStrMatcher that matches a path to the source file
 ///
 
 class CDiagStrPathMatcher : public CDiagStrMatcher
@@ -147,6 +147,41 @@ private:
     string m_Pattern;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CDiagStrErrCodeMatcher --
+///
+/// Specialization of CDiagStrMatcher that matches error codes
+///
+
+class CDiagStrErrCodeMatcher : public CDiagStrMatcher
+{
+public:
+    // Constructor - set the pattern to match.
+    // Pattern ::= coderange '.' coderange
+    // coderange ::= (int | intpair) (',' (int | intpair))*
+    // intpair ::= int '-' int
+    // int ::= integer
+    CDiagStrErrCodeMatcher(const string& pattern);
+
+    /// Return true if str matches pattern
+    /// str ::= errcode ':' subcode
+    virtual bool Match(const char* str) const;
+
+    // Print state
+    virtual void Print(ostream& out) const;
+
+private:
+    typedef int  TCode;
+    typedef vector< pair<TCode, TCode> >  TPattern;
+    
+    static void x_Parse(TPattern& pattern, const string& str);
+    static bool x_Match(const TPattern& pattern, TCode code);
+    static void x_Print(const TPattern& pattern, ostream& out);
+    TPattern m_Code;
+    TPattern m_SubCode;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -160,14 +195,18 @@ class CDiagMatcher
 public:
     // Takes ownership of module, nclass and function.
     // If NULL pointer passed as CDiagStrMatcher*, then it accepts anything
-    CDiagMatcher(CDiagStrMatcher*  file,
+    CDiagMatcher(CDiagStrMatcher*  errcode,
+                 CDiagStrMatcher*  file,
                  CDiagStrMatcher*  module, 
                  CDiagStrMatcher*  nclass, 
                  CDiagStrMatcher*  func,
                  EDiagFilterAction action)
-        : m_File(file), m_Module(module), m_Class(nclass), m_Function(func), 
+        : m_ErrCode(errcode), m_File(file),
+          m_Module(module), m_Class(nclass), m_Function(func), 
           m_Action(action), m_DiagSev(eDiag_Info)
     {}
+
+    EDiagFilterAction MatchErrCode(int code, int subcode) const;
 
     // Check if the filter accepts a filename
     EDiagFilterAction MatchFile(const char* file) const;
@@ -184,6 +223,7 @@ public:
     void SetSeverity(EDiagSev sev) { m_DiagSev = sev; }
 
 private:
+    AutoPtr<CDiagStrMatcher> m_ErrCode;
     AutoPtr<CDiagStrMatcher> m_File;
     AutoPtr<CDiagStrMatcher> m_Module;
     AutoPtr<CDiagStrMatcher> m_Class;
@@ -208,6 +248,8 @@ public:
     // 'tors
     CDiagFilter(void);
     ~CDiagFilter(void);
+
+    EDiagFilterAction CheckErrCode(int code, int subcode) const;
 
     // Check if the filter accepts the pass
     EDiagFilterAction CheckFile(const char* file) const;
@@ -280,6 +322,7 @@ public:
         eDoubleColon,    // ::
         ePars,           // ()
         eBrackets,       // []
+        eErrCode,        // (code.subcode)
         eEnd             // end of stream
     };
 
@@ -341,7 +384,8 @@ private:
 private:
     typedef vector< AutoPtr<CDiagStrMatcher> >  TMatchers;
     TMatchers                 m_Matchers;
-    AutoPtr<CDiagStrMatcher>  m_FileMatcher;             
+    AutoPtr<CDiagStrErrCodeMatcher>  m_ErrCodeMatcher;
+    AutoPtr<CDiagStrMatcher>  m_FileMatcher;
     int                       m_Pos;
     bool                      m_Negative;
     EDiagSev                  m_DiagSev;

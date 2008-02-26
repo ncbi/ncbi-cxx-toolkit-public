@@ -139,6 +139,89 @@ void CDiagStrPathMatcher::Print(ostream& out) const
     out << m_Pattern;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//  CDiagStrErrCodeMatcher
+
+CDiagStrErrCodeMatcher::CDiagStrErrCodeMatcher(const string& pattern)
+{
+    string code, subcode;
+    NStr::SplitInTwo(pattern,".",code, subcode);
+    x_Parse(m_Code,code);
+    x_Parse(m_SubCode,subcode);
+}
+
+bool CDiagStrErrCodeMatcher::Match(const char* str) const
+{
+    string first, second;
+    NStr::SplitInTwo(str,".", first, second);
+    if (!first.empty() && !second.empty()) {
+        TCode code    = NStr::StringToInt( first);
+        TCode subcode = NStr::StringToInt( second);
+        return x_Match(m_Code,code) && x_Match(m_SubCode, subcode);
+    }
+    return false;
+}
+
+void CDiagStrErrCodeMatcher::Print(ostream& out) const
+{
+    x_Print(m_Code,out);
+    out << '.';
+    x_Print(m_SubCode,out);
+}
+
+void CDiagStrErrCodeMatcher::x_Parse(TPattern& pattern, const string& str)
+{
+    list<string> loc;
+    NStr::Split( str,",",loc);
+    list<string>::iterator it_loc;
+    for (it_loc = loc.begin(); it_loc != loc.end(); ++it_loc) {
+        string first, second;
+        const string& loc = *it_loc;
+        size_t shift = 0;
+        if (loc[0] == '-') {
+            shift = 1;
+        }
+        NStr::SplitInTwo( loc.c_str() + shift,"-",first,second);
+        if (!first.empty()) {
+            TCode from, to;
+            to = from = NStr::StringToInt( first);
+            if (shift != 0) {
+                to = from = -from;
+            }
+            if (!second.empty()) {
+                to = NStr::StringToInt( second);
+            }
+            pattern.push_back( make_pair(from,to) );
+        }
+    }
+}
+
+bool CDiagStrErrCodeMatcher::x_Match(const TPattern& pattern, TCode code)
+{
+    ITERATE( TPattern, c, pattern) {
+        if (code >= c->first && code <= c->second) {
+            return true;
+        }
+    }
+    return pattern.empty();
+}
+
+void CDiagStrErrCodeMatcher::x_Print(const TPattern& pattern, ostream& out)
+{
+    bool first = true;
+    ITERATE( TPattern, c, pattern) {
+        if (!first) {
+            out << ',';
+        }
+        if (c->first != c->second) {
+            out << c->first << '-' << c->second;
+        } else {
+            out << c->first;
+        }
+        first = false;
+    }
+}
+
 
 ///////////////////////////////////////////////////////
 //  CDiagMatcher::
@@ -163,12 +246,26 @@ EDiagFilterAction CDiagMatcher::Match(const char* module,
     return m_Action;
 }
 
+EDiagFilterAction CDiagMatcher::MatchErrCode(int code, int subcode) const
+{
+    if (!m_ErrCode)
+        return eDiagFilter_None;
+    string str = NStr::IntToString(code);
+    str += '.';
+    str += NStr::IntToString(subcode);
+    if (m_ErrCode->Match(str.c_str())) {
+        return m_Action;
+    }
+    return m_Action == eDiagFilter_Reject ? 
+        eDiagFilter_Accept : eDiagFilter_None;
+}
+
 EDiagFilterAction CDiagMatcher::MatchFile(const char* file) const
 {
     if(!m_File) 
         return eDiagFilter_None;
 
-    if(m_File && m_File->Match(file))
+    if(m_File->Match(file))
         return m_Action;
 
     return m_Action == eDiagFilter_Reject ? 
@@ -193,6 +290,7 @@ void CDiagMatcher::Print(ostream& out) const
     if (m_Action == eDiagFilter_Reject)
         out << '!';
 
+    s_PrintMatcher(out, m_ErrCode,  "ErrCode"    );
     s_PrintMatcher(out, m_File,     "File"    );
     s_PrintMatcher(out, m_Module,   "Module"  );
     s_PrintMatcher(out, m_Class,    "Class"   );
@@ -247,13 +345,17 @@ EDiagFilterAction CDiagFilter::Check(const CNcbiDiag& message,
     if(m_Matchers.empty())
         return eDiagFilter_Accept;
 
-    EDiagFilterAction action = CheckFile(message.GetFile());
-    if (action == eDiagFilter_None) 
-        action = x_Check(message.GetModule(),
-                         message.GetClass(),
-                         message.GetFunction(),
-                         sev);
-
+    EDiagFilterAction action;
+    action = CheckErrCode(message.GetErrorCode(),
+                          message.GetErrorSubCode());
+    if (action == eDiagFilter_None) {
+        action = CheckFile(message.GetFile());
+        if (action == eDiagFilter_None) 
+            action = x_Check(message.GetModule(),
+                            message.GetClass(),
+                            message.GetFunction(),
+                            sev);
+    }
     if (action == eDiagFilter_None) {
         action = eDiagFilter_Reject;
     }
@@ -284,6 +386,44 @@ EDiagFilterAction CDiagFilter::Check(const CException& ex,
     return eDiagFilter_Reject;
 }
 
+EDiagFilterAction CDiagFilter::CheckErrCode(int code, int subcode) const
+// same logic as in CheckFile
+{
+    size_t not_matchers_processed = 0;
+    size_t curr_ind = 0;
+
+    ITERATE(TMatchers, i, m_Matchers) {
+        ++curr_ind;
+        EDiagFilterAction action = (*i)->MatchErrCode(code, subcode);
+
+        switch( action )
+        {
+        case eDiagFilter_Accept:
+            if ( not_matchers_processed < m_NotMatchersNum ) {
+                ++not_matchers_processed;
+                if ( curr_ind != m_Matchers.size() ) {
+                    continue;
+                } else {
+                    return eDiagFilter_Accept;
+                }
+            }
+            return eDiagFilter_Accept;
+        case eDiagFilter_Reject:
+            if ( not_matchers_processed < m_NotMatchersNum ) {
+                ++not_matchers_processed;
+                return eDiagFilter_Reject;
+            }
+            if ( curr_ind != m_Matchers.size() ) {
+                continue;
+            }
+            return eDiagFilter_Reject;
+        case eDiagFilter_None:
+            break;
+        }
+    }
+
+    return eDiagFilter_None;
+}
 
 EDiagFilterAction CDiagFilter::CheckFile(const char* file) const
 {
@@ -429,6 +569,7 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
         eExpectCloseBracket,
         eInsideId,
         eInsidePath,
+        eInsideErrCode,
         eSpace
     };
     EState state = eStart;
@@ -479,6 +620,13 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
             break;
         case eSpace :
             if ( !isspace((unsigned char) symbol) ) {
+                if ( symbol == '(' ||
+                    (symbol == '!' && CT_TO_CHAR_TYPE(in.peek()) == '(')) {
+                    in.putback( symbol );
+                    --m_Pos;
+                    state = eStart;
+                    break;
+                }
                 in.putback( symbol );
                 --m_Pos;
                 return eDone;
@@ -496,6 +644,13 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
                 break;
             if( symbol == ')' )
                 return ePars;
+            if( symbol == '+' || symbol == '-' ||
+                symbol == '.' ||
+                isdigit((unsigned char) symbol)) {
+                state = eInsideErrCode;
+                m_Str = symbol;
+                break;
+            }
             throw CDiagSyntaxParser::TErrorInfo
                 ( "wrong symbol, expected )", m_Pos );
         case eExpectCloseBracket:
@@ -519,6 +674,16 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
             if( isspace((unsigned char) symbol) )
                 return ePath;
             m_Str += symbol;
+            break;
+        case eInsideErrCode:
+            if( symbol == '+' || symbol == '-' ||
+                symbol == '.' || symbol == ',' ||
+                isdigit((unsigned char) symbol)) {
+                m_Str += symbol;
+                break;
+            }
+            if( symbol == ')' )
+                return eErrCode;
             break;
         }
     }
@@ -566,6 +731,7 @@ void CDiagSyntaxParser::x_PutIntoFilter(CDiagFilter& to, EInto into)
     case 0 :
         matcher = new CDiagMatcher
             (
+             m_ErrCodeMatcher.release(),
              m_FileMatcher.release(),
              NULL,
              NULL,
@@ -576,6 +742,7 @@ void CDiagSyntaxParser::x_PutIntoFilter(CDiagFilter& to, EInto into)
     case 1:
         matcher = new CDiagMatcher
             (
+             m_ErrCodeMatcher.release(),
              m_FileMatcher.release(),
              // the matcher goes to module if function is not enforced
              into == eFunction ? NULL : m_Matchers[0].release(),
@@ -588,6 +755,7 @@ void CDiagSyntaxParser::x_PutIntoFilter(CDiagFilter& to, EInto into)
     case 2:
         matcher = new CDiagMatcher
             (
+             m_ErrCodeMatcher.release(),
              m_FileMatcher.release(),
              // the first matcher goes to module
              m_Matchers[0].release(),
@@ -601,6 +769,7 @@ void CDiagSyntaxParser::x_PutIntoFilter(CDiagFilter& to, EInto into)
     case 3:
         matcher = new CDiagMatcher
             (
+             m_ErrCodeMatcher.release(),
              m_FileMatcher.release(),
              // the first matcher goes to module
              m_Matchers[0].release(),
@@ -615,6 +784,7 @@ void CDiagSyntaxParser::x_PutIntoFilter(CDiagFilter& to, EInto into)
         _ASSERT( false );
     }
     m_Matchers.clear();
+    m_ErrCodeMatcher = NULL;
     m_FileMatcher = NULL;
     matcher->SetSeverity(m_DiagSev);
 
@@ -710,6 +880,11 @@ void CDiagSyntaxParser::Parse(istream& in, CDiagFilter& to)
                     x_PutIntoFilter(to, eModule);
                     m_Negative = false;
                     break;
+                case CDiagLexParser::eErrCode:
+                    m_ErrCodeMatcher = new CDiagStrErrCodeMatcher(lexer.GetId());
+                    x_PutIntoFilter(to, eModule);
+                    m_Negative = false;
+                    break;
                 case CDiagLexParser::eBrackets:
                     {
                     EDiagSev sev = x_GetDiagSeverity(lexer.GetId());
@@ -739,6 +914,12 @@ void CDiagSyntaxParser::Parse(istream& in, CDiagFilter& to)
                     break;
                 case CDiagLexParser::ePath:
                     m_FileMatcher = new CDiagStrPathMatcher(lexer.GetId());
+                    x_PutIntoFilter(to, eModule);
+                    m_Negative = false;
+                    state = eStart;
+                    break;
+                case CDiagLexParser::eErrCode:
+                    m_ErrCodeMatcher = new CDiagStrErrCodeMatcher(lexer.GetId());
                     x_PutIntoFilter(to, eModule);
                     m_Negative = false;
                     state = eStart;
