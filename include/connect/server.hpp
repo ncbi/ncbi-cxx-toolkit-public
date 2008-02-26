@@ -185,6 +185,8 @@ public:
 
     /// Runs when there are insufficient resources to queue a
     /// connection, prior to closing it.
+    /// Specifically, now it can only mean that connection limit is reached.
+    // See comment for CAcceptRequest::Process and CServer::CreateRequest
     virtual void OnOverflow(void) { }
 
     /// Get underlying socket

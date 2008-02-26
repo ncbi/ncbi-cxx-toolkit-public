@@ -2409,7 +2409,7 @@ bool CBDB_Cache::Read(const string& key,
         if (ret == eBDB_Ok) {
             if (coords[0] != volume_id || 
                 coords[1] != split_id) {
-                // TO DO: restore de-mux mapping
+                // TODO: restore de-mux mapping
             }
         } else {
             // TODO: restore de-mux mapping

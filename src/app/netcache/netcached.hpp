@@ -256,8 +256,6 @@ public:
     void WriteMsg(CSocket& sock, 
                   const string& prefix, const string& msg);
 
-    void SwitchLog(bool on);
-
     ICache* GetLocalCache(const string& cache_name);
     unsigned GetTimeout();
 
@@ -290,8 +288,15 @@ public:
 
     CFastLocalTime& GetTimer();
 
-    bool IsLogForced() const;
-    bool IsLog() const;
+    enum ELogLevel {
+        kLogLevelDisable = -1,
+        kLogLevelBase    = 0,
+        kLogLevelOp      = 1,
+        kLogLevelRequest = 512,
+        kLogLevelMax     = 1024
+    };
+    void SetLogLevel(int level);
+    int GetLogLevel() const;
 
 private:
     /// Read the registry for icache_XXXX entries
@@ -313,9 +318,9 @@ private:
     int              m_Signal;
     /// Time to wait for the client (seconds)
     unsigned         m_InactivityTimeout;
-    /// Logging ON/OFF
-    bool             m_LogFlag;       ///< From config file
-    bool             m_LogForcedFlag; ///< Set by command
+    /// Logging level
+    int              m_EffectiveLogLevel;
+    int              m_ConfigLogLevel;
 
     /// Accept timeout for threaded server
     STimeout         m_ThrdSrvAcceptTimeout;

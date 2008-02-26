@@ -184,7 +184,8 @@ void CAcceptRequest::Process(void)
                                     CServer_ConnectionPool::eInactiveSocket);
             _TRACE("Connection added to pool");
         } else {
-            // the connection pool is full
+            // The connection pool is full
+            // This place is the only one which can call OnOverflow now
             m_Connection->OnOverflow();
             delete m_Connection;
             _TRACE("Connection dropped - pool full");
@@ -194,6 +195,8 @@ void CAcceptRequest::Process(void)
 
 void CAcceptRequest::Cancel(void)
 {
+    // As of now, Cancel can not be called.
+    // See comment at CServer::CreateRequest
     m_Connection->OnOverflow();
     delete m_Connection;
 }
@@ -238,6 +241,8 @@ void CServerConnectionRequest::Process(void)
 
 void CServerConnectionRequest::Cancel(void)
 {
+    // As of now, Cancel can not be called.
+    // See comment at CServer::CreateRequest
     m_Connection->OnOverflow();
     // Return socket to poll vector
     m_ConnPool.SetConnType(m_Connection,
@@ -458,7 +463,8 @@ void CServer::CreateRequest(CStdPoolOfThreads& threadPool,
             threadPool.AcceptRequest(request);
             _TRACE("Request " << NStr::IntToString(event) << " inserted");
         } catch (CBlockingQueueException&) {
-            // This is impossible event, but we handle it gently
+            // The size of thread pool queue is set to kMax_UInt, so
+            // this is impossible event, but we handle it gently
             LOG_POST_X(1, Critical << "Thread pool queue full");
             CServer_Request* req =
                 dynamic_cast<CServer_Request*>(request.GetPointer());

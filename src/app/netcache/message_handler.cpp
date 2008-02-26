@@ -247,11 +247,14 @@ void CNetCache_MessageHandler::OnClose(void)
 
 void CNetCache_MessageHandler::OnTimeout(void)
 {
+    LOG_POST(Error << "Timeout, closing connection");
 }
 
 
 void CNetCache_MessageHandler::OnOverflow(void)
 {
+    // Max connection overflow
+    LOG_POST(Error << "Max number of connections reached, closing connection");
 }
 
 
@@ -464,8 +467,10 @@ void CNetCache_MessageHandler::OnRequestEnd()
 {
     m_Stat.EndRequest();
     m_InRequest = false;
-    if (m_Server->IsLogForced() ||
-        (m_Server->IsLog() && m_Stat.elapsed > s_LogThreshold.Get())) {
+    int level = m_Server->GetLogLevel();
+    if (level >= CNetCacheServer::kLogLevelRequest ||
+        (level >= CNetCacheServer::kLogLevelBase &&
+         m_Stat.elapsed > s_LogThreshold.Get())) {
 #ifdef _DEBUG
         /*
         string trace;
@@ -485,16 +490,16 @@ void CNetCache_MessageHandler::OnRequestEnd()
         unsigned pending_requests = m_Server->GetRequestCounter().Get();
         ostrstream msg;
         msg << m_Auth
-            << " peer=" << m_Stat.peer_address
-            << " request='" << m_Stat.request << "'"
-            << " blob=" << m_Stat.blob_id
-            << " blobsize=" << m_Stat.blob_size
+            << " peer="      << m_Stat.peer_address
+            << " request='"  << m_Stat.request << "'"    
+            << " blob="      << m_Stat.blob_id
+            << " blobsize="  << m_Stat.blob_size
             << " io blocks=" << m_Stat.io_blocks
-            << " pending=" << pending_requests
-            << " req time=" << NStr::DoubleToString(m_Stat.elapsed, 5) 
+            << " pending="   << pending_requests
+            << " req time="  << NStr::DoubleToString(m_Stat.elapsed, 5) 
             << " comm time=" << NStr::DoubleToString(m_Stat.comm_elapsed, 5)
 //            << " lock wait time=" << stat.lock_elapsed
-            << " db time=" << NStr::DoubleToString(m_Stat.db_elapsed, 5)
+            << " db time="   << NStr::DoubleToString(m_Stat.db_elapsed, 5)
 //            << " db hits=" << stat.db_accesses
 #ifdef REPORT_UNACCOUNTED
             << " unaccounted=" << unaccounted

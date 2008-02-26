@@ -442,16 +442,25 @@ void CNetCacheHandler::ProcessRemove2(CSocket& sock, const SNC_Request& req)
 void CNetCacheHandler::ProcessLog(CSocket&  sock, const SNC_Request&  req)
 {
     const char* str = req.req_id.c_str();
-    bool sw_log;
+    int level = CNetCacheServer::kLogLevelBase;
     if (NStr::strcasecmp(str, "ON") == 0)
-        sw_log = true;
+        level = CNetCacheServer::kLogLevelMax;
     else if (NStr::strcasecmp(str, "OFF") == 0)
-        sw_log = false;
+        level = CNetCacheServer::kLogLevelBase;
+    else if (NStr::strcasecmp(str, "Operation") == 0 ||
+             NStr::strcasecmp(str, "Op") == 0)
+        level = CNetCacheServer::kLogLevelOp;
+    else if (NStr::strcasecmp(str, "Request") == 0)
+        level = CNetCacheServer::kLogLevelRequest;
     else {
-        WriteMsg(sock, "ERR:", "");
-        return;
+        try {
+            level = NStr::StringToInt(str);
+        } catch (...) {
+            WriteMsg(sock, "ERR:", "");
+            return;
+        }
     }
-    m_Server->SwitchLog(sw_log);
+    m_Server->SetLogLevel(level);
     WriteMsg(sock, "OK:", "");
 }
 

@@ -102,8 +102,8 @@ CNetCacheServer::CNetCacheServer(unsigned int     port,
     m_Shutdown(false),
     m_Signal(0),
     m_InactivityTimeout(network_timeout),
-    m_LogFlag(is_log),
-    m_LogForcedFlag(false),
+    m_EffectiveLogLevel(is_log ? kLogLevelBase : kLogLevelDisable),
+    m_ConfigLogLevel(is_log ? kLogLevelBase : kLogLevelDisable),
     m_Reg(reg)
 {
     if (use_hostname) {
@@ -398,24 +398,19 @@ void CNetCacheServer::WriteBuf(CSocket& sock,
 }
 
 
-void CNetCacheServer::SwitchLog(bool on)
+void CNetCacheServer::SetLogLevel(int level)
 {
-    CFastMutexGuard guard(x_NetCacheMutex);
-    m_LogForcedFlag = on;
+    if (level == kLogLevelBase) {
+        m_EffectiveLogLevel = m_ConfigLogLevel;
+    } else {
+        m_EffectiveLogLevel = level;
+    }
 }
 
 
-bool CNetCacheServer::IsLog() const
+int CNetCacheServer::GetLogLevel() const
 {
-    CFastMutexGuard guard(x_NetCacheMutex);
-    return m_LogFlag;
-}
-
-
-bool CNetCacheServer::IsLogForced() const
-{
-    CFastMutexGuard guard(x_NetCacheMutex);
-    return m_LogForcedFlag;
+    return m_EffectiveLogLevel;
 }
 
 
@@ -707,8 +702,7 @@ int CNetCacheDApp::Run(void)
             return 1;
         }
 
-        // start threaded server
-
+        // start server
 
         unsigned network_timeout =
             reg.GetInt("server", "network_timeout", 10, 0, CNcbiRegistry::eReturn);
