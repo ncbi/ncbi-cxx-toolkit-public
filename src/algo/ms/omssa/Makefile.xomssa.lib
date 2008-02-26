@@ -10,7 +10,7 @@ ASN_DEP     = omssa
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE) $(NCBI_C_INCLUDE)
 
-SRC = SpectrumSet msladder msms mspeak omssa Mod omssascore msmerge omssaapp
+SRC = SpectrumSet msladder msms mspeak omssa Mod omssascore msmerge omssaapp pepxml
 
 LIB = xomssa
 

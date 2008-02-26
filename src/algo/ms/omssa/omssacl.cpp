@@ -96,6 +96,8 @@ void COMSSA::AppInit(CArgDescriptions *argDesc)
      argDesc->AddFlag("ni", "don't print informational messages");
      argDesc->AddFlag("ns", "depreciated flag"); // to be deprecated
      argDesc->AddFlag("os", "use omssa 1.0 scoring"); // to be deprecated
+     argDesc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "Search engine for identifying MS/MS peptide spectra");
 }
 
 

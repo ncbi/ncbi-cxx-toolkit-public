@@ -469,11 +469,11 @@ MSSearchSettings ::= SEQUENCE {
         probfollowingion REAL OPTIONAL,                -- probability of a consecutive ion (used in correlation)
         nmethionine BOOLEAN OPTIONAL,                  -- should nmethionine be cleaved?
         automassadjust REAL OPTIONAL,                  -- fraction allowable adjustment of product mass tolerance
-	lomasscutoff REAL OPTIONAL,                    -- low mass filter in Daltons, unscaled
+        lomasscutoff REAL OPTIONAL,                    -- low mass filter in Daltons, unscaled
         libsearchsettings MSLibrarySettings OPTIONAL,  -- library search settings
         noprolineions SEQUENCE OF MSIonType OPTIONAL,  -- which ions to use no proline rule
         reversesearch BOOLEAN OPTIONAL,                -- do reverse search
-	othersettings SEQUENCE OF NameValue OPTIONAL   -- extra search settings
+        othersettings SEQUENCE OF NameValue OPTIONAL   -- extra search settings
         }
 
 MSSerialDataFormat ::= INTEGER {
@@ -481,11 +481,12 @@ MSSerialDataFormat ::= INTEGER {
         asntext (1),      -- open ASN.1 text format
         asnbinary (2),    -- open ASN.1 binary format
         xml (3),          -- open XML format
-        csv (4)           -- csv (excel)
+        csv (4),          -- csv (excel)
+        pepxml (5)        -- pepXML format
         }
 
 MSOutFile ::= SEQUENCE {
-        outfile VisibleString,                      -- output file name
+        outfile VisibleString,                -- output file name
         outfiletype MSSerialDataFormat,       -- output file type
         includerequest BOOLEAN                -- should the output include the request?
         }

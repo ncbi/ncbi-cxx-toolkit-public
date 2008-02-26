@@ -47,6 +47,7 @@
 #include <map>
 #include <objects/omssa/MSModSpecSet.hpp>
 #include <objects/omssa/MSSearchSettings.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
 #include "Mod.hpp"
 #include "SpectrumSet.hpp"
 
@@ -617,6 +618,12 @@ public:
      */
     bool& SetNMethionine(void);
 
+    const string GetCleaveAt(void) const;
+
+    bool GetCheckProline(void) const;
+
+    const char * GetCleaveSense(void) const;
+
 protected:
     int ProtonMass; // mass of the proton
     int TermMass;  // mass of h2o
@@ -668,6 +675,40 @@ protected:
 
 
 ///////////////////    CCleave inline methods
+
+/**
+ * What are the cleavage chars?
+ * 
+ */
+inline
+const string CCleave::GetCleaveAt(void) const
+{
+    string out;
+    CSeqConvert::Convert(CleaveAt, CSeqUtil::e_Ncbistdaa, 0, kCleave, out, CSeqUtil::e_Ncbieaa);
+    return out;
+}
+
+/**
+ * Should we check for proline?
+ * 
+ */
+inline
+bool CCleave::GetCheckProline(void) const
+{
+    return CheckProline;
+}
+
+/**
+ * Should we check for proline?
+ * 
+ */
+inline
+const char * CCleave::GetCleaveSense(void) const
+{
+    if (CleaveOffset[0] == 0) return "C";
+    else return "N";
+}
+
 
 /**
  * is the character given one of the cleavage chars?

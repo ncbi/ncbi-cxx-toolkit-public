@@ -39,6 +39,7 @@
 
 #include "SpectrumSet.hpp"
 #include "omssa.hpp"
+#include "pepxml.hpp"
 
 #include <fstream>
 #include <string>
@@ -292,6 +293,15 @@ CSearchHelper::SaveAnyFile(CMSSearch& MySearch,
         CSearchHelper::SaveOneFile(MySearch,
                                    Filename, 
                                    FileFormat, (*iOutFile)->GetIncluderequest());
+        break;
+        case eMSSerialDataFormat_pepxml:
+        {
+            CPepXML outPepXML;
+            string newname = Filename + ".pep.xml";
+            outPepXML.ConvertFromOMSSA(MySearch, Modset, Filename);
+            auto_ptr<CObjectOStream> file_out(CObjectOStream::Open(newname, eSerial_Xml));
+            *file_out << outPepXML;
+        }
         break;
         case eMSSerialDataFormat_csv:    
         {

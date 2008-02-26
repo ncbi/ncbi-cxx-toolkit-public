@@ -57,7 +57,7 @@ USING_SCOPE(omssa);
 
 COMSSABase::COMSSABase()
 {
-    SetVersion(CVersionInfo(2, 1, 1));
+    SetVersion(CVersionInfo(2, 1, 2));
 }
 
 
@@ -137,6 +137,8 @@ void COMSSABase::Init()
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("ox", "xmloutfile", "filename for xml formatted search results",
 			   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("op", "pepxmloutfile", "base filename for pepXML formatted search results",
+                           CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("oc", "csvfile", "filename for csv formatted search summary",
                 CArgDescriptions::eString, "");
     argDesc->AddFlag("w", "include spectra and search params in search results");
@@ -390,6 +392,9 @@ void COMSSABase::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings
     }
     if (args["ox"].AsString() != "") {
         SetOutFile(IncludeSpectra, eMSSerialDataFormat_xml, args["ox"].AsString(), Settings);
+    }
+    if (args["op"].AsString() != "") {
+        SetOutFile(IncludeSpectra, eMSSerialDataFormat_pepxml, args["op"].AsString(), Settings);
     }
     if (args["oc"].AsString() != "") {
         SetOutFile(IncludeSpectra, eMSSerialDataFormat_csv, args["oc"].AsString(), Settings);

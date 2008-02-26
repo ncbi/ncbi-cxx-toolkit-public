@@ -4,7 +4,7 @@
 #################################
 
 LIB_PROJ = xomssa
-APP_PROJ = omssacl omssamerge
+APP_PROJ = omssacl omssamerge omssa2pepXML
 SUB_PROJ = demo
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
