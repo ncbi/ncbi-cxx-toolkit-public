@@ -165,6 +165,8 @@ RESOURCES = \
         etc\plugin_config.asn               \
         etc\web_pages.ini                   \
         \
+        etc\blastdb-spec\blast-dbs.asn      \
+        \
         etc\dialogs\feat_edit               \
         etc\dialogs\feat_edit_res           \
         \
