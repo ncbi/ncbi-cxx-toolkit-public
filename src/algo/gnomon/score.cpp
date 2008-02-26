@@ -1385,6 +1385,13 @@ void CGnomonEngine::GetScore(CGeneModel& model) const
 
     if ((int)mrna.size() - best_stop >=3)
         cds_info.SetStop(MapRangeToOrig(best_stop,best_stop+2,mrnamap));
+    
+    for(int i = best_start+3; i < best_stop; i += 3) {
+        if(IsProperStop(i,mrna,mrnamap)) {
+            TSignedSeqRange pstop = MapRangeToOrig(i,i+2,mrnamap);
+            cds_info.AddPStop(pstop);
+        }
+    }
 
     cds_info.SetScore(best_score, is_open);
     model.SetCdsInfo( cds_info );
