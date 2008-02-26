@@ -225,12 +225,12 @@ public:
     CSimpleSink(CNcbiOstream& os) : m_Os(os) {}
     ~CSimpleSink() {}
     
-    virtual CNcbiOstream& GetOstream(CNetServerConnector& conn)
+    virtual CNcbiOstream& GetOstream(CNetServerConnection conn)
     {
         m_Os << conn.GetHost() << ":" << conn.GetPort() << endl;
         return m_Os;
     }
-    virtual void EndOfData(CNetServerConnector& conn)
+    virtual void EndOfData(CNetServerConnection conn)
     {
         m_Os << endl;
     }

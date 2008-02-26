@@ -188,11 +188,11 @@ public:
     ISimpleSink() : m_Str(new CNcbiStrstream) {}
     virtual ~ISimpleSink() {}
 
-    virtual CNcbiOstream& GetOstream(CNetServerConnector& conn)
+    virtual CNcbiOstream& GetOstream(CNetServerConnection conn)
     {
         return *m_Str;
     }
-    virtual void EndOfData(CNetServerConnector& conn)
+    virtual void EndOfData(CNetServerConnection conn)
     {
         ParseStream(*m_Str, conn);
         m_Str.reset(new CNcbiStrstream);
