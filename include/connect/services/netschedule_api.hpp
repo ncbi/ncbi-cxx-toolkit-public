@@ -364,10 +364,19 @@ public:
 
 private:
     friend class CNetScheduleAPI;
+
     CNetScheduleSubmitter(CNetScheduleAPI* api) : m_API(api) {}
+
+    string SubmitJobImpl(CNetScheduleJob& job,
+        unsigned short udp_port, unsigned wait_time) const;
 
     CNetScheduleAPI* m_API;
 };
+
+inline string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job) const
+{
+    return SubmitJobImpl(job, 0, 0);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 ////

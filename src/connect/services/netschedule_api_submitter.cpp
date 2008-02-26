@@ -42,16 +42,12 @@ BEGIN_NCBI_SCOPE
 
 
 //////////////////////////////////////////////////////////////////////////////
-static void s_SerializeJob(string& cmd, const CNetScheduleJob& job, string& aff_prev)
+static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
+    unsigned short udp_port, unsigned wait_time, string& aff_prev)
 {
-
-    //ofstream o1("/tmp/sb_job_out_before_ps.txt", ios_base::binary);
-    //o1.write(&job.input[0],job.input.size());
-
     cmd.append("\"");
     string ps_input = NStr::PrintableString(job.input);
-    //ofstream o2("/tmp/sb_job_out_after_ps.txt", ios_base::binary);
-    //o2.write(&ps_input[0],ps_input.size());
+
     cmd.append(ps_input);
     cmd.append("\"");
 
@@ -59,6 +55,13 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job, string& aff_
         cmd.append(" \"");
         cmd.append(job.progress_msg);
         cmd.append("\"");
+    }
+
+    if (udp_port != 0) {
+        cmd.append(" ");
+        cmd.append(NStr::UIntToString(udp_port));
+        cmd.append(" ");
+        cmd.append(NStr::UIntToString(wait_time));
     }
 
     if (!job.affinity.empty()) {
@@ -102,16 +105,16 @@ void static s_CheckInputSize(const string& input, size_t max_input_size)
     }
 }
 
-string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job) const
+string CNetScheduleSubmitter::SubmitJobImpl(CNetScheduleJob& job,
+    unsigned short udp_port, unsigned wait_time) const
 {
     size_t max_input_size = m_API->GetServerParams().max_input_size;
     s_CheckInputSize(job.input, max_input_size);
 
-    //cerr << "Input: " << input << endl;
     string cmd = "SUBMIT ";
 
     string aff_prev;
-    s_SerializeJob(cmd, job, aff_prev);
+    s_SerializeJob(cmd, job, udp_port, wait_time, aff_prev);
 
     job.job_id = m_API->SendCmdWaitResponse(m_API->x_GetConnectioin(), cmd);
 
@@ -162,7 +165,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
         string aff_prev;
         for (unsigned j = 0; j < batch_size; ++j,++i) {
             cmd.erase();
-            s_SerializeJob(cmd, jobs[i], aff_prev);
+            s_SerializeJob(cmd, jobs[i], 0, 0, aff_prev);
 
             conn.WriteStr(cmd + "\r\n");
         }
@@ -261,7 +264,7 @@ CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
     _ASSERT(wait_time);
     _ASSERT(udp_port);
 
-    SubmitJob(job);
+    SubmitJobImpl(job, udp_port, wait_time);
 
     CNetScheduleKey key(job.job_id);
 
