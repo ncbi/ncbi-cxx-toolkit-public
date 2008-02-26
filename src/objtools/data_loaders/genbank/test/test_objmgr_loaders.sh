@@ -3,11 +3,11 @@
 
 status_dir="../../../../../status"
 
-if test -f "$status_dir/Sybase.enabled"; then
-    methods="PUBSEQOS ID1"
+if test -f "$status_dir/PubSeqOS.enabled"; then
+    methods="PUBSEQOS ID1 ID2"
 else
-    echo Sybase is disabled: skipping PUBSEQOS loader test
-    methods="ID1"
+    echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
+    methods="ID1 ID2"
 fi
 
 exitcode=0

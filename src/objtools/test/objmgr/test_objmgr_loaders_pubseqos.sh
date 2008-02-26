@@ -3,8 +3,8 @@
 
 method="PUBSEQOS"
 
-if test ! -f "../../../../status/Sybase.enabled"; then
-    echo Sybase is disabled: skipping PUBSEQOS loader test
+if test ! -f "../../../../status/PubSeqOS.enabled"; then
+    echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
     exit 0
 fi
 
