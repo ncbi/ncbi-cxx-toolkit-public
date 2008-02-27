@@ -1,5 +1,5 @@
-#ifndef CORELIB___NCBI_QUEUE__HPP
-#define CORELIB___NCBI_QUEUE__HPP
+#ifndef UTIL___SYNC_QUEUE__HPP
+#define UTIL___SYNC_QUEUE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -30,7 +30,7 @@
  *
  */
 
-/// @file ncbi_queue.hpp
+/// @file sync_queue.hpp
 ///
 /// Definition of synchronized queue (CSyncQueue template) and templates
 /// related to it.
@@ -254,7 +254,7 @@ public:
     /// Copy (add) all queue elements to another queue.
     /// @note This method will not copy to queue blocked by some access
     ///       guardian because this pattern can lead to a deadlock in some
-    ///       situations. 
+    ///       situations.
     /// @throws  CSyncQueueException Does nothing and throws with "eNoRoom"
     ///          err.code if there is not enough room in the destination queue.
     ///          Throws with "eGuardedCopy" if other queue is guarded in the
@@ -1127,7 +1127,7 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
     const
 {
     auto_ptr<CTimeSpan> real_timeout;
-    
+
     // If we are in single-thread mode or we didn't run other threads
     // then we will wait forever. Avoid it and let's think that timeout
     // was ran over.
@@ -2082,4 +2082,4 @@ typename CSyncQueue_AccessGuard<Type, Container>::TRevIterator
 
 END_NCBI_SCOPE
 
-#endif  /* CORELIB___NCBI_QUEUE__HPP */
+#endif  /* UTIL___SYNC_QUEUE__HPP */
