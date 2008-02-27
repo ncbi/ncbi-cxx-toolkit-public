@@ -143,10 +143,6 @@ public:
             os << "THE NODE IS IN AN EXCLUSIVE MODE!!!" << endl;
 
         CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
-        //if (node.IsOnHold()) {
-        //        os << "THE NODE IDLE TASK IS RUNNING..." << endl;
-        //}
-
     }
 };
 
@@ -186,10 +182,8 @@ public:
                          CNcbiOstream& os,
                          CGridWorkerNode& node)
     {
-        int load = 0;
-        //if (!node.IsOnHold())
-            load = node.GetMaxThreads()
-                - CGridGlobals::GetInstance().GetJobsWatcher().GetJobsRunningNumber();
+        int load = node.GetMaxThreads() -
+            CGridGlobals::GetInstance().GetJobsWatcher().GetJobsRunningNumber();
         os << "OK:" << load;
     }
 };
