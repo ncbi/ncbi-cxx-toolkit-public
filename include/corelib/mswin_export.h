@@ -192,6 +192,7 @@
 #ifdef NCBI_ALGOMS_EXPORTS
 #  define NCBI_OMSSA_EXPORTS
 #  define NCBI_XOMSSA_EXPORTS
+#  define NCBI_PEPXML_EXPORTS
 #endif
 
 /* Definitions for NCBI_ALGO_STRUCTURE.DLL
@@ -625,6 +626,14 @@
 #  define NCBI_PCSUBSTANCE_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_PCSUBSTANCE_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library pepxml
+ */
+#ifdef NCBI_PEPXML_EXPORTS
+#  define NCBI_PEPXML_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_PEPXML_EXPORT __declspec(dllimport)
 #endif
 
 /* Export specifier for library proj
@@ -1235,6 +1244,7 @@
 #  define NCBI_OMSSA_EXPORT
 #  define NCBI_PCASSAY_EXPORT
 #  define NCBI_PCSUBSTANCE_EXPORT
+#  define NCBI_PEPXML_EXPORT
 #  define NCBI_PROJ_EXPORT
 #  define NCBI_PUBMED_EXPORT
 #  define NCBI_PUB_EXPORT
