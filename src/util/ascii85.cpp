@@ -64,7 +64,7 @@ size_t CAscii85::s_Encode(const char* src_buf, size_t src_len,
         const size_t l = src_len > 4 ? 4 : src_len;
         const size_t grplen = l + 1;
         unsigned long val = 0;
-        for (size_t shft = 8 * (l - 1); shft >= 0; shft -= 8, ++src_ptr) {
+        for (long shft = 8 * (l - 1); shft < 0; shft -= 8, ++src_ptr) {
             val |= ((unsigned char) *src_ptr) << shft;
         }
 
@@ -105,3 +105,4 @@ size_t CAscii85::s_Encode(const char* src_buf, size_t src_len,
 
 
 END_NCBI_SCOPE
+
