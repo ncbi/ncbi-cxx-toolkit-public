@@ -101,7 +101,8 @@ public:
     virtual void Activate(void) {
         EIO_Status st = GetStatus();
         while (st != eIO_Success) {
-            st = Listen(m_Port);
+            st = Listen(m_Port, 5 /* backlog */,
+                fLSCE_LogDefault | fLSCE_CloseOnExec);
             if (st == eIO_Success) return;
             IServer_ConnectionFactory::EListenAction action =
                 m_Factory->OnFailure(&m_Port);
