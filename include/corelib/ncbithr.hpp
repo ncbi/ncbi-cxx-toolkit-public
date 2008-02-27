@@ -345,6 +345,10 @@ private:
     CUsedTlsBases m_UsedTls;
 
     static CUsedTlsBases& GetUsedTlsBases(void);
+
+    /// Prohibit copying and assigning
+    CThread(const CThread&);
+    CThread& operator= (const CThread&);
 };
 
 
