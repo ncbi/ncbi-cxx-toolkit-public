@@ -203,8 +203,8 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
     close(status_pipe[1]);    
    
     // Try to read errno from forked process
+    ssize_t n;
     int errcode;
-    size_t n;
     while ((n = read(status_pipe[0], &errcode, sizeof(errcode))) < 0) {
         if (errno != EINTR)
             break;
