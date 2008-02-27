@@ -41,7 +41,6 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_param.hpp>
-#include <corelib/ncbi_queue.hpp>
 #include <corelib/error_codes.hpp>
 #include <errno.h>
 #include <string.h>
@@ -241,7 +240,7 @@ void CException::Throw(void) const
 const char* CException::what(void) const throw()
 {
     m_What = ReportAll();
-    return m_What.c_str();    
+    return m_What.c_str();
 }
 
 
@@ -252,7 +251,7 @@ void CException::Report(const CDiagCompileInfo& info,
     if (reporter) {
         reporter->Report(info.GetFile(), info.GetLine(), title, *this, flags);
     }
-    // unconditionally ... 
+    // unconditionally ...
     // that is, there will be two reports
     CExceptionReporter::ReportDefault(info, title, *this, flags);
 }
@@ -275,7 +274,7 @@ string CException::ReportAll(TDiagPostFlags flags) const
     }
     if (sm_BkgrEnabled && !m_InReporter) {
         m_InReporter = true;
-        CExceptionReporter::ReportDefault(CDiagCompileInfo(0, 0, 
+        CExceptionReporter::ReportDefault(CDiagCompileInfo(0, 0,
                                            NCBI_CURRENT_FUNCTION),
                                           "(background reporting)",
                                           *this, eDPF_Trace);
@@ -544,10 +543,10 @@ void CExceptionReporter::ReportDefaultEx(int err_code, int err_subcode,
         cex = wrapper.get();
     }
     if ( sm_DefHandler ) {
-        sm_DefHandler->Report(info.GetFile(), 
-                              info.GetLine(), 
-                              title, 
-                              *cex, 
+        sm_DefHandler->Report(info.GetFile(),
+                              info.GetLine(),
+                              title,
+                              *cex,
                               flags);
     } else {
         CNcbiDiag(info, cex->GetSeverity(), flags)
@@ -576,16 +575,16 @@ CExceptionReporterStream::~CExceptionReporterStream(void)
 void CExceptionReporterStream::Report(const char* file, int line,
     const string& title, const CException& ex, TDiagPostFlags flags) const
 {
-    SDiagMessage diagmsg(ex.GetSeverity(), 
-                         title.c_str(), 
-                         title.size(), 
-                         file, 
-                         line, 
+    SDiagMessage diagmsg(ex.GetSeverity(),
+                         title.c_str(),
+                         title.size(),
+                         file,
+                         line,
                          flags,
                          NULL,
                          0, 0,
-                         ex.GetModule().c_str(), 
-                         ex.GetClass().c_str(), 
+                         ex.GetModule().c_str(),
+                         ex.GetClass().c_str(),
                          ex.GetFunction().c_str());
     diagmsg.Write(m_Out);
 
@@ -634,11 +633,11 @@ const char* CLastErrorAdapt::GetErrCodeString(int errnum)
         LocalFree(*p);
     }
     char* ptr = NULL;
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                   FORMAT_MESSAGE_FROM_SYSTEM     |
                   FORMAT_MESSAGE_MAX_WIDTH_MASK  |
                   FORMAT_MESSAGE_IGNORE_INSERTS,
-                  "%0", errnum, 
+                  "%0", errnum,
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                   (LPTSTR)&ptr, 0, NULL);
     // Remove trailing dots and spaces
@@ -653,7 +652,7 @@ const char* CLastErrorAdapt::GetErrCodeString(int errnum)
     return ptr;
 }
 
-#endif 
+#endif
 
 
 END_NCBI_SCOPE
