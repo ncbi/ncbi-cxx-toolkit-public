@@ -35,12 +35,10 @@
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/srv_connections_expt.hpp>
 #include <connect/services/srv_connections.hpp>
-#include <connect/services/error_codes.hpp>
 #include <connect/services/netservice_params.hpp>
 
 #include <corelib/ncbi_system.hpp>
 
-#define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
 BEGIN_NCBI_SCOPE
 
