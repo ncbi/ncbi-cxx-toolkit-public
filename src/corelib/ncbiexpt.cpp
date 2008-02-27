@@ -656,24 +656,4 @@ const char* CLastErrorAdapt::GetErrCodeString(int errnum)
 #endif 
 
 
-//   CSyncQueueException
-
-const char* CSyncQueueException::GetErrCodeString(void) const
-{
-    switch (GetErrCode())
-    {
-    case eWrongMaxSize:       return "eWrongMaxSize";
-    case eTimeout:            return "eTimeout";
-    case eIterNotValid:       return "eIterNotValid";
-    case eMismatchedIters:    return "eMismatchedIters";
-    case eWrongGuardIter:     return "eWrongGuardIter";
-    case eNoRoom:             return "eNoRoom";
-    case eEmpty:              return "eEmpty";
-    case eDoubleGuard:        return "eDoubleGuard";
-    case eWrongInterval:      return "WrongInterval";
-    default:                  return CException::GetErrCodeString();
-    }
-}
-
-
 END_NCBI_SCOPE

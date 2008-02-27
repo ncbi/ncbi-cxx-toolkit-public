@@ -39,9 +39,9 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbitime.hpp>
-#include <corelib/ncbi_queue.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/test_mt.hpp>
+#include <util/sync_queue.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -189,7 +189,7 @@ void CTestQueueApp::RunGuarder() {
     assert(5 == guard.Queue().GetSize());
 
     // Try different iterator operations
-    TQueue::TIterator it = guard.Begin();
+    TQueue::TAccessGuard::TIterator it = guard.Begin();
     it++;
     ++it;
     --it;
@@ -198,7 +198,7 @@ void CTestQueueApp::RunGuarder() {
     it -= 2;
     it = it + 2;
 
-    TQueue::TConstIterator itc = it;
+    TQueue::TAccessGuard::TConstIterator itc = it;
     itc++;
     ++itc;
     --itc;
@@ -213,7 +213,7 @@ void CTestQueueApp::RunGuarder() {
     assert(2 == itc - it);
 
     assert(guard.End() - it >= 3);
-    TQueue::TRevIterator rev_it = guard.REnd();
+    TQueue::TAccessGuard::TRevIterator rev_it = guard.REnd();
     --rev_it;
     assert(*guard.Begin() == *rev_it);
     it = guard.End();
@@ -274,7 +274,7 @@ void CTestQueueApp::RunConstGuarder() {
     assert(5 == guard.Queue().GetSize());
 
     // Try different iterator operations
-    TQueue::TConstIterator it = guard.Begin();
+    TQueue::TAccessGuard::TConstIterator it = guard.Begin();
     it++;
     ++it;
     --it;
@@ -287,7 +287,7 @@ void CTestQueueApp::RunConstGuarder() {
     assert(it - 2 < it);
 
     assert(guard.End() - it >= 3);
-    TQueue::TRevConstIterator rev_it = guard.REnd();
+    TQueue::TAccessGuard::TRevConstIterator rev_it = guard.REnd();
     --rev_it;
     assert(*guard.Begin() == *rev_it);
     it = guard.End();
