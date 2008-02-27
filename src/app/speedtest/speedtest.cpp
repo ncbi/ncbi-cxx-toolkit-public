@@ -498,7 +498,7 @@ int CMytestApplication::Run(void)
         /* raise hell */;
     }
     scope->AddDefaults();
-    scope->AddTopLevelSeqEntry(*se);
+    scope->AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*se));
 
     lastInterval = sw.Elapsed() - lastInterval;
     NcbiCout << "ASN reading time is " << lastInterval << " seconds" << endl;
