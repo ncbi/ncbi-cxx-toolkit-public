@@ -192,7 +192,7 @@ function FillTreeStructure(oShell, oTree)
         "/src/build-system", build_files, oTree.SrcBuildSystemBranch);
 
     var compiler_files = new Array (
-        "Makefile.FLTK.app.msvc",
+        "Makefile.*.msvc",
         "ncbi.rc",
         "ncbilogo.ico",
         "project_tree_builder.ini",
