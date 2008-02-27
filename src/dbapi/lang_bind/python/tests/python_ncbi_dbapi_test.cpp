@@ -434,6 +434,14 @@ CPythonDBAPITest::Test_callproc(void)
                     );
         }
         
+        {
+            ExecuteStr("cursor_test = conn_simple.cursor()\n");
+            ExecuteStr("cursor_test.fetchall()\n");
+            ExecuteStr("while cursor_test.nextset() : \n"
+                       "    print cursor_test.fetchall() "
+                    );
+        }
+        
         // CALL stored procedure ...
         ExecuteStr("print cursor.callproc('sp_databases')\n");
         BOOST_CHECK_THROW(
