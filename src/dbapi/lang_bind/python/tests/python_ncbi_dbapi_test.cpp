@@ -407,6 +407,33 @@ CPythonDBAPITest::Test_callproc(void)
                     );
         }
         
+        if (false) {
+            ExecuteStr("print cursor.callproc('DBAPI_Sample..SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
+            ExecuteStr("cursor.fetchall()\n");
+            ExecuteStr("while cursor.nextset() : \n"
+                       "    print cursor.fetchall() "
+                    );
+        }
+        
+        if (false) {
+            ExecuteStr("print cursor.callproc('DBAPI_Sample.dbo.SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
+            ExecuteStr("cursor.fetchall()\n");
+            ExecuteStr("while cursor.nextset() : \n"
+                       "    print cursor.fetchall() "
+                    );
+        }
+        
+        if (false) {
+            ExecuteStr("db_pipe = dbapi.connect('ftds', 'MSSQL','GPIPE_META', 'GPIPE_META', 'anyone', 'allowed') \n");
+            ExecuteStr("cursor_pipe = db_pipe.cursor()\n");
+            // ExecuteStr("print cursor_pipe.callproc('GPIPE_META.dbo.test', {'@myparam':1}) \n");
+            ExecuteStr("print cursor_pipe.callproc('test', {'@myparam':1}) \n");
+            ExecuteStr("cursor.fetchall()\n");
+            ExecuteStr("while cursor.nextset() : \n"
+                       "    print cursor.fetchall() "
+                    );
+        }
+        
         // CALL stored procedure ...
         ExecuteStr("print cursor.callproc('sp_databases')\n");
         BOOST_CHECK_THROW(

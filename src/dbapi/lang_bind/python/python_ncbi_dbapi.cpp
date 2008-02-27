@@ -713,7 +713,7 @@ CConnection::CConnection(
     try {
         m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName(), &m_ConnParam.GetDatabaseParameters() );
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
 
@@ -726,7 +726,7 @@ CConnection::CConnection(
         // m_DefTransaction = new CTransaction(this, pythonpp::eBorrowed, m_ConnectionMode);
         m_DefTransaction = new CTransaction(this, pythonpp::eAcquired, m_ConnectionMode);
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
 }
@@ -955,7 +955,7 @@ CDMLConnPool::commit(void) const
             GetLocalStmt().ExecuteUpdate( "COMMIT TRANSACTION" );
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
         }
-        catch(const CDB_Exception& e) {
+        catch(const CException& e) {
             throw CDatabaseError(e.GetMsg());
         }
     }
@@ -974,7 +974,7 @@ CDMLConnPool::rollback(void) const
             GetLocalStmt().ExecuteUpdate( "ROLLBACK TRANSACTION" );
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
         }
-        catch(const CDB_Exception& e) {
+        catch(const CException& e) {
             throw CDatabaseError(e.GetMsg());
         }
     }
@@ -1173,6 +1173,7 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
 //////////////////////////////////////////////////////////////////////////////
 CStmtHelper::CStmtHelper(CTransaction* trans)
 : m_ParentTransaction( trans )
+, m_RS(NULL)
 , m_Executed( false )
 , m_ResultStatus( 0 )
 , m_ResultStatusAvailable( false )
@@ -1184,6 +1185,7 @@ CStmtHelper::CStmtHelper(CTransaction* trans)
 
 CStmtHelper::CStmtHelper(CTransaction* trans, const CStmtStr& stmt)
 : m_ParentTransaction( trans )
+, m_RS(NULL)
 , m_StmtStr( stmt )
 , m_Executed(false)
 , m_ResultStatus( 0 )
@@ -1313,7 +1315,7 @@ CStmtHelper::SetParam(const string& name, const CVariant& value)
     try {
         m_Stmt->SetParam( value, param_name );
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError( e.GetMsg() );
     }
 }
@@ -1339,7 +1341,7 @@ CStmtHelper::Execute(void)
     catch(const bad_cast&) {
         throw CInternalError("std::bad_cast exception within 'CStmtHelper::Execute'");
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
     catch(const exception&) {
@@ -1409,7 +1411,7 @@ CStmtHelper::NextRS(void)
             }
         }
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
 
@@ -1537,7 +1539,7 @@ CCallableStmtHelper::SetParam(const string& name, const CVariant& value)
 		m_Stmt->SetOutputParam( value, param_name );
 	}
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError( e.GetMsg() );
     }
 }
@@ -1559,7 +1561,7 @@ CCallableStmtHelper::Execute(void)
     catch(const bad_cast&) {
         throw CInternalError("std::bad_cast exception within 'CCallableStmtHelper::Execute'");
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
     catch(const exception&) {
@@ -1625,7 +1627,7 @@ CCallableStmtHelper::NextRS(void)
             }
         }
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
 
@@ -1874,7 +1876,7 @@ CCursor::close(const pythonpp::CTuple& args)
         // Unregister this cursor with the parent transaction ...
         GetTransaction().DestroyCursor(this);
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
 
@@ -2065,7 +2067,7 @@ CCursor::fetchone(const pythonpp::CTuple& args)
             }
         }
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
 
@@ -2121,7 +2123,7 @@ CCursor::fetchmany(const pythonpp::CTuple& args)
             m_RowsNum = m_StmtHelper.GetRowCount();
         }
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
 
@@ -2138,24 +2140,31 @@ CCursor::fetchall(const pythonpp::CTuple& args)
             return py_list;
         }
         if ( m_StmtStr.GetType() == estFunction ) {
-            IResultSet& rs = m_CallableStmtHelper.GetRS();
+	    if (m_CallableStmtHelper.HasRS()) {
+		IResultSet& rs = m_CallableStmtHelper.GetRS();
 
-            while ( rs.Next() ) {
-                py_list.Append(MakeTupleFromResult(rs));
-            }
+		while ( rs.Next() ) {
+		    py_list.Append(MakeTupleFromResult(rs));
+		}
 
-            m_RowsNum = m_CallableStmtHelper.GetRowCount();
+		m_RowsNum = m_CallableStmtHelper.GetRowCount();
+	    }
         } else {
-            IResultSet& rs = m_StmtHelper.GetRS();
+	    if (m_StmtHelper.HasRS()) {
+		IResultSet& rs = m_StmtHelper.GetRS();
 
-            while ( rs.Next() ) {
-                py_list.Append(MakeTupleFromResult(rs));
-            }
+		while ( rs.Next() ) {
+		    py_list.Append(MakeTupleFromResult(rs));
+		}
 
-            m_RowsNum = m_StmtHelper.GetRowCount();
+		m_RowsNum = m_StmtHelper.GetRowCount();
+	    }
         }
     }
-    catch(const CDB_Exception& e) {
+    catch(const pythonpp::CError&) {
+        throw;
+    }
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
     catch(...) {
@@ -2174,19 +2183,27 @@ CCursor::NextSetInternal(void)
 
         if ( !m_AllSetsFetched ) {
             if ( m_StmtStr.GetType() == estFunction ) {
-                if ( m_CallableStmtHelper.NextRS() ) {
-                    m_AllDataFetched = false;
-                    return true;
-                }
+		if (m_CallableStmtHelper.HasRS()) {
+		    if ( m_CallableStmtHelper.NextRS() ) {
+			m_AllDataFetched = false;
+			return true;
+		    }
+		} else {
+		    return false;
+		}
             } else {
-                if ( m_StmtHelper.NextRS() ) {
-                    m_AllDataFetched = false;
-                    return true;
-                }
+		if (m_StmtHelper.HasRS()) {
+		    if ( m_StmtHelper.NextRS() ) {
+			m_AllDataFetched = false;
+			return true;
+		    }
+		} else {
+		    return false;
+		}
             }
         }
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
 
@@ -2238,7 +2255,7 @@ CCursor::get_proc_return_status(const pythonpp::CTuple& args)
             return pythonpp::CInt( m_StmtHelper.GetReturnStatus() );
         }
     }
-    catch(const CDB_Exception& e) {
+    catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
     }
 
@@ -2306,7 +2323,7 @@ CModuleDBAPI::connect(const pythonpp::CTuple& args)
         // Feef the object to the Python interpreter ...
         return pythonpp::CObject(conn, pythonpp::eTakeOwnership);
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
 
@@ -2337,7 +2354,7 @@ CModuleDBAPI::Date(const pythonpp::CTuple& args)
         // Feef the object to the Python interpreter ...
         return pythonpp::CDate(year, month, day);
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
 
@@ -2368,7 +2385,7 @@ CModuleDBAPI::Time(const pythonpp::CTuple& args)
         // Feef the object to the Python interpreter ...
         return pythonpp::CTime(hour, minute, second, 0);
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
 
@@ -2406,7 +2423,7 @@ CModuleDBAPI::Timestamp(const pythonpp::CTuple& args)
         // Feef the object to the Python interpreter ...
         return pythonpp::CDateTime(year, month, day, hour, minute, second, 0);
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
 
@@ -2424,7 +2441,7 @@ CModuleDBAPI::DateFromTicks(const pythonpp::CTuple& args)
 {
     try {
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
 
@@ -2442,7 +2459,7 @@ CModuleDBAPI::TimeFromTicks(const pythonpp::CTuple& args)
 {
     try {
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
 
@@ -2460,7 +2477,7 @@ CModuleDBAPI::TimestampFromTicks(const pythonpp::CTuple& args)
 {
     try {
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
 
@@ -2492,7 +2509,7 @@ CModuleDBAPI::Binary(const pythonpp::CTuple& args)
         // Feef the object to the Python interpreter ...
         return pythonpp::CObject(obj, pythonpp::eTakeOwnership);
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
 
@@ -2613,7 +2630,7 @@ Connect(PyObject *self, PyObject *args)
             ( support_standard_interface ? eStandardMode : eSimpleMode )
             );
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
@@ -2653,7 +2670,7 @@ Date(PyObject *self, PyObject *args)
 
         return IncRefCount(pythonpp::CDate(year, month, day));
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
@@ -2694,7 +2711,7 @@ Time(PyObject *self, PyObject *args)
 
         return IncRefCount(pythonpp::CTime(hour, minute, second, 0));
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
@@ -2742,7 +2759,7 @@ Timestamp(PyObject *self, PyObject *args)
 
         return IncRefCount(pythonpp::CDateTime(year, month, day, hour, minute, second, 0));
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
@@ -2769,7 +2786,7 @@ DateFromTicks(PyObject *self, PyObject *args)
     try {
         throw CNotSupportedError("Function DateFromTicks");
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
@@ -2795,7 +2812,7 @@ TimeFromTicks(PyObject *self, PyObject *args)
     try {
         throw CNotSupportedError("Function TimeFromTicks");
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
@@ -2821,7 +2838,7 @@ TimestampFromTicks(PyObject *self, PyObject *args)
     try {
         throw CNotSupportedError("Function TimestampFromTicks");
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
@@ -2858,7 +2875,7 @@ Binary(PyObject *self, PyObject *args)
         obj = new CBinary(
             );
     }
-    catch (const CDB_Exception& e) {
+    catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
