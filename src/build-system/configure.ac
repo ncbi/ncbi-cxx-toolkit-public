@@ -1240,7 +1240,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         if test "$with_mt" = "yes" -a "$compiler_version" -lt 800; then
            DEF_FAST_FLAGS="-O3 -ip"
         elif test "$compiler_version" -ge 800 -a "$compiler_version" -lt 900; then
-           DEF_FAST_FLAGS="-O3 -axW"
+           DEF_FAST_FLAGS="-O2"
         else
            DEF_FAST_FLAGS="-O3 -axW -ip"
         fi
