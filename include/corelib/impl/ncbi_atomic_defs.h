@@ -234,12 +234,7 @@ extern "C" {
      typedef LONG TNCBIAtomicValue;
 #    define NCBI_COUNTER_ADD(p, d) (InterlockedExchangeAdd(p, d) + d)
 #  endif
-#  ifdef _WIN64
-#    define NCBI_SWAP_POINTERS(loc, nv) (InterlockedExchangePointer(loc, nv))
-#  else
-#    define NCBI_SWAP_POINTERS(loc, nv) \
-      ((void*) (InterlockedExchange((LPLONG)(loc), (LONG)(nv))))
-#  endif
+#  define NCBI_SWAP_POINTERS(loc, nv) (InterlockedExchangePointer(loc, nv))
 #elif !defined(NCBI_COUNTER_ADD)
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
