@@ -75,6 +75,10 @@ public:
         // not get equally "milked"
         // also get random list lookup direction
         unsigned servers_size = servers_copy.size();
+
+        if (servers_size == 0)
+            return false;
+
         unsigned pivot = rand() % servers_size;
         unsigned pivot_plus_servers_size = pivot + servers_size;
 
