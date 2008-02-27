@@ -58,7 +58,7 @@
 /* Dumping ground for Windows-specific stuff
  */
 #pragma warning (disable : 4786 4251 4275 4800)
-#pragma warning (3 : 4062 4191 4263 4265)
+#pragma warning (3 : 4062 4191 4263 4265 4287 4296)
 
 
 /* -------------------------------------------------
