@@ -405,57 +405,85 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
     if (server_type == CDBConnParams::eSybaseSQLServer
         || server_type == CDBConnParams::eMSSqlServer) 
     {
+        string sql; 
         string db_name;
+        string db_owner;
+        string sp_name;
+        auto_ptr<CDB_LangCmd> cmd;
 
-        string sql( 
-            "SELECT '' from sysobjects WHERE name = @name \n"
-            "UNION \n"
-            "SELECT 'master' from master..sysobjects WHERE name = @name \n"
-            );
+        {
+            vector<string> arr_param;
 
-        if (server_type == CDBConnParams::eSybaseSQLServer) {
-            sql +=
-                "UNION \n"
-                "SELECT 'sybsystemprocs' from sybsystemprocs..sysobjects WHERE name = @name \n"
-                "UNION \n"
-                "SELECT 'sybsystemdb' from sybsystemdb..sysobjects WHERE name = @name"
-                ;
+            NStr::Tokenize(name, ".", arr_param);
+            switch (arr_param.size()) {
+                case 1:
+                    sp_name = name;
+                    break;
+                case 2:
+                    db_owner = arr_param[0];
+                    sp_name = arr_param[1];
+                    break;
+                case 3:
+                    db_name = arr_param[0];
+                    db_owner = arr_param[1];
+                    sp_name = arr_param[2];
+                    break;
+                default:
+                    DATABASE_DRIVER_ERROR("Invalid format of stored procedure's name: " + name, 1);
+            }
         }
 
-        CMsgHandlerGuard guard(conn);
-        auto_ptr<CDB_LangCmd> cmd(conn.LangCmd(sql));
-        CDB_VarChar sp_name_value(name);
+        if (db_name.empty()) {
+            sql = 
+                "SELECT '' from sysobjects WHERE name = @name \n"
+                "UNION \n"
+                "SELECT 'master' from master..sysobjects WHERE name = @name \n"
+                ;
 
-        try {
-            cmd->GetBindParams().Bind("@name", &sp_name_value);
-            cmd->Send();
+            if (server_type == CDBConnParams::eSybaseSQLServer) {
+                sql +=
+                    "UNION \n"
+                    "SELECT 'sybsystemprocs' from sybsystemprocs..sysobjects WHERE name = @name \n"
+                    "UNION \n"
+                    "SELECT 'sybsystemdb' from sybsystemdb..sysobjects WHERE name = @name"
+                    ;
+            }
 
-            while (cmd->HasMoreResults()) {
-                auto_ptr<CDB_Result> res(cmd->Result());
+            CMsgHandlerGuard guard(conn);
+            cmd.reset(conn.LangCmd(sql));
+            CDB_VarChar sp_name_value(sp_name);
 
-                if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
-                    CDB_VarChar db_name_value;
+            try {
+                cmd->GetBindParams().Bind("@name", &sp_name_value);
+                cmd->Send();
 
-                    while (res->Fetch()) {
-                        res->GetItem(&db_name_value);
+                while (cmd->HasMoreResults()) {
+                    auto_ptr<CDB_Result> res(cmd->Result());
 
-                        if (!db_name_value.IsNULL()) {
-                            db_name = db_name_value.Value();
+                    if (res.get() != NULL && res->ResultType() == eDB_RowResult ) {
+                        CDB_VarChar db_name_value;
+
+                        while (res->Fetch()) {
+                            res->GetItem(&db_name_value);
+
+                            if (!db_name_value.IsNULL()) {
+                                db_name = db_name_value.Value();
+                            }
                         }
                     }
                 }
+            } catch (const CDB_Exception&) {
+                // Something is wrong. Probably we do not have enough permissios.
+                // We assume that the object is located in the current database. What
+                // else can we do?
             }
-        } catch (const CDB_Exception&) {
-            // Something is wrong. Probably we do not have enough permissios.
-            // We assume that the object is located in the current database. What
-            // else can we do?
         }
 
         // auto_ptr<CDB_RPCCmd> sp(conn.RPC("sp_sproc_columns"));
         // We cannot use CDB_RPCCmd here because of recursion ...
-        sql = "exec " + db_name + "..sp_sproc_columns @procedure_name";
+        sql = "exec " + db_name + "." + db_owner + ".sp_sproc_columns @procedure_name";
         cmd.reset(conn.LangCmd(sql));
-        CDB_VarChar name_value(name);
+        CDB_VarChar name_value(sp_name);
 
         try {
             cmd->GetBindParams().Bind("@procedure_name", &name_value);

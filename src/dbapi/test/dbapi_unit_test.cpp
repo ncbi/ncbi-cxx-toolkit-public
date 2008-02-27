@@ -7042,9 +7042,42 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
             auto_stmt01->ExecuteUpdate("USE DBAPI_Sample");
         }
 
+        //////////////////////////////////////////////////////////////////////
         {
             auto_stmt.reset(
                     m_Conn->GetCallableStatement("sp_columns")
+                    );
+
+            const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
+
+            col_num = mi.GetTotalColumns();
+            if (m_args.GetServerType() == CTestArguments::eSybase) {
+                BOOST_CHECK_EQUAL(col_num, 5U);
+            } else {
+                BOOST_CHECK_EQUAL(col_num, 6U);
+            }
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        {
+            auto_stmt.reset(
+                    m_Conn->GetCallableStatement(".sp_columns")
+                    );
+
+            const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
+
+            col_num = mi.GetTotalColumns();
+            if (m_args.GetServerType() == CTestArguments::eSybase) {
+                BOOST_CHECK_EQUAL(col_num, 5U);
+            } else {
+                BOOST_CHECK_EQUAL(col_num, 6U);
+            }
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        {
+            auto_stmt.reset(
+                    m_Conn->GetCallableStatement("..sp_columns")
                     );
 
             const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
@@ -7114,6 +7147,50 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
             auto_stmt.reset(
                     m_Conn->GetCallableStatement("sp_stored_procedures")
                     );
+
+            const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
+
+            col_num = mi.GetTotalColumns();
+            if (m_args.GetServerType() == CTestArguments::eMsSql2005) {
+                BOOST_CHECK_EQUAL(col_num, 5U);
+            } else {
+                BOOST_CHECK_EQUAL(col_num, 4U);
+            }
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        {
+            if (m_args.GetServerType() == CTestArguments::eSybase) {
+		auto_stmt.reset(
+			m_Conn->GetCallableStatement("sybsystemprocs..sp_stored_procedures")
+			);
+            } else {
+		auto_stmt.reset(
+			m_Conn->GetCallableStatement("master..sp_stored_procedures")
+			);
+            }
+
+            const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
+
+            col_num = mi.GetTotalColumns();
+            if (m_args.GetServerType() == CTestArguments::eMsSql2005) {
+                BOOST_CHECK_EQUAL(col_num, 5U);
+            } else {
+                BOOST_CHECK_EQUAL(col_num, 4U);
+            }
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        {
+            if (m_args.GetServerType() == CTestArguments::eSybase) {
+		auto_stmt.reset(
+			m_Conn->GetCallableStatement("sybsystemprocs.dbo.sp_stored_procedures")
+			);
+            } else {
+		auto_stmt.reset(
+			m_Conn->GetCallableStatement("master.dbo.sp_stored_procedures")
+			);
+            }
 
             const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
 
