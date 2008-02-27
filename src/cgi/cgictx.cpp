@@ -347,17 +347,32 @@ CCgiContext::GetStreamStatus(STimeout* timeout) const
 #endif
 }
 
-static inline bool s_CheckCookieForTID(const CCgiCookie* cookie, string& tid)
+static inline bool s_CheckValueForTID(const string& value, string& tid)
 {
-    if (cookie) {
-        string part1, part2;
-        NStr::SplitInTwo(cookie->GetValue(), "@", part1, part2);
-        if (NStr::EndsWith(part2, "SID") ) {
-            tid = part2;
-            return true;
-        }
+    string part1, part2;
+    NStr::SplitInTwo(value, "@", part1, part2);
+    if (NStr::EndsWith(part2, "SID")) {
+        tid = part2;
+        return true;
     }
     return false;
+}
+
+static inline bool s_CheckCookieForTID(const CCgiCookies& cookies,
+    const string& cookie_name, string& tid)
+{
+    const CCgiCookie* cookie = cookies.Find(cookie_name);
+
+    return cookie != NULL && s_CheckValueForTID(cookie->GetValue(), tid);
+}
+
+static inline bool s_CheckRequestEntryForTID(const CCgiRequest* request,
+    const string& entry_name, string& tid)
+{
+    bool is_found = false;
+    const CCgiEntry* entry = &request->GetEntry(entry_name, &is_found);
+
+    return is_found && s_CheckValueForTID(entry->GetValue(), tid);
 }
 
 string CCgiContext::RetrieveTrackingId() const
@@ -374,31 +389,25 @@ string CCgiContext::RetrieveTrackingId() const
 
     const CCgiCookies& cookies = m_Request->GetCookies();
 
-    static const char cookie_or_entry_name_1[] = "WebCubbyUser";
-    static const char cookie_or_entry_name_2[] = "WebEnv";
+    static const string cookie_or_entry_name_1("WebCubbyUser");
+    static const string cookie_or_entry_name_2("WebEnv");
 
     string tid;
-    const CCgiCookie* cookie = cookies.Find(cookie_or_entry_name_1);
-    if( s_CheckCookieForTID(cookie, tid) )
+    if (s_CheckCookieForTID(cookies, cookie_or_entry_name_1, tid))
         return tid;
-    cookie = cookies.Find(cookie_or_entry_name_2);
-    if( s_CheckCookieForTID(cookie, tid) )
+    if (s_CheckCookieForTID(cookies, cookie_or_entry_name_2, tid))
         return tid;
 
-    cookie = cookies.Find(TCGI_TrackingCookieName::GetDefault(),
-        kEmptyStr, kEmptyStr); 
+    const CCgiCookie* cookie = cookies.Find(
+        TCGI_TrackingCookieName::GetDefault(), kEmptyStr, kEmptyStr);
 
-    if (cookie) 
+    if (cookie)
         return cookie->GetValue();
 
-    entry = &m_Request->GetEntry(cookie_or_entry_name_1, &is_found);
-    if (is_found) {
-        return entry->GetValue();
-    }
-    entry = &m_Request->GetEntry(cookie_or_entry_name_2, &is_found);
-    if (is_found) {
-        return entry->GetValue();
-    }
+    if (s_CheckRequestEntryForTID(m_Request.get(), cookie_or_entry_name_1, tid))
+        return tid;
+    if (s_CheckRequestEntryForTID(m_Request.get(), cookie_or_entry_name_2, tid))
+        return tid;
 
     CNcbiOstrstream oss;
     oss << GetDiagContext().GetStringUID() << '_' << setw(4) << setfill('0')
