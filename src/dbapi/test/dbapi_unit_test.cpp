@@ -2352,7 +2352,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
             // Check inserted data ...
             {
                 int rec_num = GetNumOfRecords(auto_stmt, table_name);
-                BOOST_CHECK(rec_num == int(record_num * batch_num));
+                BOOST_CHECK_EQUAL(rec_num, int(record_num) * int(batch_num));
             }
         }
     }
@@ -4337,7 +4337,7 @@ CDBAPIUnitTest::Test_Bulk_Writing5(void)
 
         // Insert data ...
         {
-            auto_ptr<CDB_BCPInCmd> vBcp(conn->BCPIn(table_name)); 
+            auto_ptr<CDB_BCPInCmd> vBcp(conn->BCPIn(table_name));
 
             CDB_VarChar     s_file_name;
             CDB_Int         n_line_num;
@@ -4376,7 +4376,7 @@ CDBAPIUnitTest::Test_Bulk_Writing5(void)
             vBcp->Bind(pos++, &s_params_unparsed);
             vBcp->Bind(pos++, &s_extra);
             vBcp->Bind(pos++, &s_error);
-            vBcp->Bind(pos++, &s_warning); 
+            vBcp->Bind(pos++, &s_warning);
 
             int i = 2;
             while (i-- > 0) {
@@ -4408,7 +4408,7 @@ CDBAPIUnitTest::Test_Bulk_Writing5(void)
                 vBcp->SendRow();
             }
 
-            vBcp->CompleteBCP(); 
+            vBcp->CompleteBCP();
         }
     }
     catch(const CException& ex) {
@@ -4702,7 +4702,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
                 sql = "INSERT INTO " + table_name + "(num_field1, num_field2) "
                     "VALUES(@value1, @value2)";
 
-                // 
+                //
                 {
                     //
                     value1 = static_cast<double>(value);
@@ -4731,7 +4731,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
 
                     auto_stmt->ExecuteUpdate( sql );
                 }
-                
+
                 // ClearParamList is necessary here ...
                 auto_stmt->ClearParamList();
             }
@@ -7030,7 +7030,7 @@ CDBAPIUnitTest::Test_ResultsetMetaData(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void 
+void
 CDBAPIUnitTest::Test_StmtMetaData(void)
 {
     try {
@@ -12299,7 +12299,7 @@ CDBAPIUnitTest::Test_Identity(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void 
+void
 CDBAPIUnitTest::Test_ClearParamList(void)
 {
     const long rec_num  = 10;
@@ -12499,9 +12499,9 @@ void CDBAPIUnitTest::Test_ConnParams(void)
         {
             {
                 CDBUriConnParams params(
-                        "dbapi:" + m_args.GetDriverName() + 
-                        "://" + m_args.GetUserName() + 
-                        ":" + m_args.GetUserPassword() + 
+                        "dbapi:" + m_args.GetDriverName() +
+                        "://" + m_args.GetUserName() +
+                        ":" + m_args.GetUserPassword() +
                         "@" + m_args.GetServerName()
                         );
 
@@ -12517,8 +12517,8 @@ void CDBAPIUnitTest::Test_ConnParams(void)
             {
                 CDBUriConnParams params(
                         "dbapi:" // No driver name ...
-                        "//" + m_args.GetUserName() + 
-                        ":" + m_args.GetUserPassword() + 
+                        "//" + m_args.GetUserName() +
+                        ":" + m_args.GetUserPassword() +
                         "@" + m_args.GetServerName()
                         );
 
@@ -12534,7 +12534,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
             {
                 CDBUriConnParams params(
                         "dbapi:" // No driver name ...
-                        "//" + m_args.GetUserName() + 
+                        "//" + m_args.GetUserName() +
                         // No password ...
                         "@" + m_args.GetServerName()
                         );
@@ -12554,9 +12554,9 @@ void CDBAPIUnitTest::Test_ConnParams(void)
         {
             {
                 CDB_ODBC_ConnParams params(
-                        "DRIVER=" + m_args.GetDriverName() + 
-                        ";UID=" + m_args.GetUserName() + 
-                        ";PWD=" + m_args.GetUserPassword() + 
+                        "DRIVER=" + m_args.GetDriverName() +
+                        ";UID=" + m_args.GetUserName() +
+                        ";PWD=" + m_args.GetUserPassword() +
                         ";SERVER=" + m_args.GetServerName()
                         );
 
@@ -12572,8 +12572,8 @@ void CDBAPIUnitTest::Test_ConnParams(void)
             {
                 CDB_ODBC_ConnParams params(
                         // No driver ...
-                        ";UID=" + m_args.GetUserName() + 
-                        ";PWD=" + m_args.GetUserPassword() + 
+                        ";UID=" + m_args.GetUserName() +
+                        ";PWD=" + m_args.GetUserPassword() +
                         ";SERVER=" + m_args.GetServerName()
                         );
 
@@ -12589,7 +12589,7 @@ void CDBAPIUnitTest::Test_ConnParams(void)
             {
                 CDB_ODBC_ConnParams params(
                         // No driver ...
-                        ";UID=" + m_args.GetUserName() + 
+                        ";UID=" + m_args.GetUserName() +
                         // No password ...
                         ";SERVER=" + m_args.GetServerName()
                         );
@@ -12837,7 +12837,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         PutMsgDisabled("Test_BlobStore");
     }
 
-    if (args.GetTestConfiguration() != CTestArguments::eWithoutExceptions 
+    if (args.GetTestConfiguration() != CTestArguments::eWithoutExceptions
         && args.GetTestConfiguration() != CTestArguments::eFast
         ) {
         // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
@@ -13698,7 +13698,7 @@ CTestArguments::IsBCPAvailable(void) const
         return false;
     } else if ( GetDriverName() == ftds_odbc_driver
          || GetDriverName() == msdblib_driver
-         || ((GetDriverName() == ftds64_driver || GetDriverName() == ftds8_driver) 
+         || ((GetDriverName() == ftds64_driver || GetDriverName() == ftds8_driver)
              && GetServerType() == CTestArguments::eSybase
              )
          ) {
