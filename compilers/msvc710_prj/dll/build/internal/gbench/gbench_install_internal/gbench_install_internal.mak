@@ -66,7 +66,6 @@ INTERNAL_PLUGINS = \
         proteus \
         radar \
         contig \
-        mview \
         ncbi
 
 #
@@ -81,7 +80,6 @@ clean :
     -@rmdir /S /Q $(GBENCH)\extra
     -@del $(GBENCH)\..\..\..\$(INTDIR)\fltk_gbench.installed
     -@del $(GBENCH)\..\..\..\$(INTDIR)\berkeleydb_gbench.installed
-    -@del $(GBENCH)\..\..\..\$(INTDIR)\sqlite_gbench.installed
     -@del $(GBENCH)\..\..\..\$(INTDIR)\msvc_gbench.installed
 
 
@@ -105,7 +103,9 @@ ncbi :
     @if not exist $(GBENCH)\extra\ncbi mkdir $(GBENCH)\extra\ncbi
     @if exist $(DLLBIN)\ncbi_gbench_internal.dll copy $(DLLBIN)\ncbi_gbench_internal.dll $(GBENCH)\extra\ncbi\ncbi_gbench_internal.dll
     @if exist $(DLLBIN)\ncbi_gbench_internal.pdb copy $(DLLBIN)\ncbi_gbench_internal.pdb $(GBENCH)\extra\ncbi\ncbi_gbench_internal.pdb
-    @if exist $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-config.asn copy $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-win32-config.asn $(GBENCH)\extra\ncbi\ncbi-config.asn
+    @if exist $(DLLBIN)\mapview.dll copy $(DLLBIN)\mapview.dll $(GBENCH)\extra\ncbi\mapview.dll
+    @if exist $(DLLBIN)\mapview.pdb copy $(DLLBIN)\mapview.pdb $(GBENCH)\extra\ncbi\mapview.pdb
+    @if exist $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-config.asn copy $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-config.asn $(GBENCH)\extra\ncbi\ncbi-config.asn
     @if exist $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-win32-config.asn copy $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-win32-config.asn $(GBENCH)\extra\ncbi\ncbi-win32-config.asn
     $(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\ncbi
 
@@ -138,13 +138,3 @@ contig :
     @if exist $(DLLBIN)\dload_contig.pdb copy $(DLLBIN)\dload_contig.pdb $(GBENCH)\extra\contig\dload_contig.pdb
     @if exist $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn copy $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn $(GBENCH)\extra\contig\contig-config.asn
     @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\contig
-
-mview :
-    @echo Installing MapView...
-    @if not exist $(GBENCH)\extra\mview mkdir $(GBENCH)\extra\mview
-    @if exist $(DLLBIN)\ncbi_gbench_mapview.dll copy $(DLLBIN)\mapview.dll $(GBENCH)\extra\mview\mapview.dll
-    @if exist $(DLLBIN)\ncbi_gbench_mapview.pdb copy $(DLLBIN)\mapview.pdb $(GBENCH)\extra\mview\mapview.pdb    
-    @if exist $(DLLBIN)\ncbi_gbench_mapview.dll copy $(DLLBIN)\ncbi_gbench_mapview.dll $(GBENCH)\extra\mview\ncbi_gbench_mapview.dll
-    @if exist $(DLLBIN)\ncbi_gbench_mapview.pdb copy $(DLLBIN)\ncbi_gbench_mapview.pdb $(GBENCH)\extra\mview\ncbi_gbench_mapview.pdb
-    @if exist $(SRCDIR)\internal\gbench\plugins\mview\mview-config.asn copy $(SRCDIR)\internal\gbench\plugins\mview\mview-config.asn $(GBENCH)\extra\mview\mview-config.asn
-    @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\mview
