@@ -72,6 +72,7 @@ private:
     void DoProcess ( CNcbiIstream& ip, CNcbiOstream& op, CScope&, CRef<CSeq_entry>& se );
 
     void DoProcessStreamFasta ( CNcbiIstream& ip, CNcbiOstream& op, CRef<CSeq_entry>& se );
+    void DoProcessStreamDefline ( CNcbiIstream& ip, CNcbiOstream& op, CRef<CSeq_entry>& se, CScope& );
 
     int DoProcessFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_entry>&, bool do_format );
     int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CBioseq&, bool do_format );
@@ -96,6 +97,8 @@ private:
     bool  m_hoverlap;
     bool  m_gxref;
     bool  m_ooverlap;
+
+    bool m_defline_only;
 };
 
 
@@ -150,10 +153,10 @@ void CMytestApplication::Init(void)
 
     arg_desc->AddOptionalKey
         ("S", "Sequence",
-         "s FASTA, r No Defline, f By Feature, t Translation, v Visit, o Ostream",
+         "s FASTA, r No Defline, d Defline only, f By Feature, t Translation, v Visit, o Ostream",
          CArgDescriptions::eString);
     arg_desc->SetConstraint
-        ("S", &(*new CArgAllow_Strings, "s", "r", "f", "t", "v", "o"));
+        ("S", &(*new CArgAllow_Strings, "s", "r", "d", "f", "t", "v", "o"));
 
     arg_desc->AddOptionalKey
         ("F", "Feature",
@@ -184,11 +187,28 @@ void CMytestApplication::DoProcessStreamFasta (
 
 /////////////////////////////////////////////////////////////////////////////
 
+void CMytestApplication::DoProcessStreamDefline (
+    CNcbiIstream& ip,
+    CNcbiOstream& op,
+    CRef<CSeq_entry>& se,
+    CScope& scope
+)
+{
+    CFastaOstream fo (op);
+    for (CTypeConstIterator<CBioseq> bit (*se); bit; ++bit) {
+        fo.WriteTitle (scope.GetBioseqHandle(*bit));
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 struct s_AsString
 {
     s_AsString(const CSeq_loc& loc) : loc(loc) {}
     const CSeq_loc& loc;
 };
+
+////////////////////////////////////////////////////////////////////////////////
 
 CNcbiOstream& operator<<(CNcbiOstream& out, const s_AsString& as)
 {
@@ -218,6 +238,8 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const s_AsString& as)
     return out;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 int CMytestApplication::TestFeatureGeneOverlap (
     CNcbiIstream& ip,
     CNcbiOstream& op,
@@ -239,6 +261,8 @@ int CMytestApplication::TestFeatureGeneOverlap (
     return 1;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 int CMytestApplication::TestFeatureGeneOverlap (
     CNcbiIstream& ip,
     CNcbiOstream& op,
@@ -255,6 +279,8 @@ int CMytestApplication::TestFeatureGeneOverlap (
     return count;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 int CMytestApplication::TestFeatureGeneOverlap (
     CNcbiIstream& ip,
     CNcbiOstream& op,
@@ -270,6 +296,8 @@ int CMytestApplication::TestFeatureGeneOverlap (
     }
     return count;
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 int CMytestApplication::DoProcessFeatureGeneOverlap (
     CNcbiIstream& ip,
@@ -333,6 +361,11 @@ void CMytestApplication::DoProcess (
 
     if (m_fasta) {
         DoProcessStreamFasta( ip, op, se );
+            return;
+    }
+    if (m_defline_only) {
+        DoProcessStreamDefline( ip, op, se, scope );
+            return;
     }
     if (m_nodef) {
         // need to implement
@@ -373,6 +406,8 @@ void CMytestApplication::DoProcess (
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 int CMytestApplication::Run(void)
 {
     // Get arguments
@@ -406,6 +441,8 @@ int CMytestApplication::Run(void)
     m_gxref = false;
     m_ooverlap = false;
 
+    m_defline_only = false;
+
     if (args["K"]) {
         string km = args["K"].AsString();
         if (NStr::Find (km, "b") != NPOS) {
@@ -430,6 +467,9 @@ int CMytestApplication::Run(void)
         }
         if (NStr::Find (sm, "r") != NPOS) {
             m_nodef = true;
+        }
+        if (NStr::Find (sm, "d") != NPOS) {
+            m_defline_only = true;
         }
         if (NStr::Find (sm, "f") != NPOS) {
             m_featfa = true;
