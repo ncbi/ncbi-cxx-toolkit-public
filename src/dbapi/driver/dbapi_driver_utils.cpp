@@ -415,18 +415,15 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
             vector<string> arr_param;
 
             NStr::Tokenize(name, ".", arr_param);
+            size_t pos = 0;
+
             switch (arr_param.size()) {
-                case 1:
-                    sp_name = name;
-                    break;
-                case 2:
-                    db_owner = arr_param[0];
-                    sp_name = arr_param[1];
-                    break;
                 case 3:
-                    db_name = arr_param[0];
-                    db_owner = arr_param[1];
-                    sp_name = arr_param[2];
+                    db_name = arr_param[pos++];
+                case 2:
+                    db_owner = arr_param[pos++];
+                case 1:
+                    sp_name = arr_param[pos++];
                     break;
                 default:
                     DATABASE_DRIVER_ERROR("Invalid format of stored procedure's name: " + name, 1);
