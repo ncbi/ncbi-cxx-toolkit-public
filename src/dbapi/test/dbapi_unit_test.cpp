@@ -12985,12 +12985,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                               DBAPIInstance));
 
     if (!(args.GetDriverName() == ftds64_driver
-          && args.GetServerType() == CTestArguments::eSybase)
-        && args.GetDriverName() != ftds8_driver
+          && args.GetServerType() == CTestArguments::eSybase) // Crashes 02/28/08
+        && args.GetDriverName() != ftds8_driver // Doesn't work 02/28/08 
         && args.GetDriverName() != ftds_dblib_driver
         && args.GetDriverName() != dblib_driver
        ) {
-        add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Numeric, DBAPIInstance));
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Numeric, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    } else {
+        PutMsgDisabled("Test_Numeric");
     }
 
     if (!(args.GetDriverName() == ftds64_driver
