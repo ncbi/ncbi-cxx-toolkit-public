@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/gnomon/gnomon_model.hpp>
+#include <algo/gnomon/gnomon.hpp>
 #include "gnomon_seq.hpp"
 #include <set>
 #include <functional>
@@ -305,6 +306,34 @@ void CCDSInfo::Clear()
     m_confirmed_start = false;
     m_p_stops.clear();
     SetScore( BadScore(), false );
+}
+
+void CGeneModel::RemoveShortHolesAndRescore(const CGnomonEngine& gnomon) {
+    TExons new_exons;
+    new_exons.push_back(Exons().front());
+    bool modified = false;
+    for(unsigned int i = 1; i < Exons().size(); ++i) {
+        bool hole = !Exons()[i-1].m_ssplice || !Exons()[i].m_fsplice;
+        int intron = Exons()[i].GetFrom()-Exons()[i-1].GetTo()-1;
+        if (hole && intron < gnomon.GetMinIntronLen()) {
+            modified = true;
+            new_exons.back().m_ssplice = Exons()[i].m_ssplice;
+            new_exons.back().AddTo(Exons()[i].GetTo()-Exons()[i-1].GetTo());
+            if(intron%3 != 0) {
+                int len = intron%3;
+                int loc = Exons()[i-1].GetTo() + 1 + (intron-len)/2;
+                FrameShifts().push_back(CFrameShiftInfo(loc, len, true));
+            }
+        } else {
+            new_exons.push_back(Exons()[i]);
+        } 
+    }
+
+    if(modified) {
+        MyExons() = new_exons;
+        sort(FrameShifts().begin(),FrameShifts().end());
+        gnomon.GetScore(*this);
+    }
 }
 
 bool CGeneModel::GoodEnoughToBeAlternative(int minCdsLen, int maxcomposite) const

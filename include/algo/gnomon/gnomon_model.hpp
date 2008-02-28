@@ -367,6 +367,7 @@ public:
     void ExtendRight(int amount);
     void Extend(const CGeneModel& a, bool ensure_cds_invariant = true);
     void TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps, bool ensure_cds_invariant = true);
+    void RemoveShortHolesAndRescore(const CGnomonEngine& gnomon);   // removes holes shorter than min intron (may add frameshifts/stops)
    
     TSignedSeqRange Limits() const { return m_range; }
     int AlignLen() const ;
