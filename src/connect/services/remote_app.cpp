@@ -65,10 +65,6 @@ void TokenizeCmdLine(const string& cmdline, vector<string>& args)
                 continue;
             }
             if (cmdline[i] == '\'' || cmdline[i] == '"') {
-                /*                    if( !arg.empty() ) {
-                                      args.push_back(arg);
-                                      arg.erase();
-                                      }*/
                 char quote = cmdline[i];
                 while( ++i < cmdline.size() && cmdline[i] != quote )
                     arg += cmdline[i];
