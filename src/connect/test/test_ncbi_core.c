@@ -338,7 +338,7 @@ static void TEST_UTIL_Log(void)
     for (i = 0;  i < sizeof(data);  i++) {
         data[i] = (unsigned char) (i % 256);
     }
-    LOG_DATA(x_log, 0, 0, data, sizeof(data), "Data logging test");
+    LOG_DATA(x_log, 0, 0, eLOG_Note, data, sizeof(data), "Data logging test");
   }}
 
   /* logging with errno */
