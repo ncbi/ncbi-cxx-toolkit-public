@@ -129,8 +129,8 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
    we must explicitly drop such definitions to avoid trouble */
 #  undef LOG_DATA
 #endif
-#define  LOG_DATA(lg, code, subcode, data, size, message)                   \
-  LOG_Data(lg, code, subcode, eLOG_Trace, THIS_MODULE, THIS_FILE, __LINE__, \
+#define  LOG_DATA(lg, code, subcode, level, data, size, message)       \
+  LOG_Data(lg, code, subcode, level, THIS_MODULE, THIS_FILE, __LINE__, \
            data, size, message)
 
 

@@ -92,41 +92,41 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 #endif
 ;
 
-#define DO_CORE_LOG_X(macro, level, params)  do {                     \
-        if (g_CORE_Log  ||  (level) == eLOG_Fatal) {                  \
-            CORE_LOCK_READ;                                           \
-            macro params;  /* parentheses already in params */        \
-            CORE_UNLOCK;                                              \
-        }                                                             \
+#define DO_CORE_LOG_X(macro, level, params)  do {                       \
+        if (g_CORE_Log  ||  (level) == eLOG_Fatal) {                    \
+            CORE_LOCK_READ;                                             \
+            macro params;  /* parentheses already in params */          \
+            CORE_UNLOCK;                                                \
+        }                                                               \
     } while (0)
 
 
-#define DO_CORE_LOG_WRITE(code, subcode, level, message)              \
-    DO_CORE_LOG_X( LOG_WRITE, level,                                  \
+#define DO_CORE_LOG_WRITE(code, subcode, level, message)                \
+    DO_CORE_LOG_X( LOG_WRITE, level,                                    \
                    (g_CORE_Log, code, subcode, level, message) )
 
-#define DO_CORE_LOG_DATA(code, subcode, data, size, message)          \
-    DO_CORE_LOG_X( LOG_DATA, eLOG_Trace,                              \
-                   (g_CORE_Log, code, subcode, data, size, message) )
+#define DO_CORE_LOG_DATA(code, subcode, level, data, size, message)     \
+    DO_CORE_LOG_X( LOG_DATA, level,                                     \
+                   (g_CORE_Log, code, subcode, level, data, size, message) )
 
 #define DO_CORE_LOG_ERRNO(code, subcode, level, x_errno, x_descr, message) \
-    DO_CORE_LOG_X( LOG_WRITE_ERRNO_EX, level,                         \
-                   (g_CORE_Log, code, subcode, level, message,        \
+    DO_CORE_LOG_X( LOG_WRITE_ERRNO_EX, level,                           \
+                   (g_CORE_Log, code, subcode, level, message,          \
                     x_errno, x_descr) )
 
 
-#define CORE_LOG_X(subcode, level, message)                           \
+#define CORE_LOG_X(subcode, level, message)                             \
     DO_CORE_LOG_WRITE(NCBI_C_ERRCODE_X, subcode, level, message)
 
-#define CORE_LOGF_X(subcode, level, fmt_args)                         \
-    DO_CORE_LOG_WRITE(NCBI_C_ERRCODE_X, subcode, level,               \
+#define CORE_LOGF_X(subcode, level, fmt_args)                           \
+    DO_CORE_LOG_WRITE(NCBI_C_ERRCODE_X, subcode, level,                 \
                       g_CORE_Sprintf fmt_args)
 
-#define CORE_LOG(level, message)                                      \
+#define CORE_LOG(level, message)                                        \
     DO_CORE_LOG_WRITE(0, 0, level, message)
 
-#define CORE_LOGF(level, fmt_args)                                    \
-    DO_CORE_LOG_WRITE(0, 0, level,                                    \
+#define CORE_LOGF(level, fmt_args)                                      \
+    DO_CORE_LOG_WRITE(0, 0, level,                                      \
                       g_CORE_Sprintf fmt_args)
 
 #ifdef _DEBUG
@@ -139,47 +139,62 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 #  define CORE_DEBUG_ARG(arg)    /*arg*/
 #endif /*_DEBUG*/
 
-#define CORE_DATA_X(subcode, data, size, message)                     \
-    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, data, size, message)
+#define CORE_DATA_X(subcode, data, size, message)                       \
+    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, eLOG_Trace, data, size, \
+                     message)
 
-#define CORE_DATAF_X(subcode, data, size, fmt_args)                   \
-    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, data, size,           \
+#define CORE_DATAF_X(subcode, data, size, fmt_args)                     \
+    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, eLOG_Trace, data, size, \
                      g_CORE_Sprintf fmt_args)
 
-#define CORE_DATA(data, size, message)                                \
-    DO_CORE_LOG_DATA(0, 0, data, size, message)
-
-#define CORE_DATAF(data, size, fmt_args)                              \
-    DO_CORE_LOG_DATA(0, 0, data, size,                                \
+#define CORE_DATA_EXX(subcode, level, data, size, message)              \
+    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, level, data, size, message)
+    
+#define CORE_DATAF_EXX(subcode, level, data, size, fmt_args)            \
+    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, level, data, size,      \
                      g_CORE_Sprintf fmt_args)
 
-#define CORE_LOG_ERRNO_X(subcode, level, x_errno, message)            \
+#define CORE_DATA(data, size, message)                                  \
+    DO_CORE_LOG_DATA(0, 0, eLOG_Trace, data, size, message)
+    
+#define CORE_DATAF(data, size, fmt_args)                                \
+    DO_CORE_LOG_DATA(0, 0, eLOG_Trace, data, size,                      \
+                     g_CORE_Sprintf fmt_args)
+
+#define CORE_DATA_EX(level, data, size, message)                        \
+    DO_CORE_LOG_DATA(0, 0, level, data, size, message)
+
+#define CORE_DATAF_EX(level, data, size, fmt_args)                      \
+    DO_CORE_LOG_DATA(0, 0, level, data, size,                           \
+                     g_CORE_Sprintf fmt_args)
+
+#define CORE_LOG_ERRNO_X(subcode, level, x_errno, message)              \
     DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level, x_errno, 0, message)
 
-#define CORE_LOGF_ERRNO_X(subcode, level, x_errno, fmt_args)          \
-    DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level, x_errno, 0,   \
+#define CORE_LOGF_ERRNO_X(subcode, level, x_errno, fmt_args)            \
+    DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level, x_errno, 0,     \
                       g_CORE_Sprintf fmt_args)
 
-#define CORE_LOG_ERRNO_EXX(subcode, level, x_errno, x_descr, message) \
-    DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level,               \
+#define CORE_LOG_ERRNO_EXX(subcode, level, x_errno, x_descr, message)   \
+    DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level,                 \
                       x_errno, x_descr, message)
 
-#define CORE_LOGF_ERRNO_EXX(subcode, level, x_errno, x_descr, fmt_args) \
+#define CORE_LOGF_ERRNO_EXX(subcode, level, x_errno, x_descr, fmt_args)   \
     DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level, x_errno, x_descr, \
                       g_CORE_Sprintf fmt_args)
 
-#define CORE_LOG_ERRNO(level, x_errno, message)                       \
+#define CORE_LOG_ERRNO(level, x_errno, message)                         \
     DO_CORE_LOG_ERRNO(0, 0, level, x_errno, 0, message)
 
-#define CORE_LOGF_ERRNO(level, x_errno, fmt_args)                     \
-    DO_CORE_LOG_ERRNO(0, 0, level, x_errno, 0,                        \
+#define CORE_LOGF_ERRNO(level, x_errno, fmt_args)                       \
+    DO_CORE_LOG_ERRNO(0, 0, level, x_errno, 0,                          \
                       g_CORE_Sprintf fmt_args)
 
-#define CORE_LOG_ERRNO_EX(level, x_errno, x_descr, message)           \
+#define CORE_LOG_ERRNO_EX(level, x_errno, x_descr, message)             \
     DO_CORE_LOG_ERRNO(0, 0, level, x_errno, x_descr, message)
 
-#define CORE_LOGF_ERRNO_EX(level, x_errno, x_descr, fmt_args)         \
-    DO_CORE_LOG_ERRNO(0, 0, level, x_errno, x_descr,                  \
+#define CORE_LOGF_ERRNO_EX(level, x_errno, x_descr, fmt_args)           \
+    DO_CORE_LOG_ERRNO(0, 0, level, x_errno, x_descr,                    \
                       g_CORE_Sprintf fmt_args)
 
 
