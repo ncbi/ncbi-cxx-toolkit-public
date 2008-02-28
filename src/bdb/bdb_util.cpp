@@ -204,33 +204,33 @@ void s_LogEnvParam(const string& param_name,
 
 
 
-static const string kEnvParam_type           = "env_type";
-static const string kEnvParam_path           = "path";
-static const string kEnvParam_reinit         = "reinit";
-static const string kEnvParam_errfile        = "error_file";
+static const char* kEnvParam_type                 = "env_type";
+static const char* kEnvParam_path                 = "path";
+static const char* kEnvParam_reinit               = "reinit";
+static const char* kEnvParam_errfile              = "error_file";
 
-static const string kEnvParam_mem_size             = "mem_size";
-static const string kEnvParam_cache_size           = "cache_size";
-static const string kEnvParam_cache_num            = "cache_num";
-static const string kEnvParam_log_mem_size         = "log_mem_size";
-static const string kEnvParam_write_sync           = "write_sync";
-static const string kEnvParam_direct_db            = "direct_db";
-static const string kEnvParam_direct_log           = "direct_log";
-static const string kEnvParam_transaction_log_path = "transaction_log_path";
-static const string kEnvParam_log_file_max         = "log_file_max";
-static const string kEnvParam_log_autoremove       = "log_autoremove";
-static const string kEnvParam_lock_timeout         = "lock_timeout";
-static const string kEnvParam_TAS_spins            = "tas_spins";
-static const string kEnvParam_max_locks            = "max_locks";
-static const string kEnvParam_max_lock_objects     = "max_lock_objects";
-static const string kEnvParam_mp_maxwrite          = "mp_maxwrite";
-static const string kEnvParam_mp_maxwrite_sleep    = "mp_maxwrite_sleep";
+static const char* kEnvParam_mem_size             = "mem_size";
+static const char* kEnvParam_cache_size           = "cache_size";
+static const char* kEnvParam_cache_num            = "cache_num";
+static const char* kEnvParam_log_mem_size         = "log_mem_size";
+static const char* kEnvParam_write_sync           = "write_sync";
+static const char* kEnvParam_direct_db            = "direct_db";
+static const char* kEnvParam_direct_log           = "direct_log";
+static const char* kEnvParam_transaction_log_path = "transaction_log_path";
+static const char* kEnvParam_log_file_max         = "log_file_max";
+static const char* kEnvParam_log_autoremove       = "log_autoremove";
+static const char* kEnvParam_lock_timeout         = "lock_timeout";
+static const char* kEnvParam_TAS_spins            = "tas_spins";
+static const char* kEnvParam_max_locks            = "max_locks";
+static const char* kEnvParam_max_lock_objects     = "max_lock_objects";
+static const char* kEnvParam_mp_maxwrite          = "mp_maxwrite";
+static const char* kEnvParam_mp_maxwrite_sleep    = "mp_maxwrite_sleep";
 
-static const string kEnvParam_checkpoint_interval  = "checkpoint_interval";
-static const string kEnvParam_enable_checkpoint    = "enable_checkpoint";
-static const string kEnvParam_checkpoint_kb        = "checkpoint_kb";
-static const string kEnvParam_checkpoint_min       = "checkpoint_min";
-static const string kEnvParam_memp_trickle_percent = "memp_trickle_percent";
+static const char* kEnvParam_checkpoint_interval  = "checkpoint_interval";
+static const char* kEnvParam_enable_checkpoint    = "enable_checkpoint";
+static const char* kEnvParam_checkpoint_kb        = "checkpoint_kb";
+static const char* kEnvParam_checkpoint_min       = "checkpoint_min";
+static const char* kEnvParam_memp_trickle_percent = "memp_trickle_percent";
 
 
 CBDB_Env* BDB_CreateEnv(const CNcbiRegistry& reg, 

@@ -3363,7 +3363,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
     time_t curr = time(0);
 
     if (m_LastTimeLineCheck) {
-        if ((curr - m_LastTimeLineCheck) < m_TimeLine->GetDiscrFactor()) {
+        if ((curr - m_LastTimeLineCheck) < (time_t)m_TimeLine->GetDiscrFactor()) {
             if (m_Monitor && m_Monitor->IsActive()) {
                 string msg = "Purge: Timeline evaluation skiped ";
                 msg += "(early wakeup for this precision) remains=";
@@ -3737,7 +3737,7 @@ purge_start:
         // wait until current time goes after next projected expiration, plus
         // timeline precision, otherwise no need to do scanning
         //
-        if (gc_start < (m_NextExpTime + precision)) {
+        if (gc_start < (m_NextExpTime + (time_t)precision)) {
             if (m_Monitor && m_Monitor->IsActive()) {
                 unsigned remains = (m_NextExpTime + precision) - gc_start;
                 unsigned rc = 0;
@@ -4993,37 +4993,35 @@ public:
 
 // List of parameters accepted by the CF
 
-static const string kCFParam_path           = "path";
-static const string kCFParam_name           = "name";
+static const char* kCFParam_path               = "path";
+static const char* kCFParam_name               = "name";
 
-static const string kCFParam_lock           = "lock";
-static const string kCFParam_lock_default   = "no_lock";
-static const string kCFParam_lock_pid_lock  = "pid_lock";
+static const char* kCFParam_lock               = "lock";
+static const char* kCFParam_lock_default       = "no_lock";
+static const char* kCFParam_lock_pid_lock      = "pid_lock";
 
-static const string kCFParam_mem_size          = "mem_size";
-static const string kCFParam_log_mem_size      = "log_mem_size";
-static const string kCFParam_read_only         = "read_only";
-static const string kCFParam_write_sync        = "write_sync";
-static const string kCFParam_use_transactions  = "use_transactions";
-static const string kCFParam_direct_db         = "direct_db";
-static const string kCFParam_direct_log        = "direct_log";
-static const string kCFParam_transaction_log_path = "transaction_log_path";
+static const char* kCFParam_mem_size           = "mem_size";
+static const char* kCFParam_log_mem_size       = "log_mem_size";
+static const char* kCFParam_read_only          = "read_only";
+static const char* kCFParam_write_sync         = "write_sync";
+static const char* kCFParam_use_transactions   = "use_transactions";
+static const char* kCFParam_direct_db          = "direct_db";
+static const char* kCFParam_direct_log         = "direct_log";
+static const char* kCFParam_transaction_log_path = "transaction_log_path";
 
-
-static const string kCFParam_purge_batch_size  = "purge_batch_size";
-static const string kCFParam_purge_batch_sleep  = "purge_batch_sleep";
-static const string kCFParam_purge_clean_log    = "purge_clean_log";
-static const string kCFParam_purge_thread       = "purge_thread";
-static const string kCFParam_purge_thread_delay = "purge_thread_delay";
-static const string kCFParam_checkpoint_bytes   = "checkpoint_bytes";
-static const string kCFParam_log_file_max       = "log_file_max";
-static const string kCFParam_overflow_limit     = "overflow_limit";
-static const string kCFParam_ttl_prolong        = "ttl_prolong";
-static const string kCFParam_max_blob_size      = "max_blob_size";
-static const string kCFParam_rr_volumes         = "rr_volumes";
-static const string kCFParam_memp_trickle       = "memp_trickle";
-static const string kCFParam_TAS_spins          = "tas_spins";
-
+static const char* kCFParam_purge_batch_size   = "purge_batch_size";
+static const char* kCFParam_purge_batch_sleep  = "purge_batch_sleep";
+static const char* kCFParam_purge_clean_log    = "purge_clean_log";
+static const char* kCFParam_purge_thread       = "purge_thread";
+static const char* kCFParam_purge_thread_delay = "purge_thread_delay";
+static const char* kCFParam_checkpoint_bytes   = "checkpoint_bytes";
+static const char* kCFParam_log_file_max       = "log_file_max";
+static const char* kCFParam_overflow_limit     = "overflow_limit";
+static const char* kCFParam_ttl_prolong        = "ttl_prolong";
+static const char* kCFParam_max_blob_size      = "max_blob_size";
+static const char* kCFParam_rr_volumes         = "rr_volumes";
+static const char* kCFParam_memp_trickle       = "memp_trickle";
+static const char* kCFParam_TAS_spins          = "tas_spins";
 
 
 bool CBDB_Cache::SameCacheParams(const TCacheParams* params) const
