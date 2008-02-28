@@ -137,8 +137,8 @@ void COMSSABase::Init()
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("ox", "xmloutfile", "filename for xml formatted search results",
 			   CArgDescriptions::eString, "");
-    argDesc->AddDefaultKey("op", "pepxmloutfile", "base filename for pepXML formatted search results",
-                           CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("op", "pepxmloutfile", "filename for pepXML formatted search results",
+               CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("oc", "csvfile", "filename for csv formatted search summary",
                 CArgDescriptions::eString, "");
     argDesc->AddFlag("w", "include spectra and search params in search results");

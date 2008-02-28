@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <util/regexp.hpp>
 
 #include "pepxml.hpp"
 #include "omssa.hpp"
@@ -124,25 +125,32 @@ void CPepXML::ConvertModification(CRef<CSearch_summary> sSum, CRef <CMSModSpecSe
     }
 }
 
-// Parses a spectrum identifier string in reverse
+// Parses a spectrum identifier string
 // SpecID: the string to parse
-// field:  0 = file extension (dta)
-//         1 = charge state
+// field:  0 = whole string
+//         1 = start scan
 //         2 = end scan
-//         3 = start scan
+//         3 = charge state
+//         4 = file extension (.dta)
 // def:    string to return if SpecID is not a dta filename
 string CPepXML::ParseScan(string SpecID, int field, string def) {
-    string start = "0";
-    if (NStr::EndsWith(SpecID, "dta", NStr::eNocase)) {
-        list<string> result;
-        NStr::Split(SpecID, ".", result);
-        list<string>::reverse_iterator rIter = result.rbegin();
-        for (int i = 0; i < field; i++) { rIter++; }
-        start = (*rIter);
-    } else {
-        start = def;
-    }
-    return start;
+	CRegexp RxpParse(".*\\.(\\d+)\\.(\\d+)\\.(\\d+)(\\.dta)?", CRegexp::fCompile_ignore_case);
+	string match = RxpParse.GetMatch(SpecID, 0, field);
+	if (match == "") return def;
+	
+	return match;
+	
+ //string start = "0";
+ //   if (NStr::EndsWith(SpecID, "dta", NStr::eNocase)) {
+ //       list<string> result;
+ //       NStr::Split(SpecID, ".", result);
+ //       list<string>::reverse_iterator rIter = result.rbegin();
+ //       for (int i = 0; i < field; i++) { rIter++; }
+ //       start = (*rIter);
+ //   } else {
+ //       start = def;
+ //   }
+ //   return start;
 }
 
 void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, string basename) {
@@ -228,7 +236,7 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
             string spectrumID = HitSet->GetIds().front();
             string query = NStr::IntToString(HitSet->GetNumber());
             sQuery->SetAttlist().SetSpectrum(spectrumID);
-            sQuery->SetAttlist().SetStart_scan(ParseScan(spectrumID, 3, query));
+            sQuery->SetAttlist().SetStart_scan(ParseScan(spectrumID, 1, query));
             sQuery->SetAttlist().SetEnd_scan(ParseScan(spectrumID, 2, query));
             sQuery->SetAttlist().SetPrecursor_neutral_mass(NStr::DoubleToString((*iHit)->GetMass()/scale));
             sQuery->SetAttlist().SetAssumed_charge(NStr::IntToString((*iHit)->GetCharge()));
@@ -261,7 +269,8 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
                 sHit->SetAttlist().SetNum_matched_ions(NStr::IntToString((*iHit)->GetMzhits().size()));
                 // skip calculating the theoretical number of ions for now
                 //int tot_num_ions = (*iHit)->GetPepstring().size() * inOMSSA.GetRequest().front()->GetSettings().GetIonstosearch().size();
-                //sHit->SetSearch_hit().SetAttlist().SetTot_num_ions(NStr::IntToString(tot_num_ions));
+				int tot_num_ions = ((*iHit)->GetPepstring().length()-1) * 2;
+				sHit->SetAttlist().SetTot_num_ions(NStr::IntToString(tot_num_ions));
                 sHit->SetAttlist().SetCalc_neutral_pep_mass(NStr::DoubleToString((*iHit)->GetTheomass()/scale));
                 sHit->SetAttlist().SetMassdiff(NStr::DoubleToString(((*iHit)->GetTheomass() - (*iHit)->GetMass())/scale));
                 //sHit->SetSearch_hit().SetAttlist().SetNum_tol_term("42"); //skip

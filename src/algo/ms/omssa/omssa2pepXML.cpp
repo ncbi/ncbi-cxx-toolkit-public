@@ -94,10 +94,18 @@ void COmssa2pepxmlApplication::Init(void)
                               "Convert OMSSA ASN.1 and XML output files to PepXML");
 
     // Describe the expected command-line arguments
-    arg_desc->AddPositional
+	arg_desc->AddFlag("xml", "Input file is XML");
+	arg_desc->AddFlag("asn", "Input file is ASN.1");
+	arg_desc->AddFlag("asntext", "Input file is ASN.1 text");
+
+	arg_desc->AddOptionalKey("o", "outfile", 
+		"filename for pepXML formatted search results",
+		CArgDescriptions::eString);
+
+	arg_desc->AddPositional
         ("filename",
          "The name of the XML file to load",
-         CArgDescriptions::eString);
+		 CArgDescriptions::eString);
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -111,33 +119,67 @@ int COmssa2pepxmlApplication::Run ( void )
 {
     CMSSearch inOMSSA;
     CPepXML outPepXML;
-    ESerialDataFormat format;
+    ESerialDataFormat format = eSerial_Xml;  // assume xml
 
     // Get arguments
     const CArgs& args = GetArgs();
 
     string filename = args["filename"].AsString();
-    CFile file(filename);
-    string basename = file.GetBase();
-    string ext = file.GetExt();
-    string newname = basename + ".pep.xml";
+	CFile file(filename);
 
-    cout << "Reading " << filename << " as ";
-    if (ext == ".oms") {
-        cout << "ASN" << endl;
-        format = eSerial_AsnBinary;
-    } else if (ext == ".omx") {
-        cout << "XML" << endl;
-        format = eSerial_Xml;
-    } else if (ext == ".omt") {
-        cout << "ASN text" << endl;
-        format = eSerial_AsnText;
-    }
+	string fullpath, path, base, ext;
+	if (CFile::IsAbsolutePath(file.GetPath())) {
+		fullpath = file.GetPath();
+	} else {
+		fullpath = CFile::CreateAbsolutePath(file.GetPath());
+	}
+	CFile::SplitPath(fullpath, &path, &base, &ext);
+	string basename = path + base;
+	string newname;
+	if (args["o"].HasValue()) {
+		newname = args["o"].AsString();
+	} else {
+		newname = base + ".pep.xml";
+	}
+
+	// figure out input file type
+	bool notSet = true;
+	if (args["xml"]) {
+		format = eSerial_Xml;
+		notSet = false;
+	} else if (args["asn"]) {
+		format = eSerial_AsnBinary;
+		notSet = false;
+	} else if (args["asntext"]) {
+		format = eSerial_AsnText;
+		notSet = false;
+	}
+
+	if (notSet) { // Not explict, maybe extension gives us a clue?
+		if (ext == ".oms") {
+			format = eSerial_AsnBinary;
+		} else if (ext == ".omx") {
+			format = eSerial_Xml;
+		} else if (ext == ".omt") {
+			format = eSerial_AsnText;
+		}
+	}
+	cout << "Reading " << filename << " as ";
+	switch (format) {
+		case eSerial_AsnBinary: cout << "ASN" << endl; break;
+		case eSerial_Xml:       cout << "XML" << endl; break;
+		case eSerial_AsnText:   cout << "ASN text" << endl; break;
+	}
+
     auto_ptr<CObjectIStream> file_in(CObjectIStream::Open(filename, format));
-    auto_ptr<CObjectOStream> file_out(CObjectOStream::Open(newname, eSerial_Xml));
-
-
     *file_in >> inOMSSA;
+
+	if (!inOMSSA.CanGetRequest()) {
+		cout << "Sorry, this file cannot be converted." << endl;
+		cout << "The original search needs to have been executed with the '-w' flag set." << endl;
+		cout << "The search settings are not availiable in this file. Aborting" << endl;
+		return 0;
+	}
 
     CRef <CMSModSpecSet> Modset(new CMSModSpecSet);
     CSearchHelper::ReadModFiles("mods.xml","usermods.xml",GetProgramExecutablePath(), Modset); 
@@ -146,6 +188,7 @@ int COmssa2pepxmlApplication::Run ( void )
 
     outPepXML.ConvertFromOMSSA(inOMSSA, Modset, basename);
 
+    auto_ptr<CObjectOStream> file_out(CObjectOStream::Open(newname, eSerial_Xml));
     *file_out << outPepXML;
 
     return 0;
