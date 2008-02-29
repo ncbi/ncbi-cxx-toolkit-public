@@ -506,5 +506,95 @@ CDB_ODBC_ConnParams::~CDB_ODBC_ConnParams(void)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+CDBConnParamsDelegate::CDBConnParamsDelegate(const CDBConnParams& other)
+: m_Other(other)
+{
+}
+
+CDBConnParamsDelegate::~CDBConnParamsDelegate(void)
+{
+}
+
+
+string CDBConnParamsDelegate::GetDriverName(void) const
+{
+    return m_Other.GetDriverName();
+}
+
+Uint4  CDBConnParamsDelegate::GetProtocolVersion(void) const
+{
+    return m_Other.GetProtocolVersion();
+}
+
+EEncoding CDBConnParamsDelegate::GetEncoding(void) const
+{
+    return m_Other.GetEncoding();
+}
+
+string CDBConnParamsDelegate::GetServerName(void) const
+{
+    return m_Other.GetServerName();
+}
+
+string CDBConnParamsDelegate::GetDatabaseName(void) const
+{
+    return m_Other.GetDatabaseName();
+}
+
+string CDBConnParamsDelegate::GetUserName(void) const
+{
+    return m_Other.GetUserName();
+}
+
+string CDBConnParamsDelegate::GetPassword(void) const
+{
+    return m_Other.GetPassword();
+}
+
+CDBConnParams::EServerType 
+CDBConnParamsDelegate::GetServerType(void) const
+{
+    return m_Other.GetServerType();
+}
+
+Uint4 CDBConnParamsDelegate::GetHost(void) const
+{
+    return m_Other.GetHost();
+}
+
+Uint2 CDBConnParamsDelegate::GetPort(void) const
+{
+    return m_Other.GetPort();
+}
+
+CRef<IConnValidator> 
+CDBConnParamsDelegate::GetConnValidator(void) const
+{
+    return m_Other.GetConnValidator();
+}
+
+bool CDBConnParamsDelegate::IsSecureLogin(void) const
+{
+    return m_Other.IsSecureLogin();
+}
+
+
+bool CDBConnParamsDelegate::IsPooled(void) const
+{
+    return m_Other.IsPooled();
+}
+
+bool CDBConnParamsDelegate::IsDoNotConnect(void) const
+{
+    return m_Other.IsDoNotConnect();
+}
+
+string CDBConnParamsDelegate::GetPoolName(void) const
+{
+    return m_Other.GetPoolName();
+}
+
+
 END_NCBI_SCOPE
 

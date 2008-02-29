@@ -238,6 +238,45 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDBConnParamsDelegate : public CDBConnParams
+{
+public:
+    CDBConnParamsDelegate(const CDBConnParams& other);
+    virtual ~CDBConnParamsDelegate(void);
+
+public:
+    virtual string GetDriverName(void) const;
+    virtual Uint4  GetProtocolVersion(void) const;
+    virtual EEncoding GetEncoding(void) const;
+
+    virtual string GetServerName(void) const;
+    virtual string GetDatabaseName(void) const;
+    virtual string GetUserName(void) const;
+    virtual string GetPassword(void) const;
+
+    virtual EServerType GetServerType(void) const;
+    virtual Uint4  GetHost(void) const;
+    virtual Uint2  GetPort(void) const;
+
+    virtual CRef<IConnValidator> GetConnValidator(void) const;
+    virtual bool IsSecureLogin(void) const;
+
+    // Connection pool related methods.
+
+    /// Use connection pool with this connection.
+    virtual bool IsPooled(void) const;
+    /// Use connections from NotInUse pool
+    virtual bool IsDoNotConnect(void) const;  
+    /// Pool name to be used with this connection
+    virtual string GetPoolName(void) const; 
+
+private:
+    const CDBConnParams& m_Other;
+};
+
+
+
 END_NCBI_SCOPE
 
 

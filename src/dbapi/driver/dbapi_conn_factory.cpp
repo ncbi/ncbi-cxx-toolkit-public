@@ -31,6 +31,7 @@
 
 #include <dbapi/driver/dbapi_conn_factory.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
+#include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <dbapi/driver/public.hpp>
 #include <dbapi/error_codes.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -195,133 +196,6 @@ CDBConnectionFactory::GetRuntimeData(const CRef<IConnValidator> validator)
         validator_name,
         CRuntimeData(*this, CRef<IDBServiceMapper>(m_MapperFactory.Make()))
         )).first->second;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-class CDBConnParamsDelegate : public CDBConnParams
-{
-public:
-    CDBConnParamsDelegate(const CDBConnParams& other);
-    virtual ~CDBConnParamsDelegate(void);
-
-public:
-    virtual string GetDriverName(void) const;
-    virtual Uint4  GetProtocolVersion(void) const;
-    virtual EEncoding GetEncoding(void) const;
-
-    virtual string GetServerName(void) const;
-    virtual string GetDatabaseName(void) const;
-    virtual string GetUserName(void) const;
-    virtual string GetPassword(void) const;
-
-    virtual EServerType GetServerType(void) const;
-    virtual Uint4  GetHost(void) const;
-    virtual Uint2  GetPort(void) const;
-
-    virtual CRef<IConnValidator> GetConnValidator(void) const;
-    virtual bool IsSecureLogin(void) const;
-
-    // Connection pool related methods.
-
-    /// Use connection pool with this connection.
-    virtual bool IsPooled(void) const;
-    /// Use connections from NotInUse pool
-    virtual bool IsDoNotConnect(void) const;  
-    /// Pool name to be used with this connection
-    virtual string GetPoolName(void) const; 
-
-private:
-    const CDBConnParams& m_Other;
-};
-
-
-CDBConnParamsDelegate::CDBConnParamsDelegate(const CDBConnParams& other)
-: m_Other(other)
-{
-}
-
-CDBConnParamsDelegate::~CDBConnParamsDelegate(void)
-{
-}
-
-
-string CDBConnParamsDelegate::GetDriverName(void) const
-{
-    return m_Other.GetDriverName();
-}
-
-Uint4  CDBConnParamsDelegate::GetProtocolVersion(void) const
-{
-    return m_Other.GetProtocolVersion();
-}
-
-EEncoding CDBConnParamsDelegate::GetEncoding(void) const
-{
-    return m_Other.GetEncoding();
-}
-
-string CDBConnParamsDelegate::GetServerName(void) const
-{
-    return m_Other.GetServerName();
-}
-
-string CDBConnParamsDelegate::GetDatabaseName(void) const
-{
-    return m_Other.GetDatabaseName();
-}
-
-string CDBConnParamsDelegate::GetUserName(void) const
-{
-    return m_Other.GetUserName();
-}
-
-string CDBConnParamsDelegate::GetPassword(void) const
-{
-    return m_Other.GetPassword();
-}
-
-CDBConnParams::EServerType 
-CDBConnParamsDelegate::GetServerType(void) const
-{
-    return m_Other.GetServerType();
-}
-
-Uint4 CDBConnParamsDelegate::GetHost(void) const
-{
-    return m_Other.GetHost();
-}
-
-Uint2 CDBConnParamsDelegate::GetPort(void) const
-{
-    return m_Other.GetPort();
-}
-
-CRef<IConnValidator> 
-CDBConnParamsDelegate::GetConnValidator(void) const
-{
-    return m_Other.GetConnValidator();
-}
-
-bool CDBConnParamsDelegate::IsSecureLogin(void) const
-{
-    return m_Other.IsSecureLogin();
-}
-
-
-bool CDBConnParamsDelegate::IsPooled(void) const
-{
-    return m_Other.IsPooled();
-}
-
-bool CDBConnParamsDelegate::IsDoNotConnect(void) const
-{
-    return m_Other.IsDoNotConnect();
-}
-
-string CDBConnParamsDelegate::GetPoolName(void) const
-{
-    return m_Other.GetPoolName();
 }
 
 
