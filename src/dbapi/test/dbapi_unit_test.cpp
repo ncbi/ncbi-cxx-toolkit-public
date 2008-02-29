@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbithr.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 
 #include <ncbi_source_ver.h>
 #include <dbapi/dbapi.hpp>
@@ -13889,6 +13890,7 @@ init_unit_test_suite( int argc, char * argv[] )
     // Using old log format ...
     // Show time (no msec.) ...
     ncbi::SetDiagPostFlag(ncbi::eDPF_DateTime);
+    ncbi::CONNECT_Init();
 
     test_suite* test = BOOST_TEST_SUITE("DBAPI Unit Test.");
 
