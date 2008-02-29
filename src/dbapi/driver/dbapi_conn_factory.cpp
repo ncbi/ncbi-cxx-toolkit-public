@@ -220,7 +220,7 @@ public:
     virtual Uint2  GetPort(void) const;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const;
-    virtual bool IsSequreLogin(void) const;
+    virtual bool IsSecureLogin(void) const;
 
     // Connection pool related methods.
 
@@ -303,9 +303,9 @@ CDBConnParamsDelegate::GetConnValidator(void) const
     return m_Other.GetConnValidator();
 }
 
-bool CDBConnParamsDelegate::IsSequreLogin(void) const
+bool CDBConnParamsDelegate::IsSecureLogin(void) const
 {
-    return m_Other.IsSequreLogin();
+    return m_Other.IsSecureLogin();
 }
 
 

@@ -43,7 +43,7 @@ CDBConnParamsBase::CDBConnParamsBase(void)
 , m_ServerType(eUnknown)
 , m_Host(0)
 , m_PortNumber(0)
-, m_IsSequreLogin(false)
+, m_IsSecureLogin(false)
 , m_IsPooled(false)
 , m_IsDoNotConnect(false)
 {
@@ -222,9 +222,9 @@ CDBConnParamsBase::GetConnValidator(void) const
 }
 
 bool 
-CDBConnParamsBase::IsSequreLogin(void) const
+CDBConnParamsBase::IsSecureLogin(void) const
 {
-    return m_IsSequreLogin;
+    return m_IsSecureLogin;
 }
 
 bool 

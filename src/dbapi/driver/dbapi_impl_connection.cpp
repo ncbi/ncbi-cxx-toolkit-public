@@ -103,7 +103,7 @@ CConnection::CConnection(CDriverContext& dc,
 , m_Pool(params.GetPoolName())
 , m_Reusable(params.IsPooled())
 , m_BCPable(isBCPable)
-, m_SecureLogin(params.IsSequreLogin())
+, m_SecureLogin(params.IsSecureLogin())
 , m_Opened(false)
 {
     _ASSERT(m_MsgHandlers.GetSize() == dc.GetConnHandlerStack().GetSize());

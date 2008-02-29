@@ -942,7 +942,7 @@ public:
     virtual Uint2  GetPort(void) const = 0;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const = 0;
-    virtual bool IsSequreLogin(void) const = 0;
+    virtual bool IsSecureLogin(void) const = 0;
 
     // Connection pool related methods.
 

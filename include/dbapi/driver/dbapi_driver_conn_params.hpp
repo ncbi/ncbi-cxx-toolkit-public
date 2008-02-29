@@ -60,7 +60,7 @@ public:
     virtual Uint2 GetPort(void) const;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const;
-    virtual bool IsSequreLogin(void) const;
+    virtual bool IsSecureLogin(void) const;
 
     // Connection pool related methods.
 
@@ -121,7 +121,7 @@ protected:
     }
     void SetSequreLogin(bool flag = true)
     {
-	m_IsSequreLogin = flag;
+	m_IsSecureLogin = flag;
     }
 
     void SetPooled(bool flag = true)
@@ -152,7 +152,7 @@ private:
     CRef<IConnValidator>  m_Validator;
 
     string  m_PoolName;
-    bool    m_IsSequreLogin;
+    bool    m_IsSecureLogin;
     bool    m_IsPooled;
     bool    m_IsDoNotConnect;
 };
