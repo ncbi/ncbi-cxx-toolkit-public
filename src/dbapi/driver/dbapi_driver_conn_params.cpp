@@ -252,9 +252,6 @@ CDBDefaultConnParams::CDBDefaultConnParams(
         const string&   srv_name,
         const string&   user_name,
         const string&   passwd,
-        const CRef<IConnValidator>& validator,
-        Uint4 host,
-        Uint2 port,
         I_DriverContext::TConnectionMode mode,
         bool            reusable,
         const string&   pool_name)
@@ -262,9 +259,6 @@ CDBDefaultConnParams::CDBDefaultConnParams(
     SetServerName(srv_name);
     SetUserName(user_name);
     SetPassword(passwd);
-    SetHost(host);
-    SetPort(port);
-    SetConnValidator(validator);
     SetPoolName(pool_name);
     SetSequreLogin((mode & I_DriverContext::fPasswordEncrypted) != 0);
     SetPooled(reusable);

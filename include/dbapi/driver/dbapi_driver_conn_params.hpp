@@ -172,9 +172,6 @@ public:
     CDBDefaultConnParams(const string&   srv_name,
                          const string&   user_name,
                          const string&   passwd,
-                         const CRef<IConnValidator>& validator,
-                         Uint4 host = 0,
-                         Uint2 port = 0,
                          I_DriverContext::TConnectionMode mode = 0,
                          bool            reusable = false,
                          const string&   pool_name = kEmptyStr);
@@ -192,6 +189,20 @@ public:
     void SetEncoding(EEncoding encoding)
     {
         impl::CDBConnParamsBase::SetEncoding(encoding);
+    }
+
+    void SetHost(Uint4 host)
+    {
+        impl::CDBConnParamsBase::SetHost(host);
+    }
+    void SetPort(Uint2 port)
+    {
+        impl::CDBConnParamsBase::SetPort(port);
+    }
+
+    void SetConnValidator(const CRef<IConnValidator>& validator)
+    {
+        impl::CDBConnParamsBase::SetConnValidator(validator);
     }
 };
 

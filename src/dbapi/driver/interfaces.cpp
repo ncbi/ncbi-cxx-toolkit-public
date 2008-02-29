@@ -245,9 +245,6 @@ I_DriverContext::Connect(
             srv_name,
             user_name,
             passwd,
-            CRef<IConnValidator>(),
-            0,
-            0,
             mode,
             reusable,
             pool_name
@@ -270,13 +267,12 @@ I_DriverContext::ConnectValidated(
             srv_name,
             user_name,
             passwd,
-            CRef<IConnValidator>(&validator),
-            0,
-            0,
             mode,
             reusable,
             pool_name
             );
+
+    params.SetConnValidator(CRef<IConnValidator>(&validator));
 
     return MakeConnection(params);
 }
