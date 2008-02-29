@@ -233,7 +233,7 @@ typedef enum {
     fLOG_Module        = 0x2,
     fLOG_FileLine      = 0x4,    /**< always here for eLOG_Trace level       */
     fLOG_DateTime      = 0x8,
-    fLOG_FullData      = 0x2000, /**< do not do reduction in octal data bytes*/
+    fLOG_FullOctal     = 0x2000, /**< do not do reduction in octal data bytes*/
     fLOG_OmitNoteLevel = 0x4000, /**< do not add NOTE if eLOG_Note is level  */
     fLOG_None          = 0x8000  /**< nothing but spec'd parts, msg and data */
 } ELOG_Format;

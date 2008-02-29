@@ -359,7 +359,7 @@ extern char* LOG_ComposeMessage
                 if (!isprint(*d)) {
                     int/*bool*/ reduce;
                     unsigned char v;
-                    if (format_flags & fLOG_FullData)
+                    if (format_flags & fLOG_FullOctal)
                         reduce = 0/*false*/;
                     else {
                         reduce = (i == 1         || s_IsQuoted(d[1]) ||
