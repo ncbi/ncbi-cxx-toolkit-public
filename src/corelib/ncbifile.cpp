@@ -2023,6 +2023,200 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
 }
 
 
+string CDirEntry::GetTmpName(ETmpFileCreationMode mode)
+{
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    return GetTmpNameEx(kEmptyStr, kEmptyStr, mode);
+#else
+    if (mode == eTmpFileCreate) {
+        ERR_POST_X(2, Warning << 
+                      "The temporary file cannot be auto-created on this " \
+                      "platform, so return its name only");
+    }
+    char* filename = tempnam(0,0);
+    if ( !filename ) {
+        return kEmptyStr;
+    }
+    string res(filename);
+    free(filename);
+    return res;
+#endif
+}
+
+
+#if !defined(NCBI_OS_UNIX)
+
+static string s_StdGetTmpName(const char* dir, const char* prefix)
+{
+    char* filename = tempnam(dir, prefix);
+    if ( !filename ) {
+        return kEmptyStr;
+    }
+    string str(filename);
+    free(filename);
+    return str;
+}
+
+#endif
+
+
+string CDirEntry::GetTmpNameEx(const string&        dir, 
+                               const string&        prefix,
+                               ETmpFileCreationMode mode)
+{
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    string x_dir = dir;
+    if ( x_dir.empty() ) {
+        // Get application specific temporary directory name (see CParam)
+        x_dir = NCBI_PARAM_TYPE(NCBI,TmpDir)::GetThreadDefault();
+        if ( x_dir.empty() ) {
+            // Use default TMP directory specified by OS
+            x_dir = CDir::GetTmpDir();
+        }
+    }
+    if ( !x_dir.empty() ) {
+        x_dir = AddTrailingPathSeparator(x_dir);
+    }
+    string fn;
+
+#  if defined(NCBI_OS_UNIX)
+    string pattern = x_dir + prefix + "XXXXXX";
+    AutoPtr<char, CDeleter<char> > filename(strdup(pattern.c_str()));
+    int fd = mkstemp(filename.get());
+    close(fd);
+    if (mode != eTmpFileCreate) {
+        remove(filename.get());
+    }
+    fn = filename.get();
+
+#  elif defined(NCBI_OS_MSWIN)
+    char buffer[MAX_PATH];
+    HANDLE hFile = INVALID_HANDLE_VALUE;
+    srand((unsigned)time(0));
+    unsigned long ofs = rand();
+
+    while ( ofs < numeric_limits<unsigned long>::max() ) {
+        _ultoa((unsigned long)ofs, buffer, 24);
+        fn = x_dir + prefix + buffer;
+        hFile = CreateFile(fn.c_str(), GENERIC_ALL, 0, NULL,
+                            CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
+        if (hFile != INVALID_HANDLE_VALUE) {
+            break;
+        }
+        ofs++;
+    }
+    CloseHandle(hFile);
+    if (ofs == numeric_limits<unsigned long>::max() ) {
+        return kEmptyStr;
+    }
+    if (mode != eTmpFileCreate) {
+        remove(fn.c_str());
+    }
+
+#  endif
+
+#else // defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    if (mode == eTmpFileCreate) {
+        ERR_POST_X(3, Warning << "CFile::GetTmpNameEx: "
+                      "The file cannot be auto-created on this platform, " \
+                      "return its name only");
+    }
+    fn = s_StdGetTmpName(dir.c_str(), prefix.c_str());
+#endif
+    return fn;
+}
+
+
+class CTmpStream : public fstream
+{
+public:
+
+    CTmpStream(const char* s, IOS_BASE::openmode mode) : fstream(s, mode)
+    {
+        m_FileName = s; 
+        // Try to remove file and OS will automatically delete it after
+        // the last file descriptor to it is closed (works only on UNIXes)
+        CFile(s).Remove();
+    }
+
+#if defined(NCBI_OS_MSWIN)
+    CTmpStream(const char* s, FILE* file) : fstream(file)
+    {
+        m_FileName = s; 
+    }
+#endif    
+
+    virtual ~CTmpStream(void) 
+    { 
+        close();
+        if ( !m_FileName.empty() ) {
+            CFile(m_FileName).Remove();
+        }
+    }
+
+protected:
+    string m_FileName;  // Temporary file name
+};
+
+
+fstream* CDirEntry::CreateTmpFile(const string& filename, 
+                                  ETextBinary text_binary,
+                                  EAllowRead  allow_read)
+{
+    string tmpname = filename.empty() ? GetTmpName(eTmpFileCreate) : filename;
+    if ( tmpname.empty() ) {
+        return 0;
+    }
+#if defined(NCBI_OS_MSWIN)
+    // Open file manually, because we cannot say to fstream
+    // to use some specific flags for file opening.
+    // MS Windows should delete created file automaticaly
+    // after closing all opened file descriptors.
+
+    // We cannot enable "only write" mode here,
+    // so ignore 'allow_read' flag.
+    // Specify 'TD' (_O_SHORT_LIVED | _O_TEMPORARY)
+    char mode[6] = "w+TDb";
+    if (text_binary != eBinary) {
+        mode[4] = '\0';
+    }
+    FILE* file = fopen(tmpname.c_str(), mode);
+    if ( !file ) {
+        return 0;
+    }
+    // Create FILE* based fstream.
+    fstream* stream = new CTmpStream(tmpname.c_str(), file);
+    // We dont need to close FILE*, it will be closed in the fstream
+
+#else
+    // Create filename based fstream
+    ios::openmode mode = ios::out | ios::trunc;
+    if ( text_binary == eBinary ) {
+        mode = mode | ios::binary;
+    }
+    if ( allow_read == eAllowRead ) {
+        mode = mode | ios::in;
+    }
+    fstream* stream = new CTmpStream(tmpname.c_str(), mode);
+#endif
+
+    if ( !stream->good() ) {
+        delete stream;
+        return 0;
+    }
+    return stream;
+}
+
+
+fstream* CDirEntry::CreateTmpFileEx(const string& dir, const string& prefix,
+                                    ETextBinary text_binary, 
+                                    EAllowRead allow_read)
+{
+    return CreateTmpFile(GetTmpNameEx(dir, prefix, eTmpFileCreate),
+                         text_binary, allow_read);
+}
+
+
 // Helper: Copy attributes (owner/date/time) from one entry to another.
 // Both entries should have equal type.
 //
@@ -2179,27 +2373,6 @@ Int8 CFile::GetLength(void) const
         return -1;
     }
     return buf.st_size;
-}
-
-
-string CFile::GetTmpName(ETmpFileCreationMode mode)
-{
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
-    return GetTmpNameEx(kEmptyStr, kEmptyStr, mode);
-#else
-    if (mode == eTmpFileCreate) {
-        ERR_POST_X(2, Warning << 
-                      "The temporary file cannot be auto-created on this " \
-                      "platform, so return its name only");
-    }
-    char* filename = tempnam(0,0);
-    if ( !filename ) {
-        return kEmptyStr;
-    }
-    string res(filename);
-    free(filename);
-    return res;
-#endif
 }
 
 
@@ -2367,180 +2540,6 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
 }
 
 
-#if !defined(NCBI_OS_UNIX)
-
-static string s_StdGetTmpName(const char* dir, const char* prefix)
-{
-    char* filename = tempnam(dir, prefix);
-    if ( !filename ) {
-        return kEmptyStr;
-    }
-    string str(filename);
-    free(filename);
-    return str;
-}
-
-#endif
-
-
-string CFile::GetTmpNameEx(const string&        dir, 
-                           const string&        prefix,
-                           ETmpFileCreationMode mode)
-{
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
-    string x_dir = dir;
-    if ( x_dir.empty() ) {
-        // Get application specific temporary directory name (see CParam)
-        x_dir = NCBI_PARAM_TYPE(NCBI,TmpDir)::GetThreadDefault();
-        if ( x_dir.empty() ) {
-            // Use default TMP directory specified by OS
-            x_dir = CDir::GetTmpDir();
-        }
-    }
-    if ( !x_dir.empty() ) {
-        x_dir = AddTrailingPathSeparator(x_dir);
-    }
-    string fn;
-
-#  if defined(NCBI_OS_UNIX)
-    string pattern = x_dir + prefix + "XXXXXX";
-    AutoPtr<char, CDeleter<char> > filename(strdup(pattern.c_str()));
-    int fd = mkstemp(filename.get());
-    close(fd);
-    if (mode != eTmpFileCreate) {
-        remove(filename.get());
-    }
-    fn = filename.get();
-
-#  elif defined(NCBI_OS_MSWIN)
-    char buffer[MAX_PATH];
-    HANDLE hFile = INVALID_HANDLE_VALUE;
-    srand((unsigned)time(0));
-    unsigned long ofs = rand();
-
-    while ( ofs < numeric_limits<unsigned long>::max() ) {
-        _ultoa((unsigned long)ofs, buffer, 24);
-        fn = x_dir + prefix + buffer;
-        hFile = CreateFile(fn.c_str(), GENERIC_ALL, 0, NULL,
-                            CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
-        if (hFile != INVALID_HANDLE_VALUE) {
-            break;
-        }
-        ofs++;
-    }
-    CloseHandle(hFile);
-    if (ofs == numeric_limits<unsigned long>::max() ) {
-        return kEmptyStr;
-    }
-    if (mode != eTmpFileCreate) {
-        remove(fn.c_str());
-    }
-
-#  endif
-
-#else // defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
-    if (mode == eTmpFileCreate) {
-        ERR_POST_X(3, Warning << "CFile::GetTmpNameEx: "
-                      "The file cannot be auto-created on this platform, " \
-                      "return its name only");
-    }
-    fn = s_StdGetTmpName(dir.c_str(), prefix.c_str());
-#endif
-    return fn;
-}
-
-
-class CTmpStream : public fstream
-{
-public:
-
-    CTmpStream(const char* s, IOS_BASE::openmode mode) : fstream(s, mode)
-    {
-        m_FileName = s; 
-        // Try to remove file and OS will automatically delete it after
-        // the last file descriptor to it is closed (works only on UNIXes)
-        CFile(s).Remove();
-    }
-
-#if defined(NCBI_OS_MSWIN)
-    CTmpStream(const char* s, FILE* file) : fstream(file)
-    {
-        m_FileName = s; 
-    }
-#endif    
-
-    virtual ~CTmpStream(void) 
-    { 
-        close();
-        if ( !m_FileName.empty() ) {
-            CFile(m_FileName).Remove();
-        }
-    }
-
-protected:
-    string m_FileName;  // Temporary file name
-};
-
-
-fstream* CFile::CreateTmpFile(const string& filename, 
-                              ETextBinary text_binary,
-                              EAllowRead  allow_read)
-{
-    string tmpname = filename.empty() ? GetTmpName(eTmpFileCreate) : filename;
-    if ( tmpname.empty() ) {
-        return 0;
-    }
-#if defined(NCBI_OS_MSWIN)
-    // Open file manually, because we cannot say to fstream
-    // to use some specific flags for file opening.
-    // MS Windows should delete created file automaticaly
-    // after closing all opened file descriptors.
-
-    // We cannot enable "only write" mode here,
-    // so ignore 'allow_read' flag.
-    // Specify 'TD' (_O_SHORT_LIVED | _O_TEMPORARY)
-    char mode[6] = "w+TDb";
-    if (text_binary != eBinary) {
-        mode[4] = '\0';
-    }
-    FILE* file = fopen(tmpname.c_str(), mode);
-    if ( !file ) {
-        return 0;
-    }
-    // Create FILE* based fstream.
-    fstream* stream = new CTmpStream(tmpname.c_str(), file);
-    // We dont need to close FILE*, it will be closed in the fstream
-
-#else
-    // Create filename based fstream
-    ios::openmode mode = ios::out | ios::trunc;
-    if ( text_binary == eBinary ) {
-        mode = mode | ios::binary;
-    }
-    if ( allow_read == eAllowRead ) {
-        mode = mode | ios::in;
-    }
-    fstream* stream = new CTmpStream(tmpname.c_str(), mode);
-#endif
-
-    if ( !stream->good() ) {
-        delete stream;
-        return 0;
-    }
-    return stream;
-}
-
-
-fstream* CFile::CreateTmpFileEx(const string& dir, const string& prefix,
-                                ETextBinary text_binary, 
-                                EAllowRead allow_read)
-{
-    return CreateTmpFile(GetTmpNameEx(dir, prefix, eTmpFileCreate),
-                         text_binary, allow_read);
-}
-
-
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // CDir
@@ -2579,6 +2578,7 @@ static bool s_GetHomeByLOGIN(string& home)
     home = pwd->pw_dir;
     return true;
 }
+
 #endif // NCBI_OS_UNIX
 
 
@@ -2617,7 +2617,6 @@ string CDir::GetHome(void)
     // Add trailing separator if needed
     return AddTrailingPathSeparator(home);
 }
-
 
 
 string CDir::GetTmpDir(void)

@@ -1017,118 +1017,9 @@ public:
     ///   GetMode
     bool CheckAccess(TMode access_mode) const;
 
-protected:
-    /// Get the default global mode.
-    ///
-    /// For use in derived classes like CDir and CFile.
-    static void GetDefaultModeGlobal(EType             entry_type,
-                                     TMode*            user_mode,
-                                     TMode*            group_mode,
-                                     TMode*            other_mode,
-                                     TSpecialModeBits* special);
-
-    /// Get the default mode.
-    ///
-    /// For use by derived classes like CDir and CFile.
-    void GetDefaultMode(TMode*            user_mode,
-                        TMode*            group_mode,
-                        TMode*            other_mode,
-                        TSpecialModeBits* special) const;
-
-private:
-    string        m_Path;    ///< Full path of this directory entry
-
-    /// Which default mode: user, group, or other.
-    ///
-    /// Used as an index into an array that contains default mode values;
-    /// so there is no "fDefault" as an enumeration value for EWho here!
-    enum EWho {
-        eUser = 0,           ///< User mode
-        eGroup,              ///< Group mode
-        eOther,              ///< Other mode
-        eSpecial             ///< Special bits
-    };
-
-    /// Holds default mode values
-    TMode         m_DefaultMode[4/*EWho + Special bits*/];
-
-    /// Holds default mode global values, per entry type
-    static TMode  m_DefaultModeGlobal[eUnknown][4/*EWho + Special bits*/];
-
-    /// Backup suffix
-    static char*  m_BackupSuffix;
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CFile --
-///
-/// Define class to work with files.
-///
-/// Models a file in a file system. Basic functionality is derived from
-/// CDirEntry and extended for files.
-
-class NCBI_XNCBI_EXPORT CFile : public CDirEntry
-{
-    typedef CDirEntry CParent;    ///< CDirEntry is the parent class
-
-public:
-    /// Default constructor.
-    CFile(void);
-
-    /// Constructor using specified path string.
-    CFile(const string& file);
-
-    /// Copy constructor.
-    CFile(const CDirEntry& file);
-
-    /// Destructor.
-    virtual ~CFile(void);
-
-    /// Get a type of constructed object.
-    virtual EType GetObjectType(void) const { return eFile; };
-
-    /// Check existence of file.
-    virtual bool Exists(void) const;
-
-    /// Get size of file.
-    ///
-    /// @return
-    ///   Size of the file, if operation successful; -1, otherwise.
-    Int8 GetLength(void) const;
-
-    /// Copy a file.
-    ///
-    /// @param new_path
-    ///    Target entry path/name.
-    /// @param flags
-    ///   Flags specified how to copy entry.
-    /// @param buf_size
-    ///   Size of buffer to read file.
-    ///   Zero value means using default buffer size.
-    /// @return
-    ///   TRUE if operation successful; FALSE, otherwise.
-    /// @sa
-    ///   TCopyFlags
-    virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
-                      size_t buf_size = 0) const;
-
-    /// Compare files by content.
-    ///
-    /// @param file
-    ///   File name to compare.
-    /// @param buf_size
-    ///   Size of buffer to read file.
-    ///   Zero value means using default buffer size.
-    /// @return
-    ///   TRUE if files content is equal; FALSE otherwise.
-    bool Compare(const string& file, size_t buf_size = 0) const;
-
 
     //
-    // Temporary files
+    // Temporary directory entries (and files)
     //
 
     /// Temporary file creation mode
@@ -1256,6 +1147,115 @@ public:
                                     const string& prefix      = kEmptyStr,
                                     ETextBinary   text_binary = eBinary,
                                     EAllowRead    allow_read  = eAllowRead);
+
+protected:
+    /// Get the default global mode.
+    ///
+    /// For use in derived classes like CDir and CFile.
+    static void GetDefaultModeGlobal(EType             entry_type,
+                                     TMode*            user_mode,
+                                     TMode*            group_mode,
+                                     TMode*            other_mode,
+                                     TSpecialModeBits* special);
+
+    /// Get the default mode.
+    ///
+    /// For use by derived classes like CDir and CFile.
+    void GetDefaultMode(TMode*            user_mode,
+                        TMode*            group_mode,
+                        TMode*            other_mode,
+                        TSpecialModeBits* special) const;
+
+private:
+    string        m_Path;    ///< Full path of this directory entry
+
+    /// Which default mode: user, group, or other.
+    ///
+    /// Used as an index into an array that contains default mode values;
+    /// so there is no "fDefault" as an enumeration value for EWho here!
+    enum EWho {
+        eUser = 0,           ///< User mode
+        eGroup,              ///< Group mode
+        eOther,              ///< Other mode
+        eSpecial             ///< Special bits
+    };
+
+    /// Holds default mode values
+    TMode         m_DefaultMode[4/*EWho + Special bits*/];
+
+    /// Holds default mode global values, per entry type
+    static TMode  m_DefaultModeGlobal[eUnknown][4/*EWho + Special bits*/];
+
+    /// Backup suffix
+    static char*  m_BackupSuffix;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CFile --
+///
+/// Define class to work with files.
+///
+/// Models a file in a file system. Basic functionality is derived from
+/// CDirEntry and extended for files.
+
+class NCBI_XNCBI_EXPORT CFile : public CDirEntry
+{
+    typedef CDirEntry CParent;    ///< CDirEntry is the parent class
+
+public:
+    /// Default constructor.
+    CFile(void);
+
+    /// Constructor using specified path string.
+    CFile(const string& file);
+
+    /// Copy constructor.
+    CFile(const CDirEntry& file);
+
+    /// Destructor.
+    virtual ~CFile(void);
+
+    /// Get a type of constructed object.
+    virtual EType GetObjectType(void) const { return eFile; };
+
+    /// Check existence of file.
+    virtual bool Exists(void) const;
+
+    /// Get size of file.
+    ///
+    /// @return
+    ///   Size of the file, if operation successful; -1, otherwise.
+    Int8 GetLength(void) const;
+
+    /// Copy a file.
+    ///
+    /// @param new_path
+    ///    Target entry path/name.
+    /// @param flags
+    ///   Flags specified how to copy entry.
+    /// @param buf_size
+    ///   Size of buffer to read file.
+    ///   Zero value means using default buffer size.
+    /// @return
+    ///   TRUE if operation successful; FALSE, otherwise.
+    /// @sa
+    ///   TCopyFlags
+    virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
+                      size_t buf_size = 0) const;
+
+    /// Compare files by content.
+    ///
+    /// @param file
+    ///   File name to compare.
+    /// @param buf_size
+    ///   Size of buffer to read file.
+    ///   Zero value means using default buffer size.
+    /// @return
+    ///   TRUE if files content is equal; FALSE otherwise.
+    bool Compare(const string& file, size_t buf_size = 0) const;
 };
 
 
