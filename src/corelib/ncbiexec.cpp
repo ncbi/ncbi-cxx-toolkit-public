@@ -81,7 +81,7 @@ CExec::CResult::operator intptr_t(void) const
             return (intptr_t)m_Result.handle;
         default:
             NCBI_THROW(CExecException, eResult,
-                       "CExec:: CResult undefined concersion");
+                       "CExec:: CResult undefined conversion");
     }
     // Not reached
     return 0;
