@@ -526,8 +526,11 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     intptr_t status = -1;
 
 #if defined(NCBI_OS_MSWIN)
-    _flushall();
 
+#  if defined(NCBI_COMPILER_MSVC)
+    // This is Microsoft extention, and some compilers do not it.
+    _flushall();
+#  endif
     STARTUPINFO         StartupInfo;
     PROCESS_INFORMATION ProcessInfo;
     const int           kMaxCmdLength = 4096;
