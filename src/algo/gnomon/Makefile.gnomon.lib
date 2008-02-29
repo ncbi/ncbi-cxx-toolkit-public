@@ -6,14 +6,6 @@ SRC = $(ASN:%=%__) $(ASN:%=%___) gnomon_engine gnomon_objmgr score gnomon_model 
 LIB = xalgognomon
 LIB_OR_DLL = lib
 
-# Work around an ICC 8 optimizer bug that produced dangling references
-# to internally generated symbols.  (There's no ready way to test the
-# version directly, so this setup simply exploits the fact that the
-# in-house 32- and 64-bit installations have different versions.)
-FAST_CXXFLAGS_NAME    = FAST_CXXFLAGS_$(COMPILER)$(NCBI_PLATFORM_BITS)
-$(FAST_CXXFLAGS_NAME) = $(FAST_CXXFLAGS)
-FAST_CXXFLAGS_icc32   = $(ORIG_CXXFLAGS)
-
-CXXFLAGS = $($(FAST_CXXFLAGS_NAME))
+CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
