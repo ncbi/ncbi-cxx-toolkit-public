@@ -359,8 +359,12 @@ extern char* LOG_ComposeMessage
                 if (!isprint(*d)) {
                     int/*bool*/ reduce;
                     unsigned char v;
-                    reduce = (i == 1          ||  s_IsQuoted(d[1])  ||
-                              !isprint(d[1])  ||  d[1] < '0'  ||  d[1] > '7');
+                    if (format_flags & fLOG_FullData)
+                        reduce = 0/*false*/;
+                    else {
+                        reduce = (i == 1         || s_IsQuoted(d[1]) ||
+                                  !isprint(d[1]) || d[1] < '0' || d[1] > '7');
+                    }
                     *s++ = '\\';
                     v =  *d >> 6;
                     if (v  ||  !reduce) {
