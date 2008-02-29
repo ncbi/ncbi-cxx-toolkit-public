@@ -199,16 +199,29 @@ CMsvcPrjFilesCollector::CollectSources(void)
                                             (SConfigInfo(),&included_sources);
 
     ITERATE(list<string>, p, included_sources) {
-        sources.push_back(CDirEntry::NormalizePath
-                                        (CDirEntry::ConcatPath
-                                              (m_Project->m_SourcesBaseDir, *p)));
+        string fullpath = CDirEntry::NormalizePath(
+            CDirEntry::ConcatPath(m_Project->m_SourcesBaseDir, *p));
+        string ext = SourceFileExt(fullpath);
+        if (ext.empty() &&
+            CDirEntry::IsAbsolutePath(fullpath) &&
+            !GetApp().GetExtSrcRoot().empty()) {
+            string tpath = CDirEntry::CreateRelativePath( GetApp().m_Root, fullpath);
+            tpath = CDirEntry::ConcatPath(GetApp().GetExtSrcRoot(), tpath);
+            ext = SourceFileExt(tpath);
+            if (!ext.empty()) {
+                fullpath = tpath;
+            }
+        }
+        sources.push_back(fullpath);
     }
 
     list<string> excluded_sources;
     m_Context->GetMsvcProjectMakefile().GetExcludedSourceFiles //TODO
                                             (SConfigInfo(), &excluded_sources);
-    PSourcesExclude pred(m_Project->m_ID, excluded_sources);
-    EraseIf(sources, pred);
+    if (!excluded_sources.empty()) {
+        PSourcesExclude pred(m_Project->m_ID, excluded_sources);
+        EraseIf(sources, pred);
+    }
 
     ITERATE(list<string>, p, sources) {
 
@@ -248,9 +261,14 @@ CMsvcPrjFilesCollector::CollectSources(void)
         else if ( !ext.empty() ) {
             // add ext to file
             string source_file_abs_path = abs_path + ext;
-            m_SourceFiles.push_back(
-                CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
-                                              source_file_abs_path));
+            string t;
+            try {
+                t = CDirEntry::CreateRelativePath(
+                    m_Context->ProjectDir(), source_file_abs_path);
+            } catch (CFileException&) {
+                t = source_file_abs_path;
+            }
+            m_SourceFiles.push_back(t);
         } 
         else if ( s_IsProducedByDatatool(abs_path, *m_Project) ||
                   s_IsInsideDatatoolSourceDir(abs_path) ) {

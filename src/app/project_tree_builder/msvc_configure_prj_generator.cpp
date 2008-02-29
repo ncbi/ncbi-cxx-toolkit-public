@@ -92,7 +92,9 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     m_CustomBuildCommand += "set TREE_ROOT=" + tree_root_par + "\n";
     m_CustomBuildCommand += "set SLN_PATH="  + sln_path_par  + "\n";
     m_CustomBuildCommand += "set PTB_PLATFORM=$(PlatformName)\n";
-    m_CustomBuildOutput   = ptb_path_par  + "\\project_tree_builder.exe";
+    if (m_BuildPtb) {
+        m_CustomBuildOutput   = ptb_path_par  + "\\project_tree_builder.exe";
+    }
 
     // Build command for project_tree_builder.sln
     if (m_BuildPtb) {

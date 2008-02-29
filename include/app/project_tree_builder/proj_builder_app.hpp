@@ -117,6 +117,7 @@ public:
     bool m_TweakVTuneR;
     bool m_TweakVTuneD;
     string m_BuildRoot;
+    string m_ExtSrcRoot;
     string m_ProjTags;
     bool m_ConfirmCfg;
 
@@ -138,6 +139,10 @@ public:
     const string&            GetBuildRoot      (void) const
     {
         return m_BuildRoot;
+    }
+    const string&            GetExtSrcRoot     (void) const
+    {
+        return m_ExtSrcRoot;
     }
     const CProjectItemsTree& GetWholeTree      (void);
     const CProjectItemsTree* GetCurrentBuildTree(void) const

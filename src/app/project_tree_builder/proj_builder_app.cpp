@@ -364,7 +364,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,4,2) );
+    SetVersion( CVersionInfo(1,4,3) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -931,6 +931,22 @@ void CProjBulderApp::ParseArguments(void)
     m_ScanWholeTree  = !((bool)args["nws"]);
     if ( const CArgValue& t = args["extroot"] ) {
         m_BuildRoot = t.AsString();
+        if (CDirEntry(m_BuildRoot).Exists()) {
+            string t, try_dir;
+            string src = GetConfig().Get("ProjectTree", "src");
+            for ( t = try_dir = m_BuildRoot; ; try_dir = t) {
+                if (CDirEntry(
+                    CDirEntry::ConcatPath(try_dir, src)).Exists()) {
+                    m_ExtSrcRoot = try_dir;
+                    break;
+                }
+                t = CDirEntry(try_dir).GetDir();
+                if (t == try_dir) {
+                    break;
+                }
+            }
+
+        }
     }
     if ( const CArgValue& t = args["projtag"] ) {
         m_ProjTags = t.AsString();

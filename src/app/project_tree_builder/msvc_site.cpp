@@ -552,11 +552,22 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
     }
     if ( !lib_info.m_Files.empty()) {
         ITERATE(list<string>, p, lib_info.m_Files) {
+            bool exists = true;
             string file = *p;
             if (!CDirEntry::IsAbsolutePath(file)) {
                 file = CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Root, file);
             }
             if ( !x_DirExists(file) ) {
+                exists = false;
+                if (!GetApp().GetExtSrcRoot().empty()) {
+                    file = *p;
+                    if (!CDirEntry::IsAbsolutePath(file)) {
+                        file = CDirEntry::ConcatPath(GetApp().GetExtSrcRoot(), file);
+                    }
+                    exists = x_DirExists(file);
+                }
+            }
+            if (!exists) {
                 if (!silent) {
                     PTB_WARNING_EX(file, ePTB_FileNotFound,
                                    "file not found");
