@@ -54,7 +54,6 @@
 BEGIN_NCBI_SCOPE
 
 
-
 TExitCode CExec::CResult::GetExitCode(void)
 {
     if ( (m_Flags & fExitCode) == 0 ) {
@@ -213,7 +212,7 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
     if (n > 0) {
         // Child could not run -- rip it and exit with error
         waitpid(pid, 0, 0);
-        errno = n >= sizeof(errcode) ? errcode : 0;        
+        errno = (size_t) n >= sizeof(errcode) ? errcode : 0;        
         return -1;
     }
 

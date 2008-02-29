@@ -35,8 +35,6 @@
 /// Defines a portable execute class.
 
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbi_process.hpp>
 
 
@@ -109,16 +107,18 @@ public:
    
     /// The result type for Spawn methods.
     /// 
-    /// In the eNoWait and eDetach modes Spawn functions returns a process
-    /// handle. On MS Windows it is a real process handle of type HANDLE.
+    /// In the eNoWait and eDetach modes for Spawn functions to return process
+    /// handles.  On MS Windows it is a real process handle of type HANDLE.
     /// On UNIX it is a process identifier (pid).
-    /// In the eWait spawn functions returns an exit code of a process.
-    /// Throws an exceptions if you try to get exit code instead of 
+    /// In the eWait mode, the spawn functions return exit code of a process.
+    /// Throws an exception if you try to get exit code instead of 
     /// stored process handle, and otherwise.
-    /// In some cases can store both - an exit code and handle (see Wait()).
+    /// In some cases can store both - an exit code and a handle (see Wait()).
     class NCBI_XNCBI_EXPORT CResult
     {
     public:
+        /// Default ctor -- zero everything
+        CResult() : m_Flags(0) { memset(&m_Result, 0, sizeof(m_Result)); }
         /// Get exit code
         TExitCode      GetExitCode     (void);
         /// Get process handle/pid
