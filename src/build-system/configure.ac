@@ -4579,14 +4579,9 @@ if test "$with_sss" != "no" ; then
       NCBI_SSS_PATH=$local_sss
       NCBI_SSS_INCLUDE="\$(incdir)/sss"
       NCBI_SSS_LIBPATH="\$(libdir)"
-      sss=sss
-      ssssrv=ssssrv
-      stax=stax
+      NCBI_PACKAGE(LocalSSS)
    else
       with_included_sss=no
-      sss=
-      ssssrv=
-      stax=
    fi
    NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
    NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
@@ -5779,9 +5774,6 @@ AC_SUBST(NCBI_SSS_INCLUDE)
 AC_SUBST(NCBI_SSS_LIBPATH)
 AC_SUBST(LIBSSSUTILS)
 AC_SUBST(LIBSSSDB)
-AC_SUBST(sss)
-AC_SUBST(ssssrv)
-AC_SUBST(stax)
 AC_SUBST(SP_INCLUDE)
 AC_SUBST(SP_LIBS)
 AC_SUBST(ORBACUS_INCLUDE)
