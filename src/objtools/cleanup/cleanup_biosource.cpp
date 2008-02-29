@@ -931,7 +931,6 @@ bool CCleanup_imp::x_OkToMerge(const CBioSource& src1, const CBioSource& src2)
         && !x_OkToMerge (src1.GetOrg(), src2.GetOrg())) {
         return false;
     }
-    bool taxname_match = false;
     if (!src1.CanGetOrg() && !src2.CanGetOrg()) {
         return false;
     }
@@ -1505,8 +1504,6 @@ bool CCleanup_imp::x_Identical(const COrg_ref& org1, const COrg_ref& org2)
 
 bool CCleanup_imp::x_Identical(const CBioSource& src1, const CBioSource& src2)
 {
-    bool identical = true;
-    
     if (!src1.CanGetOrg()
         || !src2.CanGetOrg()
         || !src1.GetOrg().CanGetTaxname()

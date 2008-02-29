@@ -401,8 +401,9 @@ void RemoveWhiteSpace(string& str)
 
 unsigned int GetParenLen (string text)
 {
-    unsigned int offset = 0;
-    unsigned int paren_count, next_quote;
+    string::size_type offset = 0;
+    unsigned int paren_count;
+    string::size_type next_quote;
 
     if (!NStr::StartsWith(text, "(")) {
         return 0;
@@ -443,7 +444,7 @@ bool ParseLex (string text, TLexTokenArray &token_list)
 {
     char ch;
     bool retval = true;
-    unsigned int paren_len, offset = 0, end_pos;
+    string::size_type paren_len, offset = 0, end_pos;
         
     if (NStr::IsBlank(text)) {
         return false;

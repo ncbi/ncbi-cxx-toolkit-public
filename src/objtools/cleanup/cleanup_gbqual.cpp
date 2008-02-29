@@ -106,9 +106,9 @@ bool CCleanup_imp::BasicCleanup(CGene_ref& gene, const CGb_qual& gb_qual)
 
 bool CCleanup_imp::x_ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str)
 {
-    unsigned int aa_pos = NStr::Find(str, "aa:");
-    unsigned int len = 0;
-    unsigned int loc_pos, end_pos;
+    string::size_type aa_pos = NStr::Find(str, "aa:");
+    string::size_type len = 0;
+    string::size_type loc_pos, end_pos;
     char protein_letter = 'X';
     CRef<CSeq_loc> break_loc;
     

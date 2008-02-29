@@ -869,7 +869,7 @@ void CCleanup_imp::x_MoveDbxrefs(CSeq_feat& feat)
             if ((*it)->CanGetQual() && NStr::Equal((*it)->GetQual(), "db_xref")) {
                 CRef<CDbtag> tag(new CDbtag());
                 string qval = (*it)->GetVal();
-                unsigned int pos = NStr::Find (qval, ":");
+                string::size_type pos = NStr::Find (qval, ":");
                 if (pos == NCBI_NS_STD::string::npos) {
                     tag->SetDb("?");
                     tag->SetTag().Select(CObject_id::e_Str);
@@ -1296,7 +1296,7 @@ void CCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_annot_Handle sa)
                     CConstRef<CSeq_feat> overlap = sequence::GetOverlappingGene(feat.GetLocation(), *m_Scope);
                     if (!overlap.IsNull() && !overlap->GetData().IsGene()) {
                         // this is weird!
-                        CSeqFeatData::ESubtype stype = overlap->GetData().GetSubtype();
+//                        CSeqFeatData::ESubtype stype = overlap->GetData().GetSubtype();
                     }
                     if (!overlap.IsNull() && overlap->GetData().IsGene()) {
                         const CGene_ref& overlap_ref = overlap->GetData().GetGene();
@@ -1512,7 +1512,7 @@ void CCleanup_imp::x_ChangeImpFeatToCDS(CSeq_annot_Handle sa)
             CImp_feat& ifp = feat->SetData().SetImp();
             
             if (ifp.CanGetLoc()) {
-                unsigned int pos = NStr::Find(ifp.GetLoc(), "replace");
+                string::size_type pos = NStr::Find(ifp.GetLoc(), "replace");
                 if (pos != NCBI_NS_STD::string::npos) {
                     x_AddReplaceQual(*feat, ifp.GetLoc());
                     ifp.ResetLoc();
