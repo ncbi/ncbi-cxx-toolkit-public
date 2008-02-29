@@ -633,7 +633,7 @@ static void lookup_host(
    unsigned int     ip_addr=0;
 
    /* Storage for reentrant getaddrby* calls */
-   struct hostent result;
+   struct hostent result = {0};
    char buffer[4096];
    int h_errnop = 0;
 
@@ -651,7 +651,7 @@ static void lookup_host(
 /* froy@singleentry.com 12/21/2000 */
     if (host==NULL) {
         char addr [4];
-        int a0, a1, a2, a3;
+        int a0 = 0, a1 = 0, a2 = 0, a3 = 0;
         sscanf (servername, "%d.%d.%d.%d", &a0, &a1, &a2, &a3);
         addr [0] = a0;
         addr [1] = a1;
