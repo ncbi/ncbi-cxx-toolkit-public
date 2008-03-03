@@ -363,7 +363,7 @@ public:
     /// Callback interface for ExecWait method
     ///
     /// @sa ExecWait
-    class NCBI_XCONNECT_EXPORT IProcessWatcher 
+    class NCBI_XCONNECT_EXPORT IProcessWatcher
     {
     public:
         /// an action which ExecWait method should take 
@@ -373,13 +373,21 @@ public:
             eStop      ///< Kill the chiled process and exit
         };
         virtual ~IProcessWatcher();
-        
-        
-        /// This method is getting called periodically during 
+
+        /// This method is called when the process has just
+        /// been started by the ExecWait method.
+        ///
+        /// @param pid
+        ///   Process Id to monitor
+        /// @return
+        ///   eStop if the process should be killed, eContinue otherwise
+        virtual EAction OnStart(TProcessHandle pid) {return eContinue;};
+
+        /// This method is getting called periodically during
         /// the process execution by ExecWait method.
         ///
         /// @param pid
-        ///   Process Id to monitor to
+        ///   Process Id to monitor
         /// @return
         ///   eStop if the process should be killed, eContinue otherwise
         virtual EAction Watch(TProcessHandle pid) = 0;

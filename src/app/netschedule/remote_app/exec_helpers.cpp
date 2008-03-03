@@ -316,21 +316,30 @@ public:
         
     }
 
-    
+    virtual EAction OnStart(TProcessHandle pid)
+    {
+        if (m_Context.GetShutdownLevel() ==
+            CNetScheduleAdmin::eShutdownImmediate) {
+            return CPipe::IProcessWatcher::eStop;
+        }
+
+        LOG_POST("PID: " << NStr::UInt8ToString((Uint8) pid));
+
+        return CPipeProcessWatcher_Base::OnStart(pid);
+    }
 
     virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid) 
     {
-        if (m_Context.GetShutdownLevel() == 
+        if (m_Context.GetShutdownLevel() ==
             CNetScheduleAdmin::eShutdownImmediate) {
-            //cerr << "Shutdown requested " << endl;
             return CPipe::IProcessWatcher::eStop;
         }
 
         CPipe::IProcessWatcher::EAction action = CPipeProcessWatcher_Base::Watch(pid);
-        if( action != CPipe::IProcessWatcher::eContinue )
+        if (action != CPipe::IProcessWatcher::eContinue)
             return action;
 
-        if (m_KeepAlive.get() 
+        if (m_KeepAlive.get()
             && m_KeepAlive->Elapsed() > (double) m_KeepAlivePeriod ) {
             m_Context.JobDelayExpiration(m_KeepAlivePeriod + 10);
             m_KeepAlive->Restart();
@@ -404,7 +413,6 @@ private:
     auto_ptr<CStopWatch> m_MonitorWatch;
     int m_MonitorPeriod;
     string m_JobWDir;
-
 };
 
 

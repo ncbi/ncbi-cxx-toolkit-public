@@ -136,7 +136,7 @@ int CRemoteAppClientSampleApp::Run(void)
     CRemoteAppRequest request(factory);
     for (int i = 0; i < jobs_number; ++i) {
         CNcbiOstream& os = request.GetStdIn();
-        
+
         if (i % 5 == 0) {
             os.write(kData.c_str(),kData.size());
             os << endl << i << endl;
@@ -144,8 +144,7 @@ int CRemoteAppClientSampleApp::Run(void)
             os.write(kData.c_str(),kData.size());
             os.write(kData.c_str(),kData.size());
             os.write(kData.c_str(),kData.size());
-         } else 
-        
+        } else
             os << "Request data";
 
         request.SetCmdLine("-a sss -f=/tmp/dddd.f1");

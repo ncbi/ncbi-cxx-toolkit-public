@@ -646,8 +646,9 @@ HANDLE CPipeHandle::x_GetHandle(CPipe::EChildIOHandle from_handle) const
         return m_ChildStdOut;
     case CPipe::eStdErr:
         return m_ChildStdErr;
+    default:
+        return INVALID_HANDLE_VALUE;
     }
-    return INVALID_HANDLE_VALUE;
 }
 
 
@@ -1756,7 +1757,15 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
     if (st != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen, "Cannot execute \"" + cmd + "\"");
     }
- 
+
+    TProcessHandle pid = pipe.GetProcessHandle();
+
+    if (watcher && watcher->OnStart(pid) != IProcessWatcher::eContinue) {
+        pipe.SetTimeout(eIO_Close, &ktm);
+        pipe.Close(&exit_value);
+        return eCanceled;
+    }
+
     EFinish finish = eDone;
     bool out_done = false;
     bool err_done = false;
@@ -1801,7 +1810,8 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                     mask &= ~fStdIn;
                 }
 
-            } if (rmask & fStdOut) {
+            }
+            if (rmask & fStdOut) {
                 // read stdout
                 if (!out_done) {
                     rstatus = pipe.Read(buf, buf_size, &bytes_read);
@@ -1812,27 +1822,21 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                     }
                 }
 
-            } if (rmask & fStdErr) {
-                if (!err_done) {
-                    rstatus =
-                        pipe.Read(buf, buf_size, &bytes_read, eStdErr);
-                    err.write(buf, bytes_read);
-                    if (rstatus != eIO_Success) {
-                        err_done = true;
-                        mask &= ~fStdErr;
-                    }
+            }
+            if (rmask & fStdErr  &&  !err_done) {
+                rstatus = pipe.Read(buf, buf_size, &bytes_read, eStdErr);
+                err.write(buf, bytes_read);
+                if (rstatus != eIO_Success) {
+                    err_done = true;
+                    mask &= ~fStdErr;
                 }
             }
-            if (!CProcess(pipe.GetProcessHandle()).IsAlive())
+            if (!CProcess(pid).IsAlive())
                 break;
-            if (watcher) {
-                if (watcher->Watch(pipe.GetProcessHandle()) != 
-                    IProcessWatcher::eContinue) {
-                    pipe.SetTimeout(eIO_Close, &ktm);
-                    pipe.Close(&exit_value);
-                    finish = eCanceled;
-                    break;
-                }
+            if (watcher && watcher->Watch(pid) != IProcessWatcher::eContinue) {
+                pipe.SetTimeout(eIO_Close, &ktm);
+                finish = eCanceled;
+                break;
             }
         }
     } catch (...) {

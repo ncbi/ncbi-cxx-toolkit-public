@@ -58,10 +58,10 @@ static void s_SetParam(const CRemoteAppRequestMB_Executer& request,
 
 ///////////////////////////////////////////////////////////////////////
 
-/// NetSchedule sample job
+/// The remote_app NetSchedule job.
 ///
-/// Job reads an array of doubles, sorts it and returns data back
-/// to the client as a BLOB.
+/// This class performs demarshalling of the command line arguments
+/// and then executes the specified program.
 ///
 class CRemoteAppJob : public IWorkerNodeJob
 {
@@ -74,8 +74,7 @@ public:
     {
         CFastLocalTime lt;
         if (context.IsLogRequested()) {
-            LOG_POST( lt.GetLocalTime().AsString() 
-                      << ": " << context.GetJobKey() << " is received.");
+            LOG_POST(context.GetJobKey() << " is received.");
         }
 
         string tmp_path = m_Params.GetTempDir();
@@ -160,7 +159,8 @@ public:
         } else {
             if (ret != 0 && m_Params.GetNonZeroExitAction() != 
                            CRemoteAppParams::eDoneOnNonZeroExit) {
-                if (m_Params.GetNonZeroExitAction() == CRemoteAppParams::eFailOnNonZeroExit) {
+                if (m_Params.GetNonZeroExitAction() ==
+                    CRemoteAppParams::eFailOnNonZeroExit) {
                     context.CommitJobWithFailure("Exited with " 
                                                  + NStr::IntToString(ret) +
                                                  " return code.");
@@ -174,8 +174,8 @@ public:
             }
         }
         if (context.IsLogRequested()) {
-            LOG_POST( lt.GetLocalTime().AsString() 
-                      << ": Job " << context.GetJobKey() << stat << " ExitCode: " << ret);
+            LOG_POST("Job " << context.GetJobKey() <<
+                stat << " ExitCode: " << ret);
             result->Log(context.GetJobKey());
         }
         request->Reset();
