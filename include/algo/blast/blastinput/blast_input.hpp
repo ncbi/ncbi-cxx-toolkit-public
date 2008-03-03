@@ -324,6 +324,39 @@ private:
     void do_copy(const CBlastInput& input);
 };
 
+/// Auxiliary class for creating Bioseqs given SeqIds
+class NCBI_XBLAST_EXPORT CBlastBioseqMaker : public CObject
+{
+public:
+    /// Constructor
+    /// @param dlconfig Configuration object for the data loaders used in
+    /// CBlastScopeSource [in]
+    ///
+    CBlastBioseqMaker(const SDataLoaderConfig& dlconfig);
+
+    /// Destructor
+    ///
+    ~CBlastBioseqMaker();
+
+    /// Creates a Bioseq given a SeqId
+    /// @param id Reference to the SeqId object identifying the sequence [in]
+    /// @param retrieve_seq_data When gis/accessions are provided in the input,
+    ///                 should the sequence data be fetched by this library?
+    /// @return The newly created Bioseq object
+    ///
+    CRef<CBioseq> CreateBioseqFromId(CConstRef<CSeq_id> id,
+                                     bool retrieve_seq_data);
+
+    /// Checks the molecule type of the Bioseq identified by the given SeqId
+    /// @param id Reference to the SeqId object identifying the sequence [in]
+    /// @return True if the molecule type is protein
+    ///
+    bool IsProtein(CConstRef<CSeq_id> id);
+
+private:
+    /// Scope object used to retrieve the bioseqs
+    CRef<CScope> m_scope;
+};
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -72,59 +72,72 @@ public:
 
     //------------ callbacks needed by IBlastXMLReportData ---------
 
-#ifndef SKIP_DOXYGEN_PROCESSING
+    /// @inheritDoc
     string GetBlastProgramName(void) const {
         return blast::Blast_ProgramNameFromType(m_Options.GetProgramType());
     }
 
+    /// @inheritDoc
     blast::EProgram GetBlastTask(void) const {
         return m_Options.GetProgram();
     }
 
+    /// @inheritDoc
     string GetDatabaseName(void) const { return m_DbName; }
 
+    /// @inheritDoc
     double GetEvalueThreshold(void) const { 
         return m_Options.GetEvalueThreshold();
     }
 
+    /// @inheritDoc
     int GetGapOpeningCost(void) const {
         return m_Options.GetGapOpeningCost();
     }
 
+    /// @inheritDoc
     int GetGapExtensionCost(void) const {
         return m_Options.GetGapExtensionCost();
     }
 
+    /// @inheritDoc
     int GetMatchReward(void) const {
         return m_Options.GetMatchReward();
     }
 
+    /// @inheritDoc
     int GetMismatchPenalty(void) const {
         return m_Options.GetMismatchPenalty();
     }
 
+    /// @inheritDoc
     string GetPHIPattern(void) const {
         const char *tmp = m_Options.GetPHIPattern();
         return tmp == NULL ? string() : string(tmp);
     }
 
+    /// @inheritDoc
     string GetFilterString(void) const {
         const char *tmp = m_Options.GetFilterString();
         return tmp == NULL ? string() : string(tmp);
     }
 
+    /// @inheritDoc
     string GetMatrixName(void) const {
         const char *tmp = m_Options.GetMatrixName();
         return tmp == NULL ? string() : string(tmp);
     }
 
+    /// @inheritDoc
     CBlastFormattingMatrix* GetMatrix(void) const {
         return new CBlastFormattingMatrix((int **)m_Matrix,
                                            kMatrixCols, kMatrixCols); 
     }
 
+    /// @inheritDoc
     unsigned int GetNumQueries(void) const { return m_Queries->Size(); }
 
+    /// @inheritDoc
     const blast::TMaskedQueryRegions* 
         GetMaskLocations(int query_index) const {
         if (m_NoHitsFound || query_index >= (int)m_Masks.size()) {
@@ -133,20 +146,24 @@ public:
         return &m_Masks[query_index];
     }
 
+    /// @inheritDoc
     int GetDbNumSeqs(void) const {
         return m_DbInfo.number_seqs;
     }
 
+    /// @inheritDoc
     Int8 GetDbLength(void) const {
         return m_DbInfo.total_length;
     }
 
+    /// @inheritDoc
     int GetLengthAdjustment(int query_index) const {
         /// @todo FIXME no way to retrieve this
         /// given the data available
         return 0;
     }
 
+    /// @inheritDoc
     Int8 GetEffectiveSearchSpace(int query_index) const {
         if (m_NoHitsFound || query_index >= (int)m_AncillaryData.size()) {
             return 0;
@@ -154,20 +171,26 @@ public:
         return m_AncillaryData[query_index]->GetSearchSpace();
     }
 
+    /// @inheritDoc
     double GetLambda(int query_index) const;
 
+    /// @inheritDoc
     double GetKappa(int query_index) const;
 
+    /// @inheritDoc
     double GetEntropy(int query_index) const;
 
+    /// @inheritDoc
     const objects::CSeq_loc* GetQuery(int query_index) const {
         return m_Queries->GetQuerySeqLoc(query_index);
     }
 
+    /// @inheritDoc
     objects::CScope* GetScope(int query_index) const {
         return m_Queries->GetScope(query_index);
     }
 
+    /// @inheritDoc
     const CSeq_align_set* GetAlignment(int query_index) const {
         if (m_NoHitsFound || query_index >= (int)m_Alignments.size()) {
             return NULL;
@@ -175,16 +198,19 @@ public:
         return m_Alignments[query_index].GetPointer();
     }
 
+    /// @inheritDoc
     bool GetGappedMode(void) const {
         return m_Options.GetGappedMode();
     }
 
+    /// @inheritDoc
     int GetMasterGeneticCode() const { return m_QueryGeneticCode; }
 
+    /// @inheritDoc
     int GetSlaveGeneticCode() const { return m_DbGeneticCode; }
 
+    /// @inheritDoc
     vector<string> GetMessages() const { return m_Errors; }
-#endif /* SKIP_DOXYGEN_PROCESSING */
 
 private:
     /// Query sequences

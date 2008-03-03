@@ -44,9 +44,11 @@ static char const rcsid[] =
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include "../blast_input_aux.hpp"
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 //  CBlastInputDemoApplication::

@@ -7,6 +7,7 @@ ASN_DEP = seq xnetblast scoremat blastdb
 SRC_CXX = blast_aux \
 blast_options_cxx \
 blast_options_local_priv \
+blast_options_builder \
 blast_setup_cxx \
 blast_seqalign \
 blast_options_handle \

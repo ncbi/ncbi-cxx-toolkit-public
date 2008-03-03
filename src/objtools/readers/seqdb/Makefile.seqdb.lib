@@ -3,6 +3,8 @@
 ASN_DEP = seq blastdb
 
 SRC = seqdb \
+seqdbbitset \
+seqdbfilter \
 seqdbatlas \
 seqdbalias \
 seqdbcommon \

@@ -584,6 +584,18 @@ void CBlastFormatUtil::GetScoreString(double evalue,
                                       string& total_bit_score_str)
 {
     char evalue_buf[10], bit_score_buf[10], total_bit_score_buf[10];
+
+    /* Facilitates comparing formatted output using diff */
+    static string kBitScoreFormat("%4.1lf");
+#ifdef _DEBUG
+    static bool value_set = false;
+    if ( !value_set ) {
+        if (getenv("CTOOLKIT_COMPATIBLE")) {
+            kBitScoreFormat.assign("%4.0lf");
+        }
+        value_set = true;
+    }
+#endif
     
     if (evalue < 1.0e-180) {
         sprintf(evalue_buf, "0.0");
@@ -606,7 +618,7 @@ void CBlastFormatUtil::GetScoreString(double evalue,
     } else if (bit_score > 99.9){
         sprintf(bit_score_buf, "%4.0ld", (long)bit_score);
     } else {
-        sprintf(bit_score_buf, "%4.1lf", bit_score);
+        sprintf(bit_score_buf, kBitScoreFormat.c_str(), bit_score);
     }
     if (total_bit_score > 9999){
         sprintf(total_bit_score_buf, "%4.3le", total_bit_score);
@@ -1729,6 +1741,17 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
         // }
     }
     
+    if(linkout & eBioAssay && is_na){
+      string l_BioAssayUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");
+        sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), for_alignment ? "align" : "top", cur_align);
+        linkout_list.push_back(buf);
+    }
+    else if (linkout & eBioAssay && !is_na) {
+      string l_BioAssayUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");
+        sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), for_alignment ? "align" : "top", cur_align);
+        linkout_list.push_back(buf);
+    }
+
     return linkout_list;
 }
 

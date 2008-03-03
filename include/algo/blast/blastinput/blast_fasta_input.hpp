@@ -70,12 +70,14 @@ public:
 protected:
     /// Retrieve a single sequence (in an SSeqLoc container)
     /// @param scope CScope object to use in SSeqLoc returned [in]
-    /// @throws CObjReaderParseException if input file is empty
+    /// @throws CObjReaderParseException if input file is empty or the end of
+    /// file is reached unexpectedly
     virtual SSeqLoc GetNextSSeqLoc(CScope& scope);
 
     /// Retrieve a single sequence (in a CBlastSearchQuery container)
     /// @param scope CScope object to use in CBlastSearchQuery returned [in]
-    /// @throws CObjReaderParseException if input file is empty
+    /// @throws CObjReaderParseException if input file is empty of the end of
+    /// file is reached unexpectedly
     virtual CRef<CBlastSearchQuery> GetNextSequence(CScope& scope);
 
     /// Signal whether there are any unread sequences left

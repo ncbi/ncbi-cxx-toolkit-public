@@ -3541,4 +3541,122 @@ BOOST_AUTO_TEST_CASE(VersionedSparseId)
     CHECK(o3.size() == 1);
 }
 
+struct SDbSumInfo {
+public:
+    SDbSumInfo(CSeqDB & db)
+    {
+        total_length    = db.GetVolumeLength();
+        total_oids      = db.GetNumOIDs();
+        
+        filtered_length = db.GetTotalLength();
+        filtered_oids   = db.GetNumSeqs();
+        
+        measured_length = 0;
+        measured_oids   = 0;
+        
+        for(int oid=0; db.CheckOrFindOID(oid); oid++) {
+            measured_length += db.GetSeqLength(oid);
+            measured_oids ++;
+        }
+    }
+    
+    void CompareField(Int8 X, Int8 Y, string & sum, char ch)
+    {
+        if (X > Y) {
+            sum.append("+");
+        } else if (X < Y) {
+            sum.append("-");
+        } else {
+            sum.append("=");
+        }
+        sum.push_back(ch);
+    }
+    
+    string Compare(SDbSumInfo & other)
+    {
+        // This compares the fields for two databases to each other;
+        // it tells us which database has more sequences and bases
+        // before and after filtering.
+        
+        string sum;
+        sum.reserve(20);
+        
+        CompareField(total_length,    other.total_length,    sum, 'T');
+        CompareField(filtered_length, other.filtered_length, sum, 'F');
+        CompareField(measured_length, other.measured_length, sum, 'M');
+        
+        CompareField(total_oids,    other.total_oids,    sum, 't');
+        CompareField(filtered_oids, other.filtered_oids, sum, 'f');
+        CompareField(measured_oids, other.measured_oids, sum, 'm');
+        
+        return sum;
+    }
+    
+    string CompareSelf()
+    {
+        // This compares the fields within a database to each other;
+        // it tells us if filtering has any effect and whether the
+        // measured values equal the expected totals.
+        
+        string sum;
+        sum.reserve(20);
+        
+        CompareField(total_length,    filtered_length, sum, 'A');
+        CompareField(total_length,    measured_length, sum, 'B');
+        CompareField(filtered_length, measured_length, sum, 'C');
+        
+        CompareField(total_oids,    filtered_oids, sum, 'a');
+        CompareField(total_oids,    measured_oids, sum, 'b');
+        CompareField(filtered_oids, measured_oids, sum, 'c');
+        
+        return sum;
+    }
+    
+    /// Total length, sum of all volume lengths.
+    Int8 total_length;
+    
+    /// Filtered length, result of all filtering.
+    Int8 filtered_length;
+    
+    /// Measured length should equal filtered if alias files are correct.
+    Int8 measured_length;
+    
+    /// Total oid count, sum of all volume oid counts.
+    int total_oids;
+    
+    /// Filtered oid count, result of all filtering.
+    int filtered_oids;
+    
+    /// Measured oid count should equal filtered if alias files are correct.
+    int measured_oids;
+};
+
+BOOST_AUTO_TEST_CASE(OidAndGiLists)
+{
+    START;
+    
+    CSeqDB nr("nr", CSeqDB::eProtein);
+    CSeqDB sp("swissprot", CSeqDB::eProtein);
+    CSeqDB sc("data/swiss_cheese", CSeqDB::eProtein);
+    CSeqDB ac("data/all_cheese", CSeqDB::eProtein);
+    
+    SDbSumInfo nr_sum(nr);
+    SDbSumInfo sp_sum(sp);
+    SDbSumInfo ac_sum(ac);
+    SDbSumInfo sc_sum(sc);
+    
+    CHECK_EQUAL(nr_sum.CompareSelf(), "=A=B=C=a=b=c");
+    CHECK_EQUAL(sp_sum.CompareSelf(), "+A+B=C+a+b=c");
+    CHECK_EQUAL(ac_sum.CompareSelf(), "+A+B=C+a+b=c");
+    CHECK_EQUAL(sc_sum.CompareSelf(), "+A+B=C+a+b=c");
+    
+    CHECK_EQUAL(nr_sum.Compare(sp_sum), "=T+F+M=t+f+m");
+    CHECK_EQUAL(nr_sum.Compare(ac_sum), "=T+F+M=t+f+m");
+    CHECK_EQUAL(nr_sum.Compare(sc_sum), "=T+F+M=t+f+m");
+    
+    CHECK_EQUAL(sp_sum.Compare(sc_sum), "=T+F+M=t+f+m");
+    CHECK_EQUAL(ac_sum.Compare(sc_sum), "=T+F+M=t+f+m");
+}
+
 #endif /* SKIP_DOXYGEN_PROCESSING */
+

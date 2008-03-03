@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include "seqdboidlist.hpp"
+#include "seqdbfilter.hpp"
 #include "seqdbfile.hpp"
 #include "seqdbgilistset.hpp"
 #include <algorithm>
@@ -42,66 +43,31 @@ BEGIN_NCBI_SCOPE
 
 CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas              & atlas,
                              const CSeqDBVolSet       & volset,
+                             CSeqDB_FilterTree        & filters,
                              CRef<CSeqDBGiList>       & gi_list,
                              CRef<CSeqDBNegativeList> & neg_list,
                              CSeqDBLockHold           & locked)
     : m_Atlas   (atlas),
       m_Lease   (atlas),
-      m_NumOIDs (0),
-      m_Bits    (0),
-      m_BitEnd  (0),
-      m_BitOwner(false)
+      m_NumOIDs (0)
 {
-    // MSVC for some reason doesn't compile the following _ASSERT()
-    // Interesting fact: if we add one more _ASSERT(gi_list) before failing _ASSERT without
-    // removing it MSCV will compile it without warnings. :-)
-    //_ASSERT(volset.HasFilter() || gi_list);
-    //_ASSERT(gi_list || volset.HasFilter());
-    // (A step further: Lets not trust it to convert pointer->bool. -kmb)
-    
-    _ASSERT(gi_list.NotEmpty() || neg_list.NotEmpty() || volset.HasFilter());
-    
-    if (volset.HasSimpleMask() && gi_list.Empty() && neg_list.Empty()) {
-        x_Setup( volset.GetSimpleMask(), locked );
-    } else {
-        x_Setup( volset, gi_list, neg_list, locked );
-    }
+    _ASSERT(gi_list.NotEmpty() || neg_list.NotEmpty() || filters.HasFilter());
+    x_Setup( volset, filters, gi_list, neg_list, locked );
 }
 
 CSeqDBOIDList::~CSeqDBOIDList()
 {
-    CSeqDBLockHold locked(m_Atlas);
-
-    if (m_BitOwner) {
-        _ASSERT(m_Bits != 0);
-        m_Atlas.Free((const char *) m_Bits, locked);
-    }
 }
-
-void CSeqDBOIDList::x_Setup(const string   & filename,
-                            CSeqDBLockHold & locked)
-{
-    CSeqDBAtlas::TIndx file_length = 0;
-    
-    m_Atlas.GetFile(m_Lease, filename, file_length, locked);
-    
-    m_NumOIDs = SeqDB_GetStdOrd((int *) m_Lease.GetPtr(0)) + 1;
-    m_Bits    = (unsigned char*) m_Lease.GetPtr(sizeof(Uint4));
-    m_BitEnd  = m_Bits + file_length - sizeof(Uint4);
-}
-
 
 // The general rule I am following in these methods is to use byte
 // computations except during actual looping.
 
 void CSeqDBOIDList::x_Setup(const CSeqDBVolSet       & volset,
+                            CSeqDB_FilterTree        & filters,
                             CRef<CSeqDBGiList>       & gi_list,
                             CRef<CSeqDBNegativeList> & neg_list,
                             CSeqDBLockHold           & locked)
 {
-    _ASSERT((volset.HasFilter() && (! volset.HasSimpleMask()))
-            || gi_list.NotEmpty() || neg_list.NotEmpty());
-    
     // First, get the memory space for the OID bitmap and clear it.
     
     // Pad memory space to word boundary, add 8 bytes for "insurance".  Some
@@ -110,50 +76,31 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet       & volset,
     // other destination element.  Rather than sprinkle this code with range
     // checks, padding is used.
     
-    int num_oids = volset.GetNumOIDs();
-    int byte_length = ((num_oids + 31) / 32) * 4 + 8;
+    m_NumOIDs = volset.GetNumOIDs();
     
-    m_Bits   = (TUC*) m_Atlas.Alloc(byte_length, locked);
-    m_BitEnd = m_Bits + byte_length;
-    m_BitOwner = true;
-    m_NumOIDs = num_oids;
+    m_AllBits.Reset(new CSeqDB_BitSet(0, m_NumOIDs));
     
-    try {
-        CSeqDBGiListSet gi_list_set(m_Atlas,
-                                    volset,
-                                    gi_list,
-                                    neg_list,
-                                    locked);
+    CSeqDBGiListSet gi_list_set(m_Atlas,
+                                volset,
+                                gi_list,
+                                neg_list,
+                                locked);
+    
+    // Then get the list of filenames and offsets to overlay onto it.
+    
+    for(int i = 0; i < volset.GetNumVols(); i++) {
+        const CSeqDBVolEntry * v1 = volset.GetVolEntry(i);
         
-        memset((void*) m_Bits, 0, byte_length);
+        CRef<CSeqDB_BitSet> vol_bits =
+            x_ComputeFilters(filters, *v1, gi_list_set, locked);
         
-        // Then get the list of filenames and offsets to overlay onto it.
-        
-        for(int i = 0; i < volset.GetNumVols(); i++) {
-            if (volset.GetIncludeAllOIDs(i)) {
-                const CSeqDBVolEntry * ve = volset.GetVolEntry(i);
-                x_SetBitRange(ve->OIDStart(), ve->OIDEnd());
-                continue;
-            }
-            
-            ITERATE(CSeqDBVolSet::TFilters, it, volset.GetFilterSet(i)) {
-                const CSeqDBVolEntry * v1 = volset.GetVolEntry(i);
-                CRef<CSeqDBVolFilter> v2(*it);
-                x_ApplyFilter(v2, v1, gi_list_set, locked);
-            }
-        }
-        
-        if (gi_list.NotEmpty()) {
-            x_ApplyUserGiList(*gi_list, locked);
-        } else if (neg_list.NotEmpty()) {
-            x_ApplyNegativeList(*neg_list, locked);
-        }
+        m_AllBits->UnionWith(*vol_bits, true);
     }
-    catch(...) {
-        if (m_Bits) {
-            m_Atlas.Free((const char*) m_Bits, locked);
-        }
-        throw;
+    
+    if (gi_list.NotEmpty()) {
+        x_ApplyUserGiList(*gi_list, locked);
+    } else if (neg_list.NotEmpty()) {
+        x_ApplyNegativeList(*neg_list, locked);
     }
     
     while(m_NumOIDs && (! x_IsSet(m_NumOIDs - 1))) {
@@ -161,63 +108,133 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet       & volset,
     }
 }
 
-void CSeqDBOIDList::x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
-                                  const CSeqDBVolEntry  * vol,
-                                  CSeqDBGiListSet       & gis,
-                                  CSeqDBLockHold        & locked)
+CRef<CSeqDB_BitSet>
+CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
+                                const CSeqDBVolEntry    & vol,
+                                CSeqDBGiListSet         & gis,
+                                CSeqDBLockHold          & locked)
 {
-    // Volume-relative OIDs
+    const string & vn = vol.Vol()->GetVolName();
+    CRef<CSeqDB_FilterTree> ft = filters.Specialize(vn);
     
-    int start_vr = filter->BeginOID();
-    int end_vr   = filter->EndOID();
+    int vol_start = vol.OIDStart();
+    int vol_end   = vol.OIDEnd();
     
-    // Global OIDs
+    CRef<CSeqDB_BitSet> volume_map;
     
-    int vol_start = vol->OIDStart();
-    int vol_end   = vol->OIDEnd();
+    // Step 1: Compute the bitmap representing the filtering done by
+    // all subnodes.  This is a "union".
     
-    // Adjust oids from volume to global, avoiding overflow, and
-    // trimming ranges.
+    int vols = ft->GetVolumes().size();
     
+    _ASSERT(vols || ft->GetNodes().size());
     
-    // Global OIDs
-    
-    int start_g(0);
-    int end_g(0);
-    
-    if (end_vr < (vol_end - vol_start)) {
-        end_g = end_vr + vol_start;
-    } else {
-        end_g = vol_end;
-    }
-    
-    if (start_vr >= (end_g - vol_start)) {
-        // Specified starting oid is past end of volume.
-        return;
-    }
-    
-    start_g = start_vr + vol_start;
-    
-    if (! filter->GetOIDMask().empty()) {
-        x_OrMaskBits(filter->GetOIDMask(), vol_start, start_g, end_g, locked);
-    } else if (! filter->GetIdList().empty()) {
-        CRef<CSeqDBGiList> idlist =
-            gis.GetNodeIdList(filter->GetIdList(),
-                              vol->Vol(),
-                              vol->OIDStart(),
-                              vol->OIDEnd(),
-                              filter->UseTis(),
-                              locked);
+    if (vols > 0) {
+        // This filter tree is filtered by volume name, so all nodes
+        // below this point can be ignored if this node contains a
+        // volume.  This volume will be ORred with those nodes,
+        // flushing them to all "1"s anyway (at least until this
+        // node's filtering is applied.)
         
-        x_OrIdFileBits(*idlist,
-                       start_g,
-                       end_g,
-                       locked);
+        // This loop really just verifies that specialization was done
+        // properly in the case where there are multiple volume names
+        // (which must be the same).
+        
+        for(int j = 1; j < vols; j++) {
+            _ASSERT(ft->GetVolumes()[j] == ft->GetVolumes()[0]);
+        }
+        
+        volume_map.Reset(new CSeqDB_BitSet(vol_start,
+                                     vol_end,
+                                     CSeqDB_BitSet::eAllSet));
     } else {
-        x_SetBitRange(start_g, end_g);
+        // Since this node did not have a volume, we OR together all
+        // of its subnodes.
+        
+        volume_map.Reset(new CSeqDB_BitSet(vol_start,
+                                     vol_end,
+                                     CSeqDB_BitSet::eAllClear));
+        
+        ITERATE(vector< CRef< CSeqDB_FilterTree > >, sub, ft->GetNodes()) {
+            CRef<CSeqDB_BitSet> sub_bits =
+                x_ComputeFilters(**sub, vol, gis, locked);
+            
+            volume_map->UnionWith(*sub_bits, true);
+        }
     }
-}
+    
+    // Now we apply this level's filtering.  The first question is, is
+    // it appropriate for a node to use multiple filtering mechanisms
+    // (GI list, OID list, or OID range), either of the same or
+    // different types?  The second question is how are multiply
+    // filtered nodes interpreted?
+    
+    // The SeqDB unit tests assume that multiple filters at a given
+    // level are ANDed together.  The unit tests assume this for the
+    // case of combining OID masks and OID ranges, but in the absence
+    // of another motivating example, I'll assume it means ANDing of
+    // all such mechanisms.
+    
+    CRef<CSeqDB_BitSet> filter(new CSeqDB_BitSet(vol_start,
+                                                 vol_end,
+                                                 CSeqDB_BitSet::eAllSet));
+    
+    // First, apply any 'range' filters, because they can be combined
+    // very efficiently.
+    
+    typedef CSeqDB_FilterTree::TFilters TFilters;
 
+    ITERATE(TFilters, range, ft->GetFilters()) {
+        const CSeqDB_AliasMask & mask = **range;
+        
+        if (mask.GetType() == CSeqDB_AliasMask::eOidRange) {
+            CSeqDB_BitSet range(mask.GetBegin(),
+                                mask.GetEnd(),
+                                CSeqDB_BitSet::eAllSet);
+            filter->IntersectWith(range, true);
+        }
+    }
+    
+    ITERATE(TFilters, filt, ft->GetFilters()) {
+        const CSeqDB_AliasMask & mask = **filt;
+        
+        if (mask.GetType() == CSeqDB_AliasMask::eOidRange)
+            continue;
+        
+        CRef<CSeqDB_BitSet> f;
+        CRef<CSeqDBGiList> idlist;
+        bool use_tis = false;
+        
+        switch(mask.GetType()) {
+        case CSeqDB_AliasMask::eOidList:
+            f = x_GetOidMask(mask.GetPath(), vol_start, vol_end, locked);
+            break;
+            
+        case CSeqDB_AliasMask::eTiList:
+            use_tis = true;
+            //ft
+            
+        case CSeqDB_AliasMask::eGiList:
+            idlist = gis.GetNodeIdList(mask.GetPath(),
+                                       vol.Vol(),
+                                       use_tis,
+                                       locked);
+            
+            f = x_IdsToBitSet(*idlist, vol_start, vol_end);
+            break;
+            
+        case CSeqDB_AliasMask::eOidRange:
+            // these should have been handled in the previous loop.
+            break;
+        }
+        
+        filter->IntersectWith(*f, true);
+    }
+    
+    volume_map->IntersectWith(*filter, true);
+    
+    return volume_map;
+}
 
 void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
                                       CSeqDBLockHold & locked)
@@ -239,15 +256,15 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
     // included OID, and then scan the vector sequentially.  This
     // technique also uniqifies the set, which is desireable here.
     
-    vector<bool> gilist_oids(m_NumOIDs);
+    CRef<CSeqDB_BitSet> gilist_oids(new CSeqDB_BitSet(0, m_NumOIDs));
     
-    int j;
+    int j = 0;
     
     for(j = 0; j < gis_size; j++) {
         int oid = gis.GetGiOid(j).oid;
         
         if ((oid != -1) && (oid < m_NumOIDs)) {
-            gilist_oids[oid] = true;
+            gilist_oids->SetBit(oid);
         }
     }
     
@@ -255,7 +272,7 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
         int oid = gis.GetSeqIdOid(j).oid;
         
         if ((oid != -1) && (oid < m_NumOIDs)) {
-            gilist_oids[oid] = true;
+            gilist_oids->SetBit(oid);
         }
     }
     
@@ -263,22 +280,13 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
         int oid = gis.GetTiOid(j).oid;
         
         if ((oid != -1) && (oid < m_NumOIDs)) {
-            gilist_oids[oid] = true;
+            gilist_oids->SetBit(oid);
         }
     }
     
     // Intersect the user GI list with the OID bit map.
     
-    // Iterate over the bitmap, clearing bits we find there but not in
-    // the bool vector.  For very dense OID bit maps, it might be
-    // faster to use two similarly implemented bitmaps and AND them
-    // together word-by-word.
-    
-    for(int oid = 0; x_FindNext(oid); oid ++) {
-        if (! gilist_oids[oid]) {
-            x_ClearBit(oid);
-        }
-    }
+    m_AllBits->IntersectWith(*gilist_oids, true);
 }
 
 void CSeqDBOIDList::x_ApplyNegativeList(CSeqDBNegativeList & nlist,
@@ -298,27 +306,75 @@ void CSeqDBOIDList::x_ApplyNegativeList(CSeqDBNegativeList & nlist,
     // Clear any OIDs after the included range.
     
     if (max < m_NumOIDs) {
-        x_ClearBitRange(max, m_NumOIDs);
+        CSeqDB_BitSet new_range(0, max, CSeqDB_BitSet::eAllSet);
+        m_AllBits->IntersectWith(new_range, true);
     }
+    
+    // We require a normalized list in order to turn bits off.
+    
+    m_AllBits->Normalize();
     
     // If a 'get next included oid' method was added to the negative
     // list, the following loop could be made a bit faster.
     
     for(int oid = 0; oid < max; oid++) {
         if (! nlist.GetOidStatus(oid)) {
-            x_ClearBit(oid);
+            m_AllBits->ClearBit(oid);
         }
     }
 }
 
-void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
-                                 int              vol_start,
-                                 int              oid_start,
-                                 int              oid_end,
-                                 CSeqDBLockHold & locked)
+CRef<CSeqDB_BitSet>
+CSeqDBOIDList::x_IdsToBitSet(const CSeqDBGiList & gilist,
+                             int                  oid_start,
+                             int                  oid_end)
 {
-    _ASSERT(oid_end > oid_start);
+    CRef<CSeqDB_BitSet> bits
+        (new CSeqDB_BitSet(oid_start, oid_end, CSeqDB_BitSet::eNone));
     
+    CSeqDB_BitSet & bitset = *bits;
+    
+    int num_gis = gilist.GetNumGis();
+    int num_tis = gilist.GetNumTis();
+    int prev_oid = -1;
+    
+    for(int i = 0; i < num_gis; i++) {
+        int oid = gilist.GetGiOid(i).oid;
+        
+        if (oid != prev_oid) {
+            if ((oid >= oid_start) && (oid < oid_end)) {
+                bitset.SetBit(oid);
+            }
+            prev_oid = oid;
+        }
+    }
+    
+    for(int i = 0; i < num_tis; i++) {
+        int oid = gilist.GetTiOid(i).oid;
+        
+        if (oid != prev_oid) {
+            if ((oid >= oid_start) && (oid < oid_end)) {
+                bitset.SetBit(oid);
+            }
+            prev_oid = oid;
+        }
+    }
+    
+    return bits;
+}
+
+void CSeqDBOIDList::x_ClearBitRange(int oid_start,
+                                    int oid_end)
+{
+    m_AllBits->AssignBitRange(oid_start, oid_end, false);
+}
+
+CRef<CSeqDB_BitSet>
+CSeqDBOIDList::x_GetOidMask(const CSeqDB_Path & fn,
+                            int                 vol_start,
+                            int                 vol_end,
+                            CSeqDBLockHold    & locked)
+{
     m_Atlas.Lock(locked);
     
     // Open file and get pointers
@@ -332,7 +388,7 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
     Uint4 num_oids = 0;
     
     {
-        volmask.Open(mask_fname, locked);
+        volmask.Open(fn, locked);
         
         volmask.ReadSwapped(lease, 0, & num_oids, locked);
         
@@ -345,403 +401,20 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
         
         volmask.GetRegion(lease, sizeof(Int4), file_length, locked);
         bitmap = (TCUC*) lease.GetPtr(sizeof(Int4));
-        
-        //bitend = bitmap + file_length - sizeof(Int4);
         bitend = bitmap + (((num_oids + 31) / 32) * 4);
     }
     
-    bool range_filter =
-        ((vol_start != oid_start) ||
-         ((oid_end - oid_start) < ((int) num_oids)));
-    
-    // Fold bitmap/bitend into m_Bits/m_BitEnd at bit offset oid_start.
-    
-    if ((! range_filter) && (0 == (vol_start & 31))) {
-        // If the new data is "word aligned", we can use a fast algorithm.
-        
-        TCUC * srcp = bitmap;
-        TUC  * locp = m_Bits + (vol_start / 8);
-        TUC  * endp = locp + (bitend-bitmap);
-        
-        _ASSERT(endp <= m_BitEnd);
-        
-        Uint4 * wsrcp = (Uint4*) srcp;
-        Uint4 * wlocp = (Uint4*) locp;
-        Uint4 * wendp = wlocp + ((bitend - bitmap) / 4);
-        
-        while(wlocp < wendp) {
-            *wlocp++ |= *wsrcp++;
-        }
-        
-        srcp = (TCUC*) wsrcp;
-        locp = (unsigned char*) wlocp;
-        
-        while(locp < endp) {
-            *locp++ |= *(srcp++);
-        }
-    } else if ((! range_filter) && (0 == (vol_start & 7))) {
-        // If the new data is "byte aligned", we can use a less fast algorithm.
-        
-        TCUC * srcp = bitmap;
-        TUC  * locp = m_Bits + (vol_start / 8);
-        TUC  * endp = locp + (bitend-bitmap);
-        
-        _ASSERT(endp <= m_BitEnd);
-        
-        while(locp < endp) {
-            *locp++ |= *srcp++;
-        }
-    } else {
-        // Otherwise... we have to use a slower, byte splicing
-        // algorithm.  All range filtered cases go here - less
-        // modified code means less testing, and OID ranges are
-        // usually small, so the performance issue is probably not
-        // significant.
-        
-        Uint4 Rshift = vol_start & 7;
-        Uint4 Lshift = 8 - Rshift;
-        
-        TCUC * srcp = bitmap;
-        TUC  * locp = m_Bits + (vol_start / 8);
-        TUC  * endp = locp + (bitend-bitmap);
-        
-        _ASSERT(endp <= m_BitEnd);
-        
-        // This loop iterates over the source bytes.  Each byte is
-        // split over two destination bytes.
-        
-        bool trimmed_last_byte = false;
-        
-        if (oid_start != vol_start) {
-            Uint4 skip_oids = (oid_start - vol_start);
-            
-            srcp += skip_oids / 8;
-            locp += skip_oids / 8;
-            
-            // Store (part of) left half of source char in one
-            // location.
-            
-            Uint4 mask = 255 >> (skip_oids & 7);
-            
-            // Special case: begin and end fall in same block
-            
-            if ((oid_end/8) == (oid_start/8)) {
-                // Another intuitive formula.
-                
-                // oid_end:  first excluded oid after the included range.
-                // (oid_end % 8):  excluded oids in last examined byte.
-                
-                Uint4 oids_in_last_byte = (oid_end % 8);
-                
-                Uint4 last_byte_mask =
-                    (255 & (255 << (8 - oids_in_last_byte)));
-                
-                mask &= last_byte_mask;
-                
-                trimmed_last_byte = true;
-            }
-            
-            TCUC source = (*srcp) & mask;
-            
-            *locp |= (source >> Rshift);
-            locp++;
-            
-            // Store right half of source in the next location.
-            *locp |= (source << Lshift);
-            srcp++;
-        }
-        
-        if (! trimmed_last_byte) {
-            if ((oid_end - oid_start) < ((int) num_oids)) {
-                Uint4 oids_in_last_byte = (oid_end % 8);
-                
-                Uint4 last_byte_mask =
-                    (255 & (255 << (8 - oids_in_last_byte)));
-                
-                // Find location of last source byte.
-                TCUC * last_srcp = bitmap + (oid_end / 8);
-                
-                // Adjust endp, trimming last byte.
-                endp = m_Bits + (oid_end / 8);
-                
-                if (oid_end & 7) {
-                    TCUC source = (*last_srcp) & last_byte_mask;
-                    
-                    TUC * locp_end = m_Bits + (oid_end / 8);
-                    *locp_end |= (source >> Rshift);
-                    locp_end++;
-                    
-                    // Store right half of source in the next location.
-                    *locp_end |= (source << Lshift);
-                }
-            }
-            
-            while(locp < endp) {
-                // Store left half of source char in one location.
-                TCUC source = *srcp;
-                *locp |= (source >> Rshift);
-                locp++;
-                
-                // Store right half of source in the next location.
-                *locp |= (source << Lshift);
-                srcp++;
-            }
-            
-            _ASSERT(locp == endp);
-        }
-    }
-    
+    CRef<CSeqDB_BitSet> bitset(new CSeqDB_BitSet(vol_start, vol_end, bitmap, bitend));
     m_Atlas.RetRegion(lease);
-}
-
-void CSeqDBOIDList::x_OrIdFileBits(CSeqDBGiList    & gilist,
-                                   int               oid_start,
-                                   int               oid_end,
-                                   CSeqDBLockHold  & locked)
-{
-    m_Atlas.Lock(locked);
     
-    int num_gis = gilist.GetNumGis();
-    int num_tis = gilist.GetNumTis();
-    int prev_oid = -1;
+    // Disable any enabled bits occuring after the volume end point
+    // [this should not normally occur.]
     
-    for(int i = 0; i < num_gis; i++) {
-        int oid = gilist.GetGiOid(i).oid;
-        
-        if (oid != prev_oid) {
-            if ((oid >= oid_start) && (oid < oid_end)) {
-                x_SetBit(oid);
-            }
-            prev_oid = oid;
-        }
+    for(size_t oid = vol_end; bitset->CheckOrFindBit(oid); oid++) {
+        bitset->ClearBit(oid);
     }
     
-    for(int i = 0; i < num_tis; i++) {
-        int oid = gilist.GetTiOid(i).oid;
-        
-        if (oid != prev_oid) {
-            if ((oid >= oid_start) && (oid < oid_end)) {
-                x_SetBit(oid);
-            }
-            prev_oid = oid;
-        }
-    }
-}
-
-void CSeqDBOIDList::x_SetBitRange(int oid_start,
-                                  int oid_end)
-{
-    // Set bits at the front and back, closing to a range of full-byte
-    // addresses.
-    
-    while((oid_start & 0x7) && (oid_start < oid_end)) {
-        x_SetBit(oid_start);
-        ++oid_start;
-    }
-    
-    while((oid_end & 0x7) && (oid_start < oid_end)) {
-        x_SetBit(oid_end - 1);
-        --oid_end;
-    }
-    
-    if (oid_start < oid_end) {
-        TUC * bp_start = m_Bits + (oid_start >> 3);
-        TUC * bp_end   = m_Bits + (oid_end   >> 3);
-        
-        _ASSERT(bp_end   <= m_BitEnd);
-        _ASSERT(bp_start <  bp_end);
-        
-        memset(bp_start, 0xFF, (bp_end - bp_start));
-    }
-}
-
-void CSeqDBOIDList::x_ClearBitRange(int oid_start,
-                                    int oid_end)
-{
-    // Clear bits at the front and back, closing to a range of
-    // full-byte addresses.
-    
-    while((oid_start & 0x7) && (oid_start < oid_end)) {
-        x_ClearBit(oid_start);
-        ++oid_start;
-    }
-    
-    while((oid_end & 0x7) && (oid_start < oid_end)) {
-        x_ClearBit(oid_end - 1);
-        --oid_end;
-    }
-    
-    if (oid_start < oid_end) {
-        TUC * bp_start = m_Bits + (oid_start >> 3);
-        TUC * bp_end   = m_Bits + (oid_end   >> 3);
-        
-        _ASSERT(bp_end   <= m_BitEnd);
-        _ASSERT(bp_start <  bp_end);
-        
-        memset(bp_start, 0x00, (bp_end - bp_start));
-    }
-}
-
-void CSeqDBOIDList::x_SetBit(TOID oid)
-{
-    TUC * bp = m_Bits + (oid >> 3);
-    
-    Int4 bitnum = (oid & 7);
-    
-    if (bp < m_BitEnd) {
-        *bp |= (0x80 >> bitnum);
-    }
-}
-
-void CSeqDBOIDList::x_ClearBit(TOID oid)
-{
-    TUC * bp = m_Bits + (oid >> 3);
-    
-    Int4 bitnum = (oid & 7);
-    
-    if (bp < m_BitEnd) {
-        *bp &= ((0xFF) ^ (0x80 >> bitnum));
-    }
-}
-
-bool CSeqDBOIDList::x_FindNext(TOID & oid) const
-{
-    // If the specified OID is valid, use it.
-    
-    if (x_IsSet(oid)) {
-        return true;
-    }
-    
-    // OPTIONAL portion
-    
-    int whole_word_oids = m_NumOIDs & -32;
-    
-    while(oid < whole_word_oids) {
-        if (x_IsSet(oid)) {
-            return true;
-        }
-        
-        oid ++;
-        
-        // Try the simpler road fer now.
-        
-        if ((oid & 31) == 0) {
-            const Uint4 * bp = ((const Uint4*) m_Bits + (oid             >> 5));
-            const Uint4 * ep = ((const Uint4*) m_Bits + (whole_word_oids >> 5));
-           
-            while((bp < ep) && (0 == *bp)) {
-                ++ bp;
-                oid += 32;
-            }
-        }
-    }
-    
-    // END of OPTIONAL portion
-    
-    while(oid < m_NumOIDs) {
-        if (x_IsSet(oid)) {
-            return true;
-        }
-        
-        oid++;
-    }
-    
-    return false;
-}
-
-void CSeqDBOIDList::x_ReadBinaryGiList(CSeqDBRawFile  & gilist,
-                                       CSeqDBMemLease & lease,
-                                       int              num_gis,
-                                       vector<int>    & gis,
-                                       CSeqDBLockHold & locked)
-{
-    int gisize = (int) sizeof(Uint4);
-    int start = 8;
-    TIndx end = num_gis * gisize + start;
-    
-    for(TIndx offset = start; offset < end; offset += gisize) {
-        Uint4 elem(0);
-        gilist.ReadSwapped(lease, offset, & elem, locked);
-        gis.push_back(elem);
-    }
-}
-
-void CSeqDBOIDList::x_ReadTextGiList(CSeqDBRawFile  & gilist,
-                                     CSeqDBMemLease & lease,
-                                     vector<int>    & gis,
-                                     CSeqDBLockHold & locked)
-{
-    Uint4 file_length = (Uint4) gilist.GetFileLength();
-    
-    const char * beginp = gilist.GetRegion(lease, 0, file_length, locked);
-    const char * endp   = beginp + file_length;
-    
-    Uint4 elem(0);
-    
-    for(const char * p = beginp; p < endp; p ++) {
-        Uint4 dig = 0;
-        
-        switch(*p) {
-        case '0':
-            dig = 0;
-            break;
-            
-        case '1':
-            dig = 1;
-            break;
-            
-        case '2':
-            dig = 2;
-            break;
-            
-        case '3':
-            dig = 3;
-            break;
-            
-        case '4':
-            dig = 4;
-            break;
-            
-        case '5':
-            dig = 5;
-            break;
-            
-        case '6':
-            dig = 6;
-            break;
-            
-        case '7':
-            dig = 7;
-            break;
-            
-        case '8':
-            dig = 8;
-            break;
-            
-        case '9':
-            dig = 9;
-            break;
-            
-        case '\n':
-        case '\r':
-            // Allow for blank lines
-            if (elem != 0) {
-                gis.push_back(elem);
-            }
-            elem = 0;
-            continue;
-            
-        default:
-            NCBI_THROW(CSeqDBException,
-                       eFileErr,
-                       "Empty file specified for GI list.");
-        }
-        
-        elem *= 10;
-        elem += dig;
-    }
-    
-    m_Atlas.RetRegion(lease);
+    return bitset;
 }
 
 END_NCBI_SCOPE

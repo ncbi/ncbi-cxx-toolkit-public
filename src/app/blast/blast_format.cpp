@@ -54,8 +54,10 @@ USING_SCOPE(objects);
 
 const string CBlastFormat::kNoHitsFound("No hits found");
 
-CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname, 
-                 CFormattingArgs::EOutputFormat format_type, bool db_is_aa,
+CBlastFormat::CBlastFormat(const blast::CBlastOptions& options, 
+                 const string& dbname, 
+                 blast::CFormattingArgs::EOutputFormat format_type, 
+                 bool db_is_aa,
                  bool believe_query, CNcbiOstream& outfile,
                  int num_summary, 
                  int num_alignments, 
@@ -212,7 +214,7 @@ CBlastFormat::PrintProlog()
 }
 
 void
-CBlastFormat::x_PrintOneQueryFooter(const CBlastAncillaryData& summary)
+CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
 {
     const Blast_KarlinBlk *kbp_ungap = summary.GetUngappedKarlinBlk();
     m_Outfile << endl;
@@ -237,12 +239,150 @@ CBlastFormat::x_PrintOneQueryFooter(const CBlastAncillaryData& summary)
                         summary.GetSearchSpace() << endl;
 }
 
-void
-CBlastFormat::PrintOneResultSet(const CSearchResults& results,
-                                CConstRef<CBlastQueryVector> queries,
-                                unsigned int itr_num
-                                /* = numeric_limits<unsigned int>::max() */)
+/// Auxialiary function to determine if there are local IDs in the identifiers
+/// of the query sequences
+/// @param queries query sequence(s) [in]
+static bool 
+s_HasLocalIDs(CConstRef<CBlastQueryVector> queries)
 {
+    bool retval = false;
+    ITERATE(CBlastQueryVector, itr, *queries) {
+        if (blast::IsLocalId((*itr)->GetQuerySeqLoc()->GetId())) {
+            retval = true;
+            break;
+        }
+    }
+    return retval;
+}
+
+void 
+CBlastFormat::x_ConfigCShowBlastDefline(CShowBlastDefline& showdef)
+{
+    int flags = 0;
+    if (m_ShowLinkedSetSize)
+        flags |= CShowBlastDefline::eShowSumN;
+    if (m_IsHTML)
+        flags |= CShowBlastDefline::eHtml;
+    if (m_ShowGi)
+        flags |= CShowBlastDefline::eShowGi;
+
+    showdef.SetOption(flags);
+    showdef.SetDbName(m_DbName);
+    showdef.SetDbType(!m_DbIsAA);
+}
+
+/** Auxiliary class to sort the CPsiBlastIterationState::TSeqIds */
+class CSeqIdComparer {
+public:
+    /// Construct with Seq-id target
+    /// @param target_seqid Seq-id to be searched [in]
+    CSeqIdComparer(const CSeq_id& target_seqid)
+        : m_Target(target_seqid) {}
+
+    /// Returns true if the candidate_seqid matches the target Seq-id provided
+    /// when creating this object
+    /// @param candidate_seqid Candidate Seq-id for comparison [in]
+    bool operator() (CRef<CSeq_id> candidate_seqid) const {
+        bool retval = false;
+        if (m_Target.Match(*candidate_seqid)) {
+            retval = true;
+        }
+        return retval;
+    }
+
+private:
+    const CSeq_id& m_Target;    ///< The target Seq-id of the search
+};
+
+void
+CBlastFormat::x_SplitSeqAlign(CConstRef<CSeq_align_set> full_alignment,
+                       CSeq_align_set& repeated_seqs,
+                       CSeq_align_set& new_seqs,
+                       blast::CPsiBlastIterationState::TSeqIds& prev_seqids)
+{
+    static const CSeq_align::TDim kSubjRow = 1;
+    _ASSERT( !prev_seqids.empty() );
+    _ASSERT( !full_alignment->IsEmpty() );
+    _ASSERT(repeated_seqs.IsEmpty());
+    _ASSERT(new_seqs.IsEmpty());
+
+    ITERATE(CSeq_align_set::Tdata, alignment, full_alignment->Get()) {
+        const CSeq_id& subj_id = (*alignment)->GetSeq_id(kSubjRow);
+
+        CPsiBlastIterationState::TSeqIds::iterator pos =
+            find_if(prev_seqids.begin(), prev_seqids.end(), 
+                    CSeqIdComparer(subj_id));
+        if (pos != prev_seqids.end()) { 
+            // if found among previously seen Seq-ids...
+            repeated_seqs.Set().push_back(*alignment);
+        } else {
+            // ... else add them as new
+            new_seqs.Set().push_back(*alignment);
+        }
+    }
+}
+
+
+void
+CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set, 
+                        unsigned int itr_num,
+                        blast::CPsiBlastIterationState::TSeqIds& prev_seqids)
+{
+    if (itr_num != numeric_limits<unsigned int>::max() && 
+        !prev_seqids.empty()) {
+        // Split seq-align-set
+        CSeq_align_set repeated_seqs, new_seqs;
+        x_SplitSeqAlign(aln_set, repeated_seqs, new_seqs, prev_seqids);
+
+        // Show deflines for 'repeat' sequences
+        {{
+            CShowBlastDefline showdef(repeated_seqs, *m_Scope, 
+                                      kFormatLineLength,
+                                      m_NumSummary);
+            x_ConfigCShowBlastDefline(showdef);
+            showdef.SetupPsiblast(NULL, CShowBlastDefline::eRepeatPass);
+            showdef.DisplayBlastDefline(m_Outfile);
+        }}
+        m_Outfile << endl;
+
+        // Show deflines for 'new' sequences
+        {{
+            CShowBlastDefline showdef(new_seqs, *m_Scope, 
+                                      kFormatLineLength,
+                                      m_NumSummary);
+            x_ConfigCShowBlastDefline(showdef);
+            showdef.SetupPsiblast(NULL, CShowBlastDefline::eNewPass);
+            showdef.DisplayBlastDefline(m_Outfile);
+        }}
+
+    } else {
+        CShowBlastDefline showdef(*aln_set, *m_Scope, 
+                                  kFormatLineLength,
+                                  m_NumSummary);
+        x_ConfigCShowBlastDefline(showdef);
+        showdef.DisplayBlastDefline(m_Outfile);
+    }
+    m_Outfile << endl;
+}
+
+void
+CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
+                        CConstRef<blast::CBlastQueryVector> queries,
+                        unsigned int itr_num
+                        /* = numeric_limits<unsigned int>::max() */,
+                        blast::CPsiBlastIterationState::TSeqIds prev_seqids
+                        /* = CPsiBlastIterationState::TSeqIds() */)
+{
+    // For remote searches, we don't retrieve the sequence data for the query
+    // sequence when initially sending the request to the BLAST server (if it's
+    // a GI/accession/TI), so we flush the scope so that it can be retrieved
+    // (needed if a self-hit is found) again. This is not applicable if the
+    // query sequence(s) are specified as FASTA (will be identified by local
+    // IDs).
+    if (m_IsRemoteSearch && !s_HasLocalIDs(queries)) {
+        ResetScopeHistory();
+    }
+
     CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
 
     // ASN.1 formatting is straightforward
@@ -328,31 +468,10 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
         aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
     }
 
-    // set the alignment flags
-
-    int flags;
-
     //-------------------------------------------------
     // print 1-line summaries
     if ( !m_IsBl2Seq ) {
-        m_Outfile << endl;
-
-        CShowBlastDefline showdef(*aln_set, *m_Scope, 
-                                  kFormatLineLength,
-                                  m_NumSummary);
-
-        flags = 0;
-        if (m_ShowLinkedSetSize)
-            flags |= CShowBlastDefline::eShowSumN;
-        if (m_IsHTML)
-            flags |= CShowBlastDefline::eHtml;
-        if (m_ShowGi)
-            flags |= CShowBlastDefline::eShowGi;
-
-        showdef.SetOption(flags);
-        showdef.SetDbName(m_DbName);
-        showdef.SetDbType(!m_DbIsAA);
-        showdef.DisplayBlastDefline(m_Outfile);
+        x_DisplayDeflines(aln_set, itr_num, prev_seqids);
     }
 
     //-------------------------------------------------
@@ -370,7 +489,8 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
 
-    flags = CDisplaySeqalign::eShowBlastInfo;
+    // set the alignment flags
+    int flags = CDisplaySeqalign::eShowBlastInfo;
 
     if (m_IsHTML)
         flags |= CDisplaySeqalign::eHtml;
@@ -419,7 +539,7 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
 }
 
 void 
-CBlastFormat::PrintEpilog(const CBlastOptions& options)
+CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
 {
     // some output types don't have a footer
     if (m_FormatType >= CFormattingArgs::eTabular)

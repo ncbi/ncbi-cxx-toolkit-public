@@ -75,10 +75,9 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
     
     _ASSERT((! gi_list) || (! neg_list));
     
-    m_Aliases.SetMasks(m_VolSet);
     m_VolSet.OptimizeGiLists();
     
-    m_OidListSetup = ! (m_VolSet.HasFilter() || gi_list || neg_list);
+    m_OidListSetup = ! (m_Aliases.HasFilters() || gi_list || neg_list);
     
     m_VolumeLength = x_GetVolumeLength();
     m_NumOIDs      = x_GetNumOIDs();
@@ -214,7 +213,7 @@ CSeqDBImpl::~CSeqDBImpl()
     BREAK_MARKER();
 }
 
-void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked) const
+void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked)
 {
     CHECK_MARKER();
     if (! m_OidListSetup) {
@@ -223,6 +222,7 @@ void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked) const
         if (m_OIDList.Empty()) {
             m_OIDList.Reset( new CSeqDBOIDList(m_Atlas,
                                                m_VolSet,
+                                               *m_Aliases.GetFilterTree(),
                                                m_UserGiList,
                                                m_NegativeList,
                                                locked) );
@@ -232,14 +232,14 @@ void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked) const
     }
 }
 
-bool CSeqDBImpl::CheckOrFindOID(int & next_oid) const
+bool CSeqDBImpl::CheckOrFindOID(int & next_oid)
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     return x_CheckOrFindOID(next_oid, locked);
 }
 
-bool CSeqDBImpl::x_CheckOrFindOID(int & next_oid, CSeqDBLockHold & locked) const
+bool CSeqDBImpl::x_CheckOrFindOID(int & next_oid, CSeqDBLockHold & locked)
 {
     CHECK_MARKER();
     bool success = true;

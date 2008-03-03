@@ -387,9 +387,9 @@ public:
     /// that is.  The user will probably want to increment between
     /// calls, if iterating over the db.
     ///
-    /// @return
-    ///   True if a valid OID was found, false otherwise.
-    bool CheckOrFindOID(int & next_oid) const;
+    /// @param next_oid The starting oid, the selected oid [in|out].
+    /// @return True if a valid OID was found, false otherwise.
+    bool CheckOrFindOID(int & next_oid);
     
     /// Return a chunk of OIDs, and update the OID bookmark.
     /// 
@@ -838,7 +838,7 @@ private:
     /// 
     /// @param locked
     ///   The lock hold object for this thread.
-    void x_GetOidList(CSeqDBLockHold & locked) const;
+    void x_GetOidList(CSeqDBLockHold & locked);
     
     /// Get the next included oid
     ///
@@ -849,7 +849,9 @@ private:
     ///   The next oid to check and to return to the user.
     /// @param locked
     ///   The lock hold object for this thread.
-    bool x_CheckOrFindOID(int & next_oid, CSeqDBLockHold & locked) const;
+    /// @return
+    ///   true if an OID was found, false otherwise.
+    bool x_CheckOrFindOID(int & next_oid, CSeqDBLockHold & locked);
     
     /// Get the sequence header data.
     ///

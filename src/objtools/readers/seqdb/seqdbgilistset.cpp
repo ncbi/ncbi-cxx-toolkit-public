@@ -84,16 +84,16 @@ public:
     ///   Use trace IDs instead of GIs.
     /// @param locked
     ///   Lock holder object for this thread. [in]
-    CSeqDBNodeFileIdList(CSeqDBAtlas    & atlas,
-                         const string   & fname,
-                         bool             use_tis,
-                         CSeqDBLockHold & locked)
+    CSeqDBNodeFileIdList(CSeqDBAtlas       & atlas,
+                         const CSeqDB_Path & fname,
+                         bool                use_tis,
+                         CSeqDBLockHold    & locked)
         : m_VectorMemory(atlas)
     {
         CSeqDBAtlas::TIndx file_size(0);
         
         CSeqDBMemLease memlease(atlas);
-        atlas.GetFile(memlease, fname, file_size, locked);
+        atlas.GetFile(memlease, fname.GetPathS(), file_size, locked);
         
         const char * fbeginp = memlease.GetPtr(0);
         const char * fendp   = fbeginp + (int)file_size;
@@ -195,12 +195,10 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
 }
 
 CRef<CSeqDBGiList>
-CSeqDBGiListSet::GetNodeIdList(const string    & filename,
-                               const CSeqDBVol * volp,
-                               int               vol_start,
-                               int               vol_end,
-                               bool              use_tis,
-                               CSeqDBLockHold  & locked)
+CSeqDBGiListSet::GetNodeIdList(const CSeqDB_Path & filename,
+                               const CSeqDBVol   * volp,
+                               bool                use_tis,
+                               CSeqDBLockHold    & locked)
 {
     // Note: possibly the atlas should have a method to add and
     // subtract pseudo allocations from the memory bound; this would
@@ -214,7 +212,7 @@ CSeqDBGiListSet::GetNodeIdList(const string    & filename,
     // binary file is read, as the magic number is different.)
     
     int map_index = use_tis ? 1 : 0;
-    CRef<CSeqDBGiList> gilist = m_NodeListMap[map_index][filename];
+    CRef<CSeqDBGiList> gilist = m_NodeListMap[map_index][filename.GetPathS()];
     
     if (gilist.Empty()) {
         gilist.Reset(new CSeqDBNodeFileIdList(m_Atlas,
@@ -227,7 +225,7 @@ CSeqDBGiListSet::GetNodeIdList(const string    & filename,
             x_TranslateFromUserList(*gilist);
         }
         
-        m_NodeListMap[map_index][filename] = gilist;
+        m_NodeListMap[map_index][filename.GetPathS()] = gilist;
     }
     
     // Note: in pure-GI mode, it might be more efficient (in some

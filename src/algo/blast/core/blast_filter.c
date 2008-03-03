@@ -459,7 +459,7 @@ static Int4 s_BlastSeqLocLen(const BlastSeqLoc* var)
  * element of the list passed in to this function and the last element points
  * to NULL 
  * @param list List to convert to an array of pointers [in]
- * @count number of elements populated in the array [out]
+ * @param count number of elements populated in the array [out]
  */
 static BlastSeqLoc**
 s_BlastSeqLocListToArrayOfPointers(const BlastSeqLoc* list, Int4* count)

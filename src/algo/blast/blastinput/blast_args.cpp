@@ -245,12 +245,14 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
 
 
-    arg_desc.SetCurrentGroup("Restrict search or results");
-    arg_desc.AddOptionalKey(kArgPercentIdentity, "float_value",
-                            "Percent identity",
-                            CArgDescriptions::eDouble);
-    arg_desc.SetConstraint(kArgPercentIdentity,
-                           new CArgAllow_Doubles(0.0, 100.0));
+    if (m_ShowPercentIdentity) {
+        arg_desc.SetCurrentGroup("Restrict search or results");
+        arg_desc.AddOptionalKey(kArgPercentIdentity, "float_value",
+                                "Percent identity",
+                                CArgDescriptions::eDouble);
+        arg_desc.SetConstraint(kArgPercentIdentity,
+                               new CArgAllow_Doubles(0.0, 100.0));
+    }
 
     arg_desc.SetCurrentGroup("Extension options");
     // ungapped X-drop
@@ -304,7 +306,8 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     int gap_open=0, gap_extend=0;
     if (args.Exist(kArgMatrixName) && args[kArgMatrixName])
-         BLAST_GetProteinGapExistenceExtendParams(args[kArgMatrixName].AsString().c_str(), &gap_open, &gap_extend);
+         BLAST_GetProteinGapExistenceExtendParams
+             (args[kArgMatrixName].AsString().c_str(), &gap_open, &gap_extend);
 
     if (args.Exist(kArgGapOpen) && args[kArgGapOpen]) {
         opt.SetGapOpeningCost(args[kArgGapOpen].AsInteger());
@@ -340,7 +343,7 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetEffectiveSearchSpace(args[kArgEffSearchSpace].AsInt8());
     }
 
-    if (args[kArgPercentIdentity]) {
+    if (args.Exist(kArgPercentIdentity) && args[kArgPercentIdentity]) {
         opt.SetPercentIdentity(args[kArgPercentIdentity].AsDouble());
     }
 
@@ -1076,6 +1079,13 @@ CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("");
 }
 
+/** 
+ * @brief Break up the locations string into an actual range
+ * 
+ * @param locations String to parse and tokenize [in]
+ * @param range range to output [out]
+ * @param msg message to add to exception in case of error [in]
+ */
 static void s_TokenizeSequenceRange(const string& locations, 
                                     TSeqRange& range,
                                     const string& msg)

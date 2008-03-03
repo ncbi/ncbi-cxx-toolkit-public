@@ -60,7 +60,7 @@ BEGIN_SCOPE(blast)
 
 /// Produces a BioseqSet from a CBlastQueryVector
 /// @param queries queries as a CBlastQueryVector
-/// @retval Cref to BioseqSet
+/// @retval CRef to BioseqSet
 static CRef<CBioseq_set>
 s_QueryVectorToBioseqSet(const CBlastQueryVector & queries)
 {
@@ -68,7 +68,7 @@ s_QueryVectorToBioseqSet(const CBlastQueryVector & queries)
     
     for(size_t i = 0; i < queries.Size(); i++) {
         CScope & scope = *queries.GetScope(i);
-        
+
         const CBioseq * cbs = 
             scope.GetBioseqHandle(*queries.GetQuerySeqLoc(i)).GetBioseqCore();
         
@@ -80,8 +80,11 @@ s_QueryVectorToBioseqSet(const CBlastQueryVector & queries)
         se_list.push_back(se);
     }
     
-    CRef<CBioseq_set> rv(new CBioseq_set);
-    rv->SetSeq_set().swap(se_list);
+    CRef<CBioseq_set> rv;
+    if ( !se_list.empty() ) {
+        rv.Reset(new CBioseq_set);
+        rv->SetSeq_set().swap(se_list);
+    }
     
     return rv;
 }

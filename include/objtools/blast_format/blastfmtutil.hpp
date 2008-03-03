@@ -111,6 +111,18 @@ const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
 query.fcgi?db=gene&cmd=search&term=%d[%s]&RID=%s&log$=gene%s&blast_rank=%d\"><img border=0 height=16 width=16 \
 src=\"images/G.gif\" alt=\"Gene info\"></a>";
 
+///Bioassay for proteins
+// .ncbirc alias: BIOASSAY_PROT
+const string kBioAssayProtURL = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez\
+?db=pcassay&term=%d[ProteinTargetGI]&RID=%s&log$=pcassay%s&blast_rank=%d\"><img border=0 height=16 width=16 \
+src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info\"></a>";
+
+///Bioassay for nucleotides
+// .ncbirc alias: BIOASSAY_NUC
+const string kBioAssayNucURL = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez\
+?db=pcassay&term=%d&RID=%s&log$=pcassay%s&blast_rank=%d\"><img border=0 height=16 width=16 \
+src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info\"></a>";
+
 ///mapviewer linkout
 // .ncbirc alias: MAPVIEWER
 /*const string kMapviwerUrl = "<a href=\"%s\"><img border=0 height=16 width=16 \
@@ -193,6 +205,8 @@ k_all_url_pairs[]={
   pair <string,string>  ("GEO",    kGeoUrl),
   pair <string,string>  ("GENE",  kGeneUrl),
   pair <string,string>  ("GENE_INFO",  kGeneInfoUrl),
+  pair <string,string>  ("BIOASSAY_PROT",  kBioAssayProtURL),
+  pair <string,string>  ("BIOASSAY_NUC",  kBioAssayNucURL),
   pair <string,string>  ("ENTREZ_SUBSEQ",  kEntrezSubseqUrl),
   pair <string,string>  ("TRACE",  kTraceUrl),
   pair <string,string>  ("GENOME_BTN",  kGenomeButton),

@@ -405,7 +405,6 @@ private:
     CSeqDBAliasSets(const CSeqDBAliasSets &);
 };
 
-
 /// CSeqDBAliasNode class
 ///
 /// This is one node of the alias node tree, an n-ary tree which
@@ -693,6 +692,20 @@ public:
     /// @param volset The set of volumes for this database.
     void CompleteAliasFileValues(const CSeqDBVolSet & volset);
     
+    /// Build the filter tree for this node and its children.
+    /// @param ftree The result is returned here.
+    void BuildFilterTree(class CSeqDB_FilterTree & ftree) const;
+    
+    /// Computes the masking information for each alias node.
+    ///
+    /// This object process each alias file node to construct a
+    /// summary of the kind of OID filtering applied there.  The
+    /// has_filters parameter will be set to true if any filtering
+    /// was done.
+    ///
+    /// @param has_filters Will be set true if any filtering is done.
+    void ComputeMasks(bool & has_filters);
+    
 private:
     /// Private Constructor
     ///
@@ -825,65 +838,6 @@ private:
     ///   The lock hold object for this thread. [in]
     void x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked);
     
-    /// Add an OID list filter to a volume
-    /// 
-    /// This method stores the OID mask filename specified in this
-    /// alias file in the volume associated with this alias file.  The
-    /// specified begin and end will also be applied as an OID range
-    /// filter (0 and ULONG_MAX are used to indicate nonexistance of
-    /// an OID range).
-    /// 
-    /// @param volset
-    ///   The set of database volumes.
-    /// @param begin
-    ///   The first OID in the OID range.
-    /// @param end
-    ///   The OID after the last OID in the range.
-    /// @param oidfile
-    ///   The name of the OID mask file.
-    void x_SetOIDMask(CSeqDBVolSet          & volset,
-                      int                     begin,
-                      int                     end,
-                      const CSeqDB_BaseName & oidfile);
-
-    /// Add a GI list filter to a volume
-    /// 
-    /// This method stores the GI list filename specified in this
-    /// alias file in the volume associated with this alias file.  The
-    /// specified begin and end will also be applied as an OID range
-    /// filter (0 and ULONG_MAX are used to indicate nonexistance of
-    /// an OID range).
-    /// 
-    /// @param volset
-    ///   The set of database volumes.
-    /// @param begin
-    ///   The first OID in the OID range.
-    /// @param end
-    ///   The OID after the last OID in the range.
-    /// @param idlist
-    ///   The name of the GI list file.
-    /// @param use_tis
-    ///   The Ids are TIs if this is true (otherwise GIs).
-    void x_SetIdListMask(CSeqDBVolSet          & volset,
-                         int                     begin,
-                         int                     end,
-                         const CSeqDB_FileName & idlist,
-                         bool                    use_tis);
-    
-    /// Add an OID range to a volume
-    /// 
-    /// This method applies the specified begin and end as an OID
-    /// range filter (0 and ULONG_MAX are used to indicate
-    /// nonexistance of an OID range).
-    /// 
-    /// @param volset
-    ///   The set of database volumes.
-    /// @param begin
-    ///   The first OID in the OID range.
-    /// @param end
-    ///   The OID after the last OID in the range.
-    void x_SetOIDRange(CSeqDBVolSet & volset, int begin, int end);
-    
     /// Get the contents of an alias file.
     ///
     /// Fetches the lines belonging to an alias file, either directly
@@ -951,6 +905,9 @@ private:
     
     /// Combined alias files.
     CSeqDBAliasSets & m_AliasSets;
+    
+    /// Mask objects for this node.
+    vector< CRef<CSeqDB_AliasMask> > m_NodeMasks;
     
     /// Disable copy operator.
     CSeqDBAliasNode & operator =(const CSeqDBAliasNode &);
@@ -1129,7 +1086,20 @@ public:
     ///   True if the database scan is required.
     bool NeedTotalsScan(const CSeqDBVolSet & volset) const;
     
-    /// Set filtering options for all volumes
+    /// Check if any volume filtering exists.
+    ///
+    /// This method computes and caches the sequence filtering for
+    /// this node and any subnodes, and returns true if any filtering
+    /// exists.  Subsequent calls will just return the cached value.
+    ///
+    /// @return True if any filtering exists.
+    bool HasFilters()
+    {
+        x_ComputeMasks();
+        return m_HasFilters;
+    }
+    
+    /// Get filtering tree for all volumes.
     ///
     /// This method applies the filtering options found in the alias
     /// node tree to all associated volumes (iterating over the tree
@@ -1137,12 +1107,8 @@ public:
     /// of this process, but the data necessary for virtual OID
     /// construction is copied to the volume objects.
     ///
-    /// @param volset
-    ///   The database volume set
-    void SetMasks(CSeqDBVolSet & volset)
-    {
-        m_Node->SetMasks(volset);
-    }
+    /// @return A filter tree for all volumes.
+    CRef<CSeqDB_FilterTree> GetFilterTree();
     
     /// Get Name/Value Data From Alias Files
     ///
@@ -1173,6 +1139,18 @@ public:
                             const CSeqDBVolSet & volset);
     
 private:
+    /// Compute filtering options for all volumes.
+    ///
+    /// This method applies the filtering options found in the alias
+    /// node tree to all associated volumes (iterating over the tree
+    /// recursively).  The virtual OID lists are not built as a result
+    /// of this process, but the data necessary for virtual OID
+    /// construction is copied to the volume objects.
+    void x_ComputeMasks()
+    {
+        m_Node->ComputeMasks(m_HasFilters);
+    }
+    
     /// Combined alias files.
     CSeqDBAliasSets m_AliasSets;
 
@@ -1208,13 +1186,19 @@ private:
     mutable int m_MembBit;
     
     /// True if we have the database title.
-    mutable bool m_HaveTitle;
+    mutable bool m_HasTitle;
     
     /// Database title.
     mutable string m_Title;
     
     /// 1 if we need a totals scan, 0 if not, -1 if not known.
     mutable int m_NeedTotalsScan;
+
+    /// Filter tree representing all alias file filtering.
+    CRef<CSeqDB_FilterTree> m_TopTree;
+    
+    /// Are there filters for this database?
+    bool m_HasFilters;
     
     /// Disable copy operator.
     CSeqDBAliasFile & operator =(const CSeqDBAliasFile &);

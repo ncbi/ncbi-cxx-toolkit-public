@@ -370,19 +370,35 @@ SetupSubjects(TSeqLocVector& subjects,
     SetupSubjects_OMF(subj_src, prog, seqblk_vec, max_subjlen);
 }
 
+/// Implementation of the IBlastSeqVector interface which obtains data from a
+/// CSeq_loc and a CScope relying on the CSeqVector class
 class CBlastSeqVectorOM : public IBlastSeqVector
 {
 public:
     CBlastSeqVectorOM(const CSeq_loc& seqloc, CScope& scope)
-        : m_SeqLoc(seqloc), m_Scope(scope), m_SeqVector(seqloc, scope) {}
+        : m_SeqLoc(seqloc), m_Scope(scope), m_SeqVector(seqloc, scope)
+    {
+        m_Strand = m_SeqLoc.GetStrand();
+    }
     
-    void SetCoding(CSeq_data::E_Choice coding) {
+    /** @inheritDoc */
+    virtual void SetCoding(CSeq_data::E_Choice coding) {
         m_SeqVector.SetCoding(coding);
     }
 
-    Uint1 operator[] (TSeqPos pos) const { return m_SeqVector[pos]; }
+    /** @inheritDoc */
+    virtual Uint1 operator[] (TSeqPos pos) const { return m_SeqVector[pos]; }
 
-    SBlastSequence GetCompressedPlusStrand() {
+    /** @inheritDoc */
+    virtual void GetStrandData(objects::ENa_strand strand, unsigned char* buf) {
+        x_FixStrand(strand);
+        for (CSeqVector_CI itr(m_SeqVector, strand); itr; ++itr) {
+            *buf++ = *itr;
+        }
+    }
+
+    /** @inheritDoc */
+    virtual SBlastSequence GetCompressedPlusStrand() {
         CSeqVector_CI iter(m_SeqVector);
         iter.SetRandomizeAmbiguities();
         iter.SetCoding(CSeq_data::e_Ncbi2na);
@@ -395,32 +411,43 @@ public:
     }
 
 protected:
-    TSeqPos x_Size() const { 
+    /** @inheritDoc */
+    virtual TSeqPos x_Size() const { 
         return m_SeqVector.size(); 
     }
-    void x_SetPlusStrand() {
+    /** @inheritDoc */
+    virtual void x_SetPlusStrand() {
         x_SetStrand(eNa_strand_plus);
     }
-    void x_SetMinusStrand() {
+    /** @inheritDoc */
+    virtual void x_SetMinusStrand() {
         x_SetStrand(eNa_strand_minus);
     }
+    /** @inheritDoc 
+     * @note for this class, this might be inefficient, please use
+     * GetStrandData with the appropriate strand
+     */
     void x_SetStrand(ENa_strand s) {
-        // If the Seq-loc is on the minus strand and the user is
-        // asking for the minus strand, we change the user's request
-        // to the plus strand.  If we did not do this, we would get
-        // the plus strand (ie it would be reversed twice).
-        
-        if (eNa_strand_minus == s &&
-            eNa_strand_minus == m_SeqLoc.GetStrand()) {
-            s = eNa_strand_plus;
-        }
-        
-        if (s != m_SeqVector.GetStrand()) {
+        x_FixStrand(s);
+        _ASSERT(m_Strand == m_SeqVector.GetStrand());
+        if (s != m_Strand) {
             m_SeqVector = CSeqVector(m_SeqLoc, m_Scope,
                                      CBioseq_Handle::eCoding_Ncbi, s);
         }
     }
     
+    /// If the Seq-loc is on the minus strand and the user is 
+    /// asking for the minus strand, we change the user's request
+    /// to the plus strand. If we did not do this, we would get
+    /// the plus strand (ie it would be reversed twice)
+    /// @param strand strand to handle [in|out]
+    void x_FixStrand(objects::ENa_strand& strand) const {
+        if (eNa_strand_minus == strand && 
+            eNa_strand_minus == m_SeqLoc.GetStrand()) {
+            strand = eNa_strand_plus;
+        }
+    }
+
 private:
     const CSeq_loc & m_SeqLoc;
     CScope         & m_Scope;

@@ -104,20 +104,16 @@ public:
     ///   The filename of the GI list file.
     /// @param volp
     ///   The volume to which this GI list is applied.
-    /// @param vol_start
-    ///   Starting oid for this volume 
-    /// @param vol_end
-    ///   Ending oid for this volume.
+    /// @param use_tis
+    ///   The ID list contains TIs (otherwise GIs are assumed).
     /// @param locked
     ///   The lock holder object for this thread.
     /// @return
     ///   A reference to the specified GI list.
-    TListRef GetNodeIdList(const string    & filename,
-                           const CSeqDBVol * volp,
-                           int               vol_start,
-                           int               vol_end,
-                           bool              use_tis,
-                           CSeqDBLockHold  & locked);
+    TListRef GetNodeIdList(const CSeqDB_Path & filename,
+                           const CSeqDBVol   * volp,
+                           bool                use_tis,
+                           CSeqDBLockHold    & locked);
     
 private:
     /// Translate a volume gilist from the user gilist.

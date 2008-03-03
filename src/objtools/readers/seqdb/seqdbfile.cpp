@@ -144,7 +144,7 @@ CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas    & atlas,
     
     x_SetFileType(prot_nucl);
     
-    if (! m_File.Open(m_FileName, locked)) {
+    if (! m_File.Open(CSeqDB_Path(m_FileName), locked)) {
         m_Atlas.Unlock(locked);
         
         string msg = string("Error: File (") + m_FileName + ") not found.";

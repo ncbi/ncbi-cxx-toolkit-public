@@ -35,7 +35,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <serial/iterator.hpp>
 #include <algo/blast/api/remote_blast.hpp>
-#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/blast_options_builder.hpp>
 
 #include <objects/blast/blastclient.hpp>
 #include <objects/blast/blast__.hpp>
@@ -47,6 +47,7 @@
 #include <objects/blast/blastclient.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include "psiblast_aux_priv.hpp"    // For CPsiBlastValidate::Pssm()
+#include "bioseq_extract_data_priv.hpp" // for CBlastQuerySourceBioseqSet
 
 #if defined(NCBI_OS_UNIX)
 #include <unistd.h>
@@ -1070,15 +1071,45 @@ CRemoteBlast::CRemoteBlast(CRef<IQueryFactory>         queries,
     
     CRef<IRemoteQueryData> Q(queries->MakeRemoteQueryData());
     CRef<CBioseq_set> bss = Q->GetBioseqSet();
-    list< CRef<objects::CSeq_loc> > sll = Q->GetSeqLocs();
-    
+    IRemoteQueryData::TSeqLocs sll = Q->GetSeqLocs();
+
     if (bss.Empty() && sll.empty()) {
         NCBI_THROW(CBlastException,
                    eInvalidArgument,
                    "Error: No query data.");
     }
+
+    // Check if there are any range restrictions applied and if local IDs are
+    // being used to determine how to specify the query sequence(s)
+
+    bool has_local_ids = false;
+    if ( !sll.empty() ) {
+        // Only one range restriction can be sent in this protocol
+        if (sll.front()->IsInt()) {
+            const int kStart((int)sll.front()->GetStart(eExtreme_Positional));
+            const int kStop((int)sll.front()->GetStop(eExtreme_Positional));
+            const int kRangeLength = kStop - kStart + 1;
+
+            const bool kIsProt = 
+                !!Blast_QueryIsProtein(opts_handle->GetOptions().
+                                       GetProgramType());
+            CBlastQuerySourceBioseqSet q(*bss, kIsProt);
+            const int kFullLength = static_cast<int>(q.GetLength(0));
+            if (kFullLength != kRangeLength) {
+                x_SetOneParam(B4Param_RequiredStart, &kStart);
+                x_SetOneParam(B4Param_RequiredEnd, &kStop);
+            }
+        }
     
-    if (bss.NotEmpty()) {
+        ITERATE(IRemoteQueryData::TSeqLocs, itr, sll) {
+            if (IsLocalId((*itr)->GetId())) {
+                has_local_ids = true;
+                break;
+            }
+        }
+    } 
+    
+    if (has_local_ids) {
         SetQueries(bss);
     } else {
         SetQueries(sll);
@@ -1229,6 +1260,27 @@ const int CRemoteBlast::x_DefaultTimeout(void)
     return int(3600*3.5);
 }
 
+static EBlast4_residue_type
+s_SeqTypeToResidue(char p, string & errors)
+{
+    EBlast4_residue_type retval = eBlast4_residue_type_unknown;
+
+    switch(p) {
+    case 'p':
+        retval = eBlast4_residue_type_protein;
+        break;
+        
+    case 'n':
+        retval = eBlast4_residue_type_nucleotide;
+        break;
+        
+    default:
+        errors = "Error: invalid residue type specified.";
+    }
+    
+    return retval;
+}
+
 CRef<objects::CBlast4_request> CRemoteBlast::
 x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
                      const string                     & database, // in
@@ -1238,21 +1290,7 @@ x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
     // This will be returned in an Empty() state if an error occurs.
     CRef<CBlast4_request> request;
     
-    EBlast4_residue_type rtype(eBlast4_residue_type_unknown);
-    
-    switch(seqtype) {
-    case 'p':
-        rtype = eBlast4_residue_type_protein;
-        break;
-        
-    case 'n':
-        rtype = eBlast4_residue_type_nucleotide;
-        break;
-        
-    default:
-        errors = "Error: invalid residue type specified.";
-        return request;
-    }
+    EBlast4_residue_type rtype = s_SeqTypeToResidue(seqtype, errors);
     
     if (database.empty()) {
         errors = "Error: database name may not be blank.";
@@ -1290,6 +1328,71 @@ x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
     
     return request;
 }
+
+CRef<objects::CBlast4_request> CRemoteBlast::
+x_BuildGetSeqPartsRequest(objects::CSeq_id & seqid,     // in
+                          const string     & database,  // in
+                          char               seqtype,   // 'p' or 'n'
+                          bool               get_meta,  // in
+                          int                start_pos, // in
+                          int                end_pos,   // in
+                          string           & errors)    // out
+{
+    errors.clear();
+    
+    // This will be returned in an Empty() state if an error occurs.
+    CRef<CBlast4_request> request;
+    
+    EBlast4_residue_type rtype = s_SeqTypeToResidue(seqtype, errors);
+    
+    if (errors.size()) {
+        return request;
+    }
+    
+    if (database.empty()) {
+        errors = "Error: database name may not be blank.";
+        return request;
+    }
+    
+    if ((! get_meta) && (start_pos == end_pos)) {
+        errors = "Error: no information requested.";
+        return request;
+    }
+    
+    // Build ASN.1 request objects and link them together.
+    
+    request.Reset(new CBlast4_request);
+    
+    CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    CRef<CBlast4_database>     db  (new CBlast4_database);
+    
+    request->SetBody(*body);
+    
+    CBlast4_get_seq_parts_request & req =
+        body->SetGet_sequence_parts();
+    
+    req.SetDatabase(*db);
+    
+    // Fill in db values
+    
+    db->SetName(database);
+    db->SetType(rtype);
+    
+    // Other request data; the id, meta flag, and start/end
+    // coordinates.
+    
+    req.SetId(seqid);
+    
+    req.SetNeed_meta_data(get_meta);
+    
+    if (start_pos != 0 || end_pos != start_pos) {
+        req.SetStart(start_pos);
+        req.SetEnd(end_pos);
+    }
+    
+    return request;
+}
+
 
 /// Process error messages from a reply object.
 ///
@@ -1360,6 +1463,74 @@ CRemoteBlast::x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
     }
 }
 
+
+void
+CRemoteBlast::
+x_GetPartsFromReply(CRef<objects::CBlast4_reply>       reply,    // in
+                    CRef<objects::CBioseq>           & bioseq,   // out
+                    vector< CRef<objects::CSeq_id> > & ids,      // out
+                    int                              & length,   // out
+                    CRef<objects::CSeq_data>         & seq_data, // out
+                    string                           & errors,   // out
+                    string                           & warnings) // out
+{
+    // Read the data from the reply into the output arguments.
+    
+    bioseq.Reset();
+    seq_data.Reset();
+    ids.clear();
+    length = 0;
+    
+    static const string no_msg("<no message>");
+    
+    if (reply->CanGetErrors() && (! reply->GetErrors().empty())) {
+        ITERATE(list< CRef< CBlast4_error > >, iter, reply->GetErrors()) {
+            
+            // Determine the message source and destination.
+            
+            const string & message((*iter)->CanGetMessage()
+                                   ? (*iter)->GetMessage()
+                                   : no_msg);
+            
+            string & dest
+                (((*iter)->GetCode() & eBlast4_error_flags_warning)
+                 ? warnings
+                 : errors);
+            
+            // Attach the message (and possibly delimiter) to dest.
+            
+            if (! dest.empty()) {
+                dest += "\n";
+            }
+            
+            dest += message;
+        }
+    }
+    
+    if (reply->CanGetBody() && reply->GetBody().IsGet_sequence_parts()) {
+        CBlast4_get_seq_parts_reply & parts_rep =
+            reply->SetBody().SetGet_sequence_parts();
+        
+        if (parts_rep.CanGetBioseq()) {
+            bioseq.Reset(& parts_rep.SetBioseq());
+        }
+        
+        if (parts_rep.CanGetIds()) {
+            list< CRef<CSeq_id> > & seqids = parts_rep.SetIds();
+            ids.clear();
+            copy(seqids.begin(), seqids.end(), back_inserter(ids));
+        }
+        
+        if (parts_rep.CanGetLength()) {
+            length = parts_rep.GetLength();
+        }
+        
+        if (parts_rep.CanGetData()) {
+            seq_data.Reset(& parts_rep.SetData());
+        }
+    }
+}
+
 void
 CRemoteBlast::GetSequences(vector< CRef<objects::CSeq_id> > & seqids,   // in
                            const string                     & database, // in
@@ -1380,7 +1551,7 @@ CRemoteBlast::GetSequences(vector< CRef<objects::CSeq_id> > & seqids,   // in
     CRef<CBlast4_reply> reply(new CBlast4_reply);
     
     try {
-        // Send request.
+        // Send request
         CBlast4Client().Ask(*request, *reply);
     }
     catch(const CEofException &) {
@@ -1389,6 +1560,55 @@ CRemoteBlast::GetSequences(vector< CRef<objects::CSeq_id> > & seqids,   // in
     }
     
     x_GetSeqsFromReply(reply, bioseqs, errors, warnings);
+}
+
+void CRemoteBlast::
+GetSequenceInfo(objects::CSeq_id                 & seqid,     // in
+                const string                     & database,  // in
+                char                               seqtype,   // 'p' or 'n'
+                bool                               get_meta,  // in
+                int                                start_pos, // in
+                int                                end_pos,   // in
+                CRef<objects::CBioseq>           & bioseq,    // out
+                vector< CRef<objects::CSeq_id> > & ids,       // out
+                int                              & length,    // out
+                CRef<objects::CSeq_data>         & seq_data,  // out
+                string                           & errors,    // out
+                string                           & warnings)  // out
+{
+    // Build the request
+    
+    CRef<CBlast4_request> request =
+            x_BuildGetSeqPartsRequest(seqid,
+                                      database,
+                                      seqtype,
+                                      get_meta,
+                                      start_pos,
+                                      end_pos,
+                                      errors);
+    
+    if (request.Empty()) {
+        return;
+    }
+    
+    CRef<CBlast4_reply> reply(new CBlast4_reply);
+    
+    try {
+        // Send request.
+        CBlast4Client().Ask(*request, *reply);
+    }
+    catch(const CEofException &) {
+        NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
+                   "No response from server, cannot complete request.");
+    }
+    
+    x_GetPartsFromReply(reply,
+                        bioseq,
+                        ids,
+                        length,
+                        seq_data,
+                        errors,
+                        warnings);
 }
 
 static const string 
@@ -1617,504 +1837,6 @@ NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame,
     return CSeqLocInfo::eFrameNotSet;
 }
 
-CBlastOptionsBuilder::
-CBlastOptionsBuilder(const string                & program,
-                     const string                & service,
-                     CBlastOptions::EAPILocality   locality)
-    : m_Program        (program),
-      m_Service        (service),
-      m_PerformCulling (false),
-      m_HspRangeMax    (0),
-      m_Locality       (locality)
-{
-}
-
-EProgram
-CBlastOptionsBuilder::ComputeProgram(const string & program,
-                                     const string & service)
-{
-    string p = program;
-    string s = service;
-    
-    NStr::ToLower(p);
-    NStr::ToLower(s);
-    
-    // a. is there a program for phiblast?
-    // b. others, like vecscreen, disco?
-    
-    bool found = false;
-    
-    if (p == "blastp") {
-        if (s == "rpsblast") {
-            p = "rpsblast";
-            found = true;
-        } else if (s == "psi") {
-            p = "psiblast";
-            found = true;
-        } else if (s == "phi") {
-            // phi is just treated as a blastp here
-            found = true;
-        }
-    } else if (p == "blastn") {
-        if (s == "megablast") {
-            p = "megablast";
-            found = true;
-        }
-    } else if (p == "tblastn") {
-        if (s == "rpsblast") {
-            p = "rpstblastn";
-            found = true;
-        } else if (s == "psi") {
-            p = "psitblastn";
-            found = true;
-        }
-    }
-    
-    if (s != "plain" && (! found)) {
-        string msg = "Unsupported combination of program (";
-        msg += program;
-        msg += ") and service (";
-        msg += service;
-        msg += ").";
-        
-        NCBI_THROW(CBlastException, eInvalidArgument, msg);
-    }
-    
-    return ProgramNameToEnum(p);
-}
-
-void CBlastOptionsBuilder::
-x_ProcessOneOption(CBlastOptionsHandle        & opts,
-                   objects::CBlast4_parameter & p)
-{
-    const CBlast4_value & v = p.GetValue();
-    
-    // Note that this code does not attempt to detect or repair
-    // inconsistencies; since this request has already been processed
-    // by SplitD, the results are assumed to be correct, for now.
-    // This will remain so unless options validation code becomes
-    // available, in which case it could be used by this code.  This
-    // could be considered as a potential "to-do" item.
-    
-    if (! p.CanGetName() || p.GetName().empty()) {
-        NCBI_THROW(CBlastException,
-                   eInvalidArgument,
-                   "Option has no name.");
-    }
-    
-    string nm = p.GetName();
-    
-    bool found = true;
-    
-    // This switch is not really necessary.  I wanted to break things
-    // up for human consumption.  But as long as I'm doing that, I may
-    // as well use a performance-friendly paragraph marker.
-    
-    CBlastOptions & bo = opts.SetOptions();
-    
-    switch(nm[0]) {
-    case 'C':
-        if (B4Param_CompositionBasedStats.Match(p)) {
-            ECompoAdjustModes adjmode = (ECompoAdjustModes) v.GetInteger();
-            bo.SetCompositionBasedStats(adjmode);
-        } else if (B4Param_Culling.Match(p)) {
-            m_PerformCulling = v.GetBoolean();
-        } else if (B4Param_CullingLimit.Match(p)) {
-            bo.SetCullingLimit(v.GetInteger());
-        } else if (B4Param_CutoffScore.Match(p)) {
-            opts.SetCutoffScore(v.GetInteger());
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'D':
-        if (B4Param_DbGeneticCode.Match(p)) {
-            bo.SetDbGeneticCode(v.GetInteger());
-        } else if (B4Param_DbLength.Match(p)) {
-            opts.SetDbLength(v.GetBig_integer());
-        } else if (B4Param_DustFiltering.Match(p)) {
-            bo.SetDustFiltering(v.GetBoolean());
-        } else if (B4Param_DustFilteringLevel.Match(p)) {
-            bo.SetDustFilteringLevel(v.GetInteger());
-        } else if (B4Param_DustFilteringWindow.Match(p)) {
-            bo.SetDustFilteringWindow(v.GetInteger());
-        } else if (B4Param_DustFilteringLinker.Match(p)) {
-            bo.SetDustFilteringLinker(v.GetInteger());
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'E':
-        if (B4Param_EffectiveSearchSpace.Match(p)) {
-            opts.SetEffectiveSearchSpace(v.GetBig_integer());
-        } else if (B4Param_EntrezQuery.Match(p)) {
-            m_EntrezQuery = v.GetString();
-        } else if (B4Param_EvalueThreshold.Match(p)
-                   ||  p.GetName() == "EvalueThreshold") {
-            if (v.IsReal()) {
-                opts.SetEvalueThreshold(v.GetReal());
-            } else if (v.IsCutoff() && v.GetCutoff().IsE_value()) {
-                opts.SetEvalueThreshold(v.GetCutoff().GetE_value());
-            } else {
-                string msg = "EvalueThreshold has unsupported type.";
-                NCBI_THROW(CBlastException, eInvalidArgument, msg);
-            }
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'F':
-        if (B4Param_FilterString.Match(p)) {
-            opts.SetFilterString(v.GetString().c_str(), true);  
-        } else if (B4Param_FinalDbSeq.Match(p)) {
-            m_FinalDbSeq = v.GetInteger();
-        } else if (B4Param_FirstDbSeq.Match(p)) {
-            m_FirstDbSeq = v.GetInteger();
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'G':
-        if (B4Param_GapExtensionCost.Match(p)) {
-            bo.SetGapExtensionCost(v.GetInteger());
-        } else if (B4Param_GapOpeningCost.Match(p)) {
-            bo.SetGapOpeningCost(v.GetInteger());
-        } else if (B4Param_GiList.Match(p)) {
-            m_GiList = v.GetInteger_list();
-        } else if (B4Param_GapTracebackAlgorithm.Match(p)) {
-            bo.SetGapTracebackAlgorithm((EBlastTbackExt) v.GetInteger());
-        } else if (B4Param_GapTrigger.Match(p)) {
-            bo.SetGapTrigger(v.GetReal());
-        } else if (B4Param_GapXDropoff.Match(p)) {
-            bo.SetGapXDropoff(v.GetReal());
-        } else if (B4Param_GapXDropoffFinal.Match(p)) {
-            bo.SetGapXDropoffFinal(v.GetReal());
-        } else if (B4Param_GapExtnAlgorithm.Match(p)) {
-            bo.SetGapExtnAlgorithm(static_cast<EBlastPrelimGapExt>
-                                   (v.GetInteger()));
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'H':
-        if (B4Param_HitlistSize.Match(p)) {
-            opts.SetHitlistSize(v.GetInteger());
-        } else if (B4Param_HspRangeMax.Match(p)) {
-            m_HspRangeMax = v.GetInteger();
-        } else {
-            found = false;
-        }
-        break;
-
-    case 'I':
-        if (B4Param_InclusionThreshold.Match(p)) {
-            bo.SetInclusionThreshold(v.GetReal());
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'L':
-        if (B4Param_LCaseMask.Match(p)) {
-            // This field was removed from the options class and will
-            // probably be removed from blast4.  The server provides
-            // the filter string as well, so this boolean is redundant
-            // and can be ignored safely.
-        } else if (B4Param_LongestIntronLength.Match(p)) {
-            bo.SetLongestIntronLength(v.GetInteger());
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'M':
-        if (B4Param_MBTemplateLength.Match(p)) {
-            bo.SetMBTemplateLength(v.GetInteger());
-        } else if (B4Param_MBTemplateType.Match(p)) {
-            bo.SetMBTemplateType(v.GetInteger());
-        } else if (B4Param_MatchReward.Match(p)) {
-            bo.SetMatchReward(v.GetInteger());
-        } else if (B4Param_MatrixName.Match(p)) {
-            bo.SetMatrixName(v.GetString().c_str());
-        } else if (B4Param_MatrixTable.Match(p)) {
-            // This is no longer used.
-        } else if (B4Param_MismatchPenalty.Match(p)) {
-            bo.SetMismatchPenalty(v.GetInteger());
-        } else if (B4Param_MaskAtHash.Match(p)) {
-            bo.SetMaskAtHash(v.GetBoolean());
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'O':
-        if (B4Param_OutOfFrameMode.Match(p)) {
-            bo.SetOutOfFrameMode(v.GetBoolean());
-        } else {
-            found = false;
-        }
-        break;
-
-    case 'N':
-        if (B4Param_NegativeGiList.Match(p)) {
-            m_NegativeGiList = v.GetInteger_list();
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'P':
-        if (B4Param_PHIPattern.Match(p)) {
-            if (v.GetString() != "") {
-                bool is_na = !! Blast_QueryIsNucleotide(bo.GetProgramType());
-                bo.SetPHIPattern(v.GetString().c_str(), is_na);
-            }
-        } else if (B4Param_PercentIdentity.Match(p)) {
-            opts.SetPercentIdentity(v.GetReal());
-        } else if (B4Param_PseudoCountWeight.Match(p)) {
-            bo.SetPseudoCount(v.GetInteger());
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'Q':
-        if (B4Param_QueryGeneticCode.Match(p)) {
-            bo.SetQueryGeneticCode(v.GetInteger());
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'R':
-        if (B4Param_RepeatFiltering.Match(p)) {
-            bo.SetRepeatFiltering(v.GetBoolean());
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'S':
-        if (B4Param_StrandOption.Match(p)) {
-            // These encodings use the same values.
-            ENa_strand strand = (ENa_strand) v.GetStrand_type();
-            bo.SetStrandOption(strand);
-        } else if (B4Param_SegFiltering.Match(p)) {
-            bo.SetSegFiltering(v.GetBoolean());
-        } else if (B4Param_SegFilteringWindow.Match(p)) {
-            bo.SetSegFilteringWindow(v.GetInteger());
-        } else if (B4Param_SegFilteringLocut.Match(p)) {
-            bo.SetSegFilteringLocut(v.GetReal());
-        } else if (B4Param_SegFilteringHicut.Match(p)) {
-            bo.SetSegFilteringHicut(v.GetReal());
-        } else if (B4Param_SumStatistics.Match(p)) {
-            bo.SetSumStatisticsMode(v.GetBoolean());
-        } else if (B4Param_SmithWatermanMode.Match(p)) {
-            bo.SetSmithWatermanMode(v.GetBoolean());
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'U':
-        if (B4Param_UngappedMode.Match(p)) {
-            // Notes: (1) this is the inverse of the corresponding
-            // blast4 concept (2) blast4 always returns this option
-            // regardless of whether the value matches the default.
-            
-            opts.SetGappedMode(! v.GetBoolean());
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'W':
-        if (B4Param_WindowSize.Match(p)) {
-            opts.SetWindowSize(v.GetInteger());
-        } else if (B4Param_WordSize.Match(p)) {
-            bo.SetWordSize(v.GetInteger());
-        } else if (B4Param_WordThreshold.Match(p)) {
-            bo.SetWordThreshold(v.GetInteger());
-        } else {
-            found = false;
-        }
-        break;
-        
-    default:
-        found = false;
-    }
-    
-    if (! found) {
-        string msg = "Internal: Error processing option [";
-        msg += nm;
-        msg += "] type [";
-        msg += NStr::IntToString((int) v.Which());
-        msg += "].";
-        
-        NCBI_THROW(CRemoteBlastException,
-                   eServiceNotAvailable,
-                   msg);
-    }
-}
-
-void
-CBlastOptionsBuilder::x_ProcessOptions(CBlastOptionsHandle & opts,
-                                       const TValueList    * L)
-{
-    if ( !L ) {
-        return;
-    }
-
-    ITERATE(TValueList, iter, *L) {
-        CBlast4_parameter & p = *const_cast<CBlast4_parameter*>(& **iter);
-        x_ProcessOneOption(opts, p);
-    }
-}
-
-void CBlastOptionsBuilder::x_ApplyInteractions(CBlastOptionsHandle & boh)
-{
-    CBlastOptions & bo = boh.SetOptions();
-    
-    if (m_PerformCulling) {
-        bo.SetCullingLimit(m_HspRangeMax);
-    }
-}
-
-EProgram
-CBlastOptionsBuilder::AdjustProgram(const TValueList * L,
-                                    EProgram           program,
-                                    const string     & program_string)
-{
-    bool problem = false;
-    string name;
-
-    if ( !L ) {
-        return program;
-    }
-    
-    ITERATE(TValueList, iter, *L) {
-        CBlast4_parameter & p = const_cast<CBlast4_parameter&>(**iter);
-        const CBlast4_value & v = p.GetValue();
-        
-        if (B4Param_MBTemplateLength.Match(p)) {
-            if (v.GetInteger() != 0) {
-                return eDiscMegablast;
-            }
-        } else if (B4Param_PHIPattern.Match(p)) {
-            switch(program) {
-            case ePHIBlastn:
-            case eBlastn:
-                return ePHIBlastn;
-                
-            case ePHIBlastp:
-            case eBlastp:
-                return ePHIBlastp;
-                
-            default:
-                problem = true;
-                break;
-            }
-        }
-        
-        if (problem) {
-            name = (**iter).GetName();
-            
-            string msg = "Incorrect combination of option (";
-            msg += name;
-            msg += ") and program (";
-            msg += program_string;
-            msg += ")";
-            
-            NCBI_THROW(CRemoteBlastException,
-                       eServiceNotAvailable,
-                       msg);
-        }
-    }
-    
-    return program;
-}
-
-CRef<CBlastOptionsHandle> CBlastOptionsBuilder::
-GetSearchOptions(const objects::CBlast4_parameters * aopts,
-                 const objects::CBlast4_parameters * popts,
-                 string *task_name)
-{
-    EProgram program = ComputeProgram(m_Program, m_Service);
-    
-    program = AdjustProgram((aopts == NULL ? 0 : &aopts->Get()), 
-                            program, m_Program);
-    
-    // Using eLocal allows more of the options to be returned to the user.
-    
-    CRef<CBlastOptionsHandle>
-        cboh(CBlastOptionsFactory::Create(program, m_Locality));
-    
-    if (task_name != NULL) 
-        *task_name = EProgramToTaskName(program);
-    
-    x_ProcessOptions(*cboh, (aopts == NULL ? 0 : &aopts->Get()));
-    x_ProcessOptions(*cboh, (popts == NULL ? 0 : &popts->Get()));
-    
-    x_ApplyInteractions(*cboh);
-    
-    return cboh;
-}
-
-bool CBlastOptionsBuilder::HaveEntrezQuery()
-{
-    return m_EntrezQuery.Have();
-}
-
-string CBlastOptionsBuilder::GetEntrezQuery()
-{
-    return m_EntrezQuery.Get();
-}
-
-bool CBlastOptionsBuilder::HaveFirstDbSeq()
-{
-    return m_FirstDbSeq.Have();
-}
-
-int CBlastOptionsBuilder::GetFirstDbSeq()
-{
-    return m_FirstDbSeq.Get();
-}
-
-bool CBlastOptionsBuilder::HaveFinalDbSeq()
-{
-    return m_FinalDbSeq.Have();
-}
-
-int CBlastOptionsBuilder::GetFinalDbSeq()
-{
-    return m_FinalDbSeq.Get();
-}
-
-bool CBlastOptionsBuilder::HaveGiList()
-{
-    return m_GiList.Have();
-}
-
-list<int> CBlastOptionsBuilder::GetGiList()
-{
-    return m_GiList.Get();
-}
-
-bool CBlastOptionsBuilder::HaveNegativeGiList()
-{
-    return m_NegativeGiList.Have();
-}
-
-list<int> CBlastOptionsBuilder::GetNegativeGiList()
-{
-    return m_NegativeGiList.Get();
-}
-
 CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
 {
     if (m_CBOH.Empty()) {
@@ -2193,22 +1915,13 @@ CRemoteBlast::x_ExtractQueryIds(CSearchResultSet::TQueryIdVector& query_ids)
     }
 }
 
-// const string & CRemoteBlast::GetEntrezQuery()
-// {
-//     if (m_EntrezQuery.empty()) {
-//         GetSearchOptions();
-//     }
-//     
-//     return m_EntrezQuery;
-// }
-
 /// Submit the search and return the results.
 /// @return Search results.
 CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
 {
     CRef<CSearchResultSet> retval;
     SubmitSync();
-
+    
     TSeqAlignVector alignments = GetSeqAlignSets();
     
     /* Process errors and warnings */

@@ -102,7 +102,8 @@ string RegisterOMDataLoader(CRef<objects::CObjectManager> objmgr,
     }                                                                       \
     
 /// Recover search strategy from input file
-/// @param cmdline_args command line arguments. Will have the database
+/// @param args the command line arguments provided by the application [in]
+/// @param cmdline_args output command line arguments. Will have the database
 /// arguments set, as well as options handle [in|out]
 void
 RecoverSearchStrategy(const CArgs& args, blast::CBlastAppArgs* cmdline_args);

@@ -68,8 +68,23 @@ CPsiBlastIterationState::HasMoreIterations() const
     return false;
 }
 
+struct CSeqIdComparator : 
+    public binary_function<bool, CRef<CSeq_id>, CRef<CSeq_id> >
+{
+    /// Returns true if a < b, else false
+    bool operator() (CRef<CSeq_id> a, CRef<CSeq_id> b) {
+        if (a.Empty()) {
+            return false;
+        }
+        if (b.Empty()) {
+            return true;
+        }
+        return !! ( *a < *b );
+    }
+};
+
 bool
-CPsiBlastIterationState::HasConverged() const
+CPsiBlastIterationState::HasConverged()
 {
     // For an object that hasn't been 'advanced' or one that only has performed
     // one iteration (i.e.: called Advance() once), it doesn't make sense to 
@@ -87,8 +102,8 @@ CPsiBlastIterationState::HasConverged() const
         return false;
     }
 
-    //std::sort(m_PreviousData.begin(), m_PreviousData.end());
-    //std::sort(m_CurrentData.begin(), m_CurrentData.end());
+    sort(m_PreviousData.begin(), m_PreviousData.end(), CSeqIdComparator());
+    sort(m_CurrentData.begin(), m_CurrentData.end(), CSeqIdComparator());
 
     // Element by element comparison
     const TSeqIds::const_iterator end = m_PreviousData.end();
@@ -105,7 +120,7 @@ CPsiBlastIterationState::HasConverged() const
     return retval;
 }
 
-CPsiBlastIterationState::operator bool() const
+CPsiBlastIterationState::operator bool()
 {
     return (HasMoreIterations() && !HasConverged());
 }
@@ -118,6 +133,15 @@ CPsiBlastIterationState::x_ThrowExceptionOnLogicError()
                    "converged or exhausted its iterations");
         NCBI_THROW(CBlastException, eNotSupported, msg);
     }
+}
+
+// Note that this class returns m_CurrentData, as this is what's appropriate to
+// return from the context of the PSI-BLAST command line binary (see
+// trunk/c++/src/app/blast/psiblast_app.cpp) because of the way it's invoked.
+CPsiBlastIterationState::TSeqIds
+CPsiBlastIterationState::GetPreviouslyFoundSeqIds() const 
+{ 
+    return m_CurrentData; 
 }
 
 void

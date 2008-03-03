@@ -183,11 +183,12 @@ CRef< CBlast4_parameter> CBlast4_parameters::Add(const string name,const CBlast4
 
 
 
-CRef <CBlast4_parameter> CBlast4_parameters::GetParamByName(const string name) 
+CRef <CBlast4_parameter> 
+CBlast4_parameters::GetParamByName(const string name) const
 {
 	CRef <CBlast4_parameter> blast4ParamFound;
 
-	ITERATE(Tdata,it,this->Set()) {
+	ITERATE(Tdata,it,this->Get()) {
 		if((*it)->GetName() == name) {
 			blast4ParamFound = (*it);			
 			break;

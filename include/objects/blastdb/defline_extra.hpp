@@ -49,7 +49,8 @@ enum LinkoutTypes {
   eGene                   = (1<<4),
   eHitInMapviewer         = (1<<5),
   eAnnotatedInMapviewer   = (1<<6),
-  eGenomicSeq             = (1<<7)
+  eGenomicSeq             = (1<<7),
+  eBioAssay               = (1<<8)
 };
 
 END_objects_SCOPE

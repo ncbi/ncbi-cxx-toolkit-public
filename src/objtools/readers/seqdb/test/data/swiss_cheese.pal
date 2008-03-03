@@ -1,0 +1,4 @@
+# Combine cheese list with swissprot.  Swissprot has an embedded OID list,
+# so this will require OID lists + GI lists to work together.
+DBLIST swissprot
+GILIST cheese.gil

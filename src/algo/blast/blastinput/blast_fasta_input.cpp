@@ -133,51 +133,43 @@ public:
     /// Overloaded method to attempt to read non-FASTA input types
     virtual CRef<CSeq_entry> ReadOneSeq(void) {
         
-        static const string kRegex_Gi("^[0-9]+$");
-        static const string kRegex_Ti("^gnl\\|ti\\|[0-9]+$");
-        static const string kRegex_Accession("^[a-z].*[0-9]+$");
-        // The following are not matched by CSeq_id::IdentifyAccession
-        static const string kRegex_PdbWithDash("^pdb\\|[a-z0-9-]+$");
-        static const string kRegex_Prf("^prf\\|{1,2}[a-z0-9]+$");
-        static const string kRegex_SpWithVersion("^sp\\|[a-z0-9]+.[0-9]+$");
-
         const string line = NStr::TruncateSpaces(*++GetLineReader());
-
-        CRegexpUtil regex(line);
-        const CRegexp::ECompile flags = static_cast<CRegexp::ECompile>
-            (CRegexp::fCompile_ignore_case | CRegexp::fCompile_newline);
-
-        try {
-            // Test for GI only
-            if (regex.Exists(kRegex_Gi)) {
-                static const int conv_flags
+        if ( !line.empty() && isalnum(line.data()[0]&0xff) ) {
+            try {
+                static const int kConvFlags
                     (NStr::fAllowLeadingSpaces|NStr::fAllowTrailingSpaces);
-                int gi = NStr::StringToLong(line, conv_flags);
-                return x_PrepareBioseqWithGi(gi);
-            // Test for Trace ID
-            } else if (regex.Exists(kRegex_Ti, flags)) {
-                int ti = NStr::StringToLong(regex.Extract("[0-9]+", flags));
-                return x_PrepareBioseqWithTi(ti);
-            // Test for accession
-            } else if (regex.Exists(kRegex_Accession, flags) ||
-                       regex.Exists(kRegex_PdbWithDash, flags) ||
-                       regex.Exists(kRegex_Prf, flags) ||
-                       regex.Exists(kRegex_SpWithVersion, flags) ||
-                       x_MatchKnownAccessions(line)) {
-                return x_PrepareBioseqWithAccession(line);
+
+                // Test for GI only
+                if (s_Regex_Gi.IsMatch(line)) {
+                    int gi = NStr::StringToLong(line, kConvFlags);
+                    return x_PrepareBioseqWithGi(gi);
+                // Test for Trace ID
+                } else if (s_Regex_Ti.IsMatch(line)) {
+                    static const string kTiPrefix("gnl|ti|");
+                    int ti = NStr::StringToLong(line.substr(kTiPrefix.size()),
+                                                kConvFlags);
+                    return x_PrepareBioseqWithTi(ti);
+                // Test for accession
+                } else if (x_MatchKnownAccessions(line) ||
+                           s_Regex_Accession.IsMatch(line) ||
+                           s_Regex_PdbWithDash.IsMatch(line) ||
+                           s_Regex_Prf.IsMatch(line) ||
+                           s_Regex_SpWithVersion.IsMatch(line)) {
+                    return x_PrepareBioseqWithAccession(line);
+                }
+            } catch (const CInputException&) { 
+                throw; 
+            } catch (const CSeqIdException& e) {
+                if (e.GetErrCode() == CSeqIdException::eFormat) {
+                    NCBI_THROW(CInputException, eSeqIdNotFound,
+                               "Sequence ID not found: '" + line + "'");
+                }
+            } catch (const exception&) {
+                throw;
+            } catch (...) {
+                // in case of other exceptions, just defer to CFastaReader
             }
-        } catch (const CInputException&) { 
-            throw; 
-        } catch (const CSeqIdException& e) {
-            if (e.GetErrCode() == CSeqIdException::eFormat) {
-                NCBI_THROW(CInputException, eSeqIdNotFound,
-                           "Sequence ID not found: '" + line + "'");
-            }
-        } catch (const exception&) {
-            throw;
-        } catch (...) {
-            // in case of other exceptions, just defer to CFastaReader
-        }
+        } // end if ( !line.empty() ...
 
         // If all fails, fall back to parent's implementation
         GetLineReader().UngetLine();
@@ -187,25 +179,34 @@ public:
 private:
     /// Configuration options for the CBlastScopeSource
     const SDataLoaderConfig& m_DLConfig;
-    /// Scope used to retrieve the sequence length
-    CRef<CScope> m_InputScope;
     /// True if we're supposed to be reading proteins, else false
     bool m_ReadProteins;
     /// True if the sequence data must be fetched
     bool m_RetrieveSeqData;
+    /// The object that creates Bioseqs given SeqIds
+    CRef<CBlastBioseqMaker> m_BioseqMaker;
 
     /// Performs sanity checks to make sure that the sequence requested is of
     /// the expected type. If the tests fail, an exception is thrown.
     /// @param id Sequence id for this sequence [in]
     void x_ValidateMoleculeType(CConstRef<CSeq_id> id) 
     {
-        _ASSERT(m_InputScope.NotEmpty());
-        CBioseq_Handle bh = m_InputScope->GetBioseqHandle(*id);
-        if (bh.IsNucleotide() && m_ReadProteins) {
+        _ASSERT(m_BioseqMaker.NotEmpty());
+
+        if (id.Empty())
+        {
+            NCBI_THROW(CInputException, eInvalidInput,
+                       "Empty SeqID passed to the molecule type validation");
+        }
+
+        bool isProtein = m_BioseqMaker->IsProtein(id);
+        if (!isProtein && m_ReadProteins)
+        {
             NCBI_THROW(CInputException, eSequenceMismatch,
                "Gi/accession mismatch: requested protein, found nucleotide");
         }
-        if (bh.IsProtein() && !m_ReadProteins) {
+        if (isProtein && !m_ReadProteins)
+        {
             NCBI_THROW(CInputException, eSequenceMismatch,
                "Gi/accession mismatch: requested nucleotide, found protein");
         }
@@ -216,35 +217,12 @@ private:
     /// @param id Sequence id for this bioseq [in]
     CRef<CBioseq> x_CreateBioseq(CRef<CSeq_id> id)
     {
-        if (m_InputScope.Empty()) {
-            m_InputScope = CBlastScopeSource(m_DLConfig).NewScope();
-        }
-
-        // N.B.: this call fetches the Bioseq into the scope from its
-        // data sources (should be BLAST DB first, then Genbank)
-        TSeqPos len = sequence::GetLength(*id, m_InputScope);
-        if (len == numeric_limits<TSeqPos>::max()) {
-            NCBI_THROW(CInputException, eSeqIdNotFound,
-                       "Sequence ID not found: '" + 
-                       id->AsFastaString() + "'");
+        if (m_BioseqMaker.Empty()) {
+            m_BioseqMaker.Reset(new CBlastBioseqMaker(m_DLConfig));
         }
 
         x_ValidateMoleculeType(id);
-
-        CRef<CBioseq> retval;
-        if (m_RetrieveSeqData) {
-            CBioseq_Handle bh = m_InputScope->GetBioseqHandle(*id);
-            retval.Reset(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
-        } else {
-            retval.Reset(new CBioseq());
-            retval->SetId().push_back(id);
-            retval->SetInst().SetRepr(CSeq_inst::eRepr_raw);
-            retval->SetInst().SetMol(m_ReadProteins 
-                                     ? CSeq_inst::eMol_aa
-                                     : CSeq_inst::eMol_dna);
-            retval->SetInst().SetLength(len);
-        }
-        return retval;
+        return m_BioseqMaker->CreateBioseqFromId(id, m_RetrieveSeqData);
     }
 
     /// Create a Bioseq with a gi and save it in a Seq-entry object
@@ -298,7 +276,42 @@ private:
         }
         return false;
     }
+
+    /* BEGIN : regular expression machinery to try to detect types of input */
+
+    /// The default compilation flag for regular expressions
+    static const CRegexp::ECompile s_REFlags = static_cast<CRegexp::ECompile>
+        (CRegexp::fCompile_ignore_case | CRegexp::fCompile_newline);
+
+    /// Regular expression for GIs
+    static CRegexp s_Regex_Gi;
+    /// Regular expression for TIs
+    static CRegexp s_Regex_Ti;
+    /// Regular expression for Accessions
+    static CRegexp s_Regex_Accession;
+    // The following are not matched by CSeq_id::IdentifyAccession
+    /// Regular expression for PDB accessions with a dash
+    static CRegexp s_Regex_PdbWithDash;
+    /// Regular expression for PRF accessions
+    static CRegexp s_Regex_Prf;
+    /// Regular expression for Swissprot accessions with version
+    static CRegexp s_Regex_SpWithVersion;
+
+    /* END : regular expression machinery to try to detect types of input */
 };
+
+CRegexp CBlastInputReader::s_Regex_Gi("^[0-9]+$", 
+                                      CBlastInputReader::s_REFlags);
+CRegexp CBlastInputReader::s_Regex_Ti("^gnl\\|ti\\|[0-9]+$", 
+                                      CBlastInputReader::s_REFlags);
+CRegexp CBlastInputReader::s_Regex_Accession("^[a-z].*[0-9]+$", 
+                                             CBlastInputReader::s_REFlags);
+CRegexp CBlastInputReader::s_Regex_PdbWithDash("^pdb\\|[a-z0-9-]+$", 
+                                               CBlastInputReader::s_REFlags);
+CRegexp CBlastInputReader::s_Regex_Prf("^prf\\|{1,2}[a-z0-9]+$", 
+                                       CBlastInputReader::s_REFlags);
+CRegexp CBlastInputReader::s_Regex_SpWithVersion("^sp\\|[a-z0-9]+.[0-9]+$", 
+                                                 CBlastInputReader::s_REFlags);
 
 CBlastFastaInputSource::CBlastFastaInputSource(CNcbiIstream& infile,
                                        const CBlastInputSourceConfig& iconfig)
@@ -406,8 +419,8 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
     // sanity checks for the range
     const TSeqPos from = m_Config.GetRange().GetFrom() == kEmptyRange.GetFrom()
         ? 0 : m_Config.GetRange().GetFrom();
-    const TSeqPos to = m_Config.GetRange().GetTo() == kEmptyRange.GetTo()
-        ? 0 : m_Config.GetRange().GetTo();
+    const TSeqPos to = m_Config.GetRange().GetToOpen() == kEmptyRange.GetTo()
+        ? 0 : m_Config.GetRange().GetToOpen();
 
     // Get the sequence length
     const TSeqPos seqlen = seq_entry->GetSeq().GetInst().GetLength();

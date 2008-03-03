@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/scope.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
+#include <objtools/readers/reader_exception.hpp> // for CObjReaderParseException
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -101,7 +102,13 @@ CBlastInput::GetNextSeqLocBatch(CScope& scope)
         if (End())
             break;
 
-        retval.push_back(m_Source->GetNextSSeqLoc(scope));
+        try { retval.push_back(m_Source->GetNextSSeqLoc(scope)); }
+        catch (const CObjReaderParseException& e) {
+            if (e.GetErrCode() == CObjReaderParseException::eEOF) {
+                break;
+            }
+            throw;
+        }
         SSeqLoc& loc = retval.back();
 
         if (loc.seqloc->IsInt()) {
@@ -132,7 +139,14 @@ CBlastInput::GetNextSeqBatch(CScope& scope)
         if (End())
             break;
 
-        CRef<CBlastSearchQuery> q(m_Source->GetNextSequence(scope));
+        CRef<CBlastSearchQuery> q;
+        try { q.Reset(m_Source->GetNextSequence(scope)); }
+        catch (const CObjReaderParseException& e) {
+            if (e.GetErrCode() == CObjReaderParseException::eEOF) {
+                break;
+            }
+            throw;
+        }
         CConstRef<CSeq_loc> loc = q->GetQuerySeqLoc();
 
         if (loc->IsInt()) {
@@ -159,7 +173,13 @@ CBlastInput::GetAllSeqLocs(CScope& scope)
     TSeqLocVector retval;
 
     while (!End()) {
-        retval.push_back(m_Source->GetNextSSeqLoc(scope));
+        try { retval.push_back(m_Source->GetNextSSeqLoc(scope)); }
+        catch (const CObjReaderParseException& e) {
+            if (e.GetErrCode() == CObjReaderParseException::eEOF) {
+                break;
+            }
+            throw;
+        }
     }
 
     return retval;
@@ -172,10 +192,70 @@ CBlastInput::GetAllSeqs(CScope& scope)
     CRef<CBlastQueryVector> retval(new CBlastQueryVector);
 
     while (!End()) {
-        retval->AddQuery(m_Source->GetNextSequence(scope));
+        try { retval->AddQuery(m_Source->GetNextSequence(scope)); }
+        catch (const CObjReaderParseException& e) {
+            if (e.GetErrCode() == CObjReaderParseException::eEOF) {
+                break;
+            }
+            throw;
+        }
     }
 
     return retval;
+}
+
+CBlastBioseqMaker::CBlastBioseqMaker(const SDataLoaderConfig& dlconfig)
+{
+    m_scope = CBlastScopeSource(dlconfig).NewScope();
+}
+
+CBlastBioseqMaker::~CBlastBioseqMaker() {}
+
+CRef<CBioseq> CBlastBioseqMaker::
+        CreateBioseqFromId(CConstRef<CSeq_id> id, bool retrieve_seq_data)
+{
+    _ASSERT(m_scope.NotEmpty());
+
+    // N.B.: this call fetches the Bioseq into the scope from its
+    // data sources (should be BLAST DB first, then Genbank)
+    TSeqPos len = sequence::GetLength(*id, m_scope);
+    if (len == numeric_limits<TSeqPos>::max()) {
+        NCBI_THROW(CInputException, eSeqIdNotFound,
+                    "Sequence ID not found: '" + 
+                    id->AsFastaString() + "'");
+    }
+
+    CBioseq_Handle bh = m_scope->GetBioseqHandle(*id);
+
+    CRef<CBioseq> retval;
+    if (retrieve_seq_data) {
+        retval.Reset(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
+    } else {
+        retval.Reset(new CBioseq());
+        CRef<CSeq_id> idToStore(new CSeq_id);
+        idToStore->Assign(*id);
+        retval->SetId().push_back(idToStore);
+        retval->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+        retval->SetInst().SetMol(bh.IsProtein() 
+                                    ? CSeq_inst::eMol_aa
+                                    : CSeq_inst::eMol_dna);
+        retval->SetInst().SetLength(len);
+    }
+    return retval;
+}
+
+bool CBlastBioseqMaker::IsProtein(CConstRef<CSeq_id> id)
+{
+    _ASSERT(m_scope.NotEmpty());
+
+    CBioseq_Handle bh = m_scope->GetBioseqHandle(*id);
+    if (!bh)
+    {
+        NCBI_THROW(CInputException, eSeqIdNotFound,
+                    "Sequence ID not found: '" + 
+                    id->AsFastaString() + "'");
+    }
+    return bh.IsProtein();
 }
 
 END_SCOPE(blast)

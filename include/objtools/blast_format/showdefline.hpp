@@ -71,19 +71,6 @@ class NCBI_XBLASTFORMAT_EXPORT CShowBlastDefline
 {
 
 public:
-    ///defines 
-    enum PsiblastSeqStatus {
-        eGoodSeq = (1 << 0),            //above the threshold evalue
-        eCheckedSeq = (1 << 1),         //user checked
-        eRepeatSeq = (1 << 2)           //previously already found
-    };
-    
-    enum PsiblastStatus {
-        eFirstPass = 0,            //First pass. Default
-        eRepeatPass,               //Sequences  were found before
-        eNewPass                   //Sequences are newly found
-    };
-
     /// Constructors
     ///@param seqalign: input seqalign
     ///@param scope: scope to fetch sequences
@@ -120,11 +107,29 @@ public:
         m_Option = option;
     }
 
+    /// PSI-BLAST sequence status (applicable in HTML only)
+    enum PsiblastSeqStatus {
+        eUnknown = (0 << 0),            ///< Uninitialized
+        eGoodSeq = (1 << 0),            ///< above the threshold evalue
+        eCheckedSeq = (1 << 1),         ///< user checked
+        eRepeatSeq = (1 << 2)           ///< previously already found
+    };
+    
+    /// PSI-BLAST defline groupings
+    enum PsiblastStatus {
+        eFirstPass = 0,    ///< First pass. Default
+        eRepeatPass,       ///< Sequences were found in previous pass
+        eNewPass           ///< Sequences are newly found in current pass
+    };
+
+    /// Map of sequence IDs to PSI-BLAST sequence status
+    typedef map<string, PsiblastSeqStatus> TIdString2SeqStatus;
+
     ///Set psiblast specific options.
     ///@param seq_status: the hash table containing status for each sequence.
     ///The key contains id only (no type tag)
     ///@param status: status for this round of search
-    void SetupPsiblast(map<string, int>* seq_status = NULL, 
+    void SetupPsiblast(TIdString2SeqStatus* seq_status = NULL, 
                        PsiblastStatus status = eFirstPass){
         m_PsiblastStatus = status;
         m_SeqStatus = seq_status;
@@ -310,7 +315,7 @@ private:
     PsiblastStatus m_PsiblastStatus;
 
     ///hash table to track psiblast status for each sequence
-    map<string, int>* m_SeqStatus;
+    TIdString2SeqStatus* m_SeqStatus;
 
     ///used to calculate the alignment length
     bool m_TranslatedNucAlignment;

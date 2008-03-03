@@ -213,6 +213,12 @@ private:
     ETranslationFrame m_Frame;  ///< Frame to look for
 };
 
+/// Returns true if the CSeq_id is a local id
+/// @param seqid Sequence identifier to examine [in]
+/// @return if seqid is NULL or if it is NOT a local id, it returns false
+NCBI_XBLAST_EXPORT
+bool IsLocalId(const objects::CSeq_id* seqid);
+
 /// Auxiliary function to convert a Seq-loc describing masked query regions to a 
 /// TMaskedQueryRegions object
 /// @param sloc Seq-loc to use as source (must be Packed-int or Seq-int) [in]

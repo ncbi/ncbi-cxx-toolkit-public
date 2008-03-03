@@ -154,7 +154,7 @@ class NCBI_XBLAST_EXPORT CTaskCmdLineArgs : public IBlastCmdLineArgs
 public:
     /** Constructor 
      * @param supported_tasks list of supported tasks [in]
-     * @param default_default One of the tasks above, to be displayed as
+     * @param default_task One of the tasks above, to be displayed as
      * default in the command line arguments (cannot be empty or absent from
      * the set above) [in]
      */
@@ -222,11 +222,15 @@ public:
     /** 
      * @brief Constructor
      * 
-     * @param query_is_protein is the query sequence(s) protein?
-     * @param is_rpsblast is it RPS-BLAST?
+     * @param query_is_protein is the query sequence(s) protein? [in]
+     * @param is_rpsblast is it RPS-BLAST? [in]
+     * @param show_perc_identity should the percent identity be shown?
+     * Currently only supported for blastn [in]
      */
-    CGenericSearchArgs(bool query_is_protein = true, bool is_rpsblast = false)
-        : m_QueryIsProtein(query_is_protein), m_IsRpsBlast(is_rpsblast) {}
+    CGenericSearchArgs(bool query_is_protein = true, bool is_rpsblast = false,
+                       bool show_perc_identity = false)
+        : m_QueryIsProtein(query_is_protein), m_IsRpsBlast(is_rpsblast),
+          m_ShowPercentIdentity(show_perc_identity) {}
          
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -236,6 +240,8 @@ public:
 private:
     bool m_QueryIsProtein;  /**< true if the query is protein */
     bool m_IsRpsBlast;      /**< true if the search is RPS-BLAST */
+    bool m_ShowPercentIdentity; /**< true if the percent identity option should
+                                  be shown */
 };
 
 /** Argument class for collecting filtering options */
@@ -537,6 +543,8 @@ public:
 
     /// Get query sequence range restriction
     TSeqRange GetRange() const { return m_Range; }
+    /// Set query sequence range restriction
+    void SetRange(const TSeqRange& range) { m_Range = range; }
     /// Get strand to search in query sequence(s)
     objects::ENa_strand GetStrand() const { return m_Strand; }
     /// Use lowercase masking in FASTA input?
@@ -544,7 +552,7 @@ public:
     /// Should the defline be parsed?
     bool BelieveQueryDefline() const { return m_BelieveQueryDefline; }
 
-    // Is the query sequence protein?
+    /// Is the query sequence protein?
     bool QueryIsProtein() const { return m_QueryCannotBeNucl; }
 private:
     /// Strand(s) to search
@@ -627,7 +635,7 @@ public:
 private:
     CRef<CSearchDatabase> m_SearchDb;/**< Description of the BLAST database */
     string m_GiListFileName;        /**< File name of gi list DB restriction */
-    /**< File name of GIs to exclude from BLAST database */
+    /** File name of GIs to exclude from BLAST database */
     string m_NegativeGiListFileName;
     bool m_RequestMoleculeType;     /**< Determines whether the database's
                                       molecule type should be requested in the
@@ -746,6 +754,7 @@ private:
 class NCBI_XBLAST_EXPORT CRemoteArgs : public IBlastCmdLineArgs
 {
 public:
+    /// Default constructor
     CRemoteArgs() : m_IsRemote(false) {}
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -766,6 +775,7 @@ private:
 class NCBI_XBLAST_EXPORT CDebugArgs : public IBlastCmdLineArgs
 {
 public:
+    /// Default constructor
     CDebugArgs() : m_DebugOutput(false), m_RmtDebugOutput(false) {}
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -877,6 +887,9 @@ public:
         return m_StdCmdLineArgs->GetOutputStream();
     }
 
+    /// Set the input stream to a temporary input file (needed when importing
+    /// a search strategy)
+    /// @param input_file temporary input file to read [in]
     void SetInputStream(CRef<CTmpFile> input_file) {
         m_StdCmdLineArgs->SetInputStream(input_file);
     }

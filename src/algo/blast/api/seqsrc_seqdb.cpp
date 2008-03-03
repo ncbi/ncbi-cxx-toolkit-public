@@ -43,9 +43,11 @@
  * @{
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(blast);
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 extern "C" {
 

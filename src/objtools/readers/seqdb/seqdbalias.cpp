@@ -64,8 +64,9 @@ CSeqDBAliasFile::CSeqDBAliasFile(CSeqDBAtlas     & atlas,
       m_TotalLengthStats (-1),
       m_VolumeLength     (-1),
       m_MembBit          (-1),
-      m_HaveTitle        (false),
-      m_NeedTotalsScan   (-1)
+      m_HasTitle         (false),
+      m_NeedTotalsScan   (-1),
+      m_HasFilters       (0)
 {
     if (name_list.size() && prot_nucl != '-') {
         m_Node.Reset(new CSeqDBAliasNode(atlas,
@@ -279,8 +280,8 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
                                   locked);
             
             ostringstream oss;
-            oss << "No alias or index file found for component ["
-                << m_DBList[i].GetBasePathS() << "], type [" << p_or_n
+            oss << "No alias or index file found for " << p_or_n
+                << " database [" << m_DBList[i].GetBasePathS()
                 << "] in search path [" << search_path << "]";
             
             string msg(oss.str());
@@ -617,11 +618,11 @@ void CSeqDBAliasNode::x_ReadAliasFile(CSeqDBMemLease    & lease,
                                       const char       ** ep,
                                       CSeqDBLockHold    & locked)
 {
-    bool have_group_file = false;
+    bool has_group_file = false;
     
-    have_group_file = m_AliasSets.ReadAliasFile(path, bp, ep, locked);
+    has_group_file = m_AliasSets.ReadAliasFile(path, bp, ep, locked);
     
-    if (! have_group_file) {
+    if (! has_group_file) {
         CSeqDBAtlas::TIndx length(0);
         m_Atlas.GetFile(lease, path.GetPathS(), length, locked);
         
@@ -1327,213 +1328,10 @@ CSeqDBAliasNode::WalkNodes(CSeqDB_AliasExplorer * explorer,
     }
 }
 
-
-void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet          & volset,
-                                   int                     begin,
-                                   int                     end,
-                                   const CSeqDB_BaseName & oidfile)
-{
-    if (m_DBList.size() != 1) {
-        ostringstream oss;
-        
-        oss << "Alias file (" << m_DBPath.GetDirNameS()
-            << ") uses oid list (" << m_Values["OIDLIST"]
-            << ") but has " << m_DBList.size()
-            << " volumes (";
-        
-        for(size_t i = 0; i < m_DBList.size(); i++) {
-            if (i) {
-                oss << " ";
-            }
-            
-            oss << m_DBList[i].GetBasePathS() << " ";
-        }
-        
-        oss << ").";
-        
-        NCBI_THROW(CSeqDBException, eFileErr, oss.str());
-    }
-    
-    CSeqDB_BasePath vol_path(m_DBPath, m_DBList[0]);
-    CSeqDB_BasePath mask_path(m_DBPath, oidfile);
-    
-    volset.AddMaskedVolume(vol_path.GetBasePathS(),
-                           mask_path.GetBasePathS(),
-                           begin,
-                           end);
-}
-
-
-void CSeqDBAliasNode::x_SetIdListMask(CSeqDBVolSet          & volset,
-                                      int                     begin,
-                                      int                     end,
-                                      const CSeqDB_FileName & idlist,
-                                      bool                    use_tis)
-{
-    CSeqDB_Path idpath(m_DBPath, idlist);
-    
-    ITERATE(TVolNames, vn, m_VolNames) {
-        volset.AddIdListVolume(vn->GetBasePathS(),
-                               idpath.GetPathS(),
-                               begin,
-                               end,
-                               use_tis);
-    }
-    
-    string id_key(use_tis ? "TILIST" : "GILIST");
-    
-    NON_CONST_ITERATE(TSubNodeList, an, m_SubNodes) {
-        string & current = (**an).m_Values[id_key];
-        
-        if (! current.empty()) {
-            string msg =
-                string("Alias file (") + m_DBPath.GetDirNameS() +
-                ") has multiple ID lists (" +
-                current + "," + idpath.GetPathS() + ").";
-            
-            NCBI_THROW(CSeqDBException, eFileErr, msg);
-        }
-        
-        current = idpath.GetPathS();
-    }
-    
-    NON_CONST_ITERATE(TSubNodeList, an, m_SubNodes) {
-        (**an).SetMasks( volset );
-    }
-}
-
-
-void CSeqDBAliasNode::x_SetOIDRange(CSeqDBVolSet & volset, int begin, int end)
-{
-    if (m_DBList.size() != 1) {
-        ostringstream oss;
-        
-        oss << "Alias file (" << m_DBPath.GetDirNameS()
-            << ") uses oid range (" << (begin + 1) << "," << end
-            << ") but has " << m_DBList.size()
-            << " volumes (";
-        
-        for(size_t i = 0; i < m_DBList.size(); i++) {
-            if (i) {
-                oss << " ";
-            }
-            
-            oss << m_DBList[i].GetBasePathS() << " ";
-        }
-        
-        oss << ").";
-        
-        NCBI_THROW(CSeqDBException, eFileErr, oss.str());
-    }
-    
-    CSeqDB_BasePath volpath(m_DBPath, m_DBList[0]);
-    
-    volset.AddRangedVolume(volpath.GetBasePathS(), begin, end);
-}
-
-
-void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
-{
-    TVarList::iterator gil_iter   = m_Values.find(string("GILIST"));
-    TVarList::iterator til_iter   = m_Values.find(string("TILIST"));
-    TVarList::iterator oid_iter   = m_Values.find(string("OIDLIST"));
-    TVarList::iterator f_oid_iter = m_Values.find(string("FIRST_OID"));
-    TVarList::iterator l_oid_iter = m_Values.find(string("LAST_OID"));
-    
-    bool filtered = false;
-    
-    if (! m_DBList.empty()) {
-        if (oid_iter   != m_Values.end() ||
-            gil_iter   != m_Values.end() ||
-            til_iter   != m_Values.end() ||
-            f_oid_iter != m_Values.end() ||
-            l_oid_iter != m_Values.end()) {
-            
-            int first_oid = 0;
-            int last_oid  = INT_MAX;
-            
-            if (f_oid_iter != m_Values.end()) {
-                first_oid = NStr::StringToUInt(f_oid_iter->second);
-                
-                // Starts at one, adjust to zero-indexed.
-                if (first_oid)
-                    first_oid--;
-            }
-            
-            if (l_oid_iter != m_Values.end()) {
-                // Zero indexing and post notation adjustments cancel.
-                last_oid = NStr::StringToUInt(l_oid_iter->second);
-            }
-            
-            if (oid_iter != m_Values.end()) {
-                CSeqDB_BaseName oidlist(oid_iter->second);
-                oidlist.FixDelimiters();
-                
-                x_SetOIDMask(volset, first_oid, last_oid, oidlist);
-                filtered = true;
-            }
-            
-            if (gil_iter != m_Values.end()) {
-                const string & gilname(gil_iter->second);
-                
-                if (gilname.find(" ") != gilname.npos) {
-                    string msg =
-                        string("Alias file (") + m_DBPath.GetDirNameS() +
-                        ") has multiple GI lists (" + gilname + ").";
-                    
-                    NCBI_THROW(CSeqDBException, eFileErr, msg);
-                }
-                
-                CSeqDB_FileName gilist(gilname);
-                gilist.FixDelimiters();
-                
-                x_SetIdListMask(volset, first_oid, last_oid, gilist, false);
-                filtered = true;
-            }
-            
-            if (til_iter != m_Values.end()) {
-                const string & tilname(til_iter->second);
-                
-                if (tilname.find(" ") != tilname.npos) {
-                    string msg =
-                        string("Alias file (") + m_DBPath.GetDirNameS() +
-                        ") has multiple TI lists (" + tilname + ").";
-                    
-                    NCBI_THROW(CSeqDBException, eFileErr, msg);
-                }
-                
-                CSeqDB_FileName tilist(tilname);
-                tilist.FixDelimiters();
-                
-                x_SetIdListMask(volset, first_oid, last_oid, tilist, true);
-                filtered = true;
-            }
-            
-            if (! filtered) {
-                x_SetOIDRange(volset, first_oid, last_oid);
-                filtered = true;
-            }
-        }
-    }
-    
-    if (filtered) {
-        return;
-    }
-    
-    NON_CONST_ITERATE(TSubNodeList, sn, m_SubNodes) {
-        (**sn).SetMasks(volset);
-    }
-    
-    ITERATE(TVolNames, vn, m_VolNames) {
-        if (CSeqDBVol * vptr = volset.GetVol(vn->GetBasePathS())) {
-            // We did NOT find an OIDLIST entry; therefore, any db
-            // volumes mentioned here are included unfiltered.
-            
-            volset.AddFullVolume(vptr->GetVolName());
-        }
-    }
-}
-
+// This could be changed to use ComputeMasks, then apply the masks for
+// each node in a second traversal.  However, it probably makes more
+// sense to ignore this because eventually this functionality can be
+// scrapped once the filter tree based OID wrangling is ready.
 
 string CSeqDBAliasNode::GetTitle(const CSeqDBVolSet & volset) const
 {
@@ -1684,7 +1482,7 @@ int CSeqDBAliasFile::GetMembBit(const CSeqDBVolSet & volset) const
 
 string CSeqDBAliasFile::GetTitle(const CSeqDBVolSet & volset) const
 {
-    if (! m_HaveTitle)
+    if (! m_HasTitle)
         m_Title = m_Node->GetTitle(volset);
     
     return m_Title;
@@ -1754,6 +1552,133 @@ bool CSeqDBAliasFile::NeedTotalsScan(const CSeqDBVolSet & volset) const
     return m_NeedTotalsScan == 1;
 }
 
+void CSeqDBAliasNode::BuildFilterTree(CSeqDB_FilterTree & ftree) const
+{
+    ftree.SetName(m_ThisName.GetPathS());
+    ftree.AddFilters(m_NodeMasks);
+    
+    ITERATE(TSubNodeList, node, m_SubNodes) {
+        CRef<CSeqDB_FilterTree> subtree(new CSeqDB_FilterTree);
+        
+        (*node)->BuildFilterTree( *subtree );
+        ftree.AddNode(subtree);
+    }
+    
+    ITERATE(TVolNames, volname, m_VolNames) {
+        ftree.AddVolume(*volname);
+    }
+}
+
+CRef<CSeqDB_FilterTree> CSeqDBAliasFile::GetFilterTree()
+{
+    if (m_TopTree.Empty()) {
+        x_ComputeMasks();
+        
+        m_TopTree.Reset(new CSeqDB_FilterTree);
+        m_Node->BuildFilterTree(*m_TopTree);
+    }
+    
+    return m_TopTree;
+}
+
+void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
+{
+    if (! m_NodeMasks.empty()) {
+        return;
+    }
+    
+    typedef CSeqDB_AliasMask TMask;
+    
+    TVarList::iterator gil_iter   = m_Values.find(string("GILIST"));
+    TVarList::iterator til_iter   = m_Values.find(string("TILIST"));
+    TVarList::iterator oid_iter   = m_Values.find(string("OIDLIST"));
+    TVarList::iterator f_oid_iter = m_Values.find(string("FIRST_OID"));
+    TVarList::iterator l_oid_iter = m_Values.find(string("LAST_OID"));
+    
+    if (! m_DBList.empty()) {
+        if (oid_iter   != m_Values.end() ||
+            gil_iter   != m_Values.end() ||
+            til_iter   != m_Values.end() ||
+            f_oid_iter != m_Values.end() ||
+            l_oid_iter != m_Values.end()) {
+            
+            has_filters = true;
+            
+            int first_oid = 0;
+            int last_oid  = INT_MAX;
+            bool has_range = false;
+            
+            if (f_oid_iter != m_Values.end()) {
+                first_oid = NStr::StringToUInt(f_oid_iter->second);
+                
+                // Starts at one, adjust to zero-indexed.
+                if (first_oid)
+                    first_oid--;
+                
+                has_range = true;
+            }
+            
+            if (l_oid_iter != m_Values.end()) {
+                // Zero indexing and post notation adjustments cancel.
+                last_oid = NStr::StringToUInt(l_oid_iter->second);
+                has_range = true;
+            }
+            
+            if (has_range) {
+                CRef<TMask> mask(new TMask(first_oid, last_oid));
+                m_NodeMasks.push_back(mask);
+            }
+            
+            if (oid_iter != m_Values.end()) {
+                CSeqDB_FileName lst(oid_iter->second);
+                CSeqDB_Path lst_path(m_DBPath, lst);
+                
+                CRef<TMask> mask(new TMask(TMask::eOidList, lst_path));
+                m_NodeMasks.push_back(mask);
+            }
+            
+            if (gil_iter != m_Values.end()) {
+                const string & gilname = gil_iter->second;
+                
+                if (gilname.find(" ") != gilname.npos) {
+                    string msg =
+                        string("Alias file (") + m_DBPath.GetDirNameS() +
+                        ") has multiple GI lists (" + gilname + ").";
+                    
+                    NCBI_THROW(CSeqDBException, eFileErr, msg);
+                }
+                
+                CSeqDB_FileName lst(gilname);
+                CSeqDB_Path lst_path(m_DBPath, lst);
+                
+                CRef<TMask> mask(new TMask(TMask::eGiList, lst_path));
+                m_NodeMasks.push_back(mask);
+            }
+            
+            if (til_iter != m_Values.end()) {
+                const string & tilname = til_iter->second;
+                
+                if (tilname.find(" ") != tilname.npos) {
+                    string msg =
+                        string("Alias file (") + m_DBPath.GetDirNameS() +
+                        ") has multiple TI lists (" + tilname + ").";
+                    
+                    NCBI_THROW(CSeqDBException, eFileErr, msg);
+                }
+                
+                CSeqDB_FileName lst(tilname);
+                CSeqDB_Path lst_path(m_DBPath, lst);
+                
+                CRef<TMask> mask(new TMask(TMask::eTiList, lst_path));
+                m_NodeMasks.push_back(mask);
+            }
+        }
+    }
+    
+    NON_CONST_ITERATE(TSubNodeList, sn, m_SubNodes) {
+        (**sn).ComputeMasks(has_filters);
+    }
+}
 
 END_NCBI_SCOPE
 

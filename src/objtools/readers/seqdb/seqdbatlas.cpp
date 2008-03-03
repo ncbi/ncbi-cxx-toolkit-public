@@ -758,6 +758,8 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
                          const char    ** start,
                          CRegionMap    ** rmap)
 {
+    _ASSERT(fname.size());
+    
     Verify(true);
     
     const char * dummy = 0;

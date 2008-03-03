@@ -189,6 +189,23 @@ public:
     /// Allows index-based access to the sequence data
     virtual Uint1 operator[] (TSeqPos pos) const = 0;
 
+    /// Retrieve strand data in one chunk
+    /// @param strand strand to retrieve [in]
+    /// @param buf buffer in which to return the data, should be allocated by
+    /// caller with enough capacity to copy the entire sequence data
+    /// @note default implementation still gets it one character at a time
+    virtual void GetStrandData(objects::ENa_strand strand,
+                               unsigned char* buf) {
+        if ( IsForward(strand) ) {
+            x_SetPlusStrand();
+        } else {
+            x_SetMinusStrand();
+        }
+        for (TSeqPos pos = 0, size = x_Size(); pos < size; ++pos) {
+            buf[pos] = operator[](pos);
+        }
+    }
+
     /// For nucleotide sequences this instructs the implementation to convert
     /// its representation to be that of the plus strand
     void SetPlusStrand() {

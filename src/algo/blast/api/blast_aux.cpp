@@ -1009,6 +1009,21 @@ TSeqLocVector2Bioseqs(const TSeqLocVector& input)
     return retval;
 }
 
+bool
+IsLocalId(const objects::CSeq_id* seqid)
+{
+    bool retval = false;
+
+    if ( !seqid ) {
+        return retval;
+    }
+
+    if (seqid->IsLocal() || seqid->IdentifyAccession() == CSeq_id::eAcc_local) {
+        retval = true;
+    }
+    return retval;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

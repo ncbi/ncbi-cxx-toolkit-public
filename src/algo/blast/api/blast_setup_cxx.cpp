@@ -865,45 +865,35 @@ GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
 {
     _ASSERT(strand == eNa_strand_plus || strand == eNa_strand_minus);
     
-    if (strand == eNa_strand_plus) {
-        sv.SetPlusStrand();
-    } else {
-        sv.SetMinusStrand();
-    }
-    
-    Uint1* buf = NULL;          // buffer to write sequence
-    Uint1* buf_var = NULL;      // temporary pointer to buffer
+    Uint1* buffer = NULL;          // buffer to write sequence
     TSeqPos buflen;             // length of buffer allocated
-    TSeqPos i;                  // loop index of original sequence
-    TAutoUint1Ptr safe_buf;     // contains buf to ensure exception safety
+    const TSeqPos size = sv.size();   // size of original sequence
+    TAutoUint1Ptr safe_buf;     // contains buffer to ensure exception safety
     
     // We assume that this packs one base per byte in the requested encoding
     sv.SetCoding(CSeq_data::e_Ncbi4na);
-    buflen = CalculateSeqBufferLength(sv.size(), encoding,
-                                      strand, sentinel);
+    buflen = CalculateSeqBufferLength(size, encoding, strand, sentinel);
     _ASSERT(buflen != 0);
-    buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
-    if ( !buf ) {
+    buffer = (Uint1*) malloc(sizeof(Uint1)*buflen);
+    if ( !buffer ) {
         NCBI_THROW(CBlastSystemException, eOutOfMemory, 
                "Failed to allocate " + NStr::IntToString(buflen) + " bytes");
     }
-    safe_buf.reset(buf);
+    safe_buf.reset(buffer);
     if (sentinel == eSentinels)
-        *buf_var++ = GetSentinelByte(encoding);
+        *buffer++ = GetSentinelByte(encoding);
 
+    sv.GetStrandData(strand, buffer);
     if (encoding == eBlastEncodingNucleotide) {
-        for (i = 0; i < sv.size(); i++) {
+        for (TSeqPos i = 0; i < size; i++) {
             _ASSERT(sv[i] < BLASTNA_SIZE);
-            *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
-        }
-    } else {
-        for (i = 0; i < sv.size(); i++) {
-            *buf_var++ = sv[i];
+            buffer[i] = NCBI4NA_TO_BLASTNA[buffer[i]];
         }
     }
+    buffer += size;
     
     if (sentinel == eSentinels)
-        *buf_var++ = GetSentinelByte(encoding);
+        *buffer++ = GetSentinelByte(encoding);
     
     return SBlastSequence(safe_buf.release(), buflen);
 }

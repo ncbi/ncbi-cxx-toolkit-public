@@ -39,7 +39,9 @@
 
 #include <objtools/readers/gene_info/gene_info_reader.hpp>
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 //==========================================================================//
 

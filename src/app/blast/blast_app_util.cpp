@@ -45,6 +45,7 @@ static char const rcsid[] =
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <algo/blast/api/remote_blast.hpp>
+#include <algo/blast/api/blast_options_builder.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>  // for blast::CInputException
 #include <objtools/readers/seqdb/seqdbcommon.hpp>   // for CSeqDBException
 #include <algo/blast/blastinput/psiblast_args.hpp>
@@ -81,7 +82,7 @@ static CRef<CSeqDBGiList> s_ReadGiList(const string& filename)
     return retval;
 }
 
-CRef<CSeqDB> GetSeqDB(CRef<CBlastDatabaseArgs> db_args)
+CRef<CSeqDB> GetSeqDB(CRef<blast::CBlastDatabaseArgs> db_args)
 {
     CRef<CSeqDB> retval;
     const CSeqDB::ESeqType seq_type = db_args->IsProtein()
@@ -111,7 +112,7 @@ CRef<CSeqDB> GetSeqDB(CRef<CBlastDatabaseArgs> db_args)
     return retval;
 }
 
-string RegisterOMDataLoader(CRef<CObjectManager> objmgr, 
+string RegisterOMDataLoader(CRef<objects::CObjectManager> objmgr, 
                             CRef<CSeqDB> db_handle)
 {
     // the blast formatter requires that the database coexist in
@@ -145,6 +146,8 @@ s_GetSearchStrategy(CRef<IQueryFactory> queries,
     return rmt_blast->GetSearchStrategy();
 }
 
+/// Real implementation of search strategy extraction
+/// @todo refactor this code so that it can be reused in other contexts
 static void
 s_ExportSearchStrategy(CNcbiOstream* out,
                      CRef<blast::IQueryFactory> queries,
@@ -162,6 +165,8 @@ s_ExportSearchStrategy(CNcbiOstream* out,
     *out << MSerial_AsnText << *req;
 }
 
+/// Real implementation of search strategy import
+/// @todo refactor this code so that it can be reused in other contexts
 static void
 s_ImportSearchStrategy(CNcbiIstream* in, 
                        blast::CBlastAppArgs* cmdline_args,
@@ -342,6 +347,12 @@ s_ImportSearchStrategy(CNcbiIstream* in,
             const string& fname = tmpfile->GetFileName();
             tmpfile.Reset(new CTmpFile(fname));
             cmdline_args->SetInputStream(tmpfile);
+        }
+
+        // Set the range restriction for the query, if applicable
+        const TSeqRange query_range = opts_builder.GetRestrictedQueryRange();
+        if (query_range != TSeqRange::GetEmpty()) {
+            cmdline_args->GetQueryOptionsArgs()->SetRange(query_range);
         }
     }
 

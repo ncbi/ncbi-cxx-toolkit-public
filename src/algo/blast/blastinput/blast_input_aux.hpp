@@ -53,7 +53,7 @@ CArgDescriptions*
 SetUpCommandLineArguments(TBlastCmdLineArgs& args);
 
 /** Retrieve the appropriate batch size for the specified task 
- * @program BLAST task [in]
+ * @param program BLAST task [in]
  */
 NCBI_XBLAST_EXPORT
 int

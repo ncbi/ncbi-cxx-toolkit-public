@@ -62,9 +62,10 @@ public:
     /// Get the query batch size
     virtual int GetQueryBatchSize() const;
 
+    /// Should a PSSM be saved in a checkpoint file?
     bool SaveCheckpoint() const;
+    /// Retrieve the stream to write the checkpoint file
     CNcbiOstream* GetCheckpointStream() const;
-    
 
 protected:
     /// Create the options handle based on the command line arguments

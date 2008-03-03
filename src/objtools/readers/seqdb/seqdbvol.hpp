@@ -428,22 +428,28 @@ public:
                                     CSeqDBLockHold       & locked) const;
     
     /// Get the volume title.
+    /// @return The volume's title.
     string GetTitle() const;
     
     /// Get the formatting date of the volume.
+    /// @return The create-date of the volume.
     string GetDate() const;
     
     /// Get the number of OIDs for this volume.
-    int    GetNumOIDs() const;
+    /// @return The number of OIDs.
+    int GetNumOIDs() const;
     
     /// Get the total length of this volume (in bases).
-    Uint8  GetVolumeLength() const;
+    /// @return The total volume length.
+    Uint8 GetVolumeLength() const;
     
     /// Get the length of the largest sequence in this volume.
-    int    GetMaxLength() const;
+    /// @return The largest sequence's length.
+    int GetMaxLength() const;
     
     /// Get the volume name.
-    string GetVolName() const
+    /// @return The volume name.
+    const string & GetVolName() const
     {
         return m_VolName;
     }

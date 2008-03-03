@@ -56,6 +56,7 @@ public:
     
     /// Creates object with default options set
     CPSIBlastOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
+    /// Destructor
     ~CPSIBlastOptionsHandle() {}
     
     /******************* PSI options ***********************/

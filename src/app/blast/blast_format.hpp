@@ -41,6 +41,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/blast_results.hpp>
+#include <algo/blast/api/psiblast_iteration.hpp>
 #include <algo/blast/core/blast_seqsrc.h>
 #include <objtools/blast_format/tabular.hpp>
 #include <objtools/blast_format/showalign.hpp>
@@ -57,11 +58,12 @@ class CBlastFormat
 {
 public:
     /// The line length of pairwise blast output
-    static const int kFormatLineLength = 65;
+    static const int kFormatLineLength = 68;
+    /// The string containing the message that no hits were found
     static const string kNoHitsFound;
 
     /// Constructor
-    /// @param program Blast program name ("blastn", "blastp", etc) [in]
+    /// @param opts BLAST options used in the search [in]
     /// @param dbname Name of database to search ("" if none) [in]
     /// @param format_type Integer indication the type of output [in]
     /// @param db_is_aa true if database contains protein sequences [in]
@@ -69,10 +71,11 @@ public:
     ///                are to be parsed. If multiple queries are provieded,
     ///                their sequence ID's must be distinct [in]
     /// @param outfile Stream that will receive formatted output
-    /// @param asn_outfile Name of file to receive ASN.1 output
     /// @param num_summary The number of 1-line summaries at the top of
     ///                   the blast report (for output types that have
     ///                   1-line summaries) [in]
+    /// @param num_alignments The number of alignments to display in the BLAST
+    ///                 report [in] 
     /// @param scope The scope to use for retrieving sequence data
     ///              (must contain query and database sequences) [in]
     /// @param matrix_name Name of protein score matrix (BLOSUM62 if
@@ -110,11 +113,16 @@ public:
     /// @param results Object containing alignments, mask regions, and
     ///                ancillary data to be output [in]
     /// @param queries Query sequences (cached for XML formatting) [in]
-    /// @param itr_num iteration number being performed (for PSI-BLAST) [in]
+    /// @param itr_num iteration number, if applicable, otherwise it should be
+    /// numeric_limits<unsigned int>::max() [in]
+    /// @param prev_seqids list of previously found Seq-ids, if applicable,
+    /// otherwise it should be an empty list [in]
     void PrintOneResultSet(const blast::CSearchResults& results,
                            CConstRef<blast::CBlastQueryVector> queries,
                            unsigned int itr_num =
-                           numeric_limits<unsigned int>::max());
+                           numeric_limits<unsigned int>::max(),
+                           blast::CPsiBlastIterationState::TSeqIds prev_seqids =
+                           blast::CPsiBlastIterationState::TSeqIds());
 
     /// Print the footer of the blast report
     /// @param options Options used for performing the blast search [in]
@@ -168,8 +176,6 @@ private:
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]
-    /// @param options Options used for blast search [in]
-    ///
     void x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary);
 
     /// Initialize database statistics
@@ -191,6 +197,34 @@ private:
     /// printed out)
     bool x_FillDbInfoLocally(const string& dbname, 
                              CBlastFormatUtil::SDbInfo& info) const;
+
+    /// Display the BLAST deflines in the traditional BLAST report
+    /// @param aln_set alignments to display [in]
+    /// @param itr_num iteration number, if applicable, otherwise it should be
+    /// numeric_limits<unsigned int>::max() [in]
+    /// @param prev_seqids list of previously found Seq-ids, if applicable,
+    /// otherwise it should be an empty list [in]
+    void x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
+                   unsigned int itr_num,
+                   blast::CPsiBlastIterationState::TSeqIds& prev_seqids);
+
+    /// Split the full alignment into two sets of alignments: one for those
+    /// seen in the previous iteration and used to build the PSSM and the other
+    /// for newly found sequences. Only applicable to PSI-BLAST.
+    /// @param full_alignment results of the PSI-BLAST search [in]
+    /// @param repeated_seqs object where the repeated alignments will be
+    /// copied to [in|out]
+    /// @param new_seqs object where the newly found sequence alignments will
+    /// be copied to [in|out]
+    /// @param prev_seqids list of previosly found seqids [in]
+    void x_SplitSeqAlign(CConstRef<CSeq_align_set> full_alignment,
+                 CSeq_align_set& repeated_seqs,
+                 CSeq_align_set& new_seqs,
+                 blast::CPsiBlastIterationState::TSeqIds& prev_seqids);
+
+    /// Configure the CShowBlastDefline instance passed to it
+    /// @param showdef CShowBlastDefline object to configure [in|out]
+    void x_ConfigCShowBlastDefline(CShowBlastDefline& showdef);
 };
 
 END_NCBI_SCOPE

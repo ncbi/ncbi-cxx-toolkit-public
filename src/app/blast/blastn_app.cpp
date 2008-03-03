@@ -55,15 +55,20 @@ USING_SCOPE(objects);
 class CBlastnApp : public CNcbiApplication
 {
 public:
+    /** @inheritDoc */
     CBlastnApp() {
         SetVersion(blast::Version);
     }
 private:
+    /** @inheritDoc */
     virtual void Init();
+    /** @inheritDoc */
     virtual int Run();
 
+    /// The object manager
     CRef<CObjectManager> m_ObjMgr;
-    CRef<CBlastnAppArgs> m_CmdLineArgs;
+    /// This application's command line args
+    CRef<CBlastnAppArgs> m_CmdLineArgs; 
 };
 
 void CBlastnApp::Init()
@@ -106,7 +111,8 @@ int CBlastnApp::Run(void)
         CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->BelieveQueryDefline(),
-                                     query_opts->GetRange());
+                                     query_opts->GetRange(),
+                                     !m_CmdLineArgs->ExecuteRemotely());
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
         CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
 

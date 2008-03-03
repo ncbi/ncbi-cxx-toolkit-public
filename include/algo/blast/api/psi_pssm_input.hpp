@@ -65,6 +65,14 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT CPsiBlastInputFreqRatios : public IPssmInputFreqRatios
 {
 public:
+    /** 
+     * @brief Constructor
+     * 
+     * @param query pointer to query sequence data [in]
+     * @param query_length length of the query sequence data [in]
+     * @param freq_ratios matrix of frequency ratios [in]
+     * @param matrix_name name of underlying scoring matrix used [in]
+     */
     CPsiBlastInputFreqRatios(const unsigned char* query,
                              unsigned int query_length,
                              const CNcbiMatrix<double>& freq_ratios,
@@ -78,6 +86,7 @@ public:
     /// No-op as we assume the data is passed in to the constructor
     void Process() {}
 
+    /// @inheritDoc
     unsigned char* GetQuery() { return m_Query; }
 
     /// Get the query's length
@@ -96,9 +105,13 @@ public:
     }
 
 private:
+    /// Query sequence data
     unsigned char*      m_Query;
+    /// Length of query sequence data
     unsigned int        m_QueryLength;
+    /// Name of underlying scoring matrix
     const char*         m_MatrixName;
+    /// Frequency ratios
     CNcbiMatrix<double> m_FreqRatios;
 };
 
@@ -222,8 +235,9 @@ private:
     friend class ::CPssmEngineTest;
 
 private:
-    /// forbidden copy ctor and assignment operator
+    /// prohibit copy constructor
     CPsiBlastInputData(const CPsiBlastInputData&);
+    /// prohibit assignment operator
     CPsiBlastInputData& operator=(const CPsiBlastInputData&);
 };
 

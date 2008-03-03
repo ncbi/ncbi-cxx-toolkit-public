@@ -145,7 +145,11 @@ BOOST_AUTO_TEST_CASE(ReadAccession_MismatchNuclProt)
 
     CHECK(source->End() == false);
     bool caught_exception(false);
-    try { blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); }
+    try { 
+        blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); 
+        // here's a 'misplaced' test for blast::IsLocalId
+        BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
+    }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Gi/accession mismatch: requested protein, found nucleotide")
@@ -167,7 +171,11 @@ BOOST_AUTO_TEST_CASE(ReadAccession_MismatchProtNucl)
 
     CHECK(source->End() == false);
     bool caught_exception(false);
-    try { blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); }
+    try { 
+        blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
+        // here's a 'misplaced' test for blast::IsLocalId
+        BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
+    }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Gi/accession mismatch: requested nucleotide, found protein")
@@ -189,7 +197,11 @@ BOOST_AUTO_TEST_CASE(ReadGi_MismatchNuclProt)
 
     CHECK(source->End() == false);
     bool caught_exception(false);
-    try { blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); }
+    try { 
+        blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
+        // here's a 'misplaced' test for blast::IsLocalId
+        BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
+    }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Gi/accession mismatch: requested protein, found nucleotide")
@@ -211,7 +223,11 @@ BOOST_AUTO_TEST_CASE(ReadGi_MismatchProtNucl)
 
     CHECK(source->End() == false);
     bool caught_exception(false);
-    try { blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front(); }
+    try { 
+        blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
+        // here's a 'misplaced' test for blast::IsLocalId
+        BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
+    }
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Gi/accession mismatch: requested nucleotide, found protein")
@@ -270,7 +286,11 @@ BOOST_AUTO_TEST_CASE(TestSmallDubiousSequences)
         CHECK(source->End() == false);
         bool caught_exception(false);
         blast::SSeqLoc ssl;
-        try { ssl = source->GetNextSeqLocBatch(scope).front(); }
+        try { 
+            ssl = source->GetNextSeqLocBatch(scope).front();
+            // here's a 'misplaced' test for blast::IsLocalId
+            BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
+        }
         catch (const CInputException& e) {
             string msg(e.what());
             BOOST_CHECK(msg.find("Gi/accession mismatch: ") != NPOS);
@@ -301,7 +321,11 @@ BOOST_AUTO_TEST_CASE(TestSmallDubiousSequences)
         CHECK(source->End() == false);
         bool caught_exception(false);
         blast::SSeqLoc ssl;
-        try { ssl = source->GetNextSeqLocBatch(scope).front(); }
+        try { 
+            ssl = source->GetNextSeqLocBatch(scope).front();
+            // here's a 'misplaced' test for blast::IsLocalId
+            BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
+        }
         catch (const CInputException& e) {
             string msg(e.what());
             BOOST_CHECK(msg.find("Nucleotide FASTA provided for prot") != NPOS);
@@ -371,6 +395,7 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineProtein_Single)
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
 
     CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
     CHECK_EQUAL(eNa_strand_unknown, ssl.seqloc->GetInt().GetStrand());
@@ -402,6 +427,7 @@ BOOST_AUTO_TEST_CASE(RawFastaWithSpaces)
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
 
     CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
     CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
@@ -432,6 +458,7 @@ BOOST_AUTO_TEST_CASE(ReadProteinWithGaps)
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
 
     CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
     CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
@@ -474,6 +501,7 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces)
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
 
     CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
     CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
@@ -510,6 +538,7 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN)
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
 
     CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
     CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
@@ -605,6 +634,7 @@ BOOST_AUTO_TEST_CASE(ReadGenbankReport)
     CHECK(s.find("Ignoring invalid residue 1 at position ") != NPOS);
 
     CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
 
     CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
     CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
@@ -791,6 +821,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession)
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
 
     CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
     CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
@@ -859,6 +890,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessions)
                     ssl.seqloc->GetInt().GetTo());
 
         CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+        BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
         CHECK_EQUAL(CSeq_id::e_Other, ssl.seqloc->GetInt().GetId().Which());
         string accession;
         int version;
@@ -930,8 +962,8 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessionsFromMemory)
         CHECK_EQUAL((TSeqPos)accession_lengths[i].second - 1, 
                     ssl.seqloc->GetInt().GetTo());
         CHECK_EQUAL(eNa_strand_unknown, ssl.seqloc->GetStrand());
-
         CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+        BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
     }
 
     /// Validate the data that would be retrieved by blast.cgi
@@ -954,6 +986,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleGi)
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
 
     CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
     CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
@@ -1019,6 +1052,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleGis)
         CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 
         CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+        BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
         CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
         const int gi = gi_length[i].first;
         CHECK_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
@@ -1060,6 +1094,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleSequencesFromSequencer)
     CScope scope(*CObjectManager::GetInstance());
     blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
     CHECK_EQUAL(kNumQueries, query_vector.size());
+    BOOST_REQUIRE(blast::IsLocalId(query_vector.front().seqloc->GetId()));
 }
 
 BOOST_AUTO_TEST_CASE(ReadMultipleTis)
@@ -1100,6 +1135,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleTis)
         CHECK_EQUAL((TSeqPos)ti_lengths[i].second - 1, seqint.GetTo());
 
         CHECK(seqint.IsSetId() == true);
+        BOOST_REQUIRE( !blast::IsLocalId(query_vector.front().seqloc->GetId()));
         CHECK_EQUAL(CSeq_id::e_General, seqint.GetId().Which());
         CHECK_EQUAL(db, seqint.GetId().GetGeneral().GetDb());
         CHECK_EQUAL(ti_lengths[i].first,
@@ -1127,6 +1163,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleTi)
     CHECK(source->End() == true);
 
     CHECK(ssl.seqloc->IsInt() == true);
+    BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
 
     CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
     CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
@@ -1202,6 +1239,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
         const string& id = gi_accessions[i].first;
 
         CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+        BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
         int gi(0);
         if ( (gi = NStr::StringToLong(id, NStr::fConvErr_NoThrow)) != 0) {
             CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
@@ -1288,6 +1326,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNucleotideIntoBuffer_Single)
     CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 
     CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+    BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
     CHECK_EQUAL(CSeq_id::e_Other, ssl.seqloc->GetInt().GetId().Which());
     const string accession("NC_000001");
     CHECK_EQUAL(accession,
@@ -1313,7 +1352,8 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNucleotideIntoBuffer_Single)
 
 BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
 {
-    auto_ptr<string> user_input(new string("    1945386   "));
+    // N.B.: the extra newline causes the CFastaReader to throw an EOF exception
+    auto_ptr<string> user_input(new string("    1945386  \n "));
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CBlastInputSourceConfig iconfig(false);
@@ -1322,6 +1362,7 @@ BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
     CScope scope(*om);
     CHECK(source->End() == false);
     blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    CHECK(source->End() == true);
     blast::SSeqLoc ssl = seqs.front();
 
     CHECK(source->End() == true);
@@ -1339,6 +1380,7 @@ BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
     CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 
     CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+    BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
     CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
     const int gi(1945386);
     CHECK_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
@@ -1388,6 +1430,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
     CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 
     CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+    BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
     CHECK_EQUAL(CSeq_id::e_Genbank, ssl.seqloc->GetInt().GetId().Which());
     const string accession("u93236");
     CHECK_EQUAL(NStr::CompareNocase(accession,
@@ -1441,6 +1484,7 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineProteinIntoBuffer_Single)
 
     CHECK(ssl.seqloc->GetInt().IsSetId() == true);
     CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()));
 
     CHECK(!ssl.mask);
 
@@ -1463,7 +1507,7 @@ BOOST_AUTO_TEST_CASE(RangeBoth)
     const TSeqPos stop(100);
     CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRange().SetFrom(start);
-    iconfig.SetRange().SetTo(stop);
+    iconfig.SetRange().SetToOpen(stop);
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     CScope scope(*CObjectManager::GetInstance());
@@ -1598,6 +1642,7 @@ BOOST_AUTO_TEST_CASE(ParseDefline)
     CHECK_EQUAL(gi, ssl.seqloc->GetId()->GetGi());
     CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
     CHECK_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
+    BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
 }
 
 BOOST_AUTO_TEST_CASE(BadProtStrand)
@@ -1649,6 +1694,7 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineNucl_Multiple)
     CHECK_EQUAL(length-1, ssl.seqloc->GetStop(eExtreme_Positional));
     CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
     CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()));
 
     ssl = query_vector.back();
 
@@ -1657,6 +1703,7 @@ BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineNucl_Multiple)
     CHECK_EQUAL(length-1, ssl.seqloc->GetStop(eExtreme_Positional));
     CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
     CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+    BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()));
     CHECK(!ssl.mask);
 }
 
@@ -1679,6 +1726,7 @@ BOOST_AUTO_TEST_CASE(NuclStrand)
             const blast::SSeqLoc& ssl = *itr;
             CHECK_EQUAL(strand, ssl.seqloc->GetStrand());
             CHECK_EQUAL(strand, ssl.seqloc->GetInt().GetStrand());
+            BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()));
         }
     }
 
@@ -1694,6 +1742,7 @@ BOOST_AUTO_TEST_CASE(NuclStrand)
             const blast::SSeqLoc& ssl = *itr;
             CHECK_EQUAL(strand, ssl.seqloc->GetStrand());
             CHECK_EQUAL(strand, ssl.seqloc->GetInt().GetStrand());
+            BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()));
         }
     }
 }
@@ -1745,7 +1794,7 @@ BOOST_AUTO_TEST_CASE(MultiRange)
     const TSeqPos start(50);
     const TSeqPos stop(100);
     CBlastInputSourceConfig iconfig(is_protein);
-    iconfig.SetRange().SetFrom(start).SetTo(stop);
+    iconfig.SetRange().SetFrom(start).SetToOpen(stop);
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CScope scope(*CObjectManager::GetInstance());
 
@@ -1774,6 +1823,7 @@ BOOST_AUTO_TEST_CASE(MultiBatch)
     CHECK_EQUAL((size_t)7, v.size());
     CHECK_EQUAL((TSeqPos)530, v[0].seqloc->GetInt().GetTo());
     gi = 1346057;
+    BOOST_REQUIRE( !blast::IsLocalId(v[0].seqloc->GetId()) );
     CHECK_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
     CHECK_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
 
@@ -1781,6 +1831,7 @@ BOOST_AUTO_TEST_CASE(MultiBatch)
     CHECK_EQUAL((size_t)8, v.size());
     CHECK_EQUAL((TSeqPos)445, v[0].seqloc->GetInt().GetTo());
     gi = 1170625;
+    BOOST_REQUIRE( !blast::IsLocalId(v[0].seqloc->GetId()) );
     CHECK_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
     CHECK_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
 
@@ -1788,6 +1839,7 @@ BOOST_AUTO_TEST_CASE(MultiBatch)
     CHECK_EQUAL((size_t)4, v.size());
     CHECK_EQUAL((TSeqPos)688, v[0].seqloc->GetInt().GetTo());
     gi = 114152;
+    BOOST_REQUIRE( !blast::IsLocalId(v[0].seqloc->GetId()) );
     CHECK_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
     CHECK_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
 
@@ -1952,7 +2004,7 @@ BOOST_AUTO_TEST_CASE(CheckDiscoMegablast) {
 
 BOOST_AUTO_TEST_CASE(CheckPercentIdentity) {
     auto_ptr<CArgs> args;
-    CBlastxAppArgs blast_args;
+    CBlastnAppArgs blast_args;
 
     // invalid value
     CString2Args s2a("-db ecoli -perc_identity 104.3");

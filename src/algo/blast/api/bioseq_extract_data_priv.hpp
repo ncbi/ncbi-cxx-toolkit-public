@@ -73,24 +73,22 @@ public:
     CBlastSeqVectorFromCSeq_data(const objects::CSeq_data& seq_data, 
                                  TSeqPos length);
 
-    /// Sets the encoding for the sequence data.
-    /// @param c coding to set [in]
+    /** @inheritDoc */
     virtual void SetCoding(objects::CSeq_data::E_Choice c);
 
-    /// Allows index-based access to the sequence data
+    /** @inheritDoc */
     virtual Uint1 operator[] (TSeqPos pos) const;
 
-    /// Returns the compressed nucleotide data for the plus strand, still
-    /// occupying one base per byte.
+    /** @inheritDoc */
     virtual SBlastSequence GetCompressedPlusStrand();
 
 protected:
-    /// Return the size of the container for the data
-    TSeqPos x_Size() const;
-    /// Changes the strand of the data contained in this object to plus
-    void x_SetPlusStrand();
-    /// Changes the strand of the data contained in this object to minus
-    void x_SetMinusStrand();
+    /** @inheritDoc */
+    virtual TSeqPos x_Size() const;
+    /** @inheritDoc */
+    virtual void x_SetPlusStrand();
+    /** @inheritDoc */
+    virtual void x_SetMinusStrand();
 
 private:
     /// Container for the actual sequence data

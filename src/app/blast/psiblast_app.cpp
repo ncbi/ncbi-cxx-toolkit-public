@@ -27,7 +27,7 @@
  *
  */
 
-/** @file psiblast.cpp
+/** @file psiblast_app.cpp
  * PSI-BLAST command line application
  */
 
@@ -62,17 +62,25 @@ USING_SCOPE(objects);
 class CPsiBlastApp : public CNcbiApplication
 {
 public:
+    /** @inheritDoc */
     CPsiBlastApp() {
         SetVersion(blast::Version);
     }
 private:
+    /** @inheritDoc */
     virtual void Init();
+    /** @inheritDoc */
     virtual int Run();
 
+    /// Save the PSSM to a check point file
+    /// @param pssm PSSM to save [in]
+    /// @param itr Iteration object, NULL in case of remote search [in]
     void SavePssmToCheckpoint(CRef<CPssmWithParameters> pssm, 
                               const CPsiBlastIterationState* itr = NULL) const;
 
+    /// The object manager
     CRef<CObjectManager> m_ObjMgr;
+    /// This application's command line args
     CRef<CPsiBlastAppArgs> m_CmdLineArgs;
 };
 
@@ -94,6 +102,14 @@ void CPsiBlastApp::Init()
     SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
 }
 
+/** 
+ * @brief Extract the bioseq which represents the query from either a PSSM or a
+ * CBlastQueryVector
+ * 
+ * @param query container for query sequence(s) [in]
+ * @param scope Scope from which to retrieve the query if not in the PSSM [in]
+ * @param pssm if NON-NULL, the query will be extracted from this object [in]
+ */
 static CConstRef<CBioseq>
 s_GetQueryBioseq(CConstRef<CBlastQueryVector> query, CRef<CScope> scope,
                  CRef<CPssmWithParameters> pssm)
@@ -181,7 +197,8 @@ int CPsiBlastApp::Run(void)
             CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                          query_opts->UseLowercaseMasks(),
                                          query_opts->BelieveQueryDefline(),
-                                         query_opts->GetRange());
+                                         query_opts->GetRange(),
+                                         !m_CmdLineArgs->ExecuteRemotely());
             fasta.Reset(new CBlastFastaInputSource(
                                          m_CmdLineArgs->GetInputStream(),
                                          iconfig));
@@ -291,7 +308,8 @@ int CPsiBlastApp::Run(void)
                 CRef<CSearchResultSet> results = psiblast->Run();
                 ITERATE(CSearchResultSet, result, *results) {
                     formatter.PrintOneResultSet(**result, query,
-                                                itr.GetIterationNumber());
+                                                itr.GetIterationNumber(),
+                                                itr.GetPreviouslyFoundSeqIds());
                 }
 
                 if ( !(*results)[0].HasAlignments() ) {

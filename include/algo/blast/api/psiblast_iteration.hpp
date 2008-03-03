@@ -72,12 +72,12 @@ public:
     /// Allow implicit conversion to a boolean value, returning true if there
     /// are more iterations to perform or false if iterations are done.
     /// @sa HasConverged, HasMoreIterations
-    operator bool() const;
+    operator bool();
 
     /// Determines if the PSI-BLAST search has converged (i.e.: no more new
     /// sequences have been found since the last iteration)
     /// @return true if search has converged, otherwise false.
-    bool HasConverged() const;
+    bool HasConverged();
 
     /// Determines if more iterations are still needed.
     /// @return true if there are more iterations to do, otherwise false.
@@ -85,6 +85,9 @@ public:
 
     /// List of CSeq_ids
     typedef vector< CRef<objects::CSeq_id> > TSeqIds;
+
+    /// Retrieve the set of Seq-id's found in the previous iteration
+    TSeqIds GetPreviouslyFoundSeqIds() const;
 
     /// Advance the iterator by passing it the list of Seq-ids which passed the
     /// inclusion criteria for the current iteration

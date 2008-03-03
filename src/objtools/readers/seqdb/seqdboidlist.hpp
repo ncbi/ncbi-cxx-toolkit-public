@@ -41,7 +41,9 @@
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include "seqdbfile.hpp"
 #include "seqdbvolset.hpp"
+#include "seqdbfilter.hpp"
 #include "seqdbgilistset.hpp"
+#include "seqdbbitset.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -80,6 +82,8 @@ public:
     ///   The CSeqDBAtlas object.
     /// @param volumes
     ///   The set of database volumes.
+    /// @param filters
+    ///   The filtering to apply to the database volumes.
     /// @param gi_list
     ///   The User GI List (if there is one).
     /// @param neg_list
@@ -88,6 +92,7 @@ public:
     ///   The lock holder object for this thread.
     CSeqDBOIDList(CSeqDBAtlas              & atlas,
                   const CSeqDBVolSet       & volumes,
+                  CSeqDB_FilterTree        & filters,
                   CRef<CSeqDBGiList>       & gi_list,
                   CRef<CSeqDBNegativeList> & neg_list,
                   CSeqDBLockHold           & locked);
@@ -114,10 +119,13 @@ public:
     ///   True if an oid was found.
     bool CheckOrFindOID(TOID & next_oid) const
     {
-        if (x_IsSet(next_oid)) {
-            return true;
-        }
-        return x_FindNext(next_oid);
+        size_t bit = next_oid;
+        bool found = m_AllBits->CheckOrFindBit(bit);
+        
+        next_oid = bit;
+        _ASSERT(size_t(next_oid) == bit);
+        
+        return found;
     }
     
     /// Deallocate the memory ranges owned by this object.
@@ -148,51 +156,6 @@ private:
     ///   true if the oid is included.
     inline bool x_IsSet(TOID oid) const;
     
-    /// Include the specified oid.
-    /// 
-    /// Set the inclusion bit for the specified oid.
-    /// 
-    /// @param oid
-    ///   The oid to adjust.
-    void x_SetBit(TOID oid);
-    
-    /// Exclude the specified oid.
-    /// 
-    /// Clear the inclusion bit for the specified oid.
-    /// 
-    /// @param oid
-    ///   The oid to adjust.
-    void x_ClearBit(TOID oid);
-    
-    /// Find the next OID.
-    /// 
-    /// This method gets the next included oid.  The semantics are
-    /// exactly the same as CheckOrFindOID(), but this method is
-    /// always only called if the specified oid was not found by
-    /// x_IsSet().  This contains optimizations and should be many
-    /// times more efficient that calling CheckOrFindOID() in a loop.
-    /// 
-    /// @param oid
-    ///   The oid to check and possibly adjust
-    /// @return
-    ///   true if an included oid was found.
-    bool x_FindNext(TOID & oid) const;
-    
-    /// Map a pre-built oid mask from a file.
-    /// 
-    /// This method maps a file specified by filename, which contains
-    /// a pre-built OID bit mask.  The atlas is used to get a lease on
-    /// the file, which is held by m_Lease.  This method is only
-    /// called when there is one OID mask which spans the entire OID
-    /// range.
-    /// 
-    /// @param filename
-    ///   The name of the mask file to use.
-    /// @param locked
-    ///   The lock holder object for this thread.
-    void x_Setup(const string   & filename,
-                 CSeqDBLockHold & locked);
-    
     /// Build an oid mask in memory.
     /// 
     /// This method allocates an oid bit array which spans the entire
@@ -210,6 +173,8 @@ private:
     /// 
     /// @param volset
     ///   The set of volumes to build an oid mask for.
+    /// @param filters
+    ///   The filtering to apply to the database volumes.
     /// @param gi_list
     ///   Gi list object.
     /// @param neg_list
@@ -217,104 +182,11 @@ private:
     /// @param locked
     ///   The lock holder object for this thread.
     void x_Setup(const CSeqDBVolSet       & volset,
+                 CSeqDB_FilterTree        & filters,
                  CRef<CSeqDBGiList>       & gi_list,
                  CRef<CSeqDBNegativeList> & neg_list,
                  CSeqDBLockHold           & locked);
-    
-    /// Copy data from an OID mask into the bit array.
-    /// 
-    /// This method maps an oid mask file which spans one volume, and
-    /// combines the data from that file with the large bit array that
-    /// spans the total oid range.  The combination is done as an "OR"
-    /// operation.
-    /// 
-    /// @param mask_fname
-    ///   The name of the mask file to use.
-    /// @param vol_start
-    ///   The volume's starting oid.
-    /// @param oid_start
-    ///   The starting oid of the oid range
-    /// @param oid_end
-    ///   The oid after the end of the oid range
-    /// @param locked
-    ///   The lock holder object for this thread.
-    void x_OrMaskBits(const string   & mask_fname,
-                      int              vol_start,
-                      int              oid_start,
-                      int              oid_end,
-                      CSeqDBLockHold & locked);
-    
-    /// Add bits corresponding to a GI list.
-    /// 
-    /// This method applies a list of GIs to the OID bitmap as a
-    /// filter over a volume.  The bit corresponding to each OID is
-    /// turned on if that OID is in the range of the volume.
-    /// 
-    /// @param gilist
-    ///   The list of GIs to apply as a filter.
-    /// @param oid_start
-    ///   The OID range's starting oid.
-    /// @param oid_end
-    ///   The OID after the end of the OID range.
-    /// @param locked
-    ///   The lock holder object for this thread.
-    void x_OrIdFileBits(CSeqDBGiList    & gilist,
-                        int               oid_start,
-                        int               oid_end,
-                        CSeqDBLockHold  & locked);
-    
-    /// Read a binary GI list.
-    /// 
-    /// This method reads a binary GI list file.  This is a binary
-    /// array of GI numbers in network byte order.  It may need to
-    /// swap the entries.
-    /// 
-    /// @param gilist
-    ///   A file object for this gi list file.
-    /// @param lease
-    ///   A memory lease holder for the gi list file.
-    /// @param num_gis
-    ///   The number of entries in the file.
-    /// @param gis
-    ///   A vector to return the gis in.
-    /// @param locked
-    ///   The lock holder object for this thread.
-    void x_ReadBinaryGiList(CSeqDBRawFile  & gilist,
-                            CSeqDBMemLease & lease,
-                            int              num_gis,
-                            vector<int>    & gis,
-                            CSeqDBLockHold & locked);
-    
-    /// Read a binary GI list.
-    /// 
-    /// This method reads a text GI list file.  This is a list of
-    /// integer GI numbers in ASCII text, seperated by newlines.
-    /// 
-    /// @param gilist
-    ///   A file object for this gi list file.
-    /// @param lease
-    ///   A memory lease holder for the gi list file.
-    /// @param gis
-    ///   A vector to return the gis in.
-    /// @param locked
-    ///   The lock holder object for this thread.
-    void x_ReadTextGiList(CSeqDBRawFile  & gilist,
-                          CSeqDBMemLease & lease,
-                          vector<int>    & gis,
-                          CSeqDBLockHold & locked);
-    
-    /// Set all bits in a range.
-    /// 
-    /// This method turns on all bits in the specified oid range.  It
-    /// is used to turn on bit ranges for volumes where all OIDs are
-    /// included.
-    /// 
-    /// @param oid_start
-    ///   The volume's starting oid.
-    /// @param oid_end
-    ///   The volume's ending oid.
-    void x_SetBitRange(int oid_start, int oid_end);
-    
+
     /// Clear all bits in a range.
     /// 
     /// This method turns off all bits in the specified oid range.  It
@@ -327,27 +199,43 @@ private:
     ///   The volume's ending oid.
     void x_ClearBitRange(int oid_start, int oid_end);
     
-    /// Apply a filter to a volume.
+    /// Compute the oid mask bitset for a database volume.
     ///
-    /// This method applies the specified filter to a database volume.
-    /// The filter in question may be an OID list, GI list, or OID
-    /// range, or may be a combination of the above, except that OID
-    /// lists and GI lists cannot be applied together.  In practice,
-    /// the OID range is always used, but is specified to span the
-    /// volume when the alias file does not contain a range.
+    /// The filter tree will be specialized to this database volume and
+    /// the OID mask bitset for this volume will be computed.
     ///
-    /// @param filter
-    ///   The object specifying the filtering options.
-    /// @param vol
-    ///   The volume entry describing the volume to work with.
-    /// @param gis
-    ///   An object that manages the GI lists used here.
-    /// @param locked
-    ///   The lock holder object for this thread.
-    void x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
-                       const CSeqDBVolEntry  * vol,
-                       CSeqDBGiListSet       & gis,
-                       CSeqDBLockHold        & locked);
+    /// @param ft The filter tree for all volumes.
+    /// @param vol The volume entry object for this volume.
+    /// @param gis An object that manages the GI lists used here.
+    /// @param locked The lock holder object for this thread.
+    /// @return An OID bitset object.
+    CRef<CSeqDB_BitSet>
+    x_ComputeFilters(const CSeqDB_FilterTree & ft,
+                     const CSeqDBVolEntry    & vol,
+                     CSeqDBGiListSet         & gis,
+                     CSeqDBLockHold          & locked);
+    
+    /// Load the named OID mask file into a bitset object.
+    ///
+    /// @param fn The filename from which to load the OID mask.
+    /// @param vol_start The first OID included in this volume.
+    /// @param vol_end The first OID after this volume.
+    /// @param locked The lock holder object for this thread.
+    /// @return An OID bitset object.
+    CRef<CSeqDB_BitSet>
+    x_GetOidMask(const CSeqDB_Path & fn,
+                 int                 vol_start,
+                 int                 vol_end,
+                 CSeqDBLockHold    & locked);
+    
+    /// Load an ID (GI or TI) list file into a bitset object.
+    ///
+    /// @param ids A set of included GIs or TIs.
+    /// @param vol_start The first OID included in this volume.
+    /// @param vol_end The first OID after this volume.
+    /// @return An OID bitset object.
+    CRef<CSeqDB_BitSet>
+    x_IdsToBitSet(const CSeqDBGiList & ids, int vol_start, int vol_end);
     
     /// Apply a user GI list to a volume.
     ///
@@ -381,38 +269,23 @@ private:
                              CSeqDBLockHold     & locked);
     
     /// The memory management layer object.
-    CSeqDBAtlas    & m_Atlas;
-    
+    CSeqDBAtlas & m_Atlas;
+
     /// A memory lease which holds the mask file (if only one is used).
-    CSeqDBMemLease   m_Lease;
+    CSeqDBMemLease m_Lease;
     
-    /// The total number of OIDs represented in the bit array.
-    int              m_NumOIDs;
+    /// The total number of OIDs represented in the bit set.
+    int m_NumOIDs;
     
-    /// A pointer to the top of the bit array.
-    TUC            * m_Bits;
-    
-    /// A pointer to the end of the bit array.
-    TUC            * m_BitEnd;
-    
-    /// Set to true if the bit array was allocated.
-    bool             m_BitOwner;
+    /// An OID bit set covering all volumes.
+    CRef<CSeqDB_BitSet> m_AllBits;
 };
 
 inline bool
 CSeqDBOIDList::x_IsSet(TOID oid) const
 {
-    TCUC * bp = m_Bits + (oid >> 3);
-    
-    Int4 bitnum = (oid & 7);
-    
-    if (bp < m_BitEnd) {
-        if (*bp & (0x80 >> bitnum)) {
-            return true;
-        }
-    }
-    
-    return false;
+    _ASSERT(m_AllBits.NotEmpty());
+    return (oid < m_NumOIDs) && m_AllBits->GetBit(oid);
 }
 
 END_NCBI_SCOPE

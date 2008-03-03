@@ -153,7 +153,7 @@ public:
     /// @return 
     ///  CRef to CBlast4_parameter list node or empty reference if name does not exist
     /// 
-    CRef <CBlast4_parameter> GetParamByName(const string name); 
+    CRef <CBlast4_parameter> GetParamByName(const string name) const; 
 
 
 

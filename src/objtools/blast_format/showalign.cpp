@@ -1100,6 +1100,8 @@ void CDisplaySeqalign::x_AddLinkout(const CBioseq& cbsp,
       string l_GeoUrl = CBlastFormatUtil::GetURLFromRegistry("GEO");
       string l_UnigeneUrl = CBlastFormatUtil::GetURLFromRegistry("UNIGEN");
       string l_GeneUrl = CBlastFormatUtil::GetURLFromRegistry("GENE");
+      string l_BioAssayProtUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");
+      string l_BioAssayNucUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");
         for (list< int >::const_iterator iter = bdl.GetLinks().begin(); 
              iter != bdl.GetLinks().end(); iter ++){
             char buf[1024];
@@ -1130,6 +1132,18 @@ void CDisplaySeqalign::x_AddLinkout(const CBioseq& cbsp,
             if((*iter) & eGene){
                 sprintf(buf, l_GeneUrl.c_str(), gi, cbsp.IsAa() ? 
                         "PUID" : "NUID", m_Rid.c_str(),
+                        "align", m_cur_align);
+                out << buf;
+            }
+            if (((*iter) & eBioAssay) && cbsp.IsAa()){
+
+                sprintf(buf, l_BioAssayProtUrl.c_str(), gi, m_Rid.c_str(),
+                        "align", m_cur_align);
+                out << buf;
+            }
+            if (((*iter) & eBioAssay) && !cbsp.IsAa()){
+
+                sprintf(buf, l_BioAssayNucUrl.c_str(), gi, m_Rid.c_str(),
                         "align", m_cur_align);
                 out << buf;
             }
@@ -2843,6 +2857,17 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
                                            SAlnInfo* aln_vec_info,
                                            bool show_defline) 
 {
+    /* Facilitates comparing formatted output using diff */
+    static string kLengthString("Length=");
+#ifdef _DEBUG
+    static bool value_set = false;
+    if ( !value_set ) {
+        if (getenv("CTOOLKIT_COMPATIBLE")) {
+            kLengthString.assign("          Length = ");
+        }
+        value_set = true;
+    }
+#endif /* _DEBUG */
   
     m_AV = aln_vec_info->alnvec;
     const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
@@ -2850,7 +2875,7 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
         string id_label;
         if(!(m_AlignOption & eShowNoDeflineInfo)){
             x_PrintDefLine(bsp_handle, aln_vec_info->use_this_gi, id_label, out);
-            out<<"Length="<<bsp_handle.GetBioseqLength()<<endl;
+            out<<kLengthString<<bsp_handle.GetBioseqLength()<<endl;
 
             try
             {
@@ -3240,13 +3265,28 @@ CDisplaySeqalign::x_GetQueryFeatureList(int row_num, int aln_stop) const
 
 void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
 {
+    static string kQuery("Query");
+    static string kSubject("Sbjct");
+
+    /* Facilitates comparing formatted output using diff */
+#ifdef _DEBUG
+    static bool value_set = false;
+    if ( !value_set ) {
+        if (getenv("CTOOLKIT_COMPATIBLE")) {
+            kQuery.append(":");
+            kSubject.append(":");
+        }
+        value_set = true;
+    }
+#endif /* _DEBUG */
+
     if(m_AlignOption & eShowBlastStyleId) {
         if(row==0){//query
-            id="Query";
+            id=kQuery;
         } else {//hits
             if (!(m_AlignOption&eMergeAlign)){
                 //hits for pairwise 
-                id="Sbjct";
+                id=kSubject;
             } else {
                 if(m_AlignOption&eShowGi){
                     int gi = 0;

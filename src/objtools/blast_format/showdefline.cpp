@@ -85,7 +85,8 @@ static string kTwoSpaceMargin = "  ";
 static const string kHeader = "Sequences producing significant alignments:";
 static const string kScore = "Score";
 static const string kE = "E";
-static const string kBits = "(Bits)";
+static const string kBits = 
+    (getenv("CTOOLKIT_COMPATIBLE") ? "(bits)" : "(Bits)");
 static const string kEvalue = "E value";
 static const string kValue = "Value";
 static const string kN = "N";
@@ -100,6 +101,7 @@ static const string kPercent = "Percent";
 static const string kHighest = "Highest";
 static const string kQuery = "Query";
 static const string kCoverage = "Query coverage";
+static const string kEllipsis = "...";
 
 //psiblast related
 static const string kPsiblastNewSeqGif = "<IMG SRC=\"images/new.gif\" \
@@ -172,6 +174,15 @@ static list<string> s_GetLinkoutString(int linkout, int gi, string& rid,
       string l_GeneUrl = CBlastFormatUtil::GetURLFromRegistry("GENE");
         sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID",
                 rid.c_str(), "top", cur_align);
+        linkout_list.push_back(buf);
+    }
+    if((linkout & eBioAssay) && is_na){
+      string l_BioAssayUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");
+        sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), "top", cur_align);
+        linkout_list.push_back(buf);
+    } else if ((linkout & eBioAssay) && !is_na) {
+      string l_BioAssayUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");
+        sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), "top", cur_align);
         linkout_list.push_back(buf);
     }
     return linkout_list;
@@ -464,11 +475,11 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     if(m_SeqStatus){
         string aln_id_str;
         aln_id.GetLabel(&aln_id_str, CSeq_id::eContent);
-        int seq_status = 0;
+        PsiblastSeqStatus seq_status = eUnknown;
         
-        map<string, int>::const_iterator iter = m_SeqStatus->find(aln_id_str);
-        if ( iter != m_SeqStatus->end() ){
-            seq_status = iter->second;
+        TIdString2SeqStatus::const_iterator itr = m_SeqStatus->find(aln_id_str);
+        if ( itr != m_SeqStatus->end() ){
+            seq_status = itr->second;
         }
         if((m_PsiblastStatus == eFirstPass) ||
            ((m_PsiblastStatus == eRepeatPass) && (seq_status & eRepeatSeq))
@@ -666,11 +677,11 @@ void CShowBlastDefline::x_FillDeflineAndIdNew(const CBioseq_Handle& handle,
     if(m_SeqStatus){
         string aln_id_str;
         aln_id.GetLabel(&aln_id_str, CSeq_id::eContent);
-        int seq_status = 0;
+        PsiblastSeqStatus seq_status = eUnknown;
         
-        map<string, int>::const_iterator iter = m_SeqStatus->find(aln_id_str);
-        if ( iter != m_SeqStatus->end() ){
-            seq_status = iter->second;
+        TIdString2SeqStatus::const_iterator itr = m_SeqStatus->find(aln_id_str);
+        if ( itr != m_SeqStatus->end() ){
+            seq_status = itr->second;
         }
         if((m_PsiblastStatus == eFirstPass) ||
            ((m_PsiblastStatus == eRepeatPass) && (seq_status & eRepeatSeq))
@@ -1019,14 +1030,15 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
                 CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
                 out << kN;
             }
-            out << endl<<endl;
+            out << endl;
         }
         if(m_PsiblastStatus == eRepeatPass){
-            out << kRepeatHeader <<endl;
+            out << kRepeatHeader << endl;
         }
         if(m_PsiblastStatus == eNewPass){
-            out << kNewSeqHeader <<endl;
+            out << kNewSeqHeader << endl;
         }
+        out << endl;
     }
     
     bool first_new =true;
@@ -1086,10 +1098,10 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         }        
         line_component = "  " + (*iter)->defline; 
         string actual_line_component;
-        if(line_component.size() > m_LineLen){
+        if(line_component.size()+line_length > m_LineLen){
             actual_line_component = line_component.substr(0, m_LineLen - 
                                                           line_length - 3);
-            actual_line_component += "...";
+            actual_line_component += kEllipsis;
         } else {
             actual_line_component = line_component.substr(0, m_LineLen - 
                                                           line_length);
@@ -1538,7 +1550,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
         if(line_component.size() > m_LineLen){
             actual_line_component = line_component.substr(0, m_LineLen - 
                                                           line_length - 3);
-            actual_line_component += "...";
+            actual_line_component += kEllipsis;
         } else {
             actual_line_component = line_component.substr(0, m_LineLen - 
                                                           line_length);

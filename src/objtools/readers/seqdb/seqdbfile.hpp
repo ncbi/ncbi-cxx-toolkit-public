@@ -76,7 +76,6 @@ public:
     ///     The memory management layer object.
     CSeqDBRawFile(CSeqDBAtlas & atlas)
         : m_Atlas(atlas)
-
     {
     }
     
@@ -91,12 +90,15 @@ public:
     ///   true if the file was opened successfully.
     /// @param locked
     ///   The lock holder object for this thread.
-    bool Open(const string & name, CSeqDBLockHold & locked)
+    bool Open(const CSeqDB_Path & name, CSeqDBLockHold & locked)
     {
-        bool success = m_Atlas.GetFileSize(name, m_Length, locked);
+        _ASSERT(name.Valid());
+        
+        // FIXME: should use path even in atlas code
+        bool success = m_Atlas.GetFileSize(name.GetPathS(), m_Length, locked);
         
         if (success) {
-            m_FileName = name;
+            m_FileName = name.GetPathS();
         }
         
         return success;
