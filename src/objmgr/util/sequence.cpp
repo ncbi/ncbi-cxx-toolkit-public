@@ -503,27 +503,54 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
 
     CConstRef<CSeq_feat> feat_ref;
 
-    // Check if the sequence is circular
-    TSeqPos circular_length = kInvalidSeqPos;
-    try {
-        const CSeq_id* single_id = 0;
-        try {
-            loc.CheckId(single_id);
-        }
-        catch (CException&) {
-            single_id = 0;
-        }
-        if ( single_id ) {
-            CBioseq_Handle h = scope.GetBioseqHandle(*single_id);
-            if ( h
-                &&  h.IsSetInst_Topology()
-                &&  h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
-                circular_length = h.GetBioseqLength();
-            }
+    CBioseq_Handle h;
+    CRange<TSeqPos> range;
+    ENa_strand strand = eNa_strand_unknown;
+    if ( loc.IsWhole() ) {
+        h = scope.GetBioseqHandle(loc.GetWhole());
+        range = range.GetWhole();
+    }
+    else if ( loc.IsInt() ) {
+        const CSeq_interval& interval = loc.GetInt();
+        h = scope.GetBioseqHandle(interval.GetId());
+        range.SetFrom(interval.GetFrom());
+        range.SetTo(interval.GetTo());
+        if ( interval.IsSetStrand() ) {
+            strand = interval.GetStrand();
         }
     }
-    catch (CException& _DEBUG_ARG(e)) {
-        _TRACE("test for circularity failed: " << e.GetMsg());
+    else {
+        range = range.GetEmpty();
+    }
+
+    // Check if the sequence is circular
+    TSeqPos circular_length = kInvalidSeqPos;
+    if ( h ) {
+        if ( h.IsSetInst_Topology() &&
+             h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+            circular_length = h.GetBioseqLength();
+        }
+    }
+    else {
+        try {
+            const CSeq_id* single_id = 0;
+            try {
+                loc.CheckId(single_id);
+            }
+            catch (CException&) {
+                single_id = 0;
+            }
+            if ( single_id ) {
+                CBioseq_Handle h = scope.GetBioseqHandle(*single_id);
+                if ( h && h.IsSetInst_Topology() &&
+                     h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+                    circular_length = h.GetBioseqLength();
+                }
+            }
+        }
+        catch (CException& _DEBUG_ARG(e)) {
+            _TRACE("test for circularity failed: " << e.GetMsg());
+        }
     }
 
     try {
@@ -532,27 +559,53 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
             .SetFeatSubtype(feat_subtype)
             .SetOverlapType(annot_overlap_type)
             .SetResolveTSE();
-        CFeat_CI feat_it(scope, loc, sel);
-        for ( ;  feat_it;  ++feat_it) {
-            // treat subset as a special case
-            Int8 cur_diff = ( !revert_locations ) ?
-                TestForOverlap(feat_it->GetLocation(),
-                               loc,
-                               overlap_type,
-                               circular_length,
-                               &scope) :
-                TestForOverlap(loc,
-                               feat_it->GetLocation(),
-                               overlap_type,
-                               circular_length,
-                               &scope);
-            if (cur_diff < 0) {
-                continue;
-            }
+        if ( h ) {
+            CFeat_CI feat_it(h, range, strand, sel);
+            for ( ;  feat_it;  ++feat_it) {
+                // treat subset as a special case
+                Int8 cur_diff = ( !revert_locations ) ?
+                    TestForOverlap(feat_it->GetLocation(),
+                                   loc,
+                                   overlap_type,
+                                   circular_length,
+                                   &scope) :
+                    TestForOverlap(loc,
+                                   feat_it->GetLocation(),
+                                   overlap_type,
+                                   circular_length,
+                                   &scope);
+                if (cur_diff < 0) {
+                    continue;
+                }
 
-            TFeatScore sc(cur_diff,
-                          CConstRef<CSeq_feat>(&feat_it->GetMappedFeature()));
-            feats.push_back(sc);
+                TFeatScore sc(cur_diff,
+                              ConstRef(&feat_it->GetMappedFeature()));
+                feats.push_back(sc);
+            }
+        }
+        else {
+            CFeat_CI feat_it(scope, loc, sel);
+            for ( ;  feat_it;  ++feat_it) {
+                // treat subset as a special case
+                Int8 cur_diff = ( !revert_locations ) ?
+                    TestForOverlap(feat_it->GetLocation(),
+                                   loc,
+                                   overlap_type,
+                                   circular_length,
+                                   &scope) :
+                    TestForOverlap(loc,
+                                   feat_it->GetLocation(),
+                                   overlap_type,
+                                   circular_length,
+                                   &scope);
+                if (cur_diff < 0) {
+                    continue;
+                }
+
+                TFeatScore sc(cur_diff,
+                              ConstRef(&feat_it->GetMappedFeature()));
+                feats.push_back(sc);
+            }
         }
     }
     catch (CException&) {
