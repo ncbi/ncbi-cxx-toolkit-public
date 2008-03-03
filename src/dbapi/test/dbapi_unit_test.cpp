@@ -4837,7 +4837,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
 
             // Clean table ...
             {
-                sql = "INSERT INTO " + table_name;
+                sql = "DELETE FROM " + table_name;
 
                 auto_stmt->ExecuteUpdate( sql );
             }
@@ -4846,8 +4846,6 @@ void CDBAPIUnitTest::Test_Numeric(void)
             {
                 CVariant value1(eDB_Double);
                 CVariant value2(eDB_Double);
-
-                auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name );
 
                 sql = "INSERT INTO " + table_name + "(num_field1, num_field2) "
                     "VALUES(@value1, @value2)";
@@ -13545,7 +13543,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if(args.GetServerType() == CTestArguments::eSybase)
     {
         if (args.GetDriverName() != ftds8_driver
-            && args.GetDriverName() != ftds64_driver // Critical: Bad token from the server: Datastream processing out of sync
+	    // Critical: Bad token from the server: Datastream processing out of sync
+            // 03/03/08
+	    && args.GetDriverName() != ftds64_driver 
             && args.GetDriverName() != ftds_dblib_driver
            ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Iskhakov,
