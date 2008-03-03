@@ -1001,17 +1001,12 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                     }
                 }
                 else {
-		    CScope_Impl::TTSE_LockMatchSet tse_map;
-		    m_Scope->GetTSESetWithAnnots(bh, tse_map);
+                    CScope_Impl::TTSE_LockMatchSet tse_map;
+                    m_Scope->GetTSESetWithAnnots(bh, tse_map);
                     ITERATE (CScope_Impl::TTSE_LockMatchSet, tse_it, tse_map) {
                         tse.AddUsedTSE(tse_it->first);
-                        //ITERATE(CScope_Impl::TSeq_idSet, id_it, tse_it->second){
-                            found |= x_SearchTSE(tse_it->first, tse_it->second,
-                                                 master_range, 0);
-                            if ( x_NoMoreObjects() ) {
-                                break;
-                            }
-			    //}
+                        found |= x_SearchTSE(tse_it->first, tse_it->second,
+                                             master_range, 0);
                         if ( x_NoMoreObjects() ) {
                             break;
                         }
@@ -2153,19 +2148,14 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                 }
             }
             else {
-  	        CScope_Impl::TTSE_LockMatchSet tse_map;
-		m_Scope->GetTSESetWithAnnots(idit->first, tse_map);
+                CScope_Impl::TTSE_LockMatchSet tse_map;
+                m_Scope->GetTSESetWithAnnots(idit->first, tse_map);
                 ITERATE ( CScope_Impl::TTSE_LockMatchSet, tse_it, tse_map ) {
                     if ( tse ) {
                         tse->AddUsedTSE(tse_it->first);
                     }
-                    //ITERATE( CScope_Impl::TSeq_idSet, id_it, tse_it->second ) {
-                        found |= x_SearchTSE(tse_it->first, tse_it->second,
-                                             idit->second, cvt);
-                        if ( x_NoMoreObjects() ) {
-                            break;
-                        }
-			//}
+                    found |= x_SearchTSE(tse_it->first, tse_it->second,
+                                         idit->second, cvt);
                     if ( x_NoMoreObjects() ) {
                         break;
                     }

@@ -132,7 +132,7 @@ public:
     typedef CTSE_Lock                               TTSE_Lock;
     typedef CTSE_LockSet                            TTSE_LockSet;
     typedef set<CSeq_id_Handle>                     TSeq_idSet;
-    typedef vector< pair<TTSE_Lock, CSeq_id_Handle> >              TTSE_LockMatchSet;
+    typedef vector<pair<TTSE_Lock,CSeq_id_Handle> > TTSE_LockMatchSet;
     typedef CRef<CTSE_Info>                         TTSE_Ref;
     typedef CBlobIdKey                              TBlobId;
 
@@ -190,10 +190,11 @@ public:
     void UpdateAnnotIndex(const CSeq_entry_Info& entry_info);
     void UpdateAnnotIndex(const CSeq_annot_Info& annot_info);
 
-    void GetTSESetWithOrphanAnnots(const TSeq_idSet& ids, TTSE_LockMatchSet& tse_set);
+    void GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
+                                   TTSE_LockMatchSet& tse_set);
     void GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
-                                                const TTSE_Lock& tse,
-						TTSE_LockMatchSet& tse_set);
+                                   const TTSE_Lock& tse,
+                                   TTSE_LockMatchSet& tse_set);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return empty tse lock if the entry was not found or is not a TSE.
@@ -209,7 +210,8 @@ public:
 
     SSeqMatch_DS BestResolve(const CSeq_id_Handle& idh);
     typedef vector<SSeqMatch_DS> TSeqMatches;
-    TSeqMatches GetMatches(const CSeq_id_Handle& idh, const TTSE_LockSet& locks);
+    TSeqMatches GetMatches(const CSeq_id_Handle& idh,
+                           const TTSE_LockSet& locks);
 
     typedef vector<CSeq_id_Handle> TIds;
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);

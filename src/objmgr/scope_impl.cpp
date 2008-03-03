@@ -1881,7 +1881,7 @@ void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
         }
         CDataSource& ds = it->GetDataSource();
         TTSE_LockMatchSet_DS ds_lock;
-	ds.GetTSESetWithOrphanAnnots(ids, ds_lock);
+        ds.GetTSESetWithOrphanAnnots(ids, ds_lock);
         x_AddTSESetWithAnnots(lock, match, ds_lock, *it);
     }
 }
@@ -1917,8 +1917,8 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
     TBioseq_Lock bioseq = binfo.GetLock(null);
     TTSE_LockMatchSet_DS ds_lock;
     ds.GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
-				 bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock,
-				 ds_lock);
+                                 bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock,
+                                 ds_lock);
     x_AddTSESetWithAnnots(lock, match, ds_lock, ds_info);
 }
 
@@ -1933,8 +1933,8 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
     TBioseq_Lock bioseq = binfo.GetLock(null);
     TTSE_LockMatchSet_DS ds_lock;
     ds.GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
-				 bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock,
-				 ds_lock);
+                                 bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock,
+                                 ds_lock);
     CBioseq_ScopeInfo::TTSE_MatchSet match;
     x_AddTSESetWithAnnots(lock, match, ds_lock, ds_info);
 }

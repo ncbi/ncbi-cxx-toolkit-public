@@ -813,7 +813,8 @@ void CDataSource::x_AddTSEOrphanAnnots(TTSE_LockMatchSet& ret,
 }
 
 
-void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids, TTSE_LockMatchSet& ret)
+void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
+                                            TTSE_LockMatchSet& ret)
 {
     if ( m_Loader ) {
         // with loader installed we look only in TSEs reported by loader.
@@ -847,8 +848,8 @@ void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids, TTSE_LockMatc
 
 
 void CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
-                                       const TTSE_Lock& tse,
-					    TTSE_LockMatchSet& ret)
+                                            const TTSE_Lock& tse,
+                                            TTSE_LockMatchSet& ret)
 {
     // always add bioseq annotations
     x_AddTSEBioseqAnnots(ret, bioseq, tse);
