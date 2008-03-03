@@ -388,7 +388,7 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
     {{
         CDB_Connection* db_conn = x_GetConnection(conn);
 
-        AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_by_seqid_asn", 1));
+        AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_by_seqid_asn"));
         cmd->SetParam("@asnin", &asnIn);
         cmd->Send();
     
@@ -634,7 +634,7 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
     {{
         CDB_Connection* db_conn = x_GetConnection(conn);
     
-        AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_seqid4gi", 2));
+        AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_seqid4gi"));
         CDB_Int giIn = gi;
         CDB_TinyInt binIn = 1;
         cmd->SetParam("@gi", &giIn);
@@ -773,7 +773,7 @@ I_BaseCmd* CPubseqReader::x_SendRequest(const CBlob_id& blob_id,
                                         CDB_Connection* db_conn,
                                         const char* rpc)
 {
-    AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC(rpc, 3));
+    AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC(rpc));
     CDB_SmallInt satIn(blob_id.GetSat());
     CDB_Int satKeyIn(blob_id.GetSatKey());
     CDB_Int ext_feat(blob_id.GetSubSat());

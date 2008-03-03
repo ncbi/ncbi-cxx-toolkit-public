@@ -483,7 +483,7 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
     CDB_TinyInt text_in(!BINARY_REQUESTS);
     CDB_TinyInt text_out(0);
     
-    AutoPtr<CDB_RPCCmd> cmd(db_conn.RPC("os_asn_request", 5));
+    AutoPtr<CDB_RPCCmd> cmd(db_conn.RPC("os_asn_request"));
     cmd->SetParam("@service", &service);
     cmd->SetParam("@asnin", &short_asn);
     cmd->SetParam("@text", &text_in);
