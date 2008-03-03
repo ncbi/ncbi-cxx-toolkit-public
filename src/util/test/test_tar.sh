@@ -11,7 +11,7 @@ test -x "$tar"  ||  exit 0
 
 test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
 
-test_base="/tmp/test_tar.$$"
+test_base="${TMPDIR:-/tmp}/test_tar.$$"
 mkdir $test_base.1  ||  exit 1
 trap 'rm -rf $test_base* &' 0 1 2 15
 
