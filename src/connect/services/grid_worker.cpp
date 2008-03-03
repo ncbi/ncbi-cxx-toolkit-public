@@ -331,7 +331,6 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
                                  IWorkerNodeJobWatcher*     job_watcher)
     : m_JobFactory(job_factory),
       m_NSStorageFactory(storage_factory),
-      m_NSClientFactory(client_factory),
       m_JobWatcher(job_watcher),
       m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(4),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30),
@@ -339,6 +338,9 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
       m_UseEmbeddedStorage(false), m_CheckStatusPeriod(2),
       m_JobGetterSemaphore(1,1)
 {
+    m_SharedNSClient.reset(client_factory.CreateInstance());
+    m_SharedNSClient->SetProgramVersion(m_JobFactory.GetJobVersion());
+    m_SharedNSClient->SetConnMode(CNetServiceAPI_Base::eKeepConnection);
 }
 
 
@@ -373,7 +375,7 @@ void CGridWorkerNode::Run()
     bool      job_exists = false;
 
     int try_count = 0;
-    while (1) {
+    for (;;) {
         if (CGridGlobals::GetInstance().
             GetShutdownLevel() != CNetScheduleAdmin::eNoShutdown)
             break;
@@ -471,21 +473,6 @@ void CGridWorkerNode::Run()
     }
 
     LOG_POST_X(38, CTime(CTime::eCurrent).AsString() << " Worker Node has been stopped.");
-}
-
-const string& CGridWorkerNode::GetQueueName() const
-{
-    return GetNSClient().GetQueueName();
-}
-
-const string& CGridWorkerNode::GetClientName() const
-{
-    return GetNSClient().GetClientName();
-}
-
-const string& CGridWorkerNode::GetServiceName() const
-{
-    return GetNSClient().GetServiceName();
 }
 
 bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
@@ -603,7 +590,6 @@ void CGridWorkerNode::SetMasterWorkerNodes(const string& hosts)
 
 size_t CGridWorkerNode::GetServerOutputSize() const
 {
-    //CFastMutexGuard gurad(m_SharedClientMutex);
     return IsEmeddedStorageUsed() ?
         GetNSClient().GetServerParams().max_output_size : 0;
 }
@@ -688,22 +674,6 @@ bool CGridWorkerNode::IsExclusiveMode()
         return false;
     }
     return true;
-}
-
-CNetScheduleAPI& CGridWorkerNode::GetNSClient() const
-{
-    if ( !m_SharedNSClient.get() ) {
-        CFastMutexGuard guard(m_NSClientFactoryMutex);
-        m_SharedNSClient.reset(m_NSClientFactory.CreateInstance());
-        m_SharedNSClient->SetProgramVersion(m_JobFactory.GetJobVersion());
-        m_SharedNSClient->SetConnMode(CNetServiceAPI_Base::eKeepConnection);
-    }
-    return *m_SharedNSClient;
-}
-
-CNetScheduleExecuter CGridWorkerNode::GetNSExecuter() const
-{
-    return GetNSClient().GetExecuter();
 }
 
 

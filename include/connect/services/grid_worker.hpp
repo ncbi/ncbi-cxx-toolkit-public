@@ -386,8 +386,6 @@ public:
     virtual IWorkerNodeIdleTask* GetIdleTask() { return NULL; }
 };
 
-//DEFINE_STATIC_MUTEX(s_CreateJobMutex);
-
 template <typename TWorkerNodeJob>
 class CSimpleJobFactory : public IWorkerNodeJobFactory
 {
@@ -398,7 +396,6 @@ public:
     }
     virtual IWorkerNodeJob* CreateInstance(void)
     {
-        //CMutexGuard guard(s_CreateJobMutex);
         return new TWorkerNodeJob(*m_WorkerNodeInitContext);
     }
 
@@ -422,7 +419,6 @@ class CSimpleJobFactoryEx : public IWorkerNodeJobFactory
 public:
     virtual void Init(const IWorkerNodeInitContext& context)
     {
-        //CMutexGuard guard(s_CreateJobMutex);
         m_WorkerNodeInitContext = &context;
         try {
             m_IdleTask.reset(new TWorkerNodeIdleTask(*m_WorkerNodeInitContext));
@@ -436,7 +432,6 @@ public:
     }
     virtual IWorkerNodeJob* CreateInstance(void)
     {
-        //CMutexGuard guard(s_CreateJobMutex);
         return new TWorkerNodeJob(*m_WorkerNodeInitContext);
     }
     virtual IWorkerNodeIdleTask* GetIdleTask() { return m_IdleTask.get(); }
@@ -564,7 +559,6 @@ public:
 private:
     IWorkerNodeJobFactory&       m_JobFactory;
     IBlobStorageFactory&         m_NSStorageFactory;
-    INetScheduleClientFactory&   m_NSClientFactory;
     IWorkerNodeJobWatcher*       m_JobWatcher;
 
     mutable auto_ptr<CNetScheduleAPI>    m_SharedNSClient;
@@ -575,7 +569,6 @@ private:
     unsigned int                 m_InitThreads;
     unsigned int                 m_NSTimeout;
     unsigned int                 m_ThreadsPoolTimeout;
-    mutable CFastMutex           m_NSClientFactoryMutex;
     mutable CFastMutex           m_JobFactoryMutex;
     CFastMutex                   m_StorageFactoryMutex;
     CFastMutex                   m_JobWatcherMutex;
@@ -633,6 +626,31 @@ private:
     CGridWorkerNode& operator=(const CGridWorkerNode&);
 
 };
+
+inline const string& CGridWorkerNode::GetQueueName() const
+{
+    return GetNSClient().GetQueueName();
+}
+
+inline const string& CGridWorkerNode::GetClientName() const
+{
+    return GetNSClient().GetClientName();
+}
+
+inline const string& CGridWorkerNode::GetServiceName() const
+{
+    return GetNSClient().GetServiceName();
+}
+
+inline CNetScheduleAPI& CGridWorkerNode::GetNSClient() const
+{
+    return *m_SharedNSClient;
+}
+
+inline CNetScheduleExecuter CGridWorkerNode::GetNSExecuter() const
+{
+    return GetNSClient().GetExecuter();
+}
 
 
 class CGridWorkerNodeException : public CException
