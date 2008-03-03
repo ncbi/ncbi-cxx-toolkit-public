@@ -409,7 +409,7 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
         return false;
     }
     string comment = cf.GetComment();
-    unsigned int pos = NStr::Find(comment, "intergenic spacer");
+    string::size_type pos = NStr::Find(comment, "intergenic spacer");
     if (pos == NCBI_NS_STD::string::npos) {
         return false;
     }
@@ -432,7 +432,7 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
         delete spacer;
         return false;
     }
-    unsigned int start_after;
+    string::size_type start_after;
     start_after = NStr::Find(comment, ",", pos);
     if (start_after == NCBI_NS_STD::string::npos) {
         start_after = NStr::Find(comment, " and ", pos);
@@ -505,7 +505,7 @@ static string separators [] = {
 bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
 {
     string product = "";
-    unsigned int pos;
+    string::size_type pos;
     bool is_first = true;
     
     if (cf.GetData().Which() == CSeqFeatData::e_Rna) {
@@ -534,8 +534,8 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
     
     while (!NStr::IsBlank(product)) {
         string this_label = product;
-        unsigned int first_separator = NCBI_NS_STD::string::npos;
-        unsigned int separator_len = 0;
+        string::size_type first_separator = NCBI_NS_STD::string::npos;
+        string::size_type separator_len = 0;
         for (unsigned int i = 0; i < 4; i++) {
             pos = NStr::Find(product, separators[i]);
             if (pos != NCBI_NS_STD::string::npos 
@@ -554,7 +554,7 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
         }
     
         // find first of the recognized words to occur in the string
-        unsigned int first_word = NCBI_NS_STD::string::npos;
+        string::size_type first_word = NCBI_NS_STD::string::npos;
         unsigned int word_id = 0;
     
         for (unsigned int i = 0; i < NUM_MISC_RNA_WORDS && first_word == NCBI_NS_STD::string::npos; i++) {
@@ -1033,7 +1033,7 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
     if (NStr::Find(feature_clauses, "genes") != NCBI_NS_STD::string::npos) {
         pluralize = true;
     } else {
-        unsigned int pos = NStr::Find(feature_clauses, "gene");
+        string::size_type pos = NStr::Find(feature_clauses, "gene");
         if (pos != NCBI_NS_STD::string::npos
             && NStr::Find (feature_clauses, "gene", pos + 4) != NCBI_NS_STD::string::npos) {
             pluralize = true;

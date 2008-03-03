@@ -376,7 +376,7 @@ void CAutoDefModifierCombo::x_CleanUpTaxName (string &tax_name)
                || NStr::Equal(tax_name, "Human immunodeficiency virus 2", NStr::eNocase)) {
         tax_name = "HIV-2";
     } else if (!m_KeepParen) {
-        unsigned int pos = NStr::Find(tax_name, "(");
+        string::size_type pos = NStr::Find(tax_name, "(");
         if (pos != NCBI_NS_STD::string::npos) {
             tax_name = tax_name.substr(0, pos);
             NStr::TruncateSpacesInPlace(tax_name);
@@ -397,7 +397,7 @@ bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, co
             source_description += " ";
             string val = (*subSrcI)->GetName();
             // truncate value at first semicolon
-            unsigned int pos = NStr::Find(val, ";");
+            string::size_type pos = NStr::Find(val, ";");
             if (pos != NCBI_NS_STD::string::npos) {
                 val = val.substr(0, pos);
             }
@@ -428,7 +428,7 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
 
             string val = (*modI)->GetSubname();
             // truncate value at first semicolon
-            unsigned int pos = NStr::Find(val, ";");
+            string::size_type pos = NStr::Find(val, ";");
             if (pos != NCBI_NS_STD::string::npos) {
                 val = val.substr(0, pos);
             }
@@ -519,7 +519,7 @@ unsigned int CAutoDefModifierCombo::x_AddHIVModifiers (string &source_descriptio
 bool IsSpName (string taxname)
 {
     bool is_sp_name = false;
-    unsigned int pos = NStr::Find(taxname, " sp. ");
+    string::size_type pos = NStr::Find(taxname, " sp. ");
     if (pos != NCBI_NS_STD::string::npos
         && (pos < 2 || !NStr::StartsWith(taxname.substr(pos - 2), "f."))) {
         is_sp_name = true;
@@ -550,7 +550,7 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
     x_CleanUpTaxName(source_description);
     
     if (m_ExcludeSpOrgs) {
-        unsigned int pos = NStr::Find(source_description, " sp. ");
+        string::size_type pos = NStr::Find(source_description, " sp. ");
         if (pos != NCBI_NS_STD::string::npos
             && (pos < 2 || !NStr::StartsWith(source_description.substr(pos - 2), "f."))) {
             return source_description;

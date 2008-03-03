@@ -369,7 +369,7 @@ bool CAutoDefFeatureClause::x_FindNoncodingFeatureKeywordProduct (string comment
     if (NStr::IsBlank(comment) || NStr::IsBlank(keyword)) {
         return false;
     }
-    unsigned int start_pos = 0;
+    string::size_type start_pos = 0;
     
     while (start_pos != NCBI_NS_STD::string::npos) {
         start_pos = NStr::Find(comment, keyword, start_pos);
@@ -379,7 +379,7 @@ bool CAutoDefFeatureClause::x_FindNoncodingFeatureKeywordProduct (string comment
             if (!NStr::StartsWith(possible, "GenBank Accession Number")) {
                 product_name = possible;
                 // truncate at first semicolon
-                unsigned int end = NStr::Find(product_name, ";");
+                string::size_type end = NStr::Find(product_name, ";");
                 if (end != NCBI_NS_STD::string::npos) {
                     product_name = product_name.substr(0, end);
                 }
@@ -408,9 +408,9 @@ bool CAutoDefFeatureClause::x_GetNoncodingProductFeatProduct (string &product_na
         return false;
     }
     string comment = m_MainFeat.GetComment();
-    unsigned int start_pos = NStr::Find(comment, "nonfunctional ");
+    string::size_type start_pos = NStr::Find(comment, "nonfunctional ");
     if (start_pos != NCBI_NS_STD::string::npos) {
-        unsigned int sep_pos = NStr::Find (comment, " due to ", start_pos);
+        string::size_type sep_pos = NStr::Find (comment, " due to ", start_pos);
         if (sep_pos != NCBI_NS_STD::string::npos) {
             product_name = comment.substr(start_pos, sep_pos - start_pos);
             return true;
@@ -510,7 +510,7 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
                && m_MainFeat.CanGetComment()) {
         string comment = m_MainFeat.GetComment();
         if (!NStr::IsBlank(comment)) {
-            unsigned int pos = NStr::Find(comment, ";");
+            string::size_type pos = NStr::Find(comment, ";");
             if (pos != NCBI_NS_STD::string::npos) {
                 comment = comment.substr(0, pos);
             }
@@ -579,7 +579,7 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         }
        
         if (!NStr::IsBlank(label)) {
-            unsigned int pos = NStr::Find(label, ";");
+            string::size_type pos = NStr::Find(label, ";");
             if (pos != NCBI_NS_STD::string::npos) {
                 label = label.substr(0, pos);
             }
@@ -1321,7 +1321,7 @@ CAutoDefSatelliteClause::CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_f
                   : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
     string comment = m_MainFeat.GetComment();
-    unsigned int pos = NStr::Find(comment, ";");
+    string::size_type pos = NStr::Find(comment, ";");
     if (pos != NCBI_NS_STD::string::npos) {
         comment = comment.substr(0, pos);
     }
@@ -1403,7 +1403,7 @@ CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh
                 m_DescriptionChosen = true;
                 m_ShowTypewordFirst = false;
             } else {
-                unsigned int pos = NStr::Find(comment, ";");
+                string::size_type pos = NStr::Find(comment, ";");
                 if (pos != NCBI_NS_STD::string::npos) {
                     comment = comment.substr(0, pos);
                 }
@@ -1413,7 +1413,7 @@ CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh
             }
         }
     } else {
-        unsigned int pos = NStr::Find(comment, "intergenic spacer");
+        string::size_type pos = NStr::Find(comment, "intergenic spacer");
         if (pos != NCBI_NS_STD::string::npos) {
             m_Description = comment.substr(0, pos);
             NStr::TruncateSpacesInPlace(m_Description);
@@ -1496,7 +1496,7 @@ CAutoDefGeneClusterClause::CAutoDefGeneClusterClause(CBioseq_Handle bh, const CS
     m_ShowTypewordFirst = false;
     string comment = m_MainFeat.GetComment();
     
-    unsigned int pos = NStr::Find(comment, "gene cluster");
+    string::size_type pos = NStr::Find(comment, "gene cluster");
     if (pos == NCBI_NS_STD::string::npos) {
         pos = NStr::Find(comment, "gene locus");
         m_Typeword = "gene locus";
@@ -1533,7 +1533,7 @@ CAutoDefMiscCommentClause::CAutoDefMiscCommentClause(CBioseq_Handle bh, const CS
 {
     if (m_MainFeat.CanGetComment()) {
         m_Description = m_MainFeat.GetComment();
-        unsigned int pos = NStr::Find(m_Description, ";");
+        string::size_type pos = NStr::Find(m_Description, ";");
         if (pos != NCBI_NS_STD::string::npos) {
             m_Description = m_Description.substr(0, pos);
         }
