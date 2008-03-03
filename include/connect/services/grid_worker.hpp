@@ -273,6 +273,7 @@ public:
 
     size_t GetMaxServerOutputSize() const;
 
+    CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
 
 private:
     enum ECommitStatus {
@@ -288,8 +289,6 @@ private:
     bool IsJobExclusive() const        { return m_ExclusiveJob; }
     const string& GetErrMsg() const    { return m_Job.error_msg; }
 
-    friend class CWorkerNodeRequest;
-    CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
     bool IsJobCommitted() const    { return m_JobCommitted != eNotCommitted; }
     ECommitStatus GetCommitStatus() const    { return m_JobCommitted; }
     unsigned int GetJobNumber() const  { return m_JobNumber; }
@@ -526,6 +525,7 @@ public:
     unsigned int GetCheckStatusPeriod() const { return m_CheckStatusPeriod; }
     void SetCheckStatusPeriod(unsigned int sec) { m_CheckStatusPeriod = sec; }
     size_t GetServerOutputSize() const;
+
     /// Start jobs execution.
     ///
     void Run();
@@ -556,6 +556,8 @@ public:
 
     bool IsExclusiveMode();
 
+    unsigned int IncrementAndGetRequestCounter();
+
 private:
     IWorkerNodeJobFactory&       m_JobFactory;
     IBlobStorageFactory&         m_NSStorageFactory;
@@ -569,6 +571,7 @@ private:
     unsigned int                 m_InitThreads;
     unsigned int                 m_NSTimeout;
     unsigned int                 m_ThreadsPoolTimeout;
+    CAtomicCounter               m_RequestCounter;
     mutable CFastMutex           m_JobFactoryMutex;
     CFastMutex                   m_StorageFactoryMutex;
     CFastMutex                   m_JobWatcherMutex;
@@ -650,6 +653,11 @@ inline CNetScheduleAPI& CGridWorkerNode::GetNSClient() const
 inline CNetScheduleExecuter CGridWorkerNode::GetNSExecuter() const
 {
     return GetNSClient().GetExecuter();
+}
+
+inline unsigned int CGridWorkerNode::IncrementAndGetRequestCounter()
+{
+    return (unsigned) m_RequestCounter.Add(1);
 }
 
 

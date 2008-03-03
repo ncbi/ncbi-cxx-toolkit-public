@@ -249,52 +249,58 @@ inline void s_HandleRunJobError(CGridThreadContext& thr_context, exception* ex =
 
 static void s_RunJob(CGridThreadContext& thr_context)
 {
-    bool more_jobs = false;
+    bool more_jobs;
+
+    CWorkerNodeJobContext& job_context = thr_context.GetJobContext();
+
     do {
         more_jobs = false;
-        CNetScheduleJob new_job;
-    try {
-        CRef<IWorkerNodeJob> job(thr_context.GetJob());
-        int ret_code = 0;
-        try {
-            ret_code = job->Do(thr_context.GetJobContext());
-        } catch (CGridWorkerNodeException& ex) {
-            if (ex.GetErrCode() != CGridWorkerNodeException::eExclusiveModeIsAlreadySet)
-                throw;
-            if (thr_context.GetJobContext().IsLogRequested()) {
-                LOG_POST_X(21, CTime(CTime::eCurrent).AsString()
-                           << " Job " << thr_context.GetJobContext().GetJobKey()
-                           << " has been returned back to the queue because it "
-                           << "requested an Exclusive Mode but another job is "
-                           << "already have the exclusive status.");
-            }
-        }
-        thr_context.CloseStreams();
-        int try_count = 0;
-        while(1) {
-            try {
-                if (thr_context.IsJobCommitted()) {
-                    more_jobs = thr_context.PutResult(ret_code,new_job);
-                } else {
-                    thr_context.ReturnJob();
-                }
-                break;
-            } catch (CNetServiceException& ex) {
-                if (ex.GetErrCode() != CNetServiceException::eTimeout || ++try_count >= 2)
-                    throw;
-                ERR_POST_X(22, CTime(CTime::eCurrent).AsString() << " Communication Error : " << ex.what());
-                SleepMilliSec(1000 + try_count*2000);
-            }
-        }
-    }
-    catch (exception& ex) { s_HandleRunJobError(thr_context, &ex); }
-    catch(...) { s_HandleRunJobError(thr_context); }
 
-    thr_context.CloseStreams();
-    CWorkerNodeJobContext& job_context = thr_context.GetJobContext();
-    thr_context.Reset();
-    if (more_jobs)
-        thr_context.SetJobContext(job_context, new_job);
+        SetDiagRequestId((int) job_context.GetWorkerNode().
+            IncrementAndGetRequestCounter());
+
+        CNetScheduleJob new_job;
+        try {
+            CRef<IWorkerNodeJob> job(thr_context.GetJob());
+            int ret_code = 0;
+            try {
+                ret_code = job->Do(job_context);
+            } catch (CGridWorkerNodeException& ex) {
+                if (ex.GetErrCode() != CGridWorkerNodeException::eExclusiveModeIsAlreadySet)
+                    throw;
+                if (job_context.IsLogRequested()) {
+                    LOG_POST_X(21, CTime(CTime::eCurrent).AsString()
+                               << " Job " << job_context.GetJobKey()
+                               << " has been returned back to the queue because it "
+                               << "requested an Exclusive Mode but another job is "
+                               << "already have the exclusive status.");
+                }
+            }
+            thr_context.CloseStreams();
+            int try_count = 0;
+            for (;;) {
+                try {
+                    if (thr_context.IsJobCommitted()) {
+                        more_jobs = thr_context.PutResult(ret_code,new_job);
+                    } else {
+                        thr_context.ReturnJob();
+                    }
+                    break;
+                } catch (CNetServiceException& ex) {
+                    if (ex.GetErrCode() != CNetServiceException::eTimeout || ++try_count >= 2)
+                        throw;
+                    ERR_POST_X(22, CTime(CTime::eCurrent).AsString() << " Communication Error : " << ex.what());
+                    SleepMilliSec(1000 + try_count*2000);
+                }
+            }
+        }
+        catch (exception& ex) { s_HandleRunJobError(thr_context, &ex); }
+        catch(...) { s_HandleRunJobError(thr_context); }
+
+        thr_context.CloseStreams();
+        thr_context.Reset();
+        if (more_jobs)
+            thr_context.SetJobContext(job_context, new_job);
     } while (more_jobs);
 }
 
@@ -338,6 +344,7 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
       m_UseEmbeddedStorage(false), m_CheckStatusPeriod(2),
       m_JobGetterSemaphore(1,1)
 {
+    m_RequestCounter.Set(0);
     m_SharedNSClient.reset(client_factory.CreateInstance());
     m_SharedNSClient->SetProgramVersion(m_JobFactory.GetJobVersion());
     m_SharedNSClient->SetConnMode(CNetServiceAPI_Base::eKeepConnection);
