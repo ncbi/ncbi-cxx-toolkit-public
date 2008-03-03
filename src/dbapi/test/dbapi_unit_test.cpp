@@ -343,46 +343,6 @@ CDBAPIUnitTest::TestInit(void)
 
         auto_stmt->ExecuteUpdate( sql );
 
-        // Table for bulk insert ...
-        if ( m_args.GetServerType() == CTestArguments::eMsSql
-             || m_args.GetServerType() == CTestArguments::eMsSql2005) {
-            sql  = " CREATE TABLE #bulk_insert_table( \n";
-            sql += "    id INT PRIMARY KEY, \n";
-            sql += "    vc8000_field VARCHAR(8000) NULL, \n";
-            sql += "    int_field INT NULL, \n";
-            sql += "    bigint_field BIGINT NULL \n";
-            sql += " )";
-
-            // Create the table
-            auto_stmt->ExecuteUpdate(sql);
-
-            sql  = " CREATE TABLE #bin_bulk_insert_table( \n";
-            sql += "    id INT PRIMARY KEY, \n";
-            sql += "    vb8000_field VARBINARY(8000) NULL, \n";
-            sql += " )";
-
-            // Create the table
-            auto_stmt->ExecuteUpdate(sql);
-        } else
-        {
-            sql  = " CREATE TABLE #bulk_insert_table( \n";
-            sql += "    id INT PRIMARY KEY, \n";
-            sql += "    vc8000_field VARCHAR(1900) NULL, \n";
-            sql += "    int_field INT NULL \n";
-            sql += " )";
-
-            // Create the table
-            auto_stmt->ExecuteUpdate(sql);
-
-            sql  = " CREATE TABLE #bin_bulk_insert_table( \n";
-            sql += "    id INT PRIMARY KEY, \n";
-            sql += "    vb8000_field VARBINARY(1900) NULL \n";
-            sql += " )";
-
-            // Create the table
-            auto_stmt->ExecuteUpdate(sql);
-        }
-
         sql  = " CREATE TABLE #test_unicode_table ( \n";
         sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
         sql += "    nvc255_field NVARCHAR(255) NULL \n";
@@ -3610,9 +3570,39 @@ void
 CDBAPIUnitTest::Test_Bulk_Writing(void)
 {
     string sql;
+    string table_name = "#bin_bulk_insert_table";
+    // string table_name = "DBAPI_Sample..bin_bulk_insert_table";
 
     try {
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        if (table_name[0] == '#') {
+            // Table for bulk insert ...
+            if ( m_args.GetServerType() == CTestArguments::eMsSql
+                || m_args.GetServerType() == CTestArguments::eMsSql2005) {
+                sql  = " CREATE TABLE " + table_name + "( \n";
+                sql += "    id INT PRIMARY KEY, \n";
+                sql += "    vc8000_field VARCHAR(8000) NULL, \n";
+                sql += "    vb8000_field VARBINARY(8000) NULL, \n";
+                sql += "    int_field INT NULL, \n";
+                sql += "    bigint_field BIGINT NULL \n";
+                sql += " )";
+
+                // Create the table
+                auto_stmt->ExecuteUpdate(sql);
+            } else
+            {
+                sql  = " CREATE TABLE " + table_name + "( \n";
+                sql += "    id INT PRIMARY KEY, \n";
+                sql += "    vc8000_field VARCHAR(1900) NULL, \n";
+                sql += "    vb8000_field VARBINARY(1900) NULL, \n";
+                sql += "    int_field INT NULL \n";
+                sql += " )";
+
+                // Create the table
+                auto_stmt->ExecuteUpdate(sql);
+            }
+        }
 
 
         // VARBINARY ...
@@ -3621,26 +3611,28 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             const char char_val('2');
 
             // Clean table ...
-            auto_stmt->ExecuteUpdate( "DELETE FROM #bin_bulk_insert_table" );
+            auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name );
 
             // Insert data ...
             {
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert("#bin_bulk_insert_table")
+                    m_Conn->GetBulkInsert(table_name)
                     );
 
                 CVariant col1(eDB_Int);
-                CVariant col2(eDB_LongBinary, m_max_varchar_size);
+                CVariant col2(eDB_VarChar);
+                CVariant col3(eDB_LongBinary, m_max_varchar_size);
 
                 bi->Bind(1, &col1);
                 bi->Bind(2, &col2);
+                bi->Bind(3, &col3);
 
                 for(int i = 0; i < num_of_tests; ++i ) {
                     int int_value = m_max_varchar_size / num_of_tests * i;
                     string str_val(int_value , char_val);
 
                     col1 = int_value;
-                    col2 = CVariant::LongBinary(m_max_varchar_size,
+                    col3 = CVariant::LongBinary(m_max_varchar_size,
                                                 str_val.c_str(),
                                                 str_val.size()
                                                 );
@@ -3656,7 +3648,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 ) {
                 auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-                sql  = " SELECT id, vb8000_field FROM #bin_bulk_insert_table";
+                sql  = " SELECT id, vb8000_field FROM " + table_name;
                 sql += " ORDER BY id";
 
                 auto_stmt->SendSql( sql );
@@ -3690,7 +3682,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
         {
 
             // Clean table ...
-            auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
+            auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name );
 
             // INT collumn ...
             {
@@ -3699,14 +3691,14 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 // Insert data ...
                 {
                     auto_ptr<IBulkInsert> bi(
-                        m_Conn->GetBulkInsert("#bulk_insert_table")
+                        m_Conn->GetBulkInsert(table_name)
                         );
 
                     CVariant col1(eDB_Int);
                     CVariant col2(eDB_Int);
 
                     bi->Bind(1, &col1);
-                    bi->Bind(3, &col2);
+                    bi->Bind(4, &col2);
 
                     for(int i = 0; i < num_of_tests; ++i ) {
                         col1 = i;
@@ -3719,7 +3711,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
                 // Retrieve data ...
                 {
-                    sql  = " SELECT int_field FROM #bulk_insert_table";
+                    sql  = " SELECT int_field FROM " + table_name;
                     sql += " ORDER BY id";
 
                     auto_stmt->SendSql( sql );
@@ -3742,7 +3734,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             }
 
             // Clean table ...
-            auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
+            auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name );
 
             // BIGINT collumn ...
             // Sybase doesn't have BIGINT data type ...
@@ -3753,7 +3745,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 // Insert data ...
                 {
                     auto_ptr<IBulkInsert> bi(
-                        m_Conn->GetBulkInsert("#bulk_insert_table")
+                        m_Conn->GetBulkInsert(table_name)
                         );
 
                     CVariant col1(eDB_Int);
@@ -3764,7 +3756,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                     bi->Bind(1, &col1);
                     //bi->Bind(2, &col_tmp2);
                     //bi->Bind(3, &col_tmp3);
-                    bi->Bind(4, &col2);
+                    bi->Bind(5, &col2);
 
                     for(int i = 0; i < num_of_tests; ++i ) {
                         col1 = i;
@@ -3777,7 +3769,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
                 // Retrieve data ...
                 {
-                    sql  = " SELECT bigint_field FROM #bulk_insert_table";
+                    sql  = " SELECT bigint_field FROM " + table_name;
                     sql += " ORDER BY id";
 
                     auto_stmt->SendSql( sql );
@@ -3885,12 +3877,12 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             }
 
             // Clean table ...
-            auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
+            auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name );
 
             // Insert data ...
             {
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert("#bulk_insert_table")
+                    m_Conn->GetBulkInsert(table_name)
                     );
 
                 CVariant col1(eDB_Int);
@@ -3932,7 +3924,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             if (m_args.GetDriverName() != dblib_driver
                 && m_args.GetDriverName() != msdblib_driver
                 ) {
-                sql  = " SELECT id, vc8000_field FROM #bulk_insert_table";
+                sql  = " SELECT id, vc8000_field FROM " + table_name;
                 sql += " ORDER BY id";
 
                 auto_stmt->SendSql( sql );
@@ -8277,6 +8269,10 @@ CDBAPIUnitTest::Test_Procedure(void)
 void
 CDBAPIUnitTest::Test_Exception_Safety(void)
 {
+    string sql;
+    string table_name = "#exception_table";
+    // string table_name = "exception_table";
+
     // Very first test ...
     {
         // Try to catch a base class ...
@@ -8288,27 +8284,37 @@ CDBAPIUnitTest::Test_Exception_Safety(void)
     try {
         auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
 
-        auto_stmt->ExecuteUpdate("INSERT #bulk_insert_table(id) VALUES(17)");
+        if (table_name[0] == '#') {
+            sql  = " CREATE TABLE " + table_name + "( \n";
+            sql += "    id INT PRIMARY KEY \n";
+            sql += " )";
+
+            // Create the table
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+
+        auto_stmt->ExecuteUpdate("INSERT " + table_name + "(id) VALUES(17)");
 
         try {
             // Try to insert duplicate value ...
-            auto_stmt->ExecuteUpdate("INSERT #bulk_insert_table(id) VALUES(17)");
+            auto_stmt->ExecuteUpdate("INSERT " + table_name + "(id) VALUES(17)");
         } catch (const CDB_Exception&) {
             // ignore it ...
         }
 
         try {
             // execute invalid statement ...
-            auto_stmt->ExecuteUpdate("ISERT #bulk_insert_table(id) VALUES(17)");
+            auto_stmt->ExecuteUpdate("ISERT " + table_name + "(id) VALUES(17)");
         } catch (const CDB_Exception&) {
             // ignore it ...
         }
 
         // Check status of the statement ...
         if (false) {
-            auto_stmt->ExecuteUpdate("SELECT max(id) FROM #bulk_insert_table");
+            auto_stmt->ExecuteUpdate("SELECT max(id) FROM " + table_name);
         } else {
-            auto_stmt->SendSql("SELECT max(id) FROM #bulk_insert_table");
+            auto_stmt->SendSql("SELECT max(id) FROM " + table_name);
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
                     auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );

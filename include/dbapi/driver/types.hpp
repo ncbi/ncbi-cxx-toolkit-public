@@ -97,6 +97,14 @@ public:
     CWString& operator=(const CWString& str);
 
 public:
+    operator const string&(void) const
+    {
+        if (!(GetAvailableValueType() & eString)) {
+            x_MakeString();
+        }
+
+        return m_String;
+    }
     operator char*(void) const
     {
         if (!(GetAvailableValueType() & eChar)) {
@@ -237,7 +245,7 @@ public:
 
     virtual EDB_Type    GetType() const = 0;
     virtual CDB_Object* Clone()   const = 0;
-    virtual void AssignValue(CDB_Object& v)= 0;
+    virtual void AssignValue(const CDB_Object& v) = 0;
 
     // Create and return a new object (with internal value NULL) of type "type".
     // NOTE:  "size" matters only for eDB_Char, eDB_Binary, eDB_LongChar, eDB_LongBinary.
@@ -279,6 +287,7 @@ private:
 //
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_Int : public CDB_Object
 {
 public:
@@ -297,7 +306,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone() const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
     Int4 m_Val;
@@ -305,6 +314,7 @@ protected:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_SmallInt : public CDB_Object
 {
 public:
@@ -323,7 +333,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone() const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
     Int2 m_Val;
@@ -331,6 +341,7 @@ protected:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_TinyInt : public CDB_Object
 {
 public:
@@ -349,7 +360,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
     Uint1 m_Val;
@@ -357,6 +368,7 @@ protected:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_BigInt : public CDB_Object
 {
 public:
@@ -376,14 +388,14 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
     Int8 m_Val;
 };
 
 
-// Abstract base class.
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_String : public CDB_Object
 {
 public:
@@ -394,13 +406,27 @@ public:
     explicit CDB_String(const char* s,
                         string::size_type size = string::npos,
                         EEncoding enc = eEncoding_Unknown);
+    explicit CDB_String(const string& s,
+                        string::size_type size = string::npos,
+                        EEncoding enc = eEncoding_Unknown);
     virtual ~CDB_String(void);
 
 public:
-    // assignment operators
+    // Assignment operators
     CDB_String& operator= (const CDB_String& other);
     CDB_String& operator= (const string& s);
     CDB_String& operator= (const char* s);
+
+public:
+    // Conversion operators
+    operator const char*(void) const
+    {
+        return m_WString;
+    }
+    operator const string&(void) const
+    {
+        return m_WString;
+    }
 
 public:
 #if defined(HAVE_WSTRING)
@@ -413,7 +439,7 @@ public:
 
     const char* Value(void) const
     {
-        return IsNULL() ? 0 : static_cast<const char*>(m_WString);
+        return IsNULL() ? NULL : static_cast<const char*>(m_WString);
     }
     size_t Size(void) const
     {
@@ -423,9 +449,10 @@ public:
 public:
     // set-value methods
     void Assign(const CDB_String& other);
-    void Assign(const string& s,
-                EEncoding enc = eEncoding_Unknown);
     void Assign(const char* s,
+                string::size_type size = string::npos,
+                EEncoding enc = eEncoding_Unknown);
+    void Assign(const string& s,
                 string::size_type size = string::npos,
                 EEncoding enc = eEncoding_Unknown);
 
@@ -434,12 +461,10 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_VarChar : public CDB_String
 {
 public:
-    enum { kMaxVarCharSize = 8000 + 1 };
-
-    // constructors
     CDB_VarChar(void);
     CDB_VarChar(const string& s,
                 EEncoding enc = eEncoding_Unknown);
@@ -455,6 +480,7 @@ public:
     CDB_VarChar& operator= (const string& s)  { return SetValue(s); }
     CDB_VarChar& operator= (const char*   s)  { return SetValue(s); }
 
+public:
     // set-value methods
     CDB_VarChar& SetValue(const string& s,
                           EEncoding enc = eEncoding_Unknown);
@@ -463,30 +489,22 @@ public:
     CDB_VarChar& SetValue(const char* s, size_t l,
                           EEncoding enc = eEncoding_Unknown);
 
-    //
-    const char* Value() const  { return IsNULL() ? 0 : m_Val;  }
-    size_t      Size()  const  { return IsNULL() ? 0 : m_Size; }
-
+public:
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
-    virtual void AssignValue(CDB_Object& v);
-
-protected:
-    size_t m_Size;
-    char   m_Val[kMaxVarCharSize];
+    virtual void AssignValue(const CDB_Object& v);
 };
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_Char : public CDB_String
 {
 public:
-    enum { kMaxCharSize = 255 };
-
     CDB_Char(size_t s = 1);
     CDB_Char(size_t s,
              const string& v,
              EEncoding enc = eEncoding_Unknown);
-    // This ctoe copies a string.
-    CDB_Char(size_t len,
+    // This ctor copies a string.
+    CDB_Char(size_t s,
              const char* str,
              EEncoding enc = eEncoding_Unknown);
     CDB_Char(const CDB_Char& v);
@@ -498,30 +516,24 @@ public:
     // This operator copies a string.
     CDB_Char& operator= (const char* v);
 
+public:
     // This method copies a string.
     void SetValue(const char* str,
                   size_t len,
                   EEncoding enc = eEncoding_Unknown);
 
-    //
-    const char* Value() const  { return IsNULL() ? 0 : m_Val; }
-    size_t      Size()  const  { return IsNULL() ? 0 : m_Size; }
-
+public:
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
 
-    virtual void AssignValue(CDB_Object& v);
-
-private:
-    void SetValue(const char* str);
-    void SetValueInternal(const char* str, size_t len);
-    void SetValue(const string& str);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
-    size_t      m_Size; // Number of characters not including last '\0'
-    char*       m_Val;
+    size_t      m_Size; // Number of characters (not bytes)
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
 #define K8_1 8191
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_LongChar : public CDB_String
@@ -551,27 +563,24 @@ public:
                   EEncoding enc = eEncoding_Unknown);
 
     //
-    const char* Value() const  { return IsNULL() ? 0 : m_Val; }
     size_t      Size()  const  { return IsNULL() ? 0 : m_Size; }
-    size_t  DataSize()  const  { return IsNULL() ? 0 : strlen(m_Val); }
+    size_t  DataSize()  const  { return CDB_String::Size(); }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
 
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
-    size_t      m_Size;
-    char*       m_Val;
+    size_t      m_Size; // Number of characters (not bytes)
 };
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_VarBinary : public CDB_Object
 {
 public:
-    enum { kMaxVarBinarySize = 8000 };
-
     CDB_VarBinary();
     CDB_VarBinary(const void* v, size_t l);
     virtual ~CDB_VarBinary(void);
@@ -579,26 +588,26 @@ public:
 public:
     void SetValue(const void* v, size_t l);
 
+    CDB_VarBinary& operator= (const CDB_VarBinary& v);
+   
     //
-    const void* Value() const  { return IsNULL() ? 0 : (void*) m_Val; }
-    size_t      Size()  const  { return IsNULL() ? 0 : m_Size; }
+    const void* Value() const  { return IsNULL() ? NULL : (void*) m_Value.c_str(); }
+    size_t      Size()  const  { return IsNULL() ? 0 : m_Value.size(); }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
-    size_t        m_Size;
-    unsigned char m_Val[kMaxVarBinarySize];
+    string m_Value;
 };
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_Binary : public CDB_Object
 {
 public:
-    enum { kMaxBinSize = 255 };
-
     CDB_Binary(size_t s = 1);
     CDB_Binary(size_t s, const void* v, size_t v_size);
     CDB_Binary(const CDB_Binary& v);
@@ -610,19 +619,21 @@ public:
     CDB_Binary& operator= (const CDB_Binary& v);
 
     //
-    const void* Value() const  { return IsNULL() ? 0 : (void*) m_Val; }
-    size_t      Size()  const  { return m_Size; }
+    const void* Value() const  { return IsNULL() ? NULL : (void*) m_Value.c_str(); }
+    size_t      Size()  const  { return IsNULL() ? 0 : m_Value.size(); }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
 
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
-    size_t         m_Size;
-    unsigned char* m_Val;
+    size_t m_Size;
+    string m_Value;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_LongBinary : public CDB_Object
 {
 public:
@@ -638,22 +649,23 @@ public:
     CDB_LongBinary& operator= (const CDB_LongBinary& v);
 
     //
-    const void* Value() const  { return IsNULL() ? 0 : (void*) m_Val; }
-    size_t      Size()  const  { return m_Size; }
+    const void* Value() const  { return IsNULL() ? NULL : (void*) m_Value.c_str(); }
+    size_t      Size()  const  { return IsNULL() ? 0 : m_Value.size(); }
     size_t  DataSize()  const  { return m_DataSize; }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
 
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
-    size_t         m_Size;
-    size_t         m_DataSize;
-    unsigned char* m_Val;
+    size_t m_Size;
+    size_t m_DataSize;
+    string m_Value;
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_Float : public CDB_Object
 {
 public:
@@ -669,7 +681,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
     float m_Val;
@@ -677,6 +689,7 @@ protected:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_Double : public CDB_Object
 {
 public:
@@ -693,15 +706,15 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
     double m_Val;
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
 class CMemStore;
-
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Stream : public CDB_Object
 {
@@ -718,7 +731,7 @@ public:
 
     // current size of data
     virtual size_t Size() const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
     // 'ctors
@@ -732,6 +745,7 @@ private:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_Image : public CDB_Stream
 {
 public:
@@ -747,6 +761,7 @@ public:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_Text : public CDB_Stream
 {
 public:
@@ -765,6 +780,7 @@ public:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_SmallDateTime : public CDB_Object
 {
 public:
@@ -783,7 +799,7 @@ public:
 
     virtual EDB_Type    GetType(void) const;
     virtual CDB_Object* Clone(void)   const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
     mutable CTime        m_NCBITime;
@@ -794,6 +810,7 @@ protected:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_DateTime : public CDB_Object
 {
 public:
@@ -813,7 +830,7 @@ public:
 
     virtual EDB_Type    GetType(void) const;
     virtual CDB_Object* Clone(void)   const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
     mutable CTime        m_NCBITime;
@@ -824,6 +841,7 @@ protected:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_Bit : public CDB_Object
 {
 public:
@@ -841,7 +859,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
     Uint1 m_Val;
@@ -849,6 +867,7 @@ protected:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_Numeric : public CDB_Object
 {
 public:
@@ -883,7 +902,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
-    virtual void AssignValue(CDB_Object& v);
+    virtual void AssignValue(const CDB_Object& v);
 
 protected:
     void x_MakeFromString(unsigned int precision,
