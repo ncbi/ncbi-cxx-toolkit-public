@@ -2547,7 +2547,7 @@ void CFeatList::GetDescriptions(vector<string> &descs, bool hierarchical) const
 
 string x_SpaceToDash(string str1)
 {
-    unsigned int pos = 0;
+    string::size_type pos = 0;
     while ((pos = NStr::Find(str1, " ", pos)) != NCBI_NS_STD::string::npos) {
         str1[pos] = '-';
     }
