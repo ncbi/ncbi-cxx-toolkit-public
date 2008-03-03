@@ -1338,7 +1338,7 @@ x_BuildGetSeqPartsRequest(objects::CSeq_id & seqid,     // in
                           int                end_pos,   // in
                           string           & errors)    // out
 {
-    errors.clear();
+    errors.erase();
     
     // This will be returned in an Empty() state if an error occurs.
     CRef<CBlast4_request> request;
