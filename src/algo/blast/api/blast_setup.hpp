@@ -196,7 +196,7 @@ public:
     /// @note default implementation still gets it one character at a time
     virtual void GetStrandData(objects::ENa_strand strand,
                                unsigned char* buf) {
-        if ( IsForward(strand) ) {
+        if ( objects::IsForward(strand) ) {
             x_SetPlusStrand();
         } else {
             x_SetMinusStrand();
