@@ -131,7 +131,7 @@ inline void AdjustSlice(ssize_t& i, ssize_t& j, size_t size)
     if (i < 0) {
         i = 0;
     }
-    if (j > size) {
+    if (static_cast<size_t>(j) > size) {
         j = size;
     }
 }

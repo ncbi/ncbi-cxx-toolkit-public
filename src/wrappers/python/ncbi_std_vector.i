@@ -110,9 +110,9 @@ namespace std {
 
         %typemap(out) vector<T> {
             $result = PyList_New($1.size());
-            for (ssize_t i = 0; i < $1.size(); ++i) {
+            for (size_t i = 0; i < $1.size(); ++i) {
                 T* obj = new T($1[i]);
-                PyList_SetItem($result, i,
+                PyList_SetItem($result, static_cast<ssize_t>(i),
                                SWIG_NewPointerObj((void *) obj,
                                                   $descriptor(T*), 1));
             }
@@ -207,12 +207,12 @@ namespace std {
                               const std::vector<T>& values) {
                 size_t size = self->size();
                 AdjustSlice(i, j, size);
-                if (values.size() == j - i) {
+                if (values.size() == static_cast<size_t>(j - i)) {
                     std::copy(values.begin(), values.end(),
                               self->begin() + i);
                 } else {
                     self->erase(self->begin() + i, self->begin() + j);
-                    if (i < self->size()) {
+                    if (static_cast<size_t>(i) < self->size()) {
                         self->insert(self->begin() + i,
                                      values.begin(), values.end());
                     } else {
@@ -306,8 +306,9 @@ namespace std {
 
         %typemap(out) vector<T > {
             $result = PyList_New($1.size());
-            for (ssize_t i = 0; i < $1.size(); ++i) {
-                PyList_SetItem($result, i, FROM_CPP($1[i]));
+            for (size_t i = 0; i < $1.size(); ++i) {
+                PyList_SetItem($result, static_cast<ssize_t>(i),
+                               FROM_CPP($1[i]));
             }
         }
 
@@ -400,12 +401,12 @@ namespace std {
                               const std::vector<T >& values) {
                 size_t size = self->size();
                 AdjustSlice(i, j, size);
-                if (values.size() == j - i) {
+                if (values.size() == static_cast<size_t>(j - i)) {
                     std::copy(values.begin(), values.end(),
                               self->begin() + i);
                 } else {
                     self->erase(self->begin() + i, self->begin() + j);
-                    if (i < self->size()) {
+                    if (static_cast<size_t>(i) < self->size()) {
                         self->insert(self->begin() + i,
                                      values.begin(), values.end());
                     } else {
