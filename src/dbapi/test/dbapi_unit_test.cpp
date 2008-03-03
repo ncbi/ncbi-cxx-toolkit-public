@@ -4646,6 +4646,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
             auto_stmt->ExecuteUpdate( sql );
         }
 
+	// First test ...
         {
             // Initialization ...
             {
@@ -4806,6 +4807,61 @@ void CDBAPIUnitTest::Test_Numeric(void)
                 }
             }
         }
+
+	// Second test ...
+	{
+	    /*
+	    double double_array[] = {
+		87832866,
+		2661188789U,
+		2661188789U,
+		30811,
+		0.00115779083871678,
+		16727456,
+		0.628570812756419,
+		2536866043U,
+		95.3283004004118,
+		0,
+		8583,
+		0.000322525032251667,
+		13634779,
+		0.512356697741973,
+		93921117,
+		3.52929177321887,
+		40319553,
+		160410,
+		1218,
+		125
+	    };
+	    */
+
+            // Clean table ...
+            {
+                sql = "INSERT INTO " + table_name;
+
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            // Insert data using parameters ...
+            {
+                CVariant value1(eDB_Double);
+                CVariant value2(eDB_Double);
+
+                auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name );
+
+                sql = "INSERT INTO " + table_name + "(num_field1, num_field2) "
+                    "VALUES(@value1, @value2)";
+
+                //
+                {
+                    // TODO
+                }
+
+                // ClearParamList is necessary here ...
+                auto_stmt->ClearParamList();
+            }
+
+	}
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -13005,11 +13061,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (!(args.GetDriverName() == ftds64_driver
-        && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+          && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
         && !(args.GetDriverName() == ftds8_driver
-        && args.GetServerType() == CTestArguments::eSybase)
+             && args.GetServerType() == CTestArguments::eSybase)
         && !(args.GetDriverName() == ftds_dblib_driver
-        && args.GetServerType() == CTestArguments::eSybase)
+             && args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Create_Destroy,
                                 DBAPIInstance);
@@ -13118,7 +13174,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
 
         // Doesn't work at the moment ...
-        if (args.GetDriverName() != ftds8_driver
+        if (args.GetDriverName() != ftds8_driver // memory access violation 03/03/08 
             && args.GetDriverName() != ftds_odbc_driver
             && args.GetDriverName() != odbc_driver
             && args.GetDriverName() != odbcw_driver
@@ -13147,14 +13203,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_parameters);
             add(tc);
 
-            if (args.GetDriverName() != ftds8_driver) {
+            {
                 tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor2,
                                         DBAPIInstance);
                 tc->depends_on(tc_init);
                 tc->depends_on(tc_parameters);
                 add(tc);
-            } else {
-                PutMsgDisabled("Test_Cursor2");
             }
 
 
