@@ -54,6 +54,9 @@ void CMappedGraph::MakeMappedLoc(void) const
         m_MappedGraph.Reset();
         m_MappedLoc.Reset();
         CRef<CSeq_loc> created_loc;
+        if ( !m_Collector->m_CreatedMapped ) {
+            m_Collector->m_CreatedMapped.Reset(new CCreatedFeat_Ref);
+        }
         m_Collector->m_CreatedMapped->ReleaseRefsTo(0, &created_loc, 0, 0);
         m_GraphRef->GetMappingInfo().UpdateMappedSeq_loc(created_loc);
         m_MappedLoc = created_loc;
@@ -76,7 +79,9 @@ CSeq_graph_Handle CMappedGraph::GetSeq_graph_Handle(void) const
 
 CSeq_annot_Handle CMappedGraph::GetAnnot(void) const
 {
-    return m_Collector->GetAnnot(*m_GraphRef);
+    CSeq_annot_Handle annot_handle;
+    m_Collector->SetAnnotHandle(annot_handle, *m_GraphRef);
+    return annot_handle;
 }
 
 

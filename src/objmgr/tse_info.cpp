@@ -352,9 +352,13 @@ CBioObjectId CTSE_Info::x_IndexBioseq(CBioseq_Info* info)
     CBioObjectId uniq_id;
     _ASSERT(info->GetBioObjectId().GetType() == CBioObjectId::eUnSet);
     ITERATE ( CBioseq_Info::TId, it, info->GetId() ) {
-        x_SetBioseqId(*it, info);
-        if ( it->IsGi() )
+        if ( it->IsGi() ) {
             uniq_id = CBioObjectId(*it);
+            break;
+        }
+    }
+    if ( !info->GetId().empty() ) {
+        x_SetBioseqIds(info);
     }
     if (uniq_id.GetType() == CBioObjectId::eUnSet) {
         if (!info->GetId().empty()) 
@@ -781,6 +785,30 @@ void CTSE_Info::x_SetBioseqId(const CSeq_id_Handle& id,
     }}
     // register this TSE in data source as containing the sequence
     x_IndexSeqTSE(id);
+}
+
+
+void CTSE_Info::x_SetBioseqIds(CBioseq_Info* info)
+{
+    _ASSERT(info);
+    {{
+        CFastMutexGuard guard(m_BioseqsMutex);
+        ITERATE ( CBioseq_Info::TId, it, info->GetId() ) {
+            pair<TBioseqs::iterator, bool> ins =
+                m_Bioseqs.insert(TBioseqs::value_type(*it, info));
+            if ( !ins.second ) {
+                // No duplicate bioseqs in the same TSE
+                NCBI_THROW(CObjMgrException, eAddDataError,
+                           "duplicate Bioseq id "+it->AsString()+" present in"+
+                           "\n  seq1: " + ins.first->second->IdString()+
+                           "\n  seq2: " + info->IdString());
+            }
+        }
+    }}
+    // register this TSE in data source as containing the sequence
+    if ( HasDataSource() ) {
+        GetDataSource().x_IndexSeqTSE(info->GetId(), this);
+    }
 }
 
 

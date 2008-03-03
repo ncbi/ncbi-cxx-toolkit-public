@@ -252,7 +252,8 @@ private:
 
     const TAnnotSet& GetAnnotSet(void) const;
     CScope& GetScope(void) const;
-    CSeq_annot_Handle GetAnnot(const CAnnotObject_Ref& ref) const;
+    void SetAnnotHandle(CSeq_annot_Handle& annot_handle,
+                        const CAnnotObject_Ref& ref) const;
 
     const SAnnotSelector& GetSelector(void);
     CScope::EGetBioseqFlag GetGetFlag(void) const;
@@ -323,18 +324,21 @@ private:
     void x_AddPostMappings(void);
     void x_AddTSE(const CTSE_Handle& tse);
     void x_AddAnnot(const CAnnotObject_Ref& ref);
+    void x_CreateAnnotHandle(CSeq_annot_Handle& annot_handle,
+                             const CSeq_annot_Info* info) const;
 
     // Set of processed annot-locs to avoid duplicates
     typedef set< CConstRef<CSeq_loc> >   TAnnotLocsSet;
     typedef map<const CTSE_Info*, CTSE_Handle> TTSE_LockMap;
-    typedef map<const CSeq_annot_Info*, CSeq_annot_Handle> TAnnotLockMap;
+    typedef vector<CSeq_annot_Handle> TAnnotLocks;
     typedef SAnnotSelector::TAnnotTypesBitset TAnnotTypesBitset;
 
     const SAnnotSelector*            m_Selector;
     CHeapScope                       m_Scope;
     // TSE set to keep all the TSEs locked
     TTSE_LockMap                     m_TSE_LockMap;
-    TAnnotLockMap                    m_AnnotLockMap;
+    CSeq_annot_Handle                m_FirstAnnotLock;
+    TAnnotLocks                      m_AnnotLocks;
     auto_ptr<CAnnotMappingCollector> m_MappingCollector;
     // Set of all the annotations found
     TAnnotSet                        m_AnnotSet;

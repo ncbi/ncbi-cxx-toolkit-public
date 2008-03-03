@@ -765,13 +765,13 @@ void CDataSource::x_AddTSEAnnots(TTSE_LockMatchSet& ret,
         id.GetReverseMatchingHandles(ids);
         ITERATE ( CSeq_id_Handle::TMatches, id_it2, ids ) {
             if ( tse.x_HasIdObjects(*id_it2) ) {
-                ret[tse_lock].insert(*id_it2);
+                ret.push_back(pair<TTSE_Lock, CSeq_id_Handle>(tse_lock, *id_it2));
             }
         }
     }
     else if ( id.IsGi() || !tse.OnlyGiAnnotIds()  ) {
         if ( tse.x_HasIdObjects(id) ) {
-            ret[tse_lock].insert(id);
+            ret.push_back(pair<TTSE_Lock, CSeq_id_Handle>(tse_lock, id));
         }
     }
 }
@@ -813,11 +813,8 @@ void CDataSource::x_AddTSEOrphanAnnots(TTSE_LockMatchSet& ret,
 }
 
 
-CDataSource::TTSE_LockMatchSet
-CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids)
+void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids, TTSE_LockMatchSet& ret)
 {
-    TTSE_LockMatchSet ret;
-
     if ( m_Loader ) {
         // with loader installed we look only in TSEs reported by loader.
 
@@ -846,17 +843,13 @@ CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids)
             x_AddTSEOrphanAnnots(ret, ids, tse_it->second);
         }
     }
-
-    return ret;
 }
 
 
-CDataSource::TTSE_LockMatchSet
-CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
-                                       const TTSE_Lock& tse)
+void CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
+                                       const TTSE_Lock& tse,
+					    TTSE_LockMatchSet& ret)
 {
-    TTSE_LockMatchSet ret;
-
     // always add bioseq annotations
     x_AddTSEBioseqAnnots(ret, bioseq, tse);
 
@@ -910,14 +903,12 @@ CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
                         if ( *tse_it == tse ) {
                             continue;
                         }
-                        ret[m_StaticBlobs.FindLock(*tse_it)].insert(*id_it);
+                        ret.push_back(pair<TTSE_Lock, CSeq_id_Handle>(m_StaticBlobs.FindLock(*tse_it), *id_it));
                     }
                 }
             }
         }
     }
-
-    return ret;
 }
 
 
@@ -955,6 +946,17 @@ void CDataSource::x_IndexSeqTSE(const CSeq_id_Handle& id,
     // no need to lock as it's locked by callers
     TMainLock::TWriteLockGuard guard(m_DSMainLock);
     x_IndexTSE(m_TSE_seq, id, tse_info);
+}
+
+
+void CDataSource::x_IndexSeqTSE(const vector<CSeq_id_Handle>& ids,
+                                CTSE_Info* tse_info)
+{
+    // no need to lock as it's locked by callers
+    TMainLock::TWriteLockGuard guard(m_DSMainLock);
+    ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
+        x_IndexTSE(m_TSE_seq, *it, tse_info);
+    }
 }
 
 
@@ -1099,13 +1101,13 @@ SSeqMatch_DS CDataSource::x_GetSeqMatch(const CSeq_id_Handle& idh,
 }
 
 
-SSeqMatch_DS CDataSource::BestResolve(CSeq_id_Handle idh)
+SSeqMatch_DS CDataSource::BestResolve(const CSeq_id_Handle& idh)
 {
     return x_GetSeqMatch(idh, x_GetRecords(idh, CDataLoader::eBioseqCore));
 }
 
 
-CDataSource::TSeqMatches CDataSource::GetMatches(CSeq_id_Handle idh,
+CDataSource::TSeqMatches CDataSource::GetMatches(const CSeq_id_Handle& idh,
                                                  const TTSE_LockSet& history)
 {
     TSeqMatches ret;

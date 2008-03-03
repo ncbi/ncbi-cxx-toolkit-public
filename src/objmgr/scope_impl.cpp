@@ -1775,11 +1775,8 @@ void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info,
 }
 
 
-CScope_Impl::TTSE_LockMatchSet
-CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
+void CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh, TTSE_LockMatchSet& lock)
 {
-    TTSE_LockMatchSet lock;
-
     {{
         TConfReadLockGuard rguard(m_ConfLock);
         TSeq_idMapValue& info = x_GetSeq_id_Info(idh);
@@ -1818,15 +1815,11 @@ CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
             }
         }
     }}
-
-    return lock;
 }
 
 
-CScope_Impl::TTSE_LockMatchSet
-CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh)
+void CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh, TTSE_LockMatchSet& lock)
 {
-    TTSE_LockMatchSet lock;
     if ( bh ) {
         TConfReadLockGuard rguard(m_ConfLock);
         CRef<CBioseq_ScopeInfo> binfo
@@ -1850,7 +1843,6 @@ CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh)
         }
 #endif
     }
-    return lock;
 }
 
 
@@ -1859,11 +1851,20 @@ void CScope_Impl::x_AddTSESetWithAnnots(TTSE_LockMatchSet& lock,
                                         const TTSE_LockMatchSet_DS& add,
                                         CDataSource_ScopeInfo& ds_info)
 {
+/*
     ITERATE( TTSE_LockMatchSet_DS, it, add ) {
         CTSE_Handle tse(*x_GetTSE_Lock(it->first, ds_info));
         CTSE_ScopeInfo& tse_info = tse.x_GetScopeInfo();
         match[Ref(&tse_info)].insert(it->second.begin(), it->second.end());
         lock[tse].insert(it->second.begin(), it->second.end());
+    }
+*/
+    lock.reserve(add.size());
+    ITERATE( TTSE_LockMatchSet_DS, it, add ) {
+        CTSE_Handle tse(*x_GetTSE_Lock(it->first, ds_info));
+        CTSE_ScopeInfo& tse_info = tse.x_GetScopeInfo();
+        match.push_back(TTSE_MatchSet::value_type(Ref(&tse_info), it->second));
+        lock.push_back(pair<CTSE_Handle, CSeq_id_Handle>(tse, it->second));
     }
 }
 
@@ -1879,7 +1880,8 @@ void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
             continue;
         }
         CDataSource& ds = it->GetDataSource();
-        TTSE_LockMatchSet_DS ds_lock = ds.GetTSESetWithOrphanAnnots(ids);
+        TTSE_LockMatchSet_DS ds_lock;
+	ds.GetTSESetWithOrphanAnnots(ids, ds_lock);
         x_AddTSESetWithAnnots(lock, match, ds_lock, *it);
     }
 }
@@ -1913,9 +1915,10 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
     // datasource annotations on all ids of Bioseq
     // add external annots
     TBioseq_Lock bioseq = binfo.GetLock(null);
-    TTSE_LockMatchSet_DS ds_lock =
-        ds.GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
-                                     bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock);
+    TTSE_LockMatchSet_DS ds_lock;
+    ds.GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
+				 bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock,
+				 ds_lock);
     x_AddTSESetWithAnnots(lock, match, ds_lock, ds_info);
 }
 
@@ -1928,9 +1931,10 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
     // datasource annotations on all ids of Bioseq
     // add external annots
     TBioseq_Lock bioseq = binfo.GetLock(null);
-    TTSE_LockMatchSet_DS ds_lock =
-        ds.GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
-                                     bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock);
+    TTSE_LockMatchSet_DS ds_lock;
+    ds.GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
+				 bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock,
+				 ds_lock);
     CBioseq_ScopeInfo::TTSE_MatchSet match;
     x_AddTSESetWithAnnots(lock, match, ds_lock, ds_info);
 }
@@ -1939,9 +1943,11 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
 void CScope_Impl::x_LockMatchSet(TTSE_LockMatchSet& lock,
                                  const TTSE_MatchSet& match)
 {
-    ITERATE ( TTSE_MatchSet, it, match ) {
-        lock[*x_GetTSE_Lock(*it->first)].insert(it->second.begin(),
-                                                it->second.end());
+    size_t size = match.size();
+    lock.resize(size);
+    for ( size_t i = 0; i < size; ++i ) {
+        lock[i].first = *x_GetTSE_Lock(*match[i].first);
+        lock[i].second = match[i].second;
     }
 }
 

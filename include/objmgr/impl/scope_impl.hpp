@@ -135,7 +135,7 @@ public:
     typedef map<CSeq_id_Handle, SSeq_id_ScopeInfo>   TSeq_idMap;
     typedef TSeq_idMap::value_type                   TSeq_idMapValue;
     typedef set<CSeq_id_Handle>                      TSeq_idSet;
-    typedef map<CTSE_Handle, TSeq_idSet>             TTSE_LockMatchSet;
+    typedef vector< pair<CTSE_Handle, CSeq_id_Handle> >             TTSE_LockMatchSet;
     typedef int                                      TPriority;
     typedef map<CConstRef<CObject>, CRef<CObject> >  TEditInfoMap;
     typedef map<CRef<CDataSource>, CRef<CDataSource_ScopeInfo> > TDSMap;
@@ -342,8 +342,8 @@ private:
     // Return the highest priority loader or null
     CDataSource* GetFirstLoaderSource(void);
 
-    TTSE_LockMatchSet GetTSESetWithAnnots(const CSeq_id_Handle& idh);
-    TTSE_LockMatchSet GetTSESetWithAnnots(const CBioseq_Handle& bh);
+    void GetTSESetWithAnnots(const CSeq_id_Handle& idh, TTSE_LockMatchSet& tse_set);
+    void GetTSESetWithAnnots(const CBioseq_Handle& bh, TTSE_LockMatchSet& tse_set);
 
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);

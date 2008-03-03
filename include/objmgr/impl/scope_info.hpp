@@ -425,7 +425,7 @@ class NCBI_XOBJMGR_EXPORT CBioseq_ScopeInfo : public CScopeInfo_Base
 public:
     typedef CRef<CTSE_ScopeInfo>                        TTSE_ScopeInfo;
     typedef set<CSeq_id_Handle>                         TSeq_idSet;
-    typedef map<TTSE_ScopeInfo, TSeq_idSet>             TTSE_MatchSet;
+    typedef vector< pair<TTSE_ScopeInfo, CSeq_id_Handle> >             TTSE_MatchSet;
     typedef CObjectFor<TTSE_MatchSet>                   TTSE_MatchSetObject;
     typedef CInitMutex<TTSE_MatchSetObject>             TAnnotRefInfo;
     typedef TIndexIds                                   TIds;

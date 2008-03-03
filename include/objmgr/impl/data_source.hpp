@@ -38,8 +38,6 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objmgr/data_loader.hpp>
 
-#include <util/mutex_pool.hpp>
-
 #include <corelib/ncbimtx.hpp>
 
 //#define DEBUG_MAPS
@@ -134,7 +132,7 @@ public:
     typedef CTSE_Lock                               TTSE_Lock;
     typedef CTSE_LockSet                            TTSE_LockSet;
     typedef set<CSeq_id_Handle>                     TSeq_idSet;
-    typedef map<TTSE_Lock, TSeq_idSet>              TTSE_LockMatchSet;
+    typedef vector< pair<TTSE_Lock, CSeq_id_Handle> >              TTSE_LockMatchSet;
     typedef CRef<CTSE_Info>                         TTSE_Ref;
     typedef CBlobIdKey                              TBlobId;
 
@@ -192,9 +190,10 @@ public:
     void UpdateAnnotIndex(const CSeq_entry_Info& entry_info);
     void UpdateAnnotIndex(const CSeq_annot_Info& annot_info);
 
-    TTSE_LockMatchSet GetTSESetWithOrphanAnnots(const TSeq_idSet& ids);
-    TTSE_LockMatchSet GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
-                                                const TTSE_Lock& tse);
+    void GetTSESetWithOrphanAnnots(const TSeq_idSet& ids, TTSE_LockMatchSet& tse_set);
+    void GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
+                                                const TTSE_Lock& tse,
+						TTSE_LockMatchSet& tse_set);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return empty tse lock if the entry was not found or is not a TSE.
@@ -208,9 +207,9 @@ public:
                     CSeq_inst::EMol filter,
                     TBioseqLevelFlag level);
 
-    SSeqMatch_DS BestResolve(CSeq_id_Handle idh);
+    SSeqMatch_DS BestResolve(const CSeq_id_Handle& idh);
     typedef vector<SSeqMatch_DS> TSeqMatches;
-    TSeqMatches GetMatches(CSeq_id_Handle idh, const TTSE_LockSet& locks);
+    TSeqMatches GetMatches(const CSeq_id_Handle& idh, const TTSE_LockSet& locks);
 
     typedef vector<CSeq_id_Handle> TIds;
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
@@ -374,7 +373,8 @@ private:
     void x_UnindexTSE(TSeq_id2TSE_Set& tse_map,
                       const CSeq_id_Handle& id, CTSE_Info* tse_info);
     void x_IndexSeqTSE(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
-    void x_UnindexSeqTSE(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
+    void x_IndexSeqTSE(const vector<CSeq_id_Handle>& idh, CTSE_Info* tse_info);
+    void x_UnindexSeqTSE(const CSeq_id_Handle& ids, CTSE_Info* tse_info);
     void x_IndexAnnotTSE(const CSeq_id_Handle& idh,
                          CTSE_Info* tse_info,
                          bool orphan);
@@ -440,9 +440,6 @@ private:
     // Prefetching thread and lock, used when initializing the thread
     CRef<CPrefetchThreadOld> m_PrefetchThread;
     CFastMutex            m_PrefetchLock;
-
-    // mutex pool
-    CInitMutexPool  m_MutexPool;
 
     // hide copy constructor
     CDataSource(const CDataSource&);

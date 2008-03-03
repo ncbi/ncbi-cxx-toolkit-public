@@ -889,9 +889,7 @@ public:
 
 CAnnot_Collector::CAnnot_Collector(CScope& scope)
     : m_Selector(0),
-      m_Scope(scope),
-      m_CreatedOriginal(new CCreatedFeat_Ref),
-      m_CreatedMapped(new CCreatedFeat_Ref)
+      m_Scope(scope)
 {
 }
 
@@ -921,7 +919,8 @@ void CAnnot_Collector::x_Clear(void)
 {
     m_AnnotSet.clear();
     m_MappingCollector.reset();
-    m_AnnotLockMap.clear();
+    m_FirstAnnotLock.Reset();
+    m_AnnotLocks.clear();
     m_TSE_LockMap.clear();
     m_Scope = CHeapScope();
     m_Selector = 0;
@@ -1002,17 +1001,17 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                     }
                 }
                 else {
-                    CScope_Impl::TTSE_LockMatchSet tse_map =
-                        m_Scope->GetTSESetWithAnnots(bh);
+		    CScope_Impl::TTSE_LockMatchSet tse_map;
+		    m_Scope->GetTSESetWithAnnots(bh, tse_map);
                     ITERATE (CScope_Impl::TTSE_LockMatchSet, tse_it, tse_map) {
                         tse.AddUsedTSE(tse_it->first);
-                        ITERATE(CScope_Impl::TSeq_idSet, id_it, tse_it->second){
-                            found |= x_SearchTSE(tse_it->first, *id_it,
+                        //ITERATE(CScope_Impl::TSeq_idSet, id_it, tse_it->second){
+                            found |= x_SearchTSE(tse_it->first, tse_it->second,
                                                  master_range, 0);
                             if ( x_NoMoreObjects() ) {
                                 break;
                             }
-                        }
+			    //}
                         if ( x_NoMoreObjects() ) {
                             break;
                         }
@@ -1235,6 +1234,111 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
 }
 
 
+void CAnnot_Collector::x_AddTSE(const CTSE_Handle& tse)
+{
+    const CTSE_Info* key = &tse.x_GetTSE_Info();
+    _ASSERT(key);
+    TTSE_LockMap::iterator iter = m_TSE_LockMap.lower_bound(key);
+    if ( iter == m_TSE_LockMap.end() || iter->first != key ) {
+        iter = m_TSE_LockMap.insert(iter, TTSE_LockMap::value_type(key, tse));
+    }
+    _ASSERT(iter != m_TSE_LockMap.end());
+    _ASSERT(iter->first == key);
+    _ASSERT(iter->second == tse);
+}
+
+
+
+struct SLessByInfo
+{
+    bool operator()(const CSeq_annot_Handle& a,
+                    const CSeq_annot_Handle& b) const
+        {
+            return &a.x_GetInfo() < &b.x_GetInfo();
+        }
+    bool operator()(const CSeq_annot_Handle& a,
+                    const CSeq_annot_Info* b) const
+        {
+            return &a.x_GetInfo() < b;
+        }
+    bool operator()(const CSeq_annot_Info* a,
+                    const CSeq_annot_Handle& b) const
+        {
+            return a < &b.x_GetInfo();
+        }
+    bool operator()(const CSeq_annot_Info* a,
+                    const CSeq_annot_Info* b) const
+        {
+            return a < b;
+        }
+};
+
+
+void CAnnot_Collector::x_CreateAnnotHandle(CSeq_annot_Handle& annot_handle,
+                                           const CSeq_annot_Info* info) const
+{
+    TTSE_LockMap::const_iterator tse_it =
+        m_TSE_LockMap.find(&info->GetTSE_Info());
+    _ASSERT(tse_it != m_TSE_LockMap.end());
+    annot_handle = CSeq_annot_Handle(*info, tse_it->second);
+}
+
+
+void CAnnot_Collector::SetAnnotHandle(CSeq_annot_Handle& annot_handle,
+                                      const CAnnotObject_Ref& ref) const
+{
+    const CSeq_annot_Info* info;
+    if ( ref.IsSNPFeat() ) {
+        info = &ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
+    }
+    else {
+        info = &ref.GetSeq_annot_Info();
+    }
+
+    _ASSERT(m_FirstAnnotLock);
+    if ( info == &m_FirstAnnotLock.x_GetInfo() ) {
+        annot_handle = m_FirstAnnotLock;
+        return;
+    }
+    
+    TAnnotLocks::const_iterator it =
+        lower_bound(m_AnnotLocks.begin(), m_AnnotLocks.end(),
+                    info, SLessByInfo());
+    _ASSERT(it != m_AnnotLocks.end() && &it->x_GetInfo() == info);
+    annot_handle = *it;
+}
+
+
+void CAnnot_Collector::x_AddAnnot(const CAnnotObject_Ref& ref)
+{
+    const CSeq_annot_Info* info;
+    if ( ref.IsSNPFeat() ) {
+        info = &ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
+    }
+    else {
+        info = &ref.GetSeq_annot_Info();
+    }
+
+    if ( !m_FirstAnnotLock ) {
+        x_CreateAnnotHandle(m_FirstAnnotLock, info);
+        return;
+    }
+    if ( info == &m_FirstAnnotLock.x_GetInfo() ) {
+        return;
+    }
+    
+    for ( int i = m_AnnotLocks.size(), limit = 10; i-- && limit--; ) {
+        if ( info == &m_AnnotLocks[i].x_GetInfo() ) {
+            return;
+        }
+    }
+    
+    CSeq_annot_Handle annot_handle;
+    x_CreateAnnotHandle(annot_handle, info);
+    m_AnnotLocks.push_back(annot_handle);
+}
+
+
 inline
 void CAnnot_Collector::x_AddObject(CAnnotObject_Ref& ref)
 {
@@ -1314,6 +1418,16 @@ void CAnnot_Collector::x_Sort(void)
     default:
         // do nothing
         break;
+    }
+    if ( !m_AnnotLocks.empty() ) {
+        sort(m_AnnotLocks.begin(), m_AnnotLocks.end(), SLessByInfo());
+        m_AnnotLocks.erase(unique(m_AnnotLocks.begin(), m_AnnotLocks.end()),
+                           m_AnnotLocks.end());
+        if ( binary_search(m_AnnotLocks.begin(), m_AnnotLocks.end(),
+                           m_FirstAnnotLock, SLessByInfo()) ) {
+            m_FirstAnnotLock = m_AnnotLocks.back();
+            m_AnnotLocks.pop_back();
+        }
     }
 }
 
@@ -1432,7 +1546,6 @@ void CAnnot_Collector::x_GetTSE_Info(void)
 {
     // only one TSE is needed
     _ASSERT(m_TSE_LockMap.empty());
-    _ASSERT(m_AnnotLockMap.empty());
     _ASSERT(m_Selector->m_LimitObjectType != SAnnotSelector::eLimit_None);
     _ASSERT(m_Selector->m_LimitObject);
     
@@ -1465,62 +1578,6 @@ void CAnnot_Collector::x_GetTSE_Info(void)
     _ASSERT(m_Selector->m_LimitObject);
     _ASSERT(m_Selector->m_LimitTSE);
     x_AddTSE(m_Selector->m_LimitTSE);
-}
-
-
-void CAnnot_Collector::x_AddTSE(const CTSE_Handle& tse)
-{
-    const CTSE_Info* key = &tse.x_GetTSE_Info();
-    _ASSERT(key);
-    TTSE_LockMap::iterator iter = m_TSE_LockMap.lower_bound(key);
-    if ( iter == m_TSE_LockMap.end() || iter->first != key ) {
-        iter = m_TSE_LockMap.insert(iter, TTSE_LockMap::value_type(key, tse));
-    }
-    _ASSERT(iter != m_TSE_LockMap.end());
-    _ASSERT(iter->first == key);
-    _ASSERT(iter->second == tse);
-}
-
-
-void CAnnot_Collector::x_AddAnnot(const CAnnotObject_Ref& ref)
-{
-    const CSeq_annot_Info* info;
-    if ( ref.IsSNPFeat() ) {
-        info = &ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
-    }
-    else {
-        info = &ref.GetSeq_annot_Info();
-    }
-
-    TAnnotLockMap::iterator iter = m_AnnotLockMap.lower_bound(info);
-    if ( iter != m_AnnotLockMap.end() && iter->first == info ) {
-        return;
-    }
-
-    TTSE_LockMap::const_iterator tse_it =
-        m_TSE_LockMap.find(&info->GetTSE_Info());
-    _ASSERT(tse_it != m_TSE_LockMap.end());
-
-    iter = m_AnnotLockMap.insert(iter,
-        TAnnotLockMap::value_type(info,
-                                  CSeq_annot_Handle(*info, tse_it->second)));
-    _ASSERT(iter != m_AnnotLockMap.end() && iter->first == info);
-}
-
-
-CSeq_annot_Handle CAnnot_Collector::GetAnnot(const CAnnotObject_Ref& ref) const
-{
-    const CSeq_annot_Info* info;
-    if ( ref.IsSNPFeat() ) {
-        info = &ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
-    }
-    else {
-        info = &ref.GetSeq_annot_Info();
-    }
-
-    TAnnotLockMap::const_iterator iter = m_AnnotLockMap.find(info);
-    _ASSERT(iter != m_AnnotLockMap.end());
-    return iter->second;
 }
 
 
@@ -1765,22 +1822,31 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
     bool enough = false;
 
+    typedef vector<const CTSE_Chunk_Info*> TStubs;
     typedef map<const CTSE_Split_Info*, CTSE_Split_Info::TChunkIds> TStubMap;
-    TStubMap stubs;
+    TStubs stubs;
     do {
         if ( !stubs.empty() ) {
             _ASSERT(!enough);
+
+            TStubMap stubmap;
+            ITERATE ( TStubs, it, stubs ) {
+                const CTSE_Chunk_Info& chunk = **it;
+                stubmap[&chunk.GetSplitInfo()].
+                    push_back(chunk.GetChunkId());
+            }
+            stubs.clear();
+
             CAnnotName name(annot_name);
             // Release lock for tse update:
             guard.Release();
-            ITERATE(TStubMap, it, stubs) {
+            ITERATE(TStubMap, it, stubmap) {
                 if ( m_Selector->m_MaxSize != kMax_UInt ) {
                     it->first->LoadChunk(*it->second.begin());
                     break;
                 }
                 it->first->LoadChunks(it->second);
             }
-            stubs.clear();
 
             // Acquire the lock again:
             guard.Guard(tse.GetAnnotLock());
@@ -1836,8 +1902,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                             // Update start index for the new search
                             from_idx = index;
                         }
-                        stubs[&chunk.GetSplitInfo()].
-                            push_back(chunk.GetChunkId());
+                        stubs.push_back(&chunk);
                     }
                     if ( !stubs.empty() ) {
                         _ASSERT(!enough);
@@ -2088,19 +2153,19 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                 }
             }
             else {
-                CScope_Impl::TTSE_LockMatchSet tse_map =
-                    m_Scope->GetTSESetWithAnnots(idit->first);
+  	        CScope_Impl::TTSE_LockMatchSet tse_map;
+		m_Scope->GetTSESetWithAnnots(idit->first, tse_map);
                 ITERATE ( CScope_Impl::TTSE_LockMatchSet, tse_it, tse_map ) {
                     if ( tse ) {
                         tse->AddUsedTSE(tse_it->first);
                     }
-                    ITERATE( CScope_Impl::TSeq_idSet, id_it, tse_it->second ) {
-                        found |= x_SearchTSE(tse_it->first, *id_it,
+                    //ITERATE( CScope_Impl::TSeq_idSet, id_it, tse_it->second ) {
+                        found |= x_SearchTSE(tse_it->first, tse_it->second,
                                              idit->second, cvt);
                         if ( x_NoMoreObjects() ) {
                             break;
                         }
-                    }
+			//}
                     if ( x_NoMoreObjects() ) {
                         break;
                     }

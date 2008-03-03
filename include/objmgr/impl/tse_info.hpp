@@ -401,6 +401,7 @@ private:
     void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
     void x_SetBioseqId(const CSeq_id_Handle& id, CBioseq_Info* info);
+    void x_SetBioseqIds(CBioseq_Info* info);
     void x_ResetBioseqId(const CSeq_id_Handle& id, CBioseq_Info* info);
 
     void x_SetBioseq_setId(int key, CBioseq_set_Info* info);
