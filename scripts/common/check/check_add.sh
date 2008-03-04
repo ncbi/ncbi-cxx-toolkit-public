@@ -90,17 +90,17 @@ fi
 x_run=`echo "$x_run" | sed -e 's/ /%gj_s4%/g'`
 
 # Specified files to copy to the build directory
-x_files=`grep '^ *CHECK_COPY' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
+x_files=`grep '^ *CHECK_COPY' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 # Get application's check timeout
-x_timeout=`grep '^ *CHECK_TIMEOUT' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
+x_timeout=`grep '^ *CHECK_TIMEOUT' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 x_timeout="${x_timeout:-$x_timeout_default}"
 # Get application's requirement
-x_requires=`grep '^ *CHECK_REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
+x_requires=`grep '^ *CHECK_REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 if test -z "$x_requires"; then
-   x_requires=`grep '^ *REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
+   x_requires=`grep '^ *REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 fi
 # Get list of autors to report errors
-x_authors=`grep '^ *CHECK_AUTHORS' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
+x_authors=`grep '^ *CHECK_AUTHORS' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 
 # Write data about current test into the list file
 for x_cmd in $x_run; do
