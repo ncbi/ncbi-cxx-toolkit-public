@@ -42,7 +42,7 @@
 // TODO: remove the following includes
 #define REGISTER_READER_ENTRY_POINTS 1
 #ifdef REGISTER_READER_ENTRY_POINTS
-# include <objtools/data_loaders/genbank/readers/readers.hpp>
+# include <objtools/data_loaders/genbank/readers.hpp>
 #endif
 
 #include <objtools/data_loaders/genbank/seqref.hpp>

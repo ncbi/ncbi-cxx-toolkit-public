@@ -31,10 +31,10 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
 
-#include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
-#include <objtools/data_loaders/genbank/readers/id1/reader_id1_entry.hpp>
-#include <objtools/data_loaders/genbank/readers/id1/reader_id1_params.h>
-#include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
+#include <objtools/data_loaders/genbank/id1/reader_id1.hpp>
+#include <objtools/data_loaders/genbank/id1/reader_id1_entry.hpp>
+#include <objtools/data_loaders/genbank/id1/reader_id1_params.h>
+#include <objtools/data_loaders/genbank/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/error_codes.hpp>

@@ -29,10 +29,10 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
-#include <objtools/data_loaders/genbank/readers/pubseqos2/reader_pubseq2.hpp>
-#include <objtools/data_loaders/genbank/readers/pubseqos2/reader_pubseq2_entry.hpp>
-#include <objtools/data_loaders/genbank/readers/pubseqos2/reader_pubseq2_params.h>
-#include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
+#include <objtools/data_loaders/genbank/pubseq2/reader_pubseq2.hpp>
+#include <objtools/data_loaders/genbank/pubseq2/reader_pubseq2_entry.hpp>
+#include <objtools/data_loaders/genbank/pubseq2/reader_pubseq2_params.h>
+#include <objtools/data_loaders/genbank/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/error_codes.hpp>

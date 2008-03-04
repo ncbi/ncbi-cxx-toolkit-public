@@ -30,7 +30,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
+#include <objtools/data_loaders/genbank/id1/reader_id1.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
 

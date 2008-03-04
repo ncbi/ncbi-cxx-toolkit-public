@@ -30,7 +30,7 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
-#include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp>
+#include <objtools/data_loaders/genbank/pubseq/reader_pubseq.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objmgr/impl/tse_info.hpp>

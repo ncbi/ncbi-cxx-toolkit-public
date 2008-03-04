@@ -79,7 +79,7 @@
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/readers/cache/reader_cache.hpp>
+#include <objtools/data_loaders/genbank/cache/reader_cache.hpp>
 #include <objtools/data_loaders/genbank/processors.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/error_codes.hpp>
