@@ -1004,15 +1004,17 @@ BOOST_AUTO_TEST_CASE(GetSearchStrategy_QueryWithRange) {
 // Test that when no identifier is provided for the sequence data, a Bioseq
 // should be submitted
 BOOST_AUTO_TEST_CASE(GetSearchStrategy_QueryWithLocalIds) {
-    const bool kIsProt(false);
-    SDataLoaderConfig dlconfig(kIsProt);
-    CBlastInputSourceConfig input_config(dlconfig);
-    const string kUserInput("ACGTAGCAGCT");
-    CBlastFastaInputSource fasta_input(kUserInput, input_config);
-    CBlastInput blast_input(&fasta_input);
+
+    CSeq_entry seq_entry;
+    ifstream in("data/seq_entry_lcl_id.asn");
+    in >> MSerial_AsnText >> seq_entry;
+    CSeq_id& id = const_cast<CSeq_id&>(*seq_entry.GetSeq().GetFirstId());
+    in.close();
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
-    TSeqLocVector query_loc = blast_input.GetAllSeqLocs(*scope);
+    scope->AddTopLevelSeqEntry(seq_entry);
+    CRef<CSeq_loc> sl(new CSeq_loc(id, (TSeqPos)0, (TSeqPos)11));
+    TSeqLocVector query_loc(1, SSeqLoc(sl, scope));
     CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(query_loc));
     const string kDbName("nt");
     const CSearchDatabase target_db(kDbName,
@@ -1044,15 +1046,25 @@ BOOST_AUTO_TEST_CASE(GetSearchStrategy_QueryWithLocalIds) {
 // Test that when GIs are provided as the queries, no bioseq
 // should be submitted, instead a list of seqlocs should be sent
 BOOST_AUTO_TEST_CASE(GetSearchStrategy_QueryWithGIs) {
-    const bool kIsProt(false);
-    SDataLoaderConfig dlconfig(kIsProt);
-    CBlastInputSourceConfig input_config(dlconfig);
-    const string kUserInput("555\n556");
-    CBlastFastaInputSource fasta_input(kUserInput, input_config);
-    CBlastInput blast_input(&fasta_input);
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
-    TSeqLocVector query_loc = blast_input.GetAllSeqLocs(*scope);
+    typedef pair<int, int> TGiLength;
+    vector<TGiLength> gis;
+    gis.push_back(TGiLength(555, 624));
+    gis.push_back(TGiLength(556, 310));
+    ifstream in("data/seq_entry_gis.asn");
+    TSeqLocVector query_loc;
+
+    ITERATE(vector<TGiLength>, gi, gis) {
+        CRef<CSeq_entry> seq_entry(new CSeq_entry);
+        in >> MSerial_AsnText >> *seq_entry;
+        scope->AddTopLevelSeqEntry(*seq_entry);
+        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, gi->first));
+        CRef<CSeq_loc> sl(new CSeq_loc(*id, 0, gi->second));
+        query_loc.push_back(SSeqLoc(sl, scope));
+    }
+    in.close();
+
     CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(query_loc));
     const string kDbName("nt");
     const CSearchDatabase target_db(kDbName,

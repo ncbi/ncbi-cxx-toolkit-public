@@ -5,8 +5,6 @@
 
 
 LIB_PROJ = xblast
-# Uses blastinput, even though it might not be built yet.
-EXPENDABLE_SUB_PROJ = unit_test 
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

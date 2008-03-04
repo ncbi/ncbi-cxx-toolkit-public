@@ -1,0 +1,22 @@
+Seq-entry ::= seq {
+  id {
+    local str "1"
+  },
+  descr {
+    user {
+      type str "CFastaReader",
+      data {
+        {
+          label str "DefLine",
+          data str ">"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol na,
+    length 11,
+    seq-data ncbi2na '1B249C'H
+  }
+}
