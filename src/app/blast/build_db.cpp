@@ -42,7 +42,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
+#include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
 #include <objmgr/seq_vector.hpp>
 
 // Other utilities

@@ -45,7 +45,6 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
-#include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include "win_mask_app.hpp"
@@ -293,7 +292,7 @@ int CWinMaskApplication::Run (void)
 
 #if 0
     CGBDataLoader::RegisterInObjectManager(
-        *om, new CId2Reader, CObjectManager::eDefault );
+        *om, "id2", CObjectManager::eDefault );
 
     if( GetArgs()["dbg"].AsBoolean() )
         SetDiagTrace( eDT_Enable );

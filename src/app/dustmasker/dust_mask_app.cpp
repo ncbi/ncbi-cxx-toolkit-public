@@ -53,7 +53,6 @@
 #include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/readers/fasta.hpp>
-#include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
 #include <objtools/seqmasks_io/mask_cmdline_args.hpp>
 
 #include "dust_mask_app.hpp"
@@ -272,7 +271,7 @@ int CDustMaskApplication::Run (void)
     // Set up the object manager.
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CGBDataLoader::RegisterInObjectManager(
-        *om, new CId2Reader, CObjectManager::eDefault);
+        *om, "id2", CObjectManager::eDefault);
 
     // Set up the duster object.
     Uint4 level = GetArgs()["level"].AsInteger();
