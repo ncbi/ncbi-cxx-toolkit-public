@@ -20,3 +20,13 @@ objmgr
 objtools
 serial
 util
+-.*/demo
+-.*/test
+-.*/unit_test
+-dbapi/.*/mssamples
+-dbapi/.*/samples
+-objtools/align
+-objtools/asniotest
+-objtools/cddalignview
+-objtools/data_loaders/genbank/readers/id1/split_cache
+-objtools/writers/gene_info
