@@ -36,7 +36,7 @@
 #include <objtools/writers/writedb/writedb.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
+#include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
 #include <objtools/readers/fasta.hpp>
 
 #include <sstream>

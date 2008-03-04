@@ -41,7 +41,6 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
 
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature.hpp>
@@ -98,7 +97,7 @@ int CFeatOverlapTester::Run(void)
 {
     const CArgs&   args = GetArgs();
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*objmgr, new CId2Reader(),
+    CGBDataLoader::RegisterInObjectManager(*objmgr, "id2",
                                            CObjectManager::eDefault);
 
     CScope scope(*objmgr);
