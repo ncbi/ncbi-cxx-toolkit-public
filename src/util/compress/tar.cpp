@@ -29,14 +29,16 @@
  * File Description:
  *   Tar archive API.
  *
- *   Supports subset of POSIX.1-1988 (ustar) format.
- *   Old GNU (POSIX 1003.1) and V7 formats are also supported partially.
+ *   Supports subsets of POSIX.1-1988 (ustar), POSIX 1003.1-2001 (posix),
+ *   old GNU (POSIX 1003.1), and V7 formats (all partially but reasonably).
  *   New archives are created using POSIX (genuine ustar) format, using
  *   GNU extensions for long names/links only when unavoidable.
- *   Can handle no exotics like sparse / contiguous files, special
- *   files (devices, FIFOs), multivolume / incremental archives, etc,
- *   but just regular files, directories, and links:  can extract
- *   both hard- and symlinks, but can store symlinks only.
+ *   Can handle no exotics like sparse / contiguous files,
+ *   multivolume / incremental archives, etc, but just regular files,
+ *   devices (character or block), FIFOs, directories, and limited links:
+ *   can extract both hard- and symlinks, but can store symlinks only.
+ *   This version is only minimally PAX (Partable Archive Interchange) aware
+ *   for file extractions (but cannot use PAX extensions to store files).
  *
  */
 
@@ -69,7 +71,7 @@ typedef short        gid_t;
 BEGIN_NCBI_SCOPE
 
 
-//////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 //
 // TAR helper routines
 //
@@ -83,7 +85,7 @@ static bool s_NumToOctal(unsigned long value, char* ptr, size_t len)
         ptr[--len] = '0' + char(value & 7);
         value >>= 3;
     } while (len);
-    return !value ? true : false;
+    return value ? false : true;
 }
 
 
@@ -111,6 +113,66 @@ static bool s_OctalToNum(unsigned long& value, const char* ptr, size_t size)
         i++;
     }
     return retval;
+}
+
+
+static bool s_NumToBase256(Uint8 value, char* ptr, size_t len)
+{
+    _ASSERT(len > 0);
+    do {
+        ptr[--len] = (unsigned char)(value & 0xFF);
+        value >>= 8;
+    } while (len);
+    *ptr |= '\x80';  // set base-256 encoding flag
+    return value ? false : true;
+}
+
+
+// Return 0 (false) if conversion failed; 1 if the value converted to
+// conventional octal representation (perhaps, with terminating '\0'
+// sacrificed), or -1 if the value converted using base-256.
+static int s_EncodeSize(Uint8 size, char* ptr, size_t len)
+{
+    if (s_NumToOctal((unsigned long) size, ptr,   len))  // 8GiB-1  limit
+        return  1/*okay*/;
+    if (s_NumToOctal((unsigned long) size, ptr, ++len))  // 64GiB-1 limit
+        return  1/*okay*/;
+    if (s_NumToBase256(size,               ptr,   len))  // up to 2^94-1
+        return -1/*okay, base-256*/;
+    return 0/*failure*/;
+}
+
+
+// Return true if conversion succeeded;  false otherwise.
+static bool s_Base256ToNum(Uint8& value, const char* ptr, size_t len)
+{
+    const Uint8 limit = kMax_UI8 >> 8;
+    if (*ptr & '\x40')
+        return false/*negative base-256*/;
+    value = *ptr++ & '\x3F';
+    while (--len) {
+        if (value > limit)
+            return false;
+        value <<= 8;
+        value  |= (unsigned char)(*ptr++);
+    }
+    return true;
+}
+
+
+// Return 0 (false) if conversion failed; 1 if the value was read into
+// as a conventional octal string (perhaps, without the terminating '\0');
+// or -1 if base-256 representation used.
+static int s_DecodeSize(Uint8& size, const char* ptr, size_t len)
+{
+    if (!(*ptr & '\x80')) {
+        unsigned long value;
+        if (!s_OctalToNum(value, ptr, len))
+            return 0/*failure*/;
+        size = (Uint8) value;
+        return 1/*okay*/;
+    }
+    return s_Base256ToNum(size, ptr, len) ? -1/*okay*/ : 0/*failure*/;
 }
 
 
@@ -166,7 +228,7 @@ static mode_t s_TarToMode(TTarMode value)
 
 static TTarMode s_ModeToTar(mode_t mode)
 {
-    /* Foresee that the mode can be extracted on a different platform */
+    // Foresee that the mode can be extracted on a different platform
     TTarMode value = (
 #ifdef S_ISUID
                       (mode & S_ISUID  ? fTarSetUID   : 0) |
@@ -195,7 +257,7 @@ static TTarMode s_ModeToTar(mode_t mode)
 #if   defined(S_IRGRP)
                       (mode & S_IRGRP  ? fTarGRead    : 0) |
 #elif defined(S_IREAD)
-                      /* emulate read permission when file is readable */
+                      // emulate read permission when file is readable
                       (mode & S_IREAD  ? fTarGRead    : 0) |
 #endif
 #ifdef S_IWGRP
@@ -207,7 +269,7 @@ static TTarMode s_ModeToTar(mode_t mode)
 #if   defined(S_IROTH)
                       (mode & S_IROTH  ? fTarORead    : 0) |
 #elif defined(S_IREAD)
-                      /* emulate read permission when file is readable */
+                      // emulate read permission when file is readable
                       (mode & S_IREAD  ? fTarORead    : 0) |
 #endif
 #ifdef S_IWOTH
@@ -246,9 +308,10 @@ static const size_t kBlockSize = SIZE_OF(1);
 /// Recognized TAR formats
 enum ETar_Format {
     eTar_Unknown = 0,
-    eTar_Legacy,
-    eTar_OldGNU,
-    eTar_Ustar
+    eTar_Legacy  = 1,
+    eTar_OldGNU  = 2,
+    eTar_Ustar   = 4,
+    eTar_Posix   = 5
 };
 
 
@@ -286,7 +349,7 @@ union TBlock {
 };
 
 
-static bool s_TarChecksum(TBlock* block, bool isgnu = false)
+static bool s_TarChecksum(TBlock* block, bool isgnu)
 {
     SHeader* h = &block->header;
     size_t len = sizeof(h->checksum) - (isgnu ? 2 : 1);
@@ -360,6 +423,36 @@ void CTarEntryInfo::GetMode(CDirEntry::TMode*            usr_mode,
 }
 
 
+unsigned int CTarEntryInfo::GetMajor(void) const
+{
+#ifdef major
+    if (m_Type == eCharDev  ||  m_Type == eBlockDev) {
+        return major(m_Stat.st_rdev);
+    }
+#else
+    if (sizeof(int) >= 4  &&  sizeof(m_Stat.st_rdev) >= 4) {
+        return (*((unsigned int*) &m_Stat.st_rdev) >> 16) & 0xFFFF;
+    }
+#endif // major
+    return (unsigned int)(-1);
+}
+
+
+unsigned int CTarEntryInfo::GetMinor(void) const
+{
+#ifdef minor
+    if (m_Type == eCharDev  ||  m_Type == eBlockDev) {
+        return minor(m_Stat.st_rdev);
+    }
+#else
+    if (sizeof(int) >= 4  &&  sizeof(m_Stat.st_rdev) >= 4) {
+        return *((unsigned int*) &m_Stat.st_rdev) & 0xFFFF;
+    }
+#endif // minor
+    return (unsigned int)(-1);
+}
+
+
 static string s_ModeAsString(TTarMode mode)
 {
     string usr("---");
@@ -413,6 +506,12 @@ static char s_TypeAsChar(CTarEntryInfo::EType type)
         return 'l';
     case CTarEntryInfo::eDir:
         return 'd';
+    case CTarEntryInfo::ePipe:
+        return 'p';
+    case CTarEntryInfo::eCharDev:
+        return 'c';
+    case CTarEntryInfo::eBlockDev:
+        return 'b';
     default:
         break;
     }
@@ -434,13 +533,32 @@ static string s_UserGroupAsString(const CTarEntryInfo& info)
 }
 
 
+static string s_MajorMinor(unsigned int n)
+{
+    return n == (unsigned int)(-1) ? string("?") : NStr::UIntToString(n);
+}
+
+
+static string s_SizeOrMajorMinor(const CTarEntryInfo& info)
+{
+    if (info.GetType() == CTarEntryInfo::eCharDev  ||
+        info.GetType() == CTarEntryInfo::eBlockDev) {
+        unsigned int major = info.GetMajor();
+        unsigned int minor = info.GetMinor();
+        return s_MajorMinor(major) + ", " + s_MajorMinor(minor);
+    } else {
+        return NStr::UInt8ToString(info.GetSize());
+    }
+}
+
+
 ostream& operator << (ostream& os, const CTarEntryInfo& info)
 {
     CTime mtime(info.GetModificationTime());
     os << s_TypeAsChar(info.GetType())
        << s_ModeAsString(info.GetMode())        << ' '
        << setw(17) << s_UserGroupAsString(info) << ' '
-       << setw(10) << NStr::UInt8ToString(info.GetSize())
+       << setw(10) << s_SizeOrMajorMinor(info) << ' '
        << mtime.ToLocalTime().AsString(" Y-M-D h:m:s ")
        << info.GetName();
     if (info.GetType() == CTarEntryInfo::eSymLink  ||
@@ -536,7 +654,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 {
     unsigned long val;
     string dump;
-    bool ok;
+    int ok;
 
     dump += TAR_PRINTABLE(name, true) + '\n';
 
@@ -561,10 +679,14 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     }
     dump += '\n';
 
-    ok = s_OctalToNum(val, h->size, sizeof(h->size));
-    dump += TAR_PRINTABLE(size, !ok);
-    if (ok  &&  val > 7) {
-        dump += " [" + NStr::UIntToString(val) + ']';
+    Uint8 size;
+    ok = s_DecodeSize(size, h->size, sizeof(h->size));
+    dump += TAR_PRINTABLE(size, ok <= 0);
+    if (ok < 0  ||  val > 7) {
+        dump += " [" + NStr::UInt8ToString(size) + ']';
+        if (ok < 0) {
+            dump += " (base-256)";
+        }
     }
     dump += '\n';
 
@@ -588,7 +710,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     case '\0':
     case '0':
         ok = true;
-        if (fmt != eTar_Ustar  &&  fmt != eTar_OldGNU) {
+        if (!(fmt & eTar_Ustar)  &&  fmt != eTar_OldGNU) {
             size_t namelen = s_Length(h->name, sizeof(h->name));
             if (namelen  &&  h->name[namelen - 1] == '/') {
                 tname = "legacy regular entry (dir)" + (h->typeflag[0]? 7 : 0);
@@ -633,9 +755,16 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         tname = "global extended header";
         break;
     case 'x':
-        if (fmt == eTar_Ustar) {
+    case 'X':
+        if (fmt & eTar_Ustar) {
             ok = true;
-            tname = "extended (PAX) header - not FULLY supported";
+            if (h->typeflag[0] == 'x') {
+                tname = "extended (POSIX 1003.1-2001 [PAX]) header"
+                    " - not FULLY supported";
+            } else {
+                tname = "extended (POSIX 1003.1-2001 [PAX] by Sun) header"
+                    " - not FULLY supported";
+            }
         } else {
             tname = "extended header";
         }
@@ -686,9 +815,6 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             tname = "GNU extension: volume header";
         }
         break;
-    case 'X':
-        tname = "extended (POSIX 1003.1-2001) header";
-        break;
     default:
         break;
     }
@@ -711,6 +837,9 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         break;
     case eTar_Ustar:
         tname = "ustar";
+        break;
+    case eTar_Posix:
+        tname = "posix";  // aka "pax"
         break;
     default:
         tname = 0;
@@ -1175,6 +1304,8 @@ typedef unsigned int TPAXBits;  // Bitwise-OR of EPAXBit(s)
 
 static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
 {
+    if (!isdigit((unsigned char)(*str)))
+        return 0;
     char* e;
     errno = 0;
     unsigned long val = strtoul(str, &e, 10);
@@ -1185,6 +1316,8 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
         if (!dot) {
             return false;
         }
+        if (!isdigit((unsigned char)(*e)))
+            return false;
         strtoul(e, &e, 10);
         if (errno  ||  (size_t)(e - str) != len  ||  *e != '\n') {
             return false;
@@ -1239,9 +1372,9 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
         char *k, *e, *v;
 
         errno = 0;
-        if (!(e = (char*) strchr(str, '\n'))  ||  !(len = strtoul(str, &k, 10))
-            ||  str + len - 1 != e  ||  *k++ != ' '
-            ||  !(v = (char*) memchr(k, '=', (size_t)(e - k)))
+        if (!isdigit((unsigned char)(*str)) || !(e = (char*) strchr(str, '\n'))
+            ||  !(len = strtoul(str, &k, 10))  ||  str + len - 1 != e
+            ||  *k++ != ' '  ||  !(v = (char*) memchr(k, '=', (size_t)(e - k)))
             ||  !(klen = (size_t)(v++ - k))  ||  memchr(k, ' ', klen)
             ||  !(vlen = (size_t)(e - v))) {
             TAR_POST(74, Error, "Skipping malformed PAX header");
@@ -1254,8 +1387,9 @@ CTar::EStatus CTar::x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer)
                 if (!parser[n].val) {
                     if (parser[n].str)
                         parser[n].str->assign(v, vlen);
-                } else if (!s_ParsePAXInt(parser[n].val, v, vlen,
-                                          !parser[n].str ? true : false)) {
+                } else if (!isdigit((unsigned char) v[0])
+                           ||  !s_ParsePAXInt(parser[n].val, v, vlen,
+                                              !parser[n].str ? true : false)) {
                     TAR_POST(75, Warning,
                              "Ignoring bad numeric '" + string(v, vlen)
                              + "' in PAX value '" + string(k, klen) + '\'');
@@ -1303,7 +1437,7 @@ static void s_Dump(const string& file, Uint8 pos, size_t recsize,
 }
 
 
-CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
+CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
 {
     // Read block
     const TBlock* block;
@@ -1319,7 +1453,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     // Check header format
     ETar_Format fmt = eTar_Unknown;
     if (memcmp(h->magic, "ustar", 6) == 0) {
-        fmt = eTar_Ustar;
+        fmt = pax ? eTar_Posix : eTar_Ustar;
     } else if (memcmp(h->magic, "ustar  ", 8) == 0) {
         // NB: Here, the magic protruded into the adjacent version field
         fmt = eTar_OldGNU;
@@ -1378,7 +1512,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     // Set info members now (thus, validating the header block)
 
     // Name
-    if (fmt == eTar_Ustar  &&  h->prefix[0]  &&  h->typeflag[0] != 'x') {
+    if ((fmt & eTar_Ustar)  &&  h->prefix[0]
+        &&  tolower((unsigned char) h->typeflag[0]) != 'x') {
         info.m_Name =
             CDirEntry::ConcatPath(string(h->prefix,
                                          s_Length(h->prefix,
@@ -1412,10 +1547,11 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     info.m_Stat.st_gid = (gid_t) value;
 
     // Size
-    if (!s_OctalToNum(value, h->size, sizeof(h->size))) {
+    Uint8 size;
+    if (!s_DecodeSize(size, h->size, sizeof(h->size))) {
         TAR_THROW_EX(eUnsupportedTarFormat, "Bad entry size", h, fmt);
     }
-    info.m_Stat.st_size = value;
+    info.m_Stat.st_size = size;
 
     // Modification time
     if (!s_OctalToNum(value, h->mtime, sizeof(h->mtime))) {
@@ -1423,7 +1559,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     }
     info.m_Stat.st_mtime = value;
 
-    if (fmt == eTar_Ustar  ||  fmt == eTar_OldGNU) {
+    if (fmt == eTar_OldGNU  ||  (fmt & eTar_Ustar)) {
         // User name
         info.m_UserName.assign(h->uname, s_Length(h->uname, sizeof(h->uname)));
 
@@ -1454,7 +1590,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     switch (h->typeflag[0]) {
     case '\0':
     case '0':
-        if (fmt != eTar_Ustar  &&  fmt != eTar_OldGNU) {
+        if (!(fmt & eTar_Ustar)  &&  fmt != eTar_OldGNU) {
             size_t namelen = s_Length(h->name, sizeof(h->name));
             if (namelen  &&  h->name[namelen - 1] == '/') {
                 info.m_Type = CTarEntryInfo::eDir;
@@ -1471,25 +1607,67 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
                        : CTarEntryInfo::eSymLink);
         info.m_LinkName.assign(h->linkname,
                                s_Length(h->linkname, sizeof(h->linkname)));
+        if (!info.GetSize())
+            break;
+        if (h->typeflag[0] != '1')
+            info.m_Stat.st_size = 0;
+        else if (fmt != eTar_Posix) {
+            TAR_POST(77, Warning,
+                     "Non-zero hard-link size ("
+                     + NStr::UInt8ToString(info.GetSize())
+                     + ") is ignored (non-PAX)");
+            info.m_Stat.st_size = 0;
+        }
+        break;
+    case '3':
+    case '4':
+        info.m_Type = (h->typeflag[0] == '3'
+                       ? CTarEntryInfo::eCharDev : CTarEntryInfo::eBlockDev);
+        if (!s_OctalToNum(value, h->devminor, sizeof(h->devminor))) {
+            TAR_THROW_EX(eUnsupportedTarFormat,
+                         "Bad device minor number", h, fmt);
+        }
+        usum = value; // set aside
+        if (!s_OctalToNum(value, h->devmajor, sizeof(h->devmajor))) {
+            TAR_THROW_EX(eUnsupportedTarFormat,
+                         "Bad device major number", h, fmt);            
+        }
+#ifdef makedev
+        info.m_Stat.st_rdev = makedev((unsigned int) value, usum);
+#else
+        if (sizeof(int) >= 4  &&  sizeof(info.m_Stat.st_rdev) >= 4) {
+            *((unsigned int*) &info.m_Stat.st_rdev) =
+                (unsigned int)((value << 16) | usum);
+        }
+#endif // makedev
         info.m_Stat.st_size = 0;
         break;
     case '5':
         info.m_Type = CTarEntryInfo::eDir;
         info.m_Stat.st_size = 0;
         break;
+    case '6':
+        info.m_Type = CTarEntryInfo::ePipe;
+        info.m_Stat.st_size = 0;
+        break;
     case 'x':
+    case 'X':
     case 'K':
     case 'L':
-        if ((h->typeflag[0] == 'x'  &&  fmt == eTar_Ustar)  ||
-            (h->typeflag[0] != 'x'  &&  fmt == eTar_OldGNU)) {
-            size_t size = (size_t) info.GetSize();
-            if (dump) {
-                s_Dump(m_FileName, m_StreamPos, m_BufferSize, m_Current,
-                       h, fmt, size);
-            }
-            m_StreamPos += ALIGN_SIZE(nread);
+        if ((tolower((unsigned char) h->typeflag[0]) == 'x'
+             &&  (fmt & eTar_Ustar))  ||
+            (tolower((unsigned char) h->typeflag[0]) != 'x'
+             &&  fmt == eTar_OldGNU)) {
+            // Assign actual type
             switch (h->typeflag[0]) {
             case 'x':
+            case 'X':
+                if (pax) {
+                    TAR_POST(78, Warning,
+                             "Double PAX header encountered,"
+                             " archive may be corrupted");
+                }
+                fmt = eTar_Posix;  // upgrade
                 info.m_Type = CTarEntryInfo::ePAXHeader;
                 break;
             case 'K':
@@ -1499,6 +1677,13 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
                 info.m_Type = CTarEntryInfo::eGNULongName;
                 break;
             }
+            // Dump header
+            size_t size = (size_t) info.GetSize();
+            if (dump) {
+                s_Dump(m_FileName, m_StreamPos, m_BufferSize, m_Current,
+                       h, fmt, size);
+            }
+            m_StreamPos += ALIGN_SIZE(nread);
             // Read in the extended information
             string buffer;
             while (size) {
@@ -1540,16 +1725,16 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
             size = (size_t) info.GetSize();
             info.m_Stat.st_size = 0;
             if (!size  ||  !buffer.size()) {
-                TAR_POST(77, Error,
+                TAR_POST(79, Error,
                          "Skipping " + string(size ? "empty" : "zero-sized")
                          + " extended header");
                 return eFailure;
             }
             if (info.GetType() == CTarEntryInfo::ePAXHeader) {
                 if (size != buffer.size()) {
-                    TAR_POST(78, Error,
+                    TAR_POST(80, Error,
                              "Skipping truncated ("
-                             + NStr::UInt8ToString(info.GetSize()) + "->"
+                             + NStr::UInt8ToString((Uint8) size) + "->"
                              + NStr::UInt8ToString((Uint8) buffer.size())
                              + ") PAX header");
                     return eFailure;
@@ -1579,12 +1764,13 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
 {
     // Prepare block info
     TBlock block;
+    ETar_Format fmt = eTar_Ustar;
     memset(block.buffer, 0, sizeof(block.buffer));
     SHeader* h = &block.header;
 
     CTarEntryInfo::EType type = info.GetType();
 
-    // Name(s) ('\0'-terminated if fits entirely, otherwise not)
+    // Name(s) ('\0'-terminated if fit entirely, otherwise not)
     if (!x_PackName(h, info, false)) {
         TAR_THROW(eNameTooLong,
                   "Name '" + info.GetName() + "' too long in"
@@ -1623,18 +1809,22 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
     }
 
     // Size
-    if (!s_NumToOctal((unsigned long)
-                      (type == CTarEntryInfo::eFile ? info.GetSize() : 0),
-                      h->size, sizeof(h->size) - 1)) {
+    int enc = s_EncodeSize(type == CTarEntryInfo::eFile ? info.GetSize() : 0,
+                           h->size, sizeof(h->size) - 1);
+    if (!enc) {
         TAR_THROW(eMemory, "Cannot store file size");
+    }
+    if (enc < 0  &&  !h->prefix[0]) {
+        fmt = eTar_OldGNU;  // downgrade (if possible) to reflect size encoding
     }
 
     // Modification time
     if (!s_NumToOctal((unsigned long) info.GetModificationTime(),
-                      h->mtime, sizeof(h->mtime) - 1)){
+                      h->mtime, sizeof(h->mtime) - 1)) {
         TAR_THROW(eMemory, "Cannot store modification time");
     }
 
+    bool device = false;
     // Type (GNU extension for SymLink)
     switch (type) {
     case CTarEntryInfo::eFile:
@@ -1643,14 +1833,30 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
     case CTarEntryInfo::eSymLink:
         h->typeflag[0] = '2';
         break;
+    case CTarEntryInfo::eCharDev:
+    case CTarEntryInfo::eBlockDev:
+        h->typeflag[0] = type == CTarEntryInfo::eCharDev ? '3' : '4';
+        if (!s_NumToOctal(info.GetMajor(),
+                          h->devmajor, sizeof(h->devmajor) - 1)) {
+            TAR_THROW(eMemory, "Cannot store major number");
+        }
+        if (!s_NumToOctal(info.GetMinor(),
+                          h->devminor, sizeof(h->devminor) - 1)) {
+            TAR_THROW(eMemory, "Cannot store minor number");
+        }
+        device = true;
+        break;
     case CTarEntryInfo::eDir:
         h->typeflag[0] = '5';
+        break;
+    case CTarEntryInfo::ePipe:
+        h->typeflag[0] = '6';
         break;
     default:
         TAR_THROW(eUnsupportedEntryType,
                   "Don't know how to store entry '" + name + "' w/type #" +
-                  NStr::IntToString(int(type)) + " into archive -- internal"
-                  " error, please report!");
+                  NStr::IntToString(int(type)) + " into archive: "
+                  "Internal error, please report!");
     }
 
     // User and group
@@ -1665,12 +1871,23 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
         memcpy(h->gname, grp.c_str(), len);
     }
 
-    // Magic
-    strcpy(h->magic,   "ustar");
-    // Version (EXCEPTION:  not '\0' terminated)
-    memcpy(h->version, "00", 2);
+    // Device nos to complete the ustar header protocol (all fields ok)
+    if (!device  &&  fmt != eTar_OldGNU) {
+        s_NumToOctal(0, h->devmajor, sizeof(h->devmajor) - 1);
+        s_NumToOctal(0, h->devminor, sizeof(h->devminor) - 1);
+    }
 
-    if (!s_TarChecksum(&block)) {
+    if (fmt != eTar_OldGNU) {
+        // Magic
+        strcpy(h->magic,   "ustar");
+        // Version (EXCEPTION:  not '\0' terminated)
+        memcpy(h->version, "00", 2);
+    } else {
+        // NB: Old GNU magic protrudes into adjacent version field
+        memcpy(h->magic,   "ustar  ", 8); // 2 spaces and '\0'-terminated
+    }
+
+    if (!s_TarChecksum(&block, fmt == eTar_OldGNU ? true : false)) {
         TAR_THROW(eMemory, "Cannot store checksum");
     }
 
@@ -1722,7 +1939,7 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     s_NumToOctal(0,        h->mode,  sizeof(h->mode) - 1);
     s_NumToOctal(0,        h->uid,   sizeof(h->uid)  - 1);
     s_NumToOctal(0,        h->gid,   sizeof(h->gid)  - 1);
-    if (!s_NumToOctal(len, h->size,  sizeof(h->size) - 1)) {
+    if (!s_EncodeSize(len, h->size,  sizeof(h->size) - 1)) {
         return false;
     }
     s_NumToOctal(0,        h->mtime, sizeof(h->mtime)- 1);
@@ -1811,8 +2028,9 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         // Next block is supposed to be a header
         CTarEntryInfo info(pos);
         m_Current = xinfo.GetName().empty() ? 0 : &xinfo.GetName();
-        EStatus status = x_ReadEntryInfo(info, action == eTest
-                                         &&  (m_Flags & fDumpBlockHeaders));
+        EStatus status = x_ReadEntryInfo
+            (info, action == eTest &&  (m_Flags & fDumpBlockHeaders),
+             xinfo.GetType() == CTarEntryInfo::ePAXHeader);
         switch (status) {
         case eFailure:
         case eSuccess:
@@ -1976,6 +2194,8 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
                                       (m_BaseDir, info.GetName()))));
         // Source for extraction
         auto_ptr<CDirEntry> src;
+        // Direntry pending removal
+        auto_ptr<CDirEntry> pending;
 
         // Dereference sym.link if requested
         if (type != CTarEntryInfo::eSymLink  &&
@@ -2034,20 +2254,60 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
             if (extract) {
                 // Need to backup the existing destination?
                 if (!found  &&  (m_Flags & fBackup) == fBackup) {
-                    CDirEntry dst_tmp(*dst);
-                    if (!dst_tmp.Backup(kEmptyStr,
-                                        CDirEntry::eBackup_Rename)) {
+                    CDirEntry tmp(*dst);
+                    if (!tmp.Backup(kEmptyStr, CDirEntry::eBackup_Rename)) {
                         TAR_THROW(eBackup,
                                   "Failed to backup '" + dst->GetPath() +'\'');
                     }
                 } else if (type != CTarEntryInfo::eDir
                            ||  (!found  &&  (m_Flags & fUpdate) != fUpdate)) {
-                    dst->Remove();
+                    // Do removal safely -- until extraction has confirmed
+                    CDirEntry tmp(*dst);
+                    pending.reset(new CDirEntry(CDirEntry::GetTmpNameEx
+                                                (dst->GetDir(), "XtArX")));
+                    errno = 0;
+                    if (!tmp.Rename(pending->GetPath())  ||  dst->Exists()) {
+                        // Security concern (not to attempt data extractions
+                        // into special files etc., which can harm system).
+                        string reason = s_OSReason(errno ? errno : EEXIST);
+                        pending->Remove();
+                        TAR_THROW(eWrite,
+                                  "Cannot extract '" + dst->GetPath() + '\''
+                                  + reason);
+                    }
                 }
             }
         }
         if (extract) {
-            extract = x_ExtractEntry(info, size, dst.get(), src.get());
+#ifdef NCBI_OS_UNIX
+            mode_t u;
+            u = umask(0);
+            umask(u & 077);
+            try {
+#endif // NCBI_OS_UNIX
+                extract = x_ExtractEntry(info, size, dst.get(), src.get());
+#ifdef NCBI_OS_UNIX
+            } catch (...) {
+                umask(u);
+                throw;
+            }
+            umask(u);
+#endif // NCBI_OS_UNIX
+            if (pending.get()) {
+                if (!extract) {
+                    // Undo delete
+                    dst->Remove();
+                    CDirEntry tmp(*pending);
+                    if (!tmp.Rename(dst->GetPath())) {
+                        int x_errno = errno;
+                        pending->Remove();
+                        TAR_THROW(eWrite,
+                                  "Cannot restore '" + dst->GetPath()
+                                  + "' back in place" + s_OSReason(x_errno));
+                    }
+                }
+                pending->Remove();
+            }
         }
     }
 
@@ -2069,10 +2329,15 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
 bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
                           const CDirEntry*     dst,  const CDirEntry* src)
 {
+    CTarEntryInfo::EType type = info.GetType();
     auto_ptr<CDirEntry> src_ptr;  // deleter
     bool result = true;  // assume best
 
-    switch (info.GetType()) {
+    if (type == CTarEntryInfo::eUnknown  &&  !(m_Flags & fSkipUnsupported)) {
+        // Conform to POSIX-mandated behavior to extract as files
+        type = CTarEntryInfo::eFile;
+    }
+    switch (type) {
     case CTarEntryInfo::eHardLink:
     case CTarEntryInfo::eFile:
         {{
@@ -2085,7 +2350,22 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
                           + s_OSReason(x_errno));
             }
 
-            if (info.GetType() == CTarEntryInfo::eFile) {
+            if (type != CTarEntryInfo::eFile) {
+                if (!src) {
+                    src_ptr.reset(new CDirEntry(CDirEntry::NormalizePath
+                                                (CDirEntry::ConcatPath
+                                                 (m_BaseDir,
+                                                  info.GetLinkName()))));
+                    src = src_ptr.get();
+                }
+                if (src->GetType() == CDirEntry::eUnknown  &&  size) {
+                    // Looks like a dangling hard link but luckily we also
+                    // have actual file data (POSIX extension) so use it here.
+                    type = CTarEntryInfo::eFile;
+                }
+            }
+
+            if (type == CTarEntryInfo::eFile) {
                 // Create file
                 ofstream ofs(dst->GetPath().c_str(),
                              IOS_BASE::out    |
@@ -2120,14 +2400,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
                 _ASSERT(ofs.good());
                 ofs.close();
             } else {
-                _ASSERT(size == 0);
-                if (!src) {
-                    src_ptr.reset(new CDirEntry(CDirEntry::NormalizePath
-                                                (CDirEntry::ConcatPath
-                                                 (m_BaseDir,
-                                                  info.GetLinkName()))));
-                    src = src_ptr.get();
-                }
+                _ASSERT(src);
 #ifdef NCBI_OS_UNIX
                 if (link(src->GetPath().c_str(),
                          dst->GetPath().c_str()) == 0) {
@@ -2194,10 +2467,56 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
         _TROUBLE;
         /*FALLTHRU*/
 
+    case CTarEntryInfo::ePipe:
+        {{
+            _ASSERT(size == 0);
+#ifdef NCBI_OS_UNIX
+            mode_t u = umask(0);
+            if (mkfifo(dst->GetPath().c_str(), info.GetMode()) != 0)
+                result = false;
+            umask(u);  // NB: always succeeds and does not change errno
+            if (result)
+                break;
+            string reason = s_OSReason(errno);
+#else
+            string reason = ": Feature not supported by host OS";
+            result = false;
+#endif // NCBI_OS_UNIX
+            TAR_POST(81, Error,
+                     "Cannot create FIFO '" + dst->GetPath() + '\'' + reason);
+        }}
+        break;
+
+    case CTarEntryInfo::eCharDev:
+    case CTarEntryInfo::eBlockDev:
+        {{
+            _ASSERT(size == 0);
+#ifdef NCBI_OS_UNIX
+            mode_t u = umask(0);
+            mode_t m = (info.GetMode() |
+                        (type == CTarEntryInfo::eCharDev ? S_IFCHR : S_IFBLK));
+            if (mknod(dst->GetPath().c_str(), m, info.m_Stat.st_rdev) != 0)
+                result = false;
+            umask(u);  // NB: always succeeds and does not clobber errno
+            if (result)
+                break;
+            string reason = s_OSReason(errno);
+#else
+            string reason = ": Feature not supported by host OS";
+            result = false;
+#endif // NCBI_OS_UNIX
+            TAR_POST(82, Error,
+                     "Cannot create " +
+                     string(type == CTarEntryInfo::eCharDev
+                            ? "character" : "block")
+                     + " special '" + dst->GetPath() + '\'' + reason);
+        }}
+        break;
+
     default:
         TAR_POST(13, Warning,
                  "Skipping unsupported entry '" + info.GetName()
-                 + "' w/type #" + NStr::IntToString(int(info.GetType())));
+                 + "' w/type #" + NStr::IntToString(int(type)));
         result = false;
         break;
     }
@@ -2253,7 +2572,10 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
 
     // Mode.
     // Set them last.
-    if (m_Flags & fPreserveMode) {
+    if ((m_Flags & fPreserveMode)
+        &&  info.GetType() != CTarEntryInfo::ePipe
+        &&  info.GetType() != CTarEntryInfo::eCharDev
+        &&  info.GetType() != CTarEntryInfo::eBlockDev) {
         bool failed = false;
 #ifdef NCBI_OS_UNIX
         // We cannot change permissions for sym.links because lchmod()
@@ -2448,22 +2770,26 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 
     // Append entry
     switch (type) {
-    case CDirEntry::eLink:
-        info.m_Stat.st_size = 0;
-        /*FALLTHRU*/
     case CDirEntry::eFile:
         _ASSERT(update);
         x_AppendFile(path, info);
         entries->push_back(info);
         break;
 
+    case CDirEntry::eBlockSpecial:
+    case CDirEntry::eCharSpecial:
+    case CDirEntry::ePipe:
+    case CDirEntry::eLink:
+        _ASSERT(update);
+        /*FALLTHRU*/
     case CDirEntry::eDir:
+        // NB: x_WriteEntryInfo() takes care of setting size(0) for non-files
         if (update) {
             x_WriteEntryInfo(path, info);
             entries->push_back(info);
-            m_Current = 0;
         }
-        {{
+        if (type == CDirEntry::eDir) {
+            m_Current = 0;
             // Append/Update all files from that directory
             CDir::TEntries dir = CDir(path).GetEntries("*",
                                                        CDir::eIgnoreRecursive);
@@ -2471,7 +2797,16 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                 auto_ptr<TEntries> e = x_Append((*i)->GetPath(), toc);
                 entries->splice(entries->end(), *e.get());
             }
-        }}
+        }
+        break;
+
+    case CDirEntry::eDoor:
+    case CDirEntry::eSocket:
+        // Tar does not have any provisions to store this kind of entry
+        TAR_POST(83, Warning,
+                 "Skipping non-archiveable "
+                 + string(type == CDirEntry::eSocket ? "socket" : "door")
+                 + " entry '" + path + '\'');
         break;
 
     case CDirEntry::eUnknown:

@@ -33,14 +33,14 @@
  *   @file
  *   Tar archive API.
  *
- *   Supports subset of POSIX.1-1988 (ustar) format.
- *   Old GNU (POSIX 1003.1) and V7 formats are also supported partially.
+ *   Supports subsets of POSIX.1-1988 (ustar), POSIX 1003.1-2001 (posix),
+ *   old GNU (POSIX 1003.1), and V7 formats (all partially but reasonably).
  *   New archives are created using POSIX (genuine ustar) format, using
  *   GNU extensions for long names/links only when unavoidable.
- *   Can handle no exotics like sparse / contiguous files, special
- *   files (devices, FIFOs), multivolume / incremental archives, etc,
- *   but just regular files, directories, and links:  can extract
- *   both hard- and symlinks, but can store only symlinks.
+ *   Can handle no exotics like sparse / contiguous files,
+ *   multivolume / incremental archives, etc, but just regular files,
+ *   devices (character or block), FIFOs, directories, and limited links:
+ *   can extract both hard- and symlinks, but can store symlinks only.
  *   This version is only minimally PAX (Partable Archive Interchange) aware
  *   for file extractions (but cannot use PAX extensions to store files).
  *
@@ -154,6 +154,9 @@ public:
         eFile        = CDirEntry::eFile,        ///< Regular file
         eDir         = CDirEntry::eDir,         ///< Directory
         eSymLink     = CDirEntry::eLink,        ///< Symbolic link
+        ePipe        = CDirEntry::ePipe,        ///< Pipe (FIFO)
+        eCharDev     = CDirEntry::eCharSpecial, ///< Character device
+        eBlockDev    = CDirEntry::eBlockSpecial,///< Block device
         eUnknown     = CDirEntry::eUnknown,     ///< Unknown type
         eHardLink    = eUnknown + 1,            ///< Hard link
         ePAXHeader,                             ///< PAX extended header
@@ -186,6 +189,8 @@ public:
                           CDirEntry::TMode*            group_mode   = 0,
                           CDirEntry::TMode*            other_mode   = 0,
                           CDirEntry::TSpecialModeBits* special_bits = 0) const;
+    unsigned int  GetMajor(void)            const;
+    unsigned int  GetMinor(void)            const;
     int           GetUserId(void)           const { return m_Stat.st_uid;   }
     int           GetGroupId(void)          const { return m_Stat.st_gid;   }
     Uint8         GetPosition(void)         const { return m_Pos;           }
@@ -256,6 +261,9 @@ public:
 
         // --- Extract/List ---
         fMaskNocase         = (1<<10),
+        /// Skip unsupported entries rather than doing files out of them
+        /// when extracting (the latter is the default POSIX behavior).
+        fSkipUnsupported    = (1<<15),
 
         // --- Debugging ---
         fDumpBlockHeaders   = (1<<20),
@@ -490,7 +498,8 @@ protected:
     EStatus x_ParsePAXHeader(CTarEntryInfo& info, const string& buffer);
 
     // Read information about next entry in the archive.
-    EStatus x_ReadEntryInfo(CTarEntryInfo& info, bool dump = false);
+    EStatus x_ReadEntryInfo(CTarEntryInfo& info,
+                            bool dump = false, bool pax = false);
 
     // Pack either name or linkname into archive entry header.
     bool x_PackName(SHeader* header, const CTarEntryInfo& info, bool link);

@@ -22,6 +22,8 @@ cp -rp . $test_base.1/ 2>/dev/null
 
 mkdir $test_base.1/testdir 2>/dev/null
 
+mkfifo -m 0567 $test_base.1/.testfifo 2>/dev/null
+
 date >$test_base.1/testdir/datefile 2>/dev/null
 
 ln -s $test_base.1/testdir/datefile $test_base.1/testdir/ABS12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 2>/dev/null
@@ -90,16 +92,22 @@ echo "*** Testing piping in and extraction"
 echo
 
 cat $test_base.tar | test_tar -C $test_base.2 -v -x -f -              ||  exit 1
-
+rm -f $test_base.1/.testfifo $test_base.2/.testfifo
 diff -r $test_base.1 $test_base.2 2>/dev/null                         ||  exit 1
 
 echo
 echo "*** Testing piping out and compatibility with native tar utility"
 echo
 
+mkfifo -m 0567 $test_base.2/.testfifo >/dev/null 2>&1
 test_tar -C $test_base.2 -c -f - . 2>/dev/null | $tar tBvf -          ||  exit 1
 
 echo
+echo "*** Testing safe extraction implementation"
+echo
+
+test_tar -C $test_base.2 -x    -f $test_base.tar                      ||  exit 1
+
 echo "*** Testing backup feature"
 echo
 

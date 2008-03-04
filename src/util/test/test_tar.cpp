@@ -123,12 +123,13 @@ void CTarTest::Init(void)
     args->AddFlag("U", "Only existing files/entries in update/extract");
     args->AddFlag("B", "Create backup copies of destinations when extracting");
     args->AddFlag("E", "Maintain equal types of files and archive entries");
+    args->AddFlag("S", "Skip unsupported entries instead of extracting them");
     args->AddFlag("k", "Keep old files when extracting");
     args->AddFlag("v", "Turn on debugging information");
     args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
                    "List of files to process", CArgDescriptions::eString);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
-                          "Tar test suite: VERY simplified tar utility");
+                          "Tar test suite: a simplified tar utility");
     SetupArgDescriptions(args.release());
 }
 
@@ -234,6 +235,9 @@ int CTarTest::Run(void)
     }
     if (args["k"].HasValue()) {
         m_Flags &= ~CTar::fOverwrite;
+    }
+    if (args["S"].HasValue()) {
+        m_Flags |=  CTar::fSkipUnsupported;
     }
     if (args["v"].HasValue()) {
         m_Flags |=  fVerbose;
