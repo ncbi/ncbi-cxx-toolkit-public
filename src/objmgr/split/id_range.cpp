@@ -366,7 +366,6 @@ void CSeqsRange::Add(const CSpliced_seg& spliced)
 
 void CSeqsRange::Add(const CSparse_seg& sparse)
 {
-    size_t dim = sparse.GetRows().size();
     size_t row = 0;
     ITERATE ( CSparse_seg::TRows, it, sparse.GetRows() ) {
         const CSparse_align& aln_row = **it;
