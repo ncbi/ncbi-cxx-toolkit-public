@@ -140,7 +140,7 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
         CRef<CSeq_loc> subj_loc(new CSeq_loc(*subj_id,(*h)->GetSubjMin(),(*h)->GetSubjMax(),(*h)->GetSubjStrand()?eNa_strand_plus:eNa_strand_minus));
         std_seg->SetLoc().push_back(subj_loc);
 
-        std_seg->SetScores().push_back(IntScore("pct_identity",int((*h)->GetIdentity()*100)));
+        std_seg->SetScores().push_back(RealScore("pct_identity",(*h)->GetIdentity()*100));
         std_seg->SetScores().push_back(RealScore("bit_score",fabs((*h)->GetScore())));
 
         std_segs.push_back(std_seg);
