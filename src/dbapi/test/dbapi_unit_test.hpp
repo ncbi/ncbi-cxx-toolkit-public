@@ -237,6 +237,7 @@ public:
     void Test_Unicode_Simple(void);
     void Test_UnicodeNB(void);
     void Test_Unicode(void);
+    void Test_VARCHAR_MAX(void);
     void Test_NVARCHAR(void);
     void Test_Iskhakov(void);
     void Test_NCBI_LS(void);

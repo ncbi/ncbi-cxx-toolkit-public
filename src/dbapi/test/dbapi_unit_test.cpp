@@ -764,6 +764,64 @@ void CDBAPIUnitTest::Test_Unicode(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_VARCHAR_MAX(void)
+{
+    string sql;
+    const string table_name = "#test_varchar_max_table";
+    const string msg(32000, 'Z');
+    const CVariant vc_max_value(msg);
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Create table ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "   id NUMERIC IDENTITY NOT NULL, \n"
+                "   vc_max VARCHAR(MAX) NULL" 
+                ") \n";
+
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Insert data into the table ...
+        {
+            sql =
+                "INSERT INTO " + table_name + "(vc_max) VALUES(@vc_max)";
+
+            auto_stmt->SetParam( vc_max_value, "@vc_max" );
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Actual check ...
+        {
+            sql = "SELECT vc_max FROM " + table_name + " ORDER BY id";
+
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    BOOST_CHECK( rs.get() != NULL );
+
+                    BOOST_CHECK( rs->Next() );
+                    const string value = rs->GetVariant(1).GetString();
+                    BOOST_CHECK_EQUAL(value.size(), msg.size());
+                    // BOOST_CHECK_EQUAL(value, msg);
+                }
+            }
+        }
+    }
+    catch(const CDB_Exception& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_NVARCHAR(void)
 {
     string sql;
@@ -12881,6 +12939,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
 
     add(tc_init);
+
+    // if (args.GetServerType() == CTestArguments::eMsSql2005) {
+    if (false) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_VARCHAR_MAX,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
     if (!(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
         && args.GetDriverName() != ftds_dblib_driver
