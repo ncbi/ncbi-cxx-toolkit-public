@@ -56,11 +56,11 @@ public:
         virtual bool Authenticate(const string& host,
                                   const string& auth,
                                   const string& queue,
-                                  CNcbiOstream& replay,
+                                  CNcbiOstream& reply,
                                   const CGridWorkerNode& node) { return true; }
 
         virtual void Process(const string& request,
-                             CNcbiOstream& replay,
+                             CNcbiOstream& reply,
                              CGridWorkerNode& node) = 0;
     };
     CWorkerNodeControlThread(unsigned int start_port, unsigned int end_port,

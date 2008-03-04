@@ -648,18 +648,18 @@ bool CGridWorkerNode::x_AreMastersBusy() const
             continue;
         }
         os.freeze(false);
-        string replay;
-        if (socket.ReadLine(replay) != eIO_Success)
+        string reply;
+        if (socket.ReadLine(reply) != eIO_Success)
             continue;
-        if (NStr::StartsWith(replay, "ERR:")) {
+        if (NStr::StartsWith(reply, "ERR:")) {
             string msg;
-            NStr::Replace(replay, "ERR:", "", msg);
+            NStr::Replace(reply, "ERR:", "", msg);
             ERR_POST_X(43, CTime(CTime::eCurrent).AsString()
                        << " Worker Node @ " << it->host << ":" << it->port
                        << " returned error : " << msg);
-        } else if (NStr::StartsWith(replay, "OK:")) {
+        } else if (NStr::StartsWith(reply, "OK:")) {
             string msg;
-            NStr::Replace(replay, "OK:", "", msg);
+            NStr::Replace(reply, "OK:", "", msg);
             try {
                 int load = NStr::StringToInt(msg);
                 if (load > 0)
@@ -668,7 +668,7 @@ bool CGridWorkerNode::x_AreMastersBusy() const
         } else {
             ERR_POST_X(44, CTime(CTime::eCurrent).AsString()
                        << " Worker Node @ " << it->host << ":" << it->port
-                       << " returned unknown replay : " << replay);
+                       << " returned unknown reply : " << reply);
         }
     }
     return true;
