@@ -41,7 +41,7 @@ static char const rcsid[] =
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
+#include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)

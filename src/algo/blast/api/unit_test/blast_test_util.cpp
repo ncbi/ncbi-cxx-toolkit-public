@@ -49,7 +49,6 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
 
 // Object includes
 #include <objects/seqalign/Seq_align_set.hpp>
