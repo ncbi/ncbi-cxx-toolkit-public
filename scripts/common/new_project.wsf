@@ -65,7 +65,7 @@
             if (oArgs.Length < 2) {
                 return false;
             }
-            if (oArgs.Length > 5) {
+            if (oArgs.Length > 6) {
                 return false;
             }
             
@@ -153,7 +153,8 @@
             usage_str += "                       default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
             usage_str += "                       you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
 //            usage_str += "    [-msvc nn]  -- MSVC version: 71 or 80; default is " + GetDefaultMsvcVer() + "\n";
-            usage_str += "    [-dll]      -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
+            usage_str += "    [-dll]      -- use  NCBI C++ toolkit DLLs' instead of static libraries\n";
+            usage_str += "    [-b]        -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
             usage_str += "    [-v]        -- show details about what is being made\n";
             usage_str += "EXAMPLES:\n";
             usage_str += "    cscript new_project.wsf my_app app/basic\n";
@@ -175,6 +176,11 @@
                 this.ProjectName = GetPositionalValue(oArgs, 0);
                 this.ProjectType = GetPositionalValue(oArgs, 1);
                 this.DllBuild    = GetFlagValue(oArgs, "-dll", false);
+                if ( this.DllBuild ) {
+                    this.CopyDlls    = GetFlagValue(oArgs, "-b", false);
+                } else {
+                    this.CopyDlls    = false;
+                }
                 toolkit_path     = GetOptionalPositionalValue(oArgs, 2, 
                     GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder());
             } else {
@@ -216,6 +222,8 @@
                     GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder());
                 prompt = "Use NCBI C++ toolkit DLLs?";
                 this.DllBuild = InputFlagYNC(prompt+footer);
+                prompt = "Copy NCBI C++ toolkit DLLs into local directories?";
+                this.CopyDlls = InputFlagYNC(prompt+footer);
                 prompt = "Use verbose output?"
                 SetVerboseFlag( InputFlagYNC(prompt+footer));
             }
@@ -264,6 +272,7 @@
             WScript.Echo("ToolkitPath     = " + oTask.ToolkitPath);
             WScript.Echo("ToolkitSrcPath  = " + oTask.ToolkitSrcPath);
             WScript.Echo("DllBuild        = " + oTask.DllBuild.toString());
+            WScript.Echo("CopyDlls        = " + oTask.CopyDlls.toString());
         }
         
         // Fill local tree
@@ -459,6 +468,8 @@
         CreateTreeStructure(oTree, oTask);
         WScript.Echo("========================= FillTree ====================================");
         FillTree           (oShell, oTree);
+        VerboseEcho("========================= CopyDlls ====================================");
+        CopyDlls           (oShell, oTree, oTask);
         WScript.Echo("========================= CopyProjectTemplate =========================");
         CopyProjectTemplate(oShell, oTree, oTask);
         WScript.Echo("========================= AdjustProject ===============================");
