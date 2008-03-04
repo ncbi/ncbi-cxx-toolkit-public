@@ -491,7 +491,8 @@ function CopyDlls(oShell, oTree, oTask)
             }
             var local_bin_path = oTree.BinPathDll  + "\\" + config;
 
-            execute(oShell, "copy /Y \"" + dlls_bin_path + "\\*.dll\" \"" + local_bin_path + "\"");
+//            execute(oShell, "copy /Y \"" + dlls_bin_path + "\\*.dll\" \"" + local_bin_path + "\"");
+            execute(oShell, "xcopy /Y /Q /C /K \"" + dlls_bin_path + "\\*.dll\" \"" + local_bin_path + "\"");
         }
     } else {
         VerboseEcho("CopyDlls:  skipped (not requested)");
@@ -677,7 +678,7 @@ function GetSubtreeFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
     if (IsFileCopyAllowed()) {
 		var src_folder = BackSlashes(oTask.ToolkitSrcPath + "/" + cvs_rel_path);
 		if ( oFso.FolderExists(src_folder) ) {
-			execute(oShell, "xcopy \"" + src_folder + "\" \"" + target_abs_dir + "\" /S /E /Y /C");
+			execute(oShell, "xcopy \"" + src_folder + "\" \"" + target_abs_dir + "\" /S /E /Y /C /Q");
 			return;
 		}
     }
