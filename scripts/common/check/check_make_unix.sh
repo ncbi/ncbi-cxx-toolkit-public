@@ -162,6 +162,8 @@ is_report_err=false
 no_report_err=true
 signature="$x_signature"
 sendmail=''
+domain='@ncbi.nlm.nih.gov'
+
 
 ##  Printout USAGE info and exit
 
@@ -549,12 +551,16 @@ EOF_launch
 MailToAuthors()
 {
    test -z "\$sendmail"  &&  return 0
-   x_authors="\$1"
+   test -z "\$1"  &&  return 0
+   x_authors=""
+   for author in \$1; do
+       x_authors="\$x_authors \$author\$domain"
+   done
    x_logfile="\$2"
+   
    echo "Send results of the test \$x_app to \$x_authors"
    {
         echo "To: \$x_authors"
-        echo "Bcc: ivanov"
         echo "Subject: [C++ CHECK] \$x_app | \$signature"
         echo
         echo \$x_cmd
