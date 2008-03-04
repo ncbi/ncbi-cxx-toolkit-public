@@ -415,8 +415,13 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
                     lib_path += ".lib";
                     CDirEntry lib(lib_path);
                     if (!lib.Exists()) {
-                        PTB_ERROR_EX(lib_path, ePTB_FileNotFound,
-                                     "Library not found: " << lib_path);
+                        if (!GetApp().m_BuildRoot.empty()) {
+                            PTB_WARNING_EX(lib_path, ePTB_FileNotFound,
+                                        "Library not found: " << lib_path);
+                        } else {
+                            PTB_ERROR_EX(lib_path, ePTB_FileNotFound,
+                                        "Library not found: " << lib_path);
+                        }
                     }
                     additional_libs.push_back(lib.GetName());
                 }
