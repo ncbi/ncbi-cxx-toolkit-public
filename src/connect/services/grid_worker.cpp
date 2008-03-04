@@ -256,8 +256,7 @@ static void s_RunJob(CGridThreadContext& thr_context)
     do {
         more_jobs = false;
 
-        SetDiagRequestId((int) job_context.GetWorkerNode().
-            IncrementAndGetRequestCounter());
+        SetDiagRequestId((int) job_context.GetJobNumber());
 
         CNetScheduleJob new_job;
         try {
@@ -344,7 +343,6 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
       m_UseEmbeddedStorage(false), m_CheckStatusPeriod(2),
       m_JobGetterSemaphore(1,1)
 {
-    m_RequestCounter.Set(0);
     m_SharedNSClient.reset(client_factory.CreateInstance());
     m_SharedNSClient->SetProgramVersion(m_JobFactory.GetJobVersion());
     m_SharedNSClient->SetConnMode(CNetServiceAPI_Base::eKeepConnection);
