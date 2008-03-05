@@ -262,20 +262,7 @@ def Doxy(arg):
         class_or_struct = 'class'
     import webbrowser
     url = doxy_url_base + class_or_struct + mangled_class_name + '.html'
-    # on unix, if DISPLAY not set, remove some graphical browsers from
-    # consideration (they may not return non-zero status when they fail,
-    # so the user sees nothing)
-    import os
-    orig_tryorder = webbrowser._tryorder
-    if os.name == 'posix':
-       if not os.environ.has_key('DISPLAY'):
-          webbrowser._tryorder = []
-          for br in orig_tryorder:
-             if not br in ['mozilla', 'netscape']:
-                webbrowser._tryorder.append(br)
-                
     webbrowser.open_new(url)
-    webbrowser._tryorder = orig_tryorder
 
 ncbi_object.Doxy = classmethod(Doxy)
 
@@ -305,20 +292,7 @@ def Lxr(arg):
 
     import webbrowser
     url = lxr_url_base + 'ident?i=' + class_name
-    # on unix, if DISPLAY not set, remove some graphical browsers from
-    # consideration (they may not return non-zero status when they fail,
-    # so the user sees nothing)
-    import os
-    orig_tryorder = webbrowser._tryorder
-    if os.name == 'posix':
-       if not os.environ.has_key('DISPLAY'):
-          webbrowser._tryorder = []
-          for br in orig_tryorder:
-             if not br in ['mozilla', 'netscape']:
-                webbrowser._tryorder.append(br)
-                
     webbrowser.open_new(url)
-    webbrowser._tryorder = orig_tryorder
 
 ncbi_object.Lxr = classmethod(Lxr)
 
@@ -330,20 +304,7 @@ def DoxySearch(name):
     '''
     import webbrowser
     url = doxy_url_base + 'search.php?query=' + name
-    # on unix, if DISPLAY not set, remove some graphical browsers from
-    # consideration (they may not return non-zero status when they fail,
-    # so the user sees nothing)
-    import os
-    orig_tryorder = webbrowser._tryorder
-    if os.name == 'posix':
-       if not os.environ.has_key('DISPLAY'):
-          webbrowser._tryorder = []
-          for br in orig_tryorder:
-             if not br in ['mozilla', 'netscape']:
-                webbrowser._tryorder.append(br)
-                
     webbrowser.open_new(url)
-    webbrowser._tryorder = orig_tryorder
 
 
 try:
@@ -374,17 +335,6 @@ def Spec(arg, web=False):
    else:
       url = asn_spec_url_base + type + '.html'
       import webbrowser
-      # on unix, if DISPLAY not set, remove some graphical browsers from
-      # consideration (they may not return non-zero status when they fail,
-      # so the user sees nothing)
-      import os
-      orig_tryorder = webbrowser._tryorder
-      if os.name == 'posix':
-         if not os.environ.has_key('DISPLAY'):
-            webbrowser._tryorder = []
-            for br in orig_tryorder:
-               if not br in ['mozilla', 'netscape']:
-                  webbrowser._tryorder.append(br)
       webbrowser.open_new(url)
       
 CSerialObject.Spec = Spec
@@ -595,9 +545,6 @@ def CvsWeb(fname):
 
 %pragma(perl5) code = %{
 
-# Without this, object manager use gives a crash
-# if SYBASE environment variable is set
-$ENV{'GENBANK_LOADER_METHOD'} = 'id1';
 
 ############ dynamic_cast() -- Dynamic typecasting ############
 
@@ -635,25 +582,11 @@ print find_asn_spec.FindSpec(\"$type\") \
         system($cmd);
     } else {
         my $asn_spec_url_base
-            = 'http://graceland.ncbi.nlm.nih.gov:6224/staff/jcherry/asn_spec/';
+            = 'http://www.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/asn_spec/';
         my $url = $asn_spec_url_base . $type . '.html';
         my $cmd = "python -c \'\
 import webbrowser \
-# on unix, if DISPLAY not set, remove some graphical browsers from \
-# consideration (they may not return non-zero status when they fail, \
-# so the user sees nothing) \
-import os \
-orig_tryorder = webbrowser._tryorder \
-if os.name == \"posix\": \
-   if not os.environ.has_key(\"DISPLAY\"): \
-\
-      webbrowser._tryorder = [] \
-      for br in orig_tryorder: \
-         if not br in [\"mozilla\", \"netscape\"]: \
-            webbrowser._tryorder.append(br) \
-\                
 webbrowser.open_new(\"$url\") \
-webbrowser._tryorder = orig_tryorder \
 \'";
         system($cmd);
     }
@@ -683,21 +616,7 @@ else: \
     class_or_struct = \"class\" \
 import webbrowser \
 url = doxy_url_base + class_or_struct + mangled_class_name + \".html\" \
-# on unix, if DISPLAY not set, remove some graphical browsers from \
-# consideration (they may not return non-zero status when they fail, \
-# so the user sees nothing) \
-import os \
-orig_tryorder = webbrowser._tryorder \
-if os.name == \"posix\": \
-   if not os.environ.has_key(\"DISPLAY\"): \
-\
-      webbrowser._tryorder = [] \
-      for br in orig_tryorder: \
-         if not br in [\"mozilla\", \"netscape\"]: \
-            webbrowser._tryorder.append(br) \
-\                
 webbrowser.open_new(url) \
-webbrowser._tryorder = orig_tryorder \
 \'";
     system($cmd);
 }
@@ -723,21 +642,7 @@ sub Lxr {
         . 'ident?i=' . $type;
     my $cmd = "python -c \'\
 import webbrowser \
-# on unix, if DISPLAY not set, remove some graphical browsers from \
-# consideration (they may not return non-zero status when they fail, \
-# so the user sees nothing) \
-import os \
-orig_tryorder = webbrowser._tryorder \
-if os.name == \"posix\": \
-   if not os.environ.has_key(\"DISPLAY\"): \
-\
-      webbrowser._tryorder = [] \
-      for br in orig_tryorder: \
-         if not br in [\"mozilla\", \"netscape\"]: \
-            webbrowser._tryorder.append(br) \
-\                
 webbrowser.open_new(\"$url\") \
-webbrowser._tryorder = orig_tryorder \
 \'";
     system($cmd);
 }
@@ -755,21 +660,7 @@ sub DoxySearch {
 
     my $cmd = "python -c \'\
 import webbrowser \
-# on unix, if DISPLAY not set, remove some graphical browsers from \
-# consideration (they may not return non-zero status when they fail, \
-# so the user sees nothing) \
-import os \
-orig_tryorder = webbrowser._tryorder \
-if os.name == \"posix\": \
-   if not os.environ.has_key(\"DISPLAY\"): \
-\
-      webbrowser._tryorder = [] \
-      for br in orig_tryorder: \
-         if not br in [\"mozilla\", \"netscape\"]: \
-            webbrowser._tryorder.append(br) \
-\                
 webbrowser.open_new(\"$url\") \
-webbrowser._tryorder = orig_tryorder \
 \'";
     system($cmd);
 }
@@ -900,21 +791,7 @@ sub EntrezWeb {
 
     my $cmd = "python -c \'\
 import webbrowser \
-# on unix, if DISPLAY not set, remove some graphical browsers from \
-# consideration (they may not return non-zero status when they fail, \
-# so the user sees nothing) \
-import os \
-orig_tryorder = webbrowser._tryorder \
-if os.name == \"posix\": \
-   if not os.environ.has_key(\"DISPLAY\"): \
-\
-      webbrowser._tryorder = [] \
-      for br in orig_tryorder: \
-         if not br in [\"mozilla\", \"netscape\"]: \
-            webbrowser._tryorder.append(br) \
-\                
 webbrowser.open_new(\"$url\") \
-webbrowser._tryorder = orig_tryorder \
 \'";
     system($cmd);
 }
