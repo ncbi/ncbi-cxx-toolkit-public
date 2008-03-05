@@ -3357,7 +3357,7 @@ if test "$with_sybase" != "no" ; then
          AC_DEFINE(HAVE_SYBASE_REENTRANT, 1,
                    [Define to 1 if SYBASE has reentrant libraries.])
       fi
-      if test "$with_dbapi" != no -a -f ${real_srcdir}/src/objtools/data_loaders/genbank/readers/pubseqos/Makefile.in; then
+      if test "$with_dbapi" != no -a -f ${real_srcdir}/src/objtools/data_loaders/genbank/pubseq/Makefile.in; then
          AC_CACHE_CHECK([for PubSeq service availability], ncbi_cv_db_pubseq,
             [if grep PUBSEQ_OS $SYBASE_PATH/interfaces >/dev/null; then
                 ncbi_cv_db_pubseq=yes
