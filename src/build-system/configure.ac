@@ -1692,7 +1692,7 @@ if test "$with_profiling" = "yes" ; then
    prof_sfx="Prof"
    case "$compiler" in
       Compaq)    PFFLAGS="-pg" ;;
-      GCC)       PFFLAGS="-pg -fprofile-arcs" ;;
+      GCC)       PFFLAGS="-pg" ;;
       ICC)       PFFLAGS="-p" ;;
       KCC)       PFFLAGS="-pg" ;;
       MIPSpro73) PFFLAGS="" ;; # pixie(1) adds info at runtime
