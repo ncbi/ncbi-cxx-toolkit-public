@@ -351,8 +351,13 @@ try:
 except:
 	pass
 
-asn_spec_url_base = 'http://intranet.ncbi.nlm.nih.gov' \
-                    '/ieb/ToolBox/CPP_DOC/asn_spec/'
+if WithinNcbi():
+    asn_spec_url_base = 'http://intranet.ncbi.nlm.nih.gov' \
+                        '/ieb/ToolBox/CPP_DOC/asn_spec/'
+else:
+    asn_spec_url_base = 'http://www.ncbi.nlm.nih.gov' \
+                        '/ieb/ToolBox/CPP_DOC/asn_spec/'
+
 def Spec(arg, web=False):
    if isinstance(arg, CSerialObject):
       # a serial object; get type string from type info
