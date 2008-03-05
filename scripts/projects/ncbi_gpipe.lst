@@ -9,6 +9,7 @@ dbapi
 hello
 html
 internal/align_model$
+internal/align_model/loader
 internal/algo/align/splign
 internal/algo/align/pipeline-tools
 internal/algo/align/gpipe-wnodes
