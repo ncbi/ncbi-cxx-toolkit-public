@@ -666,8 +666,13 @@ tds_get_column_declaration(TDSSOCKET * tds, TDSCOLUMN * curcol, char *out)
         break;
     case SYBNVARCHAR:
     case XSYBNVARCHAR:
-        if (IS_TDS7_PLUS(tds))
-            fmt = "NVARCHAR(%d)";
+        if (IS_TDS7_PLUS(tds)) {
+            if (curcol->column_size > 8000) {
+                fmt = "NVARCHAR(MAX)";
+            } else {
+                fmt = "NVARCHAR(%d)";
+            }
+        }
         break;
     case XSYBNCHAR:
         if (IS_TDS7_PLUS(tds))
@@ -1501,7 +1506,10 @@ tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
             tds_put_byte(tds, MIN(curcol->column_size, 255));
             break;
         case 2:
-            tds_put_smallint(tds, 8000/*MIN(curcol->column_size, 8000)*/);
+            /* ssikorsk */
+            /* tds_put_smallint(tds, MIN(curcol->column_size, 8000)); */
+            /* tds_put_smallint(tds, curcol->column_size); */
+            tds_put_smallint(tds, 8000); 
             break;
         case 4:
             tds_put_int(tds, MIN(curcol->column_size, 0x7fffffff));
@@ -1638,6 +1646,9 @@ tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row)
                        tds_put_int(tds, colsize);
                        break;
                case 2:
+                       /* ssikorsk */
+                       /* Values longer than 8000 bytes are not allowed
+                        * 03/04/08 */
                        colsize = MIN(colsize, 8000);
                        tds_put_smallint(tds, colsize);
                        break;
@@ -1692,6 +1703,9 @@ tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row)
                        tds_put_int(tds, colsize);
                        break;
                case 2:
+                       /* ssikorsk */
+                       /* Values longer than 8000 bytes are not allowed
+                        * 03/04/08 */
                        colsize = MIN(colsize, 8000);
                        tds_put_smallint(tds, colsize);
                        break;
