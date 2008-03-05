@@ -66,11 +66,9 @@ public:
 
     template<class Func>
     Func ForEach(Func func) {
-        Rebalance();
-        CReadLockGuard g(m_ServersLock);
-        TDiscoveredServers servers_copy(m_Servers);
-        g.Release();
-        NON_CONST_ITERATE(TDiscoveredServers, it, servers_copy) {
+        TDiscoveredServers servers;
+        DiscoverServers(servers);
+        NON_CONST_ITERATE(TDiscoveredServers, it, servers) {
             CNetServerConnection conn =
                 FindOrCreateConnectionPool(*it).GetConnection();
 
@@ -143,9 +141,7 @@ protected:
 
     string GetConnectionInfo(CNetServerConnection& conn) const;
 
-    void Rebalance();
-
-    void GetDiscoveredServers(TDiscoveredServers& servers);
+    void DiscoverServers(TDiscoveredServers& servers);
 
     CNetServerConnectionPool&
         FindOrCreateConnectionPool(const TServerAddress& srv) const;

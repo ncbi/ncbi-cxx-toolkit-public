@@ -36,9 +36,6 @@
 #include <connect/services/srv_discovery.hpp>
 #include <connect/services/srv_connections_expt.hpp>
 
-#include <connect/ncbi_connutil.h>
-#include <connect/ncbi_service.h>
-
 #include <corelib/ncbi_config.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -95,33 +92,6 @@ IRebalanceStrategy*
 IRebalanceStrategy* CreateDefaultRebalanceStrategy()
 {
     return new CSimpleRebalanceStrategy(50, 10);
-}
-
-
-void DiscoverLBServices(
-    const string& service_name,
-    vector<pair<string,unsigned short> >& services,
-    bool all_services)
-{
-    SConnNetInfo* net_info = ConnNetInfo_Create(service_name.c_str());
-    TSERV_Type stype = fSERV_Any;
-    if (all_services)
-        stype |= fSERV_IncludeSuppressed;
-
-    SERV_ITER srv_it = SERV_Open(service_name.c_str(), stype, 0, net_info);
-    ConnNetInfo_Destroy(net_info);
-
-    if (srv_it != 0) {
-        const SSERV_Info* sinfo;
-        while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0) {
-            string host = CSocketAPI::ntoa(sinfo->host);
-            services.push_back(pair<string,unsigned short>(host, sinfo->port));
-        } // while
-        SERV_Close(srv_it);
-    } else {
-        NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
-                   "Load balancer cannot find service name " + service_name + ".");
-    }
 }
 
 

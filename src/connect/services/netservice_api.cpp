@@ -29,11 +29,16 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <connect/services/netservice_api.hpp>
 #include <connect/services/error_codes.hpp>
 #include <connect/services/srv_connections_expt.hpp>
 #include <connect/services/netservice_api_expt.hpp>
 #include <connect/services/netservice_params.hpp>
+
+#include <connect/ncbi_connutil.h>
+#include <connect/ncbi_service.h>
+
 #include <corelib/ncbi_system.hpp>
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Connection
@@ -257,8 +262,9 @@ CNetServerConnection CNetServiceAPI_Base::GetBest(
             NCBI_THROW(CNetSrvConnException, eSrvListEmpty, "The service is not set.");
         return FindOrCreateConnectionPool(m_Servers[0]).GetConnection();
     }
+    TDiscoveredServers servers;
     try {
-        Rebalance();
+        DiscoverServers(servers);
     } catch (CNetSrvConnException& ex) {
         if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound || !backup)
             throw;
@@ -267,10 +273,7 @@ CNetServerConnection CNetServiceAPI_Base::GetBest(
             backup->second << ".");
         return FindOrCreateConnectionPool(*backup).GetConnection();
     }
-    CReadLockGuard g(m_ServersLock);
-    TDiscoveredServers servers_copy(m_Servers);
-    g.Release();
-    ITERATE(TDiscoveredServers, it, servers_copy) {
+    ITERATE(TDiscoveredServers, it, servers) {
         CNetServerConnection conn =
             FindOrCreateConnectionPool(*it).GetConnection();
         try {
@@ -363,18 +366,38 @@ CNetServerConnectionPool& CNetServiceAPI_Base::FindOrCreateConnectionPool(
     return *pool;
 }
 
-void CNetServiceAPI_Base::Rebalance()
+void CNetServiceAPI_Base::DiscoverServers(TDiscoveredServers& servers)
 {
-    if (!m_IsLoadBalanced)
-        return;
-    if (!m_RebalanceStrategy || m_RebalanceStrategy->NeedRebalance()) {
+    if (m_IsLoadBalanced &&
+        (!m_RebalanceStrategy || m_RebalanceStrategy->NeedRebalance())) {
         CWriteLockGuard g(m_ServersLock);
         m_Servers.clear();
         int try_count = 0;
         for (;;) {
             try {
-                DiscoverLBServices(m_ServiceName, m_Servers,
-                    m_DiscoverLowPriorityServers == eOn);
+                SConnNetInfo* net_info =
+                    ConnNetInfo_Create(m_ServiceName.c_str());
+
+                SERV_ITER srv_it = SERV_Open(m_ServiceName.c_str(),
+                    m_DiscoverLowPriorityServers == eOn ?
+                        fSERV_Any | fSERV_IncludeSuppressed : fSERV_Any,
+                            0, net_info);
+
+                ConnNetInfo_Destroy(net_info);
+
+                if (srv_it == 0) {
+                    NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
+                        "Load balancer cannot find service name " +
+                            m_ServiceName + ".");
+                }
+
+                const SSERV_Info* sinfo;
+
+                while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0)
+                    m_Servers.push_back(TServerAddress(
+                        CSocketAPI::ntoa(sinfo->host), sinfo->port));
+
+                SERV_Close(srv_it);
                 break;
             } catch (CNetSrvConnException& ex) {
                 if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound)
@@ -382,15 +405,12 @@ void CNetServiceAPI_Base::Rebalance()
                 ERR_POST_X(4, "Communication Error : " << ex.what());
                 if (++try_count > TServConn_MaxFineLBNameRetries::GetDefault())
                     throw;
-                SleepMilliSec(1000 + try_count*2000);
+                SleepMilliSec(1000 + try_count * 2000);
             }
         }
     }
-}
 
-void CNetServiceAPI_Base::GetDiscoveredServers(TDiscoveredServers& servers)
-{
-    servers.erase(servers.begin(), servers.end());
+    servers.clear();
     CReadLockGuard g(m_ServersLock);
     servers.insert(servers.begin(), m_Servers.begin(), m_Servers.end());
 }

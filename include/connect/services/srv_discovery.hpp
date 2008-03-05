@@ -57,11 +57,6 @@ NCBI_XCONNECT_EXPORT IRebalanceStrategy* CreateSimpleRebalanceStrategy(
 
 NCBI_XCONNECT_EXPORT IRebalanceStrategy* CreateDefaultRebalanceStrategy();
 
-NCBI_XCONNECT_EXPORT void DiscoverLBServices(
-    const string& service_name,
-    vector<pair<string,unsigned short> >& services,
-    bool all_services);
-
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES___SRV_DISCOVERY__HPP */

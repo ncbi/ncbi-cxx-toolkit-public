@@ -307,12 +307,10 @@ void CNetScheduleExecuter::ReturnJob(const string& job_key) const
 
 bool CNetScheduleExecuter::GetJobImpl(const string& cmd, CNetScheduleJob& job) const
 {
-    m_API->Rebalance();
+    CNetServiceAPI_Base::TDiscoveredServers servers;
+    m_API->DiscoverServers(servers);
 
-    CNetServiceAPI_Base::TDiscoveredServers servers_copy;
-    m_API->GetDiscoveredServers(servers_copy);
-
-    size_t servers_size = servers_copy.size();
+    size_t servers_size = servers.size();
 
     if (servers_size == 0)
         return false;
@@ -328,7 +326,7 @@ bool CNetScheduleExecuter::GetJobImpl(const string& cmd, CNetScheduleJob& job) c
 
     for (; current < last; ++current) {
         const CNetServiceAPI_Base::TServerAddress& srv =
-            servers_copy[current % servers_size];
+            servers[current % servers_size];
 
         try {
             string resp = m_API->SendCmdWaitResponse(
