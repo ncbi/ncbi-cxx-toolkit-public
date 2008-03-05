@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = cache pubseqos id2 id1 pubseqos2 test
+SUB_PROJ = cache pubseq id2 id1 pubseq2 test
 
 LIB_PROJ = ncbi_xreader ncbi_xloader_genbank
 
