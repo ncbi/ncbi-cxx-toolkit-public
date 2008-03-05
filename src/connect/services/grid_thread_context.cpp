@@ -53,7 +53,7 @@ CGridThreadContext::CGridThreadContext(CGridWorkerNode& node, long check_status_
       m_JobContext(NULL), m_Reporter(node.GetNSExecuter()), m_MsgThrottler(1),
       m_CheckStatusPeriod(check_status_period > 1 ? check_status_period : 1),
       m_StatusThrottler(1,CTimeSpan(m_CheckStatusPeriod, 0))
- {
+{
     m_Reader.reset(node.CreateStorage());
     m_Writer.reset(node.CreateStorage());
     m_ProgressWriter.reset(node.CreateStorage());

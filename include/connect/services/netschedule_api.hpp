@@ -455,11 +455,6 @@ public:
                  EWaitMode      wait_mode = eWaitNotification) const;
 
 
-    /// Get job with wait notification (no immediate wait)
-    bool GetJobWaitNotify(CNetScheduleJob& job,
-                          unsigned   wait_time,
-                          unsigned short udp_port) const;
-
     /// Put job result (job should be received by GetJob() or WaitJob())
     ///
     /// @param job
@@ -565,8 +560,6 @@ public:
                                  unsigned       wait_time,
                                  unsigned short udp_port);
 
-    void WaitQueueNotification(unsigned wait_time,  unsigned short udp_port) const;
-
     /// Return Queue name
     const string& GetQueueName() const;
     const string& GetClientName() const;
@@ -578,8 +571,9 @@ private:
 
     CNetScheduleAPI* m_API;
 
-    void x_RegUnregClient(const string& cmd, unsigned short udp_port) const;
+    bool GetJobImpl(const string& cmd, CNetScheduleJob& job) const;
 
+    void x_RegUnregClient(const string& cmd, unsigned short udp_port) const;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -749,12 +743,6 @@ const CNetScheduleAPI::SServerParams& CNetScheduleSubmitter::GetServerParams()
 
 
 /////////////////////////////////////////////////////////////////////////
-inline
-void CNetScheduleExecuter::WaitQueueNotification(unsigned       wait_time,
-                                                 unsigned short udp_port) const
-{
-    WaitNotification(m_API->GetQueueName(), wait_time, udp_port);
-}
 inline CNetScheduleAPI::EJobStatus
 CNetScheduleExecuter::GetJobStatus(const string& job_key)
 {

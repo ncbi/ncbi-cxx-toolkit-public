@@ -64,46 +64,15 @@ public:
 
     bool IsLoadBalanced() const { return m_IsLoadBalanced; }
 
-    template<class Pred>
-    bool Find(Pred func) {
-        x_Rebalance();
-        CReadLockGuard g(m_ServersLock);
-        TDiscoveredServers servers_copy(m_Servers);
-        g.Release();
-        // pick a random pivot element, so we do not always
-        // fetch jobs using the same lookup order and some servers do
-        // not get equally "milked"
-        // also get random list lookup direction
-        unsigned servers_size = servers_copy.size();
-
-        if (servers_size == 0)
-            return false;
-
-        unsigned pivot = rand() % servers_size;
-        unsigned pivot_plus_servers_size = pivot + servers_size;
-
-        for (unsigned i = pivot; i < pivot_plus_servers_size; ++i) {
-            unsigned j = i % servers_size;
-            const TServerAddress& srv = servers_copy[j];
-
-            CNetServerConnection conn =
-                x_FindOrCreateConnectionPool(srv).GetConnection();
-
-            if (func(conn, i == pivot_plus_servers_size - 1))
-                return true;
-        }
-        return false;
-    }
-
     template<class Func>
     Func ForEach(Func func) {
-        x_Rebalance();
+        Rebalance();
         CReadLockGuard g(m_ServersLock);
         TDiscoveredServers servers_copy(m_Servers);
         g.Release();
         NON_CONST_ITERATE(TDiscoveredServers, it, servers_copy) {
             CNetServerConnection conn =
-                x_FindOrCreateConnectionPool(*it).GetConnection();
+                FindOrCreateConnectionPool(*it).GetConnection();
 
             func(conn);
         }
@@ -174,6 +143,12 @@ protected:
 
     string GetConnectionInfo(CNetServerConnection& conn) const;
 
+    void Rebalance();
+
+    void GetDiscoveredServers(TDiscoveredServers& servers);
+
+    CNetServerConnectionPool&
+        FindOrCreateConnectionPool(const TServerAddress& srv) const;
 
 private:
     friend class CNetServiceAuthenticator;
@@ -204,11 +179,6 @@ private:
     STimeout                          m_Timeout;
     unsigned int                      m_MaxRetries;
     ESwitch                           m_PermanentConnection;
-
-    CNetServerConnectionPool&
-        x_FindOrCreateConnectionPool(const TServerAddress& srv) const;
-
-    void x_Rebalance();
 };
 
 

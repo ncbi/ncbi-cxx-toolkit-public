@@ -146,48 +146,6 @@ void s_ParseGetJobResponse(string*        job_key,
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
-struct SNSJobGetter
-{
-    SNSJobGetter(const CNetScheduleAPI& api, const string& cmd, CNetScheduleJob& job)
-        : m_API(api), m_Cmd(cmd), m_Job(job)
-    {}
-    bool operator()(CNetServerConnection conn, bool isLast);
-    const CNetScheduleAPI& m_API;
-    const string& m_Cmd;
-    CNetScheduleJob& m_Job;
-};
-
-bool SNSJobGetter::operator()(CNetServerConnection conn, bool isLast)
-{
-    string resp;
-    try {
-        resp = m_API.SendCmdWaitResponse(conn, m_Cmd);
-    } catch (CNetServiceException& ex) {
-        ERR_POST_X(9, conn.GetHost() << ":" << conn.GetPort()
-                      << " returned error: \"" << ex.what() << "\"");
-        if (ex.GetErrCode() == CNetServiceException::eCommunicationError) {
-            if( isLast )
-                NCBI_THROW(CNetServiceException, eCommunicationError,
-                           "Communication error");
-            return false;
-        } else throw;
-    } catch (CIO_Exception& ex) {
-        ERR_POST_X(10, conn.GetHost() << ":" << conn.GetPort()
-                       << " returned error: \"" << ex.what() << "\"");
-        if( isLast )
-            NCBI_THROW(CNetServiceException, eCommunicationError,
-                       "Communication error");
-        return false;
-    }
-    if (!resp.empty()) {
-        m_Job.mask = CNetScheduleAPI::eEmptyMask;
-        string tmp;
-        s_ParseGetJobResponse(&m_Job.job_id, &m_Job.input, &tmp, &tmp, &m_Job.mask, resp);
-        return true;
-    }
-    return false;
-}
-
 void CNetScheduleExecuter::SetRunTimeout(const string& job_key,
                                          unsigned      time_to_run) const
 {
@@ -202,28 +160,17 @@ void CNetScheduleExecuter::JobDelayExpiration(const string& job_key,
 }
 
 
-
 bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job,
                                   unsigned short udp_port) const
 {
-    //size_t err_count = 0;
     string cmd = "GET";
-    if (udp_port != 0)
-        cmd += ' ' + NStr::IntToString(udp_port);
 
-    return m_API->Find(SNSJobGetter(*m_API, cmd, job));
-}
+    if (udp_port != 0) {
+        cmd += ' ';
+        cmd += NStr::IntToString(udp_port);
+    }
 
-
-bool CNetScheduleExecuter::GetJobWaitNotify(CNetScheduleJob& job,
-                                            unsigned   wait_time,
-                                            unsigned short udp_port) const
-{
-    //size_t err_count = 0;
-    string cmd = "WGET";
-    cmd += ' ' + NStr::IntToString(udp_port) + ' ' + NStr::IntToString(wait_time);
-
-    return m_API->Find(SNSJobGetter(*m_API, cmd, job));
+    return GetJobImpl(cmd, job);
 }
 
 
@@ -232,25 +179,25 @@ bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
                                    unsigned short udp_port,
                                    EWaitMode      wait_mode) const
 {
-    //cerr << ">>WaitJob" << endl;
-    bool job_received =
-        GetJobWaitNotify(job, wait_time, udp_port);
-    if (job_received) {
-        return job_received;
-    }
+    string cmd = "WGET ";
 
-    if (wait_mode != eWaitNotification) {
-        return 0;
-    }
-    WaitQueueNotification(wait_time, udp_port);
+    cmd += NStr::IntToString(udp_port);
+    cmd += ' ';
+    cmd += NStr::IntToString(wait_time);
+
+    if (GetJobImpl(cmd, job))
+        return true;
+
+    if (wait_mode != eWaitNotification)
+        return false;
+
+    WaitNotification(m_API->GetQueueName(), wait_time, udp_port);
 
     // no matter is WaitResult we re-try the request
     // using reliable comm.level and notify server that
     // we no longer on the UDP socket
 
-    bool ret = GetJob(job, udp_port);
-    return ret;
-
+    return GetJob(job, udp_port);
 }
 
 struct SWaitQueuePred {
@@ -357,6 +304,69 @@ void CNetScheduleExecuter::ReturnJob(const string& job_key) const
 {
     m_API->x_SendJobCmdWaitResponse("RETURN" , job_key);
 }
+
+bool CNetScheduleExecuter::GetJobImpl(const string& cmd, CNetScheduleJob& job) const
+{
+    m_API->Rebalance();
+
+    CNetServiceAPI_Base::TDiscoveredServers servers_copy;
+    m_API->GetDiscoveredServers(servers_copy);
+
+    size_t servers_size = servers_copy.size();
+
+    if (servers_size == 0)
+        return false;
+
+    // pick a random pivot element, so we do not always
+    // fetch jobs using the same lookup order and some servers do
+    // not get equally "milked"
+    // also get random list lookup direction
+    unsigned current = rand() % servers_size;
+    unsigned last = current + servers_size;
+
+    bool had_comm_err = false;
+
+    for (; current < last; ++current) {
+        const CNetServiceAPI_Base::TServerAddress& srv =
+            servers_copy[current % servers_size];
+
+        try {
+            string resp = m_API->SendCmdWaitResponse(
+                m_API->FindOrCreateConnectionPool(srv).GetConnection(),
+                    cmd);
+
+            if (!resp.empty()) {
+                job.mask = CNetScheduleAPI::eEmptyMask;
+                string tmp;
+                s_ParseGetJobResponse(&job.job_id,
+                    &job.input, &tmp, &tmp, &job.mask, resp);
+                return true;
+            }
+        }
+        catch (CNetServiceException& ex) {
+            ERR_POST_X(9, srv.first << ":" << srv.second
+                          << " returned error: \"" << ex.what() << "\"");
+
+            if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
+                throw;
+
+            had_comm_err = true;
+        }
+        catch (CIO_Exception& ex) {
+            ERR_POST_X(10, srv.first << ":" << srv.second
+                           << " returned error: \"" << ex.what() << "\"");
+
+            had_comm_err = true;
+        }
+    }
+
+    if (had_comm_err)
+        NCBI_THROW(CNetServiceException,
+            eCommunicationError, "Communication error");
+
+    return false;
+}
+
 
 void CNetScheduleExecuter::x_RegUnregClient(const string&  cmd,
                                             unsigned short udp_port) const
