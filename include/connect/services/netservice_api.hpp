@@ -139,8 +139,6 @@ protected:
 
     virtual void ProcessServerError(string& response, ETrimErr trim_err) const;
 
-    string GetConnectionInfo(CNetServerConnection& conn) const;
-
     void DiscoverServers(TDiscoveredServers& servers);
 
     CNetServerConnectionPool&

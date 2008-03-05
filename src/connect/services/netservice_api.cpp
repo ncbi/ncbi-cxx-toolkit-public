@@ -148,11 +148,6 @@ void CNetServiceAPI_Base::SetRebalanceStrategy(IRebalanceStrategy* strategy, EOw
         m_RebalanceStrategyGuard.reset();
 }
 
-string CNetServiceAPI_Base::GetConnectionInfo(CNetServerConnection& conn) const
-{
-    return GetServiceName();
-}
-
 /* static */
 void CNetServiceAPI_Base::TrimErr(string& err_msg)
 {
