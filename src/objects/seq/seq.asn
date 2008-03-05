@@ -394,10 +394,23 @@ NCBIstdaa ::= OCTET STRING    -- codes 0-25, 1 per byte
 --*** Sequence Annotation *************************************
 --*
 
+-- This is a replica of Textseq-id
+-- This is specific for annotations, and exists to maintain a semantic
+-- difference between IDs assigned to annotations and IDs assigned to
+-- sequences
+Textannot-id ::= SEQUENCE {
+    name	  VisibleString OPTIONAL ,
+    accession VisibleString OPTIONAL ,
+    release   VisibleString OPTIONAL ,
+    version   INTEGER       OPTIONAL
+}
+
 Annot-id ::= CHOICE {
     local Object-id ,
     ncbi INTEGER ,
-    general Dbtag }
+    general Dbtag,
+    other Textannot-id
+}
     
 Annot-descr ::= SET OF Annotdesc
 
