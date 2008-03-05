@@ -767,15 +767,16 @@ void CDBAPIUnitTest::Test_Unicode(void)
 void CDBAPIUnitTest::Test_VARCHAR_MAX(void)
 {
     string sql;
-    const string table_name = "#test_varchar_max_table";
-    const string msg(32000, 'Z');
-    const CVariant vc_max_value(msg);
+    // const string table_name = "#test_varchar_max_table";
+    const string table_name = "DBAPI_Sample..test_varchar_max_table";
+    // const string msg(32000, 'Z');
+    const string msg(8001, 'Z');
 
     try {
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
         // Create table ...
-        {
+        if (table_name[0] =='#') {
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
                 "   id NUMERIC IDENTITY NOT NULL, \n"
@@ -785,32 +786,81 @@ void CDBAPIUnitTest::Test_VARCHAR_MAX(void)
             auto_stmt->ExecuteUpdate( sql );
         }
 
-        // Insert data into the table ...
+        // SQL value injection technique ... 
         {
-            sql =
-                "INSERT INTO " + table_name + "(vc_max) VALUES(@vc_max)";
+            // Clean table ...
+            {
+                sql = "DELETE FROM " + table_name;
 
-            auto_stmt->SetParam( vc_max_value, "@vc_max" );
-            auto_stmt->ExecuteUpdate( sql );
-        }
+                auto_stmt->ExecuteUpdate( sql );
+            }
 
-        // Actual check ...
-        {
-            sql = "SELECT vc_max FROM " + table_name + " ORDER BY id";
+            // Insert data into the table ...
+            {
+                sql =
+                    "INSERT INTO " + table_name + "(vc_max) VALUES(\'" + msg + "\')";
 
-            auto_stmt->SendSql( sql );
-            while( auto_stmt->HasMoreResults() ) {
-                if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                    BOOST_CHECK( rs.get() != NULL );
+                auto_stmt->ExecuteUpdate( sql );
+            }
 
-                    BOOST_CHECK( rs->Next() );
-                    const string value = rs->GetVariant(1).GetString();
-                    BOOST_CHECK_EQUAL(value.size(), msg.size());
-                    // BOOST_CHECK_EQUAL(value, msg);
+            // Actual check ...
+            {
+                sql = "SELECT vc_max FROM " + table_name + " ORDER BY id";
+
+                auto_stmt->SendSql( sql );
+                while( auto_stmt->HasMoreResults() ) {
+                    if( auto_stmt->HasRows() ) {
+                        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                        BOOST_CHECK( rs.get() != NULL );
+
+                        BOOST_CHECK( rs->Next() );
+                        const string value = rs->GetVariant(1).GetString();
+                        BOOST_CHECK_EQUAL(value.size(), msg.size());
+                        // BOOST_CHECK_EQUAL(value, msg);
+                    }
                 }
             }
         }
+
+        // Parameters ...
+        if (false) {
+            const CVariant vc_max_value(msg);
+
+            // Clean table ...
+            {
+                sql = "DELETE FROM " + table_name;
+
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            // Insert data into the table ...
+            {
+                sql =
+                    "INSERT INTO " + table_name + "(vc_max) VALUES(@vc_max)";
+
+                auto_stmt->SetParam( vc_max_value, "@vc_max" );
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            // Actual check ...
+            {
+                sql = "SELECT vc_max FROM " + table_name + " ORDER BY id";
+
+                auto_stmt->SendSql( sql );
+                while( auto_stmt->HasMoreResults() ) {
+                    if( auto_stmt->HasRows() ) {
+                        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                        BOOST_CHECK( rs.get() != NULL );
+
+                        BOOST_CHECK( rs->Next() );
+                        const string value = rs->GetVariant(1).GetString();
+                        BOOST_CHECK_EQUAL(value.size(), msg.size());
+                        // BOOST_CHECK_EQUAL(value, msg);
+                    }
+                }
+            }
+        }
+
     }
     catch(const CDB_Exception& ex) {
         DBAPI_BOOST_FAIL(ex);
