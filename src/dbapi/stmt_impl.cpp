@@ -130,14 +130,19 @@ bool CStatement::HasMoreResults()
 }
 
 void CStatement::SetParam(const CVariant& v,
-                          const string& name)
+                          const CDBParamVariant& param)
 {
-    ParamList::iterator i = m_params.find(name);
-    if( i != m_params.end() ) {
-        *((*i).second) = v;
-    }
-    else {
-        m_params.insert(make_pair(name, new CVariant(v)));
+    if (param.IsPositional()) {
+        NCBI_DBAPI_THROW("Binding by position is not implemented in CStatement::SetParam.");
+    } else {
+        const string name = param.GetName();
+        ParamList::iterator i = m_params.find(name);
+        if( i != m_params.end() ) {
+            *((*i).second) = v;
+        }
+        else {
+            m_params.insert(make_pair(name, new CVariant(v)));
+        }
     }
 }
 

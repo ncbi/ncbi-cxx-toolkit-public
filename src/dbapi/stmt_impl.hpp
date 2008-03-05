@@ -70,8 +70,8 @@ public:
     virtual void Cancel();
     virtual void Close();
 
-    virtual void SetParam(const CVariant& v, 
-                          const string& name);
+    virtual void SetParam(const CVariant& v,
+                          const CDBParamVariant& param);
 
     virtual void ClearParamList();
     virtual const IResultSetMetaData& GetParamsMetaData(void);

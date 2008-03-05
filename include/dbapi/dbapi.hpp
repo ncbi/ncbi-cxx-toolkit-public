@@ -374,7 +374,7 @@ public:
     /// @param name
     ///   Parameter name.
     virtual void SetParam(const CVariant& v,
-                          const string& name) = 0;
+                          const CDBParamVariant& param) = 0;
 
     /// Clear parameter list.
     virtual void ClearParamList() = 0;

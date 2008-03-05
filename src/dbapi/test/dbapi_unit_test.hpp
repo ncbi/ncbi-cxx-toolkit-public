@@ -256,10 +256,9 @@ public:
     void Test_ConnPool(void);
     void Test_BCP_Cancel(void);
     void Test_ClearParamList(void);
-
     void Test_Truncation(void);
-
     void Test_ConnParams(void);
+    void Test_BindByPos(void);
 
 public:
     typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)
@@ -274,7 +273,6 @@ public:
 
 public:
     // Not implemented yet ...
-    void Test_Bind(void);
     void Test_Execute(void);
 
     void Test_Exception(void);

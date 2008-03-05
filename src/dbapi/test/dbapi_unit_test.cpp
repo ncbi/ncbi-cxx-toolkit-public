@@ -12806,8 +12806,82 @@ void CDBAPIUnitTest::Test_ConnParams(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 void
-CDBAPIUnitTest::Test_Bind(void)
+CDBAPIUnitTest::Test_BindByPos(void)
 {
+    const long rec_num  = 10;
+    const string table_name = GetTableName();
+    const string str_value = "asdfghjkl";
+    string sql;
+
+    // Initialize data (strings are full of spaces) ...
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // First test ...
+        {
+            {
+                // Drop all records ...
+                sql  = " DELETE FROM " + table_name;
+                auto_stmt->ExecuteUpdate(sql);
+            }
+
+            {
+                sql  = " INSERT INTO " + table_name +
+                    "(int_field, vc1000_field) "
+                    "VALUES(@int_field, @vc1000_field) \n";
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+
+                auto_stmt->SetParam( CVariant(string(str_value)), 2);
+
+                // Insert data ...
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    if (ind % 2 == 0) {
+                        auto_stmt->SetParam( CVariant( Int4(ind) ), 1);
+                    } else {
+                        auto_stmt->SetParam( CVariant(eDB_Int), 1);
+                    }
+
+                    // Execute a statement with parameters ...
+                    auto_stmt->ExecuteUpdate( sql );
+                }
+
+                // Check record number ...
+                BOOST_CHECK_EQUAL(size_t(rec_num), GetNumOfRecords(auto_stmt,
+                            GetTableName()));
+            }
+
+            // Check ...
+            {
+                sql = "SELECT int_field, vc1000_field FROM " + table_name +
+                    " ORDER BY id";
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    BOOST_CHECK(rs->Next());
+
+                    // const CVariant& int_field = rs->GetVariant(1);
+                    const CVariant& vc1000_field = rs->GetVariant(2);
+
+                    BOOST_CHECK( !vc1000_field.IsNull() );
+                    BOOST_CHECK_EQUAL(vc1000_field.GetString(), str_value);
+                }
+
+                DumpResults(auto_stmt.get());
+            }
+        }
+    }
+    catch(const CDB_Exception& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+
 }
 
 void
