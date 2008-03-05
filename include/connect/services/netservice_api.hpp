@@ -128,6 +128,8 @@ public:
     void PrintServerOut(CNetServerConnection conn,
         CNcbiOstream& out) const;
 
+    CNetServerConnection GetConnection(const TServerAddress& srv);
+
 protected:
     enum ETrimErr {
         eNoTrimErr,
@@ -137,8 +139,6 @@ protected:
     virtual void ProcessServerError(string& response, ETrimErr trim_err) const;
 
     void DiscoverServers(TDiscoveredServers& servers);
-
-    CNetServerConnection GetConnection(const TServerAddress& srv);
 
 private:
     friend class CNetServiceAuthenticator;
