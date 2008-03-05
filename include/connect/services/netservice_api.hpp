@@ -69,10 +69,7 @@ public:
         TDiscoveredServers servers;
         DiscoverServers(servers);
         NON_CONST_ITERATE(TDiscoveredServers, it, servers) {
-            CNetServerConnection conn =
-                FindOrCreateConnectionPool(*it).GetConnection();
-
-            func(conn);
+            func(GetConnection(*it));
         }
         return func;
     }
@@ -141,8 +138,7 @@ protected:
 
     void DiscoverServers(TDiscoveredServers& servers);
 
-    CNetServerConnectionPool&
-        FindOrCreateConnectionPool(const TServerAddress& srv) const;
+    CNetServerConnection GetConnection(const TServerAddress& srv);
 
 private:
     friend class CNetServiceAuthenticator;

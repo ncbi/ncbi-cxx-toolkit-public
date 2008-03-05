@@ -255,7 +255,7 @@ CNetServerConnection CNetServiceAPI_Base::GetBest(
         CReadLockGuard g(m_ServersLock);
         if (m_Servers.empty())
             NCBI_THROW(CNetSrvConnException, eSrvListEmpty, "The service is not set.");
-        return FindOrCreateConnectionPool(m_Servers[0]).GetConnection();
+        return GetConnection(m_Servers[0]);
     }
     TDiscoveredServers servers;
     try {
@@ -266,11 +266,10 @@ CNetServerConnection CNetServiceAPI_Base::GetBest(
         ERR_POST_X(5, "Connecting to backup server " <<
             backup->first << ":" <<
             backup->second << ".");
-        return FindOrCreateConnectionPool(*backup).GetConnection();
+        return GetConnection(*backup);
     }
     ITERATE(TDiscoveredServers, it, servers) {
-        CNetServerConnection conn =
-            FindOrCreateConnectionPool(*it).GetConnection();
+        CNetServerConnection conn = GetConnection(*it);
         try {
             conn.CheckConnect();
             return conn;
@@ -286,7 +285,7 @@ CNetServerConnection CNetServiceAPI_Base::GetBest(
         ERR_POST_X(3, "Couldn't find any availbale servers for " <<
             m_ServiceName << " service. Connecting to backup server " <<
             backup->first << ":" << backup->second << ".");
-        return FindOrCreateConnectionPool(*backup).GetConnection();
+        return GetConnection(*backup);
     }
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
         "Couldn't find any availbale servers for " +
@@ -295,9 +294,8 @@ CNetServerConnection CNetServiceAPI_Base::GetBest(
 
 CNetServerConnection CNetServiceAPI_Base::GetSpecific(const string& host, unsigned int port)
 {
-    return FindOrCreateConnectionPool(
-        TServerAddress(CSocketAPI::ntoa(CSocketAPI::gethostbyname(host)),
-            port)).GetConnection();
+    return GetConnection(TServerAddress(
+        CSocketAPI::ntoa(CSocketAPI::gethostbyname(host)), port));
 }
 
 void CNetServiceAPI_Base::SetCommunicationTimeout(const STimeout& to)
@@ -339,8 +337,8 @@ void CNetServiceAPI_Base::PermanentConnection(ESwitch type)
     }
 }
 
-CNetServerConnectionPool& CNetServiceAPI_Base::FindOrCreateConnectionPool(
-    const TServerAddress& srv) const
+CNetServerConnection
+    CNetServiceAPI_Base::GetConnection(const TServerAddress& srv)
 {
     CFastMutexGuard g(m_ConnectionMutex);
     TServerAddressToConnectionPool::iterator it =
@@ -358,7 +356,7 @@ CNetServerConnectionPool& CNetServiceAPI_Base::FindOrCreateConnectionPool(
     g.Release();
     if (m_RebalanceStrategy)
         m_RebalanceStrategy->OnResourceRequested(*pool);
-    return *pool;
+    return pool->GetConnection();
 }
 
 void CNetServiceAPI_Base::DiscoverServers(TDiscoveredServers& servers)

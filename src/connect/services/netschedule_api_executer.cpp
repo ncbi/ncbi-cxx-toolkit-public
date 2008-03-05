@@ -329,9 +329,8 @@ bool CNetScheduleExecuter::GetJobImpl(const string& cmd, CNetScheduleJob& job) c
             servers[current % servers_size];
 
         try {
-            string resp = m_API->SendCmdWaitResponse(
-                m_API->FindOrCreateConnectionPool(srv).GetConnection(),
-                    cmd);
+            string resp =
+                m_API->SendCmdWaitResponse(m_API->GetConnection(srv), cmd);
 
             if (!resp.empty()) {
                 job.mask = CNetScheduleAPI::eEmptyMask;
