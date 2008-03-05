@@ -196,7 +196,7 @@ private:
 
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
     {
-        return SendCmdWaitResponse(x_GetConnectioin(job_key), cmd + ' ' + job_key);
+        return SendCmdWaitResponse(x_GetConnection(job_key), cmd + ' ' + job_key);
     }
     template<typename Arg1>
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key, Arg1 arg1)
@@ -205,7 +205,7 @@ private:
         if (!job_key.empty())
             tmp += ' ' + job_key + ' ';
         tmp += ToStr<Arg1>::Convert(arg1);
-        return SendCmdWaitResponse(x_GetConnectioin(job_key), tmp);
+        return SendCmdWaitResponse(x_GetConnection(job_key), tmp);
     }
     template<typename Arg1, typename Arg2>
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key,
@@ -215,7 +215,7 @@ private:
         if (!job_key.empty())
             tmp += ' ' + job_key + ' ';
         tmp += ToStr<Arg1>::Convert(arg1) + ' ' + ToStr<Arg2>::Convert(arg2);
-        return SendCmdWaitResponse(x_GetConnectioin(job_key), tmp);
+        return SendCmdWaitResponse(x_GetConnection(job_key), tmp);
     }
     template<typename Arg1, typename Arg2, typename Arg3>
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key,
@@ -226,10 +226,10 @@ private:
             tmp += ' ' + job_key + ' ';
         tmp += ToStr<Arg1>::Convert(arg1) + ' '
             + ToStr<Arg2>::Convert(arg2) + ' ' + ToStr<Arg3>::Convert(arg3);
-        return SendCmdWaitResponse(x_GetConnectioin(job_key), tmp);
+        return SendCmdWaitResponse(x_GetConnection(job_key), tmp);
     }
 
-    CNetServerConnection x_GetConnectioin(const string& job_key = kEmptyStr);
+    CNetServerConnection x_GetConnection(const string& job_key = kEmptyStr);
 
     virtual void x_SendAuthetication(CNetServerConnection& conn) const;
 
@@ -709,7 +709,7 @@ inline CNetScheduleAdmin CNetScheduleAPI::GetAdmin()
 }
 
 inline
-CNetServerConnection CNetScheduleAPI::x_GetConnectioin(const string& job_key)
+CNetServerConnection CNetScheduleAPI::x_GetConnection(const string& job_key)
 {
     if (job_key.empty())
         return GetBest();

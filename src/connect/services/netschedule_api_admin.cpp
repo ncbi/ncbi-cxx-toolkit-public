@@ -62,7 +62,7 @@ void CNetScheduleAdmin::ShutdownServer(CNetScheduleAdmin::EShutdownLevel level) 
         break;
     }
 
-    m_API->SendCmdWaitResponse(m_API->x_GetConnectioin(), cmd);
+    m_API->SendCmdWaitResponse(m_API->x_GetConnection(), cmd);
 }
 
 
@@ -77,7 +77,7 @@ void CNetScheduleAdmin::ReloadServerConfig() const
         NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed,
                    "This command is allowed only for non-loadbalance client.");
     }
-    m_API->SendCmdWaitResponse(m_API->x_GetConnectioin(), "RECO");
+    m_API->SendCmdWaitResponse(m_API->x_GetConnection(), "RECO");
 }
 
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
@@ -104,7 +104,7 @@ void CNetScheduleAdmin::DeleteQueue(const string& qname) const
 void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key) const
 {
     string cmd = "DUMP " + job_key + "\r\n";
-    CNetServerConnection conn = m_API->x_GetConnectioin(job_key);
+    CNetServerConnection conn = m_API->x_GetConnection(job_key);
     conn.WriteStr(cmd);
     m_API->PrintServerOut(conn, out);
 }
@@ -156,7 +156,7 @@ void CNetScheduleAdmin::Monitor(CNcbiOstream & out) const
                    "This command is allowed only for non-loadbalance client.");
     }
 
-    CNetServerConnection conn = m_API->x_GetConnectioin();
+    CNetServerConnection conn = m_API->x_GetConnection();
     conn.WriteStr("MONI QUIT\r\n");
     conn.Telnet(&out, NULL);
     conn.Close();
@@ -171,7 +171,7 @@ void CNetScheduleAdmin::Logging(bool on_off) const
     string cmd = "LOG ";
     cmd += on_off ? "ON" : "OFF";
 
-    m_API->SendCmdWaitResponse(m_API->x_GetConnectioin(), cmd);
+    m_API->SendCmdWaitResponse(m_API->x_GetConnection(), cmd);
 }
 
 
