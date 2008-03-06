@@ -514,7 +514,7 @@ void CSeqMapSwitchPoint::ChangeSwitchPoint(TSeqPos pos, TSeqPos add)
         NCBI_THROW(CSeqMapException, eOutOfRange,
                    "switch point is not in valid range");
     }
-    if ( add < 0 || add > 0 && add > GetInsert(pos) ) {
+    if ( add > 0 && add > GetInsert(pos) ) {
         NCBI_THROW(CSeqMapException, eOutOfRange,
                    "adding more bases than available");
     }
