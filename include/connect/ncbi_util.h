@@ -42,7 +42,9 @@
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
  *    methods:    LOG_ComposeMessage(), LOG_ToFILE(), MessagePlusErrno(),
  *                CORE_SetLOCK(), CORE_GetLOCK(),
- *                CORE_SetLOG(),  CORE_GetLOG(),   CORE_SetLOGFILE()
+ *                CORE_SetLOG(),  CORE_GetLOG(),
+ *                CORE_SetLOGFILE[_Ex](), CORE_SetLOGFILE_NAME[_Ex]()
+ *                LOG_ToFILE[_Ex]()
  *
  * 2. Auxiliary API:
  *       CORE_GetPlatform()
