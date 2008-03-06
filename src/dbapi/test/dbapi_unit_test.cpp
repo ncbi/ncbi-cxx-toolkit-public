@@ -8218,6 +8218,17 @@ CDBAPIUnitTest::Test_Procedure(void)
                 BOOST_CHECK_EQUAL( size_t(1), GetNumOfRecords(auto_stmt) );
             }
 
+            // NULL value with CVariant ...
+            {
+                auto_ptr<ICallableStatement> auto_stmt(
+                    m_Conn->GetCallableStatement("sp_statistics")
+                    );
+
+                auto_stmt->SetParam(CVariant((const char*) NULL), "@table_name");
+                auto_stmt->Execute();
+                DumpResults(auto_stmt.get());
+            }
+
             // Doesn't work for some reason ...
             if (false) {
                 // Execute it first time ...
@@ -10386,9 +10397,18 @@ CDBAPIUnitTest::Test_Variant(void)
             BOOST_CHECK( !variant_string.IsNull() );
             BOOST_CHECK( variant_string.GetString() == value_string );
 
+            const CVariant variant_string2( kEmptyStr );
+            BOOST_CHECK( !variant_string2.IsNull() );
+            BOOST_CHECK( variant_string2.GetString() == kEmptyStr );
+
             const CVariant variant_char( value_char );
             BOOST_CHECK( !variant_char.IsNull() );
             BOOST_CHECK( variant_char.GetString() == value_char );
+
+            const CVariant variant_char2( (const char*)NULL );
+            // !!!
+            BOOST_CHECK( variant_char2.IsNull() );
+            BOOST_CHECK( variant_char2.GetString() == string() );
 
             const CVariant variant_CTimeShort( value_CTime, eShort );
             BOOST_CHECK( !variant_CTimeShort.IsNull() );
@@ -10628,9 +10648,19 @@ CDBAPIUnitTest::Test_Variant(void)
             BOOST_CHECK( !variant_VarChar.IsNull() );
             BOOST_CHECK( variant_VarChar.GetString() == value_char );
 
+            const CVariant variant_VarChar2 = CVariant::VarChar(NULL);
+            // !!!!
+            BOOST_CHECK( variant_VarChar2.IsNull() );
+            BOOST_CHECK( variant_VarChar2.GetString() == string() );
+
             const CVariant variant_Char = CVariant::Char( strlen(value_char), const_cast<char*>(value_char) );
             BOOST_CHECK( !variant_Char.IsNull() );
             BOOST_CHECK( variant_Char.GetString() == value_char );
+
+            const CVariant variant_Char2 = CVariant::Char( 0, NULL );
+            // !!!!
+            BOOST_CHECK( variant_Char2.IsNull() );
+            BOOST_CHECK( variant_Char2.GetString() == string() );
 
             const CVariant variant_LongBinary = CVariant::LongBinary( strlen(value_binary), value_binary, strlen(value_binary)) ;
             BOOST_CHECK( !variant_LongBinary.IsNull() );
@@ -10780,12 +10810,26 @@ CDBAPIUnitTest::Test_Variant(void)
             variant_string = value_string;
             BOOST_CHECK( variant_string.GetString() == value_string );
 
+            CVariant variant_string2( kEmptyStr );
+            BOOST_CHECK( !variant_string2.IsNull() );
+            variant_string2 = CVariant( kEmptyStr );
+            BOOST_CHECK( variant_string2.GetString() == kEmptyStr );
+            variant_string2 = kEmptyStr;
+            BOOST_CHECK( variant_string2.GetString() == kEmptyStr );
+
             CVariant variant_char( value_char );
             BOOST_CHECK( !variant_char.IsNull() );
             variant_char = CVariant( value_char );
             BOOST_CHECK( variant_char.GetString() == value_char );
             variant_char = value_char;
             BOOST_CHECK( variant_char.GetString() == value_char );
+
+            CVariant variant_char2( (const char*) NULL );
+            BOOST_CHECK( !variant_char.IsNull() );
+            variant_char2 = CVariant( (const char*) NULL );
+            BOOST_CHECK( variant_char2.GetString() == string() );
+            variant_char2 = (const char*) NULL;
+            BOOST_CHECK( variant_char2.GetString() == string() );
 
             CVariant variant_CTimeShort( value_CTime, eShort );
             BOOST_CHECK( !variant_CTimeShort.IsNull() );
