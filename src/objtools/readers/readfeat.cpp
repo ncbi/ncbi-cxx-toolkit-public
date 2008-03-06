@@ -76,6 +76,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objtools/readers/readfeat.hpp>
+#include <objtools/cleanup/cleanup.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
@@ -245,9 +246,16 @@ private:
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
                                    COrgMod::ESubtype mtype, const string& val);
 
+    bool x_AddGBQualToFeature    (CRef<CSeq_feat> sfp,
+                                  const string& qual, const string& val);
+
     bool x_StringIsJustQuotes (const string& str);
 
     int x_ParseTrnaString (const string& val);
+
+    bool x_SetupSeqFeat (CRef<CSeq_feat> sfp, const string& feat,
+                         const CFeature_table_reader::TFlags flags);
+
 };
 
 auto_ptr<CFeature_table_reader_imp> CFeature_table_reader::sm_Implementation;
@@ -477,7 +485,9 @@ typedef pair <const char *, const CBioSource::EGenome> TGenomeKey;
 static const TGenomeKey genome_key_to_subtype [] = {
     TGenomeKey ( "apicoplast",                CBioSource::eGenome_apicoplast       ),
     TGenomeKey ( "chloroplast",               CBioSource::eGenome_chloroplast      ),
+    TGenomeKey ( "chromatophore",             CBioSource::eGenome_chromatophore    ),
     TGenomeKey ( "chromoplast",               CBioSource::eGenome_chromoplast      ),
+    TGenomeKey ( "chromosome",                CBioSource::eGenome_chromosome       ),
     TGenomeKey ( "cyanelle",                  CBioSource::eGenome_cyanelle         ),
     TGenomeKey ( "endogenous_virus",          CBioSource::eGenome_endogenous_virus ),
     TGenomeKey ( "extrachrom",                CBioSource::eGenome_extrachrom       ),
@@ -535,6 +545,7 @@ static const TSubSrcKey subsrc_key_to_subtype [] = {
     TSubSrcKey ( "lab_host",             CSubSource::eSubtype_lab_host              ),
     TSubSrcKey ( "lat_lon",              CSubSource::eSubtype_lat_lon               ),
     TSubSrcKey ( "map",                  CSubSource::eSubtype_map                   ),
+    TSubSrcKey ( "metagenomic",          CSubSource::eSubtype_metagenomic           ),
     TSubSrcKey ( "plasmid",              CSubSource::eSubtype_plasmid_name          ),
     TSubSrcKey ( "plastid",              CSubSource::eSubtype_plastid_name          ),
     TSubSrcKey ( "pop_variant",          CSubSource::eSubtype_pop_variant           ),
@@ -557,44 +568,47 @@ DEFINE_STATIC_ARRAY_MAP(TSubSrcMap, sm_SubSrcKeys, subsrc_key_to_subtype);
 typedef pair <const char *, const COrgMod::ESubtype> TOrgModKey;
 
 static const TOrgModKey orgmod_key_to_subtype [] = {
-    TOrgModKey ( "acronym",          COrgMod::eSubtype_acronym          ),
-    TOrgModKey ( "anamorph",         COrgMod::eSubtype_anamorph         ),
-    TOrgModKey ( "authority",        COrgMod::eSubtype_authority        ),
-    TOrgModKey ( "biotype",          COrgMod::eSubtype_biotype          ),
-    TOrgModKey ( "biovar",           COrgMod::eSubtype_biovar           ),
-    TOrgModKey ( "breed",            COrgMod::eSubtype_breed            ),
-    TOrgModKey ( "chemovar",         COrgMod::eSubtype_chemovar         ),
-    TOrgModKey ( "common",           COrgMod::eSubtype_common           ),
-    TOrgModKey ( "cultivar",         COrgMod::eSubtype_cultivar         ),
-    TOrgModKey ( "dosage",           COrgMod::eSubtype_dosage           ),
-    TOrgModKey ( "ecotype",          COrgMod::eSubtype_ecotype          ),
-    TOrgModKey ( "forma",            COrgMod::eSubtype_forma            ),
-    TOrgModKey ( "forma_specialis",  COrgMod::eSubtype_forma_specialis  ),
-    TOrgModKey ( "gb_acronym",       COrgMod::eSubtype_gb_acronym       ),
-    TOrgModKey ( "gb_anamorph",      COrgMod::eSubtype_gb_anamorph      ),
-    TOrgModKey ( "gb_synonym",       COrgMod::eSubtype_gb_synonym       ),
-    TOrgModKey ( "group",            COrgMod::eSubtype_group            ),
-    TOrgModKey ( "isolate",          COrgMod::eSubtype_isolate          ),
-    TOrgModKey ( "nat_host",         COrgMod::eSubtype_nat_host         ),
-    TOrgModKey ( "natural_host",     COrgMod::eSubtype_nat_host         ),
-    TOrgModKey ( "old_lineage",      COrgMod::eSubtype_old_lineage      ),
-    TOrgModKey ( "old_name",         COrgMod::eSubtype_old_name         ),
-    TOrgModKey ( "pathovar",         COrgMod::eSubtype_pathovar         ),
-    TOrgModKey ( "serogroup",        COrgMod::eSubtype_serogroup        ),
-    TOrgModKey ( "serotype",         COrgMod::eSubtype_serotype         ),
-    TOrgModKey ( "serovar",          COrgMod::eSubtype_serovar          ),
-    TOrgModKey ( "spec_host",        COrgMod::eSubtype_nat_host         ),
-    TOrgModKey ( "specific_host",    COrgMod::eSubtype_nat_host         ),
-    TOrgModKey ( "specimen_voucher", COrgMod::eSubtype_specimen_voucher ),
-    TOrgModKey ( "strain",           COrgMod::eSubtype_strain           ),
-    TOrgModKey ( "sub_species",      COrgMod::eSubtype_sub_species      ),
-    TOrgModKey ( "subgroup",         COrgMod::eSubtype_subgroup         ),
-    TOrgModKey ( "substrain",        COrgMod::eSubtype_substrain        ),
-    TOrgModKey ( "subtype",          COrgMod::eSubtype_subtype          ),
-    TOrgModKey ( "synonym",          COrgMod::eSubtype_synonym          ),
-    TOrgModKey ( "teleomorph",       COrgMod::eSubtype_teleomorph       ),
-    TOrgModKey ( "type",             COrgMod::eSubtype_type             ),
-    TOrgModKey ( "variety",          COrgMod::eSubtype_variety          )
+    TOrgModKey ( "acronym",            COrgMod::eSubtype_acronym            ),
+    TOrgModKey ( "anamorph",           COrgMod::eSubtype_anamorph           ),
+    TOrgModKey ( "authority",          COrgMod::eSubtype_authority          ),
+    TOrgModKey ( "bio_material",       COrgMod::eSubtype_bio_material       ),
+    TOrgModKey ( "biotype",            COrgMod::eSubtype_biotype            ),
+    TOrgModKey ( "biovar",             COrgMod::eSubtype_biovar             ),
+    TOrgModKey ( "breed",              COrgMod::eSubtype_breed              ),
+    TOrgModKey ( "chemovar",           COrgMod::eSubtype_chemovar           ),
+    TOrgModKey ( "common",             COrgMod::eSubtype_common             ),
+    TOrgModKey ( "cultivar",           COrgMod::eSubtype_cultivar           ),
+    TOrgModKey ( "culture_collection", COrgMod::eSubtype_culture_collection ),
+    TOrgModKey ( "dosage",             COrgMod::eSubtype_dosage             ),
+    TOrgModKey ( "ecotype",            COrgMod::eSubtype_ecotype            ),
+    TOrgModKey ( "forma",              COrgMod::eSubtype_forma              ),
+    TOrgModKey ( "forma_specialis",    COrgMod::eSubtype_forma_specialis    ),
+    TOrgModKey ( "gb_acronym",         COrgMod::eSubtype_gb_acronym         ),
+    TOrgModKey ( "gb_anamorph",        COrgMod::eSubtype_gb_anamorph        ),
+    TOrgModKey ( "gb_synonym",         COrgMod::eSubtype_gb_synonym         ),
+    TOrgModKey ( "group",              COrgMod::eSubtype_group              ),
+    TOrgModKey ( "isolate",            COrgMod::eSubtype_isolate            ),
+    TOrgModKey ( "metagenome_source",  COrgMod::eSubtype_metagenome_source  ),
+    TOrgModKey ( "nat_host",           COrgMod::eSubtype_nat_host           ),
+    TOrgModKey ( "natural_host",       COrgMod::eSubtype_nat_host           ),
+    TOrgModKey ( "old_lineage",        COrgMod::eSubtype_old_lineage        ),
+    TOrgModKey ( "old_name",           COrgMod::eSubtype_old_name           ),
+    TOrgModKey ( "pathovar",           COrgMod::eSubtype_pathovar           ),
+    TOrgModKey ( "serogroup",          COrgMod::eSubtype_serogroup          ),
+    TOrgModKey ( "serotype",           COrgMod::eSubtype_serotype           ),
+    TOrgModKey ( "serovar",            COrgMod::eSubtype_serovar            ),
+    TOrgModKey ( "spec_host",          COrgMod::eSubtype_nat_host           ),
+    TOrgModKey ( "specific_host",      COrgMod::eSubtype_nat_host           ),
+    TOrgModKey ( "specimen_voucher",   COrgMod::eSubtype_specimen_voucher   ),
+    TOrgModKey ( "strain",             COrgMod::eSubtype_strain             ),
+    TOrgModKey ( "sub_species",        COrgMod::eSubtype_sub_species        ),
+    TOrgModKey ( "subgroup",           COrgMod::eSubtype_subgroup           ),
+    TOrgModKey ( "substrain",          COrgMod::eSubtype_substrain          ),
+    TOrgModKey ( "subtype",            COrgMod::eSubtype_subtype            ),
+    TOrgModKey ( "synonym",            COrgMod::eSubtype_synonym            ),
+    TOrgModKey ( "teleomorph",         COrgMod::eSubtype_teleomorph         ),
+    TOrgModKey ( "type",               COrgMod::eSubtype_type               ),
+    TOrgModKey ( "variety",            COrgMod::eSubtype_variety            )
 };
 
 typedef CStaticArrayMap <const char*, const COrgMod::ESubtype, PNocase_CStr> TOrgModMap;
@@ -671,6 +685,7 @@ DEFINE_STATIC_ARRAY_MAP(TTrnaMap, sm_TrnaKeys, trna_key_to_subtype);
 static const char * const single_key_list [] = {
     "environmental_sample",
     "germline",
+    "metagenomic",
     "partial",
     "pseudo",
     "rearranged",
@@ -712,9 +727,19 @@ CFeature_table_reader_imp::~CFeature_table_reader_imp(void)
 }
 
 
-bool CFeature_table_reader_imp::x_ParseFeatureTableLine (const string& line, Int4* startP, Int4* stopP,
-                                                         bool* partial5P, bool* partial3P, bool* ispointP, bool* isminusP,
-                                                         string& featP, string& qualP, string& valP, Int4 offset)
+bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
+    const string& line,
+    Int4* startP,
+    Int4* stopP,
+    bool* partial5P,
+    bool* partial3P,
+    bool* ispointP,
+    bool* isminusP,
+    string& featP,
+    string& qualP,
+    string& valP,
+    Int4 offset
+)
 
 {
     SIZE_TYPE      numtkns;
@@ -731,6 +756,9 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (const string& line, Int
     vector<string> tkns;
 
     if (line.empty ()) return false;
+
+    /* offset and other instructions encoded in brackets */
+    if (NStr::StartsWith (line, '[')) return false;
 
     tkns.clear ();
     NStr::Tokenize (line, "\t", tkns);
@@ -816,8 +844,11 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (const string& line, Int
 }
 
 
-bool CFeature_table_reader_imp::x_AddQualifierToGene (CSeqFeatData& sfdata,
-                                                      EQual qtype, const string& val)
+bool CFeature_table_reader_imp::x_AddQualifierToGene (
+    CSeqFeatData& sfdata,
+    EQual qtype,
+    const string& val
+)
 
 {
     CGene_ref& grp = sfdata.SetGene ();
@@ -853,8 +884,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToGene (CSeqFeatData& sfdata,
 }
 
 
-bool CFeature_table_reader_imp::x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
-                                                          EQual qtype, const string& val)
+bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
+    CRef<CSeq_feat> sfp,
+    CSeqFeatData& sfdata,
+    EQual qtype, const string& val
+)
 
 {
     CCdregion& crp = sfdata.SetCdregion ();
@@ -908,8 +942,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, C
                 return true;
             }
         case eQual_prot_note:
-            return true;
+            return false;
         case eQual_transl_except:
+            /* !!! */
+            /* if (x_ParseCodeBreak (sfp, crp, val)) return true; */
             return true;
         default:
             break;
@@ -918,7 +954,9 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, C
 }
 
 
-bool CFeature_table_reader_imp::x_StringIsJustQuotes (const string& str)
+bool CFeature_table_reader_imp::x_StringIsJustQuotes (
+    const string& str
+)
 
 {
     ITERATE (string, it, str) {
@@ -930,7 +968,9 @@ bool CFeature_table_reader_imp::x_StringIsJustQuotes (const string& str)
 }
 
 
-int CFeature_table_reader_imp::x_ParseTrnaString (const string& val)
+int CFeature_table_reader_imp::x_ParseTrnaString (
+    const string& val
+)
 
 {
     string fst, scd;
@@ -949,8 +989,11 @@ int CFeature_table_reader_imp::x_ParseTrnaString (const string& val)
 }
 
 
-bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
-                                                     EQual qtype, const string& val)
+bool CFeature_table_reader_imp::x_AddQualifierToRna (
+    CSeqFeatData& sfdata,
+    EQual qtype,
+    const string& val
+)
 
 {
     CRNA_ref& rrp = sfdata.SetRna ();
@@ -959,10 +1002,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
         case CRNA_ref::eType_premsg:
         case CRNA_ref::eType_mRNA:
         case CRNA_ref::eType_rRNA:
-        case CRNA_ref::eType_snRNA:
-        case CRNA_ref::eType_scRNA:
-        case CRNA_ref::eType_snoRNA:
-        case CRNA_ref::eType_other:
             switch (qtype) {
                 case eQual_product:
                     {
@@ -976,6 +1015,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
                     break;
             }
             break;
+        case CRNA_ref::eType_snRNA:
+        case CRNA_ref::eType_scRNA:
+        case CRNA_ref::eType_snoRNA:
+        case CRNA_ref::eType_other:
+            return false;
         case CRNA_ref::eType_tRNA:
             switch (qtype) {
                 case eQual_product: {
@@ -1010,8 +1054,13 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
 }
 
 
-bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
-                                                     EQual qtype, const string& qual, const string& val)
+bool CFeature_table_reader_imp::x_AddQualifierToImp (
+    CRef<CSeq_feat> sfp,
+    CSeqFeatData& sfdata,
+    EQual qtype,
+    const string& qual,
+    const string& val
+)
 
 {
     CSeqFeatData::ESubtype subtype = sfdata.GetSubtype ();
@@ -1092,8 +1141,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
 }
 
 
-bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
-                                                        EOrgRef rtype, const string& val)
+bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
+    CSeqFeatData& sfdata,
+    EOrgRef rtype,
+    const string& val
+)
 
 {
     CBioSource& bsp = sfdata.SetBiosrc ();
@@ -1151,8 +1203,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
 }
 
 
-bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
-                                                        CSubSource::ESubtype stype, const string& val)
+bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
+    CSeqFeatData& sfdata,
+    CSubSource::ESubtype stype,
+    const string& val
+)
 
 {
     CBioSource& bsp = sfdata.SetBiosrc ();
@@ -1165,8 +1220,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
 }
 
 
-bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
-                                                        COrgMod::ESubtype  mtype, const string& val)
+bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
+    CSeqFeatData& sfdata,
+    COrgMod::ESubtype mtype,
+    const string& val
+)
 
 {
     CBioSource& bsp = sfdata.SetBiosrc ();
@@ -1181,8 +1239,34 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
 }
 
 
-bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
-                                                         const string& qual, const string& val)
+bool CFeature_table_reader_imp::x_AddGBQualToFeature (
+    CRef<CSeq_feat> sfp,
+    const string& qual,
+    const string& val
+)
+
+{
+    if (qual.empty ()) return false;
+
+    CSeq_feat::TQual& qlist = sfp->SetQual ();
+    CRef<CGb_qual> gbq (new CGb_qual);
+    gbq->SetQual (qual);
+    if (x_StringIsJustQuotes (val)) {
+        gbq->SetVal (kEmptyStr);
+    } else {
+        gbq->SetVal (val);
+    }
+    qlist.push_back (gbq);
+
+    return true;
+}
+
+
+bool CFeature_table_reader_imp::x_AddQualifierToFeature (
+    CRef<CSeq_feat> sfp,
+    const string& qual,
+    const string& val
+)
 
 {
     CSeqFeatData&          sfdata = sfp->SetData ();
@@ -1311,15 +1395,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                             --s_iter;
                         }
                         if (NStr::StartsWith (val, *s_iter, NStr::eNocase)) {
-                            CSeq_feat::TQual& qlist = sfp->SetQual ();
-                            CRef<CGb_qual> gbq (new CGb_qual);
-                            gbq->SetQual (qual);
-                            if (x_StringIsJustQuotes (val)) {
-                                gbq->SetVal (kEmptyStr);
-                            } else {
-                                gbq->SetVal (val);
-                            }
-                            qlist.push_back (gbq);
+                            x_AddGBQualToFeature (sfp, qual, val);
                             return true;
                         }
                         return false;
@@ -1358,15 +1434,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                 case eQual_transposon:
                 case eQual_usedin:
                     {
-                        CSeq_feat::TQual& qlist = sfp->SetQual ();
-                        CRef<CGb_qual> gbq (new CGb_qual);
-                        gbq->SetQual (qual);
-                        if (x_StringIsJustQuotes (val)) {
-                            gbq->SetVal (kEmptyStr);
-                        } else {
-                            gbq->SetVal (val);
-                        }
-                        qlist.push_back (gbq);
+                        x_AddGBQualToFeature (sfp, qual, val);
                         return true;
                     }
                 case eQual_gene:
@@ -1398,11 +1466,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                         grp.SetLocus_tag (val);
                         return true;
                     }
-                case eQual_nomenclature:
-                    {
-                        /* !!! need to implement !!! */
-                        return true;
-                    }
                 case eQual_db_xref:
                     {
                         string db, tag;
@@ -1424,6 +1487,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                         }
                         return true;
                     }
+                case eQual_nomenclature:
+                    {
+                        /* !!! need to implement !!! */
+                        return true;
+                    }
                 case eQual_go_component:
                 case eQual_go_function:
                 case eQual_go_process:
@@ -1435,8 +1503,8 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                              obj.SetStr ("GeneOntology");
                          }
                          (need more implementation here)
-                         return true;
                          */
+                         return true;
                     }
                 default:
                     break;
@@ -1447,9 +1515,17 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
 }
 
 
-bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSeq_loc_mix *mix,
-                                                        const string& seqid, Int4 start, Int4 stop,
-                                                        bool partial5, bool partial3, bool ispoint, bool isminus)
+bool CFeature_table_reader_imp::x_AddIntervalToFeature (
+    CRef<CSeq_feat> sfp,
+    CSeq_loc_mix *mix,
+    const string& seqid,
+    Int4 start,
+    Int4 stop,
+    bool partial5,
+    bool partial3,
+    bool ispoint,
+    bool isminus
+)
 
 {
     CSeq_interval::TStrand strand = eNa_strand_plus;
@@ -1509,6 +1585,120 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSe
 }
 
 
+bool CFeature_table_reader_imp::x_SetupSeqFeat (
+    CRef<CSeq_feat> sfp,
+    const string& feat,
+    const CFeature_table_reader::TFlags flags
+)
+
+{
+    if (feat.empty ()) return false;
+
+    TFeatMap::const_iterator f_iter = sm_FeatKeys.find (feat.c_str ());
+    if (f_iter != sm_FeatKeys.end ()) {
+
+        CSeqFeatData::ESubtype sbtyp = f_iter->second;
+        if (sbtyp != CSeqFeatData::eSubtype_bad) {
+
+            // populate *sfp here...
+
+            CSeqFeatData::E_Choice typ = CSeqFeatData::GetTypeFromSubtype (sbtyp);
+            sfp->SetData ().Select (typ);
+            CSeqFeatData& sfdata = sfp->SetData ();
+    
+            if (typ == CSeqFeatData::e_Rna) {
+                CRNA_ref& rrp = sfdata.SetRna ();
+                CRNA_ref::EType rnatyp = CRNA_ref::eType_unknown;
+                switch (sbtyp) {
+                    case CSeqFeatData::eSubtype_preRNA :
+                        rnatyp = CRNA_ref::eType_premsg;
+                        break;
+                    case CSeqFeatData::eSubtype_mRNA :
+                        rnatyp = CRNA_ref::eType_mRNA;
+                        break;
+                    case CSeqFeatData::eSubtype_tRNA :
+                        rnatyp = CRNA_ref::eType_tRNA;
+                        break;
+                    case CSeqFeatData::eSubtype_rRNA :
+                        rnatyp = CRNA_ref::eType_rRNA;
+                        break;
+                    case CSeqFeatData::eSubtype_snRNA :
+                        rrp.SetExt().SetName("ncRNA");
+                        rnatyp = CRNA_ref::eType_other;
+                        x_AddGBQualToFeature (sfp, "ncRNA_class", "snRNA");
+                        break;
+                    case CSeqFeatData::eSubtype_scRNA :
+                        rrp.SetExt().SetName("ncRNA");
+                        rnatyp = CRNA_ref::eType_other;
+                        x_AddGBQualToFeature (sfp, "ncRNA_class", "scRNA");
+                        break;
+                    case CSeqFeatData::eSubtype_snoRNA :
+                        rrp.SetExt().SetName("ncRNA");
+                        rnatyp = CRNA_ref::eType_other;
+                        x_AddGBQualToFeature (sfp, "ncRNA_class", "snoRNA");
+                        break;
+                    case CSeqFeatData::eSubtype_ncRNA :
+                        rrp.SetExt().SetName("ncRNA");
+                        rnatyp = CRNA_ref::eType_other;
+                        break;
+                    case CSeqFeatData::eSubtype_tmRNA :
+                        rrp.SetExt().SetName("tmRNA");
+                        rnatyp = CRNA_ref::eType_other;
+                        break;
+                    case CSeqFeatData::eSubtype_otherRNA :
+                        rrp.SetExt().SetName("misc_RNA");
+                        rnatyp = CRNA_ref::eType_other;
+                        break;
+                    default :
+                        break;
+                }
+                rrp.SetType (rnatyp);
+   
+            } else if (typ == CSeqFeatData::e_Imp) {
+                CImp_feat_Base& imp = sfdata.SetImp ();
+                imp.SetKey (feat);
+    
+            } else if (typ == CSeqFeatData::e_Bond) {
+                sfdata.SetBond (CSeqFeatData::eBond_other);
+                
+            } else if (typ == CSeqFeatData::e_Site) {
+                sfdata.SetSite (CSeqFeatData::eSite_other);
+            }
+
+            return true;
+        }
+    }
+
+    // unrecognized feature key
+
+    if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+        ERR_POST_X (4, Warning << "Unrecognized feature " << feat);
+    }
+
+    if ((flags & CFeature_table_reader::fTranslateBadKey) != 0) {
+
+        sfp->SetData ().Select (CSeqFeatData::e_Imp);
+        CSeqFeatData& sfdata = sfp->SetData ();
+        CImp_feat_Base& imp = sfdata.SetImp ();
+        imp.SetKey ("misc_feature");
+        x_AddQualifierToFeature (sfp, "standard_name", feat);
+
+        return true;
+
+    } else if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
+
+        sfp->SetData ().Select (CSeqFeatData::e_Imp);
+        CSeqFeatData& sfdata = sfp->SetData ();
+        CImp_feat_Base& imp = sfdata.SetImp ();
+        imp.SetKey (feat);
+
+        return true;
+    }
+
+    return false;
+}
+
+
 CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     CNcbiIstream& ifs,
     const string& seqid,
@@ -1520,10 +1710,8 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     string line;
     string feat, qual, val;
     Int4 start, stop;
-    bool partial5, partial3, ispoint, isminus;
+    bool partial5, partial3, ispoint, isminus, ignore = false;;
     Int4 offset = 0;
-    CSeqFeatData::ESubtype sbtyp = CSeqFeatData::eSubtype_bad;
-    CSeqFeatData::E_Choice typ = CSeqFeatData::e_not_set;
     CRef<CSeq_annot> sap(new CSeq_annot);
     CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
     CRef<CSeq_feat> sfp;
@@ -1550,6 +1738,10 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                 // set offset !!!!!!!!
 
+            } else if (NStr::StartsWith (line, "ORDER")) {
+
+                // put nulls between feature intervals !!!!!!!!
+
             } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
                                                 &ispoint, &isminus, feat, qual, val, offset)) {
 
@@ -1559,114 +1751,35 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                     // process start - stop - feature line
 
-                    TFeatMap::const_iterator f_iter = sm_FeatKeys.find (feat.c_str ());
-                    if (f_iter != sm_FeatKeys.end ()) {
-                        sbtyp = f_iter->second;
-                        if (sbtyp != CSeqFeatData::eSubtype_bad) {
+                    sfp.Reset (new CSeq_feat);
+                    sfp->ResetLocation ();
 
-                            // populate *sfp here...
+                    if (x_SetupSeqFeat (sfp, feat, flags)) {
 
-                            sfp.Reset (new CSeq_feat);
-                            sfp->ResetLocation ();
+                        ftable.push_back (sfp);
 
-                            typ = CSeqFeatData::GetTypeFromSubtype (sbtyp);
-                            sfp->SetData ().Select (typ);
-                            CSeqFeatData& sfdata = sfp->SetData ();
-                            if (typ == CSeqFeatData::e_Rna) {
-                                CRNA_ref& rrp = sfdata.SetRna ();
-                                CRNA_ref::EType rnatyp = CRNA_ref::eType_unknown;
-                                switch (sbtyp) {
-                                    case CSeqFeatData::eSubtype_preRNA :
-                                        rnatyp = CRNA_ref::eType_premsg;
-                                        break;
-                                    case CSeqFeatData::eSubtype_mRNA :
-                                        rnatyp = CRNA_ref::eType_mRNA;
-                                        break;
-                                    case CSeqFeatData::eSubtype_tRNA :
-                                        rnatyp = CRNA_ref::eType_tRNA;
-                                        break;
-                                    case CSeqFeatData::eSubtype_rRNA :
-                                        rnatyp = CRNA_ref::eType_rRNA;
-                                        break;
-                                    case CSeqFeatData::eSubtype_snRNA :
-                                        rnatyp = CRNA_ref::eType_snRNA;
-                                        break;
-                                    case CSeqFeatData::eSubtype_scRNA :
-                                        rnatyp = CRNA_ref::eType_scRNA;
-                                        break;
-                                    case CSeqFeatData::eSubtype_snoRNA :
-                                        rnatyp = CRNA_ref::eType_snoRNA;
-                                        break;
-                                    case CSeqFeatData::eSubtype_otherRNA :
-                                        rnatyp = CRNA_ref::eType_other;
-                                        break;
-                                    default :
-                                        break;
-                                }
-                                rrp.SetType (rnatyp);
+                        // now create location
 
-                            } else if (typ == CSeqFeatData::e_Imp) {
-                                CImp_feat_Base& imp = sfdata.SetImp ();
-                                imp.SetKey (feat);
-                                
-                            } else if (typ == CSeqFeatData::e_Bond) {
-                                sfdata.SetBond (CSeqFeatData::eBond_other);
-                                
-                            } else if (typ == CSeqFeatData::e_Site) {
-                                sfdata.SetSite (CSeqFeatData::eSite_other);
-                            }
+                        CRef<CSeq_loc> location (new CSeq_loc);
+                        mix = &(location->SetMix ());
+                        sfp->SetLocation (*location);
 
-                            ftable.push_back (sfp);
+                        // and add first interval
 
-                            // now create location
+                        x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint, isminus);
 
-                            CRef<CSeq_loc> location (new CSeq_loc);
-                            mix = &(location->SetMix ());
-                            sfp->SetLocation (*location);
+                        ignore = false;
 
-                            // and add first interval
-
-                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint, isminus);
-
-                        }
                     } else {
 
-                        // unrecognized feature key
+                        // bad feature, set ignore flag
 
-                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                            ERR_POST_X (1, Warning << "Unrecognized feature " << feat);
-                        }
-
-                        if ((flags & CFeature_table_reader::fTranslateBadKey) != 0) {
-
-                            sfp.Reset (new CSeq_feat);
-                            sfp->ResetLocation ();
-                            sfp->SetData ().Select (CSeqFeatData::e_Imp);
-                            CSeqFeatData& sfdata = sfp->SetData ();
-                            CImp_feat_Base& imp = sfdata.SetImp ();
-                            imp.SetKey ("misc_feature");
-                            ftable.push_back (sfp);
-                            CRef<CSeq_loc> location (new CSeq_loc);
-                            mix = &(location->SetMix ());
-                            sfp->SetLocation (*location);
-                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint, isminus);
-                            x_AddQualifierToFeature (sfp, "standard_name", feat);
-
-                        } else if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
-
-                            sfp.Reset (new CSeq_feat);
-                            sfp->ResetLocation ();
-                            sfp->SetData ().Select (CSeqFeatData::e_Imp);
-                            CSeqFeatData& sfdata = sfp->SetData ();
-                            CImp_feat_Base& imp = sfdata.SetImp ();
-                            imp.SetKey (feat);
-                            ftable.push_back (sfp);
-                            CRef<CSeq_loc> location (new CSeq_loc);
-                            mix = &(location->SetMix ());
-                            sfp->SetLocation (*location);
-                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint, isminus);
-                        }
+                        ignore = true;
                     }
+
+                } else if (ignore) {
+
+                    // bad feature, ignore qualifiers until next feature key
 
                 } else if (start >= 0 && stop >= 0 && feat.empty () && qual.empty () && val.empty ()) {
 
@@ -1687,15 +1800,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         }
 
                         if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
-                            CSeq_feat::TQual& qlist = sfp->SetQual ();
-                            CRef<CGb_qual> gbq (new CGb_qual);
-                            gbq->SetQual (qual);
-                            if (x_StringIsJustQuotes (val)) {
-                                gbq->SetVal (kEmptyStr);
-                            } else {
-                                gbq->SetVal (val);
-                            }
-                            qlist.push_back (gbq);
+                            x_AddGBQualToFeature (sfp, qual, val);
                         }
                     }
 
@@ -1735,92 +1840,22 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
 {
     CRef<CSeq_feat> sfp (new CSeq_feat);
 
-    if (! feat.empty ()) {
-        TFeatMap::const_iterator f_iter = sm_FeatKeys.find (feat.c_str ());
-        if (f_iter != sm_FeatKeys.end ()) {
-            CSeqFeatData::ESubtype sbtyp = f_iter->second;
-            CSeqFeatData::E_Choice typ = CSeqFeatData::GetTypeFromSubtype (sbtyp);
-            sfp->SetData ().Select (typ);
-            CSeqFeatData& sfdata = sfp->SetData ();
-            sfp->SetLocation (location);
-            if (typ == CSeqFeatData::e_Rna) {
-                CRNA_ref& rrp = sfdata.SetRna ();
-                CRNA_ref::EType rnatyp = CRNA_ref::eType_unknown;
-                switch (sbtyp) {
-                    case CSeqFeatData::eSubtype_preRNA :
-                        rnatyp = CRNA_ref::eType_premsg;
-                        break;
-                    case CSeqFeatData::eSubtype_mRNA :
-                        rnatyp = CRNA_ref::eType_mRNA;
-                        break;
-                    case CSeqFeatData::eSubtype_tRNA :
-                        rnatyp = CRNA_ref::eType_tRNA;
-                        break;
-                    case CSeqFeatData::eSubtype_rRNA :
-                        rnatyp = CRNA_ref::eType_rRNA;
-                        break;
-                    case CSeqFeatData::eSubtype_snRNA :
-                        rnatyp = CRNA_ref::eType_snRNA;
-                        break;
-                    case CSeqFeatData::eSubtype_scRNA :
-                        rnatyp = CRNA_ref::eType_scRNA;
-                        break;
-                    case CSeqFeatData::eSubtype_snoRNA :
-                        rnatyp = CRNA_ref::eType_snoRNA;
-                        break;
-                    case CSeqFeatData::eSubtype_ncRNA :
-                        rrp.SetExt().SetName("ncRNA");
-                        rnatyp = CRNA_ref::eType_other;
-                        break;
-                    case CSeqFeatData::eSubtype_tmRNA :
-                        rrp.SetExt().SetName("tmRNA");
-                        rnatyp = CRNA_ref::eType_other;
-                        break;
-                    case CSeqFeatData::eSubtype_otherRNA :
-                        rnatyp = CRNA_ref::eType_other;
-                        break;
-                    default :
-                        break;
-                }
-                rrp.SetType (rnatyp);
+    sfp->ResetLocation ();
 
-            } else if (typ == CSeqFeatData::e_Imp) {
-                CImp_feat_Base& imp = sfdata.SetImp ();
-                imp.SetKey (feat);
-            }
-            sfp->SetLocation (location);
- 
-        } else {
+    if (! x_SetupSeqFeat (sfp, feat, flags)) {
 
-            // unrecognized feature key
+        // bad feature, make dummy
 
-            if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                ERR_POST_X (4, Warning << "Unrecognized feature " << feat);
-            }
-
-            if ((flags & CFeature_table_reader::fTranslateBadKey) != 0) {
-
-                sfp.Reset (new CSeq_feat);
-                sfp->ResetLocation ();
-                sfp->SetData ().Select (CSeqFeatData::e_Imp);
-                CSeqFeatData& sfdata = sfp->SetData ();
-                CImp_feat_Base& imp = sfdata.SetImp ();
-                imp.SetKey ("misc_feature");
-                sfp->SetLocation (location);
-                x_AddQualifierToFeature (sfp, "standard_name", feat);
-
-            } else if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
-
-                sfp.Reset (new CSeq_feat);
-                sfp->ResetLocation ();
-                sfp->SetData ().Select (CSeqFeatData::e_Imp);
-                CSeqFeatData& sfdata = sfp->SetData ();
-                CImp_feat_Base& imp = sfdata.SetImp ();
-                imp.SetKey (feat);
-                sfp->SetLocation (location);
-            }
-        }
+        sfp->SetData ().Select (CSeqFeatData::e_not_set);
+        /*
+        sfp->SetData ().Select (CSeqFeatData::e_Imp);
+        CSeqFeatData& sfdata = sfp->SetData ();
+        CImp_feat_Base& imp = sfdata.SetImp ();
+        imp.SetKey ("bad_feature");
+        */
     }
+ 
+    sfp->SetLocation (location);
 
     return sfp;
 }
@@ -1845,15 +1880,7 @@ void CFeature_table_reader_imp::AddFeatQual (
             }
 
             if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
-                CSeq_feat::TQual& qlist = sfp->SetQual ();
-                CRef<CGb_qual> gbq (new CGb_qual);
-                gbq->SetQual (qual);
-                if (x_StringIsJustQuotes (val)) {
-                    gbq->SetVal (kEmptyStr);
-                } else {
-                    gbq->SetVal (val);
-                }
-                qlist.push_back (gbq);
+                x_AddGBQualToFeature (sfp, qual, val);
             }
         }
 
@@ -1909,6 +1936,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     return sap;
 }
 
+
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     CNcbiIstream& ifs,
     const TFlags flags
@@ -1939,9 +1967,13 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
 }
 
-void CFeature_table_reader::ReadSequinFeatureTables(CNcbiIstream& ifs,
-                                                    CSeq_entry& entry,
-                                                    const TFlags flags)
+
+void CFeature_table_reader::ReadSequinFeatureTables(
+    CNcbiIstream& ifs,
+    CSeq_entry& entry,
+    const TFlags flags
+)
+
 {
     while ( !ifs.eof() ) {
         CRef<CSeq_annot> annot = ReadSequinFeatureTable(ifs, flags);
@@ -1976,6 +2008,7 @@ void CFeature_table_reader::ReadSequinFeatureTables(CNcbiIstream& ifs,
         }
     }
 }
+
 
 CRef<CSeq_feat> CFeature_table_reader::CreateSeqFeat (
     const string& feat,
