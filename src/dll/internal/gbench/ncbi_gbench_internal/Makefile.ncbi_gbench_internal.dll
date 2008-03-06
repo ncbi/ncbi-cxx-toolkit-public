@@ -5,7 +5,7 @@ DLL = ncbi_gbench_internal
 HOSTED_LIBS    = ncbi_gbench_internal
 
 DEPENDENCIES   = gui_objects gui_core gui_utils \
-                 xaligndb ncbi_seqext ncbi_seq ncbi_algo \
+                 xaligndb ncbi_seqext ncbi_seq ncbi_algo mapview \
                  ncbi_general ncbi_core ncbi_dbapi ncbi_dbapi_driver
 
 
