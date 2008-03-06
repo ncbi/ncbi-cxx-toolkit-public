@@ -1382,8 +1382,8 @@ static EIO_Status s_IsConnected(SOCK                  sock,
 #  endif /*NCBI_OS_UNIX*/
             {
                 struct sockaddr_in addr;
-                SOCK_socklen_t addrlen = sizeof(addr);
-                memset(&addr, 0, addrlen);
+                SOCK_socklen_t addrlen = (SOCK_socklen_t) sizeof(addr);
+                memset(&addr, 0, sizeof(addr));
 #  ifdef HAVE_SIN_LEN
                 addr.sin_len = addrlen;
 #  endif /*HAVE_SIN_LEN*/
@@ -1416,10 +1416,10 @@ static EIO_Status s_IsConnected(SOCK                  sock,
     }
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     else {
-        int    mtu;
-        char   _id[32];
+        int  mtu;
+        char _id[32];
 #  ifdef IP_MTU
-        size_t mtulen = sizeof(mtu);
+        SOCK_socklen_t mtulen = (SOCK_socklen_t) sizeof(mtu);
         if (getsockopt(sock->sock, SOL_IP, IP_MTU, &mtu, &mtulen) != 0)
 #  endif
             mtu = -1;
@@ -2315,7 +2315,7 @@ static EIO_Status s_Connect(SOCK            sock,
     memset(&addr, 0, sizeof(addr));
 #ifdef NCBI_OS_UNIX
     if (sock->path[0]) {
-        addrlen = sizeof(addr.sun);
+        addrlen = (SOCK_socklen_t) sizeof(addr.sun);
         addr.sun.sun_family = AF_UNIX;
         strncpy0(addr.sun.sun_path, sock->path, sizeof(addr.sun.sun_path)-1);
         c = sock->path;
@@ -2324,7 +2324,7 @@ static EIO_Status s_Connect(SOCK            sock,
         {
             unsigned int   x_host;
             unsigned short x_port;
-            addrlen = sizeof(addr.sin);
+            addrlen = (SOCK_socklen_t) sizeof(addr.sin);
             addr.sin.sin_family = AF_INET;
             /* get address of the remote host (assume the same host if NULL) */
             x_host = host  &&  *host ? SOCK_gethostbyname(host) : sock->host;
@@ -2340,7 +2340,7 @@ static EIO_Status s_Connect(SOCK            sock,
             x_port = (unsigned short) (port ? htons(port) : sock->port);
             addr.sin.sin_port = x_port;
 #ifdef HAVE_SIN_LEN
-            addr.sin.sin_len = sizeof(addr.sin);
+            addr.sin.sin_len = addrlen;
 #endif /*HAVE_SIN_LEN*/
             sock->host = x_host;
             sock->port = x_port;
@@ -2764,7 +2764,7 @@ static EIO_Status s_CreateListening(const char*    path,
     memset(&addr, 0, sizeof(addr));
 #ifdef NCBI_OS_UNIX
     if ( path ) {
-        addrlen = sizeof(addr.sun);
+        addrlen = (SOCK_socklen_t) sizeof(addr.sun);
         addr.sun.sun_family = AF_UNIX;
         strncpy0(addr.sun.sun_path, path, sizeof(addr.sun.sun_path) - 1);
         c = path;
@@ -2926,13 +2926,13 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     memset(&addr, 0, sizeof(addr));
 #ifdef NCBI_OS_UNIX
     if ( lsock->path[0] ) {
-        addrlen = sizeof(addr.sun);
+        addrlen = (SOCK_socklen_t) sizeof(addr.sun);
     } else
 #endif /*NCBI_OS_UNIX*/
         {
-            addrlen = sizeof(addr.sin);
+            addrlen = (SOCK_socklen_t) sizeof(addr.sin);
 #ifdef HAVE_SIN_LEN
-            addr.sin.sin_len = sizeof(addr);
+            addr.sin.sin_len = addrlen;
 #endif /*HAVE_SIN_LEN*/
         }
     if ((x_sock = accept(lsock->sock, &addr.sa, &addrlen)) == SOCK_INVALID) {
@@ -3212,9 +3212,9 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
 
     /* get peer's address */
     peerlen = (SOCK_socklen_t) sizeof(peer);
-    memset(&peer, 0, peerlen);
+    memset(&peer, 0, sizeof(peer));
 #ifdef HAVE_SIN_LEN
-    peer.sa.sa_len = sizeof(peer);
+    peer.sa.sa_len = peerlen;
 #endif
     if (getpeername(xx_sock, &peer.sa, &peerlen) < 0)
         return eIO_Closed;
@@ -3243,7 +3243,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
             peerlen = (SOCK_socklen_t) sizeof(peer);
             memset(&peer, 0, sizeof(peer));
 #  ifdef HAVE_SIN_LEN
-            peer.sa.sa_len = sizeof(peer);
+            peer.sa.sa_len = peerlen;
 #  endif
             if (getsockname(xx_sock, &peer.sa, &peerlen) < 0)
                 return eIO_Closed;
@@ -3969,8 +3969,8 @@ extern unsigned short SOCK_GetLocalPort(SOCK          sock,
 
     if (!sock->myport) {
         struct sockaddr_in addr;
-        SOCK_socklen_t addrlen = sizeof(addr);
-        memset(&addr, 0, addrlen);
+        SOCK_socklen_t addrlen = (SOCK_socklen_t) sizeof(addr);
+        memset(&addr, 0, sizeof(addr));
 #  ifdef HAVE_SIN_LEN
         addr.sin_len = addrlen;
 #  endif /*HAVE_SIN_LEN*/
@@ -4476,6 +4476,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         int                x_read;
         struct sockaddr_in addr;
         SOCK_socklen_t     addrlen = (SOCK_socklen_t) sizeof(addr);
+        memset(&addr, 0, sizeof(addr));
 #ifdef HAVE_SIN_LEN
         addr.sin_len = addrlen;
 #endif
