@@ -116,7 +116,7 @@ public:
 private:
     int minVal, maxVal, incrVal;
 
-    void Validate(wxCommandEvent& event);
+    void DoValidate(wxCommandEvent& event);
     void OnChange(wxCommandEvent& event);
 
     DECLARE_EVENT_TABLE()
@@ -171,7 +171,7 @@ public:
 private:
     double minVal, maxVal;
 
-    void Validate(wxCommandEvent& event);
+    void DoValidate(wxCommandEvent& event);
     void OnChange(wxCommandEvent& event);
 
     DECLARE_EVENT_TABLE()

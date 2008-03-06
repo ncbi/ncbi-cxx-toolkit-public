@@ -60,7 +60,7 @@ typedef list < const CSeq_align * > SeqAlignList;
 typedef vector < CRef < CSeq_id > > SeqIdList;
 
 AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnnots) :
-    master(NULL), status(CAV_ERROR_ALIGNMENTS)
+    status(CAV_ERROR_ALIGNMENTS), master(NULL)
 {
     SeqAlignList seqaligns;
 
@@ -159,7 +159,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(
     const SequenceSet *sequenceSet,
     const Sequence *masterSequence,
     const CSeq_align& seqAlign) :
-    master(masterSequence), slave(NULL), status(CAV_ERROR_PAIRWISE)
+    status(CAV_ERROR_PAIRWISE), master(masterSequence), slave(NULL)
 {
     // resize alignment and block vector
     masterToSlave.resize(master->Length(), -1);

@@ -79,7 +79,7 @@ void NotifyingSpinButton::OnSpinButtonDown(wxSpinEvent& event)
 /////////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(IntegerTextCtrl, wxTextCtrl)
-    EVT_TEXT        (-1, IntegerTextCtrl::Validate)
+    EVT_TEXT        (-1, IntegerTextCtrl::DoValidate)
     EVT_TEXT_ENTER  (-1, IntegerTextCtrl::OnChange)
 END_EVENT_TABLE()
 
@@ -91,7 +91,7 @@ IntegerTextCtrl::IntegerTextCtrl(wxWindow* parent, wxWindowID id, const wxString
 {
 }
 
-void IntegerTextCtrl::Validate(wxCommandEvent&)
+void IntegerTextCtrl::DoValidate(wxCommandEvent&)
 {
     if (IsValidInteger())
         SetBackgroundColour(*wxWHITE);
@@ -199,7 +199,7 @@ bool IntegerSpinCtrl::GetUnsignedInteger(unsigned int *value) const
 /////////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(FloatingPointTextCtrl, wxTextCtrl)
-    EVT_TEXT        (-1, FloatingPointTextCtrl::Validate)
+    EVT_TEXT        (-1, FloatingPointTextCtrl::DoValidate)
     EVT_TEXT_ENTER  (-1, FloatingPointTextCtrl::OnChange)
 END_EVENT_TABLE()
 
@@ -211,7 +211,7 @@ FloatingPointTextCtrl::FloatingPointTextCtrl(wxWindow* parent, wxWindowID id, co
 {
 }
 
-void FloatingPointTextCtrl::Validate(wxCommandEvent& event)
+void FloatingPointTextCtrl::DoValidate(wxCommandEvent& event)
 {
     if (IsValidDouble())
         SetBackgroundColour(*wxWHITE);

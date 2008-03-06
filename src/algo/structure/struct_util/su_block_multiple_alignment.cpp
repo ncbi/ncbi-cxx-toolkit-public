@@ -210,7 +210,7 @@ UnalignedBlock * BlockMultipleAlignment::
         newBlock->SetRangeOfRow(row, from, to);
 
         length = to - from + 1;
-        if ((to - from + 1) < 0) { // just to make sure...
+        if ((((int)to) - ((int)from) + 1) < 0) { // just to make sure...
             ERROR_MESSAGE("CreateNewUnalignedBlockBetween() - unaligned length < 0");
             return NULL;
         }
@@ -291,7 +291,7 @@ bool BlockMultipleAlignment::GetCharacterAt(
     if (!GetSequenceAndIndexAt(alignmentColumn, row, justification, &sequence, &seqIndex, &isAligned))
         return false;
 
-    *character = (seqIndex >= 0) ? sequence->m_sequenceString[seqIndex] : '~';
+    *character = (seqIndex != eUndefined) ? sequence->m_sequenceString[seqIndex] : '~';
     if (isAligned)
         *character = toupper((unsigned char)(*character));
     else
@@ -336,7 +336,7 @@ bool BlockMultipleAlignment::IsAligned(unsigned int row, unsigned int seqIndex) 
 const Block * BlockMultipleAlignment::GetBlock(unsigned int row, unsigned int seqIndex) const
 {
     // make sure we're in range for this sequence
-    if (row < 0 || seqIndex < 0 || row >= NRows() || seqIndex >= m_sequences[row]->Length()) {
+    if (row >= NRows() || seqIndex >= m_sequences[row]->Length()) {
         ERROR_MESSAGE("BlockMultipleAlignment::GetBlock() - coordinate out of range");
         return NULL;
     }
@@ -821,7 +821,7 @@ bool BlockMultipleAlignment::CreateBlock(unsigned int fromAlignmentIndex, unsign
     for (row=0; row<NRows(); ++row) {
         if (!GetSequenceAndIndexAt(fromAlignmentIndex, row, justification, &seq, &seqIndexFrom, &ignored) ||
                 !GetSequenceAndIndexAt(toAlignmentIndex, row, justification, &seq, &seqIndexTo, &ignored) ||
-                seqIndexFrom < 0 || seqIndexTo < 0 ||
+                seqIndexFrom == eUndefined || seqIndexTo == eUndefined ||
                 seqIndexTo - seqIndexFrom + 1 != newBlockWidth)
             return false;
         seqIndexesFrom[row] = seqIndexFrom;

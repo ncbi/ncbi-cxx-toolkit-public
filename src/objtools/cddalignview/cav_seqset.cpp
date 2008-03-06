@@ -111,14 +111,14 @@ void SequenceSet::UnpackSeqEntry(const CSeq_entry& seqEntry)
 }
 
 SequenceSet::SequenceSet(const CSeq_entry& seqEntry) :
-    master(NULL), status(CAV_SUCCESS)
+    status(CAV_SUCCESS), master(NULL)
 {
     UnpackSeqEntry(seqEntry);
     ERR_POST_X(1, Info << "number of sequences: " << sequences.size());
 }
 
 SequenceSet::SequenceSet(const SeqEntryList& seqEntries) :
-    master(NULL), status(CAV_SUCCESS)
+    status(CAV_SUCCESS), master(NULL)
 {
     SeqEntryList::const_iterator s, se = seqEntries.end();
     for (s=seqEntries.begin(); s!=se; ++s)

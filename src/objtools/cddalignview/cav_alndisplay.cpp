@@ -210,16 +210,19 @@ AlignmentDisplay::AlignmentDisplay(const SequenceSet *sequenceSet, const Alignme
     // find first and last aligned master residues (in alignment coords)
     firstAlnLoc = GetWidth();
     lastAlnLoc = -1;
-    for (l=0; l<GetWidth(); ++l)
-        if (IsAligned(textRows[0]->GetCharAt(l))) {
-            firstAlnLoc = l;
+	int i;
+	for (i=0; i<(int)GetWidth(); ++i) {
+        if (IsAligned(textRows[0]->GetCharAt(i))) {
+            firstAlnLoc = i;
             break;
         }
-    for (l=GetWidth()-1; l>=0; --l)
-        if (IsAligned(textRows[0]->GetCharAt(l))) {
-            lastAlnLoc = l;
+	}
+	for (i=GetWidth()-1; i>=0; --i) {
+        if (IsAligned(textRows[0]->GetCharAt(i))) {
+            lastAlnLoc = i;
             break;
         }
+	}
 
     ERR_POST_X(3, Info << "final alignment display size: " << GetWidth() << " x " << GetNRows());
     ERR_POST_X(4, Info << "aligned region: " << firstAlnLoc << " through " << lastAlnLoc);

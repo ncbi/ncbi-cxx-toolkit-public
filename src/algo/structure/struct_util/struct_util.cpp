@@ -325,7 +325,7 @@ bool AlignmentUtility::DoLeaveOneOut(
             THROW_MESSAGE("need at least one block to realign");
         vector < bool > realignBlock(blocks.size(), false);
         for (r=0; r<blocksToRealign.size(); ++r) {
-            if (blocksToRealign[r] >= 0 && blocksToRealign[r] < blocks.size())
+            if (blocksToRealign[r] < blocks.size())
                 realignBlock[blocksToRealign[r]] = true;
             else
                 THROW_MESSAGE("block to realign is out of range");
