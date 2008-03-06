@@ -316,7 +316,7 @@ enum ETar_Format {
 
 
 /// POSIX "ustar" tar archive member header
-struct SHeader {             // byte offset
+typedef struct SHeader {             // byte offset
     char name[100];          //   0
     char mode[8];            // 100
     char uid[8];             // 108
@@ -339,7 +339,7 @@ struct SHeader {             // byte offset
             char ctime[12];  // 357  
         } gt;
     };
-};
+} SHeader;
 
 
 /// Block as a header.
