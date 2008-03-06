@@ -517,9 +517,19 @@ extern "C" {
     typedef TWrapperRes (*FSystemWrapper)(TWrapperArg);
 }
 #elif defined(NCBI_WIN32_THREADS)
+
+static TWrapperRes ThreadWrapperCaller(TWrapperArg arg) {
+    return CThread::Wrapper(arg);
+}
+
 extern "C" {
     typedef TWrapperRes (WINAPI *FSystemWrapper)(TWrapperArg);
+
+    static TWrapperRes WINAPI ThreadWrapperCallerImpl(TWrapperArg arg) {
+        return ThreadWrapperCaller(arg);
+    }
 }
+
 #endif
 
 
@@ -565,8 +575,7 @@ bool CThread::Run(TRunMode flags)
         DWORD thread_id;
         // Suspend thread to adjust its priority
         DWORD creation_flags = (flags & fRunNice) == 0 ? 0 : CREATE_SUSPENDED;
-        m_Handle = CreateThread(NULL, 0,
-                                reinterpret_cast<FSystemWrapper>(Wrapper),
+        m_Handle = CreateThread(NULL, 0, ThreadWrapperCallerImpl,
                                 this, creation_flags, &thread_id);
         xncbi_Validate(m_Handle != NULL,
                        "CThread::Run() -- error creating thread");

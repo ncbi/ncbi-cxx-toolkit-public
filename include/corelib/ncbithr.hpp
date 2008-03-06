@@ -325,6 +325,7 @@ private:
 
     /// Function to use (internally) as the thread's startup function
     static TWrapperRes Wrapper(TWrapperArg arg);
+    friend TWrapperRes ThreadWrapperCaller(TWrapperArg arg);
 
     /// To store "CThread" object related to the current (running) thread
     static CTls<CThread>* sm_ThreadsTls;
