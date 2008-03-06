@@ -49,9 +49,8 @@ BEGIN_NCBI_SCOPE
 
 
 template<typename Pred>
-static bool s_WaitNotification(unsigned       wait_time,
-                               unsigned short udp_port,
-                               Pred pred)
+bool s_WaitNotification(unsigned wait_time,
+    unsigned short udp_port, Pred pred)
 {
     _ASSERT(wait_time);
 
