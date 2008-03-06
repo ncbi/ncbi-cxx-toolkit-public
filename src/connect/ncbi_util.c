@@ -131,7 +131,7 @@ extern void CORE_SetLOGFILE
 (FILE*       fp,
  int/*bool*/ auto_close)
 {
-    CORE_SetLOGFILE_Ex(fp, 0, auto_close);
+    CORE_SetLOGFILE_Ex(fp, eLOG_Trace, auto_close);
 }
 
 
@@ -155,7 +155,7 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME
 (const char* filename
  )
 {
-    return CORE_SetLOGFILE_NAME_Ex(filename, 0);
+    return CORE_SetLOGFILE_NAME_Ex(filename, eLOG_Trace);
 }
 
 
@@ -456,7 +456,7 @@ extern void LOG_ToFILE
  int/*bool*/ auto_close
  )
 {
-    LOG_ToFILE_Ex(lg, fp, 0, auto_close);
+    LOG_ToFILE_Ex(lg, fp, eLOG_Trace, auto_close);
 }
 
 
