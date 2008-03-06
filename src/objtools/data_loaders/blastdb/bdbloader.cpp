@@ -249,7 +249,7 @@ void CBlastDbDataLoader::CSeqChunkData::BuildLiteral()
         vector<char> v4;
         v4.reserve((length+1)/2);
         
-        TSeqPos length_whole = length & -2;
+        TSeqPos length_whole = length & ~1;
         
         for(TSeqPos i = 0; i < length_whole; i += 2) {
             v4.push_back((buffer[i] << 4) | buffer[i+1]);
@@ -293,7 +293,7 @@ void CBlastDbDataLoader::CCachedSeqData::AddSeq_data()
         vector<char>& v4 = seq_data.SetNcbi4na().Set();
         v4.reserve((length+1)/2);
     
-        TSeqPos length_whole = length & -2;
+        TSeqPos length_whole = length & ~1;
     
         for(TSeqPos i = 0; i < length_whole; i += 2) {
             v4.push_back((buffer[i] << 4) | buffer[i+1]);
