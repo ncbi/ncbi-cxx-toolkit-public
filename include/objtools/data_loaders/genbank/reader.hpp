@@ -246,7 +246,7 @@ private:
 
 inline
 CReader::CConn::CConn(CReader* reader)
-    : m_Reader(reader)
+    : m_Reader(reader), m_Conn(0)
 {
     if ( reader ) {
         m_Conn = reader->x_AllocConnection();
