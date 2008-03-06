@@ -317,20 +317,13 @@ size_t CObjectIStreamAsnBinary::ReadLength(void)
     if ( lengthLength > sizeof(size_t) ) {
         ThrowError(fOverflow, "length overflow");
     }
-    byte = m_Input.GetChar();
-    if ( byte == 0 ) {
+    size_t length = m_Input.GetChar() & 0xff;
+    if ( length == 0 ) {
         ThrowError(fFormatError, "illegal length start");
     }
-    if ( size_t(-1) < size_t(0) ) {        // size_t is signed
-        // check for sign overflow
-        if ( lengthLength == sizeof(size_t) && (byte & 0x80) != 0 ) {
-            ThrowError(fOverflow, "length overflow");
-        }
+    while ( --lengthLength > 0 ) {
+        length = (length << 8) | (m_Input.GetChar() & 0xff);
     }
-    lengthLength--;
-    size_t length = byte;
-    while ( lengthLength-- > 0 )
-        length = (length << 8) | Uint1(m_Input.GetChar());
     return StartTagData(length);
 }
 
