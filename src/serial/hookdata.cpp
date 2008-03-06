@@ -90,7 +90,6 @@ void CHookDataBase::SetGlobalHook(THook* hook)
 {
     _ASSERT(hook);
     _ASSERT(!m_GlobalHook);
-    _ASSERT(m_HookCount.Get() >= 0);
     m_GlobalHook.Reset(hook);
     m_HookCount.Add(1);
     _ASSERT(m_HookCount.Get() > 0);
@@ -105,7 +104,6 @@ void CHookDataBase::ResetGlobalHook(void)
     _ASSERT(m_HookCount.Get() > 0);
     m_GlobalHook.Reset();
     m_HookCount.Add(-1);
-    _ASSERT(m_HookCount.Get() >= 0);
 }
 
 void CHookDataBase::SetPathHook(CObjectStack* stk, const string& path, THook* hook)
