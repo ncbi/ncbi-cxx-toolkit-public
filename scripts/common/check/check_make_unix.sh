@@ -558,7 +558,18 @@ MailToAuthors()
    done
    x_logfile="\$2"
    
+   echo '-----------------------'
    echo "Send results of the test \$x_app to \$x_authors"
+   echo '-----------------------'
+  
+        echo "To: \$x_authors"
+        echo "Subject: [C++ CHECK] \$x_app | \$signature"
+        echo
+        echo \$x_cmd
+        echo
+   echo -> \$sendmail \$x_authors
+   echo '-----------------------'   
+   
    {
         echo "To: \$x_authors"
         echo "Subject: [C++ CHECK] \$x_app | \$signature"
