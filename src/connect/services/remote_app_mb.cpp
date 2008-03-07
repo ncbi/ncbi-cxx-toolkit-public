@@ -393,12 +393,6 @@ void CRemoteAppRequestMB::Send(CNcbiOstream& os)
     m_Impl->Serialize(os);
 }
 
-/*
-void CRemoteAppRequestMB::RequestExclusiveMode()
-{
-    m_Impl->SetExclusiveMode(true);
-}
-*/
 CNcbiOstream& CRemoteAppRequestMB::GetStdIn()
 {
     return m_Impl->GetStdInForWrite();

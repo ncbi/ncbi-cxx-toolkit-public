@@ -71,7 +71,6 @@ public:
     void SetCmdLine(const string& cmd);
 
     void SetAppRunTimeout(unsigned int sec);
-    //    void RequestExclusiveMode();
 
     /// Transfer a file to an application executer side.
     /// It only makes sense to transfer a file if its name also mentioned in
