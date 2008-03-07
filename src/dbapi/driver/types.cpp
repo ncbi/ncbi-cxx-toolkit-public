@@ -73,14 +73,12 @@ CWString::CWString(const CWString& str) :
 #endif
     m_UTF8String(str.m_UTF8String)
 {
-    if (!m_String.empty()) {
-        m_Char = m_String.c_str();
-    }
+    // Assign m_Char even if m_String is empty ...
+    m_Char = m_String.c_str();
 
 #ifdef HAVE_WSTRING
-    if (!m_WString.empty()) {
-        m_WChar = m_WString.c_str();
-    }
+    // Assign m_WChar even if m_WString is empty ...
+    m_WChar = m_WString.c_str();
 #endif
 }
 
@@ -728,6 +726,29 @@ void CDB_BigInt::AssignValue(const CDB_Object& v)
 
 
 /////////////////////////////////////////////////////////////////////////////
+inline
+string MakeString(const string& s, string::size_type size)
+{
+    string value(s, 0, size);
+
+    if (size != string::npos) {
+        value.resize(size, ' ');
+    }
+
+    return value;
+}
+
+inline
+string MakeString(const char* s, string::size_type size)
+{
+    if (s == NULL) {
+        return MakeString(kEmptyStr, size);
+    }
+
+    return MakeString(string(s), size);
+}
+
+/////////////////////////////////////////////////////////////////////////////
 //  CDB_String::
 //
 
@@ -750,28 +771,6 @@ CDB_String::CDB_String(const string& s, EEncoding enc)
 {
 }
 
-
-inline
-string MakeString(const string& s, string::size_type size)
-{
-    string value(s, 0, size);
-
-    if (size != string::npos) {
-        value.resize(size, ' ');
-    }
-
-    return value;
-}
-
-inline
-string MakeString(const char* s, string::size_type size)
-{
-    if (s == NULL) {
-        return MakeString(kEmptyStr, size);
-    }
-
-    return MakeString(string(s), size);
-}
 
 CDB_String::CDB_String(const char* s,
                        string::size_type size,
@@ -833,6 +832,7 @@ void CDB_String::Assign(const char* s,
 {
     if ( s ) {
         SetNULL(false);
+
         if (size == string::npos) {
             m_WString.Assign(string(s), enc);
         } else {
@@ -859,29 +859,28 @@ void CDB_String::Assign(const string& s,
 
 CDB_VarChar::CDB_VarChar(void)
 {
-    return;
 }
 
 
 CDB_VarChar::CDB_VarChar(const string& s,
                          EEncoding enc)
+: CDB_String(s, enc)
 {
-    SetValue(s, enc);
 }
 
 
 CDB_VarChar::CDB_VarChar(const char* s,
                          EEncoding enc)
+: CDB_String(s, string::npos, enc)
 {
-    SetValue(s, enc);
 }
 
 
 CDB_VarChar::CDB_VarChar(const char* s,
                          size_t l,
                          EEncoding enc)
+: CDB_String(s, l, enc)
 {
-    SetValue(s, l, enc);
 }
 
 
@@ -943,7 +942,7 @@ void CDB_VarChar::AssignValue(const CDB_Object& v)
 
 
 CDB_Char::CDB_Char(size_t s)
-    : m_Size((s < 1) ? 1 : s)
+: m_Size((s < 1) ? 1 : s)
 {
 }
 
