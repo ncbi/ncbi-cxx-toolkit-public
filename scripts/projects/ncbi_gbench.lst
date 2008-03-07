@@ -9,8 +9,8 @@ corelib
 dbapi
 gui
 html
-internal/align_model
-internal/contigdb
+internal/align_model$
+internal/contigdb$
 internal/gbench
 internal/ID/utils$
 internal/mapview/objects
@@ -27,7 +27,6 @@ util
 -[^g].*/unit_test
 -[^g].*/demo
 -[^g].*/test
--.*/am2gff3
 -.*/netcache
 -.*/omssa
 -.*xblobstorage
