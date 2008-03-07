@@ -731,8 +731,8 @@ void CDB_BigInt::AssignValue(const CDB_Object& v)
 //  CDB_String::
 //
 
-CDB_String::CDB_String(void) :
-    CDB_Object(true)
+CDB_String::CDB_String(void) 
+: CDB_Object(true)
 {
 }
 
@@ -744,10 +744,10 @@ CDB_String::CDB_String(const CDB_String& other) :
 }
 
 
-CDB_String::CDB_String(const string& s, EEncoding enc) :
-    m_WString(s, enc)
+CDB_String::CDB_String(const string& s, EEncoding enc)
+: CDB_Object(false)
+, m_WString(s, enc)
 {
-    SetNULL(false);
 }
 
 
@@ -763,21 +763,31 @@ string MakeString(const string& s, string::size_type size)
     return value;
 }
 
+inline
+string MakeString(const char* s, string::size_type size)
+{
+    if (s == NULL) {
+        return MakeString(kEmptyStr, size);
+    }
+
+    return MakeString(string(s), size);
+}
+
 CDB_String::CDB_String(const char* s,
                        string::size_type size,
-                       EEncoding enc) :
-    m_WString(MakeString(s, size), enc)
+                       EEncoding enc)
+: CDB_Object(s == NULL)
+, m_WString(MakeString(s, size), enc)
 {
-    SetNULL(s == NULL);
 }
 
 
 CDB_String::CDB_String(const string& s,
                        string::size_type size,
-                       EEncoding enc) :
-    m_WString(MakeString(s, size), enc)
+                       EEncoding enc) 
+: CDB_Object(false)
+, m_WString(MakeString(s, size), enc)
 {
-    SetNULL(s == NULL);
 }
 
 
@@ -791,6 +801,7 @@ CDB_String& CDB_String::operator= (const CDB_String& other)
     if (this != &other) {
         Assign(other);
     }
+
     return *this;
 }
 
