@@ -872,6 +872,79 @@ void CDBAPIUnitTest::Test_VARCHAR_MAX(void)
 
 
 ///////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_CHAR(void)
+{
+    string sql;
+    const string table_name = "#test_char_table";
+    // const string table_name = "DBAPI_Sample..test_char_table";
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Create table ...
+        if (table_name[0] =='#') {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "   id NUMERIC IDENTITY NOT NULL, \n"
+                "   char1_field CHAR(1) NULL" 
+                ") \n";
+
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Parameters ...
+        {
+            // const CVariant char_value;
+
+            // Clean table ...
+            {
+                sql = "DELETE FROM " + table_name;
+
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            // Insert data into the table ...
+            {
+                sql =
+                    "INSERT INTO " + table_name + "(char1_field) VALUES(@char1)";
+
+                auto_stmt->SetParam( CVariant(string()), "@char1" );
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            // Actual check ...
+            {
+                // ClearParamList is necessary here ...
+                auto_stmt->ClearParamList();
+
+                sql = "SELECT char1_field FROM " + table_name + " ORDER BY id";
+
+                auto_stmt->SendSql( sql );
+                while( auto_stmt->HasMoreResults() ) {
+                    if( auto_stmt->HasRows() ) {
+                        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                        BOOST_CHECK( rs.get() != NULL );
+
+                        BOOST_CHECK( rs->Next() );
+                        const string value = rs->GetVariant(1).GetString();
+                        BOOST_CHECK_EQUAL(value.size(), 1U);
+                        BOOST_CHECK_EQUAL(value, string(" "));
+                    }
+                }
+            }
+        }
+
+    }
+    catch(const CDB_Exception& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_NVARCHAR(void)
 {
     string sql;
@@ -10201,18 +10274,45 @@ CDBAPIUnitTest::Test_CDB_Object(void)
             BOOST_CHECK(value_SmallDateTime.IsNULL());
             BOOST_CHECK(value_DateTime.IsNULL());
             BOOST_CHECK(value_Numeric.IsNULL());
+
+            // Value() ...
+            BOOST_CHECK_EQUAL(value_Bit.Value(), 0);
+            BOOST_CHECK_EQUAL(value_Int.Value(), 0);
+            BOOST_CHECK_EQUAL(value_SmallInt.Value(), 0);
+            BOOST_CHECK_EQUAL(value_TinyInt.Value(), 0);
+            BOOST_CHECK_EQUAL(value_BigInt.Value(), 0);
+            BOOST_CHECK(value_VarChar.Value() == NULL);
+            BOOST_CHECK(value_Char.Value() == NULL);
+            BOOST_CHECK(value_LongChar.Value() == NULL);
+            BOOST_CHECK(value_VarBinary.Value() == NULL);
+            BOOST_CHECK(value_Binary.Value() == NULL);
+            BOOST_CHECK(value_LongBinary.Value() == NULL);
+            BOOST_CHECK_EQUAL(value_Float.Value(), 0.0);
+            BOOST_CHECK_EQUAL(value_Double.Value(), 0.0);
+            BOOST_CHECK_EQUAL(value_SmallDateTime.Value(), CTime());
+            BOOST_CHECK_EQUAL(value_DateTime.Value(), CTime());
+            BOOST_CHECK_EQUAL(value_Numeric.Value(), string("0"));
         }
 
         // Check for NOT NULL a non-default constructor ...
         {
-            CDB_Bit value_Bit(false);
+            CDB_Bit value_Bit(true);
             CDB_Int value_Int(1);
             CDB_SmallInt value_SmallInt(1);
             CDB_TinyInt value_TinyInt(1);
             CDB_BigInt value_BigInt(1);
             CDB_VarChar value_VarChar("ABC");
+            CDB_VarChar value_VarChar2("");
+            CDB_VarChar value_VarChar3(NULL);
+            CDB_VarChar value_VarChar4(kEmptyStr);
             CDB_Char value_Char(3, "ABC");
+            CDB_Char value_Char2(3, "");
+            CDB_Char value_Char3(3, NULL);
+            CDB_Char value_Char4(3, kEmptyStr);
             CDB_LongChar value_LongChar(3, "ABC");
+            CDB_LongChar value_LongChar2(3, "");
+            CDB_LongChar value_LongChar3(3, NULL);
+            CDB_LongChar value_LongChar4(3, kEmptyStr);
             CDB_VarBinary value_VarBinary("ABC", 3);
             CDB_Binary value_Binary(3, "ABC", 3);
             CDB_LongBinary value_LongBinary(3, "ABC", 3);
@@ -10228,8 +10328,20 @@ CDBAPIUnitTest::Test_CDB_Object(void)
             BOOST_CHECK(!value_TinyInt.IsNULL());
             BOOST_CHECK(!value_BigInt.IsNULL());
             BOOST_CHECK(!value_VarChar.IsNULL());
+            BOOST_CHECK(!value_VarChar2.IsNULL());
+            // !!!
+            BOOST_CHECK(value_VarChar3.IsNULL());
+            BOOST_CHECK(!value_VarChar4.IsNULL());
             BOOST_CHECK(!value_Char.IsNULL());
+            BOOST_CHECK(!value_Char2.IsNULL());
+            // !!!
+            BOOST_CHECK(value_Char3.IsNULL());
+            BOOST_CHECK(!value_Char4.IsNULL());
             BOOST_CHECK(!value_LongChar.IsNULL());
+            BOOST_CHECK(!value_LongChar2.IsNULL());
+            // !!!
+            BOOST_CHECK(value_LongChar3.IsNULL());
+            BOOST_CHECK(!value_LongChar4.IsNULL());
             BOOST_CHECK(!value_VarBinary.IsNULL());
             BOOST_CHECK(!value_Binary.IsNULL());
             BOOST_CHECK(!value_LongBinary.IsNULL());
@@ -10238,6 +10350,36 @@ CDBAPIUnitTest::Test_CDB_Object(void)
             BOOST_CHECK(!value_SmallDateTime.IsNULL());
             BOOST_CHECK(!value_DateTime.IsNULL());
             BOOST_CHECK(!value_Numeric.IsNULL());
+
+            // Value() ...
+            BOOST_CHECK(value_Bit.Value() != 0);
+            BOOST_CHECK(value_Int.Value() != 0);
+            BOOST_CHECK(value_SmallInt.Value() != 0);
+            BOOST_CHECK(value_TinyInt.Value() != 0);
+            BOOST_CHECK(value_BigInt.Value() != 0);
+            BOOST_CHECK(value_VarChar.Value() != NULL);
+            BOOST_CHECK(value_VarChar2.Value() != NULL);
+            // !!!
+            BOOST_CHECK(value_VarChar3.Value() == NULL);
+            BOOST_CHECK(value_VarChar4.Value() != NULL);
+            BOOST_CHECK(value_Char.Value() != NULL);
+            BOOST_CHECK(value_Char2.Value() != NULL);
+            // !!!
+            BOOST_CHECK(value_Char3.Value() == NULL);
+            BOOST_CHECK(value_Char4.Value() != NULL);
+            BOOST_CHECK(value_LongChar.Value() != NULL);
+            BOOST_CHECK(value_LongChar2.Value() != NULL);
+            // !!!
+            BOOST_CHECK(value_LongChar3.Value() == NULL);
+            BOOST_CHECK(value_LongChar4.Value() != NULL);
+            BOOST_CHECK(value_VarBinary.Value() != NULL);
+            BOOST_CHECK(value_Binary.Value() != NULL);
+            BOOST_CHECK(value_LongBinary.Value() != NULL);
+            BOOST_CHECK(value_Float.Value() != 0);
+            BOOST_CHECK(value_Double.Value() != 0);
+            BOOST_CHECK(value_SmallDateTime.Value() != CTime());
+            BOOST_CHECK(value_DateTime.Value() != CTime());
+            BOOST_CHECK(value_Numeric.Value() != string("0"));
         }
 
         // Check for NOT NULL after a value assignment operator ...
@@ -10649,7 +10791,7 @@ CDBAPIUnitTest::Test_Variant(void)
             BOOST_CHECK( variant_VarChar.GetString() == value_char );
 
             const CVariant variant_VarChar2 = CVariant::VarChar(NULL);
-            // !!!!
+            // !!!
             BOOST_CHECK( variant_VarChar2.IsNull() );
             BOOST_CHECK( variant_VarChar2.GetString() == string() );
 
@@ -10658,7 +10800,7 @@ CDBAPIUnitTest::Test_Variant(void)
             BOOST_CHECK( variant_Char.GetString() == value_char );
 
             const CVariant variant_Char2 = CVariant::Char( 0, NULL );
-            // !!!!
+            // !!!
             BOOST_CHECK( variant_Char2.IsNull() );
             BOOST_CHECK( variant_Char2.GetString() == string() );
 
@@ -13111,6 +13253,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // if (args.GetServerType() == CTestArguments::eMsSql2005) {
     if (false) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_VARCHAR_MAX,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+    if (!(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CHAR,
                 DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
