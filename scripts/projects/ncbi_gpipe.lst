@@ -21,7 +21,7 @@ objmgr
 objtools
 serial
 util
--.*/demo
+-^[^a][^l].*/demo
 -.*/test
 -.*/unit_test
 -dbapi/.*/mssamples
