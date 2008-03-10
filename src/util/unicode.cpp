@@ -221,12 +221,6 @@ size_t UnicodeToUTF8( TUnicode theUnicode, char *theBuffer,
 }
 
 ssize_t UTF8ToAscii( const char* src, char* dst, size_t dstLen,
-                     const TUnicodeTable* table)
-{
-    return UTF8ToAscii(src,dst,dstLen,NULL,table,NULL);
-}
-
-ssize_t UTF8ToAscii( const char* src, char* dst, size_t dstLen,
                      const SUnicodeTranslation* default_translation,
                      const TUnicodeTable* table,
                      EConversionResult* result)
@@ -292,13 +286,6 @@ ssize_t UTF8ToAscii( const char* src, char* dst, size_t dstLen,
         dstPos += substLen;
     }
     return (ssize_t) dstPos;
-}
-
-
-string UTF8ToAsciiString( const char* src,
-                          const TUnicodeTable* table)
-{
-    return UTF8ToAsciiString(src,NULL,table,NULL);
 }
 
 string UTF8ToAsciiString( const char* src,

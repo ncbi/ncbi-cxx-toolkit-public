@@ -124,12 +124,6 @@ size_t UnicodeToUTF8(TUnicode unicode, char *buffer, size_t buf_length);
 NCBI_XUTIL_EXPORT
 string UnicodeToUTF8(TUnicode unicode);
 
-/// Deprecated; use the function below instead
-NCBI_DEPRECATED
-NCBI_XUTIL_EXPORT
-ssize_t UTF8ToAscii(const char* src, char* dst, size_t dst_len,
-                    const TUnicodeTable* table=NULL);
-
 /// Convert UTF8 into ASCII character buffer.
 ///
 /// Decode UTF8 buffer and substitute all Unicodes with appropriate
@@ -154,11 +148,6 @@ ssize_t UTF8ToAscii(const char* src, char* dst, size_t dst_len,
                     const SUnicodeTranslation* default_translation,
                     const TUnicodeTable* table=NULL,
                     EConversionResult* result=NULL);
-
-/// Deprecated; use the function below instead
-NCBI_DEPRECATED
-NCBI_XUTIL_EXPORT
-string UTF8ToAsciiString(const char* src, const TUnicodeTable* table=NULL);
 
 /// Convert UTF8 into ASCII string.
 ///
