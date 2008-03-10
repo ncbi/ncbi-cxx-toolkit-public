@@ -567,9 +567,7 @@ MailToAuthors()
         echo
         echo \$x_cmd
         echo
-   echo -> \$sendmail \$x_authors
-   echo '-----------------------'   
-   
+   echo "cmd = \$sendmail \$x_authors"
    {
         echo "To: \$x_authors"
         echo "Subject: [C++ CHECK] \$x_app | \$signature"
@@ -578,6 +576,7 @@ MailToAuthors()
         echo
         cat \$x_logfile
    } | \$sendmail \$x_authors
+   echo '-----------------------'   
 }
 
 EOF
