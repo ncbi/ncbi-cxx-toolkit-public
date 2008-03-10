@@ -32,11 +32,13 @@
  *
  */
 
+#include <corelib/ncbienv.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
 BEGIN_NCBI_SCOPE
 
-namespace impl {
+namespace impl 
+{
 
 class NCBI_DBAPIDRIVER_EXPORT CDBConnParamsBase : 
     public CDBConnParams 
@@ -284,6 +286,91 @@ public:
 
 private:
     const CDBConnParams& m_Other;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDBEnvConnParams : public CDBConnParamsDelegate
+{
+public:
+    CDBEnvConnParams(
+        const CDBConnParams& other,
+        const string& server_name_env = "DBAPI_SERVER",
+        const string& database_name_env = "DBAPI_DATABASE",
+        const string& user_name_env = "DBAPI_USER",
+        const string& passwd_env = "DBAPI_PASSWORD"
+        );
+    virtual ~CDBEnvConnParams(void);
+
+public:
+    void SetServerNameEnv(const string& name)
+    {
+        m_ServerNameEnv = name;
+    }
+    void SetDatabaseNameEnv(const string& name)
+    {
+        m_DatabaseNameEnv = name;
+    }
+    void SetUserNameEnv(const string& name)
+    {
+        m_UserNameEnv = name;
+    }
+    void SetPasswordEnv(const string& pwd)
+    {
+        m_PasswordEnv = pwd;
+    }
+
+public:
+    virtual string GetServerName(void) const;
+    virtual string GetDatabaseName(void) const;
+    virtual string GetUserName(void) const;
+    virtual string GetPassword(void) const;
+
+private:
+    const CNcbiEnvironment m_Env;
+    string m_ServerNameEnv;
+    string m_DatabaseNameEnv;
+    string m_UserNameEnv;
+    string m_PasswordEnv;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDBInterfacesFileConnParams : 
+    public CDBConnParamsDelegate
+{
+public:
+    CDBInterfacesFileConnParams(
+        const CDBConnParams& other,
+        const string& file = kEmptyStr
+        );
+    virtual ~CDBInterfacesFileConnParams(void);
+
+public:
+    virtual EServerType GetServerType(void) const;
+    virtual Uint4 GetHost(void) const;
+    virtual Uint2 GetPort(void) const;
+
+private:
+    struct SIRecord
+    {
+        SIRecord(void)
+        : m_Host(0)
+        , m_Port(0)
+        {
+        }
+        SIRecord(Uint4 host, Uint2 port)
+        : m_Host(host)
+        , m_Port(port)
+        {
+        }
+
+        Uint4 m_Host;
+        Uint2 m_Port;
+    };
+
+    typedef map<string, SIRecord> records_type;
+    records_type m_Records;
 };
 
 

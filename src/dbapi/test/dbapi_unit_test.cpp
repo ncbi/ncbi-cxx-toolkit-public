@@ -13038,6 +13038,44 @@ void CDBAPIUnitTest::Test_ConnParams(void)
         }
     }
 
+    // Check CDBEnvConnParams ...
+    {
+        CDBUriConnParams uri_params("dbapi://wrong_user:wrong_pswd@wrong_server/wrong_db");
+        CDBEnvConnParams params(uri_params);
+        CNcbiEnvironment env;
+
+        env.Set("DBAPI_SERVER", m_args.GetServerName());
+        env.Set("DBAPI_DATABASE", "DBAPI_Sample");
+        env.Set("DBAPI_USER", m_args.GetUserName());
+        env.Set("DBAPI_PASSWORD", m_args.GetUserPassword());
+
+        IDataSource* ds = m_DM.MakeDs(params);
+        auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+        conn->Connect(params);
+        auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+        auto_stmt->ExecuteUpdate("SELECT @@version");
+
+        env.Reset();
+    }
+
+    // CDBInterfacesFileConnParams ...
+    {
+        CDBUriConnParams uri_params(
+                "dbapi:" // No driver name ...
+                "//" + m_args.GetUserName() +
+                ":" + m_args.GetUserPassword() +
+                "@" + m_args.GetServerName()
+                );
+
+        CDBInterfacesFileConnParams params(uri_params);
+
+        IDataSource* ds = m_DM.MakeDs(params);
+        auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
+        conn->Connect(params);
+        auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+        auto_stmt->ExecuteUpdate("SELECT @@version");
+    }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////

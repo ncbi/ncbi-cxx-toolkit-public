@@ -916,6 +916,7 @@ private:
 class CDBConnParams 
 {
 public:
+    CDBConnParams(void);
     virtual ~CDBConnParams(void);
 
 public:
@@ -952,6 +953,24 @@ public:
     virtual bool IsDoNotConnect(void) const = 0;  
     /// Pool name to be used with this connection
     virtual string GetPoolName(void) const = 0; 
+
+    void SetChildObj(const CDBConnParams& child_obj) const
+    {
+        m_ChildObj = &child_obj;
+    }
+
+protected:
+    const CDBConnParams& GetThis(void) const
+    {
+        if (m_ChildObj) {
+            return m_ChildObj->GetThis();
+        }
+
+        return *this;
+    }
+
+private:
+    mutable const CDBConnParams* m_ChildObj;
 };
 
 

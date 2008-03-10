@@ -39,6 +39,11 @@ BEGIN_NCBI_SCOPE
 
 
 ////////////////////////////////////////////////////////////////////////////
+CDBConnParams::CDBConnParams(void)
+: m_ChildObj(NULL)
+{
+}
+
 CDBConnParams::~CDBConnParams(void)
 {
 }
