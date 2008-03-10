@@ -36,7 +36,6 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbidiag.hpp>
 
-
 #if defined(NCBI_OS_UNIX)
 #  include <sys/types.h>
 #  include <signal.h>
@@ -49,9 +48,12 @@
 #  include <tlhelp32.h>
 #endif
 
+#if defined(NCBI_OS_MSWIN)
+#  pragma warning (disable : 4191)
+#endif
+
 
 BEGIN_NCBI_SCOPE
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -744,20 +746,20 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
     } else {
         hProcess = (TProcessHandle)m_Process;
     }
-    DWORD status = -1;
+    int status = -1;
+    DWORD x_status = STILL_ACTIVE;
     try {
         // Is process still running?
         if (!hProcess  ||  hProcess == INVALID_HANDLE_VALUE) {
             throw -1;
         }
-        if (GetExitCodeProcess(hProcess, &status)  &&
-            status != STILL_ACTIVE) {
-            throw (int)status;
+        if (GetExitCodeProcess(hProcess, &x_status)  &&
+            x_status != STILL_ACTIVE) {
+            throw (int)x_status;
         }
-        if (info  &&  status == STILL_ACTIVE) {
+        if (info  &&  x_status == STILL_ACTIVE) {
             info->state = eExitInfo_Alive;
         }
-        status = -1;
         // Wait for process termination, or timeout expired
         if (enable_sync  &&  timeout) {
             DWORD tv = (timeout == kInfiniteTimeoutMs) ? INFINITE : 
@@ -773,11 +775,12 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
                     throw -1;
             }
             // Get process exit code
-            if (GetExitCodeProcess(hProcess, &status)) {
-                throw (int)status;
+            if (GetExitCodeProcess(hProcess, &x_status)) {
+                throw (int)x_status;
             }
             throw -1;
         }
+        status = (int)x_status;
     }
     catch (int e) {
         status = e;
@@ -798,7 +801,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
     if (m_Type == ePid ) {
         CloseHandle(hProcess);
     }
-    return (int)status;
+    return status;
 #endif
 }
 

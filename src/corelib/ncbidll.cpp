@@ -53,6 +53,10 @@
 #  error "Class CDll defined only for MS Windows and UNIX platforms"
 #endif
 
+#if defined(NCBI_OS_MSWIN)
+#  pragma warning (disable : 4191)
+#endif
+
 
 #define NCBI_USE_ERRCODE_X   Corelib_Dll
 
