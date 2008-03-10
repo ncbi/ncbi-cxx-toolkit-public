@@ -55,35 +55,33 @@ CHG_Gene::~CHG_Gene(void)
 inline
 CHG_Gene::TSymbol CHG_Gene::x_GetGeneidLabel(void) const 
 { 
-	return( "GeneID:" + NStr::IntToString( GetGeneid() ) );  
-} // end CHG_Gene::x_GetGeneidLabel
+        return( "GeneID:" + NStr::IntToString( GetGeneid() ) );  
+}
 
 
-////////////////////////////////////////////////////////// CHG_Gene::GetLabel \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-// 
 CHG_Gene::TSymbol CHG_Gene::GetLabel(void) const
 {
-	CHG_Gene::TSymbol gene_symbol;
-	 
-	if ( IsSetSymbol() ) {													// if gene name is set	
-		gene_symbol = GetSymbol();	
-	}
-	else if ( IsSetLocus_tag() ) {
-		gene_symbol = GetLocus_tag();		
-	}
-	else if ( IsSetAliases() ) {										// if gene name is NOT set, look for aliases
-		const  TAliases &aliases = GetAliases();
-		TAliases_iter aliases_iter = aliases.begin();
-		gene_symbol = *aliases_iter;				
-	}
-	else if ( IsSetGeneid() ) {											// if gene name is NOT set and no aliases, set name to gene_id
-		gene_symbol = x_GetGeneidLabel();
-	}
-	else {
-		gene_symbol = "(Unknown)";
-	}
-	return gene_symbol;
-} // end CHG_Gene::GetLabel
+        CHG_Gene::TSymbol gene_symbol;
+         
+        if ( IsSetSymbol() ) {                                                                                                  // if gene name is set  
+                gene_symbol = GetSymbol();      
+        }
+        else if ( IsSetLocus_tag() ) {
+                gene_symbol = GetLocus_tag();           
+        }
+        else if ( IsSetAliases() ) {   // if gene name is NOT set, look for aliases
+                const  TAliases &aliases = GetAliases();
+                TAliases_iter aliases_iter = aliases.begin();
+                gene_symbol = *aliases_iter;                            
+        }
+        else if ( IsSetGeneid() ) {                                                                                     // if gene name is NOT set and no aliases, set name to gene_id
+                gene_symbol = x_GetGeneidLabel();
+        }
+        else {
+                gene_symbol = "(Unknown)";
+        }
+        return gene_symbol;
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::
