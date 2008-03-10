@@ -76,7 +76,7 @@ double CProtProp::GetProteinPI(CSeqVector& v)
     
     double phMin = PH_MIN;
     double phMax = PH_MAX;
-    double phMid;
+    double phMid = (phMin + phMax) / 2;  // init to avoid compiler warning
 
     for (int i = 0;  i < MAXLOOP && (phMax - phMin) > EPSI;  i++) {
         phMid = phMin + (phMax - phMin) / 2;
