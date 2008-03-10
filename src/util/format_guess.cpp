@@ -1442,7 +1442,12 @@ CFormatGuess::EnsureStats()
     //     from the AA alphabet
     //
     while ( ! TestBuffer.fail() ) {
-        NcbiGetline( TestBuffer, strLine, "\n\r" );
+        NcbiGetlineEOL( TestBuffer, strLine );
+// code in CFormatGuess::Format counts line ends
+// so, we will count them here as well
+        if (!strLine.empty()) {
+            strLine += '\n';
+        }
         size_t size = strLine.size();
         bool is_header = size > 0 && strLine[0] == '>';
         for ( size_t i=0; i < size; ++i ) {
@@ -1462,6 +1467,7 @@ CFormatGuess::EnsureStats()
                     ++m_iStatsCountAaChars;
                 }
                 if ( type & fLineEnd ) {
+                    ++m_iStatsCountAlNumChars;
                     --m_iStatsCountData;
                 }
             }
