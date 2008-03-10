@@ -70,8 +70,8 @@ class NCBI_XREGEXP_EXPORT CRegexp
 {
 public:
     /// Type definitions used for code clarity.
-    typedef int TCompile;     ///< Compilation options.
-    typedef int TMatch;       ///< Match options.
+    typedef unsigned int TCompile;     ///< Compilation options.
+    typedef unsigned int TMatch;       ///< Match options.
 
     /// Flags for compile regular expressions.
     ///
