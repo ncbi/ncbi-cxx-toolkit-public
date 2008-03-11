@@ -63,9 +63,9 @@ private:
 static char s_Str[k_NumThreadsMax*200] = "";
 static ostrstream s_Sout(s_Str, k_NumThreadsMax*200, ios::out);
 
-static int s_CreateLine = 0;
-static int s_LogLine = 0;
-static int s_ErrLine = 0;
+static size_t s_CreateLine = 0;
+static size_t s_LogLine = 0;
+static size_t s_ErrLine = 0;
 
 
 bool CTestDiagApp::TestApp_Args(CArgDescriptions& args)
@@ -186,10 +186,10 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
     CDiagContext::TUID uid = GetDiagContext().GetUID();
     CDiagContext::TPID pid = GetDiagContext().GetPID();
     // string app_name = GetProgramDisplayName();
-    int create_msg_count = 0;
-    int err_msg_count = 0;
-    int log_msg_count = 0;
-    int other_msg_count = 0;
+    size_t create_msg_count = 0;
+    size_t err_msg_count = 0;
+    size_t log_msg_count = 0;
+    size_t other_msg_count = 0;
 
     ITERATE(TStringList, it, messages) {
         if ( it->empty() ) {
