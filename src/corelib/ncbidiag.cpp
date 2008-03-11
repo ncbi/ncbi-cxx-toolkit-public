@@ -3331,6 +3331,15 @@ extern CDiagHandler* GetDiagHandler(bool take_ownership)
 }
 
 
+extern void DiagHandler_Reopen(void)
+{
+    CDiagHandler* handler = GetDiagHandler();
+    if ( handler ) {
+        handler->Reopen(CDiagHandler::fCheck);
+    }
+}
+
+
 extern CDiagBuffer& GetDiagBuffer(void)
 {
     return CDiagContextThreadData::GetThreadData().GetDiagBuffer();
@@ -3354,12 +3363,6 @@ CStreamDiagHandler_Base::CStreamDiagHandler_Base(void)
 string CStreamDiagHandler_Base::GetLogName(void)
 {
     return m_LogName;
-}
-
-
-void CStreamDiagHandler_Base::Reopen(bool /* truncate */)
-{
-    return;
 }
 
 
@@ -3402,7 +3405,7 @@ CFileHandleDiagHandler::CFileHandleDiagHandler(const string& fname)
       m_LastReopen(new CTime(GetFastLocalTime()))
 {
     SetLogName(fname);
-    Reopen(CDiagContext::GetLogTruncate());
+    Reopen(CDiagContext::GetLogTruncate() ? fTruncate : fDefault);
 }
 
 
@@ -3415,13 +3418,23 @@ CFileHandleDiagHandler::~CFileHandleDiagHandler(void)
 }
 
 
-void CFileHandleDiagHandler::Reopen(bool truncate)
+const int kLogReopenDelay = 60; // Reopen log every 60 seconds
+
+void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
 {
+    // Period is longer than for CFileDiagHandler to prevent double-reopening
+    if (flags & fCheck) {
+        CTime now(GetFastLocalTime());
+        if (now.DiffSecond(*m_LastReopen) < kLogReopenDelay + 5) {
+            return;
+        }
+    }
+
     if (m_Handle >= 0) {
         close(m_Handle);
     }
     int mode = O_WRONLY | O_APPEND | O_CREAT;
-    if ( truncate ) {
+    if (flags & fTruncate) {
         mode |= O_TRUNC;
     }
 
@@ -3470,8 +3483,6 @@ void CFileHandleDiagHandler::Reopen(bool truncate)
     }
 }
 
-
-const int kLogReopenDelay = 60; // Reopen log every 60 seconds
 
 void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
 {
@@ -3798,16 +3809,22 @@ void CFileDiagHandler::SetSubHandler(CStreamDiagHandler_Base* handler,
 }
 
 
-void CFileDiagHandler::Reopen(bool truncate)
+void CFileDiagHandler::Reopen(TReopenFlags flags)
 {
+    if (flags & fCheck) {
+        CTime now(GetFastLocalTime());
+        if (now.DiffSecond(*m_LastReopen) < kLogReopenDelay) {
+            return;
+        }
+    }
     if ( m_Err ) {
-        m_Err->Reopen(truncate);
+        m_Err->Reopen(flags);
     }
     if ( m_Log ) {
-        m_Log->Reopen(truncate);
+        m_Log->Reopen(flags);
     }
     if ( m_Trace ) {
-        m_Trace->Reopen(truncate);
+        m_Trace->Reopen(flags);
     }
     m_LastReopen->SetCurrent();
 }

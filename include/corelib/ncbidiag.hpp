@@ -1872,6 +1872,18 @@ public:
 
     /// Get current diag posts destination
     virtual string GetLogName(void);
+
+    enum EReopenFlags {
+        fTruncate = 0x01,   ///< Truncate file to zero size
+        fCheck    = 0x02,   ///< Reopen only if necessary
+        fDefault  = 0       ///< Default reopen flags:
+                            ///< - no truncation
+                            ///< - do not check if necessary
+    };
+    typedef int TReopenFlags;
+
+    /// Reopen file to enable log rotation.
+    virtual void Reopen(TReopenFlags flags = fDefault) {}
 };
 
 /// Diagnostic handler function type.
@@ -1902,6 +1914,11 @@ extern void SetDiagHandler(FDiagHandler func,
 ///   Return TRUE if user has ever set (or unset) diag. handler.
 NCBI_XNCBI_EXPORT
 extern bool IsSetDiagHandler(void);
+
+
+/// Ask diagnostic handler to reopen log files if necessary.
+NCBI_XNCBI_EXPORT
+extern void DiagHandler_Reopen(void);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1947,9 +1964,6 @@ public:
 
     virtual string GetLogName(void);
     virtual CNcbiOstream* GetStream(void) { return 0; }
-
-    // Reopen file to enable log rotation.
-    virtual void Reopen(bool truncate = false);
 
 protected:
     void SetLogName(const string& log_name) { m_LogName = log_name; }
@@ -2020,7 +2034,7 @@ public:
     bool Valid(void) { return m_Handle != -1; }
 
     // Reopen file to enable log rotation.
-    virtual void Reopen(bool truncate = false);
+    virtual void Reopen(TReopenFlags flags = fDefault);
 
 private:
     int    m_Handle;      ///< File handle
@@ -2090,7 +2104,7 @@ public:
     CNcbiOstream* GetLogStream(EDiagFileType file_type);
 
     // Reopen all files to enable log rotation.
-    virtual void Reopen(bool truncate = false);
+    virtual void Reopen(TReopenFlags flags = fDefault);
 
     // Set the selected sub-handler directly with the given ownership.
     void SetSubHandler(CStreamDiagHandler_Base* handler,

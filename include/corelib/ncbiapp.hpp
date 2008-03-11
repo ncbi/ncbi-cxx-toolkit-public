@@ -498,6 +498,39 @@ private:
 };
 
 
+/// Interface for application idler.
+class NCBI_XNCBI_EXPORT INcbiIdler {
+public:
+    virtual ~INcbiIdler(void) {}
+
+    // Perform any actions. Called by RunIdle().
+    virtual void Idle(void) = 0;
+};
+
+
+/// Default idler.
+class NCBI_XNCBI_EXPORT CDefaultIdler : public INcbiIdler
+{
+public:
+    CDefaultIdler(void) {}
+    virtual ~CDefaultIdler(void) {}
+
+    virtual void Idle(void);
+};
+
+
+/// Return currently installed idler or NULL. Update idler ownership
+/// according to the flag.
+NCBI_XNCBI_EXPORT INcbiIdler* GetIdler(EOwnership ownership = eNoOwnership);
+
+/// Set new idler and ownership.
+NCBI_XNCBI_EXPORT void SetIdler(INcbiIdler* idler,
+                                EOwnership ownership = eTakeOwnership);
+
+/// Execute currently installed idler if any.
+NCBI_XNCBI_EXPORT void RunIdler(void);
+
+
 /* @} */
 
 

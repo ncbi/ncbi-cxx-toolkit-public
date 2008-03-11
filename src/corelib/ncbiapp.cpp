@@ -38,6 +38,7 @@
 #include <corelib/ncbi_param.hpp>
 #include <corelib/syslog.hpp>
 #include <corelib/error_codes.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
@@ -1054,5 +1055,77 @@ const char* CAppException::GetErrCodeString(void) const
     default:    return CException::GetErrCodeString();
     }
 }
+
+
+void CDefaultIdler::Idle(void)
+{
+    DiagHandler_Reopen();
+}
+
+
+class CIdlerWrapper
+{
+public:
+    CIdlerWrapper(void) : m_Idler(new CDefaultIdler()) {}
+    ~CIdlerWrapper(void) {}
+
+    INcbiIdler* GetIdler(EOwnership own);
+    void SetIdler(INcbiIdler* idler, EOwnership own);
+    void RunIdler(void);
+
+private:
+    CMutex              m_Mutex;
+    AutoPtr<INcbiIdler> m_Idler;
+};
+
+
+inline
+INcbiIdler* CIdlerWrapper::GetIdler(EOwnership own)
+{
+    CMutexGuard guard(m_Mutex);
+    m_Idler.reset(m_Idler.release(), own);
+    return m_Idler.get();
+}
+
+
+inline
+void CIdlerWrapper::SetIdler(INcbiIdler* idler, EOwnership own)
+{
+    CMutexGuard guard(m_Mutex);
+    m_Idler.reset(idler, own);
+}
+
+
+inline
+void CIdlerWrapper::RunIdler(void)
+{
+    if ( m_Idler.get() ) {
+        CMutexGuard guard(m_Mutex);
+        if ( m_Idler.get() ) {
+            m_Idler->Idle();
+        }
+    }
+}
+
+
+CSafeStaticPtr<CIdlerWrapper> s_IdlerWrapper;
+
+INcbiIdler* GetIdler(EOwnership ownership)
+{
+    return s_IdlerWrapper.Get().GetIdler(ownership);
+}
+
+
+void SetIdler(INcbiIdler* idler, EOwnership ownership)
+{
+    s_IdlerWrapper.Get().SetIdler(idler, ownership);
+}
+
+
+void RunIdler(void)
+{
+    s_IdlerWrapper.Get().RunIdler();
+}
+
 
 END_NCBI_SCOPE
