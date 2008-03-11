@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
-#include <util/lightstr.hpp>
+#include <corelib/tempstr.hpp>
 
 
 /** @addtogroup ObjStreamSupport
@@ -147,11 +147,11 @@ protected:
     virtual void SkipNull(void);
     virtual void SkipByteBlock(void);
 
-    CLightString SkipTagName(CLightString tag, const char* s, size_t length);
-    CLightString SkipTagName(CLightString tag, const char* s);
-    CLightString SkipTagName(CLightString tag, const string& s);
-    CLightString SkipStackTagName(CLightString tag, size_t level);
-    CLightString SkipStackTagName(CLightString tag, size_t level, char c);
+    CTempString SkipTagName(CTempString tag, const char* s, size_t length);
+    CTempString SkipTagName(CTempString tag, const char* s);
+    CTempString SkipTagName(CTempString tag, const string& s);
+    CTempString SkipStackTagName(CTempString tag, size_t level);
+    CTempString SkipStackTagName(CTempString tag, size_t level, char c);
 
     bool HasAttlist(void);
     bool NextIsTag(void);
@@ -169,7 +169,7 @@ protected:
 
     TMemberIndex HasAnyContent(const CClassTypeInfoBase* classType);
     bool HasMoreElements(TTypeInfo elementType);
-    TMemberIndex FindDeep(TTypeInfo type, const CLightString& name) const;
+    TMemberIndex FindDeep(TTypeInfo type, const CTempString& name) const;
 #ifdef VIRTUAL_MID_LEVEL_IO
     virtual void ReadNamedType(TTypeInfo namedTypeInfo,
                                TTypeInfo typeInfo,
@@ -257,9 +257,9 @@ private:
     TUnicodeSymbol ReadUtf8Char(char ch);
     void ReadTagData(string& s, EStringType type = eStringTypeVisible);
 
-    CLightString ReadName(char c);
-    CLightString RejectedName(void);
-    CLightString ReadAttributeName(void);
+    CTempString ReadName(char c);
+    CTempString RejectedName(void);
+    CTempString ReadAttributeName(void);
     void ReadAttributeValue(string& value, bool skipClosing=false);
     char ReadUndefinedAttributes(void);
 
@@ -269,7 +269,7 @@ private:
     char SkipWS(void);
     char SkipWSAndComments(void);
 
-    void UnexpectedMember(const CLightString& id, const CItemsInfo& items);
+    void UnexpectedMember(const CTempString& id, const CItemsInfo& items);
     bool x_IsStdXml(void) {return m_StdXml || m_EnforcedStdXml;}
     void x_EndTypeNamespace(void);
 

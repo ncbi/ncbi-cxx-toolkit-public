@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/tempstr.hpp>
 #include <serial/objistrxml.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/objhook.hpp>
@@ -339,7 +340,7 @@ char CObjectIStreamXml::BeginClosingTag(void)
     return m_Input.PeekChar();
 }
 
-CLightString CObjectIStreamXml::ReadName(char c)
+CTempString CObjectIStreamXml::ReadName(char c)
 {
     _ASSERT(InsideTag());
     if ( !IsFirstNameChar(c) )
@@ -365,9 +366,9 @@ CLightString CObjectIStreamXml::ReadName(char c)
         m_Input.SkipChar();
         m_Input.SkipEndOfLine(c);
     }
-    m_LastTag = CLightString(ptr+iColon, i-iColon);
+    m_LastTag = CTempString(ptr+iColon, i-iColon);
     if (iColon > 1) {
-        string ns_prefix( CLightString(ptr, iColon-1));
+        string ns_prefix( CTempString(ptr, iColon-1));
         if (ns_prefix == "xmlns") {
             string value;
             ReadAttributeValue(value, true);
@@ -381,7 +382,7 @@ CLightString CObjectIStreamXml::ReadName(char c)
             m_NsPrefixToName[m_LastTag] = value;
             m_NsNameToPrefix[value] = m_LastTag;
             char ch = SkipWS();
-            return IsEndOfTagChar(ch) ? CLightString() : ReadName(ch);
+            return IsEndOfTagChar(ch) ? CTempString() : ReadName(ch);
         } else if (ns_prefix == "xml") {
             iColon = 0;
         } else {
@@ -390,7 +391,7 @@ CLightString CObjectIStreamXml::ReadName(char c)
                     string value;
                     ReadAttributeValue(value, true);
                     char ch = SkipWS();
-                    return IsEndOfTagChar(ch) ? CLightString() : ReadName(ch);
+                    return IsEndOfTagChar(ch) ? CTempString() : ReadName(ch);
                 }
             } else {
                 m_CurrNsPrefix = ns_prefix;
@@ -409,16 +410,16 @@ CLightString CObjectIStreamXml::ReadName(char c)
             m_NsPrefixToName[m_LastTag] = value;
             m_NsNameToPrefix[value] = m_LastTag;
             char ch = SkipWS();
-            return IsEndOfTagChar(ch) ? CLightString() : ReadName(ch);
+            return IsEndOfTagChar(ch) ? CTempString() : ReadName(ch);
         }
     }
 #if defined(NCBI_SERIAL_IO_TRACE)
     cout << ", Read= " << m_LastTag;
 #endif
-    return CLightString(ptr+iColon, i-iColon);
+    return CTempString(ptr+iColon, i-iColon);
 }
 
-CLightString CObjectIStreamXml::RejectedName(void)
+CTempString CObjectIStreamXml::RejectedName(void)
 {
     _ASSERT(!m_RejectedTag.empty());
     m_LastTag = m_RejectedTag;
@@ -443,7 +444,7 @@ void CObjectIStreamXml::SkipQDecl(void)
     _ASSERT(InsideOpeningTag());
     m_Input.SkipChar();
 
-    CLightString tagName;
+    CTempString tagName;
     tagName = ReadName( SkipWS());
 //    _ASSERT(tagName == "xml");
     for (;;) {
@@ -503,9 +504,9 @@ string CObjectIStreamXml::ReadFileHeader(void)
         case '!':
             {
                 m_Input.SkipChar();
-                CLightString tagName = ReadName(m_Input.PeekChar());
+                CTempString tagName = ReadName(m_Input.PeekChar());
                 if ( tagName == "DOCTYPE" ) {
-                    CLightString docType = ReadName(SkipWS());
+                    CTempString docType = ReadName(SkipWS());
                     string typeName = docType;
                     // skip the rest of !DOCTYPE
                     for ( ;; ) {
@@ -635,7 +636,7 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar, bool* encoded)
             return v & 0xFF;
         }
         else {
-            CLightString e(p, offset);
+            CTempString e(p, offset);
             if ( e == "lt" )
                 return '<';
             if ( e == "gt" )
@@ -703,7 +704,7 @@ TUnicodeSymbol CObjectIStreamXml::ReadUtf8Char(char c)
     return chU;
 }
 
-CLightString CObjectIStreamXml::ReadAttributeName(void)
+CTempString CObjectIStreamXml::ReadAttributeName(void)
 {
     if ( OutsideTag() )
         ThrowError(fFormatError, "attribute expected");
@@ -740,8 +741,8 @@ char CObjectIStreamXml::ReadUndefinedAttributes(void)
             m_Attlist = false;
             break;
         }
-        CLightString tagName = ReadName(c);
-        if (tagName.GetLength()) {
+        CTempString tagName = ReadName(c);
+        if (!tagName.empty()) {
             string value;
             ReadAttributeValue(value, true);
         }
@@ -751,7 +752,7 @@ char CObjectIStreamXml::ReadUndefinedAttributes(void)
 
 bool CObjectIStreamXml::ReadBool(void)
 {
-    CLightString attr;
+    CTempString attr;
     bool checktag = !(x_IsStdXml() && m_Attlist);
     if (checktag) {
         while (HasAttlist()) {
@@ -1090,7 +1091,7 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
                 ReadAttributeValue(valueName);
                 value = values.FindValue(valueName);
             } else {
-                CLightString attr;
+                CTempString attr;
                 while (HasAttlist()) {
                     attr = ReadAttributeName();
                     if ( attr == "value" ) {    
@@ -1144,7 +1145,7 @@ CObjectIStreamXml::TObjectIndex CObjectIStreamXml::ReadObjectPointer(void)
     ThrowError(fNotImplemented, "unimplemented");
     return 0;
 /*
-    CLightString attr = ReadAttributeName();
+    CTempString attr = ReadAttributeName();
     if ( attr != "index" )
         ThrowError(fIllegalCall, "attribute 'index' expected");
     string index;
@@ -1176,16 +1177,16 @@ CRef<CByteSource> CObjectIStreamXml::EndDelayBuffer(void)
     return CObjectIStream::EndDelayBuffer();
 }
 
-CLightString CObjectIStreamXml::SkipTagName(CLightString tag,
+CTempString CObjectIStreamXml::SkipTagName(CTempString tag,
                                             const char* str, size_t length)
 {
-    if ( tag.GetLength() < length ||
-         memcmp(tag.GetString(), str, length) != 0 )
+    if ( tag.size() < length ||
+         memcmp(tag.data(), str, length) != 0 )
         ThrowError(fFormatError, "invalid tag name: "+string(tag));
-    return CLightString(tag.GetString() + length, tag.GetLength() - length);
+    return CTempString(tag.data() + length, tag.size() - length);
 }
 
-CLightString CObjectIStreamXml::SkipStackTagName(CLightString tag,
+CTempString CObjectIStreamXml::SkipStackTagName(CTempString tag,
                                                  size_t level)
 {
     const TFrame& frame = FetchFrameFromTop(level);
@@ -1213,7 +1214,7 @@ CLightString CObjectIStreamXml::SkipStackTagName(CLightString tag,
                 tag = SkipStackTagName(tag, level + 1);
                 return SkipTagName(tag, "_E");
             }
-            return CLightString();
+            return CTempString();
         }
     default:
         break;
@@ -1222,18 +1223,18 @@ CLightString CObjectIStreamXml::SkipStackTagName(CLightString tag,
     return tag;
 }
 
-CLightString CObjectIStreamXml::SkipStackTagName(CLightString tag,
+CTempString CObjectIStreamXml::SkipStackTagName(CTempString tag,
                                                  size_t level, char c)
 {
     tag = SkipStackTagName(tag, level);
-    if ( tag.Empty() || *tag.GetString() != c )
+    if ( tag.empty() || tag[0] != c )
         ThrowError(fFormatError, "invalid tag name: "+string(tag));
-    return CLightString(tag.GetString() + 1, tag.GetLength() - 1);
+    return CTempString(tag.data() + 1, tag.size() - 1);
 }
 
 void CObjectIStreamXml::OpenTag(const string& e)
 {
-    CLightString tagName;
+    CTempString tagName;
     if (m_RejectedTag.empty()) {
         tagName = ReadName(BeginOpeningTag());
     } else {
@@ -1249,7 +1250,7 @@ void CObjectIStreamXml::CloseTag(const string& e)
         EndSelfClosedTag();
     }
     else {
-        CLightString tagName = ReadName(BeginClosingTag());
+        CTempString tagName = ReadName(BeginClosingTag());
         if ( tagName != e )
             ThrowError(fFormatError, "tag '"+e+"' expected: "+string(tagName));
         EndClosingTag();
@@ -1258,12 +1259,12 @@ void CObjectIStreamXml::CloseTag(const string& e)
 
 void CObjectIStreamXml::OpenStackTag(size_t level)
 {
-    CLightString tagName;
+    CTempString tagName;
     if (m_RejectedTag.empty()) {
         tagName = ReadName(BeginOpeningTag());
         if (!x_IsStdXml()) {
-            CLightString rest = SkipStackTagName(tagName, level);
-            if ( !rest.Empty() )
+            CTempString rest = SkipStackTagName(tagName, level);
+            if ( !rest.empty() )
                 ThrowError(fFormatError,
                     "unexpected tag: "+string(tagName)+string(rest));
         }
@@ -1281,10 +1282,10 @@ void CObjectIStreamXml::CloseStackTag(size_t level)
         if (m_Attlist) {
             m_TagState = eTagInsideClosing;
         } else {
-            CLightString tagName = ReadName(BeginClosingTag());
+            CTempString tagName = ReadName(BeginClosingTag());
             if (!x_IsStdXml()) {
-                CLightString rest = SkipStackTagName(tagName, level);
-                if ( !rest.Empty() )
+                CTempString rest = SkipStackTagName(tagName, level);
+                if ( !rest.empty() )
                     ThrowError(fFormatError,
                         "unexpected tag: "+string(tagName)+string(rest));
             }
@@ -1443,7 +1444,7 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
         return false;
     }
     if (x_IsStdXml()) {
-        CLightString tagName;
+        CTempString tagName;
         TTypeInfo type = GetRealTypeInfo(elementType);
         // this is to handle STL containers of primitive types
         if (GetRealTypeFamily(type) == eTypeFamilyPrimitive) {
@@ -1487,7 +1488,7 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
 
 
 TMemberIndex CObjectIStreamXml::FindDeep(TTypeInfo type,
-                                         const CLightString& name) const
+                                         const CTempString& name) const
 {
     for (;;) {
         if (type->GetTypeFamily() == eTypeFamilyContainer) {
@@ -1759,7 +1760,7 @@ void CObjectIStreamXml::EndClass(void)
     x_EndTypeNamespace();
 }
 
-void CObjectIStreamXml::UnexpectedMember(const CLightString& id,
+void CObjectIStreamXml::UnexpectedMember(const CTempString& id,
                                          const CItemsInfo& items)
 {
     string message =
@@ -1773,7 +1774,7 @@ void CObjectIStreamXml::UnexpectedMember(const CLightString& id,
 TMemberIndex
 CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
 {
-    CLightString tagName;
+    CTempString tagName;
     bool more;
     do {
         more = false;
@@ -1815,7 +1816,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
         }
     } while (more);
 
-    CLightString id = SkipStackTagName(tagName, 1, '_');
+    CTempString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id);
     if ( index == kInvalidMember ) {
         if (CanSkipUnknownMembers()) {
@@ -1836,7 +1837,7 @@ TMemberIndex
 CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                                     TMemberIndex pos)
 {
-    CLightString tagName;
+    CTempString tagName;
     TMemberIndex first = classType->GetMembers().FirstIndex();
     if (m_RejectedTag.empty()) {
         if (m_Attlist && InsideTag()) {
@@ -1847,7 +1848,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                         return kInvalidMember;
                     }
                     tagName = ReadName(ch);
-                    if (tagName.GetLength()) {
+                    if (!tagName.empty()) {
                         if (classType->GetMembers().Find(tagName) != kInvalidMember) {
                             break;
                         }
@@ -1977,7 +1978,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
         }
         return kInvalidMember;
     }
-    CLightString id = SkipStackTagName(tagName, 1, '_');
+    CTempString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id, pos);
     if ( index == kInvalidMember ) {
         if (CanSkipUnknownMembers()) {
@@ -2027,7 +2028,7 @@ void CObjectIStreamXml::EndChoice(void)
 
 TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
 {
-    CLightString tagName;
+    CTempString tagName;
     TMemberIndex first = choiceType->GetVariants().FirstIndex();
     if (m_RejectedTag.empty()) {
         if (!m_Attlist) {
@@ -2103,7 +2104,7 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
         UndoClassMember();
         UnexpectedMember(tagName, choiceType->GetVariants());
     }
-    CLightString id = SkipStackTagName(tagName, 1, '_');
+    CTempString id = SkipStackTagName(tagName, 1, '_');
     ind = choiceType->GetVariants().Find(id);
     if ( ind == kInvalidMember ) {
         if (CanSkipUnknownVariants()) {
@@ -2146,8 +2147,8 @@ void CObjectIStreamXml::ReadChoice(const CChoiceTypeInfo* choiceType,
 void CObjectIStreamXml::ReadChoiceContents(const CChoiceTypeInfo* choiceType,
                                            TObjectPtr choicePtr)
 {
-    CLightString tagName = ReadName(BeginOpeningTag());
-    CLightString id = SkipStackTagName(tagName, 0, '_');
+    CTempString tagName = ReadName(BeginOpeningTag());
+    CTempString id = SkipStackTagName(tagName, 0, '_');
     TMemberIndex index = choiceType->GetVariants().Find(id);
     if ( index == kInvalidMember )
         UnexpectedMember(id, choiceType->GetVariants());
@@ -2179,8 +2180,8 @@ void CObjectIStreamXml::SkipChoice(const CChoiceTypeInfo* choiceType)
 
 void CObjectIStreamXml::SkipChoiceContents(const CChoiceTypeInfo* choiceType)
 {
-    CLightString tagName = ReadName(BeginOpeningTag());
-    CLightString id = SkipStackTagName(tagName, 0, '_');
+    CTempString tagName = ReadName(BeginOpeningTag());
+    CTempString id = SkipStackTagName(tagName, 0, '_');
     TMemberIndex index = choiceType->GetVariants().Find(id);
     if ( index == kInvalidMember )
         UnexpectedMember(id, choiceType->GetVariants());

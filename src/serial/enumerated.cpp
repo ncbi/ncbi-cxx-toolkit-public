@@ -65,7 +65,7 @@ void CEnumeratedTypeValues::SetModuleName(const string& name)
     m_ModuleName = name;
 }
 
-TEnumValueType CEnumeratedTypeValues::FindValue(const CLightString& name) const
+TEnumValueType CEnumeratedTypeValues::FindValue(const CTempString& name) const
 {
     const TNameToValue& m = NameToValue();
     TNameToValue::const_iterator i = m.find(name);
@@ -76,7 +76,7 @@ TEnumValueType CEnumeratedTypeValues::FindValue(const CLightString& name) const
     return i->second;
 }
 
-bool CEnumeratedTypeValues::IsValidName(const CLightString& name) const
+bool CEnumeratedTypeValues::IsValidName(const CTempString& name) const
 {
     const TNameToValue& m = NameToValue();
     return ( m.find(name) != m.end() );

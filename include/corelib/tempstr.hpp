@@ -167,6 +167,13 @@ public:
     /// operator== for CTempString strings
     bool operator==(const CTempString& str) const;
 
+    /// operator!= for C-style strings
+    bool operator!=(const char* str) const;
+    /// operator!= for std::string strings
+    bool operator!=(const string& str) const;
+    /// operator!= for CTempString strings
+    bool operator!=(const CTempString& str) const;
+
     /// operator< for C-style strings
     bool operator<(const char* str) const;
     /// operator< for std::string strings
@@ -188,8 +195,8 @@ private:
                 size_type pos, size_type len);
     void x_Init(const char* str, size_type str_len,
                 size_type pos);
-    bool x_Equals(const_iterator it1, const_iterator it2) const;
-    bool x_Less(const_iterator it1, const_iterator it2) const;
+    bool x_Equals(const_iterator it2, size_type len2) const;
+    bool x_Less(const_iterator it2, size_type len2) const;
 };
 
 
@@ -548,13 +555,9 @@ CTempString::operator string(void) const
 
 
 inline
-bool CTempString::x_Equals(const_iterator it2, const_iterator end2) const
+bool CTempString::x_Equals(const_iterator it2, size_type len2) const
 {
-    size_type comp_len = end2 - it2;
-    if (comp_len != length()) {
-        return false;
-    }
-    return (memcmp(begin(), it2, comp_len) == 0);
+    return len2 == length() && memcmp(data(), it2, len2) == 0;
 }
 
 
@@ -564,28 +567,48 @@ bool CTempString::operator==(const char* str) const
     if ( !str || !m_String ) {
         return !str && !m_String;
     }
-    return x_Equals(str, str + strlen(str));
+    return x_Equals(str, strlen(str));
 }
 
 
 inline
 bool CTempString::operator==(const string& str) const
 {
-    return x_Equals(str.data(), str.data() + str.size());
+    return x_Equals(str.data(), str.size());
 }
 
 
 inline
 bool CTempString::operator==(const CTempString& str) const
 {
-    return x_Equals(str.data(), str.data() + str.size());
+    return x_Equals(str.data(), str.size());
 }
 
 
 inline
-bool CTempString::x_Less(const_iterator it2, const_iterator end2) const
+bool CTempString::operator!=(const char* str) const
 {
-    size_type other_len = end2 - it2;
+    return !(*this == str);
+}
+
+
+inline
+bool CTempString::operator!=(const string& str) const
+{
+    return !(*this == str);
+}
+
+
+inline
+bool CTempString::operator!=(const CTempString& str) const
+{
+    return !(*this == str);
+}
+
+
+inline
+bool CTempString::x_Less(const_iterator it2, size_type other_len) const
+{
     size_type comp_len = min(other_len, length());
     int res = memcmp(begin(), it2, comp_len);
     if ( res != 0 ) {
@@ -601,21 +624,21 @@ bool CTempString::operator<(const char* str) const
     if ( !str || !m_String ) {
         return str  &&  !m_String;
     }
-    return x_Less(str, str + strlen(str));
+    return x_Less(str, strlen(str));
 }
 
 
 inline
 bool CTempString::operator<(const string& str) const
 {
-    return x_Less(str.data(), str.data() + str.size());
+    return x_Less(str.data(), str.size());
 }
 
 
 inline
 bool CTempString::operator<(const CTempString& str) const
 {
-    return x_Less(str.data(), str.data() + str.size());
+    return x_Less(str.data(), str.size());
 }
 
 

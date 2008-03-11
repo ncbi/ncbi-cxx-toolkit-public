@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
-#include <util/lightstr.hpp>
+#include <corelib/tempstr.hpp>
 
 
 /** @addtogroup ObjStreamSupport
@@ -132,12 +132,12 @@ protected:
     // action: read ID into local buffer
     // return: ID pointer and length
     // note: it is not zero ended
-    CLightString ScanEndOfId(bool isId);
-    CLightString ReadTypeId(char firstChar);
-    CLightString ReadMemberId(char firstChar);
-    CLightString ReadUCaseId(char firstChar);
-    CLightString ReadLCaseId(char firstChar);
-    CLightString ReadNumber(void);
+    CTempString ScanEndOfId(bool isId);
+    CTempString ReadTypeId(char firstChar);
+    CTempString ReadMemberId(char firstChar);
+    CTempString ReadUCaseId(char firstChar);
+    CTempString ReadLCaseId(char firstChar);
+    CTempString ReadNumber(void);
 
     virtual bool ReadBool(void);
     virtual char ReadChar(void);
@@ -228,7 +228,7 @@ private:
     char SkipWhiteSpace(void);
     char SkipWhiteSpaceAndGetChar(void);
     void SkipComments(void);
-    void UnexpectedMember(const CLightString& id, const CItemsInfo& items);
+    void UnexpectedMember(const CTempString& id, const CItemsInfo& items);
     void BadStringChar(size_t startLine, char c);
     void UnendedString(size_t startLine);
 
@@ -245,15 +245,15 @@ private:
     bool NextElement(void);
     void EndBlock(void);
     TMemberIndex GetAltItemIndex(const CClassTypeInfoBase* classType,
-                                 const CLightString& id,
+                                 const CTempString& id,
                                  const TMemberIndex pos = kInvalidMember);
     TMemberIndex GetMemberIndex(const CClassTypeInfo* classType,
-                                const CLightString& id);
+                                const CTempString& id);
     TMemberIndex GetMemberIndex(const CClassTypeInfo* classType,
-                                const CLightString& id,
+                                const CTempString& id,
                                 const TMemberIndex pos);
     TMemberIndex GetChoiceIndex(const CChoiceTypeInfo* choiceType,
-                                const CLightString& id);
+                                const CTempString& id);
 
     bool m_BlockStart;
     EFixNonPrint m_FixMethod; // method of fixing non-printable chars

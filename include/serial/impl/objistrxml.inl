@@ -127,13 +127,13 @@ void CObjectIStreamXml::BeginData(void)
 }
 
 inline
-CLightString CObjectIStreamXml::SkipTagName(CLightString tag, const char* s)
+CTempString CObjectIStreamXml::SkipTagName(CTempString tag, const char* s)
 {
     return SkipTagName(tag, s, strlen(s));
 }
 
 inline
-CLightString CObjectIStreamXml::SkipTagName(CLightString tag, const string& s)
+CTempString CObjectIStreamXml::SkipTagName(CTempString tag, const string& s)
 {
     return SkipTagName(tag, s.data(), s.size());
 }

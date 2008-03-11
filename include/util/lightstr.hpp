@@ -32,6 +32,11 @@
 *   CLightString - class with "light" strings: char pointer + string length
 */
 
+#if defined __GNUG__
+# warning This file is deprecated and will be removed.                  \
+    Please, change CLightString to CTempString with PQuickStringLess
+#endif
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <string.h>
@@ -48,26 +53,16 @@ BEGIN_NCBI_SCOPE
 class CLightString
 {
 public:
-    CLightString(void)
-        : m_String(""), m_Length(0)
-        {
-        }
-    CLightString(const char* str)
-        : m_String(str), m_Length(strlen(str))
-        {
-        }
-    CLightString(const char* str, size_t length)
-        : m_String(str), m_Length(length)
-        {
-        }
-    CLightString(const string& str)
-        : m_String(str.data()), m_Length(str.size())
-        {
-        }
-    CLightString(const CTempString& str)
-        : m_String(str.data()), m_Length(str.length())
-        {
-        }
+    /// Use class CTempString with PQuickStringLess comparator
+    NCBI_DEPRECATED_CTOR(CLightString(void));
+    /// Use class CTempString with PQuickStringLess comparator
+    NCBI_DEPRECATED_CTOR(CLightString(const char* str));
+    /// Use class CTempString with PQuickStringLess comparator
+    NCBI_DEPRECATED_CTOR(CLightString(const char* str, size_t length));
+    /// Use class CTempString with PQuickStringLess comparator
+    NCBI_DEPRECATED_CTOR(CLightString(const string& str));
+    /// Use class CTempString with PQuickStringLess comparator
+    NCBI_DEPRECATED_CTOR(CLightString(const CTempString& str));
 
 
     const char* GetString(void) const
@@ -153,11 +148,33 @@ private:
     size_t m_Length;
 };
 
+inline
+CLightString::CLightString(void)
+    : m_String(""), m_Length(0)
+{
+}
+inline
+CLightString::CLightString(const char* str)
+    : m_String(str), m_Length(strlen(str))
+{
+}
+inline
+CLightString::CLightString(const char* str, size_t length)
+    : m_String(str), m_Length(length)
+{
+}
+inline
+CLightString::CLightString(const string& str)
+    : m_String(str.data()), m_Length(str.size())
+{
+}
+inline
+CLightString::CLightString(const CTempString& str)
+    : m_String(str.data()), m_Length(str.length())
+{
+}
 
 /* @} */
-
-
-//#include <util/lightstr.inl>
 
 END_NCBI_SCOPE
 

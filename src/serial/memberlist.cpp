@@ -193,7 +193,7 @@ CItemsInfo::GetItemsByTagInfo(void) const
     return ret;
 }
 
-TMemberIndex CItemsInfo::Find(const CLightString& name) const
+TMemberIndex CItemsInfo::Find(const CTempString& name) const
 {
     const TItemsByName& items = GetItemsByName();
     TItemsByName::const_iterator i = items.find(name);
@@ -202,7 +202,7 @@ TMemberIndex CItemsInfo::Find(const CLightString& name) const
     return i->second;
 }
 
-TMemberIndex CItemsInfo::FindDeep(const CLightString& name) const
+TMemberIndex CItemsInfo::FindDeep(const CTempString& name) const
 {
     TMemberIndex ind = Find(name);
     if (ind != kInvalidMember) {
@@ -330,7 +330,7 @@ TMemberIndex CItemsInfo::FindEmpty(void) const
     return kInvalidMember;
 }
 
-TMemberIndex CItemsInfo::Find(const CLightString& name, TMemberIndex pos) const
+TMemberIndex CItemsInfo::Find(const CTempString& name, TMemberIndex pos) const
 {
     for ( CIterator i(*this, pos); i.Valid(); ++i ) {
         if ( name == GetItemInfo(i)->GetId().GetName() )

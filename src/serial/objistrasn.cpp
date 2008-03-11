@@ -258,7 +258,7 @@ void CObjectIStreamAsn::SkipComments(void)
     }
 }
 
-CLightString CObjectIStreamAsn::ScanEndOfId(bool isId)
+CTempString CObjectIStreamAsn::ScanEndOfId(bool isId)
 {
     if ( isId ) {
         for ( size_t i = 1; ; ++i ) {
@@ -267,14 +267,14 @@ CLightString CObjectIStreamAsn::ScanEndOfId(bool isId)
                  (c != '-' || !IdChar(m_Input.PeekChar(i + 1))) ) {
                 const char* ptr = m_Input.GetCurrentPos();
                 m_Input.SkipChars(i);
-                return CLightString(ptr, i);
+                return CTempString(ptr, i);
             }
         }
     }
-    return CLightString();
+    return CTempString();
 }
 
-CLightString CObjectIStreamAsn::ReadTypeId(char c)
+CTempString CObjectIStreamAsn::ReadTypeId(char c)
 {
     if ( c == '[' ) {
         for ( size_t i = 1; ; ++i ) {
@@ -287,7 +287,7 @@ CLightString CObjectIStreamAsn::ReadTypeId(char c)
                 {
                     const char* ptr = m_Input.GetCurrentPos();
                     m_Input.SkipChars(i);
-                    return CLightString(ptr + 1, i - 2);
+                    return CTempString(ptr + 1, i - 2);
                 }
             }
         }
@@ -297,7 +297,7 @@ CLightString CObjectIStreamAsn::ReadTypeId(char c)
     }
 }
 
-CLightString CObjectIStreamAsn::ReadNumber(void)
+CTempString CObjectIStreamAsn::ReadNumber(void)
 {
     char c = SkipWhiteSpace();
     if ( c != '-' && c != '+' && !isdigit((unsigned char) c) )
@@ -307,25 +307,25 @@ CLightString CObjectIStreamAsn::ReadNumber(void)
         if ( !isdigit((unsigned char) c) ) {
             const char* ptr = m_Input.GetCurrentPos();
             m_Input.SkipChars(i);
-            return CLightString(ptr, i);
+            return CTempString(ptr, i);
         }
     }
 }
 
 inline
-CLightString CObjectIStreamAsn::ReadUCaseId(char c)
+CTempString CObjectIStreamAsn::ReadUCaseId(char c)
 {
     return ScanEndOfId(isupper((unsigned char) c) != 0);
 }
 
 inline
-CLightString CObjectIStreamAsn::ReadLCaseId(char c)
+CTempString CObjectIStreamAsn::ReadLCaseId(char c)
 {
     return ScanEndOfId(islower((unsigned char) c) != 0);
 }
 
 inline
-CLightString CObjectIStreamAsn::ReadMemberId(char c)
+CTempString CObjectIStreamAsn::ReadMemberId(char c)
 {
     if ( c == '[' ) {
         for ( size_t i = 1; ; ++i ) {
@@ -338,7 +338,7 @@ CLightString CObjectIStreamAsn::ReadMemberId(char c)
                 {
                     const char* ptr = m_Input.GetCurrentPos();
                     m_Input.SkipChars(++i);
-                    return CLightString(ptr + 1, i - 2);
+                    return CTempString(ptr + 1, i - 2);
                 }
             }
         }
@@ -350,18 +350,18 @@ CLightString CObjectIStreamAsn::ReadMemberId(char c)
 
 TMemberIndex CObjectIStreamAsn::GetAltItemIndex(
     const CClassTypeInfoBase* classType,
-    const CLightString& id,
+    const CTempString& id,
     const TMemberIndex pos /*= kInvalidMember*/)
 {
     TMemberIndex idx = kInvalidMember;
-    if (!id.Empty()) {
+    if (!id.empty()) {
         const CItemsInfo& info = classType->GetItems();
         string id_alt = string(id);
         id_alt[0] = toupper((unsigned char)id_alt[0]);
         if (pos != kInvalidMember) {
-            idx = info.Find(CLightString(id_alt),pos);
+            idx = info.Find(CTempString(id_alt),pos);
         } else {
-            idx = info.Find(CLightString(id_alt));
+            idx = info.Find(CTempString(id_alt));
         }
         if (idx != kInvalidMember &&
             !info.GetItemInfo(idx)->GetId().HaveNoPrefix()) {
@@ -373,10 +373,10 @@ TMemberIndex CObjectIStreamAsn::GetAltItemIndex(
 
 TMemberIndex CObjectIStreamAsn::GetMemberIndex
     (const CClassTypeInfo* classType,
-     const CLightString& id)
+     const CTempString& id)
 {
     TMemberIndex idx;
-    if (id.GetLength() > 0  &&  isdigit((unsigned char) id.GetString()[0])) {
+    if (!id.empty()  &&  isdigit((unsigned char) id[0])) {
         idx = classType->GetMembers().Find
             (CMemberId::TTag(NStr::StringToInt(id)));
     }
@@ -391,11 +391,11 @@ TMemberIndex CObjectIStreamAsn::GetMemberIndex
 
 TMemberIndex CObjectIStreamAsn::GetMemberIndex
     (const CClassTypeInfo* classType,
-     const CLightString& id,
+     const CTempString& id,
      const TMemberIndex pos)
 {
     TMemberIndex idx;
-    if (id.GetLength() > 0  &&  isdigit((unsigned char) id.GetString()[0])) {
+    if (!id.empty()  &&  isdigit((unsigned char) id[0])) {
         idx = classType->GetMembers().Find
             (CMemberId::TTag(NStr::StringToInt(id)), pos);
     }
@@ -410,10 +410,10 @@ TMemberIndex CObjectIStreamAsn::GetMemberIndex
 
 TMemberIndex CObjectIStreamAsn::GetChoiceIndex
     (const CChoiceTypeInfo* choiceType,
-     const CLightString& id)
+     const CTempString& id)
 {
     TMemberIndex idx;
-    if (id.GetLength() > 0  &&  isdigit((unsigned char) id.GetString()[0])) {
+    if (!id.empty()  &&  isdigit((unsigned char) id[0])) {
         idx = choiceType->GetVariants().Find
             (CMemberId::TTag(NStr::StringToInt(id)));
     }
@@ -682,7 +682,7 @@ void CObjectIStreamAsn::SkipBitString(void)
 
 string CObjectIStreamAsn::ReadFileHeader()
 {
-    CLightString id = ReadTypeId(SkipWhiteSpace());
+    CTempString id = ReadTypeId(SkipWhiteSpace());
     string s(id);
     if ( SkipWhiteSpace() == ':' && 
          m_Input.PeekCharNoEOF(1) == ':' &&
@@ -697,8 +697,8 @@ string CObjectIStreamAsn::ReadFileHeader()
 TEnumValueType CObjectIStreamAsn::ReadEnum(const CEnumeratedTypeValues& values)
 {
     // not integer
-    CLightString id = ReadLCaseId(SkipWhiteSpace());
-    if ( !id.Empty() ) {
+    CTempString id = ReadLCaseId(SkipWhiteSpace());
+    if ( !id.empty() ) {
         // enum element by name
         return values.FindValue(id);
     }
@@ -778,12 +778,12 @@ double CObjectIStreamAsn::ReadDouble(void)
         return NStr::StringToDouble( ScanEndOfId(true) );
     }
     Expect('{', true);
-    CLightString mantissaStr = ReadNumber();
-    size_t mantissaLength = mantissaStr.GetLength();
+    CTempString mantissaStr = ReadNumber();
+    size_t mantissaLength = mantissaStr.size();
     char buffer[128];
     if ( mantissaLength >= sizeof(buffer) - 1 )
         ThrowError(fOverflow, "buffer overflow");
-    memcpy(buffer, mantissaStr.GetString(), mantissaLength);
+    memcpy(buffer, mantissaStr.data(), mantissaLength);
     buffer[mantissaLength] = '\0';
     char* endptr;
     double mantissa = strtod(buffer, &endptr);
@@ -1218,7 +1218,7 @@ void CObjectIStreamAsn::EndClass(void)
     EndBlock();
 }
 
-void CObjectIStreamAsn::UnexpectedMember(const CLightString& id,
+void CObjectIStreamAsn::UnexpectedMember(const CTempString& id,
                                          const CItemsInfo& items)
 {
     string message =
@@ -1235,7 +1235,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType)
     if ( !NextElement() )
         return kInvalidMember;
 
-    CLightString id = ReadMemberId(SkipWhiteSpace());
+    CTempString id = ReadMemberId(SkipWhiteSpace());
     TMemberIndex index = GetMemberIndex(classType, id);
     if ( index == kInvalidMember ) {
         if (CanSkipUnknownMembers()) {
@@ -1256,7 +1256,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType,
     if ( !NextElement() )
         return kInvalidMember;
 
-    CLightString id = ReadMemberId(SkipWhiteSpace());
+    CTempString id = ReadMemberId(SkipWhiteSpace());
     TMemberIndex index = GetMemberIndex(classType, id, pos);
     if ( index == kInvalidMember ) {
         if (CanSkipUnknownMembers()) {
@@ -1360,11 +1360,11 @@ TMemberIndex CObjectIStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* choice
     bool skipname = !m_BlockStart;
     if ( !NextElement() )
         return kInvalidMember;
-    CLightString id = ReadMemberId(SkipWhiteSpace());
+    CTempString id = ReadMemberId(SkipWhiteSpace());
     if (skipname) {
         id = ReadMemberId(SkipWhiteSpace());
     }
-    if ( id.Empty() )
+    if ( id.empty() )
         ThrowError(fFormatError, "choice variant id expected");
 
     TMemberIndex index = GetChoiceIndex(choiceType, id);

@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <util/lightstr.hpp>
+#include <corelib/tempstr.hpp>
 #include <serial/impl/item.hpp>
 #include <vector>
 #include <map>
@@ -57,7 +57,7 @@ class NCBI_XSERIAL_EXPORT CItemsInfo
 public:
     typedef CMemberId::TTag TTag;
     typedef vector< AutoPtr<CItemInfo> > TItems;
-    typedef map<CLightString, TMemberIndex> TItemsByName;
+    typedef map<CTempString, TMemberIndex, PQuickStringLess> TItemsByName;
     typedef map<TTag, TMemberIndex> TItemsByTag;
     typedef map<size_t, TMemberIndex> TItemsByOffset;
 
@@ -82,10 +82,10 @@ public:
             return m_Items.size();
         }
 
-    TMemberIndex Find(const CLightString& name) const;
-    TMemberIndex FindDeep(const CLightString& name) const;
+    TMemberIndex Find(const CTempString& name) const;
+    TMemberIndex FindDeep(const CTempString& name) const;
     TMemberIndex FindEmpty(void) const;
-    TMemberIndex Find(const CLightString& name, TMemberIndex pos) const;
+    TMemberIndex Find(const CTempString& name, TMemberIndex pos) const;
     TMemberIndex Find(TTag tag) const;
     TMemberIndex Find(TTag tag, TMemberIndex pos) const;
 

@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
-#include <util/lightstr.hpp>
+#include <corelib/tempstr.hpp>
 #include <list>
 #include <map>
 #include <memory>
@@ -52,7 +52,7 @@ class NCBI_XSERIAL_EXPORT CEnumeratedTypeValues
 {
 public:
     typedef list< pair<string, TEnumValueType> > TValues;
-    typedef map<CLightString, TEnumValueType> TNameToValue;
+    typedef map<CTempString, TEnumValueType, PQuickStringLess> TNameToValue;
     typedef map<TEnumValueType, const string*> TValueToName;
 
     CEnumeratedTypeValues(const char* name, bool isInteger);
@@ -93,7 +93,7 @@ public:
     ///   Name of enum value
     /// @return
     ///   Numeric value, if found; otherwise, throws an exception
-    TEnumValueType FindValue(const CLightString& name) const;
+    TEnumValueType FindValue(const CTempString& name) const;
     
     /// Check whether enum with this name is defined
     ///
@@ -101,7 +101,7 @@ public:
     ///   Name of enum value
     /// @return
     ///   TRUE, if it is defined
-    bool IsValidName(const CLightString& name) const;
+    bool IsValidName(const CTempString& name) const;
 
     /// Find name of the enum by its numeric value
     ///

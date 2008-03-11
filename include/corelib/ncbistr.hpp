@@ -2585,6 +2585,25 @@ typedef PNocase_Conditional_Generic<const char *> PNocase_Conditional_CStr;
 
 
 /////////////////////////////////////////////////////////////////////////////
+///
+/// PQuickStringLess implements an ordering of strings,
+/// that is more efficient than usual lexicographical order.
+/// It can be used in cases when no specific order is required,
+/// e.g. only simple key lookup is needed.
+/// Current implementation first compares lengths of strings,
+/// and will compare string data only when lengths are the same.
+///
+struct PQuickStringLess
+{
+    bool operator()(const CTempString& s1, const CTempString& s2) const {
+        size_t len1 = s1.size(), len2 = s2.size();
+        return len1 < len2 ||
+            len1 == len2 && memcmp(s1.data(), s2.data(), len1) < 0;
+    }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  Algorithms
 //
 
