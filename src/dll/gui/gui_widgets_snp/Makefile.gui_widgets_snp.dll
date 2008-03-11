@@ -2,7 +2,7 @@
 
 DLL = gui_widgets_snp
 
-HOSTED_LIBS    = w_snp
+HOSTED_LIBS    = w_snp w_snp_filter
 
 DEPENDENCIES   = ncbi_core ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general \
                  ncbi_image \
