@@ -351,6 +351,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     CTime mtime = s_GetModTime(GetArguments().GetProgramName());
 
     for (m_Iteration = 1;  m_Iteration <= max_iterations;  ++m_Iteration) {
+        // Run idler. By default this reopens log file(s).
+        RunIdler();
 
         // Make sure to restore old diagnostic state after each iteration
         CDiagRestorer diag_restorer;
