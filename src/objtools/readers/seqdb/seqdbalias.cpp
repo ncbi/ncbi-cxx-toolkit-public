@@ -1501,7 +1501,7 @@ Int8 CSeqDBAliasFile::GetNumSeqs(const CSeqDBVolSet & volset) const
 Int8 CSeqDBAliasFile::GetNumSeqsStats(const CSeqDBVolSet & volset) const
 {
     if (m_NumSeqsStats == -1)
-        m_NumSeqsStats = m_Node->GetNumSeqsStats(volset);
+        m_NumSeqsStats = (int)m_Node->GetNumSeqsStats(volset);
     
     return m_NumSeqsStats;
 }

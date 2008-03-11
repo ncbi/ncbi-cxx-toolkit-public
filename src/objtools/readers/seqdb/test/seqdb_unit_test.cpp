@@ -82,6 +82,9 @@ using boost::unit_test::test_suite;
 #define CHECK_EQUAL(x, y) \
     CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
 
+#define CHECK_EQUAL_TYPED(T, x, y) \
+    CHECK_EQUAL(T(x), T(y))
+
 #define CHECK_EQUAL_MESSAGE(M, x, y) \
     CHECK_NO_THROW(BOOST_CHECK_MESSAGE((x) == (y), M))
 
@@ -93,12 +96,12 @@ using boost::unit_test::test_suite;
 
 #define CHECK_THROW_SEQDB(A) CHECK_THROW(A, CSeqDBException)
 
-static void s_UnitTestVerbosity(string s)
+static void s_UnitTestVerbosity(string s, int ln)
 {
     static bool enabled = static_cast<bool>(getenv("VERBOSE_UT") != NULL);
     
     if (enabled) {
-        cout << "Running test: " << s << endl;
+        cout << "Running test: " << s << " @ " << ln << endl;
     }
 }
 
@@ -114,7 +117,7 @@ static void s_UnitTestVerbosity(string s)
 }
 
 #define START UNIT_TEST_FILTER(BOOST_CURRENT_FUNCTION); \
-              s_UnitTestVerbosity(BOOST_CURRENT_FUNCTION)
+              s_UnitTestVerbosity(BOOST_CURRENT_FUNCTION, __LINE__)
 
 
 // Helper functions
@@ -803,23 +806,23 @@ BOOST_AUTO_TEST_CASE(GetSeqLength)
     CSeqDB dbp("data/seqp", CSeqDB::eProtein);
     CSeqDB dbn("data/seqn", CSeqDB::eNucleotide);
     
-    CHECK_EQUAL( (Uint4) 330, (Uint4) dbp.GetSeqLength(13) );
-    CHECK_EQUAL( (Uint4) 422, (Uint4) dbp.GetSeqLength(19) );
-    CHECK_EQUAL( (Uint4) 67, (Uint4) dbp.GetSeqLength(26) );
-    CHECK_EQUAL( (Uint4) 104, (Uint4) dbp.GetSeqLength(27) );
-    CHECK_EQUAL( (Uint4) 282, (Uint4) dbp.GetSeqLength(38) );
-    CHECK_EQUAL( (Uint4) 158, (Uint4) dbp.GetSeqLength(43) );
-    CHECK_EQUAL( (Uint4) 472, (Uint4) dbp.GetSeqLength(54) );
-    CHECK_EQUAL( (Uint4) 207, (Uint4) dbp.GetSeqLength(93) );
+    CHECK_EQUAL_TYPED( int, 330, dbp.GetSeqLength(13) );
+    CHECK_EQUAL_TYPED( int, 422, dbp.GetSeqLength(19) );
+    CHECK_EQUAL_TYPED( int, 67,  dbp.GetSeqLength(26) );
+    CHECK_EQUAL_TYPED( int, 104, dbp.GetSeqLength(27) );
+    CHECK_EQUAL_TYPED( int, 282, dbp.GetSeqLength(38) );
+    CHECK_EQUAL_TYPED( int, 158, dbp.GetSeqLength(43) );
+    CHECK_EQUAL_TYPED( int, 472, dbp.GetSeqLength(54) );
+    CHECK_EQUAL_TYPED( int, 207, dbp.GetSeqLength(93) );
     
-    CHECK_EQUAL( (Uint4) 833, (Uint4) dbn.GetSeqLength(9)  );
-    CHECK_EQUAL( (Uint4) 250, (Uint4) dbn.GetSeqLength(26) );
-    CHECK_EQUAL( (Uint4) 708, (Uint4) dbn.GetSeqLength(39) );
-    CHECK_EQUAL( (Uint4) 472, (Uint4) dbn.GetSeqLength(43) );
-    CHECK_EQUAL( (Uint4) 708, (Uint4) dbn.GetSeqLength(39) );
-    CHECK_EQUAL( (Uint4) 448, (Uint4) dbn.GetSeqLength(47) );
-    CHECK_EQUAL( (Uint4) 825, (Uint4) dbn.GetSeqLength(61) );
-    CHECK_EQUAL( (Uint4) 371, (Uint4) dbn.GetSeqLength(70) );
+    CHECK_EQUAL_TYPED( int, 833, dbn.GetSeqLength(9)  );
+    CHECK_EQUAL_TYPED( int, 250, dbn.GetSeqLength(26) );
+    CHECK_EQUAL_TYPED( int, 708, dbn.GetSeqLength(39) );
+    CHECK_EQUAL_TYPED( int, 472, dbn.GetSeqLength(43) );
+    CHECK_EQUAL_TYPED( int, 708, dbn.GetSeqLength(39) );
+    CHECK_EQUAL_TYPED( int, 448, dbn.GetSeqLength(47) );
+    CHECK_EQUAL_TYPED( int, 825, dbn.GetSeqLength(61) );
+    CHECK_EQUAL_TYPED( int, 371, dbn.GetSeqLength(70) );
 }
 
 BOOST_AUTO_TEST_CASE(GetSeqLengthApprox)
@@ -1347,7 +1350,7 @@ BOOST_AUTO_TEST_CASE(AmbigBioseq)
         cout << "Num diffs: " << dec << num_diffs << endl;
     }
     
-    CHECK_EQUAL(int(0), int(num_diffs));
+    CHECK_EQUAL_TYPED(int, 0, num_diffs);
 }
 
 BOOST_AUTO_TEST_CASE(GetLenHighOID)
@@ -1363,7 +1366,7 @@ BOOST_AUTO_TEST_CASE(GetLenHighOID)
         
         int len = dbp.GetSeqLength(num_seqs);
         
-        CHECK_EQUAL(int(11112222), len);
+        CHECK_EQUAL_TYPED(int, 11112222, len);
     } catch(CSeqDBException &) {
         caught_exception = true;
     }
@@ -1383,7 +1386,7 @@ BOOST_AUTO_TEST_CASE(GetLenNegOID)
         CSeqDB dbp("data/seqp", CSeqDB::eProtein);
         Uint4 len = dbp.GetSeqLength(Uint4(-1));
         
-        CHECK_EQUAL(Uint4(11112222), len);
+        CHECK_EQUAL_TYPED(Uint4, 11112222, len);
     } catch(CSeqDBException &) {
         caught_exception = true;
     }
@@ -1408,7 +1411,7 @@ BOOST_AUTO_TEST_CASE(GetSeqHighOID)
         const char * buffer = 0;
         Uint4 len = dbp.GetSequence(nseqs, & buffer);
         
-        CHECK_EQUAL(Uint4(11112222), len);
+        CHECK_EQUAL_TYPED(Uint4, 11112222, len);
     } catch(CSeqDBException &) {
         caught_exception = true;
     }
@@ -1430,7 +1433,7 @@ BOOST_AUTO_TEST_CASE(GetSeqNegOID)
         const char * buffer = 0;
         Uint4 len = dbp.GetSequence(Uint4(-1), & buffer);
         
-        CHECK_EQUAL(Uint4(11112222), len);
+        CHECK_EQUAL_TYPED(Uint4, 11112222, len);
     } catch(CSeqDBException &) {
         caught_exception = true;
     }
@@ -1817,7 +1820,7 @@ BOOST_AUTO_TEST_CASE(CSeqDBFileGiList_GetGis)
     CSeqDBFileGiList seqdbgifile(kFileName);
     vector<int> gis;
     seqdbgifile.GetGiList(gis);
-    CHECK_EQUAL((size_t)seqdbgifile.GetNumGis(), gis.size());
+    CHECK_EQUAL_TYPED(size_t, seqdbgifile.GetNumGis(), gis.size());
     sort(gis.begin(), gis.end());
     
     // Read text gi list manually
@@ -2157,10 +2160,10 @@ BOOST_AUTO_TEST_CASE(ExpertRawDataProteinNulls)
         
         int len = db.GetSeqLength(*oid);
         
-        CHECK_EQUAL((int) A.size(),       (int) 0);
-        CHECK_EQUAL((int) S.size(),       len);
-        CHECK_EQUAL((int) *(buffer-1),    (int) 0);
-        CHECK_EQUAL((int) *(buffer+slen), (int) 0);
+        CHECK_EQUAL_TYPED(int,  A.size(),        0);
+        CHECK_EQUAL_TYPED(int,  S.size(),        len);
+        CHECK_EQUAL_TYPED(int,  *(buffer-1),     0);
+        CHECK_EQUAL_TYPED(int,  *(buffer+slen),  0);
     }
 }
 
@@ -2822,16 +2825,16 @@ BOOST_AUTO_TEST_CASE(SeqIdListAndGiList)
     for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
         typedef list< CRef<CSeq_id> > TIds;
         
-        TIds ids = db.GetSeqIDs(oid);
+        TIds ids2 = db.GetSeqIDs(oid);
         
-        ITERATE(TIds, iter, ids) {
+        ITERATE(TIds, iter, ids2) {
             CRef<CSeq_id> seqid(*iter);
             string afs = seqid->AsFastaString();
             
-            set<string>::iterator i = need.find(afs);
+            set<string>::iterator i2 = need.find(afs);
             
-            CHECK(i != need.end());
-            need.erase(i);
+            CHECK(i2 != need.end());
+            need.erase(i2);
         }
     }
     
@@ -3645,17 +3648,17 @@ BOOST_AUTO_TEST_CASE(OidAndGiLists)
     SDbSumInfo ac_sum(ac);
     SDbSumInfo sc_sum(sc);
     
-    CHECK_EQUAL(nr_sum.CompareSelf(), "=A=B=C=a=b=c");
-    CHECK_EQUAL(sp_sum.CompareSelf(), "+A+B=C+a+b=c");
-    CHECK_EQUAL(ac_sum.CompareSelf(), "+A+B=C+a+b=c");
-    CHECK_EQUAL(sc_sum.CompareSelf(), "+A+B=C+a+b=c");
+    CHECK_EQUAL_TYPED(string, nr_sum.CompareSelf(), "=A=B=C=a=b=c");
+    CHECK_EQUAL_TYPED(string, sp_sum.CompareSelf(), "+A+B=C+a+b=c");
+    CHECK_EQUAL_TYPED(string, ac_sum.CompareSelf(), "+A+B=C+a+b=c");
+    CHECK_EQUAL_TYPED(string, sc_sum.CompareSelf(), "+A+B=C+a+b=c");
     
-    CHECK_EQUAL(nr_sum.Compare(sp_sum), "=T+F+M=t+f+m");
-    CHECK_EQUAL(nr_sum.Compare(ac_sum), "=T+F+M=t+f+m");
-    CHECK_EQUAL(nr_sum.Compare(sc_sum), "=T+F+M=t+f+m");
+    CHECK_EQUAL_TYPED(string, nr_sum.Compare(sp_sum), "=T+F+M=t+f+m");
+    CHECK_EQUAL_TYPED(string, nr_sum.Compare(ac_sum), "=T+F+M=t+f+m");
+    CHECK_EQUAL_TYPED(string, nr_sum.Compare(sc_sum), "=T+F+M=t+f+m");
     
-    CHECK_EQUAL(sp_sum.Compare(sc_sum), "=T+F+M=t+f+m");
-    CHECK_EQUAL(ac_sum.Compare(sc_sum), "=T+F+M=t+f+m");
+    CHECK_EQUAL_TYPED(string, sp_sum.Compare(sc_sum), "=T+F+M=t+f+m");
+    CHECK_EQUAL_TYPED(string, ac_sum.Compare(sc_sum), "=T+F+M=t+f+m");
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

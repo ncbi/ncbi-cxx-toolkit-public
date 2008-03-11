@@ -2413,7 +2413,7 @@ void CSeqDBVol::AccessionToOids(const string         & acc,
         if (! m_IsamPig.Empty()) {
             int oid(-1);
             
-            if (m_IsamPig->PigToOid(ident, oid, locked)) {
+            if (m_IsamPig->PigToOid((int) ident, oid, locked)) {
                 oids.push_back(oid);
             }
         }
@@ -2446,7 +2446,7 @@ void CSeqDBVol::AccessionToOids(const string         & acc,
         
     case CSeqDBIsam::eOID:
         // Converted to OID directly.
-        oids.push_back(ident);
+        oids.push_back((int) ident);
         break;
         
     case CSeqDBIsam::eHashId:
@@ -2555,7 +2555,7 @@ void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
         if (! m_IsamPig.Empty()) {
             int oid(-1);
             
-            if (m_IsamPig->PigToOid(ident, oid, locked)) {
+            if (m_IsamPig->PigToOid((int) ident, oid, locked)) {
                 oids.push_back(oid);
             }
         }
@@ -2588,7 +2588,7 @@ void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
         
     case CSeqDBIsam::eOID:
         // Converted to OID directly.
-        oids.push_back(ident);
+        oids.push_back((int) ident);
         break;
         
     case CSeqDBIsam::eHashId:
@@ -2888,8 +2888,8 @@ void CSeqDBVol::GetGiBounds(int            & low_id,
         
         m_IsamGi->GetIdBounds(L, H, count, locked);
         
-        low_id = L;
-        high_id = H;
+        low_id = (int) L;
+        high_id = (int) H;
         
         s_SeqDBFitsInFour(L);
         s_SeqDBFitsInFour(H);
@@ -2909,8 +2909,8 @@ void CSeqDBVol::GetPigBounds(int            & low_id,
         
         m_IsamPig->GetIdBounds(L, H, count, locked);
         
-        low_id = L;
-        high_id = H;
+        low_id = (int) L;
+        high_id = (int) H;
         
         s_SeqDBFitsInFour(L);
         s_SeqDBFitsInFour(H);

@@ -1842,7 +1842,7 @@ CRef<CSeqDBGiList> CSeqDBIdSet::GetPositiveList()
         
         ITERATE(vector<Int8>, iter, m_Ids->Set()) {
             _ASSERT(((*iter) >> 32) == 0);
-            ids->AddGi(*iter);
+            ids->AddGi((int)*iter);
         }
     }
     
@@ -1870,7 +1870,7 @@ CRef<CSeqDBNegativeList> CSeqDBIdSet::GetNegativeList()
         
         ITERATE(vector<Int8>, iter, m_Ids->Set()) {
             _ASSERT(((*iter) >> 32) == 0);
-            ids->AddGi(*iter);
+            ids->AddGi((int)*iter);
         }
     }
     

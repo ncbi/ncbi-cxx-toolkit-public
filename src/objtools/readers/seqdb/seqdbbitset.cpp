@@ -123,7 +123,7 @@ bool CSeqDB_BitSet::CheckOrFindBit(size_t & index) const
     size_t bitcount = m_End - m_Start;
     
     while(ix < bitcount) {
-        size_t vx = ix >> eWordShift;
+        vx = ix >> eWordShift;
         int wx = ix & eWordMask;
         
         _ASSERT(nwords > vx);

@@ -1011,7 +1011,7 @@ private:
 class CSeqDBMapStrategy {
 public:
     /// The type used for file offsets.
-    typedef CNcbiStreamoff TIndx;
+    typedef Int8 TIndx;
     
     /// Maximum memory: 256 GB for 64 bits.
     static const Int8 e_MaxMemory64;

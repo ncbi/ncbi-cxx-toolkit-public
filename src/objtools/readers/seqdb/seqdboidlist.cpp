@@ -188,10 +188,10 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
         const CSeqDB_AliasMask & mask = **range;
         
         if (mask.GetType() == CSeqDB_AliasMask::eOidRange) {
-            CSeqDB_BitSet range(mask.GetBegin(),
+            CSeqDB_BitSet r2(mask.GetBegin(),
                                 mask.GetEnd(),
                                 CSeqDB_BitSet::eAllSet);
-            filter->IntersectWith(range, true);
+            filter->IntersectWith(r2, true);
         }
     }
     
