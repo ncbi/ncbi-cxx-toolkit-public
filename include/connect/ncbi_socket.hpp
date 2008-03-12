@@ -96,6 +96,8 @@ public:
     EIO_Status IsSet(void);
     EIO_Status Reset(void);
 
+    EIO_Status GetStatus(void) const;
+
     virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
 
 protected:
@@ -709,6 +711,12 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 /// CTrigger::
 ///
+
+inline EIO_Status CTrigger::GetStatus(void) const
+{
+    return m_Trigger ? eIO_Success : eIO_Closed;
+}
+
 
 inline EIO_Status CTrigger::Set(void)
 {
