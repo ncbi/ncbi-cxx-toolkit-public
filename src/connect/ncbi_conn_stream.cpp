@@ -90,7 +90,7 @@ void CConn_IOStream::Cleanup(void)
     m_CSb = 0;
 #ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
-#endif
+#endif // AUTOMATIC_STREAMBUF_DESTRUCTION
 }
 
 
@@ -338,17 +338,9 @@ CConn_MemoryStream::~CConn_MemoryStream()
     Cleanup();
 #ifndef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
-#endif
+#endif // AUTOMATIC_STREAMBUF_DESTRUCTION
     BUF_Destroy(m_Buf);
     delete[] (char*) m_Ptr;
-}
-
-
-/// This method is deprecated and will be removed!!!
-string& CConn_MemoryStream::ToString(string& str)
-{
-    ToString(&str);
-    return str;
 }
 
 
@@ -426,7 +418,7 @@ CConn_PipeStream::~CConn_PipeStream()
     Cleanup();
 #ifndef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
-#endif
+#endif // AUTOMATIC_STREAMBUF_DESTRUCTION
 }
 
 

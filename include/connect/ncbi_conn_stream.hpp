@@ -368,9 +368,6 @@ public:
     /// the stream in a single container (a string, a vector, or a character
     /// array) so that all data is kept in sequential memory locations.
 
-    NCBI_DEPRECATED
-    string& ToString(string&); ///< fill in the data, return the argument
-
     void    ToString(string*); ///< fill in the data, NULL is not accepted
     void    ToVector(vector<char>*);///< fill in the data, NULL is not accepted
     char*   ToCStr(void);      ///< '\0'-terminated; delete when done using it 
