@@ -527,15 +527,6 @@ def use_class(arg):
     pass
 
 
-# bring up the web page for a file or directory in the CVS repository
-def CvsWeb(fname):
-    cvs_web_base = 'http://intranet.ncbi.nlm.nih.gov' \
-                   '/cvsutils/index.cgi/c%2b%2b'
-    url = '%s/%s' % (cvs_web_base, fname)
-    import webbrowser
-    webbrowser.open_new(url)
-
-
 #del object
 %}
 
@@ -554,6 +545,14 @@ sub dynamic_cast {
     my $obj = shift;
     my $cmd = $type . '::__dynamic_cast_to__($obj)';
     return eval($cmd);
+}
+
+
+############ _open_url() -- launch url in a web browser ##########
+
+sub _open_url {
+    my $url = shift;
+    system("python -c 'import sys, webbrowser; webbrowser.open_new(sys.argv[1])' '$url'");
 }
 
 
@@ -584,18 +583,13 @@ print find_asn_spec.FindSpec(\"$type\") \
         my $asn_spec_url_base
             = 'http://www.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/asn_spec/';
         my $url = $asn_spec_url_base . $type . '.html';
-        my $cmd = "python -c \'\
-import webbrowser \
-webbrowser.open_new(\"$url\") \
-\'";
-        system($cmd);
+        _open_url($url);
     }
 }
 
 
 ############ Doxy() -- Launch doxygen documentation in web browser ##########
 
-# lazy way: call Python
 sub Doxy {
     my $arg = shift;
     my $type;
@@ -605,52 +599,48 @@ sub Doxy {
         # a string, we hope
         $type = $arg;
     }
-    $cmd = "python -c \'\
-doxy_url_base = \"http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/doxyhtml/\" \
- \
-class_name = \"$type\".split(\"::\")[-1] \
-mangled_class_name = class_name.replace(\"_\", \"__\") \
-if class_name[0] == \"S\": \
-    class_or_struct = \"struct\" \
-else: \
-    class_or_struct = \"class\" \
-import webbrowser \
-url = doxy_url_base + class_or_struct + mangled_class_name + \".html\" \
-webbrowser.open_new(url) \
-\'";
-    system($cmd);
+
+    $doxy_url_base = "http://www.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/doxyhtml/";
+    my @tmp = split(/::/, $type);
+    my $class_name = $tmp[-1];
+    $class_name =~ s/_/__/g;
+    my $class_or_struct;
+    if ($class_name =~ /^S/) {
+        $class_or_struct = "struct";
+    } else {
+        $class_or_struct = "class";
+    }
+    my $url = $doxy_url_base . $class_or_struct . $class_name . ".html";
+    _open_url($url);
 }
 
 
 ############ Lxr() -- Launch LXR documentation in web browser ##########
 
-# lazy way: call Python
 sub Lxr {
     my $arg = shift;
     my $type;
     if ($arg->isa('HASH')) {
         $type = ref($arg);
-        # chop off any namespace qualifiers
-        my @tmp = split(/::/, $type);
-        $type = $tmp[-1]
     } else {
         # a string, we hope
         $type = $arg;
     }
 
-    my $url = 'http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/' 
+    # chop off any namespace qualifiers
+    my @tmp = split(/::/, $type);
+    $type = $tmp[-1];
+
+    my $url = 'http://www.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/' 
         . 'ident?i=' . $type;
-    my $cmd = "python -c \'\
-import webbrowser \
-webbrowser.open_new(\"$url\") \
-\'";
-    system($cmd);
+    _open_url($url);
 }
 
 
 ############ DoxySearch() -- Search doxygen documentation ##########
 
-# lazy way: call Python
+# This won't work outside of NCBI, even at www
+
 sub DoxySearch {
     my $name = shift;
 
@@ -658,11 +648,7 @@ sub DoxySearch {
         'http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/doxyhtml/';
     my $url = $doxy_url_base . 'search.php?query=' . $name;
 
-    my $cmd = "python -c \'\
-import webbrowser \
-webbrowser.open_new(\"$url\") \
-\'";
-    system($cmd);
+    _open_url($url);
 }
 
 
@@ -789,11 +775,7 @@ sub EntrezWeb {
 
     my $url = ncbi::EntrezUrl($ids, $db);
 
-    my $cmd = "python -c \'\
-import webbrowser \
-webbrowser.open_new(\"$url\") \
-\'";
-    system($cmd);
+    _open_url($url);
 }
 
 
