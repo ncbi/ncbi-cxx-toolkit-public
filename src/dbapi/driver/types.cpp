@@ -1925,7 +1925,7 @@ CDB_Numeric::CDB_Numeric() :
     m_Precision(0),
     m_Scale(0)
 {
-    return;
+    memset(m_Body, 0, sizeof(m_Body));
 }
 
 
@@ -2115,12 +2115,14 @@ string CDB_Numeric::Value() const
     unsigned char product[kMaxPrecision];
     char result[kMaxPrecision + 1];
     char* s = result;
-    int num_bytes;
+    int num_bytes = 0;
 
     memset(multiplier, 0, kMaxPrecision);
     memset(product,    0, kMaxPrecision);
     multiplier[0] = 1;
-    num_bytes = s_NumericBytesPerPrec[m_Precision-1];
+    if (m_Precision != 0) {
+        num_bytes = s_NumericBytesPerPrec[m_Precision-1];
+    }
 
     if (m_Body[0] == 1) {
         *s++ = '-';
