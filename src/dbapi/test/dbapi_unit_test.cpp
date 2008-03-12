@@ -13229,6 +13229,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     bool CompilerGCC = false;
     bool Irix = false;
     bool sybase_client_v125 = false;
+    bool sybase_client_v120_solaris = false;
 
 #if defined(NCBI_OS_SOLARIS)
     Solaris = true;
@@ -13251,6 +13252,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (NStr::CompareNocase(sybase_version, 0, 4, "12.5") == 0
         || NStr::CompareNocase(sybase_version, "current") == 0) {
         sybase_client_v125 = true;
+    }
+    if (Solaris && NStr::CompareNocase(sybase_version, 0, 4, "12.0") == 0) {
+        sybase_client_v120_solaris = true;
     }
 
     // add member function test cases to a test suite
@@ -13296,7 +13300,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (!(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)) {
+    if (!(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
+        &&  !(args.GetDriverName() == ctlib_driver && sybase_client_v120_solaris)) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CHAR,
                 DBAPIInstance);
         tc->depends_on(tc_init);
