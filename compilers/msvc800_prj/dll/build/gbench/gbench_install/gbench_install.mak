@@ -122,7 +122,8 @@ CORELIBS = \
         $(GBENCH)\bin\ncbi_xreader.dll          \
         $(GBENCH)\bin\ncbi_xreader_cache.dll    \
         $(GBENCH)\bin\ncbi_xreader_id1.dll      \
-        $(GBENCH)\bin\ncbi_xreader_id2.dll
+        $(GBENCH)\bin\ncbi_xreader_id2.dll      \
+        $(GBENCH)\bin\ncbi_xreader_pubseqos.dll
 
 #
 # Plugins
