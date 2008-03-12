@@ -703,6 +703,7 @@ CDBInterfacesFileConnParams::CDBInterfacesFileConnParams(
     vector<string> arr_param;
     enum EState {eInitial, eKeyRead,  eValueRead};
     EState state = eInitial;
+    bool tli_format = false;
 
     while (NcbiGetlineEOL(istr, line)) {
         if (line[0] == '#' || line.empty()) {
@@ -714,8 +715,15 @@ CDBInterfacesFileConnParams::CDBInterfacesFileConnParams(
                 NStr::Tokenize(line, "\t ", arr_param);
 
                 if (NStr::Equal(arr_param[0], "query")) {
-                    host_str = arr_param[arr_param.size() - 2];
-                    port_str = arr_param[arr_param.size() - 1];
+                    if (NStr::Equal(arr_param[1], "tli")) {
+                        tli_format = true;
+                        const string tli_str = arr_param[arr_param.size() - 1];
+                        host_str = tli_str.substr(10 - 1, 8);
+                        port_str = tli_str.substr(6 - 1, 4);
+                    } else {
+                        host_str = arr_param[arr_param.size() - 2];
+                        port_str = arr_param[arr_param.size() - 1];
+                    }
 
                     state = eValueRead;
                 }
@@ -729,7 +737,7 @@ CDBInterfacesFileConnParams::CDBInterfacesFileConnParams(
                 NStr::TruncateSpacesInPlace(key);
                 state = eKeyRead;
             } else {
-                //Error ...
+                // Error ...
                 DATABASE_DRIVER_ERROR("Invalid interfaces file line: " + line, 20001);
             }
         }
@@ -738,16 +746,25 @@ CDBInterfacesFileConnParams::CDBInterfacesFileConnParams(
             Uint4 host = 0;
             unsigned char* b = (unsigned char*) &host;
 
-            NStr::TruncateSpacesInPlace(host_str);
-            arr_param.clear();
-            NStr::Tokenize(host_str, ".", arr_param);
+            if (tli_format) {
+                b[0] = NStr::StringToUInt(host_str.substr(0, 2), 0, 16);
+                b[1] = NStr::StringToUInt(host_str.substr(2, 2), 0, 16);
+                b[2] = NStr::StringToUInt(host_str.substr(4, 2), 0, 16);
+                b[3] = NStr::StringToUInt(host_str.substr(6, 2), 0, 16);
 
-            b[0] = NStr::StringToUInt(arr_param[0]);
-            b[1] = NStr::StringToUInt(arr_param[1]);
-            b[2] = NStr::StringToUInt(arr_param[2]);
-            b[3] = NStr::StringToUInt(arr_param[3]);
+                m_Records[key] = SIRecord(host, NStr::StringToUInt(port_str, 0, 16));
+            } else {
+                NStr::TruncateSpacesInPlace(host_str);
+                arr_param.clear();
+                NStr::Tokenize(host_str, ".", arr_param);
 
-            m_Records[key] = SIRecord(host, NStr::StringToUInt(port_str));
+                b[0] = NStr::StringToUInt(arr_param[0]);
+                b[1] = NStr::StringToUInt(arr_param[1]);
+                b[2] = NStr::StringToUInt(arr_param[2]);
+                b[3] = NStr::StringToUInt(arr_param[3]);
+
+                m_Records[key] = SIRecord(host, NStr::StringToUInt(port_str));
+            }
 
             state = eInitial;
         }
