@@ -219,7 +219,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,     311, 110);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,      312,   6);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LocalNet,   313,  11);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,      319,  16);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,       320,  22);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,       320,  23);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LBSMD,      321,   8);
 
 
