@@ -115,6 +115,8 @@ static void TEST_URL_Encoding(void)
 
 #define ARRAY_DIM(arr) (sizeof(arr)/sizeof((arr)[0]))
 
+    CORE_LOG(eLOG_Note, "URL encoding test started");
+
     for (i = 0;  i < ARRAY_DIM(s_TestEncode);  i++) {
         const STestArg* arg = &s_TestEncode[i];
         URL_Encode(arg->src_buf, arg->src_size, &src_read,
@@ -143,6 +145,8 @@ static void TEST_URL_Encoding(void)
         assert(dst_written == arg->dst_written);
         assert(!dst_written  ||  !memcmp(dst, arg->dst_buf, dst_written));
     }
+
+    CORE_LOG(eLOG_Note, "URL encoding test completed");
 }
 
 
@@ -160,21 +164,6 @@ static int/*bool*/ s_Try_MIME
     EMIME_Type     x_type;
     EMIME_SubType  x_subtype;
     EMIME_Encoding x_encoding;
-
-    if (type == eMIME_T_NcbiData) {
-        if (!MIME_ParseContentType(str, &x_subtype, 0)  ||
-            x_subtype  != subtype) {
-            return 0/*false*/;
-        }
-        if (!MIME_ParseContentType(str, 0, &x_encoding)  ||
-            x_encoding != encoding) {
-            return 0/*false*/;
-        }
-        if (!MIME_ParseContentType(str, &x_subtype, &x_encoding)  ||
-            x_subtype != subtype  ||  x_encoding != encoding) {
-            return 0/*false*/;
-        }
-    }
 
     if (!MIME_ParseContentTypeEx(str, &x_type, &x_subtype, 0)  ||
         x_type != type  ||  x_subtype != subtype) {
@@ -207,6 +196,8 @@ static void TEST_MIME(void)
     EMIME_Encoding encoding;
     char str[MAX_CONTENT_TYPE_LEN];
     int i,j,k;
+
+    CORE_LOG(eLOG_Note, "MIME test started");
 
     *str = '\0';
     for (k = 0, type = (EMIME_Type) k;
@@ -243,13 +234,19 @@ static void TEST_MIME(void)
                       eMIME_T_Application, eMIME_XmlSoap, eENCOD_None));
     assert(!s_Try_MIME("", eMIME_T_NcbiData, eMIME_Unknown, eENCOD_Unknown));
     assert(!s_Try_MIME(0, eMIME_T_NcbiData, eMIME_Unknown, eENCOD_Unknown));
+
+    CORE_LOG(eLOG_Note, "MIME test completed");
 }
 
 
 static void TEST_ConnNetInfo(void)
 {
     size_t n;
-    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    SConnNetInfo* net_info;
+
+    CORE_LOG(eLOG_Note, "ConnNetInfo test started");
+
+    net_info = ConnNetInfo_Create(0);
 
     assert(net_info);
     printf("HTTP User Header:\n\"%s\"\n",
@@ -312,6 +309,8 @@ static void TEST_ConnNetInfo(void)
     printf("HTTP Arg after delete-all: \"%s\"\n", net_info->args);
 
     ConnNetInfo_Destroy(net_info);
+
+    CORE_LOG(eLOG_Note, "ConnNetInfo test completed");
 }
 
 
@@ -325,11 +324,16 @@ int main(void)
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
+    CORE_SetLOGFormatFlags(fLOG_Short | fLOG_DateTime | fLOG_OmitNoteLevel);
     CORE_SetLOGFILE(stderr, 0/*false*/);
+
+    CORE_LOG(eLOG_Note, "Miscellaneous tests started");
 
     TEST_URL_Encoding();
     TEST_MIME();
     TEST_ConnNetInfo();
+
+    CORE_LOG(eLOG_Note, "All tests completed");
 
     CORE_SetLOG(0);
     return 0;
