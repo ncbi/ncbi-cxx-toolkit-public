@@ -928,11 +928,16 @@ void CFastaReader::x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids)
 CRef<CSeq_id> CSeqIdGenerator::GenerateID(bool advance)
 {
     CRef<CSeq_id> seq_id(new CSeq_id);
-    string& id = seq_id->SetLocal().SetStr();
-    id.reserve(128);
-    id += m_Prefix;
-    id += NStr::IntToString((advance ? m_Counter.Add(1) - 1 : m_Counter.Get()));
-    id += m_Suffix;
+    int n = advance ? m_Counter.Add(1) - 1 : m_Counter.Get();
+    if (m_Prefix.empty()  &&  m_Suffix.empty()) {
+        seq_id->SetLocal().SetId(n);
+    } else {
+        string& id = seq_id->SetLocal().SetStr();
+        id.reserve(128);
+        id += m_Prefix;
+        id += NStr::IntToString(n);
+        id += m_Suffix;
+    }
     return seq_id;
 }
 
