@@ -2545,7 +2545,7 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
                                " Failed to set close-on-exec", x_id));
         }
 
-        if (!(*trigger = (TRIGGER) calloc(1, sizeof(*trigger)))) {
+        if (!(*trigger = (TRIGGER) calloc(1, sizeof(**trigger)))) {
             close(fd[0]);
             close(fd[1]);
             return eIO_Unknown;
