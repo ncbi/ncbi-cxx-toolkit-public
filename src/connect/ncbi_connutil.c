@@ -1056,7 +1056,8 @@ extern SOCK URL_Connect
 
     /* setup I/O timeout for the connection */
     if (SOCK_SetTimeout(sock, eIO_ReadWrite, rw_timeout) != eIO_Success) {
-        CORE_LOG_X(8, eLOG_Error, "[URL_Connect]  Cannot set connection timeout");
+        CORE_LOG_X(8, eLOG_Error,
+                   "[URL_Connect]  Cannot set connection timeout");
         SOCK_Close(sock);
         return 0/*error*/;
     }
@@ -1472,22 +1473,36 @@ extern char* MIME_ComposeContentTypeEx
  size_t         buflen)
 {
     static const char s_ContentType[] = "Content-Type: ";
-    const char*       x_Type          = s_MIME_Type    [(int) type];
-    const char*       x_SubType       = s_MIME_SubType [(int) subtype];
-    const char*       x_Encoding      = s_MIME_Encoding[(int) encoding];
-    char              x_buf[MAX_CONTENT_TYPE_LEN];
+    const char* x_type;
+    const char* x_subtype;
+    const char* x_encoding;
+    char        x_buf[MAX_CONTENT_TYPE_LEN];
 
-    if ( *x_Encoding ) {
-        assert(sizeof(s_ContentType) + strlen(x_Type) + strlen(x_SubType)
-               + strlen(x_Encoding) + 4 < MAX_CONTENT_TYPE_LEN);
+    assert(buf  &&  buflen);
+
+    if (type == eMIME_T_Undefined  ||  subtype == eMIME_Undefined)
+        return 0;
+    if (type >= eMIME_T_Unknown)
+        type  = eMIME_T_Unknown;
+    if (subtype >= eMIME_Unknown)
+        subtype  = eMIME_Unknown;
+    if (encoding >= eENCOD_Unknown)
+        encoding  = eENCOD_Unknown;
+
+    x_type     = s_MIME_Type    [type];
+    x_subtype  = s_MIME_SubType [subtype];
+    x_encoding = s_MIME_Encoding[encoding];
+
+    if ( *x_encoding ) {
+        assert(sizeof(s_ContentType) + strlen(x_type) + strlen(x_subtype)
+               + strlen(x_encoding) + 4 < MAX_CONTENT_TYPE_LEN);
         sprintf(x_buf, "%s%s/%s-%s\r\n",
-                s_ContentType, x_Type, x_SubType, x_Encoding);
+                s_ContentType, x_type, x_subtype, x_encoding);
     } else {
-        assert(sizeof(s_ContentType) + strlen(x_Type) + strlen(x_SubType)
+        assert(sizeof(s_ContentType) + strlen(x_type) + strlen(x_subtype)
                + 3 < MAX_CONTENT_TYPE_LEN);
-        sprintf(x_buf, "%s%s/%s\r\n", s_ContentType, x_Type, x_SubType);
+        sprintf(x_buf, "%s%s/%s\r\n", s_ContentType, x_type, x_subtype);
     }
-
     assert(strlen(x_buf) < sizeof(x_buf));
     assert(strlen(x_buf) < buflen);
     strncpy0(buf, x_buf, buflen - 1);
@@ -1495,6 +1510,82 @@ extern char* MIME_ComposeContentTypeEx
 }
 
 
+extern int/*bool*/ MIME_ParseContentTypeEx
+(const char*     str,
+ EMIME_Type*     type,
+ EMIME_SubType*  subtype,
+ EMIME_Encoding* encoding)
+{
+    char*  x_buf;
+    size_t x_size;
+    char*  x_type;
+    char*  x_subtype;
+    int    i;
+
+    if ( type )
+        *type = eMIME_T_Undefined;
+    if ( subtype )
+        *subtype = eMIME_Undefined;
+    if ( encoding )
+        *encoding = eENCOD_None;
+
+    x_size = str  &&  *str ? strlen(str) + 1 : 0;
+    if (!x_size)
+        return 0/*false*/;
+
+    if (!(x_buf = (char*) malloc(x_size << 1)))
+        return 0/*false*/;
+    x_type = x_buf + x_size;
+
+    strlwr(strcpy(x_buf, str));
+
+    if ((sscanf(x_buf, " content-type: %s ", x_type) != 1  &&
+         sscanf(x_buf, " %s ", x_type) != 1)  ||
+        (x_subtype = strchr(x_type, '/')) == 0) {
+        free(x_buf);
+        return 0/*false*/;
+    }
+    *x_subtype++ = '\0';
+    x_size = strlen(x_subtype);
+
+    if ( type ) {
+        for (i = 0;  i < (int) eMIME_T_Unknown;  i++) {
+            if (strcmp(x_type, s_MIME_Type[i]) == 0)
+                break;
+        }
+        *type = (EMIME_Type) i;
+    }
+
+    for (i = 1;  i <= (int) eENCOD_Unknown;  i++) {
+        size_t len = strlen(s_MIME_Encoding[i]);
+        if (len < x_size) {
+            char* x_encoding = x_subtype + x_size - len;
+            if (x_encoding[-1] == '-'
+                &&  strcmp(x_encoding, s_MIME_Encoding[i]) == 0) {
+                if ( encoding ) {
+                    *encoding = (i == (int) eENCOD_Unknown
+                                 ? eENCOD_None : (EMIME_Encoding) i);
+                }
+                x_encoding[-1] = '\0';
+                break;
+            }
+        }
+    }
+
+    if ( subtype ) {
+        for (i = 0;  i < (int) eMIME_Unknown;  i++) {
+            if (strcmp(x_subtype, s_MIME_SubType[i]) == 0)
+                break;
+        }
+        *subtype = (EMIME_SubType) i;
+    }
+
+    free(x_buf);
+    return 1/*true*/;
+}
+
+
+/* DEPRECATED and scheduled for removal */
 extern char* MIME_ComposeContentType
 (EMIME_SubType  subtype,
  EMIME_Encoding encoding,
@@ -1506,82 +1597,7 @@ extern char* MIME_ComposeContentType
 }
 
 
-extern int/*bool*/ MIME_ParseContentTypeEx
-(const char*     str,
- EMIME_Type*     type,
- EMIME_SubType*  subtype,
- EMIME_Encoding* encoding)
-{
-    char* x_buf;
-    char* x_type;
-    char* x_subtype;
-    int   i;
-
-    if ( type )
-        *type = eMIME_T_Unknown;
-    if ( subtype )
-        *subtype = eMIME_Unknown;
-    if ( encoding )
-        *encoding = eENCOD_Unknown;
-
-    if (!str  ||  !*str)
-        return 0/*false*/;
-
-    {{
-        size_t x_size = strlen(str) + 1;
-        x_buf  = (char*) malloc(2 * x_size);
-        x_type = x_buf  + x_size;
-    }}
-
-    strcpy(x_buf, str);
-    strlwr(x_buf);
-
-    if ((sscanf(x_buf, " content-type: %s ", x_type) != 1  &&
-         sscanf(x_buf, " %s ", x_type) != 1)  ||
-        (x_subtype = strchr(x_type, '/')) == 0) {
-        free(x_buf);
-        return 0/*false*/;
-    }
-    *x_subtype++ = '\0';
-
-    if ( type ) {
-        for (i = 0;  i < (int) eMIME_T_Unknown;  i++) {
-            if ( !strcmp(x_type, s_MIME_Type[i]) ) {
-                *type = (EMIME_Type) i;
-                break;
-            }
-        }
-    }
-
-    for (i = 0;  i < (int) eENCOD_Unknown;  i++) {
-        char* x_encoding = strstr(x_subtype, s_MIME_Encoding[i]);
-        if (x_encoding  &&  *x_encoding  &&
-            x_encoding != x_subtype  &&  *(x_encoding - 1) == '-'  &&
-            strcmp(x_encoding, s_MIME_Encoding[i]) == 0) {
-            if ( encoding ) {
-                *encoding = (EMIME_Encoding) i;
-            }
-            *(x_encoding - 1) = '\0';
-            break;
-        }
-    }
-    if (encoding  &&  *encoding == eENCOD_Unknown)
-        *encoding = eENCOD_None;
-
-    if ( subtype ) {
-        for (i = 0;  i < (int) eMIME_Unknown;  i++) {
-            if ( !strcmp(x_subtype, s_MIME_SubType[i]) ) {
-                *subtype = (EMIME_SubType) i;
-                break;
-            }
-        }
-    }
-
-    free(x_buf);
-    return 1/*true*/;
-}
-
-
+/* DEPRECATED and scheduled for removal */
 extern int/*bool*/ MIME_ParseContentType
 (const char*     str,
  EMIME_SubType*  subtype,
@@ -1600,25 +1616,4 @@ extern int/*bool*/ MIME_ParseContentType
     }
 
     return 1/*true*/;
-}
-
-
-
-/****************************************************************************
- * Reading and writing [host][:port] addresses:  Deprecated here, use upcalls.
- */
-
-extern const char* StringToHostPort(const char*     str,
-                                    unsigned int*   host,
-                                    unsigned short* port)
-{
-    return SOCK_StringToHostPort(str, host, port);
-}
-
-extern size_t HostPortToString(unsigned int   host,
-                               unsigned short port,
-                               char*          buf,
-                               size_t         buflen)
-{
-    return SOCK_HostPortToString(host, port, buf, buflen);
 }

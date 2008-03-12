@@ -569,6 +569,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ URL_DecodeEx
 /* Type
  */
 typedef enum {
+    eMIME_T_Undefined = -1,
     eMIME_T_NcbiData = 0,  /* "x-ncbi-data"  (NCBI specific data) */
     eMIME_T_Text,          /* "text"                              */
     eMIME_T_Application,   /* "application"                       */
@@ -580,6 +581,7 @@ typedef enum {
 /* SubType
  */
 typedef enum {
+    eMIME_Undefined = -1,
     eMIME_Dispatch = 0,  /* "x-dispatch"    (dispatcher info)          */
     eMIME_AsnText,       /* "x-asn-text"    (text ASN.1 data)          */
     eMIME_AsnBinary,     /* "x-asn-binary"  (binary ASN.1 data)        */
@@ -618,16 +620,6 @@ extern NCBI_XCONNECT_EXPORT char* MIME_ComposeContentTypeEx
  size_t         buflen    /* must be at least MAX_CONTENT_TYPE_LEN */
  );
 
-/* Exactly equivalent to MIME_ComposeContentTypeEx(eMIME_T_NcbiData, ...)
- */
-extern NCBI_XCONNECT_EXPORT char* MIME_ComposeContentType
-(EMIME_SubType  subtype,
- EMIME_Encoding encoding,
- char*          buf,
- size_t         buflen
- );
-
-
 /* Parse the NCBI-specific content-type; the (case-insensitive) "str"
  * can be in the following two formats:
  *   Content-Type: <type>/x-<subtype>-<encoding>
@@ -643,7 +635,7 @@ extern NCBI_XCONNECT_EXPORT char* MIME_ComposeContentType
  * return TRUE, eMIME_T_Unknown, eMIME_Unknown or eENCOD_None, respectively.
  * If the passed "str" has an invalid (non-HTTP ContentType) format
  * (or if it is NULL/empty), then
- * return FALSE, eMIME_T_Unknown, eMIME_Unknown, and eENCOD_Unknown
+ * return FALSE, eMIME_T_Undefined, eMIME_Undefined, and eENCOD_None
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ MIME_ParseContentTypeEx
 (const char*     str,      /* the HTTP "Content-Type:" header to parse */
@@ -652,29 +644,33 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ MIME_ParseContentTypeEx
  EMIME_Encoding* encoding  /* can be NULL */
  );
 
-/* Requires the MIME type be "x-ncbi-data"
- */
-extern NCBI_XCONNECT_EXPORT int/*bool*/ MIME_ParseContentType
-(const char*     str,      /* the HTTP "Content-Type:" header to parse */
- EMIME_SubType*  subtype,  /* can be NULL */
- EMIME_Encoding* encoding  /* can be NULL */
- );
 
-
-/* Deprecated:  Use SOCK_StringHostToPort() and SOCK_HostPortToString() instead
- */
 #ifndef NCBI_DEPRECATED
 #  define NCBI_CONNUTIL_DEPRECATED
 #else
 #  define NCBI_CONNUTIL_DEPRECATED NCBI_DEPRECATED
 #endif
-extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED
-const char* StringToHostPort
-(const char*, unsigned int*, unsigned short*);
 
+/* Exactly equivalent to MIME_ComposeContentTypeEx(eMIME_T_NcbiData, ...)
+ * Use more explicit Ex variant instead.
+ */
 extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED
-size_t HostPortToString
-(unsigned int, unsigned short, char*, size_t);
+char* MIME_ComposeContentType
+(EMIME_SubType  subtype,
+ EMIME_Encoding encoding,
+ char*          buf,
+ size_t         buflen
+ );
+
+/* Requires the MIME type be "x-ncbi-data".
+ * Use more explicit Ex variant instead.
+ */
+extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED
+int/*bool*/ MIME_ParseContentType
+(const char*     str,      /* the HTTP "Content-Type:" header to parse */
+ EMIME_SubType*  subtype,  /* can be NULL */
+ EMIME_Encoding* encoding  /* can be NULL */
+ );
 
 
 #ifdef __cplusplus
