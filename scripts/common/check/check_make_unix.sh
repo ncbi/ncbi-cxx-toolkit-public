@@ -164,6 +164,10 @@ signature="$x_signature"
 sendmail=''
 domain='@ncbi.nlm.nih.gov'
 
+# Include COMMON.SH
+
+. \${root_dir}/scripts/common/common.sh
+
 
 ##  Printout USAGE info and exit
 
@@ -550,6 +554,10 @@ EOF_launch
 
 MailToAuthors()
 {
+   # The limit on the sending email size in Kbytes
+   mail_limit=1024
+   tmp="./check_mailtoauthors.tmp.\$\$"
+
    test -z "\$sendmail"  &&  return 0
    test -z "\$1"  &&  return 0
    x_authors=""
@@ -568,15 +576,18 @@ MailToAuthors()
         echo \$x_cmd
         echo
    echo "cmd = \$sendmail \$x_authors"
+   
+   COMMON_LimitTextFileSize \$x_logfile \$tmp \$mail_limit
    {
         echo "To: \$x_authors"
         echo "Subject: [C++ CHECK] \$x_app | \$signature"
         echo
         echo \$x_cmd
         echo
-        cat \$x_logfile
+        cat \$tmp
    } | \$sendmail \$x_authors
-   echo '-----------------------'   
+   echo '-----------------------'
+   rm -f \$tmp > /dev/null
 }
 
 EOF
