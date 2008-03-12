@@ -49,7 +49,6 @@ public:
     double m_CompartmentPenalty;
     double m_MinCompartmentIdty;
     int    m_MaxExtent;
-    double m_MinProteinCoverage;
 };
 
 struct NCBI_XALGOALIGN_EXPORT SCompartment {
@@ -75,7 +74,7 @@ typedef list<CRef<CSeq_annot> > TCompartments;
 TCompartments SelectCompartmentsHits(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options);
 TCompartmentStructs MakeCompartments(const TCompartments& compartments_hits, CCompartOptions compart_options);
 /// Composition of above two functions
-TCompartmentStructs MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options, int protein_len);
+TCompartmentStructs MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options);
 
 END_SCOPE(prosplign)
 END_NCBI_SCOPE

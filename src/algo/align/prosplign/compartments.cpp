@@ -92,16 +92,6 @@ double TotalScore(THitRefs& hitrefs)
     return result;
 }
 
-class NotEnoughAA {
-public:
-    NotEnoughAA(int requered_aa) : m_requered_aa(requered_aa) {}
-    int m_requered_aa;
-    bool operator()(const SCompartment& compartment)
-    {
-        return compartment.covered_aa < m_requered_aa;
-    }
-};
-
 CRef<CScore> IntScore(const string& id, int value)
 {
     CRef<CScore> result(new CScore);
@@ -257,16 +247,9 @@ TCompartmentStructs MakeCompartments(const TCompartments& compartments, CCompart
     return results;
 }
 
-TCompartmentStructs MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options, int protein_len)
+TCompartmentStructs MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options)
 {
-    TCompartmentStructs results = MakeCompartments(SelectCompartmentsHits(hitrefs, compart_options), compart_options);
-    
-    const int required_aa = int(protein_len * compart_options.m_MinProteinCoverage);
-
-    TCompartmentStructs::iterator new_end = remove_if(results.begin(),results.end(),NotEnoughAA(required_aa));
-    results.erase(new_end, results.end());
-    
-    return results;
+    return MakeCompartments(SelectCompartmentsHits(hitrefs, compart_options), compart_options);
 }
 
 
@@ -287,29 +270,21 @@ void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
          "Multiple compartments will only be identified if "
          "they have at least this level of coverage.",
          CArgDescriptions::eDouble,
-         "0.125");
+         "0.5");
     
     argdescr->AddDefaultKey
         ("min_compartment_idty",
          "min_compartment_identity",
          "Minimal compartment identity to align.",
          CArgDescriptions::eDouble,
-         ".333333");
-    
-    argdescr->AddDefaultKey
-        ("min_prot_coverage",
-         "min_prot_coverage",
-         "Minimal protein coverage by hits.",
-         CArgDescriptions::eDouble,
-         ".25");
+         ".5");
     
 }
 
 CCompartOptions::CCompartOptions(const CArgs& args) :
     m_CompartmentPenalty(args["compartment_penalty"].AsDouble()),
     m_MinCompartmentIdty(args["min_compartment_idty"].AsDouble()),
-    m_MaxExtent(args["max_extent"].AsInteger()),
-    m_MinProteinCoverage(args["min_prot_coverage"].AsDouble())
+    m_MaxExtent(args["max_extent"].AsInteger())
 {
 }
 
