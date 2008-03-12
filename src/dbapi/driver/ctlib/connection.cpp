@@ -388,14 +388,19 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 
 #ifdef FTDS_IN_USE
     CTL_CursorCmdExpl* ccmd = new CTL_CursorCmdExpl(
-#else
-    CTL_CursorCmd* ccmd = new CTL_CursorCmd(
-#endif
         *this,
         cursor_name,
         query,
         batch_size
         );
+#else
+    CTL_CursorCmd* ccmd = new CTL_CursorCmd(
+        *this,
+        cursor_name,
+        query,
+        batch_size
+        );
+#endif
 
     return Create_CursorCmd(*ccmd);
 }
