@@ -121,13 +121,10 @@ char* SERV_WriteInfo(const SSERV_Info* info)
     size_t reserve;
     char* str;
 
-    if (info->type != fSERV_Dns &&
-        info->mime_t != SERV_MIME_TYPE_UNDEFINED &&
-        info->mime_s != SERV_MIME_SUBTYPE_UNDEFINED) {
+    if (info->type != fSERV_Dns
+        &&  MIME_ComposeContentTypeEx(info->mime_t, info->mime_s,
+                                      info->mime_e, c_t, sizeof(c_t))) {
         char* p;
-        if (!MIME_ComposeContentTypeEx(info->mime_t, info->mime_s,
-                                       info->mime_e, c_t, sizeof(c_t)))
-            return 0;
         assert(c_t[strlen(c_t) - 2] == '\r' && c_t[strlen(c_t) - 1] == '\n');
         c_t[strlen(c_t) - 2] = 0;
         p = strchr(c_t, ' ');
@@ -486,8 +483,8 @@ SSERV_Info* SERV_CreateNcbidInfoEx
         info->time         = 0;
         info->coef         = 0.0;
         info->rate         = 0.0;
-        info->mime_t       = SERV_MIME_TYPE_UNDEFINED;
-        info->mime_s       = SERV_MIME_SUBTYPE_UNDEFINED;
+        info->mime_t       = eMIME_T_Undefined;
+        info->mime_s       = eMIME_Undefined;
         info->mime_e       = eENCOD_None;
         info->flag         = SERV_DEFAULT_FLAG;
         memset(&info->reserved, 0, sizeof(info->reserved));
@@ -554,8 +551,8 @@ SSERV_Info* SERV_CreateStandaloneInfoEx
         info->time   = 0;
         info->coef   = 0.0;
         info->rate   = 0.0;
-        info->mime_t = SERV_MIME_TYPE_UNDEFINED;
-        info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
+        info->mime_t = eMIME_T_Undefined;
+        info->mime_s = eMIME_Undefined;
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
         memset(&info->reserved, 0, sizeof(info->reserved));
@@ -675,8 +672,8 @@ SSERV_Info* SERV_CreateHttpInfoEx
         info->time        = 0;
         info->coef        = 0.0;
         info->rate        = 0.0;
-        info->mime_t      = SERV_MIME_TYPE_UNDEFINED;
-        info->mime_s      = SERV_MIME_SUBTYPE_UNDEFINED;
+        info->mime_t      = eMIME_T_Undefined;
+        info->mime_s      = eMIME_Undefined;
         info->mime_e      = eENCOD_None;
         info->flag        = SERV_DEFAULT_FLAG;
         memset(&info->reserved, 0, sizeof(info->reserved));
@@ -756,8 +753,8 @@ SSERV_Info* SERV_CreateFirewallInfoEx(unsigned int host, unsigned short port,
         info->time   = 0;
         info->coef   = 0.0;
         info->rate   = 0.0;
-        info->mime_t = SERV_MIME_TYPE_UNDEFINED;
-        info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
+        info->mime_t = eMIME_T_Undefined;
+        info->mime_s = eMIME_Undefined;
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
         memset(&info->reserved, 0, sizeof(info->reserved));
@@ -816,8 +813,8 @@ SSERV_Info* SERV_CreateDnsInfoEx(unsigned int host, size_t add)
         info->time   = 0;
         info->coef   = 0.0;
         info->rate   = 0.0;
-        info->mime_t = SERV_MIME_TYPE_UNDEFINED;
-        info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
+        info->mime_t = eMIME_T_Undefined;
+        info->mime_s = eMIME_Undefined;
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
         memset(&info->reserved, 0, sizeof(info->reserved));

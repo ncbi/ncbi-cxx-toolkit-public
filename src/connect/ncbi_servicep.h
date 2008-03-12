@@ -162,14 +162,17 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_Update
 
 /* Private interface: print and return the HTTP-compliant header portion
  * (<CR><LF> separated lines, including the last line) out of the information
- * contained in the iterator; to be used in mapping requests to DISPD.
+ * contained in the iterator;  to be used in mapping requests to DISPD.
  * Also, if "net_info" is non-NULL and "net_info->http_referer" is NULL,
- * then fill out "net_info->http_referer" appropriately.
- * Return value must be 'free'd.
+ * then fill out "net_info->http_referer" accordingly.  "but_last" controls
+ * whether the currently taken info appears as the info to skip over
+ * (by the dispatcher) ["but_last"==0], or as just being used
+ * ["but_last"==1].  Return value must be 'free'd.
  */
 extern NCBI_XCONNECT_EXPORT char* SERV_Print
 (SERV_ITER     iter,
- SConnNetInfo* net_info
+ SConnNetInfo* net_info,
+ int/*bool*/   but_last
  );
 
 

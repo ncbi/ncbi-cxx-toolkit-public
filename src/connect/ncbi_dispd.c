@@ -149,7 +149,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
 
     assert(!!net_info->stateless == !!iter->stateless);
     /* Obtain additional header information */
-    if ((!(s = SERV_Print(iter, 0))
+    if ((!(s = SERV_Print(iter, 0, 0))
          ||  ConnNetInfo_OverrideUserHeader(net_info, s))
         &&
         ConnNetInfo_OverrideUserHeader(net_info,

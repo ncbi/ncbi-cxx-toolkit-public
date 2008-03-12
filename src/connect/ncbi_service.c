@@ -614,18 +614,20 @@ static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
 }
 
 
-char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info)
+char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
 {
-    static const char client_revision[] = "Client-Revision: %hu.%hu\r\n";
-    static const char accepted_types[] = "Accepted-Server-Types:";
-    static const char server_count[] = "Server-Count: ";
+    static const char kClientRevision[] = "Client-Revision: %hu.%hu\r\n";
+    static const char kAcceptedServerTypes[] = "Accepted-Server-Types:";
+    static const char kUsedServerInfo[] = "Used-Server-Info: ";
+    static const char kServerCount[] = "Server-Count: ";
+    static const char kSkipInfo[] = "Skip-Info-%u: ";
     char buffer[128], *str;
     size_t buflen, i;
     TSERV_Type t;
     BUF buf = 0;
 
     /* Put client version number */
-    buflen = sprintf(buffer, client_revision,
+    buflen = sprintf(buffer, kClientRevision,
                      SERV_CLIENT_REVISION_MAJOR, SERV_CLIENT_REVISION_MINOR);
     assert(buflen < sizeof(buffer));
     if (!BUF_Write(&buf, buffer, buflen)) {
@@ -636,8 +638,8 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info)
         if (net_info && !net_info->http_referer && iter->op && iter->op->name)
             s_SetDefaultReferer(iter, net_info);
         /* Form accepted server types */
-        buflen = sizeof(accepted_types) - 1;
-        memcpy(buffer, accepted_types, buflen);
+        buflen = sizeof(kAcceptedServerTypes) - 1;
+        memcpy(buffer, kAcceptedServerTypes, buflen);
         for (t = 1; t; t <<= 1) {
             if (iter->type & t) {
                 const char* name = SERV_TypeStr((ESERV_Type) t);
@@ -659,7 +661,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info)
         }
         /* How many server-infos for the dispatcher to send to us */
         if (iter->ismask  ||  (iter->pref  &&  iter->host)) {
-            if (!BUF_Write(&buf, server_count, sizeof(server_count) - 1)  ||
+            if (!BUF_Write(&buf, kServerCount, sizeof(kServerCount) - 1)  ||
                 !BUF_Write(&buf,
                            iter->ismask ? "10" : "ALL",
                            iter->ismask ?   2  :    3)                    ||
@@ -677,13 +679,17 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info)
             const char* name = SERV_NameOfInfo(iter->skip[i]);
             if (!(str = SERV_WriteInfo(iter->skip[i])))
                 break;
-            buflen = sprintf(buffer, "Skip-Info-%u: ", (unsigned) i + 1); 
+            if (but_last  &&  iter->last == iter->skip[i]) {
+                buflen = sizeof(kUsedServerInfo) - 1;
+                memcpy(buffer, kUsedServerInfo, buflen);
+            } else
+                buflen = sprintf(buffer, kSkipInfo, (unsigned) i + 1); 
             assert(buflen < sizeof(buffer) - 1);
-            if (!BUF_Write(&buf, buffer, buflen) ||
-                (name  &&  !BUF_Write(&buf, name, strlen(name))) ||
-                (name  &&  *name  &&  !BUF_Write(&buf, " ", 1)) ||
-                !BUF_Write(&buf, str, strlen(str)) ||
-                !BUF_Write(&buf, "\r\n", 2)) {
+            if (!BUF_Write(&buf, buffer, buflen)
+                ||  (name  &&  !BUF_Write(&buf, name, strlen(name)))
+                ||  (name  &&  *name  &&  !BUF_Write(&buf, " ", 1))
+                ||  !BUF_Write(&buf, str, strlen(str))
+                ||  !BUF_Write(&buf, "\r\n", 2)) {
                 free(str);
                 break;
             }
