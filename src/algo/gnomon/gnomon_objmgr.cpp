@@ -124,7 +124,10 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             AddHole();
         prev_splice = exon.CanGetSplice_3_prime() && exon.GetSplice_3_prime().CanGetBases() && exon.GetSplice_3_prime().GetBases().size()==2;
 
-        AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end),TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),GetProdPosInBases(exon.GetProduct_end())));
+        AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end),
+                is_protein ?
+                TSignedSeqRange::GetEmpty():
+                TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),GetProdPosInBases(exon.GetProduct_end())));
 
         int pos = 0;
         int prod_pos = prod_cur_start;
