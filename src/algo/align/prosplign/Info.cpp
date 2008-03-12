@@ -910,6 +910,7 @@ list<TSeqRange> InvertPartList(const list<CNPiece>& good_parts, TSeqRange total_
     return bad_parts;
 }
     
+#ifdef _DEBUG
 void TestExonLength(const CSpliced_exon& exon)
 {
         int prot_cur_start = GetProdPosInBases(exon.GetProduct_start());
@@ -942,6 +943,7 @@ void TestExonLength(const CSpliced_exon& exon)
         _ASSERT( nuc_cur_end-nuc_cur_start+1 == nuc_len );
         _ASSERT( prot_cur_end-prot_cur_start+1 == prot_len );
 }
+#endif
 
 void SplitChunk(TAliChunkCollection& chunks, TAliChunkIterator iter, TSeqPos start_of_second_chunk, bool genomic_plus)
 {
