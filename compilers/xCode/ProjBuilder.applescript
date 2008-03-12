@@ -31,6 +31,8 @@
  * Know issues:
  * 1) Script build phase should be changed for "gui_project". Use better sed command-line options.
  *)
+
+property upper_alphabet : "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 property ret : "
 " -- For some reason standard return does not work.
 
@@ -224,6 +226,13 @@ script ProjBuilder
 			
 			set filePath to F --"/" & x_Replace(f, ":", "/") -- f will contain something like "users:vlad:c++:src:corelib:ncbicore.cpp"
 			set fileName to x_FileNameFromPath(F)
+			
+			--set first_char to first character of fileName
+			--considering case
+			--set valid_idx to offset of first_char in upper_alphabet
+			--end considering
+			
+			--if valid_idx is 0 then -- no capital first letters!
 			if fileName ends with ".cpp" then
 				set fileType to "sourcecode.cpp.cpp"
 			else
@@ -239,6 +248,7 @@ script ProjBuilder
 			copy nameRef to the end of libFileRefs
 			
 			set refFileCount to refFileCount + 1
+			--end if
 			--if refFileCount = 3 then exit repeat
 			--log f
 		end repeat

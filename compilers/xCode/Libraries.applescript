@@ -83,7 +83,7 @@ property creaders : {name:"creaders", path:"util:creaders"}
 -- Algo
 property xalgoalign : {name:"xalgoalign", path:"algo:align"}
 property xalgosplign : {name:"xalgosplign", path:"algo:align:splign"}
-property xalgoprosplign : {name:"xalgosplign", path:"algo:align:prosplign"}
+property xalgoprosplign : {name:"xalgosplign", path:"algo:align:prosplign", inc:{"prosplign.cpp", "scoring.cpp", "PSeq.cpp", "NSeq.cpp", "Ali.cpp", "AliSeqAlign.cpp", "Info.cpp", "nucprot.cpp", "intron.cpp", "AlignInfo.cpp", "compartments.cpp"}}
 property xalgocontig_assembly : {name:"xalgocontig_assembly", path:"algo:align:contig_assembly"}
 property xalgoalignnw : {name:"xalgoalignnw", path:"algo:align:nw"}
 property xalgoaligutil : {name:"xalgoaligutil", path:"algo:align:util"}
@@ -93,7 +93,7 @@ property blast : {name:"blast", path:"algo:blast:core"}
 property blast_composition : {name:"blast_composition", path:"algo:blast:composition_adjustment"}
 property xblast : {name:"xblast", path:"algo:blast:api"}
 property xblast_dbindex : {name:"xblast_dbindex", path:"algo:blast:dbindex"}
-property xalgognomon : {name:"xalgognomon", path:"algo:gnomon"}
+property xalgognomon : {name:"xalgognomon", path:"algo:gnomon", inc:{"gnomon__.cpp", "gnomon___.cpp", "gnomon_engine.cpp", "gnomon_objmgr.cpp", "score.cpp", "gnomon_model.cpp", "parse.cpp", "hmm.cpp", "gnomon_seq.cpp", "asn1.cpp"}, asn1:true}
 property xalgowinmask : {name:"xalgowinmask", path:"algo:winmask"}
 property xalgodustmask : {name:"xalgodustmask", path:"algo:dustmask"}
 property xalgophytree : {name:"xalgophytree", path:"algo:phy_tree"}
@@ -296,7 +296,7 @@ property ncbi_xreader_cache : {name:"ncbi_xreader_cache", libs:{xreader_cache}, 
 property ncbi_xreader_pubseqos : {name:"ncbi_xreader_pubseqos", libs:{xreader_pubseqos}, dep:"ncbi_core ncbi_dbapi ncbi_dbapi_driver ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_misc ncbi_general", req:true}
 property ncbi_xloader_cdd : {name:"ncbi_xloader_cdd", libs:{xloader_cdd}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache ncbi_misc ncbi_general", req:true}
 property ncbi_xloader_genbank : {name:"ncbi_xloader_genbank", libs:{xloader_genbank}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache ncbi_misc ncbi_general", req:true}
-property ncbi_xloader_blastdb : {name:"ncbi_xloader_blastdb", libs:{xloader_blastdb}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_misc ncbi_general", req:true}
+property ncbi_xloader_blastdb : {name:"ncbi_xloader_blastdb", libs:{xloader_blastdb}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_misc ncbi_general ncbi_algo", req:true}
 property ncbi_xloader_lds : {name:"ncbi_xloader_lds", libs:{xloader_lds}, dep:"ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_general ncbi_lds ncbi_pub ncbi_seq ncbi_seqext ncbi_misc db", req:true}
 property ncbi_xloader_trace : {name:"ncbi_xloader_trace", libs:{xloader_trace}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_misc ncbi_pub", req:true}
 property ncbi_xobjsimple : {name:"ncbi_xobjsimple", libs:{xobjsimple}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_pub ncbi_misc ncbi_xreader ncbi_xreader_cache ncbi_xreader_id1 ncbi_xreader_id2", req:true}
@@ -362,7 +362,7 @@ property test_basic_cleanup : {name:"test_basic_cleanup", path:"objtools:cleanup
 --property asn2flat : {name:"asn2flat", path:"app:asn2flat", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
 property asn2asn : {name:"asn2asn", path:"app:asn2asn", inc:{"asn2asn.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
 property gi2taxid : {name:"gi2taxid", path:"app:gi2taxid", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
-property ini2reg : {name:"ini2reg", path:"gui:objutils:test", inc:{"ini2reg.cpp"}, dep:"ncbi_core ncbi_general gui_utils ncbi_seq ncbi_seqext ncbi_pub ncbi_misc ncbi_validator ncbi_image" & FI_LIBS, req:true}
+property ini2reg : {name:"ini2reg", path:"gui:app:ini2reg", inc:{"ini2reg.cpp"}, dep:"ncbi_core ncbi_general gui_utils ncbi_seq ncbi_seqext ncbi_pub ncbi_misc ncbi_validator ncbi_image" & FI_LIBS, req:true}
 property omssacl : {name:"omssacl", path:"algo:ms:omssa", inc:{"omssacl.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_pub ncbi_seqext ncbi_algo", req:false}
 property omssamerge : {name:"omssamerge", path:"algo:ms:omssa", inc:{"omssamerge.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_pub ncbi_seqext ncbi_algo", req:false}
 
@@ -411,7 +411,7 @@ property gbench_cache_agent : {name:"gbench_cache_agent", path:"gui:app:gbench_c
 
 
 -- All Libraries to build
-property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_xcache_netcache, ncbi_image, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_misc, ncbi_seqext, ncbi_validator, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_id2, ncbi_xreader_cache, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_blastdb, ncbi_xloader_lds, ncbi_xloader_trace, ncbi_xobjsimple, ncbi_algo, gui_utils, gui_config, gui_graph, gui_widgets, gui_dialogs, gui_core, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, gui_services, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_webpage, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_text, view_validator}
+property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_xcache_netcache, ncbi_image, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_misc, ncbi_seqext, ncbi_validator, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_id2, ncbi_xreader_cache, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_lds, ncbi_xloader_trace, ncbi_xobjsimple, ncbi_algo, ncbi_xloader_blastdb, gui_utils, gui_config, gui_graph, gui_widgets, gui_dialogs, gui_core, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, gui_services, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_webpage, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_text, view_validator}
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
