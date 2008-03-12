@@ -65,9 +65,15 @@
             if (oArgs.Length < 2) {
                 return false;
             }
+            var name = GetPositionalValue(oArgs, 0);
+            if (name == "") {
+                return false;
+            }
+/*
             if (oArgs.Length > 6) {
                 return false;
             }
+*/
             
             return true;
         }
@@ -152,7 +158,7 @@
             usage_str += "    [builddir]  -- path to the pre-built NCBI C++ toolkit\n";
             usage_str += "                       default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
             usage_str += "                       you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
-//            usage_str += "    [-msvc nn]  -- MSVC version: 71 or 80; default is " + GetDefaultMsvcVer() + "\n";
+            usage_str += "    [-msvc nn]  -- MSVC version: 71, 80, or 80x64; default is " + GetDefaultMsvcVer() + "\n";
             usage_str += "    [-dll]      -- use  NCBI C++ toolkit DLLs' instead of static libraries\n";
             usage_str += "    [-b]        -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
             usage_str += "    [-v]        -- show details about what is being made\n";
@@ -169,7 +175,7 @@
         {
             var toolkit_path;
             var oArgs = WScript.Arguments;
-//            SetMsvcVer(oArgs, "-msvc");
+            SetMsvcVer(oArgs, "-msvc");
             var run_interactive = GetFlagValue(oArgs, "-i", false);
             if ( !run_interactive && VerifyArguments(oArgs) ) {
                 SetVerbose(oArgs, "-v", false);

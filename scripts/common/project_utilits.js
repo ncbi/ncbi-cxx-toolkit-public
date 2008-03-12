@@ -9,8 +9,9 @@ var g_make_solution = true;
 var g_def_branch = "toolkit/trunk/internal/c++";
 var g_branch     = "toolkit/trunk/internal/c++";
 
-var g_def_msvcver = 71;
-var g_msvcver     = 71;
+// valid:   "71", "80", "80x64"
+var g_def_msvcver = "71";
+var g_msvcver     = "71";
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
@@ -114,17 +115,20 @@ function DumpTree(oTree)
 function GetConfigs(oTask)
 {
     if (oTask.DllBuild) {
-        var configs = new Array ("DebugDLL", 
-                                 "ReleaseDLL");
+        var configs = new Array ("DebugDLL", "ReleaseDLL");
         return configs;
     } else {
-        var configs = new Array ("Debug", 
-                                 "DebugMT", 
-                                 "DebugDLL", 
-                                 "Release", 
-                                 "ReleaseMT", 
-                                 "ReleaseDLL");
-        return configs;
+        if (g_msvcver == "71") {
+            var configs = new Array (
+                "Debug",   "DebugMT",   "DebugDLL", 
+                "Release", "ReleaseMT", "ReleaseDLL");
+            return configs;
+        } else {
+            var configs = new Array (
+                "DebugMT",   "DebugDLL", 
+                "ReleaseMT", "ReleaseDLL");
+            return configs;
+        }
     }
 }       
 // recursive path creator - oFso is pre-created file system object
@@ -389,14 +393,14 @@ function GetDefaultMsvcVer()
 function SetMsvcVer(oArgs, flag)
 {
     g_msvcver = GetFlaggedValue(oArgs, flag, g_msvcver);
-    if (g_msvcver != 71 && g_msvcver != 80) {
-        g_msvcver = g_def_msvcver;
+    if (g_msvcver != "71" && g_msvcver != "80" && g_msvcver != "80x64") {
+        g_msvcver = GetDefaultMsvcVer();
     }
 }
 
 function GetMsvcFolder()
 {
-    if (g_msvcver == 80) {
+    if (g_msvcver == "80" || g_msvcver == "80x64") {
         return "msvc800_prj";
     }
     return "msvc710_prj";
@@ -465,8 +469,10 @@ function GetPositionalValue(oArgs, position)
 function GetDefaultCXX_ToolkitFolder()
 {
     var root = "\\\\snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc"
-    if (g_msvcver == 80) {
+    if (g_msvcver == "80") {
         root += "8";
+    } else if (g_msvcver == "80x64") {
+        root += "8.64";
     } else {
         root += "71";
     }
