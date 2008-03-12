@@ -146,9 +146,12 @@ bool operator== (const CDBServer& l, const CDBServer& r)
 inline
 bool operator< (const CDBServer& l, const CDBServer& r)
 {
-    return (l.GetName().compare(r.GetName()) < 0 ||
-            l.GetHost() < r.GetHost() ||
-            l.GetPort() < r.GetPort());
+    int res = l.GetName().compare(r.GetName());
+    if (res != 0)
+        return res < 0;
+    if (l.GetHost() != r.GetHost())
+        return l.GetHost() < r.GetHost();
+    return l.GetPort() < r.GetPort();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
