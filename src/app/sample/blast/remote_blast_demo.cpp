@@ -121,6 +121,9 @@ void CBlastDemoApplication::Init(void)
     arg_desc->AddDefaultKey("matrix", "matrix", "Scoring matrix name",
                             CArgDescriptions::eString, "BLOSUM62");
 
+    arg_desc->AddDefaultKey("hitsize", "hitsize", "Hitlist size",
+                            CArgDescriptions::eInteger, "100");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -136,6 +139,9 @@ void CBlastDemoApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opt
         // Expect value is a supported option for all flavors of BLAST.
         if(args["evalue"].AsDouble())
           opts_handle->SetEvalueThreshold(args["evalue"].AsDouble());
+        
+        if(args["hitsize"].AsInteger() && args["hitsize"].AsInteger() > 0)
+          opts_handle->SetHitlistSize(args["hitsize"].AsInteger());
         
         // The first branch is used if the program is blastn or a flavor of megablast
         // as reward and penalty is a valid option.
