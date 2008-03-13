@@ -183,10 +183,10 @@ property xloader_blastdb : {name:"xloader_blastdb", path:"objtools:data_loaders:
 property xloader_cdd : {name:"xloader_cdd", path:"objtools:data_loaders:cdd"}
 
 property xreader : {name:"xreader", path:"objtools:data_loaders:genbank", exc:{"gbloader.cpp", "gbload_util.cpp"}}
-property xreader_id1 : {name:"xreader_id1", path:"objtools:data_loaders:genbank:readers:id1"}
-property xreader_id2 : {name:"xreader_id1", path:"objtools:data_loaders:genbank:readers:id2"}
-property xreader_cache : {name:"xreader_cache", path:"objtools:data_loaders:genbank:readers:cache"}
-property xreader_pubseqos : {name:"xreader_pubseqos", path:"objtools:data_loaders:genbank:readers:pubseqos"}
+property xreader_id1 : {name:"xreader_id1", path:"objtools:data_loaders:genbank:id1"}
+property xreader_id2 : {name:"xreader_id1", path:"objtools:data_loaders:genbank:id2"}
+property xreader_cache : {name:"xreader_cache", path:"objtools:data_loaders:genbank:cache"}
+property xreader_pubseqos : {name:"xreader_pubseqos", path:"objtools:data_loaders:genbank:pubseq"}
 property xobjwrite : {name:"xobjwrite", path:"objtools:writers"}
 
 
