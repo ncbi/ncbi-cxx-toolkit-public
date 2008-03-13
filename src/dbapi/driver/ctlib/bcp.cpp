@@ -237,7 +237,12 @@ bool CTL_BCPInCmd::x_AssignParams()
         case eDB_BigInt: {
             CDB_BigInt& par = dynamic_cast<CDB_BigInt&> (param);
 
-            /* Old code ...
+#ifdef FTDS_IN_USE
+            param_fmt.datatype = CS_LONG_TYPE;
+            Int8 value = par.Value();
+            memcpy(bind.buffer, &value, sizeof(value));
+#else
+            // Old code ...
             param_fmt.datatype = CS_NUMERIC_TYPE;
             CS_NUMERIC value;
             Int8 val8 = par.Value();
@@ -249,11 +254,7 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.precision = 20;
             memcpy(bind.buffer, &value, sizeof(CS_NUMERIC));
             bind.datalen = sizeof(CS_NUMERIC);
-            */
-
-            param_fmt.datatype = CS_LONG_TYPE;
-            Int8 value = par.Value();
-            memcpy(bind.buffer, &value, sizeof(value));
+#endif
 
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       (CS_VOID*) bind.buffer,

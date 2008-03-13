@@ -212,7 +212,15 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     case eDB_BigInt: {
         CDB_BigInt& par = dynamic_cast<CDB_BigInt&> (param);
 
-        /* Old code ...
+#ifdef FTDS_IN_USE
+        param_fmt.datatype = CS_LONG_TYPE;
+        if ( declare_only ) {
+            break;
+        }
+
+        Int8 value = par.Value();
+#else
+        // Old code ...
         param_fmt.datatype = CS_NUMERIC_TYPE;
         if ( declare_only ) {
             break;
@@ -227,14 +235,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         }
         param_fmt.scale     = 0;
         param_fmt.precision = 20;
-        */
-
-        param_fmt.datatype = CS_LONG_TYPE;
-        if ( declare_only ) {
-            break;
-        }
-
-        Int8 value = par.Value();
+#endif
 
         ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
                             (CS_VOID*) &value, CS_UNUSED, indicator));

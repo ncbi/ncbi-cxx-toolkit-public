@@ -834,6 +834,7 @@ bool CTL_CursorCmdExpl::x_AssignParams()
                 break;
             }
             case eDB_BigInt: {
+				// May have problems similar to Test_Procedure2.
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
                 string s8 = NStr::Int8ToString(val.Value());
                 s8.copy(val_buffer, s8.size());

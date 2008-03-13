@@ -13944,7 +13944,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && !(args.GetDriverName() == ftds64_driver
            && args.GetServerType() == CTestArguments::eSybase) // 03/13/08
         && args.GetDriverName() != dblib_driver // 03/13/08
-        && args.GetDriverName() != ctlib_driver // 03/13/08
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure2,
                 DBAPIInstance);
