@@ -5064,8 +5064,8 @@ extern const char* SOCK_StringToHostPort(const char*     str,
         *host = 0;
     if (port)
         *port = 0;
-    for (s = str; *s; s++) {
-        if (isspace((unsigned char)(*s)) || *s == ':')
+    for (s = str;  *s;  s++) {
+        if (isspace((unsigned char)(*s))  ||  *s == ':')
             break;
     }
     if ((alen = (size_t)(s - str)) > sizeof(abuf) - 1)
@@ -5077,8 +5077,9 @@ extern const char* SOCK_StringToHostPort(const char*     str,
     } else
         h = 0;
     if (*s == ':') {
-        if (sscanf(++s, "%hu%n", &p, &n) < 1 ||
-            (s[n] && !isspace((unsigned char) s[n])))
+        if (isspace((unsigned char)(*s))
+            ||  sscanf(++s, "%hu%n", &p, &n) < 1
+            ||  (s[n]  &&  !isspace((unsigned char) s[n])))
             return alen ? 0 : str;
     } else
         p = 0;
