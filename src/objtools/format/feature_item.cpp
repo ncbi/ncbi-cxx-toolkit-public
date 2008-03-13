@@ -831,12 +831,28 @@ string CFeatureItem::GetKey(void) const
             break;
         }
     } else {  // nucleotide
-        if ((subtype == CSeqFeatData::eSubtype_preprotein  &&  !ctx.IsRefSeq())  ||
-            subtype == CSeqFeatData::eSubtype_site                               ||
-            subtype == CSeqFeatData::eSubtype_bond                               ||
-            subtype == CSeqFeatData::eSubtype_region                             ||
-            subtype == CSeqFeatData::eSubtype_comment) {
+        switch ( subtype ) {
+
+        case CSeqFeatData::eSubtype_ncRNA:
+            return "ncRNA";
+
+        case CSeqFeatData::eSubtype_tmRNA:
+            return "tmRNA";
+
+        case CSeqFeatData::eSubtype_preprotein:
+            if ( !ctx.IsRefSeq() ) {
+                return "misc_feature";
+            }
+            break;
+
+        case CSeqFeatData::eSubtype_site:
+        case CSeqFeatData::eSubtype_bond:
+        case CSeqFeatData::eSubtype_region:
+        case CSeqFeatData::eSubtype_comment:
             return "misc_feature";
+
+        default:
+            break;
         }
     }
 
@@ -1439,6 +1455,7 @@ void CFeatureItem::x_AddQualsRna(
     bool pseudo )
 //  ----------------------------------------------------------------------------
 {
+    CSeqFeatData::ESubtype subtype = m_Feat->GetData().GetSubtype();
     const CRNA_ref& rna = feat.GetData().GetRna();
     const CFlatFileConfig& cfg = ctx.Config();
     CScope& scope = ctx.GetScope();
@@ -1542,10 +1559,17 @@ void CFeatureItem::x_AddQualsRna(
         // intentional fall through
     }
     default:
-        if ( rna.CanGetExt()  &&  rna.GetExt().IsName() ) {
-            x_AddQual(eFQ_product, new CFlatStringQVal(rna.GetExt().GetName()));
+        switch ( subtype ) {
+
+        case CSeqFeatData::eSubtype_ncRNA:
+        case CSeqFeatData::eSubtype_tmRNA:
+            break;
+        default:
+            if ( rna.CanGetExt()  &&  rna.GetExt().IsName() ) {
+                x_AddQual(eFQ_product, new CFlatStringQVal(rna.GetExt().GetName()));
+            }
+            break;
         }
-        break;
     } // end of switch
 }
 
@@ -2497,6 +2521,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(map),
         DO_IMPORT(mobile_element),
         DO_IMPORT(mod_base),
+        DO_IMPORT(ncRNA_class),
         DO_IMPORT(number),
         DO_IMPORT(old_locus_tag),
         DO_IMPORT(operon),
