@@ -8511,6 +8511,31 @@ CDBAPIUnitTest::Test_Procedure(void)
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_Procedure2(void)
+{
+    try {
+        {
+            auto_ptr<ICallableStatement> auto_stmt(
+                    m_Conn->GetCallableStatement("sp_server_info")
+                    );
+
+            // Set parameter to 2 ...
+            // sp_server_info takes an INT parameter ...
+            auto_stmt->SetParam( CVariant( Int8(2) ), "@attribute_id" );
+            auto_stmt->Execute();
+
+            BOOST_CHECK_EQUAL( size_t(1), GetNumOfRecords(auto_stmt) );
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Exception_Safety(void)
@@ -13913,6 +13938,22 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         PutMsgDisabled("Test_Variant2");
         PutMsgDisabled("Test_GetTotalColumns");
     }
+
+
+    if (args.GetDriverName() != ftds_dblib_driver // 03/13/08
+        && !(args.GetDriverName() == ftds64_driver
+           && args.GetServerType() == CTestArguments::eSybase) // 03/13/08
+        && args.GetDriverName() != dblib_driver // 03/13/08
+        && args.GetDriverName() != ctlib_driver // 03/13/08
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure2,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    } else {
+        PutMsgDisabled("Test_Procedure2");
+    }
+
 
     if ( (args.GetDriverName() == ftds8_driver
           || args.GetDriverName() == ftds63_driver
