@@ -100,7 +100,6 @@ CORELIBS = \
         $(GBENCH)\bin\ncbi_image.dll            \
         $(GBENCH)\bin\ncbi_lds.dll              \
         $(GBENCH)\bin\ncbi_misc.dll             \
-        $(GBENCH)\bin\ncbi_mmdb.dll             \
         $(GBENCH)\bin\ncbi_pub.dll              \
         $(GBENCH)\bin\ncbi_seq.dll              \
         $(GBENCH)\bin\ncbi_seqext.dll           \
@@ -122,7 +121,9 @@ CORELIBS = \
         $(GBENCH)\bin\ncbi_xreader.dll          \
         $(GBENCH)\bin\ncbi_xreader_cache.dll    \
         $(GBENCH)\bin\ncbi_xreader_id1.dll      \
-        $(GBENCH)\bin\ncbi_xreader_id2.dll      \
+        $(GBENCH)\bin\ncbi_xreader_id2.dll
+        
+OPTIONAL_LIBS = \
         $(GBENCH)\bin\ncbi_xreader_pubseqos.dll
 
 #
@@ -205,6 +206,7 @@ PATTERNS = \
 #
 all : dirs \
     $(CORELIBS) \
+    $(OPTIONAL_LIBS) \
     $(THIRD_PARTY_LIBS) \
     $(PLUGINS) \
     $(INTERNAL_PLUGINS) \
@@ -236,6 +238,15 @@ dirs :
 # Target: Copy the core libraries
 #
 $(CORELIBS) : $(DLLBIN)\$(*B).dll
+    @if exist $** echo Updating $(*B).dll...
+    @if exist $(DLLBIN)\$(*B).pdb  $(COPY) $(DLLBIN)\$(*B).pdb $(GBENCH)\bin > NUL
+    @if exist $** $(COPY) $** $(GBENCH)\bin > NUL
+
+###############################################################
+#
+# Target: Copy the optional libraries
+#
+$(OPTIONAL_LIBS) :
     @if exist $** echo Updating $(*B).dll...
     @if exist $(DLLBIN)\$(*B).pdb  $(COPY) $(DLLBIN)\$(*B).pdb $(GBENCH)\bin > NUL
     @if exist $** $(COPY) $** $(GBENCH)\bin > NUL
