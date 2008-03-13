@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="9.00"
+	Name="gbench-install"
+	ProjectGUID="{6C23686B-1522-4B44-8D48-7E3176C36247}"
+	RootNamespace="gbench-install"
+	Keyword="MakeFileProj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+		<Platform
+			Name="x64"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="DebugDLL|Win32"
+			OutputDirectory="DebugDLL"
+			IntermediateDirectory="DebugDLL"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				ReBuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				CleanCommandLine="nmake -f gbench_install.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="DebugDLL|x64"
+			OutputDirectory="DebugDLL"
+			IntermediateDirectory="DebugDLL"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				ReBuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				CleanCommandLine="nmake -f gbench_install.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseDLL|Win32"
+			OutputDirectory="ReleaseDLL"
+			IntermediateDirectory="ReleaseDLL"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				ReBuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				CleanCommandLine="nmake -f gbench_install.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseDLL|x64"
+			OutputDirectory="ReleaseDLL"
+			IntermediateDirectory="ReleaseDLL"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				ReBuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				CleanCommandLine="nmake -f gbench_install.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc8\8&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath="gbench_install.mak">
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

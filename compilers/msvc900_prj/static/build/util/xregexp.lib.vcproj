@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject ProjectType="Visual C++" Version="9.00" Name="xregexp.lib" Keyword="Win32Proj" ProjectGUID="{E46C5B0B-675C-4C37-B618-02608C379C67}">
+  <Platforms>
+    <Platform Name="Win32"/>
+    <Platform Name="x64"/>
+  </Platforms>
+  <Configurations>
+    <Configuration Name="ReleaseDLL|Win32" OutputDirectory="..\..\lib\$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="4" CharacterSet="2">
+      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;" AdditionalIncludeDirectories="..\..\..\..\..\include\, ..\..\..\..\..\include\internal\, ..\..\..\..\..\include\util\regexp\" BasicRuntimeChecks="0" RuntimeLibrary="2" RuntimeTypeInfo="TRUE" ProgramDataBaseFileName="$(IntDir)\xregexp.pdb" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="2" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="3" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"/>
+      <Tool Name="VCLinkerTool" OutputFile="" AdditionalDependencies="" LargeAddressAware="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE" FixedBaseAddress=""/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)\$(ProjectName)" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"/>
+      <Tool Name="VCCustomBuildTool"/>
+      <Tool Name="VCMIDLTool"/>
+      <Tool Name="VCPostBuildEventTool"/>
+      <Tool Name="VCPreBuildEventTool" CommandLine=""/>
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="" Culture="" AdditionalIncludeDirectories="" AdditionalOptions=""/>
+      <Tool Name="VCWebServiceProxyGeneratorTool"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+    </Configuration>
+    <Configuration Name="ReleaseDLL|x64" OutputDirectory="..\..\lib\$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="4" CharacterSet="2">
+      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;" AdditionalIncludeDirectories="..\..\..\..\..\include\, ..\..\..\..\..\include\internal\, ..\..\..\..\..\include\util\regexp\" BasicRuntimeChecks="0" RuntimeLibrary="2" RuntimeTypeInfo="TRUE" ProgramDataBaseFileName="$(IntDir)\xregexp.pdb" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="2" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="3" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"/>
+      <Tool Name="VCLinkerTool" OutputFile="" AdditionalDependencies="" LargeAddressAware="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE" FixedBaseAddress=""/>
+      <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)\$(ProjectName)" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"/>
+      <Tool Name="VCCustomBuildTool"/>
+      <Tool Name="VCMIDLTool"/>
+      <Tool Name="VCPostBuildEventTool"/>
+      <Tool Name="VCPreBuildEventTool" CommandLine=""/>
+      <Tool Name="VCPreLinkEventTool"/>
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="" Culture="" AdditionalIncludeDirectories="" AdditionalOptions=""/>
+      <Tool Name="VCWebServiceProxyGeneratorTool"/>
+      <Tool Name="VCXMLDataGeneratorTool"/>
+      <Tool Name="VCManagedWrapperGeneratorTool"/>
+      <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+    </Configuration>
+  </Configurations>
+  <References></References>
+  <Files>
+    <Filter Name="Source Files" Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx">
+      <File RelativePath="..\..\..\..\..\src\util\arg_regexp.cpp">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="1" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="1" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\src\util\mask_regexp.cpp">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="2" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="2" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\src\util\regexp.cpp">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="2" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="2" PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+        </FileConfiguration>
+      </File>
+    </Filter>
+    <Filter Name="Header Files" Filter="h;hpp;hxx;hm;inc;xsd">
+      <File RelativePath="..\..\..\..\..\include\util\align_range.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\align_range_coll.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\arg_regexp.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\ascii85.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\bytesrc.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\checksum.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\ddump_viewer.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\dictionary.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\dictionary_util.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\error_codes.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\file_obsolete.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\format_guess.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\id_mux.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\itransaction.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\itree.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\lightstr.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\line_reader.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\linkedset.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\lock_vector.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\logrotate.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\mask_regexp.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\md5.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\miscmath.h"></File>
+      <File RelativePath="..\..\..\..\..\include\util\multi_writer.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\mutex_pool.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\ncbi_cache.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\ncbi_table.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\random_gen.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\range.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\range_coll.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\rangemap.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\reader_writer.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\regexp.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\request_control.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\resize_iter.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\resource_pool.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\rwstream.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\sgml_entity.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\simple_buffer.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\smalldns.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\static_map.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\static_set.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\strbuffer.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\strsearch.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\thread_nonstop.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\thread_pool.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\time_line.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\transmissionrw.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\unicode.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\utf8.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\util_exception.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\uttp.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\util\weakmap.hpp"></File>
+    </Filter>
+    <Filter Name="Inline Files" Filter="inl">
+      <File RelativePath="..\..\..\..\..\include\util\checksum.inl"></File>
+      <File RelativePath="..\..\..\..\..\include\util\itree.inl"></File>
+      <File RelativePath="..\..\..\..\..\include\util\rangemap.inl"></File>
+      <File RelativePath="..\..\..\..\..\include\util\strbuffer.inl"></File>
+      <File RelativePath="..\..\..\..\..\src\util\unicode_plans.inl"></File>
+      <File RelativePath="..\..\..\..\..\include\util\weakmap.inl"></File>
+    </Filter>
+    <Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"></Filter>
+  </Files>
+  <Globals></Globals>
+</VisualStudioProject>
