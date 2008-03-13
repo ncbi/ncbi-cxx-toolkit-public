@@ -8,11 +8,19 @@ ulimit -n 1536 > /dev/null 2>&1
 
 # driver_list="ftds64_dblib"
 driver_list="ctlib dblib ftds odbc ftds8 odbcw ftds_odbc"
-# server_list="MS_DEV2"
-server_list="MS_TEST SYB_TEST MSSQL67"
-# server_mssql="MS_DEV2"
-server_mssql="MS_TEST"
+
+if echo $FEATURES | grep "connext" > /dev/null ; then
+	# server_list="MS_DEV2"
+	server_list="MS_TEST SYB_TEST MSSQL67"
+	# server_mssql="MS_DEV2"
+	server_mssql="MS_TEST"
+else
+	server_list="MSDEV1 SCHUMANN MSSQL67"
+	server_mssql="MSDEV1"
+fi
+
 server_mssql2005="MSSQL67"
+
 
 res_file="/tmp/test_lang_query.sh.$$"
 trap 'rm -f $res_file' 1 2 15
