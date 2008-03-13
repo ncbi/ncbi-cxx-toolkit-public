@@ -753,6 +753,18 @@ CDataSource::x_GetRecords(const CSeq_id_Handle& idh,
 }
 
 
+static inline void sx_AddAnnotMatch(CDataSource::TTSE_LockMatchSet& ret,
+                                    const CTSE_Lock& tse_lock,
+                                    const CSeq_id_Handle& id)
+{
+    if ( ret.empty() ||
+         ret.back().second != id ||
+         ret.back().first != tse_lock ) {
+        ret.push_back(pair<CTSE_Lock, CSeq_id_Handle>(tse_lock, id));
+    }
+}
+
+
 void CDataSource::x_AddTSEAnnots(TTSE_LockMatchSet& ret,
                                  const CSeq_id_Handle& id,
                                  const CTSE_Lock& tse_lock)
@@ -765,13 +777,13 @@ void CDataSource::x_AddTSEAnnots(TTSE_LockMatchSet& ret,
         id.GetReverseMatchingHandles(ids);
         ITERATE ( CSeq_id_Handle::TMatches, id_it2, ids ) {
             if ( tse.x_HasIdObjects(*id_it2) ) {
-                ret.push_back(pair<TTSE_Lock, CSeq_id_Handle>(tse_lock, *id_it2));
+                sx_AddAnnotMatch(ret, tse_lock, *id_it2);
             }
         }
     }
     else if ( id.IsGi() || !tse.OnlyGiAnnotIds()  ) {
         if ( tse.x_HasIdObjects(id) ) {
-            ret.push_back(pair<TTSE_Lock, CSeq_id_Handle>(tse_lock, id));
+            sx_AddAnnotMatch(ret, tse_lock, id);
         }
     }
 }
@@ -844,6 +856,8 @@ void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
             x_AddTSEOrphanAnnots(ret, ids, tse_it->second);
         }
     }
+    sort(ret.begin(), ret.end());
+    ret.erase(unique(ret.begin(), ret.end()), ret.end());
 }
 
 
@@ -904,12 +918,16 @@ void CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
                         if ( *tse_it == tse ) {
                             continue;
                         }
-                        ret.push_back(pair<TTSE_Lock, CSeq_id_Handle>(m_StaticBlobs.FindLock(*tse_it), *id_it));
+                        sx_AddAnnotMatch(ret,
+                                         m_StaticBlobs.FindLock(*tse_it),
+                                         *id_it);
                     }
                 }
             }
         }
     }
+    sort(ret.begin(), ret.end());
+    ret.erase(unique(ret.begin(), ret.end()), ret.end());
 }
 
 
