@@ -60,7 +60,7 @@ PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
 [Compiler.800.release]
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
 [Compiler.900.release]
-Optimization=0
+Optimization=2
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
 
 
