@@ -1,5 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2005
+# Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-CONFIGURE-", "UtilityProjects\_CONFIGURE_.vcproj", "{467825A4-1505-460A-A977-31211AF70A34}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
