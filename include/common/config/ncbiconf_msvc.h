@@ -55,7 +55,9 @@
 #define HAVE_SYS_STAT_H  1
 #define HAVE_SYS_TYPES_H 1
 #define HAVE_VSNPRINTF   1
-#define vsnprintf        _vsnprintf
+#if _MSC_VER < 1500
+#  define vsnprintf        _vsnprintf
+#endif
 #define HAVE_WINDOWS_H   1
 #define HAVE_WSTRING     1
 #define HAVE_SIGNAL_H    1
