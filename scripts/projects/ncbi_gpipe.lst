@@ -10,12 +10,14 @@ hello
 html
 internal/align_model$
 internal/align_model/loader
+internal/algo/align/prosplign
 internal/algo/align/splign
 internal/algo/align/prosplign
 internal/algo/align/pipeline-tools
 internal/algo/align/gpipe-wnodes
 internal/gnomon
 internal/gpipe
+internal/gnomon
 internal/ID/utils$
 misc
 objects
