@@ -9873,8 +9873,8 @@ static
 IDBServiceMapper*
 MakeCDBUDPriorityMapper01(const IRegistry* registry)
 {
-    TSvrRef server01(new CDBServer("MS_DEV1"));
-    TSvrRef server02(new CDBServer("MS_DEV2"));
+    TSvrRef server01(new CDBServer("MSDEV1"));
+    TSvrRef server02(new CDBServer("MSDEV2"));
     const string service_name("TEST_SERVICE_01");
 
     auto_ptr<CDBUDPriorityMapper> mapper(new CDBUDPriorityMapper(registry));
@@ -9898,7 +9898,7 @@ void
 CDBAPIUnitTest::Check_Validator(TDBConnectionFactoryFactory factory,
                                 IConnValidator& validator)
 {
-    TSvrRef server01(new CDBServer("MS_DEV1"));
+    TSvrRef server01(new CDBServer("MSDEV1"));
     const string service_name("TEST_SERVICE_01");
     auto_ptr<IConnection> conn;
 
@@ -14155,7 +14155,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 
     // Describe the expected command-line arguments
 #if defined(NCBI_OS_MSWIN)
-#define DEF_SERVER    "MS_DEV1"
+#define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    ftds_driver
 #define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, ftds63_driver, msdblib_driver, odbc_driver, \
                       ftds_dblib_driver, ftds_odbc_driver, odbcw_driver, ftds8_driver
@@ -14166,7 +14166,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, ftds63_driver, ftds_dblib_driver, \
                       ftds_odbc_driver, ftds8_driver
 #else
-#define DEF_SERVER    "MS_DEV1"
+#define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    ftds_driver
 #define ALL_DRIVERS   ftds64_driver, ftds63_driver, ftds_dblib_driver, ftds_odbc_driver, \
                       ftds8_driver
@@ -14271,6 +14271,7 @@ CTestArguments::GetServerType(void) const
         return eMsSql2005;
     } else if (NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
+                || NStr::CompareNocase(GetServerName(), 0, 5, "MSDEV") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 7, "OAMSDEV") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0
                 || NStr::CompareNocase(GetServerName(), "MS_TEST") == 0

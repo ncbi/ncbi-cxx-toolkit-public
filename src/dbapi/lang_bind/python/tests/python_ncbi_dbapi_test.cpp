@@ -759,7 +759,7 @@ CPythonDBAPITest::TestScenario_2(void)
 
             ExecuteStr("def TestScenario_2(): \n"
                         "        global conn \n"
-                        "        conn = dbapi.connect('ftds', 'MSSQL', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed', True) \n"
+                        "        conn = dbapi.connect('ftds', 'MSSQL', 'MSDEV1', 'DBAPI_Sample', 'anyone', 'allowed', True) \n"
                         "        CreateSchema() \n"
                         "        CreateCustomers() \n"
                         "        GetCustomers() \n"
@@ -906,7 +906,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 
     // Describe the expected command-line arguments
 #if defined(NCBI_OS_MSWIN)
-#define DEF_SERVER    "MS_DEV1"
+#define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
                       "odbcw", "gateway", "ftds8", "ftds_odbc"
@@ -969,6 +969,7 @@ CTestArguments::GetServerType(void) const
         return eSybase;
     } else if ( NStr::StartsWith(GetServerName(), "MS_DEV")
                 || NStr::StartsWith(GetServerName(), "MSSQL")
+                || NStr::StartsWith(GetServerName(), "MSDEV")
                 || NStr::StartsWith(GetServerName(), "OAMSDEV")
                 || NStr::StartsWith(GetServerName(), "QMSSQL")
 		|| NStr::CompareNocase(GetServerName(), "MS_TEST") == 0

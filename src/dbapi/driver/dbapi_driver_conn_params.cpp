@@ -167,6 +167,7 @@ CDBConnParamsBase::GetServerType(void) const
         // Artificial intelligence ...
         if (   NStr::CompareNocase(server_name, 0, 3, "MS_") == 0
                 || NStr::CompareNocase(server_name, 0, 5, "MSSQL") == 0
+                || NStr::CompareNocase(server_name, 0, 5, "MSDEV") == 0
                 || NStr::CompareNocase(server_name, 0, 7, "OAMSDEV") == 0
                 || NStr::CompareNocase(server_name, 0, 6, "QMSSQL") == 0
                 || NStr::CompareNocase(server_name, 0, 6, "BLASTQ") == 0
