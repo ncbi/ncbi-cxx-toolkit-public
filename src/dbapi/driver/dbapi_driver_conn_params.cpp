@@ -64,7 +64,14 @@ string CDBConnParamsBase::GetDriverName(void) const
 #ifdef HAVE_LIBSYBASE
                 return "ctlib";
 #else
-                return "ftds8";
+                // the "ftds8" driver cannot coexist with the current
+                // "ftds_dblib" driver, as they merely take care to avoid
+                // colliding with the Sybase "dblib" driver rather than also with each other.
+                //
+                // Aaron Ucko (c)
+                
+                // return "ftds8";
+                return "ftds";
 #endif
             case eMSSqlServer:
                 return "ftds";
