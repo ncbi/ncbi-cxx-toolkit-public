@@ -183,6 +183,7 @@ public:
     enum EMsvcVersion {
         eMsvc710 = 0,
         eMsvc800,
+        eMsvc900,
         eMsvcNone
     };
     enum EMsvcPlatform {

@@ -439,7 +439,11 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
 //-----------------------------------------------------------------------------
 #if NCBI_COMPILER_MSVC
 
-#if _MSC_VER >= 1400
+#if _MSC_VER >= 1500
+CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
+    CMsvc7RegSettings::eMsvc900;
+string CMsvc7RegSettings::sm_MsvcVersionName = "900";
+#elif _MSC_VER >= 1400
 CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
     CMsvc7RegSettings::eMsvc800;
 string CMsvc7RegSettings::sm_MsvcVersionName = "800";
@@ -495,6 +499,8 @@ string CMsvc7RegSettings::GetProjectFileFormatVersion(void) const
         return "7.10";
     } else if (GetMsvcVersion() == eMsvc800) {
         return "8.00";
+    } else if (GetMsvcVersion() == eMsvc900) {
+        return "9.00";
     }
     return "";
 }
@@ -504,6 +510,8 @@ string CMsvc7RegSettings::GetSolutionFileFormatVersion(void) const
         return "8.00";
     } else if (GetMsvcVersion() == eMsvc800) {
         return "9.00";
+    } else if (GetMsvcVersion() == eMsvc900) {
+        return "10.00";
     }
     return "";
 }
@@ -626,7 +634,7 @@ void CSrcToFilterInserterWithPch::InsertFile(CRef<CFilter>&  filter,
         } else if (pch_usage.first == eUse) {
             compilerl_tool->SetAttlist().SetPreprocessorDefinitions
                                 (GetApp().GetMetaMakefile().GetPchUsageDefine());
-            if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc800) {
+            if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc800) {
                 compilerl_tool->SetAttlist().SetUsePrecompiledHeader("2");
             } else {
                 compilerl_tool->SetAttlist().SetUsePrecompiledHeader("3");

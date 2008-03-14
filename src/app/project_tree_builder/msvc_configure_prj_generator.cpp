@@ -157,6 +157,9 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                 "\" /t:\"project_tree_builder_exe:Rebuild\"";
             m_CustomBuildCommand +=
                 " /p:Configuration=ReleaseDLL;Platform=$(PlatformName)";
+            if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc900) {
+                m_CustomBuildCommand += " /maxcpucount";
+            }
         }
         m_CustomBuildCommand += ") else (echo USING PREBUILT PTB at %PTB_EXE%)\n";
         m_CustomBuildCommand += "if errorlevel 1 exit 1\n";

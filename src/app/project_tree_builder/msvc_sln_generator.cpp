@@ -184,12 +184,10 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     ofs << "Global" << endl;
 	
     // Write all configurations
-    if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc800) {
-        ofs << '\t' << "GlobalSection(SolutionConfigurationPlatforms) = preSolution" << endl;
-    } else if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710) {
+    if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710) {
         ofs << '\t' << "GlobalSection(SolutionConfiguration) = preSolution" << endl;
     } else {
-        NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported MSVC version");
+        ofs << '\t' << "GlobalSection(SolutionConfigurationPlatforms) = preSolution" << endl;
     }
     ITERATE(list<SConfigInfo>, p, m_Configs) {
         string config = (*p).GetConfigFullName();

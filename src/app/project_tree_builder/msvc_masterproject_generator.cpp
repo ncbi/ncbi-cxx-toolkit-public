@@ -63,10 +63,11 @@ CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
                                 "/build $(ConfigurationName) "\
                                 "/project $(InputName) "\
                                 "\"$(SolutionPath)\"\n";
-    } else if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc800) {
-        m_CustomBuildCommand += "msbuild \"$(SolutionPath)\" /t:\"$(InputName)\" /p:Configuration=$(ConfigurationName)";
     } else {
-        NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported MSVC version");
+        m_CustomBuildCommand += "msbuild \"$(SolutionPath)\" /t:\"$(InputName)\" /p:Configuration=$(ConfigurationName)";
+        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc900) {
+            m_CustomBuildCommand += " /maxcpucount";
+        }
     }
     CreateUtilityProject(m_Name, m_Configs, &m_Xmlprj);
 }
