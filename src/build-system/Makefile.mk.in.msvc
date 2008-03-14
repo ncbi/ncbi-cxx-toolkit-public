@@ -1,5 +1,5 @@
 [Common]
-#Version=7.10 8.00
+#Version=7.10 8.00 9.00
 
 
 
@@ -54,8 +54,13 @@ EnableFunctionLevelLinking=TRUE
 
 [Compiler.800]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
+[Compiler.900]
+PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
 
 [Compiler.800.release]
+PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
+[Compiler.900.release]
+Optimization=0
 PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
 
 
