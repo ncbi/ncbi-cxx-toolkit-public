@@ -6,7 +6,7 @@ HOSTED_LIBS    = gui_view_graphic
 
 DEPENDENCIES   = ncbi_core ncbi_seq ncbi_seqext \
                  gui_objects gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq \
-                 gui_config
+                 gui_widgets_snp gui_config
 
 
 
