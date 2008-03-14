@@ -32,21 +32,21 @@ error()
 
 generate_msvc8_error_check_file() {
   cat <<-EOF >$1
-        /.*--* (Reb|B)uild( All | )started: Project:/ {
-          expendable = ""
-        }
+	/.*--* (Reb|B)uild( All | )started: Project:/ {
+	  expendable = ""
+	}
 
-        /^EXPENDABLE project/ {
-          expendable = \$0
-        }
+	/^EXPENDABLE project/ {
+	  expendable = \$0
+	}
 
-        /(^| : |^The source )([fatal error]* [CDULNKPRJVT]*[0-9]*: |The .* are both configured to produce |Error executing )/ {
-        if (!expendable) {
-          print \$0
-          exit
-          }
-        }
-        EOF
+	/(^| : |^The source )([fatal error]* [CDULNKPRJVT]*[0-9]*: |The .* are both configured to produce |Error executing )/ {
+	if (!expendable) {
+	  print \$0
+	  exit
+	  }
+	}
+	EOF
 }
 
 
