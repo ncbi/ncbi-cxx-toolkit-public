@@ -248,8 +248,8 @@ $(CORELIBS) : $(DLLBIN)\$(*B).dll
 #
 $(OPTIONAL_LIBS) :
     @if exist $(DLLBIN)\$(*B).dll echo Updating $(*B).dll...
-    @if exist $(DLLBIN)\$(*B).pdb  $(COPY) $(DLLBIN)\$(*B).pdb $(GBENCH)\bin > NUL
-    @if exist $(DLLBIN)\$(*B).dll $(COPY) $** $(GBENCH)\bin > NUL
+    @if exist $(DLLBIN)\$(*B).pdb $(COPY) $(DLLBIN)\$(*B).pdb $(GBENCH)\bin > NUL
+    @if exist $(DLLBIN)\$(*B).dll $(COPY) $(DLLBIN)\$(*B).dll $(GBENCH)\bin > NUL
 
 ###############################################################
 #
