@@ -844,10 +844,6 @@ static const char kFIREWALL  [] = "FIREWALL";
 static const char kDNS       [] = "DNS";
 
 
-/* Note: be aware of the "prefixness" of tag constants and the order of
- * their appearances in the table below, as comparison is done via
- * "strncasecmp", which can result 'true' on a smaller fit fragment.
- */
 static const SSERV_Attr s_SERV_Attr[] = {
     { fSERV_Ncbid,
       kNCBID,      sizeof(kNCBID) - 1,
@@ -903,7 +899,7 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
         size_t i;
         for (i = 0;  i < sizeof(s_SERV_Attr)/sizeof(s_SERV_Attr[0]);  i++) {
             size_t len = s_SERV_Attr[i].tag_len;
-            if (strncasecmp(s_SERV_Attr[i].tag, tag, len) == 0
+            if (strncasecmp(tag, s_SERV_Attr[i].tag, len) == 0
                 &&  (!tag[len]  ||  isspace((unsigned char) tag[len])))
                 return &s_SERV_Attr[i];
         }

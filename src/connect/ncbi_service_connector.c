@@ -126,7 +126,8 @@ static int/*bool*/ s_ParseHeader(const char* header,
                                  void*       data,
                                  int/*bool*/ server_error)
 {
-    static const char kStateless[] = "TRY_STATELESS";
+    static const char   kStateless[] = "TRY_STATELESS";
+    static const size_t klen = sizeof(kStateless) - 1;
     SServiceConnector* uuu = (SServiceConnector*) data;
 
     SERV_Update(uuu->iter, header, server_error);
@@ -145,7 +146,8 @@ static int/*bool*/ s_ParseHeader(const char* header,
             header += sizeof(HTTP_CONNECTION_INFO) - 1;
             while (*header  &&  isspace((unsigned char)(*header)))
                 header++;
-            if (strncasecmp(header, kStateless, sizeof(kStateless) - 1) == 0) {
+            if (strncasecmp(header, kStateless, klen) == 0  &&
+                (!header[klen]  ||  isspace((unsigned char) header[klen]))) {
                 /* Special keyword for switching into stateless mode */
                 uuu->host = (unsigned int)(-1);
 #if defined(_DEBUG) && !defined(NDEBUG)
@@ -155,8 +157,10 @@ static int/*bool*/ s_ParseHeader(const char* header,
                 }
 #endif
             } else {
-                if (sscanf(header, "%u.%u.%u.%u %hu %x",
-                           &i1, &i2, &i3, &i4, &uuu->port, &ticket) < 6) {
+                int n;
+                if (sscanf(header, "%u.%u.%u.%u %hu %x%n",
+                           &i1, &i2, &i3, &i4, &uuu->port, &ticket, &n) < 6  ||
+                    (header[n]  &&  !isspace((unsigned char) header[n]))) {
                     break/*failed - unreadable connection info*/;
                 }
                 o1 = i1; o2 = i2; o3 = i3; o4 = i4;

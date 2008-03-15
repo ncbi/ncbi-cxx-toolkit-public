@@ -117,6 +117,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     SConnNetInfo* info = (SConnNetInfo*) malloc(sizeof(*info) +
                                                 (service  &&  *service
                                                  ? strlen(service) + 1 : 0));
+    size_t len;
     /* aux. storage for the string-to-int conversions, etc. */
     char   str[1024];
     int    val;
@@ -159,7 +160,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* connection timeout */
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
-    if (strlen(str) > 2  &&  strncasecmp(str, "infinite", strlen(str)) == 0) {
+    len = strlen(str);
+    if (len > 2  &&  len < 9  &&  strncasecmp(str, "infinite", len) == 0) {
         info->timeout = 0;
     } else {
         info->timeout = &info->tmo;
@@ -646,7 +648,7 @@ extern void ConnNetInfo_DeleteArg(SConnNetInfo* info,
         if (*a == '&')
             a++;
         arglen = strcspn(a, "&");
-        if (arglen < argnamelen || strncasecmp(a, arg, argnamelen) != 0 ||
+        if (arglen < argnamelen  ||  strncasecmp(a, arg, argnamelen) != 0  ||
             (a[argnamelen] && a[argnamelen] != '=' && a[argnamelen] != '&'))
             continue;
         if (a[arglen]) {

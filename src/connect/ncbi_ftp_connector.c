@@ -421,15 +421,15 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
             s[size] = '\0';
         if (!(c = strchr(s, ' ')))
             c = s + strlen(s);
-        if (!(size = (size_t)(c - s))) {
+        if (!(size = (size_t)(c - s))  ||  size < 3  ||  size > 4) {
             status = eIO_Unknown;
-        } else if (strncasecmp(s, "CWD",  size) == 0) {
+        } else if (size == 3  &&  strncasecmp(s, "CWD",  3) == 0) {
             status = s_FTPChdir(xxx, s);
-        } else if (strncasecmp(s, "LIST", size) == 0  ||
-                   strncasecmp(s, "NLST", size) == 0  ||
-                   strncasecmp(s, "RETR", size) == 0) {
+        } else if (size == 4  && (strncasecmp(s, "LIST", 4) == 0  ||
+                                  strncasecmp(s, "NLST", 4) == 0  ||
+                                  strncasecmp(s, "RETR", 4) == 0)) {
             status = s_FTPRetrieve(xxx, s);
-        } else if (strncasecmp(s, "REST", size) == 0) {
+        } else if (size == 4  &&  strncasecmp(s, "REST", 4) == 0) {
             status = s_FTPCommand(xxx, s, 0);
             if (status == eIO_Success) {
                 int code;

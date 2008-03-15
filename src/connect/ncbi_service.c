@@ -545,8 +545,8 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
             p = t;
             if (iter->op->Update  &&  (*iter->op->Update)(iter, p, code))
                 retval = 1/*updated*/;
-            if (strncasecmp(p, used_server_info,
-                            sizeof(used_server_info) - 1) == 0) {
+            if (!strncasecmp(p, used_server_info, sizeof(used_server_info) - 1)
+                &&  isdigit((unsigned char) p[sizeof(used_server_info) - 1])) {
                 p += sizeof(used_server_info) - 1;
                 if (sscanf(p, "%u: %n", &d1, &d2) >= 1  &&
                     (info = SERV_ReadInfoEx(p + d2, "")) != 0) {
@@ -647,7 +647,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
                 if (!namelen || buflen + 1 + namelen + 2 >= sizeof(buffer))
                     break;
                 buffer[buflen++] = ' ';
-                strcpy(&buffer[buflen], name);
+                memcpy(buffer + buflen, name, namelen);
                 buflen += namelen;
             }
         }

@@ -197,7 +197,8 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
 
     if (code == 400)
         data->disp_fail = 1;
-    if (strncasecmp(text, server_info, sizeof(server_info) - 1) == 0) {
+    if (strncasecmp(text, server_info, sizeof(server_info) - 1) == 0
+        &&  isdigit((unsigned char) text[sizeof(server_info) - 1])) {
         const char* name;
         SSERV_Info* info;
         unsigned int d1;
@@ -241,7 +242,8 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
     } else if (((failure = strncasecmp(text, HTTP_DISP_FAILURES,
                                        sizeof(HTTP_DISP_FAILURES) - 1) == 0)
                 ||  strncasecmp(text, HTTP_DISP_MESSAGES,
-                                sizeof(HTTP_DISP_MESSAGES) - 1) == 0)) {
+                                sizeof(HTTP_DISP_MESSAGES) - 1) == 0)  &&
+               isspace((unsigned char) text[sizeof(HTTP_DISP_FAILURES) - 1])) {
         assert(sizeof(HTTP_DISP_FAILURES) == sizeof(HTTP_DISP_MESSAGES));
 #if defined(_DEBUG) && !defined(NDEBUG)
         if (data->net_info->debug_printout) {
