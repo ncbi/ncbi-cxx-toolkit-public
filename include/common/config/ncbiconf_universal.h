@@ -49,7 +49,6 @@
 #  define SIZEOF_DOUBLE        8
 #  define SIZEOF_FLOAT         4
 #  define SIZEOF_INT           4
-#  define SIZEOF_LONG          (LONG_BIT / CHAR_BIT)
 #  if __DARWIN_LONG_DOUBLE_IS_DOUBLE
 #    define SIZEOF_LONG_DOUBLE 8
 #  elif defined(__i386__) || defined(__x86_64__)
@@ -59,9 +58,19 @@
 #  endif
 #  define SIZEOF_LONG_LONG     8
 #  define SIZEOF_SHORT         2
-#  define SIZEOF_SIZE_T        (LONG_BIT / CHAR_BIT)
-#  define SIZEOF_VOIDP         (LONG_BIT / CHAR_BIT)
-#  define SIZEOF___INT64       0 /* no such type */
+/* Define these macros to literal constants rather than calculating them,
+ * to avoid redefinition warnings when using some third-party libraries. */
+#  if LONG_BIT == 64
+#    define SIZEOF_LONG   8
+#    define SIZEOF_SIZE_T 8
+#    define SIZEOF_VOIDP  8
+#  else
+#    define SIZEOF_LONG   4
+#    define SIZEOF_SIZE_T 4
+#    define SIZEOF_VOIDP  4
+#  else
+#  endif
+#  define SIZEOF___INT64    0 /* no such type */
 #  ifdef __BIG_ENDIAN__
 #    define WORDS_BIGENDIAN 1
 #  endif
