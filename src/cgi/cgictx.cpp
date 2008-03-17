@@ -298,7 +298,7 @@ const string& CCgiContext::GetSelfURL(ESelfUrlPort use_port)
         have_script_uri = !script_uri.empty();
         size_t arg_pos = script_uri.find('?');
         if (arg_pos != NPOS) {
-            script_uri = script_uri.substr(0, arg_pos - 1);
+            script_uri = script_uri.substr(0, arg_pos);
         }
     }
     if ( !have_script_uri ) {
