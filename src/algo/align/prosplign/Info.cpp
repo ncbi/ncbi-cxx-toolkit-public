@@ -54,6 +54,7 @@ USING_SCOPE(ncbi::objects);
 const char GAP_CHAR='-'; // used in dna and protein text
 const char SPACE_CHAR=' '; // translation and protein
 const char INTRON_CHAR='.'; // protein
+const char INTRON_OR_GAP[] = {INTRON_CHAR,GAP_CHAR,0};
 
 // used in match text
 const char BAD_PIECE_CHAR='X';
@@ -336,8 +337,9 @@ void CProSplignText::AddProtText(CSeqVector_CI& protein_ci, int& prot_prev, size
     size_t phase = (prot_prev+1)%3;
 
     if (phase!=0) {
-        size_t prev_not_intron_pos = m_protein.find_last_not_of(INTRON_CHAR,m_protein.size()-1);
+        size_t prev_not_intron_pos = m_protein.find_last_not_of(INTRON_OR_GAP,m_protein.size()-1);
         char aa = m_protein[prev_not_intron_pos];
+        _ASSERT( aa != SPACE_CHAR );
         SIZE_TYPE added_len = min(3-phase,len);
         if (prev_not_intron_pos == m_protein.size()-1 && phase+added_len==3) {
             m_protein.append(added_len,SPACE_CHAR);
