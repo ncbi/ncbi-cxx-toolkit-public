@@ -103,6 +103,7 @@ CORELIBS = \
         $(GBENCH)\bin\ncbi_pub.dll              \
         $(GBENCH)\bin\ncbi_seq.dll              \
         $(GBENCH)\bin\ncbi_seqext.dll           \
+        $(GBENCH)\bin\ncbi_mmdb.dll             \
         $(GBENCH)\bin\ncbi_validator.dll        \
         $(GBENCH)\bin\ncbi_web.dll              \
         $(GBENCH)\bin\ncbi_xcache_bdb.dll       \
