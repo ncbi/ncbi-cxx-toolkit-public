@@ -200,7 +200,6 @@ util/format_guess.hpp
 // #include's some stuff in util/bitset that leads to problems
 //util/id_mux.hpp
 util/itree.hpp
-util/lightstr.hpp
 util/line_reader.hpp
 util/linkedset.hpp
 util/logrotate.hpp

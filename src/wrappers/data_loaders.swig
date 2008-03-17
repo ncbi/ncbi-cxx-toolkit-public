@@ -62,24 +62,24 @@ objtools/data_loaders/genbank/statistics.hpp
 objtools/data_loaders/genbank/writer.hpp
 objtools/data_loaders/genbank/writer_interface.hpp
 
-objtools/data_loaders/genbank/readers/readers.hpp
+objtools/data_loaders/genbank/readers.hpp
 
-objtools/data_loaders/genbank/readers/cache/reader_cache.hpp
-objtools/data_loaders/genbank/readers/cache/reader_cache_entry.hpp
-objtools/data_loaders/genbank/readers/cache/writer_cache.hpp
-objtools/data_loaders/genbank/readers/cache/writer_cache_entry.hpp
+objtools/data_loaders/genbank/cache/reader_cache.hpp
+objtools/data_loaders/genbank/cache/reader_cache_entry.hpp
+objtools/data_loaders/genbank/cache/writer_cache.hpp
+objtools/data_loaders/genbank/cache/writer_cache_entry.hpp
 
-objtools/data_loaders/genbank/readers/id1/reader_id1.hpp
-objtools/data_loaders/genbank/readers/id1/reader_id1_entry.hpp
+objtools/data_loaders/genbank/id1/reader_id1.hpp
+objtools/data_loaders/genbank/id1/reader_id1_entry.hpp
 
-objtools/data_loaders/genbank/readers/id2/reader_id2.hpp
-objtools/data_loaders/genbank/readers/id2/reader_id2_entry.hpp
+objtools/data_loaders/genbank/id2/reader_id2.hpp
+objtools/data_loaders/genbank/id2/reader_id2_entry.hpp
 
-objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp
-objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq_entry.hpp
+objtools/data_loaders/genbank/pubseq/reader_pubseq.hpp
+objtools/data_loaders/genbank/pubseq/reader_pubseq_entry.hpp
 
-objtools/data_loaders/genbank/readers/pubseqos2/reader_pubseq2.hpp
-objtools/data_loaders/genbank/readers/pubseqos2/reader_pubseq2_entry.hpp
+objtools/data_loaders/genbank/pubseq2/reader_pubseq2.hpp
+objtools/data_loaders/genbank/pubseq2/reader_pubseq2_entry.hpp
 
 %%
 

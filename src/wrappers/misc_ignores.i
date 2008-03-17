@@ -30,6 +30,9 @@
  */
 
 
+// Declared as friend in CThread, but has static linkage
+%ignore ThreadWrapperCaller;
+
 // These use a typedef inherited from std::map, which is not
 // working with SWIG
 %ignore ncbi::CAccPatternCounter::GetExpandedPattern;

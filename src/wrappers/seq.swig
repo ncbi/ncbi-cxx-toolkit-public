@@ -118,6 +118,8 @@ objects/seq/Seq_literal.hpp
 objects/seq/Seq_literal_.hpp
 objects/seq/Seqdesc.hpp
 objects/seq/Seqdesc_.hpp
+objects/seq/Textannot_id.hpp
+objects/seq/Textannot_id_.hpp
 objects/seq/annot_mapper_exception.hpp
 objects/seq/seq_align_mapper_base.hpp
 objects/seq/seqport_util.hpp

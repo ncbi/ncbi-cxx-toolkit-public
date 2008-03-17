@@ -125,11 +125,13 @@ algo/blast/api/blast_exception.hpp
 algo/blast/api/blast_mtlock.hpp
 algo/blast/api/blast_nucl_options.hpp
 algo/blast/api/blast_options.hpp
+algo/blast/api/blast_options_builder.hpp
 algo/blast/api/blast_options_handle.hpp
 algo/blast/api/blast_prot_options.hpp
 algo/blast/api/blast_results.hpp
 algo/blast/api/blast_rps_options.hpp
 algo/blast/api/blast_seqinfosrc.hpp
+algo/blast/api/blast_seqinfosrc_aux.hpp
 algo/blast/api/blast_types.hpp
 algo/blast/api/blastx_options.hpp
 algo/blast/api/disc_nucl_options.hpp
@@ -182,6 +184,24 @@ algo/dustmask/symdust.hpp
 algo/gnomon/gnomon.hpp
 algo/gnomon/gnomon_exception.hpp
 algo/gnomon/gnomon_model.hpp
+algo/gnomon/Exon_params.hpp
+algo/gnomon/Exon_params_.hpp
+algo/gnomon/Gnomon_param.hpp
+algo/gnomon/Gnomon_param_.hpp
+algo/gnomon/Gnomon_params.hpp
+algo/gnomon/Gnomon_params_.hpp
+algo/gnomon/Intergenic_params.hpp
+algo/gnomon/Intergenic_params_.hpp
+algo/gnomon/Intron_params.hpp
+algo/gnomon/Intron_params_.hpp
+algo/gnomon/Length_distribution_params.hpp
+algo/gnomon/Length_distribution_params_.hpp
+algo/gnomon/Markov_chain_array.hpp
+algo/gnomon/Markov_chain_array_.hpp
+algo/gnomon/Markov_chain_params.hpp
+algo/gnomon/Markov_chain_params_.hpp
+algo/gnomon/NCBI_GNOMON_module.hpp
+algo/gnomon/asn1.hpp
 
 // next two trouble for Perl?
 //algo/phy_tree/bio_tree.hpp
