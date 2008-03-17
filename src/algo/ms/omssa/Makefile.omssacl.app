@@ -13,8 +13,7 @@ APP = omssacl
 SRC = omssacl
 
 LIB = xomssa omssa pepXML blast composition_adjustment tables seqdb blastdb \
-      seqset $(SEQ_LIBS) pub medline biblio general xser xregexp \
-      $(PCRE_LIB) xconnect xutil xncbi
+      xregexp $(PCRE_LIB) xconnect $(SOBJMGR_LIBS)
 
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
