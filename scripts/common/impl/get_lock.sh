@@ -3,7 +3,7 @@ file=$1.lock
 
 user=$REMOTE_USER
 [ -z "$user" ] && user=$USER
-[ -z "$user" ] && user=`id`
+[ -z "$user" ] && user=`id -un`
 
 fmt -74 > "$file.$$" <<EOF
 $user appears to be running $1 in `pwd` as process $2 on `hostname`.  If
