@@ -417,21 +417,6 @@
 /* Define to 1 if prototypes can use exception specifications. */
 #define NCBI_USE_THROW_SPEC 1
 
-/* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "cpp-core@ncbi.nlm.nih.gov"
-
-/* Define to the full name of this package. */
-#define PACKAGE_NAME "ncbi-tools++"
-
-/* Define to the full name and version of this package. */
-#define PACKAGE_STRING "ncbi-tools++ 0.0"
-
-/* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "ncbi-tools--"
-
-/* Define to the version of this package. */
-#define PACKAGE_VERSION "0.0"
-
 
 /* Define to 1 if the stack grows down. */
 #define STACK_GROWS_DOWN 1

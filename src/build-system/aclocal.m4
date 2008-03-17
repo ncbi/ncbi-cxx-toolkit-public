@@ -111,6 +111,15 @@ m4_define([_AS_LINENO_PREPARE],
 ])# _AS_LINENO_PREPARE
 
 
+# One more hack: suppress PACKAGE_*, as we don't use them and some
+# third-party libraries expose their corresponding settings, leading
+# to preprocessor warnings.
+m4_define([NCBI_ORIG_ACDU], m4_defn([AC_DEFINE_UNQUOTED]))
+m4_define([AC_DEFINE_UNQUOTED],
+   [ifelse(m4_substr([$1], 0, 8), [PACKAGE_], [],
+       [NCBI_ORIG_ACDU($@)])])
+
+
 AC_DEFUN(NCBI_FIX_DIR,
 [ncbi_fix_dir_tmp=`if cd $[$1]; then AS_UNSET(PWD); /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
