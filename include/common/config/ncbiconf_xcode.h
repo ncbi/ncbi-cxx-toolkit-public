@@ -587,7 +587,7 @@
 #define HOST_VENDOR "apple"
 
 /* Define as const if the declaration of iconv() needs const. */
-#define ICONV_CONST 
+#define ICONV_CONST const
 
 /* Define to 0xffffffff if your operating system doesn't. */
 /* #undef INADDR_NONE */
