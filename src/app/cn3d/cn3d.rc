@@ -31,5 +31,5 @@
 
 cn3d ICON "cn3d.ico"
 
-#include <wx/msw/wx.rc>
+//#include <wx/msw/wx.rc>
 //#include <wx/html/msw/wxhtml.rc>
