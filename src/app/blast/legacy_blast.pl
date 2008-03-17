@@ -565,6 +565,9 @@ sub handle_blastpgp($)
     $retval .= "-comp_based_stats $opt_t "  if (defined $opt_t);
     $retval .= "-phi_pattern $opt_k "       if (defined $opt_k);
     $retval .= "-out $opt_o "               if (defined $opt_o);
+    $retval .= "-out_ascii_pssm $opt_Q "    if (defined $opt_Q);
+    $retval .= "-in_msa $opt_B "            if (defined $opt_B);
+
     if (defined $opt_m) {
         if ($opt_m == 5 or $opt_m == 6) {
             print STDERR "Warning: -m5 or -m6 formatting options ";
@@ -636,13 +639,6 @@ sub handle_blastpgp($)
             die "ERROR: saving PSSM to C toolkit checkpoint " .
                 "file format not supported\n";
         }
-    }
-
-    if (defined $opt_Q) {
-        print STDERR "Warning: -Q is being ignored\n";
-    }
-    if (defined $opt_B) {
-        print STDERR "Warning: -B is being ignored\n";
     }
 
     return $retval;

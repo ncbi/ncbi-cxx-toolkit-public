@@ -65,14 +65,19 @@
 
 #include <objtools/blast_format/blastfmtutil.hpp>
 
-#include <algo/blast/api/version.hpp>
+#include <algo/blast/api/pssm_engine.hpp>   // for CScorematPssmConverter
+#include <objects/scoremat/Pssm.hpp>
+#include <objects/scoremat/PssmParameters.hpp>
 
 #include <objects/seq/seqport_util.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 
+#include <algo/blast/core/blast_stat.h> // for BLAST_SCORE_MIN
+
 #include <stdio.h>
 #include <sstream>
+#include <iomanip>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE (ncbi);
@@ -150,7 +155,7 @@ void static WrapOutputLine(string str, size_t line_len,
             }   
             out << str[i];
             if (do_wrap && isspace((unsigned char) str[i])) {
-                out << endl;  
+                out << "\n";
                 do_wrap = false;
             }
         }
@@ -183,7 +188,7 @@ void CBlastFormatUtil::BlastPrintError(list<SBlastError>&
         if (error_post){
             ERR_POST_EX(iter->level, 0, iter->message);
         }
-        out << errsevmsg[iter->level] << ": " << iter->message << endl;
+        out << errsevmsg[iter->level] << ": " << iter->message << "\n";
        
     }
 
@@ -199,9 +204,9 @@ void CBlastFormatUtil::BlastPrintVersionInfo(const string program, bool html,
                                              CNcbiOstream& out)
 {
     if (html)
-        out << "<b>" << BlastGetVersion(program) << "</b>" << endl;
+        out << "<b>" << BlastGetVersion(program) << "</b>" << "\n";
     else
-        out << BlastGetVersion(program) << endl;
+        out << BlastGetVersion(program) << "\n";
 }
 
 void 
@@ -225,13 +230,13 @@ CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len,
         str << "<b><a href=\""
             << blast::CReference::GetPubmedUrl(pub)
             << "\">" << reference << "</a>:</b>"
-            << endl;
+            << "\n";
     else
         str << reference << ": ";
 
     WrapOutputLine(str.str() + blast::CReference::GetString(pub), 
                    line_len, out);
-    out << endl;
+    out << "\n";
 }
 
 void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
@@ -241,7 +246,7 @@ void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
     NStr::Split(str, "~", split_line);
     ITERATE(list<string>, iter, split_line) {
         WrapOutputLine(*iter,  line_len, out);
-        out << endl;
+        out << "\n";
     }
 }
 
@@ -266,12 +271,12 @@ void CBlastFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
         }
 
         WrapOutputLine(db_titles, line_length, out);
-        out << endl;
+        out << "\n";
         CBlastFormatUtil::AddSpace(out, 11);
         out << NStr::Int8ToString(tot_num_seqs, NStr::fWithCommas) << 
             " sequences; " <<
             NStr::Int8ToString(tot_length, NStr::fWithCommas) << 
-            " total letters" << endl << endl;
+            " total letters\n\n";
         return;
     }
 
@@ -279,28 +284,28 @@ void CBlastFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
         if (dbinfo->subset == false) {
             out << "  Database: ";
             WrapOutputLine(dbinfo->definition, line_length, out);
-            out << endl;
+            out << "\n";
 
             out << "    Posted date:  ";
-            out << dbinfo->date << endl;
+            out << dbinfo->date << "\n";
                
             out << "  Number of letters in database: "; 
             out << NStr::Int8ToString(dbinfo->total_length, 
-                                      NStr::fWithCommas) << endl;
+                                      NStr::fWithCommas) << "\n";
             out << "  Number of sequences in database:  ";
             out << NStr::IntToString(dbinfo->number_seqs, 
-                                     NStr::fWithCommas) << endl;
+                                     NStr::fWithCommas) << "\n";
             
         } else {
-            out << "  Subset of the database(s) listed below" << endl;
+            out << "  Subset of the database(s) listed below" << "\n";
             out << "  Number of letters searched: "; 
             out << NStr::Int8ToString(dbinfo->total_length, 
-                                      NStr::fWithCommas) << endl;
+                                      NStr::fWithCommas) << "\n";
             out << "  Number of sequences searched:  ";
             out << NStr::IntToString(dbinfo->number_seqs, 
-                                     NStr::fWithCommas) << endl;
+                                     NStr::fWithCommas) << "\n";
         }
-        out << endl;
+        out << "\n";
     }
 
 }
@@ -313,14 +318,14 @@ void CBlastFormatUtil::PrintKAParameters(float lambda, float k, float h,
 
     char buffer[256];
     if (gapped) { 
-        out << "Gapped" << endl;
+        out << "Gapped" << "\n";
     }
     if (c == 0.0) {
         out << "Lambda     K      H";
     } else {
         out << "Lambda     K      H      C";
     }
-    out << endl;
+    out << "\n";
     sprintf(buffer, "%#8.3g ", lambda);
     out << buffer;
     sprintf(buffer, "%#8.3g ", k);
@@ -331,7 +336,7 @@ void CBlastFormatUtil::PrintKAParameters(float lambda, float k, float h,
         sprintf(buffer, "%#8.3g ", c);
         WrapOutputLine(buffer, line_len, out);
     }
-    out << endl;
+    out << "\n";
 }
 
 string
@@ -406,18 +411,18 @@ void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs,
         out << all_id_str;
     } else {
         WrapOutputLine(all_id_str, line_len, out);
-        out << endl;
+        out << "\n";
         if(cbs.IsSetInst() && cbs.GetInst().CanGetLength()){
             out << "Length=";
-            out << cbs.GetInst().GetLength() <<endl;
+            out << cbs.GetInst().GetLength() <<"\n";
         }
     }
 
     if (rid != kEmptyStr) {
         if (tabular) {
-            out << endl << "# RID: " << rid;
+            out << "\n" << "# RID: " << rid;
         } else {
-            out << endl << "RID: " << rid << endl;
+            out << "\n" << "RID: " << rid << "\n";
         }
     }
 }
@@ -1816,6 +1821,9 @@ CBlastFormatUtil::SortSeqalignForSortableFormat(CCgiContext& /* ctx */,
                                              int hsp_sort) {
     
    
+    if (db_sort == 0 && hit_sort < 1 && hsp_sort < 1)
+       return (CRef<CSeq_align_set>) &aln_set;
+
     list< CRef<CSeq_align_set> > seqalign_hit_total_list;
     vector< CRef<CSeq_align_set> > seqalign_vec(2);
     seqalign_vec[0] = new CSeq_align_set;
@@ -2038,4 +2046,158 @@ string  CBlastFormatUtil::GetURLDefault( const string url_name, int index) {
 void CBlastFormatUtil::ReleaseURLRegistry(void){
     if( m_Reg) { delete m_Reg; m_Reg = NULL;}
 }
+
+/** Standard order of letters according to S. Altschul
+ * FIXME: Move to blast_encoding.[hc] ?
+ */
+static int RESIDUE_ORDER[] = {
+     1,     /* A */
+    16,     /* R */
+    13,     /* N */
+     4,     /* D */ 
+     3,     /* C */
+    15,     /* Q */
+     5,     /* E */ 
+     7,     /* G */
+     8,     /* H */
+     9,     /* I */
+    11,     /* L */
+    10,     /* K */
+    12,     /* M */  
+     6,     /* F */
+    14,     /* P */
+    17,     /* S */
+    18,     /* T */
+    20,     /* W */
+    22,     /* Y */
+    19      /* V */
+};
+
+void 
+CBlastFormatUtil::PrintAsciiPssm
+    (const objects::CPssmWithParameters& pssm_with_params, 
+     CConstRef<blast::CBlastAncillaryData> ancillary_data, 
+     CNcbiOstream& out)
+{
+    static const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA[(int)'X'];
+    vector<double> info_content, gapless_col_weights, sigma;
+    blast::CScorematPssmConverter::GetInformationContent(pssm_with_params, 
+                                                         info_content);
+    blast::CScorematPssmConverter::GetGaplessColumnWeights(pssm_with_params, 
+                                                           gapless_col_weights);
+    blast::CScorematPssmConverter::GetSigma(pssm_with_params, sigma);
+
+    // We use whether the information content is available to assume whether
+    // the PSSM computation was done or not
+    bool pssm_calculation_done = info_content.empty() ? false : true;
+
+    if (pssm_calculation_done) {
+        out << "\nLast position-specific scoring matrix computed, weighted ";
+        out << "observed percentages rounded down, information per position, ";
+        out << "and relative weight of gapless real matches to pseudocounts\n";
+    } else {
+        out << "\nLast position-specific scoring matrix computed\n";
+    }
+
+    out << "         ";
+    // print the header for the last PSSM computed
+    for (size_t c = 0; c < DIM(RESIDUE_ORDER); c++) {
+        out << "  " << NCBISTDAA_TO_AMINOACID[RESIDUE_ORDER[c]];
+    }
+    if (pssm_calculation_done) {
+        // print the header for the weigthed observed percentages
+        for (size_t c = 0; c < DIM(RESIDUE_ORDER); c++) {
+            out << "   " << NCBISTDAA_TO_AMINOACID[RESIDUE_ORDER[c]];
+        }
+    }
+
+    // will need psiblast statistics: posCount, intervalSizes,
+    // sigma,
+    // posCounts can be calculated from residue_frequencies
+
+    const SIZE_TYPE kQueryLength = pssm_with_params.GetPssm().GetQueryLength();
+    _ASSERT(kQueryLength == 
+            (SIZE_TYPE)pssm_with_params.GetPssm().GetNumColumns());
+    const double kPseudoCount = pssm_with_params.GetParams().GetPseudocount();
+    auto_ptr< CNcbiMatrix<int> > pssm
+        (blast::CScorematPssmConverter::GetScores(pssm_with_params));
+    auto_ptr< CNcbiMatrix<double> > weighted_res_freqs
+        (blast::CScorematPssmConverter::
+            GetWeightedResidueFrequencies(pssm_with_params));
+    vector<int> interval_sizes, num_matching_seqs;
+    blast::CScorematPssmConverter::GetIntervalSizes(pssm_with_params,
+                                                    interval_sizes);
+    blast::CScorematPssmConverter::GetNumMatchingSeqs(pssm_with_params,
+                                                      num_matching_seqs);
+
+    CNCBIstdaa query;
+    pssm_with_params.GetPssm().GetQuerySequenceData(query);
+    const vector<char>& query_seq = query.Get();
+
+    out << fixed;
+    for (SIZE_TYPE i = 0; i < kQueryLength; i++) {
+        // print the residue for position i
+        out << "\n" << setw(5) << (i+1) << " " <<
+            NCBISTDAA_TO_AMINOACID[(int)query_seq[i]] << "  ";
+
+        // print the PSSM
+        for (SIZE_TYPE c = 0; c < DIM(RESIDUE_ORDER); c++) {
+            if ((*pssm)(RESIDUE_ORDER[c], i) == BLAST_SCORE_MIN) {
+                out << "-I ";
+            } else {
+                out << setw(3) << (*pssm)(RESIDUE_ORDER[c], i);
+            }
+        }
+        out << " ";
+
+        if (pssm_calculation_done) {
+            // Print the weighted observed
+            for (SIZE_TYPE c = 0; c < DIM(RESIDUE_ORDER); c++) {
+                if ((*pssm)(RESIDUE_ORDER[c], i) != BLAST_SCORE_MIN) {
+                    float value = 100;
+                    value *= (*weighted_res_freqs)(RESIDUE_ORDER[c], i);
+                    // round to the nearest integer
+                    value = (int)(value + (value > 0. ? 0.5 : -0.5));
+                    out << setw(4) << (int)value;
+                }
+            }
+
+            // print the information content
+            out << "  " << setprecision(2) << info_content[i] << " ";
+
+            // print the relative weight of gapless real matches to pseudocounts
+            if ((num_matching_seqs[i] > 1) && (query_seq[i] != kXResidue)) {
+                float val = gapless_col_weights[i]/kPseudoCount;
+                val *= (sigma[i] / interval_sizes[i] - 1);
+                out << setprecision(2) << val;
+            } else {
+                out << "    0.00";
+            }
+        }
+    }
+
+    const Blast_KarlinBlk* ungapped_kbp =
+        ancillary_data->GetUngappedKarlinBlk();
+    const Blast_KarlinBlk* gapped_kbp = 
+        ancillary_data->GetGappedKarlinBlk();
+    const Blast_KarlinBlk* psi_ungapped_kbp =
+        ancillary_data->GetPsiUngappedKarlinBlk();
+    const Blast_KarlinBlk* psi_gapped_kbp = 
+        ancillary_data->GetPsiGappedKarlinBlk();
+    out << "\n\n" << setprecision(4);
+    out << "                      K         Lambda\n";
+    out << "Standard Ungapped    "
+        << ungapped_kbp->K << "     "
+        << ungapped_kbp->Lambda << "\n";
+    out << "Standard Gapped      "
+        << gapped_kbp->K << "     "
+        << gapped_kbp->Lambda << "\n";
+    out << "PSI Ungapped         "
+        << psi_ungapped_kbp->K << "     "
+        << psi_ungapped_kbp->Lambda << "\n";
+    out << "PSI Gapped           "
+        << psi_gapped_kbp->K << "     "
+        << psi_gapped_kbp->Lambda << "\n";
+}
+
 END_NCBI_SCOPE

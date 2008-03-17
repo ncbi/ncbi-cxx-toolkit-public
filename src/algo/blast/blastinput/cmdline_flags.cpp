@@ -144,6 +144,8 @@ const string kArgLookupTableMaskingOnly("soft_masking");
 const string kArgPSINumIterations("num_iterations");
 const string kArgPSIInputChkPntFile("in_pssm");
 const string kArgPSIOutputChkPntFile("out_pssm");
+const string kArgAsciiPssmOutputFile("out_ascii_pssm");
+const string kArgMSAInputFile("in_msa");
 const string kArgPSIPseudocount("pseudocount");
 const string kArgPSIInclusionEThreshold("inclusion_ethresh");
 const string kArgPHIPatternFile("phi_pattern");

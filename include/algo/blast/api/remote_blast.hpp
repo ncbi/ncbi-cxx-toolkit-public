@@ -794,6 +794,16 @@ NCBI_XBLAST_EXPORT
 EBlastProgramType
 NetworkProgram2BlastProgramType(const string& program, const string& service);
 
+/// Extract a Blast4-request (a.k.a.: a search strategy) from an input stream.
+/// This function supports reading binary and text ASN.1 as well as XML.
+/// A Blast4-get-search-strategy-reply will be attempted to read first (output
+/// of BLAST SOAP server), then a Blast4-request (output of BLAST C++ command
+/// line binaries).
+/// @param in stream to read the data from [in]
+/// @throws CException if input cannot be recognized
+NCBI_XBLAST_EXPORT
+CRef<objects::CBlast4_request> 
+ExtractBlast4Request(CNcbiIstream& in);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

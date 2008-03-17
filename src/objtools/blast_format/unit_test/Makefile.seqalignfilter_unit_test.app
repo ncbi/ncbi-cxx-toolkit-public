@@ -1,7 +1,7 @@
 # $Id$
 
 APP = seqalignfilter_unit_test
-SRC = seqalignfilter_unit_test
+SRC = seqalignfilter_unit_test seq_writer_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)

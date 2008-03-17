@@ -126,19 +126,12 @@ public:
     CBlastOptionsRemote(void)
         : m_DefaultsMode(false)
     {
-        //m_Req.Reset(new objects::CBlast4_queue_search_request);
         m_ReqOpts.Reset(new objects::CBlast4_parameters);
     }
     
     ~CBlastOptionsRemote()
     {
     }
-    
-//     typedef ncbi::objects::CBlast4_queue_search_request TBlast4Req;
-//     CRef<TBlast4Req> GetBlast4Request()
-//     {
-//         return m_Req;
-//     }
     
     // the "new paradigm"
     typedef ncbi::objects::CBlast4_parameters TBlast4Opts;
@@ -149,45 +142,53 @@ public:
     
     typedef vector< CConstRef<objects::CSeq_loc> > TSeqLocVector;
     
-//     // Basic mandatory functions
-//     void SetProgram(const char * v)
-//     {
-//         m_Req->SetProgram(v);
-//     }
-    
-//     void SetService(const char * v)
-//     {
-//         m_Req->SetService(v);
-//     }
-    
     // SetValue(x,y) with different types:
     void SetValue(EBlastOptIdx opt, const EProgram            & x);
     void SetValue(EBlastOptIdx opt, const int                 & x);
     void SetValue(EBlastOptIdx opt, const double              & x);
     void SetValue(EBlastOptIdx opt, const char                * x);
     void SetValue(EBlastOptIdx opt, const TSeqLocVector       & x);
-    void SetValue(EBlastOptIdx opt, const ESeedContainerType   & x);
+    void SetValue(EBlastOptIdx opt, const ESeedContainerType  & x);
     void SetValue(EBlastOptIdx opt, const bool                & x);
     void SetValue(EBlastOptIdx opt, const Int8                & x);
     
     // Pseudo-types:
     void SetValue(EBlastOptIdx opt, const short & x)
-    { int x2 = x; SetValue(opt, x2); }
+    {
+        int x2 = x; SetValue(opt, x2);
+    }
     
     void SetValue(EBlastOptIdx opt, const unsigned int & x)
-    { int x2 = x; SetValue(opt, x2); }
+    {
+        int x2 = x; SetValue(opt, x2);
+    }
     
     void SetValue(EBlastOptIdx opt, const unsigned char & x)
-    { int x2 = x; SetValue(opt, x2); }
+    {
+        int x2 = x; SetValue(opt, x2);
+    }
     
     void SetValue(EBlastOptIdx opt, const objects::ENa_strand & x)
-    { int x2 = x; SetValue(opt, x2); }
+    {
+        int x2 = x; SetValue(opt, x2);
+    }
+    
+    /// Remove any objects matching this Blast4 field object.
+    /// 
+    /// The given field object represents a Blast4 field to remove
+    /// from the list of remote options.
+    /// 
+    /// @param opt Field object representing option to remove.
+    void ResetValue(CBlast4Field & opt)
+    {
+        x_ResetValue(opt);
+    }
     
     void SetDefaultsMode(bool dmode)
     {
         m_DefaultsMode = dmode;
     }
-
+    
     bool GetDefaultsMode()
     {
         return m_DefaultsMode;
@@ -302,6 +303,27 @@ private:
         }
         
         m_ReqOpts->Set().push_back(p);
+    }
+    
+    /// Remove values for a given Blast4 field.
+    /// @param f Field to search for and remove.
+    void x_ResetValue(CBlast4Field & f)
+    {
+        typedef list< CRef<objects::CBlast4_parameter> > TParamList;
+        typedef TParamList::iterator TParamIter;
+        
+        const string & nm = f.GetName();
+        TParamList & lst = m_ReqOpts->Set();
+        TParamIter pos = lst.begin(), end = lst.end();
+        
+        while(pos != end) {
+            TParamIter current = pos;
+            pos++;
+            
+            if ((**current).GetName() == nm) {
+                lst.erase(current);
+            }
+        }
     }
     
     void x_Throwx(const string& msg) const
@@ -508,6 +530,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
 
     case eBlastOpt_DbGeneticCode:
         x_SetParam(B4Param_DbGeneticCode, v);
+        return;
+
+    case eBlastOpt_UnifiedP:
+        x_SetParam(B4Param_UnifiedP, v);
         return;
 
     default:
@@ -910,14 +936,83 @@ void
 CBlastOptions::SetFilterString(const char* f, bool clear)
 {
     // Clear if clear is true or filtering set to FALSE.
-    if (clear == true || strcmp("F", f) == 0 || strcmp("f", f) == 0)
-      ClearFilterOptions();
-
+    if (clear == true || strcmp("F", f) == 0 || strcmp("f", f) == 0) {
+        ClearFilterOptions();
+    }
+    
     if (m_Local) {
         m_Local->SetFilterString(f);
     }
-    if (m_Remote) {  
-        m_Remote->SetValue(eBlastOpt_FilterString, f);
+    
+    if (m_Remote) {
+        // When maintaining this code, please insure the following:
+        // 
+        // 1. This list of items is parallel to the list found
+        //    below, in the "set" block.
+        // 
+        // 2. Both lists should also correspond to the list of
+        //    options in names.hpp and names.cpp that are related
+        //    to filtering options.
+        // 
+        // 3. Blast4's code in CCollectFilterOptions should also
+        //    handle the set of options handled here.
+        // 
+        // 4. CRemoteBlast and CRemoteBlastService's handling of
+        //    filtering options (CBlastOptionBuilder) should
+        //    include all of these elements.
+        // 
+        // 5. Libnet2blast should deal with all of these filtering
+        //    options when it builds CBlastOptionsHandle objects.
+        //
+        // 6. Probably at least one or two other places that I forgot.
+        
+        m_Remote->SetValue(eBlastOpt_MaskAtHash, m_Local->GetMaskAtHash());
+        
+        bool do_dust(false), do_seg(false), do_rep(false);
+        
+        do_dust = m_Local->GetDustFiltering();
+        do_seg  = m_Local->GetSegFiltering();
+        do_rep  = m_Local->GetRepeatFiltering();
+        
+        if (do_dust) {
+            m_Remote->SetValue(eBlastOpt_DustFiltering, true);
+            m_Remote->SetValue(eBlastOpt_DustFilteringLevel,
+                               m_Local->GetDustFilteringLevel());
+            
+            m_Remote->SetValue(eBlastOpt_DustFilteringWindow,
+                               m_Local->GetDustFilteringWindow());
+            m_Remote->SetValue(eBlastOpt_DustFilteringLinker,
+                               m_Local->GetDustFilteringLinker());
+        } else {
+            m_Remote->ResetValue(B4Param_DustFiltering);
+            m_Remote->ResetValue(B4Param_DustFilteringLevel);
+            m_Remote->ResetValue(B4Param_DustFilteringWindow);
+            m_Remote->ResetValue(B4Param_DustFilteringLinker);
+        }
+        
+        if (do_seg) {
+            m_Remote->SetValue(eBlastOpt_SegFiltering, true);
+            m_Remote->SetValue(eBlastOpt_SegFilteringWindow,
+                               m_Local->GetSegFilteringWindow());
+            m_Remote->SetValue(eBlastOpt_SegFilteringLocut,
+                               m_Local->GetSegFilteringLocut());
+            m_Remote->SetValue(eBlastOpt_SegFilteringHicut,
+                               m_Local->GetSegFilteringHicut());
+        } else {
+            m_Remote->ResetValue(B4Param_SegFiltering);
+            m_Remote->ResetValue(B4Param_SegFilteringWindow);
+            m_Remote->ResetValue(B4Param_SegFilteringLocut);
+            m_Remote->ResetValue(B4Param_SegFilteringHicut);
+        }
+        
+        if (do_rep) {
+            m_Remote->SetValue(eBlastOpt_RepeatFiltering, true);
+            m_Remote->SetValue(eBlastOpt_RepeatFilteringDB,
+                               m_Local->GetRepeatFilteringDB());
+        } else {
+            m_Remote->ResetValue(B4Param_RepeatFiltering);
+            m_Remote->ResetValue(B4Param_RepeatFilteringDB);
+        }
     }
 }
 

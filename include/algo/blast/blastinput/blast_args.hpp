@@ -449,14 +449,7 @@ public:
     {};
 
     /// Our virtual destructor
-    virtual ~CPsiBlastArgs() {
-        if (m_AsciiMatrixOutputStream) {
-            delete m_AsciiMatrixOutputStream;
-        }
-        if (m_MSAInputStream) {
-            delete m_MSAInputStream;
-        }
-    }
+    virtual ~CPsiBlastArgs() {}
 
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -469,15 +462,18 @@ public:
         return m_NumIterations; 
     }
     /// Get the checkpoint file output stream
+    /// @return pointer to output stream, not to be free'd by the caller
     CNcbiOstream* GetCheckPointOutputStream() const { 
         return m_CheckPointOutputStream; 
     }
     /// Get the ASCII matrix output stream
-    CNcbiOstream* GetAsciiMatrixFile() const { 
+    /// @return pointer to output stream, not to be free'd by the caller
+    CNcbiOstream* GetAsciiMatrixOutputStream() const { 
         return m_AsciiMatrixOutputStream; 
     }
     /// Get the multiple sequence alignment input stream
-    CNcbiIstream* GetMSAInputFile() const { 
+    /// @return pointer to output stream, not to be free'd by the caller
+    CNcbiIstream* GetMSAInputStream() const { 
         return m_MSAInputStream; 
     }
 

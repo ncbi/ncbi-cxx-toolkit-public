@@ -49,6 +49,8 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 
+#include "seqdbgeneral.hpp"
+
 #include <vector>
 #include <map>
 #include <set>
@@ -136,18 +138,6 @@ void seqdb_log(int cl, const char * s1, int s2);
 
 /// CSeqDBAtlas class - a collection of memory maps.
 class CSeqDBAtlas; // WorkShop needs this forward declaration.
-
-
-/// Change path delimiters to platform preferred kind in-place.
-///
-/// The path is modified in place.  The 'Convert' interface is more
-/// efficient for cases where the new path would be assigned to the
-/// same string object.  Delimiter conversion should be called by
-/// SeqDB at least once on any path received from the user, or via
-/// filesystem sources such as alias files.
-///
-/// @param dbs This string will be changed in-place.
-void SeqDB_ConvertOSPath(string & dbs);
 
 
 /// Return path with delimiters changed to platform preferred kind.
@@ -1247,8 +1237,23 @@ public:
     /// @param locked
     ///   The lock hold object for this thread.
     /// @return
-    ///   A pointer to the beginning of the file's data.
+    ///   True if the file exists.
     bool DoesFileExist(const string & fname, CSeqDBLockHold & locked);
+    
+    /// Check if file exists.
+    /// 
+    /// This is like the previous but accepts CSeqDB_Path.
+    /// 
+    /// @param fname
+    ///   The filename of the file to get.
+    /// @param locked
+    ///   The lock hold object for this thread.
+    /// @return
+    ///   True if the file exists.
+    bool DoesFileExist(const CSeqDB_Path & fname, CSeqDBLockHold & locked)
+    {
+        return DoesFileExist(fname.GetPathS(), locked);
+    }
     
     /// Get mapping of an entire file.
     /// 
@@ -1264,7 +1269,9 @@ public:
     ///   The lock hold object for this thread.
     /// @return
     ///   A pointer to the beginning of the file's data.
-    const char * GetFile(const string & fname, TIndx & length, CSeqDBLockHold & locked);
+    const char * GetFile(const string   & fname,
+                         TIndx          & length,
+                         CSeqDBLockHold & locked);
     
     /// Get mapping of an entire file.
     /// 
@@ -1280,7 +1287,30 @@ public:
     ///   The length of the file is returned here.
     /// @param locked
     ///   The lock hold object for this thread.
-    void GetFile(CSeqDBMemLease & lease, const string & fname, TIndx & length, CSeqDBLockHold & locked);
+    void GetFile(CSeqDBMemLease & lease,
+                 const string   & fname,
+                 TIndx          & length,
+                 CSeqDBLockHold & locked);
+    
+    /// Get mapping of an entire file.
+    /// 
+    /// This version is like the previous but takes CSeqDB_Path.
+    /// 
+    /// @param lease
+    ///   The lease which owns the hold on the region.
+    /// @param fname
+    ///   The filename of the file to get.
+    /// @param length
+    ///   The length of the file is returned here.
+    /// @param locked
+    ///   The lock hold object for this thread.
+    void GetFile(CSeqDBMemLease    & lease,
+                 const CSeqDB_Path & fname,
+                 TIndx             & length,
+                 CSeqDBLockHold    & locked)
+    {
+        GetFile(lease, fname.GetPathS(), length, locked);
+    }
     
     /// Get size of a file.
     /// 
@@ -1309,8 +1339,7 @@ public:
     ///   The length of the file is returned here.
     /// @return
     ///   true if the file exists.
-    bool GetFileSizeL(const string & fname,
-                                   TIndx        & length);
+    bool GetFileSizeL(const string & fname, TIndx & length);
     
     /// Gets a partial mapping of the file.
     /// 

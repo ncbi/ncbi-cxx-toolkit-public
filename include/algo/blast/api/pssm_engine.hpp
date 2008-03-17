@@ -214,6 +214,80 @@ private:
     friend class ::CPssmEngineTest; 
 };
 
+/// Auxiliary class to convert data encoded in the PSSM to CNcbiMatrix
+class CScorematPssmConverter 
+{
+public:
+    /// Returns matrix of BLASTAA_SIZE by query size (dimensions are opposite of
+    /// what is stored in the BlastScoreBlk) containing scores
+    /// @param pssm PSSM to extract data from [in]
+    /// @throws std::runtime_error if scores are not available
+    static CNcbiMatrix<int>*
+    GetScores(const objects::CPssmWithParameters& pssm);
+
+    /// Returns matrix of BLASTAA_SIZE by query size (dimensions are opposite of
+    /// what is stored in the BlastScoreBlk) containing frequency ratios
+    /// @param pssm PSSM to extract data from [in]
+    /// @throws std::runtime_error if frequency ratios are not available
+    static CNcbiMatrix<double>* 
+    GetFreqRatios(const objects::CPssmWithParameters& pssm);
+
+    /// Returns the information content per position of the PSSM
+    /// @param pssm PSSM to extract data from [in]
+    /// @param retval vector containing the information content or an empty
+    /// vector if this data is not available [in|out]
+    static void 
+    GetInformationContent(const objects::CPssmWithParameters& pssm, 
+                          vector<double>& retval);
+
+    /// Returns the gapless PSSM column weights for the provided PSSM
+    /// @param pssm PSSM to extract data from [in]
+    /// @param retval vector containing the gapless column weights or an empty
+    /// vector if this data is not available [in|out]
+    static void 
+    GetGaplessColumnWeights(const objects::CPssmWithParameters& pssm, 
+                            vector<double>& retval);
+
+    /// Returns matrix of BLASTAA_SIZE by query size (dimensions are opposite of
+    /// what is stored in the BlastScoreBlk) containing the residue frequencies
+    /// per position of the PSSM
+    /// @param pssm PSSM to extract data from [in]
+    /// @return NULL if residue frequencies are not available
+    static CNcbiMatrix<int>*
+    GetResidueFrequencies(const objects::CPssmWithParameters& pssm);
+
+    /// Returns matrix of BLASTAA_SIZE by query size (dimensions are opposite of
+    /// what is stored in the BlastScoreBlk) containing the weighted residue 
+    /// frequencies per position of the PSSM
+    /// @param pssm PSSM to extract data from [in]
+    /// @return NULL if weighted residue frequencies are not available
+    static CNcbiMatrix<double>*
+    GetWeightedResidueFrequencies(const objects::CPssmWithParameters& pssm);
+
+    /// Data used in sequence weights computation
+    /// @param pssm PSSM to extract data from [in]
+    /// @param retval vector containing the sigma values or an empty
+    /// vector if this data is not available [in|out]
+    static void
+    GetSigma(const objects::CPssmWithParameters& pssm, vector<double>& retval);
+
+    /// Length of the aligned regions per position of the query sequence
+    /// @param pssm PSSM to extract data from [in]
+    /// @param retval vector containing the interval sizes or an empty
+    /// vector if this data is not available [in|out]
+    static void
+    GetIntervalSizes(const objects::CPssmWithParameters& pssm, 
+                     vector<int>& retval);
+
+    /// Gets the number of matching sequences per position of the PSSM
+    /// @param pssm PSSM to extract data from [in]
+    /// @param retval vector containing the number of matching sequences or an
+    /// empty vector if this data is not available [in|out]
+    static void
+    GetNumMatchingSeqs(const objects::CPssmWithParameters& pssm, 
+                       vector<int>& retval);
+};
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

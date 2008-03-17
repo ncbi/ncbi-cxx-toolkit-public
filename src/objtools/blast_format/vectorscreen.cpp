@@ -371,7 +371,7 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
     CRef<CHTML_b> b(new CHTML_b);
     b->AppendPlainText("Distribution of Vector Matches on the Query Sequence");
     b->Print(out, CNCBINode::eXHTML);
-    out << endl << endl;
+    out << "\n\n";
  
     tbl = new CHTML_table;
     tbl->SetCellSpacing(0)->SetCellPadding(0)->SetAttribute("border", "0");
@@ -415,7 +415,7 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
         }
     }  
     tbl->Print(out, CNCBINode::eXHTML);
-    out << endl << endl;
+    out << "\n\n";
     
     //legend
     b = new CHTML_b;
@@ -429,7 +429,7 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
         b->AppendPlainText(" " + kGifLegend[i] + "  ");
         b->Print(out, CNCBINode::eXHTML);
     }
-    out << endl;
+    out << "\n";
     //suspected origin
     b = new CHTML_b;
     b->AppendPlainText("Segment of suspect origin: ");
@@ -439,7 +439,7 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
     image->Print(out, CNCBINode::eXHTML);
    
     //footnote
-    out << endl << endl;
+    out << "\n\n";
     b = new CHTML_b;
     b->AppendPlainText("Segments matching vector:  ");
     b->Print(out, CNCBINode::eXHTML);
@@ -450,7 +450,7 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
         ITERATE(list<AlnInfo*>, iter, m_AlnInfoList){ 
             if((*iter)->type == i){
                 if(is_first){
-                    out << endl;
+                    out << "\n";
                     a = new CHTML_a(m_HelpDocsUrl + "#" + 
                                     kGifLegend[(*iter)->type]);
                     a->SetAttribute("TARGET", "VecScreenInfo");
@@ -471,7 +471,7 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
         }
     }
   
-    out << endl << endl;
+    out << "\n\n";
 }
 
 

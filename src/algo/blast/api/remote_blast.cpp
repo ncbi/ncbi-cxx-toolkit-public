@@ -47,7 +47,9 @@
 #include <objects/blast/blastclient.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include "psiblast_aux_priv.hpp"    // For CPsiBlastValidate::Pssm()
-#include "bioseq_extract_data_priv.hpp" // for CBlastQuerySourceBioseqSet
+#include <util/format_guess.hpp>    // for CFormatGuess
+#include <serial/objistrxml.hpp>    // for CObjectIStreamXml
+#include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 
 #if defined(NCBI_OS_UNIX)
 #include <unistd.h>
@@ -1090,11 +1092,13 @@ CRemoteBlast::CRemoteBlast(CRef<IQueryFactory>         queries,
             const int kStop((int)sll.front()->GetStop(eExtreme_Positional));
             const int kRangeLength = kStop - kStart + 1;
 
-            const bool kIsProt = 
-                !!Blast_QueryIsProtein(opts_handle->GetOptions().
-                                       GetProgramType());
-            CBlastQuerySourceBioseqSet q(*bss, kIsProt);
-            const int kFullLength = static_cast<int>(q.GetLength(0));
+            _ASSERT(bss->CanGetSeq_set());
+            _ASSERT( !bss->GetSeq_set().empty() );
+            _ASSERT(bss->GetSeq_set().front()->IsSeq());
+            _ASSERT(bss->GetSeq_set().front()->GetSeq().CanGetInst());
+            const int kFullLength =
+                bss->GetSeq_set().front()->GetSeq().GetInst().GetLength();
+
             if (kFullLength != kRangeLength) {
                 x_SetOneParam(B4Param_RequiredStart, &kStart);
                 x_SetOneParam(B4Param_RequiredEnd, &kStop);
@@ -2037,6 +2041,82 @@ CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
     retval.Reset(new CSearchResultSet(query_ids, alignments, search_messages,
                                       ancill_vector));
     retval->SetRID(GetRID());
+    return retval;
+}
+
+CRef<objects::CBlast4_request> 
+ExtractBlast4Request(CNcbiIstream& in)
+{
+    // First try to read a Blast4-get-search-strategy-reply...
+    CRef<CBlast4_get_search_strategy_reply> b4_ss_reply;
+    bool succeeded = false;
+    try {
+        switch (CFormatGuess().Format(in)) {
+        case CFormatGuess::eBinaryASN:
+            b4_ss_reply.Reset(new CBlast4_get_search_strategy_reply);
+            in >> MSerial_AsnBinary >> *b4_ss_reply;
+            succeeded = true;
+            break;
+
+        case CFormatGuess::eTextASN:
+            b4_ss_reply.Reset(new CBlast4_get_search_strategy_reply);
+            in >> MSerial_AsnText >> *b4_ss_reply;
+            succeeded = true;
+            break;
+
+        case CFormatGuess::eXml:
+            {
+                auto_ptr<CObjectIStream> is(
+                    CObjectIStream::Open(eSerial_Xml, in));
+                dynamic_cast<CObjectIStreamXml*>
+                    (is.get())->SetEnforcedStdXml(true);
+                b4_ss_reply.Reset(new CBlast4_get_search_strategy_reply);
+                *is >> *b4_ss_reply;
+                succeeded = true;
+            }
+            break;
+
+        default:
+            _ASSERT(b4_ss_reply.Empty());
+        }
+    } catch (const CException& e) {
+        succeeded = false;
+    }
+
+    CRef<CBlast4_request> retval;
+    if (succeeded) {
+        retval.Reset(&b4_ss_reply->Set());
+        return retval;
+    }
+    b4_ss_reply.Reset();
+    in.seekg(0);
+
+    // Go for broke and try the Blast4-request...
+    retval.Reset(new CBlast4_request);
+    switch (CFormatGuess().Format(in)) {
+    case CFormatGuess::eBinaryASN:
+        in >> MSerial_AsnBinary >> *retval;
+        break;
+
+    case CFormatGuess::eTextASN:
+        in >> MSerial_AsnText >> *retval;
+        break;
+
+    case CFormatGuess::eXml:
+        {
+            auto_ptr<CObjectIStream> is(
+                CObjectIStream::Open(eSerial_Xml, in));
+            dynamic_cast<CObjectIStreamXml*>
+                (is.get())->SetEnforcedStdXml(true);
+            *is >> *retval;
+        }
+        break;
+
+    default:
+        NCBI_THROW(CInputException, eInvalidInput, 
+                   "Unrecognized input format ");
+    }
+
     return retval;
 }
 

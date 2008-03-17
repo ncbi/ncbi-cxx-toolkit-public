@@ -41,18 +41,15 @@ static char const rcsid[] =
 
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
-#include <serial/objistrxml.hpp>
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/blast_options_builder.hpp>
-#include <algo/blast/blastinput/blast_input.hpp>  // for blast::CInputException
 #include <objtools/readers/seqdb/seqdbcommon.hpp>   // for CSeqDBException
 #include <algo/blast/blastinput/psiblast_args.hpp>
 #include <algo/blast/blastinput/tblastn_args.hpp>
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <util/format_guess.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -178,33 +175,11 @@ s_ImportSearchStrategy(CNcbiIstream* in,
         return;
     }
 
-    CRef<CBlast4_request> b4req(new CBlast4_request);
-    try {
-        switch (CFormatGuess().Format(*in)) {
-        case CFormatGuess::eBinaryASN:
-            *in >> MSerial_AsnBinary >> *b4req;
-            break;
-
-        case CFormatGuess::eTextASN:
-            *in >> MSerial_AsnText >> *b4req;
-            break;
-
-        case CFormatGuess::eXml:
-            {
-                auto_ptr<CObjectIStream> is(
-                    CObjectIStream::Open(eSerial_Xml, *in));
-                dynamic_cast<CObjectIStreamXml*>
-                    (is.get())->SetEnforcedStdXml(true);
-                *is >> *b4req;
-            }
-            break;
-
-        default:
-            NCBI_THROW(CInputException, eInvalidInput, 
-                       "Unrecognized input format ");
-        }
+    CRef<CBlast4_request> b4req;
+    try { 
+        b4req = ExtractBlast4Request(*in);
     } catch (const CException& e) {
-        ERR_POST(Fatal << "Fail to read search strategy: " << e.what());
+        ERR_POST(Fatal << "Fail to read search strategy: " << e.GetMsg());
     }
 
     if (b4req->CanGetBody() && !b4req->GetBody().IsQueue_search() ) {

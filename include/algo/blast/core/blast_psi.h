@@ -126,6 +126,10 @@ typedef struct PSIDiagnosticsRequest {
     Boolean frequency_ratios;               /**< request frequency ratios */
     Boolean gapless_column_weights;         /**< request gapless column weights
                                               */
+    Boolean sigma;                          /**< request sigma */
+    Boolean interval_sizes;                 /**< request interval sizes */
+    Boolean num_matching_seqs;              /**< request number of matching 
+                                              sequences */
 } PSIDiagnosticsRequest;
 
 /** This structure contains the diagnostics information requested using the
@@ -146,6 +150,12 @@ typedef struct PSIDiagnosticsResponse {
                                              alphabet_size) */
     double* gapless_column_weights;        /**< Weights for columns without
                                              gaps (query_length elements) */
+    double* sigma;                         /**< sigma (query_length elements) */
+    Uint4* interval_sizes;                 /**< interval sizes of aligned
+                                             regions (query_length elements) */
+    Uint4* num_matching_seqs;              /**< number of matching sequences 
+                                             per query position (query_length
+                                             elements) */
     Uint4 query_length;                    /**< Specifies the number of
                                              positions in the PSSM */
     Uint4 alphabet_size;                   /**< Specifies length of alphabet */

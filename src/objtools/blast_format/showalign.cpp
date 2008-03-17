@@ -276,23 +276,23 @@ static void s_DisplayIdentityInfo(CNcbiOstream& out, int aln_stop,
            <<" ("<<(((positive + match)*100)/(aln_stop+1))<<"%"<<")";
     }
     out<<", Gaps = "<<gap<<"/"<<(aln_stop+1)
-       <<" ("<<((gap*100)/(aln_stop+1))<<"%"<<")"<<endl;
+       <<" ("<<((gap*100)/(aln_stop+1))<<"%"<<")"<<"\n";
     if (!aln_is_prot){ 
         out<<" Strand="<<(master_strand==1 ? "Plus" : "Minus")
-           <<"/"<<(slave_strand==1? "Plus" : "Minus")<<endl;
+           <<"/"<<(slave_strand==1? "Plus" : "Minus")<<"\n";
     }
     if(master_frame != 0 && slave_frame != 0) {
         out <<" Frame = " << ((master_frame > 0) ? "+" : "") 
             << master_frame <<"/"<<((slave_frame > 0) ? "+" : "") 
-            << slave_frame<<endl;
+            << slave_frame<<"\n";
     } else if (master_frame != 0){
         out <<" Frame = " << ((master_frame > 0) ? "+" : "") 
-            << master_frame << endl;
+            << master_frame << "\n";
     }  else if (slave_frame != 0){
         out <<" Frame = " << ((slave_frame > 0) ? "+" : "") 
-            << slave_frame <<endl;
+            << slave_frame <<"\n";
     } 
-    out<<endl;
+    out<<"\n";
     
 }
 
@@ -312,7 +312,7 @@ static void s_WrapOutputLine(CNcbiOstream& out, const string& str)
             }   
             out << str[i];
             if(do_wrap && isspace((unsigned char) str[i])){
-                out << endl;  
+                out << "\n";  
                 do_wrap = false;
             }
         }
@@ -1010,7 +1010,7 @@ void CDisplaySeqalign::x_PrintFeatures(list<SAlnFeatureInfo*> feature,
             if(row == 0){//set master feature as reference
                 master_feat_str = (*iter)->feature_string;
             }
-            out<<endl;
+            out<<"\n";
         }
     }
     
@@ -1080,75 +1080,6 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
         }
     }
     return urlLink;
-}
-
-
-void CDisplaySeqalign::x_AddLinkout(const CBioseq& cbsp, 
-                                    const CBlast_def_line& bdl,
-                                    int first_gi, int gi, 
-                                    CNcbiOstream& out) const
-{
-    char molType[8]={""};
-    if(cbsp.IsAa()){
-        sprintf(molType, "[pgi]");
-    }
-    else {
-        sprintf(molType, "[ngi]");
-    }
-    
-    if (bdl.IsSetLinks()){
-      string l_GeoUrl = CBlastFormatUtil::GetURLFromRegistry("GEO");
-      string l_UnigeneUrl = CBlastFormatUtil::GetURLFromRegistry("UNIGEN");
-      string l_GeneUrl = CBlastFormatUtil::GetURLFromRegistry("GENE");
-      string l_BioAssayProtUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");
-      string l_BioAssayNucUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");
-        for (list< int >::const_iterator iter = bdl.GetLinks().begin(); 
-             iter != bdl.GetLinks().end(); iter ++){
-            char buf[1024];
-            
-            if ((*iter) & eUnigene) {
-
-                sprintf(buf, l_UnigeneUrl.c_str(), 
-                        !cbsp.IsAa() ? "nucleotide" : "protein", 
-                        !cbsp.IsAa() ? "nucleotide" : "protein", gi,
-                        m_Rid.c_str(),
-                        "align", m_cur_align);
-                out << buf;
-            }
-            if ((*iter) & eStructure){
-                sprintf(buf, kStructureUrl.c_str(), m_Rid.c_str(), first_gi,
-                        gi, m_CddRid.c_str(), "onepair", 
-                        (m_EntrezTerm == NcbiEmptyString) ? 
-                        "none":((char*) m_EntrezTerm.c_str()),
-                        "align", m_cur_align);
-                out << buf;
-            }
-            if ((*iter) & eGeo){
-
-                sprintf(buf, l_GeoUrl.c_str(), gi, m_Rid.c_str(),
-                        "align", m_cur_align);
-                out << buf;
-            }
-            if((*iter) & eGene){
-                sprintf(buf, l_GeneUrl.c_str(), gi, cbsp.IsAa() ? 
-                        "PUID" : "NUID", m_Rid.c_str(),
-                        "align", m_cur_align);
-                out << buf;
-            }
-            if (((*iter) & eBioAssay) && cbsp.IsAa()){
-
-                sprintf(buf, l_BioAssayProtUrl.c_str(), gi, m_Rid.c_str(),
-                        "align", m_cur_align);
-                out << buf;
-            }
-            if (((*iter) & eBioAssay) && !cbsp.IsAa()){
-
-                sprintf(buf, l_BioAssayNucUrl.c_str(), gi, m_Rid.c_str(),
-                        "align", m_cur_align);
-                out << buf;
-            }
-        }
-    }
 }
 
 
@@ -1416,7 +1347,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                             alnLocList, out);
                 CBlastFormatUtil::AddSpace(out, k_SeqStopMargin);
                 out << end;
-                out<<endl;
+                out<<"\n";
                 if(m_AlignOption & eMasterAnchored){//inserts for anchored view
                     bool insertAlready = false;
                     for(list<string>::iterator iter = inserts.begin(); 
@@ -1437,7 +1368,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                                        +k_IdStartMargin
                                                        +maxStartLen
                                                        +k_StartSequenceMargin);
-                            out << insertPosString<<endl;
+                            out << insertPosString<<"\n";
                         }
                         if((m_AlignOption&eHtml)
                            &&(m_AlignOption&eMergeAlign) 
@@ -1451,7 +1382,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                                    +k_IdStartMargin
                                                    +maxStartLen
                                                    +k_StartSequenceMargin);
-                        out<<*iter<<endl;
+                        out<<*iter<<"\n";
                         insertAlready = true;
                     }
                 } 
@@ -1471,7 +1402,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                  + maxStartLen + k_StartSequenceMargin);
                     x_OutputSeq(middleLine, no_id, j, (int)actualLineLen, 0, row, 
                                 false,  alnLocList, out);
-                    out<<endl;
+                    out<<"\n";
                 }
             }
             if(!seqStarts[row].empty()){ //shouldn't need this check
@@ -1481,7 +1412,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 seqStops[row].pop_front();
             }
         }
-        out<<endl;
+        out<<"\n";
     }//end of displaying rows
    
     for(int i = 0; i < rowNum; i ++){ //free allocation
@@ -1792,7 +1723,14 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                     if (m_AlignOption & eTranslateNucToNucAlignment) {	 
                         mix[i]->Add(*ds, CAlnMix::fForceTranslation);
                     } else {
-                        mix[i]->Add(*ds);
+                        if (ds->IsSetWidths() &&
+                            ds->GetWidths()[0] == 3 && 
+                            ds->IsSetStrands() && 
+                            ds->GetStrands().front()==eNa_strand_minus){
+                            mix[i]->Add(*ds, CAlnMix::fNegativeStrand);
+                        } else {
+                            mix[i]->Add(*ds);
+                        }
                     }
                 } catch (const CException& e){
                     out << "Warning: " << e.what();
@@ -1805,7 +1743,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                 mix[i]->Merge(CAlnMix::fMinGap 
                               | CAlnMix::fQuerySeqMergeOnly 
                               | CAlnMix::fFillUnalignedRegions);  
-                //	*out2<<mix[i]->GetDenseg();
+                //*out2<<mix[i]->GetDenseg();
             }
         }
         
@@ -1815,7 +1753,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                 numDistinctFrames ++;
             }
         }
-        out<<endl;
+        out<<"\n";
         for(int i = 0; i < k_NumFrame; i ++){
             try{
                 CRef<CAlnVec> avRef (new CAlnVec (mix[i]->GetDenseg(), 
@@ -1826,7 +1764,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                 
                 if(numDistinctFrames > 1){
                     out << "For reading frame " << k_FrameConversion[i] 
-                        << " of query sequence:" << endl << endl;
+                        << " of query sequence:\n\n";
                 }
                 x_DisplayAlnvec(out);
             } catch (CException e){
@@ -1948,7 +1886,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                              CHTMLHelper::HTMLEncode(GetTitle(bsp_handle)) :
                              GetTitle(bsp_handle));     
                 
-            out<<endl;
+            out<<"\n";
             
         } else {
             //print each defline 
@@ -2061,7 +1999,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                                          HTMLEncode((*iter)->GetTitle()) :
                                          (*iter)->GetTitle());     
                     }
-                    out<<endl;
+                    out<<"\n";
                     isFirst = false;
                 }
             }
@@ -2875,7 +2813,7 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
         string id_label;
         if(!(m_AlignOption & eShowNoDeflineInfo)){
             x_PrintDefLine(bsp_handle, aln_vec_info->use_this_gi, id_label, out);
-            out<<kLengthString<<bsp_handle.GetBioseqLength()<<endl;
+            out<<kLengthString<<bsp_handle.GetBioseqLength()<<"\n";
 
             try
             {
@@ -2897,25 +2835,25 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
                     CGeneInfoFileReader::TGeneInfoList::const_iterator
                         itInfo = infoList.begin();
                     if (itInfo != infoList.end())
-                        out << endl;
+                        out << "\n";
                     for (; itInfo != infoList.end(); itInfo++)
                     {
                         CRef<CGeneInfo> info = *itInfo;
                         string strUrl = x_GetGeneLinkUrl(info->GetGeneId());
                         string strInfo;
                         info->ToString(strInfo, true, strUrl);
-                        out << strInfo << endl;
+                        out << strInfo << "\n";
                     }
                 }
             }
             catch (CException& e)
             {
                 out << "(Gene info extraction error: "
-                    << e.GetMsg() << ")" << endl;
+                    << e.GetMsg() << ")" << "\n";
             }
             catch (...)
             {
-                out << "(Gene info extraction error)" << endl;
+                out << "(Gene info extraction error)" << "\n";
             }
         }
         
@@ -2929,7 +2867,7 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
             CBlastFormatUtil::BuildFormatQueryString(*m_Ctx, 
                                                      parameters_to_change,
                                                      query_buf);
-            out << endl;
+            out << "\n";
             CBlastFormatUtil::AddSpace(out, 57); 
             out << "Sort alignments for this subject sequence by:\n";
             CBlastFormatUtil::AddSpace(out, 59); 
@@ -2978,7 +2916,7 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
             if (hsp_sort != CBlastFormatUtil::eHspPercentIdentity) {
                 out << "</a>"; 
             }
-            out << endl;
+            out << "\n";
             CBlastFormatUtil::AddSpace(out, 59); 
             if (hsp_sort != CBlastFormatUtil::eQueryStart) {
                 out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
@@ -3003,7 +2941,7 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
                 out << "</a>"; 
             }
             
-            out << endl;
+            out << "\n";
         }
         
         if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
@@ -3025,9 +2963,9 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
                     subject_gi > 0 ? 
                     NStr::IntToString(subject_gi).c_str():subject_seqid. \
                     GetSeqId()->AsFastaString().c_str()); 
-            out << buffer << endl;
+            out << buffer << "\n";
         }
-        out << endl;
+        out << "\n";
     }
     
     //output dynamic feature lines
@@ -3068,7 +3006,7 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
                     min(subject_start, subject_stop),
                     max(subject_start, subject_stop));
             
-            out << buffer << endl; 
+            out << buffer << "\n"; 
         }
         out<<" Score = "<<bit_score_buf<<" ";
         out<<"bits ("<<aln_vec_info->score<<"),"<<"  ";
@@ -3082,11 +3020,11 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
             out << ", Method: Composition-based stats.";
         else if (aln_vec_info->comp_adj_method == 2)
             out << ", Method: Compositional matrix adjust.";
-        out << endl;
+        out << "\n";
     }
         
     x_DisplayAlnvec(out);
-    out<<endl;
+    out<<"\n";
 }
 
 
@@ -3112,7 +3050,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out)
     string l_EntrezSubseqUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ_SUBSEQ");
 
     if(feat_list.size() > 0) { //has feature in this range
-        out << " Features in this part of subject sequence:" << endl;
+        out << " Features in this part of subject sequence:" << "\n";
         ITERATE(vector<SFeatInfo*>, iter, feat_list){
             out << "   ";
             if(m_AlignOption&eHtml && subject_gi > 0){
@@ -3126,11 +3064,11 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out)
             if(m_AlignOption&eHtml && subject_gi > 0){
                 out << "</a>";
             }  
-            out << endl;
+            out << "\n";
         }
     } else {  //show flank features
         if(feat5 || feat3){   
-            out << " Features flanking this part of subject sequence:" << endl;
+            out << " Features flanking this part of subject sequence:" << "\n";
         }
         if(feat5){
             out << "   ";
@@ -3146,7 +3084,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out)
             if(m_AlignOption&eHtml && subject_gi > 0){
                 out << "</a>";
             }  
-            out << endl;
+            out << "\n";
         }
         if(feat3){
             out << "   ";
@@ -3162,11 +3100,11 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out)
             if(m_AlignOption&eHtml){
                 out << "</a>";
             }  
-            out << endl;
+            out << "\n";
         }
     }
     if(feat_list.size() > 0 || feat5 || feat3 ){
-        out << endl;
+        out << "\n";
     }
 }
 

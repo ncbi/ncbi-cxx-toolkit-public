@@ -360,6 +360,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             // regardless of whether the value matches the default.
             
             opts.SetGappedMode(! v.GetBoolean());
+        } else if (B4Param_UnifiedP.Match(p)) {
+            bo.SetUnifiedP(v.GetInteger());
         } else {
             found = false;
         }

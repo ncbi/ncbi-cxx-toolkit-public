@@ -72,16 +72,25 @@ private:
     /** @inheritDoc */
     virtual int Run();
 
-    /// Save the PSSM to a check point file
+    /// Save the PSSM to a check point file and/or as an ASCII PSSM
     /// @param pssm PSSM to save [in]
     /// @param itr Iteration object, NULL in case of remote search [in]
-    void SavePssmToCheckpoint(CRef<CPssmWithParameters> pssm, 
-                              const CPsiBlastIterationState* itr = NULL) const;
+    void SavePssmToFile(CRef<CPssmWithParameters> pssm, 
+                        const CPsiBlastIterationState* itr = NULL) const;
+
+    CRef<CPssmWithParameters>
+    ComputePssmForNextIteration(const CBioseq& bioseq,
+                                CConstRef<CSeq_align_set> sset,
+                                CConstRef<CPSIBlastOptionsHandle> opts_handle,
+                                CRef<CScope> scope,
+                                CRef<CBlastAncillaryData> ancillary_data);
 
     /// The object manager
     CRef<CObjectManager> m_ObjMgr;
     /// This application's command line args
     CRef<CPsiBlastAppArgs> m_CmdLineArgs;
+    /// Ancillary results for the previously executed PSI-BLAST iteration
+    CConstRef<CBlastAncillaryData> m_AncillaryData;
 };
 
 void CPsiBlastApp::Init()
@@ -127,39 +136,49 @@ s_GetQueryBioseq(CConstRef<CBlastQueryVector> query, CRef<CScope> scope,
 }
 
 /// Auxiliary function to create the PSSM for the next iteration
-static CRef<CPssmWithParameters>
-x_ComputePssmForNextIteration(const CBioseq& bioseq,
+CRef<CPssmWithParameters>
+CPsiBlastApp::ComputePssmForNextIteration(const CBioseq& bioseq,
                               CConstRef<CSeq_align_set> sset,
                               CConstRef<CPSIBlastOptionsHandle> opts_handle,
-                              CRef<CScope> scope)
+                              CRef<CScope> scope,
+                              CRef<CBlastAncillaryData> ancillary_data)
 {
     CPSIDiagnosticsRequest diags(PSIDiagnosticsRequestNew());
     diags->frequency_ratios = true;
+    if (m_CmdLineArgs->SaveAsciiPssm()) {
+        diags->information_content = true;
+        diags->weighted_residue_frequencies = true;
+        diags->gapless_column_weights = true;
+        diags->sigma = diags->interval_sizes = diags->num_matching_seqs = true;
+        m_AncillaryData = ancillary_data;
+    }
     return PsiBlastComputePssmFromAlignment(bioseq, sset, scope, *opts_handle,
                                             diags);
 }
 
 void
-CPsiBlastApp::SavePssmToCheckpoint(CRef<CPssmWithParameters> pssm, 
-                                   const CPsiBlastIterationState* itr) const
+CPsiBlastApp::SavePssmToFile(CRef<CPssmWithParameters> pssm, 
+                             const CPsiBlastIterationState* itr) const
 {
-    // N.B.: this branch will be taken in case of remote PSI-BLAST
-    if (itr == NULL) {
-        // FIXME: make sure the proper pssm is being sent or do the semantics
-        // change?
-        if (m_CmdLineArgs->SaveCheckpoint() && pssm.NotEmpty()) {
-            *m_CmdLineArgs->GetCheckpointStream() << MSerial_AsnText << *pssm;
-        }
+    if (pssm.Empty()) {
         return;
     }
 
-    _ASSERT(itr);
-    if (pssm.NotEmpty() && 
-        itr->GetIterationNumber() > 1 && 
-        m_CmdLineArgs->SaveCheckpoint()) {
+    if (m_CmdLineArgs->SaveCheckpoint() &&
+        (itr == NULL || // this is true in the case of remote PSI-BLAST
+         itr->GetIterationNumber() > 1)) {
         *m_CmdLineArgs->GetCheckpointStream() << MSerial_AsnText << *pssm;
     }
+
+    if (m_CmdLineArgs->SaveAsciiPssm() &&
+        (itr == NULL || // this is true in the case of remote PSI-BLAST
+         itr->GetIterationNumber() > 1)) {
+        CBlastFormatUtil::PrintAsciiPssm(*pssm, 
+                                         m_AncillaryData,
+                                         *m_CmdLineArgs->GetAsciiPssmStream());
+    }
 }
+
 
 int CPsiBlastApp::Run(void)
 {
@@ -286,7 +305,7 @@ int CPsiBlastApp::Run(void)
                 formatter.PrintOneResultSet(**result, query);
             }
 
-            SavePssmToCheckpoint(rmt_psiblast->GetPSSM());
+            SavePssmToFile(rmt_psiblast->GetPSSM());
 
         } else {
 
@@ -303,7 +322,7 @@ int CPsiBlastApp::Run(void)
 
             while (itr) {
 
-                SavePssmToCheckpoint(pssm, &itr);
+                SavePssmToFile(pssm, &itr);
 
                 CRef<CSearchResultSet> results = psiblast->Run();
                 ITERATE(CSearchResultSet, result, *results) {
@@ -311,12 +330,14 @@ int CPsiBlastApp::Run(void)
                                                 itr.GetIterationNumber(),
                                                 itr.GetPreviouslyFoundSeqIds());
                 }
+                // FIXME: what if there are no results!?!
 
-                if ( !(*results)[0].HasAlignments() ) {
+                CSearchResults& results_1st_query = (*results)[0];
+                if ( !results_1st_query.HasAlignments() ) {
                     break;
                 }
 
-                CConstRef<CSeq_align_set> aln((*results)[0].GetSeqAlign());
+                CConstRef<CSeq_align_set> aln(results_1st_query.GetSeqAlign());
                 CPsiBlastIterationState::TSeqIds ids;
                 CPsiBlastIterationState::GetSeqIds(aln, opts, ids);
 
@@ -326,7 +347,8 @@ int CPsiBlastApp::Run(void)
                     CConstRef<CBioseq> seq =
                         s_GetQueryBioseq(query, scope, pssm);
                     pssm = 
-                        x_ComputePssmForNextIteration(*seq, aln, opts, scope);
+                        ComputePssmForNextIteration(*seq, aln, opts, scope,
+                                          results_1st_query.GetAncillaryData());
                     psiblast->SetPssm(pssm);
                 }
             }

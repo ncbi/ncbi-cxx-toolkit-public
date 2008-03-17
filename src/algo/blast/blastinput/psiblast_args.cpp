@@ -44,20 +44,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-#define ARG_CHECKPOINT "C"
-#define ARG_ASCII_MATRIX "Q"
-#define ARG_MSA_RESTART "B"
-#define ARG_GAP_TRIGGER "N"
-// this is how this is represented in PSI-BLAST
-#define ARG_COMP_BASED_STATS_PSI "t"    
-
-// Program option for PHI-BLAST (default blastpgp)
-#define ARG_PHI_PROGRAM "p"         // not supported
-// Number of best hits from a region to keep (default 0)
-#define ARG_NUM_BEST_HITS "K"   // not supported
-#endif
-
 CPsiBlastAppArgs::CPsiBlastAppArgs()
 {
     bool const kQueryIsProtein = true;
@@ -174,6 +160,18 @@ CNcbiOstream*
 CPsiBlastAppArgs::GetCheckpointStream() const
 {
     return m_PsiBlastArgs->GetCheckPointOutputStream();
+}
+
+bool
+CPsiBlastAppArgs::SaveAsciiPssm() const
+{
+    return static_cast<bool>(m_PsiBlastArgs->GetAsciiMatrixOutputStream() != 0);
+}
+
+CNcbiOstream*
+CPsiBlastAppArgs::GetAsciiPssmStream() const
+{
+    return m_PsiBlastArgs->GetAsciiMatrixOutputStream();
 }
 
 END_SCOPE(blast)

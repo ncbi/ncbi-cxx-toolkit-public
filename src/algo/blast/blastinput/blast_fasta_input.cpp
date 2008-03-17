@@ -280,7 +280,7 @@ private:
     /* BEGIN : regular expression machinery to try to detect types of input */
 
     /// The default compilation flag for regular expressions
-    static const CRegexp::ECompile s_REFlags = static_cast<CRegexp::ECompile>
+    static const CRegexp::TCompile s_REFlags = static_cast<CRegexp::TCompile>
         (CRegexp::fCompile_ignore_case | CRegexp::fCompile_newline);
 
     /// Regular expression for GIs

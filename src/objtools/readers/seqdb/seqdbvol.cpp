@@ -2767,7 +2767,7 @@ CSeqDBVol::GetSeqData(int              oid,
         vector<char> v4;
         v4.reserve((length+1)/2);
         
-        TSeqPos length_whole = length & -2;
+        TSeqPos length_whole = TSeqPos(length & -2);
         
         for(TSeqPos i = 0; i < length_whole; i += 2) {
             v4.push_back((buffer[i] << 4) | buffer[i+1]);

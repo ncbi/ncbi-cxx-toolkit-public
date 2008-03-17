@@ -109,6 +109,7 @@ static void s_UnitTestVerbosity(string s, int ln)
 { \
     string nm(s); \
     string filter(getenv("FILTER_UT") ? getenv("FILTER_UT") : ""); \
+    if (filter == "") filter = (getenv("UT_FILTER") ? getenv("UT_FILTER") : ""); \
     \
     if (nm.size() && filter.size() && nm.find(filter) == string::npos) { \
         cout << "Skipping test: " << s << endl; \
@@ -455,7 +456,7 @@ BOOST_AUTO_TEST_CASE(SummaryDataN)
     CHECK_EQUAL(int(100),            nseqs);
     CHECK_EQUAL(Uint8(51718),        vlength);
     CHECK_EQUAL(Uint4(875),          Uint4(localN.GetMaxLength()));
-    CHECK_EQUAL(dbname,              localN.GetDBNameList());
+    CHECK_EQUAL((string)dbname,      (string)localN.GetDBNameList());
     
     CHECK_EQUAL(string("Another test DB for CPPUNIT, SeqDB."),
                 localN.GetTitle());
@@ -503,7 +504,7 @@ BOOST_AUTO_TEST_CASE(SummaryDataP)
     CHECK_EQUAL(Uint8(26945), tlength);
     CHECK_EQUAL(Uint8(26945), vlength);
     CHECK_EQUAL(Uint4(1224),  Uint4(localP.GetMaxLength()));
-    CHECK_EQUAL(dbname,       localP.GetDBNameList());
+    CHECK_EQUAL((string)dbname, (string)localP.GetDBNameList());
     
     CHECK_EQUAL(string("Test database for BLAST unit tests"),
                 localP.GetTitle());
@@ -2102,10 +2103,10 @@ BOOST_AUTO_TEST_CASE(ExpertTaxInfo)
     db.GetTaxInfo(57176, info);
     
     CHECK_EQUAL(info.taxid,           57176);
-    CHECK_EQUAL(info.scientific_name, string("Aotus vociferans"));
-    CHECK_EQUAL(info.common_name,     string("noisy night monkey"));
-    CHECK_EQUAL(info.blast_name,      string("primates"));
-    CHECK_EQUAL(info.s_kingdom,       string("E"));
+    CHECK_EQUAL((string)info.scientific_name, string("Aotus vociferans"));
+    CHECK_EQUAL((string)info.common_name,     string("noisy night monkey"));
+    CHECK_EQUAL((string)info.blast_name,      string("primates"));
+    CHECK_EQUAL((string)info.s_kingdom,       string("E"));
 }
 
 BOOST_AUTO_TEST_CASE(ExpertRawData)
@@ -2825,16 +2826,14 @@ BOOST_AUTO_TEST_CASE(SeqIdListAndGiList)
     for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
         typedef list< CRef<CSeq_id> > TIds;
         
-        TIds ids2 = db.GetSeqIDs(oid);
+        TIds the_ids = db.GetSeqIDs(oid);
         
-        ITERATE(TIds, iter, ids2) {
+        ITERATE(TIds, iter, the_ids) {
             CRef<CSeq_id> seqid(*iter);
             string afs = seqid->AsFastaString();
-            
-            set<string>::iterator i2 = need.find(afs);
-            
-            CHECK(i2 != need.end());
-            need.erase(i2);
+            set<string>::iterator itr = need.find(afs);
+            CHECK(itr != need.end());
+            need.erase(itr);
         }
     }
     
@@ -2852,7 +2851,7 @@ BOOST_AUTO_TEST_CASE(EmptyVolume)
     
     CHECK_EQUAL(db.GetNumSeqs(), 0);
     CHECK_EQUAL(db.GetNumOIDs(), 0);
-    CHECK_EQUAL(db.GetTitle(), string("empty test database"));
+    CHECK_EQUAL((string)db.GetTitle(), string("empty test database"));
     
     CHECK_THROW_SEQDB(db.GetSeqLength(0));
     CHECK_THROW_SEQDB(db.GetSeqLengthApprox(0));
@@ -2885,8 +2884,8 @@ BOOST_AUTO_TEST_CASE(EmptyVolume)
     CHECK_THROW_SEQDB(db.GetSeqIDs(0));
     CHECK_THROW_SEQDB(db.GetGis(0, gis));
     CHECK_EQUAL(db.GetSequenceType(), CSeqDB::eProtein);
-    CHECK_EQUAL(db.GetTitle(), string("empty test database"));
-    CHECK_EQUAL(db.GetDate(), string("Mar 19, 2007 11:38 AM"));
+    CHECK_EQUAL((string)db.GetTitle(), string("empty test database"));
+    CHECK_EQUAL((string)db.GetDate(), string("Mar 19, 2007 11:38 AM"));
     CHECK_EQUAL(db.GetNumSeqs(), 0);
     CHECK_EQUAL(db.GetNumOIDs(), 0);
     CHECK_EQUAL(db.GetTotalLength(), Uint8(0));
@@ -2924,7 +2923,7 @@ BOOST_AUTO_TEST_CASE(EmptyVolume)
     }
     
     CHECK_NO_THROW(db.ResetInternalChunkBookmark());
-    CHECK_EQUAL(db.GetDBNameList(), string("data/empty"));
+    CHECK_EQUAL((string)db.GetDBNameList(), string("data/empty"));
     CHECK_EQUAL(db.GetGiList(), (CSeqDBGiList*)NULL);
     CHECK_NO_THROW(db.SetMemoryBound(1024*1024*512));
     
@@ -2972,7 +2971,7 @@ BOOST_AUTO_TEST_CASE(EmptyVolume)
     
     CHECK_EQUAL(paths1.size(), size_t(1));
     CHECK_EQUAL(paths2.size(), size_t(1));
-    CHECK_EQUAL(paths1[0], paths2[0]);
+    CHECK_EQUAL((string)paths1[0], (string)paths2[0]);
     
     // The end OID is higher than GetNumOIDs(), but as stated in the
     // documentation, this function silently adjusts the end value to
@@ -3057,8 +3056,8 @@ BOOST_AUTO_TEST_CASE(GetSequenceAsString)
     N.GetSequenceAsString(nucl_oid, nstr);
     P.GetSequenceAsString(prot_oid, pstr);
     
-    CHECK_EQUAL(nstr, nucl_str);
-    CHECK_EQUAL(pstr, prot_str);
+    CHECK_EQUAL((string)nstr, (string)nucl_str);
+    CHECK_EQUAL((string)pstr, (string)prot_str);
 }
 
 BOOST_AUTO_TEST_CASE(TotalLengths)
@@ -3659,6 +3658,37 @@ BOOST_AUTO_TEST_CASE(OidAndGiLists)
     
     CHECK_EQUAL_TYPED(string, sp_sum.Compare(sc_sum), "=T+F+M=t+f+m");
     CHECK_EQUAL_TYPED(string, ac_sum.Compare(sc_sum), "=T+F+M=t+f+m");
+}
+
+BOOST_AUTO_TEST_CASE(DeltaSequenceHash)
+{
+    START;
+    
+    // Get hash #1
+    
+    CSeqDBExpert nucl("nucl_dbs", CSeqDB::eNucleotide);
+    int oid(-1);
+    nucl.GiToOid(4512300, oid);
+    unsigned h1 = nucl.GetSequenceHash(oid);
+    
+    // Get hash #2
+    
+    char ch = CFile::GetPathSeparator();
+    string path = string("data") + ch + "deltaseq";
+    ifstream f(path.c_str());
+    
+    CBioseq bs;
+    f >> MSerial_AsnText >> bs;
+    
+    unsigned h2 = SeqDB_SequenceHash(bs);
+    
+    // Check that we don't have a real Seq-data.
+    
+    CHECK(! bs.GetInst().CanGetSeq_data());
+    
+    // Check that the hash values match.
+    
+    CHECK_EQUAL(h1, h2);
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

@@ -666,7 +666,7 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                       "absent or be D, F or 0",
                       CArgDescriptions::eString, "2");
 
-    arg_desc.SetCurrentGroup("misc");
+    arg_desc.SetCurrentGroup("Miscellaneous options");
     // Use Smith-Waterman algorithm in traceback stage
     // FIXME: available only for gapped blastp/tblastn, and with
     // composition-based statistics
@@ -954,16 +954,20 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 "File name to store checkpoint file",
                                 CArgDescriptions::eOutputFile);
         // ASCII matrix file
-        arg_desc.AddOptionalKey(ARG_ASCII_MATRIX, "ascii_mtx_file",
+        arg_desc.AddOptionalKey(kArgAsciiPssmOutputFile, "ascii_mtx_file",
                                 "File name to store ASCII version of PSSM",
-                                CArgDescriptions::eOutputFile,
-                                CArgDescriptions::fOptionalSeparator);
+                                CArgDescriptions::eOutputFile);
         // MSA restart file
-        arg_desc.AddOptionalKey(ARG_MSA_RESTART, "align_restart",
+        arg_desc.AddOptionalKey(kArgMSAInputFile, "align_restart",
                                 "File name of multiple sequence alignment to "
                                 "restart PSI-BLAST",
-                                CArgDescriptions::eInputFile,
-                                CArgDescriptions::fOptionalSeparator);
+                                CArgDescriptions::eInputFile);
+        arg_desc.SetDependency(kArgMSAInputFile,
+                               CArgDescriptions::eExcludes,
+                               kArgPSIInputChkPntFile);
+        arg_desc.SetDependency(kArgMSAInputFile,
+                               CArgDescriptions::eExcludes,
+                               kArgQuery);
         // PSI-BLAST checkpoint
         arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file", 
                                 "PSI-BLAST checkpoint file",
@@ -989,11 +993,12 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
             m_CheckPointOutputStream = 
                 &args[kArgPSIOutputChkPntFile].AsOutputFile(); 
         }
-        if (args[ARG_ASCII_MATRIX]) {
-            cerr << "Warning: ASCII MATRIX NOT HANDLED\n";
+        if (args[kArgAsciiPssmOutputFile]) {
+            m_AsciiMatrixOutputStream = 
+                &args[kArgAsciiPssmOutputFile].AsOutputFile(); 
         }
-        if (args[ARG_MSA_RESTART]) {
-            cerr << "Warning: INPUT ALIGNMENT FILE NOT HANDLED\n";
+        if (args[kArgMSAInputFile]) {
+            m_MSAInputStream = &args[kArgMSAInputFile].AsInputFile();
         }
     }
 
@@ -1398,7 +1403,7 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     const int kMinValue = static_cast<int>(CThreadable::kMinNumThreads);
 
     // number of threads
-    arg_desc.SetCurrentGroup("misc");
+    arg_desc.SetCurrentGroup("Miscellaneous options");
     arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
                            "Number of threads to use in preliminary stage "
                            "of the search", CArgDescriptions::eInteger, 
@@ -1420,7 +1425,7 @@ CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
 void
 CRemoteArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
-    arg_desc.SetCurrentGroup("misc");
+    arg_desc.SetCurrentGroup("Miscellaneous options");
     arg_desc.AddFlag(kArgRemote, "Execute search remotely?", true);
     arg_desc.SetDependency(kArgRemote,
                            CArgDescriptions::eExcludes,
@@ -1441,7 +1446,7 @@ void
 CDebugArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
 #if _DEBUG
-    arg_desc.SetCurrentGroup("misc");
+    arg_desc.SetCurrentGroup("Miscellaneous options");
     arg_desc.AddFlag("verbose", "Produce verbose output (show BLAST options)?",
                      true);
     arg_desc.AddFlag("remote_verbose", 

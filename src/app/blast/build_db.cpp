@@ -792,13 +792,13 @@ CBuildDatabase::Build(const vector<string> & ids,
     
     CRef<CInputGiList> gi_list;
     
-    if (m_SourceDb.NotEmpty() && ! ids.empty()) {
+    if (! ids.empty()) {
         gi_list = x_ResolveGis(ids);
     }
     
     // Translate the GI list.
     
-    if (gi_list.NotEmpty() &&
+    if (gi_list.NotEmpty() && m_SourceDb.NotEmpty() &&
         (gi_list->GetNumGis() || gi_list->GetNumSeqIds())) {
         
         // The process of constructing a SeqDB object with a user GI
@@ -813,8 +813,6 @@ CBuildDatabase::Build(const vector<string> & ids,
         // found using OID iteration over SeqDB, which produces a
         // better ordering inasmuch as the reads from the source
         // sequence data will be sequential on disk.
-        
-        _ASSERT(m_SourceDb.NotEmpty());
         
         CRef<CSeqDBExpert> filtered
             (new CSeqDBExpert(m_SourceDb->GetDBNameList(),

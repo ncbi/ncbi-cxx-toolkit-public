@@ -461,7 +461,7 @@ void CBlastTabularInfo::Print()
             m_Ostream << "\t";
         x_PrintField(*iter);
     }
-    m_Ostream << endl;
+    m_Ostream << "\n";
 }
 
 void CBlastTabularInfo::x_PrintFieldNames()
@@ -532,7 +532,7 @@ void CBlastTabularInfo::x_PrintFieldNames()
         }
     }
 
-    m_Ostream << endl;
+    m_Ostream << "\n";
 }
 
 void 
@@ -549,14 +549,14 @@ CBlastTabularInfo::PrintHeader(const string& program_in,
                                             m_Ostream);
 
     if (iteration != numeric_limits<unsigned int>::max())
-        m_Ostream << "# Iteration: " << iteration << endl;
+        m_Ostream << "# Iteration: " << iteration << "\n";
 
     // Print the query defline with no html; there is no need to set the 
     // line length restriction, since it's ignored for the tabular case.
     CBlastFormatUtil::AcknowledgeBlastQuery(bioseq, 0, m_Ostream, false, false,
                                             true, rid);
     
-    m_Ostream << endl << "# Database: " << dbname << endl;
+    m_Ostream << "\n# Database: " << dbname << "\n";
 
     x_PrintFieldNames();
     
@@ -564,7 +564,7 @@ CBlastTabularInfo::PrintHeader(const string& program_in,
     if (align_set)
     {
        int num_hits = align_set->Get().size();
-       m_Ostream << "# " << num_hits << " hits found" << endl;
+       m_Ostream << "# " << num_hits << " hits found" << "\n";
     }
 }
 

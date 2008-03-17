@@ -183,7 +183,7 @@ CBlastFormat::PrintProlog()
         return;
 
     if (m_IsHTML) {
-        m_Outfile << kHTML_Prefix << endl;
+        m_Outfile << kHTML_Prefix << "\n";
     }
 
     CBlastFormatUtil::BlastPrintVersionInfo(m_Program, m_IsHTML, 
@@ -192,23 +192,23 @@ CBlastFormat::PrintProlog()
         return;
     }
 
-    m_Outfile << endl << endl;
+    m_Outfile << "\n\n";
     CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
                                           m_Outfile);
 
     if (m_Program == "psiblast") {
-        m_Outfile << endl << endl;
+        m_Outfile << "\n\n";
         CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
                               m_Outfile, CReference::eCompAdjustedMatrices);
     }
     if (m_Program == "psiblast" || m_Program == "blastp") {
-        m_Outfile << endl << endl;
+        m_Outfile << "\n\n";
         CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
                               m_Outfile, CReference::eCompBasedStats,
                               (bool)(m_Program == "psiblast"));
     }
 
-    m_Outfile << endl << endl;
+    m_Outfile << "\n\n";
     CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
                                     m_Outfile, true);
 }
@@ -217,7 +217,7 @@ void
 CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
 {
     const Blast_KarlinBlk *kbp_ungap = summary.GetUngappedKarlinBlk();
-    m_Outfile << endl;
+    m_Outfile << "\n";
     if (kbp_ungap) {
         CBlastFormatUtil::PrintKAParameters(kbp_ungap->Lambda, 
                                             kbp_ungap->K, kbp_ungap->H,
@@ -226,7 +226,7 @@ CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
     }
 
     const Blast_KarlinBlk *kbp_gap = summary.GetGappedKarlinBlk();
-    m_Outfile << endl;
+    m_Outfile << "\n";
     if (kbp_gap) {
         CBlastFormatUtil::PrintKAParameters(kbp_gap->Lambda, 
                                             kbp_gap->K, kbp_gap->H,
@@ -234,9 +234,9 @@ CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
                                             true);
     }
 
-    m_Outfile << endl;
+    m_Outfile << "\n";
     m_Outfile << "Effective search space used: " << 
-                        summary.GetSearchSpace() << endl;
+                        summary.GetSearchSpace() << "\n";
 }
 
 /// Auxialiary function to determine if there are local IDs in the identifiers
@@ -343,7 +343,7 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
             showdef.SetupPsiblast(NULL, CShowBlastDefline::eRepeatPass);
             showdef.DisplayBlastDefline(m_Outfile);
         }}
-        m_Outfile << endl;
+        m_Outfile << "\n";
 
         // Show deflines for 'new' sequences
         {{
@@ -362,7 +362,7 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
         x_ConfigCShowBlastDefline(showdef);
         showdef.DisplayBlastDefline(m_Outfile);
     }
-    m_Outfile << endl;
+    m_Outfile << "\n";
 }
 
 void
@@ -409,11 +409,11 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     }
 
     if (results.HasErrors()) {
-        m_Outfile << endl << results.GetErrorStrings() << endl;
+        m_Outfile << "\n" << results.GetErrorStrings() << "\n";
         return; // errors are deemed fatal
     }
     if (results.HasWarnings()) {
-        m_Outfile << endl << results.GetWarningStrings() << endl;
+        m_Outfile << "\n" << results.GetWarningStrings() << "\n";
     }
 
     // other output types will need a bioseq handle
@@ -441,14 +441,14 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     }
 
     if (itr_num != numeric_limits<unsigned int>::max()) {
-        m_Outfile << "Results from round " << itr_num << NcbiEndl;
+        m_Outfile << "Results from round " << itr_num << "\n";
     }
 
-    CConstRef<CBioseq> bioseq = bhandle.GetCompleteBioseq();
+    CConstRef<CBioseq> bioseq = bhandle.GetBioseqCore();
 
     // print the preamble for this query
 
-    m_Outfile << endl << endl;
+    m_Outfile << "\n\n";
     CBlastFormatUtil::AcknowledgeBlastQuery(*bioseq, kFormatLineLength,
                                             m_Outfile, m_BelieveQuery,
                                             m_IsHTML, false,
@@ -456,9 +456,9 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
 
     // quit early if there are no hits
     if ( !results.HasAlignments() ) {
-        m_Outfile << endl << endl 
-                  << "***** " << kNoHitsFound << " *****" << endl 
-                  << endl << endl;
+        m_Outfile << "\n\n" 
+                  << "***** " << kNoHitsFound << " *****" << "\n" 
+                  << "\n\n";
         x_PrintOneQueryFooter(*results.GetAncillaryData());
         return;
     }
@@ -476,7 +476,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
 
     //-------------------------------------------------
     // print the alignments
-    m_Outfile << endl;
+    m_Outfile << "\n";
 
     TMaskedQueryRegions masklocs;
     results.GetMaskedQueryRegions(masklocs);
@@ -560,7 +560,7 @@ CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
         return;
     }
 
-    m_Outfile << endl << endl;
+    m_Outfile << "\n\n";
     if ( !m_IsBl2Seq ) {
         CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
                                         m_Outfile, false);
@@ -569,28 +569,28 @@ CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
     if (m_Program == "blastn" || m_Program == "megablast") {
         m_Outfile << "\n\nMatrix: " << "blastn matrix " <<
                         options.GetMatchReward() << " " <<
-                        options.GetMismatchPenalty() << endl;
+                        options.GetMismatchPenalty() << "\n";
     }
     else {
-        m_Outfile << "\n\nMatrix: " << options.GetMatrixName() << endl;
+        m_Outfile << "\n\nMatrix: " << options.GetMatrixName() << "\n";
     }
 
     if (options.GetGappedMode() == true) {
         m_Outfile << "Gap Penalties: Existence: "
                 << options.GetGapOpeningCost() << ", Extension: "
-                << options.GetGapExtensionCost() << endl;
+                << options.GetGapExtensionCost() << "\n";
     }
     if (options.GetWordThreshold()) {
         m_Outfile << "Neighboring words threshold: " <<
-                        options.GetWordThreshold() << endl;
+                        options.GetWordThreshold() << "\n";
     }
     if (options.GetWindowSize()) {
         m_Outfile << "Window for multiple hits: " <<
-                        options.GetWindowSize() << endl;
+                        options.GetWindowSize() << "\n";
     }
 
     if (m_IsHTML) {
-        m_Outfile << kHTML_Suffix << endl;
+        m_Outfile << kHTML_Suffix << "\n";
     }
 }
 

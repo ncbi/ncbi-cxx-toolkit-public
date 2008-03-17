@@ -40,10 +40,12 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objects/seq/Bioseq.hpp>
-#include  <objmgr/bioseq_handle.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
 #include <algo/blast/api/version.hpp>
+#include <algo/blast/api/blast_results.hpp> // for CBlastAncillaryData
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <util/math/matrix.hpp>
 
@@ -120,7 +122,7 @@ src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info\"></a>";
 ///Bioassay for nucleotides
 // .ncbirc alias: BIOASSAY_NUC
 const string kBioAssayNucURL = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez\
-?db=pcassay&term=%d&RID=%s&log$=pcassay%s&blast_rank=%d\"><img border=0 height=16 width=16 \
+?db=pcassay&term=%d[RNATargetGI]&RID=%s&log$=pcassay%s&blast_rank=%d\"><img border=0 height=16 width=16 \
 src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info\"></a>";
 
 ///mapviewer linkout
@@ -247,7 +249,6 @@ k_UrlMap((const TUrlMap::value_type*)&k_all_url_pairs[0],
 
 class NCBI_XBLASTFORMAT_EXPORT CBlastFormatUtil 
 {
-   
 public:
    
     ///Error info structure
@@ -728,6 +729,17 @@ public:
     static void ReleaseURLRegistry(void);
     static CNcbiRegistry *m_Reg;
     static bool   m_geturl_debug_flag;
+
+    /** 
+     * @brief Prints the PSSM in ASCII format (as in blastpgp's -Q option)
+     * 
+     * @param pssm pssm to print [in]
+     * @param ancillary_data ancillary BLAST data to print [in]
+     * @param out output stream to write output to [in]
+     */
+    static void PrintAsciiPssm(const objects::CPssmWithParameters& pssm,
+                       CConstRef<blast::CBlastAncillaryData> ancillary_data,
+                       CNcbiOstream& out);
 };
 
 /// 256x256 matrix used for calculating positives etc. during formatting.

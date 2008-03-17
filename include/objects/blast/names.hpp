@@ -173,6 +173,7 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapTrigger;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapXDropoff;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapXDropoffFinal;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SmithWatermanMode;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UnifiedP;
 
 END_objects_SCOPE // namespace ncbi::objects::
 

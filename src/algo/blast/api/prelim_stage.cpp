@@ -155,6 +155,15 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
 CRef<SInternalData>
 CBlastPrelimSearch::Run()
 {
+    if (! BlastSeqSrcGetNumSeqs(m_InternalData->m_SeqSrc->GetPointer())) {
+        string msg =
+            "GI or TI list filtering resulted in an empty database.";
+        
+        m_Messages.AddMessageAllQueries(eBlastSevWarning,
+                                        kBlastMessageNoContext, 
+                                        msg);
+    }
+    
     BlastSeqSrcResetChunkIterator(m_InternalData->m_SeqSrc->GetPointer());
 
     CEffectiveSearchSpacesMemento eff_memento(m_Options);

@@ -231,7 +231,9 @@ bool CSeqDBAtlas::DoesFileExist(const string & fname, CSeqDBLockHold & locked)
     return GetFileSize(fname, length, locked);
 }
 
-const char * CSeqDBAtlas::GetFile(const string & fname, TIndx & length, CSeqDBLockHold & locked)
+const char * CSeqDBAtlas::GetFile(const string      & fname,
+                                  TIndx             & length,
+                                  CSeqDBLockHold    & locked)
 {
     Verify(locked);
     if (! GetFileSize(fname, length, locked)) {
@@ -311,26 +313,6 @@ bool CSeqDBAtlas::GetFileSize(const string   & fname,
     Verify(true);
     
     return GetFileSizeL(fname, length);
-}
-
-void SeqDB_ConvertOSPath(string & dbs)
-{
-    // See also CDirEntry::ConvertToOSPath()
-    
-    char delim = CDirEntry::GetPathSeparator();
-    
-    for(size_t i = 0; i<dbs.size(); i++) {
-        if (dbs[i] == '/' || dbs[i] == '\\') {
-            dbs[i] = delim;
-        }
-    }
-}
-
-string SeqDB_MakeOSPath(const string & dbs)
-{
-    string cvt(dbs);
-    SeqDB_ConvertOSPath(cvt);
-    return cvt;
 }
 
 bool CSeqDBAtlas::GetFileSizeL(const string & fname,

@@ -268,7 +268,6 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
 /// @param strand_opt Unless the strand option is set to single strand, the 
 /// actual CSeq_locs in the TSeqLocVector dictacte which strand to use
 /// during the search [in]
-
 NCBI_XBLAST_EXPORT
 void
 SetupQueries_OMF(IBlastQuerySource& queries,

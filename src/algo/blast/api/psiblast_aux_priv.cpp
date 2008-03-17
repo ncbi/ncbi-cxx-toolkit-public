@@ -122,7 +122,7 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     bool missing_scores = false;
     try {
         auto_ptr< CNcbiMatrix<int> > scores
-            (CScorematPssmConverter::GetScores(pssm));
+            (CScorematPssmConverter::GetScores(*pssm));
         _ASSERT(score_blk->psi_matrix->pssm->ncols == scores->GetCols());
         _ASSERT(score_blk->psi_matrix->pssm->nrows == scores->GetRows());
 
@@ -142,7 +142,7 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
 
     try {
         auto_ptr< CNcbiMatrix<double> > freq_ratios
-            (CScorematPssmConverter::GetFreqRatios(pssm));
+            (CScorematPssmConverter::GetFreqRatios(*pssm));
         _ASSERT(score_blk->psi_matrix->pssm->ncols == 
                freq_ratios->GetCols());
         _ASSERT(score_blk->psi_matrix->pssm->nrows == 
@@ -195,95 +195,224 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     }
 }
 
-CNcbiMatrix<int>*
-CScorematPssmConverter::GetScores(CConstRef<objects::CPssmWithParameters> 
-                                  pssm_asn)
+/// Convert a list of values into a CNcbiMatrix
+/// @param source source of data [in]
+/// @param dest destination of data [out]
+/// @param by_row is the matrix data stored by row? [in]
+/// @param num_rows number of rows [in]
+/// @param num_cols number of columns [in]
+template <class T>
+void Convert2Matrix(const list<T>& source, CNcbiMatrix<T>& dest, 
+                    bool by_row, SIZE_TYPE num_rows, SIZE_TYPE num_columns)
 {
-    if (pssm_asn.Empty()) {
-        throw runtime_error("Cannot use NULL ASN.1 PSSM");
+    typename list<T>::const_iterator itr = source.begin();
+    if (by_row == true) {
+        for (SIZE_TYPE r = 0; r < num_rows; r++) {
+            for (SIZE_TYPE c = 0; c < num_columns; c++) {
+                dest(r, c) = *itr++;
+            }
+        }
+    } else {
+        for (SIZE_TYPE c = 0; c < num_columns; c++) {
+            for (SIZE_TYPE r = 0; r < num_rows; r++) {
+                dest(r, c) = *itr++;
+            }
+        }
     }
+    _ASSERT(itr == source.end());
+}
 
-    if ( !pssm_asn->GetPssm().CanGetFinalData() ||
-         !pssm_asn->GetPssm().GetFinalData().CanGetScores() ||
-         pssm_asn->GetPssm().GetFinalData().GetScores().empty() ) {
+CNcbiMatrix<int>*
+CScorematPssmConverter::GetScores(const objects::CPssmWithParameters& pssm_asn)
+{
+    if ( !pssm_asn.GetPssm().CanGetFinalData() ||
+         !pssm_asn.GetPssm().GetFinalData().CanGetScores() ||
+         pssm_asn.GetPssm().GetFinalData().GetScores().empty() ) {
         throw runtime_error("Cannot obtain scores from ASN.1 PSSM");
     }
 
-    const CPssm& pssm = pssm_asn->GetPssm();
+    const CPssm& pssm = pssm_asn.GetPssm();
     _ASSERT((size_t)pssm.GetFinalData().GetScores().size() ==
-           (size_t)pssm.GetNumRows()*pssm_asn->GetPssm().GetNumColumns());
+           (size_t)pssm.GetNumRows()*pssm_asn.GetPssm().GetNumColumns());
 
     auto_ptr< CNcbiMatrix<int> > retval
         (new CNcbiMatrix<int>(BLASTAA_SIZE,
                               pssm.GetNumColumns(), 
                               BLAST_SCORE_MIN));
 
-    CPssmFinalData::TScores::const_iterator itr =
-        pssm.GetFinalData().GetScores().begin();
-    if (pssm.GetByRow() == true) {
-        for (TSeqPos r = 0; r < retval->GetRows(); r++) {
-            for (TSeqPos c = 0; c < retval->GetCols(); c++) {
-                (*retval)(r, c) = *itr++;
-            }
-        }
-    } else {
-        for (TSeqPos c = 0; c < retval->GetCols(); c++) {
-            for (TSeqPos r = 0; r < retval->GetRows(); r++) {
-                (*retval)(r, c) = *itr++;
-            }
-        }
-    }
-    _ASSERT(itr == pssm.GetFinalData().GetScores().end());
+    Convert2Matrix(pssm.GetFinalData().GetScores(),
+                   *retval, pssm.GetByRow(), pssm.GetNumRows(),
+                   pssm.GetNumColumns());
     return retval.release();
 }
 
 CNcbiMatrix<double>*
-CScorematPssmConverter::GetFreqRatios(CConstRef<objects::CPssmWithParameters> 
+CScorematPssmConverter::GetFreqRatios(const objects::CPssmWithParameters& 
                                       pssm_asn)
 {
-    if (pssm_asn.Empty()) {
-        throw runtime_error("Cannot use NULL PSSM");
-    }
-
-    if ( !pssm_asn->GetPssm().CanGetIntermediateData() ||
-         !pssm_asn->GetPssm().GetIntermediateData().CanGetFreqRatios() ||
-         pssm_asn->GetPssm().GetIntermediateData().GetFreqRatios().empty() ) {
+    if ( !pssm_asn.GetPssm().CanGetIntermediateData() ||
+         !pssm_asn.GetPssm().GetIntermediateData().CanGetFreqRatios() ||
+         pssm_asn.GetPssm().GetIntermediateData().GetFreqRatios().empty() ) {
         throw runtime_error("Cannot obtain frequency ratios from ASN.1 PSSM");
     }
 
-    const CPssm& pssm = pssm_asn->GetPssm();
+    const CPssm& pssm = pssm_asn.GetPssm();
     _ASSERT((size_t)pssm.GetIntermediateData().GetFreqRatios().size() ==
-           (size_t)pssm.GetNumRows()*pssm_asn->GetPssm().GetNumColumns());
+           (size_t)pssm.GetNumRows()*pssm_asn.GetPssm().GetNumColumns());
 
     auto_ptr< CNcbiMatrix<double> > retval
         (new CNcbiMatrix<double>(BLASTAA_SIZE, pssm.GetNumColumns(), 0.0));
 
-    CPssmIntermediateData::TFreqRatios::const_iterator itr =
-        pssm.GetIntermediateData().GetFreqRatios().begin();
-    if (pssm.GetByRow() == true) {
-        for (int r = 0; r < pssm.GetNumRows(); r++) {
-            for (int c = 0; c < pssm.GetNumColumns(); c++) {
-                (*retval)(r, c) = *itr++;
-            }
-        }
+    Convert2Matrix(pssm.GetIntermediateData().GetFreqRatios(),
+                   *retval, pssm.GetByRow(), pssm.GetNumRows(),
+                   pssm.GetNumColumns());
+    return retval.release();
+}
 
-    } else {
-        for (int c = 0; c < pssm.GetNumColumns(); c++) {
-            for (int r = 0; r < pssm.GetNumRows(); r++) {
-                (*retval)(r, c) = *itr++;
-            }
-        }
+CNcbiMatrix<int>*
+CScorematPssmConverter::GetResidueFrequencies
+    (const objects::CPssmWithParameters& pssm_asn)
+{
+    if ( !pssm_asn.GetPssm().CanGetIntermediateData() ||
+         !pssm_asn.GetPssm().GetIntermediateData().CanGetResFreqsPerPos() ||
+         pssm_asn.GetPssm().GetIntermediateData().GetResFreqsPerPos().empty() )
+    {
+        return NULL;
     }
-    _ASSERT(itr == pssm.GetIntermediateData().GetFreqRatios().end());
 
+    const CPssm& pssm = pssm_asn.GetPssm();
+    _ASSERT((size_t)pssm.GetIntermediateData().GetResFreqsPerPos().size() ==
+           (size_t)pssm.GetNumRows()*pssm_asn.GetPssm().GetNumColumns());
+
+    auto_ptr< CNcbiMatrix<int> > retval
+        (new CNcbiMatrix<int>(BLASTAA_SIZE, pssm.GetNumColumns(), 0));
+
+    Convert2Matrix(pssm.GetIntermediateData().GetResFreqsPerPos(),
+                   *retval, pssm.GetByRow(), pssm.GetNumRows(),
+                   pssm.GetNumColumns());
+    return retval.release();
+}
+
+CNcbiMatrix<double>*
+CScorematPssmConverter::GetWeightedResidueFrequencies
+    (const objects::CPssmWithParameters& pssm_asn)
+{
+    if ( !pssm_asn.GetPssm().CanGetIntermediateData() ||
+         !pssm_asn.GetPssm().GetIntermediateData().
+            CanGetWeightedResFreqsPerPos() ||
+         pssm_asn.GetPssm().GetIntermediateData().
+            GetWeightedResFreqsPerPos().empty() ) {
+        return NULL;
+    }
+
+    const CPssm& pssm = pssm_asn.GetPssm();
+    _ASSERT((size_t)pssm.GetIntermediateData().
+                GetWeightedResFreqsPerPos().size() ==
+           (size_t)pssm.GetNumRows()*pssm_asn.GetPssm().GetNumColumns());
+
+    auto_ptr< CNcbiMatrix<double> > retval
+        (new CNcbiMatrix<double>(BLASTAA_SIZE, pssm.GetNumColumns(), 0.0));
+
+    Convert2Matrix(pssm.GetIntermediateData().GetWeightedResFreqsPerPos(),
+                   *retval, pssm.GetByRow(), pssm.GetNumRows(),
+                   pssm.GetNumColumns());
     return retval.release();
 }
 
 void
+CScorematPssmConverter::GetInformationContent
+    (const objects::CPssmWithParameters& pssm_asn, 
+     vector<double>& retval)
+{
+    retval.clear();
+    if ( !pssm_asn.GetPssm().CanGetIntermediateData() ||
+         !pssm_asn.GetPssm().GetIntermediateData().CanGetInformationContent() ||
+         pssm_asn.GetPssm().
+            GetIntermediateData().GetInformationContent().empty() ) {
+        return;
+    }
+    const CPssm& pssm = pssm_asn.GetPssm();
+    copy(pssm.GetIntermediateData().GetInformationContent().begin(),
+         pssm.GetIntermediateData().GetInformationContent().end(),
+         back_inserter(retval));
+}
+
+void
+CScorematPssmConverter::GetGaplessColumnWeights
+    (const objects::CPssmWithParameters& pssm_asn, 
+     vector<double>& retval)
+{
+    retval.clear();
+    if ( !pssm_asn.GetPssm().CanGetIntermediateData() ||
+         !pssm_asn.GetPssm().
+            GetIntermediateData().CanGetGaplessColumnWeights() ||
+         pssm_asn.GetPssm().
+            GetIntermediateData().GetGaplessColumnWeights().empty() ) {
+        return;
+    }
+    const CPssm& pssm = pssm_asn.GetPssm();
+    copy(pssm.GetIntermediateData().GetGaplessColumnWeights().begin(),
+         pssm.GetIntermediateData().GetGaplessColumnWeights().end(),
+         back_inserter(retval));
+}
+
+void
+CScorematPssmConverter::GetSigma(const objects::CPssmWithParameters& pssm_asn, 
+                                 vector<double>& retval)
+{
+    retval.clear();
+    if ( !pssm_asn.GetPssm().CanGetIntermediateData() ||
+         !pssm_asn.GetPssm().GetIntermediateData().CanGetSigma() ||
+         pssm_asn.GetPssm().GetIntermediateData().GetSigma().empty() ) {
+        return;
+    }
+    const CPssm& pssm = pssm_asn.GetPssm();
+    copy(pssm.GetIntermediateData().GetSigma().begin(),
+         pssm.GetIntermediateData().GetSigma().end(),
+         back_inserter(retval));
+}
+
+void
+CScorematPssmConverter::GetIntervalSizes
+    (const objects::CPssmWithParameters& pssm_asn, vector<int>& retval)
+{
+    retval.clear();
+    if ( !pssm_asn.GetPssm().CanGetIntermediateData() ||
+         !pssm_asn.GetPssm().
+            GetIntermediateData().CanGetIntervalSizes() ||
+         pssm_asn.GetPssm().
+            GetIntermediateData().GetIntervalSizes().empty() ) {
+        return;
+    }
+    const CPssm& pssm = pssm_asn.GetPssm();
+    copy(pssm.GetIntermediateData().GetIntervalSizes().begin(),
+         pssm.GetIntermediateData().GetIntervalSizes().end(),
+         back_inserter(retval));
+}
+
+void
+CScorematPssmConverter::GetNumMatchingSeqs
+    (const objects::CPssmWithParameters& pssm_asn, vector<int>& retval)
+{
+    retval.clear();
+    if ( !pssm_asn.GetPssm().CanGetIntermediateData() ||
+         !pssm_asn.GetPssm().
+            GetIntermediateData().CanGetNumMatchingSeqs() ||
+         pssm_asn.GetPssm().
+            GetIntermediateData().GetNumMatchingSeqs().empty() ) {
+        return;
+    }
+    const CPssm& pssm = pssm_asn.GetPssm();
+    copy(pssm.GetIntermediateData().GetNumMatchingSeqs().begin(),
+         pssm.GetIntermediateData().GetNumMatchingSeqs().end(),
+         back_inserter(retval));
+}
+
+void
 PsiBlastAddAncillaryPssmData(objects::CPssmWithParameters& pssm, 
-                             const objects::CBioseq& query, 
-                             int gap_open, 
-                             int gap_extend)
+                         const objects::CBioseq& query, 
+                         int gap_open, 
+                         int gap_extend)
 {
     pssm.SetPssm().SetQuery().SetSeq(const_cast<CBioseq&>(query));
     _ASSERT(pssm.GetParams().GetRpsdbparams().IsSetMatrixName());
@@ -334,7 +463,7 @@ void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
     _ASSERT(query_data->GetSeqLength(0) == 
             (size_t)pssm->GetPssm().GetNumColumns());
     auto_ptr< CNcbiMatrix<double> > freq_ratios
-        (CScorematPssmConverter::GetFreqRatios(pssm));
+        (CScorematPssmConverter::GetFreqRatios(*pssm));
 
     CPsiBlastInputFreqRatios pssm_engine_input(seqblk->sequence, 
                                                seqblk->length, 

@@ -248,6 +248,14 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
     *qinfo = query_info.Release();
 }
 
+/** 
+ * @brief Calculate the starting and ending contexts for a given strand
+ * 
+ * @param strand strand to compute contexts for [in]
+ * @param num_contexts number of contexts [in]
+ * @param start starting context [out]
+ * @param end ending context [out]
+ */
 static void
 s_ComputeStartEndContexts(ENa_strand   strand,
                           int          num_contexts,
@@ -274,6 +282,16 @@ s_ComputeStartEndContexts(ENa_strand   strand,
     }
 }
 
+/** 
+ * @brief Adds core_seqloc to mask. 
+ * 
+ * @param prog BLAST program
+ * @param mask data structure to add the mask to [in|out]
+ * @param query_index index of the query for which to add the mask [in]
+ * @param core_seqloc mask to add [in]
+ * @param strand strand on which the mask is being added [in]
+ * @param query_length length of the query [in]
+ */
 static void
 s_AddMask(EBlastProgramType prog,
           BlastMaskLoc* mask,
@@ -341,6 +359,16 @@ s_AddMask(EBlastProgramType prog,
     }
 }
 
+/** 
+ * @brief Adds seqloc_frames to mask. 
+ * 
+ * @param prog BLAST program
+ * @param mask data structure to add the mask to [in|out]
+ * @param query_index index of the query for which to add the mask [in]
+ * @param seqloc_frames mask to add [in]
+ * @param strand strand on which the mask is being added [in]
+ * @param query_length length of the query [in]
+ */
 static void
 s_AddMask(EBlastProgramType           prog,
           BlastMaskLoc              * mask,
@@ -414,18 +442,12 @@ s_AddMask(EBlastProgramType           prog,
     }
 }
 
-void
-s_RestrictSeqLocs_OneFrame(BlastSeqLoc             ** bsl,
-                           const IBlastQuerySource  & queries,
-                           int                        query_index,
-                           const BlastQueryInfo     * qinfo)
-{
-    CConstRef<CSeq_loc> qseqloc = queries.GetSeqLoc(query_index);
-    BlastSeqLoc_RestrictToInterval(bsl,
-                                   qseqloc->GetStart(eExtreme_Positional),
-                                   qseqloc->GetStop (eExtreme_Positional));
-}
-
+/// Restricts the masked locations in frame_to_bsl for the case when the
+/// BLAST program requires the query to be translated into multiple frames.
+/// @param frame_to_bsl query filtered frames to adjust [out]
+/// @param queries all query sequences [in]
+/// @param query_index index of the query of interest in queries [in]
+/// @param qinfo BlastQueryInfo structure for the queries above [in]
 static void
 s_RestrictSeqLocs_Multiframe(CBlastQueryFilteredFrames & frame_to_bsl,
                              const IBlastQuerySource   & queries,
@@ -460,6 +482,13 @@ s_RestrictSeqLocs_Multiframe(CBlastQueryFilteredFrames & frame_to_bsl,
     }
 }
 
+/// Extract the masking locations for a single query into a
+/// CBlastQueryFilteredFrames object and adjust the masks so that they
+/// correspond to the range specified by the Seq-loc in queries.
+/// @param queries all query sequences [in]
+/// @param query_index index of the query of interest in queries [in]
+/// @param qinfo BlastQueryInfo structure for the queries above [in]
+/// @param program BLAST program being executed [in]
 static CRef<CBlastQueryFilteredFrames>
 s_GetRestrictedBlastSeqLocs(IBlastQuerySource & queries,
                             int                       query_index,
@@ -479,16 +508,21 @@ s_GetRestrictedBlastSeqLocs(IBlastQuerySource & queries,
                                          query_index,
                                          qinfo);
         } else {
-            s_RestrictSeqLocs_OneFrame((*frame_to_bsl)[0],
-                                       queries,
-                                       query_index,
-                                       qinfo);
+            CConstRef<CSeq_loc> qseqloc = queries.GetSeqLoc(query_index);
+            BlastSeqLoc_RestrictToInterval((*frame_to_bsl)[0],
+                                       qseqloc->GetStart(eExtreme_Positional),
+                                       qseqloc->GetStop (eExtreme_Positional));
         }
     }
     
     return frame_to_bsl;
 }
 
+/// Mark the contexts corresponding to the query identified by query_index as
+/// invalid
+/// @param qinfo BlastQueryInfo structure to modify [in]
+/// @param query_index index of the query, assumes it's in the BlastQueryInfo
+/// structure above [in]
 static void
 s_InvalidateQueryContexts(BlastQueryInfo* qinfo, int query_index)
 {
@@ -505,7 +539,7 @@ SetupQueries_OMF(IBlastQuerySource& queries,
                  BlastQueryInfo* qinfo, 
                  BLAST_SequenceBlk** seqblk,
                  EBlastProgramType prog,
-                 ENa_strand strand_opt,
+                 objects::ENa_strand strand_opt,
                  TSearchMessages& messages)
 {
     _ASSERT(seqblk);

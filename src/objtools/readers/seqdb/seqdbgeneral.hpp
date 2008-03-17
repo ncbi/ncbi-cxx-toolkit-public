@@ -39,7 +39,6 @@
 
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include <corelib/ncbi_bswap.hpp>
-#include "seqdbatlas.hpp"
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -477,7 +476,7 @@ void SeqDB_CombinePath(const CSeqDB_Substring & path,
 ///   Input path
 /// @return
 ///   Path minus file extension
-CSeqDB_Substring SeqDB_GetDirName(CSeqDB_Substring s);
+CSeqDB_Substring SeqDB_RemoveFileName(CSeqDB_Substring s);
 
 
 /// Returns a filename minus greedy path.
@@ -489,7 +488,7 @@ CSeqDB_Substring SeqDB_GetDirName(CSeqDB_Substring s);
 ///   Input path
 /// @return
 ///   Filename portion of path
-CSeqDB_Substring SeqDB_GetFileName(CSeqDB_Substring s);
+CSeqDB_Substring SeqDB_RemoveDirName(CSeqDB_Substring s);
 
 
 /// Returns a filename minus greedy path.
@@ -501,20 +500,19 @@ CSeqDB_Substring SeqDB_GetFileName(CSeqDB_Substring s);
 ///   Input path
 /// @return
 ///   Path minus file extension
-CSeqDB_Substring SeqDB_GetBasePath(CSeqDB_Substring s);
+CSeqDB_Substring SeqDB_RemoveExtn(CSeqDB_Substring s);
 
 
-/// Returns a filename minus greedy path.
+/// Change path delimiters to platform preferred kind in-place.
 ///
-/// This is just the composition of the SeqDB_GetDirName and
-/// SeqDB_GetFileName functions; it returns a filename minus greedy
-/// path and non-greedy extension.
+/// The path is modified in place.  The 'Convert' interface is more
+/// efficient for cases where the new path would be assigned to the
+/// same string object.  Delimiter conversion should be called by
+/// SeqDB at least once on any path received from the user, or via
+/// filesystem sources such as alias files.
 ///
-/// @param s
-///   Input path
-/// @return
-///   Filename portion of path, minus extension
-CSeqDB_Substring SeqDB_GetBaseName(CSeqDB_Substring s);
+/// @param dbs This string will be changed in-place.
+void SeqDB_ConvertOSPath(string & dbs);
 
 
 // File and directory path classes.  This should be used across all
@@ -776,21 +774,14 @@ public:
     CSeqDB_Substring FindDirName() const
     {
         _ASSERT(Valid());
-        return SeqDB_GetDirName( CSeqDB_Substring(m_Value) );
+        return SeqDB_RemoveFileName( CSeqDB_Substring(m_Value) );
     }
     
     /// Return the portion of this path representing the base name.
     CSeqDB_Substring FindBaseName() const
     {
         _ASSERT(Valid());
-        return SeqDB_GetBaseName( CSeqDB_Substring( m_Value) );
-    }
-    
-    /// Return the portion of this path representing the file name.
-    CSeqDB_Substring FindFileName() const
-    {
-        _ASSERT(Valid());
-        return SeqDB_GetFileName( CSeqDB_Substring( m_Value ) );
+        return SeqDB_RemoveDirName( CSeqDB_Substring( m_Value) );
     }
     
     /// Return this path as a string.
@@ -965,28 +956,28 @@ public:
     CSeqDB_Substring FindDirName() const
     {
         _ASSERT(Valid());
-        return SeqDB_GetDirName( CSeqDB_Substring(m_Value) );
+        return SeqDB_RemoveFileName( CSeqDB_Substring(m_Value) );
     }
     
     /// Returns the portion of this path containing the base path.
     CSeqDB_Substring FindBasePath() const
     {
         _ASSERT(Valid());
-        return SeqDB_GetBasePath( CSeqDB_Substring(m_Value) );
+        return SeqDB_RemoveExtn(CSeqDB_Substring(m_Value));
     }
     
     /// Returns the portion of this path containing the base name.
     CSeqDB_Substring FindBaseName() const
     {
         _ASSERT(Valid());
-        return SeqDB_GetBaseName( CSeqDB_Substring(m_Value) );
+        return SeqDB_RemoveExtn(SeqDB_RemoveDirName(CSeqDB_Substring(m_Value)));
     }
     
     /// Returns the portion of this path containing the file name.
     CSeqDB_Substring FindFileName() const
     {
         _ASSERT(Valid());
-        return SeqDB_GetFileName( CSeqDB_Substring( m_Value ) );
+        return SeqDB_RemoveDirName( CSeqDB_Substring( m_Value ) );
     }
     
     /// Returns true if the paths are equal.
@@ -1027,6 +1018,11 @@ private:
     string m_Value;
 };
 
+/// Forward declaration.
+class CSeqDBAtlas;
+
+/// Forward declaration.
+class CSeqDBLockHold;
 
 /// Finds a file in the search path.
 ///

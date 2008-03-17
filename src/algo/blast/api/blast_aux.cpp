@@ -956,6 +956,19 @@ TSearchMessages::RemoveDuplicates()
     }
 }
 
+void TSearchMessages::AddMessageAllQueries(EBlastSeverity   severity,
+                                           int              error_id,
+                                           const string   & message)
+{
+    CRef<CSearchMessage> sm(new CSearchMessage(eBlastSevWarning,
+                                               kBlastMessageNoContext, 
+                                               message));
+    
+    NON_CONST_ITERATE(TSearchMessages, query_messages, *this) {
+        query_messages->push_back(sm);
+    }
+}
+
 //
 // TMaskedQueryRegions
 //

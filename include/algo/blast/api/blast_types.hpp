@@ -226,14 +226,21 @@ private:
 class NCBI_XBLAST_EXPORT TSearchMessages : public vector<TQueryMessages>
 {
 public:
-    /// Check whether there are messages for this search.
+    /// Add a message for all queries.
+    /// @param severity The severity of this message. [in]
+    /// @param error_id A number unique to this error. [in]
+    /// @param message A description of the error for the user. [in]
+    void AddMessageAllQueries(EBlastSeverity   severity,
+                              int              error_id,
+                              const string   & message);
+    
     /// @return true if messages exist.
     bool HasMessages() const;
-
+    
     /// Converts messages to a string, which is returned.
     /// @return A string containing all such messages.
     string ToString() const;
-
+    
     /// Combine another set of search messages with this one.
     ///
     /// Another set of messages is combined with these; each element

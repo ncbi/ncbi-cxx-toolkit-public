@@ -164,11 +164,38 @@ PssmIntermediateData ::= SEQUENCE {
     -- (N.B.: each position's weights should add up to 1.0).
     -- This field corresponds to f_i (f sub i) in equation 2 of 
     -- Nucleic Acids Res. 2001 Jul 15;29(14):2994-3005.
+    -- NOTE: this is needed for diagnostics information only (i.e.:
+    -- -out_ascii_pssm option in psiblast)
     weightedResFreqsPerPos      SEQUENCE OF REAL OPTIONAL,
 
     -- PSSM's frequency ratios
-    freqRatios                  SEQUENCE OF REAL
+    freqRatios                  SEQUENCE OF REAL,
 
+    -- Information content per position of the PSSM
+    -- NOTE: this is needed for diagnostics information only (i.e.:
+    -- -out_ascii_pssm option in psiblast)
+    informationContent          SEQUENCE OF REAL OPTIONAL,
+
+    -- Weights for columns of the PSSM without gaps
+    -- NOTE: this is needed for diagnostics information only (i.e.:
+    -- -out_ascii_pssm option in psiblast)
+    gaplessColumnWeights        SEQUENCE OF REAL OPTIONAL,
+
+    -- Used in sequence weights computation
+    -- NOTE: this is needed for diagnostics information only (i.e.:
+    -- -out_ascii_pssm option in psiblast)
+    sigma                       SEQUENCE OF REAL OPTIONAL,
+
+    -- Length of the aligned regions per position of the query sequence
+    -- NOTE: this is needed for diagnostics information only (i.e.:
+    -- -out_ascii_pssm option in psiblast)
+    intervalSizes               SEQUENCE OF INTEGER OPTIONAL,
+
+    -- Number of matching sequences per position of the PSSM (including the
+    -- query)
+    -- NOTE: this is needed for diagnostics information only (i.e.:
+    -- -out_ascii_pssm option in psiblast)
+    numMatchingSeqs             SEQUENCE OF INTEGER OPTIONAL
 }
 
 -- Position-specific scoring matrix

@@ -48,6 +48,7 @@
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
+#include <serial/exception.hpp>
 #include <util/range.hpp>
 
 using namespace std;
@@ -970,12 +971,12 @@ BOOST_AUTO_TEST_CASE(GetSearchStrategy_QueryWithRange) {
                 BOOST_REQUIRE(p->CanGetValue());
                 found_query_range = true;
                 if (*pname == B4Param_RequiredStart.GetName()) {
-                    BOOST_REQUIRE_EQUAL(query_range.GetFrom(), 
-                                        p->GetValue().GetInteger());
+                    BOOST_REQUIRE_EQUAL((int)query_range.GetFrom(), 
+                                        (int)p->GetValue().GetInteger());
                 }
                 if (*pname == B4Param_RequiredEnd.GetName()) {
-                    BOOST_REQUIRE_EQUAL(query_range.GetTo(), 
-                                        p->GetValue().GetInteger());
+                    BOOST_REQUIRE_EQUAL((int)query_range.GetTo(), 
+                                        (int)p->GetValue().GetInteger());
                 }
             }
         }
@@ -1091,4 +1092,40 @@ BOOST_AUTO_TEST_CASE(GetSearchStrategy_QueryWithGIs) {
     // just as a bonus, check the database
     BOOST_REQUIRE(qsr.CanGetSubject());
     BOOST_REQUIRE(qsr.GetSubject().GetDatabase() == kDbName);
+}
+
+BOOST_AUTO_TEST_CASE(ReadSearchStrategy_TextAsn1) 
+{
+    const char* fname = "data/ss.asn";
+    ifstream in(fname);
+    BOOST_REQUIRE(in);
+    CRef<CBlast4_request> search_strategy = ExtractBlast4Request(in);
+    BOOST_REQUIRE(search_strategy.NotEmpty());
+    BOOST_REQUIRE(search_strategy->GetBody().GetQueue_search().GetProgram() 
+                  == "blastn");
+    BOOST_REQUIRE(search_strategy->GetBody().GetQueue_search().GetService() 
+                  == "megablast");
+}
+
+BOOST_AUTO_TEST_CASE(ReadSearchStrategy_Xml) 
+{
+    const char* fname = "data/ss.xml";
+    ifstream in(fname);
+    BOOST_REQUIRE(in);
+    CRef<CBlast4_request> search_strategy = ExtractBlast4Request(in);
+    BOOST_REQUIRE(search_strategy.NotEmpty());
+    BOOST_REQUIRE(search_strategy->GetBody().GetQueue_search().GetProgram() 
+                  == "blastn");
+    BOOST_REQUIRE(search_strategy->GetBody().GetQueue_search().GetService() 
+                  == "plain");
+}
+
+BOOST_AUTO_TEST_CASE(ReadSearchStrategy_Invalid) 
+{
+    const char* fname = "data/seq_entry_gis.asn";
+    ifstream in(fname);
+    BOOST_REQUIRE(in);
+    CRef<CBlast4_request> search_strategy;
+    BOOST_REQUIRE_THROW(search_strategy = ExtractBlast4Request(in),
+                        CSerialException);
 }

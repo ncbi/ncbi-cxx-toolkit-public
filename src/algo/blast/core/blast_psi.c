@@ -548,6 +548,28 @@ PSIDiagnosticsResponseNew(Uint4 query_length, Uint4 alphabet_size,
         }
     }
 
+    if (wants->sigma) {
+        retval->sigma = (double*) calloc(query_length, sizeof(double));
+        if ( !retval->sigma ) {
+            return PSIDiagnosticsResponseFree(retval);
+        }
+    }
+
+    if (wants->interval_sizes) {
+        retval->interval_sizes = (Uint4*) calloc(query_length, sizeof(Uint4));
+        if ( !retval->interval_sizes ) {
+            return PSIDiagnosticsResponseFree(retval);
+        }
+    }
+
+    if (wants->num_matching_seqs) {
+        retval->num_matching_seqs = 
+            (Uint4*) calloc(query_length, sizeof(Uint4));
+        if ( !retval->num_matching_seqs ) {
+            return PSIDiagnosticsResponseFree(retval);
+        }
+    }
+
     return retval;
 }
 

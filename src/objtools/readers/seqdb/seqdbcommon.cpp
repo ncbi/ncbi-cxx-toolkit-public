@@ -45,7 +45,7 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDB_Substring SeqDB_GetFileName(CSeqDB_Substring s)
+CSeqDB_Substring SeqDB_RemoveDirName(CSeqDB_Substring s)
 {
     int off = s.FindLastOf(CFile::GetPathSeparator());
     
@@ -57,7 +57,7 @@ CSeqDB_Substring SeqDB_GetFileName(CSeqDB_Substring s)
 }
 
 
-CSeqDB_Substring SeqDB_GetDirName(CSeqDB_Substring s)
+CSeqDB_Substring SeqDB_RemoveFileName(CSeqDB_Substring s)
 {
     int off = s.FindLastOf(CFile::GetPathSeparator());
     
@@ -71,7 +71,7 @@ CSeqDB_Substring SeqDB_GetDirName(CSeqDB_Substring s)
 }
 
 
-CSeqDB_Substring SeqDB_GetBasePath(CSeqDB_Substring s)
+CSeqDB_Substring SeqDB_RemoveExtn(CSeqDB_Substring s)
 {
     // This used to remove anything after the last "." it could find.
     // Then it was changed to only remove the part after the ".", if
@@ -118,12 +118,6 @@ CSeqDB_Substring SeqDB_GetBasePath(CSeqDB_Substring s)
     }
     
     return s;
-}
-
-
-CSeqDB_Substring SeqDB_GetBaseName(CSeqDB_Substring s)
-{
-    return SeqDB_GetBasePath( SeqDB_GetFileName(s) );
 }
 
 
@@ -274,6 +268,28 @@ static string s_GetPathSplitter()
 #endif
     
     return splitter;
+}
+
+
+void SeqDB_ConvertOSPath(string & dbs)
+{
+    // See also CDirEntry::ConvertToOSPath()
+    
+    char delim = CDirEntry::GetPathSeparator();
+    
+    for(size_t i = 0; i<dbs.size(); i++) {
+        if (dbs[i] == '/' || dbs[i] == '\\') {
+            dbs[i] = delim;
+        }
+    }
+}
+
+
+string SeqDB_MakeOSPath(const string & dbs)
+{
+    string cvt(dbs);
+    SeqDB_ConvertOSPath(cvt);
+    return cvt;
 }
 
 
@@ -1416,165 +1432,6 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
     }
     
     m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
-}
-
-
-unsigned SeqDB_SequenceHash(const char * sequence,
-                            int          length)
-{
-    unsigned retval = 0;
-    
-    for (int i = 0; i < length; i++) {
-        unsigned seq_i = unsigned(sequence[i]) & 0xFF;
-        
-        retval *= 1103515245;
-        retval += seq_i + 12345;
-    }
-    
-    return retval;
-}
-
-unsigned SeqDB_SequenceHash(const CBioseq & sequence)
-{
-    if (! sequence.CanGetInst()) {
-        NCBI_THROW(CSeqDBException,
-                   eArgErr,
-                   "Need sequence data.");
-    }
-    
-    const CSeq_inst & si = sequence.GetInst();
-    
-    // Either get output_data to point to a target format or gather
-    // enough info to call CSeqConvert to produce a target format.
-    
-    if (! sequence.GetInst().CanGetSeq_data()) {
-        NCBI_THROW(CSeqDBException,
-                   eArgErr,
-                   "No sequence data in Bioseq.");
-    }
-    
-    bool need_cvt = true;
-    bool is_protein = false;
-    CSeqUtil::ECoding coding(CSeqUtil::e_not_set);
-    CTempString input_data;
-    CTempString output_data;
-    
-    const CSeq_data & sd = si.GetSeq_data();
-    
-    if (! si.CanGetLength()) {
-        NCBI_THROW(CSeqDBException,
-                   eArgErr,
-                   "No sequence length in Bioseq.");
-    }
-    
-    int base_length = si.GetLength();
-    
-    const vector<char> * vp = 0;
-    const string * sp = 0;
-    
-    switch(sd.Which()) {
-        
-            // Protein
-
-        case CSeq_data::e_Ncbistdaa:
-            need_cvt = false;
-            is_protein = true;
-            coding = CSeqUtil::e_Ncbistdaa;
-            vp = & si.GetSeq_data().GetNcbistdaa().Get();
-            output_data.assign(& (*vp)[0], vp->size());
-            break;
-            
-        case CSeq_data::e_Ncbieaa:
-            need_cvt = true;
-            is_protein = true;
-            coding = CSeqUtil::e_Ncbieaa;
-            sp = & si.GetSeq_data().GetNcbieaa().Get();
-            input_data.assign(sp->data(), sp->size());
-            break;
-            
-        case CSeq_data::e_Iupacaa:
-            need_cvt = true;
-            is_protein = true;
-            coding = CSeqUtil::e_Iupacaa;
-            sp = & si.GetSeq_data().GetIupacaa().Get();
-            input_data.assign(sp->data(), sp->size());
-            break;
-            
-        case CSeq_data::e_Ncbi8aa:
-            need_cvt = true;
-            is_protein = true;
-            coding = CSeqUtil::e_Ncbi8aa;
-            vp = & si.GetSeq_data().GetNcbi8aa().Get();
-            input_data.assign(& (*vp)[0], vp->size());
-            break;
-            
-            // Nucleotide
-
-        case CSeq_data::e_Iupacna:
-            need_cvt = true;
-            is_protein = false;
-            coding = CSeqUtil::e_Iupacna;
-            sp = & si.GetSeq_data().GetIupacna().Get();
-            input_data.assign(sp->data(), sp->size());
-            break;
-            
-        case CSeq_data::e_Ncbi2na:
-            need_cvt = true;
-            is_protein = false;
-            coding = CSeqUtil::e_Ncbi2na;
-            vp = & si.GetSeq_data().GetNcbi2na().Get();
-            input_data.assign(& (*vp)[0], vp->size());
-            break;
-            
-        case CSeq_data::e_Ncbi4na:
-            need_cvt = true;
-            is_protein = false;
-            coding = CSeqUtil::e_Ncbi4na;
-            vp = & si.GetSeq_data().GetNcbi4na().Get();
-            input_data.assign(& (*vp)[0], vp->size());
-            break;
-            
-        case CSeq_data::e_Ncbi8na:
-            need_cvt = false;
-            is_protein = false;
-            coding = CSeqUtil::e_Ncbi8na;
-            vp = & si.GetSeq_data().GetNcbi8na().Get();
-            output_data.assign(& (*vp)[0], vp->size());
-            break;
-            
-        default:
-            string msg = "Conversion for CBioseq type [";
-            msg += NStr::IntToString((int) sd.Which());
-            msg += "] not supported.";
-            
-            NCBI_THROW(CSeqDBException, eArgErr, msg);
-    }
-    
-    string buffer;
-    
-    if (need_cvt) {
-        CSeqUtil::ECoding target_coding =
-            (is_protein
-             ? CSeqUtil::e_Ncbistdaa
-             : CSeqUtil::e_Ncbi8na);
-        
-        int amt = CSeqConvert::Convert(input_data,
-                                       coding,
-                                       0,
-                                       base_length,
-                                       buffer,
-                                       target_coding);
-        
-        if (amt == 0) {
-            NCBI_THROW(CSeqDBException,
-                       eArgErr,
-                       "Could not do data type conversion for CBioseq.");
-        }
-        
-        output_data.assign(buffer.data(), buffer.size());
-    }
-    
-    return SeqDB_SequenceHash(output_data.data(), output_data.size());
 }
 
 CSeqDBIdSet::CSeqDBIdSet(const vector<int> & ids, EIdType t, bool positive)

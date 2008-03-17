@@ -535,8 +535,11 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
     _ASSERT(pssm->ncols == diagnostics->query_length);
 
     if (diagnostics->information_content) {
-        NCBI_THROW(CBlastException, eNotSupported, "Information content "
-                   "cannot be stored in PssmWithParameters ASN.1");
+        CPssmIntermediateData::TInformationContent& info_content =
+            asn1_pssm.SetIntermediateData().SetInformationContent();
+        for (Uint4 i = 0; i < diagnostics->query_length; i++) {
+            info_content.push_back(diagnostics->information_content[i]);
+        }
     }
 
     if (diagnostics->residue_freqs) {
@@ -596,8 +599,35 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
     }
 
     if (diagnostics->gapless_column_weights) {
-        NCBI_THROW(CBlastException, eNotSupported, "Gapless column weights "
-                   "cannot be stored in PssmWithParameters ASN.1");
+        CPssmIntermediateData::TGaplessColumnWeights& gcw =
+            asn1_pssm.SetIntermediateData().SetGaplessColumnWeights();
+        for (Uint4 i = 0; i < diagnostics->query_length; i++) {
+            gcw.push_back(diagnostics->gapless_column_weights[i]);
+        }
+    }
+
+    if (diagnostics->sigma) {
+        CPssmIntermediateData::TSigma& sigma =
+            asn1_pssm.SetIntermediateData().SetSigma();
+        for (Uint4 i = 0; i < diagnostics->query_length; i++) {
+            sigma.push_back(diagnostics->sigma[i]);
+        }
+    }
+
+    if (diagnostics->interval_sizes) {
+        CPssmIntermediateData::TIntervalSizes& interval_sizes =
+            asn1_pssm.SetIntermediateData().SetIntervalSizes();
+        for (Uint4 i = 0; i < diagnostics->query_length; i++) {
+            interval_sizes.push_back(diagnostics->interval_sizes[i]);
+        }
+    }
+
+    if (diagnostics->num_matching_seqs) {
+        CPssmIntermediateData::TNumMatchingSeqs& num_matching_seqs =
+            asn1_pssm.SetIntermediateData().SetNumMatchingSeqs();
+        for (Uint4 i = 0; i < diagnostics->query_length; i++) {
+            num_matching_seqs.push_back(diagnostics->num_matching_seqs[i]);
+        }
     }
 
     return retval;

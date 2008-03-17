@@ -52,6 +52,115 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+static void 
+s_InitializeKarlinBlk(Blast_KarlinBlk* src, Blast_KarlinBlk** dest)
+{
+    _ASSERT(dest);
+
+    if (src && src->Lambda >= 0) {
+        *dest = Blast_KarlinBlkNew();
+        Blast_KarlinBlkCopy(*dest, src);
+    }
+}
+
+CBlastAncillaryData::CBlastAncillaryData(EBlastProgramType program_type,
+                    int query_number,
+                    const BlastScoreBlk *sbp,
+                    const BlastQueryInfo *query_info)
+: m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_PsiUngappedKarlinBlk(0),
+  m_PsiGappedKarlinBlk(0), m_SearchSpace(0)
+{
+    int i;
+    int context_per_query = BLAST_GetNumberOfContexts(program_type);
+
+    // find the first valid context corresponding to this query
+    for (i = 0; i < context_per_query; i++) {
+        BlastContextInfo *ctx = query_info->contexts + 
+                                query_number * context_per_query + i;
+        if (ctx->is_valid) {
+            m_SearchSpace = ctx->eff_searchsp;
+            break;
+        }
+    }
+    if (i >= context_per_query) {
+        return; // we didn't find a valid context :(
+    }
+
+    // fill in the Karlin blocks for that context, if they
+    // are valid
+    const int ctx_index = query_number * context_per_query + i;
+    if (sbp->kbp_std) {
+        s_InitializeKarlinBlk(sbp->kbp_std[ctx_index], &m_UngappedKarlinBlk);
+    }
+    if (sbp->kbp_gap) {
+        s_InitializeKarlinBlk(sbp->kbp_gap[ctx_index], &m_GappedKarlinBlk);
+    }
+    if (sbp->kbp_psi) {
+        s_InitializeKarlinBlk(sbp->kbp_psi[ctx_index], &m_PsiUngappedKarlinBlk);
+    }
+    if (sbp->kbp_gap_psi) {
+        s_InitializeKarlinBlk(sbp->kbp_gap_psi[ctx_index], 
+                              &m_PsiGappedKarlinBlk);
+    }
+}
+
+CBlastAncillaryData::CBlastAncillaryData(pair<double, double> lambda,
+                                         pair<double, double> k,
+                                         pair<double, double> h,
+                                         Int8 effective_search_space)
+: m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_PsiUngappedKarlinBlk(0),
+  m_PsiGappedKarlinBlk(0), m_SearchSpace(0)
+{
+    m_GappedKarlinBlk = Blast_KarlinBlkNew();
+    m_GappedKarlinBlk->Lambda = lambda.first;
+    m_GappedKarlinBlk->K = k.first;
+    m_GappedKarlinBlk->H = h.first;
+
+    m_UngappedKarlinBlk = Blast_KarlinBlkNew();
+    m_UngappedKarlinBlk->Lambda = lambda.second;
+    m_UngappedKarlinBlk->K = k.second;
+    m_UngappedKarlinBlk->H = h.second;
+
+    m_SearchSpace = effective_search_space;
+}
+
+CBlastAncillaryData::~CBlastAncillaryData()
+{
+    Blast_KarlinBlkFree(m_UngappedKarlinBlk);
+    Blast_KarlinBlkFree(m_GappedKarlinBlk);
+    Blast_KarlinBlkFree(m_PsiUngappedKarlinBlk);
+    Blast_KarlinBlkFree(m_PsiGappedKarlinBlk);
+}
+
+void 
+CBlastAncillaryData::do_copy(const CBlastAncillaryData& other) 
+{
+    if (this != &other) {
+        m_UngappedKarlinBlk = m_GappedKarlinBlk = NULL;
+        m_SearchSpace = other.m_SearchSpace;
+
+        if (other.m_UngappedKarlinBlk) {
+            m_UngappedKarlinBlk = Blast_KarlinBlkNew();
+            Blast_KarlinBlkCopy(m_UngappedKarlinBlk, 
+                                other.m_UngappedKarlinBlk);
+        }
+        if (other.m_GappedKarlinBlk) {
+            m_GappedKarlinBlk = Blast_KarlinBlkNew();
+            Blast_KarlinBlkCopy(m_GappedKarlinBlk, other.m_GappedKarlinBlk);
+        }
+        if (other.m_PsiUngappedKarlinBlk) {
+            m_PsiUngappedKarlinBlk = Blast_KarlinBlkNew();
+            Blast_KarlinBlkCopy(m_PsiUngappedKarlinBlk, 
+                                other.m_PsiUngappedKarlinBlk);
+        }
+        if (other.m_PsiGappedKarlinBlk) {
+            m_PsiGappedKarlinBlk = Blast_KarlinBlkNew();
+            Blast_KarlinBlkCopy(m_PsiGappedKarlinBlk, 
+                                other.m_PsiGappedKarlinBlk);
+        }
+    }
+}
+
 CSearchResults::CSearchResults(CConstRef<objects::CSeq_id> query,
                                CRef<objects::CSeq_align_set> align,
                                const TQueryMessages& errs,

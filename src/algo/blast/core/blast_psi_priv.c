@@ -2452,5 +2452,22 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
         }
     }
 
+    if (diagnostics->sigma) {
+        for (p = 0; p < diagnostics->query_length; p++) {
+            diagnostics->sigma[p] = seq_weights->sigma[p];
+        }
+    }
+
+    if (diagnostics->interval_sizes) {
+        for (p = 0; p < diagnostics->query_length; p++) {
+            diagnostics->interval_sizes[p] = aligned_block->size[p];
+        }
+    }
+
+    if (diagnostics->num_matching_seqs) {
+        for (p = 0; p < diagnostics->query_length; p++) {
+            diagnostics->num_matching_seqs[p] = msa->num_matching_seqs[p];
+        }
+    }
     return PSI_SUCCESS;
 }

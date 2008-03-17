@@ -93,16 +93,21 @@ class CSearchDatabase;
 template<class TData>
 class CStructWrapper : public CObject {
 public:
-    // This functions return value is ignored; it would be void,
-    // except that most existing deletion functions return "NULL".
-    
+    /// type definition for a function that deallocated memory associated with
+    /// an object.
+    /// This functions return value is ignored; it would be void,
+    /// except that most existing deletion functions return "NULL".
     typedef TData* (TDelete)(TData*);
     
+    /// Constructor
+    /// @param obj object to wrap [in]
+    /// @param dfun deallocation function for object above [in]
     CStructWrapper(TData * obj, TDelete * dfun)
         : m_Data(obj), m_DeleteFunction(dfun)
     {
     }
     
+    /// Destructor
     ~CStructWrapper()
     {
         if (m_Data && m_DeleteFunction) {
@@ -111,16 +116,19 @@ public:
         m_Data = NULL;
     }
     
+    /// The a pointer to the wrapped object
     TData * GetPointer()
     {
         return m_Data;
     }
     
+    /// The a reference to the wrapped object
     TData & operator*()
     {
         return *m_Data;
     }
     
+    /// The a pointer to the wrapped object
     TData * operator->()
     {
         return m_Data;
@@ -132,11 +140,16 @@ private:
     /// Prohibit assignment operator
     CStructWrapper & operator=(CStructWrapper<TData> & x);
     
+    /// the pointer managed by this object
     TData   * m_Data;
+    /// deallocation function for the pointer above
     TDelete * m_DeleteFunction;
 };
 
 
+/// Auxiliary function to create a CStructWrapper for a pointer to an object
+/// @param obj pointer to wrap [in]
+/// @param del deallocation function [in]
 template<class TData>
 CStructWrapper<TData> *
 WrapStruct(TData * obj, TData* (*del)(TData*))
@@ -283,12 +296,14 @@ private:
                       bool is_multi_threaded);
 };
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 typedef CStructWrapper<BlastScoreBlk>           TBlastScoreBlk;
 typedef CStructWrapper<LookupTableWrap>         TLookupTableWrap;
 typedef CStructWrapper<BlastDiagnostics>        TBlastDiagnostics;
 typedef CStructWrapper<BlastHSPStream>          TBlastHSPStream;
 typedef CStructWrapper<BlastSeqSrc>             TBlastSeqSrc;
 typedef CStructWrapper<SPHIPatternSearchBlk>    TSPHIPatternSearchBlk;
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 /// Lightweight wrapper to enclose C structures needed for running the
 /// preliminary and traceback stages of the BLAST search

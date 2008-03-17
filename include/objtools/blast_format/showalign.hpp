@@ -440,16 +440,6 @@ private:
     ///
     int x_GetNumGaps();               
     
-    ///add linkout url
-    ///@param cbsp: bioseq of interest
-    ///@param bdl: blast defline structure
-    ///@param first_gi: the first gi in redundant sequence
-    ///@param gi: the actual gi
-    ///@param out: output stream
-    ///
-    void x_AddLinkout(const CBioseq& cbsp, const CBlast_def_line& bdl,
-                      int first_gi, int gi, CNcbiOstream& out) const;
-
     ///get url to sequence record
     ///@param ids: id list
     ///@param gi: gi or 0 if no gi

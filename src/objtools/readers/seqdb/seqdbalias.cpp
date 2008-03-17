@@ -515,7 +515,7 @@ void CSeqDBAliasSets::x_ReadAliasSetFile(const CSeqDB_Path & aset_path,
     CSeqDBMemLease lease(m_Atlas);
     
     CSeqDBAtlas::TIndx length(0);
-    m_Atlas.GetFile(lease, aset_path.GetPathS(), length, locked);
+    m_Atlas.GetFile(lease, aset_path, length, locked);
     
     const char * bp = lease.GetPtr(0);
     const char * ep = bp + (size_t) length;
@@ -572,7 +572,7 @@ bool CSeqDBAliasSets::ReadAliasFile(const CSeqDB_Path  & dbpath,
     // Check whether we already have this combined alias file.
     
     if (m_Groups.find(aset_path.GetPathS()) == m_Groups.end()) {
-        if (! m_Atlas.DoesFileExist(aset_path.GetPathS(), locked)) {
+        if (! m_Atlas.DoesFileExist(aset_path, locked)) {
             return false;
         }
         
@@ -624,7 +624,7 @@ void CSeqDBAliasNode::x_ReadAliasFile(CSeqDBMemLease    & lease,
     
     if (! has_group_file) {
         CSeqDBAtlas::TIndx length(0);
-        m_Atlas.GetFile(lease, path.GetPathS(), length, locked);
+        m_Atlas.GetFile(lease, path, length, locked);
         
         *bp = lease.GetPtr(0);
         *ep = (*bp) + length;
@@ -732,7 +732,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         // file cyclicality message at this point.
         
         if (m_DBList[i].FindDirName().Empty()) {
-            if (m_DBList[i].FindFileName() == this_name.FindFileName()) {
+            if (m_DBList[i].FindBaseName() == this_name.FindBaseName()) {
                 // If the base name of the alias file is also listed in
                 // "dblist", it is assumed to refer to a volume instead of
                 // to itself.
@@ -758,7 +758,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         // of the individual ones, build a subnode.
         
         if ( m_AliasSets.FindAliasPath(new_db_path, 0, locked) ||
-             m_Atlas.DoesFileExist(new_db_path.GetPathS(), locked) ) {
+             m_Atlas.DoesFileExist(new_db_path, locked) ) {
             
             x_AppendSubNode(base, prot_nucl, recurse, locked);
             continue;
@@ -769,7 +769,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         
         CSeqDB_Path new_vol_path( base, prot_nucl, 'i', 'n' );
         
-        if (m_Atlas.DoesFileExist(new_vol_path.GetPathS(), locked)) {
+        if (m_Atlas.DoesFileExist(new_vol_path, locked)) {
             CSeqDB_BasePath bp( new_db_path.FindBasePath() );
             m_VolNames.push_back( bp );
             continue;
@@ -783,6 +783,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         CSeqDB_BasePath restart(m_DBList[i]);
         
         if (m_AliasSets.FindBlastDBPath(restart, prot_nucl, result, locked)) {
+            CSeqDB_Path new_alias( base, prot_nucl, 'a', 'l' );
             x_AppendSubNode( result, prot_nucl, recurse, locked );
             continue;
         }

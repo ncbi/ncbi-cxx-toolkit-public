@@ -62,40 +62,7 @@ public:
     CBlastAncillaryData(EBlastProgramType program_type,
                         int query_number,
                         const BlastScoreBlk *sbp,
-                        const BlastQueryInfo *query_info)
-        : m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_SearchSpace(0)
-    {
-        int i;
-        int context_per_query = BLAST_GetNumberOfContexts(program_type);
-
-        // find the first valid context corresponding to this query
-        for (i = 0; i < context_per_query; i++) {
-            BlastContextInfo *ctx = query_info->contexts + 
-                                    query_number * context_per_query + i;
-            if (ctx->is_valid) {
-                m_SearchSpace = ctx->eff_searchsp;
-                break;
-            }
-        }
-        // fill in the Karlin blocks for that context, if they
-        // are valid
-        if (i < context_per_query && sbp->kbp_std) {
-            Blast_KarlinBlk *kbp = 
-                        sbp->kbp_std[query_number * context_per_query + i];
-            if (kbp && kbp->Lambda >= 0) {
-                m_UngappedKarlinBlk = Blast_KarlinBlkNew();
-                Blast_KarlinBlkCopy(m_UngappedKarlinBlk, kbp);
-            }
-        }
-        if (i < context_per_query && sbp->kbp_gap) {
-            Blast_KarlinBlk *kbp = 
-                        sbp->kbp_gap[query_number * context_per_query + i];
-            if (kbp && kbp->Lambda >= 0) {
-                m_GappedKarlinBlk = Blast_KarlinBlkNew();
-                Blast_KarlinBlkCopy(m_GappedKarlinBlk, kbp);
-            }
-        }
-    }
+                        const BlastQueryInfo *query_info);
 
     /** Parametrized constructor taking pairs of values for ungapped and gapped
      * Karlin-Altschul parameters as well as the effective search space
@@ -103,32 +70,16 @@ public:
      * @param k Pair of ungapped and gapped k (in that order) [in]
      * @param h Pair of ungapped and gapped h (in that order) [in]
      * @param effective_search_space effective search space [in]
+     * @note PSI-BLAST Karlin & Altschul structures cannot be passed in here,
+     * the BLAST 3 network protocol doesn't transmit these
      */
     CBlastAncillaryData(pair<double, double> lambda,
                         pair<double, double> k,
                         pair<double, double> h,
-                        Int8 effective_search_space)
-        : m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_SearchSpace(0)
-    {
-        m_GappedKarlinBlk = Blast_KarlinBlkNew();
-        m_GappedKarlinBlk->Lambda = lambda.first;
-        m_GappedKarlinBlk->K = k.first;
-        m_GappedKarlinBlk->H = h.first;
-
-        m_UngappedKarlinBlk = Blast_KarlinBlkNew();
-        m_UngappedKarlinBlk->Lambda = lambda.second;
-        m_UngappedKarlinBlk->K = k.second;
-        m_UngappedKarlinBlk->H = h.second;
-
-        m_SearchSpace = effective_search_space;
-    }
+                        Int8 effective_search_space);
 
     /// Destructor
-    ~CBlastAncillaryData()
-    {
-        Blast_KarlinBlkFree(m_UngappedKarlinBlk);
-        Blast_KarlinBlkFree(m_GappedKarlinBlk);
-    }
+    ~CBlastAncillaryData();
 
     /// Copy-constructor
     CBlastAncillaryData(const CBlastAncillaryData& rhs) {
@@ -142,22 +93,28 @@ public:
     }
 
     /// Retrieve ungapped Karlin parameters
-    const Blast_KarlinBlk * GetUngappedKarlinBlk() const
-    { 
+    const Blast_KarlinBlk * GetUngappedKarlinBlk() const { 
         return m_UngappedKarlinBlk; 
     }
 
     /// Retrieve gapped Karlin parameters
-    const Blast_KarlinBlk * GetGappedKarlinBlk() const
-    { 
+    const Blast_KarlinBlk * GetGappedKarlinBlk() const { 
         return m_GappedKarlinBlk; 
     }
 
+    /// Retrieve PSI-BLAST ungapped Karlin parameters
+    const Blast_KarlinBlk * GetPsiUngappedKarlinBlk() const { 
+        return m_PsiUngappedKarlinBlk; 
+    }
+
+    /// Retrieve PSI-BLAST gapped Karlin parameters
+    const Blast_KarlinBlk * GetPsiGappedKarlinBlk() const { 
+        return m_PsiGappedKarlinBlk; 
+    }
     /// Retrieve the search space for this query sequence. If the
     /// results correspond to a blastx search, the search space will
     /// refer to protein letters
-    Int8 GetSearchSpace() const
-    { 
+    Int8 GetSearchSpace() const { 
         return m_SearchSpace; 
     }
 
@@ -168,26 +125,18 @@ private:
     /// Gapped Karlin parameters for one query
     Blast_KarlinBlk *m_GappedKarlinBlk;
 
+    /// PSI-BLAST ungapped Karlin parameters for one query (if applicable)
+    Blast_KarlinBlk *m_PsiUngappedKarlinBlk;
+
+    /// PSI-BLAST gapped Karlin parameters for one query (if applicable)
+    Blast_KarlinBlk *m_PsiGappedKarlinBlk;
+
     /// Search space used when calculating e-values for one query
     Int8 m_SearchSpace;
 
     /// Workhorse for copy constructor and assignment operator
-    void do_copy(const CBlastAncillaryData& other) {
-        if (this != &other) {
-            m_UngappedKarlinBlk = m_GappedKarlinBlk = NULL;
-            m_SearchSpace = other.m_SearchSpace;
-
-            if (other.m_UngappedKarlinBlk) {
-                m_UngappedKarlinBlk = Blast_KarlinBlkNew();
-                Blast_KarlinBlkCopy(m_UngappedKarlinBlk, 
-                                    other.m_UngappedKarlinBlk);
-            }
-            if (other.m_GappedKarlinBlk) {
-                m_GappedKarlinBlk = Blast_KarlinBlkNew();
-                Blast_KarlinBlkCopy(m_GappedKarlinBlk, other.m_GappedKarlinBlk);
-            }
-        }
-    }
+    /// @param other object to copy [in]
+    void do_copy(const CBlastAncillaryData& other);
 };
 
 

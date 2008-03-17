@@ -77,7 +77,7 @@ IQueryFactory::MakeRemoteQueryData()
 void
 ILocalQueryData::x_ValidateIndex(size_t index)
 {
-    if (index < 0 || index > GetNumQueries()) {
+    if (index > GetNumQueries()) {
         throw std::out_of_range("Index " + NStr::IntToString(index) +
                                 " out of range (" +
                                 NStr::IntToString(GetNumQueries()) +

@@ -217,8 +217,13 @@ NCBI_XBLAST_EXPORT extern const string kArgPSINumIterations;
 
 /// Argument to specify a 'checkpoint' file to recover the PSSM from
 NCBI_XBLAST_EXPORT extern const string kArgPSIInputChkPntFile;
+/// Argument to specify a multiple sequence alignment file to create a PSSM from
+NCBI_XBLAST_EXPORT extern const string kArgMSAInputFile;
 /// Argument to specify a 'checkpoint' file to write the PSSM
 NCBI_XBLAST_EXPORT extern const string kArgPSIOutputChkPntFile;
+/// Argument to specify the file name for saving the ASCII representation of
+/// the PSSM
+NCBI_XBLAST_EXPORT extern const string kArgAsciiPssmOutputFile;
 /// Argument to specify a PHI-BLAST pattern file
 NCBI_XBLAST_EXPORT extern const string kArgPHIPatternFile;
 
@@ -254,12 +259,6 @@ NCBI_XBLAST_EXPORT extern const string kArgOutputSearchStrategy;
 NCBI_XBLAST_EXPORT extern const string kArgUseIndex;
 /// Megablast database index name.
 NCBI_XBLAST_EXPORT extern const string kArgIndexName;
-
-/* OLD C TOOLKIT ARGUMENTS */
-
-/* PSI-BLAST arguments */
-#define ARG_ASCII_MATRIX "Q"
-#define ARG_MSA_RESTART "B"
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

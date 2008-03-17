@@ -140,23 +140,6 @@ public:
                  EQueryFactoryType query_factory_type = eQFT_Query);
 };
 
-/// Auxiliary class to convert data encoded in the PSSM to CNcbiMatrix
-class CScorematPssmConverter 
-{
-public:
-    /// Returns matrix of BLASTAA_SIZE by query size (dimensions are opposite of
-    /// what is stored in the BlastScoreBlk) containing scores
-    /// Throws std::runtime_error if scores are not available
-    static CNcbiMatrix<int>*
-    GetScores(CConstRef<objects::CPssmWithParameters> pssm);
-
-    /// Returns matrix of BLASTAA_SIZE by query size (dimensions are opposite of
-    /// what is stored in the BlastScoreBlk) containing frequency ratios
-    /// Throws std::runtime_error if frequency ratios are not available
-    static CNcbiMatrix<double>* 
-    GetFreqRatios(CConstRef<objects::CPssmWithParameters> pssm);
-};
-
 /** Even though the query sequence and the matrix gap costs are not a
  * product of the PSSM engine, set them as they are required for the
  * PSI-BLAST (query sequence) and RPS-BLAST/formatrpsdb (gap costs)

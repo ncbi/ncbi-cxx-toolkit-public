@@ -67,6 +67,10 @@ public:
     /// Retrieve the stream to write the checkpoint file
     CNcbiOstream* GetCheckpointStream() const;
 
+    /// Should a PSSM be saved as ASCII in a file?
+    bool SaveAsciiPssm() const;
+    /// Retrieve the stream to write the ASCII PSSM
+    CNcbiOstream* GetAsciiPssmStream() const;
 protected:
     /// Create the options handle based on the command line arguments
     /// @param locality whether the search will be executed locally or remotely

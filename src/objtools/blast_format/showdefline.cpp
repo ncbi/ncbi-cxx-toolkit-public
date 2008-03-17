@@ -1006,7 +1006,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
             CBlastFormatUtil::AddSpace(out, 2); //E align to l of value
             out << kE;
-            out << endl;
+            out << "\n";
             out << kHeader;
             if(m_Option & eHtml){
                 if((m_Option & eShowNewSeqGif)){
@@ -1030,15 +1030,15 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
                 CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
                 out << kN;
             }
-            out << endl;
+            out << "\n";
         }
         if(m_PsiblastStatus == eRepeatPass){
-            out << kRepeatHeader << endl;
+            out << kRepeatHeader << "\n";
         }
         if(m_PsiblastStatus == eNewPass){
-            out << kNewSeqHeader << endl;
+            out << kNewSeqHeader << "\n";
         }
-        out << endl;
+        out << "\n";
     }
     
     bool first_new =true;
@@ -1141,7 +1141,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
                 out << *iter_linkout;
             }
         }
-        out <<endl;
+        out <<"\n";
     }
 }
 
@@ -1154,7 +1154,7 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
                         0, 0, m_CddRid.c_str(), "overview",
                         m_EntrezTerm == NcbiEmptyString ?
                         m_EntrezTerm.c_str() : "none");
-        out << buf <<endl<<endl;  
+        out << buf <<"\n\n";  
     }
     x_DisplayDefline(out);
 }
@@ -1187,7 +1187,7 @@ static void s_DisplayDescrColumnHeader(CNcbiOstream & out,
     }
     out << columnText;
     if (html) {        
-        out << "</a></th>" << endl;
+        out << "</a></th>\n";
     }
     else {
         CBlastFormatUtil::AddSpace(out, max_data_len - columnText.size());
@@ -1338,15 +1338,15 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                 
                     out << "<b>";
                 }
-                out << kHeader << endl;
+                out << kHeader << "\n";
                 if(m_Option & eHtml){
                     out << "</b>";			
-                    out << "(Click headers to sort columns)" << endl;
+                    out << "(Click headers to sort columns)\n";
                 }
             }
             if(m_Option & eHtml){
-                out << "<div id=\"desctbl\">" << "<table id=\"descs\">" << endl << "<thead>" << endl;
-                out << "<tr class=\"first\">" << endl << "<th>Accession</th>" << endl << "<th>Description</th>" << endl;			
+                out << "<div id=\"desctbl\">" << "<table id=\"descs\">" << "\n" << "<thead>" << "\n";
+                out << "<tr class=\"first\">" << "\n" << "<th>Accession</th>" << "\n" << "<th>Description</th>" << "\n";			
             }
             /*
             if(m_Option & eHtml){
@@ -1395,22 +1395,22 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
            
             if(m_Option & eShowSumN){
                 // CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
-                out << "<th>" << kN << "</th>" << endl;
+                out << "<th>" << kN << "</th>" << "\n";
                 
             }
-            //out << endl<<endl;
+            //out << "\n\n";
             if (m_Option & eLinkout) {
-                out << "<th>Links</th>" << endl;
-                out << "</tr>" << endl;
-                out << "</thead>" << endl;
+                out << "<th>Links</th>\n";
+                out << "</tr>\n";
+                out << "</thead>\n";
             }
         }
 		//????
         /*      if(m_PsiblastStatus == eRepeatPass){
-            out << kRepeatHeader <<endl;
+            out << kRepeatHeader <<"\n";
         }
         if(m_PsiblastStatus == eNewPass){
-            out << kNewSeqHeader <<endl;
+            out << kNewSeqHeader <<"\n";
             }*/
     //}
     
@@ -1430,7 +1430,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                                                  query_buf);
     }
 	if (m_Option & eHtml) {
-		out << "<tbody>" << endl;
+		out << "<tbody>\n";
 	}
     ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
         size_t line_length = 0;
@@ -1439,7 +1439,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
         if (is_mixed_database) {
 			if (is_first) {
                 if (m_Option & eHtml) {
-				    out << "<tr>" << endl << "<th colspan=\"" << tableColNumber<< "\" class=\"l sp\">";
+				    out << "<tr>\n<th colspan=\"" << tableColNumber<< "\" class=\"l sp\">";
 			    }
                 if (cur_database_type) {
                     out << "Genomic sequences";                    
@@ -1447,14 +1447,14 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                     out << "Transcripts";                    
                 }
 				if (!(m_Option & eHtml)) {					
-					out << ":" << endl;
+					out << ":\n";
 				}
                 if (m_Option & eHtml) {
-				    out << "</th></tr>" << endl;
+				    out << "</th></tr>\n";
 			    }
             } else if (prev_database_type != cur_database_type) {				
                 if (m_Option & eHtml) {
-				    out << "<tr>" << endl << "<th colspan=\"" << tableColNumber<< "\" class=\"l sp\">";
+				    out << "<tr>\n<th colspan=\"" << tableColNumber<< "\" class=\"l sp\">";
 			    }
 				if (cur_database_type) {
                     out << "Genomic sequences";					
@@ -1474,18 +1474,18 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
 					out << "#sort_mark\">show first</a>]</span>";
 				}
 				else {
-					out << ":" << endl;
+					out << ":\n";
 				}				
                 if (m_Option & eHtml) {
-				    out << "</th></tr>" << endl;
+				    out << "</th></tr>\n";
 			    }
             }			
         }
         prev_database_type = cur_database_type;
         is_first = false;
 		if (m_Option & eHtml) {
-			out << "<tr>" << endl;
-			out << "<td class=\"l\">" << endl;
+			out << "<tr>\n";
+			out << "<td class=\"l\">\n";
 		}
         if ((m_Option & eHtml) && ((*iter)->gi > 0)){
             if((m_Option & eShowNewSeqGif)) { 
@@ -1651,11 +1651,11 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
             out << "</tr>";
         }
         if (!(m_Option & eHtml)) {        
-            out <<endl;
+            out <<"\n";
         }
     }
 	if (m_Option & eHtml) {
-		out << "</tbody>" << endl << "</table>" << "</div>" << endl;
+		out << "</tbody>\n</table></div>\n";
 	}
 }
 
@@ -1668,7 +1668,7 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
                         0, 0, m_CddRid.c_str(), "overview",
                         m_EntrezTerm == NcbiEmptyString ?
                         m_EntrezTerm.c_str() : "none");
-        out << buf <<endl<<endl;        
+        out << buf <<"\n\n";        
     }    
     x_DisplayDeflineTable(out);
 }
