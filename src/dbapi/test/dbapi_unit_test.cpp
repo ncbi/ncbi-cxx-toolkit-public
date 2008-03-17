@@ -11906,7 +11906,7 @@ CDBAPIUnitTest::Test_Authentication(void)
             auto_conn->Connect(
                 "NAC\\anyone",
                 "permitted",
-                "MS_DEV2"
+                "MSDEV2"
                 );
 
             auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
