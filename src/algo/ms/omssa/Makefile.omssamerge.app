@@ -19,4 +19,4 @@ SRC = omssamerge
 LIB = xomssa pepXML omssa blast composition_adjustment tables seqdb blastdb \
       xregexp $(PCRE_LIB) xconnect $(SOBJMGR_LIBS)
 
-LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
