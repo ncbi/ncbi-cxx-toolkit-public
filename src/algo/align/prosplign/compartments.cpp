@@ -36,6 +36,7 @@
 #include <objects/seq/seq__.hpp>
 
 #include <algo/align/prosplign/compartments.hpp>
+#include <algo/align/prosplign/prosplign_exception.hpp>
 
 #include <algo/align/util/hit_comparator.hpp>
 #include <algo/align/util/compartment_finder.hpp>
@@ -108,7 +109,7 @@ CRef<CScore> RealScore(const string& id, double value)
     return result;
 }
 
-CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
+CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs, const THitRefs& orig_hitrefs)
 {
     _ASSERT( !hitrefs.empty() );
 
@@ -118,20 +119,41 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
     compartment.SetType(CSeq_align::eType_partial);
     CSeq_align::TSegs::TStd& std_segs = compartment.SetSegs().SetStd();
     ITERATE (THitRefs, h, hitrefs) {
+
+        bool strand = (*h)->GetSubjStrand();
+        TSeqPos subj_min = (*h)->GetSubjMin();
+        TSeqPos subj_max = (*h)->GetSubjMax();
+        TSeqPos qry_min = (*h)->GetQueryMin()/3;
+        TSeqPos qry_max = (*h)->GetQueryMax()/3;
+        double pct_identity = 0;
+        double bit_score = 0;
+
+        ITERATE(THitRefs, oh, orig_hitrefs) {
+            if ((*oh)->GetSubjStrand() == strand &&
+                (*oh)->GetSubjMin() <= subj_min &&
+                subj_max <= (*oh)->GetSubjMax() &&
+                (*oh)->GetQueryMin() <= qry_min &&
+                qry_max <= (*oh)->GetQueryMax() &&
+                pct_identity < (*oh)->GetIdentity()) {
+                pct_identity = (*oh)->GetIdentity();
+                bit_score = fabs((*oh)->GetScore())*(subj_max-subj_min+1)/((*oh)->GetSubjMax()-(*oh)->GetSubjMin()+1);
+            }
+        }
+
         CRef<CStd_seg> std_seg(new CStd_seg);
 
         CRef<CSeq_id> qry_id(new CSeq_id);
         qry_id->Assign(*(*h)->GetQueryId());
-        CRef<CSeq_loc> qry_loc(new CSeq_loc(*qry_id,(*h)->GetQueryMin(),(*h)->GetQueryMax(),(*h)->GetQueryStrand()?eNa_strand_plus:eNa_strand_minus));
+        CRef<CSeq_loc> qry_loc(new CSeq_loc(*qry_id,qry_min,qry_max,eNa_strand_plus));
         std_seg->SetLoc().push_back(qry_loc);
 
         CRef<CSeq_id> subj_id(new CSeq_id);
         subj_id->Assign(*(*h)->GetSubjId());
-        CRef<CSeq_loc> subj_loc(new CSeq_loc(*subj_id,(*h)->GetSubjMin(),(*h)->GetSubjMax(),(*h)->GetSubjStrand()?eNa_strand_plus:eNa_strand_minus));
+        CRef<CSeq_loc> subj_loc(new CSeq_loc(*subj_id,subj_min,subj_max,strand?eNa_strand_plus:eNa_strand_minus));
         std_seg->SetLoc().push_back(subj_loc);
 
-        std_seg->SetScores().push_back(RealScore("pct_identity",(*h)->GetIdentity()*100));
-        std_seg->SetScores().push_back(RealScore("bit_score",fabs((*h)->GetScore())));
+        std_seg->SetScores().push_back(RealScore("pct_identity",pct_identity*100));
+        std_seg->SetScores().push_back(RealScore("bit_score",bit_score));
 
         std_segs.push_back(std_seg);
     }
@@ -152,9 +174,13 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
 
     ITERATE(THitRefs, it, orig_hitrefs) {
         THitRef hitref(new THit(**it));
+        if (!hitref->GetQueryStrand())
+            NCBI_THROW(CProSplignException, eFormat, "minus strand on protein in BLAST hit");
         hitref->SetQueryMax((hitref->GetQueryMax()+1)*3-1);
         hitref->SetQueryMin(hitref->GetQueryMin()*3);
-        hitref->SetIdentity(0.99);
+
+        if (compart_options.m_ByCoverage)
+            hitref->SetIdentity(0.9999);
 
         hitrefs.push_back(hitref);
     }
@@ -171,7 +197,7 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
         do {
             RemoveOverlaps(comphits);
 
-            CRef<CSeq_annot> compartment = MakeCompartment(comphits);
+            CRef<CSeq_annot> compartment = MakeCompartment(comphits,orig_hitrefs);
 
             CRef<CUser_object> uo(new CUser_object);
             uo->SetType().SetStr("Compart Scores");
@@ -279,12 +305,20 @@ void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
          CArgDescriptions::eDouble,
          ".5");
     
+    argdescr->AddDefaultKey
+        ("by_coverage",
+         "flag",
+         "Ignore hit identity. Set all to 99.99%",
+         CArgDescriptions::eBoolean,
+         "T");
+    
 }
 
 CCompartOptions::CCompartOptions(const CArgs& args) :
     m_CompartmentPenalty(args["compartment_penalty"].AsDouble()),
     m_MinCompartmentIdty(args["min_compartment_idty"].AsDouble()),
-    m_MaxExtent(args["max_extent"].AsInteger())
+    m_MaxExtent(args["max_extent"].AsInteger()),
+    m_ByCoverage(args["by_coverage"].AsBoolean())
 {
 }
 

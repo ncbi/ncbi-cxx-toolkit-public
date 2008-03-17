@@ -49,6 +49,7 @@ public:
     double m_CompartmentPenalty;
     double m_MinCompartmentIdty;
     int    m_MaxExtent;
+    bool   m_ByCoverage;
 };
 
 struct NCBI_XALGOALIGN_EXPORT SCompartment {
