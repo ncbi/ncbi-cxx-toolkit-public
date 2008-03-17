@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seq blastdb blastxml
+ASN_DEP = seq blastdb blastxml scoremat
 
 LIB = xblastformat
 SRC = blastfmtutil showdefline showalign tabular vectorscreen blastxml_format \
