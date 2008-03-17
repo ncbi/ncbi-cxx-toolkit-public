@@ -140,7 +140,7 @@ AC_DEFUN(NCBI_FIX_DIR,
 # Keep track of (un)available features, packages, and projects.
 AC_DEFUN(NCBI_FEAT_EX,
          [m4_append_uniq([NCBI_ALL_]$1, $2, [ ])dnl
-	  With$1="[$]With$1[$]{With$1Sep}$2"; With$1Sep=" "])
+          With$1="[$]With$1[$]{With$1Sep}$2"; With$1Sep=" "])
 AC_DEFUN(NCBI_FEATURE, [NCBI_FEAT_EX(Features, $1)])
 AC_DEFUN(NCBI_PACKAGE, [NCBI_FEAT_EX(Packages, $1)])
 AC_DEFUN(NCBI_PROJECT, [NCBI_FEAT_EX(Projects, $1)])

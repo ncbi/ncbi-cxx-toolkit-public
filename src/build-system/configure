@@ -4372,7 +4372,7 @@ echo "$as_me: error: Do not know how to build MT-safe with compiler $CXX $compil
      * ) NCBIATOMIC_LIB=xncbi ;;
    esac
    mt_sfx="MT"
-   	  WithFeatures="$WithFeatures${WithFeaturesSep}MT"; WithFeaturesSep=" "
+             WithFeatures="$WithFeatures${WithFeaturesSep}MT"; WithFeaturesSep=" "
 else
    CPPFLAGS="$CPPFLAGS -DNCBI_WITHOUT_MT"
    MT_FLAG=
@@ -7265,7 +7265,7 @@ if test "$with_dll" = "no"; then # no DLLs whatsoever!
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
 else
    FORCE_STATIC_LIB=
-   	  WithFeatures="$WithFeatures${WithFeaturesSep}DLL"; WithFeaturesSep=" "
+             WithFeatures="$WithFeatures${WithFeaturesSep}DLL"; WithFeaturesSep=" "
    # Some shared libraries end up containing static libraries, so make
    # sure to use DLL flags for both on platforms where such inclusion
    # would otherwise be illegal....
@@ -8735,7 +8735,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS "MSWIN"
 _ACEOF
 
-   	  WithFeatures="$WithFeatures${WithFeaturesSep}MSWin"; WithFeaturesSep=" "
+             WithFeatures="$WithFeatures${WithFeaturesSep}MSWin"; WithFeaturesSep=" "
 elif test "$x_have_unistd" = "yes" ; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -8750,8 +8750,8 @@ _ACEOF
 
    UNIX_SRC='$(UNIX_SRC)'
    UNIX_USR_PROJ='$(UNIX_USR_PROJ)'
-   	  WithFeatures="$WithFeatures${WithFeaturesSep}unix"; WithFeaturesSep=" "
-   	  WithFeatures="$WithFeatures${WithFeaturesSep}WinMain"; WithFeaturesSep=" " # to accommodate a PTB-specific (ab)use of REQUIRES
+             WithFeatures="$WithFeatures${WithFeaturesSep}unix"; WithFeaturesSep=" "
+             WithFeatures="$WithFeatures${WithFeaturesSep}WinMain"; WithFeaturesSep=" " # to accommodate a PTB-specific (ab)use of REQUIRES
 
    # Extra defines for variants we care about
    case "$OSTYPE" in
@@ -8761,7 +8761,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_AIX 1
 _ACEOF
 
-        	  WithFeatures="$WithFeatures${WithFeaturesSep}AIX"; WithFeaturesSep=" "
+                  WithFeatures="$WithFeatures${WithFeaturesSep}AIX"; WithFeaturesSep=" "
         ;;
      *bsd)
 
@@ -8769,7 +8769,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_BSD 1
 _ACEOF
 
-        	  WithFeatures="$WithFeatures${WithFeaturesSep}BSD"; WithFeaturesSep=" "
+                  WithFeatures="$WithFeatures${WithFeaturesSep}BSD"; WithFeaturesSep=" "
         ;;
      cygwin)
 
@@ -8777,8 +8777,8 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_CYGWIN 1
 _ACEOF
 
-        	  WithFeatures="$WithFeatures${WithFeaturesSep}Cygwin"; WithFeaturesSep=" "
-        if test "$with_mt" = yes; then 	  WithFeatures="$WithFeatures${WithFeaturesSep}CygwinMT"; WithFeaturesSep=" "; fi
+                  WithFeatures="$WithFeatures${WithFeaturesSep}Cygwin"; WithFeaturesSep=" "
+        if test "$with_mt" = yes; then           WithFeatures="$WithFeatures${WithFeaturesSep}CygwinMT"; WithFeaturesSep=" "; fi
         ;;
      darwin)
 
@@ -8786,7 +8786,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_DARWIN 1
 _ACEOF
 
-        	  WithFeatures="$WithFeatures${WithFeaturesSep}Darwin"; WithFeaturesSep=" "
+                  WithFeatures="$WithFeatures${WithFeaturesSep}Darwin"; WithFeaturesSep=" "
         ;;
      irix)
 
@@ -8794,7 +8794,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_IRIX 1
 _ACEOF
 
-        	  WithFeatures="$WithFeatures${WithFeaturesSep}IRIX"; WithFeaturesSep=" "
+                  WithFeatures="$WithFeatures${WithFeaturesSep}IRIX"; WithFeaturesSep=" "
         ;;
      linux)
 
@@ -8802,7 +8802,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_LINUX 1
 _ACEOF
 
-        	  WithFeatures="$WithFeatures${WithFeaturesSep}Linux"; WithFeaturesSep=" "
+                  WithFeatures="$WithFeatures${WithFeaturesSep}Linux"; WithFeaturesSep=" "
         ;;
      osf)
 
@@ -8810,7 +8810,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_OSF1 1
 _ACEOF
 
-        	  WithFeatures="$WithFeatures${WithFeaturesSep}OSF"; WithFeaturesSep=" "
+                  WithFeatures="$WithFeatures${WithFeaturesSep}OSF"; WithFeaturesSep=" "
         ;;
      solaris)
 
@@ -8818,7 +8818,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_SOLARIS 1
 _ACEOF
 
-        	  WithFeatures="$WithFeatures${WithFeaturesSep}Solaris"; WithFeaturesSep=" "
+                  WithFeatures="$WithFeatures${WithFeaturesSep}Solaris"; WithFeaturesSep=" "
         ;;
    esac
 else
@@ -8832,7 +8832,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS "MAC"
 _ACEOF
 
-   	  WithFeatures="$WithFeatures${WithFeaturesSep}MacOS"; WithFeaturesSep=" "
+             WithFeatures="$WithFeatures${WithFeaturesSep}MacOS"; WithFeaturesSep=" "
 fi
 
 case "$host_os" in
@@ -19464,7 +19464,7 @@ echo "${ECHO_T}$ncbi_cv_lib_z" >&6
     Z_INCLUDE=
     Z_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}Z"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}Z"; WithPackagesSep=" "
     Z_INCLUDE=" $Z_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -19484,8 +19484,8 @@ echo "$as_me: using local zlib copy in $zlocal" >&6;}
    # Z_LIBS="-lz"
    Z_LIB="z"
    # AC_DEFINE(USE_LOCAL_ZLIB, 1, [Define to 1 if using a local copy of zlib.])
-   	  WithPackages="$WithPackages${WithPackagesSep}Z"; WithPackagesSep=" "
-   	  WithPackages="$WithPackages${WithPackagesSep}LocalZ"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}Z"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}LocalZ"; WithPackagesSep=" "
 fi
 
 if test "$with_bz2" != "no"; then
@@ -19615,7 +19615,7 @@ echo "${ECHO_T}$ncbi_cv_lib_bz2" >&6
     BZ2_INCLUDE=
     BZ2_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}BZ2"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}BZ2"; WithPackagesSep=" "
     BZ2_INCLUDE=" $BZ2_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -19639,8 +19639,8 @@ cat >>confdefs.h <<\_ACEOF
 #define USE_LOCAL_BZLIB 1
 _ACEOF
 
-   	  WithPackages="$WithPackages${WithPackagesSep}BZ2"; WithPackagesSep=" "
-   	  WithPackages="$WithPackages${WithPackagesSep}LocalBZ2"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}BZ2"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}LocalBZ2"; WithPackagesSep=" "
 fi
 
 : ${LZO2_PATH=$NCBI/lzo2}
@@ -19786,7 +19786,7 @@ echo "${ECHO_T}$ncbi_cv_lib_lzo2" >&6
     LZO2_INCLUDE=
     LZO2_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}LZO2"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}LZO2"; WithPackagesSep=" "
     LZO2_INCLUDE=" $LZO2_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -19941,7 +19941,7 @@ echo "${ECHO_T}$ncbi_cv_lib_lzo" >&6
     LZO_INCLUDE=
     LZO_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}LZO"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}LZO"; WithPackagesSep=" "
     LZO_INCLUDE=" $LZO_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -19953,7 +19953,7 @@ _ACEOF
 
 
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}LZO"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}LZO"; WithPackagesSep=" "
    cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBLZO 1
 _ACEOF
@@ -20092,7 +20092,7 @@ echo "${ECHO_T}$ncbi_cv_lib_pcre" >&6
     PCRE_INCLUDE=
     PCRE_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}PCRE"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}PCRE"; WithPackagesSep=" "
     PCRE_INCLUDE=" $PCRE_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -20117,8 +20117,8 @@ cat >>confdefs.h <<\_ACEOF
 #define USE_LOCAL_PCRE 1
 _ACEOF
 
-   	  WithPackages="$WithPackages${WithPackagesSep}PCRE"; WithPackagesSep=" "
-   	  WithPackages="$WithPackages${WithPackagesSep}LocalPCRE"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}PCRE"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}LocalPCRE"; WithPackagesSep=" "
 else
    PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
 fi
@@ -20254,7 +20254,7 @@ echo "${ECHO_T}$ncbi_cv_lib_gnutls" >&6
     GNUTLS_INCLUDE=
     GNUTLS_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}GNUTLS"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}GNUTLS"; WithPackagesSep=" "
     GNUTLS_INCLUDE=" $GNUTLS_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -20392,7 +20392,7 @@ echo "${ECHO_T}$ncbi_cv_lib_openssl" >&6
     OPENSSL_INCLUDE=
     OPENSSL_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}OPENSSL"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}OPENSSL"; WithPackagesSep=" "
     OPENSSL_INCLUDE=" $OPENSSL_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -20705,7 +20705,7 @@ echo "$as_me:$LINENO: result: $ncbi_cv_lib_sybase" >&5
 echo "${ECHO_T}$ncbi_cv_lib_sybase" >&6
 
    if test "$ncbi_cv_lib_sybase" = yes; then
-      	  WithPackages="$WithPackages${WithPackagesSep}Sybase"; WithPackagesSep=" "
+                WithPackages="$WithPackages${WithPackagesSep}Sybase"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBSYBASE 1
@@ -20738,7 +20738,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_PUBSEQ_OS 1
 _ACEOF
 
-            	  WithFeatures="$WithFeatures${WithFeaturesSep}PubSeqOS"; WithFeaturesSep=" "
+                      WithFeatures="$WithFeatures${WithFeaturesSep}PubSeqOS"; WithFeaturesSep=" "
             ncbi_xreader_pubseqos=ncbi_xreader_pubseqos
             UNLESS_PUBSEQOS=\#
          fi
@@ -20808,7 +20808,7 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_sybdb" >&5
 echo "${ECHO_T}$ncbi_cv_lib_sybdb" >&6
       if test "$ncbi_cv_lib_sybdb" = yes; then
-         	  WithPackages="$WithPackages${WithPackagesSep}DBLib"; WithPackagesSep=" "
+                   WithPackages="$WithPackages${WithPackagesSep}DBLib"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBSYBDB 1
@@ -21100,7 +21100,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBFTDS 1
 _ACEOF
 
-   	  WithPackages="$WithPackages${WithPackagesSep}FreeTDS"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}FreeTDS"; WithPackagesSep=" "
 fi
 
 
@@ -21271,7 +21271,7 @@ if test "$with_mysql" = "no" ; then
    MYSQL_INCLUDE=
    MYSQL_LIBS=
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}MySQL"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}MySQL"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_MYSQL 1
@@ -21475,7 +21475,7 @@ if test "$with_bdb" = "no" ; then
    BERKELEYDB_CXX_LIBS=
    BERKELEYDB_CXX_STATIC_LIBS=
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}BerkeleyDB"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}BerkeleyDB"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_BERKELEY_DB 1
@@ -21569,7 +21569,7 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_berkeley_db_cxx" >&5
 echo "${ECHO_T}$ncbi_cv_lib_berkeley_db_cxx" >&6
    if test "$ncbi_cv_lib_berkeley_db_cxx" = "yes"; then
-      	  WithPackages="$WithPackages${WithPackagesSep}BerkeleyDB++"; WithPackagesSep=" "
+                WithPackages="$WithPackages${WithPackagesSep}BerkeleyDB++"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_BERKELEY_DB_CXX 1
@@ -21988,7 +21988,7 @@ _ACEOF
 
    ;;
  *)
-   	  WithPackages="$WithPackages${WithPackagesSep}ODBC"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}ODBC"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ODBC 1
@@ -22143,7 +22143,7 @@ echo "${ECHO_T}$ncbi_cv_lib_python" >&6
     PYTHON_INCLUDE=
     PYTHON_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}PYTHON"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}PYTHON"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_PYTHON 1
@@ -22293,7 +22293,7 @@ echo "${ECHO_T}$ncbi_cv_lib_python23" >&6
     PYTHON23_INCLUDE=
     PYTHON23_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}PYTHON23"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}PYTHON23"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_PYTHON23 1
@@ -22444,7 +22444,7 @@ echo "${ECHO_T}$ncbi_cv_lib_python24" >&6
     PYTHON24_INCLUDE=
     PYTHON24_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}PYTHON24"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}PYTHON24"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_PYTHON24 1
@@ -22594,7 +22594,7 @@ echo "${ECHO_T}$ncbi_cv_lib_python25" >&6
     PYTHON25_INCLUDE=
     PYTHON25_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}PYTHON25"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}PYTHON25"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_PYTHON25 1
@@ -22618,7 +22618,7 @@ _ACEOF
          PYTHON_LIBS=$PYTHON23_LIBS
       fi
       if test -n "$PYTHON_LIBS"; then
-         	  WithPackages="$WithPackages${WithPackagesSep}PYTHON"; WithPackagesSep=" "
+                   WithPackages="$WithPackages${WithPackagesSep}PYTHON"; WithPackagesSep=" "
          cat >>confdefs.h <<\_ACEOF
 #define HAVE_PYTHON 1
 _ACEOF
@@ -22752,7 +22752,7 @@ if test "$with_cppunit" = "no" ; then
    CPPUNIT_INCLUDE=
    CPPUNIT_LIBS=
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}CPPUNIT"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}CPPUNIT"; WithPackagesSep=" "
    CPPUNIT_CONFIG="$CPPUNIT_BINPATH/cppunit-config"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$CPPUNIT_INCLUDE"; then
@@ -23212,7 +23212,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_BOOST_REGEX 1
 _ACEOF
 
-   	  WithPackages="$WithPackages${WithPackagesSep}Boost.Regex"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}Boost.Regex"; WithPackagesSep=" "
 else
    BOOST_REGEX_LIBS=
    BOOST_REGEX_STATIC_LIBS=
@@ -23224,7 +23224,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_BOOST_SPIRIT 1
 _ACEOF
 
-   	  WithPackages="$WithPackages${WithPackagesSep}Boost.Spirit"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}Boost.Spirit"; WithPackagesSep=" "
 fi
 
 if test "$ncbi_cv_lib_boost_test" != "no"; then
@@ -23233,7 +23233,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_BOOST_TEST 1
 _ACEOF
 
-   	  WithPackages="$WithPackages${WithPackagesSep}Boost.Test"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}Boost.Test"; WithPackagesSep=" "
 else
    BOOST_TEST_PEM_LIBS=
    BOOST_TEST_PEM_STATIC_LIBS=
@@ -23249,7 +23249,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_BOOST_THREAD 1
 _ACEOF
 
-   	  WithPackages="$WithPackages${WithPackagesSep}Boost.Threads"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}Boost.Threads"; WithPackagesSep=" "
 else
    BOOST_THREAD_LIBS=
    BOOST_THREAD_STATIC_LIBS=
@@ -23351,7 +23351,7 @@ echo "$as_me: error: --with-ctools:  NCBI C Toolkit is missing" >&2;}
    NCBI_C_LIBPATH=
    NCBI_C_ncbi=
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}C-Toolkit"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}C-Toolkit"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_NCBI_C 1
@@ -25089,7 +25089,7 @@ if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
    GLUT_LIBS=
    with_opengl="no"
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}OpenGL"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}OpenGL"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_OPENGL 1
@@ -25190,7 +25190,7 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_OSMesa_OSMesaCreateContext" >&5
 echo "${ECHO_T}$ac_cv_lib_OSMesa_OSMesaCreateContext" >&6
 if test $ac_cv_lib_OSMesa_OSMesaCreateContext = yes; then
-  	  WithPackages="$WithPackages${WithPackagesSep}MESA"; WithPackagesSep=" ";
+            WithPackages="$WithPackages${WithPackagesSep}MESA"; WithPackagesSep=" ";
           OSMESA_LIBS="$OSMESA_LDFLAGS $X_LIBS -lOSMesa -lGLU -lGL $X_ALL_LIBS"
 
 cat >>confdefs.h <<\_ACEOF
@@ -25296,7 +25296,7 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_glut_glutInit" >&5
 echo "${ECHO_T}$ac_cv_lib_glut_glutInit" >&6
 if test $ac_cv_lib_glut_glutInit = yes; then
-  	  WithPackages="$WithPackages${WithPackagesSep}GLUT"; WithPackagesSep=" ";
+            WithPackages="$WithPackages${WithPackagesSep}GLUT"; WithPackagesSep=" ";
           GLUT_LIBS="$GLUT_LDFLAGS $X_LIBS -lglut -lGLU -lGL $X_ALL_LIBS"
 
 cat >>confdefs.h <<\_ACEOF
@@ -25436,7 +25436,7 @@ if test "$with_fltk" = "no" ; then
    FLTK_LIBS=
    FLTK_LIBS_GL=
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}FLTK"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}FLTK"; WithPackagesSep=" "
    FLTK_CONFIG="$FLTK_BINPATH/fltk-config"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$FLTK_INCLUDE"; then
@@ -25763,7 +25763,7 @@ if test "$with_wxwin" = "no" ; then
    WXWIN_GL_STATIC_LIBS=
    WXWIN_POST_LINK=:
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}wxWindows"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}wxWindows"; WithPackagesSep=" "
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIN_INCLUDE"; then
       WXWIN_INCLUDE="$baseflags `$wxconf --cflags`"
@@ -25947,10 +25947,10 @@ if test "$with_wxwidgets" = "no" ; then
    WXWIDGETS_GL_STATIC_LIBS=
    WXWIDGETS_POST_LINK=:
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}wxWidgets"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}wxWidgets"; WithPackagesSep=" "
    case "`$wxconf --version`" in
       2.[89].* | 2.[0-9][0-9]* )
-         	  WithPackages="$WithPackages${WithPackagesSep}wx2.8"; WithPackagesSep=" "
+                   WithPackages="$WithPackages${WithPackagesSep}wx2.8"; WithPackagesSep=" "
          wxlibs=std,richtext
          ;;
       *)
@@ -26217,7 +26217,7 @@ if test "$with_fastcgi" = "no" ; then
    FASTCGI_LIBS=
    FASTCGI_OBJS=
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}Fast-CGI"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}Fast-CGI"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBFASTCGI 1
@@ -26250,7 +26250,7 @@ if test "$with_sss" != "no" ; then
       NCBI_SSS_PATH=$local_sss
       NCBI_SSS_INCLUDE="\$(incdir)/sss"
       NCBI_SSS_LIBPATH="\$(libdir)"
-      	  WithPackages="$WithPackages${WithPackagesSep}LocalSSS"; WithPackagesSep=" "
+                WithPackages="$WithPackages${WithPackagesSep}LocalSSS"; WithPackagesSep=" "
    else
       with_included_sss=no
    fi
@@ -26359,7 +26359,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBSSSUTILS 1
 _ACEOF
 
-         	  WithPackages="$WithPackages${WithPackagesSep}SSSUTILS"; WithPackagesSep=" "
+                   WithPackages="$WithPackages${WithPackagesSep}SSSUTILS"; WithPackagesSep=" "
       else
          with_sssutils="no"
          with_sss="no"
@@ -26436,7 +26436,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBSSSDB 1
 _ACEOF
 
-         	  WithPackages="$WithPackages${WithPackagesSep}SSSDB"; WithPackagesSep=" "
+                   WithPackages="$WithPackages${WithPackagesSep}SSSDB"; WithPackagesSep=" "
       else
          with_sssdb="no"
          with_sss="no"
@@ -26544,7 +26544,7 @@ if test "$with_sp" = "no" ; then
    SP_INCLUDE=
    SP_LIBS=
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}SP"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}SP"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBSP 1
@@ -26717,7 +26717,7 @@ if test "$with_orbacus" = no; then
    LIBOB=
    LIBIMR=
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}ORBacus"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}ORBacus"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ORBACUS 1
@@ -26853,7 +26853,7 @@ if test "$with_icu" = "no" ; then
    ICU_LIBS=
    ICU_STATIC_LIBS=
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}ICU"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}ICU"; WithPackagesSep=" "
    ICU_CONFIG="`$ICU_BINPATH/icu-config --bindir`/icu-config"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$ICU_INCLUDE"; then
@@ -27023,7 +27023,7 @@ echo "${ECHO_T}$ncbi_cv_lib_expat" >&6
     EXPAT_INCLUDE=
     EXPAT_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}EXPAT"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}EXPAT"; WithPackagesSep=" "
     EXPAT_INCLUDE=" $EXPAT_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -27184,7 +27184,7 @@ echo "${ECHO_T}$ncbi_cv_lib_sablot" >&6
     SABLOT_INCLUDE=
     SABLOT_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}SABLOT"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}SABLOT"; WithPackagesSep=" "
     SABLOT_INCLUDE=" $SABLOT_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -27333,7 +27333,7 @@ if test "$with_libxml" = "no"; then
    LIBXML_LIBPATH_=
    LIBXML_LIBS=
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}LIBXML"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}LIBXML"; WithPackagesSep=" "
    LIBXML_INCLUDE="$LIBXML_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -27477,7 +27477,7 @@ echo "${ECHO_T}$ncbi_cv_lib_libxslt" >&6
     LIBXSLT_INCLUDE=
     LIBXSLT_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}LIBXSLT"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}LIBXSLT"; WithPackagesSep=" "
     LIBXSLT_INCLUDE="$LIBXML_INCLUDE $LIBXSLT_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -27655,7 +27655,7 @@ echo "${ECHO_T}$ncbi_cv_lib_xerces_c" >&6
    fi
 fi
 if test "$with_xerces" != no; then
-   	  WithPackages="$WithPackages${WithPackagesSep}Xerces"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}Xerces"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_XERCES 1
@@ -27824,7 +27824,7 @@ echo "${ECHO_T}$ncbi_cv_lib_xalan_c" >&6
    fi
 fi
 if test "$with_xalan" != no; then
-   	  WithPackages="$WithPackages${WithPackagesSep}Xalan"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}Xalan"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_XALAN 1
@@ -27982,7 +27982,7 @@ echo "${ECHO_T}$ncbi_cv_lib_sqlite" >&6
     SQLITE_INCLUDE=
     SQLITE_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}SQLITE"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}SQLITE"; WithPackagesSep=" "
     SQLITE_INCLUDE=" $SQLITE_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -28159,7 +28159,7 @@ echo "${ECHO_T}$ncbi_cv_lib_sqlite3" >&6
     SQLITE3_INCLUDE=
     SQLITE3_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}SQLITE3"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}SQLITE3"; WithPackagesSep=" "
     SQLITE3_INCLUDE=" $SQLITE3_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -28302,7 +28302,7 @@ echo "${ECHO_T}$ncbi_cv_lib_oechem" >&6
     OECHEM_INCLUDE=
     OECHEM_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}OECHEM"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}OECHEM"; WithPackagesSep=" "
     OECHEM_INCLUDE=" $OECHEM_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -28455,7 +28455,7 @@ echo "${ECHO_T}$ncbi_cv_lib_jpeg" >&6
     JPEG_INCLUDE=
     JPEG_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}JPEG"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}JPEG"; WithPackagesSep=" "
     JPEG_INCLUDE=" $JPEG_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -28596,7 +28596,7 @@ echo "${ECHO_T}$ncbi_cv_lib_png" >&6
     PNG_INCLUDE=
     PNG_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}PNG"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}PNG"; WithPackagesSep=" "
     PNG_INCLUDE="$Z_INCLUDE $PNG_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -28735,7 +28735,7 @@ echo "${ECHO_T}$ncbi_cv_lib_tiff" >&6
     TIFF_INCLUDE=
     TIFF_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}TIFF"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}TIFF"; WithPackagesSep=" "
     TIFF_INCLUDE=" $TIFF_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -28878,7 +28878,7 @@ echo "${ECHO_T}$ncbi_cv_lib_ungif" >&6
     UNGIF_INCLUDE=
     UNGIF_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}UNGIF"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}UNGIF"; WithPackagesSep=" "
     UNGIF_INCLUDE=" $UNGIF_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -29018,7 +29018,7 @@ echo "${ECHO_T}$ncbi_cv_lib_gif" >&6
     GIF_INCLUDE=
     GIF_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}GIF"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}GIF"; WithPackagesSep=" "
     GIF_INCLUDE=" $GIF_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -29167,7 +29167,7 @@ echo "${ECHO_T}$ncbi_cv_lib_xpm" >&6
     XPM_INCLUDE=
     XPM_LIBS=
  else
-    	  WithPackages="$WithPackages${WithPackagesSep}XPM"; WithPackagesSep=" "
+              WithPackages="$WithPackages${WithPackagesSep}XPM"; WithPackagesSep=" "
     XPM_INCLUDE="$X_CFLAGS $XPM_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
@@ -29380,7 +29380,7 @@ if test "$with_freetype" = "no" ; then
    FREETYPE_INCLUDE=
    FREETYPE_LIBS=
 else
-   	  WithPackages="$WithPackages${WithPackagesSep}FreeType"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}FreeType"; WithPackagesSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_FREETYPE 1
@@ -29424,7 +29424,7 @@ done
 if test "$with_local_lbsm" = "no" ; then
    local_lbsm="ncbi_lbsmd_stub"
 else
-   	  WithProjects="$WithProjects${WithProjectsSep}local_lbsm"; WithProjectsSep=" "
+             WithProjects="$WithProjects${WithProjectsSep}local_lbsm"; WithProjectsSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LOCAL_LBSM 1
@@ -29462,7 +29462,7 @@ if test "$with_connext" = "no" ; then
    CONNEXT=
    XCONNEXT=
 else
-   	  WithProjects="$WithProjects${WithProjectsSep}connext"; WithProjectsSep=" "
+             WithProjects="$WithProjects${WithProjectsSep}connext"; WithProjectsSep=" "
    CONNEXT=connext
    XCONNEXT=xconnext
 
@@ -29492,7 +29492,7 @@ done
 if test "$with_ncbi_crypt" = "no" ; then
    ncbi_crypt="ncbi_crypt_stub"
 else
-   	  WithProjects="$WithProjects${WithProjectsSep}ncbi_crypt"; WithProjectsSep=" "
+             WithProjects="$WithProjects${WithProjectsSep}ncbi_crypt"; WithProjectsSep=" "
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_NCBI_CRYPT 1
@@ -29506,7 +29506,7 @@ fi
 if test "$with_serial" = "no" ; then
    serial=
 else
-   	  WithProjects="$WithProjects${WithProjectsSep}serial"; WithProjectsSep=" "
+             WithProjects="$WithProjects${WithProjectsSep}serial"; WithProjectsSep=" "
    serial="serial"
 fi
 
@@ -29516,7 +29516,7 @@ fi
 if test "$with_objects" = "no"  -o  -z "$serial" ; then
    objects=
 else
-   	  WithProjects="$WithProjects${WithProjectsSep}objects"; WithProjectsSep=" "
+             WithProjects="$WithProjects${WithProjectsSep}objects"; WithProjectsSep=" "
    objects="objects"
 fi
 
@@ -29543,7 +29543,7 @@ if test "$with_bdb" = "no" ; then
    BDB_LIB=
    BDB_CACHE_LIB=
 else
-   	  WithProjects="$WithProjects${WithProjectsSep}bdb"; WithProjectsSep=" "
+             WithProjects="$WithProjects${WithProjectsSep}bdb"; WithProjectsSep=" "
    bdb="bdb"
    BDB_LIB="bdb"
 
@@ -29566,7 +29566,7 @@ fi
 if test "$with_dbapi" = "no" ; then
    dbapi=
 else
-   	  WithProjects="$WithProjects${WithProjectsSep}dbapi"; WithProjectsSep=" "
+             WithProjects="$WithProjects${WithProjectsSep}dbapi"; WithProjectsSep=" "
    dbapi="dbapi"
 fi
 
@@ -29576,7 +29576,7 @@ fi
 if test "$with_app" = "no" ; then
    app=
 else
-   	  WithProjects="$WithProjects${WithProjectsSep}app"; WithProjectsSep=" "
+             WithProjects="$WithProjects${WithProjectsSep}app"; WithProjectsSep=" "
    app="app"
 fi
 
@@ -29584,7 +29584,7 @@ fi
 ## `ctools' project cluster
 
 if test "$with_ctools" != "no" ; then
-   	  WithProjects="$WithProjects${WithProjectsSep}ctools"; WithProjectsSep=" "
+             WithProjects="$WithProjects${WithProjectsSep}ctools"; WithProjectsSep=" "
 fi
 
 
@@ -29593,7 +29593,7 @@ fi
 if test "$with_gui" = "no" ; then
    gui=
 else
-   	  WithProjects="$WithProjects${WithProjectsSep}gui"; WithProjectsSep=" "
+             WithProjects="$WithProjects${WithProjectsSep}gui"; WithProjectsSep=" "
    gui="gui"
 fi
 
@@ -29603,7 +29603,7 @@ fi
 if test "$with_algo" = "no" ; then
    algo=
 else
-   	  WithProjects="$WithProjects${WithProjectsSep}algo"; WithProjectsSep=" "
+             WithProjects="$WithProjects${WithProjectsSep}algo"; WithProjectsSep=" "
    algo="algo"
 fi
 
@@ -29681,7 +29681,7 @@ if test "$with_gbench" != "no"  -a  -d ${real_srcdir}/src/gui/app/gbench \
 echo "$as_me: error: --with-gbench:  Cannot build Genome Workbench: missing $reason" >&2;}
    { (exit 1); exit 1; }; }
    elif test -z "$reason"; then
-      	  WithProjects="$WithProjects${WithProjectsSep}gbench"; WithProjectsSep=" "
+                WithProjects="$WithProjects${WithProjectsSep}gbench"; WithProjectsSep=" "
    fi
 fi
 
@@ -29722,7 +29722,7 @@ if test -n "$with_check"  -a  "$with_check" != "no" ; then
    if test "$with_check" != "yes" ; then
       CHECK_ARG=`echo "$with_check" | sed 's/%/ /g'`
    fi
-   	  WithFeatures="$WithFeatures${WithFeaturesSep}check"; WithFeaturesSep=" "
+             WithFeatures="$WithFeatures${WithFeaturesSep}check"; WithFeaturesSep=" "
 fi
 CHECK_TOOLS=$with_check_tools
 
