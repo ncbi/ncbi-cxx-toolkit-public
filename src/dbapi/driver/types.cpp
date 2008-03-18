@@ -879,7 +879,7 @@ CDB_VarChar::CDB_VarChar(const char* s,
 CDB_VarChar::CDB_VarChar(const char* s,
                          size_t l,
                          EEncoding enc)
-: CDB_String(s, l, enc)
+: CDB_String(s, (s ? min(l, strlen(s)) : 0), enc)
 {
 }
 

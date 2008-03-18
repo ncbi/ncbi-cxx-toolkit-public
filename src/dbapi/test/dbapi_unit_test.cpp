@@ -10890,27 +10890,88 @@ CDBAPIUnitTest::Test_Variant(void)
             BOOST_CHECK( !variant_bool.IsNull() );
             BOOST_CHECK( variant_bool.GetBit() == value_bool );
 
-            const CVariant variant_LongChar = CVariant::LongChar( value_char, strlen(value_char) );
-            BOOST_CHECK( !variant_LongChar.IsNull() );
-            BOOST_CHECK( variant_LongChar.GetString() == value_char );
+            // LongChar
+            {
+                {
+                    const CVariant variant_LongChar = CVariant::LongChar( value_char, strlen(value_char) );
+                    BOOST_CHECK( !variant_LongChar.IsNull() );
+                    BOOST_CHECK( variant_LongChar.GetString() == value_char );
+                }
 
-            const CVariant variant_VarChar = CVariant::VarChar( value_char, strlen(value_char) );
-            BOOST_CHECK( !variant_VarChar.IsNull() );
-            BOOST_CHECK( variant_VarChar.GetString() == value_char );
+                {
+                    const CVariant variant_LongChar = CVariant::LongChar( NULL, 0 );
+                    // !!!
+                    BOOST_CHECK( variant_LongChar.IsNull() );
+                    BOOST_CHECK( variant_LongChar.GetString() == kEmptyStr );
+                }
 
-            const CVariant variant_VarChar2 = CVariant::VarChar(NULL);
-            // !!!
-            BOOST_CHECK( variant_VarChar2.IsNull() );
-            BOOST_CHECK( variant_VarChar2.GetString() == string() );
+                {
+                    const CVariant variant_LongChar = CVariant::LongChar( "", 80 );
+                    BOOST_CHECK( !variant_LongChar.IsNull() );
+                    const string value = variant_LongChar.GetString();
+                    BOOST_CHECK_EQUAL(value.size(), 80U);
+                }
 
-            const CVariant variant_Char = CVariant::Char( strlen(value_char), const_cast<char*>(value_char) );
-            BOOST_CHECK( !variant_Char.IsNull() );
-            BOOST_CHECK( variant_Char.GetString() == value_char );
+                {
+                    const CVariant variant_LongChar = CVariant::LongChar("");
+                    BOOST_CHECK( !variant_LongChar.IsNull() );
+                    const string value = variant_LongChar.GetString();
+                    BOOST_CHECK_EQUAL(value.size(), 0U);
+                }
+            }
 
-            const CVariant variant_Char2 = CVariant::Char( 0, NULL );
-            // !!!
-            BOOST_CHECK( variant_Char2.IsNull() );
-            BOOST_CHECK( variant_Char2.GetString() == string() );
+            // VarChar
+            {
+                {
+                    const CVariant variant_VarChar = CVariant::VarChar( value_char, strlen(value_char) );
+                    BOOST_CHECK( !variant_VarChar.IsNull() );
+                    BOOST_CHECK( variant_VarChar.GetString() == value_char );
+                }
+
+                {
+                    const CVariant variant_VarChar = CVariant::VarChar(NULL);
+                    // !!!
+                    BOOST_CHECK( variant_VarChar.IsNull() );
+                    BOOST_CHECK( variant_VarChar.GetString() == kEmptyStr );
+                }
+
+                {
+                    const CVariant variant_VarChar = CVariant::VarChar( "", 900 );
+                    BOOST_CHECK( !variant_VarChar.IsNull() );
+                    const string value = variant_VarChar.GetString();
+                    BOOST_CHECK_EQUAL(value.size(), 0U);
+                }
+
+                {
+                    const CVariant variant_VarChar = CVariant::VarChar("");
+                    BOOST_CHECK( !variant_VarChar.IsNull() );
+                    const string value = variant_VarChar.GetString();
+                    BOOST_CHECK_EQUAL(value.size(), 0U);
+                }
+            }
+
+            // Char
+            {
+                {
+                    const CVariant variant_Char = CVariant::Char( strlen(value_char), const_cast<char*>(value_char) );
+                    BOOST_CHECK( !variant_Char.IsNull() );
+                    BOOST_CHECK( variant_Char.GetString() == value_char );
+                }
+
+                {
+                    const CVariant variant_Char = CVariant::Char( 0, NULL );
+                    // !!!
+                    BOOST_CHECK( variant_Char.IsNull() );
+                    BOOST_CHECK( variant_Char.GetString() == kEmptyStr );
+                }
+
+                {
+                    const CVariant variant_Char = CVariant::Char( 90, "" );
+                    BOOST_CHECK( !variant_Char.IsNull() );
+                    const string value = variant_Char.GetString();
+                    BOOST_CHECK_EQUAL(value.size(), 90U);
+                }
+            }
 
             const CVariant variant_LongBinary = CVariant::LongBinary( strlen(value_binary), value_binary, strlen(value_binary)) ;
             BOOST_CHECK( !variant_LongBinary.IsNull() );
