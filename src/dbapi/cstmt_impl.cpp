@@ -116,6 +116,10 @@ void CCallableStatement::SetOutputParam(const CVariant& v,
 void CCallableStatement::Execute()
 {
   SetFailed(false);
+
+  // Reset status value ...
+  m_status = 0;
+
   _TRACE("Executing stored procedure: " + GetRpcCmd()->GetProcName());
   GetRpcCmd()->Send();
 
