@@ -215,7 +215,7 @@ private:
 };
 
 /// Auxiliary class to convert data encoded in the PSSM to CNcbiMatrix
-class CScorematPssmConverter 
+class NCBI_XBLAST_EXPORT CScorematPssmConverter 
 {
 public:
     /// Returns matrix of BLASTAA_SIZE by query size (dimensions are opposite of
