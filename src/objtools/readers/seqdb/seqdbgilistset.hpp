@@ -153,8 +153,10 @@ private:
     /// User-specified Negative GI list.
     TNegativeRef m_NegativeList;
     
-    /// Map of all alias node specified GI lists and TI lists.
-    map<string, TListRef> m_NodeListMap[2];
+    /// Maps of all alias node specified GI lists and TI lists.
+    typedef map<string, TListRef> TNodeListMap;
+    TNodeListMap m_GINodeListMap;
+    TNodeListMap m_TINodeListMap;
 };
 
 END_NCBI_SCOPE

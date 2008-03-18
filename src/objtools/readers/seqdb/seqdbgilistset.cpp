@@ -210,9 +210,9 @@ CSeqDBGiListSet::GetNodeIdList(const CSeqDB_Path & filename,
     // Seperate indexes are used for TIs and GIs.  (Attempting to use
     // the same file for both should also produce an error when the
     // binary file is read, as the magic number is different.)
-    
-    int map_index = use_tis ? 1 : 0;
-    CRef<CSeqDBGiList> gilist = m_NodeListMap[map_index][filename.GetPathS()];
+
+    TNodeListMap& map_ref = use_tis ? m_TINodeListMap : m_GINodeListMap;
+    CRef<CSeqDBGiList> gilist = map_ref[filename.GetPathS()];
     
     if (gilist.Empty()) {
         gilist.Reset(new CSeqDBNodeFileIdList(m_Atlas,
@@ -225,7 +225,7 @@ CSeqDBGiListSet::GetNodeIdList(const CSeqDB_Path & filename,
             x_TranslateFromUserList(*gilist);
         }
         
-        m_NodeListMap[map_index][filename.GetPathS()] = gilist;
+        map_ref[filename.GetPathS()] = gilist;
     }
     
     // Note: in pure-GI mode, it might be more efficient (in some
