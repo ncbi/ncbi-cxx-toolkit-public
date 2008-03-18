@@ -8295,7 +8295,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         // Test returned recordset ...
         {
             // In case of MS SQL 2005 sp_databases returns empty result set.
-            // It is not a bug. It is a difference in implementation of MS SQL
+            // It is not a bug. It is a difference in setiings for MS SQL
             // 2005.
             if (m_args.GetServerType() != CTestArguments::eMsSql2005) {
                 int num = 0;
@@ -8600,6 +8600,31 @@ void
 CDBAPIUnitTest::Test_Procedure2(void)
 {
     try {
+        {
+            auto_ptr<ICallableStatement> auto_stmt(
+                    m_Conn->GetCallableStatement("sp_server_info")
+                    );
+
+            auto_stmt->Execute();
+
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                    switch( rs->GetResultType() ) {
+                    case eDB_RowResult:
+                        while(rs->Next()) {
+                            int value_int = rs->GetVariant(1).GetInt4();
+                            BOOST_CHECK(value_int != 0);
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+        }
+
         {
             auto_ptr<ICallableStatement> auto_stmt(
                     m_Conn->GetCallableStatement("sp_server_info")
