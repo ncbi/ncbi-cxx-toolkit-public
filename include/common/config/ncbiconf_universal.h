@@ -68,7 +68,6 @@
 #    define SIZEOF_LONG   4
 #    define SIZEOF_SIZE_T 4
 #    define SIZEOF_VOIDP  4
-#  else
 #  endif
 #  define SIZEOF___INT64    0 /* no such type */
 #  ifdef __BIG_ENDIAN__
