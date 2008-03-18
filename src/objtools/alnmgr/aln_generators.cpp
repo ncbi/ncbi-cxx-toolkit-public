@@ -120,12 +120,14 @@ public:
         addition.CombineWith(r);
         addition.Subtract(*this);
         
-        // Insert the diff
-        iterator it = find_nc(addition.begin()->GetToOpen());
-        ITERATE(TParent, add_it, addition) {
-            TRange rr(add_it->GetFrom(), add_it->GetTo());
-            it = TParent::m_vRanges.insert(it, rr);
-            ++it;
+        if ( !addition.empty() ) {
+            // Insert the diff
+            iterator it = find_nc(addition.begin()->GetToOpen());
+            ITERATE(TParent, add_it, addition) {
+                TRange rr(add_it->GetFrom(), add_it->GetTo());
+                it = TParent::m_vRanges.insert(it, rr);
+                ++it;
+            }
         }
     }
 };
