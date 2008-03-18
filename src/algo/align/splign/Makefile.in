@@ -4,7 +4,7 @@
 #################################
 
 LIB_PROJ = xalgoalignsplign
-SUB_PROJ = demo
+SUB_PROJ = app
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

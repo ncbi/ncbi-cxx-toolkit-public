@@ -1,6 +1,6 @@
 # $Id$
 
-# Meta-makefile("ALGOALIGNSPLIGN demo" project)
+# Meta-makefile("ALGOALIGNSPLIGN app" project)
 #################################
 
 SUB_PROJ = splign
