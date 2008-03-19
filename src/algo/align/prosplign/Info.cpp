@@ -287,13 +287,20 @@ CRef<CSeq_loc> GetGenomicBounds(CScope& scope, const CSeq_align& seqalign)
         ITERATE(CSeq_align::TBounds, b,seqalign.GetBounds()) {
             if ((*b)->GetId() != NULL && (*b)->GetId()->Match(nucid)) {
 
+                TSeqPos len = sequence::GetLength(nucid, &scope);
+
                 genomic->Assign(**b);
                 if (genomic->IsWhole()) {
                     // change to Interval, because Whole doesn't allow strand change - it's always unknown.
                     genomic->SetInt().SetFrom(0);
-                    genomic->SetInt().SetTo(sequence::GetLength(nucid, &scope)-1);
+                    genomic->SetInt().SetTo(len-1);
                 }
                 genomic->SetStrand(sps.GetGenomic_strand());
+
+                if (genomic->GetStop(eExtreme_Positional) >= len) {
+                    genomic->SetInt().SetFrom(genomic->GetStart(eExtreme_Positional));
+                    genomic->SetInt().SetTo(len-1);
+                }
                 
                 return genomic;
             }
