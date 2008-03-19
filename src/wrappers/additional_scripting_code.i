@@ -320,24 +320,26 @@ else:
                         '/ieb/ToolBox/CPP_DOC/asn_spec/'
 
 def Spec(arg, web=False):
-   if isinstance(arg, CSerialObject):
-      # a serial object; get type string from type info
-      type = arg.GetThisTypeInfo().GetName()
+   if isinstance(arg, CSerialObject) \
+   or (isinstance(arg, type) and issubclass(arg, CSerialObject)):
+      # a serial object instance or class;
+      # get type string from type info
+      type_name = arg.GetTypeInfo().GetName()
    else:
       # a string, one hopes
-      type = arg
+      type_name = arg
    if not web:
-      spec = find_asn_spec.FindSpec(type)
+      spec = find_asn_spec.FindSpec(type_name)
       if spec == None:
-         print 'ASN.1 spec. not found for type %s' % type
+         print 'ASN.1 spec. not found for type %s' % type_name
       else:
          print spec
    else:
-      url = asn_spec_url_base + type + '.html'
+      url = asn_spec_url_base + type_name + '.html'
       import webbrowser
       webbrowser.open_new(url)
       
-CSerialObject.Spec = Spec
+CSerialObject.Spec = classmethod(Spec)
 
 
 def EntrezUrl(ids, db=None):
