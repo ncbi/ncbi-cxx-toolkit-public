@@ -57,6 +57,11 @@ public:
 
     CBlastTabular(const char* m8, bool force_local_ids = false);
 
+    /// Construct CBlastTabular from m8 line,
+    /// use score_func to select seq-id from FASTA-style ids  
+    typedef int (*SCORE_FUNC)(const CRef<objects::CSeq_id>& id);
+    CBlastTabular(const char* m8, SCORE_FUNC score_func);
+
     // getters / setters
     void   SetLength(TCoord length);
     TCoord GetLength(void) const;
@@ -86,6 +91,9 @@ protected:
     double  m_EValue;     // e-Value                           
     float   m_Identity;   // Percent identity (ranging from 0 to 1)
     float   m_Score;      // bit score
+
+    template <class F>
+    void   x_Deserialize(const char* m8, F seq_id_extractor);
 
     virtual void   x_PartialSerialize(CNcbiOstream& os) const;
     virtual void   x_PartialDeserialize(const char* m8);

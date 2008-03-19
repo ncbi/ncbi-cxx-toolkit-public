@@ -34,6 +34,7 @@
 #include <algo/align/util/algo_align_util_exceptions.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Object_id.hpp>
+#include <corelib/ncbiutil.hpp>
 
 #include <numeric>
 
@@ -107,36 +108,77 @@ CBlastTabular::CBlastTabular(const TId& idquery, TCoord qstart, bool qstrand,
     m_Score = 2 * matches;
 }
 
+namespace {
+    class CLocalSeqIdCreator {
+    public:
+        CRef<CSeq_id> operator()(const string& strid)
+        {
+            CRef<CSeq_id> seqid;
+            seqid.Reset(new CSeq_id);
+            seqid->SetLocal().SetStr(strid);
+            return seqid;
+        }
+    };
 
-CRef<CSeq_id> ExtractSeqId(const string& strid, bool use_local)
-{
-    CRef<CSeq_id> seqid;
-    if(use_local) {
-        seqid.Reset(new CSeq_id);
-        seqid->SetLocal().SetStr(strid);
-    }
-    else {
-        CBioseq::TId ids;
-        CSeq_id::ParseFastaIds(ids, strid);
-        if(ids.size()) {
-            seqid = ids.back();
+    class CLastFastaId {
+    public:
+        CRef<CSeq_id> operator()(const string& strid)
+        {
+            CRef<CSeq_id> seqid;
+            CBioseq::TId ids;
+            CSeq_id::ParseFastaIds(ids, strid);
+            if(ids.size()) {
+                seqid = ids.back();
+            } else {
+                seqid.Reset(NULL);
+            }
+            return seqid;
         }
-        else {
-            seqid.Reset(NULL);
+    };
+
+    class CBestSeqIdExtractor {
+    public:
+        CBestSeqIdExtractor(CBlastTabular::SCORE_FUNC score_func) :
+            m_score_func(score_func) {}
+        CRef<CSeq_id> operator()(const string& strid)
+        {
+            CRef<CSeq_id> seqid;
+            CBioseq::TId ids;
+            CSeq_id::ParseFastaIds(ids, strid);
+            if(ids.size()) {
+                seqid = FindBestChoice(ids, m_score_func);
+            } else {
+                seqid.Reset(NULL);
+            }
+            return seqid;
         }
-    }
-    return seqid;
+    protected:
+         CBlastTabular::SCORE_FUNC m_score_func;
+    };
 }
 
-
 CBlastTabular::CBlastTabular(const char* m8, bool force_local_ids)
+{
+    if (force_local_ids)
+        x_Deserialize(m8, CLocalSeqIdCreator());
+    else
+        x_Deserialize(m8, CLastFastaId());
+}
+
+CBlastTabular::CBlastTabular(const char* m8, SCORE_FUNC score_func)
+{
+    x_Deserialize(m8, CBestSeqIdExtractor(score_func));
+}
+
+template <class F>
+void CBlastTabular::x_Deserialize(const char* m8, F seq_id_extractor)
 {
     const char* p0 = m8, *p = p0;
     for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
     for(p0 = p; *p && !isspace((unsigned char)(*p)); ++p); // get token
     if(*p) {
         const string id1 (p0, p - p0);
-        m_Id.first = ExtractSeqId(id1, force_local_ids);
+        m_Id.first = seq_id_extractor(id1);
     }
 
     for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
@@ -144,7 +186,7 @@ CBlastTabular::CBlastTabular(const char* m8, bool force_local_ids)
     if(*p) {
 
         const string id2 (p0, p - p0);
-        m_Id.second = ExtractSeqId(id2, force_local_ids);
+        m_Id.second = seq_id_extractor(id2);
     }
 
     if(m_Id.first.IsNull() || m_Id.second.IsNull()) {
@@ -158,7 +200,6 @@ CBlastTabular::CBlastTabular(const char* m8, bool force_local_ids)
 
     x_PartialDeserialize(p);
 }
-
 
 
 //////////////////////////////////////////////////////////////////////////////
