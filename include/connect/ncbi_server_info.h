@@ -75,7 +75,9 @@ typedef enum {
 } ESERV_Flag;
 
 #define SERV_DEFAULT_FLAG  fSERV_Regular
-                                 
+#define SERV_MIME_TYPE_UNDEFINED    ((EMIME_Type)(-1))
+#define SERV_MIME_SUBTYPE_UNDEFINED ((EMIME_SubType)(-1))
+                                
 
 /* Verbal representation of a server type (no internal spaces allowed)
  */
