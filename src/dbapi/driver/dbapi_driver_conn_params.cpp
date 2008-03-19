@@ -754,24 +754,26 @@ CDBInterfacesFileConnParams::CDBInterfacesFileConnParams(
             Uint4 host = 0;
             unsigned char* b = (unsigned char*) &host;
 
-            if (tli_format) {
-                b[0] = NStr::StringToUInt(host_str.substr(0, 2), 0, 16);
-                b[1] = NStr::StringToUInt(host_str.substr(2, 2), 0, 16);
-                b[2] = NStr::StringToUInt(host_str.substr(4, 2), 0, 16);
-                b[3] = NStr::StringToUInt(host_str.substr(6, 2), 0, 16);
+            if (!host_str.empty() && !port_str.empty()) {
+                if (tli_format) {
+                    b[0] = NStr::StringToUInt(host_str.substr(0, 2), 0, 16);
+                    b[1] = NStr::StringToUInt(host_str.substr(2, 2), 0, 16);
+                    b[2] = NStr::StringToUInt(host_str.substr(4, 2), 0, 16);
+                    b[3] = NStr::StringToUInt(host_str.substr(6, 2), 0, 16);
 
-                m_Records[key] = SIRecord(host, NStr::StringToUInt(port_str, 0, 16));
-            } else {
-                NStr::TruncateSpacesInPlace(host_str);
-                arr_param.clear();
-                NStr::Tokenize(host_str, ".", arr_param);
+                    m_Records[key] = SIRecord(host, NStr::StringToUInt(port_str, 0, 16));
+                } else {
+                    NStr::TruncateSpacesInPlace(host_str);
+                    arr_param.clear();
+                    NStr::Tokenize(host_str, ".", arr_param);
 
-                b[0] = NStr::StringToUInt(arr_param[0]);
-                b[1] = NStr::StringToUInt(arr_param[1]);
-                b[2] = NStr::StringToUInt(arr_param[2]);
-                b[3] = NStr::StringToUInt(arr_param[3]);
+                    b[0] = NStr::StringToUInt(arr_param[0]);
+                    b[1] = NStr::StringToUInt(arr_param[1]);
+                    b[2] = NStr::StringToUInt(arr_param[2]);
+                    b[3] = NStr::StringToUInt(arr_param[3]);
 
-                m_Records[key] = SIRecord(host, NStr::StringToUInt(port_str));
+                    m_Records[key] = SIRecord(host, NStr::StringToUInt(port_str));
+                }
             }
 
             state = eInitial;
