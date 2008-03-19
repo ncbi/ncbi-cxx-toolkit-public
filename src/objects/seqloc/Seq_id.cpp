@@ -998,6 +998,7 @@ static const char * kBuiltInGuide[] = {
     "2+6  FC  gb_est",
     "2+6  FD  gb_est",
     "2+6  FE  gb_est",
+    "2+6  FF  gb_est",
     "2+6  FM  embl_dirsub",
     "2+6  FN  embl_other_nuc",
     "2+6  FP  embl_other_nuc",
