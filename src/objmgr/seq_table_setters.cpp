@@ -273,25 +273,25 @@ CSeqTableSetAnyObjField::CSeqTableSetAnyObjField(CObjectTypeInfo type,
                                                  CTempString field)
     : m_SetFinalObject(false)
 {
+    CConstRef<CSeqTableNextObject> next;
     for ( ;; ) {
-        CConstRef<CSeqTableNextObject> next;
         switch ( type.GetTypeFamily() ) {
         default:
             ERR_POST("Incompatible field: "<<
                      type.GetTypeInfo()->GetName()<<" "<<field);
             return;
         case eTypeFamilyPointer:
-            next = new CSeqTableNextObjectPointer();
+            next.Reset(new CSeqTableNextObjectPointer());
             type = type.GetPointedType();
             break;
         case eTypeFamilyContainer:
             type = type.GetElementType();
             if ( type.GetTypeFamily() == eTypeFamilyPointer ) {
-                next = new CSeqTableNextObjectPtrElementNew();
+                next.Reset(new CSeqTableNextObjectPtrElementNew());
                 type = type.GetPointedType();
             }
             else {
-                next = new CSeqTableNextObjectElementNew();
+                next.Reset(new CSeqTableNextObjectElementNew());
             }
             break;
         case eTypeFamilyPrimitive:
@@ -319,13 +319,13 @@ CSeqTableSetAnyObjField::CSeqTableSetAnyObjField(CObjectTypeInfo type,
                 field = next_field;
                 if ( type.GetTypeFamily() == eTypeFamilyClass ) {
                     TMemberIndex index = type.FindMemberIndex(field_name);
-                    next = new CSeqTableNextObjectClassMember(index);
+                    next.Reset(new CSeqTableNextObjectClassMember(index));
                     type = type.GetClassTypeInfo()->GetMemberInfo(index)
                         ->GetTypeInfo();
                 }
                 else {
                     TMemberIndex index = type.FindVariantIndex(field_name);
-                    next = new CSeqTableNextObjectChoiceVariant(index);
+                    next.Reset(new CSeqTableNextObjectChoiceVariant(index));
                     type = type.GetChoiceTypeInfo()->GetVariantInfo(index)
                         ->GetTypeInfo();
                 }
