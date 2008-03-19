@@ -56,13 +56,13 @@ extern "C" {
 /* Server types
  */
 typedef enum {
-    fSERV_Ncbid           = 0x01,
-    fSERV_Standalone      = 0x02,
-    fSERV_HttpGet         = 0x04,
-    fSERV_HttpPost        = 0x08,
-    fSERV_Http            = fSERV_HttpGet | fSERV_HttpPost,
-    fSERV_Firewall        = 0x10,
-    fSERV_Dns             = 0x20
+    fSERV_Ncbid      = 0x01,
+    fSERV_Standalone = 0x02,
+    fSERV_HttpGet    = 0x04,
+    fSERV_HttpPost   = 0x08,
+    fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost,
+    fSERV_Firewall   = 0x10,
+    fSERV_Dns        = 0x20
 } ESERV_Type;
 
 
@@ -74,10 +74,7 @@ typedef enum {
     fSERV_Blast   = 0x1
 } ESERV_Flag;
 
-
-#define SERV_DEFAULT_FLAG           fSERV_Regular
-#define SERV_MIME_TYPE_UNDEFINED    ((EMIME_Type)(-1))
-#define SERV_MIME_SUBTYPE_UNDEFINED ((EMIME_SubType)(-1))
+#define SERV_DEFAULT_FLAG  fSERV_Regular
                                  
 
 /* Verbal representation of a server type (no internal spaces allowed)
