@@ -174,6 +174,10 @@ CSeqMaskerIstatAscii::CSeqMaskerIstatAscii( const string & name,
 }
 
 //------------------------------------------------------------------------------
+Uint4 CSeqMaskerIstatAscii::trueat( Uint4 unit ) const
+{ return uset.get_info( unit ); }
+
+//------------------------------------------------------------------------------
 Uint4 CSeqMaskerIstatAscii::at( Uint4 unit ) const
 {
   Uint4 res = uset.get_info( unit );

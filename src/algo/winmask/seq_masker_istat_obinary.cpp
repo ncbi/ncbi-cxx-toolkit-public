@@ -207,6 +207,10 @@ CSeqMaskerIstatOBinary::CSeqMaskerIstatOBinary( const string & name,
 }
 
 //------------------------------------------------------------------------------
+Uint4 CSeqMaskerIstatOBinary::trueat( Uint4 unit ) const
+{ return uset.get_info( unit ); }
+
+//------------------------------------------------------------------------------
 Uint4 CSeqMaskerIstatOBinary::at( Uint4 unit ) const
 {
     Uint4 res = uset.get_info( unit );

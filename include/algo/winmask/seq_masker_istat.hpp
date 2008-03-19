@@ -164,6 +164,20 @@ protected:
         **/
     virtual Uint4 at( Uint4 unit ) const = 0;
 
+public:
+
+    /**
+         \brief Get the true count for an n-mer.
+
+         \param unit the n-mer value
+
+         \return n-mer count not corrected for t_low
+                 and t_high values
+     **/
+    virtual Uint4 trueat( Uint4 unit ) const = 0;
+
+protected:
+
     /**
         **\brief Set the value of T_threshold.
         **\param arg_threshold new T_threshold value
@@ -178,11 +192,15 @@ protected:
     void set_textend( Uint4 arg_textend )
     { textend = arg_textend; }
 
+public:
+
     /**
         **\brief Get the current value of T_high.
         **\return current T_high value
         **/
     Uint4 get_max_count() const { return max_count; }
+
+protected:
 
     /**
         **\brief Set the value of T_high.
@@ -209,11 +227,15 @@ protected:
     void set_use_max_count( Uint4 arg_use_max_count )
     { use_max_count = arg_use_max_count; }
 
+public:
+
     /**
         **\brief Get the value of T_low.
         **\return current T_low value
         **/
     Uint4 get_min_count() const { return min_count; }
+
+protected:
 
     /**
         **\brief Set the value of T_low.

@@ -56,6 +56,7 @@
 #include "win_mask_gen_counts.hpp"
 #include "win_mask_util.hpp"
 #include "win_mask_sdust_masker.hpp"
+#include "win_mask_counts_converter.hpp"
 
 #include <algo/winmask/seq_masker.hpp>
 
@@ -131,7 +132,8 @@ void CWinMaskApplication::Init(void)
                              "controls the format of the masker output (for masking stage only)",
                              CArgDescriptions::eString, *kOutputFormats );
     arg_desc->AddDefaultKey( "sformat", "unit_counts_format",
-                             "controls the format of the file containing the unit counts (for counts generation only)",
+                             "controls the format of the output file containing the unit counts "
+                             "(for counts generation and conversion only)",
                              CArgDescriptions::eString, "ascii" );
 #if 0
     arg_desc->AddDefaultKey( "mpass", "merge_pass_flag",
@@ -168,6 +170,9 @@ void CWinMaskApplication::Init(void)
 #endif
     arg_desc->AddDefaultKey( "mk_counts", "generate_counts",
                              "generate frequency counts for a database",
+                             CArgDescriptions::eBoolean, "false" );
+    arg_desc->AddDefaultKey( "convert", "convert_counts",
+                             "convert counts between different formats",
                              CArgDescriptions::eBoolean, "false" );
     arg_desc->AddDefaultKey( "fa_list", "input_is_a_list",
                              "indicates that -input represents a file containing "
@@ -288,6 +293,18 @@ void CWinMaskApplication::Init(void)
 int CWinMaskApplication::Run (void)
 {
     SetDiagPostLevel( eDiag_Warning );
+
+    // Branch away immediately if the converter is called.
+    //
+    if( GetArgs()["convert"].AsBoolean() ) {
+        CWinMaskCountsConverter converter( 
+                GetArgs()[kInput].AsString(),
+                GetArgs()[kOutput].AsString(),
+                GetArgs()["sformat"].AsString() + 
+                    GetArgs()["smem"].AsString() );
+        return converter();
+    }
+
     CRef<CObjectManager> om(CObjectManager::GetInstance());
 
 #if 0

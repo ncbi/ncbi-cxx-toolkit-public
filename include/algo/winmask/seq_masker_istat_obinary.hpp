@@ -119,6 +119,16 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatOBinary
          **/
         virtual Uint4 at( Uint4 unit ) const;
 
+        /**
+            \brief Get the true count for an n-mer.
+    
+            \param unit the n-mer value
+
+            \return n-mer count not corrected for t_low
+                    and t_high values
+        **/
+        virtual Uint4 trueat( Uint4 unit ) const;
+
     private:
 
         /**\internal

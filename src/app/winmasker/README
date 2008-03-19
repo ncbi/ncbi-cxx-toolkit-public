@@ -23,6 +23,7 @@ SYNOPSIS
 
     windowmasker -ustat unit_counts [-in input_file_name] [-out output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-infmt input_format] [-outfmt output_format] [-dust use_dust] [-exclude_ids exclude_id_list] [-ids id_list] [-text_match text_match_ids] [-use_ba use_bit_arrays]
 
+    windowmasker -convert true -in input_file_name -out output_file_name [-sformat output_format] [-smem available_memory]
 
 DESCRIPTION
 
@@ -36,7 +37,8 @@ DESCRIPTION
     counts are collected and stored in a separate file. During 
     Stage 2 that file is used to mask the input sequences. Usually 
     the unit counts file is created once per genome and then used
-    multiple times for masking.
+    multiple times for masking. In addition, an option is provided
+    to convert between different unit counts formats.
 
     Stage 1 is selected with "-mk_counts true" command line option
     (this option is set to "false" by default). Stage 1 processes
@@ -76,6 +78,8 @@ DESCRIPTION
     merged together in the output. Specifically, a base is masked if 
     it is masked by either DUST or by WinMask.
 
+    The unit counts format conversion function is triggered by
+    "-convert true" command line option.
 
 OPTIONS
 
@@ -94,6 +98,14 @@ Common Options
         true selects Stage 1 processing, e.g. creation of unit counts 
         and computation of threshold parameters.  The value of false 
         (default) selects Stage 2 processing, e.g. sequence masking.
+
+    -convert true/false
+
+        Default: false
+
+        Select unit counts format conversion function. If the value
+        is 'true' then all other options except "-in", "-out", 
+        "-sformat", and "-smem" are ignored.
 
     -exclude_ids exclude_id_list
 
@@ -166,14 +178,18 @@ Stage 1 Options
         default: <empty>
 
         The location of the input file. The contents of the input 
-        file depends on the value of "-fa_list" option. If "-fa_list 
-        false" is specified, input file is a single FASTA formatted 
-        file. Unit counts will be generated based on the sequences 
-        in that file.  If "-fa_list true" is specified, then input 
-        file contains a list of pathnames (one per line) of FASTA 
+        file depends on the value of "-fa_list" and "-convert" options. 
+        
+        If "-fa_list false" is specified, input file is a single FASTA '
+        formatted file. Unit counts will be generated based on the 
+        sequences in that file.  If "-fa_list true" is specified, then 
+        input file contains a list of pathnames (one per line) of FASTA 
         formatted files that form the genome. In this case unit 
         counts will be generated based on all the sequences contained 
         in the listed files.
+
+        If "-convert true" is specified, then "-in" option is required
+        and its value must be the name of a valid unit counts file.
 
     -mem available_memory
 
@@ -193,6 +209,10 @@ Stage 1 Options
         and standard output is used if it is not specified.  Section 
         FILES contains the description of format of the file.
 
+        If "-convert true" option is given then "-out" option is
+        required and specifies the name of the target output unit
+        counts file.
+
     -sformat unit_counts_format
 
         default: ascii
@@ -210,6 +230,9 @@ Stage 1 Options
         a binary form which is not portable. "oascii" stores data 
         in a portable text format at the expense of startup performance
         during Stage 2.
+
+        If "-convert true" option is specified, then "-sformat" 
+        determines the conversion target format.
 
     -smem available_memory
 
