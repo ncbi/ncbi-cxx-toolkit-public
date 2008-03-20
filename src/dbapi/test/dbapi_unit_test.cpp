@@ -10169,10 +10169,11 @@ public:
 void
 CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
 {
+    const string db_name("AGP"); // This database should exist in MSDEV1, and not in MSDEV2
+
     // CTrivialConnValidator ...
     {
-        // Connection validator to check against DBAPI_Sample ...
-        CTrivialConnValidator validator("DBAPI_Sample");
+        CTrivialConnValidator validator(db_name);
 
         Check_Validator(factory_factory, validator);
     }
@@ -10195,7 +10196,7 @@ CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
         };
 
         // Connection validator to check against DBAPI_Sample ...
-        CValidator validator("DBAPI_Sample");
+        CValidator validator(db_name);
 
         Check_Validator(factory_factory, validator);
     }
@@ -10204,7 +10205,7 @@ CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
     {
 
         // Connection validator to check against DBAPI_Sample ...
-        CValidator01 validator("DBAPI_Sample");
+        CValidator01 validator(db_name);
 
         Check_Validator(factory_factory, validator);
     }
@@ -10212,7 +10213,7 @@ CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
     // One more ...
     {
         // Connection validator to check against DBAPI_Sample ...
-        CValidator02 validator("DBAPI_Sample");
+        CValidator02 validator(db_name);
 
         Check_Validator(factory_factory, validator);
     }
