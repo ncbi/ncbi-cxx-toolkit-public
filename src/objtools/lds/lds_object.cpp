@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/seqloc__.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -703,22 +703,64 @@ int CLDS_Object::FindMaxObjRecId()
 }
 
 
+static bool s_GetSequenceBase(const CObject_id& obj_id,
+                              SLDS_SeqIdBase*  seqid_base)
+{
+    switch (obj_id.Which()) {
+    case CObject_id::e_Id:
+        seqid_base->int_id = obj_id.GetId();
+        seqid_base->str_id.erase();
+        return true;
+    case CObject_id::e_Str:
+        seqid_base->int_id = 0;
+        seqid_base->str_id = obj_id.GetStr();
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
+
+static bool s_GetSequenceBase(const CPDB_seq_id& pdb_id,
+                              SLDS_SeqIdBase*  seqid_base)
+{
+    seqid_base->int_id = 0;
+    seqid_base->str_id = pdb_id.GetMol().Get();
+    seqid_base->str_id += '|';
+    char chain = (char) pdb_id.GetChain();
+    if ( chain == '|' ) {
+        seqid_base->str_id += "VB";
+    }
+    else if ( chain == '\0' ) {
+        seqid_base->str_id += ' ';
+    }
+    else if ( islower((unsigned char)chain) ) {
+        seqid_base->str_id.append(2, chain);
+    }
+    else {
+        seqid_base->str_id += chain;
+    }
+    return true;
+}
+
+
 void LDS_GetSequenceBase(const CSeq_id&   seq_id, 
                          SLDS_SeqIdBase*  seqid_base)
 {
     _ASSERT(seqid_base);
 
-    const CObject_id* obj_id_ptr = 0;
     int   obj_id_int = 0;
     const CTextseq_id* obj_id_txt = 0;
     const CGiimport_id* obj_id_gii = 0;
     const CPatent_seq_id* obj_id_patent = 0;
     const CDbtag*         obj_id_dbtag = 0;
-    const CPDB_seq_id*    obj_id_pdb = 0;
 
     switch (seq_id.Which()) {
     case CSeq_id::e_Local:
-        obj_id_ptr = &seq_id.GetLocal();
+        if ( s_GetSequenceBase(seq_id.GetLocal(), seqid_base) ) {
+            return;
+        }
         break;
     case CSeq_id::e_Gibbsq:
         obj_id_int = seq_id.GetGibbsq();
@@ -760,7 +802,9 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
         obj_id_txt = &seq_id.GetPrf();
         break;
     case CSeq_id::e_Pdb:
-        obj_id_pdb = &seq_id.GetPdb();
+        if ( s_GetSequenceBase(seq_id.GetPdb(), seqid_base) ) {
+            return;
+        }
         break;
     case CSeq_id::e_Tpg:
         obj_id_txt = &seq_id.GetTpg();
@@ -781,21 +825,6 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
 
     const string* id_str = 0;
 
-    if (obj_id_ptr) {
-        switch (obj_id_ptr->Which()) {
-        case CObject_id::e_Id:
-            obj_id_int = obj_id_ptr->GetId();
-            break;
-        case CObject_id::e_Str:
-            id_str = &obj_id_ptr->GetStr();
-            break;
-        case CObject_id::e_not_set:
-            break;
-        default:
-            break;
-        }
-    }
-
     if (obj_id_int) {
         seqid_base->int_id = obj_id_int;
         seqid_base->str_id.erase();
@@ -815,12 +844,12 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
             }
         }
     }
+
     if (id_str) {
         seqid_base->int_id = 0;
         seqid_base->str_id = *id_str;
         return;
     }
-
 
     LOG_POST_X(11, Warning 
                << "SeqId indexer: unsupported type " 
