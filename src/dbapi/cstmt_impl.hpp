@@ -71,7 +71,8 @@ protected:
     virtual IResultSet* ExecuteQuery(const string& /*sql*/) { return 0; }
 
 private:
-    int m_status;
+    int  m_status;
+	bool m_StatusIsAvailable;
 };
 
 //====================================================================

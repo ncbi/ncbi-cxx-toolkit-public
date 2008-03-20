@@ -46,7 +46,9 @@ BEGIN_NCBI_SCOPE
 // implementation
 CCallableStatement::CCallableStatement(const string& proc,
                        CConnection* conn)
-  : CStatement(conn), m_status(0)
+: CStatement(conn)
+, m_status(0)
+, m_StatusIsAvailable(false)
 {
     SetBaseCmd(conn->GetCDB_Connection()->RPC(proc.c_str()));
     SetIdent("CCallableStatement");
@@ -80,6 +82,7 @@ bool CCallableStatement::HasMoreResults()
         }
         if( res != 0 ) {
             m_status = res->Value();
+			m_StatusIsAvailable = true;
             _TRACE("CCallableStatement::HasMoreResults(): Return status "
                    << m_status );
             delete res;
@@ -119,6 +122,7 @@ void CCallableStatement::Execute()
 
   // Reset status value ...
   m_status = 0;
+  m_StatusIsAvailable = false;
 
   _TRACE("Executing stored procedure: " + GetRpcCmd()->GetProcName());
   GetRpcCmd()->Send();
@@ -137,6 +141,8 @@ void CCallableStatement::ExecuteUpdate()
 
 int CCallableStatement::GetReturnStatus()
 {
+  CHECK_NCBI_DBAPI(!m_StatusIsAvailable, "Return status is not available yet.");
+
   return m_status;
 }
 
