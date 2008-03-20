@@ -1373,6 +1373,17 @@ const CArgValue& CArgs::operator[] (size_t idx) const
     return (*this)[s_ComposeNameExtra(idx)];
 }
 
+vector< CRef<CArgValue> > CArgs::GetAll(void) const
+{
+    vector< CRef<CArgValue> > res;
+    ITERATE( TArgs, a, m_Args) {
+        if ((**a).HasValue()) {
+            res.push_back( *a );
+        }
+    }
+    return res;
+}
+
 
 string& CArgs::Print(string& str) const
 {

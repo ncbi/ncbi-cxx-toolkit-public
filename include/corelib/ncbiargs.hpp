@@ -311,6 +311,9 @@ public:
     /// Return N-th extra arg value,  N = 1 to GetNExtra().
     const CArgValue& operator[] (size_t idx) const;
 
+    /// Get all available arguments
+    vector< CRef<CArgValue> > GetAll(void) const;
+
     /// Print (append) all arguments to the string "str" and return "str".
     string& Print(string& str) const;
 
