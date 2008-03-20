@@ -144,7 +144,10 @@ PC-AssayDescription ::= SEQUENCE {
                                confirmatory       (2),          --   Confirmatory Assay
                                summary            (3)           --   Probe Summary Assay
                              }                        OPTIONAL,
-    dr                SEQUENCE OF PC-AssayDRAttr      OPTIONAL  -- Dose-Response Attribution
+    dr                SEQUENCE OF PC-AssayDRAttr      OPTIONAL, -- Dose-Response Attribution
+  
+    data-xref         SEQUENCE OF PC-XRefDataType     OPTIONAL  -- xref types used per SID result,
+                                                                -- see xref in PC-AssayResults.
  }
 
 
@@ -179,6 +182,44 @@ PC-AssayTargetInfo ::= SEQUENCE {
 PC-AnnotatedXRef ::= SEQUENCE {
     xref              PC-XRefData,                    -- Cross-Reference Information
     comment           VisibleString         OPTIONAL  -- Annotation qualifier describing Cross-Reference meaning
+}
+
+
+-- Note: This type should match PC-XRefData in pcsubstance.asn.
+--
+-- Types for depositor Provided X-Ref and LinkOut data for Entrez
+PC-XRefDataType ::= INTEGER {
+        regid            (1),           -- External Database Registry ID
+        rn               (2),           -- Registry Number (e.g., EC Number, CAS Number)
+        mesh             (3),           -- MESH Index Term
+        pmid             (4),           -- PubMed ID
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
+        gi               (5),           -- GenBank General ID
+                                        --   Note: Please use protein-gi or nucleotide-gi, if possible
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
+        mmdb             (6),           -- MMDB ID
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
+        sid              (7),           -- PubChem Substance ID
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
+        cid              (8),           -- PubChem Compound ID
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
+        dburl            (9),           -- Depositor Source Database Homepage
+        sburl            (10),           -- Depositor Homepage for a Substance
+        asurl            (11),          -- Depositor Homepage for an Assay
+        protein-gi       (12),          -- GenBank General ID for a Protein
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
+        nucleotide-gi    (13),          -- GenBank General ID for a Nucleotide
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
+        taxonomy         (14),          -- Taxonomy ID for an Organism
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
+        aid              (15),          -- PubChem BioAssay ID
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
+        mim              (16),          -- MIM, Mendelian Inheritance in Man, Number 
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
+        gene             (17),          -- Entrez Gene ID
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
+        probe            (18)           -- Probe ID
+                                        --   Note: Must be greater than "0" or, if invalid, "0"
 }
 
 
