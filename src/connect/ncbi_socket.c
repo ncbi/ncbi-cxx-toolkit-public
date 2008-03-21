@@ -5064,6 +5064,8 @@ extern const char* SOCK_StringToHostPort(const char*     str,
         *host = 0;
     if (port)
         *port = 0;
+    if (!*str)
+        return 0;
     for (s = str;  *s;  s++) {
         if (isspace((unsigned char)(*s))  ||  *s == ':')
             break;
