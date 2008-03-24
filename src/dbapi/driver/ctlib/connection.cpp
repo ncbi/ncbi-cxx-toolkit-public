@@ -239,14 +239,6 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                 NULL));
     }
 
-    if (!m_Handle.Open(params)) {
-        string err;
-
-        err += "Cannot connect to the server '" + params.GetServerName();
-        err += "' as user '" + params.GetUserName() + "'";
-        DATABASE_DRIVER_ERROR( err, 100011 );
-    }
-
     CTL_Connection* link = this;
     GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                             CS_SET,
@@ -254,6 +246,14 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                             &link,
                             (CS_INT) sizeof(link),
                             NULL));
+
+    if (!m_Handle.Open(params)) {
+        string err;
+
+        err += "Cannot connect to the server '" + params.GetServerName();
+        err += "' as user '" + params.GetUserName() + "'";
+        DATABASE_DRIVER_ERROR( err, 100011 );
+    }
 
     SetServerType(CalculateServerType(params));
 }

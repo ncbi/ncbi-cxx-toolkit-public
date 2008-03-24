@@ -105,6 +105,7 @@ CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
     tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)GetCDriverContext().GetLoginTimeout(),
                      (int)GetCDriverContext().GetTimeout(), 0 /*(int)m_Timeout*/);
     tds_setTDS_version((tds_login*)(m_Login->tds_login), GetDBLibCtx().GetTDSVersion());
+
     m_Link = GetDBLibCtx().Check(dbopen(m_Login, (char*) server_name.c_str()));
 
     // It doesn't work correclty (buffer is full) ...
@@ -125,8 +126,12 @@ CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
         DATABASE_DRIVER_ERROR( err_str, 200011 );
     }
 
+    // Set user-data. That will let us get server and user names in case of
+    // any problem.
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
+
     CheckFunctCall();
+
 
     SetServerType(CalculateServerType(params));
 }

@@ -170,6 +170,8 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     GetDBLibCtx().Check(dbsetopt(GetDBLibConnection(), DBTEXTSIZE , "2147483647" )); // 0x7FFFFFFF
 #endif
 
+    // Set user-data. That will let us get server and user names in case of
+    // any problem.
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();
 
