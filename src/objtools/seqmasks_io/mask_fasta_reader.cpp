@@ -44,6 +44,7 @@ USING_SCOPE(objects);
 //-------------------------------------------------------------------------
 CRef< CSeq_entry > CMaskFastaReader::GetNextSequence()
 {
+    if( input_stream.eof() ) return CRef< CSeq_entry >( null );
     CStreamLineReader line_reader( input_stream );
 
     CFastaReader::TFlags flags = 
@@ -62,6 +63,11 @@ CRef< CSeq_entry > CMaskFastaReader::GetNextSequence()
     {
         CRef< CSeq_entry > aSeqEntry( null );
         aSeqEntry = fasta_reader.ReadSet( 1 );
+
+        if( !input_stream && !input_stream.eof() ) {
+            NCBI_THROW( Exception, eBadStream,
+                    "error reading input stream" );
+        }
 
         if( aSeqEntry != 0 && aSeqEntry->IsSeq() )
             return aSeqEntry;

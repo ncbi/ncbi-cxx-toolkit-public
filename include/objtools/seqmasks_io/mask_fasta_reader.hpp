@@ -51,7 +51,13 @@ public:
      **
      **/
     CMaskFastaReader( CNcbiIstream & newInputStream, bool is_nucl = true )
-        : CMaskReader( newInputStream ), is_nucleotide_(is_nucl) {}
+        : CMaskReader( newInputStream ), is_nucleotide_(is_nucl) 
+    {
+        if( !newInputStream && !newInputStream.eof() ) {
+            NCBI_THROW( Exception, eBadStream, 
+                    "bad stream state at fasta mask reader initialization" );
+        }
+    }
 
     /**
      **\brief Object destructor.

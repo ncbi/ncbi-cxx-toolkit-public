@@ -50,6 +50,33 @@ class NCBI_XOBJREAD_EXPORT CMaskReader
 {
 public:
 
+    /** Exceptions thrown by CMaskReader class.
+      */
+    class Exception : public CException
+    {
+        public:
+
+            /**\brief Error codes.
+            */
+            enum EErrCode
+            {
+                eBadStream     /**< Input stream is failed state. */
+            };
+
+            /**\brief Return description string corresponding to an error code.
+               \return error string
+            */
+            virtual const char * GetErrCodeString() const
+            {
+                switch( GetErrCode() ) {
+                    case eBadStream: return "input stream failure";
+                    default: return CException::GetErrCodeString();
+                }
+            }
+
+            NCBI_EXCEPTION_DEFAULT( Exception, CException );
+    };
+
     /**
      **\brief Object constructor.
      **
@@ -72,7 +99,7 @@ public:
      **
      **\return Pointer (reference counting) to the next biological
      **        sequence entry read from the data source. Returns
-     **        CRef( CSeq_entry >( NULL ) if no more data is
+     **        CRef< CSeq_entry >( null ) if no more data is
      **        available.
      **
      **/
