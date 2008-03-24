@@ -121,8 +121,7 @@ public:
     /// Get main pool mutex
     ///
     /// @sa CThreadPool::GetMainPoolMutex()
-    CMutex& GetMainPoolMutex(void)
-        { return m_MainPoolMutex; }
+    CMutex& GetMainPoolMutex(void);
 
     /// Add task to the pool
     ///
@@ -220,7 +219,7 @@ public:
     bool IsAborted(void) const;
 
     /// Finish all current threads and replace them with new ones
-    /// 
+    ///
     /// @sa CThreadPool::FlushThreads()
     void FlushThreads(CThreadPool::EFlushType flush_type);
 
@@ -342,7 +341,7 @@ private:
     /// Introduced for more adequate and fast reflecting to threads starting
     /// and stopping events
     CAtomicCounter                   m_ThreadsCount;
-    /// Number of tasks executing now 
+    /// Number of tasks executing now
     /// Introduced for more adequate and fast reflecting to task executing
     /// start and finish events
     CAtomicCounter                   m_ExecutingTasks;
@@ -544,21 +543,13 @@ public:
     ///   Pool to protect
     /// @param is_active
     ///   If the mutex should be locked in constructor or not
-    CThreadPool_Guard(CThreadPool_Impl* pool, bool is_active = true)
-        : CMutexGuard(eEmptyGuard),
-          m_Pool(pool)
-    {
-        _ASSERT(pool);
-
-        if (is_active)
-            Guard();
-    }
+    CThreadPool_Guard(CThreadPool_Impl* pool, bool is_active = true);
 
     /// Turn this guardian on
-    void Guard(void) { CMutexGuard::Guard(m_Pool->GetMainPoolMutex()); }
+    void Guard(void);
 
     /// Turn this guardian off
-    void Release(void) { CMutexGuard::Release(); }
+    void Release(void);
 
 private:
     /// Pool protected by the guardian
@@ -629,6 +620,38 @@ inline void
 CThreadPool_ThreadImpl::WakeUp(void)
 {
     m_IdleTrigger.Post();
+}
+
+
+
+inline CMutex&
+CThreadPool_Impl::GetMainPoolMutex(void)
+{
+    return m_MainPoolMutex;
+}
+
+
+
+CThreadPool_Guard::CThreadPool_Guard(CThreadPool_Impl* pool, bool is_active)
+    : CMutexGuard(eEmptyGuard),
+      m_Pool(pool)
+{
+    _ASSERT(pool);
+
+    if (is_active)
+        Guard();
+}
+
+void
+CThreadPool_Guard::Guard(void)
+{
+    CMutexGuard::Guard(m_Pool->GetMainPoolMutex());
+}
+
+void
+CThreadPool_Guard::Release(void)
+{
+    CMutexGuard::Release();
 }
 
 
@@ -1395,7 +1418,8 @@ CThreadPool_Impl::FinishThreads(unsigned int count)
     // compiler otherwise calls the wrong versions of begin() and
     // end() and refuses to convert the resulting iterators.
     REVERSE_ITERATE(TThreadsList, it,
-                    static_cast<const TThreadsList&>(m_IdleThreads)) {
+                    static_cast<const TThreadsList&>(m_IdleThreads))
+    {
         // Maybe in case of several quick consecutive calls we should favor
         // the willing to finish several threads.
         //if ((*it)->IsFinishing())
@@ -1408,7 +1432,8 @@ CThreadPool_Impl::FinishThreads(unsigned int count)
     }
 
     REVERSE_ITERATE(TThreadsList, it,
-                    static_cast<const TThreadsList&>(m_WorkingThreads)) {
+                    static_cast<const TThreadsList&>(m_WorkingThreads))
+    {
         if (count == 0)
             break;
 
@@ -1736,7 +1761,7 @@ CThreadPool_Impl::FlushThreads(CThreadPool::EFlushType flush_type)
                    "Cannot flush threads when ThreadPool aborted");
     }
 
-    if (flush_type == CThreadPool::eStartImmediately 
+    if (flush_type == CThreadPool::eStartImmediately
         ||  flush_type == CThreadPool::eWaitToFinish  &&  m_Suspended)
     {
         FinishThreads(GetThreadsCount());
