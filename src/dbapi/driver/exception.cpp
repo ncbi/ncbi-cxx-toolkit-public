@@ -151,14 +151,14 @@ const char*
 CDB_Exception::GetErrCodeString(void) const
 {
     switch ( GetErrCode() ) {
-    case eDS:       return "eDS";
-    case eRPC:      return "eRPC";
-    case eSQL:      return "eSQL";
-    case eDeadlock: return "eDeadlock";
-    case eTimeout:  return "eTimeout";
-    case eClient:   return "eClient";
-    case eMulti:    return "eMulti";
-    default:        return CException::GetErrCodeString();
+        case eDS:       return "eDS";
+        case eRPC:      return "eRPC";
+        case eSQL:      return "eSQL";
+        case eDeadlock: return "eDeadlock";
+        case eTimeout:  return "eTimeout";
+        case eClient:   return "eClient";
+        case eMulti:    return "eMulti";
+        default:        return CException::GetErrCodeString();
     }
 }
 
@@ -299,6 +299,7 @@ CDB_MultiEx::Pop(void)
 string CDB_MultiEx::WhatThis(void) const
 {
     string str;
+
     str += "---  [Multi-Exception in ";
     str += GetModule();
     str += "]   Contains a backtrace of ";
@@ -306,6 +307,7 @@ string CDB_MultiEx::WhatThis(void) const
     str += " exception";
     str += NofExceptions() == 1 ? "" : "s";
     str += "  ---";
+
     return str;
 }
 
@@ -332,6 +334,7 @@ CDB_MultiEx::ReportErrorStack(ostream& out) const
     if ( record_num == 0 ) {
         return;
     }
+
     if ( record_num > m_NofRooms ) {
         out << " *** Too many exceptions -- the last ";
         out << NStr::UInt8ToString( record_num - m_NofRooms );
@@ -340,6 +343,7 @@ CDB_MultiEx::ReportErrorStack(ostream& out) const
 
     TExceptionStack::const_reverse_iterator criter = m_Bag->GetData().rbegin();
     TExceptionStack::const_reverse_iterator eriter = m_Bag->GetData().rend();
+
     for ( unsigned int i = 0; criter != eriter && i < m_NofRooms; ++criter, ++i ) {
         out << Endl();
         out << "  ";
@@ -528,7 +532,7 @@ CDB_UserHandler_Stream::CDB_UserHandler_Stream(ostream*      os,
       m_Prefix(prefix),
       m_OwnOutput(own_os)
 {
-    if (m_OwnOutput  &&  (m_Output == &cerr  ||  m_Output == &cout)) {
+    if (m_OwnOutput && (m_Output == &cerr || m_Output == &cout)) {
         m_OwnOutput = false;
     }
 }
@@ -592,20 +596,21 @@ CDB_UserHandler_Exception::HandleIt(CDB_Exception* ex)
         return true;
 
     CDB_TruncateEx* trunc_ex = dynamic_cast<CDB_TruncateEx*>(ex);
+
     if (trunc_ex) {
         ERR_POST_X(7, Severity(ex->GetSeverity()) << ex->GetMsg());
         return true;
     }
 
     if (ex->GetSeverity() != eDiag_Info) {
-	string msg = string(ex->what()) + 
-		" SERVER: '" + ex->GetServerName() +
-		"' USER: '" + ex->GetUserName() + "'" +
-		(GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-		GetExtraMsg()) + "'"
-		;
+        string msg = string(ex->what()) + 
+            " SERVER: '" + ex->GetServerName() +
+            "' USER: '" + ex->GetUserName() + "'" +
+            (GetExtraMsg().empty() ? "" : " CONTEXT: '" +
+             GetExtraMsg()) + "'"
+            ;
 
-	ex->AddBacklog(DIAG_COMPILE_INFO, msg, ex->GetSeverity()); 
+        ex->AddBacklog(DIAG_COMPILE_INFO, msg, ex->GetSeverity()); 
     }
 
     ex->Throw();
