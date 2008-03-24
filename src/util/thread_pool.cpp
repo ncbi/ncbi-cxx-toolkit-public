@@ -121,7 +121,8 @@ public:
     /// Get main pool mutex
     ///
     /// @sa CThreadPool::GetMainPoolMutex()
-    CMutex& GetMainPoolMutex(void);
+    CMutex& GetMainPoolMutex(void)
+        { return m_MainPoolMutex; }
 
     /// Add task to the pool
     ///
@@ -1363,12 +1364,6 @@ CThreadPool_Impl::GetDestroyTimeout(void) const
     return m_DestroyTimeout;
 }
 
-inline CMutex&
-CThreadPool_Impl::GetMainPoolMutex(void)
-{
-    return m_MainPoolMutex;
-}
-
 void
 CThreadPool_Impl::LaunchThreads(unsigned int count)
 {
@@ -1396,7 +1391,11 @@ CThreadPool_Impl::FinishThreads(unsigned int count)
 
     CThreadPool_Guard guard(this);
 
-    REVERSE_ITERATE(TThreadsList, it, m_IdleThreads) {
+    // The cast is theoretically extraneous, but Sun's WorkShop
+    // compiler otherwise calls the wrong versions of begin() and
+    // end() and refuses to convert the resulting iterators.
+    REVERSE_ITERATE(TThreadsList, it,
+                    static_cast<const TThreadsList&>(m_IdleThreads)) {
         // Maybe in case of several quick consecutive calls we should favor
         // the willing to finish several threads.
         //if ((*it)->IsFinishing())
@@ -1408,7 +1407,8 @@ CThreadPool_Impl::FinishThreads(unsigned int count)
             break;
     }
 
-    REVERSE_ITERATE(TThreadsList, it, m_WorkingThreads) {
+    REVERSE_ITERATE(TThreadsList, it,
+                    static_cast<const TThreadsList&>(m_WorkingThreads)) {
         if (count == 0)
             break;
 
