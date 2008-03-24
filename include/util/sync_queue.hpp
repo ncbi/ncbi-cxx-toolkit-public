@@ -887,14 +887,31 @@ class CSyncQueue_multiset
 public:
     typedef multiset<Key, Compare, Allocator>  TBaseType;
 
-    CSyncQueue_multiset() : multiset<Key, Compare, Allocator>() {}
+    CSyncQueue_multiset() : TBaseType() {}
 
-    void push_back(const typename TBaseType::value_type& elem)
-    { TBaseType::insert(elem);              }
+    void push_back(const typename TBaseType::value_type& elem) {
+        // Without std:: MSVC8 doesn't compile this code
+        TBaseType::insert(std::upper_bound(TBaseType::begin(),
+                                           TBaseType::end(),
+                                           elem), elem);
+    }
     typename TBaseType::const_reference front() const
-    { return *TBaseType::begin();           }
+    { return *TBaseType::begin();                                 }
     void pop_front()
-    { TBaseType::erase(TBaseType::begin()); }
+    { TBaseType::erase(TBaseType::begin());                       }
+    typename TBaseType::iterator erase(typename TBaseType::iterator iter) {
+        typename TBaseType::iterator res = iter;
+        ++res;
+        TBaseType::erase(iter);
+        return res;
+    }
+    typename TBaseType::iterator erase(typename TBaseType::iterator left,
+                                       typename TBaseType::iterator right)
+    {
+        typename TBaseType::iterator res = right;
+        TBaseType::erase(left, right);
+        return res;
+    }
 };
 
 

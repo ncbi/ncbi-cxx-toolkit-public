@@ -34,6 +34,7 @@
 #include <util/util_exception.hpp>
 #include <util/ncbi_table.hpp>
 #include <util/sync_queue.hpp>
+#include <util/thread_pool.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -81,6 +82,19 @@ const char* CNcbiTable_Exception::GetErrCodeString(void) const
     case eRowNotFound:        return "eRowNotFound";
     case eColumnNotFound:     return "eColumnNotFound";
     default:            return  CException::GetErrCodeString();
+    }
+}
+
+
+const char* CThreadPoolException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eControllerBusy: return "eControllerBusy";
+    case eTaskBusy:       return "eTaskBusy";
+    case eProhibited:     return "eProhibited";
+    case eInactive:       return "eInactive";
+    case eInvalid:        return "eInvalid";
+    default:              return CException::GetErrCodeString();
     }
 }
 

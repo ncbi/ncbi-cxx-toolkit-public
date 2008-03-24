@@ -8,7 +8,7 @@ APP_PROJ = test_utf8 test_rangemap test_resize_iter \
            test_staticmap test_strsearch test_table test_tar \
            test_request_control test_transmissionrw test_align \
            test_cache_mt test_id_mux test_compress_mt test_thread_pool \
-           test_uttp test_line_reader test_queue_mt
+           test_uttp test_line_reader test_queue_mt test_thread_pool_old
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

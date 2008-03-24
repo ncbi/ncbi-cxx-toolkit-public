@@ -3,7 +3,7 @@
 
 APP = test_thread_pool
 SRC = test_thread_pool
-LIB = xutil xncbi
+LIB = xutil xncbi test_mt
 
 REQUIRES = MT
 
