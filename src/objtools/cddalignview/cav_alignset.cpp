@@ -254,8 +254,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(
 
         if (!block.IsSetDim() && block.GetDim() != 2 ||
             block.GetIds().size() != 2 ||
-            block.GetStarts().size() != 2 * block.GetNumseg() ||
-            block.GetLens().size() != block.GetNumseg()) {
+            block.GetStarts().size() != ((unsigned int ) 2 * block.GetNumseg()) ||
+            block.GetLens().size() != ((unsigned int ) block.GetNumseg())) {
             ERR_POST_X(13, Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
                                     "incorrect denseg block dimension");
             return;
