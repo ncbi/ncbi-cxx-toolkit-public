@@ -262,7 +262,7 @@ CDB_MultiEx::Push(const CDB_Exception& ex)
             const_cast<CDB_MultiEx&> ( dynamic_cast<const CDB_MultiEx&> (ex) );
 
         CDB_Exception* pex = NULL;
-        while ( pex = mex.Pop() ) {
+        while ( (pex = mex.Pop()) != NULL ) {
             m_Bag->GetData().push_back( pex );
         }
     } else {
