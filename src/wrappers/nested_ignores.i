@@ -63,6 +63,8 @@
 
 // hide util/thread_pool.hpp due to classes nested in CBlockingQueue
 #define THREAD_POOL__HPP
+// this has been moved to util/thread_pool_old.hpp
+#define UTIL__THREAD_POOL_OLD__HPP
 // fallout from that
 %ignore CPrefetchManager_Impl;
 
