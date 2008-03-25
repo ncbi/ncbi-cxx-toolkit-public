@@ -189,6 +189,80 @@ private:
     TValues m_Values;
 };
 
+//////////////////////////////////////////////////////////////////////
+//
+// Inline method definitions; some are a bit involved, but WorkShop's
+// approach to templates requires them to be here anyway.
+
+EMPTY_TEMPLATE inline
+void CDataValueTmpl<bool>::PrintASN(CNcbiOstream& out, int ) const
+{
+    out << (GetValue()? "TRUE": "FALSE");
+}
+
+EMPTY_TEMPLATE inline
+string CDataValueTmpl<bool>::GetXmlString(void) const
+{
+    return (GetValue()? "true": "false");
+}
+
+
+EMPTY_TEMPLATE inline
+void CDataValueTmpl<Int4>::PrintASN(CNcbiOstream& out, int ) const
+{
+    out << GetValue();
+}
+EMPTY_TEMPLATE inline
+string CDataValueTmpl<Int4>::GetXmlString(void) const
+{
+    CNcbiOstrstream buffer;
+    PrintASN( buffer, 0);
+    return CNcbiOstrstreamToString(buffer);
+}
+
+
+EMPTY_TEMPLATE inline
+void CDataValueTmpl<double>::PrintASN(CNcbiOstream& out, int ) const
+{
+    out << GetValue();
+}
+EMPTY_TEMPLATE inline
+string CDataValueTmpl<double>::GetXmlString(void) const
+{
+    CNcbiOstrstream buffer;
+    PrintASN( buffer, 0);
+    return CNcbiOstrstreamToString(buffer);
+}
+
+EMPTY_TEMPLATE inline
+void CDataValueTmpl<string>::PrintASN(CNcbiOstream& out, int ) const
+{
+    out << '"';
+    ITERATE ( string, i, GetValue() ) {
+        char c = *i;
+        if ( c == '"' )
+            out << "\"\"";
+        else
+            out << c;
+    }
+    out << '"';
+}
+
+EMPTY_TEMPLATE inline
+string CDataValueTmpl<string>::GetXmlString(void) const
+{
+    CNcbiOstrstream buffer;
+//    PrintASN( buffer, 0);
+    ITERATE ( string, i, GetValue() ) {
+        char c = *i;
+        if ( c == '"' )
+            buffer << "\"\"";
+        else
+            buffer << c;
+    }
+    return CNcbiOstrstreamToString(buffer);
+}
+
 END_NCBI_SCOPE
 
 #endif
