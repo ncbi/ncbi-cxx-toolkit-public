@@ -30,12 +30,12 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/enumtype.hpp>
-#include <serial/datatool/blocktype.hpp>
-#include <serial/datatool/value.hpp>
-#include <serial/datatool/enumstr.hpp>
-#include <serial/datatool/module.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "enumtype.hpp"
+#include "blocktype.hpp"
+#include "value.hpp"
+#include "enumstr.hpp"
+#include "module.hpp"
+#include "srcutil.hpp"
 #include <serial/impl/enumerated.hpp>
 
 BEGIN_NCBI_SCOPE

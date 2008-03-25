@@ -28,15 +28,15 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/proj_tree_builder.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
-#include <app/project_tree_builder/proj_src_resolver.hpp>
-#include <app/project_tree_builder/msvc_prj_defines.hpp>
+#include "proj_tree_builder.hpp"
+#include "proj_builder_app.hpp"
+#include "proj_src_resolver.hpp"
+#include "msvc_prj_defines.hpp"
 
-#include <app/project_tree_builder/proj_projects.hpp>
+#include "proj_projects.hpp"
 #include <algorithm>
 
-#include <app/project_tree_builder/ptb_err_codes.hpp>
+#include "ptb_err_codes.hpp"
 
 BEGIN_NCBI_SCOPE
 

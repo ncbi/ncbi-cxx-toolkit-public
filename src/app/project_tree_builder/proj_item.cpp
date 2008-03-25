@@ -28,8 +28,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/proj_item.hpp>
-#include <app/project_tree_builder/msvc_prj_utils.hpp>
+#include "proj_item.hpp"
+#include "msvc_prj_utils.hpp"
 
 
 BEGIN_NCBI_SCOPE

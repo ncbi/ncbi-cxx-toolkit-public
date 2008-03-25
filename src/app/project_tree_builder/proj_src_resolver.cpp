@@ -28,8 +28,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/proj_src_resolver.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
+#include "proj_src_resolver.hpp"
+#include "proj_builder_app.hpp"
 
 BEGIN_NCBI_SCOPE
 

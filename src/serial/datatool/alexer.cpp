@@ -31,11 +31,11 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/alexer.hpp>
-#include <serial/datatool/aparser.hpp>
-#include <serial/datatool/atoken.hpp>
-#include <serial/datatool/comments.hpp>
+#include "exceptions.hpp"
+#include "alexer.hpp"
+#include "aparser.hpp"
+#include "atoken.hpp"
+#include "comments.hpp"
 #include <serial/error_codes.hpp>
 
 

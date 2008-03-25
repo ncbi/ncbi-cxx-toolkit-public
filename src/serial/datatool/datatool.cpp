@@ -39,20 +39,20 @@
 
 #include <memory>
 
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/code.hpp>
-#include <serial/datatool/lexer.hpp>
-#include <serial/datatool/dtdlexer.hpp>
-#include <serial/datatool/parser.hpp>
-#include <serial/datatool/dtdparser.hpp>
-#include <serial/datatool/xsdlexer.hpp>
-#include <serial/datatool/xsdparser.hpp>
-#include <serial/datatool/moduleset.hpp>
-#include <serial/datatool/module.hpp>
-#include <serial/datatool/type.hpp>
-#include <serial/datatool/generate.hpp>
-#include <serial/datatool/datatool.hpp>
-#include <serial/datatool/filecode.hpp>
+#include "exceptions.hpp"
+#include "code.hpp"
+#include "lexer.hpp"
+#include "dtdlexer.hpp"
+#include "parser.hpp"
+#include "dtdparser.hpp"
+#include "xsdlexer.hpp"
+#include "xsdparser.hpp"
+#include "moduleset.hpp"
+#include "module.hpp"
+#include "type.hpp"
+#include "generate.hpp"
+#include "datatool.hpp"
+#include "filecode.hpp"
 #include <serial/objistrxml.hpp>
 #include <serial/objostrxml.hpp>
 #include <serial/error_codes.hpp>

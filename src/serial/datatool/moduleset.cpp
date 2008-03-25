@@ -35,11 +35,11 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
 #include <typeinfo>
-#include <serial/datatool/moduleset.hpp>
-#include <serial/datatool/module.hpp>
-#include <serial/datatool/type.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/fileutil.hpp>
+#include "moduleset.hpp"
+#include "module.hpp"
+#include "type.hpp"
+#include "exceptions.hpp"
+#include "fileutil.hpp"
 #include <serial/error_codes.hpp>
 
 

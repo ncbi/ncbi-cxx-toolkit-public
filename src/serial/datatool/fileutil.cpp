@@ -33,8 +33,8 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbifile.hpp>
-#include <serial/datatool/fileutil.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "fileutil.hpp"
+#include "srcutil.hpp"
 #include <serial/error_codes.hpp>
 #include <set>
 

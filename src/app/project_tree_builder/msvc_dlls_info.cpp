@@ -28,15 +28,15 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/msvc_dlls_info.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
-#include <app/project_tree_builder/msvc_prj_defines.hpp>
-#include <app/project_tree_builder/proj_projects.hpp>
-#include <app/project_tree_builder/proj_tree_builder.hpp>
-#include <app/project_tree_builder/msvc_project_context.hpp>
-#include <app/project_tree_builder/msvc_prj_files_collector.hpp>
-#include <app/project_tree_builder/msvc_dlls_info_utils.hpp>
-#include <app/project_tree_builder/ptb_err_codes.hpp>
+#include "msvc_dlls_info.hpp"
+#include "proj_builder_app.hpp"
+#include "msvc_prj_defines.hpp"
+#include "proj_projects.hpp"
+#include "proj_tree_builder.hpp"
+#include "msvc_project_context.hpp"
+#include "msvc_prj_files_collector.hpp"
+#include "msvc_dlls_info_utils.hpp"
+#include "ptb_err_codes.hpp"
 
 #include <corelib/ncbistre.hpp>
 

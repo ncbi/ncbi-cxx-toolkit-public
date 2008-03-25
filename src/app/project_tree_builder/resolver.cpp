@@ -28,7 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/resolver.hpp>
+#include "resolver.hpp"
 #include <corelib/ncbistr.hpp>
 
 

@@ -30,16 +30,16 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/blocktype.hpp>
-#include <serial/datatool/unitype.hpp>
-#include <serial/datatool/reftype.hpp>
-#include <serial/datatool/statictype.hpp>
+#include "exceptions.hpp"
+#include "blocktype.hpp"
+#include "unitype.hpp"
+#include "reftype.hpp"
+#include "statictype.hpp"
 #include <serial/impl/autoptrinfo.hpp>
-#include <serial/datatool/value.hpp>
-#include <serial/datatool/classstr.hpp>
-#include <serial/datatool/module.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "value.hpp"
+#include "classstr.hpp"
+#include "module.hpp"
+#include "srcutil.hpp"
 #include <serial/impl/classinfo.hpp>
 #include <typeinfo>
 

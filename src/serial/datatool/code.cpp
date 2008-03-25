@@ -31,9 +31,9 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/code.hpp>
-#include <serial/datatool/type.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "code.hpp"
+#include "type.hpp"
+#include "srcutil.hpp"
 
 BEGIN_NCBI_SCOPE
 

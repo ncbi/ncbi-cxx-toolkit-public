@@ -31,11 +31,11 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/stlstr.hpp>
-#include <serial/datatool/classctx.hpp>
-#include <serial/datatool/namespace.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "exceptions.hpp"
+#include "stlstr.hpp"
+#include "classctx.hpp"
+#include "namespace.hpp"
+#include "srcutil.hpp"
 
 BEGIN_NCBI_SCOPE
 

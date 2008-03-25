@@ -30,16 +30,16 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/type.hpp>
-#include <serial/datatool/blocktype.hpp>
-#include <serial/datatool/unitype.hpp>
-#include <serial/datatool/classstr.hpp>
-#include <serial/datatool/stdstr.hpp>
-#include <serial/datatool/code.hpp>
-#include <serial/datatool/srcutil.hpp>
-#include <serial/datatool/comments.hpp>
-#include <serial/datatool/statictype.hpp>
+#include "exceptions.hpp"
+#include "type.hpp"
+#include "blocktype.hpp"
+#include "unitype.hpp"
+#include "classstr.hpp"
+#include "stdstr.hpp"
+#include "code.hpp"
+#include "srcutil.hpp"
+#include "comments.hpp"
+#include "statictype.hpp"
 
 BEGIN_NCBI_SCOPE
 

@@ -32,16 +32,16 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/rpcgen.hpp>
+#include "exceptions.hpp"
+#include "rpcgen.hpp"
 
-#include <serial/datatool/choicetype.hpp>
-#include <serial/datatool/classstr.hpp>
-#include <serial/datatool/code.hpp>
-#include <serial/datatool/generate.hpp>
-#include <serial/datatool/srcutil.hpp>
-#include <serial/datatool/statictype.hpp>
-#include <serial/datatool/stdstr.hpp>
+#include "choicetype.hpp"
+#include "classstr.hpp"
+#include "code.hpp"
+#include "generate.hpp"
+#include "srcutil.hpp"
+#include "statictype.hpp"
+#include "stdstr.hpp"
 #include <serial/error_codes.hpp>
 
 

@@ -28,13 +28,13 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/msvc_masterproject_generator.hpp>
+#include "msvc_masterproject_generator.hpp"
 
 
-#include <app/project_tree_builder/msvc_prj_utils.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
-#include <app/project_tree_builder/msvc_prj_defines.hpp>
-#include <app/project_tree_builder/ptb_err_codes.hpp>
+#include "msvc_prj_utils.hpp"
+#include "proj_builder_app.hpp"
+#include "msvc_prj_defines.hpp"
+#include "ptb_err_codes.hpp"
 
 
 BEGIN_NCBI_SCOPE

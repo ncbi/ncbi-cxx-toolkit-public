@@ -28,12 +28,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/stl_msvc_usage.hpp>
-#include <app/project_tree_builder/msvc_prj_files_collector.hpp>
-#include <app/project_tree_builder/msvc_prj_utils.hpp>
-#include <app/project_tree_builder/configurable_file.hpp>
-#include <app/project_tree_builder/ptb_err_codes.hpp>
-#include <app/project_tree_builder/proj_tree_builder.hpp>
+#include "stl_msvc_usage.hpp"
+#include "msvc_prj_files_collector.hpp"
+#include "msvc_prj_utils.hpp"
+#include "configurable_file.hpp"
+#include "ptb_err_codes.hpp"
+#include "proj_tree_builder.hpp"
 
 
 BEGIN_NCBI_SCOPE

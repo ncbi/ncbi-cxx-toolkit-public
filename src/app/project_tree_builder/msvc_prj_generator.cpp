@@ -1,13 +1,13 @@
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/msvc_prj_generator.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
-#include <app/project_tree_builder/msvc_project_context.hpp>
+#include "msvc_prj_generator.hpp"
+#include "proj_builder_app.hpp"
+#include "msvc_project_context.hpp"
 
 
-#include <app/project_tree_builder/msvc_prj_utils.hpp>
-#include <app/project_tree_builder/msvc_prj_defines.hpp>
-#include <app/project_tree_builder/msvc_prj_files_collector.hpp>
-#include <app/project_tree_builder/ptb_err_codes.hpp>
+#include "msvc_prj_utils.hpp"
+#include "msvc_prj_defines.hpp"
+#include "msvc_prj_files_collector.hpp"
+#include "ptb_err_codes.hpp"
 
 #include <algorithm>
 

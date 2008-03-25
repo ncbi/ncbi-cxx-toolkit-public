@@ -31,8 +31,8 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/type.hpp>
+#include "exceptions.hpp"
+#include "type.hpp"
 #include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE

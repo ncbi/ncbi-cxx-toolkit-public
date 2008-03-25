@@ -32,15 +32,15 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/type.hpp>
-#include <serial/datatool/choicestr.hpp>
-#include <serial/datatool/stdstr.hpp>
-#include <serial/datatool/code.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "exceptions.hpp"
+#include "type.hpp"
+#include "choicestr.hpp"
+#include "stdstr.hpp"
+#include "code.hpp"
+#include "srcutil.hpp"
 #include <serial/serialdef.hpp>
-#include <serial/datatool/statictype.hpp>
-#include <serial/datatool/unitype.hpp>
+#include "statictype.hpp"
+#include "unitype.hpp"
 #include <serial/error_codes.hpp>
 
 

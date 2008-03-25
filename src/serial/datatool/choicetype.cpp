@@ -31,13 +31,13 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/choicetype.hpp>
+#include "choicetype.hpp"
 #include <serial/impl/autoptrinfo.hpp>
 #include <serial/impl/choice.hpp>
-#include <serial/datatool/value.hpp>
-#include <serial/datatool/choicestr.hpp>
-#include <serial/datatool/choiceptrstr.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "value.hpp"
+#include "choicestr.hpp"
+#include "choiceptrstr.hpp"
+#include "srcutil.hpp"
 #include <serial/impl/member.hpp>
 #include <typeinfo>
 

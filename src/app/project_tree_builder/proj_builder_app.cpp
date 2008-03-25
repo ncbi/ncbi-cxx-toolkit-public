@@ -28,19 +28,19 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
-#include <app/project_tree_builder/proj_item.hpp>
-#include <app/project_tree_builder/proj_tree_builder.hpp>
-#include <app/project_tree_builder/msvc_prj_utils.hpp>
-#include <app/project_tree_builder/msvc_prj_generator.hpp>
-#include <app/project_tree_builder/msvc_sln_generator.hpp>
-#include <app/project_tree_builder/msvc_masterproject_generator.hpp>
-#include <app/project_tree_builder/proj_utils.hpp>
-#include <app/project_tree_builder/msvc_configure.hpp>
-#include <app/project_tree_builder/msvc_prj_defines.hpp>
-#include <app/project_tree_builder/msvc_configure_prj_generator.hpp>
-#include <app/project_tree_builder/proj_projects.hpp>
-#include <app/project_tree_builder/ptb_err_codes.hpp>
+#include "proj_builder_app.hpp"
+#include "proj_item.hpp"
+#include "proj_tree_builder.hpp"
+#include "msvc_prj_utils.hpp"
+#include "msvc_prj_generator.hpp"
+#include "msvc_sln_generator.hpp"
+#include "msvc_masterproject_generator.hpp"
+#include "proj_utils.hpp"
+#include "msvc_configure.hpp"
+#include "msvc_prj_defines.hpp"
+#include "msvc_configure_prj_generator.hpp"
+#include "proj_projects.hpp"
+#include "ptb_err_codes.hpp"
 #include <corelib/ncbitime.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */

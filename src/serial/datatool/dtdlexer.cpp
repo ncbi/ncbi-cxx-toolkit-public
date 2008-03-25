@@ -32,8 +32,8 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/dtdlexer.hpp>
-#include <serial/datatool/tokens.hpp>
+#include "dtdlexer.hpp"
+#include "tokens.hpp"
 
 BEGIN_NCBI_SCOPE
 

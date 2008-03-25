@@ -32,9 +32,9 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidiag.hpp>
-#include <serial/datatool/value.hpp>
-#include <serial/datatool/module.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "value.hpp"
+#include "module.hpp"
+#include "srcutil.hpp"
 #include <serial/error_codes.hpp>
 
 

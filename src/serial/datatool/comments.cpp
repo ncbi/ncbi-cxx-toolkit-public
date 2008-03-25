@@ -33,8 +33,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/datatool/comments.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "comments.hpp"
+#include "srcutil.hpp"
 
 BEGIN_NCBI_SCOPE
 

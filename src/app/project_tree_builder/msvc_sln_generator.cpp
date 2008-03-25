@@ -28,15 +28,15 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/stl_msvc_usage.hpp>
-#include <app/project_tree_builder/msvc_sln_generator.hpp>
-#include <app/project_tree_builder/msvc_prj_utils.hpp>
+#include "stl_msvc_usage.hpp"
+#include "msvc_sln_generator.hpp"
+#include "msvc_prj_utils.hpp"
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbistr.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
-#include <app/project_tree_builder/msvc_prj_defines.hpp>
-#include <app/project_tree_builder/msvc_makefile.hpp>
-#include <app/project_tree_builder/ptb_err_codes.hpp>
+#include "proj_builder_app.hpp"
+#include "msvc_prj_defines.hpp"
+#include "msvc_makefile.hpp"
+#include "ptb_err_codes.hpp"
 
 BEGIN_NCBI_SCOPE
 #if NCBI_COMPILER_MSVC

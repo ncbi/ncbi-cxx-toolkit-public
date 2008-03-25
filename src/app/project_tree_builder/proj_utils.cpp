@@ -29,7 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
-#include <app/project_tree_builder/proj_utils.hpp>
+#include "proj_utils.hpp"
 
 BEGIN_NCBI_SCOPE
 

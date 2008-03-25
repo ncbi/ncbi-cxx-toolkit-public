@@ -31,8 +31,8 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/mcontainer.hpp>
-#include <serial/datatool/namespace.hpp>
+#include "mcontainer.hpp"
+#include "namespace.hpp"
 
 BEGIN_NCBI_SCOPE
 

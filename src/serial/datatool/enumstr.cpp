@@ -30,11 +30,11 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/enumstr.hpp>
-#include <serial/datatool/classctx.hpp>
-#include <serial/datatool/srcutil.hpp>
-#include <serial/datatool/enumtype.hpp>
-#include <serial/datatool/code.hpp>
+#include "enumstr.hpp"
+#include "classctx.hpp"
+#include "srcutil.hpp"
+#include "enumtype.hpp"
+#include "code.hpp"
 #include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE

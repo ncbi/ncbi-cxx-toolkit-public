@@ -31,9 +31,9 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/ptrstr.hpp>
-#include <serial/datatool/classctx.hpp>
-#include <serial/datatool/namespace.hpp>
+#include "ptrstr.hpp"
+#include "classctx.hpp"
+#include "namespace.hpp"
 
 BEGIN_NCBI_SCOPE
 

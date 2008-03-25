@@ -31,8 +31,8 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/lexer.hpp>
-#include <serial/datatool/tokens.hpp>
+#include "lexer.hpp"
+#include "tokens.hpp"
 
 BEGIN_NCBI_SCOPE
 

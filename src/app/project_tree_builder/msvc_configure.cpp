@@ -28,10 +28,10 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/msvc_configure.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
+#include "msvc_configure.hpp"
+#include "proj_builder_app.hpp"
 
-#include <app/project_tree_builder/ptb_err_codes.hpp>
+#include "ptb_err_codes.hpp"
 
 BEGIN_NCBI_SCOPE
 

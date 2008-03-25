@@ -33,10 +33,10 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
-#include <serial/datatool/choiceptrstr.hpp>
-#include <serial/datatool/code.hpp>
-#include <serial/datatool/namespace.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "choiceptrstr.hpp"
+#include "code.hpp"
+#include "namespace.hpp"
+#include "srcutil.hpp"
 
 BEGIN_NCBI_SCOPE
 

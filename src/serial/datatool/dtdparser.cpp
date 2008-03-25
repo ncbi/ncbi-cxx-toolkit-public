@@ -32,19 +32,19 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/dtdparser.hpp>
-#include <serial/datatool/tokens.hpp>
-#include <serial/datatool/module.hpp>
-#include <serial/datatool/moduleset.hpp>
-#include <serial/datatool/type.hpp>
-#include <serial/datatool/statictype.hpp>
-#include <serial/datatool/enumtype.hpp>
-#include <serial/datatool/reftype.hpp>
-#include <serial/datatool/unitype.hpp>
-#include <serial/datatool/blocktype.hpp>
-#include <serial/datatool/choicetype.hpp>
-#include <serial/datatool/value.hpp>
+#include "exceptions.hpp"
+#include "dtdparser.hpp"
+#include "tokens.hpp"
+#include "module.hpp"
+#include "moduleset.hpp"
+#include "type.hpp"
+#include "statictype.hpp"
+#include "enumtype.hpp"
+#include "reftype.hpp"
+#include "unitype.hpp"
+#include "blocktype.hpp"
+#include "choicetype.hpp"
+#include "value.hpp"
 #include <serial/error_codes.hpp>
 #include <algorithm>
 #include <corelib/ncbifile.hpp>

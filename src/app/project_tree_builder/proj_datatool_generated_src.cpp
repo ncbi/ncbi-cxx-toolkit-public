@@ -28,10 +28,10 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/proj_datatool_generated_src.hpp>
-#include <app/project_tree_builder/file_contents.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
-#include <app/project_tree_builder/ptb_err_codes.hpp>
+#include "proj_datatool_generated_src.hpp"
+#include "file_contents.hpp"
+#include "proj_builder_app.hpp"
+#include "ptb_err_codes.hpp"
 
 
 BEGIN_NCBI_SCOPE

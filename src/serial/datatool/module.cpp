@@ -34,11 +34,11 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbireg.hpp>
-#include <serial/datatool/module.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/type.hpp>
-#include <serial/datatool/srcutil.hpp>
-#include <serial/datatool/fileutil.hpp>
+#include "module.hpp"
+#include "exceptions.hpp"
+#include "type.hpp"
+#include "srcutil.hpp"
+#include "fileutil.hpp"
 #include <serial/error_codes.hpp>
 #include <typeinfo>
 

@@ -32,8 +32,8 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/xsdlexer.hpp>
-#include <serial/datatool/tokens.hpp>
+#include "xsdlexer.hpp"
+#include "tokens.hpp"
 
 BEGIN_NCBI_SCOPE
 

@@ -28,7 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/ptb_registry.hpp>
+#include "ptb_registry.hpp"
 
 BEGIN_NCBI_SCOPE
 

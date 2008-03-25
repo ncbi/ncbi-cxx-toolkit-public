@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/datatool/namespace.hpp>
+#include "namespace.hpp"
 
 BEGIN_NCBI_SCOPE
 

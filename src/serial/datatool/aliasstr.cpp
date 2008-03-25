@@ -31,13 +31,13 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/type.hpp>
-#include <serial/datatool/aliasstr.hpp>
-#include <serial/datatool/code.hpp>
-#include <serial/datatool/srcutil.hpp>
-#include <serial/datatool/classstr.hpp>
-#include <serial/datatool/enumstr.hpp>
+#include "exceptions.hpp"
+#include "type.hpp"
+#include "aliasstr.hpp"
+#include "code.hpp"
+#include "srcutil.hpp"
+#include "classstr.hpp"
+#include "enumstr.hpp"
 #include <serial/serialdef.hpp>
 
 BEGIN_NCBI_SCOPE

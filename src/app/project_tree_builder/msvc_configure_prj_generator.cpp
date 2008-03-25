@@ -28,9 +28,9 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistre.hpp>
-#include <app/project_tree_builder/msvc_configure_prj_generator.hpp>
-#include <app/project_tree_builder/msvc_prj_defines.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
+#include "msvc_configure_prj_generator.hpp"
+#include "msvc_prj_defines.hpp"
+#include "proj_builder_app.hpp"
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE

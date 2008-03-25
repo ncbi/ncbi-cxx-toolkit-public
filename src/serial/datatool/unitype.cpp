@@ -32,14 +32,14 @@
 #include <ncbi_pch.hpp>
 #include <serial/impl/stltypes.hpp>
 #include <serial/impl/autoptrinfo.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/unitype.hpp>
-#include <serial/datatool/blocktype.hpp>
-#include <serial/datatool/statictype.hpp>
-#include <serial/datatool/stlstr.hpp>
-#include <serial/datatool/value.hpp>
-#include <serial/datatool/reftype.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "exceptions.hpp"
+#include "unitype.hpp"
+#include "blocktype.hpp"
+#include "statictype.hpp"
+#include "stlstr.hpp"
+#include "value.hpp"
+#include "reftype.hpp"
+#include "srcutil.hpp"
 
 BEGIN_NCBI_SCOPE
 

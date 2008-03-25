@@ -32,10 +32,10 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/xsdparser.hpp>
-#include <serial/datatool/tokens.hpp>
-#include <serial/datatool/module.hpp>
+#include "exceptions.hpp"
+#include "xsdparser.hpp"
+#include "tokens.hpp"
+#include "module.hpp"
 #include <serial/error_codes.hpp>
 
 

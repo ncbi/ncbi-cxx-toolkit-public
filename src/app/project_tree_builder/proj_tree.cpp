@@ -28,10 +28,10 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/proj_tree.hpp>
-#include <app/project_tree_builder/proj_tree_builder.hpp>
-#include <app/project_tree_builder/proj_utils.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
+#include "proj_tree.hpp"
+#include "proj_tree_builder.hpp"
+#include "proj_utils.hpp"
+#include "proj_builder_app.hpp"
 
 #include <algorithm>
 

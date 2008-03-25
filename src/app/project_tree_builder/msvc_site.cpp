@@ -28,11 +28,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/stl_msvc_usage.hpp>
-#include <app/project_tree_builder/msvc_site.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
-#include <app/project_tree_builder/msvc_prj_defines.hpp>
-#include <app/project_tree_builder/ptb_err_codes.hpp>
+#include "stl_msvc_usage.hpp"
+#include "msvc_site.hpp"
+#include "proj_builder_app.hpp"
+#include "msvc_prj_defines.hpp"
+#include "ptb_err_codes.hpp"
 
 #include <algorithm>
 

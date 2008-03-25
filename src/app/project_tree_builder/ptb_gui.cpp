@@ -28,7 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
+#include "proj_builder_app.hpp"
 #include "ptb_gui.h"
 
 BEGIN_NCBI_SCOPE

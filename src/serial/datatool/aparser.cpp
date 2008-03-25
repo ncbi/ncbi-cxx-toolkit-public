@@ -31,9 +31,9 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/aparser.hpp>
-#include <serial/datatool/comments.hpp>
+#include "exceptions.hpp"
+#include "aparser.hpp"
+#include "comments.hpp"
 
 BEGIN_NCBI_SCOPE
 

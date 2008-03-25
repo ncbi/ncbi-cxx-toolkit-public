@@ -30,21 +30,21 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/type.hpp>
+#include "type.hpp"
 #include <serial/impl/autoptrinfo.hpp>
-#include <serial/datatool/value.hpp>
-#include <serial/datatool/blocktype.hpp>
-#include <serial/datatool/module.hpp>
-#include <serial/datatool/classstr.hpp>
-#include <serial/datatool/aliasstr.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/reftype.hpp>
-#include <serial/datatool/unitype.hpp>
-#include <serial/datatool/choicetype.hpp>
-#include <serial/datatool/statictype.hpp>
-#include <serial/datatool/enumtype.hpp>
-#include <serial/datatool/fileutil.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "value.hpp"
+#include "blocktype.hpp"
+#include "module.hpp"
+#include "classstr.hpp"
+#include "aliasstr.hpp"
+#include "exceptions.hpp"
+#include "reftype.hpp"
+#include "unitype.hpp"
+#include "choicetype.hpp"
+#include "statictype.hpp"
+#include "enumtype.hpp"
+#include "fileutil.hpp"
+#include "srcutil.hpp"
 #include <serial/error_codes.hpp>
 #include <algorithm>
 

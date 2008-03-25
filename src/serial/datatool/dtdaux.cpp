@@ -36,7 +36,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/dtdaux.hpp>
+#include "dtdaux.hpp"
 
 BEGIN_NCBI_SCOPE
 

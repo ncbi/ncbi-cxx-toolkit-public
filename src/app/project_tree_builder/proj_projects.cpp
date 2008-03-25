@@ -27,9 +27,9 @@
  *
  */
 #include <ncbi_pch.hpp>
-#include <app/project_tree_builder/proj_projects.hpp>
-#include <app/project_tree_builder/proj_builder_app.hpp>
-#include <app/project_tree_builder/proj_tree.hpp>
+#include "proj_projects.hpp"
+#include "proj_builder_app.hpp"
+#include "proj_tree.hpp"
 
 #include <corelib/ncbienv.hpp>
 #include <util/regexp.hpp>

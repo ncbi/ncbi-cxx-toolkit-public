@@ -30,13 +30,13 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/datatool/exceptions.hpp>
-#include <serial/datatool/statictype.hpp>
-#include <serial/datatool/stdstr.hpp>
-#include <serial/datatool/stlstr.hpp>
-#include <serial/datatool/value.hpp>
-#include <serial/datatool/blocktype.hpp>
-#include <serial/datatool/srcutil.hpp>
+#include "exceptions.hpp"
+#include "statictype.hpp"
+#include "stdstr.hpp"
+#include "stlstr.hpp"
+#include "value.hpp"
+#include "blocktype.hpp"
+#include "srcutil.hpp"
 #include <serial/impl/stdtypes.hpp>
 #include <serial/impl/stltypes.hpp>
 #include <serial/impl/autoptrinfo.hpp>
