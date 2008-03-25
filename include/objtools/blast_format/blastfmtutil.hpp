@@ -232,6 +232,7 @@ k_all_url_pairs[]={
 };
 
 #ifndef DIM
+/// Calculates the dimensions of a static array
 #define DIM(static_array) (sizeof(static_array)/sizeof(*static_array))
 #endif
 

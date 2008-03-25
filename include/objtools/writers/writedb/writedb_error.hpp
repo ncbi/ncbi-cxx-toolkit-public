@@ -30,7 +30,7 @@
  *
  */
 
-/// @file writedb_error.hpp.hpp
+/// @file writedb_error.hpp
 /// Defines exception class for WriteDB.
 /// 
 /// Defines classes:

@@ -27,7 +27,7 @@
  *
  */
 
-/** @file custom_seq_writer.hpp
+/** @file seq_writer.hpp
  *  Definition of a customizable sequence writer interface
  */
 

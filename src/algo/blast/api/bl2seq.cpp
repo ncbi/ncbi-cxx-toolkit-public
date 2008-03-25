@@ -200,7 +200,7 @@ CBl2Seq::x_BuildAncillaryData(const TSeqAlignVector& alignments)
 
 void
 CBl2Seq::x_SimplifyTSeqLocVector(const TSeqLocVector& slv,
-                                 vector< CConstRef<CSeq_id> >& query_ids)
+                             vector< CConstRef<objects::CSeq_id> >& query_ids)
 {
     query_ids.clear();
     for (size_t i = 0; i < slv.size(); i++) {
