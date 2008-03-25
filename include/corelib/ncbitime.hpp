@@ -910,10 +910,10 @@ public:
     CTime  operator-- (int);
 
     /// Operator to increment days.
-    CTime operator+ (int days);
+    CTime operator+ (int days) const;
 
     /// Operator to decrement days.
-    CTime operator- (int days);
+    CTime operator- (int days) const;
 
     //
     // Add/subtract time span
@@ -926,10 +926,10 @@ public:
     CTime& operator-= (const CTimeSpan& ts);
 
     // Operator to add time span.
-    CTime operator+ (const CTimeSpan& ts);
+    CTime operator+ (const CTimeSpan& ts) const;
 
     /// Operator to subtract time span.
-    CTime operator- (const CTimeSpan& ts);
+    CTime operator- (const CTimeSpan& ts) const;
 
     /// Operator to subtract times.
     CTimeSpan operator- (const CTime& t);
@@ -959,6 +959,9 @@ public:
     //
     // Time difference
     //
+
+    /// Difference in whole days from specified time.
+    int DiffWholeDay(const CTime& t) const;
 
     /// Difference in days from specified time.
     double DiffDay(const CTime& t) const;
@@ -1326,7 +1329,7 @@ public:
     double GetAsDouble(void) const;
 
     /// Return TRUE is an object keep zero time span.
-    bool IsEmpty(void);
+    bool IsEmpty(void) const;
 
     //
     // Arithmetic
@@ -1336,13 +1339,13 @@ public:
     CTimeSpan& operator+= (const CTimeSpan& t);
 
     // Operator to add time span.
-    CTimeSpan operator+ (const CTimeSpan& t);
+    CTimeSpan operator+ (const CTimeSpan& t) const;
 
     /// Operator to subtract time span.
     CTimeSpan& operator-= (const CTimeSpan& t);
 
     /// Operator to subtract time span.
-    CTimeSpan operator- (const CTimeSpan& t);
+    CTimeSpan operator- (const CTimeSpan& t) const;
 
     /// Unary operator "-" (minus) to change time span sign.
     const CTimeSpan operator- (void) const;
@@ -1605,7 +1608,8 @@ public:
 NCBI_XNCBI_EXPORT
 extern CTime operator + (int days, const CTime& t);
 
-NCBI_XNCBI_EXPORT
+// This operator is deprecated. Use CTime::DiffWholeDay() instead.
+NCBI_XNCBI_EXPORT NCBI_DEPRECATED
 extern int   operator- (const CTime& t1, const CTime& t2);
 
 /// Quick and dirty getter of local time.
@@ -1832,7 +1836,7 @@ inline
 CTime& CTime::operator-= (const CTimeSpan& ts) { return AddTimeSpan(-ts); }
 
 inline
-CTime CTime::operator+ (const CTimeSpan& ts)
+CTime CTime::operator+ (const CTimeSpan& ts) const
 {
     CTime tmp(*this);
     tmp.AddTimeSpan(ts);
@@ -1840,7 +1844,7 @@ CTime CTime::operator+ (const CTimeSpan& ts)
 }
 
 inline
-CTime CTime::operator- (const CTimeSpan& ts)
+CTime CTime::operator- (const CTimeSpan& ts) const
 {
     CTime tmp(*this);
     tmp.AddTimeSpan(-ts);
@@ -1873,7 +1877,7 @@ CTime CTime::operator-- (int)
 }
 
 inline
-CTime CTime::operator+ (int days)
+CTime CTime::operator+ (int days) const
 {
     CTime t = *this;
     t.AddDay(days);
@@ -1881,7 +1885,7 @@ CTime CTime::operator+ (int days)
 }
 
 inline
-CTime CTime::operator- (int days)
+CTime CTime::operator- (int days) const
 {
     CTime t = *this;
     t.AddDay(-days);
@@ -1943,6 +1947,12 @@ bool CTime::IsEmptyDate() const
     // We check year value only, because all time object date fields
     // can be zeros only at one time.
     return !Year();
+}
+
+inline
+int CTime::DiffWholeDay(const CTime& t) const
+{
+    return int(DiffSecond(t) / 60 / 60 / 24);
 }
 
 inline
@@ -2138,7 +2148,7 @@ double CTimeSpan::GetAsDouble(void) const
 }
 
 inline
-bool CTimeSpan::IsEmpty(void)
+bool CTimeSpan::IsEmpty(void) const
 { 
     return m_Sec == 0  &&  m_NanoSec == 0;
 }
@@ -2171,7 +2181,7 @@ CTimeSpan& CTimeSpan::operator+= (const CTimeSpan& t)
 }
 
 inline
-CTimeSpan CTimeSpan::operator+ (const CTimeSpan& t)
+CTimeSpan CTimeSpan::operator+ (const CTimeSpan& t) const
 {
     CTimeSpan tnew(0, 0, 0, m_Sec + t.m_Sec, m_NanoSec + t.m_NanoSec);
     return tnew;
@@ -2187,7 +2197,7 @@ CTimeSpan& CTimeSpan::operator-= (const CTimeSpan& t)
 }
 
 inline
-CTimeSpan CTimeSpan::operator- (const CTimeSpan& t)
+CTimeSpan CTimeSpan::operator- (const CTimeSpan& t) const
 {
     CTimeSpan tnew(0, 0, 0, m_Sec - t.m_Sec, m_NanoSec - t.m_NanoSec);
     return tnew;
