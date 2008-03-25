@@ -171,6 +171,7 @@ public:
 
 private:
     static const string sm_Countries[];
+    static const string sm_Former_Countries[];
 };
 
 
