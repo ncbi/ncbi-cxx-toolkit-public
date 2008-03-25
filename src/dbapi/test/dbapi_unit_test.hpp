@@ -243,6 +243,7 @@ public:
     void Test_VARCHAR_MAX(void);
     void Test_VARCHAR_MAX_BCP(void);
     void Test_NVARCHAR(void);
+    void Test_NTEXT(void);
     void Test_CHAR(void);
     
     void Test_Iskhakov(void);

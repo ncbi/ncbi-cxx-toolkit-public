@@ -1065,6 +1065,51 @@ void CDBAPIUnitTest::Test_NVARCHAR(void)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_NTEXT(void)
+{
+    string sql;
+
+    try {
+        string ins_value = "asdfghjkl";
+        char buffer[20];
+
+        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+
+        sql = "SET TEXTSIZE 2147483647";
+        auto_stmt->ExecuteUpdate(sql);
+
+        sql = "create table #test_ntext (txt_fld ntext)";
+        auto_stmt->ExecuteUpdate(sql);
+
+        sql = "insert into #test_ntext values ('" + ins_value + "')";
+        auto_stmt->ExecuteUpdate(sql);
+
+        sql = "SELECT txt_fld from #test_ntext";
+        auto_stmt->Execute(sql);
+        while (auto_stmt->HasMoreResults()) {
+            if (auto_stmt->HasRows()) {
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                rs->BindBlobToVariant(true);
+                while (rs->Next()) {
+                    const CVariant& var = rs->GetVariant("txt_fld");
+                    BOOST_CHECK_EQUAL(var.GetBlobSize(), ins_value.size());
+                    var.Read(buffer, ins_value.size());
+                    buffer[ins_value.size()] = 0;
+                    BOOST_CHECK_EQUAL(string(buffer), ins_value);
+                }
+            }
+        }
+    }
+    catch(const CDB_Exception& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
 // Based on Soussov's API.
 void CDBAPIUnitTest::Test_Iskhakov(void)
 {
@@ -14315,6 +14360,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    if (args.GetServerType() != CTestArguments::eSybase
+        &&  args.GetDriverName() != odbc_driver  &&  args.GetDriverName() != odbcw_driver)
+    {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NTEXT,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)

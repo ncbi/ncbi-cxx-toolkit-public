@@ -3768,15 +3768,18 @@ determine_adjusted_size(const TDSICONV * char_conv, int size)
 
     /* ssikorsk */
     if (char_conv->client_charset.max_bytes_per_char > 1 &&
-        size * char_conv->client_charset.max_bytes_per_char < size
+        INT_MAX / char_conv->client_charset.max_bytes_per_char < size
         ) {
         size = INT_MAX;
     } else {
         size *= char_conv->client_charset.max_bytes_per_char;
     }
 
-    if (size % char_conv->server_charset.min_bytes_per_char)
+    if (size % char_conv->server_charset.min_bytes_per_char
+        &&  INT_MAX - char_conv->server_charset.min_bytes_per_char >= size)
+    {
         size += char_conv->server_charset.min_bytes_per_char;
+    }
     size /= char_conv->server_charset.min_bytes_per_char;
 
     return size;
