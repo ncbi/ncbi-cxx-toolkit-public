@@ -258,15 +258,18 @@ TCompartmentStructs MakeCompartments(const TCompartments& compartments, CCompart
 
     const int max_extent = compart_options.m_MaxExtent;
 
+    int prev = 0;
+
     for (size_t i=0; i<results.size(); ++i) {
         SCompartment& comp = results[i];
-        int prev = (i==0 || results[i-1].strand != comp.strand) ?
+        prev = (i==0 || results[i-1].strand != comp.strand) ?
             -comp.from :
-            results[i-1].to;
+            prev;
         int next = (i==results.size()-1 || results[i+1].strand != comp.strand) ?
             comp.to+2*max_extent+2 :
             results[i+1].from;
-        comp.from = max(comp.from-max_extent,(prev+comp.from)/2);
+        comp.from = max(comp.from-max_extent,(prev+comp.from)/2+1);
+        prev = comp.to;
         comp.to = min(comp.to+max_extent,(comp.to+next)/2-1);
     }
 
