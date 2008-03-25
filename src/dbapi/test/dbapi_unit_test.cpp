@@ -56,7 +56,6 @@ static const char* ftds_odbc_driver = "ftds_odbc";
 static const char* ftds_dblib_driver = "ftds_dblib";
 
 static const char* odbc_driver = "odbc";
-static const char* odbcw_driver = "odbcw";
 static const char* ctlib_driver = "ctlib";
 static const char* dblib_driver = "dblib";
 static const char* msdblib_driver = "msdblib";
@@ -12664,7 +12663,6 @@ CMsgHandlerGuard::CMsgHandlerGuard(
 : m_DrvContext(drv_context)
 {
     if (driver_name == odbc_driver ||
-            driver_name == odbcw_driver ||
             driver_name == ftds_odbc_driver
        )
     {
@@ -13745,7 +13743,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && !Solaris // Requires Sybase client 12.5
         && args.GetDriverName() != ftds_dblib_driver
         && args.GetDriverName() != odbc_driver
-        && args.GetDriverName() != odbcw_driver
         && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
@@ -13893,7 +13890,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //         tc->depends_on(tc_parameters);
 //         add(tc);
 
-        if (args.GetDriverName() == odbcw_driver
+        if (args.GetDriverName() == odbc_driver
             // || args.GetDriverName() == ftds_odbc_driver
             || args.GetDriverName() == ftds64_driver
             // || args.GetDriverName() == ftds8_driver
@@ -13907,7 +13904,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             PutMsgDisabled("Test_UnicodeNB");
         }
 
-        if (args.GetDriverName() == odbcw_driver
+        if (args.GetDriverName() == odbc_driver
             // || args.GetDriverName() == ftds_odbc_driver
             || args.GetDriverName() == ftds64_driver
             ) {
@@ -14290,7 +14287,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
 //     if (args.GetServerType() == CTestArguments::eMsSql
 //         && args.GetDriverName() != odbc_driver // Doesn't work ...
-//         && args.GetDriverName() != odbcw_driver // Doesn't work ...
 //         // && args.GetDriverName() != ftds_odbc_driver
 //         && args.GetDriverName() != msdblib_driver
 //         ) {
@@ -14325,7 +14321,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.GetServerType() != CTestArguments::eSybase
         &&  args.GetDriverName() != odbc_driver
-        &&  args.GetDriverName() != odbcw_driver
         &&  args.GetDriverName() != dblib_driver
         &&  args.GetDriverName() != ftds_dblib_driver
        )
@@ -14358,7 +14353,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    ftds_driver
 #define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, msdblib_driver, odbc_driver, \
-                      ftds_dblib_driver, ftds_odbc_driver, odbcw_driver, ftds8_driver
+                      ftds_dblib_driver, ftds_odbc_driver, ftds8_driver
 
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "SCHUMANN"
@@ -14521,7 +14516,6 @@ bool
 CTestArguments::IsODBCBased(void) const
 {
     return GetDriverName() == odbc_driver ||
-           GetDriverName() == odbcw_driver ||
            GetDriverName() == ftds_odbc_driver;
 }
 
@@ -14582,7 +14576,7 @@ CTestArguments::SetDatabaseParameters(void)
 
     if ( (GetDriverName() == ftds8_driver ||
           GetDriverName() == ftds64_driver ||
-          // GetDriverName() == ftds_odbc_driver  ||
+          GetDriverName() == ftds_odbc_driver ||
           GetDriverName() == ftds_dblib_driver)
          && (GetServerType() == eMsSql || GetServerType() == eMsSql2005)) {
         m_DatabaseParameters["client_charset"] = "UTF-8";

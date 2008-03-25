@@ -8,6 +8,7 @@ util/bitset
 connect$
 connect/ext$
 dbapi
+-dbapi/driver/odbc/odbcw
 misc
 cgi$ update-only
 connect/services$ update-only
