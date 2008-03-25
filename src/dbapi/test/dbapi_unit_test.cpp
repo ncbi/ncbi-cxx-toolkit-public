@@ -4395,7 +4395,9 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
             col1 = 15001;
             col2 = 1;
             col3 = 2;
-            if (m_args.IsODBCBased())
+            if (m_args.IsODBCBased()
+                || m_args.GetDriverName() == dblib_driver
+                )
             {
                 PutMsgDisabled("Bulk-insert NULLs when there are defaults");
 
