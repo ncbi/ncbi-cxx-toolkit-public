@@ -51,7 +51,6 @@
 static const char* ftds8_driver = "ftds8";
 static const char* ftds64_driver = "ftds";
 static const char* ftds_driver = ftds64_driver;
-static const char* ftds63_driver = "ftds63";
 
 static const char* ftds_odbc_driver = "ftds_odbc";
 static const char* ftds_dblib_driver = "ftds_dblib";
@@ -13504,7 +13503,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.GetTestConfiguration() != CTestArguments::eFast) {
         // Test DriverContext
         if (args.GetDriverName() == ftds8_driver ||
-                args.GetDriverName() == ftds63_driver ||
                 args.GetDriverName() == ftds_dblib_driver ||
                 // args.GetDriverName() == dblib_driver ||
                 args.GetDriverName() == msdblib_driver
@@ -13787,16 +13785,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             PutMsgDisabled("Test_Bulk_Writing3");
         }
 
-        if ( !( args.GetTestConfiguration() == CTestArguments::eWithoutExceptions
-                && args.GetDriverName() == ftds63_driver)
-                ) {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
-            tc->depends_on(tc_init);
-            add(tc);
-        }
-        else {
-            PutMsgDisabled("Test_Bulk_Writing4");
-        }
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
 
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing5, DBAPIInstance);
         tc->depends_on(tc_init);
@@ -13849,7 +13840,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
         // Doesn't work at the moment ...
         if (args.GetDriverName() != ftds8_driver // memory access violation 03/03/08 
-            && args.GetDriverName() != ftds_odbc_driver
+            && args.GetDriverName() != ftds_odbc_driver // 03/24/08 Statement(s) could not be prepared.
             && args.GetDriverName() != odbc_driver
             && args.GetDriverName() != odbcw_driver
             && args.GetDriverName() != msdblib_driver // Fails with the message "Cannot get the DBCOLINFO*"
@@ -13925,7 +13916,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //         add(tc);
 
         if (args.GetDriverName() == odbcw_driver
-            // || args.GetDriverName() == ftds63_driver
             // || args.GetDriverName() == ftds_odbc_driver
             || args.GetDriverName() == ftds64_driver
             // || args.GetDriverName() == ftds8_driver
@@ -13940,7 +13930,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
 
         if (args.GetDriverName() == odbcw_driver
-            // || args.GetDriverName() == ftds63_driver
             // || args.GetDriverName() == ftds_odbc_driver
             || args.GetDriverName() == ftds64_driver
             ) {
@@ -14110,7 +14099,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         if ((((args.GetDriverName() == ftds8_driver
                && (args.GetServerType() == CTestArguments::eMsSql
                    || args.GetServerType() == CTestArguments::eMsSql2005))
-              || args.GetDriverName() == ftds63_driver
               || args.GetDriverName() == odbc_driver
               || args.GetDriverName() == odbcw_driver
               || args.GetDriverName() == ftds_odbc_driver
@@ -14180,10 +14168,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
 
     if ( (args.GetDriverName() == ftds8_driver
-          || args.GetDriverName() == ftds63_driver
           || args.GetDriverName() == ftds_dblib_driver
           || args.GetDriverName() == ftds64_driver
-          // || args.GetDriverName() == ftds_odbc_driver  // This is a big problem ....
+          // || args.GetDriverName() == ftds_odbc_driver  // 03/25/08 // This is a big problem ....
           ) &&
          (args.GetServerType() == CTestArguments::eMsSql
           || args.GetServerType() == CTestArguments::eMsSql2005) ) {
@@ -14394,18 +14381,18 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    ftds_driver
-#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, ftds63_driver, msdblib_driver, odbc_driver, \
+#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, msdblib_driver, odbc_driver, \
                       ftds_dblib_driver, ftds_odbc_driver, odbcw_driver, ftds8_driver
 
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "SCHUMANN"
 #define DEF_DRIVER    ctlib_driver
-#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, ftds63_driver, ftds_dblib_driver, \
+#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, ftds_dblib_driver, \
                       ftds_odbc_driver, ftds8_driver
 #else
 #define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    ftds_driver
-#define ALL_DRIVERS   ftds64_driver, ftds63_driver, ftds_dblib_driver, ftds_odbc_driver, \
+#define ALL_DRIVERS   ftds64_driver, ftds_dblib_driver, ftds_odbc_driver, \
                       ftds8_driver
 #endif
 
@@ -14586,8 +14573,7 @@ CTestArguments::SetDatabaseParameters(void)
             default:
                 break;
             }
-        } else if ( (GetDriverName() == ftds63_driver ||
-                     GetDriverName() == ftds_dblib_driver) &&
+        } else if ( GetDriverName() == ftds_dblib_driver &&
                     GetServerType() == eSybase ) {
             // ftds8 work with Sybase databases using protocol v42 only ...
             m_DatabaseParameters["version"] = "42";
@@ -14619,7 +14605,6 @@ CTestArguments::SetDatabaseParameters(void)
     }
 
     if ( (GetDriverName() == ftds8_driver ||
-          GetDriverName() == ftds63_driver ||
           GetDriverName() == ftds64_driver ||
           // GetDriverName() == ftds_odbc_driver  ||
           GetDriverName() == ftds_dblib_driver)
