@@ -13,7 +13,7 @@ NCBI-GenomeCollection DEFINITIONS ::=
 BEGIN
 
 IMPORTS Dbtag FROM NCBI-General
-        MolInfo, Seqdesc, Delta-ext FROM NCBI-Sequence
+        MolInfo, Seqdesc, Seq-descr, Delta-ext FROM NCBI-Sequence
         Seq-id FROM NCBI-Seqloc
         BioSource FROM NCBI-BioSource;
 
@@ -22,15 +22,13 @@ GC-Genome ::= SEQUENCE
     -- The identifier for this genome
     id SET OF Dbtag,
 
-    -- biosrc provides taxonomic information for this genome
-    biosrc BioSource,
-
     -- project ID for this genome
     -- this is a *master* ID for the genome
     project-id INTEGER,
 
-    -- descriptors
-    desc Seqdesc OPTIONAL,
+    -- Various attributes assigned at this level:
+    -- biosrc, comments, publications...
+    descr Seq-descr OPTIONAL , 
 
     -- official list of chromosome names
     -- this should be the complete expected set of chromosomes
@@ -41,6 +39,8 @@ GC-Genome ::= SEQUENCE
     -- the bits that make up this genome
     -- this preserves the expected display order
     parts SET OF GC-GenomicPart
+    
+
 }
 
 GC-GenomicPart ::= CHOICE {
@@ -72,11 +72,9 @@ GC-Assembly ::= SEQUENCE
     -- this is the ID for this asssembly and may reflect the submitter/source
     project-id INTEGER,
 
-    -- biosrc provides taxonomic information for this assembly
-    biosrc BioSource OPTIONAL,
-
-    -- descriptors
-    desc Seqdesc OPTIONAL,
+    -- Various attributes assigned at this level:
+    -- biosrc, comments, publications...
+    descr Seq-descr OPTIONAL , 
 
     -- flag: is this assembly partial?
     -- **NOTE: not set = not known!!
@@ -106,11 +104,9 @@ GC-Molecule ::= SEQUENCE
     -- name for this molecule
     name GC-ChromosomeName,
 
-    -- biosrc provides taxonomic information for this molecule
-    biosrc BioSource OPTIONAL,
-
-    -- descriptors
-    desc Seqdesc OPTIONAL,
+    -- Various attributes assigned at this level:
+    -- biosrc, comments, publications...
+    descr Seq-descr OPTIONAL , 
 
     -- type of molecule
     type MolInfo OPTIONAL,
@@ -140,11 +136,9 @@ GC-SequenceBag ::= SEQUENCE
     -- name for this bag
     name GC-ChromosomeName OPTIONAL,
 
-    -- biosrc provides taxonomic information for this bag
-    biosrc BioSource OPTIONAL,
-
-    -- descriptors
-    desc Seqdesc OPTIONAL,
+    -- Various attributes assigned at this level:
+    -- biosrc, comments, publications...
+    descr Seq-descr OPTIONAL , 
 
     -- flag: is this set ordered?
     ordered BOOLEAN OPTIONAL,
