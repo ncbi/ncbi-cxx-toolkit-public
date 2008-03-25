@@ -690,7 +690,7 @@ void CValidError_feat::ValidateCdregion (
     }
 
     if ( pseudo && feat.CanGetProduct () ) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PsuedoCdsHasProduct,
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PseudoCdsHasProduct,
             "A pseudo coding region should not have a product", feat);
     }
     
@@ -2161,22 +2161,29 @@ void CValidError_feat::ValidateBadGeneOverlap(const CSeq_feat& feat)
 
 
 static const string s_LegalExceptionStrings[] = {
-  "RNA editing",
-  "reasons given in citation",
-  "ribosomal slippage",
-  "trans-splicing",
-  "alternative processing",
-  "artificial frameshift",
-  "nonconsensus splice site",
-  "rearrangement required for product",
-  "modified codon recognition",
-  "alternative start codon"
+    "RNA editing",
+    "reasons given in citation",
+    "rearrangement required for product",
+    "ribosomal slippage",
+    "trans-splicing",
+    "alternative processing",
+    "artificial frameshift",
+    "nonconsensus splice site",
+    "modified codon recognition",
+    "alternative start codon",
+    "dicistronic gene",
+    "transcribed product replaced",
+    "translated product replaced",
+    "transcribed pseudogene",
 };
 
 
 static const string s_RefseqExceptionStrings [] = {
-  "unclassified transcription discrepancy",
-  "unclassified translation discrepancy",
+    "unclassified transcription discrepancy",
+    "unclassified translation discrepancy",
+    "mismatches in transcription",
+    "mismatches in translation",
+    "adjusted for low-quality genome",
 };
 
 
