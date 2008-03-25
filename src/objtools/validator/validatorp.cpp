@@ -905,10 +905,65 @@ void CValidError_imp::ValidatePubdesc
 (const CPubdesc& pubdesc,
  const CSerialObject& obj)
 {
-    int uid = 0;
+    int uid = 0, pmid = 0, muid = 0;
+    bool conflicting_pmids = false, redundant_pmids = false, conflicting_muids = false, redundant_muids = false;
 
     ValidatePubHasAuthor(pubdesc, obj);
-    
+
+    // need to get uid (pmid or muid) in first pass for ValidatePubArticle
+    ITERATE( CPub_equiv::Tdata, pub_iter, pubdesc.GetPub().Get() ) {
+        const CPub& pub = **pub_iter;
+
+        switch( pub.Which() ) {
+        case CPub::e_Muid:
+            if ( muid == 0 ) {
+                muid = pub.GetMuid();
+            } else if ( muid != pub.GetMuid() ) {
+                conflicting_muids = true;
+            } else {
+                redundant_muids = true;
+            }
+            if ( uid == 0 ) {
+                uid = pub.GetMuid();
+            }
+            break;
+
+        case CPub::e_Pmid:
+            if ( pmid == 0 ) {
+                pmid = pub.GetPmid();
+            } else if ( pmid != pub.GetPmid() ) {
+                conflicting_pmids = true;
+            } else {
+                redundant_pmids = true;
+            }
+            if ( uid == 0 ) {
+                uid = pub.GetPmid();
+            }
+            break;
+            
+        default:
+            break;
+        }
+    }
+
+    if ( conflicting_pmids ) {
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+                "Publication has conflicting pmids", obj);
+    }
+    if ( redundant_pmids ) {
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+                "Publication has redundant pmids", obj);
+    }
+    if ( conflicting_muids ) {
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+                "Publication has conflicting muids", obj);
+    }
+    if ( redundant_muids ) {
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+                "Publication has redundant muids", obj);
+    }
+
+    // second pass for remaining (non-uid) types
     ITERATE( CPub_equiv::Tdata, pub_iter, pubdesc.GetPub().Get() ) {
         const CPub& pub = **pub_iter;
 
@@ -926,6 +981,7 @@ void CValidError_imp::ValidatePubdesc
                 "Publication is medline entry", obj);
             break;
 
+        /*
         case CPub::e_Muid:
             if ( uid == 0 ) {
                 uid = pub.GetMuid();
@@ -937,6 +993,7 @@ void CValidError_imp::ValidatePubdesc
                 uid = pub.GetPmid();
             }
             break;
+        */
             
         case CPub::e_Article:
             ValidatePubArticle(pub.GetArticle(), uid, obj);
@@ -2452,65 +2509,83 @@ void CValidError_imp::Setup(const CSeq_annot_Handle& sah)
 
 
 const string CValidError_imp::sm_SourceQualPrefixes[] = {
-  "acronym:",
-  "anamorph:",
-  "authority:",
-  "biotype:",
-  "biovar:",
-  "breed:",
-  "cell_line:",
-  "cell_type:",
-  "chemovar:",
-  "chromosome:",
-  "clone:",
-  "clone_lib:",
-  "common:",
-  "country:",
-  "cultivar:",
-  "dev_stage:",
-  "dosage:",
-  "ecotype:",
-  "endogenous_virus_name:",
-  "environmental_sample:",
-  "forma:",
-  "forma_specialis:",
-  "frequency:",
-  "genotype:",
-  "germline:",
-  "group:",
-  "haplotype:",
-  "insertion_seq_name:",
-  "isolate:",
-  "isolation_source:",
-  "lab_host:",
-  "map:",
-  "nat_host:",
-  "pathovar:",
-  "plasmid_name:",
-  "plastid_name:",
-  "pop_variant:",
-  "rearranged:",
-  "segment:",
-  "serogroup:",
-  "serotype:",
-  "serovar:",
-  "sex:",
-  "specimen_voucher:",
-  "strain:",
-  "subclone:",
-  "subgroup:",
-  "substrain:",
-  "subtype:",
-  "sub_species:",
-  "synonym:",
-  "taxon:",
-  "teleomorph:",
-  "tissue_lib:",
-  "tissue_type:",
-  "transgenic:",
-  "transposon_name:",
-  "type:",
-  "variety:",
+    "acronym:",
+    "anamorph:",
+    "authority:",
+    "biotype:",
+    "biovar:",
+    "bio_material:",
+    "breed:",
+    "cell_line:",
+    "cell_type:",
+    "chemovar:",
+    "chromosome:",
+    "clone:",
+    "clone_lib:",
+    "collected_by:",
+    "collection_date:",
+    "common:",
+    "country:",
+    "cultivar:",
+    "culture_collection:",
+    "dev_stage:",
+    "dosage:",
+    "ecotype:",
+    "endogenous_virus_name:",
+    "environmental_sample:",
+    "forma:",
+    "forma_specialis:",
+    "frequency:",
+    "fwd_pcr_primer_name",
+    "fwd_pcr_primer_seq",
+    "fwd_primer_name",
+    "fwd_primer_seq",
+    "genotype:",
+    "germline:",
+    "group:",
+    "haplotype:",
+    "identified_by:",
+    "insertion_seq_name:",
+    "isolate:",
+    "isolation_source:",
+    "lab_host:",
+    "lat_lon:"
+    "left_primer:",
+    "map:",
+    "metagenome_source:",
+    "metagenomic:",
+    "nat_host:",
+    "pathovar:",
+    "plasmid_name:",
+    "plastid_name:",
+    "pop_variant:",
+    "rearranged:",
+    "rev_pcr_primer_name",
+    "rev_pcr_primer_seq",
+    "rev_primer_name",
+    "rev_primer_seq",
+    "right_primer:",
+    "segment:",
+    "serogroup:",
+    "serotype:",
+    "serovar:",
+    "sex:",
+    "specimen_voucher:",
+    "strain:",
+    "subclone:",
+    "subgroup:",
+    "substrain:",
+    "subtype:",
+    "sub_species:",
+    "synonym:",
+    "taxon:",
+    "teleomorph:",
+    "tissue_lib:",
+    "tissue_type:",
+    "transgenic:",
+    "transposon_name:",
+    "type:",
+    "variety:",
 };
 
 
@@ -2578,7 +2653,7 @@ void CValidError_imp::ValidateSeqLocIds
                 PostErr(eDiag_Warning,
                     eErr_SEQ_FEAT_DifferntIdTypesInSeqLoc,
                     "Two ids refer to the same bioseq but are of "
-                    "differnt type", obj);
+                    "different type", obj);
             }
         }
     } 
