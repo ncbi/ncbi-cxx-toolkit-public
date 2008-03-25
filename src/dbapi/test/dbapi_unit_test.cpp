@@ -4395,9 +4395,7 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
             col1 = 15001;
             col2 = 1;
             col3 = 2;
-            if (m_args.GetDriverName() == odbc_driver
-                ||  m_args.GetDriverName() == odbcw_driver
-                ||  m_args.GetDriverName() == dblib_driver)
+            if (m_args.IsODBCBased())
             {
                 PutMsgDisabled("Bulk-insert NULLs when there are defaults");
 
@@ -4982,10 +4980,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
                 BOOST_CHECK( !value1.IsNull() );
                 BOOST_CHECK( !value2.IsNull() );
 
-                if (m_args.GetDriverName() == ftds_odbc_driver
-                    || m_args.GetDriverName() == odbc_driver
-                    || m_args.GetDriverName() == odbcw_driver
-                    ) {
+                if (m_args.IsODBCBased()) {
                     BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value_short);
                     BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value_short);
                 } else {
@@ -5060,10 +5055,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
                     BOOST_CHECK( !value1.IsNull() );
                     BOOST_CHECK( !value2.IsNull() );
 
-                    if (m_args.GetDriverName() == ftds_odbc_driver
-                        || m_args.GetDriverName() == odbc_driver
-                        || m_args.GetDriverName() == odbcw_driver
-                       ) {
+                    if (m_args.IsODBCBased()) {
                         BOOST_CHECK_EQUAL(value1.GetNumeric(), str_value_short);
                         BOOST_CHECK_EQUAL(value2.GetNumeric(), str_value_short);
                     } else {
@@ -5082,10 +5074,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
                     BOOST_CHECK( !value1.IsNull() );
                     BOOST_CHECK( !value2.IsNull() );
 
-                    if (m_args.GetDriverName() != ftds_odbc_driver
-                        && m_args.GetDriverName() != odbc_driver
-                        && m_args.GetDriverName() != odbcw_driver
-                       ) {
+                    if (!m_args.IsODBCBased()) {
                         BOOST_CHECK_EQUAL(value1.GetNumeric(), string("98.79"));
                         BOOST_CHECK_EQUAL(value2.GetNumeric(), string("98.79"));
                     } else {
@@ -5103,10 +5092,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
                     BOOST_CHECK( !value1.IsNull() );
                     BOOST_CHECK( !value2.IsNull() );
 
-                    if (m_args.GetDriverName() != ftds_odbc_driver
-                        && m_args.GetDriverName() != odbc_driver
-                        && m_args.GetDriverName() != odbcw_driver
-                       ) {
+                    if (!m_args.IsODBCBased()) {
                         BOOST_CHECK_EQUAL(value1.GetNumeric(), string("1.21"));
                         BOOST_CHECK_EQUAL(value2.GetNumeric(), string("1.21"));
                     } else {
@@ -6433,10 +6419,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                             {
                                 CDB_Numeric* data = static_cast<CDB_Numeric*>(variant.GetData());
 
-                                if (m_args.GetDriverName() == ftds_odbc_driver
-                                    || m_args.GetDriverName() == odbc_driver
-                                    || m_args.GetDriverName() == odbcw_driver
-                                    ) {
+                                if (m_args.IsODBCBased()) {
                                     BOOST_CHECK_EQUAL(data->Value(), string("2843113322"));
                                 } else {
                                     BOOST_CHECK_EQUAL(data->Value(), string("2843113322.00"));
@@ -12766,10 +12749,7 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
             {
                 I_DriverContext* drv_context = m_DS->GetDriverContext();
 
-                if (m_args.GetDriverName() == odbc_driver ||
-                    m_args.GetDriverName() == odbcw_driver ||
-                    m_args.GetDriverName() == ftds_odbc_driver
-                    ) {
+                if (m_args.IsODBCBased()) {
                     drv_context->PushCntxMsgHandler(new CDB_UserHandler_Exception_ODBC,
                                                     eTakeOwnership
                                                     );
@@ -13514,9 +13494,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
         if (args.GetDriverName() == ctlib_driver
             || args.GetDriverName() == ftds64_driver
-            || args.GetDriverName() == ftds_odbc_driver
-            || args.GetDriverName() == odbc_driver
-            || args.GetDriverName() == odbcw_driver
+            || args.IsODBCBased()
             ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many,
                                     DBAPIInstance);
@@ -13581,7 +13559,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (!(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
+    if (false && !(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
        && !(args.GetDriverName() == dblib_driver && args.GetServerType() == CTestArguments::eSybase)
        ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ConnParams,
@@ -13660,9 +13638,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             || args.GetDriverName() == msdblib_driver
             || (args.GetDriverName() == ctlib_driver && !Solaris)
             || (args.GetDriverName() == ftds64_driver && args.GetServerType() != CTestArguments::eSybase)
-            || args.GetDriverName() == ftds_odbc_driver
-            || args.GetDriverName() == odbc_driver
-            || args.GetDriverName() == odbcw_driver
+            || args.IsODBCBased()
             ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Timeout,
                                     DBAPIInstance);
@@ -13766,6 +13742,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && !Solaris // Requires Sybase client 12.5
         && args.GetDriverName() != ftds_dblib_driver
+        && args.GetDriverName() != odbc_driver
+        && args.GetDriverName() != odbcw_driver
         && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
@@ -13840,9 +13818,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
         // Doesn't work at the moment ...
         if (args.GetDriverName() != ftds8_driver // memory access violation 03/03/08 
-            && args.GetDriverName() != ftds_odbc_driver // 03/24/08 Statement(s) could not be prepared.
-            && args.GetDriverName() != odbc_driver
-            && args.GetDriverName() != odbcw_driver
+            && !args.IsODBCBased() // 03/24/08 Statement(s) could not be prepared.
             && args.GetDriverName() != msdblib_driver // Fails with the message "Cannot get the DBCOLINFO*"
             && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
             ) {
@@ -14099,9 +14075,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         if ((((args.GetDriverName() == ftds8_driver
                && (args.GetServerType() == CTestArguments::eMsSql
                    || args.GetServerType() == CTestArguments::eMsSql2005))
-              || args.GetDriverName() == odbc_driver
-              || args.GetDriverName() == odbcw_driver
-              || args.GetDriverName() == ftds_odbc_driver
+                   || args.IsODBCBased()
               // !!! This driver won't work with Sybase because it supports
               // CS_VERSION_110 only. !!!
               || (args.GetDriverName() == ftds64_driver
