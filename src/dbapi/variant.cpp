@@ -329,84 +329,102 @@ string CVariant::GetString(void) const
     if( IsNull() )
     {
         switch( GetType() ) {
-        case eDB_TinyInt:
-        case eDB_SmallInt:
-        case eDB_Int:
-        case eDB_BigInt:
-        case eDB_Numeric:
-            s = "0";
-            break;
-        case eDB_Float:
-        case eDB_Double:
-            s = "0.0";
-            break;
-        default:
-            break;
+            case eDB_TinyInt:
+            case eDB_SmallInt:
+            case eDB_Int:
+            case eDB_BigInt:
+            case eDB_Numeric:
+                s = "0";
+                break;
+            case eDB_Float:
+            case eDB_Double:
+                s = "0.0";
+                break;
+            default:
+                break;
         }
     }
     else
     {
         switch( GetType() ) {
-        case eDB_Char:
-            s = ((CDB_Char*)GetData())->Value();
-            break;
-        case eDB_VarChar:
-            s = ((CDB_VarChar*)GetData())->Value();
-            break;
-        case eDB_LongChar:
-            s = ((CDB_LongChar*)GetData())->Value();
-            break;
-        case eDB_Binary:
-            {
-                CDB_Binary *b = (CDB_Binary*)GetData();
-                s = string((char*)b->Value(), b->Size());
+            case eDB_Char:
+                s = ((CDB_Char*)GetData())->Value();
                 break;
-            }
-        case eDB_LongBinary:
-            {
-                CDB_LongBinary *vb = (CDB_LongBinary*)GetData();
-                s = string((char*)vb->Value(), vb->DataSize());
+            case eDB_VarChar:
+                s = ((CDB_VarChar*)GetData())->Value();
                 break;
-            }
-    case eDB_VarBinary:
-            {
-                CDB_VarBinary *vb = (CDB_VarBinary*)GetData();
-                s = string((char*)vb->Value(), vb->Size());
+            case eDB_LongChar:
+                s = ((CDB_LongChar*)GetData())->Value();
                 break;
-            }
-        case eDB_TinyInt:
-            s = NStr::IntToString((long)GetByte());
-            break;
-        case eDB_SmallInt:
-            s = NStr::IntToString(GetInt2());
-            break;
-        case eDB_Int:
-            s = NStr::IntToString(GetInt4());
-            break;
-        case eDB_BigInt:
-            s = NStr::Int8ToString(GetInt8());
-            break;
-        case eDB_Float:
-            s = NStr::DoubleToString(GetFloat());
-            break;
-        case eDB_Double:
-            s = NStr::DoubleToString(GetDouble());
-            break;
-        case eDB_Bit:
-            s = NStr::BoolToString(GetBit());
-            break;
-        case eDB_Numeric:
-            s = ((CDB_Numeric*)GetData())->Value();
-            break;
-        case eDB_DateTime:
-        case eDB_SmallDateTime:
-            s = GetCTime().AsString();
-            break;
-        default:
-            x_Verify_AssignType(eDB_UnsupportedType, "string");
-            break;
+            case eDB_Binary:
+                {
+                    CDB_Binary *b = (CDB_Binary*)GetData();
+                    s = string((char*)b->Value(), b->Size());
+                    break;
+                }
+            case eDB_LongBinary:
+                {
+                    CDB_LongBinary *vb = (CDB_LongBinary*)GetData();
+                    s = string((char*)vb->Value(), vb->DataSize());
+                    break;
+                }
+            case eDB_VarBinary:
+                {
+                    CDB_VarBinary *vb = (CDB_VarBinary*)GetData();
+                    s = string((char*)vb->Value(), vb->Size());
+                    break;
+                }
+            case eDB_TinyInt:
+                s = NStr::IntToString((long)GetByte());
+                break;
+            case eDB_SmallInt:
+                s = NStr::IntToString(GetInt2());
+                break;
+            case eDB_Int:
+                s = NStr::IntToString(GetInt4());
+                break;
+            case eDB_BigInt:
+                s = NStr::Int8ToString(GetInt8());
+                break;
+            case eDB_Float:
+                s = NStr::DoubleToString(GetFloat());
+                break;
+            case eDB_Double:
+                s = NStr::DoubleToString(GetDouble());
+                break;
+            case eDB_Bit:
+                s = NStr::BoolToString(GetBit());
+                break;
+            case eDB_Numeric:
+                s = ((CDB_Numeric*)GetData())->Value();
+                break;
+            case eDB_DateTime:
+            case eDB_SmallDateTime:
+                s = GetCTime().AsString();
+                break;
+            case eDB_Text:
+            case eDB_Image:
+                {
+                    CDB_Stream* stream = (CDB_Stream*)GetData();
+                    char* buff[4096];
+                    size_t read_bytes = 0;
+                
+                    s.reserve(stream->Size());
+                    while ((read_bytes = stream->Read(buff, sizeof(buff))) != 0) {
+                        s.append((const char*) buff, read_bytes);
+
+                        if (read_bytes < sizeof(buff)) {
+                            break;
+                        }
+                    }
+                }
+                break;
+            default:
+                x_Verify_AssignType(eDB_UnsupportedType, "string");
+                break;
         }
     }
+
     return s;
 }
 

@@ -787,7 +787,7 @@ void CDBAPIUnitTest::Test_VARCHAR_MAX(void)
         }
 
         // SQL value injection technique ... 
-        if (true) {
+        {
             // Clean table ...
             {
                 sql = "DELETE FROM " + table_name;
@@ -816,7 +816,7 @@ void CDBAPIUnitTest::Test_VARCHAR_MAX(void)
                         BOOST_CHECK( rs->Next() );
                         const string value = rs->GetVariant(1).GetString();
                         BOOST_CHECK_EQUAL(value.size(), msg.size());
-                        // BOOST_CHECK_EQUAL(value, msg);
+                        BOOST_CHECK_EQUAL(value, msg);
                     }
                 }
             }
@@ -894,7 +894,7 @@ void CDBAPIUnitTest::Test_VARCHAR_MAX_BCP(void)
             auto_stmt->ExecuteUpdate( sql );
         }
 
-        if (true) {
+        {
             const CVariant vc_max_value(msg);
 
             // Clean table ...
@@ -937,9 +937,9 @@ void CDBAPIUnitTest::Test_VARCHAR_MAX_BCP(void)
                         rs->BindBlobToVariant(true);
                         BOOST_CHECK( rs->Next() );
                         BOOST_CHECK_EQUAL(msg.size(), rs->GetVariant(1).GetBlobSize());
-                        // const string value = rs->GetVariant(1).GetString();
-                        // BOOST_CHECK_EQUAL(value.size(), msg.size());
-                        // BOOST_CHECK_EQUAL(value, msg);
+                        const string value = rs->GetVariant(1).GetString();
+                        BOOST_CHECK_EQUAL(value.size(), msg.size());
+                        BOOST_CHECK_EQUAL(value, msg);
                     }
                 }
             }
@@ -13487,7 +13487,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
-    // if (args.GetServerType() == CTestArguments::eMsSql2005
+    // if (args.GetServerType() == CTestArguments::eMsSql2005) {
     if (false) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_VARCHAR_MAX,
                 DBAPIInstance);

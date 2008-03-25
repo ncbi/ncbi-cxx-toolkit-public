@@ -179,10 +179,8 @@ bool CResultSet::Next()
             else {
                 switch(type) {
                 case eDB_Text:
-                    ((CDB_Text*)m_data[i].GetNonNullData())->Truncate();
-                    break;
                 case eDB_Image:
-                    ((CDB_Image*)m_data[i].GetNonNullData())->Truncate();
+                    ((CDB_Stream*)m_data[i].GetNonNullData())->Truncate();
                     break;
                 default:
                     break;
