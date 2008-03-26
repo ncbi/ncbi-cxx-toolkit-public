@@ -118,153 +118,153 @@ CLEAN_CMD = \
 #
 
 
-$(FLTK_SRC).install :
+$(FLTK_SRC).fltk_install :
 	@echo ---- & echo Copying FLTK DLLs & $(INSTALL_CMD)
 
-$(FLTK_SRC).clean :
+$(FLTK_SRC).fltk_clean :
 	@echo ---- & echo Deleting FLTK DLLs & $(CLEAN_CMD)
 
-install_fltk : $(FLTK_SRC).install
+install_fltk : $(FLTK_SRC).fltk_install
 
-clean_fltk : $(FLTK_SRC).clean
+clean_fltk : $(FLTK_SRC).fltk_clean
 
 
 
-$(BERKELEYDB_SRC).install :
+$(BERKELEYDB_SRC).berkeleydb_install :
 	@echo ---- & echo Copying BerkeleyDB DLLs & $(INSTALL_CMD)
 
-$(BERKELEYDB_SRC).clean :
+$(BERKELEYDB_SRC).berkeleydb_clean :
 	@echo ---- & echo Deleting BerkeleyDB DLLs & $(CLEAN_CMD)
 
-install_berkeleydb : $(BERKELEYDB_SRC).install
+install_berkeleydb : $(BERKELEYDB_SRC).berkeleydb_install
 
-clean_berkeleydb : $(BERKELEYDB_SRC).clean
+clean_berkeleydb : $(BERKELEYDB_SRC).berkeleydb_clean
 
 
 
-$(SQLITE_SRC).install :
+$(SQLITE_SRC).sqlite_install :
 	@echo ---- & echo Copying SQLite DLLs & $(INSTALL_CMD)
 
-$(SQLITE_SRC).clean :
+$(SQLITE_SRC).sqlite_clean :
 	@echo ---- & echo Deleting SQLite DLLs & $(CLEAN_CMD)
 
-install_sqlite : $(SQLITE_SRC).install
+install_sqlite : $(SQLITE_SRC).sqlite_install
 
-clean_sqlite : $(SQLITE_SRC).clean
+clean_sqlite : $(SQLITE_SRC).sqlite_clean
 
 
 
-$(SQLITE3_SRC).install :
+$(SQLITE3_SRC).sqlite3_install :
 	@echo ---- & echo Copying SQLite3 DLLs & $(INSTALL_CMD)
 
-$(SQLITE3_SRC).clean :
+$(SQLITE3_SRC).sqlite3_clean :
 	@echo ---- & echo Deleting SQLite3 DLLs & $(CLEAN_CMD)
 
-install_sqlite3 : $(SQLITE3_SRC).install
+install_sqlite3 : $(SQLITE3_SRC).sqlite3_install
 
-clean_sqlite3 : $(SQLITE3_SRC).clean
+clean_sqlite3 : $(SQLITE3_SRC).sqlite3_clean
 
 
 
-$(WXWINDOWS_SRC).install :
+$(WXWINDOWS_SRC).wxwindows_install :
 	@echo ---- & echo Copying wxWindows DLLs & $(INSTALL_CMD)
 
-$(WXWINDOWS_SRC).clean :
+$(WXWINDOWS_SRC).wxwindows_clean :
 	@echo ---- & echo Deleting wxWindows DLLs & $(CLEAN_CMD)
 
-install_wxwindows : $(WXWINDOWS_SRC).install
+install_wxwindows : $(WXWINDOWS_SRC).wxwindows_install
 
-clean_wxwindows : $(WXWINDOWS_SRC).clean
+clean_wxwindows : $(WXWINDOWS_SRC).wxwindows_clean
 
 
 
-$(WXWIDGETS_SRC).install :
+$(WXWIDGETS_SRC).wxwidgets_install :
 	@echo ---- & echo Copying wxWidgets DLLs & $(INSTALL_CMD)
 
-$(WXWIDGETS_SRC).clean :
+$(WXWIDGETS_SRC).wxwidgets_clean :
 	@echo ---- & echo Deleting wxWidgets DLLs & $(CLEAN_CMD)
 
-install_wxwidgets : $(WXWIDGETS_SRC).install
+install_wxwidgets : $(WXWIDGETS_SRC).wxwidgets_install
 
-clean_wxwidgets : $(WXWIDGETS_SRC).clean
+clean_wxwidgets : $(WXWIDGETS_SRC).wxwidgets_clean
 
 
 
-$(SYBASE_SRC).install :
+$(SYBASE_SRC).sybase_install :
 	@echo ---- & echo Copying Sybase DLLs & $(INSTALL_CMD)
 
-$(SYBASE_SRC).clean :
+$(SYBASE_SRC).sybase_clean :
 	@echo ---- & echo Deleting Sybase DLLs & $(CLEAN_CMD)
 
-install_sybase : $(SYBASE_SRC).install
+install_sybase : $(SYBASE_SRC).sybase_install
 
-clean_sybase : $(SYBASE_SRC).clean
+clean_sybase : $(SYBASE_SRC).sybase_clean
 
 
 
-$(MYSQL_SRC).install :
+$(MYSQL_SRC).mysql_install :
 	@echo ---- & echo Copying MySQL DLLs & $(INSTALL_CMD)
 
-$(MYSQL_SRC).clean :
+$(MYSQL_SRC).mysql_clean :
 	@echo ---- & echo Deleting MySQL DLLs & $(CLEAN_CMD)
 
-install_mysql : $(MYSQL_SRC).install
+install_mysql : $(MYSQL_SRC).mysql_install
 
-clean_mysql : $(MYSQL_SRC).clean
+clean_mysql : $(MYSQL_SRC).mysql_clean
 
 
 
-$(MSSQL_SRC).install :
+$(MSSQL_SRC).mssql_install :
 	@echo ---- & echo Copying MSSQL DLLs & $(INSTALL_CMD)
 
-$(MSSQL_SRC).clean :
+$(MSSQL_SRC).mssql_clean :
 	@echo ---- & echo Deleting MSSQL DLLs & $(CLEAN_CMD)
 
-install_mssql : $(MSSQL_SRC).install
+install_mssql : $(MSSQL_SRC).mssql_install
 
-clean_mssql : $(MSSQL_SRC).clean
+clean_mssql : $(MSSQL_SRC).mssql_clean
 
 
 
-$(OPENSSL_SRC).install :
+$(OPENSSL_SRC).openssl_install :
 	@echo ---- & echo Copying OpenSSL DLLs & $(INSTALL_CMD)
 
-$(OPENSSL_SRC).clean :
+$(OPENSSL_SRC).openssl_clean :
 	@echo ---- & echo Deleting OpenSSL DLLs & $(CLEAN_CMD)
 
-install_openssl : $(OPENSSL_SRC).install
+install_openssl : $(OPENSSL_SRC).openssl_install
 
-clean_openssl : $(OPENSSL_SRC).clean
+clean_openssl : $(OPENSSL_SRC).openssl_clean
 
 
 
-$(LZO_SRC).install :
+$(LZO_SRC).lzo_install :
 	@echo ---- & echo Copying LZO DLLs & $(INSTALL_CMD)
 
-$(LZO_SRC).clean :
+$(LZO_SRC).lzo_clean :
 	@echo ---- & echo Deleting LZO DLLs & $(CLEAN_CMD)
 
-install_lzo : $(LZO_SRC).install
+install_lzo : $(LZO_SRC).lzo_install
 
-clean_lzo : $(LZO_SRC).clean
+clean_lzo : $(LZO_SRC).lzo_clean
 
 
 
 # -----------------------------------------
 # MSVC RT DLLs are not included into 'all'
 
-msvc_install : dirs $(MSVCRT_SRC).install
+msvc_install : dirs $(MSVCRT_SRC).msvc_install
 
 install_msvc : msvc_install
 
-msvc_clean : $(MSVCRT_SRC).clean
+msvc_clean : $(MSVCRT_SRC).msvc_clean
 
 clean_msvc : msvc_clean
 
 msvc_rebuild : msvc_clean msvc_install
 
-$(MSVCRT_SRC).install :
+$(MSVCRT_SRC).msvc_install :
 	@echo ---- & echo Copying MSVC DLLs & $(INSTALL_CMD)
 
-$(MSVCRT_SRC).clean :
+$(MSVCRT_SRC).msvc_clean :
 	@echo ---- & echo Deleting MSVC DLLs & $(CLEAN_CMD)
