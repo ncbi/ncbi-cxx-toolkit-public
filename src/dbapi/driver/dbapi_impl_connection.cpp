@@ -150,6 +150,8 @@ CConnection::CalculateServerType(const CDBConnParams& params)
     CDBConnParams::EServerType server_type = params.GetServerType();
 
     if (server_type == CDBConnParams::eUnknown) {
+        CMsgHandlerGuard guard(*this);
+
         try {
             auto_ptr<CDB_LangCmd> cmd(LangCmd("SELECT @@version"));
             cmd->Send();

@@ -106,6 +106,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 namespace impl {
 
+/////////////////////////////////////////////////////////////////////////////
 class CDB_Params;
 
 class NCBI_DBAPIDRIVER_EXPORT CDBBindedParams : public CDBParams
@@ -141,6 +142,7 @@ private:
     impl::CDB_Params* m_Bindings;
 };
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CCachedRowInfo : public CDBBindedParams
 {
 public:
@@ -196,6 +198,7 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CRowInfo_SP_SQL_Server : public CCachedRowInfo
 {
 public:
@@ -207,6 +210,27 @@ public:
     virtual ~CRowInfo_SP_SQL_Server(void);
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CMsgHandlerGuard
+{
+public:
+    CMsgHandlerGuard(impl::CConnection& conn);
+    ~CMsgHandlerGuard(void);
+
+private:
+    impl::CConnection& m_Conn;
+    CDB_UserHandler_Exception m_Handler;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+NCBI_DBAPIDRIVER_EXPORT
+string ConvertN2A(Uint4 host);
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 inline
 void
 CCachedRowInfo::Add(const string& name,
@@ -218,16 +242,8 @@ CCachedRowInfo::Add(const string& name,
     m_Info.push_back(SInfo(name, max_size, data_type, direction));
 }
 
+
 } // namespace impl
-
-
-namespace impl 
-{
-
-NCBI_DBAPIDRIVER_EXPORT
-string ConvertN2A(Uint4 host);
-
-}
 
 
 END_NCBI_SCOPE
