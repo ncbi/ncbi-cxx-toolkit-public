@@ -662,7 +662,7 @@ CRef<CSeq_align> CGFFReader::x_ParseAlignRecord(const SRecord& record)
     SRecord::TAttrs::const_iterator tgit = record.FindAttribute("Target");
     vector<string> target;
     if (tgit != record.attrs.end()) {
-        NStr::Tokenize((*tgit)[1], " +", target);
+        NStr::Tokenize((*tgit)[1], " +-", target, NStr::eMergeDelims);
     }
     if (target.size() != 3) {
         x_Warn("Bad Target attribute", record.line_no);
