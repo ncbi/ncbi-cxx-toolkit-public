@@ -283,6 +283,9 @@ TCompartmentStructs MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartO
     return MakeCompartments(SelectCompartmentsHits(hitrefs, compart_options), compart_options);
 }
 
+const double CCompartOptions::default_CompartmentPenalty = 0.5;
+const double CCompartOptions::default_MinCompartmentIdty = 0.5;
+const double CCompartOptions::default_MinSingleCompartmentIdty = 0.25;
 
 void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
 {
