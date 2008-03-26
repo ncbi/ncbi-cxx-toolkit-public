@@ -48,8 +48,16 @@ public:
 
     double m_CompartmentPenalty;
     double m_MinCompartmentIdty;
+    double m_MinSingleCompartmentIdty;
     int    m_MaxExtent;
     bool   m_ByCoverage;
+
+    static const double default_CompartmentPenalty = 0.5;
+    static const double default_MinCompartmentIdty = 0.5;
+    static const double default_MinSingleCompartmentIdty = 0.25;
+    static const int    default_MaxExtent = 500;
+    static const bool   default_ByCoverage = true;
+
 };
 
 struct NCBI_XALGOALIGN_EXPORT SCompartment {

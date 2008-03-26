@@ -189,7 +189,9 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
     int len = CountQueryCoverage(hitrefs);
 
     CCompartmentAccessor<THit> comps ( hitrefs.begin(), hitrefs.end(),
-                                       int(compart_options.m_CompartmentPenalty * len), int(compart_options.m_MinCompartmentIdty * len) );
+                                       int(compart_options.m_CompartmentPenalty * len),
+                                       int(compart_options.m_MinCompartmentIdty * len),
+                                       int(compart_options.m_MinSingleCompartmentIdty * len));
 
     THitRefs comphits;
     if(comps.GetFirst(comphits)) {
@@ -289,37 +291,45 @@ void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
          "max_extent",
          "Max genomic extent to look for exons beyond compartment ends.",
          CArgDescriptions::eInteger,
-         "500" );
+         NStr::IntToString(CCompartOptions::default_MaxExtent) );
 
     argdescr->AddDefaultKey
         ("compartment_penalty",
-         "compartment_penalty",
+         "double",
          "Penalty to open a new compartment "
          "(compartment identification parameter). "
          "Multiple compartments will only be identified if "
          "they have at least this level of coverage.",
          CArgDescriptions::eDouble,
-         "0.5");
+         NStr::DoubleToString(CCompartOptions::default_CompartmentPenalty, 2));
     
     argdescr->AddDefaultKey
         ("min_compartment_idty",
-         "min_compartment_identity",
-         "Minimal compartment identity to align.",
+         "double",
+         "Minimal compartment identity for multiple compartments",
          CArgDescriptions::eDouble,
-         ".5");
+         NStr::DoubleToString(CCompartOptions::default_MinCompartmentIdty, 2));
+    
+    argdescr->AddDefaultKey
+        ("min_singleton_idty",
+         "double",
+         "Minimal compartment identity for single compartment",
+         CArgDescriptions::eDouble,
+         NStr::DoubleToString(CCompartOptions::default_MinSingleCompartmentIdty, 2));
     
     argdescr->AddDefaultKey
         ("by_coverage",
          "flag",
          "Ignore hit identity. Set all to 99.99%",
          CArgDescriptions::eBoolean,
-         "T");
+         CCompartOptions::default_ByCoverage?"T":"F");
     
 }
 
 CCompartOptions::CCompartOptions(const CArgs& args) :
     m_CompartmentPenalty(args["compartment_penalty"].AsDouble()),
     m_MinCompartmentIdty(args["min_compartment_idty"].AsDouble()),
+    m_MinSingleCompartmentIdty(args["min_singleton_idty"].AsDouble()),
     m_MaxExtent(args["max_extent"].AsInteger()),
     m_ByCoverage(args["by_coverage"].AsBoolean())
 {
