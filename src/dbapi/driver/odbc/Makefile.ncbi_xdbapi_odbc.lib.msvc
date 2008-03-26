@@ -4,3 +4,6 @@ ExcludeProject = FALSE
 [AddToProject]
 SourceFiles    = bcp
 
+[Compiler]
+PreprocessorDefinitions = UCS2
+
