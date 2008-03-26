@@ -15,11 +15,10 @@ for arg in "$@"; do
 done
 
 for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
-  src/objtools/eutils/*/*.dtd \
-  src/algo/gnomon/xalgognomon.asn src/algo/ms/formats/*/*.dtd \
+  src/objtools/eutils/*/*.dtd src/gui/objects/*.asn \
+  src/algo/gnomon/gnomon.asn src/algo/ms/formats/*/*.dtd \
   src/app/project_tree_builder/msvc71_project.dtd \
   src/app/sample/asn/sample_asn.asn src/app/sample/soap/soap_dataobj.xsd \
-  src/gui/dialogs/edit/feature/*.asn src/gui/objects/*.asn \
   src/internal/objects/*/*.asn src/internal/mapview/objects/*/*.asn \
   src/internal/gbench/app/sviewer/objects/*.asn \
   src/internal/gbench/plugins/radar/lib/*.asn ; do
