@@ -223,7 +223,10 @@ CSeqMap::CSeqMap(const CSeq_inst& inst)
     else if ( inst.GetRepr() == CSeq_inst::eRepr_virtual ) {
         // Virtual sequence -- no data, no segments
         // The total sequence is gap
-        x_AddGap(inst.GetLength(), false);
+        if ( m_SeqLength == kInvalidSeqPos ) {
+            m_SeqLength = 0;
+        }
+        x_AddGap(m_SeqLength, false);
     }
     else if ( inst.GetRepr() != CSeq_inst::eRepr_not_set && 
               inst.IsSetLength() && inst.GetLength() != 0 ) {
