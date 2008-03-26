@@ -512,7 +512,7 @@ CThread::~CThread(void)
 
 
 
-static inline TWrapperRes ThreadWrapperCaller(TWrapperArg arg) {
+inline TWrapperRes ThreadWrapperCaller(TWrapperArg arg) {
     return CThread::Wrapper(arg);
 }
 
