@@ -96,7 +96,8 @@ CTDS_Connection::CTDS_Connection(CTDSContext& cntx,
     if (params.GetHost()) {
         server_name = impl::ConvertN2A(params.GetHost());
         if (params.GetPort()) {
-            server_name += ":" + NStr::IntToString(params.GetPort());
+            server_name += ":";
+            server_name += NStr::IntToString(params.GetPort());
         }
     } else {
         server_name = params.GetServerName();
