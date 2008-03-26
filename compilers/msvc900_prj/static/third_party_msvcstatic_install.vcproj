@@ -19,9 +19,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -31,9 +31,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -43,9 +43,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -55,9 +55,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -67,9 +67,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="dlls-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -79,9 +79,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="dlls-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -91,9 +91,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="dlls-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -103,9 +103,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="dlls-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -115,9 +115,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -127,9 +127,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -139,9 +139,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -151,9 +151,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -163,9 +163,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="dlls-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -175,9 +175,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="dlls-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -187,9 +187,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="dlls-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -199,9 +199,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
-				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc8\8&quot;"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc9\9&quot;"
 				Output="dlls-install.exe"/>
 		</Configuration>
 	</Configurations>
