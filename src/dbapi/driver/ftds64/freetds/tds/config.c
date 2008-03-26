@@ -472,10 +472,10 @@ tds_config_login(TDSCONNECTION * connection, TDSLOGIN * login)
 	if (!tds_dstr_isempty(&login->server_name)) {
 		tds_dstr_copy(&connection->server_name, tds_dstr_cstr(&login->server_name));
 	}
-	if (login->major_version || login->minor_version) {
+	/*if (login->major_version || login->minor_version) {*/
 		connection->major_version = login->major_version;
 		connection->minor_version = login->minor_version;
-	}
+	/*}*/
 	if (!tds_dstr_isempty(&login->language)) {
 		tds_dstr_copy(&connection->language, tds_dstr_cstr(&login->language));
 	}

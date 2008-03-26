@@ -151,15 +151,14 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                    CS_NULLTERM,
                                    NULL)) != CS_SUCCEED
 #ifdef FTDS_IN_USE
-        || tds_version != 0
-           && GetCTLibContext().Check(ct_con_props(
-                                      x_GetSybaseConn(), 
-                                      CS_SET, 
-                                      CS_TDS_VERSION, 
-                                      &tds_version,
-                                      CS_UNUSED, 
-                                      NULL)
-                                     ) != CS_SUCCEED
+        || GetCTLibContext().Check(ct_con_props(
+                                   x_GetSybaseConn(), 
+                                   CS_SET, 
+                                   CS_TDS_VERSION, 
+                                   &tds_version,
+                                   CS_UNUSED, 
+                                   NULL)
+                                  ) != CS_SUCCEED
 #endif
         )
     {

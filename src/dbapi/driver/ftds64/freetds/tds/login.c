@@ -324,8 +324,8 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
         TDS_TINYINT major_version;
         TDS_TINYINT minor_version;
     } versions[] =
-        { { 8, 0 }
-        , { 7, 0 }
+        { /*{ 8, 0 }
+        , */{ 7, 0 }
         , { 5, 0 }
         , { 4, 2 }
         };
