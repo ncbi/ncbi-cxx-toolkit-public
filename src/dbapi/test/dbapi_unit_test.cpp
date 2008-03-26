@@ -14576,7 +14576,7 @@ CTestArguments::SetDatabaseParameters(void)
 
     if ( (GetDriverName() == ftds8_driver ||
           GetDriverName() == ftds64_driver ||
-          GetDriverName() == ftds_odbc_driver ||
+          // GetDriverName() == ftds_odbc_driver ||
           GetDriverName() == ftds_dblib_driver)
          && (GetServerType() == eMsSql || GetServerType() == eMsSql2005)) {
         m_DatabaseParameters["client_charset"] = "UTF-8";
