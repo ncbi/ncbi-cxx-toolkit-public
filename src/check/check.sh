@@ -120,7 +120,7 @@ shift
 
 if test "$need_check" = "yes" ; then
    # Default check
-   test $# -gt 3  ||  Error "Wrong number of args:  $#"
+   test $# -ge 3  ||  Error "Wrong number of args:  $#"
    make="$1"
    builddir="$2"
    action="$3"
