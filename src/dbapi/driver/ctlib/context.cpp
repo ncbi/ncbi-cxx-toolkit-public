@@ -1356,7 +1356,11 @@ typedef NCBI_PARAM_TYPE(ctlib, TDS_VERSION) TCtlibTdsVersion;
 CS_INT GetCtlibTdsVersion(int version)
 {
     if (version == 0) {
+#ifdef FTDS_IN_USE
+        return version;
+#else
         version = TCtlibTdsVersion::GetDefault();
+#endif
     }
 
     switch ( version ) {
@@ -1400,7 +1404,7 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
 {
     bool reuse_context = true;
 #ifdef FTDS_IN_USE
-    int  tds_version   = 80;
+    int  tds_version   = 0;
 #else
     int  tds_version   = NCBI_CTLIB_TDS_VERSION;
 #endif
@@ -1498,7 +1502,7 @@ CDbapiCtlibCFBase::CreateInstance(
         // Mandatory parameters ....
 #ifdef FTDS_IN_USE
         bool reuse_context = false; // Be careful !!!
-        int  tds_version   = 70; // version 80 doesn't work with MS SQL 2005
+        int  tds_version   = 0;
 #else
         // Previous behahviour was: reuse_context = true
         bool reuse_context = false;
