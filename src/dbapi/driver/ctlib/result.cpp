@@ -44,6 +44,9 @@ BEGIN_NCBI_SCOPE
 #ifdef FTDS_IN_USE
 namespace ftds64_ctlib
 {
+#define MAX_VARCHAR_SIZE 8000
+#else
+#define MAX_VARCHAR_SIZE 1900
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -542,11 +545,6 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     }
 
     case CS_LONGCHAR_TYPE: {
-        if (item_buf  &&
-            b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
         char* v = static_cast<unsigned int>(fmt.maxlength) < sizeof(buffer)
             ? buffer : new char[fmt.maxlength + 1];
         switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen, is_null) ) {
@@ -566,7 +564,15 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                     case eDB_LongBinary:
                         ((CDB_LongBinary*)    item_buf)->SetValue(v, outlen);
                         break;
+					case eDB_VarChar:
+						if (outlen <= MAX_VARCHAR_SIZE) {
+								((CDB_VarChar*)  item_buf)->SetValue(v, outlen, eEncoding_Unknown);
+						} else {
+								DATABASE_DRIVER_ERROR( "Invalid conversion to CDB_VarChar type", 230021 );
+						}
+						break;
                     default:
+						DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
                         break;
                     }
                 }
