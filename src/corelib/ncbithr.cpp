@@ -512,16 +512,19 @@ CThread::~CThread(void)
 
 
 
-#if defined(NCBI_POSIX_THREADS)
-extern "C" {
-    typedef TWrapperRes (*FSystemWrapper)(TWrapperArg);
-}
-#elif defined(NCBI_WIN32_THREADS)
-
-static TWrapperRes ThreadWrapperCaller(TWrapperArg arg) {
+static inline TWrapperRes ThreadWrapperCaller(TWrapperArg arg) {
     return CThread::Wrapper(arg);
 }
 
+#if defined(NCBI_POSIX_THREADS)
+extern "C" {
+    typedef TWrapperRes (*FSystemWrapper)(TWrapperArg);
+
+    static TWrapperRes ThreadWrapperCallerImpl(TWrapperArg arg) {
+        return ThreadWrapperCaller(arg);
+    }
+}
+#elif defined(NCBI_WIN32_THREADS)
 extern "C" {
     typedef TWrapperRes (WINAPI *FSystemWrapper)(TWrapperArg);
 
@@ -529,7 +532,6 @@ extern "C" {
         return ThreadWrapperCaller(arg);
     }
 }
-
 #endif
 
 
@@ -619,8 +621,7 @@ bool CThread::Run(TRunMode flags)
                            "CThread::Run() - error setting thread detach state");
         }
         xncbi_Validate(pthread_create(&m_Handle, &attr,
-                                      reinterpret_cast<FSystemWrapper>(Wrapper),
-                                      this) == 0,
+                                      ThreadWrapperCallerImpl, this) == 0,
                        "CThread::Run() -- error creating thread");
 
         xncbi_Validate(pthread_attr_destroy(&attr) == 0,
