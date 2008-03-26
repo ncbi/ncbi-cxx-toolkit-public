@@ -961,7 +961,7 @@ public:
     //
 
     /// Difference in whole days from specified time.
-    int DiffWholeDay(const CTime& t) const;
+    int DiffWholeDays(const CTime& t) const;
 
     /// Difference in days from specified time.
     double DiffDay(const CTime& t) const;
@@ -1608,7 +1608,7 @@ public:
 NCBI_XNCBI_EXPORT
 extern CTime operator + (int days, const CTime& t);
 
-// This operator is deprecated. Use CTime::DiffWholeDay() instead.
+// This operator is deprecated. Use CTime::DiffWholeDays() instead.
 NCBI_XNCBI_EXPORT NCBI_DEPRECATED
 extern int   operator- (const CTime& t1, const CTime& t2);
 
@@ -1950,7 +1950,7 @@ bool CTime::IsEmptyDate() const
 }
 
 inline
-int CTime::DiffWholeDay(const CTime& t) const
+int CTime::DiffWholeDays(const CTime& t) const
 {
     return int(DiffSecond(t) / 60 / 60 / 24);
 }
