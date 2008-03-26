@@ -1950,12 +1950,6 @@ bool CTime::IsEmptyDate() const
 }
 
 inline
-int CTime::DiffWholeDays(const CTime& t) const
-{
-    return int(DiffSecond(t) / 60 / 60 / 24);
-}
-
-inline
 double CTime::DiffDay(const CTime& t) const
 {
     return (double)DiffSecond(t) / 60.0 / 60.0 / 24.0;

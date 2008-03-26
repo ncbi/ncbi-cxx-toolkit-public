@@ -1687,10 +1687,15 @@ TSeconds CTime::TimeZoneDiff(void) const
     TSeconds dSecs  = tl.Second() - tg.Second();
     int      dMins  = tl.Minute() - tg.Minute();
     int      dHours = tl.Hour()   - tg.Hour();
-    int      dDays  = tl - tg;
+    int      dDays  = tl.DiffWholeDays(tg);
     return ((dDays * 24 + dHours) * 60 + dMins) * 60 + dSecs;
 }
 
+
+int CTime::DiffWholeDays(const CTime& t) const
+{
+    return int(s_Date2Number(*this) - s_Date2Number(t));
+}
 
 TSeconds CTime::DiffSecond(const CTime& from) const
 { 
@@ -1710,7 +1715,7 @@ TSeconds CTime::DiffSecond(const CTime& from) const
     TSeconds dSecs  = p1->Second() - p2->Second();
     int      dMins  = p1->Minute() - p2->Minute();
     int      dHours = p1->Hour()   - p2->Hour();
-    int      dDays  = *p1 - *p2;
+    int      dDays  = p1->DiffWholeDays(*p2);
     return ((dDays * 24 + dHours) * 60 + dMins) * 60 + dSecs;
 }
 
