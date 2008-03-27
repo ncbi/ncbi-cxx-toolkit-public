@@ -109,8 +109,8 @@ return  m_AliPiece;
 }
 list<CNPiece> FindGoodParts(const CNPiece pc, const string& match_all_pos, const string& protein, CProSplignOutputOptionsExt m_options)
 {
-     list<CNPiece> m_AliPiece;
-     const string& match = match_all_pos;
+    list<CNPiece> m_AliPiece;
+    const string& match = match_all_pos;
     
     string::size_type n = match.find_first_not_of(BAD_OR_MISMATCH, pc.beg);
     if(n == string::npos || n >= pc.end) return m_AliPiece; //no matches    
@@ -118,6 +118,8 @@ list<CNPiece> FindGoodParts(const CNPiece pc, const string& match_all_pos, const
     bool isintr = false;
     string::size_type beg = n;
     int efflen = 0;
+    if(match[n] == MATCH_CHAR && protein.find_first_not_of(GAP_CHAR) == n && protein[n+1] == 'M')
+        efflen += m_options.GetStartBonus();
     for(; n<pc.end; ++n) {
         if(match[n] == POSIT_CHAR || match[n] == MATCH_CHAR) {
             if(!ism) {
