@@ -604,7 +604,10 @@ public:
         /// Use hex code for encoding spaces rather than '+'
         fCookies_SpaceAsHex  = (1 << 6),
         /// Save request content (available through GetContent())
-        fSaveRequestContent  = (1 << 7)
+        fSaveRequestContent  = (1 << 7),
+        /// Do not check if page view id is present, do not generate one
+        /// if it's missing.
+        fIgnorePageViewId    = (1 << 8)
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,

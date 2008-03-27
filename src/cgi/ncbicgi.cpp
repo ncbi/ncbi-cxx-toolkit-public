@@ -1050,6 +1050,16 @@ void CCgiRequest::x_Init
 
     x_ProcessInputStream(flags, istr, ifd);
 
+    if ((flags & fIgnorePageViewId) == 0) {
+        // Check if pageviewid is present. If not, generate one.
+        static const char* kPageViewId = "page_view_id";
+        TCgiEntries::iterator pvid = m_Entries.find(kPageViewId);
+        if ( pvid == m_Entries.end() ) {
+            string gruid = GetDiagContext().GetGlobalRequestId();
+            s_AddEntry(m_Entries, kPageViewId, gruid, 0);
+        }
+    }
+
     // Check for an IMAGEMAP input entry like: "Command.x=5&Command.y=3" and
     // put them with empty string key for better access
     if (m_Entries.find(kEmptyStr) != m_Entries.end()) {
