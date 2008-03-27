@@ -854,8 +854,8 @@ void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& 
     string contig_name = seqalign.GetSegs().GetSpliced().GetGenomic_id().GetSeqIdString(true);
     string prot_id = seqalign.GetSegs().GetSpliced().GetProduct_id().GetSeqIdString(true);
     TSeqRange bounds = prosplign::GetGenomicBounds(scope, seqalign)->GetTotalRange();
-    int nuc_from = bounds.GetFrom();
-    int nuc_to = bounds.GetTo();
+    int nuc_from = bounds.GetFrom()+1;
+    int nuc_to = bounds.GetTo()+1;
     bool is_plus_strand = seqalign.GetSegs().GetSpliced().GetGenomic_strand()==eNa_strand_plus;
 
     out<<endl<<"************************************************************************"<<endl;
