@@ -1043,7 +1043,7 @@ void CDBAPIUnitTest::Test_NVARCHAR(void)
             auto_ptr<IStatement> auto_stmt(conn->GetStatement());
 
             sql = "SELECT Title from Subject where SubjectId=7";
-            auto_stmt->Execute(sql);
+            auto_stmt->SendSql(sql);
             while (auto_stmt->HasMoreResults()) {
                 if (auto_stmt->HasRows()) {
                     auto_ptr<IResultSet> rs69(auto_stmt->GetResultSet());
@@ -1084,7 +1084,7 @@ void CDBAPIUnitTest::Test_NTEXT(void)
         auto_stmt->ExecuteUpdate(sql);
 
         sql = "SELECT txt_fld from #test_ntext";
-        auto_stmt->Execute(sql);
+        auto_stmt->SendSql(sql);
         while (auto_stmt->HasMoreResults()) {
             if (auto_stmt->HasRows()) {
                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
