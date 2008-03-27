@@ -752,6 +752,27 @@ string CDiagContext::GetStringUID(TUID uid) const
 }
 
 
+string CDiagContext::GetGlobalRequestId(void) const
+{
+    Uint8 hi = GetUID();
+    Uint4 b3 = Uint4((hi >> 32) & 0xFFFFFFFF);
+    Uint4 b2 = Uint4(hi & 0xFFFFFFFF);
+
+    CDiagContextThreadData& thr_data = CDiagContextThreadData::GetThreadData();
+    Uint4 tid = thr_data.GetTID();
+    Uint4 rid = thr_data.GetRequestId();
+    CTime now = GetFastLocalTime();
+    Uint8 lo = (Uint8(tid & 0xFFFF) << 48) |
+        (Uint8(rid & 0xFFFFFF) << 24) |
+        (now.MicroSecond() & 0xFFFFFF);
+    Uint4 b1 = Uint4((lo >> 32) & 0xFFFFFFFF);
+    Uint4 b0 = Uint4(lo & 0xFFFFFFFF);
+    char buf[40];
+    sprintf(buf, "%08X%08X%08X%08X", b3, b2, b1, b0);
+    return string(buf);
+}
+
+
 const string& CDiagContext::GetHost(void) const
 {
     // Check context properties
@@ -2126,8 +2147,18 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
         // Fixed prefix
         m_PID = s_ParseInt(message, pos, 0, '/');
         m_TID = s_ParseInt(message, pos, 0, '/');
-        m_RequestId = s_ParseInt(message, pos, 0, '/');
-        m_Data->m_AppState = s_ParseStr(message, pos, ' ', true);
+        size_t sl_pos = message.find('/', pos);
+        size_t sp_pos = message.find(' ', pos);
+        if (sl_pos < sp_pos) {
+            // Newer format, app state is present.
+            m_RequestId = s_ParseInt(message, pos, 0, '/');
+            m_Data->m_AppState = s_ParseStr(message, pos, ' ', true);
+        }
+        else {
+            // Older format, no app state.
+            m_RequestId = s_ParseInt(message, pos, 0, ' ');
+            m_Data->m_AppState = "A";
+        }
 
         if (message[pos + kDiagW_UID] != ' ') {
             return;
@@ -2139,9 +2170,20 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
         m_ProcPost = s_ParseInt(message, pos, 0, '/');
         m_ThrPost = s_ParseInt(message, pos, 0, ' ');
 
-        // Date and time
+        // Date and time. Try all known formats.
         string tmp = s_ParseStr(message, pos, ' ');
-        m_Data->m_Time = CTime(tmp, kDiagTimeFormat);
+        static const char* s_TimeFormats[3] = {
+            kDiagTimeFormat, "Y-M-DTh:m:s", "Y/M/D:h:m:s"
+        };
+        for (int fmt_idx = 0; fmt_idx < 3; fmt_idx++) {
+            try {
+                m_Data->m_Time = CTime(tmp, s_TimeFormats[fmt_idx]);
+                break; // break on success
+            }
+            catch (CTimeException) {
+            }
+        }
+
         // Host
         m_Data->m_Host = s_ParseStr(message, pos, ' ');
         // Client
@@ -2178,8 +2220,7 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
                     m_Severity = eDiag_Fatal;
                     break;
                 default:
-                    NCBI_THROW(CException, eUnknown,
-                        "Unknown message severity");
+                    return;
                 }
                 m_Flags |= eDPF_IsMessage;
                 have_severity = true;
@@ -2235,8 +2276,11 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
             return;
         }
 
+        // Find message separator
+        size_t sep_pos = message.find(" --- ", pos);
+
         // <module>, <module>(<err_code>.<err_subcode>) or <module>(<err_text>)
-        if (message[pos] != '"') {
+        if (pos < sep_pos  &&  message[pos] != '"') {
             size_t mod_pos = pos;
             tmp = s_ParseStr(message, pos, ' ');
             size_t lbr = tmp.find("(");
@@ -2289,44 +2333,48 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
             if ( !m_Data->m_Module.empty() ) {
                 m_Module = m_Data->m_Module.c_str();
             }
-        }
-
-        // ["<file>", ][line <line>][:]
-        if (message[pos] != '"') {
-            return;
-        }
-        pos++; // skip "
-        tmp = s_ParseStr(message, pos, '"');
-        m_Data->m_File = tmp;
-        m_File = m_Data->m_File.c_str();
-        if (message.substr(pos, 7) != ", line ") {
-            return;
-        }
-        pos += 7;
-        m_Line = s_ParseInt(message, pos, 0, ':');
-        pos = message.find_first_not_of(' ', pos);
-        if (pos == NPOS) {
-            pos = message.length();
-        }
-
-        // Class:: Class::Function() ::Function()
-        if (message.find("::", pos) != NPOS) {
-            tmp = s_ParseStr(message, pos, ' ');
-            size_t dcol = tmp.find("::");
-            _ASSERT(dcol != NPOS);
-            if (dcol > 0) {
-                m_Data->m_Class = tmp.substr(0, dcol);
-                m_Class = m_Data->m_Class.c_str();
+            if (message[pos] != '"') {
+                return;
             }
-            dcol += 2;
-            if (dcol < tmp.length() - 2) {
-                // Remove "()"
-                if (tmp[tmp.length() - 2] != '(' || tmp[tmp.length() - 1] != ')') {
-                    return;
+        }
+
+        if (pos < sep_pos) {
+            // ["<file>", ][line <line>][:]
+            pos++; // skip "
+            tmp = s_ParseStr(message, pos, '"');
+            m_Data->m_File = tmp;
+            m_File = m_Data->m_File.empty() ? 0 : m_Data->m_File.c_str();
+            if (message.substr(pos, 7) != ", line ") {
+                return;
+            }
+            pos += 7;
+            m_Line = s_ParseInt(message, pos, 0, ':');
+            pos = message.find_first_not_of(' ', pos);
+            if (pos == NPOS) {
+                pos = message.length();
+            }
+        }
+
+        if (pos < sep_pos) {
+            // Class:: Class::Function() ::Function()
+            if (message.find("::", pos) != NPOS) {
+                tmp = s_ParseStr(message, pos, ' ');
+                size_t dcol = tmp.find("::");
+                _ASSERT(dcol != NPOS);
+                if (dcol > 0) {
+                    m_Data->m_Class = tmp.substr(0, dcol);
+                    m_Class = m_Data->m_Class.c_str();
                 }
-                tmp.resize(tmp.length() - 2);
-                m_Data->m_Function = tmp.substr(dcol, tmp.length());
-                m_Function = m_Data->m_Function.c_str();
+                dcol += 2;
+                if (dcol < tmp.length() - 2) {
+                    // Remove "()"
+                    if (tmp[tmp.length() - 2] != '(' || tmp[tmp.length() - 1] != ')') {
+                        return;
+                    }
+                    tmp.resize(tmp.length() - 2);
+                    m_Data->m_Function = tmp.substr(dcol, tmp.length());
+                    m_Function = m_Data->m_Function.c_str();
+                }
             }
         }
 

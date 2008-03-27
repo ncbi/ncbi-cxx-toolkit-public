@@ -1656,6 +1656,9 @@ public:
     /// Return string representation of UID
     string GetStringUID(TUID uid = 0) const;
 
+    /// Create global unique request id.
+    string GetGlobalRequestId(void) const;
+
     /// Set AutoWrite flag. If set, each property is posted to the current
     /// app-log stream when a new value is set.
     void SetAutoWrite(bool value);
