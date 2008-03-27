@@ -116,10 +116,7 @@ void CDataSource::DropAllTSEs(void)
     TMainLock::TWriteLockGuard guard(m_DSMainLock);
 
     // First clear all indices
-    m_Bioseq_InfoMap.clear();
-    m_Annot_InfoMap.clear();
-    m_Entry_InfoMap.clear();
-    m_TSE_InfoMap.clear();
+    m_InfoMap.clear();
     
     m_TSE_seq.clear();
 
@@ -282,21 +279,18 @@ void CDataSource::x_DropTSE(CRef<CTSE_Info> info)
 }
 
 
-template<class Map, class Ref, class Info>
-inline
-void x_MapObject(Map& info_map, const Ref& ref, const Info& info)
+void CDataSource::x_Map(const CObject* obj, const CTSE_Info_Object* info)
 {
-    _ASSERT(ref);
-    typedef typename Map::value_type value_type;
-    pair<typename Map::iterator, bool> ins =
-        info_map.insert(value_type(ref, info));
+    typedef TInfoMap::value_type value_type;
+    pair<TInfoMap::iterator, bool> ins =
+        m_InfoMap.insert(value_type(ConstRef(obj), ConstRef(info)));
     if ( !ins.second ) {
         CNcbiOstrstream str;
         str << "CDataSource::x_Map(): object already mapped:" <<
-            " " << typeid(typename Ref::TObjectType).name() <<
-            " ref: " << ref.GetPointerOrNull() <<
-            " " << typeid(typename Info::TObjectType).name() <<
-            " ptr: " << info.GetPointerOrNull() <<
+            " " << typeid(*obj).name() <<
+            " obj: " << obj <<
+            " " << typeid(*info).name() <<
+            " info: " << info <<
             " was: " << ins.first->second.GetPointerOrNull();
         NCBI_THROW(CObjMgrException, eOtherError,
                    CNcbiOstrstreamToString(str));
@@ -304,82 +298,16 @@ void x_MapObject(Map& info_map, const Ref& ref, const Info& info)
 }
 
 
-template<class Map, class Ref, class Info>
-inline
-void x_UnmapObject(Map& info_map, const Ref& ref, const Info& _DEBUG_ARG(info))
+void CDataSource::x_Unmap(const CObject* obj, const CTSE_Info_Object* info)
 {
-    _ASSERT(ref);
-    typename Map::iterator iter = info_map.lower_bound(ref);
-    if ( iter != info_map.end() && iter->first == ref ) {
+    TInfoMap::iterator iter = m_InfoMap.find(ConstRef(obj));
+    if ( iter != m_InfoMap.end() ) {
         _ASSERT(iter->second.GetPointer() == info);
-        info_map.erase(iter);
+        m_InfoMap.erase(iter);
     }
     else {
-        _ASSERT(iter != info_map.end() && iter->first == ref);
         abort();
     }
-}
-
-
-void CDataSource::x_Map(CConstRef<CSeq_entry> obj, CTSE_Info* info)
-{
-    x_MapObject(m_TSE_InfoMap, obj, Ref(info));
-    //LOG_POST_X(2, Warning << "CDataSource::x_MapTSE: " << m_TSE_InfoMap.size());
-}
-
-
-void CDataSource::x_Unmap(CConstRef<CSeq_entry> obj, CTSE_Info* info)
-{
-    x_UnmapObject(m_TSE_InfoMap, obj, info);
-    //LOG_POST_X(3, Warning << "CDataSource::x_UnmapTSE: " << m_TSE_InfoMap.size());
-}
-
-
-void CDataSource::x_Map(CConstRef<CSeq_entry> obj, CSeq_entry_Info* info)
-{
-    x_MapObject(m_Entry_InfoMap, obj, Ref(info));
-}
-
-
-void CDataSource::x_Unmap(CConstRef<CSeq_entry> obj, CSeq_entry_Info* info)
-{
-    x_UnmapObject(m_Entry_InfoMap, obj, info);
-}
-
-
-void CDataSource::x_Map(CConstRef<CSeq_annot> obj, CSeq_annot_Info* info)
-{
-    x_MapObject(m_Annot_InfoMap, obj, Ref(info));
-}
-
-
-void CDataSource::x_Unmap(CConstRef<CSeq_annot> obj, CSeq_annot_Info* info)
-{
-    x_UnmapObject(m_Annot_InfoMap, obj, info);
-}
-
-
-void CDataSource::x_Map(CConstRef<CBioseq_set> obj, CBioseq_set_Info* info)
-{
-    x_MapObject(m_Bioseq_set_InfoMap, obj, Ref(info));
-}
-
-
-void CDataSource::x_Unmap(CConstRef<CBioseq_set> obj, CBioseq_set_Info* info)
-{
-    x_UnmapObject(m_Bioseq_set_InfoMap, obj, info);
-}
-
-
-void CDataSource::x_Map(CConstRef<CBioseq> obj, CBioseq_Info* info)
-{
-    x_MapObject(m_Bioseq_InfoMap, obj, Ref(info));
-}
-
-
-void CDataSource::x_Unmap(CConstRef<CBioseq> obj, CBioseq_Info* info)
-{
-    x_UnmapObject(m_Bioseq_InfoMap, obj, info);
 }
 
 
@@ -514,9 +442,9 @@ CConstRef<CTSE_Info>
 CDataSource::x_FindTSE_Info(const CSeq_entry& obj) const
 {
     CConstRef<CTSE_Info> ret;
-    TTSE_InfoMap::const_iterator found = m_TSE_InfoMap.find(ConstRef(&obj));
-    if ( found != m_TSE_InfoMap.end() ) {
-        ret = found->second;
+    TInfoMap::const_iterator found = m_InfoMap.find(CConstRef<CObject>(&obj));
+    if ( found != m_InfoMap.end() ) {
+        ret = dynamic_cast<const CTSE_Info*>(&*found->second);
     }
     return ret;
 }
@@ -526,10 +454,9 @@ CConstRef<CSeq_entry_Info>
 CDataSource::x_FindSeq_entry_Info(const CSeq_entry& obj) const
 {
     CConstRef<CSeq_entry_Info> ret;
-    TEntry_InfoMap::const_iterator found =
-        m_Entry_InfoMap.find(ConstRef(&obj));
-    if ( found != m_Entry_InfoMap.end() ) {
-        ret = found->second;
+    TInfoMap::const_iterator found = m_InfoMap.find(CConstRef<CObject>(&obj));
+    if ( found != m_InfoMap.end() ) {
+        ret = dynamic_cast<const CSeq_entry_Info*>(&*found->second);
     }
     return ret;
 }
@@ -539,10 +466,9 @@ CConstRef<CSeq_annot_Info>
 CDataSource::x_FindSeq_annot_Info(const CSeq_annot& obj) const
 {
     CConstRef<CSeq_annot_Info> ret;
-    TAnnot_InfoMap::const_iterator found =
-        m_Annot_InfoMap.find(ConstRef(&obj));
-    if ( found != m_Annot_InfoMap.end() ) {
-        ret = found->second;
+    TInfoMap::const_iterator found = m_InfoMap.find(CConstRef<CObject>(&obj));
+    if ( found != m_InfoMap.end() ) {
+        ret = dynamic_cast<const CSeq_annot_Info*>(&*found->second);
     }
     return ret;
 }
@@ -552,10 +478,9 @@ CConstRef<CBioseq_set_Info>
 CDataSource::x_FindBioseq_set_Info(const CBioseq_set& obj) const
 {
     CConstRef<CBioseq_set_Info> ret;
-    TBioseq_set_InfoMap::const_iterator found =
-        m_Bioseq_set_InfoMap.find(ConstRef(&obj));
-    if ( found != m_Bioseq_set_InfoMap.end() ) {
-        ret = found->second;
+    TInfoMap::const_iterator found = m_InfoMap.find(CConstRef<CObject>(&obj));
+    if ( found != m_InfoMap.end() ) {
+        ret = dynamic_cast<const CBioseq_set_Info*>(&*found->second);
     }
     return ret;
 }
@@ -565,10 +490,9 @@ CConstRef<CBioseq_Info>
 CDataSource::x_FindBioseq_Info(const CBioseq& obj) const
 {
     CConstRef<CBioseq_Info> ret;
-    TBioseq_InfoMap::const_iterator found =
-        m_Bioseq_InfoMap.find(ConstRef(&obj));
-    if ( found != m_Bioseq_InfoMap.end() ) {
-        ret = found->second;
+    TInfoMap::const_iterator found = m_InfoMap.find(CConstRef<CObject>(&obj));
+    if ( found != m_InfoMap.end() ) {
+        ret = dynamic_cast<const CBioseq_Info*>(&*found->second);
     }
     return ret;
 }

@@ -292,12 +292,7 @@ private:
 #endif
 
     // registered objects
-    typedef map<CConstRef<CSeq_entry>, CRef<CTSE_Info> >       TTSE_InfoMap;
-    typedef map<CConstRef<CSeq_entry>, CRef<CSeq_entry_Info> > TEntry_InfoMap;
-    typedef map<CConstRef<CSeq_annot>, CRef<CSeq_annot_Info> > TAnnot_InfoMap;
-    typedef map<CConstRef<CBioseq_set>,
-                CRef<CBioseq_set_Info> > TBioseq_set_InfoMap;
-    typedef map<CConstRef<CBioseq>, CRef<CBioseq_Info> >       TBioseq_InfoMap;
+    typedef map<CConstRef<CObject>, CConstRef<CTSE_Info_Object> > TInfoMap;
 
     // friend classes
     friend class CAnnotTypes_CI; // using mutex etc.
@@ -331,16 +326,8 @@ private:
     void x_ForgetTSE(CRef<CTSE_Info> info);
     void x_DropTSE(CRef<CTSE_Info> info);
 
-    void x_Map(CConstRef<CSeq_entry> obj, CTSE_Info* info);
-    void x_Unmap(CConstRef<CSeq_entry> obj, CTSE_Info* info);
-    void x_Map(CConstRef<CSeq_entry> obj, CSeq_entry_Info* info);
-    void x_Unmap(CConstRef<CSeq_entry> obj, CSeq_entry_Info* info);
-    void x_Map(CConstRef<CSeq_annot> obj, CSeq_annot_Info* info);
-    void x_Unmap(CConstRef<CSeq_annot> obj, CSeq_annot_Info* info);
-    void x_Map(CConstRef<CBioseq_set> obj, CBioseq_set_Info* info);
-    void x_Unmap(CConstRef<CBioseq_set> obj, CBioseq_set_Info* info);
-    void x_Map(CConstRef<CBioseq> obj, CBioseq_Info* info);
-    void x_Unmap(CConstRef<CBioseq> obj, CBioseq_Info* info);
+    void x_Map(const CObject* obj, const CTSE_Info_Object* info);
+    void x_Unmap(const CObject* obj, const CTSE_Info_Object* info);
 
     // lookup Xxx_Info objects
     // TSE
@@ -422,11 +409,7 @@ private:
     CConstRef<CObject>    m_SharedObject;
     TTSE_LockSet          m_StaticBlobs;        // manually added TSEs
 
-    TTSE_InfoMap          m_TSE_InfoMap;        // All known TSEs
-    TEntry_InfoMap        m_Entry_InfoMap;      // All known Seq-entries
-    TAnnot_InfoMap        m_Annot_InfoMap;      // All known Seq-annots
-    TBioseq_set_InfoMap   m_Bioseq_set_InfoMap; // All known Bioseq-sets
-    TBioseq_InfoMap       m_Bioseq_InfoMap;     // All known Bioseqs
+    TInfoMap              m_InfoMap;            // All known TSE objects
 
     TSeq_id2TSE_Set       m_TSE_seq;            // id -> TSE with bioseq
     TSeq_id2TSE_Set       m_TSE_seq_annot;      // id -> TSE with bioseq annots
