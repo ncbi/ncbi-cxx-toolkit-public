@@ -196,7 +196,6 @@ const CAnnotName& CSeq_annot_Info::GetName(void) const
 void CSeq_annot_Info::x_UpdateName(void)
 {
     if ( m_Object->IsSetDesc() ) {
-        string name;
         ITERATE( CSeq_annot::TDesc::Tdata, it, m_Object->GetDesc().Get() ) {
             const CAnnotdesc& desc = **it;
             if ( desc.Which() == CAnnotdesc::e_Name ) {
