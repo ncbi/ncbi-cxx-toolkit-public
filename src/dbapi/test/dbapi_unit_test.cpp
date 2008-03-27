@@ -8721,6 +8721,31 @@ CDBAPIUnitTest::Test_Procedure3(void)
                 BOOST_CHECK_EQUAL(result_num, 3);
             }
         }
+
+        if (false) {
+            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection( CONN_OWNERSHIP ));
+            BOOST_CHECK(auto_conn.get() != NULL);
+
+            auto_conn->Connect(
+                "mvread",
+                "*****",
+                "MAPVIEW",
+                "MapView"
+                );
+
+            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+
+            int result_num = 0;
+
+            auto_stmt->SendSql("exec GetSimpleDisplayStr 5,144,3,'previous'");
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    ++result_num;
+                }
+            }
+
+            BOOST_CHECK_EQUAL(result_num, 3);
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
