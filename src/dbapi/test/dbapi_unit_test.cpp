@@ -8701,6 +8701,26 @@ CDBAPIUnitTest::Test_Procedure3(void)
                 BOOST_CHECK_EQUAL(result_num, 2);
             }
         }
+
+        // The same as above, but using IStatement ...
+        {
+            auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+
+            int result_num = 0;
+
+            auto_stmt->SendSql("exec sp_helpdb 'master'");
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    ++result_num;
+                }
+            }
+
+            if (m_args.GetServerType() == CTestArguments::eSybase) {
+                BOOST_CHECK_EQUAL(result_num, 4);
+            } else {
+                BOOST_CHECK_EQUAL(result_num, 3);
+            }
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
