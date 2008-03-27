@@ -211,6 +211,7 @@ public:
 
     void Test_Procedure(void);
     void Test_Procedure2(void);
+    void Test_Procedure3(void);
 
     void Test_Bulk_Writing(void);
     void Test_Bulk_Writing2(void);

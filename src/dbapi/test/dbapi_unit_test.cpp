@@ -8653,6 +8653,7 @@ CDBAPIUnitTest::Test_Procedure2(void)
             }
         }
 
+        // Mismatched types of INT parameters ...
         {
             auto_ptr<ICallableStatement> auto_stmt(
                     m_Conn->GetCallableStatement("sp_server_info")
@@ -8671,6 +8672,40 @@ CDBAPIUnitTest::Test_Procedure2(void)
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_Procedure3(void)
+{
+    try {
+        // Reading multiple result-sets from a stored procedure ...
+        {
+            auto_ptr<ICallableStatement> auto_stmt(
+                    m_Conn->GetCallableStatement("sp_helpdb")
+                    );
+
+            auto_stmt->SetParam( CVariant( "master" ), "@dbname" );
+            auto_stmt->Execute();
+
+            int result_num = 0;
+
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    ++result_num;
+                }
+            }
+
+            if (m_args.GetServerType() == CTestArguments::eSybase) {
+                BOOST_CHECK_EQUAL(result_num, 3);
+            } else {
+                BOOST_CHECK_EQUAL(result_num, 2);
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 void
@@ -14139,6 +14174,17 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         PutMsgDisabled("Test_Procedure2");
     }
 
+    if (args.GetDriverName() != ftds_odbc_driver // 03/27/08 
+        && !(args.GetDriverName() == ftds64_driver
+            && args.GetServerType() == CTestArguments::eSybase) // 03/27/08
+        && !(args.GetDriverName() == ftds_dblib_driver
+            && args.GetServerType() == CTestArguments::eSybase) // 03/27/08
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure3,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
     if ( (args.GetDriverName() == ftds8_driver
           || args.GetDriverName() == ftds_dblib_driver
@@ -14209,7 +14255,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
 
-    if ( args.GetDriverName() != ftds_odbc_driver  // Strange ....
+    if ( args.GetDriverName() != ftds_odbc_driver  // 03/25/08 // Strange ....
          && !(args.GetDriverName() == ftds64_driver
               && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
          && !(args.GetDriverName() == ftds8_driver
