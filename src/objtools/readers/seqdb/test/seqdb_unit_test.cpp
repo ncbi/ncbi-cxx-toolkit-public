@@ -1385,7 +1385,7 @@ BOOST_AUTO_TEST_CASE(GetLenNegOID)
     
     try {
         CSeqDB dbp("data/seqp", CSeqDB::eProtein);
-        Uint4 len = dbp.GetSeqLength(Uint4(-1));
+        Uint4 len = dbp.GetSeqLength(0-1);
         
         CHECK_EQUAL_TYPED(Uint4, 11112222, len);
     } catch(CSeqDBException &) {
@@ -1432,7 +1432,7 @@ BOOST_AUTO_TEST_CASE(GetSeqNegOID)
         CSeqDB dbp("data/seqp", CSeqDB::eProtein);
         
         const char * buffer = 0;
-        Uint4 len = dbp.GetSequence(Uint4(-1), & buffer);
+        Uint4 len = dbp.GetSequence(0-1, & buffer);
         
         CHECK_EQUAL_TYPED(Uint4, 11112222, len);
     } catch(CSeqDBException &) {
