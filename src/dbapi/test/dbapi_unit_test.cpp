@@ -4808,6 +4808,7 @@ CDBAPIUnitTest::Test_Bulk_Writing6(void)
     }
 }
 
+
 void
 CDBAPIUnitTest::Test_Bulk_Late_Bind(void)
 {
@@ -6013,6 +6014,75 @@ CDBAPIUnitTest::Test_SelectStmt(void)
     //             }
     //         }
     //     }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_SelectStmt2(void)
+{
+    string sql;
+    string table_name("#blk_table7");
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Running parametrized statement ...
+        {
+            int result_num = 0;
+
+            auto_stmt->SetParam( CVariant( "master" ), "@dbname" );
+
+            auto_stmt->SendSql("exec sp_helpdb @dbname");
+
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    ++result_num;
+                }
+            }
+
+            auto_stmt->ClearParamList();
+        }
+
+        // Create table ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "id INT NOT NULL PRIMARY KEY, \n"
+                "name VARCHAR(255) NOT NULL \n"
+                ")"
+                ;
+
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+        // Insert data ...
+        {
+            sql  = "insert into ";
+            sql += table_name + "( id, name ) values ( 1, 'one' )";
+
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+        // Query data ...
+        {
+            sql  = "select id, name from ";
+            sql += table_name;
+
+            auto_stmt->SendSql(sql);
+            while( auto_stmt->HasMoreResults() ) { 
+                if( auto_stmt->HasRows() ) { 
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
+                    while( rs->Next() ) { 
+                        ;
+                    }
+                }
+            }
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -13861,6 +13931,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         PutMsgDisabled("Test_Bulk_Writing");
     }
 
+
+    if (!(args.GetDriverName() == ftds64_driver
+          && args.GetServerType() == CTestArguments::eSybase)) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmt2, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    } else {
+        PutMsgDisabled("Test_SelectStmt2");
+    }
 
     if (!(args.GetDriverName() == ftds64_driver
           && args.GetServerType() == CTestArguments::eSybase)
