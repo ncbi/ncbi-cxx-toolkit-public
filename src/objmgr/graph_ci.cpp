@@ -79,9 +79,7 @@ CSeq_graph_Handle CMappedGraph::GetSeq_graph_Handle(void) const
 
 CSeq_annot_Handle CMappedGraph::GetAnnot(void) const
 {
-    CSeq_annot_Handle annot_handle;
-    m_Collector->SetAnnotHandle(annot_handle, *m_GraphRef);
-    return annot_handle;
+    return m_GraphRef->GetSeq_annot_Handle();
 }
 
 

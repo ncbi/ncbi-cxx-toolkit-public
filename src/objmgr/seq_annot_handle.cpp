@@ -54,6 +54,13 @@ CSeq_annot_Handle::CSeq_annot_Handle(const CSeq_annot_Info& info,
 }
 
 
+void CSeq_annot_Handle::x_Set(const CSeq_annot_Info& info,
+                              const CTSE_Handle& tse)
+{
+    m_Info = tse.x_GetScopeInfo().GetScopeLock(tse, info);
+}
+
+
 void CSeq_annot_Handle::Reset(void)
 {
     m_Info.Reset();

@@ -162,8 +162,10 @@ public:
     };
 
     CAnnotObject_Ref(void);
-    CAnnotObject_Ref(const CAnnotObject_Info& object);
+    CAnnotObject_Ref(const CAnnotObject_Info& object,
+                     const CSeq_annot_Handle& annot_handle);
     CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
+                     const CSeq_annot_Handle& annot_handle,
                      const SSNP_Info& snp_info,
                      CSeq_loc_Conversion* cvt);
 
@@ -171,6 +173,7 @@ public:
     bool IsSNPFeat(void) const;
     bool IsTableFeat(void) const;
 
+    const CSeq_annot_Handle& GetSeq_annot_Handle(void) const;
     const CSeq_annot_Info& GetSeq_annot_Info(void) const;
     const CSeq_annot_SNP_Info& GetSeq_annot_SNP_Info(void) const;
     TAnnotIndex GetAnnotIndex(void) const;
@@ -195,7 +198,9 @@ public:
     void Swap(CAnnotObject_Ref& ref);
 
 private:
-    CConstRef<CSeq_annot_Info> m_Seq_annot;   //  4 or  8
+    friend class CAnnot_Collector;
+
+    CSeq_annot_Handle          m_Seq_annot;   //  4 or  8
     TAnnotIndex                m_AnnotIndex;  //  4 or  4
     mutable CAnnotMapping_Info m_MappingInfo; // 16 or 20
 };
@@ -252,8 +257,6 @@ private:
 
     const TAnnotSet& GetAnnotSet(void) const;
     CScope& GetScope(void) const;
-    void SetAnnotHandle(CSeq_annot_Handle& annot_handle,
-                        const CAnnotObject_Ref& ref) const;
 
     const SAnnotSelector& GetSelector(void);
     CScope::EGetBioseqFlag GetGetFlag(void) const;
@@ -323,9 +326,6 @@ private:
 
     void x_AddPostMappings(void);
     void x_AddTSE(const CTSE_Handle& tse);
-    void x_AddAnnot(const CAnnotObject_Ref& ref);
-    void x_CreateAnnotHandle(CSeq_annot_Handle& annot_handle,
-                             const CSeq_annot_Info* info) const;
 
     // Set of processed annot-locs to avoid duplicates
     typedef set< CConstRef<CSeq_loc> >   TAnnotLocsSet;
@@ -337,8 +337,6 @@ private:
     CHeapScope                       m_Scope;
     // TSE set to keep all the TSEs locked
     TTSE_LockMap                     m_TSE_LockMap;
-    CSeq_annot_Handle                m_FirstAnnotLock;
-    TAnnotLocks                      m_AnnotLocks;
     auto_ptr<CAnnotMappingCollector> m_MappingCollector;
     // Set of all the annotations found
     TAnnotSet                        m_AnnotSet;
@@ -662,9 +660,16 @@ bool CAnnotObject_Ref::IsSNPFeat(void) const
 
 
 inline
+const CSeq_annot_Handle& CAnnotObject_Ref::GetSeq_annot_Handle(void) const
+{
+    return m_Seq_annot;
+}
+
+
+inline
 const CSeq_annot_Info& CAnnotObject_Ref::GetSeq_annot_Info(void) const
 {
-    return *m_Seq_annot;
+    return m_Seq_annot.x_GetInfo();
 }
 
 

@@ -251,9 +251,7 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
     const CAnnotObject_Ref& feat_ref = *annot;
     _ASSERT(feat_ref.IsFeat());
 
-    const CSeq_annot_Info* annot_info;
     if ( feat_ref.IsSNPFeat() ) {
-        annot_info = &feat_ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
         m_OriginalFeat.m_FeatIndex =
             feat_ref.GetAnnotIndex() | CSeq_feat_Handle::kSNPTableBit;
         if ( !collector.m_CreatedOriginal ) {
@@ -263,12 +261,10 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
         _ASSERT(m_OriginalFeat.IsTableSNP());
     }
     else if ( feat_ref.GetAnnotObject_Info().IsRegular() ) {
-        annot_info = &feat_ref.GetSeq_annot_Info();
         m_OriginalFeat.m_FeatIndex = feat_ref.GetAnnotIndex();
         _ASSERT(!m_OriginalFeat.IsTableSNP());
     }
     else {
-        annot_info = &feat_ref.GetSeq_annot_Info();
         m_OriginalFeat.m_FeatIndex = feat_ref.GetAnnotIndex();
         if ( !collector.m_CreatedOriginal ) {
             collector.m_CreatedOriginal.Reset(new CCreatedFeat_Ref);
@@ -276,10 +272,7 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
         m_OriginalFeat.m_CreatedFeat = collector.m_CreatedOriginal;
         _ASSERT(!m_OriginalFeat.IsTableSNP());
     }
-    if ( !m_OriginalFeat.m_Seq_annot ||
-         &m_OriginalFeat.m_Seq_annot.x_GetInfo() != annot_info ) {
-        collector.SetAnnotHandle(m_OriginalFeat.m_Seq_annot, *annot);
-    }
+    m_OriginalFeat.m_Seq_annot = annot->GetSeq_annot_Handle();
 
     m_MappingInfoPtr = &feat_ref.GetMappingInfo();
     m_MappedFeat.ResetRefs();

@@ -368,8 +368,9 @@ void CAnnotMapping_Info::InitializeMappedSeq_feat(const CSeq_feat& src,
 /////////////////////////////////////////////////////////////////////////////
 
 
-CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
-    : m_Seq_annot(&object.GetSeq_annot_Info()),
+CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object,
+                                   const CSeq_annot_Handle& annot_handle)
+    : m_Seq_annot(annot_handle),
       m_AnnotIndex(object.GetAnnotIndex())
 {
     if ( object.IsFeat() ) {
@@ -380,16 +381,17 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
             }
         }
         else {
-            m_MappingInfo.SetPartial(m_Seq_annot->IsTableFeatPartial(object));
+            m_MappingInfo.SetPartial(GetSeq_annot_Info().IsTableFeatPartial(object));
         }
     }
 }
 
 
 CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
+                                   const CSeq_annot_Handle& annot_handle,
                                    const SSNP_Info& snp,
                                    CSeq_loc_Conversion* cvt)
-    : m_Seq_annot(&snp_annot.GetParentSeq_annot_Info()),
+    : m_Seq_annot(annot_handle),
       m_AnnotIndex(snp_annot.GetIndex(snp) | kSNPTableBit)
 {
     _ASSERT(IsSNPFeat());
@@ -919,8 +921,6 @@ void CAnnot_Collector::x_Clear(void)
 {
     m_AnnotSet.clear();
     m_MappingCollector.reset();
-    m_FirstAnnotLock.Reset();
-    m_AnnotLocks.clear();
     m_TSE_LockMap.clear();
     m_Scope = CHeapScope();
     m_Selector = 0;
@@ -1269,75 +1269,9 @@ struct SLessByInfo
 };
 
 
-void CAnnot_Collector::x_CreateAnnotHandle(CSeq_annot_Handle& annot_handle,
-                                           const CSeq_annot_Info* info) const
-{
-    TTSE_LockMap::const_iterator tse_it =
-        m_TSE_LockMap.find(&info->GetTSE_Info());
-    _ASSERT(tse_it != m_TSE_LockMap.end());
-    annot_handle = CSeq_annot_Handle(*info, tse_it->second);
-}
-
-
-void CAnnot_Collector::SetAnnotHandle(CSeq_annot_Handle& annot_handle,
-                                      const CAnnotObject_Ref& ref) const
-{
-    const CSeq_annot_Info* info;
-    if ( ref.IsSNPFeat() ) {
-        info = &ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
-    }
-    else {
-        info = &ref.GetSeq_annot_Info();
-    }
-
-    _ASSERT(m_FirstAnnotLock);
-    if ( info == &m_FirstAnnotLock.x_GetInfo() ) {
-        annot_handle = m_FirstAnnotLock;
-        return;
-    }
-    
-    TAnnotLocks::const_iterator it =
-        lower_bound(m_AnnotLocks.begin(), m_AnnotLocks.end(),
-                    info, SLessByInfo());
-    _ASSERT(it != m_AnnotLocks.end() && &it->x_GetInfo() == info);
-    annot_handle = *it;
-}
-
-
-void CAnnot_Collector::x_AddAnnot(const CAnnotObject_Ref& ref)
-{
-    const CSeq_annot_Info* info;
-    if ( ref.IsSNPFeat() ) {
-        info = &ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
-    }
-    else {
-        info = &ref.GetSeq_annot_Info();
-    }
-
-    if ( !m_FirstAnnotLock ) {
-        x_CreateAnnotHandle(m_FirstAnnotLock, info);
-        return;
-    }
-    if ( info == &m_FirstAnnotLock.x_GetInfo() ) {
-        return;
-    }
-    
-    for ( int i = m_AnnotLocks.size(), limit = 10; i-- && limit--; ) {
-        if ( info == &m_AnnotLocks[i].x_GetInfo() ) {
-            return;
-        }
-    }
-    
-    CSeq_annot_Handle annot_handle;
-    x_CreateAnnotHandle(annot_handle, info);
-    m_AnnotLocks.push_back(annot_handle);
-}
-
-
 inline
 void CAnnot_Collector::x_AddObject(CAnnotObject_Ref& ref)
 {
-    x_AddAnnot(ref);
     m_AnnotSet.push_back(ref);
 }
 
@@ -1413,16 +1347,6 @@ void CAnnot_Collector::x_Sort(void)
     default:
         // do nothing
         break;
-    }
-    if ( !m_AnnotLocks.empty() ) {
-        sort(m_AnnotLocks.begin(), m_AnnotLocks.end(), SLessByInfo());
-        m_AnnotLocks.erase(unique(m_AnnotLocks.begin(), m_AnnotLocks.end()),
-                           m_AnnotLocks.end());
-        if ( binary_search(m_AnnotLocks.begin(), m_AnnotLocks.end(),
-                           m_FirstAnnotLock, SLessByInfo()) ) {
-            m_FirstAnnotLock = m_AnnotLocks.back();
-            m_AnnotLocks.pop_back();
-        }
     }
 }
 
@@ -1759,13 +1683,20 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
     if ( x_NeedSNPs()  &&
         (!m_Selector->m_CollectTypes  ||
         !m_TypesBitset.test(kAnnotTypeIndex_SNP)) ) {
+        CSeq_annot_Handle sah;
         CHandleRange::TRange range = hr.GetOverlappingRange();
         ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
             const CSeq_annot_SNP_Info& snp_annot = **snp_annot_it;
             CSeq_annot_SNP_Info::const_iterator snp_it =
                 snp_annot.FirstIn(range);
             if ( snp_it != snp_annot.end() ) {
-                x_AddTSE(tseh);
+                //x_AddTSE(tseh);
+                const CSeq_annot_Info& annot_info =
+                    snp_annot.GetParentSeq_annot_Info();
+                if ( !sah || &sah.x_GetInfo() != &annot_info ) {
+                    sah.x_Set(annot_info, tseh);
+                }
+                
                 TSeqPos index = snp_it - snp_annot.begin() - 1;
                 do {
                     ++index;
@@ -1781,8 +1712,8 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
                         m_TypesBitset.set(kAnnotTypeIndex_SNP);
                         break;
                     }
-
-                    CAnnotObject_Ref annot_ref(snp_annot, snp, cvt);
+                    
+                    CAnnotObject_Ref annot_ref(snp_annot, sah, snp, cvt);
                     x_AddObject(annot_ref);
                     if ( x_NoMoreObjects() ) {
                         return;
@@ -1813,7 +1744,8 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
     // CHandleRange::TRange range = hr.GetOverlappingRange();
 
-    x_AddTSE(tseh);
+    //x_AddTSE(tseh);
+    CSeq_annot_Handle sah;
 
     bool enough = false;
 
@@ -2001,7 +1933,13 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     bool is_circular = aoit->second.m_HandleRange  &&
                         aoit->second.m_HandleRange->GetData().IsCircular();
                     need_unique |= is_circular;
-                    CAnnotObject_Ref annot_ref(annot_info);
+                    const CSeq_annot_Info& sa_info =
+                        annot_info.GetSeq_annot_Info();
+                    if ( !sah || &sah.x_GetInfo() != &sa_info ){
+                        sah.x_Set(sa_info, tseh);
+                    }
+
+                    CAnnotObject_Ref annot_ref(annot_info, sah);
                     if ( !cvt  &&  aoit->second.GetMultiIdFlag() ) {
                         // Create self-conversion, add to conversion set
                         CHandleRange::TRange ref_rg = aoit->first;
@@ -2284,13 +2222,15 @@ void CAnnot_Collector::x_SearchAll(const CSeq_entry_Info& entry_info)
 
 void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
 {
+    _ASSERT(m_Selector->m_LimitTSE);
+    CSeq_annot_Handle sah(annot_info, m_Selector->m_LimitTSE);
     // Collect all annotations from the annot
     ITERATE ( CSeq_annot_Info::TAnnotObjectInfos, aoit,
               annot_info.GetAnnotObjectInfos() ) {
         if ( !m_Selector->MatchType(*aoit) ) {
             continue;
         }
-        CAnnotObject_Ref annot_ref(*aoit);
+        CAnnotObject_Ref annot_ref(*aoit, sah);
         x_AddObject(annot_ref);
         if ( x_NoMoreObjects() ) {
             return;
@@ -2303,7 +2243,7 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
         TSeqPos index = 0;
         ITERATE ( CSeq_annot_SNP_Info, snp_it, snp_annot ) {
             const SSNP_Info& snp = *snp_it;
-            CAnnotObject_Ref annot_ref(snp_annot, snp, 0);
+            CAnnotObject_Ref annot_ref(snp_annot, sah, snp, 0);
             x_AddObject(annot_ref);
             if ( x_NoMoreObjects() ) {
                 return;

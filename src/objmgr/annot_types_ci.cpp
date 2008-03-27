@@ -192,9 +192,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
 
 CSeq_annot_Handle CAnnotTypes_CI::GetAnnot(void) const
 {
-    CSeq_annot_Handle annot_handle;
-    m_DataCollector->SetAnnotHandle(annot_handle, Get());
-    return annot_handle;
+    return Get().GetSeq_annot_Handle();
 }
 
 

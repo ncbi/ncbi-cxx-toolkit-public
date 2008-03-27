@@ -181,14 +181,18 @@ public:
     bool Seq_annot_CanGetDesc(void) const;
     const CSeq_annot::TDesc& Seq_annot_GetDesc(void) const;
 
+    void Swap(CSeq_annot_Handle& annot);
+
 protected:
     friend class CScope_Impl;
     friend class CSeq_annot_CI;
     friend class CAnnot_Collector;
     friend class CMappedFeat;
+    friend class CAnnotObject_Ref;
 
     typedef CSeq_annot_ScopeInfo TScopeInfo;
     CSeq_annot_Handle(const CSeq_annot_Info& annot, const CTSE_Handle& tse);
+    void x_Set(const CSeq_annot_Info& annot, const CTSE_Handle& tse);
 
     CScopeInfo_Ref<TScopeInfo>  m_Info;
 
@@ -304,6 +308,13 @@ inline
 const CSeq_annot_ScopeInfo& CSeq_annot_Handle::x_GetScopeInfo(void) const
 {
     return *m_Info;
+}
+
+
+inline
+void CSeq_annot_Handle::Swap(CSeq_annot_Handle& annot)
+{
+    m_Info.Swap(annot.m_Info);
 }
 
 

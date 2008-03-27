@@ -131,6 +131,10 @@ CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
 void CAnnot_CI::x_Initialize(const CAnnotTypes_CI& iter)
 {
     _ASSERT(m_SeqAnnotSet.empty());
+    ITERATE(CAnnot_Collector::TAnnotSet, it, iter.m_DataCollector->m_AnnotSet){
+        m_SeqAnnotSet.insert(it->GetSeq_annot_Handle());
+    }
+    /*
     if ( iter.m_DataCollector->m_FirstAnnotLock ) {
         m_SeqAnnotSet.insert(iter.m_DataCollector->m_FirstAnnotLock);
         ITERATE ( CAnnot_Collector::TAnnotLocks, it,
@@ -138,6 +142,7 @@ void CAnnot_CI::x_Initialize(const CAnnotTypes_CI& iter)
             m_SeqAnnotSet.insert(*it);
         }
     }
+    */
     Rewind();
 }
 
