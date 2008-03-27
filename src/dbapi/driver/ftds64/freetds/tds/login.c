@@ -379,9 +379,11 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
     }
 #endif
 
-    /* set up iconv */
-    if (!tds_dstr_isempty(&connection->client_charset)) {
-        tds_iconv_open(tds, tds_dstr_cstr(&connection->client_charset));
+    /* set up iconv if not already initialized*/
+    if (tds->char_convs[client2ucs2]->to_wire == (iconv_t) -1) {
+        if (!tds_dstr_isempty(&connection->client_charset)) {
+            tds_iconv_open(tds, tds_dstr_cstr(&connection->client_charset));
+        }
     }
 
     /* specified a date format? */
@@ -423,6 +425,7 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
 
     if (tds_open_socket(tds, tds_dstr_cstr(&connection->ip_addr), connection->port, connect_timeout) != TDS_SUCCEED)
         return TDS_FAIL;
+	tds_set_state(tds, TDS_IDLE);
 
     if (IS_TDS80(tds)) {
         retval = tds8_do_login(tds, connection);
