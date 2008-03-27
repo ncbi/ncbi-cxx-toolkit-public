@@ -57,6 +57,10 @@ BEGIN_NCBI_SCOPE
 ///
 /// Provide basic counter operations for an atomic counter represented
 /// internally by TNCBIAtomicValue. 
+/// @note
+///   TNCBIAtomicValue does not imply any assumptions about the size and
+///   the signedness of the value. It is at least as big as int datatype
+///   and can be signed on some platforms and unsigned on others.
 
 class CAtomicCounter
 {

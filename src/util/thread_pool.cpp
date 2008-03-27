@@ -597,6 +597,9 @@ s_ConvertTaskResult(CThreadPool_Task::EStatus status)
 
 
 
+const CAtomicCounter::TValue kNeedCallController_Shift = 0x0FFFFFFF;
+
+
 inline void
 CThreadPool_ServiceThread::WakeUp(void)
 {
@@ -606,7 +609,7 @@ CThreadPool_ServiceThread::WakeUp(void)
 inline void
 CThreadPool_ServiceThread::NeedCallController(void)
 {
-    if (m_NeedCallController.Add(1) > 1) {
+    if (m_NeedCallController.Add(1) > kNeedCallController_Shift + 1) {
         m_NeedCallController.Add(-1);
     }
     else {
@@ -1018,6 +1021,8 @@ CThreadPool_ServiceThread::CThreadPool_ServiceThread(CThreadPool_Impl* pool)
       m_Finished(false)
 {
     _ASSERT(pool);
+
+    m_NeedCallController.Set(kNeedCallController_Shift);
 }
 
 CThreadPool_ServiceThread::~CThreadPool_ServiceThread(void)
@@ -1032,7 +1037,7 @@ CThreadPool_ServiceThread::IsFinished(void)
 inline void
 CThreadPool_ServiceThread::x_Idle(void)
 {
-    if (m_NeedCallController.Add(-1) < 0) {
+    if (m_NeedCallController.Add(-1) < kNeedCallController_Shift) {
         m_NeedCallController.Add(1);
     }
     m_Pool->CallController(CThreadPool_Controller::eOther);
