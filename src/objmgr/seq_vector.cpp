@@ -134,7 +134,6 @@ void CNcbi2naRandomizer::RandomizeData(char* data,
 CSeqVector::CSeqVector(void)
     : m_Size(0)
 {
-    m_Iterator.x_SetVector(*this);
 }
 
 
@@ -147,7 +146,6 @@ CSeqVector::CSeqVector(const CSeqVector& vec)
       m_Strand(vec.m_Strand),
       m_Coding(vec.m_Coding)
 {
-    m_Iterator.x_SetVector(*this);
 }
 
 
@@ -161,7 +159,6 @@ CSeqVector::CSeqVector(const CBioseq_Handle& bioseq,
 {
     m_Size = bioseq.GetBioseqLength();
     m_Mol = bioseq.GetSequenceType();
-    m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
 
@@ -175,7 +172,6 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
 {
     m_Size = m_SeqMap->GetLength(m_Scope);
     m_Mol = m_SeqMap->GetMol();
-    m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
 
@@ -190,7 +186,6 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, const CTSE_Handle& top_tse,
 {
     m_Size = m_SeqMap->GetLength(m_Scope);
     m_Mol = m_SeqMap->GetMol();
-    m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
 
@@ -204,7 +199,6 @@ CSeqVector::CSeqVector(const CSeq_loc& loc, CScope& scope,
 {
     m_Size = m_SeqMap->GetLength(m_Scope);
     m_Mol = m_SeqMap->GetMol();
-    m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
 
@@ -219,7 +213,6 @@ CSeqVector::CSeqVector(const CSeq_loc& loc, const CTSE_Handle& top_tse,
 {
     m_Size = m_SeqMap->GetLength(m_Scope);
     m_Mol = m_SeqMap->GetMol();
-    m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
 
@@ -234,7 +227,6 @@ CSeqVector::CSeqVector(const CBioseq& bioseq,
 {
     m_Size = m_SeqMap->GetLength(scope);
     m_Mol = bioseq.GetInst().GetMol();
-    m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
 
@@ -254,9 +246,17 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
         m_Mol    = vec.m_Mol;
         m_Strand = vec.m_Strand;
         m_Coding = vec.m_Coding;
-        m_Iterator.x_SetVector(*this);
+        m_Iterator.reset();
     }
     return *this;
+}
+
+
+CSeqVector_CI* CSeqVector::x_CreateIterator(TSeqPos pos) const
+{
+    CSeqVector_CI* iter;
+    m_Iterator.reset(iter = new CSeqVector_CI(*this, pos));
+    return iter;
 }
 
 
@@ -1151,7 +1151,7 @@ void CSeqVector::SetStrand(ENa_strand strand)
 {
     if ( strand != m_Strand ) {
         m_Strand = strand;
-        m_Iterator.SetStrand(strand);
+        m_Iterator.reset();
     }
 }
 
@@ -1160,8 +1160,8 @@ void CSeqVector::SetCoding(TCoding coding)
 {
     if (m_Coding != coding) {
         m_Coding = coding;
+        m_Iterator.reset();
     }
-    m_Iterator.SetCoding(coding);
 }
 
 
@@ -1222,8 +1222,10 @@ void CSeqVector::x_InitRandomizer(CRandom& random_gen)
 
 void CSeqVector::SetRandomizeAmbiguities(CRef<INcbi2naRandomizer> randomizer)
 {
-    m_Randomizer = randomizer;
-    m_Iterator.SetRandomizeAmbiguities(randomizer);
+    if ( m_Randomizer != randomizer ) {
+        m_Randomizer = randomizer;
+        m_Iterator.reset();
+    }
 }
 
 

@@ -175,7 +175,7 @@ private:
     TCoding                  m_Coding;
     CRef<INcbi2naRandomizer> m_Randomizer;
 
-    mutable CSeqVector_CI    m_Iterator;
+    mutable auto_ptr<CSeqVector_CI> m_Iterator;
 };
 
 
@@ -215,16 +215,30 @@ private:
 
 
 inline
+CSeqVector_CI& CSeqVector::x_GetIterator(TSeqPos pos) const
+{
+    CSeqVector_CI* iter = m_Iterator.get();
+    if ( !iter ) {
+        iter = x_CreateIterator(pos);
+    }
+    else {
+        iter->SetPos(pos);
+    }
+    return *iter;
+}
+
+
+inline
 CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
 {
-    return *m_Iterator.SetPos(pos);
+    return *x_GetIterator(pos);
 }
 
 
 inline
 bool CSeqVector::IsInGap(TSeqPos pos) const
 {
-    return m_Iterator.SetPos(pos).IsInGap();
+    return x_GetIterator(pos).IsInGap();
 }
 
 
@@ -319,7 +333,7 @@ bool CSeqVector::IsNucleotide(void) const
 inline
 void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
 {
-    m_Iterator.GetSeqData(start, stop, buffer);
+    x_GetIterator(start).GetSeqData(start, stop, buffer);
 }
 
 
@@ -328,7 +342,9 @@ void CSeqVector::GetSeqData(const const_iterator& start,
                             const const_iterator& stop,
                             string& buffer) const
 {
-    m_Iterator.GetSeqData(start.GetPos(), stop.GetPos(), buffer);
+    x_GetIterator(start.GetPos()).GetSeqData(start.GetPos(),
+                                             stop.GetPos(),
+                                             buffer);
 }
 
 
