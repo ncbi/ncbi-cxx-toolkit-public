@@ -92,6 +92,206 @@ list<CNPiece> FindGoodParts(const string& orig_match, const string& outp, CProSp
         }
     }
 
+    m_AliPiece = FindGoodParts(CNPiece(0, match.size(), 0, 0), match, outp, m_options);
+    for(list<CNPiece>::iterator it =  m_AliPiece.begin(); it !=  m_AliPiece.end(); ) {
+        list<CNPiece> tmp = ExcludeBadExons(*it, match, outp, m_options);
+         m_AliPiece.splice(it, tmp);
+        it =  m_AliPiece.erase(it);
+    }
+    for(list<CNPiece>::iterator it =  m_AliPiece.begin(); it !=  m_AliPiece.end(); ) {
+        list<CNPiece> tmp = FindGoodParts(*it, match, outp, m_options);
+         m_AliPiece.splice(it, tmp);
+        it =  m_AliPiece.erase(it);
+    }
+
+return  m_AliPiece;
+
+}
+list<CNPiece> FindGoodParts(const CNPiece pc, const string& match_all_pos, const string& protein, CProSplignOutputOptionsExt m_options)
+{
+     list<CNPiece> m_AliPiece;
+     const string& match = match_all_pos;
+    
+    string::size_type n = match.find_first_not_of(BAD_OR_MISMATCH, pc.beg);
+    if(n == string::npos || n >= pc.end) return m_AliPiece; //no matches    
+    bool ism = true;
+    bool isintr = false;
+    string::size_type beg = n;
+    int efflen = 0;
+    for(; n<pc.end; ++n) {
+        if(match[n] == POSIT_CHAR || match[n] == MATCH_CHAR) {
+            if(!ism) {
+                ism = true;
+                m_AliPiece.push_back(CNPiece(beg, n, 0, efflen));
+                beg = n;
+                efflen = 0;
+            } 
+        } else {
+            if(ism) {
+                    ism = false;
+                    m_AliPiece.push_back(CNPiece(beg, n, efflen, efflen));
+                    beg = n;
+                    efflen = 0;
+            }
+        }
+        if(protein[n] != INTRON_CHAR) {//inside exon
+            efflen ++;  
+            isintr = false;
+        }
+        else {//intron
+            if(!isintr) {
+                efflen += m_options.splice_cost;
+                isintr = true;
+            }
+        }
+    }
+    if(ism) {//endpoint is a match
+        m_AliPiece.push_back(CNPiece(beg, n, efflen, efflen));
+    }
+    //join pieces
+    list<CNPiece>::iterator itb, ite, itc;
+    list<CNPiece>::size_type pnum = m_AliPiece.size() + 1;
+    while(pnum > m_AliPiece.size()) {
+        pnum = m_AliPiece.size();
+        //forward
+        for(itb = m_AliPiece.begin(); ; ) {
+            ite = itb;
+            int slen = 0, spos = 0;
+            itc = itb;
+            ++itc;
+            while(itc != m_AliPiece.end()) {
+                if(m_options.Bad(itc)) break;//really bad
+                slen += itc->efflen;
+                spos += itc->posit;
+                if(m_options.Dropof(slen, spos, itb)) break;
+                ++itc;//points to  'good'
+                if(m_options.Perc(itc, slen, spos, itb)) {
+                    if(m_options.BackCheck(itb, itc)) ite = itc;//join!
+                }
+                slen += itc->efflen;
+                spos += itc->posit;
+                ++itc;//points to  ' bad' or end
+            }
+            if(ite != itb) {
+                m_options.Join(itb, ite);
+                m_AliPiece.erase(itb, ite);
+                itb = ite;
+            }
+            ++itb;
+            if(itb == m_AliPiece.end()) break; 
+            ++itb;
+        }
+        //backward
+        itb = m_AliPiece.end();
+        --itb;
+        while(itb != m_AliPiece.begin()) {
+            ite = itb;
+            int slen = 0, spos = 0;
+            itc = itb;
+            while(itc != m_AliPiece.begin()) {
+                --itc;//points to  ' bad'
+                if(m_options.Bad(itc)) break;//really bad
+                slen += itc->efflen;
+                spos += itc->posit;
+                if(m_options.Dropof(slen, spos, itb)) break;
+                --itc;//points to  'good'
+                if(m_options.Perc(itc, slen, spos, itb)) {
+                    if(m_options.ForwCheck(itc, itb)) ite = itc;//join!
+                }
+                slen += itc->efflen;
+                spos += itc->posit;
+            }
+            if(ite != itb) {
+                m_options.Join(ite, itb);
+                m_AliPiece.erase(ite, itb);
+            }
+            if(itb == m_AliPiece.begin()) break;
+            --itb;
+            --itb;
+        }
+    }   
+	//throw out bad pieces
+    for(list<CNPiece>::iterator it = m_AliPiece.begin(); it != m_AliPiece.end(); ) {
+		if(it->posit == 0) it = m_AliPiece.erase(it);
+        else if (it->efflen < m_options.GetMinGoodLen()) it = m_AliPiece.erase(it);
+		else ++it;
+    }
+    return m_AliPiece;
+}
+
+
+list<CNPiece> ExcludeBadExons(const CNPiece pc, const string& match_all_pos, const string& protein, CProSplignOutputOptionsExt m_options)
+{
+    const string& match = match_all_pos;
+    list<CNPiece> alip;
+    vector<pair<int, int> > exons; //exons inside pc, format [exon_beg, exon_end)
+
+    bool in_exon = false;
+    for(int n=pc.beg; n<pc.end; ) {
+        if( ( protein[n] != INTRON_CHAR) && !in_exon ) {
+            in_exon = true;
+            exons.push_back(make_pair(n, 0));//mark beg. of exon
+        }
+        ++n;
+        if( ( (protein[n] == INTRON_CHAR) || (n == pc.end) ) && in_exon ) {
+            in_exon = false;
+            exons.back().second = n;//mark end. of exon
+        }
+    }
+
+    int cur_beg = pc.beg;
+    for(vector<pair<int, int> >::iterator eit = exons.begin(); eit != exons.end(); ++eit) {
+        int pos = 0;
+        int id = 0;
+        int len = eit->second - eit->first;
+        for(int i = eit->first; i < eit->second; ++i) {
+            if(match[i] == POSIT_CHAR) ++pos;
+            else if(match[i] == MATCH_CHAR) {
+                ++id;
+                ++pos;
+            }
+        }
+        if(( 100*pos < len*m_options.GetMinExonPos() ) || ( 100*id < m_options.GetMinExonId() * len)) {//throw out bad exon
+            //find prev match
+            int n;
+            for(n = eit->first - 1; n > cur_beg; --n) {
+                if(match[n] == POSIT_CHAR || match[n] == MATCH_CHAR) break;
+            }
+            ++n;
+            if(n > cur_beg) alip.push_back(CNPiece(cur_beg, n, 0, 0));
+            //find next match
+            for(n = eit->second; n < pc.end; ++n) {
+                if(match[n] == POSIT_CHAR || match[n] == MATCH_CHAR) break;
+            }
+            cur_beg = n;            
+        }
+    }
+    if(cur_beg < pc.end) alip.push_back(CNPiece(cur_beg, pc.end, 0, 0));    
+    return alip;    
+}
+
+        /*
+list<CNPiece> FindGoodParts(const string& orig_match, const string& outp, CProSplignOutputOptionsExt m_options)
+{
+    list<CNPiece> m_AliPiece;
+    //init
+    if(m_options.IsPassThrough()) {
+        string::size_type n1 = outp.find_first_not_of(GAP_CHAR);
+        string::size_type n2 = outp.find_last_not_of(GAP_CHAR);
+        if (n1 <= n2) 
+        m_AliPiece.push_back(CNPiece(n1, n2+1, 0, 0));
+        return m_AliPiece;
+    }
+
+    string match = orig_match;
+    for (size_t i = 1; i < match.size()-1; ++i) {
+        if (isupper(outp[i])) {
+            _ASSERT( outp[i-1]==SPACE_CHAR && outp[i+1]==SPACE_CHAR );
+            match[i-1] = match[i+1] = match[i];
+            ++i;
+        }
+    }
+
     string::size_type n = match.find_first_not_of(BAD_OR_MISMATCH);
     if(n == string::npos) return m_AliPiece; //no matches
     bool ism = true;
@@ -201,6 +401,8 @@ list<CNPiece> FindGoodParts(const string& orig_match, const string& outp, CProSp
     return m_AliPiece;
 }
 
+
+        */
 
 //CNPiece implementation
 
@@ -919,7 +1121,6 @@ list<TSeqRange> InvertPartList(const list<CNPiece>& good_parts, TSeqRange total_
     return bad_parts;
 }
     
-#ifdef _DEBUG
 void TestExonLength(const CSpliced_exon& exon)
 {
         int prot_cur_start = GetProdPosInBases(exon.GetProduct_start());
@@ -952,7 +1153,6 @@ void TestExonLength(const CSpliced_exon& exon)
         _ASSERT( nuc_cur_end-nuc_cur_start+1 == nuc_len );
         _ASSERT( prot_cur_end-prot_cur_start+1 == prot_len );
 }
-#endif
 
 void SplitChunk(TAliChunkCollection& chunks, TAliChunkIterator iter, TSeqPos start_of_second_chunk, bool genomic_plus)
 {

@@ -36,6 +36,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objmgr/seq_vector_ci.hpp>
@@ -52,8 +53,12 @@ END_SCOPE(objects)
 class NCBI_XALGOALIGN_EXPORT CProSplignScoring: public CObject
 {
 public:
+    static void SetupArgDescriptions(CArgDescriptions* argdescr);
+
     /// creates scoring parameter object with default values
     CProSplignScoring();
+
+    CProSplignScoring(const CArgs& args);
 
 
     CProSplignScoring& SetMinIntronLen(int);
@@ -133,7 +138,10 @@ public:
         ePassThrough,
     };
 
+    static void SetupArgDescriptions(CArgDescriptions* argdescr);
+
     CProSplignOutputOptions(EMode mode = eWithHoles);
+    CProSplignOutputOptions(const CArgs& args);
 
     bool IsPassThrough() const;
 
@@ -154,12 +162,21 @@ public:
     CProSplignOutputOptions& SetMinPositives(int);
     int GetMinPositives() const;
 
+    /// minimum exon identity
+    CProSplignOutputOptions& SetMinExonId(int);
+    int GetMinExonId() const;
+    /// minimum exon positives percentage
+    CProSplignOutputOptions& SetMinExonPos(int);
+    int GetMinExonPos() const;
+
     /// minimum number of bases in the first and last exon
     CProSplignOutputOptions& SetMinFlankingExonLen(int);
     int GetMinFlankingExonLen() const;
     /// good piece should not be shorter than that 
     CProSplignOutputOptions& SetMinGoodLen(int);
     int GetMinGoodLen() const;
+
+
 
     /// reward (in # of positives?) for start codon match. Not implemented yet
     CProSplignOutputOptions& SetStartBonus(int);
@@ -177,7 +194,10 @@ public:
     static const int default_max_bad_len = 45;
     static const int default_min_positives = 15;
 
-    static const int default_min_flanking_exon_len = 10;
+    static const int default_min_exon_id = 30;
+    static const int default_min_exon_pos = 55;
+
+    static const int default_min_flanking_exon_len = 15;
     static const int default_min_good_len = 59;
 
     static const int default_start_bonus = 8; /// ???
@@ -189,6 +209,8 @@ private:
     int total_positives;
     int max_bad_len;
     int min_positives;
+    int min_exon_id;
+    int min_exon_pos;
     int min_flanking_exon_len;
     int min_good_len;
     int start_bonus;

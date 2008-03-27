@@ -49,7 +49,63 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi::objects);
 USING_SCOPE(ncbi::prosplign);
 
-
+void CProSplignScoring::SetupArgDescriptions(CArgDescriptions* arg_desc)
+{
+    arg_desc->AddDefaultKey
+        ("min_intron_len",
+         "min_intron_len",
+         "min_intron_len",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignScoring::default_min_intron_len));
+    arg_desc->AddDefaultKey
+        ("gap_opening",
+         "gap_opening",
+         "Gap Opening Cost",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignScoring::default_gap_opening));
+    arg_desc->AddDefaultKey
+        ("gap_extension",
+         "gap_extension",
+         "Gap Extension Cost for one aminoacid (three bases)",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignScoring::default_gap_extension));
+    arg_desc->AddDefaultKey
+        ("frameshift_opening",
+         "frameshift_opening",
+         "Frameshift Opening Cost",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignScoring::default_frameshift_opening));
+    arg_desc->AddDefaultKey
+        ("intron_GT",
+         "intron_GT",
+         "GT/AG intron opening cost",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignScoring::default_intron_GT));
+    arg_desc->AddDefaultKey
+        ("intron_GC",
+         "intron_GC",
+         "GC/AG intron opening cost",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignScoring::default_intron_GC));
+    arg_desc->AddDefaultKey
+        ("intron_AT",
+         "intron_AT",
+         "AT/AC intron opening cost",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignScoring::default_intron_AT));
+    arg_desc->AddDefaultKey
+        ("intron_non_consensus",
+         "intron_non_consensus",
+         "Non Consensus Intron opening Cost",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignScoring::default_intron_non_consensus));
+    arg_desc->AddDefaultKey
+        ("inverted_intron_extension",
+         "inverted_intron_extension",
+         "intron_extension cost for 1 base = 1/(inverted_intron_extension*3)",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignScoring::default_inverted_intron_extension));
+}
 ///////////////////////////////////////////////////////////////////////////
 CProSplignScoring::CProSplignScoring()
 {
@@ -62,6 +118,180 @@ CProSplignScoring::CProSplignScoring()
     SetATIntronCost(default_intron_AT);
     SetNonConsensusIntronCost(default_intron_non_consensus);
     SetInvertedIntronExtensionCost(default_inverted_intron_extension);
+}
+
+CProSplignScoring::CProSplignScoring(const CArgs& args)
+{
+    SetMinIntronLen(args["min_intron_len"].AsInteger());
+    SetGapOpeningCost(args["gap_opening"].AsInteger());
+    SetGapExtensionCost(args["gap_extension"].AsInteger());
+    SetFrameshiftOpeningCost(args["frameshift_opening"].AsInteger());
+    SetGTIntronCost(args["intron_GT"].AsInteger());
+    SetGCIntronCost(args["intron_GC"].AsInteger());
+    SetATIntronCost(args["intron_AT"].AsInteger());
+    SetNonConsensusIntronCost(args["intron_non_consensus"].AsInteger());
+    SetInvertedIntronExtensionCost(args["inverted_intron_extension"].AsInteger());
+}
+void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
+{
+    arg_desc->AddFlag("full", "output global alignment as is (all postprocessing options are ingoned)");
+    arg_desc->AddDefaultKey
+        ("eat_gaps",
+         "eat_gaps",
+         "postprocessing: if possible, do not output frame-preserving gaps, output frameshifts only",
+         CArgDescriptions::eBoolean,
+         CProSplignOutputOptions::default_eat_gaps?"true":"false");
+    arg_desc->AddDefaultKey
+        ("flank_positives",
+         "flank_positives",
+         "postprocessing: any length flank of a good piece should not be worse than this",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_flank_positives));
+    arg_desc->SetConstraint("flank_positives", new CArgAllow_Integers(0, 100));
+    arg_desc->AddDefaultKey
+        ("total_positives",
+         "total_positives",
+         "postprocessing: good piece total percentage threshold",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_total_positives));
+    arg_desc->SetConstraint("total_positives", new CArgAllow_Integers(0, 100));
+    arg_desc->AddDefaultKey
+        ("max_bad_len",
+         "max_bad_len",
+         "postprocessing: any part of a good piece longer than max_bad_len should not be worse than min_positives",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_max_bad_len));
+    arg_desc->SetConstraint("max_bad_len", new CArgAllow_Integers(0, 10000));
+    arg_desc->AddDefaultKey
+        ("min_positives",
+         "min_positives",
+         "postprocessing: any part of a good piece longer than max_bad_len should not be worse than min_positives",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_min_positives));
+    arg_desc->SetConstraint("min_positives", new CArgAllow_Integers(0, 100));
+
+    arg_desc->AddDefaultKey
+        ("min_exon_ident",
+         "pct",
+         "postprocessing: any full or partial exon in the output won't have lower percentage of identity",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_min_exon_id));
+    arg_desc->SetConstraint("min_positives", new CArgAllow_Integers(0, 100));
+    arg_desc->AddDefaultKey
+        ("min_exon_positives",
+         "pct",
+         "postprocessing: any full or partial exon in the output won't have lower percentage of positives",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_min_exon_pos));
+    arg_desc->SetConstraint("min_positives", new CArgAllow_Integers(0, 100));
+
+    arg_desc->AddDefaultKey
+        ("min_flanking_exon_len",
+         "min_flanking_exon_len",
+         "postprocessing: minimum number of bases in the first and last exon",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_min_flanking_exon_len));
+    arg_desc->SetConstraint("min_flanking_exon_len", new CArgAllow_Integers(3,10000));
+    arg_desc->AddDefaultKey
+        ("min_good_len",
+         "min_good_len",
+         "postprocessing: good piece should not be shorter",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_min_good_len));
+    arg_desc->SetConstraint("min_good_len", new CArgAllow_Integers(3,10000));
+    arg_desc->AddDefaultKey
+        ("start_bonus",
+         "start_bonus",
+         "postprocessing: reward for start codon match",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_start_bonus));
+    arg_desc->SetConstraint("start_bonus", new CArgAllow_Integers(0, 1000));
+    arg_desc->AddDefaultKey
+        ("stop_bonus",
+         "stop_bonus",
+         "postprocessing: reward for stop codon at the end",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_stop_bonus));
+    arg_desc->SetConstraint("stop_bonus", new CArgAllow_Integers(0, 1000));
+}
+
+///////////////////////////////////////////////////////////////////////////
+CProSplignOutputOptions::CProSplignOutputOptions(EMode mode)
+{
+    switch (mode) {
+    case eWithHoles:
+        SetEatGaps(default_eat_gaps);
+
+        SetFlankPositives(default_flank_positives);
+        SetTotalPositives(default_total_positives);
+        
+        SetMaxBadLen(default_max_bad_len);
+        SetMinPositives(default_min_positives);
+        
+        SetMinExonId(default_min_exon_id);
+        SetMinExonPos(default_min_exon_pos);
+
+        SetMinFlankingExonLen(default_min_flanking_exon_len);
+        SetMinGoodLen(default_min_good_len);
+        
+        SetStartBonus(default_start_bonus);
+        SetStopBonus(default_stop_bonus);
+
+        break;
+    case ePassThrough:
+        SetEatGaps(false);
+
+        SetFlankPositives(0);
+        SetTotalPositives(0);
+        
+        SetMaxBadLen(0);
+        SetMinPositives(0);
+        
+        SetMinExonId(0);
+        SetMinExonPos(0);
+
+        SetMinFlankingExonLen(0);
+        SetMinGoodLen(0);
+        
+        SetStartBonus(0);
+        SetStopBonus(0);
+    }
+}
+
+CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args)
+{
+    if (args["full"]) {
+        SetEatGaps(false);
+
+        SetFlankPositives(0);
+        SetTotalPositives(0);
+        
+        SetMaxBadLen(0);
+        SetMinPositives(0);
+        
+        SetMinExonId(0);
+        SetMinExonPos(0);
+
+        SetMinFlankingExonLen(0);
+        SetMinGoodLen(0);
+        
+        SetStartBonus(0);
+        SetStopBonus(0);
+    } else {
+        SetEatGaps(args["eat_gaps"].AsBoolean());
+        SetFlankPositives(args["flank_positives"].AsInteger());
+        SetTotalPositives(args["total_positives"].AsInteger());
+        SetMaxBadLen(args["max_bad_len"].AsInteger());
+        SetMinPositives(args["min_positives"].AsInteger());
+
+        SetMinExonId(args["min_exon_ident"].AsInteger());
+        SetMinExonPos(args["min_exon_positives"].AsInteger());
+
+        SetMinFlankingExonLen(args["min_flanking_exon_len"].AsInteger());
+        SetMinGoodLen(args["min_good_len"].AsInteger());
+        SetStartBonus(args["start_bonus"].AsInteger());
+        SetStopBonus(args["stop_bonus"].AsInteger());
+    }
 }
 
 CProSplignScoring& CProSplignScoring::SetMinIntronLen(int val)
@@ -150,42 +380,6 @@ int CProSplignScoring::GetInvertedIntronExtensionCost() const
 {
     return inverted_intron_extension;
 }
-///////////////////////////////////////////////////////////////////////////
-CProSplignOutputOptions::CProSplignOutputOptions(EMode mode)
-{
-    switch (mode) {
-    case eWithHoles:
-        SetEatGaps(default_eat_gaps);
-
-        SetFlankPositives(default_flank_positives);
-        SetTotalPositives(default_total_positives);
-        
-        SetMaxBadLen(default_max_bad_len);
-        SetMinPositives(default_min_positives);
-        
-        SetMinFlankingExonLen(default_min_flanking_exon_len);
-        SetMinGoodLen(default_min_good_len);
-        
-        SetStartBonus(default_start_bonus);
-        SetStopBonus(default_stop_bonus);
-
-        break;
-    case ePassThrough:
-        SetEatGaps(false);
-
-        SetFlankPositives(0);
-        SetTotalPositives(0);
-        
-        SetMaxBadLen(0);
-        SetMinPositives(0);
-        
-        SetMinFlankingExonLen(0);
-        SetMinGoodLen(0);
-        
-        SetStartBonus(0);
-        SetStopBonus(0);
-    }
-}
 
 bool CProSplignOutputOptions::IsPassThrough() const
 {
@@ -200,6 +394,26 @@ CProSplignOutputOptions& CProSplignOutputOptions::SetEatGaps(bool val)
 bool CProSplignOutputOptions::GetEatGaps() const
 {
     return eat_gaps;
+}
+
+CProSplignOutputOptions& CProSplignOutputOptions::SetMinExonId(int val)
+{
+    min_exon_id = val;
+    return *this;
+}
+int CProSplignOutputOptions::GetMinExonId() const
+{
+    return min_exon_id;
+}
+
+CProSplignOutputOptions& CProSplignOutputOptions::SetMinExonPos(int val)
+{
+    min_exon_pos = val;
+    return *this;
+}
+int CProSplignOutputOptions::GetMinExonPos() const
+{
+    return min_exon_pos;
 }
 
 CProSplignOutputOptions& CProSplignOutputOptions::SetFlankPositives(int val)
