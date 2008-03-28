@@ -391,7 +391,8 @@ CS_RETCODE ret;
     tdsdump_log(TDS_DBG_FUNC, "cs_convert() srctype = %d (%d) desttype = %d (%d)\n",
             src_type, src_len, desttype, destlen);
 
-    if (!is_fixed_type(desttype) && (destlen <= 0)) {
+    /* if (!is_fixed_type(desttype) && (destlen <= 0)) { */ /* original */
+    if (!is_fixed_type(desttype) && (destlen < 0)) { /* ssikorsk */
         return CS_FAIL;
     }
 

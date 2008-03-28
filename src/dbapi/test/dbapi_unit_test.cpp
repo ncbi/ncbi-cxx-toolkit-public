@@ -8761,6 +8761,12 @@ CDBAPIUnitTest::Test_Procedure3(void)
 
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    while (rs->Next()) {
+                        ;
+                    }
+
                     ++result_num;
                 }
             }
@@ -8781,6 +8787,12 @@ CDBAPIUnitTest::Test_Procedure3(void)
             auto_stmt->SendSql("exec sp_helpdb 'master'");
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    while (rs->Next()) {
+                        ;
+                    }
+
                     ++result_num;
                 }
             }
@@ -8810,6 +8822,23 @@ CDBAPIUnitTest::Test_Procedure3(void)
             auto_stmt->SendSql("exec GetSimpleDisplayStr 5,144,3,'previous'");
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    switch( rs->GetResultType() ) {
+                    case eDB_RowResult:
+                        while(rs->Next()) {
+                            // retrieve row results
+                        }
+                        break;
+                    case eDB_ParamResult:
+                        while(rs->Next()) {
+                            // Retrieve parameter row
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+
                     ++result_num;
                 }
             }
