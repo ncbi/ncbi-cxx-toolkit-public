@@ -68,6 +68,7 @@ void CProSplignApp::Init(void)
                      CArgDescriptions::eInteger);
     
     arg_desc->AddFlag("full", "do not remove bad pieces");
+    arg_desc->AddFlag("t", "produce alignment text");
 
     // Program description
     string prog_description = "Example of the ProSplign usage\n";
@@ -112,7 +113,11 @@ prosplign_demo -protein NP_002346.1 -genomic NT_009714.16 -start 1851937 -stop 1
                                                                                  )
                                                          );
 
-    cout << MSerial_AsnText << *alignment << endl;
+    if (args["t"]) {
+        CProSplignText::Output(*alignment, scope, cout, 80);
+    } else {
+        cout << MSerial_AsnText << *alignment << endl;
+    }
 
     return 0;
 }
