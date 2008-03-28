@@ -37,15 +37,12 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <objmgr/prefetch_manager.hpp>
-#include <util/thread_pool.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CScope;
-class CPrefetchToken;
-class CPrefetchThread;
 class IPrefetchAction;
 class IPrefetchListener;
 class CPrefetchManager_Impl;
@@ -56,111 +53,26 @@ class CPrefetchManager_Impl;
  */
 
 
-class NCBI_XOBJMGR_EXPORT CPrefetchRequest : public SPrefetchTypes
-{
-public:
-    CPrefetchRequest(CObjectFor<CMutex>* state_mutex,
-                     IPrefetchAction* action,
-                     IPrefetchListener* listener);
-    ~CPrefetchRequest(void);
-    
-    IPrefetchAction* GetAction(void) const
-        {
-            return m_Action.GetNCPointer();
-        }
-
-    IPrefetchListener* GetListener(void) const
-        {
-            return m_Listener.GetNCPointerOrNull();
-        }
-    void SetListener(IPrefetchListener* listener);
-    
-    EState GetState(void) const
-        {
-            return m_State;
-        }
-
-    // in one of final states: completed, failed, canceled 
-    bool IsDone(void) const
-        {
-            return GetState() >= eCompleted;
-        }
-
-    // returns old state
-    EState SetState(EState state);
-    // returns true if new state is equal to 'state'
-    bool TrySetState(EState state);
-
-    TProgress GetProgress(void) const
-        {
-            return m_Progress;
-        }
-    TProgress SetProgress(TProgress progress);
-    void Cancel(void);
-    
-    //static CPrefetchToken GetCurrentToken(void);
-
-protected:
-    void SetQueueItem(CObject* queue_item);
-    bool x_SetState(EState state);
-    
-private:
-    friend class CPrefetchToken;
-    friend class CPrefetchThread;
-    friend class CPrefetchManager;
-    friend class CPrefetchManager_Impl;
-
-    // back references
-    CRef<CObjectFor<CMutex> >   m_StateMutex;
-    CObject*                    m_QueueItem;
-
-    CIRef<IPrefetchAction>      m_Action;
-    CIRef<IPrefetchListener>    m_Listener;
-    EState                      m_State;
-    TProgress                   m_Progress;
-};
-
-
 class NCBI_XOBJMGR_EXPORT CPrefetchManager_Impl
     : public CObject,
-      public CPoolOfThreads<CPrefetchRequest>,
+      public CThreadPool,
       public SPrefetchTypes
 {
 public:
     CPrefetchManager_Impl(void);
     ~CPrefetchManager_Impl(void);
 
-    typedef CPrefetchRequest::TPriority TPriority;
+    typedef unsigned int TPriority;
 
-    size_t GetThreadCount(void) const;
-    size_t SetThreadCount(size_t count);
-
-    CPrefetchToken AddAction(TPriority priority,
-                             IPrefetchAction* action,
-                             IPrefetchListener* listener);
-
-    void Register(TThread& thread);
-    void UnRegister(TThread& thread);
-
-    void CancelQueue(void);
-    void KillAllThreads(void);
+    CRef<CPrefetchRequest> AddAction(TPriority priority,
+                                     IPrefetchAction* action,
+                                     IPrefetchListener* listener);
 
 protected:
-    friend class CPrefetchThread;
-    friend class CPrefetchToken;
     friend class CPrefetchRequest;
-
-    virtual TThread* NewThread(ERunMode mode);
-    CMutex& GetMutex(void)
-        {
-            return m_Mutex;
-        }
+    friend class CPrefetchManager;
 
 private:
-    typedef set<CRef<TThread> > TThreads;
-
-    bool        m_CanceledAll;
-    TThreads    m_Threads;
     CRef<CObjectFor<CMutex> > m_StateMutex;
 
 private:

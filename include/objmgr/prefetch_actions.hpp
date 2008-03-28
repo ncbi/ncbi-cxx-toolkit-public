@@ -85,7 +85,7 @@ public:
     CPrefetchBioseq(const CScopeSource& scope,
                     const CSeq_id_Handle& id);
 
-    virtual bool Execute(CPrefetchToken token);
+    virtual bool Execute(CRef<CPrefetchRequest> token);
 
     const CSeq_id_Handle& GetSeq_id(void) const
         {
@@ -132,7 +132,7 @@ public:
                      ENa_strand strand,
                      const SAnnotSelector& selector);
 
-    virtual bool Execute(CPrefetchToken token);
+    virtual bool Execute(CRef<CPrefetchRequest> token);
 
     const SAnnotSelector& GetSelector(void) const
         {
@@ -174,7 +174,7 @@ public:
         {
         }
 
-    virtual bool Execute(CPrefetchToken token)
+    virtual bool Execute(CRef<CPrefetchRequest> token)
         {
             m_Result = m_Handle.GetCompleteObject();
             return m_Result;
@@ -208,7 +208,7 @@ public:
     CPrefetchComplete(const CScopeSource& scope,
                       const CSeq_id_Handle& seq_id);
 
-    virtual bool Execute(CPrefetchToken token);
+    virtual bool Execute(CRef<CPrefetchRequest> token);
 
     const THandle GetHandle(void) const
         {
@@ -310,31 +310,31 @@ private:
 class NCBI_XOBJMGR_EXPORT CStdPrefetch
 {
 public:
-    static void Wait(CPrefetchToken token);
+    static void Wait(CRef<CPrefetchRequest> token);
 
     // GetBioseqHandle
-    static CPrefetchToken GetBioseqHandle(CPrefetchManager& manager,
-                                          const CScopeSource& scope,
-                                          const CSeq_id_Handle& id);
-    static CBioseq_Handle GetBioseqHandle(CPrefetchToken token);
+    static CRef<CPrefetchRequest> GetBioseqHandle(CPrefetchManager& manager,
+                                                  const CScopeSource& scope,
+                                                  const CSeq_id_Handle& id);
+    static CBioseq_Handle GetBioseqHandle(CRef<CPrefetchRequest> token);
 
     // GetFeat_CI
-    static CPrefetchToken GetFeat_CI(CPrefetchManager& manager,
-                                     const CBioseq_Handle& bioseq,
-                                     const CRange<TSeqPos>& range,
-                                     ENa_strand strand,
-                                     const SAnnotSelector& sel);
-    static CPrefetchToken GetFeat_CI(CPrefetchManager& manager,
-                                     const CScopeSource& scope,
-                                     const CSeq_id_Handle& seq_id,
-                                     const CRange<TSeqPos>& range,
-                                     ENa_strand strand,
-                                     const SAnnotSelector& sel);
-    static CPrefetchToken GetFeat_CI(CPrefetchManager& manager,
-                                     const CScopeSource& scope,
-                                     CConstRef<CSeq_loc> loc,
-                                     const SAnnotSelector& sel);
-    static CFeat_CI GetFeat_CI(CPrefetchToken token);
+    static CRef<CPrefetchRequest> GetFeat_CI(CPrefetchManager& manager,
+                                             const CBioseq_Handle& bioseq,
+                                             const CRange<TSeqPos>& range,
+                                             ENa_strand strand,
+                                             const SAnnotSelector& sel);
+    static CRef<CPrefetchRequest> GetFeat_CI(CPrefetchManager& manager,
+                                             const CScopeSource& scope,
+                                             const CSeq_id_Handle& seq_id,
+                                             const CRange<TSeqPos>& range,
+                                             ENa_strand strand,
+                                             const SAnnotSelector& sel);
+    static CRef<CPrefetchRequest> GetFeat_CI(CPrefetchManager& manager,
+                                             const CScopeSource& scope,
+                                             CConstRef<CSeq_loc> loc,
+                                             const SAnnotSelector& sel);
+    static CFeat_CI GetFeat_CI(CRef<CPrefetchRequest> token);
 };
 
 

@@ -343,7 +343,7 @@ bool CTestOM::Thread_Run(int idx)
                     sort(ids1.begin(), ids1.end());
                 }
 
-                CPrefetchToken token;
+                CRef<CPrefetchRequest> token;
                 if ( prefetch ) {
                     token = prefetch->GetNextToken();
                 }

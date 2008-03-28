@@ -57,97 +57,6 @@ IPrefetchListener::~IPrefetchListener(void)
 }
 
 
-CPrefetchToken::CPrefetchToken(void)
-{
-}
-
-
-CPrefetchToken::~CPrefetchToken(void)
-{
-}
-
-
-CPrefetchToken::CPrefetchToken(const CPrefetchToken& token)
-    : m_QueueItem(token.m_QueueItem)
-{
-}
-
-
-CPrefetchToken& CPrefetchToken::operator=(const CPrefetchToken& token)
-{
-    m_QueueItem = token.m_QueueItem;
-    return *this;
-}
-
-
-CPrefetchToken::CPrefetchToken(CPrefetchRequest* impl)
-    : m_QueueItem(impl->m_QueueItem)
-{
-    _ASSERT(impl);
-}
-
-
-CPrefetchToken::CPrefetchToken(CObject* queue_item)
-    : m_QueueItem(queue_item)
-{
-    _ASSERT(queue_item);
-}
-
-
-CPrefetchRequest& CPrefetchToken::x_GetImpl(void) const
-{
-    return dynamic_cast<CPrefetchManager_Impl::TItemHandle::TObjectType&>(m_QueueItem.GetNCObject()).SetRequest();
-}
-
-
-IPrefetchAction* CPrefetchToken::GetAction(void) const
-{
-    return x_GetImpl().GetAction();
-}
-
-
-IPrefetchListener* CPrefetchToken::GetListener(void) const
-{
-    return x_GetImpl().GetListener();
-}
-
-
-void CPrefetchToken::SetListener(IPrefetchListener* listener)
-{
-    x_GetImpl().SetListener(listener);
-}
-
-
-CPrefetchToken::EState CPrefetchToken::GetState(void) const
-{
-    return x_GetImpl().GetState();
-}
-
-
-bool CPrefetchToken::IsDone(void) const
-{
-    return x_GetImpl().IsDone();
-}
-
-
-CPrefetchToken::TProgress CPrefetchToken::GetProgress(void) const
-{
-    return x_GetImpl().GetProgress();
-}
-
-
-CPrefetchToken::TProgress CPrefetchToken::SetProgress(TProgress progress)
-{
-    return x_GetImpl().SetProgress(progress);
-}
-
-
-void CPrefetchToken::Cancel(void) const
-{
-    x_GetImpl().Cancel();
-}
-
-
 CPrefetchManager::CPrefetchManager(void)
     : m_Impl(new CPrefetchManager_Impl())
 {
@@ -159,15 +68,22 @@ CPrefetchManager::~CPrefetchManager(void)
 }
 
 
-CPrefetchToken CPrefetchManager::AddAction(TPriority priority,
-                                           IPrefetchAction* action,
-                                           IPrefetchListener* listener)
+CRef<CPrefetchRequest> CPrefetchManager::AddAction(TPriority priority,
+                                                   IPrefetchAction* action,
+                                                   IPrefetchListener* listener)
 {
     if ( !action ) {
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CPrefetchManager::AddAction: action is null");
     }
     return m_Impl->AddAction(priority, action, listener);
+}
+
+
+CRef<CPrefetchRequest> CPrefetchManager::AddAction(IPrefetchAction* action,
+                                                   IPrefetchListener* listener)
+{
+    return AddAction(0, action, listener);
 }
 
 
@@ -199,8 +115,8 @@ CPrefetchSequence::CPrefetchSequence(CPrefetchManager& manager,
 CPrefetchSequence::~CPrefetchSequence(void)
 {
     CMutexGuard guard(m_Mutex);
-    ITERATE ( list<CPrefetchToken>, it, m_ActiveTokens ) {
-        it->Cancel();
+    ITERATE ( list< CRef<CPrefetchRequest> >, it, m_ActiveTokens ) {
+        it->GetNCPointer()->RequestToCancel();
     }
 }
 
@@ -219,9 +135,9 @@ void CPrefetchSequence::EnqueNextAction(void)
 }
 
 
-CPrefetchToken CPrefetchSequence::GetNextToken(void)
+CRef<CPrefetchRequest> CPrefetchSequence::GetNextToken(void)
 {
-    CPrefetchToken ret;
+    CRef<CPrefetchRequest> ret;
     CMutexGuard guard(m_Mutex);
     if ( !m_ActiveTokens.empty() ) {
         EnqueNextAction();

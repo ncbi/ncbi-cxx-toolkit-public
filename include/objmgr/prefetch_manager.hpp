@@ -36,6 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbithr.hpp>
+#include <util/thread_pool.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -48,11 +49,9 @@ class CScope;
  */
 
 
-class CPrefetchToken;
 class CPrefetchRequest;
 class CPrefetchManager;
 class CPrefetchManager_Impl;
-class CPrefetchThread;
 
 struct SPrefetchTypes
 {
@@ -77,7 +76,7 @@ class NCBI_XOBJMGR_EXPORT IPrefetchAction : public SPrefetchTypes
 public:
     virtual ~IPrefetchAction(void);
     
-    virtual bool Execute(CPrefetchToken token) = 0;
+    virtual bool Execute(CRef<CPrefetchRequest> token) = 0;
 };
 
 
@@ -95,49 +94,7 @@ class NCBI_XOBJMGR_EXPORT IPrefetchListener : public SPrefetchTypes
 public:
     virtual ~IPrefetchListener(void);
 
-    virtual void PrefetchNotify(CPrefetchToken token, EEvent event) = 0;
-};
-
-
-class NCBI_XOBJMGR_EXPORT CPrefetchToken : public SPrefetchTypes
-{
-public:
-    CPrefetchToken(void);
-    ~CPrefetchToken(void);
-    CPrefetchToken(const CPrefetchToken& token);
-    CPrefetchToken& operator=(const CPrefetchToken& token);
-
-    DECLARE_OPERATOR_BOOL_REF(m_QueueItem);
-
-    IPrefetchAction* GetAction(void) const;
-    IPrefetchListener* GetListener(void) const;
-    void SetListener(IPrefetchListener* listener);
-    
-    TPriority GetPriority(void) const;
-    TPriority SetPriority(TPriority priority);
-
-    void Cancel(void) const;
-
-    EState GetState(void) const;
-    
-    // in one of final states: completed, failed, canceled
-    bool IsDone(void) const;
-
-    TProgress GetProgress(void) const;
-    TProgress SetProgress(TProgress progress);
-
-protected:
-    friend class CPrefetchRequest;
-    friend class CPrefetchManager_Impl;
-    friend class CPrefetchThread;
-
-    explicit CPrefetchToken(CPrefetchRequest* impl);
-    explicit CPrefetchToken(CObject* queue_item);
-
-    CPrefetchRequest& x_GetImpl(void) const;
-
-private:
-    CRef<CObject>                       m_QueueItem;
+    virtual void PrefetchNotify(CRef<CPrefetchRequest> token, EEvent event) = 0;
 };
 
 
@@ -149,17 +106,11 @@ public:
     CPrefetchManager(void);
     ~CPrefetchManager(void);
 
-    size_t GetThreadCount(void) const;
-    size_t SetThreadCount(size_t count);
-
-    CPrefetchToken AddAction(TPriority priority,
-                             IPrefetchAction* action,
-                             IPrefetchListener* listener = 0);
-    CPrefetchToken AddAction(IPrefetchAction* action,
-                             IPrefetchListener* listener = 0)
-        {
-            return AddAction(0, action, listener);
-        }
+    CRef<CPrefetchRequest> AddAction(TPriority priority,
+                                     IPrefetchAction* action,
+                                     IPrefetchListener* listener = 0);
+    CRef<CPrefetchRequest> AddAction(IPrefetchAction* action,
+                                     IPrefetchListener* listener = 0);
 
     // Returns prefetch state in current thread.
     static EState GetCurrentTokenState(void);
@@ -167,10 +118,6 @@ public:
     // Checks if prefetch is active in current thread.
     // Throws CPrefetchCanceled exception if the current token is canceled.
     static bool IsActive(void);
-
-protected:
-    friend class CPrefetchToken;
-    friend class CPrefetchThread;
 
 private:
     CRef<CPrefetchManager_Impl> m_Impl;
@@ -202,16 +149,69 @@ public:
     ~CPrefetchSequence(void);
     
     /// Returns next action waiting for its result if necessary
-    CPrefetchToken GetNextToken(void);
+    CRef<CPrefetchRequest> GetNextToken(void);
 
 protected:
     void EnqueNextAction(void);
 
 private:
-    CRef<CPrefetchManager>       m_Manager;
-    CIRef<IPrefetchActionSource> m_Source;
-    CMutex                       m_Mutex;
-    list<CPrefetchToken>         m_ActiveTokens;
+    CRef<CPrefetchManager>          m_Manager;
+    CIRef<IPrefetchActionSource>    m_Source;
+    CMutex                          m_Mutex;
+    list< CRef<CPrefetchRequest> >  m_ActiveTokens;
+};
+
+
+class NCBI_XOBJMGR_EXPORT CPrefetchRequest
+    : public SPrefetchTypes,
+      public CThreadPool_Task
+{
+public:
+    CPrefetchRequest(CObjectFor<CMutex>* state_mutex,
+                     IPrefetchAction* action,
+                     IPrefetchListener* listener,
+                     unsigned int priority);
+    ~CPrefetchRequest(void);
+    
+    IPrefetchAction* GetAction(void) const
+        {
+            return m_Action.GetNCPointer();
+        }
+
+    IPrefetchListener* GetListener(void) const
+        {
+            return m_Listener.GetNCPointerOrNull();
+        }
+    void SetListener(IPrefetchListener* listener);
+    
+    EState GetState(void) const;
+
+    // in one of final states: completed, failed, canceled 
+    bool IsDone(void) const
+        {
+            return IsFinished();
+        }
+
+    TProgress GetProgress(void) const
+        {
+            return m_Progress;
+        }
+    TProgress SetProgress(TProgress progress);
+
+    virtual EStatus Execute(void);
+
+    virtual void OnStatusChange(EStatus /* old */);
+
+private:
+    friend class CPrefetchManager;
+    friend class CPrefetchManager_Impl;
+
+    // back references
+    CRef<CObjectFor<CMutex> >   m_StateMutex;
+
+    CIRef<IPrefetchAction>      m_Action;
+    CIRef<IPrefetchListener>    m_Listener;
+    TProgress                   m_Progress;
 };
 
 

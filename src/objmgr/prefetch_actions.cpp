@@ -85,7 +85,7 @@ CPrefetchBioseq::CPrefetchBioseq(const CScopeSource& scope,
 }
 
 
-bool CPrefetchBioseq::Execute(CPrefetchToken token)
+bool CPrefetchBioseq::Execute(CRef<CPrefetchRequest> token)
 {
     if ( !GetResult() && GetSeq_id() ) {
         m_Result = GetScope().GetBioseqHandle(GetSeq_id());
@@ -136,7 +136,7 @@ CPrefetchFeat_CI::CPrefetchFeat_CI(const CScopeSource& scope,
 }
 
 
-bool CPrefetchFeat_CI::Execute(CPrefetchToken token)
+bool CPrefetchFeat_CI::Execute(CRef<CPrefetchRequest> token)
 {
     if ( m_Loc ) {
         m_Result = CFeat_CI(GetScope(), *m_Loc, m_Selector);
@@ -164,7 +164,7 @@ CPrefetchComplete<CBioseq_Handle>::CPrefetchComplete(const CScopeSource& scope,
 }
 
 
-bool CPrefetchComplete<CBioseq_Handle>::Execute(CPrefetchToken token)
+bool CPrefetchComplete<CBioseq_Handle>::Execute(CRef<CPrefetchRequest> token)
 {
     if ( CPrefetchBioseq::Execute(token) ) {
         m_Result = GetHandle().GetCompleteObject();
@@ -186,9 +186,9 @@ namespace {
             {
             }
 
-        virtual void PrefetchNotify(CPrefetchToken token, EEvent /*event*/)
+        virtual void PrefetchNotify(CRef<CPrefetchRequest> token, EEvent /*event*/)
             {
-                if ( token.IsDone() ) {
+                if ( token->IsDone() ) {
                     m_Sema.Post();
                 }
             }
@@ -205,16 +205,16 @@ namespace {
 }
 
 
-void CStdPrefetch::Wait(CPrefetchToken token)
+void CStdPrefetch::Wait(CRef<CPrefetchRequest> token)
 {
-    if ( !token.IsDone() ) {
+    if ( !token->IsDone() ) {
         CWaitingListener* listener =
-            dynamic_cast<CWaitingListener*>(token.GetListener());
+            dynamic_cast<CWaitingListener*>(token->GetListener());
         if ( !listener ) {
             listener = new CWaitingListener();
-            token.SetListener(listener);
+            token->SetListener(listener);
         }
-        if ( !token.IsDone() ) {
+        if ( !token->IsDone() ) {
             listener->Wait();
         }
     }
@@ -224,18 +224,18 @@ void CStdPrefetch::Wait(CPrefetchToken token)
 /////////////////////////////////////////////////////////////////////////////
 // CStdPrefetch::GetBioseqHandle
 
-CPrefetchToken CStdPrefetch::GetBioseqHandle(CPrefetchManager& manager,
-                                             const CScopeSource& scope,
-                                             const CSeq_id_Handle& id)
+CRef<CPrefetchRequest> CStdPrefetch::GetBioseqHandle(CPrefetchManager& manager,
+                                                     const CScopeSource& scope,
+                                                     const CSeq_id_Handle& id)
 {
     return manager.AddAction(new CPrefetchBioseq(scope, id));
 }
 
 
-CBioseq_Handle CStdPrefetch::GetBioseqHandle(CPrefetchToken token)
+CBioseq_Handle CStdPrefetch::GetBioseqHandle(CRef<CPrefetchRequest> token)
 {
     CPrefetchBioseq* action =
-        dynamic_cast<CPrefetchBioseq*>(token.GetAction());
+        dynamic_cast<CPrefetchBioseq*>(token->GetAction());
     if ( !action ) {
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CStdPrefetch::GetBioseqHandle: wrong token");
@@ -248,42 +248,42 @@ CBioseq_Handle CStdPrefetch::GetBioseqHandle(CPrefetchToken token)
 /////////////////////////////////////////////////////////////////////////////
 // CStdPrefetch::GetFeat_CI
 
-CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
-                                        const CScopeSource& scope,
-                                        CConstRef<CSeq_loc> loc,
-                                        const SAnnotSelector& sel)
+CRef<CPrefetchRequest> CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
+                                                const CScopeSource& scope,
+                                                CConstRef<CSeq_loc> loc,
+                                                const SAnnotSelector& sel)
 {
     return manager.AddAction(new CPrefetchFeat_CI(scope, loc, sel));
 }
 
 
-CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
-                                        const CBioseq_Handle& bioseq,
-                                        const CRange<TSeqPos>& range,
-                                        ENa_strand strand,
-                                        const SAnnotSelector& sel)
+CRef<CPrefetchRequest> CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
+                                                const CBioseq_Handle& bioseq,
+                                                const CRange<TSeqPos>& range,
+                                                ENa_strand strand,
+                                                const SAnnotSelector& sel)
 {
     return manager.AddAction(new CPrefetchFeat_CI(bioseq,
                                                   range, strand, sel));
 }
 
 
-CPrefetchToken CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
-                                        const CScopeSource& scope,
-                                        const CSeq_id_Handle& seq_id,
-                                        const CRange<TSeqPos>& range,
-                                        ENa_strand strand,
-                                        const SAnnotSelector& sel)
+CRef<CPrefetchRequest> CStdPrefetch::GetFeat_CI(CPrefetchManager& manager,
+                                                const CScopeSource& scope,
+                                                const CSeq_id_Handle& seq_id,
+                                                const CRange<TSeqPos>& range,
+                                                ENa_strand strand,
+                                                const SAnnotSelector& sel)
 {
     return manager.AddAction(new CPrefetchFeat_CI(scope, seq_id,
                                                   range, strand, sel));
 }
 
 
-CFeat_CI CStdPrefetch::GetFeat_CI(CPrefetchToken token)
+CFeat_CI CStdPrefetch::GetFeat_CI(CRef<CPrefetchRequest> token)
 {
     CPrefetchFeat_CI* action =
-        dynamic_cast<CPrefetchFeat_CI*>(token.GetAction());
+        dynamic_cast<CPrefetchFeat_CI*>(token->GetAction());
     if ( !action ) {
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CStdPrefetch::GetFeat_CI: wrong token");
