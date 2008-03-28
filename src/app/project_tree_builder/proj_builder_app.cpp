@@ -342,7 +342,7 @@ struct PIsExcludedByRequires
             path += ".lib";
             break;
         case CProjKey::eApp:
-            path += ".lib";
+            path += ".app";
             break;
         case CProjKey::eMsvc:
             path += ".msvc";
