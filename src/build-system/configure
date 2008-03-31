@@ -887,6 +887,7 @@ Optional Packages:
  --without-suffix        no Release/Debug, MT or DLL sfx in the build dir name
  --with-hostspec         add full host specs to the build dir name
  --without-version       don't always include the cplr ver in the bd name
+ --with-build-root-sfx=X add a user-specified suffix to the build dir name
  --without-execopy       do not copy built executables to the BIN area
  --with-bincopy          populate lib and bin with copies, not hard links
  --with-lib-rebuilds     ensure that apps use up-to-date libraries
@@ -1633,6 +1634,12 @@ fi;
 # Check whether --with-version or --without-version was given.
 if test "${with_version+set}" = set; then
   withval="$with_version"
+
+fi;
+
+# Check whether --with-build-root-sfx or --without-build-root-sfx was given.
+if test "${with_build_root_sfx+set}" = set; then
+  withval="$with_build_root_sfx"
 
 fi;
 
@@ -2401,7 +2408,8 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
    { (exit 1); exit 1; }; }
       ;;
 
-      --with-extra-action=* | --with-build-root=* | --with-fake-root=* \
+      --with-extra-action=* | --with-build-root=* | --with-build-root-sfx=* \
+      | --with-fake-root=* \
       | --with-projects=* | --with-check=* | --with-check-tools=* \
       | --with-universal=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
@@ -6926,6 +6934,10 @@ fi
 #### Add full host specs to "${build_root}"
 if test "$with_hostspec" = "yes" ; then
    build_root="${build_root}--${host}"
+fi
+
+if test -n "$with_build_root_sfx" ; then
+   build_root=$build_root$with_build_root_sfx
 fi
 
 case "$host_os" in

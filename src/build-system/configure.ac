@@ -120,6 +120,8 @@ AC_ARG_WITH(hostspec,
    [ --with-hostspec         add full host specs to the build dir name])
 AC_ARG_WITH(version,
    [ --without-version       don't always include the cplr ver in the bd name])
+AC_ARG_WITH(build-root-sfx,
+   [ --with-build-root-sfx=X add a user-specified suffix to the build dir name])
 AC_ARG_WITH(execopy,
    [ --without-execopy       do not copy built executables to the BIN area])
 AC_ARG_WITH(bincopy,
@@ -411,7 +413,8 @@ for x_arg in "$@" ; do
       AC_MSG_ERROR([$x_arg:  requires value;  use --help to show usage])
       ;;
 
-      --with-extra-action=* | --with-build-root=* | --with-fake-root=* \
+      --with-extra-action=* | --with-build-root=* | --with-build-root-sfx=* \
+      | --with-fake-root=* \
       | --with-projects=* | --with-check=* | --with-check-tools=* \
       | --with-universal=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
@@ -1734,6 +1737,10 @@ fi
 #### Add full host specs to "${build_root}"
 if test "$with_hostspec" = "yes" ; then
    build_root="${build_root}--${host}"
+fi
+
+if test -n "$with_build_root_sfx" ; then
+   build_root=$build_root$with_build_root_sfx
 fi
 
 case "$host_os" in
