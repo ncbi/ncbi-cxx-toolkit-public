@@ -380,6 +380,11 @@ The lower-level ones are redundant, and should be removed.")),
 "A BioSource descriptor with /transgenic set must be accompanied by a BioSource \
 feature on the nucleotide record.")),
 
+    TErrTypStrs( eErr_SEQ_DESCR_ReplacedCountryCode,
+    TErrStrs( "ReplacedCountryCode",
+"The country code (up to the first colon) is no longer on the approved list of \
+countries.")),
+
 /* SEQ_GENERIC */
 
     TErrTypStrs( eErr_GENERIC_NonAsciiAsn,
@@ -940,6 +945,8 @@ segments.")),
     TErrTypStrs( eErr_SEQ_GRAPH_GraphOverlap,
     TErrStrs( "GraphOverlap",
 "Quality graphs overlap - may be due to an old fa2htgs bug.")),
+
+/* SEQ_ANNOT */
 
 /* INTERNAL */
 
