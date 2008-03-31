@@ -854,6 +854,28 @@ void CDB_String::Assign(const string& s,
 
 
 /////////////////////////////////////////////////////////////////////////////
+static
+string::size_type 
+get_string_size_varchar(const char* str, string::size_type len)
+{
+    if (len == string::npos) {
+        return len;
+    }
+
+    if (str != NULL) {
+        const string::size_type str_len = strlen(str);
+        
+        if (len == 0) {
+            return str_len; // Similar to string::npos ...
+        } else {
+            return min(len, str_len);
+        }
+    }
+
+    return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 //  CDB_VarChar::
 //
 
@@ -879,7 +901,7 @@ CDB_VarChar::CDB_VarChar(const char* s,
 CDB_VarChar::CDB_VarChar(const char* s,
                          size_t l,
                          EEncoding enc)
-: CDB_String(s, (s ? min(l, strlen(s)) : 0), enc)
+: CDB_String(s, get_string_size_varchar(s, l), enc)
 {
 }
 
@@ -1037,6 +1059,28 @@ CDB_Char::~CDB_Char()
 }
 
 /////////////////////////////////////////////////////////////////////////////
+static
+string::size_type 
+get_string_size_longchar(const char* str, string::size_type len)
+{
+    if (len == string::npos) {
+        return len;
+    }
+
+    if (str != NULL) {
+        const string::size_type str_len = strlen(str);
+        
+        if (len == 0) {
+            return str_len; // Similar to string::npos ...
+        } else {
+            return max(len, str_len); // This line is "min(len, str_len)" in case of varchar ...
+        }
+    }
+
+    return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 //  CDB_LongChar::
 //
 
@@ -1059,7 +1103,7 @@ CDB_LongChar::CDB_LongChar(size_t s,
 CDB_LongChar::CDB_LongChar(size_t len,
                            const char* str,
                            EEncoding enc) :
-    CDB_String(str, len, enc),
+    CDB_String(str, get_string_size_longchar(str, len), enc),
     m_Size(CDB_String::Size())
 {
 }
