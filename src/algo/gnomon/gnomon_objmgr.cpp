@@ -124,15 +124,6 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             AddHole();
         prev_splice = exon.CanGetSplice_3_prime() && exon.GetSplice_3_prime().CanGetBases() && exon.GetSplice_3_prime().GetBases().size()==2;
 
-        if (is_protein) {
-            AddExon(TSignedSeqRange(nuc_cur_start, nuc_cur_end),
-                    TSignedSeqRange::GetEmpty());
-        } else {
-            AddExon(TSignedSeqRange(nuc_cur_start, nuc_cur_end),
-                    TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),
-                                    GetProdPosInBases(exon.GetProduct_end())));
-        }
-
         int pos = 0;
         int prod_pos = prod_cur_start;
         ITERATE(CSpliced_exon::TParts, p_it, exon.GetParts()) {
@@ -185,17 +176,25 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             }
         }
 
-        if (is_protein && hole_before && prod_cur_start%3!=0) {
-            if (Strand()==ePlus) {
-                nuc_cur_start = FShiftedMove(nuc_cur_start,3-prod_cur_start%3);
-            } else {
-                nuc_cur_end = FShiftedMove(nuc_cur_end,-(3-prod_cur_start%3));
+        if (is_protein) {
+            int nuc_start = nuc_cur_start;
+            int nuc_end  = nuc_cur_end;
+            if (hole_before && prod_cur_start%3!=0) {
+                // Trim 5' incompelete codon, assume there's no frameshift
+                if (Strand()==ePlus) {
+                    nuc_start += 3-prod_cur_start%3;
+                    _ASSERT( FrameShifts(nuc_cur_start,nuc_start-1).size()==0 );
+                } else {
+                    nuc_end -= 3-prod_cur_start%3;
+                    _ASSERT( FrameShifts(nuc_end+1,nuc_cur_end).size()==0 );
+                }
             }
-            CFrameShiftedSeqMap mrnamap(*this);
-            TSignedSeqRange range_on_genome(nuc_cur_start,nuc_cur_end);
-            TSignedSeqRange range_on_transcript = mrnamap.MapRangeOrigToEdited(range_on_genome,false);
-            Clip(range_on_genome, CGeneModel::eDontRemoveExons);
-            
+            AddExon(TSignedSeqRange(nuc_start, nuc_end),
+                    TSignedSeqRange::GetEmpty());
+        } else {
+            AddExon(TSignedSeqRange(nuc_cur_start, nuc_cur_end),
+                    TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),
+                                    GetProdPosInBases(exon.GetProduct_end())));
         }
 
         prod_prev = prod_cur_end;
