@@ -5951,69 +5951,55 @@ CDBAPIUnitTest::Test_SelectStmt(void)
             PutMsgDisabled("Check sequent call of ExecuteQuery");
         }
 
+        // Select NULL values and empty strings ... 
+        {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IResultSet> rs;
+
+            rs.reset(
+                auto_stmt->ExecuteQuery( "SELECT '', NULL, NULL, NULL" )
+                );
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+
+            rs.reset(
+                auto_stmt->ExecuteQuery( "SELECT NULL, '', NULL, NULL" )
+                );
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+
+            rs.reset(
+                auto_stmt->ExecuteQuery( "SELECT NULL, NULL, '', NULL" )
+                );
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+
+            rs.reset(
+                auto_stmt->ExecuteQuery( "SELECT NULL, NULL, NULL, ''" )
+                );
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+
+            rs.reset(
+                auto_stmt->ExecuteQuery( "SELECT '', '', NULL, NULL" )
+                );
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+
+            rs.reset(
+                auto_stmt->ExecuteQuery( "SELECT NULL, '', '', NULL" )
+                );
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+
+            rs.reset(
+                auto_stmt->ExecuteQuery( "SELECT NULL, NULL, '', ''" )
+                );
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+        }
 
 
-    //     // TMP
-    //     {
-    //         auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-    //         BOOST_CHECK( conn.get() != NULL );
-    //
-    //         conn->Connect(
-    //             "anyone",
-    //             "allowed",
-    //             "MSSQL10",
-    //             "gMapDB"
-    //             );
-    //
-    //         auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
-    //
-    //         string sql;
-    //
-    //         sql  = "SELECT len(seq_loc) l, seq_loc FROM protein where ProtGi =56964519";
-    //
-    //         auto_stmt->SendSql( sql );
-    //         while( auto_stmt->HasMoreResults() ) {
-    //             if( auto_stmt->HasRows() ) {
-    //                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-    //
-    //                 // Retrieve results, if any
-    //                 while( rs->Next() ) {
-    //                     string col2 = rs->GetVariant(2).GetString();
-    //                     BOOST_CHECK_EQUAL(col2.size(), 355);
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     // TMP
-    //     {
-    //         auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-    //         BOOST_CHECK( conn.get() != NULL );
-    //
-    //         conn->Connect(
-    //             "mvread",
-    //             "daervm",
-    //             "MSSQL29",
-    //             "MapViewHum36"
-    //             );
-    //
-    //         auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
-    //
-    //         string sql;
-    //
-    //         sql  = "MM_GetData \'model\',\'1\',8335044,8800111,9606";
-    //
-    //         auto_stmt->SendSql( sql );
-    //         while( auto_stmt->HasMoreResults() ) {
-    //             if( auto_stmt->HasRows() ) {
-    //                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-    //
-    //                 // Retrieve results, if any
-    //                 while( rs->Next() ) {
-    //                 }
-    //             }
-    //         }
-    //     }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -8802,48 +8788,6 @@ CDBAPIUnitTest::Test_Procedure3(void)
             } else {
                 BOOST_CHECK_EQUAL(result_num, 3);
             }
-        }
-
-        if (false) {
-            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection( CONN_OWNERSHIP ));
-            BOOST_CHECK(auto_conn.get() != NULL);
-
-            auto_conn->Connect(
-                "mvread",
-                "*****",
-                "MAPVIEW",
-                "MapView"
-                );
-
-            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-
-            int result_num = 0;
-
-            auto_stmt->SendSql("exec GetSimpleDisplayStr 5,144,3,'previous'");
-            while(auto_stmt->HasMoreResults()) {
-                if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-                    switch( rs->GetResultType() ) {
-                    case eDB_RowResult:
-                        while(rs->Next()) {
-                            // retrieve row results
-                        }
-                        break;
-                    case eDB_ParamResult:
-                        while(rs->Next()) {
-                            // Retrieve parameter row
-                        }
-                        break;
-                    default:
-                        break;
-                    }
-
-                    ++result_num;
-                }
-            }
-
-            BOOST_CHECK_EQUAL(result_num, 3);
         }
     }
     catch(const CException& ex) {
