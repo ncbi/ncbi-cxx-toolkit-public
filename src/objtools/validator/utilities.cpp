@@ -867,8 +867,6 @@ void CFeatQualAssoc::PopulateMandatoryGbquals(void)
     // ncRNA requires ncRNA_class
     m_MandatoryGbquals[CSeqFeatData::eSubtype_ncRNA].push_back(CGbqualType::e_NcRNA_class);
 
-    // tmRNA -> tag_peptide?
-
     // misc_binding & protein_bind require bound_moiety
     m_MandatoryGbquals[CSeqFeatData::eSubtype_misc_binding].push_back(CGbqualType::e_Bound_moiety);
     m_MandatoryGbquals[CSeqFeatData::eSubtype_protein_bind].push_back(CGbqualType::e_Bound_moiety);
