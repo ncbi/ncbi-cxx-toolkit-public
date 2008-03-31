@@ -1371,6 +1371,10 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
 
     ~SDiagMessage(void);
 
+    /// Parse the whole string into the message.
+    /// Return true on success, false if parsing failed.
+    bool ParseMessage(const string& message);
+
     /// Stream parser. Reads messages from a stream and calls the callback
     /// for each message.
     static void ParseDiagStream(CNcbiIstream& in,
@@ -1458,6 +1462,13 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     string x_GetModule(void) const;
 
 private:
+    // Parse extra args formatted as CGI query string. Do not check validity
+    // of names and values. Split args by '&', split name/value by '=', do
+    // URL-decoding.
+    void x_ParseExtraArgs(const string& str, size_t start_pos);
+    // URL-decode extra argument in-place.
+    void x_DecodeExtra(string& str) const;
+
     enum EFormatFlag {
         eFormat_Old,  // Force old post format
         eFormat_New,  // Force new post format
