@@ -1557,8 +1557,13 @@ void CValidError_imp::ValidateBioSource
                     if ( countryname.empty() ) {
                         countryname = "?";
                     }
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
-                        "Bad country name " + countryname, obj);
+                    if ( CCountries::WasValid(countryname) ) {
+                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_ReplacedCountryCode,
+                                "Replaced country name " + countryname, obj);
+                    } else {
+                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
+                                "Bad country name " + countryname, obj);
+                    }
                 }
                 break;
                 
