@@ -1156,6 +1156,7 @@ const string CCountries::sm_Countries[] = {
 };
 
 const string CCountries::sm_Former_Countries[] = {
+    "Belgian Congo",
     "British Guiana",
     "Burma",
     "Czechoslovakia",
