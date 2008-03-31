@@ -1017,6 +1017,7 @@ const string& CValidErrItem::GetErrGroup(void) const
     static const string kSeqFeat  = "SEQ_FEAT";
     static const string kSeqAlign = "SEQ_ALIGN";
     static const string kSeqGraph = "SEQ_GRAPH";
+    static const string kSeqAnnot = "SEQ_ANNOT";
     static const string kInternal = "INTERNAL";
     static const string kUnknown   = "UNKNOWN";
 
@@ -1039,6 +1040,8 @@ const string& CValidErrItem::GetErrGroup(void) const
             return kSeqAlign;
         } else if ( IS_IN(SEQ_GRAPH) ) {
             return kSeqGraph;
+        } else if ( IS_IN(SEQ_ANNOT) ) {
+            return kSeqAnnot;
         } else if ( IS_IN(INTERNAL) ) {
             return kInternal;
         }
