@@ -97,31 +97,43 @@ BEGIN_NAMED_ENUM_IN_INFO("", CGbqualType::, EType, false)
     ADD_ENUM_VALUE("clone",             e_Clone);
     ADD_ENUM_VALUE("codon",             e_Codon);
     ADD_ENUM_VALUE("codon_start",       e_Codon_start);
+    ADD_ENUM_VALUE("compare",           e_Compare);
     ADD_ENUM_VALUE("cons_splice",       e_Cons_splice);
+    ADD_ENUM_VALUE("cyt_map",           e_Cyt_map);
     ADD_ENUM_VALUE("direction",         e_Direction);
     ADD_ENUM_VALUE("EC_number",         e_EC_number);
+    ADD_ENUM_VALUE("estimated_length",  e_Estimated_length);
     ADD_ENUM_VALUE("evidence",          e_Evidence);
     ADD_ENUM_VALUE("exception",         e_Exception);
+    ADD_ENUM_VALUE("experiment",        e_Experiment);
     ADD_ENUM_VALUE("frequency",         e_Frequency);
     ADD_ENUM_VALUE("function",          e_Function);
+    ADD_ENUM_VALUE("gen_map",           e_Gen_map);
     ADD_ENUM_VALUE("gene",              e_Gene);
+    ADD_ENUM_VALUE("inference",         e_Inference);
     ADD_ENUM_VALUE("insertion_seq",     e_Insertion_seq);
     ADD_ENUM_VALUE("label",             e_Label);
     ADD_ENUM_VALUE("locus_tag",         e_Locus_tag);
     ADD_ENUM_VALUE("map",               e_Map);
+    ADD_ENUM_VALUE("mobile_element",    e_Mobile_element);
     ADD_ENUM_VALUE("mod_base",          e_Mod_base);
     ADD_ENUM_VALUE("ncRNA_class",       e_NcRNA_class);
     ADD_ENUM_VALUE("note",              e_Note);
     ADD_ENUM_VALUE("number",            e_Number);
+    ADD_ENUM_VALUE("old_locus_tag",     e_Old_locus_tag);
+    ADD_ENUM_VALUE("operon",            e_Operon);
     ADD_ENUM_VALUE("organism",          e_Organism);
     ADD_ENUM_VALUE("partial",           e_Partial);
     ADD_ENUM_VALUE("PCR_conditions",    e_PCR_conditions);
     ADD_ENUM_VALUE("phenotype",         e_Phenotype);
     ADD_ENUM_VALUE("product",           e_Product);
+    ADD_ENUM_VALUE("rad_map",           e_Rad_map);
     ADD_ENUM_VALUE("replace",           e_Replace);
     ADD_ENUM_VALUE("rpt_family",        e_Rpt_family);
     ADD_ENUM_VALUE("rpt_type",          e_Rpt_type);
     ADD_ENUM_VALUE("rpt_unit",          e_Rpt_unit);
+    ADD_ENUM_VALUE("rpt_unit_range",    e_Rpt_unit_range);
+    ADD_ENUM_VALUE("rpt_unit_seq",      e_Rpt_unit_seq);
     ADD_ENUM_VALUE("site",              e_Site);
     ADD_ENUM_VALUE("site_type",         e_Site_type);
     ADD_ENUM_VALUE("standard_name",     e_Standard_name);
@@ -219,6 +231,8 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Phenotype );
     Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Standard_name );
@@ -231,6 +245,8 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Map );
     Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Usedin );
 
@@ -242,6 +258,8 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_preRNA, CGbqualType::e_Usedin );
@@ -251,6 +269,8 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_mRNA, CGbqualType::e_Usedin );
@@ -259,6 +279,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_tRNA, CGbqualType::e_Usedin );
@@ -267,6 +288,8 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_rRNA, CGbqualType::e_Usedin );
@@ -275,6 +298,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_snRNA, CGbqualType::e_Usedin );
@@ -283,30 +307,17 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Usedin );
-
-    // ncRNA
-    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Function );
-    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Label );
-    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Map );
-    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_NcRNA_class );
-    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Product );
-    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Standard_name );
-
-    // tmRNA
-    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Function );
-    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Label );
-    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Map );
-    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Product );
-    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Standard_name );
-    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Tag_peptide );
 
     // otherRNA
     Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Usedin );
@@ -314,12 +325,15 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // attenuator
     Associate( CSeqFeatData::eSubtype_attenuator, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_attenuator, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_attenuator, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_attenuator, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_attenuator, CGbqualType::e_Phenotype );
     Associate( CSeqFeatData::eSubtype_attenuator, CGbqualType::e_Usedin );
 
     // C_region
     Associate( CSeqFeatData::eSubtype_C_region, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_C_region, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_C_region, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_C_region, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_C_region, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_C_region, CGbqualType::e_Usedin );
@@ -327,6 +341,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // CAAT_signal
     Associate( CSeqFeatData::eSubtype_CAAT_signal, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_CAAT_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_CAAT_signal, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_CAAT_signal, CGbqualType::e_Usedin );
 
     // Imp_CDS
@@ -336,6 +351,8 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Map );
     Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_Imp_CDS, CGbqualType::e_Usedin );
@@ -343,17 +360,20 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // conflict
     Associate( CSeqFeatData::eSubtype_conflict, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_conflict, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_conflict, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_conflict, CGbqualType::e_Replace );
     Associate( CSeqFeatData::eSubtype_conflict, CGbqualType::e_Label );
 
     // D_loop
     Associate( CSeqFeatData::eSubtype_D_loop, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_D_loop, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_D_loop, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_D_loop, CGbqualType::e_Usedin );
 
     // D_segment
     Associate( CSeqFeatData::eSubtype_D_segment, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_D_segment, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_D_segment, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_D_segment, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_D_segment, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_D_segment, CGbqualType::e_Usedin );
@@ -361,6 +381,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // enhancer
     Associate( CSeqFeatData::eSubtype_enhancer, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_enhancer, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_enhancer, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_enhancer, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_enhancer, CGbqualType::e_Usedin );
 
@@ -371,6 +392,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Map );
     Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_exon, CGbqualType::e_Usedin );
@@ -378,6 +400,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // GC_signal
     Associate( CSeqFeatData::eSubtype_GC_signal, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_GC_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_GC_signal, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_GC_signal, CGbqualType::e_Usedin );
 
     // iDNA
@@ -385,6 +408,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Map );
     Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_iDNA, CGbqualType::e_Usedin );
 
@@ -395,12 +419,14 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Map );
     Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_intron, CGbqualType::e_Usedin );
 
     // J_segment
     Associate( CSeqFeatData::eSubtype_J_segment, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_J_segment, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_J_segment, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_J_segment, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_J_segment, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_J_segment, CGbqualType::e_Usedin );
@@ -409,6 +435,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_LTR, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_LTR, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_LTR, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_LTR, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_LTR, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_LTR, CGbqualType::e_Usedin );
 
@@ -417,6 +444,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_mat_peptide, CGbqualType::e_Usedin );
@@ -426,12 +454,14 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_misc_binding, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_misc_binding, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_misc_binding, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_binding, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_misc_binding, CGbqualType::e_Usedin );
 
     // misc_difference
     Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Clone );
     Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Phenotype );
     Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Replace );
     Associate( CSeqFeatData::eSubtype_misc_difference, CGbqualType::e_Standard_name );
@@ -442,6 +472,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Map );
     Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Phenotype );
     Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_misc_feature, CGbqualType::e_Standard_name );
@@ -450,6 +481,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // misc_recomb
     Associate( CSeqFeatData::eSubtype_misc_recomb, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_misc_recomb, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_recomb, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_misc_recomb, CGbqualType::e_Organism );
     Associate( CSeqFeatData::eSubtype_misc_recomb, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_misc_recomb, CGbqualType::e_Usedin );
@@ -458,6 +490,8 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Phenotype );
     Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Usedin );
@@ -466,6 +500,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_misc_structure, CGbqualType::e_Usedin );
 
@@ -474,11 +509,13 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_modified_base, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_modified_base, CGbqualType::e_Map );
     Associate( CSeqFeatData::eSubtype_modified_base, CGbqualType::e_Mod_base );
+    Associate( CSeqFeatData::eSubtype_modified_base, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_modified_base, CGbqualType::e_Usedin );
 
     // N_region
     Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_N_region, CGbqualType::e_Usedin );
@@ -486,17 +523,20 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // old_sequence
     Associate( CSeqFeatData::eSubtype_old_sequence, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_old_sequence, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_old_sequence, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_old_sequence, CGbqualType::e_Replace );
     Associate( CSeqFeatData::eSubtype_old_sequence, CGbqualType::e_Usedin );
 
     // polyA_signal
     Associate( CSeqFeatData::eSubtype_polyA_signal, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_polyA_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_polyA_signal, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_polyA_signal, CGbqualType::e_Usedin );
 
     // polyA_site
     Associate( CSeqFeatData::eSubtype_polyA_site, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_polyA_site, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_polyA_site, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_polyA_site, CGbqualType::e_Usedin );
 
     // prim_transcript
@@ -504,12 +544,15 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_prim_transcript, CGbqualType::e_Usedin );
 
     // primer_bind
     Associate( CSeqFeatData::eSubtype_primer_bind, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_primer_bind, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_primer_bind, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_primer_bind, CGbqualType::e_PCR_conditions );
     Associate( CSeqFeatData::eSubtype_primer_bind, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_primer_bind, CGbqualType::e_Usedin );
@@ -518,6 +561,8 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Phenotype );
     Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_promoter, CGbqualType::e_Usedin );
@@ -527,12 +572,15 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_protein_bind, CGbqualType::e_Usedin );
 
     // RBS
     Associate( CSeqFeatData::eSubtype_RBS, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_RBS, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_RBS, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_RBS, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_RBS, CGbqualType::e_Usedin );
 
@@ -540,6 +588,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_family );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_type );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_unit );
@@ -552,6 +601,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Rpt_family );
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Rpt_type );
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Usedin );
@@ -560,12 +610,14 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_rep_origin, CGbqualType::e_Direction );
     Associate( CSeqFeatData::eSubtype_rep_origin, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_rep_origin, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_rep_origin, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_rep_origin, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_rep_origin, CGbqualType::e_Usedin );
 
     // S_region
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_repeat_unit, CGbqualType::e_Usedin );
@@ -573,6 +625,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // satellite
     Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Rpt_family );
     Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Rpt_type );
     Associate( CSeqFeatData::eSubtype_satellite, CGbqualType::e_Rpt_unit );
@@ -583,6 +636,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_sig_peptide, CGbqualType::e_Usedin );
@@ -591,23 +645,29 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_stem_loop, CGbqualType::e_Usedin );
 
     // STS
     Associate( CSeqFeatData::eSubtype_STS, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_STS, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_STS, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_STS, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_STS, CGbqualType::e_Usedin );
 
     // TATA_signal
     Associate( CSeqFeatData::eSubtype_TATA_signal, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_TATA_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_TATA_signal, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_TATA_signal, CGbqualType::e_Usedin );
 
     // terminator
     Associate( CSeqFeatData::eSubtype_terminator, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_terminator, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_terminator, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_terminator, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_terminator, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_terminator, CGbqualType::e_Usedin );
 
@@ -615,6 +675,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_transit_peptide, CGbqualType::e_Usedin );
@@ -622,12 +683,14 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // unsure
     Associate( CSeqFeatData::eSubtype_unsure, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_unsure, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_unsure, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_unsure, CGbqualType::e_Replace );
     Associate( CSeqFeatData::eSubtype_unsure, CGbqualType::e_Usedin );
 
     // V_region
     Associate( CSeqFeatData::eSubtype_V_region, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_V_region, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_V_region, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_V_region, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_V_region, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_V_region, CGbqualType::e_Usedin );
@@ -635,6 +698,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // V_segment
     Associate( CSeqFeatData::eSubtype_V_segment, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_V_segment, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_V_segment, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_V_segment, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_V_segment, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_V_segment, CGbqualType::e_Usedin );
@@ -644,6 +708,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Frequency );
     Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Phenotype );
     Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_variation, CGbqualType::e_Replace );
@@ -655,6 +720,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_3clip, CGbqualType::e_Usedin );
 
@@ -663,6 +729,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_3UTR, CGbqualType::e_Usedin );
 
@@ -671,6 +738,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_5clip, CGbqualType::e_Usedin );
 
@@ -679,18 +747,23 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_5UTR, CGbqualType::e_Usedin );
 
     // 10_signal
     Associate( CSeqFeatData::eSubtype_10_signal, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_10_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_10_signal, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_10_signal, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_10_signal, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_10_signal, CGbqualType::e_Usedin );
 
     // 35_signal
     Associate( CSeqFeatData::eSubtype_35_signal, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_35_signal, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_35_signal, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_35_signal, CGbqualType::e_Operon );
     Associate( CSeqFeatData::eSubtype_35_signal, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_35_signal, CGbqualType::e_Usedin );
 
@@ -699,6 +772,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Map );
     Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Number );
+    Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Phenotype );
     Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_region, CGbqualType::e_Standard_name );
@@ -707,6 +781,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // mat_peptide_aa
     Associate( CSeqFeatData::eSubtype_mat_peptide_aa, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_mat_peptide_aa, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_mat_peptide_aa, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_mat_peptide_aa, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_mat_peptide_aa, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_mat_peptide_aa, CGbqualType::e_Usedin );
@@ -714,6 +789,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // sig_peptide_aa
     Associate( CSeqFeatData::eSubtype_sig_peptide_aa, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_sig_peptide_aa, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_sig_peptide_aa, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_sig_peptide_aa, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_sig_peptide_aa, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_sig_peptide_aa, CGbqualType::e_Usedin );
@@ -721,6 +797,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     // transit_peptide_aa
     Associate( CSeqFeatData::eSubtype_transit_peptide_aa, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_transit_peptide_aa, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_transit_peptide_aa, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_transit_peptide_aa, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_transit_peptide_aa, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_transit_peptide_aa, CGbqualType::e_Usedin );
@@ -729,9 +806,57 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Function );
     Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Label );
     Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Old_locus_tag );
     Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_snoRNA, CGbqualType::e_Usedin );
+
+    // gap
+    Associate( CSeqFeatData::eSubtype_gap, CGbqualType::e_Estimated_length );
+    Associate( CSeqFeatData::eSubtype_gap, CGbqualType::e_Map );
+
+    // operon
+    Associate( CSeqFeatData::eSubtype_operon, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_operon, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_operon, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_operon, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_operon, CGbqualType::e_Operon );
+    Associate( CSeqFeatData::eSubtype_operon, CGbqualType::e_Phenotype );
+    Associate( CSeqFeatData::eSubtype_operon, CGbqualType::e_Standard_name );
+
+    // oriT
+    Associate( CSeqFeatData::eSubtype_oriT, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_oriT, CGbqualType::e_Direction );
+    Associate( CSeqFeatData::eSubtype_oriT, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_oriT, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_oriT, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_oriT, CGbqualType::e_Rpt_type );
+    Associate( CSeqFeatData::eSubtype_oriT, CGbqualType::e_Rpt_unit );
+    Associate( CSeqFeatData::eSubtype_oriT, CGbqualType::e_Rpt_unit_range );
+    Associate( CSeqFeatData::eSubtype_oriT, CGbqualType::e_Rpt_unit_seq );
+    Associate( CSeqFeatData::eSubtype_oriT, CGbqualType::e_Standard_name );
+
+    // ncRNA
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_NcRNA_class );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Operon );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Standard_name );
+
+    // tmRNA
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Operon );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Tag_peptide );
 }
 
 
@@ -1051,18 +1176,26 @@ bool CCountries::IsValid(const string& country)
         name = country.substr(0, pos);
     }
 
-    const string *begin;
-    const string *end;
-
     // try current countries
-    begin = sm_Countries;
-    end = &(sm_Countries[sizeof(sm_Countries) / sizeof(string)]);
+    const string *begin = sm_Countries;
+    const string *end = &(sm_Countries[sizeof(sm_Countries) / sizeof(string)]);
 
-    if ( find(begin, end, name) != end ) return true;
+    return find(begin, end, name) != end;
+}
 
-    // now try formerly-valid countries
-    begin = sm_Former_Countries;
-    end = &(sm_Former_Countries[sizeof(sm_Former_Countries) / sizeof(string)]);
+
+bool CCountries::WasValid(const string& country)
+{
+    string name = country;
+    size_t pos = country.find(':');
+
+    if ( pos != string::npos ) {
+        name = country.substr(0, pos);
+    }
+
+    // try formerly-valid countries
+    const string *begin = sm_Former_Countries;
+    const string *end = &(sm_Former_Countries[sizeof(sm_Former_Countries) / sizeof(string)]);
 
     return find(begin, end, name) != end;
 }
