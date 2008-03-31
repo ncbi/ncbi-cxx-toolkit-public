@@ -108,7 +108,7 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
     out << "\n";
   }
 
-  out << "### Errors for GenBank-based validation (-alt) ###\n";
+  out << "### Errors for GenBank-based (-alt) and other component checks (-g, FASTA files) ###\n";
   for(int i=G_First; i<G_Last; i++) {
     out << GetPrintableCode(i) << "\t" << GetMsgEx(i);
     out << "\n";

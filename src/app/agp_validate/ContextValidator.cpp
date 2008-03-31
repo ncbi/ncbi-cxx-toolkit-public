@@ -33,17 +33,20 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include "ContextValidator.hpp"
-//#include "AccessionPatterns.hpp"
-
 #include <algorithm>
+#include <objects/seqloc/Seq_id.hpp>
 
-USING_NCBI_SCOPE;
+using namespace ncbi;
+using namespace objects;
 BEGIN_NCBI_SCOPE
 
 //// class CAgpContextValidator
-CAgpContextValidator::CAgpContextValidator()
+CAgpContextValidator::CAgpContextValidator(bool checkCompNames)
 {
+  m_CheckCompNames=checkCompNames;
+
   prev_end = 0;
   prev_part_num = 0;
   componentsInLastScaffold = 0;
@@ -277,6 +280,18 @@ void CAgpContextValidator::x_OnCompRow(CAgpRow& row, int line_num)
     // Add the span to the existing entry
     spans.AddSpan(comp);
   }
+
+  if(m_CheckCompNames) {
+    CSeq_id::EAccessionInfo acc_inf = CSeq_id::IdentifyAccession( row.GetComponentId() );
+    string msg;
+    if(  acc_inf & CSeq_id::fAcc_prot ) msg="; looks like a protein accession";
+    else if(
+      (acc_inf & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_unknown ||
+      (acc_inf & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_local
+    ) msg="; local or misspelled accession";
+
+    if(msg.size()) agpErr.Msg(CAgpErrEx::G_InvalidCompId, msg);
+  }
 }
 
 #define ALIGN_W(x) setw(w) << resetiosflags(IOS_BASE::left) << (x)
@@ -436,13 +451,142 @@ void CAgpContextValidator::PrintTotals()
       {
         compNamePatterns.AddName(it->first);
       }
-      x_PrintPatterns(compNamePatterns, "Component names");
+      bool hasSuspicious = x_PrintPatterns(compNamePatterns, "Component names");
+      if(!m_CheckCompNames && hasSuspicious ) {
+        cout<< "Use -g or -a to print lines with suspicious accessions.\n";
+      }
     }
   }
 }
 
+// TRUE:
+//   &s at input &pos has one of 3 valid kinds of strings: [123..456]  [123,456]  123
+//   output args, strings of digits                      :  sd1  sd2    sd1 sd2   sd1 (sd2 empty)
+//   output &pos is moved past the recognized string (which can have any tail)
+// FALSE: not a valid number or range format.
+static bool ReadNumberOrRange(const string& s, int& pos, string& sd1, string& sd2)
+{
+  bool openBracket=false;
+  if( s[pos]=='[' ) {
+    openBracket=true;
+    pos++;
+  }
+
+  //// count digits -> numDigits
+  // DDD [DDD,DDD] [DDD..DDD]
+  // ^p1  ^p1 ^p2   ^p1  ^p2
+  int p1=pos;
+  int len1=0;
+  int p2=0;
+  while( pos<(int)s.size() ) {
+    char ch=s[pos];
+
+    if( isdigit(ch) ) {}
+    else if(openBracket) {
+      // separators, closing bracket
+      if(pos==p1) return false;
+      if(ch=='.' || ch==',') {
+        if( pos >= (int)s.size()-1 || len1 )
+          return false; // nothing after separator || encountered second separator
+        len1=pos-p1;
+        if(ch=='.') {
+          // ..
+          pos++;
+          if( pos >= (int)s.size() || s[pos] != '.' ) return false;
+        }
+        p2=pos+1;
+      }
+      else if(ch==']') {
+        if( !p2 || p2==pos ) return false;
+        openBracket=false;
+        pos++;
+        break;
+      }
+      else return false;
+    }
+    else break;
+
+    pos++;
+  }
+
+  if(openBracket || pos==p1) return false;
+  if(!len1) {
+    // a plain number, no brackets
+    sd1=s.substr(p1, pos-p1);
+    sd2=NcbiEmptyString;
+  }
+  else {
+    sd1=s.substr(p1, len1);
+    sd2=s.substr(p2, pos-1-p2);
+  }
+  return true;
+}
+
+enum EComponentNameCategory
+{
+  fNucleotideAccession=0,
+  fUnknownFormat      =1,
+  fProtein            =2,
+  fOneAccManyVer      =4,
+  f_category_mask     =7,
+
+  fSome               = 8 // different results for [start..stop]
+};
+static int GetNameCategory(const string& s)
+{
+  //// count letters_ -> numLetters
+  int numLetters=0;
+  for(;;) {
+    if( numLetters>=(int)s.size() ) return fUnknownFormat;
+    if( !isalpha(s[numLetters]) && s[numLetters]!='_' ) break;
+    numLetters++;
+  }
+  if(numLetters<1 || numLetters>4) return fUnknownFormat;
+
+  int pos=numLetters;
+  string sd1, sd2; // strings of digits
+  if( !ReadNumberOrRange(s, pos, sd1, sd2) ) return fUnknownFormat;
+
+  //// optional .version or .[range of versions]
+  string ver1, ver2; // string of digits
+  if(pos<(int)s.size()) {
+    if(s[pos]!='.') return fUnknownFormat;
+    pos++;
+
+    if( !ReadNumberOrRange(s, pos, ver1, ver2) ) return fUnknownFormat;
+    if(pos<(int)s.size()) return fUnknownFormat;
+
+    if(ver1.size()) ver1=string(".")+ver1;
+    if(ver2.size()) ver2=string(".")+ver2;
+
+    if(ver1.size()>4 && ver2.size()>4) return fUnknownFormat;
+  }
+
+  if(sd2.size()==0) {
+    // one accession
+    if(ver2.size()!=0) return fOneAccManyVer;
+    CSeq_id::EAccessionInfo acc_inf = CSeq_id::IdentifyAccession(s);
+    if(  acc_inf & CSeq_id::fAcc_prot ) return fProtein;
+    if( (acc_inf & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_unknown ) return fUnknownFormat;
+    if( (acc_inf & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_local   ) return fUnknownFormat;
+    return fNucleotideAccession; // the best possible result
+  }
+
+  // check both ends of the range in case one has a different number of digits
+  string ltr=s.substr(0, numLetters);
+  // Note: we do not care if ver1 did not actually came from ltr+sd1, ver2 from ltr+sd2, etc.
+  int c1 = GetNameCategory( ltr + sd1 + ver1 );
+  int c2 = GetNameCategory( ltr + sd2 + (ver2.size()?ver2:ver1));
+  if(c1==c2) {
+    if(c1==fNucleotideAccession && (ver1.size()>4 || ver2.size()>4) )
+      return fUnknownFormat|fSome;
+    return c1;
+  }
+  return fSome|(c1>c2?c1:c2); // some accessions are suspicious
+}
+
 // Sort by accession count, print not more than MaxPatterns or 2*MaxPatterns
-void CAgpContextValidator::x_PrintPatterns(
+bool CAgpContextValidator::x_PrintPatterns(
   CAccPatternCounter& namePatterns, const string& strHeader)
 {
   const int MaxPatterns=10;
@@ -461,7 +605,10 @@ void CAgpContextValidator::x_PrintPatterns(
 
   int wPattern=strHeader.size()-2;
   int totalCount=0;
+  int nucCount=0;
+  int otherCount=0;
   int patternsPrinted=0;
+  bool mixedPattern=false;
   for(
     CAccPatternCounter::TMapCountToString::reverse_iterator
     it = cnt_pat.rbegin(); it != cnt_pat.rend(); it++
@@ -476,43 +623,83 @@ void CAgpContextValidator::x_PrintPatterns(
       if(w+15>wPattern) wPattern = w+15;
     }
     totalCount+=it->first;
+    int code=GetNameCategory(it->second);
+    ( code==fNucleotideAccession ? nucCount : otherCount ) += it->first;
+    if(code & fSome) mixedPattern=true;
   }
 
+  bool mixedCategories=(nucCount && otherCount);
+  if(mixedCategories && wPattern<20) wPattern=20;
   // Print the total
   cout<< setw(wPattern+2) << setiosflags(IOS_BASE::left)
       << strHeader << ": " << ALIGN_W(totalCount) << "\n";
 
-  // Print the patterns
-  patternsPrinted=0;
-  int accessionsSkipped=0;
-  for(
-    CAccPatternCounter::TMapCountToString::reverse_iterator
-    it = cnt_pat.rbegin(); it != cnt_pat.rend(); it++
-  ) {
-    // Limit the number of lines to MaxPatterns or 2*MaxPatterns
-    if( ++patternsPrinted<=MaxPatterns ||
-        cnt_pat_size<=2*MaxPatterns
+  bool printNuc=(nucCount>0);
+  // 1 or 2 (if mixedCategories) iterations
+  for(;;) {
+    if(mixedCategories) {
+      // Could be an error - print extra sub-headings to get attention
+      cout<< string("------------------------").substr(0, wPattern-20);
+      if     (printNuc) cout << " Nucleotide accessions: " << ALIGN_W(nucCount  ) << "\n";
+      else              cout << " OTHER identifiers    : " << ALIGN_W(otherCount) << "\n";
+    }
+
+    // Print the patterns
+    patternsPrinted=0;
+    int accessionsSkipped=0;
+    int patternsSkipped=0;
+    for(
+      CAccPatternCounter::TMapCountToString::reverse_iterator
+      it = cnt_pat.rbegin(); it != cnt_pat.rend(); it++
     ) {
-      cout<< "  " << setw(wPattern) << setiosflags(IOS_BASE::left)
-          << it->second                   // pattern
-          << ": " << ALIGN_W( it->first ) // : count
+      int code=GetNameCategory(it->second);
+      if(mixedCategories && (code==fNucleotideAccession)!=printNuc) continue;
+
+      // Limit the number of lines to MaxPatterns or 2*MaxPatterns
+      if( ++patternsPrinted<=MaxPatterns ||
+          cnt_pat_size<=2*MaxPatterns
+      ) {
+        cout<< "  " << setw(wPattern) << setiosflags(IOS_BASE::left)
+            << it->second                    // pattern
+            << ": " << ALIGN_W( it->first ); // : count
+        if(!printNuc) {
+          //if(code & fSome) cout << " - some";
+          //switch(code & f_category_mask)
+          switch(code)
+          {
+            case fUnknownFormat|fSome:
+            case fOneAccManyVer|fSome:
+              cout << " (some local or misspelled)"; break;
+            case fProtein|fSome:
+              cout << " (some look like protein accessions)"; break;
+
+            case fUnknownFormat: if(!(mixedCategories || mixedPattern)) break;
+            case fOneAccManyVer: cout << " (local or misspelled)"; break;
+            case fProtein      : cout << " (looks like protein accession)"; break;
+          }
+        }
+        cout << "\n";
+      }
+      else {
+        // accessionsSkipped += CAccPatternCounter::GetCount(*it);
+        accessionsSkipped += it->first;
+        patternsSkipped++;
+      }
+    }
+
+    if(accessionsSkipped) {
+      string s = "other ";
+      s+=NStr::IntToString(patternsSkipped);
+      s+=" patterns";
+      cout<< "  " << setw(wPattern) << setiosflags(IOS_BASE::left) << s
+          << ": " << ALIGN_W( accessionsSkipped )
           << "\n";
     }
-    else {
-      // accessionsSkipped += CAccPatternCounter::GetCount(*it);
-      accessionsSkipped += it->first;
-    }
-  }
 
-  if(accessionsSkipped) {
-    string s = "other ";
-    s+=NStr::IntToString(cnt_pat_size - 10);
-    s+=" patterns";
-    cout<< "  " << setw(wPattern) << setiosflags(IOS_BASE::left) << s
-        << ": " << ALIGN_W( accessionsSkipped )
-        << "\n";
-
+    if(!mixedCategories || !printNuc) break;
+    printNuc=false;
   }
+  return mixedCategories||mixedPattern;
 }
 
 //// class CValuesCount

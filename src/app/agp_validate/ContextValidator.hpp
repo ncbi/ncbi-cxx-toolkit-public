@@ -127,7 +127,7 @@ public:
 class CAgpContextValidator
 {
 public:
-  CAgpContextValidator();
+  CAgpContextValidator(bool checkCompNames=false);
   //void ValidateLine(const SDataLine& dl, const CAgpLine& cl);
   void ValidateRow(CAgpRow& row, int line_num);
 
@@ -162,6 +162,7 @@ protected:
   int m_GapCount;
   //int m_CompOri[CCompVal::ORI_count];
   int m_CompOri[4];
+  bool m_CheckCompNames;
 
   //int m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_yes_count];
   int m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapYes_count];
@@ -196,7 +197,8 @@ protected:
   int  componentsInLastScaffold;
   int  componentsInLastObject;
 
-  static void x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader);
+  // true: a supicious mix of ids - some look like GenBank accessions, some do not.
+  static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader);
 
 };
 

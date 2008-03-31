@@ -109,11 +109,11 @@ public:
     "\n"
     "USAGE: agp_validate [-options] [FASTA files...] [AGP files...]\n"
     "\n"
-    "agp_validate without any options performs all validation checks except\n"
-    "for those that require the component sequences to be available in GenBank.\n"
-    "It also reports component, gap, scaffold and object statistics.\n"
+    "With no options: perform the checks that do not require\n"
+    "the component sequences to be available in GenBank.\n"
+    "Report component, gap, scaffold and object statistics.\n"
     "\n"
-    "If component FASTA files are provided in front of AGP files, it checks that:\n"
+    "If component FASTA files are given in front of AGP files, also check that:\n"
     "- component_id from AGP is present in FASTA;\n"
     "- component_end does not exceed sequence length.\n"
     "\n"
@@ -125,6 +125,8 @@ public:
     "  -out FILE  Save the AGP file, adding missing version 1 to the component accessions\n"
     "             (use with -a or -alt).\n"
     "  The above options require that the components are available in GenBank.\n"
+    "  -g         Check that component names look like Nucleotide accessions\n"
+    "             (this does not require components to be in GenBank).\n"
     //"  -al, -at  Check component Accessions, Lengths (-al), Taxids (-at).\n"
     /*
     "\n"
@@ -136,10 +138,10 @@ public:
     "\n"
     "  -list              List error and warning messages.\n"
     "  -limit COUNT       Print only the first COUNT messages of each type.\n"
-    "                     Default=10. To print all, use: -limit 0\n"
+    "                     Default=100. To print all, use: -limit 0\n"
     "  -skip, -only WHAT  Skip, or report only a particular error or warning.\n"
-    "  'WHAT' could be an error code (e11 w22 etc - see -list), a part of the message text,\n"
-    "  or one of these keywords: all, warn, err, alt.\n"
+    "  'WHAT' could be a part of the message text, an error code (e11, w22, etc; see -list),\n"
+    "  or a keyword: all, warn, err, alt.\n"
     /*
     "  -skip  WHAT   Do not report lines with a particular error or warning message.\n"
     "  -only  WHAT   Report only this particular error or warning.\n"
@@ -172,6 +174,8 @@ void CAgpValidateApplication::Init(void)
   //arg_desc->AddFlag("at" , "");
   arg_desc->AddFlag("a" , "");
 
+  arg_desc->AddFlag("g" , "");
+
   arg_desc->AddFlag("species", "allow components from different subspecies");
 
   arg_desc->AddOptionalKey( "out", "FILE",
@@ -201,7 +205,7 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddDefaultKey("limit", "ErrorCount",
     "Print at most ErrorCount lines with a particular error",
     CArgDescriptions::eInteger,
-    "10");
+    "100");
 
   arg_desc->AddFlag("list", "all possible errors and warnings");
 
@@ -260,7 +264,7 @@ int CAgpValidateApplication::Run(void)
   else if( args["a"  ].HasValue() ) m_ValidationType = VT_Acc;
   else {
     m_ValidationType = VT_Context;
-    m_ContextValidator = new CAgpContextValidator();
+    m_ContextValidator = new CAgpContextValidator(args["g"].HasValue());
   }
   if(m_ValidationType & VT_Acc) {
     //// Setup registry, error log, MT-lock for CONNECT library
@@ -318,8 +322,7 @@ int CAgpValidateApplication::Run(void)
   }
 
   agpErr.m_MaxRepeat =
-    args["limit"].HasValue() ? args["limit"].AsInteger() : 10;
-    //m_ValidationType == VT_Context ? 10 : 100;
+    args["limit"].HasValue() ? args["limit"].AsInteger() : 100;
 
 
   //// Process files, print results
