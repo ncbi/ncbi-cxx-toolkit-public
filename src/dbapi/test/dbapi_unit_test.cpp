@@ -14577,6 +14577,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             && args.GetServerType() == CTestArguments::eSybase) // 03/27/08
         && !(args.GetDriverName() == ftds_dblib_driver
             && args.GetServerType() == CTestArguments::eSybase) // 03/27/08
+        && !(args.GetDriverName() == dblib_driver
+            && args.GetServerType() == CTestArguments::eMsSql
+            && Solaris) // 04/01/08
         ) 
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure3,
