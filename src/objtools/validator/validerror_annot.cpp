@@ -59,23 +59,30 @@ CValidError_annot::~CValidError_annot(void)
 
 void CValidError_annot::ValidateSeqAnnot(const CSeq_annot_Handle& annot)
 {
-    if ( !annot.IsAlign() ) return;
-    if ( !annot.Seq_annot_IsSetDesc() ) return;
+    if ( annot.IsAlign() ) {
+        if ( !annot.Seq_annot_IsSetDesc() ) return;
     
-    ITERATE( list< CRef< CAnnotdesc > >, iter, annot.Seq_annot_GetDesc().Get() ) {
+        ITERATE( list< CRef< CAnnotdesc > >, iter, annot.Seq_annot_GetDesc().Get() ) {
         
-        if ( (*iter)->IsUser() ) {
-            const CObject_id& oid = (*iter)->GetUser().GetType();
-            if ( oid.IsStr() ) {
-                if ( oid.GetStr() == "Blast Type" ) {
-                    PostErr(eDiag_Error, eErr_SEQ_ALIGN_BlastAligns,
-                        "Record contains BLAST alignments", *annot.GetCompleteSeq_annot()); // !!!
-                    
-                    break;
+            if ( (*iter)->IsUser() ) {
+                const CObject_id& oid = (*iter)->GetUser().GetType();
+                if ( oid.IsStr() ) {
+                    if ( oid.GetStr() == "Blast Type" ) {
+                        PostErr(eDiag_Error, eErr_SEQ_ALIGN_BlastAligns,
+                            "Record contains BLAST alignments", *annot.GetCompleteSeq_annot()); // !!!
+
+                        break;
+                    }
                 }
             }
-        }
-    } // iterate
+        } // iterate
+    } else if ( annot.IsIds() ) {
+        PostErr(eDiag_Error, eErr_SEQ_ANNOT_AnnotIDs,
+                "Record contains Seq-annot.data.ids", *annot.GetCompleteSeq_annot());
+    } else if ( annot.IsLocs() ) {
+        PostErr(eDiag_Error, eErr_SEQ_ANNOT_AnnotLOCs,
+                "Record contains Seq-annot.data.locs", *annot.GetCompleteSeq_annot());
+    }
 }
 
 
