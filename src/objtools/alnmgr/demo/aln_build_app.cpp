@@ -314,6 +314,28 @@ int CAlnBuildApp::Run(void)
                                                   IAlnSegmentIterator::eAllSegments));
             while (*sparse_ci) {
                 cout << **sparse_ci << endl;
+                {{
+                    /// Demonstrate/verify usage of GetSeqPosFromAlnPos:
+                    const IAlnSegment& aln_seg = **sparse_ci;
+                    cout << "GetSeqPosFromAlnPos(" << row << ", " << aln_seg.GetAlnRange().GetFrom() << ", IAlnExplorer::eLeft): "
+                         << sparse_aln.GetSeqPosFromAlnPos(row,
+                                                           aln_seg.GetAlnRange().GetFrom(),
+                                                           IAlnExplorer::eLeft)
+                         << endl;
+                    cout << "Expected: " << (aln_seg.GetType() == IAlnSegment::fGap ?
+                                             aln_seg.GetRange().GetFrom() - 1 :
+                                             aln_seg.GetRange().GetFrom())
+                         << endl;
+                    cout << "GetSeqPosFromAlnPos(" << row << ", " << aln_seg.GetAlnRange().GetTo() << ", IAlnExplorer::eRight): "
+                         << sparse_aln.GetSeqPosFromAlnPos(row,
+                                                           aln_seg.GetAlnRange().GetTo(),
+                                                           IAlnExplorer::eRight)
+                         << endl;
+                    cout << "Expected: " << (aln_seg.GetType() == IAlnSegment::fGap ?
+                                             aln_seg.GetRange().GetTo() + 1 :
+                                             aln_seg.GetRange().GetTo())
+                         << endl;
+                }}
                 ++(*sparse_ci);
             }            
         }
