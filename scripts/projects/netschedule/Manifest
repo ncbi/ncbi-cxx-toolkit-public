@@ -1,0 +1,19 @@
+#
+# Filename: Manifest
+#
+# Copyright NCBI (c) 2008
+#
+# Author: Sergey Satskiy
+#
+# Purpose: The file holds all the supported configurations of the netschedule package
+#
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+Linux32 : Bdb4619 : compilers/unix/GCC.sh 3.4.2 --with-mt --with-flat-makefile --with-distcc --with-projects=scripts/projects/netschedule.lst  --with-bdb=$NCBI/BerkeleyDB-4.6.19.dio.SuSE-ONLY
+Linux32 : Bdb4619 : compilers/unix/GCC.sh 3.4.2 --with-debug --with-mt --with-flat-makefile --with-distcc --with-projects=scripts/projects/netschedule.lst  --with-bdb=$NCBI/BerkeleyDB-4.6.19.dio.SuSE-ONLY 
+Linux64 : Bdb4619 : compilers/unix/GCC.sh 3.4.2 --with-mt --with-flat-makefile --with-distcc --with-projects=scripts/projects/netschedule.lst  --with-bdb=$NCBI/BerkeleyDB-4.6.19.dio.SuSE-ONLY
+Linux64 : Bdb4619 : compilers/unix/GCC.sh 3.4.2 --with-debug --with-mt --with-flat-makefile --with-distcc --with-projects=scripts/projects/netschedule.lst  --with-bdb=$NCBI/BerkeleyDB-4.6.19.dio.SuSE-ONLY 
+
+
