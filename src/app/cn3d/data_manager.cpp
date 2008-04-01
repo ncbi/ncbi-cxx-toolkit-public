@@ -814,7 +814,7 @@ ncbi::objects::CAlign_annot_set * ASNDataManager::GetCDDAnnotSet(void)
 const ncbi::objects::CSeq_id * ASNDataManager::GetCDDMaster3d(void) const
 {
     const CCdd *cdd = GetInternalCDDData();
-    if (cdd && cdd->IsSetMaster3d())
+    if (cdd && cdd->IsSetMaster3d() && cdd->GetMaster3d().size() > 0)
         return cdd->GetMaster3d().front().GetPointer(); // just return the first one...
     else
         return NULL;
