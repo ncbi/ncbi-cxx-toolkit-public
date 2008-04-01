@@ -71,8 +71,10 @@ private:
 
     void DoProcess ( CNcbiIstream& ip, CNcbiOstream& op, CScope&, CRef<CSeq_entry>& se );
 
-    void DoProcessStreamFasta ( CNcbiIstream& ip, CNcbiOstream& op, CRef<CSeq_entry>& se );
-    void DoProcessStreamDefline ( CNcbiIstream& ip, CNcbiOstream& op, CRef<CSeq_entry>& se, CScope& );
+    void DoProcessStreamFasta ( 
+        CNcbiIstream& ip, CNcbiOstream& op, CRef<CSeq_entry>& se );
+    void DoProcessStreamDefline ( 
+        CNcbiIstream& ip, CNcbiOstream& op, CRef<CSeq_entry>& se, CScope&i );
 
     int DoProcessFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_entry>&, bool do_format );
     int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CBioseq&, bool do_format );
@@ -98,7 +100,8 @@ private:
     bool  m_gxref;
     bool  m_ooverlap;
 
-    bool m_defline_only;
+    bool  m_defline_only;
+    bool  m_no_scope;
 };
 
 
@@ -153,10 +156,11 @@ void CMytestApplication::Init(void)
 
     arg_desc->AddOptionalKey
         ("S", "Sequence",
-         "s FASTA, r No Defline, d Defline only, f By Feature, t Translation, v Visit, o Ostream",
+         "s FASTA, S FASTA(no_scope mode), r No Defline, d Defline only, D Defline only(no_scope mode), "
+         "f By Feature, t Translation, v Visit, o Ostream",
          CArgDescriptions::eString);
     arg_desc->SetConstraint
-        ("S", &(*new CArgAllow_Strings, "s", "r", "d", "f", "t", "v", "o"));
+        ("S", &(*new CArgAllow_Strings, "S", "s", "r", "D", "d", "f", "t", "v", "o"));
 
     arg_desc->AddOptionalKey
         ("F", "Feature",
@@ -181,7 +185,7 @@ void CMytestApplication::DoProcessStreamFasta (
 {
     CFastaOstream fo (op);
     for (CTypeConstIterator<CBioseq> bit (*se); bit; ++bit) {
-        fo.Write (*bit);
+        fo.Write (*bit, 0, m_no_scope);
     }
 }
 
@@ -196,7 +200,9 @@ void CMytestApplication::DoProcessStreamDefline (
 {
     CFastaOstream fo (op);
     for (CTypeConstIterator<CBioseq> bit (*se); bit; ++bit) {
-        fo.WriteTitle (scope.GetBioseqHandle(*bit));
+//        fo.WriteTitle (scope.GetBioseqHandle(*bit));
+        fo.WriteTitle (*bit, 0, m_no_scope);
+
     }
 }
 
@@ -462,14 +468,24 @@ int CMytestApplication::Run(void)
 
     if (args["S"]) {
         string sm = args["S"].AsString();
+        if (NStr::Find (sm, "S") != NPOS) {
+            m_fasta = true;
+            m_no_scope = true;
+        }
         if (NStr::Find (sm, "s") != NPOS) {
             m_fasta = true;
+            m_no_scope = false;
         }
         if (NStr::Find (sm, "r") != NPOS) {
             m_nodef = true;
         }
+        if (NStr::Find (sm, "D") != NPOS) {
+            m_defline_only = true;
+            m_no_scope = true;
+        }
         if (NStr::Find (sm, "d") != NPOS) {
             m_defline_only = true;
+            m_no_scope = false;
         }
         if (NStr::Find (sm, "f") != NPOS) {
             m_featfa = true;
