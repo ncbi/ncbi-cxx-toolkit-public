@@ -571,8 +571,8 @@ public:
     /// These versions may set up a temporary object manager scope
     /// In the common case of a raw bioseq, no scope is needed
     void Write(const CSeq_entry& entry, const CSeq_loc* location = 0);
-    void Write(const CBioseq&    seq,   const CSeq_loc* location = 0, bool no_scope=true );
-    void WriteTitle(const CBioseq&    seq,   const CSeq_loc* location = 0, bool no_scope=true );
+    void Write(const CBioseq&    seq,   const CSeq_loc* location = 0, bool no_scope=false );
+    void WriteTitle(const CBioseq&    seq,   const CSeq_loc* location = 0, bool no_scope=false );
 
     /// Used only by Write(CSeq_entry[_Handle], ...); permissive by default
     virtual bool SkipBioseq(const CBioseq& /* seq */) { return false; }
