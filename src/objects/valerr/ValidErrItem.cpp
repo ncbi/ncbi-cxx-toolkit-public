@@ -948,6 +948,13 @@ segments.")),
 
 /* SEQ_ANNOT */
 
+    TErrTypStrs( eErr_SEQ_ANNOT_AnnotIDs,
+    TErrStrs( "AnnotIDs",
+"Seq-annot.data.ids should only be used for communication between programs.")),
+    TErrTypStrs( eErr_SEQ_ANNOT_AnnotLOCs,
+    TErrStrs( "AnnotLOCs",
+"Seq-annot.data.locs should only be used for communication between programs.")),
+
 /* INTERNAL */
 
     TErrTypStrs( eErr_INTERNAL_Exception,
