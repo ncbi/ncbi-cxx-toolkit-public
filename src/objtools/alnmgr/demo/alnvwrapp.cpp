@@ -90,6 +90,7 @@ class CAlnVwrApp : public CNcbiApplication
     void             GetAlnPosFromSeqPosDemo();
     bool             AddAlnToMix   (const CSeq_align* aln) {
         if (aln->GetSegs().IsDenseg()) {
+            aln->GetSegs().GetDenseg().Validate(true);
             m_AV = new CAlnVec(aln->GetSegs().GetDenseg(), *m_Scope);
             return true;
         } else {
