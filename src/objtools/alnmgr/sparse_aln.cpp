@@ -33,6 +33,7 @@
 
 #include <objtools/alnmgr/sparse_aln.hpp>
 #include <objtools/alnmgr/sparse_ci.hpp>
+#include <objtools/alnmgr/alnexception.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <objects/seqalign/Sparse_align.hpp>
@@ -263,7 +264,11 @@ const CBioseq_Handle&  CSparseAln::GetBioseqHandle(TNumrow row) const
     _ASSERT(row >= 0  &&  row < GetDim());
 
     if ( !m_BioseqHandles[row] ) {
-        m_BioseqHandles[row] = m_Scope->GetBioseqHandle(GetSeqId(row));
+        if ( !(m_BioseqHandles[row] = m_Scope->GetBioseqHandle(GetSeqId(row))) ) {
+            string errstr = "Invalid bioseq handle.  Seq id \"" +
+                GetSeqId(row).AsFastaString() + "\" not in scope?";
+            NCBI_THROW(CAlnException, eInvalidRequest, errstr);
+        }
     }
     return m_BioseqHandles[row];
 }

@@ -294,15 +294,19 @@ int CAlnBuildApp::Run(void)
     ReportTime("CSparseAln");
     if (GetArgs()["print"].AsBoolean()) {
         for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
-            cout << "Row: " << row << endl;
-
-            string sequence;
-            sparse_aln.GetAlnSeqString
-                (row, 
-                 sequence, 
-                 sparse_aln.GetSeqAlnRange(row));
-            cout << sparse_aln.GetSeqId(row).AsFastaString() << "\t"
-                 << sequence << endl;
+            cout << "Row " << row << ": "
+                 << sparse_aln.GetSeqId(row).AsFastaString() << endl;
+            try {
+                string sequence;
+                sparse_aln.GetAlnSeqString
+                    (row, 
+                     sequence, 
+                     sparse_aln.GetSeqAlnRange(row));
+                cout << sequence << endl;
+            } catch (...) {
+                // if sequence is not in scope,
+                // the above is impossible
+            }
 
             auto_ptr<IAlnSegmentIterator> sparse_ci
                 (sparse_aln.CreateSegmentIterator(row,
