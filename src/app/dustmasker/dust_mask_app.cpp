@@ -270,8 +270,8 @@ int CDustMaskApplication::Run (void)
 
     // Set up the object manager.
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CGBDataLoader::RegisterInObjectManager(
-        *om, "id2", CObjectManager::eDefault);
+    // CGBDataLoader::RegisterInObjectManager(
+    //    *om, "id2", CObjectManager::eDefault);
 
     // Set up the duster object.
     Uint4 level = GetArgs()["level"].AsInteger();
