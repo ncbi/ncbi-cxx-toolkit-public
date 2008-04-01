@@ -257,7 +257,10 @@ public:
     void Test_DriverContext_Many(void);
     void Test_Decimal(void);
     void Test_Query_Cancelation(void);
+
     void Test_Timeout(void);
+    void Test_Timeout2(void);
+
     void Test_SetLogStream(void);
     void Test_Identity(void);
     void Test_BlobStore(void);
@@ -308,6 +311,9 @@ protected:
     static size_t GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt);
     static Int8 GetIdentity(const auto_ptr<IStatement>& auto_stmt);
     void Connect(const auto_ptr<IConnection>& conn) const;
+
+    void Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn);
+    void Test_WaitForDelay(const auto_ptr<IConnection>& auto_conn);
 
 private:
     const CTestArguments    m_args;

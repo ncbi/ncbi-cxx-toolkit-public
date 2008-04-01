@@ -12638,66 +12638,135 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
 void CDBAPIUnitTest::Test_Timeout(void)
 {
     try {
-        bool timeout_was_reported = false;
         auto_ptr<IConnection> auto_conn;
-        I_DriverContext* dc = m_DS->GetDriverContext();
-        unsigned int timeout = dc->GetTimeout();
+        auto_ptr<IStatement> auto_stmt;
 
-        dc->SetTimeout(2);
+        // Alter DriverContext ...
+        {
+            I_DriverContext* dc = m_DS->GetDriverContext();
+            unsigned int timeout = dc->GetTimeout();
 
-        auto_conn.reset(m_DS->CreateConnection());
-        BOOST_CHECK(auto_conn.get() != NULL);
-        auto_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-            );
+            dc->SetTimeout(2);
 
-        auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            auto_conn.reset(m_DS->CreateConnection());
+            BOOST_CHECK(auto_conn.get() != NULL);
 
-        if(m_args.GetDriverName() == ftds8_driver) {
-            try {
-                auto_stmt->SendSql("waitfor delay '0:00:04'");
-                BOOST_CHECK(auto_stmt->HasMoreResults());
-            } catch(const CDB_Exception&) {
-                timeout_was_reported = true;
-                auto_stmt->Cancel();
-            }
-        } else {
-            try {
-                auto_stmt->SendSql("waitfor delay '0:00:04'");
-                BOOST_CHECK(auto_stmt->HasMoreResults());
-            } catch(const CDB_TimeoutEx&) {
-                timeout_was_reported = true;
-                auto_stmt->Cancel();
-            }
+            Connect(auto_conn);
+
+            Test_WaitForDelay(auto_conn);
+
+            //
+            // Check selecting from a huge table ...
+            Test_HugeTableSelect(auto_conn);
+
+            dc->SetTimeout(timeout);
+        } // Alter DriverContext ...
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+void CDBAPIUnitTest::Test_Timeout2(void)
+{
+    try {
+        auto_ptr<IConnection> auto_conn;
+        auto_ptr<IStatement> auto_stmt;
+
+
+        // Alter connection ...
+        {
+            auto_conn.reset(m_DS->CreateConnection());
+            BOOST_CHECK(auto_conn.get() != NULL);
+
+            Connect(auto_conn);
+
+            auto_conn->SetTimeout(2);
+
+            Test_WaitForDelay(auto_conn);
+
+            //
+            // Check selecting from a huge table ...
+            Test_HugeTableSelect(auto_conn);
+
         }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
 
 
-        // Check if connection is alive ...
-        if (m_args.GetDriverName() != ftds8_driver
+////////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_WaitForDelay(const auto_ptr<IConnection>& auto_conn)
+{
+    auto_ptr<IStatement> auto_stmt;
+    bool timeout_was_reported = false;
+
+    auto_stmt.reset(auto_conn->GetStatement());
+
+    if(m_args.GetDriverName() == ftds8_driver) {
+        try {
+            auto_stmt->SendSql("waitfor delay '0:00:04'");
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+        } catch(const CDB_Exception&) {
+            timeout_was_reported = true;
+            auto_stmt->Cancel();
+        }
+    } else {
+        try {
+            auto_stmt->SendSql("waitfor delay '0:00:04'");
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+        } catch(const CDB_TimeoutEx&) {
+            timeout_was_reported = true;
+            auto_stmt->Cancel();
+        }
+    }
+
+
+    // Check if connection is alive ...
+    if (m_args.GetDriverName() != ftds8_driver
             && !(m_args.GetDriverName() == ftds64_driver
-              && m_args.GetServerType() == CTestArguments::eSybase)
-            ) {
-            auto_stmt->SendSql("SELECT name FROM sysobjects");
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-            BOOST_CHECK( rs.get() != NULL );
-        } else {
-            PutMsgDisabled("Test_Timeout. Check if connection is alive.");
+                && m_args.GetServerType() == CTestArguments::eSybase)
+       ) {
+        auto_stmt->SendSql("SELECT name FROM sysobjects");
+        BOOST_CHECK( auto_stmt->HasMoreResults() );
+        BOOST_CHECK( auto_stmt->HasRows() );
+        auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+        BOOST_CHECK( rs.get() != NULL );
+    } else {
+        PutMsgDisabled("Test_Timeout. Check if connection is alive.");
+    }
+
+    BOOST_CHECK(timeout_was_reported);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn)
+{
+    const string table_name("#huge_table");
+
+
+    // Check selecting from a huge table ...
+    if (m_args.GetDriverName() != ftds8_driver) 
+    {
+        const char* str_value = "Oops ...";
+        size_t rec_num = 200000;
+        string sql;
+        auto_ptr<IStatement> auto_stmt;
+
+        auto_stmt.reset(auto_conn->GetStatement());
+
+        if (!m_args.IsBCPAvailable()) {
+            rec_num = 15000;
         }
 
-        BOOST_CHECK(timeout_was_reported);
-
-
-        // Check selecting from a huge table ...
-        if (m_args.GetDriverName() != ftds8_driver) {
-            const string table_name("#huge_table");
-            size_t rec_num = 200000;
+        // Preparation ...
+        {
             string sql;
-            const char* str_value = "Oops ...";
-
+            
             // Create table ...
             {
                 sql  = " CREATE TABLE " + table_name + "( \n";
@@ -12708,92 +12777,86 @@ void CDBAPIUnitTest::Test_Timeout(void)
                 // Create the table
                 auto_stmt->ExecuteUpdate(sql);
             }
-
-            // Populate table with data ...
-            {
-                CStopWatch timer(CStopWatch::eStart);
-
-                if (m_args.IsBCPAvailable()) {
-                    CVariant col1(eDB_Int);
-                    CVariant col2(eDB_VarChar);
-
-                    auto_ptr<IBulkInsert> bi(
-                            auto_conn->GetBulkInsert(table_name)
-                            );
-
-                    bi->Bind(1, &col1);
-                    bi->Bind(2, &col2);
-
-                    col2 = str_value;
-
-                    for (size_t i = 0; i < rec_num; ++i) {
-                        col1 = Int4(i);
-
-                        bi->AddRow();
-
-                        if (i % 1000 == 0) {
-                            bi->StoreBatch();
-                        }
-                    }
-                    bi->Complete();
-                } else {
-                    rec_num = 15000;
-                    sql = "INSERT INTO " + table_name +
-                        "(id, vc8000_field) VALUES(@id, @vc_val)";
-
-                    //auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
-
-                    for (size_t i = 0; i < rec_num; ++i) {
-                        auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
-                        auto_stmt->SetParam( CVariant::VarChar(str_value), "@vc_val");
-
-                        auto_stmt->ExecuteUpdate( sql );
-
-                        /*if (i % 100 == 0) {
-                            auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
-                            auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
-                        }*/
-                    }
-
-                    //auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
-                }
-
-                LOG_POST( "Huge table inserted in " << timer.Elapsed() << " sec." );
-            }
-
-            BOOST_CHECK(GetNumOfRecords(auto_stmt, table_name) == rec_num);
-
-            // Read data ...
-            {
-                size_t num = 0;
-
-                auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-
-                CStopWatch timer(CStopWatch::eStart);
-
-                auto_stmt->SendSql("SELECT * FROM " + table_name);
-
-                while (auto_stmt->HasMoreResults()) {
-                    if (auto_stmt->HasRows()) {
-                        auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-                        BOOST_CHECK( rs.get() != NULL );
-
-                        while (rs->Next()) {
-                            ++num;
-                        }
-                    }
-                }
-
-                LOG_POST( "Huge table selected in " << timer.Elapsed() << " sec." );
-
-                BOOST_CHECK(num == rec_num);
-            }
         }
 
-        dc->SetTimeout(timeout);
-    }
-    catch(const CException& ex) {
-        DBAPI_BOOST_FAIL(ex);
+        // Populate table with data ...
+        {
+            CStopWatch timer(CStopWatch::eStart);
+
+            if (m_args.IsBCPAvailable()) {
+                CVariant col1(eDB_Int);
+                CVariant col2(eDB_VarChar);
+
+                auto_ptr<IBulkInsert> bi(
+                        auto_conn->GetBulkInsert(table_name)
+                        );
+
+                bi->Bind(1, &col1);
+                bi->Bind(2, &col2);
+
+                col2 = str_value;
+
+                for (size_t i = 0; i < rec_num; ++i) {
+                    col1 = Int4(i);
+
+                    bi->AddRow();
+
+                    if (i % 1000 == 0) {
+                        bi->StoreBatch();
+                    }
+                }
+                bi->Complete();
+            } else {
+                sql = "INSERT INTO " + table_name +
+                    "(id, vc8000_field) VALUES(@id, @vc_val)";
+
+                //auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
+
+                for (size_t i = 0; i < rec_num; ++i) {
+                    auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
+                    auto_stmt->SetParam( CVariant::VarChar(str_value), "@vc_val");
+
+                    auto_stmt->ExecuteUpdate( sql );
+
+                    /*if (i % 100 == 0) {
+                      auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
+                      auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
+                      }*/
+                }
+
+                //auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
+            }
+
+            LOG_POST( "Huge table inserted in " << timer.Elapsed() << " sec." );
+        }
+
+        BOOST_CHECK(GetNumOfRecords(auto_stmt, table_name) == rec_num);
+
+        // Read data ...
+        {
+            size_t num = 0;
+
+            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+
+            CStopWatch timer(CStopWatch::eStart);
+
+            auto_stmt->SendSql("SELECT * FROM " + table_name);
+
+            while (auto_stmt->HasMoreResults()) {
+                if (auto_stmt->HasRows()) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    BOOST_CHECK( rs.get() != NULL );
+
+                    while (rs->Next()) {
+                        ++num;
+                    }
+                }
+            }
+
+            LOG_POST( "Huge table selected in " << timer.Elapsed() << " sec." );
+
+            BOOST_CHECK(num == rec_num);
+        }
     }
 }
 
@@ -13805,6 +13868,25 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
     }
 
+    if (args.GetTestConfiguration() != CTestArguments::eWithoutExceptions
+        && args.GetTestConfiguration() != CTestArguments::eFast
+        ) 
+    {
+        if (args.GetDriverName() != ctlib_driver // SetTimeout is not supported. API doesn't support that.
+            && args.GetDriverName() != dblib_driver // SetTimeout is not supported. API doesn't support that.
+            && args.GetDriverName() != ftds_dblib_driver // SetTimeout is not supported. API doesn't support that.
+            && args.GetDriverName() != ftds8_driver // Problems ...
+            && !(args.GetDriverName() == ftds64_driver && args.GetServerType() == CTestArguments::eSybase)
+            ) 
+        {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Timeout2,
+                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        } else {
+            PutMsgDisabled("Test_Timeout2");
+        }
+    }
 
     // There is a problem with ftds driver
     // on GCC_340-ReleaseMT--i686-pc-linux2.4.23
