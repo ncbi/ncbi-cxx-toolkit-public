@@ -133,7 +133,6 @@ enum EErrType {
     eErr_SEQ_INST_InternalGapsInSeqRaw,
     eErr_SEQ_INST_SelfReferentialSequence,
     eErr_SEQ_INST_WholeComponent,
-
     ERR_CODE_END(SEQ_INST),
 
     ERR_CODE_BEGIN(SEQ_DESCR) = 1000,
@@ -193,6 +192,7 @@ enum EErrType {
     eErr_SEQ_DESCR_ReplacedCountryCode,
     eErr_SEQ_DESCR_BadInstitutionCode,
     eErr_SEQ_DESCR_BadCollectionCode,
+    eErr_SEQ_DESCR_BadVoucherID,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC) = 2000,
@@ -445,7 +445,6 @@ enum EErrType {
     ERR_CODE_END(SEQ_GRAPH),
 
     ERR_CODE_BEGIN(SEQ_ANNOT) = 7000,
-
     eErr_SEQ_ANNOT_AnnotIDs,
     eErr_SEQ_ANNOT_AnnotLOCs,
     ERR_CODE_END(SEQ_ANNOT),
