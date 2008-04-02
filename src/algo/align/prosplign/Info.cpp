@@ -1002,6 +1002,27 @@ void SeekStartStop(CSeq_align& seq_align, CScope& scope)
             CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
             modi->SetStart_codon_found(true);
             sps.SetModifiers().push_back(modi);
+
+            CSpliced_exon& exon = *sps.SetExons().front();
+            if (exon.GetProduct_start().GetProtpos().GetAmin()==0) {
+                CSeq_id protid;
+                protid.Assign(sps.GetProduct_id());
+                CPSeq pseq(scope,protid);
+
+                CRef<CSpliced_exon_chunk> chunk = exon.SetParts().front();
+                _ASSERT( !chunk->IsMatch() || pseq.HasStart() );
+                if (pseq.HasStart() && !chunk->IsMatch()) {
+                    _ASSERT( chunk->IsDiag() );
+                    int len = chunk->GetDiag();
+                    _ASSERT( len >= 3 );
+                    if (len > 3) {
+                        chunk->SetDiag(len-3);
+                        chunk.Reset(new CSpliced_exon_chunk);
+                        exon.SetParts().push_front(chunk);
+                    }
+                    chunk->SetMatch(3);
+                }
+            }
         }
         if(HasStopOnNuc(sps, scope)) {
             CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);

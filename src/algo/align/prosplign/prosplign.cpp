@@ -888,11 +888,14 @@ CRef<CSeq_align> CProSplign::CImplementation::FindGlobalAlignment_stage2()
 
 CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_align& seq_align, CProSplignOutputOptions output_options)
 {
-    CProSplignText alignment_text(scope, seq_align, "BLOSUM62");
-    list<CNPiece> good_parts = FindGoodParts( alignment_text.GetMatch(), alignment_text.GetProtein(), output_options);
-
     CRef<CSeq_align> refined_align(new CSeq_align);
     refined_align->Assign(seq_align);
+
+    if (output_options.IsPassThrough())
+        return refined_align;
+
+    CProSplignText alignment_text(scope, seq_align, "BLOSUM62");
+    list<CNPiece> good_parts = FindGoodParts( alignment_text.GetMatch(), alignment_text.GetProtein(), output_options);
 
     prosplign::RefineAlignment(scope, *refined_align, good_parts);
 
