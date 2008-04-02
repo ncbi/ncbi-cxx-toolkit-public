@@ -277,7 +277,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         CCDSInfo cds_info;
         cds_info.SetReadingFrame( reading_frame, true);
         if (start.NotEmpty()) {
-            cds_info.SetStart(start, GetProdPosInBases(sps.GetExons().front()->GetProduct_start()) == 0);
+            cds_info.SetStart(start, GetProdPosInBases(sps.GetExons().front()->GetProduct_start()) == 0 && sps.GetExons().front()->GetParts().front()->IsMatch());
         }
         if (stop.NotEmpty())
             cds_info.SetStop(stop);
