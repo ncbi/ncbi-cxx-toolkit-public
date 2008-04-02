@@ -32,6 +32,26 @@
 
 #ifdef SWIGPYTHON
 
+#ifdef FOR_OUTSIDERS
+
+%pythoncode %{
+
+_within_ncbi = False
+_use_preprocessed_specs = True
+
+%}
+
+#else
+
+%pythoncode %{
+
+_within_ncbi = True
+_use_preprocessed_specs = False
+
+%}
+
+#endif
+
 %pythoncode %{
 
 # dynamic casting
@@ -216,22 +236,7 @@ def SerialClone(sobj):
 CSerialObject.Clone = SerialClone
 
 
-def WithinNcbi():
-    '''
-    Determine from ip address whether we're running within NCBI.
-    NCBI machines have addresses of the form 130.14.2x.zzz
-    '''
-    try:
-        ip_int = CSocketAPI.gethostbyname(CSocketAPI.gethostname())
-        ip = [(ip_int >> 8 * i) & 255 for i in range(4)]
-        if ip[0] == 130 and ip[1] == 14 and ip[2] in range(20, 30):
-            return True
-    except:
-        pass
-    return False
-
-
-if WithinNcbi():
+if _within_ncbi:
     doxy_url_base = 'http://intranet.ncbi.nlm.nih.gov/' \
                     'ieb/ToolBox/CPP_DOC/doxyhtml/'
 else:
@@ -268,7 +273,7 @@ ncbi_object.Doxy = classmethod(Doxy)
 
 
 # Similar for LXR
-if WithinNcbi():
+if _within_ncbi:
     lxr_url_base = 'http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/'
 else:
     lxr_url_base = 'http://www.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/'
@@ -297,22 +302,42 @@ def Lxr(arg):
 ncbi_object.Lxr = classmethod(Lxr)
 
 # Doxygen search; take a string, bring up url that searches for it.
-def DoxySearch(name):
-    '''
-    Search Doxygen-generated documentation for a name,
-    showing result in a web browser
-    '''
-    import webbrowser
-    url = doxy_url_base + 'search.php?query=' + name
-    webbrowser.open_new(url)
+if _within_ncbi:
+    def DoxySearch(name):
+        '''
+        Search Doxygen-generated documentation for a name,
+        showing result in a web browser
+        '''
+        import webbrowser
+        url = doxy_url_base + 'search.php?query=' + name
+        webbrowser.open_new(url)
 
 
 try:
-	import find_asn_spec
+    import find_asn_spec
 except:
-	pass
+    pass
 
-if WithinNcbi():
+def FindSpec(type_name):
+    if not _use_preprocessed_specs:
+        return find_asn_spec.FindSpec(type_name)
+    else:
+        import os
+        fname = os.path.join(os.path.split(__file__)[0], 'ncbi_asn_specs')
+
+        fid = open(fname)
+        for line in fid:
+            if line.strip() == '':
+                # blank line ends table
+                return None
+            ty, start, length = line.split()
+            if ty == type_name:
+                fid.seek(-int(start), 2)
+                spec = fid.read(int(length))
+                return spec
+    
+
+if _within_ncbi:
     asn_spec_url_base = 'http://intranet.ncbi.nlm.nih.gov' \
                         '/ieb/ToolBox/CPP_DOC/asn_spec/'
 else:
@@ -329,7 +354,7 @@ def Spec(arg, web=False):
       # a string, one hopes
       type_name = arg
    if not web:
-      spec = find_asn_spec.FindSpec(type_name)
+      spec = FindSpec(type_name)
       if spec == None:
          print 'ASN.1 spec. not found for type %s' % type_name
       else:
@@ -536,6 +561,40 @@ def use_class(arg):
 
 #ifdef SWIGPERL
 
+#ifdef FOR_OUTSIDERS
+
+%pragma(perl5) code = %{
+
+$_within_ncbi = 0;
+$_use_preprocessed_specs = 1;
+
+%}
+
+#else
+
+%pragma(perl5) code = %{
+
+$_within_ncbi = 1;
+$_use_preprocessed_specs = 0;
+
+############ DoxySearch() -- Search doxygen documentation ##########
+
+# This won't work outside of NCBI, even at www
+
+sub DoxySearch {
+    my $name = shift;
+
+    my $doxy_url_base =
+        'http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/doxyhtml/';
+    my $url = $doxy_url_base . 'search.php?query=' . $name;
+
+    _open_url($url);
+}
+
+%}
+
+#endif
+
 %pragma(perl5) code = %{
 
 
@@ -574,16 +633,44 @@ sub Spec {
 
     my $web = shift;
     if (!$web) {
-        my $cmd = "python -c \'\
+        if (!$_use_preprocessed_specs) {
+            my $cmd = "python -c \'\
 import sys \
 sys.path.append(\"/netopt/ncbi_tools/c++-wrappers/python\") \
 import find_asn_spec \
 print find_asn_spec.FindSpec(\"$type\") \
 \'";
-        system($cmd);
+            system($cmd);
+        } else {
+            open(FID, 'ncbi_asn_specs');
+            while (<FID>) {
+                chomp($_);
+                if ($_ eq '') {
+                    print "Spec for $type not found\n";
+                    return;
+                }
+                my @fields = split(' ', $_);
+                my $ty = $fields[0];
+                my $start = $fields[1];
+                my $length = $fields[2];
+                if ($ty eq $type) {
+                    seek(FID, -$start, 2);
+                    my $spec;
+                    read(FID, $spec, $length);
+                    print "$spec\n";
+                    return;
+                }
+            }
+        }
     } else {
-        my $asn_spec_url_base
-            = 'http://www.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/asn_spec/';
+        my $asn_spec_url_base;
+        if (!$_within_ncbi) {
+            $asn_spec_url_base
+                = 'http://www.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/asn_spec/';
+        } else {
+            $asn_spec_url_base
+                = 'http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/asn_spec/';
+        }
         my $url = $asn_spec_url_base . $type . '.html';
         _open_url($url);
     }
@@ -602,7 +689,15 @@ sub Doxy {
         $type = $arg;
     }
 
-    $doxy_url_base = "http://www.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/doxyhtml/";
+    my $doxy_url_base;
+    if (!$_within_ncbi) {
+        $doxy_url_base
+            = "http://www.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/doxyhtml/";
+    } else {
+        $doxy_url_base
+            = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/doxyhtml/";
+    }
+
     my @tmp = split(/::/, $type);
     my $class_name = $tmp[-1];
     $class_name =~ s/_/__/g;
@@ -633,23 +728,15 @@ sub Lxr {
     my @tmp = split(/::/, $type);
     $type = $tmp[-1];
 
-    my $url = 'http://www.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/' 
-        . 'ident?i=' . $type;
-    _open_url($url);
-}
-
-
-############ DoxySearch() -- Search doxygen documentation ##########
-
-# This won't work outside of NCBI, even at www
-
-sub DoxySearch {
-    my $name = shift;
-
-    my $doxy_url_base =
-        'http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/doxyhtml/';
-    my $url = $doxy_url_base . 'search.php?query=' . $name;
-
+    my $lxr_url_base;
+    if (!$_within_ncbi) {
+        $lxr_url_base
+            = 'http://www.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/';
+    } else {
+        $lxr_url_base
+            = 'http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/';
+    }
+    my $url = $lxr_url_base . 'ident?i=' . $type;
     _open_url($url);
 }
 
