@@ -14001,6 +14001,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && args.GetDriverName() != ftds_dblib_driver
         && !(args.GetDriverName() == dblib_driver && args.GetServerType() != CTestArguments::eSybase)
+        && !(args.GetDriverName() == ctlib_driver && Solaris)
+        && !(args.GetDriverName() == dblib_driver && Solaris)
        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing2, DBAPIInstance);
