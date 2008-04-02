@@ -90,6 +90,37 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(sequence)
 
 
+string s_GetFastaTitle(const CBioseq& bs)
+{
+    string title;
+    bool has_molinfo = false;
+
+    const CSeq_descr::Tdata& descr = bs.GetDescr().Get();
+    int found = 0;
+    for ( CSeq_descr::Tdata::const_iterator it = descr.begin(); it != descr.end(); ++it ) {
+        const CSeqdesc* sd = *it;
+        if ( sd->Which() == CSeqdesc::e_Title ) {
+            if ( title == "" ) {
+                title = sd->GetTitle();
+            }
+        }
+        if ( sd->Which() == CSeqdesc::e_Molinfo ) {
+            has_molinfo = true;
+        }
+    }
+    
+    if ( !title.empty() && ! has_molinfo ) {
+        while (NStr::EndsWith(title, ".")  ||  NStr::EndsWith(title, " ")) {
+            title.erase(title.end() - 1);
+        }
+        return title;
+    }
+    else {
+        CScope scope(*CObjectManager::GetInstance());
+        return GetTitle( scope.AddBioseq(bs) );
+    }
+}
+
 const COrg_ref& GetOrg_ref(const CBioseq_Handle& handle)
 {
     {{
@@ -2014,7 +2045,7 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
 void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
                                     CScope* scope)
 {
-    string safe_title;
+/*    string safe_title;
     if (bioseq.IsSetDescr()) {
         ITERATE (CBioseq::TDescr::Tdata, iter, bioseq.GetDescr().Get()) {
             if ((*iter)->Which() == CSeqdesc::e_Title) {
@@ -2035,7 +2066,15 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
         CBioseq_Handle bsh = scope->GetBioseqHandle(bioseq);
         safe_title = sequence::GetTitle(bsh);
     }
-
+*/
+    string safe_title;
+    if (scope) {
+        CBioseq_Handle bsh = scope->GetBioseqHandle(bioseq);
+        safe_title = sequence::GetTitle(bsh);
+    }
+    else {
+        safe_title = sequence::s_GetFastaTitle( bioseq );
+    }
     NON_CONST_ITERATE (string, it, safe_title) {
         switch (*it) {
         case '>':
@@ -2071,12 +2110,6 @@ void CFastaOstream::WriteTitle(const CBioseq& bioseq,
 void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
                                const CSeq_loc* location)
 {
-    bool bOldFashioned = false;
-    if ( ! bOldFashioned ) { 
-        x_WriteSeqIds(*handle.GetBioseqCore(), location);
-        x_WriteSeqTitle(*handle.GetBioseqCore(), &handle.GetScope());
-    }
-    else {
         m_Out << '>';
         CSeq_id::WriteAsFasta(m_Out, *handle.GetBioseqCore());
 
@@ -2091,7 +2124,6 @@ void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
         string safe_title;
         NStr::Replace(sequence::GetTitle(handle), ">", "_", safe_title);
         m_Out << ' ' << safe_title << '\n';
-    }
 }
 
 
