@@ -76,7 +76,7 @@ NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrUtil,      1131,  2);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Python,        1132,  5);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Variant,       1133,  1);
 NCBI_DEFINE_ERRCODE_X(Dbapi_BlobStream,    1134,  3);
-NCBI_DEFINE_ERRCODE_X(Dbapi_ObjImpls,      1135,  9);
+NCBI_DEFINE_ERRCODE_X(Dbapi_ObjImpls,      1135, 10);
 NCBI_DEFINE_ERRCODE_X(Dbapi_BulkInsert,    1136,  1);
 
 
