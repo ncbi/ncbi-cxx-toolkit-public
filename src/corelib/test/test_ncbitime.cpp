@@ -649,6 +649,92 @@ static void s_TestFormats(void)
         }}
     }}
 
+    // Partialy defined time
+    {{
+        string s;
+        {{  // Y
+            CTime t("2001", "Y");
+            s = t.AsString("M/D/Y h:m:s");
+            assert(s.compare("01/01/2001 00:00:00") == 0);
+        }}
+        {{  // Y/M
+            CTime t("2001/2", "Y/M");
+            s = t.AsString("M/D/Y h:m:s");
+            assert(s.compare("02/01/2001 00:00:00") == 0);
+        }}
+        {{  // M/D
+            CTime current(CTime::eCurrent);
+            current.Truncate();
+            CTime t("01/02", "M/D");
+            current.SetMonth(1);
+            current.SetDay(2);
+            assert(t == current);
+        }}
+        {{  // M
+            CTime current(CTime::eCurrent);
+            current.Truncate();
+            CTime t("2", "M");
+            current.SetMonth(2);
+            current.SetDay(1);
+            assert(t == current);
+        }}
+        {{  // D time
+            CTime current(CTime::eCurrent);
+            current.Truncate();
+            CTime t("2 11:22", "D h:m");
+            current.SetDay(2);
+            current.SetHour(11);
+            current.SetMinute(22);
+            assert(t == current);
+        }}
+        {{  // D
+            CTime current(CTime::eCurrent);
+            current.Truncate();
+            CTime t("2", "D");
+            current.SetDay(2);
+            assert(t == current);
+        }}
+        {{  // time
+            CTime current(CTime::eCurrent);
+            CTime t("11:22", "h:m");
+            current.SetHour(11);
+            current.SetMinute(22);
+            current.SetSecond(0);
+            current.SetNanoSecond(0);
+            assert(t == current);
+        }}
+
+        try {
+            CTime t("2001/2 00:00", "Y/M h:m");
+            _TROUBLE; // day is not defined
+        }
+        catch (CTimeException&) {}
+
+        try {
+            CTime t("2001/2 00:00", "Y/D h:m");
+            _TROUBLE; // month is not defined
+        }
+        catch (CTimeException&) {}
+
+        try {
+            CTime t("2001/2", "Y/D");
+            _TROUBLE; // month is not defined
+        }
+        catch (CTimeException&) {}
+
+        try {
+            CTime t("2001 00:00", "Y h:m");
+            _TROUBLE; // month and day are not defined
+        }
+        catch (CTimeException&) {}
+
+        try {
+            CTime t("2 00:00", "M h:m");
+            _TROUBLE; // year and day are not defined
+        }
+        catch (CTimeException&) {}
+    }}
+
     // SetFormat/AsString with flag parameter test
     {{
         CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);

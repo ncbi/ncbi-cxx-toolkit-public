@@ -394,6 +394,7 @@ public:
     ///   Whether to use local time (default) or GMT.
     /// @param tzp
     ///   What time zone precision to use.
+    /// @sa AsString, operator=
     explicit CTime(const string& str, const CTimeFormat& fmt = kEmptyStr,
                    ETimeZone tz = eLocal,
                    ETimeZonePrecision tzp = eTZPrecisionDefault);
@@ -407,12 +408,13 @@ public:
     /// Assignment operator.
     ///
     /// If current format contains 'Z', then objects timezone will be set to:
-    /// - eGMT if "str" has word "GMT" in the appropriate position;
-    /// - eLocal otherwise.
+    ///   - eGMT if "str" has word "GMT" in the appropriate position;
+    ///   - eLocal otherwise.
     /// If current format does not contain 'Z', objects timezone
     /// will not be changed.
     /// NOTE: This operator expect a string in the format, 
     ///       that was previously setup using SetFormat() method.
+    /// @sa CTime constructor from string, AsString
     CTime& operator= (const string& str);
 
     /// Set time using time_t time value.
@@ -502,6 +504,15 @@ public:
     ///   - z = timezone shift                 (GMT[+/-HHMM])
     ///   - W = full day of week name          (Sunday-Saturday)
     ///   - w = abbreviated day of week name   (Sun-Sat)
+    ///
+    ///   Format string can represent date/time partially, in this case
+    ///   current time, or defaut values, will be used to amplify time
+    ///   object, if possible. Current date/time cannot be used if
+    ///   format string contains "z" (time shift) format symbol.
+    ///   Also, it cannot be used if time format is ambiguous, like "Y/D".
+    ///   Note, that you still can use "Y/M", or even "Y", where month and
+    ///   day will be defined to 1; or "M/D", where year will be set as
+    ///   current year.
     /// @sa
     ///   CTimeFormat, GetFormat, AsString
     static void SetFormat(const CTimeFormat& format);

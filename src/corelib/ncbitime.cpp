@@ -338,6 +338,12 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
     if ( str.empty() ) {
         return;
     }
+    // For partialy defined times use default values
+    bool is_year_present  = false;
+    bool is_month_present = false;
+    bool is_day_present   = false;
+    bool is_time_present  = false;
+
     const string& fmt = format.GetString();
     CTimeFormat::EType fmt_type = format.GetType();
     bool is_escaped = (fmt_type != CTimeFormat::eNcbiSimple);
@@ -402,6 +408,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
                 }
                 name++;
             }
+            is_month_present = true;
             continue;
         }
 
@@ -521,6 +528,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
         case 'Y':
             CHECK_RANGE_YEAR(value);
             m_Data.year = (unsigned int)value;
+            is_year_present = true;
             break;
         case 'y':
             if (value >= 0  &&  value < 50) {
@@ -530,44 +538,54 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
             }
             CHECK_RANGE_YEAR(value);
             m_Data.year = (unsigned int)value;
+            is_year_present = true;
             break;
         case 'M':
             CHECK_RANGE_MONTH(value);
             m_Data.month = (unsigned char)value;
+            is_month_present = true;
             break;
         case 'D':
         case 'd':
             CHECK_RANGE_DAY(value);
             m_Data.day = (unsigned char)value;
+            is_day_present = true;
             break;
         case 'h':
             CHECK_RANGE_HOUR(value);
             m_Data.hour = (unsigned char)value;
+            is_time_present = true;
             break;
         case 'H':
             CHECK_RANGE_HOUR(value);
             m_Data.hour = (unsigned char)value % 12;
             is_12hour = true;
+            is_time_present = true;
             break;
         case 'm':
             CHECK_RANGE_MIN(value);
             m_Data.min = (unsigned char)value;
+            is_time_present = true;
             break;
         case 's':
             CHECK_RANGE_SEC(value);
             m_Data.sec = (unsigned char)value;
+            is_time_present = true;
             break;
         case 'l':
             CHECK_RANGE_NSEC((Int8)value * 1000000);
             m_Data.nanosec = (Int4)value * 1000000;
+            is_time_present = true;
             break;
         case 'r':
             CHECK_RANGE_NSEC((Int8)value * 1000);
             m_Data.nanosec = (Int4)value * 1000;
+            is_time_present = true;
             break;
         case 'S':
             CHECK_RANGE_NSEC(value);
             m_Data.nanosec = (Int4)value;
+            is_time_present = true;
             break;
         default:
             NCBI_THROW(CTimeException, eFormat, "CTime: format is incorrect");
@@ -579,14 +597,63 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
         m_Data.hour += 12;
     }
 
-    // Check on errors
-    if (weekday != -1  &&  weekday != DayOfWeek()) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime: invalid day of week");
-    }
     while ( isspace((unsigned char)(*sss)) )
         sss++;
     if (*fff != '\0'  ||  *sss != '\0') {
         NCBI_THROW(CTimeException, eFormat, "CTime: format is incorrect");
+    }
+
+    // For partialy defined times use default values
+    int ptcache = 0;
+    ptcache += (is_year_present  ? 2000 : 1000);
+    ptcache += (is_month_present ? 200 : 100);
+    ptcache += (is_day_present   ? 20 : 10);
+    ptcache += (is_time_present  ? 2 : 1);
+
+    // Use current time to set some fields
+    CTime current;
+    if ( !adjust_needed ) {
+        switch (ptcache) {
+            case 1222:
+            case 1221:
+            case 1211:
+            case 1121:
+            case 1122:
+            case 1112:
+                current.SetCurrent();
+        }
+    }
+    switch (ptcache) {
+        case 2211:                          // Y,M      -> D = 1
+            m_Data.day   = 1;
+            break;
+        case 2111:                          // Y        -> M,D = 1
+            m_Data.month = 1;
+            m_Data.day   = 1;
+            break;
+        case 1222:                          // M,D,time -> Y = current
+        case 1221:                          // M,D      -> Y = current
+            m_Data.year  = current.Year();
+            break;
+        case 1211:                          // M        -> Y = current, D = 1
+            m_Data.year  = current.Year();
+            m_Data.day   = 1;
+            break;
+        case 1122:                          // D, time  -> Y,M = current
+        case 1121:                          // D        -> Y,M = current
+            m_Data.year  = current.Year();
+            m_Data.month = current.Month();
+            break;
+        case 1112:                          // time     -> Y,M,D = current
+            m_Data.year  = current.Year();
+            m_Data.month = current.Month();
+            m_Data.day   = current.Day();
+            break;
+    }
+
+    // Check on errors for weekday
+    if (weekday != -1  &&  weekday != DayOfWeek()) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime: invalid day of week");
     }
     // Validate time value
     if ( !IsValid() ) {
