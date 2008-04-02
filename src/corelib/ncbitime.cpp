@@ -351,8 +351,8 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
 
     const char* fff;
     const char* sss = str.c_str();
-#if ! defined(TIMEZONE_IS_UNDEFINED)
     bool  adjust_needed = false;
+#if ! defined(TIMEZONE_IS_UNDEFINED)
     long  adjust_tz     = 0;
 #endif
 
