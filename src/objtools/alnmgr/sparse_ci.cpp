@@ -300,7 +300,7 @@ IAlnSegmentIterator& CSparse_CI::operator++()
     case eSkipInserts:
         if(m_It_1 == m_It_2)   {  // aligned segment - move to gap
             ++m_It_1;
-            if(m_It_1->GetFirstFrom() == m_It_2->GetFirstTo())   { // insert - skip
+            if((bool)*this  &&  m_It_1->GetFirstFrom() == m_It_2->GetFirstTo())   { // insert - skip
                 ++m_It_2;
             }
         } else {    // gap - move to the next segment
