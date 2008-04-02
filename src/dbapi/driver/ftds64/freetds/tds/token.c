@@ -1160,7 +1160,7 @@ tds_process_col_fmt(TDSSOCKET * tds)
     int col, hdrsize;
     TDSCOLUMN *curcol;
     TDSRESULTINFO *info;
-    TDS_SMALLINT tabnamesize;
+    /* TDS_SMALLINT tabnamesize; */
     int bytes_read = 0;
     int rest;
     TDS_SMALLINT flags;
@@ -1192,10 +1192,15 @@ tds_process_col_fmt(TDSSOCKET * tds)
         switch (curcol->column_varint_size) {
         case 4:
             curcol->column_size = tds_get_int(tds);
-            /* junk the table name -- for now */
+            /* junk the table name -- for now
             tabnamesize = tds_get_smallint(tds);
             tds_get_n(tds, NULL, tabnamesize);
             bytes_read += 5 + 4 + 2 + tabnamesize;
+            */
+            /* ssikorsk */
+            curcol->table_namelen = tds_get_smallint(tds);
+            tds_get_n(tds, curcol->table_name, curcol->table_namelen);
+            bytes_read += 5 + 4 + 2 + curcol->table_namelen;
             break;
         case 1:
             curcol->column_size = tds_get_byte(tds);
