@@ -65,6 +65,8 @@ static int tds_count_placeholders_ucs2le(const char *query, const char *query_en
 
 #undef MIN
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#undef MAX
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 /* All manner of client to server submittal functions */
 
@@ -1503,7 +1505,7 @@ tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
         case 0:
             break;
         case 1:
-            tds_put_byte(tds, MIN(curcol->column_size, 255));
+            tds_put_byte(tds, MAX(MIN(curcol->column_size, 255), 1));
             break;
         case 2:
             /* ssikorsk */
@@ -1712,7 +1714,7 @@ tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row)
                case 1:
                        if (is_numeric_type(curcol->column_type))
                                colsize = tds_numeric_bytes_per_prec[((TDS_NUMERIC *) src)->precision];
-                       colsize = MIN(colsize, 255);
+                       colsize = MAX(MIN(colsize, 255), 1);
                        tds_put_byte(tds, colsize);
                        break;
                case 0:
@@ -1741,7 +1743,10 @@ tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row)
                                src = buf;
                        }
 #endif
-                       tds_put_n(tds, src, colsize);
+                       if (curcol->column_type == SYBVARCHAR  &&  curcol->column_cur_size == 0)
+                           tds_put_n(tds, " ", 1);
+                       else
+                           tds_put_n(tds, src, colsize);
                }
        }
        return TDS_SUCCEED;

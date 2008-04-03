@@ -477,8 +477,6 @@ bool CTL_BCPInCmd::Send(void)
 {
     unsigned int i;
     CS_INT       datalen = 0;
-    // CS_SMALLINT  indicator = -1; // NULL value
-    // CS_SMALLINT  indicator = 0; // DEFAULT value
     size_t       len = 0;
     char         buff[2048];
 
@@ -521,95 +519,72 @@ bool CTL_BCPInCmd::Send(void)
 
             CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
-            if (param.GetType() == eDB_Text) {
+            if (param.IsNULL()) {
+                continue;
+            }
+            else if (param.GetType() == eDB_Text) {
                 size_t valid_len = 0;
                 size_t invalid_len = 0;
                 CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
 
-                if (par.IsNULL()) {
-                    // Because of FreeTDS ...
-                    SetHasFailed((Check(blk_textxfer(x_GetSybaseCmd(),
-                                                    (CS_BYTE*) buff,
-                                                    (CS_INT) 0,
-                                                    0)
-                                        ) == CS_FAIL));
+                for (datalen = (CS_INT) par.Size();  datalen > 0;
+                    datalen -= (CS_INT) len)
+                {
+                    len = par.Read(buff + invalid_len, sizeof(buff) - invalid_len);
 
-                    CHECK_DRIVER_ERROR(
-                        HasFailed(),
-                        "blk_textxfer failed for the text/image field." + GetDbgInfo(), 123005
-                        );
-                } else {
-                    for (datalen = (CS_INT) par.Size();  datalen > 0;
-                        datalen -= (CS_INT) len)
-                    {
-                        len = par.Read(buff + invalid_len, sizeof(buff) - invalid_len);
-
-                        valid_len = CStringUTF8::GetValidBytesCount(buff, len);
-                        invalid_len = len - valid_len;
+                    valid_len = CStringUTF8::GetValidBytesCount(buff, len);
+                    invalid_len = len - valid_len;
 
 #if 0 //  #if defined(HAVE_WSTRING)
-                        if (x_IsUnicodeClientAPI()) {
-                            CWString unicode_str(buff, valid_len, eEncoding_UTF8);
+                    if (x_IsUnicodeClientAPI()) {
+                        CWString unicode_str(buff, valid_len, eEncoding_UTF8);
 
-                            string wcharle_str = MakeUCS2LE(unicode_str.AsUnicode(eEncoding_UTF8));
+                        string wcharle_str = MakeUCS2LE(unicode_str.AsUnicode(eEncoding_UTF8));
 
-                            SetHasFailed((Check(
-                                blk_textxfer(
-                                    x_GetSybaseCmd(),
-                                    (CS_BYTE*) wcharle_str.c_str(),
-                                    (CS_INT) wcharle_str.size(),
-                                    0)
-                                ) == CS_FAIL));
-                        } else {
-                            SetHasFailed((Check(blk_textxfer(x_GetSybaseCmd(),
-                                                            (CS_BYTE*) buff,
-                                                            (CS_INT) valid_len,
-                                                            0)
-                                                ) == CS_FAIL));
-                        }
-#else
+                        SetHasFailed((Check(
+                            blk_textxfer(
+                                x_GetSybaseCmd(),
+                                (CS_BYTE*) wcharle_str.c_str(),
+                                (CS_INT) wcharle_str.size(),
+                                0)
+                            ) == CS_FAIL));
+                    } else {
                         SetHasFailed((Check(blk_textxfer(x_GetSybaseCmd(),
                                                         (CS_BYTE*) buff,
                                                         (CS_INT) valid_len,
                                                         0)
                                             ) == CS_FAIL));
-#endif
-
-                        CHECK_DRIVER_ERROR(
-                            HasFailed(),
-                            "blk_textxfer failed for the text/image field." + GetDbgInfo(), 123005
-                            );
-
-                        if (valid_len < len) {
-                            memmove(buff, buff + valid_len, invalid_len);
-                        }
                     }
-                }
-            } else if (param.GetType() == eDB_Image) {
-                CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
-
-                if (par.IsNULL()) {
-                    // Because of FreeTDS ...
-                    SetHasFailed((Check(blk_textxfer(x_GetSybaseCmd(), (CS_BYTE*) buff, (CS_INT) 0, 0)) == CS_FAIL));
+#else
+                    SetHasFailed((Check(blk_textxfer(x_GetSybaseCmd(),
+                                                    (CS_BYTE*) buff,
+                                                    (CS_INT) valid_len,
+                                                    0)
+                                        ) == CS_FAIL));
+#endif
 
                     CHECK_DRIVER_ERROR(
                         HasFailed(),
                         "blk_textxfer failed for the text/image field." + GetDbgInfo(), 123005
                         );
-                } else {
-                    for (datalen = (CS_INT) par.Size();  datalen > 0; datalen -= (CS_INT) len) {
-                        len = par.Read(buff, sizeof(buff));
 
-                        SetHasFailed((Check(blk_textxfer(x_GetSybaseCmd(), (CS_BYTE*) buff, (CS_INT) len, 0)) == CS_FAIL));
-
-                        CHECK_DRIVER_ERROR(
-                            HasFailed(),
-                            "blk_textxfer failed for the text/image field." + GetDbgInfo(), 123005
-                            );
+                    if (valid_len < len) {
+                        memmove(buff, buff + valid_len, invalid_len);
                     }
                 }
-            } else {
-                continue;
+            } else if (param.GetType() == eDB_Image) {
+                CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
+
+                for (datalen = (CS_INT) par.Size();  datalen > 0; datalen -= (CS_INT) len) {
+                    len = par.Read(buff, sizeof(buff));
+
+                    SetHasFailed((Check(blk_textxfer(x_GetSybaseCmd(), (CS_BYTE*) buff, (CS_INT) len, 0)) == CS_FAIL));
+
+                    CHECK_DRIVER_ERROR(
+                        HasFailed(),
+                        "blk_textxfer failed for the text/image field." + GetDbgInfo(), 123005
+                        );
+                }
             }
         }
     case CS_SUCCEED:

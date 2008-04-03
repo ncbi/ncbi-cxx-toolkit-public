@@ -2014,7 +2014,8 @@ _ct_get_client_type(CS_CONTEXT *ctx, int datatype, int usertype, int size)
     case SYBLONGBINARY:
         if (usertype == USER_UNICHAR_TYPE || usertype == USER_UNIVARCHAR_TYPE)
             return CS_UNICHAR_TYPE;
-        return CS_CHAR_TYPE;
+        /*return CS_CHAR_TYPE;*/
+        return CS_LONGBINARY_TYPE;
         break;
     }
 
@@ -2088,9 +2089,13 @@ _ct_get_server_type(int datatype)
         break;
     case CS_UNICHAR_TYPE:
         return SYBNVARCHAR;
-    case CS_LONGCHAR_TYPE:    /* ssikorsk */
+    case CS_LONGCHAR_TYPE:
+        return SYBVARCHAR;
+    case CS_NLONGCHAR_TYPE:
         return SYBNVARCHAR;
-    case CS_VARCHAR_TYPE:     /* ssikorsk */
+    case CS_VARCHAR_TYPE:
+        return SYBVARCHAR;
+    case CS_NVARCHAR_TYPE:
         return SYBNVARCHAR;
     default:
         /*
@@ -3445,8 +3450,11 @@ ct_param(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT datalen,
     tdsdump_log(TDS_DBG_FUNC, "ct_param()\n");
     tdsdump_log(TDS_DBG_INFO1, "ct_param() data addr = %p data length = %d\n", data, datalen);
 
-    if (cmd == NULL)
+    if (cmd == NULL  ||  cmd->con == NULL)
         return CS_FAIL;
+
+    if (datafmt->datatype == CS_VARCHAR_TYPE  &&  IS_TDS7_PLUS(cmd->con->tds_socket))
+        datafmt->datatype = CS_NVARCHAR_TYPE;
 
     switch (cmd->command_type) {
     case CS_RPC_CMD:
@@ -4239,7 +4247,7 @@ _ct_process_return_status(TDSSOCKET * tds)
 
     curcol = info->columns[0];
 
-    tds_set_column_type(curcol, SYBINT4);
+    tds_set_column_type(tds, curcol, SYBINT4);
 
     tdsdump_log(TDS_DBG_INFO1, "generating return status row. type = %d(%s), varint_size %d\n",
             curcol->column_type, tds_prtype(curcol->column_type), curcol->column_varint_size);

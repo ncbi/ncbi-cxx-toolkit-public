@@ -47,7 +47,7 @@ void tds_check_cursor_extra(const TDSCURSOR * cursor);
 void tds_check_dynamic_extra(const TDSDYNAMIC * dynamic);
 
 int tds_get_cardinal_type(int datatype);
-int tds_get_varint_size(int datatype);
+int tds_get_varint_size(TDSSOCKET * tds, int datatype);
 #endif
 
 #endif /* TDS_CHECKS_H */

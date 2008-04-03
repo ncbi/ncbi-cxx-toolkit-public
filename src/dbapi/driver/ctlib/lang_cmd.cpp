@@ -212,15 +212,6 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     case eDB_BigInt: {
         CDB_BigInt& par = dynamic_cast<CDB_BigInt&> (param);
 
-#ifdef FTDS_IN_USE
-        param_fmt.datatype = CS_LONG_TYPE;
-        if ( declare_only ) {
-            break;
-        }
-
-        Int8 value = par.Value();
-#else
-        // Old code ...
         param_fmt.datatype = CS_NUMERIC_TYPE;
         if ( declare_only ) {
             break;
@@ -235,10 +226,9 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         }
         param_fmt.scale     = 0;
         param_fmt.precision = 20;
-#endif
 
         ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
-                            (CS_VOID*) &value, CS_UNUSED, indicator));
+                            (CS_VOID*) &value, sizeof(value), indicator));
         break;
     }
     case eDB_Char: {
@@ -279,12 +269,6 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     }
     case eDB_VarChar: {
         CDB_VarChar& par = dynamic_cast<CDB_VarChar&> (param);
-
-// #if defined(CS_NCHAR_TYPE)
-//         param_fmt.datatype = IsMultibyteClientEncoding() ? CS_NCHAR_TYPE : CS_CHAR_TYPE;
-// #else
-//         param_fmt.datatype = CS_CHAR_TYPE;
-// #endif
 
 #ifdef FTDS_IN_USE
         param_fmt.datatype = CS_VARCHAR_TYPE;

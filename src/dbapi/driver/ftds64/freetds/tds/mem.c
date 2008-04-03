@@ -511,6 +511,8 @@ tds_free_results(TDSRESULTINFO * res_info)
                      * + curcol->column_offset))->textvalue);
                      * */
                 }
+                if (curcol->column_default)
+                    free(curcol->column_default);
                 free(curcol);
             }
         free(res_info->columns);

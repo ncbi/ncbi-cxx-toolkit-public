@@ -644,6 +644,7 @@ typedef enum tds_packet_type
                      x==SYBMONEYN    || \
                      x==SYBDATETIMN  || \
                      x==SYBVARCHAR   || \
+                     x==XSYBCHAR     || \
                      x==SYBBINARY    || \
                      x==SYBVARBINARY || \
                      x==SYBTEXT      || \
@@ -884,6 +885,9 @@ typedef struct tds_column
     TDS_CHAR table_name[TDS_SYSNAME_SIZE];
     TDS_CHAR column_name[TDS_SYSNAME_SIZE];
 
+    TDS_INT column_def_size;
+    unsigned char* column_default;
+
     TDS_INT column_offset;      /**< offset into row buffer for store data */
     /* unsigned char *column_data; v0.65 */
     /* void (*column_data_free)(struct tds_column *column); v0.65 */
@@ -894,6 +898,7 @@ typedef struct tds_column
     unsigned int column_hidden:1;
     unsigned int column_output:1;
     unsigned int column_timestamp:1;
+    unsigned int column_hasdefault:1;
     TDS_UCHAR column_collation[5];
 
     /* additional fields flags for compute results */
@@ -1370,7 +1375,7 @@ int tds_process_tokens(TDSSOCKET * tds, TDS_INT * result_type, int *done_flags, 
 
 /* data.c */
 void tds_set_param_type(TDSSOCKET * tds, TDSCOLUMN * curcol, TDS_SERVER_TYPE type);
-void tds_set_column_type(TDSCOLUMN * curcol, int type);
+void tds_set_column_type(TDSSOCKET * tds, TDSCOLUMN * curcol, int type);
 
 
 /* tds_convert.c */

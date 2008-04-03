@@ -762,7 +762,13 @@ bool CTL_CursorCmdExpl::CloseCursor()
     }
 
     if (CursorIsDeclared()) {
-        string buff = "deallocate " + GetCmdName();
+        string buff;
+        if (GetConnection().GetServerType() == CDBConnParams::eMSSqlServer)
+            buff = "deallocate ";
+        else
+            buff = "deallocate cursor ";
+        buff += GetCmdName();
+
         try {
             m_LCmd.reset(GetConnection().xLangCmd(buff));
             m_LCmd->Send();

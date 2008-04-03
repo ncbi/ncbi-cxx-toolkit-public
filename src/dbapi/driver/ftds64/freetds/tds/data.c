@@ -37,7 +37,7 @@ TDS_RCSID(var, "$Id$");
 
 #if !ENABLE_EXTRA_CHECKS
 static int tds_get_cardinal_type(int datatype);
-static int tds_get_varint_size(int datatype);
+static int tds_get_varint_size(TDSSOCKET * tds, int datatype);
 #endif
 
 /**
@@ -46,7 +46,7 @@ static int tds_get_varint_size(int datatype);
  * @param type   type to set
  */
 void
-tds_set_column_type(TDSCOLUMN * curcol, int type)
+tds_set_column_type(TDSSOCKET * tds, TDSCOLUMN * curcol, int type)
 {
 	/* set type */
 	curcol->on_server.column_type = type;
@@ -54,7 +54,7 @@ tds_set_column_type(TDSCOLUMN * curcol, int type)
 
 	/* set size */
 	curcol->column_cur_size = -1;
-	curcol->column_varint_size = tds_get_varint_size(type);
+	curcol->column_varint_size = tds_get_varint_size(tds, type);
 	if (curcol->column_varint_size == 0)
 		curcol->column_cur_size = curcol->on_server.column_size = curcol->column_size = tds_get_size_by_type(type);
 
@@ -91,7 +91,7 @@ tds_set_param_type(TDSSOCKET * tds, TDSCOLUMN * curcol, TDS_SERVER_TYPE type)
 			break;
 		}
 	}
-	tds_set_column_type(curcol, type);
+	tds_set_column_type(tds, curcol, type);
 
 	if (is_collate_type(type)) {
 		curcol->char_conv = tds->char_convs[is_unicode_type(type) ? client2ucs2 : client2server_chardata];
@@ -170,10 +170,9 @@ tds_get_cardinal_type(int datatype)
 static
 #endif
 int
-tds_get_varint_size(int datatype)
+tds_get_varint_size(TDSSOCKET * tds, int datatype)
 {
 	switch (datatype) {
-	case SYBLONGBINARY:
 	case SYBTEXT:
 	case SYBNTEXT:
 	case SYBIMAGE:
@@ -197,14 +196,32 @@ tds_get_varint_size(int datatype)
 	case SYBUINT4:
 	case SYBUINT8:
 		return 0;
-	case XSYBNCHAR:
-	case XSYBNVARCHAR:
-	case XSYBCHAR:
-	case XSYBVARCHAR:
-	case XSYBBINARY:
-	case XSYBVARBINARY:
-		return 2;
-	default:
-		return 1;
-	}
+    case SYBLONGBINARY:
+        return 5;
+    }
+
+    if (IS_TDS7_PLUS(tds)) {
+        switch (datatype) {
+        case XSYBCHAR:
+        case XSYBNCHAR:
+        case XSYBNVARCHAR:
+        case XSYBVARCHAR:
+        case XSYBBINARY:
+        case XSYBVARBINARY:
+            return 2;
+        }
+    }
+    else {
+        switch (datatype) {
+        case XSYBCHAR:
+        case XSYBNCHAR:
+        case XSYBNVARCHAR:
+        case XSYBVARCHAR:
+        case XSYBBINARY:
+        case XSYBVARBINARY:
+            return 4;
+        }
+    }
+
+    return 1;
 }

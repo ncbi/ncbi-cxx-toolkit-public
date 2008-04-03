@@ -106,7 +106,9 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
                 );
 
         if (!buff_is_full) {
-            if (m_ColFmt[nof_item].maxlength > 2048) {
+            if (m_ColFmt[nof_item].maxlength > 2048
+                ||  m_ColFmt[nof_item].datatype == CS_IMAGE_TYPE)
+            {
                 buff_is_full = true;
             } else {
                 bind_len += m_ColFmt[nof_item].maxlength;

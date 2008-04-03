@@ -1184,7 +1184,7 @@ tds_process_col_fmt(TDSSOCKET * tds)
             curcol->column_usertype = tds_get_int(tds);
         }
         /* on with our regularly scheduled code (mlilback, 11/7/01) */
-        tds_set_column_type(curcol, tds_get_byte(tds));
+        tds_set_column_type(tds, curcol, tds_get_byte(tds));
 
         tdsdump_log(TDS_DBG_INFO1, "processing result. type = %d(%s), varint_size %d\n",
                 curcol->column_type, tds_prtype(curcol->column_type), curcol->column_varint_size);
@@ -1442,7 +1442,7 @@ tds_process_compute_result(TDSSOCKET * tds)
         /*  User defined data type of the column */
         curcol->column_usertype = tds_get_int(tds);
 
-        tds_set_column_type(curcol, tds_get_byte(tds));
+        tds_set_column_type(tds, curcol, tds_get_byte(tds));
 
         switch (curcol->column_varint_size) {
         case 4:
@@ -1517,7 +1517,7 @@ tds7_get_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol)
     curcol->column_writeable = (curcol->column_flags & 0x08) > 0;
     curcol->column_identity = (curcol->column_flags & 0x10) > 0;
 
-    tds_set_column_type(curcol, tds_get_byte(tds)); /* sets "cardinal" type */
+    tds_set_column_type(tds, curcol, tds_get_byte(tds)); /* sets "cardinal" type */
 
     curcol->column_timestamp = (curcol->column_type == SYBBINARY && curcol->column_usertype == TDS_UT_TIMESTAMP);
 
@@ -1602,7 +1602,6 @@ tds7_process_result(TDSSOCKET * tds)
     int col, num_cols;
     TDSCOLUMN *curcol;
     TDSRESULTINFO *info;
-    TDSCURSOR *cursor;
 
     CHECK_TDS_EXTRA(tds);
     tdsdump_log(TDS_DBG_INFO1, "processing TDS7 result metadata.\n");
@@ -1621,22 +1620,6 @@ tds7_process_result(TDSSOCKET * tds)
     tds_free_all_results(tds);
     tds->rows_affected = TDS_NO_COUNT;
 
-    if (tds->cur_cursor) {
-        cursor = tds->cur_cursor;
-        if ((cursor->res_info = tds_alloc_results(num_cols)) == NULL)
-            return TDS_FAIL;
-        info = cursor->res_info;
-        tds->current_results = cursor->res_info;
-        tdsdump_log(TDS_DBG_INFO1, "processing TDS7 result. set current_results to cursor->res_info\n");
-    } else {
-        if ((tds->res_info = tds_alloc_results(num_cols)) == NULL)
-            return TDS_FAIL;
-        info = tds->res_info;
-        tds->current_results = tds->res_info;
-        tdsdump_log(TDS_DBG_INFO1, "processing TDS7 result. set current_results to tds->res_info\n");
-    }
-
-    /* 0.95
     if ((info = tds_alloc_results(num_cols)) == NULL)
         return TDS_FAIL;
     tds->current_results = info;
@@ -1647,7 +1630,7 @@ tds7_process_result(TDSSOCKET * tds)
         tds->res_info = info;
         tdsdump_log(TDS_DBG_INFO1, "set current_results (%d column%s) to tds->res_info\n", num_cols, (num_cols==1? "":"s"));
     }
-    */
+
 
     /*
      * loop through the columns populating COLINFO struct from
@@ -1699,7 +1682,7 @@ tds_get_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int is_param)
     }
 
     curcol->column_usertype = tds_get_int(tds);
-    tds_set_column_type(curcol, tds_get_byte(tds));
+    tds_set_column_type(tds, curcol, tds_get_byte(tds));
 
     tdsdump_log(TDS_DBG_INFO1, "processing result. type = %d(%s), varint_size %d\n",
             curcol->column_type, tds_prtype(curcol->column_type), curcol->column_varint_size);
@@ -1759,7 +1742,6 @@ tds_process_result(TDSSOCKET * tds)
     int col, num_cols;
     TDSCOLUMN *curcol;
     TDSRESULTINFO *info;
-    TDSCURSOR *cursor;
 
     CHECK_TDS_EXTRA(tds);
 
@@ -1771,18 +1753,13 @@ tds_process_result(TDSSOCKET * tds)
     /* read number of columns and allocate the columns structure */
     num_cols = tds_get_smallint(tds);
 
+    if ((info = tds_alloc_results(num_cols)) == NULL)
+        return TDS_FAIL;
+    tds->current_results = info;
     if (tds->cur_cursor) {
-        cursor = tds->cur_cursor;
-        if ((cursor->res_info = tds_alloc_results(num_cols)) == NULL)
-            return TDS_FAIL;
-        info = cursor->res_info;
-        tds->current_results = cursor->res_info;
+        tds->cur_cursor->res_info = info;
     } else {
-        if ((tds->res_info = tds_alloc_results(num_cols)) == NULL)
-            return TDS_FAIL;
-
-        info = tds->res_info;
-        tds->current_results = tds->res_info;
+        tds->res_info = info;
     }
 
     /*
@@ -1816,11 +1793,10 @@ tds5_process_result(TDSSOCKET * tds)
 {
     int hdrsize;
 
-    /* 0.95 int colnamelen; */
+    int colnamelen;
     int col, num_cols;
     TDSCOLUMN *curcol;
     TDSRESULTINFO *info;
-    TDSCURSOR *cursor;
 
     CHECK_TDS_EXTRA(tds);
 
@@ -1840,27 +1816,14 @@ tds5_process_result(TDSSOCKET * tds)
     /* read number of columns and allocate the columns structure */
     num_cols = tds_get_smallint(tds);
 
-    if (tds->cur_cursor) {
-        cursor = tds->cur_cursor;
-        if ((cursor->res_info = tds_alloc_results(num_cols)) == NULL)
-            return TDS_FAIL;
-        info = cursor->res_info;
-    } else {
-        if ((tds->res_info = tds_alloc_results(num_cols)) == NULL)
-            return TDS_FAIL;
-        info = tds->res_info;
-    }
-    tds->current_results = info;
-
-    /* 0.95
     if ((info = tds_alloc_results(num_cols)) == NULL)
         return TDS_FAIL;
     tds->current_results = info;
-    if (tds->cur_cursor)
+    if (tds->cur_cursor) {
         tds->cur_cursor->res_info = info;
+    }
     else
         tds->res_info = info;
-    */
 
     tdsdump_log(TDS_DBG_INFO1, "num_cols=%d\n", num_cols);
 
@@ -1879,58 +1842,46 @@ tds5_process_result(TDSSOCKET * tds)
 
         /* TODO save informations somewhere */
         /* database */
-        /* 0.95
         colnamelen = tds_get_byte(tds);
         tds_get_n(tds, NULL, colnamelen);
-        */
         /*
          * tds_get_n(tds, curcol->catalog_name, colnamelen);
          * curcol->catalog_name[colnamelen] = '\0';
          */
 
         /* owner */
-        /* 0.95
         colnamelen = tds_get_byte(tds);
         tds_get_n(tds, NULL, colnamelen);
-        */
         /*
          * tds_get_n(tds, curcol->schema_name, colnamelen);
          * curcol->schema_name[colnamelen] = '\0';
          */
 
         /* table */
-        /* 0.95
-        colnamelen = tds_get_byte(tds);
-        tds_get_n(tds, NULL, colnamelen);
-        */
-        /*
-         * tds_get_n(tds, curcol->table_name, colnamelen);
-         * curcol->table_name[colnamelen] = '\0';
-         */
+        curcol->table_namelen =
+            tds_get_string(tds, tds_get_byte(tds), curcol->table_name, sizeof(curcol->table_name) - 1);
+        curcol->table_name[curcol->table_namelen] = '\0';
 
         /* column name */
-        /* 0.95
         colnamelen = tds_get_byte(tds);
-        if (!curcol->column_namelen) {
-            curcol->column_namelen =
-                tds_get_string(tds, colnamelen, curcol->column_name, sizeof(curcol->column_name) - 1);
-            curcol->column_name[curcol->column_namelen] = '\0';
-        } else {
-            tds_get_n(tds, NULL, colnamelen);
+        if (colnamelen != 0) {
+            tds_get_string(tds, colnamelen, curcol->column_name, sizeof(curcol->column_name) - 1);
+            curcol->column_name[colnamelen] = '\0';
+            curcol->column_namelen = colnamelen;
+        }
+        /*
+        if (curcol->table_column_name)
+            TDS_ZERO_FREE(curcol->table_column_name);
+        tds_alloc_get_string(tds, &curcol->table_column_name, tds_get_byte(tds));
+        */
+
+        /* if label is empty, use the table column name */
+        /*
+        if (!curcol->column_namelen && curcol->table_column_name) {
+            tds_strlcpy(curcol->column_name, curcol->table_column_name, sizeof(curcol->column_name));
+            curcol->column_namelen = strlen(curcol->column_name);
         }
         */
-        /*
-         * tds_get_n(tds, curcol->column_colname, colnamelen);
-         * curcol->column_colname[colnamelen] = '\0';
-         */
-
-        /* if label is empty, use the column name */
-        /*
-         * if (colnamelen > 0 && curcol->column_name[0] == '\0') {
-         *  strcpy(curcol->column_name, curcol->column_colname);
-         *  curcol->column_namelen = strlen(curcol->column_name);
-         * }
-         */
 
         /* flags (4 bytes) */
         curcol->column_flags = tds_get_int(tds);
@@ -1942,9 +1893,7 @@ tds5_process_result(TDSSOCKET * tds)
 
         curcol->column_usertype = tds_get_int(tds);
 
-        tds_set_column_type(curcol, tds_get_byte(tds));
-
-        curcol->column_varint_size = tds5_get_varint_size(curcol->column_type);
+        tds_set_column_type(tds, curcol, tds_get_byte(tds));
 
         switch (curcol->column_varint_size) {
         case 4:
@@ -1958,8 +1907,9 @@ tds5_process_result(TDSSOCKET * tds)
                 if (namelen)
                     tds_get_n(tds, NULL, namelen);
 
-            } else
-                tdsdump_log(TDS_DBG_INFO1, "UNHANDLED TYPE %x\n", curcol->column_type);
+            } else {
+                curcol->column_size = tds_get_int(tds);
+            }
             break;
         case 5:
             curcol->column_size = tds_get_int(tds);
@@ -1975,16 +1925,16 @@ tds5_process_result(TDSSOCKET * tds)
             break;
         }
 
-        /* Adjust column size according to client's encoding */
-        curcol->on_server.column_size = curcol->column_size;
-        adjust_character_column_size(tds, curcol);
-
         /* numeric and decimal have extra info */
         if (is_numeric_type(curcol->column_type)) {
             curcol->column_prec = tds_get_byte(tds);    /* precision */
             curcol->column_scale = tds_get_byte(tds);   /* scale */
             /* FIXME check prec/scale, don't let server crash us */
         }
+
+        /* Adjust column size according to client's encoding */
+        curcol->on_server.column_size = curcol->column_size;
+        adjust_character_column_size(tds, curcol);
 
         /* discard Locale */
         tds_get_n(tds, NULL, tds_get_byte(tds));
@@ -2134,15 +2084,26 @@ tds_get_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row, in
         }
 
         /* It's a BLOB... */
-        len = tds_get_byte(tds);
-        blob = (TDSBLOB *) & (current_row[curcol->column_offset]);
-        if (len == 16) {    /*  Jeff's hack */
-            tds_get_n(tds, blob->textptr, 16);
-            tds_get_n(tds, blob->timestamp, 8);
-            colsize = tds_get_int(tds);
-        } else {
-            colsize = -1;
+        if (is_blob_type(curcol->column_type)) {
+            len = tds_get_byte(tds);
+            blob = (TDSBLOB *) & (current_row[curcol->column_offset]);
+            if (len == 16) {    /*  Jeff's hack */
+                tds_get_n(tds, blob->textptr, 16);
+                tds_get_n(tds, blob->timestamp, 8);
+                colsize = tds_get_int(tds);
+            } else {
+                colsize = -1;
+            }
+            break;
         }
+
+        /* Any other type (XSYBCHAR and alike) */
+        colsize = tds_get_int(tds);
+        if (colsize == 0)
+            colsize = -1;
+        break;
+    case 5:
+        colsize = tds_get_int(tds);
         break;
     case 2:
         colsize = tds_get_smallint(tds);
@@ -2991,7 +2952,7 @@ tds5_process_dyn_result2(TDSSOCKET * tds)
         curcol->column_usertype = tds_get_int(tds);
 
         /* column type */
-        tds_set_column_type(curcol, tds_get_byte(tds));
+        tds_set_column_type(tds, curcol, tds_get_byte(tds));
 
         /* FIXME this should be done by tds_set_column_type */
         curcol->column_varint_size = tds5_get_varint_size(curcol->column_type);
