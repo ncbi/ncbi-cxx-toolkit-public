@@ -619,19 +619,26 @@ sub _open_url {
 
 ############ Spec() -- find and print ASN.1 specification ##########
 
-# Kind of cheesy right now: call Python!
+# Call Python or use pre-processed specs
 package ncbi;
 sub Spec {
     my $arg = shift;
+    my $web = shift;
+
     my $type;
     if ($arg->isa('HASH')) {
         $type = $arg->GetThisTypeInfo()->GetName();
     } else {
-        # a string, we hope
+        # A string, we hope
+        if (substr($arg, 0, 6) eq 'ncbi::') {
+	    # Treat as a qualified class name
+            my $obj = new $arg;
+            $obj->Spec($web);
+            return;
+        }
         $type = $arg;
     }
 
-    my $web = shift;
     if (!$web) {
         if (!$_use_preprocessed_specs) {
             my $cmd = "python -c \'\
@@ -642,7 +649,13 @@ print find_asn_spec.FindSpec(\"$type\") \
 \'";
             system($cmd);
         } else {
-            open(FID, 'ncbi_asn_specs');
+            my $mod_path = $INC{'ncbi.pm'};
+            my $spec_file = substr($mod_path, 0, -7) . 'ncbi_asn_specs';
+            my $status = open(FID, $spec_file);
+            if (!$status) {
+                print "Couldn't open file '$spec_file'\n";
+                return;
+            }
             while (<FID>) {
                 chomp($_);
                 if ($_ eq '') {
