@@ -975,6 +975,14 @@
 #  define NCBI_XLOADER_BLASTDB_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library ncbi_xloader_remoteblast
+ */
+#ifdef NCBI_XLOADER_REMOTEBLAST_EXPORTS
+#  define NCBI_XLOADER_REMOTEBLAST_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_REMOTEBLAST_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library ncbi_xloader_cdd
  */
 #ifdef NCBI_XLOADER_CDD_EXPORTS
@@ -1287,6 +1295,7 @@
 #  define NCBI_XHTML_EXPORT
 #  define NCBI_XIMAGE_EXPORT
 #  define NCBI_XLOADER_BLASTDB_EXPORT
+#  define NCBI_XLOADER_REMOTEBLAST_EXPORT
 #  define NCBI_XLOADER_CDD_EXPORT
 #  define NCBI_XLOADER_GENBANK_EXPORT
 #  define NCBI_XLOADER_LDS_EXPORT
