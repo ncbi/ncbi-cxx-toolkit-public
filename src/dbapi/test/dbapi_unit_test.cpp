@@ -10394,8 +10394,8 @@ CDBAPIUnitTest::Test_ConnFactory(void)
     enum {num_of_tests = 128};
 
     try {
-        TSvrRef server01(new CDBServer("mssql51.nac.ncbi.nlm.nih.gov"));
-        TSvrRef server02(new CDBServer("mssql51.nac.ncbi.nlm.nih.gov"));
+        TSvrRef server01(new CDBServer("mssql51.ncbi.nlm.nih.gov"));
+        TSvrRef server02(new CDBServer("mssql51.ncbi.nlm.nih.gov"));
         TSvrRef server03(new CDBServer("MSSQL67"));
 
         // Check CDBUDPriorityMapper ...
@@ -13988,9 +13988,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.IsBCPAvailable()
         && args.GetDriverName() != ftds_dblib_driver
-        && !(args.GetDriverName() == dblib_driver && args.GetServerType() != CTestArguments::eSybase)
+        && args.GetDriverName() != dblib_driver
         && !(args.GetDriverName() == ctlib_driver && Solaris)
-        && !(args.GetDriverName() == dblib_driver && Solaris)
        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing2, DBAPIInstance);

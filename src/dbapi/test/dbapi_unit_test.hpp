@@ -226,13 +226,16 @@ public:
     void Test_Bulk_Overflow(void);
     
     void Test_GetTotalColumns(void);
+
     void Test_LOB(void);
     void Test_LOB_LowLevel(void);
     void Test_LOB2(void);
     void Test_BlobStream(void);
+
     void Test_BulkInsertBlob(void);
     void Test_BulkInsertBlob_LowLevel(void);
     void Test_BulkInsertBlob_LowLevel2(void);
+
     void Test_UNIQUE(void);
     void Test_DateTime(void);
     void Test_DateTimeBCP(void);
@@ -240,6 +243,7 @@ public:
     void Test_HasMoreResults(void);
     void Test_Create_Destroy(void);
     void Test_Multiple_Close(void);
+
     void Test_Unicode_Simple(void);
     void Test_UnicodeNB(void);
     void Test_Unicode(void);
