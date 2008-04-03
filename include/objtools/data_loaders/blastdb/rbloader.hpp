@@ -57,8 +57,6 @@ BEGIN_SCOPE(objects)
 const string kCFParam_RemoteBlast_DbName = "DbName"; // = string
 const string kCFParam_RemoteBlast_DbType = "DbType"; // = EDbType (e.g. "Protein")
 
-#define NCBI_XLOADER_REMOTEBLAST_EXPORT NCBI_XLOADER_BLASTDB_EXPORT
-
 class NCBI_XLOADER_REMOTEBLAST_EXPORT CRemoteBlastDataLoader : public CDataLoader
 {
     /// The sequence data will sliced into pieces of this size.
