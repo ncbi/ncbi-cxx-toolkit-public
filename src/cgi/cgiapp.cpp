@@ -457,7 +457,7 @@ CCgiContext* CCgiApplication::CreateContext
     return
         new CCgiContext(*this, args, env, inp, out, ifd, ofd,
                         (errbuf_size >= 0) ? (size_t) errbuf_size : 256,
-                        m_RequestFlags);
+                        m_RequestFlags | CCgiRequest::fSetDiagProperties);
 }
 
 
@@ -623,17 +623,6 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             const CCgiRequest& req = m_Context->GetRequest();
             GetDiagContext().SetProperty("server_name",
                 req.GetProperty(eCgi_ServerName));
-            string client = req.GetRandomProperty("CAF_PROXIED_HOST");
-            if ( client.empty() ) {
-                client = req.GetProperty(eCgi_RemoteAddr);
-            }
-            GetDiagContext().SetProperty(
-                CDiagContext::kProperty_ClientIP, client);
-            //GetDiagContext().SetProperty(CDiagContext::kProperty_SessionID,
-            //                             req.GetSession(CCgiRequest::eDontLoad)
-            //                                   .RetrieveSessionId());
-            GetDiagContext().SetProperty(CDiagContext::kProperty_SessionID,
-                m_Context->RetrieveTrackingId());
 
             // Print request start message
             if ( !CDiagContext::IsSetOldPostFormat() ) {

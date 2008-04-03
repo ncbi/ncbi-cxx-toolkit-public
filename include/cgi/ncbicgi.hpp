@@ -605,9 +605,11 @@ public:
         fCookies_SpaceAsHex  = (1 << 6),
         /// Save request content (available through GetContent())
         fSaveRequestContent  = (1 << 7),
-        /// Do not check if page view id is present, do not generate one
+        /// Do not check if page hit id is present, do not generate one
         /// if it's missing.
-        fIgnorePageViewId    = (1 << 8)
+        fIgnorePageHitId     = (1 << 8),
+        /// Set client-ip and session-id properties for logging.
+        fSetDiagProperties   = (1 << 9)
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,
@@ -777,6 +779,9 @@ private:
     void x_ProcessQueryString(TFlags flags, const CNcbiArguments*  args);
     /// Parse input stream if needed
     void x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd);
+
+    /// Set client-ip property for logging
+    void x_SetClientIpProperty(TFlags flags) const;
 
     /// prohibit default initialization and assignment
     CCgiRequest(const CCgiRequest&);

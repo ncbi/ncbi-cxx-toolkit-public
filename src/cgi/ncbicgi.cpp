@@ -1007,6 +1007,9 @@ CCgiRequest::CCgiRequest
 }
 
 
+const char* kPageHitId      = "ncbi_phid";
+
+
 void CCgiRequest::x_Init
 (const CNcbiArguments*   args,
  const CNcbiEnvironment* env,
@@ -1031,6 +1034,8 @@ void CCgiRequest::x_Init
         x_GetPropertyByName(GetPropertyName((ECgiProp) prop));
     }
 
+    x_SetClientIpProperty(flags);
+
     // Parse HTTP cookies
     if ((flags & fCookies_Unencoded) != 0) {
         m_Cookies.SetUrlEncodeFlag(eUrlEncode_None);
@@ -1050,13 +1055,12 @@ void CCgiRequest::x_Init
 
     x_ProcessInputStream(flags, istr, ifd);
 
-    if ((flags & fIgnorePageViewId) == 0) {
+    if ((flags & fIgnorePageHitId) == 0) {
         // Check if pageviewid is present. If not, generate one.
-        static const char* kPageViewId = "page_view_id";
-        TCgiEntries::iterator pvid = m_Entries.find(kPageViewId);
-        if ( pvid == m_Entries.end() ) {
-            string gruid = GetDiagContext().GetGlobalRequestId();
-            s_AddEntry(m_Entries, kPageViewId, gruid, 0);
+        TCgiEntries::iterator phid = m_Entries.find(kPageHitId);
+        if ( phid == m_Entries.end() ) {
+            string id = GetDiagContext().GetGlobalRequestId();
+            s_AddEntry(m_Entries, kPageHitId, id, 0);
         }
     }
 
@@ -1089,6 +1093,20 @@ void CCgiRequest::x_Init
         image_name = name;
     }
     s_AddEntry(m_Entries, kEmptyStr, image_name, 0);
+}
+
+
+void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
+{
+    if ((flags & fSetDiagProperties) == 0) {
+        return;
+    }
+    // Set client IP for diagnostics
+    string client = x_GetPropertyByName("HTTP_CAF_PROXIED_HOST");
+    if ( client.empty() ) {
+        client = x_GetPropertyByName(GetPropertyName(eCgi_RemoteAddr));
+    }
+    GetDiagContext().SetProperty(CDiagContext::kProperty_ClientIP, client);
 }
 
 

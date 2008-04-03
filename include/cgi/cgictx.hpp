@@ -217,7 +217,7 @@ public:
     string RetrieveTrackingId() const;
 private:
     CCgiServerContext& x_GetServerContext(void) const;
-    void x_InitSession();
+    void x_InitSession(CCgiRequest::TFlags flags);
 
     CCgiApplication&      m_App;
     auto_ptr<CCgiRequest> m_Request;  // CGI request  information
@@ -232,6 +232,7 @@ private:
     auto_ptr<CCgiServerContext> m_ServerContext; // application defined context
 
     mutable string m_SelfURL;
+    mutable string m_TrackingId; // cached tracking id
 
     // forbidden
     CCgiContext(const CCgiContext&);

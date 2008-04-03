@@ -118,7 +118,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                                 inp, flags, ifd, errbuf_size)),
       m_Response(out, ofd)
 {
-    x_InitSession();
+    x_InitSession(flags);
     return;
 }
 
@@ -131,10 +131,10 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
       m_Response(os, -1)
 {
     m_Request->Deserialize(*is,flags);
-    x_InitSession();
+    x_InitSession(flags);
     return;
 }
-void CCgiContext::x_InitSession()
+void CCgiContext::x_InitSession(CCgiRequest::TFlags flags)
 {
     CCgiSessionParameters params;
     ICgiSessionStorage* impl = m_App.GetSessionStorage(params);
@@ -158,6 +158,10 @@ void CCgiContext::x_InitSession()
                                      track_cookie_value,
                                      TCGI_TrackingCookieDomain::GetDefault(), 
                                      TCGI_TrackingCookiePath::GetDefault());
+        if ((flags & CCgiRequest::fSetDiagProperties) != 0) {
+            GetDiagContext().SetProperty(CDiagContext::kProperty_SessionID,
+                track_cookie_value);
+        }
     }
 
 }
@@ -379,6 +383,10 @@ string CCgiContext::RetrieveTrackingId() const
 {
     if(TCGI_DisableTrackingCookie::GetDefault()) 
         return "";
+    if ( !m_TrackingId.empty() ) {
+        // Use cached value
+        return m_TrackingId;
+    }
 
     bool is_found = false;
     const CCgiEntry* entry =

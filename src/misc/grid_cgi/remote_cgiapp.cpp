@@ -173,8 +173,9 @@ int CRemoteCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os,
                               CWorkerNodeJobContext& wn_context)
 {
     auto_ptr<CCgiContext> cgi_context( 
-                         new CCgiContext(*this, &is, &os, m_RequestFlags) );
-    
+                         new CCgiContext(*this, &is, &os,
+                         m_RequestFlags | CCgiRequest::fSetDiagProperties) );
+
     m_WorkerNodeContext = &wn_context;
     CDiagRestorer diag_restorer;
 
