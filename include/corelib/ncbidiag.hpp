@@ -1465,7 +1465,9 @@ private:
     // Parse extra args formatted as CGI query string. Do not check validity
     // of names and values. Split args by '&', split name/value by '=', do
     // URL-decoding.
-    void x_ParseExtraArgs(const string& str, size_t start_pos);
+    // If the string is not in the correct format (no '&' or '=') do not
+    // parse it, return false.
+    bool x_ParseExtraArgs(const string& str, size_t pos);
     // URL-decode extra argument in-place.
     void x_DecodeExtra(string& str) const;
 

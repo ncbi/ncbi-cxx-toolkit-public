@@ -759,12 +759,10 @@ string CDiagContext::GetGlobalRequestId(void) const
     Uint4 b2 = Uint4(hi & 0xFFFFFFFF);
 
     CDiagContextThreadData& thr_data = CDiagContextThreadData::GetThreadData();
-    Uint4 tid = Uint4(thr_data.GetTID());
-    Uint4 rid = thr_data.GetRequestId();
-    CTime now = GetFastLocalTime();
-    Uint8 lo = (Uint8(tid & 0xFFFF) << 48) |
-        (Uint8(rid & 0xFFFFFF) << 24) |
-        (now.MicroSecond() & 0xFFFFFF);
+    Uint8 tid = (thr_data.GetTID() & 0xFFFFFF) << 40;
+    Uint8 rid = Uint8(thr_data.GetRequestId() & 0xFFFFFF) << 16;
+    Uint8 us = (GetFastLocalTime().MicroSecond()/16) & 0xFFFF;
+    Uint8 lo = tid | rid | us;
     Uint4 b1 = Uint4((lo >> 32) & 0xFFFFFFFF);
     Uint4 b0 = Uint4(lo & 0xFFFFFFFF);
     char buf[40];
@@ -2093,6 +2091,26 @@ SDiagMessage::~SDiagMessage(void)
 
 
 SDiagMessage::SDiagMessage(const SDiagMessage& message)
+    : m_Severity(eDiagSevMin),
+      m_Buffer(0),
+      m_BufferLen(0),
+      m_File(0),
+      m_Module(0),
+      m_Class(0),
+      m_Function(0),
+      m_Line(0),
+      m_ErrCode(0),
+      m_ErrSubCode(0),
+      m_Flags(0),
+      m_Prefix(0),
+      m_ErrText(0),
+      m_PID(0),
+      m_TID(0),
+      m_ProcPost(0),
+      m_ThrPost(0),
+      m_RequestId(0),
+      m_Data(0),
+      m_Format(eFormat_Auto)
 {
     *this = message;
 }
@@ -2111,7 +2129,7 @@ SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
             m_Data->m_AppState = message.m_Data->m_AppState;
         }
         else {
-            m_Data = new SDiagMessageData;
+            x_SaveContextData();
             if (message.m_Buffer) {
                 m_Data->m_Message =
                     string(message.m_Buffer, message.m_BufferLen);
@@ -2227,10 +2245,13 @@ CTempString s_ParseStr(const string& message,
 }
 
 
-void SDiagMessage::x_ParseExtraArgs(const string& str, size_t start_pos)
+bool SDiagMessage::x_ParseExtraArgs(const string& str, size_t pos)
 {
+    if (str.find('&', pos) == NPOS  &&  str.find('=', pos) == NPOS) {
+        return false;
+    }
     list<string> args;
-    NStr::Split(CTempString(str.c_str() + start_pos), "&", args);
+    NStr::Split(CTempString(str.c_str() + pos), "&", args);
     ITERATE(list<string>, it, args) {
         string n, v;
         NStr::SplitInTwo(*it, "=", n, v);
@@ -2238,6 +2259,7 @@ void SDiagMessage::x_ParseExtraArgs(const string& str, size_t start_pos)
         x_DecodeExtra(v);
         m_ExtraArgs.push_back(TExtraArg(n, v));
     }
+    return true;
 }
 
 
@@ -2437,9 +2459,10 @@ bool SDiagMessage::ParseMessage(const string& message)
             else if (tmp == GetEventName(eEvent_RequestStart)) {
                 m_Event = eEvent_RequestStart;
                 if (pos < message.length()) {
-                    x_ParseExtraArgs(message, pos);
+                    if ( x_ParseExtraArgs(message, pos) ) {
+                        pos = message.length();
+                    }
                 }
-                pos = message.length();
             }
             else if (tmp == GetEventName(eEvent_RequestStop)) {
                 m_Event = eEvent_RequestStop;
@@ -2447,9 +2470,10 @@ bool SDiagMessage::ParseMessage(const string& message)
             else if (tmp == GetEventName(eEvent_Extra)) {
                 m_Event = eEvent_Extra;
                 if (pos < message.length()) {
-                    x_ParseExtraArgs(message, pos);
+                    if ( x_ParseExtraArgs(message, pos) ) {
+                        pos = message.length();
+                    }
                 }
-                pos = message.length();
             }
             else {
                 return false;
@@ -3160,7 +3184,7 @@ void SDiagMessage::x_InitData(void) const
 void SDiagMessage::x_SaveContextData(void) const
 {
     CDiagContext& ctx = GetDiagContext();
-    if ( m_Data  ||  !ctx.IsCollectingMessages() ) {
+    if ( m_Data ) {
         return;
     }
     x_InitData();
@@ -3174,7 +3198,6 @@ void SDiagMessage::x_SaveContextData(void) const
 
 const string& SDiagMessage::GetHost(void) const
 {
-    x_SaveContextData();
     if ( m_Data ) {
         return m_Data->m_Host;
     }
@@ -3184,7 +3207,6 @@ const string& SDiagMessage::GetHost(void) const
 
 const string& SDiagMessage::GetClient(void) const
 {
-    x_SaveContextData();
     if ( m_Data ) {
         return m_Data->m_Client;
     }
@@ -3194,7 +3216,6 @@ const string& SDiagMessage::GetClient(void) const
 
 const string& SDiagMessage::GetSession(void) const
 {
-    x_SaveContextData();
     if ( m_Data ) {
         return m_Data->m_Session;
     }
@@ -3204,7 +3225,6 @@ const string& SDiagMessage::GetSession(void) const
 
 const string& SDiagMessage::GetAppName(void) const
 {
-    x_SaveContextData();
     if ( m_Data ) {
         return m_Data->m_AppName;
     }
@@ -3214,7 +3234,6 @@ const string& SDiagMessage::GetAppName(void) const
 
 const string& SDiagMessage::GetAppState(void) const
 {
-    x_SaveContextData();
     if ( m_Data ) {
         return m_Data->m_AppState;
     }
