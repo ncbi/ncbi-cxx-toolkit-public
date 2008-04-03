@@ -197,12 +197,9 @@ void CConnection::SetDbName(const string& name, CDB_Connection* conn)
 
     CDB_Connection* work = (conn == 0 ? GetCDB_Connection() : conn);
     string sql = "use " + m_database;
-    CDB_LangCmd* cmd = work->LangCmd(sql.c_str());
+    auto_ptr<CDB_LangCmd> cmd(work->LangCmd(sql.c_str()));
     cmd->Send();
-    while( cmd->HasMoreResults() ) {
-        cmd->Result();
-    }
-    delete cmd;
+    cmd->DumpResults();
 }
 
 CDB_Connection* CConnection::CloneCDB_Conn()

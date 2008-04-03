@@ -49,6 +49,48 @@
 
 BEGIN_NCBI_SCOPE
 
+////////////////////////////////////////////////////////////////////////////////
+CStatement::CStmtParamsMetaData::CStmtParamsMetaData(I_BaseCmd*& cmd)
+: m_Cmd(cmd)
+{
+}
+
+CStatement::CStmtParamsMetaData::~CStmtParamsMetaData()
+{
+}
+
+
+unsigned int CStatement::CStmtParamsMetaData::GetTotalColumns() const
+{
+    _ASSERT(m_Cmd);
+    return m_Cmd->GetBindParams().GetNum();
+}
+
+EDB_Type CStatement::CStmtParamsMetaData::GetType(const CDBParamVariant& param) const
+{
+    _ASSERT(m_Cmd);
+    return m_Cmd->GetBindParams().GetDataType(param);
+}
+
+int CStatement::CStmtParamsMetaData::GetMaxSize(const CDBParamVariant& param) const
+{
+    _ASSERT(m_Cmd);
+    return m_Cmd->GetBindParams().GetDataType(param);
+}
+
+string CStatement::CStmtParamsMetaData::GetName(const CDBParamVariant& param) const
+{
+    _ASSERT(m_Cmd);
+    return m_Cmd->GetBindParams().GetName(param);
+}
+
+CDBParams::EDirection CStatement::CStmtParamsMetaData::GetDirection(const CDBParamVariant& param) const
+{
+    _ASSERT(m_Cmd);
+    return m_Cmd->GetBindParams().GetDirection(param);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // implementation
 CStatement::CStatement(CConnection* conn)
 : m_conn(conn)
@@ -86,15 +128,16 @@ void CStatement::CacheResultSet(CDB_Result *rs)
         _TRACE("CStatement::CacheResultSet(): Invalidating cached CResultSet " << (void*)m_irs);
         m_irs->Invalidate();
     }
+
     if( rs != 0 ) {
         m_irs = new CResultSet(m_conn, rs);
         m_irs->AddListener(this);
         AddListener(m_irs);
         _TRACE("CStatement::CacheResultSet(): Created new CResultSet " << (void*)m_irs
             << " with CDB_Result " << (void*)rs);
-    }
-    else
+    } else {
         m_irs = 0;
+    }
 }
 
 IResultSet* CStatement::GetResultSet()
@@ -191,18 +234,20 @@ void CStatement::x_Send(const string& sql)
 IResultSet* CStatement::ExecuteQuery(const string& sql)
 {
     SendSql(sql);
-    while( HasMoreResults() ) {
-        if( HasRows() ) {
+
+    while ( HasMoreResults() ) {
+        if ( HasRows() ) {
             return GetResultSet();
         }
     }
+
     return 0;
 }
 void CStatement::ExecuteUpdate(const string& sql)
 {
     SendSql(sql);
-    //while( HasMoreResults() );
-    GetBaseCmd()->DumpResults();
+
+    PurgeResults();
 }
 
 void CStatement::ExecuteLast()
@@ -216,48 +261,6 @@ void CStatement::ExecuteLast()
     m_cmd->Send();
 }
 
-////////////////////////////////////////////////////////////////////////////////
-CStatement::CStmtParamsMetaData::CStmtParamsMetaData(I_BaseCmd*& cmd)
-: m_Cmd(cmd)
-{
-}
-
-CStatement::CStmtParamsMetaData::~CStmtParamsMetaData()
-{
-}
-
-
-unsigned int CStatement::CStmtParamsMetaData::GetTotalColumns() const
-{
-    _ASSERT(m_Cmd);
-    return m_Cmd->GetBindParams().GetNum();
-}
-
-EDB_Type CStatement::CStmtParamsMetaData::GetType(const CDBParamVariant& param) const
-{
-    _ASSERT(m_Cmd);
-    return m_Cmd->GetBindParams().GetDataType(param);
-}
-
-int CStatement::CStmtParamsMetaData::GetMaxSize(const CDBParamVariant& param) const
-{
-    _ASSERT(m_Cmd);
-    return m_Cmd->GetBindParams().GetDataType(param);
-}
-
-string CStatement::CStmtParamsMetaData::GetName(const CDBParamVariant& param) const
-{
-    _ASSERT(m_Cmd);
-    return m_Cmd->GetBindParams().GetName(param);
-}
-
-CDBParams::EDirection CStatement::CStmtParamsMetaData::GetDirection(const CDBParamVariant& param) const
-{
-    _ASSERT(m_Cmd);
-    return m_Cmd->GetBindParams().GetDirection(param);
-}
-
-////////////////////////////////////////////////////////////////////////////////
 const IResultSetMetaData& 
 CStatement::GetParamsMetaData(void)
 {
@@ -272,8 +275,10 @@ bool CStatement::HasRows()
 IWriter* CStatement::GetBlobWriter(I_ITDescriptor &d, size_t blob_size, EAllowLog log_it)
 {
     delete m_wr;
+
     m_wr = new CxBlobWriter(GetConnection()->GetCDB_Connection(),
         d, blob_size, log_it == eEnableLog, false);
+
     return m_wr;
 }
 
@@ -281,12 +286,15 @@ CNcbiOstream& CStatement::GetBlobOStream(I_ITDescriptor &d, size_t blob_size,
                                          EAllowLog log_it, size_t buf_size)
 {
     delete m_ostr;
+
     m_ostr = new CWStream(new CxBlobWriter(GetConnection()->GetCDB_Connection(),
         d, blob_size, log_it == eEnableLog, false), buf_size, 0, CRWStreambuf::fOwnWriter);
+
     return *m_ostr;
 }
 
-CDB_Result* CStatement::GetCDB_Result() {
+CDB_Result* CStatement::GetCDB_Result() 
+{
     return m_irs == 0 ? 0 : m_irs->GetCDB_Result();
 }
 
@@ -298,9 +306,11 @@ bool CStatement::Failed()
 int CStatement::GetRowCount()
 {
     int v;
+
     if( (v = GetBaseCmd()->RowCount()) >= 0 ) {
         m_rowCount = v;
     }
+
     return m_rowCount;
 }
 
@@ -315,7 +325,8 @@ void CStatement::FreeResources()
     delete m_cmd;
     m_cmd = 0;
     m_rowCount = -1;
-    if( m_conn != 0 && m_conn->IsAux() ) {
+
+    if ( m_conn != 0 && m_conn->IsAux() ) {
         delete m_conn;
         m_conn = 0;
         Notify(CDbapiAuxDeletedEvent(this));
@@ -331,15 +342,26 @@ void CStatement::FreeResources()
 
 void CStatement::PurgeResults()
 {
-//    if( GetBaseCmd() != 0 )
-    if( GetBaseCmd() != 0 )
-        GetBaseCmd()->DumpResults();
+    while (HasMoreResults())
+    {
+        if (HasRows()) {
+            auto_ptr<IResultSet> rs( GetResultSet() );
+            if (rs.get()) {
+                // The fetch below is required by ftds_odbc and ftds8 drivers in
+                // order to retrieve number of rows.
+                while (rs->Next()) {
+                    ;
+                }
+            }
+        }
+    }
 }
 
 void CStatement::Cancel()
 {
     if( GetBaseCmd() != 0 )
         GetBaseCmd()->Cancel();
+
     m_rowCount = -1;
 }
 
@@ -357,7 +379,7 @@ void CStatement::Action(const CDbapiEvent& e)
 
     CResultSet *rs;
 
-    if(dynamic_cast<const CDbapiFetchCompletedEvent*>(&e) != 0 ) {
+    if (dynamic_cast<const CDbapiFetchCompletedEvent*>(&e) != 0 ) {
         if( m_irs != 0 && (rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
             if( rs == m_irs ) {
                 m_rowCount = rs->GetTotalRows();
@@ -366,7 +388,7 @@ void CStatement::Action(const CDbapiEvent& e)
         }
     }
 
-    if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
+    if (dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(e.GetSource());
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
             _TRACE("Deleting " << GetIdent() << " " << (void*)this);

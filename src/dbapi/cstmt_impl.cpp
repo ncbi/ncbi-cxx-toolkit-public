@@ -64,14 +64,15 @@ CCallableStatement::~CCallableStatement()
 
 CDB_RPCCmd* CCallableStatement::GetRpcCmd()
 {
-  return (CDB_RPCCmd*)GetBaseCmd();
+    return (CDB_RPCCmd*)GetBaseCmd();
 }
 
 bool CCallableStatement::HasMoreResults()
 {
     _TRACE("CCallableStatement::HasMoreResults(): Calling parent method");
     bool more = CStatement::HasMoreResults();
-    if( more
+    
+    if (more
         && GetCDB_Result() != 0
         && GetCDB_Result()->ResultType() == eDB_StatusResult ) {
 
@@ -80,6 +81,7 @@ bool CCallableStatement::HasMoreResults()
         while( GetCDB_Result()->Fetch() ) {
             res = dynamic_cast<CDB_Int*>(GetCDB_Result()->GetItem());
         }
+
         if( res != 0 ) {
             m_status = res->Value();
 			m_StatusIsAvailable = true;
@@ -90,6 +92,7 @@ bool CCallableStatement::HasMoreResults()
 
         more = CStatement::HasMoreResults();
     }
+
     return more;
 }
 
@@ -118,25 +121,26 @@ void CCallableStatement::SetOutputParam(const CVariant& v,
 
 void CCallableStatement::Execute()
 {
-  SetFailed(false);
+    SetFailed(false);
 
-  // Reset status value ...
-  m_status = 0;
-  m_StatusIsAvailable = false;
+    // Reset status value ...
+    m_status = 0;
+    m_StatusIsAvailable = false;
 
-  _TRACE("Executing stored procedure: " + GetRpcCmd()->GetProcName());
-  GetRpcCmd()->Send();
+    _TRACE("Executing stored procedure: " + GetRpcCmd()->GetProcName());
+    GetRpcCmd()->Send();
 
-  if ( IsAutoClearInParams() ) {
-      // Implicitely clear all parameters.
-      ClearParamList();
-  }
+    if ( IsAutoClearInParams() ) {
+        // Implicitely clear all parameters.
+        ClearParamList();
+    }
 }
 
 void CCallableStatement::ExecuteUpdate()
 {
-  Execute();
-  while( HasMoreResults() );
+    Execute();
+
+    PurgeResults();
 }
 
 int CCallableStatement::GetReturnStatus()
@@ -149,6 +153,7 @@ int CCallableStatement::GetReturnStatus()
 
     return m_status;
 }
+
 
 void CCallableStatement::Close()
 {
