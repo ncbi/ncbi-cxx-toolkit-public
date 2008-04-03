@@ -5,6 +5,7 @@ SUB_PROJ =  \
     ncbi_validator \
     ncbi_xblastformat \
     ncbi_xloader_blastdb \
+    ncbi_xloader_remoteblast \
     ncbi_xloader_cdd \
     ncbi_xloader_genbank \
     ncbi_xloader_lds \
