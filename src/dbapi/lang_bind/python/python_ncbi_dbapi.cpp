@@ -2933,7 +2933,7 @@ void init_common(const string& module_name)
 
     // Fix plugin manager ...
     CFile file(python::RetrieveModuleFileName());
-    string module_dir = file.GetDir() + "python_ncbi_dbapi/1.6";
+    string module_dir = file.GetDir() + "python_ncbi_dbapi/1.7";
     CDriverManager::GetInstance().AddDllSearchPath(module_dir.c_str());
 
 
