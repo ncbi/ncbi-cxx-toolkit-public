@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = ncbi_xloader_remoteblast
+
+HOSTED_LIBS    = ncbi_xloader_remoteblast
+
+DEPENDENCIES   = ncbi_core   ncbi_pub     ncbi_seq \
+                 ncbi_seqext seqdb        xnetblast
+
+CPPFLAGS = -DNCBI_XLOADER_REMOTEBLAST_EXPORTS
+

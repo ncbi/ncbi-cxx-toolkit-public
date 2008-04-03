@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = ncbi_xloader_remoteblast
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
