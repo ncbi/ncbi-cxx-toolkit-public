@@ -189,6 +189,9 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_GUID           = item.m_GUID;
     m_DllHost        = item.m_DllHost;
     m_HostedLibs     = item.m_HostedLibs;
+
+    m_ExportHeadersDest = item.m_ExportHeadersDest;
+    m_ExportHeaders     = item.m_ExportHeaders;
 }
 
 

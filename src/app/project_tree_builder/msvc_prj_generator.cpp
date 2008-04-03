@@ -117,6 +117,43 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         xmlprj.SetPlatforms().SetPlatform().push_back(platform);
     }}
 
+    // package export handling
+    string pkg_export_command;
+    string pkg_export_output;
+    string pkg_export_input;
+    if (!prj.m_ExportHeaders.empty()) {
+        // destination
+        string config_inc = GetApp().GetProjectTreeInfo().m_Compilers;
+        config_inc = CDirEntry::ConcatPath(config_inc,
+            GetApp().GetRegSettings().m_CompilersSubdir);
+        config_inc = CDirEntry::ConcatPath(config_inc, GetApp().GetBuildType().GetTypeStr());
+        config_inc = CDirEntry::ConcatPath(config_inc, "$(ConfigurationName)");
+        config_inc = CDirEntry::ConcatPath(config_inc,
+            CDirEntry::ConvertToOSPath( prj.m_ExportHeadersDest));
+//        config_inc = CDirEntry::CreateRelativePath(prj.m_SourcesBaseDir, config_inc);
+        config_inc = CDirEntry::AddTrailingPathSeparator( config_inc );
+        config_inc = CDirEntry::CreateRelativePath(project_context.ProjectDir(), config_inc);
+
+        // source
+        string src_dir = 
+            CDirEntry::CreateRelativePath(project_context.ProjectDir(), prj.m_SourcesBaseDir);
+        src_dir = CDirEntry::AddTrailingPathSeparator( src_dir );
+        
+        string command, output, input, file, file_in, file_out;
+        command = "@if not exist \"" + config_inc + "\" mkdir \"" + config_inc + "\"\n";
+        ITERATE (list<string>, f, prj.m_ExportHeaders) {
+            file = CDirEntry::ConvertToOSPath(*f);
+            file_in = "\"" + src_dir + file + "\"";
+            file_out = "\"" + config_inc + file + "\"";
+            command += "xcopy /Y /D /F " + file_in + " \"" + config_inc + "\"\n";
+            output += file_out + ";";
+            input  += file_in  + ";";
+        }
+        pkg_export_command = command;
+        pkg_export_output  = output;
+        pkg_export_input   = input;
+    }
+
     ITERATE(list<SConfigInfo>, p , project_configs) {
 
         const SConfigInfo& cfg_info = *p;
@@ -228,6 +265,15 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         {{
             CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.CustomBuid(), Name);
+#if 0
+// this seems relevant place, but it does not work on MSVC 2005
+// so we put it into PostBuildEvent
+            if (!pkg_export_command.empty()) {
+                tool->SetAttlist().SetCommandLine(pkg_export_command);
+                tool->SetAttlist().SetOutputs(pkg_export_output);
+//                tool->SetAttlist().SetAdditionalDependencies(pkg_export_input);
+            }
+#endif
             conf->SetTool().push_back(tool);
         }}
 
@@ -242,6 +288,9 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         {{
             CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.PostBuildEvent(), Name);
+            if (!pkg_export_command.empty()) {
+                tool->SetAttlist().SetCommandLine( pkg_export_command);
+            }
             conf->SetTool().push_back(tool);
         }}
 

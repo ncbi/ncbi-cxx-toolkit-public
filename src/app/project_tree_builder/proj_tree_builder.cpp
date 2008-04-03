@@ -977,6 +977,16 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                                            defines,
                                            maketype,
         IdentifySlnGUID(source_base_dir, proj_key));
+
+    k = m->second.m_Contents.find("HEADER_EXPORT");
+    if (k != m->second.m_Contents.end()) {
+        (tree->m_Projects[proj_key]).m_ExportHeaders = k->second;
+    }
+    k = m->second.m_Contents.find("PACKAGE_EXPORT");
+    if (k != m->second.m_Contents.end()) {
+        (tree->m_Projects[proj_key]).m_ExportHeadersDest = k->second.front();
+    }
+
     if (!dll_host.empty()) {
         tree->m_Projects[proj_key].m_DllHost = dll_host;
         CProjKey proj_dll(CProjKey::eDll, dll_host);

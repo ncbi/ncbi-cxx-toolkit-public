@@ -157,6 +157,9 @@ public:
 
     string  m_DllHost;
     list<string> m_HostedLibs;
+    
+    string m_ExportHeadersDest;
+    list<string> m_ExportHeaders;
 
 private:
     void Clear(void);
