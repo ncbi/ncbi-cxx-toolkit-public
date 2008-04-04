@@ -3122,8 +3122,10 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     if (m_BufferLen)
         os.write(m_Buffer, m_BufferLen);
 
-    if ( m_Event == eEvent_Extra  &&  !m_ExtraArgs.empty() ) {
-        os << ' ' << FormatExtraMessage();
+    if ( IsSetDiagPostFlag(eDPF_AppLog, m_Flags) ) {
+        if ( m_Event == eEvent_Extra  &&  !m_ExtraArgs.empty() ) {
+            os << ' ' << FormatExtraMessage();
+        }
     }
 
     // <err_code_message> and <err_code_explanation>
