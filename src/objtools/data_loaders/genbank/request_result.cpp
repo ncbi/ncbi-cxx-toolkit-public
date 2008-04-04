@@ -66,19 +66,25 @@ CLoadInfo::~CLoadInfo(void)
 /////////////////////////////////////////////////////////////////////////////
 
 CLoadInfoSeq_ids::CLoadInfoSeq_ids(void)
-    : m_GiLoaded(false)
+    : m_GiLoaded(false),
+      m_LabelLoaded(false),
+      m_State(0)
 {
 }
 
 
 CLoadInfoSeq_ids::CLoadInfoSeq_ids(const CSeq_id_Handle& /*seq_id*/)
-    : m_GiLoaded(false)
+    : m_GiLoaded(false),
+      m_LabelLoaded(false),
+      m_State(0)
 {
 }
 
 
 CLoadInfoSeq_ids::CLoadInfoSeq_ids(const string& /*seq_id*/)
-    : m_GiLoaded(false)
+    : m_GiLoaded(false),
+      m_LabelLoaded(false),
+      m_State(0)
 {
 }
 
