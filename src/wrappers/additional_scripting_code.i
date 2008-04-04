@@ -369,7 +369,7 @@ CSerialObject.Spec = classmethod(Spec)
 
 def EntrezUrl(ids, db=None):
 
-    def GetGi(id, id1cli):
+    def GetUid(id, id1cli):
         if isinstance(id, int):
             return id
         if isinstance(id, string):
@@ -398,19 +398,21 @@ def EntrezUrl(ids, db=None):
     if db == None:
         # Assume it should be 'protein' or 'nucleotide';
         # figure out which from the *first* gi
-        hand = CSimpleOM.GetBioseqHandle(GetGi(ids[0], id1cli))
+        hand = CSimpleOM.GetBioseqHandle(GetUid(ids[0], id1cli))
         if hand.GetBioseqMolType() == CSeq_inst.eMol_aa:
             db = 'protein'
         else:
             db = 'nucleotide'
-        
-    base_url = 'http://www.ncbi.nlm.nih.gov/entrez'
-    query_start = '/query.fcgi?db=%s&cmd=Retrieve&list_uids=' % db
-    url = base_url + query_start
-    for i in range(0, len(ids)):
-        if i > 0:
-            url += ','
-        url += str(GetGi(ids[i], id1cli))
+
+    id_list = ','.join([str(GetUid(id, id1cli)) for id in ids])  # comma-separated
+    
+    if db == 'pubmed':
+        url = 'http://www.ncbi.nlm.nih.gov/pubmed/%s?dopt=docsum' % id_list
+    else:
+        base_url = 'http://www.ncbi.nlm.nih.gov/sites'
+        query_start = '/entrez?db=%s&cmd=Retrieve&list_uids=' % db
+        url = base_url + query_start + id_list
+
     return url
 
 
@@ -813,7 +815,7 @@ sub SerialClone {
 package ncbi;
 sub EntrezUrl {
 
-    sub GetGi {
+    sub GetUid {
         (my $id, my $id1cli) = @_;
         my $seq_id;
         if (ref($id) eq 'ncbi::CSeq_id') {
@@ -846,7 +848,7 @@ sub EntrezUrl {
     if (!defined($db)) {
         # Assume it should be 'protein' or 'nucleotide';
         # figure out which from the *first* gi
-        my $hand = ncbi::CSimpleOM::GetBioseqHandle(GetGi($ids->[0], $id1cli));
+        my $hand = ncbi::CSimpleOM::GetBioseqHandle(GetUid($ids->[0], $id1cli));
         if ($hand->GetBioseqMolType() == $ncbi::CSeq_inst_Base::eMol_aa) {
             $db = 'protein';
         } else {
@@ -854,17 +856,26 @@ sub EntrezUrl {
         }
     }
 
-    my $base_url = 'http://www.ncbi.nlm.nih.gov/entrez';
-    my $query_start = "/query.fcgi?db=${db}&cmd=Retrieve&list_uids=";
-    my $url = $base_url . $query_start;
+    # Make comma-separated uid list
+    my $id_list = '';
     my $i = 0;
     foreach $id (@$ids) {
         if ($i > 0) {
-            $url .= ',';
+            $id_list .= ',';
         }
-        $url .= GetGi($ids->[$i], $id1cli);
+        $id_list .= GetUid($ids->[$i], $id1cli);
         ++$i;
     }
+
+    my $url;
+    if ($db eq 'pubmed') {
+        $url = "http://www.ncbi.nlm.nih.gov/pubmed/${id_list}?dopt=docsum"
+    } else {
+        my $base_url = 'http://www.ncbi.nlm.nih.gov/sites';
+        my $query_start = "/entrez?db=${db}&cmd=Retrieve&list_uids=";
+        $url = $base_url . $query_start . $id_list;
+    }
+
     return $url;
 }
 
