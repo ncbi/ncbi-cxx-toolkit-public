@@ -1,0 +1,24 @@
+#
+# Filename: Manifest
+#
+# Copyright NCBI (c) 2008
+#
+# Author: Sergey Satskiy
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+Linux32 : Bdb4520-pthread : GCC.sh 3.4.2 --without-debug --with-optimization --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
+Linux32 : Bdb4520-pthread : GCC.sh 3.4.2 --with-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
+Linux64 : Bdb4520-pthread : GCC.sh 4.0.1 --without-debug --with-optimization --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
+Linux64 : Bdb4520-pthread : GCC.sh 4.0.1 --with-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
+
+
