@@ -423,6 +423,9 @@ protected:
 
 class NCBI_XNCBI_EXPORT CMemoryRegistry : public IRWRegistry
 {
+public:
+    CMemoryRegistry(void) : m_IsModified(false) {}
+
 protected:
     bool x_Empty(TFlags flags) const;
     bool x_Modified(TFlags) const { return m_IsModified; }
