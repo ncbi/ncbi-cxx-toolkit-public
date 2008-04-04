@@ -56,13 +56,15 @@ BEGIN_SCOPE(objects)
 
 
 CBioseq_Base_Info::CBioseq_Base_Info(void)
+    : m_ObjAnnot(0)
 {
 }
 
 
 CBioseq_Base_Info::CBioseq_Base_Info(const CBioseq_Base_Info& src,
                                      TObjectCopyMap* copy_map)
-    : TParent(src, copy_map)
+    : TParent(src, copy_map),
+      m_ObjAnnot(0)
 {
 }
 
