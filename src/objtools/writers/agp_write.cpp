@@ -225,6 +225,22 @@ static void s_AgpWrite(CNcbiOstream& os,
 }
 
 
+static CConstRef<CSeqMap> s_SeqMapForHandle(const CBioseq_Handle& handle)
+{
+    CConstRef<CSeqMap> seq_map;
+    if (handle.GetInst_Repr() == CSeq_inst::eRepr_raw) {
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        loc->SetInt().SetId().Assign(*handle.GetSeq_id_Handle().GetSeqId());
+        loc->SetInt().SetFrom(0);
+        loc->SetInt().SetTo(handle.GetBioseqLength() - 1);
+        seq_map = CSeqMap::CreateSeqMapForSeq_loc(*loc, &handle.GetScope());
+    } else {
+        seq_map = &handle.GetSeqMap();
+    }
+    return seq_map;
+}
+
+
 void AgpWrite(CNcbiOstream& os,
               const CSeqMap& seq_map,
               const string& object_id,
@@ -240,7 +256,7 @@ void AgpWrite(CNcbiOstream& os,
               const string& object_id,
               const vector<char>& component_types)
 {
-    s_AgpWrite(os, handle.GetSeqMap(), 0, handle.GetBioseqLength(),
+    s_AgpWrite(os, *s_SeqMapForHandle(handle), 0, handle.GetBioseqLength(),
                object_id, NULL, NULL,
                handle.GetScope(), component_types);
 }
@@ -252,7 +268,7 @@ void AgpWrite(CNcbiOstream& os,
               const string& object_id,
               const vector<char>& component_types)
 {
-    s_AgpWrite(os, handle.GetSeqMap(), from, to,
+    s_AgpWrite(os, *s_SeqMapForHandle(handle), from, to,
                object_id, NULL, NULL,
                handle.GetScope(), component_types);
 }
@@ -278,7 +294,7 @@ void AgpWrite(CNcbiOstream& os,
               bool default_linkage,
               const vector<char>& component_types)
 {
-    s_AgpWrite(os, handle.GetSeqMap(), 0, handle.GetBioseqLength(),
+    s_AgpWrite(os, *s_SeqMapForHandle(handle), 0, handle.GetBioseqLength(),
                object_id, &default_gap_type, &default_linkage,
                handle.GetScope(), component_types);
 }
@@ -292,7 +308,7 @@ void AgpWrite(CNcbiOstream& os,
               bool default_linkage,
               const vector<char>& component_types)
 {
-    s_AgpWrite(os, handle.GetSeqMap(), from, to,
+    s_AgpWrite(os, *s_SeqMapForHandle(handle), from, to,
                object_id, &default_gap_type, &default_linkage,
                handle.GetScope(), component_types);
 }
