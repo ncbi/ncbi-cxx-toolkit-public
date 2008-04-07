@@ -114,21 +114,20 @@ CResultSet::~CResultSet()
     NCBI_CATCH_ALL_X( 6, kEmptyStr )
 }
 
-const CVariant& CResultSet::GetVariant(unsigned int idx)
+const CVariant& CResultSet::GetVariant(const CDBParamVariant& param)
 {
-    CheckIdx(idx);
-    return m_data[idx-1];
+    int index = 0;
+
+    if (param.IsPositional()) {
+        index = param.GetPosition();
+    } else {
+        index = GetColNum(param.GetName());
+    }
+
+    CheckIdx(index);
+
+    return m_data[index - 1];
 }
-
-const CVariant& CResultSet::GetVariant(const string& name)
-{
-    int zIdx = GetColNum(name);
-
-    CheckIdx(zIdx);
-
-    return m_data[zIdx-1];
-}
-
 
 const IResultSetMetaData* CResultSet::GetMetaData(EOwnership ownership)
 {

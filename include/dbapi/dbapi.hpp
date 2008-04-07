@@ -96,8 +96,8 @@ public:
 
     /// Get data type for column in the resultset.
     ///
-    /// @param col
-    ///   Column number
+    /// @param param
+    ///   Column number or name
     virtual EDB_Type GetType(const CDBParamVariant& param) const = 0;
 
     /// Get maximum size for column.
@@ -108,14 +108,14 @@ public:
 
     /// Get name of column.
     ///
-    /// @param col
-    ///   Column number
+    /// @param param
+    ///   Column number or name
     virtual string GetName (const CDBParamVariant& param) const = 0;
 
     /// Get parameter's direction (in/out/inout).
     ///
-    /// @param col
-    ///   Column number
+    /// @param param
+    ///   Column number or name
     virtual CDBParams::EDirection GetDirection(const CDBParamVariant& param) const = 0;
 };
 
@@ -152,19 +152,11 @@ public:
     /// Note that the index supplied is one-based, not zero-based; the first
     /// column is column 1.
     ///
-    /// @param col
-    ///   Column number (one-based)
+    /// @param param
+    ///   Column number (one-based) or name
     /// @return
     ///   All data (for BLOB data see below) is returned as CVariant.
-    virtual const CVariant& GetVariant(unsigned int col) = 0;
-
-    /// Get variant given a column name.
-    ///
-    /// @param colName
-    ///   Column name.
-    /// @return
-    ///   All data (for BLOB data see below) is returned as CVariant.
-    virtual const CVariant& GetVariant(const string& colName) = 0;
+    virtual const CVariant& GetVariant(const CDBParamVariant& param) = 0;
 
     /// Disables column binding.
     ///

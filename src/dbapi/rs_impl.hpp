@@ -60,8 +60,7 @@ public:
 
     virtual bool Next();
 
-    virtual const CVariant& GetVariant(unsigned int idx);
-    virtual const CVariant& GetVariant(const string& colName);
+    virtual const CVariant& GetVariant(const CDBParamVariant& param);
 
     virtual void DisableBind(bool b);
     virtual void BindBlobToVariant(bool b);
