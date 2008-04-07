@@ -552,7 +552,7 @@ void CProSplignText::AddProtText(CSeqVector_CI& protein_ci, int& prot_prev, size
         char aa = m_protein[prev_not_intron_pos];
         _ASSERT( aa != SPACE_CHAR );
         SIZE_TYPE added_len = min(3-phase,len);
-        if (prev_not_intron_pos == m_protein.size()-1 && phase+added_len==3) {
+        if (prev_not_intron_pos == m_protein.size()-1 && phase+added_len==3 && (phase==1 || m_protein[prev_not_intron_pos-1]==aa)) {
             m_protein.append(added_len,SPACE_CHAR);
             m_protein[m_protein.size()-3] = SPACE_CHAR;
             m_protein[m_protein.size()-2] = toupper(aa);
@@ -584,39 +584,44 @@ void CProSplignText::AddProtText(CSeqVector_CI& protein_ci, int& prot_prev, size
 
 // translate last len bases in m_dna
 // plus spliced codon in prev exon if at the start of exon
-void CProSplignText::TranslateDNA(int phase, size_t len)
+void CProSplignText::TranslateDNA(int phase, size_t len, bool is_insertion)
 {
     _ASSERT( m_translation.size()+len ==m_dna.size() );
     _ASSERT( phase==0 || m_dna.size()>0 );
 
     m_translation.reserve(m_translation.size()+len);
     size_t start_pos = m_dna.size()-len;
-
+    const char INTRON[] = {INTRON_CHAR,0};
     if (phase != 0) {
         size_t prev_exon_pos = 0;
-        if ((prev_exon_pos=m_protein.find_last_not_of(INTRON_CHAR,start_pos-1))!=start_pos-1 &&
+        if (phase+len >=3 &&
+            ((prev_exon_pos=m_protein.find_last_not_of(is_insertion?INTRON:INTRON_OR_GAP,start_pos-1))!=start_pos-1 ||
+             m_dna[start_pos]==GAP_CHAR) &&
             m_match[prev_exon_pos]!=BAD_PIECE_CHAR) {
             string codon = m_dna.substr(prev_exon_pos-phase+1,phase)+m_dna.substr(start_pos,3-phase);
-            char aa = prosplign::SEQUTIL::TranslateTriplet(codon);
+            char aa = (codon[0]!=GAP_CHAR && codon[1]!=GAP_CHAR) ? prosplign::SEQUTIL::TranslateTriplet(codon) : SPACE_CHAR;
             for( size_t i = prev_exon_pos-phase+1; i<=prev_exon_pos;++i) {
                 m_translation[i] = tolower(aa);
                 m_match[i] = MatchChar(i);
             }
-            m_translation.append((SIZE_TYPE)(3-phase),tolower(aa));
+            m_translation.append((SIZE_TYPE)(3-phase),m_dna[start_pos]!=GAP_CHAR?tolower(aa):SPACE_CHAR);
         } else {
-            m_translation.append((SIZE_TYPE)(3-phase),SPACE_CHAR);
+            m_translation.append(min(len,(SIZE_TYPE)(3-phase)),SPACE_CHAR);
         }
-        start_pos += 3-phase;
+        start_pos += min(len,(SIZE_TYPE)(3-phase));
    }
 
-    char aa[] = "   ";
-    for ( ; start_pos+3 <= m_dna.size(); start_pos += 3) {
-        aa[1] = prosplign::SEQUTIL::TranslateTriplet(m_dna.substr(start_pos,3));
-        m_translation += aa;
+    if (m_dna[start_pos]!=GAP_CHAR) {
+        char aa[] = "   ";
+        for ( ; start_pos+3 <= m_dna.size(); start_pos += 3) {
+            aa[1] = prosplign::SEQUTIL::TranslateTriplet(m_dna.substr(start_pos,3));
+            m_translation += aa;
+        }
     }
 
-    if (start_pos < m_dna.size())
+    if (start_pos < m_dna.size()) {
         m_translation.append(m_dna.size()-start_pos,SPACE_CHAR);
+    }
 
     _ASSERT( m_translation.size()==m_dna.size() );
 }
@@ -738,6 +743,7 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
     int nuc_prev = -1;
     int prot_prev = -1;
     bool prev_3_prime_splice = false;
+    int prev_genomic_ins = 0;
     ITERATE(CSpliced_seg::TExons, e_it, sps.GetExons()) {
         const CSpliced_exon& exon = **e_it;
         int prot_cur_start = GetProdPosInBases(exon.GetProduct_start());
@@ -761,6 +767,7 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
                         genomic_ci, protein_ci,
                         nuc_prev, prot_prev,
                         nuc_cur_start, prot_cur_start);
+            prev_genomic_ins = 0;
         } else { //intron
             SIZE_TYPE intron_len = nuc_cur_start - nuc_prev -1;
             AddDNAText(genomic_ci, nuc_prev, intron_len);
@@ -777,6 +784,8 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
 
         ITERATE(CSpliced_exon::TParts, p_it, exon.GetParts()) {
             const CSpliced_exon_chunk& chunk = **p_it;
+            if (!chunk.IsGenomic_ins())
+                prev_genomic_ins = 0;
             if (chunk.IsDiag() || chunk.IsMatch() || chunk.IsMismatch()) {
                 int len = 0;
                 if (chunk.IsDiag()) {
@@ -787,24 +796,29 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
                     len = chunk.GetMismatch();
                 }
                 AddDNAText(genomic_ci,nuc_prev,len);
-                TranslateDNA((prot_prev+1)%3,len);
+                TranslateDNA((prot_prev+1)%3,len,false);
                 AddProtText(protein_ci,prot_prev,len);
-                MatchText(len);
+                if (chunk.IsMatch()) {
+                    m_match.append(len,MATCH_CHAR);
+                    // m_translation = 
+                } else if (chunk.IsMismatch()) {
+                    m_match.append(len,MISMATCH_CHAR);
+                } else
+                    MatchText(len);
             } else if (chunk.IsProduct_ins()) {
-                _ASSERT((prot_prev+1)%3==0);
-
                 SIZE_TYPE len = chunk.GetProduct_ins();
                 m_dna.append(len,GAP_CHAR);
-                m_translation.append(len,SPACE_CHAR);
+                TranslateDNA((prot_prev+1)%3,len,false);
                 m_match.append(len,MISMATCH_CHAR);
                 AddProtText(protein_ci,prot_prev,len);
             } else if (chunk.IsGenomic_ins()) {
                 SIZE_TYPE len = chunk.GetGenomic_ins();
                 AddDNAText(genomic_ci,nuc_prev,len);
-                if (0<=prot_prev && prot_prev<prot_len-1)
-                    TranslateDNA((prot_prev+1-len%3)%3,len);
+                if (0<=prot_prev && prot_prev<prot_len-1 && (prot_prev+1)%3==0)
+                    TranslateDNA(prev_genomic_ins,len,true);
                 else
                     m_translation.append(len,SPACE_CHAR);
+                prev_genomic_ins = (prev_genomic_ins+len)%3;
                 m_match.append(len,MISMATCH_CHAR);
                 m_protein.append(len,GAP_CHAR);
             }

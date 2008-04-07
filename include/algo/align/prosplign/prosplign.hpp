@@ -312,7 +312,7 @@ private:
     auto_ptr<prosplign::CSubstMatrix> m_matrix;
 
     void AddDNAText(objects::CSeqVector_CI& genomic_ci, int& nuc_prev, size_t len);
-    void TranslateDNA(int phase, size_t len);
+    void TranslateDNA(int phase, size_t len, bool is_insertion);
     void AddProtText(objects::CSeqVector_CI& protein_ci, int& prot_prev, size_t len);
     void MatchText(size_t len);
     char MatchChar(size_t i);
