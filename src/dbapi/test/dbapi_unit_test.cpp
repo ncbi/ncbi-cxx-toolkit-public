@@ -2025,7 +2025,7 @@ CDBAPIUnitTest::Test_LOB_Replication(void)
         auto_ptr<CDB_LangCmd> auto_stmt;
 
         /* DBAPI_Sample..blobRepl is replicated from MSSQL67 to MSSQL8 */
-        sql = "SELECT blob FROM DBAPI_Sample..blobRepl";
+        sql = "SELECT blob, TEXTPTR(blob) FROM DBAPI_Sample..blobRepl";
 
         {
             auto_stmt.reset(conn->LangCmd("BEGIN TRAN"));
