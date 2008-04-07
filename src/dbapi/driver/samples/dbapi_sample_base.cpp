@@ -118,8 +118,8 @@ CDbapiSampleApp::GetServerType(void) const
          || GetServerName() == "TAPER"
          || GetServerName() == "THALBERG"
          || GetServerName() == "SYB_TEST"
-         || NStr::StartsWith(GetServerName(), "DBAPI_DEV") 
-         || NStr::StartsWith(GetServerName(), "BARTOK") 
+         || NStr::StartsWith(GetServerName(), "DBAPI_DEV")
+         || NStr::StartsWith(GetServerName(), "BARTOK")
          ) {
         return eSybase;
     } else if (NStr::StartsWith(GetServerName(), "MS_DEV")
@@ -243,9 +243,6 @@ CDbapiSampleApp::Run()
             SetDatabaseParameter("version", "100");
 //         } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eMsSql ) {
 //             SetDatabaseParameter("version", "100");
-        } else if ( GetDriverName() == "ftds" &&
-                    GetServerType() == eSybase ) {
-            SetDatabaseParameter("version", "42");
         } else if ( GetDriverName() == "ftds8" &&
                     GetServerType() == eSybase ) {
             // ftds forks with Sybase databases using protocol v42 only ...
