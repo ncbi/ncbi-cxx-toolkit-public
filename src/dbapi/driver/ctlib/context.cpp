@@ -528,6 +528,19 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
     m_TDSVersion(version),
     m_Registry(NULL)
 {
+#ifdef FTDS_IN_USE
+    switch (version) {
+        case 40:
+        case 42:
+        case 46:
+        case CS_VERSION_100:
+            DATABASE_DRIVER_ERROR("FTDS driver does not support TDS protocol "
+                                  "version other than 5.0 or 7.0.",
+                                  300011 );
+            break;
+    }
+#endif
+
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
@@ -1416,8 +1429,10 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
         }
 
         citer = attr->find("version");
-        if (citer != attr->end())
+        if (citer != attr->end()) {
             tds_version = NStr::StringToInt(citer->second);
+            _TRACE("WARNING: user manually set TDS version to " << tds_version);
+        }
     }
 
     CTLibContext* cntx = new CTLibContext(reuse_context,
@@ -1531,6 +1546,7 @@ CDbapiCtlibCFBase::CreateInstance(
                     reuse_context = (v.value != "false");
                 } else if ( v.id == "version" ) {
                     tds_version = NStr::StringToInt(v.value);
+                    _TRACE("WARNING: user manually set TDS version to " << tds_version);
                 } else if ( v.id == "packet" ) {
                     page_size = NStr::StringToInt(v.value);
                 } else if ( v.id == "prog_name" ) {
