@@ -10033,16 +10033,26 @@ void CDBAPIUnitTest::Test_DropConnection(void)
     };
 
     try {
+        IDataSource* curr_ds = NULL;
+        CTestArguments::TDatabaseParameters params = m_args.GetDBParameters();
+
+        params["version"] = "125";
+
+        curr_ds = m_DM.CreateDs(
+            m_args.GetDriverName(),
+            &params
+            );
+
         sql = "sleep 0 kill";
         const unsigned orig_conn_num =
-            m_DS->GetDriverContext()->NofConnections();
+            curr_ds->GetDriverContext()->NofConnections();
 
         for (unsigned i = 0; i < num_of_tests; ++i) {
             // Start a connection scope ...
             {
                 bool conn_killed = false;
                 auto_ptr<IConnection> auto_conn(
-                    m_DS->CreateConnection(CONN_OWNERSHIP)
+                    curr_ds->CreateConnection(CONN_OWNERSHIP)
                     );
                 auto_conn->Connect(
                         "anyone",
@@ -10073,9 +10083,12 @@ void CDBAPIUnitTest::Test_DropConnection(void)
 
             BOOST_CHECK_EQUAL(
                 orig_conn_num,
-                m_DS->GetDriverContext()->NofConnections()
+                curr_ds->GetDriverContext()->NofConnections()
                 );
         }
+
+        // !!! DataSource shouldn't be destroyed  ...
+        // m_DM.DestroyDs(curr_ds);
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -14014,6 +14027,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && args.GetDriverName() != ftds_dblib_driver
         && !(args.GetDriverName() == dblib_driver && args.GetServerType() != CTestArguments::eSybase)
+        && !(args.GetDriverName() == ctlib_driver && Solaris)
        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
