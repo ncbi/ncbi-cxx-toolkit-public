@@ -278,6 +278,8 @@ public:
     void Test_ConnParams(void);
     void Test_BindByPos(void);
 
+    void Test_LOB_Replication(void);
+
 public:
     typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)
                 (IDBServiceMapper::TFactory svc_mapper_factory);

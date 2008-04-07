@@ -2007,6 +2007,75 @@ CDBAPIUnitTest::Test_UNIQUE(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 void
+CDBAPIUnitTest::Test_LOB_Replication(void)
+{
+    string sql, sql2;
+    CDB_Text txt;
+
+    try {
+        auto_ptr<IConnection> auto_conn(
+            m_DS->CreateConnection(CONN_OWNERSHIP)
+            );
+        auto_conn->Connect(
+                "anyone",
+                "allowed",
+                "MSSQL67"
+                );
+        CDB_Connection* conn = auto_conn->GetCDB_Connection();
+        auto_ptr<CDB_LangCmd> auto_stmt;
+
+        /* DBAPI_Sample..blobRepl is replicated from MSSQL67 to MSSQL8 */
+        sql = "SELECT blob FROM DBAPI_Sample..blobRepl";
+
+        {
+            auto_stmt.reset(conn->LangCmd("BEGIN TRAN"));
+            auto_stmt->Send();
+            auto_stmt->DumpResults();
+
+            auto_stmt.reset(conn->LangCmd(sql));
+            auto_stmt->Send();
+
+            txt.Append(NStr::Int8ToString(CTime(CTime::eCurrent).GetTimeT()));
+
+            auto_ptr<I_ITDescriptor> descr[2];
+            int i = 0;
+            while(auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL) {
+                    continue;
+                }
+
+                if (rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                while(rs->Fetch()) {
+                    rs->ReadItem(NULL, 0);
+                    descr[i].reset(rs->GetImageOrTextDescriptor());
+                    ++i;
+
+                }
+
+                BOOST_CHECK(descr[0].get() != NULL);
+                BOOST_CHECK(descr[1].get() != NULL);
+            }
+
+            conn->SendData(*descr[0], txt);
+            txt.MoveTo(0);
+            conn->SendData(*descr[1], txt);
+
+            auto_stmt.reset(conn->LangCmd("COMMIT TRAN"));
+            auto_stmt->Send();
+            auto_stmt->DumpResults();
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+void
 CDBAPIUnitTest::Test_LOB(void)
 {
     // static char clob_value[] = "1234567890";
@@ -14738,6 +14807,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
+/*
+    It's not supposed to be included in DBAPI unit tests.
+    It's just example of code that will force replication of updated blob.
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_Replication,
+                               DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+*/
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)
