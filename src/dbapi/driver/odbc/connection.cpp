@@ -72,8 +72,8 @@ static bool ODBC_xSendDataGetId(CStatementBase& stmt,
 CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
                                    const CDBConnParams& params) :
     impl::CConnection(
-            cntx, 
-	    params,
+            cntx,
+        params,
             IsBCPCapable()
             ),
     m_Link(NULL),
@@ -135,7 +135,7 @@ void CODBC_Connection::x_Connect(
         string conn_str_suffix;
 
         if (params.GetHost() && params.GetPort()) {
-            conn_str_suffix = 
+            conn_str_suffix =
                 ";SERVER=" + server_name +
                 ";ADDRESS=" + server_name +
                 "," + NStr::IntToString(params.GetPort()) +
@@ -144,7 +144,7 @@ void CODBC_Connection::x_Connect(
                 ";PWD=" + params.GetPassword()
                 ;
         } else {
-            conn_str_suffix = 
+            conn_str_suffix =
                 ";SERVER=" + server_name +
                 ";UID=" + params.GetUserName() +
                 ";PWD=" + params.GetPassword()
@@ -234,13 +234,11 @@ CODBC_Connection::x_SetConnAttributesBefore(
     }
 
 #ifdef SQL_COPT_SS_BCP
-//     if((conn_attr.mode & I_DriverContext::fBcpIn) != 0) {
-        // Always enable BCP ...
-        SQLSetConnectAttr(m_Link,
-                          SQL_COPT_SS_BCP,
-                          (SQLPOINTER) SQL_BCP_ON,
-                          SQL_IS_INTEGER);
-//     }
+    // Always enable BCP ...
+    SQLSetConnectAttr(m_Link,
+                      SQL_COPT_SS_BCP,
+                      (SQLPOINTER) SQL_BCP_ON,
+                      SQL_IS_INTEGER);
 #endif
 }
 
@@ -593,13 +591,23 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
     int sql_type = 0;
 
     if (descr_type == CDB_ITDescriptor::eText) {
-#if defined(UNICODE)
-        c_type = SQL_C_WCHAR;
-        sql_type = SQL_WLONGVARCHAR;
-#else
-        c_type = SQL_C_CHAR;
-        sql_type = SQL_LONGVARCHAR;
-#endif
+        // New code ...
+        if (stmt.IsMultibyteClientEncoding()) {
+            c_type = SQL_C_WCHAR;
+            sql_type = SQL_WLONGVARCHAR;
+        } else {
+            c_type = SQL_C_CHAR;
+            sql_type = SQL_LONGVARCHAR;
+        }
+        // End of new code ...
+        // Old code ...
+// #if defined(UNICODE)
+//         c_type = SQL_C_WCHAR;
+//         sql_type = SQL_WLONGVARCHAR;
+// #else
+//         c_type = SQL_C_CHAR;
+//         sql_type = SQL_LONGVARCHAR;
+// #endif
     } else {
         c_type = SQL_C_BINARY;
         sql_type = SQL_LONGVARBINARY;
@@ -667,6 +675,39 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
     size_t invalid_len = 0;
 
     while(( len = stream.Read(buff + invalid_len, sizeof(buff) - invalid_len - 1)) != 0 ) {
+        // New code ...
+//         size_t valid_len = len;
+//
+//         if (stmt.GetClientEncoding() == eEncoding_UTF8 &&
+//             descr_type == CDB_ITDescriptor::eText) {
+//
+//             valid_len = CStringUTF8::GetValidBytesCount(buff, len);
+//             invalid_len = len - valid_len;
+//         }
+//
+//         {
+//             CODBCString odbc_str(buff, valid_len, stmt.GetClientEncoding());
+//             // Force odbc_str to make conversion to odbc::TChar*.
+//             odbc::TChar* tchar_str = odbc_str;
+//
+//             rc = SQLPutData(stmt.GetHandle(),
+//                             static_cast<SQLPOINTER>(tchar_str),
+//                             static_cast<SQLINTEGER>(odbc_str.GetSymbolNum() *
+//                                                     sizeof(odbc::TChar)) // Number of bytes ...
+//                             );
+//         }
+//
+//         if (stmt.GetClientEncoding() == eEncoding_UTF8 &&
+//             descr_type == CDB_ITDescriptor::eText) {
+//
+//             if (valid_len < len) {
+//                 memmove(buff, buff + valid_len, invalid_len);
+//             }
+//         }
+        // End of new code ...
+
+
+        // Old code ...
         if (stmt.GetClientEncoding() == eEncoding_UTF8 &&
             descr_type == CDB_ITDescriptor::eText) {
 
@@ -688,11 +729,24 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
                 memmove(buff, buff + valid_len, invalid_len);
             }
         } else {
+            // Experimental code ...
+//             size_t valid_len = len;
+//
+//             CODBCString odbc_str(buff, valid_len, stmt.GetClientEncoding());
+//             // Force odbc_str to make conversion to odbc::TChar*.
+//             odbc::TChar* tchar_str = odbc_str;
+//
+//             rc = SQLPutData(stmt.GetHandle(),
+//                             static_cast<SQLPOINTER>(tchar_str),
+//                             static_cast<SQLINTEGER>(odbc_str.GetSymbolNum() *
+//                                                     sizeof(odbc::TChar)) // Number of bytes ...
+//                             );
             rc = SQLPutData(stmt.GetHandle(),
                             static_cast<SQLPOINTER>(buff),
                             static_cast<SQLINTEGER>(len) // Number of bytes ...
                             );
         }
+        // End of old code ...
 
         switch( rc ) {
         case SQL_SUCCESS_WITH_INFO:
@@ -900,11 +954,19 @@ CStatementBase::Type2String(const CDB_Object& param) const
         break;
     case eDB_Char:
     case eDB_VarChar:
+        // New code ...
         if (IsMultibyteClientEncoding()) {
-            type_str = "nvarchar(255)";
+            type_str = "nvarchar(4000)";
         } else {
-            type_str = "varchar(255)";
+            type_str = "varchar(8000)";
         }
+        // End of new code ...
+        // Old code ...
+//         if (IsMultibyteClientEncoding()) {
+//             type_str = "nvarchar(255)";
+//         } else {
+//             type_str = "varchar(255)";
+//         }
         break;
     case eDB_LongChar:
         if (IsMultibyteClientEncoding()) {
@@ -915,7 +977,10 @@ CStatementBase::Type2String(const CDB_Object& param) const
         break;
     case eDB_Binary:
     case eDB_VarBinary:
-        type_str = "varbinary(255)";
+        // New code ...
+        type_str = "varbinary(8000)";
+        // Old code ...
+//         type_str = "varbinary(255)";
         break;
     case eDB_LongBinary:
         type_str = "varbinary(8000)";
@@ -989,7 +1054,7 @@ CStatementBase::x_BindParam_ODBC(const CDB_Object& param,
 
 
 SQLSMALLINT
-CStatementBase::x_GetCType(const CDB_Object& param)
+CStatementBase::x_GetCType(const CDB_Object& param) const
 {
     SQLSMALLINT type = 0;
 
@@ -1009,11 +1074,19 @@ CStatementBase::x_GetCType(const CDB_Object& param)
     case eDB_Char:
     case eDB_VarChar:
     case eDB_LongChar:
-#ifdef UNICODE
-        type = SQL_C_WCHAR;
-#else
-        type = SQL_C_CHAR;
-#endif
+        // New code ...
+        if (IsMultibyteClientEncoding()) {
+            type = SQL_C_WCHAR;
+        } else {
+            type = SQL_C_CHAR;
+        }
+        // End of new code ...
+        // Old code ...
+// #ifdef UNICODE
+//         type = SQL_C_WCHAR;
+// #else
+//         type = SQL_C_CHAR;
+// #endif
         break;
     case eDB_Binary:
     case eDB_VarBinary:
@@ -1039,7 +1112,7 @@ CStatementBase::x_GetCType(const CDB_Object& param)
 
 
 SQLSMALLINT
-CStatementBase::x_GetSQLType(const CDB_Object& param)
+CStatementBase::x_GetSQLType(const CDB_Object& param) const
 {
     SQLSMALLINT type = SQL_UNKNOWN_TYPE;
 
@@ -1058,18 +1131,34 @@ CStatementBase::x_GetSQLType(const CDB_Object& param)
         break;
     case eDB_Char:
     case eDB_VarChar:
-#ifdef UNICODE
-        type = SQL_WVARCHAR;
-#else
-        type = SQL_VARCHAR;
-#endif
+        // New code ...
+        if (IsMultibyteClientEncoding()) {
+            type = SQL_WVARCHAR;
+        } else {
+            type = SQL_VARCHAR;
+        }
+        // End of new code ...
+        // Old code ...
+// #ifdef UNICODE
+//         type = SQL_WVARCHAR;
+// #else
+//         type = SQL_VARCHAR;
+// #endif
         break;
     case eDB_LongChar:
-#ifdef UNICODE
-        type = SQL_WLONGVARCHAR;
-#else
-        type = SQL_LONGVARCHAR;
-#endif
+        // New code ...
+        if (IsMultibyteClientEncoding()) {
+            type = SQL_WLONGVARCHAR;
+        } else {
+            type = SQL_LONGVARCHAR;
+        }
+        // End of new code ...
+        // Old code ...
+// #ifdef UNICODE
+//         type = SQL_WLONGVARCHAR;
+// #else
+//         type = SQL_LONGVARCHAR;
+// #endif
         break;
     case eDB_Binary:
     case eDB_VarBinary:
@@ -1095,7 +1184,7 @@ CStatementBase::x_GetSQLType(const CDB_Object& param)
 
 
 SQLULEN
-CStatementBase::x_GetMaxDataSize(const CDB_Object& param)
+CStatementBase::x_GetMaxDataSize(const CDB_Object& param) const
 {
     SQLULEN size = 0;
 
@@ -1114,14 +1203,32 @@ CStatementBase::x_GetMaxDataSize(const CDB_Object& param)
         break;
     case eDB_Char:
     case eDB_VarChar:
-        size = 255;
+        // New code ...
+        if (IsMultibyteClientEncoding()) {
+            size = 8000 / sizeof(odbc::TChar);
+        } else {
+            size = 8000;
+        }
+        // End of new code ...
+
+        // Old code ...
+//         size = 255;
         break;
     case eDB_LongChar:
-        size = 8000 / sizeof(odbc::TChar);
+        // New code ...
+        if (IsMultibyteClientEncoding()) {
+            size = 8000 / sizeof(odbc::TChar);
+        } else {
+            size = 8000;
+        }
+        // End of new code ...
+
+        // Old code ...
+//         size = 8000 / sizeof(odbc::TChar);
         break;
     case eDB_Binary:
     case eDB_VarBinary:
-        size = 255;
+        size = 8000;
         break;
     case eDB_LongBinary:
         size = 8000;
@@ -1147,7 +1254,7 @@ CStatementBase::x_GetMaxDataSize(const CDB_Object& param)
 
 
 SQLLEN
-CStatementBase::x_GetCurDataSize(const CDB_Object& param)
+CStatementBase::x_GetCurDataSize(const CDB_Object& param) const
 {
     SQLLEN size = 0;
 
@@ -1185,7 +1292,7 @@ CStatementBase::x_GetCurDataSize(const CDB_Object& param)
 
 
 SQLLEN
-CStatementBase::x_GetIndicator(const CDB_Object& param)
+CStatementBase::x_GetIndicator(const CDB_Object& param) const
 {
     if (param.IsNULL()) {
         return SQL_NULL_DATA;
@@ -1333,6 +1440,40 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 
     int rc;
 
+
+    // New code ...
+//     size_t valid_len = nof_bytes;
+//
+//     if (GetClientEncoding() == eEncoding_UTF8 &&
+//         m_DescrType == CDB_ITDescriptor::eText) {
+//
+//         valid_len = CStringUTF8::GetValidBytesCount(static_cast<const char*>(chunk_ptr),
+//                                                     nof_bytes);
+//
+//         if (valid_len == 0) {
+//             DATABASE_DRIVER_ERROR( "Invalid encoding of a text string." + GetDbgInfo(), 410055 );
+//         }
+//
+//         nof_bytes = valid_len;
+//     }
+//
+//     {
+//         CODBCString odbc_str(static_cast<const char*>(chunk_ptr),
+//                                 valid_len,
+//                                 GetClientEncoding());
+//
+//         // Force odbc_str to make conversion to odbc::TChar*.
+//         odbc::TChar* tchar_str = odbc_str;
+//
+//         rc = SQLPutData(GetHandle(),
+//                         static_cast<SQLPOINTER>(tchar_str),
+//                         static_cast<SQLINTEGER>(odbc_str.GetSymbolNum() *
+//                                                 sizeof(odbc::TChar))
+//                         );
+//     }
+    // End of new code ...
+
+    // Old code ...
     if (GetClientEncoding() == eEncoding_UTF8 &&
         m_DescrType == CDB_ITDescriptor::eText) {
         size_t valid_len = 0;
@@ -1363,6 +1504,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
                         static_cast<SQLINTEGER>(nof_bytes)
                         );
     }
+    // End of old code ...
 
 
     switch( rc ) {

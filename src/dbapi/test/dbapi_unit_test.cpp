@@ -14056,7 +14056,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && !Solaris // Requires Sybase client 12.5
         && args.GetDriverName() != ftds_dblib_driver
-        && args.GetDriverName() != odbc_driver
+        && args.GetDriverName() != odbc_driver // 04/04/08
         && !(args.GetDriverName() == dblib_driver && args.GetServerType() != CTestArguments::eSybase)
         ) 
     {
@@ -14071,6 +14071,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && args.GetDriverName() != ftds_dblib_driver
         && args.GetDriverName() != dblib_driver
+        && args.GetDriverName() != odbc_driver // 04/04/08
         && !(args.GetDriverName() == ctlib_driver && Solaris)
        )
     {
@@ -14119,6 +14120,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (args.IsBCPAvailable()
+        && args.GetDriverName() != odbc_driver // 04/04/08
         && !(args.GetDriverName() == dblib_driver && args.GetServerType() != CTestArguments::eSybase)
         && !(args.GetDriverName() == ftds_dblib_driver && args.GetServerType() == CTestArguments::eSybase)
        )
@@ -14379,36 +14381,33 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         PutMsgDisabled("Test_BulkInsertBlob");
     }
 
-    if (args.IsBCPAvailable()) 
+    if(args.IsBCPAvailable()
+        && args.GetDriverName() != odbc_driver // 04/04/08
+        && args.GetDriverName() != ftds_dblib_driver
+        && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
+        && !(args.GetDriverName() == ctlib_driver && Solaris && !sybase_client_v125)
+        )
     {
-        if(args.GetDriverName() != ftds_dblib_driver
-           && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
-           && !(args.GetDriverName() == ctlib_driver && Solaris && !sybase_client_v125)
-          )
-        {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel,
-                    DBAPIInstance);
-            tc->depends_on(tc_init);
-            add(tc);
-        } else {
-            PutMsgDisabled("Test_BulkInsertBlob_LowLevel");
-        }
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    } else {
+        PutMsgDisabled("Test_BulkInsertBlob_LowLevel");
     }
 
-    if (args.IsBCPAvailable()) 
+    if (args.IsBCPAvailable()
+        && args.GetDriverName() != dblib_driver // Invalid parameters to bcp_bind ...
+        && args.GetDriverName() != ftds_dblib_driver // Invalid parameters to bcp_bind ...
+        && !(args.GetDriverName() == ctlib_driver && Solaris)
+        ) 
     {
-        if (args.GetDriverName() != dblib_driver // Invalid parameters to bcp_bind ...
-            && args.GetDriverName() != ftds_dblib_driver // Invalid parameters to bcp_bind ...
-            && !(args.GetDriverName() == ctlib_driver && Solaris)
-           ) 
-        {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,
-                    DBAPIInstance);
-            tc->depends_on(tc_init);
-            add(tc);
-        } else {
-            PutMsgDisabled("Test_BulkInsertBlob_LowLevel2");
-        }
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    } else {
+        PutMsgDisabled("Test_BulkInsertBlob_LowLevel2");
     }
 
     if (args.GetDriverName() != msdblib_driver) 
@@ -14609,7 +14608,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         PutMsgDisabled("Test_Procedure2");
     }
 
-    if (args.GetDriverName() != ftds_odbc_driver // 03/27/08 
+    if (!args.IsODBCBased() // 04/04/08 
         && !(args.GetDriverName() == ftds_dblib_driver
             && args.GetServerType() == CTestArguments::eSybase) // 03/27/08
         && !(args.GetDriverName() == dblib_driver

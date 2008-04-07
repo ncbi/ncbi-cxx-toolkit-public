@@ -306,10 +306,11 @@ CODBCContext::CODBCContext(SQLLEN version,
 {
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
-
+/**/
 #ifdef UNICODE
     SetClientCharset("UTF-8");
 #endif
+/**/
 
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
         string err_message = "Cannot allocate a context" + m_Reporter.GetExtraMsg();

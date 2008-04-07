@@ -385,11 +385,11 @@ protected:
                           CMemPot& bind_guard,
                           SQLLEN* indicator_base,
                           unsigned int pos) const;
-    static SQLSMALLINT x_GetCType(const CDB_Object& param);
-    static SQLSMALLINT x_GetSQLType(const CDB_Object& param);
-    static SQLULEN x_GetMaxDataSize(const CDB_Object& param);
-    static SQLLEN x_GetCurDataSize(const CDB_Object& param);
-    static SQLLEN x_GetIndicator(const CDB_Object& param);
+    SQLSMALLINT x_GetCType(const CDB_Object& param) const;
+    SQLSMALLINT x_GetSQLType(const CDB_Object& param) const;
+    SQLULEN x_GetMaxDataSize(const CDB_Object& param) const;
+    SQLLEN x_GetCurDataSize(const CDB_Object& param) const;
+    SQLLEN x_GetIndicator(const CDB_Object& param) const;
     SQLPOINTER x_GetData(const CDB_Object& param, CMemPot& bind_guard) const;
 
 protected:

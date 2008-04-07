@@ -424,7 +424,7 @@ public:
     ///   auto-clear input parameter flag value
     virtual bool IsAutoClearInParams(void) const = 0;
 
-    /// Get nput parameters metadata.
+    /// Get input parameters metadata.
     ///
     /// @return
     ///   Pointer to result metadata.

@@ -59,16 +59,16 @@ public:
     explicit CODBCString(const string& str, EEncoding enc = eEncoding_Unknown);
 #ifdef HAVE_WSTRING
     // Seconnd parameter is redundant and will be ignored,
-    // but we need it as a syntactical sugar.
+    // but we need it as syntactical sugar.
     explicit CODBCString(SQLWCHAR* str,
                          EEncoding enc = eEncoding_Unknown);
     // Seconnd parameter is redundant and will be ignored,
-    // but we need it as a syntactical sugar.
+    // but we need it as syntactical sugar.
     explicit CODBCString(const wchar_t* str,
                          wstring::size_type size = wstring::npos,
                          EEncoding enc = eEncoding_Unknown);
     // Seconnd parameter is redundant and will be ignored,
-    // but we need it as a syntactical sugar.
+    // but we need it as syntactical sugar.
     explicit CODBCString(const wstring& str,
                          EEncoding enc = eEncoding_Unknown);
 #endif

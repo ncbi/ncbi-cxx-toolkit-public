@@ -98,7 +98,12 @@ bool CODBC_LangCmd::Send(void)
         real_query = &GetQuery();
     }
 
+    // CODBCString odbc_str(*real_query, GetClientEncoding());
+    // Force odbc_str to make conversion to odbc::TChar*.
+    // odbc::TChar* tchar_str = odbc_str;
+
     switch(SQLExecDirect(GetHandle(), CODBCString(*real_query, GetClientEncoding()), SQL_NTS)) {
+    // switch(SQLExecDirect(GetHandle(), tchar_str, odbc_str.GetSymbolNum())) {
     case SQL_SUCCESS:
         m_HasMoreResults = true;
         break;
