@@ -76,7 +76,7 @@ OPTIONS
         default: <empty>
 
         Name of the output file. If this option is not provided, standard
-        input is used.
+        output is used.
 
     -window dust_window
 

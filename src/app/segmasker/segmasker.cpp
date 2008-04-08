@@ -46,6 +46,7 @@
 #include <objtools/seqmasks_io/mask_writer_int.hpp>
 #include <objtools/seqmasks_io/mask_writer_fasta.hpp>
 #include <objtools/seqmasks_io/mask_writer_seqloc.hpp>
+#include <objtools/seqmasks_io/mask_writer_blastdb_maskinfo.hpp>
 
 // Object manager includes
 #include <objmgr/object_manager.hpp>
@@ -162,8 +163,13 @@ SegMaskerApplication::x_GetWriter()
         retval = new CMaskWriterFasta(output);
     } else if (NStr::StartsWith(format, "seqloc_")) {
         retval = new CMaskWriterSeqLoc(output, format);
+    } else if (NStr::StartsWith(format, "maskinfo_")) {
+        retval = 
+            new CMaskWriterBlastDbMaskInfo(output, format, 1,
+                               eBlast_filter_program_seg,
+                               BuildAlgorithmParametersString(args));
     } else {
-        _ASSERT("Unknown output format" == 0);
+        throw runtime_error("Unknown output format");
     }
     return retval;
 }

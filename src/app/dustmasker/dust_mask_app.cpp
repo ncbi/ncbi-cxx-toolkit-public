@@ -53,9 +53,19 @@
 #include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/readers/fasta.hpp>
-#include <objtools/seqmasks_io/mask_cmdline_args.hpp>
 
 #include "dust_mask_app.hpp"
+
+// Filtering applications IO
+#include <objtools/seqmasks_io/mask_cmdline_args.hpp>
+#include <objtools/seqmasks_io/mask_reader.hpp>
+#include <objtools/seqmasks_io/mask_writer.hpp>
+#include <objtools/seqmasks_io/mask_fasta_reader.hpp>
+#include <objtools/seqmasks_io/mask_bdb_reader.hpp>
+#include <objtools/seqmasks_io/mask_writer_int.hpp>
+#include <objtools/seqmasks_io/mask_writer_fasta.hpp>
+#include <objtools/seqmasks_io/mask_writer_seqloc.hpp>
+#include <objtools/seqmasks_io/mask_writer_blastdb_maskinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -115,7 +125,7 @@ void CDustMaskApplication::Init(void)
                              CArgDescriptions::eString, "" );
     arg_desc->AddDefaultKey( kOutput, "output_file_name",
                              "output file name",
-                             CArgDescriptions::eString, "" );
+                             CArgDescriptions::eOutputFile, "-");
     arg_desc->AddDefaultKey( "window", "window_size",
                              "DUST window length",
                              CArgDescriptions::eInteger, "64" );
@@ -130,7 +140,6 @@ void CDustMaskApplication::Init(void)
                              "output format",
                              CArgDescriptions::eString, *kOutputFormats );
     CArgAllow_Strings* strings_allowed = new CArgAllow_Strings();
-    const size_t kNumOutputFormats = 2;
     for (size_t i = 0; i < kNumOutputFormats; i++) {
         strings_allowed->Allow(kOutputFormats[i]);
     }
@@ -241,6 +250,31 @@ void CDustMaskApplication::fasta_out_handler(
     }
 }
 
+CMaskWriter*
+CDustMaskApplication::x_GetWriter()
+{
+    const CArgs& args = GetArgs();
+    const string& format(args[kOutputFormat].AsString());
+    CNcbiOstream& output = args[kOutput].AsOutputFile();
+    CMaskWriter* retval = NULL;
+
+    if (format == "interval") {
+        retval = new CMaskWriterInt(output);
+    } else if (format == "fasta") {
+        retval = new CMaskWriterFasta(output);
+    } else if (NStr::StartsWith(format, "seqloc_")) {
+        retval = new CMaskWriterSeqLoc(output, format);
+    } else if (NStr::StartsWith(format, "maskinfo_")) {
+        retval = 
+            new CMaskWriterBlastDbMaskInfo(output, format, 2,
+                               eBlast_filter_program_dust,
+                               BuildAlgorithmParametersString(args));
+    } else {
+        throw runtime_error("Unknown output format");
+    }
+    return retval;
+}
+
 //-------------------------------------------------------------------------
 int CDustMaskApplication::Run (void)
 {
@@ -279,24 +313,9 @@ int CDustMaskApplication::Run (void)
     duster_type::size_type linker = GetArgs()["linker"].AsInteger();
     duster_type duster( level, window, linker );
 
-    out_handler_type out_handler = 0;
-
-    {
-        std::string oformat = GetArgs()[kOutputFormat].AsString();
-        
-        if( oformat == "interval" ) {
-            out_handler = &interval_out_handler;
-        }else if( oformat == "acclist" ) {
-            out_handler = &acclist_out_handler;
-        }else if( oformat == "fasta" ) {
-            out_handler = &fasta_out_handler;
-        }else {
-            _ASSERT("Unknown output format" == 0);
-        }
-    }
-
     // Now process each input sequence in a loop.
     CRef< CSeq_entry > aSeqEntry( 0 );
+    auto_ptr<CMaskWriter> writer(x_GetWriter());
 
     while( (aSeqEntry = GetNextSequence( input_stream )).NotEmpty() )
     {
@@ -315,73 +334,9 @@ int CDustMaskApplication::Run (void)
             CSeqVector data 
                 = bsh.GetSeqVector( CBioseq_Handle::eCoding_Iupac );
             std::auto_ptr< duster_type::TMaskList > res = duster( data );
-
-            if( out_handler != 0 && res.get() != 0 ) {
-                out_handler( output_stream, bsh, *res.get() );
+            if (res.get()) {
+                writer->Print(bsh, *res);
             }
-
-            /*
-            if( output_stream != 0 )
-            {
-                *output_stream << ">"
-                               << CSeq_id::GetStringDescr( 
-                                    *bsh.GetCompleteBioseq(),
-                                    CSeq_id::eFormat_FastA )
-                               << " " << sequence::GetTitle( bsh ) << "\n";
-
-                for( it_type it = res->begin(); it != res->end(); ++it )
-                    *output_stream << it->first  << " - " 
-                                   << it->second << "\n";
-            }
-            */
-
-            /*
-            CConstRef< objects::CSeq_id > id = bsh.GetSeqId();
-            std::vector< CConstRef< objects::CSeq_loc > > locs;
-            duster.GetMaskedLocs( 
-                const_cast< objects::CSeq_id & >(*id.GetPointer()), 
-                data, locs );
-
-            if( output_stream != 0 )
-            {
-                *output_stream << ">"
-                               << CSeq_id::GetStringDescr( 
-                                    *bsh.GetCompleteBioseq(),
-                                    CSeq_id::eFormat_FastA )
-                               << " " << sequence::GetTitle( bsh ) << "\n";
-                for( std::vector< CConstRef< objects::CSeq_loc > >::iterator 
-                        it = locs.begin(); it != locs.end(); ++it )
-                    *output_stream 
-                      << it->GetPointer()->GetStart((objects::ESeqLocExtremes)1) 
-                      << " - " 
-                      << it->GetPointer()->GetStop((objects::ESeqLocExtremes)1) 
-                      << "\n";
-            }
-            */
-
-            /*
-            CConstRef< objects::CSeq_id > id = bsh.GetSeqId();
-            CRef< CPacked_seqint > masked( 
-                    duster.GetMaskedInts( 
-                        const_cast< objects::CSeq_id &>( *id.GetPointer() ),
-                        data ) );
-            typedef CPacked_seqint::Tdata Tdata;
-
-            if( output_stream != 0 ) {
-                const Tdata & mask_data = masked->Get();
-                *output_stream << ">"
-                               << CSeq_id::GetStringDescr( 
-                                    *bsh.GetCompleteBioseq(),
-                                    CSeq_id::eFormat_FastA )
-                               << " " << sequence::GetTitle( bsh ) << "\n";
-                for( Tdata::const_iterator i = mask_data.begin();
-                        i != mask_data.end(); ++i )
-                    *output_stream << (*i)->GetFrom()
-                                   << " - "
-                                   << (*i)->GetTo()
-                                   << "\n";
-            }
-            */
 
             NcbiCerr << "." << flush;
         }

@@ -39,6 +39,8 @@
 
 #include <algo/dustmask/symdust.hpp>
 
+#include <objtools/seqmasks_io/mask_writer.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class CDustMaskApplication : public CNcbiApplication
@@ -50,6 +52,7 @@ public:
     virtual int Run (void);
 
 private:
+    CMaskWriter* CDustMaskApplication::x_GetWriter();
 
     typedef CSymDustMasker duster_type;
     typedef duster_type::TMaskList::const_iterator it_type;

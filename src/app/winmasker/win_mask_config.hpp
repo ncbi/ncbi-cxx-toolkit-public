@@ -771,6 +771,20 @@ private:
     static void FillIdList( const string & file_name, 
                             CIdSet & id_list );
 
+    /** 
+     * @brief Create the CMaskWriter instance for this class
+     * 
+     * @param args command line arguments
+     * @param output output stream
+     * @param format format of the output to be written
+     * 
+     * @return writer based on the format requested
+     * @throws runtime_error if the output format is not recognized
+     */
+    CMaskWriter* x_GetWriter(const CArgs& args,
+                             CNcbiOstream& output, 
+                             const string& format);
+
     /**\name Window based masker configuration.
      **/
     //@{

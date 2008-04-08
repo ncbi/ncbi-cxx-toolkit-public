@@ -47,10 +47,12 @@ const std::string kInputFormat("infmt");
 const std::string kOutput("out");
 const std::string kOutputFormat("outfmt");
 const size_t kNumInputFormats = 2;
-const size_t kNumOutputFormats = 5;
+const size_t kNumOutputFormats = 8;
 const char* kInputFormats[] =  { "fasta", "blastdb" };
 const char* kOutputFormats[] = 
     { "interval", "fasta", 
-      "seqloc_asn1_bin", "seqloc_asn1_text", "seqloc_xml" };
+      "seqloc_asn1_bin", "seqloc_asn1_text", "seqloc_xml",
+      "maskinfo_asn1_bin", "maskinfo_asn1_text", "maskinfo_xml",
+    };
 
 END_NCBI_SCOPE

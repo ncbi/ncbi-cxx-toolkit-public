@@ -40,11 +40,36 @@
 #include <objtools/seqmasks_io/mask_writer_int.hpp>
 #include <objtools/seqmasks_io/mask_writer_fasta.hpp>
 #include <objtools/seqmasks_io/mask_writer_seqloc.hpp>
+#include <objtools/seqmasks_io/mask_writer_blastdb_maskinfo.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+CMaskWriter*
+CWinMaskConfig::x_GetWriter(const CArgs& args, 
+                            CNcbiOstream& output, 
+                            const string& format)
+{
+    CMaskWriter* retval = NULL;
+
+    if (format == "interval") {
+        retval = new CMaskWriterInt(output);
+    } else if (format == "fasta") {
+        retval = new CMaskWriterFasta(output);
+    } else if (NStr::StartsWith(format, "seqloc_")) {
+        retval = new CMaskWriterSeqLoc(output, format);
+    } else if (NStr::StartsWith(format, "maskinfo_")) {
+        retval = 
+            new CMaskWriterBlastDbMaskInfo(output, format, 3,
+                               eBlast_filter_program_window,
+                               BuildAlgorithmParametersString(args));
+    } else {
+        throw runtime_error("Unknown output format");
+    }
+    return retval;
+}
 
 //----------------------------------------------------------------------------
 CWinMaskConfig::CWinMaskConfig( const CArgs & args )
@@ -127,14 +152,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
 
         string oformatstr = args[kOutputFormat].AsString();
 
-        if( oformatstr == "interval" )
-            writer = new CMaskWriterInt( *os );
-        else if( oformatstr == "fasta" )
-            writer = new CMaskWriterFasta( *os );
-        else if( NStr::StartsWith(oformatstr, "seqloc_") )
-            writer = new CMaskWriterSeqLoc( *os, oformatstr );
-        else
-            _ASSERT("Unknown output format" == 0);
+        writer = x_GetWriter(args, *os, oformatstr);
 
         if( !reader )
         {
