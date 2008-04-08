@@ -13815,27 +13815,33 @@ string GetSybaseClientVersion(void)
 CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
 {
-    bool Solaris = false;
-    bool CompilerWorkShop = false;
-    bool CompilerGCC = false;
-    bool Irix = false;
+    enum EOsType {eOsUnknown, eOsSolaris, eOsWindows, eOsIrix};
+    enum ECompilerType {eCompilerUnknown, eCompilerWorkShop, eCompilerGCC};
+    
+    EOsType os_type = eOsUnknown;
+    ECompilerType compiler_type = eCompilerUnknown;
+    
     bool sybase_client_v125 = false;
     bool sybase_client_v120_solaris = false;
 
 #if defined(NCBI_OS_SOLARIS)
-    Solaris = true;
+    os_type = eOsSolaris;
 #endif
 
 #if defined(NCBI_COMPILER_WORKSHOP)
-    CompilerWorkShop = true;
+    compiler_type = eCompilerWorkShop;
 #endif
 
 #if defined(NCBI_COMPILER_GCC)
-    CompilerGCC = true;
+    compiler_type = eCompilerGCC;
 #endif
 
 #if defined(NCBI_OS_IRIX)
-    Irix = true;
+    os_type = eOsIrix;
+#endif
+
+#if defined(NCBI_OS_MSWIN)
+    os_type = eOsWindows;
 #endif
 
     // Get Sybase client version number (at least try to do that).
@@ -13845,7 +13851,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         sybase_client_v125 = true;
     }
 
-    if (Solaris && NStr::CompareNocase(sybase_version, 0, 4, "12.0") == 0) {
+    if (os_type == eOsSolaris && NStr::CompareNocase(sybase_version, 0, 4, "12.0") == 0) {
         sybase_client_v120_solaris = true;
     }
 
@@ -13891,7 +13897,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (!(args.GetDriverName() == ctlib_driver && sybase_client_v120_solaris)) {
+    if (!(args.GetDriverName() == ctlib_driver && sybase_client_v120_solaris)
+        // We probably have an old version of Sybase Client installed on
+        // Windows ...
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsWindows) // 04/08/08
+        ) 
+    {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CHAR,
                 DBAPIInstance);
         tc->depends_on(tc_init);
@@ -13942,7 +13953,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
 
     if (args.GetTestConfiguration() != CTestArguments::eFast) {
-        if (args.GetServerType() == CTestArguments::eSybase && !Solaris) 
+        if (args.GetServerType() == CTestArguments::eSybase && os_type != eOsSolaris) 
         {
             // Solaris has an outdated version of Sybase client installed ...
             if (args.GetDriverName() != dblib_driver // Cannot connect to the server ...
@@ -13981,11 +13992,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     {
         // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
         if ( (args.GetDriverName() == ftds8_driver
-            && !(Solaris && CompilerWorkShop) && !Irix
+            && !(os_type == eOsSolaris && compiler_type == eCompilerWorkShop) && os_type != eOsIrix
             )
             || (args.GetDriverName() == dblib_driver && args.GetServerType() == CTestArguments::eSybase)
             || args.GetDriverName() == msdblib_driver
-            || (args.GetDriverName() == ctlib_driver && !Solaris)
+            || (args.GetDriverName() == ctlib_driver && os_type != eOsSolaris)
             || args.GetDriverName() == ftds64_driver
             || args.IsODBCBased()
             ) 
@@ -14023,7 +14034,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.GetDriverName() != ftds8_driver
         && args.GetDriverName() != ftds_dblib_driver
         && args.GetDriverName() != msdblib_driver
-        && !(args.GetDriverName() == ftds8_driver && Solaris)
+        && !(args.GetDriverName() == ftds8_driver && os_type == eOsSolaris)
         && !(args.GetDriverName() == ftds8_driver
              && args.GetServerType() == CTestArguments::eSybase)
         && (args.GetDriverName() != dblib_driver
@@ -14103,7 +14114,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (args.IsBCPAvailable()
-        && !Solaris // Requires Sybase client 12.5
+        && os_type != eOsSolaris // Requires Sybase client 12.5
+        // We probably have an old version of Sybase Client installed on
+        // Windows ...
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsWindows) // 04/08/08
         && args.GetDriverName() != ftds_dblib_driver
         && args.GetDriverName() != odbc_driver // 04/04/08
         && !(args.GetDriverName() == dblib_driver && args.GetServerType() != CTestArguments::eSybase)
@@ -14121,7 +14135,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && args.GetDriverName() != ftds_dblib_driver
         && args.GetDriverName() != dblib_driver
         && args.GetDriverName() != odbc_driver // 04/04/08
-        && !(args.GetDriverName() == ctlib_driver && Solaris)
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris)
        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing2, DBAPIInstance);
@@ -14146,7 +14160,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && args.GetDriverName() != ftds_dblib_driver
         && !(args.GetDriverName() == dblib_driver && args.GetServerType() != CTestArguments::eSybase)
-        && !(args.GetDriverName() == ctlib_driver && Solaris)
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris)
        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing4, DBAPIInstance);
@@ -14434,7 +14448,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && args.GetDriverName() != odbc_driver // 04/04/08
         && args.GetDriverName() != ftds_dblib_driver
         && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
-        && !(args.GetDriverName() == ctlib_driver && Solaris && !sybase_client_v125)
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris && !sybase_client_v125)
         )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel,
@@ -14448,7 +14462,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && args.GetDriverName() != dblib_driver // Invalid parameters to bcp_bind ...
         && args.GetDriverName() != ftds_dblib_driver // Invalid parameters to bcp_bind ...
-        && !(args.GetDriverName() == ctlib_driver && Solaris)
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris)
         ) 
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,
@@ -14522,7 +14536,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && !(args.GetDriverName() == ftds8_driver
             && args.GetServerType() == CTestArguments::eSybase)
         && args.GetDriverName() != ftds_dblib_driver
-        && !(args.GetDriverName() == ctlib_driver && Solaris && !sybase_client_v125)
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris && !sybase_client_v125)
         ) 
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Recordset,
@@ -14626,7 +14640,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
 
     if (args.GetDriverName() != dblib_driver
-        && !(args.GetDriverName() == ctlib_driver && Solaris && !sybase_client_v125)
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris && !sybase_client_v125)
         && !(args.GetDriverName() == ftds_dblib_driver && args.GetServerType() == CTestArguments::eSybase)
         && !(args.GetDriverName() == ftds8_driver && args.GetServerType() == CTestArguments::eSybase)
         ) 
@@ -14662,7 +14676,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             && args.GetServerType() == CTestArguments::eSybase) // 03/27/08
         && !(args.GetDriverName() == dblib_driver
             && args.GetServerType() == CTestArguments::eMsSql
-            && Solaris) // 04/01/08
+            && os_type == eOsSolaris) // 04/01/08
         ) 
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure3,
