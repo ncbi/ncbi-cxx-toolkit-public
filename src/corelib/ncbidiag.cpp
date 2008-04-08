@@ -2025,7 +2025,8 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
                            const char* module, 
                            const char* nclass, 
                            const char* function)
-    : m_Data(0),
+    : m_Event(eEvent_Start),
+      m_Data(0),
       m_Format(eFormat_Auto)
 {
     m_Severity   = severity;
@@ -2072,6 +2073,7 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
       m_ProcPost(0),
       m_ThrPost(0),
       m_RequestId(0),
+      m_Event(eEvent_Start),
       m_Data(0),
       m_Format(eFormat_Auto)
 {
@@ -2109,6 +2111,7 @@ SDiagMessage::SDiagMessage(const SDiagMessage& message)
       m_ProcPost(0),
       m_ThrPost(0),
       m_RequestId(0),
+      m_Event(eEvent_Start),
       m_Data(0),
       m_Format(eFormat_Auto)
 {
@@ -2324,6 +2327,7 @@ bool SDiagMessage::ParseMessage(const string& message)
     m_ProcPost = 0;
     m_ThrPost = 0;
     m_RequestId = 0;
+    m_Event = eEvent_Start;
     m_Format = eFormat_Auto;
     if ( m_Data ) {
         delete m_Data;
