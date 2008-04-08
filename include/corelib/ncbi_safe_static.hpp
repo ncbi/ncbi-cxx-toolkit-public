@@ -297,7 +297,7 @@ private:
     {
         T* tmp = static_cast<T*>(*ptr);
         if ( tmp ) {
-            tmp->ReleaseReference();
+            tmp->RemoveReference();
             *ptr = 0;
         }
     }
