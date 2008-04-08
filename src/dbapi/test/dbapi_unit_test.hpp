@@ -138,6 +138,7 @@ public:
     bool IsBCPAvailable(void) const;
 
     bool IsODBCBased(void) const;
+    bool DriverAllowsMultipleContexts(void) const;
 
     bool UseGateway(void) const
     {
@@ -339,15 +340,17 @@ protected:
         _ASSERT(m_DS);
         return *m_DS;
     }
+    I_DriverContext& GetDriverContext(void);
 
 private:
-    const CTestArguments    m_args;
-    CDriverManager&         m_DM;
-    IDataSource*            m_DS;
-    auto_ptr<IConnection>   m_Conn;
+    const CTestArguments        m_args;
+    CDriverManager&             m_DM;
+    IDataSource*                m_DS;
+    auto_ptr<IConnection>       m_Conn;
+    auto_ptr<I_DriverContext>   m_AutoDC;
 
-    const string            m_TableName;
-    unsigned int            m_max_varchar_size;
+    const string                m_TableName;
+    unsigned int                m_max_varchar_size;
 };
 
 ///////////////////////////////////////////////////////////////////////////

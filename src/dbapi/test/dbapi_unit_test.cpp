@@ -207,6 +207,12 @@ CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
 , m_DS( NULL )
 , m_TableName( "#dbapi_unit_table" )
 {
+    if (m_args.DriverAllowsMultipleContexts()) {
+        CTestArguments::TDatabaseParameters params = m_args.GetDBParameters();
+        params["version"] = "125";
+        m_AutoDC.reset(Get_I_DriverContext(m_args.GetDriverName(), &params));
+    }
+    
     // SetDiagFilter(eDiagFilter_Trace, "!/dbapi/driver/ctlib");
 }
 
@@ -220,6 +226,23 @@ CDBAPIUnitTest::~CDBAPIUnitTest(void)
     m_Conn.reset(NULL);
     m_DM.DestroyDs(m_DS);
     m_DS = NULL;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+I_DriverContext& CDBAPIUnitTest::GetDriverContext(void)
+{
+    I_DriverContext* cntx = NULL;
+
+    if (m_args.DriverAllowsMultipleContexts()) {
+        cntx = m_AutoDC.get();
+    } else {
+        cntx = GetDS().GetDriverContext();
+    }
+
+    _ASSERT(cntx);
+
+    return *cntx;
 }
 
 
@@ -1118,12 +1141,13 @@ void CDBAPIUnitTest::Test_Iskhakov(void)
 
     try {
         auto_ptr<CDB_Connection> auto_conn(
-            GetDS().GetDriverContext()->Connect(
+            GetDriverContext().Connect(
                 "LINK_OS",
                 "anyone",
                 "allowed",
                 0)
             );
+
         BOOST_CHECK( auto_conn.get() != NULL );
 
         sql  = "get_iodesc_for_link pubmed_pubmed";
@@ -10103,15 +10127,10 @@ void CDBAPIUnitTest::Test_DropConnection(void)
     };
 
     try {
-        CTestArguments::TDatabaseParameters params = m_args.GetDBParameters();
-
-        params["version"] = "125";
-
-        auto_ptr<I_DriverContext> auto_dc(Get_I_DriverContext(m_args.GetDriverName(), &params));
-        CMsgHandlerGuard guard(*auto_dc);
+        CMsgHandlerGuard guard(GetDriverContext());
 
         sql = "sleep 0 kill";
-        const unsigned orig_conn_num = auto_dc->NofConnections();
+        const unsigned orig_conn_num = GetDriverContext().NofConnections();
 
         for (unsigned i = 0; i < num_of_tests; ++i) {
             // Start a connection scope ...
@@ -10120,7 +10139,7 @@ void CDBAPIUnitTest::Test_DropConnection(void)
 
                 auto_ptr<CDB_Connection> auto_conn;
 
-                auto_conn.reset(auto_dc->Connect(
+                auto_conn.reset(GetDriverContext().Connect(
                         "LINK_OS_INTERNAL",
                         "anyone",
                         "allowed",
@@ -10149,7 +10168,7 @@ void CDBAPIUnitTest::Test_DropConnection(void)
 
             BOOST_CHECK_EQUAL(
                 orig_conn_num,
-                auto_dc->NofConnections()
+                GetDriverContext().NofConnections()
                 );
         }
     }
@@ -13757,8 +13776,8 @@ CDBAPIUnitTest::Test_Heavy_Load(void)
             rs->BindBlobToVariant(true);
 
             while (rs->Next()) {
-                int int_val = rs->GetVariant(1).GetInt4();
-                double flt_val = rs->GetVariant(2).GetDouble();
+                /*int int_val =*/ rs->GetVariant(1).GetInt4();
+                /*double flt_val =*/ rs->GetVariant(2).GetDouble();
                 CTime date_val = rs->GetVariant(3).GetCTime();
                 string vc1_val = rs->GetVariant(4).GetString();
                 string vc2_val = rs->GetVariant(5).GetString();
@@ -13825,6 +13844,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         || NStr::CompareNocase(sybase_version, "current") == 0) {
         sybase_client_v125 = true;
     }
+
     if (Solaris && NStr::CompareNocase(sybase_version, 0, 4, "12.0") == 0) {
         sybase_client_v120_solaris = true;
     }
@@ -13834,23 +13854,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     boost::unit_test::test_case* tc = NULL;
 
     if (args.GetTestConfiguration() != CTestArguments::eFast) {
-        // Test DriverContext
-        if (args.GetDriverName() == ftds8_driver ||
-                args.GetDriverName() == ftds_dblib_driver ||
-                // args.GetDriverName() == dblib_driver ||
-                args.GetDriverName() == msdblib_driver
-           ) {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One,
-                    DBAPIInstance);
-            add(tc);
-        }
-
-        if (args.GetDriverName() == ctlib_driver
-            || args.GetDriverName() == ftds64_driver
-            || args.IsODBCBased()
-            ) {
+        if (args.DriverAllowsMultipleContexts()) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many,
                                     DBAPIInstance);
+            add(tc);
+        } else if (args.GetDriverName() != dblib_driver) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One,
+                    DBAPIInstance);
             add(tc);
         }
     }
@@ -15051,6 +15061,13 @@ CTestArguments::IsODBCBased(void) const
            GetDriverName() == ftds_odbc_driver;
 }
 
+bool CTestArguments::DriverAllowsMultipleContexts(void) const
+{
+    return GetDriverName() == ctlib_driver
+        || GetDriverName() == ftds64_driver
+        || IsODBCBased();
+}
+
 void
 CTestArguments::SetDatabaseParameters(void)
 {
@@ -15060,58 +15077,61 @@ CTestArguments::SetDatabaseParameters(void)
             // Set max_connect to let open more than 30 connections with ctlib.
             // m_DatabaseParameters["max_connect"] = "100";
         } else if ( GetDriverName() == dblib_driver  &&
-                    GetServerType() == eSybase ) {
+                GetServerType() == eSybase ) {
             // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
             // BcpIn to it using protocol version other than "100".
             m_DatabaseParameters["version"] = "100";
         } else if (GetDriverName() == ftds8_driver) {
             switch (GetServerType()) {
-            case eSybase:
-                m_DatabaseParameters["version"] = "42";
-                break;
+                case eSybase:
+                    m_DatabaseParameters["version"] = "42";
+                    break;
 //             case eMsSql2005:
 //                 m_DatabaseParameters["version"] = "70";
 //                 break;
-            default:
-                break;
+                default:
+                    break;
             }
         } else if ( GetDriverName() == ftds_dblib_driver &&
-                    GetServerType() == eSybase ) {
+                GetServerType() == eSybase ) {
             // ftds8 work with Sybase databases using protocol v42 only ...
             m_DatabaseParameters["version"] = "42";
         } else if (GetDriverName() == ftds_odbc_driver) {
             switch (GetServerType()) {
-            case eSybase:
-                m_DatabaseParameters["version"] = "50";
-                break;
-            case eMsSql2005:
-                m_DatabaseParameters["version"] = "70";
-                break;
-            default:
-                break;
+                case eSybase:
+                    m_DatabaseParameters["version"] = "50";
+                    break;
+                case eMsSql2005:
+                    m_DatabaseParameters["version"] = "70";
+                    break;
+                default:
+                    break;
             }
-/*        } else if (GetDriverName() == ftds64_driver) {
+        }
+        /* These parameters settings are commented out on purpose.
+            * ftds64 driver is supposed to autodetect TDS version.
+        } else if (GetDriverName() == ftds64_driver) {
             switch (GetServerType()) {
             case eSybase:
-                m_DatabaseParameters["version"] = "125";
-                break;
+            m_DatabaseParameters["version"] = "125";
+            break;
             case eMsSql2005:
-                m_DatabaseParameters["version"] = "70";
-                break;
+            m_DatabaseParameters["version"] = "70";
+            break;
             default:
-                break;
-            }*/
+            break;
         }
+        */
     } else {
         m_DatabaseParameters["version"] = m_TDSVersion;
     }
 
     if ( (GetDriverName() == ftds8_driver ||
-          GetDriverName() == ftds64_driver ||
-          // GetDriverName() == odbc_driver ||
-          // GetDriverName() == ftds_odbc_driver ||
-          GetDriverName() == ftds_dblib_driver)
-         && (GetServerType() == eMsSql || GetServerType() == eMsSql2005)) {
+                GetDriverName() == ftds64_driver ||
+                // GetDriverName() == odbc_driver ||
+                // GetDriverName() == ftds_odbc_driver ||
+                GetDriverName() == ftds_dblib_driver)
+            && (GetServerType() == eMsSql || GetServerType() == eMsSql2005)) {
         m_DatabaseParameters["client_charset"] = "UTF-8";
     }
 
