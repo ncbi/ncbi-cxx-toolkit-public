@@ -12946,6 +12946,11 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
 
             BOOST_CHECK(num == rec_num);
         }
+
+        {
+            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            auto_stmt->ExecuteUpdate("drop table " + table_name);
+        }
     }
 }
 
@@ -13671,6 +13676,105 @@ CDBAPIUnitTest::Transactional_Behavior(void)
 {
 }
 
+
+void
+CDBAPIUnitTest::Test_Heavy_Load(void)
+{
+    try {
+        // Heavy bulk-insert
+        Test_HugeTableSelect(m_Conn);
+
+        string table_name = "#test_heavy_load";
+        enum {num_tests = 30000};
+        {
+            string sql = "create table " + table_name + " ("
+                         "int_field int,"
+                         "flt_field float,"
+                         "date_field datetime,"
+                         "vc200_field varchar(200),"
+                         "vc2000_field varchar(2000),"
+                         "txt_field text"
+                         ")";
+
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Heavy insert with parameters
+        {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt2( m_Conn->GetStatement() );
+
+            string sql = "INSERT INTO " + table_name +
+                         " VALUES(@int_field, @flt_field, @date_field, "
+                                 "@vc200_field, @vc2000_field, @txt_field)";
+
+            string vc200_val = string(190, 'a');
+            string vc2000_val = string(1500, 'z');
+            string txt_val = string(2000, 'q');
+
+            CStopWatch timer(CStopWatch::eStart);
+
+            auto_stmt->SetParam( CVariant( Int4(123456) ), "@int_field" );
+            auto_stmt->SetParam( CVariant(654.321), "@flt_field" );
+            auto_stmt->SetParam( CVariant(CTime(CTime::eCurrent)),
+                                 "@date_field" );
+            auto_stmt->SetParam( CVariant::VarChar(vc200_val.c_str(),
+                                                   vc200_val.size()),
+                                 "@vc200_field" );
+            auto_stmt->SetParam( CVariant::LongChar(vc2000_val.c_str(),
+                                                    vc2000_val.size()),
+                                 "@vc2000_field"
+                                 );
+            auto_stmt->SetParam( CVariant::VarChar(txt_val.c_str(),
+                                                   txt_val.size()),
+                                 "@txt_field" );
+
+            auto_stmt2->ExecuteUpdate("BEGIN TRAN");
+            for (int i = 0; i < num_tests; ++i) {
+                auto_stmt->ExecuteUpdate( sql );
+
+                if (i % 1000 == 0) {
+                    auto_stmt2->ExecuteUpdate("COMMIT TRAN");
+                    auto_stmt2->ExecuteUpdate("BEGIN TRAN");
+                }
+            }
+            auto_stmt2->ExecuteUpdate("COMMIT TRAN");
+            LOG_POST( "Inserts made in " << timer.Elapsed() << " sec." );
+        }
+
+        // Heavy select
+        {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+            string sql = "select * from " + table_name;
+
+            IResultSet* rs;
+
+            CStopWatch timer(CStopWatch::eStart);
+
+            rs = auto_stmt->ExecuteQuery(sql);
+            rs->BindBlobToVariant(true);
+
+            while (rs->Next()) {
+                int int_val = rs->GetVariant(1).GetInt4();
+                double flt_val = rs->GetVariant(2).GetDouble();
+                CTime date_val = rs->GetVariant(3).GetCTime();
+                string vc1_val = rs->GetVariant(4).GetString();
+                string vc2_val = rs->GetVariant(5).GetString();
+                const CVariant& txt_var = rs->GetVariant(6);
+                string txt_val;
+                txt_val.resize(txt_var.GetBlobSize());
+                txt_var.Read(&txt_val[0], txt_val.size());
+            }
+
+            LOG_POST( "Select finished in " << timer.Elapsed() << " sec." );
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
 
 static
 string GetSybaseClientVersion(void)
@@ -14750,6 +14854,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 */
+/*
+    This is not supposed to be included in DBAPI unit tests.
+    This is just example of heavy-load test.
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Heavy_Load,
+                               DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+*/
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)
@@ -14977,7 +15090,7 @@ CTestArguments::SetDatabaseParameters(void)
             default:
                 break;
             }
-        } else if (GetDriverName() == ftds64_driver) {
+/*        } else if (GetDriverName() == ftds64_driver) {
             switch (GetServerType()) {
             case eSybase:
                 m_DatabaseParameters["version"] = "125";
@@ -14987,7 +15100,7 @@ CTestArguments::SetDatabaseParameters(void)
                 break;
             default:
                 break;
-            }
+            }*/
         }
     } else {
         m_DatabaseParameters["version"] = m_TDSVersion;

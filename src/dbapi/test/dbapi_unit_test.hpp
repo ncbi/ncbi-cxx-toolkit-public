@@ -286,6 +286,7 @@ public:
     void Test_BindByPos(void);
 
     void Test_LOB_Replication(void);
+    void Test_Heavy_Load(void);
 
 public:
     typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)
