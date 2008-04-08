@@ -39,6 +39,7 @@
 #include <dbapi/dbapi.hpp>
 #include <dbapi/driver/drivers.hpp>
 #include <dbapi/driver/util/blobstore.hpp>
+#include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 
 #include "dbapi_unit_test.hpp"
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
@@ -10102,47 +10103,43 @@ void CDBAPIUnitTest::Test_DropConnection(void)
     };
 
     try {
-        IDataSource* curr_ds = NULL;
         CTestArguments::TDatabaseParameters params = m_args.GetDBParameters();
 
         params["version"] = "125";
 
-        curr_ds = m_DM.CreateDs(
-            m_args.GetDriverName(),
-            &params
-            );
+        auto_ptr<I_DriverContext> auto_dc(Get_I_DriverContext(m_args.GetDriverName(), &params));
+        CMsgHandlerGuard guard(*auto_dc);
 
         sql = "sleep 0 kill";
-        const unsigned orig_conn_num =
-            curr_ds->GetDriverContext()->NofConnections();
+        const unsigned orig_conn_num = auto_dc->NofConnections();
 
         for (unsigned i = 0; i < num_of_tests; ++i) {
             // Start a connection scope ...
             {
                 bool conn_killed = false;
-                auto_ptr<IConnection> auto_conn(
-                    curr_ds->CreateConnection(CONN_OWNERSHIP)
-                    );
-                auto_conn->Connect(
+
+                auto_ptr<CDB_Connection> auto_conn;
+
+                auto_conn.reset(auto_dc->Connect(
+                        "LINK_OS_INTERNAL",
                         "anyone",
                         "allowed",
-                        // "LINK_OS"
-                        "LINK_OS_INTERNAL"
-                        );
+                        0
+                    ));
 
                 // kill connection ...
                 try {
-                    auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-                    auto_stmt->ExecuteUpdate(sql);
+                    auto_ptr<CDB_LangCmd> auto_stmt(auto_conn->LangCmd(sql));
+                    auto_stmt->Send();
+                    auto_stmt->DumpResults();
                 } catch (const CDB_Exception&) {
                     // Ignore it ...
                 }
 
                 try {
-                    auto_ptr<ICallableStatement> auto_stmt(
-                        auto_conn->GetCallableStatement("sp_who")
-                        );
-                    auto_stmt->Execute();
+                    auto_ptr<CDB_RPCCmd> auto_stmt(auto_conn->RPC("sp_who"));
+                    auto_stmt->Send();
+                    auto_stmt->DumpResults();
                 } catch (const CDB_Exception&) {
                     conn_killed = true;
                 }
@@ -10152,12 +10149,9 @@ void CDBAPIUnitTest::Test_DropConnection(void)
 
             BOOST_CHECK_EQUAL(
                 orig_conn_num,
-                curr_ds->GetDriverContext()->NofConnections()
+                auto_dc->NofConnections()
                 );
         }
-
-        // !!! DataSource shouldn't be destroyed  ...
-        // m_DM.DestroyDs(curr_ds);
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -12957,63 +12951,6 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Exception-safe wrapper for database error message handlers ...
-class CMsgHandlerGuard
-{
-    public:
-        CMsgHandlerGuard(I_DriverContext* drv_context,
-                const string& driver_name);
-        ~CMsgHandlerGuard();
-
-    private:
-        I_DriverContext* m_DrvContext;
-        auto_ptr<CDB_UserHandler> m_Handler1;
-        auto_ptr<CDB_UserHandler> m_Handler2;
-};
-
-CMsgHandlerGuard::CMsgHandlerGuard(
-        I_DriverContext* drv_context,
-        const string& driver_name)
-: m_DrvContext(drv_context)
-{
-    if (driver_name == odbc_driver ||
-            driver_name == ftds_odbc_driver
-       )
-    {
-        m_Handler1.reset(new CDB_UserHandler_Exception_ODBC);
-        m_Handler2.reset(new CDB_UserHandler_Exception_ODBC);
-
-        m_DrvContext->PushCntxMsgHandler(
-                m_Handler1.get(),
-                eNoOwnership
-                );
-        m_DrvContext->PushDefConnMsgHandler(
-                m_Handler2.get(),
-                eNoOwnership
-                );
-    } else {
-        m_Handler1.reset(new CDB_UserHandler_Exception);
-        m_Handler2.reset(new CDB_UserHandler_Exception);
-
-        m_DrvContext->PushCntxMsgHandler(
-                m_Handler1.get(),
-                eNoOwnership
-                );
-        m_DrvContext->PushDefConnMsgHandler(
-                m_Handler2.get(),
-                eNoOwnership
-                );
-    }
-}
-
-CMsgHandlerGuard::~CMsgHandlerGuard()
-{
-    m_DrvContext->PopCntxMsgHandler(m_Handler1.get());
-    m_DrvContext->PopDefConnMsgHandler(m_Handler2.get());
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_SetLogStream(void)
 {
     try {
@@ -13119,9 +13056,7 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
 
         // Install user-defined error handler (eNoOwnership)
         {
-            CMsgHandlerGuard handler_guard(
-                    m_DS->GetDriverContext(),
-                    m_args.GetDriverName());
+            CMsgHandlerGuard handler_guard(*m_DS->GetDriverContext());
 
             // Test block ...
             {
