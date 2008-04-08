@@ -14136,6 +14136,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && args.GetDriverName() != dblib_driver
         && args.GetDriverName() != odbc_driver // 04/04/08
         && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris)
+        // We probably have an old version of Sybase Client installed on
+        // Windows ...
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsWindows) // 04/08/08
        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing2, DBAPIInstance);
