@@ -58,16 +58,6 @@ extern "C" {
 #  define NCBI_SCHED_YIELD()
 #endif
 
-#ifdef NCBI_COMPILER_GCC
-#  if NCBI_COMPILER_VERSION >= 300
-#    define NCBI_COMPILER_GCC3 1
-#  endif
-#elif defined(NCBI_COMPILER_ICC)
-#  if NCBI_COMPILER_VERSION >= 600
-#    define NCBI_COMPILER_ICC6
-#  endif
-#endif
-
 #undef NCBI_COUNTER_UNSIGNED
 #undef NCBI_COUNTER_RESERVED_VALUE
 #undef NCBI_COUNTER_ASM_OK
@@ -79,8 +69,8 @@ extern "C" {
 #undef NCBI_SWAP_POINTERS_EXTERN
 #undef NCBI_SLOW_ATOMIC_SWAP
 
-#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP) || (defined(NCBI_COMPILER_KCC) && defined(NCBI_OS_LINUX)) || defined(NCBI_COMPILER_ICC6)
-#  define NCBI_COUNTER_ASM_OK
+#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP) || (defined(NCBI_COMPILER_KCC) && defined(NCBI_OS_LINUX)) || defined(NCBI_COMPILER_ICC)
+#  define NCBI_COUNTER_ASM_OK 1
 #endif
 
 /**
@@ -91,12 +81,20 @@ extern "C" {
  * for defining the internal represntation of the counter.
  *
  * Where possible NCBI_COUNTER_ADD is defined in terms of compiler/platform
- * specific features.
+ * specific features, favoring inline assembly over standard library calls
+ * as function-call overhead can be appreciable, particularly on x86.
  */
 #ifdef NCBI_NO_THREADS
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
+#elif defined(NCBI_COMPILER_GCC) && ((defined(__sparc) && !defined(__sparcv9))  ||  ((NCBI_COMPILER_VERSION < 300 || NCBI_COMPILER_VERSION >= 340)  &&  (defined(__i386) || defined(__sparc) || defined(__x86_64))))
+   typedef unsigned int TNCBIAtomicValue;
+#  define NCBI_COUNTER_UNSIGNED 1
+#  define NCBI_COUNTER_USE_ASM 1
+#  if defined(__sparc)  &&  !defined(__sparcv9)
+#    define NCBI_COUNTER_RESERVED_VALUE 0x3FFFFFFF
+#  endif
 #elif defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_ATOMIC_H) /* Solaris 10+. */
 #  include <atomic.h>
 #  ifndef NCBI_COUNTER_ADD
@@ -129,6 +127,7 @@ extern "C" {
 #    define NCBI_SWAP_POINTERS_EXTERN 1
 #  elif defined(__sparc)
      typedef unsigned int TNCBIAtomicValue;
+#    define NCBI_COUNTER_RESERVED_VALUE 0x3FFFFFFF
 #    define NCBI_COUNTER_UNSIGNED 1
      TNCBIAtomicValue NCBICORE_asm_swap(TNCBIAtomicValue new_value,
                                         TNCBIAtomicValue* address);
@@ -162,16 +161,7 @@ extern "C" {
 #  ifdef __cplusplus
 }
 #  endif
-#elif defined(NCBI_COUNTER_ASM_OK) && defined(__sparc) && !defined(__sparcv9)
-/*
- * Favor our own code on pre-V9 SPARC; GCC 3's implementation uses a
- * global lock.
- */
-   typedef unsigned int TNCBIAtomicValue;
-#  define NCBI_COUNTER_UNSIGNED 1
-#  define NCBI_COUNTER_RESERVED_VALUE 0x3FFFFFFF
-#  define NCBI_COUNTER_USE_ASM 1
-#elif defined(NCBI_COMPILER_GCC3)  &&  defined(__cplusplus)
+#elif defined(NCBI_COMPILER_GCC)  &&  defined(__cplusplus)
 #  if NCBI_COMPILER_VERSION >= 420
 #    include <ext/atomicity.h>
 #  else
@@ -191,7 +181,7 @@ extern "C" {
     ((void*)(__ATOMIC_EXCH_QUAD((loc), (long)(nv))))
 #endif
 
-#ifdef NCBI_NO_THREADS
+#if defined(NCBI_NO_THREADS)
 /* Already handled, but checked again here to avoid extra indentation */
 #elif defined(NCBI_OS_IRIX)
 #  include <mutex.h>
@@ -212,7 +202,7 @@ extern "C" {
     (compare_and_swap((atomic_p)(loc), (int*)(&(ov)), (int)(nv)) != FALSE)
 #elif defined(NCBI_OS_DARWIN)
 #  include <CarbonCore/DriverSynchronization.h>
-#  ifndef NCBI_COUNTER_ADD
+#  if !defined(NCBI_COUNTER_ADD)  &&  !defined(NCBI_COUNTER_USE_ASM)
      typedef SInt32 TNCBIAtomicValue;
 #    define NCBI_COUNTER_ADD(p, d) (AddAtomic(d, p) + d)
 #  endif
@@ -230,12 +220,12 @@ extern "C" {
     (OTCompareAndSwapPtr(ov, nv, loc) != FALSE)
 #elif defined(NCBI_OS_MSWIN)
 #  include <corelib/impl/ncbi_os_mswin.h>
-#  ifndef NCBI_COUNTER_ADD
+#  if !defined(NCBI_COUNTER_ADD)  &&  !defined(NCBI_COUNTER_USE_ASM)
      typedef LONG TNCBIAtomicValue;
 #    define NCBI_COUNTER_ADD(p, d) (InterlockedExchangeAdd(p, d) + d)
 #  endif
 #  define NCBI_SWAP_POINTERS(loc, nv) (InterlockedExchangePointer(loc, nv))
-#elif !defined(NCBI_COUNTER_ADD)
+#elif !defined(NCBI_COUNTER_ADD)  &&  !defined(NCBI_COUNTER_USE_ASM)
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
 #  if defined (NCBI_COUNTER_ASM_OK) && (defined(__i386) || defined(__sparc) || defined(__x86_64))
