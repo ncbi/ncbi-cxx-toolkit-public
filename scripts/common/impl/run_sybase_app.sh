@@ -16,4 +16,4 @@ if test -z "$SYBASE"; then
    SYBASE="C:\\Sybase"
    export SYBASE
 fi
-exec "$@"
+exec $CHECK_EXEC "$@"
