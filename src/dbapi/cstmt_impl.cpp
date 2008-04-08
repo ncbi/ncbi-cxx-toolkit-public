@@ -145,11 +145,13 @@ void CCallableStatement::ExecuteUpdate()
 
 int CCallableStatement::GetReturnStatus()
 {
-    // CHECK_NCBI_DBAPI(!m_StatusIsAvailable, "Return status is not available yet.");
+    CHECK_NCBI_DBAPI(!m_StatusIsAvailable, "Return status is not available yet.");
 
+    /*
     if (!m_StatusIsAvailable) {
         ERR_POST_X(10, Warning << "Return status is not available yet.");
     }
+    */
 
     return m_status;
 }
