@@ -65,7 +65,7 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	    $(TOUCH) -r $(XDLL) $(XDLLDEP); \
 	fi
 	@if [ '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
-	    echo $(BINCOPY) $(XLIB) $(libdir) && \
+	    echo $(BINCOPY) $(XDLL) $(libdir) && \
 	    $(BINCOPY) $(XDLL) $(libdir); \
 	fi
 	@if [ '@has_dll_loadable@' != '@# ' -a '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
