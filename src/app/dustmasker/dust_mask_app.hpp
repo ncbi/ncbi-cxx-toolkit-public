@@ -52,7 +52,7 @@ public:
     virtual int Run (void);
 
 private:
-    CMaskWriter* CDustMaskApplication::x_GetWriter();
+    CMaskWriter* x_GetWriter();
 
     typedef CSymDustMasker duster_type;
     typedef duster_type::TMaskList::const_iterator it_type;
