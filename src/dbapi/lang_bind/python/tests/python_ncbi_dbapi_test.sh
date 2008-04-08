@@ -47,7 +47,7 @@ RunTest()
 {
   echo
   (
-    $CHECK_EXEC run_sybase_app.sh python_ncbi_dbapi_test $1 > $res_file 2>&1
+    run_sybase_app.sh python_ncbi_dbapi_test $1 > $res_file 2>&1
   )
   if test $? -eq 0 ; then
       echo "OK:"
@@ -64,7 +64,7 @@ RunTest()
 }
 
 # Check existence of the "dbapi_driver_check"
-$CHECK_EXEC run_sybase_app.sh dbapi_driver_check
+run_sybase_app.sh dbapi_driver_check
 if test $? -ne 99 ; then
   echo "The DBAPI driver existence check application not found."
   echo
@@ -83,7 +83,7 @@ for driver in $driver_list ; do
 
 ******************* DRIVER:  $driver ************************
 EOF
-    $CHECK_EXEC run_sybase_app.sh dbapi_driver_check $driver
+    run_sybase_app.sh dbapi_driver_check $driver
     driver_status=$?
 
     if test $driver_status -eq 5; then 

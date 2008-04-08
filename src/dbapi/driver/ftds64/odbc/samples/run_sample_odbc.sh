@@ -8,6 +8,6 @@ if test $SYSTEM_NAME = "FreeBSD" -a $SYSTEM_MAJOR_RELEASE = 4 ; then
     exit
 fi
 
-$CHECK_EXEC run_sybase_app.sh $1 $2 $3 $4 $5
+run_sybase_app.sh $1 $2 $3 $4 $5
 
 exit $?

@@ -47,8 +47,8 @@ RunSimpleTest()
     # echo
     (
         cd $1 > /dev/null 2>&1
-        # $CHECK_EXEC run_sybase_app.sh $cmd > $res_file 2>&1
-        $CHECK_EXEC run_sybase_app.sh $cmd > /dev/null 2> $res_file
+        # run_sybase_app.sh $cmd > $res_file 2>&1
+        run_sybase_app.sh $cmd > /dev/null 2> $res_file
     )
 
     if test $? -eq 0 ; then
@@ -73,7 +73,7 @@ RunTest()
     reg_exp="$2"
     
     echo
-    $CHECK_EXEC run_sybase_app.sh $cmd "$sql" > $res_file 2>&1
+    run_sybase_app.sh $cmd "$sql" > $res_file 2>&1
     
     if test $? -eq 0 ; then
         if grep "$reg_exp" $res_file > /dev/null 2>&1 ; then
@@ -98,7 +98,7 @@ RunTest2()
     sql="$1"
 
     # echo
-    $CHECK_EXEC run_sybase_app.sh $cmd "$sql" > /dev/null 2> $res_file 
+    run_sybase_app.sh $cmd "$sql" > /dev/null 2> $res_file 
 
     if test $? -eq 0 ; then
         # echo "OK:"
@@ -117,7 +117,7 @@ RunTest2()
 
 
 # Check existence of the "dbapi_driver_check"
-$CHECK_EXEC run_sybase_app.sh dbapi_driver_check
+run_sybase_app.sh dbapi_driver_check
 if test $? -ne 99 ; then
     echo "The DBAPI driver existence check application not found."
     echo
@@ -133,7 +133,7 @@ for driver in $driver_list ; do
 EOF
 
 
-    $CHECK_EXEC run_sybase_app.sh dbapi_driver_check $driver
+    run_sybase_app.sh dbapi_driver_check $driver
     driver_status=$?
 
     if test $driver_status -eq 5; then 
