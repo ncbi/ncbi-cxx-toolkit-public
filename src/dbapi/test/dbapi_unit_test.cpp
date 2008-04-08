@@ -14173,6 +14173,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && args.GetDriverName() != ftds_dblib_driver
         && !(args.GetDriverName() == dblib_driver && args.GetServerType() != CTestArguments::eSybase)
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris)
        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing5, DBAPIInstance);
