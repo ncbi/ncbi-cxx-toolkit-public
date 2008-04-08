@@ -121,6 +121,21 @@ void CDBExceptionStorage::Handle(CDBHandlerStack& handler, const string& msg)
     Handle(handler);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+CMsgHandlerGuard::CMsgHandlerGuard(I_DriverContext& conn)
+: m_Conn(conn)
+{
+    m_Conn.PushCntxMsgHandler(&m_Handler);
+    m_Conn.PushDefConnMsgHandler(&m_Handler);
+}
+
+CMsgHandlerGuard::~CMsgHandlerGuard(void)
+{
+    m_Conn.PopDefConnMsgHandler(&m_Handler);
+    m_Conn.PopCntxMsgHandler(&m_Handler);
+}
+
+
 namespace impl
 {
 
