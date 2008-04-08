@@ -27,7 +27,7 @@ BEGIN
 
 EXPORTS Blast-def-line-set, Blast-def-line;
         
-IMPORTS Seq-id FROM NCBI-Seqloc;
+IMPORTS Seq-id, Seq-loc FROM NCBI-Seqloc;
 
 Blast-def-line-set ::= SEQUENCE OF Blast-def-line  -- all deflines for an entry
 
@@ -40,4 +40,25 @@ Blast-def-line ::= SEQUENCE {
 	other-info SEQUENCE OF INTEGER OPTIONAL   -- for future use (probably genomic sequences)
 }
 
+Blast-filter-program ::= INTEGER {
+    not-set    (0),
+    dust       (1),
+    seg        (2),
+    repeat     (3),
+    window     (4)
+}
+
+Blast-mask-list ::= SEQUENCE {
+    masks SEQUENCE OF Seq-loc,
+    more BOOLEAN
+}
+
+Blast-db-mask-info ::= SEQUENCE {
+    algo-id      INTEGER,
+    algo-program Blast-filter-program,
+    algo-options VisibleString,
+    masks        Blast-mask-list
+}
+
 END
+
