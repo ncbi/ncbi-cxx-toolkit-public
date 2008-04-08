@@ -152,7 +152,7 @@ CTestTransaction::CTestTransaction(
     , m_TransBehavior( tb )
 {
     if ( m_TransBehavior != eNoTrans ) {
-        auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
         stmt->ExecuteUpdate( "BEGIN TRANSACTION" );
     }
 }
@@ -161,10 +161,10 @@ CTestTransaction::~CTestTransaction(void)
 {
     try {
         if ( m_TransBehavior == eTransCommit ) {
-            auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
             stmt->ExecuteUpdate( "COMMIT TRANSACTION" );
         } else if ( m_TransBehavior == eTransRollback ) {
-            auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
             stmt->ExecuteUpdate( "ROLLBACK TRANSACTION" );
         }
     }
@@ -212,7 +212,7 @@ CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
 
 CDBAPIUnitTest::~CDBAPIUnitTest(void)
 {
-//     I_DriverContext* drv_context = m_DS->GetDriverContext();
+//     I_DriverContext* drv_context = GetDS().GetDriverContext();
 //
 //     drv_context->PopDefConnMsgHandler( m_ErrHandler.get() );
 //     drv_context->PopCntxMsgHandler( m_ErrHandler.get() );
@@ -282,7 +282,7 @@ CDBAPIUnitTest::TestInit(void)
                 );
         }
 
-        I_DriverContext* drv_context = m_DS->GetDriverContext();
+        I_DriverContext* drv_context = GetDS().GetDriverContext();
 
         if (m_args.GetTestConfiguration() != CTestArguments::eWithoutExceptions) {
             if (m_args.IsODBCBased()) {
@@ -306,12 +306,12 @@ CDBAPIUnitTest::TestInit(void)
             }
         }
 
-        m_Conn.reset(m_DS->CreateConnection( CONN_OWNERSHIP ));
+        m_Conn.reset(GetDS().CreateConnection( CONN_OWNERSHIP ));
         BOOST_CHECK(m_Conn.get() != NULL);
 
         Connect(m_Conn);
 
-        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
         // Create a test table ...
         string sql;
@@ -447,7 +447,7 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
     string str_value;
 
     try {
-        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
         IResultSet* rs;
         char buff[128];
         size_t read_bytes = 0;
@@ -505,7 +505,7 @@ void CDBAPIUnitTest::Test_UnicodeNB(void)
     // string table_name("DBAPI_Sample..test_unicode_table");
     const bool isValueInUTF8 = true;
 
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
     string str_ger("Außerdem können Sie einzelne Einträge aus Ihrem "
                    "Suchprotokoll entfernen");
 
@@ -650,7 +650,7 @@ void CDBAPIUnitTest::Test_Unicode(void)
     // string table_name("DBAPI_Sample..test_unicode_table");
 
     string sql;
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
     string str_ger("Außerdem können Sie einzelne Einträge aus Ihrem "
                    "Suchprotokoll entfernen");
 
@@ -774,7 +774,7 @@ void CDBAPIUnitTest::Test_VARCHAR_MAX(void)
     const string msg(8001, 'Z');
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create table ...
         if (table_name[0] =='#') {
@@ -882,7 +882,7 @@ void CDBAPIUnitTest::Test_VARCHAR_MAX_BCP(void)
     const string msg(8001, 'Z');
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create table ...
         if (table_name[0] =='#') {
@@ -908,7 +908,7 @@ void CDBAPIUnitTest::Test_VARCHAR_MAX_BCP(void)
             // Insert data into the table ...
             {
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert(table_name)
+                    GetConnection().GetBulkInsert(table_name)
                     );
                 CVariant col1(eDB_Int);
                 // CVariant col2(eDB_VarChar);
@@ -963,7 +963,7 @@ void CDBAPIUnitTest::Test_CHAR(void)
     // const string table_name = "DBAPI_Sample..test_char_table";
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create table ...
         if (table_name[0] =='#') {
@@ -1038,7 +1038,7 @@ void CDBAPIUnitTest::Test_NVARCHAR(void)
             string Title69;
 
             auto_ptr<IConnection> conn(
-                m_DS->CreateConnection(CONN_OWNERSHIP)
+                GetDS().CreateConnection(CONN_OWNERSHIP)
                 );
 
             conn->Connect("anyone","allowed","MSSQL69", "PMC3");
@@ -1075,7 +1075,7 @@ void CDBAPIUnitTest::Test_NTEXT(void)
         string ins_value = "asdfghjkl";
         char buffer[20];
 
-        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
         sql = "SET TEXTSIZE 2147483647";
         auto_stmt->ExecuteUpdate(sql);
@@ -1118,7 +1118,7 @@ void CDBAPIUnitTest::Test_Iskhakov(void)
 
     try {
         auto_ptr<CDB_Connection> auto_conn(
-            m_DS->GetDriverContext()->Connect(
+            GetDS().GetDriverContext()->Connect(
                 "LINK_OS",
                 "anyone",
                 "allowed",
@@ -1172,7 +1172,7 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
         // Destroy a statement before a connection get destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1184,7 +1184,7 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
         // Do not destroy statement, let it be destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1200,7 +1200,7 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
         // Destroy a statement before a connection get destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1212,7 +1212,7 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
         // Do not destroy statement, let it be destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1236,7 +1236,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
         // Destroy a statement before a connection get destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1256,7 +1256,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1277,7 +1277,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
         // Do not destroy a statement, let it be destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1297,7 +1297,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1322,7 +1322,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
         // Destroy a statement before a connection get destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1342,7 +1342,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1363,7 +1363,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
         // Do not destroy a statement, let it be destroyed ...
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1383,7 +1383,7 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
         {
             auto_ptr<IConnection> local_conn(
-                m_DS->CreateConnection(eTakeOwnership)
+                GetDS().CreateConnection(eTakeOwnership)
                 );
             Connect(local_conn);
 
@@ -1411,7 +1411,7 @@ void
 CDBAPIUnitTest::Test_HasMoreResults(void)
 {
     string sql;
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
     // First test ...
     // This test shouldn't throw.
@@ -1469,7 +1469,7 @@ CDBAPIUnitTest::Test_Insert(void)
     string sql;
     const string small_msg("%");
     const string test_msg(300, 'A');
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
     try {
         // Clean table ...
@@ -1514,7 +1514,7 @@ CDBAPIUnitTest::Test_Insert(void)
         // Retrieve data ...
         {
             enum { num_of_tests = 2 };
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             sql  = " SELECT int_field, vc1000_field FROM " + GetTableName();
             sql += " ORDER BY int_field";
@@ -1554,7 +1554,7 @@ void
 CDBAPIUnitTest::Test_DateTime(void)
 {
     string sql;
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
     CVariant value(eDB_DateTime);
     CTime t;
     CVariant null_date(t, eLong);
@@ -1719,7 +1719,7 @@ CDBAPIUnitTest::Test_DateTime(void)
                     auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
 
                     auto_ptr<ICallableStatement> call_auto_stmt(
-                        m_Conn->GetCallableStatement("sp_test_datetime")
+                        GetConnection().GetCallableStatement("sp_test_datetime")
                         );
 
                     call_auto_stmt->SetParam( value, "@dt_val" );
@@ -1768,7 +1768,7 @@ CDBAPIUnitTest::Test_DateTime(void)
                     auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
 
                     auto_ptr<ICallableStatement> call_auto_stmt(
-                        m_Conn->GetCallableStatement("sp_test_datetime")
+                        GetConnection().GetCallableStatement("sp_test_datetime")
                         );
 
                     call_auto_stmt->SetParam( null_date, "@dt_val" );
@@ -1807,7 +1807,7 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
     string table_name("#test_bcp_datetime");
     // string table_name("DBAPI_Sample..test_bcp_datetime");
     string sql;
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
     CVariant value(eDB_DateTime);
     CTime t;
     CVariant null_date(t, eLong);
@@ -1837,7 +1837,7 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
                 auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name);
 
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert(table_name)
+                    GetConnection().GetBulkInsert(table_name)
                     );
 
                 bi->Bind(1, &col1);
@@ -1894,7 +1894,7 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
                 auto_stmt->ExecuteUpdate("DELETE FROM " + table_name);
 
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert(table_name)
+                    GetConnection().GetBulkInsert(table_name)
                     );
 
                 bi->Bind(1, &col1);
@@ -1941,7 +1941,7 @@ CDBAPIUnitTest::Test_UNIQUE(void)
     CVariant value(eDB_VarBinary, 16);
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Initialization ...
         {
@@ -2015,7 +2015,7 @@ CDBAPIUnitTest::Test_LOB_Replication(void)
 
     try {
         auto_ptr<IConnection> auto_conn(
-            m_DS->CreateConnection(CONN_OWNERSHIP)
+            GetDS().CreateConnection(CONN_OWNERSHIP)
             );
         auto_conn->Connect(
                 "anyone",
@@ -2084,7 +2084,7 @@ CDBAPIUnitTest::Test_LOB(void)
     string sql;
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Prepare data ...
         {
@@ -2099,7 +2099,7 @@ CDBAPIUnitTest::Test_LOB(void)
             sql  = " SELECT text_field FROM " + GetTableName();
             // sql += " FOR UPDATE OF text_field";
 
-            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+            auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
 
             // blobRs should be destroyed before auto_cursor ...
             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
@@ -2190,7 +2190,7 @@ CDBAPIUnitTest::Test_LOB(void)
 
             sql = "SELECT text_field FROM "+ GetTableName();
 
-            auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
             bool rc = auto_stmt->Send();
             BOOST_CHECK( rc );
@@ -2256,7 +2256,7 @@ CDBAPIUnitTest::Test_LOB(void)
                         sql += " WHERE int_field = @int_field ";
 
                         if (ind % 2 == 0) {
-                            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+                            auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
                             auto_cursor->SetParam(CVariant(Int4(ind)), "@int_field");
 
                             // blobRs should be destroyed before auto_cursor ...
@@ -2274,7 +2274,7 @@ CDBAPIUnitTest::Test_LOB(void)
                         sql += " WHERE int_field = " + NStr::IntToString(ind);
 
                         if (ind % 2 == 0) {
-                            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+                            auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
 
                             // blobRs should be destroyed before auto_cursor ...
                             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
@@ -2340,7 +2340,7 @@ CDBAPIUnitTest::Test_LOB(void)
 
                 sql = "SELECT text_field FROM "+ GetTableName();
 
-                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
@@ -2403,7 +2403,7 @@ CDBAPIUnitTest::Test_LOB2(void)
     enum {num_of_records = 10};
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Prepare data ...
         {
@@ -2427,7 +2427,7 @@ CDBAPIUnitTest::Test_LOB2(void)
                 sql  = " SELECT text_field FROM " + GetTableName();
                 // sql += " FOR UPDATE OF text_field";
 
-                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
 
                 // blobRs should be destroyed before auto_cursor ...
                 auto_ptr<IResultSet> blobRs(auto_cursor->Open());
@@ -2482,7 +2482,7 @@ CDBAPIUnitTest::Test_LOB_LowLevel(void)
     try {
         bool rc = false;
         auto_ptr<CDB_LangCmd> auto_stmt;
-        CDB_Connection* conn = m_Conn->GetCDB_Connection();
+        CDB_Connection* conn = GetConnection().GetCDB_Connection();
         BOOST_CHECK(conn != NULL);
 
         // Clean table ...
@@ -2606,7 +2606,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
     string table_name = "#dbapi_bcp_table2";
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // First test ...
         {
@@ -2618,8 +2618,8 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(table_name));
-                // auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(table_name, 1));
+                auto_ptr<IBulkInsert> bi(GetConnection().CreateBulkInsert(table_name));
+                // auto_ptr<IBulkInsert> bi(GetConnection().CreateBulkInsert(table_name, 1));
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
                 CVariant col3(eDB_VarChar);
@@ -2665,7 +2665,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(table_name));
+                auto_ptr<IBulkInsert> bi(GetConnection().CreateBulkInsert(table_name));
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
                 CVariant col3(eDB_VarChar);
@@ -2716,7 +2716,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
     const string data = "testing";
 
     try {
-        CDB_Connection* conn = m_Conn->GetCDB_Connection();
+        CDB_Connection* conn = GetConnection().GetCDB_Connection();
 
         // Create table ...
         {
@@ -2763,7 +2763,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
                 sql = "SELECT dataText, dataImage FROM "+ table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
@@ -2810,7 +2810,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
             {
                 sql = "DELETE FROM " + table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 auto_stmt->Send();
                 auto_stmt->DumpResults();
@@ -2844,7 +2844,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
                 sql = "SELECT dataText FROM "+ table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
@@ -2883,7 +2883,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
             {
                 sql = "DELETE FROM " + table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 auto_stmt->Send();
                 auto_stmt->DumpResults();
@@ -2927,7 +2927,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
                 sql = "SELECT dataText FROM "+ table_name + " ORDER BY geneId";
 
-                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
@@ -2978,7 +2978,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
             {
                 sql = "DELETE FROM " + table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 auto_stmt->Send();
                 auto_stmt->DumpResults();
@@ -3018,7 +3018,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
                 sql = "SELECT dataText FROM "+ table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
@@ -3065,7 +3065,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
             {
                 sql = "DELETE FROM " + table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 auto_stmt->Send();
                 auto_stmt->DumpResults();
@@ -3110,7 +3110,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
                 sql = "SELECT dataText FROM "+ table_name;
 
-                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+                auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
                 bool rc = auto_stmt->Send();
                 BOOST_CHECK( rc );
@@ -3178,7 +3178,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
     // data = "testing";
 
     try {
-        CDB_Connection* conn = m_Conn->GetCDB_Connection();
+        CDB_Connection* conn = GetConnection().GetCDB_Connection();
         const size_t first_ind = 9;
         // const size_t first_ind = 0;
 
@@ -3277,7 +3277,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
         {
             sql = "DELETE FROM " + table_name;
 
-            auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
             auto_stmt->Send();
             auto_stmt->DumpResults();
@@ -3365,7 +3365,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
         {
             sql = "DELETE FROM " + table_name;
 
-            auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+            auto_ptr<CDB_LangCmd> auto_stmt(GetConnection().GetCDB_Connection()->LangCmd(sql));
 
             auto_stmt->Send();
             auto_stmt->DumpResults();
@@ -3512,7 +3512,7 @@ CDBAPIUnitTest::Test_BlobStream(void)
     long write_data_len = 0;
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Prepare data ...
         {
@@ -3535,7 +3535,7 @@ CDBAPIUnitTest::Test_BlobStream(void)
 
             sql  = " SELECT text_field FROM " + GetTableName();
 
-            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+            auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));
 
             // blobRs should be destroyed before auto_cursor ...
             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
@@ -3621,7 +3621,7 @@ CDBAPIUnitTest::Test_GetTotalColumns(void)
     string sql;
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create table ...
         {
@@ -3732,7 +3732,7 @@ CDBAPIUnitTest::Test_BCP_Cancel(void)
 
     try {
         auto_ptr<IConnection> conn(
-                m_DS->CreateConnection(CONN_OWNERSHIP)
+                GetDS().CreateConnection(CONN_OWNERSHIP)
                 );
         Connect(conn);
 
@@ -3827,7 +3827,7 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
     enum {column_size = 32, data_size = 64};
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Initialize ...
         {
@@ -3845,7 +3845,7 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
         {
             bool exception_catched = false;
             auto_ptr<IBulkInsert> bi(
-                m_Conn->GetBulkInsert("#test_bulk_overflow")
+                GetConnection().GetBulkInsert("#test_bulk_overflow")
                 );
 
             CVariant col1(eDB_VarChar, data_size);
@@ -3917,7 +3917,7 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
         {
             bool exception_catched = false;
             auto_ptr<IBulkInsert> bi(
-                m_Conn->GetBulkInsert("#test_bulk_overflow")
+                GetConnection().GetBulkInsert("#test_bulk_overflow")
                 );
 
             CVariant col1(eDB_VarBinary, data_size);
@@ -3963,7 +3963,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
     // string table_name = "DBAPI_Sample..bin_bulk_insert_table";
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         if (table_name[0] == '#') {
             // Table for bulk insert ...
@@ -4005,7 +4005,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             // Insert data ...
             {
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert(table_name)
+                    GetConnection().GetBulkInsert(table_name)
                     );
 
                 CVariant col1(eDB_Int);
@@ -4035,7 +4035,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             if ( m_args.GetDriverName() != dblib_driver
                  && m_args.GetDriverName() != msdblib_driver
                 ) {
-                auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+                auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
                 sql  = " SELECT id, vb8000_field FROM " + table_name;
                 sql += " ORDER BY id";
@@ -4080,7 +4080,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 // Insert data ...
                 {
                     auto_ptr<IBulkInsert> bi(
-                        m_Conn->GetBulkInsert(table_name)
+                        GetConnection().GetBulkInsert(table_name)
                         );
 
                     CVariant col1(eDB_Int);
@@ -4134,7 +4134,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 // Insert data ...
                 {
                     auto_ptr<IBulkInsert> bi(
-                        m_Conn->GetBulkInsert(table_name)
+                        GetConnection().GetBulkInsert(table_name)
                         );
 
                     CVariant col1(eDB_Int);
@@ -4188,7 +4188,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
         // Sybase doesn't have BIGINT data type ...
         if (m_args.GetServerType() != CTestArguments::eSybase)
         {
-            auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
+            auto_ptr<IStatement> stmt( GetConnection().CreateStatement() );
 
             // Create table ...
             {
@@ -4202,7 +4202,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             // First test ...
             {
                 auto_ptr<IBulkInsert> blki(
-                    m_Conn->CreateBulkInsert("#__blki_test")
+                    GetConnection().CreateBulkInsert("#__blki_test")
                     );
 
                 CVariant col1(eDB_Char,32);
@@ -4235,7 +4235,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             // Overflow test.
             // !!! Current behavior is not defined properly and not consistent between drivers.
     //         {
-    //             auto_ptr<IBulkInsert> blki( m_Conn->CreateBulkInsert("#__blki_test", 2) );
+    //             auto_ptr<IBulkInsert> blki( GetConnection().CreateBulkInsert("#__blki_test", 2) );
     //
     //             CVariant col1(eDB_Char,64);
     //             CVariant col2(eDB_BigInt);
@@ -4271,7 +4271,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             // Insert data ...
             {
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert(table_name)
+                    GetConnection().GetBulkInsert(table_name)
                     );
 
                 CVariant col1(eDB_Int);
@@ -4385,7 +4385,7 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
     const string table_name("#SbSubs");
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create table ...
         {
@@ -4407,7 +4407,7 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
         // Insert data ...
         {
             auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert(table_name)
+                    GetConnection().GetBulkInsert(table_name)
                     );
 
             CVariant col1(eDB_Int);
@@ -4456,7 +4456,7 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
             auto_stmt->ExecuteUpdate(sql);
 
             auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert(table_name)
+                    GetConnection().GetBulkInsert(table_name)
                     );
 
             CVariant col1(eDB_Int);
@@ -4543,12 +4543,12 @@ CDBAPIUnitTest::Test_Bulk_Writing3(void)
     const int test_num = 10;
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Side-effect ...
         // Tmp table ...
         auto_ptr<IBulkInsert> bi_tmp(
-            m_Conn->GetBulkInsert(table_name2)
+            GetConnection().GetBulkInsert(table_name2)
             );
 
         CVariant col_tmp(eDB_Int);
@@ -4569,7 +4569,7 @@ CDBAPIUnitTest::Test_Bulk_Writing3(void)
         // Insert data ...
         {
             auto_ptr<IBulkInsert> bi(
-                m_Conn->GetBulkInsert(table_name)
+                GetConnection().GetBulkInsert(table_name)
                 );
 
             CVariant col1(eDB_Int);
@@ -4606,7 +4606,7 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
     const int test_num = 10;
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
         const string test_data("Test, test, tEST.");
 
         // Create table ...
@@ -4632,7 +4632,7 @@ CDBAPIUnitTest::Test_Bulk_Writing4(void)
         {
             //
             auto_ptr<IBulkInsert> bi(
-                m_Conn->CreateBulkInsert(table_name)
+                GetConnection().CreateBulkInsert(table_name)
                 );
 
             CVariant b_idnwparams(eDB_Int);
@@ -4688,7 +4688,7 @@ CDBAPIUnitTest::Test_Bulk_Writing5(void)
     // const string table_name("DBAPI_Sample..blk_table5");
 
     try {
-        CDB_Connection* conn(m_Conn->GetCDB_Connection());
+        CDB_Connection* conn(GetConnection().GetCDB_Connection());
 
 
         // Create table ...
@@ -4810,7 +4810,7 @@ CDBAPIUnitTest::Test_Bulk_Writing6(void)
     const string& str_value("Oops ...");
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
         const string test_data("Test, test, tEST.");
 
         // Create table ...
@@ -4839,7 +4839,7 @@ CDBAPIUnitTest::Test_Bulk_Writing6(void)
         {
             //
             auto_ptr<IBulkInsert> stmt(
-                m_Conn->GetBulkInsert(table_name)
+                GetConnection().GetBulkInsert(table_name)
                 );
 
             // Declare variables ...
@@ -4903,7 +4903,7 @@ CDBAPIUnitTest::Test_Bulk_Late_Bind(void)
     bool exception_thrown = false;
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create table ...
         {
@@ -4920,7 +4920,7 @@ CDBAPIUnitTest::Test_Bulk_Late_Bind(void)
         // Check that data cannot be binded after rows sending
         {
             auto_ptr<IBulkInsert> bi(
-                m_Conn->CreateBulkInsert(table_name)
+                GetConnection().CreateBulkInsert(table_name)
                 );
 
             CVariant  id(eDB_Int);
@@ -4959,7 +4959,7 @@ CDBAPIUnitTest::Test_Variant2(void)
     try {
         // Initialize a test table ...
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Drop all records ...
             sql  = " DELETE FROM " + GetTableName();
@@ -4988,7 +4988,7 @@ CDBAPIUnitTest::Test_Variant2(void)
 
         // Test VarChar ...
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             sql  = "SELECT vc1000_field FROM " + GetTableName();
             sql += " ORDER BY int_field";
@@ -5026,7 +5026,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
     string sql;
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Initialization ...
         {
@@ -5542,7 +5542,7 @@ CDBAPIUnitTest::Test_Cursor(void)
     string sql;
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Initialize a test table ...
         {
@@ -5572,7 +5572,7 @@ CDBAPIUnitTest::Test_Cursor(void)
 
             // Open a cursor for the first time ...
             {
-                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
                 auto_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
@@ -5583,7 +5583,7 @@ CDBAPIUnitTest::Test_Cursor(void)
 
             // Open a cursor for the second time ...
             {
-                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
                 auto_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
@@ -5602,7 +5602,7 @@ CDBAPIUnitTest::Test_Cursor(void)
 
             // Open a cursor for the first time ...
             {
-                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
                 auto_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
@@ -5698,7 +5698,7 @@ CDBAPIUnitTest::Test_Cursor(void)
 
             // Just read data ...
             {
-                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", cursor_sql));
+                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
                 auto_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
@@ -5709,7 +5709,7 @@ CDBAPIUnitTest::Test_Cursor(void)
 
             // Update something ...
             {
-                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", cursor_sql));
+                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
                 auto_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
@@ -5727,7 +5727,7 @@ CDBAPIUnitTest::Test_Cursor(void)
 
             // Check that update was successful
             {
-                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", cursor_sql));
+                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
                 auto_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
@@ -5740,14 +5740,14 @@ CDBAPIUnitTest::Test_Cursor(void)
 
             // Delete something
             {
-                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", cursor_sql));
+                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", cursor_sql));
                 auto_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
                 BOOST_CHECK(rs->Next());
                 auto_cursor->Delete("#Objects");
 
-                auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+                auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
                 BOOST_CHECK_EQUAL(size_t(1), GetNumOfRecords(auto_stmt, "#Objects"));
             }
         } else {
@@ -5769,7 +5769,7 @@ CDBAPIUnitTest::Test_Cursor2(void)
     try {
         // Initialize a test table ...
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Drop all records ...
             sql  = " DELETE FROM " + GetTableName();
@@ -5797,7 +5797,7 @@ CDBAPIUnitTest::Test_Cursor2(void)
             const char* clob = "abc";
 
             sql = "select text_field from " + GetTableName() + " for update of text_field \n";
-            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+            auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test01", sql));
 
             {
                 // blobRs should be destroyed before auto_cursor ...
@@ -5819,7 +5819,7 @@ CDBAPIUnitTest::Test_Cursor2(void)
 
             // Check record number ...
             {
-                auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+                auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
                 BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
             }
 
@@ -5827,7 +5827,7 @@ CDBAPIUnitTest::Test_Cursor2(void)
             sql  = " select text_field from " + GetTableName();
             sql += " where int_field = 1 for update of text_field";
 
-            auto_cursor.reset(m_Conn->GetCursor("test02", sql));
+            auto_cursor.reset(GetConnection().GetCursor("test02", sql));
             {
                 // blobRs should be destroyed before auto_cursor ...
                 auto_ptr<IResultSet> blobRs(auto_cursor->Open());
@@ -5856,7 +5856,7 @@ CDBAPIUnitTest::Test_Cursor_Param(void)
     try {
          // Initialize a test table ...
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Drop all records ...
             sql  = " DELETE FROM " + GetTableName();
@@ -5883,7 +5883,7 @@ CDBAPIUnitTest::Test_Cursor_Param(void)
 
             // Open a cursor for the first time ...
             {
-                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test10", sql));
+                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test10", sql));
 
                 auto_cursor->SetParam(CVariant(Int4(0)), "@int_value" );
 
@@ -5912,7 +5912,7 @@ CDBAPIUnitTest::Test_Cursor_Param(void)
 
             // Open a cursor for the second time ...
             {
-                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test10", sql));
+                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test10", sql));
 
                 auto_cursor->SetParam(CVariant(Int4(1)), "@int_value" );
 
@@ -5940,7 +5940,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         // 2) Retrive only one record.
         // 3) Select another recordset with just one record
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
             IResultSet* rs;
 
             // 1) Select recordset with just one record
@@ -5960,7 +5960,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 
         // Same as before but uses two differenr connections ...
         if (false) {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
             IResultSet* rs;
 
             // 1) Select recordset with just one record
@@ -5972,7 +5972,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
             BOOST_CHECK( !rs->Next() );
 
             // 3) Select another recordset with just one record
-            auto_ptr<IStatement> auto_stmt2( m_Conn->CreateStatement() );
+            auto_ptr<IStatement> auto_stmt2( GetConnection().CreateStatement() );
             rs = auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" );
             BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
@@ -5981,7 +5981,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 
         // Check column name ...
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             IResultSet* rs(
                 auto_stmt->ExecuteQuery( "select @@version as oops" )
@@ -5998,7 +5998,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
             string sql = "select user_id(), convert(varchar(64), user_name()), "
                 "convert(nvarchar(64), user_name())";
 
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // 1) Select recordset with just one record
             IResultSet* rs( auto_stmt->ExecuteQuery( sql ) );
@@ -6017,7 +6017,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         // Check sequent call of ExecuteQuery ...
         if (true) {
             IResultSet* rs = NULL;
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Run first time ...
             rs = auto_stmt->ExecuteQuery( "select @@version as oops" );
@@ -6039,7 +6039,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 
         // Select NULL values and empty strings ... 
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
             auto_ptr<IResultSet> rs;
 
             rs.reset(
@@ -6101,7 +6101,7 @@ CDBAPIUnitTest::Test_SelectStmt2(void)
     string table_name("#blk_table7");
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Running parametrized statement ...
         {
@@ -6169,7 +6169,7 @@ CDBAPIUnitTest::Test_SelectStmtXML(void)
         // SQL + XML
         {
             string sql;
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
             IResultSet* rs;
 
             sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
@@ -6195,7 +6195,7 @@ void
 CDBAPIUnitTest::Test_Recordset(void)
 {
     try {
-        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
         IResultSet* rs;
 
         // First test ...
@@ -7173,7 +7173,7 @@ void
 CDBAPIUnitTest::Test_ResultsetMetaData(void)
 {
     try {
-        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
         IResultSet* rs;
         const IResultSetMetaData* md = NULL;
 
@@ -7519,14 +7519,14 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
         unsigned int col_num = 0;
 
         if (false) {
-            auto_ptr<IStatement> auto_stmt01(m_Conn->GetStatement());
+            auto_ptr<IStatement> auto_stmt01(GetConnection().GetStatement());
             auto_stmt01->ExecuteUpdate("USE DBAPI_Sample");
         }
 
         //////////////////////////////////////////////////////////////////////
         {
             auto_stmt.reset(
-                    m_Conn->GetCallableStatement("sp_columns")
+                    GetConnection().GetCallableStatement("sp_columns")
                     );
 
             const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
@@ -7542,7 +7542,7 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
         //////////////////////////////////////////////////////////////////////
         {
             auto_stmt.reset(
-                    m_Conn->GetCallableStatement(".sp_columns")
+                    GetConnection().GetCallableStatement(".sp_columns")
                     );
 
             const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
@@ -7558,7 +7558,7 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
         //////////////////////////////////////////////////////////////////////
         {
             auto_stmt.reset(
-                    m_Conn->GetCallableStatement("..sp_columns")
+                    GetConnection().GetCallableStatement("..sp_columns")
                     );
 
             const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
@@ -7574,7 +7574,7 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
         //////////////////////////////////////////////////////////////////////
         {
             auto_stmt.reset(
-                    m_Conn->GetCallableStatement("sp_sproc_columns")
+                    GetConnection().GetCallableStatement("sp_sproc_columns")
                     );
 
             const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
@@ -7598,7 +7598,7 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
         //////////////////////////////////////////////////////////////////////
         {
             auto_stmt.reset(
-                    m_Conn->GetCallableStatement("sp_server_info")
+                    GetConnection().GetCallableStatement("sp_server_info")
                     );
 
             const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
@@ -7610,7 +7610,7 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
         //////////////////////////////////////////////////////////////////////
         {
             auto_stmt.reset(
-                    m_Conn->GetCallableStatement("sp_tables")
+                    GetConnection().GetCallableStatement("sp_tables")
                     );
 
             const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
@@ -7626,7 +7626,7 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
         //////////////////////////////////////////////////////////////////////
         {
             auto_stmt.reset(
-                    m_Conn->GetCallableStatement("sp_stored_procedures")
+                    GetConnection().GetCallableStatement("sp_stored_procedures")
                     );
 
             const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
@@ -7643,11 +7643,11 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
         {
             if (m_args.GetServerType() == CTestArguments::eSybase) {
 		auto_stmt.reset(
-			m_Conn->GetCallableStatement("sybsystemprocs..sp_stored_procedures")
+			GetConnection().GetCallableStatement("sybsystemprocs..sp_stored_procedures")
 			);
             } else {
 		auto_stmt.reset(
-			m_Conn->GetCallableStatement("master..sp_stored_procedures")
+			GetConnection().GetCallableStatement("master..sp_stored_procedures")
 			);
             }
 
@@ -7665,11 +7665,11 @@ CDBAPIUnitTest::Test_StmtMetaData(void)
         {
             if (m_args.GetServerType() == CTestArguments::eSybase) {
 		auto_stmt.reset(
-			m_Conn->GetCallableStatement("sybsystemprocs.dbo.sp_stored_procedures")
+			GetConnection().GetCallableStatement("sybsystemprocs.dbo.sp_stored_procedures")
 			);
             } else {
 		auto_stmt.reset(
-			m_Conn->GetCallableStatement("master.dbo.sp_stored_procedures")
+			GetConnection().GetCallableStatement("master.dbo.sp_stored_procedures")
 			);
             }
 
@@ -7698,7 +7698,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // Set up an user-defined error handler ..
 
         // Push message handler into a context ...
-        I_DriverContext* drv_context = m_DS->GetDriverContext();
+        I_DriverContext* drv_context = GetDS().GetDriverContext();
 
         // Check PushCntxMsgHandler ...
         // PushCntxMsgHandler - Add message handler "h" to process 'context-wide' (not bound
@@ -7706,7 +7706,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         {
             auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
 
-            auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
+            auto_ptr<IConnection> local_conn( GetDS().CreateConnection() );
             Connect(local_conn);
 
             drv_context->PushCntxMsgHandler( drv_err_handler.get() );
@@ -7714,7 +7714,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             // Connection process should be affected ...
             {
                 // Create a new connection ...
-                auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+                auto_ptr<IConnection> conn( GetDS().CreateConnection() );
 
                 try {
                     conn->Connect(
@@ -7751,7 +7751,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             // New connection should not be affected ...
             {
                 // Create a new connection ...
-                auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+                auto_ptr<IConnection> conn( GetDS().CreateConnection() );
                 Connect(conn);
 
                 // Reinit the errot handler because it can be affected during connection.
@@ -7788,7 +7788,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             // after pushing a message handler into another connection
             {
                 // Create a new connection ...
-                auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+                auto_ptr<IConnection> conn( GetDS().CreateConnection() );
                 Connect(conn);
 
                 // Reinit the errot handler because it can be affected during connection.
@@ -7815,7 +7815,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
 
 
-            auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
+            auto_ptr<IConnection> local_conn( GetDS().CreateConnection() );
             Connect(local_conn);
 
             drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
@@ -7853,7 +7853,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
 
             ////////////////////////////////////////////////////////////////////////
             // Create a new connection.
-            auto_ptr<IConnection> new_conn( m_DS->CreateConnection() );
+            auto_ptr<IConnection> new_conn( GetDS().CreateConnection() );
             Connect(new_conn);
 
             // New connection should be affected ...
@@ -7890,7 +7890,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             // after pushing a message handler into another connection
             {
                 // Create a new connection ...
-                auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+                auto_ptr<IConnection> conn( GetDS().CreateConnection() );
                 Connect(conn);
 
                 try {
@@ -7912,30 +7912,30 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 IConnection* conn = NULL;
 
                 // Enable multiexception ...
-                m_DS->SetLogStream(0);
+                GetDS().SetLogStream(0);
 
                 try {
                     // Create a new connection ...
-                    conn = m_DS->CreateConnection();
+                    conn = GetDS().CreateConnection();
                 } catch(...)
                 {
                     delete conn;
                 }
 
-                m_DS->SetLogStream(&cerr);
+                GetDS().SetLogStream(&cerr);
             }
 
             {
                 IConnection* conn = NULL;
 
                 // Enable multiexception ...
-                m_DS->SetLogStream(0);
+                GetDS().SetLogStream(0);
 
                 try {
                     // Create a new connection ...
-                    conn = m_DS->CreateConnection();
+                    conn = GetDS().CreateConnection();
 
-                    m_DS->SetLogStream(&cerr);
+                    GetDS().SetLogStream(&cerr);
                 } catch(...)
                 {
                     delete conn;
@@ -7953,7 +7953,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
 // User error handler life-time ...
 void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
 {
-    I_DriverContext* drv_context = m_DS->GetDriverContext();
+    I_DriverContext* drv_context = GetDS().GetDriverContext();
 
     // Context. eNoOwnership ...
     {
@@ -8015,7 +8015,7 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
             // One connection ...
             {
                 // Create new connection ...
-                auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn(GetDS().CreateConnection());
                 auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 Connect(new_conn);
@@ -8029,8 +8029,8 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
             // Two connections ...
             {
                 // Create new connection ...
-                auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
-                auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn1(GetDS().CreateConnection());
+                auto_ptr<IConnection> new_conn2(GetDS().CreateConnection());
                 auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 Connect(new_conn1);
@@ -8046,7 +8046,7 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
 
             // One connection ...
             {
-                auto_ptr<IConnection> conn1(m_DS->CreateConnection());
+                auto_ptr<IConnection> conn1(GetDS().CreateConnection());
 
                 Connect(conn1);
 
@@ -8058,8 +8058,8 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
 
             // Two connections ...
             {
-                auto_ptr<IConnection> conn1(m_DS->CreateConnection());
-                auto_ptr<IConnection> conn2(m_DS->CreateConnection());
+                auto_ptr<IConnection> conn1(GetDS().CreateConnection());
+                auto_ptr<IConnection> conn2(GetDS().CreateConnection());
 
                 Connect(conn1);
                 Connect(conn2);
@@ -8080,7 +8080,7 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
             // One connection ...
             {
                 // Create new connection ...
-                auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn(GetDS().CreateConnection());
                 CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 Connect(new_conn);
@@ -8094,8 +8094,8 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
             // Two connections ...
             {
                 // Create new connection ...
-                auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
-                auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn1(GetDS().CreateConnection());
+                auto_ptr<IConnection> new_conn2(GetDS().CreateConnection());
                 CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 Connect(new_conn1);
@@ -8111,7 +8111,7 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
 
             // One connection ...
             {
-                auto_ptr<IConnection> conn1(m_DS->CreateConnection());
+                auto_ptr<IConnection> conn1(GetDS().CreateConnection());
 
                 Connect(conn1);
 
@@ -8123,8 +8123,8 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
 
             // Two connections ...
             {
-                auto_ptr<IConnection> conn1(m_DS->CreateConnection());
-                auto_ptr<IConnection> conn2(m_DS->CreateConnection());
+                auto_ptr<IConnection> conn1(GetDS().CreateConnection());
+                auto_ptr<IConnection> conn2(GetDS().CreateConnection());
 
                 Connect(conn1);
                 Connect(conn2);
@@ -8147,7 +8147,7 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
         {
             // One connection ...
             {
-                auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn(GetDS().CreateConnection());
                 CTestErrHandler* msg_handler = new CTestErrHandler();
 
                 Connect(new_conn);
@@ -8162,8 +8162,8 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
             // Raw pointer ...
             // Two connections ...
             {
-                auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
-                auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn1(GetDS().CreateConnection());
+                auto_ptr<IConnection> new_conn2(GetDS().CreateConnection());
                 CTestErrHandler* msg_handler = new CTestErrHandler();
 
                 Connect(new_conn1);
@@ -8183,7 +8183,7 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
         {
             // One connection ...
             {
-                auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn(GetDS().CreateConnection());
                 CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 Connect(new_conn);
@@ -8197,8 +8197,8 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
 
             // Two connections ...
             {
-                auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
-                auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn1(GetDS().CreateConnection());
+                auto_ptr<IConnection> new_conn2(GetDS().CreateConnection());
                 CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
                 Connect(new_conn1);
@@ -8215,7 +8215,7 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
 
             // One connection ...
             {
-                auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn(GetDS().CreateConnection());
 
                 Connect(new_conn);
 
@@ -8228,8 +8228,8 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
 
             // Two connections ...
             {
-                auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
-                auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn1(GetDS().CreateConnection());
+                auto_ptr<IConnection> new_conn2(GetDS().CreateConnection());
 
                 Connect(new_conn1);
                 Connect(new_conn2);
@@ -8284,7 +8284,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         // Test a regular IStatement with "exec"
         // Parameters are not allowed with this construction.
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Execute it first time ...
             auto_stmt->SendSql( "exec sp_databases" );
@@ -8356,7 +8356,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         {
             // Execute it first time ...
             auto_ptr<ICallableStatement> auto_stmt(
-                m_Conn->GetCallableStatement("sp_databases")
+                GetConnection().GetCallableStatement("sp_databases")
                 );
             auto_stmt->Execute();
             while(auto_stmt->HasMoreResults()) {
@@ -8384,7 +8384,7 @@ CDBAPIUnitTest::Test_Procedure(void)
 
 
             // Execute it second time ...
-            auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
+            auto_stmt.reset( GetConnection().GetCallableStatement("sp_databases") );
             auto_stmt->Execute();
             while(auto_stmt->HasMoreResults()) {
                 if( auto_stmt->HasRows() ) {
@@ -8411,16 +8411,16 @@ CDBAPIUnitTest::Test_Procedure(void)
 
 
             // Same as before but do not retrieve data ...
-            auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
+            auto_stmt.reset( GetConnection().GetCallableStatement("sp_databases") );
             auto_stmt->Execute();
-            auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
+            auto_stmt.reset( GetConnection().GetCallableStatement("sp_databases") );
             auto_stmt->Execute();
         }
 
         // Temporary test ...
         // !!! This is a bug ...
         if (false) {
-            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+            auto_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
             BOOST_CHECK( conn.get() != NULL );
 
             conn->Connect(
@@ -8471,7 +8471,7 @@ CDBAPIUnitTest::Test_Procedure(void)
                 int num = 0;
                 // Execute it first time ...
                 auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_databases")
+                    GetConnection().GetCallableStatement("sp_databases")
                     );
 
                 auto_stmt->Execute();
@@ -8496,7 +8496,7 @@ CDBAPIUnitTest::Test_Procedure(void)
             {
                 int num = 0;
                 auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_server_info")
+                    GetConnection().GetCallableStatement("sp_server_info")
                     );
 
                 auto_stmt->Execute();
@@ -8524,7 +8524,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         {
             {
                 auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_server_info")
+                    GetConnection().GetCallableStatement("sp_server_info")
                     );
 
                 // Set parameter to NULL ...
@@ -8547,7 +8547,7 @@ CDBAPIUnitTest::Test_Procedure(void)
             // NULL value with CVariant ...
             {
                 auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_statistics")
+                    GetConnection().GetCallableStatement("sp_statistics")
                     );
 
                 auto_stmt->SetParam(CVariant((const char*) NULL), "@table_name");
@@ -8559,7 +8559,7 @@ CDBAPIUnitTest::Test_Procedure(void)
             if (false) {
                 // Execute it first time ...
                 auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_statistics")
+                    GetConnection().GetCallableStatement("sp_statistics")
                     );
 
                 auto_stmt->SetParam(CVariant(GetTableName()), "@table_name");
@@ -8592,7 +8592,7 @@ CDBAPIUnitTest::Test_Procedure(void)
 
             if (false) {
                 auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("DBAPI_Sample..TestBigIntProc")
+                    GetConnection().GetCallableStatement("DBAPI_Sample..TestBigIntProc")
                     );
 
                 auto_stmt->SetParam(CVariant(Int8(1234567890)), "@num");
@@ -8603,12 +8603,12 @@ CDBAPIUnitTest::Test_Procedure(void)
         // Test output parameters ...
         if (false) {
             CRef<CDB_UserHandler_Diag> handler(new  CDB_UserHandler_Diag());
-            I_DriverContext* drv_context = m_DS->GetDriverContext();
+            I_DriverContext* drv_context = GetDS().GetDriverContext();
 
             drv_context->PushDefConnMsgHandler(handler);
 
             auto_ptr<ICallableStatement> auto_stmt(
-                m_Conn->GetCallableStatement("DBAPI_Sample..SampleProc3")
+                GetConnection().GetCallableStatement("DBAPI_Sample..SampleProc3")
                 );
             auto_stmt->SetParam(CVariant(1), "@id");
             auto_stmt->SetParam(CVariant(2.0), "@f");
@@ -8666,7 +8666,7 @@ CDBAPIUnitTest::Test_Procedure(void)
 
         // Temporary test ...
         if (false) {
-            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+            auto_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
             BOOST_CHECK( conn.get() != NULL );
 
             conn->Connect(
@@ -8715,7 +8715,7 @@ CDBAPIUnitTest::Test_Procedure(void)
 
         // Temporary test ...
         if (false && m_args.GetServerType() != CTestArguments::eSybase) {
-            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+            auto_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
             BOOST_CHECK( conn.get() != NULL );
 
             conn->Connect(
@@ -8772,7 +8772,7 @@ CDBAPIUnitTest::Test_Procedure2(void)
     try {
         {
             auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_server_info")
+                    GetConnection().GetCallableStatement("sp_server_info")
                     );
 
             auto_stmt->Execute();
@@ -8798,7 +8798,7 @@ CDBAPIUnitTest::Test_Procedure2(void)
         // Mismatched types of INT parameters ...
         {
             auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_server_info")
+                    GetConnection().GetCallableStatement("sp_server_info")
                     );
 
             // Set parameter to 2 ...
@@ -8823,7 +8823,7 @@ CDBAPIUnitTest::Test_Procedure3(void)
         // Reading multiple result-sets from a stored procedure ...
         {
             auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_helpdb")
+                    GetConnection().GetCallableStatement("sp_helpdb")
                     );
 
             auto_stmt->SetParam( CVariant( "master" ), "@dbname" );
@@ -8852,7 +8852,7 @@ CDBAPIUnitTest::Test_Procedure3(void)
 
         // The same as above, but using IStatement ...
         {
-            auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+            auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
             int result_num = 0;
 
@@ -8898,7 +8898,7 @@ CDBAPIUnitTest::Test_Exception_Safety(void)
     // Second test ...
     // Restore after invalid statement ...
     try {
-        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
         if (table_name[0] == '#') {
             sql  = " CREATE TABLE " + table_name + "( \n";
@@ -8970,7 +8970,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
         CDB_Exception* dbex = NULL;
 
         auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
+            GetDS().CreateConnection( CONN_OWNERSHIP )
             );
         Connect(local_conn);
 
@@ -9057,7 +9057,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
     // Second test ...
     {
         auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
+            GetDS().CreateConnection( CONN_OWNERSHIP )
             );
         Connect(local_conn);
 
@@ -9112,12 +9112,12 @@ void
 CDBAPIUnitTest::Test_MsgToEx2(void)
 {
     CRef<BaoshanGu_handler> handler(new BaoshanGu_handler);
-    I_DriverContext* drv_context = m_DS->GetDriverContext();
+    I_DriverContext* drv_context = GetDS().GetDriverContext();
 
     drv_context->PushCntxMsgHandler(handler);
     drv_context->PushDefConnMsgHandler(handler);
 
-    auto_ptr<IConnection> conn(m_DS->CreateConnection());
+    auto_ptr<IConnection> conn(GetDS().CreateConnection());
     conn->Connect("anyone","allowed", "REFTRACK_DEV", "x_locus");
 
     // conn->MsgToEx(true);
@@ -9172,7 +9172,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
             const string table_name(GetTableName());
 //             const string table_name("DBAPI_Sample..tmp_table_01");
             string sql;
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             if (false) {
                 sql  = " CREATE TABLE " + table_name + "( \n";
@@ -9291,7 +9291,7 @@ CDBAPIUnitTest::Test_NULL(void)
     try {
         // Initialize data (strings are NOT empty) ...
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             {
                 // Drop all records ...
@@ -9361,7 +9361,7 @@ CDBAPIUnitTest::Test_NULL(void)
 
         // Check ...
         if (true) {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             {
                 sql = "SELECT int_field, vc1000_field FROM " + table_name +
@@ -9434,7 +9434,7 @@ CDBAPIUnitTest::Test_NULL(void)
         {
             {
                 auto_ptr<ICallableStatement> auto_stmt(
-                    m_Conn->GetCallableStatement("sp_server_info")
+                    GetConnection().GetCallableStatement("sp_server_info")
                     );
 
                 // Set parameter to NULL ...
@@ -9461,7 +9461,7 @@ CDBAPIUnitTest::Test_NULL(void)
 
         // Special case: empty strings and strings with spaces.
         if (m_args.GetDriverName() != ftds_odbc_driver) {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Initialize data (strings are EMPTY) ...
             {
@@ -9647,7 +9647,7 @@ CDBAPIUnitTest::Test_GetRowCount()
         for ( int i = 0; i < repeat_num; ++i ) {
             // Shared/Reusable statement
             {
-                auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+                auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
 
                 CheckGetRowCount( i, eNoTrans, stmt.get() );
                 CheckGetRowCount( i, eTransCommit, stmt.get() );
@@ -9664,7 +9664,7 @@ CDBAPIUnitTest::Test_GetRowCount()
         for ( int i = 0; i < repeat_num; ++i ) {
             // Shared/Reusable statement
             {
-                auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+                auto_ptr<IStatement> stmt( GetConnection().GetStatement() );
 
                 CheckGetRowCount2( i, eNoTrans, stmt.get() );
                 CheckGetRowCount2( i, eTransCommit, stmt.get() );
@@ -9702,7 +9702,7 @@ CDBAPIUnitTest::CheckGetRowCount(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9718,7 +9718,7 @@ CDBAPIUnitTest::CheckGetRowCount(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9737,7 +9737,7 @@ CDBAPIUnitTest::CheckGetRowCount(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9756,7 +9756,7 @@ CDBAPIUnitTest::CheckGetRowCount(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9775,7 +9775,7 @@ CDBAPIUnitTest::CheckGetRowCount(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9794,7 +9794,7 @@ CDBAPIUnitTest::CheckGetRowCount(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9820,7 +9820,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
 {
     // Transaction ...
     CTestTransaction transaction(*m_Conn, tb);
-    // auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
+    // auto_ptr<IStatement> stmt( GetConnection().CreateStatement() );
     // _ASSERT(curr_stmt->get());
     string sql;
     sql  = " INSERT INTO " + GetTableName() + "(int_field) VALUES( @value ) \n";
@@ -9830,7 +9830,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9851,7 +9851,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9865,7 +9865,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9887,7 +9887,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9908,7 +9908,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9930,7 +9930,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9951,7 +9951,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9972,7 +9972,7 @@ CDBAPIUnitTest::CheckGetRowCount2(
         IStatement* curr_stmt = NULL;
         auto_ptr<IStatement> auto_stmt;
         if ( !stmt ) {
-            auto_stmt.reset( m_Conn->GetStatement() );
+            auto_stmt.reset( GetConnection().GetStatement() );
             curr_stmt = auto_stmt.get();
         } else {
             curr_stmt = stmt;
@@ -9998,7 +9998,7 @@ void CDBAPIUnitTest::Test_BlobStore(void)
     string table_name = "#TestBlobStore";
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // Create a table ...
         {
@@ -10047,7 +10047,7 @@ void CDBAPIUnitTest::Test_BlobStore(void)
             }
 
             CBlobStoreStatic blobrw(
-                m_Conn->GetCDB_Connection(),
+                GetConnection().GetCDB_Connection(),
                 table_name,     // tableName
                 "id",           // keyColName
                 "blob_num",     // numColName
@@ -10173,7 +10173,7 @@ CDBAPIUnitTest::Test_N_Connections(void)
         // There are already 2 connections - so +2
         CDriverManager::GetInstance().SetMaxConnect(eN + 2);
         for (int i = 0; i < eN; ++i) {
-            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection(CONN_OWNERSHIP));
+            auto_ptr<IConnection> auto_conn(GetDS().CreateConnection(CONN_OWNERSHIP));
             Connect(auto_conn);
 
             auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
@@ -10183,7 +10183,7 @@ CDBAPIUnitTest::Test_N_Connections(void)
         }
 
         try {
-            auto_conns[eN].reset(m_DS->CreateConnection(CONN_OWNERSHIP));
+            auto_conns[eN].reset(GetDS().CreateConnection(CONN_OWNERSHIP));
             Connect(auto_conns[eN]);
             BOOST_FAIL("Connection above limit is created");
         }
@@ -10204,7 +10204,7 @@ CDBAPIUnitTest::Test_N_Connections(void)
         // There are already 2 connections - so +2
         CDriverManager::GetInstance().SetMaxConnect(eN + 2);
         for (int i = 0; i < eN; ++i) {
-            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection(CONN_OWNERSHIP));
+            auto_ptr<IConnection> auto_conn(GetDS().CreateConnection(CONN_OWNERSHIP));
             Connect(auto_conn);
 
             auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
@@ -10259,7 +10259,7 @@ CDBAPIUnitTest::Check_Validator(TDBConnectionFactoryFactory factory,
     );
 
     // Create connection ...
-    conn.reset(m_DS->CreateConnection(CONN_OWNERSHIP));
+    conn.reset(GetDS().CreateConnection(CONN_OWNERSHIP));
     BOOST_CHECK(conn.get() != NULL);
 
     // There are only 3 of server01 ...
@@ -10561,7 +10561,7 @@ CDBAPIUnitTest::Test_ConnPool(void)
         // Create pooled connection ...
         {
             auto_ptr<CDB_Connection> auto_conn(
-                m_DS->GetDriverContext()->Connect(
+                GetDS().GetDriverContext()->Connect(
                     m_args.GetServerName(),
                     m_args.GetUserName(),
                     m_args.GetUserPassword(),
@@ -10585,7 +10585,7 @@ CDBAPIUnitTest::Test_ConnPool(void)
         // Get pooled connection ...
         {
             auto_ptr<CDB_Connection> auto_conn(
-                m_DS->GetDriverContext()->Connect(
+                GetDS().GetDriverContext()->Connect(
                     "",
                     "",
                     "",
@@ -11963,7 +11963,7 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
             string sErr;
 
             try {
-                I_DriverContext* drv_context = m_DS->GetDriverContext();
+                I_DriverContext* drv_context = GetDS().GetDriverContext();
 
                 if( drv_context == NULL ) {
                     BOOST_FAIL("FATAL: Unable to load context for dbdriver " +
@@ -12181,7 +12181,7 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
             BOOST_CHECK_EQUAL( bFetchErr, false );
         }
 
-        auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+        auto_ptr<IConnection> auto_conn( GetDS().CreateConnection() );
         BOOST_CHECK( auto_conn.get() != NULL );
 
         auto_conn->Connect(
@@ -12330,7 +12330,7 @@ CDBAPIUnitTest::Test_Authentication(void)
         // MSSQL10 has SSL certificate.
         // There is no MSSQL10 any more ...
     //     {
-    //         auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+    //         auto_ptr<IConnection> auto_conn( GetDS().CreateConnection() );
     //
     //         auto_conn->Connect(
     //             "NCBI_NT\\anyone",
@@ -12347,7 +12347,7 @@ CDBAPIUnitTest::Test_Authentication(void)
 
         // No SSL certificate.
         if (true) {
-            auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+            auto_ptr<IConnection> auto_conn( GetDS().CreateConnection() );
 
             auto_conn->Connect(
                 "NAC\\anyone",
@@ -12481,7 +12481,7 @@ CDBAPIUnitTest::Test_DriverContext_Many(void)
 void CDBAPIUnitTest::Test_Decimal(void)
 {
     string sql;
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
     sql = "declare @num decimal(6,2) set @num = 1.5 select @num as NumCol";
     auto_stmt->SendSql(sql);
@@ -12506,7 +12506,7 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
         {
             // IStatement
             {
-                auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+                auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
                 // 1
                 auto_stmt->SendSql("SELECT name FROM sysobjects");
@@ -12564,7 +12564,7 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
                                                      "sp_databases";
 
                 // 1
-                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
+                auto_stmt.reset(GetConnection().GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 DumpResults(auto_stmt.get());
                 auto_stmt->Execute();
@@ -12578,16 +12578,16 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
                 auto_stmt->Cancel();
 
                 // 3
-                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
+                auto_stmt.reset(GetConnection().GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 auto_stmt->Cancel();
-                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
+                auto_stmt.reset(GetConnection().GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 auto_stmt->Cancel();
                 auto_stmt->Cancel();
 
                 // 4
-                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
+                auto_stmt.reset(GetConnection().GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
@@ -12599,7 +12599,7 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
                 auto_stmt->Cancel();
 
                 // 5
-                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
+                auto_stmt.reset(GetConnection().GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
@@ -12612,7 +12612,7 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
                 auto_stmt->Cancel();
 
                 // 6
-                auto_stmt.reset(m_Conn->GetCallableStatement(proc_name));
+                auto_stmt.reset(GetConnection().GetCallableStatement(proc_name));
                 auto_stmt->Execute();
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
@@ -12639,7 +12639,7 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
         {
             // IStatement
             {
-                auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+                auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
                 // 1
                 try {
@@ -12705,7 +12705,7 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
 
                 // 1
                 try {
-                    auto_stmt.reset(m_Conn->GetCallableStatement("sp_wrong"));
+                    auto_stmt.reset(GetConnection().GetCallableStatement("sp_wrong"));
                     auto_stmt->ExecuteUpdate();
                 } catch(const CDB_Exception&)
                 {
@@ -12735,12 +12735,12 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
         // Alter DriverContext ...
         {
-            I_DriverContext* dc = m_DS->GetDriverContext();
+            I_DriverContext* dc = GetDS().GetDriverContext();
             unsigned int timeout = dc->GetTimeout();
 
             dc->SetTimeout(2);
 
-            auto_conn.reset(m_DS->CreateConnection());
+            auto_conn.reset(GetDS().CreateConnection());
             BOOST_CHECK(auto_conn.get() != NULL);
 
             Connect(auto_conn);
@@ -12769,7 +12769,7 @@ void CDBAPIUnitTest::Test_Timeout2(void)
 
         // Alter connection ...
         {
-            auto_conn.reset(m_DS->CreateConnection());
+            auto_conn.reset(GetDS().CreateConnection());
             BOOST_CHECK(auto_conn.get() != NULL);
 
             Connect(auto_conn);
@@ -12956,14 +12956,14 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
     try {
         CNcbiOfstream logfile("dbapi_unit_test.log");
 
-        m_DS->SetLogStream(&logfile);
-        m_DS->SetLogStream(&logfile);
+        GetDS().SetLogStream(&logfile);
+        GetDS().SetLogStream(&logfile);
 
         // Test block ...
         {
             // No errors ...
             {
-                auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                 BOOST_CHECK(auto_conn.get() != NULL);
 
                 Connect(auto_conn);
@@ -12974,11 +12974,11 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
                 DumpResults(auto_stmt.get());
             }
 
-            m_DS->SetLogStream(&logfile);
+            GetDS().SetLogStream(&logfile);
 
             // Force errors ...
             {
-                auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                 BOOST_CHECK(auto_conn.get() != NULL);
 
                 Connect(auto_conn);
@@ -12992,13 +12992,13 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
                 }
             }
 
-            m_DS->SetLogStream(&logfile);
+            GetDS().SetLogStream(&logfile);
         }
 
         // Install user-defined error handler (eTakeOwnership)
         {
             {
-                I_DriverContext* drv_context = m_DS->GetDriverContext();
+                I_DriverContext* drv_context = GetDS().GetDriverContext();
 
                 if (m_args.IsODBCBased()) {
                     drv_context->PushCntxMsgHandler(new CDB_UserHandler_Exception_ODBC,
@@ -13021,7 +13021,7 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
             {
                 // No errors ...
                 {
-                    auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                    auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                     BOOST_CHECK(auto_conn.get() != NULL);
 
                     Connect(auto_conn);
@@ -13032,11 +13032,11 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
                     DumpResults(auto_stmt.get());
                 }
 
-                m_DS->SetLogStream(&logfile);
+                GetDS().SetLogStream(&logfile);
 
                 // Force errors ...
                 {
-                    auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                    auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                     BOOST_CHECK(auto_conn.get() != NULL);
 
                     Connect(auto_conn);
@@ -13050,19 +13050,19 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
                     }
                 }
 
-                m_DS->SetLogStream(&logfile);
+                GetDS().SetLogStream(&logfile);
             }
         }
 
         // Install user-defined error handler (eNoOwnership)
         {
-            CMsgHandlerGuard handler_guard(*m_DS->GetDriverContext());
+            CMsgHandlerGuard handler_guard(*GetDS().GetDriverContext());
 
             // Test block ...
             {
                 // No errors ...
                 {
-                    auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                    auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                     BOOST_CHECK(auto_conn.get() != NULL);
 
                     Connect(auto_conn);
@@ -13073,11 +13073,11 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
                     DumpResults(auto_stmt.get());
                 }
 
-                m_DS->SetLogStream(&logfile);
+                GetDS().SetLogStream(&logfile);
 
                 // Force errors ...
                 {
-                    auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                    auto_ptr<IConnection> auto_conn(GetDS().CreateConnection());
                     BOOST_CHECK(auto_conn.get() != NULL);
 
                     Connect(auto_conn);
@@ -13091,7 +13091,7 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
                     }
                 }
 
-                m_DS->SetLogStream(&logfile);
+                GetDS().SetLogStream(&logfile);
             }
         }
     }
@@ -13112,7 +13112,7 @@ CDBAPIUnitTest::Test_Identity(void)
     const IResultSetMetaData* md = NULL;
 
     try {
-        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 
         // Clean table ...
         auto_stmt->ExecuteUpdate("DELETE FROM " + GetTableName());
@@ -13209,7 +13209,7 @@ CDBAPIUnitTest::Test_ClearParamList(void)
 
     // Initialize data (strings are full of spaces) ...
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // First test ...
         {
@@ -13297,7 +13297,7 @@ void CDBAPIUnitTest::Test_Truncation(void)
     string sql;
 
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // There should be no problems with TDS version 7, 8, and 12.5
         {
@@ -13557,7 +13557,7 @@ CDBAPIUnitTest::Test_BindByPos(void)
 
     // Initialize data (strings are full of spaces) ...
     try {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
         // First test ...
         {

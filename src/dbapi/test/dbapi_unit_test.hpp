@@ -66,6 +66,13 @@ public:
     CTestTransaction(IConnection& conn, ETransBehavior tb = eTransCommit);
     ~CTestTransaction(void);
 
+public:
+    IConnection& GetConnection(void)
+    {
+        _ASSERT(m_Conn);
+        return *m_Conn;
+    }
+
 private:
     IConnection* m_Conn;
     ETransBehavior  m_TransBehavior;
@@ -320,6 +327,17 @@ protected:
 
     void Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn);
     void Test_WaitForDelay(const auto_ptr<IConnection>& auto_conn);
+
+    IConnection& GetConnection(void)
+    {
+        _ASSERT(m_Conn.get());
+        return *m_Conn;
+    }
+    IDataSource& GetDS(void)
+    {
+        _ASSERT(m_DS);
+        return *m_DS;
+    }
 
 private:
     const CTestArguments    m_args;
