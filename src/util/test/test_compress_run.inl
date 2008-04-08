@@ -23,7 +23,7 @@
     //------------------------------------------------------------------------
 
     CVersionInfo version = TCompression().GetVersion();
-    LOG_POST("Compression library name and version: " << version.Print());
+    _TRACE("Compression library name and version: " << version.Print());
 
     // zlib v1.2.2 and earlier have a bug in decoding. In some cases
     // decompressor can produce output data on invalid compressed data.
@@ -32,14 +32,14 @@
             version.GetName() != "zlib"  || 
             version.IsUpCompatible(CVersionInfo(1,2,3));
 
-    LOG_POST("Transparent read tests are " << 
-            (allow_transparent_read_test ? "" : "not ") << "allowed.\n");
+    _TRACE("Transparent read tests are " << 
+           (allow_transparent_read_test ? "" : "not ") << "allowed.\n");
 
     //------------------------------------------------------------------------
     // Compress/decomress buffer
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Compress/decompress buffer test (default level)...");
+        _TRACE("Compress/decompress buffer test (default level)...");
         INIT_BUFFERS;
 
         // Compress data
@@ -69,7 +69,7 @@
 #if defined(HAVE_LIBLZO)
     if (version.GetName() == "lzo")
     {{
-        LOG_POST("Compress/decompress buffer test (LZO, CRC32, default level)...");
+        _TRACE("Compress/decompress buffer test (LZO, CRC32, default level)...");
         INIT_BUFFERS;
 
         // Compress data
@@ -98,7 +98,7 @@
     // Overflow test
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Output buffer overflow test...");
+        _TRACE("Output buffer overflow test...");
 
         TCompression c;
         dst_len = 5;
@@ -118,7 +118,7 @@
     //------------------------------------------------------------------------
     if (allow_transparent_read_test)
     {{
-        LOG_POST("Decompress buffer (transparent read)...");
+        _TRACE("Decompress buffer (transparent read)...");
         INIT_BUFFERS;
 
         TCompression c(CCompression::eLevel_Medium);
@@ -148,7 +148,7 @@
     // File compression/decompression test
     //------------------------------------------------------------------------
     {{
-        LOG_POST("File compress/decompress test...");
+        _TRACE("File compress/decompress test...");
         size_t n;
 
         // First test -- write 1k blocks and read in bulk
@@ -224,7 +224,7 @@
     //------------------------------------------------------------------------
     if (allow_transparent_read_test)
     {{
-        LOG_POST("Decompress file (transparent read)...");
+        _TRACE("Decompress file (transparent read)...");
         INIT_BUFFERS;
 
         TCompressionFile zf;
@@ -278,7 +278,7 @@
     // Compression input stream test
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Compression input stream test...");
+        _TRACE("Compression input stream test...");
         INIT_BUFFERS;
 
         // Compression input stream test 
@@ -319,7 +319,7 @@
     // Decompression input stream test
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Decompression input stream test...");
+        _TRACE("Decompression input stream test...");
         INIT_BUFFERS;
 
         // Compress data and create test stream
@@ -359,7 +359,7 @@
     // Compression output stream test
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Compression output stream test...");
+        _TRACE("Compression output stream test...");
         INIT_BUFFERS;
 
         // Write data to compressing stream
@@ -404,7 +404,7 @@
     // Decompression output stream test
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Decompression output stream test...");
+        _TRACE("Decompression output stream test...");
         INIT_BUFFERS;
 
         // Compress the data
@@ -457,7 +457,7 @@
     //------------------------------------------------------------------------
     if (allow_transparent_read_test)
     {{
-        LOG_POST("Decompression input stream test (transparent read)...");
+        _TRACE("Decompression input stream test (transparent read)...");
         INIT_BUFFERS;
 
         // Create test input stream with uncompressed data
@@ -487,7 +487,7 @@
     //------------------------------------------------------------------------
 
     {{
-        LOG_POST("I/O stream tests...");
+        _TRACE("I/O stream tests...");
         {{
             INIT_BUFFERS;
 
@@ -569,7 +569,7 @@
     //      - reusing compression/decompression stream processors.
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Advanced I/O stream test...");
+        _TRACE("Advanced I/O stream test...");
         INIT_BUFFERS;
 
         TStreamCompressor   compressor;

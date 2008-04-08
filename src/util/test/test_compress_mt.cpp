@@ -85,7 +85,7 @@ public:
 
 
 /// Print OK message.
-#define OK LOG_POST("OK\n")
+#define OK _TRACE("OK\n")
 
 /// Initialize destination buffers.
 #define INIT_BUFFERS  memset(dst_buf, 0, kBufLen); memset(cmp_buf, 0, kBufLen)
@@ -114,16 +114,16 @@ void CTestCompressor<TCompression, TCompressionFile,
     ::PrintResult(EPrintType type, int last_errcode, 
                   size_t src_len, size_t dst_len, size_t out_len)
 {
-    LOG_POST(((type == eCompress) ? "Compress   ": "Decompress ")
-             << "errcode = "
-             << ((last_errcode == kUnknownErr) ? 
-                    "?" : NStr::IntToString(last_errcode)) << ", "
-             << ((src_len == kUnknown) ? 
-                    "?" : NStr::UIntToString(src_len)) << " -> "
-             << ((out_len == kUnknown) ? 
-                    "?" : NStr::UIntToString(out_len)) << ", limit "
-             << ((dst_len == kUnknown) ? 
-                    "?" : NStr::UIntToString(dst_len))
+    _TRACE(((type == eCompress) ? "Compress   ": "Decompress ")
+           << "errcode = "
+           << ((last_errcode == kUnknownErr) ? 
+                  "?" : NStr::IntToString(last_errcode)) << ", "
+           << ((src_len == kUnknown) ? 
+                  "?" : NStr::UIntToString(src_len)) << " -> "
+           << ((out_len == kUnknown) ? 
+                  "?" : NStr::UIntToString(out_len)) << ", limit "
+           << ((dst_len == kUnknown) ? 
+                  "?" : NStr::UIntToString(dst_len))
     );
 }
 
@@ -144,7 +144,7 @@ public:
 
 bool CTest::Thread_Init(int)
 {
-    SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostLevel(eDiag_Error);
     GetDiagContext().SetOldPostFormat(false);
     return true;
 }
@@ -170,30 +170,30 @@ bool CTest::Thread_Run(int idx)
     // Test compressors with different size of data
     for (size_t i = 0; i < kTestCount; i++) {
 
-        LOG_POST("====================================\n" << 
-                 "Data size = " << kDataLength[i] << "\n\n");
+        _TRACE("====================================\n" << 
+               "Data size = " << kDataLength[i] << "\n\n");
 
-        LOG_POST("-------------- BZip2 ---------------\n");
+        _TRACE("-------------- BZip2 ---------------\n");
         CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
                         CBZip2StreamCompressor, CBZip2StreamDecompressor>
             ::Run(idx, src_buf, kDataLength[i]);
 
-        LOG_POST("-------------- Zlib ----------------\n");
+        _TRACE("-------------- Zlib ----------------\n");
         CTestCompressor<CZipCompression, CZipCompressionFile,
                         CZipStreamCompressor, CZipStreamDecompressor>
             ::Run(idx, src_buf, kDataLength[i]);
 
 #if defined(HAVE_LIBLZO)
-        LOG_POST("-------------- LZO -----------------\n");
+        _TRACE("-------------- LZO -----------------\n");
 
         CTestCompressor<CLZOCompression, CLZOCompressionFile,
                         CLZOStreamCompressor, CLZOStreamDecompressor>
             ::Run(idx, src_buf, kDataLength[i]);
 #endif
-        LOG_POST("\nTEST execution completed successfully!\n");
+        _TRACE("\nTEST execution completed successfully!\n");
     }
 
-    LOG_POST("\nTEST execution completed successfully!\n");
+    _TRACE("\nTEST execution completed successfully!\n");
  
     return true;
 }
