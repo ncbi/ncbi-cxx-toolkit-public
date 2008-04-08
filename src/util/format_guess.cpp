@@ -927,7 +927,8 @@ static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
 
     /// determine the number of observed columns
     size_t ncols = 0;
-    for ( ;  iter != lines.end();  ++iter) {
+    bool found = false;
+    for ( ;  iter != lines.end()  &&  ! found;  ++iter) {
         if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
             continue;
         }
@@ -935,7 +936,7 @@ static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
         toks.clear();
         NStr::Split(*iter, " \t,", toks);
         ncols = toks.size();
-        break;
+        found = true;
     }
     if ( ncols < 2 ) {
         return false;
@@ -948,7 +949,6 @@ static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
         if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
             continue;
         }
-        ++nlines;
 
         toks.clear();
         NStr::Split(*iter, " \t,", toks);
@@ -958,6 +958,8 @@ static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
             if (it != lines.end()) {
                 return false;
             }
+        } else {
+            ++nlines;
         }
     }
 
