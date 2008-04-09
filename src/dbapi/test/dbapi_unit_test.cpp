@@ -59,7 +59,6 @@ static const char* ftds_dblib_driver = "ftds_dblib";
 static const char* odbc_driver = "odbc";
 static const char* ctlib_driver = "ctlib";
 static const char* dblib_driver = "dblib";
-static const char* msdblib_driver = "msdblib";
 
 
 // #define DBAPI_BOOST_FAIL(ex)
@@ -4057,7 +4056,6 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             // Retrieve data ...
             // Some drivers limit size of text/binary to 255 bytes ...
             if ( m_args.GetDriverName() != dblib_driver
-                 && m_args.GetDriverName() != msdblib_driver
                 ) {
                 auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
@@ -4335,7 +4333,6 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             // Retrieve data ...
             // Some drivers limit size of text/binary to 255 bytes ...
             if (m_args.GetDriverName() != dblib_driver
-                && m_args.GetDriverName() != msdblib_driver
                 ) {
                 sql  = " SELECT id, vc8000_field FROM " + table_name;
                 sql += " ORDER BY id";
@@ -7085,7 +7082,6 @@ CDBAPIUnitTest::Test_Recordset(void)
             // long binary
             // dblib cannot transfer more than 255 bytes ...
             if (m_args.GetDriverName() != dblib_driver
-                && m_args.GetDriverName() != msdblib_driver
                 ) {
                 rs = auto_stmt->ExecuteQuery("select convert(binary(1000), '12345')");
                 BOOST_CHECK(rs != NULL);
@@ -9613,7 +9609,6 @@ CDBAPIUnitTest::Test_NULL(void)
                         // Old protocol version has this strange feature
                         if (m_args.GetServerType() == CTestArguments::eSybase
                             || m_args.GetDriverName() == dblib_driver
-                            || m_args.GetDriverName() == msdblib_driver
                            )
                         {
                             BOOST_CHECK_EQUAL( vc1000_field.GetString(), string(" ") );
@@ -9692,7 +9687,6 @@ CDBAPIUnitTest::Test_NULL(void)
                         // Old protocol version has this strange feature
                         if (m_args.GetServerType() == CTestArguments::eSybase
                             || m_args.GetDriverName() == dblib_driver
-                            || m_args.GetDriverName() == msdblib_driver
                            )
                         {
                             BOOST_CHECK_EQUAL( vc1000_field.GetString(), string(" ") );
@@ -12885,6 +12879,8 @@ void CDBAPIUnitTest::Test_WaitForDelay(const auto_ptr<IConnection>& auto_conn)
         } catch(const CDB_Exception&) {
             timeout_was_reported = true;
             auto_stmt->Cancel();
+        } catch(...) {
+            BOOST_CHECK(false);
         }
     } else {
         try {
@@ -13999,7 +13995,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.GetTestConfiguration() != CTestArguments::eFast) 
     {
-        if (args.GetDriverName() != msdblib_driver) {
+        if (true) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ConnPool,
                     DBAPIInstance);
             tc->depends_on(tc_init);
@@ -14031,7 +14027,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if ((args.GetServerType() == CTestArguments::eMsSql
         || args.GetServerType() == CTestArguments::eMsSql2005)
-        && args.GetDriverName() != msdblib_driver
         && args.GetDriverName() != ftds_dblib_driver
         && args.GetDriverName() != dblib_driver
         ) 
@@ -14053,7 +14048,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             && !(os_type == eOsSolaris && compiler_type == eCompilerWorkShop) && os_type != eOsIrix
             )
             || (args.GetDriverName() == dblib_driver && args.GetServerType() == CTestArguments::eSybase)
-            || args.GetDriverName() == msdblib_driver
             || (args.GetDriverName() == ctlib_driver && os_type != eOsSolaris)
             || args.GetDriverName() == ftds64_driver
             || args.IsODBCBased()
@@ -14075,7 +14069,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         if (args.GetDriverName() != ctlib_driver // SetTimeout is not supported. API doesn't support that.
             && args.GetDriverName() != dblib_driver // SetTimeout is not supported. API doesn't support that.
             && args.GetDriverName() != ftds_dblib_driver // SetTimeout is not supported. API doesn't support that.
-            && args.GetDriverName() != ftds8_driver // Problems ...
+            && args.GetDriverName() != ftds8_driver // 04/09/08 Doesn't report timeout ...
             ) 
         {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Timeout2,
@@ -14091,7 +14085,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // on GCC_340-ReleaseMT--i686-pc-linux2.4.23
     if (args.GetDriverName() != ftds8_driver
         && args.GetDriverName() != ftds_dblib_driver
-        && args.GetDriverName() != msdblib_driver
         && !(args.GetDriverName() == ftds8_driver && os_type == eOsSolaris)
         && !(args.GetDriverName() == ftds8_driver
              && args.GetServerType() == CTestArguments::eSybase)
@@ -14300,7 +14293,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // Doesn't work at the moment ...
     if (args.GetDriverName() != ftds8_driver // memory access violation 03/03/08 
         && !args.IsODBCBased() // 03/24/08 Statement(s) could not be prepared.
-        && args.GetDriverName() != msdblib_driver // Fails with the message "Cannot get the DBCOLINFO*"
         && args.GetDriverName() != ftds_dblib_driver // 04/01/08 Results pending.
         && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
         ) 
@@ -14319,7 +14311,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && !(args.GetDriverName() == ftds8_driver
             && args.GetServerType() == CTestArguments::eSybase)
         && args.GetDriverName() != dblib_driver // Code will hang up with dblib for some reason ...
-        && args.GetDriverName() != msdblib_driver // doesn't work ...
         ) 
     {
         //
@@ -14554,7 +14545,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         PutMsgDisabled("Test_BulkInsertBlob_LowLevel2");
     }
 
-    if (args.GetDriverName() != msdblib_driver) 
+    if (true) 
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_MsgToEx,
                 DBAPIInstance);
@@ -14651,7 +14642,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (select_stmt_tc
         && (args.GetServerType() == CTestArguments::eMsSql
             || args.GetServerType() == CTestArguments::eMsSql2005)
-            && args.GetDriverName() != msdblib_driver
             && args.GetDriverName() != dblib_driver
             ) 
     {
@@ -14782,7 +14772,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (args.IsBCPAvailable()
-        && args.GetDriverName() != msdblib_driver     // Just does'nt work for some reason
         && args.GetDriverName() != ftds_dblib_driver
         && (args.GetDriverName() != dblib_driver
              ||  args.GetServerType() == CTestArguments::eSybase)
@@ -14876,7 +14865,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 || args.GetDriverName() == ftds_dblib_driver
               )
            && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
-          || args.GetDriverName() == msdblib_driver
           )
          && args.GetDriverName() != dblib_driver
         )
@@ -14908,7 +14896,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //     if (args.GetServerType() == CTestArguments::eMsSql
 //         && args.GetDriverName() != odbc_driver // Doesn't work ...
 //         // && args.GetDriverName() != ftds_odbc_driver
-//         && args.GetDriverName() != msdblib_driver
 //         ) {
 //         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NCBI_LS, DBAPIInstance);
 //         add(tc);
@@ -14928,7 +14915,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // DBLIB has no cancel command, so this test doesn't work with DBLIB API
     if (args.IsBCPAvailable()
         &&  args.GetDriverName() != dblib_driver  // dblib driver series have no bcp cancellation
-        &&  args.GetDriverName() != msdblib_driver
         &&  args.GetDriverName() != ftds_dblib_driver
         &&  args.GetDriverName() != ctlib_driver  // Cancel is not working in Sybase ctlib driver
         )
@@ -14990,7 +14976,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    ftds_driver
-#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, msdblib_driver, odbc_driver, \
+#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver, \
                       ftds_dblib_driver, ftds_odbc_driver, ftds8_driver
 
 #elif defined(HAVE_LIBSYBASE)
@@ -15139,7 +15125,6 @@ CTestArguments::IsBCPAvailable(void) const
         // There is no apropriate client
         return false;
     } else if ( GetDriverName() == ftds_odbc_driver
-         || GetDriverName() == msdblib_driver
          || (GetDriverName() == ftds8_driver
              && GetServerType() == CTestArguments::eSybase)
          ) {
