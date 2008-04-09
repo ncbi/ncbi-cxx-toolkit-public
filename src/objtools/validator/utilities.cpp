@@ -1014,6 +1014,7 @@ const string CCountries::sm_Countries[] = {
     "Kerguelen Archipelago",
     "Kingman Reef",
     "Kiribati",
+    "Kosovo",
     "Kuwait",
     "Kyrgyzstan",
     "Laos",
