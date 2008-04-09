@@ -12422,8 +12422,8 @@ CDBAPIUnitTest::Test_Authentication(void)
             auto_ptr<IConnection> auto_conn( GetDS().CreateConnection() );
 
             auto_conn->Connect(
-                "NAC\\anyone",
-                "permitted",
+                "NCBI_NT\\anyone",
+                "Perm1tted",
                 "MSDEV2"
                 );
 
