@@ -87,7 +87,7 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
         
         if ( seqit->IsAa() ) {
             protcnt++;
-        } else {
+        } else if ( seqit->IsNa() ) {
             nuccnt++;
         }
         
@@ -109,17 +109,30 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
         ValidatePartsSet(seqset);
         break;
         
+    case CBioseq_set::eClass_genbank:
+        ValidateGenbankSet(seqset);
+        break;
+        
     case CBioseq_set::eClass_pop_set:
         ValidatePopSet(seqset);
+        break;
+        
+    case CBioseq_set::eClass_mut_set:
+    case CBioseq_set::eClass_phy_set:
+    case CBioseq_set::eClass_eco_set:
+    case CBioseq_set::eClass_wgs_set:
+        ValidatePhyMutEcoWgsSet(seqset);
         break;
         
     case CBioseq_set::eClass_gen_prod_set:
         ValidateGenProdSet(seqset);
         break;
+    /*
     case CBioseq_set::eClass_other:
         PostErr(eDiag_Critical, eErr_SEQ_PKG_GenomicProductPackagingProblem, 
             "Genomic product set class incorrectly set to other", seqset);
         break;
+    */
     default:
         if ( nuccnt == 0  &&  protcnt == 0 )  {
             PostErr(eDiag_Error, eErr_SEQ_PKG_EmptySet, 
@@ -148,6 +161,19 @@ bool CValidError_bioseqset::IsMrnaProductInGPS(const CBioseq& seq)
 }
 
 
+bool CValidError_bioseqset::IsCDSProductInGPS(const CBioseq& seq)
+{
+    if ( m_Imp.IsGPS() ) {
+        CFeat_CI cds(
+            m_Scope->GetBioseqHandle(seq), 
+            SAnnotSelector(CSeqFeatData::e_Cdregion)
+            .SetByProduct());
+        return (bool)cds;
+    }
+    return true;
+}
+
+
 void CValidError_bioseqset::ValidateNucProtSet
 (const CBioseq_set& seqset,
  int nuccnt, 
@@ -162,22 +188,28 @@ void CValidError_bioseqset::ValidateNucProtSet
                  "No proteins in nuc-prot set", seqset);
     }
 
-    ITERATE( list< CRef<CSeq_entry> >, se_list_it, seqset.GetSeq_set() ) {
-        if ( (**se_list_it).IsSeq() ) {
-            const CBioseq& seq = (**se_list_it).GetSeq();
+    ITERATE ( CBioseq_set::TSeq_set, se_list_it, seqset.GetSeq_set() ) {
+        if ( (*se_list_it)->IsSeq() ) {
+            const CBioseq& seq = (*se_list_it)->GetSeq();
             if ( seq.IsNa()  &&  !IsMrnaProductInGPS(seq) ) {
                 PostErr(eDiag_Warning,
                     eErr_SEQ_PKG_GenomicProductPackagingProblem,
                     "Nucleotide bioseq should be product of mRNA "
                     "feature on contig, but is not",
                     seq);
+            } else if ( seq.IsAa()  &&  !IsCDSProductInGPS(seq) ) {
+                PostErr(eDiag_Warning,
+                    eErr_SEQ_PKG_GenomicProductPackagingProblem,
+                    "Protein bioseq should be product of CDS "
+                    "feature on contig, but is not",
+                    seq);
             }
         }
 
-        if ( !(**se_list_it).IsSet() )
+        if ( !(*se_list_it)->IsSet() )
             continue;
 
-        const CBioseq_set& set = (**se_list_it).GetSet();
+        const CBioseq_set& set = (*se_list_it)->GetSet();
         if ( set.GetClass() != CBioseq_set::eClass_segset ) {
 
             const CEnumeratedTypeValues* tv = 
@@ -257,9 +289,9 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
     CSeq_inst::EMol     mol = CSeq_inst::eMol_not_set;
     CSeq_inst::EMol     seq_inst_mol;
 
-    ITERATE ( list< CRef<CSeq_entry> >, se_list_it, seqset.GetSeq_set() ) {
-        if ( (**se_list_it).IsSeq() ) {
-            const CSeq_inst& seq_inst = (**se_list_it).GetSeq().GetInst();
+    ITERATE ( CBioseq_set::TSeq_set, se_list_it, seqset.GetSeq_set() ) {
+        if ( (*se_list_it)->IsSeq() ) {
+            const CSeq_inst& seq_inst = (*se_list_it)->GetSeq().GetInst();
 
             if ( mol == CSeq_inst::eMol_not_set  ||
                  mol == CSeq_inst::eMol_other ) {
@@ -275,8 +307,8 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
                     }
                 }
             }
-        } else if ( (**se_list_it).IsSet() ) {
-            const CBioseq_set& set = (**se_list_it).GetSet();
+        } else if ( (*se_list_it)->IsSet() ) {
+            const CBioseq_set& set = (*se_list_it)->GetSet();
             const CEnumeratedTypeValues* tv = 
                 CBioseq_set::GetTypeInfo_enum_EClass();
             const string& set_class_str = 
@@ -291,12 +323,30 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
 }
 
 
+void CValidError_bioseqset::ValidateGenbankSet(const CBioseq_set& seqset)
+{
+}
+
+
 void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 {
     const CBioSource*   biosrc  = 0;
     const string        *first_taxname = 0;
     static const string influenza = "Influenza virus ";
     static const string sp = " sp. ";
+
+    ITERATE ( CBioseq_set::TSeq_set, se_list_it, seqset.GetSeq_set() ) {
+        if ( (*se_list_it)->IsSet() ) {
+            const CBioseq_set& set = (*se_list_it)->GetSet();
+            if ( set.GetClass() == CBioseq_set::eClass_genbank ) {
+
+                PostErr(eDiag_Error, eErr_SEQ_PKG_InternalGenBankSet,
+                         "Bioseq-set contains internal GenBank Bioseq-set",
+                         set);
+                break;
+            }
+        }
+    }
     
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
     for (; seqit; ++seqit) {
@@ -352,12 +402,17 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 }
 
 
+void CValidError_bioseqset::ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset)
+{
+}
+
+
 void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
 {
     bool                id_no_good = false;
     CSeq_id::E_Choice   id_type = CSeq_id::e_not_set;
     
-    list< CRef<CSeq_entry> >::const_iterator se_list_it =
+    CBioseq_set::TSeq_set::const_iterator se_list_it =
         seqset.GetSeq_set().begin();
     
     if ( !(**se_list_it).IsSeq() ) {
