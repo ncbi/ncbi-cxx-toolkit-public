@@ -231,6 +231,15 @@ tdsdump_on(void)
 
 
 /**
+ * Get the logging state.
+ */
+int 
+tdsdump_state(void)
+{
+	return write_dump;
+}
+
+/**
  * This creates and truncates a human readable dump file for the TDS
  * traffic.  The name of the file is specified by the filename
  * parameter.  If that is given as NULL or an empty string,

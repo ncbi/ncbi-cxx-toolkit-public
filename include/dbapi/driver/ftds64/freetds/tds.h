@@ -1407,6 +1407,7 @@ int tds_swap_bytes(unsigned char *buf, int bytes);
 int tds_version(TDSSOCKET * tds_socket, char *pversion_string);
 void tdsdump_off(void);
 void tdsdump_on(void);
+int tdsdump_state(void);
 int tdsdump_open(const char *filename);
 void tdsdump_close(void);
 void tdsdump_dump_buf(const char* file, unsigned int level_line, const char *msg, const void *buf, int length);

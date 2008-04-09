@@ -191,6 +191,7 @@
 #define tdsdump_dump_buf                tdsdump_dump_buf_ver64
 #define tdsdump_log                     tdsdump_log_ver64
 #define tdsdump_off                     tdsdump_off_ver64
+#define tdsdump_state                   tdsdump_state_ver64
 #define tdsdump_on                      tdsdump_on_ver64
 #define tdsdump_open                    tdsdump_open_ver64
 

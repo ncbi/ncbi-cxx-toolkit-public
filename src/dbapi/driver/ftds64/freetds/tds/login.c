@@ -801,6 +801,7 @@ static int
 tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 {
     int rc;
+    int dump_state = 0;
 
     static const unsigned char client_progver[] = { 6, 0x83, 0xf2, 0xf8 };
 
@@ -1072,9 +1073,12 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
         tds_put_n(tds, domain, domain_len);
     }
 
+    dump_state = tdsdump_state();
     tdsdump_off();
     rc = tds_flush_packet(tds);
-    tdsdump_on();
+    if ( dump_state ) {
+        tdsdump_on();
+    }
 
     return rc;
 }
