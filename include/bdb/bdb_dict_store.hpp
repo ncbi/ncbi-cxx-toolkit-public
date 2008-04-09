@@ -53,34 +53,7 @@ class CBDB_BlobDictionary : public CBDB_File
 public:
     typedef Key   TKey;
     typedef Uint4 TKeyId;
-
-    struct SReverseDictionary : public CBDB_File
-    {
-        /// key
-        typename SBDB_TypeTraits<Uint4>::TFieldType uid;
-        /// data
-        typename SBDB_TypeTraits<Key>::TFieldType   key;
-
-        SReverseDictionary()
-            : CBDB_File(eDuplicatesDisable, eQueue)
-            {
-                DisableNull();
-                SetCacheSize(128 * 1024);
-                BindKey ("uid", &uid);
-                BindData("key", &key);
-            }
-
-        Uint4 GetCurrentUid() const
-        {
-            return (Uint4)uid;
-        }
-
-        TKey GetCurrentKey() const
-        {
-            return (TKey)key;
-        }
-    };
-
+    
     CBDB_BlobDictionary(Uint4 last_uid = 0);
 
     /// @name Required CBDB_BlobDictionary<> interface
@@ -448,9 +421,6 @@ CBDB_BlobDictStore<Key, Dictionary, Store>::Read(const Key& key,
                                                  CBDB_RawFile::TBuffer& data)
 {
     TKeyId key_id = x_GetOpenDict().GetKey(key);
-    if ( !key_id ) {
-        return eBDB_NotFound;
-    }
     return ReadById(key_id, data);
 }
 
@@ -480,10 +450,6 @@ CBDB_BlobDictStore<Key, Dictionary, Store>::Write(const Key& key,
                                                   size_t size)
 {
     TKeyId key_id = x_GetOpenDict().PutKey(key);
-    if ( !key_id ) {
-        NCBI_THROW(CException, eUnknown,
-                   "Failed to insert key value");
-    }
     return UpdateInsert(key_id, data, size);
 }
 
