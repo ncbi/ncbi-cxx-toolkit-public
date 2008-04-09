@@ -5826,11 +5826,6 @@ CDBAPIUnitTest::Test_Cursor2(void)
             {
                 // blobRs should be destroyed before auto_cursor ...
                 auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-//                 while(blobRs->Next()) {
-//                     ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob), eDisableLog);
-//                     out.write(clob, strlen(clob));
-//                     out.flush();
-//                 }
 
                 if (blobRs->Next()) {
                     ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob), eDisableLog);
@@ -5946,6 +5941,64 @@ CDBAPIUnitTest::Test_Cursor_Param(void)
                 BOOST_CHECK(rs->Next());
                 BOOST_CHECK_EQUAL(rs->GetVariant(1).GetInt4(), 1);
             }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_Cursor_Multiple(void)
+{
+    string sql;
+    const size_t rec_num = 2;
+
+    try {
+         // Initialize a test table ...
+        {
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+
+            // Drop all records ...
+            sql  = " DELETE FROM " + GetTableName();
+            auto_stmt->ExecuteUpdate(sql);
+
+            // Insert new LOB records ...
+            sql  = " INSERT INTO " + GetTableName() +
+                "(int_field, text_field) VALUES(@id, '') \n";
+
+            // CVariant variant(eDB_Text);
+            // variant.Append(" ", 1);
+
+            for (size_t i = 0; i < rec_num; ++i) {
+                auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
+                // Execute a statement with parameters ...
+                auto_stmt->ExecuteUpdate( sql );
+            }
+            // Check record number ...
+            BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
+        }
+
+        // Open ...
+        {
+            sql = "select int_field from " + GetTableName() + " WHERE int_field = @int_value";
+
+            auto_ptr<ICursor> auto_cursor1(GetConnection().GetCursor("test10", sql));
+            auto_ptr<ICursor> auto_cursor2(GetConnection().GetCursor("test11", sql));
+
+            auto_cursor1->SetParam(CVariant(Int4(0)), "@int_value" );
+            auto_cursor2->SetParam(CVariant(Int4(0)), "@int_value" );
+
+            auto_ptr<IResultSet> rs1(auto_cursor1->Open());
+            BOOST_CHECK(rs1.get() != NULL);
+            auto_ptr<IResultSet> rs2(auto_cursor2->Open());
+            BOOST_CHECK(rs2.get() != NULL);
+
+            BOOST_CHECK(rs1->Next());
+            BOOST_CHECK_EQUAL(rs1->GetVariant(1).GetInt4(), 0);
+            BOOST_CHECK(rs2->Next());
+            BOOST_CHECK_EQUAL(rs2->GetVariant(1).GetInt4(), 0);
         }
     }
     catch(const CException& ex) {
@@ -14302,6 +14355,22 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     } else {
         PutMsgDisabled("Test_Cursor_Param");
+    }
+
+    if (tc_cursor
+        && args.GetDriverName() != ftds8_driver
+        && args.GetDriverName() != ftds_driver
+        && args.GetDriverName() != ftds_odbc_driver
+        && args.GetDriverName() != ftds_dblib_driver
+        ) 
+    {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor_Multiple,
+            DBAPIInstance);
+        _ASSERT(tc_cursor);
+        tc->depends_on(tc_cursor);
+        add(tc);
+    } else {
+        PutMsgDisabled("Test_Cursor_Multiple");
     }
 
     if (tc_cursor) 

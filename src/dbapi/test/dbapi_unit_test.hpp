@@ -219,6 +219,7 @@ public:
     void Test_Cursor(void);
     void Test_Cursor2(void);
     void Test_Cursor_Param(void);
+    void Test_Cursor_Multiple(void);
 
     void Test_Procedure(void);
     void Test_Procedure2(void);
