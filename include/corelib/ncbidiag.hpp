@@ -1864,6 +1864,7 @@ private:
     auto_ptr<CStopWatch>   m_StopWatch;
     auto_ptr<TMessages>    m_Messages;
     size_t                 m_MaxMessages;
+    static CDiagContext*   sm_Instance;
 };
 
 

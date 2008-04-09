@@ -682,17 +682,22 @@ struct SDiagMessageData
 };
 
 
+CDiagContext* CDiagContext::sm_Instance = NULL;
+
+
 CDiagContext::CDiagContext(void)
     : m_UID(0),
       m_StopWatch(new CStopWatch(CStopWatch::eStart)),
       m_MaxMessages(100) // limit number of collected messages to 100
 {
     SetAppState(eState_AppBegin, eProp_Global);
+    sm_Instance = this;
 }
 
 
 CDiagContext::~CDiagContext(void)
 {
+    sm_Instance = NULL;
 }
 
 
@@ -867,7 +872,7 @@ void CDiagContext::SetProperty(const string& name,
         _ASSERT(props);
         (*props)[name] = value;
     }
-    if ( TAutoWrite_Context::GetDefault() ) {
+    if ( sm_Instance  &&  TAutoWrite_Context::GetDefault() ) {
         CMutexGuard LOCK(s_DiagMutex);
         x_PrintMessage(SDiagMessage::eEvent_Extra, name + "=" + value);
     }
