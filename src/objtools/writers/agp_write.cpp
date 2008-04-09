@@ -41,6 +41,10 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_gap.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
@@ -228,7 +232,26 @@ static void s_AgpWrite(CNcbiOstream& os,
 static CConstRef<CSeqMap> s_SeqMapForHandle(const CBioseq_Handle& handle)
 {
     CConstRef<CSeqMap> seq_map;
+    bool treat_as_raw;           // one line, itself as component
+
     if (handle.GetInst_Repr() == CSeq_inst::eRepr_raw) {
+        treat_as_raw = true;
+    } else if (handle.GetInst_Repr() == CSeq_inst::eRepr_delta) {
+        // Check for a delta of all non-gap literals
+        ITERATE (CDelta_ext::Tdata,
+                 iter,
+                 handle.GetInst_Ext().GetDelta().Get()) {
+            treat_as_raw = true;
+            if ((*iter)->IsLoc() || !(*iter)->GetLiteral().IsSetSeq_data()) {
+                treat_as_raw = false;
+                break;
+            }
+        }
+    } else {
+        treat_as_raw = false;
+    }
+
+    if (treat_as_raw) {
         CRef<CSeq_loc> loc(new CSeq_loc);
         loc->SetInt().SetId().Assign(*handle.GetSeq_id_Handle().GetSeqId());
         loc->SetInt().SetFrom(0);
