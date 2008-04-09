@@ -49,33 +49,6 @@ public:
     typedef pair<PropKey, PropValue> TKey;
     typedef Uint4                    TKeyId;
 
-    struct SReverseDictionary : public CBDB_File
-    {
-        typename SBDB_TypeTraits<TKeyId>::TFieldType    uid;
-        typename SBDB_TypeTraits<PropKey>::TFieldType   prop_key;
-        typename SBDB_TypeTraits<PropValue>::TFieldType prop_val;
-
-        SReverseDictionary()
-            : CBDB_File(eDuplicatesDisable, eQueue)
-            {
-                DisableNull();
-                SetCacheSize(128 * 1024);
-                BindKey ("uid", &uid);
-                BindData("key", &prop_key);
-                BindData("val", &prop_val);
-            }
-
-        TKeyId GetCurrentUid() const
-        {
-            return (TKeyId)uid;
-        }
-
-        TKey GetCurrentKey() const
-        {
-            return TKey((PropKey)prop_key, (PropValue)prop_val);
-        }
-    };
-
     CBDB_PropertyDictionary(Uint4 last_uid = 0);
 
     /// @name Interface required for split dictionary store
