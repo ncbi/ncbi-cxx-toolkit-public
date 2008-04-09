@@ -411,10 +411,13 @@ private:
     void ValidateNucProtSet(const CBioseq_set& seqset, int nuccnt, int protcnt);
     void ValidateSegSet(const CBioseq_set& seqset, int segcnt);
     void ValidatePartsSet(const CBioseq_set& seqset);
+    void ValidateGenbankSet(const CBioseq_set& seqset);
     void ValidatePopSet(const CBioseq_set& seqset);
+    void ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset);
     void ValidateGenProdSet(const CBioseq_set& seqset);
 
     bool IsMrnaProductInGPS(const CBioseq& seq); 
+    bool IsCDSProductInGPS(const CBioseq& seq); 
 };
 
 
