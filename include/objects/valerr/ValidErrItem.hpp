@@ -442,6 +442,8 @@ enum EErrType {
     eErr_SEQ_GRAPH_GraphOverlap,
 
     eErr_SEQ_GRAPH_GraphBioseqId,
+    eErr_SEQ_GRAPH_GraphACGTScoreMany,
+    eErr_SEQ_GRAPH_GraphNScoreMany,
     ERR_CODE_END(SEQ_GRAPH),
 
     ERR_CODE_BEGIN(SEQ_ANNOT) = 7000,
