@@ -351,16 +351,20 @@ CAlnMixSequences::RowsStartItsContsistencyCheck(size_t match_idx)
 
 CAlnMixSeq::CAlnMixSeq(void)
     : m_DsCnt(0),
+      m_BioseqHandle(0),
       m_Score(0),
       m_ChainScore(0),
       m_StrandScore(0),
+      m_IsAA(false),
       m_Width(1),
       m_Frame(-1),
+      m_PositiveStrand(false),
       m_RefBy(0),
       m_ExtraRow(0),
       m_ExtraRowIdx(0),
       m_AnotherRow(0),
       m_DsIdx(0),
+      m_SeqIdx(0),
       m_ChildIdx(0),
       m_RowIdx(-1),
       m_Starts(new CAlnMixStarts())
