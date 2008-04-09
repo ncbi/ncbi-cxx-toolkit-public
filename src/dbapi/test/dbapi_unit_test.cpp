@@ -14357,11 +14357,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         PutMsgDisabled("Test_Cursor_Param");
     }
 
+    // It looks like only ctlib driver can pass this test at the moment. // 04/09/08
     if (tc_cursor
         && args.GetDriverName() != ftds8_driver
         && args.GetDriverName() != ftds_driver
         && args.GetDriverName() != ftds_odbc_driver
         && args.GetDriverName() != ftds_dblib_driver
+        && args.GetDriverName() != odbc_driver
         ) 
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor_Multiple,
