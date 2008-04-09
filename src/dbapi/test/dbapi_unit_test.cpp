@@ -14190,6 +14190,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && args.GetDriverName() != odbc_driver // 04/04/08
         && !(args.GetDriverName() == dblib_driver && args.GetServerType() != CTestArguments::eSybase)
         && !(args.GetDriverName() == ftds_dblib_driver && args.GetServerType() == CTestArguments::eSybase)
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris) // 04/09/08
        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Late_Bind, DBAPIInstance);
@@ -15112,7 +15113,7 @@ CTestArguments::SetDatabaseParameters(void)
             }
         } else if ( GetDriverName() == ftds_dblib_driver &&
                 GetServerType() == eSybase ) {
-            // ftds8 work with Sybase databases using protocol v42 only ...
+            // ftds8 works with Sybase databases using protocol v42 only ...
             m_DatabaseParameters["version"] = "42";
         } else if (GetDriverName() == ftds_odbc_driver) {
             switch (GetServerType()) {
@@ -15127,7 +15128,7 @@ CTestArguments::SetDatabaseParameters(void)
             }
         }
         /* These parameters settings are commented out on purpose.
-            * ftds64 driver is supposed to autodetect TDS version.
+         * ftds64 driver is supposed to autodetect TDS version.
         } else if (GetDriverName() == ftds64_driver) {
             switch (GetServerType()) {
             case eSybase:
