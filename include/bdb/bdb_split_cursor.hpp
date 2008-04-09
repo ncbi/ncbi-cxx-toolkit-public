@@ -88,9 +88,11 @@ private:
     string m_StoreName;
     size_t m_BufferSize;
 
-    vector<string>              m_Files;
+    vector<string>            m_Files;
     auto_ptr<TVolume>         m_Volume;
     auto_ptr<CBDB_FileCursor> m_Cursor;
+
+    CStopWatch m_SW;
 
     void x_NextVolume();
 };
@@ -102,6 +104,7 @@ CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::CBDB_SplitCursor(TSplitStore& store)
     : m_Env(NULL)
     , m_BufferSize(40 * 1024 * 1024)
 {
+    m_SW.Start();
     m_Env = store.GetEnv();
 
     ///
@@ -136,7 +139,7 @@ CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::CBDB_SplitCursor(TSplitStore& store)
                    paths.begin(), paths.end(), masks.begin(), masks.end(),
                    fFF_File);
 
-         std::sort(paths.begin(), paths.end(), SVolumeLess());
+         std::sort(m_Files.begin(), m_Files.end(), SVolumeLess());
 
          LOG_POST_XX(Bdb_Cursor, 2, Info <<
                      "found " << m_Files.size() << " candidate files");
