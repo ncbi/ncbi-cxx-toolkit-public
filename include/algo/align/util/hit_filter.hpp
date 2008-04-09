@@ -456,7 +456,10 @@ public:
         // if there are hits remaining, write them as new
         phits_new->resize(0);
         while(isrc != isrc_end) {
-            phits_new->push_back(*isrc++);
+            if(isrc->NotEmpty()) {
+                phits_new->push_back(*isrc);
+            }
+            ++isrc;
         }
     }
 
