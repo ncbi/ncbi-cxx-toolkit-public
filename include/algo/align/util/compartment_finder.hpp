@@ -266,7 +266,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 
-const double kPenaltyPerIntronBase = -1e-7; // a small penalty to prefer
+const double kPenaltyPerIntronBase = -2e-5; // a small penalty to prefer
                                             // more compact models among equal
 
 const double kPenaltyPerIntronPos  = -1e-9; // a small penalty to favor uniform
