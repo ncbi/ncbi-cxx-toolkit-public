@@ -12812,12 +12812,20 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
             dc->SetTimeout(2);
 
+            // Create connection ...
             auto_conn.reset(GetDS().CreateConnection());
             BOOST_CHECK(auto_conn.get() != NULL);
 
             Connect(auto_conn);
 
             Test_WaitForDelay(auto_conn);
+
+            // Crete new connection because some drivers (ftds8 for example)
+            // can close connection in the Test_WaitForDelay test.
+            auto_conn.reset(GetDS().CreateConnection());
+            BOOST_CHECK(auto_conn.get() != NULL);
+
+            Connect(auto_conn);
 
             //
             // Check selecting from a huge table ...
@@ -12911,118 +12919,115 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
 
 
     // Check selecting from a huge table ...
-    if (m_args.GetDriverName() != ftds8_driver) 
+    const char* str_value = "Oops ...";
+    size_t rec_num = 200000;
+    string sql;
+    auto_ptr<IStatement> auto_stmt;
+
+    auto_stmt.reset(auto_conn->GetStatement());
+
+    if (!m_args.IsBCPAvailable()) {
+        rec_num = 15000;
+    }
+
+    // Preparation ...
     {
-        const char* str_value = "Oops ...";
-        size_t rec_num = 200000;
         string sql;
-        auto_ptr<IStatement> auto_stmt;
-
-        auto_stmt.reset(auto_conn->GetStatement());
-
-        if (!m_args.IsBCPAvailable()) {
-            rec_num = 15000;
-        }
-
-        // Preparation ...
+        
+        // Create table ...
         {
-            string sql;
-            
-            // Create table ...
-            {
-                sql  = " CREATE TABLE " + table_name + "( \n";
-                sql += "    id INT PRIMARY KEY, \n";
-                sql += "    vc8000_field VARCHAR(1500) NOT NULL, \n";
-                sql += " )";
+            sql  = " CREATE TABLE " + table_name + "( \n";
+            sql += "    id INT PRIMARY KEY, \n";
+            sql += "    vc8000_field VARCHAR(1500) NOT NULL, \n";
+            sql += " )";
 
-                // Create the table
-                auto_stmt->ExecuteUpdate(sql);
-            }
+            // Create the table
+            auto_stmt->ExecuteUpdate(sql);
         }
+    }
 
-        // Populate table with data ...
-        {
-            CStopWatch timer(CStopWatch::eStart);
+    // Populate table with data ...
+    {
+        CStopWatch timer(CStopWatch::eStart);
 
-            if (m_args.IsBCPAvailable()) {
-                CVariant col1(eDB_Int);
-                CVariant col2(eDB_VarChar);
+        if (m_args.IsBCPAvailable()) {
+            CVariant col1(eDB_Int);
+            CVariant col2(eDB_VarChar);
 
-                auto_ptr<IBulkInsert> bi(
-                        auto_conn->GetBulkInsert(table_name)
-                        );
+            auto_ptr<IBulkInsert> bi(
+                    auto_conn->GetBulkInsert(table_name)
+                    );
 
-                bi->Bind(1, &col1);
-                bi->Bind(2, &col2);
+            bi->Bind(1, &col1);
+            bi->Bind(2, &col2);
 
-                col2 = str_value;
+            col2 = str_value;
 
-                for (size_t i = 0; i < rec_num; ++i) {
-                    col1 = Int4(i);
+            for (size_t i = 0; i < rec_num; ++i) {
+                col1 = Int4(i);
 
-                    bi->AddRow();
+                bi->AddRow();
 
-                    if (i % 1000 == 0) {
-                        bi->StoreBatch();
-                    }
-                }
-                bi->Complete();
-            } else {
-                sql = "INSERT INTO " + table_name +
-                    "(id, vc8000_field) VALUES(@id, @vc_val)";
-
-                //auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
-
-                for (size_t i = 0; i < rec_num; ++i) {
-                    auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
-                    auto_stmt->SetParam( CVariant::VarChar(str_value), "@vc_val");
-
-                    auto_stmt->ExecuteUpdate( sql );
-
-                    /*if (i % 100 == 0) {
-                      auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
-                      auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
-                      }*/
-                }
-
-                //auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
-            }
-
-            LOG_POST( "Huge table inserted in " << timer.Elapsed() << " sec." );
-        }
-
-        BOOST_CHECK(GetNumOfRecords(auto_stmt, table_name) == rec_num);
-
-        // Read data ...
-        {
-            size_t num = 0;
-
-            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-
-            CStopWatch timer(CStopWatch::eStart);
-
-            auto_stmt->SendSql("SELECT * FROM " + table_name);
-
-            while (auto_stmt->HasMoreResults()) {
-                if (auto_stmt->HasRows()) {
-                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-                    BOOST_CHECK( rs.get() != NULL );
-
-                    while (rs->Next()) {
-                        ++num;
-                    }
+                if (i % 1000 == 0) {
+                    bi->StoreBatch();
                 }
             }
+            bi->Complete();
+        } else {
+            sql = "INSERT INTO " + table_name +
+                "(id, vc8000_field) VALUES(@id, @vc_val)";
 
-            LOG_POST( "Huge table selected in " << timer.Elapsed() << " sec." );
+            //auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
 
-            BOOST_CHECK(num == rec_num);
+            for (size_t i = 0; i < rec_num; ++i) {
+                auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
+                auto_stmt->SetParam( CVariant::VarChar(str_value), "@vc_val");
+
+                auto_stmt->ExecuteUpdate( sql );
+
+                /*if (i % 100 == 0) {
+                    auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
+                    auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
+                    }*/
+            }
+
+            //auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
         }
 
-        {
-            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-            auto_stmt->ExecuteUpdate("drop table " + table_name);
+        LOG_POST( "Huge table inserted in " << timer.Elapsed() << " sec." );
+    }
+
+    BOOST_CHECK(GetNumOfRecords(auto_stmt, table_name) == rec_num);
+
+    // Read data ...
+    {
+        size_t num = 0;
+
+        auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+
+        CStopWatch timer(CStopWatch::eStart);
+
+        auto_stmt->SendSql("SELECT * FROM " + table_name);
+
+        while (auto_stmt->HasMoreResults()) {
+            if (auto_stmt->HasRows()) {
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                BOOST_CHECK( rs.get() != NULL );
+
+                while (rs->Next()) {
+                    ++num;
+                }
+            }
         }
+
+        LOG_POST( "Huge table selected in " << timer.Elapsed() << " sec." );
+
+        BOOST_CHECK(num == rec_num);
+    }
+
+    {
+        auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+        auto_stmt->ExecuteUpdate("drop table " + table_name);
     }
 }
 
