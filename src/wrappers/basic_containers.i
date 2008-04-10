@@ -8,7 +8,14 @@
 //%template(vector_unsigned_long_long) std::vector<unsigned long long>;
 %template(vector_size_t) std::vector<size_t>;
 %template(vector_double) std::vector<double>;
+
+// Special treatment of vector<char> to make its data() method
+// return a pointer representation rather than a string
+%typemap(out) orig_const_char_ptr = char *;
+%typemap(out) char * = SWIGTYPE *;
 %template(vector_char) std::vector<char>;
+%typemap(out) char * = orig_const_char_ptr;
+
 %template(vector_vector_char) std::vector<std::vector<char> >;
 %template(vector_signed_char) std::vector<signed char>;
 %template(vector_unsigned_char) std::vector<unsigned char>;
