@@ -104,14 +104,11 @@ void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
 
 void CDBHandlerStack::SetExtraMsg(const string& msg)
 {
-    /* Disabled temporarily ...
-    TContainer& s = m_Stack;
-    NON_CONST_ITERATE(TContainer, cit, s) {
+    NON_CONST_ITERATE(TContainer, cit, m_Stack) {
         if ( cit->NotNull() ) {
             (*cit)->GetHandler()->SetExtraMsg(msg);
         }
     }
-    */
 }
 
 CDBHandlerStack::CDBHandlerStack(const CDBHandlerStack& s) :
