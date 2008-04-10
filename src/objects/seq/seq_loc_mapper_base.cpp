@@ -691,10 +691,6 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
 
 void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_diag& diag, size_t to_row)
 {
-    if (diag.GetStarts()[to_row] < 0) {
-        // Destination ID is not present in this dense-diag
-        return;
-    }
     size_t dim = diag.GetDim();
     _ASSERT(to_row < dim);
     if (dim != diag.GetIds().size()) {
@@ -720,9 +716,6 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_diag& diag, size_t to_row)
 
     for (size_t row = 0; row < dim; ++row) {
         if (row == to_row) {
-            continue;
-        }
-        if (diag.GetStarts()[row] < 0) {
             continue;
         }
         // In alignments with multiple sequence types segment length
