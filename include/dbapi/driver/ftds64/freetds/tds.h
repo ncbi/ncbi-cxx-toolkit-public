@@ -1412,6 +1412,7 @@ int tdsdump_open(const char *filename);
 void tdsdump_close(void);
 void tdsdump_dump_buf(const char* file, unsigned int level_line, const char *msg, const void *buf, int length);
 void tdsdump_log(const char* file, unsigned int level_line, const char *fmt, ...)
+
 #if defined(__GNUC__) && __GNUC__ >= 2
     __attribute__ ((__format__ (__printf__, 3, 4)))
 #endif

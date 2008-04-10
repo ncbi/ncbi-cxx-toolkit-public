@@ -480,6 +480,7 @@ tdsdump_dump_buf(const char* file, unsigned int level_line, const char *msg, con
 void
 tdsdump_log(const char* file, unsigned int level_line, const char *fmt, ...)
 {
+    /* Disabled everything temporarily ...
 	const int debug_lvl = level_line & 15;
 	const int line = level_line >> 4;
 	va_list ap;
@@ -520,4 +521,5 @@ tdsdump_log(const char* file, unsigned int level_line, const char *fmt, ...)
 	}
 #endif
 	TDS_MUTEX_UNLOCK(&g_dump_mutex);
+    */
 }				/* tdsdump_log()  */

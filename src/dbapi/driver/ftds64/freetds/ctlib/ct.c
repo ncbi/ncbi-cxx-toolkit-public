@@ -2773,11 +2773,33 @@ ct_get_data(CS_COMMAND * cmd, CS_INT item, CS_VOID * buffer, CS_INT buflen, CS_I
         if (table_namelen + column_namelen + 2 > sizeof(cmd->iodesc->name))
             column_namelen = sizeof(cmd->iodesc->name) - 2 - table_namelen;
 
+        /* Old code ...
         sprintf(cmd->iodesc->name, "%*.*s.%*.*s",
             (int) table_namelen, (int) table_namelen, curcol->table_name,
             (int) column_namelen, (int) column_namelen, curcol->column_name);
 
         cmd->iodesc->namelen = strlen(cmd->iodesc->name);
+        */
+
+        /* New code ... */
+        if (table_namelen) {
+            memcpy(cmd->iodesc->name, curcol->table_name, table_namelen);
+            cmd->iodesc->namelen = table_namelen;
+        } else {
+            cmd->iodesc->namelen = 0;
+        }
+
+        cmd->iodesc->name[cmd->iodesc->namelen] = '.';
+        ++cmd->iodesc->namelen;
+
+        if (column_namelen) {
+            memcpy(cmd->iodesc->name + cmd->iodesc->namelen, curcol->column_name, column_namelen);
+            cmd->iodesc->namelen += column_namelen;
+        }
+
+        cmd->iodesc->name[cmd->iodesc->namelen] = '\0';
+
+        /* End of new code ... */
 
         if (blob) {
             memcpy(cmd->iodesc->timestamp, blob->timestamp, CS_TS_SIZE);
