@@ -35,10 +35,9 @@
 *      CCgiRequest   -- full CGI request
 */
 
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/rwstream.hpp>
 #include <cgi/cgi_util.hpp>
-#include <list>
 #include <map>
 #include <set>
 #include <memory>
@@ -58,6 +57,7 @@ BEGIN_NCBI_SCOPE
 
 class CTime;
 class CCgiSession;
+class CCgiEntryReaderContext;
 
 ///////////////////////////////////////////////////////
 ///
@@ -376,15 +376,16 @@ private:
         SData(const string& value, const string& filename,
               unsigned int position, const string& type)
             : m_Value(value), m_Filename(filename), m_ContentType(type),
-              m_Position(position) { }
+              m_Position(position), m_Reader(NULL) { }
         SData(const SData& data)
             : m_Value(data.m_Value), m_Filename(data.m_Filename),
               m_ContentType(data.m_ContentType),
-              m_Position(data.m_Position)
-            { }
+              m_Position(data.m_Position), m_Reader(NULL)
+            { _ASSERT( !data.m_Reader.get() ); }
 
-        string       m_Value, m_Filename, m_ContentType;
-        unsigned int m_Position;
+        string            m_Value, m_Filename, m_ContentType;
+        unsigned int      m_Position;
+        auto_ptr<IReader> m_Reader;
     };
 
 public:
@@ -404,18 +405,61 @@ public:
 
     CCgiEntry& operator=(const CCgiEntry& e) 
     {
-        x_ForceUnique();
-        *m_Data = *e.m_Data;
+        SetValue(e.GetValue());
+        SetFilename(e.GetFilename());
+        SetContentType(e.GetContentType());
+        SetPosition(e.GetPosition());
         return *this;
     }
 
 
+    /// Get the value as a string, (necessarily) prefetching it all if
+    /// applicable; the result remains available for future calls to
+    /// GetValue and relatives.
+    /// @sa GetValueReader, GetValueStream
     const string& GetValue() const
-        { return m_Data->m_Value; }
+        {
+            if (m_Data->m_Reader.get()) { x_ForceComplete(); }
+            return m_Data->m_Value;
+        }
     string&       SetValue()
         { x_ForceUnique(); return m_Data->m_Value; }
     void          SetValue(const string& v)
         { x_ForceUnique(); m_Data->m_Value = v; }
+    void          SetValue(IReader* r)
+        { x_ForceUnique(); m_Data->m_Reader.reset(r); }
+    void          SetValue(CNcbiIstream& is, EOwnership own = eNoOwnership)
+        { x_ForceUnique(); m_Data->m_Reader.reset(new CStreamReader(is, own)); }
+
+    /// Get the value via a reader, potentially on the fly -- in which
+    /// case the caller takes ownership of the source, and subsequent
+    /// calls to GetValue and relatives will yield NO data.  (In
+    /// either case, the caller owns the resulting object.)
+    /// @sa GetValue, GetValueStream
+    IReader* GetValueReader()
+        {
+            if (m_Data->m_Reader.get()) {
+                return m_Data->m_Reader.release();
+            } else { // roundabout; could probably stand to be optimized
+                return new CStreamReader(*GetValueStream(), eTakeOwnership);
+            }
+        }
+
+    /// Get the value as a stream, potentially on the fly -- in which
+    /// case the caller takes ownership of the source, and subsequent
+    /// calls to GetValue and relatives will yield NO data.  (In
+    /// either case, the caller owns the resulting object.)
+    /// @sa GetValue, GetValueReader
+    CNcbiIstream* GetValueStream()
+        {
+            if (m_Data->m_Reader.get()) {
+                return new CRStream(m_Data->m_Reader.release(), 0, 0,
+                                    CRWStreambuf::fOwnReader);
+            } else {
+                return new CNcbiIstrstream(GetValue().data(),
+                                           GetValue().size());
+            }
+        }
 
     /// Action to perform if the explicit charset is not supported
     enum EOnCharsetError {
@@ -511,7 +555,14 @@ public:
 
 private:
     void x_ForceUnique()
-        { if (!m_Data->ReferencedOnlyOnce()) { m_Data = new SData(*m_Data); } }
+        {
+            if ( !m_Data->ReferencedOnlyOnce() ) {
+                if (m_Data->m_Reader.get()) { x_ForceComplete(); }
+                m_Data = new SData(*m_Data);
+            }
+        }
+
+    void x_ForceComplete() const;
 
     // Get charset from content type or empty string
     string x_GetCharset(void) const;
@@ -609,7 +660,9 @@ public:
         /// if it's missing.
         fIgnorePageHitId     = (1 << 8),
         /// Set client-ip and session-id properties for logging.
-        fSetDiagProperties   = (1 << 9)
+        fSetDiagProperties   = (1 << 9),
+        /// Enable on-demand parsing via GetNextEntry()
+        fParseInputOnDemand  = (1 << 10)
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,
@@ -670,8 +723,22 @@ public:
     ///        only one of these entry will be returned.
     /// To get all matches, use GetEntries() and "multimap::" member functions.
     const CCgiEntry& GetEntry(const string& name, bool* is_found = 0) const;
-    
 
+    /// Get next entry when parsing input on demand.
+    ///
+    /// Returns GetEntries().end() when all entries have been parsed.
+    TCgiEntriesI GetNextEntry(void);
+
+    /// Get entry value by name, calling GetNextEntry() as needed.
+    ///
+    /// NOTE:  There can be more than one entry with the same name;
+    ///        only one of these entry will be returned.
+    ///
+    /// To get all matches, use GetEntries() and "multimap::" member
+    /// functions.  If there is no such entry, this method will parse
+    /// (and save) any remaining input and return NULL.
+    CCgiEntry* GetPossiblyUnparsedEntry(const string& name);
+    
     /// Get a set of indexes(decoded) received from the client.
     ///
     /// It will always be empty if "indexes_as_entries" in the constructor
@@ -791,6 +858,7 @@ private:
 
     mutable auto_ptr<CTrackingEnvHolder> m_TrackingEnvHolder;
     CCgiSession* m_Session;
+    CCgiEntryReaderContext* m_EntryReaderContext;
 
 public:
     void x_SetSession(CCgiSession& session);

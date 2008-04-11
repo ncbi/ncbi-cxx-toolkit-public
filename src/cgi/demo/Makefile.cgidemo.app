@@ -5,6 +5,6 @@
 
 APP = cgidemo
 SRC = cgidemo
-LIB = xcgi xncbi
+LIB = xcgi xutil xncbi
 
 CHECK_CMD =

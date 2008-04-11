@@ -45,6 +45,7 @@
 #include <cgi/cgi_serial.hpp>
 #include <cgi/cgi_session.hpp>
 #include <cgi/error_codes.hpp>
+#include <cgi/impl/cgi_entry_reader.hpp>
 #include <util/checksum.hpp>
 
 #include <algorithm>
@@ -796,166 +797,6 @@ void CCgiEntries_Parser::AddArgument(unsigned int position,
 }
 
 
-static string s_FindAttribute(const string& str, const string& name,
-                              SIZE_TYPE start, SIZE_TYPE end,
-                              bool required)
-{
-    SIZE_TYPE att_pos = str.find("; " + name + "=\"", start);
-    if (att_pos == NPOS  ||  att_pos >= end) {
-        if (required) {
-            NCBI_THROW2(CCgiParseException, eAttribute,
-                        "In multipart HTTP request -- missing attribute \""
-                        + name + "\": " + str.substr(start, end - start),
-                        start);
-        } else {
-            return kEmptyStr;
-        }
-    }
-    SIZE_TYPE att_start = att_pos + name.size() + 4;
-    SIZE_TYPE att_end   = str.find('\"', att_start);
-    if (att_end == NPOS  ||  att_end >= end) {
-        NCBI_THROW2(CCgiParseException, eAttribute,
-                    "In multipart HTTP request -- malformatted attribute \""
-                    + name + "\": " + str.substr(att_pos, end - att_pos),
-                    att_start);
-    }
-    return str.substr(att_start, att_end - att_start);
-}
-
-
-static void s_ParseMultipartEntries(const string& boundary,
-                                    const string& str,
-                                    TCgiEntries&  entries)
-{
-    const string    s_Me("s_ParseMultipartEntries");
-    const string    s_Eol(HTTP_EOL);
-    const SIZE_TYPE eol_size = s_Eol.size();
-
-    SIZE_TYPE    pos           = 0;
-    SIZE_TYPE    boundary_size = boundary.size();
-    SIZE_TYPE    end_pos;
-    unsigned int num           = 1;
-
-    if (NStr::Compare(str, 0, boundary_size + eol_size, boundary + s_Eol)
-        != 0) {
-        if (NStr::StartsWith(str, boundary + "--")) {
-            // potential corner case: no actual data
-            return;
-        }
-        NCBI_THROW(CCgiRequestException, eEntry,
-                   s_Me + ": the part does not start with boundary line: "
-                   + boundary);
-    }
-
-    {{
-        SIZE_TYPE tail_size = boundary_size + eol_size + 2;
-        SIZE_TYPE tail_start = str.find(s_Eol + boundary + "--");
-        if (tail_start == NPOS) {
-            NCBI_THROW(CCgiRequestException, eEntry,
-                       s_Me + ": the part does not contain trailing boundary "
-                       + boundary + "--");
-        }
-        end_pos = tail_start + tail_size;
-    }}
-
-    pos += boundary_size + eol_size;
-    while (pos < end_pos) {
-        SIZE_TYPE next_boundary = str.find(s_Eol + boundary, pos);
-        _ASSERT(next_boundary != NPOS);
-        string name, filename, type;
-        bool found = false;
-        for (;;) {
-            SIZE_TYPE bol_pos = pos, eol_pos = str.find(s_Eol, pos);
-            _ASSERT(eol_pos != NPOS);
-            if (pos == eol_pos) {
-                // blank -- end of headers
-                pos += eol_size;
-                break;
-            }
-            pos = str.find(':', bol_pos);
-            if (pos == NPOS  ||  pos >= eol_pos) {
-                NCBI_THROW2(CCgiParseException, eEntry,
-                            s_Me + ": no colon in the part header: "
-                            + str.substr(bol_pos, eol_pos - bol_pos),
-                            bol_pos);
-            }
-            if (NStr::CompareNocase(str, bol_pos, pos - bol_pos,
-                                    "Content-Type") == 0) {
-                type = NStr::TruncateSpaces
-                    (str.substr(pos + 1, eol_pos - pos - 1));
-                pos = eol_pos + eol_size;
-                continue;
-            } else if (NStr::CompareNocase(str, bol_pos, pos - bol_pos,
-                                    "Content-Disposition") != 0) {
-                ERR_POST_X(4, Warning << s_Me << ": ignoring unrecognized header: "
-                           + str.substr(bol_pos, eol_pos - bol_pos));
-                pos = eol_pos + eol_size;
-                continue;
-            }
-            if (NStr::CompareNocase(str, pos, 13, ": form-data; ") != 0) {
-                NCBI_THROW2(CCgiParseException, eEntry,
-                            s_Me + ": bad Content-Disposition header "
-                            + str.substr(bol_pos, eol_pos - bol_pos),
-                            pos);
-            }
-            pos += 11;
-            name     = s_FindAttribute(str, "name",     pos, eol_pos, true);
-            filename = s_FindAttribute(str, "filename", pos, eol_pos, false);
-            found = true;
-            pos = eol_pos + eol_size;
-        }
-        if (!found) {
-            NCBI_THROW2(CCgiParseException, eEntry,
-                        s_Me + ": missing Content-Disposition header", pos);
-        }
-        s_AddEntry(entries, name, str.substr(pos, next_boundary - pos),
-                   num++, filename, type);
-        pos = next_boundary + 2*eol_size + boundary_size;
-    }
-}
-
-
-static void s_ParsePostQuery(const string& content_type, const string& str,
-                             TCgiEntries& entries)
-{
-    if (content_type.empty()  ||
-        content_type == "application/x-www-form-urlencoded") {
-        // remove trailing end of line '\r' and/or '\n'
-        // (this can happen if Content-Length: was not specified)
-        SIZE_TYPE err_pos;
-        SIZE_TYPE eol = str.find_first_of("\r\n");
-        if (eol != NPOS) {
-            err_pos = CCgiRequest::ParseEntries(str.substr(0, eol), entries);
-        } else {
-            err_pos = CCgiRequest::ParseEntries(str, entries);
-        }
-        if ( err_pos != 0 ) {
-            NCBI_THROW2(CCgiParseException, eEntry,
-                        "Init CCgiRequest::ParseFORM(\"" +
-                        str + "\")", err_pos);
-        }
-        return;
-    }
-
-    if ( NStr::StartsWith(content_type, "multipart/form-data") ) {
-        string start = "boundary=";
-        SIZE_TYPE pos = content_type.find(start);
-        if (pos == NPOS) {
-            NCBI_THROW(CCgiRequestException, eEntry,
-                       "CCgiRequest::ParsePostQuery(\"" +
-                       content_type + "\"): no boundary field");
-        }
-        s_ParseMultipartEntries("--" + content_type.substr(pos + start.size()),
-                                str, entries);
-        return;
-    }
-
-    // The caller function thinks that s_ParsePostQuery() knows how to parse
-    // this content type, but s_ParsePostQuery() apparently cannot do it...
-    _TROUBLE;
-}
-
-
 CCgiRequest::~CCgiRequest(void)
 {
     SetInputStream(0);
@@ -975,7 +816,8 @@ CCgiRequest::CCgiRequest
       m_ErrBufSize(errbuf_size),
       m_QueryStringParsed(false),
       m_TrackingEnvHolder(NULL), 
-      m_Session(NULL)
+      m_Session(NULL),
+      m_EntryReaderContext(NULL)
 {
     x_Init(args, env, istr, flags, ifd);
 }
@@ -996,7 +838,8 @@ CCgiRequest::CCgiRequest
       m_ErrBufSize(errbuf_size),
       m_QueryStringParsed(false),
       m_TrackingEnvHolder(NULL),
-      m_Session(NULL)
+      m_Session(NULL),
+      m_EntryReaderContext(NULL)
 {
     CNcbiArguments args(argc, argv);
 
@@ -1155,71 +998,25 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
             // Automagically retrieve and parse content into entries
             auto_ptr<string> temp_str;
             string* pstr = 0;
-            // Check if the conent must be saved
-            if ( (flags & fSaveRequestContent) ) {
+            // Check if the content must be saved
+            if (flags & fSaveRequestContent) {
                 m_Content.reset(new string);
                 pstr = m_Content.get();
-            }
-            else {
+            } else if (content_type.empty()
+                       &&  (flags & fParseInputOnDemand) == 0) {
                 temp_str.reset(new string);
                 pstr = temp_str.get();
             }
-            size_t len = GetContentLength();
-            if (len == kContentLengthUnknown) {
-                // read data until end of file
-                CNcbiOstrstream buf;
-                if ( !NcbiStreamCopy(buf, *istr) ) {
-                    NCBI_THROW2(CCgiParseException, eRead,
-                                "Failed read of HTTP request body",
-                                istr->gcount());
-                }
-                *pstr = CNcbiOstrstreamToString(buf);
-            }
-            else {
-                pstr->resize(len);
-                for (size_t pos = 0;  pos < len;  ) {
-                    size_t rlen = len - pos;
-                    istr->read(&(*pstr)[pos], rlen);
-                    size_t count = istr->gcount();
-                    if ( count == 0 ) {
-                        pstr->resize(pos);
-                        if ( istr->eof() ) {
-                            string err =
-                                "Premature EOF while reading HTTP request"
-                                " body: (pos=";
-                            err += NStr::UIntToString(pos);
-                            err += "; content_length=";
-                            err += NStr::UIntToString(len);
-                            err += "):\n";
-                            if (m_ErrBufSize  &&  pos) {
-                                string content = NStr::PrintableString(*pstr);
-                                if (content.length() > m_ErrBufSize) {
-                                    content.resize(m_ErrBufSize);
-                                    content += "\n[truncated...]";
-                                }
-                                err += content;
-                            }
-                            NCBI_THROW2(CCgiParseException, eRead, err, pos);
-                        }
-                        else {
-                            NCBI_THROW2(CCgiParseException, eRead,
-                                       "Failed read of HTTP request body",
-                                        pos);
-                        }
-                    }
-                    pos += count;
-                    // NB: this is an ugly workaround for a buggy STL behavior
-                    //     that lets short reads (e.g. originating from reading
-                    //     pipes) get through to the user level, causing
-                    //     istream::read() to wrongly assert EOF...
-                    istr->clear();
-                }
-            }
-            if (content_type.empty()) {
+            m_EntryReaderContext = new CCgiEntryReaderContext
+                (*istr, m_Entries, content_type, pstr);
+            if ( (flags & fParseInputOnDemand) != 0) {
+                m_Input   =  0;
+                m_InputFD = -1;
+            } else if (content_type.empty()) {
                 // allow interpretation as either application/octet-stream
                 // or application/x-www-form-urlencoded
                 try {
-                    s_ParsePostQuery(content_type, *pstr, m_Entries);
+                    GetPossiblyUnparsedEntry(kEmptyStr);
                 } NCBI_CATCH_ALL_X(8, "CCgiRequest: POST with no content type");
                 CStreamUtils::Pushback(*istr, pstr->data(), pstr->length());
                 m_Input    = istr;
@@ -1228,7 +1025,7 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                 m_OwnInput = false;
             } else {
                 // parse query from the POST content
-                s_ParsePostQuery(content_type, *pstr, m_Entries);
+                GetPossiblyUnparsedEntry(kEmptyStr);
                 m_Input   =  0;
                 m_InputFD = -1;
             }
@@ -1303,6 +1100,28 @@ const CCgiEntry& CCgiRequest::GetEntry(const string& name, bool* is_found)
 }
 
 
+TCgiEntriesI CCgiRequest::GetNextEntry(void)
+{
+    return m_EntryReaderContext ? m_EntryReaderContext->GetNextEntry()
+        : m_Entries.end();
+}
+
+
+CCgiEntry* CCgiRequest::GetPossiblyUnparsedEntry(const string& name)
+{
+    TCgiEntriesI it = m_Entries.find(name);
+    if (it == m_Entries.end()) {
+        do {
+            it = GetNextEntry();
+            if (it == m_Entries.end()) {
+                return NULL;
+            }
+        } while (it->first != name);
+    }
+    return &it->second;
+}
+
+
 const size_t CCgiRequest::kContentLengthUnknown = (size_t)(-1);
 
 
@@ -1327,8 +1146,13 @@ size_t CCgiRequest::GetContentLength(void) const
 
 void CCgiRequest::SetInputStream(CNcbiIstream* is, bool own, int fd)
 {
-    if (m_Input  &&  m_OwnInput  &&  is != m_Input) {
-        delete m_Input;
+    if (is != m_Input) {
+        if (m_EntryReaderContext) {
+            delete m_EntryReaderContext;
+        }
+        if (m_Input  &&  m_OwnInput) {
+            delete m_Input;
+        }
     }
     m_Input    = is;
     m_InputFD  = fd;
@@ -1660,6 +1484,32 @@ CStringUTF8 CCgiEntry::GetValueAsUTF8(EOnCharsetError on_error) const
         return CStringUTF8();
     }
     return utf_str;
+}
+
+
+void CCgiEntry::x_ForceComplete() const
+{
+    _ASSERT(m_Data->m_Reader.get());
+    _ASSERT(m_Data->m_Value.empty());
+    size_t n = 0, pos = 0;
+    string s(4096, '\0');
+    SData& data = const_cast<SData&>(*m_Data);
+    auto_ptr<IReader> reader(data.m_Reader.release());
+    ERW_Result status = reader->Read(&s[0], s.size(), &n);
+    while (status == eRW_Success) {
+        pos += n;
+        // Grow exponentially to avoid possible quadratic runtime,
+        // adjusting size rather than capacity as the latter would
+        // require gratuitous double-buffering.
+        if (s.size() <= pos + 1024) {
+            s.resize(s.size() * 2);
+        }
+        status = reader->Read(&s[pos], s.size() - pos, &n);
+    }
+    // shrink back to the actual size
+    s.resize(pos + n);
+    // XXX - issue diagnostic message or exception if status != eRW_Eof?
+    swap(data.m_Value, s);
 }
 
 
