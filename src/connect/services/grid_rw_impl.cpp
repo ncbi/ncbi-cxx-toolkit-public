@@ -62,22 +62,14 @@ CStringOrBlobStorageWriter(size_t max_string_size, IBlobStorage* storage,
 
 void CStringOrBlobStorageWriter::x_Init(size_t max_string_size)
 {
-    if (max_string_size > 0) {
-        m_MaxBuffSize = max_string_size;
-        m_Data = s_Flags[0];
-    } else {
-        m_MaxBuffSize = 0;
-        m_Data = s_Flags[1];
-    }
+    m_MaxBuffSize = max_string_size;
+    m_Data = s_Flags[max_string_size > 0 ? 0 : 1];
 }
 
 CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()
 {
     try {
         m_Storage.Reset();
-        if (m_BlobOstr) {
-            m_Data = s_Flags[1] + m_Data;
-        }
     } NCBI_CATCH_ALL_X(1, "CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()");
 }
 
@@ -113,7 +105,9 @@ ERW_Result CStringOrBlobStorageWriter::Write(const void* buf,
         _ASSERT(!m_BlobOstr);
         string tmp(m_Data.begin() + s_FlagsLen, m_Data.end());
         m_Data = "";
-        m_BlobOstr = &m_Storage.CreateOStream(m_Data);
+        string key;
+        m_BlobOstr = &m_Storage.CreateOStream(key);
+        m_Data = s_Flags[1] + key;
         ERW_Result ret = eRW_Success;
         if (tmp.size() > 0) {
             ret = x_WriteToStream(&*tmp.begin(), tmp.size());
