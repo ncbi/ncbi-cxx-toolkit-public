@@ -30,13 +30,17 @@
  *   1. Push an arbitrary block of data back to a C++ input stream.
  *   2. Non-blocking read.
  *
+ *   Reader-writer utilities:
+ *   1. Append an IReader's contents into a string.
+ *   2. Construct an IReader object from a string.
+ *
  */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/rwutils.hpp>
 #include <corelib/stream_utils.hpp>
 #include <corelib/error_codes.hpp>
-#include <string.h>
 
 #ifdef NCBI_COMPILER_MIPSPRO
 #  define CPushback_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
@@ -529,6 +533,61 @@ streamsize CStreamUtils::Readsome(CNcbiIstream& is,
         sb->MIPSPRO_ReadsomeEnd();
 #  endif /*NCBI_COMPILER_MIPSPRO*/
     return result;
+}
+
+
+void ExtractReaderContents(IReader& reader, string& s)
+{
+    size_t     n      = 0;
+    SIZE_TYPE  pos    = s.size();
+    ERW_Result status = eRW_Success;
+
+    if (s.size() < 4096) {
+        s.resize(4096);
+    }
+
+    while (status == eRW_Success) {
+        pos += n;
+        // Grow exponentially to avoid possible quadratic runtime,
+        // adjusting size rather than capacity as the latter would
+        // require gratuitous double-buffering.
+        if (s.size() <= pos + 1024) {
+            s.resize(s.size() * 2);
+        }
+        status = reader.Read(&s[pos], s.size() - pos, &n);
+    }
+    // shrink back to the actual size
+    s.resize(pos + n);
+    // XXX - issue diagnostic message or exception if status != eRW_Eof?
+}
+
+
+ERW_Result CStringReader::Read(void* buf, size_t count, size_t* bytes_read)
+{
+    _ASSERT(m_String.size() >= m_Position);
+    size_t n = min(count, size_t(m_String.size() - m_Position));
+    memcpy(buf, &m_String[m_Position], n);
+    m_Position += n;
+    if (m_Position >= m_String.size() / 2) {
+        m_String.erase(0, m_Position);
+        m_Position = 0;
+    }
+    if (bytes_read) {
+        *bytes_read = n;
+    }
+    if (n == 0  &&  count > 0) {
+        return eRW_Eof;
+    } else {
+        return eRW_Success;
+    }
+}
+
+
+ERW_Result CStringReader::PendingCount(size_t* count)
+{
+    _ASSERT(m_String.size() >= m_Position);
+    *count = m_String.size() - m_Position;
+    return *count ? eRW_Success : eRW_Eof;
 }
 
 
