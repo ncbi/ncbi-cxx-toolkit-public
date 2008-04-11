@@ -284,9 +284,10 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
             _ASSERT(CT_EQ_INT_TYPE(delim_read, CT_TO_INT_TYPE(delim)));
         }
     } else {
-        char buffer[n + 1]; // get() insists on being able to tack on a NUL.
-        m_In.get(buffer, n + 1, delim);
-        s.assign(buffer, m_In.gcount());
+        // n + 1 because get() insists on being able to tack on a NUL.
+        AutoArray<char> buffer(n + 1);
+        m_In.get(buffer.get(), n + 1, delim);
+        s.assign(buffer.get(), m_In.gcount());
         if (m_In.eof()) {
             reason = eRT_EOF;
         } else {
