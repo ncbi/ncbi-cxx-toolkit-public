@@ -144,6 +144,10 @@ void CDBHandlerStack::PostMsg(CDB_Exception* ex)
 
 bool CDBHandlerStack::HandleExceptions(CDB_UserHandler::TExceptions& exeptions)
 {
+    // Attempting to use m_Stack directly on WorkShop fails because it
+    // tries to call the non-const version of rbegin(), and the
+    // resulting reverse_iterator can't automatically be converted to
+    // a const_reverse_iterator.  (Sigh.)
     TContainer& s = m_Stack;
     NON_CONST_REVERSE_ITERATE(TContainer, cit, s) {
         if ( cit->NotNull() && (*cit)->GetHandler()->HandleAll(exeptions) ) {
