@@ -38,7 +38,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/rwutils.hpp>
 #include <corelib/stream_utils.hpp>
 #include <corelib/error_codes.hpp>
 

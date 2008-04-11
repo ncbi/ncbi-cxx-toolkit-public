@@ -33,9 +33,14 @@
  *   1. Push an arbitrary block of data back to C++ input stream.
  *   2. Non-blocking read from a stream.
  *
+ *   Reader-writer utilities:
+ *   1. Append an IReader's contents into a string.
+ *   2. Construct an IReader object from a string.
+ *
  */
 
 #include <corelib/ncbistre.hpp>
+#include <corelib/reader_writer.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -116,6 +121,25 @@ private:
                                streamsize          buf_size,
                                void*               del_ptr = 0,
                                EPushback_How       how = ePushback_Copy);
+};
+
+
+/// Appends to the given string.
+void ExtractReaderContents(IReader& reader, string& s);
+
+class CStringReader : public IReader
+{
+public:
+    explicit CStringReader(const string& s)
+        : m_String(s), m_Position(0)
+        { }
+
+    ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
+    ERW_Result PendingCount(size_t* count);
+
+private:
+    string    m_String;
+    SIZE_TYPE m_Position;
 };
 
 

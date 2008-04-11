@@ -37,7 +37,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/rwstream.hpp>
-#include <corelib/rwutils.hpp>
+#include <corelib/stream_utils.hpp>
 #include <cgi/cgi_util.hpp>
 #include <map>
 #include <set>
