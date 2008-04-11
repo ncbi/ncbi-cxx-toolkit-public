@@ -1487,30 +1487,4 @@ CStringUTF8 CCgiEntry::GetValueAsUTF8(EOnCharsetError on_error) const
 }
 
 
-void CCgiEntry::x_ForceComplete() const
-{
-    _ASSERT(m_Data->m_Reader.get());
-    _ASSERT(m_Data->m_Value.empty());
-    size_t n = 0, pos = 0;
-    string s(4096, '\0');
-    SData& data = const_cast<SData&>(*m_Data);
-    auto_ptr<IReader> reader(data.m_Reader.release());
-    ERW_Result status = reader->Read(&s[0], s.size(), &n);
-    while (status == eRW_Success) {
-        pos += n;
-        // Grow exponentially to avoid possible quadratic runtime,
-        // adjusting size rather than capacity as the latter would
-        // require gratuitous double-buffering.
-        if (s.size() <= pos + 1024) {
-            s.resize(s.size() * 2);
-        }
-        status = reader->Read(&s[pos], s.size() - pos, &n);
-    }
-    // shrink back to the actual size
-    s.resize(pos + n);
-    // XXX - issue diagnostic message or exception if status != eRW_Eof?
-    swap(data.m_Value, s);
-}
-
-
 END_NCBI_SCOPE

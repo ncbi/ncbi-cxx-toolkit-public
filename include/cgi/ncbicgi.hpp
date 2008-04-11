@@ -37,6 +37,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/rwstream.hpp>
+#include <corelib/rwutils.hpp>
 #include <cgi/cgi_util.hpp>
 #include <map>
 #include <set>
@@ -436,30 +437,14 @@ public:
     /// calls to GetValue and relatives will yield NO data.  (In
     /// either case, the caller owns the resulting object.)
     /// @sa GetValue, GetValueStream
-    IReader* GetValueReader()
-        {
-            if (m_Data->m_Reader.get()) {
-                return m_Data->m_Reader.release();
-            } else { // roundabout; could probably stand to be optimized
-                return new CStreamReader(*GetValueStream(), eTakeOwnership);
-            }
-        }
+    IReader* GetValueReader();
 
     /// Get the value as a stream, potentially on the fly -- in which
     /// case the caller takes ownership of the source, and subsequent
     /// calls to GetValue and relatives will yield NO data.  (In
     /// either case, the caller owns the resulting object.)
     /// @sa GetValue, GetValueReader
-    CNcbiIstream* GetValueStream()
-        {
-            if (m_Data->m_Reader.get()) {
-                return new CRStream(m_Data->m_Reader.release(), 0, 0,
-                                    CRWStreambuf::fOwnReader);
-            } else {
-                return new CNcbiIstrstream(GetValue().data(),
-                                           GetValue().size());
-            }
-        }
+    CNcbiIstream* GetValueStream();
 
     /// Action to perform if the explicit charset is not supported
     enum EOnCharsetError {
@@ -990,6 +975,45 @@ inline CCgiCookies::~CCgiCookies(void)
     Clear();
 }
 
+
+
+///////////////////////////////////////////////////////
+//  CCgiEntry::
+//
+
+
+inline
+IReader* CCgiEntry::GetValueReader()
+{
+    if (m_Data->m_Reader.get()) {
+        return m_Data->m_Reader.release();
+    } else {
+        return new CStringReader(m_Data->m_Value);
+    }
+}
+
+
+inline
+CNcbiIstream* CCgiEntry::GetValueStream()
+{
+    if (m_Data->m_Reader.get()) {
+        return new CRStream(m_Data->m_Reader.release(), 0, 0,
+                            CRWStreambuf::fOwnReader);
+    } else {
+        return new CNcbiIstrstream(GetValue().data(), GetValue().size());
+    }
+}
+
+
+inline
+void CCgiEntry::x_ForceComplete() const
+{
+    _ASSERT(m_Data->m_Reader.get());
+    _ASSERT(m_Data->m_Value.empty());
+    SData& data = const_cast<SData&>(*m_Data);
+    auto_ptr<IReader> reader(data.m_Reader.release());
+    ExtractReaderContents(*reader, data.m_Value);
+}
 
 
 ///////////////////////////////////////////////////////
