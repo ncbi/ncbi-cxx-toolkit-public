@@ -126,9 +126,9 @@ private:
 
 
 /// Appends to the given string.
-void ExtractReaderContents(IReader& reader, string& s);
+void NCBI_XNCBI_EXPORT ExtractReaderContents(IReader& reader, string& s);
 
-class CStringReader : public IReader
+class NCBI_XNCBI_EXPORT CStringReader : public IReader
 {
 public:
     explicit CStringReader(const string& s)
