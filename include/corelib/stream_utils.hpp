@@ -39,6 +39,7 @@
  *
  */
 
+#include <corelib/ncbistr.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/reader_writer.hpp>
 
