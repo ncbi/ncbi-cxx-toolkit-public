@@ -14,7 +14,6 @@ services="
    NC_MapView        \
    NC_ncgraph        \
    NC_Pasc           \
-   NC_PascL          \
    NC_PCAssayGraph   \
    NC_PCSketcher     \
    NC_PhyloTree      \
