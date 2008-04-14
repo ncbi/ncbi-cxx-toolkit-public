@@ -238,10 +238,10 @@ static CConstRef<CSeqMap> s_SeqMapForHandle(const CBioseq_Handle& handle)
         treat_as_raw = true;
     } else if (handle.GetInst_Repr() == CSeq_inst::eRepr_delta) {
         // Check for a delta of all non-gap literals
+        treat_as_raw = true;
         ITERATE (CDelta_ext::Tdata,
                  iter,
                  handle.GetInst_Ext().GetDelta().Get()) {
-            treat_as_raw = true;
             if ((*iter)->IsLoc() || !(*iter)->GetLiteral().IsSetSeq_data()) {
                 treat_as_raw = false;
                 break;
