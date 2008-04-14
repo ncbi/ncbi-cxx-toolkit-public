@@ -34,6 +34,7 @@
  * The define directives below will be replaced with the following:
  * #define NCBI_PACKAGE_NAME        netschedule
  * #define NCBI_PACKAGE_VERSION     3.2.10
+ * #define NCBI_PACKAGE_CONFIG      "GCC_342-Debug--i686-pc-linux2.6.5-..."
  * where the certain package name and the version are taken from 
  * the release script parameters.
  */
@@ -41,4 +42,5 @@
 
 #define NCBI_PACKAGE_NAME       unknown
 #define NCBI_PACKAGE_VERSION    0.0.0
+#define NCBI_PACKAGE_CONFIG     ""
 
