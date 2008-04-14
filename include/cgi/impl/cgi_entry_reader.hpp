@@ -117,6 +117,7 @@ private:
     string        m_Boundary;
     string*       m_ContentLog;
     unsigned int  m_Position;
+    SIZE_TYPE     m_BytePos;
     CCgiEntry*    m_CurrentEntry;
     TReader*      m_CurrentReader;
 

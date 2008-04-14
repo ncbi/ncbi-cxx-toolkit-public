@@ -180,7 +180,7 @@ CCgiEntryReaderContext::CCgiEntryReaderContext(CNcbiIstream& in,
                                                const string& content_type,
                                                string* content_log)
     : m_In(in), m_Out(out), m_ContentLog(content_log), m_Position(0),
-      m_CurrentEntry(NULL), m_CurrentReader(NULL)
+      m_BytePos(0), m_CurrentEntry(NULL), m_CurrentReader(NULL)
 {
     if (NStr::StartsWith(content_type, "multipart/form-data")) {
         SIZE_TYPE pos = content_type.find(kBoundaryTag);
@@ -234,6 +234,10 @@ TCgiEntriesI CCgiEntryReaderContext::GetNextEntry(void)
         break;
     }
 
+    if (name.empty()  &&  m_ContentType == eCT_Null) {
+        return m_Out.end();
+    }
+
     CCgiEntry    entry(value, filename, ++m_Position, content_type);
     TCgiEntriesI it = m_Out.insert(TCgiEntries::value_type(name, entry));
     if (m_ContentType == eCT_Multipart) {
@@ -276,24 +280,29 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
 
     if (n == NPOS) {
         NcbiGetline(m_In, s, delim);
+        m_BytePos += s.size();
         if (m_In.eof()) {
             reason = eRT_EOF;
         } else {
             m_In.unget();
             delim_read = m_In.get();
             _ASSERT(CT_EQ_INT_TYPE(delim_read, CT_TO_INT_TYPE(delim)));
+            ++m_BytePos;
         }
     } else {
         // n + 1 because get() insists on being able to tack on a NUL.
         AutoArray<char> buffer(n + 1);
         m_In.get(buffer.get(), n + 1, delim);
         s.assign(buffer.get(), m_In.gcount());
+        m_BytePos += m_In.gcount();
         if (m_In.eof()) {
             reason = eRT_EOF;
         } else {
             delim_read = m_In.get();
             _ASSERT( !CT_EQ_INT_TYPE(delim_read, CT_EOF) );
-            if ( !CT_EQ_INT_TYPE(delim_read, CT_TO_INT_TYPE(delim)) ) {
+            if (CT_EQ_INT_TYPE(delim_read, CT_TO_INT_TYPE(delim))) {
+                ++m_BytePos;
+            } else {
                 reason = eRT_LengthBound;
                 m_In.unget();
             }
@@ -309,11 +318,14 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
 
     if (m_ContentType == eCT_Multipart  &&  reason == eRT_Delimiter) {
         delim_read = m_In.get();
-        if ( !CT_EQ_INT_TYPE(delim_read, CT_TO_INT_TYPE('\n')) ) {
+        if (CT_EQ_INT_TYPE(delim_read, CT_TO_INT_TYPE('\n'))) {
+            ++m_BytePos;
+            if (m_ContentLog) {
+                *m_ContentLog += '\n';
+            }
+        } else {
             m_In.unget();
             reason = eRT_PartialDelimiter;
-        } else if (m_ContentLog) {
-            *m_ContentLog += '\n';
         }
     }
 
@@ -334,8 +346,10 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
 
 void CCgiEntryReaderContext::x_ReadURLEncodedEntry(string& name, string& value)
 {
-    CT_POS_TYPE input_pos = m_In.tellg();
-    x_DelimitedRead(name);
+    SIZE_TYPE input_pos = m_BytePos;
+    if (x_DelimitedRead(name) == eRT_EOF  ||  m_In.eof()) {
+        m_ContentType = eCT_Null;
+    }
     SIZE_TYPE   name_len = name.find('=');
     if (name_len != NPOS) {
         value = name.substr(name_len + 1);
@@ -345,14 +359,14 @@ void CCgiEntryReaderContext::x_ReadURLEncodedEntry(string& name, string& value)
     if (error_pos > 0) {
         NCBI_THROW2(CCgiParseException, eEntry,
                     CCER "malformatted URL-encoded parameter " + name,
-                    NcbiStreamposToInt8(input_pos) + error_pos - 1);
+                    input_pos + error_pos - 1);
     }
     error_pos = URL_DecodeInPlace(value);
     if (error_pos > 0) {
         NCBI_THROW2(CCgiParseException, eEntry,
                     CCER "malformatted URL-encoded value for " + name
                     + ": " + value,
-                    NcbiStreamposToInt8(input_pos) + name_len + error_pos);
+                    input_pos + name_len + error_pos);
     }
 }
 
@@ -389,7 +403,7 @@ void CCgiEntryReaderContext::x_ReadMultipartHeaders(string& name,
 {
     string line;
     for (;;) {
-        CT_POS_TYPE input_pos = m_In.tellg();
+        SIZE_TYPE input_pos = m_BytePos;
         switch (x_DelimitedRead(line)) {
         case eRT_Delimiter:
             break;
@@ -397,15 +411,14 @@ void CCgiEntryReaderContext::x_ReadMultipartHeaders(string& name,
         case eRT_EOF:
             NCBI_THROW2(CCgiParseException, eEntry,
                         CCER "Hit end of input while reading part headers",
-                        NcbiStreamposToInt8(input_pos));
+                        input_pos);
 
         case eRT_LengthBound:
             _TROUBLE;
 
         case eRT_PartialDelimiter:
             NCBI_THROW2(CCgiParseException, eEntry,
-                        CCER "CR in part header not followed by LF",
-                        NcbiStreamposToInt8(input_pos));
+                        CCER "CR in part header not followed by LF", input_pos);
         }
 
         if (line.empty()) {
@@ -415,8 +428,7 @@ void CCgiEntryReaderContext::x_ReadMultipartHeaders(string& name,
         SIZE_TYPE pos = line.find(':');
         if (pos == NPOS) {
             NCBI_THROW2(CCgiParseException, eEntry,
-                        CCER "part header lacks colon: " + line,
-                        NcbiStreamposToInt8(input_pos));
+                        CCER "part header lacks colon: " + line, input_pos);
         }
         CTempString field_name(line, 0, pos);
         if (field_name == kContentDisposition) {
@@ -424,7 +436,7 @@ void CCgiEntryReaderContext::x_ReadMultipartHeaders(string& name,
                 NCBI_THROW2(CCgiParseException, eEntry,
                             CCER "malformatted Content-Disposition header: "
                             + line,
-                            pos);
+                            input_pos);
             }
             name     = s_FindAttribute(line, "name",     input_pos, true);
             filename = s_FindAttribute(line, "filename", input_pos, false);
