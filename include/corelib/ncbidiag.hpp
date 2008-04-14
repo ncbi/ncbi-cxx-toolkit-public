@@ -1419,6 +1419,9 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
 
     /// If event type is "extra", contains the list of arguments
     TExtraArgs       m_ExtraArgs;
+    /// Set to true if this is a typed extra message (the arguments include
+    /// "NCBIEXTRATYPE=<extra-type>").
+    bool             m_TypedExtra;
 
     /// Convert extra arguments to string
     string FormatExtraMessage(void) const;
@@ -1468,8 +1471,6 @@ private:
     // If the string is not in the correct format (no '&' or '=') do not
     // parse it, return false.
     bool x_ParseExtraArgs(const string& str, size_t pos);
-    // URL-decode extra argument in-place.
-    void x_DecodeExtra(string& str) const;
 
     enum EFormatFlag {
         eFormat_Old,  // Force old post format
@@ -1635,6 +1636,8 @@ public:
     /// Print the message and reset object
     void Flush(void);
 
+    CDiagContext_Extra& SetType(const string& type);
+
 private:
     void x_Release(void);
 
@@ -1647,6 +1650,7 @@ private:
 
     TExtraArgs* m_Args;
     int*        m_Counter;
+    bool        m_Typed;
 };
 
 

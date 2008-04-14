@@ -974,14 +974,16 @@ void CDiagContext::PrintExtra(const string& message)
 
 CDiagContext_Extra::CDiagContext_Extra(void)
     : m_Args(0),
-      m_Counter(new int(1))
+      m_Counter(new int(1)),
+      m_Typed(false)
 {
 }
 
 
 CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
     : m_Args(const_cast<CDiagContext_Extra&>(args).m_Args),
-      m_Counter(const_cast<CDiagContext_Extra&>(args).m_Counter)
+      m_Counter(const_cast<CDiagContext_Extra&>(args).m_Counter),
+      m_Typed(args.m_Typed)
 {
     (*m_Counter)++;
 }
@@ -1004,6 +1006,7 @@ void CDiagContext_Extra::Flush(void)
                       0, 0, 0); // module/class/function
     mess.m_Event = SDiagMessage::eEvent_Extra;
     mess.m_ExtraArgs = *m_Args;
+    mess.m_TypedExtra = m_Typed;
     m_Args->clear();
     GetDiagBuffer().DiagHandler(mess);
 }
@@ -1026,6 +1029,7 @@ CDiagContext_Extra::operator=(const CDiagContext_Extra& args)
         x_Release();
         m_Args = const_cast<CDiagContext_Extra&>(args).m_Args;
         m_Counter = const_cast<CDiagContext_Extra&>(args).m_Counter;
+        m_Typed = args.m_Typed;
         (*m_Counter)++;
     }
     return *this;
@@ -1049,6 +1053,16 @@ CDiagContext_Extra::Print(const string& name,
         m_Args = new TExtraArgs;
     }
     m_Args->push_back(TExtraArg(name, value));
+    return *this;
+}
+
+
+static const char* kExtraTypeArgName = "NCBIEXTRATYPE";
+
+CDiagContext_Extra& CDiagContext_Extra::SetType(const string& type)
+{
+    m_Typed = true;
+    Print(kExtraTypeArgName, type);
     return *this;
 }
 
@@ -2031,6 +2045,7 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
                            const char* nclass, 
                            const char* function)
     : m_Event(eEvent_Start),
+      m_TypedExtra(false),
       m_Data(0),
       m_Format(eFormat_Auto)
 {
@@ -2079,6 +2094,7 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
       m_ThrPost(0),
       m_RequestId(0),
       m_Event(eEvent_Start),
+      m_TypedExtra(false),
       m_Data(0),
       m_Format(eFormat_Auto)
 {
@@ -2117,6 +2133,7 @@ SDiagMessage::SDiagMessage(const SDiagMessage& message)
       m_ThrPost(0),
       m_RequestId(0),
       m_Event(eEvent_Start),
+      m_TypedExtra(false),
       m_Data(0),
       m_Format(eFormat_Auto)
 {
@@ -2172,6 +2189,7 @@ SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
         m_ThrPost = message.m_ThrPost;
         m_RequestId = message.m_RequestId;
         m_Event = message.m_Event;
+        m_TypedExtra = message.m_TypedExtra;
 
         m_Buffer = m_Data->m_Message.empty() ? 0 : m_Data->m_Message.c_str();
         m_BufferLen = m_Data->m_Message.empty() ?
@@ -2253,6 +2271,99 @@ CTempString s_ParseStr(const string& message,
 }
 
 
+static const char s_ExtraEncodeChars[256][4] = {
+    "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
+    "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
+    "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
+    "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
+    "+",   "%21", "%22", "%23", "%24", "%25", "%26", "%27",
+    "%28", "%29", "%2A", "%2B", "%2C", "%2D", ".", "%2F",
+    "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
+    "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
+    "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
+    "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
+    "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
+    "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "_",
+    "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
+    "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
+    "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
+    "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
+    "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
+    "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
+    "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
+    "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
+    "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
+    "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
+    "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
+    "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
+    "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
+    "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
+    "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
+    "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
+    "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
+    "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
+    "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
+    "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
+};
+
+
+bool x_IsEncodableChar(char c)
+{
+    return s_ExtraEncodeChars[c][0] != c  ||
+        s_ExtraEncodeChars[c][1] != 0;
+}
+
+
+bool x_DecodeExtraArg(string& str, bool is_arg_name)
+{
+    NStr::TruncateSpacesInPlace(str);
+    size_t len = str.length();
+    if ( !len ) {
+        return !is_arg_name; // names can not be empty
+    }
+
+    size_t dst = 0;
+    for (size_t src = 0;  src < len;  dst++) {
+        switch ( str[src] ) {
+        case '%': {
+            if (src + 2 > len) {
+                return false;
+            }
+            int n1 = NStr::HexChar(str[src+1]);
+            int n2 = NStr::HexChar(str[src+2]);
+            if (n1 < 0 || n2 < 0) {
+                return false;
+            }
+            str[dst] = (n1 << 4) | n2;
+            src += 3;
+            if ( is_arg_name  &&  x_IsEncodableChar(str[dst]) ) {
+                return false; // no encodable chars allowed in names
+            }
+            break;
+        }
+        case '+': {
+            if ( is_arg_name ) {
+                return false; // no spaces in names
+            }
+            str[dst] = ' ';
+            src++;
+            break;
+        }
+        default:
+            str[dst] = str[src++];
+            if ( x_IsEncodableChar(str[dst]) ) {
+                return false; // everything must be encoded
+            }
+        }
+    }
+    if (dst < len) {
+        str[dst] = '\0';
+        str.resize(dst);
+    }
+    return true;
+}
+
+
 bool SDiagMessage::x_ParseExtraArgs(const string& str, size_t pos)
 {
     if (str.find('&', pos) == NPOS  &&  str.find('=', pos) == NPOS) {
@@ -2263,52 +2374,18 @@ bool SDiagMessage::x_ParseExtraArgs(const string& str, size_t pos)
     ITERATE(list<string>, it, args) {
         string n, v;
         NStr::SplitInTwo(*it, "=", n, v);
-        x_DecodeExtra(n);
-        x_DecodeExtra(v);
+        if (!x_DecodeExtraArg(n, true)  ||  !x_DecodeExtraArg(v, false)) {
+            // Error when parsing args.
+            m_ExtraArgs.clear();
+            m_TypedExtra = false;
+            return false;
+        }
+        if (n == kExtraTypeArgName) {
+            m_TypedExtra = true;
+        }
         m_ExtraArgs.push_back(TExtraArg(n, v));
     }
     return true;
-}
-
-
-void SDiagMessage::x_DecodeExtra(string& str) const
-{
-    size_t len = str.length();
-    if ( !len ) {
-        return;
-    }
-
-    size_t dst = 0;
-    for (size_t src = 0;  src < len;  dst++) {
-        switch ( str[src] ) {
-        case '%': {
-            if (src + 2 > len) {
-                str[dst] = str[src++];
-            } else {
-                int n1 = NStr::HexChar(str[src+1]);
-                int n2 = NStr::HexChar(str[src+2]);
-                if (n1 < 0 || n2 < 0) {
-                    str[dst] = str[src++];
-                } else {
-                    str[dst] = (n1 << 4) | n2;
-                    src += 3;
-                }
-            }
-            break;
-        }
-        case '+': {
-            str[dst] = ' ';
-            src++;
-            break;
-        }
-        default:
-            str[dst] = str[src++];
-        }
-    }
-    if (dst < len) {
-        str[dst] = '\0';
-        str.resize(dst);
-    }
 }
 
 
@@ -2333,6 +2410,7 @@ bool SDiagMessage::ParseMessage(const string& message)
     m_ThrPost = 0;
     m_RequestId = 0;
     m_Event = eEvent_Start;
+    m_TypedExtra = false;
     m_Format = eFormat_Auto;
     if ( m_Data ) {
         delete m_Data;
@@ -2817,48 +2895,13 @@ string SDiagMessage::x_GetModule(void) const
 
 string SDiagMessage::FormatExtraMessage(void) const
 {
-    static const char s_EncodeChars[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
-        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
-        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
-        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
-        "+",   "%21", "%22", "%23", "%24", "%25", "%26", "%27",
-        "%28", "%29", "%2A", "%2B", "%2C", "%2D", ".", "%2F",
-        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
-        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
-        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
-        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "_",
-        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
-        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
-        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
-        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
-        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
-        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
-        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
-        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
-        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
-        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
-        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
-        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
-        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
-        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
-        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
-        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
-    };
-
     string msg;
     ITERATE(TExtraArgs, it, m_ExtraArgs) {
         if ( !msg.empty() ) {
             msg += "&";
         }
         ITERATE(string, c, it->first) {
-            const char* enc = s_EncodeChars[(unsigned char)(*c)];
+            const char* enc = s_ExtraEncodeChars[(unsigned char)(*c)];
             if (enc[1] != 0  ||  enc[0] != *c) {
                 NCBI_THROW(CCoreException, eInvalidArg,
                     "Invalid char in extra args name: " + it->first);
@@ -2867,7 +2910,7 @@ string SDiagMessage::FormatExtraMessage(void) const
         }
         msg += "=";
         ITERATE(string, c, it->second) {
-            msg += s_EncodeChars[(unsigned char)(*c)];
+            msg += s_ExtraEncodeChars[(unsigned char)(*c)];
         }
     }
     return msg;
