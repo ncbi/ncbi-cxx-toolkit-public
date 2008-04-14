@@ -7594,8 +7594,7 @@ if test "$with_app" = "no" ; then
    NoConfProjects="$NoConfProjects app"
 fi
 
-if test ! -f ${real_srcdir}/src/app/Makefile.in  -o  \
-        ! -d ${real_srcdir}/include/app ; then
+if test ! -f ${real_srcdir}/src/app/Makefile.in ; then
    if test "${with_app-no}" != "no" ; then
       { { echo "$as_me:$LINENO: error: --with-app:  APP sources are missing" >&5
 echo "$as_me: error: --with-app:  APP sources are missing" >&2;}

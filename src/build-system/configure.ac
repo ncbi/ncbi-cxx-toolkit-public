@@ -1996,7 +1996,18 @@ fi
 
 #### Ensure that all explicitly requested subtrees actually exist
 NCBI_CHECK_SUBTREE(algo)
-NCBI_CHECK_SUBTREE(app)
+dnl NCBI_CHECK_SUBTREE(app)
+if test "$with_app" = "no" ; then
+   NoConfProjects="$NoConfProjects app"
+fi
+
+if test ! -f ${real_srcdir}/src/app/Makefile.in ; then
+   if test "${with_app-no}" != "no" ; then
+      AC_MSG_ERROR([--with-app:  APP sources are missing])
+   fi
+   with_app="no"
+fi
+
 dnl NCBI_CHECK_SUBTREE(bdb) # deferred until end, as --with-bdb does double duty
 NCBI_CHECK_SUBTREE(ctools)
 NCBI_CHECK_SUBTREE(dbapi)
