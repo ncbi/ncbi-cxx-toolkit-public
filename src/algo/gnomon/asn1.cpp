@@ -342,8 +342,6 @@ CRef<CSeq_loc> CAnnotationASN1::CImplementationData::create_packed_int_seqloc(co
         if (interval_range.Empty())
             continue;
         CRef<CSeq_interval> interval(new CSeq_interval(*contig_sid, interval_range.GetFrom(),interval_range.GetTo(), strand));
-        interval->SetPartialStart(!e->m_fsplice && interval_range.GetFrom()==e->GetFrom(),eExtreme_Positional);
-        interval->SetPartialStop(!e->m_ssplice && interval_range.GetTo()==e->GetTo(),eExtreme_Positional);
         packed_int.AddInterval(*interval);
     }
     return seq_loc->Merge(CSeq_loc::fSort, NULL);
