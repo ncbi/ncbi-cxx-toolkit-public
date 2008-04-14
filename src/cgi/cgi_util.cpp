@@ -498,7 +498,7 @@ string CUrl::ComposeUrl(CCgiArgs::EAmpEncoding amp_enc,
         url += ":" + m_Port;
     }
     url += encoder->EncodePath(m_Path);
-    if ( m_ArgsList.get() ) {
+    if ( HaveArgs() ) {
         url += "?" + m_ArgsList->GetQueryString(amp_enc, encoder);
     }
     if ( !m_Fragment.empty() ) {
