@@ -528,8 +528,29 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_gene_feature(const 
     CRef<CFeat_id> feat_id( new CFeat_id() );
     feat_id->SetLocal(*obj_id);
     gene_feature->SetIds().push_back(feat_id);
+    gene_feature->SetData().SetGene();
 
-    gene_feature->SetData().SetGene().SetPseudo(model.Status() & CGeneModel::ePseudo);
+    if (model.Status() & CGeneModel::ePseudo) {
+        gene_feature->SetData().SetGene().SetPseudo(true);
+
+        int frameshifts = model.FrameShifts().size();
+        int pstops = model.GetCdsInfo().PStops().size();
+        _ASSERT( frameshifts+pstops > 0 );
+        string frameshift_comment;
+        string pstop_comment;
+        if (frameshifts==1)
+            frameshift_comment = "remove a frameshift";
+        else if (frameshifts>1)
+            frameshift_comment = "remove frameshifts";
+        if (pstops==1)
+            pstop_comment = "prevent a premature stop codon";
+        else if (pstops>1)
+            pstop_comment = "prevent premature stop codons";
+        if (frameshifts>0 and pstops>0)
+            pstop_comment = " and "+pstop_comment;
+            
+        gene_feature->SetComment("The sequence of the transcript was modified to "+frameshift_comment+pstop_comment+" represented in this assembly.");
+    }
     //    .SetLocus_tag("...");
 
     CRef<CSeq_loc> gene_location(new CSeq_loc());
