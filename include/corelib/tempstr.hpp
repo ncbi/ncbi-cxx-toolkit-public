@@ -67,7 +67,7 @@ public:
     /// @{
     typedef size_t          size_type;
     typedef const char*     const_iterator;
-    static const size_type	npos = static_cast<size_type>(-1);
+    static const size_type  npos = static_cast<size_type>(-1);
     /// @}
 
     CTempString(void);

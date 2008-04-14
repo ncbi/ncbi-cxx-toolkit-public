@@ -1266,7 +1266,7 @@ CTime& CTime::x_SetTime(const time_t* value)
     time_t timer;
     long ns = 0;
 
-	// Get time with nanoseconds
+    // Get time with nanoseconds
     if ( value ) {
         timer = *value;
     } else {
