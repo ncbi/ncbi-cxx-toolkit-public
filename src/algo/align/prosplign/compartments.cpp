@@ -265,7 +265,7 @@ TCompartmentStructs MakeCompartments(const TCompartments& compartments, CCompart
     for (size_t i=0; i<results.size(); ++i) {
         SCompartment& comp = results[i];
         prev = (i==0 || results[i-1].strand != comp.strand) ?
-            -comp.from :
+            -comp.from-2 :
             prev;
         int next = (i==results.size()-1 || results[i+1].strand != comp.strand) ?
             comp.to+2*max_extent+2 :
