@@ -546,7 +546,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_gene_feature(const 
             pstop_comment = "prevent a premature stop codon";
         else if (pstops>1)
             pstop_comment = "prevent premature stop codons";
-        if (frameshifts>0 and pstops>0)
+        if (frameshifts>0 && pstops>0)
             pstop_comment = " and "+pstop_comment;
             
         gene_feature->SetComment("The sequence of the transcript was modified to "+frameshift_comment+pstop_comment+" represented in this assembly.");
