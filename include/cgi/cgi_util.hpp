@@ -397,7 +397,7 @@ public:
 
     /// Check if the URL contains any arguments
     bool HaveArgs(void) const
-        { return m_ArgsList.get() != 0; }
+        { return m_ArgsList.get() != 0  &&  !m_ArgsList->GetArgs().empty(); }
 
     /// Get const list of arguments
     const CCgiArgs& GetArgs(void) const;
