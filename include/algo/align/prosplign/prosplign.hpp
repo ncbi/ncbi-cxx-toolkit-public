@@ -314,7 +314,7 @@ private:
     void AddDNAText(objects::CSeqVector_CI& genomic_ci, int& nuc_prev, size_t len);
     void TranslateDNA(int phase, size_t len, bool is_insertion);
     void AddProtText(objects::CSeqVector_CI& protein_ci, int& prot_prev, size_t len);
-    void MatchText(size_t len);
+    void MatchText(size_t len, bool is_match=false);
     char MatchChar(size_t i);
     void AddHoleText(bool prev_3_prime_splice, bool cur_5_prime_splice,
                      objects::CSeqVector_CI& genomic_ci, objects::CSeqVector_CI& protein_ci,

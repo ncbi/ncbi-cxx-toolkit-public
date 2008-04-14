@@ -640,7 +640,7 @@ char CProSplignText::MatchChar(size_t i)
     return m;
 }
 
-void CProSplignText::MatchText(size_t len)
+void CProSplignText::MatchText(size_t len, bool is_match)
 {
     _ASSERT( m_translation.size() == m_protein.size() );
     _ASSERT( m_translation.size() == m_match.size()+len );
@@ -648,7 +648,7 @@ void CProSplignText::MatchText(size_t len)
     m_match.reserve(m_match.size()+len);
 
     for (size_t i = m_translation.size()-len; i < m_translation.size(); ++i) {
-        m_match.push_back(MatchChar(i));
+        m_match.push_back((is_match && islower(m_protein[i]))?MATCH_CHAR:MatchChar(i));
     }
 }
 
@@ -798,13 +798,10 @@ CProSplignText::CProSplignText(objects::CScope& scope, const objects::CSeq_align
                 AddDNAText(genomic_ci,nuc_prev,len);
                 TranslateDNA((prot_prev+1)%3,len,false);
                 AddProtText(protein_ci,prot_prev,len);
-                if (chunk.IsMatch()) {
-                    m_match.append(len,MATCH_CHAR);
-                    // m_translation = 
-                } else if (chunk.IsMismatch()) {
+                if (chunk.IsMismatch()) {
                     m_match.append(len,MISMATCH_CHAR);
                 } else
-                    MatchText(len);
+                    MatchText(len, chunk.IsMatch());
             } else if (chunk.IsProduct_ins()) {
                 SIZE_TYPE len = chunk.GetProduct_ins();
                 m_dna.append(len,GAP_CHAR);
