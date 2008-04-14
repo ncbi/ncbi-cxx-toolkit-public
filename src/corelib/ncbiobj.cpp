@@ -163,6 +163,84 @@ void* single_alloc(size_t size)
 }
 #endif
 
+
+static CObject::EAllocFillMode sm_AllocFillMode;
+static bool sm_AllocFillMode_IsSet;
+#ifdef _DEBUG
+# define ALLOC_FILL_MODE_INIT        CObject::eAllocFillPattern
+# define ALLOC_FILL_MODE_DEFAULT     CObject::eAllocFillPattern
+#else
+# define ALLOC_FILL_MODE_INIT        CObject::eAllocFillZero
+# define ALLOC_FILL_MODE_DEFAULT     CObject::eAllocFillNone
+#endif
+#if defined(NCBI_COMPILER_MSVC)
+# define ALLOC_FILL_BYTE_PATTERN 0xcd
+#else
+# define ALLOC_FILL_BYTE_PATTERN 0xaa
+#endif
+
+static CObject::EAllocFillMode sx_InitFillNewMemoryMode(void)
+{
+    CObject::EAllocFillMode mode = ALLOC_FILL_MODE_INIT;
+    const char* env = ::getenv("NCBI_MEMORY_FILL");
+    if ( env && *env ) {
+        bool is_set = true;
+        if ( NStr::CompareNocase(env, "NONE") == 0 )
+            mode = CObject::eAllocFillNone;
+        else if ( NStr::CompareNocase(env, "ZERO") == 0 )
+            mode = CObject::eAllocFillZero;
+        else if ( NStr::CompareNocase(env, "PATTERN") == 0 )
+            mode = CObject::eAllocFillPattern;
+        else
+            is_set = false;
+        sm_AllocFillMode_IsSet = is_set;
+    }
+    sm_AllocFillMode = mode;
+    return mode;
+}
+
+
+CObject::EAllocFillMode CObject::GetAllocFillMode(void)
+{
+    return sm_AllocFillMode;
+}
+
+
+void CObject::SetAllocFillMode(CObject::EAllocFillMode mode)
+{
+    sm_AllocFillMode = mode;
+}
+
+
+void CObject::SetAllocFillMode(const string& value)
+{
+    EAllocFillMode mode = sm_AllocFillMode;
+    if ( NStr::CompareNocase(value, "NONE") == 0 )
+        mode = eAllocFillNone;
+    else if ( NStr::CompareNocase(value, "ZERO") == 0 )
+        mode = eAllocFillZero;
+    else if ( NStr::CompareNocase(value, "PATTERN") == 0 )
+        mode = eAllocFillPattern;
+    else if ( !sm_AllocFillMode_IsSet )
+        mode = ALLOC_FILL_MODE_DEFAULT;
+    sm_AllocFillMode = mode;
+}
+
+
+static inline void sx_FillNewMemory(void* ptr, size_t size)
+{
+    CObject::EAllocFillMode mode = sm_AllocFillMode;
+    if ( !mode ) {
+        mode = sx_InitFillNewMemoryMode();
+    }
+    if ( mode == CObject::eAllocFillZero ) {
+        memset(ptr, 0, size);
+    }
+    else if ( mode == CObject::eAllocFillPattern ) {
+        memset(ptr, ALLOC_FILL_BYTE_PATTERN, size);
+    }
+}
+
 // CObject local new operator to mark allocation in heap
 void* CObject::operator new(size_t size)
 {
@@ -171,7 +249,7 @@ void* CObject::operator new(size_t size)
 
 #ifdef USE_SINGLE_ALLOC
     void* ptr = single_alloc(size);
-    memset(ptr, 0, size);
+    sx_FillNewMemory(ptr, size);
     //static_cast<CObject*>(ptr)->m_Counter.Set(0);
     return ptr;
 #else
@@ -183,7 +261,7 @@ void* CObject::operator new(size_t size)
         s_heap_obj->push_front(ptr);
     }}
 #else// USE_HEAPOBJ_LIST
-    memset(ptr, 0, size);
+    sx_FillNewMemory(ptr, size);
 #  if USE_COMPLEX_MASK
     GetSecondCounter(static_cast<CObject*>(ptr))->Set(eMagicCounterNew);
 #  endif// USE_COMPLEX_MASK
@@ -212,7 +290,7 @@ void CObject::operator delete(void* ptr)
 void* CObject::operator new(size_t size, void* place)
 {
     _ASSERT(size >= sizeof(CObject));
-    memset(place, 0, size);
+    sx_FillNewMemory(place, size);
     //static_cast<CObject*>(ptr)->m_Counter.Set(0);
     return place;
 }
@@ -273,7 +351,7 @@ void* CObject::operator new[](size_t size)
 # else
     void* ptr = ::operator new[](size);
 # endif
-    memset(ptr, 0, size);
+    sx_FillNewMemory(ptr, size);
     return ptr;
 }
 

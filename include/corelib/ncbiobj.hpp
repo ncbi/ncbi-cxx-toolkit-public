@@ -244,6 +244,25 @@ public:
     NCBI_XNCBI_EXPORT
     static void ThrowNullPointerException(void);
 
+
+    /// Controll filling of newly allocated memory
+    /// 
+    /// Default mode is eAllocFillNone if not changed by configuration.
+    ///   eAllocFillNone - do not fill at all
+    ///       this mode is faster and is necessary to avoid interference with
+    ///       memory checker programs like valgrind.
+    ///   eAllocFillZero - fill new memory with zeros (old default mode)
+    ///   eAllocFillPattern - fill with non-zero pattern
+    enum EAllocFillMode {
+        eAllocFillNone = 1,
+        eAllocFillZero,
+        eAllocFillPattern
+    };
+    static EAllocFillMode GetAllocFillMode(void);
+    static void SetAllocFillMode(EAllocFillMode mode);
+    /// Set mode from configuration parameter value.
+    static void SetAllocFillMode(const string& value);
+
 private:
     typedef CAtomicCounter   TCounter;  ///< Counter type is CAtomiCounter
     typedef TCounter::TValue TCount;    ///< Alias for value type of counter

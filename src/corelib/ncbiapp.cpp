@@ -920,6 +920,9 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             return;
     }
 
+    // [NCBI.MEMORY_FILL]
+    CObject::SetAllocFillMode(reg->Get("NCBI", "MEMORY_FILL"));
+
     {{
         CSysLog* syslog = dynamic_cast<CSysLog*>(GetDiagHandler());
         if (syslog) {
