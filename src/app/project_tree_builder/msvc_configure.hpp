@@ -62,7 +62,8 @@ private:
                         const string&      root_dir,
                         const SConfigInfo& config,
                         const CBuildType&  build_type);
-    void WriteNcbiconfMsvcSite(const string& full_path) const;
+    void WriteNcbiconfMsvcSite(const string& full_path,
+                               const string& signature) const;
 
     // No value semantics
     CMsvcConfigure(const CMsvcConfigure&);

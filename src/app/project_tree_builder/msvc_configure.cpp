@@ -234,11 +234,18 @@ void CMsvcConfigure::AnalyzeDefines(
             m_ConfigSite[define] = '0';
         }
     }
+    string signature("MSVC_");
+    signature += CMsvc7RegSettings::GetMsvcVersionName();
+    signature += "-" + config.m_Name;
+    signature += "--";
+    signature += HOST;
+    signature += "-";
+    signature += GetApp().GetEnvironment().Get("COMPUTERNAME");
 
     string candidate_path = filename + ".candidate";
     CDirEntry::SplitPath(filename, &dir);
     CDir(dir).CreatePath();
-    WriteNcbiconfMsvcSite(candidate_path);
+    WriteNcbiconfMsvcSite(candidate_path, signature);
     if (PromoteIfDifferent(filename, candidate_path)) {
         PTB_WARNING_EX(filename, ePTB_FileModified,
                        "Configuration file modified");
@@ -248,7 +255,8 @@ void CMsvcConfigure::AnalyzeDefines(
     }
 }
 
-void CMsvcConfigure::WriteNcbiconfMsvcSite(const string& full_path) const
+void CMsvcConfigure::WriteNcbiconfMsvcSite(
+    const string& full_path, const string& signature) const
 {
     CNcbiOfstream  ofs(full_path.c_str(), 
                        IOS_BASE::out | IOS_BASE::trunc );
@@ -303,6 +311,7 @@ void CMsvcConfigure::WriteNcbiconfMsvcSite(const string& full_path) const
         }
     }
     ofs << endl;
+    ofs << "#define NCBI_SIGNATURE \\" << endl << "  \"" << signature << "\"" << endl;
 }
 
 
