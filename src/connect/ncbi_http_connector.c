@@ -805,16 +805,20 @@ static char* s_VT_Descr
 {
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
     size_t len = 7/*"http://"*/ + strlen(uuu->net_info->host) +
-        (uuu->net_info->port == 80 ? 0 : 6/*:port*/) +
-        strlen(uuu->net_info->path) +
+        (uuu->net_info->port != DEF_CONN_PORT ? 6/*:port*/ : 0) +
+        (uuu->net_info->http_proxy_adjusted ? 2 : 0) +
+        strlen(uuu->net_info->path) + 1 +
         (*uuu->net_info->args ? 2 + strlen(uuu->net_info->args) : 1);
     char* buf = (char*) malloc(len);
     if (buf) {
         len = sprintf(buf, "http://%s", uuu->net_info->host);
-        if (uuu->net_info->port != 80)
+        if (uuu->net_info->port != DEF_CONN_PORT)
             len += sprintf(&buf[len], ":%hu", uuu->net_info->port);
-        sprintf(&buf[len], "%s%s%s", uuu->net_info->path,
-                *uuu->net_info->args ? "&" : "", uuu->net_info->args);
+        sprintf(&buf[len], "%s%s%s%s%s", uuu->net_info->http_proxy_adjusted
+                ? "<" : *uuu->net_info->path != '/'
+                ? "/" : "", uuu->net_info->path,
+                &"&"[!*uuu->net_info->args], uuu->net_info->args,
+                ">" + !uuu->net_info->http_proxy_adjusted);
     }
     return buf;
 }
