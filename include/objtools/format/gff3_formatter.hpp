@@ -53,10 +53,14 @@ class CDense_seg;
 class NCBI_FORMAT_EXPORT CGFF3_Formatter : public CGFFFormatter
 {
 public:
+    CGFF3_Formatter()
+    {
+        m_CurrentId = 1;
+    }
+
     void Start       (IFlatTextOStream& text_os);
     void EndSection  (const CEndSectionItem& esec, IFlatTextOStream& text_os);
     void FormatAlignment(const CAlignmentItem& aln, IFlatTextOStream& text_os);
-
 protected:
     string x_GetAttrSep(void) const { return ";"; }
     string x_FormatAttr(const string& name, const string& value) const;
@@ -64,6 +68,8 @@ protected:
                        const string& transcript_id) const;
 
 private:
+    unsigned int m_CurrentId;
+
     static CNcbiOstream& x_AppendEncoded(CNcbiOstream& os, const string& s);
 
     void x_FormatAlignment(const CAlignmentItem& aln,

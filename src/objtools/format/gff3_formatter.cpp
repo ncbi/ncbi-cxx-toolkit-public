@@ -37,6 +37,7 @@
 #include <objtools/format/gff3_formatter.hpp>
 #include <objtools/format/items/alignment_item.hpp>
 #include <objtools/format/text_ostream.hpp>
+#include <objtools/format/flat_file_config.hpp>
 
 #include <serial/iterator.hpp>
 #include <objects/general/Object_id.hpp>
@@ -83,6 +84,8 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
                                         IFlatTextOStream& text_os,
                                         const CSeq_align& sa)
 {
+    const CFlatFileConfig& config = aln.GetContext()->Config();
+
     switch (sa.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
         x_FormatDenseg(aln, text_os, sa.GetSegs().GetDenseg());
@@ -103,6 +106,9 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
     case CSeq_align::TSegs::e_Disc:
         ITERATE (CSeq_align_set::Tdata, it, sa.GetSegs().GetDisc().Get()) {
             x_FormatAlignment(aln, text_os, **it);
+        }
+        if ( config.GffGenerateIdTags() ) {
+            ++m_CurrentId;
         }
         break;
 
@@ -159,6 +165,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     CAlnMap         alnmap(ds);
     TNumrow         ref_row = -1;
     CScope&         scope = ctx->GetScope();
+    const CFlatFileConfig& config = ctx->Config();
 
     const CSeq_id& ref_id = *ctx->GetPrimaryId();
     for (TNumrow row = 0;  row < alnmap.GetNumRows();  ++row) {
@@ -227,6 +234,9 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         // pluses, which we otherwise avoid due to ambiguity. :-/
         CNcbiOstrstream attrs;
         const CSeq_id& tgt_id = s_GetTargetId(alnmap.GetSeqId(tgt_row), scope);
+        if ( config.GffGenerateIdTags() ) {
+            attrs << "ID=" << m_CurrentId << ";";
+        }
         attrs << "Target=";
         x_AppendEncoded(attrs, tgt_id.GetSeqIdString(true));
         attrs << '+' << (tgt_range.GetFrom() + 1) << '+'
@@ -246,7 +256,6 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             string cigar_string = CNcbiOstrstreamToString(cigar);
             attrs << ";Gap=" << cigar_string;
         }
-
         // XXX - should supply appropriate score, if any
         CSeq_loc loc(*ctx->GetPrimaryId(), ref_range.GetFrom(),
                      ref_range.GetTo(),
@@ -273,7 +282,6 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         x_AddFeature(l, loc, source, s_GetMatchType(ref_id, tgt_id), "." /*score*/, -1 /*frame*/,
                      attr_string, false /*gtf*/, *ctx);
     }
-
     text_os.AddParagraph(l, &ds);
 }
 

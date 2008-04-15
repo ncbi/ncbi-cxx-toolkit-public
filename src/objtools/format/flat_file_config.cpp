@@ -40,14 +40,15 @@ BEGIN_SCOPE(objects)
 
 
 // -- constructor
-CFlatFileConfig::CFlatFileConfig
-(TFormat format,
- TMode mode,
- TStyle style,
- TFlags flags,
- TView view) :
+CFlatFileConfig::CFlatFileConfig(
+    TFormat format,
+    TMode mode,
+    TStyle style,
+    TFlags flags,
+    TView view,
+    TGffOptions gff_options) :
     m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
-    m_Flags(flags), m_RefSeqConventions(false)
+    m_Flags(flags), m_RefSeqConventions(false), m_GffOptions(gff_options)
 {
     // GFF/GFF3 and FTable always require master style
     if (m_Format == eFormat_GFF  ||  m_Format == eFormat_GFF3  ||

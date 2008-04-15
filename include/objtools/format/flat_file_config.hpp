@@ -113,19 +113,26 @@ public:
         fViewAll          = (fViewNucleotides | fViewProteins)
     };
 
+    enum EGffOptions {
+        // specifies special features of GFF(3) generation
+        fGffGenerateIdTags     = 1 << 0,
+    };
+
     // types
     typedef EFormat         TFormat;
     typedef EMode           TMode;
     typedef EStyle          TStyle;
     typedef unsigned int    TFlags; // binary OR of "EFlatFileFlags"
     typedef EView           TView;
+    typedef unsigned int    TGffOptions;
 
     // constructors
     CFlatFileConfig(TFormat format = eFormat_GenBank,
                     TMode   mode = eMode_GBench,
                     TStyle  style = eStyle_Normal,
                     TFlags  flags = 0,
-                    TView   view = fViewNucleotides);
+                    TView   view = fViewNucleotides,
+                    TGffOptions gff_options = 0 );
     // destructor
     ~CFlatFileConfig(void);
 
@@ -288,6 +295,18 @@ public:
     CFlatFileConfig& SetHideGapFeatures      (bool val = true);
     CFlatFileConfig& SetNeverTranslateCDS    (bool val = true);
     
+    // -- GffOptions
+    // getters
+    bool GffGenerateIdTags   (void) const 
+    { 
+        return m_GffOptions & fGffGenerateIdTags;
+    };
+
+    // setters
+    void SetGffGenerateIdTags (bool val = true)
+    {
+        m_GffOptions |= fGffGenerateIdTags;
+    };
 
 private:
     // mode specific flags
@@ -299,6 +318,8 @@ private:
     TStyle      m_Style;
     TView       m_View;
     TFlags      m_Flags;  // custom flags
+    TGffOptions m_GffOptions;
+
     bool        m_RefSeqConventions;
 };
 
