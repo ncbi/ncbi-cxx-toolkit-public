@@ -188,9 +188,12 @@ public:
     typedef pair<TOrf,TOrf>       TOrfPair;
     TOrfPair GetCds(const THit::TId & id, const vector<char> * seq_data = 0);
 
+    static size_t s_TestPolyA(const char * seq, size_t dim, size_t cds_stop = 0);
+
+
 protected:
 
-    // active ingredient :-)
+    // the spliced alignment computing object
     CRef<TAligner> m_aligner;
 
     // access to sequence data
@@ -266,7 +269,8 @@ protected:
                                             size_t range_right);
 
     TAligner::TScore x_Run(const char* seq1, const char* seq2);
-    size_t x_TestPolyA(void);
+
+    void   x_SplitQualifyingHits(THitRefs* phitrefs);
     void   x_SetPattern(THitRefs* hitrefs);
     bool   x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const;
     Uint4  x_GetGenomicExtent(const Uint4 query_extent, Uint4 max_ext = 0) const;
@@ -276,6 +280,9 @@ protected:
                           THit::TCoord start,
                           THit::TCoord finish,
                           bool retain);
+
+    static THitRef sx_NewHit(THit::TCoord q0, THit::TCoord q,
+                             THit::TCoord s0, THit::TCoord s);
 
     /// forbidden
     CSplign(const CSplign&);
