@@ -10,6 +10,13 @@
 #
 
 # Each line describes a single configuration
+# Supported variables:
+#     $ROOT is a source checkout root
+# Implicitly APP is looked for in $BUILD_ROOT/bin
+#            DLL and LIB are looked for in $BUILD_ROOT/lib
+APP: netscheduled netschedule_admin netschedule_check netschedule_control netschedule_control_old
+ETC: $ROOT/src/app/netschedule/netscheduled.ini
+
 # The format is as follows:
 # <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
 # Configuration script is relative to c++/compilers/unix/ .
