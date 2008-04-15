@@ -221,6 +221,39 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
 }
 
 
+void CNWFormatter::SSegment::ExtendLeft(int extent,
+                                        const char* seq1,
+                                        const char* seq2,
+                                        CConstRef<CSplicedAligner> aligner)
+{
+    m_details.resize(m_details.size() + extent);
+    copy(m_details.begin(), m_details.end(), m_details.begin() + extent);
+    while(--extent >= 0) {
+        m_details[extent] =(seq1[--m_box[0]] == seq2[--m_box[2]])? 'M': 'R';
+    }
+    Update(aligner.GetNonNullPointer());
+    if(m_annot.size() > 2 && m_annot[2] == '<') {
+        m_annot[0] = m_annot[1] = ' ';
+    }
+}
+
+void CNWFormatter::SSegment::ExtendRight(int extent,
+                                         const char* seq1,
+                                         const char* seq2,
+                                         CConstRef<CSplicedAligner> aligner)
+{
+    m_details.reserve(m_details.size() + extent);
+    while(--extent >= 0) {
+        m_details.push_back((seq1[++m_box[1]] == seq2[++m_box[3]])? 'M': 'R');
+    }
+    Update(aligner.GetNonNullPointer());
+    const size_t adim (m_annot.size());
+    if(adim > 2 && m_annot[adim - 3] == '>') {
+        m_annot[adim - 1] = m_annot[adim - 2] = ' ';
+    }
+}
+
+
 
 // try improving the segment by cutting it from the left
 void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
@@ -470,15 +503,443 @@ const char* CNWFormatter::SSegment::GetAcceptor() const
 
 
 bool CNWFormatter::SSegment::s_IsConsensusSplice(const char* donor,
-                                                 const char* acceptor)
+                                                 const char* acceptor,
+                                                 bool semi_as_cons)
 {
-  return donor && acceptor &&
-    (donor[0] == 'G' && (donor[1] == 'C' || donor[1] == 'T'))
-    &&
-    (acceptor[0] == 'A' && acceptor[1] == 'G');
+    bool rv;
+    if(semi_as_cons) {
+        rv = donor && acceptor &&
+            (donor[0] == 'G' && (donor[1] == 'C' || donor[1] == 'T'))
+            &&
+            (acceptor[0] == 'A' && acceptor[1] == 'G');
+    }
+    else {
+        rv = donor && acceptor 
+            && donor[0] == 'G' && donor[1] == 'T'
+            && acceptor[0] == 'A' && acceptor[1] == 'G';
+    }
+
+    return rv;
+}
+
+#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+
+void CNWFormatter::MakeSegments(deque<SSegment>* psegments) const
+{
+    const CNWAligner::TTranscript transcript (m_aligner->GetTranscript());
+    if(transcript.size() == 0) {
+        NCBI_THROW(CAlgoAlignException, eNoSeqData, g_msg_NoAlignment);
+    }
+
+    deque<SSegment>& segments (*psegments);
+    segments.resize(0);
+
+    bool esfL1, esfR1, esfL2, esfR2;
+    m_aligner->GetEndSpaceFree(&esfL1, &esfR1, &esfL2, &esfR2);
+    const size_t len2  (m_aligner->GetSeqLen2());
+    const char* start1 (m_aligner->GetSeq1());
+    const char* start2 (m_aligner->GetSeq2());
+    const char* p1     (start1);
+    const char* p2     (start2);
+    int tr_idx_hi0 (transcript.size() - 1), tr_idx_hi (tr_idx_hi0);
+    int tr_idx_lo0 (0), tr_idx_lo (tr_idx_lo0);
+
+    while(transcript[tr_idx_hi] == CNWAligner::eTS_SlackInsert
+          || transcript[tr_idx_hi] == CNWAligner::eTS_SlackDelete)
+    {
+        if(transcript[tr_idx_hi] == CNWAligner::eTS_SlackInsert) {
+            ++p2;
+        }
+        else {
+            ++p1;
+        }
+        --tr_idx_hi;
+    }
+
+    if(esfL1 && transcript[tr_idx_hi0] == CNWAligner::eTS_Insert) {
+        while(esfL1 && transcript[tr_idx_hi] == CNWAligner::eTS_Insert) {
+            --tr_idx_hi;
+            ++p2;
+        }
+    }
+
+    if(esfL2 && transcript[tr_idx_hi0] == CNWAligner::eTS_Delete) {
+        while(esfL2 && transcript[tr_idx_hi] == CNWAligner::eTS_Delete) {
+            --tr_idx_hi;
+            ++p1;
+        }
+    }
+
+    if(esfR1 && transcript[tr_idx_lo0] == CNWAligner::eTS_Insert) {
+        while(esfR1 && transcript[tr_idx_lo] == CNWAligner::eTS_Insert) {
+            ++tr_idx_lo;
+        }
+    }
+
+    if(esfR2 && transcript[tr_idx_lo0] == CNWAligner::eTS_Delete) {
+        while(esfR2 && transcript[tr_idx_lo] == CNWAligner::eTS_Delete) {
+            ++tr_idx_lo;
+        }
+    }
+
+    vector<char> trans_ex (tr_idx_hi - tr_idx_lo + 1);
+
+    for(int tr_idx (tr_idx_hi); tr_idx >= tr_idx_lo; ) {
+
+        const char * p1_beg (p1), * p1_x (0);
+        const char * p2_beg (p2);
+        size_t matches (0), exon_aln_size (0), exon_aln_size_x(0);
+        int tr_idx_x (-1);
+
+        vector<char>::iterator ii_ex (trans_ex.begin()), ii_ex_x (0);
+        size_t cons_dels (0);
+        const size_t max_cons_dels (25);
+        while(tr_idx >= tr_idx_lo && transcript[tr_idx] < CNWAligner::eTS_Intron) {
+                
+            bool noins (transcript[tr_idx] != CNWAligner::eTS_Insert);
+            bool nodel (transcript[tr_idx] != CNWAligner::eTS_Delete);
+            if(noins && nodel) {
+                
+                if(cons_dels > max_cons_dels) {
+                    break;
+                }
+
+                cons_dels = 0;
+
+                if(*p1++ == *p2++) {
+                    ++matches;
+                    *ii_ex++ = 'M';
+                }
+                else {
+                    *ii_ex++ = 'R';
+                }
+            } else if(noins) {
+
+                if(cons_dels == 0) {
+                    p1_x = p1;
+                    ii_ex_x = ii_ex;
+                    exon_aln_size_x = exon_aln_size;
+                    tr_idx_x = tr_idx;
+                }
+                
+                ++p1;
+                *ii_ex++ = 'D';
+                ++cons_dels;
+            } else {
+
+                ++p2;
+                *ii_ex++ = 'I';
+                cons_dels = 0;
+            }
+            --tr_idx;
+            ++exon_aln_size;
+        }
+
+        if(cons_dels > max_cons_dels) {
+            swap(p1, p1_x);
+            swap(ii_ex, ii_ex_x);
+            swap(exon_aln_size, exon_aln_size_x);
+            swap(tr_idx, tr_idx_x);
+        }
+
+        if(exon_aln_size > 0) {
+
+            segments.push_back(SSegment());
+            SSegment& s = segments.back();
+
+            s.m_exon = true;
+            s.m_idty = float(matches) / exon_aln_size;
+            s.m_len = exon_aln_size;
+
+            size_t beg1 (p1_beg - start1), end1 (p1 - start1 - 1);
+            size_t beg2 (p2_beg - start2), end2 (p2 - start2 - 1);
+
+            s.m_box[0] = beg1;
+            s.m_box[1] = end1;
+            s.m_box[2] = beg2;
+            s.m_box[3] = end2;
+
+            char c1 ((p2_beg >= start2 + 2)? *(p2_beg - 2): ' ');
+            char c2 ((p2_beg >= start2 + 1)? *(p2_beg - 1): ' ');
+            char c3 ((p2 < start2 + len2)? *(p2): ' ');
+            char c4 ((p2 < start2 + len2 - 1)? *(p2+1): ' ');
+
+            s.m_annot.resize(10);
+            s.m_annot[0] = c1;
+            s.m_annot[1] = c2;
+            const string s_exontag ("<exon>");
+            copy(s_exontag.begin(), s_exontag.end(), s.m_annot.begin() + 2);
+            s.m_annot[8] = c3;
+            s.m_annot[9] = c4;
+            s.m_details.resize(ii_ex - trans_ex.begin());
+            copy(trans_ex.begin(), ii_ex, s.m_details.begin());
+            s.Update(m_aligner);
+        }
+
+        if(cons_dels > max_cons_dels) {
+
+            segments.push_back(SSegment());
+            SSegment& s (segments.back());
+
+            s.m_exon = false;
+            s.m_idty = 0;
+            s.m_len = exon_aln_size_x - exon_aln_size;
+
+            size_t beg1 (p1 - start1),     end1 (p1_x - start1 - 1);
+            size_t beg2 (0), end2 (0);
+
+            s.m_box[0] = beg1;
+            s.m_box[1] = end1;
+            s.m_box[2] = beg2;
+            s.m_box[3] = end2;
+
+            s.m_annot = "<gap>";
+            s.m_details.resize(ii_ex_x - ii_ex);
+            copy(ii_ex, ii_ex_x, s.m_details.begin());
+
+            swap(p1,            p1_x);
+            swap(ii_ex,         ii_ex_x);
+            swap(exon_aln_size, exon_aln_size_x);
+            swap(tr_idx,        tr_idx_x);
+        }
+
+        if(transcript[tr_idx] == CNWAligner::eTS_SlackInsert 
+           || transcript[tr_idx] == CNWAligner::eTS_SlackDelete)
+        {
+            break;
+        }
+
+        // find next exon
+        while(tr_idx >= tr_idx_lo && (transcript[tr_idx] == CNWAligner::eTS_Intron)) {
+            --tr_idx;
+            ++p2;
+        }
+    }
 }
 
 
+void CNWFormatter::AsText(string* output, ETextFormatType type, size_t line_width)
+  const
+{
+    CNcbiOstrstream ss;
+
+    const CNWAligner::TTranscript transcript = m_aligner->GetTranscript();
+    if(transcript.size() == 0) {
+        NCBI_THROW(CAlgoAlignException,
+                   eNoSeqData,
+                   g_msg_NoAlignment);
+    }
+
+    const string strid_query = m_Seq1Id->GetSeqIdString(true);
+    const string strid_subj = m_Seq2Id->GetSeqIdString(true);
+
+    switch (type) {
+
+    case eFormatType1: {
+
+        ss << '>' << strid_query << '\t' << strid_subj << endl;
+
+        vector<char> v1, v2;
+        unsigned i1 (0), i2 (0);
+        size_t aln_size (x_ApplyTranscript(&v1, &v2));
+        for (size_t i = 0;  i < aln_size; ) {
+
+            ss << i << '\t' << i1 << ':' << i2 << endl;
+            int i0 = i;
+            for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width; ++i, ++jPos) {
+                char c1 (v1[i0 + jPos]);
+                ss << c1;
+                if(c1 != '-' && c1 != 'x' && c1 != '+') ++i1;
+            }
+            ss << endl;
+            
+            string marker_line(line_width, ' ');
+            i = i0;
+            for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width; ++i, ++jPos) {
+                char c1 (v1[i0 + jPos]);
+                char c2 (v2[i0 + jPos]);
+                ss << c2;
+                if(c2 != '-' && c2 != '+' && c2 != 'x')
+                    i2++;
+                if(c2 != c1 && c2 != '-' && c1 != '-' && c1 != '+' && c1 != 'x')
+                    marker_line[jPos] = '^';
+            }
+            ss << endl << marker_line << endl;
+        }
+    }
+    break;
+
+    case eFormatType2: {
+
+        ss << '>' << strid_query << '\t' << strid_subj << endl;
+
+        vector<char> v1, v2;
+        unsigned i1 (0), i2 (0);
+        size_t aln_size (x_ApplyTranscript(&v1, &v2));
+        for (size_t i = 0;  i < aln_size; ) {
+            ss << i << '\t' << i1 << ':' << i2 << endl;
+            int i0 = i;
+            for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width; ++i, ++jPos) {
+                char c (v1[i0 + jPos]);
+                ss << c;
+                if(c != '-' && c != '+' && c != 'x') ++i1;
+            }
+            ss << endl;
+            
+            string line2 (line_width, ' ');
+            string line3 (line_width, ' ');
+            i = i0;
+            for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width; ++i, ++jPos) {
+                char c1 (v1[i0 + jPos]);
+                char c2 (v2[i0 + jPos]);
+                if(c2 != '-' && c2 != '+' && c2 != 'x') i2++;
+                if(c2 == c1) line2[jPos] = '|';
+                line3[jPos] = c2;
+            }
+            ss << line2 << endl << line3 << endl << endl;
+        }
+    }
+    break;
+
+    case eFormatAsn: {
+
+        CRef<CSeq_align> sa = AsSeqAlign(0, eNa_strand_plus,
+                                         0, eNa_strand_plus);
+        CObjectOStreamAsn asn_stream (ss);
+        asn_stream << *sa;
+        asn_stream << Separator;
+    }
+    break;
+
+    case eFormatFastA: {
+        vector<char> v1, v2;
+        size_t aln_size (x_ApplyTranscript(&v1, &v2));
+        
+        ss << '>' << strid_query << endl;
+        const vector<char>* pv = &v1;
+        for(size_t i = 0; i < aln_size; ) {
+            for(size_t j = 0; j < line_width && i < aln_size; ++j, ++i) {
+                ss << (*pv)[i];
+            }
+            ss << endl;
+        }
+
+        ss << '>' << strid_subj << endl;
+        pv = &v2;
+        for(size_t i = 0; i < aln_size; ) {
+            for(size_t j = 0; j < line_width && i < aln_size; ++j, ++i) {
+                ss << (*pv)[i];
+            }
+            ss << endl;
+        }
+    }
+    break;
+    
+    case eFormatExonTable:
+    case eFormatExonTableEx:  {
+
+        ss.precision(3);
+
+        typedef deque<SSegment> TSegments;
+        TSegments segments;
+        MakeSegments(&segments);
+        ITERATE(TSegments, ii, segments) {
+
+            ss << strid_query << '\t' << strid_subj << '\t';
+            ss << ii->m_idty << '\t' << ii->m_len << '\t';
+            copy(ii->m_box, ii->m_box + 4, 
+                 ostream_iterator<size_t>(ss,"\t"));
+            ss << '\t' << ii->m_annot;
+            if(type == eFormatExonTableEx) {
+                ss << '\t' << ii->m_details;
+            }
+            ss << endl;
+        }
+    }
+    break;
+
+    default:
+        NCBI_THROW(CAlgoAlignException, eBadParameter, "Incorrect format specified");
+    }
+
+    *output = CNcbiOstrstreamToString(ss);
+}
+
+
+
+// Transform source sequences according to the transcript.
+// Write the results to v1 and v2 leaving source sequences intact.
+// Return alignment size.
+size_t CNWFormatter::x_ApplyTranscript(vector<char>* pv1, vector<char>* pv2)
+    const
+{
+    const CNWAligner::TTranscript transcript = m_aligner->GetTranscript();
+
+    vector<char>& v1 (*pv1);
+    vector<char>& v2 (*pv2);
+
+    vector<CNWAligner::ETranscriptSymbol>::const_reverse_iterator
+        ib = transcript.rbegin(),
+        ie = transcript.rend(),
+        ii;
+
+    const char* iv1 (m_aligner->GetSeq1());
+    const char* iv2 (m_aligner->GetSeq2());
+    v1.clear();
+    v2.clear();
+
+    for (ii = ib;  ii != ie;  ii++) {
+
+        CNWAligner::ETranscriptSymbol ts (*ii);
+        char c1, c2;
+        switch ( ts ) {
+
+        case CNWAligner::eTS_Insert:
+            c1 = '-';
+            c2 = *iv2++;
+            break;
+
+        case CNWAligner::eTS_SlackInsert:
+            c1 = 'x';
+            c2 = *iv2++;
+            break;
+
+        case CNWAligner::eTS_Delete:
+            c2 = '-';
+            c1 = *iv1++;
+            break;
+
+
+        case CNWAligner::eTS_SlackDelete:
+            c2 = 'x';
+            c1 = *iv1++;
+            break;
+
+        case CNWAligner::eTS_Match:
+        case CNWAligner::eTS_Replace:
+            c1 = *iv1++;
+            c2 = *iv2++;
+            break;
+
+        case CNWAligner::eTS_Intron:
+            c1 = '+';
+            c2 = *iv2++;
+            break;
+
+        default:
+            c1 = c2 = '?';
+            break;
+        }
+
+        v1.push_back(c1);
+        v2.push_back(c2);
+    }
+
+    return v1.size();
+}
+
+
+#else
 
 void CNWFormatter::MakeSegments(deque<SSegment>* psegments) const
 {
@@ -814,119 +1275,7 @@ size_t CNWFormatter::x_ApplyTranscript(vector<char>* pv1, vector<char>* pv2)
 }
 
 
-/*
+#endif
 
- {
-        ss.precision(3);
-        bool esfL1, esfR1, esfL2, esfR2;
-        m_aligner->GetEndSpaceFree(&esfL1, &esfR1, &esfL2, &esfR2);
-        const size_t len2 = m_aligner->GetSeqLen2();
-        const char* start1 = m_aligner->GetSeq1();
-        const char* start2 = m_aligner->GetSeq2();
-        const char* p1 = start1;
-        const char* p2 = start2;
-        int tr_idx_hi0 = transcript.size() - 1, tr_idx_hi = tr_idx_hi0;
-        int tr_idx_lo0 = 0, tr_idx_lo = tr_idx_lo0;
-
-        if(esfL1 && transcript[tr_idx_hi0] == CNWAligner::eTS_Insert) {
-            while(esfL1 && transcript[tr_idx_hi] == CNWAligner::eTS_Insert) {
-                --tr_idx_hi;
-                ++p2;
-            }
-        }
-
-        if(esfL2 && transcript[tr_idx_hi0] == CNWAligner::eTS_Delete) {
-            while(esfL2 && transcript[tr_idx_hi] == CNWAligner::eTS_Delete) {
-                --tr_idx_hi;
-                ++p1;
-            }
-        }
-
-        if(esfR1 && transcript[tr_idx_lo0] == CNWAligner::eTS_Insert) {
-            while(esfR1 && transcript[tr_idx_lo] == CNWAligner::eTS_Insert) {
-                ++tr_idx_lo;
-            }
-        }
-
-        if(esfR2 && transcript[tr_idx_lo0] == CNWAligner::eTS_Delete) {
-            while(esfR2 && transcript[tr_idx_lo] == CNWAligner::eTS_Delete) {
-                ++tr_idx_lo;
-            }
-        }
-
-        bool type_ex = type == eFormatExonTableEx;
-        vector<char> trans_ex (tr_idx_hi - tr_idx_lo + 1);
-
-        for(int tr_idx = tr_idx_hi; tr_idx >= tr_idx_lo;) {
-            const char* p1_beg = p1;
-            const char* p2_beg = p2;
-            size_t matches = 0, exon_aln_size = 0;
-
-            vector<char>::iterator ii_ex = trans_ex.begin();
-            while(tr_idx >= tr_idx_lo && 
-                  transcript[tr_idx] < CNWAligner::eTS_Intron) {
-                
-                bool noins = transcript[tr_idx] != CNWAligner::eTS_Insert;
-                bool nodel = transcript[tr_idx] != CNWAligner::eTS_Delete;
-                if(noins && nodel) {
-                    if(*p1++ == *p2++) {
-                        ++matches;
-                        if(type_ex) *ii_ex++ = 'M';
-                    }
-                    else {
-                        if(type_ex) *ii_ex++ = 'R';
-                    }
-                } else if( noins ) {
-                    ++p1;
-                    if(type_ex) *ii_ex++ = 'D';
-                } else {
-                    ++p2;
-                    if(type_ex) *ii_ex++ = 'I';
-                }
-                --tr_idx;
-                ++exon_aln_size;
-            }
-
-            if(exon_aln_size > 0) {
-
-                ss << strid_query << '\t' << strid_subj << '\t';
-
-                float identity = float(matches) / exon_aln_size;
-                ss << identity << '\t' << exon_aln_size << '\t';
-                size_t beg1  = p1_beg - start1, end1 = p1 - start1 - 1;
-                size_t beg2  = p2_beg - start2, end2 = p2 - start2 - 1;
-		if(beg1 <= end1) {
-		    ss << beg1 << '\t' << end1 << '\t';
-		}
-		else {
-		    ss << "-\t-\t";
-		}
-		ss << beg2 << '\t' << end2 << '\t';
-                char c1 = (p2_beg >= start2 + 2)? *(p2_beg - 2): ' ';
-                char c2 = (p2_beg >= start2 + 1)? *(p2_beg - 1): ' ';
-                char c3 = (p2 < start2 + len2)? *(p2): ' ';
-                char c4 = (p2 < start2 + len2 - 1)? *(p2+1): ' ';
-                ss << c1 << c2 << "<exon>" << c3 << c4;
-
-                if(type == eFormatExonTableEx) {
-                    ss << '\t';
-                    copy(trans_ex.begin(), ii_ex, ostream_iterator<char>(ss));
-                }
-                ss << endl;
-            }
-
-            // find next exon
-            while(tr_idx >= tr_idx_lo &&
-                  (transcript[tr_idx] == CNWAligner::eTS_Intron)) {
-
-                --tr_idx;
-                ++p2;
-            }
-        }
-    }
-
-
-
-*/
 
 END_NCBI_SCOPE

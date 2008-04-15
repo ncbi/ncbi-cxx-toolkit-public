@@ -47,9 +47,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-// IUPACna alphabet (default)
-const char g_nwaligner_nucleotides [] = "AGTCBDHKMNRSVWY";
-
 
 CNWAligner::CNWAligner()
     : m_Wm(GetDefaultWm()),
@@ -204,15 +201,15 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 
     vector<TScore> stl_rowV (N2), stl_rowF(N2);
 
-    TScore* rowV    = &stl_rowV[0];
-    TScore* rowF    = &stl_rowF[0];
+    TScore * rowV    = &stl_rowV[0];
+    TScore * rowF    = &stl_rowF[0];
 
-    TScore* pV = rowV - 1;
+    TScore * pV = rowV - 1;
 
-    const char* seq1 = m_Seq1 + data->m_offset1 - 1;
-    const char* seq2 = m_Seq2 + data->m_offset2 - 1;
+    const char * seq1 = m_Seq1 + data->m_offset1 - 1;
+    const char * seq2 = m_Seq2 + data->m_offset2 - 1;
 
-    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
+    const TNCBIScore (* sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
     m_terminate = false;
 
@@ -237,7 +234,6 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
     TScore wg1 = m_Wg, ws1 = m_Ws;
 
     // index calculation: [i,j] = i*n2 + j
-
     CBacktraceMatrix4 backtrace_matrix (N1 * N2);
     backtrace_matrix.SetAt(0, 0);
 
@@ -692,15 +688,15 @@ void CNWAligner::SetTranscript(const TTranscript& transcript)
 // Return transcript as a readable string
 string CNWAligner::GetTranscriptString(void) const
 {
-    const size_t dim = m_Transcript.size();   
+    const int dim (m_Transcript.size());
     string s;
     s.resize(dim);
-    size_t i1 = 0, i2 = 0, i = 0;
+    size_t i1 (0), i2 (0), i (0);
 
-    for (int k = dim - 1; k >= 0; --k) {
+    for (int k (dim - 1); k >= 0; --k) {
 
-        ETranscriptSymbol c0 = m_Transcript[k];
-        char c = 0;
+        ETranscriptSymbol c0 (m_Transcript[k]);
+        char c (0);
         switch ( c0 ) {
 
             case eTS_Match: {
@@ -733,6 +729,22 @@ string CNWAligner::GetTranscriptString(void) const
             }
             break;
 
+#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+
+            case eTS_SlackInsert: {
+                c = 'i';
+                ++i2;
+            }
+            break;
+
+
+            case eTS_SlackDelete: {
+                c = 'd';
+                ++i1;
+            }
+            break;
+
+#endif
             case eTS_Delete: {
                 c = 'D';
                 ++i1;
@@ -762,8 +774,7 @@ string CNWAligner::GetTranscriptString(void) const
 }
 
 
-void CNWAligner::SetProgressCallback ( FProgressCallback prg_callback,
-				       void* data )
+void CNWAligner::SetProgressCallback(FProgressCallback prg_callback, void* data)
 {
     m_prg_callback = prg_callback;
     m_prg_info.m_data = data;
@@ -850,35 +861,36 @@ bool CNWAligner::x_CheckMemoryLimit()
 {
     const size_t elem_size (GetElemSize());
     const size_t gdim (m_guides.size());
+    double mem (0);
 
     if(gdim) {
 
-        size_t dim1 = m_guides[0], dim2 = m_guides[2];
-        double mem = double(dim1)*dim2*elem_size;
-        if(mem >= m_MaxMem) {
-            return false;
-        }
-        for(size_t i = 4; i < gdim; i += 4) {
-            dim1 = m_guides[i] - m_guides[i-3] + 1;
-            dim2 = m_guides[i + 2] - m_guides[i-1] + 1;
-            mem = double(dim1)*dim2*elem_size;
-            if(mem >= m_MaxMem) {
-                return false;
+        size_t dim1 (m_guides[0]), dim2 (m_guides[2]);
+        mem = double(dim1) * dim2 * elem_size;
+        if(mem <= m_MaxMem) {
+
+            for(size_t i (4); i < gdim; i += 4) {
+
+                dim1 = m_guides[i] - m_guides[i-3] + 1;
+                dim2 = m_guides[i + 2] - m_guides[i-1] + 1;
+                mem = double(dim1) * dim2 * elem_size;
+                if(mem > m_MaxMem) {
+                    break;
+                }
+            }
+
+            if(mem <= m_MaxMem) {
+                dim1 = m_SeqLen1 - m_guides[gdim-3];
+                dim2 = m_SeqLen2 - m_guides[gdim-1];
+                mem = double(dim1) * dim2 * elem_size;
             }
         }
-        dim1 = m_SeqLen1 - m_guides[gdim-3];
-        dim2 = m_SeqLen2 - m_guides[gdim-1];
-        mem = double(dim1)*dim2*elem_size;
-        if(mem >= m_MaxMem) {
-            return false;
-        }
-
-        return true;
     }
     else {
-        double mem (double(m_SeqLen1 + 1)*(m_SeqLen2 + 1)*elem_size);
-        return mem < m_MaxMem;
+        mem = double(m_SeqLen1 + 1) * (m_SeqLen2 + 1) * elem_size;
     }
+
+    return mem < m_MaxMem;
 }
 
 
@@ -904,35 +916,44 @@ CNWAligner::TScore CNWAligner::ScoreFromTranscript(
                    g_msg_InconsistentArguments);
     }
 
-    const size_t dim = transcript.size();
+    const size_t dim (transcript.size());
     if(dim == 0) {
         return 0;
     }
 
-    TScore score = 0;
+    TScore score (0);
 
-    const char* p1 = m_Seq1 + start1;
-    const char* p2 = m_Seq2 + start2;
+    const char* p1 (m_Seq1 + start1);
+    const char* p2 (m_Seq2 + start2);
 
-    int state1;   // 0 = normal, 1 = gap, 2 = intron
-    int state2;   // 0 = normal, 1 = gap
+    int state1;   // 0 = normal, 1 = gap;
+    int state2;   // 0 = normal, 1 = gap;
 
-    switch(transcript[0]) {
+    size_t i (0);
+    switch(transcript[i]) {
+
     case eTS_Match:
-    case eTS_Replace:  state1 = state2 = 0; break;
-    case eTS_Insert:   state1 = 1; state2 = 0; score += m_Wg; break;
-    case eTS_Delete:   state1 = 0; state2 = 1; score += m_Wg; break;
-    default: {
-        NCBI_THROW( CAlgoAlignException, eInternal,
-                    g_msg_InvalidTranscriptSymbol );
-        }
+    case eTS_Replace:
+        state1 = state2 = 0;
+        break;
+
+    case eTS_Insert:
+        state1 = 1; state2 = 0; score += m_Wg;
+        break;
+
+    case eTS_Delete:
+        state1 = 0; state2 = 1; score += m_Wg;
+        break;
+
+    default:
+        NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidTranscriptSymbol);
     }
 
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
-    for(size_t i = 0; i < dim; ++i) {
+    for(; i < dim; ++i) {
 
-        ETranscriptSymbol ts = transcript[i];
+        ETranscriptSymbol ts (transcript[i]);
 
         switch(ts) {
 
@@ -969,11 +990,8 @@ CNWAligner::TScore CNWAligner::ScoreFromTranscript(
         }
         break;
         
-        default: {
-
-            NCBI_THROW(CAlgoAlignException, eInternal,
-                       g_msg_InvalidTranscriptSymbol);
-        }
+        default:
+            NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidTranscriptSymbol);
         }
     }
 

@@ -290,7 +290,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     if(!m_terminate) {
         x_DoBackTrace(backtrace_matrix, data);
     }
-    
+
     return V;
 }
 
