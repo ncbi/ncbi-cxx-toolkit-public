@@ -108,7 +108,7 @@ string CSplignFormatter::AsExonTable(
     const bool print_exon_scores = (flags & fNoExonScores)? false: true;
     
     ITERATE(CSplign::TResults, ii, *results) {
-        
+
         for(size_t i (0), seg_dim (ii->m_Segments.size()); i < seg_dim; ++i) {
             
             const CSplign::TSegment& seg (ii->m_Segments[i]);

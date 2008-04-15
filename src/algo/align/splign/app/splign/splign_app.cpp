@@ -49,7 +49,6 @@
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 
-#include <objmgr/object_manager.hpp>
 #include <objmgr/seq_vector.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -70,6 +69,7 @@ namespace {
     const char kDirAntisense[] = "antisense";
     const char kDirBoth[]      = "both";
     const char kDirAuto[]      = "auto";
+    const char kDirDefault[]   = "default";
 }
 
 
@@ -78,18 +78,16 @@ BEGIN_NCBI_SCOPE
 void CSplignApp::Init()
 {
 #ifndef GENOME_PIPELINE
-    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
+    HideStdArgs(fHideHelp|fHideLogfile|fHideConffile|fHideVersion|fHideDryRun);
 #endif
 
-    SetVersion(CVersionInfo(1, 28, 0, "Splign"));
-    auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
-
-    string program_name ("Splign v.1.28");
-
+    SetVersion(CVersionInfo(1, 31, 0, "Splign"));
+    string program_name ("Splign v.1.31");
 #ifdef GENOME_PIPELINE
     program_name += 'p';
 #endif
 
+    auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(), program_name);
     
     argdescr->AddOptionalKey
@@ -106,7 +104,8 @@ void CSplignApp::Init()
          "[Batch mode] Externally computed input blast compartments "
          "specified in blast tabular format with one empty line as separator. "
          "No built-in compartmentization will occur. "
-         "The hits must be collated by subject and query.",
+         "For best performance, the compartments must be collated "
+         "by subject and query (e.g. as produced by compart)",
          CArgDescriptions::eInputFile);
 
     argdescr->AddOptionalKey
@@ -123,22 +122,24 @@ void CSplignApp::Init()
 
     argdescr->AddOptionalKey
         ("query", "query",
-         "[Pairwise mode] FASTA file with the spliced sequence. "
-         "Must be used with -subj.",
+         "[Pairwise mode] FASTA file with the spliced sequence.",
          CArgDescriptions::eInputFile);
     
     argdescr->AddOptionalKey
         ("subj", "subj",
-         "[Pairwise mode] FASTA file with the genomic sequence(s). "
-         "Must be used with -query. ",
+         "[Pairwise mode] FASTA file with the genomic sequence(s).",
          CArgDescriptions::eInputFile);
     
+    argdescr->AddFlag
+        ("disc",
+         "[Pairwise mode] Use discontiguous megablast to facilitate "
+         "alignment of more divergent sequences such as those "
+         "from different organisms (cross-species alignment).");
+
     argdescr->AddDefaultKey
         ("W", "mbwordsize", "[Pairwise mode] Megablast word size",
          CArgDescriptions::eInteger,
          "28");
-
-    CSplignArgUtil::SetupArgDescriptions(argdescr.get());
 
 #ifdef GENOME_PIPELINE
 
@@ -158,38 +159,50 @@ void CSplignApp::Init()
 
 #endif
     
-    argdescr->AddDefaultKey
-        ("log", "log", "Splign log file",
-         CArgDescriptions::eOutputFile,
-         "splign.log");
-    
-    argdescr->AddOptionalKey
-        ("asn", "asn", "ASN.1 output file name", 
-         CArgDescriptions::eOutputFile);
-
-    argdescr->AddOptionalKey
-        ("aln", "aln", "Pairwise alignment output file name", 
-         CArgDescriptions::eOutputFile);
-    
-    argdescr->AddFlag("cross",
-                      "[Pairwise mode] Use discontiguous megablast to facilitate "
-                      "alignment of more divergent sequences such as those "
-                      "from different organisms (cross-species alignment).");
+    CSplignArgUtil::SetupArgDescriptions(argdescr.get());
 
     argdescr->AddDefaultKey
         ("direction", 
          "direction", 
-         "Query sequence orientation", 
-         CArgDescriptions::eString,
-         kDirSense);
+         "Query sequence orientation. "
+         "Auto orientation begins with the longest ORF direction (d1) "
+         "and proceeds with the opposite direction (d2) "
+         "if found a non-consensus splice in d1 or poly-a tail in d2. "
+
+#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+         "Default translates to 'auto' in mRNA and "
+         "'both' in EST mode", 
+         CArgDescriptions::eString,   kDirDefault
+#else
+         , CArgDescriptions::eString, kDirSense
+#endif
+         );
+
+    argdescr->AddDefaultKey("log", "log", "Splign log file",
+                            CArgDescriptions::eOutputFile,
+                            "splign.log");
     
-    CArgAllow_Strings* constrain_direction = new CArgAllow_Strings;
-    constrain_direction->Allow(kDirSense)->Allow(kDirAntisense)
-        ->Allow(kDirBoth)->Allow(kDirAuto);
+    argdescr->AddOptionalKey("asn", "asn", "ASN.1 output file name", 
+                             CArgDescriptions::eOutputFile);
+
+    argdescr->AddOptionalKey("aln", "aln", "Pairwise alignment output file name", 
+                             CArgDescriptions::eOutputFile);
+    
+    CArgAllow_Strings * constrain_direction (new CArgAllow_Strings);
+    constrain_direction
+#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+        ->Allow(kDirDefault)
+#endif
+        ->Allow(kDirSense)
+        ->Allow(kDirAntisense)
+        ->Allow(kDirBoth)
+        ->Allow(kDirAuto);
     
     argdescr->SetConstraint("direction", constrain_direction);
 
     SetupArgDescriptions(argdescr.release());
+
+    m_ObjMgr = CObjectManager::GetInstance();
 }
 
 
@@ -547,11 +560,11 @@ void CSplignApp::x_LogCompartmentStatus(const THit::TId & query,
 
 
 CRef<blast::CBlastOptionsHandle> 
-CSplignApp::x_SetupBlastOptions(bool cross)
+CSplignApp::x_SetupBlastOptions(bool use_disc)
 {
     USING_SCOPE(blast);
 
-    m_BlastProgram = cross? eDiscMegablast: eMegablast;
+    m_BlastProgram = use_disc? eDiscMegablast: eMegablast;
 
     CRef<CBlastOptionsHandle> blast_options_handle
         (CBlastOptionsFactory::Create(m_BlastProgram));
@@ -560,7 +573,7 @@ CSplignApp::x_SetupBlastOptions(bool cross)
 
     CBlastOptions& blast_opt = blast_options_handle->SetOptions();
 
-    if(!cross) {
+    if(!use_disc) {
 
         const CArgs& args = GetArgs();
         blast_opt.SetWordSize(args["W"].AsInteger());
@@ -649,12 +662,11 @@ void CSplignApp::x_DoIncremental(void)
     USING_SCOPE(objects);
     USING_SCOPE(blast);
 
-    const CArgs& args = GetArgs();
-    const string dbname = args["subjdb"].AsString();
+    const CArgs& args   (GetArgs());
+    const string dbname (args["subjdb"].AsString());
 
-    CRef<CObjectManager> objmgr (CObjectManager::GetInstance());
     CBlastDbDataLoader::RegisterInObjectManager(
-        *objmgr, dbname, CBlastDbDataLoader::eNucleotide, 
+        *m_ObjMgr, dbname, CBlastDbDataLoader::eNucleotide, 
         CObjectManager::eDefault);
 
     CRef<ILineReader> line_reader;
@@ -674,7 +686,7 @@ void CSplignApp::x_DoIncremental(void)
         for(CRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
             se.NotEmpty(); se = fasta_reader.ReadOneSeq()) 
         {
-            CRef<CScope> scope (new CScope(*objmgr));
+            CRef<CScope> scope (new CScope(*m_ObjMgr));
             scope->AddDefaults();
             scope->AddTopLevelSeqEntry(*se);
 
@@ -716,13 +728,12 @@ void CSplignApp::x_DoBatch3(void)
     USING_SCOPE(objects);
     USING_SCOPE(blast);
 
-    const CArgs& args = GetArgs();
-    const string dbname = args["querydb"].AsString();
-    const size_t W = args["W"].AsInteger();
+    const CArgs& args   (GetArgs());
+    const string dbname (args["querydb"].AsString());
+    const size_t W      (args["W"].AsInteger());
     
-    CRef<CObjectManager> objmgr (CObjectManager::GetInstance());
     CBlastDbDataLoader::RegisterInObjectManager(
-        *objmgr, dbname, CBlastDbDataLoader::eNucleotide, 
+        *m_ObjMgr, dbname, CBlastDbDataLoader::eNucleotide, 
         CObjectManager::eDefault);
 
     CRef<ILineReader> line_reader;
@@ -737,7 +748,7 @@ void CSplignApp::x_DoBatch3(void)
     for(CRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
         se.NotEmpty(); se = fasta_reader.ReadOneSeq()) 
     {
-        CRef<CScope> scope (new CScope(*objmgr));
+        CRef<CScope> scope (new CScope(*m_ObjMgr));
         scope->AddDefaults();
         scope->AddTopLevelSeqEntry(*se);
         m_Splign->SetScope() = scope;
@@ -875,7 +886,7 @@ int CSplignApp::Run()
 { 
     USING_SCOPE(objects);
 
-    const CArgs& args = GetArgs();    
+    const CArgs & args (GetArgs());
 
     // check that modes aren't mixed
 
@@ -886,17 +897,17 @@ int CSplignApp::Run()
     const bool is_query   = args["query"];
     const bool is_subj    = args["subj"];
 
-#ifdef GENOME_PIPELINE
     const bool is_comps   = args["comps"];
+
+#ifdef GENOME_PIPELINE
     const bool is_querydb = args["querydb"];
     const bool is_subjdb  = args["subjdb"];
 #else
-    const bool is_comps (false);
     const bool is_querydb = false;
     const bool is_subjdb = false;
 #endif
 
-    const bool is_cross   = args["cross"];
+    const bool use_disc_megablast (args["disc"]);
 
     if(is_mklds) {
 
@@ -945,7 +956,7 @@ int CSplignApp::Run()
     if(run_mode == eNotSet) {
         NCBI_THROW(CSplignAppException,
                    eBadParameter,
-                   "Incomplete or inconsistent set of input parameters." );
+                   "Incomplete or inconsistent set of arguments specified" );
     }   
 
     // open log stream
@@ -959,7 +970,7 @@ int CSplignApp::Run()
     
     // in pairwise, batch 2 or incremental mode, setup blast options
     if(run_mode != eBatch1 && run_mode != eBatch2) {
-        m_BlastOptionsHandle = x_SetupBlastOptions(is_cross);
+        m_BlastOptionsHandle = x_SetupBlastOptions(use_disc_megablast);
     }
 
     // splign and formatter setup    
@@ -972,12 +983,11 @@ int CSplignApp::Run()
     m_Formatter.Reset(new CSplignFormatter(*m_Splign));
 
     // do mode-specific preparations
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CRef<CScope> scope;
     CRef<CSeq_id> seqid_query, seqid_subj;
     if(run_mode == ePairwise) {
 
-        scope.Reset (new CScope(*objmgr));
+        scope.Reset (new CScope(*m_ObjMgr));
         scope->AddDefaults();
         seqid_query = x_ReadFastaSetId(args["query"], scope);
         seqid_subj  = x_ReadFastaSetId(args["subj"] , scope);
@@ -991,8 +1001,8 @@ int CSplignApp::Run()
         m_LDS_db.reset(ldsdb);
         m_LDS_db->Open();
         CLDS_DataLoader::RegisterInObjectManager(
-            *objmgr, *ldsdb, CObjectManager::eDefault);
-        scope.Reset (new CScope(*objmgr));
+            *m_ObjMgr, *ldsdb, CObjectManager::eDefault);
+        scope.Reset (new CScope(*m_ObjMgr));
         scope->AddDefaults();
     }
     else if(run_mode == eIncremental) {
@@ -1180,17 +1190,31 @@ size_t GetNonConsensusSpliceCount(const CSplign::TResults & splign_results)
 }
 
 
+struct SComplement
+{
+    char operator() (char c) {
+        switch(c) {
+        case 'A': return 'T';
+        case 'G': return 'C';
+        case 'T': return 'A';
+        case 'C': return 'G';
+        }
+        return c;
+    }
+};
+
+
 void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
                                THit::TCoord smin, THit::TCoord smax)
 {
 
 #ifdef GENOME_PIPELINE
     const CSplignFormatter::EFlags flags (CSplignFormatter::fNone);
-    const bool raw_hits (! args["comps"]);
 #else
     const CSplignFormatter::EFlags flags (CSplignFormatter::fNoExonScores);
-    const bool raw_hits (true);
 #endif
+
+    const bool raw_hits (!args["comps"]);
 
     if(hitrefs.size() == 0) {
         return;
@@ -1206,7 +1230,14 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
     
     m_Formatter->SetSeqIds(query, subj);
 
-    const string strand (args["direction"].AsString());
+    string strand (args["direction"].AsString());
+
+#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+    if(strand == kDirDefault) {
+        strand = (args["type"].AsString() == kQueryType_mRNA)? kDirAuto: kDirBoth;
+    }
+#endif
+
     CSplign::TResults splign_results;
 
     if(strand == kDirSense) {
@@ -1247,7 +1278,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
     }
     else {
 
-        // when in doubt - align both directions
+        // 'auto' means to align both directions when in doubt
 
         THitRefs hits0;
         ITERATE(THitRefs, ii, hitrefs) {
@@ -1265,16 +1296,34 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
         static size_t mid (1);
         size_t mid_first, mid_second;
 
-        // align in sense direction
+        // align in the longest ORF direction
         m_Splign->SetStrand(sense_first);
         m_Splign->SetStartModelId(mid);
         x_RunSplign(raw_hits, &hitrefs, smin, smax, &splign_results);
         mid_first = m_Splign->GetNextModelId();
 
-        // if there is a non-consensus splice, also align the opposite direction
+        // if there is a non-consensus splice, also align in the opposite direction
         const size_t nc_count (GetNonConsensusSpliceCount(splign_results));
 
-        if(nc_count > 0) {
+        // same if there is a poly-a in the opposite direction 
+        bool polya_found (false);
+        if(nc_count == 0) {
+            CRef<CScope> scope (m_Splign->GetScope());
+            CConstRef<CSeq_id> seqid_query (hits0.front()->GetQueryId());
+            CBioseq_Handle bh (scope->GetBioseqHandle(*seqid_query));
+                               CSeqVector sv (bh.GetSeqVector(CBioseq_Handle
+                                                              ::eCoding_Iupac));
+            string str;
+            sv.GetSeqData(0, sv.size(), str);
+            if(sense_first) {
+                reverse (str.begin(), str.end());
+                transform(str.begin(), str.end(), str.begin(), SComplement());
+            }
+            const size_t polya (CSplign::s_TestPolyA(str.data(), str.size()));
+            polya_found = (0 < polya && polya < str.size());
+        }
+
+        if(nc_count > 0 || polya_found) {
             m_Splign->SetStrand(!sense_first);
             m_Splign->SetStartModelId(mid);
             x_RunSplign(raw_hits, &hits0, smin, smax, &splign_results);
@@ -1287,7 +1336,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
     }
     
     cout << m_Formatter->AsExonTable(&splign_results, flags);
-        
+
     if(m_AsnOut) {
         *m_AsnOut << MSerial_AsnText 
                   << *(m_Formatter->AsSeqAlignSet(&splign_results))
@@ -1311,78 +1360,8 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
-#ifdef GENOME_PIPELINE
-
-// make old-style Splign index file
-void MakeIDX( istream* inp_istr, const size_t file_index, ostream* out_ostr )
-{
-    istream * inp = inp_istr? inp_istr: &cin;
-    ostream * out = out_ostr? out_ostr: &cout;
-    inp->unsetf(IOS_BASE::skipws);
-    char c0 = '\n', c;
-    while(inp->good()) {
-        c = inp->get();
-        if(c0 == '\n' && c == '>') {
-            CT_OFF_TYPE pos = inp->tellg() - CT_POS_TYPE(1);
-            string s;
-            *inp >> s;
-            *out << s << '\t' << file_index << '\t' << pos << endl;
-        }
-        c0 = c;
-    }
-}
-#endif
-
 int main(int argc, const char* argv[]) 
 {
-
-#ifdef GENOME_PIPELINE
-
-    // pre-scan for mkidx0
-    for(int i = 1; i < argc; ++i) {
-        if(0 == strcmp(argv[i], "-mkidx0")) {
-            
-            if(i + 1 == argc) {
-                char err_msg [] = 
-                    "ERROR: No FastA files specified to index. "
-                    "Please specify one or more FastA files after -mkidx0. "
-                    "Your system may support wildcards "
-                    "to specify multiple files.";
-                cerr << err_msg << endl;
-                return 1;
-            }
-            else {
-                ++i;
-            }
-            vector<string> fasta_filenames;
-            for(; i < argc; ++i) {
-                fasta_filenames.push_back(argv[i]);
-                // test
-                ifstream ifs (argv[i]);
-                if(ifs.fail()) {
-                    cerr << "ERROR: Unable to open " << argv[i] << endl;
-                    return 1;
-                }
-            }
-            
-            // write the list of files
-            const size_t files_count = fasta_filenames.size();
-            cout << "# This file was generated by Splign." << endl;
-            cout << "$$$FI" << endl;
-            for(size_t k = 0; k < files_count; ++k) {
-                cout << fasta_filenames[k] << '\t' << k << endl;
-            }
-            cout << "$$$SI" << endl;
-            for(size_t k = 0; k < files_count; ++k) {
-                ifstream ifs (fasta_filenames[k].c_str());
-                MakeIDX(&ifs, k, &cout);
-            }
-            
-            return 0;
-        }
-    }    
-
-#endif
-
-    return CSplignApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    const int rv (CSplignApp().AppMain(argc, argv, 0, eDS_Default, 0));
+    return rv;
 }

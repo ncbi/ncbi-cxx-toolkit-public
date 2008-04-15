@@ -47,6 +47,7 @@
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include <objtools/lds/lds.hpp>
 
+#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
@@ -120,14 +121,16 @@ protected:
                                             CRef<objects::CScope>);
 
     typedef map<int, CRef<CSeq_id> > TOidToSeqId;
-    TOidToSeqId     m_Oid2SeqId;
+    TOidToSeqId                         m_Oid2SeqId;
 
-    string                          m_firstline;
-    THitRefs                        m_PendingHits;
+    string                              m_firstline;
+    THitRefs                            m_PendingHits;
 
-    size_t                          m_CurHitRef;
+    size_t                              m_CurHitRef;
 
     auto_ptr<objects::CLDS_Database>    m_LDS_db;
+
+    CRef<objects::CObjectManager>       m_ObjMgr;
 };
 
 END_NCBI_SCOPE

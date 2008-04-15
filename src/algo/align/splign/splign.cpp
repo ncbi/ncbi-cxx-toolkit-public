@@ -332,6 +332,79 @@ void CSplign::ClearMem(void)
 }
 
 
+CSplign::THitRef CSplign::sx_NewHit(THit::TCoord q0, THit::TCoord q,
+                                    THit::TCoord s0, THit::TCoord s)
+{
+    THitRef hr (new THit);
+    hr->SetQueryStart(q0);
+    hr->SetSubjStart(s0);
+    hr->SetQueryStop(q - 1);
+    hr->SetSubjStop(s - 1);
+    hr->SetLength(q - q0);
+    hr->SetMismatches(0);
+    hr->SetGaps(0);
+    hr->SetEValue(0);
+    hr->SetScore(2*(q - q0));
+    hr->SetIdentity(1);
+    return hr;
+}
+
+
+void CSplign::x_SplitQualifyingHits(THitRefs* phitrefs)
+{
+    const char * Seq1 (&m_mrna.front());
+    const char * Seq2 (&m_genomic.front());
+    THitRefs rv;
+    ITERATE(THitRefs, ii, (*phitrefs)) {
+
+        const THitRef & h (*ii);
+        const double idty (h->GetIdentity());
+        const bool diag (h->GetGaps() == 0 && h->GetQuerySpan() == h->GetSubjSpan());
+        if(idty == 1 || idty < .95 || h->GetLength() < 100 || !diag) {
+            rv.push_back(h);
+        }
+        else {
+
+            int q0 (-1), s0 (-1), q1 (h->GetQueryMax());
+            int q (h->GetQueryMin()), s (h->GetSubjMin());
+            size_t new_hits (0);
+            while(q <= q1) {
+                if(Seq1[q++] != Seq2[s++]) {
+                    if(q0 != -1 && q >= q0 + int(m_MinPatternHitLength)) {
+                        THitRef hr (sx_NewHit(q0, q, s0, s));
+                        hr->SetQueryId(h->GetQueryId());
+                        hr->SetSubjId(h->GetSubjId());
+                        rv.push_back(hr);
+                        ++new_hits;
+                    }
+                    q0 = s0 = -1;
+                }
+                else {
+                    if(q0 == -1) {
+                        q0 = q;
+                        s0 = s;
+                    }
+                }
+            }
+
+            if(q0 != -1 && q >= q0 + int(m_MinPatternHitLength)) {
+                THitRef hr (sx_NewHit(q0, q, s0, s));
+                hr->SetQueryId(h->GetQueryId());
+                hr->SetSubjId(h->GetSubjId());
+                rv.push_back(hr);
+                ++new_hits;
+            }
+
+            if(new_hits == 0) {
+                rv.push_back(h);
+            }
+        }
+    }
+
+    *phitrefs = rv;
+}
+
+
 void CSplign::x_SetPattern(THitRefs* phitrefs)
 {
     m_alnmap.clear();
@@ -344,7 +417,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 
     // check that no two consecutive hits are farther than the max intron
     // (extra short hits skipped)
-    const size_t max_intron (1u << 20);
+    const size_t max_intron (CCompartmentFinder<THit>::s_GetDefaultMaxIntron());
     size_t prev (0);
     NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
 
@@ -367,6 +440,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
                 NCBI_THROW(CAlgoAlignException, eIntronTooLong, errmsg);
             }
         }
+
         prev = h->GetSubjStop();
     }
 
@@ -389,7 +463,10 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             pattern0.push_back(h->GetSubjMin());
             pattern0.push_back(h->GetSubjMax());
             const double idty (h->GetIdentity());
-            const bool imprf  (idty < 1.00 || h->GetQuerySpan() != h->GetSubjSpan());
+            const bool imprf  (idty < 1.00 
+                               || h->GetQuerySpan() != h->GetSubjSpan()
+                               || h->GetMismatches() > 0
+                               || h->GetGaps() > 0);
             imperfect.push_back(pair<bool,double>(imprf, idty));
             if(idty > max_idty) {
                 max_idty = idty;
@@ -413,14 +490,14 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     
     // verify conditions on the input hit pattern
     CNcbiOstrstream ostr_err;
-    bool bad_input (false);
+    bool some_error (false), bad_input (false);
     if(dim % 4 == 0) {
 
-        for(size_t i = 0; i < dim; i += 4) {
-            
+        for(size_t i (0); i < dim; i += 4) {
+
             if(pattern0[i] > pattern0[i+1] || pattern0[i+2] > pattern0[i+3]) {
                 ostr_err << "Pattern hits must be specified in plus strand";
-                bad_input = true;
+                some_error = bad_input = true;
                 break;
             }
             
@@ -428,6 +505,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
                 if(pattern0[i] <= pattern0[i-3] || pattern0[i+2] <= pattern0[i-1]) {
                     ostr_err << g_msg_CompartmentInconsistent
                              << string(" (hits not sorted)");
+                    some_error = true;
                     break;
                 }
             }
@@ -452,6 +530,8 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
                     ostr_err << "\tsubj_pattern_max = " << pattern0[i+3]
                              << "; subj_len = " << SeqLen2 << endl;
                 }
+
+                some_error= true;
                 break;
             }
         }
@@ -459,10 +539,10 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     }
     else {
         ostr_err << "Pattern dimension must be a multiple of four";
-        bad_input = true;
+        some_error = bad_input = true;
     }
     
-    if(bad_input) {
+    if(some_error) {
         ostr_err << " (query = " 
                  << phitrefs->front()->GetQueryId()->AsFastaString() 
                  << " , subj = "
@@ -494,6 +574,10 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         const bool imprf (imperfect[i/4].first);
         if(imprf) {                
 
+            // TODO:
+            // a better approach is to find indels and mismatches
+            // and split at the SplitQualifyingHits() stage
+            // to pass here only perfect diags
             const size_t len1 (pattern0[i+1] - pattern0[i] + 1);
             const size_t len2 (pattern0[i+3] - pattern0[i+2] + 1);
             const size_t maxlen (max(len1, len2));
@@ -539,19 +623,19 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             if(imprf) {
 
                 const size_t hitlen_q (pattern0[i + 1] - pattern0[i] + 1);
-                const size_t sh (hitlen_q / 4);
+                const size_t sh (size_t(hitlen_q / 4));
                 
                 size_t delta (sh > L1? sh - L1: 0);
                 q0 += delta;
                 s0 += delta;
-
+                    
                 const size_t h2s_right (hitlen_q - R1 - 1);
                 delta = sh > h2s_right? sh - h2s_right: 0;
                 q1 -= delta;
                 s1 -= delta;
                 
                 if(q0 > q1 || s0 > s1) {
-
+                    
                     // the longest segment too short
                     q0 = pattern0[i] + L1;
                     s0 = pattern0[i+2] + L2;
@@ -746,7 +830,6 @@ void CSplign::Run(THitRefs* phitrefs)
             try {
 
                 if(comps.GetStatus(i)) {
-
                     THitRefs comp_hits;
                     comps.Get(i, comp_hits);
 
@@ -826,16 +909,14 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
         ac.m_Msg = "Ok";
         ac.m_Cds_start = m_cds_start;
         ac.m_Cds_stop = m_cds_stop;
-        ac.m_QueryLen = m_mrna.size();
-        ac.m_PolyA = (m_polya_start < kMax_UInt? m_polya_start : 0);
 
-        *result = ac;
+        *result = ac;        
         m_mrna.resize(0);
     }
 
     catch(CAlgoAlignException& e) {
 
-        m_mrna.resize(0);
+        m_mrna.resize(0);        
 
         if(e.GetSeverity() == eDiag_Fatal) {
             throw;
@@ -855,16 +936,36 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
     return rv;
 }
 
-// naive polya detection
-size_t CSplign::x_TestPolyA(void)
+// naive polya detection; sense direction assumed
+size_t CSplign::s_TestPolyA(const char * seq, size_t dim, size_t cds_stop)
 {
-    const size_t dim = m_mrna.size();
-    int i = dim - 1;
-    for(; i >= 0; --i) {
-        if(m_mrna[i] != 'A') break;
+    const size_t kMaxNonA (3), kMinAstreak (5);
+    int i (dim - 1), i0 (dim);
+    for(size_t count_non_a (0), astreak (0); i >= 0 && count_non_a < kMaxNonA; --i) {
+        if(seq[i] != 'A') {
+            ++count_non_a;
+            astreak = 0;
+        }
+        else {
+            if(++astreak >= kMinAstreak) {
+                i0 = i;
+            }
+        }
     }
-    const size_t len = dim - i - 1;;
-    return len > 3 ? i + 1 : kMax_UInt;
+
+    const size_t len (dim - i0);
+    size_t rv;
+    if(len >= kMinAstreak) {
+        rv = i0;
+        if(0 < cds_stop && cds_stop < dim && rv <= cds_stop) {
+            rv = cds_stop + 1;
+        }
+    }
+    else {
+        rv = kMax_UInt;
+    }
+
+    return rv;
 }
 
 
@@ -891,7 +992,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         }
     
         const size_t mrna_size (m_mrna.size());
-
+    
         if(m_strand == false) {
         
             // adjust the hits
@@ -906,15 +1007,17 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 h->SetSubjStrand(new_strand);
             }
         }
-    
-        m_polya_start = m_nopolya? kMax_UInt: x_TestPolyA();
-    
-        if(m_polya_start < kMax_UInt) {
 
-            // cleave off hits beyond cds
+        const size_t cds_stop (m_strand? m_cds_stop: mrna_size - m_cds_stop - 1);
+        m_polya_start = m_nopolya?
+            kMax_UInt:
+            s_TestPolyA(&m_mrna.front(), m_mrna.size(), cds_stop);
+    
+        // cleave off hits beyond polya
+        if(m_polya_start < kMax_UInt) {
             CleaveOffByTail(phitrefs, m_polya_start); 
         }
-    
+
         // keep short terminal hits out of the pattern
         THitRefs::iterator ii (phitrefs->begin()), jj (phitrefs->end() - 1);
         const size_t min_termhitlen1 (m_MinPatternHitLength);
@@ -962,6 +1065,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             NCBI_THROW(CAlgoAlignException, eNoHits,
                        g_msg_NoHitsAfterFiltering);
         }
+
 
         // find regions of interest on mRna (query) and contig (subj)
         THit::TCoord span [4];
@@ -1091,6 +1195,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             (*ii)->Shift(-qmin, -smin);
         }
 
+        x_SplitQualifyingHits(phitrefs);
         x_SetPattern(phitrefs);
         rv.m_Score = x_Run(&m_mrna.front(), &m_genomic.front());
 
@@ -1099,17 +1204,17 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);
         }
 
-        // try to extend the last segment into the PolyA area  
+        // try to extend the last segment as long as it's a perfect match
         if(m_polya_start < kMax_UInt && seg_dim && m_segments[seg_dim-1].m_exon) {
 
             TSegment& s (const_cast<TSegment&>(m_segments[seg_dim-1]));
+
             const char* p0 = &m_mrna.front() + s.m_box[1] + 1;
             const char* q = &m_genomic.front() + s.m_box[3] + 1;
             const char* p = p0;
             const char* pe = &m_mrna.front() + mrna_size;
             const char* qe = &m_genomic.front() + m_genomic.size();
             for(; p < pe && q < qe; ++p, ++q) {
-                if(*p != 'A') break;
                 if(*p != *q) break;
             }
         
@@ -1133,7 +1238,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 m_polya_start += sh;
             }
         }
-
+    
         // look for PolyA in trailing segments:
         // if a segment is mostly 'A's then we add it to PolyA
 
@@ -1141,15 +1246,17 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         for(; j >= 0; --j) {
         
             const TSegment& s (m_segments[j]);
+
             const char* p0 (&m_mrna[qmin] + s.m_box[0]);
             const char* p1 (&m_mrna[qmin] + s.m_box[1] + 1);
             const size_t len_chars (p1 - p0);
             size_t count (0);
-            for(const char* pc (p0); pc < p1; ++pc) {
+            for(const char* pc (p0); pc != p1; ++pc) {
                 if(*pc == 'A') ++count;
             }
 
             double min_a_content (0.76); // min 'A' content in a polyA
+
             // also check splices
             if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
 
@@ -1166,7 +1273,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             if(!s.m_exon) {
                 min_a_content = (s.m_len <= 4)? 0.49: 0.599;
             }
-
+        
             if(double(count)/len_chars < min_a_content) {
                 if(s.m_exon && s.m_len > 4) break;
             }
@@ -1232,7 +1339,6 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 }
             }
         }
-
     } // try
 
     catch(CAlgoAlignException& e) {
@@ -1272,20 +1378,35 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
     cerr << "Pattern:" << endl;  
 #endif
 
+    const size_t map_dim (m_alnmap.size());
+    if(map_dim != 1) {
+        NCBI_THROW(CAlgoAlignException, eInternal, "Multiple maps not supported");
+    }
+
     TAligner::TScore rv (0);
+    size_t cds_start (0), cds_stop (0);
+    const int kMaxShot (5);
+    for(size_t i (0); i < map_dim; ++i) {
 
-    for(size_t i = 0, map_dim = m_alnmap.size(); i < map_dim; ++i) {
-
-        const SAlnMapElem& zone = m_alnmap[i];
+        const SAlnMapElem& zone (m_alnmap[i]);
 
         // setup sequences
         const size_t len1 (zone.m_box[1] - zone.m_box[0] + 1);
         const size_t len2 (zone.m_box[3] - zone.m_box[2] + 1);
         
-        m_aligner->SetSequences(
-            Seq1 + zone.m_box[0], len1,
-            Seq2 + zone.m_box[2], len2,
-            false);
+        // remap cds if antisense
+        if(m_strand) {
+            cds_start = m_cds_start;
+            cds_stop  = m_cds_stop;
+        }
+        else {
+            cds_start = len1 - m_cds_start - 1;
+            cds_stop  = len1 - m_cds_stop - 1;
+        }
+
+        m_aligner->SetSequences(Seq1 + zone.m_box[0], len1,
+                                Seq2 + zone.m_box[2], len2,
+                                false);
 
         // prepare the pattern
         vector<size_t> pattern;
@@ -1301,12 +1422,12 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
                  back_inserter(pattern));
         }
         
-        for(size_t j = 0, pt_dim = pattern.size(); j < pt_dim; j += 4) {
+        for(size_t j (0), pt_dim (pattern.size()); j < pt_dim; j += 4) {
 
 #ifdef  DBG_DUMP_PATTERN
-            cerr << pattern[j] << '\t' << pattern[j+1] << '\t'
+            cerr << (1 + pattern[j]) << '\t' << (1 + pattern[j+1]) << '\t'
                  << "(len = " << (pattern[j+1] - pattern[j] + 1) << ")\t"
-                 << pattern[j+2] << '\t' << pattern[j+3] 
+                 << (1 + pattern[j+2]) << '\t' << (1 + pattern[j+3]) 
                  << "(len = " << (pattern[j+3] - pattern[j+2] + 1) << ")\t"
                  << endl;
 #undef DBG_DUMP_PATTERN
@@ -1318,19 +1439,14 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
             pattern[j+3] -= zone.m_box[2];
         }
 
-        // setup esf
+        // setup the aligner
         m_aligner->SetPattern(pattern);
         m_aligner->SetEndSpaceFree(true, true, true, true);
-        if(m_strand) {
-            m_aligner->SetCDS(m_cds_start, m_cds_stop);
-        }
-        else {
-            m_aligner->SetCDS(len1 - m_cds_start - 1, len1 - m_cds_stop - 1);
-        }
+        m_aligner->SetCDS(cds_start, cds_stop);
 
         rv += m_aligner->Run();
 
-//#define DBG_DUMP_TYPE2
+// #define DBG_DUMP_TYPE2
 #ifdef  DBG_DUMP_TYPE2
         {{
             CNWFormatter fmt (*m_aligner);
@@ -1366,7 +1482,8 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
 #ifdef DUMP_ORIG_SEGS
     cerr << "Orig segments:" << endl;
     ITERATE(TSegmentDeque, ii, segments) {
-        cerr << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
+        cerr << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
+             << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
              << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
              << ii->m_annot  << '\t' << ii->m_score  << endl;
     }
@@ -1399,7 +1516,41 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
             }
         }
     }
-    
+
+    // may need to catch up with cds at terms
+    if(cds_start < cds_stop) {
+        {{
+        TSegmentDeque::iterator ib (segments.begin()),
+            ie (segments.end()), ii (ib);
+        while(ii != ie && !ii->m_exon) ++ii;
+        if(ii != ie) {
+            const int start_undershot (ii->m_box[0] - cds_start);
+            if(0 < start_undershot && start_undershot < kMaxShot) {
+                const int extent (min(start_undershot, int(ii->m_box[2])));
+                if(extent > 0) {
+                    ii->ExtendLeft(extent, Seq1, Seq2, m_aligner);
+                }
+            }
+        }
+        }}
+
+        {{
+        TSegmentDeque::reverse_iterator irb (segments.rbegin()),
+            ire (segments.rend()), iir (irb);
+        while(iir != ire && !iir->m_exon) ++iir;
+        if(iir != ire) {
+            const int stop_undershot (cds_stop - iir->m_box[1]);
+            if(0 < stop_undershot && stop_undershot < kMaxShot) {
+                const int extent (min(stop_undershot,
+                                      int(SeqLen2 - iir->m_box[3] - 1)));
+                if(extent > 0) {
+                    iir->ExtendRight(extent, Seq1, Seq2, m_aligner);
+                }
+            }
+        }
+        }}
+    }
+
     m_segments.resize(0);
     while(true) {
 
@@ -1431,7 +1582,10 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
                                        m_MinExonIdty:
                                        max(m_MinExonIdty, kMinTermExonIdty));
                 
-                if(s.m_idty < min_idty || m_endgaps) {
+                const bool b1 (s.m_idty < min_idty || m_endgaps);
+                const bool b2 (cds_start == cds_stop
+                               || cds_start > s.m_box[0] + kMaxShot);
+                if(b1 && b2) {
                     s.ImproveFromLeft(Seq1, Seq2, m_aligner);
                 }
 
@@ -1453,7 +1607,11 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
                                        m_MinExonIdty:
                                        max(m_MinExonIdty, kMinTermExonIdty));
 
-                if(s.m_idty < min_idty || m_endgaps) {
+                const bool b1 (s.m_idty < min_idty || m_endgaps);
+                const bool b2 (cds_start == cds_stop 
+                               || cds_stop + kMaxShot < s.m_box[1]);
+
+                if(b1 && b2) {
                     s.ImproveFromRight(Seq1, Seq2, m_aligner);
                 }
 
@@ -1465,9 +1623,35 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
         // turn to gaps exons with low identity
-        for(size_t k = 0; k < seg_dim; ++k) {
-            TSegment& s = segments[k];
-            if(s.m_exon && s.m_idty < m_MinExonIdty) {
+        for(size_t k (0); k < seg_dim; ++k) {
+
+            TSegment& s (segments[k]);
+            if(s.m_exon == false) continue;
+
+            bool drop (false);
+            if(s.m_idty < m_MinExonIdty) {
+                drop = true; // always make gaps on low identity
+            }
+            else if (s.m_idty < .9 && s.m_len < 20) {
+
+                // same for short exons preceded/followed by non-consensus splices
+                bool nc_prev (false), nc_next (false);
+                if(k > 0 && segments[k-1].m_exon) {
+                    nc_prev = ! TSegment::s_IsConsensusSplice(
+                                 segments[k-1].GetDonor(),
+                                 s.GetAcceptor());
+                }
+
+                if(k + 1 < seg_dim && segments[k+1].m_exon) {
+                    nc_next = ! TSegment::s_IsConsensusSplice(
+                                 s.GetDonor(),
+                                 segments[k+1].GetAcceptor());
+                }
+
+                drop = nc_prev || nc_next;
+            }
+
+            if(drop) {
                 s.m_exon = false;
                 s.m_idty = 0;
                 s.m_len = s.m_box[1] - s.m_box[0] + 1;
@@ -1516,7 +1700,7 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
             }
         }}
 
-        // turn to gaps extra-short exons preceeded/followed by gaps
+        // turn to gaps extra-short exons preceded/followed by gaps
         bool gap_prev (false);
         for(size_t k (0); k < seg_dim; ++k) {
 
@@ -1530,7 +1714,7 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
                 if(k + 1 < seg_dim) {
                     gap_next = !segments[k+1].m_exon;
                 }
-                if(length <= 5 && (gap_prev || gap_next)) {
+                if(length <= 10 && (gap_prev || gap_next)) {
                     s.m_exon = false;
                     s.m_idty = 0;
                     s.m_len = s.m_box[1] - s.m_box[0] + 1;

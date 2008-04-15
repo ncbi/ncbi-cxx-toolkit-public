@@ -7,4 +7,5 @@ SRC = splign splign_util splign_formatter splign_simple splign_cmdargs
 LIB = xalgoalignsplign
 
 CXXFLAGS = $(FAST_CXXFLAGS)
+#CXXFLAGS = $(FAST_CXXFLAGS) -D ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
 LDFLAGS  = $(FAST_LDFLAGS)
