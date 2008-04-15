@@ -82,24 +82,22 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 
 all: $(XDLL) export-headers
 
-clean:
-	-$(RMDIR) SunWS_cache
-	-$(RMDIR) ii_files
-	-$(RMDIR) ti_files
-	-$(RM) .make.state
+clean: clean-common clean-dll
+
+clean-dll:
 	-$(RM) $(XDLLOBJ)
 	-$(RM) $(XDLL) $(XDLLDEP)
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
-	-$(RM) $(SOURCES:=.d)
-	-$(RM) ir.out
 
 purge: clean purge-headers deactivate
 
-deactivate:
+deactivate: deactivate-dll
+
+deactivate-dll:
 	-if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
 	    $(RM) $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP); \
 	    [ '@has_dll_loadable@' = '@# ' ]  ||  \
 	        $(RM) $(libdir)/$(XDLL_LOADABLE); \
 	fi
 
-.PHONY: default_rule all clean purge deactivate
+.PHONY: default_rule all clean clean-dll purge deactivate deactivate-dll

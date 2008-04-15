@@ -39,6 +39,14 @@ requirements:  $(REQUIRES:%=$(status_dir)/%.enabled)
 @GCCPCH@	mkdir -p $(pchdir)
 @GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(FAST_CXXFLAGS) $(CXXFLAGS_DLL) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
 
+clean-common:
+	-$(RMDIR) SunWS_cache
+	-$(RMDIR) ii_files
+	-$(RMDIR) ti_files
+	-$(RM) .make.state
+	-$(RM) $(SOURCES:=.d)
+	-$(RM) ir.out
+
 ### Header exporting, SSS-style.
 # NB: export-headers explicitly uses cp rather than $(bincopy) because
 # the whole point is to have build-specific copies of the headers
@@ -65,5 +73,5 @@ purge-headers:
 	    cd $(incdest)  &&  rmdir -p $(PACKAGE_EXPORT); \
 	fi
 
-.PHONY: export-headers purge-headers requirements
+.PHONY: clean-common export-headers purge-headers requirements
 

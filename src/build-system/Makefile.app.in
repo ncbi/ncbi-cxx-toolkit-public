@@ -81,16 +81,10 @@ MAKEFILE = $(builddir)/Makefile.app.tmpl
 all: $(ALL)
 	@test "$(ALL)" = "$(XAPP)" || $(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XAPP)
 
-clean:
-	-$(RMDIR) SunWS_cache
-	-$(RMDIR) ii_files
-	-$(RMDIR) ti_files
-	-$(RM) .make.state
+clean: clean-common
 	-$(RM) $(XOBJ)
 	-$(RM) $(XAPP)
-	-$(RM) $(SOURCES:=.d)
 	-$(RM) core
-	-$(RM) ir.out
 
 purge: clean
 	-if [ '$(BINCOPY)' != '@:' -a -d $(bindir) -a -w $(bindir) -a $(srcdir) != . ]; then \

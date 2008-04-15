@@ -53,31 +53,31 @@ $(XLIB): $(XLIBOBJ)
 	@if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
 	    $(BINCOPY) $(XLIBDEP) $(status_dir) && \
 	    $(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) && \
-	    cd $(status_dir) && \
-	    $(RM) $(XLIBDEPLINK) && \
-	    $(LN_S) $(XLIBDEP) $(XLIBDEPLINK); \
+	    if [ $(XLIBDEP) != $(XLIBDEPLINK) ]; then \
+	        cd $(status_dir) && \
+	        $(RM) $(XLIBDEPLINK) && \
+	        $(LN_S) $(XLIBDEP) $(XLIBDEPLINK); \
+	    fi; \
 	fi
 
 ### Standard targets
 
 all: $(XLIB) export-headers
 
-clean:
-	-$(RMDIR) SunWS_cache
-	-$(RMDIR) ii_files
-	-$(RMDIR) ti_files
-	-$(RM) .make.state
+clean: clean-common clean-lib
+
+clean-lib:
 	-$(RM) $(XLIBOBJ)
 	-$(RM) $(XLIB) $(XLIBDEP)
-	-$(RM) $(SOURCES:=.d)
-	-$(RM) ir.out
 
 purge: clean purge-headers deactivate
 
-deactivate:
+deactivate: deactivate-lib
+
+deactivate-lib:
 	-if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
 	    $(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) \
 	        $(libdir)/$(XLIBLINK) $(status_dir)/$(XLIBDEPLINK); \
 	fi
 
-.PHONY: default_rule all clean purge deactivate
+.PHONY: default_rule all clean clean-lib purge deactivate deactivate-lib

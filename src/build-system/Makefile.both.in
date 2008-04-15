@@ -38,103 +38,11 @@
 # include @builddir@/Makefile.both
 #################################
 
-default_rule: all
-
-
-### C/C++ source file compilation (and maybe auto-dependencies) build rules
-# Build both shared and static libraries as PIC for the PubMed people.
-
-#CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-#CFLAGS_ALL   = @f_compile@ $(CFLAGS)   $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-CXXFLAGS_ALL = @f_compile@ \
-	$(CXXFLAGS) $(CXXFLAGS_DLL) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-CFLAGS_ALL   = @f_compile@ \
-	$(CFLAGS) $(CFLAGS_DLL) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-SOURCES      = @UNIX_SRC@ $(LIBOBJ) $(SRC)
-include $(builddir)/Makefile.$(Rules)
-
-
-### The static library build rule
-
-XLIBOBJ     = $(SOURCES:=@obj_ext@)
-XOBJ        = $(OBJ:=@obj_ext@)
-XLIB        = $(LIB:%=@lib_pre@%@lib_ext@)
-XLIBDEP     = .$(LIB)-static.dep
-XLIBLINK    = @lib_pre@$(LIB)-static@lib_ext@
-
-$(XLIB): $(XLIBOBJ)
-	-$(RM) $(XLIB)
-	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XOBJ) | @TSORT@` $(AR_FILTER)
-	@$(RANLIB) $(XLIB)
-	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
-	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
-	@if [ '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
-	    echo $(BINCOPY) $(XLIB) $(libdir) && \
-	    $(BINCOPY) $(XLIB) $(libdir) && \
-	    cd $(libdir) && $(RM) $(XLIBLINK) && $(LN_S) $(XLIB) $(XLIBLINK); \
-	fi
-	@if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
-	    $(BINCOPY) $(XLIBDEP) $(status_dir) && \
-	    $(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP); \
-	fi
-
-
-### The shared library build rule
-
-XDLLOBJ       = $(XLIBOBJ) $(XOBJ)
-XDLL          = $(LIB:%=@lib_pre@%@dll_ext@)
-XDLL_LOADABLE = $(LIB:%=@lib_pre@%@loadable_ext@)
-XDLLDEP       = .$(LIB).dep
-XDLL_LIBS     = @DLL_LIB_SETTING@
-XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(XDLL_LIBS:%=@lib_l_pre@%@lib_l_ext@)
-XDLL_LIBDEP = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
-
-$(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
-	-$(RM) $(XDLL)
-	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
-	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
-	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XLIBOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
-	@if [ ! -r $(XDLLDEP) ]; then \
-	    echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP); \
-	    $(TOUCH) -r $(XDLL) $(XDLLDEP); \
-	fi
-	@if [ '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
-	    echo $(BINCOPY) $(XDLL) $(libdir) && \
-	    $(BINCOPY) $(XDLL) $(libdir); \
-	fi
-	@if [ '@has_dll_loadable@' != '@# ' -a '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
-	    echo $(BINCOPY) $(XDLL_LOADABLE) $(libdir) && \
-	    $(BINCOPY) $(XDLL_LOADABLE) $(libdir); \
-	fi
-	@if [ '$(BINCOPY)' != '@:' -a -w $(status_dir) -a ! -r $(status_dir)/$(XDLLDEP) ]; then \
-	    $(BINCOPY) $(XDLLDEP) $(status_dir); \
-	    $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP); \
-	fi
-
-
-### Standard targets
-
-all: $(XLIB) $(XDLL) export-headers
-
-clean:
-	-$(RMDIR) SunWS_cache
-	-$(RMDIR) ii_files
-	-$(RMDIR) ti_files
-	-$(RM) .make.state
-	-$(RM) $(XLIBOBJ)
-	-$(RM) $(XLIB) $(XDLL) $(XLIBDEP) $(XDLLDEP)
-	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
-	-$(RM) $(SOURCES:=.d)
-	-$(RM) ir.out
-
-purge: clean purge-headers deactivate
-
-deactivate:
-	-if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
-	    $(RM) $(libdir)/$(XLIB) $(libdir)/$(XDLL) $(libdir)/$(XLIBLINK) \
-	        $(status_dir)/$(XLIBDEP) $(status_dir)/$(XDLLDEP); \
-	    [ '@has_dll_loadable@' = '@# ' ]  ||  \
-	        $(RM) $(libdir)/$(XDLL_LOADABLE); \
-	fi
-
-.PHONY: default_rule all clean purge deactivate
+include $(builddir)/Makefile.lib
+XLIBDEP = $(XLIBDEPLINK)
+# Kludge: Makefile.lib and Makefile.dll both include Makefile.$(Rules);
+# while including the real version twice should be safe, gmake for one
+# warns about duplicate rules.  Substituting a guaranteed contentless
+# makefile avoids any such problem.
+Rules = is_dll_support
+include $(builddir)/Makefile.dll
