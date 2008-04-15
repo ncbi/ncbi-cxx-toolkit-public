@@ -220,8 +220,8 @@ public:
     }
     static string          GetMsvcSection(void);
 
-    string    GetProjectFileFormatVersion(void) const;
-    string    GetSolutionFileFormatVersion(void) const;
+    static string    GetProjectFileFormatVersion(void);
+    static string    GetSolutionFileFormatVersion(void);
 private:
     static EMsvcVersion   sm_MsvcVersion;
     static EMsvcPlatform  sm_MsvcPlatform;

@@ -493,7 +493,7 @@ CMsvc7RegSettings::CMsvc7RegSettings(void)
 {
 }
 
-string CMsvc7RegSettings::GetProjectFileFormatVersion(void) const
+string CMsvc7RegSettings::GetProjectFileFormatVersion(void)
 {
     if (GetMsvcVersion() == eMsvc710) {
         return "7.10";
@@ -504,7 +504,7 @@ string CMsvc7RegSettings::GetProjectFileFormatVersion(void) const
     }
     return "";
 }
-string CMsvc7RegSettings::GetSolutionFileFormatVersion(void) const
+string CMsvc7RegSettings::GetSolutionFileFormatVersion(void)
 {
     if (GetMsvcVersion() == eMsvc710) {
         return "8.00";

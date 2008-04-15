@@ -388,8 +388,16 @@ void CProjBulderApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "MSVC 7.10 projects builder application");
+    string context;
+    string msvc_ver = CMsvc7RegSettings::GetProjectFileFormatVersion();
+    if (!msvc_ver.empty()) {
+        context = "MSVC ";
+        context += msvc_ver + " (" + CMsvc7RegSettings::GetMsvcPlatformName() + ")";
+    } else {
+        context = CMsvc7RegSettings::GetMsvcPlatformName();
+    }
+    context += " projects tree builder application";
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),context);
 
     // Programm arguments:
 
