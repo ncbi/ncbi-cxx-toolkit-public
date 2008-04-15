@@ -1,0 +1,141 @@
+
+Author:  Kevin Bealer
+Updated: April 2008
+
+----- Index Files -----
+
+Naming:   <any-name>.[np]in
+Encoding: binary
+Style:    general meta data, then several byte offset arrays
+
+  The index file represents the starting point for interpreting any
+  BlastDB database volume.  These files contain a meta-data "header"
+  section describing the volume, followed by several arrays of byte
+  offset locations of various pieces of data stored in the sequence
+  and header files.
+
+  The data stored here is binary; it is mostly integer data, which,
+  like all BlastDB formats, uses platform independent byte ordering.
+
+  This file describes the latest version (4) of the BlastDB format.
+  All versions less than 4 are considered obsolete and are not
+  described here.
+
+--- Notation ---
+
+ The offset field uses a symbol in square brackets, like this "[X]" to
+ indicate the end of a variable length field defined on that line.
+ Future use of the symbol X will indicate that offset.
+
+ The suffix "[]" added to a type (e.g. Int4[]) indicates an array of
+ that type.
+
+Int4:
+
+  Four byte integer, always in big-endian order.  Not necessarily
+  aligned to a 4 byte offset.
+
+Int8:
+
+  Eight byte integer, always in big-endian order.  Not necessarily
+  aligned to a 4 or 8 byte offset.
+
+Int8X:
+
+  Eight byte integer, always in little-endian order.  Not necessarily
+  aligned to a 4 or 8 byte offset.  This one type does not follow the
+  convention of all other integer types in BlastDB with regard to
+  endianness.  This is probably a bug that simply survived long enough
+  to be too awkward to fix.
+
+String:
+String#:
+
+  ASCII string data, prefixed with Int4 length.
+
+  In some cases, a string includes 1-3 terminating NUL bytes.  If
+  present, they are included when counting the encoded string length,
+  but should be removed before returning the string to the user.
+
+  This technique is only used for certain strings and is designed to
+  cause other data to be aligned to a multiple of 4 bytes.  Strings
+  for which this technique is used are labeled as "String#" here.
+
+--- File Format ---
+
+(All offsets are in bytes.)
+
+Offset    Type       Fieldname         Notes
+------    ----       ---------         -----
+0         Int4       format-version    The BlastDB spec version this
+                                       volume uses -- currently 4.
+4         Int4       sequence-type     1 = protein, 0 = nucleotide
+8 [T]     String     title             This volume's title.
+T [D]     String#    create-date       Volume or db "create" time.
+D         Int4       num-oids          OID count for this volume.
+D+4       Int8X      volume-length     Total # of bases or residues.
+D+12      Int4       max-seq-length    Maximum sequence length.
+D+16      Int4[]     header-array      header data offsets.
+--        Int4[]     sequence-array    sequence data offsets.
+--        Int4[]     ambig-array       optional ambiguity data offsets.
+
+The fields header-array, sequence-array, and ambig-array are arrays of
+integer byte offsets.  Each array contains one offset for each OID in
+the volume, plus a final offset representing the end of the last
+element.  The final offset is included to simplify the code paths that
+index into the header and sequence file offset arrays.  (The presence
+of this value slightly simplifies code paths that use these arrays.)
+
+--- Header-array ---
+
+The header file contains binary ASN.1 Blast-def-line-set objects, one
+for each OID in the database volume.  Certain older C program assume
+that the taxid is always present, so it is necessary to store a taxid
+for every object.  (If the taxid is not available, use a zero.)
+
+--- Sequence-array and Ambig-array ---
+
+The sequence-array contains the start offset of every sequence's data
+in the sequence file (nsq or psq).
+
+In the case of protein data, the first sequence's data in the sequence
+file is preceded by a NUL byte, and the data for the last sequence is
+followed by a NUL byte.  There is also a NUL byte separating the data
+for any two consecutive sequences in the file.  These bytes facilitate
+detection of sequence ends in the sequence alignment code.
+
+Therefore, the beginning of any protein sequence is found at the start
+offset in the sequence-array, and the end of the protein sequence is
+the subsequent start offset minus one (for the NUL).
+
+In the case of nucleotide, however, the sequence data is followed by
+ambiguity data.  The start offset of any given sequence's sequence
+data can be found in the sequence-array (just as with protein, but no
+NUL bytes are used).  The end offset of each sequence's sequence data
+is found in the "ambig-array" for the same OID.
+
+For protein volumes, the ambig-array is entirely missing from the
+index file.
+
+The start of the ambiguity data for each (nucleotide) sequence is
+found at the offset given in the ambig-array at the same OID, but the
+end of the ambiguity data is found by looking in the sequence-array
+for the start of the sequence data for the following array.
+
+
+This table summarizes this system, where S is sequence-array, A is
+ambiguity-array, and offset ranges are given using post-notation (the
+start offset is included but the end is not):
+
+  Sequence Type    Sequence Range[i]    Ambiguity Range[i]
+  -------------    -----------------    ------------------
+  Protein          S[i] to S[i-1]-1     n/a
+  Nucleotide       S[i] to A[i]         A[i] to S[i+1]
+
+--- Sequence Data Encodings ---
+
+See the file sequence_files.txt for more information about the format
+used for data encoded in BlastDB sequence files.  This file only
+describes the encoding in the index file of the offsets into the
+sequence file.
+

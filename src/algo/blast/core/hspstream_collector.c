@@ -560,7 +560,7 @@ Blast_HSPListCollectorInitMT(EBlastProgramType program,
     if ((Blast_QueryIsProtein(program) || Blast_QueryIsPssm(program)) &&
         extn_opts->compositionBasedStats != 0) {
         stream_data->sort_by_score = 
-            (SSortByScoreStruct*)calloc(0, sizeof(SSortByScoreStruct));
+            (SSortByScoreStruct*)calloc(1, sizeof(SSortByScoreStruct));
         stream_data->sort_by_score->sort_on_read = sort_on_read;
         stream_data->sort_by_score->first_query_index = 0;
     } else {

@@ -97,7 +97,7 @@ s_CompoHeapRecordCompare(BlastCompo_HeapRecord * place1,
     int result;
     if (0 == (result = CMP(place1->bestEvalue, place2->bestEvalue)) &&
         0 == (result = CMP(place2->bestScore, place1->bestScore))) {
-        result = CMP(place1->subject_index, place2->subject_index);
+        result = CMP(place2->subject_index, place1->subject_index);
     }
     return result > 0;
 }

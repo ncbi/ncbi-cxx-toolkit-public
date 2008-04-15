@@ -63,7 +63,7 @@ Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
 
        prelim_hitlist_size = hit_options->hitlist_size;
        if (ext_options->compositionBasedStats)
-            prelim_hitlist_size *= 2;
+            prelim_hitlist_size = prelim_hitlist_size * 2 + 50;  
        else if (scoring_options->gapped_calculation)
             prelim_hitlist_size = MIN(2 * prelim_hitlist_size, 
                                       prelim_hitlist_size + 50);
@@ -2372,10 +2372,6 @@ void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list,
 static int
 s_EvalueCompareHSPLists(const void* v1, const void* v2)
 {
-#ifdef _DEBUG
-   static Boolean c_toolkit_compatible = FALSE;
-   static Boolean value_set = FALSE;
-#endif /* _DEBUG */
    BlastHSPList* h1,* h2;
    int retval = 0;
    
@@ -2400,29 +2396,9 @@ s_EvalueCompareHSPLists(const void* v1, const void* v2)
    if (h1->hsp_array[0]->score < h2->hsp_array[0]->score)
       return 1;
 
-#ifdef _DEBUG
-   if ( !value_set ) {
-       c_toolkit_compatible = !!(getenv("CTOOLKIT_COMPATIBLE") != NULL);
-       value_set = TRUE;
-   }
-   if (c_toolkit_compatible) {
-       if (h1->oid < h2->oid)
-          return -1;
-       if (h1->oid > h2->oid)
-          return 1;
-       return 0;
-   } 
-#endif /* _DEBUG */
-
-   
    /* In case of equal best E-values and scores, order will be determined
       by ordinal ids of the subject sequences */
-   if (h1->oid > h2->oid)
-      return -1;
-   if (h1->oid < h2->oid)
-      return 1;
-
-   return 0;
+   return BLAST_CMP(h2->oid, h1->oid);
 }
 
 /** Callback for sorting hsp lists by their best e-value/score, in 
@@ -3064,8 +3040,8 @@ Int2 Blast_HSPResultsInsertHSPList(BlastHSPResults* results,
    ASSERT(hsp_list->query_index < results->num_queries);
 
    if (!results->hitlist_array[hsp_list->query_index]) {
-      results->hitlist_array[hsp_list->query_index] = 
-         Blast_HitListNew(hitlist_size);
+       results->hitlist_array[hsp_list->query_index] = 
+           Blast_HitListNew(hitlist_size);
    }
    Blast_HitListUpdate(results->hitlist_array[hsp_list->query_index], 
                        hsp_list);

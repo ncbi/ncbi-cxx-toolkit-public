@@ -147,7 +147,7 @@ extern "C" {
                                   for */
 /** Defaults for PSI-BLAST options */
 #define PSI_INCLUSION_ETHRESH 0.002 /**< Inclusion threshold for PSI BLAST */
-#define PSI_PSEUDO_COUNT_CONST 9 /**< Pseudo-count constant for PSI-BLAST */
+#define PSI_PSEUDO_COUNT_CONST 0 /**< Pseudo-count constant for PSI-BLAST */
 
 /** Default genetic code for query and/or database */
 #define BLAST_GENETIC_CODE 1  /**< Use the standard genetic code for converting

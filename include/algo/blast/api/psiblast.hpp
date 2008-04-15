@@ -156,6 +156,7 @@ PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
                                  CConstRef<objects::CSeq_align_set> alignment,
                                  CRef<objects::CScope> database_scope,
                                  const CPSIBlastOptionsHandle& opts_handle,
+                                 CConstRef<CBlastAncillaryData> ancillary_data,
                                  PSIDiagnosticsRequest* diagnostics_req = 0);
 
 END_SCOPE(blast)

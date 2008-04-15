@@ -50,6 +50,7 @@
 #include <util/format_guess.hpp>    // for CFormatGuess
 #include <serial/objistrxml.hpp>    // for CObjectIStreamXml
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
+#include <algo/blast/api/objmgr_query_data.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #include <unistd.h>
@@ -875,6 +876,10 @@ CRemoteBlast::x_SetMaskingLocationsForQueries(const TSeqLocInfoVector&
                                               masking_locations)
 {
     _ASSERT(m_QSR->CanGetQueries());
+    if (masking_locations.empty()) {
+        return;
+    }
+
     if (m_QSR->GetQueries().GetNumQueries() != masking_locations.size()) {
         CNcbiOstrstream oss;
         oss << "Mismatched number of queries (" 
@@ -1063,13 +1068,46 @@ CRemoteBlast::CRemoteBlast(CRef<IQueryFactory>         queries,
                            CRef<CBlastOptionsHandle>   opts_handle,
                            const CSearchDatabase     & db)
 {
+    x_Init(opts_handle, db);
+    x_InitQueries(queries);
+}
+
+static void
+s_FlattenBioseqSet(const CBioseq_set & bss, list< CRef<CBioseq> > & seqs)
+{
+    if (bss.CanGetSeq_set()) {
+        ITERATE(CBioseq_set::TSeq_set, iter, bss.GetSeq_set()) {
+            if (iter->NotEmpty()) {
+                const CSeq_entry & entry = **iter;
+                
+                if (entry.IsSeq()) {
+                    CBioseq & bs = const_cast<CBioseq &>(entry.GetSeq());
+                    seqs.push_back(CRef<CBioseq>(& bs));
+                } else {
+                    _ASSERT(entry.IsSet());
+                    s_FlattenBioseqSet(entry.GetSet(), seqs);
+                }
+            }
+        }
+    }
+}
+
+CRemoteBlast::CRemoteBlast(CRef<IQueryFactory>       queries,
+                           CRef<CBlastOptionsHandle> opts_handle,
+                           CRef<IQueryFactory>       subjects)
+{
+    x_Init(&* opts_handle);
+    x_InitQueries(queries);
+    SetSubjectSequences(subjects);
+}
+
+void CRemoteBlast::x_InitQueries(CRef<IQueryFactory> queries)
+{
     if (queries.Empty()) {
         NCBI_THROW(CBlastException,
                    eInvalidArgument,
                    "Error: No queries specified");
     }
-    
-    x_Init(opts_handle, db);
     
     CRef<IRemoteQueryData> Q(queries->MakeRemoteQueryData());
     CRef<CBioseq_set> bss = Q->GetBioseqSet();
@@ -1083,8 +1121,9 @@ CRemoteBlast::CRemoteBlast(CRef<IQueryFactory>         queries,
 
     // Check if there are any range restrictions applied and if local IDs are
     // being used to determine how to specify the query sequence(s)
-
+    
     bool has_local_ids = false;
+    
     if ( !sll.empty() ) {
         // Only one range restriction can be sent in this protocol
         if (sll.front()->IsInt()) {
@@ -1112,11 +1151,25 @@ CRemoteBlast::CRemoteBlast(CRef<IQueryFactory>         queries,
             }
         }
     } 
+
+    TSeqLocInfoVector user_specified_masks;
+    x_ExtractUserSpecifiedMasks(queries, user_specified_masks);
     
     if (has_local_ids) {
-        SetQueries(bss);
+        SetQueries(bss, user_specified_masks);
     } else {
-        SetQueries(sll);
+        SetQueries(sll, user_specified_masks);
+    }
+}
+
+void
+CRemoteBlast::x_ExtractUserSpecifiedMasks(CRef<IQueryFactory> query_factory,
+                                          TSeqLocInfoVector& masks)
+{
+    masks.clear();
+    CObjMgr_QueryFactory* objmgrqf = NULL;
+    if ( (objmgrqf = dynamic_cast<CObjMgr_QueryFactory*>(&*query_factory))) {
+        masks = objmgrqf->ExtractUserSpecifiedMasks();
     }
 }
 
@@ -1228,6 +1281,37 @@ void CRemoteBlast::SetDatabase(const string & x)
     m_Dbs.Reset(new CBlast4_database);
     m_Dbs->SetName(x);
     m_Dbs->SetType(rtype);
+    
+    m_SubjectSequences.clear();
+}
+
+void CRemoteBlast::SetSubjectSequences(CRef<IQueryFactory> subjects)
+{
+    CRef<IRemoteQueryData> Q(subjects->MakeRemoteQueryData());
+    CRef<CBioseq_set> bss = Q->GetBioseqSet();
+    
+    if (bss.Empty()) {
+        NCBI_THROW(CBlastException,
+                   eInvalidArgument,
+                   "Error: No query data.");
+    }
+    
+    list< CRef<CBioseq> > seqs;
+    s_FlattenBioseqSet(*bss, seqs);
+    
+    SetSubjectSequences(seqs);
+}
+
+void CRemoteBlast::SetSubjectSequences(const list< CRef< CBioseq > > & subj)
+{
+    CRef<CBlast4_subject> subject_p(new CBlast4_subject);
+    subject_p->SetSequences() = subj;
+    
+    m_QSR->SetSubject(*subject_p);
+    m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eSubject));
+    
+    m_SubjectSequences = subj;
+    m_Dbs.Reset();
 }
 
 void CRemoteBlast::SetEntrezQuery(const char * x)

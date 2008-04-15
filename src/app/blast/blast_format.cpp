@@ -216,7 +216,9 @@ CBlastFormat::PrintProlog()
 void
 CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
 {
-    const Blast_KarlinBlk *kbp_ungap = summary.GetUngappedKarlinBlk();
+    const Blast_KarlinBlk *kbp_ungap = (m_Program == "psiblast") 
+        ? summary.GetPsiUngappedKarlinBlk() 
+        : summary.GetUngappedKarlinBlk();
     m_Outfile << "\n";
     if (kbp_ungap) {
         CBlastFormatUtil::PrintKAParameters(kbp_ungap->Lambda, 
@@ -225,7 +227,9 @@ CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
                                             false);
     }
 
-    const Blast_KarlinBlk *kbp_gap = summary.GetGappedKarlinBlk();
+    const Blast_KarlinBlk *kbp_gap = (m_Program == "psiblast") 
+        ? summary.GetPsiGappedKarlinBlk()
+        : summary.GetGappedKarlinBlk();
     m_Outfile << "\n";
     if (kbp_gap) {
         CBlastFormatUtil::PrintKAParameters(kbp_gap->Lambda, 
@@ -338,7 +342,7 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
         {{
             CShowBlastDefline showdef(repeated_seqs, *m_Scope, 
                                       kFormatLineLength,
-                                      m_NumSummary);
+                                  min(m_NumSummary, (int)prev_seqids.size()));
             x_ConfigCShowBlastDefline(showdef);
             showdef.SetupPsiblast(NULL, CShowBlastDefline::eRepeatPass);
             showdef.DisplayBlastDefline(m_Outfile);
@@ -347,9 +351,8 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
 
         // Show deflines for 'new' sequences
         {{
-            CShowBlastDefline showdef(new_seqs, *m_Scope, 
-                                      kFormatLineLength,
-                                      m_NumSummary);
+            CShowBlastDefline showdef(new_seqs, *m_Scope, kFormatLineLength,
+                              max(0, m_NumSummary-(int)prev_seqids.size()));
             x_ConfigCShowBlastDefline(showdef);
             showdef.SetupPsiblast(NULL, CShowBlastDefline::eNewPass);
             showdef.DisplayBlastDefline(m_Outfile);

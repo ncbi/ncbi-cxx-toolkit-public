@@ -104,11 +104,17 @@ Blast4-queries ::= CHOICE {
     bioseq-set              Bioseq-set
 }
 
--- Options have been broken down into two groups as part of the BLAST
+-- Options have been broken down into three groups as part of the BLAST
 -- API work.  The algorithm options essentially correspond to those
 -- options available via the CBlastOptions class.
+-- For definitions of the names used in the Blast4-parameter structures, see
+-- c++/{include,src}/objects/blast/names.[hc]pp in the NCBI C++ toolkit.
 --   algorithm-options: Options for BLAST (ie. seq comparison) algorithm.
---   program-options:   Other options, such as which seqs. to compare.
+--   program-options:   Options for controlling program execution and/or 
+--                      database filtering
+--   format-options:    Options for formatting BLAST results, clients should
+--                      use this only if applicable, otherwise they should be
+--                      ignored
 
 Blast4-queue-search-request ::= SEQUENCE {
     program                 VisibleString,
@@ -118,7 +124,8 @@ Blast4-queue-search-request ::= SEQUENCE {
     -- This field contains a task description
     paramset                VisibleString OPTIONAL,
     algorithm-options       Blast4-parameters OPTIONAL,
-    program-options         Blast4-parameters OPTIONAL
+    program-options         Blast4-parameters OPTIONAL,
+    format-options          Blast4-parameters OPTIONAL
 }
 
 -- Simplified search submission structure
@@ -154,7 +161,8 @@ Blast4-get-request-info-reply ::= SEQUENCE {
     created-by              VisibleString,
     queries                 Blast4-queries,
     algorithm-options       Blast4-parameters,
-    program-options         Blast4-parameters
+    program-options         Blast4-parameters,
+    format-options          Blast4-parameters OPTIONAL
 }
 
 -- Fetch the search strategy (i.e.: object used to submit the search)

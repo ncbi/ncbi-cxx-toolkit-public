@@ -1327,7 +1327,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     return hits_extended;
 }
 
-/* Description in blast_extend.h */
+/* Description in na_ungapped.h */
 Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
                        BLAST_SequenceBlk * query,
                        BlastQueryInfo * query_info,

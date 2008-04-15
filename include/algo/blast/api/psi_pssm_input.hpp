@@ -228,8 +228,13 @@ private:
     /// @param denseg source alignment segment (HSP) [in]
     /// @param msa_index index of the sequence aligned with the query in the
     ///        desc_matrix field of the m_AlignmentData data member [in]
+    /// @param evalue evalue for this sequence aligned with the query (used for
+    /// debugging only) [in]
+    /// @param bit_score bit score for this sequence aligned with the query
+    /// (used for debugging only) [in]
     void x_ProcessDenseg(const objects::CDense_seg& denseg, 
-                         unsigned int msa_index);
+                         unsigned int msa_index,
+                         double evalue, double bit_score);
 
     /// unit test class
     friend class ::CPssmEngineTest;

@@ -592,20 +592,27 @@ void CBlastFormatUtil::GetScoreString(double evalue,
 
     /* Facilitates comparing formatted output using diff */
     static string kBitScoreFormat("%4.1lf");
-#ifdef _DEBUG
+#ifdef CTOOLKIT_COMPATIBLE
+    static bool ctoolkit_compatible = false;
     static bool value_set = false;
     if ( !value_set ) {
         if (getenv("CTOOLKIT_COMPATIBLE")) {
             kBitScoreFormat.assign("%4.0lf");
+            ctoolkit_compatible = true;
         }
         value_set = true;
     }
-#endif
+#endif /* CTOOLKIT_COMPATIBLE */
     
     if (evalue < 1.0e-180) {
         sprintf(evalue_buf, "0.0");
     } else if (evalue < 1.0e-99) {
         sprintf(evalue_buf, "%2.0le", evalue);        
+#ifdef CTOOLKIT_COMPATIBLE
+        if (ctoolkit_compatible) {
+            strncpy(evalue_buf, evalue_buf+1, sizeof(evalue_buf-1));
+        }
+#endif /* CTOOLKIT_COMPATIBLE */
     } else if (evalue < 0.0009) {
         sprintf(evalue_buf, "%3.0le", evalue);
     } else if (evalue < 0.1) {

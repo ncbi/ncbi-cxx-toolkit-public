@@ -2702,6 +2702,14 @@ s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
    q_length = init_hsp->offsets.qs_offsets.q_off + offset_adjustment;
    s_length = init_hsp->offsets.qs_offsets.s_off + offset_adjustment;
 
+   /* This prevents the starting point from being at the end of a sequence
+      as mentioned in the comment above. */
+   if (q_length > query_blk->length || s_length > subject_blk->length)
+   {
+       q_length -= COMPRESSION_RATIO;
+       s_length -= COMPRESSION_RATIO;
+   }
+
    /* perform extension to left */
    score_left = s_BlastAlignPackedNucl(query, subject, q_length, s_length, 
                       &private_q_start, &private_s_start, gap_align, 

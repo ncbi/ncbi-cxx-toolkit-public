@@ -55,6 +55,7 @@ typedef struct LookupTableWrap {
 /** Create the lookup table for all query words.
  * @param query The query sequence [in]
  * @param lookup_options What kind of lookup table to build? [in]
+ * @param query_options options for query setup [in]
  * @param lookup_segments Locations on query to be used for lookup table
  *                        construction [in]
  * @param sbp Scoring block containing matrix [in]

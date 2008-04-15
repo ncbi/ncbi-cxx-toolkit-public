@@ -146,7 +146,7 @@ private:
     bool m_DbIsAA;              ///< true if database has protein sequences
     bool m_BelieveQuery;        ///< true if query sequence IDs are parsed
     CNcbiOstream& m_Outfile;    ///< stream to receive output
-    int m_NumSummary;           ///< number of 1-line summaries
+    int m_NumSummary;        ///< number of 1-line summaries
     int m_NumAlignments;        ///< number of database sequences to present alignments for.
     string m_Program;           ///< blast program
     string m_DbName;            ///< name of blast database

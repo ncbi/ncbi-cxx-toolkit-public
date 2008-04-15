@@ -385,6 +385,35 @@ CPssmEngine::x_InitializeQueryInfo(unsigned int query_length)
 }
 
 void
+CPssmEngine::SetUngappedStatisticalParams(CConstRef<CBlastAncillaryData> 
+                                          ancillary_data)
+{
+    _ASSERT(m_ScoreBlk.Get() != NULL);
+    _ASSERT(ancillary_data.NotEmpty());
+    if (ancillary_data->GetPsiUngappedKarlinBlk()) {
+        _ASSERT(m_ScoreBlk->kbp_psi && m_ScoreBlk->kbp_psi[0]);
+        m_ScoreBlk->kbp_psi[0]->Lambda =
+            ancillary_data->GetPsiUngappedKarlinBlk()->Lambda;
+        m_ScoreBlk->kbp_psi[0]->K =
+            ancillary_data->GetPsiUngappedKarlinBlk()->K;
+        m_ScoreBlk->kbp_psi[0]->logK = log(m_ScoreBlk->kbp_psi[0]->K);
+        m_ScoreBlk->kbp_psi[0]->H =
+            ancillary_data->GetPsiUngappedKarlinBlk()->H;
+    }
+
+    if (ancillary_data->GetPsiGappedKarlinBlk()) {
+        _ASSERT(m_ScoreBlk->kbp_gap_psi && m_ScoreBlk->kbp_gap_psi[0]);
+        m_ScoreBlk->kbp_gap_psi[0]->Lambda =
+            ancillary_data->GetPsiGappedKarlinBlk()->Lambda;
+        m_ScoreBlk->kbp_gap_psi[0]->K =
+            ancillary_data->GetPsiGappedKarlinBlk()->K;
+        m_ScoreBlk->kbp_gap_psi[0]->logK = log(m_ScoreBlk->kbp_gap_psi[0]->K);
+        m_ScoreBlk->kbp_gap_psi[0]->H =
+            ancillary_data->GetPsiGappedKarlinBlk()->H;
+    }
+}
+
+void
 CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
                                     unsigned int query_length,
                                     const char* matrix_name)
@@ -392,9 +421,7 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     _ASSERT(query);
     _ASSERT(matrix_name);
 
-    // This program type will need to be changed when psi-tblastn is
-    // implemented
-    const EBlastProgramType kProgramType = eBlastTypeBlastp;
+    const EBlastProgramType kProgramType = eBlastTypePsiBlast;
     short status = 0;
 
     TAutoUint1Ptr guarded_query(x_GuardProteinQuery(query, query_length));
@@ -450,6 +477,8 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     }
 
     _ASSERT(retval->kbp_ideal);
+    _ASSERT(retval->kbp == retval->kbp_psi);
+    _ASSERT(retval->kbp_gap == retval->kbp_gap_psi);
 
     m_ScoreBlk.Reset(retval);
 }
@@ -503,9 +532,12 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
     asn1_pssm.SetNumColumns(pssm->ncols);
     asn1_pssm.SetByRow(false);  // this is the default
 
-    asn1_pssm.SetFinalData().SetLambda(pssm->lambda);
-    asn1_pssm.SetFinalData().SetKappa(pssm->kappa);
-    asn1_pssm.SetFinalData().SetH(pssm->h);
+    asn1_pssm.SetLambda(pssm->lambda);
+    asn1_pssm.SetKappa(pssm->kappa);
+    asn1_pssm.SetH(pssm->h);
+    asn1_pssm.SetLambdaUngapped(pssm->ung_lambda);
+    asn1_pssm.SetKappaUngapped(pssm->ung_kappa);
+    asn1_pssm.SetHUngapped(pssm->ung_h);
     if (asn1_pssm.GetByRow() == false) {
         for (unsigned int i = 0; i < pssm->ncols; i++) {
             for (unsigned int j = 0; j < pssm->nrows; j++) {

@@ -125,13 +125,10 @@ int CTblastxApp::Run(void)
         search_db = db_args->GetSearchDatabase();
         CRef<CScope> scope(new CScope(*m_ObjMgr));
         if ( !m_CmdLineArgs->ExecuteRemotely() ) {
-            if (db_args->GetSubjects()) {
+            CRef<IQueryFactory> subjects;
+            if ( (subjects = db_args->GetSubjects(scope)) ) {
                 _ASSERT(search_db.Empty());
-                CRef<CScope> subj_scope;
-                db_adapter.Reset
-                    (new CLocalDbAdapter(db_args->GetSubjects(&subj_scope), 
-                                         opts_hndl));
-                scope->AddScope(*subj_scope);
+                db_adapter.Reset(new CLocalDbAdapter(subjects, opts_hndl));
             } else {
                 CRef<CSeqDB> seqdb = GetSeqDB(db_args);
                 db_adapter.Reset(new CLocalDbAdapter(seqdb));
@@ -175,11 +172,10 @@ int CTblastxApp::Run(void)
             CRef<CSearchResultSet> results;
 
             if (m_CmdLineArgs->ExecuteRemotely()) {
-                CRemoteBlast rmt_blast(queries, opts_hndl, *search_db);
-                if (m_CmdLineArgs->ProduceDebugRemoteOutput()) {
-                    rmt_blast.SetVerbose();
-                }
-                results = rmt_blast.GetResultSet();
+                CRef<CRemoteBlast> rmt_blast = 
+                    InitializeRemoteBlast(queries, db_args, opts_hndl, scope,
+                          m_CmdLineArgs->ProduceDebugRemoteOutput());
+                results = rmt_blast->GetResultSet();
             } else {
                 CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
                 lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());

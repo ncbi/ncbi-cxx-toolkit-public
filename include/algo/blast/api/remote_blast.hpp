@@ -106,6 +106,14 @@ public:
                  CRef<CBlastOptionsHandle>   opts_handle,
                  const CSearchDatabase     & db);
     
+    /// Create a search and set options, queries, and subject sequences.
+    /// @param queries Queries corresponding to Seq-loc-list or Bioseq-set.
+    /// @param opts_handle Blast options handle.
+    /// @param subjects Subject corresponding to Seq-loc-list or Bioseq-set.
+    CRemoteBlast(CRef<IQueryFactory>       queries,
+                 CRef<CBlastOptionsHandle> opts_handle,
+                 CRef<IQueryFactory>       subjects);
+    
     /// Create a PSSM search and set options, queries, and database.
     /// @param pssm Search matrix for a PSSM search.
     /// @param opts_handle Blast options handle.
@@ -130,22 +138,28 @@ public:
     /// Set the name of the database to search against.
     void SetDatabase(const string & x);
     
+    /// Set a list of subject sequences to search against.
+    void SetSubjectSequences(CRef<IQueryFactory> subj);
+    
+    /// Set a list of subject sequences to search against.
+    void SetSubjectSequences(const list< CRef<objects::CBioseq> > & subj);
+    
     /// Restrict search to sequences matching this Entrez query.
     void SetEntrezQuery(const char * x);
     
     /// Set the query as a Bioseq_set.
     void SetQueries(CRef<objects::CBioseq_set> bioseqs);
-
+    
     /// Set the query as a Bioseq_set along with the corresponding masking
     /// locations.
     /// @param bioseqs Query sequence data [in]
     /// @param masking_locations Masked regions for the queries above [in]
     void SetQueries(CRef<objects::CBioseq_set> bioseqs,
                     const TSeqLocInfoVector& masking_locations);
-
+    
     /// Typedef for a list of Seq-locs
     typedef list< CRef<objects::CSeq_loc> > TSeqLocList;
-
+    
     /// Set the query as a list of Seq_locs.
     /// @param seqlocs One interval Seq_loc or a list of whole Seq_locs.
     void SetQueries(TSeqLocList& seqlocs);
@@ -389,7 +403,7 @@ public:
     ///
     /// @return An object describing the searched database(s).
     CRef<objects::CBlast4_database> GetDatabases();
-
+    
     /// Get the program used for this search.
     /// @return The value of the program parameter.
     string GetProgram();
@@ -492,6 +506,10 @@ private:
     /// @param db Database used for this search.
     void x_Init(CRef<CBlastOptionsHandle>   opts_handle,
                 const CSearchDatabase     & db);
+    
+    /// Initialize queries based on a query factory.
+    /// @param queries Query factory from which to pull queries.
+    void x_InitQueries(CRef<IQueryFactory> queries);
     
     /// Configure new search from options handle passed to constructor.
     void x_SetAlgoOpts(void);
@@ -648,6 +666,15 @@ private:
     void x_SetMaskingLocationsForQueries(const TSeqLocInfoVector&
                                          masking_locations);
 
+    /// Extract the user specified masking locations from the query factory
+    /// @note this method only extracts masking locations for
+    /// CObjMgr_QueryFactory objects, for other types use the SetQueries method
+    /// @param query_factory source of query sequence data [in]
+    /// @param masks masking locations extracted [out]
+    void
+    x_ExtractUserSpecifiedMasks(CRef<IQueryFactory> query_factory, 
+                                TSeqLocInfoVector& masks);
+
     /// Converts the provided query masking locations (if any) to the network
     /// representation following the BLAST 4 ASN.1 spec
     void x_QueryMaskingLocationsToNetwork();
@@ -725,6 +752,9 @@ private:
     
     /// Databases
     CRef<objects::CBlast4_database> m_Dbs;
+    
+    /// Subject Sequences
+    list< CRef<objects::CBioseq> > m_SubjectSequences;
     
     /// Program value used when submitting this search
     string m_Program;

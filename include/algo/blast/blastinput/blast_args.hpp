@@ -619,11 +619,12 @@ public:
     }
 
     /// Retrieve subject sequences, if provided
+    /// @param scope scope to which to sequence read will be added [in]
     /// @return empty CRef<> if no subjects were provided, otherwise a properly
     /// initialized IQueryFactory object
-    CRef<IQueryFactory> GetSubjects(CRef<objects::CScope>* scope = NULL) const {
-        if (scope) {
-            *scope = m_Scope;
+    CRef<IQueryFactory> GetSubjects(CRef<objects::CScope> scope) {
+        if (m_Subjects) {
+            scope->AddScope(*m_Scope);
         }
         return m_Subjects; 
     }

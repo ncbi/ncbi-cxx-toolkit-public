@@ -993,7 +993,7 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
                 /* round up for positive scores, down for negatives. */
                 matrix[index1][index2] = 
                     BLAST_Nint( (double) ((degeneracy[index2]-1)*penalty + 
-                                          reward))/degeneracy[index2];
+                                          reward)/ (double) degeneracy[index2]);
                 if (index1 != index2)
                 {
                       matrix[index2][index1] = matrix[index1][index2];

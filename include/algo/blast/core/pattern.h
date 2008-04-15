@@ -204,7 +204,7 @@ SPHIQueryInfoFree(SPHIQueryInfo* pat_info);
  */
 NCBI_XBLAST_EXPORT
 SPHIQueryInfo* 
-SPHIQueryInfoCopy(SPHIQueryInfo* pat_info);
+SPHIQueryInfoCopy(const SPHIQueryInfo* pat_info);
 
 /** Finds all pattern hits in a given query and saves them in the 
  * previously allocated SPHIQueryInfo structure.

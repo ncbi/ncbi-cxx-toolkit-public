@@ -403,9 +403,8 @@ CFilteringArgs::x_TokenizeFilteringArgs(const string& filtering_args,
 void
 CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
 {
-    if (args[kArgLookupTableMaskingOnly] && 
-        args[kArgLookupTableMaskingOnly].AsBoolean()) {
-        opt.SetMaskAtHash(true);
+    if (args[kArgLookupTableMaskingOnly]) {
+        opt.SetMaskAtHash(args[kArgLookupTableMaskingOnly].AsBoolean());
     }
 
     vector<string> tokens;
@@ -1279,25 +1278,19 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     } else if (args.Exist(kArgSubject) && args[kArgSubject]) {
 
-        if (args.Exist(kArgRemote) && args[kArgRemote]) {
-            NCBI_THROW(CBlastException, eInvalidArgument,
-               "Submission of remote BLAST-2-Sequences is not supported\n"
-               "Please visit the NCBI web site to submit your search");
+        CNcbiIstream& subj_input_stream = args[kArgSubject].AsInputFile();
+        TSeqRange subj_range;
+        if (args.Exist(kArgSubjectLocation) && args[kArgSubjectLocation]) {
+            s_TokenizeSequenceRange(args[kArgSubjectLocation].AsString(), 
+                            subj_range,
+                            "Invalid specification of subject location");
         }
-        else {
-            CNcbiIstream& subj_input_stream = args[kArgSubject].AsInputFile();
-            TSeqRange subj_range;
-            if (args.Exist(kArgSubjectLocation) && args[kArgSubjectLocation]) {
-                s_TokenizeSequenceRange(args[kArgSubjectLocation].AsString(), 
-                                subj_range,
-                                "Invalid specification of subject location");
-            }
 
-            CRef<blast::CBlastQueryVector> subjects;
-            m_Scope = ReadSequencesToBlast(subj_input_stream, IsProtein(),
-                                           subj_range, subjects);
-            m_Subjects.Reset(new blast::CObjMgr_QueryFactory(*subjects));
-        }
+        CRef<blast::CBlastQueryVector> subjects;
+        m_Scope = ReadSequencesToBlast(subj_input_stream, IsProtein(),
+                                       subj_range, subjects);
+        m_Subjects.Reset(new blast::CObjMgr_QueryFactory(*subjects));
+
     } else {
         NCBI_THROW(CBlastException, eInvalidArgument,
            "Either a BLAST database or subject sequence(s) must be specified");

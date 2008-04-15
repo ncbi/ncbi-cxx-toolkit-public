@@ -150,10 +150,10 @@ CPsiBlastApp::ComputePssmForNextIteration(const CBioseq& bioseq,
         diags->weighted_residue_frequencies = true;
         diags->gapless_column_weights = true;
         diags->sigma = diags->interval_sizes = diags->num_matching_seqs = true;
-        m_AncillaryData = ancillary_data;
     }
+    m_AncillaryData = ancillary_data;
     return PsiBlastComputePssmFromAlignment(bioseq, sset, scope, *opts_handle,
-                                            diags);
+                                            m_AncillaryData, diags);
 }
 
 void
@@ -172,7 +172,7 @@ CPsiBlastApp::SavePssmToFile(CRef<CPssmWithParameters> pssm,
 
     if (m_CmdLineArgs->SaveAsciiPssm() &&
         (itr == NULL || // this is true in the case of remote PSI-BLAST
-         itr->GetIterationNumber() > 1)) {
+         itr->GetIterationNumber() >= 1)) {
         CBlastFormatUtil::PrintAsciiPssm(*pssm, 
                                          m_AncillaryData,
                                          *m_CmdLineArgs->GetAsciiPssmStream());
@@ -199,7 +199,7 @@ int CPsiBlastApp::Run(void)
         CRef<CPSIBlastOptionsHandle> opts;
         opts.Reset(dynamic_cast<CPSIBlastOptionsHandle*>(&*opts_hndl));
         _ASSERT(opts.NotEmpty());
-        const CBlastOptions& opt = opts->GetOptions();
+        CBlastOptions& opt = opts->SetOptions();
         const size_t kNumIterations = m_CmdLineArgs->GetNumberOfIterations();
 
         /*** Get the query sequence(s) or PSSM (these two options are mutually
@@ -279,6 +279,12 @@ int CPsiBlastApp::Run(void)
                                opt.GetDbGeneticCode(),
                                opt.GetSumStatisticsMode(),
                                m_CmdLineArgs->ExecuteRemotely());
+        //if (kNumIterations > 1) {
+        //    // don't restrict the # of hits so that the number of hits sent to
+        //    // the PSSM engine is the same as in the C toolkit
+        //    opt.SetHitlistSize(max(fmt_args->GetNumDescriptions(),
+        //                           fmt_args->GetNumAlignments()));
+        //}
 
         formatter.PrintProlog();
 
@@ -287,18 +293,9 @@ int CPsiBlastApp::Run(void)
 
         if (m_CmdLineArgs->ExecuteRemotely()) {
 
-            CRef<CRemoteBlast> rmt_psiblast;
-            if (query_factory.Empty()) {
-                rmt_psiblast.Reset(new CRemoteBlast(pssm, opts_hndl, 
-                                                    *search_db));
-            } else {
-                rmt_psiblast.Reset(new CRemoteBlast(query_factory, opts_hndl,
-                                                    *search_db));
-            }
-
-            if (m_CmdLineArgs->ProduceDebugRemoteOutput()) {
-                rmt_psiblast->SetVerbose();
-            }
+            CRef<CRemoteBlast> rmt_psiblast = 
+                InitializeRemoteBlast(query_factory, db_args, opts_hndl, scope,
+                      m_CmdLineArgs->ProduceDebugRemoteOutput(), pssm);
 
             CRef<CSearchResultSet> results = rmt_psiblast->GetResultSet();
             ITERATE(CSearchResultSet, result, *results) {

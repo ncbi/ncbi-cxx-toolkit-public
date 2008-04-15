@@ -42,6 +42,7 @@
 
 // generated classes
 
+#include <objects/scoremat/PssmFinalData.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -95,6 +96,98 @@ CPssm::GetQuerySequenceData(CNCBIstdaa& retval) const
              seq_data.GetNcbistdaa().Get().end(),
              back_inserter(retval.Set()));
     }
+}
+
+double
+CPssm::GetLambda() const
+{
+    if ( !CanGetFinalData() || !GetFinalData().CanGetLambda() ) {
+        return kInvalidStat;
+    }
+    return GetFinalData().GetLambda();
+}
+
+double
+CPssm::GetKappa() const
+{
+    if ( !CanGetFinalData() || !GetFinalData().CanGetKappa() ) {
+        return kInvalidStat;
+    }
+    return GetFinalData().GetKappa();
+}
+
+double
+CPssm::GetH() const
+{
+    if ( !CanGetFinalData() || !GetFinalData().CanGetH() ) {
+        return kInvalidStat;
+    }
+    return GetFinalData().GetH();
+}
+
+double
+CPssm::GetLambdaUngapped() const
+{
+    if ( !CanGetFinalData() || !GetFinalData().CanGetLambdaUngapped() ) {
+        return kInvalidStat;
+    }
+    return GetFinalData().GetLambdaUngapped();
+}
+
+double
+CPssm::GetKappaUngapped() const
+{
+    if ( !CanGetFinalData() || !GetFinalData().CanGetKappaUngapped() ) {
+        return kInvalidStat;
+    }
+    return GetFinalData().GetKappaUngapped();
+}
+
+double
+CPssm::GetHUngapped() const
+{
+    if ( !CanGetFinalData() || !GetFinalData().CanGetHUngapped() ) {
+        return kInvalidStat;
+    }
+    return GetFinalData().GetHUngapped();
+}
+
+const double CPssm::kInvalidStat = 0.0;
+
+void 
+CPssm::SetLambda(double val)
+{
+    SetFinalData().SetLambda(val);
+}
+
+void 
+CPssm::SetKappa(double val)
+{
+    SetFinalData().SetKappa(val);
+}
+
+void 
+CPssm::SetH(double val)
+{
+    SetFinalData().SetH(val);
+}
+
+void 
+CPssm::SetLambdaUngapped(double val)
+{
+    SetFinalData().SetLambdaUngapped(val);
+}
+
+void 
+CPssm::SetKappaUngapped(double val)
+{
+    SetFinalData().SetKappaUngapped(val);
+}
+
+void 
+CPssm::SetHUngapped(double val)
+{
+    SetFinalData().SetHUngapped(val);
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

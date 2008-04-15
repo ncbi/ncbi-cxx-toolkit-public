@@ -317,7 +317,14 @@ static Int4 s_BlastSmallNaLookupFinalize(Int4 **thin_backbone,
     return 0;
 }
 
-static BlastSeqLoc* s_SeqLocListInvert(BlastSeqLoc* locations, Int4 length)
+/** Changes the list of locations into a list of 
+   the intervals between locations (the inverse).
+   @param locations input list [in]
+   @param length (query) sequence length [in]
+   @return inverted BlastSeqLoc
+*/
+
+static BlastSeqLoc* s_SeqLocListInvert(const BlastSeqLoc* locations, Int4 length)
 {
      BlastSeqLoc* retval = NULL;
      BlastSeqLoc* tail = NULL;  /* Tail of the list. */

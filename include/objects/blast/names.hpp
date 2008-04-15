@@ -175,6 +175,24 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapXDropoffFinal;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SmithWatermanMode;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UnifiedP;
 
+// List of formatting-related options
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_Alignments;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_AlignView;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_BlastSpecialPage;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_Client;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_Descriptions;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_EntrezQuery;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_Html;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_JobTitle;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_NewWindow;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_OrganismName;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_RunPsiBlast;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_ShortQueryAdjust;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_ShowGi;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_ShowOverview;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_StepNumber;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_User;
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

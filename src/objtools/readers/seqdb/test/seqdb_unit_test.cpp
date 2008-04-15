@@ -3691,5 +3691,11 @@ BOOST_AUTO_TEST_CASE(DeltaSequenceHash)
     CHECK_EQUAL(h1, h2);
 }
 
+BOOST_AUTO_TEST_CASE(RestartWithVolumes)
+{
+    START;
+    CSeqDB db("data/restart", CSeqDB::eProtein);
+}
+
 #endif /* SKIP_DOXYGEN_PROCESSING */
 

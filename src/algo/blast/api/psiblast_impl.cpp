@@ -150,6 +150,24 @@ CPsiBlastImpl::Run()
                                 search_messages);
     tback.SetResultType(m_ResultType);
     m_Results = tback.Run();
+
+    // Save the K&A values be as they might have been modified in the 
+    // composition adjustment library
+    if (m_Pssm.NotEmpty()) {
+        CPssm& pssm = m_Pssm->SetPssm();
+        pssm.SetLambda
+            (core_data->m_ScoreBlk->GetPointer()->kbp_gap_psi[0]->Lambda);
+        pssm.SetKappa
+            (core_data->m_ScoreBlk->GetPointer()->kbp_gap_psi[0]->K);
+        pssm.SetH
+            (core_data->m_ScoreBlk->GetPointer()->kbp_gap_psi[0]->H);
+        pssm.SetLambdaUngapped
+            (core_data->m_ScoreBlk->GetPointer()->kbp_psi[0]->Lambda);
+        pssm.SetKappaUngapped
+            (core_data->m_ScoreBlk->GetPointer()->kbp_psi[0]->K);
+        pssm.SetHUngapped
+            (core_data->m_ScoreBlk->GetPointer()->kbp_psi[0]->H);
+    }
     return m_Results;
 }
 

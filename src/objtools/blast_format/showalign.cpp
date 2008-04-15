@@ -2797,7 +2797,7 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
 {
     /* Facilitates comparing formatted output using diff */
     static string kLengthString("Length=");
-#ifdef _DEBUG
+#ifdef CTOOLKIT_COMPATIBLE
     static bool value_set = false;
     if ( !value_set ) {
         if (getenv("CTOOLKIT_COMPATIBLE")) {
@@ -2805,7 +2805,7 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
         }
         value_set = true;
     }
-#endif /* _DEBUG */
+#endif /* CTOOLKIT_COMPATIBLE */
   
     m_AV = aln_vec_info->alnvec;
     const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
@@ -3206,8 +3206,8 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
     static string kQuery("Query");
     static string kSubject("Sbjct");
 
+#ifdef CTOOLKIT_COMPATIBLE
     /* Facilitates comparing formatted output using diff */
-#ifdef _DEBUG
     static bool value_set = false;
     if ( !value_set ) {
         if (getenv("CTOOLKIT_COMPATIBLE")) {
@@ -3216,7 +3216,7 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
         }
         value_set = true;
     }
-#endif /* _DEBUG */
+#endif /* CTOOLKIT_COMPATIBLE */
 
     if(m_AlignOption & eShowBlastStyleId) {
         if(row==0){//query

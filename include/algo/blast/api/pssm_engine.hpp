@@ -38,6 +38,7 @@
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/pssm_input.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/api/blast_results.hpp> // for CBlastAncillaryData
 
 // Forward declarations
 class CPssmEngineTest;      // unit test class
@@ -112,6 +113,13 @@ public:
 
     /// Destructor
     ~CPssmEngine();
+
+    /// Sets the Karlin & Altschul parameters in the BlastScoreBlk to be used
+    /// in PSSM generation. This should be used when performing PSI-BLAST
+    /// iterations, but it's not necessary for a single PSSM construction
+    /// @param ancillary_data BLAST ancillary data from a previous iteration
+    void SetUngappedStatisticalParams(CConstRef<CBlastAncillaryData>
+                                      ancillary_data);
 
     /// Runs the PSSM engine to compute the PSSM
     CRef<objects::CPssmWithParameters> Run();

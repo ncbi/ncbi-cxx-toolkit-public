@@ -105,6 +105,7 @@ PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
                                  CConstRef<objects::CSeq_align_set> alignment,
                                  CRef<objects::CScope> database_scope,
                                  const CPSIBlastOptionsHandle& opts_handle,
+                                 CConstRef<CBlastAncillaryData> ancillary_data,
                                  PSIDiagnosticsRequest* diagnostics_request)
 {
     // Extract PSSM engine options from options handle
@@ -129,6 +130,7 @@ PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
                              diagnostics_request);
 
     CPssmEngine engine(&input);
+    engine.SetUngappedStatisticalParams(ancillary_data);
     CRef<CPssmWithParameters> retval(engine.Run());
 
     PsiBlastAddAncillaryPssmData(*retval, query, 

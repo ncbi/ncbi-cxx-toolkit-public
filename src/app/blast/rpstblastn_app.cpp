@@ -170,11 +170,10 @@ int CRPSTBlastnApp::Run(void)
             CRef<CSearchResultSet> results;
 
             if (m_CmdLineArgs->ExecuteRemotely()) {
-                CRemoteBlast rmt_blast(queries, opts_hndl, *search_db);
-                if (m_CmdLineArgs->ProduceDebugRemoteOutput()) {
-                    rmt_blast.SetVerbose();
-                }
-                results = rmt_blast.GetResultSet();
+                CRef<CRemoteBlast> rmt_blast = 
+                    InitializeRemoteBlast(queries, db_args, opts_hndl, scope,
+                          m_CmdLineArgs->ProduceDebugRemoteOutput());
+                results = rmt_blast->GetResultSet();
             } else {
                 CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
                 lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());

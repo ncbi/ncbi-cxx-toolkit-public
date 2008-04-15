@@ -75,9 +75,6 @@ extern const unsigned int kQueryIndex;
 /** Small constant to test against 0 */
 extern const double kEpsilon;
 
-/* FIXME: Should this value be replaced by BLAST_EXPECT_VALUE? *
-extern const double kDefaultEvalueForPosition; */
-
 /** Successor to POSIT_SCALE_FACTOR  */
 extern const int kPSIScaleFactor;
 
@@ -206,7 +203,8 @@ typedef struct _PSIMsa {
     Uint4*              num_matching_seqs;  /**< number of sequences aligned at
                                               a given position in the multiple
                                               sequence alignment (length: 
-                                              query_length) */
+                                              query_length). Corresponds to
+                                              posit.h:posSearch->posCount */
 } _PSIMsa;
 
 /** Allocates and initializes the internal version of the PSIMsa structure
@@ -284,6 +282,15 @@ _PSIAlignedBlockFree(_PSIAlignedBlock* aligned_blocks);
 
 /** Internal data structure to keep computed sequence weights */
 typedef struct _PSISequenceWeights {
+    /* Some notes on how elements of this structures corresponds to elements 
+       of structures defined in posit.h:
+
+    _PSISequenceWeights->match_weights is the same as posSearch->posMatchWeights
+    _PSISequenceWeights->gapless_column_weights is the same as 
+          posSearch->posGaplessColumnWeights
+    _PSISequenceWeights->norm_seq_weights is the same as posSearch->posA
+    _PSISequenceWeights->row_sigma is the same as posSearch->posRowSigma
+    */
     double** match_weights;     /**< weighted observed residue frequencies (f_i
                                   in 2001 paper). (dimensions: query_length 
                                   x BlastScoreBlk's alphabet_size) */
@@ -301,6 +308,12 @@ typedef struct _PSISequenceWeights {
     /* This fields is required for important diagnostic output, they are
      * copied into diagnostics structure */
     double* gapless_column_weights; /**< FIXME */
+    int** posDistinctDistrib; /**< For position i, how many positions in its block
+                               have j distinct letters.  Copied from
+                               posit.h:posSearchItems.posDistinctDistrib */
+    Uint4 posDistinctDistrib_size; /**< Kept to deallocate field above. */
+    int* posNumParticipating; /**< number of sequences at each position.  Copied from
+                                posit.h:posSearchItems.posNumParticipating  */
 } _PSISequenceWeights;
 
 /** Allocates and initializes the _PSISequenceWeights structure.
@@ -374,6 +387,7 @@ _PSIValidateMSA(const _PSIMsa* msa);
 
 /** Main function to compute aligned blocks' properties for each position 
  * within multiple alignment (stage 3) 
+ * Corresponds to posit.c:posComputeExtents
  * @param msa multiple sequence alignment data structure [in]
  * @param aligned_block data structure describing the aligned blocks'
  * properties for each position of the multiple sequence alignment [out]
@@ -386,6 +400,7 @@ _PSIComputeAlignmentBlocks(const _PSIMsa* msa,
 
 /** Main function to calculate the sequence weights. Should be called with the
  * return value of PSIComputeAlignmentBlocks (stage 4)
+ * Corresponds to posit.c:posComputeSequenceWeights
  * @param msa multiple sequence alignment data structure [in]
  * @param aligned_blocks data structure describing the aligned blocks'
  * properties for each position of the multiple sequence alignment [in]
@@ -406,6 +421,7 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,
 
 /** Main function to compute the PSSM's frequency ratios (stage 5).
  * Implements formula 2 in Nucleic Acids Research, 2001, Vol 29, No 14.
+ * Corresponds to posit.c:posComputePseudoFreqs
  * @param msa multiple sequence alignment data structure [in]
  * @param seq_weights data structure containing the data needed to compute the
  * sequence weights [in]
@@ -588,6 +604,7 @@ _PSICalculateInformationContentFromScoreMatrix(
 
 /** Calculates the information content from the residue frequencies calculated
  * in stage 5 of the PSSM creation algorithm 
+ * Corresponds to posit.c:posFreqsToInformation
  * @sa _PSIComputeFreqRatios: stage 5
  * @param freq_ratios matrix of frequency ratios (dimensions: query_length x 
  * alphabet_sz) (const) [in]
@@ -604,10 +621,12 @@ _PSICalculateInformationContentFromFreqRatios(
     Uint4 query_length,
     Uint4 alphabet_sz);
 
-#ifdef _DEBUG
+#ifdef DEBUG_PSSM_ENGINE
 void PrintMsa(const char* filename, const PSIMsa* msa);
+void PrintMsaFP(FILE* fp, const PSIMsa* msa);
 void __printMsa(const char* filename, const _PSIPackedMsa* msa);
-#endif /* _DEBUG */
+void __printMsaFP(FILE* fp, const _PSIPackedMsa* msa);
+#endif /* DEBUG_PSSM_ENGINE */
 
 /** Enable NCBI structure group customization to discard the query sequence,
  * as this really isn't the result of a PSI-BLAST iteration, but rather an

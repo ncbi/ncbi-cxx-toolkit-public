@@ -1343,9 +1343,9 @@ Int2 PSIBlastOptionsValidate(const PSIBlastOptions* psi_options,
         return retval;
     }
 
-    if (psi_options->pseudo_count <= 0) {
+    if (psi_options->pseudo_count < 0) {
         Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
-                           "Pseudo count must be greater than 0");
+                           "Pseudo count must be greater than or equal to 0");
         return retval;
     }
 

@@ -60,6 +60,15 @@ typedef struct PSIMsaDimensions {
                           query (does not include the query) */
 } PSIMsaDimensions;
 
+#ifdef DEBUG_PSSM_ENGINE
+/** Sequence information structure */
+typedef struct PSISeqInfo {
+    int gi;                 /**< Sequence GI */
+    double bit_score;       /**< Bit score of this sequence aligned with query*/
+    double evalue;          /**< E-value of this sequence aligned with query*/
+} PSISeqInfo;
+#endif /* DEBUG_PSSM_ENGINE */
+
 /** Multiple sequence alignment (msa) data structure containing the raw data 
  * needed by the PSSM engine to create a PSSM. By convention, the first row of
  * the data field contains the query sequence */
@@ -68,6 +77,12 @@ typedef struct PSIMsa {
     PSIMsaCell**        data;       /**< actual data, dimensions are 
                                      (dimensions->num_seqs+1) by
                                      (dimensions->query_length) */
+#ifdef DEBUG_PSSM_ENGINE
+    PSISeqInfo*         seqinfo;    /** sequence information for a row of the
+                                      multiple sequence alignment, length is
+                                      dimensions->num_seqs+1 */
+                                     
+#endif /* DEBUG_PSSM_ENGINE */
 } PSIMsa;
 
 /** Allocates and initializes the multiple sequence alignment data structure
@@ -96,6 +111,9 @@ typedef struct PSIMatrix {
     double  lambda;     /**< Lambda Karlin-Altschul parameter */
     double  kappa;      /**< Kappa Karlin-Altschul parameter */
     double  h;          /**< H Karlin-Altschul parameter */
+    double  ung_lambda; /**< Ungapped Lambda Karlin-Altschul parameter */
+    double  ung_kappa;  /**< Ungapped Kappa Karlin-Altschul parameter */
+    double  ung_h;      /**< Ungapped H Karlin-Altschul parameter */
 } PSIMatrix;
 
 /** Allocates a new PSIMatrix structure 

@@ -68,6 +68,21 @@ public:
     /// it will be empty if there is no sequence data available [in|out]
     void GetQuerySequenceData(CNCBIstdaa& sequence) const;
 
+    static const double kInvalidStat;
+
+    double GetLambda() const;
+    double GetKappa() const;
+    double GetH() const;
+    double GetLambdaUngapped() const;
+    double GetKappaUngapped() const;
+    double GetHUngapped() const;
+
+    void SetLambda(double val);
+    void SetKappa(double val);
+    void SetH(double val);
+    void SetLambdaUngapped(double val);
+    void SetKappaUngapped(double val);
+    void SetHUngapped(double val);
 private:
     // Prohibit copy constructor and assignment operator
     CPssm(const CPssm& value);

@@ -40,8 +40,31 @@
 
 #include <objects/blast/Blast4_request.hpp>
 #include <algo/blast/api/uniform_search.hpp>
+#include <algo/blast/api/remote_blast.hpp>
 
 BEGIN_NCBI_SCOPE
+
+/** 
+ * @brief Initializes a CRemoteBlast instance for usage by command line BLAST
+ * binaries
+ * 
+ * @param queries query sequence(s) or NULL in case of PSSM input [in]
+ * @param db_args database/subject arguments [in]
+ * @param opts_hndl BLAST options handle [in]
+ * @param scope scope to which the subject sequence(s) will be added [in]
+ * @param verbose_output set to true if CRemoteBlast should produce verbose
+ * output [in]
+ * @param pssm PSSM to use for single iteration remote PSI-BLAST
+ * @throws CInputException in case of remote PSI-BL2SEQ, as it's not supported
+ */
+CRef<blast::CRemoteBlast> 
+InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
+                      CRef<blast::CBlastDatabaseArgs> db_args,
+                      CRef<blast::CBlastOptionsHandle> opts_hndl,
+                      CRef<objects::CScope> scope,
+                      bool verbose_output,
+                      CRef<objects::CPssmWithParameters> pssm = 
+                        CRef<objects::CPssmWithParameters>());
 
 /// Create a CSeqDB object from the command line arguments provided
 /// @param db_args BLAST database arguments [in]

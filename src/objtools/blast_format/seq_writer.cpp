@@ -27,8 +27,8 @@
  *
  */
 
-/** @file seq_writter.cpp
- *  Implementation of the CFastaOstreamCreator class
+/** @file seq_writer.cpp
+ *  Implementation of the CSeqFormatter class
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -45,29 +45,6 @@ static char const rcsid[] =
 BEGIN_NCBI_SCOPE
 USING_SCOPE(blast);
 USING_SCOPE(objects);
-
-#if 0
-CCustomFastaOstream::CCustomFastaOstream()
-{
-}
-
-CCustomFastaOstreamCreator::CCustomFastaOstreamCreator(CNcbiOstream& out,
-                         CSeqDB& blastdb_handle,
-                         const string& specification,
-                                     size_t line_length /* = 80 */,
-                                     bool use_ctrl_A /* = false */)
-: CFastaOstreamCreator(out, line_length, use_ctrl_A), m_BlastDb(blastdb_handle),
-    m_OutputSpec(specification)
-{}
-
-CFastaOstream*
-CCustomFastaOstreamCreator::Create()
-{
-    auto_ptr<CFastaOstream> retval(new CFastaOstream(m_Out));
-    retval->SetWidth(m_LineLength);
-    return retval.release();
-}
-#endif
 
 CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
                              CNcbiOstream& out)

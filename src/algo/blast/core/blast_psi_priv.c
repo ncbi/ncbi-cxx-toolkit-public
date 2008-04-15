@@ -41,6 +41,8 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_util.h>
 #include "blast_dynarray.h"
 
+#include <algo/blast/composition_adjustment/matrix_frequency_data.h>
+
 /****************************************************************************/
 /* Use the following #define's to enable/disable functionality */
 
@@ -227,7 +229,7 @@ _PSIPackedMsaGetNumberOfAlignedSeqs(const _PSIPackedMsa* msa)
 
 /****************************************************************************/
 
-#if _DEBUG
+#ifdef DEBUG_PSSM_ENGINE 
 char GetResidue(char input)
 {
     return input > BLASTAA_SIZE ? '?' : NCBISTDAA_TO_AMINOACID[(int)input];
@@ -236,16 +238,26 @@ char GetResidue(char input)
 void
 PrintMsa(const char* filename, const PSIMsa* msa)
 {
-    Uint4 i, j;
     FILE* fp = NULL;
-
     ASSERT(msa);
     ASSERT(filename);
-
     fp = fopen(filename, "w");
+    PrintMsaFP(fp, msa);
+    fclose(fp);
+}
+
+void
+PrintMsaFP(FILE* fp, const PSIMsa* msa)
+{
+    Uint4 i, j;
+
+    ASSERT(msa);
 
     for (i = 0; i < msa->dimensions->num_seqs + 1; i++) {
-        fprintf(fp, "%3d\t", i);
+        fprintf(fp, "%3d\tGI=%10d\tEvalue=%2.0le\tBitScore=%4.1f\t", i,
+                msa->seqinfo[i].gi,
+                msa->seqinfo[i].evalue,
+                msa->seqinfo[i].bit_score);
         for (j = 0; j < msa->dimensions->query_length; j++) {
             if (msa->data[i][j].is_aligned) {
                 fprintf(fp, "%c", GetResidue(msa->data[i][j].letter));
@@ -255,19 +267,15 @@ PrintMsa(const char* filename, const PSIMsa* msa)
         }
         fprintf(fp, "\n");
     }
-    fclose(fp);
 }
 
 void
-__printMsa(const char* filename, const _PSIPackedMsa* msa)
+__printPackedMsaFP(FILE* fp, const _PSIPackedMsa* msa)
 {
     Uint4 i, j;
-    FILE* fp = NULL;
 
     ASSERT(msa);
-    ASSERT(filename);
-
-    fp = fopen(filename, "w");
+    ASSERT(fp);
 
     for (i = 0; i < msa->dimensions->num_seqs + 1; i++) {
         fprintf(fp, "%3d\t", i);
@@ -285,9 +293,19 @@ __printMsa(const char* filename, const _PSIPackedMsa* msa)
         }
         fprintf(fp, "\n");
     }
+}
+
+void
+__printPackedMsa(const char* filename, const _PSIPackedMsa* msa)
+{
+    FILE* fp = NULL;
+    ASSERT(msa);
+    ASSERT(filename);
+    fp = fopen(filename, "w");
+    __printPackedMsaFP(fp, msa);
     fclose(fp);
 }
-#endif /* _DEBUG */
+#endif /* DEBUG_PSSM_ENGINE */
 
 _PSIMsa*
 _PSIMsaNew(const _PSIPackedMsa* msa, Uint4 alphabet_size)
@@ -522,6 +540,7 @@ _PSIAlignedBlockFree(_PSIAlignedBlock* aligned_blocks)
     return NULL;
 }
 
+#define EFFECTIVE_ALPHABET 20 /**< size of alphabet used for pseudocounts calculations */
 _PSISequenceWeights*
 _PSISequenceWeightsNew(const PSIMsaDimensions* dimensions, 
                        const BlastScoreBlk* sbp)
@@ -573,6 +592,20 @@ _PSISequenceWeightsNew(const PSIMsaDimensions* dimensions,
         return _PSISequenceWeightsFree(retval);
     }
 
+    retval->posDistinctDistrib = (int**) 
+        _PSIAllocateMatrix(1+dimensions->query_length, 
+                           1+EFFECTIVE_ALPHABET, 
+                           sizeof(int));
+    retval->posDistinctDistrib_size = 1+dimensions->query_length;
+    if ( !retval->posDistinctDistrib ) {
+        return _PSISequenceWeightsFree(retval);
+    }
+
+    retval->posNumParticipating = (int*) calloc(1+dimensions->query_length, sizeof(int));
+    if ( !retval->posNumParticipating ) {
+        return _PSISequenceWeightsFree(retval);
+    }
+
     return retval;
 }
 
@@ -606,6 +639,15 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights)
 
     if (seq_weights->gapless_column_weights) {
         sfree(seq_weights->gapless_column_weights);
+    }
+
+    if (seq_weights->posDistinctDistrib) {
+        _PSIDeallocateMatrix((void**) seq_weights->posDistinctDistrib,
+                             seq_weights->posDistinctDistrib_size);
+    }
+
+    if (seq_weights->posNumParticipating) {
+        sfree(seq_weights->posNumParticipating);
     }
 
     sfree(seq_weights);
@@ -1488,11 +1530,16 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
             _PSICalculateNormalizedSequenceWeights(msa, aligned_blocks, pos, 
                                                    aligned_seqs, seq_weights);
         } else {
+            int index;
             seq_weights->sigma[pos] = seq_weights->sigma[pos-1];
+            for (index = 0; index <= EFFECTIVE_ALPHABET; index++) {
+               seq_weights->posDistinctDistrib[pos][index] = seq_weights->posDistinctDistrib[pos-1][index];
+            }
             /* seq_weights->norm_seq_weights are unchanged from the previous
              * iteration, leaving them ready to be used in
              * _PSICalculateMatchWeights */
         }
+        seq_weights->posNumParticipating[pos] = aligned_seqs->num_used;
 
         /* Uses seq_weights->norm_seq_weights to populate match_weights */
         _PSICalculateMatchWeights(msa, pos, aligned_seqs, seq_weights);
@@ -1527,6 +1574,8 @@ _PSICalculateNormalizedSequenceWeights(
     const SDynamicUint4Array* aligned_seqs,             /* [in] */
     _PSISequenceWeights* seq_weights)       /* [out] norm_seq_weights, sigma */
 {
+    const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
+    const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
     /* Index into aligned block for requested position */
     Uint4 i = 0;         
 
@@ -1563,6 +1612,7 @@ _PSICalculateNormalizedSequenceWeights(
         /* number of distinct residues found in a column of the alignment
          * extent correspoding to a query position */
         Uint4 num_distinct_residues_for_column = 0; 
+        Uint4 num_local_std_letters = 0; 
 
         /* Assert that the alignment extents have sane values */
         ASSERT(i < msa->dimensions->query_length);
@@ -1575,11 +1625,15 @@ _PSICalculateNormalizedSequenceWeights(
 
             if (residue_counts_for_column[kResidue] == 0) {
                 num_distinct_residues_for_column++;
+                if (kResidue != kGapResidue && kResidue != kXResidue)
+                    num_local_std_letters++;
             }
             residue_counts_for_column[kResidue]++;
         }
 
         sigma += num_distinct_residues_for_column;
+        num_local_std_letters = MIN(num_local_std_letters,EFFECTIVE_ALPHABET);
+        seq_weights->posDistinctDistrib[position][num_local_std_letters]++; 
         if (num_distinct_residues_for_column > 1) {
             /* num_distinct_residues_for_column == 1 means that all residues in
              * that column of the alignment extent are the same residue */
@@ -1792,6 +1846,44 @@ _PSICheckSequenceWeights(const _PSIMsa* msa,
     return PSI_SUCCESS;
 }
 
+/** initialize the expected number of observations
+  use background probabilities for this matrix
+  Calculate exp. # of distinct aa's as a function of independent trials
+  copy of posit.c:initializeExpNumObservations
+
+  @param expno table of expectations [out]
+  @param backgroundProbabilities residue background probs [in]
+*/
+static void s_initializeExpNumObservations(double *expno, const double *backgroundProbabilities);
+
+/** A method to estimate the effetive number of observations
+  in the interval for the specified columnNumber 
+  copy of posit.c:effectiveObservations
+  @param align_blk data structure describing the aligned blocks [in]
+  @param seq_weights data structure of sequence weights [in]
+  @param columnNumber column in the PSSM [in]
+  @param queryLength length of the query sequence
+  @param expno table of expectations [in]
+*/
+static double s_effectiveObservations(const _PSIAlignedBlock *align_blk,
+                                         const _PSISequenceWeights* seq_weights,
+                                         int columnNumber, int queryLength,
+                                         const double *expno);
+
+
+/** copy of posit.c:columnSpecificPseudocounts 
+ @param posSearch data structure of sequence weights [in]
+ @param columnNumber column in the PSSM [in]
+ @param backgroundProbabilities residue background probs [in]
+ @param observations for each column an estimate of observed residues [in]
+*/
+static double s_columnSpecificPseudocounts(const _PSISequenceWeights *posSearch,
+                                  int columnNumber,
+                                  const double *backgroundProbabilities,
+                                  const double observations);
+
+#define MAX_IND_OBSERVATIONS  400 /**< max number of independent observation for pseudocount calculation */
+#define PSEUDO_MAX 1000000 /**< effective infinity */
 /****************************************************************************/
 /******* Compute residue frequencies stage of PSSM creation *****************/
 
@@ -1809,6 +1901,10 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
     SFreqRatios* freq_ratios = NULL;/* matrix-specific frequency ratios */
     Uint4 p = 0;                    /* index on positions */
     Uint4 r = 0;                    /* index on residues */
+    const double kZeroObsPseudo = 30.0; /*arbitrary constant to use for columns with
+                             zero observations in actual data (ZERO_OBS_PSEUDO in posit.c) */
+    double  expno[MAX_IND_OBSERVATIONS+1]; /*table of expectations*/
+    const double* backgroundProbabilities = Blast_GetMatrixBackgroundFreq(sbp->name);
 
     if ( !msa || !seq_weights || !sbp || !aligned_blocks || !internal_pssm ) {
         return PSIERR_BADPARAM;
@@ -1817,7 +1913,28 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
 
     freq_ratios = _PSIMatrixFrequencyRatiosNew(sbp->name);
 
+    s_initializeExpNumObservations(&(expno[0]),  backgroundProbabilities);
+
     for (p = 0; p < msa->dimensions->query_length; p++) {
+        double columnCounts = 0.0; /*column-specific pseudocounts*/
+        double observations = 0.0;
+        double pseudoWeight; /*multiplier for pseudocounts term*/
+        if (msa->cell[kQueryIndex][p].letter != kXResidue)
+        {
+           observations = s_effectiveObservations(aligned_blocks, seq_weights, p, msa->dimensions->query_length, expno);
+
+           if (0 == pseudo_count)
+              columnCounts = s_columnSpecificPseudocounts(seq_weights, p, backgroundProbabilities, observations);
+           else
+              columnCounts = pseudo_count;
+        }
+        if (columnCounts >= PSEUDO_MAX) {
+           pseudoWeight = kZeroObsPseudo;
+           observations = 0;
+        }
+        else {
+           pseudoWeight = columnCounts;
+        }
 
         for (r = 0; r < msa->alphabet_size; r++) {
 
@@ -1832,10 +1949,8 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
 
                 /* beta( Sum_j(f_j r_ij) ) in formula 2 */
                 double pseudo = 0.0;            
-                /* Effective number of independent observations for column p */
-                double alpha = 0.0;
                 /* Renamed to match the formula in the paper */
-                const double kBeta = pseudo_count;
+                const double kBeta = pseudoWeight;
                 double numerator = 0.0;         /* intermediate term */
                 double denominator = 0.0;       /* intermediate term */
                 double qOverPEstimate = 0.0;    /* intermediate term */
@@ -1850,14 +1965,12 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
                 }
                 pseudo *= kBeta;
 
-                alpha = seq_weights->sigma[p]/aligned_blocks->size[p]-1;
-
                 numerator =
-                    (alpha * seq_weights->match_weights[p][r] / 
+                    (observations * seq_weights->match_weights[p][r] / 
                      seq_weights->std_prob[r]) 
                     + pseudo;
 
-                denominator = alpha + kBeta;
+                denominator = observations + kBeta;
 
                 if (nsg_compatibility_mode && denominator == 0.0) {
                     return PSIERR_UNKNOWN;
@@ -2265,6 +2378,9 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
 
     /* Get the minimum and maximum scores */
     for (p = 0; p < query_length; p++) {
+        if (query[p] == kXResidue) {
+            continue;
+        }
         for (r = 0; r < alphabet_size; r++) {
             const int kScore = pssm[p][aa_alphabet[r]];
 
@@ -2470,4 +2586,214 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
         }
     }
     return PSI_SUCCESS;
+}
+
+
+
+/** Reorders in the same manner as returned by Blast_GetMatrixBackgroundFreq 
+   this function is a copy of posit.c:fillColumnProbabilities
+*/
+static void  s_fillColumnProbabilities(double *probabilities,
+                                     const _PSISequenceWeights *posSearch,
+                                     Int4 columnNumber)
+{
+   int charOrder[EFFECTIVE_ALPHABET]; /*standard order of letters according to S. Altschul*/
+   int c; /*loop index*/
+
+   charOrder[0] =  1;  /*A*/
+   charOrder[1] =  16; /*R*/
+   charOrder[2] =  13; /*N*/
+   charOrder[3] =  4;  /*D*/
+   charOrder[4] =  3;  /*C*/
+   charOrder[5] =  15; /*Q*/
+   charOrder[6] =  5;  /*E*/
+   charOrder[7] =  7;  /*G*/
+   charOrder[8] =  8;  /*H*/
+   charOrder[9] =  9;  /*I*/
+   charOrder[10] = 11; /*L*/
+   charOrder[11] = 10; /*K*/
+   charOrder[12] = 12; /*M*/
+   charOrder[13] =  6; /*F*/
+   charOrder[14] = 14; /*P*/
+   charOrder[15] = 17; /*S*/
+   charOrder[16] = 18; /*T*/
+   charOrder[17] = 20; /*W*/
+   charOrder[18] = 22; /*Y*/
+   charOrder[19] = 19; /*V*/
+
+   for(c = 0; c < EFFECTIVE_ALPHABET; c++)
+     probabilities[c] = posSearch->match_weights[columnNumber][charOrder[c]];
+}
+
+/** adjust the probabilities by assigning observations weight
+  to initialProbabilities and standardWeight to standardProbabilities
+  copy of posit.c:adjustColumnProbabilities 
+  @param initialProbabilities starting probabilities [in]
+  @param probabilitiesToReturn return value [out]
+  @param standardWeight small number of pseudocounts to
+                    avoid 0 probabilities [in]
+  @param standardProbabilities  background probabilities [in]
+  @param observations expected number of observations [in]
+*/
+static void s_adjustColumnProbabilities(double *initialProbabilities,
+                                      double *probabilitiesToReturn,
+                                      double standardWeight,
+                                      const double *standardProbabilities,
+                                      double observations)
+{
+  double intermediateSums[EFFECTIVE_ALPHABET]; /*weighted sums for each letter*/
+  double overallSum; /*overall sum of weightedSums*/
+  int c; /*loop index*/
+
+  overallSum = 0.0;
+  for(c = 0; c < EFFECTIVE_ALPHABET; c++) {
+    intermediateSums[c] =
+      (initialProbabilities[c] * observations) +
+      (standardProbabilities[c] * standardWeight);
+    overallSum += intermediateSums[c];
+  }
+  for(c = 0; c < EFFECTIVE_ALPHABET; c++)
+    probabilitiesToReturn[c] = intermediateSums[c]/overallSum;
+}
+
+/*compute relative entropy of first distribution to second distribution
+   copy of posit.c:computeRelativeEntropy */
+
+const double kPosEpsilon = 0.0001; /**< minimum return value of s_computeRelativeEntropy */
+
+/** compute relative entropy of first distribution to second distribution
+    A copy of posit.c:computeRelativeEntropy
+    @param newDistribution working set [in]
+    @param backgroundProbabilities standard set [in]
+*/
+static double s_computeRelativeEntropy(const double *newDistribution,
+                              const double *backgroundProbabilities)
+{
+   Int4 c; /*loop index*/
+   double returnValue; /*value to return*/
+
+   returnValue = 0.0;
+   for(c = 0; c < EFFECTIVE_ALPHABET; c++) {
+     if (newDistribution[c] > kPosEpsilon)
+       returnValue += (newDistribution[c] *
+                       log (newDistribution[c]/backgroundProbabilities[c]));
+   }
+   if (returnValue < kPosEpsilon)
+     returnValue = kPosEpsilon;
+   return(returnValue);
+}
+
+
+/*initialize the expected number of observations
+  use background probabilities for this matrix
+  Calculate exp. # of distinct aa's as a function of independent trials
+  copy of posit.c:initializeExpNumObservations
+*/
+static void s_initializeExpNumObservations(double *expno,
+                                    const double *backgroundProbabilities)
+
+{
+int     j,k ; /*loop indices*/
+double  weighted_sum; /*20 - this is how many distinct
+                         amino acids are expected*/
+
+   expno[0] = 0;
+   for (j=1;j<MAX_IND_OBSERVATIONS;++j) {
+     weighted_sum = 0;
+     for (k=0;k<EFFECTIVE_ALPHABET;++k)
+       weighted_sum += exp(j*log(1.0-backgroundProbabilities[k]));
+     expno[j] = EFFECTIVE_ALPHABET-weighted_sum;
+   }
+}
+
+/* copy of posit.c:columnSpecificPseudocounts */
+static double s_columnSpecificPseudocounts(const _PSISequenceWeights *posSearch,
+                                  int columnNumber,
+                                  const double *backgroundProbabilities,
+                                  const double observations)
+{
+  double columnProbabilitiesInitial[EFFECTIVE_ALPHABET];
+  double columnProbabilitiesAdjusted[EFFECTIVE_ALPHABET];
+  double relativeEntropy; /*relative entropy of this column to background probs.*/
+  double alpha; /*intermediate term*/
+  double pseudoDenominator; /*intermediate term*/
+  double returnValue;
+  /* Constant values, were #defines in posit.c */
+  const double kPseudoMult = 500.0;
+  const double kPseudoNumerator = 0.052;  /*numerator of entropy-based method*/
+  const double kPseudoExponent = 1.0;  /*exponent of denominator*/
+  const double kPseudoSmallInitial = 1.5; /*small number of pseudocounts to
+                                        avoid 0 probabilities in entropy-based method*/
+
+  s_fillColumnProbabilities(&(columnProbabilitiesInitial[0]), posSearch, columnNumber);
+  s_adjustColumnProbabilities(&(columnProbabilitiesInitial[0]),
+                            &(columnProbabilitiesAdjusted[0]),
+                              kPseudoSmallInitial,
+                              backgroundProbabilities, observations);
+  relativeEntropy = s_computeRelativeEntropy(&(columnProbabilitiesAdjusted[0]),
+                                           backgroundProbabilities);
+  pseudoDenominator = pow(relativeEntropy, kPseudoExponent);
+  alpha = kPseudoNumerator/pseudoDenominator;
+  if (alpha < (1.0 - kPosEpsilon))
+    returnValue = kPseudoMult * alpha/ (1- alpha);
+  else
+    returnValue = PSEUDO_MAX;
+
+  return(returnValue);
+}
+
+static double s_effectiveObservations(const _PSIAlignedBlock *align_blk,
+                                         const _PSISequenceWeights* seq_weights,
+                                         int columnNumber, int queryLength,
+                                         const double *expno)
+{
+int     i,k; /*loop indices*/
+double  indep; /*number of independent observations to return*/
+int halfNumColumns; /*half the number of columns in the interval, rounded
+                      down*/
+int totalDistinctCounts; /*total number of distinct letters in columns
+                     used*/
+double aveDistinctAA; /*average number of distinct letters in columns used*/
+int columnsAccountedFor; /*how many of the columns had their
+                            distinct count totaled so far*/
+
+
+ if (align_blk->pos_extnt[columnNumber].left < 0)
+   return(0);
+ if (align_blk->pos_extnt[columnNumber].right >= queryLength)
+   return(0);
+
+/*  Calculate the average number of distinct amino acids in the half of the
+    columns within the block in question with the most distinct amino acids;
+    +2 in the parentheses is for rounding up.*/
+
+ halfNumColumns = MAX(1,(align_blk->pos_extnt[columnNumber].right -
+                         align_blk->pos_extnt[columnNumber].left+2)/2);
+ k = EFFECTIVE_ALPHABET;
+ columnsAccountedFor = 0;
+ totalDistinctCounts = 0;
+ while (columnsAccountedFor < halfNumColumns) {
+   totalDistinctCounts += (seq_weights->posDistinctDistrib[columnNumber][k] *k);
+   columnsAccountedFor += seq_weights->posDistinctDistrib[columnNumber][k];
+   if (columnsAccountedFor > halfNumColumns) {
+     totalDistinctCounts -=
+       ((columnsAccountedFor - halfNumColumns) * k);
+     columnsAccountedFor = halfNumColumns;
+   }
+   k--;
+ }
+ aveDistinctAA = ((double) totalDistinctCounts)/
+   ((double) columnsAccountedFor);
+
+/*    Then use the following code to calculate the number of
+        independent observations corresponding to
+        aveDistinctAA.
+*/
+
+ for (i=1;i<MAX_IND_OBSERVATIONS && expno[i]<=aveDistinctAA;++i);
+ indep = (i==MAX_IND_OBSERVATIONS) ? i :
+   i-(expno[i]-aveDistinctAA)/(expno[i]-expno[i-1]);
+ indep = MIN(indep, seq_weights->posNumParticipating[columnNumber]);
+ indep = MAX(0,indep - 1);
+ return(indep);
 }

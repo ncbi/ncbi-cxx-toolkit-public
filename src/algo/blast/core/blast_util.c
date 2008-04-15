@@ -1162,28 +1162,27 @@ BLAST_GetStandardAaProbabilities()
     Blast_ResFreq* standard_probabilities = NULL;
     Uint4 i = 0;
     double* retval = NULL;
-    BlastScoreBlk* sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
 
-    if ( !sbp ) {
-        return NULL;
-    }
+    /* Manually build a BlastScoreBlk, we only need a few fields populated */
+    BlastScoreBlk sbp;
+    memset((void*)&sbp, 0, sizeof(BlastScoreBlk));
+    sbp.alphabet_code = BLASTAA_SEQ_CODE;
+    sbp.alphabet_size = BLASTAA_SIZE;
+    sbp.protein_alphabet = TRUE;
 
-    ASSERT(sbp->alphabet_size == BLASTAA_SIZE);
-    retval = (double*) malloc(sbp->alphabet_size * sizeof(double));
+    retval = (double*) malloc(sbp.alphabet_size * sizeof(double));
     if ( !retval ) {
-        sbp = BlastScoreBlkFree(sbp);
         return NULL;
     }
 
-    standard_probabilities = Blast_ResFreqNew(sbp);
-    Blast_ResFreqStdComp(sbp, standard_probabilities);
+    standard_probabilities = Blast_ResFreqNew(&sbp);
+    Blast_ResFreqStdComp(&sbp, standard_probabilities);
 
-    for (i = 0; i < (Uint4) sbp->alphabet_size; i++) {
+    for (i = 0; i < (Uint4) sbp.alphabet_size; i++) {
         retval[i] = standard_probabilities->prob[i];
     }
 
     Blast_ResFreqFree(standard_probabilities);
-    sbp = BlastScoreBlkFree(sbp);
     return retval;
 }
 

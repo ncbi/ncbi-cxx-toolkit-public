@@ -46,6 +46,7 @@ static char const rcsid[] =
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/blast_options_builder.hpp>
 #include <objtools/readers/seqdb/seqdbcommon.hpp>   // for CSeqDBException
+#include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 #include <algo/blast/blastinput/psiblast_args.hpp>
 #include <algo/blast/blastinput/tblastn_args.hpp>
 #include <algo/blast/blastinput/blast_scope_src.hpp>
@@ -54,6 +55,44 @@ static char const rcsid[] =
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(blast);
+
+CRef<blast::CRemoteBlast> 
+InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
+                      CRef<blast::CBlastDatabaseArgs> db_args,
+                      CRef<blast::CBlastOptionsHandle> opts_hndl,
+                      CRef<objects::CScope> scope,
+                      bool verbose_output,
+                      CRef<objects::CPssmWithParameters> pssm 
+                        /* = CRef<objects::CPssmWithParameters>() */)
+{
+    _ASSERT(queries);
+    _ASSERT(db_args);
+    _ASSERT(opts_hndl);
+
+    CRef<CRemoteBlast> retval;
+
+    CRef<CSearchDatabase> search_db = db_args->GetSearchDatabase();
+    if (search_db.NotEmpty()) {
+        if (pssm.NotEmpty()) {
+            _ASSERT(queries.Empty());
+            retval.Reset(new CRemoteBlast(pssm, opts_hndl, *search_db));
+        } else {
+            retval.Reset(new CRemoteBlast(queries, opts_hndl, *search_db));
+        }
+    } else {
+        if (pssm.NotEmpty()) {
+            NCBI_THROW(CInputException, eInvalidInput,
+                       "Remote PSI-BL2SEQ is not supported");
+        } else {
+            retval.Reset(new CRemoteBlast(queries, opts_hndl,
+                                         db_args->GetSubjects(scope)));
+        }
+    }
+    if (verbose_output) {
+        retval->SetVerbose();
+    }
+    return retval;
+}
 
 /** 
  * @brief Read a gi list by resolving the file name

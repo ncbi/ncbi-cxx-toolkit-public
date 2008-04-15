@@ -146,8 +146,16 @@ PssmFinalData ::= SEQUENCE {
     -- scaled-up PSSMs, it will ensure that all PSSMs used to build the 
     -- RPS-BLAST database are scaled by the same factor (otherwise, RPS-BLAST 
     -- will silently produce incorrect results).
-    scalingFactor       INTEGER DEFAULT 1
+    scalingFactor       INTEGER DEFAULT 1,
 
+    -- Karlin & Altschul parameter produced during the PSSM's calculation
+    lambdaUngapped      REAL OPTIONAL,
+
+    -- Karlin & Altschul parameter produced during the PSSM's calculation
+	kappaUngapped       REAL OPTIONAL,
+
+    -- Karlin & Altschul parameter produced during the PSSM's calculation
+    hUngapped           REAL OPTIONAL
 }
 
 -- Contains the PSSM's intermediate data used to create the PSSM's scores 

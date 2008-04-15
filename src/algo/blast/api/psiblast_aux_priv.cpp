@@ -90,27 +90,43 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
                    "BlastScoreBlk is not configured for a protein alphabet");
     }
 
+    // Assign the ungapped Karlin-Altschul block
+    if (pssm->GetPssm().GetLambdaUngapped() != CPssm::kInvalidStat) {
+        score_blk->kbp_psi[0]->Lambda = pssm->GetPssm().GetLambdaUngapped();
+    } else if (score_blk->kbp_std[0]->Lambda > 0.0) {
+        score_blk->kbp_psi[0]->Lambda = score_blk->kbp_std[0]->Lambda;
+    }
+
+    if (pssm->GetPssm().GetKappaUngapped() != CPssm::kInvalidStat) {
+        score_blk->kbp_psi[0]->K = pssm->GetPssm().GetKappaUngapped();
+    } else if (score_blk->kbp_std[0]->K > 0.0) {
+        score_blk->kbp_psi[0]->K = score_blk->kbp_std[0]->K;
+    }
+    score_blk->kbp_psi[0]->logK = log(score_blk->kbp_psi[0]->K);
+
+    if (pssm->GetPssm().GetHUngapped() != CPssm::kInvalidStat) {
+        score_blk->kbp_psi[0]->H = pssm->GetPssm().GetHUngapped();
+    } else if (score_blk->kbp_std[0]->K > 0.0) {
+        score_blk->kbp_psi[0]->H = score_blk->kbp_std[0]->H;
+    }
+
     // Assign the gapped Karlin-Altschul block
-    if (pssm->GetPssm().GetFinalData().CanGetLambda() &&
-        pssm->GetPssm().GetFinalData().GetLambda() > 0) {
-        score_blk->kbp_gap_psi[0]->Lambda =
-            pssm->GetPssm().GetFinalData().GetLambda();
-    } else {
+    if (pssm->GetPssm().GetLambda() != CPssm::kInvalidStat) {
+        score_blk->kbp_gap_psi[0]->Lambda = pssm->GetPssm().GetLambda();
+    } else if (score_blk->kbp_gap_std[0]->Lambda > 0.0) {
         score_blk->kbp_gap_psi[0]->Lambda = score_blk->kbp_gap_std[0]->Lambda;
     }
 
-    if (pssm->GetPssm().GetFinalData().GetKappa() > 0) {
-        score_blk->kbp_gap_psi[0]->K = 
-            pssm->GetPssm().GetFinalData().GetKappa();
-    } else {
+    if (pssm->GetPssm().GetKappa() != CPssm::kInvalidStat) {
+        score_blk->kbp_gap_psi[0]->K = pssm->GetPssm().GetKappa();
+    } else if (score_blk->kbp_gap_std[0]->K > 0.0) {
         score_blk->kbp_gap_psi[0]->K = score_blk->kbp_gap_std[0]->K;
     }
     score_blk->kbp_gap_psi[0]->logK = log(score_blk->kbp_gap_psi[0]->K);
 
-    if (pssm->GetPssm().GetFinalData().CanGetH() &&
-        pssm->GetPssm().GetFinalData().GetH() > 0) {
-        score_blk->kbp_gap_psi[0]->H = pssm->GetPssm().GetFinalData().GetH();
-    } else {
+    if (pssm->GetPssm().GetH() != CPssm::kInvalidStat) {
+        score_blk->kbp_gap_psi[0]->H = pssm->GetPssm().GetH();
+    } else if (score_blk->kbp_gap_std[0]->H > 0.0) {
         score_blk->kbp_gap_psi[0]->H = score_blk->kbp_gap_std[0]->H;
     }
 
@@ -493,8 +509,7 @@ void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
 
 /// Returns the evalue from this score object
 /// @param score ASN.1 score object [in]
-static double 
-s_GetEvalue(const CScore& score)
+static double s_GetEvalue(const CScore& score)
 {
     string score_type = score.GetId().GetStr();
     if (score.GetValue().IsReal() && 
@@ -504,14 +519,32 @@ s_GetEvalue(const CScore& score)
     return numeric_limits<double>::max();
 }
 
-double GetLowestEvalue(const objects::CDense_seg::TScores& scores)
+/// Returns the bit_score from this score object
+/// @param score ASN.1 score object [in]
+static double s_GetBitScore(const CScore& score)
 {
-    double retval = numeric_limits<double>::max();
+    string score_type = score.GetId().GetStr();
+    if (score.GetValue().IsReal() && score_type == "bit_score") {
+        return score.GetValue().GetReal();
+    }
+    return BLAST_EXPECT_VALUE;
+}
+
+double GetLowestEvalue(const objects::CDense_seg::TScores& scores,
+                       double* bit_score /* = NULL */)
+{
+    double retval = BLAST_EXPECT_VALUE;
     double tmp;
+    if (bit_score) {
+        *bit_score = retval;
+    }
 
     ITERATE(CDense_seg::TScores, i, scores) {
         if ( (tmp = s_GetEvalue(**i)) < retval) {
             retval = tmp;
+        }
+        if (bit_score && ((tmp = s_GetBitScore(**i)) > *bit_score)) {
+            *bit_score = tmp;
         }
     }
     return retval;

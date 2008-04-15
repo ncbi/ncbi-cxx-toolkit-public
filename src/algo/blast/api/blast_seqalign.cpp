@@ -1569,12 +1569,12 @@ s_BlastResults2SeqAlignDatabaseSearch_OMF(const BlastHSPResults  * results,
 
 TSeqAlignVector
 LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
-                           ILocalQueryData   & local_data,
-                           const IBlastSeqInfoSrc& seqinfo_src,
-                           EBlastProgramType   program,
-                           bool                gapped,
-                           bool                oof_mode,
-                           EResultType         result_type)
+                   ILocalQueryData   & local_data,
+                   const IBlastSeqInfoSrc& seqinfo_src,
+                   EBlastProgramType   program,
+                   bool                gapped,
+                   bool                oof_mode,
+                   EResultType         result_type /* = eDatabaseSearch*/)
 {
     TSeqAlignVector retval;
     

@@ -970,34 +970,9 @@ CBlastOptions::SetFilterString(const char* f, bool clear)
         
         bool do_dust(false), do_seg(false), do_rep(false);
         
-        do_dust = m_Local->GetDustFiltering();
-        do_seg  = m_Local->GetSegFiltering();
-        do_rep  = m_Local->GetRepeatFiltering();
-        
-        if (do_dust) {
-            m_Remote->SetValue(eBlastOpt_DustFiltering, true);
-            m_Remote->SetValue(eBlastOpt_DustFilteringLevel,
-                               m_Local->GetDustFilteringLevel());
-            
-            m_Remote->SetValue(eBlastOpt_DustFilteringWindow,
-                               m_Local->GetDustFilteringWindow());
-            m_Remote->SetValue(eBlastOpt_DustFilteringLinker,
-                               m_Local->GetDustFilteringLinker());
-        } else {
-            m_Remote->ResetValue(B4Param_DustFiltering);
-            m_Remote->ResetValue(B4Param_DustFilteringLevel);
-            m_Remote->ResetValue(B4Param_DustFilteringWindow);
-            m_Remote->ResetValue(B4Param_DustFilteringLinker);
-        }
-        
-        if (do_seg) {
-            m_Remote->SetValue(eBlastOpt_SegFiltering, true);
-            m_Remote->SetValue(eBlastOpt_SegFilteringWindow,
-                               m_Local->GetSegFilteringWindow());
-            m_Remote->SetValue(eBlastOpt_SegFilteringLocut,
-                               m_Local->GetSegFilteringLocut());
-            m_Remote->SetValue(eBlastOpt_SegFilteringHicut,
-                               m_Local->GetSegFilteringHicut());
+        if (Blast_QueryIsProtein(GetProgramType())) {
+            do_seg = m_Local->GetSegFiltering();
+            m_Remote->SetValue(eBlastOpt_SegFiltering, do_seg);
         } else {
             m_Remote->ResetValue(B4Param_SegFiltering);
             m_Remote->ResetValue(B4Param_SegFilteringWindow);
@@ -1005,13 +980,43 @@ CBlastOptions::SetFilterString(const char* f, bool clear)
             m_Remote->ResetValue(B4Param_SegFilteringHicut);
         }
         
-        if (do_rep) {
-            m_Remote->SetValue(eBlastOpt_RepeatFiltering, true);
-            m_Remote->SetValue(eBlastOpt_RepeatFilteringDB,
-                               m_Local->GetRepeatFilteringDB());
+        if (Blast_QueryIsNucleotide(GetProgramType())) {
+            do_dust = m_Local->GetDustFiltering();
+            do_rep  = m_Local->GetRepeatFiltering();
+            
+            m_Remote->SetValue(eBlastOpt_DustFiltering, do_dust);
+            m_Remote->SetValue(eBlastOpt_RepeatFiltering, do_rep);
         } else {
+            m_Remote->ResetValue(B4Param_DustFiltering);
+            m_Remote->ResetValue(B4Param_DustFilteringLevel);
+            m_Remote->ResetValue(B4Param_DustFilteringWindow);
+            m_Remote->ResetValue(B4Param_DustFilteringLinker);
+            
             m_Remote->ResetValue(B4Param_RepeatFiltering);
             m_Remote->ResetValue(B4Param_RepeatFilteringDB);
+        }
+        
+        if (do_dust) {
+            m_Remote->SetValue(eBlastOpt_DustFilteringLevel,
+                               m_Local->GetDustFilteringLevel());
+            m_Remote->SetValue(eBlastOpt_DustFilteringWindow,
+                               m_Local->GetDustFilteringWindow());
+            m_Remote->SetValue(eBlastOpt_DustFilteringLinker,
+                               m_Local->GetDustFilteringLinker());
+        }
+        
+        if (do_rep) {
+            m_Remote->SetValue(eBlastOpt_RepeatFilteringDB,
+                               m_Local->GetRepeatFilteringDB());
+        }
+        
+        if (do_seg) {
+            m_Remote->SetValue(eBlastOpt_SegFilteringWindow,
+                               m_Local->GetSegFilteringWindow());
+            m_Remote->SetValue(eBlastOpt_SegFilteringLocut,
+                               m_Local->GetSegFilteringLocut());
+            m_Remote->SetValue(eBlastOpt_SegFilteringHicut,
+                               m_Local->GetSegFilteringHicut());
         }
     }
 }

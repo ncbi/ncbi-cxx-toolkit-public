@@ -508,7 +508,7 @@ SPHIQueryInfoFree(SPHIQueryInfo* pat_info)
 }
 
 SPHIQueryInfo* 
-SPHIQueryInfoCopy(SPHIQueryInfo* pat_info)
+SPHIQueryInfoCopy(const SPHIQueryInfo* pat_info)
 {
     SPHIQueryInfo* retval = NULL;
     

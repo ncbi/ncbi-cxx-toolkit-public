@@ -91,7 +91,10 @@ void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
 
 /// Returns the lowest score from the list of scores in CDense_seg::TScores
 /// @param scores list of scores [in]
-double GetLowestEvalue(const objects::CDense_seg::TScores& scores);
+/// @param bit_score If not NULL, returns the bit score corresponding to the
+/// lowest evalue found [in|out]
+double GetLowestEvalue(const objects::CDense_seg::TScores& scores,
+                       double* bit_score = NULL);
 
 /** Auxiliary class to retrieve sequence identifiers its position in the
  * alignment which are below the inclusion evalue threshold.

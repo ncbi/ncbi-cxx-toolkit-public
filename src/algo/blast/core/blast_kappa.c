@@ -866,14 +866,13 @@ s_MatchingSequenceRelease(BlastCompo_MatchingSequence * self)
     }
 }
 
-#define MINUMUM_FRACTION_NEAR_IDENTICAL 0.98
-
 /**
  * Test whether the aligned parts of two sequences that
  * have a high-scoring gapless alignment are nearly identical
  *
  * @param seqData           subject sequence
  * @param queryData         query sequence
+ * @param queryOffset       offset for align if there are multiple queries
  * @param align             information about the alignment
  * @param rangeOffset       offset for subject sequence (used for tblastn)
  *
@@ -890,6 +889,7 @@ s_TestNearIdentical(const BlastCompo_SequenceData *seqData,
   double fractionIdentical;
   int qPos, sPos; /*positions in query and subject;*/
   int qEnd; /*end of query*/
+  const double kMinFractionNearIdentical = 0.98; /* cutoff for this check. */
 
   qPos = align->queryStart - queryOffset;
   qEnd = align->queryEnd - queryOffset;
@@ -902,7 +902,7 @@ s_TestNearIdentical(const BlastCompo_SequenceData *seqData,
   }
   fractionIdentical = ((double) numIdentical/
   (double) (align->queryEnd - align->queryStart));
-  if (fractionIdentical >= MINUMUM_FRACTION_NEAR_IDENTICAL)
+  if (fractionIdentical >= kMinFractionNearIdentical)
     return(TRUE);
   else
     return(FALSE);

@@ -783,8 +783,15 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         CSeqDB_BasePath restart(m_DBList[i]);
         
         if (m_AliasSets.FindBlastDBPath(restart, prot_nucl, result, locked)) {
-            CSeqDB_Path new_alias( base, prot_nucl, 'a', 'l' );
-            x_AppendSubNode( result, prot_nucl, recurse, locked );
+            CSeqDB_Path new_alias( result, prot_nucl, 'a', 'l' );
+            CSeqDB_Path new_volume( result, prot_nucl, 'i', 'n' );
+            
+            if (m_Atlas.DoesFileExist(new_alias, locked)) {
+                x_AppendSubNode( result, prot_nucl, recurse, locked );
+            } else if (m_Atlas.DoesFileExist(new_volume, locked)) {
+                m_VolNames.push_back( result );
+            }
+            
             continue;
         }
         

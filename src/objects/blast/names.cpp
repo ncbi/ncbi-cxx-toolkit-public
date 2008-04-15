@@ -201,6 +201,23 @@ TField B4Param_GapXDropoffFinal      ("GapXDropoffFinal",      CBlast4_value::e_
 TField B4Param_SmithWatermanMode     ("SmithWatermanMode",     CBlast4_value::e_Boolean);
 TField B4Param_UnifiedP              ("UnifiedP",              CBlast4_value::e_Integer);
 
+TField B4Param_Format_AlignView         ("Format_AlignView",        CBlast4_value::e_Integer);
+TField B4Param_Format_Alignments        ("Format_Alignments",       CBlast4_value::e_Integer);
+TField B4Param_Format_BlastSpecialPage  ("Format_BlastSpecialPage", CBlast4_value::e_String);
+TField B4Param_Format_Client            ("Format_Client",           CBlast4_value::e_String);
+TField B4Param_Format_Descriptions      ("Format_Descriptions",     CBlast4_value::e_Integer);
+TField B4Param_Format_EntrezQuery       ("Format_EntrezQuery",      CBlast4_value::e_String);
+TField B4Param_Format_Html              ("Format_Html",             CBlast4_value::e_Boolean);
+TField B4Param_Format_JobTitle          ("Format_JobTitle",         CBlast4_value::e_String);
+TField B4Param_Format_NewWindow         ("Format_NewWindow",        CBlast4_value::e_Boolean);
+TField B4Param_Format_OrganismName      ("Format_OrganismName",     CBlast4_value::e_String);
+TField B4Param_Format_RunPsiBlast       ("Format_RunPsiBlast",      CBlast4_value::e_Boolean);
+TField B4Param_Format_ShortQueryAdjust  ("Format_ShortQueryAdjust", CBlast4_value::e_Boolean);
+TField B4Param_Format_ShowGi            ("Format_ShowGi",           CBlast4_value::e_Boolean);
+TField B4Param_Format_ShowOverview      ("Format_ShowOverview",     CBlast4_value::e_Boolean);
+TField B4Param_Format_StepNumber        ("Format_StepNumber",       CBlast4_value::e_Integer);
+TField B4Param_Format_User              ("Format_User",             CBlast4_value::e_String);
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

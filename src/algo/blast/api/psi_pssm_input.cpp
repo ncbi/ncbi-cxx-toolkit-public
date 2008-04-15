@@ -263,7 +263,8 @@ CPsiBlastInputData::x_ExtractAlignmentData()
     // For each hit...
     ITERATE(CSeq_align_set::Tdata, itr, m_SeqAlignSet->Get()) {
 
-        double evalue = GetLowestEvalue((*itr)->GetScore());
+        double bit_score;
+        double evalue = GetLowestEvalue((*itr)->GetScore(), &bit_score);
         CSeq_id* current_sid = const_cast<CSeq_id*> (&(*itr)->GetSeq_id(1));
 
         // Increment msa_index (if appropriate) after all CDense_seg for a given target 
@@ -277,7 +278,7 @@ CPsiBlastInputData::x_ExtractAlignmentData()
         if (evalue < m_Opts.inclusion_ethresh) {
             // DELME ?? _ASSERT(msa_index < GetNumAlignedSequences() + 1);
             const CDense_seg& seg = (*itr)->GetSegs().GetDenseg();
-            x_ProcessDenseg(seg, msa_index);
+            x_ProcessDenseg(seg, msa_index, evalue, bit_score);
             qualifying_seqid = true;
         }
         last_sid = current_sid;
@@ -286,7 +287,9 @@ CPsiBlastInputData::x_ExtractAlignmentData()
 
 void
 CPsiBlastInputData::x_ProcessDenseg(const objects::CDense_seg& denseg, 
-                                    unsigned int msa_index)
+                                    unsigned int msa_index,
+                                    double evalue,
+                                    double bit_score)
 {
     _ASSERT(denseg.GetDim() == 2);
 
@@ -314,6 +317,15 @@ CPsiBlastInputData::x_ProcessDenseg(const objects::CDense_seg& denseg,
         }
         return;
     }
+
+#ifdef DEBUG_PSSM_ENGINE
+    _ASSERT(denseg.CanGetIds() && denseg.GetIds().size() == 2);
+    if (denseg.GetIds().back()->IsGi()) {
+        m_Msa->seqinfo[msa_index].gi = denseg.GetIds().back()->GetGi();
+    }
+    m_Msa->seqinfo[msa_index].evalue = evalue;
+    m_Msa->seqinfo[msa_index].bit_score = bit_score;
+#endif /* DEBUG_PSSM_ENGINE */
 
     // Iterate over all segments
     for (int segmt_idx = 0; segmt_idx < kNumSegments; segmt_idx++) {

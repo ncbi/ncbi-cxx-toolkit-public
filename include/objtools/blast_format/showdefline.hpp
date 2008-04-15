@@ -149,6 +149,12 @@ public:
         m_QueryNumber = number;
     }
 
+    ///Display top num seqalign
+    ///@param num: number desired
+    void SetNumAlignToShow(int num) {
+        m_NumToShow = num;
+    }
+
     ///Set this for constructing structure linkout
     ///@param term: entrez query term
     ///

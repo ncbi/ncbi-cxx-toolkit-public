@@ -248,6 +248,19 @@ CBlastTracebackSearch::Run()
             m_InternalData->m_LookupTable->GetPointer()->lut;
         phi_lookup_table->num_patterns_db = m_DBscanInfo->m_NumPatOccurInDB;
     }
+
+    // When dealing with PSI-BLAST iterations, we need to keep a larger
+    // alignment for the PSSM engine as to replicate blastpgp's behavior
+    int hitlist_size_backup = m_OptsMemento->m_HitSaveOpts->hitlist_size;
+    if (m_OptsMemento->m_ProgramType == eBlastTypePsiBlast) {
+        SBlastHitsParameters* bhp = NULL;
+        SBlastHitsParametersNew(m_OptsMemento->m_HitSaveOpts, 
+                                m_OptsMemento->m_ExtnOpts,
+                                m_OptsMemento->m_ScoringOpts,
+                                &bhp);
+        m_OptsMemento->m_HitSaveOpts->hitlist_size = bhp->prelim_hitlist_size;
+        bhp = SBlastHitsParametersFree(bhp);
+    }
     
     BlastHSPResults * hsp_results(0);
     int status =
@@ -276,6 +289,7 @@ CBlastTracebackSearch::Run()
     
     _ASSERT(m_SeqInfoSrc);
     _ASSERT(m_QueryFactory);
+    m_OptsMemento->m_HitSaveOpts->hitlist_size = hitlist_size_backup;
     
     CRef<ILocalQueryData> qdata = m_QueryFactory->MakeLocalQueryData(m_Options);
     
