@@ -59,7 +59,7 @@ BEGIN_SCOPE(objects)
     class CSeq_id;
 END_SCOPE(objects)
 
-// Needleman Wunsch algorithm encapsulation
+// Needleman-Wunsch algorithm encapsulation
 //
 
 class NCBI_XALGOALIGN_EXPORT CNWAligner: public CObject
@@ -146,17 +146,21 @@ public:
 
     size_t        GetSpaceLimit(void) const {  return m_MaxMem; }
     static size_t GetDefaultSpaceLimit(void) {
-        return 1024u * 1024u * (512u + 2u * 1024u);
+        return 0xFFFFFFFF;
     }
     
     // alignment transcript
     enum ETranscriptSymbol {
-        eTS_None    =  0,   
-        eTS_Delete  = 'D',
-        eTS_Insert  = 'I',
-        eTS_Match   = 'M',
-        eTS_Replace = 'R',
-        eTS_Intron  = 'Z'
+        eTS_None         = 0   
+        ,eTS_Delete       = 'D'
+        ,eTS_Insert       = 'I'
+        ,eTS_Match        = 'M'
+        ,eTS_Replace      = 'R'
+        ,eTS_Intron       = 'Z'
+#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+        ,eTS_SlackDelete // unaligned s-w term
+        ,eTS_SlackInsert // -- " -- 
+#endif
     };
     typedef vector<ETranscriptSymbol> TTranscript;
 
@@ -285,11 +289,6 @@ protected:
     struct SAlignInOut;
     virtual TScore x_Align (SAlignInOut* data);
 
-    // overflow safe "infinity"
-    enum { kInfMinus = kMin_Int / 2 };
-
-    // backtrace
-
     // a helper class assuming four bits per backtrace matrix cell
     class CBacktraceMatrix4 {
     public:
@@ -376,6 +375,14 @@ private:
     size_t m_space; // required dynprog dimension
 };
 
+
+namespace {
+
+    const char g_nwaligner_nucleotides [] = "AGTCBDHKMNRSVWY";
+
+    const CNWAligner::TScore kInfMinus ( -(numeric_limits<CNWAligner::TScore>::
+                                            max() / 2) );
+}
 
 END_NCBI_SCOPE
 

@@ -66,7 +66,7 @@ public:
     }
 
     static size_t GetDefaultIntronMinSize (void) {
-        return 30;
+        return 25;
     }
 
     virtual size_t GetSpliceTypeCount(void)  = 0;

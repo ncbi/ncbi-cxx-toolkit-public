@@ -107,6 +107,11 @@ public:
 
         CNWAligner::TScore m_score; // dynprog score
         
+        void ExtendLeft(int extent, const char* seq1, const char* seq2,
+                             CConstRef<CSplicedAligner> aligner);
+        void ExtendRight(int extent, const char* seq1, const char* seq2,
+                             CConstRef<CSplicedAligner> aligner);
+
         void ImproveFromLeft(const char* seq1, const char* seq2,
                              CConstRef<CSplicedAligner> aligner);
         void ImproveFromRight(const char* seq1, const char* seq2,
@@ -116,7 +121,8 @@ public:
         const char* GetDonor(void) const;       // raw pointers to parts of annot
         const char* GetAcceptor(void) const;    // or zero if less than 2 chars
 
-        static bool s_IsConsensusSplice(const char* donor, const char* acceptor);
+        static bool s_IsConsensusSplice(const char* donor, const char* acceptor,
+                                        bool semi_as_cons = false);
         
         // NetCache-related serialization
         typedef vector<char> TNetCacheBuffer;

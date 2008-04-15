@@ -41,7 +41,7 @@
 
 BEGIN_NCBI_SCOPE
 
-const size_t splice_type_count_16 = 4;
+const size_t splice_type_count_16 (4);
 
 class NCBI_XALGOALIGN_EXPORT CSplicedAligner16: public CSplicedAligner
 {
@@ -59,7 +59,11 @@ public:
 
     // returns the size of a single backtrace matrix element
     virtual size_t GetElemSize(void) const {
+#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+        return 2;
+#else
         return 3;
+#endif
     }
 
     virtual size_t GetSpliceTypeCount(void) {
@@ -79,9 +83,16 @@ protected:
     }
     virtual TScore  x_Align (CNWAligner::SAlignInOut* data);
 
+#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+    void x_DoBackTrace(const Uint2* backtrace_matrix,
+                       CNWAligner::SAlignInOut* data,
+                       int i_global_max,
+                       int j_global_max);
+#else
     void x_DoBackTrace(const Uint2* backtrace_matrix,
                        const Uint1* backtrace_matrix_ext,
                        CNWAligner::SAlignInOut* data);
+#endif
 };
 
 
