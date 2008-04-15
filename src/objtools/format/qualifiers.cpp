@@ -107,7 +107,8 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
 {
     const string* text_string = NULL,
                 * evidence = NULL,
-                * go_id = NULL;
+                * go_id = NULL,
+                * go_ref = NULL;
     string temp;
     int pmid = 0;
     
@@ -128,6 +129,8 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
                 go_id = &data.GetStr();
             } else if (label == "evidence") {
                 evidence = &data.GetStr();
+            } else if (label == "go ref") {
+                go_ref = &data.GetStr();
             }
         } else if (data.IsInt()) {
             if (label == "go id") {
@@ -159,17 +162,22 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
         }
     } else { 
         if (go_id != NULL) {
-            go_text += " [goid ";
+            go_text += " [GO ID ";
             go_text += *go_id;
             go_text += ']';
             if (evidence != NULL) {
-                go_text += " [evidence ";
+                go_text += " [Evidence ";
                 go_text += *evidence;
                 go_text += ']';
             }
             if ( pmid != 0 ) {
-                go_text += " [pmid ";
+                go_text += " [PMID ";
                 go_text += NStr::IntToString(pmid);
+                go_text += ']';
+            }
+            if (go_ref != NULL) {
+                go_text += " [GO Ref ";
+                go_text += *go_ref;
                 go_text += ']';
             }
         }
