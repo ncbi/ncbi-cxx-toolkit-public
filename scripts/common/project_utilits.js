@@ -249,6 +249,20 @@ function CopyPtb(oShell, oTree, oTask)
     var remote_ptb_found = false;
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
     var configs = GetConfigs(oTask);
+
+// look for prebuilt PTB
+    var sysenv = oShell.Environment("PROCESS");
+    var ptbexe = sysenv("PREBUILT_PTB_EXE");
+    if (ptbexe.length != 0) {
+        if (oFso.FileExists(ptbexe)) {
+            oTask.RemotePtb = ptbexe;
+            remote_ptb_found = true;
+            WScript.Echo("Using PREBUILT_PTB_EXE: " + ptbexe);
+        } else {
+            WScript.Echo("WARNING: PREBUILT_PTB_EXE not found: " + ptbexe);
+        }
+    }
+
     for(var config_i = 0; config_i < configs.length; config_i++) {
         var conf = configs[config_i];
         var target_path;
