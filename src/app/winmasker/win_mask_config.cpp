@@ -53,7 +53,6 @@ CWinMaskConfig::x_GetWriter(const CArgs& args,
                             const string& format)
 {
     CMaskWriter* retval = NULL;
-
     if (format == "interval") {
         retval = new CMaskWriterInt(output);
     } else if (format == "fasta") {
@@ -210,6 +209,13 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
     }
 
     _TRACE( "Leaving CWinMaskConfig::CWinMaskConfig" );
+}
+
+CWinMaskConfig::~CWinMaskConfig()
+{
+    if ( writer ) {
+        delete writer;
+    }
 }
 
 //----------------------------------------------------------------------------

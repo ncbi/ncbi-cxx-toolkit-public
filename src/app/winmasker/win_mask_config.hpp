@@ -218,6 +218,9 @@ public:
      **/
     CWinMaskConfig( const CArgs & args );
 
+    /** Destructor */
+    ~CWinMaskConfig();
+
     /**
      **\brief Winmasker configuration validation.
      **
@@ -617,6 +620,14 @@ public:
     bool MatchId() const { return !text_match; }
 
 private:
+
+    /// Prohibit copy constructor
+    /// @param rhs object to copy from [in]
+    CWinMaskConfig(const CWinMaskConfig& rhs);
+
+    /// Prohibit assignment operator
+    /// @param rhs object to copy from [in]
+    CWinMaskConfig& operator=(const CWinMaskConfig& rhs);
 
     /**\internal
      **\brief This class is the resource allocator/initializer for 
