@@ -281,7 +281,7 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
     {{
         char x_path[sizeof(info->host) + 16 + sizeof(info->path)];
         sprintf(x_path, "http://%s:%hu%s%s", info->host, info->port,
-                *info->path == '/' ? "" : "/", info->path);
+                &"/"[*info->path == '/'], info->path);
         assert(strlen(x_path) < sizeof(x_path));
         strncpy0(info->path, x_path, sizeof(info->path) - 1);
     }}
