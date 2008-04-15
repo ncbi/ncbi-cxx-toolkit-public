@@ -51,7 +51,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-const string CRemapClient::kDefaultUrl = "http://bender.be-md.ncbi.nlm.nih.gov:6224/"
+const string CRemapClient::kDefaultUrl =
+    "http://intrawebdev.be-md.ncbi.nlm.nih.gov:6224/"
     "staff/jcherry/remap/remap_server.cgi";
 
 
