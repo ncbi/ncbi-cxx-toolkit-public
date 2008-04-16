@@ -25,7 +25,7 @@
 *
 * ===========================================================================
 *
-* Authors:  Kamen Todorov, NCBI
+* Author:  Kamen Todorov, NCBI
 *
 * File Description:
 *   Pairwise and query-anchored alignments
@@ -207,6 +207,11 @@ public:
     }
 
 
+    /// Split rows with mixed dir into separate rows
+    /// returns true if the operation was performed
+    bool SplitStrands();
+
+
 private:
     static const TDim  kInvalidAnchorRow = -1;
     TDim               m_AnchorRow;
@@ -215,10 +220,13 @@ private:
 };
 
 
+typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVec;
+
+
 template<class C>
 struct PScoreGreater
 {
-    bool operator()(const C* const c_1, const C* const c_2)
+    bool operator()(const C* const c_1, const C* const c_2) const
     {
         return c_1->GetScore() > c_2->GetScore();
     }
