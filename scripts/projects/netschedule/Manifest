@@ -9,14 +9,15 @@
 #          It is used by release configurator.
 #
 
-# Each line describes a single configuration
-# Supported variables:
-#     $ROOT is a source checkout root
-# Implicitly APP is looked for in $BUILD_ROOT/bin
-#            DLL and LIB are looked for in $BUILD_ROOT/lib
+# The APP: statement describes binaries
+# The LIB: statement describes libraries
+# The DLL: statement describes shared objects
+# The ETC: statement describes configuration files
+# It is allowed to have more than one of each statements
 APP: netscheduled netschedule_admin netschedule_check netschedule_control netschedule_control_old
-ETC: $ROOT/src/app/netschedule/netscheduled.ini
+ETC: src/app/netschedule/netscheduled.ini
 
+# Each line describes a single configuration
 # The format is as follows:
 # <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
 # Configuration script is relative to c++/compilers/unix/ .
