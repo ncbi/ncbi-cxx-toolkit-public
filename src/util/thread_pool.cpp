@@ -237,6 +237,9 @@ public:
     /// then return time period of 1 second.
     CTimeSpan GetSafeSleepTime(void) const;
 
+    /// Mark that initialization of the interface was finished
+    void SetInterfaceStarted(void);
+
 
 private:
     /// Type of queue used for storing tasks
@@ -676,6 +679,12 @@ inline CThreadPool*
 CThreadPool_Impl::GetPoolInterface(void) const
 {
     return m_Interface;
+}
+
+inline void
+CThreadPool_Impl::SetInterfaceStarted(void)
+{
+    m_ServiceThread->Run(CThread::fRunDetached);
 }
 
 inline bool
@@ -1359,10 +1368,7 @@ CThreadPool_Impl::x_Init(CThreadPool*             pool_intf,
     controller->x_AttachToPool(this);
     m_Controller = controller;
 
-    // Should be the last because at the beginning of Main it locks main mutex
-    // and begins to work with the pool
     m_ServiceThread = new CThreadPool_ServiceThread(this);
-    m_ServiceThread->Run(CThread::fRunDetached);
 }
 
 CThreadPool_Impl::~CThreadPool_Impl(void)
@@ -2020,12 +2026,14 @@ CThreadPool::CThreadPool(unsigned int queue_size,
                          unsigned int min_threads)
 {
     m_Impl = new CThreadPool_Impl(this, queue_size, max_threads, min_threads);
+    m_Impl->SetInterfaceStarted();
 }
 
 CThreadPool::CThreadPool(unsigned int            queue_size,
                          CThreadPool_Controller* controller)
 {
     m_Impl = new CThreadPool_Impl(this, queue_size, controller);
+    m_Impl->SetInterfaceStarted();
 }
 
 CThreadPool::~CThreadPool(void)
