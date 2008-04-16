@@ -148,9 +148,11 @@ void CDriverContext::ResetEnvSybase(void) const
     // If user forces his own Sybase client path using $RESET_SYBASE
     // and $SYBASE -- use that unconditionally.
     try {
-        if (!env.Get("SYBASE").empty()  &&
-            NStr::StringToBool(env.Get("RESET_SYBASE"))) {
-            return;
+        if (!env.Get("SYBASE").empty()) {
+            string reset = env.Get("RESET_SYBASE");
+            if ( !reset.empty() && NStr::StringToBool(reset)) {
+                return;
+            }
         }
         // ...else try hardcoded paths 
     } catch (const CStringException&) {
