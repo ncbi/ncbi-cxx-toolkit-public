@@ -135,6 +135,7 @@ CAlnMixSequences::Add(const CDense_seg& ds, TAddFlags flags)
                         aln_seq->m_IsAA = true;
                         m_ContainsAA = true;
                     } else {
+                        aln_seq->m_IsAA = false;
                         m_ContainsNA = true;
                     }
                 }
@@ -252,6 +253,7 @@ CAlnMixSequences::x_IdentifyAlnMixSeq(CRef<CAlnMixSeq>& aln_seq, const CSeq_id& 
             aln_seq->m_IsAA = true;
             m_ContainsAA = true;
         } else {
+            aln_seq->m_IsAA = false;
             m_ContainsNA = true;
         }
     } else {
@@ -358,13 +360,13 @@ CAlnMixSeq::CAlnMixSeq(void)
       m_IsAA(false),
       m_Width(1),
       m_Frame(-1),
-      m_PositiveStrand(false),
+      m_PositiveStrand(true),
       m_RefBy(0),
       m_ExtraRow(0),
       m_ExtraRowIdx(0),
       m_AnotherRow(0),
       m_DsIdx(0),
-      m_SeqIdx(0),
+      m_SeqIdx(-1),
       m_ChildIdx(0),
       m_RowIdx(-1),
       m_Starts(new CAlnMixStarts())
