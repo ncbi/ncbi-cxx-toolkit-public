@@ -204,6 +204,13 @@ private:
     CConfig& operator=(const CConfig&);
 
 protected:
+    const string& x_GetString(const string&  driver_name,
+                              const string&  param_name, 
+                              EErrAction     on_error,
+                              const string&  default_value,
+                              const list<string>* synonyms);
+
+protected:
     AutoPtr<TParamTree> m_ParamTree;
 };
 

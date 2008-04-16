@@ -421,21 +421,26 @@ string CConfig::GetString(const string&  driver_name,
                           const string&  default_value,
                           const list<string>* synonyms)
 {
-    try {
-        return GetString(driver_name, param_name, eErr_Throw, synonyms);
-    } catch (CConfigException&) {
-        if (on_error == eErr_NoThrow) {
-            return default_value;
-        } else {
-            throw;
-        }
-    }
+    return x_GetString(driver_name, param_name,
+                       on_error, default_value, synonyms);
 }
+
 
 const string& CConfig::GetString(const string&  driver_name,
                                  const string&  param_name, 
                                  EErrAction     on_error,
                                  const list<string>* synonyms)
+{
+    return x_GetString(driver_name, param_name,
+                       on_error, kEmptyStr, synonyms);
+}
+
+
+const string& CConfig::x_GetString(const string&  driver_name,
+                                   const string&  param_name, 
+                                   EErrAction     on_error,
+                                   const string&  default_value,
+                                   const list<string>* synonyms)
 {
     list<const TParamTree*> tns;
     const TParamTree* tn = m_ParamTree->FindSubNode(param_name);
@@ -451,7 +456,7 @@ const string& CConfig::GetString(const string&  driver_name,
     }
     if (tns.empty()) {
         if (on_error == eErr_NoThrow) {
-            return kEmptyStr;
+            return default_value;
         }
         string msg = "Cannot init plugin " + driver_name +
                      ", missing parameter:" + param_name;
@@ -475,8 +480,8 @@ const string& CConfig::GetString(const string&  driver_name,
         if (on_error == eErr_NoThrow) {
             msg += " for driver " + driver_name + ". Default value is used.";
             ERR_POST_X_ONCE(1, msg); 
-            return kEmptyStr;
-        } 
+            return default_value;
+        }
         msg = "Cannot init plugin " + driver_name + ". " + msg;
         NCBI_THROW(CConfigException, eSynonymDuplicate, msg);
     }

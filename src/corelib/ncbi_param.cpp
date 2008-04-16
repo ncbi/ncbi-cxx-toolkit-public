@@ -60,11 +60,11 @@ const char* kNcbiConfigPrefix = "NCBI_CONFIG__";
 namespace {
     bool StringToBool(const string& value)
     {
-        try {
-            return NStr::StringToBool(value);
-        }
-        catch ( ... ) {
+        if ( !value.empty() && isdigit((unsigned char)value[0]) ) {
             return NStr::StringToInt(value) != 0;
+        }
+        else {
+            return NStr::StringToBool(value);
         }
     }
 
@@ -141,7 +141,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
         }
     }
     const char* str = GetEnv(section, variable, env_var_name);
-    if ( str ) {
+    if ( str && *str ) {
         try {
             bool value = StringToBool(str);
 #ifdef _DEBUG
@@ -220,7 +220,7 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
         }
     }
     const char* str = GetEnv(section, variable, env_var_name);
-    if ( str ) {
+    if ( str && *str ) {
         try {
             int value = NStr::StringToInt(str);
 #ifdef _DEBUG
