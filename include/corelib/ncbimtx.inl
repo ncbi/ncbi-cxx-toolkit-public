@@ -59,104 +59,26 @@ void SSystemFastMutex::CheckInitialized(void) const
 #endif
 }
 
+#if defined(NCBI_NO_THREADS)
+// empty version of Lock/Unlock methods for inlining
 inline
 void SSystemFastMutex::Lock(void)
 {
-    WRITE_MUTEX_EVENT(this, "SSystemFastMutex::Lock()");
-
-#if defined(NCBI_NO_THREADS)
-    return;
-#else
-    // check
-    CheckInitialized();
-
-    // Acquire system mutex
-#  if defined(NCBI_WIN32_THREADS)
-#    if defined(NCBI_USE_CRITICAL_SECTION)
-    EnterCriticalSection(&m_Handle);
-#    else
-    if (WaitForSingleObject(m_Handle, INFINITE) != WAIT_OBJECT_0) {
-        ThrowLockFailed();
-    }
-#    endif
-#  elif defined(NCBI_POSIX_THREADS)
-    if ( pthread_mutex_lock(&m_Handle) != 0 ) { // error
-        ThrowLockFailed();
-    }
-#  endif
-#endif
 }
+
 
 inline
 bool SSystemFastMutex::TryLock(void)
 {
-    WRITE_MUTEX_EVENT(this, "SSystemFastMutex::TryLock()");
-
-#if defined(NCBI_NO_THREADS)
     return true;
-#else
-    // check
-    CheckInitialized();
-
-    // Check if the system mutex is acquired.
-    // If not, acquire for the current thread.
-#  if defined(NCBI_WIN32_THREADS)
-#    if defined(NCBI_USE_CRITICAL_SECTION)
-    return TryEnterCriticalSection(&m_Handle) != 0;
-#    else
-    DWORD status = WaitForSingleObject(m_Handle, 0);
-    if (status == WAIT_OBJECT_0) { // ok
-        return true;
-    }
-    else {
-        if (status != WAIT_TIMEOUT) { // error
-            ThrowTryLockFailed();
-        }
-        return false;
-    }
-#    endif
-#  elif defined(NCBI_POSIX_THREADS)
-    int status = pthread_mutex_trylock(&m_Handle);
-    if (status == 0) { // ok
-        return true;
-    }
-    else {
-        if (status != EBUSY) { // error
-            ThrowTryLockFailed();
-        }
-        return false;
-    }
-#  endif
-#endif
 }
+
 
 inline
 void SSystemFastMutex::Unlock(void)
 {
-    WRITE_MUTEX_EVENT(this, "SSystemFastMutex::Unlock()");
-
-#if defined(NCBI_NO_THREADS)
-    return;
-#else
-    // check
-    CheckInitialized();
-        
-    // Release system mutex
-# if defined(NCBI_WIN32_THREADS)
-#    if defined(NCBI_USE_CRITICAL_SECTION)
-    LeaveCriticalSection(&m_Handle);
-#    else
-    if ( !ReleaseMutex(m_Handle) ) { // error
-        ThrowUnlockFailed();
-    }
-#    endif
-# elif defined(NCBI_POSIX_THREADS)
-    if ( pthread_mutex_unlock(&m_Handle) != 0 ) { // error
-        ThrowUnlockFailed();
-    }
-# endif
-#endif
 }
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 //  SSystemMutex
