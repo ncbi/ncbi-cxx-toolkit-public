@@ -188,6 +188,7 @@ public:
     CTSE_Lock FindLock(const CTSE_Info* info) const;
 
     bool AddLock(const CTSE_Lock& lock);
+    bool PutLock(CTSE_Lock& lock);
     bool RemoveLock(const CTSE_Lock& lock);
     bool RemoveLock(const CTSE_Info* info);
 

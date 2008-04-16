@@ -94,7 +94,8 @@ CDataSource::CDataSource(const CObject& shared_object, const CSeq_entry& entry)
     : m_SharedObject(&shared_object),
       m_DefaultPriority(9)
 {
-    m_StaticBlobs.AddLock(AddTSE(const_cast<CSeq_entry&>(entry)));
+    CTSE_Lock tse_lock = AddTSE(const_cast<CSeq_entry&>(entry));
+    m_StaticBlobs.PutLock(tse_lock);
 }
 
 
@@ -283,7 +284,7 @@ void CDataSource::x_Map(const CObject* obj, const CTSE_Info_Object* info)
 {
     typedef TInfoMap::value_type value_type;
     pair<TInfoMap::iterator, bool> ins =
-        m_InfoMap.insert(value_type(ConstRef(obj), ConstRef(info)));
+        m_InfoMap.insert(value_type(obj, info));
     if ( !ins.second ) {
         CNcbiOstrstream str;
         str << "CDataSource::x_Map(): object already mapped:" <<
@@ -291,7 +292,7 @@ void CDataSource::x_Map(const CObject* obj, const CTSE_Info_Object* info)
             " obj: " << obj <<
             " " << typeid(*info).name() <<
             " info: " << info <<
-            " was: " << ins.first->second.GetPointerOrNull();
+            " was: " << ins.first->second;
         NCBI_THROW(CObjMgrException, eOtherError,
                    CNcbiOstrstreamToString(str));
     }
@@ -300,9 +301,9 @@ void CDataSource::x_Map(const CObject* obj, const CTSE_Info_Object* info)
 
 void CDataSource::x_Unmap(const CObject* obj, const CTSE_Info_Object* info)
 {
-    TInfoMap::iterator iter = m_InfoMap.find(ConstRef(obj));
+    TInfoMap::iterator iter = m_InfoMap.find(obj);
     if ( iter != m_InfoMap.end() ) {
-        _ASSERT(iter->second.GetPointer() == info);
+        _ASSERT(iter->second == info);
         m_InfoMap.erase(iter);
     }
     else {
@@ -442,7 +443,7 @@ CConstRef<CTSE_Info>
 CDataSource::x_FindTSE_Info(const CSeq_entry& obj) const
 {
     CConstRef<CTSE_Info> ret;
-    TInfoMap::const_iterator found = m_InfoMap.find(CConstRef<CObject>(&obj));
+    TInfoMap::const_iterator found = m_InfoMap.find(&obj);
     if ( found != m_InfoMap.end() ) {
         ret = dynamic_cast<const CTSE_Info*>(&*found->second);
     }
@@ -454,7 +455,7 @@ CConstRef<CSeq_entry_Info>
 CDataSource::x_FindSeq_entry_Info(const CSeq_entry& obj) const
 {
     CConstRef<CSeq_entry_Info> ret;
-    TInfoMap::const_iterator found = m_InfoMap.find(CConstRef<CObject>(&obj));
+    TInfoMap::const_iterator found = m_InfoMap.find(&obj);
     if ( found != m_InfoMap.end() ) {
         ret = dynamic_cast<const CSeq_entry_Info*>(&*found->second);
     }
@@ -466,7 +467,7 @@ CConstRef<CSeq_annot_Info>
 CDataSource::x_FindSeq_annot_Info(const CSeq_annot& obj) const
 {
     CConstRef<CSeq_annot_Info> ret;
-    TInfoMap::const_iterator found = m_InfoMap.find(CConstRef<CObject>(&obj));
+    TInfoMap::const_iterator found = m_InfoMap.find(&obj);
     if ( found != m_InfoMap.end() ) {
         ret = dynamic_cast<const CSeq_annot_Info*>(&*found->second);
     }
@@ -478,7 +479,7 @@ CConstRef<CBioseq_set_Info>
 CDataSource::x_FindBioseq_set_Info(const CBioseq_set& obj) const
 {
     CConstRef<CBioseq_set_Info> ret;
-    TInfoMap::const_iterator found = m_InfoMap.find(CConstRef<CObject>(&obj));
+    TInfoMap::const_iterator found = m_InfoMap.find(&obj);
     if ( found != m_InfoMap.end() ) {
         ret = dynamic_cast<const CBioseq_set_Info*>(&*found->second);
     }
@@ -490,7 +491,7 @@ CConstRef<CBioseq_Info>
 CDataSource::x_FindBioseq_Info(const CBioseq& obj) const
 {
     CConstRef<CBioseq_Info> ret;
-    TInfoMap::const_iterator found = m_InfoMap.find(CConstRef<CObject>(&obj));
+    TInfoMap::const_iterator found = m_InfoMap.find(&obj);
     if ( found != m_InfoMap.end() ) {
         ret = dynamic_cast<const CBioseq_Info*>(&*found->second);
     }
@@ -979,7 +980,7 @@ CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
         ITERATE ( TTSE_Set, it, tse_set->second ) {
             TTSE_Lock tse = x_LockTSE(**it, load_locks, fLockNoThrow);
             if ( tse ) {
-                all_tse.AddLock(tse);
+                all_tse.PutLock(tse);
             }
         }
     }}
@@ -1619,7 +1620,15 @@ CTSE_Lock CTSE_LockSet::FindLock(const CTSE_Info* info) const
 
 bool CTSE_LockSet::AddLock(const CTSE_Lock& lock)
 {
-    return m_TSE_LockSet.insert(TTSE_LockSet::value_type(&*lock, lock)).second;
+    m_TSE_LockSet[&*lock] = lock;
+    return true;
+}
+
+
+bool CTSE_LockSet::PutLock(CTSE_Lock& lock)
+{
+    m_TSE_LockSet[&*lock].Swap(lock);
+    return true;
 }
 
 

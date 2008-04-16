@@ -292,7 +292,7 @@ private:
 #endif
 
     // registered objects
-    typedef map<CConstRef<CObject>, CConstRef<CTSE_Info_Object> > TInfoMap;
+    typedef map<const CObject*, const CTSE_Info_Object*> TInfoMap;
 
     // friend classes
     friend class CAnnotTypes_CI; // using mutex etc.
