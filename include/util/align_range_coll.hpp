@@ -82,7 +82,7 @@ public:
     typedef typename TAlignRangeVector::size_type size_type;
     
     enum EFlags {
-        /// policies
+        /// Policies:
         fKeepNormalized = 0x0001, /// enforce all policies after any modification
         /// if normalization is not possible exception will be thrown
         fAllowMixedDir  = 0x0002, /// allow segments with different orientation
@@ -90,7 +90,10 @@ public:
         fAllowAbutting  = 0x0008, /// allows segments not separated by gaps
         
         fDefaultPoicy   = fKeepNormalized,
+
+        fPolicyMask     = 0x000f,
         
+        /// State flags:
         fNotValidated   = 0x0100, /// collection was modified and not validated
         fInvalid        = 0x0200,  /// one or more policies violated
 
@@ -342,12 +345,20 @@ public:
         return CRange<position_type>(GetFirstFrom(), GetFirstTo());
     }
     
-    int     GetFlags() const    {
+    int GetFlags() const {
         return m_Flags;
     }
-    bool    IsSet(int flags) const  {
+    bool IsSet(int flags) const {
         return (m_Flags & flags) == flags;
     }
+    int GetPolicyFlags() const {
+        return m_Flags & fPolicyMask;
+    }
+    int GetStateFlags() const {
+        return m_Flags & ~fPolicyMask;
+    }
+
+
 
     TSignedSeqPos GetSecondPosByFirstPos(position_type pos, ESearchDirection dir = eNone) const
     {
