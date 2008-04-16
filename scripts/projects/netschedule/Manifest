@@ -14,7 +14,7 @@
 # The DLL: statement describes shared objects
 # The ETC: statement describes configuration files
 # It is allowed to have more than one of each statements
-APP: netscheduled netschedule_admin netschedule_check netschedule_control netschedule_control_old
+APP: netscheduled netschedule_admin netschedule_check netschedule_control
 ETC: src/app/netschedule/netscheduled.ini
 
 # Each line describes a single configuration

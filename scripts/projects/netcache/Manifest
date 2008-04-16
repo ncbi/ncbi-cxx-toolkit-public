@@ -9,6 +9,9 @@
 #          It is used by release configurator.
 #
 
+APP: netcached netcache_check netcache_control
+ETC: src/app/netcache/netcached.ini
+
 # Each line describes a single configuration
 # The format is as follows:
 # <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
