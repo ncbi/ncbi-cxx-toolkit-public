@@ -268,15 +268,18 @@ struct SSystemFastMutex
     volatile EMagic m_Magic;    ///< Magic flag
 
     /// Acquire mutex for the current thread with no nesting checks.
+    NCBI_XNCBI_EXPORT
     void Lock(void);
 
     /// Release mutex with no owner or nesting checks.
+    NCBI_XNCBI_EXPORT
     void Unlock(void);
 
     /// Try to lock.
     /// 
     /// @return
     ///   TRUE on success; FALSE, otherwise.
+    NCBI_XNCBI_EXPORT
     bool TryLock(void);
 
     /// Check initialized value of mutex.
