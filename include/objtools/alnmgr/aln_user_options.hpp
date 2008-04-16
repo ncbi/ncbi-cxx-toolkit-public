@@ -50,24 +50,50 @@ public:
     typedef CPairwiseAln::TPos TPos;
 
     enum EDirection {
-        eBothDirections   = 0, ///< No filtering: use both direct and reverse sequences.
-        eDirect           = 1, ///< Use only sequences whose strand is the same as that of the anchor
-        eReverse          = 2,  ///< Use only sequences whose strand is opposite to that of the anchor
+        eBothDirections   = 0, ///< No filtering: use both direct and
+                               ///  reverse sequences.
+
+        eDirect           = 1, ///< Use only sequences whose strand is
+                               ///  the same as that of the anchor
+
+        eReverse          = 2,  ///< Use only sequences whose strand
+                                ///  is opposite to that of the anchor
+
         eDefaultDirection = eBothDirections
     };
     EDirection m_Direction;
 
     enum EMergeAlgo {
-        eMergeAllSeqs      = 0, ///< Merge all sequences
-        eQuerySeqMergeOnly = 1, ///< Only put the query seq on same row, 
-        ePreserveRows      = 2, ///< Preserve all rows as they were in the input (e.g. self-align a sequence) (coresponds to separate alignments)
+        eMergeAllSeqs      = 0, ///< Merge all sequences [greedy algo]
+
+        eQuerySeqMergeOnly = 1, ///< Only put the query seq on same
+                                ///  row [input order is not
+                                ///  significant]
+
+        ePreserveRows      = 2, ///< Preserve all rows as they were in
+                                ///  the input (e.g. self-align a
+                                ///  sequence) (coresponds to separate
+                                ///  alignments) [greedy algo]
+
         eDefaultMergeAlgo  = eMergeAllSeqs
     };
     EMergeAlgo m_MergeAlgo;
 
     enum EMergeFlags {
-        fTruncateOverlaps = 0x0001, ///< Otherwise put on separate rows
-        fAllowMixedStrand = 0x0002, ///< Allow mixed strand on the same row
+        fTruncateOverlaps   = 0x0001, ///< Otherwise put on separate
+                                      ///  rows
+
+        fAllowMixedStrand   = 0x0002, ///< Allow mixed strand on the
+                                      ///  same row
+
+        fAllowTranslocation = 0x0004, ///< Allow translocations on the
+                                      ///  same row
+
+        fSkipSortByScore    = 0x0008  ///< In greedy algos, skip
+                                      ///  sorting input alignments by
+                                      ///  score thus allowing for
+                                      ///  user-defined sort order.
+
     };
     typedef int TMergeFlags;
     TMergeFlags  m_MergeFlags;

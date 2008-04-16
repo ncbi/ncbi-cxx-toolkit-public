@@ -151,8 +151,8 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
 //        CPairwiseAln::fAllowAbutting;
 
     int flags = 
-        CPairwiseAln::fKeepNormalized;
-        //CPairwiseAln::fAllowMixedDir |
+        CPairwiseAln::fKeepNormalized | 
+        CPairwiseAln::fAllowMixedDir;
         //CPairwiseAln::fAllowOverlap |
         //CPairwiseAln::fAllowAbutting;
 
@@ -189,9 +189,9 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
 
 template <class TAlnStats>
 void 
-CreateAnchoredAlnVec(TAlnStats& aln_stats,                 ///< input
-                     vector<CRef<CAnchoredAln> >& out_vec, ///< output
-                     const CAlnUserOptions& options)       ///< user options
+CreateAnchoredAlnVec(TAlnStats& aln_stats,           ///< input
+                     TAnchoredAlnVec& out_vec,       ///< output
+                     const CAlnUserOptions& options) ///< user options
 {
     _ASSERT(out_vec.empty());
     out_vec.resize(aln_stats.GetAlnCount());
@@ -213,7 +213,7 @@ CreateAnchoredAlnVec(TAlnStats& aln_stats,                 ///< input
         anchored_aln.SetScore() /= anchored_aln.GetDim();
     }
 }
-
+                                 
 
 END_NCBI_SCOPE
 

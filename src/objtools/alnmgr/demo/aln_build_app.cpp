@@ -140,13 +140,23 @@ void CAlnBuildApp::Init(void)
 
     // Merge option
     arg_desc->AddDefaultKey
-        ("algo", "merge_algo",
+        ("merge_algo", "merge_algo",
          "eMergeAllSeqs      = 0, ///< Merge all sequences\n"
          "eQuerySeqMergeOnly = 1, ///< Only put the query seq on same row, \n"
          "ePreserveRows      = 2, ///< Preserve all rows as they were in the input (e.g. self-align a sequence)\n"
          "eDefaultMergeAlgo  = eMergeAllSeqs",
          CArgDescriptions::eInteger, "0");
-    arg_desc->SetConstraint("algo", new CArgAllow_Integers(0,2));
+    arg_desc->SetConstraint("merge_algo", new CArgAllow_Integers(0,2));
+
+
+    // Merge option
+    arg_desc->AddDefaultKey
+        ("merge_flags", "merge_flags",
+         "fTruncateOverlaps = 0x0001,  ///< Otherwise put on separate rows\n"
+         "fAllowMixedStrand = 0x0002,  ///< Allow mixed strand on the same row\n"
+         "fAllowTranslocation = 0x0004 ///< Allow translocations on the same row",
+         CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint("merge_flags", new CArgAllow_Integers(0,7));
 
 
     // Program description
@@ -260,7 +270,6 @@ int CAlnBuildApp::Run(void)
 
 
     /// Construct a vector of anchored alignments
-    typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVec;
     TAnchoredAlnVec anchored_aln_vec;
     CreateAnchoredAlnVec(aln_stats, anchored_aln_vec, aln_user_options);
     ReportTime("TAnchoredAlnVec");
@@ -274,7 +283,12 @@ int CAlnBuildApp::Run(void)
 
     /// Choose merging algorithm
     aln_user_options.m_MergeAlgo = 
-        (CAlnUserOptions::EMergeAlgo) GetArgs()["algo"].AsInteger();
+        (CAlnUserOptions::EMergeAlgo) GetArgs()["merge_algo"].AsInteger();
+
+
+    /// Choose merging flags
+    aln_user_options.m_MergeFlags = 
+        (CAlnUserOptions::EMergeFlags) GetArgs()["merge_flags"].AsInteger();
 
 
     /// Build a single anchored aln
@@ -284,6 +298,8 @@ int CAlnBuildApp::Run(void)
              aln_user_options);
     ReportTime("BuildAln");
     {
+        cout << out_anchored_aln;
+        out_anchored_aln.SplitStrands();
         cout << out_anchored_aln;
         m_StopWatch.Restart();
     }
@@ -311,9 +327,11 @@ int CAlnBuildApp::Run(void)
             auto_ptr<IAlnSegmentIterator> sparse_ci
                 (sparse_aln.CreateSegmentIterator(row,
                                                   sparse_aln.GetAlnRange(),
-                                                  IAlnSegmentIterator::eAllSegments));
+                                                  IAlnSegmentIterator::eSkipInserts/*eAllSegments*/));
+
             while (*sparse_ci) {
                 cout << **sparse_ci << endl;
+#if 0
                 {{
                     /// Demonstrate/verify usage of GetSeqPosFromAlnPos:
                     const IAlnSegment& aln_seg = **sparse_ci;
@@ -336,6 +354,7 @@ int CAlnBuildApp::Run(void)
                                              aln_seg.GetRange().GetTo())
                          << endl;
                 }}
+#endif
                 ++(*sparse_ci);
             }            
         }
