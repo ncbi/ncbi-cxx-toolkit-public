@@ -311,6 +311,7 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
         }}
         break;
 
+    case C_Segs::e_Sparse:
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::GetSeq_id() currently does not handle "
