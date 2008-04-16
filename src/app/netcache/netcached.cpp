@@ -55,6 +55,17 @@
 #include "netcached.hpp"
 #include "netcache_version.hpp"
 
+#define NETCACHED_HUMAN_VERSION \
+      "NCBI NetCache server Version " NETCACHED_VERSION \
+      " build " __DATE__ " " __TIME__
+
+#define NETCACHED_FULL_VERSION \
+      "NCBI NetCache Server version " NETCACHED_VERSION \
+      " Storage version " NETCACHED_STORAGE_VERSION \
+      " Protocol version " NETCACHED_PROTOCOL_VERSION \
+      " build " __DATE__ " " __TIME__
+
+
 
 USING_NCBI_SCOPE;
 
@@ -570,6 +581,7 @@ void CNetCacheDApp::Init(void)
                               "netcached");
 
     arg_desc->AddFlag("reinit", "Recreate the storage directory.");
+    arg_desc->AddFlag("version-full", "Version");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -580,7 +592,12 @@ int CNetCacheDApp::Run(void)
     CBDB_Cache* bdb_cache = 0;
     CArgs args = GetArgs();
 
-    LOG_POST(NETCACHED_VERSION);
+    if (args["version-full"]) {
+        printf(NETCACHED_FULL_VERSION "\n");
+        return 0;
+    }
+
+    LOG_POST(NETCACHED_FULL_VERSION);
 
     try {
         const CNcbiRegistry& reg = GetConfig();

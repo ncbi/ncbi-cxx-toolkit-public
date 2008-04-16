@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistl.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -40,12 +41,18 @@
 
 #include <connect/services/netcache_api.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <common/ncbi_package_ver.h>
 
 
 USING_NCBI_SCOPE;
 
-///////////////////////////////////////////////////////////////////////
+#define NETCACHE_VERSION NCBI_AS_STRING(NCBI_PACKAGE_VERSION)
 
+#define NETCACHE_HUMAN_VERSION \
+      "NCBI NetCache control utility Version " NETCACHE_VERSION \
+      " build " __DATE__ " " __TIME__
+
+///////////////////////////////////////////////////////////////////////
 
 /// Netcache stop application
 ///
@@ -69,16 +76,17 @@ void CNetCacheControl::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetCache control.");
     
-    arg_desc->AddPositional("service", 
-                            "NetCache service name.", CArgDescriptions::eString);
+    arg_desc->AddDefaultPositional("service", 
+        "NetCache service name.", CArgDescriptions::eString, "");
 
 
-    arg_desc->AddFlag("shutdown", "Shutdown server");
-    arg_desc->AddFlag("ver", "Server version");
-    arg_desc->AddFlag("getconf", "Server config");
-    arg_desc->AddFlag("stat", "Server statistics");
-    arg_desc->AddFlag("dropstat", "Drop server statistics");
-    arg_desc->AddFlag("monitor", "Monitor server");
+    arg_desc->AddFlag("shutdown",      "Shutdown server");
+    arg_desc->AddFlag("version-full",  "Version");
+    arg_desc->AddFlag("ver",           "Server version");
+    arg_desc->AddFlag("getconf",       "Server config");
+    arg_desc->AddFlag("stat",          "Server statistics");
+    arg_desc->AddFlag("dropstat",      "Drop server statistics");
+    arg_desc->AddFlag("monitor",       "Monitor server");
 
     arg_desc->AddOptionalKey("fetch",
                      "key",
@@ -125,6 +133,11 @@ int CNetCacheControl::Run(void)
 {
     const CArgs& args = GetArgs();
     const string& service  = args["service"].AsString();
+
+    if (args["version-full"]) {
+        printf(NETCACHE_HUMAN_VERSION "\n");
+        return 0;
+    }
 
     CNetCacheAPI nc_client(service,"netcache_control");
     CNetCacheAdmin admin = nc_client.GetAdmin();

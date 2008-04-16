@@ -23,13 +23,14 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description:  Check NetCache service (functionality).
  *
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistl.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -40,10 +41,17 @@
 #include <connect/services/netcache_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
+#include <common/ncbi_package_ver.h>
+
 #include <common/test_assert.h>  /* This header must go last */
 
-
 USING_NCBI_SCOPE;
+
+#define NETCACHE_VERSION NCBI_AS_STRING(NCBI_PACKAGE_VERSION)
+
+#define NETCACHE_HUMAN_VERSION \
+      "NCBI NetCache check utility Version " NETCACHE_VERSION \
+      " build " __DATE__ " " __TIME__
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -70,10 +78,11 @@ void CNetCacheCheck::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetCache check.");
     
-    arg_desc->AddPositional("service_address", 
+    arg_desc->AddDefaultPositional("service_address", 
         "NetCache host or service name: { host:port | lb_service_name }.", 
-        CArgDescriptions::eString);
-
+        CArgDescriptions::eString,
+        "");
+    arg_desc->AddFlag("version-full", "Version");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -83,7 +92,13 @@ void CNetCacheCheck::Init(void)
 int CNetCacheCheck::Run(void)
 {
     CArgs args = GetArgs();
-    const string& service_addr  = args["service_address"].AsString();
+
+    if (args["version-full"]) {
+        printf(NETCACHE_HUMAN_VERSION "\n");
+        return 0;
+    }
+
+    const string& service_addr = args["service_address"].AsString();
 
     auto_ptr<CNetCacheClient> cl;
 

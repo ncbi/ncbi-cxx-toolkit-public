@@ -1,4 +1,4 @@
-APP_PROJ = netcached netcache_control netcache_check netcache_control_old
+APP_PROJ = netcached netcache_control netcache_check
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
