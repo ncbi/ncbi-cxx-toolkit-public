@@ -253,6 +253,13 @@ void CDense_seg::Validate(bool full_test) const
                     offset -= numrows;
                 }
             }
+            if (min_start == -1) {
+                string errstr = string("CDense_seg::Validate():")
+                    + " Row " + NStr::IntToString(numrow) +
+                    " is empty.";
+                NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                           errstr);
+            }
         }
     }
 }
