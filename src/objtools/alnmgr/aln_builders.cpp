@@ -247,6 +247,7 @@ ostream& operator<<(ostream& out, const CMergedPairwiseAln& merged)
     ITERATE(CMergedPairwiseAln::TPairwiseAlnVector, aln_it, merged.GetPairwiseAlns()) {
         out << **aln_it;
     };
+    return out;
 }
 
 
