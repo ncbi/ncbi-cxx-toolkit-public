@@ -96,7 +96,6 @@ string s_GetFastaTitle(const CBioseq& bs)
     bool has_molinfo = false;
 
     const CSeq_descr::Tdata& descr = bs.GetDescr().Get();
-    int found = 0;
     for ( CSeq_descr::Tdata::const_iterator it = descr.begin(); it != descr.end(); ++it ) {
         const CSeqdesc* sd = *it;
         if ( sd->Which() == CSeqdesc::e_Title ) {
