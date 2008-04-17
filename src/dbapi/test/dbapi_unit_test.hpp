@@ -150,6 +150,14 @@ public:
         return m_TestConfiguration;
     }
 
+    void PutMsgDisabled(const char* msg) const;
+    void PutMsgExpected(const char* msg, const char* replacement) const;
+
+    unsigned int GetNumOfDisabledTests(void) const
+    {
+        return m_NumOfDisabled;
+    }
+
 private:
     void SetDatabaseParameters(void);
 
@@ -165,6 +173,9 @@ private:
     string m_GatewayPort;
     ETestConfiguration  m_TestConfiguration;
     TDatabaseParameters m_DatabaseParameters;
+    mutable unsigned int m_NumOfDisabled;
+    bool m_ReportDisabled;
+    bool m_ReportExpected;
 };
 
 

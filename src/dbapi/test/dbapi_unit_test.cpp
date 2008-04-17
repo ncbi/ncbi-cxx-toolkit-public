@@ -87,23 +87,6 @@ enum { max_text_size = 8000 };
 static const char* msg_record_expected = "Record expected";
 
 ////////////////////////////////////////////////////////////////////////////////
-inline
-void PutMsgDisabled(const char* msg)
-{
-#if 0
-    LOG_POST(Warning << "- " << msg << " is disabled !!!");
-#endif
-}
-
-inline
-void PutMsgExpected(const char* msg, const char* replacement)
-{
-#if 0
-    LOG_POST(Warning << "? " << msg << " is expected instead of " << replacement);
-#endif
-}
-
-////////////////////////////////////////////////////////////////////////////////
 class CDB_UserHandler_Exception_NoThrow :
     public CDB_UserHandler
 {
@@ -2243,7 +2226,7 @@ CDBAPIUnitTest::Test_LOB(void)
 
             }
         } else {
-            PutMsgDisabled("Test_LOB - Read Blob");
+            m_args.PutMsgDisabled("Test_LOB - Read Blob");
         }
 
         // Test NULL values ...
@@ -2354,7 +2337,7 @@ CDBAPIUnitTest::Test_LOB(void)
                     }
                 }
             } else {
-                PutMsgDisabled("Test_LOB Read blob via Read method");
+                m_args.PutMsgDisabled("Test_LOB Read blob via Read method");
             }
 
             // Read Blob
@@ -2407,7 +2390,7 @@ CDBAPIUnitTest::Test_LOB(void)
 
                 }
             } else {
-                PutMsgDisabled("Test_LOB Read Read Blob");
+                m_args.PutMsgDisabled("Test_LOB Read Read Blob");
             } // Read Blob
         } // Test NULL values ...
     }
@@ -3517,7 +3500,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
             }
 
         } else {
-            PutMsgDisabled("Test_BulkInsertBlob_LowLevel2 - third scenario");
+            m_args.PutMsgDisabled("Test_BulkInsertBlob_LowLevel2 - third scenario");
         }
     }
     catch(const CException& ex) {
@@ -3888,7 +3871,7 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
             }
 
             if (m_args.GetDriverName() == dblib_driver) {
-                PutMsgDisabled("Unexceptional overflow of varchar in bulk-insert");
+                m_args.PutMsgDisabled("Unexceptional overflow of varchar in bulk-insert");
 
                 if ( !exception_catched ) {
                     BOOST_FAIL("Exception CDB_ClientEx was expected.");
@@ -3960,7 +3943,7 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
             }
 
             if (m_args.GetDriverName() == ctlib_driver) {
-                PutMsgDisabled("Exception when overflow of varbinary in bulk-insert");
+                m_args.PutMsgDisabled("Exception when overflow of varbinary in bulk-insert");
 
                 if ( exception_catched ) {
                     BOOST_FAIL("Exception CDB_ClientEx was not expected.");
@@ -4085,7 +4068,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 // Dump results ...
                 DumpResults( auto_stmt.get() );
             } else {
-                // PutMsgDisabled("Test_Bulk_Writing Retrieve data");
+                // m_args.PutMsgDisabled("Test_Bulk_Writing Retrieve data");
             }
         }
 
@@ -4202,7 +4185,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 }
             }
             else {
-                PutMsgDisabled("Bigint in Sybase");
+                m_args.PutMsgDisabled("Bigint in Sybase");
             }
         }
 
@@ -4272,7 +4255,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
     //         }
         }
         else {
-            PutMsgDisabled("Bigint in Sybase");
+            m_args.PutMsgDisabled("Bigint in Sybase");
         }
 
         // VARCHAR ...
@@ -4390,7 +4373,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                     }
                 }
             } else {
-                PutMsgDisabled("Test_Bulk_Writing Retrieve data");
+                m_args.PutMsgDisabled("Test_Bulk_Writing Retrieve data");
             }
         }
     }
@@ -4503,7 +4486,7 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
                 || m_args.GetDriverName() == dblib_driver
                 )
             {
-                PutMsgDisabled("Bulk-insert NULLs when there are defaults");
+                m_args.PutMsgDisabled("Bulk-insert NULLs when there are defaults");
 
                 bi->AddRow();
                 bi->Complete();
@@ -4545,7 +4528,7 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
             }
             else {
                 // driver crushes after trying to insert
-                PutMsgDisabled("Bulk-insert NULL into NOT-NULL column");
+                m_args.PutMsgDisabled("Bulk-insert NULL into NOT-NULL column");
             }
         }
 
@@ -5187,7 +5170,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
                         BOOST_CHECK_EQUAL(value1.GetNumeric(), string("98.79"));
                         BOOST_CHECK_EQUAL(value2.GetNumeric(), string("98.79"));
                     } else {
-                        PutMsgDisabled("Test_Numeric - part 2");
+                        m_args.PutMsgDisabled("Test_Numeric - part 2");
                     }
                 }
 
@@ -5205,7 +5188,7 @@ void CDBAPIUnitTest::Test_Numeric(void)
                         BOOST_CHECK_EQUAL(value1.GetNumeric(), string("1.21"));
                         BOOST_CHECK_EQUAL(value2.GetNumeric(), string("1.21"));
                     } else {
-                        PutMsgDisabled("Test_Numeric - part 3");
+                        m_args.PutMsgDisabled("Test_Numeric - part 3");
                     }
                 }
             }
@@ -5772,7 +5755,7 @@ CDBAPIUnitTest::Test_Cursor(void)
                 BOOST_CHECK_EQUAL(size_t(1), GetNumOfRecords(auto_stmt, "#Objects"));
             }
         } else {
-            PutMsgDisabled("Test_Cursor Second test");
+            m_args.PutMsgDisabled("Test_Cursor Second test");
         } // Second test ...
     }
     catch(const CException& ex) {
@@ -6108,7 +6091,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
             BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
         } else {
-            PutMsgDisabled("Check sequent call of ExecuteQuery");
+            m_args.PutMsgDisabled("Check sequent call of ExecuteQuery");
         }
 
         // Select NULL values and empty strings ... 
@@ -6610,7 +6593,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                             break;
                         case eDB_Double:
                             {
-                                PutMsgExpected("CDB_Numeric", "CDB_Double");
+                                m_args.PutMsgExpected("CDB_Numeric", "CDB_Double");
 
                                 CDB_Double* data = static_cast<CDB_Double*>(variant.GetData());
                                 BOOST_CHECK_EQUAL(data->Value(), 1);
@@ -6645,7 +6628,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                             break;
                         case eDB_Double:
                             {
-                                PutMsgExpected("CDB_Numeric", "CDB_Double");
+                                m_args.PutMsgExpected("CDB_Numeric", "CDB_Double");
 
                                 CDB_Double* data = static_cast<CDB_Double*>(variant.GetData());
                                 BOOST_CHECK_EQUAL(data->Value(), 2843113322U);
@@ -6677,7 +6660,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                         break;
                     case eDB_Double:
                         {
-                            PutMsgExpected("CDB_Numeric", "CDB_Double");
+                            m_args.PutMsgExpected("CDB_Numeric", "CDB_Double");
 
                             CDB_Double* data = static_cast<CDB_Double*>(variant.GetData());
                             BOOST_CHECK_EQUAL(data->Value(), 1);
@@ -6708,7 +6691,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 float_data = dynamic_cast<CDB_Float*>(variant.GetData());
 
                 if (float_data) {
-                    // PutMsgExpected("CDB_Double", "CDB_Float");
+                    // m_args.PutMsgExpected("CDB_Double", "CDB_Float");
                     BOOST_CHECK_EQUAL(float_data->Value(), 1);
                 }
 
@@ -6717,7 +6700,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 double_data = dynamic_cast<CDB_Double*>(variant.GetData());
 
                 if (double_data) {
-                    PutMsgExpected("CDB_Float", "CDB_Double");
+                    m_args.PutMsgExpected("CDB_Float", "CDB_Double");
                     BOOST_CHECK_EQUAL(double_data->Value(), 1);
                 }
 
@@ -6827,7 +6810,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 dt_data = dynamic_cast<CDB_DateTime*>(variant.GetData());
 
                 if (!dt_data){
-                    PutMsgExpected("CDB_DateTime", "CDB_SmallDateTime");
+                    m_args.PutMsgExpected("CDB_DateTime", "CDB_SmallDateTime");
 
                     CDB_SmallDateTime* data = dynamic_cast<CDB_SmallDateTime*>(variant.GetData());
                     BOOST_CHECK(data);
@@ -6860,7 +6843,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 varchar_data = dynamic_cast<CDB_VarChar*>(variant.GetData());
 
                 if(varchar_data) {
-                    PutMsgExpected("CDB_Char", "CDB_VarChar");
+                    m_args.PutMsgExpected("CDB_Char", "CDB_VarChar");
 
                     BOOST_CHECK_EQUAL(string(varchar_data->Value()), string("12345     "));
                 }
@@ -6870,7 +6853,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 longchar_data = dynamic_cast<CDB_LongChar*>(variant.GetData());
 
                 if(longchar_data) {
-                    PutMsgExpected("CDB_Char", "CDB_LongChar");
+                    m_args.PutMsgExpected("CDB_Char", "CDB_LongChar");
 
                     BOOST_CHECK_EQUAL(longchar_data->Size(), size_t(10));
                     BOOST_CHECK_EQUAL(string(static_cast<const char*>(longchar_data->Value()),
@@ -6896,7 +6879,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 char_data = dynamic_cast<CDB_Char*>(variant.GetData());
 
                 if(char_data) {
-                    PutMsgExpected("CDB_VarChar", "CDB_Char");
+                    m_args.PutMsgExpected("CDB_VarChar", "CDB_Char");
 
                     BOOST_CHECK_EQUAL(char_data->Value(),
                                       string("12345     "));
@@ -6915,7 +6898,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 longchar_data = dynamic_cast<CDB_LongChar*>(variant.GetData());
 
                 if(longchar_data) {
-                    PutMsgExpected("CDB_VarChar", "CDB_LongChar");
+                    m_args.PutMsgExpected("CDB_VarChar", "CDB_LongChar");
 
                     BOOST_CHECK_EQUAL(longchar_data->Size(), size_t(32));
                     BOOST_CHECK_EQUAL(string(static_cast<const char*>(longchar_data->Value()),
@@ -6947,7 +6930,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 varchar_data = dynamic_cast<CDB_VarChar*>(variant.GetData());
 
                 if(varchar_data) {
-                    PutMsgExpected("CDB_Char", "CDB_VarChar");
+                    m_args.PutMsgExpected("CDB_Char", "CDB_VarChar");
 
                     BOOST_CHECK_EQUAL(string(varchar_data->Value()), string("12345     "));
                 }
@@ -6956,7 +6939,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 longchar_data = dynamic_cast<CDB_LongChar*>(variant.GetData());
 
                 if(longchar_data) {
-                    PutMsgExpected("CDB_Char", "CDB_LongChar");
+                    m_args.PutMsgExpected("CDB_Char", "CDB_LongChar");
 
                     BOOST_CHECK_EQUAL(longchar_data->Size(), size_t(10));
                     BOOST_CHECK_EQUAL(string(static_cast<const char*>(longchar_data->Value()),
@@ -6981,7 +6964,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 char_data = dynamic_cast<CDB_Char*>(variant.GetData());
 
                 if(char_data) {
-                    PutMsgExpected("CDB_VarChar", "CDB_Char");
+                    m_args.PutMsgExpected("CDB_VarChar", "CDB_Char");
 
                     BOOST_CHECK_EQUAL(char_data->Value(),
                                       string("12345     "));
@@ -7000,7 +6983,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 longchar_data = dynamic_cast<CDB_LongChar*>(variant.GetData());
 
                 if(longchar_data) {
-                    PutMsgExpected("CDB_VarChar", "CDB_LongChar");
+                    m_args.PutMsgExpected("CDB_VarChar", "CDB_LongChar");
 
                     BOOST_CHECK_EQUAL(longchar_data->Size(), size_t(32));
                     BOOST_CHECK_EQUAL(string(static_cast<const char*>(longchar_data->Value()),
@@ -7045,7 +7028,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 varchar_data = dynamic_cast<CDB_VarBinary*>(variant.GetData());
 
                 if(varchar_data) {
-                    PutMsgExpected("CDB_Binary", "CDB_VarBinary");
+                    m_args.PutMsgExpected("CDB_Binary", "CDB_VarBinary");
 
                     BOOST_CHECK_EQUAL(varchar_data->Size(), size_t(10));
                     // BOOST_CHECK_EQUAL(string(static_cast<const char*>(varchar_data->Value()),
@@ -7067,7 +7050,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 longchar_data = dynamic_cast<CDB_LongBinary*>(variant.GetData());
 
                 if(longchar_data) {
-                    PutMsgExpected("CDB_Binary", "CDB_LongBinary");
+                    m_args.PutMsgExpected("CDB_Binary", "CDB_LongBinary");
 
                     BOOST_CHECK_EQUAL(longchar_data->Size(), size_t(32));
                     BOOST_CHECK_EQUAL(string(static_cast<const char*>(longchar_data->Value()),
@@ -7094,7 +7077,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 char_data = dynamic_cast<CDB_Binary*>(variant.GetData());
 
                 if(char_data) {
-                    PutMsgExpected("CDB_LongBinary", "CDB_Binary");
+                    m_args.PutMsgExpected("CDB_LongBinary", "CDB_Binary");
 
                     BOOST_CHECK_EQUAL(string(static_cast<const char*>(char_data->Value()),
                                 char_data->Size()),
@@ -7107,7 +7090,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 varchar_data = dynamic_cast<CDB_VarBinary*>(variant.GetData());
 
                 if(varchar_data) {
-                    PutMsgExpected("CDB_LongBinary", "CDB_VarBinary");
+                    m_args.PutMsgExpected("CDB_LongBinary", "CDB_VarBinary");
 
                     BOOST_CHECK_EQUAL(varchar_data->Size(), size_t(1000));
                     // BOOST_CHECK_EQUAL(string(static_cast<const char*>(varchar_data->Value()),
@@ -7146,7 +7129,7 @@ CDBAPIUnitTest::Test_Recordset(void)
 
                 DumpResults(auto_stmt.get());
             } else {
-                PutMsgDisabled("Test_Recordset: Second test - long binary");
+                m_args.PutMsgDisabled("Test_Recordset: Second test - long binary");
             }
 
             // varbinary
@@ -7162,7 +7145,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 char_data = dynamic_cast<CDB_Binary*>(variant.GetData());
 
                 if(char_data) {
-                    PutMsgExpected("CDB_VarBinary", "CDB_Binary");
+                    m_args.PutMsgExpected("CDB_VarBinary", "CDB_Binary");
 
                     BOOST_CHECK_EQUAL(string(static_cast<const char*>(char_data->Value()),
                                 char_data->Size()),
@@ -7185,7 +7168,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 longchar_data = dynamic_cast<CDB_LongBinary*>(variant.GetData());
 
                 if(longchar_data) {
-                    PutMsgExpected("CDB_VarBinary", "CDB_LongBinary");
+                    m_args.PutMsgExpected("CDB_VarBinary", "CDB_LongBinary");
 
                     BOOST_CHECK_EQUAL(longchar_data->Size(), size_t(10));
                     BOOST_CHECK_EQUAL(string(static_cast<const char*>(longchar_data->Value()),
@@ -7212,7 +7195,7 @@ CDBAPIUnitTest::Test_Recordset(void)
 
                 DumpResults(auto_stmt.get());
             } else {
-                PutMsgDisabled("Test_Recordset: Second test - text");
+                m_args.PutMsgDisabled("Test_Recordset: Second test - text");
             }
 
             // image
@@ -7230,7 +7213,7 @@ CDBAPIUnitTest::Test_Recordset(void)
 
                 DumpResults(auto_stmt.get());
             } else {
-                PutMsgDisabled("Test_Recordset: Second test - image");
+                m_args.PutMsgDisabled("Test_Recordset: Second test - image");
             }
         }
 
@@ -9700,7 +9683,7 @@ CDBAPIUnitTest::Test_NULL(void)
                 DumpResults(auto_stmt.get());
             }
         } else {
-            PutMsgDisabled("Testing of NULL-value + empty string is disabled.");
+            m_args.PutMsgDisabled("Testing of NULL-value + empty string is disabled.");
         }
     }
     catch(const CException& ex) {
@@ -10280,7 +10263,7 @@ CDBAPIUnitTest::Test_N_Connections(void)
         }
     }
     else {
-        PutMsgDisabled("Large connections amount");
+        m_args.PutMsgDisabled("Large connections amount");
     }
 }
 
@@ -12901,7 +12884,7 @@ void CDBAPIUnitTest::Test_WaitForDelay(const auto_ptr<IConnection>& auto_conn)
         auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
         BOOST_CHECK( rs.get() != NULL );
     } else {
-        PutMsgDisabled("Test_Timeout. Check if connection is alive.");
+        m_args.PutMsgDisabled("Test_Timeout. Check if connection is alive.");
     }
 
     BOOST_CHECK(timeout_was_reported);
@@ -13989,7 +13972,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             add(tc);
         } else {
-            PutMsgDisabled("Test_ConnFactory");
+            args.PutMsgDisabled("Test_ConnFactory");
         }
     }
 
@@ -14001,7 +13984,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             add(tc);
         } else {
-            PutMsgDisabled("Test_ConnPool");
+            args.PutMsgDisabled("Test_ConnPool");
         }
     }
 
@@ -14020,7 +14003,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 tc->depends_on(tc_init);
                 add(tc);
             } else {
-                PutMsgDisabled("Test_DropConnection");
+                args.PutMsgDisabled("Test_DropConnection");
             }
         }
     }
@@ -14036,7 +14019,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_BlobStore");
+        args.PutMsgDisabled("Test_BlobStore");
     }
 
     if (args.GetTestConfiguration() != CTestArguments::eWithoutExceptions
@@ -14058,7 +14041,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             add(tc);
         } else {
-            PutMsgDisabled("Test_Timeout");
+            args.PutMsgDisabled("Test_Timeout");
         }
     }
 
@@ -14077,7 +14060,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             add(tc);
         } else {
-            PutMsgDisabled("Test_Timeout2");
+            args.PutMsgDisabled("Test_Timeout2");
         }
     }
 
@@ -14097,7 +14080,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Query_Cancelation");
+        args.PutMsgDisabled("Test_Query_Cancelation");
     }
 
 
@@ -14113,7 +14096,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             add(tc);
         } else {
-            PutMsgDisabled("Test_Authentication");
+            args.PutMsgDisabled("Test_Authentication");
         }
     }
 
@@ -14132,7 +14115,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Numeric");
+        args.PutMsgDisabled("Test_Numeric");
     }
 
     if (!(args.GetDriverName() == ftds8_driver
@@ -14146,7 +14129,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Create_Destroy");
+        args.PutMsgDisabled("Test_Create_Destroy");
     }
 
     //
@@ -14161,7 +14144,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Multiple_Close");
+        args.PutMsgDisabled("Test_Multiple_Close");
     }
 
     if (args.IsBCPAvailable()
@@ -14178,7 +14161,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Bulk_Writing");
+        args.PutMsgDisabled("Test_Bulk_Writing");
     }
 
 
@@ -14196,7 +14179,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Bulk_Writing2");
+        args.PutMsgDisabled("Test_Bulk_Writing2");
     }
 
     if (args.IsBCPAvailable()
@@ -14208,7 +14191,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Bulk_Writing3");
+        args.PutMsgDisabled("Test_Bulk_Writing3");
     }
 
     if (args.IsBCPAvailable()
@@ -14221,7 +14204,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Bulk_Writing4");
+        args.PutMsgDisabled("Test_Bulk_Writing4");
     }
 
     if (args.IsBCPAvailable()
@@ -14234,7 +14217,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Bulk_Writing5");
+        args.PutMsgDisabled("Test_Bulk_Writing5");
     }
 
     if (args.IsBCPAvailable()
@@ -14248,7 +14231,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Bulk_Late_Bind");
+        args.PutMsgDisabled("Test_Bulk_Late_Bind");
     }
 
     if (args.IsBCPAvailable()
@@ -14260,7 +14243,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Bulk_Writing6");
+        args.PutMsgDisabled("Test_Bulk_Writing6");
     }
 
     boost::unit_test::test_case* tc_parameters = NULL;
@@ -14272,7 +14255,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc_parameters->depends_on(tc_init);
         add(tc_parameters);
     } else {
-        PutMsgDisabled("Test_StatementParameters");
+        args.PutMsgDisabled("Test_StatementParameters");
     }
 
     if (tc_parameters
@@ -14287,7 +14270,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_parameters);
         add(tc);
     } else {
-        PutMsgDisabled("Test_GetRowCount");
+        args.PutMsgDisabled("Test_GetRowCount");
     }
 
     // Doesn't work at the moment ...
@@ -14302,7 +14285,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_LOB_LowLevel");
+        args.PutMsgDisabled("Test_LOB_LowLevel");
     }
 
     boost::unit_test::test_case* tc_cursor = NULL;
@@ -14322,7 +14305,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
         tc_cursor = tc;
     } else {
-        PutMsgDisabled("Test_Cursor");
+        args.PutMsgDisabled("Test_Cursor");
     }
 
     if (tc_parameters
@@ -14338,7 +14321,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_parameters);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Cursor2");
+        args.PutMsgDisabled("Test_Cursor2");
     }
 
     if (tc_cursor 
@@ -14350,7 +14333,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_cursor);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Cursor_Param");
+        args.PutMsgDisabled("Test_Cursor_Param");
     }
 
     // It looks like only ctlib driver can pass this test at the moment. // 04/09/08
@@ -14368,7 +14351,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_cursor);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Cursor_Multiple");
+        args.PutMsgDisabled("Test_Cursor_Multiple");
     }
 
     if (tc_cursor) 
@@ -14381,7 +14364,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_cursor);
         add(tc);
     } else {
-        PutMsgDisabled("Test_LOB");
+        args.PutMsgDisabled("Test_LOB");
     }
 
     if (tc_cursor) 
@@ -14393,7 +14376,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_cursor);
         add(tc);
     } else {
-        PutMsgDisabled("Test_LOB2");
+        args.PutMsgDisabled("Test_LOB2");
     }
 
     if (tc_cursor) {
@@ -14404,7 +14387,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_cursor);
         add(tc);
     } else {
-        PutMsgDisabled("Test_BlobStream");
+        args.PutMsgDisabled("Test_BlobStream");
     }
 
     // Not completed yet ...
@@ -14429,7 +14412,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_parameters);
         add(tc);
     } else {
-        PutMsgDisabled("Test_UnicodeNB");
+        args.PutMsgDisabled("Test_UnicodeNB");
     }
 
 
@@ -14447,7 +14430,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_parameters);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Unicode");
+        args.PutMsgDisabled("Test_Unicode");
     }
 
 
@@ -14462,7 +14445,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_parameters);
         add(tc);
     } else {
-        PutMsgDisabled("Test_StmtMetaData");
+        args.PutMsgDisabled("Test_StmtMetaData");
     }
 
     if (tc_parameters) 
@@ -14474,7 +14457,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_parameters);
         add(tc);
     } else {
-        PutMsgDisabled("Test_ClearParamList");
+        args.PutMsgDisabled("Test_ClearParamList");
     }
 
     if (tc_parameters) 
@@ -14485,7 +14468,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_parameters);
         add(tc);
     } else {
-        PutMsgDisabled("Test_SelectStmt2");
+        args.PutMsgDisabled("Test_SelectStmt2");
     }
 
     if (tc_parameters
@@ -14499,7 +14482,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_parameters);
         add(tc);
     } else {
-        PutMsgDisabled("Test_NULL");
+        args.PutMsgDisabled("Test_NULL");
     }
 
 
@@ -14513,7 +14496,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_BulkInsertBlob");
+        args.PutMsgDisabled("Test_BulkInsertBlob");
     }
 
     if(args.IsBCPAvailable()
@@ -14528,7 +14511,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_BulkInsertBlob_LowLevel");
+        args.PutMsgDisabled("Test_BulkInsertBlob_LowLevel");
     }
 
     if (args.IsBCPAvailable()
@@ -14542,7 +14525,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_BulkInsertBlob_LowLevel2");
+        args.PutMsgDisabled("Test_BulkInsertBlob_LowLevel2");
     }
 
     if (true) 
@@ -14552,7 +14535,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_MsgToEx");
+        args.PutMsgDisabled("Test_MsgToEx");
     }
 
     /*
@@ -14585,7 +14568,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(except_safety_tc);
         add(tc);
     } else {
-        PutMsgDisabled("Test_UserErrorHandler");
+        args.PutMsgDisabled("Test_UserErrorHandler");
     }
 
     boost::unit_test::test_case* select_stmt_tc = NULL;
@@ -14600,7 +14583,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         select_stmt_tc->depends_on(tc_init);
         add(select_stmt_tc);
     } else {
-        PutMsgDisabled("Test_SelectStmt");
+        args.PutMsgDisabled("Test_SelectStmt");
     }
 
     // There is a problem with the ftds8 driver and Sybase ...
@@ -14618,7 +14601,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(select_stmt_tc);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Recordset");
+        args.PutMsgDisabled("Test_Recordset");
     }
 
     //
@@ -14632,7 +14615,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(select_stmt_tc);
         add(tc);
     } else {
-        PutMsgDisabled("Test_ResultsetMetaData");
+        args.PutMsgDisabled("Test_ResultsetMetaData");
     }
 
 
@@ -14654,7 +14637,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(select_stmt_tc);
         add(select_xml_stmt_tc);
     } else {
-        PutMsgDisabled("Test_SelectStmtXML");
+        args.PutMsgDisabled("Test_SelectStmtXML");
     }
 
 
@@ -14667,7 +14650,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(select_xml_stmt_tc);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Unicode_Simple");
+        args.PutMsgDisabled("Test_Unicode_Simple");
     }
 
     // ctlib/ftds64 will work in case of protocol version 12.5 only
@@ -14689,7 +14672,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Insert");
+        args.PutMsgDisabled("Test_Insert");
     }
 
     if (!(args.GetDriverName() == ftds8_driver
@@ -14706,7 +14689,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
 
     } else {
-        PutMsgDisabled("Test_Procedure");
+        args.PutMsgDisabled("Test_Procedure");
     }
 
 
@@ -14720,7 +14703,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Variant2");
+        args.PutMsgDisabled("Test_Variant2");
     }
 
 
@@ -14739,7 +14722,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Procedure2");
+        args.PutMsgDisabled("Test_Procedure2");
     }
 
     if (!args.IsODBCBased() // 04/04/08 
@@ -14768,7 +14751,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_UNIQUE");
+        args.PutMsgDisabled("Test_UNIQUE");
     }
 
     if (args.IsBCPAvailable()
@@ -14782,7 +14765,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_DateTimeBCP");
+        args.PutMsgDisabled("Test_DateTimeBCP");
     }
 
     // !!! There are still problems ...
@@ -14803,7 +14786,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 add(tc);
             }
         } else {
-            PutMsgDisabled("Test_Bulk_Overflow");
+            args.PutMsgDisabled("Test_Bulk_Overflow");
         }
     }
 
@@ -14820,7 +14803,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             add(tc);
         } else {
-            PutMsgDisabled("Test_Iskhakov");
+            args.PutMsgDisabled("Test_Iskhakov");
         }
     }
 
@@ -14836,7 +14819,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_DateTime");
+        args.PutMsgDisabled("Test_DateTime");
     }
 
     // Valid for all drivers ...
@@ -14849,7 +14832,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
 
     } else {
-        PutMsgDisabled("Test_Decimal");
+        args.PutMsgDisabled("Test_Decimal");
     }
 
 
@@ -14874,7 +14857,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_Identity");
+        args.PutMsgDisabled("Test_Identity");
     }
 
 
@@ -14908,7 +14891,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     } else {
-        PutMsgDisabled("Test_HasMoreResults");
+        args.PutMsgDisabled("Test_HasMoreResults");
     }
 
 
@@ -14954,6 +14937,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 */
+
+    cout << args.GetNumOfDisabledTests() << " tests are disabled..." << endl;
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)
@@ -14965,6 +14950,9 @@ CDBAPITestSuite::~CDBAPITestSuite(void)
 CTestArguments::CTestArguments(int argc, char * argv[])
 : m_Arguments(argc, argv)
 , m_TestConfiguration(eWithExceptions)
+, m_NumOfDisabled(0)
+, m_ReportDisabled(false)
+, m_ReportExpected(false)
 {
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
 
@@ -15026,6 +15014,11 @@ CTestArguments::CTestArguments(int argc, char * argv[])
                             CArgDescriptions::eInteger,
                             "65534");
 
+    arg_desc->AddDefaultKey("report_disabled", "report_disabled",
+                            "Report disabled tests",
+                            CArgDescriptions::eBoolean,
+                            "false");
+
     arg_desc->AddDefaultKey("conf", "configuration",
                             "Configuration for testing",
                             CArgDescriptions::eString, "with-exceptions");
@@ -15042,6 +15035,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
     m_UserName      = args["U"].AsString();
     m_UserPassword  = args["P"].AsString();
     m_DatabaseName  = args["D"].AsString();
+    m_ReportDisabled = args["report_disabled"].AsBoolean();
 
     if ( args["v"].HasValue() ) {
         m_TDSVersion = args["v"].AsString();
@@ -15207,7 +15201,7 @@ CTestArguments::SetDatabaseParameters(void)
     }
 
     if ( (GetDriverName() == ftds8_driver ||
-                GetDriverName() == ftds64_driver ||
+                // GetDriverName() == ftds64_driver ||
                 // GetDriverName() == odbc_driver ||
                 // GetDriverName() == ftds_odbc_driver ||
                 GetDriverName() == ftds_dblib_driver)
@@ -15219,6 +15213,22 @@ CTestArguments::SetDatabaseParameters(void)
         m_DatabaseParameters["host_name"] = m_GatewayHost;
         m_DatabaseParameters["port_num"] = m_GatewayPort;
         m_DatabaseParameters["driver_name"] = GetDriverName();
+    }
+}
+
+void CTestArguments::PutMsgDisabled(const char* msg) const
+{
+    ++m_NumOfDisabled;
+
+    if (m_ReportDisabled) {
+        LOG_POST(Warning << "- " << msg << " is disabled !!!");
+    }
+}
+
+void CTestArguments::PutMsgExpected(const char* msg, const char* replacement) const
+{
+    if (m_ReportExpected) {
+        LOG_POST(Warning << "? " << msg << " is expected instead of " << replacement);
     }
 }
 
