@@ -2275,11 +2275,14 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
                                   const CSeq_loc* location)
 {
     if ( !(m_Flags & eAssembleParts)  &&  !handle.IsSetInst_Seq_data() ) {
-        return; // XXX - too extreme?
+        SSeqMapSelector sel(CSeqMap::fFindInnerRef, (size_t)-1);
+        if ( !handle.GetSeqMap().CanResolveRange(NULL, sel) ) {
+            return;
+        }
     }
 
-    CScope&               scope = handle.GetScope();
-    CSeqVector            v;
+    CScope&    scope = handle.GetScope();
+    CSeqVector v;
     if (location) {
         CRef<CSeq_loc> merged
             = sequence::Seq_loc_Merge(*location, CSeq_loc::fMerge_All, &scope);
