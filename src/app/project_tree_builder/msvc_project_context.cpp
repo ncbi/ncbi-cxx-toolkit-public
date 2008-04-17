@@ -263,15 +263,8 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     list<string> dirs;
     string dir;
 
-    // configuration specific
-    string config_inc = GetApp().GetProjectTreeInfo().m_Compilers;
-    config_inc = CDirEntry::ConcatPath(config_inc,
-        GetApp().GetRegSettings().m_CompilersSubdir);
-    config_inc = CDirEntry::ConcatPath(config_inc, GetApp().GetBuildType().GetTypeStr());
-    config_inc = CDirEntry::AddTrailingPathSeparator(config_inc);
+    string config_inc = CDirEntry::AddTrailingPathSeparator(GetApp().m_IncDir);
     config_inc = CDirEntry::CreateRelativePath(m_ProjectDir, config_inc);
-    config_inc = CDirEntry::ConcatPath(config_inc, "$(ConfigurationName)");
-    config_inc = CDirEntry::AddTrailingPathSeparator(config_inc);
     add_include_dirs_list.push_back( config_inc );
 
     // project dir

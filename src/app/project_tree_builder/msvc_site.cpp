@@ -192,7 +192,11 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
         raw_macro = data.substr(start,end-start+1);
         if (CSymResolver::IsDefine(raw_macro)) {
             macro = CSymResolver::StripDefine(raw_macro);
-            definition = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(), macro);
+            if (macro == "incdir") {
+                definition = GetApp().m_IncDir;
+            } else {
+                definition = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(), macro);
+            }
             if (definition.empty()) {
                 definition = m_Registry.Get("Configure", macro);
             }

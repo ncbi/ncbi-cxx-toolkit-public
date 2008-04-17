@@ -110,6 +110,7 @@ public:
     string m_Subtree;
     string m_Solution;
     string m_StatusDir;
+    string m_IncDir;
     bool   m_Dll;
     bool m_BuildPtb;
     bool m_AddMissingLibs;

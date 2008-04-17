@@ -330,7 +330,7 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
     include_dirs->clear();
     ITERATE(list<string>, p, cpp_flags) {
         const string& flag = *p;
-        const string token("-I$(includedir)");
+        string token("-I$(includedir)");
 
         // process -I$(includedir)
         string token_val;
@@ -339,6 +339,14 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
             string dir = 
                 CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include,
                                       token_val);
+            dir = CDirEntry::NormalizePath(dir);
+            dir = CDirEntry::AddTrailingPathSeparator(dir);
+
+            include_dirs->push_back(dir);
+        }
+        token_val = SMakeProjectT::GetOneIncludeDir(flag, "-I$(incdir)");
+        if ( !token_val.empty() ) {
+            string dir = CDirEntry::ConcatPath(GetApp().m_IncDir,token_val);
             dir = CDirEntry::NormalizePath(dir);
             dir = CDirEntry::AddTrailingPathSeparator(dir);
 
@@ -367,6 +375,11 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
                 ITERATE(list<string>, dir_item, dir_list) {
                     const string& dir = *dir_item;
                     if ( CDirEntry(dir).IsDir() ) {
+                        include_dirs->push_back(dir);    
+                    } else if (CDirEntry::IsAbsolutePath(dir)) {
+                        LOG_POST(Warning << "In " << source_base_dir << ": "
+                            << flag << " = " << dir << ": "
+                            << dir << " not found");
                         include_dirs->push_back(dir);    
                     } else {
                         string d = 

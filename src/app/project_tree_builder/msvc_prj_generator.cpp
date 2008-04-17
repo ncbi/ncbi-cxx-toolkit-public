@@ -123,11 +123,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
     string pkg_export_input;
     if (!prj.m_ExportHeaders.empty()) {
         // destination
-        string config_inc = GetApp().GetProjectTreeInfo().m_Compilers;
-        config_inc = CDirEntry::ConcatPath(config_inc,
-            GetApp().GetRegSettings().m_CompilersSubdir);
-        config_inc = CDirEntry::ConcatPath(config_inc, GetApp().GetBuildType().GetTypeStr());
-        config_inc = CDirEntry::ConcatPath(config_inc, "$(ConfigurationName)");
+        string config_inc = GetApp().m_IncDir;
         config_inc = CDirEntry::ConcatPath(config_inc,
             CDirEntry::ConvertToOSPath( prj.m_ExportHeadersDest));
 //        config_inc = CDirEntry::CreateRelativePath(prj.m_SourcesBaseDir, config_inc);

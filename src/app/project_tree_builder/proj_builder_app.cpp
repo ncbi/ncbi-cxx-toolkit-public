@@ -364,7 +364,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,4,5) );
+    SetVersion( CVersionInfo(1,4,6) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -904,7 +904,6 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
 
 void CProjBulderApp::Exit(void)
 {
-	//TODO
 }
 
 
@@ -989,6 +988,12 @@ void CProjBulderApp::VerifyArguments(void)
     if (m_AllowedTags.empty()) {
         m_AllowedTags.insert("*");
     }
+
+    m_IncDir = GetProjectTreeInfo().m_Compilers;
+    m_IncDir = CDirEntry::ConcatPath(m_IncDir,GetRegSettings().m_CompilersSubdir);
+    m_IncDir = CDirEntry::ConcatPath(m_IncDir, GetBuildType().GetTypeStr());
+    m_IncDir = CDirEntry::ConcatPath(m_IncDir, "inc");
+    m_IncDir = CDirEntry::ConcatPath(m_IncDir, "$(ConfigurationName)");
 }
 
 
