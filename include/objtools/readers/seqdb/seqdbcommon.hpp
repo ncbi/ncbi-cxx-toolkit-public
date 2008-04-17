@@ -1197,6 +1197,7 @@ string SeqDB_ResolveDbPath(const string & filename);
 /// @param sequence A pointer to the sequence data. [in]
 /// @param length The length of the sequence in bases. [in]
 /// @return The 32 bit hash value.
+NCBI_XOBJREAD_EXPORT
 unsigned SeqDB_SequenceHash(const char * sequence,
                             int          length);
 
@@ -1206,6 +1207,7 @@ unsigned SeqDB_SequenceHash(const char * sequence,
 ///
 /// @param sequence The sequence. [in]
 /// @return The 32 bit hash value.
+NCBI_XOBJREAD_EXPORT
 unsigned SeqDB_SequenceHash(const CBioseq & sequence);
 
 END_NCBI_SCOPE
