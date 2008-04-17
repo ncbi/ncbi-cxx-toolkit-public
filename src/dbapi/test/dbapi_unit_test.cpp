@@ -15019,6 +15019,11 @@ CTestArguments::CTestArguments(int argc, char * argv[])
                             CArgDescriptions::eBoolean,
                             "false");
 
+    arg_desc->AddDefaultKey("report_expected", "report_expected",
+                            "Report expected tests",
+                            CArgDescriptions::eBoolean,
+                            "false");
+
     arg_desc->AddDefaultKey("conf", "configuration",
                             "Configuration for testing",
                             CArgDescriptions::eString, "with-exceptions");
@@ -15201,7 +15206,7 @@ CTestArguments::SetDatabaseParameters(void)
     }
 
     if ( (GetDriverName() == ftds8_driver ||
-                // GetDriverName() == ftds64_driver ||
+                GetDriverName() == ftds64_driver ||
                 // GetDriverName() == odbc_driver ||
                 // GetDriverName() == ftds_odbc_driver ||
                 GetDriverName() == ftds_dblib_driver)
