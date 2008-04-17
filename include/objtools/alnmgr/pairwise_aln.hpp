@@ -94,7 +94,7 @@ private:
 
 
 /// Query-anchored alignment can be 2 or multi-dimentional
-class CAnchoredAln : public CObject
+class NCBI_XALNMGR_EXPORT CAnchoredAln : public CObject
 {
 public:
     // Types
