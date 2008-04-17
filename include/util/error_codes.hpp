@@ -53,6 +53,7 @@ NCBI_DEFINE_ERRCODE_X(Util_Image,        209, 29);
 NCBI_DEFINE_ERRCODE_X(Util_Compress,     210, 83);
 NCBI_DEFINE_ERRCODE_X(Util_BlobStore,    211,  2);
 NCBI_DEFINE_ERRCODE_X(Util_StaticArray,  212,  1);
+NCBI_DEFINE_ERRCODE_X(Util_Scheduler,    213,  1);
 
 
 END_NCBI_SCOPE

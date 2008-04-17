@@ -6,6 +6,6 @@ SRC = random_gen utf8 checksum bytesrc strbuffer itree smalldns \
       dictionary_util thread_nonstop sgml_entity request_control \
       transmissionrw miscmath mutex_pool ncbi_cache line_reader \
       util_exception uttp multi_writer itransaction thread_pool \
-      thread_pool_ctrl
+      thread_pool_ctrl scheduler
 
 LIB = xutil
