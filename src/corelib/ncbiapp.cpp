@@ -334,8 +334,8 @@ int CNcbiApplication::AppMain
                 if ( !argv[i++] ) {
                     continue;
                 }
-                // Print USAGE
-                LOG_POST_X(4, appname + ": " + GetVersion().Print());
+                // Print VERSION
+                cout << appname << ": " << GetVersion().Print() << endl;
                 GetDiagContext().DiscardMessages();
                 return 0;
 
@@ -486,7 +486,6 @@ int CNcbiApplication::AppMain
                 m_ArgDesc->PrintUsage
                     (str, e.GetErrCode() == CArgHelpException::eHelpFull);
                 cout << str;
-            // LOG_POST_X(5, str);
             }
             exit_code = 0;
         }
