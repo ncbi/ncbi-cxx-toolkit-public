@@ -458,7 +458,7 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
              m_CaseConversion != eCaseConversion_none ) {
             table = sx_GetConvertTable(dataCoding, cacheCoding,
                                        reverse, m_CaseConversion);
-            if ( !table ) {
+            if ( !table && cacheCoding != dataCoding ) {
                 NCBI_THROW_FMT(CSeqVectorException, eCodingError,
                                "Incompatible sequence codings: "<<
                                dataCoding<<" -> "<<cacheCoding);

@@ -777,7 +777,7 @@ void CSeqVector::x_GetPacked8SeqData(string& dst_str,
                  case_conversion != eCaseConversion_none ) {
                 table = sx_GetConvertTable(src_coding, dst_coding,
                                            reverse, case_conversion);
-                if ( !table ) {
+                if ( !table && src_coding != dst_coding ) {
                     NCBI_THROW_FMT(CSeqVectorException, eCodingError,
                                    "Incompatible sequence codings: "<<
                                    src_coding<<" -> "<<dst_coding);
@@ -795,7 +795,7 @@ void CSeqVector::x_GetPacked8SeqData(string& dst_str,
                     (src_pos - seg.GetPosition());
             }
 
-            if ( table != sm_TrivialTable && !reverse ) {
+            if ( ( !table || table == sm_TrivialTable)  &&  !reverse ) {
                 switch ( src_coding ) {
                 case CSeq_data::e_Iupacna:
                     x_Append8To8(dst_str, data.GetIupacna().Get(),
@@ -870,14 +870,14 @@ void CSeqVector::x_GetPacked4naSeqData(string& dst_str,
                  case_conversion != eCaseConversion_none ) {
                 table = sx_GetConvertTable(src_coding, dst_coding,
                                            reverse, case_conversion);
-                if ( !table ) {
+                if ( !table && src_coding != dst_coding ) {
                     NCBI_THROW_FMT(CSeqVectorException, eCodingError,
                                    "Incompatible sequence codings: "<<
                                    src_coding<<" -> "<<dst_coding);
                 }
             }
 
-            if ( table != sm_TrivialTable || reverse ) {
+            if ( (table && table != sm_TrivialTable) || reverse ) {
                 TSeqPos dataPos;
                 if ( reverse ) {
                     // Revert segment offset
@@ -955,14 +955,15 @@ void CSeqVector::x_GetPacked2naSeqData(string& dst_str,
                  case_conversion != eCaseConversion_none ) {
                 table = sx_GetConvertTable(src_coding, dst_coding,
                                            reverse, case_conversion);
-                if ( !table ) {
+                if ( !table && src_coding != dst_coding ) {
                     NCBI_THROW_FMT(CSeqVectorException, eCodingError,
                                    "Incompatible sequence codings: "<<
                                    src_coding<<" -> "<<dst_coding);
                 }
             }
 
-            if ( table != sm_TrivialTable || reverse || randomizer ) {
+            if ( (table && table != sm_TrivialTable)  ||  reverse
+                ||  randomizer ) {
                 TSeqPos dataPos;
                 if ( reverse ) {
                     // Revert segment offset
