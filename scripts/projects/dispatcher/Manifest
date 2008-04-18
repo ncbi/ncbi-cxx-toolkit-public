@@ -9,6 +9,8 @@
 #          It is used by release configurator.
 #
 
+APP: fwdaemon dispd.cgi lbsmd lbsm_feedback test_mghbn
+
 # Each line describes a single configuration
 # The format is as follows:
 # <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
