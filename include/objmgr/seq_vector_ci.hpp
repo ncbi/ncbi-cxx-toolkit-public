@@ -71,6 +71,7 @@ protected:
     static const char* sx_GetConvertTable(TCoding src, TCoding dst,
                                           bool reverse,
                                           ECaseConversion case_cvt);
+    static const char sm_TrivialTable[256];
 };
 
 class CSeqVector;
