@@ -402,7 +402,8 @@ CScheduler_MT::HasTasksToExecute(const CTime& now) const
 SScheduler_TaskInfo
 CScheduler_MT::GetNextTaskToExecute(const CTime& now)
 {
-    SScheduler_TaskInfo res_info = {0, null};
+    SScheduler_TaskInfo res_info;
+    res_info.id = 0;
     CRef<CScheduler_QueueEvent> event_info;
 
     {{
