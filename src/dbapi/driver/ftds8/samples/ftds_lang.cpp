@@ -57,7 +57,7 @@ CDemoeApp::Run(void)
 
         CTDSContext my_context;
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("MS_DEV2",
+        auto_ptr<CDB_Connection> con(my_context.Connect("MSDEV1",
                                                         "anyone",
                                                         "allowed",
                                                         0));
