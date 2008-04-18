@@ -339,6 +339,10 @@ namespace std {
 %callback(1) endl;
 %callback(1) flush;
 #endif
+#ifdef SWIGPERL
+%callback("%s") endl;
+%callback("%s") flush;
+#endif
     ostream& endl(ostream& os);
     ostream& flush(ostream& os);
 
