@@ -405,21 +405,30 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         ITERATE(list<CProjKey>, n, project.m_Depends) {
             const CProjKey& depend_id = *n;
 
-            CProjectItemsTree::TProjects::const_iterator i = tree_src.m_Projects.find(depend_id);
-            if (i != tree_src.m_Projects.end()) {
+            CProjectItemsTree::TProjects::const_iterator i = tree_dst->m_Projects.find(depend_id);
+            bool found = false;
+            if (i != tree_dst->m_Projects.end()) {
                 if (i->second.m_DllHost.empty()) {
                     new_depends.push_back(depend_id);
                 } else {
                     new_depends.push_back(CProjKey(CProjKey::eDll, i->second.m_DllHost));
                 }
+                found = true;
             } else /* if (!GetApp().m_ScanWholeTree)*/ {
-                ITERATE(CProjectItemsTree::TProjects, d, tree_src.m_Projects) {
+                ITERATE(CProjectItemsTree::TProjects, d, tree_dst->m_Projects) {
                     const list<string>& lst = d->second.m_HostedLibs;
                     if ( find (lst.begin(), lst.end(), depend_id.Id()) != lst.end()) {
                         new_depends.push_back(d->first);
+                        found = true;
                         break;
                     }
                 }
+            }
+            if (!found) {
+                string path = CDirEntry::ConcatPath(project.m_SourcesBaseDir, project.m_ID);
+                PTB_WARNING_EX(path, ePTB_ProjectNotFound,
+                            "Depends on missing project: " << depend_id.Id());
+
             }
         }
         new_depends.sort();
