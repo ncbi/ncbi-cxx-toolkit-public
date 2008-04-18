@@ -139,3 +139,22 @@ public:
     };
 #endif
 };
+
+
+#ifdef SWIGPERL
+
+%extend std::istream {
+    // support operator>> with streams
+    std::istream& __rshift__(ncbi::CSerialObject& obj) {
+        return *self >> obj;
+    };
+};
+
+%extend std::ostream {
+    // support opeator<< with streams
+    std::ostream& __lshift__(const ncbi::CSerialObject& obj) {
+        return *self << obj;
+    };
+};
+
+#endif

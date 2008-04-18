@@ -22,6 +22,24 @@ ios& MSerial_VerifyNo(ios& io);
 ios& MSerial_VerifyYes(ios& io);
 ios& MSerial_VerifyDefValue(ios& io);
 }
+#endif
+
+#ifdef SWIGPERL
+
+// SWIG screws up on CNcbiIos typedef and callbacks,
+// so provide SWIG with non-typedef versions of manipulators
+namespace ncbi {
+%constant ios& MSerial_AsnText(ios& io);
+%constant ios& MSerial_AsnBinary(ios& io);
+%constant ios& MSerial_Xml(ios& io);
+%constant ios& MSerial_Json(ios& io);
+%constant ios& MSerial_VerifyDefault(ios& io);
+%constant ios& MSerial_VerifyNo(ios& io);
+%constant ios& MSerial_VerifyYes(ios& io);
+%constant ios& MSerial_VerifyDefValue(ios& io);
+}
+
+#endif
 
 %ignore ncbi::MSerial_AsnText;
 %ignore ncbi::MSerial_AsnBinary;
@@ -45,4 +63,16 @@ ios& MSerial_VerifyDefValue(ios& io);
 }
 #endif
 
+#ifdef SWIGPERL
+// support operator>> and operator<< for manipulators with arguments
+%extend std::istream {
+    std::istream& __rshift__(const ncbi::MSerial_Flags& manip) {
+        return *self >> manip;
+    }
+}
+%extend std::ostream {
+    std::ostream& __lshift__(const ncbi::MSerial_Flags& manip) {
+        return *self << manip;
+    }
+}
 #endif
