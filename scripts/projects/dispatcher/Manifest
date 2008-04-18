@@ -11,6 +11,9 @@
 
 APP: launcherd fwdaemon dispd.cgi lbsmd lbsm_feedback test_mghbn
 
+# The -t key prevents inclusion of the tree builder into the release
+SVN_TAG_RELEASE_ADD_FLAGS: -t
+
 # Each line describes a single configuration
 # The format is as follows:
 # <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
