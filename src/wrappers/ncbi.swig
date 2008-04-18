@@ -40,6 +40,8 @@
 %feature("compactdefaultargs", "0") ncbi::CSymDustMasker::CSymDustMasker;
 %feature("compactdefaultargs", "0") ncbi::CPairwiseAln::CPairwiseAln;
 
+%include typemap_fixes.i
+
 #ifdef SWIGRUBY
 // int vs. enum for ios_base::fmtflags
 %ignore std::ios_base::setf;
@@ -188,9 +190,6 @@ void HandleException(void) {
 #ifdef SWIGPYTHON
 %rename(__nonzero__) *::operator bool;
 #endif
-#ifdef SWIGPERL
-%rename(Bool) *::operator bool;
-#endif
 
 %{
 namespace ncbi {namespace objects {namespace validator {}}
@@ -336,7 +335,7 @@ objtools/simple/simple_om.hpp
 %%
 
 %include text_editor.i                // CTextEditor (display/editing)
-%include serial_extensions.i          // (de)serialization, Spec(), etc.
+%include serial_extensions.i          // (de)serialization
 %include additional_scripting_code.i  // lots of important extensions
 %include version.i                    // "version" global string variable
                                       // (auto-generated)
