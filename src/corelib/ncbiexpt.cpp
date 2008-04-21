@@ -410,6 +410,9 @@ void CException::x_Assign(const CException& src)
     if (!m_Predecessor && src.m_Predecessor) {
         m_Predecessor = src.m_Predecessor->x_Clone();
     }
+    if ( src.m_StackTrace.get() ) {
+        m_StackTrace.reset(new CStackTrace(*src.m_StackTrace));
+    }
 }
 
 
