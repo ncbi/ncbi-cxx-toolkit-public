@@ -143,6 +143,8 @@ void HandleException(void) {
 
 %feature("autodoc");  // generate documentation for Python
 
+%include reinterpret_cast.i
+
 %include ncbi_stl.i
 %include ncbi_iostream.i
 
