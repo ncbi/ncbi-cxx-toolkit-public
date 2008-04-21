@@ -217,6 +217,11 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
             } else {
                 dll->m_Depends.push_back(CProjKey(CProjKey::eDll, i->second.m_DllHost));
             }
+        } else {
+            string host = GetDllHost(tree_src,depend_id.Id());
+            if (!host.empty()) {
+                dll->m_Depends.push_back(CProjKey(CProjKey::eDll, host));
+            }
         }
     }
     dll->m_Depends.sort();
@@ -322,6 +327,22 @@ void AnalyzeDllData(CProjectItemsTree& tree)
     }
 }
 
+string GetDllHost(const CProjectItemsTree& tree, const string& lib)
+{
+    ITERATE(CProjectItemsTree::TProjects, p, tree.m_Projects) {
+        const CProjKey& key = p->first;
+        const CProjItem& project = p->second;
+        if (key.Type() == CProjKey::eDll) {
+            ITERATE( list<string>, h,  project.m_HostedLibs) {
+                if (*h == lib) {
+                    return key.Id();
+                }
+            }
+        }
+    }
+    return kEmptyStr;
+}
+
 void CreateDllBuildTree(const CProjectItemsTree& tree_src, 
                         CProjectItemsTree*       tree_dst)
 {
@@ -405,22 +426,25 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         ITERATE(list<CProjKey>, n, project.m_Depends) {
             const CProjKey& depend_id = *n;
 
-            CProjectItemsTree::TProjects::const_iterator i = tree_dst->m_Projects.find(depend_id);
             bool found = false;
-            if (i != tree_dst->m_Projects.end()) {
-                if (i->second.m_DllHost.empty()) {
-                    new_depends.push_back(depend_id);
-                } else {
-                    new_depends.push_back(CProjKey(CProjKey::eDll, i->second.m_DllHost));
-                }
-                found = true;
-            } else /* if (!GetApp().m_ScanWholeTree)*/ {
-                ITERATE(CProjectItemsTree::TProjects, d, tree_dst->m_Projects) {
-                    const list<string>& lst = d->second.m_HostedLibs;
-                    if ( find (lst.begin(), lst.end(), depend_id.Id()) != lst.end()) {
-                        new_depends.push_back(d->first);
-                        found = true;
-                        break;
+            for (int pass=0; !found && pass<2; ++pass) {
+                const CProjectItemsTree& tree = pass ? tree_src : *tree_dst;
+                CProjectItemsTree::TProjects::const_iterator i = tree.m_Projects.find(depend_id);
+                if (i != tree.m_Projects.end()) {
+                    if (i->second.m_DllHost.empty()) {
+                        new_depends.push_back(depend_id);
+                    } else {
+                        new_depends.push_back(CProjKey(CProjKey::eDll, i->second.m_DllHost));
+                    }
+                    found = true;
+                } else /* if (!GetApp().m_ScanWholeTree)*/ {
+                    ITERATE(CProjectItemsTree::TProjects, d, tree.m_Projects) {
+                        const list<string>& lst = d->second.m_HostedLibs;
+                        if ( find (lst.begin(), lst.end(), depend_id.Id()) != lst.end()) {
+                            new_depends.push_back(d->first);
+                            found = true;
+                            break;
+                        }
                     }
                 }
             }

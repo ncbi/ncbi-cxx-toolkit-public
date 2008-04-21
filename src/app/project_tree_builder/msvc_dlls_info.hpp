@@ -46,6 +46,8 @@ void FilterOutDllHostedProjects(const CProjectItemsTree& tree_src,
 
 void AnalyzeDllData(CProjectItemsTree& tree_src);
 
+string GetDllHost(const CProjectItemsTree& tree, const string& lib);
+
 void CreateDllBuildTree(const CProjectItemsTree& tree_src, 
                         CProjectItemsTree*       tree_dst);
 
