@@ -57,6 +57,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <algo/gnomon/gnomon.hpp>
 #include <algo/sequence/orf.hpp>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -312,14 +313,36 @@ CTestTranscript_InframeUpstreamStop::RunTest(const CSerialObject& obj,
 static void s_CodingPropensity(const CSeq_id& id, const CSeqTestContext* ctx,
                                CFeat_CI feat_iter, CSeq_test_result& result)
 {
-    const CSeq_loc& cds = feat_iter->GetLocation();
+    //creating CHMMParameters object from file is expensive, so
+    //created objects are cached in a static map.
+    //It is reasonable to expect that the number of parameter files
+    //per program is small, and so the cache size does not need
+    //to be limited.
+
+    static std::map<string, CRef<CHMMParameters> > s_hmmparams_cache;
+    DEFINE_STATIC_FAST_MUTEX(map_mutex); 
+
+    CRef<CHMMParameters> hmm_params;
 
     if (!ctx->HasKey("gnomon_model_file")) {
         return;
     }
+
+
     string model_file_name = (*ctx)["gnomon_model_file"];
-    CNcbiIfstream model_file(model_file_name.c_str());
-    CRef<CHMMParameters> hmm_params(new CHMMParameters(model_file));    
+
+    {{
+        CFastMutexGuard guard(map_mutex); //released when goes out of scope 4 lines below
+        if(s_hmmparams_cache.find(model_file_name) == s_hmmparams_cache.end()) {
+            CNcbiIfstream model_file(model_file_name.c_str());
+            s_hmmparams_cache[model_file_name] = CRef<CHMMParameters>(new CHMMParameters(model_file));
+        }
+    }}
+
+    hmm_params = s_hmmparams_cache[model_file_name];
+    
+    
+    const CSeq_loc& cds = feat_iter->GetLocation();
 
     int gccontent=0;
     double score = CCodingPropensity::GetScore(hmm_params, cds,
