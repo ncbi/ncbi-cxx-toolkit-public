@@ -891,6 +891,13 @@ sub EntrezWeb {
     _open_url($url);
 }
 
+############ bool() -- return 1 or 0 depending on boolean value ##########
+
+sub bool {
+    if (@_ != 1) {die "bool() expected 1 argument, got " . int(@_);}
+    my $arg = shift;
+    return $arg ? 1 : 0;
+}
 
 %}
 
