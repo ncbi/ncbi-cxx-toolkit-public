@@ -250,6 +250,7 @@ public:
     void Test_LOB(void);
     void Test_LOB_LowLevel(void);
     void Test_LOB2(void);
+    void Test_LOB_Multiple(void);
     void Test_BlobStream(void);
 
     void Test_BulkInsertBlob(void);

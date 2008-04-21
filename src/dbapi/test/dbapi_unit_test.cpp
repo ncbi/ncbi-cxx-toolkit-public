@@ -2478,6 +2478,105 @@ CDBAPIUnitTest::Test_LOB2(void)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_LOB_Multiple(void)
+{
+    const string table_name = "#test_lob_multiple";
+    static string clob_value("1234567890");
+    string sql;
+    enum {num_of_records = 10};
+
+    try {
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+
+        // Prepare data ...
+        {
+            // Create table ...
+            if (table_name[0] =='#') {
+                sql =
+                    "CREATE TABLE " + table_name + " ( \n"
+                    "   id NUMERIC IDENTITY NOT NULL, \n"
+                    "   text01  TEXT NULL, \n" 
+                    "   text02  TEXT NULL, \n" 
+                    "   image01 IMAGE NULL, \n" 
+                    "   image02 IMAGE NULL \n" 
+                    ") \n";
+
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            // Insert data ...
+
+            // Insert empty CLOB.
+            {
+                sql  = " INSERT INTO " + table_name + "(text01, text02, image01, image02)";
+                sql += " VALUES('', '', '', '')";
+
+                auto_stmt->ExecuteUpdate( sql );
+                
+                /*
+                for (int i = 0; i < num_of_records; ++i) {
+                    auto_stmt->ExecuteUpdate( sql );
+                }
+                */
+            }
+
+            // Update LOB value.
+            {
+                sql  = " SELECT text01, text02, image01, image02 FROM " + table_name;
+                sql += " ORDER BY id";
+
+                auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test_lob_multiple", sql));
+
+                auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+                while(blobRs->Next()) {
+                    for (int pos = 1; pos <= 4; ++pos) {
+                        ostream& out =
+                            auto_cursor->GetBlobOStream(pos,
+                                                        clob_value.size(),
+                                                        eDisableLog
+                                                        );
+                        out.write(clob_value.c_str(), clob_value.size());
+                        out.flush();
+                    }
+                }
+            }
+        }
+
+        // Retrieve data ...
+        {
+            sql  = " SELECT text01, text02, image01, image02 FROM " + table_name;
+            sql += " ORDER BY id";
+
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    rs->BindBlobToVariant(true);
+
+                    while ( rs->Next() ) {
+                        for (int pos = 1; pos <= 4; ++pos) {
+                            const CVariant& value = rs->GetVariant(pos);
+
+                            BOOST_CHECK( !value.IsNull() );
+
+                            size_t blob_size = value.GetBlobSize();
+                            BOOST_CHECK_EQUAL(clob_value.size(), blob_size);
+                            BOOST_CHECK_EQUAL(value.GetString(), clob_value);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_LOB_LowLevel(void)
@@ -14377,6 +14476,23 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     } else {
         args.PutMsgDisabled("Test_LOB2");
+    }
+
+    if (tc_cursor
+        && args.GetDriverName() != ftds64_driver // 04/21/08  Memory access violation
+        && args.GetDriverName() != ftds8_driver // 04/21/08  "Invalid text, ntext, or image pointer value"
+        && args.GetDriverName() != ftds_odbc_driver // 04/21/08 Memory access violation
+        ) 
+    {
+        // Does not work with all databases and drivers currently ...
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_Multiple, 
+            DBAPIInstance);
+        tc->depends_on(tc_init);
+        _ASSERT(tc_cursor);
+        tc->depends_on(tc_cursor);
+        add(tc);
+    } else {
+        args.PutMsgDisabled("Test_LOB_Multiple");
     }
 
     if (tc_cursor) {
