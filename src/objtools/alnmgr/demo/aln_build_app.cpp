@@ -141,9 +141,14 @@ void CAlnBuildApp::Init(void)
     // Merge option
     arg_desc->AddDefaultKey
         ("merge_algo", "merge_algo",
-         "eMergeAllSeqs      = 0, ///< Merge all sequences\n"
-         "eQuerySeqMergeOnly = 1, ///< Only put the query seq on same row, \n"
-         "ePreserveRows      = 2, ///< Preserve all rows as they were in the input (e.g. self-align a sequence)\n"
+         "eMergeAllSeqs      = 0, ///< Merge all sequences [greedy algo]\n"
+         "eQuerySeqMergeOnly = 1, ///< Only put the query seq on same\n"
+         "                        ///  row [input order is not\n"
+         "                        ///  significant]\n"
+         "ePreserveRows      = 2, ///< Preserve all rows as they were in\n"
+         "                        ///  the input (e.g. self-align a\n"
+         "                        ///  sequence) (coresponds to separate\n"
+         "                        ///  alignments) [greedy algo]\n"
          "eDefaultMergeAlgo  = eMergeAllSeqs",
          CArgDescriptions::eInteger, "0");
     arg_desc->SetConstraint("merge_algo", new CArgAllow_Integers(0,2));
@@ -152,11 +157,18 @@ void CAlnBuildApp::Init(void)
     // Merge option
     arg_desc->AddDefaultKey
         ("merge_flags", "merge_flags",
-         "fTruncateOverlaps = 0x0001,  ///< Otherwise put on separate rows\n"
-         "fAllowMixedStrand = 0x0002,  ///< Allow mixed strand on the same row\n"
-         "fAllowTranslocation = 0x0004 ///< Allow translocations on the same row",
+         "fTruncateOverlaps   = 0x0001, ///< Otherwise put on separate\n"
+         "                              ///  rows\n"
+         "fAllowMixedStrand   = 0x0002, ///< Allow mixed strand on the\n"
+         "                              ///  same row\n"
+         "fAllowTranslocation = 0x0004, ///< Allow translocations on the\n"
+         "                              ///  same row\n"
+         "fSkipSortByScore    = 0x0008  ///< In greedy algos, skip\n"
+         "                              ///  sorting input alignments by\n"
+         "                              ///  score thus allowing for\n"
+         "                              ///  user-defined sort order.\n",
          CArgDescriptions::eInteger, "0");
-    arg_desc->SetConstraint("merge_flags", new CArgAllow_Integers(0,7));
+    arg_desc->SetConstraint("merge_flags", new CArgAllow_Integers(0,15));
 
 
     // Program description
