@@ -2485,7 +2485,7 @@ CDBAPIUnitTest::Test_LOB_Multiple(void)
     const string table_name = "#test_lob_multiple";
     static string clob_value("1234567890");
     string sql;
-    enum {num_of_records = 10};
+    // enum {num_of_records = 10};
 
     try {
         auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
@@ -2700,6 +2700,173 @@ CDBAPIUnitTest::Test_LOB_LowLevel(void)
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_LOB_Multiple_LowLevel(void)
+{
+    const string table_name = "#test_lob_ll_multiple";
+    static string clob_value("1234567890");
+    string sql;
+    // enum {num_of_records = 10};
+
+    try {
+        bool rc = false;
+        auto_ptr<CDB_LangCmd> auto_stmt;
+        CDB_Connection* conn = GetConnection().GetCDB_Connection();
+        BOOST_CHECK(conn != NULL);
+
+        // Prepare data ...
+        {
+            // Create table ...
+            if (table_name[0] =='#') {
+                sql =
+                    "CREATE TABLE " + table_name + " ( \n"
+                    "   id NUMERIC IDENTITY NOT NULL, \n"
+                    "   text01  TEXT NULL, \n" 
+                    "   text02  TEXT NULL, \n" 
+                    "   image01 IMAGE NULL, \n" 
+                    "   image02 IMAGE NULL \n" 
+                    ") \n";
+
+                auto_stmt.reset(conn->LangCmd(sql));
+                rc = auto_stmt->Send();
+                BOOST_CHECK(rc);
+                auto_stmt->DumpResults();
+            }
+
+            // Insert data ...
+
+            // Insert empty CLOB.
+            {
+                sql  = " INSERT INTO " + table_name + "(text01, text02, image01, image02)";
+                sql += " VALUES('', '', '', '')";
+
+                auto_stmt.reset(conn->LangCmd(sql));
+                rc = auto_stmt->Send();
+                BOOST_CHECK(rc);
+                auto_stmt->DumpResults();
+                
+                /*
+                for (int i = 0; i < num_of_records; ++i) {
+                    auto_stmt->ExecuteUpdate( sql );
+                }
+                */
+            }
+
+            // Update LOB value.
+            {
+                sql  = " SELECT text01, text02, image01, image02 FROM " + table_name;
+                sql += " ORDER BY id";
+
+                auto_ptr<CDB_CursorCmd> auto_cursor;
+                auto_cursor.reset(conn->Cursor("test_lob_multiple_ll", sql));
+
+                auto_ptr<CDB_Result> rs(auto_cursor->Open());
+                BOOST_CHECK (rs.get() != NULL);
+
+                auto_ptr<I_ITDescriptor> text01;
+                auto_ptr<I_ITDescriptor> text02;
+                auto_ptr<I_ITDescriptor> image01;
+                auto_ptr<I_ITDescriptor> image02;
+
+                while (rs->Fetch()) {
+                    rs->ReadItem(NULL, 0);
+                    text01.reset(rs->GetImageOrTextDescriptor());
+                    rs->SkipItem();
+
+                    rs->ReadItem(NULL, 0);
+                    text02.reset(rs->GetImageOrTextDescriptor());
+                    rs->SkipItem();
+
+                    rs->ReadItem(NULL, 0);
+                    image01.reset(rs->GetImageOrTextDescriptor());
+                    rs->SkipItem();
+
+                    rs->ReadItem(NULL, 0);
+                    image02.reset(rs->GetImageOrTextDescriptor());
+                    rs->SkipItem();
+                }
+
+                // Send data ...
+                {
+                    CDB_Text    obj_text;
+                    CDB_Image   obj_image;
+
+                    obj_text.Append(clob_value);
+                    obj_image.Append(clob_value.c_str(), clob_value.size());
+
+                    conn->SendData(*text01, obj_text);
+                    obj_text.Truncate();
+                    obj_text.Append(clob_value);
+                    conn->SendData(*text02, obj_text);
+                    conn->SendData(*image01, obj_image);
+                    obj_image.Truncate();
+                    obj_image.Append(clob_value.c_str(), clob_value.size());
+                    conn->SendData(*image02, obj_image);
+                }
+
+            }
+        }
+
+        // Retrieve data ...
+        {
+            sql  = " SELECT text01, text02, image01, image02 FROM " + table_name;
+            sql += " ORDER BY id";
+
+            auto_stmt.reset(conn->LangCmd(sql));
+            rc = auto_stmt->Send();
+            BOOST_CHECK(rc);
+
+            // Retrieve descriptor ...
+            while(auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL) {
+                    continue;
+                }
+
+                if (rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                CDB_Stream* obj_lob;
+                CDB_Text    obj_text;
+                CDB_Image   obj_image;
+                char        buffer[128];
+
+                while (rs->Fetch()) {
+                    for (int pos = 0; pos < 4; ++pos) {
+                        switch (rs->ItemDataType(pos)) {
+                            case eDB_Image:
+                                obj_lob = &obj_image;
+                                break;
+                            case eDB_Text:
+                                obj_lob = &obj_text;
+                            default:
+                                break;
+                        };
+
+                        obj_lob->Truncate();
+                        rs->GetItem(obj_lob);
+
+                        BOOST_CHECK( !obj_lob->IsNULL() );
+
+                        size_t blob_size = obj_lob->Size();
+                        BOOST_CHECK_EQUAL(clob_value.size(), blob_size);
+
+                        size_t size_read = obj_lob->Read(buffer, sizeof(buffer));
+
+                        BOOST_CHECK_EQUAL(clob_value, string(buffer, size_read));
+                    }
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 void
@@ -14484,7 +14651,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && args.GetDriverName() != ftds_odbc_driver // 04/21/08 Memory access violation
         ) 
     {
-        // Does not work with all databases and drivers currently ...
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_Multiple, 
             DBAPIInstance);
         tc->depends_on(tc_init);
@@ -14493,6 +14659,22 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     } else {
         args.PutMsgDisabled("Test_LOB_Multiple");
+    }
+
+    if (tc_cursor
+        && args.GetDriverName() != ftds64_driver // 04/21/08  "Invalid text, ntext, or image pointer value"
+        && args.GetDriverName() != ftds8_driver // 04/21/08  "Invalid text, ntext, or image pointer value"
+        && args.GetDriverName() != ftds_odbc_driver // 04/21/08 "Statement(s) could not be prepared"
+        ) 
+    {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_Multiple_LowLevel, 
+            DBAPIInstance);
+        tc->depends_on(tc_init);
+        _ASSERT(tc_cursor);
+        tc->depends_on(tc_cursor);
+        add(tc);
+    } else {
+        args.PutMsgDisabled("Test_LOB_Multiple_LowLevel");
     }
 
     if (tc_cursor) {

@@ -248,9 +248,10 @@ public:
     void Test_GetTotalColumns(void);
 
     void Test_LOB(void);
-    void Test_LOB_LowLevel(void);
     void Test_LOB2(void);
     void Test_LOB_Multiple(void);
+    void Test_LOB_LowLevel(void);
+    void Test_LOB_Multiple_LowLevel(void);
     void Test_BlobStream(void);
 
     void Test_BulkInsertBlob(void);
