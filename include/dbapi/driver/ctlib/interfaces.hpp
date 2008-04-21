@@ -247,8 +247,10 @@ public:
     // if not called), the values will affect the new connections only
 
     // Deprecated. Use SetApplicationName instead.
+    NCBI_DEPRECATED
     virtual void CTLIB_SetApplicationName(const string& a_name);
     // Deprecated. Use SetHostName instead.
+    NCBI_DEPRECATED
     virtual void CTLIB_SetHostName(const string& host_name);
     virtual void CTLIB_SetPacketSize(CS_INT packet_size);
     virtual void CTLIB_SetLoginRetryCount(CS_INT n);

@@ -689,9 +689,10 @@ CTLibContext::x_SetRegistry(CTLibContextRegistry* registry)
 
 bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
+    impl::CDriverContext::SetLoginTimeout(nof_secs);
+
     CMutexGuard mg(m_CtxMtx);
 
-    I_DriverContext::SetLoginTimeout(nof_secs);
     int sec = (nof_secs == 0 ? CS_NO_LIMIT : static_cast<int>(nof_secs));
 
     return Check(ct_config(CTLIB_GetContext(),
@@ -705,9 +706,10 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 
 bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
+    impl::CDriverContext::SetTimeout(nof_secs);
+
     CMutexGuard mg(m_CtxMtx);
 
-    I_DriverContext::SetTimeout(nof_secs);
     int sec = (nof_secs == 0 ? CS_NO_LIMIT : static_cast<int>(nof_secs));
 
     if (Check(ct_config(CTLIB_GetContext(),
@@ -743,35 +745,43 @@ bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
 unsigned int
 CTLibContext::GetLoginTimeout(void) const
 {
-    CS_INT t_out = 0;
+    {
+        CMutexGuard mg(m_CtxMtx);
 
-    if (Check(ct_config(CTLIB_GetContext(),
-                           CS_GET,
-                           CS_LOGIN_TIMEOUT,
-                           &t_out,
-                           CS_UNUSED,
-                           NULL)) == CS_SUCCEED) {
-        return t_out;
+        CS_INT t_out = 0;
+
+        if (Check(ct_config(CTLIB_GetContext(),
+                            CS_GET,
+                            CS_LOGIN_TIMEOUT,
+                            &t_out,
+                            CS_UNUSED,
+                            NULL)) == CS_SUCCEED) {
+            return t_out;
+        }
     }
 
-    return I_DriverContext::GetLoginTimeout();
+    return impl::CDriverContext::GetLoginTimeout();
 }
 
 
 unsigned int CTLibContext::GetTimeout(void) const
 {
-    CS_INT t_out = 0;
+    {
+        CMutexGuard mg(m_CtxMtx);
 
-    if (Check(ct_config(CTLIB_GetContext(),
-                        CS_GET,
-                        CS_TIMEOUT,
-                        &t_out,
-                        CS_UNUSED,
-                        NULL)) == CS_SUCCEED) {
-        return t_out;
+        CS_INT t_out = 0;
+
+        if (Check(ct_config(CTLIB_GetContext(),
+                            CS_GET,
+                            CS_TIMEOUT,
+                            &t_out,
+                            CS_UNUSED,
+                            NULL)) == CS_SUCCEED) {
+            return t_out;
+        }
     }
 
-    return I_DriverContext::GetTimeout();
+    return impl::CDriverContext::GetTimeout();
 }
 
 
@@ -800,6 +810,8 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
 bool
 CTLibContext::SetMaxConnect(unsigned int num)
 {
+    CMutexGuard mg(m_CtxMtx);
+
     return Check(ct_config(CTLIB_GetContext(),
                            CS_SET,
                            CS_MAX_CONNECT,
@@ -812,6 +824,8 @@ CTLibContext::SetMaxConnect(unsigned int num)
 unsigned int
 CTLibContext::GetMaxConnect(void)
 {
+    CMutexGuard mg(m_CtxMtx);
+
     unsigned int num = 0;
 
     if (Check(ct_config(CTLIB_GetContext(),

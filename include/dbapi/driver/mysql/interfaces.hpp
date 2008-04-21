@@ -71,9 +71,10 @@ public:
     virtual ~CMySQLContext();
 
 public:
-    virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
-
     virtual bool IsAbleTo(ECapability cpb) const;
+
+protected:
+    virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
 };
 
 

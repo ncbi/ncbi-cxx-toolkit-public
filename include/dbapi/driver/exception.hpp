@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbithr.hpp>
 #include <corelib/ncbimtx.hpp>
 
 #include <deque>
@@ -439,6 +440,10 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler : public CObject
 {
 public:
+    CDB_UserHandler(void);
+    virtual ~CDB_UserHandler(void);
+
+public:
     /// Exception container type
     /// @sa HandleAll()
     typedef deque<CDB_Exception*> TExceptions;
@@ -472,17 +477,11 @@ public:
     // handler will be delete'd automagically on the program termination.
     static CDB_UserHandler* SetDefault(CDB_UserHandler* h);
 
-    // d-tor
-    virtual ~CDB_UserHandler();
-
     string GetExtraMsg(void) const;
     void SetExtraMsg(const string& msg);
 
-protected:
-    mutable CFastMutex  m_Mtx;
-
 private:
-    string              m_ExtraMsg;
+    CRef<CTls<string> > m_ExtraMsg; // CTls must be created on heap.
 };
 
 
@@ -516,6 +515,8 @@ public:
     virtual bool HandleIt(CDB_Exception* ex);
 
 private:
+    mutable CFastMutex  m_Mtx;
+
     ostream* m_Output;     // output stream to print messages to
     string   m_Prefix;     // string to prefix each message with
     bool     m_OwnOutput;  // if TRUE, then delete "m_Output" in d-tor

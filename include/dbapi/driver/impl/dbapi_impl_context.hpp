@@ -69,8 +69,19 @@ public:
     virtual ~CDriverContext(void);
 
 public:
-    virtual bool SetTimeout(unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
+
+    virtual bool SetLoginTimeout(unsigned int nof_secs = 0);
+    virtual unsigned int GetLoginTimeout(void) const;
+
+    virtual bool SetTimeout(unsigned int nof_secs = 0);
+    virtual unsigned int GetTimeout(void) const;
+
+    virtual void SetApplicationName(const string& app_name);
+    virtual string GetApplicationName(void) const;
+
+    virtual void SetHostName(const string& host_name);
+    virtual string GetHostName(void) const;
 
     virtual CDB_Connection* MakeConnection(const CDBConnParams& params);
 
@@ -156,6 +167,12 @@ protected:
 
 
 private:
+    unsigned int    m_LoginTimeout; //< Login timeout.
+    unsigned int    m_Timeout;      //< Connection timeout.
+
+    string          m_AppName;  //< Application name.
+    string          m_HostName; //< Host name
+
     /// Unused(reserve) connections
     TConnPool       m_NotInUse;
     /// Used connections

@@ -54,6 +54,8 @@ namespace impl
 //
 
 CDriverContext::CDriverContext(void) :
+    m_LoginTimeout(0),
+    m_Timeout(0),
     m_MaxTextImageSize(0),
     m_ClientEncoding(eEncoding_ISO8859_1)
 {
@@ -66,17 +68,73 @@ CDriverContext::~CDriverContext(void)
     return;
 }
 
+void
+CDriverContext::SetApplicationName(const string& app_name)
+{
+    CMutexGuard mg(m_CtxMtx);
+
+    m_AppName = app_name;
+}
+
+string
+CDriverContext::GetApplicationName(void) const
+{
+    CMutexGuard mg(m_CtxMtx);
+
+    return m_AppName;
+}
+
+void
+CDriverContext::SetHostName(const string& host_name)
+{
+    CMutexGuard mg(m_CtxMtx);
+
+    m_HostName = host_name;
+}
+
+string
+CDriverContext::GetHostName(void) const
+{
+    CMutexGuard mg(m_CtxMtx);
+
+    return m_HostName;
+}
+
+unsigned int CDriverContext::GetLoginTimeout(void) const 
+{ 
+    CMutexGuard mg(m_CtxMtx);
+
+    return m_LoginTimeout; 
+}
+
+bool CDriverContext::SetLoginTimeout (unsigned int nof_secs)
+{
+    CMutexGuard mg(m_CtxMtx);
+
+    m_LoginTimeout = nof_secs;
+
+    return true;
+}
+
+unsigned int CDriverContext::GetTimeout(void) const 
+{ 
+    CMutexGuard mg(m_CtxMtx);
+
+    return m_Timeout; 
+}
+
+
 bool CDriverContext::SetTimeout(unsigned int nof_secs)
 {
     bool success = true;
     CMutexGuard mg(m_CtxMtx);
 
     try {
-        if (I_DriverContext::SetTimeout(nof_secs)) {
-            // We do not have to update query/connection timeout in context
-            // any more. Each connection can be updated explicitly now.
-            // UpdateConnTimeout();
-        }
+        m_Timeout = nof_secs;
+        
+        // We do not have to update query/connection timeout in context
+        // any more. Each connection can be updated explicitly now.
+        // UpdateConnTimeout();
     } catch (...) {
         success = false;
     }

@@ -321,7 +321,7 @@ int CDBLibContext::GetTDSVersion(void) const
 
 bool CDBLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    if (I_DriverContext::SetLoginTimeout(nof_secs)) {
+    if (impl::CDriverContext::SetLoginTimeout(nof_secs)) {
         CFastMutexGuard ctx_mg(s_CtxMutex);
         return Check(dbsetlogintime(GetLoginTimeout())) == SUCCEED;
     }

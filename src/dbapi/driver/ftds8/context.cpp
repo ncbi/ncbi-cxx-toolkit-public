@@ -288,7 +288,7 @@ int CTDSContext::GetTDSVersion(void) const
 
 bool CTDSContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    return I_DriverContext::SetLoginTimeout(nof_secs);
+    return impl::CDriverContext::SetLoginTimeout(nof_secs);
 }
 
 

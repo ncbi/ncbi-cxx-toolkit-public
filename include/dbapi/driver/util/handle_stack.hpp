@@ -32,6 +32,7 @@
  *
  */
 
+#include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <deque>
 
@@ -42,7 +43,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_DBAPIDRIVER_EXPORT CDBHandlerStack
 {
 public:
-    CDBHandlerStack(size_t n = 8);
+    CDBHandlerStack(void);
     CDBHandlerStack(const CDBHandlerStack& s);
     ~CDBHandlerStack(void);
 
@@ -143,6 +144,8 @@ public:
     typedef deque<CRef<CUserHandlerWrapper> > TContainer;
 
 private:
+    mutable CFastMutex m_Mtx;
+
     TContainer m_Stack;
 };
 

@@ -187,9 +187,7 @@ I_Result::~I_Result(void)
 //  I_DriverContext::
 //
 
-I_DriverContext::I_DriverContext(void) :
-    m_LoginTimeout(0),
-    m_Timeout(0)
+I_DriverContext::I_DriverContext(void)
 {
     return;
 }
@@ -197,44 +195,6 @@ I_DriverContext::I_DriverContext(void) :
 I_DriverContext::~I_DriverContext(void)
 {
     return;
-}
-
-void
-I_DriverContext::SetApplicationName(const string& app_name)
-{
-    m_AppName = app_name;
-}
-
-const string&
-I_DriverContext::GetApplicationName(void) const
-{
-    return m_AppName;
-}
-
-void
-I_DriverContext::SetHostName(const string& host_name)
-{
-    m_HostName = host_name;
-}
-
-const string&
-I_DriverContext::GetHostName(void) const
-{
-    return m_HostName;
-}
-
-bool I_DriverContext::SetLoginTimeout (unsigned int nof_secs)
-{
-    m_LoginTimeout = nof_secs;
-
-    return true;
-}
-
-bool I_DriverContext::SetTimeout      (unsigned int nof_secs)
-{
-    m_Timeout = nof_secs;
-
-    return true;
 }
 
 CDB_Connection* 

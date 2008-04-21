@@ -427,11 +427,11 @@ bool CODBCContext::CheckSIE(int rc, SQLHDBC con)
 {
     switch(rc) {
     case SQL_SUCCESS_WITH_INFO:
-        xReportConError(con);
+        x_ReportConError(con);
     case SQL_SUCCESS:
         return true;
     case SQL_ERROR:
-        xReportConError(con);
+        x_ReportConError(con);
         SQLFreeHandle(SQL_HANDLE_DBC, con);
         break;
     default:
@@ -443,7 +443,7 @@ bool CODBCContext::CheckSIE(int rc, SQLHDBC con)
 }
 
 
-void CODBCContext::xReportConError(SQLHDBC con)
+void CODBCContext::x_ReportConError(SQLHDBC con)
 {
     m_Reporter.SetHandleType(SQL_HANDLE_DBC);
     m_Reporter.SetHandle(con);

@@ -878,7 +878,7 @@ public:
     // app_name defines the application name that a connection will use when
     // connecting to a server.
     void SetApplicationName(const string& app_name);
-    const string& GetApplicationName(void) const;
+    string GetApplicationName(void) const;
 };
 
 

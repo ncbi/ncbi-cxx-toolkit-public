@@ -37,7 +37,7 @@
 BEGIN_NCBI_SCOPE
 
 
-CDBHandlerStack::CDBHandlerStack(size_t)
+CDBHandlerStack::CDBHandlerStack()
 {
 }
 
@@ -52,6 +52,8 @@ void CDBHandlerStack::Push(CDB_UserHandler* h, EOwnership ownership)
 
     CRef<CUserHandlerWrapper>
         obj(new CUserHandlerWrapper(h, ownership == eNoOwnership));
+
+    CFastMutexGuard guard(m_Mtx);
 
     m_Stack.push_back(TContainer::value_type(obj));
 }
@@ -81,6 +83,8 @@ void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
     CHECK_DRIVER_ERROR(h == NULL, "An attempt to pass NULL instead of "
                        "a valid CDB_UserHandler object", 0);
 
+    CFastMutexGuard guard(m_Mtx);
+
     if ( last ) {
         while ( !m_Stack.empty() ) {
             if (m_Stack.back().GetObject() == h) {
@@ -104,6 +108,8 @@ void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
 
 void CDBHandlerStack::SetExtraMsg(const string& msg)
 {
+    CFastMutexGuard guard(m_Mtx);
+
     NON_CONST_ITERATE(TContainer, cit, m_Stack) {
         if ( cit->NotNull() ) {
             (*cit)->GetHandler()->SetExtraMsg(msg);
@@ -121,14 +127,19 @@ m_Stack( s.m_Stack )
 CDBHandlerStack& CDBHandlerStack::operator= (const CDBHandlerStack& s)
 {
     if ( this != &s ) {
+        CFastMutexGuard guard(m_Mtx);
+
         m_Stack = s.m_Stack;
     }
+
     return *this;
 }
 
 
 void CDBHandlerStack::PostMsg(CDB_Exception* ex)
 {
+    CFastMutexGuard guard(m_Mtx);
+
     // Attempting to use m_Stack directly on WorkShop fails because it
     // tries to call the non-const version of rbegin(), and the
     // resulting reverse_iterator can't automatically be converted to
@@ -144,6 +155,8 @@ void CDBHandlerStack::PostMsg(CDB_Exception* ex)
 
 bool CDBHandlerStack::HandleExceptions(CDB_UserHandler::TExceptions& exeptions)
 {
+    CFastMutexGuard guard(m_Mtx);
+
     // Attempting to use m_Stack directly on WorkShop fails because it
     // tries to call the non-const version of rbegin(), and the
     // resulting reverse_iterator can't automatically be converted to

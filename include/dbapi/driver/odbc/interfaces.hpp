@@ -209,7 +209,7 @@ private:
     CODBCContextRegistry* m_Registry;
     int             m_TDSVersion;
 
-    void xReportConError(SQLHDBC con);
+    void x_ReportConError(SQLHDBC con);
 
     void x_AddToRegistry(void);
     void x_RemoveFromRegistry(void);

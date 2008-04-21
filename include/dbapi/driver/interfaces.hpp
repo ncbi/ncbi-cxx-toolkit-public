@@ -580,7 +580,7 @@ public:
     ///
     /// @sa
     ///   GetLoginTimeout()
-    virtual bool SetLoginTimeout(unsigned int nof_secs = 0);
+    virtual bool SetLoginTimeout(unsigned int nof_secs = 0) = 0;
 
     /// Set connection timeouts.
     ///
@@ -592,7 +592,7 @@ public:
     ///
     /// @sa
     ///   GetTimeout()
-    virtual bool SetTimeout(unsigned int nof_secs = 0);
+    virtual bool SetTimeout(unsigned int nof_secs = 0) = 0;
 
     /// Get login timeout
     ///
@@ -600,7 +600,7 @@ public:
     ///   Login timeout.
     /// @sa
     ///   SetLoginTimeout()
-    virtual unsigned int GetLoginTimeout(void) const { return m_LoginTimeout; }
+    virtual unsigned int GetLoginTimeout(void) const = 0;
 
     /// Get connection timeout
     ///
@@ -609,7 +609,7 @@ public:
     ///
     /// @sa
     ///   SetTimeout()
-    virtual unsigned int GetTimeout(void) const { return m_Timeout; }
+    virtual unsigned int GetTimeout(void) const = 0;
 
     /// Set maximal size for Text and Image objects. 
     ///
@@ -853,7 +853,7 @@ public:
     ///
     /// @sa
     ///   GetApplicationName()
-    void SetApplicationName(const string& app_name);
+    virtual void SetApplicationName(const string& app_name) = 0;
     
     /// @brief 
     ///   Return application name.
@@ -863,7 +863,7 @@ public:
     ///
     /// @sa
     ///   SetApplicationName()
-    const string& GetApplicationName(void) const;
+    virtual string GetApplicationName(void) const = 0;
 
     /// @brief 
     ///   Set host name.
@@ -873,7 +873,7 @@ public:
     ///
     /// @sa
     ///   GetHostName()
-    void SetHostName(const string& host_name);
+    virtual void SetHostName(const string& host_name) = 0;
     
     /// @brief 
     ///  Get host name.
@@ -883,7 +883,7 @@ public:
     ///
     /// @sa
     ///   SetHostName()
-    const string& GetHostName(void) const;
+    virtual string GetHostName(void) const = 0;
 
 protected:
     /// @brief 
@@ -897,12 +897,6 @@ protected:
     virtual CDB_Connection* MakePooledConnection(const CDBConnParams& params) = 0;
 
 private:
-    unsigned int    m_LoginTimeout; //< Login timeout.
-    unsigned int    m_Timeout;      //< Connection timeout.
-
-    string          m_AppName;  //< Application name.
-    string          m_HostName; //< Host name
-
     friend class IDBConnectionFactory;
 };
 

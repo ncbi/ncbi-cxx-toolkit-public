@@ -45,7 +45,7 @@ void IDataSource::SetApplicationName(const string& app_name)
 	GetDriverContext()->SetApplicationName(app_name);
 }
 
-const string& IDataSource::GetApplicationName(void) const
+string IDataSource::GetApplicationName(void) const
 {
 	return GetDriverContext()->GetApplicationName();
 }
