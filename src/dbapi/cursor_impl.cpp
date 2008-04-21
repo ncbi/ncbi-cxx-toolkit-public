@@ -111,6 +111,7 @@ CNcbiOstream& CCursor::GetBlobOStream(unsigned int col,
 {
     // Delete previous ostream
     delete m_ostr;
+    m_ostr = NULL;
 
     m_ostr = new CWStream(new CxBlobWriter(GetCursorCmd(),
                                            col - 1,
