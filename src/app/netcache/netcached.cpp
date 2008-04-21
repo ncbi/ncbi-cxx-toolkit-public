@@ -56,14 +56,14 @@
 #include "netcache_version.hpp"
 
 #define NETCACHED_HUMAN_VERSION \
-      "NCBI NetCache server Version " NETCACHED_VERSION \
-      " build " __DATE__ " " __TIME__
+    "NCBI NetCache server Version " NETCACHED_VERSION \
+    " build " __DATE__ " " __TIME__
 
 #define NETCACHED_FULL_VERSION \
-      "NCBI NetCache Server version " NETCACHED_VERSION \
-      " Storage version " NETCACHED_STORAGE_VERSION \
-      " Protocol version " NETCACHED_PROTOCOL_VERSION \
-      " build " __DATE__ " " __TIME__
+    "NCBI NetCache Server version " NETCACHED_VERSION \
+    " Storage version " NETCACHED_STORAGE_VERSION \
+    " Protocol version " NETCACHED_PROTOCOL_VERSION \
+    " build " __DATE__ " " __TIME__
 
 
 

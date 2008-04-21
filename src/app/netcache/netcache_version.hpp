@@ -35,7 +35,7 @@
 #include <corelib/ncbistl.hpp>
 #include <common/ncbi_package_ver.h>
 
-#define NETCACHED_VERSION NCBI_AS_STRING(NCBI_PACKAGE_VERSION)
+#define NETCACHED_VERSION NCBI_PACKAGE_VERSION
 #define NETCACHED_STORAGE_VERSION  "1.0.0"
 #define NETCACHED_PROTOCOL_VERSION "1.0.0"
 
