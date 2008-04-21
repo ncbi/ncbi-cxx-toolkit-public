@@ -48,10 +48,11 @@
 #define NCBI_PACKAGE_VERSION_PATCH  0
 #define NCBI_PACKAGE_CONFIG         ""
 
-#define __STR(x)                    #x
+#define __STR2(x)                   #x
+#define __STR(x)                    __STR2(x)
 
-#define NCBI_PACKAGE_VERSION       __STR(NCBI_PACKAGE_VERSION_MAJOR)  "." \
-                                   __STR(NCBI_PACKAGE_VERSION_MINOR)  "." \
-                                   __STR(NCBI_PACKAGE_VERSION_PATCH)
+#define NCBI_PACKAGE_VERSION        __STR(NCBI_PACKAGE_VERSION_MAJOR)  "." \
+                                    __STR(NCBI_PACKAGE_VERSION_MINOR)  "." \
+                                    __STR(NCBI_PACKAGE_VERSION_PATCH)
 
 
