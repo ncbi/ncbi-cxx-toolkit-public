@@ -3171,12 +3171,16 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
         os << '[' << m_Prefix << "] ";
 
     // <message>
-    if (m_BufferLen)
+    if (m_BufferLen) {
         os.write(m_Buffer, m_BufferLen);
+    }
 
     if ( IsSetDiagPostFlag(eDPF_AppLog, m_Flags) ) {
         if ( m_Event == eEvent_Extra  &&  !m_ExtraArgs.empty() ) {
-            os << ' ' << FormatExtraMessage();
+            if ( m_BufferLen ) {
+                os << ' ';
+            }
+            os << FormatExtraMessage();
         }
     }
 
