@@ -326,7 +326,7 @@ BuildAln(TAnchoredAlnVec& in_alns,
         break;
     case CAlnUserOptions::ePreserveRows:
         if ( !in_alns.empty() ) {
-            if ( ! options.m_MergeFlags & CAlnUserOptions::fSkipSortByScore ) {
+            if ( !(options.m_MergeFlags & CAlnUserOptions::fSkipSortByScore) ) {
                 SortAnchoredAlnVecByScore(in_alns);
             }
             TMergedVec merged_vec;
@@ -363,7 +363,7 @@ BuildAln(TAnchoredAlnVec& in_alns,
     case CAlnUserOptions::eMergeAllSeqs:
     default: 
         {
-            if ( ! options.m_MergeFlags & CAlnUserOptions::fSkipSortByScore ) {
+            if ( !(options.m_MergeFlags & CAlnUserOptions::fSkipSortByScore) ) {
                 SortAnchoredAlnVecByScore(in_alns);
             }
             typedef map<TAlnSeqIdIRef, CRef<CMergedPairwiseAln>, SAlnSeqIdIRefComp> TIdMergedMap;
