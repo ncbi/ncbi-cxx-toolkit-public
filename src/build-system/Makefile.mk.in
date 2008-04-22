@@ -561,7 +561,7 @@ BLAST_FORMATTER_LIBS = xblastformat gene_info xalnmgr $(BLAST_INPUT_LIBS) \
                        blastxml xcgi xhtml
 # BLAST_FORMATTER_LIBS and BLAST_INPUT_LIBS need $BLAST_LIBS
 BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment xalgodustmask \
-             seqdb xobjutil xobjread creaders \
+             xalgowinmask seqdb xobjutil xobjread creaders \
              xnetblastcli xnetblast blastdb scoremat tables
 # BLAST additionally needs xconnect $(SOBJMGR_LIBS) or $(OBJMGR_LIBS)
 
