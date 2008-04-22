@@ -334,7 +334,7 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
             bool have_strand = false;
             switch ( loc.Which() ) {
             case CSeq_loc::e_Empty:
-                start = kInvalidSeqPos;
+                start = (int)kInvalidSeqPos;
                 break;
             case CSeq_loc::e_Whole:
                 start = 0;
@@ -910,7 +910,7 @@ void CSeq_align_Mapper_Base::x_FillKnownStrands(TStrands& strands) const
         ENa_strand strand = eNa_strand_unknown;
         // Skip gaps, try find a row with mapped strand
         ITERATE(TSegments, seg_it, m_Segs) {
-            if (seg_it->m_Rows[r_idx].GetSegStart() != kInvalidSeqPos) {
+            if ((TSeqPos)seg_it->m_Rows[r_idx].GetSegStart() != kInvalidSeqPos) {
                 strand = seg_it->m_Rows[r_idx].m_Strand;
                 break;
             }
@@ -939,8 +939,8 @@ void CSeq_align_Mapper_Base::x_GetDstDendiag(CRef<CSeq_align>& dst) const
             diag->SetStarts().push_back(row->GetSegStart());
             if (seg.m_HaveStrands) { // per-segment strands
                 // For gaps use the strand of the first mapped row
-                diag->SetStrands().push_back(
-                    row->GetSegStart() != kInvalidSeqPos ?
+                diag->SetStrands().
+                    push_back((TSeqPos)row->GetSegStart() != kInvalidSeqPos ?
                     row->m_Strand : strands[str_idx]);
             }
             have_prots |= row->m_Width == 3;
@@ -1007,8 +1007,8 @@ void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
             dseg.SetStarts().push_back(row->GetSegStart());
             if (m_HaveStrands) { // per-alignment strands
                 // For gaps use the strand of the first mapped row
-                dseg.SetStrands().push_back(
-                    row->GetSegStart() != kInvalidSeqPos ?
+                dseg.SetStrands().
+                    push_back((TSeqPos)row->GetSegStart() != kInvalidSeqPos ?
                     (row->m_Strand != eNa_strand_unknown ?
                     row->m_Strand : eNa_strand_plus): strands[str_idx]);
             }
@@ -1085,8 +1085,8 @@ void CSeq_align_Mapper_Base::x_GetDstPacked(CRef<CSeq_align>& dst) const
             pseg.SetStarts().push_back(row->GetSegStart());
             pseg.SetPresent().push_back(row->m_Start != kInvalidSeqPos);
             if (m_HaveStrands) {
-                pseg.SetStrands().push_back(
-                    row->GetSegStart() != kInvalidSeqPos ?
+                pseg.SetStrands().
+                    push_back((TSeqPos)row->GetSegStart() != kInvalidSeqPos ?
                     row->m_Strand : strands[str_idx]);
             }
             have_prots |= row->m_Width == 3;
@@ -1182,8 +1182,8 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
             dseg.SetStarts().push_back(row->GetSegStart());
             if (m_HaveStrands) { // per-alignment strands
                 // For gaps use the strand of the first mapped row
-                dseg.SetStrands().push_back(
-                    row->GetSegStart() != kInvalidSeqPos ?
+                dseg.SetStrands().
+                    push_back((TSeqPos)row->GetSegStart() != kInvalidSeqPos ?
                     (row->m_Strand != eNa_strand_unknown ?
                     row->m_Strand : eNa_strand_plus): strands[str_idx]);
             }
