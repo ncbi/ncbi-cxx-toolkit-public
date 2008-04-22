@@ -2309,8 +2309,8 @@ static const char s_ExtraEncodeChars[256][4] = {
 
 bool x_IsEncodableChar(char c)
 {
-    return s_ExtraEncodeChars[c][0] != c  ||
-        s_ExtraEncodeChars[c][1] != 0;
+    return s_ExtraEncodeChars[(unsigned char)c][0] != c  ||
+        s_ExtraEncodeChars[(unsigned char)c][1] != 0;
 }
 
 
