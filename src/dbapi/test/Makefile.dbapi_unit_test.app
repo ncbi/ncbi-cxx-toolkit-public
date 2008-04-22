@@ -6,7 +6,7 @@ SRC = dbapi_unit_test
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB  = dbapi dbapi_driver dbapi_util_blobstore$(STATIC) \
-       $(COMPRESS_LIBS) $(XCONNEXT) xconnect xutil xncbi
+       $(COMPRESS_LIBS) $(XCONNEXT) xconnect xutil xncbi test_boost
 LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) \
        $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

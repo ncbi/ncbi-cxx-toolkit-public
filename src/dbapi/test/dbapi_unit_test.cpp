@@ -2539,6 +2539,7 @@ CDBAPIUnitTest::Test_LOB_Multiple(void)
                                                         );
                         out.write(clob_value.c_str(), clob_value.size());
                         out.flush();
+                        BOOST_CHECK(out.good());
                     }
                 }
             }
@@ -14646,7 +14647,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (tc_cursor
-        && args.GetDriverName() != ftds64_driver // 04/21/08  Memory access violation
+        && args.GetServerType() == CTestArguments::eSybase
+        && args.GetDriverName() != ftds64_driver // 04/22/08  This result is not available anymore
         && args.GetDriverName() != ftds8_driver // 04/21/08  "Invalid text, ntext, or image pointer value"
         && args.GetDriverName() != ftds_odbc_driver // 04/21/08 Memory access violation
         ) 
@@ -14662,8 +14664,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (tc_cursor
-        && args.GetDriverName() != ftds64_driver // 04/21/08  "Invalid text, ntext, or image pointer value"
-        && args.GetDriverName() != ftds8_driver // 04/21/08  "Invalid text, ntext, or image pointer value"
+        && args.GetServerType() == CTestArguments::eSybase
         && args.GetDriverName() != ftds_odbc_driver // 04/21/08 "Statement(s) could not be prepared"
         ) 
     {
