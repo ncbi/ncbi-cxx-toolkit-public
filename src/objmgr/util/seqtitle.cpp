@@ -72,7 +72,8 @@ BEGIN_SCOPE(sequence)
 
 static string s_TitleFromBioSource (const CBioSource&    source,
                                           CMolInfo::TTech tech,
-                                    const string&        suffix = kEmptyStr);
+                                    const string&        suffix = kEmptyStr,
+                                          bool           pooled_clones = false);
 
 
 static string s_TitleFromChromosome(const CBioSource&    source,
@@ -110,6 +111,8 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     bool                      htg_tech    = false;
     bool                      htgs_draft  = false;
     bool                      htgs_cancelled = false;
+    bool                      htgs_pooled = false;
+    bool                      htgs_unfinished = false;
     bool                      use_biosrc  = false;
     CScope&                   scope       = hnd.GetScope();
 
@@ -190,6 +193,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     case CMolInfo::eTech_htgs_0:
     case CMolInfo::eTech_htgs_1:
     case CMolInfo::eTech_htgs_2:
+        htgs_unfinished = true;
         // manufacture all titles for unfinished HTG sequences
         flags |= fGetTitle_Reconstruct;
         // fall through
@@ -203,6 +207,39 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         use_biosrc = true;
     default:
         break;
+    }
+
+    if (htg_tech  ||  third_party) {
+        const CGB_block::TKeywords* keywords = 0;
+        for (CSeqdesc_CI gb(hnd, CSeqdesc::e_Genbank);  gb;  ++gb) {
+            if (gb->GetGenbank().IsSetKeywords()) {
+                keywords = &gb->GetGenbank().GetKeywords();
+            }
+            BREAK(gb);
+        }
+        if ( !keywords ) {
+            for (CSeqdesc_CI embl(hnd, CSeqdesc::e_Embl);  embl;  ++embl) {
+                if (embl->GetEmbl().IsSetKeywords()) {
+                    keywords = &embl->GetEmbl().GetKeywords();
+                }
+                BREAK(embl);
+            }
+        }
+        if (keywords) {
+            ITERATE (CGB_block::TKeywords, it, *keywords) {
+                if (NStr::EqualNocase(*it, "HTGS_DRAFT")) {
+                    htgs_draft = true;
+                } else if (NStr::EqualNocase(*it, "HTGS_CANCELLED")) {
+                    htgs_cancelled = true;
+                } else if (NStr::EqualNocase(*it, "HTGS_POOLED_MULTICLONE")) {
+                    htgs_pooled = true;
+                } else if (NStr::EqualNocase(*it, "TPA:experimental")) {
+                    tpa_exp = true;
+                } else if (NStr::EqualNocase(*it, "TPA:inferential")) {
+                    tpa_inf = true;
+                }
+            }
+        }
     }
 
     if (!(flags & fGetTitle_Reconstruct)) {
@@ -224,7 +261,8 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             title = s_TitleFromBioSource(*source, tech,
                                          general_id->GetTag().GetStr());
         } else {
-            title = s_TitleFromBioSource(*source, tech);
+            title = s_TitleFromBioSource(*source, tech, kEmptyStr,
+                                         htgs_unfinished && htgs_pooled);
         }
         flags &= ~fGetTitle_Organism;
     }
@@ -349,37 +387,6 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         }
     }
 
-    if (htg_tech  ||  third_party) {
-        const CGB_block::TKeywords* keywords = 0;
-        for (CSeqdesc_CI gb(hnd, CSeqdesc::e_Genbank);  gb;  ++gb) {
-            if (gb->GetGenbank().IsSetKeywords()) {
-                keywords = &gb->GetGenbank().GetKeywords();
-            }
-            BREAK(gb);
-        }
-        if ( !keywords ) {
-            for (CSeqdesc_CI embl(hnd, CSeqdesc::e_Embl);  embl;  ++embl) {
-                if (embl->GetEmbl().IsSetKeywords()) {
-                    keywords = &embl->GetEmbl().GetKeywords();
-                }
-                BREAK(embl);
-            }
-        }
-        if (keywords) {
-            ITERATE (CGB_block::TKeywords, it, *keywords) {
-                if (NStr::EqualNocase(*it, "HTGS_DRAFT")) {
-                    htgs_draft = true;
-                } else if (NStr::EqualNocase(*it, "HTGS_CANCELLED")) {
-                    htgs_cancelled = true;
-                } else if (NStr::EqualNocase(*it, "TPA:experimental")) {
-                    tpa_exp = true;
-                } else if (NStr::EqualNocase(*it, "TPA:inferential")) {
-                    tpa_inf = true;
-                }
-            }
-        }
-    }
-
     if (third_party  &&  !title.empty() ) {
         bool tpa_start = NStr::StartsWith(title, "TPA: ", NStr::eNocase);
         if (tpa_exp) {
@@ -498,14 +505,16 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
 }
 
 
-static string s_DescribeClones(const string& clone)
+static string s_DescribeClones(const string& clone, bool pooled)
 {
     SIZE_TYPE count = 1;
     for (SIZE_TYPE pos = clone.find(';');  pos != NPOS;
          pos = clone.find(';', pos + 1)) {
         ++count;
     }
-    if (count > 3) {
+    if (pooled) {
+        return ", pooled multiple clones";
+    } else if (count > 3) {
         return ", " + NStr::IntToString(count) + " clones,";
     } else {
         return " clone " + clone;
@@ -543,7 +552,8 @@ static bool s_EndsWithStrain(const string& name, const string& strain)
 
 static string s_TitleFromBioSource(const CBioSource& source,
                                    CMolInfo::TTech   tech,
-                                   const string&     suffix)
+                                   const string&     suffix,
+                                   bool              pooled_clones)
 {
     string          name, chromosome, clone, map_, plasmid, strain, sfx;
     const COrg_ref& org = source.GetOrg();
@@ -559,7 +569,7 @@ static string s_TitleFromBioSource(const CBioSource& source,
                 chromosome = " chromosome " + (*it)->GetName();
                 break;
             case CSubSource::eSubtype_clone:
-                clone = s_DescribeClones((*it)->GetName());
+                clone = s_DescribeClones((*it)->GetName(), pooled_clones);
                 break;
             case CSubSource::eSubtype_map:
                 map_ = " map " + (*it)->GetName();
@@ -868,7 +878,7 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
             if (src.IsSetSubtype()) {
                 ITERATE (CBioSource::TSubtype, ssrc, src.GetSubtype()) {
                     if ((*ssrc)->GetSubtype() == CSubSource::eSubtype_clone) {
-                        clone = s_DescribeClones((*ssrc)->GetName());
+                        clone = s_DescribeClones((*ssrc)->GetName(), false);
                     }
                 }
             }
