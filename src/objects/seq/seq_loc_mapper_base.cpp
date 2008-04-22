@@ -490,6 +490,11 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         }
     }
     while (src_it  &&  dst_it) {
+        // Set width flags if not set yet.
+        if (m_UseWidth  &&
+            m_Widths.find(src_it.GetSeq_id_Handle()) == m_Widths.end()) {
+            m_Widths[src_it.GetSeq_id_Handle()] = GetWidthFlags(src_width);
+        }
         x_NextMappingRange(
             src_it.GetSeq_id(), src_start, src_len, src_it.GetStrand(),
             dst_it.GetSeq_id(), dst_start, dst_len, dst_it.GetStrand(),
@@ -792,6 +797,11 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_seg& denseg,
             src_width = CheckSeqWidth(src_id, src_width);
         }
         m_UseWidth |= (src_width != m_Dst_width);
+        // Set width flags if not set yet.
+        CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(src_id);
+        if (m_UseWidth  &&  m_Widths.find(src_idh) == m_Widths.end()) {
+            m_Widths[src_idh] = GetWidthFlags(src_width);
+        }
         int dst_width_rel = (m_UseWidth) ? m_Dst_width : 1;
         int src_width_rel = (m_UseWidth) ? src_width : 1;
 
@@ -1055,12 +1065,22 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
         TSeqPos gen_len = gen_to - gen_from + 1;
         TSeqPos prod_len = prod_to - prod_from + 1;
         if ( to_row == 1 ) {
+            // Set width flags if not set yet.
+            CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(*ex_gen_id);
+            if (m_UseWidth  &&  m_Widths.find(src_idh) == m_Widths.end()) {
+                m_Widths[src_idh] = GetWidthFlags(src_width);
+            }
             x_NextMappingRange(
                 *ex_gen_id, gen_from, gen_len, ex_gen_strand,
                 *ex_prod_id, prod_from, prod_len, prod_strand,
                 0, 0, src_width);
         }
         else {
+            // Set width flags if not set yet.
+            CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(*ex_prod_id);
+            if (m_UseWidth  &&  m_Widths.find(src_idh) == m_Widths.end()) {
+                m_Widths[src_idh] = GetWidthFlags(src_width);
+            }
             x_NextMappingRange(
                 *ex_prod_id, prod_from, prod_len, ex_prod_strand,
                 *ex_gen_id, gen_from, gen_len, gen_strand,
@@ -1115,6 +1135,12 @@ void CSeq_loc_Mapper_Base::x_InitSparse(const CSparse_seg& sparse,
     int second_width = to_second ? m_Dst_width : src_width;
     // Always use widths because another pair of rows may have different widths
     m_UseWidth = true;
+    // Set width flags if not set yet.
+    CSeq_id_Handle src_idh =
+        CSeq_id_Handle::GetHandle(to_second ? first_id : second_id);
+    if (m_Widths.find(src_idh) == m_Widths.end()) {
+        m_Widths[src_idh] = GetWidthFlags(src_width);
+    }
 
     const CSparse_align::TFirst_starts& first_starts = row.GetFirst_starts();
     const CSparse_align::TSecond_starts& second_starts = row.GetSecond_starts();
@@ -1162,6 +1188,20 @@ int CSeq_loc_Mapper_Base::CheckSeqWidth(const CSeq_id& id,
                                         TSeqPos*       length)
 {
     return width;
+}
+
+
+CSeq_loc_Mapper_Base::TWidthFlags
+CSeq_loc_Mapper_Base::GetWidthFlags(int width) const
+{
+    TWidthFlags wid_cvt = 0;
+    if (width == 1) {
+        wid_cvt |= fWidthProtToNuc;
+    }
+    if (m_Dst_width == 1) {
+        wid_cvt |= fWidthNucToProt;
+    }
+    return wid_cvt;
 }
 
 

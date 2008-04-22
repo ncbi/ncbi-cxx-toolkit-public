@@ -377,13 +377,7 @@ int CSeq_loc_Mapper::CheckSeqWidth(const CSeq_id& id,
     if ( !m_Dst_width ) {
         m_Dst_width = width;
     }
-    TWidthFlags wid_cvt = 0;
-    if (width == 1) {
-        wid_cvt |= fWidthProtToNuc;
-    }
-    if (m_Dst_width == 1) {
-        wid_cvt |= fWidthNucToProt;
-    }
+    TWidthFlags wid_cvt = GetWidthFlags(width);
     CConstRef<CSynonymsSet> syns = m_Scope.GetScope().GetSynonyms(id);
     ITERATE(CSynonymsSet, syn_it, *syns) {
         m_Widths[syns->GetSeq_id_Handle(syn_it)] = wid_cvt;

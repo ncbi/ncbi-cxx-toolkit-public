@@ -285,6 +285,14 @@ protected:
                               int            width,
                               TSeqPos*       length = 0);
 
+    enum EWidthFlags {
+        fWidthProtToNuc = 1,
+        fWidthNucToProt = 2
+    };
+    typedef int TWidthFlags; // binary OR of "EWidthFlags"
+    // Get width flags from the width value.
+    TWidthFlags GetWidthFlags(int width) const;
+
     // Get sequence length for the given seq-id
     virtual TSeqPos GetSequenceLength(const CSeq_id& id);
 
@@ -321,12 +329,6 @@ protected:
                             const CInt_fuzz* fuzz_from = 0,
                             const CInt_fuzz* fuzz_to = 0,
                             int              src_width = 1);
-
-    enum EWidthFlags {
-        fWidthProtToNuc = 1,
-        fWidthNucToProt = 2
-    };
-    typedef int TWidthFlags; // binary OR of "EWidthFlags"
 
     void x_MapSeq_loc(const CSeq_loc& src_loc);
 
