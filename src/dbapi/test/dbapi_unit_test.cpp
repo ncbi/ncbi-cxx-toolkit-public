@@ -2525,7 +2525,8 @@ CDBAPIUnitTest::Test_LOB_Multiple(void)
             // Update LOB value.
             {
                 sql  = " SELECT text01, text02, image01, image02 FROM " + table_name;
-                sql += " ORDER BY id";
+                // With next line MS SQL returns incorrect blob descriptors in select
+                //sql += " ORDER BY id";
 
                 auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test_lob_multiple", sql));
 
@@ -2758,7 +2759,8 @@ CDBAPIUnitTest::Test_LOB_Multiple_LowLevel(void)
             // Update LOB value.
             {
                 sql  = " SELECT text01, text02, image01, image02 FROM " + table_name;
-                sql += " ORDER BY id";
+                // With next line MS SQL returns incorrect blob descriptors in select
+                //sql += " ORDER BY id";
 
                 auto_ptr<CDB_CursorCmd> auto_cursor;
                 auto_cursor.reset(conn->Cursor("test_lob_multiple_ll", sql));
@@ -2772,20 +2774,22 @@ CDBAPIUnitTest::Test_LOB_Multiple_LowLevel(void)
                 auto_ptr<I_ITDescriptor> image02;
 
                 while (rs->Fetch()) {
-                    rs->ReadItem(NULL, 0);
+                    // ReadItem must not be called here
+                    //rs->ReadItem(NULL, 0);
                     text01.reset(rs->GetImageOrTextDescriptor());
+                    BOOST_CHECK(text01.get());
                     rs->SkipItem();
 
-                    rs->ReadItem(NULL, 0);
                     text02.reset(rs->GetImageOrTextDescriptor());
+                    BOOST_CHECK(text02.get());
                     rs->SkipItem();
 
-                    rs->ReadItem(NULL, 0);
                     image01.reset(rs->GetImageOrTextDescriptor());
+                    BOOST_CHECK(image01.get());
                     rs->SkipItem();
 
-                    rs->ReadItem(NULL, 0);
                     image02.reset(rs->GetImageOrTextDescriptor());
+                    BOOST_CHECK(image02.get());
                     rs->SkipItem();
                 }
 
@@ -14647,7 +14651,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (tc_cursor
-        && args.GetServerType() == CTestArguments::eSybase
         && args.GetDriverName() != ftds64_driver // 04/22/08  This result is not available anymore
         && args.GetDriverName() != ftds8_driver // 04/21/08  "Invalid text, ntext, or image pointer value"
         && args.GetDriverName() != ftds_odbc_driver // 04/21/08 Memory access violation
@@ -14664,7 +14667,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (tc_cursor
-        && args.GetServerType() == CTestArguments::eSybase
         && args.GetDriverName() != ftds_odbc_driver // 04/21/08 "Statement(s) could not be prepared"
         ) 
     {
