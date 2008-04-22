@@ -243,6 +243,8 @@ public:
     /// throws travel.  This is done to avoid an inline throw.
     NCBI_XNCBI_EXPORT
     static void ThrowNullPointerException(void);
+    NCBI_XNCBI_EXPORT
+    static void ThrowNullPointerException(const type_info& type);
 
 
     /// Controll filling of newly allocated memory
@@ -749,6 +751,11 @@ public:
             return ptr;
         }
 
+    static void ThrowNullPointerException(void)
+        {
+            CObject::ThrowNullPointerException(typeid(TObjectType*));
+        }
+
     /// Release a reference to the object and return a pointer to the object.
     ///
     /// Releasing a reference means decreasing the reference count by "1". A
@@ -765,12 +772,15 @@ public:
     TObjectType* Release(void)
         {
             TObjectType* ptr = m_Data.second();
-            if ( !ptr ) {
-                CObject::ThrowNullPointerException();
+            if ( ptr ) {
+                m_Data.second() = 0;
+                m_Data.first().UnlockRelease(ptr);
+                return ptr;
             }
-            m_Data.second() = 0;
-            m_Data.first().UnlockRelease(ptr);
-            return ptr;
+            else {
+                ThrowNullPointerException();
+                return ptr;
+            }
         }
 
     /// Reset reference object to new pointer.
@@ -854,7 +864,7 @@ public:
         {
             TObjectType* ptr = m_Data.second();
             if ( !ptr ) {
-                CObject::ThrowNullPointerException();
+                ThrowNullPointerException();
             }
             return ptr;
         }
@@ -933,7 +943,7 @@ public:
         {
             const TObjectType* ptr = m_Data.second();
             if ( !ptr ) {
-                CObject::ThrowNullPointerException();
+                ThrowNullPointerException();
             }
             return ptr;
         }
@@ -1030,7 +1040,7 @@ public:
         {
             TObjectType* ptr = m_Data.second();
             if ( !ptr ) {
-                CObject::ThrowNullPointerException();
+                ThrowNullPointerException();
             }
             return ptr;
         }
@@ -1291,6 +1301,11 @@ public:
             return ptr;
         }
 
+    static void ThrowNullPointerException(void)
+        {
+            CObject::ThrowNullPointerException(typeid(TObjectType*));
+        }
+
     /// Release a reference to the object and return a pointer to the object.
     ///
     /// Releasing a reference means decreasing the reference count by "1". A
@@ -1307,12 +1322,15 @@ public:
     TObjectType* Release(void)
         {
             TObjectType* ptr = m_Data.second();
-            if ( !ptr ) {
-                CObject::ThrowNullPointerException();
+            if ( ptr ) {
+                m_Data.second() = 0;
+                m_Data.first().UnlockRelease(ptr);
+                return ptr;
             }
-            m_Data.second() = 0;
-            m_Data.first().UnlockRelease(ptr);
-            return ptr;
+            else {
+                ThrowNullPointerException();
+                return ptr;
+            }
         }
 
     /// Reset reference object to new pointer.
@@ -1403,7 +1421,7 @@ public:
         {
             TObjectType* ptr = m_Data.second();
             if ( !ptr ) {
-                CObject::ThrowNullPointerException();
+                ThrowNullPointerException();
             }
             return ptr;
         }

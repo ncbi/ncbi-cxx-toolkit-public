@@ -670,10 +670,10 @@ void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 NCBI_PARAM_DECL(bool, NCBI, ABORT_ON_NULL);
 NCBI_PARAM_DEF_EX(bool, NCBI, ABORT_ON_NULL, false,
                   eParam_NoThread, NCBI_ABORT_ON_NULL);
+static NCBI_PARAM_TYPE(NCBI, ABORT_ON_NULL) sx_abort_on_null;
 
 void CObject::ThrowNullPointerException(void)
 {
-    static NCBI_PARAM_TYPE(NCBI, ABORT_ON_NULL) sx_abort_on_null;
     if ( sx_abort_on_null.Get() ) {
         Abort();
     }
@@ -682,6 +682,21 @@ void CObject::ThrowNullPointerException(void)
     ex.SetSeverity(eDiag_Critical);
     NCBI_EXCEPTION_THROW(ex);
     // NCBI_THROW(CCoreException, eNullPtr, "Attempt to access NULL pointer.");
+}
+
+
+void CObject::ThrowNullPointerException(const type_info& type)
+{
+    if ( sx_abort_on_null.Get() ) {
+        Abort();
+    }
+    NCBI_EXCEPTION_VAR(ex,
+                       CCoreException, eNullPtr,
+                       string("Attempt to access NULL pointer: ")+type.name());
+    ex.SetSeverity(eDiag_Critical);
+    NCBI_EXCEPTION_THROW(ex);
+    // NCBI_THROW(CCoreException, eNullPtr,
+    //            string("Attempt to access NULL pointer: ")+type.name());
 }
 
 
