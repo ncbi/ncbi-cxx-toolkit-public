@@ -753,7 +753,7 @@ public:
 
     static void ThrowNullPointerException(void)
         {
-            CObject::ThrowNullPointerException(typeid(TObjectType*));
+            CObject::ThrowNullPointerException(/*typeid(TObjectType*)*/);
         }
 
     /// Release a reference to the object and return a pointer to the object.
@@ -1303,7 +1303,7 @@ public:
 
     static void ThrowNullPointerException(void)
         {
-            CObject::ThrowNullPointerException(typeid(TObjectType*));
+            CObject::ThrowNullPointerException(/*typeid(TObjectType*)*/);
         }
 
     /// Release a reference to the object and return a pointer to the object.
