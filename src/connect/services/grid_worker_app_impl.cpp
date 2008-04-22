@@ -409,6 +409,8 @@ void CGridWorkerApp_Impl::Init()
 {
     //    SetDiagPostLevel(eDiag_Info);
     //    SetDiagPostFlag(eDPF_DateTime);
+    SetDiagPostFlag(eDPF_PreMergeLines);
+    SetDiagPostFlag(eDPF_MergeLines);
 
     IRWRegistry& reg = m_App.GetConfig();
     reg.Set(kNetScheduleAPIDriverName, "discover_low_priority_servers", "true");
