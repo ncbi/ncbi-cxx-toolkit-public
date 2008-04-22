@@ -364,7 +364,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,4,6) );
+    SetVersion( CVersionInfo(1,4,7) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -516,7 +516,7 @@ int CProjBulderApp::Run(void)
     CMsvcConfigure configure;
     configure.Configure(const_cast<CMsvcSite&>(GetSite()), 
                         GetRegSettings().m_ConfigInfo, 
-                        GetProjectTreeInfo().m_Root);
+                        m_IncDir);
 
     // Build projects tree
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);

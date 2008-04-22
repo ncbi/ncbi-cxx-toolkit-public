@@ -213,11 +213,11 @@ void CMsvcConfigure::AnalyzeDefines(
     CMsvcSite& site, const string& root_dir,
     const SConfigInfo& config, const CBuildType&  build_type)
 {
-    string ncbi_conf_msvc_site_path = 
-        CDirEntry::ConcatPath(root_dir, m_ConfigureDefinesPath);
-    string dir, base, ext;
-    CDirEntry::SplitPath(ncbi_conf_msvc_site_path, &dir, &base, &ext);
-    string filename = CDirEntry::ConcatPath( dir, base) + "." + config.m_Name + ext;
+    string cfg_root_inc = NStr::Replace(root_dir,"$(ConfigurationName)",config.m_Name);
+    string filename =
+        CDirEntry::ConcatPath(cfg_root_inc, m_ConfigureDefinesPath);
+    string dir;
+    CDirEntry::SplitPath(filename, &dir);
 
     _TRACE("Configuration " << config.m_Name << ":");
 

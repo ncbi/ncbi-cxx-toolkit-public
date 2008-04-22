@@ -127,4 +127,4 @@ typedef   int   ssize_t;
 
 /* PROJECT_TREE_BUILDER-generated site localization
  */
-#include "msvc/ncbiconf_msvc_site.h"
+#include <common/config/ncbiconf_msvc_site.h>
