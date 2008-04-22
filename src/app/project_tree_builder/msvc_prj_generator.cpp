@@ -527,7 +527,7 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
         }
     }
     build_info->m_CommandLine = 
-        "@echo on\n" + tool_exe_location + " " + tool_cmd;
+        "@echo on\n" + tool_exe_location + " " + tool_cmd + "\n@echo off";
 
     //Description
     build_info->m_Description = 
