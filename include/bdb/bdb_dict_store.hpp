@@ -67,7 +67,7 @@ public:
     /// retrieve the current key
     Key    GetCurrentKey() const;
     TKeyId GetCurrentUid() const;
-    TKeyId GetLastUid() const;
+    TKeyId GetMaxUid() const;
 
     /// read a particular key's value
     EBDB_ErrCode Read (const TKey& key, TKeyId* val);
@@ -78,13 +78,14 @@ public:
     /// write a key/value pair to the store
     EBDB_ErrCode Write(const TKey& key, TKeyId val);
 
+protected:
+    TKeyId m_MaxUid;
+
 private:
     /// key
     typename SBDB_TypeTraits<Key>::TFieldType   m_Key;
     /// data
     typename SBDB_TypeTraits<Uint4>::TFieldType m_Uid;
-
-    TKeyId m_LastUid;
 };
 
 
@@ -217,7 +218,7 @@ private:
 template <typename Key>
 inline
 CBDB_BlobDictionary<Key>::CBDB_BlobDictionary(Uint4 last_uid)
-    : m_LastUid(last_uid)
+    : m_MaxUid(last_uid)
 {
     BindKey ("key", &m_Key);
     BindData("uid", &m_Uid);
@@ -273,9 +274,9 @@ CBDB_BlobDictionary<Key>::GetCurrentUid() const
 template <typename Key>
 inline
 typename CBDB_BlobDictionary<Key>::TKeyId
-CBDB_BlobDictionary<Key>::GetLastUid() const
+CBDB_BlobDictionary<Key>::GetMaxUid() const
 {
-    return m_LastUid;
+    return m_MaxUid;
 }
 
 
@@ -298,8 +299,8 @@ Uint4 CBDB_BlobDictionary<Key>::PutKey(const Key& key)
         return uid;
     }
 
-    ++m_LastUid;
-    uid = m_LastUid;
+    ++m_MaxUid;
+    uid = m_MaxUid;
     if (uid) {
         if (Write(key, uid) != eBDB_Ok) {
             uid = 0;

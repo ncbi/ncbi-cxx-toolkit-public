@@ -80,7 +80,8 @@ public:
     const void* GetLastMultiFetchData() const;
     size_t      GetLastMultiFetchDataLen() const;
     TVolume&    GetSourceVolume();
-    Uint4       GetCurrentBlobId() const;
+    NCBI_DEPRECATED Uint4       GetCurrentBlobId() const;
+    Uint4       GetLastBlobId() const;
 
 private:
     CBDB_Env* m_Env;
@@ -210,6 +211,14 @@ CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::GetSourceVolume()
 template <typename BDB_SplitStore, typename BDB_Vol>
 inline Uint4
 CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::GetCurrentBlobId() const
+{
+    return GetLastBlobId();
+}
+
+
+template <typename BDB_SplitStore, typename BDB_Vol>
+inline Uint4
+CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::GetLastBlobId() const
 {
     if (m_Volume.get()) {
         return (Uint4)m_Volume->GetUid();

@@ -49,7 +49,7 @@ public:
     typedef pair<PropKey, PropValue> TKey;
     typedef Uint4                    TKeyId;
 
-    CBDB_PropertyDictionary(Uint4 last_uid = 0);
+    CBDB_PropertyDictionary();
 
     /// @name Interface required for split dictionary store
     /// @{
@@ -61,7 +61,7 @@ public:
 
     TKey   GetCurrentKey() const;
     TKeyId GetCurrentUid() const;
-    TKeyId GetLastUid() const;
+    TKeyId GetMaxUid() const;
 
     EBDB_ErrCode Read(TKeyId* key_idx);
     EBDB_ErrCode Read(const TKey& key, TKeyId* key_idx);
@@ -72,12 +72,18 @@ public:
                        const PropValue& value,
                        TKeyId key_idx);
 
+protected:
+    TKeyId m_MaxUid;
+
 private:
     typename SBDB_TypeTraits<PropKey>::TFieldType   m_PropKey;
     typename SBDB_TypeTraits<PropValue>::TFieldType m_PropVal;
     typename SBDB_TypeTraits<TKeyId>::TFieldType    m_Uid;
 
-    TKeyId m_LastUid;
+private:
+    /// forbidden
+    CBDB_PropertyDictionary(const CBDB_PropertyDictionary<PropKey, PropValue>&);
+    CBDB_PropertyDictionary& operator=(const CBDB_PropertyDictionary<PropKey, PropValue>&);
 };
 
 
@@ -105,6 +111,11 @@ public:
     CBDB_BvPropertyStore(const string& demux_path = kEmptyStr);
     CBDB_BvPropertyStore(TDictionary& dict, TStore& store,
                          EOwnership own = eTakeOwnership);
+
+private:
+    /// forbidden
+    CBDB_BvPropertyStore(const CBDB_BvPropertyStore<PropKey, PropValue, Dictionary, BvStore, BV>&);
+    CBDB_BvPropertyStore& operator=(const CBDB_BvPropertyStore<PropKey, PropValue, Dictionary, BvStore, BV>&);
 };
 
 
@@ -113,8 +124,8 @@ public:
 
 template <class PropKey, class PropValue>
 inline
-CBDB_PropertyDictionary<PropKey, PropValue>::CBDB_PropertyDictionary(Uint4 last_uid)
-    : m_LastUid(last_uid)
+CBDB_PropertyDictionary<PropKey, PropValue>::CBDB_PropertyDictionary()
+    : m_MaxUid(0)
 {
     BindKey ("key", &m_PropKey);
     BindKey ("val", &m_PropVal);
@@ -144,9 +155,9 @@ CBDB_PropertyDictionary<PropKey, PropValue>::GetCurrentUid() const
 template <class PropKey, class PropValue>
 inline
 typename CBDB_PropertyDictionary<PropKey, PropValue>::TKeyId
-CBDB_PropertyDictionary<PropKey, PropValue>::GetLastUid() const
+CBDB_PropertyDictionary<PropKey, PropValue>::GetMaxUid() const
 {
-    return m_LastUid;
+    return m_MaxUid;
 }
 
 
@@ -169,8 +180,8 @@ Uint4 CBDB_PropertyDictionary<PropKey, PropValue>::PutKey(const TKey& key)
         return uid;
     }
 
-    ++m_LastUid;
-    uid = m_LastUid;
+    ++m_MaxUid;
+    uid = m_MaxUid;
     if (uid) {
         if (Write(key, uid) != eBDB_Ok) {
             uid = 0;
