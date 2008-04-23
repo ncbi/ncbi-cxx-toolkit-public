@@ -62,13 +62,14 @@ CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
         m_CustomBuildCommand += "devenv "\
                                 "/build $(ConfigurationName) "\
                                 "/project $(InputName) "\
-                                "\"$(SolutionPath)\"\n";
+                                "\"$(SolutionPath)\"";
     } else {
         m_CustomBuildCommand += "msbuild \"$(SolutionPath)\" /t:\"$(InputName)\" /p:Configuration=$(ConfigurationName)";
         if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc900) {
             m_CustomBuildCommand += " /maxcpucount";
         }
     }
+    m_CustomBuildCommand  += "\n@echo off";
     CreateUtilityProject(m_Name, m_Configs, &m_Xmlprj);
 }
 
