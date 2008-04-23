@@ -163,7 +163,9 @@ void CDll::Load(void)
     // Load DLL
     _TRACE("Loading dll: "<<m_Name);
 #if defined(NCBI_OS_MSWIN)
+    UINT errMode = SetErrorMode(SEM_FAILCRITICALERRORS);
     HMODULE handle = LoadLibrary(m_Name.c_str());
+    SetErrorMode(errMode);
 #elif defined(NCBI_OS_UNIX)
 #  ifdef HAVE_DLFCN_H
     int flags = RTLD_LAZY | (F_ISSET(fLocal) ? RTLD_LOCAL : RTLD_GLOBAL);
