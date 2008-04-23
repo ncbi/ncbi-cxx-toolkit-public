@@ -51,7 +51,7 @@ reinterpret_cast_func(const char* desc, void *ptr)
     if (type) {
         return SWIG_NewPointerObj(ptr, type, 0);
     } else {
-        throw runtime_error(string("type not found: ") + desc);
+        throw std::runtime_error(std::string("type not found: ") + desc);
     }
 }
 
