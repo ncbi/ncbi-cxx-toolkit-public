@@ -496,7 +496,14 @@ public:
     ///   compatible with the type of retrieved item!) to retrieve the item to;
     ///   otherwise allocate new "CDB_Object".
 	///   In case of "CDB_Image" and "CDB_Text" data types value will be *appended*
-	///   to the "item_buf" by default.
+	///   to the "item_buf" by default (policy == eAppendLOB).
+    /// 
+	/// @param policy
+	///   Data retrieval policy. If policy == eAppendLOB and "item_buf" is an
+	///   object of CDB_Image or CDB_Text type, then data will be *appended* to
+	///   the end of previously assigned data. If policy == eAssignLOB and "item_buf" is an
+	///   object of CDB_Image or CDB_Text type, then new value will be *assigned*
+	///   to the "item_buf" object.
     /// 
     /// @return 
     ///   a result item
