@@ -265,16 +265,10 @@ CDB_SendDataCmd* CDB_Connection::SendDataCmd(I_ITDescriptor& desc,
     return m_ConnImpl->SendDataCmd(desc, data_size, log_it);
 }
 
-bool CDB_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it)
+bool CDB_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob, bool log_it)
 {
     CHECK_CONNECTION(m_ConnImpl);
-    return m_ConnImpl->SendData(desc, txt, log_it);
-}
-
-bool CDB_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it)
-{
-    CHECK_CONNECTION(m_ConnImpl);
-    return m_ConnImpl->SendData(desc, img, log_it);
+    return m_ConnImpl->SendData(desc, lob, log_it);
 }
 
 bool CDB_Connection::Refresh()
@@ -466,10 +460,10 @@ int CDB_Result::GetColumnNum(void) const
     return GetIResult().GetColumnNum();
 }
 
-CDB_Object* CDB_Result::GetItem(CDB_Object* item_buf)
+CDB_Object* CDB_Result::GetItem(CDB_Object* item_buf, EGetItem policy)
 {
     CHECK_RESULT( GetIResultPtr() );
-    return GetIResult().GetItem(item_buf);
+    return GetIResult().GetItem(item_buf, policy);
 }
 
 size_t CDB_Result::ReadItem(void* buffer, size_t buffer_size, bool* is_null)

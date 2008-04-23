@@ -383,10 +383,9 @@ protected:
                                           size_t          data_size,
                                           bool            log_it = true);
 
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
-                          bool log_it = true);
+
     virtual bool Refresh(void);
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
 
@@ -870,7 +869,8 @@ protected:
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
-    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
+    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0,
+							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -884,8 +884,13 @@ protected:
                               CS_INT buflen,
                               CS_INT *outlen,
                               bool& is_null);
-    CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
-                          CDB_Object* item_buf);
+    CDB_Object* GetItemInternal(
+		I_Result::EGetItem policy, 
+		CS_COMMAND* cmd, 
+		CS_INT item_no, 
+		CS_DATAFMT& fmt,
+		CDB_Object* item_buf
+		);
     CS_COMMAND* x_GetSybaseCmd(void) const { return m_Cmd; }
     CS_RETCODE Check(CS_RETCODE rc)
     {
@@ -1024,7 +1029,8 @@ protected:
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
-    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0);
+    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0,
+							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);

@@ -421,40 +421,38 @@ CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_ITDescriptor& descr_in,
 }
 
 
-bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it)
+bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob, bool log_it)
 {
     CStatementBase stmt(*this);
 
     SQLPOINTER  p = (SQLPOINTER)2;
-    SQLLEN      s = img.Size();
+    SQLLEN      s = lob.Size();
     SQLLEN      ph;
 
-    if((!ODBC_xSendDataPrepare(stmt, (CDB_ITDescriptor&)desc, s, false, log_it, p, &ph)) ||
+	CDB_ITDescriptor::ETDescriptorType desc_type = CDB_ITDescriptor::eUnknown;
+	
+	if (lob.GetType() == eDB_Image) {
+			desc_type = CDB_ITDescriptor::eBinary;
+	} else {
+			desc_type = CDB_ITDescriptor::eText;
+	}
+
+    if((!ODBC_xSendDataPrepare(
+			stmt, 
+			(CDB_ITDescriptor&)desc, 
+			s, 
+			(desc_type == CDB_ITDescriptor::eText), 
+			log_it, 
+			p, 
+			&ph
+			)) ||
        (!ODBC_xSendDataGetId(stmt, &p ))) {
         string err_message = "Cannot prepare a command." + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 
-    return x_SendData(CDB_ITDescriptor::eBinary, stmt, img);
+    return x_SendData(desc_type, stmt, lob);
 
-}
-
-
-bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it)
-{
-    CStatementBase stmt(*this);
-
-    SQLPOINTER  p = (SQLPOINTER)2;
-    SQLLEN      s = txt.Size();
-    SQLLEN      ph;
-
-    if((!ODBC_xSendDataPrepare(stmt, (CDB_ITDescriptor&)desc, s, true, log_it, p, &ph)) ||
-       (!ODBC_xSendDataGetId(stmt, &p))) {
-        string err_message = "Cannot prepare a command." + GetDbgInfo();
-        DATABASE_DRIVER_ERROR( err_message, 410035 );
-    }
-
-    return x_SendData(CDB_ITDescriptor::eText, stmt, txt);
 }
 
 

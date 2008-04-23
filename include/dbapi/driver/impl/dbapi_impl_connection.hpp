@@ -137,9 +137,7 @@ public:
 
     /// Shortcut to send text and image to the server without using the
     /// "Send-data" command (SendDataCmd)
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Text& txt,
-                          bool log_it = true) = 0;
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true) = 0;
 
     /// Reset the connection to the "ready" state (cancel all active commands)

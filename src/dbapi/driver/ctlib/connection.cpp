@@ -415,17 +415,10 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
 }
 
 
-bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img,
+bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                               bool log_it)
 {
-    return x_SendData(desc, img, log_it);
-}
-
-
-bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt,
-                              bool log_it)
-{
-    return x_SendData(desc, txt, log_it);
+    return x_SendData(desc, lob, log_it);
 }
 
 

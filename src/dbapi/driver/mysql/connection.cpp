@@ -102,15 +102,7 @@ CDB_SendDataCmd* CMySQL_Connection::SendDataCmd(I_ITDescriptor& /*descr_in*/,
 
 
 bool CMySQL_Connection::SendData(I_ITDescriptor& /*desc*/,
-                                 CDB_Image&      /*img*/,
-                                 bool            /*log_it*/)
-{
-    return true;
-}
-
-
-bool CMySQL_Connection::SendData(I_ITDescriptor& /*desc*/,
-                                 CDB_Text&       /*txt*/,
+                                 CDB_Stream&      /*img*/,
                                  bool            /*log_it*/)
 {
     return true;

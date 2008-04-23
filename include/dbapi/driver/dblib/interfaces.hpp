@@ -296,10 +296,9 @@ protected:
                                          size_t          data_size,
                                          bool            log_it = true);
 
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
-                          bool log_it = true);
+
     virtual bool Refresh(void);
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
 
@@ -681,9 +680,12 @@ protected:
         GetConnection().CheckFunctCall();
     }
     EDB_Type GetDataType(int n);
-    CDB_Object* GetItemInternal(int item_no,
-                                SDBL_ColDescr* fmt,
-                                CDB_Object* item_buff);
+    CDB_Object* GetItemInternal(
+		I_Result::EGetItem policy, 
+		int item_no,
+		SDBL_ColDescr* fmt,
+		CDB_Object* item_buff
+		);
     EDB_Type RetGetDataType(int n);
     CDB_Object* RetGetItem(int item_no,
                            SDBL_ColDescr* fmt,
@@ -756,7 +758,8 @@ protected:
 protected:
     virtual EDB_ResType     ResultType(void) const;
     virtual bool            Fetch(void);
-    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
+    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0,
+							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -784,7 +787,8 @@ protected:
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
-    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
+    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0,
+							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -820,7 +824,8 @@ protected:
 protected:
     virtual EDB_ResType     ResultType(void) const;
     virtual bool            Fetch(void);
-    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0);
+    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0,
+							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -851,7 +856,8 @@ protected:
     virtual EDB_ResType     ResultType(void) const;
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
-    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0);
+    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0,
+							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -882,7 +888,8 @@ protected:
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const ;
     virtual int             GetColumnNum(void) const;
-    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0);
+    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0,
+							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -914,7 +921,8 @@ protected:
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
-    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0);
+    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0,
+							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);

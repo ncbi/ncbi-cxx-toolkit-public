@@ -73,7 +73,8 @@ public:
     /// If "item_buf" is not NULL, then use "*item_buf" (its type should be
     /// compatible with the type of retrieved item!) to retrieve the item to;
     /// otherwise allocate new "CDB_Object".
-    virtual CDB_Object* GetItem(CDB_Object* item_buf = 0) = 0;
+    virtual CDB_Object* GetItem(CDB_Object* item_buf = 0, 
+					I_Result::EGetItem policy = I_Result::eAppendLOB) = 0;
 
     /// Read a result item body (for text/image mostly).
     /// Return number of successfully read bytes.

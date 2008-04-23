@@ -125,7 +125,8 @@ int CMySQL_RowResult::GetColumnNum(void) const
 }
 
 
-static CDB_Object* s_GetItem(EDB_Type    data_type,
+static CDB_Object* s_GetItem(I_Result::EGetItem policy,
+							 EDB_Type    data_type,
                              CDB_Object* item_buff,
                              EDB_Type    b_type,
                              const char* d_ptr,
@@ -149,24 +150,34 @@ static CDB_Object* s_GetItem(EDB_Type    data_type,
     if (b_type == eDB_Image) {
         if ( !item_buff ) {
             item_buff = new CDB_Image;
-        }
+        } else if (policy == I_Result::eAssignLOB) {
+			// Explicitly truncate previous value ...
+			static_cast<CDB_Image*>(item_buff)->Truncate();
+		}
+
         if ( d_len ) {
             ((CDB_Image*) item_buff)->Append(d_ptr, d_len);
         } else {
             item_buff->AssignNULL();
         }
+
         return item_buff;
     }
 
     if (b_type == eDB_Text) {
         if ( !item_buff ) {
             item_buff = new CDB_Text;
+        } else if (policy == I_Result::eAssignLOB) {
+			// Explicitly truncate previous value ...
+			static_cast<CDB_Text*>(item_buff)->Truncate();
         }
+
         if ( d_len ) {
             ((CDB_Text*) item_buff)->Append(d_ptr, d_len);
         } else {
             item_buff->AssignNULL();
         }
+
         return item_buff;
     }
 
@@ -278,14 +289,14 @@ static CDB_Object* s_GetItem(EDB_Type    data_type,
 }
 
 
-CDB_Object* CMySQL_RowResult::GetItem(CDB_Object* item_buf)
+CDB_Object* CMySQL_RowResult::GetItem(CDB_Object* item_buf, I_Result::EGetItem policy)
 {
     if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         return 0;
     }
 
     CDB_Object* r =
-        s_GetItem(GetDefineParams().GetDataType(m_CurrItem), item_buf,
+        s_GetItem(policy, GetDefineParams().GetDataType(m_CurrItem), item_buf,
                   item_buf ? item_buf->GetType() : eDB_UnsupportedType,
                   m_Row[m_CurrItem], m_Lengths[m_CurrItem]);
     ++m_CurrItem;

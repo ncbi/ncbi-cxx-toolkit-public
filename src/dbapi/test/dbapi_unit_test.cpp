@@ -2802,12 +2802,10 @@ CDBAPIUnitTest::Test_LOB_Multiple_LowLevel(void)
                     obj_image.Append(clob_value.c_str(), clob_value.size());
 
                     conn->SendData(*text01, obj_text);
-                    obj_text.Truncate();
-                    obj_text.Append(clob_value);
+                    obj_text.MoveTo(0);
                     conn->SendData(*text02, obj_text);
                     conn->SendData(*image01, obj_image);
-                    obj_image.Truncate();
-                    obj_image.Append(clob_value.c_str(), clob_value.size());
+                    obj_image.MoveTo(0);
                     conn->SendData(*image02, obj_image);
                 }
 
@@ -2852,8 +2850,12 @@ CDBAPIUnitTest::Test_LOB_Multiple_LowLevel(void)
                                 break;
                         };
 
-                        obj_lob->Truncate();
-                        rs->GetItem(obj_lob);
+                        // You have to call either 
+                        // obj_lob->Truncate();
+                        // rs->GetItem(obj_lob);
+                        // or
+                        // rs->GetItem(obj_lob, I_Result::eAssignLOB);
+                        rs->GetItem(obj_lob, I_Result::eAssignLOB);
 
                         BOOST_CHECK( !obj_lob->IsNULL() );
 

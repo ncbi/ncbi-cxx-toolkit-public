@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 13, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 14, 0, 0);
 
 
 namespace impl
@@ -142,8 +142,8 @@ public:
     /// 
     /// @param desc 
     ///   Lob descriptor.
-    /// @param txt 
-    ///   Text object.
+    /// @param lob 
+    ///   Text or Image object.
     /// @param log_it 
     ///   Log LOB operation if this value is set to true.
     /// 
@@ -152,28 +152,9 @@ public:
     ///
     /// @sa
     ///   SendDataCmd
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Text& txt,
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
     
-    /// @brief 
-    ///   Shortcut to send text and image to the server without using the
-    ///   "Send-data" command (SendDataCmd)
-    /// 
-    /// @param desc 
-    ///   Lob descriptor.
-    /// @param img 
-    ///   Image object.
-    /// @param log_it 
-    ///   Log LOB operation if this value is set to true.
-    /// 
-    /// @return 
-    ///   - true on success.
-    ///
-    /// @sa
-    ///   SendDataCmd
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
-                          bool log_it = true);
-
     /// @brief 
     /// Reset the connection to the "ready" state (cancel all active commands)
     /// 
@@ -404,13 +385,15 @@ public:
     ///   If "item_buf" is not NULL, then use "*item_buf" (its type should be
     ///   compatible with the type of retrieved item!) to retrieve the item to;
     ///   otherwise allocate new "CDB_Object".
+	///   In case of "CDB_Image" and "CDB_Text" data types value will be *appended*
+	///   to the "item_buf" by default.
     /// 
     /// @return 
     ///   a result item
     ///
     /// @sa
     ///   ReadItem, SkipItem
-    virtual CDB_Object* GetItem(CDB_Object* item_buf = 0);
+    virtual CDB_Object* GetItem(CDB_Object* item_buf = 0, EGetItem policy = eAppendLOB);
 
     /// @brief 
     ///   Read a result item body (for text/image mostly).

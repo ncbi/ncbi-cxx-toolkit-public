@@ -257,10 +257,9 @@ protected:
                                           size_t          data_size,
                                           bool            log_it = true);
 
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
-                          bool log_it = true);
+
     virtual bool Refresh(void);
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
 
@@ -693,7 +692,8 @@ protected:
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
-    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
+    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0,
+							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -703,8 +703,8 @@ protected:
 
     int xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
         SQLINTEGER buffer_size);
-    CDB_Object* xLoadItem(CDB_Object* item_buf);
-    CDB_Object* xMakeItem(void);
+    CDB_Object* x_LoadItem(I_Result::EGetItem policy, CDB_Object* item_buf);
+    CDB_Object* x_MakeItem(void);
 
 protected:
     SQLHSTMT GetHandle(void) const
@@ -804,7 +804,8 @@ protected:
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
-    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0);
+    virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0,
+							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);

@@ -50,6 +50,7 @@ BEGIN_NCBI_SCOPE
 
 
 // Aux. for s_*GetItem()
+// CDB_Image and CDB_Text are not handled by this function ...
 static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                                     EDB_Type b_type, const BYTE* d_ptr, DBINT d_len)
 {
@@ -458,12 +459,13 @@ bool CDBL_RowResult::Fetch()
 }
 
 
-CDB_Object* CDBL_RowResult::GetItem(CDB_Object* item_buff)
+CDB_Object* CDBL_RowResult::GetItem(CDB_Object* item_buff, I_Result::EGetItem policy)
 {
     if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         return 0;
     }
-    CDB_Object* r = GetItemInternal(m_CurrItem + 1,
+    CDB_Object* r = GetItemInternal(policy,
+									m_CurrItem + 1,
                                     &m_ColFmt[m_CurrItem],
                                     item_buff);
     ++m_CurrItem;
@@ -607,7 +609,7 @@ int CDBL_BlobResult::GetColumnNum(void) const
 }
 
 
-CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
+CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff, I_Result::EGetItem policy)
 {
     if (m_CurrItem)
         return 0;
@@ -618,12 +620,23 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
         DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 230020 );
     }
 
-    if (item_buff == 0) {
-        item_buff = m_ColFmt.data_type == eDB_Text
-            ? (CDB_Object*) new CDB_Text : (CDB_Object*) new CDB_Image;
-    }
+	CDB_Stream* val = NULL;
 
-    CDB_Text* val = (CDB_Text*) item_buff;
+	if (item_buff) {
+			val = static_cast<CDB_Stream*>(item_buff);
+
+			if (policy == I_Result::eAssignLOB) {
+					// Explicitly truncate previous value ...
+					val->Truncate();
+			}
+	} else if (m_ColFmt.data_type == eDB_Text) {
+			val = new CDB_Text;
+	} else {
+			val = new CDB_Image;
+	}
+
+	_ASSERT(val);
+
 
     // check if we do have something in buffer
     if(m_ReadedBytes < m_BytesInBuffer) {
@@ -789,7 +802,7 @@ bool CDBL_ParamResult::Fetch()
 }
 
 
-CDB_Object* CDBL_ParamResult::GetItem(CDB_Object* item_buff)
+CDB_Object* CDBL_ParamResult::GetItem(CDB_Object* item_buff, I_Result::EGetItem /*policy*/)
 {
     if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         return 0;
@@ -940,7 +953,7 @@ int CDBL_ComputeResult::CurrentItemNo() const
 }
 
 
-CDB_Object* CDBL_ComputeResult::GetItem(CDB_Object* item_buff)
+CDB_Object* CDBL_ComputeResult::GetItem(CDB_Object* item_buff, I_Result::EGetItem /*policy*/)
 {
     if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         return 0;
@@ -1056,7 +1069,7 @@ int CDBL_StatusResult::GetColumnNum(void) const
 }
 
 
-CDB_Object* CDBL_StatusResult::GetItem(CDB_Object* item_buff)
+CDB_Object* CDBL_StatusResult::GetItem(CDB_Object* item_buff, I_Result::EGetItem /*policy*/)
 {
     if (!item_buff)
         return new CDB_Int(m_Val);
@@ -1210,9 +1223,9 @@ int CDBL_CursorResult::GetColumnNum(void) const
 }
 
 
-CDB_Object* CDBL_CursorResult::GetItem(CDB_Object* item_buff)
+CDB_Object* CDBL_CursorResult::GetItem(CDB_Object* item_buff, I_Result::EGetItem policy)
 {
-    return GetResultSet() ? GetResultSet()->GetItem(item_buff) : 0;
+    return GetResultSet() ? GetResultSet()->GetItem(item_buff, policy) : 0;
 }
 
 
@@ -1416,9 +1429,12 @@ EDB_Type CDBL_Result::GetDataType(int n)
 
 // Aux. for CDBL_RowResult::GetItem()
 CDB_Object*
-CDBL_Result::GetItemInternal(int item_no,
-                             SDBL_ColDescr* fmt,
-                             CDB_Object* item_buff)
+CDBL_Result::GetItemInternal(
+	I_Result::EGetItem policy, 
+	int item_no,
+	SDBL_ColDescr* fmt,
+	CDB_Object* item_buff
+	)
 {
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
     const BYTE* d_ptr = Check(dbdata (GetCmd(), item_no));
@@ -1503,7 +1519,22 @@ CDBL_Result::GetItemInternal(int item_no,
         if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
             DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
-        CDB_Text* v = item_buff ? (CDB_Text*) item_buff : new CDB_Text;
+
+        CDB_Text* v = NULL;
+		
+		if (item_buff) {
+				v = static_cast<CDB_Text*>(item_buff);
+
+				if (policy == I_Result::eAssignLOB) {
+						// Explicitly truncate previous value ...
+						v->Truncate();
+				}
+		} else {
+				v = new CDB_Text;
+		}
+
+		_ASSERT(v);
+	
         v->Append((char*) d_ptr, (int) d_len);
         return v;
     }
@@ -1512,7 +1543,22 @@ CDBL_Result::GetItemInternal(int item_no,
         if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
             DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
-        CDB_Image* v = item_buff ? (CDB_Image*) item_buff : new CDB_Image;
+
+        CDB_Image* v = NULL;
+		
+		if (item_buff) {
+				v = static_cast<CDB_Image*>(item_buff);
+
+				if (policy == I_Result::eAssignLOB) {
+						// Explicitly truncate previous value ...
+						v->Truncate();
+				}
+		} else {
+				v = new CDB_Image;
+		}
+
+		_ASSERT(v);
+	
         v->Append((void*) d_ptr, (int) d_len);
         return v;
     }
@@ -1547,6 +1593,7 @@ EDB_Type CDBL_Result::RetGetDataType(int n)
 
 
 // Aux. for CDBL_ParamResult::GetItem()
+// CDB_Image and CDB_Text are not handled by this function ...
 CDB_Object* CDBL_Result::RetGetItem(int item_no,
                                     SDBL_ColDescr* fmt,
                                     CDB_Object* item_buff)
@@ -1587,6 +1634,7 @@ EDB_Type CDBL_Result::AltGetDataType(int id, int n)
 
 
 // Aux. for CDBL_ComputeResult::GetItem()
+// CDB_Image and CDB_Text are not handled by this function ...
 CDB_Object* CDBL_Result::AltGetItem(int id,
                                     int item_no,
                                     SDBL_ColDescr* fmt,

@@ -233,14 +233,8 @@ CDB_SendDataCmd* CTDS_Connection::SendDataCmd(I_ITDescriptor& descr_in,
 
 
 bool CTDS_Connection::SendData(I_ITDescriptor& desc,
-                               CDB_Image& img, bool log_it){
-    return x_SendData(desc, dynamic_cast<CDB_Stream&> (img), log_it);
-}
-
-
-bool CTDS_Connection::SendData(I_ITDescriptor& desc,
-                               CDB_Text&  txt, bool log_it) {
-    return x_SendData(desc, dynamic_cast<CDB_Stream&> (txt), log_it);
+                               CDB_Stream& lob, bool log_it){
+    return x_SendData(desc, lob, log_it);
 }
 
 

@@ -107,9 +107,7 @@ protected:
                                     unsigned int  batch_size = 1);
 
 
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
-                          bool log_it = true);
-    virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
 
     virtual bool Refresh();
@@ -289,7 +287,8 @@ protected:
     virtual bool            Fetch();
     virtual int             CurrentItemNo() const;
     virtual int             GetColumnNum(void) const;
-    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
+    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0,
+							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor();

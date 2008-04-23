@@ -307,8 +307,13 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd,
 }
 
 // Aux. for CTL_RowResult::GetItem()
-CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
-                                     CDB_Object* item_buf)
+CDB_Object* CTL_RowResult::GetItemInternal(
+	I_Result::EGetItem policy, 
+	CS_COMMAND* cmd, 
+	CS_INT item_no, 
+	CS_DATAFMT& fmt,
+	CDB_Object* item_buf
+	)
 {
     CS_INT outlen = 0;
     char buffer[2048];
@@ -937,14 +942,26 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
     case CS_TEXT_TYPE:
     case CS_IMAGE_TYPE: {
-       if (item_buf  &&  b_type != eDB_Text  &&  b_type != eDB_Image) {
+		if (item_buf  &&  b_type != eDB_Text  &&  b_type != eDB_Image) {
             DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
+		}
 
-        CDB_Stream* val =
-            item_buf                         ? (CDB_Stream*) item_buf
-            : (fmt.datatype == CS_TEXT_TYPE) ? (CDB_Stream*) new CDB_Text
-            :                                  (CDB_Stream*) new CDB_Image;
+        CDB_Stream* val = NULL;
+
+		if (item_buf) {
+				val = static_cast<CDB_Stream*>(item_buf);
+
+				if (policy == I_Result::eAssignLOB) {
+						// Explicitly truncate previous value ...
+						val->Truncate();
+				}
+		} else if (fmt.datatype == CS_TEXT_TYPE) {
+				val = new CDB_Text;
+		} else {
+				val = new CDB_Image;
+		}
+
+		_ASSERT(val);
 
         for (;;) {
             switch ( my_ct_get_data(cmd, item_no, buffer, sizeof(buffer), &outlen, is_null) ) {
@@ -980,13 +997,13 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 }
 
 
-CDB_Object* CTL_RowResult::GetItem(CDB_Object* item_buf)
+CDB_Object* CTL_RowResult::GetItem(CDB_Object* item_buf, I_Result::EGetItem policy)
 {
     if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()  ||  m_CurrItem == -1) {
         return 0;
     }
 
-    CDB_Object* item = s_GetItem(x_GetSybaseCmd(), m_CurrItem + 1, m_ColFmt[m_CurrItem],
+    CDB_Object* item = GetItemInternal(policy, x_GetSybaseCmd(), m_CurrItem + 1, m_ColFmt[m_CurrItem],
                                  item_buf);
 
     ++m_CurrItem;
@@ -1347,9 +1364,9 @@ int CTL_CursorResultExpl::GetColumnNum(void) const
 }
 
 
-CDB_Object* CTL_CursorResultExpl::GetItem(CDB_Object* item_buff)
+CDB_Object* CTL_CursorResultExpl::GetItem(CDB_Object* item_buff, I_Result::EGetItem policy)
 {
-    return m_Res ? m_Res->GetItem(item_buff) : 0;
+    return m_Res ? m_Res->GetItem(item_buff, policy) : NULL;
 }
 
 

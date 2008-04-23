@@ -350,7 +350,7 @@ bool CODBC_RowResult::CheckSIENoD_Binary(CDB_Stream* val)
     return false;
 }
 
-CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
+CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* item_buf)
 {
     char buffer[8*1024];
     int outlen;
@@ -692,6 +692,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         switch(item_buf->GetType()) {
 #ifdef HAVE_WSTRING
         case eDB_Text: {
+			if (policy == I_Result::eAssignLOB) {
+				static_cast<CDB_Stream*>(item_buf)->Truncate();
+			}
+
             while (CheckSIENoD_WText((CDB_Stream*)item_buf)) {
                 continue;
             }
@@ -699,6 +703,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         }
 #endif
         case eDB_Image: {
+			if (policy == I_Result::eAssignLOB) {
+				static_cast<CDB_Stream*>(item_buf)->Truncate();
+			}
+
             while (CheckSIENoD_Binary((CDB_Stream*)item_buf)) {
                 continue;
             }
@@ -715,12 +723,20 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
     case SQL_LONGVARCHAR:
         switch(item_buf->GetType()) {
         case eDB_Text: {
+			if (policy == I_Result::eAssignLOB) {
+				static_cast<CDB_Stream*>(item_buf)->Truncate();
+			}
+
             while (CheckSIENoD_Text((CDB_Stream*)item_buf)) {
                 continue;
             }
             break;
         }
         case eDB_Image: {
+			if (policy == I_Result::eAssignLOB) {
+				static_cast<CDB_Stream*>(item_buf)->Truncate();
+			}
+
             while (CheckSIENoD_Binary((CDB_Stream*)item_buf)) {
                 continue;
             }
@@ -743,7 +759,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
     return item_buf;
 }
 
-CDB_Object* CODBC_RowResult::xMakeItem()
+CDB_Object* CODBC_RowResult::x_MakeItem()
 {
     char buffer[8*1024];
     int outlen;
@@ -928,13 +944,13 @@ CDB_Object* CODBC_RowResult::xMakeItem()
 }
 
 
-CDB_Object* CODBC_RowResult::GetItem(CDB_Object* item_buf)
+CDB_Object* CODBC_RowResult::GetItem(CDB_Object* item_buf, I_Result::EGetItem policy)
 {
     if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()  ||  m_CurrItem == -1) {
         return 0;
     }
 
-    CDB_Object* item = item_buf? xLoadItem(item_buf) : xMakeItem();
+    CDB_Object* item = item_buf? x_LoadItem(policy, item_buf) : x_MakeItem();
 
     ++m_CurrItem;
     return item;
@@ -1289,9 +1305,9 @@ int CODBC_CursorResult::GetColumnNum(void) const
 }
 
 
-CDB_Object* CODBC_CursorResult::GetItem(CDB_Object* item_buff)
+CDB_Object* CODBC_CursorResult::GetItem(CDB_Object* item_buff, I_Result::EGetItem policy)
 {
-    return m_Res ? m_Res->GetItem(item_buff) : 0;
+    return m_Res ? m_Res->GetItem(item_buff, policy) : 0;
 }
 
 

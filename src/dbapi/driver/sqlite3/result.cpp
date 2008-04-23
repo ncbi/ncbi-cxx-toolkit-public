@@ -254,7 +254,7 @@ int CSL3_RowResult::GetColumnNum(void) const
 }
 
 
-CDB_Object* CSL3_RowResult::GetItem(CDB_Object* item_buf)
+CDB_Object* CSL3_RowResult::GetItem(CDB_Object* item_buf, I_Result::EGetItem policy)
 {
     if ((unsigned int) m_CurrItem >= GetDefineParams().GetNum()) {
         ++m_CurrItem;
@@ -327,6 +327,10 @@ CDB_Object* CSL3_RowResult::GetItem(CDB_Object* item_buf)
                     sqlite3_column_bytes(x_GetSQLite3stmt(), m_CurrItem));
                 break;
             case eDB_Text:
+				if (policy == I_Result::eAssignLOB) {
+						// Explicitly truncate previous value ...
+						static_cast<CDB_Text*>(item_buf)->Truncate();
+				}
                 static_cast<CDB_Text*>(item_buf)->Append(
                     sqlite3_column_text(x_GetSQLite3stmt(), m_CurrItem),
                     sqlite3_column_bytes(x_GetSQLite3stmt(), m_CurrItem));
@@ -349,6 +353,10 @@ CDB_Object* CSL3_RowResult::GetItem(CDB_Object* item_buf)
                     sqlite3_column_bytes(x_GetSQLite3stmt(), m_CurrItem));
                 break;
             case eDB_Image:
+				if (policy == I_Result::eAssignLOB) {
+						// Explicitly truncate previous value ...
+						static_cast<CDB_Image*>(item_buf)->Truncate();
+				}
                 static_cast<CDB_Image*>(item_buf)->Append(
                     sqlite3_column_blob(x_GetSQLite3stmt(), m_CurrItem),
                     sqlite3_column_bytes(x_GetSQLite3stmt(), m_CurrItem));

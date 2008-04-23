@@ -92,16 +92,8 @@ CDB_SendDataCmd* CSL3_Connection::SendDataCmd(I_ITDescriptor& /*descr_in*/,
 
 
 bool CSL3_Connection::SendData(I_ITDescriptor& /*desc*/,
-                                 CDB_Image&      /*img*/,
-                                 bool            /*log_it*/)
-{
-    return false;
-}
-
-
-bool CSL3_Connection::SendData(I_ITDescriptor& /*desc*/,
-                                 CDB_Text&       /*txt*/,
-                                 bool            /*log_it*/)
+                                 CDB_Stream&   /*img*/,
+                                 bool          /*log_it*/)
 {
     return false;
 }
