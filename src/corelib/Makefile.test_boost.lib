@@ -1,0 +1,10 @@
+# $Id$
+
+SRC = test_boost
+LIB    = test_boost
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+
+LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(ORIG_LIBS)
+
+REQUIRES = Boost.Test

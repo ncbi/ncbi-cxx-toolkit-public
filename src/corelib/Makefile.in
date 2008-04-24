@@ -7,7 +7,7 @@
 #################################
 
 USR_PROJ = precompile
-LIB_PROJ = corelib test_mt
+LIB_PROJ = corelib test_mt test_boost
 SUB_PROJ = test
 
 EXTRA_CONFIGURABLES = Makefile.precompile ncbicfg.c
