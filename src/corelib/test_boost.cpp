@@ -213,7 +213,7 @@ boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] )
                             boost::unit_test::runtime_config::report_format();
 
     NCBI_NS_NCBI::CNcbiEnvironment env;
-    string is_autobuild = env.Get("NCBI_AUTOMATED_BUILD");
+    std::string is_autobuild = env.Get("NCBI_AUTOMATED_BUILD");
     if (! is_autobuild.empty()) {
         format = boost::unit_test::XML;
         boost::unit_test::results_reporter::set_level(
