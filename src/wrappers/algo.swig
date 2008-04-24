@@ -81,9 +81,9 @@ algo/align/nw/nw_spliced_aligner16.hpp
 algo/align/nw/nw_spliced_aligner32.hpp
 algo/align/nw/nw_band_aligner.hpp
 algo/align/nw/nw_pssm_aligner.hpp
-// prosplign not built in public build as of 8/21/07
-//algo/align/prosplign/prosplign.hpp
-//algo/align/prosplign/prosplign_exception.hpp
+algo/align/prosplign/compartments.hpp
+algo/align/prosplign/prosplign.hpp
+algo/align/prosplign/prosplign_exception.hpp
 algo/align/splign/splign.hpp
 algo/align/splign/splign_formatter.hpp
 algo/align/splign/splign_cmdargs.hpp
@@ -105,11 +105,14 @@ algo/sequence/align_group.hpp
 algo/sequence/annot_compare.hpp
 algo/sequence/antigenic.hpp
 algo/sequence/coiled_coil.hpp
+algo/sequence/compare_feats.hpp
 algo/sequence/consensus_splice.hpp
 algo/sequence/cpg.hpp
 algo/sequence/find_pattern.hpp
 algo/sequence/gene_model.hpp
+algo/sequence/loc_mapper.hpp
 algo/sequence/make_cdr_prods.hpp
+algo/sequence/masking_delta.hpp
 algo/sequence/nuc_prop.hpp
 algo/sequence/orf.hpp
 algo/sequence/prot_prop.hpp
@@ -121,6 +124,7 @@ algo/sequence/signal_seq.hpp
 algo/blast/api/bl2seq.hpp
 algo/blast/api/blast_advprot_options.hpp
 algo/blast/api/blast_aux.hpp
+algo/blast/api/blast_dbindex.hpp
 algo/blast/api/blast_exception.hpp
 algo/blast/api/blast_mtlock.hpp
 algo/blast/api/blast_nucl_options.hpp
@@ -138,6 +142,7 @@ algo/blast/api/disc_nucl_options.hpp
 algo/blast/api/effsearchspace_calc.hpp
 algo/blast/api/hspstream_queue.hpp
 algo/blast/api/local_blast.hpp
+algo/blast/api/local_db_adapter.hpp
 algo/blast/api/local_search.hpp
 algo/blast/api/objmgr_query_data.hpp
 algo/blast/api/objmgrfree_query_data.hpp
@@ -162,12 +167,32 @@ algo/blast/api/seqinfosrc_seqvec.hpp
 algo/blast/api/seqsrc_multiseq.hpp
 algo/blast/api/seqsrc_seqdb.hpp
 algo/blast/api/setup_factory.hpp
+algo/blast/api/split_query.hpp
 algo/blast/api/sseqloc.hpp
 algo/blast/api/tblastn_options.hpp
 algo/blast/api/tblastx_options.hpp
 algo/blast/api/traceback_stage.hpp
 algo/blast/api/uniform_search.hpp
 algo/blast/api/version.hpp
+
+algo/blast/blastinput/blast_args.hpp
+algo/blast/blastinput/blast_fasta_input.hpp
+algo/blast/blastinput/blast_input.hpp
+algo/blast/blastinput/blast_scope_src.hpp
+algo/blast/blastinput/blastn_args.hpp
+algo/blast/blastinput/blastp_args.hpp
+algo/blast/blastinput/blastx_args.hpp
+algo/blast/blastinput/cmdline_flags.hpp
+algo/blast/blastinput/psiblast_args.hpp
+algo/blast/blastinput/rpsblast_args.hpp
+algo/blast/blastinput/rpstblastn_args.hpp
+algo/blast/blastinput/tblastn_args.hpp
+algo/blast/blastinput/tblastx_args.hpp
+
+algo/blast/dbindex/dbindex.hpp
+algo/blast/dbindex/sequence_istream.hpp
+algo/blast/dbindex/sequence_istream_bdb.hpp
+algo/blast/dbindex/sequence_istream_fasta.hpp
 
 algo/cobalt/base.hpp
 algo/cobalt/cobalt.hpp
@@ -202,6 +227,7 @@ algo/gnomon/Markov_chain_params.hpp
 algo/gnomon/Markov_chain_params_.hpp
 algo/gnomon/NCBI_GNOMON_module.hpp
 algo/gnomon/asn1.hpp
+algo/gnomon/set.hpp
 
 // next two trouble for Perl?
 //algo/phy_tree/bio_tree.hpp
@@ -246,6 +272,16 @@ algo/seqqa/seq_id_tests.hpp
 algo/seqqa/seqtest.hpp
 algo/seqqa/single_aln_tests.hpp
 algo/seqqa/xcript_tests.hpp
+
+algo/text/text_util.hpp
+algo/text/vector.hpp
+//algo/text/vector_impl.hpp  // template specialization confuses SWIG
+algo/text/vector_score.hpp
+algo/text/vector_serial.hpp
+
+algo/tree/tree_algo.hpp
+
+algo/volume_merge/bv_merger.hpp
 
 %%
 

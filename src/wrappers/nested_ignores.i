@@ -30,6 +30,21 @@
  */
 
 
+%ignore *::CCompareSeq_locs_SIntervalComparisonResult
+        ::CCompareSeq_locs_SIntervalComparisonResult;
+%ignore *::CCompareSeq_locs_SIntervalComparisonResult::m_result;
+
+%ignore *::CSequenceIStream::next;  // rv is unqualified nested CSeqData
+%ignore *::CSequenceIStream_CSequenceIStream_Exception // copy ctor generated
+        ::CSequenceIStream_CSequenceIStream_Exception; // by macro is trouble
+
+%ignore *::CDbIndex_CSearchResults;
+
+%ignore *::CSequenceIStreamBlastDB::next;
+%ignore *::CSequenceIStreamFasta::next;
+
+%ignore *::CBDB_ExtBlobMap_SBlobLoc::blob_location_table;
+
 %ignore *::CSeqTable_sparse_index_CConstIterator;
 
 %ignore *::CFrameShiftedSeqMap_SMapRangeEdge;

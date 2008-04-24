@@ -30,6 +30,12 @@
  */
 
 
+// Related to CRef<CSplitQueryBlk>
+%ignore *::CQuerySplitter::Split();
+
+// Strange template thing for CSimpleBuffer param (default args?)
+%ignore *::CTextUtil::DecodeFreqs(TWordFreq& freq, const CSimpleBuffer& data);
+
 // Declared as friend in CThread, but has static linkage
 %ignore ThreadWrapperCaller;
 

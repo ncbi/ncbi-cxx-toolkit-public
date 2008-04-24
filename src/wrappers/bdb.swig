@@ -39,9 +39,11 @@ bdb/bdb_bv_property_store.hpp
 bdb/bdb_bv_split_store.hpp
 // template classes with nested classes
 //bdb/bdb_bv_store.hpp
+bdb/bdb_checkpoint_thread.hpp
 bdb/bdb_dict_store.hpp
 bdb/bdb_env.hpp
 bdb/bdb_expt.hpp
+bdb/bdb_ext_blob.hpp
 bdb/bdb_file.hpp
 bdb/bdb_filedump.hpp
 // declares db_map_base, a template class with nested classes
@@ -54,9 +56,11 @@ bdb/bdb_range_map.hpp
 //bdb/bdb_result_store.hpp
 // template classes with nested classes
 //bdb/bdb_split_blob.hpp
+//bdb/bdb_split_cursor.hpp
 bdb/bdb_trans.hpp
 bdb/bdb_types.hpp
 bdb/bdb_util.hpp
 bdb/bdb_volumes.hpp
+bdb/error_codes.hpp
 
 %%

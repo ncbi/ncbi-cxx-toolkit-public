@@ -329,6 +329,8 @@ objects/insdseq/INSDSeqid.hpp
 objects/insdseq/INSDSeqid_.hpp
 objects/insdseq/INSDSet.hpp
 objects/insdseq/INSDSet_.hpp
+objects/insdseq/INSDXref.hpp
+objects/insdseq/INSDXref_.hpp
 objects/insdseq/INSD_INSDSeq_module.hpp
 
 objects/valerr/ValidErrItem.hpp
