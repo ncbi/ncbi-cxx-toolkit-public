@@ -43,6 +43,7 @@
 #undef init_unit_test_suite
 
 #include <list>
+#include <string>
 
 #include <common/test_assert.h>  /* This header must go last */
 
