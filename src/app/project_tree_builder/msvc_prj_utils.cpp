@@ -606,6 +606,7 @@ CSrcToFilterInserterWithPch::~CSrcToFilterInserterWithPch(void)
 
 void CSrcToFilterInserterWithPch::InsertFile(CRef<CFilter>&  filter, 
                                              const string&   rel_source_file,
+                                             const string&   pch_default,
                                              const string&   enable_cfg)
 {
     CRef<CFFile> file(new CFFile());
@@ -634,17 +635,22 @@ void CSrcToFilterInserterWithPch::InsertFile(CRef<CFilter>&  filter,
         } else if (pch_usage.first == eUse) {
             compilerl_tool->SetAttlist().SetPreprocessorDefinitions
                                 (GetApp().GetMetaMakefile().GetPchUsageDefine());
+#if 0
+// moved into msvc_prj_generator.cpp to become project default
             if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc800) {
                 compilerl_tool->SetAttlist().SetUsePrecompiledHeader("2");
             } else {
                 compilerl_tool->SetAttlist().SetUsePrecompiledHeader("3");
             }
-            compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough
-                                                            (pch_usage.second);
+#endif
+            if (pch_usage.second != pch_default) {
+                compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough
+                                                                (pch_usage.second);
+            }
         }
         else {
             compilerl_tool->SetAttlist().SetUsePrecompiledHeader("0");
-            compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough("");
+//            compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough("");
         }
         file_config->SetTool(*compilerl_tool);
         file->SetFileConfiguration().push_back(file_config);
@@ -658,11 +664,12 @@ void CSrcToFilterInserterWithPch::InsertFile(CRef<CFilter>&  filter,
 
 void 
 CSrcToFilterInserterWithPch::operator()(CRef<CFilter>&  filter, 
-                                        const string&   rel_source_file)
+                                        const string&   rel_source_file,
+                                        const string&   pch_default)
 {
     if ( NStr::Find(rel_source_file, ".@config@") == NPOS ) {
         // Ordinary file
-        InsertFile(filter, rel_source_file);
+        InsertFile(filter, rel_source_file, pch_default);
     } else {
         // Configurable file
 
@@ -672,7 +679,7 @@ CSrcToFilterInserterWithPch::operator()(CRef<CFilter>&  filter,
             const string& cfg = (*icfg).GetConfigFullName();
             string source_file = NStr::Replace(rel_source_file,
                                                ".@config@", "." + cfg);
-            InsertFile(filter, source_file, cfg);
+            InsertFile(filter, source_file, pch_default, cfg);
         }
     }
 }
@@ -705,6 +712,11 @@ CSrcToFilterInserterWithPch::DefinePchUsage(const string& project_dir,
     if ( pch_file.empty() )
         return TPch(eNotUse, "");
 
+/*
+ Documentation says:
+ Although you can use only one precompiled header (.pch) file per source file,
+ you can use multiple .pch files in a project.
+*/
     if (m_PchHeaders.find(pch_file) == m_PchHeaders.end()) {
         // New PCH - this source file will create it
         m_PchHeaders.insert(pch_file);
@@ -735,9 +747,10 @@ CBasicProjectsFilesInserter::~CBasicProjectsFilesInserter(void)
 {
 }
 
-void CBasicProjectsFilesInserter::AddSourceFile(const string& rel_file_path)
+void CBasicProjectsFilesInserter::AddSourceFile(
+    const string& rel_file_path, const string& pch_default)
 {
-    m_Filters.AddSourceFile(m_SrcInserter, rel_file_path);
+    m_Filters.AddSourceFile(m_SrcInserter, rel_file_path, pch_default);
 }
 
 void CBasicProjectsFilesInserter::AddHeaderFile(const string& rel_file_path)
@@ -822,9 +835,10 @@ void CBasicProjectsFilesInserter::SFiltersItem::Initilize(void)
 
 void CBasicProjectsFilesInserter::SFiltersItem::AddSourceFile
                            (CSrcToFilterInserterWithPch& inserter_w_pch,
-                            const string&                rel_file_path)
+                            const string&                rel_file_path,
+                            const string&                pch_default)
 {
-    inserter_w_pch(m_SourceFiles, rel_file_path);
+    inserter_w_pch(m_SourceFiles, rel_file_path, pch_default);
 }
 
 void CBasicProjectsFilesInserter::SFiltersItem::AddHeaderFile
@@ -910,7 +924,8 @@ CDllProjectFilesInserter::~CDllProjectFilesInserter(void)
 }
 
 
-void CDllProjectFilesInserter::AddSourceFile (const string& rel_file_path)
+void CDllProjectFilesInserter::AddSourceFile (
+    const string& rel_file_path, const string& pch_default)
 {
     string abs_path = CDirEntry::ConcatPath(m_ProjectDir, rel_file_path);
     abs_path = CDirEntry::NormalizePath(abs_path);
@@ -918,20 +933,20 @@ void CDllProjectFilesInserter::AddSourceFile (const string& rel_file_path)
     CProjKey proj_key = GetApp().GetDllFilesDistr().GetSourceLib(abs_path, m_DllProjectKey);
     
     if (proj_key == CProjKey()) {
-        m_PrivateFilters.AddSourceFile(m_SrcInserter, rel_file_path);
+        m_PrivateFilters.AddSourceFile(m_SrcInserter, rel_file_path, pch_default);
         return;
     }
 
     THostedLibs::iterator p = m_HostedLibs.find(proj_key);
     if (p != m_HostedLibs.end()) {
         TFiltersItem& filters_item = p->second;
-        filters_item.AddSourceFile(m_SrcInserter, rel_file_path);
+        filters_item.AddSourceFile(m_SrcInserter, rel_file_path, pch_default);
         return;
     }
 
     TFiltersItem new_item(m_ProjectDir);
     new_item.Initilize();
-    new_item.AddSourceFile(m_SrcInserter, rel_file_path);
+    new_item.AddSourceFile(m_SrcInserter, rel_file_path, pch_default);
     m_HostedLibs[proj_key] = new_item;
 }
 

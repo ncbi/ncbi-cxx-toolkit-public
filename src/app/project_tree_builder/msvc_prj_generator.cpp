@@ -150,6 +150,14 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         pkg_export_input   = input;
     }
 
+// default PCH
+    string pch_default;
+    if ( GetApp().GetMetaMakefile().IsPchEnabled() ) {
+        string noname = CDirEntry::ConcatPath(prj.m_SourcesBaseDir,"aanofile");
+        pch_default = GetApp().GetMetaMakefile().GetUsePchThroughHeader(
+            prj.m_ID, noname, GetApp().GetProjectTreeInfo().m_Src);
+    }
+
     ITERATE(list<SConfigInfo>, p , project_configs) {
 
         const SConfigInfo& cfg_info = *p;
@@ -189,7 +197,19 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
             BIND_TOOLS(tool, msvc_tool.Compiler(), BasicRuntimeChecks);
             BIND_TOOLS(tool, msvc_tool.Compiler(), RuntimeLibrary);
             BIND_TOOLS(tool, msvc_tool.Compiler(), RuntimeTypeInfo);
+#if 0
             BIND_TOOLS(tool, msvc_tool.Compiler(), UsePrecompiledHeader);
+#else
+// set default
+            if (!pch_default.empty()) {
+                if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc800) {
+                    tool->SetAttlist().SetUsePrecompiledHeader("2");
+                } else {
+                    tool->SetAttlist().SetUsePrecompiledHeader("3");
+                }
+                tool->SetAttlist().SetPrecompiledHeaderThrough(pch_default);
+            }
+#endif
             BIND_TOOLS(tool, msvc_tool.Compiler(), WarningLevel);
             BIND_TOOLS(tool,
                        msvc_tool.Compiler(), Detect64BitPortabilityProblems);
@@ -383,7 +403,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
     ITERATE(list<string>, p, collector.SourceFiles()) {
         //Include collected source files
         const string& rel_source_file = *p;
-        inserter->AddSourceFile(rel_source_file);
+        inserter->AddSourceFile(rel_source_file, pch_default);
     }
 
     ITERATE(list<string>, p, collector.HeaderFiles()) {

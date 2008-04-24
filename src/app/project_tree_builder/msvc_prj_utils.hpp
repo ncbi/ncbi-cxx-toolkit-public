@@ -285,7 +285,8 @@ public:
     {
     }
 
-    virtual void AddSourceFile (const string& rel_file_path) = 0;
+    virtual void AddSourceFile (const string& rel_file_path,
+                                const string& pch_default) = 0;
     virtual void AddHeaderFile (const string& rel_file_path) = 0;
     virtual void AddInlineFile (const string& rel_file_path) = 0;
 
@@ -305,7 +306,8 @@ public:
     ~CSrcToFilterInserterWithPch(void);
 
     void operator() (CRef<CFilter>& filter, 
-                     const string&  rel_source_file);
+                     const string&  rel_source_file,
+                     const string&  pch_default);
 
 private:
     string            m_ProjectId;
@@ -327,6 +329,7 @@ private:
 
     void InsertFile    (CRef<CFilter>&    filter, 
                         const string&     rel_source_file,
+                        const string&     pch_default,
                         const string&     enable_cfg = kEmptyStr);
 
     // Prohibited to:
@@ -346,7 +349,8 @@ public:
     virtual ~CBasicProjectsFilesInserter(void);
 
     // IFilesToProjectInserter implementation
-    virtual void AddSourceFile (const string& rel_file_path);
+    virtual void AddSourceFile (const string& rel_file_path,
+                                const string& pch_default);
     virtual void AddHeaderFile (const string& rel_file_path);
     virtual void AddInlineFile (const string& rel_file_path);
 
@@ -368,7 +372,8 @@ public:
         void Initilize(void);
 
         void AddSourceFile (CSrcToFilterInserterWithPch& inserter_w_pch,
-                            const string&                rel_file_path);
+                            const string&                rel_file_path,
+                            const string&                pch_default);
 
         void AddHeaderFile (const string& rel_file_path);
 
@@ -400,7 +405,8 @@ public:
     virtual ~CDllProjectFilesInserter(void);
 
     // IFilesToProjectInserter implementation
-    virtual void AddSourceFile (const string& rel_file_path);
+    virtual void AddSourceFile (const string& rel_file_path,
+                                const string& pch_default);
     virtual void AddHeaderFile (const string& rel_file_path);
     virtual void AddInlineFile (const string& rel_file_path);
 

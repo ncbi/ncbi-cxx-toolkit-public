@@ -82,7 +82,12 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
 
     string tree_root_par = "$(ProjectDir)" + CDirEntry::DeleteTrailingPathSeparator(
                             CDirEntry::CreateRelativePath(m_ProjectDir,tree_root));
+#if 1
+    string sln_path_par = "$(ProjectDir)" + 
+        CDirEntry::CreateRelativePath(m_ProjectDir, GetApp().m_Solution);
+#else
     string sln_path_par  = "$(SolutionPath)";
+#endif
 
     m_CustomBuildCommand += "set PTB_PATH="  + ptb_path_par  + "\n";
     m_CustomBuildCommand +=
