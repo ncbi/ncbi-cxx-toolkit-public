@@ -657,9 +657,7 @@ CTLibContext::~CTLibContext()
 CS_RETCODE
 CTLibContext::Check(CS_RETCODE rc) const
 {
-    // We need const_cast here because of someone's idea of non-const argument
-    // of Handle()
-    GetCTLExceptionStorage().Handle(const_cast<CDBHandlerStack&>(GetCtxHandlerStack()));
+    GetCTLExceptionStorage().Handle(GetCtxHandlerStack());
 
     return rc;
 }

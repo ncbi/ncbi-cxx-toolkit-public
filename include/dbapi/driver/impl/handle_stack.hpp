@@ -39,6 +39,8 @@
 
 BEGIN_NCBI_SCOPE
 
+namespace impl
+{
 
 class NCBI_DBAPIDRIVER_EXPORT CDBHandlerStack
 {
@@ -57,11 +59,11 @@ public:
 
     void Push(CDB_UserHandler* h, EOwnership ownership = eNoOwnership);
     void Pop (CDB_UserHandler* h, bool last = true);
-    void SetExtraMsg(const string& msg);
+    void SetExtraMsg(const string& msg) const;
 
-    void PostMsg(CDB_Exception* ex);
+    void PostMsg(CDB_Exception* ex) const;
     // Return TRUE if exceptions have been successfully processed.
-    bool HandleExceptions(CDB_UserHandler::TExceptions& exeptions);
+    bool HandleExceptions(const CDB_UserHandler::TExceptions& exeptions) const;
 
 
 public:
@@ -148,6 +150,8 @@ private:
 
     TContainer m_Stack;
 };
+
+}
 
 END_NCBI_SCOPE
 

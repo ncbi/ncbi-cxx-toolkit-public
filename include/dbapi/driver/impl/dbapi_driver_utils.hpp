@@ -39,28 +39,6 @@
 
 BEGIN_NCBI_SCOPE
 
-/////////////////////////////////////////////////////////////////////////////
-class CDBHandlerStack;
-
-/////////////////////////////////////////////////////////////////////////////
-class NCBI_DBAPIDRIVER_EXPORT CDBExceptionStorage
-{
-private:
-    friend class CSafeStaticPtr<CDBExceptionStorage>;
-
-    CDBExceptionStorage(void);
-    ~CDBExceptionStorage(void) throw();
-
-public:
-    void Accept(const CDB_Exception& e);
-    void Handle(CDBHandlerStack& handler);
-    void Handle(CDBHandlerStack& handler, const string& msg);
-
-private:
-    CFastMutex                      m_Mutex;
-    CDB_UserHandler::TExceptions    m_Exceptions;
-};
-
 template <class I>
 class CInterfaceHook
 {

@@ -38,9 +38,9 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
-CDBExceptionStorage& GetCTLExceptionStorage(void)
+impl::CDBExceptionStorage& GetCTLExceptionStorage(void)
 {
-    static CSafeStaticPtr<CDBExceptionStorage> instance;
+    static CSafeStaticPtr<impl::CDBExceptionStorage> instance;
 
     return instance.Get();
 }

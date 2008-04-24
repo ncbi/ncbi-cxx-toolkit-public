@@ -33,10 +33,10 @@
  */
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
+#include "../dbapi_driver_exception_storage.hpp"
 
 
 BEGIN_NCBI_SCOPE
-
 
 // Uncomment a line below if you want to simulate a previous ftds driver logic.
 // #define FTDS_LOGIC
@@ -62,7 +62,7 @@ NCBI_EntryPoint_xdbapi_ftds8(
 /////////////////////////////////////////////////////////////////////////////
 // Singleton
 
-CDBExceptionStorage& GetFTDS8ExceptionStorage(void);
+impl::CDBExceptionStorage& GetFTDS8ExceptionStorage(void);
 
 
 END_NCBI_SCOPE

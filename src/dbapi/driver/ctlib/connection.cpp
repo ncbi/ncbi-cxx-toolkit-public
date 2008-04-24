@@ -54,6 +54,9 @@ inline int close(int fd)
 #  include <ctlib.h>
 #endif
 
+#include "../dbapi_driver_exception_storage.hpp"
+
+
 #define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Conn
 
 

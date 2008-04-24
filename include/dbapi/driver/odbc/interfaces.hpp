@@ -106,7 +106,7 @@ class CStatementBase;
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Reporter
 {
 public:
-    CODBC_Reporter(CDBHandlerStack* hs,
+    CODBC_Reporter(impl::CDBHandlerStack* hs,
                    SQLSMALLINT ht,
                    SQLHANDLE h,
                    const CODBC_Reporter* parent_reporter = NULL);
@@ -114,7 +114,7 @@ public:
 
 public:
     void ReportErrors(void) const;
-    void SetHandlerStack(CDBHandlerStack& hs) {
+    void SetHandlerStack(impl::CDBHandlerStack& hs) {
         m_HStack = &hs;
     }
     void SetHandle(SQLHANDLE h) {
@@ -132,7 +132,7 @@ private:
     CODBC_Reporter(void);
 
 private:
-    CDBHandlerStack*        m_HStack;
+    impl::CDBHandlerStack*  m_HStack;
     SQLHANDLE               m_Handle;
     SQLSMALLINT             m_HType;
     const CODBC_Reporter*   m_ParentReporter;

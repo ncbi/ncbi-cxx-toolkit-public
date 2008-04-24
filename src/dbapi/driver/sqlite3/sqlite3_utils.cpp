@@ -47,7 +47,7 @@ CDiagCompileInfo GetBlankCompileInfo(void)
 
 
 /////////////////////////////////////////////////////////////////////////////
-int CheckSQLite3(sqlite3* h_native, CDBHandlerStack& h_stack, int rc)
+int CheckSQLite3(sqlite3* h_native, impl::CDBHandlerStack& h_stack, int rc)
 {
     if (rc != SQLITE_OK) {
         _ASSERT(h_native);

@@ -33,10 +33,10 @@
  */
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
+#include "../dbapi_driver_exception_storage.hpp"
 
 
 BEGIN_NCBI_SCOPE
-
 
 /////////////////////////////////////////////////////////////////////////////
 extern "C"
@@ -72,7 +72,7 @@ NCBI_EntryPoint_xdbapi_ctlib(
 /////////////////////////////////////////////////////////////////////////////
 // Singleton
 
-CDBExceptionStorage& GetCTLExceptionStorage(void);
+impl::CDBExceptionStorage& GetCTLExceptionStorage(void);
 
 
 END_NCBI_SCOPE

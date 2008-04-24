@@ -1,3 +1,6 @@
+#ifndef DBAPI_DRIVER___DBAPI_DRIVER_EXCEPTION_STORAGE__HPP
+#define DBAPI_DRIVER___DBAPI_DRIVER_EXCEPTION_STORAGE__HPP
+
 /* $Id$
  * ===========================================================================
  *
@@ -23,30 +26,44 @@
  *
  * ===========================================================================
  *
- * Author:  Sergey Sikorskiy
- *
- * File Description:  Small utility classes common to the dblib driver.
  *
  */
 
-#include <ncbi_pch.hpp>
 
-#include "dblib_utils.hpp"
+#include <dbapi/driver/public.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
+namespace impl
+{
 
 /////////////////////////////////////////////////////////////////////////////
-impl::CDBExceptionStorage& GetDBLExceptionStorage(void)
+class CDBHandlerStack;
+
+/////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDBExceptionStorage
 {
-    static CSafeStaticPtr<impl::CDBExceptionStorage> instance;
+private:
+    friend class CSafeStaticPtr<CDBExceptionStorage>;
 
-    return instance.Get();
+    CDBExceptionStorage(void);
+    ~CDBExceptionStorage(void) throw();
+
+public:
+    void Accept(const CDB_Exception& e);
+    void Handle(const CDBHandlerStack& handler);
+    void Handle(const CDBHandlerStack& handler, const string& msg);
+
+private:
+    CFastMutex                      m_Mutex;
+    CDB_UserHandler::TExceptions    m_Exceptions;
+};
+
 }
-
-
 
 END_NCBI_SCOPE
 
+
+#endif // DBAPI_DRIVER___DBAPI_DRIVER_EXCEPTION_STORAGE__HPP
 

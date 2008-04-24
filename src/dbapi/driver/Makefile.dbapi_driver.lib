@@ -1,13 +1,11 @@
 # $Id$
 
-SRC = handle_stack numeric_convert parameters \
-      exception interfaces public types \
-      memory_store pointer_pot driver_mgr \
-      dbapi_driver_conn_mgr dbapi_conn_factory \
-	  dbapi_svc_mapper dbapi_driver_utils \
-      dbapi_impl_cmd dbapi_impl_connection \
-      dbapi_impl_context dbapi_impl_result \
-      dbapi_driver_conn_params
+SRC = handle_stack numeric_convert parameters exception interfaces \
+      public types memory_store pointer_pot driver_mgr \
+      dbapi_driver_conn_mgr dbapi_conn_factory dbapi_svc_mapper \
+      dbapi_driver_utils dbapi_impl_cmd dbapi_impl_connection \
+      dbapi_impl_context dbapi_impl_result dbapi_driver_conn_params \
+      dbapi_driver_exception_storage
 
 LIB      = dbapi_driver
 

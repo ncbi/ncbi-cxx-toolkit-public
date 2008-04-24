@@ -33,11 +33,19 @@
  */
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
-
 #include <sqlite3.h>
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+namespace impl
+{
+
+    class CDBHandlerStack;
+
+}
+
+/////////////////////////////////////////////////////////////////////////////
 extern "C"
 {
 
@@ -51,7 +59,7 @@ NCBI_EntryPoint_xdbapi_sqlite3(
 
 
 /////////////////////////////////////////////////////////////////////////////
-int CheckSQLite3(sqlite3* h_native, CDBHandlerStack& h_stack, int rc);
+int CheckSQLite3(sqlite3* h_native, impl::CDBHandlerStack& h_stack, int rc);
 
 END_NCBI_SCOPE
 

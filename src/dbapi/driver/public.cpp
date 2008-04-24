@@ -31,9 +31,9 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/public.hpp>
-#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/impl/dbapi_impl_result.hpp>
 #include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/error_codes.hpp>
 
 

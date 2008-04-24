@@ -36,7 +36,9 @@
 #include <corelib/ncbimtx.hpp>
 
 #include <dbapi/driver/interfaces.hpp>
-#include <dbapi/driver/util/handle_stack.hpp>
+
+#include <dbapi/driver/impl/handle_stack.hpp>
+
 
 BEGIN_NCBI_SCOPE
 

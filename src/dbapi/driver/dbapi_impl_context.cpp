@@ -29,14 +29,14 @@
 
 #include <ncbi_pch.hpp>
 
+#include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
-
-#include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
 #include <corelib/ncbifile.hpp>
 
 #include <algorithm>
+
 
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock2.h>

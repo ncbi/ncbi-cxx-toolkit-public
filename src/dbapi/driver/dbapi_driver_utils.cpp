@@ -32,11 +32,11 @@
 #include <ncbi_pch.hpp>
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
-#include <dbapi/driver/util/handle_stack.hpp>
-#include <dbapi/driver/util/parameters.hpp>
-#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
+#include <dbapi/driver/util/parameters.hpp>
 #include <dbapi/error_codes.hpp>
+
 
 #ifdef NCBI_OS_MSWIN
     #include <sqlext.h>
@@ -49,77 +49,6 @@
 #define NCBI_USE_ERRCODE_X   Dbapi_DrvrUtil
 
 BEGIN_NCBI_SCOPE
-
-/////////////////////////////////////////////////////////////////////////////
-struct SNoLock
-{
-    void operator() (CDB_UserHandler::TExceptions& resource) const {}
-};
-
-struct SUnLock
-{
-    void operator() (CDB_UserHandler::TExceptions& resource) const
-    {
-        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, resource) {
-            CDB_Exception* ex = *it; // for debugging ...
-            delete ex;
-        }
-
-        resource.clear();
-    }
-};
-
-/////////////////////////////////////////////////////////////////////////////
-CDBExceptionStorage::CDBExceptionStorage(void)
-{
-}
-
-
-CDBExceptionStorage::~CDBExceptionStorage(void) throw()
-{
-    try {
-        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
-            delete *it;
-        }
-    }
-    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
-}
-
-
-void CDBExceptionStorage::Accept(CDB_Exception const& e)
-{
-    CFastMutexGuard mg(m_Mutex);
-
-    CDB_Exception* ex = e.Clone(); // for debugging ...
-    m_Exceptions.push_back(ex);
-}
-
-
-void CDBExceptionStorage::Handle(CDBHandlerStack& handler)
-{
-    typedef CGuard<CDB_UserHandler::TExceptions, SNoLock, SUnLock> TGuard;
-
-    if (!m_Exceptions.empty()) {
-        CFastMutexGuard mg(m_Mutex);
-        TGuard guard(m_Exceptions);
-
-        if (!handler.HandleExceptions(m_Exceptions)) {
-            NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
-                handler.PostMsg(*it);
-            }
-        }
-    }
-}
-
-
-void CDBExceptionStorage::Handle(CDBHandlerStack& handler, const string& msg)
-{
-    if (!msg.empty()) {
-        handler.SetExtraMsg(msg);
-    }
-
-    Handle(handler);
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 CMsgHandlerGuard::CMsgHandlerGuard(I_DriverContext& conn)

@@ -169,7 +169,7 @@ CODBCContextRegistry::StaticClearAll(void)
 //
 //  CODBC_Reporter::
 //
-CODBC_Reporter::CODBC_Reporter(CDBHandlerStack* hs,
+CODBC_Reporter::CODBC_Reporter(impl::CDBHandlerStack* hs,
                                SQLSMALLINT ht,
                                SQLHANDLE h,
                                const CODBC_Reporter* parent_reporter)

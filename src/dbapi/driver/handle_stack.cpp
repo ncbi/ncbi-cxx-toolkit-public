@@ -30,12 +30,15 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <dbapi/driver/util/handle_stack.hpp>
 #include <string.h>
 #include <algorithm>
 
+#include <dbapi/driver/impl/handle_stack.hpp>
+
 BEGIN_NCBI_SCOPE
 
+namespace impl
+{
 
 CDBHandlerStack::CDBHandlerStack()
 {
@@ -106,13 +109,13 @@ void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
 }
 
 
-void CDBHandlerStack::SetExtraMsg(const string& msg)
+void CDBHandlerStack::SetExtraMsg(const string& msg) const
 {
     CFastMutexGuard guard(m_Mtx);
 
-    NON_CONST_ITERATE(TContainer, cit, m_Stack) {
+    ITERATE(TContainer, cit, m_Stack) {
         if ( cit->NotNull() ) {
-            (*cit)->GetHandler()->SetExtraMsg(msg);
+            cit->GetNCObject().GetHandler()->SetExtraMsg(msg);
         }
     }
 }
@@ -136,7 +139,7 @@ CDBHandlerStack& CDBHandlerStack::operator= (const CDBHandlerStack& s)
 }
 
 
-void CDBHandlerStack::PostMsg(CDB_Exception* ex)
+void CDBHandlerStack::PostMsg(CDB_Exception* ex) const
 {
     CFastMutexGuard guard(m_Mtx);
 
@@ -144,16 +147,16 @@ void CDBHandlerStack::PostMsg(CDB_Exception* ex)
     // tries to call the non-const version of rbegin(), and the
     // resulting reverse_iterator can't automatically be converted to
     // a const_reverse_iterator.  (Sigh.)
-    TContainer& s = m_Stack;
-    NON_CONST_REVERSE_ITERATE(TContainer, cit, s) {
-        if ( cit->NotNull() && (*cit)->GetHandler()->HandleIt(ex) ) {
+    const TContainer& s = m_Stack;
+    REVERSE_ITERATE(TContainer, cit, s) {
+        if ( cit->NotNull() && cit->GetNCObject().GetHandler()->HandleIt(ex) ) {
             break;
         }
     }
 }
 
 
-bool CDBHandlerStack::HandleExceptions(CDB_UserHandler::TExceptions& exeptions)
+bool CDBHandlerStack::HandleExceptions(const CDB_UserHandler::TExceptions& exeptions) const
 {
     CFastMutexGuard guard(m_Mtx);
 
@@ -161,14 +164,16 @@ bool CDBHandlerStack::HandleExceptions(CDB_UserHandler::TExceptions& exeptions)
     // tries to call the non-const version of rbegin(), and the
     // resulting reverse_iterator can't automatically be converted to
     // a const_reverse_iterator.  (Sigh.)
-    TContainer& s = m_Stack;
-    NON_CONST_REVERSE_ITERATE(TContainer, cit, s) {
-        if ( cit->NotNull() && (*cit)->GetHandler()->HandleAll(exeptions) ) {
+    const TContainer& s = m_Stack;
+    REVERSE_ITERATE(TContainer, cit, s) {
+        if ( cit->NotNull() && cit->GetNCObject().GetHandler()->HandleAll(exeptions) ) {
             return true;
         }
     }
 
     return false;
+}
+
 }
 
 END_NCBI_SCOPE

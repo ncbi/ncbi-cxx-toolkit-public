@@ -33,6 +33,7 @@
  */
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
+#include "../dbapi_driver_exception_storage.hpp"
 
 #ifdef MS_DBLIB_IN_USE
 #    define GetDBLExceptionStorage  GetMSDBLExceptionStorage
@@ -106,7 +107,7 @@ NCBI_EntryPoint_xdbapi_dblib(
 /////////////////////////////////////////////////////////////////////////////
 // Singleton
 
-CDBExceptionStorage& GetDBLExceptionStorage(void);
+impl::CDBExceptionStorage& GetDBLExceptionStorage(void);
 
 
 END_NCBI_SCOPE

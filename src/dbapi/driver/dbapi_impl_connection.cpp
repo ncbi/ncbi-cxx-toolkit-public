@@ -29,10 +29,9 @@
 
 #include <ncbi_pch.hpp>
 
-#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
-#include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
-
+#include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
 #include <dbapi/error_codes.hpp>
