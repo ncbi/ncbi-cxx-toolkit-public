@@ -12,7 +12,7 @@
 APP: launcherd fwdaemon dispd.cgi lbsmd lbsm_feedback test_mghbn
 
 # The -t key prevents inclusion of the tree builder into the release
-SVN_TAG_RELEASE_ADD_FLAGS: -t
+# SVN_TAG_RELEASE_ADD_FLAGS: -t
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -21,5 +21,6 @@ SVN_TAG_RELEASE_ADD_FLAGS: -t
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux32 : plain : GCC.sh 3.4   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
-Linux64 : plain : GCC.sh 4.0.1 --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
+Linux32   : plain : GCC.sh 3.4   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
+Linux64   : plain : GCC.sh 4.0.1 --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
+FreeBSD32 : plain : GCC.sh 3.4.4 --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
