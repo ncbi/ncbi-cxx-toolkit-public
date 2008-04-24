@@ -2375,9 +2375,16 @@ bool SDiagMessage::x_ParseExtraArgs(const string& str, size_t pos)
         string n, v;
         NStr::SplitInTwo(*it, "=", n, v);
         if (!x_DecodeExtraArg(n, true)  ||  !x_DecodeExtraArg(v, false)) {
-            // Error when parsing args.
+            // Error when parsing args. Try to treat the message as a single
+            // name=value pair with non-encoded value.
             m_ExtraArgs.clear();
             m_TypedExtra = false;
+            NStr::SplitInTwo(CTempString(str.c_str() + pos), "=", n, v);
+            // Try to decode only the name, leave the value as-is.
+            if ( x_DecodeExtraArg(n, true) ) {
+                m_ExtraArgs.push_back(TExtraArg(n, v));
+                return true;
+            }
             return false;
         }
         if (n == kExtraTypeArgName) {
