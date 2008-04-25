@@ -901,6 +901,12 @@ sub bool {
 
 %}
 
+%extend ncbi::CSerialObject {
+%perlcode %{
+*Clone = *ncbi::SerialClone;
+%}
+};
+
 #endif
 
 
