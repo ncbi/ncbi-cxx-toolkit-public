@@ -31,6 +31,8 @@
  */
 
 
+%ignore ncbi::blast::kMinRawGappedScore;
+
 %ignore ncbi::CDiagCollectGuard::SetPrintSeverity;
 %ignore ncbi::CDiagCollectGuard::SetCollectSeverity;
 
