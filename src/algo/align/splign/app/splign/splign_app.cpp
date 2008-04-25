@@ -92,20 +92,15 @@ void CSplignApp::Init()
     
     argdescr->AddOptionalKey
         ("hits", "hits",
-         "[Batch mode] Externally computed input blast hits. "
-         "This file defines the set of sequences to align and "
-         "is also used to guide alignments. "
+         "[Batch mode] Externally computed local alignments "
+         "(such as blast hits), in blast tabular format. "
          "The file must be collated by subject and query "
          "(e.g. sort -k 2,2 -k 1,1).",
          CArgDescriptions::eInputFile);
    
     argdescr->AddOptionalKey
         ("comps", "comps",
-         "[Batch mode] Externally computed input blast compartments "
-         "specified in blast tabular format with one empty line as separator. "
-         "No built-in compartmentization will occur. "
-         "For best performance, the compartments must be collated "
-         "by subject and query (e.g. as produced by compart)",
+         "[Batch mode] Compartments computed with Compart utility.",
          CArgDescriptions::eInputFile);
 
     argdescr->AddOptionalKey
