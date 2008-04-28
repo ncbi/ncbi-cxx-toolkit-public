@@ -713,11 +713,13 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
     int width_flag = mapper.m_UseWidth ?
         mapper.m_Widths[aln_row.m_Id] : 0;
     int dst_width = width_flag ? 3 : 1;
+    int len_wid = 1;
     TSeqPos start = aln_row.m_Start;
     if (width_flag & CSeq_loc_Mapper_Base::fWidthProtToNuc) {
         dst_width = 1;
         if (aln_row.m_Width == 3) {
             start *= 3;
+            len_wid = 3;
             if ( aln_row.m_Frame ) {
                 start += aln_row.m_Frame - 1;
             }
@@ -726,11 +728,12 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
     else if (!width_flag  &&  aln_row.m_Width == 3) {
         dst_width = 3;
         start *= 3;
+        len_wid = 3;
         if ( aln_row.m_Frame ) {
             start += aln_row.m_Frame - 1;
         }
     }
-    TSeqPos stop = start + seg.m_Len - 1;
+    TSeqPos stop = start + seg.m_Len*len_wid - 1;
     TSeqPos left_shift = 0;
     for (size_t map_idx = 0; map_idx < mappings.size(); ++map_idx) {
         CRef<CMappingRange> mapping(mappings[map_idx]);
@@ -776,7 +779,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
         if (dl > 0) {
             // Add segment for the skipped range
             SAlignment_Segment& lseg = x_InsertSeg(seg_it,
-                dl, seg.m_Rows.size());
+                dl/len_wid, seg.m_Rows.size());
             for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
                 SAlignment_Segment::SAlignment_Row& lrow =
                     lseg.CopyRow(r, seg.m_Rows[r]);
@@ -795,10 +798,11 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                     }
                     else {
                         lrow.m_Start +=
-                            (seg.m_Len - lseg.m_Len - left_shift)/width;
+                            ((seg.m_Len - lseg.m_Len)*len_wid - left_shift)/width;
                         if (lrow.m_Frame) {
-                            lrow.m_Frame = (lrow.m_Frame+seg.m_Len-lseg.m_Len-
-                                left_shift-1)%3+1;
+                            lrow.m_Frame = (lrow.m_Frame +
+                                (seg.m_Len - lseg.m_Len)*len_wid -
+                                left_shift - 1)%3+1;
                         }
                     }
                 }
@@ -808,7 +812,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
         left_shift += dl;
         // At least part of the interval was converted.
         SAlignment_Segment& mseg = x_InsertSeg(seg_it,
-            stop - dr - start + 1, seg.m_Rows.size());
+            (stop - dr - start + 1)/len_wid, seg.m_Rows.size());
         if (!dl  &&  !dr) {
             // copy scores if there's no truncation
             mseg.SetScores(seg.m_Scores);
@@ -831,7 +835,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                 mrow.m_IsSetStrand |= (dst_strand != eNa_strand_unknown);
                 mrow.m_Strand = dst_strand;
                 mrow.m_Frame = mrow.m_Frame ?
-                    (mrow.m_Frame+left_shift-1)%3+1 : 0;
+                    (mrow.m_Frame + left_shift - 1)%3+1 : 0;
                 mrow.SetMapped();
                 mseg.m_HaveStrands |= mrow.m_IsSetStrand;
                 m_HaveStrands |= mseg.m_HaveStrands;
@@ -843,22 +847,23 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                     if (mrow.SameStrand(aln_row)) {
                         mrow.m_Start += left_shift/width;
                         if (mrow.m_Frame) {
-                            mrow.m_Frame = (mrow.m_Frame+left_shift-1)%3+1;
+                            mrow.m_Frame = (mrow.m_Frame + left_shift - 1)%3+1;
                         }
                     }
                     else {
                         mrow.m_Start +=
-                            (seg.m_Len - left_shift - mseg.m_Len)/width;
+                            ((seg.m_Len - mseg.m_Len)*len_wid - left_shift)/width;
                         if (mrow.m_Frame) {
-                            mrow.m_Frame = (mrow.m_Frame+seg.m_Len-mseg.m_Len-
-                                left_shift-1)%3+1;
+                            mrow.m_Frame = (mrow.m_Frame +
+                            (seg.m_Len - mseg.m_Len)*len_wid -
+                                left_shift - 1)%3+1;
                         }
                     }
                 }
             }
         }
-        left_shift += mseg.m_Len;
-        start += mseg.m_Len;
+        left_shift += seg.m_Len*len_wid;
+        start += seg.m_Len*len_wid;
         mapped = true;
     }
     if (align_flags == eAlign_MultiId  &&  m_AlignFlags == eAlign_Normal) {
@@ -874,7 +879,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
     if (start <= stop) {
         // Add the remaining unmapped range
         SAlignment_Segment& rseg = x_InsertSeg(seg_it,
-            stop - start + 1, seg.m_Rows.size());
+            (stop - start + 1)/len_wid, seg.m_Rows.size());
         for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& rrow =
                 rseg.CopyRow(r, seg.m_Rows[r]);
@@ -888,7 +893,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                 if (rrow.SameStrand(aln_row)) {
                     rrow.m_Start += left_shift/width;
                     if (rrow.m_Frame) {
-                        rrow.m_Frame = (rrow.m_Frame+left_shift-1)%3+1;
+                        rrow.m_Frame = (rrow.m_Frame + left_shift - 1)%3+1;
                     }
                 }
             }
