@@ -14300,7 +14300,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         ) 
     {
         // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
-        if ( (args.GetDriverName() == ftds8_driver
+        // Test_Timeout is disabled till it get fixed. JIRA: CXX-371 ...
+        if (false 
+            && (args.GetDriverName() == ftds8_driver
             && !(os_type == eOsSolaris && compiler_type == eCompilerWorkShop) && os_type != eOsIrix
             )
             || (args.GetDriverName() == dblib_driver && args.GetServerType() == CTestArguments::eSybase)
@@ -14318,7 +14320,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
     }
 
-    if (args.GetTestConfiguration() != CTestArguments::eWithoutExceptions
+    // Test_Timeout2 is disabled till it get fixed. JIRA: CXX-371 ...
+    if (false 
+        && args.GetTestConfiguration() != CTestArguments::eWithoutExceptions
         && args.GetTestConfiguration() != CTestArguments::eFast
         ) 
     {
