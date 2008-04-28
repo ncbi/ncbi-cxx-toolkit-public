@@ -54,7 +54,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
-#include "repeats_filter.hpp"
+#include <algo/blast/api/repeats_filter.hpp>
 #include "blast_setup.hpp"
 
 #include <algo/blast/core/blast_seqsrc.h>
