@@ -412,7 +412,7 @@ bool CDB_UserHandler_Wrapper::HandleIt(CDB_Exception* ex)
 //
 
 CDB_UserHandler::CDB_UserHandler(void)
-: m_ExtraMsg(new CTls<string>)
+// : m_ExtraMsg(new CTls<string>)
 {
 }
 
@@ -454,11 +454,17 @@ bool CDB_UserHandler::HandleAll(const TExceptions& exceptions)
 
 string CDB_UserHandler::GetExtraMsg(void) const
 {
+    CFastMutexGuard mg(m_Mtx);
+	
+	return m_ExtraMsg;
+
+	/*
     if (m_ExtraMsg->GetValue()) { 
         return *m_ExtraMsg->GetValue();
     }
 
     return kEmptyStr;
+	*/
 }
 
 static void s_TlsStringCleanup(string* str, void* /* data */)
@@ -468,11 +474,17 @@ static void s_TlsStringCleanup(string* str, void* /* data */)
 
 void CDB_UserHandler::SetExtraMsg(const string& msg)
 {
+    CFastMutexGuard mg(m_Mtx);
+
+	m_ExtraMsg = msg;
+
+	/*
     if (m_ExtraMsg->GetValue()) { 
         m_ExtraMsg->GetValue()->assign(msg);
     } else {
         m_ExtraMsg->SetValue(new string(msg), s_TlsStringCleanup);
     }
+	*/
 }
 
 
