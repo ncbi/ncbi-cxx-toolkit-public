@@ -110,6 +110,9 @@ typedef struct {
 /// CTimeFormat --
 ///
 /// Defines a storage class for time format.
+///
+/// See CTime::SetFormat and CTimeSpan::SetFormat for description
+/// of format symbols for specific class.
 
 class NCBI_XNCBI_EXPORT CTimeFormat
 {
