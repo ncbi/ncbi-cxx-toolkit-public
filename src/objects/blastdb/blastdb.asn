@@ -40,12 +40,16 @@ Blast-def-line ::= SEQUENCE {
 	other-info SEQUENCE OF INTEGER OPTIONAL   -- for future use (probably genomic sequences)
 }
 
+-- This defines the possible sequence filtering algorithms to be used in a
+-- BLAST database
 Blast-filter-program ::= INTEGER {
-    not-set    (0),
-    dust       (1),
-    seg        (2),
-    repeat     (3),
-    window     (4)
+    not-set             (0),
+    dust                (10),
+    seg                 (20),
+    windowmasker        (30),
+    repeat              (40),
+    other               (100),
+    max                 (255)
 }
 
 Blast-mask-list ::= SEQUENCE {
