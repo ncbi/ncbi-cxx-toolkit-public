@@ -52,7 +52,7 @@ CResult::~CResult(void)
     try {
         DetachInterface();
     }
-    NCBI_CATCH_ALL_X( 1, kEmptyStr )
+    NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
 }
 
 const CDBParams& 
