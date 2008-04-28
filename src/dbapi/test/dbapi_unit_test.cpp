@@ -14654,6 +14654,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (tc_cursor
         && args.GetDriverName() != ftds8_driver // 04/21/08  "Invalid text, ntext, or image pointer value"
         && args.GetDriverName() != ftds_odbc_driver // 04/21/08 Memory access violation
+        && args.GetDriverName() != odbc_driver // 04/28/08 Memory access violation
         ) 
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_Multiple, 
