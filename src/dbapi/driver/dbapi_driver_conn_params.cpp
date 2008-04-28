@@ -161,46 +161,6 @@ CDBConnParamsBase::GetPassword(void) const
 CDBConnParams::EServerType 
 CDBConnParamsBase::GetServerType(void) const
 {
-    if (m_ServerType == eUnknown) {
-        const string server_name = GetThis().GetServerName();
-
-        // Artificial intelligence ...
-        if (   NStr::CompareNocase(server_name, 0, 3, "MS_") == 0
-                || NStr::CompareNocase(server_name, 0, 5, "MSSQL") == 0
-                || NStr::CompareNocase(server_name, 0, 5, "MSDEV") == 0
-                || NStr::CompareNocase(server_name, 0, 7, "OAMSDEV") == 0
-                || NStr::CompareNocase(server_name, 0, 6, "QMSSQL") == 0
-                || NStr::CompareNocase(server_name, 0, 6, "BLASTQ") == 0
-                || NStr::CompareNocase(server_name, 0, 4, "GENE") == 0
-                || NStr::CompareNocase(server_name, 0, 5, "GPIPE") == 0
-                || NStr::CompareNocase(server_name, 0, 7, "MAPVIEW") == 0
-                || NStr::CompareNocase(server_name, 0, 5, "MSSNP") == 0
-                || NStr::CompareNocase(server_name, 0, 4, "STRC") == 0
-                || NStr::CompareNocase(server_name, 0, 4, "SUBS") == 0
-           )
-        {
-            return eMSSqlServer;
-        } else if ( NStr::CompareNocase(server_name, "TAPER") == 0
-                || NStr::CompareNocase(server_name, "THALBERG") == 0
-                || NStr::CompareNocase(server_name, 0, 8, "SCHUMANN") == 0
-                || NStr::CompareNocase(server_name, 0, 6, "BARTOK") == 0
-                || NStr::CompareNocase(server_name, 0, 8, "SCHUBERT") == 0
-                || NStr::CompareNocase(server_name, 0, 8, "SYB_TEST") == 0
-                ) 
-        {
-            return eSybaseSQLServer;
-        } else if ( NStr::CompareNocase(server_name, 0, 7, "LINK_OS") == 0 
-                || NStr::CompareNocase(server_name, 0, 7, "MAIL_OS") == 0
-                || NStr::CompareNocase(server_name, 0, 9, "PUBSEQ_OS") == 0
-                || NStr::CompareNocase(server_name, 0, 7, "TEST_OS") == 0
-                || NStr::CompareNocase(server_name, 0, 8, "TRACE_OS") == 0
-                || NStr::CompareNocase(server_name, 0, 7, "TROS_OS") == 0
-                ) 
-        {
-            return eSybaseOpenServer;
-        }
-    }
-
     return m_ServerType;
 }
 

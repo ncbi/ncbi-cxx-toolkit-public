@@ -184,6 +184,77 @@ I_Result::~I_Result(void)
 
 
 ////////////////////////////////////////////////////////////////////////////
+//
+//
+
+class CCPPToolkitConnParams : public CDBConnParamsDelegate
+{
+public:
+		CCPPToolkitConnParams(const CDBConnParams& other);
+		virtual ~CCPPToolkitConnParams(void);
+
+public:
+		virtual EServerType GetServerType(void) const;
+};
+
+
+CCPPToolkitConnParams::CCPPToolkitConnParams(const CDBConnParams& other)
+		: CDBConnParamsDelegate(other)
+{
+}
+
+
+CCPPToolkitConnParams::~CCPPToolkitConnParams(void)
+{
+}
+
+
+CDBConnParams::EServerType 
+CCPPToolkitConnParams::GetServerType(void) const
+{
+		const string server_name = GetThis().GetServerName();
+
+		// Artificial intelligence ...
+		if (   NStr::CompareNocase(server_name, 0, 3, "MS_") == 0
+				|| NStr::CompareNocase(server_name, 0, 5, "MSSQL") == 0
+				|| NStr::CompareNocase(server_name, 0, 5, "MSDEV") == 0
+				|| NStr::CompareNocase(server_name, 0, 7, "OAMSDEV") == 0
+				|| NStr::CompareNocase(server_name, 0, 6, "QMSSQL") == 0
+				|| NStr::CompareNocase(server_name, 0, 6, "BLASTQ") == 0
+				|| NStr::CompareNocase(server_name, 0, 4, "GENE") == 0
+				|| NStr::CompareNocase(server_name, 0, 5, "GPIPE") == 0
+				|| NStr::CompareNocase(server_name, 0, 7, "MAPVIEW") == 0
+				|| NStr::CompareNocase(server_name, 0, 5, "MSSNP") == 0
+				|| NStr::CompareNocase(server_name, 0, 4, "STRC") == 0
+				|| NStr::CompareNocase(server_name, 0, 4, "SUBS") == 0
+				)
+		{
+				return eMSSqlServer;
+		} else if ( NStr::CompareNocase(server_name, "TAPER") == 0
+				|| NStr::CompareNocase(server_name, "THALBERG") == 0
+				|| NStr::CompareNocase(server_name, 0, 8, "SCHUMANN") == 0
+				|| NStr::CompareNocase(server_name, 0, 6, "BARTOK") == 0
+				|| NStr::CompareNocase(server_name, 0, 8, "SCHUBERT") == 0
+				|| NStr::CompareNocase(server_name, 0, 8, "SYB_TEST") == 0
+				) 
+		{
+				return eSybaseSQLServer;
+		} else if ( NStr::CompareNocase(server_name, 0, 7, "LINK_OS") == 0 
+				|| NStr::CompareNocase(server_name, 0, 7, "MAIL_OS") == 0
+				|| NStr::CompareNocase(server_name, 0, 9, "PUBSEQ_OS") == 0
+				|| NStr::CompareNocase(server_name, 0, 7, "TEST_OS") == 0
+				|| NStr::CompareNocase(server_name, 0, 8, "TRACE_OS") == 0
+				|| NStr::CompareNocase(server_name, 0, 7, "TROS_OS") == 0
+				) 
+		{
+				return eSybaseOpenServer;
+		}
+
+		return CDBConnParamsDelegate::GetServerType();
+}
+
+
+////////////////////////////////////////////////////////////////////////////
 //  I_DriverContext::
 //
 
@@ -206,7 +277,7 @@ I_DriverContext::Connect(
         bool            reusable,
         const string&   pool_name)
 {
-    const CDBDefaultConnParams params(
+    const CDBDefaultConnParams def_params(
             srv_name,
             user_name,
             passwd,
@@ -214,6 +285,7 @@ I_DriverContext::Connect(
             reusable,
             pool_name
             );
+	const CCPPToolkitConnParams params(def_params);
 
     return MakeConnection(params);
 }
@@ -228,7 +300,7 @@ I_DriverContext::ConnectValidated(
         bool            reusable,
         const string&   pool_name)
 {
-    CDBDefaultConnParams params(
+    CDBDefaultConnParams def_params(
             srv_name,
             user_name,
             passwd,
@@ -236,8 +308,10 @@ I_DriverContext::ConnectValidated(
             reusable,
             pool_name
             );
+    def_params.SetConnValidator(CRef<IConnValidator>(&validator));
 
-    params.SetConnValidator(CRef<IConnValidator>(&validator));
+	const CCPPToolkitConnParams params(def_params);
+
 
     return MakeConnection(params);
 }

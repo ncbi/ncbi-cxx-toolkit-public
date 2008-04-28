@@ -192,6 +192,10 @@ public:
     {
         impl::CDBConnParamsBase::SetEncoding(encoding);
     }
+    void SetServerType(EServerType type)
+    {
+        impl::CDBConnParamsBase::SetServerType(type);
+    }
 
     void SetHost(Uint4 host)
     {
