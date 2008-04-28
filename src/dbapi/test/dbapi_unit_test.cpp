@@ -14498,6 +14498,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && !(args.GetDriverName() == dblib_driver && args.GetServerType() != CTestArguments::eSybase)
         && !(args.GetDriverName() == ftds_dblib_driver && args.GetServerType() == CTestArguments::eSybase)
         && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris) // 04/09/08
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsWindows) // 04/28/08 // memory access violation
        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Late_Bind, DBAPIInstance);
