@@ -31,6 +31,10 @@
  */
 
 
+%ignore ncbi::CQueryParseNode::GetIdentIdx;
+
+%ignore ncbi::IServer_StreamHandler::GetStream;
+
 %ignore ncbi::blast::kMinRawGappedScore;
 
 %ignore ncbi::CDiagCollectGuard::SetPrintSeverity;

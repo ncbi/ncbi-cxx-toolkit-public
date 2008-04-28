@@ -30,6 +30,8 @@
  */
 
 
+%ignore *::CLZOCompression_SCompressionParam::compress;
+
 %ignore *::CCompareSeq_locs_SIntervalComparisonResult
         ::CCompareSeq_locs_SIntervalComparisonResult;
 %ignore *::CCompareSeq_locs_SIntervalComparisonResult::m_result;

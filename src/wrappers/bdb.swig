@@ -31,8 +31,9 @@
 
 %%
 
-// bdb_cursor.hpp early to avoid %include in %import problem
+// bdb_cursor.hpp, error_codes.hpp early to avoid %include in %import problem
 bdb/bdb_cursor.hpp
+bdb/error_codes.hpp
 bdb/bdb_blob.hpp
 bdb/bdb_blobcache.hpp
 bdb/bdb_bv_property_store.hpp
@@ -61,6 +62,5 @@ bdb/bdb_trans.hpp
 bdb/bdb_types.hpp
 bdb/bdb_util.hpp
 bdb/bdb_volumes.hpp
-bdb/error_codes.hpp
 
 %%

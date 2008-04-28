@@ -34,7 +34,6 @@
 dbapi/driver/driver_mgr.hpp
 dbapi/driver/drivers.hpp
 dbapi/driver/exception.hpp
-dbapi/driver/util/handle_stack.hpp
 dbapi/driver/interfaces.hpp
 dbapi/driver/util/numeric_convert.hpp
 dbapi/driver/util/parameters.hpp

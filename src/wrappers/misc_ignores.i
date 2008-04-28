@@ -30,6 +30,9 @@
  */
 
 
+// Not a real function
+%ignore *::err_code_x__dummy_for_semicolon;
+
 // Related to CRef<CSplitQueryBlk>
 %ignore *::CQuerySplitter::Split();
 

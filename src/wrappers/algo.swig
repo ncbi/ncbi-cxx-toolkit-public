@@ -275,8 +275,8 @@ algo/seqqa/xcript_tests.hpp
 
 algo/text/text_util.hpp
 algo/text/vector.hpp
-//algo/text/vector_impl.hpp  // template specialization confuses SWIG
-algo/text/vector_score.hpp
+//algo/text/vector_impl.hpp   // template specialization confuses SWIG
+//algo/text/vector_score.hpp  // just templates
 algo/text/vector_serial.hpp
 
 algo/tree/tree_algo.hpp
