@@ -14,7 +14,7 @@ LIB:          netcached
 DLL:                   netcached
 ETC: src/app/netcache/netcached.ini
 SRC: src/app/netcache/netcached.cpp
-CONF: app/netcache/nc_handler.d
+CONF: build/app/netcache/nc_handler.d
 
 # Each line describes a single configuration
 # The format is as follows:
