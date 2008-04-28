@@ -425,7 +425,14 @@ CDB_UserHandler::CDB_UserHandler(void)
 
 CDB_UserHandler::~CDB_UserHandler(void)
 {
-    return;
+    try {
+		TErrMap* err_map = s_TlsErrMap->GetValue();
+
+		if (err_map) {
+			err_map->erase(this);
+		}
+    }
+    NCBI_CATCH_ALL_X( 8, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -512,7 +519,7 @@ CDB_UserHandler_Diag::~CDB_UserHandler_Diag()
     try {
         m_Prefix.erase();
     }
-    NCBI_CATCH_ALL_X( 5, kEmptyStr )
+    NCBI_CATCH_ALL_X( 5, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -581,7 +588,7 @@ CDB_UserHandler_Stream::~CDB_UserHandler_Stream()
 
         m_Prefix.erase();
     }
-    NCBI_CATCH_ALL_X( 6, kEmptyStr )
+    NCBI_CATCH_ALL_X( 6, NCBI_CURRENT_FUNCTION )
 }
 
 
