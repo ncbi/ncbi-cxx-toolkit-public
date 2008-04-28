@@ -1375,7 +1375,7 @@ CDB_Object* CTL_CursorResultExpl::GetItem(CDB_Object* item_buff, I_Result::EGetI
 
     if (item_buff) {
         EDB_Type type = m_Fields[m_CurItemNo]->GetType();
-        if (type == I_Result::eAppendLOB  &&  (type == eDB_Image  ||  type == eDB_Text)) {
+        if (policy == I_Result::eAppendLOB  &&  (type == eDB_Image  ||  type == eDB_Text)) {
             if (item_buff->GetType() != eDB_Text  &&  item_buff->GetType() != eDB_Image) {
                 DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130120 );
 		    }
