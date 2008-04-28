@@ -163,7 +163,7 @@ protected:
     void UpdateConnMaxTextImageSize(void) const;
     void UpdateConnTimeout(void) const;
 
-    void SetExtraMsg(const string& msg);
+    void SetExtraMsg(const string& msg) const;
 
     void ResetEnvSybase(void) const;
 

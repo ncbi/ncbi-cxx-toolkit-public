@@ -478,14 +478,7 @@ public:
     static CDB_UserHandler* SetDefault(CDB_UserHandler* h);
 
     string GetExtraMsg(void) const;
-    void SetExtraMsg(const string& msg);
-
-protected:
-    mutable CFastMutex m_Mtx;
-
-private:
-    // CRef<CTls<string> > m_ExtraMsg; // CTls must be created on heap.
-	string             m_ExtraMsg;
+    void SetExtraMsg(const string& msg) const;
 };
 
 
@@ -519,7 +512,7 @@ public:
     virtual bool HandleIt(CDB_Exception* ex);
 
 private:
-    // mutable CFastMutex  m_Mtx;
+    mutable CFastMutex  m_Mtx;
 
     ostream* m_Output;     // output stream to print messages to
     string   m_Prefix;     // string to prefix each message with

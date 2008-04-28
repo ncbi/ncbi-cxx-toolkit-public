@@ -192,7 +192,7 @@ void CDriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
 }
 
 
-void CDriverContext::SetExtraMsg(const string& msg)
+void CDriverContext::SetExtraMsg(const string& msg) const
 {
     GetCtxHandlerStack().SetExtraMsg(msg);
 }

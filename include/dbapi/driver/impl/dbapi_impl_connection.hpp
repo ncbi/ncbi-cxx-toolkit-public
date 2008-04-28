@@ -89,7 +89,7 @@ public:
     bool IsMultibyteClientEncoding(void) const;
     EEncoding GetClientEncoding(void) const;
 
-    void SetExtraMsg(const string& msg);
+    void SetExtraMsg(const string& msg) const;
 
 
     const string& GetServerName(void) const

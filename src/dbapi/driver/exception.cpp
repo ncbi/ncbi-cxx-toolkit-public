@@ -42,6 +42,14 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
+// Error messages in TLS
+//
+
+typedef map<const CDB_UserHandler*, string> TErrMap;
+
+static CSafeStaticRef<CTls<TErrMap> > s_TlsErrMap;
+
+/////////////////////////////////////////////////////////////////////////////
 //  CDB_Exception::
 //
 
@@ -412,7 +420,6 @@ bool CDB_UserHandler_Wrapper::HandleIt(CDB_Exception* ex)
 //
 
 CDB_UserHandler::CDB_UserHandler(void)
-// : m_ExtraMsg(new CTls<string>)
 {
 }
 
@@ -454,37 +461,37 @@ bool CDB_UserHandler::HandleAll(const TExceptions& exceptions)
 
 string CDB_UserHandler::GetExtraMsg(void) const
 {
-    CFastMutexGuard mg(m_Mtx);
-	
-	return m_ExtraMsg;
+	const TErrMap* err_map = s_TlsErrMap->GetValue();
 
-	/*
-    if (m_ExtraMsg->GetValue()) { 
-        return *m_ExtraMsg->GetValue();
+    if (err_map) { 
+		const TErrMap::const_iterator it = err_map->find(this);
+
+		if (it != err_map->end()) {
+			return it->second;
+		}
     }
 
     return kEmptyStr;
-	*/
 }
 
-static void s_TlsStringCleanup(string* str, void* /* data */)
+static void s_TlsErrMapCleanup(TErrMap* err_map, void* /* data */)
 {
-        delete str;
+		delete err_map;
 }
 
-void CDB_UserHandler::SetExtraMsg(const string& msg)
+void CDB_UserHandler::SetExtraMsg(const string& msg) const
 {
-    CFastMutexGuard mg(m_Mtx);
+	TErrMap* err_map = s_TlsErrMap->GetValue();
 
-	m_ExtraMsg = msg;
+	if (!err_map) {
+		auto_ptr<TErrMap> tmp_value(new TErrMap);
+        s_TlsErrMap->SetValue(tmp_value.get(), s_TlsErrMapCleanup);
+		err_map = tmp_value.release();
+	}
 
-	/*
-    if (m_ExtraMsg->GetValue()) { 
-        m_ExtraMsg->GetValue()->assign(msg);
-    } else {
-        m_ExtraMsg->SetValue(new string(msg), s_TlsStringCleanup);
-    }
-	*/
+	_ASSERT(err_map);
+
+	(*err_map)[this] = msg;
 }
 
 
