@@ -14511,6 +14511,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && !(args.GetDriverName() == dblib_driver && args.GetServerType() != CTestArguments::eSybase)
         && !(args.GetDriverName() == ftds_dblib_driver && args.GetServerType() == CTestArguments::eSybase)
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris) // 04/28/08 // Bad row data received from the client while bulk copying into object
        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing6, DBAPIInstance);
