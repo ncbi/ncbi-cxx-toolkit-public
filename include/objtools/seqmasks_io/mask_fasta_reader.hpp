@@ -50,8 +50,10 @@ public:
      **\param newInputStream input stream to read data from.
      **
      **/
-    CMaskFastaReader( CNcbiIstream & newInputStream, bool is_nucl = true )
-        : CMaskReader( newInputStream ), is_nucleotide_(is_nucl) 
+    CMaskFastaReader( CNcbiIstream & newInputStream, bool is_nucl = true,
+                      bool parse_seqids = false )
+        : CMaskReader( newInputStream ), is_nucleotide_(is_nucl),
+        parse_seqids_(parse_seqids)
     {
         if( !newInputStream && !newInputStream.eof() ) {
             NCBI_THROW( Exception, eBadStream, 
@@ -77,6 +79,7 @@ public:
 
 private:
     bool is_nucleotide_; /**< This object is reading nucleotide sequences */
+    bool parse_seqids_;  /**< Should the Seq-ids be parsed? */
 };
 
 END_NCBI_SCOPE

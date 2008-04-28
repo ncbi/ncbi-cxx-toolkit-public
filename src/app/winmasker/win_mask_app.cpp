@@ -128,6 +128,8 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( kInputFormat, "input_format",
                              "controls the format of the masker input (for masking stage only)",
                              CArgDescriptions::eString, *kInputFormats );
+    arg_desc->AddFlag      ( "parse_seqids",
+                             "Parse Seq-ids in FASTA input", true );
     arg_desc->AddDefaultKey( kOutputFormat, "output_format",
                              "controls the format of the masker output (for masking stage only)",
                              CArgDescriptions::eString, *kOutputFormats );

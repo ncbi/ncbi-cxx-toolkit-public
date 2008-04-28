@@ -50,8 +50,10 @@ CRef< CSeq_entry > CMaskFastaReader::GetNextSequence()
     CFastaReader::TFlags flags = 
         CFastaReader::fForceType |
         CFastaReader::fOneSeq    |
-        CFastaReader::fNoParseID |
         CFastaReader::fAllSeqIds;
+    if ( !parse_seqids_ ) {
+        flags |= CFastaReader::fNoParseID;
+    }
 
     flags += is_nucleotide_ 
         ? CFastaReader::fAssumeNuc 

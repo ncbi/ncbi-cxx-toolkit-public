@@ -62,7 +62,7 @@ CWinMaskConfig::x_GetWriter(const CArgs& args,
     } else if (NStr::StartsWith(format, "maskinfo_")) {
         retval = 
             new CMaskWriterBlastDbMaskInfo(output, format, 3,
-                               eBlast_filter_program_window,
+                               eBlast_filter_program_windowmasker,
                                BuildAlgorithmParametersString(args));
     } else {
         throw runtime_error("Unknown output format");
@@ -145,7 +145,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
         }
 
         if( iformatstr == "fasta" )
-            reader = new CMaskFastaReader( *is );
+            reader = new CMaskFastaReader( *is, false, args["parse_seqids"] );
         else if( iformatstr == "blastdb" )
             reader = new CMaskBDBReader( args[kInput].AsString() );
 

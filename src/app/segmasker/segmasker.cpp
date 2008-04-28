@@ -106,6 +106,8 @@ void SegMaskerApplication::Init(void)
         strings_allowed->Allow(kInputFormats[i]);
     }
     arg_desc->SetConstraint(kInputFormat, strings_allowed);
+    arg_desc->AddFlag      ( "parse_seqids",
+                             "Parse Seq-ids in FASTA input", true );
 
     arg_desc->AddDefaultKey(kOutputFormat, "output_format",
                             "controls the format of the masker output",
@@ -140,7 +142,7 @@ SegMaskerApplication::x_GetReader()
 
     if (format == "fasta") {
         CNcbiIstream& input = args[kInput].AsInputFile();
-        retval = new CMaskFastaReader(input, false);
+        retval = new CMaskFastaReader(input, false, args["parse_seqids"]);
     } else if (format == "blastdb") {
         retval = new CMaskBDBReader(args[kInput].AsString(), false);
     } else {
