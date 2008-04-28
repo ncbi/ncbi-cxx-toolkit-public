@@ -81,7 +81,7 @@ if test $buildptb = "no"; then
   ptb="$extptb"
   if test -x "$ptb"; then
     ptbver=`$ptb -version 2>&1 | sed -e 's/[a-zA-Z._: ]//g'`
-    if test $ptbver -lt 140; then
+    if test $ptbver -lt 148; then
       $ptb -version 2>&1
       echo "Prebuilt project_tree_builder at"
       echo $extptb
