@@ -42,17 +42,28 @@
  */
 
 
-#define NCBI_PACKAGE_NAME           "unknown"
-#define NCBI_PACKAGE_VERSION_MAJOR  0
-#define NCBI_PACKAGE_VERSION_MINOR  0
-#define NCBI_PACKAGE_VERSION_PATCH  0
-#define NCBI_PACKAGE_CONFIG         ""
+#ifndef COMMON__NCBI_PACKAGE_VER__H
+#define COMMON__NCBI_PACKAGE_VER__H
 
-#define __STR2(x)                   #x
-#define __STR(x)                    __STR2(x)
+#define NCBI_PACKAGE_NAME                   "unknown"
+#define NCBI_PACKAGE_VERSION_MAJOR          0
+#define NCBI_PACKAGE_VERSION_MINOR          0
+#define NCBI_PACKAGE_VERSION_PATCH          0
+#define NCBI_PACKAGE_CONFIG                 ""
 
-#define NCBI_PACKAGE_VERSION        __STR(NCBI_PACKAGE_VERSION_MAJOR)  "." \
-                                    __STR(NCBI_PACKAGE_VERSION_MINOR)  "." \
-                                    __STR(NCBI_PACKAGE_VERSION_PATCH)
 
+#define NCBI_PACKAGE_VERSION_STRINGIFY(x)  #x 
+#define NCBI_PACKAGE_VERSION_COMPOSE_STR(a, b, c)  \
+    NCBI_PACKAGE_VERSION_STRINGIFY(a) "."          \
+    NCBI_PACKAGE_VERSION_STRINGIFY(b) "."          \
+    NCBI_PACKAGE_VERSION_STRINGIFY(c)
+
+
+#define NCBI_PACKAGE_VERSION          \
+    NCBI_PACKAGE_VERSION_COMPOSE_STR  \
+    (NCBI_PACKAGE_VERSION_MAJOR,      \
+     NCBI_PACKAGE_VERSION_MINOR,      \
+     NCBI_PACKAGE_VERSION_PATCH)
+
+#endif  /* COMMON__NCBI_PACKAGE_VER__H */
 
