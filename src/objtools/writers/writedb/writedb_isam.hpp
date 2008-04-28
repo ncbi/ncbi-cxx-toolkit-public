@@ -85,12 +85,12 @@ public:
     
     /// Constructor for an ISAM index file.
     ///
-    /// @param itype    Type (GI, PIG, or string).
-    /// @param dbname   Database name (same for all volumes).
-    /// @param protein  True for protein, false for nucleotide.
-    /// @param index    Index of the associated volume.
-    /// @param datafile Corresponding ISAM data file.
-    /// @param sparse   Set to true if sparse mode should be used.
+    /// @param itype    Type (GI, PIG, or string). [in]
+    /// @param dbname   Database name (same for all volumes). [in]
+    /// @param protein  True for protein, false for nucleotide. [in]
+    /// @param index    Index of the associated volume. [in]
+    /// @param datafile Corresponding ISAM data file. [in]
+    /// @param sparse   Set to true if sparse mode should be used. [in]
     CWriteDB_IsamIndex(EIsamType               itype,
                        const string          & dbname,
                        bool                    protein,
@@ -109,8 +109,8 @@ public:
     /// How many and what kind of strings are indexed depends on
     /// whether the "sparse" flag is specified.
     ///
-    /// @param oid OID of the sequence.
-    /// @param List of sequence identifiers.
+    /// @param oid OID of the sequence. [in]
+    /// @param ids List of sequence identifiers. [in]
     void AddIds(int oid, const TIdList & ids);
     
     /// Set PIG for a protein sequence.
@@ -120,8 +120,8 @@ public:
     /// not treated as a true sequence identifier.  Each PIG will be
     /// associated with one OID in a non-redundant protein database.
     ///
-    /// @param oid OID of the sequence.
-    /// @param pig PIG identifier for this sequence.
+    /// @param oid OID of the sequence. [in]
+    /// @param pig PIG identifier for this sequence. [in]
     void AddPig(int oid, int pig);
     
     /// Set a sequence's hash value.
@@ -130,8 +130,8 @@ public:
     /// hash for the purpose of building an ISAM file mapping hash
     /// values to OIDs.
     ///
-    /// @param oid OID of the sequence.
-    /// @param hash Sequence hash for this sequence.
+    /// @param oid OID of the sequence. [in]
+    /// @param hash Sequence hash for this sequence. [in]
     void AddHash(int oid, int hash);
     
     /// Tests whether there is room for a given number of IDs.
@@ -144,11 +144,12 @@ public:
     /// reaches the maximum file size.  This is done for performance
     /// reasons.
     ///
-    /// @param num Number of IDs that would be added.
+    /// @param num Number of IDs that would be added. [in]
     /// @return Returns true if the IDs can fit into the volume.
     bool CanFit(int num);
     
     /// Tests whether the index file is empty (has no entries).
+    /// @return True if no sequences were added.
     bool Empty() const;
     
 private:
@@ -172,13 +173,13 @@ private:
     void x_Flush();
     
     /// Store GIs found in Seq-id list.
-    /// @param oid OID of the sequence.
-    /// @param idlist Identifiers for this sequence.
+    /// @param oid OID of the sequence. [in]
+    /// @param idlist Identifiers for this sequence. [in]
     void x_AddGis(int oid, const TIdList & idlist);
     
     /// Store GIs found in Seq-id list.
-    /// @param oid OID of the sequence.
-    /// @param idlist Identifiers for this sequence.
+    /// @param oid OID of the sequence. [in]
+    /// @param idlist Identifiers for this sequence. [in]
     void x_AddTraceIds(int oid, const TIdList & idlist);
     
     /// Compute and store string IDs from Seq-ids.
@@ -186,8 +187,8 @@ private:
     /// For each identifier in the idlist, zero or more strings are
     /// added to the table of strings for this database.
     ///
-    /// @param oid OID of the sequence.
-    /// @param idlist Identifiers for this sequence.
+    /// @param oid OID of the sequence. [in]
+    /// @param idlist Identifiers for this sequence. [in]
     void x_AddStringIds(int oid, const TIdList & idlist);
     
     /// Add the index strings for the specified PDB identifier.
@@ -196,8 +197,8 @@ private:
     /// are constructed from the ID and added to the index file.  This
     /// method handles the definition for Seq-ids of the PDB type.
     ///
-    /// @param oid OID of the sequence.
-    /// @param seqid The sequence identifier.
+    /// @param oid OID of the sequence. [in]
+    /// @param seqid The sequence identifier. [in]
     void x_AddPdb(int oid, const CSeq_id & seqid);
     
 #ifndef SHORT_ISAM_FORMAT
@@ -207,8 +208,8 @@ private:
     /// GIs with the format "gi|#|".  This adds such a string to the
     /// string table.
     ///
-    /// @param oid OID of the sequence.
-    /// @param gi GI to stringify.
+    /// @param oid OID of the sequence. [in]
+    /// @param gi GI to stringify. [in]
     void x_AddGiString(int oid, int gi);
 #endif
     
@@ -219,9 +220,8 @@ private:
     /// method handles the 'local' ID, i.e. those IDs that would be
     /// printed as "lcl|...".
     /// 
-    /// @param oid OID for this sequence.
-    /// @param seqid The sequence identifier.
-    /// @param objid The data type for the local ID.
+    /// @param oid OID for this sequence. [in]
+    /// @param seqid The sequence identifier. [in]
     void x_AddLocal(int oid, const CSeq_id & seqid);
     
     /// Add a 'patent' type Seq-id.
@@ -233,23 +233,21 @@ private:
     /// issuing authority (country of origin), the 1234 is the patent
     /// number and 56 is the sequence number (within the 1234 patent).
     /// 
-    /// @param oid OID for this sequence.
-    /// @param seqid The sequence identifier.
+    /// @param oid OID for this sequence. [in]
+    /// @param seqid The sequence identifier. [in]
     void x_AddPatent(int oid, const CSeq_id & seqid);
     
     /// Add a text ID.
     ///
-    /// For each Seq-id type, there is a defined set of strings that
-    /// are constructed from the ID and added to the index file.
-    /// Several Seq-id types follow a 'Textseq-id' pattern.  This
-    /// method handles those types.  This method can also optionally
-    /// add 'genbank' strings, which look like "gb|...".
+    /// For each Seq-id type defined as a Textseq_id, there is a
+    /// defined set of strings constructed from the ID and added to
+    /// the index file.  This method handles those types; it can
+    /// optionally add 'genbank' strings, of the form "gb|...".
     ///
-    /// @param oid OID for this sequence.
-    /// @param typestr The string prefix for this type, e.g. "dbj".
-    /// @param seqid The sequence identifier.
-    /// @param id The Textseq_id object.
-    /// @param add_gb Specify true to add the "gb|" strings.
+    /// @param oid OID for this sequence. [in]
+    /// @param typestr The string prefix for this type, e.g. "dbj". [in]
+    /// @param id The Textseq_id object. [in]
+    /// @param add_gb Specify true to add the "gb|" strings. [in]
     void x_AddTextId(int                 oid,
                      const char        * typestr,
                      const CTextseq_id & id,
@@ -262,8 +260,8 @@ private:
     /// methods to prevent automatic conversions between strings and
     /// CTempStrings from accidentally occurring.
     /// 
-    /// @param oid OID for this sequence.
-    /// @param s String to add.
+    /// @param oid OID for this sequence. [in]
+    /// @param s String to add. [in]
     void x_AddStdString(int oid, const string & s)
     {
         x_AddStringData(oid, s.data(), (int) s.size());
@@ -276,8 +274,8 @@ private:
     /// other methods to prevent automatic conversions between strings
     /// and CTempStrings from accidentally occurring.
     /// 
-    /// @param oid OID for this sequence.
-    /// @param s String to add.
+    /// @param oid OID for this sequence. [in]
+    /// @param s String to add. [in]
     void x_AddStringData(int oid, const CTempString & s)
     {
         x_AddStringData(oid, s.data(), (int) s.size());
@@ -289,9 +287,9 @@ private:
     /// just adds a record mapping the string to the OID.  Every
     /// string added to the string table goes through this method.
     /// 
-    /// @param oid OID for this sequence.
-    /// @param s String to add.
-    /// @param size Size of string to add.
+    /// @param oid OID for this sequence. [in]
+    /// @param s String to add. [in]
+    /// @param size Size of string to add. [in]
     void x_AddStringData(int oid, const char * s, int size);
     
     /// Add an accession with a version.
@@ -301,9 +299,9 @@ private:
     /// accession and version and adds the resulting string to the
     /// string table.
     ///
-    /// @param oid OID for this sequence.
-    /// @param s Accession string to add.
-    /// @param ver Version to use, or zero.
+    /// @param oid OID for this sequence. [in]
+    /// @param s Accession string to add. [in]
+    /// @param ver Version to use, or zero. [in]
     void x_AddString(int oid, const CTempString & s, int ver);
     
 #ifndef SHORT_ISAM_FORMAT
@@ -323,11 +321,11 @@ private:
     /// specified.  Duplications will be removed at a later stage of
     /// processing.
     ///
-    /// @param oid OID for this sequence.
-    /// @param typestr The type prefix for this identifier.
-    /// @param nm The name component of the identifier.
-    /// @param ver Version to use, or zero.
-    /// @param acc The accession string.
+    /// @param oid OID for this sequence. [in]
+    /// @param typestr The type prefix for this identifier. [in]
+    /// @param nm The name component of the identifier. [in]
+    /// @param ver Version to use, or zero. [in]
+    /// @param acc The accession string. [in]
     void x_AddString(int                 oid,
                      const char        * typestr,
                      const CTempString & nm,
@@ -338,7 +336,8 @@ private:
     /// Write the ISAM index header to disk.
     void x_WriteHeader();
     
-    /// Convert a string to lower case.
+    /// Convert a string to lower case in-place.
+    /// @param s String to lower-case. [in|out]
     void x_ToLower(string & s)
     {
         for(unsigned i = 0; i < s.size(); i++) {
@@ -373,8 +372,8 @@ private:
     /// pair<int,int> provides correct equality and order operators.
     struct SIdOid : public pair<Int8, int> {
         /// Construct an object from oid and ident.
-        /// @param i Numeric identifier (GI or PIG).
-        /// @param o OID of the sequence.
+        /// @param i Numeric identifier (GI or PIG). [in]
+        /// @param o OID of the sequence. [in]
         SIdOid(Int8 i, int o)
             : pair<Int8,int>(i,o)
         {
@@ -415,11 +414,11 @@ public:
     
     /// Constructor for an ISAM data file.
     ///
-    /// @param itype         Type (GI, PIG, or string).
-    /// @param dbname        Database name (same for all volumes).
-    /// @param protein       True for protein, false for nucleotide.
-    /// @param index         Index of the associated volume.
-    /// @param max_file_size Maximum size of any generated file in bytes.
+    /// @param itype         Type (GI, PIG, or string). [in]
+    /// @param dbname        Database name (same for all volumes). [in]
+    /// @param protein       True for protein, false for nucleotide. [in]
+    /// @param index         Index of the associated volume. [in]
+    /// @param max_file_size Maximum size of any generated file in bytes. [in]
     CWriteDB_IsamData(EIsamType      itype,
                       const string & dbname,
                       bool           protein,
@@ -450,12 +449,12 @@ public:
     
     /// Constructor for an ISAM index file.
     ///
-    /// @param itype         Type (GI, PIG, or string).
-    /// @param dbname        Database name (same for all volumes).
-    /// @param protein       True for protein, false for nucleotide.
-    /// @param index         Index of the associated volume.
-    /// @param max_file_size Maximum size of any generated file in bytes.
-    /// @param sparse        Set to true if sparse mode should be used.
+    /// @param itype         Type (GI, PIG, or string). [in]
+    /// @param dbname        Database name (same for all volumes). [in]
+    /// @param protein       True for protein, false for nucleotide. [in]
+    /// @param index         Index of the associated volume. [in]
+    /// @param max_file_size Maximum size of any generated file in bytes. [in]
+    /// @param sparse        Set to true if sparse mode should be used. [in]
     CWriteDB_Isam(EIsamType      itype,
                   const string & dbname,
                   bool           protein,
@@ -474,8 +473,8 @@ public:
     /// How many and what kind of strings are indexed depends on
     /// whether the "sparse" flag is specified.
     ///
-    /// @param oid OID of the sequence.
-    /// @param List of sequence identifiers.
+    /// @param oid OID of the sequence. [in]
+    /// @param ids List of sequence identifiers. [in]
     void AddIds(int oid, const TIdList & ids);
     
     /// Set PIG for a protein sequence.
@@ -485,8 +484,8 @@ public:
     /// not treated as a true sequence identifier.  Each PIG will be
     /// associated with one OID in a non-redundant protein database.
     ///
-    /// @param oid OID of the sequence.
-    /// @param pig PIG identifier for this sequence.
+    /// @param oid OID of the sequence. [in]
+    /// @param pig PIG identifier for this sequence. [in]
     void AddPig(int oid, int pig);
     
     /// Set a sequence's hash value.
@@ -495,8 +494,8 @@ public:
     /// hash for the purpose of building an ISAM file mapping hash
     /// values to OIDs.
     ///
-    /// @param oid OID of the sequence.
-    /// @param hash Sequence hash for this sequence.
+    /// @param oid OID of the sequence. [in]
+    /// @param hash Sequence hash for this sequence. [in]
     void AddHash(int oid, int hash);
     
     /// Rename files to single-volume names.
@@ -520,7 +519,7 @@ public:
     /// reaches the maximum file size.  This is done for performance
     /// reasons.
     ///
-    /// @param num Number of IDs that would be added.
+    /// @param num Number of IDs that would be added. [in]
     /// @return Returns true if the IDs can fit into the volume.
     bool CanFit(int num);
     
@@ -532,7 +531,7 @@ public:
     /// to existing contents.
     ///
     /// @param files
-    ///   The set of resolved database path names.
+    ///   The set of resolved database path names. [out]
     void ListFiles(vector<string> & files) const;
     
 private:

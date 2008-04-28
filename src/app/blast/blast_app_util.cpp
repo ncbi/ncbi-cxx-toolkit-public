@@ -65,7 +65,7 @@ InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
                       CRef<objects::CPssmWithParameters> pssm 
                         /* = CRef<objects::CPssmWithParameters>() */)
 {
-    _ASSERT(queries);
+    _ASSERT(queries || pssm);
     _ASSERT(db_args);
     _ASSERT(opts_hndl);
 

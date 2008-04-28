@@ -55,7 +55,10 @@ class NCBI_XBLAST_EXPORT CBlastOptionsBuilder {
 public:
     /// List of name/value pairs.
     typedef list< CRef<objects::CBlast4_parameter> > TValueList;
-    
+
+    /// List of Blast4 masks.
+    typedef list< CRef<objects::CBlast4_mask> > TMaskList;
+
     /// Constructor
     ///
     /// This takes the program and service strings, using them to
@@ -112,6 +115,12 @@ public:
     
     /// Get the negative GI list.
     list<int> GetNegativeGiList();
+
+    /// Check whether query masks are specified.
+    bool HaveQueryMasks();
+
+    /// Get the query masks.
+    TMaskList GetQueryMasks();
 
     /// Return the range that was used to restrict the query sequence(s)
     /// (returns TSeqRange::GetEmpty() if not applicable)
@@ -178,6 +187,12 @@ private:
         
         /// Get the value.
         T Get()
+        {
+            return m_Value;
+        }
+
+        /// Get the reference to the stored value.
+        T& GetRef()
         {
             return m_Value;
         }
@@ -250,6 +265,12 @@ private:
     
     /// The negative GI list (or none).
     SOptional< list<int> > m_NegativeGiList;
+
+    /// The query masking locations
+    SOptional< TMaskList > m_QueryMasks;
+
+    /// Indicated that query masks have already been collected
+    bool m_IgnoreQueryMasks;
 
     /// The range to restrict the query sequence(s)
     TSeqRange m_QueryRange;

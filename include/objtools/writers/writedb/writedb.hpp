@@ -109,13 +109,13 @@ public:
     /// Starts construction of a blast database.
     /// 
     /// @param dbname
-    ///   A list of database or alias names, seperated by spaces
+    ///   A list of database or alias names, seperated by spaces. [in]
     /// @param seqtype
-    ///   Specify eProtein, eNucleotide, or eUnknown.
+    ///   Specify eProtein, eNucleotide, or eUnknown. [in]
     /// @param title
-    ///   The database title.
+    ///   The database title. [in]
     /// @param itype
-    ///   Indicates the type of indices to build if specified.
+    ///   Indicates the type of indices to build if specified. [in]
     CWriteDB(const string & dbname,
              ESeqType       seqtype,
              const string & title,
@@ -150,8 +150,7 @@ public:
     /// better to use the version of this function that also takes a
     /// CSeqVector.
     /// 
-    /// @param bs
-    ///   The sequence and related data expressed as a CBioseq.
+    /// @param bs The sequence and related data as a CBioseq. [in]
     void AddSequence(const CBioseq & bs);
     
     /// Add a sequence as a CBioseq.
@@ -164,10 +163,8 @@ public:
     /// sequence is provided.  This version will use the CSeqVector if
     /// the sequence data is not found in the CBioseq.
     /// 
-    /// @param bs
-    ///   A CBioseq containing meta data for the sequence.
-    /// @param sv
-    ///   The sequence data for the sequence.
+    /// @param bs A CBioseq containing meta data for the sequence. [in]
+    /// @param sv The sequence data for the sequence. [in]
     void AddSequence(const CBioseq & bs, CSeqVector & sv);
     
     /// Add a sequence as a CBioseq.
@@ -175,8 +172,7 @@ public:
     /// This adds the sequence found in the given CBioseq_Handle to
     /// the database.
     /// 
-    /// @param bs
-    ///   The sequence and related data expressed as a CBioseq.
+    /// @param bsh The sequence and related data as a CBioseq_Handle. [in]
     void AddSequence(const CBioseq_Handle & bsh);
     
     /// Add a sequence as raw data.
@@ -189,10 +185,8 @@ public:
     /// provide one or more deflines with SetDeflines() or
     /// AddDefline() calls.
     /// 
-    /// @param sequence
-    ///   The sequence data as a string of bytes.
-    /// @param ambiguities
-    ///   The ambiguity data as a string of bytes.
+    /// @param sequence The sequence data as a string of bytes. [in]
+    /// @param ambiguities The ambiguity data as a string of bytes. [in]
     void AddSequence(const CTempString & sequence,
                      const CTempString & ambiguities = "");
     
@@ -200,8 +194,7 @@ public:
     /// 
     /// For proteins, this sets the PIG of the protein sequence.
     /// 
-    /// @param pig
-    ///   PIG identifier as an integer.
+    /// @param pig PIG identifier as an integer. [in]
     void SetPig(int pig);
     
     /// Set the deflines to be used for the sequence.
@@ -211,8 +204,7 @@ public:
     /// method is used with the CBioseq version of AddSequence, it
     /// replaces the deflines found in the CBioseq.
     /// 
-    /// @param deflines
-    ///   Deflines to use for this sequence.
+    /// @param deflines Deflines to use for this sequence. [in]
     void SetDeflines(const CBlast_def_line_set & deflines);
     
     /// Adds defline record for this sequence.
@@ -223,11 +215,11 @@ public:
     /// with the CBioseq version of AddSequence, the deflines provided
     /// with this method replace the deflines found in the CBioseq.
     /// 
-    /// @param ids   One or more sequence identifiers.
-    /// @param title The defline title.
-    /// @param taxid The taxonomic id, or zero for none.
-    /// @param membs Sets the memberships for this defline.
-    /// @param links Sets linkouts for this defline.
+    /// @param ids   One or more sequence identifiers. [in]
+    /// @param title The defline title. [in]
+    /// @param taxid The taxonomic id, or zero for none. [in]
+    /// @param membs Sets the memberships for this defline. [in]
+    /// @param links Sets linkouts for this defline. [in]
     void AddDefline(const vector< CRef<CSeq_id> > & ids,
                     const CTempString             & title,
                     int                             taxid,
@@ -244,8 +236,7 @@ public:
     /// class; the returned list may not be complete until Close() has
     /// been called.
     ///
-    /// @param vols
-    ///   The set of volumes produced by this class.
+    /// @param vols The set of volumes produced by this class. [out]
     void ListVolumes(vector<string> & vols);
     
     /// List Filenames
@@ -254,8 +245,7 @@ public:
     /// returned list may not be complete until Close() has been
     /// called.
     ///
-    /// @param files
-    ///   The set of resolved database path names.
+    /// @param files The set of resolved database path names. [out]
     void ListFiles(vector<string> & files);
     
     /// Close the Database.
@@ -284,7 +274,7 @@ public:
     /// The default value is 2^30-1.  There is also a hard limit
     /// required by the database format.
     ///
-    /// @param sz Maximum size in bytes of any volume component file.
+    /// @param sz Maximum size in bytes of any volume component file. [in]
     void SetMaxFileSize(Uint8 sz);
     
     /// Set maximum letters for output volumes.
@@ -297,7 +287,7 @@ public:
     /// a hard limit required by the format definition.  Ambiguity
     /// encoding is not counted toward this limit.
     ///
-    /// @param letters Maximum letters to pack in one volume.
+    /// @param letters Maximum letters to pack in one volume. [in]
     void SetMaxVolumeLetters(Uint8 letters);
     
     /// Extract Deflines From Bioseq.
@@ -306,7 +296,7 @@ public:
     /// user.  The caller can then modify or inspect the deflines, and
     /// apply them to a sequence with SetDeflines().
     /// 
-    /// @param bioseq
+    /// @param bs The bioseq from which to extract a defline set. [in]
     /// @return A set of deflines for this CBioseq.
     static CRef<CBlast_def_line_set>
     ExtractBioseqDeflines(const CBioseq & bs);
@@ -321,7 +311,7 @@ public:
     /// This method only works with protein (the motivating case
     /// cannot happen with nucleotide).
     /// 
-    /// @param masked Letters to disinclude.
+    /// @param masked Letters to disinclude. [in]
     void SetMaskedLetters(const string & masked);
     
 protected:

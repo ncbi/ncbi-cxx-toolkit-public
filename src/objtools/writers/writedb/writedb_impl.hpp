@@ -333,7 +333,7 @@ private:
     /// found here too.  If the caller wishes to accept '>' as an
     /// alternate delimiter, then accept_gt should be specified.
     ///
-    /// @param bin_hdr Binary ASN.1 encoding of defline set. [in]
+    /// @param bioseq Bioseq object produced by CFastaReader. [in]
     /// @param deflines Defline set. [out]
     /// @param membits Membership bits for each defline. [in]
     /// @param linkout Linkout bits for each defline. [in]
@@ -368,8 +368,8 @@ private:
     /// @param bioseq Defline data will be built from this. [in]
     /// @param deflines A defline set will be returned here. [out]
     /// @param bin_hdr Binary header data may be returned here. [out]
-    /// @param membits Membership bits for each defline. [in]
-    /// @param linkout Linkout bits for each defline. [in]
+    /// @param membbits Membership bits for each defline. [in]
+    /// @param linkouts Linkout bits for each defline. [in]
     /// @param pig PIG to attach to a protein sequence. [in]
     static void x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                   CConstRef<CBlast_def_line_set> & deflines,

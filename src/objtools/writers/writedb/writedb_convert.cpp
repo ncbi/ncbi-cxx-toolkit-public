@@ -58,9 +58,9 @@ public:
     {
     }
     
-    /// Construct a new ambiguous region.
+    /// Construct a new ambiguous region one letter in length.
     /// @param value Ambiguity letter to use. [in]
-    /// @parma offset Starting offset of the ambiguity. [in]
+    /// @param offset Starting offset of the ambiguity. [in]
     CAmbiguousRegion(int value, int offset)
         : m_Start (offset),
           m_End   (offset+1),
@@ -68,7 +68,7 @@ public:
     {
     }
     
-    /// Construct a new ambiguous region.
+    /// Construct a new ambiguous region of a specified length.
     /// @param value Ambiguity letter to use. [in]
     /// @param offset Starting offset of the ambiguity. [in]
     /// @param length Length of the ambiguity. [in]

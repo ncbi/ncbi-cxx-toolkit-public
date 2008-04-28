@@ -65,7 +65,8 @@ blast_seqinfosrc_aux \
 blast_dbindex \
 split_query_cxx \
 split_query_aux_priv \
-split_query_blk
+split_query_blk \
+winmask_filter
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 

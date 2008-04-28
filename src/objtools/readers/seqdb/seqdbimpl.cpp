@@ -1230,7 +1230,14 @@ void CSeqDBImpl::GetRawSeqAndAmbig(int           oid,
 /// Accumulate optional min, max, and count.
 ///
 /// This generic template describes the accumulation of low, high, and
-/// count values over any ordered type.
+/// count values over any ordered type.  The low_in, high_in, and
+/// count_in values are compared to the current values of low_out,
+/// high_out, and count_out.  If the new value is lower than low_out,
+/// it will replace the value in low_out, and similarly for high_out.
+/// The count_out value just accumulates counts.  If any of the *_out
+/// fields is NULL, that field will not be processed.  If the set_all
+/// flag is true, the values in *_in are simply copied unchanged to
+/// the corresponding *_out fields.
 ///
 /// @param low_in    The low value for one volume. [in]
 /// @param high_in   The high value for one volume. [in]
@@ -1238,6 +1245,7 @@ void CSeqDBImpl::GetRawSeqAndAmbig(int           oid,
 /// @param low_out   If non-null, the low output value. [out]
 /// @param high_out  If non-null, the high output value. [out]
 /// @param count_out If non-null, the ID output value. [out]
+/// @param set_all   If true, adopt values without testing. [in]
 template<class TId>
 inline void s_AccumulateMinMaxCount(TId   low_in,
                                     TId   high_in,
@@ -1245,26 +1253,25 @@ inline void s_AccumulateMinMaxCount(TId   low_in,
                                     TId * low_out,
                                     TId * high_out,
                                     int * count_out,
-                                    bool set_all)
+                                    bool  set_all)
 {
     if (set_all) {
-        if (low_out) {
-            *low_out   = low_in;
-        }
+        if (low_out)
+            *low_out = low_in;
         
-        *high_out  = high_in;
-        *count_out = count_in;
+        if (high_out)
+            *high_out = high_in;
+        
+        if (count_out)
+            *count_out = count_in;
     } else {
-        if (low_out && (set_all || *low_out > low_in)) {
+        if (low_out && (*low_out > low_in)) {
             *low_out = low_in;
         }
-        if (high_out && (set_all || *high_out < high_in)) {
+        if (high_out && (*high_out < high_in)) {
             *high_out = high_in;
         }
         if (count_out) {
-            if (set_all) {
-                *count_out = 0;
-            }
             *count_out += count_in;
         }
     }

@@ -1099,12 +1099,12 @@ private:
     /// lists.
     ///
     /// @param op The operation to perform (OR, AND, or XOR). [in]
+    /// @param A The first input list. [in]
     /// @param A_pos True if the first list is positive. [in]
+    /// @param B The second input list. [in]
     /// @param B_pos True if the second list is positive. [in]
+    /// @param result The resulting list of identifiers. [out]
     /// @param result_pos True if the result is a positive list. [out]
-    /// @param incl_A True if ids found only in list A are kept. [out]
-    /// @param incl_B True if ids found only in list B are kept. [out]
-    /// @param incl_AB True if ids found in both lists are kept. [out]
     void x_BooleanSetOperation(EOperation           op,
                                const vector<Int8> & A,
                                bool                 A_pos,

@@ -101,11 +101,15 @@ CRemoteBlastDataLoader::~CRemoteBlastDataLoader()
 }
 
 
+/// Template converting blob IDs to human readable strings.
 typedef pair<int, CSeq_id_Handle> TBlob_id;
 template<>
 struct PConvertToString<TBlob_id>
     : public unary_function<TBlob_id, string>
 {
+    /// Convert blob IDs (a `pair' type) to human readable strings.
+    /// @param v The blob-ID to convert. [in]
+    /// @return A string version of the blob ID.
     string operator()(const TBlob_id& v) const
     {
         return NStr::IntToString(v.first) + ':' + v.second.AsString();

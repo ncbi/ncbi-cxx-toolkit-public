@@ -35,6 +35,7 @@
 #include <objtools/error_codes.hpp>
 #include "seqdbtax.hpp"
 
+/// Tell the error reporting framework what part of the code we're in.
 #define NCBI_USE_ERRCODE_X   Objtools_SeqDBTax
 
 BEGIN_NCBI_SCOPE

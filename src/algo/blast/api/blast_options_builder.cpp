@@ -248,11 +248,21 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'L':
-        if (B4Param_LCaseMask.Match(p)) {
-            // This field was removed from the options class and will
-            // probably be removed from blast4.  The server provides
-            // the filter string as well, so this boolean is redundant
-            // and can be ignored safely.
+        if (B4Param_LCaseMask.Match(p))
+        {
+            if (!m_IgnoreQueryMasks)
+            {
+                _ASSERT(v.IsQuery_mask());
+                CRef<CBlast4_mask> refMask(new CBlast4_mask);
+                refMask->Assign(v.GetQuery_mask());
+
+                if (!m_QueryMasks.Have())
+                {
+                    TMaskList listEmpty;
+                    m_QueryMasks = listEmpty;
+                }
+                m_QueryMasks.GetRef().push_back(refMask);
+            }
         } else if (B4Param_LongestIntronLength.Match(p)) {
             bo.SetLongestIntronLength(v.GetInteger());
         } else {
@@ -491,7 +501,10 @@ GetSearchOptions(const objects::CBlast4_parameters * aopts,
     if (task_name != NULL) 
         *task_name = EProgramToTaskName(program);
     
+    m_IgnoreQueryMasks = false;
     x_ProcessOptions(*cboh, (aopts == NULL ? 0 : &aopts->Get()));
+
+    m_IgnoreQueryMasks = m_QueryMasks.Have();
     x_ProcessOptions(*cboh, (popts == NULL ? 0 : &popts->Get()));
     
     x_ApplyInteractions(*cboh);
@@ -547,6 +560,17 @@ bool CBlastOptionsBuilder::HaveNegativeGiList()
 list<int> CBlastOptionsBuilder::GetNegativeGiList()
 {
     return m_NegativeGiList.Get();
+}
+
+bool CBlastOptionsBuilder::HaveQueryMasks()
+{
+    return m_QueryMasks.Have();
+}
+
+CBlastOptionsBuilder::TMaskList
+    CBlastOptionsBuilder::GetQueryMasks()
+{
+    return m_QueryMasks.Get();
 }
 
 END_SCOPE(blast)

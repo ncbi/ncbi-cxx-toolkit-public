@@ -387,6 +387,17 @@ public:
                                       bool html, bool tabular=false,
                                       const string& rid = kEmptyStr);
     
+    /// Prints out PHI-BLAST info for header (or footer)
+    /// @param num_patterns number of times pattern appears in query [in]
+    /// @param pattern the pattern used [in]
+    /// @param prob probability of pattern [in]
+    /// @param offsets vector of pattern offsets in query [in]
+    /// @param out stream to ouput [in]
+    static void PrintPhiInfo(int num_patterns, const string& pattern,
+                                    double prob,
+                                    vector<int>& offsets,
+                                    CNcbiOstream& out);
+
     ///Get blast defline
     ///@param handle: bioseq handle to extract blast defline from
     ///

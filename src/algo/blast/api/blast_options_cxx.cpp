@@ -116,7 +116,9 @@ enum EBlastOptIdx {
     eBlastOpt_GapTracebackAlgorithm,
     eBlastOpt_CompositionBasedStats,
     eBlastOpt_SmithWatermanMode,
-    eBlastOpt_UnifiedP
+    eBlastOpt_UnifiedP,
+    eBlastOpt_WindowMaskerDatabase,
+    eBlastOpt_WindowMaskerTaxId
 };
 
 /// Encapsulates all blast input parameters
@@ -536,6 +538,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
         x_SetParam(B4Param_UnifiedP, v);
         return;
 
+    case eBlastOpt_WindowMaskerTaxId:
+        x_SetParam(B4Param_WindowMaskerTaxId, v);
+        return;
+
     default:
         break;
     }
@@ -626,6 +632,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
         
     case eBlastOpt_MatrixName:
         x_SetParam(B4Param_MatrixName, v);
+        return;
+        
+    case eBlastOpt_WindowMaskerDatabase:
+        x_SetParam(B4Param_WindowMaskerDatabase, v);
         return;
         
     default:
@@ -921,6 +931,8 @@ CBlastOptions::ClearFilterOptions()
     SetSegFiltering(false);
     SetRepeatFiltering(false);
     SetMaskAtHash(false);
+    SetWindowMaskerTaxId(0);
+    SetWindowMaskerDatabase(NULL);
     return;
 }
 
@@ -1228,6 +1240,54 @@ CBlastOptions::SetRepeatFilteringDB(const char* db)
     }
     if (m_Remote) {
         m_Remote->SetValue(eBlastOpt_RepeatFilteringDB, db);
+    }
+}
+
+int
+CBlastOptions::GetWindowMaskerTaxId() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetWindowMaskerTaxId() not available.");
+    }
+    return m_Local->GetWindowMaskerTaxId();
+}
+
+void
+CBlastOptions::SetWindowMaskerTaxId(int value)
+{
+    if (m_Local) {
+        m_Local->SetWindowMaskerTaxId(value);
+    }
+    if (m_Remote) {
+        if (value) {
+            m_Remote->SetValue(eBlastOpt_WindowMaskerTaxId, value);
+        } else {
+            m_Remote->ResetValue(B4Param_WindowMaskerTaxId);
+        }
+    }
+}
+
+const char *
+CBlastOptions::GetWindowMaskerDatabase() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetWindowMaskerDatabase() not available.");
+    }
+    return m_Local->GetWindowMaskerDatabase();
+}
+
+void
+CBlastOptions::SetWindowMaskerDatabase(const char * value)
+{
+    if (m_Local) {
+        m_Local->SetWindowMaskerDatabase(value);
+    }
+    if (m_Remote) {
+        if (value) {
+            m_Remote->SetValue(eBlastOpt_WindowMaskerDatabase, value); 
+        } else {
+            m_Remote->ResetValue(B4Param_WindowMaskerDatabase); 
+        }
     }
 }
 

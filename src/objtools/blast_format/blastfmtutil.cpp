@@ -427,6 +427,32 @@ void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs,
     }
 }
 
+void CBlastFormatUtil::PrintPhiInfo(int num_patterns,
+                                    const string& pattern,
+                                    double prob,
+                                    vector<int>& offsets,
+                                    CNcbiOstream& out)
+{
+    out << num_patterns << " occurrence(s) of pattern: " << "\n"
+             << pattern << " at position(s) ";
+
+    bool first = true;
+    for (vector<int>::iterator it = offsets.begin();
+      it != offsets.end(); it++)
+    {
+           if (!first)
+             out << ", ";
+
+           out << 1 + *it ;
+
+           first = false;
+    }
+    out << " of query sequence" << "\n";
+    out << "pattern probability=" << prob << "\n";
+
+}
+                                    
+
 /// Efficiently decode a Blast-def-line-set from binary ASN.1.
 /// @param oss Octet string sequence of binary ASN.1 data.
 /// @param bdls Blast def line set decoded from oss.

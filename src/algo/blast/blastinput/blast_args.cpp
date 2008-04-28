@@ -384,6 +384,15 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgFilteringDb, "filtering_database",
                 "BLAST database containing filtering elements (i.e.: repeats)",
                 CArgDescriptions::eString);
+        
+        arg_desc.AddOptionalKey(kArgWindowMaskerTaxId, "window_masker_taxid",
+                "Enable WindowMasker filtering using a Taxonomic ID",
+                CArgDescriptions::eInteger);
+
+        arg_desc.AddOptionalKey(kArgWindowMaskerDatabase, "window_masker_db",
+                "Enable WindowMasker filtering using this repeats database.",
+                CArgDescriptions::eString);
+
         arg_desc.AddDefaultKey(kArgLookupTableMaskingOnly, "soft_masking",
                         "Apply filtering locations as soft masks",
                         CArgDescriptions::eBoolean, "true");
@@ -436,9 +445,38 @@ CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
             opt.SetDustFilteringLinker(NStr::StringToInt(tokens[2]));
         }
     }
-
+    
+    int filter_dbs = 0;
+    
     if (args.Exist(kArgFilteringDb) && args[kArgFilteringDb]) {
         opt.SetRepeatFilteringDB(args[kArgFilteringDb].AsString().c_str());
+        filter_dbs++;
+    }
+    
+    if (args.Exist(kArgWindowMaskerTaxId) &&
+        args[kArgWindowMaskerTaxId]) {
+        
+        opt.SetWindowMaskerTaxId
+            (args[kArgWindowMaskerTaxId].AsInteger());
+        
+        filter_dbs++;
+    }
+    
+    if (args.Exist(kArgWindowMaskerDatabase) &&
+        args[kArgWindowMaskerDatabase]) {
+        
+        opt.SetWindowMaskerDatabase
+            (args[kArgWindowMaskerDatabase].AsString().c_str());
+        
+        filter_dbs++;
+    }
+    
+    if (filter_dbs > 1) {
+        string msg =
+            string("Please specify at most one of ") + kArgFilteringDb + ", " +
+            kArgWindowMaskerTaxId + ", or " + kArgWindowMaskerDatabase + ".";
+        
+        NCBI_THROW(CBlastException, eInvalidArgument, msg);
     }
 }
 

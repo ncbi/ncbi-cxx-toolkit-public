@@ -1524,7 +1524,7 @@ bool CSeqDBIsam::x_IdentToOid(Int8 ident, TOid & oid, CSeqDBLockHold & locked)
         return true;
     }
     
-    oid = (Uint4)-1;
+    oid = -1u;
     
     return false;
 }

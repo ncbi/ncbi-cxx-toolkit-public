@@ -1,0 +1,336 @@
+
+Author:  Kevin Bealer
+Updated: April 2008
+
+----- Column Files -----
+
+Naming:   <any-name>.[npx][a-z][ab]
+Encoding: binary
+Style:    meta-data fields, key/value data, then an offset array
+
+  The column file mechanism is an extension to the normal BlastDB
+  volume format.  It was designed for SeqDB and WriteDB -- the older
+  libraries (readdb and formatdb) do not understand this format.  The
+  goal of the column file is to support any (or nearly any) type of
+  per-oid data as an addition to the BlastDB format.
+
+  Each column consists of two files -- an index file and a data file.
+  This pair of files can be associated with a specific BlastDB volume,
+  or can be an independant column, storing data that is unrelated to
+  any particular volume.  Columns associated with a specific volume
+  will be named with extensions [np][a-z]a for the index file and
+  [np][a-z]b for the data file.  (The initial letter is determined by
+  whether the column contains protein or nucleotide data.)  Columns
+  not associated with a volume have an extension like x[a-z][ab].  The
+  middle letter of the column's extensions is the index, and will
+  usually be given the earliest letter in the alphabet that has not
+  yet been reserved.
+
+  Column index files contain normal meta-data fields describing the
+  construction time, title, and so on of the column data, but also
+  include user-defined meta data to support storage of special data
+  that is not specific to any particular OID.  User defined meta-data
+  is stored in a key/value format; both the key and value are strings.
+  The user defined data should provide some insight into interpreting
+  per-OID data stored in the column.  The exact meaning of the data
+  (if any) stored in the key/value map is not specified by the format,
+  instead it is determined by the code using the column.
+
+  The main (expected) purpose of the column is to store an array of
+  binary data strings, accessed by index.  The data in each array is
+  determined by the code producing and consuming this data.
+
+  Note: The column's Key/Value metadata section is not designed to
+  store large amounts of data or to support high performance lookup of
+  these values at runtime.  If more than a few megabytes of data is
+  stored here, the performance of loading column objects will probably
+  suffer (but this has not been tested.)  This resource can be seen as
+  analogous to an STL "map" (not a multimap).
+
+--- Blobs ---
+
+  Access to data in the per-OID section of the column is expected to
+  perform well.  The BlastDB format uses platform-independant formats
+  throughout, and applications using column support should also do so
+  for data stored by OID.  To support this assumption and facilitate
+  design of binary formats, the CSeqDBBlob class has been provided.
+
+  The CSeqDBBlob class is used for BlastDB's column support, but is in
+  fact a generally applicable tool for binary object construction and
+  interpretation.  The term "Blob" as used here is a generic term for
+  any binary-format data stored in a container (such as a database),
+  where the fields of the data format are not interpreted by the code
+  implementing the container.
+
+  Goals of the Blob object design:
+
+  Blobs were designed to meet these goals:
+
+  + Data is platform independant, assuming the Read*() and Write*()
+    methods are used to access all field data.
+
+  + Copying of data is reduced.  Blobs can own data or refer to
+    data stored elsewhere.
+
+  + Support for data lifetime management.  Blobs which refer to data
+    stored elsewhere can keep that data alive exactly as long as it
+    is needed.  This mechanism supports multiple blobs sharing data.
+
+  + Both Read and Write.  Blobs have both read and write abilities and
+    can be accessed as a "stream" or using "random access" techniques.
+
+  + Amortized allocation.  A Blob used to construct binary objects can
+    be reset and reused many times.  This allows the design of APIs
+    that "amortize" buffer allocations.
+
+-- Mask Data Files --
+
+  The binary data stored in the per-OID arrays has a format that will
+  be specific to the applications that generate and consume it.  The
+  first usage of the column support by SeqDB and WriteDB is the code
+  working with "masked subject" database support.
+
+  See subject_masking_column.txt for more information about the
+  formats used by the subject masking support.
+
+--- Notation ---
+
+ The offset field uses a symbol in square brackets, like this "[X]" to
+ indicate the end of a variable length field defined on that line.
+ Future use of the symbol X will indicate that offset.
+
+ The suffix "[]" added to a type (e.g. Int4[]) indicates an array of
+ that type.
+
+ Note that the Column support uses the Blob objects to parse all
+ formats, so all of the following types of data can easily be parsed
+ using the Blob API.
+
+Int8:
+  Eight byte integer, always in big-endian order.  Not necessarily
+  aligned to a 4 or 8 byte multiple offset.
+
+Int4:
+  Four byte integer, always in big-endian order.  Not necessarily
+  aligned to a 4 byte multiple offset.
+
+Int2:
+  A two byte integer, always in big-endian order.  Not necessarily
+  aligned to a 2 byte multiple offset.
+
+Int1:
+  A single byte integer.
+
+VarInt:
+  An integer of variable-sized representation.  This format for
+  storing integers uses more space for larger values and less space
+  for smaller values.  It is intended for values which may be any
+  size, but which are usually small.  This format is slower to parse
+  than 4-byte-aligned values in Int4 or Int8 format, but is more
+  space-efficient when values are usually small.
+
+  A number encoded in this format is first split into a "sign" and a
+  "value".  For a positive number "x", sign is 0, and value is x.  For
+  a negative number "x", sign is 1, and value is -x.
+
+  The encoding for an integer is one or more bytes storing 7 bits of
+  value, with a high-order bit of 1, followed by one byte storing a
+  high-order bit of 0, the second-highest-order bit holding "sign",
+  and six bits of the number.
+
+String(None):
+
+  ASCII string data.  No termination is used, so the program must know
+  when to stop parsing in some other way.
+
+String(Z):
+
+  NUL byte terminated string (called "C strings" or stringz format).
+  The string data is written out, followed by a NUL byte.  Strings
+  stored with this method require every byte to be inspected to find
+  the end of a string.  This method does not work properly with
+  strings that might contain embedded NUL bytes.
+
+String(4):
+
+  This format prefixes the string data with a length encoded as a
+  four-byte integer.  This format parses quickly and is not sensitive
+  to the string's content, so binary data and embedded NUL bytes do
+  not conflict with this format.
+
+String(V):
+
+  This format prefixes the string data with a length encoded as a
+  variable length integer (VarInt).  This format has most of the same
+  characteristics as String(eSize4) but is more storage-efficient.
+
+PAD(i):
+
+  This is not field-data but rather a series of NUL bytes used to pad
+  the buffer out to a multiple of some alignment.  To know how to
+  produce and parse this type, both reader and writer must know the
+  desired alignment to pad to.
+
+  The normal motive for padding is to align the offset before emitting
+  a (possibly large) array of integer data or fixed-length objects.
+
+PAD(z):
+
+  This pads the buffer out to a multiple of some alignment N by writing a
+  String(Z) containing repeated "#" characters.  The advantage of this
+  technique compared to PADx(i) is that consumers and producers of the data
+  do not need to know what alignment was used.  This means that alignments
+  can change in the future, or the code may wish to adjust the alignment
+  multiplier according to some formula.  However, the PAD(z) type always
+  emits at least one byte, so it is one byte less efficient than simple
+  padding (with probability of approximately 1/N).
+
+--- File Formats ---
+
+-- Column Index File --
+
+Offset  Type       Fieldname         Notes
+------  ----       ---------         -----
+0       Int4       format-version    Version of columns format (1 for now).
+4       Int4       column-type       Column type (for now this is always 1,
+                                     for "Blob" columns indexed by OID, but
+                                     other types, such as generic ISAM-like
+                                     formats could be provided.)
+8       Int4       offset-int-size   Integer size for this file (4 for now).
+12      Int4       oid-count         Number of OIDs stored here.
+16      Int8       data-file-length  Column data file length in bytes.
+24      Int4       meta-data-off     Offset in this file of meta-data.
+28      Int4       offset-array-off  Offset in this file of the offset array.
+32      String(V)  column-title      Title of this column (not the volume).
+--      String(V)  create-date       Column creation time stamp string.
+--      Int4       metadata-count    Number of meta-data elements.
+--      Meta[]     metadata-list     See below for definition of Meta.
+--      PAD(z)     --                Pad to align offset array.
+--      Int4[]     offset-array4     Data offset array (if offset-int-size
+                                     is specified as 4.)
+--      Int8[]     offset-array8     Data offset array (if offset-int-size
+                                     is specified as 8.)
+
+Definition of "Meta":
+0       String(V)  key               Meta-data key field.
+--      String(V)  value             Meta-data value field.
+
+
+The fixed size header (the first 32 bytes) is designed as a section that
+can be mapped or read to get an overview of the file's contents.  The
+variable length resources of the file can then be accessed sequentially
+(for the metadata) or in a random-access fashion (for the OID array) as
+needed.
+
+Notes on specific fields:
+
+format-version:
+
+  This is always 1 for the format described above.  Future versions of this
+  format can increment this when introducing backward-incompatible changes.
+
+column-type:
+
+  This is also currently always 1, but could be incremented to support
+  other kinds of data.  The value 1 here represents files which implement a
+  mapping from OID to Blob data (the only format defined right now).
+
+offset-int-size:
+
+  The data in the offset array could use 4 or 8 bytes per offset.  The code
+  that writes this array currently only uses the value 4, and the code that
+  reads it currently only understands the value 4 here.  If column files
+  are used for applications where the amount of data in the column data
+  file might exceed 4 byte offsets, support for this field and for 8-byte
+  offsets should be added to both the SeqDB and WriteDB parts of the column
+  file code.
+
+oid-count:
+
+  Number of OIDs stored in this column.
+
+data-file-length:
+
+  Length (in bytes) of the column data file.
+
+meta-data-off:
+
+  This is the offset, in the index file (this file) of the key/value meta
+  data section.
+
+offset-array-off:
+
+  This is the offset, in the index file (this file) of the offset array
+  section.
+
+column-title:
+
+  This is the column title.  Each column has a title that is used to find
+  the column when needed by SeqDB or by other code.  The title should be
+  unique to the kind of data stored here, but not to this individual column
+  of this individual volume.  In effect, the column name identifies the
+  purpose of this data and selects the binary format of the data in the
+  per-OID sections, as well as determining how any key/value metadata is
+  expected to be used.
+
+create-date:
+
+  This string is a formatted timestamp describing the creation date and
+  time of this individual database column.  It may not match the creation
+  time of the volume with which it is associated, depending on the order
+  and timing of the creation of that volume's other components.
+
+metadata-count:
+
+  This is the number of key-value mappings stored in the metadata section.
+
+metadata-list:
+
+  This is a list of metadata -- data describing the contents of this
+  column, especially data that is not specific to any individual OID.
+  Access to the data stored here is expected to be slower than access to
+  per-OID data, so the amount of information stored in this way should
+  probably be limited.
+
+offset-array4
+
+  This is a list of Int4 offsets into the associated data file.  There is
+  one additional offset so that the start point and length of any given
+  element can be found by loading two sequential offset values.
+
+offset-array8
+
+  This is a list of Int8 offsets into the associated data file.  This is
+  just like offset-array4 except that each offset is 8 bytes in length.
+
+  The 8 byte version of the offset array will not be created until the
+  column data file's length (and therefore the value of the offsets stored
+  in the column index file) become large enough to require it.
+
+  (However, support for 8 byte offsets is not currently present in either
+  the CSeqDB or CWriteDB parts of the column support code.)
+
+-- Column Data File --
+
+The data in the column data file is considered to be "binary data".  This
+means that SeqDB and WriteDB do not make assumptions about the contents of
+this data, such as whether NUL bytes are present, or whether a particular
+type of endianness is used.  This data is not aligned to a particular size
+by WriteDB -- however, an alignment can be maintained by insuring that each
+per-OID object is a multiple of the desired size (possibly by padding each
+one before providing it to WriteDB.)
+
+In fact the per-OID data in a column can be text, ASN.1 or XML objects, or
+any user defined format.  It is expected to be written and read with the
+"Blob" API, but nothing requires this to be so, and in fact the Blob API
+provides methods to return the raw data for interpretation by other means.
+It is strongly suggested that any column associated with a BlastDB volume,
+and the binary formats used by it, follow the practice of using platform
+independant encodings (the Blob code is designed to insure this).
+
+Blob objects (the class name is CSeqDBBlob) are used to send this data to
+the WriteDB API, and to return it from the SeqDB API.  The Blob code is
+designed to do this task and to have good performance properties with
+regard to allocation and data lifetime management when used with these
+usage patterns.
+

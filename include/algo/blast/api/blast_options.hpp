@@ -184,6 +184,12 @@ public:
     const char* GetRepeatFilteringDB() const;
     void SetRepeatFilteringDB(const char* db);
 
+    int GetWindowMaskerTaxId() const;
+    void SetWindowMaskerTaxId(int taxid);
+
+    const char* GetWindowMaskerDatabase() const;
+    void SetWindowMaskerDatabase(const char* db);
+
     objects::ENa_strand GetStrandOption() const;
     void SetStrandOption(objects::ENa_strand s);
 

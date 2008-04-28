@@ -41,6 +41,10 @@ BEGIN_NCBI_SCOPE
 /// Include definitions from the objects namespace.
 USING_SCOPE(objects);
 
+
+/// Compute a sequence hash from a (generic) source of ncbi8na values.
+/// @param TSource Type of object for `src' parameter.
+/// @param src Object providing sequence data as ncbi8na values.
 template<class TSource>
 unsigned SeqDB_ComputeSequenceHash(TSource & src)
 {
@@ -56,26 +60,44 @@ unsigned SeqDB_ComputeSequenceHash(TSource & src)
     return retval;
 }
 
+
+/// Forward iteration (only) for an array of sequence data.
 struct SSeqDB_ArraySource {
+    /// Construct sequence data source from existing array.
+    /// @param ptr Pointer to beginning of ncbi8na data.
+    /// @param len Length of sequence in bases (== bytes).
     SSeqDB_ArraySource(const char * ptr, int len)
         : begin(ptr), end(ptr + len)
     {
     }
     
+    /// Check whether there is more data to fetch.
+    /// @return True if any unfetched data remains.
     bool More()
     {
         return begin != end;
     }
     
+    /// Get a nucleotide base value and move iteration forward.
+    /// @return One nucleotide base value.
     unsigned char Get()
     {
         return *(begin++);
     }
     
-    const char *begin, *end;
+private:
+    /// Pointer to the first unprocessed byte of sequence data.
+    const char *begin;
+    
+    /// Pointer to the end of the sequence data array.
+    const char *end;
 };
 
+
+/// Forward iteration (only) for sequence data of a Bioseq object.
 struct SSeqDB_SVCISource {
+    /// Constructor.
+    /// @param bs Bioseq providing the sequence over which to iterate.
     SSeqDB_SVCISource(const CBioseq & bs)
         : index(0), size(0)
     {
@@ -92,175 +114,51 @@ struct SSeqDB_SVCISource {
         size = seqvector.size();
     }
     
+    /// Check whether there is more data to fetch.
+    /// @return True if any unfetched data remains.
     bool More()
     {
         return index < size;
     }
     
+    /// Get a nucleotide base value and move iteration forward.
+    /// @return One nucleotide base value.
     unsigned char Get()
     {
         return seqvector[index++];
     }
     
+private:
+    /// Pointer to the first unprocessed byte of sequence data.
     CSeqVector seqvector;
-    TSeqPos index, size;
+    
+    /// Index of the next base of sequence data to return.
+    TSeqPos index;
+    
+    /// Total number of bases of sequence data to iterate over.
+    TSeqPos size;
 };
 
+
+/// Compute the hash of a sequence in ncbi8na format.
+/// @param sequence A sequence in ncbi8na format.
+/// @param length Length of the sequence in bases (== bytes).
+/// @return The hash value of the sequence data.
 unsigned SeqDB_SequenceHash(const char * sequence,
-                             int          length)
+                            int          length)
 {
     SSeqDB_ArraySource src(sequence, length);
     return SeqDB_ComputeSequenceHash(src);
 }
 
-// This could be made public if needed, but for now it should be
-// enough to use it from the function following it.
-
-static unsigned SeqDB_SequenceHashSeqVector(const CBioseq & bs)
+/// Compute the hash of a sequence in a Bioseq.
+/// @param bs The Bioseq containing the sequence.
+/// @return The hash value of the sequence data.
+unsigned SeqDB_SequenceHash(const CBioseq & bs)
 {
     SSeqDB_SVCISource src(bs);
     return SeqDB_ComputeSequenceHash(src);
 }
-
-unsigned SeqDB_SequenceHash(const CBioseq & sequence)
-{
-    if (! sequence.CanGetInst()) {
-        return SeqDB_SequenceHashSeqVector(sequence);
-    }
-    
-    const CSeq_inst & si = sequence.GetInst();
-    
-    // Either get output_data to point to a target format or gather
-    // enough info to call CSeqConvert to produce a target format.
-    
-    if (! sequence.GetInst().CanGetSeq_data()) {
-        return SeqDB_SequenceHashSeqVector(sequence);
-    }
-    
-    bool need_cvt = true;
-    bool is_protein = false;
-    CSeqUtil::ECoding coding(CSeqUtil::e_not_set);
-    CTempString input_data;
-    CTempString output_data;
-    
-    const CSeq_data & sd = si.GetSeq_data();
-    
-    if (! si.CanGetLength()) {
-        NCBI_THROW(CSeqDBException,
-                   eArgErr,
-                   "No sequence length in Bioseq.");
-    }
-    
-    int base_length = si.GetLength();
-    
-    const vector<char> * vp = 0;
-    const string * sp = 0;
-    
-    switch(sd.Which()) {
-        
-            // Protein
-
-        case CSeq_data::e_Ncbistdaa:
-            need_cvt = false;
-            is_protein = true;
-            coding = CSeqUtil::e_Ncbistdaa;
-            vp = & si.GetSeq_data().GetNcbistdaa().Get();
-            output_data.assign(& (*vp)[0], vp->size());
-            break;
-            
-        case CSeq_data::e_Ncbieaa:
-            need_cvt = true;
-            is_protein = true;
-            coding = CSeqUtil::e_Ncbieaa;
-            sp = & si.GetSeq_data().GetNcbieaa().Get();
-            input_data.assign(sp->data(), sp->size());
-            break;
-            
-        case CSeq_data::e_Iupacaa:
-            need_cvt = true;
-            is_protein = true;
-            coding = CSeqUtil::e_Iupacaa;
-            sp = & si.GetSeq_data().GetIupacaa().Get();
-            input_data.assign(sp->data(), sp->size());
-            break;
-            
-        case CSeq_data::e_Ncbi8aa:
-            need_cvt = true;
-            is_protein = true;
-            coding = CSeqUtil::e_Ncbi8aa;
-            vp = & si.GetSeq_data().GetNcbi8aa().Get();
-            input_data.assign(& (*vp)[0], vp->size());
-            break;
-            
-            // Nucleotide
-
-        case CSeq_data::e_Iupacna:
-            need_cvt = true;
-            is_protein = false;
-            coding = CSeqUtil::e_Iupacna;
-            sp = & si.GetSeq_data().GetIupacna().Get();
-            input_data.assign(sp->data(), sp->size());
-            break;
-            
-        case CSeq_data::e_Ncbi2na:
-            need_cvt = true;
-            is_protein = false;
-            coding = CSeqUtil::e_Ncbi2na;
-            vp = & si.GetSeq_data().GetNcbi2na().Get();
-            input_data.assign(& (*vp)[0], vp->size());
-            break;
-            
-        case CSeq_data::e_Ncbi4na:
-            need_cvt = true;
-            is_protein = false;
-            coding = CSeqUtil::e_Ncbi4na;
-            vp = & si.GetSeq_data().GetNcbi4na().Get();
-            input_data.assign(& (*vp)[0], vp->size());
-            break;
-            
-        case CSeq_data::e_Ncbi8na:
-            need_cvt = false;
-            is_protein = false;
-            coding = CSeqUtil::e_Ncbi8na;
-            vp = & si.GetSeq_data().GetNcbi8na().Get();
-            output_data.assign(& (*vp)[0], vp->size());
-            break;
-            
-        default:
-            string msg = "Conversion for CBioseq type [";
-            msg += NStr::IntToString((int) sd.Which());
-            msg += "] not supported.";
-            
-            NCBI_THROW(CSeqDBException, eArgErr, msg);
-    }
-    
-    string buffer;
-    
-    if (need_cvt) {
-        CSeqUtil::ECoding target_coding =
-            (is_protein
-             ? CSeqUtil::e_Ncbistdaa
-             : CSeqUtil::e_Ncbi8na);
-        
-        int amt = CSeqConvert::Convert(input_data,
-                                       coding,
-                                       0,
-                                       base_length,
-                                       buffer,
-                                       target_coding);
-        
-        if (amt == 0) {
-            NCBI_THROW(CSeqDBException,
-                       eArgErr,
-                       "Could not do data type conversion for CBioseq.");
-        }
-        
-        output_data.assign(buffer.data(), buffer.size());
-    }
-    
-    return SeqDB_SequenceHash(output_data.data(), output_data.size());
-}
-
 
 END_NCBI_SCOPE
 

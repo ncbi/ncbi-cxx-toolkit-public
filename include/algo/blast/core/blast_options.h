@@ -214,6 +214,15 @@ typedef struct SRepeatFilterOptions {
     char* database;   /**< Nucleotide database for mini BLAST search. */
 } SRepeatFilterOptions;
 
+/** Filtering options for organism-specific filtering with Window
+    Masker.  The taxid and filename are alternative means of choosing
+    which Window Masker database to use.
+ */
+typedef struct SWindowMaskerOptions {
+    int          taxid;    /**< Select masking database for this TaxID. */
+    const char * database; /**< Use winmasker database at this location. */
+} SWindowMaskerOptions;
+
 /** All filtering options */
 typedef struct SBlastFilterOptions {
     Boolean mask_at_hash;         /**< mask query only for lookup table creation */
@@ -221,6 +230,7 @@ typedef struct SBlastFilterOptions {
     SSegOptions* segOptions;      /**< low-complexity filtering for proteins sequences 
             (includes translated nucleotides). */
     SRepeatFilterOptions* repeatFilterOptions;  /**< for organism specific repeat filtering. */
+    SWindowMaskerOptions* windowMaskerOptions;  /**< organism specific filtering with window masker. */
 } SBlastFilterOptions;
 
 
@@ -467,6 +477,15 @@ Int2 SSegOptionsNew(SSegOptions* *seg_options);
 NCBI_XBLAST_EXPORT
 Int2 SRepeatFilterOptionsResetDB(SRepeatFilterOptions* *repeat_options, const char* dbname);
 
+/** Resets name of db for window masker filtering.
+ * @param winmask_options options block constaining field to be reset [in|out]
+ * @param dbname name of the database(s) [in]
+ * @return zero on sucess
+ */
+NCBI_XBLAST_EXPORT
+Int2 SWindowMaskerOptionsResetDB(SWindowMaskerOptions ** winmask_options,
+                                 const char            * dbname);
+
 /** Frees SRepeatFilterOptions.
  * @param repeat_options object to free [in]
  * @return NULL pointer
@@ -474,12 +493,26 @@ Int2 SRepeatFilterOptionsResetDB(SRepeatFilterOptions* *repeat_options, const ch
 NCBI_XBLAST_EXPORT
 SRepeatFilterOptions* SRepeatFilterOptionsFree(SRepeatFilterOptions* repeat_options);
 
+/** Frees SWindowMaskerOptions.
+ * @param winmask_options object to free [in]
+ * @return NULL pointer
+ */
+NCBI_XBLAST_EXPORT SWindowMaskerOptions*
+SWindowMaskerOptionsFree(SWindowMaskerOptions * winmask_options);
+
 /** Allocates memory for SRepeatFilterOptions, fills in defaults.
  * @param repeat_options options that are being returned [in|out]
  * @return zero on sucess
  */
 NCBI_XBLAST_EXPORT
-Int2 SRepeatFilterOptionsNew(SRepeatFilterOptions* *repeat_options);
+Int2 SRepeatFilterOptionsNew(SRepeatFilterOptions ** repeat_options);
+
+/** Allocates memory for SWindowMaskerOptions, fills in defaults.
+ * @param winmask_options options that are being returned [in|out]
+ * @return zero on sucess
+ */
+NCBI_XBLAST_EXPORT
+Int2 SWindowMaskerOptionsNew(SWindowMaskerOptions ** winmask_options);
 
 /** Frees SBlastFilterOptions and all subservient structures.
  * @param filter_options object to free

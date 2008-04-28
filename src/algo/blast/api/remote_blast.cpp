@@ -850,6 +850,16 @@ void CRemoteBlast::SetQueries(CRef<objects::CBioseq_set> bioseqs,
     x_SetMaskingLocationsForQueries(masking_locations);
 }
 
+void CRemoteBlast::SetQueryMasks(const TSeqLocInfoVector& masking_locations)
+{
+    if (!m_QSR->IsSetQueries())
+    {
+        NCBI_THROW(CBlastException, eInvalidArgument,
+                   "Queries must be set before setting the masks.");
+    }
+    x_SetMaskingLocationsForQueries(masking_locations);
+}
+
 void CRemoteBlast::SetQueries(CRemoteBlast::TSeqLocList& seqlocs)
 {
     if (seqlocs.empty()) {
@@ -1302,7 +1312,8 @@ void CRemoteBlast::SetSubjectSequences(CRef<IQueryFactory> subjects)
     SetSubjectSequences(seqs);
 }
 
-void CRemoteBlast::SetSubjectSequences(const list< CRef< CBioseq > > & subj)
+void 
+CRemoteBlast::SetSubjectSequences(const list< CRef< objects::CBioseq > > & subj)
 {
     CRef<CBlast4_subject> subject_p(new CBlast4_subject);
     subject_p->SetSequences() = subj;
@@ -2163,7 +2174,7 @@ ExtractBlast4Request(CNcbiIstream& in)
         default:
             _ASSERT(b4_ss_reply.Empty());
         }
-    } catch (const CException& e) {
+    } catch (const CException&) {
         succeeded = false;
     }
 

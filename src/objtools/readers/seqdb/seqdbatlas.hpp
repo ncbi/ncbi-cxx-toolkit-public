@@ -958,6 +958,7 @@ public:
     /// average inevitably lags behind input value changes.
     ///
     /// @param ratio Amount of smoothing to do.
+    /// @param start Starting value to use for average.
     CSeqDBMovingAverage(double ratio, double start)
         : m_Ratio(ratio),
           m_Average(start)

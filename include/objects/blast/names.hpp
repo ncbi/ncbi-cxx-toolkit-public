@@ -123,8 +123,8 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DbGeneticCode;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DbLength;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DustFiltering;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DustFilteringLevel;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DustFilteringWindow;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DustFilteringLinker;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DustFilteringWindow;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_EffectiveSearchSpace;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_EntrezQuery;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_EvalueThreshold;
@@ -174,6 +174,8 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapXDropoff;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapXDropoffFinal;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SmithWatermanMode;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UnifiedP;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowMaskerDatabase;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowMaskerTaxId;
 
 // List of formatting-related options
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Format_Alignments;

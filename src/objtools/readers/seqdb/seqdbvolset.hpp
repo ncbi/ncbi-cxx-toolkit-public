@@ -172,10 +172,10 @@ public:
     ///   The names of the volumes this object will manage.
     /// @param prot_nucl
     ///   Whether these are protein or nucleotide sequences.
-    /// @param user_gilist
-    ///   If specified, will be used to filter deflines by GI.
-    /// @param neg_gilist
-    ///   If specified, will be used to filter deflines by GI.
+    /// @param user_list
+    ///   If specified, will be used to include deflines by GI or TI.
+    /// @param neg_list
+    ///   If specified, will be used to exclude deflines by GI or TI.
     CSeqDBVolSet(CSeqDBAtlas          & atlas,
                  const vector<string> & vol_names,
                  char                   prot_nucl,

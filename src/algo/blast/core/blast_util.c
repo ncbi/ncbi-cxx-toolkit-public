@@ -805,7 +805,7 @@ Int2 BLAST_PackDNA(const Uint1* buffer, Int4 length, EBlastEncoding encoding,
 size_t
 BLAST_GetTranslatedProteinLength(size_t nucleotide_length, unsigned int context)
 {
-    ASSERT(context >= 0 && context < NUM_FRAMES);
+    ASSERT((int)context >= 0 && context < NUM_FRAMES);
     if (nucleotide_length == 0) {
         return 0;
     }

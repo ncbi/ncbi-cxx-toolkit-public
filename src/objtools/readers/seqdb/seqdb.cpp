@@ -87,6 +87,8 @@ static char s_GetSeqTypeChar(CSeqDB::ESeqType seqtype)
 ///   This ID list specifies OIDs and deflines to include.
 /// @param neg_list
 ///   This negative ID list specifies deflines and OIDs to exclude.
+/// @param idset
+///   If set, this specifies IDs to either include or exclude.
 /// @return
 ///   The CSeqDBImpl object that was created.
 

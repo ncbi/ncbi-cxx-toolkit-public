@@ -167,6 +167,8 @@ public:
         eGaps,                 ///< Total number of gaps
         ePercentPositives,     ///<percent positives 
         eFrames,               ///< frames
+        eQueryFrame,               ///< frames
+        eSubjFrame,               ///< frames
         eMaxTabularField       ///< Sentinel value
     };
 
@@ -250,6 +252,8 @@ protected:
     void x_PrintPercentPositives();
     /// Print frames
     void x_PrintFrames();
+    void x_PrintQueryFrame();
+    void x_PrintSubjectFrame();
 
 private:
 
@@ -427,6 +431,10 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
         x_PrintPercentPositives(); break;
     case eFrames:
         x_PrintFrames(); break;
+    case eQueryFrame:
+        x_PrintQueryFrame(); break;
+    case eSubjFrame:
+        x_PrintSubjectFrame(); break;        
     default:
         break;
     }
@@ -500,6 +508,17 @@ inline void CBlastTabularInfo::x_PrintFrames(void)
 {
     m_Ostream << m_QueryFrame << "/" << m_SubjectFrame;
 }
+
+inline void CBlastTabularInfo::x_PrintQueryFrame(void)
+{
+    m_Ostream << m_QueryFrame;
+}
+
+inline void CBlastTabularInfo::x_PrintSubjectFrame(void)
+{
+    m_Ostream << m_SubjectFrame;
+}
+
 
 inline void CBlastTabularInfo::x_PrintNumIdentical(void)
 {

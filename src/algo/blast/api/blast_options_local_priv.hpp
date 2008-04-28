@@ -124,6 +124,12 @@ public:
     const char* GetRepeatFilteringDB() const;
     void SetRepeatFilteringDB(const char* db);
 
+    int GetWindowMaskerTaxId() const;
+    void SetWindowMaskerTaxId(int taxid);
+
+    const char* GetWindowMaskerDatabase() const;
+    void SetWindowMaskerDatabase(const char* db);
+
     objects::ENa_strand GetStrandOption() const;
     void SetStrandOption(objects::ENa_strand s);
 
@@ -502,17 +508,17 @@ CBlastOptionsLocal::SetFilterString(const char* f)
    else
    {
        if (m_QueryOpts->filtering_options)
-          m_QueryOpts->filtering_options = 
-              SBlastFilterOptionsFree(m_QueryOpts->filtering_options);
+           m_QueryOpts->filtering_options = 
+               SBlastFilterOptionsFree(m_QueryOpts->filtering_options);
        m_QueryOpts->filtering_options = new_opts;
        new_opts = NULL;
    }
 
    // Repeat filtering is only allowed for blastn.
    if (GetProgramType() != eBlastTypeBlastn && 
-            m_QueryOpts->filtering_options->repeatFilterOptions)
-         m_QueryOpts->filtering_options->repeatFilterOptions =
-            SRepeatFilterOptionsFree(m_QueryOpts->filtering_options->repeatFilterOptions);
+       m_QueryOpts->filtering_options->repeatFilterOptions)
+       m_QueryOpts->filtering_options->repeatFilterOptions =
+           SRepeatFilterOptionsFree(m_QueryOpts->filtering_options->repeatFilterOptions);
 
    return;
 }
@@ -737,13 +743,51 @@ CBlastOptionsLocal::GetRepeatFilteringDB() const
 inline void
 CBlastOptionsLocal::SetRepeatFilteringDB(const char* db)
 {
-
    if (!db)
       return;
 
    SRepeatFilterOptionsResetDB(&(m_QueryOpts->filtering_options->repeatFilterOptions), db);
 
    return;
+}
+
+inline int
+CBlastOptionsLocal::GetWindowMaskerTaxId() const
+{
+    if (m_QueryOpts->filtering_options->windowMaskerOptions == NULL)
+        return 0;
+    
+    return m_QueryOpts->filtering_options->windowMaskerOptions->taxid;
+}
+
+inline void
+CBlastOptionsLocal::SetWindowMaskerTaxId(int taxid)
+{
+    if (m_QueryOpts->filtering_options->windowMaskerOptions == NULL)
+        SWindowMaskerOptionsNew
+            (&(m_QueryOpts->filtering_options->windowMaskerOptions));
+    
+    m_QueryOpts->filtering_options->windowMaskerOptions->taxid = taxid;
+}
+
+inline const char*
+CBlastOptionsLocal::GetWindowMaskerDatabase() const
+{
+    if (! m_QueryOpts->filtering_options->windowMaskerOptions)
+        return NULL;
+    
+    return m_QueryOpts->filtering_options->windowMaskerOptions->database;
+}
+
+inline void
+CBlastOptionsLocal::SetWindowMaskerDatabase(const char* db)
+{
+    if (m_QueryOpts->filtering_options->windowMaskerOptions == NULL)
+        SWindowMaskerOptionsNew
+            (&(m_QueryOpts->filtering_options->windowMaskerOptions));
+    
+    SWindowMaskerOptionsResetDB
+        (&(m_QueryOpts->filtering_options->windowMaskerOptions), db);
 }
 
 inline objects::ENa_strand

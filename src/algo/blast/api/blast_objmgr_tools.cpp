@@ -53,7 +53,8 @@ static char const rcsid[] =
 #include "blast_seqalign.hpp"
 
 #include "dust_filter.hpp"
-#include "repeats_filter.hpp"
+#include <algo/blast/api/repeats_filter.hpp>
+#include "winmask_filter.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -199,12 +200,22 @@ CBlastQuerySourceOM::x_CalculateMasks(void)
             }
         }
         if (m_Options->GetRepeatFiltering()) {
+            string rep_db = m_Options->GetRepeatFilteringDB();
+            
             if (m_QueryVector.NotEmpty()) {
-                Blast_FindRepeatFilterLoc(*m_QueryVector,
-                                          m_Options->GetRepeatFilteringDB());
+                Blast_FindRepeatFilterLoc(*m_QueryVector, rep_db.c_str());
             } else {
-                Blast_FindRepeatFilterLoc(*m_TSeqLocVector,
-                                          m_Options->GetRepeatFilteringDB());
+                Blast_FindRepeatFilterLoc(*m_TSeqLocVector, rep_db.c_str());
+            }
+        }
+        
+        if (NULL != m_Options->GetWindowMaskerDatabase() ||
+            0    != m_Options->GetWindowMaskerTaxId()) {
+            
+            if (m_QueryVector.NotEmpty()) {
+                Blast_FindWindowMaskerLoc(*m_QueryVector, m_Options);
+            } else {
+                Blast_FindWindowMaskerLoc(*m_TSeqLocVector, m_Options);
             }
         }
     }

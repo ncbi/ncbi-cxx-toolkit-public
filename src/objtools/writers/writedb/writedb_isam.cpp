@@ -765,6 +765,9 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
     }
 }
 
+/// Compare two strings, ignoring case.
+/// @param a First string.
+/// @param b Second string.
 bool s_NoCaseEqual(CTempString & a, CTempString & b)
 {
     if (a.size() != b.size())

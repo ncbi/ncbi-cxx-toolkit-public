@@ -153,9 +153,13 @@ private:
     /// User-specified Negative GI list.
     TNegativeRef m_NegativeList;
     
-    /// Maps of all alias node specified GI lists and TI lists.
+    /// Type used for maps of filenames to GI or TI lists.
     typedef map<string, TListRef> TNodeListMap;
+    
+    /// Map of filenames to alias node specified GI lists.
     TNodeListMap m_GINodeListMap;
+    
+    /// Map of filenames to alias node specified TI lists.
     TNodeListMap m_TINodeListMap;
 };
 

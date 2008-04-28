@@ -125,6 +125,55 @@ s_ParseRepeatOptions(const char* repeat_options, char** dbname)
     return 0;
 }
 
+/** Parses window masker options string.
+ * @param winmask_options Input character string [in]
+ * @param dbname Database name for window masker filtering [out]
+ * @param taxid Taxonomic ID for window masker filtering [out]
+ */
+static Int2  
+s_ParseWindowMaskerOptions(const char  * winmask_options,
+                           char       ** dbname,
+                           int         * taxid)
+{
+    char* ptr = NULL;
+    
+    ASSERT(dbname);
+    *dbname = NULL;
+    
+    if (!winmask_options)
+        return 0;
+    
+    ptr = strstr(winmask_options, "-d");
+    
+    if (ptr) {
+        char * endp = 0;
+        
+        ptr += 2;
+        while (*ptr == ' ' || *ptr == '\t')
+            ++ptr;
+        
+        *dbname = strdup(ptr);
+        
+        for(endp = *dbname; *endp; ++endp) {
+            if (*endp == ' ' || *endp == '\t') {
+                *endp = (char)0;
+                break;
+            }
+        }
+    } else {
+        ptr = strstr(winmask_options, "-t");
+        
+        if (ptr) {
+            ptr += 2;
+            while (*ptr == ' ' || *ptr == '\t')
+                ++ptr;
+            *taxid = atoi(ptr);
+        }
+    }
+
+    return 0;
+}
+
 /** Parses options used for dust.
  * @param ptr buffer containing instructions. [in]
  * @param level sets level for dust. [out]
@@ -262,7 +311,8 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
         SSegOptions* segOptions = NULL;
         SDustOptions* dustOptions = NULL;
         SRepeatFilterOptions* repeatOptions = NULL;
-   
+        SWindowMaskerOptions * winmaskOptions = NULL;
+        
         *filtering_options = NULL;
         if (blast_message)
             *blast_message = NULL;
@@ -355,6 +405,35 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
                              }
                         }
                 }
+                else if (*ptr == 'W')
+                {
+                    SWindowMaskerOptionsNew(&winmaskOptions);
+                    
+                    ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
+                    if (buffer[0] != NULLB) {
+                        char* dbname = NULL;
+                        int taxid = 0;
+                        
+                        status = s_ParseWindowMaskerOptions(buffer, &dbname, &taxid);
+                        if (status) {
+                            winmaskOptions = SWindowMaskerOptionsFree(winmaskOptions);
+                            sprintf(error_buffer, "Error parsing filter string: %s", buffer);
+                            if (blast_message)
+                                Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
+                                                   error_buffer);
+                            
+                            sfree(buffer);
+                            return status;
+                        }
+                        if (dbname) {
+                            sfree(winmaskOptions->database);
+                            winmaskOptions->database = dbname;
+                        }
+                        if (taxid) {
+                            winmaskOptions->taxid = taxid;
+                        }
+                    }
+                }
 		else if (*ptr == 'L' || *ptr == 'T')
 		{ /* do low-complexity filtering; dust for blastn, otherwise seg.*/
                         if (program_number == eBlastTypeBlastn)
@@ -382,6 +461,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
         (*filtering_options)->dustOptions = dustOptions;
         (*filtering_options)->segOptions = segOptions;
         (*filtering_options)->repeatFilterOptions = repeatOptions;
+        (*filtering_options)->windowMaskerOptions = winmaskOptions;
         (*filtering_options)->mask_at_hash = mask_at_hash;
 
         return status;

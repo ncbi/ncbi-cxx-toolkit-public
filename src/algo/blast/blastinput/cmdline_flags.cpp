@@ -139,6 +139,8 @@ const string kDfltArgDustFiltering =
     NStr::DoubleToString(kDustLinker);
 
 const string kArgFilteringDb("filtering_db");
+const string kArgWindowMaskerTaxId("window_masker_taxid");
+const string kArgWindowMaskerDatabase("window_masker_db");
 const string kArgLookupTableMaskingOnly("soft_masking");
 
 const string kArgPSINumIterations("num_iterations");

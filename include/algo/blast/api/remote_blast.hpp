@@ -157,6 +157,10 @@ public:
     void SetQueries(CRef<objects::CBioseq_set> bioseqs,
                     const TSeqLocInfoVector& masking_locations);
     
+    /// Set the masking locations for queries.
+    /// @param masking_locations Masked regions for the queries above [in]
+    void SetQueryMasks(const TSeqLocInfoVector& masking_locations);
+
     /// Typedef for a list of Seq-locs
     typedef list< CRef<objects::CSeq_loc> > TSeqLocList;
     
@@ -371,17 +375,18 @@ public:
     /// Different parts of the CBioseq can be fetched, including the meta
     /// data, and part of the sequence data.
     /// 
-    /// @param seqid     A vector of Seq-ids for which Bioseqs are requested.
-    /// @param database  A list of databases from which to get the sequences.
-    /// @param seqtype   The residue type, 'p' from protein, 'n' for nucleotide.
-    /// @param get_meta  True if meta-data should be retrieved.
-    /// @param start_pos Start coordinate of data to fetch (or zero if none).
-    /// @param end_pos   End coordinate of data to fetch (or zero if none).
-    /// @param bioseq    The requested Bioseq (minus data) or NULL.
-    /// @param ids       The Seq-ids for this sequence, or an empty list.
-    /// @param length    The length of the sequence (or -1).
-    /// @param errors    An error message (if any).
-    /// @param warnings  A warning (if any).
+    /// @param seqid     A vector of Seq-ids for which Bioseqs are requested. [in]
+    /// @param database  A list of databases from which to get the sequences. [in]
+    /// @param seqtype   The residue type, 'p' from protein, 'n' for nucleotide. [in]
+    /// @param get_meta  True if meta-data should be retrieved. [in]
+    /// @param start_pos Start coordinate of data to fetch (or zero if none). [in]
+    /// @param end_pos   End coordinate of data to fetch (or zero if none). [in]
+    /// @param bioseq    The requested Bioseq (minus data) or NULL. [out]
+    /// @param ids       The Seq-ids for this sequence, or an empty list. [out]
+    /// @param length    The length of the sequence (or -1). [out]
+    /// @param seq_data  Sequence data in CSeq_data format. [out]
+    /// @param errors    An error message (if any). [out]
+    /// @param warnings  A warning (if any). [out]
     static void
     GetSequenceInfo(objects::CSeq_id                 & seqid,     // in
                     const string                     & database,  // in

@@ -131,7 +131,27 @@ public:
     /// Enable repeat filtering.
     /// @param db repeat filtering database [in]
     void SetRepeatFilteringDB(const char* db) { m_Opts->SetRepeatFilteringDB(db); }
-
+    
+    /// Get the window masker taxid (or 0 if not set).
+    int GetWindowMaskerTaxId() const { return m_Opts->GetWindowMaskerTaxId(); }
+    
+    /// Enable window masker and select a taxid (or 0 to disable).
+    /// @param taxid Select Window Masker filtering database for this taxid [in]
+    void SetWindowMaskerTaxId(int taxid) { m_Opts->SetWindowMaskerTaxId(taxid); }
+    
+    /// Get the window masker database name (or NULL if not set).
+    const char* GetWindowMaskerDatabase() const
+    {
+        return m_Opts->GetWindowMaskerDatabase();
+    }
+    
+    /// Enable window masker and select a database (or NULL to disable).
+    /// @param taxid Select Window Masker filtering database by filename [in]
+    void SetWindowMaskerDatabase(const char* db)
+    {
+        m_Opts->SetWindowMaskerDatabase(db);
+    }
+    
     /******************* Initial word options ***********************/
 
     /// Returns XDropoff

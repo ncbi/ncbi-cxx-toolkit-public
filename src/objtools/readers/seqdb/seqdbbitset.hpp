@@ -115,8 +115,6 @@ public:
         }
     }
 
-    void foo();
-    
     /// Constructor.
     ///
     /// This constructs a normal (eNone) bit array with the given

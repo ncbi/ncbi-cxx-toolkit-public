@@ -41,7 +41,7 @@
 #include <algo/blast/api/seqsrc_multiseq.hpp>
 #include <algo/blast/api/seqinfosrc_seqvec.hpp>
 #include "dust_filter.hpp"
-#include "repeats_filter.hpp"
+#include <algo/blast/api/repeats_filter.hpp>
 #include "blast_seqalign.hpp"
 #include "blast_objmgr_priv.hpp"
 #include <algo/blast/api/objmgr_query_data.hpp>

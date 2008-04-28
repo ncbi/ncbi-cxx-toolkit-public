@@ -88,6 +88,9 @@ void CBlastTabularInfo::x_SetFieldsToShow(const string& format)
     m_FieldMap["gaps"] = eGaps;
     m_FieldMap["ppos"] = ePercentPositives;
     m_FieldMap["frames"] = eFrames;
+    m_FieldMap["qframe"] = eQueryFrame;
+    m_FieldMap["sframe"] = eSubjFrame;
+    
     
     vector<string> format_tokens;
 
@@ -458,7 +461,7 @@ void CBlastTabularInfo::Print()
     ITERATE(list<ETabularField>, iter, m_FieldsToShow) {
         // Add tab in front of field, except for the first field.
         if (iter != m_FieldsToShow.begin())
-            m_Ostream << "\t";
+            m_Ostream << m_FieldDelimiter;
         x_PrintField(*iter);
     }
     m_Ostream << "\n";
@@ -527,6 +530,10 @@ void CBlastTabularInfo::x_PrintFieldNames()
             m_Ostream << "% positives"; break;
         case eFrames:
             m_Ostream << "query/sbjct frames"; break; 
+        case eQueryFrame:
+            m_Ostream << "query frame"; break; 
+        case eSubjFrame:
+            m_Ostream << "sbjct frame"; break; 
         default:
             break;
         }

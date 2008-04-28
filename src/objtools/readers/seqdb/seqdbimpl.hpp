@@ -661,7 +661,7 @@ public:
     /// @param oid Ordinal id of the sequence.
     /// @param buffer Buffer of raw data.
     /// @param seq_length Returned length of the sequence data.
-    /// @param seq_length Returned length of the ambiguity data.
+    /// @param ambig_length Returned length of the ambiguity data.
     void GetRawSeqAndAmbig(int           oid,
                            const char ** buffer,
                            int         * seq_length,

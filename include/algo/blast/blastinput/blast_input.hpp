@@ -84,7 +84,11 @@ public:
     /// @param retrieve_seq_data When gis/accessions are provided in the input,
     ///                 should the sequence data be fetched by this library?
     /// @param range Range restriction for all sequences (default means no
-    ///                 restriction) [in]
+    ///                 restriction). To support the specification of a single
+    ///                 coordinate (start or stop), use the SetRange() method,
+    ///                 the missing coordinate will be set the default value 
+    ///                 (e.g.: 0 for starting coordinate, sequence length for
+    ///                 ending coordinate) [in]
     /// @param seqlen_thresh2guess sequence length threshold for molecule
     ///                 type guessing (see @ref kSeqLenThreshold2Guess) [in]
     /// @param local_id_counter counter used to create the CSeqidGenerator to

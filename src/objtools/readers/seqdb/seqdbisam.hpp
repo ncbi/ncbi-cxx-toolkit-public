@@ -568,7 +568,7 @@ private:
     ///   The starting OID for this ISAM file's database volume.
     /// @param vol_end
     ///   The ending OID for this ISAM file's database volume.
-    /// @param nlist
+    /// @param gis
     ///   The Negative ID list to translate.
     /// @param use_tis
     ///   Iterate over TIs if true (GIs otherwise).
@@ -1134,11 +1134,11 @@ private:
     
     /// Make filenames for ISAM file.
     ///
-    /// @param dbname Base name of the database volume.
-    /// @param prot_nucl 'n' or 'p' for protein or nucleotide.
-    /// @param file_ext_char Identifier symbol; 's' for string, etc.
-    /// @param index_name Filename of ISAM index file.
-    /// @param index_name Filename of ISAM data file.
+    /// @param dbname Base name of the database volume. [in]
+    /// @param prot_nucl 'n' or 'p' for protein or nucleotide. [in]
+    /// @param file_ext_char Identifier symbol; 's' for string, etc. [in]
+    /// @param index_name Filename of ISAM index file. [out]
+    /// @param data_name Filename of ISAM data file. [out]
     static void x_MakeFilenames(const string & dbname,
                                 char           prot_nucl,
                                 char           file_ext_char,

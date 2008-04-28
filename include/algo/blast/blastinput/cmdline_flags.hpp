@@ -89,10 +89,6 @@ NCBI_XBLAST_EXPORT extern const string kArgEvalue;
 /// stages
 NCBI_XBLAST_EXPORT extern const string kArgMinRawGappedScore;
 
-/// Argument for minimum raw score to keep an alignment in the preliminary
-/// gapped and traceback stages
-NCBI_XBLAST_EXPORT extern const string kMinRawGappedScore;
-
 /* Formatting options */
 
 /// Argument to select formatted output type
@@ -206,6 +202,12 @@ NCBI_XBLAST_EXPORT extern const string kDfltArgDustFiltering;
 /// Argument to specify a filtering database (i.e.: one containing repetitive
 /// elements)
 NCBI_XBLAST_EXPORT extern const string kArgFilteringDb;
+
+/// Argument to specify a taxid for Window Masker.
+NCBI_XBLAST_EXPORT extern const string kArgWindowMaskerTaxId;
+
+/// Argument to specify a path to a Window Masker database.
+NCBI_XBLAST_EXPORT extern const string kArgWindowMaskerDatabase;
 
 /// Argument to specify to mask query during lookup table creation
 NCBI_XBLAST_EXPORT extern const string kArgLookupTableMaskingOnly;

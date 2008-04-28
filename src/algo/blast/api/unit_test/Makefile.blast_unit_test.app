@@ -7,7 +7,7 @@ SRC = test_objmgr blast_test_util bl2seq_unit_test gencode_singleton_unit_test \
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS)
+LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS) xalgowinmask
 LIB = $(LIB_:%=%$(STATIC))
 
 LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(NETWORK_LIBS) \
@@ -18,3 +18,4 @@ REQUIRES = objects
 
 CHECK_CMD = blast_unit_test
 CHECK_AUTHORS = blastsoft
+

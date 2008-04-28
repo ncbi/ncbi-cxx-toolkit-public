@@ -236,7 +236,7 @@ int CPsiBlastApp::Run(void)
             scope->AddTopLevelSeqEntry(pssm->SetQuery());
 
             CRef<CSeq_loc> sl(new CSeq_loc());
-            sl->SetId(*pssm->GetQuery().GetSeq().GetFirstId());
+            sl->SetWhole().Assign(*pssm->GetQuery().GetSeq().GetFirstId());
 
             CRef<CBlastSearchQuery> q(new CBlastSearchQuery(*sl, *scope));
             query->AddQuery(q);

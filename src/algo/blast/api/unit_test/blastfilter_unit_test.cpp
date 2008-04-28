@@ -51,7 +51,8 @@
 #include <algo/blast/core/blast_setup.h>
 
 // For repeats and dust filtering only
-#include "../repeats_filter.hpp"
+#include <algo/blast/api/repeats_filter.hpp>
+#include "../winmask_filter.hpp"
 #include "../dust_filter.hpp"
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
@@ -526,7 +527,70 @@ BOOST_AUTO_TEST_CASE(RepeatsFilter) {
 
     BOOST_REQUIRE_EQUAL(kNumLocs, loc_index);
 }
+
+BOOST_AUTO_TEST_CASE(WindowMasker)
+{
+    int pair_size = sizeof(TSeqPos) * 2;
     
+    const TSeqPos intervals[] =
+        { 0, 79,
+          100, 122,
+          146, 169,
+          225, 248,
+          286, 329,
+          348, 366,
+          373, 688,
+          701, 971,
+          974, 1303,
+          1450, 1485,
+          2858, 2887,
+          3086, 3212,
+          3217, 3735,
+          4142, 4162,
+          5423, 5443,
+          5797, 5817,
+          6333, 6383,
+          6458, 6477,
+          6519, 6539,
+          7043, 7063,
+          7170, 7189,
+          7604, 7623,
+          8454, 8476,
+          8829, 8851,
+          8860, 8889 };
+    
+    size_t num_locs = sizeof(intervals) / pair_size;
+    BOOST_REQUIRE(0 == (sizeof(intervals) % pair_size));
+    
+    CSeq_id id("gi|1945388");
+    auto_ptr<SSeqLoc>
+        qsl(CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
+    
+    TSeqLocVector query_v;
+    query_v.push_back(*qsl);
+    
+    CBlastNucleotideOptionsHandle nucl_handle;
+    nucl_handle.SetWindowMaskerTaxId(9606);
+    Blast_FindWindowMaskerLoc(query_v, &nucl_handle);
+    
+    BOOST_REQUIRE(query_v[0].mask.NotEmpty());
+    BOOST_REQUIRE(query_v[0].mask->IsPacked_int());
+    const CPacked_seqint::Tdata& seqinterval_list = 
+        query_v[0].mask->GetPacked_int().Get();
+    
+    size_t loc_index = 0;
+    BOOST_REQUIRE_EQUAL(num_locs, seqinterval_list.size());
+    
+    ITERATE(CPacked_seqint::Tdata, itr,  seqinterval_list) {
+        BOOST_REQUIRE_EQUAL(intervals[loc_index],   (*itr)->GetFrom());
+        BOOST_REQUIRE_EQUAL(intervals[loc_index+1], (*itr)->GetTo());
+        BOOST_REQUIRE(! (*itr)->CanGetStrand());
+        loc_index += 2;
+    }
+    
+    BOOST_REQUIRE_EQUAL(num_locs*2, loc_index);
+}
+
 BOOST_AUTO_TEST_CASE(RepeatsFilter_OnSeqInterval) {
     vector<TSeqRange> masked_regions;
     masked_regions.push_back(TSeqRange(85028, 85354));
@@ -573,6 +637,59 @@ BOOST_AUTO_TEST_CASE(RepeatsFilter_OnSeqInterval) {
     BOOST_REQUIRE_EQUAL(masked_regions.size(), loc_index);
 }
 
+BOOST_AUTO_TEST_CASE(WindowMasker_OnSeqInterval)
+{
+    // Note that ranges overlap -- the windowmasker code does not eliminate this at the moment.
+    vector<TSeqRange> masked_regions;
+    
+    // these two are from dust
+    masked_regions.push_back(TSeqRange(85028, 85060));
+    masked_regions.push_back(TSeqRange(85211, 85236));
+    
+    // these are from window masker
+    masked_regions.push_back(TSeqRange(85019, 85172));
+    masked_regions.push_back(TSeqRange(85190, 85345));
+    masked_regions.push_back(TSeqRange(85385, 85452));
+    masked_regions.push_back(TSeqRange(85483, 85505));
+    masked_regions.push_back(TSeqRange(85511, 85533));
+    masked_regions.push_back(TSeqRange(85575, 85596));
+    masked_regions.push_back(TSeqRange(85673, 85694));
+    masked_regions.push_back(TSeqRange(85725, 85745));
+    
+    CSeq_id id("gi|20196551");
+    auto_ptr<SSeqLoc>
+        qsl(CTestObjMgr::Instance().CreateSSeqLoc
+            (id, make_pair<TSeqPos, TSeqPos>(85000, 86200), eNa_strand_both));
+    
+    TSeqLocVector query_v;
+    query_v.push_back(*qsl);
+    
+    CBlastNucleotideOptionsHandle nucl_handle;
+    nucl_handle.SetDustFiltering(true);
+    nucl_handle.SetWindowMaskerTaxId(9606);
+    
+    Blast_FindDustFilterLoc(query_v, &nucl_handle);
+    Blast_FindWindowMaskerLoc(query_v, &nucl_handle);
+    
+    BOOST_REQUIRE(query_v[0].mask->IsPacked_int());
+    const CPacked_seqint::Tdata& seqinterval_list = 
+        query_v[0].mask->GetPacked_int().Get();
+    
+    size_t loc_index = 0;
+    BOOST_REQUIRE_EQUAL(masked_regions.size(), seqinterval_list.size());
+    
+    ITERATE(CPacked_seqint::Tdata, itr,  seqinterval_list) {
+        BOOST_REQUIRE_EQUAL(masked_regions[loc_index].GetFrom(), 
+                            (*itr)->GetFrom());
+        BOOST_REQUIRE_EQUAL(masked_regions[loc_index].GetTo(), 
+                            (*itr)->GetTo());
+        BOOST_REQUIRE(!(*itr)->CanGetStrand());
+        ++loc_index;
+    }
+    
+    BOOST_REQUIRE_EQUAL(masked_regions.size(), loc_index);
+}
+
 BOOST_AUTO_TEST_CASE(RepeatsFilter_NoHitsFound) {
     CSeq_id id("gi|33079743");
     auto_ptr<SSeqLoc> qsl(
@@ -588,6 +705,22 @@ BOOST_AUTO_TEST_CASE(RepeatsFilter_NoHitsFound) {
     BOOST_REQUIRE(query_v[0].mask.Empty());
 }
 
+BOOST_AUTO_TEST_CASE(WindowMasker_NoHitsFound) {
+    CSeq_id id("gi|33079743");
+    auto_ptr<SSeqLoc> qsl
+        (CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
+    
+    TSeqLocVector query_v;
+    query_v.push_back(*qsl);
+    
+    CBlastNucleotideOptionsHandle nucl_handle;
+    nucl_handle.SetWindowMaskerTaxId(9606);
+    
+    Blast_FindRepeatFilterLoc(query_v, &nucl_handle);
+    
+    BOOST_REQUIRE(query_v[0].mask.Empty());
+}
+
 BOOST_AUTO_TEST_CASE(RepeatsFilterWithMissingParameter) {
     CSeq_id id("gi|1945388");
     auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
@@ -598,6 +731,19 @@ BOOST_AUTO_TEST_CASE(RepeatsFilterWithMissingParameter) {
     // note the missing argument to the repeats database
     nucl_handle.SetFilterString("m L; R -d ");
     BOOST_REQUIRE_THROW(Blast_FindRepeatFilterLoc(query_v, &nucl_handle),
+                        CBlastException);
+}
+
+BOOST_AUTO_TEST_CASE(WindowMaskerWithMissingParameter) {
+    CSeq_id id("gi|1945388");
+    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    TSeqLocVector query_v;
+    query_v.push_back(*qsl);
+
+    CBlastNucleotideOptionsHandle nucl_handle;
+    // note the missing argument to the repeats database
+    nucl_handle.SetFilterString("m L; W -d ");
+    BOOST_REQUIRE_THROW(Blast_FindWindowMaskerLoc(query_v, &nucl_handle),
                         CBlastException);
 }
 
@@ -1330,6 +1476,19 @@ BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastpL)
     BOOST_REQUIRE(filtering_options->segOptions);
     filtering_options = SBlastFilterOptionsFree(filtering_options);
 }
+BOOST_AUTO_TEST_CASE(FilterOptionsFromStringBlastnW)
+{
+    const EBlastProgramType kProgram = eBlastTypeBlastn;
+    SBlastFilterOptions* filtering_options = NULL;
+    Int2 status = BlastFilteringOptionsFromString(kProgram, (char*) "W -t 9606", &filtering_options, NULL);
+    BOOST_REQUIRE(status == 0);
+    BOOST_REQUIRE(! filtering_options->mask_at_hash);
+    BOOST_REQUIRE(! filtering_options->dustOptions);
+    BOOST_REQUIRE(! filtering_options->segOptions);
+    BOOST_REQUIRE(! filtering_options->repeatFilterOptions);
+    BOOST_REQUIRE(filtering_options->windowMaskerOptions);
+    filtering_options = SBlastFilterOptionsFree(filtering_options);
+}
 
 BOOST_AUTO_TEST_CASE(FilterMerge)
 {
@@ -1380,6 +1539,8 @@ BOOST_AUTO_TEST_CASE(FilterStringFalse)
     nucl_handle.SetFilterString("F");
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetMaskAtHash());
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetDustFiltering());
+    BOOST_REQUIRE_EQUAL(false, nucl_handle.GetWindowMaskerTaxId());
+    BOOST_REQUIRE_EQUAL((char*)0, nucl_handle.GetWindowMaskerDatabase());
 }
 
 BOOST_AUTO_TEST_CASE(MergeOptionHandle) {
@@ -1404,6 +1565,8 @@ BOOST_AUTO_TEST_CASE(OptionsHandleClear) {
     nucl_handle.SetFilterString("R -d repeat/repeat_9606");
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetDustFiltering());
     BOOST_REQUIRE_EQUAL(true, nucl_handle.GetRepeatFiltering());
+    BOOST_REQUIRE_EQUAL(false, nucl_handle.GetWindowMaskerTaxId());
+    BOOST_REQUIRE_EQUAL((char*)0, nucl_handle.GetWindowMaskerDatabase());
 }
 
 BOOST_AUTO_TEST_CASE(GetSeqLocInfoVector_EmptyQueryIdVector) {

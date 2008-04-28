@@ -91,6 +91,33 @@ Int2 SSegOptionsNew(SSegOptions* *seg_options)
     return 0;
 }
 
+Int2 SWindowMaskerOptionsNew(SWindowMaskerOptions ** winmask_options)
+{
+    if (winmask_options) {
+        *winmask_options = (SWindowMaskerOptions*) calloc(1, sizeof(SWindowMaskerOptions));
+        if (*winmask_options == NULL)
+            return BLASTERR_MEMORY;
+        
+        (*winmask_options)->taxid = 0;
+        (*winmask_options)->database = NULL;
+        return 0;
+    }
+    return 1;
+}
+
+SWindowMaskerOptions* SWindowMaskerOptionsFree(SWindowMaskerOptions* winmask_options)
+{
+    if (winmask_options)
+    {
+        if (winmask_options->database)
+        {
+            sfree(winmask_options->database);
+        }
+        sfree(winmask_options);
+    }
+    return NULL;
+}
+
 SRepeatFilterOptions* SRepeatFilterOptionsFree(SRepeatFilterOptions* repeat_options)
 {
     if (repeat_options)
@@ -130,6 +157,25 @@ Int2 SRepeatFilterOptionsResetDB(SRepeatFilterOptions* *repeat_options, const ch
     sfree((*repeat_options)->database);
     (*repeat_options)->database = strdup(db);
 
+    return status;
+}
+
+Int2 SWindowMaskerOptionsResetDB(SWindowMaskerOptions ** winmask_options, const char* db)
+{
+    Int2 status=0;
+    
+    if (*winmask_options == NULL)
+        status = SWindowMaskerOptionsNew(winmask_options);
+    
+    if (status)
+        return status;
+    
+    sfree((*winmask_options)->database);
+    
+    if (db) {
+        (*winmask_options)->database = strdup(db);
+    }
+    
     return status;
 }
 
@@ -272,6 +318,46 @@ static SRepeatFilterOptions* s_MergeRepeatOptions(const SRepeatFilterOptions* op
       return retval;
 }
 
+/** Merges together two sets of window masker options, choosing the most non-default one.
+ * 
+ * @param opt1 first set to be merged [in]
+ * @param opt2 second set to be merged [in]
+ * @return the merged options.
+ */
+static SWindowMaskerOptions*
+s_MergeWindowMaskerOptions(const SWindowMaskerOptions* opt1,
+                           const SWindowMaskerOptions* opt2)
+{
+    SWindowMaskerOptions* retval = NULL;
+    const SWindowMaskerOptions* src = NULL;
+    Boolean have1 = FALSE, have2 = FALSE;
+    
+    have1 = opt1 && (opt1->database || opt1->taxid);
+    have2 = opt2 && (opt2->database || opt2->taxid);
+    
+    if (! (have1 || have2))
+        return NULL;
+    
+    if (have1 && ! have2) {
+        src = opt1;
+    } else if (! have1 && have2) {
+        src = opt2;
+    } else {
+        // We have data structures with some kind of content, so
+        // prefer structure 2 as repeat filter options do.
+        src = opt2;
+    }
+    
+    ASSERT(src);
+    ASSERT(src->database || src->taxid);
+    
+    SWindowMaskerOptionsNew(&retval);
+    SWindowMaskerOptionsResetDB(& retval, src->database);
+    retval->taxid = src->taxid;
+    
+    return retval;
+}
+
 Int2 SBlastFilterOptionsMerge(SBlastFilterOptions** combined, const SBlastFilterOptions* opt1,
        const SBlastFilterOptions* opt2)
 {
@@ -298,6 +384,8 @@ Int2 SBlastFilterOptionsMerge(SBlastFilterOptions** combined, const SBlastFilter
          s_MergeSegOptions(opt1 ? opt1->segOptions : NULL, opt2 ? opt2->segOptions : NULL);
      retval->repeatFilterOptions = 
          s_MergeRepeatOptions(opt1 ? opt1->repeatFilterOptions : NULL, opt2 ? opt2->repeatFilterOptions : NULL);
+     retval->windowMaskerOptions = 
+         s_MergeWindowMaskerOptions(opt1 ? opt1->windowMaskerOptions : NULL, opt2 ? opt2->windowMaskerOptions : NULL);
 
      return 0;
 }
