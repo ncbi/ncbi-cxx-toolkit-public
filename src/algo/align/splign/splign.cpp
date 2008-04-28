@@ -209,7 +209,7 @@ size_t CSplign::GetMinSingletonIdentityBps(void) const {
 
 double CSplign::s_GetDefaultMinCompartmentIdty(void)
 {
-    return 0.5;
+    return 0.70;
 }
 
 void CSplign::SetMaxCompsPerQuery(size_t m) {
@@ -250,7 +250,7 @@ void CSplign::SetCompartmentPenalty(double penalty)
 
 double CSplign::s_GetDefaultCompartmentPenalty(void)
 {
-    return 0.4;
+    return 0.55;
 }
 
 double CSplign::GetCompartmentPenalty( void ) const 
