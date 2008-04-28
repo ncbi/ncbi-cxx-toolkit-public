@@ -15,17 +15,18 @@ for dir in "$@"; do
         esac
     fi
     for f in $dir/*; do
-	case "`basename $f`" in
-	    *blast* | datatool | gbench* | id1_fetch | idwwwget | lbsmc \
-	        | one2all | speedtest | testipub | test_checksum | test_mghbn \
-	        | *.gz )
+        case "`basename $f`" in
+            speedtest | testipub | test_checksum | test_mghbn | *.gz )
                 ;;
-	    *test* | *demo* | *sample*)
+            *test* | *demo* | *sample*)
                 gzip -Nf $f
                 ;;
-	    *)
+            *blast* | datatool | gbench* | id1_fetch | idwwwget | lbsmc \
+                | one2all )
+                ;;
+            *)
                 test "$compress_others" = "no" || gzip -Nf $f
                 ;;
-	esac
+        esac
     done
 done
