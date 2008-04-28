@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(SimpleAdd)
 
     SScheduler_TaskInfo task_info = sch->GetNextTaskToExecute(t_prev);
 
-    BOOST_CHECK_EQUAL(task_info.id, 0);
+    BOOST_CHECK_EQUAL(task_info.id, TScheduler_TaskID(0));
     BOOST_CHECK(task_info.task.IsNull());
 
 
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(AddWithRate)
 
     SScheduler_TaskInfo task_info = sch->GetNextTaskToExecute(t_prev);
 
-    BOOST_CHECK_EQUAL(task_info.id, 0);
+    BOOST_CHECK_EQUAL(task_info.id, TScheduler_TaskID(0));
     BOOST_CHECK(task_info.task.IsNull());
 
 
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(AddWithRate)
 
     task_info = sch->GetNextTaskToExecute(t_prev_next);
 
-    BOOST_CHECK_EQUAL(task_info.id, 0);
+    BOOST_CHECK_EQUAL(task_info.id, TScheduler_TaskID(0));
     BOOST_CHECK(task_info.task.IsNull());
 
 
@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(AddWithDelay)
 
     SScheduler_TaskInfo task_info = sch->GetNextTaskToExecute(t_prev);
 
-    BOOST_CHECK_EQUAL(task_info.id, 0);
+    BOOST_CHECK_EQUAL(task_info.id, TScheduler_TaskID(0));
     BOOST_CHECK(task_info.task.IsNull());
 
 
@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(GetTasks)
     const size_t num_tasks = 10;
 
     CRef<CTestSchedTask> tasks[num_tasks];
-    for (int i = 0; i < num_tasks; ++i, t += period) {
+    for (size_t i = 0; i < num_tasks; ++i, t += period) {
         tasks[i] = new CTestSchedTask();
         sch->AddTask(tasks[i].GetPointer(), t);
     }
@@ -260,9 +260,9 @@ BOOST_AUTO_TEST_CASE(GetTasks)
     BOOST_CHECK_EQUAL(ret_tasks.size(), num_tasks);
 
     size_t num_found = 0;
-    for (int i = 0; i < num_tasks; ++i) {
+    for (size_t i = 0; i < num_tasks; ++i) {
         bool found = false;
-        for (int j = 0; j < num_tasks; ++j) {
+        for (size_t j = 0; j < num_tasks; ++j) {
             if (tasks[j].GetPointer() == ret_tasks[i].task.GetPointer()) {
                 found = true;
                 break;
@@ -274,12 +274,12 @@ BOOST_AUTO_TEST_CASE(GetTasks)
     }
     BOOST_CHECK_EQUAL(num_found, num_tasks);
 
-    for (int i = 0; i < num_tasks; ++i) {
+    for (size_t i = 0; i < num_tasks; ++i) {
         sch->RemoveTask(ret_tasks[i].id);
     }
 
     ret_tasks = sch->GetScheduledTasks();
-    BOOST_CHECK_EQUAL(ret_tasks.size(), 0);
+    BOOST_CHECK_EQUAL(ret_tasks.size(), size_t(0));
 }
 
 
