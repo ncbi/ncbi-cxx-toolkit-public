@@ -1256,15 +1256,54 @@ CTL_ITDescriptor::~CTL_ITDescriptor()
 CTL_CursorResultExpl::CTL_CursorResultExpl(CTL_LangCmd* cmd) :
     CTL_CursorResult(cmd->x_GetSybaseCmd(), cmd->GetConnection()),
     m_Cmd(cmd),
-    m_Res(NULL)
+    m_Res(NULL),
+    m_CurItemNo(0),
+    m_ReadBuffer(NULL)
 {
+}
+
+
+void
+CTL_CursorResultExpl::ClearFields(void)
+{
+    ITERATE(vector<CDB_Object*>, it, m_Fields) {
+        delete *it;
+    }
+    ITERATE(vector<I_ITDescriptor*>, it, m_ITDescrs) {
+        delete *it;
+    }
+    m_Fields.clear();
+    m_ITDescrs.clear();
+
+    if (m_ReadBuffer) {
+        free(m_ReadBuffer);
+        m_ReadBuffer = NULL;
+    }
+}
+
+
+EDB_ResType CTL_CursorResultExpl::ResultType() const
+{
+    return eDB_CursorResult;
+}
+
+
+bool CTL_CursorResultExpl::Fetch()
+{
+    // try to get next cursor result
     try {
+        bool fetch_succeeded = false;
+        m_CurItemNo = -1;
+        ClearFields();
+
         GetCmd().Send();
         while (GetCmd().HasMoreResults()) {
             m_Res = GetCmd().Result();
 
             if (m_Res && m_Res->ResultType() == eDB_RowResult) {
-                return;
+                fetch_succeeded = m_Res->Fetch();
+                if (fetch_succeeded)
+                    break;
             }
 
             if (m_Res) {
@@ -1275,45 +1314,27 @@ CTL_CursorResultExpl::CTL_CursorResultExpl(CTL_LangCmd* cmd) :
                 m_Res = NULL;
             }
         }
-    } catch ( const CDB_Exception& e ) {
-        DATABASE_DRIVER_ERROR_EX( e, "Failed to get the results." + GetDbgInfo(), 122510 );
-    }
-}
 
-EDB_ResType CTL_CursorResultExpl::ResultType() const
-{
-    return eDB_CursorResult;
-}
+        if (!fetch_succeeded)
+            return false;
 
+        m_CachedRowInfo = static_cast<const impl::CCachedRowInfo&>
+                                                   (m_Res->GetDefineParams());
 
-const CDBParams& CTL_CursorResultExpl::GetDefineParams(void) const
-{
-    _ASSERT(m_Res);
-    return m_Res->GetDefineParams();
-}
-
-
-bool CTL_CursorResultExpl::Fetch()
-{
-    if (!m_Res) {
-        return false;
-    }
-
-    try {
-        if (m_Res->Fetch()) {
-            return true;
+        int col_cnt = m_Res->GetColumnNum();
+        m_Fields.resize(col_cnt, NULL);
+        m_ITDescrs.resize(col_cnt, NULL);
+        for (int i = 0; i < col_cnt; ++i) {
+            EDB_Type item_type = m_Res->ItemDataType(m_Res->CurrentItemNo());
+            if (item_type == eDB_Text || item_type == eDB_Image) {
+                m_ITDescrs[i] = m_Res->GetImageOrTextDescriptor();
+            }
+            m_Fields[i] = m_Res->GetItem();
         }
-    }
-    catch (CDB_ClientEx& ex) {
-        if (ex.GetDBErrCode() == 200003) {
-            m_Res = NULL;
-        } else {
-            DATABASE_DRIVER_ERROR( "Failed to fetch the results." + GetDbgInfo(), 122511 );
-        }
-    }
 
-    // try to get next cursor result
-    try {
+        m_CurItemNo = 0;
+        m_ReadBytes = 0;
+
         // finish this command
         delete m_Res;
         m_Res = NULL;
@@ -1327,24 +1348,7 @@ bool CTL_CursorResultExpl::Fetch()
             }
         }
 
-        // send the another "fetch cursor_name" command
-        GetCmd().Send();
-        while (GetCmd().HasMoreResults()) {
-            m_Res = GetCmd().Result();
-
-            if (m_Res  &&  m_Res->ResultType() == eDB_RowResult) {
-                return m_Res->Fetch();
-            }
-
-            if (m_Res) {
-                while (m_Res->Fetch()) {
-                    continue;
-                }
-
-                delete m_Res;
-                m_Res = NULL;
-            }
-        }
+        return true;
     } catch ( const CDB_Exception& e ) {
         DATABASE_DRIVER_ERROR_EX( e, "Failed to fetch the results." + GetDbgInfo(), 222011 );
     }
@@ -1354,46 +1358,232 @@ bool CTL_CursorResultExpl::Fetch()
 
 int CTL_CursorResultExpl::CurrentItemNo() const
 {
-    return m_Res ? m_Res->CurrentItemNo() : -1;
+    return m_CurItemNo;
 }
 
 
 int CTL_CursorResultExpl::GetColumnNum(void) const
 {
-    return m_Res ? m_Res->GetColumnNum() : -1;
+    return int(m_Fields.size());
 }
 
 
 CDB_Object* CTL_CursorResultExpl::GetItem(CDB_Object* item_buff, I_Result::EGetItem policy)
 {
-    return m_Res ? m_Res->GetItem(item_buff, policy) : NULL;
+    if (m_CurItemNo >= GetColumnNum() || m_CurItemNo == -1)
+        return NULL;
+
+    if (item_buff) {
+        EDB_Type type = m_Fields[m_CurItemNo]->GetType();
+        if (type == I_Result::eAppendLOB  &&  (type == eDB_Image  ||  type == eDB_Text)) {
+            if (item_buff->GetType() != eDB_Text  &&  item_buff->GetType() != eDB_Image) {
+                DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130120 );
+		    }
+
+            CDB_Stream* ostr  = static_cast<CDB_Stream*>(item_buff);
+            CDB_Stream* istr  = static_cast<CDB_Stream*>(m_Fields[m_CurItemNo]);
+            istr->MoveTo(0);
+            size_t total_size = istr->Size();
+            size_t total_read = 0;
+            while (total_read < total_size) {
+                char buffer[2048];
+
+                size_t read_size = istr->Read(buffer, 2048);
+                ostr->Append(buffer, read_size);
+                total_read += read_size;
+            }
+        }
+        else {
+            item_buff->AssignValue(*m_Fields[m_CurItemNo]);
+        }
+        delete m_Fields[m_CurItemNo];
+    }
+    else {
+        item_buff = m_Fields[m_CurItemNo];
+    }
+    m_Fields[m_CurItemNo] = NULL;
+    ++m_CurItemNo;
+
+    return item_buff;
 }
 
 
 size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
                                       bool* is_null)
 {
-    if (m_Res) {
-        return m_Res->ReadItem(buffer, buffer_size, is_null);
+    if (m_CurItemNo >= GetColumnNum() || m_CurItemNo < 0)
+        return 0;
+
+    CDB_Object* field = m_Fields[m_CurItemNo];
+
+    if (field->IsNULL()) {
+        if (is_null)
+            *is_null = true;
+
+        ++m_CurItemNo;
+
+        return 0;
     }
 
-    if (is_null) {
-        *is_null = true;
+    if (is_null)
+        *is_null = false;
+
+    if (!buffer  ||  buffer_size == 0)
+        return 0;
+
+
+    CS_DATETIME  datetime;
+    CS_DATETIME4 datetime4;
+    CS_NUMERIC   numeric;
+
+    const void* data = NULL;
+    size_t max_size  = 0;
+
+    switch(field->GetType()) {
+    case eDB_Int:
+        max_size = 4;
+        data = static_cast<CDB_Int*>(field)->BindVal();
+        break;
+    case eDB_SmallInt:
+        max_size = 2;
+        data = static_cast<CDB_SmallInt*>(field)->BindVal();
+        break;
+    case eDB_TinyInt:
+        max_size = 1;
+        data = static_cast<CDB_TinyInt*>(field)->BindVal();
+        break;
+    case eDB_BigInt:
+        max_size = 8;
+        data = static_cast<CDB_BigInt*>(field)->BindVal();
+        break;
+    case eDB_VarChar: {
+        CDB_VarChar* vc_field = static_cast<CDB_VarChar*>(field);
+        max_size = vc_field->Size();
+        data = static_cast<const void*>(vc_field->Value());
+        break;
+    }
+    case eDB_Char: {
+        CDB_Char* c_field = static_cast<CDB_Char*>(field);
+        max_size = c_field->Size();
+        data = static_cast<const void*>(c_field->Value());
+        break;
+    }
+    case eDB_VarBinary: {
+        CDB_VarBinary* vb_field = static_cast<CDB_VarBinary*>(field);
+        max_size = vb_field->Size();
+        data = static_cast<const void*>(vb_field->Value());
+        break;
+    }
+    case eDB_Binary: {
+        CDB_Binary* b_field = static_cast<CDB_Binary*>(field);
+        max_size = b_field->Size();
+        data = static_cast<const void*>(b_field->Value());
+        break;
+    }
+    case eDB_Float:
+        max_size = sizeof(float);
+        data = static_cast<CDB_Float*>(field)->BindVal();
+        break;
+    case eDB_Double:
+        max_size = sizeof(double);
+        data = static_cast<CDB_Double*>(field)->BindVal();
+        break;
+    case eDB_DateTime: {
+        CDB_DateTime* dt_field = static_cast<CDB_DateTime*>(field);
+        datetime.dtdays = dt_field->GetDays();
+        datetime.dttime = dt_field->Get300Secs();
+        max_size = sizeof(datetime);
+        data = &datetime;
+        break;
+    }
+    case eDB_SmallDateTime: {
+        CDB_SmallDateTime* dt_field = static_cast<CDB_SmallDateTime*>(field);
+        datetime4.days = dt_field->GetDays();
+        datetime4.minutes = dt_field->GetMinutes();
+        max_size = sizeof(datetime4);
+        data = &datetime4;
+        break;
+    }
+    case eDB_Text:
+    case eDB_Image: {
+        CDB_Stream* str_field = static_cast<CDB_Stream*>(field);
+        max_size = str_field->Size();
+        if (!m_ReadBuffer) {
+            m_ReadBuffer = malloc(max_size);
+            str_field->MoveTo(0);
+            str_field->Read(m_ReadBuffer, max_size);
+        }
+        data = m_ReadBuffer;
+        break;
+    }
+    case eDB_Bit:
+        max_size = 1;
+        data = static_cast<CDB_Bit*>(field)->BindVal();
+        break;
+    case eDB_Numeric: {
+        CDB_Numeric* num_field = static_cast<CDB_Numeric*>(field);
+        numeric.scale = num_field->Scale();
+        numeric.precision = num_field->Precision();
+        memcpy(numeric.array, num_field->RawData(), CS_MAX_NUMLEN);
+        max_size = sizeof(numeric);
+        data = &numeric;
+        break;
+    }
+    case eDB_LongChar: {
+        CDB_LongChar* lc_field = static_cast<CDB_LongChar*>(field);
+        max_size = lc_field->DataSize();
+        data = static_cast<const void*>(lc_field->Value());
+        break;
+    }
+    case eDB_LongBinary: {
+        CDB_LongBinary* lb_field = static_cast<CDB_LongBinary*>(field);
+        max_size = lb_field->Size();
+        data = static_cast<const void*>(lb_field->Value());
+        break;
+    }
+    default:
+        break;
     }
 
-    return 0;
+    size_t copied = max_size - m_ReadBytes;
+    if (copied > buffer_size)
+        copied = buffer_size;
+
+    memcpy(buffer, data, copied);
+    m_ReadBytes += copied;
+
+    if (m_ReadBytes == max_size) {
+        ++m_CurItemNo;
+        m_ReadBytes = 0;
+        if (m_ReadBuffer) {
+            free(m_ReadBuffer);
+            m_ReadBuffer = NULL;
+        }
+    }
+
+    return copied;
 }
 
 
-I_ITDescriptor* CTL_CursorResultExpl::GetImageOrTextDescriptor()
+I_ITDescriptor* CTL_CursorResultExpl::GetImageOrTextDescriptor(int item_num)
 {
-    return m_Res ? m_Res->GetImageOrTextDescriptor() : 0;
+    if (item_num >= GetColumnNum() || item_num < 0)
+        return NULL;
+
+    CTL_ITDescriptor* result = new CTL_ITDescriptor;
+    *result = *static_cast<CTL_ITDescriptor*>(m_ITDescrs[item_num]);
+
+    return result;
 }
 
 
 bool CTL_CursorResultExpl::SkipItem()
 {
-    return m_Res ? m_Res->SkipItem() : false;
+    if (m_CurItemNo >= GetColumnNum() || m_CurItemNo == -1)
+        return false;
+
+    ++m_CurItemNo;
+    return true;
 }
 
 
@@ -1403,6 +1593,8 @@ CTL_CursorResultExpl::~CTL_CursorResultExpl()
         delete m_Res;
     }
     NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
+
+    ClearFields();
 }
 
 

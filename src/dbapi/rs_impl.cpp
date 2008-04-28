@@ -163,6 +163,9 @@ bool CResultSet::Next()
 
     more = m_rs->Fetch();
 
+    if (more  &&  m_data.size() == 0) {
+        Init();
+    }
 
     if( more && !IsDisableBind() ) {
 

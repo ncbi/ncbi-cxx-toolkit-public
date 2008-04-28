@@ -900,6 +900,10 @@ public:
         return m_Scale;
     }
 
+    // This method is for internal use only. It is strongly recommended
+    // to refrain from using this method in applications.
+    const unsigned char* RawData() const { return m_Body; }
+
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
     virtual void AssignValue(const CDB_Object& v);

@@ -14609,10 +14609,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         args.PutMsgDisabled("Test_Cursor_Param");
     }
 
-    // It looks like only ctlib driver can pass this test at the moment. // 04/09/08
+    // It looks like only ctlib and ftds64 driver can pass this test at the moment. // 04/23/08
     if (tc_cursor
         && args.GetDriverName() != ftds8_driver
-        && args.GetDriverName() != ftds_driver
         && args.GetDriverName() != ftds_odbc_driver
         && args.GetDriverName() != ftds_dblib_driver
         && args.GetDriverName() != odbc_driver
@@ -14653,7 +14652,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (tc_cursor
-        && args.GetDriverName() != ftds64_driver // 04/22/08  This result is not available anymore
         && args.GetDriverName() != ftds8_driver // 04/21/08  "Invalid text, ntext, or image pointer value"
         && args.GetDriverName() != ftds_odbc_driver // 04/21/08 Memory access violation
         ) 

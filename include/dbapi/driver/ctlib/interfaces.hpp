@@ -1025,7 +1025,6 @@ protected:
 
 protected:
     virtual EDB_ResType     ResultType(void) const;
-    virtual const CDBParams& GetDefineParams(void) const;
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
@@ -1033,11 +1032,11 @@ protected:
 							I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
-    // For correct compiling in gcc 2.95.3
-    I_ITDescriptor*         GetImageOrTextDescriptor(int item_num) {
-        return CTL_RowResult::GetImageOrTextDescriptor(item_num);
+    virtual I_ITDescriptor* GetImageOrTextDescriptor(void)
+    {
+        return GetImageOrTextDescriptor(m_CurItemNo);
     }
+    I_ITDescriptor*         GetImageOrTextDescriptor(int item_num);
     virtual bool            SkipItem(void);
 
 private:
@@ -1058,11 +1057,18 @@ private:
         return *m_Cmd;
     }
 
+    void ClearFields(void);
+
 private:
     // data
-    CTL_LangCmd*   m_Cmd;
+    CTL_LangCmd*           m_Cmd;
     // CTL_RowResult* m_Res;
-    CDB_Result*    m_Res;
+    CDB_Result*             m_Res;
+    vector<CDB_Object*>     m_Fields;
+    vector<I_ITDescriptor*> m_ITDescrs;
+    int                     m_CurItemNo;
+    size_t                  m_ReadBytes;
+    void*                   m_ReadBuffer;
 };
 
 
@@ -1241,6 +1247,7 @@ CTL_CursorCmdExpl::ClearResultSet(void)
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ITDescriptor : public I_ITDescriptor
 {
     friend class CTL_RowResult;
+    friend class CTL_CursorResultExpl;
     friend class CTL_Connection;
     friend class CTL_CursorCmd;
     friend class CTL_CursorCmdExpl;
