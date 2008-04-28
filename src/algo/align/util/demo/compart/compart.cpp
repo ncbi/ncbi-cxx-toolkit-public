@@ -54,30 +54,26 @@ void CCompartApp::Init()
                               "the tool expects tabular blast hits at stdin collated "
                               "by query and subject, e.g. with 'sort -k 1,1 -k 2,2'");
 
-    argdescr->AddOptionalKey ("qdb", "qdb",
-                              "cDNA BLAST database", 
+    argdescr->AddOptionalKey ("qdb", "qdb", "cDNA BLAST database", 
                               CArgDescriptions::eString);
 
-    argdescr->AddOptionalKey ("sdb", "sdb",
-                              "Genomic BLAST database", 
+    argdescr->AddOptionalKey ("sdb", "sdb", "Genomic BLAST database", 
                               CArgDescriptions::eString);
 
     argdescr->AddFlag ("ho", "Print raw hits only - no compartments");
 
-    argdescr->AddDefaultKey("penalty", "penalty",
-                            "Per-compartment penalty",
+    argdescr->AddDefaultKey("penalty", "penalty", "Per-compartment penalty",
                             CArgDescriptions::eDouble, "0.55");
     
-    argdescr->AddDefaultKey("min_idty", "min_idty", 
-                            "Minimal overall identity",
-                            CArgDescriptions::eDouble, "0.75");
+    argdescr->AddDefaultKey("min_idty", "min_idty", "Minimal overall identity",
+                            CArgDescriptions::eDouble, "0.70");
     
     argdescr->AddDefaultKey("min_singleton_idty", "min_singleton_idty", 
                             "Minimal identity for singleton compartments. "
                             "The actual parameter passed to the compartmentization "
                             "procedure is least of this parameter multipled "
                             "by the seq length, and min_singleton_idty_bps.",
-                            CArgDescriptions::eDouble, "0.75");
+                            CArgDescriptions::eDouble, "0.70");
 
     argdescr->AddDefaultKey("min_singleton_idty_bps", "min_singleton_idty_bps", 
                             "Minimal identity for singleton compartments "
