@@ -159,6 +159,9 @@ public:
     virtual const CVariant& GetVariant(const CDBParamVariant& param) = 0;
 
     /// Disables column binding.
+    /// @note
+    ///   When binding is disabled all columns must be read with Read()
+    ///   method, GetVariant() method will always return NULL in this case.
     ///
     /// False by default.
     /// @param
@@ -169,6 +172,12 @@ public:
     ///
     /// If this mode is true, BLOB data is returned as CVariant
     /// False by default.
+    /// @note
+    ///   When binding of blobs to variant is disabled all columns in
+    ///   resultset placed after first blob column must be read with Read()
+    ///   method, GetVariant() method will always return NULL for these
+    ///   columns.
+    ///
     /// @param
     ///   Enables blob binding when set to true.
     virtual void BindBlobToVariant(bool b) = 0;
