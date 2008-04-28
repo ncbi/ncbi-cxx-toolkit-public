@@ -133,9 +133,9 @@ public:
 
     // try to find an "optimal" view of a single structure
     void CenterViewOnStructure(void);
-    
+
     // center rotation and view on aligned residues only
-    void CenterViewOnAlignedResidues(void);
+    bool CenterViewOnAlignedResidues(void);
 
     bool Draw(const AtomSet *atomSet) const;
 

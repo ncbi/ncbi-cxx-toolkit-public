@@ -893,15 +893,15 @@ void StructureSet::CenterViewOnStructure(void)
     TRACEMSG("Centered view at " << alphaCenter << " radius " << alphaRadius);
 }
 
-void StructureSet::CenterViewOnAlignedResidues(void)
+bool StructureSet::CenterViewOnAlignedResidues(void)
 {
     const BlockMultipleAlignment *alignment = alignmentManager->GetCurrentMultipleAlignment();
     if (!alignment || !alignment->GetSequenceOfRow(0) || !alignment->GetSequenceOfRow(0))
-        return;                     // no alignment
+        return false;;                     // no alignment
     const Molecule *masterMolecule = alignment->GetSequenceOfRow(0)->molecule;
-    if (!masterMolecule) return;    // no structured master
+    if (!masterMolecule) return false;    // no structured master
     const StructureObject *masterObject;
-    if (!masterMolecule->GetParentOfType(&masterObject)) return;
+    if (!masterMolecule->GetParentOfType(&masterObject)) return false;
 
     // get coords of all aligned c-alphas
     deque < Vector > coords;
@@ -913,6 +913,8 @@ void StructureSet::CenterViewOnAlignedResidues(void)
         const AtomCoord* atom = masterObject->coordSets.front()->atomSet->GetAtom(ap, true, true);
         if (atom) coords.push_back(atom->site);
     }
+    if (coords.size() == 0)
+        return false;
 
     // calculate center
     unsigned int i;
@@ -930,6 +932,7 @@ void StructureSet::CenterViewOnAlignedResidues(void)
     // set view
     renderer->CenterView(alignedCenter, radius);
     TRACEMSG("Centered view at " << alignedCenter << " radius " << radius);
+    return true;
 }
 
 bool StructureSet::Draw(const AtomSet *atomSet) const

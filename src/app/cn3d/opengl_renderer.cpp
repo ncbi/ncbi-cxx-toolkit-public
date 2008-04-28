@@ -682,9 +682,7 @@ void OpenGLRenderer::CenterView(const Vector& viewCenter, double radius)
 
 void OpenGLRenderer::ComputeBestView(void)
 {
-    if (structureSet->IsMultiStructure())
-        structureSet->CenterViewOnAlignedResidues();
-    else
+    if (!structureSet->IsMultiStructure() || !structureSet->CenterViewOnAlignedResidues())
         structureSet->CenterViewOnStructure();
 }
 
