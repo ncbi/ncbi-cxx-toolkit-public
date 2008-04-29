@@ -179,8 +179,12 @@ CPrefetchManager::EState CPrefetchManager::GetCurrentTokenState(void)
 
     CPrefetchRequest* req = static_cast<CPrefetchRequest*>(
                                     thread->GetCurrentTask().GetNCPointer());
-    if (req)
-        return req->GetState();
+    if (req) {
+        if (req->IsCancelRequested())
+            return SPrefetchTypes::eCanceled;
+        else
+            return req->GetState();
+    }
     else
         return eInvalid;
 }
