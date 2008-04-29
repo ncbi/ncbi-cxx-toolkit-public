@@ -228,7 +228,7 @@ static mode_t s_TarToMode(TTarMode value)
 
 static TTarMode s_ModeToTar(mode_t mode)
 {
-    // Foresee that the mode can be extracted on a different platform
+    // Keep in mind that the mode may be extracted on a different platform
     TTarMode value = (
 #ifdef S_ISUID
                       (mode & S_ISUID  ? fTarSetUID   : 0) |
@@ -279,6 +279,16 @@ static TTarMode s_ModeToTar(mode_t mode)
                       (mode & S_IXOTH  ? fTarOExecute : 0) |
 #endif
                       0);
+#if defined(S_IFMT)  ||  defined(_S_IFMT)
+    TTarMode mask = (TTarMode) mode;
+#  ifdef S_IFMT
+    mask &=  S_IFMT;
+#  else
+    mask &= _S_IFMT;
+#  endif
+    if (!(mask & 07777))
+        value |= mask;
+#endif
     return value;
 }
 
@@ -558,7 +568,7 @@ ostream& operator << (ostream& os, const CTarEntryInfo& info)
     os << s_TypeAsChar(info.GetType())
        << s_ModeAsString(info.GetMode())        << ' '
        << setw(17) << s_UserGroupAsString(info) << ' '
-       << setw(10) << s_SizeOrMajorMinor(info) << ' '
+       << setw(10) << s_SizeOrMajorMinor(info)  << ' '
        << mtime.ToLocalTime().AsString(" Y-M-D h:m:s ")
        << info.GetName();
     if (info.GetType() == CTarEntryInfo::eSymLink  ||
@@ -2581,7 +2591,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
         // We cannot change permissions for sym.links because lchmod()
         // is not portable and is not implemented on majority of platforms.
         if (info.GetType() != CTarEntryInfo::eSymLink) {
-            // Use raw mode here to restore most of bits
+            // Use raw mode here to restore most of the bits
             mode_t mode = s_TarToMode(info.m_Stat.st_mode);
             if (chmod(dst->GetPath().c_str(), mode) != 0) {
                 // May fail due to setuid/setgid bits -- strip'em and try again
