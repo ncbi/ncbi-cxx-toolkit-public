@@ -10,8 +10,6 @@
 #
 
 APP: netcached netcache_check netcache_control
-LIB:          netcached
-DLL:                   netcached
 ETC: src/app/netcache/netcached.ini
 SRC: src/app/netcache/netcached.cpp
 CONF: build/app/netcache/nc_handler.d
