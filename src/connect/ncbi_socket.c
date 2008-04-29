@@ -1191,7 +1191,7 @@ static EIO_Status s_Select(size_t                n,
                         ready = 1;
                         continue;
                     }
-                    if (type != eListening  &&  n != 1  &&
+                    if (type == eSocket  &&  n != 1  &&
                         /*FIXME*/
                         polls[i].sock->stype == eSOCK_Datagram)
                         continue;
@@ -1200,7 +1200,7 @@ static EIO_Status s_Select(size_t                n,
                     switch (polls[i].event) {
                     case eIO_Write:
                     case eIO_ReadWrite:
-                        if (type != eListening) {
+                        if (type == eSocket) {
                             if (polls[i].sock->stype == eSOCK_Datagram  ||
                                 polls[i].sock->w_status != eIO_Closed) {
                                 read_only = 0;
@@ -3567,7 +3567,7 @@ extern EIO_Status SOCK_Poll(size_t          n,
 
     for (x_n = 0; x_n < n; x_n++) {
         if (polls[x_n].sock                        &&
-            polls[x_n].sock->type != eListening    &&
+            polls[x_n].sock->type == eSocket       &&
             polls[x_n].sock->sock != SOCK_INVALID  &&
             (polls[x_n].event == eIO_Read  ||
              polls[x_n].event == eIO_ReadWrite)    &&
