@@ -161,7 +161,16 @@ bool BMARefinerInterface::SetBlocksToRealign(const vector < bool >& b)
     return true;
 }
 
-bool BMARefinerInterface::Run(objects::CCdd::TSeqannot& results)
+int g_meterMax = 0;
+BMARefinerInterface::ProgressCallback g_callback = NULL;
+
+void ProgressAsInt(int num)
+{
+    if (g_callback && g_meterMax > 0)
+        (*g_callback)(((double) num) / g_meterMax);
+}
+
+bool BMARefinerInterface::Run(objects::CCdd::TSeqannot& results, ProgressCallback progress)
 {
     results.clear();
 
@@ -176,7 +185,15 @@ bool BMARefinerInterface::Run(objects::CCdd::TSeqannot& results)
             options->be,
             options->genl.nCycles, options->genl.nTrials, options->genl.lnoFirst, options->genl.verbose, options->genl.trialConvThold);
 
-        align_refine::RefinerResultCode result = refinerEngine.Refine(&au, NULL, NULL);
+        if (progress) {
+            g_meterMax = refinerEngine.NumTrials() * refinerEngine.NumCycles() * (nRows - options->loo.rowsToExclude.size() - 1);
+            g_callback = progress;
+        } else {
+            g_meterMax = 0;
+            g_callback = NULL;
+        }
+
+        align_refine::RefinerResultCode result = refinerEngine.Refine(&au, NULL, (progress ? ProgressAsInt : NULL));
 
         //  store results (in order of decreasing score so best alignment is first).
         bool errorsEncountered = true;

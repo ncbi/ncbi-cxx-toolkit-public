@@ -61,6 +61,7 @@
 #include "style_manager.hpp"
 #include "cn3d_ba_interface.hpp"
 #include "cn3d_pssm.hpp"
+#include "progress_meter.hpp"
 
 #include <algo/structure/bma_refine/Interface.hpp>
 #include <algo/structure/bma_refine/InterfaceGUI.hpp>
@@ -1167,6 +1168,15 @@ void AlignmentManager::ExtendUpdate(BlockMultipleAlignment *single)
     }
 }
 
+ProgressMeter *g_refinerProgressMeter = NULL;
+#define PROGRESS_MAX 1000
+
+void RefinementProgress(double progress)
+{
+    if (g_refinerProgressMeter)
+        g_refinerProgressMeter->SetValue((int) (progress * PROGRESS_MAX));
+}
+
 void AlignmentManager::RefineAlignment(bool setUpOptionsOnly)
 {
     // TODO:  selection dialog for realigning specific rows
@@ -1247,12 +1257,23 @@ void AlignmentManager::RefineAlignment(bool setUpOptionsOnly)
     if (setUpOptionsOnly)
         return;
 
+    // set up a progress meter
+    g_refinerProgressMeter = new ProgressMeter(NULL, "Refinement in progress...", "Wait", PROGRESS_MAX);
+    g_refinerProgressMeter->SetValue(0);
+
     // actually run the refiner algorithm
     CCdd::TSeqannot results;
     SetDialogSevereErrors(false);
-    bool okay = interface.Run(results);
+    wxSetCursor(*wxHOURGLASS_CURSOR);
+    bool okay = interface.Run(results, RefinementProgress);
+    wxSetCursor(wxNullCursor);
     SetDialogSevereErrors(true);
     SetDiagPostLevel(eDiag_Info);   // may be changed by refiner
+
+    // delete progress meter
+    g_refinerProgressMeter->Close(true);
+    g_refinerProgressMeter->Destroy();
+    g_refinerProgressMeter = NULL;
 
     if (okay) {
 

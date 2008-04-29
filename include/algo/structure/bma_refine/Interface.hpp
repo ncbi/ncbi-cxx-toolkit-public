@@ -70,7 +70,7 @@ public:
     virtual bool SetBlocksToRealign(const vector < bool >& b);
 
     // run the algorithm; returns true on success
-    virtual bool Run(objects::CCdd::TSeqannot& results);
+    virtual bool Run(objects::CCdd::TSeqannot& results, ProgressCallback progress = NULL);
 
     // options stuff
     bool SetOptions(const BMARefinerOptions& opts);

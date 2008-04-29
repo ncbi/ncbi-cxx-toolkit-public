@@ -66,8 +66,11 @@ public:
     // number of blocks in the alignment
     virtual bool SetBlocksToRealign(const vector < bool >&) = 0;
 
+    // a progress feedback function, from [0.0 .. 1.0]
+    typedef void (*ProgressCallback)(double progress);
+
     // run the algorithm; returns true on success
-    virtual bool Run(objects::CCdd::TSeqannot&) = 0;
+    virtual bool Run(objects::CCdd::TSeqannot&, ProgressCallback progress = NULL) = 0;
 
     // the derived class will probably have some options structure, which will be specific to
     // that class, so there's not much that can be put in this interface for that...
