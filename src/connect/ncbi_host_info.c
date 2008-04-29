@@ -94,11 +94,35 @@ int HINFO_CpuCount(const HOST_INFO host_info)
 }
 
 
+int HINFO_CpuUnits(const HOST_INFO host_info)
+{
+    if (!host_info || host_info->pad != M_PI)
+        return -1;
+    return LBSM_HINFO_CpuUnits((const char*) host_info + sizeof(*host_info));
+}
+
+
+double HINFO_CpuClock(const HOST_INFO host_info)
+{
+    if (!host_info || host_info->pad != M_PI)
+        return 0.0;
+    return LBSM_HINFO_CpuClock((const char*) host_info + sizeof(*host_info));
+}
+
 int HINFO_TaskCount(const HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return -1;
     return LBSM_HINFO_TaskCount((const char*) host_info + sizeof(*host_info));
+}
+ 
+
+int HINFO_Memusage(const HOST_INFO host_info, double memusage[5])
+{
+    if (!host_info || host_info->pad != M_PI)
+        return -1;
+    return LBSM_HINFO_Memusage((const char*) host_info + sizeof(*host_info),
+                               memusage);
 }
 
 
@@ -117,13 +141,6 @@ int/*bool*/ HINFO_Status(const HOST_INFO host_info, double status[2])
         return 0;
     return LBSM_HINFO_Status((const char*) host_info + sizeof(*host_info),
                              status);
-}
-
-
-/*ARGSUSED*/
-int/*bool*/ HINFO_BLASTParams(const HOST_INFO host_info, unsigned int blast[8])
-{
-    return 0;
 }
 
 

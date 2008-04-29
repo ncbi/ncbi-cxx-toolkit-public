@@ -83,10 +83,20 @@ extern NCBI_XCONNECT_EXPORT ESwitch LBSMD_FastHeapAccess(ESwitch onoff);
 /* Host info getters */
 typedef const void* LBSM_HINFO;
 
+
 int LBSM_HINFO_CpuCount(LBSM_HINFO hinfo);
 
 
+int LBSM_HINFO_CpuUnits(LBSM_HINFO hinfo);
+
+
+double LBSM_HINFO_CpuClock(LBSM_HINFO hinfo);
+
+
 int LBSM_HINFO_TaskCount(LBSM_HINFO hinfo);
+
+
+int/*bool*/ LBSM_HINFO_Memusage(LBSM_HINFO hinfo, double memusage[5]);
 
 
 int/*bool*/ LBSM_HINFO_LoadAverage(LBSM_HINFO hinfo, double lavg[2]);
