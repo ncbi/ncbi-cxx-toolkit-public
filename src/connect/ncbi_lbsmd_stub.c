@@ -72,9 +72,30 @@ int LBSM_HINFO_CpuCount(LBSM_HINFO hinfo)
 
 
 /*ARGSUSED*/
+int LBSM_HINFO_CpuUnits(LBSM_HINFO hinfo)
+{
+    return -1;
+}
+
+
+/*ARGSUSED*/
+double LBSM_HINFO_CpuClock(LBSM_HINFO hinfo)
+{
+    return 0.0;
+}
+
+
+/*ARGSUSED*/
 int LBSM_HINFO_TaskCount(LBSM_HINFO hinfo)
 {
     return -1;
+}
+
+
+/*ARGSUSED*/
+int LBSM_HINFO_Memusage(LBSM_HINFO hinfo, double memusage[5])
+{
+    return 0/*failure*/;
 }
 
 
