@@ -200,29 +200,31 @@ CConstRef<CUser_field> CUser_field::GetFieldRef(const string& str,
         }
     }
 
-    list<string>::const_iterator last = toks.end();
-    --last;
+    if (toks.size()) {
+        list<string>::const_iterator last = toks.end();
+        --last;
 
-    ITERATE (list<string>, iter, toks) {
-        CConstRef<CUser_field> new_f;
+        ITERATE (list<string>, iter, toks) {
+            CConstRef<CUser_field> new_f;
 
-        ITERATE (TData::TFields, field_iter, f->GetData().GetFields()) {
-            const CUser_field& field = **field_iter;
-            if (field.GetLabel().IsStr()
-                &&  field.GetLabel().GetStr() == *iter) {
-                if (iter != last  &&  field.GetData().IsFields()) {
-                    new_f = *field_iter;
-                    break;
-                } else if (iter == last) {
-                    new_f = *field_iter;
-                    break;
+            ITERATE (TData::TFields, field_iter, f->GetData().GetFields()) {
+                const CUser_field& field = **field_iter;
+                if (field.GetLabel().IsStr()
+                    &&  field.GetLabel().GetStr() == *iter) {
+                    if (iter != last  &&  field.GetData().IsFields()) {
+                        new_f = *field_iter;
+                        break;
+                    } else if (iter == last) {
+                        new_f = *field_iter;
+                        break;
+                    }
                 }
             }
-        }
 
-        f = new_f;
-        if ( !f ) {
-            return f;
+            f = new_f;
+            if ( !f ) {
+                return f;
+            }
         }
     }
 
