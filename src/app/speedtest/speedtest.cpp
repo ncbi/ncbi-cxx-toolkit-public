@@ -48,12 +48,14 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/submit/Seq_submit.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_ci.hpp>
 #include <objmgr/util/sequence.hpp>
-
 #include <objtools/cleanup/cleanup.hpp>
+#include <algo/align/prosplign/prosplign.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -75,11 +77,16 @@ private:
         CNcbiIstream& ip, CNcbiOstream& op, CRef<CSeq_entry>& se );
     void DoProcessStreamDefline ( 
         CNcbiIstream& ip, CNcbiOstream& op, CRef<CSeq_entry>& se, CScope&i );
+    int DoProcessFeatureSuggest( 
+        CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_submit>&, bool do_format );
 
     int DoProcessFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_entry>&, bool do_format );
     int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CBioseq&, bool do_format );
     int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CSeq_annot&, bool do_format );
     int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CSeq_feat&, bool do_format );
+
+    int PlayAroundWithSuggestIntervals( CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_submit>& );
+    void DumpAlignment( CNcbiOstream&, CRef<CSeq_align>& );
 
     // data
     bool  m_bsec;
@@ -102,6 +109,7 @@ private:
 
     bool  m_defline_only;
     bool  m_no_scope;
+    bool  m_suggest;
 };
 
 
@@ -164,10 +172,10 @@ void CMytestApplication::Init(void)
 
     arg_desc->AddOptionalKey
         ("F", "Feature",
-         "v Visit, g Gene Overlap Print, h Gene Overlap Speed, x Xref, o Operon",
+         "v Visit, g Gene Overlap Print, h Gene Overlap Speed, x Xref, o Operon s Suggest",
          CArgDescriptions::eString);
     arg_desc->SetConstraint
-        ("F", &(*new CArgAllow_Strings, "v", "g", "h", "x", "o"));
+        ("F", &(*new CArgAllow_Strings, "v", "g", "h", "x", "o", "s"));
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -265,6 +273,19 @@ int CMytestApplication::TestFeatureGeneOverlap (
         op << s_AsString( locbase ) << " -> " << s_AsString( ol->GetLocation() ) << '\n';
     }
     return 1;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int CMytestApplication::DoProcessFeatureSuggest (
+    CNcbiIstream& ip,
+    CNcbiOstream& op,
+    CScope& scope,
+    CRef<CSeq_submit>& se,
+    bool do_format )
+{
+    CProSplign prosplign;
+    return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -412,6 +433,77 @@ void CMytestApplication::DoProcess (
     }
 }
 
+//  ============================================================================
+void
+CMytestApplication::DumpAlignment(
+    CNcbiOstream& Os,
+    CRef<CSeq_align>& align )
+//  ============================================================================
+{
+    Os << MSerial_AsnText << *align << endl;
+}
+
+//  ============================================================================
+int 
+CMytestApplication::PlayAroundWithSuggestIntervals( 
+    CNcbiIstream& is,
+    CNcbiOstream& os, 
+    CScope& scope,
+    CRef<CSeq_submit>& sub )
+//  ============================================================================
+{
+    if (!sub->IsSetSub()  ||  !sub->IsSetData()) {
+        return 1;
+    }
+    CRef<CSeq_entry> se( sub->SetData().SetEntrys().front() );
+    if ( se.Empty() ) {
+        return 1;
+    }
+    // get Seq_entry_Handle from scope
+    CSeq_entry_Handle entry;
+    try {
+        entry = scope.GetSeq_entryHandle( *se );
+    } catch ( CException& ) {}
+
+    if ( !entry ) {  // add to scope if not already in it
+        entry = scope.AddTopLevelSeqEntry( *se );
+    }
+    CBioseq_set::TClass clss = entry.GetSet().GetClass();
+    if (clss != CBioseq_set::eClass_nuc_prot) {
+        return 1;
+    }
+    CRef<CSeq_loc> nucloc;
+    list< CConstRef<CSeq_id> > proteins;
+
+    CSeq_inst::TMol mol_type = CSeq_inst::eMol_not_set;
+    CBioseq_CI seq_iter(entry, mol_type, CBioseq_CI::eLevel_Mains);
+    for ( ; seq_iter; ++seq_iter ) {
+        const CBioseq_Handle& bs = *seq_iter;
+        if (bs.IsNa()) {
+//            const CSeq_id& nucid = ( *bs.GetSeqId() );
+//            nucloc.Reset( new CSeq_loc( nucid, 0, (int)bs.GetInst_Length(),eNa_strand_unknown ) );
+            nucloc.Reset( bs.GetRangeSeq_loc(0, bs.GetInst_Length() ) );
+//            nucloc.Reset( bs.GetRangeSeq_loc(0, 0 ) );
+        }
+        else if (bs.IsAa()) {
+            proteins.push_back( bs.GetSeqId() );
+        }
+    }
+
+    CProSplign prosplign;
+    list< CConstRef<CSeq_id> >::iterator it = proteins.begin();
+    for ( ; it != proteins.end(); ++it ) {
+        CRef<CSeq_align> alignment = prosplign.FindAlignment(
+            scope, 
+            **it, 
+            *nucloc );
+        DumpAlignment( os, alignment );
+    }
+    os.flush();
+    return 0;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 int CMytestApplication::Run(void)
@@ -448,6 +540,7 @@ int CMytestApplication::Run(void)
     m_ooverlap = false;
 
     m_defline_only = false;
+    m_suggest = false;
 
     if (args["K"]) {
         string km = args["K"].AsString();
@@ -518,6 +611,9 @@ int CMytestApplication::Run(void)
         if (NStr::Find (fm, "o") != NPOS) {
             m_ooverlap = true;
         }
+        if (NStr::Find (fm, "s") != NPOS) {
+            m_suggest = true;
+        }
     }
 
     int ct;
@@ -540,11 +636,6 @@ int CMytestApplication::Run(void)
         return 0;
     }
 
-    // otherwise read ASN.1
-    auto_ptr<CObjectIStream> is (CObjectIStream::Open (eSerial_AsnText, ip));
-    CRef<CSeq_entry> se(new CSeq_entry);
-    *is >> *se;
-
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     if ( !objmgr ) {
         /* raise hell */;
@@ -554,6 +645,22 @@ int CMytestApplication::Run(void)
         /* raise hell */;
     }
     scope->AddDefaults();
+
+    // otherwise read ASN.1
+    auto_ptr<CObjectIStream> is (CObjectIStream::Open (eSerial_AsnText, ip));
+    if ( m_suggest ) {
+        
+        CRef<CSeq_submit> sub(new CSeq_submit());
+        *is >> *sub;
+        int iRet = PlayAroundWithSuggestIntervals( ip, op, *scope, sub );
+        lastInterval = sw.Elapsed() - lastInterval;
+        NcbiCout << "Internal processing time is " << lastInterval << " seconds" << endl;
+        return iRet;        
+    }
+
+    CRef<CSeq_entry> se(new CSeq_entry);
+    *is >> *se;
+
     scope->AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*se));
 
     lastInterval = sw.Elapsed() - lastInterval;

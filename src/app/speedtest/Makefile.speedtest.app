@@ -8,9 +8,10 @@
 
 APP = speedtest
 SRC = speedtest
-LIB = xcleanup xobjutil submit $(SOBJMGR_LIBS)
+LIB = prosplign xalgoalignutil xalnmgr xcleanup xobjutil submit \
+      $(OBJMGR_LIBS:%=%$(STATIC))
 
-LIBS = $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
 
