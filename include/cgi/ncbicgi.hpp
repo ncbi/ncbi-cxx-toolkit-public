@@ -723,6 +723,9 @@ public:
     /// functions.  If there is no such entry, this method will parse
     /// (and save) any remaining input and return NULL.
     CCgiEntry* GetPossiblyUnparsedEntry(const string& name);
+
+    /// Parse any remaining POST content for use by GetEntries() et al.
+    void ParseRemainingContent(void);
     
     /// Get a set of indexes(decoded) received from the client.
     ///

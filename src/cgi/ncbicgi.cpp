@@ -1016,7 +1016,7 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                 // allow interpretation as either application/octet-stream
                 // or application/x-www-form-urlencoded
                 try {
-                    GetPossiblyUnparsedEntry(kEmptyStr);
+                    ParseRemainingContent();
                 } NCBI_CATCH_ALL_X(8, "CCgiRequest: POST with no content type");
                 CStreamUtils::Pushback(*istr, pstr->data(), pstr->length());
                 m_Input    = istr;
@@ -1025,7 +1025,7 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                 m_OwnInput = false;
             } else {
                 // parse query from the POST content
-                GetPossiblyUnparsedEntry(kEmptyStr);
+                ParseRemainingContent();
                 m_Input   =  0;
                 m_InputFD = -1;
             }
@@ -1119,6 +1119,13 @@ CCgiEntry* CCgiRequest::GetPossiblyUnparsedEntry(const string& name)
         } while (it->first != name);
     }
     return &it->second;
+}
+
+
+void CCgiRequest::ParseRemainingContent(void)
+{
+    while (GetNextEntry() != m_Entries.end())
+        ;
 }
 
 
