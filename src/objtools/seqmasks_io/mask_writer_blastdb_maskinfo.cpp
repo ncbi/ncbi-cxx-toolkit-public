@@ -115,6 +115,12 @@ CMaskWriterBlastDbMaskInfo::x_ConsolidateListOfMasks()
 
         for (;(i < m_ListOfMasks.size() && seqlocs_read < kMaxSeqLocsPerBatch); 
               i++) {
+            if (m_ListOfMasks[i]->GetMasks().empty()) {
+                // We only have one list and it's empty
+                _ASSERT(m_ListOfMasks.size() == 1);
+                consolidated_list.swap(m_ListOfMasks);
+                continue;
+            }
             _ASSERT(m_ListOfMasks[i]->GetMasks().size() == 1);
             CRef<CSeq_loc> sl = m_ListOfMasks[i]->GetMasks().front();
             seqlocs_read += 
@@ -149,6 +155,7 @@ void CMaskWriterBlastDbMaskInfo::Print( const objects::CSeq_id& id,
     mask_list->SetMasks().push_back(seqloc);
     mask_list->SetMore(true);
     m_ListOfMasks.push_back(mask_list);
+    _ASSERT( !m_ListOfMasks.back()->GetMasks().empty() );
 }
 
 void CMaskWriterBlastDbMaskInfo::Print( objects::CBioseq_Handle& bsh, 
