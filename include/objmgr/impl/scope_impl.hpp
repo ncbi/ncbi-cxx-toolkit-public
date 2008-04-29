@@ -501,7 +501,7 @@ private:
 
     CInitMutexPool       m_MutexPool;
 
-    typedef CMutex                      TConfLock;
+    typedef CRWLock                     TConfLock;
     typedef TConfLock::TReadLockGuard   TConfReadLockGuard;
     typedef TConfLock::TWriteLockGuard  TConfWriteLockGuard;
     typedef CFastMutex                  TSeq_idMapLock;
