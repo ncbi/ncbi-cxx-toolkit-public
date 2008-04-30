@@ -89,13 +89,12 @@ void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
     CFastMutexGuard guard(m_Mtx);
 
     if ( last ) {
-        while ( !m_Stack.empty() ) {
-            if (m_Stack.back().GetObject() == h) {
-                m_Stack.pop_back();
-                break;
-            } else {
-                m_Stack.pop_back();
-            }
+        TContainer::reverse_iterator rcit;
+
+        rcit = find_if(m_Stack.rbegin(), m_Stack.rend(), CFunctor(h));
+
+        if ( rcit != m_Stack.rend() ) {
+            m_Stack.erase((--rcit.base()), m_Stack.end());
         }
     } else {
         TContainer::iterator cit;

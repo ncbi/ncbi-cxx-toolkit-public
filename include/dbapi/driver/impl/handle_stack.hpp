@@ -114,6 +114,9 @@ public:
             ~CObjGuard(void)
             {
                 if (m_Obj) {
+                    // This call doesn't delete m_Obj even if reference
+                    // counter is equal to 0. And with this feature CObjGuard
+                    // differs from CRef.
                     m_Obj->ReleaseReference();
                 }
             }
