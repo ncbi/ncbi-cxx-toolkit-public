@@ -101,17 +101,17 @@ int main(int argc, const char* argv[])
                 CORE_LOG(eLOG_Note, "  Host info available:");
                 CORE_LOGF(eLOG_Note, ("    Number of CPUs: %d",
                                       HINFO_CpuCount(hinfo)));
-                CORE_LOGF(eLOG_Note, ("    Number of CPU units: %d @ %.3fMHz",
+                CORE_LOGF(eLOG_Note, ("    Number of CPU units: %d @ %.0fMHz",
                                       HINFO_CpuUnits(hinfo),
                                       HINFO_CpuClock(hinfo)));
                 CORE_LOGF(eLOG_Note, ("    Number of tasks: %d",
                                       HINFO_TaskCount(hinfo)));
                 if (HINFO_Memusage(hinfo, array)) {
-                    CORE_LOGF(eLOG_Note, ("    Total RAM:  %.3fMB", array[0]));
-                    CORE_LOGF(eLOG_Note, ("    Cache RAM:  %.3fMB", array[1]));
-                    CORE_LOGF(eLOG_Note, ("    Free  RAM:  %.3fMB", array[2]));
-                    CORE_LOGF(eLOG_Note, ("    Total Swap: %.3fMB", array[3]));
-                    CORE_LOGF(eLOG_Note, ("    Free  Swap: %.3fMB", array[4]));
+                    CORE_LOGF(eLOG_Note, ("    Total RAM:  %.2fMB", array[0]));
+                    CORE_LOGF(eLOG_Note, ("    Cache RAM:  %.2fMB", array[1]));
+                    CORE_LOGF(eLOG_Note, ("    Free  RAM:  %.2fMB", array[2]));
+                    CORE_LOGF(eLOG_Note, ("    Total Swap: %.2fMB", array[3]));
+                    CORE_LOGF(eLOG_Note, ("    Free  Swap: %.2fMB", array[4]));
                 } else
                     CORE_LOG (eLOG_Note,  "    Memory usage: unavailable");
                 if (HINFO_LoadAverage(hinfo, array)) {
