@@ -35,6 +35,9 @@
 #include <connect/connect_export.h>
 #include "ncbi_config.h"
 #include <stddef.h>
+#ifndef NCBI_CXX_TOOLKIT
+#  define _GNU_SOURCE
+#endif /*!NCBI_CXX_TOOLKIT*/
 #include <string.h>
 
 
