@@ -25,5 +25,5 @@ Linux32    : plain : GCC.sh 3.4       --without-debug --without-mt --with-static
 Linux64    : plain : GCC.sh 4.0.1     --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
 FreeBSD32  : plain : GCC.sh 3.4.4     --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
 IRIX64     : plain : GCC.sh 3.4.4     --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
-SunOSx86   : plain : WorkShop55.sh 64 --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
+SunOSx86   : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
 SunOSSparc : plain : WorkShop55.sh 64 --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
