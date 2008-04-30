@@ -45,6 +45,7 @@
 #include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/prefetch_manager.hpp>
 
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -1720,6 +1721,7 @@ SSeqMatch_Scope CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
 {
     _ASSERT(&ds_info.GetScopeImpl() == this);
     try {
+        CPrefetchManager::IsActive();
         return ds_info.BestResolve(idh, get_flag);
     }
     catch (CBlobStateException& e) {
@@ -2046,6 +2048,7 @@ CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh)
     else {
         // Unknown bioseq, try to find in data sources
         for (CPriority_I it(m_setDataSrc); it; ++it) {
+            CPrefetchManager::IsActive();
             it->GetDataSource().GetIds(idh, ret);
             if ( !ret.empty() ) {
                 break;
