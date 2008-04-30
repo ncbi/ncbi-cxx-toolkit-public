@@ -14301,16 +14301,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     {
         // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
         // Test_Timeout is disabled till it get fixed. JIRA: CXX-371 ...
-        if (false 
-            && (args.GetDriverName() == ftds8_driver
-            && !(os_type == eOsSolaris && compiler_type == eCompilerWorkShop) && os_type != eOsIrix
+        bool condition = 
+            (args.GetDriverName() == ftds8_driver
+             && !(os_type == eOsSolaris && compiler_type == eCompilerWorkShop) && os_type != eOsIrix
             )
             || (args.GetDriverName() == dblib_driver && args.GetServerType() == CTestArguments::eSybase)
             || (args.GetDriverName() == ctlib_driver && os_type != eOsSolaris)
             || args.GetDriverName() == ftds64_driver
-            || args.IsODBCBased()
-            ) 
-        {
+            || args.IsODBCBased();
+
+        if (false  &&  condition) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Timeout,
                                     DBAPIInstance);
             tc->depends_on(tc_init);
