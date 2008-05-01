@@ -290,8 +290,10 @@ namespace NWinHook
     typedef VOID (WINAPI *FExitProcess)(UINT uExitCode);
 
     ////////////////////////////////////////////////////////////////////////////
+    // Version of the function, which was found at initialization time ...
     static FGetProcAddress g_FGetProcAddress = reinterpret_cast<FGetProcAddress>
         (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "GetProcAddress"));
+    // Version of the function, which was found at initialization time ...
     static FLoadLibraryA g_LoadLibraryA = reinterpret_cast<FLoadLibraryA>
         (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "LoadLibraryA"));
 
@@ -303,19 +305,25 @@ namespace NWinHook
         ~CKernell32();
 
     public:
+        // Version of the function developed by Microsoft ...
         static HMODULE WINAPI LoadLibraryA(LPCSTR lpLibFileName);
+        // Version of the function developed by Microsoft ...
         static HMODULE WINAPI LoadLibraryW(LPCWSTR lpLibFileName);
+        // Version of the function developed by Microsoft ...
         static HMODULE WINAPI LoadLibraryExA(LPCSTR lpLibFileName,
                                              HANDLE hFile,
                                              DWORD dwFlags
                                              );
+        // Version of the function developed by Microsoft ...
         static HMODULE WINAPI LoadLibraryExW(LPCWSTR lpLibFileName,
                                              HANDLE hFile,
                                              DWORD dwFlags
                                              );
+        // Version of the function developed by Microsoft ...
         static FARPROC WINAPI GetProcAddress(HMODULE hModule,
                                              LPCSTR lpProcName
                                              );
+        // Version of the function, which was found at initialization time ...
         static VOID WINAPI ExitProcess(UINT uExitCode);
 
     private:
@@ -349,6 +357,8 @@ namespace NWinHook
     {
         m_ModuleKenell32 = ::GetModuleHandle("kernel32.dll");
 
+        // Retrieve original procedure address ...
+        //
         sm_FGetProcAddress = reinterpret_cast<FGetProcAddress>
             (::GetProcAddress(m_ModuleKenell32, "GetProcAddress"));
         sm_FLoadLibraryA = reinterpret_cast<FLoadLibraryA>
@@ -373,6 +383,10 @@ namespace NWinHook
 
         unsigned long long mod_addr = (uintptr_t)m_ModuleKenell32;
 
+        // There is a trick below ...
+        // If the import section is already patched, we can get procedure address
+        // from the export section ...
+        //
         sm_FGetProcAddress = IsPatched(sm_FGetProcAddress) ?
             reinterpret_cast<FGetProcAddress>(
                 GetRVAFromExportSection(m_ModuleKenell32, "GetProcAddress") +
@@ -700,9 +714,12 @@ namespace NWinHook
 
     CModuleInstance::~CModuleInstance(void)
     {
-        ReleaseModules();
+        try {
+            ReleaseModules();
 
-        delete [] m_pszName;
+            delete [] m_pszName;
+        }
+        NCBI_CATCH_ALL_X( 5, NCBI_CURRENT_FUNCTION )
     }
 
 
@@ -820,7 +837,10 @@ namespace NWinHook
 
     CPsapiHandler::~CPsapiHandler(void)
     {
-        Finalize();
+        try {
+            Finalize();
+        }
+        NCBI_CATCH_ALL_X( 6, NCBI_CURRENT_FUNCTION )
     }
 
     BOOL CPsapiHandler::Initialize(void)
@@ -1171,7 +1191,10 @@ namespace NWinHook
 
     CTaskManager::~CTaskManager(void)
     {
-        delete m_pLibHandler;
+        try {
+            delete m_pLibHandler;
+        }
+        NCBI_CATCH_ALL_X( 7, NCBI_CURRENT_FUNCTION )
     }
 
     BOOL CTaskManager::PopulateProcess(DWORD dwProcessId,
@@ -1198,7 +1221,13 @@ namespace NWinHook
                 CRef<CHookedFunction> pHook;
 
                 pHook = it->second;
-                pHook->UnHookImport();
+                BOOL result = pHook->UnHookImport();
+
+                if (result == FALSE) {
+                    LOG_POST_X(4, Warning << pHook->GetFuncName() <<
+                               " is not unhooked in " << NCBI_CURRENT_FUNCTION);
+                }
+
                 // delete pHook;
                 /*
                 CApiHookMgr::GetInstance().UnHookImport(
@@ -1260,7 +1289,15 @@ namespace NWinHook
 
     CHookedFunction::~CHookedFunction(void)
     {
-        UnHookImport();
+        try {
+            BOOL result = UnHookImport();
+
+            if (result == FALSE) {
+                LOG_POST_X(4, Warning <<
+                           "Import is not unhooked in " << NCBI_CURRENT_FUNCTION);
+            }
+        }
+        NCBI_CATCH_ALL_X( 8, NCBI_CURRENT_FUNCTION )
     }
 
     HMODULE CHookedFunction::GetCalleeMod(void) const
@@ -1331,14 +1368,14 @@ namespace NWinHook
                         ModuleFromAddress(CApiHookMgr::GetProcAddressWindows));
 
                     // We don't hook functions in our own modules
-                    if (bReplace)
+                    if (bReplace) {
                         // Hook this function in this module
                         bResult = ReplaceInOneModule(pszCalleeModName,
                                                      pfnCurrent,
                                                      pfnNew,
                                                      pModule->GetModule()
                                                      ) || bResult;
-
+                    }
                 }
                 // Hook this function in the executable as well
                 bResult = ReplaceInOneModule(pszCalleeModName,
@@ -1374,6 +1411,7 @@ namespace NWinHook
 
             // Loop through all descriptors and
             // find the import descriptor containing references to callee's functions
+            // Get import descriptor for a given pszCalleeModName (allee's module name)
             while (pImportDesc->Name) {
                 PSTR pszModName = (PSTR)((PBYTE) hmodCaller + pImportDesc->Name);
                 if (stricmp(pszModName, pszCalleeModName) == 0) {
@@ -1387,6 +1425,10 @@ namespace NWinHook
                 __leave;
             }
 
+
+            // We have import descriptor. Let's get a function.
+
+
             // Get caller's IAT
             PIMAGE_THUNK_DATA pThunk =
             (PIMAGE_THUNK_DATA)( (PBYTE) hmodCaller + pImportDesc->FirstThunk );
@@ -1396,6 +1438,7 @@ namespace NWinHook
                 // Get the address of the function address
                 PROC* ppfn = (PROC*) &pThunk->u1.Function;
                 // Is this the function we're looking for?
+                // !!! It can be hoocked by others ... !!!
                 BOOL bFound = (*ppfn == pfnCurrent);
                 // Is this Windows 9x
                 if (!bFound && (*ppfn > sm_pvMaxAppAddr)) {
@@ -1692,6 +1735,8 @@ namespace NWinHook
                 m_ModuleList.find(hmodOriginal);
 
             if (mod_it != m_ModuleList.end()) {
+                // This module was hooked at least once.
+                // Let's check if a function was hoocked in this module.
                 const TFunctionList& fn_list = mod_it->second;
 
                 // Get the function by name ...
@@ -1797,7 +1842,10 @@ namespace NWinHook
 
     CApiHookMgr::~CApiHookMgr(void)
     {
-        UnHookAllFuncs();
+        try {
+            UnHookAllFuncs();
+        }
+        NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
     }
 
     void
@@ -1818,26 +1866,75 @@ namespace NWinHook
         BOOL bResult;
 
         if (m_bSystemFuncsHooked != TRUE) {
-            bResult = HookImport("Kernel32.dll",
-                                 "LoadLibraryA",
-                                 (PROC) CApiHookMgr::MyLoadLibraryA
-                                 );
-            bResult = HookImport("Kernel32.dll",
-                                 "LoadLibraryW",
-                                 (PROC) CApiHookMgr::MyLoadLibraryW
-                                 ) || bResult;
-            bResult = HookImport("Kernel32.dll",
-                                 "LoadLibraryExA",
-                                 (PROC) CApiHookMgr::MyLoadLibraryExA
-                                 ) || bResult;
-            bResult = HookImport("Kernel32.dll",
-                                 "LoadLibraryExW",
-                                 (PROC) CApiHookMgr::MyLoadLibraryExW
-                                 ) || bResult;
-            bResult = HookImport("Kernel32.dll",
-                                 "GetProcAddress",
-                                 (PROC) CApiHookMgr::MyGetProcAddress
-                                 ) || bResult;
+            {
+                bResult = HookImport("Kernel32.dll",
+                                     "LoadLibraryA",
+                                     (PROC) CApiHookMgr::MyLoadLibraryA
+                                     );
+
+//                 if (bResult == FALSE) {
+//                     LOG_POST_X(4, Warning
+//                                << "LoadLibraryA is not hooked in "
+//                                << NCBI_CURRENT_FUNCTION
+//                                );
+//                 }
+            }
+
+            {
+                bResult = HookImport("Kernel32.dll",
+                                     "LoadLibraryW",
+                                     (PROC) CApiHookMgr::MyLoadLibraryW
+                                     ) || bResult;
+
+//                 if (bResult == FALSE) {
+//                     LOG_POST_X(4, Warning
+//                                << "LoadLibraryW is not hooked in "
+//                                << NCBI_CURRENT_FUNCTION
+//                                );
+//                 }
+            }
+
+            {
+                bResult = HookImport("Kernel32.dll",
+                                     "LoadLibraryExA",
+                                     (PROC) CApiHookMgr::MyLoadLibraryExA
+                                     ) || bResult;
+
+//                 if (bResult == FALSE) {
+//                     LOG_POST_X(4, Warning
+//                                << "LoadLibraryExA is not hooked in "
+//                                << NCBI_CURRENT_FUNCTION
+//                                );
+//                 }
+            }
+
+            {
+                bResult = HookImport("Kernel32.dll",
+                                     "LoadLibraryExW",
+                                     (PROC) CApiHookMgr::MyLoadLibraryExW
+                                     ) || bResult;
+
+//                 if (bResult == FALSE) {
+//                     LOG_POST_X(4, Warning
+//                                << "LoadLibraryExW is not hooked in "
+//                                << NCBI_CURRENT_FUNCTION
+//                                );
+//                 }
+            }
+
+            {
+                bResult = HookImport("Kernel32.dll",
+                                     "GetProcAddress",
+                                     (PROC) CApiHookMgr::MyGetProcAddress
+                                     ) || bResult;
+
+//                 if (bResult == FALSE) {
+//                     LOG_POST_X(4, Warning
+//                                << "GetProcAddress is not hooked in"
+//                                << NCBI_CURRENT_FUNCTION
+//                                );
+//                 }
+            }
 
             m_bSystemFuncsHooked = bResult;
         }
@@ -1935,21 +2032,36 @@ namespace NWinHook
                               PROC  pfnHook
                               )
     {
-        BOOL             bResult = FALSE;
+        BOOL bResult = FALSE;
+
         if (!m_pHookedFunctions.GetHookedFunction(pszCalleeModName,
                                                   pszFuncName
                                                   )
-            ) {
-            CRef<CHookedFunction> pHook;
-            pHook = new CHookedFunction(pszCalleeModName,
-                                        pszFuncName,
-                                        pfnOrig,
-                                        pfnHook
-                                        );
+            )
+        {
+            // Function wasn't hoocked in pszCalleeModName yet ...
+            // Let's do that.
+
+            CRef<CHookedFunction> pHook(
+                new CHookedFunction(pszCalleeModName,
+                                    pszFuncName,
+                                    pfnOrig,
+                                    pfnHook
+                                    )
+            );
 
             // We must create the hook and insert it in the container
-            pHook->HookImport();
-            bResult = m_pHookedFunctions.AddHook(pHook);
+            BOOL result = pHook->HookImport();
+
+            if (bResult == FALSE) {
+                // There are problems ...
+//                 LOG_POST_X(4, Warning << pszFuncName
+//                            << " is not hooked in "
+//                            << NCBI_CURRENT_FUNCTION
+//                            );
+            } else {
+                bResult = m_pHookedFunctions.AddHook(pHook);
+            }
         }
 
         return (bResult);
@@ -2162,17 +2274,27 @@ namespace NWinHook
     ////////////////////////////////////////////////////////////////////////////
     COnExitProcess::COnExitProcess(void)
     {
-        CApiHookMgr::GetInstance().HookImport("Kernel32.DLL",
-                                              "ExitProcess",
-                                              (PROC)COnExitProcess::ExitProcess);
+        BOOL result = CApiHookMgr::GetInstance().HookImport(
+            "Kernel32.DLL",
+            "ExitProcess",
+            reinterpret_cast<PROC>(COnExitProcess::ExitProcess)
+            );
+
+        // Problems ...
+//         if (result == FALSE) {
+//             LOG_POST_X(4, Warning
+//                        << "ExitProcess is not hooked in "
+//                        << NCBI_CURRENT_FUNCTION
+//                        );
+//         }
     }
 
     COnExitProcess::~COnExitProcess(void)
     {
-        ClearAll();
-
-        CApiHookMgr::GetInstance().UnHookImport("Kernel32.DLL",
-                                                "ExitProcess");
+        try {
+            ClearAll();
+        }
+        NCBI_CATCH_ALL_X( 9, NCBI_CURRENT_FUNCTION )
     }
 
     COnExitProcess&
