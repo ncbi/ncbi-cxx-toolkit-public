@@ -10,7 +10,7 @@
 # defaults
 solution="Makefile.flat"
 logfile="Flat.configuration_log"
-extptb="$NCBI/c++.frozen/Release/bin/project_tree_builder"
+extptb="$NCBI/c++.stable/Release/bin/project_tree_builder"
 #-----------------------------------------------------------------------------
 
 initial_dir=`pwd`
