@@ -111,6 +111,13 @@ static PyObject* StringFromCpp(const std::string& s)
 }
 
 
+// Treatment of char's for container specialization
+static PyObject* CharFromCpp(char c)
+{
+    return PyString_FromStringAndSize(&c, 1);
+}
+
+
 // Treat negative indices the way Python does
 inline void AdjustIndex(ssize_t& i, size_t size)
 {

@@ -465,7 +465,7 @@ namespace std {
                                PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
 
     ncbi_specialize_std_vector(char,
-                               PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+                               SWIG_Check_char, SWIG_As_char, CharFromCpp);
     ncbi_specialize_std_vector(signed char,
                                PyInt_Check, PyInt_AsLong, PyInt_FromLong);
     ncbi_specialize_std_vector(unsigned char,
