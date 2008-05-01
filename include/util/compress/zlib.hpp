@@ -227,6 +227,19 @@ public:
     ///   Return TRUE on success, FALSE on error.
     /// @sa
     ///   DecompressFile
+    /// @note
+    ///   This method, as well as some gzip utilities, always
+    ///   keeps the original file name and timestamp in
+    ///   the compressed file. On this moment DecompressFile()
+    ///   do not use this information at all, but be aware...
+    ///   If you assign different base name to destination
+    ///   compressed file, that behavior of decompression utilities
+    ///   on different platforms may differ.
+    ///   For example, WinZip on MS Windows always restore
+    ///   original file name and timestamp stored in the file.
+    ///   UNIX gunzip have -N option for this, but by default
+    ///   do not use it, and just creates a decompressed file with
+    ///   the name of the compressed file without .gz extention.
     virtual bool CompressFile(
         const string& src_file,
         const string& dst_file,
@@ -245,6 +258,12 @@ public:
     ///   Return TRUE on success, FALSE on error.
     /// @sa
     ///   CompressFile
+    /// @note
+    ///   CompressFile() method, as well as some gzip utilities,
+    ///   always keeps the original file name and timestamp in
+    ///   the compressed file. On this moment DecompressFile()
+    ///   do not use this information at all.
+    ///   See CompressFile() for more details.
     virtual bool DecompressFile(
         const string& src_file,
         const string& dst_file, 
