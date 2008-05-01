@@ -40,6 +40,7 @@
 
 html/commentdiag.hpp
 html/components.hpp
+html/error_codes.hpp
 html/factory.hpp
 html/html.hpp
 html/html_exception.hpp
@@ -54,12 +55,14 @@ html/selection.hpp
 html/writer_htmlenc.hpp
 
 cgi/caf.hpp
+//cgi/cgiapp_cached.hpp  // some ugly problem with parameters macro
 cgi/cgi_exception.hpp
 cgi/cgi_util.hpp
 cgi/cgi_session.hpp
 cgi/cgi_serial.hpp
 cgi/cgiapp.hpp
 cgi/cgictx.hpp
+cgi/error_codes.hpp
 cgi/ncbicgi.hpp
 cgi/ncbicgir.hpp
 cgi/ncbires.hpp

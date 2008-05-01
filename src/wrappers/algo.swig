@@ -160,6 +160,7 @@ algo/blast/api/query_data.hpp
 algo/blast/api/remote_blast.hpp
 algo/blast/api/remote_search.hpp
 algo/blast/api/remote_services.hpp
+algo/blast/api/repeats_filter.hpp
 algo/blast/api/rps_aux.hpp
 algo/blast/api/rpstblastn_options.hpp
 algo/blast/api/seqinfosrc_seqdb.hpp
@@ -230,10 +231,11 @@ algo/gnomon/asn1.hpp
 algo/gnomon/set.hpp
 
 // next two trouble for Perl?
-//algo/phy_tree/bio_tree.hpp
-//algo/phy_tree/bio_tree_conv.hpp
+algo/phy_tree/bio_tree.hpp
+algo/phy_tree/bio_tree_conv.hpp
 algo/phy_tree/dist_methods.hpp
 algo/phy_tree/phy_node.hpp
+algo/phy_tree/tree_to_dist_mat.hpp
 
 algo/winmask/seq_masker.hpp
 algo/winmask/seq_masker_cache_boost.hpp
@@ -282,6 +284,7 @@ algo/text/vector_serial.hpp
 algo/tree/tree_algo.hpp
 
 algo/volume_merge/bv_merger.hpp
+algo/volume_merge/volume_merge.hpp
 
 %%
 
@@ -307,14 +310,6 @@ FindPolyTail(objects::CSeqVector_CI begin, objects::CSeqVector_CI end,
              TSignedSeqPos &cleavage_site);
 }
 
-
-%{
-#include <algo/phy_tree/bio_tree.hpp>
-#include <algo/phy_tree/bio_tree_conv.hpp>
-%}
-//#define ALGO_PHY_TREE___BIO_TREE__HPP
-%include algo/phy_tree/bio_tree.hpp
-%include algo/phy_tree/bio_tree_conv.hpp
 
 %template(CBioTreeDynamic)
    ncbi::CBioTree<ncbi::BioTreeBaseNode<ncbi::CBioTreeEmptyNodeData,

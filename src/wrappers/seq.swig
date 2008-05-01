@@ -660,12 +660,18 @@ objects/taxon1/Taxon2_data.hpp
 objects/taxon1/Taxon2_data_.hpp
 objects/taxon1/NCBI_Taxon1_module.hpp
 
+objects/blastdb/Blast_db_mask_info.hpp
+objects/blastdb/Blast_db_mask_info_.hpp
 objects/blastdb/Blast_def_line.hpp
 objects/blastdb/Blast_def_line_.hpp
 objects/blastdb/Blast_def_line_set.hpp
 objects/blastdb/Blast_def_line_set_.hpp
-objects/blastdb/defline_extra.hpp
+objects/blastdb/Blast_filter_program.hpp
+objects/blastdb/Blast_filter_program_.hpp
+objects/blastdb/Blast_mask_list.hpp
+objects/blastdb/Blast_mask_list_.hpp
 objects/blastdb/NCBI_BlastDL_module.hpp
+objects/blastdb/defline_extra.hpp
 
 // seqtest
 

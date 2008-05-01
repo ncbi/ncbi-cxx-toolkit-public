@@ -31,6 +31,8 @@
 
 %%
 
+objects/error_codes.hpp
+
 objects/general/Date.hpp
 objects/general/Date_.hpp
 objects/general/Date_std.hpp

@@ -190,6 +190,7 @@ objtools/alnmgr/alnpos_ci.hpp
 objtools/alnmgr/alnsegments.hpp
 objtools/alnmgr/alnseq.hpp
 objtools/alnmgr/alnvec.hpp
+objtools/alnmgr/alnvec_iterator.hpp
 objtools/alnmgr/pairwise_aln.hpp
 objtools/alnmgr/seqid_comp.hpp
 objtools/alnmgr/seqids_extractor.hpp
@@ -237,18 +238,25 @@ objmgr/annot_name.hpp
 objmgr/annot_selector.hpp
 objmgr/annot_type_selector.hpp
 objmgr/annot_types_ci.hpp
+objmgr/bio_object_id.hpp
 objmgr/bioseq_ci.hpp
 objmgr/bioseq_handle.hpp
 objmgr/bioseq_set_handle.hpp
 objmgr/blob_id.hpp
 objmgr/data_loader.hpp
 objmgr/data_loader_factory.hpp
+objmgr/edits_db_engine.hpp
+objmgr/edits_db_saver.hpp
 objmgr/edit_saver.hpp
+objmgr/error_codes.hpp
 objmgr/feat_ci.hpp
+objmgr/gbloader.hpp
 objmgr/graph_ci.hpp
 objmgr/object_manager.hpp
 objmgr/objmgr_exception.hpp
 objmgr/objmgr_version.hpp
+objmgr/prefetch.hpp
+objmgr/reader.hpp
 objmgr/scope.hpp
 objmgr/scope_transaction.hpp
 objmgr/seq_align_handle.hpp
@@ -265,19 +273,31 @@ objects/seq/seq_loc_mapper_base.hpp
 objmgr/seq_loc_mapper.hpp
 objmgr/seq_map.hpp
 objmgr/seq_map_ci.hpp
+objmgr/seq_map_switch.hpp
 objmgr/seq_vector.hpp
 objmgr/seq_vector_ci.hpp
 objmgr/seqdesc_ci.hpp
+objmgr/table_field.hpp
 // won't compile (nothing must #include this)
 //objmgr/tse_ci.hpp
 objmgr/tse_handle.hpp
+objmgr/unsupp_editsaver.hpp
+objmgr/util/autodef.hpp
+objmgr/util/autodef_available_modifier.hpp
+objmgr/util/autodef_feature_clause.hpp
+objmgr/util/autodef_feature_clause_base.hpp
+objmgr/util/autodef_mod_combo.hpp
+objmgr/util/autodef_source_desc.hpp
+objmgr/util/autodef_source_group.hpp
 objmgr/util/feature.hpp
 // non-inline function definition in header; messes up splitting
 //objmgr/util/genbank.hpp
 objmgr/util/obj_sniff.hpp
+objmgr/util/seq_align_util.hpp
+objmgr/util/seq_loc_util.hpp
 objmgr/util/sequence.hpp
 objmgr/util/weight.hpp
-objmgr/util/seq_loc_util.hpp
+
 
 objtools/cleanup/cleanup.hpp
 objtools/cleanup/cleanup_change.hpp
@@ -292,6 +312,9 @@ objtools/readers/aln_reader.hpp
 objtools/readers/cigar.hpp
 objtools/readers/fasta.hpp
 objtools/readers/featuredump.hpp
+//objtools/readers/gene_info/file_utils.hpp  // nested template struct
+objtools/readers/gene_info/gene_info_reader.hpp
+objtools/readers/gene_info/gene_info.hpp
 objtools/readers/getfeature.hpp
 objtools/readers/gff_reader.hpp
 objtools/readers/glimmer_reader.hpp
@@ -303,6 +326,7 @@ objtools/readers/seqdb/seqdb.hpp
 objtools/readers/seqdb/seqdbcommon.hpp
 objtools/readers/seqdb/seqdbexpert.hpp
 objtools/writers/agp_write.hpp
+objtools/writers/gene_info/gene_info_writer.hpp
 objtools/writers/writer_exception.hpp
 objtools/writers/writedb/writedb.hpp
 objtools/writers/writedb/writedb_error.hpp

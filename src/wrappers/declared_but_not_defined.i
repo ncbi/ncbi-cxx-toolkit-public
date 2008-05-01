@@ -31,6 +31,8 @@
  */
 
 
+%ignore ncbi::objects::CAutoDef::DoAutoDef;
+
 %ignore ncbi::CQueryParseNode::GetIdentIdx;
 
 %ignore ncbi::IServer_StreamHandler::GetStream;
