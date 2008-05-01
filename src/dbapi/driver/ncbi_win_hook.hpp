@@ -238,7 +238,8 @@ namespace NWinHook
 
         static COnExitProcess& Instance(void);
 
-        void Add(TFunct funct);
+        // Return true in case of success.
+        bool Add(TFunct funct);
         void Remove(TFunct funct);
         void ClearAll(void);
 
@@ -248,8 +249,10 @@ namespace NWinHook
         // Hook function prototype
         static void WINAPI ExitProcess(UINT uExitCode);
 
+    private:
         mutable CFastMutex  m_Mutex;
         vector<TFunct>      m_Registry;
+        bool                m_Hooked;
 
         friend class CSafeStaticPtr<COnExitProcess>;
     };

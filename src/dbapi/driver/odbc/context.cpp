@@ -80,12 +80,18 @@ public:
     void ClearAll(void);
     static void StaticClearAll(void);
 
+    bool ExitProcessIsPatched(void) const
+    {
+        return m_ExitProcessPatched;
+    }
+
 private:
     CODBCContextRegistry(void);
     ~CODBCContextRegistry(void) throw();
 
     mutable CMutex          m_Mutex;
     vector<CODBCContext*>   m_Registry;
+    bool                    m_ExitProcessPatched;
 
     friend class CSafeStaticPtr<CODBCContextRegistry>;
 };
@@ -95,8 +101,11 @@ CODBCContextRegistry::CODBCContextRegistry(void)
 {
 #if defined(NCBI_OS_MSWIN)
     try {
-        NWinHook::COnExitProcess::Instance().Add(CODBCContextRegistry::StaticClearAll);
+        m_ExitProcessPatched = 
+            NWinHook::COnExitProcess::Instance().Add(CODBCContextRegistry::StaticClearAll);
     } catch (const NWinHook::CWinHookException&) {
+        // Just in case ...
+        m_ExitProcessPatched = false;
     }
 #endif
 }

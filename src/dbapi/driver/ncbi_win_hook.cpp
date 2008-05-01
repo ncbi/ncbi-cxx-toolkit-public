@@ -43,6 +43,8 @@
 
 #pragma comment(lib, "DbgHelp.lib")
 
+#pragma warning( push )
+#pragma warning( disable : 4191 ) // unsafe conversion from ...
 
 #define NCBI_USE_ERRCODE_X   Dbapi_DrvrWinHook
 
@@ -2051,17 +2053,21 @@ namespace NWinHook
             );
 
             // We must create the hook and insert it in the container
-            BOOL result = pHook->HookImport();
+            pHook->HookImport();
 
-            if (bResult == FALSE) {
-                // There are problems ...
+            // It is not correct to interpret HookImport()'s result.
+            // This method may return "false" if an import section wasn't found
+            // or a function wasn't imported.
+            //
+//             BOOL result = pHook->HookImport();
+//             if (result == FALSE) {
 //                 LOG_POST_X(4, Warning << pszFuncName
 //                            << " is not hooked in "
 //                            << NCBI_CURRENT_FUNCTION
 //                            );
-            } else {
-                bResult = m_pHookedFunctions.AddHook(pHook);
-            }
+//             }
+
+            bResult = m_pHookedFunctions.AddHook(pHook);
         }
 
         return (bResult);
@@ -2273,6 +2279,7 @@ namespace NWinHook
 
     ////////////////////////////////////////////////////////////////////////////
     COnExitProcess::COnExitProcess(void)
+    : m_Hooked(false)
     {
         BOOL result = CApiHookMgr::GetInstance().HookImport(
             "Kernel32.DLL",
@@ -2280,13 +2287,14 @@ namespace NWinHook
             reinterpret_cast<PROC>(COnExitProcess::ExitProcess)
             );
 
-        // Problems ...
-//         if (result == FALSE) {
-//             LOG_POST_X(4, Warning
-//                        << "ExitProcess is not hooked in "
-//                        << NCBI_CURRENT_FUNCTION
-//                        );
-//         }
+        m_Hooked = (result == TRUE);
+
+        if (!m_Hooked) {
+            LOG_POST_X(4, Warning
+                       << "ExitProcess is not hooked in "
+                       << NCBI_CURRENT_FUNCTION
+                       );
+        }
     }
 
     COnExitProcess::~COnExitProcess(void)
@@ -2305,17 +2313,24 @@ namespace NWinHook
         return (instance.Get());
     }
 
-    void
+    bool
     COnExitProcess::Add(TFunct funct)
     {
-        CFastMutexGuard mg(m_Mutex);
+        if (m_Hooked) {
+            // Do not register functions if we cannot run them at right time.
+            CFastMutexGuard mg(m_Mutex);
 
-        vector<TFunct>::iterator it = find(m_Registry.begin(),
-                                           m_Registry.end(),
-                                           funct);
-        if (it == m_Registry.end()) {
-            m_Registry.push_back(funct);
+            vector<TFunct>::iterator it = find(m_Registry.begin(),
+                                               m_Registry.end(),
+                                               funct);
+            if (it == m_Registry.end()) {
+                m_Registry.push_back(funct);
+            }
+
+            return true;
         }
+
+        return false;
     }
 
     void
@@ -2353,6 +2368,8 @@ namespace NWinHook
 }
 
 END_NCBI_SCOPE
+
+#pragma warning( pop )
 
 #endif
 

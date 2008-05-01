@@ -111,8 +111,8 @@ CDblibContextRegistry::CDblibContextRegistry(void)
 #if defined(NCBI_OS_MSWIN)
 
     try {
-        NWinHook::COnExitProcess::Instance().Add(CDblibContextRegistry::StaticClearAll);
-        m_ExitProcessPatched = true;
+        m_ExitProcessPatched = 
+            NWinHook::COnExitProcess::Instance().Add(CDblibContextRegistry::StaticClearAll);
     } catch (const NWinHook::CWinHookException&) {
         // Just in case ...
         m_ExitProcessPatched = false;

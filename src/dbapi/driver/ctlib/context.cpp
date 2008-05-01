@@ -116,8 +116,8 @@ m_ExitProcessPatched(false)
 #if defined(NCBI_OS_MSWIN)
 
     try {
-        // NWinHook::COnExitProcess::Instance().Add(CTLibContextRegistry::StaticClearAll);
-        // m_ExitProcessPatched = true;
+        m_ExitProcessPatched = 
+            NWinHook::COnExitProcess::Instance().Add(CTLibContextRegistry::StaticClearAll);
     } catch (const NWinHook::CWinHookException&) {
         // Just in case ...
         m_ExitProcessPatched = false;
