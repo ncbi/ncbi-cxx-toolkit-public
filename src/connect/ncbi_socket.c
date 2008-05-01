@@ -279,7 +279,7 @@ typedef int TRIGGER_Handle;
 #endif
 
 
-#if defined(HAVE_SOCKLEN_T)  ||  defined (_SOCKLEN_T)
+#if defined(HAVE_SOCKLEN_T)  ||  defined(_SOCKLEN_T)
 typedef socklen_t  SOCK_socklen_t;
 #else
 typedef int	       SOCK_socklen_t;
@@ -2719,7 +2719,7 @@ static EIO_Status s_CreateListening(const char*    path,
     *lsock = 0;
     /* initialize internals */
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
-    assert(!!path ^ !!port);
+    assert(!path ^ !port);
 
     if (path) {
 #ifdef NCBI_OS_UNIX
