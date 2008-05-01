@@ -969,7 +969,7 @@ void CDBAPI_Cache::Purge(time_t           access_timeout,
     string del_sql =
         "DELETE FROM dbo.cache_attr WHERE ";
     del_sql += " cache_timestamp < ";
-    del_sql += NStr::IntToString(curr);
+    del_sql += NStr::IntToString(long(curr));
 
     stmt->ExecuteUpdate(del_sql);
 
@@ -1016,7 +1016,7 @@ void CDBAPI_Cache::Purge(const string&    key,
     string del_sql =
         "DELETE FROM dbo.cache_attr WHERE ";
     del_sql += " cache_timestamp < ";
-    del_sql += NStr::IntToString(curr);
+    del_sql += NStr::IntToString(long(curr));
     if (!key.empty()) {
         del_sql += " AND cache_key = '";
         del_sql += key;

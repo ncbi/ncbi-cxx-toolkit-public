@@ -121,7 +121,7 @@ CDbapiBcpApp::RunSample(void)
 
         for ( i= 0; *file_name[i] != '\0'; ++i ) {
             int_val = i;
-            fl_val = i + 0.999;
+            fl_val = float(i + 0.999);
             date_val = date_val.Value();
             str_val= file_name[i];
 
