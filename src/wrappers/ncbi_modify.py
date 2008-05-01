@@ -67,6 +67,12 @@ def Modify(s):
         {
             return m_Value;
         }
+
+        /// Get the reference to the stored value.
+        T& GetRef()
+        {
+            return m_Value;
+        }
         
         /// Assign the field from another optional field.
         SOptional<T> & operator=(const T & x)
