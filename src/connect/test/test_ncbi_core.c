@@ -66,14 +66,6 @@ extern "C" {
  *  TEST_CORE -- test "ncbi_core.c"
  */
 
-static void TEST_CORE_Generic(void)
-{
-  /* STimeout */
-  static STimeout x_timeout = { 111111, 222222 };
-  x_timeout.sec  = (unsigned int) 333333;
-  x_timeout.usec = (unsigned int) 444444;
-}
-
 
 static void TEST_CORE_Io(void)
 {
@@ -297,7 +289,6 @@ static void TEST_CORE_Log(void)
 static void TEST_CORE(void)
 {
   /* Do all TEST_CORE_***() tests */
-  DO_TEST(TEST_CORE_Generic);
   DO_TEST(TEST_CORE_Io);
   DO_TEST(TEST_CORE_Lock);
   DO_TEST(TEST_CORE_Log);
