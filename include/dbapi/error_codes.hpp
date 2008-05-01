@@ -69,7 +69,7 @@ NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Conn,     1124,  3);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Context,  1125,  3);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Cmds,     1126,  5);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Results,  1127,  5);
-NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrWinHook,   1128,  2);
+NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrWinHook,   1128,  9);
 NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrMemStore,  1129,  1);
 NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrResult,    1130,  1);
 NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrUtil,      1131,  2);
