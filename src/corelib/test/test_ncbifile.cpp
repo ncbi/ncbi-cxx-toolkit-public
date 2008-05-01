@@ -204,7 +204,7 @@ static void s_TEST_CheckPath(void)
     assert(!d.IsAbsolutePath("c:file") );
     assert( d.IsAbsolutePath("\\\\machine\\dir") );
     assert(!d.IsAbsolutePath("file") );
-    assert(!d.IsAbsolutePath("\\file") );
+    assert( d.IsAbsolutePath("\\file") );
     assert(!d.IsAbsolutePath(".\\file") );
     assert(!d.IsAbsolutePath("..\\file") );
     assert(!d.IsAbsolutePath("dir\\file") );
