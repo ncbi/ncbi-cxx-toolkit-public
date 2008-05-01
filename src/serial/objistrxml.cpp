@@ -753,7 +753,7 @@ char CObjectIStreamXml::ReadUndefinedAttributes(void)
 bool CObjectIStreamXml::ReadBool(void)
 {
     CTempString attr;
-    bool checktag = !(x_IsStdXml() && m_Attlist);
+    bool checktag = !x_IsStdXml();
     if (checktag) {
         while (HasAttlist()) {
             attr = ReadAttributeName();
@@ -769,14 +769,20 @@ bool CObjectIStreamXml::ReadBool(void)
         }
     }
     string sValue;
-    ReadAttributeValue(sValue);
+    if (m_Attlist || checktag) {
+        ReadAttributeValue(sValue);
+    } else {
+        ReadTagData(sValue);
+    }
+
+// http://www.w3.org/TR/xmlschema11-2/#boolean
     bool value;
-    if ( sValue == "true" )
+    if ( sValue == "true"  || sValue == "1")
         value = true;
     else {
-        if ( sValue != "false" ) {
+        if ( sValue != "false"  && sValue != "0") {
             ThrowError(fFormatError,
-                       "'true' or 'false' attrubute value expected: "+sValue);
+                       "'true' or 'false' value expected: "+sValue);
         }
         value = false;
     }

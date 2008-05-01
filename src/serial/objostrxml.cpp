@@ -479,7 +479,7 @@ void CObjectOStreamXml::WriteEncodedChar(const char*& src, EStringType type)
 
 void CObjectOStreamXml::WriteBool(bool data)
 {
-    if ( !(x_IsStdXml() && m_Attlist) ) {
+    if ( !x_IsStdXml() ) {
         OpenTagEndBack();
         if ( data )
             m_Output.PutString(" value=\"true\"");
