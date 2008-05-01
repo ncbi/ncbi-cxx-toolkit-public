@@ -958,7 +958,7 @@ void CDBAPI_Cache::Purge(time_t           access_timeout,
         return;
     }
     CTime time_stamp(CTime::eCurrent);
-    time_t curr = (int)time_stamp.GetTimeT();
+    time_t curr = time_stamp.GetTimeT();
     int timeout = GetTimeout();
     curr -= timeout;
 
@@ -1005,7 +1005,7 @@ void CDBAPI_Cache::Purge(const string&    key,
     }
 
     CTime time_stamp(CTime::eCurrent);
-    time_t curr = (int)time_stamp.GetTimeT();
+    time_t curr = time_stamp.GetTimeT();
     int timeout = GetTimeout();
     curr -= timeout;
 
