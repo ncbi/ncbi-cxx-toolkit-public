@@ -14675,6 +14675,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (tc_cursor
         && args.GetDriverName() != ftds_odbc_driver // 04/21/08 "Statement(s) could not be prepared"
+        // 05/01/08 "Unclosed quotation mark before the character string 't use me'."
+        // Looks like a bug in cursor implementation.
+        && args.GetDriverName() != odbc_driver         
         ) 
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_Multiple_LowLevel, 
