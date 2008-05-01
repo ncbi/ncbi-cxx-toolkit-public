@@ -60,9 +60,11 @@
 BEGIN_NCBI_SCOPE
 
 
-#if !defined(HAVE_SOCKLEN_T)
-typedef int socklen_t;
-#endif
+#if defined(HAVE_SOCKLEN_T)  ||  defined(_SOCKLEN_T)
+typedef socklen_t  SOCK_socklen_t;
+#else
+typedef int        SOCK_socklen_t;
+#endif /*HAVE_SOCKLEN_T || _SOCKLEN_T*/
 
 
 // Predefined timeouts
@@ -625,7 +627,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         memset(&addr, 0, sizeof(addr));
         addr.sun_family = AF_UNIX;
 #ifdef HAVE_SIN_LEN
-        addr.sun_len = (socklen_t) sizeof(addr);
+        addr.sun_len = (SOCK_socklen_t) sizeof(addr);
 #endif
         strcpy(addr.sun_path, pipename.c_str());
         
@@ -634,7 +636,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         // Auto-resume if interrupted by a signal
         for (n = 0; ; n = 1) {
             if (connect(sock, (struct sockaddr*) &addr,
-                        (socklen_t) sizeof(addr)) == 0) {
+                        (SOCK_socklen_t) sizeof(addr)) == 0) {
                 break;
             }
             x_errno = errno;
@@ -694,7 +696,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                 }
                 // Check connection
                 x_errno = 0;
-                socklen_t x_len = (socklen_t) sizeof(x_errno);
+                SOCK_socklen_t x_len = (SOCK_socklen_t) sizeof(x_errno);
                 if ((getsockopt(sock, SOL_SOCKET, SO_ERROR, &x_errno, 
                                 &x_len) != 0  ||  x_errno != 0)) {
                     throw string("UNIX socket getsockopt() failed: ")
@@ -755,12 +757,12 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         memset(&addr, 0, sizeof(addr));
         addr.sun_family = AF_UNIX;
 #ifdef HAVE_SIN_LEN
-        addr.sun_len = (socklen_t) sizeof(addr);
+        addr.sun_len = (SOCK_socklen_t) sizeof(addr);
 #endif
         strcpy(addr.sun_path, pipename.c_str());
         mode_t u = umask(0);
         if (bind(m_LSocket, (struct sockaddr*) &addr,
-                 (socklen_t) sizeof(addr)) != 0) {
+                 (SOCK_socklen_t) sizeof(addr)) != 0) {
             umask(u);
             throw "UNIX socket bind(\"" + pipename + "\") failed: "
                 + strerror(errno);
@@ -838,7 +840,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 
         // Can accept next connection from the list of waiting ones
         struct sockaddr_un addr;
-        socklen_t addrlen = (socklen_t) sizeof(addr);
+        socklen_t addrlen = (SOCK_socklen_t) sizeof(addr);
         memset(&addr, 0, sizeof(addr));
 #  ifdef HAVE_SIN_LEN
         addr.sun_len = sizeof(addr);
@@ -990,12 +992,12 @@ bool CNamedPipeHandle::x_CloseSocket(int sock)
 
 bool CNamedPipeHandle::x_SetSocketBufSize(int sock, size_t bufsize, int dir)
 {
-    int       bs_old = 0;
-    int       bs_new = (int) bufsize;
-    socklen_t bs_len = (socklen_t) sizeof(bs_old);
+    int            bs_old = 0;
+    int            bs_new = (int) bufsize;
+    SOCK_socklen_t bs_len = (SOCK_socklen_t) sizeof(bs_old);
 
-    if (getsockopt(sock, SOL_SOCKET, dir, &bs_old, &bs_len) == 0  &&
-        bs_new > bs_old) {
+    if (getsockopt(sock, SOL_SOCKET, dir, &bs_old, &bs_len) == 0
+        &&  bs_new > bs_old) {
         if (setsockopt(sock, SOL_SOCKET, dir, &bs_new, bs_len) != 0) {
             return false;
         }
