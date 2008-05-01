@@ -79,7 +79,6 @@ int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
     CNcbiRegistry* reg;
-    unsigned long seed;
     TFCDC_Flags flag = 0;
     SConnNetInfo* net_info;
     size_t i, j, k, l, m, n, size;
@@ -89,11 +88,10 @@ int main(int argc, const char* argv[])
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
     if (argc <= 1)
-        seed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     else
-        sscanf(argv[1], "%lu", &seed);
-    CORE_LOGF(eLOG_Note, ("Random SEED = %lu", seed));
-    g_NCBI_ConnectRandomSeed = seed;
+        g_NCBI_ConnectRandomSeed = atoi(argv[1]);
+    CORE_LOGF(eLOG_Note, ("Random SEED = %u", g_NCBI_ConnectRandomSeed));
     srand(g_NCBI_ConnectRandomSeed);
 
     SetDiagTrace(eDT_Enable);

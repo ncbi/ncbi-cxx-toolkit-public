@@ -334,9 +334,8 @@ static int s_Client(int x_port, unsigned int max_try)
 
 int main(int argc, const char* argv[])
 {
-    unsigned long seed;
-    unsigned int  max_try = DEF_CONN_MAX_TRY;
-    const char*   env = getenv("CONN_DEBUG_PRINTOUT");
+    unsigned int max_try = DEF_CONN_MAX_TRY;
+    const char*  env = getenv("CONN_DEBUG_PRINTOUT");
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
@@ -346,11 +345,10 @@ int main(int argc, const char* argv[])
         return s_Usage(argv[0]);
 
     if (argc <= 4)
-        seed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     else
-        sscanf(argv[4], "%lu", &seed);
-    CORE_LOGF(eLOG_Note, ("Random SEED = %lu", seed));
-    g_NCBI_ConnectRandomSeed = seed;
+        g_NCBI_ConnectRandomSeed = atoi(argv[4]);
+    CORE_LOGF(eLOG_Note, ("Random SEED = %u", g_NCBI_ConnectRandomSeed));
     srand(g_NCBI_ConnectRandomSeed);
 
     if (env && (strcasecmp(env, "1") == 0     ||
