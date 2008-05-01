@@ -1158,14 +1158,13 @@ void CNamedPipe::x_SetName(const string& pipename)
 #elif defined(NCBI_OS_UNIX)
     static const mode_t k_writeable = S_IWUSR | S_IWGRP | S_IWOTH;
     struct stat st;
-    int    err;
 
     const char* pipedir = "/var/tmp";
-    if ((err = stat(pipedir, &st)) != 0  ||  !S_ISDIR(st.st_mode)  ||
-        (st.st_mode & k_writeable) != k_writeable) {
+    if (stat(pipedir, &st) != 0  ||  !S_ISDIR(st.st_mode)
+        ||  (st.st_mode & k_writeable) != k_writeable) {
         pipedir = "/tmp";
-        if ((err = stat(pipedir, &st)) != 0  || !S_ISDIR(st.st_mode)  ||
-            (st.st_mode & k_writeable) != k_writeable) {
+        if (stat(pipedir, &st) != 0  ||  !S_ISDIR(st.st_mode)
+            ||  (st.st_mode & k_writeable) != k_writeable) {
             pipedir = ".";
         }
     }
