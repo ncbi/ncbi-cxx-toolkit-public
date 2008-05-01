@@ -585,9 +585,10 @@ static string s_TitleFromBioSource(const CBioSource& source,
 
     if (org.IsSetOrgname()  &&  org.GetOrgname().IsSetMod()) {
         ITERATE (COrgName::TMod, it, org.GetOrgname().GetMod()) {
+            const string& subname = (*it)->GetSubname();
             if ((*it)->GetSubtype() == COrgMod::eSubtype_strain
-                &&  !s_EndsWithStrain(name, (*it)->GetSubname())) {
-                strain = " strain " + (*it)->GetSubname();
+                &&  !s_EndsWithStrain(name, subname)) {
+                strain = " strain " + subname.substr(0, subname.find(';'));
             }
         }
     }
