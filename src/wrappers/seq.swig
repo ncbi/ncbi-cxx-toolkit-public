@@ -673,8 +673,6 @@ objects/blastdb/Blast_mask_list_.hpp
 objects/blastdb/NCBI_BlastDL_module.hpp
 objects/blastdb/defline_extra.hpp
 
-// seqtest
-
 objects/seqtest/SeqTestResults.hpp
 objects/seqtest/SeqTestResults_.hpp
 objects/seqtest/Seq_test_result.hpp
@@ -682,6 +680,20 @@ objects/seqtest/Seq_test_result_.hpp
 objects/seqtest/Seq_test_result_set.hpp
 objects/seqtest/Seq_test_result_set_.hpp
 objects/seqtest/NCBI_SeqTest_module.hpp
+
+objects/genomecoll/GC_Assembly.hpp
+objects/genomecoll/GC_Assembly_.hpp
+objects/genomecoll/GC_ChromosomeName.hpp
+objects/genomecoll/GC_ChromosomeName_.hpp
+objects/genomecoll/GC_Genome.hpp
+objects/genomecoll/GC_Genome_.hpp
+objects/genomecoll/GC_GenomicPart.hpp
+objects/genomecoll/GC_GenomicPart_.hpp
+objects/genomecoll/GC_Molecule.hpp
+objects/genomecoll/GC_Molecule_.hpp
+objects/genomecoll/GC_SequenceBag.hpp
+objects/genomecoll/GC_SequenceBag_.hpp
+objects/genomecoll/NCBI_GenomeCollection_module.hpp
 
 %%
 

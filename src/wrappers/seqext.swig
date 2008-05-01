@@ -149,6 +149,8 @@ ADD_STREAM_INSERTER(ncbi::CAnchoredAln)
 
 %%
 
+objtools/error_codes.hpp
+
 // Obsolescent
 // objtools/flat/flat_context.hpp
 // objtools/flat/flat_ddbj_formatter.hpp
@@ -298,6 +300,10 @@ objmgr/util/seq_loc_util.hpp
 objmgr/util/sequence.hpp
 objmgr/util/weight.hpp
 
+objtools/cddalignview/cav_alignset.hpp
+objtools/cddalignview/cav_alndisplay.hpp
+objtools/cddalignview/cav_asnio.hpp
+objtools/cddalignview/cav_seqset.hpp
 
 objtools/cleanup/cleanup.hpp
 objtools/cleanup/cleanup_change.hpp
@@ -325,6 +331,17 @@ objtools/readers/rm_reader.hpp
 objtools/readers/seqdb/seqdb.hpp
 objtools/readers/seqdb/seqdbcommon.hpp
 objtools/readers/seqdb/seqdbexpert.hpp
+
+objtools/seqmasks_io/mask_bdb_reader.hpp
+objtools/seqmasks_io/mask_cmdline_args.hpp
+objtools/seqmasks_io/mask_fasta_reader.hpp
+objtools/seqmasks_io/mask_reader.hpp
+objtools/seqmasks_io/mask_writer.hpp
+objtools/seqmasks_io/mask_writer_blastdb_maskinfo.hpp
+objtools/seqmasks_io/mask_writer_fasta.hpp
+objtools/seqmasks_io/mask_writer_int.hpp
+objtools/seqmasks_io/mask_writer_seqloc.hpp
+
 objtools/writers/agp_write.hpp
 objtools/writers/gene_info/gene_info_writer.hpp
 objtools/writers/writer_exception.hpp
@@ -381,6 +398,36 @@ objtools/format/items/sequence_item.hpp
 objtools/format/items/source_item.hpp
 objtools/format/items/version_item.hpp
 objtools/format/items/wgs_item.hpp
+
+// Looks like these aren't in a Windows library.
+// This seems like a reasonable place for them.
+objects/homologene/HG_Alignment.hpp
+objects/homologene/HG_AlignmentSet.hpp
+objects/homologene/HG_AlignmentSet_.hpp
+objects/homologene/HG_Alignment_.hpp
+objects/homologene/HG_Commentary.hpp
+objects/homologene/HG_CommentaryContainer.hpp
+objects/homologene/HG_CommentaryContainer_.hpp
+objects/homologene/HG_CommentarySet.hpp
+objects/homologene/HG_CommentarySet_.hpp
+objects/homologene/HG_Commentary_.hpp
+objects/homologene/HG_Domain.hpp
+objects/homologene/HG_Domain_.hpp
+objects/homologene/HG_Entry.hpp
+objects/homologene/HG_EntrySet.hpp
+objects/homologene/HG_EntrySet_.hpp
+objects/homologene/HG_Entry_.hpp
+objects/homologene/HG_Gene.hpp
+objects/homologene/HG_Gene_.hpp
+objects/homologene/HG_Link.hpp
+objects/homologene/HG_Link_.hpp
+objects/homologene/HG_Node.hpp
+objects/homologene/HG_Node_.hpp
+objects/homologene/HG_Node_id.hpp
+objects/homologene/HG_Node_id_.hpp
+objects/homologene/HG_Stats.hpp
+objects/homologene/HG_Stats_.hpp
+objects/homologene/HomoloGene_module.hpp
 
 %%
 

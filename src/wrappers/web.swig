@@ -71,6 +71,8 @@ cgi/ref_args.hpp
 %ifndef WINDOWS cgi/caf_plain.hpp
 %ifndef WINDOWS cgi/caf_encoded.hpp
 
+misc/error_codes.hpp
+
 misc/cgi_redirect/redirect.hpp
 
 %%

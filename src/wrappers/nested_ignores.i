@@ -30,6 +30,8 @@
  */
 
 
+%ignore *::CMaskReader_Exception(const Exception&);
+
 %ignore *::CLZOCompression_SCompressionParam::compress;
 
 %ignore *::CCompareSeq_locs_SIntervalComparisonResult

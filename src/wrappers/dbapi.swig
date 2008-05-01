@@ -31,6 +31,8 @@
 
 %%
 
+dbapi/error_codes.hpp
+
 dbapi/dbapi.hpp
 dbapi/driver_mgr.hpp
 dbapi/variant.hpp

@@ -186,6 +186,8 @@ corelib/syslog.hpp
 corelib/tempstr.hpp
 corelib/version.hpp
 
+util/error_codes.hpp
+
 util/align_range.hpp
 util/align_range_coll.hpp
 util/align_range_oper.hpp
@@ -267,6 +269,8 @@ util/qparse/query_parse.hpp
 // weakmap.inl won't compile
 //util/weakmap.hpp
 util/tables/raw_scoremat.h
+
+connect/error_codes.hpp
 
 connect/connect_export.h
 connect/ncbi_buffer.h
