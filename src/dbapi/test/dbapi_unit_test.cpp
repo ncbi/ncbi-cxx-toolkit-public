@@ -14797,7 +14797,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && args.GetDriverName() != ftds_dblib_driver
         && (args.GetDriverName() != dblib_driver || args.GetServerType() == CTestArguments::eSybase)
-        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris && !sybase_client_v125)
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris && !sybase_client_v125) // 05/01/08 // Bad row data received from the client
         ) 
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob,
