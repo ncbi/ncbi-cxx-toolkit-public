@@ -381,7 +381,7 @@ public:
         ///   Process Id to monitor
         /// @return
         ///   eStop if the process should be killed, eContinue otherwise
-        virtual EAction OnStart(TProcessHandle pid) {return eContinue;};
+        virtual EAction OnStart(TProcessHandle /*pid*/) {return eContinue;};
 
         /// This method is getting called periodically during
         /// the process execution by ExecWait method.
@@ -390,7 +390,7 @@ public:
         ///   Process Id to monitor
         /// @return
         ///   eStop if the process should be killed, eContinue otherwise
-        virtual EAction Watch(TProcessHandle pid) = 0;
+        virtual EAction Watch(TProcessHandle /*pid*/) = 0;
     };
 
     /// ExecWait return code
