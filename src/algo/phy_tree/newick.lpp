@@ -46,6 +46,8 @@
 #include <corelib/stream_utils.hpp>
 #include <algo/phy_tree/phy_node.hpp>
 
+#define YY_NO_UNPUT 1  // avoid a compiler warning
+
 USING_SCOPE(ncbi);
 
 #include "newick.tab.hpp"
@@ -72,7 +74,7 @@ extern CNcbiIstream *g_NewickIstr;
 
 %%
 
-<EXPECT_NUM>[-+]?([0-9]+|([0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?) {
+<EXPECT_NUM>[-+]?(([0-9]+|([0-9]*\.[0-9]+))([eE][-+]?[0-9]+)?) {
     newicklval.dblval = atof(yytext);
     BEGIN 0;
     return NUM;
