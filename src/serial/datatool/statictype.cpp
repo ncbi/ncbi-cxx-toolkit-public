@@ -130,7 +130,13 @@ void CStaticDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) con
         GetParentType()->GetDataMember() &&
         GetParentType()->GetDataMember()->Attlist()) {
         const CDataMember* mem = GetDataMember();
-        out << "\n    " << tag << " CDATA ";
+        out << "\n    " << tag;
+        const CBoolDataType* bt = dynamic_cast<const CBoolDataType*>(this);
+        if (bt) {
+           out << " ( true | false ) ";
+        } else {
+           out << " CDATA ";
+        }
         if (mem->GetDefault()) {
             out << "\"" << mem->GetDefault()->GetXmlString() << "\"";
         } else {
