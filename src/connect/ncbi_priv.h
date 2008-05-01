@@ -58,7 +58,7 @@ extern "C" {
  */
 
 extern NCBI_XCONNECT_EXPORT int g_NCBI_ConnectRandomSeed;
-extern NCBI_XCONNECT_EXPORT int g_NCBI_ConnectSrandAddend();
+extern NCBI_XCONNECT_EXPORT int g_NCBI_ConnectSrandAddend(void);
 #define NCBI_CONNECT_SRAND_ADDEND g_NCBI_ConnectSrandAddend()
 
 
