@@ -16,7 +16,6 @@
 # It is allowed to have more than one of each statements
 APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn 
 APP: legacy_blast.pl makembindex makeblastdb blastdbcmd blastdb_aliastool
-LIB: xblast blastinput xblastformat seqdb writedb
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -25,10 +24,6 @@ LIB: xblast blastinput xblastformat seqdb writedb
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux32 : Bdb4619 : GCC.sh 3.4.2 --without-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.19.dio.SuSE-ONLY
-Linux32 : Bdb4619 : GCC.sh 3.4.2 --with-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.19.dio.SuSE-ONLY
-# Unfortunately, on 64 bit Linux platform BerkeleyDB 4.6.19 can not open necessary number (>~320) of databases
-Linux64 : Bdb4520 : GCC.sh 4.0.1 --without-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
-Linux64 : Bdb4520 : GCC.sh 4.0.1 --with-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
-
+Linux32 : plain : GCC.sh 3.4.2 --without-debug --with-mt --with-flat-makefile
+Linux32 : plain : GCC.sh 3.4.2 --with-debug    --with-mt --with-flat-makefile
 
