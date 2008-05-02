@@ -6952,6 +6952,11 @@ esac
 #### Overall configuration mode summary
 signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
 
+cat >>confdefs.h <<_ACEOF
+#define NCBI_SIGNATURE "$signature"
+_ACEOF
+
+
 
 #### Check if there is "${build_root}" dir
 test -d "${build_root}"  ||  mkdir -p "${build_root}"

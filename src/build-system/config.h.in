@@ -687,6 +687,10 @@
    pointers as restricted in the C99 sense. */
 #undef NCBI_RESTRICT_CXX
 
+/* Build signature: compiler-name '_' compiler-version '-' configuration '--'
+   platform-name '-' hostname */
+#undef NCBI_SIGNATURE
+
 /* Define to 1 if SQLColAttribute's last argument is an SQLLEN * */
 #undef NCBI_SQLCOLATTRIBUTE_SQLLEN
 

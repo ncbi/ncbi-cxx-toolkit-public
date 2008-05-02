@@ -1754,6 +1754,9 @@ esac
 
 #### Overall configuration mode summary
 signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
+AC_DEFINE_UNQUOTED(NCBI_SIGNATURE, "$signature",
+   [Build signature: compiler-name '_' compiler-version '-' configuration
+   '--' platform-name '-' hostname])
 
 
 #### Check if there is "${build_root}" dir
