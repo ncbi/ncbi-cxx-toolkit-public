@@ -732,6 +732,19 @@ CSplign::TOrfPair CSplign::GetCds(const THit::TId& id, const vector<char> * seq_
 }
 
 
+void CSplign::x_FinilizeAlignedCompartment(SAlignedCompartment & ac)
+{
+    ac.m_Id         = ++m_model_id;
+    ac.m_Segments   = m_segments;
+    ac.m_Status     = SAlignedCompartment::eStatus_Ok;
+    ac.m_Msg        = "Ok";
+    ac.m_Cds_start  = m_cds_start;
+    ac.m_Cds_stop   = m_cds_stop;
+    ac.m_QueryLen   = m_mrna.size();
+    ac.m_PolyA      = (m_polya_start < kMax_UInt? m_polya_start : 0);
+}
+
+
 // PRE:  Input Blast hits.
 // POST: TResults - a vector of aligned compartments.
 void CSplign::Run(THitRefs* phitrefs)
@@ -836,17 +849,8 @@ void CSplign::Run(THitRefs* phitrefs)
                     if(smax < box[3]) smax = box[3];
                     if(smin > box[2]) smin = box[2];
 
-                    SAlignedCompartment ac (
-                         x_RunOnCompartment(&comp_hits, smin, smax));
-
-                    ac.m_Id = ++m_model_id;
-                    ac.m_Segments = m_segments;
-                    ac.m_Status = SAlignedCompartment::eStatus_Ok;
-                    ac.m_Msg = "Ok";
-                    ac.m_Cds_start = m_cds_start;
-                    ac.m_Cds_stop = m_cds_stop;
-                    ac.m_QueryLen = m_mrna.size();
-                    ac.m_PolyA = (m_polya_start < kMax_UInt? m_polya_start : 0);
+                    SAlignedCompartment ac (x_RunOnCompartment(&comp_hits, smin,smax));
+                    x_FinilizeAlignedCompartment(ac);
                     m_result.push_back(ac);
                 }
             }
@@ -902,14 +906,7 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
     try {
 
         SAlignedCompartment ac (x_RunOnCompartment(phitrefs, subj_min, subj_max));
-
-        ac.m_Id = ++m_model_id;
-        ac.m_Segments = m_segments;
-        ac.m_Status = SAlignedCompartment::eStatus_Ok;
-        ac.m_Msg = "Ok";
-        ac.m_Cds_start = m_cds_start;
-        ac.m_Cds_stop = m_cds_stop;
-
+        x_FinilizeAlignedCompartment(ac);
         *result = ac;        
         m_mrna.resize(0);
     }
@@ -942,6 +939,7 @@ size_t CSplign::s_TestPolyA(const char * seq, size_t dim, size_t cds_stop)
     const size_t kMaxNonA (3), kMinAstreak (5);
     int i (dim - 1), i0 (dim);
     for(size_t count_non_a (0), astreak (0); i >= 0 && count_non_a < kMaxNonA; --i) {
+
         if(seq[i] != 'A') {
             ++count_non_a;
             astreak = 0;
@@ -1007,11 +1005,10 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 h->SetSubjStrand(new_strand);
             }
         }
-
-        const size_t cds_stop (m_strand? m_cds_stop: mrna_size - m_cds_stop - 1);
+        
         m_polya_start = m_nopolya?
             kMax_UInt:
-            s_TestPolyA(&m_mrna.front(), m_mrna.size(), cds_stop);
+            s_TestPolyA(&m_mrna.front(), m_mrna.size(), m_cds_stop);
     
         // cleave off hits beyond polya
         if(m_polya_start < kMax_UInt) {
@@ -1338,6 +1335,10 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                     jj->m_box[3] = smax - jj->m_box[3];
                 }
             }
+        }
+
+        if(!rv.m_QueryStrand && m_polya_start > 0 && m_polya_start < mrna_size) {
+            m_polya_start = mrna_size - m_polya_start - 1;
         }
     } // try
 

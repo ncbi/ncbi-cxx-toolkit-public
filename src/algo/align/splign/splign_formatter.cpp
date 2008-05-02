@@ -105,7 +105,7 @@ string CSplignFormatter::AsExonTable(
     CNcbiOstrstream oss;
     oss.precision(3);
 
-    const bool print_exon_scores = (flags & fNoExonScores)? false: true;
+    const bool print_exon_scores ((flags & fNoExonScores)? false: true);
     
     ITERATE(CSplign::TResults, ii, *results) {
 
@@ -158,6 +158,39 @@ string CSplignFormatter::AsExonTable(
                 if(print_exon_scores) {
                     oss << "\t-";
                 }
+            }
+            oss << endl;
+        }
+
+        // print poly-A/T, if any
+        const bool polya_present (ii->m_PolyA > 0 && ii->m_PolyA < ii->m_QueryLen);
+
+        if(polya_present) {
+
+            size_t polya_len;
+            size_t start, stop;
+            char c1, c2;
+            if(ii->m_QueryStrand) {
+                polya_len = ii->m_QueryLen - ii->m_PolyA;
+                c1 = '+';
+                c2 = 'A';
+                start = 1 + ii->m_PolyA;
+                stop  = ii->m_QueryLen;
+            }
+            else {
+                polya_len = 1 + ii->m_PolyA;
+                c1 = '-';
+                c2 = 'T';
+                start = polya_len;
+                stop  = 1;
+            }
+
+            oss << c1 << ii->m_Id << '\t' << querystr << '\t' << subjstr 
+                << "\t-\t"  << polya_len << '\t';
+            oss << start << '\t' << stop 
+                << "\t-\t-\t<poly-" << c2 << ">\t-";
+            if(print_exon_scores) {
+                oss << "\t-";
             }
             oss << endl;
         }
