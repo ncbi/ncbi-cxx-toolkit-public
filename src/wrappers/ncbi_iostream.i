@@ -270,7 +270,6 @@ namespace std {
         ostream& operator<< (long n);
         ostream& operator<<(double x);
         //ostream& operator<<(const void *ptr);
-        //ostream& operator<<(const char *str);
         ostream& put(char ch);
         ostream& write(const char *str, int count);
         ostream& flush(void);
@@ -284,7 +283,12 @@ namespace std {
     
     %extend ostream {
     public:
-        ostream& operator<< (const std::string& str) {*self << str; return *self;};
+        ostream& operator<< (const std::string& str) {
+            *self << str; return *self;
+        }
+        ostream& operator<<(const char *str) {
+            *self << str; return *self;
+        }
         ostream& write(const std::string& str) {
             self->write(str.c_str(), str.size());
             return *self;

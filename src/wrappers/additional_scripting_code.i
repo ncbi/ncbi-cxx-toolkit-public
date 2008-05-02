@@ -556,6 +556,44 @@ def use_class(arg):
     pass
 
 
+# after a CException, examine the source code around where it was thrown
+def li(arg=False):
+    do_vt100_bolding = True
+    # see http://www.ecma-international.org/publications/standards/Ecma-048.htm
+    # and http://www.cs.uu.nl/wais/html/na-dir/emulators-faq/part3.html
+    import sys
+    import re
+    s = sys.last_value.args[0]
+    m = re.match(r'NCBI C\+\+ Exception:\n *\"(.*)\", line ([0-9]*)', s)
+    fname, lineno = m.groups()
+    lineno = int(lineno)
+    #print fname, lineno
+    if arg == 'cvs':
+        # show cvs web page
+        if fname.find('/src/') != -1:
+            short_fname = fname[fname.find('/src/') + 1:]
+        elif fname.find('/include/') != -1:
+            short_fname = fname[fname.find('/include/') + 1:]
+        else:
+            raise RuntimeError('cannot figure out correct relative path for %s'
+                               % fname)
+        CvsWeb(short_fname)
+    elif arg == True:
+        # display source file in text editor
+        CTextEditor.EditFile(fname, CTextEditor.eGuess, lineno)
+    else:
+        # print to stdout
+        fid = open(fname)
+        lines = fid.readlines()
+        fid.close
+        for i in range(lineno - 11, lineno + 10):
+            if i + 1 == lineno and do_vt100_bolding:
+                sys.stdout.write('\x1b[01;31m')
+            print i + 1, lines[i],
+            if i + 1 == lineno and do_vt100_bolding:
+                sys.stdout.write('\x1b[00m')
+
+
 #del object
 %}
 
