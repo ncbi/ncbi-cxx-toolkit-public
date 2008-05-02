@@ -9,7 +9,8 @@
 #          It is used by release configurator.
 #
 
-APP: launcherd fwdaemon dispd.cgi lbsmd lbsm_feedback test_mghbn lbsmc test_ncbi_disp
+APP: launcherd fwdaemon dispd.cgi lbsmd lbsm_feedback test_mghbn lbsmc 
+# APP: test_ncbi_disp -- not now
 
 # The -t key prevents inclusion of the tree builder into the release
 SVN_TAG_RELEASE_ADD_FLAGS: -t
