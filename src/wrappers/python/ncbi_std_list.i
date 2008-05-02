@@ -348,6 +348,13 @@ namespace std {
     ncbi_specialize_std_list(size_t,
                              PyLong_Check,
                              PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
+    ncbi_specialize_std_list(long long,
+                             PyLong_Check,
+                             PyLong_AsLongLong, PyLong_FromLongLong);
+    ncbi_specialize_std_list(unsigned long long,
+                             PyLong_Check,
+                             PyLong_AsUnsignedLongLong,
+                             PyLong_FromUnsignedLongLong);
 
     ncbi_specialize_std_list(char,
                              SWIG_Check_char, SWIG_As_char, CharFromCpp);

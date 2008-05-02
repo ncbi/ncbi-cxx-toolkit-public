@@ -1,11 +1,13 @@
 // containers for common types
 
+%template(vector_short) std::vector<short>;
 %template(vector_int) std::vector<int>;
 %template(vector_long) std::vector<long>;
-//%template(vector_long_long) std::vector<long long>;
+%template(vector_long_long) std::vector<long long>;
+%template(vector_unsigned_short) std::vector<unsigned short>;
 %template(vector_unsigned_int) std::vector<unsigned int>;
 %template(vector_unsigned_long) std::vector<unsigned long>;
-//%template(vector_unsigned_long_long) std::vector<unsigned long long>;
+%template(vector_unsigned_long_long) std::vector<unsigned long long>;
 %template(vector_size_t) std::vector<size_t>;
 %template(vector_double) std::vector<double>;
 
@@ -22,10 +24,14 @@
 %template(vector_bool) std::vector<bool>;
 %template(vector_string) std::vector<std::string>;
 
+%template(list_short) std::list<short>;
 %template(list_int) std::list<int>;
 %template(list_long) std::list<long>;
+%template(list_long_long) std::list<long long>;
+%template(list_unsigned_short) std::list<unsigned short>;
 %template(list_unsigned_int) std::list<unsigned int>;
 %template(list_unsigned_long) std::list<unsigned long>;
+%template(list_unsigned_long_long) std::list<unsigned long long>;
 %template(list_size_t) std::list<size_t>;
 %template(list_double) std::list<double>;
 %template(list_char) std::list<char>;
