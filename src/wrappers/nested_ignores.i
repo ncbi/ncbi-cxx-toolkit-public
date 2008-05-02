@@ -30,6 +30,12 @@
  */
 
 
+%ignore *::CRemoteBlastDataLoader_CCachedSeqData::BuildDataChunk;
+%ignore *::CRemoteBlastDataLoader_CCachedSeqData::RegisterIds;
+%ignore *::CRemoteBlastDataLoader_SBlastDbParam
+        ::CRemoteBlastDataLoader_SBlastDbParam;
+%ignore *::CRemoteBlastDataLoader_SBlastDbParam::m_DbType;
+
 %ignore *::CMaskReader_Exception(const Exception&);
 
 %ignore *::CLZOCompression_SCompressionParam::compress;

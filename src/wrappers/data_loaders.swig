@@ -34,6 +34,8 @@
 objtools/data_loaders/loaders.hpp
 
 objtools/data_loaders/blastdb/bdbloader.hpp
+objtools/data_loaders/blastdb/rbloader.hpp
+objtools/data_loaders/blastdb/remotedb.hpp
 
 objtools/data_loaders/cdd/cdd.hpp
 

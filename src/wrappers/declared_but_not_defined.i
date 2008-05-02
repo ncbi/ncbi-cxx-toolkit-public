@@ -31,6 +31,8 @@
  */
 
 
+%ignore *::CRemoteBlastDataLoader_CCachedSeqData::AddDelta;
+
 %ignore ncbi::objects::CAutoDef::DoAutoDef;
 
 %ignore ncbi::CQueryParseNode::GetIdentIdx;
