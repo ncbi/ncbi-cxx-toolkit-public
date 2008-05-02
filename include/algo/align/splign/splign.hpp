@@ -268,12 +268,13 @@ protected:
                                             size_t range_left,
                                             size_t range_right);
 
-    TAligner::TScore x_Run(const char* seq1, const char* seq2);
+    TAligner::TScore    x_Run(const char* seq1, const char* seq2);
 
     void   x_SplitQualifyingHits(THitRefs* phitrefs);
     void   x_SetPattern(THitRefs* hitrefs);
     bool   x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const;
     Uint4  x_GetGenomicExtent(const Uint4 query_extent, Uint4 max_ext = 0) const;
+    void   x_FinilizeAlignedCompartment(SAlignedCompartment & ac);
 
     void   x_LoadSequence(vector<char>* seq, 
                           const objects::CSeq_id& seqid,
