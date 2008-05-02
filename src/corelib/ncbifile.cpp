@@ -380,12 +380,10 @@ bool CDirEntry::IsAbsolutePath(const string& path)
         return false;
 
 #if defined(NCBI_OS_MSWIN)
-    // Absolute path is a path started with 'd:\', 'd:/' or  '\' only (including '\\').
-    if ( (isalpha((unsigned char)path[0])  &&
-          path[1] == ':'  &&
-          (path[2] == '/'  || path[2] == '\\')
-         ) ||
-         (path[0] == '\\') ) {
+    // Absolute path is a path started with 'd:\', 'd:/' or  '\\' only.
+    if ( ( isalpha((unsigned char)path[0])  &&  path[1] == ':'  &&
+           (path[2] == '/'  || path[2] == '\\') )  ||
+           (path[0] == '\\'  &&  path[1] == '\\') ) {
         return true;
     }
 #elif defined(NCBI_OS_UNIX)
@@ -402,7 +400,7 @@ bool CDirEntry::IsAbsolutePathEx(const string& path)
         return false;
 
     // Windows: 
-    // absolute path is a path started with 'd:\', 'd:/' or  '\\' only.
+    // Absolute path is a path started with 'd:\', 'd:/' or  '\\' only.
     if ( ( isalpha((unsigned char)path[0])  &&  path[1] == ':'  &&
            (path[2] == '/'  || path[2] == '\\') )  ||
            (path[0] == '\\'  &&  path[1] == '\\') ) {
@@ -410,6 +408,9 @@ bool CDirEntry::IsAbsolutePathEx(const string& path)
     }
     // Unix
     if ( path[0] == '/' )
+        // FIXME:
+        // This is an Unix absolute path or MS Windows relative.
+        // But Unix have favor here, because '/' is native dir separator.
         return true;
 
     // Else - relative

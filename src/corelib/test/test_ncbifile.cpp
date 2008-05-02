@@ -198,26 +198,41 @@ static void s_TEST_CheckPath(void)
 
     // IsAbsolutePath() test
 
-#if defined(NCBI_OS_MSWIN)
-    assert( d.IsAbsolutePath("c:\\") );
-    assert( d.IsAbsolutePath("c:\\file") );
-    assert(!d.IsAbsolutePath("c:file") );
-    assert( d.IsAbsolutePath("\\\\machine\\dir") );
-    assert(!d.IsAbsolutePath("file") );
-    assert( d.IsAbsolutePath("\\file") );
-    assert(!d.IsAbsolutePath(".\\file") );
-    assert(!d.IsAbsolutePath("..\\file") );
-    assert(!d.IsAbsolutePath("dir\\file") );
-
-#elif defined(NCBI_OS_UNIX)
-    assert( d.IsAbsolutePath("/") );
-    assert( d.IsAbsolutePath("/file") );
-    assert( d.IsAbsolutePath("/dir/dir") );
+    // Common cases
     assert(!d.IsAbsolutePath("file") );
     assert(!d.IsAbsolutePath("./file") );
     assert(!d.IsAbsolutePath("../file") );
     assert(!d.IsAbsolutePath("dir/file") );
+
+    // See difference between Unix and MS Windows
+#if defined(NCBI_OS_MSWIN)
+    // MS Windows paths
+    assert( d.IsAbsolutePath("c:\\") );
+    assert( d.IsAbsolutePath("c:\\file") );
+    assert(!d.IsAbsolutePath("c:file") );
+    assert( d.IsAbsolutePath("\\\\machine\\dir") );
+    assert(!d.IsAbsolutePath("\\file") );
+    assert(!d.IsAbsolutePath(".\\file") );
+    // Unix paths
+    assert(!d.IsAbsolutePath("/") );
+    assert(!d.IsAbsolutePath("/file") );
+    assert(!d.IsAbsolutePath("/dir/dir") );
+
+#elif defined(NCBI_OS_UNIX)
+    // MS Windows paths
+    assert(!d.IsAbsolutePath("c:\\") );
+    assert(!d.IsAbsolutePath("c:\\file") );
+    assert(!d.IsAbsolutePath("c:file") );
+    assert(!d.IsAbsolutePath("\\\\machine\\dir") );
+    assert(!d.IsAbsolutePath("\\file") );
+    assert(!d.IsAbsolutePath(".\\file") );
+    // Unix paths
+    assert( d.IsAbsolutePath("/") );
+    assert( d.IsAbsolutePath("/file") );
+    assert( d.IsAbsolutePath("/dir/dir") );
 #endif
+
+    // Universal check for any OS
     assert( d.IsAbsolutePathEx("c:\\") );
     assert( d.IsAbsolutePathEx("c:\\file") );
     assert(!d.IsAbsolutePathEx("c:") );
@@ -228,10 +243,10 @@ static void s_TEST_CheckPath(void)
     assert(!d.IsAbsolutePathEx("dir/file") );
     assert(!d.IsAbsolutePathEx("dir\\file") );
     assert(!d.IsAbsolutePathEx("dir/file") );
-    // MS Windows relative path
-    assert(!d.IsAbsolutePathEx("\\file") );
     // UNIX absolute path
     assert( d.IsAbsolutePathEx("/file") );
+    // MS Windows relative path
+    assert(!d.IsAbsolutePathEx("\\file") );
 
 
     // Normalize path test
