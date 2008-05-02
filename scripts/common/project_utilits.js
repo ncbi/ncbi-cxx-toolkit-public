@@ -165,7 +165,7 @@ function CreateTreeStructure(oTree, oTask)
 
     CreateFolderIfAbsent(oFso, oTree.IncludeRootBranch     );
     CreateFolderIfAbsent(oFso, oTree.IncludeConfig         );
-    CreateFolderIfAbsent(oFso, oTree.IncludeConfig + "\\msvc");
+//    CreateFolderIfAbsent(oFso, oTree.IncludeConfig + "\\msvc");
     CreateFolderIfAbsent(oFso, oTree.IncludeProjectBranch  );
 
     CreateFolderIfAbsent(oFso, oTree.SrcRootBranch         );
@@ -215,9 +215,11 @@ function FillTreeStructure(oShell, oTree)
     GetFilesFromTree(oShell, oTree, oTask,
         "/include/common/config", new Array("ncbiconf_msvc*.*"),
         oTree.IncludeConfig);
+/*
     GetFilesFromTree(oShell, oTree, oTask,
         "/include/common/config/msvc", new Array("ncbiconf_msvc*.*"),
         oTree.IncludeConfig + "\\msvc");
+*/
 }
 
 // check-out a subdir from CVS/SVN - oTree is supposed to have TreeRoot property
