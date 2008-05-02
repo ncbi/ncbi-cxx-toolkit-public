@@ -108,8 +108,13 @@ typedef   int   ssize_t;
 
 #if _MSC_VER >= 1400
 
-/* Suppress 'function deprecated' warning on MSVC 2005 express */
-#  pragma warning(disable: 4996)
+/* Suppress 'deprecated' warning for STD functions */
+#if !defined(_CRT_NONSTDC_DEPRECATE)
+#define _CRT_NONSTDC_DEPRECATE(x)
+#endif
+#if !defined(_SECURE_SCL_DEPRECATE)
+#define _SECURE_SCL_DEPRECATE 0
+#endif
 
 #  if !defined(_SECURE_SCL) || _SECURE_SCL
 /* STL iterators are non-POD types */
