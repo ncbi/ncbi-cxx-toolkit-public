@@ -202,6 +202,8 @@ public:
 
     virtual void OnStatusChange(EStatus /* old */);
 
+    virtual void OnCancelRequested(void);
+
 private:
     friend class CPrefetchManager;
     friend class CPrefetchManager_Impl;
