@@ -30,6 +30,12 @@
  */
 
 
+// leads to trouble with bool_p
+%ignore *::CSoapServerApplication::AddMessageListener;
+
+// leads to trouble with int_p
+%ignore MT_LOCK_Create;
+
 // Not a real function
 %ignore *::err_code_x__dummy_for_semicolon;
 

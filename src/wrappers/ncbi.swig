@@ -339,8 +339,10 @@ objtools/simple/simple_om.hpp
 %include text_editor.i                // CTextEditor (display/editing)
 %include serial_extensions.i          // (de)serialization
 %include additional_scripting_code.i  // lots of important extensions
+%include pointer_handling.i           // handle pointers to built-in types
 %include version.i                    // "version" global string variable
                                       // (auto-generated)
+
 #ifdef SWIGRUBY
 %init %{
 
