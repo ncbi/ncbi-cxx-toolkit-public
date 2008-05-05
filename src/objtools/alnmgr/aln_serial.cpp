@@ -155,6 +155,7 @@ ostream& operator<<(ostream& out, const TAlnStats& aln_stats)
     out << "Number of alignments: " << aln_stats.GetAlnCount() << endl;
     out << "IsCanonicalQueryAnchored:" << aln_stats.IsCanonicalQueryAnchored() << endl;
     out << "IsCanonicalMultiple:" << aln_stats.IsCanonicalMultiple() << endl;
+    out << "HasPotentialAnchors:" << aln_stats.HasPotentialAnchors() << endl;
     out << endl;
     out << "IdVec (" << aln_stats.GetIdVec().size() << "):" << endl;
     ITERATE(TAlnStats::TIdVec, it, aln_stats.GetIdVec()) {
@@ -164,6 +165,21 @@ ostream& operator<<(ostream& out, const TAlnStats& aln_stats)
     out << "IdMap (" << aln_stats.GetIdMap().size() << "):" << endl;
     ITERATE(TAlnStats::TIdMap, it, aln_stats.GetIdMap()) {
         out << it->first->AsString() << " (base_width=" << it->first->GetBaseWidth() << ")" << endl;
+    }
+    out << endl;
+    out << "AnchorIdVec (" << aln_stats.GetAnchorIdVec().size() << "):" << endl;
+    ITERATE(TAlnStats::TIdVec, it, aln_stats.GetAnchorIdVec()) {
+        out << (*it)->AsString() << " (base_width=" << (*it)->GetBaseWidth() << ")" << endl;
+    }
+    out << endl;
+    out << "AnchorIdMap (" << aln_stats.GetAnchorIdMap().size() << "):" << endl;
+    ITERATE(TAlnStats::TIdMap, it, aln_stats.GetAnchorIdMap()) {
+        out << it->first->AsString() << " (base_width=" << it->first->GetBaseWidth() << ")" << endl;
+    }
+    out << endl;
+    out << "AnchorIdxVec (" << aln_stats.GetAnchorIdxVec().size() << "):" << endl;
+    ITERATE(TAlnStats::TIdxVec, it, aln_stats.GetAnchorIdxVec()) {
+        out << *it << endl;
     }
     out << endl;
     for (size_t aln_idx = 0;  aln_idx < aln_stats.GetAlnCount();  ++aln_idx) {

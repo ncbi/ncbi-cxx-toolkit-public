@@ -66,7 +66,8 @@ public:
     CAlnStats(const TAlnIdVec& aln_id_vec) :
         m_AlnIdVec(aln_id_vec),
         m_AlnVec(aln_id_vec.GetAlnVec()),
-        m_AlnCount(m_AlnVec.size())
+        m_AlnCount(m_AlnVec.size()),
+        m_HasPotentialAnchors(-1)
     {
         _ASSERT(m_AlnVec.size() == m_AlnIdVec.size());
         
@@ -103,6 +104,7 @@ public:
                 }
             }
         }
+        x_IdentifyPotentialAnchors();
     }
 
 
@@ -194,11 +196,21 @@ public:
     /// on row 1, B on rows 2 (and possibly 3). B can be present on 2
     /// rows only if they represent different strands.
     bool IsCanonicalQueryAnchored() const {
+        // Is the first sequence present in all aligns?
+        if (m_BitVecVec[0].count() != m_AlnCount) {
+            return false;
+        }
         switch (m_IdVec.size()) {
         case 2:
-            // Is the first sequence present in all aligns?
-            if (m_BitVecVec[0].count() == m_AlnCount) {
+            // two rows: canonical
+            return true;
+            break;
+        case 3:
+            // three rows: A, B and B?
+            if (*m_IdVec[1] == *m_IdVec[2]) {
                 return true;
+            } else {
+                return false;
             }
             break;
         default:
@@ -214,6 +226,38 @@ public:
     }
 
 
+    bool HasPotentialAnchors() const {
+        if (m_HasPotentialAnchors < 0) {
+            x_IdentifyPotentialAnchors();
+        }
+        return m_HasPotentialAnchors;
+    }
+
+    
+    const TIdMap& GetAnchorIdMap() const {
+        if (m_HasPotentialAnchors < 0) {
+            x_IdentifyPotentialAnchors();
+        }
+        return m_AnchorIdMap;
+    }
+
+
+    const TIdVec& GetAnchorIdVec() const {
+        if (m_HasPotentialAnchors < 0) {
+            x_IdentifyPotentialAnchors();
+        }
+        return m_AnchorIdVec;
+    }
+
+
+    const TIdxVec& GetAnchorIdxVec() const {
+        if (m_HasPotentialAnchors < 0) {
+            x_IdentifyPotentialAnchors();
+        }
+        return m_AnchorIdxVec;
+    }
+
+    
 private:
     size_t x_AddId(const TAlnSeqIdIRef& id, size_t aln_i, size_t row_i) {
         m_IdVec.push_back(id);
@@ -234,6 +278,35 @@ private:
         return m_IdVec.size() - 1;
     }
 
+    void x_IdentifyPotentialAnchors() const {
+        _ASSERT(m_IdVec.size() == m_BitVecVec.size());
+        _ASSERT(m_HasPotentialAnchors < 0);
+        _ASSERT(m_AnchorIdxVec.empty());
+        _ASSERT(m_AnchorIdVec.empty());
+        _ASSERT(m_AnchorIdMap.empty());
+        for (size_t id_idx = 0; id_idx < m_BitVecVec.size(); ++id_idx) {
+            if (m_BitVecVec[id_idx].count() == m_AlnCount) {
+                
+                // insert into the anchor idx vec:
+                m_AnchorIdxVec.push_back(id_idx);
+
+                const TAlnSeqIdIRef& id = m_IdVec[id_idx];
+
+                // insert in the anchor vec
+                m_AnchorIdVec.push_back(id);
+
+                // insert in the anchor map
+                TIdMap::iterator it = m_AnchorIdMap.lower_bound(id);
+                if (it == m_AnchorIdMap.end()  ||  *id < *it->first) { // id encountered for a first time, insert it
+                    it = m_AnchorIdMap.insert
+                        (it,
+                         TIdMap::value_type(id, TIdxVec()));
+                }
+                it->second.push_back(id_idx);
+            }
+        }
+        m_HasPotentialAnchors = (m_AnchorIdxVec.empty() ? 0 : 1);
+    }
 
     typedef map<TAlnSeqIdIRef, TIdVec> TAlignedIdsMap;
 
@@ -245,6 +318,10 @@ private:
     TRowVecVec m_RowVecVec;
     TBitVecVec m_BitVecVec;
     mutable TAlignedIdsMap m_AlignedIdsMap;
+    mutable TIdxVec m_AnchorIdxVec;
+    mutable TIdMap m_AnchorIdMap;
+    mutable TIdVec m_AnchorIdVec;
+    mutable int m_HasPotentialAnchors;
 };
 
 

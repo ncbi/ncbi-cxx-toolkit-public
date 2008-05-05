@@ -272,7 +272,7 @@ int CAlnBuildApp::Run(void)
     CAlnUserOptions aln_user_options;
 
 
-    /// Choose the first seq to be the anchor
+    /// Choose the anchor
     aln_user_options.SetAnchorId(aln_stats.GetIdVec()[GetArgs()["anchor"].AsInteger()]);
 
 

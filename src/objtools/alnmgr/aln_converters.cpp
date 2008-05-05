@@ -49,7 +49,6 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <objtools/alnmgr/aln_converters.hpp>
-#include <objtools/alnmgr/alnexception.hpp>
 #include <objtools/error_codes.hpp>
 
 

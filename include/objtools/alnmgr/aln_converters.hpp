@@ -40,6 +40,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seq/seq_loc_mapper_base.hpp>
 
+#include <objtools/alnmgr/alnexception.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
 
@@ -127,13 +128,24 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
     typedef typename TAlnStats::TDim TDim;
     TDim dim = aln_stats.GetDimForAln(aln_idx);
 
+    size_t anchor_id_idx;
+    if (options.GetAnchorId()) {
+        // if anchor was chosen by the user
+        typedef typename TAlnStats::TIdMap TIdMap;
+        typename TIdMap::const_iterator it = aln_stats.GetAnchorIdMap().find(options.GetAnchorId());
+        if (it == aln_stats.GetAnchorIdMap().end()) {
+            NCBI_THROW(CAlnException, eInvalidRequest,
+                       "Invalid options.GetAnchorId()");
+        }
+        anchor_id_idx = it->second[0];
+    } else {
+        // if not explicitly chosen, just choose the first potential anchor:
+        anchor_id_idx = aln_stats.GetAnchorIdxVec()[0];
+    }
+
     /// Anchor row
     TDim anchor_row = 
-        aln_stats.GetRowVecVec()
-        [options.GetAnchorId() ?
-         aln_stats.GetIdMap().find(options.GetAnchorId())->second[0] :
-         0]
-        [aln_idx];
+        aln_stats.GetRowVecVec()[anchor_id_idx][aln_idx];
     _ASSERT(anchor_row >= 0);
 
     TDim target_row;
