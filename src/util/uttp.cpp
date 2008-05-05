@@ -37,7 +37,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
+#include <corelib/ncbidbg.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -127,7 +127,7 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
 void CUTTPWriter::Reset(char* buffer,
     size_t buffer_size, size_t max_buffer_size)
 {
-    assert(buffer_size >= sizeof(m_InternalBuffer) - 1 &&
+    _ASSERT(buffer_size >= sizeof(m_InternalBuffer) - 1 &&
         max_buffer_size >= buffer_size &&
         "Buffer sizes must be consistent.");
 
@@ -139,10 +139,10 @@ void CUTTPWriter::Reset(char* buffer,
 
 bool CUTTPWriter::SendControlSymbol(char symbol)
 {
-    assert(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
+    _ASSERT(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
         m_InternalBufferSize == 0 && m_ChunkPartSize == 0 &&
         "Must be in the state of filling the output buffer.");
-    assert(symbol < '0' || symbol > '9' &&
+    _ASSERT(symbol < '0' || symbol > '9' &&
         "Ensure the control symbol is not a digit.");
 
     m_Buffer[m_OutputBufferSize] = symbol;
@@ -152,7 +152,7 @@ bool CUTTPWriter::SendControlSymbol(char symbol)
 bool CUTTPWriter::SendChunk(const char* chunk,
     size_t chunk_length, bool to_be_continued)
 {
-    assert(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
+    _ASSERT(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
         m_InternalBufferSize == 0 && m_ChunkPartSize == 0 &&
         "Must be in the state of filling the output buffer.");
 
