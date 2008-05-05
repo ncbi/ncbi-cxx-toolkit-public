@@ -41,11 +41,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-///
-/// Utility function to split an alignment into pairwise alignments
-/// NB: this should go elsewhere
-///
-
+/// class CAlignCleanup implements an alignment cleanup utility based on
+/// the C++ alignment manager.  The primary goal is to remove redundancies
+/// from any given set of alignment, and generate a cleaned up version of
+/// these alignments
 class NCBI_XALGOSEQ_EXPORT CAlignCleanup
 {
 public:
@@ -55,7 +54,10 @@ public:
     typedef list< CRef<CSeq_align> >      TAligns;
 
     enum EMode {
+        //< use the older (i.e., CAlnVec) alignment manager
         eAlignVec,
+
+        //< use the newer (i.e., CAnchoredAln) alignment manager
         eAnchoredAlign,
 
         eDefault = eAlignVec
@@ -64,11 +66,18 @@ public:
                  TAligns&            aligns_out,
                  EMode               mode = eDefault);
 
+    /// flags
+    /// these primarity affect the CAlnVec implementation
+    void SortInputsByScore(bool b)      { m_SortByScore = b; }
+    void AllowTranslocations(bool b)    { m_AllowTransloc = b; }
+
     static void CreatePairwiseFromMultiple(const CSeq_align& multiple,
                                            TAligns&          pairwise);
 
 private:
     CRef<CScope> m_Scope;
+    bool m_SortByScore;
+    bool m_AllowTransloc;
 
     void x_Cleanup_AlignVec(const TConstAligns& aligns_in,
                             TAligns&            aligns_out);

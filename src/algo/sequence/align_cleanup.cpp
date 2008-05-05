@@ -112,6 +112,8 @@ void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
 
 CAlignCleanup::CAlignCleanup(CScope& scope)
     : m_Scope(&scope)
+    , m_SortByScore(true)
+    , m_AllowTransloc(true)
 {
 }
 
@@ -266,9 +268,13 @@ void CAlignCleanup::x_Cleanup_AlignVec(const TConstAligns& aligns_in,
     CAlnMix::TMergeFlags merge_flags = CAlnMix::fTruncateOverlaps |
                                        CAlnMix::fRemoveLeadTrailGaps |
                                        CAlnMix::fGapJoin |
-                                       CAlnMix::fMinGap |
-                                       CAlnMix::fSortInputByScore |
-                                       CAlnMix::fAllowTranslocation;
+                                       CAlnMix::fMinGap;
+    if (m_SortByScore) {
+        merge_flags |= CAlnMix::fSortInputByScore;
+    }
+    if (m_AllowTransloc) {
+        merge_flags |= CAlnMix::fAllowTranslocation;
+    }
 
     /// next, merge each sublist independently, if needed
     string msg;
