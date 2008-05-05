@@ -119,7 +119,7 @@ void CConn_Streambuf::x_Cleanup(bool if_close)
 
 
 void CConn_Streambuf::x_OnClose(CONN           _DEBUG_ARG(conn),
-                                ECONN_Callback type,
+                                ECONN_Callback _DEBUG_ARG(type),
                                 void*          data)
 {
     CConn_Streambuf* sb = static_cast<CConn_Streambuf*>(data);
@@ -400,7 +400,7 @@ CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 {
     NCBI_THROW(CConnException, eConn, "CConn_Streambuf::setbuf() not allowed");
     /*NOTREACHED*/
-    return this; /*dummy for compiler*/
+    return this; /*dummy for compiler*/ /* NCBI_FAKE_WARNING */
 }
 
 
