@@ -434,6 +434,8 @@ void CODBCContext::SetPacketSize(SQLUINTEGER packet_size)
 
 bool CODBCContext::CheckSIE(int rc, SQLHDBC con)
 {
+    CMutexGuard mg(m_CtxMtx);
+
     switch(rc) {
     case SQL_SUCCESS_WITH_INFO:
         x_ReportConError(con);

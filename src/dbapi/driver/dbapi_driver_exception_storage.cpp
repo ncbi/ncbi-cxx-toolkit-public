@@ -89,30 +89,31 @@ void CDBExceptionStorage::Accept(CDB_Exception const& e)
 
 void CDBExceptionStorage::Handle(const CDBHandlerStack& handler)
 {
+    Handle(handler, string());
+}
+
+
+void CDBExceptionStorage::Handle(const CDBHandlerStack& handler, const string& msg)
+{
     typedef CGuard<CDB_UserHandler::TExceptions, SNoLock, SUnLock> TGuard;
 
     if (!m_Exceptions.empty()) {
         CFastMutexGuard mg(m_Mutex);
         TGuard guard(m_Exceptions);
 
-        if (!handler.HandleExceptions(m_Exceptions)) {
+        if (!handler.HandleExceptions(m_Exceptions, msg)) {
             NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
-                handler.PostMsg(*it);
+                handler.PostMsg(*it, msg);
             }
         }
     }
 }
 
-
-void CDBExceptionStorage::Handle(const CDBHandlerStack& handler, const string& msg)
-{
-    if (!msg.empty()) {
-        handler.SetExtraMsg(msg);
-    }
-
-    Handle(handler);
 }
 
+void s_DelExceptionStorage(impl::CDBExceptionStorage* storage, void* /* data */)
+{
+	delete storage;
 }
 
 END_NCBI_SCOPE

@@ -560,7 +560,7 @@ RETCODE CTDS_Connection::CheckDead(RETCODE rc)
 
 void CTDS_Connection::CheckFunctCall(void)
 {
-    GetFTDS8ExceptionStorage().Handle(GetMsgHandlers());
+    GetFTDS8ExceptionStorage().Handle(GetMsgHandlers(), GetExtraMsg());
 }
 
 

@@ -692,7 +692,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 
 void CDBLibContext::CheckFunctCall(void)
 {
-    GetDBLExceptionStorage().Handle(GetCtxHandlerStack());
+    GetDBLExceptionStorage().Handle(GetCtxHandlerStack(), GetExtraMsg());
 }
 
 ///////////////////////////////////////////////////////////////////////

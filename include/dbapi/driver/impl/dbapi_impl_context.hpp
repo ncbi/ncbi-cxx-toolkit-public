@@ -163,7 +163,14 @@ protected:
     void UpdateConnMaxTextImageSize(void) const;
     void UpdateConnTimeout(void) const;
 
-    void SetExtraMsg(const string& msg) const;
+    void SetExtraMsg(const string& msg) const
+    {
+        m_ExtraMsg = msg;
+    }
+    const string& GetExtraMsg(void) const
+    {
+        return m_ExtraMsg;
+    }
 
     void ResetEnvSybase(void) const;
 
@@ -184,6 +191,8 @@ private:
     CDBHandlerStack m_CntxHandlers;
     /// Stacks of `per-connection' err.message handlers
     CDBHandlerStack m_ConnHandlers;
+
+    mutable string  m_ExtraMsg;
 
     string          m_ClientCharset;
     size_t          m_MaxTextImageSize;

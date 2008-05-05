@@ -684,7 +684,7 @@ RETCODE CDBL_Connection::CheckDead(RETCODE rc)
 
 void CDBL_Connection::CheckFunctCall(void)
 {
-    GetDBLExceptionStorage().Handle(GetMsgHandlers());
+    GetDBLExceptionStorage().Handle(GetMsgHandlers(), GetExtraMsg());
 }
 
 

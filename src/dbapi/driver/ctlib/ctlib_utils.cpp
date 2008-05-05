@@ -40,9 +40,16 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 impl::CDBExceptionStorage& GetCTLExceptionStorage(void)
 {
-    static CSafeStaticPtr<impl::CDBExceptionStorage> instance;
+    static CSafeStaticRef< CTls<impl::CDBExceptionStorage> > instance;
 
-    return instance.Get();
+    impl::CDBExceptionStorage* result = instance->GetValue();
+    if (!result) {
+		auto_ptr<impl::CDBExceptionStorage> tmp_value(new impl::CDBExceptionStorage);
+        instance->SetValue(tmp_value.get(), s_DelExceptionStorage);
+		result = tmp_value.release();
+    }
+
+    return *result;
 }
 
 

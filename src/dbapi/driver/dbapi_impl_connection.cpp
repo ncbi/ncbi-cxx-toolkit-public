@@ -315,13 +315,6 @@ CConnection::GetClientEncoding(void) const
 }
 
 
-void
-CConnection::SetExtraMsg(const string& msg) const
-{
-    GetMsgHandlers().SetExtraMsg(msg);
-}
-
-
 } // namespace impl
 
 END_NCBI_SCOPE

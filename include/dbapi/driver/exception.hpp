@@ -152,6 +152,9 @@ public:
     void SetUserName(const string& name) { m_UserName = name;          }
     const string& GetUserName(void) const { return m_UserName;         }
 
+    void SetExtraMsg(const string& msg) { m_ExtraMsg = msg;            }
+    const string& GetExtraMsg(void) const { return m_ExtraMsg;         }
+
     /// WARNING !!! Sybase severity value can be provided by Sybase/FreeTDS
     /// ctlib/dblib drivers only.
     void SetSybaseSeverity(int severity) { m_SybaseSeverity = severity;}
@@ -192,6 +195,7 @@ private:
     string  m_ServerName;
     string  m_UserName;
     int     m_SybaseSeverity;
+    string  m_ExtraMsg;
 };
 
 
@@ -477,8 +481,10 @@ public:
     // handler will be delete'd automagically on the program termination.
     static CDB_UserHandler* SetDefault(CDB_UserHandler* h);
 
-    string GetExtraMsg(void) const;
-    void SetExtraMsg(const string& msg) const;
+    /// Method is deprecated. Use CDB_Exception::GetExtraMsg() instead.
+    NCBI_DEPRECATED string GetExtraMsg(void) const;
+    /// Method is deprecated. Use CDB_Exception::SetExtraMsg() instead.
+    NCBI_DEPRECATED void SetExtraMsg(const string& msg) const;
 };
 
 

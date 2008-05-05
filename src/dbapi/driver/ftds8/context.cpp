@@ -631,7 +631,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
 
 void CTDSContext::CheckFunctCall(void)
 {
-    GetFTDS8ExceptionStorage().Handle(GetCtxHandlerStack());
+    GetFTDS8ExceptionStorage().Handle(GetCtxHandlerStack(), GetExtraMsg());
 }
 
 

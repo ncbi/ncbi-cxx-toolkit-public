@@ -42,14 +42,6 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
-// Error messages in TLS
-//
-
-typedef map<const CDB_UserHandler*, string> TErrMap;
-
-static CSafeStaticRef<CTls<TErrMap> > s_TlsErrMap;
-
-/////////////////////////////////////////////////////////////////////////////
 //  CDB_Exception::
 //
 
@@ -398,7 +390,7 @@ CDB_UserHandler* CDB_UserHandler_Wrapper::Set(CDB_UserHandler* h)
     }
 
     CDB_UserHandler* prev_h = m_Handler.Release();
-    m_Handler = h;;
+    m_Handler = h;
     return prev_h;
 }
 
@@ -425,14 +417,6 @@ CDB_UserHandler::CDB_UserHandler(void)
 
 CDB_UserHandler::~CDB_UserHandler(void)
 {
-    try {
-		TErrMap* err_map = s_TlsErrMap->GetValue();
-
-		if (err_map) {
-			err_map->erase(this);
-		}
-    }
-    NCBI_CATCH_ALL_X( 8, NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -468,37 +452,12 @@ bool CDB_UserHandler::HandleAll(const TExceptions& exceptions)
 
 string CDB_UserHandler::GetExtraMsg(void) const
 {
-	const TErrMap* err_map = s_TlsErrMap->GetValue();
-
-    if (err_map) { 
-		const TErrMap::const_iterator it = err_map->find(this);
-
-		if (it != err_map->end()) {
-			return it->second;
-		}
-    }
-
-    return kEmptyStr;
+    return "Method CDB_UserHandler::GetExtraMsg is deprecated. "
+           "Use CDB_Exception::GetExtraMsg instead.";
 }
 
-static void s_TlsErrMapCleanup(TErrMap* err_map, void* /* data */)
+void CDB_UserHandler::SetExtraMsg(const string&) const
 {
-		delete err_map;
-}
-
-void CDB_UserHandler::SetExtraMsg(const string& msg) const
-{
-	TErrMap* err_map = s_TlsErrMap->GetValue();
-
-	if (!err_map) {
-		auto_ptr<TErrMap> tmp_value(new TErrMap);
-        s_TlsErrMap->SetValue(tmp_value.get(), s_TlsErrMapCleanup);
-		err_map = tmp_value.release();
-	}
-
-	_ASSERT(err_map);
-
-	(*err_map)[this] = msg;
 }
 
 
@@ -540,16 +499,16 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
             ERR_POST_X(3, Severity(ex->GetSeverity()) << ex->what() <<
                        " SERVER: '" << ex->GetServerName() <<
                        "' USER: '" << ex->GetUserName() << "'" <<
-                       (GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-                        GetExtraMsg()) << "'"
+                       (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
+                        ex->GetExtraMsg()) << "'"
                        );
         } else {
             ERR_POST_X(4, Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
                        ex->what() <<
                        " SERVER: '" << ex->GetServerName() <<
                        "' USER: '" << ex->GetUserName() << "'" <<
-                       (GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-                        GetExtraMsg()) << "'"
+                       (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
+                        ex->GetExtraMsg()) << "'"
                        );
         }
     }
@@ -643,8 +602,8 @@ CDB_UserHandler_Exception::HandleIt(CDB_Exception* ex)
         string msg = string(ex->what()) + 
             " SERVER: '" + ex->GetServerName() +
             "' USER: '" + ex->GetUserName() + "'" +
-            (GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-             GetExtraMsg()) + "'"
+            (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
+             ex->GetExtraMsg()) + "'"
             ;
 
         ex->AddBacklog(DIAG_COMPILE_INFO, msg, ex->GetSeverity()); 

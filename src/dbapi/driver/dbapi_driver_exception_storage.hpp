@@ -44,9 +44,7 @@ class CDBHandlerStack;
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDBExceptionStorage
 {
-private:
-    friend class CSafeStaticPtr<CDBExceptionStorage>;
-
+public:
     CDBExceptionStorage(void);
     ~CDBExceptionStorage(void) throw();
 
@@ -61,6 +59,10 @@ private:
 };
 
 }
+
+
+void NCBI_DBAPIDRIVER_EXPORT
+s_DelExceptionStorage(impl::CDBExceptionStorage* storage, void* data);
 
 END_NCBI_SCOPE
 

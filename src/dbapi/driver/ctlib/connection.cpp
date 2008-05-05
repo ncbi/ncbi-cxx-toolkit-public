@@ -261,7 +261,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 CS_RETCODE
 CTL_Connection::Check(CS_RETCODE rc)
 {
-    GetCTLExceptionStorage().Handle(GetMsgHandlers());
+    GetCTLExceptionStorage().Handle(GetMsgHandlers(), GetExtraMsg());
 
     return rc;
 }

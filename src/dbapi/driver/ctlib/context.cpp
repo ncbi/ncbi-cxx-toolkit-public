@@ -77,6 +77,19 @@ CDiagCompileInfo GetBlankCompileInfo(void)
 }
 
 
+#ifdef FTDS_IN_USE
+#   define s_CTLCtxMtx  s_TDSCtxMtx
+#endif
+
+/// Static mutex which will guard all thread-unsafe operations on all ctlib
+/// contexts. It is added because several CTLibContext classes can share one
+/// global underlying context handle, so there is no other way to synchronize
+/// them but some global mutex. Use of non-global context handles considered
+/// to be very rare so the impact on using it through global mutex can be
+/// treated as insignificant.
+DEFINE_STATIC_MUTEX(s_CTLCtxMtx);
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CTLibContextRegistry (Singleton)
@@ -177,6 +190,7 @@ CTLibContextRegistry::ClearAll(void)
     if (!m_Registry.empty())
     {
         CMutexGuard mg(m_Mutex);
+        CMutexGuard ctx_mg(s_CTLCtxMtx);
 
         while ( !m_Registry.empty() ) {
             // x_Close will unregister and remove handler from the registry.
@@ -541,8 +555,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
     }
 #endif
 
-    DEFINE_STATIC_FAST_MUTEX(xMutex);
-    CFastMutexGuard mg(xMutex);
+    CMutexGuard mg(s_CTLCtxMtx);
 
     ResetEnvSybase();
 
@@ -642,6 +655,8 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
 
 CTLibContext::~CTLibContext()
 {
+    CMutexGuard mg(s_CTLCtxMtx);
+
     try {
         x_Close();
 
@@ -657,7 +672,7 @@ CTLibContext::~CTLibContext()
 CS_RETCODE
 CTLibContext::Check(CS_RETCODE rc) const
 {
-    GetCTLExceptionStorage().Handle(GetCtxHandlerStack());
+    GetCTLExceptionStorage().Handle(GetCtxHandlerStack(), GetExtraMsg());
 
     return rc;
 }
@@ -689,7 +704,7 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
     impl::CDriverContext::SetLoginTimeout(nof_secs);
 
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(s_CTLCtxMtx);
 
     int sec = (nof_secs == 0 ? CS_NO_LIMIT : static_cast<int>(nof_secs));
 
@@ -704,9 +719,9 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 
 bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
-    impl::CDriverContext::SetTimeout(nof_secs);
+    bool success = impl::CDriverContext::SetTimeout(nof_secs);
 
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(s_CTLCtxMtx);
 
     int sec = (nof_secs == 0 ? CS_NO_LIMIT : static_cast<int>(nof_secs));
 
@@ -717,7 +732,7 @@ bool CTLibContext::SetTimeout(unsigned int nof_secs)
                         CS_UNUSED,
                         NULL)) == CS_SUCCEED
         ) {
-        return impl::CDriverContext::SetTimeout(nof_secs);
+        return success;
     }
 
     return false;
@@ -728,7 +743,7 @@ bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     impl::CDriverContext::SetMaxTextImageSize(nof_bytes);
 
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(s_CTLCtxMtx);
 
     CS_INT ti_size = (CS_INT) GetMaxTextImageSize();
     return Check(ct_config(CTLIB_GetContext(),
@@ -744,7 +759,8 @@ unsigned int
 CTLibContext::GetLoginTimeout(void) const
 {
     {
-        CMutexGuard mg(m_CtxMtx);
+        // For the sake of Check() and HandlerStack()
+        CMutexGuard mg(s_CTLCtxMtx);
 
         CS_INT t_out = 0;
 
@@ -765,7 +781,8 @@ CTLibContext::GetLoginTimeout(void) const
 unsigned int CTLibContext::GetTimeout(void) const
 {
     {
-        CMutexGuard mg(m_CtxMtx);
+        // For the sake of Check() and HandlerStack()
+        CMutexGuard mg(s_CTLCtxMtx);
 
         CS_INT t_out = 0;
 
@@ -786,6 +803,8 @@ unsigned int CTLibContext::GetTimeout(void) const
 impl::CConnection*
 CTLibContext::MakeIConnection(const CDBConnParams& params)
 {
+    CMutexGuard mg(s_CTLCtxMtx);
+
     return new CTL_Connection(*this, params);
 }
 
@@ -808,7 +827,7 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
 bool
 CTLibContext::SetMaxConnect(unsigned int num)
 {
-    CMutexGuard mg(m_CtxMtx);
+    CMutexGuard mg(s_CTLCtxMtx);
 
     return Check(ct_config(CTLIB_GetContext(),
                            CS_SET,
@@ -822,7 +841,8 @@ CTLibContext::SetMaxConnect(unsigned int num)
 unsigned int
 CTLibContext::GetMaxConnect(void)
 {
-    CMutexGuard mg(m_CtxMtx);
+    // For the sake of Check() and HandlerStack()
+    CMutexGuard mg(s_CTLCtxMtx);
 
     unsigned int num = 0;
 
@@ -842,8 +862,6 @@ CTLibContext::GetMaxConnect(void)
 void
 CTLibContext::x_Close(bool delete_conn)
 {
-    CMutexGuard mg(m_CtxMtx);
-
     if ( CTLIB_GetContext() ) {
         if (x_SafeToFinalize()) {
             if (delete_conn) {
@@ -1351,6 +1369,8 @@ void CTLibContext::SetClientCharset(const string& charset)
     impl::CDriverContext::SetClientCharset(charset);
 
     if ( !GetClientCharset().empty() ) {
+        CMutexGuard mg(s_CTLCtxMtx);
+
         cs_locale(CTLIB_GetContext(),
                   CS_SET,
                   m_Locale,

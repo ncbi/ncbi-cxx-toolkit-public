@@ -59,11 +59,15 @@ public:
 
     void Push(CDB_UserHandler* h, EOwnership ownership = eNoOwnership);
     void Pop (CDB_UserHandler* h, bool last = true);
-    void SetExtraMsg(const string& msg) const;
 
-    void PostMsg(CDB_Exception* ex) const;
+    void PostMsg(CDB_Exception* ex, const string& extra_msg) const;
+    void PostMsg(CDB_Exception* ex) const
+    {
+        return PostMsg(ex, string());
+    }
     // Return TRUE if exceptions have been successfully processed.
-    bool HandleExceptions(const CDB_UserHandler::TExceptions& exeptions) const;
+    bool HandleExceptions(const CDB_UserHandler::TExceptions&  exeptions,
+                          const string&                        extra_msg) const;
 
 
 public:
@@ -149,8 +153,6 @@ public:
     typedef deque<CRef<CUserHandlerWrapper> > TContainer;
 
 private:
-    mutable CFastMutex m_Mtx;
-
     TContainer m_Stack;
 };
 

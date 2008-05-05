@@ -89,7 +89,14 @@ public:
     bool IsMultibyteClientEncoding(void) const;
     EEncoding GetClientEncoding(void) const;
 
-    void SetExtraMsg(const string& msg) const;
+    void SetExtraMsg(const string& msg) const
+    {
+        m_ExtraMsg = msg;
+    }
+    const string& GetExtraMsg(void) const
+    {
+        return m_ExtraMsg;
+    }
 
 
     const string& GetServerName(void) const
@@ -263,15 +270,16 @@ private:
     CDB_ResultProcessor*            m_ResProc;
     CDBConnParams::EServerType      m_ServerType;
 
-    const string  m_Server;
-    const string  m_User;
-    const string  m_Passwd;
-    const string  m_Pool;
-    const bool    m_Reusable;
-    const bool    m_BCPable; //< Does this connection support BCP (It is related to Context, actually)
-    const bool    m_SecureLogin;
-    bool          m_Opened;
-    string        m_ExecCntxInfo;
+    const string   m_Server;
+    const string   m_User;
+    const string   m_Passwd;
+    const string   m_Pool;
+    const bool     m_Reusable;
+    const bool     m_BCPable; //< Does this connection support BCP (It is related to Context, actually)
+    const bool     m_SecureLogin;
+    bool           m_Opened;
+    string         m_ExecCntxInfo;
+    mutable string m_ExtraMsg;
 };
 
 } // namespace impl

@@ -192,12 +192,6 @@ void CDriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
 }
 
 
-void CDriverContext::SetExtraMsg(const string& msg) const
-{
-    GetCtxHandlerStack().SetExtraMsg(msg);
-}
-
-
 void CDriverContext::ResetEnvSybase(void) const
 {
     CMutexGuard mg(m_CtxMtx);
