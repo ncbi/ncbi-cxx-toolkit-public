@@ -1425,61 +1425,6 @@ CS_INT GetCtlibTdsVersion(int version)
 // Driver manager related functions
 //
 
-I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
-{
-    bool reuse_context = true;
-#ifdef FTDS_IN_USE
-    int  tds_version   = 0;
-#else
-    int  tds_version   = NCBI_CTLIB_TDS_VERSION;
-#endif
-
-    if ( attr ) {
-        map<string,string>::const_iterator citer = attr->find("reuse_context");
-        if ( citer != attr->end() ) {
-            reuse_context = (citer->second != "false");
-        }
-
-        citer = attr->find("version");
-        if (citer != attr->end()) {
-            tds_version = NStr::StringToInt(citer->second);
-            _TRACE("WARNING: user manually set TDS version to " << tds_version);
-        }
-    }
-
-    CTLibContext* cntx = new CTLibContext(reuse_context,
-                                          GetCtlibTdsVersion(tds_version));
-
-    if ( cntx && attr ) {
-        string page_size;
-        map<string,string>::const_iterator citer = attr->find("packet");
-        if ( citer != attr->end() ) {
-            page_size = citer->second;
-        }
-        if ( !page_size.empty() ) {
-            CS_INT s= atoi(page_size.c_str());
-            cntx->CTLIB_SetPacketSize(s);
-        }
-        string prog_name;
-        citer = attr->find("prog_name");
-        if ( citer != attr->end() ) {
-            prog_name = citer->second;
-        }
-        if ( !prog_name.empty() ) {
-            cntx->CTLIB_SetApplicationName(prog_name);
-        }
-        string host_name;
-        citer = attr->find("host_name");
-        if ( citer != attr->end() ) {
-            host_name = citer->second;
-        }
-        if ( !host_name.empty() ) {
-            cntx->CTLIB_SetHostName(host_name);
-        }
-    }
-    return cntx;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 class CDbapiCtlibCFBase : public CSimpleClassFactoryImpl<I_DriverContext, CTLibContext>
 {

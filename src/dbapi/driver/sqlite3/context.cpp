@@ -71,12 +71,6 @@ CSL3Context::MakeIConnection(const CDBConnParams& params)
 ///////////////////////////////////////////////////////////////////////
 // DriverManager related functions
 //
-/*
-static I_DriverContext* SQLite3_CreateContext(const map<string,string>* attr)
-{
-    return new CSL3Context();
-}
-*/
 
 ///////////////////////////////////////////////////////////////////////////////
 class CDbapiSQLite3CF2 : public CSimpleClassFactoryImpl<I_DriverContext, CSL3Context>

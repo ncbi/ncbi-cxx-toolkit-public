@@ -639,55 +639,6 @@ void CTDSContext::CheckFunctCall(void)
 // Driver manager related functions
 //
 
-I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
-{
-    DBINT version = DBVERSION_UNKNOWN;
-    map<string,string>::const_iterator citer;
-
-    if ( attr ) {
-        citer = attr->find("reuse_context");
-        if ( citer != attr->end() ) {
-            CFastMutexGuard mg(s_CtxMutex);
-
-            if ( citer->second == "true" &&
-                 g_pTDSContext ) {
-                return g_pTDSContext;
-            }
-        }
-
-        string vers;
-        citer = attr->find("version");
-        if ( citer != attr->end() ) {
-            vers = citer->second;
-        }
-        if ( vers.find("42") != string::npos )
-            version = DBVERSION_42;
-        else if ( vers.find("46") != string::npos )
-            version = DBVERSION_46;
-        else if ( vers.find("70") != string::npos )
-            version = DBVERSION_70;
-        else if ( vers.find("100") != string::npos )
-            version = DBVERSION_100;
-
-    }
-
-    CTDSContext* cntx =  new CTDSContext(version);
-    if ( cntx && attr ) {
-        string page_size;
-        citer = attr->find("packet");
-        if ( citer != attr->end() ) {
-            page_size = citer->second;
-        }
-        if ( !page_size.empty() ) {
-            int s= atoi(page_size.c_str());
-            cntx->TDS_SetPacketSize(s);
-        }
-    }
-
-    return cntx;
-}
-
-
 // Version-specific driver name and DLL entry point
 #if defined(NCBI_FTDS)
 #  if   NCBI_FTDS == 7
