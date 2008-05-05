@@ -42,6 +42,10 @@ objtools/data_loaders/genbank
 objtools/data_loaders/blastdb$
 app/blast
 app/blastdb
+app/winmasker$
+app/dustmasker$
+app/segmasker$
+objtools/simple$
 -objects/.*/test
 -objects/.*/demo
 -objects/.*/unit_test
