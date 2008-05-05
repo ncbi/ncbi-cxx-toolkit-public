@@ -10,16 +10,18 @@ ulimit -n 1536 > /dev/null 2>&1
 driver_list="ctlib dblib ftds odbc ftds8 odbcw ftds_odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
-	server_list="MSDEV1 SCHUMANN MSSQL67"
+	server_list="MSDEV1 SCHUMANN"
 	server_mssql="MSDEV1"
+
+	server_mssql2005="MSDEV1"
 else
 	# server_list="MS_DEV2"
-	server_list="MS_TEST SYB_TEST MSSQL67"
+	server_list="MS_TEST SYB_TEST"
 	# server_mssql="MS_DEV2"
 	server_mssql="MS_TEST"
-fi
 
-server_mssql2005="MSSQL67"
+	server_mssql2005="MS_TEST"
+fi
 
 
 res_file="/tmp/test_lang_query.sh.$$"
