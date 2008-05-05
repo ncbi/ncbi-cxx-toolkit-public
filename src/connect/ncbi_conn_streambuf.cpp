@@ -47,9 +47,12 @@
 BEGIN_NCBI_SCOPE
 
 
-CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
-                                 streamsize buf_size, bool tie,
-                                 CT_CHAR_TYPE* ptr, size_t size)
+CConn_Streambuf::CConn_Streambuf(CONNECTOR       connector,
+                                 const STimeout* timeout,
+                                 streamsize      buf_size,
+                                 bool            tie,
+                                 CT_CHAR_TYPE*   ptr,
+                                 size_t          size)
     : m_Conn(0), m_WriteBuf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie),
       x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE) size)
 {
@@ -115,7 +118,9 @@ void CConn_Streambuf::x_Cleanup(bool if_close)
 }
 
 
-void CConn_Streambuf::x_OnClose(CONN conn, ECONN_Callback type, void* data)
+void CConn_Streambuf::x_OnClose(CONN           _DEBUG_ARG(conn),
+                                ECONN_Callback type,
+                                void*          data)
 {
     CConn_Streambuf* sb = static_cast<CConn_Streambuf*>(data);
 
@@ -126,8 +131,9 @@ void CConn_Streambuf::x_OnClose(CONN conn, ECONN_Callback type, void* data)
 
 
 EIO_Status CConn_Streambuf::x_LogIfError(const CDiagCompileInfo& diag_info,
-                                         int err_subcode,
-                                         EIO_Status status, const string& msg)
+                                         int                     err_subcode,
+                                         EIO_Status              status,
+                                         const string&           msg)
 {
     if (status != eIO_Success) {
         CNcbiDiag(diag_info) << ErrCode(NCBI_ERRCODE_X, err_subcode)
@@ -398,7 +404,8 @@ CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 }
 
 
-CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
+CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
+                                     IOS_BASE::seekdir  whence,
                                      IOS_BASE::openmode which)
 {
     if (m_Conn  &&  off == 0  &&  whence == IOS_BASE::cur) {

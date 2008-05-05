@@ -243,24 +243,22 @@ extern const char* CORE_SendMail(const char* to,
  * the Sun compiler much happier, and less wordy :-)
  */
 
-#define SENDMAIL_RETURN(subcode, reason)                                   \
-    do {                                                                   \
-        if (sock)                                                          \
-            SOCK_Close(sock);                                              \
-        CORE_LOGF_X(subcode, eLOG_Error, ("[SendMail]  %s", reason));      \
-        if (reason/*always true, though, to trick "smart" compiler*/)      \
-            return reason;                                                 \
-    } while (0)
+#define SENDMAIL_RETURN(subcode, reason)                                \
+  do {                                                                  \
+      if (sock)                                                         \
+          SOCK_Close(sock);                                             \
+      CORE_LOGF_X(subcode, eLOG_Error, ("[SendMail]  %s", reason));     \
+      return reason;                                                    \
+  } while (1)
 
-#define SENDMAIL_RETURN2(subcode, reason, explanation)                     \
-    do {                                                                   \
-       if (sock)                                                           \
-           SOCK_Close(sock);                                               \
-       CORE_LOGF_X( subcode, eLOG_Error,                                   \
-                    ("[SendMail]  %s: %s", reason, explanation) );         \
-       if (reason/*always true, though, to trick "smart" compiler*/)       \
-           return reason;                                                  \
-    } while (0)
+#define SENDMAIL_RETURN2(subcode, reason, explanation)                  \
+  do {                                                                  \
+      if (sock)                                                         \
+          SOCK_Close(sock);                                             \
+      CORE_LOGF_X( subcode, eLOG_Error,                                 \
+                   ("[SendMail]  %s: %s", reason, explanation) );       \
+      return reason;                                                    \
+  } while (1)
 
 
 static const char* s_SendRcpt(SOCK sock, const char* to,
