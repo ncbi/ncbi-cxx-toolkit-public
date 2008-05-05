@@ -63,7 +63,7 @@ public:
     void PostMsg(CDB_Exception* ex, const string& extra_msg) const;
     void PostMsg(CDB_Exception* ex) const
     {
-        return PostMsg(ex, string());
+        PostMsg(ex, string());
     }
     // Return TRUE if exceptions have been successfully processed.
     bool HandleExceptions(const CDB_UserHandler::TExceptions&  exeptions,
