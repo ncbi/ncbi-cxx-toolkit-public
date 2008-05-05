@@ -213,7 +213,11 @@ CDBConnParamsBase::GetParam(const string& key) const
 void 
 CDBConnParamsBase::SetParam(const string& key, const string& value)
 {
-	m_UnclassifiedParamMap[key] = value;
+	string tmp_key = key;
+
+	// Use lower-case keys ...
+	NStr::ToLower(tmp_key);
+	m_UnclassifiedParamMap[tmp_key] = value;
 }
 
 
@@ -418,19 +422,13 @@ void CDBUriConnParams::ParseParamPairs(const string& param_pairs, size_t cur_pos
         if (NStr::SplitInTwo(*it, "=", key, value)) {
             NStr::TruncateSpacesInPlace(key);
             NStr::TruncateSpacesInPlace(value);
-            x_MapPairToParam(NStr::ToUpper(key), value);
+            SetParam(key, value);
         } else {
             key = *it;
             NStr::TruncateSpacesInPlace(key);
-            x_MapPairToParam(NStr::ToUpper(key), key);
+            SetParam(key, key);
         }
     }
-}
-
-
-void CDBUriConnParams::x_MapPairToParam(const string& key, const string& value)
-{
-    // Not ready yet ...
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -446,11 +444,11 @@ CDB_ODBC_ConnParams::CDB_ODBC_ConnParams(const string& params)
         if (NStr::SplitInTwo(*it, "=", key, value)) {
             NStr::TruncateSpacesInPlace(key);
             NStr::TruncateSpacesInPlace(value);
-            x_MapPairToParam(NStr::ToUpper(key), value);
+            x_MapPairToParam(key, value);
         } else {
             key = *it;
             NStr::TruncateSpacesInPlace(key);
-            x_MapPairToParam(NStr::ToUpper(key), key);
+            x_MapPairToParam(key, key);
         }
     }
 }
@@ -459,17 +457,17 @@ CDB_ODBC_ConnParams::CDB_ODBC_ConnParams(const string& params)
 void CDB_ODBC_ConnParams::x_MapPairToParam(const string& key, const string& value)
 {
     // MS SQL Server related attributes ...
-    if (NStr::Equal(key, "SERVER")) {
+    if (NStr::Equal(key, "SERVER", NStr::eNocase)) {
         SetServerName(value);
-    } else if (NStr::Equal(key, "UID")) {
+    } else if (NStr::Equal(key, "UID", NStr::eNocase)) {
         SetUserName(value);
-    } else if (NStr::Equal(key, "PWD")) {
+    } else if (NStr::Equal(key, "PWD", NStr::eNocase)) {
         SetPassword(value);
-    } else if (NStr::Equal(key, "DRIVER")) {
+    } else if (NStr::Equal(key, "DRIVER", NStr::eNocase)) {
         SetDriverName(value);
-    } else if (NStr::Equal(key, "DATABASE")) {
+    } else if (NStr::Equal(key, "DATABASE", NStr::eNocase)) {
         SetDatabaseName(value);
-    } else if (NStr::Equal(key, "ADDRESS")) {
+    } else if (NStr::Equal(key, "ADDRESS", NStr::eNocase)) {
         string host;
         string port;
 
@@ -479,7 +477,9 @@ void CDB_ODBC_ConnParams::x_MapPairToParam(const string& key, const string& valu
 
         // SetHost(host);
         SetPort(static_cast<Uint2>(NStr::StringToInt(port)));
-    }
+    } else {
+		SetParam(key, value);
+	}
 }
 
 

@@ -211,8 +211,6 @@ private:
     void ParseServer(const string& params, size_t cur_pos);
     void ParseSlash(const string& params, size_t cur_pos);
     void ParseParamPairs(const string& param_pairs, size_t cur_pos);
-
-    void x_MapPairToParam(const string& key, const string& value);
 };
 
 
@@ -231,7 +229,7 @@ public:
     }
 
 private:
-    void x_MapPairToParam(const string& key, const string& value);
+	void x_MapPairToParam(const string& key, const string& value);
 };
 
 
