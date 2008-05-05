@@ -99,10 +99,10 @@ CConnection::CConnection(CDriverContext& dc,
 , m_Server(params.GetServerName())
 , m_User(params.GetUserName())
 , m_Passwd(params.GetPassword())
-, m_Pool(params.GetPoolName())
-, m_Reusable(params.IsPooled())
+, m_Pool(params.GetParam("pool_name"))
+, m_Reusable(params.GetParam("is_pooled") == "true")
 , m_BCPable(isBCPable)
-, m_SecureLogin(params.IsSecureLogin())
+, m_SecureLogin(params.GetParam("secure_login") == "true")
 , m_Opened(false)
 {
     _ASSERT(m_MsgHandlers.GetSize() == dc.GetConnHandlerStack().GetSize());

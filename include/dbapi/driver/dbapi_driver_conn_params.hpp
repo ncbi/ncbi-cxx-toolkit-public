@@ -62,16 +62,8 @@ public:
     virtual Uint2 GetPort(void) const;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const;
-    virtual bool IsSecureLogin(void) const;
 
-    // Connection pool related methods.
-
-    /// Use connection pool with this connection.
-    virtual bool IsPooled(void) const;
-    /// Use connections from NotInUse pool
-    virtual bool IsDoNotConnect(void) const;  
-    /// Pool name to be used with this connection
-    virtual string GetPoolName(void) const; 
+	virtual string GetParam(const string& key) const;
 
 protected:
     void SetDriverName(const string& name)
@@ -121,25 +113,12 @@ protected:
     {
 	m_Validator = validator;
     }
-    void SetSequreLogin(bool flag = true)
-    {
-	m_IsSecureLogin = flag;
-    }
 
-    void SetPooled(bool flag = true)
-    {
-	m_IsPooled = flag;
-    }
-    void SetDoNotConnect(bool flag = true)
-    {
-	m_IsDoNotConnect = flag;
-    }
-    void SetPoolName(const string& name)
-    {
-	m_PoolName = name;
-    }
+	void SetParam(const string& key, const string& value);
 
 private:
+	typedef map<string, string> TUnclassifiedParamMap;
+
     string    m_DriverName;
     Uint4     m_ProtocolVersion;
     EEncoding m_Encoding;
@@ -152,11 +131,7 @@ private:
     Uint4                 m_Host;
     Uint2                 m_PortNumber;
     CRef<IConnValidator>  m_Validator;
-
-    string  m_PoolName;
-    bool    m_IsSecureLogin;
-    bool    m_IsPooled;
-    bool    m_IsDoNotConnect;
+	TUnclassifiedParamMap m_UnclassifiedParamMap;
 };
 
 } // namespace impl
@@ -210,6 +185,11 @@ public:
     {
         impl::CDBConnParamsBase::SetConnValidator(validator);
     }
+
+	void SetParam(const string& key, const string& value)
+	{
+        impl::CDBConnParamsBase::SetParam(key, value);
+	}
 };
 
 
@@ -277,16 +257,8 @@ public:
     virtual Uint2  GetPort(void) const;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const;
-    virtual bool IsSecureLogin(void) const;
 
-    // Connection pool related methods.
-
-    /// Use connection pool with this connection.
-    virtual bool IsPooled(void) const;
-    /// Use connections from NotInUse pool
-    virtual bool IsDoNotConnect(void) const;  
-    /// Pool name to be used with this connection
-    virtual string GetPoolName(void) const; 
+	virtual string GetParam(const string& key) const;
 
 private:
     const CDBConnParams& m_Other;

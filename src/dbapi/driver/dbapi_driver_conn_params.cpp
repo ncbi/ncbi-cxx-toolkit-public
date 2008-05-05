@@ -44,10 +44,10 @@ CDBConnParamsBase::CDBConnParamsBase(void)
 , m_ServerType(eUnknown)
 , m_Host(0)
 , m_PortNumber(0)
-, m_IsSecureLogin(false)
-, m_IsPooled(false)
-, m_IsDoNotConnect(false)
 {
+	SetParam("secure_login", "false");
+	SetParam("is_pooled", "false");
+	SetParam("do_not_connect", "false");
 }
 
 CDBConnParamsBase::~CDBConnParamsBase(void)
@@ -196,29 +196,26 @@ CDBConnParamsBase::GetConnValidator(void) const
     return m_Validator;
 }
 
-bool 
-CDBConnParamsBase::IsSecureLogin(void) const
-{
-    return m_IsSecureLogin;
-}
-
-bool 
-CDBConnParamsBase::IsPooled(void) const
-{
-    return m_IsPooled;
-}
-
-bool 
-CDBConnParamsBase::IsDoNotConnect(void) const
-{
-    return m_IsDoNotConnect;
-}
 
 string 
-CDBConnParamsBase::GetPoolName(void) const
+CDBConnParamsBase::GetParam(const string& key) const
 {
-    return m_PoolName;
+	TUnclassifiedParamMap::const_iterator it = m_UnclassifiedParamMap.find(key);
+
+	if (it != m_UnclassifiedParamMap.end()) {
+		return it->second;
+	}
+
+	return string();
 }
+
+
+void 
+CDBConnParamsBase::SetParam(const string& key, const string& value)
+{
+	m_UnclassifiedParamMap[key] = value;
+}
+
 
 }
 
@@ -234,10 +231,26 @@ CDBDefaultConnParams::CDBDefaultConnParams(
     SetServerName(srv_name);
     SetUserName(user_name);
     SetPassword(passwd);
-    SetPoolName(pool_name);
-    SetSequreLogin((mode & I_DriverContext::fPasswordEncrypted) != 0);
-    SetPooled(reusable);
-    SetDoNotConnect((mode & I_DriverContext::fDoNotConnect) != 0);
+
+    SetParam(
+		"pool_name", 
+		pool_name
+		);
+
+    SetParam(
+		"secure_login", 
+		((mode & I_DriverContext::fPasswordEncrypted) != 0) ? "true" : "false"
+		);
+
+    SetParam(
+		"is_pooled", 
+		reusable ? "true" : "false"
+		);
+
+    SetParam(
+		"do_not_connect", 
+		(mode & I_DriverContext::fDoNotConnect) != 0 ? "true" : "false"
+		);
 }
 
 
@@ -544,25 +557,9 @@ CDBConnParamsDelegate::GetConnValidator(void) const
     return m_Other.GetConnValidator();
 }
 
-bool CDBConnParamsDelegate::IsSecureLogin(void) const
+string CDBConnParamsDelegate::GetParam(const string& key) const
 {
-    return m_Other.IsSecureLogin();
-}
-
-
-bool CDBConnParamsDelegate::IsPooled(void) const
-{
-    return m_Other.IsPooled();
-}
-
-bool CDBConnParamsDelegate::IsDoNotConnect(void) const
-{
-    return m_Other.IsDoNotConnect();
-}
-
-string CDBConnParamsDelegate::GetPoolName(void) const
-{
-    return m_Other.GetPoolName();
+    return m_Other.GetParam(key);
 }
 
 

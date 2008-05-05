@@ -387,7 +387,7 @@ CDBConnectionFactory::DispatchServerName(
             cur_srv_name = dsp_srv->GetName();
             cur_host = dsp_srv->GetHost();
             cur_port = dsp_srv->GetPort();
-        } else if (params.GetPoolName().empty()) {
+        } else if (params.GetParam("pool_name").empty()) {
             DATABASE_DRIVER_ERROR
                 ("Neither server name nor pool name provided.", 111000);
         } else {

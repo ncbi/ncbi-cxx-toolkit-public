@@ -948,17 +948,12 @@ public:
     virtual Uint2  GetPort(void) const = 0;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const = 0;
-    virtual bool IsSecureLogin(void) const = 0;
+	
+	/// Parameters, which are not listed above explicitly, should be retrieved via
+	/// SetParam() method.
+	virtual string GetParam(const string& key) const = 0;
 
-    // Connection pool related methods.
-
-    /// Use connection pool with this connection.
-    virtual bool IsPooled(void) const = 0;
-    /// Use connections from NotInUse pool
-    virtual bool IsDoNotConnect(void) const = 0;  
-    /// Pool name to be used with this connection
-    virtual string GetPoolName(void) const = 0; 
-
+public:
     void SetChildObj(const CDBConnParams& child_obj) const
     {
         m_ChildObj = &child_obj;

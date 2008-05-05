@@ -71,10 +71,43 @@ MakePluginManagerParamTree(const CDBConnParams& params)
 
     tr->GetKey() = params.GetDriverName();
 
-    tr->AddNode(CConfig::TParamValue("reuse_context" , "false"));
+    string param_value;
+
+    param_value = params.GetParam("reuse_context");
+    if (!param_value.empty()) {
+        tr->AddNode(CConfig::TParamValue(
+            "reuse_context", 
+            param_value
+            ));
+    }
+
+    param_value = params.GetParam("packet");
+    if (!param_value.empty()) {
+        tr->AddNode(CConfig::TParamValue(
+            "packet", 
+            param_value
+            ));
+    }
+
+    param_value = params.GetParam("prog_name");
+    if (!param_value.empty()) {
+        tr->AddNode(CConfig::TParamValue(
+            "prog_name", 
+            param_value
+            ));
+    }
+
+    param_value = params.GetParam("host_name");
+    if (!param_value.empty()) {
+        tr->AddNode(CConfig::TParamValue(
+            "host_name", 
+            param_value
+            ));
+    }
+
     if (params.GetProtocolVersion() != 0) {
-	tr->AddNode(CConfig::TParamValue("version" , 
-	    NStr::IntToString(params.GetProtocolVersion())));
+        tr->AddNode(CConfig::TParamValue("version" , 
+                    NStr::IntToString(params.GetProtocolVersion())));
     }
 
     switch (params.GetEncoding()) {

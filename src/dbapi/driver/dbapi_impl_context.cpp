@@ -310,18 +310,18 @@ CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection)
 CDB_Connection*
 CDriverContext::MakePooledConnection(const CDBConnParams& params)
 {
-    if (params.IsPooled()) {
+    if (params.GetParam("is_pooled") == "true") {
         CMutexGuard mg(m_CtxMtx);
 
         if (!m_NotInUse.empty()) {
-            if (!params.GetPoolName().empty()) {
+            if (!params.GetParam("pool_name").empty()) {
                 // use a pool name
                 for (TConnPool::iterator it = m_NotInUse.begin(); it != m_NotInUse.end(); ) {
                     CConnection* t_con(*it);
 
                     // There is no pool name check here. We assume that a connection
                     // pool contains connections with appropriate server names only.
-                    if (params.GetPoolName().compare(t_con->PoolName()) == 0) {
+                    if (params.GetParam("pool_name").compare(t_con->PoolName()) == 0) {
                         it = m_NotInUse.erase(it);
                         if(t_con->Refresh()) {
                             return MakeCDBConnection(t_con);
@@ -362,7 +362,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
         }
     }
 
-    if (params.IsDoNotConnect()) {
+    if (params.GetParam("do_not_connect") == "true") {
         return NULL;
     }
 
@@ -427,7 +427,7 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
             *this,
             params);
 
-    if((!t_con && params.IsDoNotConnect())) {
+    if((!t_con && params.GetParam("do_not_connect") == "true")) {
         return NULL;
     }
 

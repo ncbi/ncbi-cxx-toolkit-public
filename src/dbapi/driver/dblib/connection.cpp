@@ -95,7 +95,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     BCP_SETL(m_Login, TRUE);
 
 #ifndef MS_DBLIB_IN_USE
-    if (params.IsSecureLogin())
+    if (params.GetParam("secure_login") == "true")
         DBSETLENCRYPT(m_Login, TRUE);
 #endif
 
