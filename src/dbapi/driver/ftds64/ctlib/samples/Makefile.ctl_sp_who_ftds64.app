@@ -9,4 +9,4 @@ LIBS = $(FTDS64_CTLIB_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
 CPPFLAGS = -I$(includedir)/dbapi/driver/ftds64 $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS)
 
 # CHECK_CMD = run_sybase_app.sh ctl_sp_who_ftds64
-CHECK_CMD = run_sybase_app.sh ctl_sp_who_ftds64 -S MSDEV1 -v 80
+CHECK_CMD = run_sybase_app.sh ctl_sp_who_ftds64 -S MSDEV1
