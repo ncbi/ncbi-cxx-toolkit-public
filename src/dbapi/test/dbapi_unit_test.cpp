@@ -10734,7 +10734,7 @@ public:
 void
 CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
 {
-    const string db_name("AGP"); // This database should exist in MSDEV1, and not in MSDEV2
+    const string db_name("AlignModel"); // This database should exist in MSDEV1, and not in MSDEV2
 
     // CTrivialConnValidator ...
     {
@@ -10794,7 +10794,7 @@ CDBAPIUnitTest::Test_ConnFactory(void)
     try {
         TSvrRef server01(new CDBServer("mssql51.ncbi.nlm.nih.gov"));
         TSvrRef server02(new CDBServer("mssql51.ncbi.nlm.nih.gov"));
-        TSvrRef server03(new CDBServer("MSSQL67"));
+        TSvrRef server03(new CDBServer("mssql67.ncbi.nlm.nih.gov"));
 
         // Check CDBUDPriorityMapper ...
         {
