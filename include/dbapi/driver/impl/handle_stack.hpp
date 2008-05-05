@@ -71,7 +71,7 @@ public:
 
 
 public:
-    class CUserHandlerWrapper : public CObject
+    class NCBI_DBAPIDRIVER_EXPORT CUserHandlerWrapper : public CObject
     {
     public:
         CUserHandlerWrapper(CDB_UserHandler* handler, bool guard = false);
@@ -93,7 +93,7 @@ public:
 
     private:
         /// CObjGuard is not the same as CRef.
-        class CObjGuard
+        class NCBI_DBAPIDRIVER_EXPORT CObjGuard
         {
         public:
             CObjGuard(CObject* const obj);
