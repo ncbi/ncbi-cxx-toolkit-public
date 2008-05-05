@@ -153,7 +153,49 @@ bool CDBHandlerStack::HandleExceptions(const CDB_UserHandler::TExceptions&  exep
     return false;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+CDBHandlerStack::CUserHandlerWrapper::CUserHandlerWrapper(
+    CDB_UserHandler* handler,
+    bool guard
+    ) :
+    m_ObjGuard(guard ? handler : NULL),
+    m_UserHandler(handler)
+{
 }
+
+CDBHandlerStack::CUserHandlerWrapper::~CUserHandlerWrapper(void)
+{
+}
+
+CDBHandlerStack::CUserHandlerWrapper::CObjGuard::CObjGuard(CObject* const obj) :
+    m_Obj(obj)
+{
+    if (m_Obj) {
+        m_Obj->AddReference();
+    }
+}
+
+CDBHandlerStack::CUserHandlerWrapper::CObjGuard::CObjGuard(const CObjGuard& other) :
+    m_Obj(other.m_Obj)
+{
+    if (m_Obj) {
+        m_Obj->AddReference();
+    }
+}
+
+CDBHandlerStack::CUserHandlerWrapper::CObjGuard::~CObjGuard(void)
+{
+    if (m_Obj) {
+        // This call doesn't delete m_Obj even if reference
+        // counter is equal to 0. And with this feature CObjGuard
+        // differs from CRef.
+        m_Obj->ReleaseReference();
+    }
+}
+
+
+}
+
 
 END_NCBI_SCOPE
 

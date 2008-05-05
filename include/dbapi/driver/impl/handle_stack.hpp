@@ -74,14 +74,8 @@ public:
     class CUserHandlerWrapper : public CObject
     {
     public:
-        CUserHandlerWrapper(CDB_UserHandler* handler, bool guard = false) :
-            m_ObjGuard(guard ? handler : NULL),
-            m_UserHandler(handler)
-        {
-        }
-        ~CUserHandlerWrapper(void)
-        {
-        }
+        CUserHandlerWrapper(CDB_UserHandler* handler, bool guard = false);
+        ~CUserHandlerWrapper(void);
 
         bool operator==(CDB_UserHandler* handler)
         {
@@ -98,32 +92,13 @@ public:
         }
 
     private:
+        /// CObjGuard is not the same as CRef.
         class CObjGuard
         {
         public:
-            CObjGuard(CObject* const obj) :
-                m_Obj(obj)
-            {
-                if (m_Obj) {
-                    m_Obj->AddReference();
-                }
-            }
-            CObjGuard(const CObjGuard& other) :
-                m_Obj(other.m_Obj)
-            {
-                if (m_Obj) {
-                    m_Obj->AddReference();
-                }
-            }
-            ~CObjGuard(void)
-            {
-                if (m_Obj) {
-                    // This call doesn't delete m_Obj even if reference
-                    // counter is equal to 0. And with this feature CObjGuard
-                    // differs from CRef.
-                    m_Obj->ReleaseReference();
-                }
-            }
+            CObjGuard(CObject* const obj);
+            CObjGuard(const CObjGuard& other);
+            ~CObjGuard(void);
 
             CObjGuard& operator=(const CObjGuard& other)
             {
