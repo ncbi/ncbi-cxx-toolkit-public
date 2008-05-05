@@ -396,6 +396,19 @@ void CPubseq2Reader::x_InitConnection(CDB_Connection& db_conn, TConn conn)
 
 
 namespace {
+    bool sx_FetchNextItem(CDB_Result& result, const CTempString& name)
+    {
+        while ( result.Fetch() ) {
+            for ( size_t pos = 0; pos < result.NofItems(); ++pos ) {
+                if ( result.ItemName(pos) == name ) {
+                    return true;
+                }
+                result.SkipItem();
+            }
+        }
+        return false;
+    }
+    
     class CDB_Result_Reader : public CObject, public IReader
     {
     public:
@@ -404,7 +417,7 @@ namespace {
             : m_DB_RPCCmd(cmd), m_DB_Result(db_result)
             {
             }
-    
+
         ERW_Result Read(void*   buf,
                         size_t  count,
                         size_t* bytes_read)
@@ -417,8 +430,9 @@ namespace {
                 }
                 size_t ret;
                 while ( (ret = m_DB_Result->ReadItem(buf, count)) == 0 ) {
-                    if ( !m_DB_Result->Fetch() )
+                    if ( !sx_FetchNextItem(*m_DB_Result, "asnout") ) {
                         break;
+                    }
                 }
                 if ( bytes_read ) {
                     *bytes_read = ret;
@@ -449,6 +463,16 @@ void CPubseq2Reader::x_ReceiveReply(TConn conn,
                                     CID2_Reply& reply)
 {
     x_ReceiveReply(x_GetCurrentResult(conn), conn, reply);
+}
+
+
+void CPubseq2Reader::x_EndOfPacket(TConn conn)
+{
+    CObjectIStream& stream = x_GetCurrentResult(conn);
+    if ( stream.HaveMoreData() ) {
+        ERR_POST_X(4, "CPubseq2Reader: extra blob data");
+    }
+    x_SetCurrentResult(conn, 0);
 }
 
 
@@ -501,22 +525,14 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
         if ( !dbr.get() || dbr->ResultType() != eDB_RowResult ) {
             continue;
         }
-        while ( dbr->Fetch() ) {
-            for ( unsigned pos = 0; pos < dbr->NofItems(); ++pos ) {
-                const string& name = dbr->ItemName(pos);
-                if ( name != "asnout" ) {
-                    dbr->SkipItem();
-                    continue;
-                }
-                
-                AutoPtr<CDB_Result_Reader> reader
-                    (new CDB_Result_Reader(cmd, dbr));
-                AutoPtr<CRStream> stream
-                    (new CRStream(reader.release(), 0, 0, CRWStreambuf::fOwnAll));
-                AutoPtr<CObjectIStream> obj_str
-                    (new CObjectIStreamAsnBinary(*stream.release(), true));
-                return obj_str;
-            }
+        if ( sx_FetchNextItem(*dbr, "asnout") ) {
+            AutoPtr<CDB_Result_Reader> reader
+                (new CDB_Result_Reader(cmd, dbr));
+            AutoPtr<CRStream> stream
+                (new CRStream(reader.release(), 0, 0, CRWStreambuf::fOwnAll));
+            AutoPtr<CObjectIStream> obj_str
+                (new CObjectIStreamAsnBinary(*stream.release(), true));
+            return obj_str;
         }
     }
     NCBI_THROW(CLoaderException, eOtherError,

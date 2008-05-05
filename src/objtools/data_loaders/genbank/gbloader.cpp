@@ -881,14 +881,14 @@ TBlobContentsMask CGBDataLoader::x_MakeContentMask(EChoice choice) const
         // all internal annotations
         return fBlobHasIntAnnot;
     case CGBDataLoader::eExtFeatures:
-        return fBlobHasExtFeat;
+        return fBlobHasExtFeat|fBlobHasNamedFeat;
     case CGBDataLoader::eExtGraph:
-        return fBlobHasExtGraph;
+        return fBlobHasExtGraph|fBlobHasNamedGraph;
     case CGBDataLoader::eExtAlign:
-        return fBlobHasExtAlign;
+        return fBlobHasExtAlign|fBlobHasNamedAlign;
     case CGBDataLoader::eExtAnnot:
         // external annotations
-        return fBlobHasExtAnnot;
+        return fBlobHasExtAnnot|fBlobHasNamedAnnot;
     case CGBDataLoader::eOrphanAnnot:
         // orphan annotations
         return fBlobHasOrphanAnnot;

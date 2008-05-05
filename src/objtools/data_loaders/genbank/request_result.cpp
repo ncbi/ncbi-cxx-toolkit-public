@@ -392,6 +392,18 @@ void CLoadLockBlob::SetBlobVersion(TBlobVersion version)
 }
 
 
+void CLoadLockBlob::SetAnnotInfo(const TAnnotInfo& annot_info)
+{
+    m_AnnotInfo = annot_info;
+}
+
+
+const CLoadLockBlob::TAnnotInfo& CLoadLockBlob::GetAnnotInfo(void) const
+{
+    return m_AnnotInfo;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CReaderRequestResult
 /////////////////////////////////////////////////////////////////////////////

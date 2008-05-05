@@ -136,6 +136,9 @@ enum EBlobContentsMask
     fBlobHasIntGraph    = 1 << 10,
     fBlobHasExtGraph    = 1 << 11,
     fBlobHasOrphanGraph = 1 << 12,
+    fBlobHasNamedFeat   = 1 << 13,
+    fBlobHasNamedAlign  = 1 << 14,
+    fBlobHasNamedGraph  = 1 << 15,
     
     fBlobHasIntAnnot    = (fBlobHasIntFeat |
                            fBlobHasIntAlign |
@@ -143,19 +146,25 @@ enum EBlobContentsMask
     fBlobHasExtAnnot    = (fBlobHasExtFeat |
                            fBlobHasExtAlign |
                            fBlobHasExtGraph),
+    fBlobHasNamedAnnot  = (fBlobHasNamedFeat |
+                           fBlobHasNamedAlign |
+                           fBlobHasNamedGraph),
     fBlobHasOrphanAnnot = (fBlobHasOrphanFeat |
                            fBlobHasOrphanAlign |
                            fBlobHasOrphanGraph),
     fBlobHasAnyFeat     = (fBlobHasIntFeat |
                            fBlobHasExtFeat |
-                           fBlobHasOrphanFeat),
-    fBlobHasAnyAlign     = (fBlobHasIntAlign |
+                           fBlobHasOrphanFeat |
+                           fBlobHasNamedFeat),
+    fBlobHasAnyAlign    = (fBlobHasIntAlign |
                            fBlobHasExtAlign |
-                           fBlobHasOrphanAlign),
-    fBlobHasAnyGraph     = (fBlobHasIntGraph |
+                           fBlobHasOrphanAlign |
+                           fBlobHasNamedAlign),
+    fBlobHasAnyGraph    = (fBlobHasIntGraph |
                            fBlobHasExtGraph |
-                           fBlobHasOrphanGraph),
-    fBlobHasAllLocal     = (fBlobHasCore | fBlobHasDescr |
+                           fBlobHasOrphanGraph |
+                           fBlobHasNamedGraph),
+    fBlobHasAllLocal    = (fBlobHasCore | fBlobHasDescr |
                            fBlobHasSeqMap | fBlobHasSeqData |
                            fBlobHasIntAnnot),
 

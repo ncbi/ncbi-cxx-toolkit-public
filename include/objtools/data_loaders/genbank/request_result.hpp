@@ -37,6 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
 #include <util/mutex_pool.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
 #include <objtools/data_loaders/genbank/blob_id.hpp>
@@ -158,7 +159,7 @@ class CBlob_Info
 public:
     typedef TBlobContentsMask TContentsMask;
 
-    CBlob_Info(TContentsMask contents)
+    explicit CBlob_Info(TContentsMask contents)
         : m_Contents(contents)
         {
         }
@@ -446,12 +447,18 @@ public:
 
     typedef int TBlobState;
     typedef int TBlobVersion;
+    typedef list< CRef<CID2S_Seq_annot_Info> > TAnnotInfo;
 
     TBlobState GetBlobState(void) const;
     void SetBlobState(TBlobState state);
     bool IsSetBlobVersion(void) const;
     TBlobVersion GetBlobVersion(void) const;
     void SetBlobVersion(TBlobVersion);
+    void SetAnnotInfo(const TAnnotInfo& annot_info);
+    const TAnnotInfo& GetAnnotInfo(void) const;
+
+private:
+    TAnnotInfo m_AnnotInfo;
 };
 
 /*

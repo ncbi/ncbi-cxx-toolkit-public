@@ -58,7 +58,7 @@ NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Process, 1414,  7);
 NCBI_DEFINE_ERRCODE_X(Objtools_Reader_Id1, 1415,  5);
 NCBI_DEFINE_ERRCODE_X(Objtools_Reader_Id2, 1416,  1);
 NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Pubseq,  1417,  7);
-NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Pubseq2, 1418,  3);
+NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Pubseq2, 1418,  4);
 NCBI_DEFINE_ERRCODE_X(Objtools_SeqDBTax,   1419,  1);
 NCBI_DEFINE_ERRCODE_X(Objtools_SplitCache, 1420,  1);
 NCBI_DEFINE_ERRCODE_X(Objtools_Aln_Sparse, 1421,  3);

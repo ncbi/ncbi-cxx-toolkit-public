@@ -65,6 +65,7 @@ protected:
 
     virtual void x_SendPacket(TConn conn, const CID2_Request_Packet& packet);
     virtual void x_ReceiveReply(TConn conn, CID2_Reply& reply);
+    virtual void x_EndOfPacket(TConn conn);
 
     CDB_Connection& x_GetConnection(TConn conn);
     CDB_Connection* x_NewConnection(TConn conn);

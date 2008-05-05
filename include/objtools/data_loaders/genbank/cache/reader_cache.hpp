@@ -78,6 +78,8 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     static const char* GetSeq_idsSubkey(void);
     // blob_id -> blob version (1 int)
     static const char* GetBlobVersionSubkey(void);
+    // blob_id -> named annot info, binary ASN.1
+    static const char* GetBlobAnnotInfoSubkey(void);
 
     /// Return BLOB cache key string based on Sat() and SatKey()
     static string GetBlobKey(const CBlob_id& blob_id);

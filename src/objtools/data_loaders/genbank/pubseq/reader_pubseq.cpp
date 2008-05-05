@@ -47,6 +47,8 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
+#include <objects/seqsplit/ID2S_Feat_type_Info.hpp>
 
 #include <corelib/ncbicntr.hpp>
 #include <corelib/plugin_manager_impl.hpp>
@@ -272,6 +274,7 @@ CDB_Connection* CPubseqReader::x_NewConnection(TConn conn_)
         }
     }
 
+    _TRACE("CPubseqReader::NewConnection("<<m_Server<<")");
     AutoPtr<CDB_Connection> conn
         (m_Context->Connect(m_Server, m_User, m_Password, 0));
     
@@ -384,6 +387,7 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
     }}
 
     int result_count = 0;
+    int named_gi = 0;
     CConn conn(this);
     {{
         CDB_Connection* db_conn = x_GetConnection(conn);
@@ -403,6 +407,7 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                 CDB_Int satGot;
                 CDB_Int satKeyGot;
                 CDB_Int extFeatGot;
+                CDB_Int namedAnnotsGot;
 
                 _TRACE("next fetch: " << dbr->NofItems() << " items");
                 ++result_count;
@@ -431,6 +436,13 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                             _TRACE("ext_feat = "<<extFeatGot.Value());
                         }
 #endif
+                    }
+                    else if (name == "named_annots" ) {
+                        dbr->GetItem(&namedAnnotsGot);
+                        _TRACE("named_annots = "<<namedAnnotsGot.Value());
+                        if ( namedAnnotsGot.Value() ) {
+                            named_gi = giGot.Value();
+                        }
                     }
                     else {
                         dbr->SkipItem();
@@ -463,7 +475,8 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                         CBlob_id blob_id;
                         blob_id.SetSat(sat);
                         blob_id.SetSatKey(sat_key);
-                        blob_ids.AddBlob_id(blob_id, fBlobHasAllLocal);
+                        blob_ids.AddBlob_id(blob_id,
+                                            CBlob_Info(fBlobHasAllLocal));
                         if ( !extFeatGot.IsNULL() ) {
                             int ext_feat = extFeatGot.Value();
                             while ( ext_feat ) {
@@ -472,7 +485,8 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                                 blob_id.SetSat(GetAnnotSat(bit));
                                 blob_id.SetSatKey(gi);
                                 blob_id.SetSubSat(bit);
-                                blob_ids.AddBlob_id(blob_id, fBlobHasExtAnnot);
+                                blob_ids.AddBlob_id(blob_id,
+                                                    CBlob_Info(fBlobHasExtAnnot));
                             }
                         }
                     }
@@ -484,9 +498,12 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                         if ( !extFeatGot.IsNULL() ) {
                             blob_id.SetSubSat(extFeatGot.Value());
                         }
-                        blob_ids.AddBlob_id(blob_id, fBlobHasAllLocal);
+                        blob_ids.AddBlob_id(blob_id,
+                                            CBlob_Info(fBlobHasAllLocal));
                     }
-                    SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
+                    if ( !named_gi ) {
+                        SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
+                    }
                 }
 
                 if ( giGot.IsNULL() || gi == 0 ) {
@@ -505,7 +522,73 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                 }
             }
         }
+
+        cmd.reset();
+
+        if ( named_gi ) {
+            CDB_Int giIn(named_gi);
+            AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_annot_types"));
+            cmd->SetParam("@gi", &giIn);
+            cmd->Send();
+            _TRACE("id_get_annot_types "<<giIn.Value());
+            while(cmd->HasMoreResults()) {
+                AutoPtr<CDB_Result> dbr(cmd->Result());
+                if ( !dbr.get() || dbr->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+                
+                while ( dbr->Fetch() ) {
+                    CDB_Int giGot;
+                    CDB_Int satGot;
+                    CDB_Int satKeyGot;
+                    CDB_Int typeGot;
+                    CDB_VarChar nameGot;
+                    for ( unsigned pos = 0; pos < dbr->NofItems(); ++pos ) {
+                        const string& name = dbr->ItemName(pos);
+                        _TRACE("next item: " << name);
+                        if (name == "gi") {
+                            dbr->GetItem(&giGot);
+                            _TRACE("ngi: "<<giGot.Value());
+                        }
+                        else if (name == "sat" ) {
+                            dbr->GetItem(&satGot);
+                            _TRACE("nsat: "<<satGot.Value());
+                        }
+                        else if(name == "sat_key") {
+                            dbr->GetItem(&satKeyGot);
+                            _TRACE("nsat_key: "<<satKeyGot.Value());
+                        }
+                        else if(name == "type") {
+                            dbr->GetItem(&typeGot);
+                            _TRACE("ntype: "<<typeGot.Value());
+                        }
+                        else if(name == "name") {
+                            dbr->GetItem(&nameGot);
+                            _TRACE("nname: "<<nameGot.Value());
+                        }
+                        else {
+                            dbr->SkipItem();
+                        }
+                    }
+                    CBlob_id blob_id;
+                    blob_id.SetSat(satGot.Value());
+                    blob_id.SetSatKey(satKeyGot.Value());
+                    CBlob_Info info(fBlobHasNamedFeat);
+                    blob_ids.AddBlob_id(blob_id, info);
+
+                    CRef<CID2S_Feat_type_Info> feat(new CID2S_Feat_type_Info);
+                    feat->SetType(typeGot.Value());
+                    CRef<CID2S_Seq_annot_Info> annot(new CID2S_Seq_annot_Info);
+                    annot->SetName(nameGot.Value());
+                    annot->SetFeat().push_back(feat);
+                    list<CRef<CID2S_Seq_annot_Info> > annot_info(1, annot);
+                    SetAndSaveBlobAnnotInfo(result, blob_id, annot_info);
+                }
+            }
+            SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
+        }
     }}
+
     conn.Release();
     return result_count > 0;
 }
@@ -570,19 +653,31 @@ namespace {
     }
     
 
-    class CDB_Result_Reader : public IReader
+    bool sx_FetchNextItem(CDB_Result& result, const CTempString& name)
+    {
+        while ( result.Fetch() ) {
+            for ( size_t pos = 0; pos < result.NofItems(); ++pos ) {
+                if ( result.ItemName(pos) == name ) {
+                    return true;
+                }
+                result.SkipItem();
+            }
+        }
+        return false;
+    }
+    
+    class CDB_Result_Reader : public CObject, public IReader
     {
     public:
-        CDB_Result_Reader(CDB_Result* db_result)
+        CDB_Result_Reader(AutoPtr<CDB_Result> db_result)
             : m_DB_Result(db_result)
             {
             }
-    
+
         ERW_Result Read(void*   buf,
                         size_t  count,
                         size_t* bytes_read)
             {
-                _TRACE("CDB_Result_Reader::Read("<<count<<")");
                 if ( !count ) {
                     if ( bytes_read ) {
                         *bytes_read = 0;
@@ -591,11 +686,10 @@ namespace {
                 }
                 size_t ret;
                 while ( (ret = m_DB_Result->ReadItem(buf, count)) == 0 ) {
-                    _TRACE("CDB_Result_Reader::Read("<<count<<") -> Fetch");
-                    if ( !m_DB_Result->Fetch() )
+                    if ( !sx_FetchNextItem(*m_DB_Result, "asn1") ) {
                         break;
+                    }
                 }
-                _TRACE("CDB_Result_Reader::Read("<<count<<") = "<<ret);
                 if ( bytes_read ) {
                     *bytes_read = ret;
                 }
@@ -607,7 +701,7 @@ namespace {
             }
 
     private:
-        CDB_Result* m_DB_Result;
+        AutoPtr<CDB_Result> m_DB_Result;
     };
 }
 
@@ -665,26 +759,20 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
                 continue;
             }
 
-            while ( dbr->Fetch() ) {
-                _TRACE("next fetch: " << dbr->NofItems() << " items");
-                for ( unsigned pos = 0; pos < dbr->NofItems(); ++pos ) {
-                    const string& name = dbr->ItemName(pos);
-                    _TRACE("next item: " << name);
-                    if ( name == "seqid" ) {
-                        CDB_Result_Reader reader(dbr.get());
-                        CRStream stream(&reader);
-                        CObjectIStreamAsnBinary in(stream);
-                        CSeq_id id;
-                        while ( in.HaveMoreData() ) {
-                            in >> id;
-                            ids.AddSeq_id(id);
-                            ++id_count;
-                        }
-                    }
-                    else {
-                        dbr->SkipItem();
-                    }
+            if ( sx_FetchNextItem(*dbr, "seqid") ) {
+                CDB_Result_Reader reader(dbr);
+                CRStream stream(&reader);
+                CObjectIStreamAsnBinary in(stream);
+                CSeq_id id;
+                while ( in.HaveMoreData() ) {
+                    in >> id;
+                    ids.AddSeq_id(id);
+                    ++id_count;
                 }
+                if ( in.HaveMoreData() ) {
+                    ERR_POST_X(4, "CPubseqReader: extra seqid data");
+                }
+                break;
             }
         }
         if ( id_count == 0 && !not_found ) {
@@ -705,7 +793,11 @@ void CPubseqReader::GetBlobVersion(CReaderRequestResult& result,
             CDB_Connection* db_conn = x_GetConnection(conn);
             AutoPtr<I_BaseCmd> cmd
                 (x_SendRequest2(blob_id, db_conn, RPC_GET_BLOB_INFO));
-            x_ReceiveData(result, blob_id, *cmd, false);
+            pair<AutoPtr<CDB_Result>, int> dbr
+                (x_ReceiveData(result, blob_id, *cmd, false));
+            if ( dbr.first ) {
+                ERR_POST_X(5, "CPubseqReader: unexpected blob data");
+            }
         }}
         conn.Release();
         if ( !blob_id.IsMainBlob() ) {
@@ -736,7 +828,7 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
         pair<AutoPtr<CDB_Result>, int> dbr
             (x_ReceiveData(result, blob_id, *cmd, true));
         if ( dbr.first ) {
-            CDB_Result_Reader reader(dbr.first.get());
+            CDB_Result_Reader reader(dbr.first);
             CRStream stream(&reader);
             CProcessor::EType processor_type;
             if ( blob_id.GetSubSat() == eSubSat_SNP ) {
@@ -746,19 +838,19 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
                 processor_type = CProcessor::eType_Seq_entry;
             }
             if ( dbr.second & fZipType_gzipped ) {
-                //LOG_POST_X(4, "Compressed blob: " << blob_id.ToString());
                 CCompressionIStream unzip(stream,
                                           new CZipStreamDecompressor,
                                           CCompressionIStream::fOwnProcessor);
                 m_Dispatcher->GetProcessor(processor_type)
                     .ProcessStream(result, blob_id, chunk_id, unzip);
-                //LOG_POST_X(5, "Compressed blob: " << blob_id.ToString() << " read.");
             }
             else {
-                //LOG_POST_X(6, "Non-compressed blob: " << blob_id.ToString());
                 m_Dispatcher->GetProcessor(processor_type)
                     .ProcessStream(result, blob_id, chunk_id, stream);
-                //LOG_POST_X(7, "Non-compressed blob: " << blob_id.ToString() << " read.");
+            }
+            char buf[1];
+            if ( stream.read(buf, 1) || stream.gcount() ) {
+                ERR_POST_X(6, "CPubseqReader: extra blob data");
             }
         }
         else {

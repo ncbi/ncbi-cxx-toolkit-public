@@ -50,6 +50,7 @@
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_id.hpp>
+#include <objects/seq/Textannot_id.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seqtable/seqtable__.hpp>
@@ -195,8 +196,23 @@ const CAnnotName& CSeq_annot_Info::GetName(void) const
 
 void CSeq_annot_Info::x_UpdateName(void)
 {
-    if ( m_Object->IsSetDesc() ) {
-        ITERATE( CSeq_annot::TDesc::Tdata, it, m_Object->GetDesc().Get() ) {
+    const CSeq_annot& annot = *m_Object;
+    if ( annot.IsSetId() ) {
+        const CSeq_annot::TId& ids = annot.GetId();
+        ITERATE ( CSeq_annot::TId, it, ids ) {
+            const CAnnot_id& id = **it;
+            if ( id.IsOther() ) {
+                const CTextannot_id& text_id = id.GetOther();
+                if ( text_id.IsSetAccession() ) {
+                    m_Name.SetNamed(text_id.GetAccession());
+                    return;
+                }
+            }
+        }
+    }
+    if ( annot.IsSetDesc() ) {
+        const CSeq_annot::TDesc::Tdata& descs = annot.GetDesc().Get();
+        ITERATE( CSeq_annot::TDesc::Tdata, it, descs ) {
             const CAnnotdesc& desc = **it;
             if ( desc.Which() == CAnnotdesc::e_Name ) {
                 m_Name.SetNamed(desc.GetName());

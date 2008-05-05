@@ -421,7 +421,7 @@ void CId1Reader::GetSeq_idBlob_ids(CReaderRequestResult& result,
                     blob_id.SetSat(iter->second.first);
                     blob_id.SetSatKey(num);
                     blob_id.SetSubSat(iter->second.second);
-                    ids.AddBlob_id(blob_id, fBlobHasAllLocal);
+                    ids.AddBlob_id(blob_id, CBlob_Info(fBlobHasAllLocal));
                     SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
                     return;
                 }
@@ -517,7 +517,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         CBlob_id blob_id;
         blob_id.SetSat(kSat_BlobError);
         blob_id.SetSatKey(gi);
-        ids.AddBlob_id(blob_id, 0);
+        ids.AddBlob_id(blob_id, CBlob_Info(0));
         CTSE_Info::TBlobState state = CBioseq_Handle::fState_other_error|
                                       CBioseq_Handle::fState_no_data;
         if ( id1_reply.IsError() ) {
@@ -545,7 +545,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         CBlob_id blob_id;
         blob_id.SetSat(kSat_BlobError);
         blob_id.SetSatKey(gi);
-        ids.AddBlob_id(blob_id, 0);
+        ids.AddBlob_id(blob_id, CBlob_Info(0));
         ids->SetState(CBioseq_Handle::fState_withdrawn|
                       CBioseq_Handle::fState_no_data);
         SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
@@ -555,7 +555,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         CBlob_id blob_id;
         blob_id.SetSat(kSat_BlobError);
         blob_id.SetSatKey(gi);
-        ids.AddBlob_id(blob_id, 0);
+        ids.AddBlob_id(blob_id, CBlob_Info(0));
         ids->SetState(CBioseq_Handle::fState_confidential|
                       CBioseq_Handle::fState_no_data);
         SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
@@ -566,7 +566,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         CBlob_id blob_id;
         blob_id.SetSat(kSat_BlobError);
         blob_id.SetSatKey(gi);
-        ids.AddBlob_id(blob_id, 0);
+        ids.AddBlob_id(blob_id, CBlob_Info(0));
         ids->SetState(CBioseq_Handle::fState_other_error|
                       CBioseq_Handle::fState_no_data);
         SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
@@ -578,7 +578,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
             CBlob_id blob_id;
             blob_id.SetSat(info.GetSat());
             blob_id.SetSatKey(info.GetSat_key());
-            ids.AddBlob_id(blob_id, fBlobHasAllLocal);
+            ids.AddBlob_id(blob_id, CBlob_Info(fBlobHasAllLocal));
         }}
         if ( info.IsSetExtfeatmask() ) {
             int ext_feat = info.GetExtfeatmask();
@@ -589,7 +589,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
                 blob_id.SetSat(GetAnnotSat(bit));
                 blob_id.SetSatKey(gi);
                 blob_id.SetSubSat(bit);
-                ids.AddBlob_id(blob_id, fBlobHasExtAnnot);
+                ids.AddBlob_id(blob_id, CBlob_Info(fBlobHasExtAnnot));
             }
         }
     }
@@ -601,7 +601,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         if ( info.IsSetExtfeatmask() ) {
             blob_id.SetSubSat(info.GetExtfeatmask());
         }
-        ids.AddBlob_id(blob_id, fBlobHasAllLocal);
+        ids.AddBlob_id(blob_id, CBlob_Info(fBlobHasAllLocal));
     }
     SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
 }

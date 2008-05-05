@@ -33,6 +33,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/plugin_manager.hpp>
+#include <objtools/data_loaders/genbank/request_result.hpp>
 #include <util/cache/icache.hpp>
 #include <vector>
 #include <list>
@@ -82,6 +83,10 @@ public:
     virtual void SaveBlobVersion(CReaderRequestResult& result,
                                  const TBlobId& blob_id,
                                  TBlobVersion version) = 0;
+    typedef CLoadLockBlob::TAnnotInfo TAnnotInfo;
+    virtual void SaveBlobAnnotInfo(CReaderRequestResult& result,
+                                   const TBlobId& blob_id,
+                                   const TAnnotInfo& annot_info) = 0;
 
     class NCBI_XREADER_EXPORT CBlobStream : public CObject {
     public:

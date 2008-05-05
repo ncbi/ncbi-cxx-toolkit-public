@@ -119,6 +119,12 @@ const char* SCacheInfo::GetBlobVersionSubkey(void)
 }
 
 
+const char* SCacheInfo::GetBlobAnnotInfoSubkey(void)
+{
+    return "named";
+}
+
+
 string SCacheInfo::GetBlobSubkey(int chunk_id)
 {
     if ( chunk_id == kMain_ChunkId )
@@ -407,13 +413,41 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
         return false;
     }
 
+    for ( size_t i = IDS_HSIZE; i < data.size(); i += IDS_SIZE ) {
+        CBlob_id id;
+        id.SetSat(data[i+0]);
+        id.SetSubSat(data[i+1]);
+        id.SetSatKey(data[i+2]);
+        int content_mask = data[i+3];
+        if ( content_mask & fBlobHasNamedAnnot ) {
+            CConn conn(this);
+            auto_ptr<IReader> reader
+                (m_IdCache->GetReadStream(GetBlobKey(id), 0,
+                                          GetBlobAnnotInfoSubkey()));
+            if ( !reader.get() ) {
+                conn.Release();
+                return false;
+            }
+            TAnnotInfo annot_info;
+            CRStream r_stream(reader.get());
+            CObjectIStreamAsnBinary obj_stream(r_stream);
+            while ( obj_stream.HaveMoreData() ) {
+                CRef<CID2S_Seq_annot_Info> type(new CID2S_Seq_annot_Info);
+                obj_stream >> *type;
+                annot_info.push_back(type);
+            }
+            SetAndSaveBlobAnnotInfo(result, id, annot_info);
+        }
+    }
+
     ids->SetState(data[1]);
     for ( size_t i = IDS_HSIZE; i < data.size(); i += IDS_SIZE ) {
         CBlob_id id;
         id.SetSat(data[i+0]);
         id.SetSubSat(data[i+1]);
         id.SetSatKey(data[i+2]);
-        ids.AddBlob_id(id, data[i+3]);
+        int content_mask = data[i+3];
+        ids.AddBlob_id(id, CBlob_Info(content_mask));
     }
     ids.SetLoaded();
     return true;

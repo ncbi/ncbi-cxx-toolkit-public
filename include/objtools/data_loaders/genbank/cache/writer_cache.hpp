@@ -64,6 +64,9 @@ public:
     virtual void SaveBlobVersion(CReaderRequestResult& result,
                                  const TBlobId& blob_id,
                                  TBlobVersion version);
+    virtual void SaveBlobAnnotInfo(CReaderRequestResult& result,
+                                   const TBlobId& blob_id,
+                                   const TAnnotInfo& annot_info);
 
     virtual CRef<CBlobStream> OpenBlobStream(CReaderRequestResult& result,
                                              const TBlobId& blob_id,

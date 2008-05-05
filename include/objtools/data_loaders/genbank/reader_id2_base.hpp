@@ -133,6 +133,7 @@ protected:
 
     virtual void x_SendPacket(TConn conn, const CID2_Request_Packet& packet)=0;
     virtual void x_ReceiveReply(TConn conn, CID2_Reply& reply) = 0;
+    virtual void x_EndOfPacket(TConn conn);
 
     void x_SetResolve(CID2_Request_Get_Blob_Id& get_blob_id,
                       const CSeq_id& seq_id);

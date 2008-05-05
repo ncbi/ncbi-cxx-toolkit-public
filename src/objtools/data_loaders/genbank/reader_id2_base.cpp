@@ -137,7 +137,8 @@ LimitChunksRequests(size_t max_request_size = GetMaxChunksRequestSize())
 struct SId2BlobInfo
 {
     CId2ReaderBase::TContentsMask m_ContentMask;
-    list< CRef<CID2S_Seq_annot_Info> > m_AnnotInfo;
+    typedef list< CRef<CID2S_Seq_annot_Info> > TAnnotInfo;
+    TAnnotInfo m_AnnotInfo;
 };
 
 
@@ -802,7 +803,8 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
                 }
             }
             if ( GetDebugLevel() >= eTraceBlob ) {
-                for ( CTypeIterator<CID2_Reply_Data> it(Begin(reply)); it; ++it ) {
+                for ( CTypeConstIterator<CID2_Reply_Data> it(Begin(reply));
+                      it; ++it ) {
                     if ( it->IsSetData() ) {
                         CProcessor_ID2::DumpDataAsText(*it, NcbiCout);
                     }
@@ -833,6 +835,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
                 --remaining_count;
             }
         }
+        x_EndOfPacket(conn);
     }
     catch ( ... ) {
         if ( GetDebugLevel() >= eTraceError ) {
@@ -842,6 +845,12 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
         throw;
     }
     conn.Release();
+}
+
+
+void CId2ReaderBase::x_EndOfPacket(TConn /*conn*/)
+{
+    // do nothing by default
 }
 
 
@@ -861,7 +870,12 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
         }
         ids->SetState(it->second.first);
         ITERATE ( SId2LoadedSet::TBlob_ids, it2, it->second.second ) {
-            ids.AddBlob_id(it2->first, it2->second.m_ContentMask);
+            CBlob_Info blob_info(it2->second.m_ContentMask);
+            ids.AddBlob_id(it2->first, blob_info);
+            if ( !it2->second.m_AnnotInfo.empty() ) {
+                SetAndSaveBlobAnnotInfo(result, it2->first,
+                                        it2->second.m_AnnotInfo);
+            }
         }
         SetAndSaveSeq_idBlob_ids(result, it->first, ids);
     }
@@ -1229,10 +1243,11 @@ void CId2ReaderBase::x_ProcessGetBlobId(
         }
     }}
     SId2BlobInfo& blob_info = ids.second[blob_id];
-    blob_info.m_ContentMask = mask;
     if ( reply.IsSetAnnot_info() ) {
+        mask = fBlobHasNamedFeat;
         blob_info.m_AnnotInfo = reply.GetAnnot_info();
     }
+    blob_info.m_ContentMask = mask;
     if ( src_blob_id.IsSetVersion() && src_blob_id.GetVersion() > 0 ) {
         SetAndSaveBlobVersion(result, blob_id, src_blob_id.GetVersion());
     }

@@ -293,6 +293,46 @@ void CCacheWriter::SaveBlobVersion(CReaderRequestResult& /*result*/,
 }
 
 
+void CCacheWriter::SaveBlobAnnotInfo(CReaderRequestResult& /*result*/,
+                                     const TBlobId& blob_id,
+                                     const TAnnotInfo& annot_info)
+{
+    if( !m_IdCache ) {
+        return;
+    }
+
+    try {
+        auto_ptr<IWriter> writer
+            (m_IdCache->GetWriteStream(GetBlobKey(blob_id), 0,
+                                       GetBlobAnnotInfoSubkey()));
+        if ( !writer.get() ) {
+            return;
+        }
+
+        {{
+            CWStream w_stream(writer.get());
+            CObjectOStreamAsnBinary obj_stream(w_stream);
+            ITERATE ( TAnnotInfo, it, annot_info ) {
+                obj_stream << **it;
+            }
+        }}
+
+        writer.reset();
+    }
+    catch ( ... ) {
+        // In case of an error we need to remove incomplete data
+        // from the cache.
+        try {
+            m_IdCache->Remove(GetBlobKey(blob_id));
+        }
+        catch ( exception& /*exc*/ ) {
+            // ignored
+        }
+        // ignore cache write error - it doesn't affect application
+    }
+}
+
+
 class CCacheBlobStream : public CWriter::CBlobStream
 {
 public:

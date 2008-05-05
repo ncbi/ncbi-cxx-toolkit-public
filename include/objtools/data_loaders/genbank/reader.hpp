@@ -33,6 +33,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbitime.hpp>
 #include <util/cache/icache.hpp>
+#include <objtools/data_loaders/genbank/request_result.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
@@ -148,6 +149,14 @@ public:
                           const TBlobId& blob_id,
                           TChunkId chunk_id,
                           CLoadLockBlob& blob);
+    typedef CLoadLockBlob::TAnnotInfo TAnnotInfo;
+    void SetAndSaveBlobAnnotInfo(CReaderRequestResult& result,
+                                 const TBlobId& blob_id,
+                                 const TAnnotInfo& info) const;
+    void SetAndSaveBlobAnnotInfo(CReaderRequestResult& result,
+                                 const TBlobId& blob_id,
+                                 CLoadLockBlob& blob,
+                                 const TAnnotInfo& info) const;
 
     int SetMaximumConnections(int max);
     int GetMaximumConnections(void) const;

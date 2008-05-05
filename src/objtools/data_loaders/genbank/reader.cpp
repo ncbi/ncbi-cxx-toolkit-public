@@ -519,6 +519,15 @@ void CReader::SetAndSaveBlobVersion(CReaderRequestResult& result,
 }
 
 
+void CReader::SetAndSaveBlobAnnotInfo(CReaderRequestResult& result,
+                                      const TBlobId& blob_id,
+                                      const TAnnotInfo& annot_info) const
+{
+    CLoadLockBlob blob(result, blob_id);
+    SetAndSaveBlobAnnotInfo(result, blob_id, blob, annot_info);
+}
+
+
 void CReader::SetAndSaveStringSeq_ids(CReaderRequestResult& result,
                                       const string& seq_id,
                                       CLoadLockSeq_ids& seq_ids) const
@@ -635,6 +644,19 @@ void CReader::SetAndSaveBlobVersion(CReaderRequestResult& result,
     CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
     if( writer ) {
         writer->SaveBlobVersion(result, blob_id, version);
+    }
+}
+
+
+void CReader::SetAndSaveBlobAnnotInfo(CReaderRequestResult& result,
+                                      const TBlobId& blob_id,
+                                      CLoadLockBlob& blob,
+                                      const TAnnotInfo& annot_info) const
+{
+    blob.SetAnnotInfo(annot_info);
+    CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
+    if( writer ) {
+        writer->SaveBlobAnnotInfo(result, blob_id, annot_info);
     }
 }
 
