@@ -36,45 +36,25 @@
 #include <util/utf8.hpp>
 #include <util/sgml_entity.hpp>
 
+// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
+#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
+#  undef numeric_limits
+#endif
+
+#define BOOST_AUTO_TEST_MAIN
+#include <boost/test/auto_unit_test.hpp>
+#ifndef BOOST_AUTO_TEST_CASE
+#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
+#endif
+
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
-
-class CTestUtf8 : public CNcbiApplication
+BOOST_AUTO_TEST_CASE(TestUtf8)
 {
-public:
-    void Init(void);
-    int Run(void);
-    void TestUtf8(void);
-    void TestSgml(void);
-};
-
-
-void CTestUtf8::Init(void)
-{
-    SetDiagPostLevel(eDiag_Warning);
-
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
-
-    d->SetUsageContext("test_utf8",
-                       "test UTF-8 converter");
-    SetupArgDescriptions(d.release());
-}
-
-// Run test
-
-int CTestUtf8::Run(void)
-{
-    TestUtf8();
-    TestSgml();
-    NcbiCout << NcbiEndl << NcbiEndl;
-    return 0;
-}
-
-void CTestUtf8::TestUtf8(void)
-{
-    const char* sTest[]={
+    const size_t MAX_TEST_NUM = 6;
+    const char* sTest[MAX_TEST_NUM]={
           "Archiv für Gynäkologie",
           "Phillip Journal für restaurative Zahnmedizin.",
           "Revista odontológica.",
@@ -82,13 +62,23 @@ void CTestUtf8::TestUtf8(void)
           "Zhōnghuá zhŏngliú zázhì",
           "Biokhimii\357\270\240a\357\270\241"
     };
-    const size_t MAX_TEST_NUM = 6;
+    const char* sResult[MAX_TEST_NUM]={
+        "Archiv fur Gynakologie",
+        "Phillip Journal fur restaurative Zahnmedizin.",
+        "Revista odontologica.",
+        "Veterinarni medicina.",
+        "Zhonghua zhongliu zazhi",
+        "Biokhimiia"
+    };
     string sRes;
-    string s;
+    string s, res;
     vector<long> v;
     utf8::EConversionStatus stat;
     char ch;
     size_t len;
+    long vres[] = {
+        90, 104, 333, 110, 103, 104, 117, 225, 32, 122, 104, 335, 110, 103,
+        108, 105, 250, 32, 122, 225, 122, 104, 236};
     
 
     // Start passes
@@ -99,7 +89,8 @@ void CTestUtf8::TestUtf8(void)
     for (size_t i=0; i<MAX_TEST_NUM; i++)
     {
         sRes=utf8::StringToAscii(sTest[i]);
-        NcbiCout << sTest[i] << "\t -> " << sRes << NcbiEndl;
+        BOOST_CHECK_EQUAL(sRes, sResult[i]);
+//        NcbiCout << sTest[i] << "\t -> " << sRes << NcbiEndl;
     }
 
     //-----------------------------------
@@ -108,15 +99,40 @@ void CTestUtf8::TestUtf8(void)
     for (size_t i=0; i<MAX_TEST_NUM; i++)
     {
         s=sTest[i]; 
+        res = sResult[i];
         NcbiCout << s << "\n" << NcbiEndl;
 
-        for (size_t j=0; j<s.size(); )
+        size_t j=0, r=0;
+        for (; j<s.size(); )
         {
             ch=utf8::StringToChar(s.data()+j, &len, false, &stat);
-            NcbiCout << s[j] << " (len = "<<len<<")\t - result "
-                     << ch << ", status " << stat << NcbiEndl;
+//            NcbiCout << s[j] << " (len = "<<len<<")\t - result "
+//                     << ch << ", status " << stat << NcbiEndl;
+            if (len == 1) {
+                if (r < res.size()) {
+                    BOOST_CHECK_EQUAL(ch,res[r]);
+                } else {
+                    BOOST_CHECK(r < res.size());
+                    break;
+                }
+                BOOST_CHECK_EQUAL(stat,utf8::eSuccess);
+            } else if (len >= 2) {
+                BOOST_CHECK_EQUAL(ch,utf8::kOutrangeChar);
+                BOOST_CHECK_EQUAL(stat,utf8::eOutrangeChar);
+            } else {
+                BOOST_CHECK(len > 0);
+                break;
+            }
             j+=len;
+            ++r;
+
+// Only for this input data, when len = 3, we should not increment r
+            if (len > 2) {
+                --r;
+            }
         }
+        BOOST_CHECK_EQUAL(j, s.size());
+        BOOST_CHECK_EQUAL(r, res.size());
         NcbiCout << "----" << NcbiEndl;
     }
 
@@ -126,14 +142,15 @@ void CTestUtf8::TestUtf8(void)
     v=utf8::StringToVector(sTest[4]);    
     for (size_t i=0; i<v.size(); i++)
     {
-        NcbiCout << v[i] << ' ';
+//        NcbiCout << v[i] << ' ';
+        BOOST_CHECK_EQUAL(v[i],vres[i]);
     }
 
     //-----------------------------------
 }
 
 
-void CTestUtf8::TestSgml(void)
+BOOST_AUTO_TEST_CASE(TestSgml)
 {
     const size_t MAX_TEST_NUM = 4;
     const char* sTest[MAX_TEST_NUM]={
@@ -155,13 +172,7 @@ void CTestUtf8::TestSgml(void)
     for (size_t i=0; i<MAX_TEST_NUM; i++)
     {
         string sRes = Sgml2Ascii(sTest[i]);
-        NcbiCout << sTest[i] << " -> " << sRes << NcbiEndl;
-        _ASSERT(sRes == sResult[i]);
+//        NcbiCout << sTest[i] << " -> " << sRes << NcbiEndl;
+        BOOST_CHECK_EQUAL(sRes, sResult[i]);
     }
-}
-
-
-int main(int argc, const char* argv[])
-{
-    return CTestUtf8().AppMain(argc, argv);
 }
