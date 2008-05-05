@@ -1414,109 +1414,104 @@ namespace NWinHook
                 return TRUE;
             }
         }
-        __try {
 
-            // Get the address of the module's import section
-            PIMAGE_IMPORT_DESCRIPTOR pImportDesc =
-                static_cast<PIMAGE_IMPORT_DESCRIPTOR>
-                    (CPEi386::GetInstance().GetIAT(hmodCaller,
-                                                   IMAGE_DIRECTORY_ENTRY_IMPORT));
+        // Get the address of the module's import section
+        PIMAGE_IMPORT_DESCRIPTOR pImportDesc =
+            static_cast<PIMAGE_IMPORT_DESCRIPTOR>
+                (CPEi386::GetInstance().GetIAT(hmodCaller,
+                                               IMAGE_DIRECTORY_ENTRY_IMPORT));
 
-            // Does this module has import section ?
-            if (pImportDesc == NULL) {
-                // There is no import section, but that is OK.
-                bResult = TRUE;
-                __leave;
-            }
-
-            // Loop through all descriptors and
-            // find the import descriptor containing references to callee's functions
-            // Get import descriptor for a given pszCalleeModName (allee's module name)
-            while (pImportDesc->Name) {
-                PSTR pszModName = (PSTR)((PBYTE) hmodCaller + pImportDesc->Name);
-                if (stricmp(pszModName, pszCalleeModName) == 0) {
-                    break;   // Found
-                }
-                pImportDesc++;
-            }
-
-            // Does this module import any functions from this callee ?
-            if (pImportDesc->Name == 0) {
-                // This module doesn't import anything from "pszCalleeModName".
-                // No problem. We can live with that.
-                bResult = TRUE;
-                __leave;
-            }
-
-
-            // We have import descriptor. Let's get a function.
-
-
-            // Get caller's IAT
-            PIMAGE_THUNK_DATA pThunk =
-            (PIMAGE_THUNK_DATA)( (PBYTE) hmodCaller + pImportDesc->FirstThunk );
-
-            // Replace current function address with new one
-            while (pThunk->u1.Function) {
-                // Get the address of the function address
-                PROC* ppfn = (PROC*) &pThunk->u1.Function;
-                // Is this the function we're looking for?
-                // !!! It can be hoocked by others ... !!!
-                BOOL bFound = (*ppfn == pfnCurrent);
-                // Is this Windows 9x
-                if (!bFound && (*ppfn > sm_pvMaxAppAddr)) {
-                    PBYTE pbInFunc = (PBYTE) *ppfn;
-
-                    // Is this a wrapper (debug thunk) represented by PUSH instruction?
-                    if (pbInFunc[0] == cPushOpCode) {
-                        ppfn = (PROC*) &pbInFunc[1];
-                        // Is this the function we're looking for?
-                        bFound = (*ppfn == pfnCurrent);
-                    }
-                }
-
-                if (bFound) {
-                    MEMORY_BASIC_INFORMATION mbi;
-                    ::VirtualQuery(ppfn, &mbi, sizeof(MEMORY_BASIC_INFORMATION));
-                    // In order to provide writable access to this part of the
-                    // memory we need to change the memory protection
-                    if (::VirtualProtect(mbi.BaseAddress,
-                                         mbi.RegionSize,
-                                         // Use copy-on-write protection
-                                         // PAGE_WRITECOPY,
-                                         PAGE_READWRITE,
-                                         &mbi.Protect) == FALSE
-                       ) {
-                        __leave;
-                    }
-
-                    // Hook the function.
-                    *ppfn = *pfnNew;
-
-                    // Restore the protection back
-                    DWORD dwOldProtect;
-                    ::VirtualProtect(mbi.BaseAddress,
-                                     mbi.RegionSize,
-                                     mbi.Protect,
-                                     &dwOldProtect
-                                     );
-
-                    bResult = TRUE;
-
-                    if (bHookOrRestore) {
-                        m_HookedModuleSet.insert(hmodCaller);
-                    } else {
-                        m_HookedModuleSet.erase(hmodCaller);
-                    }
-
-                    break;
-                }
-
-                pThunk++;
-            }
+        // Does this module has import section ?
+        if (pImportDesc == NULL) {
+            // There is no import section, but that is OK.
+            bResult = TRUE;
+            return bResult;
         }
-        __finally {
-            // do nothing
+
+        // Loop through all descriptors and
+        // find the import descriptor containing references to callee's functions
+        // Get import descriptor for a given pszCalleeModName (allee's module name)
+        while (pImportDesc->Name) {
+            PSTR pszModName = (PSTR)((PBYTE) hmodCaller + pImportDesc->Name);
+            if (stricmp(pszModName, pszCalleeModName) == 0) {
+                break;   // Found
+            }
+            pImportDesc++;
+        }
+
+        // Does this module import any functions from this callee ?
+        if (pImportDesc->Name == 0) {
+            // This module doesn't import anything from "pszCalleeModName".
+            // No problem. We can live with that.
+            bResult = TRUE;
+            return bResult;
+        }
+
+
+        // We have import descriptor. Let's get a function.
+
+
+        // Get caller's IAT
+        PIMAGE_THUNK_DATA pThunk =
+        (PIMAGE_THUNK_DATA)( (PBYTE) hmodCaller + pImportDesc->FirstThunk );
+
+        // Replace current function address with new one
+        while (pThunk->u1.Function) {
+            // Get the address of the function address
+            PROC* ppfn = (PROC*) &pThunk->u1.Function;
+            // Is this the function we're looking for?
+            // !!! It can be hoocked by others ... !!!
+            BOOL bFound = (*ppfn == pfnCurrent);
+            // Is this Windows 9x
+            if (!bFound && (*ppfn > sm_pvMaxAppAddr)) {
+                PBYTE pbInFunc = (PBYTE) *ppfn;
+
+                // Is this a wrapper (debug thunk) represented by PUSH instruction?
+                if (pbInFunc[0] == cPushOpCode) {
+                    ppfn = (PROC*) &pbInFunc[1];
+                    // Is this the function we're looking for?
+                    bFound = (*ppfn == pfnCurrent);
+                }
+            }
+
+            if (bFound) {
+                MEMORY_BASIC_INFORMATION mbi;
+                ::VirtualQuery(ppfn, &mbi, sizeof(MEMORY_BASIC_INFORMATION));
+                // In order to provide writable access to this part of the
+                // memory we need to change the memory protection
+                if (::VirtualProtect(mbi.BaseAddress,
+                                     mbi.RegionSize,
+                                     // Use copy-on-write protection
+                                     // PAGE_WRITECOPY,
+                                     PAGE_READWRITE,
+                                     &mbi.Protect) == FALSE
+                   ) {
+                    return bResult;
+                }
+
+                // Hook the function.
+                *ppfn = *pfnNew;
+
+                // Restore the protection back
+                DWORD dwOldProtect;
+                ::VirtualProtect(mbi.BaseAddress,
+                                 mbi.RegionSize,
+                                 mbi.Protect,
+                                 &dwOldProtect
+                                 );
+
+                bResult = TRUE;
+
+                if (bHookOrRestore) {
+                    m_HookedModuleSet.insert(hmodCaller);
+                } else {
+                    m_HookedModuleSet.erase(hmodCaller);
+                }
+
+                break;
+            }
+
+            pThunk++;
         }
 
         // This function is not in the caller's import section
