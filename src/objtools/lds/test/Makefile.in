@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+APP_PROJ = lds_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
