@@ -15397,14 +15397,16 @@ CTestArguments::GetServerType(void) const
     } else if ( NStr::CompareNocase(GetServerName(), 0, 7, "MSSQL67") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 7, "MSSQL79") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 7, "MSSQL82") == 0
+                // || NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
+                || NStr::CompareNocase(GetServerName(), 0, 5, "MSDEV") == 0
+                || NStr::CompareNocase(GetServerName(), "MS_TEST") == 0
                 ) {
         return eMsSql2005;
-    } else if (NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
-                || NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
-                || NStr::CompareNocase(GetServerName(), 0, 5, "MSDEV") == 0
+    } else if ( NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 7, "OAMSDEV") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0
-                || NStr::CompareNocase(GetServerName(), "MS_TEST") == 0
+                || NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
+                // || NStr::CompareNocase(GetServerName(), 0, 5, "MSDEV") == 0
                 ) {
         return eMsSql;
     }
