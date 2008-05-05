@@ -70,14 +70,14 @@ namespace NWinHook
         /// Sets Full path and filename of the executable file for the process or DLL
         void    SetName(char *pszName);
         /// Returns module handle
-        HMODULE GetModule(void) const;
-        void    SetModule(HMODULE module);
+        HMODULE GetHandle(void) const;
+        void    SetHandle(HMODULE handle);
         /// Returns only the filename of the executable file for the process or DLL
         char*   GetBaseName(void) const;
 
     private:
         char*   m_pszName;
-        HMODULE m_hModule;
+        HMODULE m_ModuleHandle;
 
     protected:
         typedef vector<CModuleInstance*> TInternalList;
@@ -98,7 +98,7 @@ namespace NWinHook
         virtual BOOL PopulateModules(CModuleInstance* pProcess) = 0;
         virtual BOOL PopulateProcess(DWORD dwProcessId, BOOL bPopulateModules) = 0;
         CExeModuleInstance* GetExeModuleInstance(void) const {
-            return (m_pProcess.get());
+            return m_pProcess.get();
         }
 
     protected:
@@ -232,7 +232,8 @@ namespace NWinHook
                         );
         ~CHookedFunction(void);
 
-        HMODULE GetCalleeMod(void) const;
+    public:
+        HMODULE GetCalleeModHandle(void) const;
         PCSTR GetCalleeModName(void) const;
         PCSTR GetFuncName(void) const;
         PROC GetPfnHook(void) const;
@@ -242,7 +243,8 @@ namespace NWinHook
         /// Restore the original API handler
         BOOL UnHookImport(void);
         /// Replace the address of the function in the IAT of a specific module
-        BOOL ReplaceInOneModule(PCSTR   pszCalleeModName,
+        BOOL ReplaceInOneModule(bool    bHookOrRestore,
+                                PCSTR   pszCalleeModName,
                                 PROC    pfnCurrent,
                                 PROC    pfnNew,
                                 HMODULE hmodCaller
@@ -251,23 +253,27 @@ namespace NWinHook
         BOOL IsMandatory(void);
 
     private:
+        typedef set<HMODULE> TModuleSet;
+
         BOOL    m_bHooked;
-        HMODULE m_CalleeMod;
+        HMODULE m_CalleeModHandle;
         char    m_szCalleeModName[MAX_PATH];
         char    m_szFuncName[MAX_PATH];
         PROC    m_pfnOrig;
         PROC    m_pfnHook;
         /// Maximum private memory address
         static  PVOID   sm_pvMaxAppAddr;
+        /// Set of hoocked modules
+        TModuleSet      m_HookedModuleSet;
 
         /// Perform actual replacing of function pointers
-        BOOL DoHook(BOOL bHookOrRestore,
+        BOOL DoHook(bool bHookOrRestore,
                     PROC pfnCurrent,
                     PROC pfnNew
                     );
 
         /// Replace the address of a imported function entry  in all modules
-        BOOL ReplaceInAllModules(BOOL   bHookOrRestore,
+        BOOL ReplaceInAllModules(bool   bHookOrRestore,
                                  PCSTR  pszCalleeModName,
                                  PROC   pfnCurrent,
                                  PROC   pfnNew
@@ -553,15 +559,19 @@ namespace NWinHook
         PROC    pfnCreateToolhelp32Snapshot;
 
         hModToolHelp = g_LoadLibraryA("KERNEL32.DLL");
+
         if (hModToolHelp != NULL) {
-            pfnCreateToolhelp32Snapshot = ::GetProcAddress(hModToolHelp,
-                             "CreateToolhelp32Snapshot"
-                             );
+            pfnCreateToolhelp32Snapshot = ::GetProcAddress(
+                hModToolHelp,
+                "CreateToolhelp32Snapshot"
+                );
+
             bResult = (pfnCreateToolhelp32Snapshot != NULL);
+
             ::FreeLibrary(hModToolHelp);
         }
 
-        return (bResult);
+        return bResult;
     }
 
 
@@ -576,7 +586,7 @@ namespace NWinHook
             ::FreeLibrary(hModPSAPI);
         }
 
-        return (bResult);
+        return bResult;
     }
 
     static HMODULE ModuleFromAddress(PVOID pv)
@@ -708,10 +718,9 @@ namespace NWinHook
     ////////////////////////////////////////////////////////////////////////////
     CModuleInstance::CModuleInstance(char *pszName, HMODULE hModule):
     m_pszName(NULL),
-    m_hModule(NULL)
+    m_ModuleHandle(hModule)
     {
         SetName(pszName);
-        SetModule(hModule);
     }
 
     CModuleInstance::~CModuleInstance(void)
@@ -772,14 +781,14 @@ namespace NWinHook
 
     }
 
-    HMODULE CModuleInstance::GetModule() const
+    HMODULE CModuleInstance::GetHandle(void) const
     {
-        return (m_hModule);
+        return m_ModuleHandle;
     }
 
-    void CModuleInstance::SetModule(HMODULE module)
+    void CModuleInstance::SetHandle(HMODULE handle)
     {
-        m_hModule = module;
+        m_ModuleHandle = handle;
     }
 
 
@@ -874,12 +883,12 @@ namespace NWinHook
 
         }
 
-        bResult =
-        m_pfnEnumProcesses
-        &&  m_pfnEnumProcessModules
-        &&  m_pfnGetModuleFileNameExA;
+        bResult
+            =  m_pfnEnumProcesses
+            && m_pfnEnumProcessModules
+            && m_pfnGetModuleFileNameExA;
 
-        return (bResult);
+        return bResult;
     }
 
     void CPsapiHandler::Finalize(void)
@@ -969,7 +978,7 @@ namespace NWinHook
         else {
             bResult = FALSE;
         }
-        return (bResult);
+        return bResult;
     }
 
 
@@ -1033,7 +1042,7 @@ namespace NWinHook
         else {
             bResult = FALSE;
         }
-        return (bResult);
+        return bResult;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1077,7 +1086,7 @@ namespace NWinHook
                       m_pfnModule32Next;
         }
 
-        return (bResult);
+        return bResult;
     }
 
     BOOL CToolhelpHandler::PopulateModules(CModuleInstance* pProcess)
@@ -1103,7 +1112,7 @@ namespace NWinHook
                 // However, we should fix up the module of the EXE, because
                 // th32ModuleID member has meaning only to the tool help functions
                 // and it is not usable by Win32 API elements.
-                pProcess->SetModule( me.hModule );
+                pProcess->SetHandle( me.hModule );
             }
         }
 
@@ -1111,7 +1120,7 @@ namespace NWinHook
             ::CloseHandle(hSnapshot);
         }
 
-        return (bResult);
+        return bResult;
     }
 
     BOOL CToolhelpHandler::ModuleFirst(HANDLE hSnapshot, PMODULEENTRY32 pme) const
@@ -1175,7 +1184,7 @@ namespace NWinHook
             bResult = TRUE;
         }
 
-        return (bResult);
+        return bResult;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1227,19 +1236,11 @@ namespace NWinHook
 
                 if (result == FALSE) {
                     LOG_POST_X(4, Warning << pHook->GetFuncName() <<
-                               " is not unhooked in " << NCBI_CURRENT_FUNCTION);
+                               " wasn't unhooked in " << NCBI_CURRENT_FUNCTION);
                 }
-
-                // delete pHook;
-                /*
-                CApiHookMgr::GetInstance().UnHookImport(
-                    pHook->GetCalleeModName(),
-                    pHook->GetFuncName()
-                    );
-                */
-
             }
         }
+
         m_ModuleList.clear();
         m_ModuleNameList.clear();
     }
@@ -1260,14 +1261,14 @@ namespace NWinHook
                                      PROC  pfnHook
                                      ) :
     m_bHooked(FALSE),
-    m_CalleeMod(NULL),
+    m_CalleeModHandle(NULL),
     m_pfnOrig(pfnOrig),
     m_pfnHook(pfnHook)
     {
         strcpy(m_szCalleeModName, pszCalleeModName);
         strcpy(m_szFuncName, pszFuncName);
 
-        m_CalleeMod = ::GetModuleHandle(m_szCalleeModName);
+        m_CalleeModHandle = ::GetModuleHandle(m_szCalleeModName);
 
         if (sm_pvMaxAppAddr == NULL) {
             // Functions with address above lpMaximumApplicationAddress require
@@ -1302,9 +1303,9 @@ namespace NWinHook
         NCBI_CATCH_ALL_X( 8, NCBI_CURRENT_FUNCTION )
     }
 
-    HMODULE CHookedFunction::GetCalleeMod(void) const
+    HMODULE CHookedFunction::GetCalleeModHandle(void) const
     {
-        return m_CalleeMod;
+        return m_CalleeModHandle;
     }
 
     PCSTR CHookedFunction::GetCalleeModName(void) const
@@ -1314,24 +1315,24 @@ namespace NWinHook
 
     PCSTR CHookedFunction::GetFuncName(void) const
     {
-        return (const_cast<PCSTR>(m_szFuncName));
+        return const_cast<PCSTR>(m_szFuncName);
     }
 
     PROC CHookedFunction::GetPfnHook(void) const
     {
-        return (m_pfnHook);
+        return m_pfnHook;
     }
 
     PROC CHookedFunction::GetPfnOrig(void) const
     {
-        return (m_pfnOrig);
+        return m_pfnOrig;
     }
 
     BOOL CHookedFunction::HookImport(void)
     {
         m_bHooked = DoHook(TRUE, m_pfnOrig, m_pfnHook);
 
-        return (m_bHooked);
+        return m_bHooked;
     }
 
     BOOL CHookedFunction::UnHookImport(void)
@@ -1343,7 +1344,7 @@ namespace NWinHook
         return (!m_bHooked);
     }
 
-    BOOL CHookedFunction::ReplaceInAllModules(BOOL  bHookOrRestore,
+    BOOL CHookedFunction::ReplaceInAllModules(bool  bHookOrRestore,
                                               PCSTR pszCalleeModName,
                                               PROC  pfnCurrent,
                                               PROC  pfnNew
@@ -1366,38 +1367,53 @@ namespace NWinHook
                 // Enumerates all modules loaded by (pProcess) process
                 for (size_t i = 0; i < pProcess->GetModuleCount(); ++i) {
                     pModule = pProcess->GetModuleByIndex(i);
-                    bReplace = (pModule->GetModule() !=
-                        ModuleFromAddress(CApiHookMgr::GetProcAddressWindows));
+                    bReplace = (pModule->GetHandle() !=
+                        ModuleFromAddress(CKernell32::LoadLibraryA));
 
                     // We don't hook functions in our own modules
                     if (bReplace) {
                         // Hook this function in this module
-                        bResult = ReplaceInOneModule(pszCalleeModName,
+                        bResult = ReplaceInOneModule(bHookOrRestore,
+                                                     pszCalleeModName,
                                                      pfnCurrent,
                                                      pfnNew,
-                                                     pModule->GetModule()
+                                                     pModule->GetHandle()
                                                      ) || bResult;
                     }
                 }
+
                 // Hook this function in the executable as well
-                bResult = ReplaceInOneModule(pszCalleeModName,
+                bResult = ReplaceInOneModule(bHookOrRestore,
+                                             pszCalleeModName,
                                              pfnCurrent,
                                              pfnNew,
-                                             pProcess->GetModule()
+                                             pProcess->GetHandle()
                                              ) || bResult;
             }
         }
-        return (bResult);
+        return bResult;
     }
 
 
-    BOOL CHookedFunction::ReplaceInOneModule(PCSTR   pszCalleeModName,
+    BOOL CHookedFunction::ReplaceInOneModule(bool    bHookOrRestore,
+                                             PCSTR   pszCalleeModName,
                                              PROC    pfnCurrent,
                                              PROC    pfnNew,
                                              HMODULE hmodCaller
                                              )
     {
         BOOL bResult = FALSE;
+
+        if (bHookOrRestore == false) {
+            // We are restoring hoock ...
+            TModuleSet::const_iterator it = m_HookedModuleSet.find(hmodCaller);
+
+            if (it == m_HookedModuleSet.end()) {
+                // Hook wasn't set in this module ...
+                // That is OK.
+                return TRUE;
+            }
+        }
         __try {
 
             // Get the address of the module's import section
@@ -1408,6 +1424,8 @@ namespace NWinHook
 
             // Does this module has import section ?
             if (pImportDesc == NULL) {
+                // There is no import section, but that is OK.
+                bResult = TRUE;
                 __leave;
             }
 
@@ -1424,6 +1442,9 @@ namespace NWinHook
 
             // Does this module import any functions from this callee ?
             if (pImportDesc->Name == 0) {
+                // This module doesn't import anything from "pszCalleeModName".
+                // No problem. We can live with that.
+                bResult = TRUE;
                 __leave;
             }
 
@@ -1471,7 +1492,7 @@ namespace NWinHook
 
                     // Hook the function.
                     *ppfn = *pfnNew;
-                    bResult = TRUE;
+
                     // Restore the protection back
                     DWORD dwOldProtect;
                     ::VirtualProtect(mbi.BaseAddress,
@@ -1479,6 +1500,15 @@ namespace NWinHook
                                      mbi.Protect,
                                      &dwOldProtect
                                      );
+
+                    bResult = TRUE;
+
+                    if (bHookOrRestore) {
+                        m_HookedModuleSet.insert(hmodCaller);
+                    } else {
+                        m_HookedModuleSet.erase(hmodCaller);
+                    }
+
                     break;
                 }
 
@@ -1488,11 +1518,12 @@ namespace NWinHook
         __finally {
             // do nothing
         }
+
         // This function is not in the caller's import section
-        return (bResult);
+        return bResult;
     }
 
-    BOOL CHookedFunction::DoHook(BOOL bHookOrRestore,
+    BOOL CHookedFunction::DoHook(bool bHookOrRestore,
                                  PROC pfnCurrent,
                                  PROC pfnNew
                                  )
@@ -1519,7 +1550,7 @@ namespace NWinHook
             }
         }
 
-        return (bResult);
+        return bResult;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1548,15 +1579,15 @@ namespace NWinHook
             bResult = TRUE;
         }
 
-        return (bResult);
+        return bResult;
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    BOOL CHookedFunctions::GetFunctionNameFromExportSection(
+    BOOL CHookedFunctions::x_GetFunctionNameFromExportSection(
         HMODULE hmodOriginal,
         DWORD   dwFuncOrdinalNum,
         PSTR    pszFuncName
-        )
+        ) const
     {
         BOOL bResult = FALSE;
         // Make sure we return a valid string (atleast an empty one)
@@ -1637,33 +1668,45 @@ namespace NWinHook
         {
             // do nothing
         }
+
         // This function is not in the caller's import section
-        return (bResult);
+        return bResult;
     }
 
-    void CHookedFunctions::GetFunctionNameByOrdinal(PCSTR   pszCalleeModName,
-                                                    DWORD   dwFuncOrdinalNum,
-                                                    PSTR    pszFuncName
-                                                    )
+    void CHookedFunctions::x_GetFunctionNameByOrdinal(
+        PCSTR   pszCalleeModName,
+        DWORD   dwFuncOrdinalNum,
+        PSTR    pszFuncName
+        ) const
     {
         HMODULE hmodOriginal = ::GetModuleHandle(pszCalleeModName);
+
         // Take the name from the export section of the DLL
-        GetFunctionNameFromExportSection(hmodOriginal, dwFuncOrdinalNum, pszFuncName);
+        x_GetFunctionNameFromExportSection(
+            hmodOriginal,
+            dwFuncOrdinalNum,
+            pszFuncName
+            );
     }
 
-    void CHookedFunctions::GetFunctionNameByOrdinal(HMODULE hmodOriginal,
-                                                    DWORD   dwFuncOrdinalNum,
-                                                    PSTR    pszFuncName
-                                                    )
+    void CHookedFunctions::x_GetFunctionNameByOrdinal(
+        HMODULE hmodOriginal,
+        DWORD   dwFuncOrdinalNum,
+        PSTR    pszFuncName
+        ) const
     {
         // Take the name from the export section of the DLL
-        GetFunctionNameFromExportSection(hmodOriginal, dwFuncOrdinalNum, pszFuncName);
+        x_GetFunctionNameFromExportSection(
+            hmodOriginal,
+            dwFuncOrdinalNum,
+            pszFuncName
+            );
     }
 
 
     CRef<CHookedFunction>
     CHookedFunctions::GetHookedFunction(PCSTR pszCalleeModName,
-                                        PCSTR pszFuncName)
+                                        PCSTR pszFuncName) const
     {
         CRef<CHookedFunction> pHook;
         char szFuncName[MAX_PATH];
@@ -1678,10 +1721,12 @@ namespace NWinHook
         else {
             // It is safe to cast a pointer to DWORD here because it is not a
             // pointer, it is an ordinal number of a function.
-            GetFunctionNameByOrdinal(pszCalleeModName,
-                                     static_cast<DWORD>(
-                                        reinterpret_cast<uintptr_t>(pszFuncName)),
-                                     szFuncName);
+            x_GetFunctionNameByOrdinal(
+                pszCalleeModName,
+                static_cast<DWORD>(
+                    reinterpret_cast<uintptr_t>(pszFuncName)),
+                szFuncName
+                );
         }
 
         // Search in the map only if we have found the name of the requested
@@ -1708,7 +1753,7 @@ namespace NWinHook
 
     CRef<CHookedFunction>
     CHookedFunctions::GetHookedFunction(HMODULE hmodOriginal,
-                                        PCSTR pszFuncName)
+                                        PCSTR pszFuncName) const
     {
         CRef<CHookedFunction> pHook;
         char szFuncName[MAX_PATH];
@@ -1723,10 +1768,12 @@ namespace NWinHook
         else {
             // It is safe to cast a pointer to DWORD here because it is not a
             // pointer, it is an ordinal number of a function.
-            GetFunctionNameByOrdinal(hmodOriginal,
-                                     static_cast<DWORD>(
-                                        reinterpret_cast<uintptr_t>(pszFuncName)),
-                                     szFuncName);
+            x_GetFunctionNameByOrdinal(
+                hmodOriginal,
+                static_cast<DWORD>(
+                    reinterpret_cast<uintptr_t>(pszFuncName)),
+                szFuncName
+                );
         }
 
         // Search in the map only if we have found the name of the requested
@@ -1759,12 +1806,12 @@ namespace NWinHook
         if (pHook != NULL) {
             m_ModuleNameList[pHook->GetCalleeModName()][pHook->GetFuncName()] =
                 pHook;
-            m_ModuleList[pHook->GetCalleeMod()][pHook->GetFuncName()] =
+            m_ModuleList[pHook->GetCalleeModHandle()][pHook->GetFuncName()] =
                 pHook;
 
             bResult = TRUE;
         }
-        return (bResult);
+        return bResult;
     }
 
     BOOL CHookedFunctions::RemoveHook(const CRef<CHookedFunction> pHook)
@@ -1788,7 +1835,7 @@ namespace NWinHook
 
                 // Remove from m_ModuleList ...
                 TModuleList::iterator mod_it =
-                    m_ModuleList.find(pHook->GetCalleeMod());
+                    m_ModuleList.find(pHook->GetCalleeModHandle());
 
                 if (mod_it != m_ModuleList.end()) {
                     TFunctionList& fn_list = mod_it->second;
@@ -1807,7 +1854,8 @@ namespace NWinHook
         catch (...) {
             bResult = FALSE;
         }
-        return (bResult);
+
+        return bResult;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1824,7 +1872,7 @@ namespace NWinHook
             // Get current registry ...
             const IRegistry& registry = app->GetConfig();
 
-            if (!registry.GetBool("WIN_HOOK", "ENABLED", true)) {
+            if (!registry.GetBool("NCBI_WIN_HOOK", "ENABLED", true)) {
                 enabled_from_registry = false;
                 NCBI_THROW(CWinHookException,
                         eDisabled,
@@ -1839,13 +1887,13 @@ namespace NWinHook
                     "Windows API hooking is disabled from registry.");
         }
 
-        HookSystemFuncs();
+        x_HookSystemFuncs();
     }
 
     CApiHookMgr::~CApiHookMgr(void)
     {
         try {
-            UnHookAllFuncs();
+            x_UnHookAllFuncs();
         }
         NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
     }
@@ -1863,7 +1911,7 @@ namespace NWinHook
         return (instance.Get());
     }
 
-    BOOL CApiHookMgr::HookSystemFuncs(void)
+    BOOL CApiHookMgr::x_HookSystemFuncs(void)
     {
         BOOL bResult;
 
@@ -1874,12 +1922,12 @@ namespace NWinHook
                                      (PROC) CApiHookMgr::MyLoadLibraryA
                                      );
 
-//                 if (bResult == FALSE) {
-//                     LOG_POST_X(4, Warning
-//                                << "LoadLibraryA is not hooked in "
-//                                << NCBI_CURRENT_FUNCTION
-//                                );
-//                 }
+                if (bResult == FALSE) {
+                    LOG_POST_X(4, Warning
+                               << "LoadLibraryA is not hooked in "
+                               << NCBI_CURRENT_FUNCTION
+                               );
+                }
             }
 
             {
@@ -1888,12 +1936,12 @@ namespace NWinHook
                                      (PROC) CApiHookMgr::MyLoadLibraryW
                                      ) || bResult;
 
-//                 if (bResult == FALSE) {
-//                     LOG_POST_X(4, Warning
-//                                << "LoadLibraryW is not hooked in "
-//                                << NCBI_CURRENT_FUNCTION
-//                                );
-//                 }
+                if (bResult == FALSE) {
+                    LOG_POST_X(4, Warning
+                               << "LoadLibraryW is not hooked in "
+                               << NCBI_CURRENT_FUNCTION
+                               );
+                }
             }
 
             {
@@ -1902,12 +1950,12 @@ namespace NWinHook
                                      (PROC) CApiHookMgr::MyLoadLibraryExA
                                      ) || bResult;
 
-//                 if (bResult == FALSE) {
-//                     LOG_POST_X(4, Warning
-//                                << "LoadLibraryExA is not hooked in "
-//                                << NCBI_CURRENT_FUNCTION
-//                                );
-//                 }
+                if (bResult == FALSE) {
+                    LOG_POST_X(4, Warning
+                               << "LoadLibraryExA is not hooked in "
+                               << NCBI_CURRENT_FUNCTION
+                               );
+                }
             }
 
             {
@@ -1916,12 +1964,12 @@ namespace NWinHook
                                      (PROC) CApiHookMgr::MyLoadLibraryExW
                                      ) || bResult;
 
-//                 if (bResult == FALSE) {
-//                     LOG_POST_X(4, Warning
-//                                << "LoadLibraryExW is not hooked in "
-//                                << NCBI_CURRENT_FUNCTION
-//                                );
-//                 }
+                if (bResult == FALSE) {
+                    LOG_POST_X(4, Warning
+                               << "LoadLibraryExW is not hooked in "
+                               << NCBI_CURRENT_FUNCTION
+                               );
+                }
             }
 
             {
@@ -1930,21 +1978,21 @@ namespace NWinHook
                                      (PROC) CApiHookMgr::MyGetProcAddress
                                      ) || bResult;
 
-//                 if (bResult == FALSE) {
-//                     LOG_POST_X(4, Warning
-//                                << "GetProcAddress is not hooked in"
-//                                << NCBI_CURRENT_FUNCTION
-//                                );
-//                 }
+                if (bResult == FALSE) {
+                    LOG_POST_X(4, Warning
+                               << "GetProcAddress is not hooked in"
+                               << NCBI_CURRENT_FUNCTION
+                               );
+                }
             }
 
             m_bSystemFuncsHooked = bResult;
         }
 
-        return (m_bSystemFuncsHooked);
+        return m_bSystemFuncsHooked;
     }
 
-    void CApiHookMgr::UnHookAllFuncs(void)
+    void CApiHookMgr::x_UnHookAllFuncs(void)
     {
         m_pHookedFunctions.UnHookAllFuncs();
         m_bSystemFuncsHooked = FALSE;
@@ -1953,14 +2001,18 @@ namespace NWinHook
     // Indicates whether there is hooked function
     bool CApiHookMgr::HaveHookedFunctions(void) const
     {
-        return (m_pHookedFunctions.HaveHookedFunctions());
+        // CHookedFunctions is not thread-safe ...
+        CFastMutexGuard guard(m_Mutex);
+
+        return m_pHookedFunctions.HaveHookedFunctions();
     }
 
     CRef<CHookedFunction>
     CApiHookMgr::GetHookedFunction(HMODULE hmod,
                                    PCSTR   pszFuncName
-                                   )
+                                   ) const
     {
+        // CHookedFunctions is not thread-safe ...
         CFastMutexGuard guard(m_Mutex);
 
         return m_pHookedFunctions.GetHookedFunction(hmod, pszFuncName);
@@ -1982,7 +2034,7 @@ namespace NWinHook
             pszFuncName
             )) {
 
-            pfnOrig = GetProcAddressWindows(
+            pfnOrig = xs_GetProcAddressWindows(
                 ::GetModuleHandleA(pszCalleeModName),
                 pszFuncName
                 );
@@ -1991,8 +2043,9 @@ namespace NWinHook
             // so lets try to load it.
             if (pfnOrig == NULL) {
                 HMODULE hmod = g_LoadLibraryA(pszCalleeModName);
+
                 if (NULL != hmod) {
-                    pfnOrig = GetProcAddressWindows(
+                    pfnOrig = xs_GetProcAddressWindows(
                         ::GetModuleHandleA(pszCalleeModName),
                         pszFuncName
                         );
@@ -2000,15 +2053,16 @@ namespace NWinHook
             }
 
             if (pfnOrig != NULL) {
-                bResult = AddHook(pszCalleeModName,
-                                  pszFuncName,
-                                  pfnOrig,
-                                  pfnHook
-                                  );
+                bResult = x_AddHook(
+                    pszCalleeModName,
+                    pszFuncName,
+                    pfnOrig,
+                    pfnHook
+                    );
             }
         }
 
-        return (bResult);
+        return bResult;
     }
 
     // Restores original API function address in IAT
@@ -2018,21 +2072,17 @@ namespace NWinHook
     {
         CFastMutexGuard guard(m_Mutex);
 
-        BOOL bResult = TRUE;
-        try {
-            bResult = RemoveHook(pszCalleeModName, pszFuncName);
-        }
-        NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
+        BOOL bResult = x_RemoveHook(pszCalleeModName, pszFuncName);
 
-        return (bResult);
+        return bResult;
     }
 
     // Add a hook to the internally supported container
-    BOOL CApiHookMgr::AddHook(PCSTR pszCalleeModName,
-                              PCSTR pszFuncName,
-                              PROC  pfnOrig,
-                              PROC  pfnHook
-                              )
+    BOOL CApiHookMgr::x_AddHook(PCSTR pszCalleeModName,
+                                PCSTR pszFuncName,
+                                PROC  pfnOrig,
+                                PROC  pfnHook
+                                )
     {
         BOOL bResult = FALSE;
 
@@ -2053,30 +2103,25 @@ namespace NWinHook
             );
 
             // We must create the hook and insert it in the container
-            pHook->HookImport();
+            BOOL result = pHook->HookImport();
 
-            // It is not correct to interpret HookImport()'s result.
-            // This method may return "false" if an import section wasn't found
-            // or a function wasn't imported.
-            //
-//             BOOL result = pHook->HookImport();
-//             if (result == FALSE) {
-//                 LOG_POST_X(4, Warning << pszFuncName
-//                            << " is not hooked in "
-//                            << NCBI_CURRENT_FUNCTION
-//                            );
-//             }
-
-            bResult = m_pHookedFunctions.AddHook(pHook);
+            if (result == FALSE) {
+                LOG_POST_X(4, Warning << pszFuncName
+                           << " is not hooked in "
+                           << NCBI_CURRENT_FUNCTION
+                           );
+            } else {
+                bResult = m_pHookedFunctions.AddHook(pHook);
+            }
         }
 
-        return (bResult);
+        return bResult;
     }
 
     // Remove a hook from the internally supported container
-    BOOL CApiHookMgr::RemoveHook(PCSTR pszCalleeModName,
-                                 PCSTR pszFuncName
-                                 )
+    BOOL CApiHookMgr::x_RemoveHook(PCSTR pszCalleeModName,
+                                   PCSTR pszFuncName
+                                   )
     {
         BOOL             bResult = FALSE;
         CRef<CHookedFunction> pHook;
@@ -2091,7 +2136,7 @@ namespace NWinHook
             }
         }
 
-        return (bResult);
+        return bResult;
     }
 
 
@@ -2099,28 +2144,35 @@ namespace NWinHook
     void WINAPI CApiHookMgr::HackModuleOnLoad(HMODULE hmod, DWORD dwFlags)
     {
         // If a new module is loaded, just hook it
-        if ((hmod != NULL) && ((dwFlags & LOAD_LIBRARY_AS_DATAFILE) == 0)) {
+        if ((hmod != NULL) && ((dwFlags & LOAD_LIBRARY_AS_DATAFILE) == 0))
+        {
             CFastMutexGuard guard(m_Mutex);
 
+            // Strange logic below ...
+            // Should be fixed !!!
             ITERATE(CHookedFunctions::TModuleNameList,
                     mn_it,
-                    m_pHookedFunctions.m_ModuleNameList) {
+                    m_pHookedFunctions.m_ModuleNameList)
+            {
 
                 const CHookedFunctions::TFunctionList& fn_list = mn_it->second;
 
                 ITERATE(CHookedFunctions::TFunctionList,
                         it,
-                        fn_list) {
+                        fn_list)
+                {
 
                     CRef<CHookedFunction> pHook(it->second);
-                    pHook->ReplaceInOneModule(pHook->GetCalleeModName(),
-                                              pHook->GetPfnOrig(),
-                                              pHook->GetPfnHook(),
-                                              hmod
-                                              );
+
+                    pHook->ReplaceInOneModule(
+                        TRUE,
+                        pHook->GetCalleeModName(),
+                        pHook->GetPfnOrig(),
+                        pHook->GetPfnHook(),
+                        hmod
+                        );
                 }
             }
-
         }
     }
 
@@ -2206,7 +2258,7 @@ namespace NWinHook
                 pfn = pFuncHook->GetPfnHook();
             } else {
                 // Get the original address of the function
-                pfn = GetProcAddressWindows(hmod, pszProcName);
+                pfn = xs_GetProcAddressWindows(hmod, pszProcName);
             }
         } catch (...) {
             return NULL;
@@ -2215,8 +2267,10 @@ namespace NWinHook
         return pfn;
     }
 
-    FARPROC WINAPI CApiHookMgr::GetProcAddressWindows(HMODULE hmod,
-                                                      PCSTR pszProcName)
+    FARPROC WINAPI CApiHookMgr::xs_GetProcAddressWindows(
+        HMODULE hmod,
+        PCSTR pszProcName
+        )
     {
         // return CKernell32::GetProcAddress(hmod, pszProcName);
         return (g_FGetProcAddress(hmod, pszProcName));
@@ -2284,7 +2338,7 @@ namespace NWinHook
         BOOL result = CApiHookMgr::GetInstance().HookImport(
             "Kernel32.DLL",
             "ExitProcess",
-            reinterpret_cast<PROC>(COnExitProcess::ExitProcess)
+            reinterpret_cast<PROC>(COnExitProcess::xs_ExitProcess)
             );
 
         m_Hooked = (result == TRUE);
@@ -2310,7 +2364,7 @@ namespace NWinHook
     {
         static CSafeStaticPtr<COnExitProcess> instance;
 
-        return (instance.Get());
+        return instance.Get();
     }
 
     bool
@@ -2320,9 +2374,12 @@ namespace NWinHook
             // Do not register functions if we cannot run them at right time.
             CFastMutexGuard mg(m_Mutex);
 
-            vector<TFunct>::iterator it = find(m_Registry.begin(),
-                                               m_Registry.end(),
-                                               funct);
+            TRegistry::iterator it = find(
+                m_Registry.begin(),
+                m_Registry.end(),
+                funct
+                );
+
             if (it == m_Registry.end()) {
                 m_Registry.push_back(funct);
             }
@@ -2338,9 +2395,15 @@ namespace NWinHook
     {
         CFastMutexGuard mg(m_Mutex);
 
-        m_Registry.erase(find(m_Registry.begin(),
-                              m_Registry.end(),
-                              funct));
+        TRegistry::iterator it = find(
+            m_Registry.begin(),
+            m_Registry.end(),
+            funct
+            );
+
+        if (it != m_Registry.end()) {
+            m_Registry.erase(it);
+        }
     }
 
     void
@@ -2348,17 +2411,19 @@ namespace NWinHook
     {
         if (!m_Registry.empty()) {
             CFastMutexGuard mg(m_Mutex);
+
             if (!m_Registry.empty()) {
                 // Run all functions ...
-                ITERATE(vector<TFunct>, it, m_Registry) {
+                ITERATE(TRegistry, it, m_Registry) {
                     (*it)();
                 }
+
                 m_Registry.clear();
             }
         }
     }
 
-    void WINAPI COnExitProcess::ExitProcess(UINT uExitCode)
+    void WINAPI COnExitProcess::xs_ExitProcess(UINT uExitCode)
     {
         COnExitProcess::Instance().ClearAll();
 

@@ -72,20 +72,26 @@ namespace NWinHook
     ///
     class CHookedFunction;
 
-    class CHookedFunctions {
+    // !!! Not thred-safe class !!!
+    class CHookedFunctions
+    {
     public:
         CHookedFunctions(void);
         ~CHookedFunctions(void);
 
     public:
         /// Return the address of an CHookedFunction object
-        CRef<CHookedFunction> GetHookedFunction(PCSTR pszCalleeModName,
-                                           PCSTR pszFuncName
-                                           );
+        CRef<CHookedFunction> GetHookedFunction(
+            PCSTR pszCalleeModName,
+            PCSTR pszFuncName
+            ) const;
+
         /// Return the address of an CHookedFunction object
-        CRef<CHookedFunction> GetHookedFunction(HMODULE hmod,
-                                           PCSTR   pszFuncName
-                                           );
+        CRef<CHookedFunction> GetHookedFunction(
+            HMODULE hmod,
+            PCSTR   pszFuncName
+            ) const;
+
         /// Add a new object to the container
         BOOL AddHook(const CRef<CHookedFunction> pHook);
         /// Remove exising object pointer from the container
@@ -107,19 +113,22 @@ namespace NWinHook
 
     private:
         /// Return the name of the function from EAT by its ordinal value
-        BOOL GetFunctionNameFromExportSection(HMODULE hmodOriginal,
-                                              DWORD   dwFuncOrdinalNum,
-                                              PSTR    pszFuncName
-                                              );
+        BOOL x_GetFunctionNameFromExportSection(
+            HMODULE hmodOriginal,
+            DWORD   dwFuncOrdinalNum,
+            PSTR    pszFuncName
+            ) const;
         /// Return the name of the function by its ordinal value
-        void GetFunctionNameByOrdinal(PCSTR   pszCalleeModName,
-                                      DWORD   dwFuncOrdinalNum,
-                                      PSTR    pszFuncName
-                                      );
-        void GetFunctionNameByOrdinal(HMODULE hmodOriginal,
-                                      DWORD   dwFuncOrdinalNum,
-                                      PSTR    pszFuncName
-                                      );
+        void x_GetFunctionNameByOrdinal(
+            PCSTR   pszCalleeModName,
+            DWORD   dwFuncOrdinalNum,
+            PSTR    pszFuncName
+            ) const;
+        void x_GetFunctionNameByOrdinal(
+            HMODULE hmodOriginal,
+            DWORD   dwFuncOrdinalNum,
+            PSTR    pszFuncName
+            ) const;
 
     private:
         struct SNocaseCmp {
@@ -135,6 +144,7 @@ namespace NWinHook
         TModuleList     m_ModuleList;
         TModuleNameList m_ModuleNameList;
 
+        // Because of CApiHookMgr::HackModuleOnLoad
         friend class CApiHookMgr;
     };
 
@@ -162,32 +172,26 @@ namespace NWinHook
                           PCSTR pszFuncName
                           );
 
+        /// Used when a DLL is newly loaded after hooking a function
+        void WINAPI HackModuleOnLoad(HMODULE hmod,
+                                     DWORD   dwFlags
+                                     );
+
+        /// Return the address of an CHookedFunction object
+        /// Protected version.
+        CRef<CHookedFunction> GetHookedFunction(HMODULE hmod,
+                                                PCSTR   pszFuncName
+                                                ) const;
+
         /// Indicates whether there is hooked function
         bool HaveHookedFunctions(void) const;
 
     private:
         /// Hook all needed system functions in order to trap loading libraries
-        BOOL HookSystemFuncs(void);
+        BOOL x_HookSystemFuncs(void);
 
         /// Unhook all functions and restore original ones
-        void UnHookAllFuncs(void);
-
-        /// Return the address of an CHookedFunction object
-        /// Protected version.
-        CRef<CHookedFunction> GetHookedFunction(HMODULE hmod,
-                                           PCSTR   pszFuncName
-                                           );
-
-        CFastMutex m_Mutex;
-        /// Container keeps track of all hacked functions
-        CHookedFunctions m_pHookedFunctions;
-        /// Determines whether all system functions has been successfuly hacked
-        BOOL m_bSystemFuncsHooked;
-
-        /// Used when a DLL is newly loaded after hooking a function
-        void WINAPI HackModuleOnLoad(HMODULE hmod,
-                                     DWORD   dwFlags
-                                     );
+        void x_UnHookAllFuncs(void);
 
         /// Used to trap events when DLLs are loaded
         static HMODULE WINAPI MyLoadLibraryA(PCSTR  pszModuleName);
@@ -210,24 +214,30 @@ namespace NWinHook
                                                );
 
         /// Returns original address of the API function
-        static FARPROC WINAPI GetProcAddressWindows(HMODULE hmod,
-                                                    PCSTR   pszProcName
-                                                    );
+        static FARPROC WINAPI xs_GetProcAddressWindows(
+            HMODULE hmod,
+            PCSTR   pszProcName
+            );
 
         /// Add a newly intercepted function to the container
-        BOOL AddHook(PCSTR  pszCalleeModName,
-                     PCSTR  pszFuncName,
-                     PROC   pfnOrig,
-                     PROC   pfnHook
-                     );
+        BOOL x_AddHook(PCSTR  pszCalleeModName,
+                       PCSTR  pszFuncName,
+                       PROC   pfnOrig,
+                       PROC   pfnHook
+                       );
 
         /// Remove intercepted function from the container
-        BOOL RemoveHook(PCSTR pszCalleeModName,
-                        PCSTR pszFuncName
-                        );
+        BOOL x_RemoveHook(PCSTR pszCalleeModName,
+                          PCSTR pszFuncName
+                          );
+
+        mutable CFastMutex m_Mutex;
+        /// Container keeps track of all hacked functions
+        CHookedFunctions m_pHookedFunctions;
+        /// Determines whether all system functions has been successfuly hacked
+        BOOL m_bSystemFuncsHooked;
 
         friend class CSafeStaticPtr<CApiHookMgr>;
-        friend class CHookedFunction;
     };
 
 
@@ -246,13 +256,16 @@ namespace NWinHook
     private:
         COnExitProcess(void);
         ~COnExitProcess(void);
+
         // Hook function prototype
-        static void WINAPI ExitProcess(UINT uExitCode);
+        static void WINAPI xs_ExitProcess(UINT uExitCode);
 
     private:
-        mutable CFastMutex  m_Mutex;
-        vector<TFunct>      m_Registry;
-        bool                m_Hooked;
+        typedef vector<TFunct> TRegistry;
+
+        CFastMutex  m_Mutex;
+        TRegistry   m_Registry;
+        bool        m_Hooked;
 
         friend class CSafeStaticPtr<COnExitProcess>;
     };
