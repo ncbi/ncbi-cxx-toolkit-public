@@ -78,15 +78,17 @@ private:
     void DoProcessStreamDefline ( 
         CNcbiIstream& ip, CNcbiOstream& op, CRef<CSeq_entry>& se, CScope&i );
     int DoProcessFeatureSuggest( 
-        CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_submit>&, bool do_format );
+        CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_entry>&, bool do_format );
 
     int DoProcessFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_entry>&, bool do_format );
     int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CBioseq&, bool do_format );
     int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CSeq_annot&, bool do_format );
     int TestFeatureGeneOverlap( CNcbiIstream&, CNcbiOstream&, CScope&, CSeq_feat&, bool do_format );
 
-    int PlayAroundWithSuggestIntervals( CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_submit>& );
+    int PlayAroundWithSuggestIntervals( CNcbiIstream&, CNcbiOstream&, CScope&, CRef<CSeq_entry>& );
     void DumpAlignment( CNcbiOstream&, CRef<CSeq_align>& );
+
+    void GetSeqEntry( CNcbiIstream&, CRef<CSeq_entry>& se );
 
     // data
     bool  m_bsec;
@@ -214,44 +216,14 @@ void CMytestApplication::DoProcessStreamDefline (
     }
 }
 
-/////////////////////////////////////////////////////////////////////////////
-
-struct s_AsString
-{
-    s_AsString(const CSeq_loc& loc) : loc(loc) {}
-    const CSeq_loc& loc;
-};
-
 ////////////////////////////////////////////////////////////////////////////////
-
-CNcbiOstream& operator<<(CNcbiOstream& out, const s_AsString& as)
+string SeqLocString( const CSeq_loc& loc )
 {
-    const CSeq_loc& loc = as.loc;
-    const CSeq_id* id = loc.GetId();
-    if ( ! id ) {
-        return out << "?";
-    }
-
-    out << "[gi|" << id->GetGi() << ":";
-    switch ( loc.Which() ) {
-        case CSeq_feat_Base::TLocation::e_Int: {
-            const CSeq_loc_Base::TInt& intv = loc.GetInt();
-            bool complement = ( intv.GetStrand() == eNa_strand_minus );
-            if ( ! complement ) {
-                out << intv.GetFrom()+1 << "-" << intv.GetTo()+1 << "]";
-            }
-            else {
-                out << 'c' << intv.GetTo()+1 << "-" << intv.GetFrom()+1 << "]";
-            }
-            break;
-        }
-        default:
-            out << "?";
-            break;
-    }
-    return out;
+    string str;
+    loc.GetLabel(&str);
+    return str;
 }
-
+   
 ////////////////////////////////////////////////////////////////////////////////
 
 int CMytestApplication::TestFeatureGeneOverlap (
@@ -270,7 +242,8 @@ int CMytestApplication::TestFeatureGeneOverlap (
         return 1;
     }
     if (do_format) {
-        op << s_AsString( locbase ) << " -> " << s_AsString( ol->GetLocation() ) << '\n';
+        op << SeqLocString( locbase ) << " -> " 
+           << SeqLocString( ol->GetLocation() ) << '\n';
     }
     return 1;
 }
@@ -281,7 +254,7 @@ int CMytestApplication::DoProcessFeatureSuggest (
     CNcbiIstream& ip,
     CNcbiOstream& op,
     CScope& scope,
-    CRef<CSeq_submit>& se,
+    CRef<CSeq_entry>& se,
     bool do_format )
 {
     CProSplign prosplign;
@@ -449,17 +422,9 @@ CMytestApplication::PlayAroundWithSuggestIntervals(
     CNcbiIstream& is,
     CNcbiOstream& os, 
     CScope& scope,
-    CRef<CSeq_submit>& sub )
+    CRef<CSeq_entry>& se )
 //  ============================================================================
 {
-    if (!sub->IsSetSub()  ||  !sub->IsSetData()) {
-        return 1;
-    }
-    CRef<CSeq_entry> se( sub->SetData().SetEntrys().front() );
-    if ( se.Empty() ) {
-        return 1;
-    }
-    // get Seq_entry_Handle from scope
     CSeq_entry_Handle entry;
     try {
         entry = scope.GetSeq_entryHandle( *se );
@@ -505,7 +470,60 @@ CMytestApplication::PlayAroundWithSuggestIntervals(
 
 
 ////////////////////////////////////////////////////////////////////////////////
+void CMytestApplication::GetSeqEntry( 
+    CNcbiIstream& ip, 
+    CRef<CSeq_entry>& se )
+{
+    string asntype = GetArgs()["a"].AsString();
+    auto_ptr<CObjectIStream> is (CObjectIStream::Open (eSerial_AsnText, ip));
+    is->SetStreamPos( 0 );
 
+    if ( asntype == "a" || asntype == "m" ) {
+        try {
+            CRef<CSeq_submit> sub(new CSeq_submit());
+            *is >> *sub;
+            se.Reset( sub->SetData().SetEntrys().front() );
+            return;
+        }
+        catch( ... ) {
+            is->SetStreamPos( 0 );
+        }
+    }
+    if ( asntype == "a" || asntype == "e" ) {
+        try {
+            *is >> *se;
+            return;
+        }
+        catch( ... ) {
+            is->SetStreamPos( 0 );
+        }
+    }
+    if ( asntype == "a" || asntype == "b" ) {
+        try {
+		    CRef<CBioseq> bs( new CBioseq );
+	        *is >> *bs;
+            se->SetSeq( bs.GetObject() );
+            return;
+        }
+        catch( ... ) {
+            is->SetStreamPos( 0 );
+        }
+    }
+    if ( asntype == "a" || asntype == "s" ) {
+        try {
+		    CRef<CBioseq_set> bss( new CBioseq_set );
+	        *is >> *bss;
+            se->SetSet( bss.GetObject() );
+            return;
+        }
+        catch( ... ) {
+//          is->SetStreamPos( 0 );
+        }
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 int CMytestApplication::Run(void)
 {
     // Get arguments
@@ -647,19 +665,18 @@ int CMytestApplication::Run(void)
     scope->AddDefaults();
 
     // otherwise read ASN.1
-    auto_ptr<CObjectIStream> is (CObjectIStream::Open (eSerial_AsnText, ip));
+    CRef<CSeq_entry> se(new CSeq_entry);
+    GetSeqEntry( ip, se );
+    if ( ! se ) {
+        return 1;
+    }
+
     if ( m_suggest ) {
-        
-        CRef<CSeq_submit> sub(new CSeq_submit());
-        *is >> *sub;
-        int iRet = PlayAroundWithSuggestIntervals( ip, op, *scope, sub );
+        int iRet = PlayAroundWithSuggestIntervals( ip, op, *scope, se );
         lastInterval = sw.Elapsed() - lastInterval;
         NcbiCout << "Internal processing time is " << lastInterval << " seconds" << endl;
         return iRet;        
     }
-
-    CRef<CSeq_entry> se(new CSeq_entry);
-    *is >> *se;
 
     scope->AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*se));
 
