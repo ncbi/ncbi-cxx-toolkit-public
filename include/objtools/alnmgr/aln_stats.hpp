@@ -67,7 +67,7 @@ public:
         m_AlnIdVec(aln_id_vec),
         m_AlnVec(aln_id_vec.GetAlnVec()),
         m_AlnCount(m_AlnVec.size()),
-        m_HasPotentialAnchors(-1)
+        m_CanBeAnchored(-1)
     {
         _ASSERT(m_AlnVec.size() == m_AlnIdVec.size());
         
@@ -226,16 +226,16 @@ public:
     }
 
 
-    bool HasPotentialAnchors() const {
-        if (m_HasPotentialAnchors < 0) {
+    bool CanBeAnchored() const {
+        if (m_CanBeAnchored < 0) {
             x_IdentifyPotentialAnchors();
         }
-        return m_HasPotentialAnchors;
+        return m_CanBeAnchored;
     }
 
     
     const TIdMap& GetAnchorIdMap() const {
-        if (m_HasPotentialAnchors < 0) {
+        if (m_CanBeAnchored < 0) {
             x_IdentifyPotentialAnchors();
         }
         return m_AnchorIdMap;
@@ -243,7 +243,7 @@ public:
 
 
     const TIdVec& GetAnchorIdVec() const {
-        if (m_HasPotentialAnchors < 0) {
+        if (m_CanBeAnchored < 0) {
             x_IdentifyPotentialAnchors();
         }
         return m_AnchorIdVec;
@@ -251,7 +251,7 @@ public:
 
 
     const TIdxVec& GetAnchorIdxVec() const {
-        if (m_HasPotentialAnchors < 0) {
+        if (m_CanBeAnchored < 0) {
             x_IdentifyPotentialAnchors();
         }
         return m_AnchorIdxVec;
@@ -280,7 +280,7 @@ private:
 
     void x_IdentifyPotentialAnchors() const {
         _ASSERT(m_IdVec.size() == m_BitVecVec.size());
-        _ASSERT(m_HasPotentialAnchors < 0);
+        _ASSERT(m_CanBeAnchored < 0);
         _ASSERT(m_AnchorIdxVec.empty());
         _ASSERT(m_AnchorIdVec.empty());
         _ASSERT(m_AnchorIdMap.empty());
@@ -305,7 +305,7 @@ private:
                 it->second.push_back(id_idx);
             }
         }
-        m_HasPotentialAnchors = (m_AnchorIdxVec.empty() ? 0 : 1);
+        m_CanBeAnchored = (m_AnchorIdxVec.empty() ? 0 : 1);
     }
 
     typedef map<TAlnSeqIdIRef, TIdVec> TAlignedIdsMap;
@@ -321,7 +321,7 @@ private:
     mutable TIdxVec m_AnchorIdxVec;
     mutable TIdMap m_AnchorIdMap;
     mutable TIdVec m_AnchorIdVec;
-    mutable int m_HasPotentialAnchors;
+    mutable int m_CanBeAnchored;
 };
 
 

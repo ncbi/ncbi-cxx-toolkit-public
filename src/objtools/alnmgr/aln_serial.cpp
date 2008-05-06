@@ -153,9 +153,9 @@ ostream& operator<<(ostream& out, const CAnchoredAln& anchored_aln)
 ostream& operator<<(ostream& out, const TAlnStats& aln_stats)
 {
     out << "Number of alignments: " << aln_stats.GetAlnCount() << endl;
-    out << "IsCanonicalQueryAnchored:" << aln_stats.IsCanonicalQueryAnchored() << endl;
-    out << "IsCanonicalMultiple:" << aln_stats.IsCanonicalMultiple() << endl;
-    out << "HasPotentialAnchors:" << aln_stats.HasPotentialAnchors() << endl;
+    out << "IsCanonicalQueryAnchored: " << aln_stats.IsCanonicalQueryAnchored() << endl;
+    out << "IsCanonicalMultiple: " << aln_stats.IsCanonicalMultiple() << endl;
+    out << "CanBeAnchored: " << aln_stats.CanBeAnchored() << endl;
     out << endl;
     out << "IdVec (" << aln_stats.GetIdVec().size() << "):" << endl;
     ITERATE(TAlnStats::TIdVec, it, aln_stats.GetIdVec()) {
