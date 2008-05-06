@@ -49,6 +49,7 @@
 
 #include <objtools/alnmgr/aln_generators.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
+#include <objtools/alnmgr/aln_serial.hpp>
 
 #include <util/range_coll.hpp>
 
@@ -92,6 +93,19 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
 }
 
 
+//#define _TRACE_CSegmentedRangeCollection
+#ifdef _TRACE_CSegmentedRangeCollection
+ostream& operator<<(ostream& out, const CRangeCollection<CPairwiseAln::TPos>& segmetned_range_coll)
+{
+    out << "CRangeCollection<CPairwiseAln::TPos>" << endl;
+    
+    ITERATE (CRangeCollection<CPairwiseAln::TPos>, rng_it, segmetned_range_coll) {
+        out << (CPairwiseAln::TRng)*rng_it << endl;
+    }
+    return out << endl;
+}
+#endif
+
 class CSegmentedRangeCollection : public CRangeCollection<CPairwiseAln::TPos>
 {
 public:
@@ -111,9 +125,17 @@ public:
     }
 
     void insert(const TRange& r) {
+#ifdef _TRACE_CSegmentedRangeCollection
+        cerr << "=====================" << endl;
+        cerr << "Original:" << *this;
+        cerr << "Inserting: " <<  endl << (CPairwiseAln::TRng)r << endl << endl;
+#endif
         // Cut
         CutAtPosition(r.GetFrom());
         CutAtPosition(r.GetToOpen());
+#ifdef _TRACE_CSegmentedRangeCollection
+        cerr << "After the cut:" << *this << endl;
+#endif
         
         // Find the diff if any
         TParent addition;
@@ -121,14 +143,30 @@ public:
         addition.Subtract(*this);
         
         if ( !addition.empty() ) {
+#ifdef _TRACE_CSegmentedRangeCollection
+            cerr << "Addition: " << addition << endl;
+#endif
             // Insert the diff
             iterator it = find_nc(addition.begin()->GetToOpen());
             ITERATE(TParent, add_it, addition) {
                 TRange rr(add_it->GetFrom(), add_it->GetTo());
+                while (it != TParent::m_vRanges.end()  &&
+                       rr.GetFrom() >= it->GetFrom()) {
+                    ++it;
+                }
                 it = TParent::m_vRanges.insert(it, rr);
                 ++it;
             }
         }
+#ifdef _TRACE_CSegmentedRangeCollection
+        else {
+            cerr << "No addition." << endl << endl;
+        }
+#endif
+#ifdef _TRACE_CSegmentedRangeCollection
+        cerr << "Result: " << *this;
+        cerr << "=====================" << endl << endl;
+#endif
     }
 };
 
@@ -138,7 +176,6 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln)
 {
     const CAnchoredAln::TPairwiseAlnVector& pairwises = anchored_aln.GetPairwiseAlns();
 
-    //typedef CRangeCollection<CPairwiseAln::TPos> TAnchorSegments;
     typedef CSegmentedRangeCollection TAnchorSegments;
     TAnchorSegments anchor_segments;
     ITERATE(CAnchoredAln::TPairwiseAlnVector, pairwise_aln_i, pairwises) {
@@ -190,27 +227,41 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln)
         int matrix_row_pos = row;  // optimization to eliminate multiplication
         seg_i = anchor_segments.begin();
         CPairwiseAln::TAlnRngColl::const_iterator aln_rng_i = pairwises[row]->begin();
+        bool direct = aln_rng_i->IsDirect();
         TSignedSeqPos left_delta = 0;
         TSignedSeqPos right_delta = aln_rng_i->GetLength();
-        bool direct = aln_rng_i->IsDirect();
         while (seg_i != anchor_segments.end()) {
             _ASSERT(seg < numseg);
             _ASSERT(matrix_row_pos == row + dim * seg);
             if (aln_rng_i != pairwises[row]->end()  &&
                 seg_i->GetFrom() >= aln_rng_i->GetFirstFrom()) {
+                _ASSERT(seg_i->GetFrom() >= aln_rng_i->GetFirstFrom());
+                if (seg_i->GetFrom() < aln_rng_i->GetFirstFrom()) {
+                    NCBI_THROW(CAlnException, eInternalFailure,
+                               "seg_i->GetFrom() < aln_rng_i->GetFirstFrom()");
+                }
+                _ASSERT(seg_i->GetToOpen() <= aln_rng_i->GetFirstToOpen());
+                if (seg_i->GetToOpen() > aln_rng_i->GetFirstToOpen()) {
+                    NCBI_THROW(CAlnException, eInternalFailure,
+                               "seg_i->GetToOpen() > aln_rng_i->GetFirstToOpen()");
+                }
                 starts[matrix_row_pos] = 
                     (direct ?
                      aln_rng_i->GetSecondFrom() + left_delta :
                      aln_rng_i->GetSecondToOpen() - right_delta);
                 left_delta += seg_i->GetLength();
                 _ASSERT(right_delta >= seg_i->GetLength());
+                if (right_delta < seg_i->GetLength()) {
+                    NCBI_THROW(CAlnException, eInternalFailure,
+                               "right_delta < seg_i->GetLength()");
+                }
                 right_delta -= seg_i->GetLength();
                 if (right_delta == 0) {
                     ++aln_rng_i;
                     if (aln_rng_i != pairwises[row]->end()) {
+                        direct = aln_rng_i->IsDirect();
                         left_delta = 0;
                         right_delta = aln_rng_i->GetLength();
-                        direct = aln_rng_i->IsDirect();
                     }
                 }
             }

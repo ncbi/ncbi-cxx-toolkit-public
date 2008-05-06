@@ -53,7 +53,8 @@ public:
         eTranslateFailure,
         eMergeFailure,
         eUnknownMergeFailure,
-        eUnsupported
+        eUnsupported,
+        eInternalFailure
     };
 
     virtual const char *GetErrCodeString(void) const
@@ -69,6 +70,7 @@ public:
         case eTranslateFailure:     return "eTranslateFailure";
         case eMergeFailure:         return "eMergeFailure";
         case eUnknownMergeFailure:  return "eUnknownMergeFailure";
+        case eInternalFailure:      return "eInternalFailure";
         case eUnsupported:          return "eUnsupported";
         default:                    return CException::GetErrCodeString();
         }
