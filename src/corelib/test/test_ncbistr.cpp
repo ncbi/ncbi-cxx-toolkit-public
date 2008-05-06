@@ -717,54 +717,54 @@ BOOST_AUTO_TEST_CASE(s_Replace)
     string search("ccc");
     string replace("RrR");
     NStr::Replace(src, search, replace, dst);
-    BOOST_CHECK_EQUAL(dst, "aaabbbaaRrRzzRrRXX");
+    BOOST_CHECK_EQUAL(dst, string("aaabbbaaRrRzzRrRXX"));
 
     search = "a";
     replace = "W";
     NStr::Replace(src, search, replace, dst, 6, 1);
-    BOOST_CHECK_EQUAL(dst, "aaabbbWaccczzcccXX");
+    BOOST_CHECK_EQUAL(dst, string("aaabbbWaccczzcccXX"));
     
     search = "bbb";
     replace = "BBB";
     NStr::Replace(src, search, replace, dst, 50);
-    BOOST_CHECK_EQUAL(dst, "aaabbbaaccczzcccXX");
+    BOOST_CHECK_EQUAL(dst, string("aaabbbaaccczzcccXX"));
 
     search = "ggg";
     replace = "no";
     dst = NStr::Replace(src, search, replace);
-    BOOST_CHECK_EQUAL(dst, "aaabbbaaccczzcccXX");
+    BOOST_CHECK_EQUAL(dst, string("aaabbbaaccczzcccXX"));
 
     search = "a";
     replace = "A";
     dst = NStr::Replace(src, search, replace);
-    BOOST_CHECK_EQUAL(dst, "AAAbbbAAccczzcccXX");
+    BOOST_CHECK_EQUAL(dst, string("AAAbbbAAccczzcccXX"));
 
     search = "X";
     replace = "x";
     dst = NStr::Replace(src, search, replace, src.size() - 1);
-    BOOST_CHECK_EQUAL(dst, "aaabbbaaccczzcccXx");
+    BOOST_CHECK_EQUAL(dst, string("aaabbbaaccczzcccXx"));
 
     // ReplaceInPlace
 
     search = "a";
     replace = "W";
     NStr::ReplaceInPlace(src, search, replace);
-    BOOST_CHECK_EQUAL(src, "WWWbbbWWccczzcccXX");
+    BOOST_CHECK_EQUAL(src, string("WWWbbbWWccczzcccXX"));
 
     search = "W";
     replace = "a";
     NStr::ReplaceInPlace(src, search, replace, 2, 2);
-    BOOST_CHECK_EQUAL(src, "WWabbbaWccczzcccXX");
+    BOOST_CHECK_EQUAL(src, string("WWabbbaWccczzcccXX"));
 
     search = "a";
     replace = "bb";
     NStr::ReplaceInPlace(src, search, replace);
-    BOOST_CHECK_EQUAL(src, "WWbbbbbbbWccczzcccXX");
+    BOOST_CHECK_EQUAL(src, string("WWbbbbbbbWccczzcccXX"));
 
     search = "bb";
     replace = "c";
     NStr::ReplaceInPlace(src, search, replace);
-    BOOST_CHECK_EQUAL(src, "WWcccbWccczzcccXX");
+    BOOST_CHECK_EQUAL(src, string("WWcccbWccczzcccXX"));
 
     OK;
 }
@@ -1424,7 +1424,7 @@ BOOST_AUTO_TEST_CASE(s_VersionInfo)
         BOOST_CHECK_EQUAL(ver.GetPatchLevel(), s_VerInfo[i].patch_level);
     }
     ParseVersionString("MyProgram ", &name, &ver);
-    BOOST_CHECK_EQUAL(name, "MyProgram");
+    BOOST_CHECK_EQUAL(name, string("MyProgram"));
     BOOST_CHECK(ver.IsAny());
 
     OK;
