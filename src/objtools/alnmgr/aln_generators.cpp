@@ -235,28 +235,30 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln)
             _ASSERT(matrix_row_pos == row + dim * seg);
             if (aln_rng_i != pairwises[row]->end()  &&
                 seg_i->GetFrom() >= aln_rng_i->GetFirstFrom()) {
-                _ASSERT(seg_i->GetFrom() >= aln_rng_i->GetFirstFrom());
-                if (seg_i->GetFrom() < aln_rng_i->GetFirstFrom()) {
-                    NCBI_THROW(CAlnException, eInternalFailure,
-                               "seg_i->GetFrom() < aln_rng_i->GetFirstFrom()");
-                }
                 _ASSERT(seg_i->GetToOpen() <= aln_rng_i->GetFirstToOpen());
                 if (seg_i->GetToOpen() > aln_rng_i->GetFirstToOpen()) {
                     NCBI_THROW(CAlnException, eInternalFailure,
                                "seg_i->GetToOpen() > aln_rng_i->GetFirstToOpen()");
                 }
-                starts[matrix_row_pos] = 
-                    (direct ?
-                     aln_rng_i->GetSecondFrom() + left_delta :
-                     aln_rng_i->GetSecondToOpen() - right_delta);
-                left_delta += seg_i->GetLength();
+
+                // dec right_delta
                 _ASSERT(right_delta >= seg_i->GetLength());
                 if (right_delta < seg_i->GetLength()) {
                     NCBI_THROW(CAlnException, eInternalFailure,
                                "right_delta < seg_i->GetLength()");
                 }
                 right_delta -= seg_i->GetLength();
+
+                starts[matrix_row_pos] = 
+                    (direct ?
+                     aln_rng_i->GetSecondFrom() + left_delta :
+                     aln_rng_i->GetSecondFrom() + right_delta);
+
+                // inc left_delta
+                left_delta += seg_i->GetLength();
+
                 if (right_delta == 0) {
+                    _ASSERT(left_delta == aln_rng_i->GetLength());
                     ++aln_rng_i;
                     if (aln_rng_i != pairwises[row]->end()) {
                         direct = aln_rng_i->IsDirect();
