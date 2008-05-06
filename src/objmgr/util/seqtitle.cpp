@@ -106,6 +106,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     bool                      is_nc       = false;
     bool                      is_nm       = false;
     bool                      is_nr       = false;
+    bool                      is_tsa      = false;
     bool                      wgs_master  = false;
     CMolInfo::TTech           tech        = CMolInfo::eTech_unknown;
     bool                      htg_tech    = false;
@@ -205,6 +206,10 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     case CMolInfo::eTech_survey:
     case CMolInfo::eTech_wgs:
         use_biosrc = true;
+        break;
+    case CMolInfo::eTech_tsa:
+        is_tsa = true;
+        break;
     default:
         break;
     }
@@ -387,24 +392,26 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         }
     }
 
-    if (third_party  &&  !title.empty() ) {
+    if (is_tsa  &&  !title.empty() ) {
+        prefix = "TSA: ";
+    } else if (third_party  &&  !title.empty() ) {
         bool tpa_start = NStr::StartsWith(title, "TPA: ", NStr::eNocase);
         if (tpa_exp) {
             if ( !NStr::StartsWith(title, "TPA_exp:", NStr::eNocase) ) {
-                prefix += "TPA_exp: ";
+                prefix = "TPA_exp: ";
                 if (tpa_start) {
                     title.erase(0, 5);
                 }
             }
         } else if (tpa_inf) {
             if ( !NStr::StartsWith(title, "TPA_inf:", NStr::eNocase) ) {
-                prefix += "TPA_inf: ";
+                prefix = "TPA_inf: ";
                 if (tpa_start) {
                     title.erase(0, 5);
                 }
             }
         } else if ( !tpa_start ) {
-            prefix += "TPA: ";
+            prefix = "TPA: ";
         }
     }
 
