@@ -277,17 +277,6 @@ int CAlnBuildApp::Run(void)
         (CAlnUserOptions::EDirection) GetArgs()["dir"].AsInteger();
 
 
-    /// Construct a vector of anchored alignments
-    TAnchoredAlnVec anchored_aln_vec;
-    CreateAnchoredAlnVec(aln_stats, anchored_aln_vec, aln_user_options);
-    ReportTime("TAnchoredAlnVec");
-    {
-        ITERATE(TAnchoredAlnVec, aln_vec_it, anchored_aln_vec) {
-            cout << **aln_vec_it;
-        }
-        m_StopWatch.Restart();
-    }
-
     /// Can the alignments be anchored?
     if ( !aln_stats.CanBeAnchored() ) {
         cout << "Input alignments cannot be anchored because they don't share at least one common sequence." << endl;
@@ -311,6 +300,17 @@ int CAlnBuildApp::Run(void)
         cout << "Automatically set anchor to: " << aln_user_options.GetAnchorId() << endl << endl;
     }
     
+
+    /// Construct a vector of anchored alignments
+    TAnchoredAlnVec anchored_aln_vec;
+    CreateAnchoredAlnVec(aln_stats, anchored_aln_vec, aln_user_options);
+    ReportTime("TAnchoredAlnVec");
+    {
+        ITERATE(TAnchoredAlnVec, aln_vec_it, anchored_aln_vec) {
+            cout << **aln_vec_it;
+        }
+        m_StopWatch.Restart();
+    }
 
     /// Choose merging algorithm
     aln_user_options.m_MergeAlgo = 
