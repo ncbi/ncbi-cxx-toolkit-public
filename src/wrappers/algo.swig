@@ -359,6 +359,34 @@ public:
 }
 
 
+#ifdef SWIGPYTHON
+%define STREAM_INSERTER(class_name)
+%extend class_name {
+    // support opeator<< with streams
+    std::ostream& __rlshift__(std::ostream& ostr) {
+        return ostr << *self;
+    };
+};
+%enddef
+#endif
+
+#ifdef SWIGPERL
+%define STREAM_INSERTER(class_name)
+%extend std::ostream {
+    // support opeator<< with streams
+    std::ostream& __lshift__(const class_name& obj) {
+        return *self << obj;
+    };
+};
+%enddef
+#endif
+
+#define BIO_TREE_DYN ncbi::CBioTree<ncbi::BioTreeBaseNode<ncbi::CBioTreeEmptyNodeData, ncbi::CBioTreeFeatureList> >
+STREAM_INSERTER(BIO_TREE_DYN)
+STREAM_INSERTER(ncbi::CTreeNode<ncbi::CPhyNodeData>)
+#undef  BIO_TREE_DYN
+
+
 // Member of CContigAssembly::SAlignStats
 %template(vector_CContigAssembly_SAlignStats_STails)
     std::vector<ncbi::CContigAssembly_SAlignStats_STails>;
