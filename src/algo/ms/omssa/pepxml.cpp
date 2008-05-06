@@ -51,32 +51,93 @@ char const * const kMolNames[5] = {
     "NA"
 };
 
-string CPepXML::ConvertAA(char in) {
+char CPepXML::ConvertAA(char in) {
     string out;
     CSeqConvert::Convert(&in, CSeqUtil::e_Ncbistdaa, 0, 1, out, CSeqUtil::e_Ncbieaa);
-    return out;
+    return out[0];
 }
 
-void CPepXML::ConvertModification(CRef<CSearch_summary> sSum, CRef <CMSModSpecSet> Modset, int modnum, bool fixed) {
-//     eMSModType_modaa   = 0,  ///< at particular amino acids
-//     eMSModType_modn    = 1,  ///< at the N terminus of a protein
-//     eMSModType_modnaa  = 2,  ///< at the N terminus of a protein at particular amino acids
-//     eMSModType_modc    = 3,  ///< at the C terminus of a protein
-//     eMSModType_modcaa  = 4,  ///< at the C terminus of a protein at particular amino acids
-//     eMSModType_modnp   = 5,  ///< at the N terminus of a peptide
-//     eMSModType_modnpaa = 6,  ///< at the N terminus of a peptide at particular amino acids
-//     eMSModType_modcp   = 7,  ///< at the C terminus of a peptide
-//     eMSModType_modcpaa = 8,  ///< at the C terminus of a peptide at particular amino acids
-//     eMSModType_modmax  = 9  ///< the max number of modification types
+typedef pair<int, string> TAAModPair;
+typedef map<int, string> TAAModMap;
+
+CRef<CModification_info> CPepXML::ConvertModifications(CRef<CMSHits> msHits, CRef<CMSModSpecSet> Modset) {
+    if (msHits->GetMods().empty()) {
+        return null;
+    }
+    CRef<CModification_info> modInfo(new CModification_info);
+
+    TAAModMap modMap;
+    string pep = msHits->GetPepstring();
+
+    ITERATE(CMSHits::TMods, iMod, msHits->GetMods()) {
+        int pos = (*iMod)->GetSite();
+        int num = (*iMod)->GetModtype();  // poorly named in OMSSA, is actually MSMod, not MSModType 
+        EMSModType type = Modset->GetModType(num);
+        double mdiff = MSSCALE2DBL(Modset->GetModMass(num));
+        char aa = pep[pos];
+        double aaMass = aaMassMap.find(aa)->second;
+        double mass = aaMass - mdiff;
+        string sMass = NStr::DoubleToString(mass);
+        string iMass = "[" + NStr::IntToString(static_cast<int>(mass)) + "]";
+        
+        modMap.insert(TAAModPair(pos,iMass));
+
+        CRef<CMod_aminoacid_mass> modaaMass(new CMod_aminoacid_mass);
+
+        switch (type) {
+        case eMSModType_modaa:
+            modaaMass->SetAttlist().SetPosition(NStr::IntToString(pos+1));
+            modaaMass->SetAttlist().SetMass(sMass);
+            modInfo->SetMod_aminoacid_mass().push_back(modaaMass);
+            break;
+        case eMSModType_modn:
+        case eMSModType_modnaa:
+        case eMSModType_modnp:
+        case eMSModType_modnpaa:
+            modInfo->SetAttlist().SetMod_nterm_mass(sMass);
+            break;
+        case eMSModType_modc:
+        case eMSModType_modcaa:
+        case eMSModType_modcp:
+        case eMSModType_modcpaa:
+            modInfo->SetAttlist().SetMod_cterm_mass(sMass);
+            break;
+        default:
+            // perhaps some error handling here
+            break;
+        }
+        
+    }
+    string modPep;
+    
+    for (unsigned int i=0; i<pep.length(); i++) {
+        modPep.append(1, pep[i]);
+        TAAModMap::iterator it;
+        it = modMap.find(i);
+        if (it != modMap.end()) {
+            modPep.append(it->second);
+        }
+    }
+    modInfo->SetAttlist().SetModified_peptide(modPep);    
+
+    return modInfo;
+}
+
+
+void CPepXML::ConvertModSetting(CRef<CSearch_summary> sSum, CRef<CMSModSpecSet> Modset, int modnum, bool fixed) {
     // NB: pepXML does not seem to allow for modification to the terminus of a protein at particular amino acids
     int type = Modset->GetModType(modnum);
     if ( type % 2 == 0) {  // Must apply to a paticular amino acid
         for (int i=0; i< Modset->GetModNumChars(modnum); i++) {
             CRef<CAminoacid_modification> aaMod(new CAminoacid_modification);
             int modchar = Modset->GetModChar(modnum, i);
-            aaMod->SetAttlist().SetAminoacid(ConvertAA(modchar));
+            char aa = ConvertAA(modchar);
+            string aaStr(1, aa);
+            aaMod->SetAttlist().SetAminoacid(aaStr);
             double mdiff = MSSCALE2DBL(Modset->GetModMass(modnum));
-            string mass = NStr::DoubleToString(MonoMass[modchar] - mdiff);
+            double aaMass = MonoMass[modchar];
+            aaMassMap.insert(TAminoAcidMassPair(aa, aaMass));
+            string mass = NStr::DoubleToString(aaMass - mdiff);
             aaMod->SetAttlist().SetMassdiff(NStr::DoubleToString(mdiff));
             aaMod->SetAttlist().SetMass(mass);
             if (fixed) {
@@ -88,7 +149,7 @@ void CPepXML::ConvertModification(CRef<CSearch_summary> sSum, CRef <CMSModSpecSe
                 if (type == eMSModType_modnpaa) aaMod->SetAttlist().SetPeptide_terminus("N");
                 if (type == eMSModType_modcpaa) aaMod->SetAttlist().SetPeptide_terminus("C");
             }
-            aaMod->SetAttlist().SetDescription(Modset->GetModName(modnum));
+            aaMod->SetAttlist().SetDescription(Modset->GetUnimodName(modnum));
             sSum->SetAminoacid_modification().push_back(aaMod);
         }
     } else {
@@ -102,7 +163,7 @@ void CPepXML::ConvertModification(CRef<CSearch_summary> sSum, CRef <CMSModSpecSe
         } else {
             termMod->SetAttlist().SetVariable("Y");
         }
-        termMod->SetAttlist().SetDescription(Modset->GetModName(modnum));
+        termMod->SetAttlist().SetDescription(Modset->GetUnimodName(modnum));
         switch (type) {
         case eMSModType_modn:
             termMod->SetAttlist().SetTerminus("N");
@@ -134,24 +195,25 @@ void CPepXML::ConvertModification(CRef<CSearch_summary> sSum, CRef <CMSModSpecSe
 //         4 = file extension (.dta)
 // def:    string to return if SpecID is not a dta filename
 string CPepXML::ParseScan(string SpecID, int field, string def) {
+	CRegexp RxpLocus("^locus", CRegexp::fCompile_ignore_case | CRegexp::fCompile_newline );
+	if (RxpLocus.IsMatch(SpecID)) return def;
+
 	CRegexp RxpParse(".*\\.(\\d+)\\.(\\d+)\\.(\\d+)(\\.dta)?", CRegexp::fCompile_ignore_case);
 	string match = RxpParse.GetMatch(SpecID, 0, field);
 	if (match == "") return def;
 	
 	return match;
-	
- //string start = "0";
- //   if (NStr::EndsWith(SpecID, "dta", NStr::eNocase)) {
- //       list<string> result;
- //       NStr::Split(SpecID, ".", result);
- //       list<string>::reverse_iterator rIter = result.rbegin();
- //       for (int i = 0; i < field; i++) { rIter++; }
- //       start = (*rIter);
- //   } else {
- //       start = def;
- //   }
- //   return start;
 }
+
+string CPepXML::GetProteinName(CRef<CMSPepHit> pHit) {
+    if (pHit->CanGetAccession()) {
+        return pHit->GetAccession();
+    } else if (pHit->CanGetGi()) {
+        return "gi:" + NStr::IntToString(pHit->GetGi());
+    }
+    return pHit->GetDefline();
+}
+
 
 void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, string basename) {
     string newname = basename + ".pep.xml";
@@ -212,14 +274,14 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     CMSSearchSettings::TFixed::const_iterator iterF;
     for (iterF = inOMSSA.GetRequest().front()->GetSettings().GetFixed().begin();
          iterF != inOMSSA.GetRequest().front()->GetSettings().GetFixed().end(); ++iterF) {
-        ConvertModification(sSum, Modset, *iterF, true);
+        ConvertModSetting(sSum, Modset, *iterF, true);
     }
 
     // Variable mods
     CMSSearchSettings::TVariable::const_iterator iterV;
     for (iterV = inOMSSA.GetRequest().front()->GetSettings().GetVariable().begin();
          iterV != inOMSSA.GetRequest().front()->GetSettings().GetVariable().end(); ++iterV) {
-        ConvertModification(sSum, Modset, *iterV, false);
+        ConvertModSetting(sSum, Modset, *iterV, false);
     }
     rSum->SetSearch_summary().push_back(sSum);
     
@@ -258,13 +320,9 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
                 sHit->SetAttlist().SetPeptide((*iHit)->GetPepstring());
                 sHit->SetAttlist().SetPeptide_prev_aa((*iHit)->GetPepstart());
                 sHit->SetAttlist().SetPeptide_next_aa((*iHit)->GetPepstop());
-                if ((*iPephit)->CanGetAccession()) {
-                    sHit->SetAttlist().SetProtein((*iPephit)->GetAccession());
-                } else if ((*iPephit)->GetGi()) {
-                    sHit->SetAttlist().SetProtein("gi:" + NStr::IntToString((*iPephit)->GetGi()));
-                } else {
-                    sHit->SetAttlist().SetProtein((*iPephit)->GetDefline());
-                }
+
+                sHit->SetAttlist().SetProtein(GetProteinName(*iPephit));
+
                 sHit->SetAttlist().SetNum_tot_proteins(NStr::IntToString((*iHit)->GetPephits().size()));
                 sHit->SetAttlist().SetNum_matched_ions(NStr::IntToString((*iHit)->GetMzhits().size()));
                 // skip calculating the theoretical number of ions for now
@@ -290,12 +348,15 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
                 // Generate alternative_proteins
                 for (iPephit++ ; iPephit != (*iHit)->GetPephits().end(); iPephit++) {
                     CRef<CAlternative_protein> altPro(new CAlternative_protein);
-                    altPro->SetAttlist().SetProtein((*iPephit)->GetAccession());
+                    altPro->SetAttlist().SetProtein(GetProteinName(*iPephit));
 	                altPro->SetAttlist().SetProtein_descr((*iPephit)->GetDefline());
 	                //altPro->SetAlternative_protein().SetAttlist().SetNum_tol_term(); //skip
 	                //altPro->SetAlternative_protein().SetAttlist().SetProtein_mw();  //skip
                     sHit->SetAlternative_protein().push_back(altPro);
                 }
+                CRef<CModification_info> modInfo = ConvertModifications(*iHit, Modset);
+                if (modInfo) sHit->SetModification_info(*modInfo);
+                
                 sResult->SetSearch_hit().push_back(sHit);
             }
             sQuery->SetSearch_result().push_back(sResult);
