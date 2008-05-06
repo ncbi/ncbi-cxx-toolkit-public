@@ -344,7 +344,9 @@ MSModSpec ::= SEQUENCE {
     averagemass REAL,    -- average mass
     n15mass REAL,        -- monoisotopic n15 mass
     residues SEQUENCE OF VisibleString OPTIONAL,  -- residues to apply mod to
-    neutralloss MSMassSet OPTIONAL  -- loss after precursor mass determination
+    neutralloss MSMassSet OPTIONAL,  -- loss after precursor mass determination
+    unimod INTEGER OPTIONAL,         -- the equivalent Unimod Accession number
+    psi-ms VisibleString OPTIONAL    -- the PSI-MS equivalent name  
     }
     
 -- Holds a set of modifications

@@ -84,6 +84,14 @@ void CMSModSpecSet::CreateArrays(void)
         // make sure name is null terminated
         ModNames[ModNum][kMaxNameSize-1] = '\0';
 
+        if ((*iMods)->CanGetPsi_ms()) {
+            strncpy(UnimodNames[ModNum], (*iMods)->GetPsi_ms().c_str(), kMaxNameSize - 1);
+        } else {
+            strncpy(ModNames[ModNum], (*iMods)->GetName().c_str(), kMaxNameSize - 1);    
+        }        
+        // make sure name is null terminated
+        UnimodNames[ModNum][kMaxNameSize-1] = '\0';
+
         int iChars(0);
         CMSModSpec::TResidues::const_iterator iRes;
         // loop thru chars
