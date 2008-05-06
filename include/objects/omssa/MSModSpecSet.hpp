@@ -101,6 +101,12 @@ public:
     */
     const char * GetModName(int Mod) const;
 
+    //! get unimod name
+    /*!
+    \param Mod the modification number
+    */
+    const char * GetUnimodName(int Mod) const;
+
     //! get modification type
     /*!
     \param Mod the modification number
@@ -132,6 +138,9 @@ private:
 
     //! friendly names
     char ModNames[eMSMod_max][kMaxNameSize];
+
+    //! friendly names
+    char UnimodNames[eMSMod_max][kMaxNameSize];
 
     //! categorizes existing mods as the types EMSModType
     EMSModType ModTypes[eMSMod_max];
@@ -201,6 +210,16 @@ inline
 const char * CMSModSpecSet::GetModName(int Mod) const
 {
     return ModNames[Mod];
+}
+
+//! get unimod name
+/*!
+\param Mod the modification number
+*/
+inline
+const char * CMSModSpecSet::GetUnimodName(int Mod) const
+{
+    return UnimodNames[Mod];
 }
 
 //! get modification type
