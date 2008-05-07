@@ -4,7 +4,7 @@ ASN_DEP = seqset xnetblast
 
 SRC = cpg nuc_prop orf prot_prop regexp_loc seq_match restriction antigenic \
       coiled_coil signal_seq make_cdr_prods find_pattern gene_model \
-      annot_compare compare_feats align_group masking_delta align_cleanup
+      annot_compare compare_feats align_group masking_delta align_cleanup util
 
 LIB = xalgoseq
 
