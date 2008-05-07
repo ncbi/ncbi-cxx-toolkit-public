@@ -1904,7 +1904,7 @@ public:
     typedef int TReopenFlags;
 
     /// Reopen file to enable log rotation.
-    virtual void Reopen(TReopenFlags flags = fDefault) {}
+    virtual void Reopen(TReopenFlags /*flags*/) {}
 };
 
 /// Diagnostic handler function type.
@@ -2055,7 +2055,7 @@ public:
     bool Valid(void) { return m_Handle != -1; }
 
     // Reopen file to enable log rotation.
-    virtual void Reopen(TReopenFlags flags = fDefault);
+    virtual void Reopen(TReopenFlags flags);
 
 private:
     int    m_Handle;      ///< File handle
@@ -2125,7 +2125,7 @@ public:
     CNcbiOstream* GetLogStream(EDiagFileType file_type);
 
     // Reopen all files to enable log rotation.
-    virtual void Reopen(TReopenFlags flags = fDefault);
+    virtual void Reopen(TReopenFlags flags);
 
     // Set the selected sub-handler directly with the given ownership.
     void SetSubHandler(CStreamDiagHandler_Base* handler,

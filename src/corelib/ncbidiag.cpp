@@ -3734,7 +3734,7 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
 {
     // Period is longer than for CFileDiagHandler to prevent double-reopening
     if (mess.GetTime().DiffSecond(*m_LastReopen) >= kLogReopenDelay + 5) {
-        Reopen();
+        Reopen(fDefault);
     }
 
     // If the handle is not available, collect the messages until they
@@ -4080,7 +4080,7 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
 {
     // Check time and re-open the streams
     if (mess.GetTime().DiffSecond(*m_LastReopen) >= kLogReopenDelay) {
-        Reopen();
+        Reopen(fDefault);
     }
 
     // Output the message
