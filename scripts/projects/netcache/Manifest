@@ -21,9 +21,7 @@ CONF: build/app/netcache/nc_handler.d
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux32 : Bdb4621 : GCC.sh 3.4.2 --without-debug --with-optimization --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.21
-Linux32 : Bdb4621 : GCC.sh 3.4.2 --with-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.21
-Linux64 : Bdb4621 : GCC.sh 4.0.1 --without-debug --with-optimization --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.21
-Linux64 : Bdb4621 : GCC.sh 4.0.1 --with-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.21
-
-
+Linux32 : Bdb4621 : GCC.sh 3.4.2 --without-debug --with-optimization --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.21.1
+Linux32 : Bdb4621 : GCC.sh 3.4.2 --with-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.21.1
+Linux64 : Bdb4621 : GCC.sh 4.0.1 --without-debug --with-optimization --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.21.1
+Linux64 : Bdb4621 : GCC.sh 4.0.1 --with-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.21.1
