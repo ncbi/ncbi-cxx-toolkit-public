@@ -533,17 +533,13 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
     try {
         ITERATE(TStack, it, m_Stack) {
             CStackTrace::SStackFrameInfo sf_info;
-            sf_info.func = "???";
-            sf_info.file = "???";
-            sf_info.offs = 0;
-            sf_info.line = 0;
+            sf_info.func = "<cannot get function name for this address>";
 
             if ( !SymGetSymFromAddr(curr_proc,
                                     it->AddrPC.Offset,
                                     &offs,
                                     pSym) ) {
-                ERR_POST_X(9, Error << "failed to get symbol for address: "
-                    << it->AddrPC.Offset);
+                stack.push_back(sf_info);
                 continue;
             }
             sf_info.offs = offs;
