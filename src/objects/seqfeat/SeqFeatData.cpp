@@ -267,7 +267,6 @@ void CSeqFeatData::x_InitFeatDataInfo(void) const
                 m_FeatDataInfo = it->second;
             }
             else {
-                bool other = GetRna().GetType() != CRNA_ref::eType_other;
                 bool can_get_name = (GetRna().CanGetExt()
                                     &&  GetRna().GetExt().IsName());
                 const string& ext_name = (can_get_name
@@ -275,12 +274,13 @@ void CSeqFeatData::x_InitFeatDataInfo(void) const
                                         : kEmptyStr);
                 if (ext_name == "ncRNA") {
                     m_FeatDataInfo.m_Subtype = eSubtype_ncRNA;
-                    m_FeatDataInfo.m_Key_full = other ? ext_name : "misc_RNA";
+                    m_FeatDataInfo.m_Key_full = ext_name;
                 } else if (ext_name == "tmRNA") {
                     m_FeatDataInfo.m_Subtype = eSubtype_tmRNA;
-                    m_FeatDataInfo.m_Key_full = other ? ext_name : "misc_RNA";
+                    m_FeatDataInfo.m_Key_full = ext_name;
                 } else {
                     m_FeatDataInfo.m_Subtype = eSubtype_otherRNA;
+                    bool other = GetRna().GetType() == CRNA_ref::eType_other;
                     m_FeatDataInfo.m_Key_full = other ? "RNA" : "misc_RNA";
                 }
                 m_FeatDataInfo.m_Key_gb = "misc_RNA";
