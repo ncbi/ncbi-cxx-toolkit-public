@@ -209,6 +209,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         break;
     case CMolInfo::eTech_tsa:
         is_tsa = true;
+        use_biosrc = true;
         break;
     default:
         break;
@@ -261,7 +262,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     }
 
     if (title.empty()  &&  use_biosrc  &&  source.NotEmpty()) {
-        if (tech == CMolInfo::eTech_wgs  &&  !wgs_master
+        if (((tech == CMolInfo::eTech_wgs  &&  !wgs_master)  ||  is_tsa)
             &&  general_id.NotEmpty()  &&  general_id->GetTag().IsStr()) {
             title = s_TitleFromBioSource(*source, tech,
                                          general_id->GetTag().GetStr());
