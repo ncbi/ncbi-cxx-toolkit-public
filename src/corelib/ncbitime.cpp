@@ -1125,6 +1125,9 @@ time_t CTime::GetTimeT(void) const
     t.tm_isdst = -1;
 #if defined(NCBI_OS_DARWIN) && ! defined(NCBI_COMPILER_MW_MSL)
     time_t tt = mktime(&t);
+    if ( tt == -1 ) {
+        return -1;
+    }
     return IsGmtTime() ? tt+t.tm_gmtoff : tt;
 #elif defined(HAVE_TIMEGM)
     return IsGmtTime() ? timegm(&t) : mktime(&t);
@@ -1132,6 +1135,9 @@ time_t CTime::GetTimeT(void) const
     struct tm *ttemp;
     time_t timer;
     timer = mktime(&t);
+    if ( timer == -1 ) {
+        return -1;
+    }
 
     // Correct timezone for GMT time
     if ( IsGmtTime() ) {
@@ -1148,6 +1154,9 @@ time_t CTime::GetTimeT(void) const
         t.tm_year  = Year()-1900;
         t.tm_isdst = -1;
         timer = mktime(&t);
+        if ( timer == -1 ) {
+            return -1;
+        }
 
 #  if defined(HAVE_LOCALTIME_R)
         struct tm temp;
@@ -1251,8 +1260,8 @@ static void s_GetTimeT(time_t& timer, long& ns)
     } else {
         timer = tp.tv_sec;
         ns = long((double)tp.tv_usec *
-                    (double)kNanoSecondsPerSecond /
-                    (double)kMicroSecondsPerSecond);
+                  (double)kNanoSecondsPerSecond /
+                  (double)kMicroSecondsPerSecond);
     }
 #else // NCBI_OS_MAC
     timer = time(0);
@@ -1286,6 +1295,10 @@ CTime& CTime::x_SetTime(const time_t* value)
     t = &temp;
 #else
     t = ( GetTimeZone() == eLocal ) ? localtime(&timer) : gmtime(&timer);
+    if ( !t ) {
+        // Error was detected: incorrect timer value or system error
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  localtime/gmtime error, possible incorrect time_t value");
+    }
 #endif
     m_Data.adjTimeDiff = 0;
     m_Data.year        = t->tm_year + 1900;
@@ -1635,6 +1648,10 @@ CTime& CTime::ToTime(ETimeZone tz)
         t = &temp;
 #else
         t = ( tz == eLocal ) ? localtime(&timer) : gmtime(&timer);
+        if ( !t ) {
+            // Error was detected: incorrect timer value or system error
+            NCBI_THROW(CTimeException, eInvalid, "CTime:  localtime/gmtime error, possible incorrect time_t value");
+        }
 #endif
         m_Data.year  = t->tm_year + 1900;
         m_Data.month = t->tm_mon + 1;
