@@ -951,7 +951,7 @@ static const char * kBuiltInGuide[] = {
     "2+6  DI  ddbj_patent # from Korea",
     "2+6  DJ  ddbj_patent",
     "2+6  DK  ddbj_est",
-    "2+6  DL  ddbj_other_nuc",
+    "2+6  DL  ddbj_patent",
     "2+6  DM  ddbj_other_nuc",
     "2+6  DN  gb_est",
     "2+6  DO  unreserved_nuc",
