@@ -463,7 +463,6 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
             gb_params = GetLoaderParams(app_params.get());
         }
     }
-    DumpParams(gb_params);
     
     size_t queue_size = DEFAULT_ID_GC_SIZE;
     if ( gb_params ) {
