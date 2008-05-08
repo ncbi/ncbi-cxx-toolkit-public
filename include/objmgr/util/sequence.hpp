@@ -550,8 +550,14 @@ END_SCOPE(sequence)
 class NCBI_XOBJUTIL_EXPORT CFastaOstream {
 public:
     enum EFlags {
-        eAssembleParts      = 0x01,
-        eInstantiateGaps    = 0x02
+        fAssembleParts   = 0x01, ///< assemble FAR delta sequences
+        fInstantiateGaps = 0x02, ///< with Ns or Xs as appropriate, vs. one -
+        fSuppressRange   = 0x04, ///< never include location details in defline
+        fReverseStrand   = 0x08, ///< flip the (implicit) location
+        fKeepGTSigns     = 0x10, ///< don't convert '>' to '_' in title
+        // historically misnamed as eFlagName
+        eAssembleParts   = fAssembleParts,
+        eInstantiateGaps = fInstantiateGaps
     };
     typedef int TFlags; ///< binary OR of EFlags
 

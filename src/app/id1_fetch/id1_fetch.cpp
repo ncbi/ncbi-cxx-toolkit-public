@@ -525,7 +525,7 @@ bool CId1FetchApp::LookUpGI(int gi)
         }
     } else if (fmt == "fasta"  &&  lt == "entry") {
         CFastaOstream out(*m_OutputFile);
-        out.SetFlag(CFastaOstream::eAssembleParts);
+        out.SetFlag(CFastaOstream::fAssembleParts);
         out.Write(handle);
     } else if (fmt == "quality") {
         WriteQualityScores(handle);

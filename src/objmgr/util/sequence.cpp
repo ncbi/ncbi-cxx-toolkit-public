@@ -2031,7 +2031,8 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
     m_Out << '>';
     CSeq_id::WriteAsFasta(m_Out, bioseq);
 
-    if (location != NULL  &&  !location->IsWhole() ) {
+    if (location != NULL  &&  !location->IsWhole()
+        &&  !(m_Flags & fSuppressRange) ) {
         char delim = ':';
         for (CSeq_loc_CI it(*location);  it;  ++it) {
             CSeq_loc::TRange range = it.GetRange();
@@ -2074,14 +2075,13 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
     else {
         safe_title = sequence::s_GetFastaTitle( bioseq );
     }
-    NON_CONST_ITERATE (string, it, safe_title) {
-        switch (*it) {
-        case '>':
-            *it = '_';
-            break;
 
-        default:
-            break;
+    if ( !(m_Flags & fKeepGTSigns) ) {
+        NON_CONST_ITERATE (string, it, safe_title) {
+            switch (*it) {
+            case '>':  *it = '_';  break;
+            default:   break;
+            }
         }
     }
 
@@ -2109,20 +2109,25 @@ void CFastaOstream::WriteTitle(const CBioseq& bioseq,
 void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
                                const CSeq_loc* location)
 {
-        m_Out << '>';
-        CSeq_id::WriteAsFasta(m_Out, *handle.GetBioseqCore());
+    m_Out << '>';
+    CSeq_id::WriteAsFasta(m_Out, *handle.GetBioseqCore());
 
-        if (location != NULL  &&  !location->IsWhole() ) {
-            char delim = ':';
-            for (CSeq_loc_CI it(*location);  it;  ++it) {
-                CSeq_loc::TRange range = it.GetRange();
-                m_Out << delim << range.GetFrom() + 1 << '-' << range.GetTo() + 1;
-                delim = ',';
-            }
+    if (location != NULL  &&  !location->IsWhole()
+        &&  !(m_Flags & fSuppressRange) ) {
+        char delim = ':';
+        for (CSeq_loc_CI it(*location);  it;  ++it) {
+            CSeq_loc::TRange range = it.GetRange();
+            m_Out << delim << range.GetFrom() + 1 << '-' << range.GetTo() + 1;
+            delim = ',';
         }
+    }
+    if ((m_Flags & fKeepGTSigns) != 0) {
+        m_Out << ' ' << sequence::GetTitle(handle) << '\n';
+    } else {
         string safe_title;
         NStr::Replace(sequence::GetTitle(handle), ">", "_", safe_title);
         m_Out << ' ' << safe_title << '\n';
+    }
 }
 
 
@@ -2204,6 +2209,11 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
     CSeqVector_CI::TResidue gap_char      = it.GetGapChar();
     string                  uc_gaps(m_Width, gap_char);
     string                  lc_gaps(m_Width, tolower(gap_char));
+
+    if ((m_Flags & fReverseStrand) != 0) {
+        it.SetStrand(Reverse(it.GetStrand()));
+    }
+
     while ( it ) {
         if (rem_state == 0) {
             _ASSERT(ms_it->first == it.GetPos());
@@ -2214,7 +2224,7 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                 rem_state = ms_it->first - it.GetPos();
             }
         }
-        if ( !(m_Flags & eInstantiateGaps)  &&  it.GetGapSizeForward() ) {
+        if ( !(m_Flags & fInstantiateGaps)  &&  it.GetGapSizeForward() ) {
             TSeqPos gap_size = it.SkipGap();
             m_Out << "-\n";
             rem_line = m_Width;
@@ -2273,7 +2283,7 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
 void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
                                   const CSeq_loc* location)
 {
-    if ( !(m_Flags & eAssembleParts)  &&  !handle.IsSetInst_Seq_data() ) {
+    if ( !(m_Flags & fAssembleParts)  &&  !handle.IsSetInst_Seq_data() ) {
         SSeqMapSelector sel(CSeqMap::fFindInnerRef, (size_t)-1);
         if ( !handle.GetSeqMap().CanResolveRange(NULL, sel) ) {
             return;
@@ -2283,6 +2293,13 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
     CScope&    scope = handle.GetScope();
     CSeqVector v;
     if (location) {
+        if (sequence::SeqLocCheck(*location, &scope)
+            == sequence::eSeqLocCheck_error) {
+            string label;
+            location->GetLabel(&label);
+            NCBI_THROW(CObjmgrUtilException, eBadLocation,
+                       "CFastaOstream: location out of range: " + label);
+        }
         CRef<CSeq_loc> merged
             = sequence::Seq_loc_Merge(*location, CSeq_loc::fMerge_All, &scope);
         v = CSeqVector(*merged, scope, CBioseq_Handle::eCoding_Iupac);

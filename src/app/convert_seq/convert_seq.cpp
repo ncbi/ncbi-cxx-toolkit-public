@@ -121,6 +121,14 @@ void CConversionApp::Init(void)
         ("outfmt", &(*new CArgAllow_Strings,
                      "asn", "asnb", "xml", "ddbj", "embl", "genbank", "fasta",
                      "gff", "gff3", "tbl", "gbseq/xml"));
+    arg_desc->AddOptionalKey
+        ("outflags", "Flags",
+         "Format-specific output flags, in C-style decimal, hex, or octal"
+         " (FASTA-only at present)",
+         CArgDescriptions::eString); // eInteger is too strict
+    arg_desc->SetConstraint
+        ("outflags",
+         new CArgAllow_Regexp("^([1-9]\\d*|0[Xx][[:xdigit:]]*|0[0-7]*)$"));
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -281,8 +289,13 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
         }
     } else if (outfmt == "fasta") {
         CFastaOstream out(args["out"].AsOutputFile());
-        out.SetFlag(CFastaOstream::eAssembleParts);
-        out.SetFlag(CFastaOstream::eInstantiateGaps);
+        if (args["outflags"]) {
+            out.SetAllFlags
+                (NStr::StringToInt(args["outflags"].AsString(), 0, 0));
+        } else {
+            out.SetFlag(CFastaOstream::fAssembleParts);
+            out.SetFlag(CFastaOstream::fInstantiateGaps);
+        }
         for (CTypeConstIterator<CBioseq> it(entry);  it;  ++it) {
             out.Write(m_Scope->GetBioseqHandle(*it));
         }

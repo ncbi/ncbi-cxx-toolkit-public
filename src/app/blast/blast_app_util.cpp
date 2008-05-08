@@ -334,7 +334,7 @@ s_ImportSearchStrategy(CNcbiIstream* in,
                     queries.GetSeq_loc_list();
                 CFastaOstream out(tmpfile->AsOutputFile
                                   (CTmpFile::eIfExists_Throw));
-                out.SetFlag(CFastaOstream::eAssembleParts);
+                out.SetFlag(CFastaOstream::fAssembleParts);
                 
                 CBlastScopeSource scope_src(!!Blast_QueryIsProtein(prog));
                 CRef<CScope> scope(scope_src.NewScope());
@@ -351,7 +351,7 @@ s_ImportSearchStrategy(CNcbiIstream* in,
                     queries.GetBioseq_set();
                 CFastaOstream out(tmpfile->AsOutputFile
                                   (CTmpFile::eIfExists_Throw));
-                out.SetFlag(CFastaOstream::eAssembleParts);
+                out.SetFlag(CFastaOstream::fAssembleParts);
 
                 ITERATE(CBioseq_set::TSeq_set, seq_entry, bioseqs.GetSeq_set()){
                     out.Write(**seq_entry);
