@@ -69,6 +69,8 @@ public:
         return 25;
     }
 
+    void CheckPreferences(void);
+
     virtual size_t GetSpliceTypeCount(void)  = 0;
 
 protected:
