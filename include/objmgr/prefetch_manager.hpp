@@ -112,9 +112,6 @@ public:
     CRef<CPrefetchRequest> AddAction(IPrefetchAction* action,
                                      IPrefetchListener* listener = 0);
 
-    // Returns prefetch state in current thread.
-    static EState GetCurrentTokenState(void);
-
     // Checks if prefetch is active in current thread.
     // Throws CPrefetchCanceled exception if the current token is canceled.
     static bool IsActive(void);
@@ -201,8 +198,6 @@ public:
     virtual EStatus Execute(void);
 
     virtual void OnStatusChange(EStatus /* old */);
-
-    virtual void OnCancelRequested(void);
 
 private:
     friend class CPrefetchManager;

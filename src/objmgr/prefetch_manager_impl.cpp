@@ -66,9 +66,6 @@ CPrefetchRequest::~CPrefetchRequest(void)
 
 CPrefetchRequest::EState CPrefetchRequest::GetState(void) const
 {
-    if (IsCancelRequested())
-        return SPrefetchTypes::eCanceled;
-
     switch (GetStatus()) {
     case CThreadPool_Task::eIdle:
         return eInvalid;
@@ -101,16 +98,9 @@ void CPrefetchRequest::SetListener(IPrefetchListener* listener)
 
 void CPrefetchRequest::OnStatusChange(EStatus /* old */)
 {
-    // Changing to status eCanceled will be already notified
-    // via OnCancelRequested(). So we will not notify twice.
-    if (GetStatus() != CThreadPool_Task::eCanceled  &&  m_Listener) {
+    if (m_Listener) {
         m_Listener->PrefetchNotify(Ref(this), GetState());
     }
-}
-
-void CPrefetchRequest::OnCancelRequested(void)
-{
-    OnStatusChange(GetStatus());
 }
 
 CPrefetchRequest::TProgress
@@ -179,28 +169,25 @@ CRef<CPrefetchRequest> CPrefetchManager_Impl::AddAction(TPriority priority,
 }
 
 
-CPrefetchManager::EState CPrefetchManager::GetCurrentTokenState(void)
+bool CPrefetchManager::IsActive(void)
 {
     CThreadPool_Thread* thread = dynamic_cast<CThreadPool_Thread*>(
                                                 CThread::GetCurrentThread());
     if ( !thread ) {
-        return eInvalid;
+        return false;
     }
 
     CPrefetchRequest* req = static_cast<CPrefetchRequest*>(
                                     thread->GetCurrentTask().GetNCPointer());
-    if (req)
-        return req->GetState();
-    else
-        return eInvalid;
-}
-
-
-bool CPrefetchManager::IsActive(void)
-{
-    switch ( GetCurrentTokenState() ) {
-    case eCanceled:
+    if ( !req ) {
+        return false;
+    }
+    
+    if (req->IsCancelRequested()) {
         NCBI_THROW(CPrefetchCanceled, eCanceled, "canceled");
+    }
+    
+    switch ( req->GetState() ) {
     case eInvalid:
         return false;
     default:
