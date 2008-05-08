@@ -565,7 +565,11 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
         combined = "$(InputDir)" + *i + "__.cpp;" + "$(InputDir)" + *i + "___.cpp;";
     }
 #endif
-    build_info->m_Outputs = "$(InputDir)$(InputName).files;";
+    if (GetApp().GetCurrentBuildTree()) {
+        build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp";
+    } else {
+        build_info->m_Outputs = "$(InputDir)$(InputName).files;";
+    }
 
     //Additional Dependencies
     build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;" + tool_exe_location;

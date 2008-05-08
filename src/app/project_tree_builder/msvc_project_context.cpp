@@ -246,6 +246,13 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         ITERATE(list<CProjKey>, p, project.m_Depends) {
             const CProjKey& proj_key = *p;
             if (proj_key.Type() == CProjKey::eLib) {
+                if (GetApp().GetCurrentBuildTree()) {
+                    // do not attempt to prebuild what is missing
+                    if (GetApp().GetCurrentBuildTree()->m_Projects.find(proj_key) ==
+                        GetApp().GetCurrentBuildTree()->m_Projects.end()) {
+                        continue;
+                    }
+                }
                 m_PreBuilds.push_back(CreateProjectName(proj_key));
             }
         }
