@@ -81,8 +81,8 @@ void CSplignApp::Init()
     HideStdArgs(fHideHelp|fHideLogfile|fHideConffile|fHideVersion|fHideDryRun);
 #endif
 
-    SetVersion(CVersionInfo(1, 31, 0, "Splign"));
-    string program_name ("Splign v.1.31");
+    SetVersion(CVersionInfo(1, 32, 0, "Splign"));
+    string program_name ("Splign v.1.32");
 #ifdef GENOME_PIPELINE
     program_name += 'p';
 #endif

@@ -35,7 +35,6 @@
 
 #include "splign_util.hpp"
 #include "messages.hpp"
-
 #include <algo/align/util/hit_comparator.hpp>
 #include <algo/align/util/compartment_finder.hpp>
 #include <algo/align/nw/nw_band_aligner.hpp>
@@ -1446,6 +1445,7 @@ CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
         m_aligner->SetCDS(cds_start, cds_stop);
 
         rv += m_aligner->Run();
+        m_aligner->CheckPreferences();
 
 // #define DBG_DUMP_TYPE2
 #ifdef  DBG_DUMP_TYPE2
