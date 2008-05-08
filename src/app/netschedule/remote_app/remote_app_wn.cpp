@@ -123,6 +123,15 @@ public:
         int ret = -1;
         bool finished_ok = false;
         try {
+            x_GetEnv();
+
+            vector<const char*> env(m_Env);
+
+            string job_key("NCBI_NS_JID=");
+            job_key += context.GetJobKey();
+
+            env.insert(env.begin(), job_key.c_str());
+
             finished_ok = ExecRemoteApp(m_Params.GetAppPath(), 
                                         args, 
                                         request->GetStdIn(), 
@@ -137,7 +146,7 @@ public:
                                         tmp_path,
                                         m_Params.RemoveTempDir(),
                                         job_wdir,
-                                        x_GetEnv(),
+                                        &env[0],
                                         m_Params.GetMonitorAppPath(),
                                         m_Params.GetMaxMonitorRunningTime(),
                                         m_Params.GetMonitorPeriod(),
