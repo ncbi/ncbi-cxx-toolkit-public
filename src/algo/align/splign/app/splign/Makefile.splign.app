@@ -13,6 +13,8 @@ LIB = xalgoalignsplign xalgoalignutil xalgoalignnw xalgoseq \
       $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(BERKELEYDB_STATIC_LIBS) \
+       $(PCRE_LIBS) \
+       $(CMPRS_LIBS) \
        $(NETWORK_LIBS) \
        $(DL_LIBS) \
        $(ORIG_LIBS)
