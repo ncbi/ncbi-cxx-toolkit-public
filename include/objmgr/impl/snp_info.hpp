@@ -131,18 +131,18 @@ public:
         kNo_CommentIndex   = kMax_UI1,
         kMax_CommentIndex  = kNo_CommentIndex - 1
     };
-    typedef Uint1 TAlleleIndex;
     enum {
-        kNo_AlleleIndex    = kMax_UI1,
+        kMax_AllelesCount  = 6
+    };
+    typedef Uint2 TAlleleIndex;
+    enum {
+        kNo_AlleleIndex    = kMax_UI2,
         kMax_AlleleIndex   = kNo_AlleleIndex - 1
     };
-    typedef Uint1 TQualityIndex;
+    typedef TAlleleIndex TQualityIndex;
     enum {
-        kNo_QualityIndex    = kMax_UI1,
-        kMax_QualityIndex   = kNo_QualityIndex - 1
-    };
-    enum {
-        kMax_AllelesCount  = 4
+        kNo_QualityIndex    = kNo_AlleleIndex,
+        kMax_QualityIndex   = kMax_AlleleIndex
     };
     typedef Uint1 TWeight;
     enum {

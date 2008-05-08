@@ -456,7 +456,7 @@ public:
 }
 
 
-static const unsigned MAGIC = 0x12340005;
+static const unsigned MAGIC = 0x12340006;
 
 void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
                                        const CConstObjectInfo& object,

@@ -109,7 +109,7 @@ static const string kVal_1               ("1");
 static const string kId_dbSNP            ("dbSNP");
 
 static const size_t kMax_CommentLength = 65530;
-static const size_t kMax_AlleleLength  = 5;
+static const size_t kMax_AlleleLength  = 32;
 
 size_t SSNP_Info::GetAllelesCount(void) const
 {
