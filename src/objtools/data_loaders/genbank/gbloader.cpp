@@ -340,6 +340,18 @@ namespace {
         }
         return 0;
     }
+
+    void DumpParams(const TParams* params, const string& prefix = "")
+    {
+        if ( params ) {
+            for ( TParams::TNodeList_CI it = params->SubNodeBegin();
+                  it != params->SubNodeEnd(); ++it ) {
+                NcbiCout << prefix << (*it)->GetKey() << " = " << (*it)->GetValue().value
+                         << NcbiEndl;
+                DumpParams(static_cast<const TParams*>(*it), prefix + "  ");
+            }
+        }
+    }
 }
 
 
@@ -442,7 +454,7 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
     auto_ptr<TParamTree> app_params;
     const TParamTree* gb_params = 0;
     if ( params.GetParamTree() ) {
-        gb_params = params.GetParamTree();
+        gb_params = GetLoaderParams(params.GetParamTree());
     }
     else {
         CNcbiApplication* app = CNcbiApplication::Instance();
@@ -451,6 +463,7 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
             gb_params = GetLoaderParams(app_params.get());
         }
     }
+    DumpParams(gb_params);
     
     size_t queue_size = DEFAULT_ID_GC_SIZE;
     if ( gb_params ) {
@@ -521,11 +534,14 @@ string CGBDataLoader::GetReaderName(const TParamTree* params) const
 {
     string str;
     if ( str.empty() ) {
-        // try config first
-        str = TGenbankLoaderMethod::GetDefault();
+        str = GetParam(params, NCBI_GBLOADER_PARAM_READER_NAME);
     }
     if ( str.empty() ) {
-        str = GetParam(params, NCBI_GBLOADER_PARAM_READER_NAME);
+        str = GetParam(params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
+    }
+    if ( str.empty() ) {
+        // try config first
+        str = TGenbankLoaderMethod::GetDefault();
     }
     if ( str.empty() ) {
         // fall back default reader list
@@ -541,7 +557,10 @@ string CGBDataLoader::GetWriterName(const TParamTree* params) const
     string str = GetParam(params, NCBI_GBLOADER_PARAM_WRITER_NAME);
     if ( str.empty() ) {
         // try config first
-        string env_reader = TGenbankLoaderMethod::GetDefault();
+        string env_reader = GetParam(params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
+        if ( env_reader.empty() ) {
+            env_reader = TGenbankLoaderMethod::GetDefault();
+        }
         NStr::ToLower(env_reader);
         if ( NStr::StartsWith(env_reader, "cache;") ) {
             str = "cache";

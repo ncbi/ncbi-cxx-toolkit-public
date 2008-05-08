@@ -52,6 +52,8 @@
 /* List of writers */
 #define NCBI_GBLOADER_PARAM_WRITER_NAME "WriterName"
 /* available driver names for writer are: cache_writer */
+/* List of readers and writers */
+#define NCBI_GBLOADER_PARAM_LOADER_METHOD "loader_method"
 
 /* Size of id resolution GC queues */
 #define NCBI_GBLOADER_PARAM_ID_GC_SIZE "ID_GC_SIZE"
