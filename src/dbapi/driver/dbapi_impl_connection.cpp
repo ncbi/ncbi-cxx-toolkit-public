@@ -126,7 +126,7 @@ void CConnection::CheckCanOpen(void)
     if (!CDbapiConnMgr::Instance().AddConnect()) {
 		const string msg = 
 			"Cannot create new connection: maximum connections amount (" 
-			+ NStr::IntToString(CDbapiConnMgr::Instance().GetMaxConnect()) 
+			+ NStr::UIntToString(CDbapiConnMgr::Instance().GetMaxConnect()) 
 			+ ") is exceeded!!!";
 
         ERR_POST_X_ONCE(3, msg);
