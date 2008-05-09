@@ -124,16 +124,13 @@ void CConnection::CheckCanOpen(void)
 
     // Check for maximum number of connections
     if (!CDbapiConnMgr::Instance().AddConnect()) {
-        ERR_POST_X_ONCE(3, "Cannot create new connection: "
-                           "maximum connections amount ("
-                           << CDbapiConnMgr::Instance().GetMaxConnect()
-                           << ") is exceeded!!!");
-        DATABASE_DRIVER_ERROR( 
+		const string msg = 
 			"Cannot create new connection: maximum connections amount (" 
 			+ NStr::IntToString(CDbapiConnMgr::Instance().GetMaxConnect()) 
-			+ ") is exceeded!!!", 
-			500000 
-			);
+			+ ") is exceeded!!!";
+
+        ERR_POST_X_ONCE(3, msg);
+        DATABASE_DRIVER_ERROR(msg, 500000);
     }
 
     m_Opened = true;
