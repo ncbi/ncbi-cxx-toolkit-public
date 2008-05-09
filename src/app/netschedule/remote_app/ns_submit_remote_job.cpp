@@ -44,16 +44,16 @@
 
 USING_NCBI_SCOPE;
 
-class CNSSubmitRemoveJobApp : public CGridClientApp
+class CNSSubmitRemoteJobApp : public CGridClientApp
 {
 public:
-    CNSSubmitRemoveJobApp() {}
+    CNSSubmitRemoteJobApp() {}
 
     virtual void Init(void);
     virtual int Run(void);
     virtual string GetProgramVersion(void) const
     {
-        return "CNSSubmitRemoveJobApp version 1.0.0";
+        return "CNSSubmitRemoteJobApp version 1.0.0";
     }
 
 protected:
@@ -66,7 +66,7 @@ protected:
 
 };
 
-void CNSSubmitRemoveJobApp::Init(void)
+void CNSSubmitRemoteJobApp::Init(void)
 {
     // hack!!! It needs to be removed when we know how to deal with unresolved
     // symbols in plugins.
@@ -172,7 +172,7 @@ static string s_FindParam(const string& str, const string& par_name)
     return "";
 }
 
-int CNSSubmitRemoveJobApp::Run(void)
+int CNSSubmitRemoteJobApp::Run(void)
 {
 
     const CArgs& args = GetArgs();
@@ -192,8 +192,8 @@ int CNSSubmitRemoveJobApp::Run(void)
     if ( args["nc"]) {
         reg.Set(kNetCacheAPIDriverName, "client_name", "ns_submit_remote_job");
         reg.Set(kNetCacheAPIDriverName, "service", args["nc"].AsString());
-	if ( args["ncprot"] )
-	    reg.Set(kNetCacheAPIDriverName, "protocol", args["ncprot"].AsString());
+    if ( args["ncprot"] )
+        reg.Set(kNetCacheAPIDriverName, "protocol", args["ncprot"].AsString());
     }
 
     // Don't forget to call it
@@ -379,5 +379,5 @@ int CNSSubmitRemoveJobApp::Run(void)
 }
 int main(int argc, const char* argv[])
 {
-    return CNSSubmitRemoveJobApp().AppMain(argc, argv);
+    return CNSSubmitRemoteJobApp().AppMain(argc, argv);
 } 
