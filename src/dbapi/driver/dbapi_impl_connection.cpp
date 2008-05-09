@@ -128,7 +128,12 @@ void CConnection::CheckCanOpen(void)
                            "maximum connections amount ("
                            << CDbapiConnMgr::Instance().GetMaxConnect()
                            << ") is exceeded!!!");
-        DATABASE_DRIVER_ERROR( "Maximum connections amount is exceeded", 500000 );
+        DATABASE_DRIVER_ERROR( 
+			"Cannot create new connection: maximum connections amount (" 
+			+ NStr::IntToString(CDbapiConnMgr::Instance().GetMaxConnect()) 
+			+ ") is exceeded!!!", 
+			500000 
+			);
     }
 
     m_Opened = true;
