@@ -137,18 +137,22 @@ void CSplicedAligner::CheckPreferences(void)
             break;
             
         case eTS_Insert:
+#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
         case eTS_SlackInsert:
+#endif
             csq_matches = 0;
             ++p2;
             break;
             
         case eTS_Delete:
+#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
         case eTS_SlackDelete:
+#endif
             csq_matches = 0;
             ++p1;
             break;
             
-        case eTS_Intron:
+        case eTS_Intron: {
             int ti (t - 1);
             for(; ti >= 0 && m_Transcript[ti] == eTS_Intron; --ti);
             const int ilen (t - ti);
@@ -159,7 +163,8 @@ void CSplicedAligner::CheckPreferences(void)
             }
             else {
 
-                size_t maxpr (0), jmaxpr (0);
+                size_t maxpr (0);
+                int jmaxpr (0);
                 // explore the left of the splice
                 int j;
                 for(j = -1; j >= -csq_matches && *(p1 + j) == *(p2e + j); --j) {
@@ -197,7 +202,8 @@ void CSplicedAligner::CheckPreferences(void)
                 }
             }
             csq_matches = 0;
-            break;
+        }
+        break;
             
         default:
             NCBI_THROW(CAlgoAlignException, eInternal, "Unexpected transcript symbol");
