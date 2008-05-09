@@ -33,6 +33,7 @@
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
+#include "dbapi_value_convert.hpp"
 
 #include <dbapi/error_codes.hpp>
 
@@ -124,9 +125,10 @@ void CConnection::CheckCanOpen(void)
 
     // Check for maximum number of connections
     if (!CDbapiConnMgr::Instance().AddConnect()) {
+		const string conn_num = convert(CDbapiConnMgr::Instance().GetMaxConnect());
 		const string msg = 
-			"Cannot create new connection: maximum connections amount (" 
-			+ NStr::UIntToString(CDbapiConnMgr::Instance().GetMaxConnect()) 
+			string("Cannot create new connection: maximum connections amount (")
+			+ conn_num
 			+ ") is exceeded!!!";
 
         ERR_POST_X_ONCE(3, msg);
