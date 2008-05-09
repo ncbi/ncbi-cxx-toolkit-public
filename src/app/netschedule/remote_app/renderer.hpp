@@ -131,19 +131,20 @@ class CNSInfoRenderer
 public:
     enum EItem {
         eId        = 1 << 0,
-        eStatus    = 1 << 1,
-        eRetCode   = 1 << 2,
-        eCmdLine   = 1 << 3,
-        eErrMsg    = 1 << 4,
-        eStdIn     = 1 << 5,
-        eStdOut    = 1 << 6,
-        eStdErr    = 1 << 7,
-        eRawInput  = 1 << 8,
-        eRawOutput = 1 << 9,
-        
+        eCmdLine   = 1 << 1,
+        eStdIn     = 1 << 2,
+        eStdOut    = 1 << 3,
+        eStdErr    = 1 << 4,
+        eErrMsg    = 1 << 5,
+        eStatus    = 1 << 6,
+        eProgress  = 1 << 7,
+        eRetCode   = 1 << 8,
+        eRawInput  = 1 << 9,
+        eRawOutput = 1 << 10,
+
         eMinimal   = eId | eStatus | eRetCode,
         eStandard  = eMinimal | eCmdLine | eErrMsg,
-        eFull      = eStandard | eStdIn | eStdOut | eStdErr
+        eFull      = eStandard | eProgress | eStdIn | eStdOut | eStdErr
     };
     typedef int TFlags;
 

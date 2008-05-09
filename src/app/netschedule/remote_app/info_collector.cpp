@@ -108,6 +108,7 @@ void CNSJobInfo::x_Load()
 
     CNetScheduleAPI& cln = m_Collector.x_GetAPI();
     m_Status = cln.GetJobDetails(m_Job);
+    cln.GetProgressMsg(m_Job);
 }
 void CNSJobInfo::x_Load() const
 {

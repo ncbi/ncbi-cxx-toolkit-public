@@ -184,6 +184,8 @@ public:
     ///
     EJobStatus GetJobDetails(CNetScheduleJob& job);
 
+    void GetProgressMsg(CNetScheduleJob& job);
+
     virtual void ProcessServerError(string& response, ETrimErr trim_err) const;
 
 private:
@@ -234,8 +236,6 @@ private:
     virtual void x_SendAuthetication(CNetServerConnection& conn) const;
 
     EJobStatus x_GetJobStatus(const string& job_key, bool submitter);
-
-    void GetProgressMsg(CNetScheduleJob& job);
 
 private:
     static CNetScheduleExceptionMap sm_ExceptionMap;

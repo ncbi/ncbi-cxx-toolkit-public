@@ -59,7 +59,7 @@ void CNSRemoveJobControlApp::Init(void)
 {
     // hack!!! It needs to be removed when we know how to deal with unresolved
     // symbols in plugins.
-    BlobStorage_RegisterDriver_NetCache(); 
+    BlobStorage_RegisterDriver_NetCache();
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -68,21 +68,21 @@ void CNSRemoveJobControlApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Remote application jobs submitter");
 
-    arg_desc->AddOptionalKey("q", "queue_name", "NetSchedule queue name", 
+    arg_desc->AddOptionalKey("q", "queue_name", "NetSchedule queue name",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("ns", "service", 
-                             "NetSchedule service addrress (service_name or host:port)", 
+    arg_desc->AddOptionalKey("ns", "service",
+                             "NetSchedule service addrress (service_name or host:port)",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("nc", "service", 
-                     "NetCache service addrress (service_name or host:port)", 
+    arg_desc->AddOptionalKey("nc", "service",
+                     "NetCache service addrress (service_name or host:port)",
                      CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("ncprot", "protocol", 
-                     "NetCache client protocol", 
+    arg_desc->AddOptionalKey("ncprot", "protocol",
+                     "NetCache client protocol",
                      CArgDescriptions::eString);
-    arg_desc->SetConstraint("ncprot", 
-                            &(*new CArgAllow_Strings(NStr::eNocase), 
+    arg_desc->SetConstraint("ncprot",
+                            &(*new CArgAllow_Strings(NStr::eNocase),
                               "simple", "persistent")
                             );
 
@@ -90,9 +90,9 @@ void CNSRemoveJobControlApp::Init(void)
                              "status",
                              "Show jobs by status",
                              CArgDescriptions::eString);
-    arg_desc->SetConstraint("jlist", 
-                            &(*new CArgAllow_Strings(NStr::eNocase), 
-                              "done", "failed", "running", "pending", 
+    arg_desc->SetConstraint("jlist",
+                            &(*new CArgAllow_Strings(NStr::eNocase),
+                              "done", "failed", "running", "pending",
                               "canceled", "returned", "all")
                             );
 
@@ -115,11 +115,11 @@ void CNSRemoveJobControlApp::Init(void)
                              CArgDescriptions::eString,
                              CArgDescriptions::fAllowMultiple);
 
-    arg_desc->SetConstraint("attr", 
-                            &(*new CArgAllow_Strings(NStr::eNocase), 
+    arg_desc->SetConstraint("attr",
+                            &(*new CArgAllow_Strings(NStr::eNocase),
                               "minimal", "standard", "full",
-                              "status", "retcode", "cmdline",
-                              "stdin", "stdout", "stderr", 
+                              "cmdline", "stdin", "stdout", "stderr",
+                              "status", "progress", "retcode",
                               "raw_input", "raw_output")
                             );
 
@@ -127,8 +127,8 @@ void CNSRemoveJobControlApp::Init(void)
                              "cmd_name",
                              "Perform a command",
                              CArgDescriptions::eString);
-    arg_desc->SetConstraint("cmd", 
-                            &(*new CArgAllow_Strings(NStr::eNocase), 
+    arg_desc->SetConstraint("cmd",
+                            &(*new CArgAllow_Strings(NStr::eNocase),
                               "shutdown_nodes", "kill_nodes", "drop_jobs")
                             );
 
@@ -137,18 +137,18 @@ void CNSRemoveJobControlApp::Init(void)
                              "render_type",
                              "Renderer type",
                              CArgDescriptions::eString);
-    arg_desc->SetConstraint("render", 
-                            &(*new CArgAllow_Strings(NStr::eNocase), 
+    arg_desc->SetConstraint("render",
+                            &(*new CArgAllow_Strings(NStr::eNocase),
                               "text", "xml")
                             );
 
-    arg_desc->SetConstraint("jlist", 
-                            &(*new CArgAllow_Strings(NStr::eNocase), 
-                              "done", "failed", "running", "pending", 
+    arg_desc->SetConstraint("jlist",
+                            &(*new CArgAllow_Strings(NStr::eNocase),
+                              "done", "failed", "running", "pending",
                               "canceled", "returned", "all")
                             );
 
-    arg_desc->AddOptionalKey("of", 
+    arg_desc->AddOptionalKey("of",
                              "file_names",
                              "Output file",
                              CArgDescriptions::eOutputFile);
@@ -181,7 +181,7 @@ int CNSRemoveJobControlApp::Run(void)
     IRWRegistry& reg = GetConfig();
 
     if (args["q"]) {
-        string queue = args["q"].AsString();   
+        string queue = args["q"].AsString();
         reg.Set(kNetScheduleAPIDriverName, "queue_name", queue);
     }
 
@@ -195,8 +195,8 @@ int CNSRemoveJobControlApp::Run(void)
     if ( args["nc"]) {
         reg.Set(kNetCacheAPIDriverName, "client_name", "ns_remote_job_control");
         reg.Set(kNetCacheAPIDriverName, "service", args["nc"].AsString());
-	if ( args["ncprot"] )
-	    reg.Set(kNetCacheAPIDriverName, "protocol", args["ncprot"].AsString());
+    if ( args["ncprot"] )
+        reg.Set(kNetCacheAPIDriverName, "protocol", args["ncprot"].AsString());
     }
 
 
@@ -228,14 +228,14 @@ int CNSRemoveJobControlApp::Run(void)
 
     auto_ptr<CConfig::TParamTree> ptree(CConfig::ConvertRegToTree(reg));
     const CConfig::TParamTree* ns_tree = ptree->FindSubNode(kNetScheduleAPIDriverName);
-    if (!ns_tree) 
+    if (!ns_tree)
         NCBI_THROW(CArgException, eInvalidArg,
                    "Could not find \"" + string(kNetScheduleAPIDriverName) + "\" section");
-    
+
     CConfig ns_conf(ns_tree);
     string queue = ns_conf.GetString(kNetScheduleAPIDriverName, "queue_name", CConfig::eErr_NoThrow, "");
     NStr::TruncateSpacesInPlace(queue);
-    if (queue.empty()) 
+    if (queue.empty())
         //        NCBI_THROW(CArgException, eInvalidArg,
         //                   "\"queue_name\" parameter is not set neither in config file nor in cmd line");
         queue = "noname";
@@ -262,6 +262,8 @@ int CNSRemoveJobControlApp::Run(void)
                 flags = CNSInfoRenderer::eFull;
             if (NStr::CompareNocase(*it, "status") == 0)
                 flags |= CNSInfoRenderer::eStatus;
+            if (NStr::CompareNocase(*it, "progress") == 0)
+                flags |= CNSInfoRenderer::eProgress;
             if (NStr::CompareNocase(*it, "retcode") == 0)
                 flags |= CNSInfoRenderer::eRetCode;
             if (NStr::CompareNocase(*it, "cmdline") == 0)
@@ -275,7 +277,7 @@ int CNSRemoveJobControlApp::Run(void)
             if (NStr::CompareNocase(*it, "raw_input") == 0)
                 flags |= CNSInfoRenderer::eRawInput;
             if (NStr::CompareNocase(*it, "raw_output") == 0)
-                flags |= CNSInfoRenderer::eRawOutput;           
+                flags |= CNSInfoRenderer::eRawOutput;
         }
     }
 
@@ -284,13 +286,13 @@ int CNSRemoveJobControlApp::Run(void)
     if (args["jlist"]) {
         string sstatus = args["jlist"].AsString();
         if (NStr::CompareNocase(sstatus, "all") == 0) {
-            for(int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {                
-                CNetScheduleAPI::EJobStatus status = 
+            for(int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
+                CNetScheduleAPI::EJobStatus status =
                     (CNetScheduleAPI::EJobStatus)i;
                 renderer->RenderJobByStatus(status, flags);
             }
         } else {
-            CNetScheduleAPI::EJobStatus status = 
+            CNetScheduleAPI::EJobStatus status =
                 CNetScheduleAPI::StringToStatus(sstatus);
             renderer->RenderJobByStatus(status, flags);
         }
@@ -304,13 +306,13 @@ int CNSRemoveJobControlApp::Run(void)
     } else if (args["cmd"]) {
         string cmd = args["cmd"].AsString();
         if (NStr::CompareNocase(cmd, "shutdown_nodes") == 0) {
-            CNetScheduleAdmin::EShutdownLevel level = 
+            CNetScheduleAdmin::EShutdownLevel level =
                 CNetScheduleAdmin::eShutdownImmediate;
             CWNodeShutdownAction action(level);
             info_collector->TraverseNodes(action);
         }
         if (NStr::CompareNocase(cmd, "kill_nodes") == 0) {
-            CNetScheduleAdmin::EShutdownLevel level = 
+            CNetScheduleAdmin::EShutdownLevel level =
                 level = CNetScheduleAdmin::eDie;
             CWNodeShutdownAction action(level);
             info_collector->TraverseNodes(action);
@@ -334,4 +336,4 @@ int CNSRemoveJobControlApp::Run(void)
 int main(int argc, const char* argv[])
 {
     return CNSRemoveJobControlApp().AppMain(argc, argv);
-} 
+}

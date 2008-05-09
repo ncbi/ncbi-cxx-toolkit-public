@@ -61,7 +61,6 @@ protected:
     void PrintJobInfo(const string& job_key);
     void ShowBlob(const string& blob_key);
 
-    virtual bool UseProgressMessage() const { return false; }
     virtual bool UseAutomaticCleanup() const { return false; }
 
 };

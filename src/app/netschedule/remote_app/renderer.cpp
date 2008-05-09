@@ -224,6 +224,9 @@ void CNSInfoRenderer::RenderJob(const CNSJobInfo& info, TFlags flags)
     if (flags & eCmdLine) {
         x_RenderString("CmdLine", info.GetCmdLine());
     }
+    if (flags & eProgress) {
+        x_RenderString("ProgressMsg", info.GetProgressMsg());
+    }
     if (flags & eErrMsg && status == CNetScheduleAPI::eFailed) {
         x_RenderString("ErrMsg", info.GetErrMsg());
     }

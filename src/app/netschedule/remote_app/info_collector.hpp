@@ -53,6 +53,7 @@ public:
 
     CNetScheduleAPI::EJobStatus GetStatus() const;
     const string& GetId() const { return m_Job.job_id; }
+    const string& GetProgressMsg() const { return m_Job.progress_msg; }
     const string& GetRawInput() const;
     const string& GetRawOutput() const;
     const string& GetErrMsg() const;
