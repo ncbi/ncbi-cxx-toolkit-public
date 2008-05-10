@@ -666,13 +666,8 @@ void CRemoteAppResultMB_Executer::Reset()
 
 void CRemoteAppResultMB_Executer::Log(const string& prefix)
 {
-    if (!m_Impl->GetOutBlobIdOrData().empty()) {
-        LOG_POST_X(9, prefix
-                   << " Out data: " << m_Impl->GetOutBlobIdOrData());
-    }
     if (!m_Impl->GetErrBlobIdOrData().empty()) {
-        LOG_POST_X(10, prefix
-                   << " Err data: " << m_Impl->GetErrBlobIdOrData());
+        LOG_POST_X(9, prefix << " Err data: " << m_Impl->GetErrBlobIdOrData());
     }
 }
 
