@@ -298,6 +298,11 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
         if (m_In.eof()) {
             reason = eRT_EOF;
         } else {
+            // NB: this is an ugly workaround for a buggy STL behavior that
+            //     lets short reads (e.g. originating from reading pipes) get
+            //     through to the user level, causing istream::read() to
+            //     wrongly assert EOF...
+            m_In.clear();
             delim_read = m_In.get();
             _ASSERT( !CT_EQ_INT_TYPE(delim_read, CT_EOF) );
             if (CT_EQ_INT_TYPE(delim_read, CT_TO_INT_TYPE(delim))) {
@@ -335,11 +340,6 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
         s.resize(s.size() - 2);
     }
 
-    // NB: this is an ugly workaround for a buggy STL behavior that
-    //     lets short reads (e.g. originating from reading pipes) get
-    //     through to the user level, causing istream::read() to
-    //     wrongly assert EOF...
-    m_In.clear();
     return reason;
 }
 
