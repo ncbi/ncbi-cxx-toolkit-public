@@ -43,6 +43,8 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/biblio/Id_pat.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 
 #include <bdb/bdb_cursor.hpp>
@@ -752,9 +754,6 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
 
     int   obj_id_int = 0;
     const CTextseq_id* obj_id_txt = 0;
-    const CGiimport_id* obj_id_gii = 0;
-    const CPatent_seq_id* obj_id_patent = 0;
-    const CDbtag*         obj_id_dbtag = 0;
 
     switch (seq_id.Which()) {
     case CSeq_id::e_Local:
@@ -769,7 +768,7 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
         obj_id_int = seq_id.GetGibbmt();
         break;
     case CSeq_id::e_Giim:
-        obj_id_gii = &seq_id.GetGiim();
+        obj_id_int = seq_id.GetGiim().GetId();
         break;
     case CSeq_id::e_Genbank:
         obj_id_txt = &seq_id.GetGenbank();
@@ -784,14 +783,21 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
         obj_id_txt = &seq_id.GetSwissprot();
         break;
     case CSeq_id::e_Patent:
-        obj_id_patent = &seq_id.GetPatent();
-        break;
+        {{
+            seqid_base->int_id = 0;
+            const CId_pat& pat = seq_id.GetPatent().GetCit();
+            pat.GetLabel(&seqid_base->str_id);
+        }}
+        return;
     case CSeq_id::e_Other:
         obj_id_txt = &seq_id.GetOther();
         break;
     case CSeq_id::e_General:
-        obj_id_dbtag = &seq_id.GetGeneral();
-        break;
+        {{
+            seqid_base->int_id = 0;
+            seq_id.GetGeneral().GetLabel(&seqid_base->str_id);
+        }}
+        return;
     case CSeq_id::e_Gi:
         obj_id_int = seq_id.GetGi();
         break;

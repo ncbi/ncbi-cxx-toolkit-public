@@ -1,0 +1,113 @@
+Seq-entry ::= seq {
+  id {
+    embl {
+      accession "A00002" ,
+      version 1 } ,
+    patent {
+      seqid 1 ,
+      cit {
+        country "EP" ,
+        id
+          number "0238993" } } ,
+    gi 2 } ,
+  descr {
+    title "B.taurus DNA sequence 1 from patent application EP0238993" ,
+    genbank {
+      div "PAT" } ,
+    pub {
+      pub {
+        patent {
+          title "Aprotinin homologues produced by genetic engineering." ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Auerswald" ,
+                      initials "E.A." } } ,
+                {
+                  name
+                    name {
+                      last "Schroeder" ,
+                      initials "W." } } ,
+                {
+                  name
+                    name {
+                      last "Schnabel" ,
+                      initials "E." } } ,
+                {
+                  name
+                    name {
+                      last "Bruns" ,
+                      initials "W." } } ,
+                {
+                  name
+                    name {
+                      last "Reinhardt" ,
+                      initials "G." } } ,
+                {
+                  name
+                    name {
+                      last "Kotick" ,
+                      initials "M." } } } ,
+            affil
+              str "BAYER AG" } ,
+          country "EP" ,
+          doc-type "A" ,
+          number "0238993" ,
+          date-issue
+            std {
+              year 1987 ,
+              month 9 ,
+              day 30 } } } } ,
+    embl {
+      div mam ,
+      creation-date
+        std {
+          year 1993 ,
+          month 1 ,
+          day 28 } ,
+      update-date
+        std {
+          year 1993 ,
+          month 2 ,
+          day 10 } } ,
+    create-date
+      std {
+        year 1993 ,
+        month 1 ,
+        day 28 } ,
+    update-date
+      std {
+        year 1993 ,
+        month 2 ,
+        day 10 } ,
+    source {
+      org {
+        taxname "Bos taurus" ,
+        common "cattle" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 9913 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Bos" ,
+              species "taurus" } ,
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Laurasiatheria; Cetartiodactyla;
+ Ruminantia; Pecora; Bovidae; Bovinae; Bos" ,
+          gcode 1 ,
+          mgcode 2 ,
+          div "MAM" } } } } ,
+  inst {
+    repr raw ,
+    mol dna ,
+    length 194 ,
+    seq-data
+      ncbi2na '0F4E6D687DE5D8965B11EA5790276CD35BC7DC439029297BB485F6CC69AF96E
+709B041F40D66821E606C7E6BAD7CB027E0'H } }
+

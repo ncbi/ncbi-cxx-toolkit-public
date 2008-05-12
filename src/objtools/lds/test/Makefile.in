@@ -3,7 +3,7 @@
 # Meta-makefile
 #################################
 
-APP_PROJ = lds_test
+APP_PROJ = lds_test test_lds
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

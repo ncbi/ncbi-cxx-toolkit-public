@@ -44,10 +44,7 @@
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-
-
 USING_NCBI_SCOPE;
-
 
 class CTestApplication : public CNcbiApplication
 {

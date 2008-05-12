@@ -1,0 +1,539 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "REF_tigr" ,
+      tag
+        str "AHA_0004" } ,
+    other {
+      accession "YP_854532" ,
+      version 1 } ,
+    gi 117619604 } ,
+  descr {
+    molinfo {
+      biomol peptide ,
+      tech concept-trans } ,
+    user {
+      type
+        str "RefGeneTracking" ,
+      data {
+        {
+          label
+            str "Assembly" ,
+          data
+            fields {
+              {
+                label
+                  id 0 ,
+                data
+                  fields {
+                    {
+                      label
+                        str "accession" ,
+                      data
+                        str "ABK37959" } ,
+                    {
+                      label
+                        str "gi" ,
+                      data
+                        int 117561011 } } } } } ,
+        {
+          label
+            str "Status" ,
+          data
+            str "Provisional" } } } ,
+    title "DNA gyrase, B subunit [Aeromonas hydrophila subsp. hydrophila ATCC
+ 7966]" ,
+    create-date
+      std {
+        year 2006 ,
+        month 11 ,
+        day 8 } ,
+    source {
+      genome genomic ,
+      org {
+        taxname "Aeromonas hydrophila subsp. hydrophila ATCC 7966" ,
+        db {
+          {
+            db "ATCC" ,
+            tag
+              id 7966 } ,
+          {
+            db "taxon" ,
+            tag
+              id 380703 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Aeromonas" ,
+              species "hydrophila" ,
+              subspecies "subsp. hydrophila" } ,
+          mod {
+            {
+              subtype strain ,
+              subname "ATCC 7966" } ,
+            {
+              subtype sub-species ,
+              subname "hydrophila" } ,
+            {
+              subtype other ,
+              subname "type strain of Aeromonas hydrophila subsp. hydrophila
+ ATCC 7966" } } ,
+          lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Aeromonadales; Aeromonadaceae; Aeromonas" ,
+          gcode 11 ,
+          div "BCT" } } } ,
+    user {
+      class "Genomes" ,
+      type
+        str "info" ,
+      data {
+        {
+          label
+            id 1 ,
+          data
+            int 20061 } } } ,
+    user {
+      type
+        str "GenomeProjectsDB" ,
+      data {
+        {
+          label
+            str "ProjectID" ,
+          data
+            int 16697 } ,
+        {
+          label
+            str "ParentID" ,
+          data
+            int 0 } } } ,
+    user {
+      type
+        str "GenomesInfo" ,
+      data {
+        {
+          label
+            str "Contigs" ,
+          data
+            str "-" } ,
+        {
+          label
+            str "Contributor" ,
+          data
+            str "TIGR" } ,
+        {
+          label
+            str "URL" ,
+          data
+            str "http://www.tigr.org/" } ,
+        {
+          label
+            str "GenomeLink" ,
+          data
+            str "" } ,
+        {
+          label
+            str "LocusTagLink" ,
+          data
+            str "" } } } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    consortium "NCBI Genome Project" } } ,
+            affil
+              std {
+                affil "National Center for Biotechnology Information, NIH" ,
+                city "Bethesda" ,
+                sub "MD" ,
+                country "USA" ,
+                postal-code "20894" } } ,
+          date
+            std {
+              year 2006 ,
+              month 11 ,
+              day 8 } } } } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Seshadri" ,
+                      first "Rekha" ,
+                      initials "R." } } ,
+                {
+                  name
+                    name {
+                      last "Joseph" ,
+                      first "Sam" ,
+                      middle "W" ,
+                      initials "S.W." } } ,
+                {
+                  name
+                    name {
+                      last "Chopra" ,
+                      first "Ashok" ,
+                      middle "K" ,
+                      initials "A.K." } } ,
+                {
+                  name
+                    name {
+                      last "Shaw" ,
+                      first "Jonathan" ,
+                      initials "J." } } ,
+                {
+                  name
+                    name {
+                      last "Graf" ,
+                      first "Jeorg" ,
+                      initials "J." } } ,
+                {
+                  name
+                    name {
+                      last "Haft" ,
+                      first "Daniel" ,
+                      initials "D." } } ,
+                {
+                  name
+                    name {
+                      last "Wu" ,
+                      first "Martin" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Rosovitz" ,
+                      first "MJ" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Madupu" ,
+                      first "Ramana" ,
+                      initials "R." } } ,
+                {
+                  name
+                    name {
+                      last "Tallon" ,
+                      first "Luke" ,
+                      initials "L." } } ,
+                {
+                  name
+                    name {
+                      last "Kim" ,
+                      first "Mary" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Jin" ,
+                      first "Shaohua" ,
+                      initials "S." } } ,
+                {
+                  name
+                    name {
+                      last "Vuong" ,
+                      first "Hue" ,
+                      initials "H." } } ,
+                {
+                  name
+                    name {
+                      last "Stine" ,
+                      first "O" ,
+                      middle "Colin" ,
+                      initials "O.C." } } ,
+                {
+                  name
+                    name {
+                      last "Ali" ,
+                      first "Afsar" ,
+                      initials "A." } } ,
+                {
+                  name
+                    name {
+                      last "Horneman" ,
+                      first "Amy" ,
+                      middle "J" ,
+                      initials "A.J." } } ,
+                {
+                  name
+                    name {
+                      last "Heidelberg" ,
+                      first "John" ,
+                      middle "F." ,
+                      initials "J.F." } } } ,
+            affil
+              std {
+                affil "The Institute for Genomic Research" ,
+                city "Rockville" ,
+                sub "MD" ,
+                country "USA" ,
+                street "9712 Medical Center Dr." ,
+                postal-code "20850" } } ,
+          medium other ,
+          date
+            std {
+              year 2006 ,
+              month 9 ,
+              day 6 } } } } ,
+    pub {
+      pub {
+        article {
+          title {
+            name "Genome Sequence of Aeromonas hydrophila ATCC 7966T: The Jack
+ of All Trades." } ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Seshadri" ,
+                      first "Rekha" ,
+                      initials "R." } } ,
+                {
+                  name
+                    name {
+                      last "Joseph" ,
+                      first "Sam" ,
+                      middle "W" ,
+                      initials "S.W." } } ,
+                {
+                  name
+                    name {
+                      last "Chopra" ,
+                      first "Ashok" ,
+                      middle "K" ,
+                      initials "A.K." } } ,
+                {
+                  name
+                    name {
+                      last "Sha" ,
+                      first "Jian" ,
+                      initials "J." } } ,
+                {
+                  name
+                    name {
+                      last "Shaw" ,
+                      first "Jonathan" ,
+                      initials "J." } } ,
+                {
+                  name
+                    name {
+                      last "Graf" ,
+                      first "Jeorg" ,
+                      initials "J." } } ,
+                {
+                  name
+                    name {
+                      last "Haft" ,
+                      first "Daniel" ,
+                      initials "D." } } ,
+                {
+                  name
+                    name {
+                      last "Wu" ,
+                      first "Martin" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Ren" ,
+                      first "Qinghu" ,
+                      initials "Q." } } ,
+                {
+                  name
+                    name {
+                      last "Rosovitz" ,
+                      first "MJ" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Madupu" ,
+                      first "Ramana" ,
+                      initials "R." } } ,
+                {
+                  name
+                    name {
+                      last "Tallon" ,
+                      first "Luke" ,
+                      initials "L." } } ,
+                {
+                  name
+                    name {
+                      last "Kim" ,
+                      first "Mary" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Jin" ,
+                      first "Shaohua" ,
+                      initials "S." } } ,
+                {
+                  name
+                    name {
+                      last "Vuong" ,
+                      first "Hue" ,
+                      initials "H." } } ,
+                {
+                  name
+                    name {
+                      last "Stine" ,
+                      first "O" ,
+                      middle "Colin" ,
+                      initials "O.C." } } ,
+                {
+                  name
+                    name {
+                      last "Ali" ,
+                      first "Afsar" ,
+                      initials "A." } } ,
+                {
+                  name
+                    name {
+                      last "Horneman" ,
+                      first "Amy" ,
+                      middle "J" ,
+                      initials "A.J." } } ,
+                {
+                  name
+                    name {
+                      last "Heidelberg" ,
+                      first "John" ,
+                      middle "F" ,
+                      initials "J.F." } } } } ,
+          from
+            journal {
+              title {
+                iso-jta "J. Bacteriol." } ,
+              imp {
+                date
+                  std {
+                    year 2006 ,
+                    month 9 ,
+                    day 15 } ,
+                prepub in-press ,
+                pubstatus aheadofprint } } } ,
+        pmid 16980456 } } ,
+    update-date
+      std {
+        year 2008 ,
+        month 4 ,
+        day 13 } } ,
+  inst {
+    repr raw ,
+    mol aa ,
+    length 803 ,
+    seq-data
+      ncbieaa "MSENTYDSSNIKVLKGLDAVRKRPGMYIGDTDDGSGLHHMVFEVVDNSIDEALAGYCSDIQVK
+IHSDGSVSVRDNGRGIPVDIHPEEGRSAAEVIMTVLHAGGKFDDNSYKVSGGLHGVGVSVVNALSDKLLLTIRRNGHV
+YEQTYHLGEPQAPLKQIGDSTGTGTEVRFWPSPTIFSDTLFHYEILAKRLRELSFLNSGVSIRLLDERDGREAHFCYE
+GGIKAFVEYLNQNKTPIHPKVFHFTTEQDGIGVEVAMQWNDAYQEGVYCFTNNIPQRDGGTHLVGFRTALTRTLNSYM
+DKEDYSKKAKSAASGDDVREGLIAVISVKVPDPKFSSQTKDKLVSSEVKTAVEQAMGEKLADFLLENPGDAKIVVNKI
+IDAARAREAARKARELTRRKGALDIAGLPGKLADCQEKDPALSELYIVEGDSAGGSAKQGRNRKNQAILPLKGKILNV
+EKARFDKMISSQEVGTLITALGCGIGRDEYNPDKLRYHNIIIMTDADVDGAHIRTLLLTFFYRQMPEIIERGYVYIAQ
+PPLYKVKKGKQEQYLKDEDALLQYQTAMALDGATLHVNESAPAIGGEALERLVNQHRSVSHLITRMSRRAPEAVLTQL
+IYQPELNEALLSSESDLLAWCQSMEAVLNESNHGIQYQMQVRHDEERRLFVPHAVVRQHGVDREYPLSYDFLQSSEYR
+QLVSLGKEIANLIEEGGYIKRGEKVKPVASFVEAVEWLMGEGKRGIYIQRYKGLGEMNPDQLWETTMDPEARRMLRVT
+IDDAVGADQLFSTLMGDAVEPRRDFIETNALRVANLDV" } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              prot {
+                name {
+                  "DNA gyrase, B subunit" } ,
+                ec {
+                  "5.99.1.3" } } ,
+            location
+              int {
+                from 0 ,
+                to 802 ,
+                id
+                  gi 117619604 } } } } ,
+    {
+      data
+        ftable {
+          {
+            data
+              gene {
+                locus "recF" ,
+                locus-tag "AHA_0003" } ,
+            location
+              int {
+                from 2782 ,
+                to 3885 ,
+                strand plus ,
+                id
+                  gi 117617447 } ,
+            dbxref {
+              {
+                db "GeneID" ,
+                tag
+                  id 4490515 } } } ,
+          {
+            data
+              cdregion {
+                frame one ,
+                code {
+                  id 11 } } ,
+            comment "identified by match to protein family HMM PF02463; match
+ to protein family HMM TIGR00611" ,
+            product
+              whole
+                gi 117618875 ,
+            location
+              int {
+                from 2782 ,
+                to 3885 ,
+                strand plus ,
+                id
+                  gi 117617447 } } ,
+          {
+            data
+              gene {
+                locus "gyrB" ,
+                locus-tag "AHA_0004" } ,
+            location
+              int {
+                from 3882 ,
+                to 6293 ,
+                strand plus ,
+                id
+                  gi 117617447 } ,
+            dbxref {
+              {
+                db "GeneID" ,
+                tag
+                  id 4490516 } } } ,
+          {
+            data
+              cdregion {
+                frame one ,
+                code {
+                  id 11 } } ,
+            comment "identified by similarity to SP:P06982; match to protein
+ family HMM PF00204; match to protein family HMM PF00986; match to protein
+ family HMM PF01751; match to protein family HMM PF02518; match to protein
+ family HMM TIGR01059" ,
+            product
+              whole
+                gi 117619604 ,
+            location
+              int {
+                from 3882 ,
+                to 6293 ,
+                strand plus ,
+                id
+                  gi 117617447 } } } } } }
