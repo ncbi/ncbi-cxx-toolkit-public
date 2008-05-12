@@ -1529,7 +1529,7 @@ CDB_Stream& CDB_Stream::Assign(const CDB_Stream& v)
     m_Store->Truncate();
     if ( !IsNULL() ) {
         char buff[1024];
-        CMemStore* s = (CMemStore*) &v.m_Store;
+        CMemStore* s = v.m_Store;
         size_t pos = s->Tell();
         for (size_t n = s->Read((void*) buff, sizeof(buff));
              n > 0;
