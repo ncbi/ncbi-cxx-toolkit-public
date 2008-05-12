@@ -60,7 +60,7 @@ public:
         //< use the newer (i.e., CAnchoredAln) alignment manager
         eAnchoredAlign,
 
-        eDefault = eAlignVec
+        eDefault = eAnchoredAlign
     };
     void Cleanup(const TConstAligns& aligns_in,
                  TAligns&            aligns_out,
