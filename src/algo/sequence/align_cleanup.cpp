@@ -56,10 +56,82 @@ USING_SCOPE(objects);
 void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
                                                TAligns&          pairwise)
 {
+#if 0
+    CAlnContainer aln_container;
+    aln_container.insert(multiple);
+
+    /// Types we use here:
+    typedef CSeq_align::TDim TDim;
+    typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
+    typedef CAlnIdMap<vector< CConstRef<CSeq_align> >, TIdExtract> TAlnIdMap;
+    typedef CAlnStats<TAlnIdMap> TAlnStats;
+
+    /// Create a vector of seq-ids per seq-align
+    TIdExtract id_extract;
+    TAlnIdMap aln_id_map(id_extract, aln_container.size());
+    size_t count_accepted = 0;
+    ITERATE(CAlnContainer, aln_it, aln_container) {
+        try {
+            aln_id_map.push_back(**aln_it);
+            ++count_accepted;
+        }
+        catch (CAlnException& e) {
+            LOG_POST(Error
+                << "CAlgoPlugin_AlignCleanup::x_Run_AlignMgr(): "
+                << "failed to extract IDs: " << e.GetMsg());
+        }
+    }
+
+    if (count_accepted != aln_container.size()) {
+        if (count_accepted == 0) {
+            NCBI_THROW(CException, eUnknown, 
+                       "No valid alignments found");
+            return;
+        }
+
+        LOG_POST(Warning
+            << count_accepted << "/" << aln_container.size()
+            << " alignments had no IDs to extract.");
+    }
+
+    ///
+    /// gather statistics about our alignment
+    ///
+    TAlnStats aln_stats(aln_id_map);
+
+    CAlnUserOptions opts;
+    opts.m_MergeAlgo = CAlnUserOptions::eMergeAllSeqs;
+    opts.m_Direction = CAlnUserOptions::eBothDirections;
+    opts.SetMergeFlags(CAlnUserOptions::fTruncateOverlaps, true);
+
+    ///
+    /// create a set of anchored alignments
+    ///
+    typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVec;
+    TAnchoredAlnVec anchored_aln_vec;
+    CreateAnchoredAlnVec(aln_stats, anchored_aln_vec, opts);
+
+    ITERATE (TAnchoredAlnVec, iter, anchored_aln_vec) {
+        ITERATE(CAnchoredAln::TPairwiseAlnVector,
+                pairwise_aln_i, 
+                (*iter)->GetPairwiseAlns()) {
+
+            CRef<CDense_seg> ds = 
+                CreateDensegFromPairwiseAln(**pairwise_aln_i);
+            CRef<CSeq_align> aln(new CSeq_align);
+            aln->SetSegs().SetDenseg(*ds);
+            aln->SetType(CSeq_align::eType_partial);
+            pairwise.push_back(aln);
+        }
+    }
+#endif
+
+#if 1
     _ASSERT(multiple.GetSegs().IsDenseg());
 
     const CDense_seg& seg = multiple.GetSegs().GetDenseg();
-    for (CDense_seg::TDim row = 1;  row < seg.GetDim();  ++row) {
+    CDense_seg::TDim max_rows = seg.GetDim();
+    for (CDense_seg::TDim row = 1;  row < max_rows;  ++row) {
         CRef<CDense_seg> new_seg(new CDense_seg);
 
         /// we are creating pairwise alignments
@@ -78,8 +150,8 @@ void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
         /// copy the starts
         CDense_seg::TNumseg segs = 0;
         for (CDense_seg::TNumseg j = 0;  j < seg.GetNumseg();  ++j) {
-            TSignedSeqPos start_0 = seg.GetStarts()[j * seg.GetDim() + 0];
-            TSignedSeqPos start_1 = seg.GetStarts()[j * seg.GetDim() + row];
+            TSignedSeqPos start_0 = seg.GetStarts()[j * max_rows + 0];
+            TSignedSeqPos start_1 = seg.GetStarts()[j * max_rows + row];
 
             if (start_0 < 0  &&  start_1 < 0) {
                 /// segment is entirely gapped
@@ -96,15 +168,28 @@ void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
         new_seg->SetNumseg(segs);
 
         if (segs) {
-            CRef<CSeq_align> align(new CSeq_align);
+            try {
+                CRef<CSeq_align> align(new CSeq_align);
 
-            /// make sure we set type correctly
-            align->SetType(multiple.GetType());
+                /// make sure we set type correctly
+                align->SetType(multiple.GetType());
 
-            align->SetSegs().SetDenseg(*new_seg);
-            pairwise.push_back(align);
+                align->SetSegs().SetDenseg(*new_seg);
+
+                ///
+                /// validation is optional!
+                align->Validate(true);
+
+                pairwise.push_back(align);
+            }
+            catch (CException& e) {
+                LOG_POST(Error
+                    << "CAlignCleanup::CreatePairwiseFromMultiple(): "
+                    << "failed to validate: " << e.GetMsg());
+            }
         }
     }
+#endif
 }
 
 
@@ -144,11 +229,17 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     ///
     size_t count = 0;
     size_t count_invalid = 0;
+    bool all_pairwise = true;
     ITERATE (TConstAligns, iter, aligns_in) {
 
         try {
             ++count;
             CConstRef<CSeq_align> aln = *iter;
+            if (aln->GetSegs().IsDenseg()  &&
+                aln->GetSegs().GetDenseg().GetDim() != 2) {
+                all_pairwise = false;
+            }
+
             aln_container.insert(*aln);
 
             ///
@@ -237,11 +328,25 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     ///
     /// create dense-segs and return
     ///
-    CRef<CSeq_align> ds_align =
-        CreateSeqAlignFromAnchoredAln(out_anchored_aln,
-                                      CSeq_align::TSegs::e_Denseg);
+    if (all_pairwise) {
+        /// Create individual Dense-segs (one per CPairwiseAln)
+        ITERATE(CAnchoredAln::TPairwiseAlnVector,
+                pairwise_aln_i, 
+                out_anchored_aln.GetPairwiseAlns()) {
 
-    aligns_out.push_back(ds_align);
+            CRef<CDense_seg> ds = 
+                CreateDensegFromPairwiseAln(**pairwise_aln_i);
+            CRef<CSeq_align> aln(new CSeq_align);
+            aln->SetSegs().SetDenseg(*ds);
+            aln->SetType(CSeq_align::eType_partial);
+            aligns_out.push_back(aln);
+        }
+    } else {
+        CRef<CSeq_align> ds_align =
+            CreateSeqAlignFromAnchoredAln(out_anchored_aln,
+                                          CSeq_align::TSegs::e_Denseg);
+        aligns_out.push_back(ds_align);
+    }
 }
 
 
@@ -252,8 +357,14 @@ void CAlignCleanup::x_Cleanup_AlignVec(const TConstAligns& aligns_in,
     typedef set<CSeq_id_Handle> TIdSet;
     typedef map<TIdSet, list< CConstRef<CSeq_align> > > TAlignments;
     TAlignments align_map;
+
+    bool all_pairwise = true;
     ITERATE (TConstAligns, iter, aligns_in) {
         CConstRef<CSeq_align> al = *iter;
+        if (al->GetSegs().IsDenseg()  &&
+            al->GetSegs().GetDenseg().GetDim() != 2) {
+            all_pairwise = false;
+        }
 
         TIdSet id_set;
         CTypeConstIterator<CSeq_id> id_iter(*al);
@@ -342,7 +453,8 @@ void CAlignCleanup::x_Cleanup_AlignVec(const TConstAligns& aligns_in,
                 CRef<CSeq_align> new_align(new CSeq_align);
                 new_align->Assign(mix.GetSeqAlign());
 
-                if (new_align->GetSegs().IsDenseg()  &&
+                if (all_pairwise  &&
+                    new_align->GetSegs().IsDenseg()  &&
                     new_align->GetSegs().GetDenseg().GetDim() > 2) {
                     CreatePairwiseFromMultiple(*new_align, aligns);
                 } else {
