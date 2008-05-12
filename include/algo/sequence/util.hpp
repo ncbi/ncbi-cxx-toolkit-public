@@ -46,8 +46,9 @@ END_SCOPE(objects)
 // New sequence will has Seq-id 'new_id'
 // Its Seq-inst object will be of type delta, and has reference to
 // the original sequence ('original_id') and gaps in place of masked ranges.
-CRef<objects::CBioseq> NCBI_XALGOSEQ_EXPORT
-SeqLocToBioseq(const objects::CSeq_loc& loc, objects::CScope& scope);
+NCBI_XALGOSEQ_EXPORT
+CRef<objects::CBioseq> SeqLocToBioseq(const objects::CSeq_loc& loc,
+                                      objects::CScope& scope);
 
 END_NCBI_SCOPE
 
