@@ -34,7 +34,7 @@
 
 #include "ncbi_config.h"
 
-#if defined(verify)
+#ifdef   verify
 #  undef verify
 #endif
 
