@@ -244,6 +244,16 @@ version  1 # of file format
 2+6  FP  embl_other_nuc
 2+6  FQ  embl_other_nuc
 2+6  FR  embl_other_nuc
+2+6  FS  ddbj_other_nuc
+2+6  FT  ddbj_other_nuc
+2+6  FU  ddbj_other_nuc
+2+6  FV  ddbj_other_nuc
+2+6  FW  ddbj_other_nuc
+2+6  FX  ddbj_other_nuc
+2+6  FY  ddbj_other_nuc
+2+6  FZ  ddbj_other_nuc
+2+6  GA  ddbj_other_nuc
+2+6  GB  ddbj_other_nuc
 2+6  ??  unreserved_nuc
 
 # SPECIAL CASES
