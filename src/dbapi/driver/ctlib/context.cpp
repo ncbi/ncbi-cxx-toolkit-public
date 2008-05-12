@@ -1506,7 +1506,7 @@ CDbapiCtlibCFBase::CreateInstance(
         string prog_name;
         string host_name;
         string client_charset;
-        int max_connect = 0;
+        unsigned int max_connect = 0;
 
         if ( params != NULL ) {
             typedef TPluginManagerParamTree::TNodeList_CI TCIter;
@@ -1550,11 +1550,11 @@ CDbapiCtlibCFBase::CreateInstance(
         }
 
         if (!prog_name.empty()) {
-            drv->CTLIB_SetApplicationName(prog_name);
+            drv->SetApplicationName(prog_name);
         }
 
         if (!host_name.empty()) {
-            drv->CTLIB_SetHostName(host_name);
+            drv->SetHostName(host_name);
         }
 
         if (!client_charset.empty()) {

@@ -135,9 +135,9 @@ public:
         return m_ConnectFactory;
     }
 
-    void SetMaxConnect(int max_connect);
+    void SetMaxConnect(unsigned int max_connect);
 
-    int GetMaxConnect(void) const {
+    unsigned int GetMaxConnect(void) const {
         return m_MaxConnect;
     }
 
@@ -151,8 +151,8 @@ private:
     CRef<IDBConnectionFactory> m_ConnectFactory;
 
     CMutex m_Mutex;
-    int m_MaxConnect;
-    int m_NumConnect;
+    unsigned int m_MaxConnect;
+    unsigned int m_NumConnect;
 
     // Friends
     friend class CSafeStaticPtr<CDbapiConnMgr>;

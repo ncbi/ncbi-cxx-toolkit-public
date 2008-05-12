@@ -87,12 +87,12 @@ public:
     void DestroyDs(const IDataSource* ds);
 
     // Set maximum number of connections in application
-    void SetMaxConnect(int max_connect) {
+    void SetMaxConnect(unsigned int max_connect) {
         CDbapiConnMgr::Instance().SetMaxConnect(max_connect);
     }
 
     // Get maximum number of connections in application
-    int GetMaxConnect(void) {
+    unsigned int GetMaxConnect(void) {
         return CDbapiConnMgr::Instance().GetMaxConnect();
     }
 

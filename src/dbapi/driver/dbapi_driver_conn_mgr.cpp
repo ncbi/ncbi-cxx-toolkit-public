@@ -124,7 +124,7 @@ CDbapiConnMgr::Instance(void)
     return instance.Get();
 }
 
-void CDbapiConnMgr::SetMaxConnect(int max_connect)
+void CDbapiConnMgr::SetMaxConnect(unsigned int max_connect)
 {
     CMutexGuard mg(m_Mutex);
 
