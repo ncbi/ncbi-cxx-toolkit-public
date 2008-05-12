@@ -3,13 +3,7 @@ util$
 util/compress
 util/regexp$
 util/cache$
-util/unicode_plans$
-util/bitset
 connect$
 connect/ext$
 dbapi
 -dbapi/driver/odbc/odbcw
-misc
-cgi$ update-only
-connect/services$ update-only
-html$ update-only
