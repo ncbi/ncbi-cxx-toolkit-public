@@ -48,6 +48,9 @@ int yylex(void);
 CNcbiIstream *g_NewickIstr;
 // a list of all allocated nodes so they can be deleted on error
 vector<TPhyTreeNode*> g_NodeList;
+
+// Increase stack size
+#define YYINITDEPTH 10000
 %}
 
 %union {
