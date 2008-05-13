@@ -2253,7 +2253,7 @@ size_t CObjectIStreamXml::ReadBytes(ByteBlock& block,
         char src_buf[chunk_in];
         size_t bytes_left = length;
         size_t src_size, src_read, dst_written;
-        while (!end_of_data && bytes_left > 0 && bytes_left <= length) {
+        while (!end_of_data && bytes_left > chunk_in && bytes_left <= length) {
             for ( src_size = 0; src_size < chunk_in; ) {
                 int c = GetBase64Char();
                 if (c < 0) {
