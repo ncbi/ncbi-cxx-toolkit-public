@@ -199,12 +199,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
                 if(i > 0) G += V1;                
             }
 
-            if(j == 0) {
-                V1 += wsleft2;
-                E = V1 + wg1 + ws1;
-                tracer = 0;
-            }
-            else if(j > jbeg) {
+            if(j > jbeg) {
                 n0 = V + wg1;
                 if(E >= n0) {
                     E += ws1;      // gap extension
@@ -214,6 +209,11 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
                     E = n0 + ws1;  // gap open
                     tracer = 0;
                 }
+            }
+            else if(j == 0 && i < m_Shift + int(m_band)) {
+                V1 += wsleft2;
+                E = V1 + wg1 + ws1;
+                tracer = 0;
             }
             else {
                 E = kInfMinus;
