@@ -10,8 +10,8 @@ LDFLAGS = $(LOCAL_LDFLAGS) $(FAST_LDFLAGS)
 
 LIB = gene_info xncbi
 
-LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(ORIG_LIBS)
+LIBS = $(BOOST_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = gene_info_unit_test
-CHECK_COPY = data
+CHECK_CMD     = gene_info_unit_test
+CHECK_COPY    = data
 CHECK_AUTHORS = blastsoft

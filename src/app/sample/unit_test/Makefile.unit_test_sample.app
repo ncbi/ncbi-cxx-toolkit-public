@@ -10,7 +10,9 @@ SRC = unit_test_sample
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
-LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(ORIG_LIBS)
+LIBS = $(BOOST_LIBS) $(ORIG_LIBS)
+
+REQUIRES = Boost.Test objects
 
 # Uncomment to run automatically as part of "make check"
 # CHECK_CMD =

@@ -11,10 +11,10 @@ LDFLAGS = $(LOCAL_LDFLAGS) $(FAST_LDFLAGS)
 LIB_ = gene_info_writer gene_info xobjutil seqdb blastdb $(SOBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
-LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) \
+LIBS = $(BOOST_LIBS) \
        $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = gene_info_writer_unit_test
+CHECK_CMD  = gene_info_writer_unit_test
 CHECK_COPY = data
 CHECK_AUTHORS = blastsoft
 
