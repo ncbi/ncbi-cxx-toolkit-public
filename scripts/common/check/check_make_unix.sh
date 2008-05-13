@@ -631,6 +631,7 @@ for x_row in $x_tests; do
             x_copy="$x_src_dir/$i"
             if [ -f "$x_copy"  -o  -d "$x_copy" ]; then
                cp -prf "$x_copy" "$x_work_dir"
+               find "$x_work_dir/$i" -name .svn -print | xargs rm -rf
             else
                echo "Warning:  The copied object \"$x_copy\" should be a file or directory!"
                continue 1
