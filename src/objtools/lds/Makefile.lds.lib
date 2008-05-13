@@ -2,13 +2,11 @@
 
 # Build library "lds"
 ###############################
-ASN_DEP = seq submit seqset
+ASN_DEP = seq submit seqset biblio
 
 LIB = lds
 SRC = lds lds_reader lds_query \
       lds_admin lds_coreobjreader lds_files lds_object lds_manager
-
-CPPFLAGS = $(ORIG_CPPFLAGS)
 
 # Dependencies for shared library
 DLL_LIB = bdb
