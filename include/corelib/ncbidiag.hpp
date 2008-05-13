@@ -2058,8 +2058,8 @@ public:
     virtual void Reopen(TReopenFlags flags);
 
 private:
-    int    m_Handle;      ///< File handle
-    CTime* m_LastReopen;  ///< Last reopen time
+    int         m_Handle;       ///< File handle
+    CStopWatch* m_ReopenTimer;
 
     /// Save messages if the handle is unavailable
     typedef list<SDiagMessage> TMessages;
@@ -2152,7 +2152,7 @@ private:
     bool                     m_OwnLog;
     CStreamDiagHandler_Base* m_Trace;
     bool                     m_OwnTrace;
-    CTime*                   m_LastReopen;
+    CStopWatch*              m_ReopenTimer;
 };
 
 

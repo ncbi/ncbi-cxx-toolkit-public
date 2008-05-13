@@ -2307,6 +2307,7 @@ static const char s_ExtraEncodeChars[256][4] = {
 };
 
 
+inline
 bool x_IsEncodableChar(char c)
 {
     return s_ExtraEncodeChars[(unsigned char)c][0] != c  ||
@@ -2314,45 +2315,59 @@ bool x_IsEncodableChar(char c)
 }
 
 
-bool x_DecodeExtraArg(string& str, bool is_arg_name)
+class CExtraDecoder : public IStringDecoder
 {
-    NStr::TruncateSpacesInPlace(str);
+public:
+    virtual string Decode(const string& src, EStringType stype) const;
+};
+
+
+string CExtraDecoder::Decode(const string& src, EStringType stype) const
+{
+    string str = src; // NStr::TruncateSpaces(src);
     size_t len = str.length();
-    if ( !len ) {
-        return !is_arg_name; // names can not be empty
+    if ( !len  &&  stype == eName ) {
+        NCBI_THROW2(CStringException, eFormat,
+            "Empty name in extra-arg", 0);
     }
 
+    // Do not use default URL-decoder since it does not check invalid chars
     size_t dst = 0;
-    for (size_t src = 0;  src < len;  dst++) {
-        switch ( str[src] ) {
+    for (size_t p = 0;  p < len;  dst++) {
+        switch ( str[p] ) {
         case '%': {
-            if (src + 2 > len) {
-                return false;
+            if ( stype == eName ) {
+                NCBI_THROW2(CStringException, eFormat,
+                    "Inavild char in extra arg name", p);
             }
-            int n1 = NStr::HexChar(str[src+1]);
-            int n2 = NStr::HexChar(str[src+2]);
+            if (p + 2 > len) {
+                NCBI_THROW2(CStringException, eFormat,
+                    "Inavild char in extra arg", p);
+            }
+            int n1 = NStr::HexChar(str[p+1]);
+            int n2 = NStr::HexChar(str[p+2]);
             if (n1 < 0 || n2 < 0) {
-                return false;
+                NCBI_THROW2(CStringException, eFormat,
+                    "Inavild char in extra arg", p);
             }
             str[dst] = (n1 << 4) | n2;
-            src += 3;
-            if ( is_arg_name  &&  x_IsEncodableChar(str[dst]) ) {
-                return false; // no encodable chars allowed in names
-            }
+            p += 3;
             break;
         }
         case '+': {
-            if ( is_arg_name ) {
-                return false; // no spaces in names
+            if ( stype == eName ) {
+                NCBI_THROW2(CStringException, eFormat,
+                    "Inavild char in extra arg name", p);
             }
             str[dst] = ' ';
-            src++;
+            p++;
             break;
         }
         default:
-            str[dst] = str[src++];
+            str[dst] = str[p++];
             if ( x_IsEncodableChar(str[dst]) ) {
-                return false; // everything must be encoded
+                NCBI_THROW2(CStringException, eFormat,
+                    "Unencoded special char in extra arg", p);
             }
         }
     }
@@ -2360,37 +2375,41 @@ bool x_DecodeExtraArg(string& str, bool is_arg_name)
         str[dst] = '\0';
         str.resize(dst);
     }
-    return true;
+    return str;
 }
 
 
 bool SDiagMessage::x_ParseExtraArgs(const string& str, size_t pos)
 {
+    m_ExtraArgs.clear();
     if (str.find('&', pos) == NPOS  &&  str.find('=', pos) == NPOS) {
         return false;
     }
-    list<string> args;
-    NStr::Split(CTempString(str.c_str() + pos), "&", args);
-    ITERATE(list<string>, it, args) {
+    CStringPairsParser parser("&", "=", new CExtraDecoder());
+    try {
+        parser.Parse(CTempString(str.c_str() + pos));
+    }
+    catch (CStringException) {
         string n, v;
-        NStr::SplitInTwo(*it, "=", n, v);
-        if (!x_DecodeExtraArg(n, true)  ||  !x_DecodeExtraArg(v, false)) {
-            // Error when parsing args. Try to treat the message as a single
-            // name=value pair with non-encoded value.
-            m_ExtraArgs.clear();
-            m_TypedExtra = false;
-            NStr::SplitInTwo(CTempString(str.c_str() + pos), "=", n, v);
-            // Try to decode only the name, leave the value as-is.
-            if ( x_DecodeExtraArg(n, true) ) {
-                m_ExtraArgs.push_back(TExtraArg(n, v));
-                return true;
+        NStr::SplitInTwo(CTempString(str.c_str() + pos), "=", n, v);
+        // Try to decode only the name, leave the value as-is.
+        try {
+            n = parser.GetDecoder()->Decode(n, CExtraDecoder::eName);
+            if (n == kExtraTypeArgName) {
+                m_TypedExtra = true;
             }
+            m_ExtraArgs.push_back(TExtraArg(n, v));
+            return true;
+        }
+        catch (CStringException) {
             return false;
         }
-        if (n == kExtraTypeArgName) {
+    }
+    ITERATE(CStringPairsParser::TStrPairs, it, parser.GetPairs()) {
+        if (it->first == kExtraTypeArgName) {
             m_TypedExtra = true;
         }
-        m_ExtraArgs.push_back(TExtraArg(n, v));
+        m_ExtraArgs.push_back(TExtraArg(it->first, it->second));
     }
     return true;
 }
@@ -3648,7 +3667,7 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
 
 CFileHandleDiagHandler::CFileHandleDiagHandler(const string& fname)
     : m_Handle(-1),
-      m_LastReopen(new CTime(GetFastLocalTime()))
+      m_ReopenTimer(new CStopWatch())
 {
     SetLogName(fname);
     Reopen(CDiagContext::GetLogTruncate() ? fTruncate : fDefault);
@@ -3657,7 +3676,7 @@ CFileHandleDiagHandler::CFileHandleDiagHandler(const string& fname)
 
 CFileHandleDiagHandler::~CFileHandleDiagHandler(void)
 {
-    delete m_LastReopen;
+    delete m_ReopenTimer;
     if (m_Handle >= 0) {
         close(m_Handle);
     }
@@ -3669,9 +3688,8 @@ const int kLogReopenDelay = 60; // Reopen log every 60 seconds
 void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
 {
     // Period is longer than for CFileDiagHandler to prevent double-reopening
-    if (flags & fCheck) {
-        CTime now(GetFastLocalTime());
-        if (now.DiffSecond(*m_LastReopen) < kLogReopenDelay + 5) {
+    if (flags & fCheck  &&  m_ReopenTimer->IsRunning()) {
+        if (m_ReopenTimer->Elapsed() < kLogReopenDelay + 5) {
             return;
         }
     }
@@ -3691,7 +3709,7 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
         0);
     m_Handle = open(CFile::ConvertToOSPath(GetLogName()).c_str(),
                     mode, perm);
-    m_LastReopen->SetCurrent();
+    m_ReopenTimer->Restart();
     if (m_Handle == -1) {
         string msg;
         switch ( errno ) {
@@ -3733,7 +3751,8 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
 void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
 {
     // Period is longer than for CFileDiagHandler to prevent double-reopening
-    if (mess.GetTime().DiffSecond(*m_LastReopen) >= kLogReopenDelay + 5) {
+    if (!m_ReopenTimer->IsRunning()  ||
+        m_ReopenTimer->Elapsed() >= kLogReopenDelay + 5) {
         Reopen(fDefault);
     }
 
@@ -3785,7 +3804,7 @@ CFileDiagHandler::CFileDiagHandler(void)
       m_OwnLog(false),
       m_Trace(0),
       m_OwnTrace(false),
-      m_LastReopen(new CTime(GetFastLocalTime()))
+      m_ReopenTimer(new CStopWatch())
 {
     SetLogFile("-", eDiagFile_All, true);
 }
@@ -3796,7 +3815,7 @@ CFileDiagHandler::~CFileDiagHandler(void)
     x_ResetHandler(&m_Err, &m_OwnErr);
     x_ResetHandler(&m_Log, &m_OwnLog);
     x_ResetHandler(&m_Trace, &m_OwnTrace);
-    delete m_LastReopen;
+    delete m_ReopenTimer;
 }
 
 
@@ -3965,7 +3984,7 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
                 s_CreateHandler(log_name, failed), true);
             x_SetHandler(&m_Trace, &m_OwnTrace,
                 s_CreateHandler(trace_name, failed), true);
-            m_LastReopen->SetCurrent();
+            m_ReopenTimer->Restart();
             break;
         }
     case eDiagFile_Err:
@@ -4057,9 +4076,8 @@ void CFileDiagHandler::SetSubHandler(CStreamDiagHandler_Base* handler,
 
 void CFileDiagHandler::Reopen(TReopenFlags flags)
 {
-    if (flags & fCheck) {
-        CTime now(GetFastLocalTime());
-        if (now.DiffSecond(*m_LastReopen) < kLogReopenDelay) {
+    if (flags & fCheck  &&  m_ReopenTimer->IsRunning()) {
+        if (m_ReopenTimer->Elapsed() < kLogReopenDelay) {
             return;
         }
     }
@@ -4072,14 +4090,15 @@ void CFileDiagHandler::Reopen(TReopenFlags flags)
     if ( m_Trace ) {
         m_Trace->Reopen(flags);
     }
-    m_LastReopen->SetCurrent();
+    m_ReopenTimer->Restart();
 }
 
 
 void CFileDiagHandler::Post(const SDiagMessage& mess)
 {
     // Check time and re-open the streams
-    if (mess.GetTime().DiffSecond(*m_LastReopen) >= kLogReopenDelay) {
+    if (!m_ReopenTimer->IsRunning()  ||
+        m_ReopenTimer->Elapsed() >= kLogReopenDelay) {
         Reopen(fDefault);
     }
 
