@@ -2327,6 +2327,264 @@ extern char* strdup(const char* str)
 #endif
 
 
+string NStr::URLEncode(const string& str, EUrlEncode flag)
+{
+    static const char s_Encode[256][4] = {
+        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
+        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
+        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
+        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
+        "+",   "!",   "%22", "%23", "$",   "%25", "%26", "'",
+        "(",   ")",   "*",   "%2B", ",",   "-",   ".",   "%2F",
+        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
+        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
+        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
+        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
+        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
+        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "_",
+        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
+        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
+        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
+        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
+        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
+        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
+        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
+        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
+        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
+        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
+        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
+        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
+        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
+        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
+        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
+        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
+        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
+        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
+        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
+        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
+    };
+
+    static const char s_EncodeMarkChars[256][4] = {
+        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
+        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
+        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
+        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
+        "+",   "%21", "%22", "%23", "%24", "%25", "%26", "%27",
+        "%28", "%29", "%2A", "%2B", "%2C", "%2D", "%2E", "%2F",
+        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
+        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
+        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
+        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
+        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
+        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "%5F",
+        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
+        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
+        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
+        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
+        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
+        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
+        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
+        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
+        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
+        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
+        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
+        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
+        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
+        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
+        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
+        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
+        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
+        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
+        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
+        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
+    };
+
+    static const char s_EncodePercentOnly[256][4] = {
+        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
+        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
+        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
+        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
+        "%20", "%21", "%22", "%23", "%24", "%25", "%26", "%27",
+        "%28", "%29", "%2A", "%2B", "%2C", "%2D", "%2E", "%2F",
+        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
+        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
+        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
+        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
+        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
+        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "%5F",
+        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
+        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
+        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
+        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
+        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
+        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
+        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
+        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
+        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
+        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
+        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
+        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
+        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
+        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
+        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
+        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
+        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
+        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
+        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
+        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
+    };
+
+    static const char s_EncodePath[256][4] = {
+        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
+        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
+        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
+        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
+        "+",   "%21", "%22", "%23", "%24", "%25", "%26", "%27",
+        "%28", "%29", "%2A", "%2B", "%2C", "%2D", ".",   "/",
+        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
+        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
+        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
+        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
+        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
+        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "%5F",
+        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
+        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
+        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
+        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
+        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
+        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
+        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
+        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
+        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
+        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
+        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
+        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
+        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
+        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
+        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
+        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
+        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
+        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
+        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
+        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
+    };
+
+    SIZE_TYPE len = str.length();
+    if ( !len ) {
+        return kEmptyStr;
+    }
+
+    const char (*encode_table)[4];
+    switch (flag) {
+    case eUrlEnc_SkipMarkChars:
+        encode_table = s_Encode;
+        break;
+    case eUrlEnc_ProcessMarkChars:
+        encode_table = s_EncodeMarkChars;
+        break;
+    case eUrlEnc_PercentOnly:
+        encode_table = s_EncodePercentOnly;
+        break;
+    case eUrlEnc_Path:
+        encode_table = s_EncodePath;
+        break;
+    default:
+        _TROUBLE;
+        // To keep off compiler warning
+        encode_table = 0;
+    }
+
+    string dst;
+    SIZE_TYPE pos;
+    SIZE_TYPE dst_len = len;
+    const unsigned char* cstr = (const unsigned char*)str.c_str();
+    for (pos = 0;  pos < len;  pos++) {
+        if (encode_table[cstr[pos]][0] == '%')
+            dst_len += 2;
+    }
+    dst.reserve(dst_len + 1);
+    dst.resize(dst_len);
+
+    SIZE_TYPE p = 0;
+    for (pos = 0;  pos < len;  pos++, p++) {
+        const char* subst = encode_table[cstr[pos]];
+        if (*subst != '%') {
+            dst[p] = *subst;
+        } else {
+            dst[p] = '%';
+            dst[++p] = *(++subst);
+            dst[++p] = *(++subst);
+        }
+    }
+
+    _ASSERT( p == dst_len );
+    dst[dst_len] = '\0';
+    return dst;
+}
+
+
+void s_URLDecode(const string& src, string& dst, NStr::EUrlDecode flag)
+{
+    SIZE_TYPE len = src.length();
+    if ( !len ) {
+        dst.clear();
+        return;
+    }
+    if (dst.length() < src.length()) {
+        dst.resize(len);
+    }
+
+    SIZE_TYPE pdst = 0;
+    for (SIZE_TYPE psrc = 0;  psrc < len;  pdst++) {
+        switch ( src[psrc] ) {
+        case '%': {
+            // Accordingly RFC 1738 the '%' character is unsafe
+            // and should be always encoded, but sometimes it is
+            // not really encoded...
+            if (psrc + 2 > len) {
+                dst[pdst] = src[psrc++];
+            } else {
+                int n1 = NStr::HexChar(src[psrc+1]);
+                int n2 = NStr::HexChar(src[psrc+2]);
+                if (n1 < 0  ||  n1 > 15  || n2 < 0  ||  n2 > 15) {
+                    dst[pdst] = src[psrc++];
+                } else {
+                    dst[pdst] = (n1 << 4) | n2;
+                    psrc += 3;
+                }
+            }
+            break;
+        }
+        case '+': {
+            dst[pdst] = (flag == NStr::eUrlDec_All) ? ' ' : '+';
+            psrc++;
+            break;
+        }
+        default:
+            dst[pdst] = src[psrc++];
+        }
+    }
+    if (pdst < len) {
+        dst[pdst] = '\0';
+        dst.resize(pdst);
+    }
+}
+
+
+string NStr::URLDecode(const string& str, EUrlDecode flag)
+{
+    string dst;
+    s_URLDecode(str, dst, flag);
+    return dst;
+}
+
+
+void NStr::URLDecodeInPlace(string& str, EUrlDecode flag)
+{
+    s_URLDecode(str, str, flag);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  CStringUTF8
 
@@ -2742,6 +3000,82 @@ const char* CStringException::GetErrCodeString(void) const
     case eFormat:   return "eFormat";
     default:    return CException::GetErrCodeString();
     }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CStringPairsParser
+
+
+CStringPairsParser::CStringPairsParser(void)
+    : m_ArgSep("&"),
+      m_ValSep("=")
+{
+}
+
+
+CStringPairsParser::CStringPairsParser(const string& arg_sep,
+                                       const string& val_sep,
+                                       IStringDecoder* decoder,
+                                       EOwnership own)
+    : m_ArgSep(arg_sep),
+      m_ValSep(val_sep),
+      m_Decoder(decoder, own)
+{
+}
+
+
+CStringPairsParser::CStringPairsParser(IStringDecoder* decoder,
+                                       EOwnership own)
+    : m_ArgSep("&"),
+      m_ValSep("="),
+      m_Decoder(decoder, own)
+{
+}
+
+
+CStringPairsParser::~CStringPairsParser(void)
+{
+}
+
+
+void CStringPairsParser::Parse(const CTempString& str,
+                               NStr::EMergeDelims merge_argsep)
+{
+    list<string> lst;
+    NStr::Split(str, m_ArgSep, lst, merge_argsep);
+    m_Data.clear();
+    m_Data.reserve(lst.size());
+    size_t idx = 0;
+    ITERATE(list<string>, it, lst) {
+        string name, val;
+        NStr::SplitInTwo(*it, m_ValSep, name, val);
+        if ( m_Decoder.get() ) {
+            try {
+                name = m_Decoder->Decode(name, IStringDecoder::eName);
+                val = m_Decoder->Decode(val, IStringDecoder::eValue);
+            }
+            catch (CStringException) {
+                // Discard all data
+                m_Data.clear();
+                throw;
+            }
+        }
+        m_Data.push_back(TStrPair(name, val));
+    }
+}
+
+
+CStringDecoder_Url::CStringDecoder_Url(NStr::EUrlDecode flag)
+    : m_Flag(flag)
+{
+}
+
+
+string CStringDecoder_Url::Decode(const string& src,
+                                  EStringType stype) const
+{
+    return NStr::URLDecode(src, m_Flag);
 }
 
 
