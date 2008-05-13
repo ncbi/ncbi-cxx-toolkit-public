@@ -123,6 +123,11 @@ void CNSRemoveJobControlApp::Init(void)
                               "raw_input", "raw_output")
                             );
 
+    arg_desc->AddOptionalKey("stdout",
+                             "job_id",
+                             "Dump stdout of the job",
+                             CArgDescriptions::eString);
+
     arg_desc->AddOptionalKey("cmd",
                              "cmd_name",
                              "Perform a command",
@@ -206,25 +211,7 @@ int CNSRemoveJobControlApp::Run(void)
         out = &args["of"].AsOutputFile();
     }
 
-    auto_ptr<ITagWriter> writer;
-    if (args["render"]) {
-        string type = args["render"].AsString();
-        if(NStr::CompareNocase(type, "xml") == 0)
-            writer.reset(new CXmlTagWriter(*out));
-    }
-    if (!writer.get())
-        writer.reset(new CTextTagWriter(*out));
-
-    try {
-
     CBlobStorageFactory factory(reg);
-    if (args["bid"]) {
-        info_collector.reset(new CNSInfoCollector(factory));
-        auto_ptr<CNSInfoRenderer> renderer(new CNSInfoRenderer(*writer, *info_collector));
-        string id = args["bid"].AsString();
-        renderer->RenderBlob(id);
-        return 0;
-    }
 
     auto_ptr<CConfig::TParamTree> ptree(CConfig::ConvertRegToTree(reg));
     const CConfig::TParamTree* ns_tree = ptree->FindSubNode(kNetScheduleAPIDriverName);
@@ -248,6 +235,30 @@ int CNSRemoveJobControlApp::Run(void)
                    "neither in config file nor in cmd line");
 
     info_collector.reset(new CNSInfoCollector(queue, service, factory));
+
+    if (args["stdout"]) {
+        CNSJobInfo job_info(args["stdout"].AsString(), *info_collector);
+        *out << job_info.GetStdOut().rdbuf();
+        return 0;
+    }
+
+    auto_ptr<ITagWriter> writer;
+    if (args["render"]) {
+        string type = args["render"].AsString();
+        if(NStr::CompareNocase(type, "xml") == 0)
+            writer.reset(new CXmlTagWriter(*out));
+    }
+    if (!writer.get())
+        writer.reset(new CTextTagWriter(*out));
+
+    try {
+
+    if (args["bid"]) {
+        auto_ptr<CNSInfoRenderer> renderer(new CNSInfoRenderer(*writer, *info_collector));
+        string id = args["bid"].AsString();
+        renderer->RenderBlob(id);
+        return 0;
+    }
 
     CNSInfoRenderer::TFlags flags = 0;
     if (args["attr"]) {
