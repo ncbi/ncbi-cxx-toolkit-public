@@ -160,8 +160,8 @@ private:
 
 
 class NCBI_XOBJMGR_EXPORT CPrefetchRequest
-    : public SPrefetchTypes,
-      public CThreadPool_Task
+    : public CThreadPool_Task,
+      public SPrefetchTypes
 {
 public:
     CPrefetchRequest(CObjectFor<CMutex>* state_mutex,
