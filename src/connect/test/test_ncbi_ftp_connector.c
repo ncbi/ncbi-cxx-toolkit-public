@@ -91,13 +91,8 @@ int main(int argc, char* argv[])
     } else {
         *buf = 0;
     }
-    CORE_LOGF(eLOG_Note, ("Connecting to ftp://%s%s%s@%s%s%s%s",
-                          TEST_USER ? TEST_USER                : "",
-                          TEST_PASS ? ":"                      : "",
-                          TEST_PASS ? TEST_PASS                : "",
-                          TEST_HOST, buf,
-                          !TEST_PATH || *TEST_PATH == '/' ? "" : "/",
-                          TEST_PATH ? TEST_PATH                : ""));
+    CORE_LOGF(eLOG_Note, ("Connecting to ftp://%s:%s@%s%s/",
+                          TEST_USER, TEST_PASS, TEST_HOST, buf));
     /* Run the tests */
     connector = FTP_CreateDownloadConnector(TEST_HOST, TEST_PORT,
                                             TEST_USER, TEST_PASS,
