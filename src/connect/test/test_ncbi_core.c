@@ -334,15 +334,18 @@ static void TEST_UTIL_Log(void)
 
   /* logging with errno */
   errno = 0;
-  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Warning, 0);  
-  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Error, "");
-  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Critical, "OKAY");
+  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Warning,  0,      errno, 0);  
+  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Error,    "",     errno, 0);
+  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Critical, "OKAY", errno, 0);
 
 #undef  THIS_FILE
 #define THIS_FILE 0
-  (void)strtod("1e-999999", 0);  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Warning, 0);  
-  (void)strtod("1e-999999", 0);  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Error, "");
-  (void)strtod("1e-999999", 0);  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Critical, "FAIL");
+  (void)strtod("1e-999999", 0);
+  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Warning,  0,      errno, 0);  
+  (void)strtod("1e-999999", 0);
+  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Error,    "",     errno, 0);
+  (void)strtod("1e-999999", 0);
+  LOG_WRITE_ERRNO(x_log, 0, 0, eLOG_Critical, "FAIL", errno, 0);
 
   /* delete */
   verify(LOG_Delete(x_log) == 0);

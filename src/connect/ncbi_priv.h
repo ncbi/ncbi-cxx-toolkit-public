@@ -110,7 +110,7 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
                    (g_CORE_Log, code, subcode, level, data, size, message) )
 
 #define DO_CORE_LOG_ERRNO(code, subcode, level, x_errno, x_descr, message) \
-    DO_CORE_LOG_X( LOG_WRITE_ERRNO_EX, level,                           \
+    DO_CORE_LOG_X( LOG_WRITE_ERRNO, level,                              \
                    (g_CORE_Log, code, subcode, level, message,          \
                     x_errno, x_descr) )
 
