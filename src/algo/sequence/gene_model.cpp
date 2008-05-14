@@ -338,9 +338,8 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 cds_feat->SetLocation(*new_loc);
 
                 /// copy any existing dbxrefs
-                if (cds_feat  &&
-                    !cds_feat->IsSetDbxref()  &&
-                    gene_feat->IsSetDbxref()) {
+                if (cds_feat  &&  gene_feat  &&
+                    !cds_feat->IsSetDbxref()  &&  gene_feat->IsSetDbxref()) {
                     ITERATE (CSeq_feat::TDbxref, xref_it, gene_feat->GetDbxref()) {
                         CRef<CDbtag> tag(new CDbtag);
                         tag->Assign(**xref_it);
