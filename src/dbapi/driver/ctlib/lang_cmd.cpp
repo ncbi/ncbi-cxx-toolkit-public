@@ -248,13 +248,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     }
     case eDB_LongChar: {
         CDB_LongChar& par = dynamic_cast<CDB_LongChar&> (param);
-#ifndef FTDS_IN_USE
         param_fmt.datatype = CS_LONGCHAR_TYPE;
-#else
-        // CS_LONGCHAR_TYPE is not supported with the FreeTDS ctlib library ...
-        // param_fmt.datatype = CS_UNICHAR_TYPE; - Unicode datatype ...
-        param_fmt.datatype = CS_CHAR_TYPE;
-#endif
         if ( declare_only ) {
             break;
         }

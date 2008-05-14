@@ -3477,6 +3477,8 @@ ct_param(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT datalen,
 
     if (datafmt->datatype == CS_VARCHAR_TYPE  &&  IS_TDS7_PLUS(cmd->con->tds_socket))
         datafmt->datatype = CS_NVARCHAR_TYPE;
+    if (datafmt->datatype == CS_LONGCHAR_TYPE  &&  IS_TDS7_PLUS(cmd->con->tds_socket))
+        datafmt->datatype = CS_NLONGCHAR_TYPE;
 
     switch (cmd->command_type) {
     case CS_RPC_CMD:
