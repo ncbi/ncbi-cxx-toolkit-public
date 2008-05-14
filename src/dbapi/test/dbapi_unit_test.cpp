@@ -8790,6 +8790,58 @@ CDBAPIUnitTest::Test_Procedure(void)
             status = status; // Get rid of warnings.
         }
 
+        if (false) {
+            const string query("[db_alias] is not null");
+
+            auto_ptr<IConnection> conn( GetDS().CreateConnection( CONN_OWNERSHIP ) );
+            BOOST_CHECK( conn.get() != NULL );
+
+            conn->Connect(
+                "*****",
+                "******",
+                "MSSQL31",
+                "AlignDb_Info"
+                );
+
+            auto_ptr<ICallableStatement> auto_stmt(
+                conn->PrepareCall("[dbo].[FindAttributesEx]")
+                );
+            auto_stmt->SetParam( CVariant(1), "@userid" );
+            auto_stmt->SetParam( CVariant("ALIGNDB"), "@application" );
+            auto_stmt->SetParam( CVariant("AlignDbMasterInfo"), "@classname" );
+            // LongChar doesn't work.
+            // auto_stmt->SetParam( CVariant(new CDB_LongChar(query.length(), query)), "@query" );
+            // auto_stmt->SetParam( CVariant::LongChar(query.c_str(), query.length()), "@query" );
+            auto_stmt->SetParam( CVariant(query), "@query" );
+            auto_stmt->SetParam( CVariant(1), "@max_results" );
+
+            auto_stmt->Execute();
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                    switch( rs->GetResultType() ) {
+                    case eDB_RowResult:
+                        while(rs->Next()) {
+                            // retrieve row results
+                        }
+                        break;
+                    case eDB_ParamResult:
+                        _ASSERT(false);
+                        while(rs->Next()) {
+                            // Retrieve parameter row
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+            // Get status
+            int status = auto_stmt->GetReturnStatus();
+            status = status; // Get rid of warnings.
+        }
+
 
         // Test returned recordset ...
         {
@@ -11079,6 +11131,25 @@ CDBAPIUnitTest::Test_CDB_Object(void)
             BOOST_CHECK(value_SmallDateTime.Value() != CTime());
             BOOST_CHECK(value_DateTime.Value() != CTime());
             BOOST_CHECK(value_Numeric.Value() != string("0"));
+
+
+            // Check actual values ...
+            BOOST_CHECK(value_Bit.Value() == true);
+            BOOST_CHECK_EQUAL(value_Int.Value(), 1);
+            BOOST_CHECK_EQUAL(value_SmallInt.Value(), 1);
+            BOOST_CHECK_EQUAL(value_TinyInt.Value(), 1);
+            BOOST_CHECK_EQUAL(value_BigInt.Value(), 1);
+            BOOST_CHECK_EQUAL(value_VarChar.Value(), string("ABC"));
+            BOOST_CHECK_EQUAL(value_Char.Value(), string("ABC"));
+            BOOST_CHECK_EQUAL(value_LongChar.Value(), string("ABC"));
+            BOOST_CHECK_EQUAL(strncmp((const char*)value_VarBinary.Value(), "ABC", 3), 0);
+            BOOST_CHECK_EQUAL(strncmp((const char*)value_Binary.Value(), "ABC", 3), 0);
+            BOOST_CHECK_EQUAL(strncmp((const char*)value_LongBinary.Value(), "ABC", 3), 0);
+            BOOST_CHECK_EQUAL(value_Float.Value(), 1.0);
+            BOOST_CHECK_EQUAL(value_Double.Value(), 1.0);
+            BOOST_CHECK_EQUAL(value_SmallDateTime.Value(), CTime("04/24/2007 11:17:01"));
+            BOOST_CHECK_EQUAL(value_DateTime.Value(), CTime("04/24/2007 11:17:01"));
+            // value_Numeric(10, 2, "10");
         }
 
         // Check for NOT NULL after a value assignment operator ...
