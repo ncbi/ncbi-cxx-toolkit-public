@@ -446,9 +446,21 @@ int CNcbiApplication::AppMain
         }
         catch (CArgHelpException& e) {
             if ( !m_DisableArgDesc ) {
-                if ((m_HideArgs & fHideHelp) != 0) {
-                    if (m_ArgDesc->Exist("h")) {
-                        m_ArgDesc->Delete("h");
+                if (m_ArgDesc->IsAutoHelpEnabled()) {
+                    if ((m_HideArgs & fHideHelp) != 0) {
+                        if (m_ArgDesc->Exist("h")) {
+                            m_ArgDesc->Delete("h");
+                        }
+                    }
+                }
+                if ((m_HideArgs & fHideFullHelp) != 0) {
+                    if (m_ArgDesc->Exist("help")) {
+                        m_ArgDesc->Delete("help");
+                    }
+                }
+                if ((m_HideArgs & fHideXmlHelp) != 0) {
+                    if (m_ArgDesc->Exist("xmlhelp")) {
+                        m_ArgDesc->Delete("xmlhelp");
                     }
                 }
                 if ((m_HideArgs & fHideLogfile) == 0  &&

@@ -318,7 +318,9 @@ protected:
         fHideLogfile  = 0x02,  ///< Hide log file description
         fHideConffile = 0x04,  ///< Hide configuration file description
         fHideVersion  = 0x08,  ///< Hide version description
-        fHideDryRun   = 0x10   ///< Hide dryrun description
+        fHideDryRun   = 0x10,  ///< Hide dryrun description
+        fHideFullHelp = 0x20,  ///< Hide full help description
+        fHideXmlHelp  = 0x40   ///< Hide XML help description
     };
     typedef int THideStdArgs;  ///< Binary OR of "EHideStdArgs"
 

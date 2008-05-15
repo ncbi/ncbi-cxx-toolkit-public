@@ -1510,11 +1510,11 @@ CArgDescriptions::CArgDescriptions(bool auto_help,
     if ( m_AutoHelp ) {
         AddFlag(s_AutoHelp,
                 "Print USAGE and DESCRIPTION;  ignore other arguments");
-        AddFlag(s_AutoHelpFull,
-                "Print USAGE, DESCRIPTION and ARGUMENTS description;  ignore other arguments");
-        AddFlag(s_AutoHelpXml,
-                "Print USAGE, DESCRIPTION and ARGUMENTS description in XML format;  ignore other arguments");
     }
+    AddFlag(s_AutoHelpFull,
+            "Print USAGE, DESCRIPTION and ARGUMENTS description;  ignore other arguments");
+    AddFlag(s_AutoHelpXml,
+            "Print USAGE, DESCRIPTION and ARGUMENTS description in XML format;  ignore other arguments");
 }
 
 
@@ -1968,9 +1968,11 @@ CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 
 void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
 {
-    _ASSERT(m_AutoHelp);
-    if (arg.compare(string("-") + s_AutoHelp) == 0) {
-        NCBI_THROW(CArgHelpException,eHelp,kEmptyStr);
+//    _ASSERT(m_AutoHelp);
+    if (m_AutoHelp) {
+        if (arg.compare(string("-") + s_AutoHelp) == 0) {
+            NCBI_THROW(CArgHelpException,eHelp,kEmptyStr);
+        }
     }
     if (arg.compare(string("-") + s_AutoHelpFull) == 0) {
         NCBI_THROW(CArgHelpException,eHelpFull,kEmptyStr);

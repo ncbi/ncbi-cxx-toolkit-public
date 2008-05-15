@@ -804,6 +804,11 @@ public:
     /// names).
     static bool VerifyName(const string& name, bool extended = false);
 
+    /// See if special flag "-h" is activated
+    bool IsAutoHelpEnabled(void) const
+    {
+        return m_AutoHelp;
+    }
 private:
     typedef set< AutoPtr<CArgDesc> >  TArgs;    ///< Argument descr. type
     typedef TArgs::iterator           TArgsI;   ///< Arguments iterator
@@ -947,10 +952,8 @@ public:
         x_PreCheck();
 
         // Check for "-h" flag
-        if ( m_AutoHelp ) {
-            for (TSize i = 1;  i < argc;  i++) {
-                x_CheckAutoHelp(argv[i]);
-            }
+        for (TSize i = 1;  i < argc;  i++) {
+            x_CheckAutoHelp(argv[i]);
         }
 
         // Create new "CArgs" to fill up, and parse cmd.-line args into it
