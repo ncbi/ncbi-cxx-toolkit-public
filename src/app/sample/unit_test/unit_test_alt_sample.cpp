@@ -23,15 +23,14 @@
 *
 * ===========================================================================
 *
-* Author:  Pavel Ivanov, NCBI
+* Author:  Aaron Ucko, Pavel Ivanov, NCBI
 *
 * File Description:
-*   Sample unit test with auto-registration of test cases.
+*   Sample unit test without auto-registration of test cases.
 *
-* If you don't want to use auto-registration of test cases or you want to use
-* some features that are not available with auto-registration
-* (e.g. initialization code before all tests or dependencies between tests)
-* look into another sample - unit_test_alt_sample.cpp.
+* If you don't like concept of init_unit_test_suite() function and want
+* to use auto-registration of test cases look into another sample
+* unit_test_sample.cpp.
 *
 * NOTE:
 *   Boost.Test reports some memory leaks when compiled in MSVC even for this
@@ -44,50 +43,52 @@
 
 #include <ncbi_pch.hpp>
 
-// This macro should be defined before inclusion of test_boost.hpp only in one
-// .cpp-file inside executable (like function main() for non-Boost.Test
-// executables).
-// This macro is necessary only for unit tests with auto-registration.
-// For example of writing unit tests without auto-registration look into
-// unit_test_alt_sample.cpp.
-#define BOOST_AUTO_TEST_MAIN
-
 // This header must be included before all Boost.Test headers
 #include <corelib/test_boost.hpp>
 
+#include <boost/shared_ptr.hpp>
 
 USING_NCBI_SCOPE;
 
 
-BOOST_AUTO_TEST_CASE(TestSimpleTools)
+void TestSimpleTools(void)
 {
-    int    i  = 1;
-    double d  = 0.123;
+    int i = 1;
+    double d = 0.123;
     string s1 = "qwerty";
     string s2 = "qwerty";
 
-    BOOST_CHECK_EQUAL(i,  1);
-    BOOST_CHECK_EQUAL(d,  0.123);
+    BOOST_CHECK_EQUAL(i, 1);
+    BOOST_CHECK_EQUAL(d, 0.123);
     BOOST_CHECK_EQUAL(s1, s2);
-
-    // Never use it this way, because it will not compile on WorkShop:
-    //    BOOST_CHECK_EQUAL(s1, "qwerty");
-    // Instead, use it this way:
+    // Never use it this way, because it will not compile on WorkShop
+    // BOOST_CHECK_EQUAL(s1, "qwerty");
+    // Instead of that use it this way
     BOOST_CHECK(s1 == "qwerty");
-    // ...or this way:
+    // Or this way
     BOOST_CHECK_EQUAL(s1, string("qwerty"));
 }
 
 
-static void s_ThrowSomeException(void)
+class CExceptionTests
+{
+public:
+    void TestWithException(void);
+    void TestWithoutException(void);
+
+private:
+    void ThrowSomeException(void);
+};
+
+void CExceptionTests::ThrowSomeException(void)
 {
     NCBI_THROW(CException, eUnknown, "Some exception message");
 }
 
-BOOST_AUTO_TEST_CASE(TestWithException)
+void CExceptionTests::TestWithException(void)
 {
     try {
-        s_ThrowSomeException();
+        ThrowSomeException();
         BOOST_FAIL("Exception wasn't thrown");
     }
     catch (CException&) {
@@ -97,7 +98,7 @@ BOOST_AUTO_TEST_CASE(TestWithException)
     // Or you can make it this way
     bool exception_thrown = false;
     try {
-        s_ThrowSomeException();
+        ThrowSomeException();
     }
     catch (CException&) {
         exception_thrown = true;
@@ -105,8 +106,7 @@ BOOST_AUTO_TEST_CASE(TestWithException)
     BOOST_CHECK_MESSAGE(exception_thrown, "Exception wasn't thrown");
 }
 
-
-BOOST_AUTO_TEST_CASE(TestWithoutException)
+void CExceptionTests::TestWithoutException(void)
 {
     try {
         // Put some code that have not to throw exception
@@ -114,4 +114,42 @@ BOOST_AUTO_TEST_CASE(TestWithoutException)
     catch (exception&) {
         BOOST_FAIL("std::exception was thrown");
     }
+}
+
+
+using namespace boost::unit_test;
+
+// Initialization function - it must be in global namespace, i.e. outside of
+// any BEGIN_NCBI_SCOPE-END_NCBI_SCOPE structures.
+test_suite*
+init_unit_test_suite( int argc, char* argv[] )
+{
+    test_suite* ts = BOOST_TEST_SUITE("Main Sample Test Suite");
+
+    test_case* tc = BOOST_TEST_CASE(TestSimpleTools);
+    ts->add(tc);
+
+    test_suite* sub_ts = BOOST_TEST_SUITE("Test Suite for exceptions");
+    ts->add(sub_ts);
+    // all tests in sub_ts should not be called if tc fails
+    sub_ts->depends_on(tc);
+
+    // Object for 2 other test cases. It will be destroyed when last
+    // shared_ptr for it will be destroyed.
+    boost::shared_ptr<CExceptionTests> testObj(new CExceptionTests());
+
+    test_case* tc_class =
+        BOOST_CLASS_TEST_CASE(&CExceptionTests::TestWithException, testObj);
+    sub_ts->add(tc_class);
+
+    tc_class =
+        BOOST_CLASS_TEST_CASE(&CExceptionTests::TestWithoutException, testObj);
+    sub_ts->add(tc_class);
+
+
+    // Here (or anywhere else in this function) you can call any other
+    // initialization code which you want to execute before all tests.
+
+
+    return ts;
 }

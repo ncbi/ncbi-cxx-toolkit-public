@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = unit_test_sample
+APP_PROJ = unit_test_sample unit_test_alt_sample
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

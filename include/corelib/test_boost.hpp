@@ -38,7 +38,12 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include <boost/test/unit_test.hpp>
+// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
+#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
+#  undef numeric_limits
+#endif
+
+#include <boost/test/auto_unit_test.hpp>
 
 #include <string>
 
