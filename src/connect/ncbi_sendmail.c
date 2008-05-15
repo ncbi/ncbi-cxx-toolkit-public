@@ -236,11 +236,8 @@ extern const char* CORE_SendMail(const char* to,
 
 
 /* In two macros below the smartest (or, weak-minded?) Sun
- * C compiler warned about unreachable end-of-loop condition
- * (well, it thinks "a condition" is there, dumb!), if we
- * used 'return' right before the end of 'while' statement.
- * So we now added "check" and "conditional" exit, which makes
- * the Sun compiler much happier, and less wordy :-)
+ * C compiler warns about unreachable end-of-loop condition
+ * (well, it thinks "a condition" is there, dumb!).
  */
 
 #define SENDMAIL_RETURN(subcode, reason)                                \
@@ -249,16 +246,16 @@ extern const char* CORE_SendMail(const char* to,
           SOCK_Close(sock);                                             \
       CORE_LOGF_X(subcode, eLOG_Error, ("[SendMail]  %s", reason));     \
       return reason;                                                    \
-  } while (1)
+  } while (0) /* NCBI_FAKE_WARNING: WorkShop */
 
 #define SENDMAIL_RETURN2(subcode, reason, explanation)                  \
   do {                                                                  \
       if (sock)                                                         \
           SOCK_Close(sock);                                             \
-      CORE_LOGF_X( subcode, eLOG_Error,                                 \
-                   ("[SendMail]  %s: %s", reason, explanation) );       \
+      CORE_LOGF_X(subcode, eLOG_Error,                                  \
+                  ("[SendMail]  %s: %s", reason, explanation));         \
       return reason;                                                    \
-  } while (1)
+  } while (0) /* NCBI_FAKE_WARNING: WorkShop */
 
 
 static const char* s_SendRcpt(SOCK sock, const char* to,
