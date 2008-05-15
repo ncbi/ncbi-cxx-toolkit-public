@@ -8,9 +8,8 @@
 
 APP = multireader
 SRC = multireader
-LIB = xobjutil submit xobjread $(OBJMGR_LIBS)
-
-LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIB = xobjread creaders seqset $(SEQ_LIBS) pub medline biblio general \
+      xser xutil xncbi
 
 REQUIRES = objects -Cygwin
 
