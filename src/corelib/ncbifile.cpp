@@ -230,7 +230,7 @@ CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][4] =
 
 
 // Default backup suffix
-char* CDirEntry::m_BackupSuffix = ".bak";
+const char* CDirEntry::m_BackupSuffix = ".bak";
 
 
 CDirEntry& CDirEntry::operator= (const CDirEntry& other)
@@ -1848,8 +1848,8 @@ bool CDirEntry::IsNewer(const string& entry_name, TIfAbsent2 if_absent) const
     }
     // throw an exception by default
     NCBI_THROW(CFileException, eNotExists, 
-                "IsNewer: dir entry does not exists");
-    // not reached
+                "IsNewer: dir entry does not exist");
+    /*NOTREACHED*/
     return false;
 }
 
@@ -1866,7 +1866,7 @@ bool CDirEntry::IsNewer(time_t tm, EIfAbsent if_absent) const
             case eIfAbsent_Throw:
             default:
                  NCBI_THROW(CFileException, eNotExists, 
-                            "IsNewer: dir entry does not exists");
+                            "IsNewer: dir entry does not exist");
         }
     }
     return current > tm;
@@ -1885,7 +1885,7 @@ bool CDirEntry::IsNewer(const CTime& tm, EIfAbsent if_absent) const
             case eIfAbsent_Throw:
             default:
                  NCBI_THROW(CFileException, eNotExists, 
-                            "IsNewer: dir entry does not exists");
+                            "IsNewer: dir entry does not exist");
         }
     }
     return current > tm;
@@ -2032,8 +2032,8 @@ string CDirEntry::GetTmpName(ETmpFileCreationMode mode)
 #else
     if (mode == eTmpFileCreate) {
         ERR_POST_X(2, Warning << 
-                      "The temporary file cannot be auto-created on this " \
-                      "platform, so return its name only");
+                   "Temporary file cannot be auto-created on this platform,"
+                   " so return its name only");
     }
     char* filename = tempnam(0,0);
     if ( !filename ) {
@@ -2120,8 +2120,8 @@ string CDirEntry::GetTmpNameEx(const string&        dir,
 #else // defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
     if (mode == eTmpFileCreate) {
         ERR_POST_X(3, Warning << "CFile::GetTmpNameEx: "
-                      "The file cannot be auto-created on this platform, " \
-                      "return its name only");
+                   "Temporary file cannot be auto-created on this platform,"
+                   " so return its name only");
     }
     fn = s_StdGetTmpName(dir.c_str(), prefix.c_str());
 #endif
@@ -3646,13 +3646,13 @@ CNcbiIstream& CTmpFile::AsInputFile(EIfExists if_exists,
             case eIfExists_Throw:
                 NCBI_THROW(CFileException, eTmpFile, 
                     "AsInputFile() is already called");
+                /*NOTREACHED*/
                 break;
             case eIfExists_Reset:
                 // see below
                 break;
             case eIfExists_ReturnCurrent:
                 return *m_InFile;
-                break;
         }
     }
     mode |= IOS_BASE::in;
@@ -3669,13 +3669,13 @@ CNcbiOstream& CTmpFile::AsOutputFile(EIfExists if_exists,
             case eIfExists_Throw:
                 NCBI_THROW(CFileException, eTmpFile, 
                     "AsOutputFile() is already called");
+                /*NOTREACHED*/
                 break;
             case eIfExists_Reset:
                 // see below
                 break;
             case eIfExists_ReturnCurrent:
                 return *m_OutFile;
-                break;
         }
     }
     mode |= IOS_BASE::out;
@@ -3804,7 +3804,7 @@ CMemoryFile_Base::CMemoryFile_Base(void)
     if ( !IsSupported() ) {
         NCBI_THROW(CFileException, eMemoryMap,
                    "Memory-mapping is not supported by the C++ Toolkit"
-                   "on this platform");
+                   " on this platform");
     }
     if ( !s_VirtualMemoryPageSize ) {
         s_VirtualMemoryPageSize = GetVirtualMemoryPageSize();
@@ -3882,8 +3882,8 @@ CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
     }
     if ( !m_Length ) {
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileSegment: The length of file mapping region "
-            "must be above 0");
+            "CMemoryFileSegment: The length of file mapping region"
+            " must be above 0");
     }
     // Get system's memory allocation granularity.
     if ( !s_VirtualMemoryPageSize ) {
@@ -4014,7 +4014,7 @@ CMemoryFileMap::CMemoryFileMap(const string&  file_name,
         }
         NCBI_THROW(CFileException, eMemoryMap,
             "CMemoryFileMap: The mapped file \"" + m_FileName +
-            "\" must exists");
+            "\" must exist");
     }
     // Extend file size if necessary
     if ( mode == eExtend  &&  max_file_len > (Uint8)file_size) {
@@ -4061,8 +4061,8 @@ void* CMemoryFileMap::Map(off_t offset, size_t length)
             length = (size_t)file_size;
         } else {
             NCBI_THROW(CFileException, eMemoryMap,
-                "CMemoryFileMap: Specified offset of the mapping region "
-                "exceeds file size");
+                "CMemoryFileMap: Specified offset of the mapping region"
+                " exceeds the file size");
         }
     }
     // Map file segment
@@ -4291,7 +4291,7 @@ void CMemoryFileMap::x_Extend(Uint8 length)
     if ( fd < 0 ) {
         NCBI_THROW(CFileException, eMemoryMap,
             "CMemoryFileMap: Unable to open file \"" + m_FileName +
-            "\" for change its size");
+            "\" to change its size");
     }
     // and extend it with zeros
     s_AppendZeros(fd, length);
@@ -4308,8 +4308,8 @@ CMemoryFileMap::x_GetMemoryFileSegment(void* ptr) const
     TSegments::const_iterator segment = m_Segments.find(ptr);
     if ( segment == m_Segments.end() ) {
         NCBI_THROW(CFileException, eMemoryMap,
-                   "CMemoryFileMap: Cannot find mapped file segment "
-                   "with specified address");
+                   "CMemoryFileMap: Cannot find mapped file segment"
+                   " with specified address");
     }
     return segment->second;
 }
@@ -4375,8 +4375,8 @@ void* CMemoryFile::Extend(size_t length)
             length = (size_t)fs;
         } else {
             NCBI_THROW(CFileException, eMemoryMap,
-                "CMemoryFile: Specified offset of the mapping region "
-                "exceeds file size");
+                "CMemoryFile: Specified offset of the mapping region"
+                " exceeds the file size");
         }
     }
 
@@ -5236,7 +5236,7 @@ void CFileLock::Lock(EType type, off_t offset, size_t length)
 
 #endif
     if (!res) {
-        NCBI_THROW(CFileErrnoException, eFileLock, "Unable to lock a file");
+        NCBI_THROW(CFileErrnoException, eFileLock, "Unable to lock file");
     }
     m_IsLocked = true;
     return;

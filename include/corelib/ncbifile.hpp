@@ -1187,7 +1187,7 @@ private:
     static TMode  m_DefaultModeGlobal[eUnknown][4/*EWho + Special bits*/];
 
     /// Backup suffix
-    static char*  m_BackupSuffix;
+    static const char* m_BackupSuffix;
 };
 
 
