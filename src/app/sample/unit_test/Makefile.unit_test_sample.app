@@ -1,4 +1,5 @@
 # $Id$
+
 APP = unit_test_sample
 SRC = unit_test_sample
 
@@ -9,10 +10,10 @@ SRC = unit_test_sample
 ### BEGIN COPIED SETTINGS
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
+LIB = xncbi test_boost
 LIBS = $(BOOST_LIBS) $(ORIG_LIBS)
 
-REQUIRES = Boost.Test objects
+REQUIRES = Boost.Test
 
 # Uncomment to run automatically as part of "make check"
 # CHECK_CMD =
