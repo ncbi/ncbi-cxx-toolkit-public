@@ -69,7 +69,7 @@ SRC =	aaa_dummy_pch \
 	wx_tools
 
 LIB =	xcd_utils xbma_refiner xbma_refiner_gui xstruct_util xstruct_dp xstruct_thread \
-	xblast xalgodustmask xalgoblastdbindex composition_adjustment seqdb xobjread tables xobjutil \
+	xblast xalgowinmask xalgoseq xalgodustmask xalgoblastdbindex composition_adjustment seqdb xobjread tables xobjutil \
 	id1cli id1 cdd ncbimime cn3d mmdb scoremat seqset seq seqcode sequtil \
 	pub medline biblio general taxon1 blastdb xnetblast \
 	xregexp xser xutil xconnect xncbi \
