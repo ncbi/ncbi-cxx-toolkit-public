@@ -90,7 +90,7 @@ public:
         const CFlatFileConfig& cfg);
 
     //void Reset(void);
-private:
+protected:
     CRef<CFlatFileContext>    m_Ctx;
 
     // forbidden
