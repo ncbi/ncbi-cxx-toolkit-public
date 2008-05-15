@@ -3046,7 +3046,6 @@ void CStringPairsParser::Parse(const CTempString& str,
     NStr::Split(str, m_ArgSep, lst, merge_argsep);
     m_Data.clear();
     m_Data.reserve(lst.size());
-    size_t idx = 0;
     ITERATE(list<string>, it, lst) {
         string name, val;
         NStr::SplitInTwo(*it, m_ValSep, name, val);
