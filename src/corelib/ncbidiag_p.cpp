@@ -176,12 +176,12 @@ void CDiagStrErrCodeMatcher::x_Parse(TPattern& pattern, const string& str)
     list<string>::iterator it_loc;
     for (it_loc = loc.begin(); it_loc != loc.end(); ++it_loc) {
         string first, second;
-        const string& loc = *it_loc;
+        const string& sloc = *it_loc;
         size_t shift = 0;
-        if (loc[0] == '-') {
+        if (sloc[0] == '-') {
             shift = 1;
         }
-        NStr::SplitInTwo( loc.c_str() + shift,"-",first,second);
+        NStr::SplitInTwo( sloc.c_str() + shift,"-",first,second);
         if (!first.empty()) {
             TCode from, to;
             to = from = NStr::StringToInt( first);
