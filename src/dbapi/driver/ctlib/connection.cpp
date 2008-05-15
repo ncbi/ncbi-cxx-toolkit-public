@@ -948,9 +948,15 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         DATABASE_DRIVER_ERROR( "ct_send_data failed." + GetDbgInfo(), 190001 );
     }
 
-    SetBytes2Go(GetBytes2Go() - nof_bytes);
+    // ATTN: if we inline this expression into call to SetBytes2Go and then call GetBytes2Go()
+    // in if thinking that the value was already changed and we will check new value, some
+    // optimizers (e.g. gcc 4.1.1) can fail to understand this logic, miss this changing and
+    // check in if the value that was returned by GetBytes2Go() in first call.
+    size_t bytes2go = GetBytes2Go() - nof_bytes;
 
-    if ( GetBytes2Go() )
+    SetBytes2Go(bytes2go);
+
+    if ( bytes2go )
         return nof_bytes;
 
     if (Check(ct_send(x_GetSybaseCmd())) != CS_SUCCEED) {
