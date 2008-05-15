@@ -734,6 +734,7 @@ CArgDescMandatory::CArgDescMandatory(const string&            name,
         _TROUBLE;
         NCBI_THROW(CArgException, eArgType, s_ArgExptMsg(GetName(),
             "Invalid argument type", "k_EType_Size"));
+        /*NOTREACHED*/
         break;
     default:
         if ( (flags & CArgDescriptions::fFileFlags) == 0 )
@@ -2843,7 +2844,7 @@ CArgAllow::~CArgAllow(void)
     return;
 }
 
-void CArgAllow::PrintUsageXml(CNcbiOstream& out) const
+void CArgAllow::PrintUsageXml(CNcbiOstream& ) const
 {
 }
 

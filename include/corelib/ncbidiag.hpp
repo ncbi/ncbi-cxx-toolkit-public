@@ -801,7 +801,7 @@ public:
     /// Example:
     ///   CNcbiDiag() << ex;
     template<class X> inline
-    const CNcbiDiag& Put(const CException* e, const X& x) const {
+    const CNcbiDiag& Put(const CException*, const X& x) const {
         return x_Put(x);
     }
 
@@ -838,10 +838,10 @@ public:
     // Output manipulators for CNcbiDiag.
 
     /// Reset the content of current message.
-    friend const CNcbiDiag& Reset  (const CNcbiDiag& diag);
+    friend const CNcbiDiag& Reset   (const CNcbiDiag& diag);
 
     /// Flush current message, start new one.
-    friend const CNcbiDiag& Endm   (const CNcbiDiag& diag);
+    friend const CNcbiDiag& Endm    (const CNcbiDiag& diag);
 
     /// Flush current message, then set a severity for the next diagnostic
     /// message to INFO

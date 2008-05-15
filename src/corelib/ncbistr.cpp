@@ -3073,7 +3073,7 @@ CStringDecoder_Url::CStringDecoder_Url(NStr::EUrlDecode flag)
 
 
 string CStringDecoder_Url::Decode(const string& src,
-                                  EStringType stype) const
+                                  EStringType ) const
 {
     return NStr::URLDecode(src, m_Flag);
 }

@@ -449,7 +449,7 @@ const string& CConfig::x_GetString(const string&  driver_name,
         tns.push_back(tn);
     if (synonyms) {
         ITERATE(list<string>, it, *synonyms) {
-            const TParamTree* tn = m_ParamTree->FindSubNode(*it);
+            tn = m_ParamTree->FindSubNode(*it);
             if (tn && !tn->GetValue().value.empty()) 
                 tns.push_back(tn);
         }
