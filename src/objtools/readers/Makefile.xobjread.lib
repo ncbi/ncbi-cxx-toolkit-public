@@ -4,5 +4,5 @@ ASN_DEP = seq seqset
 
 LIB = xobjread
 SRC = fasta readfeat gff_reader agp_util agp_read aln_reader cigar getfeature phrap \
-      fasta_aln_builder rm_reader acc_pattern
+      fasta_aln_builder reader_base bed_reader microarray_reader rm_reader acc_pattern
 DLL_LIB = creaders
