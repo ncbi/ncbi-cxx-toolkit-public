@@ -66,7 +66,7 @@ void CNSRemoveJobControlApp::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Remote application jobs submitter");
+                              "Remote application job control");
 
     arg_desc->AddOptionalKey("q", "queue_name", "NetSchedule queue name",
                              CArgDescriptions::eString);
