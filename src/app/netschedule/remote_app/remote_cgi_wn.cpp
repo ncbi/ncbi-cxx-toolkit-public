@@ -175,17 +175,18 @@ public:
 
     int Do(CWorkerNodeJobContext& context) 
     {
-        CFastLocalTime lt;
         if (context.IsLogRequested()) {
-            LOG_POST( lt.GetLocalTime().AsString() 
-                      << ": " << context.GetJobKey() + " " + context.GetJobInput());
+            LOG_POST("Job " << context.GetJobKey() + " input: " +
+                context.GetJobInput());
         }
 
         string tmp_path = m_Params.GetTempDir();
-        if (!tmp_path.empty())
+        if (!tmp_path.empty()) {
+            CFastLocalTime lt;
             tmp_path += CDirEntry::GetPathSeparator() + 
                 context.GetQueueName() + "_"  + context.GetJobKey() + "_" +
                 NStr::UIntToString((unsigned int)lt.GetLocalTime().GetTimeT());
+        }
 
         string job_wdir = tmp_path.empty() ? CDir::GetCwd() : tmp_path;
 
@@ -246,9 +247,9 @@ public:
         }
         if (context.IsLogRequested()) {
             if (err.pcount() > 0 )
-                LOG_POST( lt.GetLocalTime().AsString() << ": " << err.rdbuf());
-            LOG_POST( lt.GetLocalTime().AsString() 
-                      << ": Job " << context.GetJobKey() + " " + context.GetJobOutput()
+                LOG_POST("STDERR: " << err.rdbuf());
+
+            LOG_POST("Job " << context.GetJobKey() + " " + context.GetJobOutput()
                       << stat << " Retcode: " << ret);
         }
         return ret;
