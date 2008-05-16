@@ -318,8 +318,10 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
                 if (prevEValue < (*iHit)->GetEvalue()) hitRank++; 
                 sHit->SetAttlist().SetHit_rank(NStr::IntToString(hitRank));
                 sHit->SetAttlist().SetPeptide((*iHit)->GetPepstring());
-                sHit->SetAttlist().SetPeptide_prev_aa((*iHit)->GetPepstart());
-                sHit->SetAttlist().SetPeptide_next_aa((*iHit)->GetPepstop());
+                if((*iHit)->CanGetPepstart())
+                    sHit->SetAttlist().SetPeptide_prev_aa((*iHit)->GetPepstart());
+                if((*iHit)->CanGetPepstop())
+                    sHit->SetAttlist().SetPeptide_next_aa((*iHit)->GetPepstop());
 
                 sHit->SetAttlist().SetProtein(GetProteinName(*iPephit));
 
