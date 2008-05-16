@@ -12,7 +12,6 @@ LIBS = $(BOOST_LIBS) \
 
 REQUIRES = Boost.Test
 
-CHECK_REQUIRES = DLL
 # CHECK_COPY = dbapi_unit_test.sh dbapi_unit_test.ini
 CHECK_COPY = dbapi_unit_test.sh
 CHECK_CMD = dbapi_unit_test.sh
