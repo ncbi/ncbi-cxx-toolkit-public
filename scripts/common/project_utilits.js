@@ -34,6 +34,7 @@ function execute(oShell, command)
 
 function silent_execute(oShell, command)
 {
+/*
     var oExec = oShell.Exec("cmd /c \"" + command + " 2>&1 \"");
     while( oExec.Status == 0 ) {
         while (!oExec.StdOut.AtEndOfStream) {
@@ -43,6 +44,23 @@ function silent_execute(oShell, command)
     }
     while (!oExec.StdOut.AtEndOfStream) {
         oExec.StdOut.ReadLine();
+    }
+*/
+    var oExec = oShell.Exec("cmd /c \"" + command + "\"");
+    while( oExec.Status == 0 ) {
+        while (!oExec.StdErr.AtEndOfStream) {
+            VerboseEcho(oExec.StdErr.ReadLine());
+        }
+        while (!oExec.StdOut.AtEndOfStream) {
+            oExec.StdOut.SkipLine();
+        }
+        WScript.Sleep(100);
+    }
+    while (!oExec.StdErr.AtEndOfStream) {
+        VerboseEcho(oExec.StdErr.ReadLine());
+    }
+    while (!oExec.StdOut.AtEndOfStream) {
+        oExec.StdOut.SkipLine();
     }
     return oExec.ExitCode;
 }
