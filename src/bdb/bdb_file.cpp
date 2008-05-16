@@ -139,7 +139,8 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys, EDBType db_type)
   m_CmpOverride(true),
   m_PageSize(0),
   m_CacheSize(256 * 1024),
-  m_DuplicateKeys(dup_keys)
+  m_DuplicateKeys(dup_keys),
+  m_OpenMode(eReadOnly)
 {
     if (m_DB_Type == eQueue)
     {
