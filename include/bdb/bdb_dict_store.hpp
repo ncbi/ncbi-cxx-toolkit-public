@@ -54,7 +54,7 @@ public:
     typedef Key   TKey;
     typedef Uint4 TKeyId;
     
-    CBDB_BlobDictionary(Uint4 last_uid = 0);
+    CBDB_BlobDictionary();
 
     /// @name Required CBDB_BlobDictionary<> interface
     /// @{
@@ -168,7 +168,7 @@ public:
     CBDB_BlobDictStore(Dictionary& dict,
                        Store&    store,
                        EOwnership  own = eNoOwnership);
-    ~CBDB_BlobDictStore();
+    virtual ~CBDB_BlobDictStore();
 
     void      SetEnv(CBDB_Env& env);
     CBDB_Env* GetEnv();
@@ -217,8 +217,8 @@ private:
 
 template <typename Key>
 inline
-CBDB_BlobDictionary<Key>::CBDB_BlobDictionary(Uint4 last_uid)
-    : m_MaxUid(last_uid)
+CBDB_BlobDictionary<Key>::CBDB_BlobDictionary()
+    : m_MaxUid(0)
 {
     BindKey ("key", &m_Key);
     BindData("uid", &m_Uid);
@@ -240,6 +240,7 @@ EBDB_ErrCode CBDB_BlobDictionary<Key>::Read(Uint4* val)
     EBDB_ErrCode err = Fetch();
     if (err == eBDB_Ok  &&  val) {
         *val = m_Uid;
+        _ASSERT(*val <= m_MaxUid);
     }
     return err;
 }
@@ -251,6 +252,7 @@ EBDB_ErrCode CBDB_BlobDictionary<Key>::Write(const Key& key, Uint4 val)
 {
     m_Key = key;
     m_Uid = val;
+    m_MaxUid = max(m_MaxUid, val);
     return UpdateInsert();
 }
 
@@ -296,6 +298,7 @@ Uint4 CBDB_BlobDictionary<Key>::PutKey(const Key& key)
 {
     Uint4 uid = GetKey(key);
     if (uid != 0) {
+        _ASSERT(uid <= m_MaxUid);
         return uid;
     }
 
