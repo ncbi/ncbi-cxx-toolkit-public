@@ -655,6 +655,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CBDB_BlobSplitStore(TObjDeMux* de_mux)
    m_Env(0),
    m_IdDeMux(new TIdDeMux(2)),
    m_ObjDeMux(de_mux),
+   m_OpenMode(CBDB_RawFile::eReadOnly),
    m_DB_Type(CBDB_RawFile::eBtree), 
    m_CachePriority(CBDB_RawFile::eCache_Default),
    m_AllProjAvail(false),
@@ -1143,8 +1144,8 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::ReadRealloc(
 {
     _ASSERT(coords);
 
-    TBlobFile* db;
-    TLock*     lock;
+    TBlobFile* db = NULL;
+    TLock*     lock = NULL;
     {{
         SLockedDb& dbp = this->GetDb(coords[0], coords[1], eGetRead);
 
