@@ -635,7 +635,7 @@ struct TVersion {
 };
 
 struct SUserAgent {
-    char*                         str;        // in
+    const char*                   str;        // in
     CCgiUserAgent::EBrowser       browser;    // out
     TVersion                      browser_v;  // out
     CCgiUserAgent::EBrowserEngine engine;     // out
