@@ -3,7 +3,7 @@
 
 APP = test_utf8
 SRC = test_utf8
-LIB = xutil xncbi test_boost
+LIB = test_boost xutil xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LIBS = $(ORIG_LIBS)
