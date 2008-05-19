@@ -38,6 +38,12 @@
 
 #include <corelib/ncbistd.hpp>
 
+/// Redefinition of the name of global function used in Boost.Test for
+/// initialization. It is called now from NCBI wrapper function called before
+/// user-defined.
+#define init_unit_test_suite  NcbiInitUnitTestSuite
+
+
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
 #  undef numeric_limits
@@ -55,11 +61,6 @@
 
 
 BEGIN_NCBI_SCOPE
-
-/// Redefinition of the name of global function used in Boost.Test for
-/// initialization. It is called now from NCBI wrapper function called before
-/// user-defined.
-#define init_unit_test_suite  NcbiInitUnitTestSuite
 
 
 /// Define some test as disabled in current configuration
