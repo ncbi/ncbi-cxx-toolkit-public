@@ -66,8 +66,11 @@ BOOST_AUTO_TEST_CASE(TestSimpleTools)
     string s1 = "qwerty";
     string s2 = "qwerty";
 
+    // If this check fails, test will continue its execution
     BOOST_CHECK_EQUAL(i,  1);
-    BOOST_CHECK_EQUAL(d,  0.123);
+    // If this check fails, test will stop its execution at this point
+    BOOST_REQUIRE_EQUAL(d,  0.123);
+
     BOOST_CHECK_EQUAL(s1, s2);
 
     // Never use it this way, because it will not compile on WorkShop:
@@ -84,34 +87,18 @@ static void s_ThrowSomeException(void)
     NCBI_THROW(CException, eUnknown, "Some exception message");
 }
 
+static void s_FuncWithoutException(void)
+{
+    printf("Here is some dummy message");
+}
+
 BOOST_AUTO_TEST_CASE(TestWithException)
 {
-    try {
-        s_ThrowSomeException();
-        BOOST_FAIL("Exception wasn't thrown");
-    }
-    catch (CException&) {
-        // Exception thrown - all is ok
-    }
-
-    // Or you can make it this way
-    bool exception_thrown = false;
-    try {
-        s_ThrowSomeException();
-    }
-    catch (CException&) {
-        exception_thrown = true;
-    }
-    BOOST_CHECK_MESSAGE(exception_thrown, "Exception wasn't thrown");
+    BOOST_CHECK_THROW( s_ThrowSomeException(), CException );
 }
 
 
 BOOST_AUTO_TEST_CASE(TestWithoutException)
 {
-    try {
-        // Put some code that have not to throw exception
-    }
-    catch (exception&) {
-        BOOST_FAIL("std::exception was thrown");
-    }
+    BOOST_CHECK_NO_THROW( s_FuncWithoutException() );
 }

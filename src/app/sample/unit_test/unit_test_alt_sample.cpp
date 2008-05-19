@@ -46,6 +46,7 @@
 // This header must be included before all Boost.Test headers
 #include <corelib/test_boost.hpp>
 
+// For use in init_unit_test_suite()
 #include <boost/shared_ptr.hpp>
 
 USING_NCBI_SCOPE;
@@ -58,9 +59,13 @@ void TestSimpleTools(void)
     string s1 = "qwerty";
     string s2 = "qwerty";
 
-    BOOST_CHECK_EQUAL(i, 1);
-    BOOST_CHECK_EQUAL(d, 0.123);
+    // If this check fails, test will continue its execution
+    BOOST_CHECK_EQUAL(i,  1);
+    // If this check fails, test will stop its execution at this point
+    BOOST_REQUIRE_EQUAL(d, 0.123);
+
     BOOST_CHECK_EQUAL(s1, s2);
+
     // Never use it this way, because it will not compile on WorkShop
     // BOOST_CHECK_EQUAL(s1, "qwerty");
     // Instead of that use it this way
@@ -78,6 +83,7 @@ public:
 
 private:
     void ThrowSomeException(void);
+    void FuncWithoutException(void);
 };
 
 void CExceptionTests::ThrowSomeException(void)
@@ -85,35 +91,19 @@ void CExceptionTests::ThrowSomeException(void)
     NCBI_THROW(CException, eUnknown, "Some exception message");
 }
 
+void CExceptionTests::FuncWithoutException(void)
+{
+    printf("Here is some dummy message");
+}
+
 void CExceptionTests::TestWithException(void)
 {
-    try {
-        ThrowSomeException();
-        BOOST_FAIL("Exception wasn't thrown");
-    }
-    catch (CException&) {
-        // Exception thrown - all is ok
-    }
-
-    // Or you can make it this way
-    bool exception_thrown = false;
-    try {
-        ThrowSomeException();
-    }
-    catch (CException&) {
-        exception_thrown = true;
-    }
-    BOOST_CHECK_MESSAGE(exception_thrown, "Exception wasn't thrown");
+    BOOST_CHECK_THROW( ThrowSomeException(), CException );
 }
 
 void CExceptionTests::TestWithoutException(void)
 {
-    try {
-        // Put some code that have not to throw exception
-    }
-    catch (exception&) {
-        BOOST_FAIL("std::exception was thrown");
-    }
+    BOOST_CHECK_NO_THROW( FuncWithoutException() );
 }
 
 
