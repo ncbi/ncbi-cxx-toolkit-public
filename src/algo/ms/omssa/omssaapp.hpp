@@ -34,6 +34,7 @@
 #ifndef OMSSAAPP__HPP
 #define OMSSAAPP__HPP
 
+#include <string>
 
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -47,7 +48,7 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/iterator.hpp>
 #include <objects/omssa/omssa__.hpp>
-#include <string>
+#include "omssa.hpp"
 
 
 
@@ -102,7 +103,85 @@ public:
      * Set search settings given args
      */
     void SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings);
+
+	typedef vector < CRef<CSearch> > TSearchThreads;
+
+	/**
+	 * get a list of the search engine threads
+	 */
+	const TSearchThreads & GetsearchThreads(void) const;
+
+	/**
+	 * return a settable list of search engine threads
+	 */
+	TSearchThreads & SetsearchThreads(void);
+
+	/**
+	 * return number of threads
+	 */
+	const int GetnThreads(void) const;
+
+	/**
+	 * return settable number of threads
+	 */
+	int & SetnThreads(void);
+
+	/**
+	 * set up number of threads
+	 *
+	 * @param NumThreads number of threads requested by user
+	 */
+	void SetThreadCount(int NumThreads);
+
+	/**
+	 * run multithreaded search
+	 *
+	 * @param SearchEngine original copy of search engine
+	 */
+	void RunSearch(CRef <CSearch> SearchEngine);
+
+private:
+
+	/**
+	 * search threads
+	 */
+	TSearchThreads searchThreads;
+
+	/**
+	 * number of search threads
+	 */
+	int nThreads;
+
 };
+
+
+inline
+const COMSSABase::TSearchThreads & 
+COMSSABase::GetsearchThreads(void) const
+{
+	return searchThreads;
+}
+
+inline
+COMSSABase::TSearchThreads & 
+COMSSABase::SetsearchThreads(void)
+{
+	return searchThreads;
+}
+
+inline
+const int 
+COMSSABase::GetnThreads(void) const
+{
+	return nThreads;
+}
+
+inline
+int & 
+COMSSABase::SetnThreads(void)
+{
+	return nThreads;
+}
 
 /**
  * some friendly names for ion series

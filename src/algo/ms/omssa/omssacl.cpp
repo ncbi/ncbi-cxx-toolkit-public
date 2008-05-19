@@ -81,19 +81,6 @@ public:
 void COMSSA::AppInit(CArgDescriptions *argDesc)
 {
     if(!argDesc) return;
-    argDesc->AddDefaultKey("mx", "modinputfile", 
-                "file containing modification data",
-                CArgDescriptions::eString,
-                "mods.xml");
-     argDesc->AddDefaultKey("mux", "usermodinputfile", 
-                 "file containing user modification data",
-                 CArgDescriptions::eString,
-                 "usermods.xml");
-     argDesc->AddDefaultKey("nt", "numthreads",
-			    "number of search threads to use, 0=autodetect",
-			    CArgDescriptions::eInteger, 
-			    "0");
-     argDesc->AddFlag("ni", "don't print informational messages");
      argDesc->AddFlag("ns", "depreciated flag"); // to be deprecated
      argDesc->AddFlag("os", "use omssa 1.0 scoring"); // to be deprecated
      argDesc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -131,10 +118,10 @@ int COMSSA::Run()
     if(CSearchHelper::ReadModFiles(args["mx"].AsString(), args["mux"].AsString(),
                             GetProgramExecutablePath(), Modset))
         return 1;
+	Modset->CreateArrays();
 
 	// print out the modification list
 	if(args["ml"]) {
-        Modset->CreateArrays();
 	    PrintMods(Modset);
 	    return 0;
 	}
@@ -178,20 +165,10 @@ int COMSSA::Run()
 
     CSearchHelper::ValidateSearchSettings(SearchSettings);
 
-    int nThreads;
-#if defined(_MT)
-    nThreads = args["nt"].AsInteger();
-    if (nThreads == 0) nThreads = GetCpuCount();
-    if (nThreads > 1) {
-      ERR_POST(Info << "Using " << nThreads << " search threads");
-    }
-#else
-    nThreads = 1;
-#endif
+	SetThreadCount(args["nt"].AsInteger());
 
-    vector < CRef<CSearch> > searchThreads;
     CRef <CSearch> SearchEngine (new CSearch(0));
-    searchThreads.push_back(SearchEngine);
+    SetsearchThreads().push_back(SearchEngine);
     
     //CSearch* SearchEngine = new CSearch();
 
@@ -252,23 +229,7 @@ int COMSSA::Run()
                               SearchSettings,
                               &OMSSACallback);
 
-    for (int i=1; i < nThreads; i++) { 
-       CRef <CSearch> SearchThread (new CSearch(i));
-       SearchThread->CopySettings(SearchEngine);
-       searchThreads.push_back(SearchThread);
-    }
-    
-    _TRACE("omssa: search begin");
-    for (int i=0; i < nThreads; i++) { 
-       searchThreads[i]->Run(CThread::fRunAllowST);
-    }
-
-    bool* result;
-    for (int i=0; i < nThreads; i++) {
-        searchThreads[i]->Join(reinterpret_cast<void**>(&result));
-        //cout << "Returned value: " << *result << endl;
-    }
-    searchThreads[0]->SetResult(searchThreads[0]->SharedPeakSet);
+	RunSearch(SearchEngine);
     _TRACE("omssa: search end");
     
 

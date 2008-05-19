@@ -34,12 +34,14 @@
 
 #include <ncbi_pch.hpp>
 
+#include <corelib/ncbi_system.hpp>
+
+#include "omssaapp.hpp"
 
 #include <fstream>
 #include <string>
 #include <list>
 
-#include "omssaapp.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -303,6 +305,21 @@ void COMSSABase::Init()
     argDesc->AddFlag("el", "print a list of enzymes and their corresponding id number");
     argDesc->AddFlag("ml", "print a list of modifications and their corresponding id number");
 
+    argDesc->AddDefaultKey("mx", "modinputfile", 
+                "file containing modification data",
+                CArgDescriptions::eString,
+                "mods.xml");
+     argDesc->AddDefaultKey("mux", "usermodinputfile", 
+                 "file containing user modification data",
+                 CArgDescriptions::eString,
+                 "usermods.xml");
+     argDesc->AddDefaultKey("nt", "numthreads",
+			    "number of search threads to use, 0=autodetect",
+			    CArgDescriptions::eInteger, 
+			    "0");
+     argDesc->AddFlag("ni", "don't print informational messages");
+
+
     AppInit(argDesc.get());
 
     SetupArgDescriptions(argDesc.release());
@@ -463,5 +480,38 @@ void COMSSABase::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings
 }
 
 
+void COMSSABase::SetThreadCount(int NumThreads)
+{
+#if defined(_MT)
+    SetnThreads() = NumThreads;
+    if (GetnThreads() == 0) SetnThreads() = GetCpuCount();
+    if (GetnThreads() > 1) {
+      ERR_POST(Info << "Using " << GetnThreads() << " search threads");
+    }
+#else
+    SetnThreads() = 1;
+#endif
+}
+
+void COMSSABase::RunSearch(CRef <CSearch> SearchEngine)
+{
+    for (int i=1; i < GetnThreads(); i++) { 
+       CRef <CSearch> SearchThread (new CSearch(i));
+       SearchThread->CopySettings(SearchEngine);
+       SetsearchThreads().push_back(SearchThread);
+    }
+    
+    _TRACE("omssa: search begin");
+    for (int i=0; i < GetnThreads(); i++) { 
+       SetsearchThreads()[i]->Run(CThread::fRunAllowST);
+    }
+
+    bool* result;
+    for (int i=0; i < GetnThreads(); i++) {
+        SetsearchThreads()[i]->Join(reinterpret_cast<void**>(&result));
+        //cout << "Returned value: " << *result << endl;
+    }
+    SetsearchThreads()[0]->SetResult(SetsearchThreads()[0]->SharedPeakSet);
+}
 
 

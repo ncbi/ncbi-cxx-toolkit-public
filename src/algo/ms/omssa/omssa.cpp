@@ -841,13 +841,6 @@ void CSearch::SetIons(list <EMSIonSeries> & Ions)
 }
 
 
-void CSearch::SetupMods(CRef <CMSModSpecSet> Modset)
-{
-    //Modset->Append(MyRequest);
-    Modset->CreateArrays();
-}
-
-
 void CSearch::InitLadders(list <EMSIonSeries> & Ions)
 {
 
@@ -947,8 +940,6 @@ void CSearch::Search(CRef <CMSRequest> MyRequestIn,
         // force the mass scale settings to what is currently used.
         SetSettings()->SetScale(MSSCALE);
         SetResponse()->SetScale(MSSCALE);
-
-        SetupMods(Modset);
 
         SetEnzyme() = CCleaveFactory::CleaveFactory(static_cast <EMSEnzymes> 
                                                     (GetSettings()->GetEnzyme()));

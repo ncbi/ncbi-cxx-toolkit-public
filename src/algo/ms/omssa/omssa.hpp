@@ -252,14 +252,6 @@ protected:
     void Spectrum2Peak(CRef<CMSPeakSet> PeakSet);
 
     /**
-     * set up modifications from both user input and mod file data
-     * 
-     * @param MyRequest the user search params and spectra
-     * @param Modset list of modifications
-     */
-    void SetupMods(CRef <CMSModSpecSet> Modset);
-
-    /**
      *  count the number of unique sites modified
      * 
      * @param NumModSites the number of unique mod sites
