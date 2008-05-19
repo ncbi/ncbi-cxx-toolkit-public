@@ -246,6 +246,7 @@ extern const char* CORE_SendMail(const char* to,
           SOCK_Close(sock);                                             \
       CORE_LOGF_X(subcode, eLOG_Error, ("[SendMail]  %s", reason));     \
       return reason;                                                    \
+      /*NOTREACHED*/                                                    \
   } while (0) /* NCBI_FAKE_WARNING: WorkShop */
 
 #define SENDMAIL_RETURN2(subcode, reason, explanation)                  \
@@ -255,6 +256,7 @@ extern const char* CORE_SendMail(const char* to,
       CORE_LOGF_X(subcode, eLOG_Error,                                  \
                   ("[SendMail]  %s: %s", reason, explanation));         \
       return reason;                                                    \
+      /*NOTREACHED*/                                                    \
   } while (0) /* NCBI_FAKE_WARNING: WorkShop */
 
 
