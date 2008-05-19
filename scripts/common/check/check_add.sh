@@ -81,8 +81,7 @@ fi
 x_app=$x_app$x_exeext
 
 # Get cmd-lines to run test
-x_run=`grep '^ *CHECK_CMD' "$x_srcdir/Makefile.$x_test.app" | sed 's/^[^=]*=//'`
-
+x_run=`grep '^ *CHECK_CMD' "$x_srcdir/Makefile.$x_test.app"`
 if test -z "$x_run"; then
    # If command line not defined, then just run the test without parameters
    x_run="$x_app"
@@ -104,8 +103,10 @@ x_authors=`grep '^ *CHECK_AUTHORS' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/
 
 # Write data about current test into the list file
 for x_cmd in $x_run; do
-    x_cmd=`echo "$x_cmd" | sed -e 's/%gj_s4%/ /g' | sed -e 's/^ *//' | sed -e 's/\"/\\\\"/g'`
-    echo "$x_srcdir_rel$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_files$x_delim$x_timeout$x_delim$x_requires$x_delim$x_authors" >> $x_out
+    x_cmd=`echo "$x_cmd"  | sed -e 's/%gj_s4%/ /g'`
+    x_name=`echo "$x_cmd" | sed -e 's/^.*CHECK_NAME *= *\(\w*\).*/\1/' -e 's/.*CHECK_CMD.*//'`
+    x_cmd=`echo "$x_cmd"  | sed -e 's/ *\/CHECK_NAME.*//' -e 's/^[^=]*=//' -e 's/^ *//'  -e 's/\"/\\\\"/g'`
+    echo "$x_srcdir_rel$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_name$x_delim$x_files$x_delim$x_timeout$x_delim$x_requires$x_delim$x_authors" >> $x_out
 done
 
 exit 0

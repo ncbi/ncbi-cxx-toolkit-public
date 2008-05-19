@@ -353,9 +353,10 @@ RunTest()
    x_test="\$2"
    x_app="\$3"
    x_run="\$4"
-   x_ext="\$5"
-   x_timeout="\$6"
-   x_authors="\$7"
+   x_name="\${5:-\$x_run}"  
+   x_ext="\$6"
+   x_timeout="\$7"
+   x_authors="\$8"
 
    if \$is_report_err; then
       # Authors are not defined for this test
@@ -370,7 +371,7 @@ RunTest()
 
       # Goto the test's directory 
       cd "\$x_work_dir"
-      x_cmd="[\$x_work_dir_tail] \$x_run"
+      x_cmd="[\$x_work_dir_tail] \$x_name"
 
       # Run test if it exist
       if [ -f "\$x_app" ]; then
@@ -391,10 +392,10 @@ RunTest()
             NCBI_CHECK_TOOL=\`eval echo "\$"NCBI_CHECK_\${tool_up}""\`
       
             if [ \$tool_lo = "regular" ] ; then
-               x_cmd="[\$x_work_dir_tail] \$x_run"
+               x_cmd="[\$x_work_dir_tail] \$x_name"
                x_test_out="\$x_work_dir/\$x_test.\$x_ext"
             else
-               x_cmd="[\$x_work_dir_tail] \$tool_up \$x_run"
+               x_cmd="[\$x_work_dir_tail] \$tool_up \$x_name"
                x_test_out="\$x_work_dir/\$x_test.\$x_ext.\$tool_lo"
             fi
             case "\$tool_lo" in
@@ -436,7 +437,7 @@ RunTest()
                echo "\$x_test_out" >> \$res_journal
                (
                  echo "======================================================================"
-                 echo "\$x_run"
+                 echo "\$x_name"
                  echo "======================================================================"
                  echo 
                ) > \$x_test_out 2>&1
@@ -609,9 +610,10 @@ for x_row in $x_tests; do
    x_test=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_app=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_cmd=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_requires=" `echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'` "
+   x_name=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_requires=" `echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'` "
    x_authors=`echo "$x_row" | sed -e 's/.*~//'`
 
    # Check application requirements
@@ -659,6 +661,7 @@ RunTest "$x_work_dir_tail" \\
         "$x_test" \\
         "$x_app" \\
         "$x_cmd" \\
+        "$x_name" \\
         "$x_test_out" \\
         "$x_timeout" \\
         "$x_authors"

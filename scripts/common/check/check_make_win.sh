@@ -274,10 +274,11 @@ RunTest() {
    x_test="\$2"
    x_app="\$3"
    x_run="\$4"
-   x_ext="\$5"
-   x_timeout="\$6"
-   x_requires="\$7"
-   x_conf="\$8"
+   x_name="\${5:-\$x_run}"  
+   x_ext="\$6"
+   x_timeout="\$7"
+   x_requires="\$8"
+   x_conf="\$9"
 
    x_work_dir="\$build_dir/\${build_tree}check/\$x_conf/\$x_wdir"
    mkdir -p \$x_work_dir
@@ -300,8 +301,8 @@ RunTest() {
 
    x_cmd="[\${build_tree}\$x_conf/\$x_wdir]"
    if test \$result -eq 0; then
-      echo "ABS --  \$x_cmd - \$x_app"
-      echo "ABS --  \$x_cmd - \$x_app" >> \$res_log
+      echo "ABS --  \$x_cmd - \$x_test"
+      echo "ABS --  \$x_cmd - \$x_test" >> \$res_log
       count_absent=\`expr \$count_absent + 1\`
       return 0
    fi
@@ -313,7 +314,7 @@ RunTest() {
    echo "\$x_test_out" >> \$res_journal
    (
       echo "======================================================================"
-      echo "\${build_tree}\$x_conf - \$x_run"
+      echo "\${build_tree}\$x_conf - \$x_name"
       echo "======================================================================"
       echo 
    ) > \$x_test_out 2>&1
@@ -367,7 +368,7 @@ RunTest() {
    echo "@@@ EXIT CODE: \$result" >> \$x_test_out
 
    # And write result also on the screen and into the log
-   x_cmd="\$x_cmd \$x_run"
+   x_cmd="\$x_cmd \$x_name"
    if test \$result -eq 0; then
       echo "OK  --  \$x_cmd     (\$exec_time)"
       echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
@@ -430,7 +431,6 @@ x_test_prev=""
 
 # For all tests
 for x_row in $x_tests; do
-#echo $x_row
    # Get one row from list
    x_row=`echo "$x_row" | sed -e 's/%gj_s4%/ /g' -e 's/^ *//' -e 's/ ____ /~/g'`
 
@@ -440,15 +440,14 @@ for x_row in $x_tests; do
    x_test=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_app=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_cmd=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_requires=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_name=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_requires=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_authors=`echo "$x_row" | sed -e 's/.*~//'`
 
    for build_tree in $x_build_trees; do
-
       build_tree="$build_tree/"
-
       # Copy specified files to the check tree
       if test ! -z "$x_files" ; then
          for x_conf in $x_confs; do
@@ -458,7 +457,7 @@ for x_row in $x_tests; do
                x_copy="$x_src_dir/$i"
                if test -f "$x_copy"  -o  -d "$x_copy" ; then
                   cp -prf "$x_copy" "$x_path"
-                  find "$x_work_dir/$i" -name .svn -print | xargs rm -rf
+                  find "$x_path/$i" -name .svn -print | xargs rm -rf
                else
                   echo "Warning:  \"$x_copy\" must be file or directory!"
                fi
@@ -486,6 +485,7 @@ for x_row in $x_tests; do
            "$x_test" \\
            "$x_app" \\
            "$x_cmd" \\
+           "$x_name" \\
            "$x_test_out" \\
            "$x_timeout" \\
            "$x_requires" \\
