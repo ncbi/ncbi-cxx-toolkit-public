@@ -84,6 +84,9 @@ public:
     void Validate    (bool full_test = false) const;
 
     /// GetSeqRange
+    /// NB: On a Spliced-seg, in case the product-type is protein,
+    /// these only return the amin part of Prot-pos.  The frame is
+    /// ignored.
     CRange<TSeqPos> GetSeqRange(TDim row) const;
     TSeqPos         GetSeqStart(TDim row) const;
     TSeqPos         GetSeqStop (TDim row) const;
