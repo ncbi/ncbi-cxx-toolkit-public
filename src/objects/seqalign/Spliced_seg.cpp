@@ -52,10 +52,46 @@ CSpliced_seg::~CSpliced_seg(void)
 }
 
 
+ENa_strand 
+CSpliced_seg::GetSeqStrand(TDim row) const 
+{
+    switch (row) {
+    case 0:
+        if (CanGetProduct_strand()) {
+            return GetProduct_strand();
+        } else {
+            if ((*GetExons().begin())->CanGetProduct_strand()) {
+                return (*GetExons().begin())->GetProduct_strand();
+            } else {
+                return eNa_strand_unknown;
+            }
+        }
+        break;
+    case 1:
+        if (CanGetGenomic_strand()) {
+            return GetGenomic_strand();
+        } else {
+            if ((*GetExons().begin())->CanGetGenomic_strand()) {
+                return (*GetExons().begin())->GetGenomic_strand();
+            } else {
+                return eNa_strand_unknown;
+            }
+        }
+        break;
+    default:
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                   "CSpliced_seg::GetSeqStrand(): Invalid row number");
+    }
+}
+
 void CSpliced_seg::Validate(bool full_test) const
 {
     bool prot = GetProduct_type() == eProduct_type_protein;
 
+    if (GetExons().empty()) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CSpliced_seg::Validate(): Spiced-seg is empty (has no exons)");
+    }
 
     ITERATE (CSpliced_seg::TExons, exon_it, GetExons()) {
 
@@ -156,6 +192,69 @@ void CSpliced_seg::Validate(bool full_test) const
         }
     }
 
+}
+
+
+CRange<TSeqPos>
+CSpliced_seg::GetSeqRange(TDim row) const
+{
+    if (GetExons().empty()) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CSpliced_seg::GetSeqRange(): Spiced-seg is empty (has no exons)");
+    }
+    CRange<TSeqPos> result;
+    switch (row) {
+    case 0:
+        switch (GetProduct_type()) {
+        case eProduct_type_transcript:
+            ITERATE(TExons, exon_it, GetExons()) {
+                result.CombineWith
+                    (CRange<TSeqPos>
+                     ((*exon_it)->GetProduct_start().GetNucpos(),
+                      (*exon_it)->GetProduct_end().GetNucpos()));
+            }
+            break;
+        case eProduct_type_protein:
+            ITERATE(TExons, exon_it, GetExons()) {
+                result.CombineWith
+                    (CRange<TSeqPos>
+                     ((*exon_it)->GetProduct_start().GetProtpos().GetAmin(),
+                      (*exon_it)->GetProduct_end().GetProtpos().GetAmin()));
+
+            }
+            break;
+        default:
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                       "Invalid product type");
+        }
+        break;
+    case 1:
+        ITERATE(TExons, exon_it, GetExons()) {
+            result.CombineWith
+                (CRange<TSeqPos>
+                 ((*exon_it)->GetGenomic_start(),
+                  (*exon_it)->GetGenomic_end()));
+        }
+        break;
+    default:
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                   "CSpliced_seg::GetSeqRange(): Invalid row number");
+    }
+    return result;
+}
+
+
+TSeqPos
+CSpliced_seg::GetSeqStart(TDim row) const
+{
+    return GetSeqRange(row).GetFrom();
+}
+
+
+TSeqPos
+CSpliced_seg::GetSeqStop (TDim row) const
+{
+    return GetSeqRange(row).GetTo();
 }
 
 

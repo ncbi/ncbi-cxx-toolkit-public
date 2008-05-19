@@ -189,6 +189,9 @@ CRange<TSeqPos> CSeq_align::GetSeqRange(TDim row) const
             return rng;
         }
 
+    case C_Segs::e_Spliced:
+        return GetSegs().GetSpliced().GetSeqRange(row);
+
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::GetSeqRange() currently does not handle "
@@ -204,6 +207,8 @@ TSeqPos CSeq_align::GetSeqStart(TDim row) const
         return GetSegs().GetDenseg().GetSeqStart(row);
     case C_Segs::e_Dendiag:
     case C_Segs::e_Std:
+    case C_Segs::e_Spliced:
+    case C_Segs::e_Disc:
         return GetSeqRange(row).GetFrom();
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
@@ -220,6 +225,8 @@ TSeqPos CSeq_align::GetSeqStop (TDim row) const
         return GetSegs().GetDenseg().GetSeqStop(row);
     case C_Segs::e_Dendiag:
     case C_Segs::e_Std:
+    case C_Segs::e_Spliced:
+    case C_Segs::e_Disc:
         return GetSeqRange(row).GetTo();
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
@@ -234,6 +241,8 @@ ENa_strand CSeq_align::GetSeqStrand(TDim row) const
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().GetSeqStrand(row);
+    case C_Segs::e_Spliced:
+        return GetSegs().GetSpliced().GetSeqStrand(row);
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::GetSeqStrand() currently does not handle "

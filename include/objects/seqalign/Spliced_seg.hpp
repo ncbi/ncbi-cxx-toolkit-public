@@ -59,8 +59,22 @@ public:
     // destructor
     ~CSpliced_seg(void);
 
+    /// types
+    typedef int TDim;
+
     /// Validators
-    void    Validate    (bool full_test = false) const;
+    void Validate    (bool full_test = false) const;
+    TDim CheckNumRows(void)                   const {
+        return 2;
+    }
+
+    /// GetSeqRange
+    CRange<TSeqPos> GetSeqRange(TDim row) const;
+    TSeqPos         GetSeqStart(TDim row) const;
+    TSeqPos         GetSeqStop (TDim row) const;
+
+    /// Get strand (the first one if segments have different strands).
+    ENa_strand      GetSeqStrand(TDim row) const;
 
 private:
     // Prohibit copy constructor and assignment operator
