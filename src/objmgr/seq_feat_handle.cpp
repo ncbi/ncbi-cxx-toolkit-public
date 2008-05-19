@@ -242,7 +242,7 @@ const string& CSeq_feat_Handle::GetSNPQualityCodeStr(void) const
 
 void CSeq_feat_Handle::GetSNPQualityCodeOs(vector<char>& os) const
 {
-    return x_GetSNP_annot_Info().x_GetQualityOs(x_GetSNP_Info().GetQualityOsIndex(), os);
+    x_GetSNP_annot_Info().x_GetQualityOs(x_GetSNP_Info().GetQualityOsIndex(), os);
 }
 
 
