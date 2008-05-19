@@ -122,7 +122,11 @@ protected:
     // menu identifiers
     enum {
         // view menu
+#ifdef __WXMAC__
+        MID_SHOW_TITLES = 1,   //  avoid debug warning when have menuitem ID = 0
+#else
         MID_SHOW_TITLES,
+#endif
         MID_HIDE_TITLES,
         MID_SHOW_GEOM_VLTNS,
         MID_FIND_PATTERN,
