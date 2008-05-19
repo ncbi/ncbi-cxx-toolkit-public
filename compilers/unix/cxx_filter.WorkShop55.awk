@@ -70,6 +70,7 @@ function print_if_interesting()
       m ~ /Warning: ".+" is too large to generate inline, consider writing it yourself./ ||
       m ~ /Warning: Could not find source for ncbi::CTreeIteratorTmpl<ncbi::C(Const)?TreeLevelIterator>::/ ||
       m ~ /Warning: Could not find source for ncbi::CTypes?IteratorBase<ncbi::CTreeIterator(Tmpl<ncbi::C(Const)?TreeLevelIterator>)?>::/ ||
+      m ~ /: warning: end-of-loop code not reached/ ||
       m ~ /Where: While instantiating "(__rw)?std::.*(<.*>)?::__((de)?allocate_.*|unLink)\(\)"/ ||
       m ~ /^".*\/include\/CC\/C?std\/.+", line [0-9]+: Warning: There are two consecutive underbars in ".+"\./ ||
       m ~ /^".*\/include\/CC\/Cstd\/.*", line [0-9]*: .*should not initialize a non-const reference with a temporary\./ ||
