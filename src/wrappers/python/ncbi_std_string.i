@@ -124,7 +124,7 @@ namespace std {
             char __getitem__(ssize_t i) {
                 std::string::size_type size = self->size();
                 AdjustIndex(i, size);
-                if (i < 0 || i >= size) {
+                if (i < 0 || static_cast<std::string::size_type>(i) >= size) {
                     throw std::out_of_range("index out of range");
                 } else {
                     return (*self)[i];
