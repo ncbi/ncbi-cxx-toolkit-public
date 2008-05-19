@@ -289,12 +289,12 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
             }
         }
         if (k >= buf_size)
-            SENDMAIL_RETURN(3, "Recepient address is too long");
+            SENDMAIL_RETURN(3, "Recipient address is too long");
         buf[k] = '\0'/*just in case*/;
         if (quote) {
             CORE_LOGF_X(1, eLOG_Warning,
                         ("[SendMail]  Unbalanced delimiters in "
-                         "recepient %s for %s: \"%c\" expected",
+                         "recipient %s for %s: \"%c\" expected",
                          buf, what, quote));
         }
         if (!s_SockWrite(sock, "RCPT TO: <", 0)  ||
