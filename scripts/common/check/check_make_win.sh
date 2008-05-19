@@ -273,7 +273,7 @@ RunTest() {
    x_wdir="\$1"
    x_test="\$2"
    x_app="\$3"
-   x_run="\$4"
+   x_run="\${4:-\$x_app}"
    x_name="\${5:-\$x_run}"  
    x_ext="\$6"
    x_timeout="\$7"
