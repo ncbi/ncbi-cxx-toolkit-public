@@ -223,6 +223,16 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     }
 
     unsigned int nAln = toRealign.size(), a = 0;
+
+    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+    multiple->GetUngappedAlignedBlocks(&blocks);
+    if (blocks.size() == 0) {
+        ERRORMSG("Must have at least one aligned block to use the block aligner");
+        return false;
+    }
+
+    //  Make the progress meter after the above check so don't have to clean it up 
+    //  on the Mac in the event the above test returns prematurely.
     auto_ptr < ProgressMeter > progress;
     if (nAln > 1) {
         long u = wxGetNumberFromUser("How many sequences do you want to realign?", "Max:", "Alignments...", nAln, 1, nAln, NULL);
@@ -233,12 +243,6 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             progress.reset(new ProgressMeter(NULL, "Running block alignment...", "Working", nAln));
     }
 
-    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
-    multiple->GetUngappedAlignedBlocks(&blocks);
-    if (blocks.size() == 0) {
-        ERRORMSG("Must have at least one aligned block to use the block aligner");
-        return false;
-    }
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
     unsigned int i;
 
@@ -287,6 +291,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             newAlignments->push_back(newAlignment);
             continue;
         }
+
         if (progress.get())
             progress->SetValue(a);
 
@@ -372,6 +377,19 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         // cleanup
         DP_DestroyAlignmentResult(dpResult);
     }
+
+//  Bug fix:  the Mac does not like the use of auto_ptr for some reason.
+//  Control is not returned to the parent window properly and most events
+//  involving mouse clicks, menus are subsequently ignored in all windows.
+//  Destroy() and reseting to null do not appear necessary, but I'll leave
+//  them commented out here as a reminder they may be needed later.
+#ifdef __WXMAC__
+    if (progress.get()) {
+        progress->Close(true);
+//        progressMeter->Destroy();
+//        progressMeter = NULL;
+    }
+#endif
 
     if (errorsEncountered)
         ERRORMSG("Block aligner encountered problem(s) - see message log for details");
