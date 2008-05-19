@@ -31,25 +31,13 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbireg.hpp>
+#include <corelib/ncbi_limits.h>
 #include <corelib/version.hpp>
 #include <corelib/ncbi_xstr.hpp>
 #include <algorithm>
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
 #define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
-
-#include <common/test_assert.h>  /* This header must go last */
+#include <corelib/test_boost.hpp>
 
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
@@ -1358,7 +1346,7 @@ BOOST_AUTO_TEST_CASE(s_FindNoCase)
     NcbiCout << NcbiEndl << "NStr::FindNoCase() tests...";
     BOOST_CHECK_EQUAL(NStr::FindNoCase(" abcd", " xyz"), NPOS);
     BOOST_CHECK_EQUAL(NStr::FindNoCase(" abcd", " xyz", 0, NPOS, NStr::eLast), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindNoCase(" abcd", " aBc", 0, NPOS, NStr::eLast), 0);
+    BOOST_CHECK(NStr::FindNoCase(" abcd", " aBc", 0, NPOS, NStr::eLast) == 0);
 
     OK;
 }
@@ -1381,16 +1369,8 @@ BOOST_AUTO_TEST_CASE(s_VersionInfo)
         BOOST_CHECK_EQUAL(ver.GetMajor(), 12);
         BOOST_CHECK_EQUAL(ver.GetMinor(), 35);
         BOOST_CHECK_EQUAL(ver.GetPatchLevel(), 0);
-        {{
-            bool err_catch = false;
-            try {
-                ver.FromStr("12.35a");
-            }
-            catch (exception&) {
-                err_catch = true;
-            }
-            BOOST_CHECK(err_catch);
-        }}
+
+        BOOST_CHECK_THROW( ver.FromStr("12.35a"), exception);
     }}
     OK;
 
@@ -1476,7 +1456,7 @@ BOOST_AUTO_TEST_CASE(s_StringUTF8)
     res = str.c_str();
 
     BOOST_CHECK_EQUAL( strncmp(src,res,126), 0);
-    BOOST_CHECK_EQUAL( strlen(res+127), 256);
+    BOOST_CHECK( strlen(res+127) == 256 );
     res += 127;
     BOOST_CHECK_EQUAL( strncmp(conv,res,256), 0);
 

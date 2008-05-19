@@ -31,23 +31,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
 #include <util/utf8.hpp>
 #include <util/sgml_entity.hpp>
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
 #define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
-
-#include <common/test_assert.h>  /* This header must go last */
+#include <corelib/test_boost.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -108,20 +96,15 @@ BOOST_AUTO_TEST_CASE(TestUtf8)
             ch=utf8::StringToChar(s.data()+j, &len, false, &stat);
 //            NcbiCout << s[j] << " (len = "<<len<<")\t - result "
 //                     << ch << ", status " << stat << NcbiEndl;
+            BOOST_REQUIRE(len > 0);
             if (len == 1) {
-                if (r < res.size()) {
-                    BOOST_CHECK_EQUAL(ch,res[r]);
-                } else {
-                    BOOST_CHECK(r < res.size());
-                    break;
-                }
+                BOOST_REQUIRE(r < res.size());
+
+                BOOST_CHECK_EQUAL(ch,res[r]);
                 BOOST_CHECK_EQUAL(stat,utf8::eSuccess);
             } else if (len >= 2) {
                 BOOST_CHECK_EQUAL(ch,utf8::kOutrangeChar);
                 BOOST_CHECK_EQUAL(stat,utf8::eOutrangeChar);
-            } else {
-                BOOST_CHECK(len > 0);
-                break;
             }
             j+=len;
             ++r;
