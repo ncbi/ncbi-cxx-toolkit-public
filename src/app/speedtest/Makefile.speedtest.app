@@ -13,5 +13,5 @@ LIB = prosplign xalgoalignutil xalnmgr xcleanup xobjutil submit \
 
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects -Cygwin
+REQUIRES = objects algo -Cygwin
 
