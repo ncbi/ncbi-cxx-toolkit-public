@@ -337,13 +337,15 @@ int CNSRemoveJobControlApp::Run(void)
         writer->WriteBeginTag("Error");
         writer->WriteText(ex.what());
         writer->WriteCloseTag("Error");
+        return 1;
     } catch (...) {
         writer->WriteTag("Error", "Unknown error");
+        return 2;
     }
 
     return 0;
-
 }
+
 int main(int argc, const char* argv[])
 {
     return CNSRemoveJobControlApp().AppMain(argc, argv);
