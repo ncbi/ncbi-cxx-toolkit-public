@@ -211,8 +211,8 @@ protected:
     SSNP_Info::TQualityIndex x_GetQualityIndex(const string& str);
     typedef vector<char> TOctetString;
     SSNP_Info::TQualityIndex x_GetQualityIndex(const TOctetString& os);
-    const string& x_GetQuality(SSNP_Info::TQualityIndex index) const;
-    void x_GetQuality(SSNP_Info::TQualityIndex index, TOctetString& os) const;
+    const string& x_GetQualityStr(SSNP_Info::TQualityIndex index) const;
+    void x_GetQualityOs(SSNP_Info::TQualityIndex index, TOctetString& os) const;
 
     bool x_CheckGi(int gi);
     void x_SetGi(int gi);
@@ -357,15 +357,15 @@ CSeq_annot_SNP_Info::x_GetAllele(SSNP_Info::TAlleleIndex index) const
 
 inline
 const string&
-CSeq_annot_SNP_Info::x_GetQuality(SSNP_Info::TQualityIndex index) const
+CSeq_annot_SNP_Info::x_GetQualityStr(SSNP_Info::TQualityIndex index) const
 {
     return m_QualityStr.GetString(index);
 }
 
 
 inline
-void CSeq_annot_SNP_Info::x_GetQuality(SSNP_Info::TQualityIndex index,
-                                       TOctetString& os) const
+void CSeq_annot_SNP_Info::x_GetQualityOs(SSNP_Info::TQualityIndex index,
+                                         TOctetString& os) const
 {
     m_QualityOs.GetString(index, os);
 }

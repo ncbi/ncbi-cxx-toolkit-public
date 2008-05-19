@@ -223,9 +223,7 @@ size_t CSeq_feat_Handle::GetSNPAllelesCount(void) const
 
 const string& CSeq_feat_Handle::GetSNPAllele(size_t index) const
 {
-    const SSNP_Info& snp = x_GetSNP_Info();
-    _ASSERT(index < snp.GetAllelesCount());
-    return x_GetSNP_annot_Info().x_GetAllele(snp.m_AllelesIndices[index]);
+    return x_GetSNP_annot_Info().x_GetAllele(x_GetSNP_Info().GetAlleleStrIndex(index));
 }
 
 
@@ -233,6 +231,18 @@ CUser_field::TData::E_Choice
 CSeq_feat_Handle::GetSNPQualityCodeWhich(void) const
 {
     return x_GetSNP_Info().GetQualityCodeWhich();
+}
+
+
+const string& CSeq_feat_Handle::GetSNPQualityCodeStr(void) const
+{
+    return x_GetSNP_annot_Info().x_GetQualityStr(x_GetSNP_Info().GetQualityStrIndex());
+}
+
+
+void CSeq_feat_Handle::GetSNPQualityCodeOs(vector<char>& os) const
+{
+    return x_GetSNP_annot_Info().x_GetQualityOs(x_GetSNP_Info().GetQualityOsIndex(), os);
 }
 
 

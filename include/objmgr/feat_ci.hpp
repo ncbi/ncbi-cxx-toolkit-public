@@ -123,6 +123,12 @@ public:
             return m_MappingInfoPtr->IsMappedLocation()?
                 GetMappedLocation(): GetOriginalFeature().GetLocation();
         }
+    CRange<TSeqPos> GetTotalRange(void) const
+        {
+            return m_MappingInfoPtr->IsMappedLocation()?
+                m_MappingInfoPtr->GetTotalRange():
+                GetOriginalFeature().GetLocation().GetTotalRange();
+        }
 
     bool IsSetQual(void) const
         { return GetOriginalFeature().IsSetQual(); }

@@ -119,7 +119,10 @@ public:
                           const CSeq_annot_SNP_Info& annot_info) const;
 
     size_t GetAllelesCount(void) const;
+    size_t GetAlleleStrIndex(size_t index) const;
     CUser_field::TData::E_Choice GetQualityCodeWhich(void) const;
+    size_t GetQualityStrIndex(void) const;
+    size_t GetQualityOsIndex(void) const;
 
     typedef int TSNPId;
     typedef Int1 TPositionDelta;
@@ -234,6 +237,30 @@ inline
 bool SSNP_Info::NotThis(const TRange& range) const
 {
     return GetFrom() >= range.GetToOpen();
+}
+
+
+inline
+size_t SSNP_Info::GetAlleleStrIndex(size_t index) const
+{
+    _ASSERT(index < GetAllelesCount());
+    return m_AllelesIndices[index];
+}
+
+
+inline
+size_t SSNP_Info::GetQualityStrIndex(void) const
+{
+    _ASSERT(m_Flags & fQualityCodeStr);
+    return m_AllelesIndices[GetAllelesCount()];
+}
+
+
+inline
+size_t SSNP_Info::GetQualityOsIndex(void) const
+{
+    _ASSERT(m_Flags & fQualityCodeOs);
+    return m_AllelesIndices[GetAllelesCount()];
 }
 
 

@@ -544,7 +544,7 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
         CPackString::Assign(user_field.SetLabel().SetStr(), kId_QualityCodes);
         TQualityIndex qadata_index = m_AllelesIndices[alleles_count];
         CPackString::Assign(user_field.SetData().SetStr(),
-                            annot_info.x_GetQuality(qadata_index));
+                            annot_info.x_GetQualityStr(qadata_index));
     }
     else if ( m_Flags & fQualityCodeOs ) {
         // qadata in ext
@@ -556,7 +556,7 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
         CUser_field& user_field = *data[0];
         CPackString::Assign(user_field.SetLabel().SetStr(), kId_QualityCodes);
         TQualityIndex qadata_index = m_AllelesIndices[alleles_count];
-        annot_info.x_GetQuality(qadata_index, user_field.SetData().SetOs());
+        annot_info.x_GetQualityOs(qadata_index, user_field.SetData().SetOs());
     }
     else {
         feat.ResetExt();

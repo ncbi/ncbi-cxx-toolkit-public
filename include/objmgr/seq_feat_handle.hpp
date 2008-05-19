@@ -161,7 +161,7 @@ public:
     bool IsSetSNPQualityCode(void) const;
     CUser_field::TData::E_Choice GetSNPQualityCodeWhich(void) const;
     const string& GetSNPQualityCodeStr(void) const;
-    vector<char> GetSNPQualityCodeOs(void) const;
+    void GetSNPQualityCodeOs(vector<char>& os) const;
 
     /// Return true if this feature was removed already
     bool IsRemoved(void) const;
