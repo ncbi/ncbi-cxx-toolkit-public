@@ -91,8 +91,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CReader*
-CReader::GetReader(
+CReaderBase*
+CReaderBase::GetReader(
     const string& format,
     int flags )
 //  ----------------------------------------------------------------------------
@@ -107,8 +107,8 @@ CReader::GetReader(
 }
 
 //  ----------------------------------------------------------------------------
-CReader*
-CReader::GetReader(
+CReaderBase*
+CReaderBase::GetReader(
     FileFormat format,
     int flags )
 //  ----------------------------------------------------------------------------
@@ -124,8 +124,8 @@ CReader::GetReader(
 }
 
 //  ----------------------------------------------------------------------------
-CReader::FileFormat
-CReader::GuessFormat(
+CReaderBase::FileFormat
+CReaderBase::GuessFormat(
     CNcbiIstream& is )
 //  ----------------------------------------------------------------------------
 {

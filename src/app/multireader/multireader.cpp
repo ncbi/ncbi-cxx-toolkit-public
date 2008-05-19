@@ -62,7 +62,7 @@ private:
     virtual int  Run(void);
     virtual void Exit(void);
 
-    CReader* m_pReader;
+    CReaderBase* m_pReader;
 
 };
 
@@ -118,10 +118,11 @@ CMultiReaderApp::Run(void)
     //
     string format = args["f"].AsString();
     if ( format == "guess" ) {
-        m_pReader = CReader::GetReader( CReader::GuessFormat( ip ), args["g"].AsInteger() );
+        m_pReader = CReaderBase::GetReader( 
+            CReaderBase::GuessFormat( ip ), args["g"].AsInteger() );
     }
     else {
-        m_pReader = CReader::GetReader( format, args["g"].AsInteger() );
+        m_pReader = CReaderBase::GetReader( format, args["g"].AsInteger() );
     }
     if ( !m_pReader ) {
         cerr << "Bad format string: " << args["f"].AsString() << endl;

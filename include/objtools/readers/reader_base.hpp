@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class NCBI_XOBJREAD_EXPORT CReader
+class NCBI_XOBJREAD_EXPORT CReaderBase
 //  ----------------------------------------------------------------------------
 {
 public:
@@ -56,11 +56,11 @@ public:
     //
     //  Class interface:
     //
-    static CReader* GetReader(
+    static CReaderBase* GetReader(
         const string&,
         int =0 );
 
-    static CReader* GetReader(
+    static CReaderBase* GetReader(
         FileFormat,
         int =0 );
 

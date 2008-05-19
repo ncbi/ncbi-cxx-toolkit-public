@@ -44,7 +44,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CBedReader
 //  ----------------------------------------------------------------------------
-    : public CReader
+    : public CReaderBase
 {
     //
     //  object management:

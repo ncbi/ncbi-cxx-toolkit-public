@@ -44,7 +44,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CMicroArrayReader
 //  ----------------------------------------------------------------------------
-    : public CReader
+    : public CReaderBase
 {
 public:
     enum {
