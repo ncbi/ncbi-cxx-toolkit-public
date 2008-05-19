@@ -11134,7 +11134,7 @@ CDBAPIUnitTest::Test_CDB_Object(void)
 
 
             // Check actual values ...
-            BOOST_CHECK(value_Bit.Value() == true);
+            BOOST_CHECK(value_Bit.Value() == 1);
             BOOST_CHECK_EQUAL(value_Int.Value(), 1);
             BOOST_CHECK_EQUAL(value_SmallInt.Value(), 1);
             BOOST_CHECK_EQUAL(value_TinyInt.Value(), 1);
@@ -13243,15 +13243,14 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
 
     // Check selecting from a huge table ...
     const char* str_value = "Oops ...";
-    size_t rec_num = 200000;
+    size_t rec_num = 800000;
     string sql;
     auto_ptr<IStatement> auto_stmt;
 
     auto_stmt.reset(auto_conn->GetStatement());
 
-    if (!m_args.IsBCPAvailable()) {
-        rec_num = 15000;
-    }
+    bool small_amount = !m_args.IsBCPAvailable()
+                        ||  m_args.GetServerType() == CTestArguments::eSybase;
 
     // Preparation ...
     {
@@ -13273,7 +13272,7 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
     {
         CStopWatch timer(CStopWatch::eStart);
 
-        if (m_args.IsBCPAvailable()) {
+        if (!small_amount) {
             CVariant col1(eDB_Int);
             CVariant col2(eDB_VarChar);
 
@@ -13293,6 +13292,8 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
 
                 if (i % 1000 == 0) {
                     bi->StoreBatch();
+                    if (timer.Elapsed() > 4)
+                        break;
                 }
             }
             bi->Complete();
@@ -13312,6 +13313,8 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
                     auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
                     auto_stmt->ExecuteUpdate("BEGIN TRANSACTION");
                     }*/
+                if (timer.Elapsed() > 4)
+                    break;
             }
 
             //auto_stmt->ExecuteUpdate("COMMIT TRANSACTION");
@@ -13319,8 +13322,6 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
 
         LOG_POST( "Huge table inserted in " << timer.Elapsed() << " sec." );
     }
-
-    BOOST_CHECK(GetNumOfRecords(auto_stmt, table_name) == rec_num);
 
     // Read data ...
     {
@@ -13330,7 +13331,12 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
 
         CStopWatch timer(CStopWatch::eStart);
 
-        auto_stmt->SendSql("SELECT * FROM " + table_name);
+        if (small_amount) {
+            auto_stmt->SendSql("SELECT top 800000 * FROM " + table_name + " a, " + table_name + " b");
+        }
+        else {
+            auto_stmt->SendSql("SELECT * FROM " + table_name);
+        }
 
         while (auto_stmt->HasMoreResults()) {
             if (auto_stmt->HasRows()) {
@@ -13339,13 +13345,13 @@ void CDBAPIUnitTest::Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn
 
                 while (rs->Next()) {
                     ++num;
+                    if (timer.Elapsed() > 4)
+                        break;
                 }
             }
         }
 
         LOG_POST( "Huge table selected in " << timer.Elapsed() << " sec." );
-
-        BOOST_CHECK(num == rec_num);
     }
 
     {
@@ -14381,7 +14387,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             || args.GetDriverName() == ftds64_driver
             || args.IsODBCBased();
 
-        if (false  &&  condition) {
+        if (condition) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Timeout,
                                     DBAPIInstance);
             tc->depends_on(tc_init);
@@ -14392,8 +14398,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     // Test_Timeout2 is disabled till it get fixed. JIRA: CXX-371 ...
-    if (false 
-        && args.GetTestConfiguration() != CTestArguments::eWithoutExceptions
+    if (args.GetTestConfiguration() != CTestArguments::eWithoutExceptions
         && args.GetTestConfiguration() != CTestArguments::eFast
         ) 
     {
