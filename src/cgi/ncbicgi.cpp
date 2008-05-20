@@ -39,6 +39,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/stream_utils.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/request_ctx.hpp>
 
 #include <cgi/cgi_exception.hpp>
 #include <cgi/ncbicgi.hpp>
@@ -68,6 +69,12 @@
 
 BEGIN_NCBI_SCOPE
 
+
+
+const char* kPageInfoCookie = "ncbi_st";
+const char* kPageHitId      = "ncbi_phid";
+const char* kPageHitIdRef   = "ncbi_phid_ref";
+const char* kPageDesignId   = "ncbi_pdid";
 
 
 ///////////////////////////////////////////////////////
@@ -850,9 +857,6 @@ CCgiRequest::CCgiRequest
 }
 
 
-const char* kPageHitId      = "ncbi_phid";
-
-
 void CCgiRequest::x_Init
 (const CNcbiArguments*   args,
  const CNcbiEnvironment* env,
@@ -898,14 +902,36 @@ void CCgiRequest::x_Init
 
     x_ProcessInputStream(flags, istr, ifd);
 
+    string phid;
+    CRequestContext rctx = GetDiagContext().GetRequestContext();
     if ((flags & fIgnorePageHitId) == 0) {
         // Check if pageviewid is present. If not, generate one.
-        TCgiEntries::iterator phid = m_Entries.find(kPageHitId);
-        if ( phid == m_Entries.end() ) {
-            string id = GetDiagContext().GetGlobalRequestId();
-            s_AddEntry(m_Entries, kPageHitId, id, 0);
+        TCgiEntries::iterator phid_it = m_Entries.find(kPageHitId);
+        if ( phid_it == m_Entries.end() ) {
+            phid = rctx.SetHitID();
+        }
+        else {
+            phid = phid_it->second;
+            rctx.SetHitID(phid);
         }
     }
+
+    // Check if ncbi_st cookie is set, save page info to diag context
+    const CCgiCookie* st = m_Cookies.Find(kPageInfoCookie);
+    CCgiArgs pg_info;
+    if ( st ) {
+        pg_info.SetQueryString(st->GetValue());
+    }
+    pg_info.SetValue(kPageHitId, phid);
+    rctx.SetProperty(kPageInfoCookie,
+        pg_info.GetQueryString(CCgiArgs::eAmp_Char));
+    // Log ncbi_st values
+    CDiagContext_Extra extra = GetDiagContext().Extra();
+    // extra.SetType("NCBICGI");
+    ITERATE(CCgiArgs::TArgs, it, pg_info.GetArgs()) {
+        extra.Print(it->name, it->value);
+    }
+    extra.Flush();
 
     // Check for an IMAGEMAP input entry like: "Command.x=5&Command.y=3" and
     // put them with empty string key for better access
@@ -941,7 +967,7 @@ void CCgiRequest::x_Init
 
 void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
 {
-    if ((flags & fSetDiagProperties) == 0) {
+    if ((flags & fSkipDiagProperties) != 0) {
         return;
     }
     // Set client IP for diagnostics
@@ -949,7 +975,7 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
     if ( client.empty() ) {
         client = x_GetPropertyByName(GetPropertyName(eCgi_RemoteAddr));
     }
-    GetDiagContext().SetProperty(CDiagContext::kProperty_ClientIP, client);
+    GetDiagContext().GetRequestContext().SetClientIP(client);
 }
 
 

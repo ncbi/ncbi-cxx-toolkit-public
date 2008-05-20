@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgi_exception.hpp>
+#include <corelib/request_ctx.hpp>
 
 
 #if !defined(HAVE_LIBFASTCGI)
@@ -505,6 +506,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
             VerifyCgiContext(*m_Context);
             ProcessHttpReferer();
+            LogRequest();
+
             int x_result = 0;
             try {
                 try {
@@ -567,10 +570,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             if (x_result != 0)
                 (*result)++;
             FCGX_SetExitStatus(x_result, pfout);
-            GetDiagContext().SetProperty(CDiagContext::kProperty_BytesRd,
-                                         NStr::IntToString(ibuf.GetCount()));
-            GetDiagContext().SetProperty(CDiagContext::kProperty_BytesWr,
-                                         NStr::IntToString(obuf.GetCount()));
+            GetDiagContext().GetRequestContext().SetBytesRd(ibuf.GetCount());
+            GetDiagContext().GetRequestContext().SetBytesWr(obuf.GetCount());
             x_OnEvent(x_result == 0 ? eSuccess : eError, x_result);
 
         }

@@ -1158,11 +1158,11 @@ extern void PushDiagPostPrefix(const char* prefix);
 NCBI_XNCBI_EXPORT
 extern void PopDiagPostPrefix(void);
 
-/// Get iteration number/request ID for the current thread.
+/// Get iteration number/request ID.
 NCBI_XNCBI_EXPORT
 extern int GetDiagRequestId(void);
 
-/// Set iteration number/request ID for the current thread.
+/// Set iteration number/request ID.
 NCBI_XNCBI_EXPORT
 extern void SetDiagRequestId(int id);
 
@@ -1455,7 +1455,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     const string& GetClient(void) const;
     const string& GetSession(void) const;
     const string& GetAppName(void) const;
-    const string& GetAppState(void) const;
+    const char* GetAppState(void) const;
 
     /// For compatibility x_Write selects old or new message formatting
     /// depending on DIAG_OLD_POST_FORMAT parameter.
@@ -1545,6 +1545,10 @@ enum EPostNumberIncrement {
 };
 
 
+struct SRequestCtxWrapper;
+class CRequestContext;
+
+
 /// Thread local context data stored in TLS
 class NCBI_XNCBI_EXPORT CDiagContextThreadData
 {
@@ -1552,25 +1556,31 @@ public:
     CDiagContextThreadData(void);
     ~CDiagContextThreadData(void);
 
+    /// Get current request context.
+    CRequestContext& GetRequestContext(void);
+    /// Set request context. If NULL, switches the current thread
+    /// to its default request context.
+    void SetRequestContext(CRequestContext* ctx);
+
     /// CDiagContext properties
     typedef map<string, string> TProperties;
     enum EGetProperties {
         eProp_Get,    ///< Do not create properties if not exist yet
         eProp_Create  ///< Auto-create properties if not exist
     };
-    TProperties* GetProperties(EGetProperties flag);
+    NCBI_DEPRECATED TProperties* GetProperties(EGetProperties flag);
 
     /// Request id
-    int GetRequestId(void) { return m_RequestId; }
-    void SetRequestId(int id) { m_RequestId = id; }
-    void IncRequestId(void) { m_RequestId++; }
+    NCBI_DEPRECATED int GetRequestId(void);
+    NCBI_DEPRECATED void SetRequestId(int id);
+    NCBI_DEPRECATED void IncRequestId(void);
 
     /// Get request timer, create if not exist yet
-    CStopWatch* GetOrCreateStopWatch(void);
+    NCBI_DEPRECATED CStopWatch* GetOrCreateStopWatch(void) { return NULL; }
     /// Get request timer or null
-    CStopWatch* GetStopWatch(void) { return m_StopWatch.get(); }
+    NCBI_DEPRECATED CStopWatch* GetStopWatch(void) { return NULL; }
     /// Delete request timer
-    void ResetStopWatch(void);
+    NCBI_DEPRECATED void ResetStopWatch(void) {}
 
     /// Diag buffer
     CDiagBuffer& GetDiagBuffer(void) { return *m_DiagBuffer; }
@@ -1605,14 +1615,14 @@ private:
     typedef list<SDiagMessage>       TDiagCollection;
 
     auto_ptr<TProperties> m_Properties;       // Per-thread properties
-    int                   m_RequestId;        // Per-thread request ID
-    auto_ptr<CStopWatch>  m_StopWatch;        // Request timer
     auto_ptr<CDiagBuffer> m_DiagBuffer;       // Thread's diag buffer
     TTID                  m_TID;              // Cached thread ID
     int                   m_ThreadPostNumber; // Number of posted messages
     TCollectGuards        m_CollectGuards;
     TDiagCollection       m_DiagCollection;
     size_t                m_DiagCollectionSize; // cached size of m_DiagCollection
+    auto_ptr<SRequestCtxWrapper> m_RequestCtx;        // Request context
+    auto_ptr<SRequestCtxWrapper> m_DefaultRequestCtx; // Default request context
 };
 
 
@@ -1636,6 +1646,7 @@ public:
     /// Print the message and reset object
     void Flush(void);
 
+    /// Set extra message type.
     CDiagContext_Extra& SetType(const string& type);
 
 private:
@@ -1674,13 +1685,26 @@ public:
     string GetStringUID(TUID uid = 0) const;
 
     /// Create global unique request id.
-    string GetGlobalRequestId(void) const;
+    string GetNextHitID(void) const;
+    /// Deprecated version of HID generator.
+    NCBI_DEPRECATED
+    string GetGlobalRequestId(void) const { return GetNextHitID(); }
+
+    /// Shortcut to
+    ///   CDiagContextThreadData::GetThreadData().GetRequestContext()
+    static CRequestContext& GetRequestContext(void);
+    /// Shortcut to
+    ///   CDiagContextThreadData::GetThreadData().SetRequestContext()
+    static void SetRequestContext(CRequestContext* ctx);
 
     /// Set AutoWrite flag. If set, each property is posted to the current
     /// app-log stream when a new value is set.
+    /// @deprecated
+    NCBI_DEPRECATED
     void SetAutoWrite(bool value);
 
     /// Property visibility flag.
+    /// @deprecated
     enum EPropertyMode {
         eProp_Default,  ///< Auto-mode for known properties, local for others
         eProp_Global,   ///< The property is global for the application
@@ -1692,6 +1716,8 @@ public:
     /// Property mode defines if the property is a global or a
     /// per-thread one. By default unknown properties are set as
     /// thread-local.
+    /// @deprecated
+    NCBI_DEPRECATED
     void SetProperty(const string& name,
                      const string& value,
                      EPropertyMode mode = eProp_Default);
@@ -1699,15 +1725,21 @@ public:
     /// Get application context property by name, return empty string if the
     /// property is not set. If mode is eProp_Default and the property is
     /// not a known one, check thread-local properties first.
-    const string& GetProperty(const string& name,
-                              EPropertyMode mode = eProp_Default) const;
+    /// @deprecated
+    NCBI_DEPRECATED
+    string GetProperty(const string& name,
+                       EPropertyMode mode = eProp_Default) const;
 
     /// Delete a property by name. If mode is eProp_Default and the property
     /// is not a known one, check thread-local properties first.
+    /// @deprecated
+    NCBI_DEPRECATED
     void DeleteProperty(const string& name,
                         EPropertyMode mode = eProp_Default);
 
     /// Forced dump of all set properties.
+    /// @deprecated
+    NCBI_DEPRECATED
     void PrintProperties(void);
 
     /// Global properties
@@ -1764,6 +1796,7 @@ public:
 
     /// Application execution states shown in the std prefix
     enum EAppState {
+        eState_NotSet,        ///< Reserved value, never used in messages
         eState_AppBegin,      ///< AB
         eState_AppRun,        ///< A
         eState_AppEnd,        ///< AE
@@ -1772,10 +1805,23 @@ public:
         eState_RequestEnd     ///< RE
     };
 
-    /// Set application state property corresponding to the flag.
-    /// By default the property is set as global if the flag indicates an
-    /// application state and as thread local for request states.
-    void SetAppState(EAppState state, EPropertyMode mode = eProp_Default);
+    /// Always returns global application state.
+    EAppState GetGlobalAppState(void) const;
+    /// Set global application state.
+    /// Do not change state of the current thread.
+    void SetGlobalAppState(EAppState state);
+    /// Return application state for the current thread if it's set.
+    /// If not set, return global application state. This is a shortcut
+    /// to the current request context's GetAppState().
+    EAppState GetAppState(void) const;
+    /// Set application state. Application state is set globally and the
+    /// thread's state is reset (for the current thread only).
+    /// Request states are set for the current thread (request context) only.
+    void SetAppState(EAppState state);
+    /// The 'mode' flag is deprecated. Use CRequestContext::SetAppState() for
+    /// per-thread/per-request state.
+    NCBI_DEPRECATED
+    void SetAppState(EAppState state, EPropertyMode mode);
 
     /// Check old/new format flag (for compatibility only)
     static bool IsSetOldPostFormat(void);
@@ -1787,12 +1833,41 @@ public:
     /// Switch printing system TID (rather than CThread::GetSelf()) on/off
     static void UseSystemThreadId(bool value = true);
 
-    /// Set username property
+    /// Get username
+    const string& GetUsername(void) const { return m_Username; }
+    /// Set username
     /// @sa SetDiagUserAndHost
-    void SetUsername(const string& username);
-    /// Set hostname property
+    void SetUsername(const string& username) { m_Username = username; }
+
+    /// Get host name. The order is: cached hostname, cached hostIP,
+    /// uname or COMPUTERNAME, SERVER_ADDR, empty string.
+    const string& GetHost(void) const;
+
+    /// Get cached hostname - do not try to detect host name as Getost() does.
+    const string& GetHostname(void) const { return m_Host; }
+    /// Set hostname
     /// @sa SetDiagUserAndHost
-    void SetHostname(const string& hostname);
+    void SetHostname(const string& hostname) { m_Host = hostname; }
+
+    /// Get host IP address
+    const string& GetHostIP(void) const { return m_HostIP; }
+    /// Set host IP address
+    void SetHostIP(const string& ip) { m_HostIP = ip; }
+
+    /// Get application name
+    const string& GetAppName(void) const { return m_AppName; }
+    /// Set application name
+    void SetAppName(const string& app_name) { m_AppName = app_name; }
+
+    /// Get exit code
+    int GetExitCode(void) const { return m_ExitCode; }
+    /// Set exit code
+    void SetExitCode(int exit_code) { m_ExitCode = exit_code; }
+
+    /// Get exit signal
+    int GetExitSignal(void) const { return m_ExitSig; }
+    /// Set exit signal
+    void SetExitSignal(int exit_sig) { m_ExitSig = exit_sig; }
 
     /// Write standard prefix to the stream. Use values from the message
     /// (PID/TID/RID etc.).
@@ -1834,10 +1909,6 @@ public:
     /// Return process post number (incrementing depends on the flag).
     static int GetProcessPostNumber(EPostNumberIncrement inc);
 
-    /// Get host name. The order is: hostname property, hostIP property,
-    /// uname or COMPUTERNAME, SERVER_ADDR, empty string.
-    const string& GetHost(void) const;
-
     /// Internal function, should be used only by CNcbiApplication.
     static void x_FinalizeSetupDiag(void);
 
@@ -1864,6 +1935,12 @@ private:
 
     mutable TUID           m_UID;
     mutable string         m_Host;
+    string                 m_HostIP;
+    string                 m_Username;
+    string                 m_AppName;
+    int                    m_ExitCode;
+    int                    m_ExitSig;
+    EAppState              m_AppState;
     TProperties            m_Properties;
     auto_ptr<CStopWatch>   m_StopWatch;
     auto_ptr<TMessages>    m_Messages;

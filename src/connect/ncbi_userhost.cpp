@@ -44,7 +44,7 @@ void SetDiagUserAndHost(TDiagUserAndHost flags)
     CDiagContext& ctx = GetDiagContext();
     if ((flags & fDiag_AddUser) != 0  &&
         ((flags & fDiag_OverrideExisting) != 0) ||
-        ctx.GetProperty("username").empty()) {
+        ctx.GetUsername().empty()) {
         const int buf_len = 256;
         char buf[buf_len];
         CORE_GetUsername(buf, buf_len);
@@ -54,7 +54,7 @@ void SetDiagUserAndHost(TDiagUserAndHost flags)
     }
     if ((flags & fDiag_AddHost) != 0  &&
         ((flags & fDiag_OverrideExisting) != 0)  ||
-        ctx.GetProperty("hostname").empty()) {
+        ctx.GetHostname().empty()) {
         const int buf_len = 256;
         char buf[buf_len];
         if (SOCK_gethostname(buf, buf_len) == 0) {

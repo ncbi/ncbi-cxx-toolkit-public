@@ -269,8 +269,11 @@ protected:
     /// Set CONN_HTTP_REFERER, print self-URL and referer to log.
     void ProcessHttpReferer(void);
 
+    /// Write the required values to log (user-agent, self-url, referer etc.)
+    void LogRequest(void) const;
+
     /// Bit flags for CCgiRequest
-    int                       m_RequestFlags;
+    int m_RequestFlags;
 
 private:
 
@@ -315,9 +318,6 @@ private:
 
     /// HTTP status
     unsigned int              m_HTTPStatus;
-
-    /// Request processing time - not MT-safe
-    CStopWatch                m_RequestTimer;
 
     /// Wrappers for cin and cout
     auto_ptr<CNcbiIstream>    m_InputStream;

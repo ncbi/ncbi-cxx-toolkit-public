@@ -90,7 +90,7 @@ CNcbiApplication::CNcbiApplication(void)
     // Initialize UID and start timer
     GetDiagContext().GetUID();
     GetDiagContext().InitMessages(size_t(-1));
-    GetDiagContext().SetAppState(CDiagContext::eState_AppBegin);
+    GetDiagContext().SetGlobalAppState(CDiagContext::eState_AppBegin);
 
     m_DisableArgDesc = false;
     m_HideArgs = 0;
@@ -518,7 +518,7 @@ int CNcbiApplication::AppMain
 
         // Run application
         if (exit_code == 1) {
-            GetDiagContext().SetAppState(CDiagContext::eState_AppRun);
+            GetDiagContext().SetGlobalAppState(CDiagContext::eState_AppRun);
             try {
                 exit_code = m_DryRun ? DryRun() : Run();
             }
@@ -537,7 +537,7 @@ int CNcbiApplication::AppMain
                 exit_code = 3;
             }
         }
-        GetDiagContext().SetAppState(CDiagContext::eState_AppEnd);
+        GetDiagContext().SetGlobalAppState(CDiagContext::eState_AppEnd);
 
         // Close application
         try {
@@ -776,9 +776,8 @@ void CNcbiApplication::x_SetupStdio(void)
 void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 {
     m_ProgramDisplayName = app_name;
-    // Also set app_name property in the diag context
-    GetDiagContext().SetProperty(
-        CDiagContext::kProperty_AppName, app_name);
+    // Also set app_name in the diag context
+    GetDiagContext().SetAppName(app_name);
 }
 
 
@@ -1047,8 +1046,7 @@ void CNcbiApplication::AppStart(void)
 
 void CNcbiApplication::AppStop(int exit_code)
 {
-    GetDiagContext().SetProperty(CDiagContext::kProperty_ExitCode,
-        NStr::IntToString(exit_code));
+    GetDiagContext().SetExitCode(exit_code);
 }
 
 

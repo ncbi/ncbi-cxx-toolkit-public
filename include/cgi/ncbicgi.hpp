@@ -645,7 +645,9 @@ public:
         /// if it's missing.
         fIgnorePageHitId     = (1 << 8),
         /// Set client-ip and session-id properties for logging.
-        fSetDiagProperties   = (1 << 9),
+        fSkipDiagProperties  = (1 << 9),
+        /// Old (deprecated) flag controlling diag properties.
+        fSetDiagProperties   = 0,
         /// Enable on-demand parsing via GetNextEntry()
         fParseInputOnDemand  = (1 << 10)
     };
@@ -819,7 +821,6 @@ private:
     /// 0 in this variable means no buffer diagnostics
     size_t        m_ErrBufSize;
 
-    /// 
     bool m_QueryStringParsed;
     /// the real constructor code
     void x_Init(const CNcbiArguments*   args,

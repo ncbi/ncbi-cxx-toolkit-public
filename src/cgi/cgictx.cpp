@@ -34,6 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/request_ctx.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <cgi/ncbires.hpp>
 #include <cgi/cgictx.hpp>
@@ -158,9 +159,9 @@ void CCgiContext::x_InitSession(CCgiRequest::TFlags flags)
                                      track_cookie_value,
                                      TCGI_TrackingCookieDomain::GetDefault(), 
                                      TCGI_TrackingCookiePath::GetDefault());
-        if ((flags & CCgiRequest::fSetDiagProperties) != 0) {
-            GetDiagContext().SetProperty(CDiagContext::kProperty_SessionID,
-                track_cookie_value);
+        if ((flags & CCgiRequest::fSkipDiagProperties) == 0) {
+            GetDiagContext().GetRequestContext()
+                .SetSessionID(track_cookie_value);
         }
     }
 

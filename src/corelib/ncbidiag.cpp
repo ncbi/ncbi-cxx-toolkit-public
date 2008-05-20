@@ -46,6 +46,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/syslog.hpp>
 #include <corelib/error_codes.hpp>
+#include <corelib/request_ctx.hpp>
 #include "ncbidiag_p.hpp"
 #include <stdio.h>
 #include <stdlib.h>
@@ -410,6 +411,12 @@ static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 //  CDiagContextThreadData::
 
 
+struct SRequestCtxWrapper
+{
+    CRef<CRequestContext> m_Ctx;
+};
+
+
 inline Uint8 s_GetThreadId(void)
 {
     if (TPrintSystemTID::GetDefault()) {
@@ -438,13 +445,14 @@ static void s_ThreadDataSafeStaticCleanup(void*)
 
 CDiagContextThreadData::CDiagContextThreadData(void)
     : m_Properties(NULL),
-      m_RequestId(0),
-      m_StopWatch(NULL),
       m_DiagBuffer(new CDiagBuffer),
       m_TID(s_GetThreadId()),
       m_ThreadPostNumber(0),
-      m_DiagCollectionSize(0)
+      m_DiagCollectionSize(0),
+      m_RequestCtx(new SRequestCtxWrapper),
+      m_DefaultRequestCtx(new SRequestCtxWrapper)
 {
+    m_RequestCtx->m_Ctx = m_DefaultRequestCtx->m_Ctx = new CRequestContext;
 }
 
 
@@ -459,7 +467,7 @@ void ThreadDataTlsCleanup(CDiagContextThreadData* value, void* cleanup_data)
         // Copy properties from the main thread's TLS to the global properties.
         CMutexGuard LOCK(s_DiagMutex);
         CDiagContextThreadData::TProperties* props =
-            value->GetProperties(CDiagContextThreadData::eProp_Get);
+            value->GetProperties(CDiagContextThreadData::eProp_Get); /* NCBI_FAKE_WARNING */
         if ( props ) {
             GetDiagContext().m_Properties.insert(props->begin(),
                                                  props->end());
@@ -547,6 +555,19 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
 }
 
 
+CRequestContext& CDiagContextThreadData::GetRequestContext(void)
+{
+    _ASSERT(m_RequestCtx.get()  &&  m_RequestCtx->m_Ctx);
+    return *m_RequestCtx->m_Ctx;
+}
+
+
+void CDiagContextThreadData::SetRequestContext(CRequestContext* ctx)
+{
+    m_RequestCtx->m_Ctx = ctx ? ctx : m_DefaultRequestCtx->m_Ctx;
+}
+
+
 CDiagContextThreadData::TProperties*
 CDiagContextThreadData::GetProperties(EGetProperties flag)
 {
@@ -554,21 +575,6 @@ CDiagContextThreadData::GetProperties(EGetProperties flag)
         m_Properties.reset(new TProperties);
     }
     return m_Properties.get();
-}
-
-
-CStopWatch* CDiagContextThreadData::GetOrCreateStopWatch(void)
-{
-    if ( !m_StopWatch.get() ) {
-        m_StopWatch.reset(new CStopWatch(CStopWatch::eStart));
-    }
-    return m_StopWatch.get();
-}
-
-
-void CDiagContextThreadData::ResetStopWatch(void)
-{
-    m_StopWatch.reset();
 }
 
 
@@ -641,15 +647,33 @@ void CDiagContextThreadData::CollectDiagMessage(const SDiagMessage& mess)
 }
 
 
+int CDiagContextThreadData::GetRequestId(void)
+{
+    return GetRequestContext().GetRequestID();
+}
+
+
+void CDiagContextThreadData::SetRequestId(int id)
+{
+    GetRequestContext().SetRequestID(id);
+}
+
+
+void CDiagContextThreadData::IncRequestId(void)
+{
+    GetRequestContext().SetRequestID();
+}
+
+
 extern int GetDiagRequestId(void)
 {
-    return CDiagContextThreadData::GetThreadData().GetRequestId();
+    return GetDiagContext().GetRequestContext().GetRequestID();
 }
 
 
 extern void SetDiagRequestId(int id)
 {
-    CDiagContextThreadData::GetThreadData().SetRequestId(id);
+    GetDiagContext().GetRequestContext().SetRequestID(id);
 }
 
 
@@ -657,9 +681,33 @@ extern void SetDiagRequestId(int id)
 //  CDiagContext::
 
 
+// AppState formatting/parsing
+static const char* s_AppStateStr[] = {
+    "NS", "AB", "A", "AE", "RB", "R", "RE"
+};
+
+const char* s_AppStateToStr(CDiagContext::EAppState state)
+{
+    return s_AppStateStr[state];
+}
+
+CDiagContext::EAppState s_StrToAppState(const string& state)
+{
+    for (int st = (int)CDiagContext::eState_AppBegin;
+        st < CDiagContext::eState_RequestEnd; st++) {
+        if (state == s_AppStateStr[st]) {
+            return (CDiagContext::EAppState)st;
+        }
+    }
+    // Throw to notify caller about invalid app state.
+    NCBI_THROW(CException, eUnknown, "Invalid EAppState value");
+    return CDiagContext::eState_NotSet;
+}
+
+
 struct SDiagMessageData
 {
-    SDiagMessageData(void) : m_UID(0), m_Time(GetFastLocalTime()) {}
+    SDiagMessageData(void);
     ~SDiagMessageData(void) {}
 
     string m_Message;
@@ -678,8 +726,16 @@ struct SDiagMessageData
     string m_Client;
     string m_Session;
     string m_AppName;
-    string m_AppState;
+    CDiagContext::EAppState m_AppState;
 };
+
+
+SDiagMessageData::SDiagMessageData(void)
+    : m_UID(0),
+      m_Time(GetFastLocalTime()),
+      m_AppState(CDiagContext::eState_NotSet)
+{
+}
 
 
 CDiagContext* CDiagContext::sm_Instance = NULL;
@@ -687,10 +743,12 @@ CDiagContext* CDiagContext::sm_Instance = NULL;
 
 CDiagContext::CDiagContext(void)
     : m_UID(0),
+      m_ExitCode(0),
+      m_ExitSig(0),
+      m_AppState(eState_AppBegin),
       m_StopWatch(new CStopWatch(CStopWatch::eStart)),
       m_MaxMessages(100) // limit number of collected messages to 100
 {
-    SetAppState(eState_AppBegin, eProp_Global);
     sm_Instance = this;
 }
 
@@ -757,7 +815,7 @@ string CDiagContext::GetStringUID(TUID uid) const
 }
 
 
-string CDiagContext::GetGlobalRequestId(void) const
+string CDiagContext::GetNextHitID(void) const
 {
     Uint8 hi = GetUID();
     Uint4 b3 = Uint4((hi >> 32) & 0xFFFFFFFF);
@@ -765,7 +823,7 @@ string CDiagContext::GetGlobalRequestId(void) const
 
     CDiagContextThreadData& thr_data = CDiagContextThreadData::GetThreadData();
     Uint8 tid = (thr_data.GetTID() & 0xFFFFFF) << 40;
-    Uint8 rid = Uint8(thr_data.GetRequestId() & 0xFFFFFF) << 16;
+    Uint8 rid = Uint8(thr_data.GetRequestContext().GetRequestID() & 0xFFFFFF) << 16;
     Uint8 us = (GetFastLocalTime().MicroSecond()/16) & 0xFFFF;
     Uint8 lo = tid | rid | us;
     Uint4 b1 = Uint4((lo >> 32) & 0xFFFFFFFF);
@@ -779,43 +837,37 @@ string CDiagContext::GetGlobalRequestId(void) const
 const string& CDiagContext::GetHost(void) const
 {
     // Check context properties
-    const string& name_prop = GetDiagContext().GetProperty(
-        CDiagContext::kProperty_HostName);
-    if ( !name_prop.empty() )
-        return name_prop;
+    if ( !m_Host.empty() ) {
+        return m_Host;
+    }
+    if ( !m_HostIP.empty() ) {
+        return m_HostIP;
+    }
 
-    const string& ip_prop =
-        GetDiagContext().GetProperty(CDiagContext::kProperty_HostIP);
-    if ( !ip_prop.empty() )
-        return ip_prop;
-
-    if ( m_Host.empty() ) {
 #if defined(NCBI_OS_UNIX)
-        // UNIX - use uname()
-        {{
-            struct utsname buf;
-            if (uname(&buf) == 0) {
-                m_Host = buf.nodename;
-                return m_Host;
-            }
-        }}
+    // UNIX - use uname()
+    {{
+        struct utsname buf;
+        if (uname(&buf) == 0) {
+            m_Host = buf.nodename;
+            return m_Host;
+        }
+    }}
 #endif
 
 #if defined(NCBI_OS_MSWIN)
-        // MSWIN - use COMPUTERNAME
-        const char* compname = ::getenv("COMPUTERNAME");
-        if ( compname  &&  *compname ) {
-            m_Host = compname;
-            return m_Host;
-        }
+    // MSWIN - use COMPUTERNAME
+    const char* compname = ::getenv("COMPUTERNAME");
+    if ( compname  &&  *compname ) {
+        m_Host = compname;
+        return m_Host;
+    }
 #endif
 
-        // Server env. - use SERVER_ADDR
-        const char* servaddr = ::getenv("SERVER_ADDR");
-        if ( servaddr  &&  *servaddr ) {
-            m_Host = servaddr;
-            return m_Host;
-        }
+    // Server env. - use SERVER_ADDR
+    const char* servaddr = ::getenv("SERVER_ADDR");
+    if ( servaddr  &&  *servaddr ) {
+        m_Host = servaddr;
     }
     return m_Host;
 }
@@ -832,6 +884,18 @@ void CDiagContext::x_CreateUID(void) const
     }
     // The low 4 bits are reserved as GUID generator version number.
     m_UID = (h << 48) + ((pid & 0xFFFF) << 32) + ((t & 0xFFFFFFF) << 4);
+}
+
+
+CRequestContext& CDiagContext::GetRequestContext(void)
+{
+    return CDiagContextThreadData::GetThreadData().GetRequestContext();
+}
+
+
+void CDiagContext::SetRequestContext(CRequestContext* ctx)
+{
+    CDiagContextThreadData::GetThreadData().SetRequestContext(ctx);
 }
 
 
@@ -857,6 +921,69 @@ void CDiagContext::SetProperty(const string& name,
                                const string& value,
                                EPropertyMode mode)
 {
+    // Global properties
+    if (name == kProperty_UserName) {
+        SetUsername(value);
+        return;
+    }
+    if (name == kProperty_HostName) {
+        SetHostname(value);
+        return;
+    }
+    if (name == kProperty_HostIP) {
+        SetHostIP(value);
+        return;
+    }
+    if (name == kProperty_AppName) {
+        SetAppName(value);
+        return;
+    }
+    if (name == kProperty_ExitCode) {
+        SetExitCode(NStr::StringToInt(value, NStr::fConvErr_NoThrow));
+        return;
+    }
+    if (name == kProperty_ExitSig) {
+        SetExitSignal(NStr::StringToInt(value, NStr::fConvErr_NoThrow));
+        return;
+    }
+
+    // Request properties
+    if (name == kProperty_AppState) {
+        try {
+            SetAppState(s_StrToAppState(value));
+        }
+        catch (CException) {
+        }
+        return;
+    }
+    if (name == kProperty_ClientIP) {
+        GetRequestContext().SetClientIP(value);
+        return;
+    }
+    if (name == kProperty_SessionID) {
+        GetRequestContext().SetSessionID(value);
+        return;
+    }
+    if (name == kProperty_ReqStatus) {
+        GetRequestContext().SetRequestStatus(
+            NStr::StringToInt(value, NStr::fConvErr_NoThrow));
+        return;
+    }
+    if (name == kProperty_BytesRd) {
+        GetRequestContext().SetBytesRd(
+            NStr::StringToInt8(value, NStr::fConvErr_NoThrow));
+        return;
+    }
+    if (name == kProperty_BytesWr) {
+        GetRequestContext().SetBytesWr(
+            NStr::StringToInt8(value, NStr::fConvErr_NoThrow));
+        return;
+    }
+    if (name == kProperty_ReqTime) {
+        // Can not set this property
+        return;
+    }
+
     if ( mode == eProp_Default ) {
         mode = IsGlobalProperty(name) ? eProp_Global : eProp_Thread;
     }
@@ -868,7 +995,7 @@ void CDiagContext::SetProperty(const string& name,
     else {
         TProperties* props =
             CDiagContextThreadData::GetThreadData().GetProperties(
-            CDiagContextThreadData::eProp_Create);
+            CDiagContextThreadData::eProp_Create); /* NCBI_FAKE_WARNING */
         _ASSERT(props);
         (*props)[name] = value;
     }
@@ -879,14 +1006,57 @@ void CDiagContext::SetProperty(const string& name,
 }
 
 
-const string& CDiagContext::GetProperty(const string& name,
-                                        EPropertyMode mode) const
+string CDiagContext::GetProperty(const string& name,
+                                 EPropertyMode mode) const
 {
+    // Global properties
+    if (name == kProperty_UserName) {
+        return GetUsername();
+    }
+    if (name == kProperty_HostName) {
+        return GetHostname();
+    }
+    if (name == kProperty_HostIP) {
+        return GetHostIP();
+    }
+    if (name == kProperty_AppName) {
+        return GetAppName();
+    }
+    if (name == kProperty_ExitCode) {
+        return NStr::IntToString(m_ExitCode);
+    }
+    if (name == kProperty_ExitSig) {
+        return NStr::IntToString(m_ExitSig);
+    }
+
+    // Request properties
+    if (name == kProperty_AppState) {
+        return s_AppStateToStr(GetAppState());
+    }
+    if (name == kProperty_ClientIP) {
+        return GetRequestContext().GetClientIP();
+    }
+    if (name == kProperty_SessionID) {
+        return GetRequestContext().GetSessionID();
+    }
+    if (name == kProperty_ReqStatus) {
+        return NStr::IntToString(GetRequestContext().GetRequestStatus());
+    }
+    if (name == kProperty_BytesRd) {
+        return NStr::Int8ToString(GetRequestContext().GetBytesRd());
+    }
+    if (name == kProperty_BytesWr) {
+        return NStr::Int8ToString(GetRequestContext().GetBytesWr());
+    }
+    if (name == kProperty_ReqTime) {
+        return GetRequestContext().GetRequestTimer().AsString();
+    }
+
     if (mode == eProp_Thread  ||
         (mode == eProp_Default  &&  !IsGlobalProperty(name))) {
         TProperties* props =
             CDiagContextThreadData::GetThreadData().GetProperties(
-            CDiagContextThreadData::eProp_Get);
+            CDiagContextThreadData::eProp_Get); /* NCBI_FAKE_WARNING */
         if ( props ) {
             TProperties::const_iterator tprop = props->find(name);
             if ( tprop != props->end() ) {
@@ -911,7 +1081,7 @@ void CDiagContext::DeleteProperty(const string& name,
         (mode ==  eProp_Default  &&  !IsGlobalProperty(name))) {
         TProperties* props =
             CDiagContextThreadData::GetThreadData().GetProperties(
-            CDiagContextThreadData::eProp_Get);
+            CDiagContextThreadData::eProp_Get); /* NCBI_FAKE_WARNING */
         if ( props ) {
             TProperties::iterator tprop = props->find(name);
             if ( tprop != props->end() ) {
@@ -943,7 +1113,7 @@ void CDiagContext::PrintProperties(void)
     }}
     TProperties* props =
             CDiagContextThreadData::GetThreadData().GetProperties(
-            CDiagContextThreadData::eProp_Get);
+            CDiagContextThreadData::eProp_Get); /* NCBI_FAKE_WARNING */
     if ( !props ) {
         return;
     }
@@ -1079,35 +1249,62 @@ void CDiagContext::PrintRequestStop(void)
 }
 
 
-void CDiagContext::SetAppState(EAppState state, EPropertyMode mode)
+CDiagContext::EAppState CDiagContext::GetGlobalAppState(void) const
 {
-    // Always reset thread-local property to allow global one to
-    // become visible.
-    DeleteProperty(kProperty_AppState, eProp_Thread);
+    CMutexGuard LOCK(s_DiagMutex);
+    return m_AppState;
+}
+
+
+CDiagContext::EAppState CDiagContext::GetAppState(void) const
+{
+    // This checks thread's state first, then calls GetAppState if necessary.
+    return GetRequestContext().GetAppState();
+}
+
+
+void CDiagContext::SetGlobalAppState(EAppState state)
+{
+    CMutexGuard LOCK(s_DiagMutex);
+    m_AppState = state;
+}
+
+
+void CDiagContext::SetAppState(EAppState state)
+{
+    CRequestContext& ctx = GetRequestContext();
     switch ( state ) {
     case eState_AppBegin:
-        SetProperty(kProperty_AppState, "AB",
-            mode == eProp_Default ? eProp_Global : mode);
-        break;
     case eState_AppRun:
-        SetProperty(kProperty_AppState, "A",
-            mode == eProp_Default ? eProp_Global : mode);
-        break;
     case eState_AppEnd:
-        SetProperty(kProperty_AppState, "AE",
-            mode == eProp_Default ? eProp_Global : mode);
-        break;
+        {
+            ctx.SetAppState(eState_NotSet);
+            CMutexGuard LOCK(s_DiagMutex);
+            m_AppState = state;
+            break;
+        }
     case eState_RequestBegin:
-        SetProperty(kProperty_AppState, "RB",
-            mode == eProp_Default ? eProp_Thread : mode);
-        break;
     case eState_Request:
-        SetProperty(kProperty_AppState, "R",
-            mode == eProp_Default ? eProp_Thread : mode);
-        break;
     case eState_RequestEnd:
-        SetProperty(kProperty_AppState, "RE",
-            mode == eProp_Default ? eProp_Thread : mode);
+        ctx.SetAppState(state);
+        break;
+    default:
+        ERR_POST_X(17, Warning << "Invalid EAppState value");
+    }
+}
+
+
+void CDiagContext::SetAppState(EAppState state, EPropertyMode mode)
+{
+    switch ( mode ) {
+    case eProp_Default:
+        SetAppState(state);
+        break;
+    case eProp_Global:
+        SetGlobalAppState(state);
+        break;
+    case eProp_Thread:
+        GetRequestContext().SetAppState(state);
         break;
     }
 }
@@ -1168,13 +1365,13 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
          << setw(0) << msg.GetTime().AsString(kDiagTimeFormat) << ' '
          << setfill(' ') << setiosflags(IOS_BASE::left)
          << setw(kDiagW_Host)
-         << (host.empty() ? "UNK_HOST" : host.c_str()) << ' '
+         << (host.empty() ? kUnknown_Host : host.c_str()) << ' '
          << setw(kDiagW_Client)
-         << (client.empty() ? "UNK_CLIENT" : client.c_str()) << ' '
+         << (client.empty() ? kUnknown_Client : client.c_str()) << ' '
          << setw(kDiagW_Session)
-         << (session.empty() ? "UNK_SESSION" : session.c_str()) << ' '
+         << (session.empty() ? kUnknown_Session : session.c_str()) << ' '
          << resetiosflags(IOS_BASE::left) << setw(0)
-         << (app.empty() ? "UNK_APP" : app.c_str()) << ' ';
+         << (app.empty() ? kUnknown_App : app.c_str()) << ' ';
 }
 
 
@@ -1183,8 +1380,6 @@ void RequestStopWatchTlsCleanup(CStopWatch* value, void* /*cleanup_data*/)
     delete value;
 }
 
-
-static const char* kZeroStr = "0";
 
 void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                                   const string&            message)
@@ -1204,68 +1399,30 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     case SDiagMessage::eEvent_RequestStart:
         {
             // Reset properties
-            DeleteProperty(kProperty_ReqStatus);
-            DeleteProperty(kProperty_ReqTime);
-            DeleteProperty(kProperty_BytesRd);
-            DeleteProperty(kProperty_BytesWr);
-            // Start stopwatch
-            CStopWatch* sw =
-                CDiagContextThreadData::GetThreadData().GetOrCreateStopWatch();
-            _ASSERT(sw);
-            sw->Restart();
+            CRequestContext& ctx = GetRequestContext();
+            ctx.SetRequestStatus(0);
+            ctx.SetBytesRd(0);
+            ctx.SetBytesWr(0);
+            ctx.GetRequestTimer().Restart();
             break;
         }
     case SDiagMessage::eEvent_Stop:
-        prop = GetProperty(kProperty_ExitCode);
-        if ( prop.empty() ) {
-            prop = kZeroStr;
-        }
-        ostr << prop;
-        ostr << " " << m_StopWatch->AsString();
-        prop = GetProperty(kProperty_ExitSig);
-        if ( !prop.empty() ) {
-            ostr << " SIG=" << prop;
+        ostr << NStr::IntToString(GetExitCode())
+            << " " << m_StopWatch->AsString();
+        if (GetExitSignal() != 0) {
+            ostr << " SIG=" << GetExitSignal();
         }
         need_space = true;
         break;
     case SDiagMessage::eEvent_RequestStop:
         {
-            prop = GetProperty(kProperty_ReqStatus);
-            if ( prop.empty() ) {
-                prop = kZeroStr;
-            }
-            ostr << prop;
-            prop = GetProperty(kProperty_ReqTime);
-            if ( prop.empty() ) {
-                // Try to get time from the stopwatch
-                CStopWatch* sw =
-                    CDiagContextThreadData::GetThreadData().
-                    GetOrCreateStopWatch();
-                if ( sw ) {
-                    prop = sw->AsString();
-                    CDiagContextThreadData::GetThreadData().ResetStopWatch();
-                }
-                else {
-                    prop = kZeroStr;
-                }
-            }
-            ostr << " " << prop;
-            prop = GetProperty(kProperty_BytesRd);
-            if ( prop.empty() ) {
-                prop = kZeroStr;
-            }
-            ostr << " " << prop;
-            prop = GetProperty(kProperty_BytesWr);
-            if ( prop.empty() ) {
-                prop = kZeroStr;
-            }
-            ostr << " " << prop;
+            CRequestContext& ctx = GetRequestContext();
+            ostr << ctx.GetRequestStatus() << " "
+                << ctx.GetRequestTimer().AsString() << " "
+                << ctx.GetBytesRd() << " "
+                << ctx.GetBytesWr();
             need_space = true;
-            // Reset properties
-            DeleteProperty(kProperty_ReqStatus);
-            DeleteProperty(kProperty_ReqTime);
-            DeleteProperty(kProperty_BytesRd);
-            DeleteProperty(kProperty_BytesWr);
+            ctx.Reset();
             break;
         }
     }
@@ -1310,18 +1467,6 @@ bool CDiagContext::IsUsingSystemThreadId(void)
 void CDiagContext::UseSystemThreadId(bool value)
 {
     TPrintSystemTID::SetDefault(value);
-}
-
-
-void CDiagContext::SetUsername(const string& username)
-{
-    SetProperty(kProperty_UserName, username);
-}
-
-
-void CDiagContext::SetHostname(const string& hostname)
-{
-    SetProperty(kProperty_HostName, hostname);
 }
 
 
@@ -2068,7 +2213,7 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
         CDiagContextThreadData::GetThreadData();
     m_PID = ctx.GetPID();
     m_TID = thr_data.GetTID();
-    m_RequestId = thr_data.GetRequestId();
+    m_RequestId = thr_data.GetRequestContext().GetRequestID();
     m_ProcPost = ctx.GetProcessPostNumber(ePostNumber_Increment);
     m_ThrPost = thr_data.GetThreadPostNumber(ePostNumber_Increment);
 }
@@ -2454,12 +2599,13 @@ bool SDiagMessage::ParseMessage(const string& message)
         if (sl_pos < sp_pos) {
             // Newer format, app state is present.
             m_RequestId = s_ParseInt(message, pos, 0, '/');
-            m_Data->m_AppState = s_ParseStr(message, pos, ' ', true);
+            m_Data->m_AppState =
+                s_StrToAppState(s_ParseStr(message, pos, ' ', true));
         }
         else {
             // Older format, no app state.
             m_RequestId = s_ParseInt(message, pos, 0, ' ');
-            m_Data->m_AppState = "A";
+            m_Data->m_AppState = CDiagContext::eState_AppRun;
         }
 
         if (message[pos + kDiagW_UID] != ' ') {
@@ -3267,16 +3413,18 @@ void SDiagMessage::x_InitData(void) const
 
 void SDiagMessage::x_SaveContextData(void) const
 {
-    CDiagContext& ctx = GetDiagContext();
     if ( m_Data ) {
         return;
     }
     x_InitData();
-    m_Data->m_Host = ctx.GetHost();
-    m_Data->m_Client = ctx.GetProperty(CDiagContext::kProperty_ClientIP);
-    m_Data->m_Session = ctx.GetProperty(CDiagContext::kProperty_SessionID);
-    m_Data->m_AppName = ctx.GetProperty(CDiagContext::kProperty_AppName);
-    m_Data->m_AppState = ctx.GetProperty(CDiagContext::kProperty_AppState);
+    CDiagContext& dctx = GetDiagContext();
+    m_Data->m_Host = dctx.GetHost();
+    m_Data->m_AppName = dctx.GetAppName();
+    m_Data->m_AppState = dctx.GetAppState();
+
+    CRequestContext& rctx = dctx.GetRequestContext();
+    m_Data->m_Client = rctx.GetClientIP();
+    m_Data->m_Session = rctx.GetSessionID();
 }
 
 
@@ -3291,19 +3439,15 @@ const string& SDiagMessage::GetHost(void) const
 
 const string& SDiagMessage::GetClient(void) const
 {
-    if ( m_Data ) {
-        return m_Data->m_Client;
-    }
-    return GetDiagContext().GetProperty(CDiagContext::kProperty_ClientIP);
+    return m_Data ? m_Data->m_Client
+        : GetDiagContext().GetRequestContext().GetClientIP();
 }
 
 
 const string& SDiagMessage::GetSession(void) const
 {
-    if ( m_Data ) {
-        return m_Data->m_Session;
-    }
-    return GetDiagContext().GetProperty(CDiagContext::kProperty_SessionID);
+    return m_Data ? m_Data->m_Session
+        : GetDiagContext().GetRequestContext().GetSessionID();
 }
 
 
@@ -3312,16 +3456,18 @@ const string& SDiagMessage::GetAppName(void) const
     if ( m_Data ) {
         return m_Data->m_AppName;
     }
-    return GetDiagContext().GetProperty(CDiagContext::kProperty_AppName);
+    return GetDiagContext().GetAppName();
 }
 
 
-const string& SDiagMessage::GetAppState(void) const
+const char* SDiagMessage::GetAppState(void) const
 {
-    if ( m_Data ) {
-        return m_Data->m_AppState;
+    CDiagContext::EAppState state = m_Data
+        ? m_Data->m_AppState : CDiagContext::eState_NotSet;
+    if (state == CDiagContext::eState_NotSet) {
+        state = GetDiagContext().GetAppState();
     }
-    return GetDiagContext().GetProperty(CDiagContext::kProperty_AppState);
+    return s_AppStateToStr(state);
 }
 
 

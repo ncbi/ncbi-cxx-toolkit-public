@@ -39,6 +39,7 @@
 #include <corelib/ncbi_system.hpp> // for SuppressSystemMessageBox
 #include <corelib/rwstream.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/request_ctx.hpp>
 
 #include <util/multi_writer.hpp>
 #include <util/cache/icache.hpp>
@@ -216,6 +217,7 @@ int CCgiApplication::Run(void)
 
             VerifyCgiContext(*m_Context);
             ProcessHttpReferer();
+            LogRequest();
 
             try {
                 m_Cache.reset( GetCacheStorage() );
@@ -319,6 +321,8 @@ int CCgiApplication::Run(void)
 }
 
 
+const char* kExtraType_CGI = "NCBICGI";
+
 void CCgiApplication::ProcessHttpReferer(void)
 {
     // Set HTTP_REFERER
@@ -331,23 +335,44 @@ void CCgiApplication::ProcessHttpReferer(void)
             ref += "?" + args;
         }
         GetConfig().Set("CONN", "HTTP_REFERER", ref);
+    }
+}
+
+
+void CCgiApplication::LogRequest(void) const
+{
+    const CCgiContext& ctx = GetContext();
+    string str;
+    if ( s_PrintSelfUrlParam.Get() ) {
         // Print script URL
-        if ( s_PrintSelfUrlParam.Get() ) {
-            GetDiagContext().Extra().Print("SELF_URL", ref);
+        str = ctx.GetSelfURL();
+        if ( !str.empty() ) {
+            string args =
+                ctx.GetRequest().GetProperty(eCgi_QueryString);
+            if ( !args.empty() ) {
+                str += "?" + args;
+            }
+            GetDiagContext().Extra().
+                //SetType(kExtraType_CGI).
+                Print("SELF_URL", str);
         }
     }
     // Print HTTP_REFERER
     if ( s_PrintRefererParam.Get() ) {
-        ref = ctx.GetRequest().GetProperty(eCgi_HttpReferer);
-        if ( !ref.empty() ) {
-            GetDiagContext().Extra().Print("HTTP_REFERER", ref);
+        str = ctx.GetRequest().GetProperty(eCgi_HttpReferer);
+        if ( !str.empty() ) {
+            GetDiagContext().Extra().
+                //SetType(kExtraType_CGI).
+                Print("HTTP_REFERER", str);
         }
     }
     // Print USER_AGENT
     if ( s_PrintUserAgentParam.Get() ) {
-        string agent = ctx.GetRequest().GetProperty(eCgi_HttpUserAgent);
-        if ( !agent.empty() ) {
-            GetDiagContext().Extra().Print("USER_AGENT", agent);
+        str = ctx.GetRequest().GetProperty(eCgi_HttpUserAgent);
+        if ( !str.empty() ) {
+            GetDiagContext().Extra().
+                //SetType(kExtraType_CGI).
+                Print("USER_AGENT", str);
         }
     }
 }
@@ -457,7 +482,7 @@ CCgiContext* CCgiApplication::CreateContext
     return
         new CCgiContext(*this, args, env, inp, out, ifd, ofd,
                         (errbuf_size >= 0) ? (size_t) errbuf_size : 256,
-                        m_RequestFlags | CCgiRequest::fSetDiagProperties);
+                        m_RequestFlags);
 }
 
 
@@ -506,7 +531,6 @@ CCgiApplication::CCgiApplication(void)
    m_Iteration(0),
    m_ArgContextSync(false),
    m_HTTPStatus(200),
-   m_RequestTimer(CStopWatch::eStop),
    m_IsResultReady(true),
    m_ShouldExit(false)
 {
@@ -621,50 +645,36 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
 
             // Set context properties
             const CCgiRequest& req = m_Context->GetRequest();
-            GetDiagContext().SetProperty("server_name",
-                req.GetProperty(eCgi_ServerName));
 
             // Print request start message
             if ( !CDiagContext::IsSetOldPostFormat() ) {
                 GetDiagContext().PrintRequestStart(req.GetCGIEntriesStr());
             }
-
-            // Start timer
-            m_RequestTimer.Restart();
             break;
         }
     case eSuccess:
     case eError:
     case eException:
         {
-            GetDiagContext().SetProperty(CDiagContext::kProperty_ReqStatus,
-                NStr::IntToString(m_HTTPStatus));
+            CRequestContext& rctx = GetDiagContext().GetRequestContext();
+            rctx.SetRequestStatus(m_HTTPStatus);
             if ( m_InputStream.get() ) {
                 if ( m_InputStream->eof() ) {
                     m_InputStream->clear();
                 }
-                GetDiagContext().SetProperty(CDiagContext::kProperty_BytesRd,
-                    NStr::Int8ToString(
-                    NcbiStreamposToInt8(m_InputStream->tellg())));
+                rctx.SetBytesRd(NcbiStreamposToInt8(m_InputStream->tellg()));
             }
             if ( m_OutputStream.get() ) {
-                GetDiagContext().SetProperty(CDiagContext::kProperty_BytesWr,
-                    NStr::Int8ToString(
-                    NcbiStreamposToInt8(m_OutputStream->tellp())));
+                rctx.SetBytesWr(NcbiStreamposToInt8(m_OutputStream->tellp()));
             }
             break;
         }
     case eEndRequest:
         {
-            GetDiagContext().SetProperty(CDiagContext::kProperty_ReqTime,
-                m_RequestTimer.AsString());
             if ( !CDiagContext::IsSetOldPostFormat() ) {
+                // This will also reset request context
                 GetDiagContext().PrintRequestStop();
             }
-            GetDiagContext().SetProperty(
-                CDiagContext::kProperty_ClientIP, kEmptyStr);
-            GetDiagContext().SetProperty(
-                CDiagContext::kProperty_SessionID, kEmptyStr);
             break;
         }
     case eExit:
@@ -1022,8 +1032,7 @@ void CCgiApplication::AppStart(void)
 
 void CCgiApplication::AppStop(int exit_code)
 {
-    GetDiagContext().SetProperty(CDiagContext::kProperty_ExitCode,
-        NStr::IntToString(exit_code));
+    GetDiagContext().SetExitCode(exit_code);
 }
 
 
