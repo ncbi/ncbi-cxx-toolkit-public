@@ -526,47 +526,8 @@ const CCgiArgs& CUrl::GetArgs(void) const
 
 extern SIZE_TYPE URL_DecodeInPlace(string& str, EUrlDecode decode_flag)
 {
-    SIZE_TYPE len = str.length();
-    if ( !len ) {
-        return 0;
-    }
-
-    SIZE_TYPE p = 0;
-    for (SIZE_TYPE pos = 0;  pos < len;  p++) {
-        switch ( str[pos] ) {
-        case '%': {
-            // Accordingly RFC 1738 the '%' character is unsafe
-            // and should be always encoded, but sometimes it is
-            // not really encoded...
-            if (pos + 2 > len) {
-                str[p] = str[pos++];
-            } else {
-                int n1 = NStr::HexChar(str[pos+1]);
-                int n2 = NStr::HexChar(str[pos+2]);
-                if (n1 < 0  ||  n1 > 15  || n2 < 0  ||  n2 > 15) {
-                    str[p] = str[pos++];
-                } else {
-                    str[p] = (n1 << 4) | n2;
-                    pos += 3;
-                }
-            }
-            break;
-        }
-        case '+': {
-            if ( decode_flag == eUrlDecode_All ) {
-                str[p] = ' ';
-            }
-            pos++;
-            break;
-        }
-        default:
-            str[p] = str[pos++];
-        }
-    }
-    if (p < len) {
-        str[p] = '\0';
-        str.resize(p);
-    }
+    NStr::URLDecodeInPlace(str, decode_flag == eUrlDecode_All ?
+        NStr::eUrlDec_All : NStr::eUrlDec_Percent);
     return 0;
 }
 
@@ -577,218 +538,31 @@ extern string URL_DecodeString(const string& str,
     if (encode_flag == eUrlEncode_None) {
         return str;
     }
-    string    x_str   = str;
-    SIZE_TYPE err_pos =
-        URL_DecodeInPlace(x_str,
-        (encode_flag == eUrlEncode_PercentOnly)
-        ? eUrlDecode_Percent : eUrlDecode_All);
-    if (err_pos != 0) {
-        NCBI_THROW2(CCgiArgsParserException, eFormat,
-                    "URL_DecodeString(\"" + NStr::PrintableString(str) + "\")",
-                    err_pos);
-    }
-    return x_str;
+    return NStr::URLDecode(str, encode_flag == eUrlEncode_PercentOnly ?
+        NStr::eUrlDec_Percent : NStr::eUrlDec_All);
 }
 
 
 extern string URL_EncodeString(const string& str,
                                EUrlEncode encode_flag)
 {
-    static const char s_Encode[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
-        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
-        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
-        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
-        "+",   "!",   "%22", "%23", "$",   "%25", "%26", "'",
-        "(",   ")",   "*",   "%2B", ",",   "-",   ".",   "%2F",
-        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
-        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
-        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
-        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "_",
-        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
-        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
-        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
-        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
-        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
-        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
-        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
-        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
-        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
-        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
-        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
-        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
-        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
-        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
-        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
-        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
-    };
-
-    static const char s_EncodeMarkChars[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
-        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
-        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
-        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
-        "+",   "%21", "%22", "%23", "%24", "%25", "%26", "%27",
-        "%28", "%29", "%2A", "%2B", "%2C", "%2D", "%2E", "%2F",
-        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
-        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
-        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
-        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "%5F",
-        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
-        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
-        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
-        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
-        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
-        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
-        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
-        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
-        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
-        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
-        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
-        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
-        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
-        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
-        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
-        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
-    };
-
-    static const char s_EncodePercentOnly[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
-        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
-        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
-        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
-        "%20", "%21", "%22", "%23", "%24", "%25", "%26", "%27",
-        "%28", "%29", "%2A", "%2B", "%2C", "%2D", "%2E", "%2F",
-        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
-        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
-        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
-        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "%5F",
-        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
-        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
-        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
-        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
-        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
-        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
-        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
-        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
-        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
-        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
-        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
-        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
-        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
-        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
-        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
-        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
-    };
-
-    static const char s_EncodePath[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
-        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
-        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
-        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
-        "+",   "%21", "%22", "%23", "%24", "%25", "%26", "%27",
-        "%28", "%29", "%2A", "%2B", "%2C", "%2D", ".",   "/",
-        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
-        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
-        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
-        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "%5F",
-        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
-        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
-        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
-        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
-        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
-        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
-        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
-        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
-        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
-        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
-        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
-        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
-        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
-        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
-        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
-        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
-    };
-
-    if (encode_flag == eUrlEncode_None) {
-        return str;
-    }
-
-    string url_str;
-
-    SIZE_TYPE len = str.length();
-    if ( !len )
-        return url_str;
-
-    const char (*encode_table)[4];
+    NStr::EUrlEncode enc = NStr::eUrlEnc_SkipMarkChars;
     switch (encode_flag) {
-    case eUrlEncode_SkipMarkChars:
-        encode_table = s_Encode;
-        break;
+    case eUrlEncode_None:
+        return str;
     case eUrlEncode_ProcessMarkChars:
-        encode_table = s_EncodeMarkChars;
+        enc = NStr::eUrlEnc_ProcessMarkChars;
         break;
     case eUrlEncode_PercentOnly:
-        encode_table = s_EncodePercentOnly;
+        enc = NStr::eUrlEnc_PercentOnly;
         break;
     case eUrlEncode_Path:
-        encode_table = s_EncodePath;
+        enc = NStr::eUrlEnc_Path;
         break;
     default:
-        _TROUBLE;
-        // To keep off compiler warning
-        encode_table = 0;
+        break;
     }
-
-    SIZE_TYPE pos;
-    SIZE_TYPE url_len = len;
-    const unsigned char* cstr = (const unsigned char*)str.c_str();
-    for (pos = 0;  pos < len;  pos++) {
-        if (encode_table[cstr[pos]][0] == '%')
-            url_len += 2;
-    }
-    url_str.reserve(url_len + 1);
-    url_str.resize(url_len);
-
-    SIZE_TYPE p = 0;
-    for (pos = 0;  pos < len;  pos++, p++) {
-        const char* subst = encode_table[cstr[pos]];
-        if (*subst != '%') {
-            url_str[p] = *subst;
-        } else {
-            url_str[  p] = '%';
-            url_str[++p] = *(++subst);
-            url_str[++p] = *(++subst);
-        }
-    }
-
-    _ASSERT( p == url_len );
-    url_str[url_len] = '\0';
-    return url_str;
+    return NStr::URLEncode(str, enc);
 }
 
 
