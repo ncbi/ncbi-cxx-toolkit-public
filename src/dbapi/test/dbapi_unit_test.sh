@@ -8,12 +8,12 @@ ulimit -n 1024 > /dev/null 2>&1
 driver_list="ctlib dblib ftds odbc odbcw ftds_odbc ftds_dblib ftds8" # mysql
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
-	server_list="MSDEV1 SCHUMANN TAPER"
+	server_list="MSDEV1 SCHUMANN"
 	server_mssql="MSDEV1"
 
 	server_mssql2005="MSDEV1"
 else
-	server_list="MS_TEST SYB_TEST TAPER"
+	server_list="MS_TEST SYB_TEST"
 	# "MSSQL67 THALBERG"
 	server_mssql="MS_TEST"
 
