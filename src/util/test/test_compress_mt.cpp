@@ -139,8 +139,20 @@ class CTest : public CThreadedApp
 public:
     bool Thread_Init(int idx);
     bool Thread_Run(int idx);
+    bool TestApp_Args(CArgDescriptions& args);
 };
 
+
+bool CTest::TestApp_Args(CArgDescriptions& args)
+{
+    args.SetUsageContext(GetArguments().GetProgramBasename(),
+                         "Test compression library in MT mode");
+    args.AddDefaultPositional
+        ("lib", "Compression library to test", CArgDescriptions::eString, "all");
+    args.SetConstraint
+        ("lib", &(*new CArgAllow_Strings, "all", "z", "bz2", "lzo"));
+    return true;
+}
 
 bool CTest::Thread_Init(int)
 {
@@ -152,9 +164,9 @@ bool CTest::Thread_Init(int)
 
 bool CTest::Thread_Run(int idx)
 {
-    AutoArray<char> src_buf_arr(kBufLen);
-    char* src_buf = src_buf_arr.get();
-    assert(src_buf);
+    // Get arguments
+    CArgs args = GetArgs();
+    string test = args["lib"].AsString();
 
     // Set a random starting point
     unsigned int seed = (unsigned int)time(0) + idx*999;
@@ -162,6 +174,10 @@ bool CTest::Thread_Run(int idx)
     CRandom gen(seed);
 
     // Preparing a data for compression
+    AutoArray<char> src_buf_arr(kBufLen);
+    char* src_buf = src_buf_arr.get();
+    assert(src_buf);
+
     for (size_t i=0; i<kBufLen; i++) {
         // Use a set of 25 chars [A-Z]
         src_buf[i] = (char)(65+(double)rand()/RAND_MAX*(90-65));
@@ -173,31 +189,31 @@ bool CTest::Thread_Run(int idx)
         _TRACE("====================================\n" << 
                "Data size = " << kDataLength[i] << "\n\n");
 
-        _TRACE("-------------- BZip2 ---------------\n");
-        CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
-                        CBZip2StreamCompressor, CBZip2StreamDecompressor>
-            ::Run(idx, src_buf, kDataLength[i]);
-
-        _TRACE("-------------- Zlib ----------------\n");
-        CTestCompressor<CZipCompression, CZipCompressionFile,
-                        CZipStreamCompressor, CZipStreamDecompressor>
-            ::Run(idx, src_buf, kDataLength[i]);
-
+        if (test == "all"  ||  test == "z") {
+            _TRACE("-------------- Zlib ----------------\n");
+            CTestCompressor<CZipCompression, CZipCompressionFile,
+                            CZipStreamCompressor, CZipStreamDecompressor>
+                ::Run(idx, src_buf, kDataLength[i]);
+        }
+        if (test == "all"  ||  test == "bz2") {
+            _TRACE("-------------- BZip2 ---------------\n");
+            CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
+                            CBZip2StreamCompressor, CBZip2StreamDecompressor>
+                ::Run(idx, src_buf, kDataLength[i]);
+        }
 #if defined(HAVE_LIBLZO)
-        _TRACE("-------------- LZO -----------------\n");
-
-        CTestCompressor<CLZOCompression, CLZOCompressionFile,
-                        CLZOStreamCompressor, CLZOStreamDecompressor>
-            ::Run(idx, src_buf, kDataLength[i]);
+        if (test == "all"  ||  test == "lzo") {
+            _TRACE("-------------- LZO -----------------\n");
+            CTestCompressor<CLZOCompression, CLZOCompressionFile,
+                            CLZOStreamCompressor, CLZOStreamDecompressor>
+                ::Run(idx, src_buf, kDataLength[i]);
+        }
 #endif
-        _TRACE("\nTEST execution completed successfully!\n");
     }
 
     _TRACE("\nTEST execution completed successfully!\n");
- 
     return true;
 }
-
 
 
 //////////////////////////////////////////////////////////////////////////////
