@@ -2203,6 +2203,57 @@
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\request_ctx.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
