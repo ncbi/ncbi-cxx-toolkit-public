@@ -104,9 +104,9 @@ typedef struct meSet
   struct meSet *secondNode;
 } meSet;
 
-meNode *makeNewNode(char *label, int i);
-meNode *makeNode(char *label, meEdge *parentEdge, int index);
-meEdge *makeEdge(char *label, meNode *tail, meNode *head, double weight);
+meNode *makeNewNode(const char *label, int i);
+meNode *makeNode(const char *label, meEdge *parentEdge, int index);
+meEdge *makeEdge(const char *label, meNode *tail, meNode *head, double weight);
 meSet *addToSet(meNode *v, meSet *X);
 meTree *newTree();
 

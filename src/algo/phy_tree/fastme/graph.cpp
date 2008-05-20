@@ -72,7 +72,7 @@ meSet *addToSet(meNode *v, meSet *X)
   return(X);
 }
 
-meNode *makeNode(char *label, meEdge *parentEdge, int index)
+meNode *makeNode(const char *label, meEdge *parentEdge, int index)
 {
   meNode *newNode;  /*points to new meNode added to the graph*/
   newNode = (meNode *) malloc(sizeof(meNode));
@@ -87,7 +87,7 @@ meNode *makeNode(char *label, meEdge *parentEdge, int index)
   return(newNode);
 }
 
-meEdge *makeEdge(char *label, meNode *tail, meNode *head, double weight)
+meEdge *makeEdge(const char *label, meNode *tail, meNode *head, double weight)
 {
   meEdge *newEdge;
   newEdge = (meEdge *) malloc(sizeof(meEdge));
@@ -161,7 +161,7 @@ meNode *copyNode(meNode *v)
   return(w);
 }
 
-meNode *makeNewNode(char *label, int i)
+meNode *makeNewNode(const char *label, int i)
 {
   return(makeNode(label,NULL,i));
 }
