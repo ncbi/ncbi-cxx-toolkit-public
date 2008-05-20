@@ -165,12 +165,20 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase)
 };
 
+static const char* const kSkippableDbXrefs[] = {
+    "BankIt",
+    "NCBIFILE",
+    "TMSMART"
+};
+
 // case sensetive
 typedef CStaticArrayMap<const char*, CDbtag::EDbtagType, PCase_CStr> TDbxrefTypeMap;
+// case insensitive, per the C Toolkit
+typedef CStaticArraySet<const char*, PNocase_CStr> TDbxrefSet;
 
 DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedDb, kApprovedDbXrefs);
 DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedRefSeqDb, kApprovedRefSeqDbXrefs);
-
+DEFINE_STATIC_ARRAY_MAP(TDbxrefSet, sc_SkippableDbXrefs, kSkippableDbXrefs);
 
 // destructor
 CDbtag::~CDbtag(void)
@@ -250,6 +258,13 @@ const char* CDbtag::IsApprovedNoCase(bool refseq) const
     }
 
     return retval;
+}
+
+
+bool CDbtag::IsSkippable(void) const
+{
+    return sc_SkippableDbXrefs.find(GetDb().c_str())
+        != sc_SkippableDbXrefs.end();
 }
 
 

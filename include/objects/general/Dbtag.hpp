@@ -185,6 +185,9 @@ public:
     // Returns the case sensetive DB name if approved, NULL otherwise.
     const char* IsApprovedNoCase(bool refseq = false) const;
 
+    // Test if appropriate to omit from displays, formatting, etc.
+    bool IsSkippable(void) const;
+
     // Retrieve the enumerated type for the dbtag
     EDbtagType GetType(void) const;
 
