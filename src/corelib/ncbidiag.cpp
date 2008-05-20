@@ -1422,7 +1422,6 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                 << ctx.GetBytesRd() << " "
                 << ctx.GetBytesWr();
             need_space = true;
-            ctx.Reset();
             break;
         }
     }
@@ -1443,6 +1442,10 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     mess.m_Event = event;
     buf.DiagHandler(mess);
     ostr.rdbuf()->freeze(false);
+    // Now it's safe to reset the request context
+    if (event == SDiagMessage::eEvent_RequestStop) {
+        GetRequestContext().Reset();
+    }
 }
 
 
