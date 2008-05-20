@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/request_ctx.hpp>
 #include <html/components.hpp>
 #include <html/page.hpp>
 #include <html/jsmenu.hpp>
@@ -53,6 +54,47 @@ typedef map<string, string*> TTemplateCache;
 static CSafeStaticPtr<TTemplateCache> s_TemplateCache;
 
 
+class CHTMLPageStat : public CNCBINode
+{
+    typedef CNCBINode CParent;
+public:
+    CHTMLPageStat(void);
+    ~CHTMLPageStat(void);
+    
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
+};
+
+
+CHTMLPageStat::CHTMLPageStat(void)
+    : CNCBINode("ncbipagestat")
+{
+    return;
+}
+
+
+CHTMLPageStat::~CHTMLPageStat(void)
+{
+    return;
+}
+
+
+CNcbiOstream& CHTMLPageStat::PrintBegin(CNcbiOstream& out, TMode mode)
+{
+    string pg_info = GetDiagContext().GetRequestContext().GetProperty("ncbi_st");
+    if ( pg_info.empty() ) {
+        return out;
+    }
+    CStringPairsParser parser(new CStringDecoder_Url());
+    parser.Parse(pg_info);
+    ITERATE(CStringPairsParser::TStrPairs, it, parser.GetPairs()) {
+        CHTML_meta meta(CHTML_meta::eName, it->first, it->second);
+        meta.PrintBegin(out, mode);
+        out << endl;
+    }
+    return out;
+}
+
+
 // CHTMLBasicPage
 
 CHTMLBasicPage::CHTMLBasicPage(void)
@@ -60,6 +102,7 @@ CHTMLBasicPage::CHTMLBasicPage(void)
       m_CgiApplication(0),
       m_Style(0)
 {
+    AddTagMap("NCBI_PAGE_STAT", new CHTMLPageStat);
     return;
 }
 
@@ -69,6 +112,7 @@ CHTMLBasicPage::CHTMLBasicPage(CCgiApplication* application, int style)
       m_Style(style),
       m_PrintMode(eHTML)
 {
+    AddTagMap("NCBI_PAGE_STAT", new CHTMLPageStat);
     return;
 }
 
