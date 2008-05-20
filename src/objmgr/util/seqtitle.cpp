@@ -146,7 +146,9 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             break;
         }
         case CSeq_id::e_General:
-            general_id = &id->GetGeneral();
+            if ( !id->GetGeneral().IsSkippable() ) {
+                general_id = &id->GetGeneral();
+            }
             break;
         case CSeq_id::e_Tpg:
         case CSeq_id::e_Tpe:
