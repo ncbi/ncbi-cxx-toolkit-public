@@ -10670,6 +10670,21 @@ CDBRedispatchFactoryFactory(IDBServiceMapper::TFactory svc_mapper_factory)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+class CValidator : public CTrivialConnValidator
+{
+public:
+    CValidator(const string& db_name,
+               int attr = eDefaultValidateAttr)
+        : CTrivialConnValidator(db_name, attr)
+        {
+        }
+
+    virtual EConnStatus ValidateException(const CDB_Exception& ex)
+        {
+            return eTempInvalidConn;
+        }
+};
+
 class CValidator01 : public CTrivialConnValidator
 {
 public:
@@ -10797,21 +10812,6 @@ CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
 
     // Same as before but with a customized validator ...
     {
-        class CValidator : public CTrivialConnValidator
-        {
-        public:
-            CValidator(const string& db_name,
-                       int attr = eDefaultValidateAttr)
-            : CTrivialConnValidator(db_name, attr)
-            {
-            }
-
-            virtual EConnStatus ValidateException(const CDB_Exception& ex)
-            {
-                return eTempInvalidConn;
-            }
-        };
-
         // Connection validator to check against DBAPI_Sample ...
         CValidator validator(db_name);
 
