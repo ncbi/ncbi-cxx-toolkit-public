@@ -1979,16 +1979,8 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
         return CVariant( pythonpp::CFloat(obj) );
     } else if ( pythonpp::CString::HasSameType(obj) ) {
         const pythonpp::CString python_str(obj);
-        string std_str(python_str);
-
-        if ( std_str.size() <= 255 ) {
-            return CVariant( std_str );
-        } else {
-            return CVariant::LongChar(
-                std_str.c_str(),
-                std_str.size()
-                );
-        }
+        const string std_str(python_str);
+		return CVariant( std_str );
     }
 
     return CVariant(eDB_UnsupportedType);
