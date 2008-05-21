@@ -33,6 +33,11 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <serial/serial.hpp>
+#include <serial/objistrasn.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objostrasn.hpp>
+#include <serial/objostrasnb.hpp>
 
 #include <algo/structure/struct_util/struct_util.hpp>
 #include <algo/structure/struct_util/su_block_multiple_alignment.hpp>
@@ -41,8 +46,7 @@
 
 #include "struct_util_demo.hpp"
 
-// borrow Cn3D's asn i/o functions
-#include "../src/app/cn3d/asn_reader.hpp"
+#include <memory>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -54,6 +58,83 @@ BEGIN_SCOPE(struct_util)
 #define WARNING_MESSAGE(s) ERR_POST(Warning << "struct_util_demo: " << s)
 #define INFO_MESSAGE(s) ERR_POST(Info << "struct_util_demo: " << s)
 #define TRACE_MESSAGE(s) ERR_POST(Trace << "struct_util_demo: " << s)
+
+// a utility function for reading different types of ASN data from a file
+template < class ASNClass >
+bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, std::string *err)
+{
+    err->erase();
+
+    // initialize the binary input stream
+    CNcbiIfstream inStream(filename, IOS_BASE::in | IOS_BASE::binary);
+    if (!inStream) {
+        *err = "Cannot open file for reading";
+        return false;
+    }
+
+    auto_ptr<CObjectIStream> inObject;
+    if (isBinary) {
+        // Associate ASN.1 binary serialization methods with the input
+        inObject.reset(new CObjectIStreamAsnBinary(inStream));
+    } else {
+        // Associate ASN.1 text serialization methods with the input
+        inObject.reset(new CObjectIStreamAsn(inStream));
+    }
+
+    // Read the asn data
+    bool okay = true;
+    SetDiagTrace(eDT_Disable);
+    try {
+        *inObject >> *ASNobject;
+    } catch (std::exception& e) {
+        *err = e.what();
+        okay = false;
+    }
+    SetDiagTrace(eDT_Default);
+
+    inStream.close();
+    return okay;
+}
+
+// for writing ASN data
+template < class ASNClass >
+bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBinary,
+    std::string *err, EFixNonPrint fixNonPrint = eFNP_Default)
+{
+    err->erase();
+
+    // initialize a binary output stream
+    CNcbiOfstream outStream(filename,
+        isBinary ? (IOS_BASE::out | IOS_BASE::binary) : IOS_BASE::out);
+    if (!outStream) {
+        *err = "Cannot open file for writing";
+        return false;
+    }
+
+    auto_ptr<CObjectOStream> outObject;
+    if (isBinary) {
+        // Associate ASN.1 binary serialization methods with the input
+        outObject.reset(new CObjectOStreamAsnBinary(outStream, fixNonPrint));
+    } else {
+        // Associate ASN.1 text serialization methods with the input
+        outObject.reset(new CObjectOStreamAsn(outStream, fixNonPrint));
+    }
+
+    // write the asn data
+    bool okay = true;
+    SetDiagTrace(eDT_Disable);
+    try {
+        *outObject << ASNobject;
+        outStream.flush();
+    } catch (std::exception& e) {
+        *err = e.what();
+        okay = false;
+    }
+    SetDiagTrace(eDT_Default);
+
+    outStream.close();
+    return okay;
+}
 
 void SUApp::Init(void)
 {
@@ -102,7 +183,7 @@ static bool ReadCD(const string& filename, CCdd *cdd)
 
     string err;
     SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
-    bool readOK = Cn3D::ReadASNFromFile(filename.c_str(), cdd, isBinary, &err);
+    bool readOK = ReadASNFromFile(filename.c_str(), cdd, isBinary, &err);
     SetDiagPostLevel(eDiag_Info);
     if (!readOK)
         ERROR_MESSAGE("can't read input file: " << err);
@@ -184,7 +265,7 @@ int SUApp::Run(void)
 
     // write out processed data
     string err;
-    if (!Cn3D::WriteASNToFile(args["o"].AsString().c_str(), cdd, args["ob"].HasValue(), &err)) {
+    if (!WriteASNToFile(args["o"].AsString().c_str(), cdd, args["ob"].HasValue(), &err)) {
         ERROR_MESSAGE("error writing output file " << args["o"].AsString());
         return 4;
     }
