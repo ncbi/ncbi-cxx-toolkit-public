@@ -906,28 +906,36 @@ public:
     //
 
     /// Operator to add days.
-    CTime& operator+= (int days);
+    /// @deprecated Use AddDay() instead.
+    NCBI_DEPRECATED CTime& operator+= (int days);
 
     /// Operator to subtract days.
-    CTime& operator-= (int days);
+    /// @deprecated Use AddDay() instead.
+    NCBI_DEPRECATED CTime& operator-= (int days);
 
     /// Operator to increment days.
-    CTime& operator++ (void);
+    /// @deprecated Use AddDay(1) instead.
+    NCBI_DEPRECATED CTime& operator++ (void);
 
     /// Operator to decrement days.
-    CTime& operator-- (void);
+    /// @deprecated Use AddDay(-1) instead.
+    NCBI_DEPRECATED CTime& operator-- (void);
 
     /// Operator to increment days.
-    CTime  operator++ (int);
+    /// @deprecated Use AddDay(1) instead.
+    NCBI_DEPRECATED CTime  operator++ (int);
 
     /// Operator to decrement days.
-    CTime  operator-- (int);
+    /// @deprecated Use AddDay(-1) instead.
+    NCBI_DEPRECATED CTime  operator-- (int);
 
     /// Operator to increment days.
-    CTime operator+ (int days) const;
+    /// @deprecated Use AddDay() instead.
+    NCBI_DEPRECATED CTime operator+ (int days) const;
 
     /// Operator to decrement days.
-    CTime operator- (int days) const;
+    /// @deprecated Use AddDay() instead.
+    NCBI_DEPRECATED CTime operator- (int days) const;
 
     //
     // Add/subtract time span
@@ -1121,8 +1129,10 @@ private:
     TData m_Data;  ///< Packed members
 
     // Friend left-hand operators
+    /// @deprecated Use AddDay() instead.
     NCBI_XNCBI_EXPORT
     friend CTime operator+ (int days, const CTime& t);
+    /// @deprecated Use AddDay() instead.
     NCBI_XNCBI_EXPORT
     friend CTime operator+ (const CTimeSpan& ts, const CTime& t);
 
@@ -1618,11 +1628,13 @@ public:
 //=============================================================================
 
 
-// Add/subtract days (see CTime::operator +/-)
-NCBI_XNCBI_EXPORT
+/// Add/subtract days (see CTime::operator +/-)
+/// @deprecated Use CTime::AddDay() instead.
+NCBI_XNCBI_EXPORT NCBI_DEPRECATED
 extern CTime operator + (int days, const CTime& t);
 
-// This operator is deprecated. Use CTime::DiffWholeDays() instead.
+/// This operator is deprecated.
+/// #deprecated Use CTime::DiffWholeDays() instead.
 NCBI_XNCBI_EXPORT NCBI_DEPRECATED
 extern int   operator- (const CTime& t1, const CTime& t2);
 

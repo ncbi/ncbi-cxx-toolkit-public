@@ -65,11 +65,6 @@ static void s_TestMisc(void)
     {{
         CTime t(CTime::eCurrent);
         LOG_POST(STR(t));
-        LOG_POST(STR(t++));
-        LOG_POST(STR(t++));
-        LOG_POST(STR(t++));
-        LOG_POST(STR(++t));
-        LOG_POST(STR(++t));
     }}
 
     // Month and Day name<->num conversion
@@ -119,20 +114,27 @@ static void s_TestMisc(void)
             CTime::SetFormat("M/D/Y");
             LOG_POST("\nYear 2000 problem:");
             CTime t(1999, 12, 30); 
-            t++; LOG_POST(STR(t));
+            t.AddDay();
+            LOG_POST(STR(t));
             assert(t.AsString() == "12/31/1999");
-            t++; LOG_POST(STR(t));
+            t.AddDay();
+            LOG_POST(STR(t));
             assert(t.AsString() == "01/01/2000");
-            t++; LOG_POST(STR(t));
+            t.AddDay();
+            LOG_POST(STR(t));
             assert(t.AsString() == "01/02/2000");
             t="02/27/2000";
-            t++; LOG_POST(STR(t));
+            t.AddDay();
+            LOG_POST(STR(t));
             assert(t.AsString() == "02/28/2000");
-            t++; LOG_POST(STR(t));
+            t.AddDay();
+            LOG_POST(STR(t));
             assert(t.AsString() == "02/29/2000");
-            t++; LOG_POST(STR(t));
+            t.AddDay();
+            LOG_POST(STR(t));
             assert(t.AsString() == "03/01/2000");
-            t++; LOG_POST(STR(t));
+            t.AddDay();
+            LOG_POST(STR(t));
             assert(t.AsString() == "03/02/2000");
         }}
         {{
@@ -391,7 +393,7 @@ static void s_TestMisc(void)
     {{   
         CTime t(1900, 1, 1);
         int i;
-        for (i = 1; t <= CTime(2030, 12, 31); t++,i++) {
+        for (i = 1; t <= CTime(2030, 12, 31); t.AddDay(),i++) {
             assert(t.DayOfWeek() == (i%7));
         }
     }}
@@ -416,7 +418,7 @@ static void s_TestMisc(void)
 
         time_t gt = t.GetTimeT();
 
-        for (i = 1; t <= CTime(2030, 12, 31); i++, t++, gt += 24*3600) {
+        for (i = 1; t <= CTime(2030, 12, 31); i++, t.AddDay(), gt += 24*3600) {
             struct tm *today = gmtime(&gt);
             assert(today != 0);
             int week_num_rtl, week_num, month_week_num;
@@ -827,7 +829,7 @@ static void s_TestGMT(void)
         CTime t(2001, 4, 1);
         t.SetFormat("M/D/Y h:m:s w");
         int i;
-        for (i = 0; t <= CTime(2001, 4, 10); t++,i++) {
+        for (i = 0; t <= CTime(2001, 4, 10); t.AddDay(),i++) {
             LOG_POST(t.AsString() + " is " +NStr::IntToString(t.DayOfWeek()));
             assert(t.DayOfWeek() == (i%7));
         }
@@ -892,7 +894,7 @@ static void s_TestGMT(void)
                  NStr::Int8ToString(ts.TimeZoneDiff() / 3600));
         assert(ts.TimeZoneDiff()/3600 == -4);
 
-        for (; tw < ts; tw++) {
+        for (; tw < ts; tw.AddDay()) {
             if ((tw.TimeZoneDiff() / 3600) == -4) {
                 LOG_POST("First daylight saving day = " + STR(tw));
                 break;
@@ -912,7 +914,7 @@ static void s_TestGMT(void)
                  NStr::Int8ToString(ts.TimeZoneDiff() / 3600));
         assert(ts.TimeZoneDiff() / 3600 == -5);
 
-        for (; tw < ts; tw++) {
+        for (; tw < ts; tw.AddDay()) {
             if ((tw.TimeZoneDiff() / 3600) == -5) {
                 LOG_POST("First non daylight saving day = " + STR(tw));
                 break;
@@ -932,24 +934,31 @@ static void s_TestGMT(void)
 
         t.SetTimeZone(CTime::eGmt);
         LOG_POST("GMT");
-        tn = t + 5;  
+        tn = t;
+        tn.AddDay(5);  
         LOG_POST("+5d   " + STR(tn));
         assert(tn.AsString() == "03/16/2007 01:01:00");
-        tn = t + 40; 
+        tn = t;
+        tn.AddDay(40); 
         LOG_POST("+40d  " + STR(tn));
         assert(tn.AsString() == "04/20/2007 01:01:00");
 
         t.SetTimeZone(CTime::eLocal);
         LOG_POST("Local eNone");
         t.SetTimeZonePrecision(CTime::eNone);
-        tn=t+5;  LOG_POST("+5d   " + STR(tn));
+        tn = t;
+        tn.AddDay(5);
+        LOG_POST("+5d   " + STR(tn));
         assert(tn.AsString() == "03/16/2007 01:01:00");
-        tn=t+40; LOG_POST("+40d  " + STR(tn));
+        tn = t;
+        tn.AddDay(40);
+        LOG_POST("+40d  " + STR(tn));
         assert(tn.AsString() == "04/20/2007 01:01:00");
 
         t.SetTimeZonePrecision(CTime::eMonth);
         LOG_POST("Local eMonth");
-        tn = t + 5;
+        tn = t;
+        tn.AddDay(5);
         LOG_POST("+5d   " + STR(tn));
         tn = t; 
         tn.AddMonth(-1);
@@ -962,13 +971,15 @@ static void s_TestGMT(void)
 
         t.SetTimeZonePrecision(CTime::eDay);
         LOG_POST("Local eDay");
-        tn = t - 1; 
+        tn = t;
+        tn.AddDay(-1); 
         LOG_POST("-1d   " + STR(tn));
         assert(tn.AsString() == "03/10/2007 01:01:00");
-        tn++;   
+        tn.AddDay();   
         LOG_POST("+0d   " + STR(tn));
         assert(tn.AsString() == "03/11/2007 01:01:00");
-        tn = t + 1; 
+        tn = t;
+        tn.AddDay(); 
         LOG_POST("+1d   " + STR(tn));
         assert(tn.AsString() == "03/12/2007 02:01:00");
 

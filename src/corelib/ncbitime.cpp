@@ -325,7 +325,7 @@ CTime::CTime(int year, int yearDayNumber,
     m_Data.tzprec = tzp;
 
     CTime t = CTime(year, 1, 1);
-    t += yearDayNumber - 1;
+    t.AddDay(yearDayNumber - 1);
     m_Data.year  = t.Year();
     m_Data.month = t.Month();
     m_Data.day   = t.Day();
@@ -1255,18 +1255,20 @@ static void s_GetTimeT(time_t& timer, long& ns)
 #elif defined(NCBI_OS_UNIX)
     struct timeval tp;
     if (gettimeofday(&tp,0) == -1) {
-        timer = 0;
-        ns = 0;
+        timer = -1;
     } else {
         timer = tp.tv_sec;
         ns = long((double)tp.tv_usec *
                   (double)kNanoSecondsPerSecond /
                   (double)kMicroSecondsPerSecond);
     }
-#else // NCBI_OS_MAC
+#else
     timer = time(0);
     ns = 0;
 #endif
+    if (timer == (time_t)(-1)) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  Unable to get time value");
+    }
 }
 
 
