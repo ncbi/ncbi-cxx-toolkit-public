@@ -36,6 +36,7 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 
 
 
@@ -56,7 +57,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// Define class for storing version information.
 
-class NCBI_XNCBI_EXPORT CVersionInfo
+class NCBI_XNCBI_EXPORT CVersionInfo : public CObject
 {
 public:
     /// Default constructor
@@ -153,6 +154,110 @@ protected:
     int          m_Minor;       ///< Minor number
     int          m_PatchLevel;  ///< Patch level
     string       m_Name;        ///< Name
+};
+
+
+class NCBI_XNCBI_EXPORT CComponentVersionInfo : public CVersionInfo
+{
+public:
+
+    /// Constructor
+    CComponentVersionInfo( const string& component_name,
+                           int  ver_major,
+                           int  ver_minor,
+                           int  patch_level = 0,
+                           const string& ver_name = kEmptyStr);
+
+    /// Constructor
+    ///
+    /// @param component_name
+    ///    component name
+    /// @param version
+    ///    version string (eg, 1.2.4)
+    /// @param ver_name
+    ///    version name
+    CComponentVersionInfo( const string& component_name,
+                           const string& version,
+                           const string& ver_name = kEmptyStr);
+
+    /// Copy constructor.
+    CComponentVersionInfo(const CComponentVersionInfo& version);
+
+    /// Assignment.
+    CComponentVersionInfo& operator=(const CComponentVersionInfo& version);
+
+    /// Destructor.
+    virtual ~CComponentVersionInfo() {}
+
+    /// Get component name
+    const string& GetComponentName(void) const
+    {
+        return m_ComponentName;
+    }
+
+    /// Print version information.
+    virtual string Print(void) const;
+
+private:
+    // default ctor
+    CComponentVersionInfo(void);
+    string m_ComponentName;
+};
+
+
+class NCBI_XNCBI_EXPORT CVersion : public CObject
+{
+public:
+
+    CVersion(void);
+    
+    CVersion(const CVersionInfo& version);
+
+    /// Copy constructor.
+    CVersion(const CVersion& version);
+    /// Destructor.
+    virtual ~CVersion(void)
+    {
+    }
+    
+    /// Set version information
+    void SetVersionInfo( int  ver_major,
+                         int  ver_minor,
+                         int  patch_level = 0,
+                         const string& ver_name = kEmptyStr);
+    /// Set version information
+    void SetVersionInfo( const CVersionInfo& version);
+    /// Get version information
+    CVersionInfo GetVersionInfo( ) const;
+
+    /// Add component version information
+    void AddComponentVersion( const string& component_name,
+                              int           ver_major,
+                              int           ver_minor,
+                              int           patch_level = 0,
+                              const string& ver_name = kEmptyStr);
+    /// Add component version information
+    void AddComponentVersion( const CComponentVersionInfo& component);
+
+    static string GetPackageName(void);
+    static CVersionInfo GetPackageVersion(void);
+    static string GetPackageConfig(void);
+
+    enum EPrintFlags {
+        fVersionInfo    = 0x01,  ///< Print version info
+        fComponents     = 0x02,  ///< Print components version info
+        fPackageShort   = 0x04,  ///< Print package info, if available
+        fPackageFull    = 0x08,  ///< Print package info, if available
+        fPrintAll       = 0xFF,  ///< Print all version data
+    };
+    typedef int TPrintFlags;  ///< Binary OR of EPrintFlags
+    
+    /// Print version data.
+    string Print(const string& appname, TPrintFlags flags = fPrintAll) const;
+
+private:
+    CRef< CVersionInfo > m_VersionInfo;
+    vector< CRef< CComponentVersionInfo> > m_Components;
 };
 
 

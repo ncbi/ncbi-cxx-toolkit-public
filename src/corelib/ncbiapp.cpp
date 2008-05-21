@@ -69,6 +69,7 @@ BEGIN_NCBI_SCOPE
 static const char* s_ArgLogFile = "-logfile";
 static const char* s_ArgCfgFile = "-conffile";
 static const char* s_ArgVersion = "-version";
+static const char* s_ArgFullVersion = "-version-full";
 static const char* s_ArgDryRun  = "-dryrun";
 
 
@@ -106,7 +107,7 @@ CNcbiApplication::CNcbiApplication(void)
     m_Instance = this;
 
     // Create empty version info
-    m_Version.reset(new CVersionInfo(0,0));
+    m_Version.Reset(new CVersion());
 
     // Create empty application arguments & name
     m_Arguments.reset(new CNcbiArguments(0,0));
@@ -335,7 +336,18 @@ int CNcbiApplication::AppMain
                     continue;
                 }
                 // Print VERSION
-                cout << appname << ": " << GetVersion().Print() << endl;
+                cout << GetFullVersion().Print( appname,
+                    CVersion::fVersionInfo | CVersion::fPackageShort );
+                GetDiagContext().DiscardMessages();
+                return 0;
+
+                // Full version
+            } else if ( NStr::strcmp(argv[i], s_ArgFullVersion) == 0 ) {
+                if ( !argv[i++] ) {
+                    continue;
+                }
+                // Print full VERSION
+                cout << GetFullVersion().Print( appname );
                 GetDiagContext().DiscardMessages();
                 return 0;
 
@@ -483,6 +495,12 @@ int CNcbiApplication::AppMain
                         (s_ArgVersion + 1,
                          "Print version number;  ignore other arguments");
                 }
+                if ((m_HideArgs & fHideFullVersion) == 0  &&
+                    !m_ArgDesc->Exist(s_ArgFullVersion + 1)) {
+                    m_ArgDesc->AddFlag
+                        (s_ArgFullVersion + 1,
+                         "Print extended version data;  ignore other arguments");
+                }
                 if ((m_HideArgs & fHideDryRun) == 0  &&
                     !m_ArgDesc->Exist(s_ArgDryRun + 1)) {
                     m_ArgDesc->AddFlag
@@ -602,11 +620,21 @@ void CNcbiApplication::SetEnvironment(const string& name, const string& value)
 
 void CNcbiApplication::SetVersion(const CVersionInfo& version)
 {
-    m_Version.reset(new CVersionInfo(version));
+    m_Version->SetVersionInfo( version);
+}
+
+void CNcbiApplication::SetFullVersion(const CVersion& version)
+{
+    m_Version.Reset( new CVersion( version ) );
 }
 
 
 CVersionInfo CNcbiApplication::GetVersion(void) const
+{
+    return m_Version->GetVersionInfo();
+}
+
+const CVersion& CNcbiApplication::GetFullVersion(void) const
 {
     return *m_Version;
 }

@@ -279,6 +279,9 @@ public:
 
     /// Get the program version information.
     CVersionInfo GetVersion(void) const;
+
+    /// Get the program version information.
+    const CVersion& GetFullVersion(void) const;
     
     /// Check if it is a test run.
     bool IsDryRun(void) const;
@@ -300,7 +303,7 @@ protected:
     /// which you do not want to be parsed.
     /// Note that by default all cmd.line args are enabled.
     enum EDisableArgDesc {
-        fDisableStdArgs     = 0x01   ///<  (-h, -logfile, -conffile, -version)
+        fDisableStdArgs     = 0x01   ///<  (-logfile, -conffile, -version etc)
         // TODO: fDisableUserArgs    = 0x02   ///<  user-defined cmd.line args
     };
     typedef int TDisableArgDesc;  ///< Binary OR of "EDisableArgDesc"
@@ -314,13 +317,15 @@ protected:
     /// flags in the usage message. Note that you still can pass them in
     /// the command line.
     enum EHideStdArgs {
-        fHideHelp     = 0x01,  ///< Hide help description
-        fHideLogfile  = 0x02,  ///< Hide log file description
-        fHideConffile = 0x04,  ///< Hide configuration file description
-        fHideVersion  = 0x08,  ///< Hide version description
-        fHideDryRun   = 0x10,  ///< Hide dryrun description
-        fHideFullHelp = 0x20,  ///< Hide full help description
-        fHideXmlHelp  = 0x40   ///< Hide XML help description
+        fHideLogfile     = 0x01,  ///< Hide log file description
+        fHideConffile    = 0x02,  ///< Hide configuration file description
+        fHideVersion     = 0x04,  ///< Hide version description
+        fHideFullVersion = 0x08,  ///< Hide full version description
+        fHideDryRun      = 0x10,  ///< Hide dryrun description
+        fHideHelp        = 0x20,  ///< Hide help description
+        fHideFullHelp    = 0x40,  ///< Hide full help description
+        fHideXmlHelp     = 0x80,  ///< Hide XML help description
+        fHideAll         = 0xFF   ///< Hide all standard argument descriptions
     };
     typedef int THideStdArgs;  ///< Binary OR of "EHideStdArgs"
 
@@ -353,6 +358,9 @@ protected:
     ///
     /// If not set, a default of 0.0.0 (unknown) is used.
     void SetVersion(const CVersionInfo& version);
+
+    /// Set version data for the program.
+    void SetFullVersion(const CVersion& version);
 
     /// Setup the command line argument descriptions.
     ///
@@ -478,7 +486,7 @@ private:
     void x_SetupStdio(void);
 
     static CNcbiApplication*   m_Instance;   ///< Current app. instance
-    auto_ptr<CVersionInfo>     m_Version;    ///< Program version
+    CRef<CVersion>             m_Version;    ///< Program version
     auto_ptr<CNcbiEnvironment> m_Environ;    ///< Cached application env.
     CRef<CNcbiRegistry>        m_Config;     ///< Guaranteed to be non-NULL
     auto_ptr<CNcbiOstream>     m_DiagStream; ///< Opt., aux., see eDS_ToMemory

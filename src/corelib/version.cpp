@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/version.hpp>
+#include <common/ncbi_package_ver.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -395,6 +396,144 @@ void ParseVersionString(const string&  vstr,
 
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//  CComponentVersionInfo
+
+CComponentVersionInfo::CComponentVersionInfo( const string& component_name,
+                                              int  ver_major,
+                                              int  ver_minor,
+                                              int  patch_level,
+                                              const string& name)
+    : CVersionInfo(ver_major, ver_minor, patch_level, name),
+      m_ComponentName( component_name )
+{
+}
+
+CComponentVersionInfo::CComponentVersionInfo( const string& component_name,
+                                              const string& version,
+                                              const string& name)
+    : CVersionInfo( version, name),
+      m_ComponentName( component_name )
+      
+{
+}
+
+CComponentVersionInfo::CComponentVersionInfo(
+    const CComponentVersionInfo& version)
+    : CVersionInfo( version),
+      m_ComponentName( version.m_ComponentName )
+      
+{
+}
+
+CComponentVersionInfo& CComponentVersionInfo::operator=(
+    const CComponentVersionInfo& version)
+{
+    m_ComponentName = version.m_ComponentName;
+    CVersionInfo::operator=( version );
+    return *this;
+}
+
+string CComponentVersionInfo::Print(void) const
+{
+    CNcbiOstrstream os;
+    os << GetComponentName() << ": " << CVersionInfo::Print();
+    return CNcbiOstrstreamToString(os);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//  CVersion
+
+CVersion::CVersion(void)
+    : m_VersionInfo( new CVersionInfo(0,0))
+{
+}
+
+CVersion::CVersion(const CVersionInfo& version)
+    : m_VersionInfo( new CVersionInfo(version) )
+{
+}
+
+CVersion::CVersion(const CVersion& version)
+    : m_VersionInfo( version.m_VersionInfo), 
+      m_Components ( version.m_Components)
+{
+}
+
+void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,
+                               int  patch_level, const string& ver_name)
+{
+    m_VersionInfo.Reset( new CVersionInfo(
+        ver_major, ver_minor, patch_level, ver_name) );
+}
+
+void CVersion::SetVersionInfo( const CVersionInfo& version)
+{
+    m_VersionInfo.Reset( new CVersionInfo(version) );
+}
+
+CVersionInfo CVersion::GetVersionInfo(void) const
+{
+    return *m_VersionInfo;
+}
+
+void CVersion::AddComponentVersion(
+    const string& component_name, int  ver_major, int  ver_minor,
+    int  patch_level, const string& ver_name)
+{
+    m_Components.push_back( CRef<CComponentVersionInfo>(
+        new CComponentVersionInfo(component_name, ver_major, ver_minor,
+                                  patch_level, ver_name) ));
+}
+
+void CVersion::AddComponentVersion( const CComponentVersionInfo& component)
+{
+    m_Components.push_back( CRef<CComponentVersionInfo>(
+        new CComponentVersionInfo(component) ));
+}
+
+string CVersion::GetPackageName(void)
+{
+    return NCBI_PACKAGE_NAME;
+}
+
+CVersionInfo CVersion::GetPackageVersion(void)
+{
+    return CVersionInfo(NCBI_PACKAGE_VERSION_MAJOR,
+                        NCBI_PACKAGE_VERSION_MINOR,
+                        NCBI_PACKAGE_VERSION_PATCH);
+}
+
+string CVersion::GetPackageConfig(void)
+{
+    return NCBI_PACKAGE_CONFIG;
+}
+
+string CVersion::Print(const string& appname, TPrintFlags flags) const
+{
+    CNcbiOstrstream os;
+    if (flags & fVersionInfo) {
+        os << appname << ": " << m_VersionInfo->Print() << endl;
+    }
+    if (flags & fComponents) {
+        ITERATE( vector< CRef< CComponentVersionInfo> >, c, m_Components) {
+            os << ' ' <<  (*c)->Print() << endl;
+        }
+    }
+#if NCBI_PACKAGE
+    if (flags & ( fPackageShort | fPackageFull )) {
+        os << "Package: " << GetPackageName() << ' '
+           << GetPackageVersion().Print() << ", build "
+           << __DATE__ << ' ' << __TIME__
+           << endl;
+    }
+    if (flags & fPackageFull) {
+        os << ' ' << NCBI_SIGNATURE << endl;
+        os << ' ' << GetPackageConfig() << endl;
+    }
+#endif
+    return CNcbiOstrstreamToString(os);
+}
 
 
 END_NCBI_SCOPE
