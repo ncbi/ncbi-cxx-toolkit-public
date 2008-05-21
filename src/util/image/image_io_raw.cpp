@@ -106,8 +106,8 @@ CImage* CImageIORaw::ReadImage(CNcbiIstream& istr,
 }
 
 
-bool CImageIORaw::ReadImageInfo(CNcbiIstream& istr,
-                                size_t* width, size_t* height, size_t* depth)
+bool CImageIORaw::ReadImageInfo(CNcbiIstream&,
+                                size_t*, size_t*, size_t*)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIORaw::ReadImageInfo(): RAW format inspection "

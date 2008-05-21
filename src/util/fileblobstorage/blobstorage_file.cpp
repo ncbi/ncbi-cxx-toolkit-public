@@ -84,14 +84,14 @@ CBlobStorage_File::~CBlobStorage_File()
     }
 }
 
-bool CBlobStorage_File::IsKeyValid(const string& str)
+bool CBlobStorage_File::IsKeyValid(const string&)
 {
     return true;
 }
 
 CNcbiIstream& CBlobStorage_File::GetIStream(const string& key,
                                             size_t* blob_size,
-                                            ELockMode lockMode)
+                                            ELockMode)
 {
     if (m_IStream.get())
         NCBI_THROW(CBlobStorageException,
@@ -103,7 +103,8 @@ CNcbiIstream& CBlobStorage_File::GetIStream(const string& key,
                    eBlobNotFound, "Requested blob is not found. " + key);
 
     Int8 fsize = blob.GetLength();
-    m_IStream.reset(new CNcbiIfstream(blob.GetPath().c_str(), IOS_BASE::in | IOS_BASE::binary));
+    m_IStream.reset(new CNcbiIfstream(blob.GetPath().c_str(),
+                                      IOS_BASE::in | IOS_BASE::binary));
     if (!m_IStream->good() || fsize == -1 )
         NCBI_THROW(CBlobStorageException, eReader, 
                    "Reader couldn't create a temporary file. BlobKey: " + key);

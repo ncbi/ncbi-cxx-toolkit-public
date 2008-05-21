@@ -593,12 +593,12 @@ void CDiagContextThreadData::AddCollectGuard(CDiagCollectGuard* guard)
 
 void CDiagContextThreadData::RemoveCollectGuard(CDiagCollectGuard* guard)
 {
-    TCollectGuards::iterator it = find(
+    TCollectGuards::iterator itg = find(
         m_CollectGuards.begin(), m_CollectGuards.end(), guard);
-    if (it == m_CollectGuards.end()) {
+    if (itg == m_CollectGuards.end()) {
         return; // The guard has been already released
     }
-    m_CollectGuards.erase(it);
+    m_CollectGuards.erase(itg);
     if ( !m_CollectGuards.empty() ) {
         return;
         // Previously printing was done for each guard, discarding - only for
@@ -609,8 +609,8 @@ void CDiagContextThreadData::RemoveCollectGuard(CDiagCollectGuard* guard)
     if (guard->GetAction() == CDiagCollectGuard::ePrint) {
         CDiagHandler* handler = GetDiagHandler();
         if ( handler ) {
-            ITERATE(TDiagCollection, it, m_DiagCollection) {
-                handler->Post(*it);
+            ITERATE(TDiagCollection, itc, m_DiagCollection) {
+                handler->Post(*itc);
             }
             size_t discarded = m_DiagCollectionSize - m_DiagCollection.size();
             if (discarded > 0) {
@@ -701,6 +701,7 @@ CDiagContext::EAppState s_StrToAppState(const string& state)
     }
     // Throw to notify caller about invalid app state.
     NCBI_THROW(CException, eUnknown, "Invalid EAppState value");
+    /*NOTREACHED*/
     return CDiagContext::eState_NotSet;
 }
 
@@ -1336,10 +1337,10 @@ static const int   kDiagW_Host     = 15;
 static const int   kDiagW_Client   = 15;
 static const int   kDiagW_Session  = 24;
 
-static char* kUnknown_Host    = "UNK_HOST";
-static char* kUnknown_Client  = "UNK_CLIENT";
-static char* kUnknown_Session = "UNK_SESSION";
-static char* kUnknown_App     = "UNK_APP";
+static const char* kUnknown_Host    = "UNK_HOST";
+static const char* kUnknown_Client  = "UNK_CLIENT";
+static const char* kUnknown_Session = "UNK_SESSION";
+static const char* kUnknown_App     = "UNK_APP";
 
 
 void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,

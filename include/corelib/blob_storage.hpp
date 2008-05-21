@@ -212,14 +212,14 @@ class CBlobStorage_Null : public IBlobStorage
 public:
     virtual ~CBlobStorage_Null() {}
 
-    virtual string        GetBlobAsString( const string& /*blob_key*/)
+    virtual string        GetBlobAsString(const string& /*blob_key*/)
     {
         return "";
     }
 
     virtual CNcbiIstream& GetIStream(const string&,
-                                     size_t* blob_size = 0,
-                                     ELockMode lock_mode = eLockWait)
+                                     size_t* blob_size,
+                                     ELockMode /*lock_mode = eLockWait*/)
     {
         if (blob_size) *blob_size = 0;
         NCBI_THROW(CBlobStorageException,
@@ -233,9 +233,9 @@ public:
     }
 
     virtual bool IsKeyValid(const string&) { return false; }
-    virtual string CreateEmptyBlob() { return kEmptyStr; };
+    virtual string CreateEmptyBlob() { return kEmptyStr; }
     virtual void DeleteBlob(const string&) {}
-    virtual void Reset() {};
+    virtual void Reset() {}
 };
 
 

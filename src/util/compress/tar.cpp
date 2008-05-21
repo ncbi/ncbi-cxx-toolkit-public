@@ -1688,16 +1688,16 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
                 break;
             }
             // Dump header
-            size_t size = (size_t) info.GetSize();
+            size_t hsize = (size_t) info.GetSize();
             if (dump) {
                 s_Dump(m_FileName, m_StreamPos, m_BufferSize, m_Current,
-                       h, fmt, size);
+                       h, fmt, hsize);
             }
             m_StreamPos += ALIGN_SIZE(nread);
             // Read in the extended information
             string buffer;
-            while (size) {
-                nread = size;
+            while (hsize) {
+                nread = hsize;
                 const char* xbuf = x_ReadArchive(nread);
                 if (!xbuf) {
                     TAR_THROW(eRead,
@@ -1710,7 +1710,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
                 }
                 buffer.append(xbuf, nread);
                 m_StreamPos += ALIGN_SIZE(nread);
-                size -= nread;
+                hsize -= nread;
             }
             // Make sure there's no embedded '\0'(s)
             buffer.resize(strlen(buffer.c_str()));
@@ -1732,19 +1732,19 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
                             : "\"\n"));
             }
             // Reset size because the data blocks have been all read
-            size = (size_t) info.GetSize();
+            hsize = (size_t) info.GetSize();
             info.m_Stat.st_size = 0;
-            if (!size  ||  !buffer.size()) {
+            if (!hsize  ||  !buffer.size()) {
                 TAR_POST(79, Error,
-                         "Skipping " + string(size ? "empty" : "zero-sized")
+                         "Skipping " + string(hsize ? "empty" : "zero-sized")
                          + " extended header");
                 return eFailure;
             }
             if (info.GetType() == CTarEntryInfo::ePAXHeader) {
-                if (size != buffer.size()) {
+                if (hsize != buffer.size()) {
                     TAR_POST(80, Error,
                              "Skipping truncated ("
-                             + NStr::UInt8ToString((Uint8) size) + "->"
+                             + NStr::UInt8ToString((Uint8) hsize) + "->"
                              + NStr::UInt8ToString((Uint8) buffer.size())
                              + ") PAX header");
                     return eFailure;
@@ -2926,7 +2926,7 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
         if (count > (size_t)(m_Info.GetSize() - m_Read)) {
             count = (size_t)(m_Info.GetSize() - m_Read);
         }
-        size_t left = OFFSET_OF(m_Read);
+        size_t left = (size_t) OFFSET_OF(m_Read);
         if (left) {
             read = kBlockSize - left;
             if (read > count) {

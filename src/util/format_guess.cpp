@@ -800,7 +800,7 @@ static bool x_IsInputDistanceMatrix(const char* byte_buf, size_t byte_count)
     return true;
 }
 
-static bool x_IsInputTaxplot(const char* byte_buf, size_t byte_count)
+static bool x_IsInputTaxplot(const char* /*byte_buf*/, size_t /*byte_count*/)
 {
     return false;
 }
@@ -1076,13 +1076,12 @@ CFormatGuess::Format(const unsigned char* buffer,
     //  The following is actually three tests rolled into one, based on symbol
     //  frequencies in the input sample. I am leaving them "as is".
     //
-    unsigned int i = 0;
     unsigned ATGC_content = 0;
     unsigned amino_acid_content = 0;
-    unsigned seq_length = (unsigned)buffer_size;
-    unsigned txt_length = 0;
-
+    size_t seq_length = buffer_size;
+    size_t txt_length = 0;
     unsigned alpha_content = 0;
+    size_t i;
 
     if (buffer[0] == '>') { // FASTA ?
         for (i = 0; i < buffer_size; ++i) {
@@ -1095,7 +1094,7 @@ CFormatGuess::Format(const unsigned char* buffer,
                 ++alpha_content;
             }
         }
-        seq_length = (unsigned)buffer_size - i;
+        seq_length = buffer_size - i;
         if (seq_length == 0) {
             return eUnknown;   // No way to tell what format is this...
         }
@@ -1140,13 +1139,13 @@ CFormatGuess::Format(const unsigned char* buffer,
             amino_acid_content = 0;
             seq_length = txt_length = 0;
 
-            CNcbiIstrstream istr(reinterpret_cast<const char *>(buffer), buffer_size);
+            CNcbiIstrstream istr(chbuf, buffer_size);
             string line;
             while (!istr.fail()) {
                 NcbiGetline(istr, line, "\n\r");
                 if (line[0] == '>') {  // header line
                     txt_length += line.length();
-                    for (size_t i = 0; i < line.length(); ++i) {
+                    for (i = 0; i < line.length(); ++i) {
                         unsigned char c = line[i];
                         unsigned char type = symbol_type_table[c];
 
@@ -1159,7 +1158,7 @@ CFormatGuess::Format(const unsigned char* buffer,
                     } // for
                 } else { // sequence line
                     seq_length += line.length();
-                    for (size_t i = 0; i < line.length(); ++i) {
+                    for (i = 0; i < line.length(); ++i) {
                         unsigned char c = line[i];
                         unsigned char type = symbol_type_table[c];
 
@@ -1172,10 +1171,8 @@ CFormatGuess::Format(const unsigned char* buffer,
                     } // for
                 }
             } // while
-            double dna_content = 
-                (double)ATGC_content / (double)seq_length;
-            double prot_content = 
-                (double)amino_acid_content / (double)seq_length;
+            dna_content = (double)ATGC_content / (double)seq_length;
+            prot_content = (double)amino_acid_content / (double)seq_length;
             double dna_content_txt = 
                 (double)ATGC_content_txt / (double)txt_length;
             double prot_content_txt = 
@@ -1198,7 +1195,7 @@ CFormatGuess::Format(const unsigned char* buffer,
         // 1. The "::=" need not be separated from its neigbors
         //    by whitespace
         // 2. It need not be on the first non-blank, non-comment line
-        CNcbiIstrstream istr(reinterpret_cast<const char *>(buffer), buffer_size);
+        CNcbiIstrstream istr(chbuf, buffer_size);
         string line;
         vector<string> fields;
         while (!istr.fail()) {

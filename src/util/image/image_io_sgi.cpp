@@ -50,8 +50,8 @@ CImage* CImageIOSgi::ReadImage(CNcbiIstream&,
                "read unimplemented");
 }
 
-bool CImageIOSgi::ReadImageInfo(CNcbiIstream& istr,
-                                size_t* width, size_t* height, size_t* depth)
+bool CImageIOSgi::ReadImageInfo(CNcbiIstream&,
+                                size_t*, size_t*, size_t*)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOSgi::ReadImageInfo(): SGI format inspection "

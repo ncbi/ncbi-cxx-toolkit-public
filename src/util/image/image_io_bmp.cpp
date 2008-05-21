@@ -50,8 +50,8 @@ CImage* CImageIOBmp::ReadImage(CNcbiIstream&,
                "read unimplemented");
 }
 
-bool CImageIOBmp::ReadImageInfo(CNcbiIstream& istr,
-                                size_t* width, size_t* height, size_t* depth)
+bool CImageIOBmp::ReadImageInfo(CNcbiIstream&,
+                                size_t*, size_t*, size_t*)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOBmp::ReadImageInfo(): BMP format inspection "

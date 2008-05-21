@@ -52,7 +52,7 @@ public:
 // Implementation
 private:
     struct SChunkData {
-        char* chunk;
+        const char* chunk;
         bool to_be_continued;
         char control_symbol;
     };

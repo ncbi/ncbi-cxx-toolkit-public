@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 //
 // internal message handler for PNG images
 //
-static void s_PngReadErrorHandler(png_structp png_ptr, png_const_charp msg)
+static void s_PngReadErrorHandler(png_structp /*png_ptr*/, png_const_charp msg)
 {
     string str("Error reading PNG file: ");
     str += msg;
@@ -66,7 +66,7 @@ static void s_PngReadErrorHandler(png_structp png_ptr, png_const_charp msg)
 //
 // internal message handler for PNG images
 //
-static void s_PngWriteErrorHandler(png_structp png_ptr, png_const_charp msg)
+static void s_PngWriteErrorHandler(png_structp /*png_ptr*/,png_const_charp msg)
 {
     string str("Error writing PNG file: ");
     str += msg;
@@ -77,7 +77,7 @@ static void s_PngWriteErrorHandler(png_structp png_ptr, png_const_charp msg)
 //
 // internal handler: translate PNG warnings to NCBI warnings
 //
-static void s_PngWarningHandler(png_structp png_ptr, png_const_charp msg)
+static void s_PngWarningHandler(png_structp /*png_ptr*/, png_const_charp msg)
 {
     LOG_POST_X(25, Warning << "Warning in PNG file: " << msg);
 }

@@ -832,7 +832,7 @@ void AC_TestNormalized_Strict()
 }
 
 
-void AC_CheckBounds(const TAlignColl& coll, const TSignedRange& r_1, const TSignedRange& r_2)
+void AC_CheckBounds(const TAlignColl& coll, const TSignedRange& r_1, const TSignedRange& /*r_2*/)
 {
     BOOST_CHECK_EQUAL(coll.GetFirstRange(), r_1);
     BOOST_CHECK_EQUAL(coll.GetFirstFrom(), r_1.GetFrom());
@@ -1226,7 +1226,7 @@ END_NCBI_SCOPE
 std::ofstream out("res.xml"); //TODO
 
 
-test_suite* init_unit_test_suite(int argc, char * argv[])
+test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/[])
 {    
 #if BOOST_VERSION >= 103300
     typedef boost::unit_test_framework::unit_test_log_t TLog; 

@@ -241,23 +241,29 @@ extern const char* CORE_SendMail(const char* to,
  */
 
 #define SENDMAIL_RETURN(subcode, reason)                                \
-  do {                                                                  \
-      if (sock)                                                         \
-          SOCK_Close(sock);                                             \
-      CORE_LOGF_X(subcode, eLOG_Error, ("[SendMail]  %s", reason));     \
-      return reason;                                                    \
-      /*NOTREACHED*/                                                    \
-  } while (0) /* NCBI_FAKE_WARNING: WorkShop */
+    do {                                                                \
+        if (sock) {                                                     \
+            SOCK_Close(sock);                                           \
+            sock = 0;                                                   \
+        }                                                               \
+        CORE_LOGF_X(subcode, eLOG_Error, ("[SendMail]  %s", reason));   \
+        if (!sock)                                                      \
+            return reason;                                              \
+        /*NOTREACHED*/                                                  \
+    } while (0)
 
 #define SENDMAIL_RETURN2(subcode, reason, explanation)                  \
-  do {                                                                  \
-      if (sock)                                                         \
-          SOCK_Close(sock);                                             \
-      CORE_LOGF_X(subcode, eLOG_Error,                                  \
-                  ("[SendMail]  %s: %s", reason, explanation));         \
-      return reason;                                                    \
-      /*NOTREACHED*/                                                    \
-  } while (0) /* NCBI_FAKE_WARNING: WorkShop */
+    do {                                                                \
+        if (sock) {                                                     \
+            SOCK_Close(sock);                                           \
+            sock = 0;                                                   \
+        }                                                               \
+        CORE_LOGF_X(subcode, eLOG_Error,                                \
+                    ("[SendMail]  %s: %s", reason, explanation));       \
+        if (!sock)                                                      \
+            return reason;                                              \
+        /*NOTREACHED*/                                                  \
+    } while (0)
 
 
 static const char* s_SendRcpt(SOCK sock, const char* to,

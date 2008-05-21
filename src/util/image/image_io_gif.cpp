@@ -496,8 +496,8 @@ CImage* CImageIOGif::ReadImage(CNcbiIstream&,
 }
 
 
-bool CImageIOGif::ReadImageInfo(CNcbiIstream& istr,
-                                size_t* width, size_t* height, size_t* depth)
+bool CImageIOGif::ReadImageInfo(CNcbiIstream&,
+                                size_t*, size_t*, size_t*)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOGif::ReadImageInfo(): GIF format not supported");

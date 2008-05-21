@@ -66,9 +66,8 @@ public:
         m_OStream << " [" << qnode.GetOrig() << "]";
         i += 2 + qnode.GetOrig().length();
         if (!qnode.IsExplicit()) {
-            string s = " implicit";
-            m_OStream << s;
-            i += s.length();
+            m_OStream << " implicit";
+            i += 9;
         }
         for( ;i < 55; i++) {
             m_OStream << " ";

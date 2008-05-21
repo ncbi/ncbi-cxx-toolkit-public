@@ -40,12 +40,15 @@ BEGIN_NCBI_SCOPE
 class CSimpleResizeStrategy
 {
 public:
-    static size_t GetNewCapacity(size_t cur_capacity, size_t requested_size) { return requested_size; }
+    static size_t GetNewCapacity(size_t /*cur_capacity*/,
+                                 size_t requested_size)
+    { return requested_size; }
 };
 class CAgressiveResizeStrategy
 {
 public:
-    static size_t GetNewCapacity(size_t cur_capacity, size_t requested_size) 
+    static size_t GetNewCapacity(size_t /*cur_capacity*/,
+                                 size_t requested_size) 
     { return requested_size + requested_size / 2; }
 };
 
@@ -53,7 +56,8 @@ public:
 /// Mimics vector<unsigned char>
 ///
 
-template <typename T = unsigned char, typename ResizeStrategy = CSimpleResizeStrategy>
+template <typename T = unsigned char,
+          typename ResizeStrategy = CSimpleResizeStrategy>
 class CSimpleBufferT
 {
 public:
@@ -189,8 +193,8 @@ private:
     }
 private:
     value_type* m_Buffer;
-    size_type      m_Size;
-    size_type      m_Capacity;
+    size_type   m_Size;
+    size_type   m_Capacity;
 };
 
 typedef CSimpleBufferT<> CSimpleBuffer;

@@ -349,7 +349,7 @@ END_NCBI_SCOPE
 
 /// Called by yyparse on error 
 static
-int ncbi_q_error (const char *s) 
+int ncbi_q_error (const char *) 
 {
     _TRACE("Parsing error!!!");
 //    NCBI_THROW(CQueryParseException, eParserError, "Syntax error!");

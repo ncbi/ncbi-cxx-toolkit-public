@@ -359,6 +359,7 @@ bool CBufferedLineReader::x_ReadBuffer()
         case eRW_NotImplemented:
         case eRW_Error:
             NCBI_THROW(CIOException, eRead, "Read error");
+            /*NOTREACHED*/
             break;
         case eRW_Timeout:
             // keep spinning around

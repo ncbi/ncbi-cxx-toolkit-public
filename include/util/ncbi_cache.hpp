@@ -107,17 +107,18 @@ class CCacheElement_Handler
 {
 public:
     /// Special processing of a removed element (e.g. deleting the object)
-    void RemoveElement(const TKey& key, TValue& value) {}
+    void RemoveElement(const TKey& /*key*/, TValue& /*value*/) {}
 
     /// Special processing of an element to be inserted (e.g. count total
     /// memory used by the cached objects)
     ///
     /// NOTE:  This method is called *before* the element is actually
     ///        added to the cache.
-    void InsertElement(const TKey& key, const TValue& value) {}
+    void InsertElement(const TKey& /*key*/, const TValue& /*value*/) {}
 
     /// Check if the element can be inserted into the cache
-    ECache_InsertFlag CanInsertElement(const TKey& key, const TValue& value)
+    ECache_InsertFlag CanInsertElement(const TKey& /*key*/,
+                                       const TValue& /*value*/)
     {
         return eCache_CheckSize;
     }
@@ -125,7 +126,7 @@ public:
     /// Element factory -- to create elements by key.
     /// This gets called when there is no element matching the key in the cache
     /// @sa CCache::Get()
-    TValue CreateValue(const TKey& key)  { return TValue(); }
+    TValue CreateValue(const TKey& /*key*/)  { return TValue(); }
 };
 
 

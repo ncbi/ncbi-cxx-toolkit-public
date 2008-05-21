@@ -138,7 +138,7 @@ public:
         delete value;
     }
     // Inserting an element does not require special processing.
-    void InsertElement(const int& /*key*/, CHeapElement* value) {}
+    void InsertElement(const int& /*key*/, CHeapElement* /*value*/) {}
     // Possibility to insert an element depends only on the cache size.
     ECache_InsertFlag CanInsertElement(const int& /*key*/,
                                        const CHeapElement* value)
