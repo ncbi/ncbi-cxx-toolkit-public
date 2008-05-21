@@ -10,7 +10,14 @@
 # defaults
 solution="Makefile.flat"
 logfile="Flat.configuration_log"
+
+# default path to project_tree_builder
 extptb="$NCBI/c++.stable/Release/bin/project_tree_builder"
+# required version of PTB
+ptbreqver=148
+ptbname="project_tree_builder"
+# dependencies
+ptbdep="corelib util util/regexp app/project_tree_builder"
 #-----------------------------------------------------------------------------
 
 initial_dir=`pwd`
@@ -77,19 +84,19 @@ fi
 
 #-----------------------------------------------------------------------------
 # more checks
+ptb="$extptb"
 if test $buildptb = "no"; then
-  ptb="$extptb"
   if test -x "$ptb"; then
-    ptbver=`$ptb -version 2>&1 | sed -e 's/[a-zA-Z._: ]//g'`
-    if test $ptbver -lt 148; then
+    ptbver=`$ptb -version 2>&1 | grep $ptbname | sed -e 's/[a-zA-Z._: ]//g'`
+    if test $ptbver -lt $ptbreqver; then
       $ptb -version 2>&1
-      echo "Prebuilt project_tree_builder at"
+      echo "Prebuilt $ptbname at"
       echo $extptb
       echo "is too old. Will build PTB locally"
       buildptb="yes"
     fi
   else
-    echo "Prebuilt project_tree_builder is not found at"
+    echo "Prebuilt $ptbname is not found at"
     echo $extptb
     echo "Will build PTB locally"
     buildptb="yes"
@@ -99,7 +106,7 @@ fi
 COMMON_Exec cd $builddir
 dll=""
 test -f "../status/DLL.enabled" && dll="-dll"
-ptbini="$srcdir/compilers/msvc710_prj/project_tree_builder.ini"
+ptbini="$srcdir/compilers/msvc710_prj/$ptbname.ini"
 test -f "$ptbini" || Usage "$ptbini not found"
 
 
@@ -108,15 +115,23 @@ test -f "$ptbini" || Usage "$ptbini not found"
 
 COMMON_Exec cd $builddir
 if test "$buildptb" = "yes"; then
-#  ptbdep="corelib util serial serial/datatool app/project_tree_builder"
-  ptbdep="corelib util util/regexp app/project_tree_builder"
   for dep in $ptbdep; do
-    test -d "$dep"          || Usage "$builddir/$dep not found"
-    test -f "$dep/Makefile" || Usage "$builddir/$dep/Makefile not found"
+    if ! test -d "$dep"; then
+      echo "WARNING: $builddir/$dep not found"
+      buildptb="no"
+      break;
+    fi
+    if ! test -f "$dep/Makefile"; then
+      echo "WARNING: $builddir/$dep/Makefile not found"
+      buildptb="no"
+      break;
+    fi
   done
+fi
 
+if test "$buildptb" = "yes"; then
   echo "**********************************************************************"
-  echo "Building project_tree_builder"
+  echo "Building $ptbname"
   echo "**********************************************************************"
   for dep in $ptbdep; do
     COMMON_Exec cd $builddir
@@ -124,17 +139,18 @@ if test "$buildptb" = "yes"; then
     COMMON_Exec make
   done
   COMMON_Exec cd $builddir
-  ptb="./app/project_tree_builder/project_tree_builder"
+  ptb="./app/project_tree_builder/$ptbname"
   test -x "$ptb" || Usage "$builddir/$ptb not found"
 fi
 
+test -x "$ptb" || Usage "$ptb not found"
 
 #-----------------------------------------------------------------------------
 # run project_tree_builder
 
 COMMON_Exec cd $builddir
 echo "**********************************************************************"
-echo "Running project_tree_builder. Please wait."
+echo "Running $ptbname. Please wait."
 echo "**********************************************************************"
 echo $ptb $dll -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
 COMMON_Exec $ptb $dll -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
