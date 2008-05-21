@@ -35,8 +35,8 @@
 
 #include "dist_select_dialog.hpp"
 
-#include "wx_tools.hpp"
-using namespace Cn3D;
+#include <algo/structure/wx_tools/wx_tools.hpp>
+using namespace ncbi;
 
 ////@begin XPM images
 ////@end XPM images

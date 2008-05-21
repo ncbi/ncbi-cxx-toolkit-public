@@ -3,7 +3,7 @@
 # Meta-makefile("algo/structure" projects)
 #################################
 
-SUB_PROJ = struct_dp struct_util cd_utils bma_refine threader
+SUB_PROJ = struct_dp struct_util cd_utils wx_tools bma_refine threader
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

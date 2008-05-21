@@ -42,11 +42,10 @@
 #endif
 #include <wx/wx.h>
 
+#include <algo/structure/wx_tools/wx_tools.hpp>
+
 
 BEGIN_SCOPE(Cn3D)
-
-class IntegerSpinCtrl;
-class FloatingPointSpinCtrl;
 
 class AnimationControls : public wxDialog
 {
@@ -60,8 +59,8 @@ private:
     void OnButton(wxCommandEvent& event);
 
     // GUI elements
-    IntegerSpinCtrl *iSpinDelay, *iFrameDelay;
-    FloatingPointSpinCtrl *fSpinIncrement;
+    ncbi::IntegerSpinCtrl *iSpinDelay, *iFrameDelay;
+    ncbi::FloatingPointSpinCtrl *fSpinIncrement;
 
     DECLARE_EVENT_TABLE()
 };

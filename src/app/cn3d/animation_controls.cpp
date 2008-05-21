@@ -38,7 +38,7 @@
 #include "remove_header_conflicts.hpp"
 
 #include "animation_controls.hpp"
-#include "wx_tools.hpp"
+#include <algo/structure/wx_tools/wx_tools.hpp>
 #include "cn3d_tools.hpp"
 
 

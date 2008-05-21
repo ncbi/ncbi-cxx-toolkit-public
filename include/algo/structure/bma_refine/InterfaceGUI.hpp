@@ -34,7 +34,7 @@
 #ifndef BMA_REFINER__MSAA_INTERFACE__GUI__HPP
 #define BMA_REFINER__MSAA_INTERFACE__GUI__HPP
 
-#include <algo/structure/bma_refine/wx_tools.hpp>
+#include <algo/structure/wx_tools/wx_tools.hpp>
 
 #include <algo/structure/bma_refine/Interface.hpp>
 #include <algo/structure/bma_refine/RefinerDefs.hpp>
@@ -64,10 +64,10 @@ private:
     const vector < string >& rowTitles;
     vector < unsigned int > rowsToExclude;
 
-	Cn3D::IntegerSpinCtrl *nCyclesSpin, *nTrialsSpin;
-    Cn3D::IntegerSpinCtrl *lnoSpin, *loopExtensionSpin, *loopCutoffSpin, *rngSpin, *nExtSpin, *cExtSpin;
-    Cn3D::IntegerSpinCtrl *minBlockSizeSpin, *medianSpin;
-    Cn3D::FloatingPointSpinCtrl *loopPercentSpin, *rawVoteSpin, *weightedVoteSpin ;
+    ncbi::IntegerSpinCtrl *nCyclesSpin, *nTrialsSpin;
+    ncbi::IntegerSpinCtrl *lnoSpin, *loopExtensionSpin, *loopCutoffSpin, *rngSpin, *nExtSpin, *cExtSpin;
+    ncbi::IntegerSpinCtrl *minBlockSizeSpin, *medianSpin;
+    ncbi::FloatingPointSpinCtrl *loopPercentSpin, *rawVoteSpin, *weightedVoteSpin ;
     wxCheckBox *doLooCheck, *fixStructCheck, *fullSeqCheck, *extendFirstCheck, *allUnstSeqCheck;
     wxComboBox *phaseOrderCombo, *looSelectionOrderCombo, *esCombo;
 

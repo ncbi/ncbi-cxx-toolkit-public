@@ -42,11 +42,10 @@
 #endif
 #include <wx/wx.h>
 
+#include <algo/structure/wx_tools/wx_tools.hpp>
+
 
 BEGIN_SCOPE(Cn3D)
-
-class IntegerSpinCtrl;
-class FloatingPointSpinCtrl;
 
 class PreferencesDialog : public wxDialog
 {
@@ -63,10 +62,10 @@ private:
     // utility functions
 
     // GUI elements
-    IntegerSpinCtrl
+    ncbi::IntegerSpinCtrl
         *iWormSegments, *iWormSides, *iBondSides, *iHelixSides, *iAtomSlices, *iAtomStacks,
         *iCacheSize, *iMaxStructs, *iFootRes;
-    FloatingPointSpinCtrl *fSeparation;
+    ncbi::FloatingPointSpinCtrl *fSeparation;
 
     DECLARE_EVENT_TABLE()
 };

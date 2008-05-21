@@ -31,8 +31,8 @@
 * ===========================================================================
 */
 
-#ifndef CN3D_WX_TOOLS__HPP
-#define CN3D_WX_TOOLS__HPP
+#ifndef WX_TOOLS__HPP
+#define WX_TOOLS__HPP
 
 #include <corelib/ncbistd.hpp>
 
@@ -45,7 +45,7 @@
 #include <wx/spinctrl.h>
 
 
-BEGIN_SCOPE(Cn3D)
+BEGIN_NCBI_SCOPE
 
 // "spin control" height
 #if defined(__WXMSW__)
@@ -231,6 +231,6 @@ private:
     DECLARE_EVENT_TABLE()
 };
 
-END_SCOPE(Cn3D)
+END_NCBI_SCOPE
 
-#endif // CN3D_WX_TOOLS__HPP
+#endif // WX_TOOLS__HPP

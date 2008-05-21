@@ -65,11 +65,10 @@ SRC =	aaa_dummy_pch \
 	update_viewer_window \
 	vector_math \
 	viewer_base \
-	viewer_window_base \
-	wx_tools
+	viewer_window_base
 
-LIB =   xcd_utils xbma_refiner xbma_refiner_gui xstruct_util xstruct_dp xstruct_thread \
-	xblast xalgowinmask xalgoseq xalgodustmask xalgoblastdbindex composition_adjustment seqdb xobjread tables xobjutil \
+LIB =   wx_tools xcd_utils xbma_refiner xbma_refiner_gui xstruct_util xstruct_dp xstruct_thread \
+	xblast xalgowinmask xalgodustmask xalgoblastdbindex composition_adjustment seqdb xobjread tables xobjutil \
 	id1cli id1 cdd ncbimime cn3d mmdb scoremat seqset seq seqcode sequtil \
 	pub medline biblio general taxon1 blastdb xnetblast \
 	xregexp xser xutil xconnect xncbi \

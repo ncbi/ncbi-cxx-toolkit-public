@@ -37,6 +37,7 @@
 #include "viewer_window_base.hpp"
 
 #include <wx/spinctrl.h>
+#include <algo/structure/wx_tools/wx_tools.hpp>
 
 
 BEGIN_SCOPE(Cn3D)
@@ -195,8 +196,6 @@ public:
 ///// dialog used to get threader options from user /////
 
 class ThreaderOptions;
-class FloatingPointSpinCtrl;
-class IntegerSpinCtrl;
 class Sequence;
 
 class ThreaderOptionsDialog : public wxDialog
@@ -211,8 +210,8 @@ public:
 private:
     wxStaticBox *box;
     wxButton *bOK, *bCancel;
-    FloatingPointSpinCtrl *fpWeight, *fpLoops;
-    IntegerSpinCtrl *iStarts, *iResults, *iCutoff;
+    ncbi::FloatingPointSpinCtrl *fpWeight, *fpLoops;
+    ncbi::IntegerSpinCtrl *iStarts, *iResults, *iCutoff;
     wxCheckBox *bMerge, *bFreeze;
 
     void OnCloseWindow(wxCloseEvent& event);
@@ -231,7 +230,7 @@ public:
     bool GetValues(int *from, int *to);
 
 private:
-    IntegerSpinCtrl *iFrom, *iTo;
+    ncbi::IntegerSpinCtrl *iFrom, *iTo;
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);

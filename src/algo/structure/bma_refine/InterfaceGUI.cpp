@@ -46,7 +46,6 @@
 
 
 BEGIN_SCOPE(align_refine)
-USING_SCOPE(Cn3D);
 
 // diagnostic streams
 #define TRACEMSG(stream) ERR_POST(ncbi::Trace << stream)

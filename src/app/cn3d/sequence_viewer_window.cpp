@@ -50,7 +50,7 @@
 #include "show_hide_dialog.hpp"
 #include "sequence_display.hpp"
 #include "messenger.hpp"
-#include "wx_tools.hpp"
+#include <algo/structure/wx_tools/wx_tools.hpp>
 #include "molecule_identifier.hpp"
 #include "cn3d_tools.hpp"
 #include "cn3d_blast.hpp"

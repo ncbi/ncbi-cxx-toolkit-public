@@ -41,7 +41,7 @@
 #include "cn3d_tools.hpp"
 #include "structure_set.hpp"
 #include "messenger.hpp"
-#include "wx_tools.hpp"
+#include <algo/structure/wx_tools/wx_tools.hpp>
 
 #include <wx/colordlg.h>
 
@@ -131,11 +131,11 @@ wxSizer *LayoutLabelsPage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-// a bit of a kludge - but necessary to be able to use most of the wxDesigner code as is
-static Cn3D::FloatingPointSpinCtrl *gfpSpaceFill, *gfpBallRadius, *gfpStickRadius, *gfpTubeRadius,
-    *gfpTubeWormRadius, *gfpHelixRadius, *gfpStrandWidth, *gfpStrandThickness;
-
 USING_NCBI_SCOPE;
+
+// a bit of a kludge - but necessary to be able to use most of the wxDesigner code as is
+static FloatingPointSpinCtrl *gfpSpaceFill, *gfpBallRadius, *gfpStickRadius, *gfpTubeRadius,
+    *gfpTubeWormRadius, *gfpHelixRadius, *gfpStrandWidth, *gfpStrandThickness;
 
 
 BEGIN_SCOPE(Cn3D)
@@ -1230,50 +1230,50 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
     // space fill proportion
     wxStaticText *item4 = new wxStaticText(parent, ID_TEXT, "Space fill size:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
     grid->Add(item4, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    gfpSpaceFill = new Cn3D::FloatingPointSpinCtrl(parent,
+    gfpSpaceFill = new FloatingPointSpinCtrl(parent,
         0.0, 10.0, 0.1, 1.0,
-        wxDefaultPosition, wxSize(80, Cn3D::SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, Cn3D::SPIN_CTRL_HEIGHT));
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpSpaceFill->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     grid->Add(gfpSpaceFill->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // tube radius
     wxStaticText *item7 = new wxStaticText(parent, ID_TEXT, "Tube radius:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
     grid->Add(item7, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    gfpTubeRadius = new Cn3D::FloatingPointSpinCtrl(parent,
+    gfpTubeRadius = new FloatingPointSpinCtrl(parent,
         0.0, 5.0, 0.02, 0.3,
-        wxDefaultPosition, wxSize(80, Cn3D::SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, Cn3D::SPIN_CTRL_HEIGHT));
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpTubeRadius->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     grid->Add(gfpTubeRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // worm tube
     wxStaticText *item10 = new wxStaticText(parent, ID_TEXT, "Worm tube radius:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
     grid->Add(item10, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    gfpTubeWormRadius = new Cn3D::FloatingPointSpinCtrl(parent,
+    gfpTubeWormRadius = new FloatingPointSpinCtrl(parent,
         0.0, 5.0, 0.02, 0.3,
-        wxDefaultPosition, wxSize(80, Cn3D::SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, Cn3D::SPIN_CTRL_HEIGHT));
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpTubeWormRadius->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     grid->Add(gfpTubeWormRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // ball radius
     wxStaticText *item13 = new wxStaticText(parent, ID_TEXT, "Ball radius:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
     grid->Add(item13, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    gfpBallRadius = new Cn3D::FloatingPointSpinCtrl(parent,
+    gfpBallRadius = new FloatingPointSpinCtrl(parent,
         0.0, 10.0, 0.05, 0.4,
-        wxDefaultPosition, wxSize(80, Cn3D::SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, Cn3D::SPIN_CTRL_HEIGHT));
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpBallRadius->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     grid->Add(gfpBallRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // stick radius
     wxStaticText *item16 = new wxStaticText(parent, ID_TEXT, "Stick radius:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
     grid->Add(item16, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    gfpStickRadius = new Cn3D::FloatingPointSpinCtrl(parent,
+    gfpStickRadius = new FloatingPointSpinCtrl(parent,
         0.0, 5.0, 0.01, 0.2,
-        wxDefaultPosition, wxSize(80, Cn3D::SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, Cn3D::SPIN_CTRL_HEIGHT));
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpStickRadius->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     grid->Add(gfpStickRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
@@ -1285,30 +1285,30 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
     // helix radius
     wxStaticText *item19 = new wxStaticText(parent, ID_TEXT, "Helix radius:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
     grid->Add(item19, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    gfpHelixRadius = new Cn3D::FloatingPointSpinCtrl(parent,
+    gfpHelixRadius = new FloatingPointSpinCtrl(parent,
         0.0, 10.0, 0.1, 1.8,
-        wxDefaultPosition, wxSize(80, Cn3D::SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, Cn3D::SPIN_CTRL_HEIGHT));
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpHelixRadius->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     grid->Add(gfpHelixRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // strand width
     wxStaticText *item22 = new wxStaticText(parent, ID_TEXT, "Strand width:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
     grid->Add(item22, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    gfpStrandWidth = new Cn3D::FloatingPointSpinCtrl(parent,
+    gfpStrandWidth = new FloatingPointSpinCtrl(parent,
         0.0, 10.0, 0.1, 2.0,
-        wxDefaultPosition, wxSize(80, Cn3D::SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, Cn3D::SPIN_CTRL_HEIGHT));
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpStrandWidth->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     grid->Add(gfpStrandWidth->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // strand thickness
     wxStaticText *item25 = new wxStaticText(parent, ID_TEXT, "Strand thickness:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
     grid->Add(item25, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
-    gfpStrandThickness = new Cn3D::FloatingPointSpinCtrl(parent,
+    gfpStrandThickness = new FloatingPointSpinCtrl(parent,
         0.0, 5.0, 0.05, 0.5,
-        wxDefaultPosition, wxSize(80, Cn3D::SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, Cn3D::SPIN_CTRL_HEIGHT));
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpStrandThickness->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     grid->Add(gfpStrandThickness->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 

@@ -49,7 +49,7 @@
 #include "sequence_display.hpp"
 #include "alignment_manager.hpp"
 #include "cn3d_threader.hpp"
-#include "wx_tools.hpp"
+#include <algo/structure/wx_tools/wx_tools.hpp>
 #include "cn3d_tools.hpp"
 #include "molecule_identifier.hpp"
 #include "cn3d_ba_interface.hpp"

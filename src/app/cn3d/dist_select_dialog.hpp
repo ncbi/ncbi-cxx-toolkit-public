@@ -30,7 +30,7 @@
 ////@begin forward declarations
 ////@end forward declarations
 
-namespace Cn3D {
+namespace ncbi {
 class FloatingPointSpinCtrl;
 };
 
@@ -115,7 +115,7 @@ public:
     wxCheckBox* m_Other;
 ////@end DistanceSelectDialog member variables
 
-    Cn3D::FloatingPointSpinCtrl *fpSpinCtrl;
+    ncbi::FloatingPointSpinCtrl *fpSpinCtrl;
 };
 
 #endif

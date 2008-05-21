@@ -74,7 +74,7 @@
 #include "cdd_ref_dialog.hpp"
 #include "cdd_book_ref_dialog.hpp"
 #include "cn3d_png.hpp"
-#include "wx_tools.hpp"
+#include <algo/structure/wx_tools/wx_tools.hpp>
 #include "block_multiple_alignment.hpp"
 #include "sequence_set.hpp"
 #include "molecule_identifier.hpp"

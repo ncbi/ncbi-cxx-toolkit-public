@@ -57,7 +57,7 @@
 #include "sequence_set.hpp"
 #include "structure_set.hpp"
 #include "molecule_identifier.hpp"
-#include "wx_tools.hpp"
+#include <algo/structure/wx_tools/wx_tools.hpp>
 #include "cn3d_tools.hpp"
 #include "sequence_viewer.hpp"
 #include "cn3d_pssm.hpp"

@@ -35,15 +35,10 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
-#include "remove_header_conflicts.hpp"
-
-#include <algo/structure/bma_refine/wx_tools.hpp>
-#include "cn3d_tools.hpp"
-
-USING_NCBI_SCOPE;
+#include <algo/structure/wx_tools/wx_tools.hpp>
 
 
-BEGIN_SCOPE(Cn3D)
+BEGIN_NCBI_SCOPE
 
 const int WX_TOOLS_NOTIFY_CHANGED = wxNewEventType();
 
@@ -188,7 +183,7 @@ bool IntegerSpinCtrl::GetUnsignedInteger(unsigned int *value) const
     long longValue;
     if (!iTextCtrl->GetValue().ToLong(&longValue)) return false;
     if (minVal < 0 || maxVal < 0 || longValue < 0)
-        WARNINGMSG("IntegerSpinCtrl::GetUnsignedInteger() - possible signed/unsigned mismatch");
+        ERR_POST(Warning << "IntegerSpinCtrl::GetUnsignedInteger() - possible signed/unsigned mismatch");
     *value = (unsigned int) longValue;
     return (iTextCtrl->IsValidInteger());
 }
@@ -367,4 +362,4 @@ void GetFloatingPointDialog::OnCloseWindow(wxCloseEvent& event)
     EndModal(wxCANCEL);
 }
 
-END_SCOPE(Cn3D)
+END_NCBI_SCOPE

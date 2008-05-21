@@ -49,12 +49,12 @@
 
 #include "style_manager.hpp"
 #include "cn3d_tools.hpp"
+#include <algo/structure/wx_tools/wx_tools.hpp>
 
 
 BEGIN_SCOPE(Cn3D)
 
 class StructureSet;
-class FloatingPointSpinCtrl;
 
 class StyleDialog : public wxDialog
 {
@@ -75,7 +75,7 @@ private:
     const StructureSet *structureSet;
     bool changedSinceApply, changedEver, initialized;
 
-    FloatingPointSpinCtrl *fpSpaceFill, *fpBallRadius, *fpStickRadius, *fpTubeRadius,
+    ncbi::FloatingPointSpinCtrl *fpSpaceFill, *fpBallRadius, *fpStickRadius, *fpTubeRadius,
         *fpTubeWormRadius, *fpHelixRadius, *fpStrandWidth, *fpStrandThickness;
 
     bool HandleColorButton(int bID);

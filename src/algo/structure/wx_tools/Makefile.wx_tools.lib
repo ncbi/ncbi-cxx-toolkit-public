@@ -4,12 +4,10 @@
 #
 ##########################################
 
-REQUIRES = wxWidgets objects
+REQUIRES = wxWidgets
 
-ASN_DEP = cdd
+LIB =   wx_tools
 
-LIB =   xbma_refiner_gui
-
-SRC =   InterfaceGUI
+SRC =   wx_tools
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(WXWIDGETS_INCLUDE)
