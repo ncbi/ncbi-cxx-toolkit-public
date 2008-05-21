@@ -432,7 +432,7 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
 
                         // Decode data_type
                         EDB_Type edb_data_type(eDB_UnsupportedType);
-                        switch (column_type.Value()) {
+                        switch (data_type.Value()) {
                             case SQL_LONGVARCHAR:
                                 edb_data_type = eDB_VarChar;
                                 break;
