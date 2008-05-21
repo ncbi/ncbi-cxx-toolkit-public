@@ -2059,6 +2059,58 @@ CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh)
 }
 
 
+CSeq_id_Handle CScope_Impl::GetAccVer(const CSeq_id_Handle& idh)
+{
+    CSeq_id_Handle ret;
+    TConfReadLockGuard rguard(m_ConfLock);
+    SSeqMatch_Scope match;
+    CRef<CBioseq_ScopeInfo> info =
+        x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
+    if ( info ) {
+        if ( info->HasBioseq() ) {
+            ret = CScope::x_GetAccVer(info->GetIds());
+        }
+    }
+    else {
+        // Unknown bioseq, try to find in data sources
+        for (CPriority_I it(m_setDataSrc); it; ++it) {
+            CPrefetchManager::IsActive();
+            ret = it->GetDataSource().GetAccVer(idh);
+            if ( ret ) {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+
+int CScope_Impl::GetGi(const CSeq_id_Handle& idh)
+{
+    int ret = 0;
+    TConfReadLockGuard rguard(m_ConfLock);
+    SSeqMatch_Scope match;
+    CRef<CBioseq_ScopeInfo> info =
+        x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
+    if ( info ) {
+        if ( info->HasBioseq() ) {
+            ret = CScope::x_GetGi(info->GetIds());
+        }
+    }
+    else {
+        // Unknown bioseq, try to find in data sources
+        for (CPriority_I it(m_setDataSrc); it; ++it) {
+            CPrefetchManager::IsActive();
+            ret = it->GetDataSource().GetGi(idh);
+            if ( ret ) {
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+
 string CScope_Impl::GetLabel(const CSeq_id_Handle& idh, bool force_load)
 {
     string ret;

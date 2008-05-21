@@ -305,6 +305,12 @@ public:
     TIds GetIds(const CSeq_id&        id );
     TIds GetIds(const CSeq_id_Handle& idh);
 
+    CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
+    int GetGi(const CSeq_id_Handle& idh);
+
+    static CSeq_id_Handle x_GetAccVer(const TIds& ids);
+    static int x_GetGi(const TIds& ids);
+
     /// Get short description of bioseq, usually "accession.version"
     enum EForceLabelLoad {
         eNoForceLabelLoad,

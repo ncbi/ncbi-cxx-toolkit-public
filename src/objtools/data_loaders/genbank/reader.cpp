@@ -329,6 +329,18 @@ bool CReader::LoadSeq_idGi(CReaderRequestResult& result,
 }
 
 
+bool CReader::LoadSeq_idAccVer(CReaderRequestResult& result,
+                               const CSeq_id_Handle& seq_id)
+{
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( ids->IsLoadedAccVer() || ids.IsLoaded() ) {
+        return true;
+    }
+    m_Dispatcher->LoadSeq_idSeq_ids(result, seq_id);
+    return ids->IsLoadedAccVer();
+}
+
+
 bool CReader::LoadSeq_idLabel(CReaderRequestResult& result,
                               const CSeq_id_Handle& seq_id)
 {
@@ -493,6 +505,15 @@ void CReader::SetAndSaveSeq_idGi(CReaderRequestResult& result,
 }
 
 
+void CReader::SetAndSaveSeq_idAccVer(CReaderRequestResult& result,
+                                     const CSeq_id_Handle& seq_id,
+                                     const CSeq_id& acc_id) const
+{
+    CLoadLockSeq_ids seq_ids(result, seq_id);
+    SetAndSaveSeq_idAccVer(result, seq_id, seq_ids, acc_id);
+}
+
+
 void CReader::SetAndSaveSeq_idLabel(CReaderRequestResult& result,
                                     const CSeq_id_Handle& seq_id,
                                     const string& label) const
@@ -593,6 +614,23 @@ void CReader::SetAndSaveSeq_idGi(CReaderRequestResult& result,
     CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
     if( writer ) {
         writer->SaveSeq_idGi(result, seq_id);
+    }
+}
+
+
+void CReader::SetAndSaveSeq_idAccVer(CReaderRequestResult& result,
+                                     const CSeq_id_Handle& seq_id,
+                                     CLoadLockSeq_ids& seq_ids,
+                                     const CSeq_id& acc_id) const
+{
+    if ( seq_ids->IsLoadedAccVer() ) {
+        return;
+    }
+    CSeq_id_Handle acch = CSeq_id_Handle::GetHandle(acc_id);
+    seq_ids->SetLoadedAccVer(acch);
+    CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
+    if( writer ) {
+        writer->SaveSeq_idAccVer(result, seq_id);
     }
 }
 

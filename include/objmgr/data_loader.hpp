@@ -244,6 +244,9 @@ public:
     typedef vector<CSeq_id_Handle> TIds;
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
 
+    virtual CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
+    virtual int GetGi(const CSeq_id_Handle& idh);
+
     virtual string GetLabel(const CSeq_id_Handle& idh);
 
     // Load multiple seq-ids. Same as GetRecords() for multiple ids
@@ -317,7 +320,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 3, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 3, 1, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>

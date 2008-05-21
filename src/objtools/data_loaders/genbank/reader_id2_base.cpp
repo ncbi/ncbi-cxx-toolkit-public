@@ -273,6 +273,50 @@ bool CId2ReaderBase::LoadSeq_idSeq_ids(CReaderRequestResult& result,
 }
 
 
+bool CId2ReaderBase::LoadSeq_idGi(CReaderRequestResult& result,
+                                  const CSeq_id_Handle& seq_id)
+{
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( ids->IsLoadedGi() ) {
+        return true;
+    }
+    CID2_Request req;
+    CID2_Request::C_Request::TGet_seq_id& get_id =
+        req.SetRequest().SetGet_seq_id();
+    get_id.SetSeq_id().SetSeq_id().Assign(*seq_id.GetSeqId());
+    get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_gi);
+    x_ProcessRequest(result, req);
+
+    if ( !ids->IsLoadedGi() ) {
+        return LoadSeq_idSeq_ids(result, seq_id);
+    }
+
+    return true;
+}
+
+
+bool CId2ReaderBase::LoadSeq_idAccVer(CReaderRequestResult& result,
+                                      const CSeq_id_Handle& seq_id)
+{
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( ids->IsLoadedAccVer() ) {
+        return true;
+    }
+    CID2_Request req;
+    CID2_Request::C_Request::TGet_seq_id& get_id =
+        req.SetRequest().SetGet_seq_id();
+    get_id.SetSeq_id().SetSeq_id().Assign(*seq_id.GetSeqId());
+    get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_text);
+    x_ProcessRequest(result, req);
+
+    if ( !ids->IsLoadedAccVer() ) {
+        return LoadSeq_idSeq_ids(result, seq_id);
+    }
+
+    return true;
+}
+
+
 bool CId2ReaderBase::LoadSeq_idLabel(CReaderRequestResult& result,
                                      const CSeq_id_Handle& seq_id)
 {
@@ -1164,6 +1208,16 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
             if ( (**it).IsGi() ) {
                 SetAndSaveSeq_idGi(result, seq_id, ids, (**it).GetGi());
+                break;
+            }
+        }
+        break;
+    }}
+    case CID2_Request_Get_Seq_id::eSeq_id_type_text:
+    {{
+        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+            if ( (**it).GetTextseq_Id() ) {
+                SetAndSaveSeq_idAccVer(result, seq_id, ids, (**it));
                 break;
             }
         }

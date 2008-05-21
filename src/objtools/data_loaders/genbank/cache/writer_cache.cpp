@@ -184,6 +184,29 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
 }
 
 
+void CCacheWriter::SaveSeq_idAccVer(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id)
+{
+    if( !m_IdCache) {
+        return;
+    }
+
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( ids->IsLoadedAccVer() ) {
+        CSeq_id_Handle acc = ids->GetAccVer();
+        string str;
+        if ( acc ) {
+            str = acc.AsString();
+        }
+        m_IdCache->Store(GetIdKey(seq_id),
+                         0,
+                         GetAccVerSubkey(),
+                         str.data(),
+                         str.size());
+    }
+}
+
+
 void CCacheWriter::SaveSeq_idLabel(CReaderRequestResult& result,
                                    const CSeq_id_Handle& seq_id)
 {

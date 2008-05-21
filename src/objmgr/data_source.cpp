@@ -67,6 +67,7 @@
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <objmgr/scope.hpp>
 
 #include <algorithm>
 
@@ -1088,6 +1089,36 @@ void CDataSource::GetIds(const CSeq_id_Handle& idh, TIds& ids)
     if ( m_Loader ) {
         m_Loader->GetIds(idh, ids);
     }
+}
+
+
+CSeq_id_Handle CDataSource::GetAccVer(const CSeq_id_Handle& idh)
+{
+    CSeq_id_Handle ret;
+    TTSE_LockSet locks;
+    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    if ( match ) {
+        ret = CScope::x_GetAccVer(match.m_Bioseq->GetId());
+    }
+    else if ( m_Loader ) {
+        ret = m_Loader->GetAccVer(idh);
+    }
+    return ret;
+}
+
+
+int CDataSource::GetGi(const CSeq_id_Handle& idh)
+{
+    int ret = 0;
+    TTSE_LockSet locks;
+    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    if ( match ) {
+        ret = CScope::x_GetGi(match.m_Bioseq->GetId());
+    }
+    else if ( m_Loader ) {
+        ret = m_Loader->GetGi(idh);
+    }
+    return ret;
 }
 
 

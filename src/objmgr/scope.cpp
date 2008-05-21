@@ -329,6 +329,45 @@ CScope::TIds CScope::GetIds(const CSeq_id_Handle& idh)
 }
 
 
+CSeq_id_Handle CScope::GetAccVer(const CSeq_id_Handle& idh)
+{
+    return m_Impl->GetAccVer(idh);
+}
+
+
+int CScope::GetGi(const CSeq_id_Handle& idh)
+{
+    return m_Impl->GetGi(idh);
+}
+
+
+CSeq_id_Handle CScope::x_GetAccVer(const TIds& ids)
+{
+    CSeq_id_Handle ret;
+    ITERATE ( TIds, iter, ids ) {
+        if ( !iter->IsGi() && iter->GetSeqId()->GetTextseq_Id() ) {
+            ret = *iter;
+            break;
+        }
+    }
+    return ret;
+}
+
+
+int CScope::x_GetGi(const TIds& ids)
+{
+    ITERATE ( TIds, iter, ids ) {
+        if ( iter->IsGi() ) {
+            return iter->GetGi();
+        }
+        if ( iter->Which() == CSeq_id::e_Gi ) {
+            return iter->GetSeqId()->GetGi();
+        }
+    }
+    return 0;
+}
+
+
 string CScope::GetLabel(const CSeq_id& id, EForceLabelLoad force_load)
 {
     return GetLabel(CSeq_id_Handle::GetHandle(id), force_load);

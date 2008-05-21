@@ -109,6 +109,14 @@ public:
         }
     void SetLoadedGi(int gi);
 
+    bool IsLoadedAccVer(void);
+    CSeq_id_Handle GetAccVer(void) const
+        {
+            _ASSERT(m_AccLoaded);
+            return m_Acc;
+        }
+    void SetLoadedAccVer(const CSeq_id_Handle& acc);
+
     bool IsLoadedLabel(void);
     const string& GetLabel(void) const
         {
@@ -143,12 +151,14 @@ public:
         {
             m_State = state;
         }
-
+    
 public:
     TSeq_ids    m_Seq_ids;
     bool        m_GiLoaded;
-    int         m_Gi;
+    bool        m_AccLoaded;
     bool        m_LabelLoaded;
+    int         m_Gi;
+    CSeq_id_Handle m_Acc;
     string      m_Label;
     TState      m_State;
 };

@@ -297,11 +297,23 @@ CSeq_id_Handle GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
 CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
                      EGetIdType type)
 {
-    if ( type == eGetId_ForceGi  &&  idh.IsGi() ) {
-        return idh;
+    CSeq_id_Handle ret;
+    if ( type == eGetId_ForceGi ) {
+        if ( idh.IsGi() ) {
+            return idh;
+        }
+        int gi = scope.GetGi(idh);
+        if ( gi ) {
+            ret = CSeq_id_Handle::GetGiHandle(gi);
+        }
     }
-    CScope::TIds ids = scope.GetIds(idh);
-    CSeq_id_Handle ret = x_GetId(ids, type);
+    else if ( type == eGetId_ForceAcc ) {
+        ret = scope.GetAccVer(idh);
+    }
+    else {
+        CScope::TIds ids = scope.GetIds(idh);
+        x_GetId(ids, type);
+    }
     return ret ? ret : idh;
 }
 

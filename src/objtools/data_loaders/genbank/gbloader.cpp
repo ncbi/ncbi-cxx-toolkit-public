@@ -735,6 +735,28 @@ void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 }
 
 
+CSeq_id_Handle CGBDataLoader::GetAccVer(const CSeq_id_Handle& idh)
+{
+    CGBReaderRequestResult result(this, idh);
+    CLoadLockSeq_ids seq_ids(result, idh);
+    if ( !seq_ids->IsLoadedAccVer() ) {
+        m_Dispatcher->LoadSeq_idAccVer(result, idh);
+    }
+    return seq_ids->GetAccVer();
+}
+
+
+int CGBDataLoader::GetGi(const CSeq_id_Handle& idh)
+{
+    CGBReaderRequestResult result(this, idh);
+    CLoadLockSeq_ids seq_ids(result, idh);
+    if ( !seq_ids->IsLoadedGi() ) {
+        m_Dispatcher->LoadSeq_idGi(result, idh);
+    }
+    return seq_ids->GetGi();
+}
+
+
 string CGBDataLoader::GetLabel(const CSeq_id_Handle& idh)
 {
     CGBReaderRequestResult result(this, idh);

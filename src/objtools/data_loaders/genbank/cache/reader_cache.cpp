@@ -101,6 +101,12 @@ const char* SCacheInfo::GetGiSubkey(void)
 }
 
 
+const char* SCacheInfo::GetAccVerSubkey(void)
+{
+    return "accver";
+}
+
+
 const char* SCacheInfo::GetLabelSubkey(void)
 {
     return "label";
@@ -335,7 +341,31 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
             return true;
         }
     }
-    return CReader::LoadSeq_idGi(result, seq_id);
+    return false;
+}
+
+
+bool CCacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id)
+{
+    if ( !m_IdCache ) {
+        return false;
+    }
+
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( !ids->IsLoadedAccVer() ) {
+        string data;
+        if ( x_LoadIdCache(GetIdKey(seq_id), GetAccVerSubkey(), data) ) {
+            CSeq_id_Handle acch;
+            if ( !data.empty() ) {
+                CSeq_id id(data);
+                acch = CSeq_id_Handle::GetHandle(id);
+            }
+            ids->SetLoadedAccVer(acch);
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -354,7 +384,7 @@ bool CCacheReader::LoadSeq_idLabel(CReaderRequestResult& result,
             return true;
         }
     }
-    return CReader::LoadSeq_idLabel(result, seq_id);
+    return false;
 }
 
 

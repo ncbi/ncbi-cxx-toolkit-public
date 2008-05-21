@@ -41,6 +41,7 @@
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/scope.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
 
@@ -177,6 +178,22 @@ void CDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
             break;
         }
     }
+}
+
+
+CSeq_id_Handle CDataLoader::GetAccVer(const CSeq_id_Handle& idh)
+{
+    TIds ids;
+    GetIds(idh, ids);
+    return CScope::x_GetAccVer(ids);
+}
+
+
+int CDataLoader::GetGi(const CSeq_id_Handle& idh)
+{
+    TIds ids;
+    GetIds(idh, ids);
+    return CScope::x_GetGi(ids);
 }
 
 

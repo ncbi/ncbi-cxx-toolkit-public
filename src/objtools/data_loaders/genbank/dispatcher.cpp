@@ -55,6 +55,7 @@ BEGIN_SCOPE(objects)
 static STimeStatistics s_Stat_StringSeq_ids;
 static STimeStatistics s_Stat_Seq_idSeq_ids;
 static STimeStatistics s_Stat_Seq_idGi;
+static STimeStatistics s_Stat_Seq_idAcc;
 static STimeStatistics s_Stat_Seq_idLabel;
 static STimeStatistics s_Stat_Seq_idBlob_ids;
 static STimeStatistics s_Stat_BlobVersion;
@@ -324,6 +325,48 @@ namespace {
         string GetStatisticsDescription(void) const
             {
                 return "gi("+m_Key.AsString()+")";
+            }
+#endif
+        
+    private:
+        TKey m_Key;
+        TLock m_Lock;
+    };
+
+    class CCommandLoadSeq_idAccVer : public CReadDispatcherCommand
+    {
+    public:
+        typedef CSeq_id_Handle TKey;
+        typedef CLoadLockSeq_ids TLock;
+        CCommandLoadSeq_idAccVer(CReaderRequestResult& result,
+                                 const TKey& key)
+            : CReadDispatcherCommand(result),
+              m_Key(key), m_Lock(result, key)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                return m_Lock->IsLoadedAccVer();
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadSeq_idAccVer(GetResult(), m_Key);
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadSeq_idAccVer("+m_Key.AsString()+"): "
+                    "data not found";
+            }
+
+#ifdef GB_COLLECT_STATS
+        STimeStatistics& GetStatistics(void) const
+            {
+                return s_Stat_Seq_idAcc;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "acc("+m_Key.AsString()+")";
             }
 #endif
         
@@ -944,6 +987,14 @@ void CReadDispatcher::LoadSeq_idGi(CReaderRequestResult& result,
 }
 
 
+void CReadDispatcher::LoadSeq_idAccVer(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id)
+{
+    CCommandLoadSeq_idAccVer command(result, seq_id);
+    Process(command);
+}
+
+
 void CReadDispatcher::LoadSeq_idLabel(CReaderRequestResult& result,
                                       const CSeq_id_Handle& seq_id)
 {
@@ -1120,6 +1171,7 @@ void CReadDispatcher::PrintStatistics(void) const
     PrintStat("resolved", "string ids", s_Stat_StringSeq_ids);
     PrintStat("resolved", "seq-ids", s_Stat_Seq_idSeq_ids);
     PrintStat("resolved", "gis", s_Stat_Seq_idGi);
+    PrintStat("resolved", "accs", s_Stat_Seq_idAcc);
     PrintStat("resolved", "labels", s_Stat_Seq_idLabel);
     PrintStat("resolved", "blob ids", s_Stat_Seq_idBlob_ids);
     PrintStat("resolved", "blob versions", s_Stat_BlobVersion);

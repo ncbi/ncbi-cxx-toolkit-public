@@ -314,6 +314,8 @@ public:
 
     // Get "native" bioseq ids without filtering and matching.
     TIds GetIds(const CSeq_id_Handle& idh);
+    CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
+    int GetGi(const CSeq_id_Handle& idh);
 
     string GetLabel(const CSeq_id_Handle& idh, bool force_load);
 

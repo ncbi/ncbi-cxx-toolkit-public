@@ -303,6 +303,77 @@ CDB_Connection* CPubseqReader::x_NewConnection(TConn conn_)
 }
 
 
+namespace {
+    I_BaseCmd* x_SendRequest2(const CBlob_id& blob_id,
+                              CDB_Connection* db_conn,
+                              const char* rpc)
+    {
+        string str = rpc;
+        str += " ";
+        str += NStr::IntToString(blob_id.GetSatKey());
+        str += ",";
+        str += NStr::IntToString(blob_id.GetSat());
+        str += ",";
+        str += NStr::IntToString(blob_id.GetSubSat());
+        AutoPtr<I_BaseCmd> cmd(db_conn->LangCmd(str));
+        cmd->Send();
+        return cmd.release();
+    }
+    
+
+    bool sx_FetchNextItem(CDB_Result& result, const CTempString& name)
+    {
+        while ( result.Fetch() ) {
+            for ( size_t pos = 0; pos < result.NofItems(); ++pos ) {
+                if ( result.ItemName(pos) == name ) {
+                    return true;
+                }
+                result.SkipItem();
+            }
+        }
+        return false;
+    }
+    
+    class CDB_Result_Reader : public CObject, public IReader
+    {
+    public:
+        CDB_Result_Reader(AutoPtr<CDB_Result> db_result)
+            : m_DB_Result(db_result)
+            {
+            }
+
+        ERW_Result Read(void*   buf,
+                        size_t  count,
+                        size_t* bytes_read)
+            {
+                if ( !count ) {
+                    if ( bytes_read ) {
+                        *bytes_read = 0;
+                    }
+                    return eRW_Success;
+                }
+                size_t ret;
+                while ( (ret = m_DB_Result->ReadItem(buf, count)) == 0 ) {
+                    if ( !sx_FetchNextItem(*m_DB_Result, "asn1") ) {
+                        break;
+                    }
+                }
+                if ( bytes_read ) {
+                    *bytes_read = ret;
+                }
+                return ret? eRW_Success: eRW_Eof;
+            }
+        ERW_Result PendingCount(size_t* /*count*/)
+            {
+                return eRW_NotImplemented;
+            }
+
+    private:
+        AutoPtr<CDB_Result> m_DB_Result;
+    };
+}
+
+
 // LoadSeq_idGi, LoadSeq_idSeq_ids, and LoadSeq_idBlob_ids
 // are implemented here and call the same function because
 // PubSeqOS has one RPC call that may suite all needs
@@ -361,6 +432,89 @@ bool CPubseqReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     }
     // blob_ids are always loaded in GetSeq_idInfo()
     _ASSERT(blob_ids.IsLoaded());
+    return true;
+}
+
+
+bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
+                                     const CSeq_id_Handle& seq_id)
+{
+    CLoadLockSeq_ids seq_ids(result, seq_id);
+    if ( seq_ids->IsLoadedAccVer() ) {
+        return true;
+    }
+
+    if ( seq_id.IsGi() ) {
+        _ASSERT(seq_id.Which() == CSeq_id::e_Gi);
+        int gi;
+        if ( seq_id.IsGi() ) {
+            gi = seq_id.GetGi();
+        }
+        else {
+            gi = seq_id.GetSeqId()->GetGi();
+        }
+        if ( gi != 0 ) {
+            _TRACE("ResolveGi to Acc: " << gi);
+
+            CConn conn(this);
+            {{
+                CDB_Connection* db_conn = x_GetConnection(conn);
+    
+                AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_accn_ver_by_gi"));
+                CDB_Int giIn = gi;
+                cmd->SetParam("@gi", &giIn);
+                cmd->Send();
+                
+                bool not_found = false;
+                while ( cmd->HasMoreResults() ) {
+                    AutoPtr<CDB_Result> dbr(cmd->Result());
+                    if ( !dbr.get() ) {
+                        continue;
+                    }
+            
+                    if ( dbr->ResultType() == eDB_StatusResult ) {
+                        dbr->Fetch();
+                        CDB_Int v;
+                        dbr->GetItem(&v);
+                        int status = v.Value();
+                        if ( status == 100 ) {
+                            // gi does not exist
+                            not_found = true;
+                        }
+                        break;
+                    }
+                    
+                    if ( dbr->ResultType() != eDB_RowResult ) {
+                        continue;
+                    }
+                    
+                    if ( sx_FetchNextItem(*dbr, "accver") ) {
+                        CDB_VarChar accVerGot;
+                        dbr->GetItem(&accVerGot);
+                        try {
+                            CSeq_id id(accVerGot.Value());
+                            SetAndSaveSeq_idAccVer(result, seq_id, id);
+                            break;
+                        }
+                        catch ( CException& /*exc*/ ) {
+                            /*
+                            ERR_POST_X(7,
+                                       "CPubseqReader: bad accver data: "<<
+                                       " gi "<<gi<<" -> "<<accVerGot.Value()<<
+                                       ": "<< exc.GetMsg());
+                            */
+                        }
+                    }
+                }
+            }}
+            conn.Release();
+        }
+    }
+
+    if ( !seq_ids->IsLoadedAccVer() ) {
+        return CId1ReaderBase::LoadSeq_idAccVer(result, seq_id);
+    }
+
     return true;
 }
 
@@ -632,77 +786,6 @@ void CPubseqReader::GetSeq_idSeq_ids(CReaderRequestResult& result,
     // copy Seq-id list from gi to original seq-id
     ids->m_Seq_ids = gi_ids->m_Seq_ids;
     ids->SetState(gi_ids->GetState());
-}
-
-
-namespace {
-    I_BaseCmd* x_SendRequest2(const CBlob_id& blob_id,
-                              CDB_Connection* db_conn,
-                              const char* rpc)
-    {
-        string str = rpc;
-        str += " ";
-        str += NStr::IntToString(blob_id.GetSatKey());
-        str += ",";
-        str += NStr::IntToString(blob_id.GetSat());
-        str += ",";
-        str += NStr::IntToString(blob_id.GetSubSat());
-        AutoPtr<I_BaseCmd> cmd(db_conn->LangCmd(str));
-        cmd->Send();
-        return cmd.release();
-    }
-    
-
-    bool sx_FetchNextItem(CDB_Result& result, const CTempString& name)
-    {
-        while ( result.Fetch() ) {
-            for ( size_t pos = 0; pos < result.NofItems(); ++pos ) {
-                if ( result.ItemName(pos) == name ) {
-                    return true;
-                }
-                result.SkipItem();
-            }
-        }
-        return false;
-    }
-    
-    class CDB_Result_Reader : public CObject, public IReader
-    {
-    public:
-        CDB_Result_Reader(AutoPtr<CDB_Result> db_result)
-            : m_DB_Result(db_result)
-            {
-            }
-
-        ERW_Result Read(void*   buf,
-                        size_t  count,
-                        size_t* bytes_read)
-            {
-                if ( !count ) {
-                    if ( bytes_read ) {
-                        *bytes_read = 0;
-                    }
-                    return eRW_Success;
-                }
-                size_t ret;
-                while ( (ret = m_DB_Result->ReadItem(buf, count)) == 0 ) {
-                    if ( !sx_FetchNextItem(*m_DB_Result, "asn1") ) {
-                        break;
-                    }
-                }
-                if ( bytes_read ) {
-                    *bytes_read = ret;
-                }
-                return ret? eRW_Success: eRW_Eof;
-            }
-        ERW_Result PendingCount(size_t* /*count*/)
-            {
-                return eRW_NotImplemented;
-            }
-
-    private:
-        AutoPtr<CDB_Result> m_DB_Result;
-    };
 }
 
 

@@ -82,6 +82,10 @@ public:
                            const string& seq_id);
     bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
                            const CSeq_id_Handle& seq_id);
+    bool LoadSeq_idGi(CReaderRequestResult& result,
+                      const CSeq_id_Handle& seq_id);
+    bool LoadSeq_idAccVer(CReaderRequestResult& result,
+                          const CSeq_id_Handle& seq_id);
     bool LoadSeq_idLabel(CReaderRequestResult& result,
                          const CSeq_id_Handle& seq_id);
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,

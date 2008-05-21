@@ -72,6 +72,8 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     static const char* GetBlob_idsSubkey(void);
     // Seq-id -> gi (1 int)
     static const char* GetGiSubkey(void);
+    // Seq-id -> acc (string: fasta)
+    static const char* GetAccVerSubkey(void);
     // Seq-id -> label (string)
     static const char* GetLabelSubkey(void);
     // Seq-id -> list of Seq-id, binary ASN.1
@@ -142,6 +144,8 @@ public:
                            const CSeq_id_Handle& seq_id);
     bool LoadSeq_idGi(CReaderRequestResult& result,
                       const CSeq_id_Handle& seq_id);
+    bool LoadSeq_idAccVer(CReaderRequestResult& result,
+                          const CSeq_id_Handle& seq_id);
     bool LoadSeq_idLabel(CReaderRequestResult& result,
                          const CSeq_id_Handle& seq_id);
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,

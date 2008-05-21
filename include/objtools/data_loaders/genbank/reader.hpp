@@ -75,6 +75,8 @@ public:
                                    const CSeq_id_Handle& seq_id) = 0;
     virtual bool LoadSeq_idGi(CReaderRequestResult& result,
                               const CSeq_id_Handle& seq_id);
+    virtual bool LoadSeq_idAccVer(CReaderRequestResult& result,
+                                  const CSeq_id_Handle& seq_id);
     virtual bool LoadSeq_idLabel(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id);
     virtual bool LoadBlobVersion(CReaderRequestResult& result,
@@ -108,6 +110,9 @@ public:
     void SetAndSaveSeq_idGi(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             int gi) const;
+    void SetAndSaveSeq_idAccVer(CReaderRequestResult& result,
+                                const CSeq_id_Handle& seq_id,
+                                const CSeq_id& acc_id) const;
     void SetAndSaveSeq_idLabel(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             const string& label) const;
@@ -134,6 +139,10 @@ public:
                             const CSeq_id_Handle& seq_id,
                             CLoadLockSeq_ids& seq_ids,
                             int gi) const;
+    void SetAndSaveSeq_idAccVer(CReaderRequestResult& result,
+                                const CSeq_id_Handle& seq_id,
+                                CLoadLockSeq_ids& seq_ids,
+                                const CSeq_id& acc_id) const;
     void SetAndSaveSeq_idLabel(CReaderRequestResult& result,
                                const CSeq_id_Handle& seq_id,
                                CLoadLockSeq_ids& seq_ids,

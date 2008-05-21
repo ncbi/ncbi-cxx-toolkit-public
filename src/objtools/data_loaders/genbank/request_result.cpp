@@ -67,6 +67,7 @@ CLoadInfo::~CLoadInfo(void)
 
 CLoadInfoSeq_ids::CLoadInfoSeq_ids(void)
     : m_GiLoaded(false),
+      m_AccLoaded(false),
       m_LabelLoaded(false),
       m_State(0)
 {
@@ -75,6 +76,7 @@ CLoadInfoSeq_ids::CLoadInfoSeq_ids(void)
 
 CLoadInfoSeq_ids::CLoadInfoSeq_ids(const CSeq_id_Handle& /*seq_id*/)
     : m_GiLoaded(false),
+      m_AccLoaded(false),
       m_LabelLoaded(false),
       m_State(0)
 {
@@ -83,6 +85,7 @@ CLoadInfoSeq_ids::CLoadInfoSeq_ids(const CSeq_id_Handle& /*seq_id*/)
 
 CLoadInfoSeq_ids::CLoadInfoSeq_ids(const string& /*seq_id*/)
     : m_GiLoaded(false),
+      m_AccLoaded(false),
       m_LabelLoaded(false),
       m_State(0)
 {
@@ -125,6 +128,34 @@ void CLoadInfoSeq_ids::SetLoadedGi(int gi)
     _ASSERT(!m_GiLoaded || m_Gi == gi);
     m_Gi = gi;
     m_GiLoaded = true;
+}
+
+
+bool CLoadInfoSeq_ids::IsLoadedAccVer(void)
+{
+    if ( m_AccLoaded ) {
+        return true;
+    }
+    if ( !IsLoaded() ) {
+        return false;
+    }
+    CSeq_id_Handle acc;
+    ITERATE ( CLoadInfoSeq_ids, it, *this ) {
+        if ( !it->IsGi() && it->GetSeqId()->GetTextseq_Id() ) {
+            acc = *it;
+            break;
+        }
+    }
+    SetLoadedAccVer(acc);
+    return true;
+}
+
+
+void CLoadInfoSeq_ids::SetLoadedAccVer(const CSeq_id_Handle& acc)
+{
+    _ASSERT(!m_AccLoaded || m_Acc == acc);
+    m_Acc = acc;
+    m_AccLoaded = true;
 }
 
 
