@@ -31,9 +31,10 @@
  */
 
 /// @file test_boost.hpp
-/// Utility stuff for more convenient using of Boost.Test library.
+///   Utility stuff for more convenient using of Boost.Test library.
 ///
-/// This header must be included after all Boost.Test headers.
+/// This header must be included before any Boost.Test header
+/// (if you have any).
 
 
 #include <corelib/ncbistd.hpp>
@@ -63,6 +64,33 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Type of function with unit tests initialization code
+typedef void (*TNcbiBoostInitFunc)(void);
+
+/// Macro defining initialization function which will be called before
+/// tests execution. The usage of this macro is similar to
+/// BOOST_AUTO_TEST_CASE, i.e.:
+/// BOOST_AUTO_INITIALIZATION(FunctionName)
+/// {
+///     // initialization function body
+/// }
+#define BOOST_AUTO_INITIALIZATION(name)                                     \
+static void name(void);                                                     \
+static ::NCBI_NS_NCBI::SNcbiBoostIniter BOOST_JOIN(name, _initer) (&name);  \
+static void name(void)
+
+/// Registrar of all initialization functions
+void RegisterNcbiBoostInit(TNcbiBoostInitFunc func);
+
+/// Class for implementing automatic registration of init-functions
+struct SNcbiBoostIniter
+{
+    SNcbiBoostIniter(TNcbiBoostInitFunc func)
+    {
+        RegisterNcbiBoostInit(func);
+    }
+};
+
 /// Define some test as disabled in current configuration
 /// This function should be called for every existing test which is not added
 /// to Boost's test suite for execution. Such tests will be included in
@@ -72,8 +100,8 @@ BEGIN_NCBI_SCOPE
 ///   Name of the disabled test
 /// @param reason
 ///   Reason of test disabling. It will be printed in the report.
-extern void NcbiBoostTestDisable(const string&  test_name,
-                                 const string&  reason = "");
+extern void NcbiBoostTestDisable(CTempString  test_name,
+                                 CTempString  reason = "");
 
 
 END_NCBI_SCOPE

@@ -32,20 +32,23 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/error_codes.hpp>
+#include <corelib/ncbienv.hpp>
+#include <corelib/test_boost.hpp>
+#undef init_unit_test_suite
 
 #include <boost/test/results_reporter.hpp>
 #include <boost/test/output/plain_report_formatter.hpp>
 #include <boost/test/output/xml_report_formatter.hpp>
 #include <boost/test/detail/unit_test_parameters.hpp>
 
-#include <corelib/ncbienv.hpp>
-#include <corelib/test_boost.hpp>
-#undef init_unit_test_suite
-
 #include <list>
 #include <string>
 
 #include <common/test_assert.h>  /* This header must go last */
+
+
+#define NCBI_USE_ERRCODE_X  Corelib_TestBoost
 
 
 /// Prototype of global user-defined initialization function
@@ -54,6 +57,20 @@ NcbiInitUnitTestSuite( int argc, char* argv[] );
 
 
 BEGIN_NCBI_SCOPE
+
+static list<TNcbiBoostInitFunc>* s_BoostInitFuncs = NULL;
+
+
+void
+RegisterNcbiBoostInit(TNcbiBoostInitFunc func)
+{
+    if (! s_BoostInitFuncs) {
+        s_BoostInitFuncs = new list<TNcbiBoostInitFunc>();
+    }
+    s_BoostInitFuncs->push_back(func);
+}
+
+
 
 // Some shortening typedefs
 typedef boost::unit_test::results_reporter::format  TBoostFormatter;
@@ -190,8 +207,8 @@ CNcbiBoostReporter::do_confirmation_report(TBoostTestUnit const&  tu,
 CNcbiBoostReporter* s_NcbiReporter = NULL;
 
 
-void NcbiBoostTestDisable(const string&  test_name,
-                          const string&  reason)
+void
+NcbiBoostTestDisable(CTempString test_name, CTempString reason)
 {
     // reporter must be already created by init_unit_test_suite()
     assert(s_NcbiReporter);
@@ -204,13 +221,14 @@ END_NCBI_SCOPE
 
 
 // Global initialization function called from Boost framework
-boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] )
+boost::unit_test::test_suite*
+init_unit_test_suite( int argc, char* argv[] )
 {
     // This function should not be called yet
     assert(! NCBI_NS_NCBI::s_NcbiReporter);
 
-    boost::unit_test::output_format format =
-                            boost::unit_test::runtime_config::report_format();
+    boost::unit_test::output_format
+                format = boost::unit_test::runtime_config::report_format();
 
     NCBI_NS_NCBI::CNcbiEnvironment env;
     std::string is_autobuild = env.Get("NCBI_AUTOMATED_BUILD");
@@ -223,8 +241,27 @@ boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] )
     NCBI_NS_NCBI::s_NcbiReporter =
                                 new NCBI_NS_NCBI::CNcbiBoostReporter(format);
 
-    boost::unit_test::results_reporter::set_format(
-                                                NCBI_NS_NCBI::s_NcbiReporter);
+    boost::unit_test::results_reporter
+                            ::set_format(NCBI_NS_NCBI::s_NcbiReporter);
+
+
+    if (NCBI_NS_NCBI::s_BoostInitFuncs) {
+        ITERATE(std::list<NCBI_NS_NCBI::TNcbiBoostInitFunc>, it,
+                                            (*NCBI_NS_NCBI::s_BoostInitFuncs))
+        {
+            try {
+                (*it)();
+            }
+            catch (std::exception& e) {
+                ERR_POST_X(1, "Exception in unit tests initialization function: "
+                              << e.what());
+                return NULL;
+            }
+        }
+
+        delete NCBI_NS_NCBI::s_BoostInitFuncs;
+        NCBI_NS_NCBI::s_BoostInitFuncs = NULL;
+    }
 
     return NcbiInitUnitTestSuite(argc, argv);
 }
