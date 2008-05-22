@@ -97,7 +97,6 @@ int main(int argc, const char* argv[])
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
-    GetDiagContext().SetAutoWrite(false);
     reg = s_CreateRegistry();
     CONNECT_Init(reg);
 
