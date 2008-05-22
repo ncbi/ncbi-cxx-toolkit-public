@@ -72,49 +72,47 @@ CConstRef<CUser_field> CUser_object::GetFieldRef(const string& str,
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
-
-    CConstRef<CUser_object> obj_ref(this);
-    CConstRef<CUser_field>  field_ref;
-    ITERATE(list<string>, iter, toks) {
-        if (obj_ref) {
-            ITERATE(TData, field_iter, obj_ref->GetData()) {
-                const CUser_field& field = **field_iter;
-                if (field.IsSetLabel()  &&  field.GetLabel().IsStr()  &&
-                    field.GetLabel().GetStr() == *iter) {
-                    field_ref.Reset(&field);
-                    obj_ref.Reset();
-                    break;
-                }
-            }
-        } else if (field_ref) {
-            switch (field_ref->GetData().Which()) {
-            case CUser_field::TData::e_Object:
-                obj_ref.Reset(&field_ref->GetData().GetObject());
-                field_ref.Reset();
-                --iter;
-                break;
-            case CUser_field::TData::e_Objects:
-                break;
-            case CUser_field::TData::e_Fields:
-                break;
-            default:
-                NCBI_THROW(CException, eUnknown,
-                    "illegal recursion");
-            }
-        }
+    if ( !toks.size() ) {
+        return CConstRef<CUser_field>();
     }
 
-    if ( !field_ref ) {
-        /// not found in the standard pathway, so recurse the fields themselves
-        ITERATE(TData, field_iter, GetData()) {
-            field_ref = (*field_iter)->GetFieldRef(str, delim);
+    ///
+    /// step 1: scan one level deep for a nested object
+    /// we scan only with the first token
+    ///
+    string sub;
+    string first;
+    {{
+        list<string>::iterator iter = toks.begin();
+        first = *iter;
+        for (++iter;  iter != toks.end();  ++iter) {
+            if ( !sub.empty() ) {
+                sub += delim;
+            }
+            sub += *iter;
+        }
+    }}
+
+    ITERATE(TData, field_iter, GetData()) {
+        const CUser_field& field = **field_iter;
+        if (field.IsSetLabel()  &&  field.GetLabel().IsStr()) {
+            const string& this_label = field.GetLabel().GetStr();
+            if (this_label != first) {
+                continue;
+            }
+        }
+
+        if ( !sub.empty() ) {
+            CConstRef<CUser_field> field_ref =
+                (*field_iter)->GetFieldRef(sub, delim);
             if (field_ref) {
-                break;
+                return field_ref;
             }
+        } else {
+            return CConstRef<CUser_field>(&field);
         }
     }
-
-    return field_ref;
+    return CConstRef<CUser_field>();
 }
 
 

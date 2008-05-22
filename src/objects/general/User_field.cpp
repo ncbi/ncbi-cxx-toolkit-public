@@ -253,7 +253,6 @@ CRef<CUser_field> CUser_field::SetFieldRef(const string& str,
     CRef<CUser_field> f(this);
     if ( ! f->GetData().IsFields()  &&  f->GetData().Which() != CUser_field::TData::e_not_set ) {
         // There is a value here, not a list of User_fields, no place to recurse downward. 
-        _ASSERT(false);
         NCBI_THROW(CException, eUnknown, "Too many parts in key: \"" + str + "\"");
     }
     list<string>::const_iterator last = toks.end();
@@ -271,7 +270,6 @@ CRef<CUser_field> CUser_field::SetFieldRef(const string& str,
                     break;
                 } else {
                     // There is a value here, not a list of User_fields, no place to recurse downward. 
-                    _ASSERT(false);
                     NCBI_THROW(CException, eUnknown, "Too many parts in key: \"" + str + "\"");
                 }
             }
