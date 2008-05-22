@@ -291,7 +291,7 @@ void TestTempString()
 }
 
 
-test_suite* init_unit_test_suite(int argc, char * argv[])
+test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/[])
 {
     test_suite* suite = BOOST_TEST_SUITE("CTempString Unit Test");
     suite->add(BOOST_TEST_CASE(TestTempString));
