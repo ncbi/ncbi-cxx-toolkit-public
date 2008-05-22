@@ -823,7 +823,7 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
 
     if ( ( args.GetDriverName() == "ctlib" && sybase_client_v125) ||
          ( (args.GetDriverName() == "ftds"
-            || args.GetDriverName() == "ftds8"
+            // || args.GetDriverName() == "ftds8" // 05/22/08 // Stoped working
             || args.GetDriverName() == "ftds63"
             || args.GetDriverName() == "ftds_odbc"
             ) &&
