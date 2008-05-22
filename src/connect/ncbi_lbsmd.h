@@ -59,10 +59,10 @@ extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
 
 
 /* Get (perhaps cached) copy of LBSM heap, which is guaranteed to be
- * current for given time "time".  If "time" passed as 0, current time
- * of the day is assumed.  Return NULL if the copy operation cannot
- * be performed (due to various reasons, including the original
- * LBSM shmem to be obsolete).
+ * current for given the time "time".  If "time" passed as 0, the heap
+ * (if present as shmem) will be returned regardless of its freshness.
+ * Return NULL if the copy operation cannot be performed (due to various
+ * reasons, including the original LBSM shmem to be stale).
  * Returned heap (if non-NULL) has a serial number reflecting which
  * shmem segment has been used to get the snapshot.  The serial number
  * is negated for newer heap structure, which has dedicated version
