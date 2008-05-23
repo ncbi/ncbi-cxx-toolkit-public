@@ -596,6 +596,9 @@
 /* #undef NCBI_BIN_RELEASE */
 
 /* Compiler name */
+#define NCBI_COMPILER "GCC"
+
+/* Compiler name */
 /* #undef NCBI_COMPILER_COMPAQ */
 
 /* Compiler name */

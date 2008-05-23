@@ -18,6 +18,7 @@
 #define NCBI_OS        "MSWIN"
 #define NCBI_OS_MSWIN  1
 
+#define NCBI_COMPILER         "MSVC"
 #define NCBI_COMPILER_MSVC    1
 
 #define HOST_CPU     "i386"

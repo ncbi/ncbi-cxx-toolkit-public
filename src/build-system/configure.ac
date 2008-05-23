@@ -687,6 +687,7 @@ if false; then
    AC_DEFINE(NCBI_COMPILER_UNKNOWN,   1, [Compiler name])
 fi
 
+AC_DEFINE_UNQUOTED(NCBI_COMPILER, "$ncbi_compiler", [Compiler name])
 AC_DEFINE_UNQUOTED(NCBI_COMPILER_$ncbi_compiler, 1, [Compiler name])
 AC_DEFINE_UNQUOTED(NCBI_COMPILER_VERSION, $ncbi_compiler_ver,
                    [Compiler version as three-digit integer])

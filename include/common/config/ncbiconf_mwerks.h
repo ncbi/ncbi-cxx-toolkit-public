@@ -9,6 +9,7 @@
 #define NCBI_CXX_TOOLKIT  1
 
 #ifdef __MWERKS__
+#  define NCBI_COMPILER            "METROWERKS"
 #  define NCBI_COMPILER_METROWERKS 1
 #endif
 
@@ -35,7 +36,9 @@
 
 #if defined(NCBI_OS_DARWIN) && defined(NCBI_COMPILER_METROWERKS)
 #  if _MSL_USING_MW_C_HEADERS
-#    define NCBI_COMPILER_MW_MSL
+#    undef NCBI_COMPILER
+#    define NCBI_COMPILER        "MW_MSL"
+#    define NCBI_COMPILER_MW_MSL 1
 #  endif
 #endif
 

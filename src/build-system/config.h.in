@@ -586,6 +586,9 @@
 #undef NCBI_BIN_RELEASE
 
 /* Compiler name */
+#undef NCBI_COMPILER
+
+/* Compiler name */
 #undef NCBI_COMPILER_COMPAQ
 
 /* Compiler name */

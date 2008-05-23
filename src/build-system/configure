@@ -4255,6 +4255,11 @@ fi
 
 
 cat >>confdefs.h <<_ACEOF
+#define NCBI_COMPILER "$ncbi_compiler"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
 #define NCBI_COMPILER_$ncbi_compiler 1
 _ACEOF
 
