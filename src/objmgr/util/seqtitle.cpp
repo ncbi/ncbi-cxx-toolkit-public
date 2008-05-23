@@ -90,6 +90,18 @@ static string s_TitleFromSegment   (const CBioseq_Handle& handle,
 static void s_FlyCG_PtoR(string& s);
                                           
 
+enum EOrganelleNameFlags {
+    fON_with_plasmid = 0x1,
+    fON_virus        = 0x2,
+    fON_wgs          = 0x4
+};
+typedef int TOrganelleNameFlags; // binary OR of EOrganelleNameFlags
+
+
+static const char* s_OrganelleName(CBioSource::TGenome genome,
+                                   TOrganelleNameFlags flags);
+
+
 string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
 {
     string                    prefix, title, suffix;
@@ -483,10 +495,15 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             if (title.find("whole genome shotgun sequencing project") == NPOS){
                 suffix = ", whole genome shotgun sequencing project";
             }            
-        } else {
-            if (title.find("whole genome shotgun sequence") == NPOS) {
-                suffix = ", whole genome shotgun sequence";
+        } else if (title.find("whole genome shotgun sequence") == NPOS) {
+            if (source.NotEmpty()) {
+                const char* orgnl = s_OrganelleName(source->GetGenome(),
+                                                    fON_wgs);
+                if (orgnl[0]) {
+                    suffix = string(1, ' ') + orgnl;
+                }
             }
+            suffix += ", whole genome shotgun sequence";
         }
         break;
     }
@@ -617,12 +634,105 @@ static string s_TitleFromBioSource(const CBioSource& source,
 }
 
 
+static const char* s_OrganelleName(CBioSource::TGenome genome,
+                                   TOrganelleNameFlags flags)
+{
+    switch (genome) {
+        // unknown, genomic
+    case CBioSource::eGenome_chloroplast:
+        return "chloroplast";
+    case CBioSource::eGenome_chromoplast:
+        return "chromoplast";
+    case CBioSource::eGenome_kinetoplast:
+        return "kinetoplast";
+    case CBioSource::eGenome_mitochondrion:
+        if ((flags & (fON_with_plasmid | fON_wgs)) == 0) {
+            return "mitochondrion";
+        } else {
+            return "mitochondrial";
+        }
+    case CBioSource::eGenome_plastid:
+        return "plastid";
+    case CBioSource::eGenome_macronuclear:
+        if ((flags & fON_wgs) == 0) {
+            return "macronuclear";
+        }
+        break;
+    case CBioSource::eGenome_extrachrom:
+        if ((flags & fON_wgs) == 0) {
+            return "extrachromosomal";
+        }
+        break;
+    case CBioSource::eGenome_plasmid:
+        if ((flags & fON_wgs) == 0) {
+            return "plasmid";
+        }
+        break;
+        // transposon, insertion-seq
+    case CBioSource::eGenome_cyanelle:
+        return "cyanelle";
+    case CBioSource::eGenome_proviral:
+        if ((flags & fON_virus) == 0) {
+            if ((flags & (fON_with_plasmid | fON_wgs)) == 0) {
+                return "provirus";
+            } else {
+                return "proviral";
+            }
+        }
+        break;
+    case CBioSource::eGenome_virion:
+        if ((flags & fON_virus) == 0) {
+            return "virus";
+        }
+        break;
+    case CBioSource::eGenome_nucleomorph:
+        if ((flags & fON_wgs) == 0) {
+            return "nucleomorph";
+        }
+        break;
+    case CBioSource::eGenome_apicoplast:
+        return "apicoplast";
+    case CBioSource::eGenome_leucoplast:
+        return "leucoplast";
+    case CBioSource::eGenome_proplastid:
+        if ((flags & fON_wgs) == 0) {
+            return "protoplast";
+        } else {
+            return "proplastid";
+        }
+        break;
+    case CBioSource::eGenome_endogenous_virus:
+        if ((flags & fON_wgs) != 0) {
+            return "endogenous virus";
+        }
+        break;
+    case CBioSource::eGenome_hydrogenosome:
+        if ((flags & fON_wgs) != 0) {
+            return "hydrogenosome";
+        }
+        break;
+    case CBioSource::eGenome_chromosome:
+        if ((flags & fON_wgs) != 0) {
+            return "chromosome";
+        }
+        break;
+    case CBioSource::eGenome_chromatophore:
+        if ((flags & fON_wgs) != 0) {
+            return "chromatophore";
+        }
+        break;
+    }
+    return kEmptyCStr;
+}
+
+
 static string x_TitleFromChromosome(const CBioSource& source,
                                     const CMolInfo&   mol_info)
 {
     string name, chromosome, segment, plasmid_name, orgnl;
     string seq_tag, gen_tag;
-    bool   is_plasmid = false, is_virus = false;
+    bool   is_plasmid = false;
+    TOrganelleNameFlags flags = 0;
 
     if (source.GetOrg().IsSetTaxname()) {
         name = source.GetOrg().GetTaxname();
@@ -634,7 +744,7 @@ static string x_TitleFromChromosome(const CBioSource& source,
     NStr::ToLower(lc_name);
 
     if (lc_name.find("virus") != NPOS  ||  lc_name.find("phage") != NPOS) {
-        is_virus = true;
+        flags |= fON_virus;
     }
 
     if (source.IsSetSubtype()) {
@@ -655,44 +765,16 @@ static string x_TitleFromChromosome(const CBioSource& source,
                     &&  lc_plasmid.find("element") == NPOS) {
                     plasmid_name = "plasmid " + plasmid_name;
                 }
+                flags |= fON_with_plasmid;
                 break;
             }
             }
         }
     }
 
-    switch (source.GetGenome()) {
-        // unknown, genomic
-    case CBioSource::eGenome_chloroplast:  orgnl = "chloroplast";   break;
-    case CBioSource::eGenome_chromoplast:  orgnl = "chromoplast";   break;
-    case CBioSource::eGenome_kinetoplast:  orgnl = "kinetoplast";   break;
-    case CBioSource::eGenome_mitochondrion:
-        orgnl = plasmid_name.empty() ? "mitochondrion" : "mitochondrial";
-        break;
-    case CBioSource::eGenome_plastid:      orgnl = "plastid";       break;
-    case CBioSource::eGenome_macronuclear: orgnl = "macronuclear";  break;
-    case CBioSource::eGenome_extrachrom:   orgnl = "extrachromosomal"; break;
-    case CBioSource::eGenome_plasmid:
-        orgnl = "plasmid";
+    orgnl = s_OrganelleName(source.GetGenome(), flags);
+    if (source.GetGenome() == CBioSource::eGenome_plasmid) {
         is_plasmid = true;
-        break;
-        // transposon, insertion-seq
-    case CBioSource::eGenome_cyanelle:     orgnl = "cyanelle";      break;
-    case CBioSource::eGenome_proviral:
-        if (!is_virus) {
-            orgnl = plasmid_name.empty() ? "provirus" : "proviral";
-        }
-        break;
-    case CBioSource::eGenome_virion:
-        if (!is_virus) {
-            orgnl = "virus";
-        }
-        break;
-    case CBioSource::eGenome_nucleomorph:  orgnl = "nucleomorph";   break;
-    case CBioSource::eGenome_apicoplast:   orgnl = "apicoplast";    break;
-    case CBioSource::eGenome_leucoplast:   orgnl = "leucoplast";    break;
-    case CBioSource::eGenome_proplastid:   orgnl = "protoplast";    break;
-        // endogenous-virus
     }
 
     switch (mol_info.GetCompleteness()) {
