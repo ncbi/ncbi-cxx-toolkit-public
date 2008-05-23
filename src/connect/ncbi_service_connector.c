@@ -181,6 +181,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
 }
 
 
+/*ARGSUSED*/
 static int/*bool*/ s_IsContentTypeDefined(const SConnNetInfo* net_info,
                                           EMIME_Type          mime_t,
                                           EMIME_SubType       mime_s,
@@ -327,6 +328,7 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
+/*ARGSUSED*/
 /* This callback is only for services called via direct HTTP */
 static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
                                    void*         data,
