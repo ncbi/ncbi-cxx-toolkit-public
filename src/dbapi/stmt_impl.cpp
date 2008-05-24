@@ -35,7 +35,6 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/rwstream.hpp>
 #include "conn_impl.hpp"
 #include "stmt_impl.hpp"
 #include "rs_impl.hpp"

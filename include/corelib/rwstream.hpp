@@ -38,7 +38,6 @@
 /// @sa IReader, IWriter, IReaderWriter, CRWStreambuf
 
 
-#include <corelib/reader_writer.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/impl/rwstreambuf.hpp>
 
