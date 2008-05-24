@@ -37,7 +37,6 @@
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
 #include <ctype.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_Service

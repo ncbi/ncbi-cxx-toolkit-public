@@ -36,7 +36,6 @@
 #include "ncbi_lb.h"
 #include "ncbi_local.h"
 #include "ncbi_priv.h"
-#include <string.h>
 #include <stdlib.h>
 
 

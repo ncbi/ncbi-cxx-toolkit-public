@@ -33,7 +33,6 @@
  *
  */
 
-#include <connect/ncbi_buffer.h>
 #include <connect/ncbi_memory_connector.h>
 #include <assert.h>
 #include <stdlib.h>

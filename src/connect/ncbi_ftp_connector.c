@@ -38,7 +38,6 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_assert.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_buffer.h>
 #include <connect/ncbi_ftp_connector.h>
 #include <connect/ncbi_socket.h>
 #include <ctype.h>
