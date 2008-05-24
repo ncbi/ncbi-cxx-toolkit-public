@@ -33,6 +33,10 @@
  *
  */
 
+#ifdef __GNUC__
+#  warning "Header <util/rwstream.hpp> is obsolete;  please use <corelib/rwstream.hpp> instead!"
+#endif // __GNUC__ 
+
 #include <corelib/rwstream.hpp>
 
 #endif /* UTIL___RWSTREAM__HPP */
