@@ -341,6 +341,7 @@ if \$no_report_err; then
 fi
 
 ulimit -c 1000000
+ulimit -v 2000000
 
 
 ##  Run one test
