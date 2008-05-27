@@ -39,10 +39,13 @@
 #################################
 
 include $(builddir)/Makefile.lib
-XLIBDEP = $(XLIBDEPLINK)
+@IF_WITH_DLL@ XLIBDEP = $(XLIBDEPLINK)
 # Kludge: Makefile.lib and Makefile.dll both include Makefile.$(Rules);
 # while including the real version twice should be safe, gmake for one
 # warns about duplicate rules.  Substituting a guaranteed contentless
 # makefile avoids any such problem.
 Rules = is_dll_support
 include $(builddir)/Makefile.dll
+@UNLESS_WITH_DLL@ XDLL_LINK          = $(XDLL)
+@UNLESS_WITH_DLL@ XDLL_LOADABLE_LINK = $(XDLL_LOADABLE)
+@UNLESS_WITH_DLL@ XDLLDEP_LINK       = $(XDLLDEP)

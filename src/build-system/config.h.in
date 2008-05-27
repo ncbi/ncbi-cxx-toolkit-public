@@ -625,6 +625,9 @@
    functions as deprecated. */
 #undef NCBI_DEPRECATED
 
+/* Define to 1 if building dynamic libraries by default. */
+#undef NCBI_DLL_BUILD
+
 /* Define to whatever syntax your compiler supports for marking functions as
    to be inlined even if they might not otherwise be. */
 #undef NCBI_FORCEINLINE

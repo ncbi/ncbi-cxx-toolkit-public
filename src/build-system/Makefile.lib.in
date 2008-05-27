@@ -38,6 +38,7 @@ XLIB        = $(LIB:%=@lib_pre@%@lib_ext@)
 XLIBDEP     = .$(LIB).dep
 XLIBLINK    = @lib_pre@$(LIB)-static@lib_ext@
 XLIBDEPLINK = .$(LIB)-static.dep
+XOLD_DLLS   = $(LIB:%=@lib_pre@%@dll_ext@) $(LIB:%=@lib_pre@%@loadable_ext@)
 
 $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB)
@@ -48,7 +49,8 @@ $(XLIB): $(XLIBOBJ)
 	@if [ '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
 	    echo $(BINCOPY) $(XLIB) $(libdir) && \
 	    $(BINCOPY) $(XLIB) $(libdir) && \
-	    cd $(libdir) && $(RM) $(XLIBLINK) && $(LN_S) $(XLIB) $(XLIBLINK); \
+	    cd $(libdir) && $(RM) $(XLIBLINK) $(XOLD_DLLS) && \
+	    $(LN_S) $(XLIB) $(XLIBLINK); \
 	fi
 	@if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
 	    $(BINCOPY) $(XLIBDEP) $(status_dir) && \

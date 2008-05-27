@@ -141,7 +141,8 @@ void CDll::x_Init(const string& path, const string& name, TFlags flags)
     if (F_ISSET(fBaseName)  &&
         name.find_first_of(":/\\") == NPOS  &&
         !CDirEntry::MatchesMask(name.c_str(),
-                                NCBI_PLUGIN_PREFIX "*" NCBI_PLUGIN_SUFFIX "*")
+                                NCBI_PLUGIN_PREFIX "*" NCBI_PLUGIN_MIN_SUFFIX
+                                "*")
         ) {
         // "name" is basename
         x_name = NCBI_PLUGIN_PREFIX + x_name + NCBI_PLUGIN_SUFFIX;

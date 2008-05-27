@@ -55,13 +55,18 @@ struct SDllHandle;
 #ifndef NCBI_PLUGIN_SUFFIX
 #  ifdef NCBI_OS_MSWIN
 #    define NCBI_PLUGIN_PREFIX ""
-#    define NCBI_PLUGIN_SUFFIX ".dll"
+#    define NCBI_PLUGIN_MIN_SUFFIX ".dll"
 #  elif defined(NCBI_XCODE_BUILD)
 #    define NCBI_PLUGIN_PREFIX "lib"
-#    define NCBI_PLUGIN_SUFFIX ".dylib"
+#    define NCBI_PLUGIN_MIN_SUFFIX ".dylib"
 #  else
 #    define NCBI_PLUGIN_PREFIX "lib"
-#    define NCBI_PLUGIN_SUFFIX ".so"
+#    define NCBI_PLUGIN_MIN_SUFFIX ".so"
+#  endif
+#  if defined(NCBI_DLL_BUILD)  ||  defined(NCBI_OS_MSWIN)
+#    define NCBI_PLUGIN_SUFFIX NCBI_PLUGIN_MIN_SUFFIX
+#  else
+#    define NCBI_PLUGIN_SUFFIX "-dll" NCBI_PLUGIN_MIN_SUFFIX
 #  endif
 #endif
 
@@ -74,7 +79,7 @@ struct SDllHandle;
 ///
 /// The DLL name is considered the basename if it does not contain embedded
 /// '/', '\', or ':' symbols. Also, in this case, if the DLL name does not
-/// start with NCBI_PLUGIN_PREFIX and contain NCBI_PLUGIN_SUFFIX (and if
+/// start with NCBI_PLUGIN_PREFIX and contain NCBI_PLUGIN_MIN_SUFFIX (and if
 /// eExactName flag not passed to the constructor), then it will be
 /// automagically transformed according to the following rule:
 ///   <name>  --->  NCBI_PLUGIN_PREFIX + <name> + NCBI_PLUGIN_SUFFIX

@@ -10,4 +10,4 @@ ASN_DEP = seq
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = ncbi_xreader
+DLL_LIB = ncbi_xreader$(DLL)

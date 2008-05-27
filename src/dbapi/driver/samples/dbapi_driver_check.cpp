@@ -53,6 +53,7 @@ int main(int argc, char* argv[])
     string driver_name = argv[1];
 
     CException::EnableBackgroundReporting(false);
+    CPluginManager_DllResolver::EnableGlobally(true);
 
     try {
         C_DriverMgr drv_mgr;

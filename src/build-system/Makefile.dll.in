@@ -48,12 +48,15 @@ include $(builddir)/Makefile.$(Rules)
 
 XDLLOBJ       = $(SOURCES:=@obj_ext@)
 XOBJ          = $(OBJ:=@obj_ext@)
-XDLL          = $(LIB:%=@lib_pre@%@dll_ext@)
-XDLL_LOADABLE = $(LIB:%=@lib_pre@%@loadable_ext@)
-XDLLDEP       = .$(LIB).dep
+XDLL          = $(LIB:%=@lib_pre@%$(DLL)@dll_ext@)
+XDLL_LINK     = $(LIB:%=@lib_pre@%@dll_ext@)
+XDLL_LOADABLE = $(LIB:%=@lib_pre@%$(DLL)@loadable_ext@)
+XDLL_LOADABLE_LINK = $(LIB:%=@lib_pre@%@loadable_ext@)
+XDLLDEP       = .$(LIB)$(DLL).dep
+XDLLDEP_LINK  = .$(LIB).dep
 XDLL_LIBS     = @DLL_LIB_SETTING@
 XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(XDLL_LIBS:%=@lib_l_pre@%@lib_l_ext@)
-XDLL_LIBDEP = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
+XDLL_LIBDEP   = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
 
 $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL)
@@ -67,14 +70,29 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	@if [ '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
 	    echo $(BINCOPY) $(XDLL) $(libdir) && \
 	    $(BINCOPY) $(XDLL) $(libdir); \
+	    if [ $(XDLL_LINK) != $(XDLL) ]; then \
+	        cd $(libdir) && \
+	        $(RM) $(XDLL_LINK) && \
+	        $(LN_S) $(XDLL) $(XDLL_LINK); \
+	    fi; \
 	fi
 	@if [ '@has_dll_loadable@' != '@# ' -a '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
 	    echo $(BINCOPY) $(XDLL_LOADABLE) $(libdir) && \
 	    $(BINCOPY) $(XDLL_LOADABLE) $(libdir); \
+	    if [ $(XDLL_LOADABLE_LINK) != $(XDLL_LOADABLE) ]; then \
+	        cd $(libdir) && \
+	        $(RM) $(XDLL_LOADABLE_LINK) && \
+	        $(LN_S) $(XDLL_LOADABLE) $(XDLL_LOADABLE_LINK); \
+	    fi; \
 	fi
 	@if [ '$(BINCOPY)' != '@:' -a -w $(status_dir) -a ! -r $(status_dir)/$(XDLLDEP) ]; then \
 	    $(BINCOPY) $(XDLLDEP) $(status_dir); \
 	    $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP); \
+	    if [ $(XDLLDEP_LINK) != $(XDLLDEP) ]; then \
+	        cd $(status_dir) && \
+	        $(RM) $(XDLLDEP_LINK) && \
+	        $(LN_S) $(XDLLDEP) $(XDLLDEP_LINK); \
+	    fi; \
 	fi
 
 
@@ -95,9 +113,10 @@ deactivate: deactivate-dll
 
 deactivate-dll:
 	-if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
-	    $(RM) $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP); \
+	    $(RM) $(libdir)/$(XDLL) $(libdir)/$(XDLL_LINK) \
+	       $(status_dir)/$(XDLLDEP) $(status_dir)/$(XDLLDEP_LINK); \
 	    [ '@has_dll_loadable@' = '@# ' ]  ||  \
-	        $(RM) $(libdir)/$(XDLL_LOADABLE); \
+	     $(RM) $(libdir)/$(XDLL_LOADABLE) $(libdir)/$(XDLL_LOADABLE_LINK); \
 	fi
 
 .PHONY: default_rule all clean clean-dll purge deactivate deactivate-dll

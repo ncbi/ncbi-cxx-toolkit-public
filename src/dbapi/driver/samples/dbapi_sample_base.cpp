@@ -84,6 +84,7 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
     m_TableUID += CTime(CTime::eCurrent).AsString("MDy");
     replace( m_TableUID.begin(), m_TableUID.end(), '-', '_' );
 
+    CPluginManager_DllResolver::EnableGlobally(true);
     return;
 }
 

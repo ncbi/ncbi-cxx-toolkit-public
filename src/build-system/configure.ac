@@ -1425,17 +1425,32 @@ case "$with_dll:$with_static" in
    *)       LIB_OR_DLL="lib";  dll_sfx=""  ;;
 esac
 
+DLL=
 DLL_LIB_SETTING='$(DLL_DLIB)'
+IF_WITH_DLL=
+UNLESS_WITH_DLL='# '
 STATIC="-static"
 USUAL_AND_DLL=both
 USUAL_AND_LIB=both
 
 case "$LIB_OR_DLL" in
-   dll) USUAL_AND_DLL=dll; STATIC= ;;
-   lib) USUAL_AND_LIB=lib; DLL_LIB_SETTING='$(DLL_LIB)' ;;
+   dll)
+       STATIC=
+       USUAL_AND_DLL=dll
+       ;;
+   lib)
+       DLL=-dll
+       DLL_LIB_SETTING='$(DLL_LIB)'
+       IF_WITH_DLL='# '
+       UNLESS_WITH_DLL=
+       USUAL_AND_LIB=lib
+       ;;
 esac
 
+AC_SUBST(DLL)
 AC_SUBST(DLL_LIB_SETTING)
+AC_SUBST(IF_WITH_DLL)
+AC_SUBST(UNLESS_WITH_DLL)
 AC_SUBST(STATIC)
 AC_SUBST(USUAL_AND_DLL)
 AC_SUBST(USUAL_AND_LIB)
@@ -1955,6 +1970,7 @@ case "$compiler" in
 esac
 
 if test "$with_dll" = "no"; then # no DLLs whatsoever!
+   DLL=
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
 else
    FORCE_STATIC_LIB=
@@ -1971,6 +1987,10 @@ else
         CXXFLAGS_DLL=
         ;;
    esac
+   if test "$with_dll" = "yes"; then
+      AC_DEFINE(NCBI_DLL_BUILD, 1,
+                [Define to 1 if building dynamic libraries by default.])
+   fi
 fi
 
 # Make sure we have commands for both C and C++ preprocessors

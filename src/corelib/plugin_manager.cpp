@@ -329,6 +329,32 @@ CDllResolver* CPluginManager_DllResolver::GetCreateDllResolver()
     return m_DllResolver;
 }
 
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_DLL_BUILD)
+#  define LOAD_PLUGINS_FROM_DLLS_BY_DEFAULT true
+#else
+#  define LOAD_PLUGINS_FROM_DLLS_BY_DEFAULT false
+#endif
+NCBI_PARAM_DECL(bool, NCBI, Load_Plugins_From_DLLs);
+NCBI_PARAM_DEF_EX(bool, NCBI, Load_Plugins_From_DLLs,
+                  LOAD_PLUGINS_FROM_DLLS_BY_DEFAULT,
+                  eParam_NoThread, NCBI_LOAD_PLUGINS_FROM_DLLS);
+typedef NCBI_PARAM_TYPE(NCBI, Load_Plugins_From_DLLs) TLoadPluginsFromDLLsParam;
+
+bool CPluginManager_DllResolver::IsEnabledGlobally()
+{
+    return TLoadPluginsFromDLLsParam::GetDefault();
+}
+
+bool CPluginManager_DllResolver::IsEnabledGloballyByDefault()
+{
+    return LOAD_PLUGINS_FROM_DLLS_BY_DEFAULT;
+}
+
+void CPluginManager_DllResolver::EnableGlobally(bool enable)
+{
+    TLoadPluginsFromDLLsParam::SetDefault(enable);
+}
+
 const char* CPluginManagerException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {

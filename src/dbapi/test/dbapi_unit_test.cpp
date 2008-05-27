@@ -14242,6 +14242,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         sybase_client_v120_solaris = true;
     }
 
+    CPluginManager_DllResolver::EnableGlobally(true);
+
     // add member function test cases to a test suite
     boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(args));
     boost::unit_test::test_case* tc = NULL;

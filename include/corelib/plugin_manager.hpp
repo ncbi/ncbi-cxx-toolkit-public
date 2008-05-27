@@ -692,6 +692,19 @@ public:
     /// Return name of the driver
     const string& GetDriverName() const { return m_DriverName; }
 
+    /// Return whether to allow loading plugins from DLLs in general
+    static bool IsEnabledGlobally();
+
+    /// Return whether to allow loading plugins from DLLs in general by default
+    static bool IsEnabledGloballyByDefault();
+
+    /// Enable (or disable, if called with enable = false) loading
+    /// plugins from DLLs in general
+    static void EnableGlobally(bool enable = true);
+
+    /// Disable loading plugins from DLLs in general
+    static void DisableGlobally() { EnableGlobally(false); }
+
 protected:
     CDllResolver* GetCreateDllResolver();
     CDllResolver* CreateDllResolver() const;
@@ -1201,7 +1214,7 @@ void CPluginManager<TClass>::ResolveFile(const string&       driver,
 
 template <class TClass>
 CPluginManager<TClass>::CPluginManager(void)
-    : m_BlockResolution(false),
+    : m_BlockResolution( !CPluginManager_DllResolver::IsEnabledGlobally() ),
       m_StdDllPath(CDllResolver::fDefaultDllPath)
 {
     const IRegistry* registry(NULL);

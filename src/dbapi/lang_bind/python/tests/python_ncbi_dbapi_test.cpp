@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/plugin_manager.hpp>
 
 #include "python_ncbi_dbapi_test.hpp"
 #include <common/test_assert.h>  /* This header must go last */
@@ -67,6 +68,7 @@ void
 CPythonDBAPITest::MakeTestPreparation(void)
 {
     try {
+        CPluginManager_DllResolver::EnableGlobally(true);
         string connection_args( m_args.GetDriverName() + "', '" +
                                 m_args.GetServerTypeStr() + "', '" +
                                 m_args.GetServerName() + "', '" +

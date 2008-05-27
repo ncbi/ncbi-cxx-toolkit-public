@@ -178,9 +178,13 @@ LIB_OR_DLL    = @LIB_OR_DLL@
 USUAL_AND_DLL = @USUAL_AND_DLL@
 USUAL_AND_LIB = @USUAL_AND_LIB@
 
-# library name suffix; either "-static" or empty
-STATIC     = @STATIC@
-# hard-coded; use only for "LIB_OR_DLL = both" libraries!
+# Library name suffix; either "-dll" or empty.  Normally EMPTY for
+# --with-dll configurations, which can simply exploit the linker's
+# general preference for dynamic libraries.
+DLL          = @DLL@
+# Library name suffix; either "-static" or empty.
+STATIC       = @STATIC@
+# Hard-coded; use only for "LIB_OR_DLL = both" libraries!
 FORCE_STATIC = -static
 
 LINK_DLL      = @LINK_DLL@

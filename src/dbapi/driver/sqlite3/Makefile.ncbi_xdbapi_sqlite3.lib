@@ -9,6 +9,6 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(SQLITE3_INCLUDE)
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = dbapi_driver
+DLL_LIB = dbapi_driver$(DLL)
 DLL_DLIB = $(DLL_LIB) xncbi
 LIBS = $(SQLITE3_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)

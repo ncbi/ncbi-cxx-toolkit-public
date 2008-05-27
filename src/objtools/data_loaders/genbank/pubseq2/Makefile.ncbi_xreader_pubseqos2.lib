@@ -10,6 +10,6 @@ ASN_DEP = seq seqset id2
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = dbapi_driver ncbi_xreader $(XCONNEXT) xconnect
+DLL_LIB = dbapi_driver$(DLL) ncbi_xreader$(DLL) $(XCONNEXT) xconnect
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)
