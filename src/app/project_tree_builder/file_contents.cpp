@@ -164,6 +164,7 @@ bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
                 value = NStr::Replace(value, raw_macro, definition);
             }
         }
+        value = NStr::Replace(value,"-dll",kEmptyStr);
         value = NStr::Replace(value,"-l",kEmptyStr);
         value = NStr::Replace(value,"-static",kEmptyStr);
     }

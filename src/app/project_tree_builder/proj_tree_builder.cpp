@@ -724,7 +724,9 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     if (k != makefile.m_Contents.end()) {
 //        depends = k->second;
         ITERATE(list<string>, i, k->second) {
-            depends.push_back( NStr::Replace( *i,"-static",kEmptyStr));
+            depends.push_back(
+                NStr::Replace(NStr::Replace(*i, "-dll", kEmptyStr),
+                              "-static", kEmptyStr));
         }
     }
     //Adjust depends by information from msvc Makefile
@@ -955,7 +957,9 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
             k = m->second.m_Contents.find("DLL_LIB");
             if (k != m->second.m_Contents.end()) {
                 ITERATE(list<string>, i, k->second) {
-                    dll_depends.push_back( NStr::Replace( *i,"-static",kEmptyStr));
+                    dll_depends.push_back(
+                        NStr::Replace(NStr::Replace(*i, "-dll", kEmptyStr),
+                              "-static", kEmptyStr));
                 }
             }
             list<CProjKey> dll_depends_ids;
