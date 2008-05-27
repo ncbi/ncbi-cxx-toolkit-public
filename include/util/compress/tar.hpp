@@ -447,11 +447,15 @@ public:
     /// Create an IReader, which can extract contents of one named file.
     ///
     /// Tar archive is deemed to be in the specified stream "is", properly
-    /// positioned.  The extraction is done as if fFirstOnly flag was set.
+    /// positioned (either at the beginning of the archive, or at any
+    /// CTarEntryInfo::GetPosition()'s result possibly off-set with some
+    /// fixed pre-archive base position).
+    /// The extraction is done at the first matching entry only then stops.
+    /// See test suite (in test/test_tar.cpp) for a usage example.
     /// @return
     ///   IReader interface to read the file contents with;  0 on error.
     /// @sa
-    ///   Extract, SetFlags
+    ///   CTarEntryInfo::GetPosition, Extract, SetFlags
     static IReader* Extract(istream& is, const string& name, TFlags flags = 0);
 
 protected:
