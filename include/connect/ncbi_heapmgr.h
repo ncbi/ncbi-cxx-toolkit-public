@@ -235,6 +235,9 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
  * newalk == eDefault keeps current setting.
  * This call is intended for internal uses; and default settings (fast ops
  * w/o new structure integrity checks) should suffice for most users.
+ * Note that in current implementation, new heap walk is only coupled with
+ * slow heap operations, that is if heap access is set to fast==eOn, then
+ * newalk setting is read but ignored.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_Options(ESwitch fast, ESwitch newalk);
 
