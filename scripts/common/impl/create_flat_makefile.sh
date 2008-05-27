@@ -12,9 +12,9 @@ solution="Makefile.flat"
 logfile="Flat.configuration_log"
 
 # default path to project_tree_builder
-extptb="$NCBI/c++.stable/Release/bin/project_tree_builder"
+extptb="$NCBI/c++.metastable/Release/bin/project_tree_builder"
 # required version of PTB
-ptbreqver=148
+ptbreqver=149
 ptbname="project_tree_builder"
 # dependencies
 ptbdep="corelib util util/regexp app/project_tree_builder"
