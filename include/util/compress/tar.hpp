@@ -201,8 +201,8 @@ private:
     string       m_LinkName;   ///< Link name if type is e{Sym|Hard}Link
     string       m_UserName;   ///< User name
     string       m_GroupName;  ///< Group name (empty string for MSWin)
-    struct stat  m_Stat;       ///< Dir-entry compatible info
-    Uint8        m_Pos;        ///< Position within archive
+    struct stat  m_Stat;       ///< Dir-entry compatible info (if applicable)
+    Uint8        m_Pos;        ///< Entry (not data!) position within archive
 
     friend class CTar;
 };
