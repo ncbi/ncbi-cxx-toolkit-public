@@ -1519,7 +1519,9 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
         TAR_THROW_EX(eChecksum, message, h, fmt);
     }
 
-    // Set info members now (thus, validating the header block)
+    // Set all info members now (thus, validating the header block)
+
+    info.m_HeaderSize = kBlockSize;
 
     // Name
     if ((fmt & eTar_Ustar)  &&  h->prefix[0]
@@ -1693,7 +1695,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
                 s_Dump(m_FileName, m_StreamPos, m_BufferSize, m_Current,
                        h, fmt, hsize);
             }
-            m_StreamPos += ALIGN_SIZE(nread);
+            m_StreamPos += kBlockSize;  // NB: nread
             // Read in the extended information
             string buffer;
             while (hsize) {
@@ -1733,6 +1735,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
             }
             // Reset size because the data blocks have been all read
             hsize = (size_t) info.GetSize();
+            info.m_HeaderSize += ALIGN_SIZE(hsize);
             info.m_Stat.st_size = 0;
             if (!hsize  ||  !buffer.size()) {
                 TAR_POST(79, Error,
@@ -1764,7 +1767,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump, bool pax)
         s_Dump(m_FileName, m_StreamPos, m_BufferSize, m_Current,
                h, fmt, info.GetSize());
     }
-    m_StreamPos += ALIGN_SIZE(nread);
+    m_StreamPos += kBlockSize;  // NB: nread
 
     return eSuccess;
 }
@@ -2048,13 +2051,18 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             if (zeroblock_count  &&  !(m_Flags & fIgnoreZeroBlocks)) {
                 TAR_POST(5, Error, "Interspersing single zero block ignored");
             }
-            /*FALLTHRU*/
             break;
 
         case eZeroBlock:
-            m_Current = 0;
             zeroblock_count++;
             if ((m_Flags & fIgnoreZeroBlocks)  ||  zeroblock_count < 2) {
+                if (xinfo.GetType() == CTarEntryInfo::eUnknown) {
+                    // Reading an entry -- advance
+                    pos += kBlockSize;
+                    m_Current = 0;
+                } else {
+                    xinfo.m_HeaderSize += kBlockSize;
+                }
                 continue;
             }
             // Two zero blocks -> eEOF
@@ -2074,6 +2082,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         //
         if (status == eContinue) {
             // Extended header information has been read
+            xinfo.m_HeaderSize += info.m_HeaderSize;
             switch (info.GetType()) {
             case CTarEntryInfo::ePAXHeader:
                 if (xinfo.GetType() != CTarEntryInfo::eUnknown) {
@@ -2085,7 +2094,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 xinfo.m_UserName.swap(info.m_UserName);
                 xinfo.m_GroupName.swap(info.m_GroupName);
                 xinfo.m_Stat = info.m_Stat;
-                xinfo.m_Pos = info.m_Pos;
+                xinfo.m_Pos = info.m_Pos;  // NB: Parsed mask, not pos!
                 break;
 
             case CTarEntryInfo::eGNULongName:
@@ -2119,6 +2128,8 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         }
 
         // Fixup current 'info' with extended information obtained previously
+        info.m_HeaderSize += xinfo.m_HeaderSize;
+        xinfo.m_HeaderSize = 0;
         if (!xinfo.GetName().empty()) {
             xinfo.m_Name.swap(info.m_Name);
             xinfo.m_Name.erase();
@@ -2171,9 +2182,9 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                       : true);
 
         // NB: match is 'false' when processing a failing entry
-        if ((match  &&  action == eInternal)  ||
-            x_ProcessEntry(info, match  &&  action == eExtract, done.get())  ||
-            (match  &&  !(int(action) & ((eExtract | eInternal) & ~eRW)))) {
+        if ((match  &&  action == eInternal)
+            ||  x_ProcessEntry(info, match  &&  action == eExtract, done.get())
+            ||  (match  &&  !(int(action) & ((eExtract | eInternal) & ~eRW)))){
             _ASSERT(status == eSuccess);
             done->push_back(info);
             if (action == eInternal) {
@@ -2796,6 +2807,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         // NB: x_WriteEntryInfo() takes care of setting size(0) for non-files
         if (update) {
             x_WriteEntryInfo(path, info);
+            info.m_HeaderSize = (streamsize)(m_StreamPos - info.m_Pos);
             entries->push_back(info);
         }
         if (type == CDirEntry::eDir) {
@@ -2836,25 +2848,26 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 }
 
 
-// Works for both regular files and symbolic links
-void CTar::x_AppendFile(const string& file, const CTarEntryInfo& info)
+// Regular files only!
+void CTar::x_AppendFile(const string& file, CTarEntryInfo& info)
 {
     CNcbiIfstream ifs;
 
-    if (info.GetType() == CTarEntryInfo::eFile) {
-        // Open file
-        ifs.open(file.c_str(), IOS_BASE::binary | IOS_BASE::in);
-        if (!ifs) {
-            int x_errno = errno;
-            TAR_THROW(eOpen,
-                      "Cannot open file '" + file + '\''+ s_OSReason(x_errno));
-        }
+    assert(info.GetType() == CTarEntryInfo::eFile);
+
+    // Open file
+    ifs.open(file.c_str(), IOS_BASE::binary | IOS_BASE::in);
+    if (!ifs) {
+        int x_errno = errno;
+        TAR_THROW(eOpen,
+                  "Cannot open file '" + file + '\''+ s_OSReason(x_errno));
     }
 
     // Write file header
     x_WriteEntryInfo(file, info);
-    Uint8 size = info.GetSize();
+    info.m_HeaderSize = (streamsize)(m_StreamPos - info.m_Pos);
 
+    Uint8 size = info.GetSize();
     while (size) {
         // Write file contents
         size_t avail = m_BufferSize - m_BufferPos;

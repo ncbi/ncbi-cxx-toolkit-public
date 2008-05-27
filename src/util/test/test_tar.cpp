@@ -136,11 +136,19 @@ void CTarTest::Init(void)
 
 string CTarTest::x_Pos(const CTarEntryInfo& info)
 {
-    Uint8 pos = info.GetPosition();
-    _ASSERT((pos & 0777) == 0);
+    Uint8 header_pos = info.GetPosition(CTarEntryInfo::ePos_Header);
+    Uint8 data_pos   = info.GetPosition(CTarEntryInfo::ePos_Data);
+    _ASSERT((header_pos & 0777) == 0  &&  (data_pos & 0777) == 0);
     if (!(m_Flags & fVerbose))
         return kEmptyStr;
-    return " at block " + NStr::UInt8ToString(pos >> 9, NStr::fWithCommas);
+    string pos(" at block "
+               + NStr::UInt8ToString(header_pos >> 9, NStr::fWithCommas));
+    if (info.GetSize()) {
+        pos += (" (data at "
+                + NStr::UInt8ToString(data_pos >> 9, NStr::fWithCommas)
+                + ')');
+    }
+    return pos;
 }
 
 

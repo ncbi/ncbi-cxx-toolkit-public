@@ -164,9 +164,15 @@ public:
         eGNULongLink                            ///< GNU long link
     };
 
+    /// Position type.
+    enum EPos {
+        ePos_Header,
+        ePos_Data,
+    };
+
     // Constructor
     CTarEntryInfo(Uint8 pos = 0)
-        : m_Type(eUnknown), m_Pos(pos)
+        : m_Type(eUnknown), m_HeaderSize(0), m_Pos(pos)
     {
         memset(&m_Stat, 0, sizeof(m_Stat));
     }
@@ -193,7 +199,8 @@ public:
     unsigned int  GetMinor(void)            const;
     int           GetUserId(void)           const { return m_Stat.st_uid;   }
     int           GetGroupId(void)          const { return m_Stat.st_gid;   }
-    Uint8         GetPosition(void)         const { return m_Pos;           }
+    Uint8         GetPosition(EPos what)    const
+    { return what == ePos_Header ? m_Pos : m_Pos + m_HeaderSize; }
 
 private:
     EType        m_Type;       ///< Type
@@ -201,7 +208,8 @@ private:
     string       m_LinkName;   ///< Link name if type is e{Sym|Hard}Link
     string       m_UserName;   ///< User name
     string       m_GroupName;  ///< Group name (empty string for MSWin)
-    struct stat  m_Stat;       ///< Dir-entry compatible info (if applicable)
+    streamsize   m_HeaderSize; ///< Total size of all headers for this entry
+    struct stat  m_Stat;       ///< Dir-entry compatible info (as applicable)
     Uint8        m_Pos;        ///< Entry (not data!) position within archive
 
     friend class CTar;
@@ -276,8 +284,8 @@ public:
 
     /// Constructors
     CTar(const string& filename, size_t blocking_factor = 20);
-    /// Stream version does not at all use stream positioning and so
-    /// is safe on non-positionable streams, like magnetic tapes :-I
+    /// Stream version does not at all use stream positioning and so is safe
+    /// on non-positionable streams, like magnetic tapes :-I or pipes/sockets.
     CTar(CNcbiIos& stream, size_t blocking_factor = 20);
 
     /// Destructor (finalize the archive if currently open).
@@ -448,9 +456,9 @@ public:
     ///
     /// Tar archive is deemed to be in the specified stream "is", properly
     /// positioned (either at the beginning of the archive, or at any
-    /// CTarEntryInfo::GetPosition()'s result possibly off-set with some
-    /// fixed pre-archive base position).
-    /// The extraction is done at the first matching entry only then stops.
+    /// CTarEntryInfo::GetPosition(ePos_Header)'s result possibly off-set
+    /// with some fixed archive base position, e.g.if there is any preamble).
+    /// The extraction is done at the first matching entry only, then stops.
     /// See test suite (in test/test_tar.cpp) for a usage example.
     /// @return
     ///   IReader interface to read the file contents with;  0 on error.
@@ -544,8 +552,8 @@ protected:
     // Append an entry to the archive.
     auto_ptr<TEntries> x_Append(const string&   name,
                                 const TEntries* toc = 0);
-    // Append a file/symlink entry to the archive.
-    void x_AppendFile(const string& file, const CTarEntryInfo& info);
+    // Append a regular file to the archive and set size of the entry header.
+    void x_AppendFile(const string& file, CTarEntryInfo& info);
 
 protected:
     string         m_FileName;     ///< Tar archive file name.
