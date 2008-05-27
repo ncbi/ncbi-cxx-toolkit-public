@@ -2853,7 +2853,7 @@ void CTar::x_AppendFile(const string& file, CTarEntryInfo& info)
 {
     CNcbiIfstream ifs;
 
-    assert(info.GetType() == CTarEntryInfo::eFile);
+    _ASSERT(info.GetType() == CTarEntryInfo::eFile);
 
     // Open file
     ifs.open(file.c_str(), IOS_BASE::binary | IOS_BASE::in);
