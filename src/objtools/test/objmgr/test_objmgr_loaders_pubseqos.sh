@@ -15,7 +15,8 @@ fi
 
 echo "Checking GenBank loader $method:"
 GENBANK_LOADER_METHOD="$method"
-export GENBANK_LOADER_METHOD
+NCBI_LOAD_PLUGINS_FROM_DLLS=1
+export GENBANK_LOADER_METHOD NCBI_LOAD_PLUGINS_FROM_DLLS
 ../../../run_sybase_app.sh $CHECK_EXEC "$@"
 exitcode=$?
 if test $exitcode -ne 0; then

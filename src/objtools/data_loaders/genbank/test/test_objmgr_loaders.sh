@@ -5,6 +5,8 @@ status_dir="../../../../../status"
 
 if test -f "$status_dir/PubSeqOS.enabled"; then
     methods="PUBSEQOS ID1 ID2"
+    NCBI_LOAD_PLUGINS_FROM_DLLS=1
+    export NCBI_LOAD_PLUGINS_FROM_DLLS
 else
     echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
     methods="ID1 ID2"
@@ -25,6 +27,7 @@ for method in $methods; do
             129|130|137|143) echo "Apparently killed"; break ;;
         esac
     fi
+    unset NCBI_LOAD_PLUGINS_FROM_DLLS
 done
 
 exit $exitcode
