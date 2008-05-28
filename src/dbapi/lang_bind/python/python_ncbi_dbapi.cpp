@@ -216,7 +216,6 @@ CCachedResultSet::GetMetaData(void) const
 class CRealResultSet : public CVariantSet
 {
 public:
-    // Take ownership of other ....
     CRealResultSet(IResultSet* other);
     virtual ~CRealResultSet(void);
 
