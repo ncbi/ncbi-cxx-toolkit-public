@@ -188,6 +188,7 @@ void RaiseLogWindow(void)
     if (!logFrame) {
         logFrame = new MsgFrame("Cn3D Message Log", wxPoint(500, 0), wxSize(500, 500));
 #ifdef __WXMAC__
+        logFrame->Move(500, 20);  //  drop the window below the Mac menubar
         // make empty menu for this window
         wxMenuBar *menuBar = new wxMenuBar;
         logFrame->SetMenuBar(menuBar);
@@ -294,6 +295,13 @@ bool Cn3DApp::OnInit(void)
     // create the main frame window - must be first window created by the app
     structureWindow = new StructureWindow(
         wxString("Cn3D ") + CN3D_VERSION_STRING, wxPoint(0,0), wxSize(500,500));
+
+    // On the Mac, drop window down slightly so that the title bar 
+    // is not under the menu bar at the top of the screen.
+#ifdef __WXMAC__
+    structureWindow->Move(0, 20);
+#endif
+
     SetTopWindow(structureWindow);
     SetExitOnFrameDelete(true); // exit app when structure window is closed
     topWindow = structureWindow;
@@ -411,7 +419,7 @@ void Cn3DApp::MacOpenFile(const wxString& filename)
 {
     if (filename.size() > 0) {
         INFOMSG("apple open event file: " << filename);
-        structureWindow->LoadData(filename, false);
+        structureWindow->LoadData(filename, false, commandLine.Found("n"));
     }
 }
 #endif

@@ -78,6 +78,14 @@ void SequenceViewer::CreateSequenceWindow(bool showNow)
         SequenceDisplay *display = GetCurrentDisplay();
         if (display) {
             sequenceWindow = new SequenceViewerWindow(this);
+
+#ifdef __WXMAC__
+            //  Nudge down a bit to compensate for the menubar at the top of the screen
+            wxPoint p = sequenceWindow->GetPosition();
+            p.y += 20;
+            sequenceWindow->Move(p);
+#endif
+
             sequenceWindow->NewDisplay(display, true);
             sequenceWindow->ScrollToColumn(display->GetStartingColumn());
             sequenceWindow->Show(showNow);

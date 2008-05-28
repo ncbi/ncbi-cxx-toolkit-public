@@ -94,7 +94,7 @@ public:
 
     enum {
         // File menu
-            MID_OPEN,
+            MID_OPEN = 1,    //  wxMac doesn't like MID_OPEN = 0 on Mac OSX 10.4 and higher
             MID_NETWORK_OPEN,
             MID_SAVE_SAME,
             MID_SAVE_AS,

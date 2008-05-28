@@ -306,7 +306,12 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     bool showLog = false;
     RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog);
     windowMenu->Check(MID_SHOW_LOG_START, showLog);
+#ifdef __WXMAC__
+    //  Avoid name-clash with standard 'Window' menu added to the Mac application menu bar.
+    menuBar->Append(windowMenu, "Show ...");
+#else
     menuBar->Append(windowMenu, "&Window");
+#endif
 
     // CDD menu
     bool readOnly;
@@ -1633,7 +1638,11 @@ void StructureWindow::OnOpen(wxCommandEvent& event)
     if (event.GetId() == MID_OPEN) {
         const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", userDir.c_str(),
             "", "", "All Files|*.*|Cn3D Files (*.cn3)|*.cn3",
+#ifdef __WXMAC__
+            wxFD_OPEN | wxFD_FILE_MUST_EXIST, this);
+#else
             wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+#endif
         if (!filestr.IsEmpty())
             LoadData(filestr.c_str(), false, false);
     }
