@@ -202,15 +202,20 @@ check_add.real:
 
 status_dir = @status_dir@
 reqs = $(REQUIRES:%=$(status_dir)/%.enabled)
-# uncommenting this makes gmake ignore the fallback rule for some reason
-# requirements: $(reqs)
-
-%.needs-reqs: $(reqs) %.real
-	@: dummy rule
+requirements: $(reqs)
 
 %.needs-reqs:
-	@echo "NOTE:  Skipping project \"`basename \`pwd\``\" due to unmet requirements:"
-	@for f in $(reqs);  do test -f "$$f" || basename "$$f" .enabled;  done
+	@skip=false ; \
+	for f in $(reqs);  do \
+	  if test ! -f "$$f" ; then \
+	    if test $skip = false ; then \
+	      echo "NOTE:  Skipping project \"`basename \`pwd\``\" due to unmet requirements:" ; \
+	      skip=true ; \
+	    fi ; \
+	    basename "$$f" .enabled ; \
+	  fi ; \
+	done ; \
+	test $skip = true  ||  $(MAKE) $(MFLAGS) $*.real
 
 ### Recursive build -- in the [SUB_PROJ] directories
 
@@ -224,7 +229,7 @@ SUB_BRA = \
             continue ; \
         fi ; \
         ( if test -d $$i ; then \
-          cd $$i  &&  $(RWL) $(MAKE) $(MFLAGS)
+          cd $$i  &&  $(MAKE) $(MFLAGS)
 
 SUB_KET = || $(NOTK_BRA) exit 4 $(NOTK_KET) ; \
         else \
@@ -238,6 +243,7 @@ clean_r:     clean_r.needs-reqs
 purge_r:     purge_r.needs-reqs
 check_r:     check_r.needs-reqs
 check_add_r: check_add_r.needs-reqs
+libs_r:      libs_r.needs-reqs
 
 all_r.real: all.real
 	@-rm -f .built_r
@@ -253,6 +259,8 @@ check_r.real:
 	@$(CHECK_BRA) check_add_r $(CHECK_KET)
 check_add_r.real: check_add.real
 	@$(SUB_BRA) check_add_r $(SUB_KET)
+libs_r.real: libs.real
+	@$(SUB_BRA) libs_r $(SUB_KET)
 
 
 CPP       = @CPP@
@@ -329,7 +337,7 @@ if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
         ( if test -d $$i ; then \
           cd $$i  &&  if $(RELEVANT_DIR) || $(RELEVANT_SUBS) ; then \
-          $(RWL) $(MAKE) $(MFLAGS)
+          $(MAKE) $(MFLAGS)
 
 SUB_KET_P = ; else true ; fi $(SUB_KET)
 
@@ -338,11 +346,12 @@ clean_p:     clean_p.needs-reqs
 purge_p:     purge_p.needs-reqs
 check_p:     check_p.needs-reqs
 check_add_p: check_add_p.needs-reqs
+libs_p:      libs_p.needs-reqs
 
 all_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 	@-rm -f .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
-	@+if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) all; else true; fi
+	@+if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) all.real; else true; fi
 	@+if $(RELEVANT_SUBS); then $(MAKE) $(MFLAGS) configurables  &&  $(SUB_BRA_P) all_p $(SUB_KET_P); else true; fi
 	@-rm -f .building
 	@-echo "`date`: recursive build succeeded in `pwd`" > .built_r
@@ -361,6 +370,10 @@ check_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 check_add_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 	@if $(RELEVANT_DIR); then $(CHECK_ADD_BRA) $(CHECK_ADD_KET); else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) check_add_p $(SUB_KET_P); else true; fi
+
+libs_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
+	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) libs; else true; fi
+	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) libs_p $(SUB_KET_P); else true; fi
 
 include $(top_srcdir)/src/build-system/Makefile.configurables
 
