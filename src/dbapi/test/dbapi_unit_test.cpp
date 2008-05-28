@@ -325,7 +325,8 @@ CDBAPIUnitTest::TestInit(void)
         sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
         sql += "    int_field INT NULL, \n";
         sql += "    vc1000_field VARCHAR(1000) NULL, \n";
-        sql += "    text_field TEXT NULL \n";
+        sql += "    text_field TEXT NULL, \n";
+        sql += "    image_field TEXT NULL \n";
         sql += " )";
 
         // Create the table
@@ -2477,6 +2478,74 @@ CDBAPIUnitTest::Test_LOB2(void)
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_LOB3(void)
+{
+    // static char clob_value[] = "1234567890";
+    const string clob_value(4000, '4');
+    string sql;
+    enum {num_of_records = 10};
+
+    try {
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+
+        // Prepare data ...
+        {
+            // Clean table ...
+            auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
+
+            // Insert data ...
+            {
+                sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field, image_field)";
+                sql += " VALUES(0, @tv, @iv)";
+
+                auto_stmt->SetParam( CVariant(clob_value), "@tv" );
+                auto_stmt->SetParam( CVariant(clob_value), "@iv" );
+
+                for (int i = 0; i < num_of_records; ++i) {
+                    // Execute statement with parameters ...
+                    auto_stmt->ExecuteUpdate( sql );
+                }
+
+                auto_stmt->ClearParamList();
+            }
+        }
+
+        // Retrieve data ...
+        {
+            sql = "SELECT text_field, image_field FROM "+ GetTableName();
+
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if ( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    rs->BindBlobToVariant(true);
+
+                    while ( rs->Next() ) {
+                        const CVariant& text_value = rs->GetVariant(1);
+                        const CVariant& image_value = rs->GetVariant(2);
+
+                        BOOST_CHECK( !text_value.IsNull() );
+                        size_t text_blob_size = text_value.GetBlobSize();
+                        BOOST_CHECK_EQUAL(clob_value.size(), text_blob_size);
+                        BOOST_CHECK(NStr::Compare(clob_value, text_value.GetString()) == 0);
+
+                        BOOST_CHECK( !image_value.IsNull() );
+                        size_t image_blob_size = image_value.GetBlobSize();
+                        BOOST_CHECK_EQUAL(clob_value.size(), image_blob_size);
+                        BOOST_CHECK(NStr::Compare(clob_value, image_value.GetString()) == 0);
+                    }
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 void
@@ -12266,7 +12335,7 @@ CDBAPIUnitTest::Test_Variant(void)
                 BOOST_CHECK( CVariant(string("abcd")) < CVariant( string("bcde")));
                 BOOST_CHECK( CVariant( "abcd" ) < CVariant( "bcde" ) );
                 CTime new_time = value_CTime;
-                new_time += 1;
+                new_time.AddMinute();
                 BOOST_CHECK( CVariant( value_CTime, eShort ) <
                              CVariant( new_time, eShort )
                              );
@@ -12275,7 +12344,7 @@ CDBAPIUnitTest::Test_Variant(void)
                              );
             }
 
-            // Check comparasion wit Uint1(0) ...
+            // Check comparasion with Uint1(0) ...
             //!!! It *fails* !!!
             if (false) {
                 BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
@@ -14733,6 +14802,19 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     } else {
         args.PutMsgDisabled("Test_LOB2");
+    }
+
+    if (args.GetDriverName() != dblib_driver
+        && args.GetDriverName() != ftds_dblib_driver
+        && args.GetDriverName() != ftds8_driver
+        && !(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB3, 
+            DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    } else {
+        args.PutMsgDisabled("Test_LOB3");
     }
 
     if (tc_cursor
