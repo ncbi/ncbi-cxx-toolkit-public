@@ -45,18 +45,27 @@
 #include <ncbi_pch.hpp>
 
 // This macro should be defined before inclusion of test_boost.hpp only in one
-// .cpp-file inside executable (like function main() for non-Boost.Test
-// executables).
+// "*.cpp" file inside executable. It is like function main() for
+// non-Boost.Test executables.
+//
 // This macro is necessary only for unit tests with auto-registration.
-// For example of writing unit tests without auto-registration look into
-// unit_test_alt_sample.cpp.
+// For the example of unit test without auto-registration look into
+// "unit_test_alt_sample.cpp".
 #define BOOST_AUTO_TEST_MAIN
+
 
 // This header must be included before all Boost.Test headers
 #include <corelib/test_boost.hpp>
 
 
 USING_NCBI_SCOPE;
+
+
+
+BOOST_AUTO_INITIALIZATION(MyTestInit)
+{
+    // Your application initialization code here (optional)
+}
 
 
 BOOST_AUTO_TEST_CASE(TestSimpleTools)
@@ -87,16 +96,16 @@ static void s_ThrowSomeException(void)
     NCBI_THROW(CException, eUnknown, "Some exception message");
 }
 
-static void s_FuncWithoutException(void)
-{
-    printf("Here is some dummy message");
-}
-
 BOOST_AUTO_TEST_CASE(TestWithException)
 {
     BOOST_CHECK_THROW( s_ThrowSomeException(), CException );
 }
 
+
+static void s_FuncWithoutException(void)
+{
+    printf("Here is some dummy message\n");
+}
 
 BOOST_AUTO_TEST_CASE(TestWithoutException)
 {
