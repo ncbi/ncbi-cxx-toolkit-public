@@ -1944,17 +1944,25 @@ bool OpenGLRenderer::SetGLFont(int firstChar, int nChars, int fontBase)
 //    glXUseXFont(gdk_font_id(GetGLFont().GetInternalFont()), firstChar, nChars, fontBase);
 
 #elif defined(__WXMAC__)
-    wxFontRefData *fontRefData = (wxFontRefData *) GetGLFont().GetRefData();
-    if (RealFont(fontRefData->m_macFontNum, fontRefData->m_macFontSize)) {
-        if (aglUseFont(aglGetCurrentContext(),
-                (GLint) fontRefData->m_macFontNum,
-                fontRefData->m_macFontStyle, fontRefData->m_macFontSize,
-                firstChar, nChars, fontBase) != GL_TRUE) {
-            ERRORMSG("OpenGLRenderer::SetGLFont() - aglUseFont() failed");
-            okay = false;
-        }
-    } else {
-        ERRORMSG("OpenGLRenderer::SetGLFont() - RealFont() returned false");
+//    **  RealFont is deprecated as of OSX10.4, with no replacement.  
+//    wxFontRefData *fontRefData = (wxFontRefData *) GetGLFont().GetRefData();
+//    if (RealFont(fontRefData->m_macFontNum, fontRefData->m_macFontSize)) {
+//    if (RealFont(fontFamily, fontSize)) {
+//                (GLint) fontRefData->m_macFontNum,
+//                fontRefData->m_macFontStyle, fontRefData->m_macFontSize,
+
+
+//  Offsets to font family, style determined empirically.  
+    int fontFamily = GetGLFont().GetFamily() - wxFONTFAMILY_DEFAULT;
+    int fontSize = GetGLFont().GetPointSize();
+    int fontStyle = GetGLFont().GetStyle() - wxFONTSTYLE_NORMAL;
+//    TRACEMSG("OpenGLRenderer::SetGLFont() - fontFamily/fontSize/fontStyle " << fontFamily << "/" << fontSize << "/" << fontStyle);
+
+    if (aglUseFont(aglGetCurrentContext(),
+                   (GLint) fontFamily, 
+                   fontStyle, (GLint) fontSize,
+                   firstChar, nChars, fontBase) != GL_TRUE) {
+        ERRORMSG("OpenGLRenderer::SetGLFont() - aglUseFont() failed: " << aglErrorString(aglGetError()));
         okay = false;
     }
 #endif
