@@ -39,8 +39,11 @@ check_add = $(abs_top_srcdir)/scripts/common/check/check_add.sh
 NOTK_BRA = test "$$expendable" = true || case "$(MFLAGS)" in *k*) ;; *)
 NOTK_KET = ;; esac
 
+# Non-redundant flags (avoid --jobserver-fds=* proliferation)
+MFLAGS_NR = $(MFLAGS:--jobserver-fds%=)
+
 # Factored out merely to avoid duplication
-MAKE_USR = $(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(abs_srcdir)" $(MFLAGS)
+MAKE_USR = $(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(abs_srcdir)" $(MFLAGS_NR)
 USRP_BRA = \
 +if test ! -z "$(USR_PROJ)"  ||  test ! -z "@UNIX_USR_PROJ@" \
 	|| test ! -z "$(EXPENDABLE_USR_PROJ)" ; then \
@@ -70,7 +73,7 @@ ASNP_BRA = \
    x_project="$(ASN_PROJ)" ; \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
-       && MAKE="$(MAKE) $(MFLAGS)" $(RWL) -base make_asn $(MAKE_ASN)
+       && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_ASN)
 ASNP_KET = ) || $(NOTK_BRA) exit 6 $(NOTK_KET) ; \
    done ; \
 fi
@@ -81,7 +84,7 @@ DTDP_BRA = \
    x_project="$(DTD_PROJ)" ; \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
-       && MAKE="$(MAKE) $(MFLAGS)" $(RWL) -base make_asn $(MAKE_DTD)
+       && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_DTD)
 DTDP_KET = ) || $(NOTK_BRA) exit 6 $(NOTK_KET) ; \
    done ; \
 fi
@@ -92,14 +95,14 @@ XSDP_BRA = \
    x_project="$(XSD_PROJ)" ; \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
-       && MAKE="$(MAKE) $(MFLAGS)" $(RWL) -base make_asn $(MAKE_XSD)
+       && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_XSD)
 XSDP_KET = ) || $(NOTK_BRA) exit 6 $(NOTK_KET) ; \
    done ; \
 fi
 
 # If you change this rule, please continue to honor external
 # definitions of $(MAKE_LIB).
-MAKE_LIB = $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
+MAKE_LIB = $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS_NR)
 LIBP_BRA = \
 +if test ! -z "$(LIB_PROJ)$(EXPENDABLE_LIB_PROJ)$(ASN_PROJ)$(DTD_PROJ)$(XSD_PROJ)"; then \
    x_project="$(ASN_PROJ) $(DTD_PROJ) $(XSD_PROJ) $(LIB_PROJ) - $(EXPENDABLE_LIB_PROJ)" ; \
@@ -119,7 +122,7 @@ fi
 
 # If you change this rule, please continue to honor external
 # definitions of $(MAKE_APP).
-MAKE_APP = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS)
+MAKE_APP = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS_NR)
 APPP_BRA = \
 +if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
    x_project="$(APP_PROJ) - $(EXPENDABLE_APP_PROJ)" ; \
@@ -139,7 +142,7 @@ fi
 
 CHECK_BRA = \
 +if test -f "$(check_run)"; then \
-  $(check_run) @signature@ $(builddir) $(abs_top_srcdir) $(MAKE) $(MFLAGS) IS_CHECK=Y
+  $(check_run) @signature@ $(builddir) $(abs_top_srcdir) $(MAKE) $(MFLAGS_NR) IS_CHECK=Y
 CHECK_KET = ||  exit 7 ; \
 fi
 
@@ -215,7 +218,7 @@ requirements: $(reqs)
 	    basename "$$f" .enabled ; \
 	  fi ; \
 	done ; \
-	test $skip = true  ||  $(MAKE) $(MFLAGS) $*.real
+	test $skip = true  ||  $(MAKE) $(MFLAGS_NR) $*.real
 
 ### Recursive build -- in the [SUB_PROJ] directories
 
@@ -229,7 +232,7 @@ SUB_BRA = \
             continue ; \
         fi ; \
         ( if test -d $$i ; then \
-          cd $$i  &&  $(MAKE) $(MFLAGS)
+          cd $$i  &&  $(MAKE) $(MFLAGS_NR)
 
 SUB_KET = || $(NOTK_BRA) exit 4 $(NOTK_KET) ; \
         else \
@@ -337,7 +340,7 @@ if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
         ( if test -d $$i ; then \
           cd $$i  &&  if $(RELEVANT_DIR) || $(RELEVANT_SUBS) ; then \
-          $(MAKE) $(MFLAGS)
+          $(MAKE) $(MFLAGS_NR)
 
 SUB_KET_P = ; else true ; fi $(SUB_KET)
 
@@ -351,17 +354,17 @@ libs_p:      libs_p.needs-reqs
 all_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 	@-rm -f .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
-	@+if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) all.real; else true; fi
-	@+if $(RELEVANT_SUBS); then $(MAKE) $(MFLAGS) configurables  &&  $(SUB_BRA_P) all_p $(SUB_KET_P); else true; fi
+	@+if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS_NR) all.real; else true; fi
+	@+if $(RELEVANT_SUBS); then $(MAKE) $(MFLAGS_NR) configurables  &&  $(SUB_BRA_P) all_p $(SUB_KET_P); else true; fi
 	@-rm -f .building
 	@-echo "`date`: recursive build succeeded in `pwd`" > .built_r
 
 clean_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
-	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) clean; else true; fi
+	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS_NR) clean; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) clean_p $(SUB_KET_P); else true; fi
 
 purge_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
-	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) purge; else true; fi
+	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS_NR) purge; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) purge_p $(SUB_KET_P); else true; fi
 
 check_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
@@ -372,7 +375,7 @@ check_add_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) check_add_p $(SUB_KET_P); else true; fi
 
 libs_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
-	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) libs; else true; fi
+	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS_NR) libs; else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) libs_p $(SUB_KET_P); else true; fi
 
 include $(top_srcdir)/src/build-system/Makefile.configurables
