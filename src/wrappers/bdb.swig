@@ -29,6 +29,9 @@
  *
  */
 
+
+// See ncbi_modify.py for %template insertions into bdb_types.hpp
+
 %%
 
 // bdb_cursor.hpp, error_codes.hpp early to avoid %include in %import problem

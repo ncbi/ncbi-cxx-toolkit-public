@@ -41,7 +41,7 @@ def Replace(s, begin, end, replacement):
     subsequent occurence of end with replacement
     '''
     begin_index = s.index(begin)
-    end_index   = s.index(end, begin_index) + len(end)
+    end_index   = s.index(end, begin_index + len(begin)) + len(end)
     s = s[:begin_index] + replacement + s[end_index:]
     return s
 
@@ -90,7 +90,7 @@ def Modify(s):
         T    m_Value;
     };
 '''
-    s = re.sub(re.escape(trouble), '// template class SOptimal deleted\n', s)
+    s = Replace(s, trouble, '', '// template class SOptimal deleted\n')
 
     # Part of hit_filter.hpp causes SWIG parse error
     begin_trouble = \
@@ -125,4 +125,34 @@ def Modify(s):
     s = Replace(s, begin_trouble, end_trouble,
                 '// template class CAlignRangeCollExtender deleted\n')
     
+    # Some %template declarations for base classes must be inserted
+    # into bdb_types.hpp (after templates, before subclasses)
+    begin_subclasses = '///  Int8 field type'
+    replacement = \
+        '%template(CBDB_FieldSimple_Int4) ncbi::CBDB_FieldSimple<Int4>;\n' \
+        '%template(CBDB_FieldSimple_float) ncbi::CBDB_FieldSimple<float>;\n' \
+        '%template(CBDB_FieldSimple_Uint8) ncbi::CBDB_FieldSimple<Uint8>;\n' \
+        '%template(CBDB_FieldSimple_unsigned_char) ncbi::CBDB_FieldSimple<unsigned char>;\n' \
+        '%template(CBDB_FieldSimple_double) ncbi::CBDB_FieldSimple<double>;\n' \
+        '%template(CBDB_FieldSimple_char) ncbi::CBDB_FieldSimple<char>;\n' \
+        '%template(CBDB_FieldSimple_Uint2) ncbi::CBDB_FieldSimple<Uint2>;\n' \
+        '%template(CBDB_FieldSimple_Int8) ncbi::CBDB_FieldSimple<Int8>;\n' \
+        '%template(CBDB_FieldSimple_Uint4) ncbi::CBDB_FieldSimple<Uint4>;\n' \
+        '%template(CBDB_FieldSimple_Int2) ncbi::CBDB_FieldSimple<Int2>;\n' \
+        '\n' \
+        '%template(CBDB_FieldSimpleInt_Uint8) ncbi::CBDB_FieldSimpleInt<Uint8>;\n' \
+        '%template(CBDB_FieldSimpleInt_Int4) ncbi::CBDB_FieldSimpleInt<Int4>;\n' \
+        '%template(CBDB_FieldSimpleInt_unsigned_char) ncbi::CBDB_FieldSimpleInt<unsigned char>;\n' \
+        '%template(CBDB_FieldSimpleInt_Int2) ncbi::CBDB_FieldSimpleInt<Int2>;\n' \
+        '%template(CBDB_FieldSimpleInt_char) ncbi::CBDB_FieldSimpleInt<char>;\n' \
+        '%template(CBDB_FieldSimpleInt_Uint4) ncbi::CBDB_FieldSimpleInt<Uint4>;\n' \
+        '%template(CBDB_FieldSimpleInt_Int8) ncbi::CBDB_FieldSimpleInt<Int8>;\n' \
+        '%template(CBDB_FieldSimpleInt_Uint2) ncbi::CBDB_FieldSimpleInt<Uint2>;\n' \
+        '\n' \
+        '%template(CBDB_FieldSimpleFloat_float) ncbi::CBDB_FieldSimpleFloat<float>;\n' \
+        '%template(CBDB_FieldSimpleFloat_double) ncbi::CBDB_FieldSimpleFloat<double>;\n' \
+        '\n' \
+        + begin_subclasses
+    s = Replace(s, begin_subclasses, '', replacement)
+
     return s
