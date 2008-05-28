@@ -64,6 +64,10 @@
 #include <memory>
 
 
+#ifndef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+#define GENOME_PIPELINE
+#endif
+
 namespace {
     const char kDirSense[]     = "sense";
     const char kDirAntisense[] = "antisense";
@@ -78,7 +82,9 @@ BEGIN_NCBI_SCOPE
 void CSplignApp::Init()
 {
 #ifndef GENOME_PIPELINE
-    HideStdArgs(fHideHelp|fHideLogfile|fHideConffile|fHideVersion|fHideDryRun);
+    HideStdArgs(fHideHelp    | fHideLogfile | fHideConffile |
+                fHideVersion | fHideFullVersion | fHideDryRun  |
+                fHideXmlHelp | fHideFullHelp);
 #endif
 
     SetVersion(CVersionInfo(1, 32, 0, "Splign"));
@@ -951,7 +957,8 @@ int CSplignApp::Run()
     if(run_mode == eNotSet) {
         NCBI_THROW(CSplignAppException,
                    eBadParameter,
-                   "Incomplete or inconsistent set of arguments specified" );
+                   "Incomplete or inconsistent set of arguments specified. "
+                   "Specify -help to print arguments." );
     }   
 
     // open log stream
