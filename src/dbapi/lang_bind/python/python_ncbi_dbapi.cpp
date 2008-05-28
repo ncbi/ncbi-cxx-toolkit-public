@@ -174,9 +174,8 @@ bool
 CCachedResultSet::Next(void)
 {
     if (m_CurRowNum < m_RecordSet.size()) {
-        if (m_CurRowNum++ < m_RecordSet.size()) {
-            return true;
-        }
+		++m_CurRowNum;
+		return true;
     }
 
     return false;
@@ -188,7 +187,10 @@ CCachedResultSet::GetVariant(const CDBParamVariant& param)
     if (param.IsPositional()) {
         unsigned int col_num = param.GetPosition();
 
-        if (col_num > 0 && col_num <= GetTotalColumns()) {
+        if (col_num > 0 
+			&& col_num <= GetTotalColumns() 
+			&& m_CurRowNum <= m_RecordSet.size()
+			) {
             return m_RecordSet[m_CurRowNum - 1][col_num - 1];
         }
     }
