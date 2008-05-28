@@ -402,7 +402,8 @@ static bool MSWin_OpenDocument(const char* doc_name)
 #endif
 
 #ifdef __WXMAC__
-static OSStatus MacLaunchURL(ConstStr255Param urlStr)
+//  CJL Hack ... pass the length of the string
+static OSStatus MacLaunchURL(ConstStr255Param urlStr, SInt32 len)
 {
     OSStatus err;
     ICInstance inst;
@@ -416,7 +417,14 @@ static OSStatus MacLaunchURL(ConstStr255Param urlStr)
 #endif
         if (err == noErr) {
             startSel = 0;
-            endSel = strlen(urlStr);
+//            endSel = strlen(urlStr);   //  OSX didn't like this:  invalid conversion from 
+//                                          'const unsigned char*' to 'const char*' compiler error.
+// ConstStr255Param is an unsigned char*.  Mac developer docs do not seem to indicate the '255' 
+// means there are any length restrictions on such strings, and that implementations have some
+// backing store for longer strings.   But to be safe, I'm truncating this to 255.
+// As used in Cn3D none of the URLs are terribly long ... except when multiple annotations are selected.
+// (Also see CoreFoundation header CFBase.h; used in ncbi_os_mac.hpp Pstrncpy)
+            endSel = (len > 0 && len <= 255) ? len : 255;
             err = ICLaunchURL(inst, "\p", urlStr, endSel, &startSel, &endSel);
         }
         ICStop(inst);
@@ -445,7 +453,14 @@ void LaunchWebPage(const char *url)
     system(command.c_str());
 
 #elif defined(__WXMAC__)
-    MacLaunchURL(url);
+    //  CJL:  hack of dubious generality to get the string length
+    //        of a 'ConstStr255Param' type.  
+    //        Unclear if strings longer than 255 characters are safe.  See notes above in MacLaunchURL.
+    unsigned int i = 0, l = strlen(url);
+    unsigned char uc_url[l+1];
+    for (; i < l && i < 255; ++i)  uc_url[i] = (unsigned char) *(url + i);
+    uc_url[i] = '\0';
+    MacLaunchURL(uc_url, l);
 #endif
 }
 
