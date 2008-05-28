@@ -29,9 +29,6 @@
  *
  */
 
-// SWIG chokes on corelib/hash_impl/stlp_defs.hpp for reasons unknown
-#define STLP_DEFS__HPP
-
 // nested classes that cause problems
 %ignore *::CConvertCache_SCacheKeySort;
 %ignore *::CRegularGridGen_const_iterator;

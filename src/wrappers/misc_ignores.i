@@ -30,6 +30,9 @@
  */
 
 
+// SWIG chokes on corelib/hash_impl/stlp_defs.hpp for reasons unknown
+#define STLP_DEFS__HPP
+
 // leads to trouble with bool_p
 %ignore *::CSoapServerApplication::AddMessageListener;
 
