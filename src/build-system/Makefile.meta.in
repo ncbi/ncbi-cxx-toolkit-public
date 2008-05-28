@@ -209,7 +209,8 @@ requirements: $(reqs)
 
 %.needs-reqs:
 	@skip=false ; \
-	for f in $(reqs);  do \
+	x_reqs="$(reqs)" ; \
+	for f in $$x_reqs ;  do \
 	  if test ! -f "$$f" ; then \
 	    if test $skip = false ; then \
 	      echo "NOTE:  Skipping project \"`basename \`pwd\``\" due to unmet requirements:" ; \
