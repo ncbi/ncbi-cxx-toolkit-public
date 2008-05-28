@@ -605,7 +605,7 @@ bool CThread::Run(TRunMode flags)
         xncbi_Validate(pthread_attr_init (&attr) == 0,
                        "CThread::Run() - error initializing thread attributes");
         if ( ! (flags & fRunUnbound) ) {
-#if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_CYGWIN)
+#if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_CYGWIN)  ||  defined(NCBI_OS_IRIX)
             xncbi_Validate(pthread_attr_setscope(&attr,
                                                  PTHREAD_SCOPE_PROCESS) == 0,
                            "CThread::Run() - error setting thread scope");
