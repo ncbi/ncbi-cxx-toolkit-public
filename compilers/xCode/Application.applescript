@@ -654,13 +654,17 @@ on ValidatePaths()
 	if x_NoSuchPath(TheOUTPath) then
 		do shell script "mkdir " & TheOUTPath
 		x_AddtoLog("The Output folder was created at: " & TheOUTPath)
+		--return "The Output folder was not found at: " & TheOUTPath
+	end if
+	
+	-- create (or re-create) the cfg directory
+	if x_NoSuchPath(TheOUTPath & "/cfg") then
 		do shell script "mkdir " & TheOUTPath & "/cfg"
 		set lib_dir to TheOUTPath & "/lib"
 		set lib_dir to x_Replace(lib_dir, "/", "\\/")
 		set ncbicfg to "sed 's/@ncbi_runpath@/" & lib_dir & "/' <" & TheNCBIPath & "/src/corelib/ncbicfg.c.in >" & TheOUTPath & "/cfg/ncbicfg.c"
 		
 		do shell script ncbicfg
-		--return "The Output folder was not found at: " & TheOUTPath
 	end if
 	
 	set libTypeDLL to true --content of button "libType" of window "Main" -- DLL or Static
