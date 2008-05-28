@@ -219,7 +219,7 @@ requirements: $(reqs)
 	    basename "$$f" .enabled ; \
 	  fi ; \
 	done ; \
-	test $skip = true  ||  $(MAKE) $(MFLAGS_NR) $*.real
+	test $$skip = true  ||  $(MAKE) $(MFLAGS_NR) $*.real
 
 ### Recursive build -- in the [SUB_PROJ] directories
 
