@@ -60,7 +60,7 @@ req: true  if required for a default build
 
 (* Libraries definitions *)
 -- Core
-property xncbi : {name:"xncbi", path:"corelib", exc:{"test_mt.cpp", "ncbi_os_mac.cpp", "ncbi_os_mswin.cpp", "ncbicfg.c.in", "ncbi_stack_default.cpp", "ncbi_stack_linux.cpp", "ncbi_stack_solaris.cpp", "ncbi_stack_win32.cpp", "ncbiatomic_workshop.c"}}
+property xncbi : {name:"xncbi", path:"corelib", exc:{"test_boost.cpp", "test_mt.cpp", "ncbi_os_mac.cpp", "ncbi_os_mswin.cpp", "ncbicfg.c.in", "ncbi_stack_default.cpp", "ncbi_stack_linux.cpp", "ncbi_stack_solaris.cpp", "ncbi_stack_win32.cpp", "ncbiatomic_workshop.c"}}
 property xcgi : {name:"xcgi", path:"cgi", exc:{"fcgi_run.cpp", "fcgibuf.cpp"}}
 property dbapi : {name:"dbapi", path:"dbapi"}
 property dbapi_cache : {name:"dbapi_cache", path:"dbapi:cache"}
