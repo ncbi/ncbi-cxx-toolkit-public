@@ -71,6 +71,372 @@ BEGIN_NCBI_SCOPE
 namespace python
 {
 
+// A striped version of IResultSet because it is hard to implement all member
+// functions from IResultSet in case of cached data.
+class CVariantSet : public CObject
+{
+public:
+    /// Destructor.
+    ///
+    /// Clean up the resultset.
+    virtual ~CVariantSet(void) {}
+
+    /// Get result type.
+    ///
+    /// @sa
+    ///   See in <dbapi/driver/interfaces.hpp> for the list of result types.
+    virtual EDB_ResType GetResultType(void) = 0;
+
+    /// Get next row.
+    ///
+    /// NOTE: no results are fetched before first call to this function.
+    virtual bool Next(void) = 0;
+
+    /// Retrieve a CVariant class describing the data stored in a given column.
+    /// Note that the index supplied is one-based, not zero-based; the first
+    /// column is column 1.
+    ///
+    /// @param param
+    ///   Column number (one-based) or name
+    /// @return
+    ///   All data (for BLOB data see below) is returned as CVariant.
+    virtual const CVariant& GetVariant(const CDBParamVariant& param) = 0;
+
+    /// Get total columns.
+    ///
+    /// @return
+    ///   Returns total number of columns in the resultset
+    virtual unsigned int GetTotalColumns(void) = 0;
+
+    /// Get Metadata.
+    ///
+    /// @return
+    ///   Pointer to result metadata.
+    virtual const IResultSetMetaData& GetMetaData(void) const = 0;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+class CCachedResultSet : public CVariantSet
+{
+public:
+    CCachedResultSet(IResultSet& other);
+    virtual ~CCachedResultSet(void);
+
+    virtual EDB_ResType GetResultType(void);
+    virtual bool Next(void);
+    virtual const CVariant& GetVariant(const CDBParamVariant& param);
+    virtual unsigned int GetTotalColumns(void);
+    virtual const IResultSetMetaData& GetMetaData(void) const;
+
+private:
+    typedef deque<CVariant> TRecord;
+    typedef deque<TRecord>  TRecordSet;
+
+    const EDB_ResType   m_ResType;
+    const unsigned int  m_ColumsNum;
+   
+    TRecordSet  m_RecordSet;
+    auto_ptr<const IResultSetMetaData> m_MetaData;
+    size_t      m_CurRowNum;
+    size_t      m_CurColNum;
+};
+
+CCachedResultSet::CCachedResultSet(IResultSet& other)
+: m_ResType(other.GetResultType())
+, m_ColumsNum(other.GetTotalColumns())
+, m_MetaData(other.GetMetaData(eTakeOwnership))
+, m_CurRowNum(0)
+, m_CurColNum(0)
+{
+    other.BindBlobToVariant(true);
+
+    while (other.Next()) {
+        m_RecordSet.push_back(TRecord());
+        TRecordSet::reference record = m_RecordSet.back();
+
+        for (unsigned int col = 1; col <= m_ColumsNum; ++col) {
+            record.push_back(other.GetVariant(col));
+        }
+    }
+}
+
+CCachedResultSet::~CCachedResultSet(void)
+{
+}
+
+EDB_ResType 
+CCachedResultSet::GetResultType(void)
+{
+    return m_ResType;
+}
+
+bool 
+CCachedResultSet::Next(void)
+{
+    if (m_CurRowNum < m_RecordSet.size()) {
+        if (m_CurRowNum++ < m_RecordSet.size()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+const CVariant& 
+CCachedResultSet::GetVariant(const CDBParamVariant& param)
+{
+    if (param.IsPositional()) {
+        unsigned int col_num = param.GetPosition();
+
+        if (col_num > 0 && col_num <= GetTotalColumns()) {
+            return m_RecordSet[m_CurRowNum - 1][col_num - 1];
+        }
+    }
+
+    static CVariant value(eDB_UnsupportedType);
+    return value;
+}
+
+unsigned int 
+CCachedResultSet::GetTotalColumns(void)
+{
+    return m_ColumsNum;
+}
+
+const IResultSetMetaData& 
+CCachedResultSet::GetMetaData(void) const
+{
+    return *m_MetaData;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+class CRealResultSet : public CVariantSet
+{
+public:
+    // Take ownership of other ....
+    CRealResultSet(IResultSet* other);
+    virtual ~CRealResultSet(void);
+
+    virtual EDB_ResType GetResultType(void);
+    virtual bool Next(void);
+    virtual const CVariant& GetVariant(const CDBParamVariant& param);
+    virtual unsigned int GetTotalColumns(void);
+    virtual const IResultSetMetaData& GetMetaData(void) const;
+
+private:
+    // Lifetime of m_RS shouldn't be managed by auto_ptr
+    IResultSet* m_RS;
+};
+
+CRealResultSet::CRealResultSet(IResultSet* other)
+: m_RS(other)
+{
+    _ASSERT(other);
+
+    m_RS->BindBlobToVariant(true);
+}
+
+CRealResultSet::~CRealResultSet(void)
+{
+}
+
+EDB_ResType 
+CRealResultSet::GetResultType(void)
+{
+    return m_RS->GetResultType();
+}
+
+bool 
+CRealResultSet::Next(void)
+{
+    return m_RS->Next();
+}
+
+const CVariant& 
+CRealResultSet::GetVariant(const CDBParamVariant& param)
+{
+    return m_RS->GetVariant(param);
+}
+
+unsigned int 
+CRealResultSet::GetTotalColumns(void)
+{
+    return m_RS->GetTotalColumns();
+}
+
+const IResultSetMetaData& 
+CRealResultSet::GetMetaData(void) const
+{
+    return *m_RS->GetMetaData();
+}
+
+//////////////////////////////////////////////////////////////////////////////
+class CRealSetProxy : public CResultSetProxy
+{
+public:
+    CRealSetProxy(ICallableStatement& stmt);
+    virtual ~CRealSetProxy(void);
+
+    virtual bool MoveToNextRS(void);
+    virtual bool MoveToLastRS(void);
+    virtual CVariantSet& GetRS(void);
+    virtual const CVariantSet& GetRS(void) const;
+    virtual bool HasRS(void) const;
+    virtual void DumpResult(void);
+
+private:
+    ICallableStatement* m_Stmt;
+    auto_ptr<CVariantSet> m_VariantSet;
+    bool m_HasRS;
+};
+
+CRealSetProxy::CRealSetProxy(ICallableStatement& stmt)
+: m_Stmt(&stmt)
+, m_HasRS(false)
+{
+}
+
+CRealSetProxy::~CRealSetProxy(void)
+{
+}
+
+
+bool CRealSetProxy::MoveToNextRS(void)
+{
+    m_HasRS = false;
+
+    while (m_Stmt->HasMoreResults()) {
+        if ( m_Stmt->HasRows() ) {
+            m_VariantSet.reset(new CRealResultSet(m_Stmt->GetResultSet()));
+            m_HasRS = true;
+            break;
+        }
+    }
+
+    return m_HasRS;
+}
+
+bool 
+CRealSetProxy::MoveToLastRS(void)
+{
+    return false;
+}
+
+CVariantSet& 
+CRealSetProxy::GetRS(void)
+{
+    return *m_VariantSet;
+}
+
+const CVariantSet& CRealSetProxy::GetRS(void) const
+{
+    return *m_VariantSet;
+}
+
+bool CRealSetProxy::HasRS(void) const
+{
+    return m_HasRS;
+}
+
+void 
+CRealSetProxy::DumpResult(void)
+{
+    while ( m_Stmt->HasMoreResults() ) {
+        if ( m_Stmt->HasRows() ) {
+            // Keep very last ResultSet in case somebody calls GetRS().
+            m_VariantSet.reset(new CRealResultSet(m_Stmt->GetResultSet()));
+        }
+    }
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+class CVariantSetProxy : public CResultSetProxy
+{
+public:
+    CVariantSetProxy(ICallableStatement& stmt);
+    virtual ~CVariantSetProxy(void);
+
+    virtual bool MoveToNextRS(void);
+    virtual bool MoveToLastRS(void);
+    virtual CVariantSet& GetRS(void);
+    virtual const CVariantSet& GetRS(void) const;
+    virtual bool HasRS(void) const;
+    virtual void DumpResult(void);
+
+private:
+    typedef deque<CRef<CVariantSet> > TCachedSet;
+
+    TCachedSet m_CachedSet;
+    CRef<CVariantSet> m_CurResultSet;
+    bool m_HasRS;
+};
+
+CVariantSetProxy::CVariantSetProxy(ICallableStatement& stmt)
+: m_HasRS(false)
+{
+    while (stmt.HasMoreResults()) {
+        if (stmt.HasRows()) {
+            auto_ptr<IResultSet> rs(stmt.GetResultSet());
+            m_CachedSet.push_back(CRef<CVariantSet>(new CCachedResultSet(*rs)));
+        }
+    }
+}
+
+CVariantSetProxy::~CVariantSetProxy(void)
+{
+}
+
+
+bool CVariantSetProxy::MoveToNextRS(void)
+{
+    m_HasRS = false;
+    
+    if (!m_CachedSet.empty()) {
+        m_CurResultSet.Reset(m_CachedSet.front());
+        m_CachedSet.pop_front();
+        m_HasRS = true;
+    }
+
+    return m_HasRS;
+}
+
+bool 
+CVariantSetProxy::MoveToLastRS(void)
+{
+    m_HasRS = false;
+
+    if (!m_CachedSet.empty()) {
+        m_CurResultSet.Reset(m_CachedSet.back());
+        m_CachedSet.pop_back();
+        m_HasRS = true;
+    }
+
+    return m_HasRS;
+}
+
+CVariantSet& CVariantSetProxy::GetRS(void)
+{
+    return *m_CurResultSet;
+}
+
+const CVariantSet& CVariantSetProxy::GetRS(void) const
+{
+    return *m_CurResultSet;
+}
+
+bool CVariantSetProxy::HasRS(void) const
+{
+    return m_HasRS;
+}
+
+void CVariantSetProxy::DumpResult(void)
+{
+    while (MoveToNextRS()) {;}
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 CBinary::CBinary(void)
 {
@@ -1394,7 +1760,7 @@ CStmtHelper::GetReturnStatus(void)
 }
 
 bool
-CStmtHelper::NextRS(void)
+CStmtHelper::MoveToNextRS(void)
 {
     _ASSERT( m_Stmt.get() );
 
@@ -1421,7 +1787,6 @@ CStmtHelper::NextRS(void)
 //////////////////////////////////////////////////////////////////////////////
 CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans)
 : m_ParentTransaction( trans )
-, m_RS(NULL)
 , m_Executed( false )
 , m_ResultStatus( 0 )
 , m_ResultStatusAvailable( false )
@@ -1433,7 +1798,6 @@ CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans)
 
 CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans, const CStmtStr& stmt)
 : m_ParentTransaction( trans )
-, m_RS(NULL)
 , m_StmtStr( stmt )
 , m_Executed( false )
 , m_ResultStatus( 0 )
@@ -1467,11 +1831,9 @@ CCallableStmtHelper::Close(void)
 void
 CCallableStmtHelper::DumpResult(void)
 {
-    if ( m_Stmt.get() && m_Executed ) {
-        while ( m_Stmt->HasMoreResults() ) {
-            if ( m_Stmt->HasRows() ) {
-                m_RS = m_Stmt->GetResultSet();
-            }
+    if ( m_Stmt.get() ) {
+        if (m_RSProxy.get()) {
+            m_RSProxy->DumpResult();
         }
     }
 }
@@ -1518,7 +1880,7 @@ CCallableStmtHelper::SetStr(const CStmtStr& stmt)
 }
 
 void
-CCallableStmtHelper::SetParam(const string& name, const CVariant& value)
+CCallableStmtHelper::SetParam(const string& name, const CVariant& value, bool& output_param)
 {
     _ASSERT( m_Stmt.get() );
 
@@ -1533,11 +1895,13 @@ CCallableStmtHelper::SetParam(const string& name, const CVariant& value)
     }
 
     try {
-	if (m_Stmt->GetParamsMetaData().GetDirection(name) == CDBParams::eIn) {
-		m_Stmt->SetParam( value, param_name );
-	} else {
-		m_Stmt->SetOutputParam( value, param_name );
-	}
+        if (m_Stmt->GetParamsMetaData().GetDirection(name) == CDBParams::eIn) {
+            m_Stmt->SetParam( value, param_name );
+            output_param = false;
+        } else {
+            m_Stmt->SetOutputParam( value, param_name );
+            output_param = true;
+        }
     }
     catch(const CException& e) {
         throw CDatabaseError( e.GetMsg() );
@@ -1545,7 +1909,7 @@ CCallableStmtHelper::SetParam(const string& name, const CVariant& value)
 }
 
 void
-CCallableStmtHelper::Execute(void)
+CCallableStmtHelper::Execute(bool cache_results)
 {
     _ASSERT( m_Stmt.get() );
 
@@ -1554,8 +1918,13 @@ CCallableStmtHelper::Execute(void)
         m_ResultStatusAvailable = false;
 
         m_Stmt->Execute();
+
         // Retrieve a resut if there is any ...
-        NextRS();
+        if (cache_results) {
+            m_RSProxy.reset(new CVariantSetProxy(*m_Stmt));
+        } else {
+            m_RSProxy.reset(new CRealSetProxy(*m_Stmt));
+        }
         m_Executed = true;
     }
     catch(const bad_cast&) {
@@ -1578,30 +1947,34 @@ CCallableStmtHelper::GetRowCount(void) const
     return -1;                          // As required by the specification ...
 }
 
-IResultSet&
+CVariantSet&
 CCallableStmtHelper::GetRS(void)
 {
-    if ( m_RS == NULL ) {
+    if ( m_RSProxy.get() == NULL ) {
         throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
-    return *m_RS;
+    return m_RSProxy->GetRS();
 }
 
-const IResultSet&
+const CVariantSet&
 CCallableStmtHelper::GetRS(void) const
 {
-    if ( m_RS == NULL ) {
+    if ( m_RSProxy.get() == NULL ) {
         throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
-    return *m_RS;
+    return m_RSProxy->GetRS();
 }
 
 bool
 CCallableStmtHelper::HasRS(void) const
 {
-    return m_RS != NULL;
+    if (m_RSProxy.get()) {
+        return m_RSProxy->HasRS();
+    }
+
+    return false;
 }
 
 int
@@ -1614,26 +1987,31 @@ CCallableStmtHelper::GetReturnStatus(void)
 }
 
 bool
-CCallableStmtHelper::NextRS(void)
+CCallableStmtHelper::MoveToNextRS(void)
 {
-    _ASSERT( m_Stmt.get() );
-
-    try {
-        while ( m_Stmt->HasMoreResults() ) {
-            if ( m_Stmt->HasRows() ) {
-                m_RS = m_Stmt->GetResultSet();
-                m_RS->BindBlobToVariant(true);
-                return true;
-            }
-        }
-    }
-    catch(const CException& e) {
-        throw CDatabaseError(e.GetMsg());
+    if ( m_RSProxy.get() == NULL ) {
+        throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
-    m_ResultStatusAvailable = true;
-    return false;
+    bool result = m_RSProxy->MoveToNextRS();
+
+    if (!result) {
+        m_ResultStatusAvailable = true;
+    }
+
+    return result;
 }
+
+bool 
+CCallableStmtHelper::MoveToLastRS(void)
+{
+    if ( m_RSProxy.get() == NULL ) {
+        throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
+    }
+
+    return m_RSProxy->MoveToLastRS();
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 pythonpp::CObject
@@ -1725,7 +2103,25 @@ MakeTupleFromResult(IResultSet& rs)
     for ( int i = 0; i < col_num; ++i) {
         const CVariant& value = rs.GetVariant (i + 1);
 
-	tuple[i] = ConvertCVariant2PCObject(value);
+        tuple[i] = ConvertCVariant2PCObject(value);
+    }
+
+    return tuple;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+pythonpp::CTuple
+MakeTupleFromResult(CVariantSet& rs)
+{
+    // Set data. Make a sequence (tuple) ...
+    int col_num = rs.GetTotalColumns();
+
+    pythonpp::CTuple tuple(col_num);
+
+    for ( int i = 0; i < col_num; ++i) {
+        const CVariant& value = rs.GetVariant (i + 1);
+
+        tuple[i] = ConvertCVariant2PCObject(value);
     }
 
     return tuple;
@@ -1782,6 +2178,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
     m_RowsNum = -1;                     // As required by the specification ...
     m_AllDataFetched = false;
     m_AllSetsFetched = false;
+    bool has_out_params = false;
 
     if ( args_size == 0 ) {
         throw CProgrammingError("A stored procedure name is expected as a parameter");
@@ -1804,7 +2201,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
                 const pythonpp::CDict dict = obj;
 
                 m_CallableStmtHelper.SetStr(m_StmtStr);
-                SetupParameters(dict, m_CallableStmtHelper);
+                has_out_params = SetupParameters(dict, m_CallableStmtHelper);
             } else  {
                 // Curently, NCBI DBAPI supports pameter binding by name only ...
 //            pythonpp::CSequence sequence;
@@ -1819,49 +2216,55 @@ CCursor::callproc(const pythonpp::CTuple& args)
         }
     }
 
-    m_CallableStmtHelper.Execute();
+    m_CallableStmtHelper.Execute(has_out_params);
     m_RowsNum = m_StmtHelper.GetRowCount();
 
-    if ( args_size > 1 ) {
-	// If we have input parameters ...
-	pythonpp::CObject output_args( args[1] );
-	
-	if ( m_CallableStmtHelper.HasRS() ) {
-	    // We can have out/inout arguments ...
-	    IResultSet& rs = m_CallableStmtHelper.GetRS();
+    if ( args_size > 1 && has_out_params) {
+        // If we have input parameters ...
+        pythonpp::CObject output_args( args[1] );
 
-	    if ( rs.GetResultType() == eDB_ParamResult ) {
-		// We've got ParamResult with output arguments ...
-		if ( rs.Next() ) {
-		    int col_num = rs.GetTotalColumns();
-		    const IResultSetMetaData* md_ptr = rs.GetMetaData();
+        if (m_CallableStmtHelper.MoveToLastRS() && m_CallableStmtHelper.HasRS() ) {
+            // We can have out/inout arguments ...
+            CVariantSet& rs = m_CallableStmtHelper.GetRS();
 
-		    for ( int i = 0; i < col_num; ++i) {
-			const CVariant& value = rs.GetVariant (i + 1);
+            if ( rs.GetResultType() == eDB_ParamResult ) {
+                // We've got ParamResult with output arguments ...
+                if ( rs.Next() ) {
+                    int col_num = rs.GetTotalColumns();
+                    const IResultSetMetaData& md = rs.GetMetaData();
 
-			if ( pythonpp::CDict::HasSameType(output_args) ) {
-			    // Dictionary ...
-			    pythonpp::CDict dict = output_args;
-			    const string param_name = md_ptr->GetName(i + 1);
+                    for ( int i = 0; i < col_num; ++i) {
+                        const CVariant& value = rs.GetVariant (i + 1);
 
-			    dict.SetItem(param_name, ConvertCVariant2PCObject(value));
-			} else  {
-			    // tuple[i] = ConvertCVariant2PCObject(value);
-			    // Curently, NCBI DBAPI supports pameter binding by name only ...
-			    //            pythonpp::CSequence sequence;
-			    //            if ( pythonpp::CList::HasSameType(obj) ) {
-			    //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
-			    //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
-			    //            }
-			    throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
-			}
-		    }
-		}
-	    }
-	}
+                        if ( pythonpp::CDict::HasSameType(output_args) ) {
+                            // Dictionary ...
+                            pythonpp::CDict dict = output_args;
+                            const string param_name = md.GetName(i + 1);
 
-	return output_args;
+                            dict.SetItem(param_name, ConvertCVariant2PCObject(value));
+                        } else  {
+                            // tuple[i] = ConvertCVariant2PCObject(value);
+                            // Curently, NCBI DBAPI supports pameter binding by name only ...
+                            //            pythonpp::CSequence sequence;
+                            //            if ( pythonpp::CList::HasSameType(obj) ) {
+                            //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
+                            //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
+                            //            }
+                            throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
+                        }
+                    }
+                }
+            }
+        }
+
+        // Get RowResultSet ...
+        m_CallableStmtHelper.MoveToNextRS();
+
+        return output_args;
     }
+
+    // Get RowResultSet ...
+    m_CallableStmtHelper.MoveToNextRS();
 
     return pythonpp::CNone();
 
@@ -1947,21 +2350,27 @@ CCursor::SetupParameters(const pythonpp::CDict& dict, CStmtHelper& stmt)
     }
 }
 
-void
+bool
 CCursor::SetupParameters(const pythonpp::CDict& dict, CCallableStmtHelper& stmt)
 {
     // Iterate over a dict.
     pythonpp::py_ssize_t i = 0;
     PyObject* key;
     PyObject* value;
+    bool result = false;
+    bool output_param = false;
+
     while ( PyDict_Next(dict, &i, &key, &value) ) {
         // Refer to borrowed references in key and value.
         const pythonpp::CObject key_obj(key);
         const pythonpp::CObject value_obj(value);
         string param_name = pythonpp::CString(key_obj);
 
-        stmt.SetParam(param_name, GetCVariant(value_obj));
+        stmt.SetParam(param_name, GetCVariant(value_obj), output_param);
+        result |= output_param;
     }
+
+    return result;
 }
 
 CVariant
@@ -2044,7 +2453,7 @@ CCursor::fetchone(const pythonpp::CTuple& args)
             return pythonpp::CNone();
         }
         if ( m_StmtStr.GetType() == estFunction ) {
-            IResultSet& rs = m_CallableStmtHelper.GetRS();
+            CVariantSet& rs = m_CallableStmtHelper.GetRS();
 
             if ( rs.Next() ) {
                 m_RowsNum = m_CallableStmtHelper.GetRowCount();
@@ -2086,7 +2495,7 @@ CCursor::fetchmany(const pythonpp::CTuple& args)
             return py_list;
         }
         if ( m_StmtStr.GetType() == estFunction ) {
-            IResultSet& rs = m_CallableStmtHelper.GetRS();
+            CVariantSet& rs = m_CallableStmtHelper.GetRS();
 
             size_t i = 0;
             for ( ; i < array_size && rs.Next(); ++i ) {
@@ -2131,26 +2540,27 @@ CCursor::fetchall(const pythonpp::CTuple& args)
         if ( m_AllDataFetched ) {
             return py_list;
         }
+
         if ( m_StmtStr.GetType() == estFunction ) {
-	    if (m_CallableStmtHelper.HasRS()) {
-		IResultSet& rs = m_CallableStmtHelper.GetRS();
+            if (m_CallableStmtHelper.HasRS()) {
+                CVariantSet& rs = m_CallableStmtHelper.GetRS();
 
-		while ( rs.Next() ) {
-		    py_list.Append(MakeTupleFromResult(rs));
-		}
+                while ( rs.Next() ) {
+                    py_list.Append(MakeTupleFromResult(rs));
+                }
 
-		m_RowsNum = m_CallableStmtHelper.GetRowCount();
-	    }
+                m_RowsNum = m_CallableStmtHelper.GetRowCount();
+            }
         } else {
-	    if (m_StmtHelper.HasRS()) {
-		IResultSet& rs = m_StmtHelper.GetRS();
+            if (m_StmtHelper.HasRS()) {
+                IResultSet& rs = m_StmtHelper.GetRS();
 
-		while ( rs.Next() ) {
-		    py_list.Append(MakeTupleFromResult(rs));
-		}
+                while ( rs.Next() ) {
+                    py_list.Append(MakeTupleFromResult(rs));
+                }
 
-		m_RowsNum = m_StmtHelper.GetRowCount();
-	    }
+                m_RowsNum = m_StmtHelper.GetRowCount();
+            }
         }
     }
     catch(const pythonpp::CError&) {
@@ -2175,23 +2585,23 @@ CCursor::NextSetInternal(void)
 
         if ( !m_AllSetsFetched ) {
             if ( m_StmtStr.GetType() == estFunction ) {
-		if (m_CallableStmtHelper.HasRS()) {
-		    if ( m_CallableStmtHelper.NextRS() ) {
-			m_AllDataFetched = false;
-			return true;
-		    }
-		} else {
-		    return false;
-		}
+                if (m_CallableStmtHelper.HasRS()) {
+                    if ( m_CallableStmtHelper.MoveToNextRS() ) {
+                        m_AllDataFetched = false;
+                        return true;
+                    }
+                } else {
+                    return false;
+                }
             } else {
-		if (m_StmtHelper.HasRS()) {
-		    if ( m_StmtHelper.NextRS() ) {
-			m_AllDataFetched = false;
-			return true;
-		    }
-		} else {
-		    return false;
-		}
+                if (m_StmtHelper.HasRS()) {
+                    if ( m_StmtHelper.MoveToNextRS() ) {
+                        m_AllDataFetched = false;
+                        return true;
+                    }
+                } else {
+                    return false;
+                }
             }
         }
     }

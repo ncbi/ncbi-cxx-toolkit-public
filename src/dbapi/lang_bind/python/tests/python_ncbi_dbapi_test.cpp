@@ -403,7 +403,7 @@ CPythonDBAPITest::Test_callproc(void)
         if (false) {
             // ExecuteStr("cursor.callproc('sp_server_info', {'@attribute_id':1}) \n");
             ExecuteStr("print cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
-            ExecuteStr("cursor.fetchall()\n");
+            ExecuteStr("print cursor.fetchall()\n");
             ExecuteStr("while cursor.nextset() : \n"
                        "    print cursor.fetchall() "
                     );

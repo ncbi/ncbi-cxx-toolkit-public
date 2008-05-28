@@ -192,7 +192,7 @@ public:
     void Close(void);
     long GetRowCount(void) const;
 
-    bool NextRS(void);
+    bool MoveToNextRS(void);
     IResultSet& GetRS(void);
     const IResultSet& GetRS(void) const;
     bool HasRS(void) const;
@@ -215,6 +215,22 @@ private:
 };
 
 //////////////////////////////////////////////////////////////////////////////
+class CVariantSet;
+
+class CResultSetProxy
+{
+public:
+    virtual ~CResultSetProxy(void) {}
+
+    virtual bool MoveToNextRS(void) = 0;
+    virtual bool MoveToLastRS(void) = 0;
+    virtual CVariantSet& GetRS(void) = 0;
+    virtual const CVariantSet& GetRS(void) const = 0;
+    virtual bool HasRS(void) const = 0;
+    virtual void DumpResult(void) = 0;
+};
+
+//////////////////////////////////////////////////////////////////////////////
 // ICallableStatement plus additinal informaion ...
 class CCallableStmtHelper
 {
@@ -226,15 +242,16 @@ public:
 public:
     // void SetStr(const string& stmt, int num_arg, EStatementType default_type = estFunction);
     void SetStr(const CStmtStr& stmt);
-    void SetParam(const string& name, const CVariant& value);
+    void SetParam(const string& name, const CVariant& value, bool& output_param);
 
-    void Execute(void);
+    void Execute(bool cache_results = false);
     void Close(void);
     long GetRowCount(void) const;
 
-    bool NextRS(void);
-    IResultSet& GetRS(void);
-    const IResultSet& GetRS(void) const;
+    bool MoveToNextRS(void);
+    bool MoveToLastRS(void);
+    CVariantSet& GetRS(void);
+    const CVariantSet& GetRS(void) const;
     bool HasRS(void) const;
 
     int GetReturnStatus(void);
@@ -247,7 +264,7 @@ private:
 private:
     CTransaction* const             m_ParentTransaction; //< A transaction to which belongs this cursor object
     auto_ptr<ICallableStatement>    m_Stmt;     //< DBAPI SQL statement interface
-    IResultSet*                     m_RS;
+    auto_ptr<CResultSetProxy>       m_RSProxy;
     CStmtStr                        m_StmtStr;
     bool                            m_Executed;
     int                             m_ResultStatus;
@@ -378,7 +395,8 @@ private:
     CVariant GetCVariant(const pythonpp::CObject& obj) const;
 
     void SetupParameters(const pythonpp::CDict& dict, CStmtHelper& stmt);
-    void SetupParameters(const pythonpp::CDict& dict, CCallableStmtHelper& stmt);
+    // Return *true* if there are output parameters.
+    bool SetupParameters(const pythonpp::CDict& dict, CCallableStmtHelper& stmt);
 
     void ExecuteCurrStatement(void);
 
