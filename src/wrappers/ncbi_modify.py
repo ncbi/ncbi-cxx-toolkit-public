@@ -46,6 +46,17 @@ def Replace(s, begin, end, replacement):
     return s
 
 
+# Replace only if header is present as %import or %include.
+# This allows things to work with headers removed.
+def ReplaceIf(s, begin, end, replacement, header):
+    pat = r'\%(includefile|importfile) ".*/include/' + re.escape(header) \
+        + r'" \['
+    m = re.search(pat, s)
+    if m != None:
+        s = Replace(s, begin, end, replacement)
+    return s
+
+
 def Modify(s):
     trouble = '''    template<typename T>
     class SOptional {
@@ -90,40 +101,46 @@ def Modify(s):
         T    m_Value;
     };
 '''
-    s = Replace(s, trouble, '', '// template class SOptimal deleted\n')
+    s = ReplaceIf(s, trouble, '', '// template class SOptimal deleted\n',
+                  'algo/blast/api/blast_options_builder.hpp')
 
     # Part of hit_filter.hpp causes SWIG parse error
     begin_trouble = \
         '    // merging of abutting hits sharing same ids and subject strand'
     end_trouble = '\n    }\n'
-    s = Replace(s, begin_trouble, end_trouble, '// sx_TestAndMerge deleted\n')
+    s = ReplaceIf(s, begin_trouble, end_trouble, '// sx_TestAndMerge deleted\n',
+                  'algo/align/util/hit_filter.hpp')
     
-    # In biotree.hpp, nested class inheriting from template causes trouble.
+    # In bio_tree.hpp, nested class inheriting from template causes trouble.
     # Hide the inheritance from SWIG.
-    s = re.sub(re.escape('class CBioNode : public CTreeNode<TBioNode>'),
-               'class CBioNode', s)
+    s = ReplaceIf(s, 'class CBioNode : public CTreeNode<TBioNode>', '',
+                  'class CBioNode',
+                  'algo/phy_tree/bio_tree.hpp')
 
     # CSplicedAligner contains a nested templace struct, SAllocator
     begin_trouble = \
         '    // a trivial but helpful memory allocator for core dynprog'
     end_trouble = '\n    };\n'
-    s = Replace(s, begin_trouble, end_trouble,
-                '// template struct SAllocator deleted\n')
+    s = ReplaceIf(s, begin_trouble, end_trouble,
+                  '// template struct SAllocator deleted\n',
+                  'algo/align/nw/nw_spliced_aligner.hpp')
 
     # template class CNetSchedulekeys in connect/services/netschedule_key.hpp
     # contains nested class
     begin_trouble = 'template <typename TBVector = bm::bvector<> >\n' \
                     'class CNetScheduleKeys'
     end_trouble = '\n};'
-    s = Replace(s, begin_trouble, end_trouble,
-                '// template class CNetScheduleKeys deleted\n')
+    s = ReplaceIf(s, begin_trouble, end_trouble,
+                  '// template class CNetScheduleKeys deleted\n',
+                  'connect/services/netschedule_key.hpp')
     
     # Bad nested/template interaction in util/align_range_coll.hpp
     begin_trouble = 'template <class TColl>\n' \
                     '    class CAlignRangeCollExtender'
     end_trouble = '\n};'
-    s = Replace(s, begin_trouble, end_trouble,
-                '// template class CAlignRangeCollExtender deleted\n')
+    s = ReplaceIf(s, begin_trouble, end_trouble,
+                  '// template class CAlignRangeCollExtender deleted\n',
+                  'util/align_range_coll.hpp')
     
     # Some %template declarations for base classes must be inserted
     # into bdb_types.hpp (after templates, before subclasses)
@@ -153,6 +170,6 @@ def Modify(s):
         '%template(CBDB_FieldSimpleFloat_double) ncbi::CBDB_FieldSimpleFloat<double>;\n' \
         '\n' \
         + begin_subclasses
-    s = Replace(s, begin_subclasses, '', replacement)
+    s = ReplaceIf(s, begin_subclasses, '', replacement, 'bdb/bdb_types.hpp')
 
     return s
