@@ -104,19 +104,19 @@ void CCursor::Delete(const string& table)
 }
 
 CNcbiOstream& CCursor::GetBlobOStream(unsigned int col,
-                                 size_t blob_size, 
-                                 EAllowLog log_it,
-                                 size_t buf_size)
+                                      size_t blob_size, 
+                                      EAllowLog log_it,
+                                      size_t buf_size)
 {
     // Delete previous ostream
     delete m_ostr;
-    m_ostr = NULL;
+    m_ostr = 0;
 
     m_ostr = new CWStream(new CxBlobWriter(GetCursorCmd(),
                                            col - 1,
                                            blob_size,
                                            log_it == eEnableLog), 
-							  buf_size, 0, CRWStreambuf::fOwnWriter);
+                          buf_size, 0, CRWStreambuf::fOwnWriter);
     return *m_ostr;
 }
 
@@ -126,13 +126,15 @@ IWriter* CCursor::GetBlobWriter(unsigned int col,
 {
     // Delete previous writer
     delete m_wr;
+    m_wr = 0;
 
     m_wr = new CxBlobWriter(GetCursorCmd(),
-                           col - 1,
-                           blob_size,
-                           log_it == eEnableLog);
+                            col - 1,
+                            blob_size,
+                            log_it == eEnableLog);
     return m_wr;
 }
+
 void CCursor::Cancel()
 {
     if( GetCursorCmd() != 0 )
@@ -156,7 +158,6 @@ void CCursor::FreeResources()
 	    m_conn = 0;
 	    Notify(CDbapiAuxDeletedEvent(this));
     }
-  
 }
 
 void CCursor::Action(const CDbapiEvent& e) 
@@ -165,7 +166,7 @@ void CCursor::Action(const CDbapiEvent& e)
            << "' from " << e.GetSource()->GetIdent());
 
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
-	RemoveListener(e.GetSource());
+        RemoveListener(e.GetSource());
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
             _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
