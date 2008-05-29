@@ -40,6 +40,7 @@
 
 include $(builddir)/Makefile.lib
 @IF_WITH_DLL@ XLIBDEP = $(XLIBDEPLINK)
+@IF_WITH_DLL@ XOLD_DLLS =
 # Kludge: Makefile.lib and Makefile.dll both include Makefile.$(Rules);
 # while including the real version twice should be safe, gmake for one
 # warns about duplicate rules.  Substituting a guaranteed contentless
