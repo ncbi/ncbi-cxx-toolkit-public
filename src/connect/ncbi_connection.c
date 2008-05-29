@@ -46,11 +46,11 @@
 
 /* Standard logging message
  */
-#define CONN_LOG_EX(subcode, level, descr, status)         \
-  CORE_LOGF_X(subcode, level,                                \
-              ("%s (connector \"%s\", error \"%s\")", descr, \
-               conn->meta.get_type                           \
-               ? conn->meta.get_type(conn->meta.c_get_type)  \
+#define CONN_LOG_EX(subcode, level, message, status)            \
+  CORE_LOGF_X(subcode, level,                                   \
+              ("%s (connector \"%s\", error \"%s\")", message,  \
+               conn->meta.get_type                              \
+               ? conn->meta.get_type(conn->meta.c_get_type)     \
                : "Unknown", IO_StatusStr(status)))
 
 #define CONN_LOG(subcode, level, descr)   \

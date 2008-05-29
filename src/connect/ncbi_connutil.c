@@ -122,7 +122,6 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     char   str[1024];
     int    val;
     double dbl;
-    char*  s;
 
     if (!info)
         return 0/*failure*/;
@@ -252,13 +251,10 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* not adjusted yet... */
     info->http_proxy_adjusted = 0/*false*/;
-    /* store service name for which this structure has been created */
-    if (service  &&  *service) {
-        s = (char*) info + sizeof(*info);
-        strcpy(s, service);
-    } else
-        s = 0;
-    info->service = s;
+    /* store the service name for which this structure has been created */
+    info->service = (service  &&  *service
+                     ? strcpy((char*) info + sizeof(*info), service)
+                     : 0);
 
     /* done */
     return info;

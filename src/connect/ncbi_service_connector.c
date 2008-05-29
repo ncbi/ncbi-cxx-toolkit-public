@@ -672,7 +672,7 @@ static EIO_Status s_Close(CONNECTOR       connector,
 static const char* s_VT_GetType(CONNECTOR connector)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
-    return uuu->name ? uuu->name : "SERVICE";
+    return uuu->name ? uuu->name : uuu->service;
 }
 
 
@@ -685,7 +685,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
     SConnNetInfo* net_info;
     CONNECTOR conn;
 
-    assert(!uuu->meta.list && !uuu->name);
+    assert(!uuu->meta.list  &&  !uuu->name);
     if (!uuu->iter  &&  !s_OpenDispatcher(uuu)) {
         uuu->status = status;
         return status;
@@ -733,11 +733,15 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         if (uuu->meta.get_type) {
             const char* type;
             if ((type = uuu->meta.get_type(uuu->meta.c_get_type)) != 0) {
-                static const char prefix[] = "SERVICE/";
-                char* name = (char*) malloc(sizeof(prefix) + strlen(type));
+                size_t slen = strlen(uuu->service);
+                size_t tlen = strlen(type);
+                char* name = (char*) malloc(slen + tlen + 2);
                 if (name) {
-                    memcpy(&name[0],                prefix, sizeof(prefix)-1);
-                    strcpy(&name[sizeof(prefix)-1], type);
+                    memcpy(name,        uuu->service, slen);
+                    name[slen++] = '/';
+                    memcpy(name + slen, type,         tlen);
+                    tlen += slen;
+                    name[tlen]   = '\0';
                     uuu->name = name;
                 }
             }
@@ -845,7 +849,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         xxx->net_info->stateless = 1/*true*/;
     if (types & fSERV_Firewall)
         xxx->net_info->firewall = 1/*true*/;
-    strcpy(xxx->service, service);
+    strupr(strcpy(xxx->service, service));
     if (!s_OpenDispatcher(xxx)) {
         s_Destroy(ccc);
         return 0;
