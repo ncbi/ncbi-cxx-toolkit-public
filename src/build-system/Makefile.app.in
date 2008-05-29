@@ -80,7 +80,8 @@ $(XAPP) .$(XAPP).stamp: $(XOBJ) $(XLIBDEP)
 MAKEFILE = $(builddir)/Makefile.app.tmpl
 
 all: $(ALL)
-	@test "$(ALL)" = "$(XAPP)" || $(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XAPP)
+	@test "$(ALL)" = ".$(XAPP).stamp" || \
+	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) .$(XAPP).stamp
 
 clean: clean-common
 	-$(RM) $(XOBJ)
