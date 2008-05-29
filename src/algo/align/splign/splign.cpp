@@ -108,6 +108,43 @@ CConstRef<CSplign::TAligner> CSplign::GetAligner( void ) const {
     return m_aligner;
 }
 
+
+CRef<CSplicedAligner> CSplign::s_CreateDefaultAligner(bool low_query_quality)
+{
+    CRef<CSplicedAligner> aligner(
+        static_cast<CSplicedAligner*>(new CSplicedAligner16));
+        
+#ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
+    if(false == low_query_quality) {
+        aligner->SetWm  (1000);
+        aligner->SetWms (-1044);
+        aligner->SetWg  (-3070);
+        aligner->SetWs  (-173);
+        aligner->SetScoreMatrix(NULL);
+
+        aligner->SetWi(0, -4270);
+        aligner->SetWi(1, -5314);
+        aligner->SetWi(2, -6358);
+        aligner->SetWi(3, -7395);
+    }
+    else {
+        aligner->SetWm  (1000);
+        aligner->SetWms (-1011);
+        aligner->SetWg  (-1460);
+        aligner->SetWs  (-464);
+        aligner->SetScoreMatrix(NULL);
+
+        aligner->SetWi(0, -4988);
+        aligner->SetWi(1, -5999);
+        aligner->SetWi(2, -7010);
+        aligner->SetWi(3, -13060);
+    }
+#endif
+
+    return aligner;
+}
+
+
 void CSplign::SetEndGapDetection( bool on ) {
     m_endgaps = on;
 }

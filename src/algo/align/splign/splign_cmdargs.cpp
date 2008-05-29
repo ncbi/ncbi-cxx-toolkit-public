@@ -121,39 +121,13 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
     splign->SetMinSingletonIdentityBps(args["min_singleton_idty_bps"].AsInteger());
     splign->SetMinExonIdentity(args["min_exon_idty"].AsDouble());
 
-    CRef<CSplicedAligner> aligner(
-        static_cast<CSplicedAligner*>(new CSplicedAligner16));
-        
 #ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
-
-    if(args["type"].AsString() == kQueryType_mRNA) {
-        aligner->SetWm  (1000);
-        aligner->SetWms (-1044);
-        aligner->SetWg  (-3070);
-        aligner->SetWs  (-173);
-        aligner->SetScoreMatrix(NULL);
-
-        aligner->SetWi(0, -4270);
-        aligner->SetWi(1, -5314);
-        aligner->SetWi(2, -6358);
-        aligner->SetWi(3, -7395);
-    }
-    else {
-        aligner->SetWm  (1000);
-        aligner->SetWms (-1011);
-        aligner->SetWg  (-1460);
-        aligner->SetWs  (-464);
-        aligner->SetScoreMatrix(NULL);
-
-        aligner->SetWi(0, -4988);
-        aligner->SetWi(1, -5999);
-        aligner->SetWi(2, -7010);
-        aligner->SetWi(3, -13060);
-    }
-
+    const bool query_low_quality (args["type"].AsString() == kQueryType_EST);
+#else
+    const bool query_low_quality (false);
 #endif
 
-    splign->SetAligner() = aligner;
+    splign->SetAligner() = CSplign::s_CreateDefaultAligner(query_low_quality);
 }
 
 
