@@ -95,7 +95,8 @@ CPythonDBAPITest::MakeTestPreparation(void)
             "   int_val int null, "
             // "   vc1900_field varchar(255) null, "
             "   vc1900_field varchar(1900) null, "
-            "   text_val text null)') \n"
+            "   text_val text null, "
+            "   image_val image null)') \n"
             );
     }
     catch( const string& ex ) {
@@ -628,11 +629,14 @@ CPythonDBAPITest::Test_LOB(void)
 
             sql  = "cursor.execute('INSERT INTO #t2(vc1900_field, text_val) VALUES(@vcv, @tv)', ";
             sql += " {'@vcv':long_str, '@tv':long_str} ) \n";
+            // sql  = "cursor.execute('INSERT INTO #t2(vc1900_field, text_val, image_val) VALUES(@vcv, @tv, @iv)', ";
+            // sql += " {'@vcv':long_str, '@tv':long_str, '@iv':long_str} ) \n";
             ExecuteStr( sql.c_str() );
         }
 
         // Check ...
         {
+            // sql = "SELECT vc1900_field, text_val, image_val FROM #t2";
             sql = "SELECT vc1900_field, text_val FROM #t2";
             ExecuteSQL(sql);
             ExecuteStr("record = cursor.fetchone() \n");
@@ -645,6 +649,9 @@ CPythonDBAPITest::Test_LOB(void)
             ExecuteStr("if len(record[1]) != len(long_str) : "
                        "raise StandardError('Invalid string size: ') \n"
             );
+            // ExecuteStr("if len(record[2]) != len(long_str) : "
+            //            "raise StandardError('Invalid string size: ') \n"
+            // );
         }
     }
     catch( const string& ex ) {
@@ -985,29 +992,22 @@ CTestArguments::GetServerType(void) const
 void
 CTestArguments::SetDatabaseParameters(void)
 {
-    if ( GetDriverName() == "ctlib" ) {
-        // m_DatabaseParameters["version"] = "125";
-    } else if ( GetDriverName() == "dblib"  &&
-                GetServerType() == eSybase ) {
-        // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
-        // BcpIn to it using protocol version other than "100".
-        m_DatabaseParameters["version"] = "100";
-    } else if ( (GetDriverName() == "ftds") &&
-                GetServerType() == eSybase ) {
-        m_DatabaseParameters["version"] = "42";
-    } else if ( (GetDriverName() == "ftds8") &&
-                GetServerType() == eSybase ) {
-        m_DatabaseParameters["version"] = "42";
-    } else if ( (GetDriverName() == "ftds63" ||
-                 GetDriverName() == "ftds64_dblib") &&
-                GetServerType() == eSybase ) {
-        // ftds work with Sybase databases using protocol v42 only ...
-        m_DatabaseParameters["version"] = "100";
-    } else if (GetDriverName() == "ftds_odbc") {
-        if (GetServerType() == eSybase) {
-            m_DatabaseParameters["version"] = "50";
-        }
-    }
+	if (GetServerType() == eSybase) {
+		if ( GetDriverName() == "dblib") {
+				// Due to the bug in the Sybase 12.5 server, DBLIB cannot do
+				// BcpIn to it using protocol version other than "100".
+				m_DatabaseParameters["version"] = "100";
+		} else if ( (GetDriverName() == "ftds")) {
+				m_DatabaseParameters["version"] = "42";
+		} else if ( (GetDriverName() == "ftds8")) {
+				m_DatabaseParameters["version"] = "42";
+		} else if (GetDriverName() == "ftds63" || GetDriverName() == "ftds64_dblib") {
+				// ftds work with Sybase databases using protocol v42 only ...
+				m_DatabaseParameters["version"] = "100";
+		} else if (GetDriverName() == "ftds_odbc") {
+				m_DatabaseParameters["version"] = "50";
+		}
+	}
 }
 
 string

@@ -453,14 +453,21 @@ public:
                 const CTuple args_tuple( args );
 
                 return IncRefCount((obj->*func)(args_tuple));
-            }
-            catch(const CError&) {
+			}
+			/* CException is not defined here. We must translate all CException
+			 * to CError in user's code.
+			catch (const CException& e) {
+				CError::SetString(e.GetMsg());
+			}
+			*/
+			catch(const CError&) {
                 // An error message is already set by a previosly raised exception ...
-                return NULL;
-            }
-            catch(...) {
+				return NULL;
+			}
+			catch(...) {
                 CError::SetString("Unknown error during executing of a method");
-            }
+			}
+
             // NULL means "error".
             return NULL;
         }
