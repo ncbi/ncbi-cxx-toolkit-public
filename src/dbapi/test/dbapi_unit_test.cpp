@@ -35,7 +35,7 @@
 #include <corelib/ncbithr.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 
-#include <ncbi_source_ver.h>
+#include <common/ncbi_source_ver.h>
 #include <dbapi/dbapi.hpp>
 #include <dbapi/driver/drivers.hpp>
 #include <dbapi/driver/util/blobstore.hpp>
