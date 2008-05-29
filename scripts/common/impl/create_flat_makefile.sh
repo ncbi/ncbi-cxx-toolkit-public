@@ -116,12 +116,12 @@ test -f "$ptbini" || Usage "$ptbini not found"
 COMMON_Exec cd $builddir
 if test "$buildptb" = "yes"; then
   for dep in $ptbdep; do
-    if ! test -d "$dep"; then
+    if test ! -d "$dep"; then
       echo "WARNING: $builddir/$dep not found"
       buildptb="no"
       break;
     fi
-    if ! test -f "$dep/Makefile"; then
+    if test ! -f "$dep/Makefile"; then
       echo "WARNING: $builddir/$dep/Makefile not found"
       buildptb="no"
       break;
