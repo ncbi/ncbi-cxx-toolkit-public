@@ -264,16 +264,18 @@ unsigned int CResultSet::GetTotalColumns()
 CNcbiIstream& CResultSet::GetBlobIStream(size_t buf_size)
 {
     delete m_istr;
-	m_istr = new CRStream(new CxBlobReader(this), buf_size, 0, CRWStreambuf::fOwnReader);
-
+    m_istr = 0;
+	m_istr = new CRStream(new CxBlobReader(this), buf_size, 0,
+                          (CRWStreambuf::fOwnReader |
+                           CRWStreambuf::fLogExceptions));
     return *m_istr;
 }
 
 IReader* CResultSet::GetBlobReader()
 {
     delete m_rd;
+    m_rd = 0;
     m_rd = new CxBlobReader(this);
-
     return m_rd;
 }
 

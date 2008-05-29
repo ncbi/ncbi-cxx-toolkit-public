@@ -116,7 +116,8 @@ CNcbiOstream& CCursor::GetBlobOStream(unsigned int col,
                                            col - 1,
                                            blob_size,
                                            log_it == eEnableLog), 
-                          buf_size, 0, CRWStreambuf::fOwnWriter);
+                          buf_size, 0, (CRWStreambuf::fOwnWriter |
+                                        CRWStreambuf::fLogExceptions));
     return *m_ostr;
 }
 
