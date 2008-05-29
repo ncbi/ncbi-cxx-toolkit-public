@@ -325,7 +325,8 @@ public:
 
     /// Append an entry at the end of the archive that already exists.
     ///
-    /// Appended entry can be either a file, a directory, or a symbolic link.
+    /// Appended entry can be either a file, a directory, a symbolic link,
+    /// a device special file (block or character), or a FIFO special file.
     /// The name is taken with respect to the base directory, if any set.
     /// Adding a directory results in all its files and subdirectories to
     /// get added (examine the return value to find out what has been added).
@@ -334,7 +335,7 @@ public:
     /// all appended entries will be converted to Unix format (that is, to
     /// have forward slashes in the paths, and drive letter, if any on
     /// MS-Windows, stripped).  All entries will be added at the logical end
-    /// (not always EOF) of the archive, when appending to an existing one.
+    /// (not always EOF) of the archive, when appending to non-empty one.
     ///
     /// @return
     ///   A list of the appended entries.
@@ -374,7 +375,7 @@ public:
     /// Extract the entire archive (into either current directory or
     /// a directory otherwise specified by SetBaseDir()).
     ///
-    /// Extract all archive entries, which names match pre-set mask.
+    /// Extract all archive entries, whose names match pre-set mask.
     /// @sa
     ///   SetMask, SetBaseDir
     auto_ptr<TEntries> Extract(void);
@@ -382,8 +383,8 @@ public:
     /// Get information about all matching archive entries.
     ///
     /// @return
-    ///   An array containing information on those archive entries
-    ///   which names match pre-set mask.
+    ///   An array containing information on those archive entries,
+    ///   whose names match pre-set mask.
     /// @sa
     ///   SetMask
     auto_ptr<TEntries> List(void);
@@ -394,7 +395,7 @@ public:
     void Test(void);
 
     /// Return archive size as if all specified input entries were put in it.
-    /// Note that the return value is not exact but the upper bound of
+    /// Note that the return value is not the exact but the upper bound of
     /// what the archive size can be expected.  This call does not recurse
     /// into any subdirectries but relies solely upon the information as
     /// passed via the parameter.
@@ -423,11 +424,11 @@ public:
     /// If masks are not defined then all archive entries will be processed.
     /// By default, the masks are used case sensitively.  To cancel this and
     /// use the masks case-insensitively SetFlags() can be called with
-    /// fMaskIgnoreCase flag set.
+    /// fMaskNocase flag set.
     /// @param mask
     ///   Set of masks.
     /// @param if_to_own
-    ///   Flag to take ownership on the masks (delete on destruction).
+    ///   Flag to take ownership on the masks (delete upon CTar destruction).
     /// @sa
     //    SetFlags, UnsetMask
     void SetMask(CMask* mask, EOwnership if_to_own = eNoOwnership);
@@ -463,7 +464,7 @@ public:
     /// @return
     ///   IReader interface to read the file contents with;  0 on error.
     /// @sa
-    ///   CTarEntryInfo::GetPosition, Extract, SetFlags
+    ///   CTarEntryInfo::GetPosition, Extract, SetFlags, IReader, CRStream
     static IReader* Extract(istream& is, const string& name, TFlags flags = 0);
 
 protected:
@@ -567,7 +568,7 @@ protected:
     char*          m_Buffer;       ///< I/O buffer (page-aligned).
     TFlags         m_Flags;        ///< Bitwise OR of flags.
     CMask*         m_Mask;         ///< Masks for list/test/extract.
-    EOwnership     m_MaskOwned;    ///< Flag to take ownership for m_Mask.
+    EOwnership     m_MaskOwned;    ///< Flag of m_Mask's ownership.
     bool           m_IsModified;   ///< True after at least one write.
     string         m_BaseDir;      ///< Base directory for relative paths.
     const string*  m_Current;      ///< Current entry name being processed.
