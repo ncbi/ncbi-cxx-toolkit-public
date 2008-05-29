@@ -121,6 +121,8 @@ char* SERV_WriteInfo(const SSERV_Info* info)
     size_t reserve;
     char* str;
 
+    if (!(attr = s_GetAttrByType(info->type)))
+        return 0;
     if (info->type != fSERV_Dns
         &&  MIME_ComposeContentTypeEx(info->mime_t, info->mime_s,
                                       info->mime_e, c_t, sizeof(c_t))) {
@@ -133,7 +135,6 @@ char* SERV_WriteInfo(const SSERV_Info* info)
         memmove(c_t, p, strlen(p) + 1);
     } else
         *c_t = 0;
-    attr = s_GetAttrByType(info->type);
     reserve = attr->tag_len+1 + MAX_IP_ADDR_LEN + 1+5/*port*/ + 1+10/*flag*/ +
         1+9/*coef*/ + 3+strlen(c_t)/*cont.type*/ + 1+5/*locl*/ + 1+5/*priv*/ +
         1+7/*quorum*/ + 1+14/*rate*/ + 1+5/*sful*/ + 1+12/*time*/ + 1/*EOL*/;
@@ -188,6 +189,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* info_str, const char* name)
 
     if (!str || (*str && !isspace((unsigned char)(*str))))
         return 0;
+    /* NB: "str" guarantees there is non-NULL attr */
     while (*str && isspace((unsigned char)(*str)))
         str++;
     if (!ispunct((unsigned char)(*str)) || *str == ':') {
@@ -400,17 +402,19 @@ const char* SERV_NameOfInfo(const SSERV_Info* info)
 
 size_t SERV_SizeOfInfo(const SSERV_Info *info)
 {
-    return info ? sizeof(*info) - sizeof(info->u) +
-        s_GetAttrByType(info->type)->vtable.SizeOf(&info->u) : 0;
+    const SSERV_Attr* attr = info ? s_GetAttrByType(info->type) : 0;
+    return attr
+        ? sizeof(*info) - sizeof(info->u) + attr->vtable.SizeOf(&info->u) : 0;
 }
 
 
 int/*bool*/ SERV_EqualInfo(const SSERV_Info *i1, const SSERV_Info *i2)
 {
+    const SSERV_Attr* attr;
     if (i1->type != i2->type || i1->host != i2->host || i1->port != i2->port)
         return 0;
-    return (s_GetAttrByType(i1->type)->vtable.Equal ?
-            s_GetAttrByType(i1->type)->vtable.Equal(&i1->u, &i2->u) : 1);
+    attr = s_GetAttrByType(i1->type/*==i2->type*/);
+    return attr->vtable.Equal ? attr->vtable.Equal(&i1->u, &i2->u) : 1;
 }
 
 
