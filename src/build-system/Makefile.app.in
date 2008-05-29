@@ -84,7 +84,7 @@ all: $(ALL)
 
 clean: clean-common
 	-$(RM) $(XOBJ)
-	-$(RM) $(XAPP)
+	-$(RM) $(XAPP) .$(XAPP).stamp
 	-$(RM) core
 
 purge: clean

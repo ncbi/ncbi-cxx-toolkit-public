@@ -105,7 +105,7 @@ clean: clean-common clean-dll
 
 clean-dll:
 	-$(RM) $(XDLLOBJ)
-	-$(RM) $(XDLL) $(XDLLDEP)
+	-$(RM) $(XDLL) $(XDLLDEP) .$(XDLL).stamp
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 
 purge: clean purge-headers deactivate

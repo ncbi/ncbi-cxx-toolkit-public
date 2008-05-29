@@ -71,7 +71,7 @@ clean: clean-common clean-lib
 
 clean-lib:
 	-$(RM) $(XLIBOBJ)
-	-$(RM) $(XLIB) $(XLIBDEP)
+	-$(RM) $(XLIB) $(XLIBDEP) .$(XLIB).stamp
 
 purge: clean purge-headers deactivate
 
