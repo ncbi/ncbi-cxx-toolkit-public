@@ -770,7 +770,8 @@ static void s_DoLog
             else
                 strcpy(tail, "???");
         }
-        CORE_TRACEF(("%s%s%s", s_ID(sock, _id), head, tail));
+        CORE_LOGF_X(112, eLOG_Trace,
+                    ("%s%s%s", s_ID(sock, _id), head, tail));
         break;
 
     case eIO_Read:
@@ -829,7 +830,8 @@ static void s_DoLog
                         sock->n_in == 1 ? "" : "s");
             }
         }}
-        CORE_TRACEF(("%s%s (out: %s, in: %s)", s_ID(sock, _id),
+        CORE_LOGF_X(113, eLOG_Trace,
+                    ("%s%s (out: %s, in: %s)", s_ID(sock, _id),
                      sock->stype == eSOCK_ServerSideKeep
                      ? "Leaving" : "Closing", head,tail));
         break;
@@ -1127,6 +1129,30 @@ static EIO_Status s_Status(SOCK sock, EIO_Event direction)
 }
 
 
+#if !defined(NCBI_OS_MSWIN) && defined(FD_SETSIZE)
+static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
+{
+    int fd = fcntl(sock->sock, F_DUPFD, STDERR_FILENO + 1);
+    if (fd >= 0) {
+        if (fd < FD_SETSIZE) {
+            char _id[32];
+            int cloexec = fcntl(sock->sock, F_GETFD, 0);
+            if (cloexec >= 0)
+                fcntl(fd, F_SETFD, cloexec);
+            CORE_LOGF_X(111, eLOG_Note,
+                        ("%s[SOCK::s_Select]  File descriptor lowered to %d",
+                         s_ID(sock, _id), fd));
+            close(sock->sock);
+            sock->sock = fd;
+            return 1/*success*/;
+        }
+        close(fd);
+    }
+    return 0/*failure*/;
+}
+#endif /*!NCBI_MSWIN && FD_SETSIZE*/
+
+
 /* compare 2 normalized timeval timeouts: "whether v1 is less than v2" */
 static int/*bool*/ s_Less(const struct timeval* v1, const struct timeval* v2)
 {
@@ -1207,10 +1233,14 @@ static EIO_Status s_Select(size_t                n,
                 TSOCK_Handle fd = polls[i].sock->sock;
 #if !defined(NCBI_OS_MSWIN) && defined(FD_SETSIZE)
                 if (fd >= FD_SETSIZE) {
-                    polls[i].revent = eIO_Close;
-                    errno = SOCK_ETOOMANY;
-                    ready = 1;
-                    continue;
+                    if (!x_TryLowerSockFileno(polls[i].sock)) {
+                        polls[i].revent = eIO_Close;
+                        errno = SOCK_ETOOMANY;
+                        ready = 1;
+                        continue;
+                    }
+                    fd = polls[i].sock->sock;
+                    assert(fd < FD_SETSIZE);
                 }
 #endif /*!NCBI_MSWIN && FD_SETSIZE*/
                 if (fd != SOCK_INVALID) {
@@ -2111,8 +2141,8 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         if ((status = s_WritePending(sock, tv, 0, 0)) != eIO_Success) {
             CORE_LOGF_X(13, !tv  ||  (tv->tv_sec | tv->tv_usec)
                         ? eLOG_Warning : eLOG_Trace,
-                        ("%s[SOCK::s_Shutdown]  Shutting down for "
-                         "write with some output pending (%s)",
+                        ("%s[SOCK::s_Shutdown]  Shutting down for"
+                         " write with some output still pending (%s)",
                          s_ID(sock, _id), IO_StatusStr(status)));
         }
         x_how = SOCK_SHUTDOWN_WR;
@@ -2131,8 +2161,8 @@ static EIO_Status s_Shutdown(SOCK                  sock,
             &&  (status = s_WritePending(sock, tv, 0, 0)) != eIO_Success) {
             CORE_LOGF_X(14, !tv  ||  (tv->tv_sec | tv->tv_usec)
                         ? eLOG_Warning : eLOG_Trace,
-                        ("%s[SOCK::s_Shutdown]  Shutting down for "
-                         "R/W with some output pending (%s)",
+                        ("%s[SOCK::s_Shutdown]  Shutting down for"
+                         " R/W with some output still pending (%s)",
                          s_ID(sock, _id), IO_StatusStr(status)));
         }
         x_how = SOCK_SHUTDOWN_RDWR;
@@ -2252,15 +2282,15 @@ static EIO_Status s_Close(SOCK sock, int/*bool*/ abort)
             int x_errno = SOCK_ERRNO;
             CORE_LOGF_ERRNO_EXX(19, eLOG_Trace,
                                 x_errno, SOCK_STRERROR(x_errno),
-                                ("%s[SOCK::s_Close]  Cannot set socket "
-                                 "back to blocking mode", s_ID(sock, _id)));
+                                ("%s[SOCK::s_Close]  Cannot set socket"
+                                 " back to blocking mode", s_ID(sock, _id)));
         }
     } else {
         status = s_WritePending(sock, sock->c_timeout, 0, 0);
         if (status != eIO_Success) {
             CORE_LOGF_X(20, eLOG_Warning,
-                        ("%s[SOCK::s_Close]  Leaving with some "
-                         "output data pending (%s)",
+                        ("%s[SOCK::s_Close]  Leaving with some"
+                         " output data still pending (%s)",
                          s_ID(sock, _id), IO_StatusStr(status)));
         }
     }
@@ -2425,8 +2455,8 @@ static EIO_Status s_Connect(SOCK            sock,
             if (x_errno != SOCK_EINTR) {
                 CORE_LOGF_ERRNO_EXX(25, eLOG_Error,
                                     x_errno, SOCK_STRERROR(x_errno),
-                                    ("%s[SOCK::s_Connect]  Failed connect() "
-                                     "to %s", s_ID(sock, _id), c));
+                                    ("%s[SOCK::s_Connect]  Failed connect()"
+                                     " to %s", s_ID(sock, _id), c));
             }
             s_Close(sock, 1/*abort*/);
             /* unrecoverable error */
@@ -2441,8 +2471,8 @@ static EIO_Status s_Connect(SOCK            sock,
             if (status != eIO_Success) {
                 CORE_LOGF_ERRNO_EXX(26, eLOG_Error,
                                     x_errno, SOCK_STRERROR(x_errno),
-                                    ("%s[SOCK::s_Connect]  Failed pending "
-                                     "connect() to %s (%s)", s_ID(sock, _id),
+                                    ("%s[SOCK::s_Connect]  Failed pending"
+                                     " connect() to %s (%s)", s_ID(sock, _id),
                                      c, IO_StatusStr(status)));
                 s_Close(sock, 1/*abort*/);
                 return status;
@@ -2588,7 +2618,8 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 
         /* statistics & logging */
         if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn)) {
-            CORE_TRACEF(("TRIGGER#%u[%u, %u]: Ready", x_id, fd[0], fd[1]));
+            CORE_LOGF_X(116, eLOG_Trace,
+                        ("TRIGGER#%u[%u, %u]: Ready", x_id, fd[0], fd[1]));
         }
     }}
 
@@ -2616,7 +2647,8 @@ extern EIO_Status TRIGGER_Close(TRIGGER trigger)
 
     /* statistics & logging */
     if (trigger->log == eOn  ||  (trigger->log == eDefault  &&  s_Log == eOn)){
-        CORE_TRACEF(("TRIGGER#%u[%u]: Closing", trigger->id, trigger->fd));
+        CORE_LOGF_X(117, eLOG_Trace,
+                    ("TRIGGER#%u[%u]: Closing", trigger->id, trigger->fd));
     }
 
 #  ifdef NCBI_OS_UNIX
@@ -2877,7 +2909,8 @@ static EIO_Status s_CreateListening(const char*    path,
 
     /* statistics & logging */
     if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn)) {
-        CORE_TRACEF(("LSOCK#%u[%u]: Listening on %s",
+        CORE_LOGF_X(115, eLOG_Trace,
+                    ("LSOCK#%u[%u]: Listening on %s",
                      x_id, (unsigned int) x_lsock, c));
     }
 
@@ -3088,7 +3121,8 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
                 SOCK_HostPortToString(0, lsock->port, s, sizeof(s));
                 c = s;
             }
-        CORE_TRACEF(("LSOCK#%u[%u]: Closing at %s "
+        CORE_LOGF_X(114, eLOG_Trace,
+                    ("LSOCK#%u[%u]: Closing at %s "
                      "(%u accept%s total)", lsock->id,
                      (unsigned int) lsock->sock, c,
                      lsock->n_accept, lsock->n_accept == 1 ? "" : "s"));
@@ -3296,8 +3330,8 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     if (datalen  &&  (!BUF_SetChunkSize(&w_buf, datalen)  ||
                       !BUF_Write(&w_buf, data, datalen))) {
         CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
-                          ("SOCK#%u[%u]: [SOCK::CreateOnTopEx]  Cannot store "
-                           "initial data", x_id, (unsigned int) xx_sock));
+                          ("SOCK#%u[%u]: [SOCK::CreateOnTopEx]  Cannot store"
+                           " initial data", x_id, (unsigned int) xx_sock));
         BUF_Destroy(w_buf);
         return eIO_Unknown;
     }
@@ -3341,8 +3375,8 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
         char _id[32];
         CORE_LOGF_ERRNO_EXX(50, eLOG_Error,
                             x_errno, SOCK_STRERROR(x_errno),
-                            ("%s[SOCK::CreateOnTopEx]  Cannot set socket "
-                             "to non-blocking mode", s_ID(x_sock, _id)));
+                            ("%s[SOCK::CreateOnTopEx]  Cannot set socket"
+                             " to non-blocking mode", s_ID(x_sock, _id)));
         x_sock->sock = SOCK_INVALID;
         SOCK_Close(x_sock);
         return eIO_Unknown;
@@ -3372,9 +3406,9 @@ static EIO_Status s_Reconnect(SOCK            sock,
         char _id[32];
         if (!host  ||  !*host  ||  !port) {
             CORE_LOGF_X(51, eLOG_Error,
-                        ("%s[SOCK::Reconnect]  Attempt to reconnect "
-                         "server-side socket as the client one to "
-                         "its peer address", s_ID(sock, _id)));
+                        ("%s[SOCK::Reconnect]  Attempt to reconnect"
+                         " server-side socket as the client one to"
+                         " its peer address", s_ID(sock, _id)));
             return eIO_InvalidArg;
         }
         sock->stype = eSOCK_ClientSide;
