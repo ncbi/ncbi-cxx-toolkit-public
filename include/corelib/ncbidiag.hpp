@@ -631,6 +631,18 @@ enum EDiagPostFlag {
 typedef int TDiagPostFlags;  ///< Binary OR of "EDiagPostFlag"
 
 
+/// Application execution states shown in the std prefix
+enum EDiagAppState {
+    eDiagAppState_NotSet,        ///< Reserved value, never used in messages
+    eDiagAppState_AppBegin,      ///< AB
+    eDiagAppState_AppRun,        ///< A
+    eDiagAppState_AppEnd,        ///< AE
+    eDiagAppState_RequestBegin,  ///< RB
+    eDiagAppState_Request,       ///< R
+    eDiagAppState_RequestEnd     ///< RE
+};
+
+
 // Forward declaration of some classes.
 class CDiagBuffer;
 class CDiagErrCodeInfo;
@@ -1455,7 +1467,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     const string& GetClient(void) const;
     const string& GetSession(void) const;
     const string& GetAppName(void) const;
-    const char* GetAppState(void) const;
+    EDiagAppState GetAppState(void) const;
 
     /// For compatibility x_Write selects old or new message formatting
     /// depending on DIAG_OLD_POST_FORMAT parameter.
@@ -1794,34 +1806,23 @@ public:
     /// Print request stop message (for request-driven applications)
     void PrintRequestStop(void);
 
-    /// Application execution states shown in the std prefix
-    enum EAppState {
-        eState_NotSet,        ///< Reserved value, never used in messages
-        eState_AppBegin,      ///< AB
-        eState_AppRun,        ///< A
-        eState_AppEnd,        ///< AE
-        eState_RequestBegin,  ///< RB
-        eState_Request,       ///< R
-        eState_RequestEnd     ///< RE
-    };
-
     /// Always returns global application state.
-    EAppState GetGlobalAppState(void) const;
+    EDiagAppState GetGlobalAppState(void) const;
     /// Set global application state.
     /// Do not change state of the current thread.
-    void SetGlobalAppState(EAppState state);
+    void SetGlobalAppState(EDiagAppState state);
     /// Return application state for the current thread if it's set.
     /// If not set, return global application state. This is a shortcut
     /// to the current request context's GetAppState().
-    EAppState GetAppState(void) const;
+    EDiagAppState GetAppState(void) const;
     /// Set application state. Application state is set globally and the
     /// thread's state is reset (for the current thread only).
     /// Request states are set for the current thread (request context) only.
-    void SetAppState(EAppState state);
+    void SetAppState(EDiagAppState state);
     /// The 'mode' flag is deprecated. Use CRequestContext::SetAppState() for
     /// per-thread/per-request state.
     NCBI_DEPRECATED
-    void SetAppState(EAppState state, EPropertyMode mode);
+    void SetAppState(EDiagAppState state, EPropertyMode mode);
 
     /// Check old/new format flag (for compatibility only)
     static bool IsSetOldPostFormat(void);
@@ -1940,7 +1941,7 @@ private:
     string                 m_AppName;
     int                    m_ExitCode;
     int                    m_ExitSig;
-    EAppState              m_AppState;
+    EDiagAppState          m_AppState;
     TProperties            m_Properties;
     auto_ptr<CStopWatch>   m_StopWatch;
     auto_ptr<TMessages>    m_Messages;

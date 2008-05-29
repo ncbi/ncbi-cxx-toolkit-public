@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 CRequestContext::CRequestContext(void)
     : m_RequestID(0),
-      m_AppState(CDiagContext::eState_NotSet),
+      m_AppState(eDiagAppState_NotSet),
       m_ReqTimer(CStopWatch::eStop),
       m_BytesRd(0),
       m_BytesWr(0)
@@ -67,14 +67,14 @@ const string& CRequestContext::SetHitID(void)
 }
 
 
-CRequestContext::TAppState CRequestContext::GetAppState(void) const
+EDiagAppState CRequestContext::GetAppState(void) const
 {
-    return m_AppState != CDiagContext::eState_NotSet
+    return m_AppState != eDiagAppState_NotSet
         ? m_AppState : GetDiagContext().GetGlobalAppState();
 }
 
 
-void CRequestContext::SetAppState(TAppState state)
+void CRequestContext::SetAppState(EDiagAppState state)
 {
     m_AppState = state;
 }
@@ -83,7 +83,7 @@ void CRequestContext::SetAppState(TAppState state)
 void CRequestContext::Reset(void)
 {
     m_RequestID = 0; // No request ID is assigned to this request
-    m_AppState = CDiagContext::eState_NotSet; // Use global AppState
+    m_AppState = eDiagAppState_NotSet; // Use global AppState
     m_ClientIP.clear();
     m_SessionID.clear();
     m_HitID.clear();

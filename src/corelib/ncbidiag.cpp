@@ -686,23 +686,23 @@ static const char* s_AppStateStr[] = {
     "NS", "AB", "A", "AE", "RB", "R", "RE"
 };
 
-const char* s_AppStateToStr(CDiagContext::EAppState state)
+const char* s_AppStateToStr(EDiagAppState state)
 {
     return s_AppStateStr[state];
 }
 
-CDiagContext::EAppState s_StrToAppState(const string& state)
+EDiagAppState s_StrToAppState(const string& state)
 {
-    for (int st = (int)CDiagContext::eState_AppBegin;
-        st < CDiagContext::eState_RequestEnd; st++) {
+    for (int st = (int)eDiagAppState_AppBegin;
+        st < eDiagAppState_RequestEnd; st++) {
         if (state == s_AppStateStr[st]) {
-            return (CDiagContext::EAppState)st;
+            return (EDiagAppState)st;
         }
     }
     // Throw to notify caller about invalid app state.
-    NCBI_THROW(CException, eUnknown, "Invalid EAppState value");
+    NCBI_THROW(CException, eUnknown, "Invalid EDiagAppState value");
     /*NOTREACHED*/
-    return CDiagContext::eState_NotSet;
+    return eDiagAppState_NotSet;
 }
 
 
@@ -727,14 +727,14 @@ struct SDiagMessageData
     string m_Client;
     string m_Session;
     string m_AppName;
-    CDiagContext::EAppState m_AppState;
+    EDiagAppState m_AppState;
 };
 
 
 SDiagMessageData::SDiagMessageData(void)
     : m_UID(0),
       m_Time(GetFastLocalTime()),
-      m_AppState(CDiagContext::eState_NotSet)
+      m_AppState(eDiagAppState_NotSet)
 {
 }
 
@@ -746,7 +746,7 @@ CDiagContext::CDiagContext(void)
     : m_UID(0),
       m_ExitCode(0),
       m_ExitSig(0),
-      m_AppState(eState_AppBegin),
+      m_AppState(eDiagAppState_AppBegin),
       m_StopWatch(new CStopWatch(CStopWatch::eStart)),
       m_MaxMessages(100) // limit number of collected messages to 100
 {
@@ -1250,52 +1250,52 @@ void CDiagContext::PrintRequestStop(void)
 }
 
 
-CDiagContext::EAppState CDiagContext::GetGlobalAppState(void) const
+EDiagAppState CDiagContext::GetGlobalAppState(void) const
 {
     CMutexGuard LOCK(s_DiagMutex);
     return m_AppState;
 }
 
 
-CDiagContext::EAppState CDiagContext::GetAppState(void) const
+EDiagAppState CDiagContext::GetAppState(void) const
 {
     // This checks thread's state first, then calls GetAppState if necessary.
     return GetRequestContext().GetAppState();
 }
 
 
-void CDiagContext::SetGlobalAppState(EAppState state)
+void CDiagContext::SetGlobalAppState(EDiagAppState state)
 {
     CMutexGuard LOCK(s_DiagMutex);
     m_AppState = state;
 }
 
 
-void CDiagContext::SetAppState(EAppState state)
+void CDiagContext::SetAppState(EDiagAppState state)
 {
     CRequestContext& ctx = GetRequestContext();
     switch ( state ) {
-    case eState_AppBegin:
-    case eState_AppRun:
-    case eState_AppEnd:
+    case eDiagAppState_AppBegin:
+    case eDiagAppState_AppRun:
+    case eDiagAppState_AppEnd:
         {
-            ctx.SetAppState(eState_NotSet);
+            ctx.SetAppState(eDiagAppState_NotSet);
             CMutexGuard LOCK(s_DiagMutex);
             m_AppState = state;
             break;
         }
-    case eState_RequestBegin:
-    case eState_Request:
-    case eState_RequestEnd:
+    case eDiagAppState_RequestBegin:
+    case eDiagAppState_Request:
+    case eDiagAppState_RequestEnd:
         ctx.SetAppState(state);
         break;
     default:
-        ERR_POST_X(17, Warning << "Invalid EAppState value");
+        ERR_POST_X(17, Warning << "Invalid EDiagAppState value");
     }
 }
 
 
-void CDiagContext::SetAppState(EAppState state, EPropertyMode mode)
+void CDiagContext::SetAppState(EDiagAppState state, EPropertyMode mode)
 {
     switch ( mode ) {
     case eProp_Default:
@@ -1351,13 +1351,13 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
     const string& client = msg.GetClient();
     const string& session = msg.GetSession();
     const string& app = msg.GetAppName();
-    const string& app_state = msg.GetAppState();
+    const char* app_state = s_AppStateToStr(msg.GetAppState());
 
     // Print common fields
     ostr << setfill('0') << setw(kDiagW_PID) << msg.m_PID << '/'
          << setw(kDiagW_TID) << msg.m_TID << '/'
          << setw(kDiagW_RID) << msg.m_RequestId
-         << (!app_state.empty() ? "/" : "")
+         << "/"
          << setfill(' ') << setw(kDiagW_AppState) << setiosflags(IOS_BASE::left)
          << app_state << resetiosflags(IOS_BASE::left)
          << ' ' << setw(0) << setfill(' ') << uid << ' '
@@ -2609,7 +2609,7 @@ bool SDiagMessage::ParseMessage(const string& message)
         else {
             // Older format, no app state.
             m_RequestId = s_ParseInt(message, pos, 0, ' ');
-            m_Data->m_AppState = CDiagContext::eState_AppRun;
+            m_Data->m_AppState = eDiagAppState_AppRun;
         }
 
         if (message[pos + kDiagW_UID] != ' ') {
@@ -3464,14 +3464,9 @@ const string& SDiagMessage::GetAppName(void) const
 }
 
 
-const char* SDiagMessage::GetAppState(void) const
+EDiagAppState SDiagMessage::GetAppState(void) const
 {
-    CDiagContext::EAppState state = m_Data
-        ? m_Data->m_AppState : CDiagContext::eState_NotSet;
-    if (state == CDiagContext::eState_NotSet) {
-        state = GetDiagContext().GetAppState();
-    }
-    return s_AppStateToStr(state);
+    return m_Data ? m_Data->m_AppState : GetDiagContext().GetAppState();
 }
 
 

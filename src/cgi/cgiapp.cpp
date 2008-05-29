@@ -206,7 +206,7 @@ int CCgiApplication::Run(void)
     
     try {
         _TRACE("(CGI) CCgiApplication::Run: calling ProcessRequest");
-        GetDiagContext().SetAppState(CDiagContext::eState_RequestBegin);
+        GetDiagContext().SetAppState(eDiagAppState_RequestBegin);
 
         m_Context.reset( CreateContext() );
         ConfigureDiagnostics(*m_Context);
@@ -240,9 +240,9 @@ int CCgiApplication::Run(void)
                                                   CRWStreambuf::fOwnWriter));
                     m_Context->GetResponse().SetOutput(new_stream.get());
                 }
-                GetDiagContext().SetAppState(CDiagContext::eState_Request);
+                GetDiagContext().SetAppState(eDiagAppState_Request);
                 result = ProcessRequest(*m_Context);
-                GetDiagContext().SetAppState(CDiagContext::eState_RequestEnd);
+                GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
                 if (result != 0) {
                     SetHTTPStatus(500);
                 } else {
@@ -268,7 +268,7 @@ int CCgiApplication::Run(void)
                  e.GetStatusCode() >= CCgiException::e400_BadRequest ) {
                 throw;
             }
-            GetDiagContext().SetAppState(CDiagContext::eState_RequestEnd);
+            GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
             // If for some reason exception with status 2xx was thrown,
             // set the result to 0, update HTTP status and continue.
             m_Context->GetResponse().SetStatus(e.GetStatusCode(),
@@ -283,7 +283,7 @@ int CCgiApplication::Run(void)
         x_OnEvent(eExit, result);
     }
     catch (exception& e) {
-        GetDiagContext().SetAppState(CDiagContext::eState_RequestEnd);
+        GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
         // Call the exception handler and set the CGI exit code
         result = OnException(e, NcbiCout);
         x_OnEvent(eException, result);

@@ -70,9 +70,8 @@ public:
     static int GetNextRequestID(void);
 
     /// Application state
-    typedef CDiagContext::EAppState TAppState;
-    TAppState GetAppState(void) const;
-    void SetAppState(TAppState state);
+    EDiagAppState GetAppState(void) const;
+    void SetAppState(EDiagAppState state);
 
     /// Client IP/hostname
     const string& GetClientIP(void) const { return m_ClientIP; }
@@ -121,16 +120,16 @@ public:
     TProperties& GetProperties(void) { return m_Properties; }
 
 private:
-    int         m_RequestID;
-    TAppState   m_AppState;
-    string      m_ClientIP;
-    string      m_SessionID;
-    string      m_HitID;
-    int         m_ReqStatus;
-    CStopWatch  m_ReqTimer;
-    Int8        m_BytesRd;
-    Int8        m_BytesWr;
-    TProperties m_Properties;
+    int           m_RequestID;
+    EDiagAppState m_AppState;
+    string        m_ClientIP;
+    string        m_SessionID;
+    string        m_HitID;
+    int           m_ReqStatus;
+    CStopWatch    m_ReqTimer;
+    Int8          m_BytesRd;
+    Int8          m_BytesWr;
+    TProperties   m_Properties;
 };
 
 
