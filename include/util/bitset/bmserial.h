@@ -397,9 +397,7 @@ unsigned serialize(const BV& bv,
     // (can happen for very sparse vectors)
 
     bm::id_t cnt = bv.count();
-    unsigned id_capacity = cnt * sizeof(bm::id_t);
-    id_capacity += 16;
-    if (id_capacity < encoded_size) 
+    if (encoded_size > 16  &&  cnt < ((encoded_size - 16) / sizeof(bm::id_t)))
     {
         // plain list of ints is better than serialization
         bm::encoder enc(buf, 0);
