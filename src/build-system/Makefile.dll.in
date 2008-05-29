@@ -64,12 +64,12 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
 	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
 	@if [ ! -r $(XDLLDEP) ]; then \
-	    echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP); \
+	    echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP) && \
 	    $(TOUCH) -r $(XDLL) $(XDLLDEP); \
 	fi
 	@if [ '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
 	    echo $(BINCOPY) $(XDLL) $(libdir) && \
-	    $(BINCOPY) $(XDLL) $(libdir); \
+	    $(BINCOPY) $(XDLL) $(libdir) && \
 	    if [ $(XDLL_LINK) != $(XDLL) ]; then \
 	        cd $(libdir) && \
 	        $(RM) $(XDLL_LINK) && \
@@ -78,7 +78,7 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	fi
 	@if [ '@has_dll_loadable@' != '@# ' -a '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
 	    echo $(BINCOPY) $(XDLL_LOADABLE) $(libdir) && \
-	    $(BINCOPY) $(XDLL_LOADABLE) $(libdir); \
+	    $(BINCOPY) $(XDLL_LOADABLE) $(libdir) && \
 	    if [ $(XDLL_LOADABLE_LINK) != $(XDLL_LOADABLE) ]; then \
 	        cd $(libdir) && \
 	        $(RM) $(XDLL_LOADABLE_LINK) && \
@@ -86,7 +86,7 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	    fi; \
 	fi
 	@if [ '$(BINCOPY)' != '@:' -a -w $(status_dir) -a ! -r $(status_dir)/$(XDLLDEP) ]; then \
-	    $(BINCOPY) $(XDLLDEP) $(status_dir); \
+	    $(BINCOPY) $(XDLLDEP) $(status_dir) && \
 	    $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP); \
 	    if [ $(XDLLDEP_LINK) != $(XDLLDEP) ]; then \
 	        cd $(status_dir) && \
