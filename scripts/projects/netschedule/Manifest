@@ -29,5 +29,7 @@ Linux32 : Bdb4621 : GCC.sh 3.4.2 --with-debug    --with-mt --with-flat-makefile 
 Linux64 : Bdb4621 : GCC.sh 4.0.1 --without-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.21.1
 Linux64 : Bdb4621 : GCC.sh 4.0.1 --with-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.6.21.1
 
-Win32   : Bdb4621 : test purposes record
-Win64   : Bdb4621 : one more test record
+Win32   : Bdb4621 : msvc710_prj/static  DebugDLL
+Win32   : Bdb4621 : msvc710_prj/dll     DebugDLL
+Win64   : Bdb4621 : msvc800_prj/dll     ReleaseDLL
+
