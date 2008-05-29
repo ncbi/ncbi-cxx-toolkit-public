@@ -87,7 +87,7 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	fi
 	@if [ '$(BINCOPY)' != '@:' -a -w $(status_dir) -a ! -r $(status_dir)/$(XDLLDEP) ]; then \
 	    $(BINCOPY) $(XDLLDEP) $(status_dir) && \
-	    $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP); \
+	    $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP) && \
 	    if [ $(XDLLDEP_LINK) != $(XDLLDEP) ]; then \
 	        cd $(status_dir) && \
 	        $(RM) $(XDLLDEP_LINK) && \
