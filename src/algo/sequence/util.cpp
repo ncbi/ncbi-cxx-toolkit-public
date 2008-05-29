@@ -88,18 +88,9 @@ SeqLocToBioseq(const objects::CSeq_loc& loc, objects::CScope& scope)
         }
     }
 
-    /// FIXME: force whole encoding until a BLAST issue is solved
-    /// it appears that dust masking doesn't like gaps.
-    /// NOTE: If this is fixed, handling of user-supplied masks
-    /// must be altered (mask locations should not be remapped)
-
-    if (
-#if !defined GBENCH_USE_DELTA_SEQ
-        true
-#else
-        process_whole
-#endif
-        ) {
+    /// BLAST now handles delta-seqs correctly, so we can submit this
+    /// as a delta-seq
+    if (process_whole) {
         /// just encode the whole sequence
         CSeqVector vec(loc, scope, CBioseq_Handle::eCoding_Iupac);
         string seq_string;
