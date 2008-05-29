@@ -42,13 +42,7 @@
 ///                         in pool of threads
 
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbitime.hpp>
-#include <corelib/ncbicntr.hpp>
 #include <util/sync_queue.hpp>
-
-#include <set>
 
 
 // Old interfaces and classes

@@ -33,8 +33,6 @@
  */
 
 #include <corelib/ncbithr.hpp>
-#include <corelib/ncbimtx.hpp>
-#include <corelib/ncbicntr.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -34,7 +34,6 @@
 /// Framework to create multithreaded network servers with thread-per-request
 /// scheduling.
 
-#include <corelib/ncbistd.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_socket.hpp>

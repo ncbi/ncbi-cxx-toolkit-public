@@ -32,11 +32,8 @@
 
 #include <ncbi_pch.hpp>
 #include "connection_pool.hpp"
-#include "server_connection.hpp"
 #include <connect/ncbi_buffer.h>
-#include <connect/server.hpp>
 #include <connect/error_codes.hpp>
-#include <util/thread_pool.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Connect_ThrServer

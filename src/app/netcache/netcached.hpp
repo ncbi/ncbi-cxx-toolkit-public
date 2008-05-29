@@ -34,13 +34,8 @@
 
 #include <connect/server.hpp>
 #include <connect/server_monitor.hpp>
-#include <connect/ncbi_socket.hpp>
-#include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netcache_client.hpp>
 
-#include <util/bitset/ncbi_bitset.hpp>
-#include <util/cache/icache.hpp>
 #include <util/cache/icache_clean_thread.hpp>
 #include <bdb/bdb_blobcache.hpp>
 

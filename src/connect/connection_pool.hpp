@@ -34,8 +34,6 @@
 /// Internal header for threaded server connection pools.
 
 
-#include <corelib/ncbitime.hpp>
-
 #include "server_connection.hpp"
 
 

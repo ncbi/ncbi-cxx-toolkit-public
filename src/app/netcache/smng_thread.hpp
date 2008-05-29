@@ -34,10 +34,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbimtx.hpp>
 #include <util/thread_nonstop.hpp>
-
-#include <vector>
 
 BEGIN_NCBI_SCOPE
 

@@ -38,11 +38,9 @@
  * ---------------------------------------------------------------------------
  */
 
-#include <corelib/ncbitype.h>
 #include <corelib/ncbistr.hpp>
 #include <connect/ncbi_socket_unix.h>
 #include <string>
-#include <vector>
 
 
 /** @addtogroup Sockets

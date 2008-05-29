@@ -59,7 +59,6 @@
 #include <corelib/ncbithr_conf.hpp>
 #include <corelib/ncbicntr.hpp>
 #include <corelib/guard.hpp>
-#include <vector>
 #include <memory>
 
 
