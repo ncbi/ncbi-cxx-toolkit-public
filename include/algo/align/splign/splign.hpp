@@ -62,6 +62,7 @@ public:
     // setters and getters
     CRef<TAligner>&     SetAligner(void);
     CConstRef<TAligner> GetAligner(void) const;
+    static CRef<CSplicedAligner> s_CreateDefaultAligner(bool low_query_quality);
 
     CRef<objects::CScope>  GetScope(void) const;
     CRef<objects::CScope>& SetScope(void);
