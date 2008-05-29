@@ -753,7 +753,9 @@ char CObjectIStreamXml::ReadUndefinedAttributes(void)
 bool CObjectIStreamXml::ReadBool(void)
 {
     CTempString attr;
-    bool checktag = !x_IsStdXml();
+// accept both   <a>true</a>   and   <a value="true"/>
+// for compatibility with ASN-generated classes
+    bool checktag = HasAttlist(); //!x_IsStdXml();
     if (checktag) {
         while (HasAttlist()) {
             attr = ReadAttributeName();
