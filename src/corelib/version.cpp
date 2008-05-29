@@ -527,10 +527,12 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
            << __DATE__ << ' ' << __TIME__
            << endl;
     }
+#ifdef NCBI_SIGNATURE
     if (flags & fPackageFull) {
         os << ' ' << NCBI_SIGNATURE << endl;
         os << ' ' << GetPackageConfig() << endl;
     }
+#endif
 #endif
     return CNcbiOstrstreamToString(os);
 }
