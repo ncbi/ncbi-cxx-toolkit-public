@@ -33,6 +33,7 @@
  *
  */
 
+#include <util/cache/icache.hpp>
 #include <util/thread_nonstop.hpp>
 #include <util/error_codes.hpp>
 
