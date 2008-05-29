@@ -154,6 +154,7 @@ public:
 
 void CSampleSoapClientApplication::Init(void)
 {
+    CNcbiApplication::Init();
     // Create
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     // Program description

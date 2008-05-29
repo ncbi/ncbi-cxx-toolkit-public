@@ -60,6 +60,7 @@ CSampleSoapServerApplication::CSampleSoapServerApplication(
 
 void CSampleSoapServerApplication::Init()
 {
+    CSoapServerApplication::Init();
 // Register incoming object types
 // so the SOAP message parser can recognize these objects
 // in incoming data and parse them correctly.
