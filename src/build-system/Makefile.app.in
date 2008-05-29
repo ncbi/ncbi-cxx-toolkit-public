@@ -49,7 +49,7 @@ ASK_REBUILD = \
     fi
 
 SKIP_REBUILD = true
-ALL          = $(XAPP)
+ALL          = .$(XAPP).stamp
 @IF_REBUILDING_LIBS@ SKIP_REBUILD = false
 @IF_REBUILDING_LIBS@ ALL          = rebuild-libs
 @IF_REBUILDING_CONDITIONALLY@ SKIP_REBUILD = ($(ASK_REBUILD))
@@ -63,7 +63,7 @@ rebuild-libs:
 	   (cd "$$builddir" && $(MAKE) $(MFLAGS) libs srcdir="$$srcdir") ; \
 	done
 
-$(XAPP): $(XOBJ) $(XLIBDEP)
+$(XAPP) .$(XAPP).stamp: $(XOBJ) $(XLIBDEP)
 	$(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
 	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)
@@ -71,6 +71,7 @@ $(XAPP): $(XOBJ) $(XLIBDEP)
 	    echo $(BINCOPY) $(XAPP) $(bindir) && \
 	    $(BINCOPY) $(XAPP) $(bindir); \
 	fi
+	@touch .$(XAPP).stamp
 
 
 ### Standard targets (non-recursive)

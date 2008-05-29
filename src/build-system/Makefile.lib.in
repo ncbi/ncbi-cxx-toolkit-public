@@ -40,7 +40,7 @@ XLIBLINK    = @lib_pre@$(LIB)-static@lib_ext@
 XLIBDEPLINK = .$(LIB)-static.dep
 XOLD_DLLS   = $(LIB:%=@lib_pre@%@dll_ext@) $(LIB:%=@lib_pre@%@loadable_ext@)
 
-$(XLIB): $(XLIBOBJ)
+$(XLIB) .$(XLIB).stamp: $(XLIBOBJ)
 	-$(RM) $(XLIB)
 	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XOBJ) | @TSORT@` $(AR_FILTER)
 	@$(RANLIB) $(XLIB)
@@ -61,10 +61,11 @@ $(XLIB): $(XLIBOBJ)
 	        $(LN_S) $(XLIBDEP) $(XLIBDEPLINK); \
 	    fi; \
 	fi
+	@touch .$(XLIB).stamp
 
 ### Standard targets
 
-all: $(XLIB) export-headers
+all: .$(XLIB).stamp export-headers
 
 clean: clean-common clean-lib
 

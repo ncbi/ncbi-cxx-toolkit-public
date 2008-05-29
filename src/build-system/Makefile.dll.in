@@ -58,7 +58,7 @@ XDLL_LIBS     = @DLL_LIB_SETTING@
 XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(XDLL_LIBS:%=@lib_l_pre@%@lib_l_ext@)
 XDLL_LIBDEP   = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
 
-$(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
+$(XDLL) .$(XDLL).stamp: $(XDLLOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL)
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
@@ -94,11 +94,12 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	        $(LN_S) $(XDLLDEP) $(XDLLDEP_LINK); \
 	    fi; \
 	fi
+	@touch .$(XDLL).stamp
 
 
 ### Standard targets
 
-all: $(XDLL) export-headers
+all: .$(XDLL).stamp export-headers
 
 clean: clean-common clean-dll
 
