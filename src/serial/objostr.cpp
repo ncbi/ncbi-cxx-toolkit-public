@@ -223,7 +223,7 @@ CObjectOStream::~CObjectOStream(void)
         ResetLocalHooks();
     }
     catch (CException& exc) {
-        ERR_POST_X(4, "Can not close output stream: "<<exc.what());
+        ERR_POST_X(4, "Cannot close output stream: "<<exc.what());
     }
 }
 

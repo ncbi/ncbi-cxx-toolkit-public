@@ -412,7 +412,7 @@ bool SerialEquals(const C& object1, const C& object2,
                   ESerialRecursionMode how = eRecursive)
 {
     if ( typeid(object1) != typeid(object2) ) {
-        string msg("Can not compare types: ");
+        string msg("Cannot compare types: ");
         msg += typeid(object1).name();
         msg += " == ";
         msg += typeid(object2).name();

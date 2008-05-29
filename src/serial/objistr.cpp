@@ -401,7 +401,7 @@ CObjectIStream::~CObjectIStream(void)
         ResetLocalHooks();
     }
     catch (...) {
-        ERR_POST_X(1, "Can not close input stream");
+        ERR_POST_X(1, "Cannot close input stream");
     }
 }
 

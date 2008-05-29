@@ -97,7 +97,7 @@ void CSerialObject::Assign(const CSerialObject& source, ESerialRecursionMode how
 bool CSerialObject::Equals(const CSerialObject& object, ESerialRecursionMode how) const
 {
     if ( typeid(object) != typeid(*this)  && !IsSameTypeInfo(object, *this) ) {
-        string msg("Can not compare types: ");
+        string msg("Cannot compare types: ");
         msg += typeid(*this).name();
         msg += " == ";
         msg += typeid(object).name();
