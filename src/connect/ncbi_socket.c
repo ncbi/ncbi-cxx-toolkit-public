@@ -187,6 +187,15 @@ typedef HANDLE TRIGGER_Handle;
 #  define SOCK_SHUTDOWN_WR    SD_SEND
 #  define SOCK_SHUTDOWN_RDWR  SD_BOTH
 #  define SOCK_STRERROR(err)  s_StrError(err)
+#  if   defined(ENFILE)
+#    define SOCK_ETOOMANY     ENFILE
+#  elif defined(EMFILE)
+#    define SOCK_ETOOMANY     EMFILE
+#  elif defined(EINVAL)
+#    define SOCK_ETOOMANY     EINVAL
+#  else
+#    define SOCK_ETOOMANY     0
+#  endif
 /* NCBI_OS_MSWIN */
 
 #elif defined(NCBI_OS_UNIX)
@@ -231,6 +240,15 @@ typedef int TRIGGER_Handle;
 #    define INADDR_NONE       ((unsigned int)(-1))
 #  endif /*INADDR_NONE*/
 #  define SOCK_STRERROR(err)  s_StrError(err)
+#  if   defined(ENFILE)
+#    define SOCK_ETOOMANY     ENFILE
+#  elif defined(EMFILE)
+#    define SOCK_ETOOMANY     EMFILE
+#  elif defined(EINVAL)
+#    define SOCK_ETOOMANY     EINVAL
+#  else
+#    define SOCK_ETOOMANY     0
+#  endif
 /* NCBI_OS_UNIX */
 
 #elif defined(NCBI_OS_MAC)
@@ -265,12 +283,22 @@ typedef int TRIGGER_Handle;
 #  define SOCK_SHUTDOWN_WR    1
 #  define SOCK_SHUTDOWN_RDWR  2
 #  define SOCK_STRERROR(err)  s_StrError(err)
-#  ifdef NETDB_INTERNAL
+#  ifdef   NETDB_INTERNAL
 #    undef NETDB_INTERNAL
 #  endif /*NETDB_INTERNAL*/
-#  ifndef INADDR_LOOPBACK
-#    define	INADDR_LOOPBACK	0x7F000001
+#  ifndef   INADDR_LOOPBACK
+#    define	INADDR_LOOPBACK	  0x7F000001
 #  endif /*INADDR_LOOPBACK*/
+#  if   defined(ENFILE)
+#    define SOCK_ETOOMANY     ENFILE
+#  elif defined(EMFILE)
+#    define SOCK_ETOOMANY     EMFILE
+#  elif defined(EINVAL)
+#    define SOCK_ETOOMANY     EINVAL
+#  else
+#    define SOCK_ETOOMANY     0
+#  endif
+/*NCBI_OS_MAC*/
 
 #endif /*NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC*/
 
@@ -1180,6 +1208,7 @@ static EIO_Status s_Select(size_t                n,
 #if !defined(NCBI_OS_MSWIN) && defined(FD_SETSIZE)
                 if (fd >= FD_SETSIZE) {
                     polls[i].revent = eIO_Close;
+                    errno = SOCK_ETOOMANY;
                     ready = 1;
                     continue;
                 }
@@ -1246,6 +1275,7 @@ static EIO_Status s_Select(size_t                n,
                     /* Check whether FD_SETSIZE has been overcome */
                     if (!FD_ISSET(fd, &e_fds)) {
                         polls[i].revent = eIO_Close;
+                        errno = SOCK_ETOOMANY;
                         ready = 1;
                         continue;
                     }
