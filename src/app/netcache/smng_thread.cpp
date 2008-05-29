@@ -34,6 +34,7 @@
 #include <corelib/ncbitime.hpp>
 
 #include "smng_thread.hpp"
+#include "netcached.hpp"
 
 BEGIN_NCBI_SCOPE
 
