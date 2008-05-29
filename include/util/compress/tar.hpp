@@ -47,7 +47,6 @@
  */
 
 #include <corelib/ncbifile.hpp>
-#include <corelib/reader_writer.hpp>
 #include <list>
 #include <utility>
 

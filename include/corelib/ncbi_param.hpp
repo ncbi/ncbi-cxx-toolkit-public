@@ -38,9 +38,8 @@
 ///
 
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbithr.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbithr.hpp>
 
 
 /** @addtogroup Param
