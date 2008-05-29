@@ -2483,8 +2483,16 @@ CDBAPIUnitTest::Test_LOB2(void)
 void
 CDBAPIUnitTest::Test_LOB3(void)
 {
-    // static char clob_value[] = "1234567890";
-    const string clob_value(4000, '4');
+    const string clob_value =
+        "Seq-align ::= { type partial, dim 2, score "
+        "{ { id str \"score\", value int 6771 }, { id str "
+        "\"e_value\", value real { 0, 10, 0 } }, { id str "
+        "\"bit_score\", value real { 134230121751674, 10, -10 } }, "
+        "{ id str \"num_ident\", value int 7017 } }, segs denseg "
+        "{ dim 2, numseg 3, ids { gi 3021694, gi 3924652 }, starts "
+        "{ 6767, 32557, 6763, -1, 0, 25794 }, lens { 360, 4, 6763 }, "
+        "strands { minus, minus, minus, minus, minus, minus } } }";
+
     string sql;
     enum {num_of_records = 10};
 
@@ -14808,6 +14816,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && args.GetDriverName() != ftds_dblib_driver
         && args.GetDriverName() != ftds8_driver
         && !(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
+        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris && compiler_type == eCompilerWorkShop)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB3, 
             DBAPIInstance);
