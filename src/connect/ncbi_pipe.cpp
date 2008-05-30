@@ -1744,16 +1744,19 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                                const string&           current_dir,
                                const char* const       env[],
                                CPipe::IProcessWatcher* watcher,
-                               const STimeout* kill_timeout)
+                               const STimeout*         kill_timeout)
 {
-    STimeout ktm = {CProcess::kDefaultKillTimeout,0};
-    if (kill_timeout)
+    STimeout ktm = { CProcess::kDefaultKillTimeout / 1000,
+                    (CProcess::kDefaultKillTimeout % 1000) * 1000 };
+    if (kill_timeout) {
         ktm = *kill_timeout;
+    }
 
     CPipe pipe;
     EIO_Status st = pipe.Open(cmd, args, 
-                              fStdErr_Open | fKeepPipeSignal | fNewGroup | fKillOnClose,
-                              current_dir, env);
+                              (fStdErr_Open | fKeepPipeSignal
+                               | fNewGroup | fKillOnClose),
+                               current_dir, env);
     if (st != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen, "Cannot execute \"" + cmd + "\"");
     }
