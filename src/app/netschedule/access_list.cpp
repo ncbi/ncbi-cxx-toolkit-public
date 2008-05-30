@@ -74,11 +74,12 @@ void CNetSchedule_AccessList::SetHosts(const string& host_names)
         if (ha != 0) {
             m_Hosts.set(ha);
         } else {
-            LOG_POST(Error << "'" << *it << "'" 
+            LOG_POST(Error << "'" << *it << "'"
                             << " is not a valid host name. Ignored.");
         }
-    }        
+    }
 }
+
 
 void CNetSchedule_AccessList::PrintHosts(CNcbiOstream & out) const
 {
@@ -91,5 +92,17 @@ void CNetSchedule_AccessList::PrintHosts(CNcbiOstream & out) const
         out << host << "\n";
     }
 }
+
+
+string CNetSchedule_AccessList::Print(const char* sep) const
+{
+    string s;
+    for(THostVector::enumerator en(m_Hosts.first()); en.valid(); ++en) {
+        if (s.size()) s += sep;
+        s += CSocketAPI::gethostbyaddr(*en);
+    }
+    return s;
+}
+
 
 END_NCBI_SCOPE

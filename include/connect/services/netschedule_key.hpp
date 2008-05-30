@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors: Maxim Didenko
+ * Authors: Maxim Didenko, Victor Joukov
  *
  * File Description:
  *   NetSchedule client API.
@@ -65,24 +65,19 @@ BEGIN_NCBI_SCOPE
 struct NCBI_XCONNECT_EXPORT CNetScheduleKey
 {
     CNetScheduleKey(unsigned _id, const string& _host, unsigned _port, unsigned ver = 1)
-        : id(_id), host(_host), port(_port), version(ver) {}
+        : version(ver), host(_host), port(_port), id(_id), run(-1) {}
 
     explicit CNetScheduleKey(const string& str_key);
 
     operator string() const;
 
-    unsigned     id;        ///< Job id
-    string       host;      ///< server name
-    unsigned     port;      ///< TCP/IP port number
     unsigned     version;   ///< Key version
+    string       host;      ///< Server name
+    unsigned     port;      ///< TCP/IP port number
+    string       queue;     ///< Queue name, optional
+    unsigned     id;        ///< Job id
+    int          run;       ///< Job run number, -1 - no run
 };
-
-const string kNetScheduleKeyPrefix = "JSID";
-
-
-/// @internal
-#define NETSCHEDULE_JOBMASK "JSID_01_%u_%s_%u"
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 ////

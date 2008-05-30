@@ -40,6 +40,7 @@
 ///
 /// @internal
 
+#include <util/bitset/bmalgo.h>
 #include <util/bitset/ncbi_bitset.hpp>
 #include <util/bitset/ncbi_bitset_alloc.hpp>
 

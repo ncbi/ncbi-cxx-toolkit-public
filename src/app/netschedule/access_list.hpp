@@ -65,9 +65,10 @@ public:
     void SetHosts(const string& host_names);
 
     void PrintHosts(CNcbiOstream & out) const;
-    
+    string Print(const char* sep=",") const;
+
 private:
-    bool x_IsRestrictionSet() const 
+    bool x_IsRestrictionSet() const
     {
         return m_Hosts.any();
     }
@@ -82,5 +83,5 @@ private:
 
 END_NCBI_SCOPE
 
-#endif 
+#endif
 

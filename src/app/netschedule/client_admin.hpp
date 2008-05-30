@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 /// Proxy class to open ShutdownServer
 ///
 /// @internal
-class CNetScheduleClient_Control : public CNetScheduleClient 
+class CNetScheduleClient_Control : public CNetScheduleClient
 {
 public:
     CNetScheduleClient_Control(const string&  host,
@@ -69,5 +69,5 @@ public:
 
 END_NCBI_SCOPE
 
-#endif 
+#endif
 

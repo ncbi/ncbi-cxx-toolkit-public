@@ -40,10 +40,17 @@
 #include <connect/services/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
+#include <common/ncbi_package_ver.h>
+
 #include "client_admin.hpp"
 
 USING_NCBI_SCOPE;
 
+#define NETSCHEDULE_VERSION NCBI_AS_STRING(NCBI_PACKAGE_VERSION)
+
+#define NETSCHEDULE_HUMAN_VERSION \
+      "NCBI NetSchedule admin utility Version " NETSCHEDULE_VERSION \
+      " build " __DATE__ " " __TIME__
 
 class CNetScheduleClient_LB_Admin : public CNetScheduleClient_LB
 {
@@ -51,8 +58,8 @@ public:
     CNetScheduleClient_LB_Admin(const string& client_name,
                                 const string& lb_service_name,
                                 const string& queue_name)
-    : CNetScheduleClient_LB(client_name, 
-                            lb_service_name, 
+    : CNetScheduleClient_LB(client_name,
+                            lb_service_name,
                             queue_name)
     {}
 
@@ -83,10 +90,13 @@ void CNetScheduleAdminApp::Init(void)
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetSchedule Admin.");
-    
-    arg_desc->AddPositional("host_service", 
-        "NetSchedule host or service name. Format: service|host:port", 
-        CArgDescriptions::eString);
+
+    arg_desc->AddDefaultPositional("host_service",
+        "NetSchedule host or service name. Format: service|host:port",
+        CArgDescriptions::eString,
+        "");
+
+    arg_desc->AddFlag("version-full", "Version");
 
     arg_desc->AddFlag("v", "Server version");
 
@@ -125,11 +135,16 @@ int CNetScheduleAdminApp::Run(void)
 {
     CArgs args = GetArgs();
 
+    if (args["version-full"]) {
+        printf(NETSCHEDULE_HUMAN_VERSION "\n");
+        return 0;
+    }
+
     const string& host_service  = args["host_service"].AsString();
 
     string queue = "noname";
-    if (args["q"]) {  
-        queue = args["q"].AsString(); 
+    if (args["q"]) {
+        queue = args["q"].AsString();
     }
 
 
@@ -143,12 +158,12 @@ int CNetScheduleAdminApp::Run(void)
         Run(nc_control);
 
     } else {  // LB name
-        CNetScheduleClient_LB_Admin cli_lb("netschedule_admin", 
+        CNetScheduleClient_LB_Admin cli_lb("netschedule_admin",
                                            host_service, "noname");
         cli_lb.DiscoverLowPriorityServers(true);
         cli_lb.ObtainServerList(host_service);
 
-        const CNetScheduleClient_LB_Admin::TServiceList& lst = 
+        const CNetScheduleClient_LB_Admin::TServiceList& lst =
             cli_lb.GetServiceList();
 
         CNetScheduleClient_LB_Admin::TServiceList::const_iterator it =
@@ -165,10 +180,10 @@ int CNetScheduleAdminApp::Run(void)
         }
 
         ITERATE(CNetScheduleClient_LB_Admin::TServiceList, it, lst) {
-            
+
             string conn_host = CSocketAPI::gethostbyaddr(it->host);
 
-            NcbiCout << "Connecting to: " << conn_host 
+            NcbiCout << "Connecting to: " << conn_host
                      << ":" << it->port << " Queue=" << queue << NcbiEndl;
 
             CNetScheduleClient_Control nc_control(conn_host, it->port, queue);
@@ -193,7 +208,7 @@ void CNetScheduleAdminApp::Run(CNetScheduleClient_Control& nc_client)
                  << (on_off ? "ON" : "OFF") << NcbiEndl;
     }
 
-    if (args["drop"]) {  
+    if (args["drop"]) {
         nc_client.DropQueue();
     }
 
@@ -213,7 +228,7 @@ void CNetScheduleAdminApp::Run(CNetScheduleClient_Control& nc_client)
         if (args["k"]) {
             job_key = args["k"].AsString();
         }
-        
+
         nc_client.DumpQueue(NcbiCout, job_key);
     }
 

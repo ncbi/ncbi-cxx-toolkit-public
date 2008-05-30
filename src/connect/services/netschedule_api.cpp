@@ -74,6 +74,12 @@ string CNetScheduleAPI::StatusToString(EJobStatus status)
     case eCanceled:    return "Canceled";
     case eFailed:      return "Failed";
     case eDone:        return "Done";
+    case eReading:     return "Reading";
+    case eConfirmed:   return "Confirmed";
+    case eReadFailed:  return "ReadFailed";
+    case eTimeout:     return "Timeout";
+    case eReadTimeout: return "ReadTimeout";
+
     default: _ASSERT(0);
     }
     return kEmptyStr;
@@ -100,6 +106,22 @@ CNetScheduleAPI::StringToStatus(const string& status_str)
     if (NStr::CompareNocase(status_str, "Done") == 0) {
         return eDone;
     }
+    if (NStr::CompareNocase(status_str, "Reading") == 0) {
+        return eReading;
+    }
+    if (NStr::CompareNocase(status_str, "Confirmed") == 0) {
+        return eConfirmed;
+    }
+    if (NStr::CompareNocase(status_str, "ReadFailed") == 0) {
+        return eReadFailed;
+    }
+    if (NStr::CompareNocase(status_str, "Timeout") == 0) {
+        return eTimeout;
+    }
+    if (NStr::CompareNocase(status_str, "ReadTimeout") == 0) {
+        return eReadTimeout;
+    }
+
 
     // check acceptable synonyms
 
@@ -154,7 +176,8 @@ CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job)
     if (status == eDone || status == eFailed
         || status == eRunning || status == ePending
         || status == eCanceled || status == eReturned
-        || status == eFailed) {
+        || status == eReading || status == eConfirmed
+        || status == eReadFailed) {
         //cerr << str <<endl;
         for ( ;*str && isdigit((unsigned char)(*str)); ++str) {}
 
@@ -217,8 +240,7 @@ CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job)
             }
         }
         job.input = NStr::ParseEscapes(job.input);
-
-    } // if status done or failed
+    }
 
     return status;
 }

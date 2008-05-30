@@ -34,7 +34,7 @@
  */
 
 /// @file bdb_affinity.hpp
-/// NetSchedule job affinity. 
+/// NetSchedule job affinity.
 ///
 /// @internal
 
@@ -83,7 +83,7 @@ public:
     string GetAffToken(unsigned aff_id);
 
     /// Remove affinity token
-    void RemoveToken(unsigned          aff_id, 
+    void RemoveToken(unsigned          aff_id,
                      CBDB_Transaction& trans);
 
 private:
@@ -112,11 +112,17 @@ public:
         TNSBitVector  aff_ids;          ///< List of affinity tokens
         TNSBitVector  candidate_jobs;   ///< List of job candidates for this node
         TNSBitVector  blacklisted_jobs; ///< List of jobs, blacklisted for node
+        // Blacklist expiration handling
+        /// We should not bother revise the list before this time
+        time_t        min_expire_time;
+        typedef vector<pair<time_t, unsigned> > TExpirationVector;
+        TExpirationVector blacklisted_expirations;
 
-        SAffinityInfo() 
+        SAffinityInfo()
             : aff_ids(bm::BM_GAP), candidate_jobs(bm::BM_GAP),
               blacklisted_jobs(bm::BM_GAP)
         {}
+        const TNSBitVector& GetBlacklistedJobs(time_t t);
     };
     typedef unsigned TNetAddress;
 public:
@@ -129,31 +135,33 @@ public:
     /// Forget affinity association
     void ClearAffinity(TNetAddress addr, const string& client_name);
 
-    /// Create affinity association
-    void AddAffinity(TNetAddress   addr, 
-                     const string& client_name, 
-                     unsigned      aff_id);
+    /// Create/update affinity association
+    void AddAffinity(TNetAddress   addr,
+                     const string& client_name,
+                     unsigned      aff_id,
+                     time_t        exp_time);
 
-    void BlacklistJob(TNetAddress   addr, 
+    void BlacklistJob(TNetAddress   addr,
                       const string& client_name,
-                      unsigned      job_id);
+                      unsigned      job_id,
+                      time_t        exp_time);
 
     /// Remove affinity token association
     void RemoveAffinity(unsigned aff_id);
 
-    /// Remove affinity token association, input is specified by a 
+    /// Remove affinity token association, input is specified by a
     /// vector of ids
     void RemoveAffinity(const TNSBitVector& bv);
 
     /// Retrieve all affinity ids assigned to all(any) worker nodes
     /// Logical OR (Union) of all SAffinityInfo::aff_ids
-    void GetAllAssignedAffinity(TNSBitVector* aff_ids);
+    void GetAllAssignedAffinity(TNSBitVector& aff_ids);
 
 
     /// Free unused memory
     void OptimizeMemory();
 
-    SAffinityInfo* GetAffinity(TNetAddress   addr, 
+    SAffinityInfo* GetAffinity(TNetAddress   addr,
                                const string& client_name);
 private:
     CWorkerNodeAffinity(const CWorkerNodeAffinity&);

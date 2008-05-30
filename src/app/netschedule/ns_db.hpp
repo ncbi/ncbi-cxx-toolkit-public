@@ -66,8 +66,6 @@ struct SQueueDB : public CBDB_File
 
     CBDB_FieldInt4         status;          ///< Current job status
     CBDB_FieldUint4        time_submit;     ///< Job submit time
-    CBDB_FieldUint4        time_run;        ///<     start time
-    CBDB_FieldUint4        time_done;       ///<     result submission time
     CBDB_FieldUint4        timeout;         ///<     individual timeout
     CBDB_FieldUint4        run_timeout;     ///<     job run timeout
 
@@ -75,14 +73,13 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldUint4        subm_port;       ///< notification port
     CBDB_FieldUint4        subm_timeout;    ///< notification timeout
 
-    CBDB_FieldUint4        worker_node1;    ///< IP of wnode 1 (netw BO)
-    CBDB_FieldUint4        worker_node2;    ///<       wnode 2
-    CBDB_FieldUint4        worker_node3;
-    CBDB_FieldUint4        worker_node4;
-    CBDB_FieldUint4        worker_node5;
-
+    // This field shows the number of attempts from submission or last
+    // reschedule, so the number of actual attempts in SRunsDB can be more
+    // than this number
     CBDB_FieldUint4        run_counter;     ///< Number of execution attempts
-    CBDB_FieldInt4         ret_code;        ///< Return code
+
+    // When job is in Reading state, its read group id is here.
+    CBDB_FieldUint4        read_group;
 
     /// Affinity token id (refers to the affinity dictionary DB)
     CBDB_FieldUint4        aff_id;
@@ -93,19 +90,16 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldLString      input;           ///< Input data
     CBDB_FieldLString      output;          ///< Result data
 
-    CBDB_FieldString       err_msg;         ///< Error message (exception::what())
     CBDB_FieldString       progress_msg;    ///< Progress report message
 
     SQueueDB()
     {
-        DisableNull(); 
+        DisableNull();
 
         BindKey("id", &id);
 
         BindData("status",       &status);
         BindData("time_submit",  &time_submit);
-        BindData("time_run",     &time_run);
-        BindData("time_done",    &time_done);
         BindData("timeout",      &timeout);
         BindData("run_timeout",  &run_timeout);
 
@@ -113,14 +107,8 @@ struct SQueueDB : public CBDB_File
         BindData("subm_port",    &subm_port);
         BindData("subm_timeout", &subm_timeout);
 
-        BindData("worker_node1", &worker_node1);
-        BindData("worker_node2", &worker_node2);
-        BindData("worker_node3", &worker_node3);
-        BindData("worker_node4", &worker_node4);
-        BindData("worker_node5", &worker_node5);
-
-        BindData("run_counter",        &run_counter);
-        BindData("ret_code",           &ret_code);
+        BindData("run_counter",  &run_counter);
+        BindData("read_group",   &read_group);
 
         BindData("aff_id", &aff_id);
         BindData("mask",   &mask);
@@ -129,8 +117,6 @@ struct SQueueDB : public CBDB_File
         BindData("output_overflow", &output_overflow);
         BindData("input",  &input,  kNetScheduleSplitSize);
         BindData("output", &output, kNetScheduleSplitSize);
-
-        BindData("err_msg", &err_msg, kNetScheduleMaxDBErrSize);
         BindData("progress_msg", &progress_msg, kNetScheduleMaxDBDataSize);
     }
 };
@@ -158,6 +144,36 @@ struct SJobInfoDB : public CBDB_File
 };
 
 
+/// BDB table to store run information
+/// Every instantiation of a job is reflected in this table under
+/// correspoding (id, run) key. In particular, this table stores
+/// ALL run attempts, so if the job was rescheduled, the number of
+/// actual attempts can be more than run_count.
+struct SRunsDB : public CBDB_File
+{
+    CBDB_FieldUint4  id;           ///< Job id
+    CBDB_FieldUint4  run;          ///< Job run
+    CBDB_FieldInt4   status;       ///< Final job status for this run
+    CBDB_FieldUint4  time_start;   ///< Start time (former time_run)
+    CBDB_FieldUint4  time_done;    ///< Result submission time
+    CBDB_FieldUint4  worker_node;  ///< IP of worker node (net byteorder)
+    CBDB_FieldInt4   ret_code;     ///< Return code
+    CBDB_FieldString err_msg;      ///< Error message (exception::what())
+
+    SRunsDB()
+    {
+        BindKey("id",           &id);
+        BindKey("run",          &run);
+        BindData("status",      &status);
+        BindData("time_start",  &time_start);
+        BindData("time_done",   &time_done);
+        BindData("worker_node", &worker_node);
+        BindData("ret_code",    &ret_code);
+        BindData("err_msg",     &err_msg, kNetScheduleMaxDBErrSize);
+    }
+};
+
+
 /// Database of vectors of jobs to be deleted. Because deletion
 /// occurs in background, with different pace for different tables,
 /// and even in different manner (blocks of jobs from main and aux job
@@ -175,7 +191,7 @@ struct SDeletedJobsDB : public CBDB_BvStore<TNSBitVector>
 
     SDeletedJobsDB()
     {
-        DisableNull(); 
+        DisableNull();
         BindKey("id", &id);
     }
 };
@@ -192,7 +208,7 @@ struct SQueueAffinityIdx : public CBDB_BvStore<TNSBitVector>
 
     SQueueAffinityIdx()
     {
-        DisableNull(); 
+        DisableNull();
         BindKey("aff_id", &aff_id);
     }
 };
@@ -209,7 +225,7 @@ struct SAffinityDictDB : public CBDB_File
 
     SAffinityDictDB()
     {
-        DisableNull(); 
+        DisableNull();
         BindKey("aff_id", &aff_id);
         BindData("token", &token, kNetScheduleMaxDBDataSize);
     }
@@ -226,7 +242,7 @@ struct SAffinityDictTokenIdx : public CBDB_File
 
     SAffinityDictTokenIdx()
     {
-        DisableNull(); 
+        DisableNull();
         BindKey("token", &token, kNetScheduleMaxDBDataSize);
         BindData("aff_id", &aff_id);
     }
@@ -246,7 +262,7 @@ struct STagDB : public CBDB_BvStore<TNSBitVector>
 
     STagDB()
     {
-        DisableNull(); 
+        DisableNull();
         BindKey("key", &key);
         BindKey("val", &val);
     }

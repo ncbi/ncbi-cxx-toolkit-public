@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anatoliy Kuznetsov, Maxim Didenko
+ * Author:  Anatoliy Kuznetsov, Maxim Didenko, Victor Joukov
  *
  * File Description:
  *   Implementation of NetSchedule API.
@@ -40,78 +40,121 @@
 
 BEGIN_NCBI_SCOPE
 
+static const string kNetScheduleKeyPrefix = "JSID";
+static const string kNetScheduleKeySchema = "nsid";
+
 CNetScheduleKey::CNetScheduleKey(const string& key_str)
 {
 
-    // JSID_01_1_MYHOST_9000
+    // Parses several notations for job id:
+    // version 1:
+    //   JSID_01_1_MYHOST_9000
+    // version 2:
+    //   nsid|host/port/[queue]/num[/run] e.g.,
+    //     nsid|192.168.1.1/9101/splign/1
+    //     nsid|192.168.1.1/9101/splign/1/5
+    //     nsid|192.168.1.1/9101//1/5
+    // "version 0", or just job number or job number with run number:
+    //   num[/run]
 
     const char* ch = key_str.c_str();
-    string prefix;
+    if (key_str.compare(0, 8, "JSID_01_") == 0) {
+        // Old (version 1) key
+        version = 1;
+        ch += 8;
 
-    // prefix
-
-    for (;*ch && *ch != '_'; ++ch) {
-        prefix += *ch;
-    }
-    if (*ch == 0) {
-        NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
-    }
-    ++ch;
-
-    if (prefix != kNetScheduleKeyPrefix) {
-        NCBI_THROW(CNetScheduleException, eKeyFormatError,
-                                       "Key syntax error. Invalid prefix.");
-    }
-
-    // version
-    version = atoi(ch);
-    while (*ch && *ch != '_') {
+        // id
+        id = (unsigned) atoi(ch);
+        while (*ch && *ch != '_') {
+            ++ch;
+        }
+        if (*ch == 0 || id == 0) {
+            NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+        }
         ++ch;
-    }
-    if (*ch == 0) {
-        NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
-    }
-    ++ch;
 
-    // id
-    id = (unsigned) atoi(ch);
-    while (*ch && *ch != '_') {
+        // hostname
+        for (;*ch && *ch != '_'; ++ch) {
+            host += *ch;
+        }
+        if (*ch == 0) {
+            NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+        }
         ++ch;
-    }
-    if (*ch == 0 || id == 0) {
-        NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
-    }
-    ++ch;
 
-
-    // hostname
-    for (;*ch && *ch != '_'; ++ch) {
-        host += *ch;
+        // port
+        port = atoi(ch);
+        return;
+    } else if (key_str.compare(0, 5, "nsid|") == 0) {
+        version = 2;
+        ch += 5;
+        do {
+            // hostname
+            for (;*ch && *ch != '/'; ++ch)
+                host += *ch;
+            if (*ch == 0) break;
+            ++ch;
+            // port
+            port = atoi(ch);
+            while (*ch && *ch != '/') ++ch;
+            if (*ch == 0) break;
+            ++ch;
+            // queue
+            for (;*ch && *ch != '/'; ++ch)
+                queue += *ch;
+            if (*ch == 0) break;
+            ++ch;
+            // id
+            id = (unsigned) atoi(ch);
+            while (*ch && *ch != '/') ++ch;
+            if (*ch) {
+                // run
+                run = atoi(ch+1);
+            } else {
+                run = -1;
+            }
+            return;
+        } while (0);
+    } else if (isdigit(*ch)) {
+        version = 0;
+        id = (unsigned) atoi(ch);
+        while (*ch && *ch != '/') ++ch;
+        if (*ch) {
+            ch += 1;
+            if (!isdigit(*ch))
+                NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+            // run
+            run = atoi(ch);
+        } else {
+            run = -1;
+        }
+        return;
     }
-    if (*ch == 0) {
-        NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
-    }
-    ++ch;
-
-    // port
-    port = atoi(ch);
+    NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
 }
 
 CNetScheduleKey::operator string() const
 {
-    string tmp;
-    string key = "JSID_01";
-
-    NStr::IntToString(tmp, id);
-    key += "_";
-    key += tmp;
-
-    key += "_";
-    key += host;
-
-    NStr::IntToString(tmp, port);
-    key += "_";
-    key += tmp;
+    string key;
+    if (version == 1) {
+        key = "JSID_01_";
+        key += NStr::IntToString(id);
+        key += '_';
+        key += host;
+        key += '_';
+        key += NStr::IntToString(port);
+    } else if (version == 2) {
+        key = "nsid|";
+        key += host + '/';
+        key += NStr::IntToString(port);
+        key += '/';
+        key += queue + '/';
+        key += NStr::IntToString(id);
+        if (run >= 0) {
+            key += '/';
+            key += NStr::IntToString(run);
+        }
+    }
     return key;
 }
 

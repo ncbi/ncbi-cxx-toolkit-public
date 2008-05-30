@@ -41,9 +41,15 @@
 
 #include <connect/services/netschedule_api.hpp>
 
+#include <common/ncbi_package_ver.h>
 
 USING_NCBI_SCOPE;
 
+#define NETSCHEDULE_VERSION NCBI_AS_STRING(NCBI_PACKAGE_VERSION)
+
+#define NETSCHEDULE_HUMAN_VERSION \
+      "NCBI NetSchedule control utility Version " NETSCHEDULE_VERSION \
+      " build " __DATE__ " " __TIME__
 
 /// NetSchedule control application
 ///
@@ -57,7 +63,7 @@ public:
 
 private:
 
-    void x_GetConnectionArgs(string& service, string& queue, int& retry, 
+    void x_GetConnectionArgs(string& service, string& queue, int& retry,
                              bool queue_requered);
     CNetScheduleAPI* x_CreateNewClient(bool queue_requered);
 
@@ -69,7 +75,7 @@ void CNetScheduleControl::x_GetConnectionArgs(string& service, string& queue, in
                                               bool queue_requered)
 {
     const CArgs& args = GetArgs();
-    if (!args["service"]) 
+    if (!args["service"])
         NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -service");
     if (queue_requered && !args["queue"] )
         NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -queue");
@@ -91,7 +97,7 @@ void CNetScheduleControl::x_GetConnectionArgs(string& service, string& queue, in
         }
     }
     */
-    service = args["service"].AsString();               
+    service = args["service"].AsString();
 }
 
 
@@ -110,23 +116,25 @@ void CNetScheduleControl::Init(void)
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetSchedule control.");
-    
+
+    arg_desc->AddFlag("version-full", "Version");
+
     arg_desc->AddOptionalKey("service",
                              "service_name",
-                             "NetSchedule service name. Format: service|host:port", 
+                             "NetSchedule service name. Format: service|host:port",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("queue", 
+    arg_desc->AddOptionalKey("queue",
                              "queue_name",
-                             "NetSchedule queue name.", 
+                             "NetSchedule queue name.",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("jid", 
+    arg_desc->AddOptionalKey("jid",
                              "job_id",
-                             "NetSchedule job id.", 
+                             "NetSchedule job id.",
                              CArgDescriptions::eString);
 
-    
+
     arg_desc->AddFlag("shutdown", "Shutdown server");
     arg_desc->AddFlag("shutdown_now", "Shutdown server IMMIDIATE");
     arg_desc->AddFlag("die", "Shutdown server");
@@ -160,8 +168,8 @@ void CNetScheduleControl::Init(void)
                              "type",
                              "Print queue statistics",
                              CArgDescriptions::eString);
-    arg_desc->SetConstraint("stat", 
-                            &(*new CArgAllow_Strings(NStr::eNocase), 
+    arg_desc->SetConstraint("stat",
+                            &(*new CArgAllow_Strings(NStr::eNocase),
                               "brief", "all"));
 
     arg_desc->AddOptionalKey("affstat",
@@ -224,7 +232,7 @@ class CSimpleSink : public CNetServiceAPI_Base::ISink
 public:
     CSimpleSink(CNcbiOstream& os) : m_Os(os) {}
     ~CSimpleSink() {}
-    
+
     virtual CNcbiOstream& GetOstream(CNetServerConnection conn)
     {
         m_Os << conn.GetHost() << ":" << conn.GetPort() << endl;
@@ -241,6 +249,12 @@ private:
 int CNetScheduleControl::Run(void)
 {
     const CArgs& args = GetArgs();
+
+    if (args["version-full"]) {
+        printf(NETSCHEDULE_HUMAN_VERSION "\n");
+        return 0;
+    }
+
     CNcbiOstream& os = NcbiCout;
 
     auto_ptr<CNetScheduleAPI> ctl;
@@ -263,7 +277,7 @@ int CNetScheduleControl::Run(void)
         ctl.reset(x_CreateNewClient(false));
         bool on_off = args["log"].AsBoolean();
         ctl->GetAdmin().Logging(on_off);
-        os << "Logging turned " 
+        os << "Logging turned "
            << (on_off ? "ON" : "OFF") << " on the server" << endl;
     }
     else if (args["monitor"]) {
@@ -331,17 +345,17 @@ int CNetScheduleControl::Run(void)
     else if (args["drop"]) {
         ctl.reset(x_CreateNewClient(true));
         ctl->GetAdmin().DropQueue();
-        os << "All jobs from the queue \"" << ctl->GetQueueName() 
+        os << "All jobs from the queue \"" << ctl->GetQueueName()
            << "\" has been dropped." << endl;
     }
     else if (args["showparams"]) {
         ctl.reset(x_CreateNewClient(true));
         CNetScheduleAPI::SServerParams params = ctl->GetServerParams();
-        os << "Server parameters for the queue \"" << ctl->GetQueueName() 
-           << "\":" << endl 
+        os << "Server parameters for the queue \"" << ctl->GetQueueName()
+           << "\":" << endl
            << "max_input_size = " << params.max_input_size << endl
            << "max_output_size = " << params.max_output_size << endl
-           << "fast status is " 
+           << "fast status is "
            << (params.fast_status? "supported" : "not supported") << endl;
     }
 
@@ -351,7 +365,7 @@ int CNetScheduleControl::Run(void)
         if (args["jid"] ) {
             jid = args["jid"].AsString();
             ctl->GetAdmin().DumpJob(os,jid);
-        } else {            
+        } else {
             CSimpleSink sink(os);
             ctl->GetAdmin().DumpQueue(sink);
         }
@@ -375,7 +389,7 @@ int CNetScheduleControl::Run(void)
     else if (args["stat"]) {
         string sstatus = args["stat"].AsString();
         CNetScheduleAdmin::EStatisticsOptions st = CNetScheduleAdmin::eStaticticsBrief;
-        if (NStr::CompareNocase(sstatus, "all") == 0) 
+        if (NStr::CompareNocase(sstatus, "all") == 0)
             st = CNetScheduleAdmin::eStatisticsAll;
         ctl.reset(x_CreateNewClient(true));
         CSimpleSink sink(os);
@@ -407,7 +421,7 @@ int CNetScheduleControl::Run(void)
         }
         os << endl;
     } else {
-        NCBI_THROW(CArgException, eNoArg, 
+        NCBI_THROW(CArgException, eNoArg,
                    "Unknown command or command is not specified.");
     }
 
@@ -436,7 +450,7 @@ bool CNetScheduleControl::CheckPermission()
             return true;
     }
     return false;
-        
+
 #endif
     */
     return true;

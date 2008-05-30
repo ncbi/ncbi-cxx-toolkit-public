@@ -29,7 +29,7 @@
  * Authors:  Anatoliy Kuznetsov
  *
  * File Description: Notification thread
- *                   
+ *
  *
  */
 

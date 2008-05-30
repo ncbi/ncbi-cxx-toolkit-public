@@ -82,7 +82,8 @@ public:
         eDuplicateName,
         eQuerySyntaxError,
         eCommandIsNotAllowed,
-        eObsoleteCommand
+        eObsoleteCommand,
+        eInvalidParameter
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -104,6 +105,7 @@ public:
         case eQuerySyntaxError:    return "eQuerySyntaxError";
         case eCommandIsNotAllowed: return "eCommandIsNotAllowed";
         case eObsoleteCommand:     return "eObsoleteCommand";
+        case eInvalidParameter:    return "eInvalidParameter";
         default:                   return CNetServiceException::GetErrCodeString();
         }
     }

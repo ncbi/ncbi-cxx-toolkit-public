@@ -52,8 +52,216 @@
 #include "weak_ref.hpp"
 
 #include <deque>
+#include <map>
 
 BEGIN_NCBI_SCOPE
+
+
+typedef pair<string, string> TNSTag;
+typedef list<TNSTag> TNSTagList;
+
+// Forward for CJob/CJobRun friendship
+struct SLockedQueue;
+
+// Instantiation of a Job on a Worker Node
+class CJob;
+class CJobRun
+{
+public:
+    CJobRun();
+    // setters/getters
+    TJobStatus GetStatus() const 
+        { return m_Status; }
+    unsigned GetTimeStart() const
+        { return m_TimeStart; }
+    unsigned GetTimeDone() const
+        { return m_TimeDone; }
+    unsigned GetWorkerNode() const
+        { return m_WorkerNode; }
+    int      GetRetCode() const
+        { return m_RetCode; }
+    const string& GetErrorMsg() const
+        { return m_ErrorMsg; }
+
+    void SetStatus(TJobStatus status);
+    void SetTimeStart(unsigned t);
+    void SetTimeDone(unsigned t);
+    void SetWorkerNode(unsigned node);
+    void SetRetCode(int retcode);
+    void SetErrorMsg(const string& msg);
+
+    // generic access via field name
+    static
+    int GetFieldIndex(const string& name);
+    string GetField(int index) const;
+
+private:
+    friend class CJob;
+    // Service fields
+    bool      m_Dirty;
+
+    // SRunsDB fields
+    // id, run - implicit
+    TJobStatus m_Status;      ///< final job status for this run
+    unsigned   m_TimeStart;   ///< job start time
+    unsigned   m_TimeDone;    ///< job result submission time
+    unsigned   m_WorkerNode;  ///< IP of worker node (net byteorder)
+    int        m_RetCode;     ///< Return code
+    string     m_ErrorMsg;    ///< Error message (exception::what())
+};
+
+
+// Internal representation of a Job
+// mirrors database tables SQueueDB, SJobInfoDB, and SRunsDB
+class CJob
+{
+public:
+    // Parts of objects residing in different DB tables
+    enum EPart {
+        fJobPart     = 1 << 0, ///< SQueueDB part
+        fJobInfoPart = 1 << 1, ///< SJobInfoDB part
+        fRunsPart    = 1 << 2  ///< SRunsDB part
+    };
+    enum EJobFetchResult {
+        eJF_Ok = 0,
+        eJF_NotFound = 1,
+        eJF_DBErr = 2
+    };
+    CJob();
+
+    // Getter/setters
+    unsigned       GetId() const
+        { return m_Id; }
+    TJobStatus GetStatus() const 
+        { return m_Status; }
+    unsigned       GetTimeSubmit() const
+        { return m_TimeSubmit; }
+    unsigned       GetTimeout() const
+        { return m_Timeout; }
+    unsigned       GetRunTimeout() const
+        { return m_RunTimeout; }
+
+    unsigned       GetSubmAddr() const
+        { return m_SubmAddr; }
+    unsigned short GetSubmPort() const
+        { return m_SubmPort; }
+    unsigned       GetSubmTimeout() const
+        { return m_SubmTimeout; }
+
+    unsigned       GetRunCount() const
+        { return m_RunCount; }
+    unsigned       GetReadGroup() const
+        { return m_ReadGroup; }
+    const string&  GetProgressMsg() const
+        { return m_ProgressMsg; }
+
+    unsigned       GetAffinityId() const
+        { return m_AffinityId; }
+    bool           HasAffinityToken() const
+        { return m_AffinityToken.size(); }
+    const string&  GetAffinityToken() const
+        { return m_AffinityToken; }
+
+    unsigned       GetMask() const
+        { return m_Mask; }
+    const vector<CJobRun>& GetRuns() const
+        { return m_Runs; }
+    const TNSTagList& GetTags() const
+        { return m_Tags; }
+    const string&  GetInput() const
+        { return m_Input; }
+    const string&  GetOutput() const
+        { return m_Output; }
+
+    void           SetId(unsigned id);
+    void           SetStatus(TJobStatus status);
+    void           SetTimeSubmit(unsigned t);
+    void           SetTimeout(unsigned t);
+    void           SetRunTimeout(unsigned t);
+
+    void           SetSubmAddr(unsigned addr);
+    void           SetSubmPort(unsigned short port);
+    void           SetSubmTimeout(unsigned t);
+
+    void           SetRunCount(unsigned count);
+    void           SetReadGroup(unsigned group);
+    void           SetProgressMsg(const string& msg);
+    void           SetAffinityId(unsigned aff_id);
+    void           SetAffinityToken(const string& aff_token);
+    void           SetMask(unsigned mask);
+    
+    void           SetRuns(const vector<CJobRun>& runs);
+    void           SetTags(const TNSTagList& tags);
+    void           SetTags(const string& strtags);
+    void           SetInput(const string& input);
+    void           SetOutput(const string& output);
+
+    // generic access via field name
+    static
+    int GetFieldIndex(const string& name);
+    string GetField(int index) const;
+
+    // manipulators
+    CJobRun&       AppendRun();
+    const CJobRun* GetLastRun() const;
+    CJobRun*       GetLastRun();
+
+    // preparatory
+    // Lookup affinity token and fill out affinity id
+    void CheckAffinityToken(SLockedQueue*     queue,
+                            CBDB_Transaction& trans);
+    // Using affinity id fill out affinity token
+    void FetchAffinityToken(SLockedQueue*     queue);
+
+    // Mark job for deletion
+    void Delete();
+
+    // Fetch/flush
+    // Fetch current object
+    EJobFetchResult Fetch(SLockedQueue* queue);
+    // Fetch object by its numeric id
+    EJobFetchResult Fetch(SLockedQueue* queue, unsigned id);
+    // Cursor like functionality - not here yet. May be we need
+    // to create separate CJobIterator.
+    // EJobFetchResult FetchNext(SLockedQueue* queue);
+    bool Flush(SLockedQueue* queue);
+private:
+    void x_ParseTags(const string& strtags, TNSTagList& tags);
+    // Service flags
+    bool     m_New;     ///< Object should be inserted, not updated
+    bool     m_Deleted; ///< Object with this id should be deleted
+    unsigned m_Dirty;
+
+    // Reflection of database structures
+
+    // Reside in SQueueDB table
+    unsigned        m_Id;
+    TJobStatus      m_Status;
+    unsigned        m_TimeSubmit;    ///< Job submit time
+    unsigned        m_Timeout;       ///<     individual timeout
+    unsigned        m_RunTimeout;    ///<     job run timeout
+
+    unsigned        m_SubmAddr;      ///< netw BO (for notification)
+    unsigned short  m_SubmPort;      ///< notification port
+    unsigned        m_SubmTimeout;   ///< notification timeout
+
+    unsigned        m_RunCount;      ///< since last reschedule
+    unsigned        m_ReadGroup;
+    string          m_ProgressMsg;
+
+    unsigned        m_AffinityId;
+    string          m_AffinityToken;
+
+    unsigned        m_Mask;
+
+    // Resides in SRunsDB table
+    vector<CJobRun> m_Runs;
+
+    // Reside in SJobInfoDB table (input and output - if over limit)
+    TNSTagList      m_Tags;
+    string          m_Input;
+    string          m_Output;
+};
 
 
 /// Queue parameters
@@ -64,8 +272,9 @@ struct SQueueParameters
     int notif_timeout;
     int run_timeout;
     string program_name;
-    bool delete_when_done;
+    bool delete_done;
     int failed_retries;
+    time_t blacklist_time;
     time_t empty_lifetime;
     unsigned max_input_size;
     unsigned max_output_size;
@@ -80,90 +289,53 @@ struct SQueueParameters
         timeout(3600),
         notif_timeout(7),
         run_timeout(3600),
-        program_name(""),
-        delete_when_done(false),
+        delete_done(false),
         failed_retries(0),
         empty_lifetime(0),
         max_input_size(kNetScheduleMaxDBDataSize),
         max_output_size(kNetScheduleMaxDBDataSize),
-        deny_access_violations(true),
-        log_access_violations(false),
-        subm_hosts(""),
-        wnode_hosts(""),
+        deny_access_violations(false),
+        log_access_violations(true),
         run_timeout_precision(3600)
     { }
     ///
     void Read(const IRegistry& reg, const string& sname);
 };
 
-
-/// @internal
-typedef unsigned TNetScheduleListenerType;
-
-
-/// Queue watcher (client) description. Client is predominantly a worker node
-/// waiting for new jobs.
-///
-/// @internal
-///
-struct SQueueListener
+// Notification and worker node management
+// (host, port) key into TWorkerNodes map
+typedef pair<unsigned, unsigned short> TWorkerNodeHostPort;
+// value for TWorkerNodes map
+struct SWorkerNodeInfo
 {
-    unsigned int               host;         ///< host name (network BO)
-    unsigned short             udp_port;     ///< Listening UDP port
-    time_t                     last_connect; ///< Last registration timestamp
-    int                        timeout;      ///< Notification expiration timeout
-    string                     auth;         ///< Authentication string
-
-    SQueueListener(unsigned int             host_addr,
-                   unsigned short           udp_port_number,
-                   time_t                   curr,
-                   int                      expiration_timeout,
-                   const string&            client_auth)
-    : host(host_addr),
-      udp_port(udp_port_number),
-      last_connect(curr),
-      timeout(expiration_timeout),
-      auth(client_auth)
-    {}
-};
-
-
-class CQueueComparator
-{
-public:
-    CQueueComparator(unsigned host, unsigned port) :
-      m_Host(host), m_Port(port)
-    {}
-    bool operator()(SQueueListener *l) {
-        return l->host == m_Host && l->udp_port == m_Port;
+    SWorkerNodeInfo() :
+        last_visit(0), visit_timeout(0), notify_time(0)
+    { } 
+    SWorkerNodeInfo(time_t curr, unsigned timeout, const string& auth_) :
+        last_visit(curr), visit_timeout(3600),
+        auth(auth_), notify_time(curr + timeout)
+    { }
+    void Set(time_t curr, unsigned timeout, const string& auth_)
+    {
+        last_visit = curr;
+        notify_time = curr + timeout;
+        auth = auth_;
     }
-private:
-    unsigned m_Host;
-    unsigned m_Port;
+    void Set(time_t curr, unsigned timeout)
+    {
+        last_visit = curr;
+        notify_time = curr + timeout;
+    }
+
+    // Session management
+    time_t last_visit;      ///< Last time client executed worker node command
+    unsigned visit_timeout; ///< When last visit should be expired
+    string auth;            ///< Authentication string
+    // Notification management
+    time_t notify_time;     ///< Up to what time client expects notifications
 };
+typedef map<TWorkerNodeHostPort, SWorkerNodeInfo> TWorkerNodes;
 
-
-/// Runtime queue statistics
-///
-/// @internal
-struct SQueueStatictics
-{
-    double   total_run_time; ///< Accumulated job running time
-    unsigned run_count;      ///< Number of runs
-
-    double   total_turn_around_time; ///< time from subm to completion
-
-    SQueueStatictics() 
-        : total_run_time(0.0), run_count(0), total_turn_around_time(0)
-    {}
-};
-
-
-typedef pair<string, string> TNSTag;
-typedef list<TNSTag> TNSTagList;
-
-// Forward for bv-pooled structures
-struct SLockedQueue;
 
 // key, value -> bitvector of job ids
 // typedef TNSBitVector TNSShortIntSet;
@@ -181,7 +353,7 @@ private:
 };
 
 
-/* obsolete
+/* TODO: remove obsolete
 // another representation key -> value, bitvector
 typedef pair<string, TNSBitVector*> TNSTagValue;
 typedef vector<TNSTagValue> TNSTagDetails;
@@ -202,9 +374,13 @@ private:
 typedef CTimeLine<TNSBitVector> CJobTimeLine;
 /// Mutex protected Queue database with job status FSM 
 ///
-/// Class holds the queue database (open files and indexes), 
+/// Class holds the queue database (open files and indexes),
 /// thread sync mutexes and classes auxiliary queue management concepts
 /// (like affinity and job status bit-matrix)
+///
+/// Mutex priority (a < b means 'a' should be taken before 'b'
+/// lock < m_AffinityMapLock (CQueue::JobFailed) - artificial, no longer needed
+/// m_AffinityMapLock < m_AffinityIdxLock (FindPendingJob)
 ///
 /// @internal
 ///
@@ -221,31 +397,47 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
         eVIAffinity = 2
     };
     typedef int TQueueKind;
-    string                       qname;
-    string                       qclass;           ///< Parameter class
-    TQueueKind                   kind;             ///< 0 - static, 1 - dynamic
-
-    // Databases
-    SQueueDB                     db;               ///< Main queue database
-    SJobInfoDB                   m_JobInfoDB;      ///< Aux info on jobs, tags etc.
-    SQueueAffinityIdx            aff_idx;          ///< Q affinity index
-    auto_ptr<CBDB_FileCursor>    m_Cursor;         ///< DB cursor
 private:
     friend class CQueueGuard;
-    CFastMutex                   lock;             ///< db, cursor lock
-public:
-    CJobStatusTracker            status_tracker;   ///< status FSA
+    friend class CQueueJSGuard;
+    friend class CJob;
 
+    string                       m_QueueName;
+    string                       m_QueueClass;      ///< Parameter class
+    TQueueKind                   m_Kind;            ///< 0 - static, 1 - dynamic
+public:                                           
+    // Databases
+    SQueueDB                     db;                ///< Main queue database
+private:
+    SJobInfoDB                   m_JobInfoDB;       ///< Aux info on jobs, tags etc.
+
+    SRunsDB                      m_RunsDB;          ///< Info on jobs runs
+    auto_ptr<CBDB_FileCursor>    m_RunsCursor;      ///< DB cursor for RunsDB
+
+    CFastMutex                   m_DbLock;          ///< db, cursor lock
+
+public:
+    CJobStatusTracker            status_tracker;    ///< status FSA
+
+private:
     // Main DB field info
     map<string, int> m_FieldMap;
     int m_NKeys;
 
-    // affinity dictionary does not need a mutex, because 
-    // CAffinityDict is a syncronized class itself (mutex included)
-    CAffinityDict                affinity_dict;    ///< Affinity tokens
-    CWorkerNodeAffinity          worker_aff_map;   ///< Affinity map
-    CFastMutex                   aff_map_lock;     ///< worker_aff_map lck
+    // Affinity
+    SQueueAffinityIdx            m_AffinityIdx;     ///< Q affinity index
+    CFastMutex                   m_AffinityIdxLock;
 
+
+public:
+    // affinity dictionary does not need a mutex, because
+    // CAffinityDict is a syncronized class itself (mutex included)
+    CAffinityDict                affinity_dict;     ///< Affinity tokens
+private:
+    CWorkerNodeAffinity          m_AffinityMap;     ///< Affinity map
+    CFastMutex                   m_AffinityMapLock; ///< m_AffinityMap lock
+
+    // Tags
     STagDB                       m_TagDb;
     CFastMutex                   m_TagLock;
 
@@ -253,19 +445,17 @@ public:
     time_t                       m_BecameEmpty;
 
     // List of active worker node listeners waiting for pending jobs
+    TWorkerNodes                 m_WorkerNodes; ///< worker nodes
+    time_t                       last_notif;    ///< last notification time
+    mutable CRWLock              wn_lock;       ///< wnodes locker
+    string                       q_notif;       ///< Queue notification message
 
-    typedef vector<SQueueListener*> TListenerList;
-
-    TListenerList                wnodes;       ///< worker node listeners
-    time_t                       last_notif;   ///< last notification time
-    mutable CRWLock              wn_lock;      ///< wnodes locker
-    string                       q_notif;      ///< Queue notification message
-
+public:
     // Timeline object to control job execution timeout
     CJobTimeLine*                run_time_line;
     CRWLock                      rtl_lock;      ///< run_time_line locker
 
-    // Datagram notification socket 
+    // Datagram notification socket
     // (used to notify worker nodes and waiting clients)
     CDatagramSocket              udp_socket;    ///< UDP notification socket
     CFastMutex                   us_lock;       ///< UDP socket lock
@@ -273,34 +463,9 @@ public:
     /// Queue monitor
     CServer_Monitor              m_Monitor;
 
-    SQueueStatictics             qstat;
-    CFastMutex                   qstat_lock;
-
     /// Should we delete db upon close?
     bool                         delete_database;
     vector<string>               files; ///< list of files (paths) for queue
-
-    /// Last valid id for queue
-    CAtomicCounter               m_LastId;
-
-    /// Lock for deleted jobs vectors
-    CFastMutex                   m_JobsToDeleteLock;
-    /// Database for vectors of deleted jobs
-    SDeletedJobsDB               m_DeletedJobsDB;
-    /// Vector of jobs to be deleted from db unconditionally
-    /// keeps jobs still to be deleted from main DB
-    TNSBitVector                 m_JobsToDelete;
-    /// Vector to mask queries against; keeps jobs not yet deleted
-    /// from tags DB
-    TNSBitVector                 m_DeletedJobs;
-    /// Vector to keep ids to be cleaned from affinity
-    TNSBitVector                 m_AffJobsToDelete;
-    /// Is m_CurrAffId wrapped around 0?
-    bool                         m_AffWrapped;
-    /// Current aff id to start cleaning from
-    unsigned                     m_CurrAffId;
-    /// Last aff id cleaning started from
-    unsigned                     m_LastAffId;
 
 public:
     // Constructor/destructor
@@ -318,8 +483,15 @@ public:
     // Status matrix related
     unsigned LoadStatusMatrix();
 
-    CNetScheduleAPI::EJobStatus
-        GetJobStatus(unsigned job_id) const;
+    const string& GetQueueName() const {
+        return m_QueueName;
+    }
+
+    string DecorateJobId(unsigned job_id) {
+        return m_QueueName + '/' + NStr::IntToString(job_id);
+    }
+
+    TJobStatus GetJobStatus(unsigned job_id) const;
 
     // Set UDP port for notifications
     void SetPort(unsigned short port);
@@ -334,6 +506,17 @@ public:
     unsigned int GetNextId();
     /// Returns first id for the batch
     unsigned int GetNextIdBatch(unsigned count);
+
+    // Read-Confirm stage
+    /// Request done jobs for reading with timeout
+    void ReadJobs(unsigned peer_addr,
+                  unsigned count, unsigned timeout,
+                  unsigned& read_id, TNSBitVector& bv_jobs);
+    /// Confirm reading of these jobs
+    void ConfirmJobs(unsigned read_id, TNSBitVector& bv_jobs);
+    /// Fail (negative acknoledge) reading of these jobs
+    void FailReadingJobs(unsigned read_id, TNSBitVector& bv_jobs);
+
 
     /// Erase job from all structures, request delayed db deletion
     void Erase(unsigned job_id);
@@ -353,16 +536,90 @@ public:
     /// Clear part of affinity index, called from periodic Purge
     void ClearAffinityIdx();
 
-    void NotifyListeners(bool unconditional);
+    void NotifyListeners(bool unconditional, unsigned aff_id);
     void Notify(unsigned addr, unsigned short port, unsigned job_id);
 
     // Optimize bitvectors
     void OptimizeMem();
 
+    // Affinity methods
+    /// Read queue affinity index, retrieve all jobs, with
+    /// given set of affinity ids, append it to 'jobs'
+    ///
+    /// @param aff_id_set
+    ///     set of affinity ids to read
+    /// @param jobs
+    ///     OUT set of jobs associated with specified affinities
+    ///
+    void GetJobsWithAffinity(const TNSBitVector& aff_id_set,
+                             TNSBitVector*       jobs);
+    /// Read queue affinity index, retrieve all jobs, with
+    /// given affinity id, append it to 'jobs'
+    ///
+    /// @param aff_id_set
+    ///     set of affinity ids to read
+    /// @param jobs
+    ///     OUT set of jobs associated with specified affinities
+    ///
+    void GetJobsWithAffinity(unsigned            aff_id,
+                             TNSBitVector*       jobs);
+
+    /// Find the pending job.
+    /// This method takes into account jobs available
+    /// in the job status matrix and current
+    /// worker node affinity association
+    ///
+    /// Sync.Locks: affinity map lock, main queue lock, status matrix
+    ///
+    /// @return job_id
+    unsigned
+    FindPendingJob(unsigned       client_addr,
+                   const string&  client_name,
+                   time_t         t);
+
+    void x_ReadAffIdx_NoLock(unsigned            aff_id,
+                             TNSBitVector*       jobs);
+
+    /// Update the affinity index
+    void AddJobsToAffinity(CBDB_Transaction& trans,
+                           unsigned aff_id,
+                           unsigned job_id_from,
+                           unsigned job_id_to = 0);
+
+    void AddJobsToAffinity(CBDB_Transaction& trans,
+                           const vector<CJob>& batch);
+
+    // Worker node methods
+    void PrintWorkerNodeStat(CNcbiOstream& out) const;
+    void RegisterNotificationListener(unsigned        host,
+                                      unsigned short  port,
+                                      unsigned        timeout,
+                                      const string&   auth);
+    void UnRegisterNotificationListener(unsigned       host,
+                                        unsigned short port);
+    void RegisterWorkerNodeVisit(unsigned       host_addr,
+                                 unsigned short udp_port,
+                                 unsigned       timeout);
+
+    typedef CWorkerNodeAffinity::TNetAddress TNetAddress;
+    void ClearAffinity(TNetAddress   addr,
+                       const string& client_name);
+    void AddAffinity(TNetAddress   addr,
+                     const string& client_name,
+                     unsigned      aff_id,
+                     time_t        exp_time);
+    void BlacklistJob(TNetAddress   addr,
+                      const string& client_name,
+                      unsigned      job_id,
+                      time_t        exp_time);
+
+
     // Tags methods
     typedef CSimpleBuffer TBuffer;
     void SetTagDbTransaction(CBDB_Transaction* trans);
-    void AppendTags(CNSTagMap& tag_map, TNSTagList& tags, unsigned job_id);
+    void AppendTags(CNSTagMap& tag_map,
+                    const TNSTagList& tags,
+                    unsigned job_id);
     void FlushTags(CNSTagMap& tag_map, CBDB_Transaction& trans);
     bool ReadTag(const string& key, const string& val,
                  TBuffer* buf);
@@ -370,10 +627,19 @@ public:
     void x_RemoveTags(CBDB_Transaction& trans, const TNSBitVector& ids);
     CFastMutex& GetTagLock() { return m_TagLock; }
 
+    /// Check execution timeout. Now checks reading timeout as well.
+    /// All jobs failed to execute, go back to pending
+    void CheckExecutionTimeout(void);
+
+    /// Check timeout for a job
+    void x_CheckExecutionTimeout(unsigned queue_run_timeout,
+                                 unsigned job_id, time_t curr_time);
+
+    unsigned CheckJobsExpiry(unsigned batch_size, TJobStatus status);
+
     unsigned DeleteBatch(unsigned batch_size);
 
-    CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
-
+    CBDB_FileCursor& GetRunsCursor();
 
     /// Pass socket for monitor (takes ownership)
     void SetMonitorSocket(CSocket& socket);
@@ -381,6 +647,10 @@ public:
     bool IsMonitoring();
     /// Send string to monitor
     void MonitorPost(const string& msg);
+
+    // DB statistics
+    unsigned CountRecs();
+    void PrintStat(CNcbiOstream& out);
 
     // Statistics gathering objects
     friend class CStatisticsThread;
@@ -408,19 +678,66 @@ public:
     unsigned m_Average[eStatNumEvents];
     void CountEvent(TStatEvent event, int num=1);
     double GetAverage(TStatEvent event);
+
+    void x_ChangeGroupStatus(unsigned            group_id,
+                             const TNSBitVector& bv_jobs,
+                             TJobStatus          status);
+
+    // Add job to group, creating it if necessary. Used during queue
+    // loading, so guaranteed no concurrent queue acces.
+    void x_AddToReadGroupNoLock(unsigned group_id, unsigned job_id);
+    // Thread-safe helpers for read group management
+    // Create read group and assign jobs to it
+    void x_CreateReadGroup(unsigned group_id, const TNSBitVector& bv_jobs);
+    // Remove from group, and if group is empty delete it
+    void x_RemoveFromReadGroup(unsigned group_id, unsigned job_id);
+
 private:
+    typedef map<unsigned, TNSBitVector> TGroupMap;
+    /// Last valid id for queue
+    CAtomicCounter               m_LastId;
+
+    /// Last valid id for read group
+    CAtomicCounter               m_GroupLastId;
+    TGroupMap                    m_GroupMap;
+    CFastMutex                   m_GroupMapLock;
+
+    /// Lock for deleted jobs vectors
+    CFastMutex                   m_JobsToDeleteLock;
+    /// Database for vectors of deleted jobs
+    SDeletedJobsDB               m_DeletedJobsDB;
+    /// Vector of jobs to be deleted from db unconditionally
+    /// keeps jobs still to be deleted from main DB
+    TNSBitVector                 m_JobsToDelete;
+    /// Vector to mask queries against; keeps jobs not yet deleted
+    /// from tags DB
+    TNSBitVector                 m_DeletedJobs;
+    /// Vector to keep ids to be cleaned from affinity
+    TNSBitVector                 m_AffJobsToDelete;
+    /// Is m_CurrAffId wrapped around 0?
+    bool                         m_AffWrapped;
+    /// Current aff id to start cleaning from
+    unsigned                     m_CurrAffId;
+    /// Last aff id cleaning started from
+    unsigned                     m_LastAffId;
+
+    // When modifying this, modify all places marked with PARAMETERS
     // Configurable queue parameters
     friend class CQueueParamAccessor;
-    CRWLock                      m_ParamLock;
+    mutable CRWLock              m_ParamLock;
     int                          m_Timeout;         ///< Result exp. timeout
     int                          m_NotifTimeout;    ///< Notification interval
     bool                         m_DeleteDone;      ///< Delete done jobs
     int                          m_RunTimeout;      ///< Execution timeout
+    /// Its precision, set at startup only, not reconfigurable
+    int                          m_RunTimeoutPrecision;
     /// How many attemts to make on different nodes before failure
     unsigned                     m_FailedRetries;
-    ///< How long to live after becoming empty, if -1 - infinitely
-    int                          m_EmptyLifetime;
-    unsigned                     m_MaxInputSize;                    
+    /// How long a job lives in blacklist
+    time_t                       m_BlacklistTime;
+    /// How long to live after becoming empty, if -1 - infinitely
+    time_t                       m_EmptyLifetime;
+    unsigned                     m_MaxInputSize;
     unsigned                     m_MaxOutputSize;
     bool                         m_DenyAccessViolations;
     bool                         m_LogAccessViolations;
@@ -433,16 +750,29 @@ private:
 };
 
 
-class CQueueParamAccessor
+class CParameterEnumerator
 {
 public:
-    CQueueParamAccessor(SLockedQueue& queue) :
+    virtual ~CParameterEnumerator() { }
+    virtual unsigned GetNumParams() const { return 0; }
+    virtual string GetParamName(unsigned n) const { return ""; }
+    virtual string GetParamValue(unsigned n) const { return ""; }
+};
+
+
+class CQueueParamAccessor : public CParameterEnumerator
+{
+    // When modifying this, modify all places marked with PARAMETERS
+public:
+    CQueueParamAccessor(const SLockedQueue& queue) :
         m_Queue(queue), m_Guard(queue.m_ParamLock) { }
     int GetTimeout() { return m_Queue.m_Timeout; }
     int GetNotifTimeout() { return m_Queue.m_NotifTimeout; }
     bool GetDeleteDone() { return m_Queue.m_DeleteDone; }
     int GetRunTimeout() { return m_Queue.m_RunTimeout; }
+    int GetRunTimeoutPrecision() { return m_Queue.m_RunTimeoutPrecision; }
     unsigned GetFailedRetries() { return m_Queue.m_FailedRetries; }
+    time_t GetBlacklistTime() { return m_Queue.m_BlacklistTime; }
     int GetEmptyLifetime() { return m_Queue.m_EmptyLifetime; }
     unsigned GetMaxInputSize() { return m_Queue.m_MaxInputSize; }
     unsigned GetMaxOutputSize() { return m_Queue.m_MaxOutputSize; }
@@ -455,9 +785,72 @@ public:
     const CNetSchedule_AccessList& GetWnodeHosts()
         { return m_Queue.m_WnodeHosts; }
 
+    unsigned GetNumParams() const {
+        return 15;
+    }
+    string GetParamName(unsigned n) const {
+        switch (n) {
+        case 0:  return "timeout";
+        case 1:  return "notif_timeout";
+        case 2:  return "delete_done";
+        case 3:  return "run_timeout";
+        case 4:  return "run_timeout_precision";
+        case 5:  return "failed_retries";
+        case 6:  return "blacklist_time";
+        case 7:  return "empty_lifetime";
+        case 8:  return "max_input_size";
+        case 9:  return "max_output_size";
+        case 10: return "deny_access_violations";
+        case 11: return "log_access_violations";
+        case 12: return "program";
+        case 13: return "subm_host";
+        case 14: return "wnode_host";
+        default: return "";
+        }
+    }
+    string GetParamValue(unsigned n) const {
+        switch (n) {
+        case 0:  return NStr::IntToString(m_Queue.m_Timeout);
+        case 1:  return NStr::IntToString(m_Queue.m_NotifTimeout);
+        case 2:  return m_Queue.m_DeleteDone ? "true" : "false";
+        case 3:  return NStr::IntToString(m_Queue.m_RunTimeout);
+        case 4:  return NStr::IntToString(m_Queue.m_RunTimeoutPrecision);
+        case 5:  return NStr::IntToString(m_Queue.m_FailedRetries);
+        case 6:  return NStr::IntToString(m_Queue.m_BlacklistTime);
+        case 7:  return NStr::IntToString(m_Queue.m_EmptyLifetime);
+        case 8:  return NStr::IntToString(m_Queue.m_MaxInputSize);
+        case 9:  return NStr::IntToString(m_Queue.m_MaxOutputSize);
+        case 10: return m_Queue.m_DenyAccessViolations ? "true" : "false";
+        case 11: return m_Queue.m_LogAccessViolations ? "true" : "false";
+        case 12: return m_Queue.m_ProgramVersionList.Print();
+        case 13: return m_Queue.m_SubmHosts.Print();
+        case 14: return m_Queue.m_WnodeHosts.Print();
+        default: return "";
+        }
+    }
+
 private:
-    SLockedQueue& m_Queue;
+    const SLockedQueue& m_Queue;
     CReadLockGuard m_Guard;
+};
+
+
+// Application specific defaults provider for DB transaction
+class CNS_Transaction : public CBDB_Transaction
+{
+public:
+    CNS_Transaction(CBDB_Env&             env,
+                    ETransSync            tsync = eEnvDefault,
+                    EKeepFileAssociation  assoc = eNoAssociation)
+        : CBDB_Transaction(env, tsync, assoc)
+    {
+    }
+    CNS_Transaction(SLockedQueue*         queue,
+                    ETransSync            tsync = eEnvDefault,
+                    EKeepFileAssociation  assoc = eNoAssociation)
+        : CBDB_Transaction(*(queue->db.GetEnv()), tsync, assoc)
+    {
+    }
 };
 
 
@@ -469,6 +862,8 @@ public:
 };
 
 
+// Guards which locks the queue and set transaction for main
+// queue tables
 class CQueueGuard
 {
 public:
@@ -476,14 +871,14 @@ public:
     {
     }
 
-    CQueueGuard(CRef<SLockedQueue> q) : m_Queue(0)
+    CQueueGuard(SLockedQueue* q,
+                CBDB_Transaction* trans = NULL)
+        : m_Queue(0)
     {
         Guard(q);
-    }
-
-    CQueueGuard(SLockedQueue* q) : m_Queue(0)
-    {
-        Guard(q);
+        q->db.SetTransaction(trans);
+        q->m_JobInfoDB.SetTransaction(trans);
+        q->m_RunsDB.SetTransaction(trans);
     }
 
     ~CQueueGuard()
@@ -497,7 +892,7 @@ public:
     void Release()
     {
         if (m_Queue) {
-            m_Queue->lock.Unlock();
+            m_Queue->m_DbLock.Unlock();
             m_Queue = 0;
         }
     }
@@ -506,7 +901,7 @@ public:
     {
         Release();
         m_Queue = q;
-        m_Queue->lock.Lock();
+        m_Queue->m_DbLock.Lock();
         m_Queue->CountEvent(SLockedQueue::eStatDBLockEvent);
     }
 
@@ -516,6 +911,39 @@ private:
     void operator=(const CQueueGuard&);
 private:
     SLockedQueue* m_Queue;
+};
+
+
+// Job status guard
+class CQueueJSGuard
+{
+public:
+    CQueueJSGuard(SLockedQueue* q,
+                  unsigned      job_id,
+                  TJobStatus    status,
+                  bool*         updated = 0)
+        : m_Guard(q->status_tracker, job_id, status, updated)
+    {
+    }
+
+    void Commit() { m_Guard.Commit(); }
+
+    void SetStatus(TJobStatus status)
+    {
+        m_Guard.SetStatus(status);
+    }
+
+    TJobStatus GetOldStatus() const
+    {
+        return m_Guard.GetOldStatus();
+    }
+
+private:
+    // No copy
+    CQueueJSGuard(const CQueueJSGuard&);
+    void operator=(const CQueueJSGuard&);
+private:
+    CNetSchedule_JS_Guard m_Guard;
 };
 
 END_NCBI_SCOPE

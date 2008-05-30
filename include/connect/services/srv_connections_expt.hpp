@@ -61,7 +61,7 @@ public:
         case eResponseTimeout:    return "eResponseTimeout";
         case eLBNameNotFound:     return "eLBNameNotFound";
         case eSrvListEmpty:       return "eSrvListEmpty";
-        case eConnectionFailure:  return "eConntectionFailure";
+        case eConnectionFailure:  return "eConnectionFailure";
         case eWriteFailure:       return "eWriteFailure";
         default:                  return CException::GetErrCodeString();
         }

@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov, Maxim Didenko
+ * Authors:  Anatoliy Kuznetsov, Maxim Didenko, Victor Joukov
  *
  * File Description:
  *   NetSchedule client API.
@@ -125,18 +125,24 @@ public:
     // -----------------------------------------------------------------
 
     /// Job status codes
-    ///
+    /// NB: eReturned, eTimeout and eReadTimeout states are visible only
+    /// in job history, and ePending cannot be there.
     enum EJobStatus
     {
-        eJobNotFound = -1,  ///< No such job
-        ePending     = 0,   ///< Waiting for execution
-        eRunning,           ///< Running on a worker node
-        eReturned,          ///< Returned back to the queue(to be rescheduled)
-        eCanceled,          ///< Explicitly canceled
-        eFailed,            ///< Failed to run (execution timeout)
-        eDone,              ///< Job is ready (computed successfully)
+        eJobNotFound = -1, ///< No such job
+        ePending     = 0,  ///< Waiting for execution
+        eRunning,          ///< Running on a worker node
+        eReturned,         ///< Returned back to the queue (to be rescheduled)
+        eCanceled,         ///< Explicitly canceled
+        eFailed,           ///< Failed to run (execution timeout)
+        eDone,             ///< Job is ready (computed successfully)
+        eReading,          ///< Job has its output been reading
+        eConfirmed,        ///< Final state - read confirmed
+        eReadFailed,       ///< Final state - read failed
+        eTimeout,          ///< Execution canceled due to timeout
+        eReadTimeout,      ///< Reading timed out
 
-        eLastStatus         ///< Fake status (do not use)
+        eLastStatus        ///< Fake status (do not use)
     };
 
     /// Printable status type
@@ -146,7 +152,9 @@ public:
     /// Parse status string into enumerator value
     ///
     /// Acceptable string values:
-    ///   Pending, Running, Returned, Canceled, Failed, Done
+    ///   Pending, Running, Returned, Canceled, Failed, Done, Reading,
+    ///   Confirmed, ReadFailed, Timeout, ReadTimeout
+    /// Abbreviated
     ///   Pend, Run, Return, Cancel, Fail
     ///
     /// @return eJobNotFound if string cannot be parsed
@@ -156,9 +164,20 @@ public:
     /// Job masks
     ///
     enum EJobMask {
-        eEmptyMask    = 0x0,
-        eExclusiveJob = 0x1,  ///< Exlcusive job
-        eUsersMask    = (1 << 16) ///< User's masks start from here
+        eEmptyMask    = 0,
+        /// Exlcusive job - the node executes only this job, even if
+        /// there are processor resources
+        eExclusiveJob = (1 << 0),
+        // Not implemented yet ---v
+        /// This jobs comes to the node before every regular jobs
+        eOutOfOrder   = (1 << 1),
+        /// This job will be scheduled to every active node
+        eForEachNode  = (1 << 2),
+        /// This job should be interpreted by client library, not client itself
+        /// Can contain control information, e.g. instruction for node to die
+        eSystemJob    = (1 << 3),
+        //                     ---^
+        eUserMask     = (1 << 16) ///< User's masks start from here
     };
     typedef unsigned TJobMask;
 

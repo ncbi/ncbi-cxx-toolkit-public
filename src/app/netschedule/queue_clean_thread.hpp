@@ -29,7 +29,7 @@
  * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description: Queue cleaning thread.
- *                   
+ *
  *
  */
 
@@ -87,7 +87,7 @@ public:
     virtual void DoJob(void);
 private:
     CJobQueueExecutionWatcherThread(const CJobQueueExecutionWatcherThread&);
-    CJobQueueExecutionWatcherThread& 
+    CJobQueueExecutionWatcherThread&
         operator=(const CJobQueueExecutionWatcherThread&);
 private:
     CBackgroundHost& m_Host;

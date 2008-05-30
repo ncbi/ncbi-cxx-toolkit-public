@@ -26,7 +26,7 @@
  * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description: Queue cleaning thread.
- *                   
+ *
  *
  */
 
@@ -49,14 +49,14 @@ void CJobQueueCleanerThread::DoJob(void)
     try {
         m_QueueDB.Purge();
 #ifdef _DEBUG
-    if (m_DbgTriggerDBRecover)
-        BDB_ERRNO_THROW(DB_RUNRECOVERY, "Test of error processing");
+        if (m_DbgTriggerDBRecover)
+            BDB_ERRNO_THROW(DB_RUNRECOVERY, "Test of error processing");
 #endif
-    } 
+    }
     catch (CBDB_ErrnoException& ex)
     {
         if (ex.IsNoMem()) {
-            ERR_POST(Warning << 
+            ERR_POST(Warning <<
                 "BDB reported resource shortage in cleaning thread. Ignored.");
             return;
         }
@@ -74,7 +74,7 @@ void CJobQueueCleanerThread::DoJob(void)
             ERR_POST(msg);
             m_Host.ReportError(CBackgroundHost::eFatal, msg);
         } else {
-            ERR_POST(Error << "BDB Error when cleaning job queue: " 
+            ERR_POST(Error << "BDB Error when cleaning job queue: "
                            << ex.what()
                            << " cleaning thread has been stopped.");
         }
@@ -83,7 +83,7 @@ void CJobQueueCleanerThread::DoJob(void)
     catch(exception& ex)
     {
         RequestStop();
-        ERR_POST(Error << "Error when cleaning queue: " 
+        ERR_POST(Error << "Error when cleaning queue: "
                         << ex.what()
                         << " cleaning thread has been stopped.");
         RequestStop();
@@ -93,9 +93,10 @@ void CJobQueueCleanerThread::DoJob(void)
 
 void CJobQueueExecutionWatcherThread::DoJob(void)
 {
+    if (!m_Host.ShouldRun()) return;
     try {
         m_QueueDB.CheckExecutionTimeout();
-    } 
+    }
     catch (CBDB_ErrnoException& ex)
     {
         if (ex.IsNoMem()) {
@@ -117,7 +118,7 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
             ERR_POST(msg);
             m_Host.ReportError(CBackgroundHost::eFatal, msg);
         } else {
-            ERR_POST(Error << "BDB Error in execution watcher thread: " 
+            ERR_POST(Error << "BDB Error in execution watcher thread: "
                            << ex.what()
                            << " watcher thread has been stopped.");
         }
@@ -126,7 +127,7 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
     catch(exception& ex)
     {
         RequestStop();
-        ERR_POST(Error << "Error in execution watcher: " 
+        ERR_POST(Error << "Error in execution watcher: "
                         << ex.what()
                         << " watcher thread has been stopped.");
     }

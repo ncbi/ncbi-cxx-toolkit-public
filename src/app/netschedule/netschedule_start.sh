@@ -12,7 +12,7 @@
 #
 # PRINTOUT  (specifically adapted to run as a cronjob):
 #    stderr  -- all changes in the server status (includin successful launch)
-#               and all errors occured during the script execution 
+#               and all errors occured during the script execution
 #    stdout  -- routine script progress messages
 #
 # USAGE:
@@ -28,14 +28,14 @@ Die() {
 
 Success() {
     echo "$@" >& 2
-    echo $ns_pid > netscheduled.pid    
+    echo $ns_pid > netscheduled.pid
     cat netscheduled.out >& 2
-#    | mail -s "$@" $mail_to    
+#    | mail -s "$@" $mail_to
     cd $start_dir
     exit 0
 }
 
-# ---------------------------------------------------- 
+# ----------------------------------------------------
 
 
 run_dir="$1"
@@ -71,36 +71,36 @@ echo "Testing if netscheduled is alive on $host:$port"
 
 if ! $ns_control -retry 7 -v $host $port > /dev/null  2>&1; then
     echo "Service not responding"
-    
+
     echo "Starting the netscheduled service..."
     cat netscheduled.out >> netscheduled_out.old
     $netscheduled > netscheduled.out  2>&1 &
     ns_pid=$!
     echo "Waiting for the service to start ($service_wait seconds)..."
     sleep $service_wait
-    
+
     if ! $ns_control -v $host $port > /dev/null  2>&1; then
         echo "Service failed to start in $service_wait seconds" >& 2
-        
+
         echo "Giving it $service_wait seconds more..." >& 2
         sleep $service_wait
-        
+
         if ! $ns_control -v $host $port > /dev/null  2>&1; then
             cat netscheduled.out >& 2
 #            | mail -s "[PROBLEM] netscheduled @ $host:$port failed to start" $mail_to
-            
+
             kill $ns_pid
             sleep 3
             kill -9 $ns_pid
-            
+
             echo "Database reinitialization." >& 2
-            
+
             $netscheduled -reinit >> netscheduled.out  2>&1 &
             ns_pid=$!
-            
+
             echo "Waiting for the service to start ($service_wait seconds)..."
             sleep $service_wait
-            
+
             if ! $ns_control -v $host $port > /dev/null  2>&1; then
                 echo "Service failed to start with database reinitialization" >& 2
                 cat netscheduled.out >& 2
@@ -108,8 +108,8 @@ if ! $ns_control -retry 7 -v $host $port > /dev/null  2>&1; then
                 Die "Failed to start service"
             else
                 Success "netscheduled started with -reinit (pid=$ns_pid) at $host:$port"
-            fi                        
-        fi        
+            fi
+        fi
     fi
 else
     echo "Service is alive"

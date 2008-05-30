@@ -34,7 +34,7 @@
  *
  */
 /// @file bdb_queue.hpp
-/// NetSchedule job status database. 
+/// NetSchedule job status database.
 ///
 /// @internal
 
@@ -83,13 +83,13 @@ public:
         ITERATE(list<string>, it, programs) {
             const string& vstr = *it;
             try {
-                ParseVersionString(vstr, 
+                ParseVersionString(vstr,
                     &program_info.client_name, &program_info.version_info);
                 NStr::TruncateSpacesInPlace(program_info.client_name);
                 x_AddClientInfo_NoLock(program_info);
             }
             catch (CStringException&) {
-                LOG_POST(Error << "Program string '" << vstr << "'" 
+                LOG_POST(Error << "Program string '" << vstr << "'"
                                << " cannot be parsed and ignored.");
             }
 
@@ -125,6 +125,18 @@ public:
     {
         CWriteLockGuard guard(m_Lock);
         m_RegisteredClients.resize(0);
+    }
+
+    string Print(const char* sep=",") const
+    {
+        string s;
+        ITERATE(vector<CQueueClientInfo>, it, m_RegisteredClients) {
+            if (s.size()) s += sep;
+            s += it->client_name;
+            s += ' ';
+            s += it->version_info.Print();
+        }
+        return s;
     }
 
 private:

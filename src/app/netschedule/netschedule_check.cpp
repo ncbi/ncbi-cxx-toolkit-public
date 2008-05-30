@@ -40,11 +40,18 @@
 
 #include <connect/services/netschedule_api.hpp>
 
+#include <common/ncbi_package_ver.h>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;
 
+#define NETSCHEDULE_VERSION NCBI_AS_STRING(NCBI_PACKAGE_VERSION)
+
+#define NETSCHEDULE_HUMAN_VERSION \
+      "NCBI NetSchedule check utility Version " NETSCHEDULE_VERSION \
+      " build " __DATE__ " " __TIME__
 
 /// NetSchedule check application
 ///
@@ -66,10 +73,13 @@ void CNetScheduleCheck::Init(void)
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetSchedule Check.");
-    
-    arg_desc->AddPositional("service", 
-        "NetSchedule host or service name. Format: service|host:port", 
-        CArgDescriptions::eString);
+
+    arg_desc->AddDefaultPositional("service",
+        "NetSchedule host or service name. Format: service|host:port",
+        CArgDescriptions::eString,
+        "");
+
+    arg_desc->AddFlag("version-full", "Version");
 
     arg_desc->AddOptionalKey("qclass",
                              "queue",
@@ -134,6 +144,11 @@ int CNetScheduleCheck::Run(void)
 {
     const CArgs& args = GetArgs();
 
+    if (args["version-full"]) {
+        printf(NETSCHEDULE_HUMAN_VERSION "\n");
+        return 0;
+    }
+
     const string& service  = args["service"].AsString();
 
     string queue = "test";
@@ -175,7 +190,7 @@ int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
 
     while ( true ) {
         //SleepSec(1);
-        
+
         CNetScheduleJob job1;
         bool job_exists = executer.WaitJob(job1,5,9898);
         if (job_exists) {
@@ -183,7 +198,7 @@ int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
                 executer.ReturnJob(job1.job_id);
             else {
                 if (job1.input != job.input) {
-                    job1.error_msg = "Job's (" + job1.job_id + 
+                    job1.error_msg = "Job's (" + job1.job_id +
                         ") input does not match.(" + job.input + ") ["+ job1.input +"]";
                     executer.PutFailure(job1);
                 } else {
@@ -205,7 +220,7 @@ int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
 
         CNetScheduleAPI::EJobStatus status = submitter.GetJobDetails(job);
         switch(status) {
-        
+
         case CNetScheduleAPI::eJobNotFound:
             ret = 210;
             err = "Job (" + job.job_id +") is lost.";
@@ -218,7 +233,7 @@ int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
         case CNetScheduleAPI::eCanceled:
             ret = 212;
             err = "Job (" + job.job_id +") is canceled.";
-            break;           
+            break;
         case CNetScheduleAPI::eFailed:
             ret = 213;
             break;
@@ -227,11 +242,11 @@ int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
                 ret = job.ret_code;
                 err = "Job (" + job.job_id +") is done, but retcode is not zero.";
             } else if (job.output != output) {
-                err = "Job (" + job.job_id + ") is done, output does not match.(" 
+                err = "Job (" + job.job_id + ") is done, output does not match.("
                     + output + ") ["+ job.output +"]";
                 ret = 214;
             } else if (job.input != input) {
-                err = "Job (" + job.job_id +") is done, input does not match.(" 
+                err = "Job (" + job.job_id +") is done, input does not match.("
                     + input + ") ["+ job.input +"]";
                 ret = 215;
             }

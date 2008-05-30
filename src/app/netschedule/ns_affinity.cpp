@@ -23,12 +23,13 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description: Network scheduler affinity.
  *
  */
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include "ns_affinity.hpp"
@@ -36,6 +37,8 @@
 
 
 BEGIN_NCBI_SCOPE
+
+static const unsigned kMaxDeadLocks = 100;  // max. dead lock repeats
 
 CAffinityDict::CAffinityDict()
 : m_AffDictDB(0),
@@ -50,7 +53,7 @@ CAffinityDict::~CAffinityDict()
 {
     try {
         Close();
-    } 
+    }
     catch (exception& ex)
     {
         ERR_POST("Error while closing affinity dictionary " << ex.what());
@@ -99,7 +102,7 @@ void CAffinityDict::Open(CBDB_Env& env, const string& queue_name)
         unsigned aff_id = m_AffDictDB->aff_id;
         m_IdCounter.Set(aff_id);
     }
-    }}    
+    }}
 }
 
 unsigned CAffinityDict::CheckToken(const char*       aff_token,
@@ -107,63 +110,79 @@ unsigned CAffinityDict::CheckToken(const char*       aff_token,
 {
     unsigned aff_id;
 
-    CFastMutexGuard guard(m_DbLock);
-
-    // check if affinity token string already registered
-    {{
-        CBDB_CursorGuard cg1(*m_CurTokenIdx);
-        m_CurTokenIdx->ReOpen(&trans);
-        m_CurTokenIdx->SetCondition(CBDB_FileCursor::eEQ);
-        m_CurTokenIdx->From << aff_token;
-        if (m_CurTokenIdx->Fetch() == eBDB_Ok) {
-            aff_id = m_AffDict_TokenIdx->aff_id;
-            return aff_id;
-        }
-    }}
-
-    // add new affinity token
-
+    unsigned dead_locks = 0; // dead lock counter
     while (1) {
-        aff_id = m_IdCounter.Add(1);
+        try {
+            CFastMutexGuard guard(m_DbLock);
 
-        // make sure it is not there yet
+            // check if affinity token string already registered
+            {{
+                CBDB_CursorGuard cg1(*m_CurTokenIdx);
+                m_CurTokenIdx->ReOpen(&trans);
+                m_CurTokenIdx->SetCondition(CBDB_FileCursor::eEQ);
+                m_CurTokenIdx->From << aff_token;
+                if (m_CurTokenIdx->Fetch() == eBDB_Ok) {
+                    aff_id = m_AffDict_TokenIdx->aff_id;
+                    return aff_id;
+                }
+            }}
 
-        {{
-        CBDB_CursorGuard cg2(*m_CurAffDB);
-        m_CurAffDB->ReOpen(&trans);
-        m_CurAffDB->SetCondition(CBDB_FileCursor::eEQ);
-        m_CurAffDB->From << aff_id;
-        if (m_CurAffDB->Fetch() == eBDB_Ok) {
-            aff_id = m_AffDictDB->aff_id;
-            if (aff_id > (unsigned)m_IdCounter.Get()) {
-                m_IdCounter.Set(aff_id);
+            // add new affinity token
+
+            while (1) {
+                aff_id = m_IdCounter.Add(1);
+
+                // make sure it is not there yet
+
+                {{
+                CBDB_CursorGuard cg2(*m_CurAffDB);
+                m_CurAffDB->ReOpen(&trans);
+                m_CurAffDB->SetCondition(CBDB_FileCursor::eEQ);
+                m_CurAffDB->From << aff_id;
+                if (m_CurAffDB->Fetch() == eBDB_Ok) {
+                    aff_id = m_AffDictDB->aff_id;
+                    if (aff_id > (unsigned)m_IdCounter.Get()) {
+                        m_IdCounter.Set(aff_id);
+                    }
+                    continue;
+                }
+                }}
+
+                m_AffDictDB->SetTransaction(&trans);
+
+                m_AffDictDB->aff_id = aff_id;
+                m_AffDictDB->token = aff_token;
+
+                EBDB_ErrCode err = m_AffDictDB->Insert();
+                if (err == eBDB_KeyDup) {
+                    ERR_POST("Duplicate record in affinity dictionary.");
+                    continue;
+                }
+
+                m_AffDict_TokenIdx->SetTransaction(&trans);
+                m_AffDict_TokenIdx->aff_id = aff_id;
+                m_AffDict_TokenIdx->token = aff_token;
+
+                m_AffDict_TokenIdx->UpdateInsert();
+
+                break;
+            } // while
+        } catch (CBDB_ErrnoException& ex) {
+            if (ex.IsDeadLock() || ex.IsNoMem()) {
+                if (++dead_locks < kMaxDeadLocks) {
+                    SleepMilliSec(250);
+                    continue;
+                }
+            } else {
+                throw;
             }
-            continue;
+            ERR_POST("Too many transaction repeats in CAffinityDict::CheckToken.");
+            throw;
         }
-        }}
-
-        m_AffDictDB->SetTransaction(&trans);
-
-        m_AffDictDB->aff_id = aff_id;
-        m_AffDictDB->token = aff_token;
-        
-        EBDB_ErrCode err = m_AffDictDB->Insert();
-        if (err == eBDB_KeyDup) {
-            ERR_POST("Duplicate record in affinity dictionary.");
-            continue;
-        }
-
-        m_AffDict_TokenIdx->SetTransaction(&trans);
-        m_AffDict_TokenIdx->aff_id = aff_id;
-        m_AffDict_TokenIdx->token = aff_token;
-
-        m_AffDict_TokenIdx->UpdateInsert();
-
-        break;            
-    } // while
+        break;
+    }
 
     return aff_id;
-
 }
 
 unsigned CAffinityDict::GetTokenId(const char* aff_token)
@@ -197,35 +216,80 @@ string CAffinityDict::GetAffToken(unsigned aff_id)
     }
 
     m_AffDictDB->token.ToString(token);
-    return token;    
+    return token;
 }
 
 
-void CAffinityDict::RemoveToken(unsigned          aff_id, 
+void CAffinityDict::RemoveToken(unsigned          aff_id,
                                 CBDB_Transaction& trans)
 {
-    CFastMutexGuard guard(m_DbLock);
+    unsigned dead_locks = 0; // dead lock counter
+    while (1) {
+        try {
+            CFastMutexGuard guard(m_DbLock);
 
-    {{
-    CBDB_CursorGuard cg1(*m_CurAffDB);
-    m_CurAffDB->ReOpen(&trans);
-    m_CurAffDB->SetCondition(CBDB_FileCursor::eEQ);
-    m_CurAffDB->From << aff_id;
-    if (m_CurAffDB->Fetch() != eBDB_Ok) {
-        return;
+            {{
+            CBDB_CursorGuard cg1(*m_CurAffDB);
+            m_CurAffDB->ReOpen(&trans);
+            m_CurAffDB->SetCondition(CBDB_FileCursor::eEQ);
+            m_CurAffDB->From << aff_id;
+            if (m_CurAffDB->Fetch() != eBDB_Ok) {
+                return;
+            }
+            }}
+            string token;
+            m_AffDictDB->token.ToString(token);
+
+            m_AffDict_TokenIdx->SetTransaction(&trans);
+            m_AffDictDB->SetTransaction(&trans);
+
+            m_AffDict_TokenIdx->token = token;
+            m_AffDict_TokenIdx->Delete(CBDB_RawFile::eIgnoreError);
+
+            m_AffDictDB->aff_id = aff_id;
+            m_AffDictDB->Delete(CBDB_RawFile::eIgnoreError);
+        } catch (CBDB_ErrnoException& ex) {
+            if (ex.IsDeadLock() || ex.IsNoMem()) {
+                if (++dead_locks < kMaxDeadLocks) {
+                    SleepMilliSec(250);
+                    continue;
+                }
+            } else {
+                throw;
+            }
+            ERR_POST("Too many transaction repeats in CAffinityDict::CheckToken.");
+            throw;
+        }
+        break;
     }
-    }}
-    string token;
-    m_AffDictDB->token.ToString(token);
-    
-    m_AffDict_TokenIdx->SetTransaction(&trans);
-    m_AffDictDB->SetTransaction(&trans);
+}
 
-    m_AffDict_TokenIdx->token = token;
-    m_AffDict_TokenIdx->Delete(CBDB_RawFile::eIgnoreError);
 
-    m_AffDictDB->aff_id = aff_id;
-    m_AffDictDB->Delete(CBDB_RawFile::eIgnoreError);
+const TNSBitVector& 
+CWorkerNodeAffinity::SAffinityInfo::GetBlacklistedJobs(time_t t)
+{
+    if (t >= min_expire_time  &&  ! blacklisted_expirations.empty()) {
+        TExpirationVector new_blacklisted_expirations;
+        bool expired = false;
+        bool inited = false;
+        ITERATE(TExpirationVector, it, blacklisted_expirations) {
+            time_t exp_time = it->first;
+            _ASSERT(exp_time);
+            if (! inited  ||  exp_time < min_expire_time) {
+                min_expire_time = exp_time;
+                inited = true;
+            }
+            if (exp_time <= t) {
+                expired = true;
+                blacklisted_jobs.set(it->second, false);
+            } else {
+                new_blacklisted_expirations.push_back(*it);
+            }
+        }
+        if (expired)
+            blacklisted_expirations = new_blacklisted_expirations;
+    }
+    return blacklisted_jobs;
 }
 
 
@@ -239,7 +303,7 @@ CWorkerNodeAffinity::~CWorkerNodeAffinity()
 {
     try {
         ClearAffinity();
-    } 
+    }
     catch (exception& ex)
     {
         ERR_POST("Error in ~CWorkerNodeAffinity(): " << ex.what());
@@ -254,7 +318,7 @@ void CWorkerNodeAffinity::ClearAffinity()
     m_AffinityMap.erase(m_AffinityMap.begin(), m_AffinityMap.end());
 }
 
-void CWorkerNodeAffinity::ClearAffinity(TNetAddress   addr, 
+void CWorkerNodeAffinity::ClearAffinity(TNetAddress   addr,
                                         const string& client_name)
 {
     TAffMap::iterator it = m_AffinityMap.find(pair<unsigned, string>(addr, client_name));
@@ -265,9 +329,10 @@ void CWorkerNodeAffinity::ClearAffinity(TNetAddress   addr,
     m_AffinityMap.erase(it);
 }
 
-void CWorkerNodeAffinity::AddAffinity(TNetAddress   addr, 
-                                      const string& client_name, 
-                                      unsigned      aff_id)
+void CWorkerNodeAffinity::AddAffinity(TNetAddress   addr,
+                                      const string& client_name,
+                                      unsigned      aff_id,
+                                      time_t        exp_time)
 {
     SAffinityInfo* ai = GetAffinity(addr, client_name);
     if (ai == 0) {
@@ -277,16 +342,24 @@ void CWorkerNodeAffinity::AddAffinity(TNetAddress   addr,
     ai->aff_ids.set(aff_id);
 }
 
-void CWorkerNodeAffinity::BlacklistJob(TNetAddress   addr, 
-                                       const string& client_name, 
-                                       unsigned      job_id)
+void CWorkerNodeAffinity::BlacklistJob(TNetAddress   addr,
+                                       const string& client_name,
+                                       unsigned      job_id,
+                                       time_t        exp_time)
 {
     SAffinityInfo* ai = GetAffinity(addr, client_name);
     if (ai == 0) {
         ai = new SAffinityInfo();
         m_AffinityMap[pair<unsigned, string>(addr, client_name)] = ai;
     }
+    bool was_empty = !ai->blacklisted_jobs.any();
     ai->blacklisted_jobs.set(job_id);
+    if (exp_time) {
+        ai->blacklisted_expirations.push_back(
+            pair<time_t, unsigned>(exp_time, job_id));
+        if (was_empty || exp_time < ai->min_expire_time)
+            ai->min_expire_time = exp_time;
+    }
 }
 
 void CWorkerNodeAffinity::OptimizeMemory()
@@ -295,12 +368,13 @@ void CWorkerNodeAffinity::OptimizeMemory()
         SAffinityInfo* ai = it->second;
         ai->aff_ids.optimize();
         ai->candidate_jobs.optimize();
+        ai->blacklisted_jobs.optimize();
     }
 }
 
 
-CWorkerNodeAffinity::SAffinityInfo* 
-CWorkerNodeAffinity::GetAffinity(TNetAddress   addr, 
+CWorkerNodeAffinity::SAffinityInfo*
+CWorkerNodeAffinity::GetAffinity(TNetAddress   addr,
                                  const string& client_name)
 {
     TAffMap::iterator it = m_AffinityMap.find(
@@ -325,13 +399,11 @@ void CWorkerNodeAffinity::RemoveAffinity(const TNSBitVector& bv)
     }
 }
 
-void CWorkerNodeAffinity::GetAllAssignedAffinity(TNSBitVector* aff_ids)
+void CWorkerNodeAffinity::GetAllAssignedAffinity(TNSBitVector& aff_ids)
 {
-    _ASSERT(aff_ids);
-
     ITERATE(TAffMap, it, m_AffinityMap) {
         SAffinityInfo* ai = it->second;
-        *aff_ids |= ai->aff_ids; 
+        aff_ids |= ai->aff_ids;
     }
 }
 

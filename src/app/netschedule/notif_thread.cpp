@@ -26,7 +26,7 @@
  * Authors:  Anatoliy Kuznetsov
  *
  * File Description: Notification thread.
- *                   
+ *
  *
  */
 
@@ -43,11 +43,11 @@ void CJobNotificationThread::DoJob(void)
 {
     try {
         m_QueueDB.NotifyListeners();
-    } 
+    }
     catch(exception& ex)
     {
         RequestStop();
-        ERR_POST(Error << "Error during notification: " 
+        ERR_POST(Error << "Error during notification: "
                         << ex.what()
                         << " notification thread has been stopped.");
     }

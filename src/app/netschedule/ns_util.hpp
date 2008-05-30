@@ -1,5 +1,5 @@
-#ifndef NETSCHEDULE_VERSION__HPP
-#define NETSCHEDULE_VERSION__HPP
+#ifndef NETSCHEDULE_NS_UTIL__HPP
+#define NETSCHEDULE_NS_UTIL__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,14 +28,17 @@
  *
  * Authors:  Victor Joukov
  *
- * File Description: Network scheduler daemon version
+ * File Description: Utility functions for NetSchedule
  *
  */
-#include <common/ncbi_package_ver.h>
 
-#define NETSCHEDULED_VERSION NCBI_PACKAGE_VERSION
-#define NETSCHEDULED_STORAGE_VERSION  "2.0.0"
-#define NETSCHEDULED_PROTOCOL_VERSION "1.1.0"
+#include <corelib/ncbistl.hpp>
+#include "ns_types.hpp"
 
+BEGIN_NCBI_SCOPE
 
-#endif /* NETSCHEDULE_VERSION__HPP */
+string NS_EncodeBitVector(TNSBitVector& bv);
+TNSBitVector NS_DecodeBitVector(const string& s);
+END_NCBI_SCOPE
+
+#endif /* NETSCHEDULE_NS_UTIL__HPP */

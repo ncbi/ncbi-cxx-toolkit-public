@@ -53,6 +53,7 @@ CNetScheduleExceptionMap::CNetScheduleExceptionMap()
     m_Map["eQuerySyntaxError"]    = CNetScheduleException::eQuerySyntaxError;
     m_Map["eCommandIsNotAllowed"] = CNetScheduleException::eCommandIsNotAllowed;
     m_Map["eObsoleteCommand"]     = CNetScheduleException::eObsoleteCommand;
+    m_Map["eInvalidParameter"]    = CNetScheduleException::eInvalidParameter;
 }
 
 CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)

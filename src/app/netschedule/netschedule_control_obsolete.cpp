@@ -73,12 +73,12 @@ void CNetScheduleControl::Init(void)
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetSchedule control.");
-    
-    arg_desc->AddPositional("hostname", 
+
+    arg_desc->AddPositional("hostname",
                             "NetSchedule host name.", CArgDescriptions::eString);
 
     arg_desc->AddPositional("port",
-                            "Port number.", 
+                            "Port number.",
                             CArgDescriptions::eInteger);
 
     arg_desc->AddFlag("s", "Shutdown server");
@@ -154,7 +154,7 @@ int CNetScheduleControl::Run(void)
             try {
                 nc_client.CheckConnect(kEmptyStr);
                 break;
-            } 
+            }
             catch (exception&) {
                 SleepMilliSec(5 * 1000);
             }
@@ -162,29 +162,29 @@ int CNetScheduleControl::Run(void)
     }
 
     if (args["log"]) {  // logging control
-        
+
         bool on_off = args["log"].AsBoolean();
 
         nc_client.Logging(on_off);
-        NcbiCout << "Logging turned " 
+        NcbiCout << "Logging turned "
                  << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
     }
-    if (args["drop"]) {  
-        string queue = args["drop"].AsString(); 
+    if (args["drop"]) {
+        string queue = args["drop"].AsString();
         CNetScheduleClient_Control drop_client(host, port, queue);
         drop_client.DropQueue();
         NcbiCout << "Queue droppped: " << queue << NcbiEndl;
     }
 
-    if (args["stat"]) {  
-        string queue = args["stat"].AsString(); 
+    if (args["stat"]) {
+        string queue = args["stat"].AsString();
         CNetScheduleClient_Control cl(host, port, queue);
         cl.PrintStatistics(NcbiCout);
         NcbiCout << NcbiEndl;
     }
 
-    if (args["affstat"]) {  
-        string queue_aff = args["affstat"].AsString(); 
+    if (args["affstat"]) {
+        string queue_aff = args["affstat"].AsString();
         string queue, aff;
         NStr::SplitInTwo(queue_aff, ":", queue, aff);
         if (queue.empty()) {
@@ -198,13 +198,13 @@ int CNetScheduleControl::Run(void)
             NcbiCout << CNetScheduleClient::StatusToString(it->first) << ": "
                      << it->second
                      << NcbiEndl;
-        }        
+        }
     }
 
-    if (args["dump"]) {  
-        string param = args["dump"].AsString(); 
+    if (args["dump"]) {
+        string param = args["dump"].AsString();
         string queue, job_key;
-        
+
         NStr::SplitInTwo(param, ":", queue, job_key);
 
         CNetScheduleClient_Control cl(host, port, queue);
@@ -213,9 +213,9 @@ int CNetScheduleControl::Run(void)
     }
 
     if (args["qprint"]) {
-        string param = args["qprint"].AsString(); 
+        string param = args["qprint"].AsString();
         string queue, status_str;
-        
+
         NStr::SplitInTwo(param, ":", queue, status_str);
 
         CNetScheduleClient::EJobStatus status =
@@ -243,12 +243,12 @@ int CNetScheduleControl::Run(void)
 
 
     if (args["monitor"]) {
-        string queue = args["monitor"].AsString(); 
+        string queue = args["monitor"].AsString();
         CNetScheduleClient_Control cl(host, port, queue);
         cl.Monitor(NcbiCout);
     }
 
-    if (args["s"]) {  // shutdown        
+    if (args["s"]) {  // shutdown
         if( !CheckPermission() ) {
             NcbiCout << "Could not shutdown the service: Permission denied" << NcbiEndl;
             return 1;
@@ -257,7 +257,7 @@ int CNetScheduleControl::Run(void)
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
         return 0;
     }
-    if (args["die"]) {  // shutdown        
+    if (args["die"]) {  // shutdown
         if( !CheckPermission() ) {
             NcbiCout << "Could not shutdown the service: Permission denied" << NcbiEndl;
             return 1;
@@ -300,7 +300,7 @@ bool CNetScheduleControl::CheckPermission()
             return true;
     }
     return false;
-        
+
 #endif
     return true;
 }
