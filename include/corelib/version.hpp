@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// Define class for storing version information.
 
-class NCBI_XNCBI_EXPORT CVersionInfo : public CObject
+class NCBI_XNCBI_EXPORT CVersionInfo
 {
 public:
     /// Default constructor
@@ -256,8 +256,8 @@ public:
     string Print(const string& appname, TPrintFlags flags = fPrintAll) const;
 
 private:
-    CRef< CVersionInfo > m_VersionInfo;
-    vector< CRef< CComponentVersionInfo> > m_Components;
+    AutoPtr< CVersionInfo > m_VersionInfo;
+    vector< AutoPtr< CComponentVersionInfo> > m_Components;
 };
 
 

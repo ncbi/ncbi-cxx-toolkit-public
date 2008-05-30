@@ -463,13 +463,13 @@ CVersion::CVersion(const CVersion& version)
 void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,
                                int  patch_level, const string& ver_name)
 {
-    m_VersionInfo.Reset( new CVersionInfo(
+    m_VersionInfo.reset( new CVersionInfo(
         ver_major, ver_minor, patch_level, ver_name) );
 }
 
 void CVersion::SetVersionInfo( const CVersionInfo& version)
 {
-    m_VersionInfo.Reset( new CVersionInfo(version) );
+    m_VersionInfo.reset( new CVersionInfo(version) );
 }
 
 CVersionInfo CVersion::GetVersionInfo(void) const
@@ -481,14 +481,14 @@ void CVersion::AddComponentVersion(
     const string& component_name, int  ver_major, int  ver_minor,
     int  patch_level, const string& ver_name)
 {
-    m_Components.push_back( CRef<CComponentVersionInfo>(
+    m_Components.push_back( AutoPtr<CComponentVersionInfo>(
         new CComponentVersionInfo(component_name, ver_major, ver_minor,
                                   patch_level, ver_name) ));
 }
 
 void CVersion::AddComponentVersion( const CComponentVersionInfo& component)
 {
-    m_Components.push_back( CRef<CComponentVersionInfo>(
+    m_Components.push_back( AutoPtr<CComponentVersionInfo>(
         new CComponentVersionInfo(component) ));
 }
 
@@ -516,7 +516,7 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
         os << appname << ": " << m_VersionInfo->Print() << endl;
     }
     if (flags & fComponents) {
-        ITERATE( vector< CRef< CComponentVersionInfo> >, c, m_Components) {
+        ITERATE( vector< AutoPtr< CComponentVersionInfo> >, c, m_Components) {
             os << ' ' <<  (*c)->Print() << endl;
         }
     }
