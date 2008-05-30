@@ -1139,7 +1139,7 @@ static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
         if (fd < FD_SETSIZE) {
             char _id[32];
             int cloexec = fcntl(sock->sock, F_GETFD, 0);
-            if (cloexec >= 0)
+            if (cloexec > 0  &&  (cloexec & FD_CLOEXEC))
                 fcntl(fd, F_SETFD, cloexec);
             CORE_LOGF_X(111, eLOG_Note,
                         ("%s[SOCK::s_Select]  File descriptor lowered to %d",
