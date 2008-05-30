@@ -101,8 +101,8 @@ public:
         eHandle   ///< As a process handle.
     };
 
-    /// Default wait time between "soft" and "hard" attempts to terminate
-    /// the process.
+    /// Default wait time (milliseconds) between "soft" and "hard"
+    /// attempts to terminate the process.
     static const unsigned long kDefaultKillTimeout;
 
     /// Constructor.
