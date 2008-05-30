@@ -29,6 +29,17 @@
  *
  */
 
+// See ncbi_modify.py for %template insertion for CTypeIterator superclasses
+// and handling of certain problematic CTypeIterator ctors
+
+// CTreeIteratorTmpl::TThis is private, but return type of operator++
+%extend ncbi::CTreeIteratorTmpl {
+    CTreeIteratorTmpl<LevelIterator>& Incr(void) {
+        return ++(*self);
+    }
+}
+%ignore ncbi::CTreeIteratorTmpl::operator++;
+
 // SWIG mishandles template argument defaults for
 // bvector forward declaration in util/bitset/bmfwd.h
 #define BMFWD__H__INCLUDED__   

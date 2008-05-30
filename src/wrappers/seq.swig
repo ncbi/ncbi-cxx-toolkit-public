@@ -767,3 +767,22 @@ public:
     }
 #endif
 }
+
+
+// Instantiate CTypeIterator<> for some particularly important types
+%template(CTypeIterator_CSeq_id)
+    ncbi::CTypeIterator<ncbi::objects::CSeq_id>;
+%template(CTypeIterator_CSeq_loc)
+    ncbi::CTypeIterator<ncbi::objects::CSeq_loc>;
+%template(CTypeIterator_CSeq_annot)
+    ncbi::CTypeIterator<ncbi::objects::CSeq_annot>;
+%template(CTypeIterator_CSeq_align)
+    ncbi::CTypeIterator<ncbi::objects::CSeq_align>;
+%template(CTypeIterator_CSeq_feat)
+    ncbi::CTypeIterator<ncbi::objects::CSeq_feat>;
+%template(CTypeIterator_CBioseq)
+    ncbi::CTypeIterator<ncbi::objects::CBioseq>;
+%template(CTypeIterator_CBioseq_set)
+    ncbi::CTypeIterator<ncbi::objects::CBioseq_set>;
+%template(CTypeIterator_CSeq_entry)
+    ncbi::CTypeIterator<ncbi::objects::CSeq_entry>;

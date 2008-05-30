@@ -172,4 +172,42 @@ def Modify(s):
         + begin_subclasses
     s = ReplaceIf(s, begin_subclasses, '', replacement, 'bdb/bdb_types.hpp')
 
+    # Templates in hierarchy of superclasses of CTypeIterator
+    after = '\ntypedef CTreeIteratorTmpl<CConstTreeLevelIterator> ' \
+        'CTreeConstIterator;\n'
+    replacement = '\n%template(CTreeIteratorTmpl_CTreeLevelIterator) ' \
+        'ncbi::CTreeIteratorTmpl<CTreeLevelIterator>;\n' \
+        + after
+    s = ReplaceIf(s, after, '', replacement, 'serial/iterator.hpp')
+    after = '''
+/// Template class for iteration on objects of class C
+template<class C, class TypeGetter = C>
+class CTypeIterator : public CTypeIteratorBase<CTreeIterator>
+'''
+    replacement = '\n%template(CTypeIteratorBase_CTreeIterator) ' \
+        'ncbi::CTypeIteratorBase<CTreeIterator>;\n' \
+        + after
+    s = ReplaceIf(s, after, '', replacement, 'serial/iterator.hpp')
+
+    # Some CTypeIterator ctors take TBeginInfo, an inaccessible typedef
+    orig_ctors = '''
+    CTypeIterator(const TBeginInfo& beginInfo)
+        : CParent(TypeGetter::GetTypeInfo(), beginInfo)
+        {
+        }
+    CTypeIterator(const TBeginInfo& beginInfo, const string& filter)
+        : CParent(TypeGetter::GetTypeInfo(), beginInfo, filter)
+        {
+        }'''
+    new_ctors = '''
+    //CTypeIterator(const TBeginInfo& beginInfo)
+    //    : CParent(TypeGetter::GetTypeInfo(), beginInfo)
+    //    {
+    //    }
+    //CTypeIterator(const TBeginInfo& beginInfo, const string& filter)
+    //    : CParent(TypeGetter::GetTypeInfo(), beginInfo, filter)
+    //    {
+    //    }'''
+    s = ReplaceIf(s, orig_ctors, '', new_ctors, 'serial/iterator.hpp')
+
     return s
