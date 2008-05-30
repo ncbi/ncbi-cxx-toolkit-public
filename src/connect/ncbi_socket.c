@@ -1129,9 +1129,11 @@ static EIO_Status s_Status(SOCK sock, EIO_Event direction)
 }
 
 
-#if !defined(NCBI_OS_MSWIN) && defined(FD_SETSIZE)
+#if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
+/*ARGSUSED*/
 static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
 {
+#  ifndef NCBI_OS_MAC
     int fd = fcntl(sock->sock, F_DUPFD, STDERR_FILENO + 1);
     if (fd >= 0) {
         if (fd < FD_SETSIZE) {
@@ -1148,6 +1150,7 @@ static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
         }
         close(fd);
     }
+#  endif /*!NCBI_OS_MAC*/
     return 0/*failure*/;
 }
 #endif /*!NCBI_MSWIN && FD_SETSIZE*/
@@ -1231,7 +1234,7 @@ static EIO_Status s_Select(size_t                n,
             if (polls[i].event  &&
                 (EIO_Event)(polls[i].event | eIO_ReadWrite) == eIO_ReadWrite) {
                 TSOCK_Handle fd = polls[i].sock->sock;
-#if !defined(NCBI_OS_MSWIN) && defined(FD_SETSIZE)
+#if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
                 if (fd >= FD_SETSIZE) {
                     if (!x_TryLowerSockFileno(polls[i].sock)) {
                         polls[i].revent = eIO_Close;
