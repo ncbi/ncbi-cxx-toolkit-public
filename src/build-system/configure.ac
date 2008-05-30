@@ -1947,11 +1947,11 @@ case "$compiler" in
    FORBID_UNDEF='-error_unresolved'
    ;;
  WorkShop* )
-   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG -G -h \$@ -o"
+   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG -G -h \$(XDLL) -o"
    FORBID_UNDEF="-z defs"
    ;;
  KCC )
-   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG --soname \$@ -o"
+   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG --soname \$(XDLL) -o"
    FORBID_UNDEF="-z defs"
    ;;
  VisualAge )
