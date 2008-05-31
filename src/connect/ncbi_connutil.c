@@ -992,6 +992,10 @@ extern SOCK URL_Connect
 
     buf = 0;
     errno = 0;
+    if (port != DEF_CONN_PORT)
+        sprintf(buffer, ":%hu", port);
+    else
+        *buffer = '\0';
     /* compose HTTP header */
     if (/* {POST|GET} <path>?<args> HTTP/1.0\r\n */
         !BUF_Write(&buf, x_req_r, strlen(x_req_r))            ||
@@ -1001,9 +1005,10 @@ extern SOCK URL_Connect
               !BUF_Write(&buf, x_args,  strlen(x_args))))     ||
         !BUF_Write(&buf,       X_REQ_E, sizeof(X_REQ_E) - 1)  ||
 
-        /* Host: host\r\n */
+        /* Host: host[:port]\r\n */
         !BUF_Write(&buf, X_HOST, sizeof(X_HOST) - 1)          ||
         !BUF_Write(&buf, host,   strlen(host))                ||
+        !BUF_Write(&buf, buffer, strlen(buffer))              ||
         !BUF_Write(&buf, "\r\n", 2)                           ||
 
         /* <user_header> */
