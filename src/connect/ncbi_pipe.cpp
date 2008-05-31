@@ -1150,7 +1150,7 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 
         if ( timeout ) {
             // If timeout is not infinite
-            x_timeout = NcbiTImeoutToMs(timeout);
+            x_timeout = NcbiTimeoutToMs(timeout);
             x_options = WNOHANG;
         } else {
             x_timeout = 0/*irrelevant*/;
