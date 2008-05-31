@@ -455,7 +455,7 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
         TNCBI_Size hsize = ((dsize + size + heap->chunk - 1)
                             / heap->chunk) * heap->chunk;
         SHEAP_HeapBlock* base = (SHEAP_HeapBlock*)
-            heap->resize(heap->base, (size_t) hsize, heap->arg);
+            heap->resize(heap->base, hsize, heap->arg);
         if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
             CORE_LOGF_X(9, eLOG_Warning,
                         ("Heap Alloc%s: Unaligned base (0x%08lX)",
@@ -819,7 +819,7 @@ HEAP HEAP_Trim(HEAP heap)
 
     if (heap->resize) {
         SHEAP_HeapBlock* base = (SHEAP_HeapBlock*)
-            heap->resize(heap->base, (size_t) hsize, heap->arg);
+            heap->resize(heap->base, hsize, heap->arg);
         if (!hsize)
             assert(!base);
         else if (!base)

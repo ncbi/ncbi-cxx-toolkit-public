@@ -390,7 +390,7 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
                    "CConn_MemoryStream::ToVector(NULL) is not allowed");
     }
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
-    streamsize size = sb ? (size_t)(tellp() - tellg()) : 0;
+    streamsize size = sb ? (streamsize)(tellp() - tellg()) : 0;
     vec->resize(size);
     if (sb) {
         streamsize s = sb->sgetn(&(*vec)[0], size);
