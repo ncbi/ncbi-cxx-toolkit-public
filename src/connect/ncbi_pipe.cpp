@@ -405,8 +405,8 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 
     // Is the process still running?
     if (status == eIO_Timeout  &&  !IS_SET(m_Flags, CPipe::fKeepOnClose)) {
-        unsigned long x_timeout = !timeout ? CProcess::kDefaultKillTimeout :
-                                             timeout->sec * 1000 + (timeout->usec + 500) / 1000;
+        unsigned long x_timeout =
+            timeout ? NcbiTimeoutToMs(timeout) : CProcess::kDefaultKillTimeout;
         status = eIO_Success;
         if ( IS_SET(m_Flags, CPipe::fKillOnClose) ) {
             bool killed;
@@ -1150,7 +1150,7 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 
         if ( timeout ) {
             // If timeout is not infinite
-            x_timeout = timeout->sec * 1000 + (timeout->usec + 500) / 1000;
+            x_timeout = NcbiTImeoutToMs(timeout);
             x_options = WNOHANG;
         } else {
             x_timeout = 0/*irrelevant*/;
@@ -1192,8 +1192,8 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 
     // Is the process still running?
     if (status == eIO_Timeout  &&  !IS_SET(m_Flags, CPipe::fKeepOnClose)) {
-        unsigned long x_timeout = !timeout ? CProcess::kDefaultKillTimeout :
-                                             timeout->sec * 1000 + (timeout->usec + 500) / 1000;
+        unsigned long x_timeout = 
+            timeout ? NcbiTimeoutToMs(timeout) : CProcess::kDefaultKillTimeout;
         status = eIO_Success;
         if ( IS_SET(m_Flags, CPipe::fKillOnClose) ) {
             bool killed;
@@ -1746,11 +1746,12 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                                CPipe::IProcessWatcher* watcher,
                                const STimeout*         kill_timeout)
 {
-    STimeout ktm = { CProcess::kDefaultKillTimeout / 1000,
-                    (CProcess::kDefaultKillTimeout % 1000) * 1000 };
-    if (kill_timeout) {
+    STimeout ktm;
+
+    if (kill_timeout)
         ktm = *kill_timeout;
-    }
+    else
+        NcbiMsToTimeout(&ktm, CProcess::kDefaultKillTimeout);
 
     CPipe pipe;
     EIO_Status st = pipe.Open(cmd, args, 
@@ -1826,7 +1827,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                 }
 
             }
-            if (rmask & fStdErr  &&  !err_done) {
+            if ((rmask & fStdErr)  &&  !err_done) {
                 rstatus = pipe.Read(buf, buf_size, &bytes_read, eStdErr);
                 err.write(buf, bytes_read);
                 if (rstatus != eIO_Success) {

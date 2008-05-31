@@ -147,9 +147,6 @@ public:
     EIO_Status Status(EIO_Event direction) const;
 
 private:
-    long TimeoutToMSec(const STimeout* timeout) const;
-
-private:
     HANDLE      m_Pipe;         // pipe I/O handle
     string      m_PipeName;     // pipe name 
     size_t      m_PipeBufSize;  // pipe buffer size
@@ -198,7 +195,8 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         // NOTE: We do not use here a WaitNamedPipe() because it works
         //       incorrect in some cases.
 
-        DWORD x_timeout = TimeoutToMSec(timeout);
+        DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
+
         do {
             // Open existing pipe
             m_Pipe = CreateFile(m_PipeName.c_str(),
@@ -281,7 +279,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 
     // Wait for the client to connect, or time out.
     // NOTE: The function WaitForSingleObject() do not work with pipes.
-    DWORD x_timeout = TimeoutToMSec(timeout);
+    DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
     try {
         if (m_Pipe == INVALID_HANDLE_VALUE) {
@@ -375,7 +373,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             return m_ReadStatus;
         }
 
-        DWORD x_timeout   = TimeoutToMSec(timeout);
+        DWORD x_timeout   = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_avail = 0;
 
         // Wait a data from the pipe with timeout.
@@ -444,7 +442,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
             return eIO_Success;
         }
 
-        DWORD x_timeout     = TimeoutToMSec(timeout);
+        DWORD x_timeout     = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_written = 0;
 
         // Wait a data from the pipe with timeout.
@@ -505,13 +503,6 @@ EIO_Status CNamedPipeHandle::Status(EIO_Event direction) const
         break;
     }
     return eIO_InvalidArg;
-}
-
-
-// Convert STimeout value to number of milliseconds
-long CNamedPipeHandle::TimeoutToMSec(const STimeout* timeout) const
-{
-    return timeout ? timeout->sec * 1000 + timeout->usec / 1000 : INFINITE;
 }
 
 
