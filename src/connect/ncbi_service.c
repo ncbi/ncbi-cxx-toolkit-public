@@ -723,7 +723,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
  * n >= 2
  * Hence, the formula below always yields a value in the range [0.0 .. 1.0].
  */
-double SERV_Preference(double pref, double gap, unsigned int n)
+double SERV_Preference(double pref, double gap, size_t n)
 {
     double spread;
     assert(0.0 <= pref && pref <= 1.0);
@@ -732,7 +732,7 @@ double SERV_Preference(double pref, double gap, unsigned int n)
     if (gap >= pref)
         return gap;
     spread = 14.0/(n + 12.0);
-    if (gap >= spread*(1.0/(double) n))
+    if (gap >= spread/((double) n))
         return pref;
     else
         return 2.0/spread*gap*pref;

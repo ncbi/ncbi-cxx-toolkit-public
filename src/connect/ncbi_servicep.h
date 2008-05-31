@@ -195,9 +195,9 @@ extern NCBI_XCONNECT_EXPORT char* SERV_ServiceName(const char* service);
  * acceptable stretch for the gap (the number of candidates is n).
  */
 extern NCBI_XCONNECT_EXPORT double SERV_Preference
-(double       pref,
- double       gap,
- unsigned int n
+(double pref,
+ double gap,
+ size_t n
  );
 
 
