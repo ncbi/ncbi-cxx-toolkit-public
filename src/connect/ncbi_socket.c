@@ -3043,7 +3043,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     /* create new SOCK structure */
 #ifdef NCBI_OS_UNIX
     if ( lsock->path[0] )
-        addrlen = strlen(lsock->path);
+        addrlen = (SOCK_socklen_t) strlen(lsock->path);
     else
 #endif /*NCBI_OS_UNIX*/
         addrlen = 0;
