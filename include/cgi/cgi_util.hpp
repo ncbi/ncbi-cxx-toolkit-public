@@ -35,8 +35,6 @@
 /// CGI related utility classes and functions.
 ///
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/version.hpp>
 

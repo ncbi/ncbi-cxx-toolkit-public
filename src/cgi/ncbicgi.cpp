@@ -37,7 +37,6 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/stream_utils.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/request_ctx.hpp>
 
