@@ -49,7 +49,7 @@ ASK_REBUILD = \
     fi
 
 SKIP_REBUILD = true
-ALL          = .$(XAPP).stamp
+ALL          = $(XAPP)
 @IF_REBUILDING_LIBS@ SKIP_REBUILD = false
 @IF_REBUILDING_LIBS@ ALL          = rebuild-libs
 @IF_REBUILDING_CONDITIONALLY@ SKIP_REBUILD = ($(ASK_REBUILD))
@@ -63,7 +63,8 @@ rebuild-libs:
 	   (cd "$$builddir" && $(MAKE) $(MFLAGS) libs srcdir="$$srcdir") ; \
 	done
 
-$(XAPP) .$(XAPP).stamp: $(XOBJ) $(XLIBDEP)
+$(XAPP): $(XOBJ) $(XLIBDEP)
+	@-$(RM) .$(XAPP).stamp
 	$(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
 	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)
@@ -71,7 +72,6 @@ $(XAPP) .$(XAPP).stamp: $(XOBJ) $(XLIBDEP)
 	    echo $(BINCOPY) $(XAPP) $(bindir) && \
 	    $(BINCOPY) $(XAPP) $(bindir); \
 	fi
-	@touch .$(XAPP).stamp
 
 
 ### Standard targets (non-recursive)
@@ -80,15 +80,18 @@ $(XAPP) .$(XAPP).stamp: $(XOBJ) $(XLIBDEP)
 MAKEFILE = $(builddir)/Makefile.app.tmpl
 
 all: $(ALL)
-	@test "$(ALL)" = ".$(XAPP).stamp" || \
-	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) .$(XAPP).stamp
+	@test "$(ALL)" = "$(XAPP)"  ||  $(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XAPP)
 
-clean: clean-common
-	-$(RM) $(XOBJ)
+unlink:
 	-$(RM) $(XAPP) .$(XAPP).stamp
+
+clean: clean-common unlink
+	-$(RM) $(XOBJ)
 	-$(RM) core
 
 purge: clean
 	-if [ '$(BINCOPY)' != '@:' -a -d $(bindir) -a -w $(bindir) -a $(srcdir) != . ]; then \
 	    $(RM) $(bindir)/$(XAPP); \
 	fi
+
+.PHONY: default_rule all unlink clean purge

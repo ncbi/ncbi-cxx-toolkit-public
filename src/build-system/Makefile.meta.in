@@ -42,6 +42,9 @@ NOTK_KET = ;; esac
 # Non-redundant flags (avoid --jobserver-fds=* proliferation)
 MFLAGS_NR = $(MFLAGS:--jobserver-fds%=)
 
+deactivate = unlink
+@IF_DEACTIVATING@ deactivate = deactivate
+
 # Factored out merely to avoid duplication
 MAKE_USR = $(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(abs_srcdir)" $(MFLAGS_NR)
 USRP_BRA = \
@@ -112,7 +115,7 @@ LIBP_BRA = \
      if NCBICXX_TESTING_REQS=1 $(MAKE_LIB) -q requirements ; then \
         $(RWL) -base "make_$$i" $(MAKE_LIB)
 LIBP_KET = && continue ; \
-        @IF_DEACTIVATING@$(MAKE_LIB) deactivate ; \
+        $(MAKE_LIB) $(deactivate) ; \
         $(NOTK_BRA) exit 2 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
@@ -132,7 +135,9 @@ APPP_BRA = \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
      if NCBICXX_TESTING_REQS=1 $(MAKE_APP) -q requirements ; then \
         $(RWL) -base "make_$$i" $(MAKE_APP)
-APPP_KET = || $(NOTK_BRA) exit 3 $(NOTK_KET) ; \
+APPP_KET = && continue ; \
+        $(MAKE_APP) unlink ; \
+        $(NOTK_BRA) exit 3 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
      fi; \

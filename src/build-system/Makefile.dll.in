@@ -58,8 +58,8 @@ XDLL_LIBS     = @DLL_LIB_SETTING@
 XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(XDLL_LIBS:%=@lib_l_pre@%@lib_l_ext@)
 XDLL_LIBDEP   = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
 
-$(XDLL) .$(XDLL).stamp: $(XDLLOBJ) $(XDLL_LIBDEP)
-	-$(RM) $(XDLL)
+$(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
+	-$(RM) $(XDLL) .$(XDLL).stamp
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
 	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
@@ -94,25 +94,28 @@ $(XDLL) .$(XDLL).stamp: $(XDLLOBJ) $(XDLL_LIBDEP)
 	        $(LN_S) $(XDLLDEP) $(XDLLDEP_LINK); \
 	    fi; \
 	fi
-	@touch .$(XDLL).stamp
 
 
 ### Standard targets
 
-all: .$(XDLL).stamp export-headers
+all: $(XDLL) export-headers
+
+unlink: unlink-dll
+
+unlink-dll:
+	-$(RM) $(XDLL) $(XDLLDEP) .$(XDLL).stamp
+	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 
 clean: clean-common clean-dll
 
 clean-dll:
 	-$(RM) $(XDLLOBJ)
-	-$(RM) $(XDLL) $(XDLLDEP) .$(XDLL).stamp
-	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 
 purge: clean purge-headers deactivate
 
 deactivate: deactivate-dll
 
-deactivate-dll:
+deactivate-dll: unlink-dll
 	-if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
 	    $(RM) $(libdir)/$(XDLL) $(libdir)/$(XDLL_LINK) \
 	       $(status_dir)/$(XDLLDEP) $(status_dir)/$(XDLLDEP_LINK); \
@@ -120,4 +123,5 @@ deactivate-dll:
 	     $(RM) $(libdir)/$(XDLL_LOADABLE) $(libdir)/$(XDLL_LOADABLE_LINK); \
 	fi
 
-.PHONY: default_rule all clean clean-dll purge deactivate deactivate-dll
+.PHONY: default_rule all unlink unlink-dll clean clean-dll purge 
+.PHONY: deactivate deactivate-dll

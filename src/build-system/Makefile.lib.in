@@ -40,8 +40,8 @@ XLIBLINK    = @lib_pre@$(LIB)-static@lib_ext@
 XLIBDEPLINK = .$(LIB)-static.dep
 XOLD_DLLS   = $(LIB:%=@lib_pre@%@dll_ext@) $(LIB:%=@lib_pre@%@loadable_ext@)
 
-$(XLIB) .$(XLIB).stamp: $(XLIBOBJ)
-	-$(RM) $(XLIB)
+$(XLIB): $(XLIBOBJ)
+	-$(RM) $(XLIB) .$(XLIB).stamp
 	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XOBJ) | @TSORT@` $(AR_FILTER)
 	@$(RANLIB) $(XLIB)
 	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
@@ -61,26 +61,30 @@ $(XLIB) .$(XLIB).stamp: $(XLIBOBJ)
 	        $(LN_S) $(XLIBDEP) $(XLIBDEPLINK); \
 	    fi; \
 	fi
-	@touch .$(XLIB).stamp
 
 ### Standard targets
 
-all: .$(XLIB).stamp export-headers
+all: $(XLIB) export-headers
+
+unlink: unlink-lib
+
+unlink-lib:
+	-$(RM) $(XLIB) $(XLIBDEP) .$(XLIB).stamp
 
 clean: clean-common clean-lib
 
-clean-lib:
+clean-lib: unlink-lib
 	-$(RM) $(XLIBOBJ)
-	-$(RM) $(XLIB) $(XLIBDEP) .$(XLIB).stamp
 
 purge: clean purge-headers deactivate
 
 deactivate: deactivate-lib
 
-deactivate-lib:
+deactivate-lib: unlink-lib
 	-if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
 	    $(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) \
 	        $(libdir)/$(XLIBLINK) $(status_dir)/$(XLIBDEPLINK); \
 	fi
 
-.PHONY: default_rule all clean clean-lib purge deactivate deactivate-lib
+.PHONY: default_rule all unlink unlink-lib clean clean-lib purge
+.PHONY: deactivate deactivate-lib
