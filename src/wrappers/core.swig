@@ -247,7 +247,6 @@ util/regexp.hpp
 util/request_control.hpp
 util/resize_iter.hpp
 util/resource_pool.hpp
-util/rwstream.hpp
 util/scheduler.hpp
 util/sgml_entity.hpp
 util/simple_buffer.hpp
