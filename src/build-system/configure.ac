@@ -5536,8 +5536,8 @@ case "$with_lib_rebuilds" in
 esac
 
 case "$with_deactivation" in
-  no) IF_DEACTIVATING=": " ;;
-  * ) IF_DEACTIVATING=""   ;;
+  no) IF_DEACTIVATING="#" ;;
+  * ) IF_DEACTIVATING=""  ;;
 esac
 
 case "$with_makefile_auto_update" in
