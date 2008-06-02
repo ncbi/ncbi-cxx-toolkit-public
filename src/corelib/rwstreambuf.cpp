@@ -83,7 +83,8 @@ CRWStreambuf::CRWStreambuf(IReaderWriter*       rw,
                            CT_CHAR_TYPE*        s,
                            CRWStreambuf::TFlags f)
     : m_Flags(f), m_Reader(rw), m_Writer(rw), m_pBuf(0),
-      x_GPos((CT_OFF_TYPE) 0), x_PPos((CT_OFF_TYPE) 0)
+      x_GPos((CT_OFF_TYPE) 0), x_PPos((CT_OFF_TYPE) 0),
+      x_Err(false), x_ErrPos((CT_OFF_TYPE) 0)
 {
     setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufSize << 1);
 }
@@ -95,7 +96,8 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
                            CT_CHAR_TYPE*        s,
                            CRWStreambuf::TFlags f)
     : m_Flags(f), m_Reader(r), m_Writer(w), m_pBuf(0),
-      x_GPos((CT_OFF_TYPE) 0), x_PPos((CT_OFF_TYPE) 0)
+      x_GPos((CT_OFF_TYPE) 0), x_PPos((CT_OFF_TYPE) 0),
+      x_Err(false), x_ErrPos((CT_OFF_TYPE) 0)
 {
     setbuf(s  &&  n ? s : 0,
            n ? n : kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0));
@@ -106,7 +108,9 @@ CRWStreambuf::~CRWStreambuf()
 {
     // Flush only if data pending
     if (pbase()  &&  pptr() > pbase()) {
-        sync();
+        if (!x_Err  ||  x_ErrPos != x_GetPPos()) {
+            sync();
+        }
     }
     setg(0, 0, 0);
     setp(0, 0);
@@ -191,13 +195,17 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
             }
             RWSTREAMBUF_CATCH_ALL(5, "CRWStreambuf::overflow():"
                                   " IWriter::Write()", n_written = 0);
-            if ( !n_written )
+            if ( !n_written ) {
+                x_Err    = true;
+                x_ErrPos = x_GetPPos();
                 return CT_EOF;
+            }
             // update buffer content (get rid of the data just sent)
             _ASSERT(n_written <= n_write);
             memmove(pbase(), pbase() + n_written, n_write - n_written);
             x_PPos += (CT_OFF_TYPE) n_written;
             pbump(-int(n_written));
+            x_Err   = false;
         }
 
         // store char
@@ -213,8 +221,14 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         RWSTREAMBUF_CATCH_ALL(6, "CRWStreambuf::overflow(): IWriter::Write(1)",
                               n_written = 0);
         _ASSERT(n_written <= 1);
-        x_PPos += (CT_OFF_TYPE) n_written;
-        return n_written == 1 ? c : CT_EOF;
+        if ( !n_written ) {
+            x_Err    = true;
+            x_ErrPos = x_GetPPos();
+            return CT_EOF;
+        }
+        x_PPos += (CT_OFF_TYPE) 1;
+        x_Err   = false;
+        return c;
     }
 
     _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
@@ -224,11 +238,14 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         case eRW_Eof:
             break;
         default:
+            x_Err = false;
             return CT_NOT_EOF(CT_EOF);
         }
     }
     RWSTREAMBUF_CATCH_ALL(7, "CRWStreambuf::overflow(): IWriter::Flush()",
                           (void) 0);
+    x_Err    = true;
+    x_ErrPos = x_GetPPos();
     return CT_EOF;
 }
 
@@ -253,24 +270,29 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                 // Entirely fits into the buffer not causing an overflow
                 memcpy(pptr(), buf, n);
                 pbump(int(n));
+                x_Err = false;
                 return (streamsize)(n_written + n);
             }
             if (result != eRW_Success)
                 break;
 
             size_t x_write = (size_t)(pptr() - pbase());
-            if (x_write) {
+            if ( x_write ) {
                 try {
                     result = m_Writer->Write(pbase(), x_write, &x_written);
                 }
                 RWSTREAMBUF_CATCH_ALL(8, "CRWStreambuf::xsputn():"
                                       " IWriter::Write()", x_written = 0);
-                if (!x_written)
+                if ( !x_written ) {
+                    x_Err    = true;
+                    x_ErrPos = x_GetPPos();
                     break;
+                }
                 _ASSERT(x_written <= x_write);
                 memmove(pbase(), pbase() + x_written, x_write - x_written);
                 x_PPos += (CT_OFF_TYPE) x_written;
                 pbump(-int(x_written));
+                x_Err   = false;
                 continue;
             }
         }
@@ -281,7 +303,9 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         }
         RWSTREAMBUF_CATCH_ALL(9, "CRWStreambuf::xsputn(): IWriter::Write()",
                               x_written = 0);
-        if (!x_written) {
+        if ( !x_written ) {
+            x_Err    = true;
+            x_ErrPos = x_GetPPos();
             if (!pbase())
                 return (streamsize) n_written;
             break;
@@ -290,6 +314,7 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         x_PPos    += (CT_OFF_TYPE) x_written;
         n_written += x_written;
         n         -= x_written;
+        x_Err      = false;
         if (!n  ||  !pbase())
             return (streamsize) n_written;
         buf       += x_written;
@@ -331,7 +356,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     }
     RWSTREAMBUF_CATCH_ALL(10, "CRWStreambuf::underflow(): IReader::Read()",
                           n_read = 0);
-    if (!n_read)
+    if ( !n_read )
         return CT_EOF;
     _ASSERT(n_read <= (size_t) m_BufSize);
 
@@ -373,7 +398,7 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         }
         RWSTREAMBUF_CATCH_ALL(11, "CRWStreambuf::xsgetn(): IReader::Read()",
                               x_read = 0);
-        if (!x_read)
+        if ( !x_read )
             break;
         _ASSERT(x_read <= to_read);
         x_GPos += (CT_OFF_TYPE) x_read;
@@ -439,9 +464,9 @@ CT_POS_TYPE CRWStreambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
     if (off == 0  &&  whence == IOS_BASE::cur) {
         switch (which) {
         case IOS_BASE::out:
-            return x_PPos + (CT_OFF_TYPE)(pptr() ? pptr() - pbase() : 0);
+            return x_GetPPos();
         case IOS_BASE::in:
-            return x_GPos - (CT_OFF_TYPE)(gptr() ? egptr() - gptr() : 0);
+            return x_GetGPos();
         default:
             break;
         }
@@ -459,12 +484,11 @@ ERW_Result CStreamReader::Read(void*   buf,
                                size_t  count,
                                size_t* bytes_read)
 {
-    m_Stream->read(static_cast<char*>(buf), count);
-    size_t r = m_Stream->gcount();
+    streamsize r = m_Stream->rdbuf()->sgetn(static_cast<char*>(buf), count);
     if ( bytes_read ) {
-        *bytes_read = r;
+        *bytes_read = (size_t) r;
     }
-    return r ? eRW_Success: m_Stream->eof() ? eRW_Eof: eRW_Error;
+    return r ? eRW_Success : eRW_Eof;
 }
 
 

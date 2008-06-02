@@ -54,9 +54,8 @@ BEGIN_NCBI_SCOPE
 /// Reader-based stream; @sa IReader
 ///
 /// @param buf_size
-///     specifies the number bytes for internal I/O buffer,
-///     with half used for reading and the other half for writing
-///     by underlying stream buffer CRWStreambuf;
+///     specifies the number bytes for internal I/O buffer, entirely used
+///     for reading by the underlying stream buffer CRWStreambuf;
 ///     0 causes to create the buffer of some default size.
 ///
 /// @param buf
@@ -68,6 +67,8 @@ BEGIN_NCBI_SCOPE
 ///     and whether excpetions cause logging (or caught silently).
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
+///
+/// @sa IWStream, IRWStream
 
 class NCBI_XNCBI_EXPORT CRStream : public CNcbiIstream
 {
@@ -94,7 +95,23 @@ private:
 
 
 /// Writer-based stream; @sa IWriter
-/// @sa IRStream
+///
+/// @param buf_size
+///     specifies the number bytes for internal I/O buffer, entirely used
+///     for writing by the underlying stream buffer CRWStreambuf;
+///     0 causes to create the buffer of some default size.
+///
+/// @param buf
+///     may specify the buffer location (if 0, an internal storage gets
+///     allocated and later freed upon stream destruction).
+///
+/// @param flags
+///     controls whether IWriter is destroyed upon stream destruction,
+///     and whether excpetions cause logging (or caught silently).
+///
+/// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
+///
+/// @sa IRStream, IRWStream
 
 class NCBI_XNCBI_EXPORT CWStream : public CNcbiOstream
 {
@@ -121,7 +138,24 @@ private:
 
 
 /// Reader-writer based stream; @sa IReaderWriter
-/// @sa IRStream
+///
+/// @param buf_size
+///     specifies the number bytes for internal I/O buffer,
+///     with half used for reading and the other half for writing
+///     by underlying stream buffer CRWStreambuf;
+///     0 causes to create the buffer of some default size.
+///
+/// @param buf
+///     may specify the buffer location (if 0, an internal storage gets
+///     allocated and later freed upon stream destruction).
+///
+/// @param flags
+///     controls whether IReader is destroyed upon stream destruction,
+///     and whether excpetions cause logging (or caught silently).
+///
+/// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
+///
+/// @sa IRStream, IWStream
 
 class NCBI_XNCBI_EXPORT CRWStream : public CNcbiIostream
 {

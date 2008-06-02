@@ -99,6 +99,12 @@ protected:
                                 IOS_BASE::openmode which =
                                 IOS_BASE::in | IOS_BASE::out);
 protected:
+    CT_POS_TYPE    x_GetGPos(void)
+    { return x_GPos - (CT_OFF_TYPE)(gptr() ? egptr() - gptr() : 0); }
+    CT_POS_TYPE    x_GetPPos(void)
+    { return x_GPos - (CT_OFF_TYPE)(gptr() ? egptr() - gptr() : 0); }
+
+protected:
     TFlags         m_Flags;
 
     IReader*       m_Reader;
@@ -111,8 +117,11 @@ protected:
     CT_CHAR_TYPE*  m_pBuf;
     CT_CHAR_TYPE   x_Buf;
 
-    CT_POS_TYPE    x_GPos;      // get position [for istream.tellg()]
-    CT_POS_TYPE    x_PPos;      // put position [for ostream.tellp()]
+    CT_POS_TYPE    x_GPos;      //< get position [for istream.tellg()]
+    CT_POS_TYPE    x_PPos;      //< put position [for ostream.tellp()]
+
+    bool           x_Err;       //< whether there was a write error
+    CT_POS_TYPE    x_ErrPos;    //< position of write error (if x_Error)
 };
 
 
