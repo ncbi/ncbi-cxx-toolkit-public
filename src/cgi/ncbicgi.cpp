@@ -72,8 +72,6 @@ BEGIN_NCBI_SCOPE
 
 const char* kPageInfoCookie = "ncbi_st";
 const char* kPageHitId      = "ncbi_phid";
-const char* kPageHitIdRef   = "ncbi_phid_ref";
-const char* kPageDesignId   = "ncbi_pdid";
 
 
 ///////////////////////////////////////////////////////
@@ -902,7 +900,7 @@ void CCgiRequest::x_Init
     x_ProcessInputStream(flags, istr, ifd);
 
     string phid;
-    CRequestContext rctx = GetDiagContext().GetRequestContext();
+    CRequestContext& rctx = CDiagContext::GetRequestContext();
     if ((flags & fIgnorePageHitId) == 0) {
         // Check if pageviewid is present. If not, generate one.
         TCgiEntries::iterator phid_it = m_Entries.find(kPageHitId);
@@ -915,15 +913,13 @@ void CCgiRequest::x_Init
         }
     }
 
-    // Check if ncbi_st cookie is set, save page info to diag context
+    // Check if ncbi_st cookie is set
     const CCgiCookie* st = m_Cookies.Find(kPageInfoCookie);
     CCgiArgs pg_info;
     if ( st ) {
         pg_info.SetQueryString(st->GetValue());
     }
     pg_info.SetValue(kPageHitId, phid);
-    rctx.SetProperty(kPageInfoCookie,
-        pg_info.GetQueryString(CCgiArgs::eAmp_Char));
     // Log ncbi_st values
     CDiagContext_Extra extra = GetDiagContext().Extra();
     // extra.SetType("NCBICGI");
@@ -974,7 +970,7 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
     if ( client.empty() ) {
         client = x_GetPropertyByName(GetPropertyName(eCgi_RemoteAddr));
     }
-    GetDiagContext().GetRequestContext().SetClientIP(client);
+    CDiagContext::GetRequestContext().SetClientIP(client);
 }
 
 
