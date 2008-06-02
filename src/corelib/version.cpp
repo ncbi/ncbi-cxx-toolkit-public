@@ -38,10 +38,6 @@
 BEGIN_NCBI_SCOPE
 
 
-const CVersionInfo CVersionInfo::kAny(0, 0, 0);
-const CVersionInfo CVersionInfo::kLatest(-1, -1, -1);
-
-
 CVersionInfo::CVersionInfo(void) 
     : m_Major(-1),
       m_Minor(-1),
@@ -71,6 +67,12 @@ CVersionInfo::CVersionInfo(const string& version,
     if (!name.empty()) {
         m_Name = name;
     }
+}
+
+CVersionInfo::CVersionInfo(EVersionFlags flags)
+{
+    _ASSERT( flags == kAny || flags == kLatest);
+    m_Major = m_Minor = m_PatchLevel = (flags == kAny) ? 0 : -1;
 }
 
 static

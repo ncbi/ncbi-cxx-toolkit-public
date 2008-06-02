@@ -75,6 +75,12 @@ public:
     CVersionInfo(const string& version,
                  const string& name = kEmptyStr);
 
+    enum EVersionFlags {
+        kAny = 0,
+        kLatest
+    };
+    CVersionInfo(EVersionFlags flags);
+
     /// Constructor.
     CVersionInfo(const CVersionInfo& version);
     CVersionInfo& operator=(const CVersionInfo& version);
@@ -104,9 +110,6 @@ public:
     int GetPatchLevel(void) const { return m_PatchLevel; }
 
     const string& GetName(void) const { return m_Name; }
-
-    static const CVersionInfo kAny;      /// { 0,  0,  0}
-    static const CVersionInfo kLatest;   /// {-1, -1, -1}
 
     /// Version comparison result
     /// @sa Match
