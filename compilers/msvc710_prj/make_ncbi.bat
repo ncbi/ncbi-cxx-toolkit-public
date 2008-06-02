@@ -40,5 +40,12 @@ REM
 REM ===========================================================================
 
 
+IF _%1% == _dll GOTO DLL
+
+:STATIC
 @call make.bat %1 ncbi_cpp.sln %2 %3 %4 %5 %6 %7 %8 %9
+EXIT %ERRORLEVEL%
+
+:DLL
+@call make.bat %1 ncbi_cpp_dll.sln %2 %3 %4 %5 %6 %7 %8 %9
 EXIT %ERRORLEVEL%
