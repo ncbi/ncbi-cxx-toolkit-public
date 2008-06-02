@@ -5622,6 +5622,7 @@ for x in $NoConfProjects dll; do
    echo "/^\\.\\/$x/d"
 done > $tmp_sed
 cat >>$tmp_sed <<EOF
+s%^.\\(/build-system.*/Makefile*\\)\\.in\$%$builddir\\1:./src\\1\\.in%
 s%^.\\(/build-system\\)\\(/.*\\)\\.in\$%$builddir\\2:./src\\1\\2\\.in%
 s%^.\\(/[[^:]]*\\)\\.in\$%$builddir\\1:./src\\1\\.in%
 EOF
