@@ -3444,14 +3444,14 @@ const string& SDiagMessage::GetHost(void) const
 const string& SDiagMessage::GetClient(void) const
 {
     return m_Data ? m_Data->m_Client
-        : GetDiagContext().GetRequestContext().GetClientIP();
+        : CDiagContext::GetRequestContext().GetClientIP();
 }
 
 
 const string& SDiagMessage::GetSession(void) const
 {
     return m_Data ? m_Data->m_Session
-        : GetDiagContext().GetRequestContext().GetSessionID();
+        : CDiagContext::GetRequestContext().GetSessionID();
 }
 
 
