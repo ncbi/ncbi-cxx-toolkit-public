@@ -99,10 +99,14 @@ CRef<uilist::CIdList> CEFetch_Request::FetchIdList(int chunk_size)
 {
     int retstart = GetRetStart();
     int orig_retmax = GetRetMax();
-    int retmax = orig_retmax > 0 ? orig_retmax : numeric_limits<int>::max();
-    if (chunk_size <= 0) {
-        chunk_size = retmax;
+    if (chunk_size > 0) {
+        SetRetMax(chunk_size);
     }
+    else {
+        chunk_size = orig_retmax;
+    }
+    int retlast = orig_retmax > 0 ?
+        retstart + orig_retmax : numeric_limits<int>::max();
     // Get in XML mode
     SetRetMode(eRetMode_xml);
     // Get chunks
@@ -110,14 +114,19 @@ CRef<uilist::CIdList> CEFetch_Request::FetchIdList(int chunk_size)
     uilist::CIdList::TId& ids = id_list->SetId();
     uilist::CIdList tmp;
     try {
-        for (int i = retstart; i < retmax; i += chunk_size) {
+        for (int i = retstart; i < retlast; i += chunk_size) {
             SetRetStart(i);
-            SetRetMax(chunk_size < (retmax - i) ? chunk_size : (retmax - i));
+            if (chunk_size > retlast - i) {
+                SetRetMax(retlast - i);
+            }
             *GetObjectIStream() >> tmp;
             if ( tmp.SetId().empty() ) {
                 break;
             }
             ids.splice(ids.end(), tmp.SetId());
+            if (chunk_size <= 0) {
+                break; // both chunk_size and orig_retmax are not set
+            }
         }
     }
     catch (CSerialException) {
