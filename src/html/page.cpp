@@ -54,19 +54,44 @@ typedef map<string, string*> TTemplateCache;
 static CSafeStaticPtr<TTemplateCache> s_TemplateCache;
 
 
+const string& CPageStat::GetValue(const string& name) const
+{
+    TData::const_iterator it = m_Data.find(name);
+    return it == m_Data.end() ? kEmptyStr : it->second;
+}
+
+
+void CPageStat::SetValue(const string& name, const string& value)
+{
+    if ( !value.empty() ) {
+        m_Data[name] = value;
+    }
+    else {
+        TData::iterator it = m_Data.find(name);
+        if (it != m_Data.end()) {
+            m_Data.erase(it);
+        }
+    }
+}
+
+
 class CHTMLPageStat : public CNCBINode
 {
     typedef CNCBINode CParent;
 public:
-    CHTMLPageStat(void);
+    CHTMLPageStat(CHTMLBasicPage& page);
     ~CHTMLPageStat(void);
     
     virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
+
+private:
+    const CHTMLBasicPage& m_Page;
 };
 
 
-CHTMLPageStat::CHTMLPageStat(void)
-    : CNCBINode("ncbipagestat")
+CHTMLPageStat::CHTMLPageStat(CHTMLBasicPage& page)
+    : CNCBINode("ncbipagestat"),
+      m_Page(page)
 {
     return;
 }
@@ -80,14 +105,22 @@ CHTMLPageStat::~CHTMLPageStat(void)
 
 CNcbiOstream& CHTMLPageStat::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    string pg_info = GetDiagContext().GetRequestContext().GetProperty("ncbi_st");
-    if ( pg_info.empty() ) {
+    const CPageStat::TData& stat = m_Page.GetPageStat().GetData();
+    if ( stat.empty() ) {
         return out;
     }
-    CStringPairsParser parser(new CStringDecoder_Url());
-    parser.Parse(pg_info);
-    ITERATE(CStringPairsParser::TStrPairs, it, parser.GetPairs()) {
+    bool phid_present = false;
+    string phid = CDiagContext::GetRequestContext().GetHitID();
+    ITERATE(CPageStat::TData, it, stat) {
+        if ( NStr::EqualNocase(it->first, "ncbi_phid") ) {
+            phid_present = true;
+        }
         CHTML_meta meta(CHTML_meta::eName, it->first, it->second);
+        meta.PrintBegin(out, mode);
+        out << endl;
+    }
+    if ( !phid_present  &&  !phid.empty() ) {
+        CHTML_meta meta(CHTML_meta::eName, "ncbi_phid", phid);
         meta.PrintBegin(out, mode);
         out << endl;
     }
@@ -102,7 +135,7 @@ CHTMLBasicPage::CHTMLBasicPage(void)
       m_CgiApplication(0),
       m_Style(0)
 {
-    AddTagMap("NCBI_PAGE_STAT", new CHTMLPageStat);
+    AddTagMap("NCBI_PAGE_STAT", new CHTMLPageStat(*this));
     return;
 }
 
@@ -112,7 +145,7 @@ CHTMLBasicPage::CHTMLBasicPage(CCgiApplication* application, int style)
       m_Style(style),
       m_PrintMode(eHTML)
 {
-    AddTagMap("NCBI_PAGE_STAT", new CHTMLPageStat);
+    AddTagMap("NCBI_PAGE_STAT", new CHTMLPageStat(*this));
     return;
 }
 

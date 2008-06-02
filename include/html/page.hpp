@@ -58,6 +58,42 @@ BEGIN_NCBI_SCOPE
 class CCgiApplication;
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CPageStat --
+///
+/// Page information used for tracking and logging: hit ID, design ID etc.
+/// Contains pairs of name+value strings.
+/// Elements of page stat are included in the page as meta tags in place
+/// of <@NCBI_PAGE_STAT@> tag.
+
+class NCBI_XHTML_EXPORT CPageStat
+{
+public:
+    CPageStat(void) {}
+    ~CPageStat(void) {}
+
+    /// Get value by name. Return empty string if the name is unknown.
+    const string& GetValue(const string& name) const;
+    /// Set new value for the name. If the value is empty, delete the
+    /// element completely.
+    void SetValue(const string& name, const string& value);
+    /// Remove all entries
+    void Clear(void) { m_Data.clear(); }
+
+    typedef map<string, string> TData;
+
+    /// Return the whole internal string map (read-only).
+    const TData& GetData(void) const { return m_Data; }
+
+private:
+    // Prohibit copying
+    CPageStat(const CPageStat&);
+    CPageStat& operator=(const CPageStat&);
+
+    TData m_Data;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -99,6 +135,11 @@ public:
     virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
     virtual void AddTagMap(const string& name, CNCBINode*     node);
 
+    /// Get CPageStat used to create meta-tags (design ID, hit ID etc.)
+    const CPageStat& GetPageStat(void) const { return m_PageStat; }
+    /// Get editable CPageStat object
+    CPageStat& SetPageStat(void) { return m_PageStat; }
+
 protected:
     CCgiApplication* m_CgiApplication;  ///< Pointer to runtime information
     int              m_Style;
@@ -107,6 +148,7 @@ protected:
 
     /// Tag resolvers (as registered by AddTagMap).
     TTagMap m_TagMap;
+    CPageStat m_PageStat;
 };
 
 
