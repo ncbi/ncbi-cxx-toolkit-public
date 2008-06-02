@@ -120,6 +120,10 @@ public:
     TProperties& GetProperties(void) { return m_Properties; }
 
 private:
+    // Prohibit copying
+    CRequestContext(const CRequestContext&);
+    CRequestContext& operator=(const CRequestContext&);
+
     int           m_RequestID;
     EDiagAppState m_AppState;
     string        m_ClientIP;
