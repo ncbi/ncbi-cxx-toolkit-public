@@ -1848,7 +1848,7 @@ bool CDirEntry::IsNewer(const string& entry_name, TIfAbsent2 if_absent) const
     }
     // throw an exception by default
     NCBI_THROW(CFileException, eNotExists, 
-                "IsNewer: dir entry does not exist");
+                "dir entry does not exist");
     /*NOTREACHED*/
     return false;
 }
@@ -1866,7 +1866,7 @@ bool CDirEntry::IsNewer(time_t tm, EIfAbsent if_absent) const
             case eIfAbsent_Throw:
             default:
                  NCBI_THROW(CFileException, eNotExists, 
-                            "IsNewer: dir entry does not exist");
+                            "dir entry does not exist");
         }
     }
     return current > tm;
@@ -1885,7 +1885,7 @@ bool CDirEntry::IsNewer(const CTime& tm, EIfAbsent if_absent) const
             case eIfAbsent_Throw:
             default:
                  NCBI_THROW(CFileException, eNotExists, 
-                            "IsNewer: dir entry does not exist");
+                            "dir entry does not exist");
         }
     }
     return current > tm;
@@ -2370,10 +2370,17 @@ CFile::~CFile(void)
 
 Int8 CFile::GetLength(void) const
 {
+#if defined(NCBI_OS_MSWIN)
+    struct __stat64 buf;
+    if ( _stat64(GetPath().c_str(), &buf) != 0 ) {
+        return -1;
+    }
+#else
     struct stat buf;
     if ( stat(GetPath().c_str(), &buf) != 0 ) {
         return -1;
     }
+#endif
     return buf.st_size;
 }
 
@@ -3596,7 +3603,7 @@ CTmpFile::CTmpFile(ERemoveMode remove_file)
     m_FileName = CFile::GetTmpName();
     if ( m_FileName.empty() ) {
         NCBI_THROW(CFileException, eTmpFile, 
-            "Cannot generate temporary file name");
+            "cannot generate temporary file name");
     }
     m_RemoveOnDestruction = remove_file;
 }
@@ -3803,8 +3810,8 @@ CMemoryFile_Base::CMemoryFile_Base(void)
     // Check if memory-mapping is supported on this platform
     if ( !IsSupported() ) {
         NCBI_THROW(CFileException, eMemoryMap,
-                   "Memory-mapping is not supported by the C++ Toolkit"
-                   " on this platform");
+                   "Memory-mapping is not supported by the C++ Toolkit "
+                   "on this platform");
     }
     if ( !s_VirtualMemoryPageSize ) {
         s_VirtualMemoryPageSize = GetVirtualMemoryPageSize();
@@ -3878,17 +3885,16 @@ CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
 {
     if ( m_Offset < 0 ) {
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileSegment: The file offset cannot be negative");
+            "The file offset cannot be negative");
     }
     if ( !m_Length ) {
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileSegment: The length of file mapping region"
-            " must be above 0");
+            "The length of file mapping region must be above 0");
     }
     // Get system's memory allocation granularity.
     if ( !s_VirtualMemoryPageSize ) {
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileSegment: Cannot determine size of virtual page");
+            "Cannot determine size of virtual page");
     }    
     // Adjust mapped length and offset.
     if ( m_Offset % s_VirtualMemoryPageSize ) {
@@ -3919,7 +3925,7 @@ CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
     m_DataPtr = (char*)m_DataPtrReal + (m_Offset - m_OffsetReal);
     if ( !m_DataPtr ) {
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileSegment: Unable to map a view of a file '" + 
+            "Unable to map a view of a file '" + 
             handle.sFileName + "' into memory (offset=" +
             NStr::Int8ToString(m_Offset) + ", length=" +
             NStr::Int8ToString(m_Length) + "): " + errmsg);
@@ -3972,8 +3978,7 @@ void CMemoryFileSegment::x_Verify(void) const
     if ( m_DataPtr ) {
         return;
     }
-    NCBI_THROW(CFileException, eMemoryMap,
-               "CMemoryFileSegment: File view is not mapped");
+    NCBI_THROW(CFileException, eMemoryMap, "File view is not mapped");
 }
 
 
@@ -4013,8 +4018,7 @@ CMemoryFileMap::CMemoryFileMap(const string&  file_name,
             m_Attrs = 0;
         }
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileMap: The mapped file \"" + m_FileName +
-            "\" must exist");
+            "The mapped file \"" + m_FileName + "\" must exist");
     }
     // Extend file size if necessary
     if ( mode == eExtend  &&  max_file_len > (Uint8)file_size) {
@@ -4056,12 +4060,16 @@ void* CMemoryFileMap::Map(off_t offset, size_t length)
     if ( !length ) {
         Int8 file_size = GetFileSize() - offset;
         if ( (Uint8)file_size > get_limits(length).max() ) {
-            length = get_limits(length).max();
+            NCBI_THROW(CFileException, eMemoryMap,
+                    "File is too big to map " \
+                    "(file \"" + m_FileName +"\", "
+                    "offset=" + NStr::Int8ToString(offset) + ", "\
+                    "length=" + NStr::Int8ToString(length) + ")");
         } else if ( file_size > 0 ) {
             length = (size_t)file_size;
         } else {
             NCBI_THROW(CFileException, eMemoryMap,
-                "CMemoryFileMap: Specified offset of the mapping region"
+                "Specified offset of the mapping region"
                 " exceeds the file size");
         }
     }
@@ -4071,7 +4079,7 @@ void* CMemoryFileMap::Map(off_t offset, size_t length)
     void* ptr = segment->GetPtr();
     if ( !ptr ) {
         NCBI_THROW(CFileException, eMemoryMap,
-                   "CMemoryFileMap: Map() failed (file \"" + m_FileName +"\", "
+                   "Map() failed (file \"" + m_FileName +"\", "
                    "offset=" + NStr::Int8ToString(offset) + ", "\
                    "length=" + NStr::Int8ToString(length) + ")");
     }        
@@ -4197,7 +4205,8 @@ void CMemoryFileMap::x_Open(void)
     // Error: close and cleanup
     x_Close();
     NCBI_THROW(CFileException, eMemoryMap,
-        "CMemoryFile: Unable to map file \"" + m_FileName + "\" into memory" + errmsg);
+        "CMemoryFile: Unable to map file \"" + m_FileName +
+        "\" into memory" + errmsg);
 }
 
 
@@ -4370,12 +4379,14 @@ void* CMemoryFile::Extend(size_t length)
     if ( !length ) {
         Int8 fs = file_size - offset;
         if ( (Uint8)fs > get_limits(length).max() ) {
-            length = get_limits(length).max();
+            NCBI_THROW(CFileException, eMemoryMap,
+                    "Specified length of the mapping region " \
+                    "is too big (length=" + NStr::Int8ToString(length) + ")");
         } else if ( fs > 0 ) {
             length = (size_t)fs;
         } else {
             NCBI_THROW(CFileException, eMemoryMap,
-                "CMemoryFile: Specified offset of the mapping region"
+                "Specified offset of the mapping region"
                 " exceeds the file size");
         }
     }
