@@ -9,7 +9,7 @@
 #          It is used by release configurator.
 #
 
-APP: launcherd fwdaemon dispd.cgi lbsmd lbsm_feedback test_mghbn lbsmc 
+APP: launcherd fwdaemon dispd.cgi lbsmd lbsm_feedback test_mghbn lbsmc testipub
 # APP: test_ncbi_disp -- not now
 
 # The -t key prevents inclusion of the tree builder into the release
