@@ -213,7 +213,7 @@ reqs = $(REQUIRES:%=$(status_dir)/%.enabled)
 requirements: $(reqs)
 
 %.needs-reqs:
-	@skip=false ; \
+	@+skip=false ; \
 	x_reqs="$(reqs)" ; \
 	for f in $$x_reqs ;  do \
 	  if test ! -f "$$f" ; then \
