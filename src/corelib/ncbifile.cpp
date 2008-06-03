@@ -4055,8 +4055,8 @@ void* CMemoryFileMap::Map(off_t offset, size_t length)
     // Map file wholly if the length of the mapped region is not specified
     if ( !length ) {
         Int8 file_size = GetFileSize() - offset;
-        if ( file_size > kMax_UInt ) {
-            length = kMax_UInt;
+        if ( (Uint8)file_size > get_limits(length).max() ) {
+            length = get_limits(length).max();
         } else if ( file_size > 0 ) {
             length = (size_t)file_size;
         } else {
@@ -4369,8 +4369,8 @@ void* CMemoryFile::Extend(size_t length)
     // Map file wholly if the length of the mapped region is not specified
     if ( !length ) {
         Int8 fs = file_size - offset;
-        if ( fs > kMax_UInt ) {
-            length = kMax_UInt;
+        if ( (Uint8)fs > get_limits(length).max() ) {
+            length = get_limits(length).max();
         } else if ( fs > 0 ) {
             length = (size_t)fs;
         } else {
