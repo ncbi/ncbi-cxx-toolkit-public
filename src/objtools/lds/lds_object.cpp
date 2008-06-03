@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Anatoliy Kuznetsov
+ * Author: Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description:  CLDS_Object implementation.
  *
@@ -785,6 +785,7 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
     case CSeq_id::e_Patent:
         {{
             seqid_base->int_id = 0;
+            seqid_base->str_id = "";
             const CId_pat& pat = seq_id.GetPatent().GetCit();
             pat.GetLabel(&seqid_base->str_id);
         }}
@@ -795,6 +796,7 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
     case CSeq_id::e_General:
         {{
             seqid_base->int_id = 0;
+            seqid_base->str_id = "";
             seq_id.GetGeneral().GetLabel(&seqid_base->str_id);
         }}
         return;
