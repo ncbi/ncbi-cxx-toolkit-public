@@ -1,6 +1,6 @@
 algo
 app/netcache
-app/project_tree_builder
+build-system/project_tree_builder
 bdb
 cgi
 check

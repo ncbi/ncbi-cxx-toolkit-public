@@ -12,6 +12,7 @@ objmgr
 objtools
 ctools
 app
+build-system
 algo
 check
 gui
