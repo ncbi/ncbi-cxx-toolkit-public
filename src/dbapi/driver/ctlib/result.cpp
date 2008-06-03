@@ -1549,7 +1549,7 @@ size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
     if (copied > buffer_size)
         copied = buffer_size;
 
-    memcpy(buffer, data, copied);
+    memcpy(buffer, (const char*)data + m_ReadBytes, copied);
     m_ReadBytes += copied;
 
     if (m_ReadBytes == max_size) {
