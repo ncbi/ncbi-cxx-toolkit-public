@@ -326,7 +326,7 @@ CDBAPIUnitTest::TestInit(void)
         sql += "    int_field INT NULL, \n";
         sql += "    vc1000_field VARCHAR(1000) NULL, \n";
         sql += "    text_field TEXT NULL, \n";
-        sql += "    image_field TEXT NULL \n";
+        sql += "    image_field IMAGE NULL \n";
         sql += " )";
 
         // Create the table
@@ -2394,6 +2394,50 @@ CDBAPIUnitTest::Test_LOB(void)
                 m_args.PutMsgDisabled("Test_LOB Read Read Blob");
             } // Read Blob
         } // Test NULL values ...
+
+        if (false) {
+            const string sql("select blob from Request where ri = 31960321 order by oid");
+
+            auto_ptr<IConnection> conn(
+                GetDS().CreateConnection(CONN_OWNERSHIP)
+                );
+
+            conn->Connect("*****","******","mssql31", "BlastQNew");
+            auto_ptr<ICursor> auto_cursor(conn->GetCursor("test05", sql));
+
+            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+            while(blobRs->Next()) {
+                char buff[8192];
+
+                istream& strm = blobRs->GetBlobIStream();
+
+                BOOST_CHECK_EQUAL(strm.good(), true);
+
+                /*
+                strm.read(buff, sizeof(buff));
+                long read_data_len = strm.gcount();
+                const string str_value(buff, read_data_len);
+                char tmp = str_value[4097];
+
+                BOOST_CHECK_EQUAL(str_value.size(), 5099U);
+                BOOST_CHECK_EQUAL(str_value[4096], 40);
+                */
+
+                long read_data_len = 0;
+                int c;
+                while ( (c = strm.get()) != CT_EOF ) {
+                    buff[read_data_len++] = c;
+                }
+
+                FILE* fd = fopen("dump.blob", "w");
+                if (fd) {
+                    fwrite(buff, 1, read_data_len, fd);
+                    fclose(fd);
+                }
+
+                break;
+            }
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -14813,6 +14857,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (args.GetDriverName() != dblib_driver
+        && args.GetDriverName() != ftds_driver // 06/03/08
         && args.GetDriverName() != ftds_dblib_driver
         && args.GetDriverName() != ftds8_driver
         && !(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
@@ -15688,11 +15733,11 @@ CTestArguments::SetDatabaseParameters(void)
         m_DatabaseParameters["version"] = m_TDSVersion;
     }
 
-    if ( (GetDriverName() == ftds8_driver ||
-                GetDriverName() == ftds64_driver ||
-                // GetDriverName() == odbc_driver ||
-                // GetDriverName() == ftds_odbc_driver ||
-                GetDriverName() == ftds_dblib_driver)
+    if ((GetDriverName() == ftds8_driver ||
+         GetDriverName() == ftds64_driver ||
+         // GetDriverName() == odbc_driver ||
+         // GetDriverName() == ftds_odbc_driver ||
+         GetDriverName() == ftds_dblib_driver)
             && (GetServerType() == eMsSql || GetServerType() == eMsSql2005)) {
         m_DatabaseParameters["client_charset"] = "UTF-8";
     }
