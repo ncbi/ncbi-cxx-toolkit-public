@@ -222,7 +222,7 @@ public:
           m_AppRunningTime(app_running_time)
     {
         if (m_MaxAppRunningTime > 0 || m_AppRunningTime > 0)
-            m_RunningTime.reset(new CStopWatch(CStopWatch::eStart));        
+            m_RunningTime.reset(new CStopWatch(CStopWatch::eStart));
     }
     
     virtual ~CPipeProcessWatcher_Base() {}
@@ -257,8 +257,13 @@ private:
 class CRAMonitor
 {
 public:
-    CRAMonitor(const string& app, int max_app_running_time) 
-        : m_App(app), m_MaxAppRunningTime(max_app_running_time)  {}
+    CRAMonitor(const string& app, const char* const* env,
+        int max_app_running_time) :
+        m_App(app),
+        m_Env(env),
+        m_MaxAppRunningTime(max_app_running_time)
+    {
+    }
 
     int Run(vector<string>& args, CNcbiOstream& out, CNcbiOstream& err)
     {
@@ -269,7 +274,7 @@ public:
         try {
             ret = CPipe::ExecWait(m_App, args, in, 
                                   out, err, exit_value, 
-                                  kEmptyStr, NULL,
+                                  kEmptyStr, m_Env,
                                   &callback);
         } catch( exception& ex ) {
             err << ex.what();
@@ -283,6 +288,7 @@ public:
 
 private:
     string m_App;
+    const char* const* m_Env;
     int m_MaxAppRunningTime;
 };
 
@@ -523,7 +529,8 @@ bool ExecRemoteApp(const string& cmd,
 
         auto_ptr<CRAMonitor> ra_monitor;
         if (!monitor_app.empty() && monitor_period > 0) {
-            ra_monitor.reset(new CRAMonitor(monitor_app, max_monitor_running_time));
+            ra_monitor.reset(new CRAMonitor(monitor_app, env,
+                max_monitor_running_time));
             callback.SetMonitor(*ra_monitor, monitor_period);
         }
         STimeout kill_tm = { kill_timeout, 0 };
