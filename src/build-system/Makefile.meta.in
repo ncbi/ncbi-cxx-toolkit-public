@@ -224,7 +224,12 @@ requirements: $(reqs)
 	    basename "$$f" .enabled ; \
 	  fi ; \
 	done ; \
-	test $$skip = true  ||  $(MAKE) $(MFLAGS_NR) $*.real
+	case "$*:$(USR_PROJ:%=%_x):$$skip" in \
+	    *:true ) ;; \
+	    *_?:*  ) $(MAKE) $(MFLAGS_NR) $*.real ;; \
+	    *      ) $(MAKE) $(MFLAGS_NR) $*.real APP_PROJ='$(APP_PROJ)' \
+	                 LIB_PROJ='$(LIB_PROJ)' ;; \
+	esac
 
 ### Recursive build -- in the [SUB_PROJ] directories
 
