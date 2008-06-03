@@ -139,7 +139,7 @@ if test "$buildptb" = "yes"; then
     COMMON_Exec make
   done
   COMMON_Exec cd $builddir
-  ptb="./app/project_tree_builder/$ptbname"
+  ptb="./build-system/project_tree_builder/$ptbname"
   test -x "$ptb" || Usage "$builddir/$ptb not found"
 fi
 
