@@ -321,7 +321,8 @@ void CNetServiceClient::WaitForServer(unsigned wait_sec)
         EIO_Status io_st = m_Sock->Wait(eIO_Read, &to);
         if (io_st == eIO_Timeout) {
             NCBI_THROW(CNetServiceException, eTimeout,
-                       "No response from the server for " + NStr::IntToString(to.sec) + " sec.");
+                "No response from " + m_Host + ":" + NStr::IntToString(m_Port) +
+                " for " + NStr::IntToString(to.sec) + " sec.");
         }
         else {
             break;
