@@ -2533,9 +2533,10 @@ CDBAPIUnitTest::Test_LOB3(void)
         "\"e_value\", value real { 0, 10, 0 } }, { id str "
         "\"bit_score\", value real { 134230121751674, 10, -10 } }, "
         "{ id str \"num_ident\", value int 7017 } }, segs denseg "
-        "{ dim 2, numseg 3, ids { gi 3021694, gi 3924652 }, starts "
-        "{ 6767, 32557, 6763, -1, 0, 25794 }, lens { 360, 4, 6763 }, "
-        "strands { minus, minus, minus, minus, minus, minus } } }";
+        // "{ dim 2, numseg 3, ids { gi 3021694, gi 3924652 }, starts "
+        // "{ 6767, 32557, 6763, -1, 0, 25794 }, lens { 360, 4, 6763 }, "
+        // "strands { minus, minus, minus, minus, minus, minus } } }"
+        ;
 
     string sql;
     enum {num_of_records = 10};
@@ -14856,12 +14857,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         args.PutMsgDisabled("Test_LOB2");
     }
 
-    if (args.GetDriverName() != dblib_driver
-        && args.GetDriverName() != ftds_driver // 06/03/08
-        && args.GetDriverName() != ftds_dblib_driver
-        && args.GetDriverName() != ftds8_driver
-        && !(args.GetDriverName() == ftds_driver && args.GetServerType() == CTestArguments::eSybase)
-        && !(args.GetDriverName() == ctlib_driver && os_type == eOsSolaris && compiler_type == eCompilerWorkShop)
+    if ( args.GetDriverName() != ftds_driver // 06/03/08
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB3, 
             DBAPIInstance);
