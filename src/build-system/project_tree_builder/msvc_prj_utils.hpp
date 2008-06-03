@@ -34,7 +34,7 @@
 #include "proj_item.hpp"
 #include <corelib/ncbienv.hpp>
 #if NCBI_COMPILER_MSVC
-#   include <app/project_tree_builder/msvc71_project__.hpp>
+#   include <build-system/project_tree_builder/msvc71_project__.hpp>
 #endif //NCBI_COMPILER_MSVC
 #include "proj_item.hpp"
 #include <set>

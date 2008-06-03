@@ -17,7 +17,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "datatool.exe", "serial\data
 		{1DCE18CD-4A7E-43B8-B7AF-48972EFE51E7} = {1DCE18CD-4A7E-43B8-B7AF-48972EFE51E7}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "project_tree_builder.exe", "app\project_tree_builder\project_tree_builder.exe.vcproj", "{8D5B9C1E-5941-44F8-B017-25F6201E822B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "project_tree_builder.exe", "build-system\project_tree_builder\project_tree_builder.exe.vcproj", "{8D5B9C1E-5941-44F8-B017-25F6201E822B}"
 	ProjectSection(ProjectDependencies) = postProject
 		{E46C5B0B-675C-4C37-B618-02608C379C67} = {E46C5B0B-675C-4C37-B618-02608C379C67}
 		{1EDB6A26-ADB9-4591-B907-505E8D1A8157} = {1EDB6A26-ADB9-4591-B907-505E8D1A8157}

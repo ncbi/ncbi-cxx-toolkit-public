@@ -120,7 +120,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                 CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
                                     GetApp().GetRegSettings().m_ProjectsSubdir);
             project_tree_builder_sln_dir = 
-                CDirEntry::ConcatPath(project_tree_builder_sln_dir, "app");
+                CDirEntry::ConcatPath(project_tree_builder_sln_dir, "build-system");
             project_tree_builder_sln_dir = 
                 CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
                                     "project_tree_builder");

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="project_tree_builder.exe"
 	ProjectGUID="{8D5B9C1E-5941-44F8-B017-25F6201E822B}"
 	Keyword="Win32Proj"
@@ -237,7 +237,7 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\configurable_file.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\configurable_file.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -261,7 +261,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\file_contents.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\file_contents.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -283,7 +283,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc71_project__.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc71_project__.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -305,7 +305,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc71_project___.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc71_project___.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -327,7 +327,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_configure.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_configure.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -349,7 +349,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_configure_prj_generator.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_configure_prj_generator.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -371,7 +371,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_dlls_info.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_dlls_info.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -393,7 +393,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_makefile.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_makefile.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -415,7 +415,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_masterproject_generator.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_masterproject_generator.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -437,7 +437,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_prj_files_collector.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_prj_files_collector.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -459,7 +459,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_prj_generator.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_prj_generator.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -481,7 +481,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_prj_utils.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_prj_utils.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -503,7 +503,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_project_context.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_project_context.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -525,7 +525,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_site.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_site.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -547,7 +547,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc_sln_generator.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_sln_generator.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -569,7 +569,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_builder_app.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_builder_app.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -591,7 +591,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_datatool_generated_src.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_datatool_generated_src.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -613,7 +613,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_item.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_item.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -635,7 +635,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_projects.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_projects.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -657,7 +657,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_src_resolver.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_src_resolver.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -679,7 +679,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_tree.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_tree.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -701,7 +701,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_tree_builder.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_tree_builder.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -723,7 +723,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\proj_utils.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_utils.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -745,7 +745,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\ptb_gui.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\ptb_gui.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -767,7 +767,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\resolver.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\resolver.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -789,7 +789,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\ptb_registry.cpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\ptb_registry.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -816,195 +816,195 @@
 			Filter="h;hpp;hxx;hm;inc;xsd"
 			>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\configurable_file.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\configurable_file.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Configuration.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Configuration.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Configuration_.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Configuration_.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Configurations.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Configurations.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Configurations_.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Configurations_.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\File.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\File.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\File_.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\File_.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\file_contents.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\file_contents.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\FileConfiguration.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\FileConfiguration.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\FileConfiguration_.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\FileConfiguration_.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Files.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Files.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Files_.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Files_.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Filter.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Filter.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Filter_.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Filter_.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc71_project__.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc71_project__.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_configure.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_configure.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_configure_prj_generator.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_configure_prj_generator.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_dlls_info.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_dlls_info.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_dlls_info_utils.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_dlls_info_utils.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_makefile.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_makefile.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_masterproject_generator.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_masterproject_generator.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_prj_defines.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_prj_defines.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_prj_files_collector.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_prj_files_collector.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_prj_generator.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_prj_generator.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_prj_utils.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_prj_utils.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_project_context.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_project_context.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_site.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_site.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_sln_generator.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_sln_generator.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_tools_implement.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_tools_implement.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\msvc_traits.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc_traits.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Platform.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Platform.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Platform_.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Platform_.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Platforms.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Platforms.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Platforms_.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Platforms_.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\proj_builder_app.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_builder_app.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\proj_datatool_generated_src.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_datatool_generated_src.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\proj_item.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_item.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\proj_projects.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_projects.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\proj_src_resolver.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_src_resolver.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\proj_tree.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_tree.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\proj_tree_builder.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_tree_builder.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\proj_utils.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\proj_utils.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\resolver.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\resolver.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\stl_msvc_usage.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\stl_msvc_usage.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Tool.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Tool.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\Tool_.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\Tool_.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\VisualStudioProject.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\VisualStudioProject.hpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\include\app\project_tree_builder\VisualStudioProject_.hpp"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\VisualStudioProject_.hpp"
 				>
 			</File>
 			<Filter
@@ -1012,7 +1012,7 @@
 				Filter="h;hpp;hxx;hm;inc;xsd"
 				>
 				<File
-					RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\ptb_gui.h"
+					RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\ptb_gui.h"
 					>
 				</File>
 			</Filter>
@@ -1027,7 +1027,7 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
 			>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\ptb_gui.rc"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\ptb_gui.rc"
 				>
 			</File>
 		</Filter>
@@ -1035,7 +1035,7 @@
 			Name="Datatool Files"
 			>
 			<File
-				RelativePath="..\..\..\..\..\..\src\app\project_tree_builder\msvc71_project.dtd"
+				RelativePath="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc71_project.dtd"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
@@ -1043,7 +1043,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"
-						CommandLine="@echo on&#x0D;&#x0A;&quot;$(OutDir)\datatool.exe&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)\$(InputName).def&quot; -odi -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\..\&#x0D;&#x0A;"
+						CommandLine="@echo on&#x0D;&#x0A;&quot;$(OutDir)\datatool.exe&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)\$(InputName).def&quot; -odi -ocvs -or build-system\project_tree_builder\ -oR ..\..\..\..\..\..\&#x0D;&#x0A;"
 						AdditionalDependencies="$(InputDir)$(InputName).def;&quot;$(OutDir)\datatool.exe&quot;"
 						Outputs="$(InputDir)$(InputName).files;"
 					/>
@@ -1054,7 +1054,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"
-						CommandLine="@echo on&#x0D;&#x0A;&quot;$(OutDir)\datatool.exe&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)\$(InputName).def&quot; -odi -ocvs -or app\project_tree_builder\ -oR ..\..\..\..\..\..\&#x0D;&#x0A;"
+						CommandLine="@echo on&#x0D;&#x0A;&quot;$(OutDir)\datatool.exe&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)\$(InputName).def&quot; -odi -ocvs -or build-system\project_tree_builder\ -oR ..\..\..\..\..\..\&#x0D;&#x0A;"
 						AdditionalDependencies="$(InputDir)$(InputName).def;&quot;$(OutDir)\datatool.exe&quot;"
 						Outputs="$(InputDir)$(InputName).files;"
 					/>
