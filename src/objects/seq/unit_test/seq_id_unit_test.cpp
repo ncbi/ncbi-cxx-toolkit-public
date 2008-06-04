@@ -40,9 +40,12 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Giimport_id.hpp>
 #include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
@@ -734,4 +737,113 @@ BOOST_AUTO_TEST_CASE(s_TestListOps)
     CHECK_EQUAL(CSeq_id::ParseFastaIds(ids, "gi|1234|junk|pdb|1GAV", true),
                 size_t(2));
     CHECK_THROW_SEQID(CSeq_id::ParseFastaIds(ids, "gi|1234|junk|pdb|1GAV"));
+}
+
+BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
+{
+    {
+        CRef<CSeq_id> id1(new CSeq_id("gi|1"));
+        CRef<CSeq_loc> loc1(new CSeq_loc);
+        loc1->SetWhole(*id1);
+        CRef<CSeq_loc> mix1(new CSeq_loc);
+        mix1->SetMix().Set().push_back(loc1);
+
+        CRef<CSeq_id> id2(new CSeq_id("gi|2"));
+        CRef<CSeq_loc> loc2(new CSeq_loc);
+        loc2->SetEmpty(*id2);
+        CRef<CSeq_loc> mix2(new CSeq_loc);
+        mix2->SetMix().Set().push_back(loc2);
+
+        CHECK(loc1->IsWhole());
+        CHECK(loc1->GetWhole().IsGi());
+        CHECK_EQUAL(loc1->GetWhole().GetGi(), 1);
+
+        CHECK(loc2->IsEmpty());
+        CHECK(loc2->GetEmpty().IsGi());
+        CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
+
+        CHECK(loc1->GetId());
+        CHECK(loc1->GetId()->IsGi());
+        CHECK_EQUAL(loc1->GetId()->GetGi(), 1);
+
+        CHECK(loc2->GetId());
+        CHECK(loc2->GetId()->IsGi());
+        CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
+
+        loc1->Assign(*loc2);
+
+        id1.Reset();
+        id2.Reset();
+
+        CHECK(loc1->IsEmpty());
+        CHECK(loc1->GetEmpty().IsGi());
+        CHECK_EQUAL(loc1->GetEmpty().GetGi(), 2);
+
+        CHECK(loc2->IsEmpty());
+        CHECK(loc2->GetEmpty().IsGi());
+        CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
+    
+        CHECK(loc1->GetId());
+        CHECK(loc1->GetId()->IsGi());
+        CHECK_EQUAL(loc1->GetId()->GetGi(), 2);
+
+        CHECK(loc2->GetId());
+        CHECK(loc2->GetId()->IsGi());
+        CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
+    }
+    {
+        CRef<CSeq_id> id1(new CSeq_id("gi|1"));
+        CRef<CSeq_loc> loc1(new CSeq_loc);
+        loc1->SetWhole(*id1);
+        CRef<CSeq_feat> feat1(new CSeq_feat);
+        feat1->SetData().SetRegion("1");
+        feat1->SetLocation(*loc1);
+
+        CRef<CSeq_id> id2(new CSeq_id("gi|2"));
+        CRef<CSeq_loc> loc2(new CSeq_loc);
+        loc2->SetEmpty(*id2);
+        CRef<CSeq_feat> feat2(new CSeq_feat);
+        feat2->SetData().SetRegion("2");
+        feat2->SetLocation(*loc2);
+
+        CHECK(loc1->IsWhole());
+        CHECK(loc1->GetWhole().IsGi());
+        CHECK_EQUAL(loc1->GetWhole().GetGi(), 1);
+
+        CHECK(loc2->IsEmpty());
+        CHECK(loc2->GetEmpty().IsGi());
+        CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
+
+        CHECK(loc1->GetId());
+        CHECK(loc1->GetId()->IsGi());
+        CHECK_EQUAL(loc1->GetId()->GetGi(), 1);
+
+        CHECK(loc2->GetId());
+        CHECK(loc2->GetId()->IsGi());
+        CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
+
+        feat1->Assign(*feat2);
+
+        id1.Reset();
+        id2.Reset();
+
+        CHECK_EQUAL(feat1->GetData().GetRegion(), "2");
+        loc1 = &feat1->SetLocation();
+
+        CHECK(loc1->IsEmpty());
+        CHECK(loc1->GetEmpty().IsGi());
+        CHECK_EQUAL(loc1->GetEmpty().GetGi(), 2);
+
+        CHECK(loc2->IsEmpty());
+        CHECK(loc2->GetEmpty().IsGi());
+        CHECK_EQUAL(loc2->GetEmpty().GetGi(), 2);
+    
+        CHECK(loc1->GetId());
+        CHECK(loc1->GetId()->IsGi());
+        CHECK_EQUAL(loc1->GetId()->GetGi(), 2);
+
+        CHECK(loc2->GetId());
+        CHECK(loc2->GetId()->IsGi());
+        CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
+    }
 }

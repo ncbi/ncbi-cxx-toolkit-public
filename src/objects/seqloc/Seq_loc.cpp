@@ -317,6 +317,7 @@ void x_Assign(CSeq_loc_equiv& dst, const CSeq_loc_equiv& src)
 
 void CSeq_loc::Assign(const CSerialObject& obj, ESerialRecursionMode how)
 {
+    x_InvalidateCache();
     if ( GetTypeInfo() == obj.GetThisTypeInfo() ) {
         const CSeq_loc& loc = static_cast<const CSeq_loc&>(obj);
         switch ( loc.Which() ) {
