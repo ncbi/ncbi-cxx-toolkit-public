@@ -255,6 +255,7 @@ private:
     int ReadEscapedChar(char endingChar, bool* encoded=0);
     int ReadEncodedChar(char endingChar, EStringType type = eStringTypeVisible, bool* encoded=0);
     TUnicodeSymbol ReadUtf8Char(char ch);
+    bool ReadCDSection(string& s);
     void ReadTagData(string& s, EStringType type = eStringTypeVisible);
 
     CTempString ReadName(char c);

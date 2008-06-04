@@ -1037,6 +1037,32 @@ char* CObjectIStreamXml::ReadCString(void)
     return strdup(str.c_str());
 }
 
+bool CObjectIStreamXml::ReadCDSection(string& str)
+// http://www.w3.org/TR/2000/REC-xml-20001006#dt-cdsection
+// must begin with <![CDATA[
+// must end with   ]]>
+{
+    if (m_Input.PeekChar() != '<' || m_Input.PeekChar(1) != '!') {
+        return false;
+    }
+    m_Input.SkipChars(2);
+    const char* open = "[CDATA[";
+    for ( ; *open; ++open) {
+        if (m_Input.PeekChar() != *open) {
+            ThrowError(fFormatError, "CDATA section expected");
+        }
+        m_Input.SkipChar();
+    }
+    while ( m_Input.PeekChar(0) != ']' ||
+            m_Input.PeekChar(1) != ']' ||
+            m_Input.PeekChar(2) != '>') {
+        str += m_Input.PeekChar();
+        m_Input.SkipChar();
+    }
+    m_Input.SkipChars(3);
+    return true;
+}
+
 void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
 {
     BeginData();
@@ -1046,7 +1072,10 @@ void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
         for ( ;; ) {
             int c = ReadEncodedChar(m_Attlist ? '\"' : '<', type, &encoded);
             if ( c < 0 ) {
-                break;
+                if (m_Attlist || !ReadCDSection(str)) {
+                    break;
+                }
+                continue;
             }
             if (!encoded) {
                 if (c == '\n' || c == '\r') {
@@ -1338,7 +1367,9 @@ bool CObjectIStreamXml::HasAttlist(void)
 bool CObjectIStreamXml::NextIsTag(void)
 {
     BeginData();
-    return SkipWSAndComments() == '<' && m_Input.PeekChar(1) != '/';
+    return SkipWSAndComments() == '<' &&
+        m_Input.PeekChar(1) != '/' &&
+        m_Input.PeekChar(1) != '!';
 }
 
 bool CObjectIStreamXml::NextTagIsClosing(void)
