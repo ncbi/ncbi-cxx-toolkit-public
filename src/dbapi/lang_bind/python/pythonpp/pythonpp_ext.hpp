@@ -127,9 +127,13 @@ public:
     }
 
 public:
-    PyTypeObject* GetPyTypeObject( void )
+    PyTypeObject* GetObjType( void )
     {
-        return this;;
+        return this;
+    }
+    const PyTypeObject* GetObjType( void ) const
+    {
+        return this;
     }
     void SetName( const char* name )
     {
@@ -243,6 +247,18 @@ private:
 #endif
     }
 };
+
+inline
+bool operator ==(const CObject& l, const CExtType& r)
+{
+    return l.GetObjType() == r.GetObjType();
+}
+
+inline
+bool operator ==(const CExtType& l, const CObject& r)
+{
+    return l.GetObjType() == r.GetObjType();
+}
 
 //////////////////////////////////////////////////////////////////////////
 namespace bind
@@ -513,7 +529,7 @@ protected:
     static void PrepareForPython(CExtObject<T>* self)
     {
         // Borrowed reference.
-        PyObject_Init( self, GetType().GetPyTypeObject() );
+        PyObject_Init( self, GetType().GetObjType() );
     }
 
 protected:

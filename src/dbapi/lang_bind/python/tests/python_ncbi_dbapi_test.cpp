@@ -627,17 +627,14 @@ CPythonDBAPITest::Test_LOB(void)
             sql  = "long_str = '"+ long_string + "' \n";
             ExecuteStr( sql.c_str() );
 
-            sql  = "cursor.execute('INSERT INTO #t2(vc1900_field, text_val) VALUES(@vcv, @tv)', ";
-            sql += " {'@vcv':long_str, '@tv':long_str} ) \n";
-            // sql  = "cursor.execute('INSERT INTO #t2(vc1900_field, text_val, image_val) VALUES(@vcv, @tv, @iv)', ";
-            // sql += " {'@vcv':long_str, '@tv':long_str, '@iv':long_str} ) \n";
+            sql  = "cursor.execute('INSERT INTO #t2(vc1900_field, text_val, image_val) VALUES(@vcv, @tv, @iv)', ";
+            sql += " {'@vcv':long_str, '@tv':long_str, '@iv':dbapi.Binary(long_str)} ) \n";
             ExecuteStr( sql.c_str() );
         }
 
         // Check ...
         {
-            // sql = "SELECT vc1900_field, text_val, image_val FROM #t2";
-            sql = "SELECT vc1900_field, text_val FROM #t2";
+            sql = "SELECT vc1900_field, text_val, image_val FROM #t2";
             ExecuteSQL(sql);
             ExecuteStr("record = cursor.fetchone() \n");
             ExecuteStr("print record[0] \n");
@@ -649,9 +646,9 @@ CPythonDBAPITest::Test_LOB(void)
             ExecuteStr("if len(record[1]) != len(long_str) : "
                        "raise StandardError('Invalid string size: ') \n"
             );
-            // ExecuteStr("if len(record[2]) != len(long_str) : "
-            //            "raise StandardError('Invalid string size: ') \n"
-            // );
+            ExecuteStr("if len(record[2]) != len(long_str) : "
+                       "raise StandardError('Invalid string size: ') \n"
+            );
         }
     }
     catch( const string& ex ) {

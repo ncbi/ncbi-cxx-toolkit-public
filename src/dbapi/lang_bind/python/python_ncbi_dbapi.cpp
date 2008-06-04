@@ -444,6 +444,12 @@ CBinary::CBinary(void)
     PrepareForPython(this);
 }
 
+CBinary::CBinary(const string& value)
+: m_Value(value)
+{
+    PrepareForPython(this);
+}
+
 CBinary::~CBinary(void)
 {
 }
@@ -2205,95 +2211,95 @@ pythonpp::CObject
 CCursor::callproc(const pythonpp::CTuple& args)
 {
 	try {
-			const size_t args_size = args.size();
+        const size_t args_size = args.size();
 
-			m_RowsNum = -1;                     // As required by the specification ...
-			m_AllDataFetched = false;
-			m_AllSetsFetched = false;
-			bool has_out_params = false;
+        m_RowsNum = -1;                     // As required by the specification ...
+        m_AllDataFetched = false;
+        m_AllSetsFetched = false;
+        bool has_out_params = false;
 
-			if ( args_size == 0 ) {
-					throw CProgrammingError("A stored procedure name is expected as a parameter");
-			} else if ( args_size > 0 ) {
-					pythonpp::CObject obj(args[0]);
+        if ( args_size == 0 ) {
+            throw CProgrammingError("A stored procedure name is expected as a parameter");
+        } else if ( args_size > 0 ) {
+            pythonpp::CObject obj(args[0]);
 
-					if ( pythonpp::CString::HasSameType(obj) ) {
-							m_StmtStr.SetStr(pythonpp::CString(args[0]), estFunction);
-					} else {
-							throw CProgrammingError("A stored procedure name is expected as a parameter");
-					}
+            if ( pythonpp::CString::HasSameType(obj) ) {
+                m_StmtStr.SetStr(pythonpp::CString(args[0]), estFunction);
+            } else {
+                throw CProgrammingError("A stored procedure name is expected as a parameter");
+            }
 
-					m_StmtHelper.Close();
+            m_StmtHelper.Close();
 
-					// Setup parameters ...
-					if ( args_size > 1 ) {
-							pythonpp::CObject obj( args[1] );
+            // Setup parameters ...
+            if ( args_size > 1 ) {
+                pythonpp::CObject obj( args[1] );
 
-							if ( pythonpp::CDict::HasSameType(obj) ) {
-									const pythonpp::CDict dict = obj;
+                if ( pythonpp::CDict::HasSameType(obj) ) {
+                    const pythonpp::CDict dict = obj;
 
-									m_CallableStmtHelper.SetStr(m_StmtStr);
-									has_out_params = SetupParameters(dict, m_CallableStmtHelper);
-							} else  {
-									// Curently, NCBI DBAPI supports pameter binding by name only ...
-									//            pythonpp::CSequence sequence;
-									//            if ( pythonpp::CList::HasSameType(obj) ) {
-									//            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
-									//            } else if ( pythonpp::CSet::HasSameType(obj) ) {
-									//            }
-									throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
-							}
-					} else {
-							m_CallableStmtHelper.SetStr(m_StmtStr);
-					}
-			}
+                    m_CallableStmtHelper.SetStr(m_StmtStr);
+                    has_out_params = SetupParameters(dict, m_CallableStmtHelper);
+                } else  {
+                    // Curently, NCBI DBAPI supports pameter binding by name only ...
+                    //            pythonpp::CSequence sequence;
+                    //            if ( pythonpp::CList::HasSameType(obj) ) {
+                    //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
+                    //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
+                    //            }
+                    throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
+                }
+            } else {
+                m_CallableStmtHelper.SetStr(m_StmtStr);
+            }
+        }
 
-			m_CallableStmtHelper.Execute(has_out_params);
-			m_RowsNum = m_StmtHelper.GetRowCount();
+        m_CallableStmtHelper.Execute(has_out_params);
+        m_RowsNum = m_StmtHelper.GetRowCount();
 
-			if ( args_size > 1 && has_out_params) {
-					// If we have input parameters ...
-					pythonpp::CObject output_args( args[1] );
+        if ( args_size > 1 && has_out_params) {
+            // If we have input parameters ...
+            pythonpp::CObject output_args( args[1] );
 
-					if (m_CallableStmtHelper.MoveToLastRS() && m_CallableStmtHelper.HasRS() ) {
-							// We can have out/inout arguments ...
-							CVariantSet& rs = m_CallableStmtHelper.GetRS();
+            if (m_CallableStmtHelper.MoveToLastRS() && m_CallableStmtHelper.HasRS() ) {
+                // We can have out/inout arguments ...
+                CVariantSet& rs = m_CallableStmtHelper.GetRS();
 
-							if ( rs.GetResultType() == eDB_ParamResult ) {
-									// We've got ParamResult with output arguments ...
-									if ( rs.Next() ) {
-											int col_num = rs.GetTotalColumns();
-											const IResultSetMetaData& md = rs.GetMetaData();
+                if ( rs.GetResultType() == eDB_ParamResult ) {
+                    // We've got ParamResult with output arguments ...
+                    if ( rs.Next() ) {
+                        int col_num = rs.GetTotalColumns();
+                        const IResultSetMetaData& md = rs.GetMetaData();
 
-											for ( int i = 0; i < col_num; ++i) {
-													const CVariant& value = rs.GetVariant (i + 1);
+                        for ( int i = 0; i < col_num; ++i) {
+                            const CVariant& value = rs.GetVariant (i + 1);
 
-													if ( pythonpp::CDict::HasSameType(output_args) ) {
-															// Dictionary ...
-															pythonpp::CDict dict = output_args;
-															const string param_name = md.GetName(i + 1);
+                            if ( pythonpp::CDict::HasSameType(output_args) ) {
+                                // Dictionary ...
+                                pythonpp::CDict dict = output_args;
+                                const string param_name = md.GetName(i + 1);
 
-															dict.SetItem(param_name, ConvertCVariant2PCObject(value));
-													} else  {
-															// tuple[i] = ConvertCVariant2PCObject(value);
-															// Curently, NCBI DBAPI supports pameter binding by name only ...
-															//            pythonpp::CSequence sequence;
-															//            if ( pythonpp::CList::HasSameType(obj) ) {
-															//            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
-															//            } else if ( pythonpp::CSet::HasSameType(obj) ) {
-															//            }
-															throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
-													}
-											}
-									}
-							}
-					}
+                                dict.SetItem(param_name, ConvertCVariant2PCObject(value));
+                            } else  {
+                                // tuple[i] = ConvertCVariant2PCObject(value);
+                                // Curently, NCBI DBAPI supports pameter binding by name only ...
+                                //            pythonpp::CSequence sequence;
+                                //            if ( pythonpp::CList::HasSameType(obj) ) {
+                                //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
+                                //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
+                                //            }
+                                throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
+                            }
+                        }
+                    }
+                }
+            }
 
-					// Get RowResultSet ...
-					m_CallableStmtHelper.MoveToNextRS();
+            // Get RowResultSet ...
+            m_CallableStmtHelper.MoveToNextRS();
 
-					return output_args;
-			}
+            return output_args;
+        }
 	}
 	catch(const CException& e) {
 		throw CDatabaseError(e.GetMsg());
@@ -2326,46 +2332,46 @@ pythonpp::CObject
 CCursor::execute(const pythonpp::CTuple& args)
 {
     try {
-			const size_t args_size = args.size();
+        const size_t args_size = args.size();
 
-			m_AllDataFetched = false;
-			m_AllSetsFetched = false;
+        m_AllDataFetched = false;
+        m_AllSetsFetched = false;
 
-			// Process function's arguments ...
-			if ( args_size == 0 ) {
-					throw CProgrammingError("An SQL statement string is expected as a parameter");
-			} else if ( args_size > 0 ) {
-					pythonpp::CObject obj(args[0]);
+        // Process function's arguments ...
+        if ( args_size == 0 ) {
+            throw CProgrammingError("An SQL statement string is expected as a parameter");
+        } else if ( args_size > 0 ) {
+            pythonpp::CObject obj(args[0]);
 
-					if ( pythonpp::CString::HasSameType(obj) ) {
-							m_StmtStr.SetStr(pythonpp::CString(args[0]), estSelect);
-					} else {
-							throw CProgrammingError("An SQL statement string is expected as a parameter");
-					}
+            if ( pythonpp::CString::HasSameType(obj) ) {
+                m_StmtStr.SetStr(pythonpp::CString(args[0]), estSelect);
+            } else {
+                throw CProgrammingError("An SQL statement string is expected as a parameter");
+            }
 
-					m_CallableStmtHelper.Close();
-					m_StmtHelper.SetStr(m_StmtStr);
+            m_CallableStmtHelper.Close();
+            m_StmtHelper.SetStr(m_StmtStr);
 
-					// Setup parameters ...
-					if ( args_size > 1 ) {
-							pythonpp::CObject obj(args[1]);
+            // Setup parameters ...
+            if ( args_size > 1 ) {
+                pythonpp::CObject obj(args[1]);
 
-							if ( pythonpp::CDict::HasSameType(obj) ) {
-									SetupParameters(obj, m_StmtHelper);
-							} else  {
-									// Curently, NCBI DBAPI supports parameter binding by name only ...
-									//            pythonpp::CSequence sequence;
-									//            if ( pythonpp::CList::HasSameType(obj) ) {
-									//            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
-									//            } else if ( pythonpp::CSet::HasSameType(obj) ) {
-									//            }
-									throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
-							}
-					}
-			}
+                if ( pythonpp::CDict::HasSameType(obj) ) {
+                    SetupParameters(obj, m_StmtHelper);
+                } else  {
+                    // Curently, NCBI DBAPI supports parameter binding by name only ...
+                    //            pythonpp::CSequence sequence;
+                    //            if ( pythonpp::CList::HasSameType(obj) ) {
+                    //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
+                    //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
+                    //            }
+                    throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
+                }
+            }
+        }
 
-			m_StmtHelper.Execute();
-			m_RowsNum = m_StmtHelper.GetRowCount();
+        m_StmtHelper.Execute();
+        m_RowsNum = m_StmtHelper.GetRowCount();
     }
     catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
@@ -2431,6 +2437,9 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
         const pythonpp::CString python_str(obj);
         const string std_str(python_str);
 		return CVariant( std_str );
+    } else if (obj == CBinary::GetType()) {
+        const string value = static_cast<CBinary*>(obj.Get())->GetValue();
+        return CVariant::VarBinary(value.c_str(), value.size());
     }
 
     return CVariant(eDB_UnsupportedType);
@@ -2440,49 +2449,49 @@ pythonpp::CObject
 CCursor::executemany(const pythonpp::CTuple& args)
 {
     try {
-			const size_t args_size = args.size();
+        const size_t args_size = args.size();
 
-			m_AllDataFetched = false;
-			m_AllSetsFetched = false;
+        m_AllDataFetched = false;
+        m_AllSetsFetched = false;
 
-			// Process function's arguments ...
-			if ( args_size == 0 ) {
-					throw CProgrammingError("A SQL statement string is expected as a parameter");
-			} else if ( args_size > 0 ) {
-					pythonpp::CObject obj(args[0]);
+        // Process function's arguments ...
+        if ( args_size == 0 ) {
+            throw CProgrammingError("A SQL statement string is expected as a parameter");
+        } else if ( args_size > 0 ) {
+            pythonpp::CObject obj(args[0]);
 
-					if ( pythonpp::CString::HasSameType(obj) ) {
-							m_StmtStr.SetStr(pythonpp::CString(args[0]), estSelect);
-					} else {
-							throw CProgrammingError("A SQL statement string is expected as a parameter");
-					}
+            if ( pythonpp::CString::HasSameType(obj) ) {
+                m_StmtStr.SetStr(pythonpp::CString(args[0]), estSelect);
+            } else {
+                throw CProgrammingError("A SQL statement string is expected as a parameter");
+            }
 
-					// Setup parameters ...
-					if ( args_size > 1 ) {
-							pythonpp::CObject obj(args[1]);
+            // Setup parameters ...
+            if ( args_size > 1 ) {
+                pythonpp::CObject obj(args[1]);
 
-							if ( pythonpp::CList::HasSameType(obj) || pythonpp::CTuple::HasSameType(obj) ) {
-									const pythonpp::CSequence params(obj);
-									pythonpp::CList::const_iterator citer;
-									pythonpp::CList::const_iterator cend = params.end();
+                if ( pythonpp::CList::HasSameType(obj) || pythonpp::CTuple::HasSameType(obj) ) {
+                    const pythonpp::CSequence params(obj);
+                    pythonpp::CList::const_iterator citer;
+                    pythonpp::CList::const_iterator cend = params.end();
 
-									//
-									m_CallableStmtHelper.Close();
-									m_StmtHelper.SetStr( m_StmtStr );
-									m_RowsNum = 0;
+                    //
+                    m_CallableStmtHelper.Close();
+                    m_StmtHelper.SetStr( m_StmtStr );
+                    m_RowsNum = 0;
 
-									for ( citer = params.begin(); citer != cend; ++citer ) {
-											SetupParameters(*citer, m_StmtHelper);
-											m_StmtHelper.Execute();
-											m_RowsNum += m_StmtHelper.GetRowCount();
-									}
-							} else {
-									throw CProgrammingError("Sequence of parameters should be provided either as a list or as a tuple data type");
-							}
-					} else {
-							throw CProgrammingError("A sequence of parameters is expected with the 'executemany' function");
-					}
-			}
+                    for ( citer = params.begin(); citer != cend; ++citer ) {
+                        SetupParameters(*citer, m_StmtHelper);
+                        m_StmtHelper.Execute();
+                        m_RowsNum += m_StmtHelper.GetRowCount();
+                    }
+                } else {
+                    throw CProgrammingError("Sequence of parameters should be provided either as a list or as a tuple data type");
+                }
+            } else {
+                throw CProgrammingError("A sequence of parameters is expected with the 'executemany' function");
+            }
+        }
     }
     catch(const CException& e) {
         throw CDatabaseError(e.GetMsg());
@@ -3319,8 +3328,7 @@ Binary(PyObject *self, PyObject *args)
             throw CProgrammingError("Invalid parameters within 'Binary' function");
         }
 
-        obj = new CBinary(
-            );
+        obj = new CBinary(value);
     }
     catch (const CException& e) {
         pythonpp::CError::SetString(e.GetMsg());
@@ -3380,7 +3388,7 @@ void init_common(const string& module_name)
 
     // Fix plugin manager ...
     CFile file(python::RetrieveModuleFileName());
-    string module_dir = file.GetDir() + "python_ncbi_dbapi/1.7";
+    string module_dir = file.GetDir() + "python_ncbi_dbapi/1.8";
     CDriverManager::GetInstance().AddDllSearchPath(module_dir.c_str());
 
 

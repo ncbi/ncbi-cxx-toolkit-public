@@ -54,7 +54,17 @@ class CBinary : public pythonpp::CExtObject<CBinary>
 {
 public:
     CBinary(void);
+    CBinary(const string& value);
     ~CBinary(void);
+
+public:
+    string GetValue(void) const
+    {
+        return m_Value;
+    }
+
+private:
+    const string m_Value;
 };
 
 //////////////////////////////////////////////////////////////////////////////

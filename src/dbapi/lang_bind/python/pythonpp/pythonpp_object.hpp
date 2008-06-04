@@ -238,7 +238,14 @@ public:
     }
 
 public:
+    // There's really no reason to use this function instead of the common
+    // expression m_PyObject->ob_type, which returns a pointer of type PyTypeObject*,
+    // except when the incremented reference count is needed.
     CType GetType(void) const;
+    PyTypeObject* GetObjType(void) const
+    {
+        return m_PyObject->ob_type;
+    }
     // CString GetString(void) const;
     // CString GetRepresentation() const;
     // std::string as_string(void) const;
@@ -407,6 +414,12 @@ public:
         return PyType_CheckExact (obj);
     }
 };
+
+inline
+bool operator ==(const CType& l, const CType& r)
+{
+    return l.Get() == r.Get();
+}
 
 ///////////////////////////////////////////////////////////////////////////
 // Numeric interface
