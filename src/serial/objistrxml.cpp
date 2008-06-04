@@ -2293,7 +2293,7 @@ size_t CObjectIStreamXml::ReadBytes(ByteBlock& block,
                     end_of_data = true;
                     break;
                 }
-                if (c != '=') {
+                /*if (c != '=')*/ {
                     src_buf[ src_size++ ] = c;
                 }
                 m_Input.SkipChar();
