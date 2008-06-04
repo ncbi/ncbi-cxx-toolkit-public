@@ -599,7 +599,7 @@ CDB_UserHandler_Exception::HandleIt(CDB_Exception* ex)
     }
 
     if (ex->GetSeverity() != eDiag_Info) {
-        string msg = string(ex->what()) + 
+        string msg =
             " SERVER: '" + ex->GetServerName() +
             "' USER: '" + ex->GetUserName() + "'" +
             (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
