@@ -827,7 +827,7 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
         id1.Reset();
         id2.Reset();
 
-        CHECK_EQUAL(feat1->GetData().GetRegion(), "2");
+        CHECK_EQUAL(feat1->GetData().GetRegion(), string("2"));
         loc1 = &feat1->SetLocation();
 
         CHECK(loc1->IsEmpty());
