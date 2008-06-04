@@ -177,7 +177,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
             weight_qual = true;
             m_Weight |= fwWeightQual;
             if ( qual_val == kVal_1 ) {
-                m_Weight |= 1 << fWeightFlagBits;
+                m_Weight |= 1 << (int)fWeightFlagBits;
             }
             else {
                 try {
@@ -185,7 +185,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                     if ( value < 0 || value > kMax_Weight ) {
                         return eSNP_Complex_WeightBadValue;
                     }
-                    m_Weight |= TWeight(value) << fWeightFlagBits;
+                    m_Weight |= TWeight(value) << (int)fWeightFlagBits;
                 }
                 catch ( ... ) {
                     return eSNP_Complex_WeightBadValue;
@@ -298,7 +298,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                 if ( value < 0 || value > kMax_Weight ) {
                     return eSNP_Complex_WeightBadValue;
                 }
-                m_Weight |= TWeight(value) << fWeightFlagBits;
+                m_Weight |= TWeight(value) << (int)fWeightFlagBits;
             }
         }
         else if ( kId_dbSnpQAdata == ext_id_str ) {
@@ -532,7 +532,7 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
             }
             ++qual_index;
             CPackString::Assign(gb_qual->SetQual(), kId_weight);
-            int weight = m_Weight >> fWeightFlagBits;
+            int weight = m_Weight >> (int)fWeightFlagBits;
             if ( weight == 1 ) {
                 CPackString::Assign(gb_qual->SetVal(), kVal_1);
             }
@@ -557,7 +557,7 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
         }
         CUser_field& user_field = **it;
         CPackString::Assign(user_field.SetLabel().SetStr(), kId_weight);
-        user_field.SetData().SetInt(m_Weight >> fWeightFlagBits);
+        user_field.SetData().SetInt(m_Weight >> (int)fWeightFlagBits);
         data.erase(++it, data.end());
     }
     else if ( (m_Flags & fQualityCodesMask) ||
