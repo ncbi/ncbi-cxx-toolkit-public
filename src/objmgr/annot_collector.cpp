@@ -396,8 +396,13 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
 {
     _ASSERT(IsSNPFeat());
     TSeqPos src_from = snp.GetFrom(), src_to = snp.GetTo();
-    ENa_strand src_strand =
-        snp.MinusStrand()? eNa_strand_minus: eNa_strand_plus;
+    ENa_strand src_strand = eNa_strand_unknown;
+    if ( snp.MinusStrand() ) {
+        src_strand = eNa_strand_minus;
+    }
+    else if ( snp.PlusStrand() ) {
+        src_strand = eNa_strand_plus;
+    }
     if ( !cvt ) {
         m_MappingInfo.SetTotalRange(TRange(src_from, src_to));
         m_MappingInfo.SetMappedSeq_id(

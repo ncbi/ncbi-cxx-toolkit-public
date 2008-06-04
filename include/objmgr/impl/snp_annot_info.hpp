@@ -208,11 +208,13 @@ protected:
     const string& x_GetComment(SSNP_Info::TCommentIndex index) const;
     SSNP_Info::TAlleleIndex x_GetAlleleIndex(const string& allele);
     const string& x_GetAllele(SSNP_Info::TAlleleIndex index) const;
-    SSNP_Info::TQualityIndex x_GetQualityIndex(const string& str);
+    SSNP_Info::TQualityCodesIndex x_GetQualityCodesIndex(const string& str);
     typedef vector<char> TOctetString;
-    SSNP_Info::TQualityIndex x_GetQualityIndex(const TOctetString& os);
-    const string& x_GetQualityStr(SSNP_Info::TQualityIndex index) const;
-    void x_GetQualityOs(SSNP_Info::TQualityIndex index, TOctetString& os) const;
+    SSNP_Info::TQualityCodesIndex x_GetQualityCodesIndex(const TOctetString& os);
+    const string& x_GetQualityCodesStr(SSNP_Info::TQualityCodesIndex index) const;
+    void x_GetQualityCodesOs(SSNP_Info::TQualityCodesIndex index, TOctetString& os) const;
+    SSNP_Info::TExtraIndex x_GetExtraIndex(const string& str);
+    const string& x_GetExtra(SSNP_Info::TExtraIndex index) const;
 
     bool x_CheckGi(int gi);
     void x_SetGi(int gi);
@@ -232,8 +234,9 @@ private:
     TSNP_Set                    m_SNP_Set;
     CIndexedStrings             m_Comments;
     CIndexedStrings             m_Alleles;
-    CIndexedStrings             m_QualityStr;
-    CIndexedOctetStrings        m_QualityOs;
+    CIndexedStrings             m_QualityCodesStr;
+    CIndexedOctetStrings        m_QualityCodesOs;
+    CIndexedStrings             m_Extra;
     CRef<CSeq_annot>            m_Seq_annot;
 };
 
@@ -324,18 +327,26 @@ CSeq_annot_SNP_Info::x_GetCommentIndex(const string& comment)
 
 
 inline
-SSNP_Info::TQualityIndex
-CSeq_annot_SNP_Info::x_GetQualityIndex(const string& str)
+SSNP_Info::TExtraIndex
+CSeq_annot_SNP_Info::x_GetExtraIndex(const string& str)
 {
-    return m_QualityStr.GetIndex(str, SSNP_Info::kMax_QualityIndex);
+    return m_Extra.GetIndex(str, SSNP_Info::kMax_ExtraIndex);
 }
 
 
 inline
-SSNP_Info::TQualityIndex
-CSeq_annot_SNP_Info::x_GetQualityIndex(const TOctetString& os)
+SSNP_Info::TQualityCodesIndex
+CSeq_annot_SNP_Info::x_GetQualityCodesIndex(const string& str)
 {
-    return m_QualityOs.GetIndex(os, SSNP_Info::kMax_QualityIndex);
+    return m_QualityCodesStr.GetIndex(str, SSNP_Info::kMax_QualityCodesIndex);
+}
+
+
+inline
+SSNP_Info::TQualityCodesIndex
+CSeq_annot_SNP_Info::x_GetQualityCodesIndex(const TOctetString& os)
+{
+    return m_QualityCodesOs.GetIndex(os, SSNP_Info::kMax_QualityCodesIndex);
 }
 
 
@@ -357,17 +368,25 @@ CSeq_annot_SNP_Info::x_GetAllele(SSNP_Info::TAlleleIndex index) const
 
 inline
 const string&
-CSeq_annot_SNP_Info::x_GetQualityStr(SSNP_Info::TQualityIndex index) const
+CSeq_annot_SNP_Info::x_GetQualityCodesStr(SSNP_Info::TQualityCodesIndex index) const
 {
-    return m_QualityStr.GetString(index);
+    return m_QualityCodesStr.GetString(index);
 }
 
 
 inline
-void CSeq_annot_SNP_Info::x_GetQualityOs(SSNP_Info::TQualityIndex index,
-                                         TOctetString& os) const
+void CSeq_annot_SNP_Info::x_GetQualityCodesOs(SSNP_Info::TQualityCodesIndex index,
+                                              TOctetString& os) const
 {
-    m_QualityOs.GetString(index, os);
+    m_QualityCodesOs.GetString(index, os);
+}
+
+
+inline
+const string&
+CSeq_annot_SNP_Info::x_GetExtra(SSNP_Info::TExtraIndex index) const
+{
+    return m_Extra.GetString(index);
 }
 
 

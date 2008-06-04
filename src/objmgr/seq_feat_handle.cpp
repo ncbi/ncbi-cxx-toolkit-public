@@ -227,22 +227,30 @@ const string& CSeq_feat_Handle::GetSNPAllele(size_t index) const
 }
 
 
+const string& CSeq_feat_Handle::GetSNPExtra(void) const
+{
+    return x_GetSNP_annot_Info().x_GetExtra(x_GetSNP_Info().GetExtraIndex());
+}
+
+
 CUser_field::TData::E_Choice
 CSeq_feat_Handle::GetSNPQualityCodeWhich(void) const
 {
-    return x_GetSNP_Info().GetQualityCodeWhich();
+    return x_GetSNP_Info().GetQualityCodesWhich();
 }
 
 
 const string& CSeq_feat_Handle::GetSNPQualityCodeStr(void) const
 {
-    return x_GetSNP_annot_Info().x_GetQualityStr(x_GetSNP_Info().GetQualityStrIndex());
+    return x_GetSNP_annot_Info()
+        .x_GetQualityCodesStr(x_GetSNP_Info().GetQualityCodesStrIndex());
 }
 
 
 void CSeq_feat_Handle::GetSNPQualityCodeOs(vector<char>& os) const
 {
-    x_GetSNP_annot_Info().x_GetQualityOs(x_GetSNP_Info().GetQualityOsIndex(), os);
+    x_GetSNP_annot_Info()
+        .x_GetQualityCodesOs(x_GetSNP_Info().GetQualityCodesOsIndex(), os);
 }
 
 

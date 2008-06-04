@@ -98,15 +98,16 @@ const char* const SSNP_Info::s_SNP_Type_Label[eSNP_Type_last] = {
 };
 
 
-static const string kId_variation        ("variation");
-static const string kId_allele           ("allele");
-static const string kId_replace          ("replace");
-static const string kId_dbSnpSynonymyData("dbSnpSynonymyData");
-static const string kId_dbSnpQAdata      ("dbSnpQAdata");
-static const string kId_weight           ("weight");
-static const string kId_QualityCodes     ("QualityCodes");
-static const string kVal_1               ("1");
-static const string kId_dbSNP            ("dbSNP");
+static const CTempString kId_variation        ("variation");
+static const CTempString kId_allele           ("allele");
+static const CTempString kId_replace          ("replace");
+static const CTempString kId_dbSnpSynonymyData("dbSnpSynonymyData");
+static const CTempString kId_dbSnpQAdata      ("dbSnpQAdata");
+static const CTempString kId_weight           ("weight");
+static const CTempString kId_QualityCodes     ("QualityCodes");
+static const CTempString kId_Extra            ("Extra");
+static const CTempString kVal_1               ("1");
+static const CTempString kId_dbSNP            ("dbSNP");
 
 static const size_t kMax_CommentLength = 65530;
 static const size_t kMax_AlleleLength  = 32;
@@ -119,19 +120,16 @@ size_t SSNP_Info::GetAllelesCount(void) const
             break;
         }
     }
-    if ( m_Flags & fQualityCodeMask ) {
-        --count;
-    }
     return count;
 }
 
 
-CUser_field::TData::E_Choice SSNP_Info::GetQualityCodeWhich(void) const
+CUser_field::TData::E_Choice SSNP_Info::GetQualityCodesWhich(void) const
 {
-    if ( m_Flags & fQualityCodeStr ) {
+    if ( m_Flags & fQualityCodesStr ) {
         return CUser_field::TData::e_Str;
     }
-    if ( m_Flags & fQualityCodeOs ) {
+    if ( m_Flags & fQualityCodesOs ) {
         return CUser_field::TData::e_Os;
     }
     return CUser_field::TData::e_not_set;
@@ -139,9 +137,12 @@ CUser_field::TData::E_Choice SSNP_Info::GetQualityCodeWhich(void) const
 
 
 SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
-                                              CSeq_annot_SNP_Info& annot_info)
+                                              CSeq_annot_SNP_Info& annot)
 {
     m_Flags = 0;
+    m_CommentIndex = kNo_CommentIndex;
+    m_Weight = 0;
+    m_ExtraIndex = kNo_ExtraIndex;
 
     const CSeq_loc& loc = feat.GetLocation();
     const CSeqFeatData& data = feat.GetData();
@@ -166,17 +167,17 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         const CGb_qual& gb_qual = **it;
         const string& qual_id = gb_qual.GetQual();
         const string& qual_val = gb_qual.GetVal();
-        if ( qual_id == kId_replace ) {
+        if ( kId_replace == qual_id ) {
             qual_replace = true;
         }
-        else if ( qual_id == kId_weight ) {
+        else if ( kId_weight == qual_id ) {
             if ( weight_qual ) {
                 return eSNP_Complex_WeightCountIsNotOne;
             }
             weight_qual = true;
-            m_Flags |= fWeightQual;
+            m_Weight |= fwWeightQual;
             if ( qual_val == kVal_1 ) {
-                m_Weight = 1;
+                m_Weight |= 1 << fWeightFlagBits;
             }
             else {
                 try {
@@ -184,7 +185,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                     if ( value < 0 || value > kMax_Weight ) {
                         return eSNP_Complex_WeightBadValue;
                     }
-                    m_Weight = TWeight(value);
+                    m_Weight |= TWeight(value) << fWeightFlagBits;
                 }
                 catch ( ... ) {
                     return eSNP_Complex_WeightBadValue;
@@ -192,7 +193,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
             }
             continue;
         }
-        else if ( qual_id == kId_allele ) {
+        else if ( kId_allele == qual_id ) {
             qual_allele = true;
         }
         else {
@@ -201,7 +202,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         if ( qual_val.size() > kMax_AlleleLength ) {
             return eSNP_Complex_AlleleTooBig;
         }
-        TAlleleIndex allele_index = annot_info.x_GetAlleleIndex(qual_val);
+        TAlleleIndex allele_index = annot.x_GetAlleleIndex(qual_val);
         if ( allele_index == kNo_AlleleIndex ) {
             return eSNP_Complex_AlleleIndexOverflow;
         }
@@ -211,7 +212,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         return eSNP_Bad_WrongTextId;
     }
     if ( qual_replace ) {
-        m_Flags |= fQualReplace;
+        m_Flags |= fAlleleReplace;
     }
     for ( size_t i = alleles_count; i < kMax_AllelesCount; ++i ) {
         m_AllelesIndices[i] = kNo_AlleleIndex;
@@ -223,7 +224,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
             return eSNP_Complex_IdCountTooLarge;
         }
         const CDbtag& dbtag = **it;
-        if ( dbtag.GetDb() != kId_dbSNP ) {
+        if ( kId_dbSNP != dbtag.GetDb() ) {
             return eSNP_Bad_WrongTextId;
         }
         const CObject_id& tag = dbtag.GetTag();
@@ -256,7 +257,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         return eSNP_Bad_WrongMemberSet;
     }
 
-    if ( imp_feat.GetKey() != kId_variation ) {
+    if ( kId_variation != imp_feat.GetKey()  ) {
         return eSNP_Bad_WrongTextId;
     }
 
@@ -267,7 +268,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
             return eSNP_Bad_WrongTextId;
         }
         const string& ext_id_str = ext_id.GetStr();
-        if ( ext_id_str == kId_dbSnpSynonymyData ) {
+        if ( kId_dbSnpSynonymyData == ext_id_str ) {
             if ( weight_qual ) {
                 return eSNP_Complex_WeightCountIsNotOne;
             }
@@ -279,7 +280,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                 {{
                     const CObject_id& id = field.GetLabel();
                     if ( id.Which() != CObject_id::e_Str ||
-                         id.GetStr() != kId_weight ) {
+                         kId_weight != id.GetStr() ) {
                         return eSNP_Bad_WrongTextId;
                     }
                 }}
@@ -288,7 +289,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                     return eSNP_Complex_WeightCountIsNotOne;
                 }
                 weight_ext = true;
-                m_Flags |= fWeightExt;
+                m_Weight |= fwWeightExt;
                 if ( field.IsSetNum() ||
                      user_data.Which() != CUser_field::TData::e_Int ) {
                     return eSNP_Complex_WeightBadValue;
@@ -297,61 +298,89 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                 if ( value < 0 || value > kMax_Weight ) {
                     return eSNP_Complex_WeightBadValue;
                 }
-                m_Weight = TWeight(value);
+                m_Weight |= TWeight(value) << fWeightFlagBits;
             }
         }
-        else if ( ext_id_str == kId_dbSnpQAdata ) {
-            if ( alleles_count == kMax_AllelesCount ||
-                 (m_Flags & fQualityCodeMask) ) {
-                return eSNP_Complex_NoPlaceForQAdata;
-            }
-            
+        else if ( kId_dbSnpQAdata == ext_id_str ) {
             const CUser_object::TData& data = ext.GetData();
             if ( data.empty() ) {
                 return eSNP_Complex_BadQAdata;
             }
-            CUser_object::TData::const_iterator it = data.begin();
-            const CUser_field& field = **it;
-            {{
+            ITERATE ( CUser_object::TData, it, data ) {
+                const CUser_field& field = **it;
                 const CObject_id& id = field.GetLabel();
-                if ( id.Which() != CObject_id::e_Str ||
-                     id.GetStr() != kId_QualityCodes ) {
+                if ( id.Which() != CObject_id::e_Str ) {
                     return eSNP_Bad_WrongTextId;
                 }
-            }}
-            const CUser_field::TData& user_data = field.GetData();
-            TFlags qaflag;
-            TQualityIndex qaindex;
-            switch ( user_data.Which() ) {
-            case CUser_field::TData::e_Str:
-                qaflag = fQualityCodeStr;
-                qaindex = annot_info.x_GetQualityIndex(user_data.GetStr());
-                break;
-            case CUser_field::TData::e_Os:
-                qaflag = fQualityCodeOs;
-                qaindex = annot_info.x_GetQualityIndex(user_data.GetOs());
-                break;
-            default:
-                return eSNP_Complex_BadQAdata;
+                if ( kId_Extra == id.GetStr() ) {
+                    if ( m_ExtraIndex != kNo_ExtraIndex ) {
+                        // duplicated Extra
+                        return eSNP_Complex_NoPlaceForQAdata;
+                    }
+                    const CUser_field::TData& user_data = field.GetData();
+                    if ( !user_data.IsStr() ) {
+                        return eSNP_Complex_BadQAdata;
+                    }
+                    TExtraIndex index =
+                        annot.x_GetExtraIndex(user_data.GetStr());
+                    if ( index == kNo_ExtraIndex ) {
+                        return eSNP_Complex_QAdataIndexOverflow;
+                    }
+                    m_ExtraIndex = index;
+                }
+                else if ( kId_QualityCodes == id.GetStr() ) {
+                    if ( m_Flags&fQualityCodesMask ) {
+                        // duplicated QualityCodes
+                        return eSNP_Complex_NoPlaceForQAdata;
+                    }
+                    const CUser_field::TData& user_data = field.GetData();
+                    TFlags qaflag;
+                    TQualityCodesIndex index;
+                    switch ( user_data.Which() ) {
+                    case CUser_field::TData::e_Str:
+                        qaflag = fQualityCodesStr;
+                        index = annot.x_GetQualityCodesIndex(user_data.GetStr());
+                        break;
+                    case CUser_field::TData::e_Os:
+                        qaflag = fQualityCodesOs;
+                        index = annot.x_GetQualityCodesIndex(user_data.GetOs());
+                        break;
+                    default:
+                        return eSNP_Complex_BadQAdata;
+                    }
+                    if ( index == kNo_QualityCodesIndex ) {
+                        return eSNP_Complex_QAdataIndexOverflow;
+                    }
+                    m_Flags |= qaflag;
+                    m_QualityCodesIndex = index;
+                }
+                else {
+                    return eSNP_Bad_WrongTextId;
+                }
             }
-            if ( qaindex == kNo_QualityIndex || ++it != data.end() ) {
-                return eSNP_Complex_QAdataIndexOverflow;
-            }
-            m_Flags |= qaflag;
-            m_AllelesIndices[alleles_count++] = qaindex;
         }
         else {
             return eSNP_Bad_WrongTextId;
         }
     }
     const CSeq_id* id;
-    ENa_strand strand;
+    ENa_strand strand = eNa_strand_unknown;
     switch ( loc.Which() ) {
     case CSeq_loc::e_Pnt:
     {
         const CSeq_point& point = loc.GetPnt();
-        if ( !point.IsSetStrand() ) {
-            return eSNP_Bad_WrongMemberSet;
+        if ( point.IsSetStrand() ) {
+            strand = loc.GetStrand();
+            switch ( strand ) {
+            case eNa_strand_plus:
+                m_Flags |= fPlusStrand;
+                break;
+            case eNa_strand_minus:
+                m_Flags |= fMinusStrand;
+                break;
+            default:
+                return eSNP_Complex_LocationStrandIsBad;
+            }
         }
         if ( point.IsSetFuzz() ) {
             const CInt_fuzz& fuzz = point.GetFuzz();
@@ -361,7 +390,6 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
             m_Flags |= fFuzzLimTr;
         }
         id = &point.GetId();
-        strand = point.GetStrand();
         m_ToPosition = point.GetPoint();
         m_PositionDelta = 0;
         break;
@@ -369,12 +397,23 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
     case CSeq_loc::e_Int:
     {
         const CSeq_interval& interval = loc.GetInt();
-        if ( interval.IsSetFuzz_from() || interval.IsSetFuzz_to() ||
-             !interval.IsSetStrand() ) {
+        if ( interval.IsSetStrand() ) {
+            strand = interval.GetStrand();
+            switch ( strand ) {
+            case eNa_strand_plus:
+                m_Flags |= fPlusStrand;
+                break;
+            case eNa_strand_minus:
+                m_Flags |= fMinusStrand;
+                break;
+            default:
+                return eSNP_Complex_LocationStrandIsBad;
+            }
+        }
+        if ( interval.IsSetFuzz_from() || interval.IsSetFuzz_to() ) {
             return eSNP_Bad_WrongMemberSet;
         }
         id = &interval.GetId();
-        strand = interval.GetStrand();
         m_ToPosition = interval.GetTo();
         int delta = m_ToPosition - interval.GetFrom();
         if ( delta <= 0 || delta > kMax_PositionDelta ) {
@@ -387,34 +426,21 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         return eSNP_Complex_LocationIsNotPoint;
     }
 
-    switch ( strand ) {
-    case eNa_strand_plus:
-        break;
-    case eNa_strand_minus:
-        m_Flags |= fMinusStrand;
-        break;
-    default:
-        return eSNP_Complex_LocationStrandIsBad;
-    }
-
     if ( feat.IsSetComment() ) {
         const string& comment = feat.GetComment();
         if ( comment.size() > kMax_CommentLength ) {
             return eSNP_Complex_CommentTooBig;
         }
-        m_CommentIndex = annot_info.x_GetCommentIndex(feat.GetComment());
+        m_CommentIndex = annot.x_GetCommentIndex(feat.GetComment());
         if ( m_CommentIndex == kNo_CommentIndex ) {
             return eSNP_Complex_CommentIndexOverflow;
         }
-    }
-    else {
-        m_CommentIndex = kNo_CommentIndex;
     }
 
     if ( !id->IsGi() ) {
         return eSNP_Complex_LocationIsNotGi;
     }
-    if ( !annot_info.x_CheckGi(id->GetGi()) ) {
+    if ( !annot.x_CheckGi(id->GetGi()) ) {
         return eSNP_Complex_LocationGiIsBad;
     }
 
@@ -456,7 +482,7 @@ CRef<CSeq_feat> SSNP_Info::x_CreateSeq_feat(void) const
 
 
 void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
-                                     const CSeq_annot_SNP_Info& annot_info) const
+                                     const CSeq_annot_SNP_Info& annot) const
 {
     CPackString::Assign(feat.SetData().SetImp().SetKey(),
                         kId_variation);
@@ -466,7 +492,7 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
         }
         else {
             CPackString::Assign(feat.SetComment(),
-                                annot_info.x_GetComment(m_CommentIndex));
+                                annot.x_GetComment(m_CommentIndex));
         }
     }
     size_t alleles_count = 0;
@@ -475,15 +501,10 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
         ++alleles_count;
     }
     
-    if ( m_Flags & fQualityCodeMask ) {
-        _ASSERT(alleles_count > 0);
-        --alleles_count;
-    }
-    
     { // allele
         CSeq_feat::TQual& qual = feat.SetQual();
         const string& qual_str =
-            m_Flags & fQualReplace? kId_replace: kId_allele;
+            m_Flags & fAlleleReplace? kId_replace: kId_allele;
         
         size_t qual_index = 0;
         for ( size_t i = 0; i < alleles_count; ++i ) {
@@ -498,10 +519,10 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
             ++qual_index;
             CPackString::Assign(gb_qual->SetQual(), qual_str);
             CPackString::Assign(gb_qual->SetVal(),
-                                annot_info.x_GetAllele(allele_index));
+                                annot.x_GetAllele(allele_index));
         }
 
-        if ( m_Flags & fWeightQual ) { // weight in qual
+        if ( m_Weight & fwWeightQual ) { // weight in qual
             CGb_qual* gb_qual;
             if ( qual_index < qual.size() ) {
                 gb_qual = qual[qual_index].GetPointer();
@@ -511,52 +532,77 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
             }
             ++qual_index;
             CPackString::Assign(gb_qual->SetQual(), kId_weight);
-            if ( m_Weight == 1 ) {
+            int weight = m_Weight >> fWeightFlagBits;
+            if ( weight == 1 ) {
                 CPackString::Assign(gb_qual->SetVal(), kVal_1);
             }
             else {
-                gb_qual->SetVal(NStr::IntToString(m_Weight));
+                gb_qual->SetVal(NStr::IntToString(weight));
             }
         }
         qual.resize(qual_index);
     }
 
-    if ( m_Flags & fWeightExt ) {
+    if ( (m_Weight & fwWeightExt) ) {
         // weight in ext
         CSeq_feat::TExt& ext = feat.SetExt();
         CPackString::Assign(ext.SetType().SetStr(), kId_dbSnpSynonymyData);
         CSeq_feat::TExt::TData& data = ext.SetData();
-        data.resize(1);
-        data[0].Reset(new CUser_field);
-        CUser_field& user_field = *data[0];
-        CPackString::Assign(user_field.SetLabel().SetStr(),
-                            kId_weight);
-        user_field.SetData().SetInt(m_Weight);
+        CSeq_feat::TExt::TData::iterator it = data.begin();
+        if ( it == data.end() ) {
+            it = data.insert(it, Ref(new CUser_field));
+        }
+        else if ( !*it ) {
+            *it = new CUser_field;
+        }
+        CUser_field& user_field = **it;
+        CPackString::Assign(user_field.SetLabel().SetStr(), kId_weight);
+        user_field.SetData().SetInt(m_Weight >> fWeightFlagBits);
+        data.erase(++it, data.end());
     }
-    else if ( m_Flags & fQualityCodeStr ) {
+    else if ( (m_Flags & fQualityCodesMask) ||
+              (m_ExtraIndex != kNo_ExtraIndex) ) {
         // qadata in ext
         CSeq_feat::TExt& ext = feat.SetExt();
         CPackString::Assign(ext.SetType().SetStr(), kId_dbSnpQAdata);
         CSeq_feat::TExt::TData& data = ext.SetData();
-        data.resize(1);
-        data[0].Reset(new CUser_field);
-        CUser_field& user_field = *data[0];
-        CPackString::Assign(user_field.SetLabel().SetStr(), kId_QualityCodes);
-        TQualityIndex qadata_index = m_AllelesIndices[alleles_count];
-        CPackString::Assign(user_field.SetData().SetStr(),
-                            annot_info.x_GetQualityStr(qadata_index));
-    }
-    else if ( m_Flags & fQualityCodeOs ) {
-        // qadata in ext
-        CSeq_feat::TExt& ext = feat.SetExt();
-        CPackString::Assign(ext.SetType().SetStr(), kId_dbSnpQAdata);
-        CSeq_feat::TExt::TData& data = ext.SetData();
-        data.resize(1);
-        data[0].Reset(new CUser_field);
-        CUser_field& user_field = *data[0];
-        CPackString::Assign(user_field.SetLabel().SetStr(), kId_QualityCodes);
-        TQualityIndex qadata_index = m_AllelesIndices[alleles_count];
-        annot_info.x_GetQualityOs(qadata_index, user_field.SetData().SetOs());
+        CSeq_feat::TExt::TData::iterator it = data.begin();
+        if ( m_ExtraIndex != kNo_ExtraIndex ) {
+            if ( it == data.end() ) {
+                it = data.insert(it, Ref(new CUser_field));
+            }
+            else if ( !*it ) {
+                *it = new CUser_field;
+            }
+            CUser_field& user_field = **it;
+            CPackString::Assign(user_field.SetLabel().SetStr(),
+                                kId_Extra);
+            TExtraIndex index = m_ExtraIndex;
+            CPackString::Assign(user_field.SetData().SetStr(),
+                                annot.x_GetExtra(index));
+            ++it;
+        }
+        if ( m_Flags & fQualityCodesMask ) {
+            if ( it == data.end() ) {
+                it = data.insert(it, Ref(new CUser_field));
+            }
+            else if ( !*it ) {
+                *it = new CUser_field;
+            }
+            CUser_field& user_field = **it;
+            CPackString::Assign(user_field.SetLabel().SetStr(),
+                                kId_QualityCodes);
+            TQualityCodesIndex index = m_QualityCodesIndex;
+            if ( m_Flags & fQualityCodesStr ) {
+                CPackString::Assign(user_field.SetData().SetStr(),
+                                    annot.x_GetQualityCodesStr(index));
+            }
+            else {
+                annot.x_GetQualityCodesOs(index, user_field.SetData().SetOs());
+            }
+            ++it;
+        }
+        data.erase(it, data.end());
     }
     else {
         feat.ResetExt();
@@ -579,14 +625,13 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
 void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
                                  CRef<CSeq_point>& seq_point,
                                  CRef<CSeq_interval>& seq_interval,
-                                 const CSeq_annot_SNP_Info& annot_info) const
+                                 const CSeq_annot_SNP_Info& annot) const
 {
-    x_UpdateSeq_featData(feat, annot_info);
+    x_UpdateSeq_featData(feat, annot);
     { // location
         TSeqPos to_position = m_ToPosition;
         TPositionDelta position_delta = m_PositionDelta;
-        int gi = annot_info.GetGi();
-        ENa_strand strand = MinusStrand()? eNa_strand_minus: eNa_strand_plus;
+        int gi = annot.GetGi();
         if ( position_delta == 0 ) {
             // point
             feat.SetLocation().Reset();
@@ -596,7 +641,15 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
             CSeq_point& point = *seq_point;
             feat.SetLocation().SetPnt(point);
             point.SetPoint(to_position);
-            point.SetStrand(strand);
+            if ( PlusStrand() ) {
+                point.SetStrand(eNa_strand_plus);
+            }
+            else if ( MinusStrand() ) {
+                point.SetStrand(eNa_strand_minus);
+            }
+            else {
+                point.ResetStrand();
+            }
             point.SetId().SetGi(gi);
             if ( m_Flags & fFuzzLimTr ) {
                 point.SetFuzz().SetLim(CInt_fuzz::eLim_tr);
@@ -615,7 +668,15 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
             feat.SetLocation().SetInt(interval);
             interval.SetFrom(to_position-position_delta);
             interval.SetTo(to_position);
-            interval.SetStrand(strand);
+            if ( PlusStrand() ) {
+                interval.SetStrand(eNa_strand_plus);
+            }
+            else if ( MinusStrand() ) {
+                interval.SetStrand(eNa_strand_minus);
+            }
+            else {
+                interval.ResetStrand();
+            }
             interval.SetId().SetGi(gi);
         }
     }
@@ -623,19 +684,26 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
 
 
 void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
-                                 const CSeq_annot_SNP_Info& annot_info) const
+                                 const CSeq_annot_SNP_Info& annot) const
 {
-    x_UpdateSeq_featData(feat, annot_info);
+    x_UpdateSeq_featData(feat, annot);
     { // location
         TSeqPos to_position = m_ToPosition;
         TPositionDelta position_delta = m_PositionDelta;
-        int gi = annot_info.GetGi();
-        ENa_strand strand = MinusStrand()? eNa_strand_minus: eNa_strand_plus;
+        int gi = annot.GetGi();
         if ( position_delta == 0 ) {
             // point
             CSeq_point& point = feat.SetLocation().SetPnt();
             point.SetPoint(to_position);
-            point.SetStrand(strand);
+            if ( PlusStrand() ) {
+                point.SetStrand(eNa_strand_plus);
+            }
+            else if ( MinusStrand() ) {
+                point.SetStrand(eNa_strand_minus);
+            }
+            else {
+                point.ResetStrand();
+            }
             point.SetId().SetGi(gi);
             if ( m_Flags & fFuzzLimTr ) {
                 point.SetFuzz().SetLim(CInt_fuzz::eLim_tr);
@@ -649,7 +717,15 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
             CSeq_interval& interval = feat.SetLocation().SetInt();
             interval.SetFrom(to_position-position_delta);
             interval.SetTo(to_position);
-            interval.SetStrand(strand);
+            if ( PlusStrand() ) {
+                interval.SetStrand(eNa_strand_plus);
+            }
+            else if ( MinusStrand() ) {
+                interval.SetStrand(eNa_strand_minus);
+            }
+            else {
+                interval.ResetStrand();
+            }
             interval.SetId().SetGi(gi);
         }
     }
@@ -657,33 +733,33 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
 
 
 CRef<CSeq_feat>
-SSNP_Info::CreateSeq_feat(const CSeq_annot_SNP_Info& annot_info) const
+SSNP_Info::CreateSeq_feat(const CSeq_annot_SNP_Info& annot) const
 {
     CRef<CSeq_feat> feat_ref = x_CreateSeq_feat();
-    x_UpdateSeq_feat(*feat_ref, annot_info);
+    x_UpdateSeq_feat(*feat_ref, annot);
     return feat_ref;
 }
 
 
 void SSNP_Info::UpdateSeq_feat(CRef<CSeq_feat>& feat_ref,
-                               const CSeq_annot_SNP_Info& annot_info) const
+                               const CSeq_annot_SNP_Info& annot) const
 {
     if ( !feat_ref || !feat_ref->ReferencedOnlyOnce() ) {
         feat_ref = x_CreateSeq_feat();
     }
-    x_UpdateSeq_feat(*feat_ref, annot_info);
+    x_UpdateSeq_feat(*feat_ref, annot);
 }
 
 
 void SSNP_Info::UpdateSeq_feat(CRef<CSeq_feat>& feat_ref,
                                CRef<CSeq_point>& seq_point,
                                CRef<CSeq_interval>& seq_interval,
-                               const CSeq_annot_SNP_Info& annot_info) const
+                               const CSeq_annot_SNP_Info& annot) const
 {
     if ( !feat_ref || !feat_ref->ReferencedOnlyOnce() ) {
         feat_ref = x_CreateSeq_feat();
     }
-    x_UpdateSeq_feat(*feat_ref, seq_point, seq_interval, annot_info);
+    x_UpdateSeq_feat(*feat_ref, seq_point, seq_interval, annot);
 }
 
 
@@ -709,8 +785,9 @@ CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info& info)
       m_SNP_Set(info.m_SNP_Set),
       m_Comments(info.m_Comments),
       m_Alleles(info.m_Alleles),
-      m_QualityStr(info.m_QualityStr),
-      m_QualityOs(info.m_QualityOs),
+      m_QualityCodesStr(info.m_QualityCodesStr),
+      m_QualityCodesOs(info.m_QualityCodesOs),
+      m_Extra(info.m_Extra),
       m_Seq_annot(info.m_Seq_annot)
 {
 }
@@ -953,8 +1030,9 @@ void CSeq_annot_SNP_Info::x_FinishParsing(void)
     // we don't need index maps anymore
     m_Comments.ClearIndices();
     m_Alleles.ClearIndices();
-    m_QualityStr.ClearIndices();
-    m_QualityOs.ClearIndices();
+    m_QualityCodesStr.ClearIndices();
+    m_QualityCodesOs.ClearIndices();
+    m_Extra.ClearIndices();
     
     sort(m_SNP_Set.begin(), m_SNP_Set.end());
     
@@ -968,8 +1046,9 @@ void CSeq_annot_SNP_Info::Reset(void)
     m_Seq_id.Reset();
     m_Comments.Clear();
     m_Alleles.Clear();
-    m_QualityStr.Clear();
-    m_QualityOs.Clear();
+    m_QualityCodesStr.Clear();
+    m_QualityCodesOs.Clear();
+    m_Extra.Clear();
     m_SNP_Set.clear();
     m_Seq_annot.Reset();
 }

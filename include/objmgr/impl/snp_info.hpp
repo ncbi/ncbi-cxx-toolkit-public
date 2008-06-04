@@ -57,6 +57,7 @@ public:
 
     TSeqPos GetFrom(void) const;
     TSeqPos GetTo(void) const;
+    bool PlusStrand(void) const;
     bool MinusStrand(void) const;
 
     bool IsRemoved(void) const;
@@ -120,48 +121,57 @@ public:
 
     size_t GetAllelesCount(void) const;
     size_t GetAlleleStrIndex(size_t index) const;
-    CUser_field::TData::E_Choice GetQualityCodeWhich(void) const;
-    size_t GetQualityStrIndex(void) const;
-    size_t GetQualityOsIndex(void) const;
+    size_t GetExtraIndex(void) const;
+    CUser_field::TData::E_Choice GetQualityCodesWhich(void) const;
+    size_t GetQualityCodesStrIndex(void) const;
+    size_t GetQualityCodesOsIndex(void) const;
 
     typedef int TSNPId;
-    typedef Int1 TPositionDelta;
+    typedef Uint1 TPositionDelta;
     enum {
-        kMax_PositionDelta = kMax_I1
+        kMax_PositionDelta = kMax_UI1
     };
     typedef Uint1 TCommentIndex;
     enum {
         kNo_CommentIndex   = kMax_UI1,
         kMax_CommentIndex  = kNo_CommentIndex - 1
     };
+    typedef Uint1 TWeight;
     enum {
-        kMax_AllelesCount  = 6
+        fwWeightQual       = 1 << 0,
+        fwWeightExt        = 1 << 1,
+        fWeightFlagBits    = 2,
+        kMax_Weight        = kMax_UI1>>fWeightFlagBits
+    };
+    typedef Uint2 TExtraIndex;
+    enum {
+        kNo_ExtraIndex     = kMax_UI2,
+        kMax_ExtraIndex    = kNo_ExtraIndex - 1
+    };
+    typedef Uint2 TQualityCodesIndex;
+    enum {
+        kNo_QualityCodesIndex  = kMax_UI2,
+        kMax_QualityCodesIndex = kNo_QualityCodesIndex - 1
+    };
+    enum {
+        kMax_AllelesCount  = 4
     };
     typedef Uint2 TAlleleIndex;
     enum {
         kNo_AlleleIndex    = kMax_UI2,
         kMax_AlleleIndex   = kNo_AlleleIndex - 1
     };
-    typedef TAlleleIndex TQualityIndex;
-    enum {
-        kNo_QualityIndex    = kNo_AlleleIndex,
-        kMax_QualityIndex   = kMax_AlleleIndex
-    };
-    typedef Uint1 TWeight;
-    enum {
-        kMax_Weight        = kMax_I1
-    };
+
     typedef Uint1 TFlags;
     enum FFlags {
-        fMinusStrand    = 1 << 0,
-        fQualReplace    = 1 << 1,
-        fWeightQual     = 1 << 2,
-        fRemoved        = 1 << 3,
-        fWeightExt      = 1 << 4,
-        fQualityCodeStr = 1 << 5,
-        fQualityCodeOs  = 1 << 6,
-        fQualityCodeMask= fQualityCodeStr | fQualityCodeOs,
-        fFuzzLimTr      = 1 << 7
+        fRemoved           = 1 << 0,
+        fPlusStrand        = 1 << 1,
+        fMinusStrand       = 1 << 2,
+        fFuzzLimTr         = 1 << 3,
+        fAlleleReplace     = 1 << 4,
+        fQualityCodesStr   = 1 << 5,
+        fQualityCodesOs    = 1 << 6,
+        fQualityCodesMask  = fQualityCodesStr | fQualityCodesOs
     };
 
     TSeqPos         m_ToPosition;
@@ -170,6 +180,8 @@ public:
     TPositionDelta  m_PositionDelta;
     TCommentIndex   m_CommentIndex;
     TWeight         m_Weight;
+    TExtraIndex     m_ExtraIndex;
+    TQualityCodesIndex  m_QualityCodesIndex;
     TAlleleIndex    m_AllelesIndices[kMax_AllelesCount];
 };
 
@@ -188,6 +200,13 @@ inline
 TSeqPos SSNP_Info::GetTo(void) const
 {
     return m_ToPosition;
+}
+
+
+inline
+bool SSNP_Info::PlusStrand(void) const
+{
+    return (m_Flags & fPlusStrand) != 0;
 }
 
 
@@ -249,18 +268,25 @@ size_t SSNP_Info::GetAlleleStrIndex(size_t index) const
 
 
 inline
-size_t SSNP_Info::GetQualityStrIndex(void) const
+size_t SSNP_Info::GetExtraIndex(void) const
 {
-    _ASSERT(m_Flags & fQualityCodeStr);
-    return m_AllelesIndices[GetAllelesCount()];
+    return m_ExtraIndex;
 }
 
 
 inline
-size_t SSNP_Info::GetQualityOsIndex(void) const
+size_t SSNP_Info::GetQualityCodesStrIndex(void) const
 {
-    _ASSERT(m_Flags & fQualityCodeOs);
-    return m_AllelesIndices[GetAllelesCount()];
+    _ASSERT(m_Flags & fQualityCodesStr);
+    return m_QualityCodesIndex;
+}
+
+
+inline
+size_t SSNP_Info::GetQualityCodesOsIndex(void) const
+{
+    _ASSERT(m_Flags & fQualityCodesOs);
+    return m_QualityCodesIndex;
 }
 
 

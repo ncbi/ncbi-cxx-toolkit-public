@@ -456,7 +456,7 @@ public:
 }
 
 
-static const unsigned MAGIC = 0x12340006;
+static const unsigned MAGIC = 0x12340007;
 
 void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
                                        const CConstObjectInfo& object,
@@ -570,8 +570,9 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
     // strings
     StoreIndexedStringsTo(stream, snp_info.m_Comments);
     StoreIndexedStringsTo(stream, snp_info.m_Alleles);
-    StoreIndexedStringsTo(stream, snp_info.m_QualityStr);
-    StoreIndexedOctetStringsTo(stream, snp_info.m_QualityOs);
+    StoreIndexedStringsTo(stream, snp_info.m_Extra);
+    StoreIndexedStringsTo(stream, snp_info.m_QualityCodesStr);
+    StoreIndexedOctetStringsTo(stream, snp_info.m_QualityCodesOs);
 
     // simple Set_Info
     unsigned count = snp_info.m_SNP_Set.size();
@@ -582,6 +583,7 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
 
 
 static const size_t kMax_CommentLength = 65536;
+static const size_t kMax_ExtraLength = 256;
 static const size_t kMax_AlleleLength = 256;
 static const size_t kMax_QualityLength = 32;
 
@@ -612,12 +614,16 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
                            SSNP_Info::kMax_AlleleIndex,
                            kMax_AlleleLength);
     LoadIndexedStringsFrom(stream,
-                           snp_info.m_QualityStr,
-                           SSNP_Info::kMax_QualityIndex,
+                           snp_info.m_Extra,
+                           SSNP_Info::kMax_ExtraIndex,
+                           kMax_ExtraLength);
+    LoadIndexedStringsFrom(stream,
+                           snp_info.m_QualityCodesStr,
+                           SSNP_Info::kMax_QualityCodesIndex,
                            kMax_QualityLength);
     LoadIndexedOctetStringsFrom(stream,
-                                snp_info.m_QualityOs,
-                                SSNP_Info::kMax_QualityIndex,
+                                snp_info.m_QualityCodesOs,
+                                SSNP_Info::kMax_QualityCodesIndex,
                                 kMax_QualityLength);
 
     // simple Set_Info
@@ -629,8 +635,9 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
     }
     size_t comments_size = snp_info.m_Comments.GetSize();
     size_t alleles_size = snp_info.m_Alleles.GetSize();
-    size_t quality_str_size = snp_info.m_QualityStr.GetSize();
-    size_t quality_os_size = snp_info.m_QualityOs.GetSize();
+    size_t extra_size = snp_info.m_Extra.GetSize();
+    size_t quality_str_size = snp_info.m_QualityCodesStr.GetSize();
+    size_t quality_os_size = snp_info.m_QualityCodesOs.GetSize();
     ITERATE ( CSeq_annot_SNP_Info::TSNP_Set, it, snp_info.m_SNP_Set ) {
         size_t index = it->m_CommentIndex;
         if ( index != SSNP_Info::kNo_CommentIndex &&
@@ -639,32 +646,44 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Bad format of SNP table");
         }
-        int quality = it->m_Flags & SSNP_Info::fQualityCodeMask;
+        index = it->m_ExtraIndex;
+        if ( index != SSNP_Info::kNo_ExtraIndex &&
+             index >= extra_size ) {
+            snp_info.Reset();
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Bad format of SNP table");
+        }
+        switch ( it->m_Flags & SSNP_Info::fQualityCodesMask ) {
+        case 0:
+            break;
+        case SSNP_Info::fQualityCodesStr:
+            index = it->m_QualityCodesIndex;
+            if ( index >= quality_str_size ) {
+                snp_info.Reset();
+                NCBI_THROW(CLoaderException, eLoaderFailed,
+                           "Bad format of SNP table");
+            }
+            break;
+        case SSNP_Info::fQualityCodesOs:
+            index = it->m_QualityCodesIndex;
+            if ( index >= quality_os_size ) {
+                snp_info.Reset();
+                NCBI_THROW(CLoaderException, eLoaderFailed,
+                           "Bad format of SNP table");
+            }
+            break;
+        default:
+            snp_info.Reset();
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Bad format of SNP table");
+        }
         for ( int i = SSNP_Info::kMax_AllelesCount-1; i >= 0; --i ) {
             index = it->m_AllelesIndices[i];
-            if ( index != SSNP_Info::kNo_AlleleIndex ) {
-                if ( quality ) {
-                    size_t size;
-                    if ( quality & SSNP_Info::fQualityCodeStr ) {
-                        size = quality_str_size;
-                    }
-                    else {
-                        size = quality_os_size;
-                    }
-                    if ( index >= size ) {
-                        snp_info.Reset();
-                        NCBI_THROW(CLoaderException, eLoaderFailed,
-                                   "Bad format of SNP table");
-                    }
-                    quality = 0;
-                }
-                else {
-                    if ( index >= alleles_size ) {
-                        snp_info.Reset();
-                        NCBI_THROW(CLoaderException, eLoaderFailed,
-                                   "Bad format of SNP table");
-                    }
-                }
+            if ( index != SSNP_Info::kNo_AlleleIndex &&
+                 index >= alleles_size ) {
+                snp_info.Reset();
+                NCBI_THROW(CLoaderException, eLoaderFailed,
+                           "Bad format of SNP table");
             }
         }
     }

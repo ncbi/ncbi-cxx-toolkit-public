@@ -163,6 +163,9 @@ public:
     const string& GetSNPQualityCodeStr(void) const;
     void GetSNPQualityCodeOs(vector<char>& os) const;
 
+    bool IsSetSNPExtra(void) const;
+    const string& GetSNPExtra(void) const;
+
     /// Return true if this feature was removed already
     bool IsRemoved(void) const;
     /// Remove the feature from Seq-annot
@@ -305,7 +308,14 @@ CSeq_feat_Handle::TWeight CSeq_feat_Handle::GetSNPWeight(void) const
 inline
 bool CSeq_feat_Handle::IsSetSNPQualityCode(void) const
 {
-    return (x_GetSNP_Info().m_Flags & SSNP_Info::fQualityCodeMask) != 0;
+    return (x_GetSNP_Info().m_Flags & SSNP_Info::fQualityCodesMask) != 0;
+}
+
+
+inline
+bool CSeq_feat_Handle::IsSetSNPExtra(void) const
+{
+    return x_GetSNP_Info().m_ExtraIndex != SSNP_Info::kNo_ExtraIndex;
 }
 
 
