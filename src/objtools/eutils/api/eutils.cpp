@@ -44,7 +44,8 @@ CEUtils_Request::CEUtils_Request(CRef<CEUtils_ConnContext>& ctx,
                                  const string& script_name)
     : m_Context(ctx),
       m_Stream(0),
-      m_ScriptName(script_name)
+      m_ScriptName(script_name),
+      m_Method(eHttp_Post)
 {
 }
 
@@ -67,25 +68,27 @@ void CEUtils_Request::SetConnContext(const CRef<CEUtils_ConnContext>& ctx)
 
 static const string kEUtils_Base_URL =
     "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
-/*
-static const string kEInfo_URL = "einfo.fcgi?";
-static const string kESearch_URL = "esearch.fcgi?";
-static const string kEPost_URL = "epost.fcgi?";
-static const string kESummary_URL = "esummary.fcgi?";
-static const string kELink_URL = "elink.fcgi?";
-static const string kEGQuery_URL = "egquery.fcgi?";
-static const string kESpell_URL = "espell.fcgi?";
-*/
 
 
 void CEUtils_Request::Connect(void)
 {
-    m_Stream.reset(new CConn_HttpStream(
-        kEUtils_Base_URL +
-        GetScriptName() + "?" +
-        GetQueryString(),
-        fHCC_AutoReconnect,
-        GetConnContext()->GetTimeout()));
+    string url = kEUtils_Base_URL + GetScriptName();
+    string body = GetQueryString();
+    if ( m_Method == eHttp_Post ) {
+        m_Stream.reset(new CConn_HttpStream(
+            url,
+            NULL,
+            "Content-type: application/x-www-form-urlencoded\n",
+            fHCC_AutoReconnect,
+            GetConnContext()->GetTimeout()));
+        *m_Stream << body;
+    }
+    else {
+        m_Stream.reset(new CConn_HttpStream(
+            url + "?" + body,
+            fHCC_AutoReconnect,
+            GetConnContext()->GetTimeout()));
+    }
 }
 
 

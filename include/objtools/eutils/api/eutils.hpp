@@ -172,6 +172,17 @@ public:
     /// Get argument by name.
     const string& GetArgument(const string& name) const;
 
+    /// HTTP method used to send request
+    enum ERequestMethod {
+        eHttp_Post, ///< Use POST (default)
+        eHttp_Get   ///< Use GET
+    };
+
+    /// Get HTTP method
+    ERequestMethod GetRequestMethod(void) const { return m_Method; }
+    /// Set HTTP method
+    void SetRequestMethod(ERequestMethod method) { m_Method = method; }
+
 private:
     typedef map<string, string> TRequestArgs;
 
@@ -182,6 +193,7 @@ private:
     string           m_QueryKey; // empty = use value from ConnContext
     string           m_Database;
     TRequestArgs     m_Args;     // user-defined arguments
+    ERequestMethod   m_Method;
 };
 
 

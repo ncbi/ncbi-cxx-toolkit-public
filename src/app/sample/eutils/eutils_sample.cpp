@@ -91,8 +91,11 @@ private:
     CEFetch_Request* x_CreateTaxRequest(const CArgs& args);
 
     CRef<CEUtils_ConnContext>& x_GetCtx(void);
+    void x_SetHttpMethod(CEUtils_Request& req, const CArgs& args);
+    void x_DumpRequest(CEUtils_Request& req);
 
     CRef<CEUtils_ConnContext> m_Ctx;
+    bool                      m_DumpRequests;
 };
 
 
@@ -123,6 +126,16 @@ void CEUtilsApp::Init(void)
     arg_desc->AddFlag("esummary", "Call esummary utility", true);
     arg_desc->AddFlag("espell", "Call espell utility", true);
     arg_desc->AddFlag("ehistory", "Call ehistory utility", true);
+
+    // Switch HTTP method
+    arg_desc->AddDefaultKey("http", "Method",
+        "HTTP method used to send requests",
+        CArgDescriptions::eString, "post");
+    arg_desc->SetConstraint("http", &(*new CArgAllow_Strings,
+        "post", "get"));
+
+    // Debug flag
+    arg_desc->AddFlag("dump", "Print raw incoming data", true);
 
     // Context setup
     arg_desc->AddOptionalKey("webenv", "WebEnv", "Web environment",
@@ -222,12 +235,34 @@ void CEUtilsApp::Init(void)
 }
 
 
+void CEUtilsApp::x_SetHttpMethod(CEUtils_Request& req, const CArgs& args)
+{
+    if ( args["http"].AsString() == "get" ) {
+        req.SetRequestMethod(CEUtils_Request::eHttp_Get);
+    }
+}
+
+
+void CEUtilsApp::x_DumpRequest(CEUtils_Request& req)
+{
+    string data;
+    req.Read(&data);
+    cout << data << endl;
+}
+
+
 void CEUtilsApp::CallEInfo(const CArgs& args)
 {
     string db = args["db"] ? args["db"].AsString() : kEmptyStr;
     CEInfo_Request req(db, x_GetCtx());
+    x_SetHttpMethod(req, args);
 
     cout << req.GetScriptName() << "?" << req.GetQueryString() << endl;
+
+    if ( m_DumpRequests ) {
+        x_DumpRequest(req);
+        return;
+    }
 
     CRef<einfo::CEInfoResult> result = req.GetEInfoResult();
     _ASSERT(result);
@@ -248,6 +283,7 @@ void CEUtilsApp::CallESearch(const CArgs& args)
 {
     // Prepare request
     CESearch_Request req(args["db"].AsString(), x_GetCtx());
+    x_SetHttpMethod(req, args);
 
     req.SetTerm(args["term"].AsString());
     if ( args["usehistory"] ) {
@@ -259,6 +295,11 @@ void CEUtilsApp::CallESearch(const CArgs& args)
 
     // Print query string
     cout << req.GetScriptName() << "?" << req.GetQueryString() << endl;
+
+    if ( m_DumpRequests ) {
+        x_DumpRequest(req);
+        return;
+    }
 
     // Get and show the results
     CRef<esearch::CESearchResult> result = req.GetESearchResult();
@@ -273,11 +314,17 @@ void CEUtilsApp::CallEGQuery(const CArgs& args)
 {
     // Prepare request
     CEGQuery_Request req(x_GetCtx());
+    x_SetHttpMethod(req, args);
 
     req.SetTerm(args["term"].AsString());
 
     // Print query string
     cout << req.GetScriptName() << "?" << req.GetQueryString() << endl;
+
+    if ( m_DumpRequests ) {
+        x_DumpRequest(req);
+        return;
+    }
 
     // Get and show the results
     CRef<egquery::CResult> result = req.GetResult();
@@ -290,11 +337,17 @@ void CEUtilsApp::CallEPost(const CArgs& args)
 {
     // Prepare request
     CEPost_Request req(args["db"].AsString(), x_GetCtx());
+    x_SetHttpMethod(req, args);
 
     req.GetId().SetIds(args["id"].AsString());
 
     // Print query string
     cout << req.GetScriptName() << "?" << req.GetQueryString() << endl;
+
+    if ( m_DumpRequests ) {
+        x_DumpRequest(req);
+        return;
+    }
 
     // Get and show the results
     CRef<epost::CEPostResult> result = req.GetEPostResult();
@@ -309,6 +362,7 @@ void CEUtilsApp::CallELink(const CArgs& args)
 {
     // Prepare request
     CELink_Request req(args["db"].AsString(), x_GetCtx());
+    x_SetHttpMethod(req, args);
 
     if ( args["dbfrom"] ) {
         req.SetDbFrom(args["dbfrom"].AsString());
@@ -364,6 +418,11 @@ void CEUtilsApp::CallELink(const CArgs& args)
     // Print query string
     cout << req.GetScriptName() << "?" << req.GetQueryString() << endl;
 
+    if ( m_DumpRequests ) {
+        x_DumpRequest(req);
+        return;
+    }
+
     // Get and show the results
     CRef<elink::CELinkResult> result = req.GetELinkResult();
     _ASSERT(result);
@@ -376,6 +435,7 @@ void CEUtilsApp::CallESummary(const CArgs& args)
     // Prepare request
     string db = args["db"] ? args["db"].AsString() : kEmptyStr;
     CESummary_Request req(db, x_GetCtx());
+    x_SetHttpMethod(req, args);
 
     // If WebEnv was set (as an command line argument or by previous requests)
     // use it instead of id.
@@ -392,6 +452,11 @@ void CEUtilsApp::CallESummary(const CArgs& args)
     // Print query string
     cout << req.GetScriptName() << "?" << req.GetQueryString() << endl;
 
+    if ( m_DumpRequests ) {
+        x_DumpRequest(req);
+        return;
+    }
+
     // Get and show the results
     CRef<esummary::CESummaryResult> result = req.GetESummaryResult();
     _ASSERT(result);
@@ -404,11 +469,17 @@ void CEUtilsApp::CallESpell(const CArgs& args)
     // Prepare request
     string db = args["db"] ? args["db"].AsString() : kEmptyStr;
     CESpell_Request req(db, x_GetCtx());
+    x_SetHttpMethod(req, args);
 
     req.SetTerm(args["term"].AsString());
 
     // Print query string
     cout << req.GetScriptName() << "?" << req.GetQueryString() << endl;
+
+    if ( m_DumpRequests ) {
+        x_DumpRequest(req);
+        return;
+    }
 
     // Get and show the results
     CRef<espell::CESpellResult> result = req.GetESpellResult();
@@ -421,9 +492,15 @@ void CEUtilsApp::CallEHistory(const CArgs& args)
 {
     // Prepare request
     CEHistory_Request req(args["db"].AsString(), x_GetCtx());
+    x_SetHttpMethod(req, args);
 
     // Print query string
     cout << req.GetScriptName() << "?" << req.GetQueryString() << endl;
+
+    if ( m_DumpRequests ) {
+        x_DumpRequest(req);
+        return;
+    }
 
     // Get and show the results
     CRef<ehistory::CEHistoryResult> result = req.GetEHistoryResult();
@@ -632,6 +709,7 @@ void CEUtilsApp::CallEFetch(const CArgs& args)
             << args["db"].AsString() << " using the specified arguments.");
         return;
     }
+    x_SetHttpMethod(*req, args);
 
     // If WebEnv was set (as an command line argument or by previous requests)
     // use it instead of id.
@@ -660,6 +738,11 @@ void CEUtilsApp::CallEFetch(const CArgs& args)
 
     cout << req->GetScriptName() << "?" << req->GetQueryString() << endl;
 
+    if ( m_DumpRequests ) {
+        x_DumpRequest(*req);
+        return;
+    }
+
     // efetch can return different object types, just print plain content
     string content;
     req->Read(&content);
@@ -671,6 +754,8 @@ int CEUtilsApp::Run(void)
 {
     // Process command line args
     const CArgs& args = GetArgs();
+
+    m_DumpRequests = args["dump"];
 
     // Set connection context parameters
     if (args["webenv"]) {
