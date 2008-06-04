@@ -348,6 +348,18 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CCPPToolkitConnParams : 
+    public CDBConnParamsDelegate
+{
+public:
+		CCPPToolkitConnParams(const CDBConnParams& other);
+		virtual ~CCPPToolkitConnParams(void);
+
+public:
+		virtual EServerType GetServerType(void) const;
+};
+
 
 END_NCBI_SCOPE
 
