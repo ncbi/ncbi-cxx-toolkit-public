@@ -407,12 +407,14 @@ NCBI_C_ncbi = @NCBI_C_ncbi@
 # OpenGL: headers and libs (including core X dependencies) for code
 # not using other toolkits.  (The wxWindows and FLTK variables already
 # include these as appropriate.)
-OPENGL_INCLUDE = @OPENGL_INCLUDE@
-OPENGL_LIBS    = @OPENGL_LIBS@
-OSMESA_INCLUDE = @OSMESA_INCLUDE@
-OSMESA_LIBS    = @OSMESA_LIBS@
-GLUT_INCLUDE   = @GLUT_INCLUDE@
-GLUT_LIBS      = @GLUT_LIBS@
+OPENGL_INCLUDE     = @OPENGL_INCLUDE@
+OPENGL_LIBS        = @OPENGL_LIBS@
+OPENGL_STATIC_LIBS = @OPENGL_STATIC_LIBS@
+OSMESA_INCLUDE     = @OSMESA_INCLUDE@
+OSMESA_LIBS        = @OSMESA_LIBS@
+OSMESA_STATIC_LIBS = @OSMESA_STATIC_LIBS@
+GLUT_INCLUDE       = @GLUT_INCLUDE@
+GLUT_LIBS          = @GLUT_LIBS@
 
 # wxWindows (2.4 or older):  headers and libs
 WXWIN_INCLUDE        = @WXWIN_INCLUDE@

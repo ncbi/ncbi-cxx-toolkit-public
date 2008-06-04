@@ -4173,7 +4173,16 @@ fi
 
 ## OpenGL
 if test "$with_opengl" != "no"; then
-   : ${with_opengl:=yes}
+   if test "${with_opengl-yes}" = yes; then
+      if test -d $NCBI/MesaGL; then
+         : ${OPENGL_PATH=$NCBI/MesaGL}
+      fi
+   else
+      OPENGL_PATH=$with_opengl
+   fi
+   if test -d "$OPENGL_PATH"; then
+      NCBI_FIX_DIR(OPENGL_PATH)
+   fi
    case "$OSTYPE" in
       darwin) # Use native interface
          OPENGL_LIBS="-framework Carbon -framework AGL -framework OpenGL"
@@ -4201,20 +4210,20 @@ if test "$with_opengl" != "no"; then
          AC_CHECK_LIB(Xmu, XmuMakeAtom, Xmu="-lXmu", Xmu=,
             [$Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
          X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
-         if test -d "$with_opengl/include/GL"; then
-            X_CFLAGS="-I$with_opengl/include $X_CFLAGS"
+         if test -d "$OPENGL_PATH/include/GL"; then
+            OPENGL_INCLUDE="-I$OPENGL_PATH/include $X_CFLAGS"
+         else
+            OPENGL_INCLUDE=$X_CFLAGS
          fi
-         if test -d "$with_opengl/lib"; then
-            l=$with_opengl/lib
-            NCBI_RPATHIFY(X_LIBS, $l, [ ]$X_LIBS)
+         if test -d "$OPENGL_PATH/lib"; then
+            NCBI_RPATHIFY(OPENGL_LIBPATH, $OPENGL_PATH/lib, [ ]$X_LIBS)
          fi
          LDFLAGS="$orig_LDFLAGS $X_LIBS"
-         OPENGL_INCLUDE="$X_CFLAGS"
-         OPENGL_LIBS="$X_LIBS -lGLU -lGL $X_ALL_LIBS"
+         OPENGL_LIBS="$OPENGL_LIBPATH -lGLU -lGL $X_ALL_LIBS"
          ;;
    esac
-   case "${with_opengl}" in
-      */*) where=" in $with_opengl" ;;
+   case "${OPENGL_PATH}" in
+      */*) where=" in $OPENGL_PATH" ;;
       *  ) where= ;;
    esac
    AC_CACHE_CHECK([for OpenGL$where], ncbi_cv_lib_opengl,
@@ -4235,15 +4244,22 @@ fi
 if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
    OPENGL_INCLUDE=
    OPENGL_LIBS=
+   OPENGL_STATIC_LIBS=
    OSMESA_INCLUDE=
    OSMESA_LIBS=
+   OSMESA_STATIC_LIBS=
    GLUT_INCLUDE=
    GLUT_LIBS=
    with_opengl="no"
 else
    NCBI_PACKAGE(OpenGL)
    AC_DEFINE(HAVE_OPENGL, 1, [Define to 1 if you have OpenGL (-lGL).])
-   : ${OSMESA_PATH=$NCBI/MesaGL}
+   if test -f "$OPENGL_PATH/lib/libGLU-static.a"; then
+      OPENGL_STATIC_LIBS="$OPENGL_LIBPATH -lGLU-static -lGL-static $X_ALL_LIBS"
+   else
+      OPENGL_STATIC_LIBS=$OPENGL_LIBS
+   fi
+   : ${OSMESA_PATH=$OPENGL_PATH}
    orig_LDFLAGS_X=$LDFLAGS
    if test "$with_mesa" != "no"; then
       if test "${with_mesa-yes}" = "yes" -a -d "$OSMESA_PATH"; then
@@ -4251,15 +4267,22 @@ else
       fi
       if test -n "$with_mesa" -a "$with_mesa" != "yes"; then
          OSMESA_INCLUDE=-I$with_mesa/include
-         NCBI_RPATHIFY(OSMESA_LDFLAGS, $with_mesa/lib)
+         if test "$with_mesa" != "$OPENGL_PATH"; then
+            NCBI_RPATHIFY(OSMESA_LDFLAGS, $with_mesa/lib)
+         fi
       fi
       LDFLAGS="$orig_LDFLAGS_X $OSMESA_LDFLAGS"
       AC_CHECK_LIB(OSMesa, OSMesaCreateContext,
          [NCBI_PACKAGE(MESA);
-          OSMESA_LIBS="$OSMESA_LDFLAGS $X_LIBS -lOSMesa -lGLU -lGL $X_ALL_LIBS"
+          OSMESA_LIBS="$OSMESA_LDFLAGS $OPENGL_LIBPATH -lOSMesa -lGLU -lGL $X_ALL_LIBS"
           AC_DEFINE(HAVE_LIBOSMESA, 1, [Define to 1 if you have libOSMesa.])],
          [OSMESA_LIBS=],
          $OPENGL_LIBS)
+   fi
+   if test -f "$OSMESA_PATH/lib/libOSMesa-static.a"; then
+      OSMESA_STATIC_LIBS="$OSMESA_LDFLAGS $OPENGL_LIBPATH -lOSMesa-static -lGLU-static -lGL-static $X_ALL_LIBS"
+   else
+      OSMESA_STATIC_LIBS=$OSMESA_LIBS
    fi
    : ${GLUT_PATH=$NCBI/glut}
    if test "$with_glut" != "no"; then
@@ -4273,7 +4296,7 @@ else
       LDFLAGS="$orig_LDFLAGS_X $GLUT_LDFLAGS"
       AC_CHECK_LIB(glut, glutInit,
          [NCBI_PACKAGE(GLUT);
-          GLUT_LIBS="$GLUT_LDFLAGS $X_LIBS -lglut -lGLU -lGL $X_ALL_LIBS"
+          GLUT_LIBS="$GLUT_LDFLAGS $OPENGL_LIBPATH -lglut -lGLU -lGL $X_ALL_LIBS"
           AC_DEFINE(HAVE_LIBGLUT, 1, [Define to 1 if you have libglut.])],
          [GLUT_LIBS=],
          $OPENGL_LIBS)
@@ -5790,8 +5813,10 @@ AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(OPENGL_INCLUDE)
 AC_SUBST(OPENGL_LIBS)
+AC_SUBST(OPENGL_STATIC_LIBS)
 AC_SUBST(OSMESA_INCLUDE)
 AC_SUBST(OSMESA_LIBS)
+AC_SUBST(OSMESA_STATIC_LIBS)
 AC_SUBST(GLUT_INCLUDE)
 AC_SUBST(GLUT_LIBS)
 AC_SUBST(FLTK_INCLUDE)
