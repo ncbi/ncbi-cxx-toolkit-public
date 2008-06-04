@@ -94,6 +94,7 @@
 #include <objtools/format/embl_gather.hpp>
 #include <objtools/format/gff_gather.hpp>
 #include <objtools/format/ftable_gather.hpp>
+#include <objtools/format/feature_gather.hpp>
 #include <objtools/format/context.hpp>
 #include <objtools/error_codes.hpp>
 #include "utils.hpp"
@@ -129,6 +130,9 @@ CFlatGatherer* CFlatGatherer::New(CFlatFileConfig::TFormat format)
     
     case CFlatFileConfig::eFormat_FTable:
         return new CFtableGatherer;
+
+	case CFlatFileConfig::eFormat_FeaturesOnly:
+		return new CFeatureGatherer;
 
     case CFlatFileConfig::eFormat_DDBJ:
     default:

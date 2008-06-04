@@ -75,6 +75,7 @@ CFlatItemFormatter* CFlatItemFormatter::New(CFlatFileConfig::TFormat format)
 {
     switch ( format ) {
     case CFlatFileConfig::eFormat_GenBank:
+    case CFlatFileConfig::eFormat_FeaturesOnly:
         return new CGenbankFormatter;
         
     case CFlatFileConfig::eFormat_EMBL:

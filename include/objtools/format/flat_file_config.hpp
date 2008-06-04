@@ -52,7 +52,8 @@ public:
         eFormat_GBSeq,
         eFormat_FTable,
         eFormat_GFF, // version 2, w/GTF
-        eFormat_GFF3
+        eFormat_GFF3,
+        eFormat_FeaturesOnly
     };
 
     enum EMode {
