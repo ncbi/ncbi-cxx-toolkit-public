@@ -8,10 +8,8 @@
 
 APP = streamtest
 SRC = streamtest
-LIB = prosplign xalgoalignutil xalnmgr xcleanup xobjutil submit \
-      $(OBJMGR_LIBS:%=%$(STATIC))
+LIB = xobjutil submit $(SOBJMGR_LIBS)
 
-LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects -Cygwin
-
+REQUIRES = objects
