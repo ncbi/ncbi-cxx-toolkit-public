@@ -24,6 +24,8 @@
 #define HOST_CPU     "i386"
 #define HOST_VENDOR  "pc"
 
+#define NCBI_PLUGIN_AUTO_LOAD      1
+
 #define HAVE_STRDUP                1
 #define HAVE_STRICMP               1
 #define NCBI_USE_THROW_SPEC        1

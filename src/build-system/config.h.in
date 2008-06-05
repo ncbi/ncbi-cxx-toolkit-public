@@ -685,6 +685,9 @@
 /* Define to the architecture size. */
 #undef NCBI_PLATFORM_BITS
 
+/* Define to 1 if the plugin manager should load DLLs by default. */
+#undef NCBI_PLUGIN_AUTO_LOAD
+
 /* Define to whatever syntax, if any, your C compiler supports for marking
    pointers as restricted in the C99 sense. */
 #undef NCBI_RESTRICT_C

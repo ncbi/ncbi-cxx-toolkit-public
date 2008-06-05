@@ -88,6 +88,8 @@ AC_ARG_WITH(static,
    [ --with-static           build all libraries statically even if --with-dll])
 AC_ARG_WITH(static-exe,
    [ --with-static-exe       build all executables as statically as possible])
+AC_ARG_WITH(plugin-auto-load,
+   [ --with-plugin-auto-load always enable the plugin manager by default])
 AC_ARG_WITH(bin-release,
    [ --with-bin-release      build executables suitable for public release])
 AC_ARG_WITH(mt,
@@ -374,10 +376,11 @@ AC_ARG_WITH(manuals,
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization profiling dll static runpath mt 64 universal \
-exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe bin-release strip version lfs pch caution ccache distcc \
-flat-makefile projects ncbi-public deactivation makefile-auto-update \
+debug optimization profiling dll static static-exe plugin-auto-load \
+bin-release mt 64 universal exe runpath lfs \
+autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
+deactivation makefile-auto-update projects flat-makefile check ncbi-public \
+strip pch caution ccache distcc \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo lzo2 pcre gnutls openssl sybase sybase-local sybase-new \
@@ -1992,7 +1995,13 @@ else
    if test "$with_dll" = "yes"; then
       AC_DEFINE(NCBI_DLL_BUILD, 1,
                 [Define to 1 if building dynamic libraries by default.])
+      : ${with_plugin_auto_load=yes}
    fi
+fi
+
+if test "$with_plugin_auto_load" = yes; then
+   AC_DEFINE(NCBI_PLUGIN_AUTO_LOAD, 1,
+             [Define to 1 if the plugin manager should load DLLs by default.])
 fi
 
 # Make sure we have commands for both C and C++ preprocessors

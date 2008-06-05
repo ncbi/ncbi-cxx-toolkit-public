@@ -872,6 +872,7 @@ Optional Packages:
  --with-dll              build all libraries as DLLs
  --with-static           build all libraries statically even if --with-dll
  --with-static-exe       build all executables as statically as possible
+ --with-plugin-auto-load always enable the plugin manager by default
  --with-bin-release      build executables suitable for public release
  --with-mt               compile in a MultiThread-safe manner
  --with-64               compile to 64-bit code
@@ -1543,6 +1544,12 @@ fi;
 # Check whether --with-static-exe or --without-static-exe was given.
 if test "${with_static_exe+set}" = set; then
   withval="$with_static_exe"
+
+fi;
+
+# Check whether --with-plugin-auto-load or --without-plugin-auto-load was given.
+if test "${with_plugin_auto_load+set}" = set; then
+  withval="$with_plugin_auto_load"
 
 fi;
 
@@ -2374,10 +2381,11 @@ fi;
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization profiling dll static runpath mt 64 universal \
-exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe bin-release strip version lfs pch caution ccache distcc \
-flat-makefile projects ncbi-public deactivation makefile-auto-update \
+debug optimization profiling dll static static-exe plugin-auto-load \
+bin-release mt 64 universal exe runpath lfs \
+autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
+deactivation makefile-auto-update projects flat-makefile check ncbi-public \
+strip pch caution ccache distcc \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo lzo2 pcre gnutls openssl sybase sybase-local sybase-new \
@@ -7329,7 +7337,16 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_DLL_BUILD 1
 _ACEOF
 
+      : ${with_plugin_auto_load=yes}
    fi
+fi
+
+if test "$with_plugin_auto_load" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_PLUGIN_AUTO_LOAD 1
+_ACEOF
+
 fi
 
 # Make sure we have commands for both C and C++ preprocessors
