@@ -2521,6 +2521,22 @@ ct_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
             break;
         }
         break;
+    case CS_LOGIN_TIMEOUT:
+        switch (action) {
+        case CS_SET:
+            ctx->login_timeout = *((unsigned int*)buf);
+            break;
+        case CS_GET:
+            *((unsigned int*)buf) = ctx->login_timeout;
+            break;
+        case CS_CLEAR:
+            ctx->login_timeout = -1;
+            break;
+        default:
+            ret = CS_FAIL;
+            break;
+        }
+        break;
     default:
         ret = CS_SUCCEED;
         break;

@@ -288,6 +288,7 @@ CDBAPIUnitTest::TestInit(void)
         }
 
         I_DriverContext* drv_context = GetDS().GetDriverContext();
+        drv_context->SetLoginTimeout(2);
 
         if (m_args.GetTestConfiguration() != CTestArguments::eWithoutExceptions) {
             if (m_args.IsODBCBased()) {
