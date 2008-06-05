@@ -1029,7 +1029,7 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                 pstr = temp_str.get();
             }
             m_EntryReaderContext = new CCgiEntryReaderContext
-                (*istr, m_Entries, content_type, pstr);
+                (*istr, m_Entries, content_type, GetContentLength(), pstr);
             if ( (flags & fParseInputOnDemand) != 0) {
                 m_Input   =  0;
                 m_InputFD = -1;

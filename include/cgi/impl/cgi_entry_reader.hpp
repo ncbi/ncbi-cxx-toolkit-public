@@ -86,6 +86,8 @@ class CCgiEntryReaderContext
 public:
     CCgiEntryReaderContext(CNcbiIstream& in, TCgiEntries& out,
                            const string& content_type,
+                           size_t content_length
+                               = CCgiRequest::kContentLengthUnknown,
                            string* content_log = NULL);
     ~CCgiEntryReaderContext();
 
@@ -114,6 +116,7 @@ private:
     CNcbiIstream& m_In;
     TCgiEntries&  m_Out;
     EContentType  m_ContentType;
+    size_t        m_ContentLength;
     string        m_Boundary;
     string*       m_ContentLog;
     unsigned int  m_Position;

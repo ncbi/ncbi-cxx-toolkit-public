@@ -178,9 +178,11 @@ void CCgiEntryReader::x_HitBoundary(bool final)
 CCgiEntryReaderContext::CCgiEntryReaderContext(CNcbiIstream& in,
                                                TCgiEntries& out,
                                                const string& content_type,
+                                               size_t content_length,
                                                string* content_log)
-    : m_In(in), m_Out(out), m_ContentLog(content_log), m_Position(0),
-      m_BytePos(0), m_CurrentEntry(NULL), m_CurrentReader(NULL)
+    : m_In(in), m_Out(out), m_ContentLength(content_length),
+      m_ContentLog(content_log), m_Position(0), m_BytePos(0),
+      m_CurrentEntry(NULL), m_CurrentReader(NULL)
 {
     if (NStr::StartsWith(content_type, "multipart/form-data")) {
         SIZE_TYPE pos = content_type.find(kBoundaryTag);
@@ -281,7 +283,7 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
     if (n == NPOS) {
         NcbiGetline(m_In, s, delim);
         m_BytePos += s.size();
-        if (m_In.eof()) {
+        if (m_In.eof()  ||  m_BytePos >= m_ContentLength) {
             reason = eRT_EOF;
         } else {
             m_In.unget();
@@ -295,7 +297,7 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
         m_In.get(buffer.get(), n + 1, delim);
         s.assign(buffer.get(), m_In.gcount());
         m_BytePos += m_In.gcount();
-        if (m_In.eof()) {
+        if (m_In.eof()  ||  m_BytePos >= m_ContentLength) {
             reason = eRT_EOF;
         } else {
             // NB: this is an ugly workaround for a buggy STL behavior that
@@ -334,8 +336,8 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
         }
     }
 
-    if (m_ContentType == eCT_URLEncoded   &&  NStr::EndsWith(s, HTTP_EOL)
-        &&  CT_EQ_INT_TYPE(delim_read, CT_EOF)) {
+    if (m_ContentType == eCT_URLEncoded  &&  NStr::EndsWith(s, HTTP_EOL)
+        &&  reason == eRT_EOF) {
         // discard terminal CRLF
         s.resize(s.size() - 2);
     }
