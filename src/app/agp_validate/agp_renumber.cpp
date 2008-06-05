@@ -43,7 +43,8 @@ USING_NCBI_SCOPE;
 
 const char* usage=
 "Clean up an AGP file:\n"
-"http://www.ncbi.nlm.nih.gov/genome/guide/Assembly/AGP_Specification.html\n"
+"http://www.ncbi.nlm.nih.gov/genome/assembly/agp/AGP_Specification.shtml\n"
+//"http://www.ncbi.nlm.nih.gov/genome/guide/Assembly/AGP_Specification.html\n"
 "\n"
 "USAGE: agp_renumber <in.agp >out.agp\n"
 "\n"

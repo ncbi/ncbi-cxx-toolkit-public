@@ -104,8 +104,8 @@ public:
   string& PrintUsage(string& str, bool detailed) const
   {
     str="Validate data in the AGP format:\n"
-    "http://www.ncbi.nlm.nih.gov/genome/guide/Assembly/AGP_Specification.html\n"
-    //"http://www.ncbi.nlm.nih.gov/Genbank/WGS.agpformat.html\n"
+    "http://www.ncbi.nlm.nih.gov/genome/assembly/agp/AGP_Specification.shtml\n"
+    //"http://www.ncbi.nlm.nih.gov/genome/guide/Assembly/AGP_Specification.html\n"
     "\n"
     "USAGE: agp_validate [-options] [FASTA files...] [AGP files...]\n"
     "\n"
