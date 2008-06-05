@@ -4,7 +4,7 @@ _export = NCBI_GENERAL_EXPORT
 [Int-fuzz]
 p-m._type       = TSeqPos
 range.max._type = TSeqPos
-range.min_type  = TSeqPos
+range.min._type = TSeqPos
 alt.E._type     = TSeqPos
 
 [User-field]
