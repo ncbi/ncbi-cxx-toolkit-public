@@ -275,7 +275,6 @@ CQueueDataBase::CQueueDataBase(CBackgroundHost& host)
   m_StopPurge(false),
   m_FreeStatusMemCnt(0),
   m_LastFreeMem(time(0)),
-  m_LastR2P(time(0)),
   m_UdpPort(0)
 {
 }

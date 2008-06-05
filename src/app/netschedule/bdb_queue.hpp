@@ -593,7 +593,6 @@ private:
     CFastMutex           m_PurgeLock;
     unsigned             m_FreeStatusMemCnt;  ///< Free memory counter
     time_t               m_LastFreeMem;       ///< time of the last memory opt
-    time_t               m_LastR2P;           ///< Return 2 Pending timestamp
     unsigned short       m_UdpPort;           ///< UDP notification port
 
     CRef<CJobNotificationThread>             m_NotifThread;
