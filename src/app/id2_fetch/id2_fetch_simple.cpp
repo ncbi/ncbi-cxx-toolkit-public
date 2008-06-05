@@ -63,7 +63,7 @@
 
 #include <util/compress/reader_zlib.hpp>
 #include <util/compress/zlib.hpp>
-#include <util/rwstream.hpp>
+#include <corelib/rwstream.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
