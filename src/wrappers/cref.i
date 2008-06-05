@@ -65,39 +65,33 @@ namespace ncbi {
 #endif
         }
 
-        %typemap(in)  CRef<T> (CRef<T> *pcref, T* pobj) {
-            // accept either a CRef<T> or a T
-            if (SWIG_ConvertPtr($input,(void **) &pcref, 
-                                $&1_descriptor,0) != -1) {
-                $1 = *pcref;
-            } else if (SWIG_ConvertPtr($input, (void **) &pobj, 
+        %typemap(in)  CRef<T> (T* pobj) {
+            // accept a T (and not a CRef<T>)
+            if (SWIG_ConvertPtr($input, (void **) &pobj, 
                                 $descriptor(T *), 0) != -1) {
                 $1.Reset(pobj);
             } else {
 #ifdef SWIGPYTHON
-                PyErr_SetString(PyExc_TypeError, #T " or CRef<" #T "> expected");
+                PyErr_SetString(PyExc_TypeError, #T " expected");
                 SWIG_fail;
 #endif
 #ifdef SWIGPERL
                 SWIG_fail;
 #endif
 #ifdef SWIGRUBY
-                rb_raise(rb_eArgError, #T " or CRef<" #T "> expected");
+                rb_raise(rb_eArgError, #T " expected");
 #endif
             }
         }
-        %typemap(in)  const CRef<T> & (CRef<T> *pcref, T* pobj, CRef<T> cref) {
-            // accept either a CRef<T> or a T
-            if (SWIG_ConvertPtr($input, (void **) &pcref, 
-                                $1_descriptor, 0) != -1) {
-                $1 = pcref;
-            } else if (SWIG_ConvertPtr($input, (void **) &pobj, 
+        %typemap(in)  const CRef<T> & (T* pobj, CRef<T> cref) {
+            // accept a T (and not a CRef<T>)
+            if (SWIG_ConvertPtr($input, (void **) &pobj, 
                                 $descriptor(T *), 0) != -1) {
                 cref.Reset(pobj);
                 $1 = &cref;
             } else {
 #ifdef SWIGPYTHON
-                PyErr_SetString(PyExc_TypeError, #T " or CRef<" #T "> expected");
+                PyErr_SetString(PyExc_TypeError, #T " expected");
                 SWIG_fail;
 #endif
 #ifdef SWIGPERL
@@ -110,13 +104,9 @@ namespace ncbi {
         }
 
         %typecheck(SWIG_TYPECHECK_POINTER) CRef<T> {
-            // accept either a CRef<T> or a T
-            CRef<T> *pcref;
+            // accept a T (and not a CRef<T>)
             T* pobj;
-            if (SWIG_ConvertPtr($input,(void **) &pcref, 
-                                $&1_descriptor,0) != -1) {
-                $1 = 1;
-            } else if (SWIG_ConvertPtr($input, (void **) &pobj, 
+            if (SWIG_ConvertPtr($input, (void **) &pobj, 
                                 $descriptor(T *), 0) != -1) {
                 $1 = 1;
             } else {
