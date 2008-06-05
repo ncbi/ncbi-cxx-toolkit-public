@@ -280,10 +280,14 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
         _TROUBLE;
     }
 
+    if (m_ContentLength != CCgiRequest::kContentLengthUnknown) {
+        n = min(n, m_ContentLength - m_BytePos);
+    }
+
     if (n == NPOS) {
         NcbiGetline(m_In, s, delim);
         m_BytePos += s.size();
-        if (m_In.eof()  ||  m_BytePos >= m_ContentLength) {
+        if (m_In.eof()) {
             reason = eRT_EOF;
         } else {
             m_In.unget();
