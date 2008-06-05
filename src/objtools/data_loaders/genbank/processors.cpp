@@ -350,7 +350,14 @@ void CProcessor::RegisterAllProcessors(CReadDispatcher& d)
 bool CProcessor::TryStringPack(void)
 {
     static NCBI_PARAM_TYPE(GENBANK, SNP_PACK_STRINGS) s_Value;
-    return s_Value.Get();
+    if ( !s_Value.Get() ) {
+        return false;
+    }
+    if ( !CPackString::TryStringPack() ) {
+        s_Value.Set(false);
+        return false;
+    }
+    return true;
 }
 
 
@@ -384,24 +391,22 @@ static bool s_CacheRecompress(void)
 
 void CProcessor::SetSeqEntryReadHooks(CObjectIStream& in)
 {
-    if ( !TryStringPack() ) {
-        return;
+    if ( TryStringPack() ) {
+        CObjectTypeInfo type;
+
+        type = CObjectTypeInfo(CType<CObject_id>());
+        type.FindVariant("str").SetLocalReadHook(in, new CPackStringChoiceHook);
+
+        type = CObjectTypeInfo(CType<CImp_feat>());
+        type.FindMember("key").SetLocalReadHook(in,
+                                                new CPackStringClassHook(32, 128));
+
+        type = CObjectTypeInfo(CType<CDbtag>());
+        type.FindMember("db").SetLocalReadHook(in, new CPackStringClassHook);
+
+        type = CType<CGb_qual>();
+        type.FindMember("qual").SetLocalReadHook(in, new CPackStringClassHook);
     }
-
-    CObjectTypeInfo type;
-
-    type = CObjectTypeInfo(CType<CObject_id>());
-    type.FindVariant("str").SetLocalReadHook(in, new CPackStringChoiceHook);
-
-    type = CObjectTypeInfo(CType<CImp_feat>());
-    type.FindMember("key").SetLocalReadHook(in,
-                                            new CPackStringClassHook(32, 128));
-
-    type = CObjectTypeInfo(CType<CDbtag>());
-    type.FindMember("db").SetLocalReadHook(in, new CPackStringClassHook);
-
-    type = CType<CGb_qual>();
-    type.FindMember("qual").SetLocalReadHook(in, new CPackStringClassHook);
     if ( s_UseMemoryPool() ) {
         in.UseMemoryPool();
     }
@@ -410,29 +415,27 @@ void CProcessor::SetSeqEntryReadHooks(CObjectIStream& in)
 
 void CProcessor::SetSNPReadHooks(CObjectIStream& in)
 {
-    if ( !TryStringPack() ) {
-        return;
+    if ( TryStringPack() ) {
+        CObjectTypeInfo type;
+
+        type = CType<CGb_qual>();
+        type.FindMember("qual").SetLocalReadHook(in, new CPackStringClassHook);
+        type.FindMember("val").SetLocalReadHook(in,
+                                                new CPackStringClassHook(4, 128));
+
+        type = CObjectTypeInfo(CType<CImp_feat>());
+        type.FindMember("key").SetLocalReadHook(in,
+                                                new CPackStringClassHook(32, 128));
+
+        type = CObjectTypeInfo(CType<CObject_id>());
+        type.FindVariant("str").SetLocalReadHook(in, new CPackStringChoiceHook);
+
+        type = CObjectTypeInfo(CType<CDbtag>());
+        type.FindMember("db").SetLocalReadHook(in, new CPackStringClassHook);
+
+        type = CObjectTypeInfo(CType<CSeq_feat>());
+        type.FindMember("comment").SetLocalReadHook(in, new CPackStringClassHook);
     }
-
-    CObjectTypeInfo type;
-
-    type = CType<CGb_qual>();
-    type.FindMember("qual").SetLocalReadHook(in, new CPackStringClassHook);
-    type.FindMember("val").SetLocalReadHook(in,
-                                            new CPackStringClassHook(4, 128));
-
-    type = CObjectTypeInfo(CType<CImp_feat>());
-    type.FindMember("key").SetLocalReadHook(in,
-                                            new CPackStringClassHook(32, 128));
-
-    type = CObjectTypeInfo(CType<CObject_id>());
-    type.FindVariant("str").SetLocalReadHook(in, new CPackStringChoiceHook);
-
-    type = CObjectTypeInfo(CType<CDbtag>());
-    type.FindMember("db").SetLocalReadHook(in, new CPackStringClassHook);
-
-    type = CObjectTypeInfo(CType<CSeq_feat>());
-    type.FindMember("comment").SetLocalReadHook(in, new CPackStringClassHook);
 }
 
 
