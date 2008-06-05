@@ -4957,7 +4957,7 @@ fi
 
 : ${LIBXML_PATH=$NCBI/libxml}
 # test -d "$LIBXML_PATH" || LIBXML_PATH=`xml2-config --prefix 2>/dev/null`
-vpath="$LIBXML_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+vpath="$LIBXML_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
 test -d "$vpath"  &&  LIBXML_PATH=$vpath
 if test "$with_libxml" != "no"; then
    case "$with_libxml" in
