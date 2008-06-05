@@ -820,5 +820,5 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
-    return CEUtilsApp().AppMain(argc, argv);
+    return CEUtilsApp().AppMain(argc, argv, 0, eDS_Default, NULL);
 }
