@@ -25,3 +25,5 @@ Linux32 : Bdb4621 : GCC.sh 3.4.2 --without-debug --with-optimization --with-mt -
 Linux32 : Bdb4621 : GCC.sh 3.4.2 --with-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 Linux64 : Bdb4621 : GCC.sh 4.0.1 --without-debug --with-optimization --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 Linux64 : Bdb4621 : GCC.sh 4.0.1 --with-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
+
+Win32   : Bdb4621 : msvc710_prj  dll     32  DebugDLL
