@@ -66,7 +66,7 @@ static const char* dblib_driver = "dblib";
 //     BOOST_FAIL(ex.GetMsg())
 
 #define DBAPI_BOOST_FAIL(ex) \
-    BOOST_FAIL(ex.GetMsg())
+    BOOST_FAIL(ex.what())
 
 BEGIN_NCBI_SCOPE
 
