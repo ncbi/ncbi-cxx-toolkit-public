@@ -265,7 +265,8 @@ CRef<CUser_field> CUser_field::SetFieldRef(const string& str,
                 if (iter == last) {
                     new_f = *field_iter;
                     break;
-                } else if (field.GetData().IsFields()) {
+                } else if (field.GetData().IsFields()  ||
+                           field.GetData().Which() == CUser_field::TData::e_not_set) {
                     new_f = *field_iter;
                     break;
                 } else {
