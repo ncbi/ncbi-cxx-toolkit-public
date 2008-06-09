@@ -99,9 +99,8 @@ bool CPackString::TryStringPack(void)
     }
 
     string s1("test"), s2;
-    s1.c_str();
     s2 = s1;
-    if ( s1.c_str() != s2.c_str() ) {
+    if ( s1.data() != s2.data() ) {
         // strings don't use reference counters
         return (use_string_pack = false);
     }
@@ -122,7 +121,7 @@ bool CPackString::x_Assign(string& s, const string& src)
     if ( TryStringPack() ) {
         const_cast<string&>(src) = s;
         s = src;
-        if ( s.c_str() != src.c_str() ) {
+        if ( s.data() != src.data() ) {
             x_RefCounterError();
         }
         return true;

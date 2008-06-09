@@ -49,7 +49,7 @@ public:
     struct SNode {
         SNode(const string& s)
             : m_Length(s.size()),
-              m_Chars(s.c_str()),
+              m_Chars(s.data()),
               m_CompressedIn(0)
             {
             }
@@ -206,7 +206,7 @@ inline
 bool CPackString::Assign(string& s, const string& src)
 {
     s = src;
-    if ( s.c_str() != src.c_str() ) {
+    if ( s.data() != src.data() ) {
         return x_Assign(s, src);
     }
     else {
@@ -220,7 +220,7 @@ void CPackString::SNode::AssignTo(string& s) const
 {
     ++m_CompressedIn;
     if ( CPackString::Assign(s, m_String) ) {
-        const_cast<SNode*>(this)->m_Chars = m_String.c_str();
+        const_cast<SNode*>(this)->m_Chars = m_String.data();
     }
 }
 
@@ -229,9 +229,9 @@ inline
 void CPackString::SNode::SetString(const string& s) const
 {
     _ASSERT(m_String.empty());
-    _ASSERT(s.size() == m_Length && x_Compare(s.c_str()) == 0);
+    _ASSERT(s.size() == m_Length && x_Compare(s.data()) == 0);
     const_cast<SNode*>(this)->m_String = s;
-    const_cast<SNode*>(this)->m_Chars = m_String.c_str();
+    const_cast<SNode*>(this)->m_Chars = m_String.data();
 }
 
 
@@ -240,7 +240,7 @@ void CPackString::SNode::SetString(void) const
 {
     _ASSERT(m_String.empty());
     const_cast<SNode*>(this)->m_String.assign(m_Chars, m_Length);
-    const_cast<SNode*>(this)->m_Chars = m_String.c_str();
+    const_cast<SNode*>(this)->m_Chars = m_String.data();
 }
 
 
