@@ -89,14 +89,6 @@ public:
 public:
     typedef map<string, string> TDatabaseParameters;
 
-    enum EServerType {
-        eUnknown,   //< Server type is not known
-        eSybase,    //< Sybase server
-        eMsSql,     //< Microsoft SQL server
-        eMsSql2005, //< Microsoft SQL server 2005
-        eOracle     //< ORACLE server
-    };
-
     enum ETestConfiguration {
         eWithExceptions,
         eWithoutExceptions,

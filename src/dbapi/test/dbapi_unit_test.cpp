@@ -168,6 +168,80 @@ protected:
     }
 };
 
+///////////////////////////////////////////////////////////////////////////////
+class CDBSetConnParams : public CDBConnParamsDelegate
+{
+public:
+    CDBSetConnParams(
+        const string& server_name,
+        const string& user_name,
+        const string& password,
+        Uint4 tds_version,
+        const CDBConnParams& other);
+    virtual ~CDBSetConnParams(void);
+
+public:
+    virtual Uint4  GetProtocolVersion(void) const;
+
+    virtual string GetServerName(void) const;
+    virtual string GetUserName(void) const;
+    virtual string GetPassword(void) const;
+
+private:
+    // Non-copyable.
+    CDBSetConnParams(const CDBSetConnParams& other);
+    CDBSetConnParams& operator =(const CDBSetConnParams& other);
+
+private:
+    const Uint4     m_ProtocolVersion;
+    const string    m_ServerName;
+    const string    m_UserName;
+    const string    m_Password;
+};
+
+
+CDBSetConnParams::CDBSetConnParams(
+        const string& server_name,
+        const string& user_name,
+        const string& password,
+        Uint4 tds_version,
+        const CDBConnParams& other)
+: CDBConnParamsDelegate(other)
+, m_ProtocolVersion(tds_version)
+, m_ServerName(server_name)
+, m_UserName(user_name)
+, m_Password(password)
+{
+}
+
+CDBSetConnParams::~CDBSetConnParams(void)
+{
+}
+
+Uint4 
+CDBSetConnParams::GetProtocolVersion(void) const
+{
+    return m_ProtocolVersion;
+}
+
+string 
+CDBSetConnParams::GetServerName(void) const
+{
+    return m_ServerName;
+}
+
+string 
+CDBSetConnParams::GetUserName(void) const
+{
+    return m_UserName;
+}
+
+string 
+CDBSetConnParams::GetPassword(void) const
+{
+    return m_Password;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 CDBAPIUnitTest::CDBAPIUnitTest(const CRef<const CTestArguments>& args)
@@ -1068,13 +1142,16 @@ void CDBAPIUnitTest::Test_Iskhakov(void)
     string sql;
 
     try {
+        CDBSetConnParams params(
+            "LINK_OS",
+            "anyone",
+            "allowed",
+            125,
+            GetArgs().GetConnParams()
+            );
+
         auto_ptr<CDB_Connection> auto_conn(
-            GetDS().GetDriverContext()->Connect(
-                "LINK_OS",
-                "anyone",
-                "allowed",
-                0
-            )
+            GetDS().GetDriverContext()->MakeConnection(params)
         );
 
         BOOST_CHECK( auto_conn.get() != NULL );
@@ -10542,6 +10619,14 @@ void CDBAPIUnitTest::Test_DropConnection(void)
         sql = "sleep 0 kill";
         const unsigned orig_conn_num = GetDS().GetDriverContext()->NofConnections();
 
+        CDBSetConnParams params(
+            "LINK_OS_INTERNAL",
+            "anyone",
+            "allowed",
+            125,
+            GetArgs().GetConnParams()
+        );
+
         for (unsigned i = 0; i < num_of_tests; ++i) {
             // Start a connection scope ...
             {
@@ -10549,12 +10634,7 @@ void CDBAPIUnitTest::Test_DropConnection(void)
 
                 auto_ptr<CDB_Connection> auto_conn;
 
-                auto_conn.reset(GetDS().GetDriverContext()->Connect(
-                        "LINK_OS_INTERNAL",
-                        "anyone",
-                        "allowed",
-                        0
-                    ));
+                auto_conn.reset(GetDS().GetDriverContext()->MakeConnection(params));
 
                 // kill connection ...
                 try {
