@@ -30,6 +30,13 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
+
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
+
+#include <algo/sequence/loc_mapper.hpp>
 #include <algo/sequence/compare_feats.hpp>
 #include <queue>
 
@@ -37,22 +44,86 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+/// Comparison functor for pqueue storing related comparisons
+/// A comparison of the same subtypes (e.g. mRNA vs. mRNA as opposed to mRNA vs. CDS)
+/// is always preferable; Otherwise a better-overlapping comparison is preferable.
+struct SCompareFeats_OpLess : public binary_function<CRef<CCompareFeats>&, CRef<CCompareFeats>&, bool>
+{
+public:
+    bool operator()(const CRef<CCompareFeats>& c1, const CRef<CCompareFeats>& c2) const
+    {    
+#if 0
+        string s1q = "";
+        feature::GetLabel(*c1->GetFeatQ(), &s1q, feature::eContent);
+        string s1t = "";
+        feature::GetLabel(*c1->GetFeatT(), &s1t, feature::eContent);
+        string s2q = "";
+        feature::GetLabel(*c2->GetFeatQ(), &s2q, feature::eContent);
+        string s2t = "";
+        feature::GetLabel(*c2->GetFeatT(), &s2t, feature::eContent);
+        
+#endif
+        
+        
+        //any match is better than no match
+        if(!c1->IsMatch() && c2->IsMatch()) return true;
+        if(c1->IsMatch() && !c2->IsMatch()) return false;
+        if(!c1->IsMatch() && !c2->IsMatch()) return c1->GetFeatQ().IsNull();
+        
+        //Same type is better
+        bool c1_sameType = c1->IsSameType();
+        bool c2_sameType = c2->IsSameType();
+        if(c1_sameType && !c2_sameType) return false;
+        if(!c1_sameType && c2_sameType) return true;
+        
+        //larger symmetrical overlap is better
+        double overlap1 = c1->GetComparison()->GetSymmetricalOverlap();
+        double overlap2 = c2->GetComparison()->GetSymmetricalOverlap();
+        if(overlap1 < overlap2) return true;
+        if(overlap1 > overlap2) return false;
+        
+        //larger relative overlap is better
+        overlap1 = c1->GetComparison()->GetRelativeOverlap();
+        overlap2 = c2->GetComparison()->GetRelativeOverlap();
+        if(overlap1 < overlap2) return true;
+        if(overlap1 > overlap2) return false;
+        
+        
+        //same subtype is better than different subtypes (I bet we NEVER get to this point)
+        bool c1_sameSubtype = c1->IsSameSubtype();
+        bool c2_sameSubtype = c2->IsSameSubtype();
+        if(c1_sameSubtype && !c2_sameSubtype) return false;
+        if(!c1_sameSubtype && c2_sameSubtype) return true;
+        
+        
+        //smaller difference in TypeSortingOrder is better 
+        unsigned c1_typeSortingOrderDiff = std::abs(c1->GetFeatQ()->GetTypeSortingOrder() - c1->GetFeatT()->GetTypeSortingOrder());
+        unsigned c2_typeSortingOrderDiff = std::abs(c2->GetFeatQ()->GetTypeSortingOrder() - c2->GetFeatT()->GetTypeSortingOrder());
+        if(c1_typeSortingOrderDiff < c2_typeSortingOrderDiff) return false;
+        if(c1_typeSortingOrderDiff > c2_typeSortingOrderDiff) return true;
+        
+        
+        
+        return false;    
+    }
+private:
 
+};
 
 
 CNcbiOstream& operator<<(CNcbiOstream& out, const CCompareFeats& cf)
 {
     if(!cf.m_feat1.IsNull()) {
         out << CCompareFeats::s_GetFeatLabel(*cf.m_feat1) << "\t";
-        out << CCompareFeats::s_GetLocLabel(cf.m_feat1->GetLocation(), false) << "\t";
-        out << CCompareFeats::s_GetLocLabel(*cf.m_feat1_mapped_loc, false) << "\t";
+        out << CCompareFeats::s_GetLocLabel(cf.m_feat1->GetLocation(), true) << "\t";
+        out << CCompareFeats::s_GetLocLabel(*cf.m_feat1_mapped_loc, true) << "\t";
     } else {
         out << "\t\t\t";
     }
     
     if(!cf.m_feat2.IsNull()) {
         out << CCompareFeats::s_GetFeatLabel(*cf.m_feat2) << "\t";
-        out << CCompareFeats::s_GetLocLabel(cf.m_feat2->GetLocation(), false) << "\t";
+        out << CCompareFeats::s_GetLocLabel(cf.m_feat2->GetLocation(), true) << "\t";
     } else {
         out << "\t\t";
     }
@@ -67,13 +138,17 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CCompareFeats& cf)
         out << cf.m_compare->GetEvidenceString() << "\t";
         cf.m_compare->GetResult(&sResult);
         out << sResult << "\t";
+        
+        out << cf.GetMappedIdentity() << "\t";
         out << cf.m_compare->GetRelativeOverlap() << "\t";
         out << cf.m_compare->GetSymmetricalOverlap();
     } else {
-        out << "\t\t\t";
+        out << "\t\t\t\t";
     }
     return out;
 }
+
+
         
 string CCompareSeq_locs::SIntervalComparisonResultGroup::ToString()
 {
@@ -102,7 +177,6 @@ string CCompareSeq_locs::SIntervalComparisonResultGroup::ToString()
     if(m_first.m_result & fCmp_StrandDifferent) {
         strm << "strand-mismatch(" << s_pos2 << ")";
     } else { 
-        //TODO: not sure if we need to flip
         bool overlap_5p = (m_first.m_result & fCmp_Overlap) && (m_first.m_position_comparison < 0);
         bool overlap_3p = (m_first.m_result & fCmp_Overlap) && (m_first.m_position_comparison > 0);
 
@@ -125,6 +199,7 @@ string CCompareSeq_locs::GetEvidenceString() const
     
     SIntervalComparisonResultGroup grp(false);
 
+    int ii(0);
     ITERATE(vector<SIntervalComparisonResult>, it, m_IntComparisons) {
         SIntervalComparisonResult comp = *it;
         if(!grp.Add(comp)) {
@@ -134,9 +209,10 @@ string CCompareSeq_locs::GetEvidenceString() const
             }
             grp.Reset(comp);   
         }  
+        ii++;
     }
 
-    strm << sep << grp.ToString() << "]";
+    strm << sep << grp.ToString() << "](" << ii << ")";
     return  CNcbiOstrstreamToString(strm); 
 }   
 
@@ -148,7 +224,8 @@ CCompareSeq_locs::FCompareLocs CCompareSeq_locs::x_CompareInts(const CSeq_loc& l
     bool is5p_match = loc1.GetStart(eExtreme_Biological) == loc2.GetStart(eExtreme_Biological);
     bool is3p_match = loc1.GetStop(eExtreme_Biological) == loc2.GetStop(eExtreme_Biological);
 
-    sequence::ECompare cmp = sequence::Compare(loc1, loc2, m_scope1); //TODO: will it be a problem if loc2 lives in another scope?
+    sequence::ECompare cmp = sequence::Compare(loc1, loc2, m_scope_t); //we are comparing mapped query loc vs
+                                                                       //the target, hence the target scope
     
     switch(cmp) {
         case sequence::eSame:       return fCmp_Match;
@@ -175,22 +252,21 @@ void CCompareSeq_locs::x_Compare()
     // 
     // If some intervals refer to other bioseqs we assume that our locs have them in order.
     // The fact is stored in this->m_sameBioseq
-    // TODO: report this  somewhere? 
     CRef<CSeq_loc> loc1;
     CRef<CSeq_loc> loc2;
 
     try {
-        const CSeq_id& seq_id1 = sequence::GetId(*m_loc1, m_scope1);
-        const CSeq_id& seq_id2 = sequence::GetId(*m_loc2, m_scope2);
-        this->m_sameBioseq = sequence::IsSameBioseq(seq_id1, seq_id2, m_scope1);
+        const CSeq_id& seq_id1 = sequence::GetId(*m_loc1, m_scope_t);
+        const CSeq_id& seq_id2 = sequence::GetId(*m_loc2, m_scope_t);
+        this->m_sameBioseq = sequence::IsSameBioseq(seq_id1, seq_id2, m_scope_t);
     } catch(...) { //GetId may throw if intervals refer to multiple bioseqs
         this->m_sameBioseq = false;   
     }
     
     if(false && this->m_sameBioseq) { //disabled sorting
         //this "merge" is actually just a sort
-        loc1 = sequence::Seq_loc_Merge(*m_loc1, CSeq_loc::fSort, m_scope1);
-        loc2 = sequence::Seq_loc_Merge(*m_loc2, CSeq_loc::fSort, m_scope2);
+        loc1 = sequence::Seq_loc_Merge(*m_loc1, CSeq_loc::fSort, m_scope_t);
+        loc2 = sequence::Seq_loc_Merge(*m_loc2, CSeq_loc::fSort, m_scope_t);
     } else {
         loc1.Reset(new CSeq_loc);
         loc2.Reset(new CSeq_loc);
@@ -206,26 +282,20 @@ void CCompareSeq_locs::x_Compare()
     loc2->ChangeToMix();
     
     
-    //TODO: At least for now we don't compare things on different strands.
-    //Note that even the locs may be of "same orientation", in general case one or more of the intervals
-    //may be on opposite strand. This will be handled in int-wise comparisons
-    if(!SameOrientation(sequence::GetStrand(*loc1, m_scope1), sequence::GetStrand(*loc2, m_scope2))) {
-        m_sameStrand = false;   
-        return;
-    } else {
-        m_sameStrand = true;
-    }
+    m_sameStrand = SameOrientation(sequence::GetStrand(*loc1, m_scope_t), sequence::GetStrand(*loc2, m_scope_t));
     
-    
-    //TODO: to avoid issues if some interval points to another sequence or they are not sorted (as a result of 
-    //mapping or otherwise), we compare
-    //every interval against every other interval leading to O(exon_count1*exon_count2) complexity. This can be optimized
-    //to run in O(exon_count1+exon_count2). For now treat we treat the premature optimization as evil.
+
+    //To avoid issues if some interval points to another sequence or they are not sorted (as a result of 
+    //mapping or otherwise), we compare every interval against every other interval 
+    //leading to O(exon_count1*exon_count2) complexity.
+    //TODO: optimize to O(exon_count1+exon_count2) complexity after self-mapping seq-loc filter is implemented.
     
     set<unsigned> loc2_reported_set;     //keep track of matched exons on loc2 so we can report the unmatched
     unsigned it1_exon_ordinal = 1;
     
-    int adjust_for_strand = IsReverse(sequence::GetStrand(*loc1, m_scope1)) ? -1 : 1;
+    
+    
+    int adjust_for_strand = IsReverse(sequence::GetStrand(*loc1, m_scope_t)) ? -1 : 1;
     
     //have to use eEmpty_Allow to conserve the numbering of exons in the presence of non-mapping intervals
     for(CSeq_loc_CI it1(*loc1, CSeq_loc_CI::eEmpty_Allow, CSeq_loc_CI::eOrder_Positional); 
@@ -234,8 +304,8 @@ void CCompareSeq_locs::x_Compare()
     {
         unsigned it2_exon_ordinal = 1;
         bool loc1_found_Overlap = false;
-        int it1_cmp_it2 = 0;
         
+        int it1_cmp_it2 = 0; //positive iff loc1 is 5' further and does not overlap loc1
         
         
         for(CSeq_loc_CI it2(*loc2, CSeq_loc_CI::eEmpty_Allow, CSeq_loc_CI::eOrder_Positional); 
@@ -243,30 +313,34 @@ void CCompareSeq_locs::x_Compare()
             ++it2, ++it2_exon_ordinal) 
         {
             FCompareLocs cmp_res = x_CompareInts(it1.GetSeq_loc(), it2.GetSeq_loc());
+            
             try {
-                it1_cmp_it2 = adjust_for_strand * it1.GetSeq_loc().Compare(it2.GetSeq_loc());
+                it1_cmp_it2 = adjust_for_strand * 
+                              (it1.GetSeq_loc().GetStart(eExtreme_Biological) > 
+                               it2.GetSeq_loc().GetStop(eExtreme_Biological) ? 1 : -1);
+                //it1_cmp_it2 = adjust_for_strand * it1.GetSeq_loc().Compare(it2.GetSeq_loc());
             } catch (...) {
                 ; //reuse the last value
             }
-            
+                    
             
             // if no overlap and the segment on the other loc hasn't been reported and we already passed it
             if((cmp_res == fCmp_Unknown || cmp_res == fCmp_NoOverlap) 
                && loc2_reported_set.find(it2_exon_ordinal) == loc2_reported_set.end() 
-               && it1_cmp_it2 < 0) 
+               && it1_cmp_it2 > 0) 
             {
                 loc2_reported_set.insert(it2_exon_ordinal);
                 
                 SIntervalComparisonResult sRes(
                     0                   //no corresponding exon on loc1
                   , it2_exon_ordinal    //for this exon on loc2
-                  , cmp_res);   
+                  , cmp_res, it1_cmp_it2);   
                   
                 m_IntComparisons.push_back(sRes);   
                 
             } else if (cmp_res != fCmp_Unknown && cmp_res != fCmp_NoOverlap) {
                 //also check the matching of directions; if problem - report it as strand mismatch
-                if(!SameOrientation(sequence::GetStrand(it1.GetSeq_loc(), m_scope1), sequence::GetStrand(it2.GetSeq_loc(), m_scope2))) {
+                if(!m_sameStrand) {
                     cmp_res = fCmp_StrandDifferent;
                 }  
                 
@@ -293,12 +367,15 @@ void CCompareSeq_locs::x_Compare()
         }
     }
 
+
+    
     
     //compute the stats
     for(vector<SIntervalComparisonResult>::iterator it = m_IntComparisons.begin(); 
        it != m_IntComparisons.end(); 
        ++it) 
     {
+        
         if(m_counts.missing_5p == 0 && it->missing_first()) {
             m_counts.extra_5p++;
         } else if(m_counts.extra_5p == 0 && it->missing_second()) {
@@ -335,6 +412,46 @@ void CCompareSeq_locs::x_Compare()
     }
 }
 
+/// Recompute m_len_seqloc_overlap, m_len_seqloc1, and m_len_seqloc2
+void CCompareSeq_locs::x_ComputeOverlapValues() const 
+{
+    CRef<CSeq_loc> merged_loc1 = sequence::Seq_loc_Merge(*m_loc1, CSeq_loc::fMerge_All, m_scope_t);
+    CRef<CSeq_loc> merged_loc2 = sequence::Seq_loc_Merge(*m_loc2, CSeq_loc::fMerge_All, m_scope_t);
+    
+    //fix: if have strand mismatches - the overlaps are forced to zero
+    if(!m_sameStrand) {
+        merged_loc1->SetEmpty();
+        merged_loc2->SetEmpty();
+    }   
+    
+
+
+
+    CRef<CSeq_loc> subtr_loc1 = sequence::Seq_loc_Subtract(*merged_loc1, *merged_loc2, CSeq_loc::fMerge_All, m_scope_t);
+    
+    TSeqPos subtr_len;
+    try {
+        subtr_len = sequence::GetLength(*subtr_loc1, m_scope_t);
+    } catch (...) { 
+        subtr_len = 0;
+    }   
+    
+    try {
+        m_len_seqloc1 = sequence::GetLength(*merged_loc1, m_scope_t);
+    } catch(...) {
+        m_len_seqloc1 = 0;
+    }   
+    
+    try {
+        m_len_seqloc2 = sequence::GetLength(*merged_loc2, m_scope_t);
+    } catch(...) {
+        m_len_seqloc2 = 0;
+    }
+
+    m_len_seqloc_overlap = m_len_seqloc1 - subtr_len;
+
+    m_cachedOverlapValues = true;
+}
 
 CCompareSeq_locs::TCompareLocsFlags CCompareSeq_locs::GetResult(string* str_result) const
 {
@@ -403,9 +520,8 @@ CCompareSeq_locs::TCompareLocsFlags CCompareSeq_locs::GetResult(string* str_resu
         strm << "3'truncated; ";
     }
     
-    //TODO: subset/superset may need to be reported regardles off the result_flags setting?
     if(!result_flags) {
-        sequence::ECompare cmp = sequence::Compare(*m_loc1, *m_loc2, m_scope1); 
+        sequence::ECompare cmp = sequence::Compare(*m_loc1, *m_loc2, m_scope_t); 
     
         switch(cmp) {
             case sequence::eSame:       
@@ -414,7 +530,7 @@ CCompareSeq_locs::TCompareLocsFlags CCompareSeq_locs::GetResult(string* str_resu
             break;
                 
             case sequence::eNoOverlap:  
-                if(sequence::TestForOverlap(*this->m_loc1, *this->m_loc2, sequence::eOverlap_Simple)) {
+                if(-1 != sequence::TestForOverlap(*this->m_loc1, *this->m_loc2, sequence::eOverlap_Simple)) {
                     result_flags |= fCmp_RegionOverlap;
                     strm << "region overlap; ";
                 } else {
@@ -456,52 +572,69 @@ CCompareSeq_locs::TCompareLocsFlags CCompareSeq_locs::GetResult(string* str_resu
 }
 
 
-/// Comparison functor for pqueue storing related comparisons
-/// A comparison of the same subtypes (e.g. mRNA vs. mRNA as opposed to mRNA vs. CDS)
-/// is always preferable; Otherwise a better-overlapping comparison is preferable.
-struct SCompareFeats_OpLess : public binary_function<CRef<CCompareFeats>&, CRef<CCompareFeats>&, bool>
-{
-public:
-    //TODO: this needs to be imroved such that if we don't have a matching feature
-    //of the same type we pick semantically closest comparison: i.e. we want to
-    //report exon vs. mRNA as opposed to exon vs. gene if possible.
-    //But what if comparing to a different feature has better overlap and the 
-    //feature of the same type is irrelevant?
-    //There's definitely some room for improvement in prioritizing matches
-    
-    bool operator()(const CRef<CCompareFeats>& c1, const CRef<CCompareFeats>& c2) const
-    {    
-        //any match is better than no match
-        if(c1->m_unmatched && !c2->m_unmatched) return true;
-        if(!c1->m_unmatched && c2->m_unmatched) return false;
-        
-        //same subtype is better than different subtypes
-        bool c1_sameSubtype = c1->IsSameSubtype();
-        bool c2_sameSubtype = c2->IsSameSubtype();
-        if(c1_sameSubtype && !c2_sameSubtype) return false;
-        if(!c1_sameSubtype && c2_sameSubtype) return true;
-        
-        //smaller difference in TypeSortingOrder is better 
-        unsigned c1_typeSortingOrderDiff = abs(c1->m_feat1->GetTypeSortingOrder() - c1->m_feat2->GetTypeSortingOrder());
-        unsigned c2_typeSortingOrderDiff = abs(c2->m_feat1->GetTypeSortingOrder() - c2->m_feat2->GetTypeSortingOrder());
-        if(c1_typeSortingOrderDiff < c2_typeSortingOrderDiff) return false;
-        if(c1_typeSortingOrderDiff > c2_typeSortingOrderDiff) return true;
-        
-        
-        double overlap1 = c1->GetAutoOverlap();
-        double overlap2 = c2->GetAutoOverlap();
-            
-        //if overlaps are equal, fall back on symmetrical overlap
-        if(overlap1 == overlap2 && !c1->m_unmatched && !c2->m_unmatched) {
-             return c1->m_compare->GetSymmetricalOverlap() < c2->m_compare->GetSymmetricalOverlap();
-        } else {
-             return overlap1 < overlap2;
-        }
-        
-    }
-private:
 
-};
+//return feature's gene_id/locus_id or prelocuslink gene number
+int CCompareSeqRegions::s_GetGeneId(const CSeq_feat& feat) 
+{
+    //normally locus_id is in feat's dbxref
+    if(feat.IsSetDbxref()) {
+        ITERATE (CSeq_feat::TDbxref, dbxref, feat.GetDbxref()) {
+            if ((*dbxref)->GetDb() == "GeneID"  || (*dbxref)->GetDb() == "LocusID") {
+                return (*dbxref)->GetTag().GetId();
+            }
+        }
+    }
+    
+    
+    //but sometimes it is in Db
+    if(feat.CanGetData() ) 
+    {
+        if(feat.GetData().IsGene()) {
+            ITERATE (CSeq_feat::TDbxref, dbxref, feat.GetData().GetGene().GetDb()) {
+                if ((*dbxref)->GetDb() == "GeneID"  || (*dbxref)->GetDb() == "LocusID") {
+                    return (*dbxref)->GetTag().GetId();
+                }
+            }
+            
+            //for prelocuslink gene annots the gene number is here:
+            try {
+                return NStr::StringToInt(feat.GetData().GetGene().GetLocus());
+            } catch (...) {};
+        } else if(feat.GetData().IsRna()) {
+            /*for prelocuslink merged ASN, rnas look like this:
+             *
+               Seq-feat ::= {
+                  data rna {
+                    type mRNA,
+                    ext name "67485"
+                  },
+                  product whole local str "MmUn_53691_37.35221.67485.m",
+               ...
+               
+             * The gene_id is the number is 35221
+             */
+                
+            
+            
+            try {
+                std::vector<string> tokens;
+                string label = "";
+                feat.GetProduct().GetWhole().GetLabel(&label, CSeq_id::eContent);
+                NStr::Tokenize(label, ".", tokens);
+                
+                if(tokens.size() == 4 && (tokens[3] == "m" || tokens[3] == "p")) {
+                    int num1 = NStr::StringToInt(tokens[1]);
+                    int num2 = NStr::StringToInt(tokens[2]); //make sure this one is a number too
+                    num2 = 0;
+                    return num1;
+                }
+            } catch (...) {}
+        } 
+    }
+
+    return 0;    
+}
+
     
 
 /// Return the next group of comparisons on the region (return true iff found any)
@@ -515,84 +648,340 @@ private:
 bool CCompareSeqRegions::NextComparisonGroup(vector<CRef<CCompareFeats> >& vComparisons)
 {
     vComparisons.clear();
-    CSeq_loc aggregate_loc;
-    aggregate_loc.SetEmpty();
-
-    for(; m_loc1_ci; ++m_loc1_ci) {
+    CRef<CSeq_loc> group_loc_q(new CSeq_loc);
+    CRef<CSeq_loc> group_loc_t(new CSeq_loc);
+    group_loc_q->SetNull();
+    group_loc_t->SetNull();
     
-        const CSeq_feat& feat1 = m_loc1_ci->GetMappedFeature();
-        if(m_loc1_ci->GetFeatSubtype() == CSeqFeatData::eSubtype_STS) {
-            continue;
-            //don't want to deal with these at the moment (they are on one annotation but not the other) 
-        }
-
-
-        if(!aggregate_loc.IsEmpty() 
-           && sequence::Compare(aggregate_loc, feat1.GetLocation(), m_scope1) == sequence::eNoOverlap) 
-        {
-            return !vComparisons.empty();
-        }
-
-        
-        aggregate_loc.SetMix();
-        aggregate_loc.Add(feat1.GetLocation());
-
-        SAnnotSelector sel2;
-        sel2.SetResolveMethod(SAnnotSelector::eResolve_All);
-        sel2.SetAdaptiveDepth(true);
-        //sel2.IncludeFeatSubtype(m_loc1_ci->GetFeatSubtype());
-
-          
-        CConstRef<CSeq_loc> feat1_mapped_loc = m_mapper->Map(feat1.GetLocation());
-
-
-        priority_queue<CRef<CCompareFeats>
-                     , vector<CRef<CCompareFeats> > 
-                     , SCompareFeats_OpLess> pq;
-        
-        CRef<CSeq_loc> feat1_mapped_range = sequence::Seq_loc_Merge(*feat1_mapped_loc, CSeq_loc::fMerge_SingleRange, m_scope1); //TODO: which scope to use here? 
-        for(CFeat_CI it2(*m_scope2, *feat1_mapped_range, sel2); it2; ++it2) {
-            CRef<CCompareFeats> cf(new CCompareFeats(
-                feat1
-              , *feat1_mapped_loc
-              , m_scope1
-              , it2->GetMappedFeature()
-              , m_scope2));
-            pq.push(cf);
-        }
-        
+    _TRACE("Starting next comparison group");
+    
+    for(; m_loc_q_ci; ++m_loc_q_ci) {
+        CConstRef<CSeq_feat> feat1(&m_loc_q_ci->GetMappedFeature()); //original feat could be on segments, so self-mapper will happily remap to nothing
        
-       if(pq.empty()) {
-            //create a no-match entry
-            CRef<CCompareFeats> cf(new CCompareFeats(feat1, *feat1_mapped_loc, m_scope1));
-            vComparisons.push_back(cf);
-        } else {
-            
-            //report all best matches
-            //Note that we may have 'best' overlap with multiple features on the target sequence
-            //Do we want to report all of them? Probably not because we may have
-            //features on this sequence of the same type that will have best match to them, and we
-            //want to avoid the combinatorial mini-explosion. Hence we report all best matches
-            //not solely based on score, but as determined by SCompareFeats_OpLess
-            
-            
-            CRef<CCompareFeats> top_comparison = pq.top();
-            vComparisons.push_back(top_comparison);
-            pq.pop();
-            
-            SCompareFeats_OpLess opLess;
-            while(!pq.empty()
-                  && !opLess(top_comparison, pq.top()) 
-                  && !opLess(pq.top(), top_comparison) )
-            {
-                vComparisons.push_back(pq.top());
-                pq.pop();
+        //get raw matches for this feat
+        vector<CRef<CCompareFeats> > feat_matches;
+        x_GetPutativeMatches(feat_matches, feat1);
+        
+        //compute the combined location of the raw matches
+        CSeq_loc aggregate_match_loc_t;
+        aggregate_match_loc_t.SetNull();
+        ITERATE(vector<CRef<CCompareFeats> >, it, feat_matches) {
+            if(!(*it)->GetFeatT().IsNull() && !(*it)->GetSelfLocT().IsNull()) {
+                aggregate_match_loc_t.SetMix();
+                aggregate_match_loc_t.Add(*(*it)->GetSelfLocT());
             }
+        } 
+        
+        
+        if(!group_loc_q->IsNull() 
+           && sequence::Compare(*group_loc_q, feat1->GetLocation(), m_scope_q) == sequence::eNoOverlap) 
+        { 
+            //the feature on query does not overlap anything in the current overlap group:
+            //We might think that we've reached the next group; however, we want to keep
+            //multiple non-overlapping features on Q matching the same larger feat on T in the same 
+            //group to avoid the ambiguity in selecting best matches. Hence we also require
+            //the same on the target side:
+            
+            if(group_loc_t->IsNull() || sequence::Compare(*group_loc_t, aggregate_match_loc_t, m_scope_t) == sequence::eNoOverlap) {
+                break;    
+            }  
         }
+        
+        vComparisons.insert(vComparisons.end(), feat_matches.begin(), feat_matches.end());
+        
+        //update group locs
+        group_loc_q = sequence::Seq_loc_Add(*group_loc_q, feat1->GetLocation(), CSeq_loc::fMerge_SingleRange, m_scope_q);
+        group_loc_t = sequence::Seq_loc_Add(*group_loc_t, aggregate_match_loc_t, CSeq_loc::fMerge_SingleRange, m_scope_t);
+        
+        
+#if _DEBUG
+        string label = "";
+        feature::GetLabel(*feat1, &label, feature::eBoth, m_scope_q);
+        _TRACE("  " + label);
+        
+        label = "";
+        group_loc_q->GetLabel(&label);
+        _TRACE("  group_loc_q:   " + label);
+        
+        label = "";
+        group_loc_t->GetLabel(&label);
+        _TRACE("  group_loc_t:   " + label);
+#endif
+        
+    }
+    
+    if(m_comp_options & CCompareSeqRegions::fSelectBest) {SelectMatches(vComparisons);}
+    
+    if(!vComparisons.empty()) {
+        return true;
+    }
+
+    if(m_already_processed_unmatched_targets) {
+        return false;
+    }
+    
+    //process unmatched targets
+    double dummy(0.0f);
+    CConstRef<CSeq_loc> tgt_loc = m_mapper->Map(*this->m_loc_q, &dummy);
+    
+    SAnnotSelector sel = m_selector_t; //because original is const
+    sel.SetOverlapIntervals();
+    for(CFeat_CI it2(*m_scope_t, *tgt_loc, sel); it2; ++it2) {
+        CConstRef<CSeq_feat> feat(&it2->GetMappedFeature());
+        string loc_label;
+        feat->GetLocation().GetLabel(&loc_label);
+        if(m_seen_targets.find(loc_label) != m_seen_targets.end()) {
+            continue;
+        }
+        
+        CConstRef<CSeq_loc> feat_self_loc = x_GetSelfLoc(feat->GetLocation(), m_scope_t, false);
+        
+        //compute the remapped ratio
+        CRef<CSeq_loc> subtr_loc = sequence::Seq_loc_Subtract(*feat_self_loc, *tgt_loc, CSeq_loc::fMerge_All, m_scope_t);
+      
+        TSeqPos len_subtr = subtr_loc->Which() == CSeq_loc::e_not_set 
+                         || subtr_loc->IsNull() 
+                         || subtr_loc->IsEmpty() ? 0 : sequence::GetLength(*subtr_loc, m_scope_t);
+        
+        TSeqPos feat_len = feat_self_loc->Which() == CSeq_loc::e_not_set 
+                         || feat_self_loc->IsNull() 
+                         || feat_self_loc->IsEmpty() ? 0 : sequence::GetLength(*feat_self_loc, m_scope_t);
+        
+        double mapped = feat_len == 0 ? 0.0f : 1.0 - (len_subtr / feat_len);
+        
+        
+        CRef<CCompareFeats> cf(new CCompareFeats(
+                *feat
+              , *feat_self_loc
+              , mapped
+              , m_scope_t
+            ));
+        vComparisons.push_back(cf);
+    
+    }
+    m_already_processed_unmatched_targets = true;
+    
+    return !vComparisons.empty();
+}
+
+
+void CCompareSeqRegions::x_GetPutativeMatches(
+        vector<CRef<CCompareFeats> >& vComparisons, 
+        CConstRef<CSeq_feat> feat1)
+{
+    double mapped_identity(0);
+    CConstRef<CSeq_loc> feat1_mapped_loc = m_mapper->Map(feat1->GetLocation(), &mapped_identity);
+    CConstRef<CSeq_loc> feat1_mapped_range_loc = sequence::Seq_loc_Merge(*feat1_mapped_loc, CSeq_loc::fMerge_SingleRange, m_scope_t);
+    CConstRef<CSeq_loc> feat1_self_loc = x_GetSelfLoc(feat1->GetLocation(), m_scope_q, false);
+    CConstRef<CSeq_loc> feat1_self_range_loc = x_GetSelfLoc(feat1->GetLocation(), m_scope_q, true);
+    
+    _ASSERT(!feat1_mapped_loc.IsNull());
+    _ASSERT(!feat1_mapped_range_loc.IsNull());
+    _ASSERT(!feat1_self_loc.IsNull());
+    _ASSERT(!feat1_self_range_loc.IsNull());
+    
+
+    
+    
+    int feat1_gene_id = s_GetGeneId(*feat1);
+    
+#if 0
+    if(feat1_gene_id == 0) {
+        ERR_POST(Info << "Unable to determine gene_id for");
+        NcbiCerr << MSerial_AsnText << *feat1;
+    }
+#endif
+    
+    bool had_some_matches = false;
+    for(CFeat_CI it2(*m_scope_t, *feat1_mapped_loc, m_selector_t); it2; ++it2) {
+        CConstRef<CSeq_feat> feat_t(&it2->GetMappedFeature());
+        
+        if((m_comp_options & CCompareSeqRegions::fDifferentGenesOnly) 
+           && feat1_gene_id == s_GetGeneId(*feat_t)) 
+        {
+            continue;
+        }
+        
+        string loc_label = "";
+        feat_t->GetLocation().GetLabel(&loc_label);
+        this->m_seen_targets.insert(loc_label);
+        
+        
+        if(m_comp_options & CCompareSeqRegions::fSameTypeOnly
+           && feat_t->GetData().Which() != feat1->GetData().Which())
+        {
+            continue;
+        }
+        
+
+        bool usingRangeComparison = feat_t->GetData().GetSubtype() == CSeqFeatData::eSubtype_gene
+                                  && feat1->GetData().GetSubtype() == CSeqFeatData::eSubtype_gene;
+        
+        CConstRef<CSeq_loc> feat_t_self_loc = x_GetSelfLoc(feat_t->GetLocation(), m_scope_t, usingRangeComparison);
+        CRef<CCompareFeats> cf(new CCompareFeats(
+            *feat1
+          , usingRangeComparison ? *feat1_mapped_range_loc : *feat1_mapped_loc
+          , mapped_identity
+          , usingRangeComparison ? *feat1_self_range_loc : *feat1_self_loc
+          , m_scope_q
+          , *feat_t
+          , *feat_t_self_loc
+          , m_scope_t));
+        
+        
+        vComparisons.push_back(cf);
+        had_some_matches = true;
 
     }
     
-    return !vComparisons.empty();
+    if(!had_some_matches) {
+        string s = "";
+        feature::GetLabel(*feat1, &s, feature::eBoth);
+        
+        CRef<CCompareFeats> cf(new CCompareFeats(
+                *feat1
+              , *feat1_mapped_loc
+              , mapped_identity
+              , *feat1_self_loc
+              , m_scope_q));
+        
+        _ASSERT(!cf->GetSelfLocQ().IsNull());
+        _ASSERT(!cf->GetMappedLocQ().IsNull());
+        vComparisons.push_back(cf);
+    }
+
+}
+
+CConstRef<CSeq_loc> CCompareSeqRegions::x_GetSelfLoc(
+        const CSeq_loc& loc, 
+        CScope* scope,
+        bool merge_single_range)
+{
+    CRef<CSeq_loc> new_loc;
+    
+    if(!sequence::IsOneBioseq(loc, scope)) {
+        CSeq_loc_Mapper& mapper = (scope == m_scope_q ? *m_self_mapper_q : *m_self_mapper_t);
+        new_loc = mapper.Map(loc);
+    }
+    
+    if(merge_single_range){
+        new_loc = sequence::Seq_loc_Merge(
+                (new_loc.IsNull() ? loc : *new_loc), 
+                CSeq_loc::fMerge_SingleRange,
+                scope);
+    }
+
+    return new_loc.IsNull() ? CConstRef<CSeq_loc>(&loc) : new_loc;
+}
+
+void CCompareSeqRegions::SelectMatches(vector<CRef<CCompareFeats> >& vComparisons)
+{
+    typedef priority_queue<CRef<CCompareFeats>,
+                           vector<CRef<CCompareFeats> >,
+                           SCompareFeats_OpLess
+                           > TMatchesQueue;
+    
+    typedef map<CConstRef<CSeq_feat>, TMatchesQueue > TMatchesMap;
+    
+    TMatchesMap q_map;
+    TMatchesMap t_map;
+    
+    int i = 0;
+    ITERATE(vector<CRef<CCompareFeats> >, it, vComparisons) {
+        CRef<CCompareFeats> cf = *it;
+        
+        
+        if(!cf->GetFeatQ().IsNull()) {
+            q_map[cf->GetFeatQ()].push(cf);
+        }
+        
+        if(!cf->GetFeatT().IsNull()) {
+            t_map[cf->GetFeatT()].push(cf);
+        }
+        
+        ++i;
+    }
+    
+#if 0
+    i = 0;
+    ERR_POST(Info << "q->t");
+    ITERATE(TMatchesMap, it, q_map) {
+        const CConstRef<CSeq_feat> feat = it->first;
+        const CConstRef<CCompareFeats> best_match = it->second.top();
+        
+        string s0 = "";
+        feature::GetLabel(*feat, &s0, feature::eBoth);
+        
+        string s1 = "";
+        if(!best_match.IsNull() && best_match->IsMatch()) {
+            feature::GetLabel(*best_match->GetFeatT(), &s1, feature::eBoth);
+        }
+        ERR_POST(Info << "Best match for " << s0 << " : " << s1 << ", out of " << it->second.size());
+    ++i;
+    }
+     
+    i = 0;
+    ERR_POST(Info << "t->q");
+    ITERATE(TMatchesMap, it, t_map) {
+        const CConstRef<CSeq_feat> feat = it->first;
+        const CConstRef<CCompareFeats> best_match = it->second.top();
+        
+        string s0 = "";
+        feature::GetLabel(*feat, &s0, feature::eBoth);
+        
+        string s1 = "";
+        if(!best_match.IsNull() && best_match->IsMatch()) {
+            feature::GetLabel(*best_match->GetFeatQ(), &s1, feature::eBoth);
+        }
+        ERR_POST(Info << "Best match for " << s0 << " : " << s1 << ", out of " << it->second.size());
+    
+    }
+    ++i;
+    ERR_POST(Info << "");
+#endif
+    
+    set<CRef<CCompareFeats> > compset;
+
+    ITERATE(vector<CRef<CCompareFeats> >, it, vComparisons) {
+        CRef<CCompareFeats> cf = *it;
+        if(q_map[cf->GetFeatQ()].top() == cf && t_map[cf->GetFeatT()].top() == cf) {
+           cf->SetIrrelevance(0);
+           compset.insert(cf);
+        }
+    }  
+    
+    ITERATE(vector<CRef<CCompareFeats> >, it, vComparisons) {
+        CRef<CCompareFeats> cf = *it;
+        if(compset.find(cf) == compset.end() && 
+           (q_map[cf->GetFeatQ()].top() == cf || cf->GetFeatQ().IsNull())) 
+        {
+           cf->SetIrrelevance(1);
+           compset.insert(cf);
+        }
+    } 
+    
+    ITERATE(vector<CRef<CCompareFeats> >, it, vComparisons) {
+        CRef<CCompareFeats> cf = *it;
+        if(compset.find(cf) == compset.end() && 
+           (t_map[cf->GetFeatT()].top() == cf || cf->GetFeatT().IsNull()))
+        {
+           cf->SetIrrelevance(2);
+           compset.insert(cf);
+        }
+    } 
+    
+    vComparisons.clear();
+    ITERATE(set<CRef<CCompareFeats> >, it, compset) {
+        
+        //do not report non-matches if we want different genes only
+        //this should really be filtered out earlier, in GetPutativeMatches but for some reason
+        //that removes 99% of comparisons - need to look into it
+        //cout << **it;
+        //if((*it)->GetFeatT().IsNull() && (m_comp_options & CCompareSeqRegions::fDifferentGenesOnly)) {
+        //    continue;
+        // }
+        vComparisons.push_back(*it);
+    }
 }
        
 END_NCBI_SCOPE
