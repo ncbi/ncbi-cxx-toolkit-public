@@ -76,6 +76,7 @@
 #include <objmgr/prefetch_manager.hpp>
 #include <objmgr/prefetch_actions.hpp>
 #include <objmgr/table_field.hpp>
+#include <objtools/format/flat_file_generator.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
@@ -210,6 +211,10 @@ void CDemoApp::Init(void)
                       "print counts of different feature types");
     arg_desc->AddFlag("count_subtypes",
                       "print counts of different feature subtypes");
+    arg_desc->AddFlag("get_types",
+                      "print only types of features found");
+    arg_desc->AddFlag("get_names",
+                      "print only Seq-annot names of features found");
     arg_desc->AddOptionalKey("range_from", "RangeFrom",
                              "features starting at this point on the sequence",
                              CArgDescriptions::eInteger);
@@ -327,7 +332,7 @@ int test1()
         gis.push_back(gi);
         ids.push_back(CSeq_id_Handle::GetGiHandle(gi));
     }
-    
+
     CRef<CPrefetchManager> prefetch_manager;
     //prefetch_manager = new CPrefetchManager();
     CRef<CPrefetchSequence> prefetch;
@@ -396,14 +401,19 @@ int test2()
     CBioseq_Handle bh = scope.GetBioseqHandle(id);
     CSeqMap& sm = bh.GetEditHandle().SetSeqMap();
     CSeqMap_CI it = sm.FindSegment(72470, &scope);
-    for ( int i = 0; i < 3; ++i ) {
-        NcbiCout << "Old seg: " << it.GetPosition() << " " << it.GetLength()
+    for ( int i = 0; i < 5; ++i ) {
+        NcbiCout << "Old seg: " << it.GetPosition() << " "<<it.GetLength()
                  << NcbiEndl;
         NcbiCout << "Old len: " << bh.GetBioseqLength() << " "
                  << sm.GetLength(&scope)
                  << NcbiEndl;
-        it = sm.RemoveSegment(it);
-        NcbiCout << "New seg: " << it.GetPosition() << " " << it.GetLength()
+        if ( i%3 == 2 ) {
+            it = sm.InsertSegmentGap(it, 123);
+        }
+        else {
+            it = sm.RemoveSegment(it);
+        }
+        NcbiCout << "New seg: " << it.GetPosition() << " "<<it.GetLength()
                  << NcbiEndl;
         NcbiCout << "New len: " << bh.GetBioseqLength() << " "
                  << sm.GetLength(&scope)
@@ -483,6 +493,11 @@ int CDemoApp::Run(void)
     bool by_product = args["by_product"];
     bool count_types = args["count_types"];
     bool count_subtypes = args["count_subtypes"];
+    bool get_types = args["get_types"];
+    bool get_names = args["get_names"];
+    if ( get_types || get_names ) {
+        only_features = true;
+    }
     bool print_tse = args["print_tse"];
     bool print_seq = args["print_seq"];
     bool print_descr = args["print_descr"];
@@ -518,7 +533,7 @@ int CDemoApp::Run(void)
     bool whole_sequence = args["whole_sequence"];
     bool used_memory_check = args["used_memory_check"];
     bool get_synonyms = false;
-    bool get_ids = true;
+    bool get_ids = 1;
     bool get_blob_id = true;
     set<string> include_named;
     if ( args["named"] ) {
@@ -623,7 +638,17 @@ int CDemoApp::Run(void)
     // Add default loaders (GB loader in this demo) to the scope.
     scope.AddDefaults();
 
-    {{
+    if ( 0 ) {
+        CBioseq_Handle::TId id_handles;
+        id_handles.push_back(CSeq_id_Handle::GetGiHandle(71516264));
+        id_handles.push_back(CSeq_id_Handle::GetGiHandle(61139581));  
+        id_handles.push_back(CSeq_id_Handle::GetGiHandle(156148258)); 
+        id_handles.push_back(CSeq_id_Handle::GetGiHandle(47776295));  
+        id_handles.push_back(CSeq_id_Handle::GetGiHandle(47776317));  
+        CScope::TBioseqHandles handles = scope.GetBioseqHandles(id_handles);
+    }
+    
+    if ( 0 ) {
         CNcbiIfstream in("sparse_test.asn");
         CSeq_loc loc1, loc2;
         CSeq_align aln;
@@ -640,7 +665,7 @@ int CDemoApp::Run(void)
         CRef<CSeq_align> aln2 = mapper.Map(aln);
         cout << MSerial_AsnText << *aln2;
         return 0;
-    }}
+    }
 
     CSeq_entry_Handle added_entry;
     CSeq_annot_Handle added_annot;
@@ -724,7 +749,22 @@ int CDemoApp::Run(void)
         NcbiCout << "-------------------- END --------------------\n";
     }
     if ( print_seq ) {
-        handle.GetEditHandle();
+        if ( 0 ) {
+            CBioseq_Handle prot_bh = handle;
+            NcbiCout << MSerial_AsnText
+                     << *prot_bh.GetCompleteBioseq() << "\n";
+            CRef<CSeq_id> new_prot_id(new CSeq_id());
+            new_prot_id->Assign(*prot_bh.GetSeqId());
+            ((CTextseq_id*)new_prot_id->GetTextseq_Id())->SetAccession() += "_prot";
+            CBioseq_EditHandle prot_eh = prot_bh.GetEditHandle();
+            CSeq_id_Handle seq_hdl = sequence::GetId(prot_eh);
+            bool removed = prot_eh.RemoveId(seq_hdl);
+            CSeq_id_Handle new_hdl = CSeq_id_Handle::GetHandle(*new_prot_id);
+            bool added = prot_eh.AddId(new_hdl);
+            NcbiCout << "removed: "<<removed<<" added: "<<added << '\n';
+            NcbiCout << MSerial_AsnText
+                     << *prot_eh.GetCompleteBioseq() << "\n";
+        }
         NcbiCout << "-------------------- SEQ --------------------\n";
         NcbiCout << MSerial_AsnText << *handle.GetCompleteObject() << '\n';
         NcbiCout << "-------------------- END --------------------\n";
@@ -773,6 +813,7 @@ int CDemoApp::Run(void)
     int table_field_id = -1;
     if ( args["table_field_id"] )
         table_field_id = args["table_field_id"].AsInteger();
+    bool modify = args["modify"];
 
     handle.Reset();
     for ( int c = 0; c < repeat_count; ++c ) {
@@ -782,6 +823,7 @@ int CDemoApp::Run(void)
         
         // get handle again, check for scope TSE locking
         handle = scope.GetBioseqHandle(idh);
+        //handle.GetEditHandle();
         //scope.RemoveFromHistory(handle.GetTSE_Handle()); break;
 
         if ( get_seg_labels ) {
@@ -835,8 +877,8 @@ int CDemoApp::Run(void)
 
             // Get the sequence using CSeqVector. Use default encoding:
             // CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
-            CSeqVector seq_vect =
-                handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+            CSeqVector seq_vect(*whole_loc, scope, CBioseq_Handle::eCoding_Iupac);
+            //handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
             // -- use the vector: print length and the first 10 symbols
             NcbiCout << "Sequence: length=" << seq_vect.size();
             if (seq_vect.CanGetRange(0, seq_vect.size() - 1)) {
@@ -978,6 +1020,34 @@ int CDemoApp::Run(void)
             sel_msg = "req";
         }
         base_sel.SetByProduct(by_product);
+
+        if ( get_types || get_names ) {
+            if ( get_types ) {
+                CFeat_CI it(scope, *range_loc, base_sel.SetCollectTypes());
+                ITERATE ( CFeat_CI::TAnnotTypes, i, it.GetAnnotTypes() ) {
+                    SAnnotSelector::TFeatType t = i->GetFeatType();
+                    SAnnotSelector::TFeatSubtype st = i->GetFeatSubtype();
+                    NcbiCout << "Feat type: "
+                             << setw(10) << CSeqFeatData::SelectionName(t)
+                             << " (" << setw(2) << t << ") "
+                             << " subtype: "
+                             << setw(3) << st
+                             << NcbiEndl;
+                }
+            }
+            if ( get_names ) {
+                CFeat_CI it(scope, *range_loc, base_sel.SetCollectNames());
+                ITERATE ( CFeat_CI::TAnnotNames, i, it.GetAnnotNames() ) {
+                    if ( i->IsNamed() ) {
+                        NcbiCout << "Named annot: " << i->GetName() <<NcbiEndl;
+                    }
+                    else {
+                        NcbiCout << "Unnamed annot" <<NcbiEndl;
+                    }
+                }
+            }
+            continue;
+        }
 
         typedef int TTableField;
         auto_ptr< CTableFieldHandle<TTableField> > table_field;
@@ -1128,10 +1198,16 @@ int CDemoApp::Run(void)
                     }
                 }
 
-                if ( it->GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA &&
+                if ( modify ) {
+                    it.GetAnnot().GetEditHandle();
+                }
+                if ( print_features &&
+                     it->GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA &&
                      it->IsSetProduct() ) {
                     using namespace sequence;
-                    handle.GetEditHandle();
+                    if ( modify ) {
+                        handle.GetEditHandle();
+                    }
                     CSeq_id_Handle prod_idh =
                         GetIdHandle(it->GetProduct(), NULL);
                     NcbiCout << "mRNA product: " << prod_idh.AsString()
@@ -1167,6 +1243,29 @@ int CDemoApp::Run(void)
                         }
                         NcbiCout << NcbiEndl;
                     }
+                }
+                if ( print_features &&
+                     it->GetFeatType() == CSeqFeatData::e_Cdregion ) {
+                    using namespace sequence;
+                    CConstRef<CSeq_feat> gene =
+                        GetBestOverlappingFeat(it->GetLocation(),
+                                               CSeqFeatData::e_Gene,
+                                               eOverlap_Contains,
+                                               scope);
+                    NcbiCout << "GetBestGeneForCds: "<<it->GetLocation();
+                    if ( gene ) {
+                        NcbiCout << MSerial_AsnText << *gene;
+                        NcbiCout << " compare: " <<
+                            MSerial_AsnText << gene->GetLocation() <<
+                            "\n with: "<< it->GetOriginalFeature().GetLocation() <<
+                            "\n = " << sequence::Compare(gene->GetLocation(),
+                                                         it->GetOriginalFeature().GetLocation(),
+                                                         &scope);
+                    }
+                    else {
+                        NcbiCout << "null";
+                    }
+                    NcbiCout << NcbiEndl;
                 }
                 if ( 0 && it->IsSetXref() ) {
                     ITERATE ( CSeq_feat::TXref, xit, it->GetXref() ) {
@@ -1450,7 +1549,7 @@ int CDemoApp::Run(void)
             _ASSERT(total_length == handle.GetBioseqLength());
         }
 
-        if ( args["modify"] ) {
+        if ( modify ) {
             //CTSE_Handle tse = handle.GetTSE_Handle();
             //CBioseq_EditHandle ebh = handle.GetEditHandle();
             CRef<CBioseq> newseq(new CBioseq);
@@ -1468,9 +1567,9 @@ int CDemoApp::Run(void)
         }
 
         handle.Reset();
-        scope.ResetHistory();
+        //scope.ResetHistory();
     }
-    if ( args["modify"] ) {
+    if ( modify ) {
         handle = scope.GetBioseqHandle(idh);
         CBioseq_EditHandle ebh = handle.GetEditHandle();
     }
