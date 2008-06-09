@@ -30,5 +30,5 @@ Linux64 : Bdb4520 : GCC.sh 4.0.1 --without-debug --with-mt --with-flat-makefile 
 Linux64 : Bdb4520 : GCC.sh 4.0.1 --with-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 
 Win32   : Bdb4520 : msvc710_prj  static  32  DebugDLL
-Win32   : Bdb4520 : msvc710_prj  dll     32  DebugDLL
-Win64   : Bdb4520 : msvc800_prj  dll     64  ReleaseDLL
+#Win32   : Bdb4520 : msvc710_prj  dll     32  DebugDLL
+#Win64   : Bdb4520 : msvc800_prj  dll     64  ReleaseDLL
