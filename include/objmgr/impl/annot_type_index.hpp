@@ -79,6 +79,7 @@ public:
 private:
     typedef vector<TIndexRange> TIndexRangeTable;
     typedef vector<size_t>      TIndexTable;
+    typedef vector<CSeqFeatData::ESubtype> TSubtypes;
 
     static void x_InitIndexTables(void);
 
@@ -98,6 +99,8 @@ private:
     static TIndexRangeTable sm_FeatTypeIndexRange;
     // Table feat subtype -> index
     static TIndexTable sm_FeatSubtypeIndex;
+    // Table index -> subtype
+    static TSubtypes sm_IndexSubtype;
 };
 
 
@@ -154,7 +157,13 @@ size_t CAnnotType_Index::GetSubtypeIndex(CSeqFeatData::ESubtype subtype)
 inline
 CSeqFeatData::ESubtype CAnnotType_Index::GetSubtypeForIndex(size_t index)
 {
-    return CSeqFeatData::ESubtype(index - eFtableIndex);
+    Initialize();
+    if ( index < sm_IndexSubtype.size() ) {
+        return sm_IndexSubtype[index];
+    }
+    else {
+        return CSeqFeatData::eSubtype_bad;
+    }
 }
 
 

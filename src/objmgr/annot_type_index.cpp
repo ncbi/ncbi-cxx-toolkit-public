@@ -55,6 +55,7 @@ CAnnotType_Index::TIndexRangeTable CAnnotType_Index::sm_AnnotTypeIndexRange;
 CAnnotType_Index::TIndexRangeTable CAnnotType_Index::sm_FeatTypeIndexRange;
 
 CAnnotType_Index::TIndexTable CAnnotType_Index::sm_FeatSubtypeIndex;
+CAnnotType_Index::TSubtypes CAnnotType_Index::sm_IndexSubtype;
 
 DEFINE_STATIC_FAST_MUTEX(sm_TablesInitializeMutex);
 bool CAnnotType_Index::sm_TablesInitialized = false;
@@ -91,6 +92,7 @@ void CAnnotType_Index::x_InitIndexTables(void)
     sm_FeatSubtypeIndex.resize(kFeatSubtypeMax + 1);
 
     size_t cur_idx = eFtableIndex;
+    sm_IndexSubtype.assign(cur_idx, CSeqFeatData::eSubtype_bad);
     for ( size_t type = 0; type <= kFeatTypeMax; ++type ) {
         sm_FeatTypeIndexRange[type].first = cur_idx;
         if ( type != CSeqFeatData::e_not_set ) {
@@ -99,6 +101,7 @@ void CAnnotType_Index::x_InitIndexTables(void)
         }
         ITERATE ( vector<size_t>, it, type_subtypes[type] ) {
             sm_FeatSubtypeIndex[*it] = cur_idx++;
+            sm_IndexSubtype.push_back(CSeqFeatData::ESubtype(*it));
         }
     }
 
@@ -107,6 +110,34 @@ void CAnnotType_Index::x_InitIndexTables(void)
     sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_not_set].second = cur_idx;
     
     sm_TablesInitialized = true;
+
+#if defined(_DEBUG)
+    for ( size_t type = 1; type <= kFeatTypeMax; ++type ) {
+        CSeqFeatData::E_Choice feat_type = CSeqFeatData::E_Choice(type);
+        TIndexRange range = GetFeatTypeRange(feat_type);
+        _TRACE("type: "<<feat_type
+               << " range: "<<range.first<<"-"<<range.second);
+        for ( size_t ind = range.first; ind < range.second; ++ind ) {
+            SAnnotTypeSelector sel = GetTypeSelector(ind);
+            _TRACE("index: "<<ind
+                   << " type: "<<sel.GetFeatType()
+                   << " subtype: "<<sel.GetFeatSubtype());
+            _ASSERT(sel.GetAnnotType() == CSeq_annot::C_Data::e_Ftable);
+            _ASSERT(sel.GetFeatType() == feat_type);
+            _ASSERT(GetSubtypeIndex(sel.GetFeatSubtype()) == ind);
+        }
+    }
+    for ( size_t st = 0; st <= CSeqFeatData::eSubtype_max; ++st ) {
+        CSeqFeatData::ESubtype subtype = CSeqFeatData::ESubtype(st);
+        CSeqFeatData::E_Choice type =
+            CSeqFeatData::GetTypeFromSubtype(subtype);
+        if ( type != CSeqFeatData::e_not_set ||
+             subtype == CSeqFeatData::eSubtype_bad ) {
+            size_t ind = GetSubtypeIndex(subtype);
+            _ASSERT(GetSubtypeForIndex(ind) == subtype);
+        }
+    }
+#endif
 }
 
 
@@ -168,7 +199,7 @@ SAnnotTypeSelector CAnnotType_Index::GetTypeSelector(size_t index)
         sel.SetAnnotType(CSeq_annot::C_Data::e_Graph);
         break;
     default:
-        sel.SetFeatSubtype(CSeqFeatData::ESubtype(index - eFtableIndex));
+        sel.SetFeatSubtype(GetSubtypeForIndex(index));
         break;
     }
     return sel;
