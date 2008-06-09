@@ -216,6 +216,11 @@ public:
     virtual Uint2  GetPort(void) const;
 
 private:
+    // Non-copyable.
+    CDB_DBLB_Delegate(const CDB_DBLB_Delegate& other);
+    CDB_DBLB_Delegate& operator =(const CDB_DBLB_Delegate& other);
+
+private:
     const string m_ServerName;
     const Uint4  m_Host;
     const Uint2  m_Port;
