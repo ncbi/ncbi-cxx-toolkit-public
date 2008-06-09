@@ -40,6 +40,11 @@ BEGIN_NCBI_SCOPE
 namespace impl 
 {
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  impl::CDBConnParamsBase::
+///
+
 class NCBI_DBAPIDRIVER_EXPORT CDBConnParamsBase : 
     public CDBConnParams 
 {
@@ -76,45 +81,50 @@ protected:
     }
     void SetEncoding(EEncoding encoding)
     {
-	m_Encoding = encoding;
+        m_Encoding = encoding;
     }
 
     void SetServerName(const string& name)
     {
-	m_ServerName = name;
+        m_ServerName = name;
     }
     void SetDatabaseName(const string& name)
     {
-	m_DatabaseName = name;
+        m_DatabaseName = name;
     }
     void SetUserName(const string& name)
     {
-	m_UserName = name;
+        m_UserName = name;
     }
     void SetPassword(const string& passwd)
     {
-	m_Password = passwd;
+        m_Password = passwd;
     }
 
     void SetServerType(EServerType type)
     {
-	m_ServerType = type;
+        m_ServerType = type;
     }
     void SetHost(Uint4 host)
     {
-	m_Host = host;
+        m_Host = host;
     }
     void SetPort(Uint2 port)
     {
-	m_PortNumber = port;
+        m_PortNumber = port;
     }
 
     void SetConnValidator(const CRef<IConnValidator>& validator)
     {
-	m_Validator = validator;
+        m_Validator = validator;
     }
 
 	void SetParam(const string& key, const string& value);
+
+private:
+    // Non-copyable.
+    CDBConnParamsBase(const CDBConnParamsBase& other);
+    CDBConnParamsBase& operator =(const CDBConnParamsBase& other);
 
 private:
 	typedef map<string, string> TUnclassifiedParamMap;
@@ -135,6 +145,78 @@ private:
 };
 
 } // namespace impl
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CDBConnParamsBase::
+///
+
+class CDBConnParamsBase : 
+    public impl::CDBConnParamsBase 
+{
+public:
+    CDBConnParamsBase(void) {}
+    virtual ~CDBConnParamsBase(void) {}
+
+public:
+    void SetDriverName(const string& name)
+    {
+        impl::CDBConnParamsBase::SetDriverName(name);
+    }
+    void SetProtocolVersion(Uint4 version)
+    {
+        impl::CDBConnParamsBase::SetProtocolVersion(version);
+    }
+    void SetEncoding(EEncoding encoding)
+    {
+        impl::CDBConnParamsBase::SetEncoding(encoding);
+    }
+
+    void SetServerName(const string& name)
+    {
+        impl::CDBConnParamsBase::SetServerName(name);
+    }
+    void SetDatabaseName(const string& name)
+    {
+        impl::CDBConnParamsBase::SetDatabaseName(name);
+    }
+    void SetUserName(const string& name)
+    {
+        impl::CDBConnParamsBase::SetUserName(name);
+    }
+    void SetPassword(const string& passwd)
+    {
+        impl::CDBConnParamsBase::SetPassword(passwd);
+    }
+
+    void SetServerType(EServerType type)
+    {
+        impl::CDBConnParamsBase::SetServerType(type);
+    }
+    void SetHost(Uint4 host)
+    {
+        impl::CDBConnParamsBase::SetHost(host);
+    }
+    void SetPort(Uint2 port)
+    {
+        impl::CDBConnParamsBase::SetPort(port);
+    }
+
+    void SetConnValidator(const CRef<IConnValidator>& validator)
+    {
+        impl::CDBConnParamsBase::SetConnValidator(validator);
+    }
+
+	void SetParam(const string& key, const string& value)
+    {
+        impl::CDBConnParamsBase::SetParam(key, value);
+    }
+
+private:
+    // Non-copyable.
+    CDBConnParamsBase(const CDBConnParamsBase& other);
+    CDBConnParamsBase& operator =(const CDBConnParamsBase& other);
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -190,6 +272,11 @@ public:
 	{
         impl::CDBConnParamsBase::SetParam(key, value);
 	}
+
+private:
+    // Non-copyable.
+    CDBDefaultConnParams(const CDBDefaultConnParams& other);
+    CDBDefaultConnParams& operator =(const CDBDefaultConnParams& other);
 };
 
 
@@ -211,6 +298,11 @@ private:
     void ParseServer(const string& params, size_t cur_pos);
     void ParseSlash(const string& params, size_t cur_pos);
     void ParseParamPairs(const string& param_pairs, size_t cur_pos);
+
+private:
+    // Non-copyable.
+    CDBUriConnParams(const CDBUriConnParams& other);
+    CDBUriConnParams& operator =(const CDBUriConnParams& other);
 };
 
 
@@ -229,37 +321,12 @@ public:
     }
 
 private:
-	void x_MapPairToParam(const string& key, const string& value);
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-class NCBI_DBAPIDRIVER_EXPORT CDBConnParamsDelegate : public CDBConnParams
-{
-public:
-    CDBConnParamsDelegate(const CDBConnParams& other);
-    virtual ~CDBConnParamsDelegate(void);
-
-public:
-    virtual string GetDriverName(void) const;
-    virtual Uint4  GetProtocolVersion(void) const;
-    virtual EEncoding GetEncoding(void) const;
-
-    virtual string GetServerName(void) const;
-    virtual string GetDatabaseName(void) const;
-    virtual string GetUserName(void) const;
-    virtual string GetPassword(void) const;
-
-    virtual EServerType GetServerType(void) const;
-    virtual Uint4  GetHost(void) const;
-    virtual Uint2  GetPort(void) const;
-
-    virtual CRef<IConnValidator> GetConnValidator(void) const;
-
-	virtual string GetParam(const string& key) const;
+    // Non-copyable.
+    CDB_ODBC_ConnParams(const CDB_ODBC_ConnParams& other);
+    CDB_ODBC_ConnParams& operator =(const CDB_ODBC_ConnParams& other);
 
 private:
-    const CDBConnParams& m_Other;
+	void x_MapPairToParam(const string& key, const string& value);
 };
 
 
@@ -301,6 +368,11 @@ public:
     virtual string GetPassword(void) const;
 
 private:
+    // Non-copyable.
+    CDBEnvConnParams(const CDBEnvConnParams& other);
+    CDBEnvConnParams& operator =(const CDBEnvConnParams& other);
+
+private:
     const CNcbiEnvironment m_Env;
     string m_ServerNameEnv;
     string m_DatabaseNameEnv;
@@ -324,6 +396,11 @@ public:
     virtual EServerType GetServerType(void) const;
     virtual Uint4 GetHost(void) const;
     virtual Uint2 GetPort(void) const;
+
+private:
+    // Non-copyable.
+    CDBInterfacesFileConnParams(const CDBInterfacesFileConnParams& other);
+    CDBInterfacesFileConnParams& operator =(const CDBInterfacesFileConnParams& other);
 
 private:
     struct SIRecord
@@ -353,11 +430,16 @@ class NCBI_DBAPIDRIVER_EXPORT CCPPToolkitConnParams :
     public CDBConnParamsDelegate
 {
 public:
-		CCPPToolkitConnParams(const CDBConnParams& other);
-		virtual ~CCPPToolkitConnParams(void);
+    CCPPToolkitConnParams(const CDBConnParams& other);
+    virtual ~CCPPToolkitConnParams(void);
 
 public:
-		virtual EServerType GetServerType(void) const;
+    virtual EServerType GetServerType(void) const;
+
+private:
+    // Non-copyable.
+    CCPPToolkitConnParams(const CCPPToolkitConnParams& other);
+    CCPPToolkitConnParams& operator =(const CCPPToolkitConnParams& other);
 };
 
 

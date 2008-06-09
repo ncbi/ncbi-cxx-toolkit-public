@@ -91,8 +91,14 @@ Uint4  CDBConnParamsBase::GetProtocolVersion(void) const
         // Artificial intelligence ...
         switch (GetThis().GetServerType()) {
             case eSybaseOpenServer:
-            case eSybaseSQLServer:
                 if (NStr::Compare(driver_name, "ftds") == 0) {
+                    return 125;
+                } 
+            case eSybaseSQLServer:
+                // ftds64 can autodetect tds version by itself.
+
+                if (NStr::Compare(driver_name, "ftds8") == 0) {
+                    // ftds8 works with Sybase databases using protocol v42 only ...
                     return 42;
                 } else if (NStr::Compare(driver_name, "dblib") == 0) {
                     // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
@@ -485,81 +491,6 @@ void CDB_ODBC_ConnParams::x_MapPairToParam(const string& key, const string& valu
 
 CDB_ODBC_ConnParams::~CDB_ODBC_ConnParams(void)
 {
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-CDBConnParamsDelegate::CDBConnParamsDelegate(const CDBConnParams& other)
-: m_Other(other)
-{
-    other.SetChildObj(*this);
-}
-
-CDBConnParamsDelegate::~CDBConnParamsDelegate(void)
-{
-}
-
-
-string CDBConnParamsDelegate::GetDriverName(void) const
-{
-    return m_Other.GetDriverName();
-}
-
-Uint4  CDBConnParamsDelegate::GetProtocolVersion(void) const
-{
-    return m_Other.GetProtocolVersion();
-}
-
-EEncoding CDBConnParamsDelegate::GetEncoding(void) const
-{
-    return m_Other.GetEncoding();
-}
-
-string CDBConnParamsDelegate::GetServerName(void) const
-{
-    return m_Other.GetServerName();
-}
-
-string CDBConnParamsDelegate::GetDatabaseName(void) const
-{
-    return m_Other.GetDatabaseName();
-}
-
-string CDBConnParamsDelegate::GetUserName(void) const
-{
-    return m_Other.GetUserName();
-}
-
-string CDBConnParamsDelegate::GetPassword(void) const
-{
-    return m_Other.GetPassword();
-}
-
-CDBConnParams::EServerType 
-CDBConnParamsDelegate::GetServerType(void) const
-{
-    return m_Other.GetServerType();
-}
-
-Uint4 CDBConnParamsDelegate::GetHost(void) const
-{
-    return m_Other.GetHost();
-}
-
-Uint2 CDBConnParamsDelegate::GetPort(void) const
-{
-    return m_Other.GetPort();
-}
-
-CRef<IConnValidator> 
-CDBConnParamsDelegate::GetConnValidator(void) const
-{
-    return m_Other.GetConnValidator();
-}
-
-string CDBConnParamsDelegate::GetParam(const string& key) const
-{
-    return m_Other.GetParam(key);
 }
 
 

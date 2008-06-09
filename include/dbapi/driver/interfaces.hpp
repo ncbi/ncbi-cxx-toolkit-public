@@ -179,6 +179,114 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+///  CDBConnParams::
+///
+
+class CDBConnParams 
+{
+public:
+    CDBConnParams(void);
+    virtual ~CDBConnParams(void);
+
+public:
+    enum EServerType {
+        eUnknown,          //< Server type is not known
+        eMySQL,            //< MySQL server
+        eSybaseOpenServer, //< Sybase Open server
+        eSybaseSQLServer,  //< Sybase SQL server
+        eMSSqlServer,      //< Microsoft SQL server
+        eSqlite            //< SQLITE3 server
+    };
+
+    virtual string GetDriverName(void) const = 0;
+    virtual Uint4  GetProtocolVersion(void) const = 0;
+    virtual EEncoding GetEncoding(void) const = 0;
+
+    virtual string GetServerName(void) const = 0;
+    virtual string GetDatabaseName(void) const = 0;
+    virtual string GetUserName(void) const = 0;
+    virtual string GetPassword(void) const = 0;
+
+    virtual EServerType GetServerType(void) const = 0;
+    virtual Uint4  GetHost(void) const = 0;
+    virtual Uint2  GetPort(void) const = 0;
+
+    virtual CRef<IConnValidator> GetConnValidator(void) const = 0;
+	
+	/// Parameters, which are not listed above explicitly, should be retrieved via
+	/// SetParam() method.
+	virtual string GetParam(const string& key) const = 0;
+
+protected:
+    void SetChildObj(const CDBConnParams& child_obj) const
+    {
+        _ASSERT(!m_ChildObj);
+        m_ChildObj = &child_obj;
+    }
+    void ReleaseChildObj(void) const
+    {
+        m_ChildObj = NULL;
+    }
+
+protected:
+    const CDBConnParams& GetThis(void) const
+    {
+        if (m_ChildObj) {
+            return m_ChildObj->GetThis();
+        }
+
+        return *this;
+    }
+
+private:
+    // Non-copyable.
+    CDBConnParams(const CDBConnParams& other);
+    CDBConnParams& operator =(const CDBConnParams& other);
+
+private:
+    mutable const CDBConnParams* m_ChildObj;
+
+    friend class CDBConnParamsDelegate;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDBConnParamsDelegate : public CDBConnParams
+{
+public:
+    CDBConnParamsDelegate(const CDBConnParams& other);
+    virtual ~CDBConnParamsDelegate(void);
+
+public:
+    virtual string GetDriverName(void) const;
+    virtual Uint4  GetProtocolVersion(void) const;
+    virtual EEncoding GetEncoding(void) const;
+
+    virtual string GetServerName(void) const;
+    virtual string GetDatabaseName(void) const;
+    virtual string GetUserName(void) const;
+    virtual string GetPassword(void) const;
+
+    virtual EServerType GetServerType(void) const;
+    virtual Uint4  GetHost(void) const;
+    virtual Uint2  GetPort(void) const;
+
+    virtual CRef<IConnValidator> GetConnValidator(void) const;
+
+	virtual string GetParam(const string& key) const;
+
+private:
+    // Non-copyable.
+    CDBConnParamsDelegate(const CDBConnParamsDelegate& other);
+    CDBConnParamsDelegate& operator =(const CDBConnParamsDelegate& other);
+
+private:
+    const CDBConnParams& m_Other;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 ///  I_ITDescriptor::
 ///
 /// Image or Text descriptor.
@@ -911,67 +1019,6 @@ private:
     friend class IDBConnectionFactory;
 };
 
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-///  CDBConnParams::
-///
-
-class CDBConnParams 
-{
-public:
-    CDBConnParams(void);
-    virtual ~CDBConnParams(void);
-
-public:
-    enum EServerType {
-        eUnknown,          //< Server type is not known
-        eMySQL,            //< MySQL server
-        eSybaseOpenServer, //< Sybase Open server
-        eSybaseSQLServer,  //< Sybase SQL server
-        eMSSqlServer,      //< Microsoft SQL server
-        eSqlite            //< SQLITE3 server
-    };
-
-    virtual string GetDriverName(void) const = 0;
-    virtual Uint4  GetProtocolVersion(void) const = 0;
-    virtual EEncoding GetEncoding(void) const = 0;
-
-    virtual string GetServerName(void) const = 0;
-    virtual string GetDatabaseName(void) const = 0;
-    virtual string GetUserName(void) const = 0;
-    virtual string GetPassword(void) const = 0;
-
-    virtual EServerType GetServerType(void) const = 0;
-    virtual Uint4  GetHost(void) const = 0;
-    virtual Uint2  GetPort(void) const = 0;
-
-    virtual CRef<IConnValidator> GetConnValidator(void) const = 0;
-	
-	/// Parameters, which are not listed above explicitly, should be retrieved via
-	/// SetParam() method.
-	virtual string GetParam(const string& key) const = 0;
-
-public:
-    void SetChildObj(const CDBConnParams& child_obj) const
-    {
-        m_ChildObj = &child_obj;
-    }
-
-protected:
-    const CDBConnParams& GetThis(void) const
-    {
-        if (m_ChildObj) {
-            return m_ChildObj->GetThis();
-        }
-
-        return *this;
-    }
-
-private:
-    mutable const CDBConnParams* m_ChildObj;
-};
 
 
 /////////////////////////////////////////////////////////////////////////////

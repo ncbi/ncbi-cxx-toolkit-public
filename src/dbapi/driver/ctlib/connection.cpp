@@ -76,7 +76,15 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 {
 #ifdef FTDS_IN_USE
     int tds_version = 0;
-    switch (GetCTLibContext().GetTDSVersion()) {
+
+    if (params.GetProtocolVersion()) {
+        // Use current TDS version if available...
+        tds_version = params.GetProtocolVersion();
+    } else {
+        tds_version = GetCTLibContext().GetTDSVersion();
+    }
+    
+    switch (tds_version) {
         case 50:
             tds_version = CS_TDS_50;
             break;
@@ -85,6 +93,9 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
             break;
         case 80:
             tds_version = CS_TDS_80;
+            break;
+        case 125:
+            tds_version = CS_TDS_50;
             break;
         case CS_VERSION_110:
             tds_version = CS_TDS_50;
@@ -253,6 +264,36 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         err += "' as user '" + params.GetUserName() + "'";
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
+
+#ifdef FTDS_IN_USE
+    if (!GetCTLibContext().GetTDSVersion()) {
+        // Check for auto-detected TDS version...
+        GetCTLibContext().Check(
+            ct_con_props(
+                x_GetSybaseConn(), 
+                CS_GET, 
+                CS_TDS_VERSION, 
+                &tds_version,
+                CS_UNUSED, 
+                NULL
+            )
+        );
+
+        switch (tds_version) {
+            case CS_TDS_50:
+                tds_version = 50;
+                break;
+            case CS_TDS_70:
+                tds_version = 70;
+                break;
+            case CS_TDS_80:
+                tds_version = 80;
+                break;
+        }
+
+        GetCTLibContext().SetTDSVersion(tds_version);
+    }
+#endif
 
     SetServerType(CalculateServerType(params));
 }
