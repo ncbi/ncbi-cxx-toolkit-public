@@ -1586,7 +1586,12 @@ tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row)
                tdsdump_log(TDS_DBG_INFO1, "tds_put_data: null param\n");
                switch (curcol->column_varint_size) {
                case 4:
-                       tds_put_int(tds, -1);
+                       if (IS_TDS50(tds)) {
+                           tds_put_int(tds, 0);
+                       }
+                       else {
+                           tds_put_int(tds, -1);
+                       }
                        break;
                case 2:
                        tds_put_smallint(tds, -1);
@@ -1696,13 +1701,19 @@ tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row)
                /* TODO ICONV handle charset conversions for data */
                /* put size of data */
                switch (curcol->column_varint_size) {
-               case 4:	/* It's a BLOB... */
-                       blob = (TDSBLOB *) & (current_row[curcol->column_offset]);
-                       tds_put_byte(tds, 16);
-                       tds_put_n(tds, blob->textptr, 16);
-                       tds_put_n(tds, blob->timestamp, 8);
-                       colsize = MIN(colsize, 0x7fffffff);
-                       tds_put_int(tds, colsize);
+               case 4:
+                       if (is_blob_type(curcol->column_type)) {
+                           blob = (TDSBLOB *) & (current_row[curcol->column_offset]);
+                           tds_put_byte(tds, 16);
+                           tds_put_n(tds, blob->textptr, 16);
+                           tds_put_n(tds, blob->timestamp, 8);
+                           colsize = MIN(colsize, 0x7fffffff);
+                           tds_put_int(tds, colsize);
+                       }
+                       else {
+                           colsize = MAX(MIN(colsize, 0x7fffffff), 1);
+                           tds_put_int(tds, colsize);
+                       }
                        break;
                case 2:
                        /* ssikorsk */
@@ -1743,10 +1754,14 @@ tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row)
                                src = buf;
                        }
 #endif
-                       if (curcol->column_type == SYBVARCHAR  &&  curcol->column_cur_size == 0)
+                       if ((curcol->column_type == SYBVARCHAR  ||  curcol->column_type == SYBCHAR)
+                            &&  curcol->column_cur_size == 0)
+                       {
                            tds_put_n(tds, " ", 1);
-                       else
+                       }
+                       else {
                            tds_put_n(tds, src, colsize);
+                       }
                }
        }
        return TDS_SUCCEED;

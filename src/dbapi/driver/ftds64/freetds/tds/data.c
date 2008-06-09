@@ -91,6 +91,16 @@ tds_set_param_type(TDSSOCKET * tds, TDSCOLUMN * curcol, TDS_SERVER_TYPE type)
 			break;
 		}
 	}
+    else {
+		switch (type) {
+		case SYBVARCHAR:
+		case SYBCHAR:
+			type = XSYBCHAR;
+			break;
+		default:
+			break;
+		}
+    }
 	tds_set_column_type(tds, curcol, type);
 
 	if (is_collate_type(type)) {

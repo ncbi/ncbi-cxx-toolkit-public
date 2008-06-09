@@ -14806,7 +14806,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
         args->PutMsgDisabled("Test_LOB2");
     }
 
-    if ( args->GetDriverName() != ftds_driver // 06/03/08
+    if (! (args->GetDriverName() == ftds_driver && args->GetServerType() == CDBConnParams::eMSSqlServer) // 06/06/08
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB3, 
             DBAPIInstance);
