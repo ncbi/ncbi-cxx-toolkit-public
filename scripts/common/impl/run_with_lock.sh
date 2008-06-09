@@ -7,7 +7,7 @@ else
 fi
 
 clean_up () {
-    rm -f "$command.lock"
+    rm -rf "$command.lock"
 }
 
 case $0 in

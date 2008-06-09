@@ -1,40 +1,46 @@
 #!/bin/sh
-file=$1.lock
+dir=$1.lock
 
 user=$REMOTE_USER
 [ -z "$user" ] && user=$USER
 [ -z "$user" ] && user=`whoami`
 
-fmt -74 > "$file.$$" <<EOF
-$user appears to be running $1 in `pwd` as process $2 on `hostname`.  If
-you have received this message in error, delete `pwd`/$file and try again.
-EOF
+# XXX - try to detect and clean stale locks, either once or every iteration?
 
-# echo no | mv -i "$file.$$" "$file" # Doesn't work on Solaris. :-/
-if [ -f "$file" ]; then
-    if [ x`echo -n` = x-n ]; then
-        n=''; c='\c'
-    else
-        n='-n'; c=''
+seconds=0
+while [ "$seconds" -lt 900 ]; do
+    if mkdir $dir >/dev/null 2>&1; then
+        [ "$seconds" = 0 ] || echo
+        echo $1    > "$dir/command"
+        hostname   > "$dir/hostname"
+        echo $2    > "$dir/pid"
+        echo $user > "$dir/user"
+        exit 0
     fi
-    echo $n "Waiting for $file$c" >&2
-    for x in 1 2 3 4 5; do
-        sleep $x
-        [ -f "$file" ] || break
-        echo $n ".$c" >&2
-    done
-    echo >&2
-fi
-[ -f "$file" ] || mv "$file.$$" "$file" # Not (quite) atomic. :-/
+    if [ "$seconds" = 0 ]; then
+        if [ x`echo -n` = x-n ]; then
+            n=''; c='\c'
+        else
+            n='-n'; c=''
+        fi
+        echo $n "Waiting for $dir$c" >&2
+    fi
+    sleep 5
+    echo $n ".$c" >&2
+    seconds=`expr $seconds + 5`
+done
 
-# Try to work around a weird race condition observed on Mac OS X 10.4
-if [ -f "$file.$$" ]; then
-    sleep 1
+if test -f "$dir"; then
+    # old-style lock
+    echo
+    cat "$dir"
+else
+    fmt -74 <<EOF
+
+`cat $dir/user` appears to be running `cat $dir/command` in `pwd` as
+process `cat $dir/pid` on `cat $dir/hostname`.  If you have received
+this message in error, remove `pwd`/$dir and try again.
+EOF
 fi
 
-if [ -f "$file.$$" ]; then
-    cat "$file" >& 2
-    rm "$file.$$"
-#    kill $2
-    exit 1
-fi
+exit 1
