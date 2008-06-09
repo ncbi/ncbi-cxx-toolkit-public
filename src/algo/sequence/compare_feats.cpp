@@ -97,8 +97,8 @@ public:
         
         
         //smaller difference in TypeSortingOrder is better 
-        unsigned c1_typeSortingOrderDiff = std::abs(c1->GetFeatQ()->GetTypeSortingOrder() - c1->GetFeatT()->GetTypeSortingOrder());
-        unsigned c2_typeSortingOrderDiff = std::abs(c2->GetFeatQ()->GetTypeSortingOrder() - c2->GetFeatT()->GetTypeSortingOrder());
+        unsigned c1_typeSortingOrderDiff = abs(c1->GetFeatQ()->GetTypeSortingOrder() - c1->GetFeatT()->GetTypeSortingOrder());
+        unsigned c2_typeSortingOrderDiff = abs(c2->GetFeatQ()->GetTypeSortingOrder() - c2->GetFeatT()->GetTypeSortingOrder());
         if(c1_typeSortingOrderDiff < c2_typeSortingOrderDiff) return false;
         if(c1_typeSortingOrderDiff > c2_typeSortingOrderDiff) return true;
         
