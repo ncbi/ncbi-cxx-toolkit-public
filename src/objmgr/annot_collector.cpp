@@ -956,6 +956,9 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                    "Bioseq handle is null");
     }
     m_Selector = &selector;
+    if ( m_Selector->m_CollectNames ) {
+        m_AnnotNames.reset(new TAnnotNames());
+    }
     try {
         CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
         m_Selector->CheckLimitObjectType();
@@ -1132,6 +1135,9 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                                     const CHandleRangeMap& master_loc)
 {
     m_Selector = &selector;
+    if ( m_Selector->m_CollectNames ) {
+        m_AnnotNames.reset(new TAnnotNames());
+    }
     try {
         CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
         if ( !m_Selector->m_LimitObject ) {
@@ -1320,6 +1326,9 @@ void CAnnot_Collector::x_AddPostMappings(void)
 void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector)
 {
     m_Selector = &selector;
+    if ( m_Selector->m_CollectNames ) {
+        m_AnnotNames.reset(new TAnnotNames());
+    }
     try {
         CScope_Impl::TConfReadLockGuard guard(m_Scope->m_ConfLock);
         // Limit must be set, resolving is obsolete
@@ -1640,6 +1649,13 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
                                        const CHandleRange&   hr,
                                        CSeq_loc_Conversion*  cvt)
 {
+    if ( m_Selector->m_CollectNames ) {
+        if ( m_AnnotNames->find(annot_name) != m_AnnotNames->end() ) {
+            // already found
+            return;
+        }
+    }
+
     if ( !m_Selector->m_AnnotTypesBitset.any() ) {
         pair<size_t, size_t> range =
             CAnnotType_Index::GetIndexRange(*m_Selector, *objs);
@@ -1685,9 +1701,11 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
     static const size_t kAnnotTypeIndex_SNP =
         CAnnotType_Index::GetSubtypeIndex(CSeqFeatData::eSubtype_variation);
 
-    if ( x_NeedSNPs()  &&
-        (!m_Selector->m_CollectTypes  ||
-        !m_TypesBitset.test(kAnnotTypeIndex_SNP)) ) {
+    if ( x_NeedSNPs() ) {
+        if ( m_Selector->m_CollectTypes &&
+             m_TypesBitset.test(kAnnotTypeIndex_SNP) ) {
+            return;
+        }
         CSeq_annot_Handle sah;
         CHandleRange::TRange range = hr.GetOverlappingRange();
         ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
@@ -1715,6 +1733,10 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
 
                     if (m_Selector->m_CollectTypes) {
                         m_TypesBitset.set(kAnnotTypeIndex_SNP);
+                        break;
+                    }
+                    if (m_Selector->m_CollectNames) {
+                        m_AnnotNames->insert(annot_name);
                         break;
                     }
                     
@@ -1769,7 +1791,6 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
             }
             stubs.clear();
 
-            CAnnotName name(annot_name);
             // Release lock for tse update:
             guard.Release();
             ITERATE(TStubMap, it, stubmap) {
@@ -1784,7 +1805,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
             guard.Guard(tse.GetAnnotLock());
 
             // Reget range map pointer as it may change:
-            objs = tse.x_GetIdObjects(name, id);
+            objs = tse.x_GetIdObjects(annot_name, id);
             _ASSERT(objs);
         }
         for ( size_t index = from_idx; index < to_idx; ++index ) {
@@ -1816,6 +1837,13 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                             x_MatchRange(hr, aoit->first, aoit->second) ) {
                             m_TypesBitset.set(index);
                             break;
+                        }
+                    }
+                    if (m_Selector->m_CollectNames) {
+                        if (x_MatchLimitObject(annot_info)  &&
+                            x_MatchRange(hr, aoit->first, aoit->second) ) {
+                            m_AnnotNames->insert(annot_name);
+                            return;
                         }
                     }
 
