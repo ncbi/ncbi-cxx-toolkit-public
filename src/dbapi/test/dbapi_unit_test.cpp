@@ -15544,10 +15544,9 @@ CTestArguments::CTestArguments(int argc, char * argv[])
                             "Name of the SQL server to connect to",
                             CArgDescriptions::eString, DEF_SERVER);
 
-    arg_desc->AddDefaultKey("d", "driver",
+    arg_desc->AddOptionalKey("d", "driver",
                             "Name of the DBAPI driver to use",
-                            CArgDescriptions::eString,
-                            DEF_DRIVER);
+                            CArgDescriptions::eString);
     arg_desc->SetConstraint("d", &(*new CArgAllow_Strings, ALL_DRIVERS));
 
     arg_desc->AddDefaultKey("U", "username",
@@ -15597,10 +15596,13 @@ CTestArguments::CTestArguments(int argc, char * argv[])
     // Get command-line arguments ...
     m_ReportDisabled = args["report_disabled"].AsBoolean();
 
-    m_ParamBase.SetDriverName(args["d"].AsString());
     m_ParamBase.SetServerName(args["S"].AsString());
     m_ParamBase.SetUserName(args["U"].AsString());
     m_ParamBase.SetPassword(args["P"].AsString());
+
+    if (args["d"].HasValue()) {
+        m_ParamBase.SetDriverName(args["d"].AsString());
+    }
 
     if (args["D"].HasValue()) {
         m_ParamBase.SetDatabaseName(args["D"].AsString());
