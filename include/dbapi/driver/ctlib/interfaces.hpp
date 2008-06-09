@@ -282,11 +282,6 @@ public:
     {
         return m_TDSVersion;
     }
-    // This method is used to set auto-detected TDS version...
-    void SetTDSVersion(CS_INT version)
-    {
-        m_TDSVersion = version;
-    }
     CS_INT GetPacketSize(void) const
     {
         return m_PacketSize;

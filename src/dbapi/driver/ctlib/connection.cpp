@@ -265,36 +265,6 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 
-#ifdef FTDS_IN_USE
-    if (!GetCTLibContext().GetTDSVersion()) {
-        // Check for auto-detected TDS version...
-        GetCTLibContext().Check(
-            ct_con_props(
-                x_GetSybaseConn(), 
-                CS_GET, 
-                CS_TDS_VERSION, 
-                &tds_version,
-                CS_UNUSED, 
-                NULL
-            )
-        );
-
-        switch (tds_version) {
-            case CS_TDS_50:
-                tds_version = 50;
-                break;
-            case CS_TDS_70:
-                tds_version = 70;
-                break;
-            case CS_TDS_80:
-                tds_version = 80;
-                break;
-        }
-
-        GetCTLibContext().SetTDSVersion(tds_version);
-    }
-#endif
-
     SetServerType(CalculateServerType(params));
 }
 
