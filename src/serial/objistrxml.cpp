@@ -767,7 +767,8 @@ bool CObjectIStreamXml::ReadBool(void)
         }
         if ( attr != "value" ) {
             EndOpeningTagSelfClosed();
-            ThrowError(fMissingValue,"attribute 'value' is missing");
+//            ThrowError(fMissingValue,"attribute 'value' is missing");
+            checktag = false;
         }
     }
     string sValue;
