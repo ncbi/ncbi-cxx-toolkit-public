@@ -527,6 +527,15 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    /// Collect available annot names rather than annots.
+    ///  @sa
+    ///    CAnnotTypes_CI::GetAnnotNames()
+    SAnnotSelector& SetCollectNames(bool value = true)
+        {
+            m_CollectNames = value;
+            return *this;
+        }
+
 protected:
     friend class CAnnot_Collector;
 
@@ -566,6 +575,7 @@ protected:
     bool                  m_ExcludeExternal;
     bool                  m_CollectSeq_annots;
     bool                  m_CollectTypes;
+    bool                  m_CollectNames;
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
     TAnnotTypesBitset     m_AnnotTypesBitset;

@@ -202,10 +202,9 @@ CAnnotTypes_CI::~CAnnotTypes_CI(void)
 }
 
 
-CAnnotTypes_CI::TAnnotTypes CAnnotTypes_CI::GetAnnotTypes(void) const
+const CAnnotTypes_CI::TAnnotTypes& CAnnotTypes_CI::GetAnnotTypes(void) const
 {
-    if (m_AnnotTypes.empty()  &&
-        m_DataCollector->m_TypesBitset.any()) {
+    if (m_AnnotTypes.empty()  && m_DataCollector->m_TypesBitset.any()) {
         for (size_t i = 0; i < m_DataCollector->m_TypesBitset.size(); ++i) {
             if ( m_DataCollector->m_TypesBitset.test(i) ) {
                 m_AnnotTypes.push_back(CAnnotType_Index::GetTypeSelector(i));
@@ -213,6 +212,12 @@ CAnnotTypes_CI::TAnnotTypes CAnnotTypes_CI::GetAnnotTypes(void) const
         }
     }
     return m_AnnotTypes;
+}
+
+
+const CAnnotTypes_CI::TAnnotNames& CAnnotTypes_CI::GetAnnotNames(void) const
+{
+    return m_DataCollector->x_GetAnnotNames();
 }
 
 

@@ -2316,5 +2316,19 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
 }
 
 
+const CAnnot_Collector::TAnnotNames&
+CAnnot_Collector::x_GetAnnotNames(void) const
+{
+    if ( !m_AnnotNames.get() ) {
+        TAnnotNames* names = new TAnnotNames;
+        m_AnnotNames.reset(names);
+        ITERATE ( TAnnotSet, it, m_AnnotSet ) {
+            names->insert(it->GetSeq_annot_Info().GetName());
+        }
+    }
+    return *m_AnnotNames;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

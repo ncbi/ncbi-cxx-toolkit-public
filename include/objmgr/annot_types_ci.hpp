@@ -34,6 +34,7 @@
 */
 
 #include <objmgr/impl/annot_collector.hpp>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 
@@ -87,7 +88,10 @@ public:
 
     typedef vector<SAnnotTypeSelector> TAnnotTypes;
     // Get annot types
-    TAnnotTypes GetAnnotTypes(void) const;
+    const TAnnotTypes& GetAnnotTypes(void) const;
+
+    typedef set<CAnnotName> TAnnotNames;
+    const TAnnotNames& GetAnnotNames(void) const;
 
 protected:
     friend class CAnnot_CI;

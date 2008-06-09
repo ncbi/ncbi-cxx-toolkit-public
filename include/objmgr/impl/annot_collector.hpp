@@ -332,6 +332,9 @@ private:
     typedef map<const CTSE_Info*, CTSE_Handle> TTSE_LockMap;
     typedef vector<CSeq_annot_Handle> TAnnotLocks;
     typedef SAnnotSelector::TAnnotTypesBitset TAnnotTypesBitset;
+    typedef set<CAnnotName> TAnnotNames;
+
+    const TAnnotNames& x_GetAnnotNames(void) const;
 
     const SAnnotSelector*            m_Selector;
     CHeapScope                       m_Scope;
@@ -344,8 +347,10 @@ private:
     // Temporary objects to be re-used by iterators
     CRef<CCreatedFeat_Ref>  m_CreatedOriginal;
     CRef<CCreatedFeat_Ref>  m_CreatedMapped;
+
     auto_ptr<TAnnotLocsSet> m_AnnotLocsSet;
     TAnnotTypesBitset       m_TypesBitset;
+    mutable auto_ptr<TAnnotNames> m_AnnotNames;
 
     friend class CAnnotTypes_CI;
     friend class CMappedFeat;
