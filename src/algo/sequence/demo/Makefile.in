@@ -3,7 +3,7 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-APP_PROJ = cpgdemo regexplocdemo
+APP_PROJ = cpgdemo regexplocdemo xcompareannotsdemo
 
 
 srcdir = @srcdir@
