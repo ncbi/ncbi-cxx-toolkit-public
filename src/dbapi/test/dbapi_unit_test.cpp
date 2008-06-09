@@ -15557,10 +15557,9 @@ CTestArguments::CTestArguments(int argc, char * argv[])
     arg_desc->AddDefaultKey("P", "password",
                             "Password",
                             CArgDescriptions::eString, "allowed");
-    arg_desc->AddDefaultKey("D", "database",
+    arg_desc->AddOptionalKey("D", "database",
                             "Name of the database to connect",
-                            CArgDescriptions::eString,
-                            "DBAPI_Sample");
+                            CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("v", "version",
                             "TDS protocol version",
@@ -15602,7 +15601,10 @@ CTestArguments::CTestArguments(int argc, char * argv[])
     m_ParamBase.SetServerName(args["S"].AsString());
     m_ParamBase.SetUserName(args["U"].AsString());
     m_ParamBase.SetPassword(args["P"].AsString());
-    m_ParamBase.SetDatabaseName(args["D"].AsString());
+
+    if (args["D"].HasValue()) {
+        m_ParamBase.SetDatabaseName(args["D"].AsString());
+    }
 
     if ( args["v"].HasValue() ) {
         m_ParamBase.SetProtocolVersion(args["v"].AsInteger());
