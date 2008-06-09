@@ -513,7 +513,7 @@ public:
  
     bool NextComparisonGroup(vector<CRef<CCompareFeats> >& v);
     void SelectMatches(vector<CRef<CCompareFeats> >& v);
-    static int CCompareSeqRegions::s_GetGeneId(const CSeq_feat& feat);
+    static int s_GetGeneId(const CSeq_feat& feat);
 private:
     void x_GetPutativeMatches(vector<CRef<CCompareFeats> >& v, CConstRef<CSeq_feat> q_feat);
     CConstRef<CSeq_loc> x_GetSelfLoc(
