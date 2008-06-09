@@ -9364,7 +9364,11 @@ CDBAPIUnitTest::Test_Procedure3(void)
                 }
             }
 
-            BOOST_CHECK_EQUAL(result_num, 2);
+            if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
+                BOOST_CHECK_EQUAL(result_num, 3);
+            } else {
+                BOOST_CHECK_EQUAL(result_num, 2);
+            }
         }
 
         // The same as above, but using IStatement ...
@@ -9386,7 +9390,11 @@ CDBAPIUnitTest::Test_Procedure3(void)
                 }
             }
 
-            BOOST_CHECK_EQUAL(result_num, 3);
+            if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
+                BOOST_CHECK_EQUAL(result_num, 4);
+            } else {
+                BOOST_CHECK_EQUAL(result_num, 3);
+            }
         }
     }
     catch(const CException& ex) {
