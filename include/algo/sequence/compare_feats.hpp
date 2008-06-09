@@ -40,7 +40,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
-
+#include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/feature.hpp> 
 
 #include "loc_mapper.hpp"
@@ -97,11 +97,10 @@ public:
                                    //e.g. 1:>1>  vs. 1:<1<
     };
     
-    CCompareSeq_locs(const CSeq_loc& loc1, CScope* scope1, const CSeq_loc& loc2, CScope* scope2)
+    CCompareSeq_locs(const CSeq_loc& loc1, const CSeq_loc& loc2, CScope* scope2)
         : m_loc1(&loc1)
-        , m_scope1(scope1)
         , m_loc2(&loc2)
-        , m_scope2(scope2)
+        , m_scope_t(scope2)
     {
         this->Reset();            
     } 
@@ -178,7 +177,7 @@ private:
 
     /// This helper struct is used to accumulate the neighboring comparisons 
     /// of the same class, such that the comparison [... 3:5  4:6 ... 20:22 ...]
-    /// can be represented as [... 3-20:5:22 ...]
+    /// can be represented as [... 3-20:5-22 ...]
     struct SIntervalComparisonResultGroup
     {
     public: 
@@ -244,24 +243,6 @@ private:
             missing_5p(0),
             extra_5p(0) {}
             
-        string GetDump() {
-            CNcbiOstrstream strm;  
-            strm
-                << "(loc1_int:" << loc1_int
-                << ", loc2_int:" << loc2_int
-                << ", matched:" << matched
-                << ", partially_matched:" << partially_matched
-                << ", unknown:" << unknown            
-                << ", missing:" << missing
-                << ", missing_5p:" << missing_5p
-                << ", missing_3p:" << missing_3p
-                << ", extra:" << extra
-                << ", extra_5p:" << extra_5p
-                << ", extra_3p:" << extra_3p
-                << ")"; 
-            return  CNcbiOstrstreamToString(strm); 
-        }
-
         inline unsigned missing_internal() const {return missing - (missing_3p + missing_5p); }
         inline unsigned extra_internal() const {return extra - (extra_3p + extra_5p); }
         
@@ -282,36 +263,7 @@ private:
     void x_Compare();
     
     /// Recompute m_len_seqloc_overlap, m_len_seqloc1, and m_len_seqloc2
-    void x_ComputeOverlapValues() const 
-    {
-        CRef<CSeq_loc> merged_loc1 = sequence::Seq_loc_Merge(*m_loc1, CSeq_loc::fMerge_All, m_scope1);
-        CRef<CSeq_loc> merged_loc2 = sequence::Seq_loc_Merge(*m_loc2, CSeq_loc::fMerge_All, m_scope2);
-        
-        CRef<CSeq_loc> subtr_loc1 = sequence::Seq_loc_Subtract(*merged_loc1, *merged_loc2, CSeq_loc::fMerge_All, m_scope1);
-        
-        TSeqPos subtr_len;
-        try {
-            subtr_len = sequence::GetLength(*subtr_loc1, m_scope1);
-        } catch (...) {
-            subtr_len = 0;
-        }
-        
-        try {
-            m_len_seqloc1 = sequence::GetLength(*merged_loc1, m_scope1);
-        } catch(...) {
-            m_len_seqloc1 = 0;
-        }
-        
-        try {
-            m_len_seqloc2 = sequence::GetLength(*merged_loc2, m_scope1);
-        } catch(...) {
-            m_len_seqloc2 = 0;
-        }
-        
-        m_len_seqloc_overlap = m_len_seqloc1 - subtr_len;
-  
-        m_cachedOverlapValues = true;
-    }
+    void x_ComputeOverlapValues() const; 
     
     /// Compare two exons
     FCompareLocs x_CompareInts(const CSeq_loc& loc1, const CSeq_loc& loc2) const;
@@ -331,9 +283,9 @@ private:
     
     vector<SIntervalComparisonResult> m_IntComparisons;
     const CConstRef<CSeq_loc> m_loc1;
-    CScope* m_scope1;
     const CConstRef<CSeq_loc> m_loc2;
-    CScope* m_scope2;
+    CScope* m_scope_t;
+    
 };
 
 
@@ -347,82 +299,81 @@ class CCompareFeats : public CObject
 {
 public:
     CCompareFeats(const CSeq_feat& feat1
-                , const CSeq_loc& feat1_mapped_loc ///mapped to feat2's coordinate system
+                , const CSeq_loc& feat1_mapped_loc 
+                , double mapped_identity
+                , const CSeq_loc& feat1_self_loc
                 , CScope* scope1
                 , const CSeq_feat& feat2
+                , const CSeq_loc& feat2_self_loc
                 , CScope* scope2) 
         : m_feat1(&feat1)
         , m_feat1_mapped_loc(&feat1_mapped_loc)
-        , m_scope1(scope1)
+        , m_feat1_self_loc(&feat1_self_loc)
+        , m_scope_q(scope1)
         , m_feat2(&feat2)
-        , m_scope2(scope2)
-        , m_compare(new CCompareSeq_locs(feat1_mapped_loc, scope1, feat2.GetLocation(), scope2))
-        , m_unmatched(false)
+        , m_feat2_self_loc(&feat2_self_loc)
+        , m_scope_t(scope2)
+        , m_compare(new CCompareSeq_locs(feat1_mapped_loc, feat2_self_loc, scope2)) // feat1_mapped_loc lives in scope2
+        , m_irrelevance(0)
+        , m_mapped_identity(mapped_identity)
     {}
     
     
     /// No matching feat2
     CCompareFeats(const CSeq_feat& feat1
                 , const CSeq_loc& feat1_mapped_loc ///mapped to feat2's coordinate system
+                , double mapped_identity
+                , const CSeq_loc& feat1_self_loc 
                 , CScope* scope1)
         : m_feat1(&feat1)
         , m_feat1_mapped_loc(&feat1_mapped_loc)
-        , m_scope1(scope1)
-        , m_unmatched(true)
+        , m_feat1_self_loc(&feat1_self_loc)
+        , m_scope_q(scope1)
+        , m_irrelevance(1) //Forward
+        , m_mapped_identity(mapped_identity)
     {}
     
     /// No matching feat1
-    CCompareFeats(const CSeq_feat& feat2, CScope* scope2) 
+    CCompareFeats(const CSeq_feat& feat2, const CSeq_loc& feat2_self_loc, double mapped_identity, CScope* scope2) 
         : m_feat2(&feat2)
-        , m_scope2(scope2)
-        , m_unmatched(true)
+        , m_feat2_self_loc(&feat2_self_loc)
+        , m_scope_t(scope2)
+        , m_irrelevance(2) //Reverse
+        , m_mapped_identity(mapped_identity)
     {}
     
 
     friend CNcbiOstream& operator<<(CNcbiOstream& out, const CCompareFeats& cf);
 
 
-    /// If any of the locs is partial or they are of different subtypes - return relative overlap score.
-    /// Otherwise return symmetrical overlap score.
-    ///
-    /// Rationale: in the former case, if one feature contains another, but the containee endpoints
-    /// are fuzzy or are expected to be fully contained (e.g. mRNA fully contains comparison exon), 
-    /// then we don't want to penalize for non-overlapping regions of the larger feature.
-    double GetAutoOverlap() const
-    {
-        if (m_unmatched) return 0.0;
-         
-        bool isPartial1 = m_feat1_mapped_loc->IsPartialStart(eExtreme_Positional)
-                       || m_feat1_mapped_loc->IsPartialStop(eExtreme_Positional)
-                       || m_feat1_mapped_loc->IsTruncatedStart(eExtreme_Positional)
-                       || m_feat1_mapped_loc->IsTruncatedStop(eExtreme_Positional);
-                      
-        bool isPartial2 = m_feat2->GetLocation().IsPartialStart(eExtreme_Positional)
-                       || m_feat2->GetLocation().IsPartialStop(eExtreme_Positional)
-                       || m_feat2->GetLocation().IsTruncatedStart(eExtreme_Positional)
-                       || m_feat2->GetLocation().IsTruncatedStop(eExtreme_Positional);
-        
-        if(isPartial1 || isPartial2 || !IsSameSubtype())  {
-            return m_compare->GetRelativeOverlap();
-        } else {
-            return m_compare->GetSymmetricalOverlap();
-        } 
-    }
     
+    
+    double GetMappedIdentity() const 
+    {
+        return m_mapped_identity;
+    }
 
     // Return true iff features being compared are of the same subtype
     bool IsSameSubtype() const
     {
-        return !m_unmatched 
+        return IsMatch()
             && m_feat1->CanGetData() 
             && m_feat2->CanGetData()
             && (m_feat1->GetData().GetSubtype() == m_feat2->GetData().GetSubtype());    
     }
     
+    bool IsSameType() const
+    {
+        return IsMatch()
+            && m_feat1->CanGetData() 
+            && m_feat2->CanGetData()
+            && (m_feat1->GetData().Which() == m_feat2->GetData().Which());    
+    }
+    
     // Return true iff labels are the same and fCmp_Match flag is set in the comparison result
     bool IsIdentical() const
     {
-        return !m_unmatched 
+        return IsMatch() 
             && (CCompareFeats::s_GetFeatLabel(*m_feat1) == CCompareFeats::s_GetFeatLabel(*m_feat2)) 
             && (m_compare->GetResult() & CCompareSeq_locs::fCmp_Match);
     }
@@ -447,13 +398,36 @@ public:
         return gene_label; 
     }
 
+    
+    CConstRef<CSeq_feat> GetFeatQ() const {return m_feat1;}
+    CConstRef<CSeq_feat> GetFeatT() const {return m_feat2;}
+    
+    CConstRef<CSeq_loc> GetMappedLocQ() const {return m_feat1_mapped_loc;}
+    CConstRef<CSeq_loc> GetSelfLocQ() const {return m_feat1_self_loc;} 
+    CConstRef<CSeq_loc> GetSelfLocT() const {return m_feat2_self_loc;}
+    
+    bool IsMatch() const {return !m_feat1.IsNull() && !m_feat2.IsNull();}
+    CConstRef<CCompareSeq_locs> GetComparison() const {return m_compare;}
+    
+    
+    int GetIrrelevance() const {return m_irrelevance; }
+    void SetIrrelevance(int  val) {m_irrelevance =val;}
+private:
     CConstRef<CSeq_feat> m_feat1;   
     CConstRef<CSeq_loc> m_feat1_mapped_loc;
-    CScope* m_scope1;
+    CConstRef<CSeq_loc> m_feat1_self_loc;
+    CScope* m_scope_q;
+    
+    
     CConstRef<CSeq_feat> m_feat2;
-    CScope* m_scope2;
+    CConstRef<CSeq_loc> m_feat2_self_loc;
+    CScope* m_scope_t;
+    
+    
     CRef<CCompareSeq_locs> m_compare;
+    int m_irrelevance;
     bool m_unmatched;
+    double m_mapped_identity;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -467,45 +441,104 @@ public:
         , eScore_Feat1PctOverlap        ///< length of overlap / (length of 1st feat)
         , eScore_Feat2PctOverlap        ///< length of overlap / (length of 2nd feat)
     };
+   
+    enum EComparisonOptions {
+        fSelectBest                 = (1<<0),
+        fMergeExons                 = (1<<1),
+        fDifferentGenesOnly         = (1<<2),
+        fCreateSentinelGenes        = (1<<3),
+        fSameTypeOnly               = (1<<4)
+    };
+    
+    typedef int TComparisonOptions; 
+    
     
     CCompareSeqRegions(const CSeq_loc& query_loc
                      , CScope* q_scope
                      , CScope* t_scope
                      , ILocMapper& mapper
+                     , const SAnnotSelector& q_sel
+                     , const SAnnotSelector& t_sel
+                     , const CSeq_id& target_id
+                     , TComparisonOptions options = fSelectBest|fMergeExons
                      , EScoreMethod score_method = eScore_SymmetricPctOverlap) 
-        : m_loc1(&query_loc) 
-        , m_scope1(q_scope)
-        //, m_loc2(&target_loc)
-        , m_scope2(t_scope)
+        : m_loc_q(&query_loc) 
+        , m_scope_q(q_scope)
+        , m_scope_t(t_scope)
         , m_mapper(&mapper)
+        , m_selector_q(q_sel)
+        , m_selector_t(t_sel)
+        , m_target_id(&target_id)
+        , m_comp_options(options)
         , m_score_method(score_method)
-        
+        , m_loc_q_ci(*m_scope_q, *m_loc_q, q_sel)
+        , m_already_processed_unmatched_targets(false)
     {
-        //TODO: make sure the locs are on single bioseq each.
-        //When processing feats on the region filter out the segments 
-        //that point to different seqs
         
-        SAnnotSelector sel;
-        sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
-        sel.SetResolveMethod(SAnnotSelector::eResolve_All);
-        sel.SetAdaptiveDepth(true);
-        CFeat_CI ci(*m_scope1, *m_loc1, sel);
-        m_loc1_ci = ci;
+        //when initializing the whole_locs, we use maximally large intervals
+        //instead of Whole seqloc type because Seq_loc_Mapper can't digest those
+        //in the case of incomplete scopes, such as pre-locuslink LDS type
+        CRef<CSeq_loc> t_whole_loc(new CSeq_loc);
+        CRef<CSeq_id> t_id(new CSeq_id);
+        t_id->Assign(target_id);
+        t_whole_loc->SetInt().SetId(*t_id);
+        t_whole_loc->SetInt().SetFrom(0);
+        t_whole_loc->SetInt().SetTo(((TSeqPos) (-10)));
+        
+        
+        CRef<CSeq_loc> q_whole_loc(new CSeq_loc);
+        CRef<CSeq_id> q_id(new CSeq_id);
+        q_id->Assign(sequence::GetId(query_loc, 0));
+        q_whole_loc->SetInt().SetId(*q_id);
+        q_whole_loc->SetInt().SetFrom(0);
+        q_whole_loc->SetInt().SetTo(((TSeqPos) (-10)));
+        
+
+        m_self_mapper_q.Reset(new CSeq_loc_Mapper(*q_whole_loc, *q_whole_loc, m_scope_q));
+        m_self_mapper_t.Reset(new CSeq_loc_Mapper(*t_whole_loc, *t_whole_loc, m_scope_t));
+        
+        m_seen_targets.clear();
     }
     
+    
     void Rewind() {
-        m_loc1_ci.Rewind();
+        m_loc_q_ci.Rewind();
+        m_seen_targets.clear();
     }
-
+    
+    TComparisonOptions& SetOptions() {return m_comp_options;}
+    TComparisonOptions GetOptions() const {return m_comp_options;}
+    
+    const CSeq_loc& GetQueryLoc() const {return *m_loc_q;}
+ 
     bool NextComparisonGroup(vector<CRef<CCompareFeats> >& v);
+    void SelectMatches(vector<CRef<CCompareFeats> >& v);
+    static int CCompareSeqRegions::s_GetGeneId(const CSeq_feat& feat);
 private:
-    CFeat_CI m_loc1_ci;
-    CConstRef<CSeq_loc> m_loc1;
-    CScope* m_scope1;
-    //CConstRef<CSeq_loc> m_loc2;
-    CScope* m_scope2; 
+    void x_GetPutativeMatches(vector<CRef<CCompareFeats> >& v, CConstRef<CSeq_feat> q_feat);
+    CConstRef<CSeq_loc> x_GetSelfLoc(
+            const CSeq_loc& loc, 
+            CScope* scope,
+            bool merge_single_range);
+    
+    
+    
+    CConstRef<CSeq_loc> m_loc_q;
+    CScope* m_scope_q;
+    CScope* m_scope_t; 
     CRef<ILocMapper> m_mapper;
+    const SAnnotSelector& m_selector_q;
+    const SAnnotSelector& m_selector_t;
+    CConstRef<CSeq_id> m_target_id;
+    CRef<CSeq_loc_Mapper> m_self_mapper_q;
+    CRef<CSeq_loc_Mapper> m_self_mapper_t;
+    TComparisonOptions m_comp_options;
     EScoreMethod m_score_method;
+    CFeat_CI m_loc_q_ci;
+    std::set<std::string> m_seen_targets;
+        //loc-labels of all target features that have been compared
+        //(we use it to collect the target features that are not comparable at the end)
+    bool m_already_processed_unmatched_targets;
 };
     
 
