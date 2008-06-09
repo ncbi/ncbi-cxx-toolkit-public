@@ -39,6 +39,8 @@
 
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 
+#include <dbapi/driver/dbapi_driver_conn_params.hpp>
+
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
 #  undef numeric_limits
@@ -79,7 +81,7 @@ private:
 };
 
 ///////////////////////////////////////////////////////////////////////////
-class CTestArguments
+class CTestArguments : public CObject
 {
 public:
     CTestArguments(int argc, char * argv[]);
@@ -103,35 +105,33 @@ public:
 
     string GetDriverName(void) const
     {
-        return m_DriverName;
+        return m_ConnParams.GetDriverName();
     }
 
     string GetServerName(void) const
     {
-        return m_ServerName;
+        return m_ConnParams.GetServerName();
     }
 
     string GetUserName(void) const
     {
-        return m_UserName;
+        return m_ConnParams.GetUserName();
     }
 
     string GetUserPassword(void) const
     {
-        return m_UserPassword;
-    }
-
-    const TDatabaseParameters& GetDBParameters(void) const
-    {
-        return m_DatabaseParameters;
+        return m_ConnParams.GetPassword();
     }
 
     string GetDatabaseName(void) const
     {
-        return m_DatabaseName;
+        return m_ConnParams.GetDatabaseName();
     }
 
-    EServerType GetServerType(void) const;
+    CDBConnParams::EServerType GetServerType(void) const
+    {
+        return m_ConnParams.GetServerType();
+    }
 
     string GetProgramBasename(void) const;
 
@@ -158,24 +158,28 @@ public:
         return m_NumOfDisabled;
     }
 
+    const CDBConnParams& GetConnParams(void) const
+    {
+        return m_ConnParams;
+    }
+
 private:
     void SetDatabaseParameters(void);
 
 private:
     CNcbiArguments m_Arguments;
-    string m_DriverName;
-    string m_ServerName;
-    string m_UserName;
-    string m_UserPassword;
-    string m_DatabaseName;
-    string m_TDSVersion;
+
     string m_GatewayHost;
     string m_GatewayPort;
+
     ETestConfiguration  m_TestConfiguration;
-    TDatabaseParameters m_DatabaseParameters;
+
     mutable unsigned int m_NumOfDisabled;
     bool m_ReportDisabled;
     bool m_ReportExpected;
+
+    CDBConnParamsBase m_ParamBase;
+    CCPPToolkitConnParams m_ConnParams;
 };
 
 
@@ -184,7 +188,7 @@ private:
 class CDBAPIUnitTest
 {
 public:
-    CDBAPIUnitTest(const CTestArguments& args);
+    CDBAPIUnitTest(const CRef<const CTestArguments>& args);
     ~CDBAPIUnitTest(void);
 
 public:
@@ -340,7 +344,6 @@ protected:
                                   const string& table_name);
     static size_t GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt);
     static Int8 GetIdentity(const auto_ptr<IStatement>& auto_stmt);
-    void Connect(const auto_ptr<IConnection>& conn) const;
 
     void Test_HugeTableSelect(const auto_ptr<IConnection>& auto_conn);
     void Test_WaitForDelay(const auto_ptr<IConnection>& auto_conn);
@@ -355,10 +358,15 @@ protected:
         _ASSERT(m_DS);
         return *m_DS;
     }
-    I_DriverContext& GetDriverContext(void);
+
+    const CTestArguments& GetArgs(void) const
+    {
+        return *m_Args;
+    }
 
 private:
-    const CTestArguments        m_args;
+    CRef<const CTestArguments>  m_Args;
+
     CDriverManager&             m_DM;
     IDataSource*                m_DS;
     auto_ptr<IConnection>       m_Conn;
@@ -371,7 +379,7 @@ private:
 ///////////////////////////////////////////////////////////////////////////
 struct CDBAPITestSuite : public test_suite
 {
-    CDBAPITestSuite(const CTestArguments& args);
+    CDBAPITestSuite(const CRef<const CTestArguments>& args);
     ~CDBAPITestSuite(void);
 };
 
