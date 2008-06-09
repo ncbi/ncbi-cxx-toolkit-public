@@ -64,7 +64,7 @@ public:
     /// Set request ID.
     void SetRequestID(int rid) { m_RequestID = rid; }
     /// Assign the next available request ID to this request.
-    void SetRequestID(void) { m_RequestID = GetNextRequestID(); }
+    int SetRequestID(void) { return m_RequestID = GetNextRequestID(); }
 
     /// Return the next available application-wide request ID.
     static int GetNextRequestID(void);
@@ -80,6 +80,8 @@ public:
     /// Session ID
     const string& GetSessionID(void) const { return m_SessionID; }
     void SetSessionID(const string& session) { m_SessionID = session; }
+    /// Create and set new session ID
+    const string& SetSessionID(void);
 
     /// Hit ID
     const string& GetHitID(void) const { return m_HitID; }

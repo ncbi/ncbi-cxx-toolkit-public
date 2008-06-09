@@ -67,6 +67,16 @@ const string& CRequestContext::SetHitID(void)
 }
 
 
+const string& CRequestContext::SetSessionID(void)
+{
+    CNcbiOstrstream oss;
+    oss << GetDiagContext().GetStringUID() << '_' << setw(4) << setfill('0')
+        << GetRequestID() << "SID";
+    m_SessionID = CNcbiOstrstreamToString(oss);
+    return m_SessionID;
+}
+
+
 EDiagAppState CRequestContext::GetAppState(void) const
 {
     return m_AppState != eDiagAppState_NotSet

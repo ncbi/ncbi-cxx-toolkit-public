@@ -418,10 +418,7 @@ string CCgiContext::RetrieveTrackingId() const
     if (s_CheckRequestEntryForTID(m_Request.get(), cookie_or_entry_name_2, tid))
         return tid;
 
-    CNcbiOstrstream oss;
-    oss << GetDiagContext().GetStringUID() << '_' << setw(4) << setfill('0')
-        << m_App.GetFCgiIteration() << "SID";
-    return CNcbiOstrstreamToString(oss);
+    return CDiagContext::GetRequestContext().SetSessionID();
 }
 
 
