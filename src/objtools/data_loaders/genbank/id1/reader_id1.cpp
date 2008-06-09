@@ -265,6 +265,14 @@ string CId1Reader::x_ConnDescription(CConn_IOStream& stream) const
 }
 
 
+struct ConnInfoDeleter1
+{
+    /// C Language deallocation function.
+    static void Delete(SConnNetInfo* object)
+    { ConnNetInfo_Destroy(object); }
+};
+
+
 CConn_IOStream* CId1Reader::x_NewConnection(TConn conn)
 {
     WaitBeforeNewConnection(conn);
@@ -272,8 +280,12 @@ CConn_IOStream* CId1Reader::x_NewConnection(TConn conn)
     tmout.sec = m_Timeout;
     tmout.usec = 0;
     
+    AutoPtr<SConnNetInfo, ConnInfoDeleter1> info
+        (ConnNetInfo_Create(m_ServiceName.c_str()));
+    info->max_try = 1;
     AutoPtr<CConn_IOStream> stream
-        (new CConn_ServiceStream(m_ServiceName, fSERV_Any, 0, 0, &tmout));
+        (new CConn_ServiceStream(m_ServiceName, fSERV_Any,
+                                 info.get(), 0, &tmout));
     // need to call CONN_Wait to force connection to open
     if ( !stream->bad() ) {
         CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);

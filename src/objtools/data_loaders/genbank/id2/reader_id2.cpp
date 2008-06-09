@@ -265,6 +265,14 @@ string CId2Reader::x_ConnDescription(TConn conn) const
 }
 
 
+struct ConnInfoDeleter2
+{
+    /// C Language deallocation function.
+    static void Delete(SConnNetInfo* object)
+    { ConnNetInfo_Destroy(object); }
+};
+
+
 CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
 {
     WaitBeforeNewConnection(conn);
@@ -283,8 +291,12 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
             (new CConn_HttpStream(m_ServiceName));
     }
     else {
+        AutoPtr<SConnNetInfo, ConnInfoDeleter2> info
+            (ConnNetInfo_Create(m_ServiceName.c_str()));
+        info->max_try = 1;
         stream.reset
-            (new CConn_ServiceStream(m_ServiceName, fSERV_Any, 0, 0, &tmout));
+            (new CConn_ServiceStream(m_ServiceName, fSERV_Any,
+                                     info.get(), 0, &tmout));
     }
     // need to call CONN_Wait to force connection to open
     if ( !stream->bad() ) {
