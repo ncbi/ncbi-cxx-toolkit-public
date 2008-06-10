@@ -149,9 +149,10 @@ CTL_Cmd::ProcessResultInternal(CDB_Result& res)
 bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
                              const string& param_name,
                              CS_DATAFMT&   param_fmt,
-                             CS_SMALLINT   indicator,
                              bool          declare_only)
 {
+    CS_SMALLINT   indicator  = param.IsNULL() ? -1 : 0;
+
     {{
         size_t l = param_name.copy(param_fmt.name, CS_MAX_NAME-1);
         param_fmt.name[l] = '\0';
@@ -160,6 +161,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
 
     CS_RETCODE ret_code;
 
+    // We HAVE to pass correct data type even in case of NULL value.
     switch ( param.GetType() ) {
     case eDB_Int: {
         CDB_Int& par = dynamic_cast<CDB_Int&> (param);
@@ -744,13 +746,12 @@ bool CTL_LangCmd::x_AssignParams()
 
         CDB_Object&   param      = *GetBindParamsImpl().GetParam(i);
         const string& param_name = GetBindParamsImpl().GetParamName(i);
-        CS_SMALLINT   indicator  = param.IsNULL() ? -1 : 0;
 
         if ( !AssignCmdParam(param,
                              param_name,
                              param_fmt,
-                             indicator,
-                             false/*!declare_only*/) ) {
+                             false/*!declare_only*/) ) 
+        {
             return false;
         }
     }

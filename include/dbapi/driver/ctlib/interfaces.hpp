@@ -529,7 +529,6 @@ protected:
     bool AssignCmdParam(CDB_Object&   param,
                         const string& param_name,
                         CS_DATAFMT&   param_fmt,
-                        CS_SMALLINT   indicator,
                         bool          declare_only = false
                         );
     void GetRowCount(int* cnt);

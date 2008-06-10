@@ -482,13 +482,15 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
     param_fmt.status  = CS_INPUTVALUE;
 
     for (unsigned int i = 0;  i < GetBindParamsImpl().NofParams();  i++) {
-        if(GetBindParamsImpl().GetParamStatus(i) == 0) continue;
+        if (GetBindParamsImpl().GetParamStatus(i) == 0) {
+            continue;
+        }
 
-        CDB_Object&   param = *GetBindParamsImpl().GetParam(i);
+        CDB_Object& param = *GetBindParamsImpl().GetParam(i);
         const string& param_name = GetBindParamsImpl().GetParamName(i);
-        CS_SMALLINT   indicator = (!declare_only  &&  param.IsNULL()) ? -1 : 0;
 
-        if ( !AssignCmdParam(param, param_name, param_fmt, indicator, declare_only) ) {
+        if ( !AssignCmdParam(param, param_name, param_fmt, declare_only) ) 
+        {
             return false;
         }
     }

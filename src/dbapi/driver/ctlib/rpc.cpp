@@ -147,7 +147,6 @@ bool CTL_RPCCmd::x_AssignParams()
         if(GetBindParamsImpl().GetParamStatus(i) == 0) continue;
         CDB_Object&   param      = *GetBindParamsImpl().GetParam(i);
         const string& param_name = GetBindParamsImpl().GetParamName(i);
-        CS_SMALLINT   indicator  = param.IsNULL() ? -1 : 0;
 
         param_fmt.status =
             ((GetBindParamsImpl().GetParamStatus(i) & impl::CDB_Params::fOutput) == 0)
@@ -156,7 +155,6 @@ bool CTL_RPCCmd::x_AssignParams()
         if ( !AssignCmdParam(param,
                              param_name,
                              param_fmt,
-                             indicator,
                              false/*!declare_only*/) ) {
             return false;
         }
