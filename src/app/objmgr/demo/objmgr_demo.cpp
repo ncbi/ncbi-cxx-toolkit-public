@@ -76,7 +76,6 @@
 #include <objmgr/prefetch_manager.hpp>
 #include <objmgr/prefetch_actions.hpp>
 #include <objmgr/table_field.hpp>
-#include <objtools/format/flat_file_generator.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
