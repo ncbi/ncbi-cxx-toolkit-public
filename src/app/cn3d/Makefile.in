@@ -15,7 +15,8 @@ macapp: cn3d
 	cp $(srcdir)/Info.plist Cn3D.app/Contents
 	echo -n "APPLCn3D" > Cn3D.app/Contents/PkgInfo
 	mkdir Cn3D.app/Contents/Resources
-	cp $(srcdir)/mac-logo.icns Cn3D.app/Contents/Resources/wxmac.icns
+	cp $(srcdir)/mac-cn3dApp.icns Cn3D.app/Contents/Resources/cn3dApp.icns
+	cp $(srcdir)/mac-cn3dDoc.icns Cn3D.app/Contents/Resources/cn3dDoc.icns
 	cp $(CN3D_HOME)/cn3d_commands.htb Cn3D.app/Contents/Resources
 	cp -r $(CN3D_HOME)/data Cn3D.app/Contents/Resources
 

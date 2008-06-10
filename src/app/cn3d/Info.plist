@@ -7,35 +7,15 @@
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
-			<key>CFBundleTypeIconFile</key>
-			<string>129</string>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>****</string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>None</string>
-		</dict>
-		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>cn3</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
-			<string>wxmac.icns</string>
+			<string>cn3dDoc.icns</string>
 			<key>CFBundleTypeMIMETypes</key>
 			<array>
 				<string>chemical/ncbi-asn1-binary</string>
-			</array>
-			<key>CFBundleTypeName</key>
-			<string>gov.NCBI.Cn3D</string>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-		</dict>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>cn3</string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>gov.NCBI.Cn3D</string>
@@ -48,7 +28,7 @@
 	<key>CFBundleGetInfoString</key>
 	<string>Cn3D 4.2</string>
 	<key>CFBundleIconFile</key>
-	<string>wxmac.icns</string>
+	<string>cn3dApp.icns</string>
 	<key>CFBundleIdentifier</key>
 	<string>gov.NCBI.Cn3D</string>
 	<key>CFBundleInfoDictionaryVersion</key>
