@@ -2424,7 +2424,7 @@ CVariant
 CCursor::GetCVariant(const pythonpp::CObject& obj) const
 {
     if ( pythonpp::CNone::HasSameType(obj) ) {
-        return CVariant(eDB_UnsupportedType);
+        return CVariant(eDB_VarChar);
     } else if ( pythonpp::CBool::HasSameType(obj) ) {
         return CVariant( pythonpp::CBool(obj) );
     } else if ( pythonpp::CInt::HasSameType(obj) ) {
