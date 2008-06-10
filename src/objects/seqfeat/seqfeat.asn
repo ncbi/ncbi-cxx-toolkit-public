@@ -498,6 +498,8 @@ SubSource ::= SEQUENCE {
         fwd-primer-name (35) ,
         rev-primer-name (36) ,
         metagenomic (37) ,
+        mating-type (38) ,
+        linkage-group (39) ,
         other (255) } ,
     name VisibleString ,
     attrib VisibleString OPTIONAL }    -- attribution/source of this name
