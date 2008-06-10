@@ -226,8 +226,8 @@ protected:
 
 private:
     bool x_AssignParams(void);
-    bool AssignCmdParam(CDB_Object& param,
-                        int         param_num);
+    bool x_AssignCmdParam(CDB_Object& param,
+                          int         param_num);
 
     CSL3_Connection*     m_Connect;
     bool                 m_HasMoreResults;

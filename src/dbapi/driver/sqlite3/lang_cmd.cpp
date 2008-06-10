@@ -261,7 +261,8 @@ bool CSL3_LangCmd::x_AssignParams(void)
         if(GetBindParamsImpl().GetParamStatus(i) == 0) continue;
 
         CDB_Object& param = *GetBindParamsImpl().GetParam(i);
-        if ( !AssignCmdParam(param, i + 1) ) {
+        if ( !x_AssignCmdParam(param, i + 1) ) 
+        {
             return false;
         }
     }
@@ -271,9 +272,9 @@ bool CSL3_LangCmd::x_AssignParams(void)
 }
 
 
-bool CSL3_LangCmd::AssignCmdParam(CDB_Object&   param,
-                                  int           param_num
-                                  )
+bool CSL3_LangCmd::x_AssignCmdParam(CDB_Object&   param,
+                                    int           param_num
+                                    )
 {
     if (param.IsNULL()) {
         Check(sqlite3_bind_null(m_SQLite3stmt, param_num));
