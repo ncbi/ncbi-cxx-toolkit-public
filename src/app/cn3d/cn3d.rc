@@ -29,7 +29,9 @@
 *      Required resource file for creating wxDialog-derived dialogs
 */
 
-cn3d ICON "cn3d.ico"
+//cn3d      ICON "cn3d.ico"
+cn3d      ICON "cn3d42App.ico"
+cn3d42Doc ICON "cn3d42Doc.ico"
 
 //#include <wx/msw/wx.rc>
 //#include <wx/html/msw/wxhtml.rc>

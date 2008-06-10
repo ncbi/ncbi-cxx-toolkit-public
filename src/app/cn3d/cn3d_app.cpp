@@ -72,7 +72,7 @@
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
-    #include "cn3d.xpm"
+    #include "cn3d42App.xpm"
 #endif
 
 USING_NCBI_SCOPE;
