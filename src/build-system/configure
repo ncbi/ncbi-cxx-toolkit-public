@@ -25070,6 +25070,7 @@ else
   Xmu=
 fi
 
+         LDFLAGS=$orig_LDFLAGS
          X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
          if test -d "$OPENGL_PATH/include/GL"; then
             OPENGL_INCLUDE="-I$OPENGL_PATH/include $X_CFLAGS"
@@ -25098,7 +25099,6 @@ fi
     OPENGL_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags} $X_LIBS"
  fi
          fi
-         LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_LIBS="$OPENGL_LIBPATH -lGLU -lGL $X_ALL_LIBS"
          ;;
    esac
@@ -25193,7 +25193,6 @@ _ACEOF
       OPENGL_STATIC_LIBS=$OPENGL_LIBS
    fi
    : ${OSMESA_PATH=$OPENGL_PATH}
-   orig_LDFLAGS_X=$LDFLAGS
    if test "$with_mesa" != "no"; then
       if test "${with_mesa-yes}" = "yes" -a -d "$OSMESA_PATH"; then
          with_mesa=$OSMESA_PATH
@@ -25223,7 +25222,7 @@ _ACEOF
  fi
          fi
       fi
-      LDFLAGS="$orig_LDFLAGS_X $OSMESA_LDFLAGS"
+      LDFLAGS="$orig_LDFLAGS $OSMESA_LDFLAGS $OPENGL_LIBPATH"
       echo "$as_me:$LINENO: checking for OSMesaCreateContext in -lOSMesa" >&5
 echo $ECHO_N "checking for OSMesaCreateContext in -lOSMesa... $ECHO_C" >&6
 if test "${ac_cv_lib_OSMesa_OSMesaCreateContext+set}" = set; then
@@ -25334,7 +25333,7 @@ fi
     GLUT_LDFLAGS="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
       fi
-      LDFLAGS="$orig_LDFLAGS_X $GLUT_LDFLAGS"
+      LDFLAGS="$orig_LDFLAGS $GLUT_LDFLAGS $OPENGL_LIBPATH"
       echo "$as_me:$LINENO: checking for glutInit in -lglut" >&5
 echo $ECHO_N "checking for glutInit in -lglut... $ECHO_C" >&6
 if test "${ac_cv_lib_glut_glutInit+set}" = set; then

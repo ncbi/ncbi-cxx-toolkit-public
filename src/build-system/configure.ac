@@ -4218,6 +4218,7 @@ if test "$with_opengl" != "no"; then
             [$Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
          AC_CHECK_LIB(Xmu, XmuMakeAtom, Xmu="-lXmu", Xmu=,
             [$Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+         LDFLAGS=$orig_LDFLAGS
          X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
          if test -d "$OPENGL_PATH/include/GL"; then
             OPENGL_INCLUDE="-I$OPENGL_PATH/include $X_CFLAGS"
@@ -4227,7 +4228,6 @@ if test "$with_opengl" != "no"; then
          if test -d "$OPENGL_PATH/lib"; then
             NCBI_RPATHIFY(OPENGL_LIBPATH, $OPENGL_PATH/lib, [ ]$X_LIBS)
          fi
-         LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_LIBS="$OPENGL_LIBPATH -lGLU -lGL $X_ALL_LIBS"
          ;;
    esac
@@ -4269,7 +4269,6 @@ else
       OPENGL_STATIC_LIBS=$OPENGL_LIBS
    fi
    : ${OSMESA_PATH=$OPENGL_PATH}
-   orig_LDFLAGS_X=$LDFLAGS
    if test "$with_mesa" != "no"; then
       if test "${with_mesa-yes}" = "yes" -a -d "$OSMESA_PATH"; then
          with_mesa=$OSMESA_PATH
@@ -4280,7 +4279,7 @@ else
             NCBI_RPATHIFY(OSMESA_LDFLAGS, $with_mesa/lib)
          fi
       fi
-      LDFLAGS="$orig_LDFLAGS_X $OSMESA_LDFLAGS"
+      LDFLAGS="$orig_LDFLAGS $OSMESA_LDFLAGS $OPENGL_LIBPATH"
       AC_CHECK_LIB(OSMesa, OSMesaCreateContext,
          [NCBI_PACKAGE(MESA);
           OSMESA_LIBS="$OSMESA_LDFLAGS $OPENGL_LIBPATH -lOSMesa -lGLU -lGL $X_ALL_LIBS"
@@ -4302,7 +4301,7 @@ else
          GLUT_INCLUDE=-I$with_glut/include
          NCBI_RPATHIFY(GLUT_LDFLAGS, $with_glut/lib)
       fi
-      LDFLAGS="$orig_LDFLAGS_X $GLUT_LDFLAGS"
+      LDFLAGS="$orig_LDFLAGS $GLUT_LDFLAGS $OPENGL_LIBPATH"
       AC_CHECK_LIB(glut, glutInit,
          [NCBI_PACKAGE(GLUT);
           GLUT_LIBS="$GLUT_LDFLAGS $OPENGL_LIBPATH -lglut -lGLU -lGL $X_ALL_LIBS"
