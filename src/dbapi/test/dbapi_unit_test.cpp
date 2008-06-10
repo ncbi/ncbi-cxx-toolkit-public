@@ -9794,17 +9794,20 @@ CDBAPIUnitTest::Test_StatementParameters(void)
         }
 
         // Use NULL with parameters ...
-        if (false) {
+        if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
             auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             auto_stmt->SetParam( CVariant(eDB_VarChar), "@printfmt_par" );
             auto_stmt->SendSql( " SELECT name FROM syscolumns"
-                                " WHERE id = 4 AND printfmt = @printfmt_par");
+//                                 " WHERE id = 4 AND printfmt = @printfmt_par");
+                                " WHERE printfmt = @printfmt_par");
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs->Next() );
             DumpResults(auto_stmt.get());
+        } else {
+            GetArgs().PutMsgDisabled("Use NULL with parameters");
         }
     }
     catch(const CException& ex) {
@@ -14908,7 +14911,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CRef<const CTestArguments>& args)
         args->PutMsgDisabled("Test_LOB2");
     }
 
-    if (! (args->GetDriverName() == ftds_driver && args->GetServerType() == CDBConnParams::eMSSqlServer) // 06/06/08
+    if (!(args->GetDriverName() == ftds_driver && args->GetServerType() == CDBConnParams::eMSSqlServer) // 06/06/08
+        && !(args->GetDriverName() == odbc_driver) // 06/10/08
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB3, 
             DBAPIInstance);
