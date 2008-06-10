@@ -1269,10 +1269,8 @@ CStatementBase::x_GetCurDataSize(const CDB_Object& param) const
         break;
     case eDB_Char:
     case eDB_VarChar:
-        size = 256;
-        break;
     case eDB_LongChar:
-        size = dynamic_cast<const CDB_LongChar&>(param).DataSize() * sizeof(odbc::TChar);
+        size = dynamic_cast<const CDB_String&>(param).Size() * sizeof(odbc::TChar);
         break;
     case eDB_LongBinary:
         size = dynamic_cast<const CDB_LongBinary&>(param).Size();
