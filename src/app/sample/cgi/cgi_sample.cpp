@@ -130,7 +130,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         return 2;
     }
     SetDiagNode(page.get());
-    
 
     // Register substitution for the template parameters <@MESSAGE@> and
     // <@SELF_URL@>
@@ -226,6 +225,7 @@ void CCgiSampleApplication::x_LookAtArgs()
 
 int main(int argc, const char* argv[])
 {
+    GetDiagContext().SetOldPostFormat(false); // Switch to the new log format
     int result = CCgiSampleApplication().AppMain(argc, argv, 0, eDS_Default);
     _TRACE("back to normal diags");
     return result;
