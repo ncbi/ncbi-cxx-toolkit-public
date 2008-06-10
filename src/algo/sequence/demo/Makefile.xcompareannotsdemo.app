@@ -12,3 +12,5 @@ LIB = xalgoseq taxon1 xalnmgr ncbi_xloader_lds lds bdb xobjread creaders \
 
 LIBS = $(BERKELEYDB_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) \
        $(DL_LIBS) $(ORIG_LIBS)
+
+REQUIRES = bdb
