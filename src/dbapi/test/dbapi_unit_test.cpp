@@ -9792,6 +9792,20 @@ CDBAPIUnitTest::Test_StatementParameters(void)
                 auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name );
             }
         }
+
+        // Use NULL with parameters ...
+        if (false) {
+            auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@printfmt_par" );
+            auto_stmt->SendSql( " SELECT name FROM syscolumns"
+                                " WHERE id = 4 AND printfmt = @printfmt_par");
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            BOOST_CHECK( rs->Next() );
+            DumpResults(auto_stmt.get());
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
