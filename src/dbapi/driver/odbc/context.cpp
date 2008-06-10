@@ -162,8 +162,11 @@ CODBCContextRegistry::ClearAll(void)
         CMutexGuard mg(m_Mutex);
 
         while ( !m_Registry.empty() ) {
-            // x_Close will unregister and remove handler from the registry.
-            m_Registry.back()->x_Close(false);
+			try {
+				// x_Close will unregister and remove handler from the registry.
+				m_Registry.back()->x_Close(false);
+			}
+			NCBI_CATCH_ALL_X(4, "Error closing context");
         }
     }
 }

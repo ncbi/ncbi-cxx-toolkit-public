@@ -66,7 +66,7 @@ NCBI_DEFINE_ERRCODE_X(Dbapi_CTlib_Results, 1121,  3);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Mysql_Conn,    1122,  2);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Mysql_Cmds,    1123,  1);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Conn,     1124,  3);
-NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Context,  1125,  3);
+NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Context,  1125,  4);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Cmds,     1126,  5);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Odbc_Results,  1127,  5);
 NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrWinHook,   1128,  9);
