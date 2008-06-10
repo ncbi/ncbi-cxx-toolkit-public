@@ -401,11 +401,12 @@ exp :
     { 
         $$ = $2;
     } 
-    /* NOT */    
+    /* NOT
     | exp NOT exp
     {
         QTreeAddNode(parm, $$ = $2, $1, $3);
     }
+*/
     /* unary NOT */
     | NOT exp
     {
