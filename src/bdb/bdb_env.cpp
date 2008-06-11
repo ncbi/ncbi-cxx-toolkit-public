@@ -42,6 +42,17 @@
 
 #include <db.h>
 
+// Adaptation to 4.7 flags convention
+#ifndef DB_LOG_INMEMORY
+#define DB_LOG_INMEMORY DB_LOG_IN_MEMORY
+#endif
+#ifndef DB_LOG_AUTOREMOVE
+#define DB_LOG_AUTOREMOVE DB_LOG_AUTO_REMOVE
+#endif
+#ifndef DB_DIRECT_LOG
+#define DB_DIRECT_LOG DB_LOG_DIRECT
+#endif
+
 
 // Berkeley DB 4.4.x reworked and extended the mutex API.
 #if DB_VERSION_MAJOR >= 4 
