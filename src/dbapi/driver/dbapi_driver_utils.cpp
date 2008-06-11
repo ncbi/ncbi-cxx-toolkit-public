@@ -204,6 +204,7 @@ CCachedRowInfo::SInfo::SInfo(const string& name,
 ////////////////////////////////////////////////////////////////////////////////
 CCachedRowInfo::CCachedRowInfo(impl::CDB_Params& bindings)
 : CDBBindedParams(bindings)
+, m_Initialized(false)
 {
 }
 
@@ -215,12 +216,20 @@ CCachedRowInfo::~CCachedRowInfo(void)
 unsigned int 
 CCachedRowInfo::GetNum(void) const
 {
+    if (!IsInitialized()) {
+        Initialize();
+    }
+
     unsigned int num = GetNumInternal(); // For debugging purposes ...
     return num;
 }
 
 unsigned int CCachedRowInfo::FindParamPosInternal(const string& name) const
 {
+    if (!IsInitialized()) {
+        Initialize();
+    }
+
     const size_t param_num = m_Info.size();
 
     for (size_t i = 0; i < param_num; ++i) {
@@ -238,6 +247,10 @@ CCachedRowInfo::GetName(
         const CDBParamVariant& param, 
         CDBParamVariant::ENameFormat format) const
 {
+    if (!IsInitialized()) {
+        Initialize();
+    }
+
     if (param.IsPositional()) {
         unsigned int num = param.GetPosition();
 
@@ -255,6 +268,10 @@ CCachedRowInfo::GetName(
 unsigned int 
 CCachedRowInfo::GetIndex(const CDBParamVariant& param) const
 {
+    if (!IsInitialized()) {
+        Initialize();
+    }
+
     if (param.IsPositional()) {
         return param.GetPosition();
     } else {
@@ -270,6 +287,10 @@ CCachedRowInfo::GetIndex(const CDBParamVariant& param) const
 size_t 
 CCachedRowInfo::GetMaxSize(const CDBParamVariant& param) const
 {
+    if (!IsInitialized()) {
+        Initialize();
+    }
+
     if (param.IsPositional()) {
         unsigned int num = param.GetPosition();
 
@@ -286,6 +307,10 @@ CCachedRowInfo::GetMaxSize(const CDBParamVariant& param) const
 EDB_Type 
 CCachedRowInfo::GetDataType(const CDBParamVariant& param) const
 {
+    if (!IsInitialized()) {
+        Initialize();
+    }
+
     if (param.IsPositional()) {
         unsigned int num = param.GetPosition();
 
@@ -302,6 +327,10 @@ CCachedRowInfo::GetDataType(const CDBParamVariant& param) const
 CDBParams::EDirection 
 CCachedRowInfo::GetDirection(const CDBParamVariant& param) const
 {
+    if (!IsInitialized()) {
+        Initialize();
+    }
+
     if (param.IsPositional()) {
         unsigned int num = param.GetPosition();
 
@@ -323,8 +352,20 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
         impl::CDB_Params& bindings
         )
 : CCachedRowInfo(bindings)
+, m_Name(name)
+, m_Conn(conn)
 {
-    const CDBConnParams::EServerType server_type = conn.GetServerType();
+}
+
+
+CRowInfo_SP_SQL_Server::~CRowInfo_SP_SQL_Server(void)
+{
+}
+
+void 
+CRowInfo_SP_SQL_Server::Initialize(void) const
+{
+    const CDBConnParams::EServerType server_type = GetCConnection().GetServerType();
 
     if (server_type == CDBConnParams::eSybaseSQLServer
         || server_type == CDBConnParams::eMSSqlServer) 
@@ -338,7 +379,7 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
         {
             vector<string> arr_param;
 
-            NStr::Tokenize(name, ".", arr_param);
+            NStr::Tokenize(GetName(), ".", arr_param);
             size_t pos = 0;
 
             switch (arr_param.size()) {
@@ -350,7 +391,7 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
                     sp_name = arr_param[pos++];
                     break;
                 default:
-                    DATABASE_DRIVER_ERROR("Invalid format of stored procedure's name: " + name, 1);
+                    DATABASE_DRIVER_ERROR("Invalid format of stored procedure's name: " + GetName(), 1);
             }
         }
 
@@ -370,8 +411,8 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
                     ;
             }
 
-            CMsgHandlerGuard guard(conn);
-            cmd.reset(conn.LangCmd(sql));
+            CMsgHandlerGuard guard(GetCConnection());
+            cmd.reset(GetCConnection().LangCmd(sql));
             CDB_VarChar sp_name_value(sp_name);
 
             try {
@@ -403,7 +444,7 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
         // auto_ptr<CDB_RPCCmd> sp(conn.RPC("sp_sproc_columns"));
         // We cannot use CDB_RPCCmd here because of recursion ...
         sql = "exec " + db_name + "." + db_owner + ".sp_sproc_columns @procedure_name";
-        cmd.reset(conn.LangCmd(sql));
+        cmd.reset(GetCConnection().LangCmd(sql));
         CDB_VarChar name_value(sp_name);
 
         try {
@@ -516,13 +557,9 @@ CRowInfo_SP_SQL_Server::CRowInfo_SP_SQL_Server(
             // We may not have permissions to run stored procedures ...
         }
     } // if server_type
+
+    SetInitialized();
 }
-
-
-CRowInfo_SP_SQL_Server::~CRowInfo_SP_SQL_Server(void)
-{
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 CMsgHandlerGuard::CMsgHandlerGuard(impl::CConnection& conn)

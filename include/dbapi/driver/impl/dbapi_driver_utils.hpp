@@ -158,7 +158,25 @@ public:
             size_t max_size,
             EDB_Type data_type = eDB_UnsupportedType,
             EDirection direction = eOut
-            );
+            ) const;
+
+protected:
+    // Methods to provide lazy initialization semantic.
+    //
+    virtual void Initialize(void) const
+    {
+        // Enabling an assert below will cause several tests to crash.
+        // _ASSERT(IsInitialized());
+        SetInitialized();
+    }
+    bool IsInitialized(void) const
+    {
+        return m_Initialized;
+    }
+    void SetInitialized() const
+    {
+        m_Initialized = true;
+    }
 
 private:
     // Inline version of virtual function GetNum() ...
@@ -185,7 +203,8 @@ private:
         EDirection m_Direction;
     };
 
-    vector<SInfo> m_Info;
+    mutable bool          m_Initialized;
+    mutable vector<SInfo> m_Info;
 };
 
 
@@ -199,6 +218,21 @@ public:
             impl::CDB_Params& bindings
             );
     virtual ~CRowInfo_SP_SQL_Server(void);
+
+protected:
+    virtual void Initialize(void) const;
+    const string& GetName(void) const
+    {
+        return m_Name;
+    }
+    impl::CConnection& GetCConnection(void) const
+    {
+        return m_Conn;
+    }
+
+private:
+    const string& m_Name;
+    mutable impl::CConnection& m_Conn;
 };
 
 
@@ -228,9 +262,10 @@ CCachedRowInfo::Add(const string& name,
         size_t max_size,
         EDB_Type data_type,
         EDirection direction
-        )
+        ) const
 {
     m_Info.push_back(SInfo(name, max_size, data_type, direction));
+    SetInitialized();
 }
 
 
