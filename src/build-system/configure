@@ -4935,8 +4935,9 @@ fi
 #### Flags to enable (potentially unsafe) extra optimization.
 if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
    case "$compiler:$compiler_version" in
-      GCC:2* )
-        # GCC 2.9x sometimes experiences internal errors at high optimization.
+      GCC:2* | GCC:344 )
+        # GCC 2.9x sometimes experiences internal errors at high optimization;
+        # GCC 3.4.4 (at least on FreeBSD) meanwhile generates crashprone code.
         DEF_FAST_FLAGS="-O2"
         ;;
       GCC:* )
