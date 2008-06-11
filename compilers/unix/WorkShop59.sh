@@ -11,6 +11,13 @@
 
 ## Compiler location and attributes
 WS_BIN="/netopt/studio12/SUNWspro/bin"
+
+case "`$WS_BIN/CC -V 2>&1`" in
+    *2007/??/?? ) # early releases are too buggy to use :-/
+        WS_BIN=/net/nfsaps01/s/`uname -p`/none/pkg/studio12c/SUNWspro/bin
+        ;;
+esac
+
 export WS_BIN
 
 ## Configure using generic script "WorkShop.sh"
