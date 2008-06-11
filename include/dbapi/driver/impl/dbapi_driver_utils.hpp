@@ -165,8 +165,7 @@ protected:
     //
     virtual void Initialize(void) const
     {
-        // Enabling an assert below will cause several tests to crash.
-        // _ASSERT(IsInitialized());
+        _ASSERT(!IsInitialized());
         SetInitialized();
     }
     bool IsInitialized(void) const
@@ -185,7 +184,7 @@ private:
         return m_Info.size();
     }
 
-  unsigned int FindParamPosInternal(const string& name) const;
+    unsigned int FindParamPosInternal(const string& name) const;
 
 private:
     struct SInfo
