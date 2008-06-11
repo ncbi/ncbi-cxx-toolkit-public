@@ -25077,11 +25077,11 @@ fi
          else
             OPENGL_INCLUDE=$X_CFLAGS
          fi
-         if test -d "$OPENGL_PATH/lib"; then
+         if test -d "$OPENGL_PATH/lib${bit64_sfx}"; then
             ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $OPENGL_PATH/lib; do
+    for x in $OPENGL_PATH/lib${bit64_sfx}; do
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -25089,7 +25089,7 @@ fi
  else
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $OPENGL_PATH/lib; do
+    for x in $OPENGL_PATH/lib${bit64_sfx}; do
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -25187,7 +25187,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_OPENGL 1
 _ACEOF
 
-   if test -f "$OPENGL_PATH/lib/libGLU-static.a"; then
+   if test -f "$OPENGL_PATH/lib${bit64_sfx}/libGLU-static.a"; then
       OPENGL_STATIC_LIBS="$OPENGL_LIBPATH -lGLU-static -lGL-static $X_ALL_LIBS"
    else
       OPENGL_STATIC_LIBS=$OPENGL_LIBS
@@ -25203,7 +25203,7 @@ _ACEOF
             ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $with_mesa/lib; do
+    for x in $with_mesa/lib${bit64_sfx}; do
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -25211,7 +25211,7 @@ _ACEOF
  else
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $with_mesa/lib; do
+    for x in $with_mesa/lib${bit64_sfx}; do
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -25300,7 +25300,7 @@ else
 fi
 
    fi
-   if test -f "$OSMESA_PATH/lib/libOSMesa-static.a"; then
+   if test -f "$OSMESA_PATH/lib${bit64_sfx}/libOSMesa-static.a"; then
       OSMESA_STATIC_LIBS="$OSMESA_LDFLAGS $OPENGL_LIBPATH -lOSMesa-static -lGLU-static -lGL-static $X_ALL_LIBS"
    else
       OSMESA_STATIC_LIBS=$OSMESA_LIBS
@@ -25315,7 +25315,7 @@ fi
          ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $with_glut/lib; do
+    for x in $with_glut/lib${bit64_sfx}; do
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -25323,7 +25323,7 @@ fi
  else
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $with_glut/lib; do
+    for x in $with_glut/lib${bit64_sfx}; do
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`

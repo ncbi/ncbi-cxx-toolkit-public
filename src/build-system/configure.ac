@@ -4225,8 +4225,9 @@ if test "$with_opengl" != "no"; then
          else
             OPENGL_INCLUDE=$X_CFLAGS
          fi
-         if test -d "$OPENGL_PATH/lib"; then
-            NCBI_RPATHIFY(OPENGL_LIBPATH, $OPENGL_PATH/lib, [ ]$X_LIBS)
+         if test -d "$OPENGL_PATH/lib${bit64_sfx}"; then
+            NCBI_RPATHIFY(OPENGL_LIBPATH, $OPENGL_PATH/lib${bit64_sfx},
+                          [ ]$X_LIBS)
          fi
          OPENGL_LIBS="$OPENGL_LIBPATH -lGLU -lGL $X_ALL_LIBS"
          ;;
@@ -4263,7 +4264,7 @@ if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
 else
    NCBI_PACKAGE(OpenGL)
    AC_DEFINE(HAVE_OPENGL, 1, [Define to 1 if you have OpenGL (-lGL).])
-   if test -f "$OPENGL_PATH/lib/libGLU-static.a"; then
+   if test -f "$OPENGL_PATH/lib${bit64_sfx}/libGLU-static.a"; then
       OPENGL_STATIC_LIBS="$OPENGL_LIBPATH -lGLU-static -lGL-static $X_ALL_LIBS"
    else
       OPENGL_STATIC_LIBS=$OPENGL_LIBS
@@ -4276,7 +4277,7 @@ else
       if test -n "$with_mesa" -a "$with_mesa" != "yes"; then
          OSMESA_INCLUDE=-I$with_mesa/include
          if test "$with_mesa" != "$OPENGL_PATH"; then
-            NCBI_RPATHIFY(OSMESA_LDFLAGS, $with_mesa/lib)
+            NCBI_RPATHIFY(OSMESA_LDFLAGS, $with_mesa/lib${bit64_sfx})
          fi
       fi
       LDFLAGS="$orig_LDFLAGS $OSMESA_LDFLAGS $OPENGL_LIBPATH"
@@ -4287,7 +4288,7 @@ else
          [OSMESA_LIBS=],
          $OPENGL_LIBS)
    fi
-   if test -f "$OSMESA_PATH/lib/libOSMesa-static.a"; then
+   if test -f "$OSMESA_PATH/lib${bit64_sfx}/libOSMesa-static.a"; then
       OSMESA_STATIC_LIBS="$OSMESA_LDFLAGS $OPENGL_LIBPATH -lOSMesa-static -lGLU-static -lGL-static $X_ALL_LIBS"
    else
       OSMESA_STATIC_LIBS=$OSMESA_LIBS
@@ -4299,7 +4300,7 @@ else
       fi
       if test -n "$with_glut" -a "$with_glut" != "yes"; then
          GLUT_INCLUDE=-I$with_glut/include
-         NCBI_RPATHIFY(GLUT_LDFLAGS, $with_glut/lib)
+         NCBI_RPATHIFY(GLUT_LDFLAGS, $with_glut/lib${bit64_sfx})
       fi
       LDFLAGS="$orig_LDFLAGS $GLUT_LDFLAGS $OPENGL_LIBPATH"
       AC_CHECK_LIB(glut, glutInit,
