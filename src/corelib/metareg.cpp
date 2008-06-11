@@ -96,18 +96,6 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
 }
 
 
-CMetaRegistry::SEntry& CMetaRegistry::SEntry::operator=(const SEntry& entry)
-{
-    actual_name = entry.actual_name;
-    flags       = entry.flags;
-    reg_flags   = entry.reg_flags;
-    registry    = entry.registry;
-    timestamp   = entry.timestamp;
-    length      = entry.length;
-    return *this;
-}
-
-
 CMetaRegistry& CMetaRegistry::Instance(void)
 {
     return *s_Instance;

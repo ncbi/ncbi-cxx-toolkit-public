@@ -91,11 +91,6 @@ public:
         /// @return
         ///   TRUE if a reload actually occurred.
         bool Reload(TFlags reload_flags = fReloadIfChanged);
-
-        /// Assignment operator; doesn't do anything special, but
-        /// older patch levels of Workshop 5.9 otherwise segfault when
-        /// generating the relevant code. :-/
-        SEntry& operator=(const SEntry& entry);
     };
 
     static CMetaRegistry& Instance(void);
