@@ -31,7 +31,7 @@ script_dir=`(cd "$script_dir"; pwd)`
 
 # Make timestamp
 timestamp_file="/tmp/check_exec_timestamp.$$"
-touch timestamp_file
+touch $timestamp_file
 
 # Reinforce timeout
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
@@ -52,7 +52,7 @@ status=$?
 
 # Special check for core file on Darwin
 if [ $status != 0  -a  `uname -s` = "Darwin" -a -d "/cores" ]; then
-   core_files=`find /cores/core.* -newer timestamp_file 2>/dev/null`
+   core_files=`find /cores/core.* -newer $timestamp_file 2>/dev/null`
    for core in $core_files ; do
       if [ -O "$core" ]; then
          # Move the core file to current directory with name "core"
@@ -62,7 +62,7 @@ if [ $status != 0  -a  `uname -s` = "Darwin" -a -d "/cores" ]; then
       fi
    done
 fi
-rm timestamp_file > /dev/null 2>&1
+rm $timestamp_file > /dev/null 2>&1
 
 # Return test exit code
 exit $status
