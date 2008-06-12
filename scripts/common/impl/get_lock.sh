@@ -8,7 +8,7 @@ user=$REMOTE_USER
 # XXX - try to detect and clean stale locks, either once or every iteration?
 
 seconds=0
-while [ "$seconds" -lt 1800 ]; do
+while [ "$seconds" -lt 900 ]; do
     if mkdir $dir >/dev/null 2>&1; then
         [ "$seconds" = 0 ] || echo
         echo $1    > "$dir/command"
