@@ -83,15 +83,15 @@ public:
 
 
 
-/// Type of task identifier
-typedef unsigned int TScheduler_TaskID;
+/// Type of scheduled series identifier
+typedef unsigned int TScheduler_SeriesID;
 
 
-/// Information about scheduled task
-struct NCBI_XUTIL_EXPORT SScheduler_TaskInfo
+/// Information about scheduled series
+struct NCBI_XUTIL_EXPORT SScheduler_SeriesInfo
 {
-    /// Identifier of the task
-    TScheduler_TaskID       id;
+    /// Identifier of the series
+    TScheduler_SeriesID     id;
 
     /// Smart-pointer to the task
     CIRef<IScheduler_Task>  task;
@@ -113,9 +113,11 @@ public:
     ///   Task to execute
     /// @param exec_time
     ///   Time when the task should be executed
+    /// @return
+    ///   Id of scheduled series (this particular task addition)
     virtual
-    TScheduler_TaskID AddTask(IScheduler_Task*  task,
-                              const CTime&      exec_time) = 0;
+    TScheduler_SeriesID AddTask(IScheduler_Task*  task,
+                                const CTime&      exec_time) = 0;
 
 
     /// How to run repetitive tasks
@@ -138,23 +140,39 @@ public:
     ///   When to start repetitive task executions
     /// @param rate_period
     ///   Time period between the executions
+    /// @return
+    ///   Id of scheduled series (this particular task addition)
     virtual
-    TScheduler_TaskID AddRepetitiveTask(IScheduler_Task*  task,
-                                        const CTime&      start_time,
-                                        const CTimeSpan&  period,
-                                        ERepeatPattern    repeat_pattern) = 0;
+    TScheduler_SeriesID AddRepetitiveTask(IScheduler_Task* task,
+                                          const CTime&     start_time,
+                                          const CTimeSpan& period,
+                                          ERepeatPattern   repeat_pattern) = 0;
 
 
-    /// Unschedule task
+    /// Unschedule scheduled series
     /// @note
-    ///   Do nothing if there is no task with this ID in the scheduler queue
+    ///   Do nothing if there is no series with this ID in the scheduler queue
     virtual
-    void RemoveTask(TScheduler_TaskID task_id) = 0;
+    void RemoveSeries(TScheduler_SeriesID series_id) = 0;
 
 
-    /// Get list of all scheduled tasks
+    /// Unschedule all series related to the task
+    /// @note
+    ///   Do nothing if there is no such task in the scheduler queue.
+    ///   If this task was added several times then unschedule all relevant
+    ///   scheduled series.
     virtual
-    vector<SScheduler_TaskInfo> GetScheduledTasks(void) const = 0;
+    void RemoveTask(IScheduler_Task* task) = 0;
+
+
+    /// Unschedule all tasks
+    virtual
+    void RemoveAllSeries(void) = 0;
+
+
+    /// Get list of all scheduled series
+    virtual
+    void GetScheduledSeries(vector<SScheduler_SeriesInfo>* series) const = 0;
 
 
     /// Add listener which will be notified whenever the time of the earliest
@@ -174,9 +192,16 @@ public:
 
     /// Get next time point when scheduler will be ready to execute a task
     /// @note
-    ///   The returned time can be in the past
+    ///   The returned time can be in the past.
+    ///   If there are no tasks (or only the 'eWithDelay' tasks that are
+    ///   still executing at the time) then an "infinite" time will be returned
     virtual
     CTime GetNextExecutionTime(void) const = 0;
+
+
+    /// Check if there are any tasks in scheduler queue (if it is not empty)
+    virtual
+    bool IsEmpty(void) const = 0;
 
 
     /// Check if there are tasks ready to be executed
@@ -190,29 +215,33 @@ public:
     /// @param now
     ///   Moment in time against which to check
     /// @note
-    ///   You must(!) call TaskFinished() when this task has finished executing
+    ///   You must(!) call TaskExecuted() when this task has finished executing
     /// @note
     ///   If there are no tasks to execute at the specified time, then
     ///   return {id=0, task=NULL}
-    /// @sa TaskFinished()
+    ///
+    /// @sa TaskExecuted()
     virtual
-    SScheduler_TaskInfo GetNextTaskToExecute(const CTime& now) = 0;
+    SScheduler_SeriesInfo GetNextTaskToExecute(const CTime& now) = 0;
 
 
     /// This method must be called when the task execution has finished.
+    /// Scheduler assumes that scheduled task execution starts after call to
+    /// GetNextTaskToExecute() and finishes after call to this method.
+    ///
     /// The scheduler will:
     ///  - if it's a one-time task, then remove the task for good;
     ///  - if it's a repetitive and "eWithDelay" task, then schedule the task
     ///    for subsequent execution.
     ///
-    /// @param task_id
-    ///   Identificator of the task
+    /// @param series_id
+    ///   Identificator of the scheduled series
     /// @param now
     ///   Time when the task has finished executing
     ///
-    /// @sa AddTask(), AddRepetitiveTask(), RemoveTask()
+    /// @sa AddTask(), AddRepetitiveTask(), RemoveSeries(), RemoveTask()
     virtual
-    void TaskFinished(TScheduler_TaskID task_id, const CTime& now) = 0;
+    void TaskExecuted(TScheduler_SeriesID series_id, const CTime& now) = 0;
 
 
     /// Pure virtual destructor

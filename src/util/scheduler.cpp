@@ -48,8 +48,8 @@ BEGIN_NCBI_SCOPE
 class CScheduler_QueueEvent : public CObject
 {
 public:
-    /// Id of the task
-    TScheduler_TaskID       id;
+    /// Id of the series
+    TScheduler_SeriesID     id;
     /// Task itself
     CIRef<IScheduler_Task>  task;
     /// Time when this event will be executed
@@ -73,6 +73,25 @@ public:
 
     /// Repeating pattern of the task
     ERepeatPattern          repeat_pattern;
+
+
+    /// Check if this event matches given series id
+    bool IsMatch(TScheduler_SeriesID id) const
+    {
+        return this->id == id;
+    }
+
+    /// Check if this event matches given task
+    bool IsMatch(IScheduler_Task* task) const
+    {
+        return this->task == task;
+    }
+
+    /// Dummy function to support code templates and avoid duplication of code
+    bool isMatch(bool dummy_val) const
+    {
+        return dummy_val;
+    }
 };
 
 
@@ -97,23 +116,31 @@ class CScheduler_MT
 public:
     /// Schedule task for one-time execution
     virtual
-    TScheduler_TaskID AddTask(IScheduler_Task* task,
-                              const CTime&     exec_time);
+    TScheduler_SeriesID AddTask(IScheduler_Task* task,
+                                const CTime&     exec_time);
 
     /// Schedule task for repetitive execution
     virtual
-    TScheduler_TaskID AddRepetitiveTask(IScheduler_Task*  task,
-                                        const CTime&      start_time,
-                                        const CTimeSpan&  period,
-                                        ERepeatPattern    repeat_pattern);
+    TScheduler_SeriesID AddRepetitiveTask(IScheduler_Task*  task,
+                                          const CTime&      start_time,
+                                          const CTimeSpan&  period,
+                                          ERepeatPattern    repeat_pattern);
+
+    /// Remove series from scheduler queue
+    virtual
+    void RemoveSeries(TScheduler_SeriesID series_id);
 
     /// Remove task from scheduler queue
     virtual
-    void RemoveTask(TScheduler_TaskID task_id);
+    void RemoveTask(IScheduler_Task* task);
 
-    /// Get full scheduled tasks list
+    /// Unschedule all series waiting in scheduler queue
     virtual
-    vector<SScheduler_TaskInfo> GetScheduledTasks(void) const;
+    void RemoveAllSeries(void);
+
+    /// Get full scheduler series list
+    virtual
+    void GetScheduledSeries(vector<SScheduler_SeriesInfo>* series) const;
 
     /// Add listener which will be notified about changing in time
     /// of availability of next scheduled task
@@ -129,6 +156,10 @@ public:
     virtual
     CTime GetNextExecutionTime(void) const;
 
+    /// Check if there are tasks in scheduler queue (if it is not empty)
+    virtual
+    bool IsEmpty(void) const;
+
     /// Check if there are tasks ready to execute
     virtual
     bool HasTasksToExecute(const CTime& now) const;
@@ -136,11 +167,11 @@ public:
     /// Get information about next task that is ready to execute
     /// If there are no tasks to execute then return id = 0 and task = NULL
     virtual
-    SScheduler_TaskInfo GetNextTaskToExecute(const CTime& now);
+    SScheduler_SeriesInfo GetNextTaskToExecute(const CTime& now);
 
     /// Be aware that task was just finished its execution
     virtual
-    void TaskFinished(TScheduler_TaskID task_id, const CTime& now);
+    void TaskExecuted(TScheduler_SeriesID series_id, const CTime& now);
 
     /// Constructor
     CScheduler_MT(void);
@@ -156,7 +187,7 @@ private:
 
     /// Schedule task execution
     /// @param id
-    ///   id of the task. if 0 then it is assigned automatically
+    ///   id of the scheduler series. if 0 then it is assigned automatically
     /// @param task
     ///   Task to execute
     /// @param exec_time
@@ -168,19 +199,17 @@ private:
     /// @param isDelay
     ///   Whether period is executed from the beginning oor from the ending
     ///   of the task execution
-    TScheduler_TaskID x_AddQueueTask
+    /// @param guard
+    ///   Guard for the main mutex which will be released at the end of method
+    TScheduler_SeriesID x_AddQueueTask
     (
-        TScheduler_TaskID                      id,
+        TScheduler_SeriesID                    id,
         IScheduler_Task*                       task,
         const CTime&                           exec_time,
         const CTimeSpan&                       period,
-        CScheduler_QueueEvent::ERepeatPattern  repeat_pattern
+        CScheduler_QueueEvent::ERepeatPattern  repeat_pattern,
+        CMutexGuard*                           guard
     );
-
-    /// Change next execution time if given value is less
-    /// @return
-    ///   TRUE - if next execution time changed, FALSE - otherwise
-    bool x_AdjustNextExecTime(const CTime& exec_time);
 
     /// Change next execution time when queue of scheduled tasks is changed.
     /// Notify all listeners about change if needed.
@@ -189,6 +218,15 @@ private:
     ///   notification of listeners. NB: after method execution mutex is not
     ///   locked anymore.
     void x_SchedQueueChanged(CMutexGuard* guard);
+
+    /// Implementation of removing task from queue.
+    /// The task is searched by criteria given as a parameter. Parameter
+    /// can be of any type that is accepted by
+    /// CScheduler_QueueEvent::IsMatch().
+    ///
+    /// @sa CScheduler_QueueEvent::IsMatch(), RemoveSeries(), RemoveTask()
+    template <class T>
+    void x_RemoveTaskImpl(T task);
 
 
     /// Type of queue for information about scheduled tasks
@@ -230,14 +268,15 @@ CScheduler_MT::~CScheduler_MT(void)
 {
 }
 
-TScheduler_TaskID
+TScheduler_SeriesID
 CScheduler_MT::x_AddQueueTask
 (
-    TScheduler_TaskID                      id,
+    TScheduler_SeriesID                    id,
     IScheduler_Task*                       task,
     const CTime&                           exec_time,
     const CTimeSpan&                       period,
-    CScheduler_QueueEvent::ERepeatPattern  repeat_pattern
+    CScheduler_QueueEvent::ERepeatPattern  repeat_pattern,
+    CMutexGuard*                           guard
 )
 {
     // Be sure that task is referenced and will be destroyed in case
@@ -256,14 +295,10 @@ CScheduler_MT::x_AddQueueTask
     event_info->period = period;
     event_info->repeat_pattern = repeat_pattern;
 
-    {{
-        CMutexGuard guard(m_MainMutex);
+    m_ScheduledTasks.push_back(event_info);
 
-        m_ScheduledTasks.push_back(event_info);
-
-        x_SchedQueueChanged(&guard);
-        // Mutex unlocked!!!
-    }}
+    x_SchedQueueChanged(guard);
+    // Mutex unlocked!!!
 
     return id;
 }
@@ -298,34 +333,40 @@ CScheduler_MT::x_SchedQueueChanged(CMutexGuard* guard)
     }
 }
 
-TScheduler_TaskID
+TScheduler_SeriesID
 CScheduler_MT::AddTask(IScheduler_Task* task, const CTime& exec_time)
 {
+    CMutexGuard guard(m_MainMutex);
+
     return x_AddQueueTask(0, task, exec_time, CTimeSpan(),
-                          CScheduler_QueueEvent::eNoRepeat);
+                          CScheduler_QueueEvent::eNoRepeat, &guard);
 }
 
-TScheduler_TaskID
+TScheduler_SeriesID
 CScheduler_MT::AddRepetitiveTask(IScheduler_Task*  task,
                                  const CTime&      start_time,
                                  const CTimeSpan&  period,
                                  ERepeatPattern    repeat_pattern)
 {
+    CMutexGuard guard(m_MainMutex);
+
     return x_AddQueueTask(0, task, start_time, period,
-                       CScheduler_QueueEvent::ERepeatPattern(repeat_pattern));
+                       CScheduler_QueueEvent::ERepeatPattern(repeat_pattern),
+                       &guard);
 }
 
-void
-CScheduler_MT::RemoveTask(TScheduler_TaskID task_id)
+template <class T>
+inline void
+CScheduler_MT::x_RemoveTaskImpl(T task)
 {
-    TMutexGuard guard(m_MainMutex);
+    CMutexGuard guard(m_MainMutex);
 
     bool is_begin_removed = false;
 
     for (TSchedQueue::iterator it = m_ScheduledTasks.begin();
                                 it != m_ScheduledTasks.end(); )
     {
-        if ((*it)->id == task_id) {
+        if ((*it)->IsMatch(task)) {
             if (it == m_ScheduledTasks.begin()) {
                 is_begin_removed = true;
             }
@@ -336,30 +377,61 @@ CScheduler_MT::RemoveTask(TScheduler_TaskID task_id)
         }
     }
 
+    ITERATE(TExecList, it, m_ExecutingTasks) {
+        if ((*it)->IsMatch(task)) {
+            it->GetNCPointer()->repeat_pattern = CScheduler_QueueEvent::eNoRepeat;
+        }
+    }
+
     if (is_begin_removed) {
         x_SchedQueueChanged(&guard);
         // Mutex unlocked!!!
     }
 }
 
-vector<SScheduler_TaskInfo>
-CScheduler_MT::GetScheduledTasks(void) const
+void
+CScheduler_MT::RemoveSeries(TScheduler_SeriesID series_id)
 {
-    vector<SScheduler_TaskInfo> tasks;
-    tasks.resize(m_ScheduledTasks.size());
+    x_RemoveTaskImpl(series_id);
+}
+
+void
+CScheduler_MT::RemoveTask(IScheduler_Task* task)
+{
+    x_RemoveTaskImpl(task);
+}
+
+void
+CScheduler_MT::RemoveAllSeries(void)
+{
+    x_RemoveTaskImpl(true);
+}
+
+void
+CScheduler_MT::GetScheduledSeries(vector<SScheduler_SeriesInfo>* series) const
+{
+    series->clear();
 
     {{
-        TMutexGuard guard(m_MainMutex);
+        CMutexGuard guard(m_MainMutex);
 
+        series->resize(m_ScheduledTasks.size());
         size_t ind = 0;
         ITERATE (TSchedQueue, it, m_ScheduledTasks) {
-            tasks[ind].id  = (*it)->id;
-            tasks[ind].task = (*it)->task;
+            (*series)[ind].id   = (*it)->id;
+            (*series)[ind].task = (*it)->task;
             ++ind;
         }
-    }}
 
-    return tasks;
+        ITERATE(TExecList, it, m_ExecutingTasks) {
+            if ((*it)->repeat_pattern != CScheduler_QueueEvent::eNoRepeat) {
+                series->resize(ind + 1);
+                (*series)[ind].id   = (*it)->id;
+                (*series)[ind].task = (*it)->task;
+                ++ind;
+            }
+        }
+    }}
 }
 
 void
@@ -392,6 +464,26 @@ CScheduler_MT::GetNextExecutionTime(void) const
 }
 
 bool
+CScheduler_MT::IsEmpty(void) const
+{
+    CMutexGuard guard(m_MainMutex);
+
+    bool result = !m_ScheduledTasks.empty();
+
+    if (!result) {
+        ITERATE(TExecList, it, m_ExecutingTasks) {
+            if ((*it)->repeat_pattern != CScheduler_QueueEvent::eNoRepeat)
+            {
+                result = true;
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+
+bool
 CScheduler_MT::HasTasksToExecute(const CTime& now) const
 {
     CMutexGuard guard(m_MainMutex);
@@ -399,15 +491,15 @@ CScheduler_MT::HasTasksToExecute(const CTime& now) const
     return m_NextExecTime <= now;
 }
 
-SScheduler_TaskInfo
+SScheduler_SeriesInfo
 CScheduler_MT::GetNextTaskToExecute(const CTime& now)
 {
-    SScheduler_TaskInfo res_info;
+    SScheduler_SeriesInfo res_info;
     res_info.id = 0;
     CRef<CScheduler_QueueEvent> event_info;
 
     {{
-        TMutexGuard guard(m_MainMutex);
+        CMutexGuard guard(m_MainMutex);
 
         if (m_ScheduledTasks.size() == 0
             ||  (*m_ScheduledTasks.begin())->exec_time > now)
@@ -419,40 +511,44 @@ CScheduler_MT::GetNextTaskToExecute(const CTime& now)
         m_ScheduledTasks.pop_front();
         m_ExecutingTasks.push_back(event_info);
 
-        x_SchedQueueChanged(&guard);
-        // Mutex unlocked!!!
+        res_info.id   = event_info->id;
+        res_info.task = event_info->task;
+
+        if (event_info->repeat_pattern == CScheduler_QueueEvent::eWithRate) {
+            x_AddQueueTask(event_info->id,
+                           event_info->task,
+                           event_info->exec_time + event_info->period,
+                           event_info->period,
+                           event_info->repeat_pattern,
+                           &guard);
+            // Mutex unlocked!!!
+            // x_SchedQueueChanged() is called inside x_AddQueueTask()
+        }
+        else {
+            // x_SchedQueueChanged() should be called anyway because we've changed
+            // the beginning of the queue
+            x_SchedQueueChanged(&guard);
+            // Mutex unlocked!!!
+        }
     }}
-
-    res_info.id   = event_info->id;
-    res_info.task = event_info->task;
-
-    if (event_info->repeat_pattern == CScheduler_QueueEvent::eWithRate) {
-        x_AddQueueTask(event_info->id,
-                       event_info->task,
-                       event_info->exec_time + event_info->period,
-                       event_info->period,
-                       event_info->repeat_pattern);
-    }
 
     return res_info;
 }
 
 void
-CScheduler_MT::TaskFinished(TScheduler_TaskID task_id, const CTime& now)
+CScheduler_MT::TaskExecuted(TScheduler_SeriesID series_id, const CTime& now)
 {
+    CMutexGuard guard(m_MainMutex);
+
     CRef<CScheduler_QueueEvent> event_info;
 
-    {{
-        TMutexGuard guard(m_MainMutex);
-
-        NON_CONST_ITERATE(TExecList, it, m_ExecutingTasks) {
-            if ((*it)->id == task_id) {
-                event_info = *it;
-                m_ExecutingTasks.erase(it);
-                break;
-            }
+    NON_CONST_ITERATE(TExecList, it, m_ExecutingTasks) {
+        if ((*it)->IsMatch(series_id)) {
+            event_info = *it;
+            m_ExecutingTasks.erase(it);
+            break;
         }
-    }}
+    }
 
     if (event_info.IsNull()) {
         return;
@@ -463,7 +559,9 @@ CScheduler_MT::TaskFinished(TScheduler_TaskID task_id, const CTime& now)
                        event_info->task,
                        now + event_info->period,
                        event_info->period,
-                       event_info->repeat_pattern);
+                       event_info->repeat_pattern,
+                       &guard);
+        // Mutex unlocked!!!
     }
 }
 
@@ -560,7 +658,7 @@ CScheduler_ExecThread_Impl::Main(void)
         if ( !m_Stopped ) {
             cur_time.SetCurrent();
             for (;;) {
-                SScheduler_TaskInfo task_info =
+                SScheduler_SeriesInfo task_info =
                     m_Scheduler->GetNextTaskToExecute(cur_time);
 
                 if (task_info.task.IsNull())
@@ -578,7 +676,7 @@ CScheduler_ExecThread_Impl::Main(void)
                     break;
 
                 cur_time.SetCurrent();
-                m_Scheduler->TaskFinished(task_info.id, cur_time);
+                m_Scheduler->TaskExecuted(task_info.id, cur_time);
             }
         }
     }
