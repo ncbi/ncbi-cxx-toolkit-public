@@ -1664,7 +1664,19 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
             CJob& job = batch[i];
             if (job.GetAffinityId() == (unsigned)kMax_I4) { // take prev. token
                 _ASSERT(i > 0);
-                job.SetAffinityId(batch[i-1].GetAffinityId());
+                unsigned prev_aff_id = 0;
+                if (i > 0) {
+                    prev_aff_id = batch[i-1].GetAffinityId();
+                    if (!prev_aff_id) {
+                        prev_aff_id = 0;
+                        LOG_POST(Warning << "Reference to empty previous "
+                                            "affinity token");
+                    }
+                } else {
+                    LOG_POST(Warning << "First job in batch cannot have "
+                                        "reference to previous affinity token");
+                }
+                job.SetAffinityId(prev_aff_id);
             } else {
                 if (job.HasAffinityToken()) {
                     job.CheckAffinityToken(q, trans);

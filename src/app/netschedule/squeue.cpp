@@ -541,6 +541,9 @@ bool CJob::Flush(SLockedQueue* queue)
     if (!m_Dirty) return true;
     // We can not run CheckAffinityToken during flush because of locking
     // constraints, so we assert that it was run before flush.
+    if (m_AffinityToken.size() && !m_AffinityId) {
+        LOG_POST(Error << "CheckAffinityToken call missed");
+    }
     _ASSERT(!m_AffinityToken.size() || m_AffinityId);
     SQueueDB&   job_db      = queue->db;
     SJobInfoDB& job_info_db = queue->m_JobInfoDB;
@@ -775,18 +778,7 @@ SLockedQueue::SLockedQueue(const string& queue_name,
 SLockedQueue::~SLockedQueue()
 {
     delete run_time_line;
-    if (delete_database) {
-        //CBDB_File deleter;
-        db.Close();
-        m_AffinityIdx.Close();
-        affinity_dict.Close();
-        m_TagDb.Close();
-        ITERATE(vector<string>, it, files) {
-            // NcbiCout << "Wiping out " << *it << NcbiEndl;
-            //deleter.Remove(*it);
-            CFile(*it).Remove();
-        }
-    }
+    Close();
     m_StatThread->RequestStop();
     m_StatThread->Join(NULL);
 }
@@ -794,50 +786,76 @@ SLockedQueue::~SLockedQueue()
 void SLockedQueue::Open(CBDB_Env& env, const string& path)
 {
     string prefix = string("jsq_") + m_QueueName;
-    string fname = prefix + ".db";
-    db.SetEnv(env);
 
-    // TODO: RevSplitOff make sense only for long living queues,
-    // for dynamic ones it slows down the process, but because queue
-    // if eventually is disposed of, it does not make sense to save
-    // space here
-    db.RevSplitOff();
-    db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-    x_ReadFieldInfo();
-    files.push_back(path + fname);
+    try {
+        string fname = prefix + ".db";
+        if (!CDirEntry(path+fname).Exists())
+            delete_database = true;
+        db.SetEnv(env);
+        // TODO: RevSplitOff make sense only for long living queues,
+        // for dynamic ones it slows down the process, but because queue
+        // if eventually is disposed of, it does not make sense to save
+        // space here
+        db.RevSplitOff();
+        db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        x_ReadFieldInfo();
+        files.push_back(path + fname);
 
-    fname = prefix + "_jobinfo.db";
-    m_JobInfoDB.SetEnv(env);
-    m_JobInfoDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-    files.push_back(path + fname);
+        fname = prefix + "_jobinfo.db";
+        m_JobInfoDB.SetEnv(env);
+        m_JobInfoDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        files.push_back(path + fname);
 
-    fname = prefix + "_runs.db";
-    m_RunsDB.SetEnv(env);
-    m_RunsDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-    files.push_back(path + fname);
+        fname = prefix + "_runs.db";
+        m_RunsDB.SetEnv(env);
+        m_RunsDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        files.push_back(path + fname);
 
-    fname = prefix + "_deleted.db";
-    m_DeletedJobsDB.SetEnv(env);
-    m_DeletedJobsDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-    files.push_back(path + fname);
+        fname = prefix + "_deleted.db";
+        m_DeletedJobsDB.SetEnv(env);
+        m_DeletedJobsDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        files.push_back(path + fname);
 
-    fname = prefix + "_affid.idx";
-    m_AffinityIdx.SetEnv(env);
-    m_AffinityIdx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-    files.push_back(path + fname);
+        fname = prefix + "_affid.idx";
+        m_AffinityIdx.SetEnv(env);
+        m_AffinityIdx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        files.push_back(path + fname);
 
-    affinity_dict.Open(env, m_QueueName);
-    files.push_back(path + prefix + "_affdict.db");
-    files.push_back(path + prefix + "_affdict_token.idx");
+        affinity_dict.Open(env, m_QueueName);
+        files.push_back(path + prefix + "_affdict.db");
+        files.push_back(path + prefix + "_affdict_token.idx");
 
-    fname = prefix + "_tag.idx";
-    m_TagDb.SetEnv(env);
-    m_TagDb.SetPageSize(32*1024);
-    m_TagDb.RevSplitOff();
-    m_TagDb.Open(fname, CBDB_RawFile::eReadWriteCreate);
-    files.push_back(path + fname);
+        fname = prefix + "_tag.idx";
+        m_TagDb.SetEnv(env);
+        m_TagDb.SetPageSize(32*1024);
+        m_TagDb.RevSplitOff();
+        m_TagDb.Open(fname, CBDB_RawFile::eReadWriteCreate);
+        files.push_back(path + fname);
 
-    last_notif = time(0);
+        last_notif = time(0);
+    } catch (CBDB_ErrnoException& ex) {
+        Close();
+        throw;
+    }
+    delete_database = false;
+}
+
+
+void SLockedQueue::Close()
+{
+    m_TagDb.Close();
+    affinity_dict.Close();
+    m_AffinityIdx.Close();
+    m_DeletedJobsDB.Close();
+    m_RunsDB.Close();
+    m_JobInfoDB.Close();
+    db.Close();
+    if (delete_database) {
+        ITERATE(vector<string>, it, files) {
+            // NcbiCout << "Wiping out " << *it << NcbiEndl;
+            CFile(*it).Remove();
+        }
+    }
 }
 
 

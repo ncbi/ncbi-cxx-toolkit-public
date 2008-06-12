@@ -1312,6 +1312,7 @@ void CNetScheduleHandler::ProcessMsgBatchJob(BUF buffer)
     job.SetInput(m_JobReq.input);
     if (m_JobReq.param1 == "affp") {
         job.SetAffinityId(kMax_I4);
+        job.SetAffinityToken("");
     } else {
         job.SetAffinityToken(m_JobReq.affinity_token);
     }

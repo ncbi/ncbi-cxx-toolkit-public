@@ -474,6 +474,8 @@ public:
     ~SLockedQueue();
 
     void Open(CBDB_Env& env, const string& path);
+    void Close();
+
     void x_ReadFieldInfo(void);
 
     // Thread-safe parameter set
