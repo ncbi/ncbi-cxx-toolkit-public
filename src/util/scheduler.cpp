@@ -84,11 +84,11 @@ public:
     /// Check if this event matches given task
     bool IsMatch(IScheduler_Task* task) const
     {
-        return this->task == task;
+        return &*this->task == task;
     }
 
     /// Dummy function to support code templates and avoid duplication of code
-    bool isMatch(bool dummy_val) const
+    bool IsMatch(bool dummy_val) const
     {
         return dummy_val;
     }
