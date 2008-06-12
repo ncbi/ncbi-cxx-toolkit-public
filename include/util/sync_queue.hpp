@@ -893,7 +893,8 @@ public:
         // Without std:: MSVC8 doesn't compile this code
         TBaseType::insert(std::upper_bound(TBaseType::begin(),
                                            TBaseType::end(),
-                                           elem), elem);
+                                           elem,
+                                           TBaseType::key_comp()), elem);
     }
     typename TBaseType::const_reference front() const
     { return *TBaseType::begin();                                 }
