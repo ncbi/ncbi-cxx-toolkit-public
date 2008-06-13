@@ -51,7 +51,7 @@ USING_SCOPE(objects);
 
 /// CCompareSeq_locs is used for comparing locations of two features on the same coordinate system
 /// It is agnostic to what type of feature it is and only compares the internal structure of the locs.
-class CCompareSeq_locs : public CObject
+class NCBI_XALGOSEQ_EXPORT CCompareSeq_locs : public CObject
 {
 public:
     typedef int TCompareLocsFlags;
@@ -295,7 +295,7 @@ private:
 /// CCompareFeats represens a result of comparison of two features. 
 /// (CCompareFeats::m_compare stores the actual result)
 /// These comparisons will be produces by CCompare_Regions
-class CCompareFeats : public CObject
+class NCBI_XALGOSEQ_EXPORT CCompareFeats : public CObject
 {
 public:
     CCompareFeats(const CSeq_feat& feat1
@@ -433,7 +433,7 @@ private:
 ///////////////////////////////////////////////////////////////////////////////
 
 /// Compare multiple feature annotations on the specified seq_locs.
-class CCompareSeqRegions : public CObject
+class NCBI_XALGOSEQ_EXPORT CCompareSeqRegions : public CObject
 {
 public:
     enum EScoreMethod {
