@@ -229,9 +229,10 @@ public:
                          int  patch_level = 0,
                          const string& ver_name = kEmptyStr);
     /// Set version information
-    void SetVersionInfo( const CVersionInfo& version);
+    /// @note Takes the ownership over the passed VersionInfo object 
+    void SetVersionInfo( CVersionInfo* version);
     /// Get version information
-    CVersionInfo GetVersionInfo( ) const;
+    const CVersionInfo& GetVersionInfo( ) const;
 
     /// Add component version information
     void AddComponentVersion( const string& component_name,
@@ -240,7 +241,8 @@ public:
                               int           patch_level = 0,
                               const string& ver_name = kEmptyStr);
     /// Add component version information
-    void AddComponentVersion( const CComponentVersionInfo& component);
+    /// @note Takes the ownership over the passed VersionInfo object 
+    void AddComponentVersion( CComponentVersionInfo* component);
 
     static string GetPackageName(void);
     static CVersionInfo GetPackageVersion(void);

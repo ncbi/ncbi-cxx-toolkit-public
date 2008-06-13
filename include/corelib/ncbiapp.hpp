@@ -358,7 +358,7 @@ protected:
     void SetVersion(const CVersionInfo& version);
 
     /// Set version data for the program.
-    void SetFullVersion(const CVersion& version);
+    void SetFullVersion( CRef<CVersion> version);
 
     /// Setup the command line argument descriptions.
     ///

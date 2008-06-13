@@ -469,12 +469,12 @@ void CVersion::SetVersionInfo( int  ver_major, int  ver_minor,
         ver_major, ver_minor, patch_level, ver_name) );
 }
 
-void CVersion::SetVersionInfo( const CVersionInfo& version)
+void CVersion::SetVersionInfo( CVersionInfo* version)
 {
-    m_VersionInfo.reset( new CVersionInfo(version) );
+    m_VersionInfo.reset( version );
 }
 
-CVersionInfo CVersion::GetVersionInfo(void) const
+const CVersionInfo& CVersion::GetVersionInfo(void) const
 {
     return *m_VersionInfo;
 }
@@ -488,10 +488,9 @@ void CVersion::AddComponentVersion(
                                   patch_level, ver_name) ));
 }
 
-void CVersion::AddComponentVersion( const CComponentVersionInfo& component)
+void CVersion::AddComponentVersion( CComponentVersionInfo* component)
 {
-    m_Components.push_back( AutoPtr<CComponentVersionInfo>(
-        new CComponentVersionInfo(component) ));
+    m_Components.push_back( AutoPtr<CComponentVersionInfo>( component ));
 }
 
 string CVersion::GetPackageName(void)

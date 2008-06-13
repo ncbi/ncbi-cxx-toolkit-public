@@ -620,12 +620,12 @@ void CNcbiApplication::SetEnvironment(const string& name, const string& value)
 
 void CNcbiApplication::SetVersion(const CVersionInfo& version)
 {
-    m_Version->SetVersionInfo( version);
+    m_Version->SetVersionInfo( new CVersionInfo(version) );
 }
 
-void CNcbiApplication::SetFullVersion(const CVersion& version)
+void CNcbiApplication::SetFullVersion( CRef<CVersion> version)
 {
-    m_Version.Reset( new CVersion( version ) );
+    m_Version.Reset( version );
 }
 
 
