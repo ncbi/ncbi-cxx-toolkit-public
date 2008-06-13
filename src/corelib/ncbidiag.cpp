@@ -1041,7 +1041,11 @@ string CDiagContext::GetProperty(const string& name,
         return GetRequestContext().GetSessionID();
     }
     if (name == kProperty_ReqStatus) {
-        return NStr::IntToString(GetRequestContext().GetRequestStatus());
+        int req_status = GetRequestContext().GetRequestStatus();
+        if (req_status == 0) {
+            return kEmptyStr;  // this is a quick backward-compatibility fix
+        }
+        return NStr::IntToString(req_status);
     }
     if (name == kProperty_BytesRd) {
         return NStr::Int8ToString(GetRequestContext().GetBytesRd());
