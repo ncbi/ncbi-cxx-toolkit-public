@@ -88,12 +88,12 @@ public:
 
     // Set maximum number of connections in application
     void SetMaxConnect(unsigned int max_connect) {
-        CDbapiConnMgr::Instance().SetMaxConnect(max_connect);
+        CDbapiConnMgr::SetMaxConnect(max_connect);
     }
 
     // Get maximum number of connections in application
     unsigned int GetMaxConnect(void) {
-        return CDbapiConnMgr::Instance().GetMaxConnect();
+        return CDbapiConnMgr::GetMaxConnect();
     }
 
 protected:

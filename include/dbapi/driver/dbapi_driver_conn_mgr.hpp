@@ -135,11 +135,9 @@ public:
         return m_ConnectFactory;
     }
 
-    void SetMaxConnect(unsigned int max_connect);
+    static void SetMaxConnect(unsigned int max_connect);
 
-    unsigned int GetMaxConnect(void) const {
-        return m_MaxConnect;
-    }
+    static unsigned int GetMaxConnect(void);
 
 private:
     CDbapiConnMgr(void);
@@ -151,7 +149,6 @@ private:
     CRef<IDBConnectionFactory> m_ConnectFactory;
 
     CMutex m_Mutex;
-    unsigned int m_MaxConnect;
     unsigned int m_NumConnect;
 
     // Friends

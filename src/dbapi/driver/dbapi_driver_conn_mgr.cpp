@@ -107,7 +107,7 @@ IDBConnectionFactory::~IDBConnectionFactory(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-CDbapiConnMgr::CDbapiConnMgr(void) : m_MaxConnect(100), m_NumConnect(0)
+CDbapiConnMgr::CDbapiConnMgr(void) : m_NumConnect(0)
 {
     m_ConnectFactory.Reset( new CDefaultConnectPolicy() );
 }
@@ -124,18 +124,27 @@ CDbapiConnMgr::Instance(void)
     return instance.Get();
 }
 
+
+NCBI_PARAM_DECL(unsigned int, dbapi, max_connection);
+typedef NCBI_PARAM_TYPE(dbapi, max_connection) TDbapi_MaxConnection;
+NCBI_PARAM_DEF_EX(unsigned int, dbapi, max_connection, 100, eParam_NoThread, NULL);
+
+
 void CDbapiConnMgr::SetMaxConnect(unsigned int max_connect)
 {
-    CMutexGuard mg(m_Mutex);
+    TDbapi_MaxConnection::SetDefault(max_connect);
+}
 
-    m_MaxConnect = max_connect;
+unsigned int CDbapiConnMgr::GetMaxConnect(void)
+{
+    return TDbapi_MaxConnection::GetDefault();
 }
 
 bool CDbapiConnMgr::AddConnect(void)
 {
     CMutexGuard mg(m_Mutex);
 
-    if (m_NumConnect >= m_MaxConnect)
+    if (m_NumConnect >= GetMaxConnect())
         return false;
 
     ++m_NumConnect;
