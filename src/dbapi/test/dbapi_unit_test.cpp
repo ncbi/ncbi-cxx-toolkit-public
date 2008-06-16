@@ -250,12 +250,6 @@ CDBAPIUnitTest::CDBAPIUnitTest(const CRef<const CTestArguments>& args)
 , m_DS( NULL )
 , m_TableName( "#dbapi_unit_table" )
 {
-    if (GetArgs().DriverAllowsMultipleContexts()) {
-        // CTestArguments::TDatabaseParameters params = GetArgs().GetDBParameters();
-        // params["version"] = "125";
-        m_AutoDC.reset(MakeDriverContext(GetArgs().GetConnParams()));
-    }
-    
     // SetDiagFilter(eDiagFilter_Trace, "!/dbapi/driver/ctlib");
 }
 

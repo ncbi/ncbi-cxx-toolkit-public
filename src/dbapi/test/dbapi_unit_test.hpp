@@ -362,7 +362,6 @@ private:
     CDriverManager&             m_DM;
     IDataSource*                m_DS;
     auto_ptr<IConnection>       m_Conn;
-    auto_ptr<I_DriverContext>   m_AutoDC;
 
     const string                m_TableName;
     unsigned int                m_max_varchar_size;
