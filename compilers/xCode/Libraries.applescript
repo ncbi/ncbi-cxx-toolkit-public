@@ -144,7 +144,7 @@ property seqblock : {name:"seqblock", path:"objects:seqblock", inc:{"seqblock__.
 property seqfeat : {name:"seqfeat", path:"objects:seqfeat", inc:{"seqfeat__.cpp", "seqfeat___.cpp"}, asn1:true}
 property seqloc : {name:"seqloc", path:"objects:seqloc", inc:{"seqloc__.cpp", "seqloc___.cpp"}, asn1:true}
 property seqres : {name:"seqres", path:"objects:seqres", inc:{"seqres__.cpp", "seqres___.cpp"}, asn1:true}
-property seqset : {name:"seqset", path:"objects:seqset", inc:{"seqset__.cpp", "seqset___.cpp"}, asn1:true}
+property seqset : {name:"seqset", path:"objects:seqset", inc:{"seqset__.cpp", "seqset___.cpp", "gb_release_file.cpp"}, asn1:true}
 property seqcode : {name:"seqcode", path:"objects:seqcode", inc:{"seqcode__.cpp", "seqcode___.cpp"}, asn1:true}
 property seqsplit : {name:"seqsplit", path:"objects:seqsplit", inc:{"seqsplit__.cpp", "seqsplit___.cpp"}, asn1:true}
 property seqtest : {name:"seqtest", path:"objects:seqtest", inc:{"seqtest__.cpp", "seqtest___.cpp"}, asn1:true}
