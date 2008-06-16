@@ -7,3 +7,4 @@ connect$
 connect/ext$
 dbapi
 -dbapi/driver/odbc/odbcw
+misc
