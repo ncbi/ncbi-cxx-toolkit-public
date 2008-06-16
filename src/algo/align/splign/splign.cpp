@@ -1973,7 +1973,7 @@ bool CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
                             m_max_genomic_ext: (5000 *  kMinTermExonSize));
 
             if(consensus) {
-                if(exon_size < 5) {
+                if(exon_size < 8) {
                     max_ext = 10 * exon_size;
                 }
             }
