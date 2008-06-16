@@ -38,9 +38,12 @@
 BEGIN_NCBI_SCOPE
 
 
+const int kRequestStatus_NotSet = -1;
+
 CRequestContext::CRequestContext(void)
     : m_RequestID(0),
       m_AppState(eDiagAppState_NotSet),
+      m_ReqStatus(kRequestStatus_NotSet),
       m_ReqTimer(CStopWatch::eStop),
       m_BytesRd(0),
       m_BytesWr(0)
@@ -50,6 +53,18 @@ CRequestContext::CRequestContext(void)
 
 CRequestContext::~CRequestContext(void)
 {
+}
+
+
+bool CRequestContext::IsSetRequestStatus(void) const
+{
+    return m_ReqStatus == kRequestStatus_NotSet;
+}
+
+
+void CRequestContext::ResetRequestStatus(void)
+{
+    m_ReqStatus = kRequestStatus_NotSet;
 }
 
 
@@ -97,7 +112,7 @@ void CRequestContext::Reset(void)
     m_ClientIP.clear();
     m_SessionID.clear();
     m_HitID.clear();
-    m_ReqStatus = 0;
+    m_ReqStatus = kRequestStatus_NotSet;
     m_BytesRd = 0;
     m_BytesWr = 0;
     m_ReqTimer.Restart(); // Reset time to 0

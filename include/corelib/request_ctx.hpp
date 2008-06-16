@@ -91,8 +91,10 @@ public:
     const string& SetHitID(void);
 
     /// Request exit startus
+    bool IsSetRequestStatus(void) const;
     int GetRequestStatus(void) const { return m_ReqStatus; }
     void SetRequestStatus(int status) { m_ReqStatus = status; }
+    void ResetRequestStatus(void);
 
     /// Request execution timer
     const CStopWatch& GetRequestTimer(void) const { return m_ReqTimer; }
