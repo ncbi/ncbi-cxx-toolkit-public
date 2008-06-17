@@ -1408,7 +1408,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         {
             // Reset properties
             CRequestContext& ctx = GetRequestContext();
-            ctx.SetRequestStatus(0);
+            ctx.UnsetRequestStatus();
             ctx.SetBytesRd(0);
             ctx.SetBytesWr(0);
             ctx.GetRequestTimer().Restart();
