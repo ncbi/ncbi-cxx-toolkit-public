@@ -7,4 +7,5 @@ connect$
 connect/ext$
 dbapi
 -dbapi/driver/odbc/odbcw
-misc
+misc/third_party
+misc/third_party_static
