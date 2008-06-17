@@ -147,7 +147,7 @@
   </wsdl:binding>
   <wsdl:service name="SoapSampleService">
     <wsdl:port name="SoapSampleServer" binding="SoapSampleServer">
-      <soap:address location="http://graceland.ncbi.nlm.nih.gov:6224/staff/gouriano/cgi/samplesoap/samplesoap.cgi" />
+      <soap:address location="http://intrawebdev:6224/staff/gouriano/samplesoap/samplesoap.cgi" />
     </wsdl:port>
   </wsdl:service>
 </wsdl:definitions>
