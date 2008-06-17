@@ -60,7 +60,7 @@ public:
     virtual ~CRequestContext(void);
 
     /// Get request ID (or zero if not set).
-    int GetRequestID(void) const;
+    int  GetRequestID(void) const;
     /// Set request ID.
     void SetRequestID(int rid);
     /// Check if request ID was assigned a value
@@ -68,47 +68,47 @@ public:
     /// Reset request ID
     void UnsetRequestID(void);
     /// Assign the next available request ID to this request.
-    int SetRequestID(void);
+    int  SetRequestID(void);
 
     /// Return the next available application-wide request ID.
     static int GetNextRequestID(void);
 
     /// Application state
     EDiagAppState GetAppState(void) const;
-    void SetAppState(EDiagAppState state);
+    void          SetAppState(EDiagAppState state);
 
     /// Client IP/hostname
     const string& GetClientIP(void) const;
-    void SetClientIP(const string& client);
-    bool IsSetCleintIP(void) const;
-    void UnsetClientIP(void);
+    void          SetClientIP(const string& client);
+    bool          IsSetCleintIP(void) const;
+    void          UnsetClientIP(void);
 
     /// Session ID
     const string& GetSessionID(void) const;
-    void SetSessionID(const string& session);
-    bool IsSetSessionID(void) const;
-    void UnsetSessionID(void);
+    void          SetSessionID(const string& session);
+    bool          IsSetSessionID(void) const;
+    void          UnsetSessionID(void);
     /// Create and set new session ID
     const string& SetSessionID(void);
 
     /// Hit ID
     const string& GetHitID(void) const;
-    void SetHitID(const string& hit);
-    bool IsSetHitID(void) const;
-    void UnsetHitID(void);
+    void          SetHitID(const string& hit);
+    bool          IsSetHitID(void) const;
+    void          UnsetHitID(void);
     /// Generate unique hit id, assign it to this request, return
     /// the hit id value.
     const string& SetHitID(void);
 
     /// Request exit startus
-    int GetRequestStatus(void) const;
+    int  GetRequestStatus(void) const;
     void SetRequestStatus(int status);
     bool IsSetRequestStatus(void) const;
     void UnsetRequestStatus(void);
 
     /// Request execution timer
     const CStopWatch& GetRequestTimer(void) const { return m_ReqTimer; }
-    CStopWatch& GetRequestTimer(void) { return m_ReqTimer; }
+    CStopWatch&       GetRequestTimer(void) { return m_ReqTimer; }
 
     /// Bytes read
     Int8 GetBytesRd(void) const { return m_BytesRd; }
@@ -125,17 +125,18 @@ public:
     typedef map<string, string> TProperties;
 
     /// Add/change property
-    void SetProperty(const string& name, const string& value);
+    void          SetProperty(const string& name, const string& value);
     /// Get property value or empty string
     const string& GetProperty(const string& name) const;
     /// Check if the property has a value (even if it's an empty string).
-    bool IsSetProperty(const string& name) const;
+    bool          IsSetProperty(const string& name) const;
     /// Remove property from the map
-    void UnsetProperty(const string& name);
+    void          UnsetProperty(const string& name);
+
     /// Get all properties (read only)
     const TProperties& GetProperties(void) const { return m_Properties; }
     /// Get all properties (non-const)
-    TProperties& GetProperties(void) { return m_Properties; }
+    TProperties&       GetProperties(void) { return m_Properties; }
 
 private:
     // Prohibit copying
