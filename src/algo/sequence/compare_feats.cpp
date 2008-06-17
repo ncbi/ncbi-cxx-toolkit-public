@@ -874,6 +874,46 @@ CConstRef<CSeq_loc> CCompareSeqRegions::x_GetSelfLoc(
     return new_loc.IsNull() ? CConstRef<CSeq_loc>(&loc) : new_loc;
 }
 
+
+
+struct SFeats_OpLess : public binary_function<CConstRef<CSeq_feat>, CConstRef<CSeq_feat>, bool>
+{
+public:
+    bool operator()(CConstRef<CSeq_feat> f1, CConstRef<CSeq_feat> f2) const
+    { 
+        if(f1 == f2) {
+            return false;
+        }
+        
+        if(f1.IsNull() && !f2.IsNull()) {
+            return true;
+        }
+        
+        if(!f1.IsNull() && f2.IsNull()) {
+            return false;
+        }
+
+        int res = f1->Compare(*f2);
+        
+        if(res < 0) {
+            return true;
+        }
+        
+        if(res > 0) {
+            return false;
+        }
+        
+        //Compare does not always go all the way, so here we manually try to distinguish by labels
+        string s1 = "";
+        feature::GetLabel(*f1, &s1, feature::eBoth);
+        
+        string s2 = "";
+        feature::GetLabel(*f2, &s2, feature::eBoth);
+        
+        return s1 < s2;
+    }
+};
+
 void CCompareSeqRegions::SelectMatches(vector<CRef<CCompareFeats> >& vComparisons)
 {
     typedef priority_queue<CRef<CCompareFeats>,
@@ -881,7 +921,10 @@ void CCompareSeqRegions::SelectMatches(vector<CRef<CCompareFeats> >& vComparison
                            SCompareFeats_OpLess
                            > TMatchesQueue;
     
-    typedef map<CConstRef<CSeq_feat>, TMatchesQueue > TMatchesMap;
+    //Note: used to use default key comparator that assumed that the same feats
+    //have same addresses. However, that is not always the case, so 
+    //we have to use custom content-based comparator, SFeats_OpLess
+    typedef map<CConstRef<CSeq_feat>, TMatchesQueue, SFeats_OpLess > TMatchesMap;
     
     TMatchesMap q_map;
     TMatchesMap t_map;
