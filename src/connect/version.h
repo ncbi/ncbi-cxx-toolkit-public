@@ -47,9 +47,9 @@
 
 #else
 
-#  define NETDAEMONS_MAJOR        1
-#  define NETDAEMONS_MINOR        99
-#  define NETDAEMONS_PATCH        999
+#  define NETDAEMONS_MAJOR        2
+#  define NETDAEMONS_MINOR        0
+#  define NETDAEMONS_PATCH        1
 
 #  define NETDAEMONS_VERSION_STR  NCBI_PACKAGE_VERSION_COMPOSE_STR  \
                                   (NETDAEMONS_MAJOR,                \
