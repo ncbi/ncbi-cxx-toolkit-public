@@ -966,8 +966,13 @@ void CDiagContext::SetProperty(const string& name,
         return;
     }
     if (name == kProperty_ReqStatus) {
-        GetRequestContext().SetRequestStatus(
-            NStr::StringToInt(value, NStr::fConvErr_NoThrow));
+        if ( !value.empty() ) {
+            GetRequestContext().SetRequestStatus(
+                NStr::StringToInt(value, NStr::fConvErr_NoThrow));
+        }
+        else {
+            GetRequestContext().UnsetRequestStatus();
+        }
         return;
     }
     if (name == kProperty_BytesRd) {

@@ -38,12 +38,10 @@
 BEGIN_NCBI_SCOPE
 
 
-const int kRequestStatus_NotSet = -1;
-
 CRequestContext::CRequestContext(void)
     : m_RequestID(0),
       m_AppState(eDiagAppState_NotSet),
-      m_ReqStatus(kRequestStatus_NotSet),
+      m_ReqStatus(0),
       m_ReqTimer(CStopWatch::eStop),
       m_BytesRd(0),
       m_BytesWr(0)
@@ -56,18 +54,6 @@ CRequestContext::~CRequestContext(void)
 }
 
 
-bool CRequestContext::IsSetRequestStatus(void) const
-{
-    return m_ReqStatus == kRequestStatus_NotSet;
-}
-
-
-void CRequestContext::ResetRequestStatus(void)
-{
-    m_ReqStatus = kRequestStatus_NotSet;
-}
-
-
 int CRequestContext::GetNextRequestID(void)
 {
     static CAtomicCounter s_RequestCount;
@@ -77,7 +63,7 @@ int CRequestContext::GetNextRequestID(void)
 
 const string& CRequestContext::SetHitID(void)
 {
-    m_HitID = GetDiagContext().GetNextHitID();
+    SetHitID(GetDiagContext().GetNextHitID());
     return m_HitID;
 }
 
@@ -87,7 +73,7 @@ const string& CRequestContext::SetSessionID(void)
     CNcbiOstrstream oss;
     oss << GetDiagContext().GetStringUID() << '_' << setw(4) << setfill('0')
         << GetRequestID() << "SID";
-    m_SessionID = CNcbiOstrstreamToString(oss);
+    SetSessionID(CNcbiOstrstreamToString(oss));
     return m_SessionID;
 }
 
@@ -107,12 +93,12 @@ void CRequestContext::SetAppState(EDiagAppState state)
 
 void CRequestContext::Reset(void)
 {
-    m_RequestID = 0; // No request ID is assigned to this request
     m_AppState = eDiagAppState_NotSet; // Use global AppState
-    m_ClientIP.clear();
-    m_SessionID.clear();
-    m_HitID.clear();
-    m_ReqStatus = kRequestStatus_NotSet;
+    UnsetRequestID();
+    UnsetClientIP();
+    UnsetSessionID();
+    UnsetHitID();
+    UnsetRequestStatus();
     m_BytesRd = 0;
     m_BytesWr = 0;
     m_ReqTimer.Restart(); // Reset time to 0
@@ -130,6 +116,18 @@ const string& CRequestContext::GetProperty(const string& name) const
 {
     TProperties::const_iterator it = m_Properties.find(name);
     return it != m_Properties.end() ? it->second : kEmptyStr;
+}
+
+
+bool CRequestContext::IsSetProperty(const string& name) const
+{
+    return m_Properties.find(name) != m_Properties.end();
+}
+
+
+void CRequestContext::UnsetProperty(const string& name)
+{
+    m_Properties.erase(name);
 }
 
 

@@ -59,12 +59,16 @@ public:
     CRequestContext(void);
     virtual ~CRequestContext(void);
 
-    /// Get request ID. 0 = not set.
-    int GetRequestID(void) const { return m_RequestID; }
+    /// Get request ID (or zero if not set).
+    int GetRequestID(void) const;
     /// Set request ID.
-    void SetRequestID(int rid) { m_RequestID = rid; }
+    void SetRequestID(int rid);
+    /// Check if request ID was assigned a value
+    bool IsSetRequestID(void) const;
+    /// Reset request ID
+    void UnsetRequestID(void);
     /// Assign the next available request ID to this request.
-    int SetRequestID(void) { return m_RequestID = GetNextRequestID(); }
+    int SetRequestID(void);
 
     /// Return the next available application-wide request ID.
     static int GetNextRequestID(void);
@@ -74,27 +78,33 @@ public:
     void SetAppState(EDiagAppState state);
 
     /// Client IP/hostname
-    const string& GetClientIP(void) const { return m_ClientIP; }
-    void SetClientIP(const string& client) { m_ClientIP = client; }
+    const string& GetClientIP(void) const;
+    void SetClientIP(const string& client);
+    bool IsSetCleintIP(void) const;
+    void UnsetClientIP(void);
 
     /// Session ID
-    const string& GetSessionID(void) const { return m_SessionID; }
-    void SetSessionID(const string& session) { m_SessionID = session; }
+    const string& GetSessionID(void) const;
+    void SetSessionID(const string& session);
+    bool IsSetSessionID(void) const;
+    void UnsetSessionID(void);
     /// Create and set new session ID
     const string& SetSessionID(void);
 
     /// Hit ID
-    const string& GetHitID(void) const { return m_HitID; }
-    void SetHitID(const string& hit) { m_HitID = hit; }
+    const string& GetHitID(void) const;
+    void SetHitID(const string& hit);
+    bool IsSetHitID(void) const;
+    void UnsetHitID(void);
     /// Generate unique hit id, assign it to this request, return
     /// the hit id value.
     const string& SetHitID(void);
 
     /// Request exit startus
+    int GetRequestStatus(void) const;
+    void SetRequestStatus(int status);
     bool IsSetRequestStatus(void) const;
-    int GetRequestStatus(void) const { return m_ReqStatus; }
-    void SetRequestStatus(int status) { m_ReqStatus = status; }
-    void ResetRequestStatus(void);
+    void UnsetRequestStatus(void);
 
     /// Request execution timer
     const CStopWatch& GetRequestTimer(void) const { return m_ReqTimer; }
@@ -118,6 +128,10 @@ public:
     void SetProperty(const string& name, const string& value);
     /// Get property value or empty string
     const string& GetProperty(const string& name) const;
+    /// Check if the property has a value (even if it's an empty string).
+    bool IsSetProperty(const string& name) const;
+    /// Remove property from the map
+    void UnsetProperty(const string& name);
     /// Get all properties (read only)
     const TProperties& GetProperties(void) const { return m_Properties; }
     /// Get all properties (non-const)
@@ -127,6 +141,19 @@ private:
     // Prohibit copying
     CRequestContext(const CRequestContext&);
     CRequestContext& operator=(const CRequestContext&);
+
+    enum EProperty {
+        eProp_RequestID  = 1 << 0,
+        eProp_ClientIP   = 1 << 1,
+        eProp_SessionID  = 1 << 2,
+        eProp_HitID      = 1 << 3,
+        eProp_ReqStatus  = 1 << 4
+    };
+    typedef int TPropSet;
+
+    bool x_IsSetProp(EProperty prop) const;
+    void x_SetProp(EProperty prop);
+    void x_UnsetProp(EProperty prop);
 
     int           m_RequestID;
     EDiagAppState m_AppState;
@@ -138,7 +165,170 @@ private:
     Int8          m_BytesRd;
     Int8          m_BytesWr;
     TProperties   m_Properties;
+    TPropSet      m_PropSet;
 };
+
+
+inline
+int CRequestContext::GetRequestID(void) const
+{
+    return x_IsSetProp(eProp_RequestID) ? m_RequestID : 0;
+}
+
+inline
+void CRequestContext::SetRequestID(int rid)
+{
+    x_SetProp(eProp_RequestID);
+    m_RequestID = rid;
+}
+
+inline
+int CRequestContext::SetRequestID(void)
+{
+    SetRequestID(GetNextRequestID());
+    return m_RequestID;
+}
+
+inline
+bool CRequestContext::IsSetRequestID(void) const
+{
+    return x_IsSetProp(eProp_RequestID);
+}
+
+inline
+void CRequestContext::UnsetRequestID(void)
+{
+    x_UnsetProp(eProp_RequestID);
+    m_RequestID = 0;
+}
+
+
+inline
+const string& CRequestContext::GetClientIP(void) const
+{
+    return x_IsSetProp(eProp_ClientIP) ? m_ClientIP : kEmptyStr;
+}
+
+inline
+void CRequestContext::SetClientIP(const string& client)
+{
+    x_SetProp(eProp_ClientIP);
+    m_ClientIP = client;
+}
+
+inline
+bool CRequestContext::IsSetCleintIP(void) const
+{
+    return x_IsSetProp(eProp_ClientIP);
+}
+
+inline
+void CRequestContext::UnsetClientIP(void)
+{
+    x_UnsetProp(eProp_ClientIP);
+    m_ClientIP.clear();
+}
+
+
+inline
+const string& CRequestContext::GetSessionID(void) const
+{
+    return x_IsSetProp(eProp_SessionID) ? m_SessionID : kEmptyStr;
+}
+
+inline
+void CRequestContext::SetSessionID(const string& session)
+{
+    x_SetProp(eProp_SessionID);
+    m_SessionID = session;
+}
+
+inline
+bool CRequestContext::IsSetSessionID(void) const
+{
+    return x_IsSetProp(eProp_SessionID);
+}
+
+inline
+void CRequestContext::UnsetSessionID(void)
+{
+    x_UnsetProp(eProp_SessionID);
+    m_SessionID.clear();
+}
+
+
+inline
+const string& CRequestContext::GetHitID(void) const
+{
+    return x_IsSetProp(eProp_HitID) ? m_HitID : kEmptyStr;
+}
+
+inline
+void CRequestContext::SetHitID(const string& hit)
+{
+    x_SetProp(eProp_HitID);
+    m_HitID = hit;
+}
+
+inline
+bool CRequestContext::IsSetHitID(void) const
+{
+    return x_IsSetProp(eProp_HitID);
+}
+
+inline
+void CRequestContext::UnsetHitID(void)
+{
+    x_UnsetProp(eProp_HitID);
+    m_HitID.clear();
+}
+
+
+inline
+int CRequestContext::GetRequestStatus(void) const
+{
+    return x_IsSetProp(eProp_ReqStatus) ? m_ReqStatus : 0;
+}
+
+inline
+void CRequestContext::SetRequestStatus(int status)
+{
+    x_SetProp(eProp_ReqStatus);
+    m_ReqStatus = status;
+}
+
+inline
+bool CRequestContext::IsSetRequestStatus(void) const
+{
+    return x_IsSetProp(eProp_ReqStatus);
+}
+
+inline
+void CRequestContext::UnsetRequestStatus(void)
+{
+    x_UnsetProp(eProp_ReqStatus);
+    m_ReqStatus = 0;
+}
+
+
+inline
+bool CRequestContext::x_IsSetProp(EProperty prop) const
+{
+    return m_PropSet & prop;
+}
+
+
+inline
+void CRequestContext::x_SetProp(EProperty prop)
+{
+    m_PropSet |= prop;
+}
+
+inline
+void CRequestContext::x_UnsetProp(EProperty prop)
+{
+    m_PropSet &= ~prop;
+}
 
 
 END_NCBI_SCOPE
