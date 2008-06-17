@@ -1806,12 +1806,12 @@ static EIO_Status s_Send(SOCK        sock,
             sock->w_status = eIO_Success;
             break/*done*/;
         }
-        x_errno = SOCK_ERRNO;
         /* don't want to handle all possible errors... let them be "unknown" */
         sock->w_status = eIO_Unknown;
-        if (oob)
+        if (oob  ||  !x_written)
             break;
 
+        x_errno = SOCK_ERRNO;
         /* blocked -- retry if unblocked before the timeout expires */
         /* (use stall protection if specified) */
         if (x_errno == SOCK_EWOULDBLOCK  ||  x_errno == SOCK_EAGAIN
@@ -1906,7 +1906,7 @@ static EIO_Status s_WriteSliced(SOCK        sock,
         if (status != eIO_Success)
             break;
         *n_written += n_io_done;
-        if (n_io != n_io_done)
+        if (n_io   != n_io_done)
             break;
         size       -= n_io_done;
     } while ( size );
