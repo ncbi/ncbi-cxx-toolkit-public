@@ -105,6 +105,12 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
 
     auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_Xml, http));
     auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml, http));
+
+// allow unknown data
+    is->SetSkipUnknownMembers(eSerialSkipUnknown_Yes);
+// allow missing mandatory data
+    is->SetVerifyData(eSerialVerifyData_No);
+
     if (m_OmitScopePrefixes) {
         dynamic_cast<CObjectOStreamXml*>(os.get())->SetEnforcedStdXml(true);
         dynamic_cast<CObjectIStreamXml*>(is.get())->SetEnforcedStdXml(true);
