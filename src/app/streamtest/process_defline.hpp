@@ -36,7 +36,7 @@
 //  ============================================================================
 class CDeflineProcess
 //  ============================================================================
-    : public CBioseqProcess
+    : public CSeqEntryProcess
 {
 public:
     //  ------------------------------------------------------------------------
@@ -49,11 +49,10 @@ public:
     ~CDeflineProcess()
     //  ------------------------------------------------------------------------
     {
-        delete m_out;
     };
 
     //  ------------------------------------------------------------------------
-    void Initialize(
+    void ProcessInitialize(
         const CArgs& args )
     //  ------------------------------------------------------------------------
     {
@@ -61,11 +60,26 @@ public:
     };
 
     //  ------------------------------------------------------------------------
-    void Process(
-        const CBioseq& bs )
+    void ProcessFinalize()
     //  ------------------------------------------------------------------------
     {
-        m_out->WriteTitle( bs, 0, true );
+        delete m_out;
+    }
+
+    //  ------------------------------------------------------------------------
+    void SeqEntryProcess(
+        const CRef<CSeq_entry>& se )
+    //  ------------------------------------------------------------------------
+    {
+        try {
+            for (CTypeConstIterator<CBioseq> bit (*se); bit; ++bit) {
+                m_out->WriteTitle( *bit, 0, true );
+                ++m_objectcount;
+            }
+        }
+        catch (CException& e) {
+            LOG_POST(Error << "error processing seqentry: " << e.what());
+        }
     };
 
 protected:

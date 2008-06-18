@@ -33,17 +33,17 @@
 * ===========================================================================
 */
 
-#ifndef __processor_seqset_hpp__
-#define __processor_seqset_hpp__
+#ifndef __presenter_seqset_hpp__
+#define __presenter_seqset_hpp__
 
 //  ============================================================================
-class CSeqSetProcessor
+class CSeqSetPresenter
 //  ============================================================================
-    : public CBioseqProcessor
+    : public CSeqEntryPresenter
 {
 public:
     //  ------------------------------------------------------------------------
-    CSeqSetProcessor()
+    CSeqSetPresenter()
     //  ------------------------------------------------------------------------
         : m_repititions( 0 )
     {
@@ -54,18 +54,23 @@ public:
         const CArgs& args )
     //  ------------------------------------------------------------------------
     {
-        CBioseqProcessor::Initialize( args );  
+        ESerialDataFormat dataformat =
+            (args["binary"] ? eSerial_AsnBinary : eSerial_AsnText);
+
+        CSeqEntryPresenter::Initialize( args );  
         m_is.reset( 
-            CObjectIStream::Open(eSerial_AsnText, args["i"].AsInputFile() ) );
+            CObjectIStream::Open(
+                dataformat, 
+                args["i"].AsInputFile() ) );
         m_repititions = args["count"].AsInteger();
     };
 
     //  ------------------------------------------------------------------------
     virtual void Run(
-        CBioseqProcess* process )
+        CSeqEntryProcess* process )
     //  ------------------------------------------------------------------------
     {   
-        CBioseqProcessor::Run( process );
+        CSeqEntryPresenter::Run( process );
 
         CRef< CSeq_entry > se( new CSeq_entry );
         GetSeqEntry( se );
@@ -73,9 +78,7 @@ public:
             return;
         }
         for ( int i=0; i < m_repititions; ++i ) {
-            for (CTypeConstIterator<CBioseq> bit (*se); bit; ++bit) {
-                Process( *bit );
-            }
+            Process( se );
         }
 
         if (m_report_final) {
@@ -85,25 +88,33 @@ public:
 
     //  ------------------------------------------------------------------------
     virtual void Process(
-        const CBioseq& bs )
+        CRef< CSeq_entry > se )
     //  ------------------------------------------------------------------------
     {
-        m_stopwatch.Restart();
         try {
             if ( m_process ) {
-                m_process->Process( bs );
+                m_process->SeqEntryInitialize( se );
+
+                m_stopwatch.Restart();
+
+                m_process->SeqEntryProcess( se );
+                
+                if ( m_stopwatch.IsRunning() ) {
+                    double elapsed = m_stopwatch.Elapsed();
+                    m_stopwatch.Stop();
+                    m_total_time += elapsed;
+                    m_diff_time += elapsed;
+                }
+
+            m_process->SeqEntryFinalize( se );
             }
-            ++m_objectcount;
         }
         catch (CException& e) {
-            LOG_POST(Error << "error processing bioseq: " << e.what());
+            LOG_POST(Error << "error processing seqentry: " << e.what());
         }
-        double elapsed = m_stopwatch.Elapsed();
-        m_stopwatch.Stop();
-        m_total_time += elapsed;
-        m_diff_time += elapsed;
-        
-        if ( m_report_interval && ! (GetObjectCount() % m_report_interval) ) {
+        if ( m_report_interval && 
+            ! (m_process->GetObjectCount() % m_report_interval) ) 
+        {
             ProgressReport();
         }
     };

@@ -44,6 +44,8 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/seqset/gb_release_file.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistr.hpp>
@@ -51,14 +53,17 @@
 #include <serial/objectiter.hpp>
 #include <serial/objectio.hpp>
 
+#include <objmgr/util/sequence.hpp>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 #include "process.hpp"
 #include "process_defline.hpp"
-#include "processor.hpp"
-#include "processor_releasefile.hpp"
-#include "processor_seqset.hpp"
+#include "process_gene_overlap.hpp"
+#include "presenter.hpp"
+#include "presenter_releasefile.hpp"
+#include "presenter_seqset.hpp"
 
 //  ============================================================================
 class CStreamTestApp : public CNcbiApplication
@@ -69,9 +74,9 @@ private:
     virtual int  Run(void);
     virtual void Exit(void);
 
-    CBioseqProcess* GetProcess(
+    CSeqEntryProcess* GetProcess(
         const CArgs& );
-    CBioseqProcessor* GetProcessor(
+    CSeqEntryPresenter* GetPresenter(
         const CArgs& );
 };
 
@@ -107,6 +112,9 @@ void CStreamTestApp::Init()
         CArgDescriptions::eOutputFile,
         "-");
 
+    arg_desc->AddFlag( "binary",
+        "Input is binary ASN" );
+
     arg_desc->AddKey( "test", 
         "TestCase",
         "Mode for generation",
@@ -140,19 +148,21 @@ int CStreamTestApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    CBioseqProcess* pProcess = 0;
-    CBioseqProcessor* pProcessor = 0;
+    CSeqEntryProcess* pProcess = 0;
+    CSeqEntryPresenter* pPresenter = 0;
 
     pProcess = GetProcess( args );
-    pProcessor = GetProcessor( args );
-    if ( pProcess == 0 || pProcessor == 0 ) {
+    pPresenter = GetPresenter( args );
+    if ( pProcess == 0 || pPresenter == 0 ) {
         LOG_POST( Error << "Not yet implemented!" );
         return 1;
     }
-    
-    pProcessor->Run( pProcess );
 
-    delete pProcessor;
+    pProcess->ProcessInitialize( args );
+    pPresenter->Run( pProcess );
+    pProcess->ProcessFinalize();
+
+    delete pPresenter;
     delete pProcess;
     return 0;
 }
@@ -166,43 +176,43 @@ void CStreamTestApp::Exit(void)
 }
 
 //  ============================================================================
-CBioseqProcess*
+CSeqEntryProcess*
 CStreamTestApp::GetProcess(
     const CArgs& args )
 //  ============================================================================
 {
     string testcase = args["test"].AsString();
 
-    CBioseqProcess* pProcess = 0;
+    CSeqEntryProcess* pProcess = 0;
     if ( testcase == "null"  ) {
-        pProcess = new CBioseqProcess;
+        pProcess = new CSeqEntryProcess;
     }
     if ( testcase == "defline" ) {
         pProcess = new CDeflineProcess;
     }
-    if ( 0 != pProcess ) {
-        pProcess->Initialize( args );
+    if ( testcase == "gene-overlap" ) {
+        pProcess = new CGeneOverlapProcess;
     }
     return pProcess;
 }
 
 //  ============================================================================
-CBioseqProcessor*
-CStreamTestApp::GetProcessor(
+CSeqEntryPresenter*
+CStreamTestApp::GetPresenter(
     const CArgs& args )
 //  ============================================================================
 {
-    CBioseqProcessor* pProcessor = 0;
+    CSeqEntryPresenter* pPresenter = 0;
     if ( args["batch"] ) {
-        pProcessor = new CReleaseFileProcessor;
+        pPresenter = new CReleaseFilePresenter;
     }
     else {
-        pProcessor = new CSeqSetProcessor;
+        pPresenter = new CSeqSetPresenter;
     }
-    if ( pProcessor ) {
-        pProcessor->Initialize( args );
+    if ( pPresenter ) {
+        pPresenter->Initialize( args );
     }
-    return pProcessor;
+    return pPresenter;
 }
 
 

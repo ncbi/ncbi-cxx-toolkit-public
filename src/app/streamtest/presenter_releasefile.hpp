@@ -30,18 +30,18 @@
 * ===========================================================================
 */
 
-#ifndef __processor_releasefile_hpp__
-#define __processor_releasefile_hpp__
+#ifndef __presenter_releasefile_hpp__
+#define __presenter_releasefile_hpp__
 
 //  ============================================================================
-class CReleaseFileProcessor
+class CReleaseFilePresenter
 //  ============================================================================
-    : public CBioseqProcessor
-    , public CReadObjectHook
+    : public CSeqEntryPresenter
+    , public CGBReleaseFile::ISeqEntryHandler
 {
 public:
     //  ------------------------------------------------------------------------
-    CReleaseFileProcessor()
+    CReleaseFilePresenter()
     //  ------------------------------------------------------------------------
     {
     };
@@ -51,63 +51,54 @@ public:
         const CArgs& args )
     //  ------------------------------------------------------------------------
     {
-        CBioseqProcessor::Initialize( args );  
+        CSeqEntryPresenter::Initialize( args );  
         m_is.reset( 
-            CObjectIStream::Open(eSerial_AsnBinary, args["i"].AsInputFile() ) );
+            CObjectIStream::Open(
+                (args["binary"] ? eSerial_AsnBinary : eSerial_AsnText), 
+                args["i"].AsInputFile() ) );
     };
 
     //  ------------------------------------------------------------------------
     virtual void Run(
-        CBioseqProcess* process )
+        CSeqEntryProcess* process )
     //  ------------------------------------------------------------------------
     {   
-        CBioseqProcessor::Run( process );
+        CSeqEntryPresenter::Run( process );
 
-        CObjectTypeInfo bsi = CType< CBioseq >();
-        bsi.SetLocalReadHook( *m_is, this );
-        while( true ) {
-            try {
-                CBioseq_set bss;
-                m_is->Read( &bss, bss.GetThisTypeInfo() );
-            }
-            catch( ... ) {
-                break;
-            }
-        }
+        CGBReleaseFile in(*m_is.release());
+        in.RegisterHandler( this );
+        in.Read();  // HandleSeqEntry will be called from this function
+
         if (m_report_final) {
             FinalReport();
         }
     };
 
     //  ------------------------------------------------------------------------
-    virtual void ReadObject(
-        CObjectIStream& is,
-        const CObjectInfo& info )
+    bool HandleSeqEntry(CRef<CSeq_entry>& se) {
     //  ------------------------------------------------------------------------
-    {
-        try {
-            CRef<CBioseq> bs( new CBioseq );
-            info.GetTypeInfo()->DefaultReadData( is, bs );
+        if ( m_process ) {
+            m_process->SeqEntryInitialize( se );
+
             m_stopwatch.Restart();
-            if ( m_process ) {
-                m_process->Process( *bs );
+
+            m_process->SeqEntryProcess( se );
+
+            if ( m_stopwatch.IsRunning() ) {
+                double elapsed = m_stopwatch.Elapsed();
+                m_stopwatch.Stop();
+                m_total_time += elapsed;
+                m_diff_time += elapsed;
             }
-            ++m_objectcount;
-        }
-        catch (CException& e) {
-            LOG_POST(Error << "error processing bioseq: " << e.what());
-        }
 
-        if ( m_stopwatch.IsRunning() ) {
-            double elapsed = m_stopwatch.Elapsed();
-            m_stopwatch.Stop();
-            m_total_time += elapsed;
-            m_diff_time += elapsed;
+            if ( m_report_interval && 
+                ! (m_process->GetObjectCount() % m_report_interval) ) 
+            {
+                ProgressReport();
+            }
+            m_process->SeqEntryFinalize( se );
         }
-
-        if ( m_report_interval && ! (GetObjectCount() % m_report_interval) ) {
-            ProgressReport();
-        }
+        return true;
     };
 
 protected:       

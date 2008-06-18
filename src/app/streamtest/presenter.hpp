@@ -30,27 +30,26 @@
 * ===========================================================================
 */
 
-#ifndef __processor_hpp__
-#define __processor_hpp__
+#ifndef __presenter_hpp__
+#define __presenter_hpp__
 
 //  ============================================================================
-class CBioseqProcessor
+class CSeqEntryPresenter
 //  ============================================================================
 {
 public:
     //  ------------------------------------------------------------------------
-    CBioseqProcessor():
+    CSeqEntryPresenter()
     //  ------------------------------------------------------------------------
-        m_process( 0 ),
-        m_objectcount( 0 ),
-        m_report_final( true ),
-        m_report_interval( 1000 ),
-        m_total_time( 0 ),
-        m_diff_time( 0 )
+        : m_process( 0 )
+        , m_total_time( 0 )
+        , m_diff_time( 0 )
+        , m_report_final( true )
+        , m_report_interval( 1000 )
     {};
 
     //  ------------------------------------------------------------------------
-    virtual ~CBioseqProcessor()
+    virtual ~CSeqEntryPresenter()
     //  ------------------------------------------------------------------------
     {};
 
@@ -65,17 +64,10 @@ public:
 
     //  ------------------------------------------------------------------------
     virtual void Run(
-        CBioseqProcess* process )
+        CSeqEntryProcess* process )
     //  ------------------------------------------------------------------------
     {
         m_process = process;
-    };
-
-    //  ------------------------------------------------------------------------
-    int GetObjectCount() const
-    //  ------------------------------------------------------------------------
-    {
-        return m_objectcount;
     };
 
     //  ------------------------------------------------------------------------
@@ -98,8 +90,10 @@ protected:
     //  ------------------------------------------------------------------------
     {
         cerr << "-----------------------------------------------------" << endl;
-        cerr << "Current object count   : " << GetObjectCount()         << endl;
-        cerr << "Time since last report : " << GetDiffTime() << " secs" << endl;
+        cerr << "Current object count   : " << m_process->GetObjectCount() 
+             << endl;
+        cerr << "Time since last report : " << GetDiffTime() 
+             << " secs" << endl;
         m_diff_time = 0;
     };
 
@@ -108,19 +102,21 @@ protected:
     //  ------------------------------------------------------------------------
     {
         cerr << "=====================================================" << endl;
-        cerr << "Final object count     : " << GetObjectCount()         << endl;
-        cerr << "Total processing time  : " << GetTotalTime() <<" secs" << endl;
+        cerr << "Final object count     : " << m_process->GetObjectCount() 
+             << endl;
+        cerr << "Total processing time  : " << GetTotalTime() 
+             << " secs" << endl;
         cerr << "=====================================================" << endl;
     };
 
 protected:
-    CBioseqProcess* m_process;
-    int m_objectcount;
-    bool m_report_final;
-    int m_report_interval;
+    CSeqEntryProcess* m_process;
     CStopWatch m_stopwatch;
     double m_total_time;
     double m_diff_time;
+    bool m_report_final;
+    int m_report_interval;
 };
 
-#endif
+#endif /* __presenter_hpp__ */
+
