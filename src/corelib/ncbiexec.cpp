@@ -649,19 +649,26 @@ string CExec::ResolvePath(const string& filename)
             tmp = CDirEntry::MakePath(dir, title, "exe");
         }
 #  endif
-        if ( CFile(tmp).Exists() ) {
-            // Relative path from the the current directory
-            tmp = CDir::GetCwd() + CDirEntry::GetPathSeparator() + tmp;
-            if ( IsExecutable(tmp) ) {
-                path = tmp;
-            }
-        } else {
-            // Check on relative path with sub-directories,
-            // ignore such filenames.
-            size_t sep = tmp.find_first_of("/\\");
-            if ( sep == NPOS ) {
-                // Try to find filename among the paths of the PATH
-                // environment variable.
+        // Check on relative path with sub-directories,
+        // ignore such filenames.
+        size_t sep = tmp.find_first_of("/\\");
+        if ( sep == NPOS ) {
+            // The path looks like "filename".
+            // The behavior for such executables are different on Unix and Windows. 
+            // Unix always use PATH env.variable to find it, Windows try
+            // current directory first.
+#  ifdef NCBI_OS_MSWIN
+            if ( CFile(tmp).Exists() ) {
+                // File in the current directory
+                tmp = CDir::GetCwd() + CDirEntry::GetPathSeparator() + tmp;
+                if ( IsExecutable(tmp) ) {
+                    path = tmp;
+                }
+            } 
+#  endif
+            // Try to find filename among the paths of the PATH
+            // environment variable.
+            if ( path.empty() ) {
                 const char* env = getenv("PATH");
                 if (env  &&  *env) {
                     list<string> split_path;
@@ -677,10 +684,19 @@ string CExec::ResolvePath(const string& filename)
                             break;
                         }
                     } /* ITERATE */
-                }     /* env */
-            }         /* sep == NPOS*/
-        }             /* CFile(tmp).Exists() */
+                } /* env */
+            } /* path.empty() */
+        } /* sep == NPOS */
+
+        if ( path.empty()  &&  CFile(tmp).Exists() ) {
+            // Relative path from the current directory
+            tmp = CDir::GetCwd() + CDirEntry::GetPathSeparator() + tmp;
+            if ( IsExecutable(tmp) ) {
+                path = tmp;
+            }
+        } 
     }
+
     // If found - normalize path 
     if ( !path.empty() ) {
         path = CDirEntry::NormalizePath(path);
