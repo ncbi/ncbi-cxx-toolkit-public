@@ -1958,6 +1958,10 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                     }
                 }
             } else {
+                if (CanSkipUnknownMembers() && NextIsTag()) {
+                    SetFailFlags(fUnknownValue);
+                    SkipAnyContent();
+                }
                 return kInvalidMember;
             }
             if (!NextIsTag()) {
