@@ -1014,8 +1014,10 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
         const string& content_type = GetProperty(eCgi_ContentType);
         if ((flags & fDoNotParseContent) == 0  &&
             (content_type.empty()  ||
-             content_type == "application/x-www-form-urlencoded"  ||
-             NStr::StartsWith(content_type, "multipart/form-data"))) {
+             NStr::StartsWith(content_type,
+                              "application/x-www-form-urlencoded")  ||
+             NStr::StartsWith(content_type,
+                              "multipart/form-data"))) {
             // Automagically retrieve and parse content into entries
             auto_ptr<string> temp_str;
             string* pstr = 0;
