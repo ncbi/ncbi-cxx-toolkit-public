@@ -1233,7 +1233,11 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/[])
     TLog& log = boost::unit_test_framework::unit_test_log;
     log.set_stream(out);    
     log.set_format(boost::unit_test_framework::XML);
+#  if BOOST_VERSION >= 103500
+    log.set_threshold_level(boost::unit_test_framework::log_test_units);
+#  else
     log.set_threshold_level(boost::unit_test_framework::log_test_suites);
+#  endif
 #else
     typedef boost::unit_test_framework::unit_test_log TLog; 
     TLog& log = TLog::instance();
