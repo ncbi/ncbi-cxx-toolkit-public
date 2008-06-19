@@ -44,7 +44,8 @@ CRequestContext::CRequestContext(void)
       m_ReqStatus(0),
       m_ReqTimer(CStopWatch::eStop),
       m_BytesRd(0),
-      m_BytesWr(0)
+      m_BytesWr(0),
+      m_PropSet(0)
 {
 }
 
