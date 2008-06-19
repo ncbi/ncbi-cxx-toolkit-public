@@ -91,7 +91,8 @@ catch (...) {                                                            \
 try {                                                                        \
     S;                                                                       \
     BOOST_CHECK_IMPL( true, "no exceptions thrown by " BOOST_STRINGIZE( S ), \
-                      TL, CHECK_MSG ); }                                     \
+                      TL, CHECK_MSG );                                       \
+}                                                                            \
 catch (std::exception& ex) {                                                 \
     BOOST_CHECK_IMPL( false, "an std::exception was thrown by "              \
                              BOOST_STRINGIZE( S ) " : " << ex.what(),        \
