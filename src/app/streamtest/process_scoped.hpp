@@ -30,79 +30,56 @@
 * ===========================================================================
 */
 
-#ifndef __presenter_releasefile_hpp__
-#define __presenter_releasefile_hpp__
+#ifndef __process_scoped__hpp__
+#define __process_scoped__hpp__
 
 //  ============================================================================
-class CReleaseFilePresenter
+class CScopedProcess
 //  ============================================================================
-    : public CSeqEntryPresenter
-    , public CGBReleaseFile::ISeqEntryHandler
+    : public CSeqEntryProcess
 {
 public:
     //  ------------------------------------------------------------------------
-    CReleaseFilePresenter()
+    CScopedProcess()
+    //  ------------------------------------------------------------------------
+    {};
+
+    //  ------------------------------------------------------------------------
+    ~CScopedProcess()
     //  ------------------------------------------------------------------------
     {
     };
 
     //  ------------------------------------------------------------------------
-    virtual void Initialize(
-        const CArgs& args )
+    virtual void SeqEntryInitialize(
+        CRef<CSeq_entry>& se )
     //  ------------------------------------------------------------------------
     {
-        CSeqEntryPresenter::Initialize( args );  
-        m_is.reset( 
-            CObjectIStream::Open(
-                (args["binary"] ? eSerial_AsnBinary : eSerial_AsnText), 
-                args["i"].AsInputFile() ) );
-    };
+        CSeqEntryProcess::SeqEntryInitialize( se );
 
-    //  ------------------------------------------------------------------------
-    virtual void Run(
-        CSeqEntryProcess* process )
-    //  ------------------------------------------------------------------------
-    {   
-        CSeqEntryPresenter::Run( process );
-
-        CGBReleaseFile in(*m_is.release());
-        in.RegisterHandler( this );
-        in.Read();  // HandleSeqEntry will be called from this function
-
-        if (m_report_final) {
-            FinalReport();
+        m_objmgr = CObjectManager::GetInstance();
+        if ( !m_objmgr ) {
+            /* raise hell */;
         }
-    };
-
-    //  ------------------------------------------------------------------------
-    bool HandleSeqEntry( CRef<CSeq_entry>& se ) {
-    //  ------------------------------------------------------------------------
-        if ( m_process ) {
-            m_process->SeqEntryInitialize( se );
-
-            m_stopwatch.Restart();
-
-            m_process->SeqEntryProcess();
-
-            if ( m_stopwatch.IsRunning() ) {
-                double elapsed = m_stopwatch.Elapsed();
-                m_stopwatch.Stop();
-                m_total_time += elapsed;
-                m_diff_time += elapsed;
-            }
-
-            if ( m_report_interval && 
-                ! (m_process->GetObjectCount() % m_report_interval) ) 
-            {
-                ProgressReport();
-            }
-            m_process->SeqEntryFinalize();
+        m_scope.Reset( new CScope( *m_objmgr ) );
+        if ( !m_scope ) {
+            /* raise hell */;
         }
-        return true;
+        m_scope->AddDefaults();
+        m_scope->AddTopLevelSeqEntry( *m_entry );
     };
 
-protected:       
-    auto_ptr<CObjectIStream> m_is;
+    //  ------------------------------------------------------------------------
+    virtual void SeqEntryFinalize()
+    //  ------------------------------------------------------------------------
+    {
+        m_scope.Release();
+        m_objmgr.Release();
+    };
+
+protected:
+    CRef<CObjectManager> m_objmgr;
+    CRef<CScope> m_scope;
 };
 
 #endif

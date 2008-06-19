@@ -67,12 +67,11 @@ public:
     }
 
     //  ------------------------------------------------------------------------
-    void SeqEntryProcess(
-        const CRef<CSeq_entry>& se )
+    void SeqEntryProcess()
     //  ------------------------------------------------------------------------
     {
         try {
-            for (CTypeConstIterator<CBioseq> bit (*se); bit; ++bit) {
+            for (CTypeConstIterator<CBioseq> bit (*m_entry); bit; ++bit) {
                 m_out->WriteTitle( *bit, 0, true );
                 ++m_objectcount;
             }

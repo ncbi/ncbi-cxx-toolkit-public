@@ -54,13 +54,10 @@ public:
         const CArgs& args )
     //  ------------------------------------------------------------------------
     {
-        ESerialDataFormat dataformat =
-            (args["binary"] ? eSerial_AsnBinary : eSerial_AsnText);
-
         CSeqEntryPresenter::Initialize( args );  
         m_is.reset( 
             CObjectIStream::Open(
-                dataformat, 
+                (args["binary"] ? eSerial_AsnBinary : eSerial_AsnText), 
                 args["i"].AsInputFile() ) );
         m_repititions = args["count"].AsInteger();
     };
@@ -97,7 +94,7 @@ public:
 
                 m_stopwatch.Restart();
 
-                m_process->SeqEntryProcess( se );
+                m_process->SeqEntryProcess();
                 
                 if ( m_stopwatch.IsRunning() ) {
                     double elapsed = m_stopwatch.Elapsed();
@@ -106,7 +103,7 @@ public:
                     m_diff_time += elapsed;
                 }
 
-            m_process->SeqEntryFinalize( se );
+            m_process->SeqEntryFinalize();
             }
         }
         catch (CException& e) {

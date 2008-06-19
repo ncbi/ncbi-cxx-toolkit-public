@@ -36,7 +36,7 @@
 //  ============================================================================
 class CGeneOverlapProcess
 //  ============================================================================
-    : public CSeqEntryProcess
+    : public CScopedProcess
 {
 public:
     //  ------------------------------------------------------------------------
@@ -67,77 +67,37 @@ public:
 
     //  ------------------------------------------------------------------------
     virtual void SeqEntryInitialize(
-        const CRef<CSeq_entry>& se )
+        CRef<CSeq_entry>& se )
     //  ------------------------------------------------------------------------
     {
-        m_objmgr = CObjectManager::GetInstance();
-        if ( !m_objmgr ) {
-            /* raise hell */;
-        }
-        m_scope.Reset( new CScope( *m_objmgr ) );
-        if ( !m_scope ) {
-            /* raise hell */;
-        }
-        m_scope->AddDefaults();
-        m_scope->AddTopLevelSeqEntry( const_cast< const CSeq_entry& >( *se ) );
+        CScopedProcess::SeqEntryInitialize( se );
     };
 
     //  ------------------------------------------------------------------------
-    void SeqEntryProcess(
-        const CRef<CSeq_entry>& se )
+    void SeqEntryProcess()
     //  ------------------------------------------------------------------------
     {
-        switch (se->Which()) {
-
-        case CSeq_entry::e_Seq:
-            if ( se->GetSeq().IsSetAnnot() ) {
-                ITERATE (CBioseq::TAnnot, it, se->GetSeq().GetAnnot()) {
-                    TestFeatureGeneOverlap( **it );
-                }
+        try {
+            for (CTypeConstIterator<CSeq_feat> fit (*m_entry); fit; ++fit) {
+                TestFeatureGeneOverlap( *fit );
+                ++m_objectcount;
             }
-            break;
-
-        case CSeq_entry::e_Set: {
-            const CBioseq_set& bss( se->GetSet() );
-            if (bss.IsSetAnnot()) {
-                ITERATE (CBioseq::TAnnot, it, bss.GetAnnot()) {
-                    TestFeatureGeneOverlap( **it );
-                }
-            }
-
-            if (bss.IsSetSeq_set()) {
-                ITERATE (CBioseq_set::TSeq_set, it, bss.GetSeq_set()) {
-                    CBioseq_set::TSeq_set::const_iterator it2 = it;
-                        SeqEntryProcess( *it );
-                }
-            }
-            break;
         }
-
-        case CSeq_entry::e_not_set:
-        default:
-            break;
+        catch (CException& e) {
+            LOG_POST(Error << "error processing seqentry: " << e.what());
         }
-    };
-
-    //  ------------------------------------------------------------------------
-    virtual void SeqEntryFinalize(
-        const CRef<CSeq_entry>& se )
-    //  ------------------------------------------------------------------------
-    {
-        m_scope.Release();
-        m_objmgr.Release();
     };
 
 protected:
     //  ------------------------------------------------------------------------
     void TestFeatureGeneOverlap (
-    //  ------------------------------------------------------------------------
         const CSeq_feat& f )
+    //  ------------------------------------------------------------------------
     {
         if ( f.GetData().Which() == CSeqFeatData::e_Gene ) {
             return;
         }
+        ++m_objectcount;
         const CSeq_feat_Base::TLocation& locbase = f.GetLocation();
         CConstRef<CSeq_feat> ol = sequence::GetOverlappingGene( 
             locbase, *m_scope );
@@ -146,18 +106,6 @@ protected:
         }
         *m_out << SeqLocString( locbase ) << " -> " 
                << SeqLocString( ol->GetLocation() ) << endl;
-    }
-
-    //  ------------------------------------------------------------------------
-    void TestFeatureGeneOverlap (
-    //  ------------------------------------------------------------------------
-        const CSeq_annot& sa )
-    {
-        if ( sa.IsSetData()  &&  sa.GetData().IsFtable() ) {
-            ITERATE( CSeq_annot::TData::TFtable, it, sa.GetData().GetFtable() ) {
-                TestFeatureGeneOverlap( **it );
-            }
-        }
     }
 
     //  ------------------------------------------------------------------------
@@ -174,8 +122,6 @@ protected:
     //  ------------------------------------------------------------------------
 protected:
     CNcbiOstream* m_out;
-    CRef<CObjectManager> m_objmgr;
-    CRef<CScope> m_scope;
 };
 
 #endif

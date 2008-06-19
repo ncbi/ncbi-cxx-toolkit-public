@@ -65,19 +65,22 @@ public:
 
     //  ------------------------------------------------------------------------
     virtual void SeqEntryInitialize(
-        const CRef<CSeq_entry>& se )
+        CRef<CSeq_entry>& se )
     //  ------------------------------------------------------------------------
-    {};
+    {
+        m_entry.Reset( se );
+        m_entry->Parentize();
+    };
 
     //  ------------------------------------------------------------------------
-    virtual void SeqEntryProcess(
-        const CRef<CSeq_entry>& )
+    virtual void SeqEntryProcess()
     //  ------------------------------------------------------------------------
-    {++m_objectcount;};
+    {
+        ++m_objectcount;
+    };
 
     //  ------------------------------------------------------------------------
-    virtual void SeqEntryFinalize(
-        const CRef<CSeq_entry>& se )
+    virtual void SeqEntryFinalize()
     //  ------------------------------------------------------------------------
     {};
 
@@ -90,6 +93,7 @@ public:
 
 protected:
     unsigned int m_objectcount;
+    CRef<CSeq_entry> m_entry;
 };
 
 #endif

@@ -59,6 +59,7 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 #include "process.hpp"
+#include "process_scoped.hpp"
 #include "process_defline.hpp"
 #include "process_gene_overlap.hpp"
 #include "presenter.hpp"
