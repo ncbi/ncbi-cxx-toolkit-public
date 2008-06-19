@@ -43,7 +43,11 @@
 
 #include <ncbi_pch.hpp>
 
-// This header must be included before all Boost.Test headers
+// This macro should be defined in all unit tests that do not use
+// auto-registration facility of Boost.Test
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+
+// This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
 // For use in init_unit_test_suite()

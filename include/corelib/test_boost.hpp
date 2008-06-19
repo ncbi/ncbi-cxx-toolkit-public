@@ -50,9 +50,64 @@
 #  undef numeric_limits
 #endif
 
+// By default BOOST_AUTO_TEST_MAIN will be defined
+#ifndef NCBI_BOOST_NO_AUTO_TEST_MAIN
+#  ifndef BOOST_AUTO_TEST_MAIN
+#    define BOOST_AUTO_TEST_MAIN
+#  endif
+#endif
+
 #include <boost/test/auto_unit_test.hpp>
 
-#include <string>
+
+// Redefine some Boost macros to make them more comfortable
+#undef BOOST_CHECK_THROW_IMPL
+#undef BOOST_CHECK_NO_THROW_IMPL
+
+#ifndef BOOST_TEST_PASSPOINT
+// Compatibility with Boost 1.33.1
+#  define BOOST_TEST_PASSPOINT()  extern void dummy_boost_passpoint_func(void)
+#endif
+
+#define BOOST_CHECK_THROW_IMPL( S, E, P, prefix, TL )                    \
+try {                                                                    \
+    BOOST_TEST_PASSPOINT();                                              \
+    S;                                                                   \
+    BOOST_CHECK_IMPL( false, "exception " BOOST_STRINGIZE( E )           \
+                             " is expected", TL, CHECK_MSG ); }          \
+catch( E const& ex ) {                                                   \
+    boost::unit_test::ut_detail::ignore_unused_variable_warning( ex );   \
+    BOOST_CHECK_IMPL( P, prefix BOOST_STRINGIZE( E ) " is caught",       \
+                      TL, CHECK_MSG );                                   \
+}                                                                        \
+catch (std::exception& ex) {                                             \
+    BOOST_CHECK_IMPL(false, "an std::exception was thrown by "           \
+                            BOOST_STRINGIZE( S ) " : " << ex.what(),     \
+                     TL, CHECK_MSG);                                     \
+}                                                                        \
+catch (...) {                                                            \
+    BOOST_CHECK_IMPL(false, "a nonstandard exception was thrown by "     \
+                            BOOST_STRINGIZE( S ),                        \
+                     TL, CHECK_MSG);                                     \
+}                                                                        \
+/**/
+
+#define BOOST_CHECK_NO_THROW_IMPL( S, TL )                                   \
+try {                                                                        \
+    S;                                                                       \
+    BOOST_CHECK_IMPL( true, "no exceptions thrown by " BOOST_STRINGIZE( S ), \
+                      TL, CHECK_MSG ); }                                     \
+catch (std::exception& ex) {                                                 \
+    BOOST_CHECK_IMPL( false, "an std::exception was thrown by "              \
+                             BOOST_STRINGIZE( S ) " : " << ex.what(),        \
+                      TL, CHECK_MSG);                                        \
+}                                                                            \
+catch( ... ) {                                                               \
+    BOOST_CHECK_IMPL( false, "a nonstandard exception thrown by "            \
+                             BOOST_STRINGIZE( S ),                           \
+                      TL, CHECK_MSG );                                       \
+}                                                                            \
+/**/
 
 
 /** @addtogroup Tests

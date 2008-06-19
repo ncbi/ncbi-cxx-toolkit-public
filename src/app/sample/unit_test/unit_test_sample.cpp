@@ -30,8 +30,8 @@
 *
 * If you don't want to use auto-registration of test cases or you want to use
 * some features that are not available with auto-registration
-* (e.g. initialization code before all tests or dependencies between tests)
-* look into another sample - unit_test_alt_sample.cpp.
+* (e.g. dependencies between tests) look into another sample -
+* unit_test_alt_sample.cpp.
 *
 * NOTE:
 *   Boost.Test reports some memory leaks when compiled in MSVC even for this
@@ -44,17 +44,19 @@
 
 #include <ncbi_pch.hpp>
 
-// This macro should be defined before inclusion of test_boost.hpp only in one
-// "*.cpp" file inside executable. It is like function main() for
-// non-Boost.Test executables.
+// This macro should be defined before inclusion of test_boost.hpp in all
+// "*.cpp" files inside executable except one. It is like function main() for
+// non-Boost.Test executables is defined only in one *.cpp file - other files
+// should not include it. If NCBI_BOOST_NO_AUTO_TEST_MAIN will not be defined
+// then test_boost.hpp will define such "main()" function for tests.
 //
-// This macro is necessary only for unit tests with auto-registration.
-// For the example of unit test without auto-registration look into
-// "unit_test_alt_sample.cpp".
-#define BOOST_AUTO_TEST_MAIN
+// Usually if your unit tests contain only one *.cpp file you should not
+// care about this macro at all.
+//
+//#undef NCBI_BOOST_NO_AUTO_TEST_MAIN
 
 
-// This header must be included before all Boost.Test headers
+// This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
 

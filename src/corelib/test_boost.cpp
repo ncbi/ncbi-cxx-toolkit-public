@@ -34,6 +34,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbienv.hpp>
+
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 #undef init_unit_test_suite
 
