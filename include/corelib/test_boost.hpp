@@ -66,7 +66,7 @@
 
 #ifndef BOOST_TEST_PASSPOINT
 // Compatibility with Boost 1.33.1
-#  define BOOST_TEST_PASSPOINT()  extern void dummy_boost_passpoint_func(void)
+#  define BOOST_TEST_PASSPOINT()  0
 #endif
 
 #define BOOST_CHECK_THROW_IMPL( S, E, P, prefix, TL )                    \
@@ -80,13 +80,8 @@ catch( E const& ex ) {                                                   \
     BOOST_CHECK_IMPL( P, prefix BOOST_STRINGIZE( E ) " is caught",       \
                       TL, CHECK_MSG );                                   \
 }                                                                        \
-catch (std::exception& ex) {                                             \
-    BOOST_CHECK_IMPL(false, "an std::exception was thrown by "           \
-                            BOOST_STRINGIZE( S ) " : " << ex.what(),     \
-                     TL, CHECK_MSG);                                     \
-}                                                                        \
 catch (...) {                                                            \
-    BOOST_CHECK_IMPL(false, "a nonstandard exception was thrown by "     \
+    BOOST_CHECK_IMPL(false, "an unexpected exception was thrown by "     \
                             BOOST_STRINGIZE( S ),                        \
                      TL, CHECK_MSG);                                     \
 }                                                                        \
