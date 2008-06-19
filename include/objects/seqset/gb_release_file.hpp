@@ -62,6 +62,7 @@ public:
         // The return value indicates whethear to continue (true),
         // or abort (false) the read.
         virtual bool HandleSeqEntry(CRef<CSeq_entry>& entry) = 0;
+        virtual ~ISeqEntryHandler(void) {};
     };
     
     // constructors
