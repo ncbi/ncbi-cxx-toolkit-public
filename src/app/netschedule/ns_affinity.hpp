@@ -66,9 +66,13 @@ public:
     ~CAffinityDict();
 
     /// Open the association files
-    void Open(CBDB_Env& env, const string& queue_name);
+//    void Open(CBDB_Env& env, const string& queue_name);
 
-    void Close();
+//    void Close();
+
+    void Attach(SAffinityDictDB* aff_dict_db,
+                SAffinityDictTokenIdx* aff_dict_token_idx);
+    void Detach();
 
     /// Add a new token or return token's id if this affinity
     /// index is already in the database

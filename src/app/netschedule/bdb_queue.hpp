@@ -104,9 +104,9 @@ class CQueue
 {
 public:
     /// @param client_host_addr - 0 means internal use
-    CQueue(CQueueDataBase& db,
-           const string&   queue_name,
-           unsigned        client_host_addr);
+    CQueue(CQueueDataBase&    db,
+           CRef<SLockedQueue> queue,
+           unsigned           client_host_addr);
 
     /// Is the queue empty long enough to be deleted?
     bool IsExpired(void);
@@ -316,7 +316,11 @@ public:
     void OptimizeMem(void)
         { x_GetLQueue()->OptimizeMem(); }
 
-    CBDB_Env& GetBDBEnv();
+    // BerkeleyDB-specific statistics
+    void PrintMutexStat(CNcbiOstream& out);
+    void PrintLockStat(CNcbiOstream& out);
+    void PrintMemStat(CNcbiOstream& out);
+
 
 private:
     // Support of CQueue iterators
@@ -388,7 +392,7 @@ private:
 private:
     // Per queue data
     CQueueDataBase&    m_Db;      ///< Parent structure reference
-    CWeakRef<SLockedQueue> m_LQueue;
+    CWeakRefOrig<SLockedQueue> m_LQueue;
     unsigned           m_ClientHostAddr;
 
     // Per client data
@@ -420,7 +424,7 @@ public:
 
     void Close();
 
-    CRef<SLockedQueue> GetLockedQueue(const string& qname) const;
+    CRef<SLockedQueue> GetQueue(const string& qname) const;
     bool QueueExists(const string& qname) const;
 
     /// Collection takes ownership of queue
@@ -477,6 +481,7 @@ struct SNSDBEnvironmentParams : public CParameterEnumerator
 {
     string    db_path;
     string    db_log_path;
+    unsigned  max_queues;          ///< Number of pre-allocated queues
     unsigned  cache_ram_size;      ///< Size of database cache
     unsigned  mutex_max;           ///< Number of mutexes
     unsigned  max_locks;           ///< Number of locks
@@ -502,7 +507,7 @@ struct SNSDBEnvironmentParams : public CParameterEnumerator
 };
 
 /// Top level queue database.
-/// (Thread-Safe, syncronized.)
+/// (Thread-Safe, synchronized.)
 ///
 /// @internal
 ///
@@ -512,26 +517,32 @@ public:
     CQueueDataBase(CBackgroundHost& host);
     ~CQueueDataBase();
 
-    /// @param path
-    ///    Path to the database
     /// @param params
     ///    Parameters of DB environment
+    /// @param reinit
+    ///    Whether to clean out database
     void Open(const SNSDBEnvironmentParams& params, bool reinit);
 
-    void Configure(const IRegistry& reg, unsigned* min_run_timeout);
+    // Read queue information from registry and configure queues
+    // accordingly.
+    // returns minimum run timeout, necessary for watcher thread
+    unsigned Configure(const IRegistry& reg);
+
+    CQueue* OpenQueue(const string& name, unsigned peer_addr);
 
     typedef SLockedQueue::TQueueKind TQueueKind;
     void MountQueue(const string& qname,
                     const string& qclass,
                     TQueueKind    kind,
-                    const SQueueParameters& params);
+                    const SQueueParameters& params,
+                    SQueueDbBlock* queue_db_block);
 
     void CreateQueue(const string& qname, const string& qclass,
                      const string& comment = "");
     void DeleteQueue(const string& qname);
     void QueueInfo(const string& qname, int& kind,
                    string* qclass, string* comment);
-    void GetQueueNames(string* list, const string& sep) const;
+    string GetQueueNames(const string& sep) const;
 
     void UpdateQueueParameters(const string& qname,
                                const SQueueParameters& params);
@@ -562,6 +573,23 @@ public:
     /// Force transaction checkpoint
     void TransactionCheckPoint(bool clean_log=false);
 
+    // BerkeleyDB-specific statistics
+    void PrintMutexStat(CNcbiOstream& out) {
+        m_Env->PrintMutexStat(out);
+    }
+    void PrintLockStat(CNcbiOstream& out) {
+        m_Env->PrintLockStat(out);
+    }
+    void PrintMemStat(CNcbiOstream& out) {
+        m_Env->PrintMemStat(out);
+    }
+
+
+private:
+    // No copy
+    CQueueDataBase(const CQueueDataBase&);
+    CQueueDataBase& operator=(const CQueueDataBase&);
+
 protected:
     /// get next job id (counter increment)
     unsigned GetNextId();
@@ -570,7 +598,9 @@ protected:
     unsigned GetNextIdBatch(unsigned count);
 
 private:
-    friend class CQueue;
+    int x_AllocateQueue(const string& qname, const string& qclass,
+                        int kind, const string& comment);
+
     unsigned x_PurgeUnconditional(unsigned batch_size);
     void x_OptimizeStatusMatrix(void);
     bool x_CheckStopPurge(void);
@@ -586,6 +616,9 @@ private:
     TQueueParamMap                  m_QueueParamMap;
     SQueueDescriptionDB             m_QueueDescriptionDB;
     CQueueCollection                m_QueueCollection;
+    
+    // Pre-allocated Berkeley DB blocks
+    CQueueDbBlockArray              m_QueueDbBlockArray;
 
     CRef<CJobQueueCleanerThread>    m_PurgeThread;
 

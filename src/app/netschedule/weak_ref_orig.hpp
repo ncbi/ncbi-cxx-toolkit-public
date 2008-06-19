@@ -1,5 +1,5 @@
-#ifndef WEAK_REF__HPP
-#define WEAK_REF__HPP
+#ifndef WEAK_REF_ORIG__HPP
+#define WEAK_REF_ORIG__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -145,7 +145,7 @@ public:
             delete this;
         }
     }
-    // For CWeakRef
+    // For CWeakRefOrig
     TWeakProxy* GetWeakProxy(void)
     {
         return m_ProxyRef.GetPointer();
@@ -171,7 +171,7 @@ public:
 
 
 template <class C>
-class CWeakRef : public CRef< CWeakProxy<C> >
+class CWeakRefOrig : public CRef< CWeakProxy<C> >
 {
 public:
     typedef CWeakProxy<C> TProxyType;
@@ -179,10 +179,10 @@ public:
     typedef C TObjectType;
     typedef CRef<C> TObjectRefType;
 
-    CWeakRef() : CRef<TProxyType>()
+    CWeakRefOrig() : CRef<TProxyType>()
     { }
 
-    CWeakRef(TObjectRefType ptr) :
+    CWeakRefOrig(TObjectRefType ptr) :
         CRef<TProxyType>((TProxyType *)ptr->GetWeakProxy())
     { }
 
@@ -199,4 +199,4 @@ public:
 
 END_NCBI_SCOPE
 
-#endif /* WEAK_REF__HPP */
+#endif /* WEAK_REF_ORIG__HPP */

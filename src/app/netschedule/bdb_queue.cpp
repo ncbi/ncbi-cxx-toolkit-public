@@ -75,7 +75,7 @@ void CQueueCollection::Close()
 }
 
 
-CRef<SLockedQueue> CQueueCollection::GetLockedQueue(const string& name) const
+CRef<SLockedQueue> CQueueCollection::GetQueue(const string& name) const
 {
     CReadLockGuard guard(m_Lock);
     TQueueMap::const_iterator it = m_QMap.find(name);
@@ -115,6 +115,8 @@ bool CQueueCollection::RemoveQueue(const string& name)
 }
 
 
+// FIXME: remove this arcane construct, SLockedQueue now has all
+// access methods required by ITERATE(CQueueCollection, it, m_QueueCollection)
 CQueueIterator CQueueCollection::begin() const
 {
     return CQueueIterator(m_QueueDataBase, m_QMap.begin(), &m_Lock);
@@ -195,7 +197,9 @@ bool SNSDBEnvironmentParams::Read(const IRegistry& reg, const string& sname)
 #define GetBoolNoErr(name, dflt) \
     bdb_conf.GetBool("netschedule", name, CConfig::eErr_NoThrow, dflt)
 
-    cache_ram_size = (unsigned)
+    max_queues        = GetUIntNoErr("max_queues", 50);
+
+    cache_ram_size    = (unsigned)
         bdb_conf.GetDataSize("netschedule", "mem_size",
                                 CConfig::eErr_NoThrow, 0);
     mutex_max         = GetUIntNoErr("mutex_max", 0);
@@ -218,7 +222,7 @@ bool SNSDBEnvironmentParams::Read(const IRegistry& reg, const string& sname)
 
 unsigned SNSDBEnvironmentParams::GetNumParams() const
 {
-    return 14; // do not count max_trans
+    return 15; // do not count max_trans
 }
 
 
@@ -227,18 +231,19 @@ string SNSDBEnvironmentParams::GetParamName(unsigned n) const
     switch (n) {
     case 0:  return "path";
     case 1:  return "transaction_log_path";
-    case 2:  return "mem_size";
-    case 3:  return "mutex_max";
-    case 4:  return "max_locks";
-    case 5:  return "max_lockers";
-    case 6:  return "max_lockobjects";
-    case 7:  return "log_mem_size";
-    case 8:  return "checkpoint_kb";
-    case 9:  return "checkpoint_min";
-    case 10: return "sync_transactions";
-    case 11: return "direct_db";
-    case 12: return "direct_log";
-    case 13: return "private_env";
+    case 2:  return "max_queues";
+    case 3:  return "mem_size";
+    case 4:  return "mutex_max";
+    case 5:  return "max_locks";
+    case 6:  return "max_lockers";
+    case 7:  return "max_lockobjects";
+    case 8:  return "log_mem_size";
+    case 9:  return "checkpoint_kb";
+    case 10: return "checkpoint_min";
+    case 11: return "sync_transactions";
+    case 12: return "direct_db";
+    case 13: return "direct_log";
+    case 14: return "private_env";
     default: return "";
     }
 }
@@ -249,18 +254,19 @@ string SNSDBEnvironmentParams::GetParamValue(unsigned n) const
     switch (n) {
     case 0:  return db_path;
     case 1:  return db_log_path;
-    case 2:  return NStr::UIntToString(cache_ram_size);
-    case 3:  return NStr::UIntToString(mutex_max);
-    case 4:  return NStr::UIntToString(max_locks);
-    case 5:  return NStr::UIntToString(max_lockers);
-    case 6:  return NStr::UIntToString(max_lockobjects);
-    case 7:  return NStr::UIntToString(log_mem_size);
-    case 8:  return NStr::UIntToString(checkpoint_kb);
-    case 9:  return NStr::UIntToString(checkpoint_min);
-    case 10: return NStr::BoolToString(sync_transactions);
-    case 11: return NStr::BoolToString(direct_db);
-    case 12: return NStr::BoolToString(direct_log);
-    case 13: return NStr::BoolToString(private_env);
+    case 2:  return NStr::UIntToString(max_queues);
+    case 3:  return NStr::UIntToString(cache_ram_size);
+    case 4:  return NStr::UIntToString(mutex_max);
+    case 5:  return NStr::UIntToString(max_locks);
+    case 6:  return NStr::UIntToString(max_lockers);
+    case 7:  return NStr::UIntToString(max_lockobjects);
+    case 8:  return NStr::UIntToString(log_mem_size);
+    case 9:  return NStr::UIntToString(checkpoint_kb);
+    case 10: return NStr::UIntToString(checkpoint_min);
+    case 11: return NStr::BoolToString(sync_transactions);
+    case 12: return NStr::BoolToString(direct_db);
+    case 13: return NStr::BoolToString(direct_log);
+    case 14: return NStr::BoolToString(private_env);
     default: return "";
     }
 }
@@ -343,8 +349,6 @@ void CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
     }}
 */
 
-
-
     m_Name = "jsqueue";
     string err_file = m_Path + "err" + string(m_Name) + ".log";
     m_Env->OpenErrFile(err_file.c_str());
@@ -356,8 +360,6 @@ void CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
         m_Env->SetLogFileMax(200 * 1024 * 1024);
         m_Env->SetLogAutoRemove(true);
     }
-
-
 
     // Check if bdb env. files are in place and try to join
     CDir dir(*effective_log_path);
@@ -418,11 +420,30 @@ void CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
 
     m_QueueDescriptionDB.SetEnv(*m_Env);
     m_QueueDescriptionDB.Open("sys_qdescr.db", CBDB_RawFile::eReadWriteCreate);
+
+    // Allocate SQueueDbBlock's here, open/create corresponding databases
+    m_QueueDbBlockArray.Init(*m_Env, m_Path, params.max_queues);
 }
 
 
-void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
+int CQueueDataBase::x_AllocateQueue(const string& qname, const string& qclass,
+                                    int kind, const string& comment)
 {
+    int pos = m_QueueDbBlockArray.Allocate();
+    if (pos < 0) return pos;
+    m_QueueDescriptionDB.queue   = qname;
+    m_QueueDescriptionDB.kind    = kind;
+    m_QueueDescriptionDB.pos     = pos;
+    m_QueueDescriptionDB.qclass  = qclass;
+    m_QueueDescriptionDB.comment = comment;
+    m_QueueDescriptionDB.UpdateInsert();
+    return pos;
+}
+
+
+unsigned CQueueDataBase::Configure(const IRegistry& reg)
+{
+    unsigned min_run_timeout = 3600;
     bool no_default_queues =
         reg.GetBool("server", "no_default_queues", false, 0, IRegistry::eReturn);
 
@@ -430,6 +451,7 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
 
     x_CleanParamMap();
 
+    // Merge queue data from config file into queue description database
     CNS_Transaction trans(*m_Env);
     m_QueueDescriptionDB.SetTransaction(&trans);
 
@@ -448,21 +470,26 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
             LOG_POST(Warning << tmp << " section " << sname
                              << " conflicts with previous " <<
                              (NStr::CompareNocase(tmp, "queue") == 0 ?
-                                 "qclass" : "queue") <<
-                             " section with same queue/qclass name");
+                                 "qclass_" : "queue_") << qclass
+                             << " section. Ignored.");
             continue;
         }
 
         SQueueParameters* params = new SQueueParameters;
         params->Read(reg, sname);
         m_QueueParamMap[qclass] = params;
-        *min_run_timeout =
-            std::min(*min_run_timeout, (unsigned)params->run_timeout_precision);
+        min_run_timeout =
+            std::min(min_run_timeout, (unsigned)params->run_timeout_precision);
+        // Compatibility with previous convention - create a queue for every
+        // class, declared as queue_*
         if (!no_default_queues && NStr::CompareNocase(tmp, "queue") == 0) {
-            m_QueueDescriptionDB.queue = qclass;
-            m_QueueDescriptionDB.kind = SLockedQueue::eKindStatic;
-            m_QueueDescriptionDB.qclass = qclass;
-            m_QueueDescriptionDB.UpdateInsert();
+            int pos = x_AllocateQueue(qclass, qclass,
+                                      SLockedQueue::eKindStatic, "");
+            if (pos < 0) {
+                LOG_POST(Warning << "Queue " << qclass
+                         << " can not be allocated: max_queues limit");
+                break;
+            }
         }
     }
 
@@ -472,10 +499,13 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
         const string& qname = *it;
         string qclass = reg.GetString("queues", qname, "");
         if (!qclass.empty()) {
-            m_QueueDescriptionDB.queue = qname;
-            m_QueueDescriptionDB.kind = SLockedQueue::eKindStatic;
-            m_QueueDescriptionDB.qclass = qclass;
-            m_QueueDescriptionDB.UpdateInsert();
+            int pos = x_AllocateQueue(qname, qclass,
+                                      SLockedQueue::eKindStatic, "");
+            if (pos < 0) {
+                LOG_POST(Warning << "Queue " << qname
+                         << " can not be allocated: max_queues limit");
+                break;
+            }
         }
     }
     trans.Commit();
@@ -486,20 +516,21 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
 
     while (cur.Fetch() == eBDB_Ok) {
         string qname(m_QueueDescriptionDB.queue);
-        string qclass(m_QueueDescriptionDB.qclass);
         int kind = m_QueueDescriptionDB.kind;
+        unsigned pos = m_QueueDescriptionDB.pos;
+        string qclass(m_QueueDescriptionDB.qclass);
         TQueueParamMap::iterator it = m_QueueParamMap.find(qclass);
         if (it == m_QueueParamMap.end()) {
             LOG_POST(Error << "Can not find class " << qclass << " for queue " << qname);
-            // TODO: Mark queue as dynamic, so we can delete it
-            // m_QueueDescriptionDB.kind = SLockedQueue::eKindDynamic;
-            // cur.Update();
+            // Mark queue as dynamic, so we can delete it
+            m_QueueDescriptionDB.kind = SLockedQueue::eKindDynamic;
+            cur.Update();
             continue;
         }
         const SQueueParameters& params = *(it->second);
         bool qexists = m_QueueCollection.QueueExists(qname);
         if (!qexists) {
-            MountQueue(qname, qclass, kind, params);
+            MountQueue(qname, qclass, kind, params, m_QueueDbBlockArray.Get(pos));
         } else {
             UpdateQueueParameters(qname, params);
         }
@@ -508,7 +539,7 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
         const char* action = qexists ? "Reconfiguring" : "Mounting";
         string sparams;
         {{
-            CRef<SLockedQueue> queue(m_QueueCollection.GetLockedQueue(qname));
+            CRef<SLockedQueue> queue(m_QueueCollection.GetQueue(qname));
             CQueueParamAccessor qp(*queue);
             unsigned nParams = qp.GetNumParams();
             for (unsigned n = 0; n < nParams; ++n) {
@@ -520,18 +551,28 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
         }}
         LOG_POST(Info << action << " queue '" << qname << "' " << sparams);
     }
+    return min_run_timeout;
+}
+
+
+CQueue* CQueueDataBase::OpenQueue(const string& name, unsigned peer_addr)
+{
+    CRef<SLockedQueue> queue(m_QueueCollection.GetQueue(name));
+    return new CQueue(*this, queue, peer_addr);
 }
 
 
 void CQueueDataBase::MountQueue(const string& qname,
                                 const string& qclass,
                                 TQueueKind    kind,
-                                const SQueueParameters& params)
+                                const SQueueParameters& params,
+                                SQueueDbBlock* queue_db_block)
 {
     _ASSERT(m_Env);
 
     auto_ptr<SLockedQueue> q(new SLockedQueue(qname, qclass, kind));
-    q->Open(*m_Env, m_Path);
+//    q->Open(*m_Env, m_Path);
+    q->Attach(queue_db_block);
     q->SetParameters(params);
 
     SLockedQueue& queue = m_QueueCollection.AddQueue(qname, q.release());
@@ -558,17 +599,19 @@ void CQueueDataBase::CreateQueue(const string& qname, const string& qclass,
                             "\" for queue \"" + qname + "\"";
         NCBI_THROW(CNetScheduleException, eUnknownQueueClass, err);
     }
+    // Find vacant position in queue block for new queue
     CNS_Transaction trans(*m_Env);
     m_QueueDescriptionDB.SetTransaction(&trans);
-    m_QueueDescriptionDB.queue = qname;
-    m_QueueDescriptionDB.kind = SLockedQueue::eKindDynamic;
-    m_QueueDescriptionDB.qclass = qclass;
-    m_QueueDescriptionDB.comment = comment;
-    m_QueueDescriptionDB.UpdateInsert();
+    int pos = x_AllocateQueue(qname, qclass,
+                              SLockedQueue::eKindDynamic, comment);
+
+    if (pos < 0) NCBI_THROW(CNetScheduleException, eUnknownQueue,
+        "Cannot allocate queue: max_queues limit");
     trans.Commit();
     m_QueueDescriptionDB.Sync();
     const SQueueParameters& params = *(it->second);
-    MountQueue(qname, qclass, SLockedQueue::eKindDynamic, params);
+    MountQueue(qname, qclass,
+        SLockedQueue::eKindDynamic, params, m_QueueDbBlockArray.Get(pos));
 }
 
 
@@ -591,7 +634,7 @@ void CQueueDataBase::DeleteQueue(const string& qname)
         NCBI_THROW(CNetScheduleException, eAccessDenied, msg);
     }
     // Signal queue to wipe out database files.
-    CRef<SLockedQueue> queue(m_QueueCollection.GetLockedQueue(qname));
+    CRef<SLockedQueue> queue(m_QueueCollection.GetQueue(qname));
     queue->delete_database = true;
     // Remove it from collection
     if (!m_QueueCollection.RemoveQueue(qname)) {
@@ -599,6 +642,7 @@ void CQueueDataBase::DeleteQueue(const string& qname)
         msg += qname;
         NCBI_THROW(CNetScheduleException, eUnknownQueue, msg);
     }
+    m_QueueDbBlockArray.Free(queue->GetPos());
     // Remove it from DB
     m_QueueDescriptionDB.Delete(CBDB_File::eIgnoreError);
     trans.Commit();
@@ -624,18 +668,19 @@ void CQueueDataBase::QueueInfo(const string& qname, int& kind,
 }
 
 
-void CQueueDataBase::GetQueueNames(string* list, const string& sep) const
+string CQueueDataBase::GetQueueNames(const string& sep) const
 {
-    CFastMutexGuard guard(m_ConfigureLock);
+    string names;
     ITERATE(CQueueCollection, it, m_QueueCollection) {
-        *list += it.GetName(); *list += sep;
+        names += it.GetName(); names += sep;
     }
+    return names;
 }
 
 void CQueueDataBase::UpdateQueueParameters(const string& qname,
                                            const SQueueParameters& params)
 {
-    CRef<SLockedQueue> queue(m_QueueCollection.GetLockedQueue(qname));
+    CRef<SLockedQueue> queue(m_QueueCollection.GetQueue(qname));
     queue->SetParameters(params);
 }
 
@@ -654,6 +699,10 @@ void CQueueDataBase::Close()
     x_CleanParamMap();
 
     m_QueueCollection.Close();
+
+    // Close pre-allocated databases
+    m_QueueDbBlockArray.Close();
+
     m_QueueDescriptionDB.Close();
     try {
         if (m_Env->CheckRemove()) {
@@ -909,11 +958,11 @@ void CQueueDataBase::StopExecutionWatcherThread(void)
 /////////////////////////////////////////////////////////////////////////////
 // CQueue implementation
 
-CQueue::CQueue(CQueueDataBase& db,
-               const string&   queue_name,
-               unsigned        client_host_addr)
+CQueue::CQueue(CQueueDataBase&    db,
+               CRef<SLockedQueue> queue,
+               unsigned           client_host_addr)
 : m_Db(db),
-  m_LQueue(db.m_QueueCollection.GetLockedQueue(queue_name)),
+  m_LQueue(queue),
   m_ClientHostAddr(client_host_addr),
   m_QueueDbAccessCounter(0)
 {
@@ -1171,9 +1220,21 @@ double CQueue::GetAverage(TStatEvent n_event)
 }
 
 
-CBDB_Env& CQueue::GetBDBEnv()
+void CQueue::PrintMutexStat(CNcbiOstream& out)
 {
-    return *(m_Db.m_Env);
+    m_Db.PrintMutexStat(out);
+}
+
+
+void CQueue::PrintLockStat(CNcbiOstream& out)
+{
+    m_Db.PrintLockStat(out);
+}
+
+
+void CQueue::PrintMemStat(CNcbiOstream& out)
+{
+    m_Db.PrintMemStat(out);
 }
 
 
@@ -1182,12 +1243,10 @@ void CQueue::PrintAllJobDbStat(CNcbiOstream& out)
     CRef<SLockedQueue> q(x_GetLQueue());
     unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
 
-    SQueueDB& db = q->db;
-
     CJob job;
     CQueueGuard guard(q);
-    CBDB_FileCursor cur(db);
-    cur.SetCondition(CBDB_FileCursor::eFirst);
+
+    CQueueEnumCursor cur(q);
     while (cur.Fetch() == eBDB_Ok) {
         CJob::EJobFetchResult res = job.Fetch(q);
         if (res == CJob::eJF_Ok) {
@@ -2559,19 +2618,7 @@ bool CQueue::CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
 {
     _ASSERT(status_map);
     CRef<SLockedQueue> q(x_GetLQueue());
-
-    unsigned aff_id = 0;
-    TNSBitVector aff_jobs;
-    if (affinity_token && *affinity_token) {
-        aff_id = q->affinity_dict.GetTokenId(affinity_token);
-        if (!aff_id)
-            return false;
-        q->GetJobsWithAffinity(aff_id, &aff_jobs);
-    }
-
-    q->status_tracker.CountStatus(status_map, aff_id!=0 ? &aff_jobs : 0);
-
-    return true;
+    return q->CountStatus(status_map, affinity_token);
 }
 
 

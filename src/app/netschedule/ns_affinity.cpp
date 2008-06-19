@@ -40,26 +40,30 @@ BEGIN_NCBI_SCOPE
 
 static const unsigned kMaxDeadLocks = 100;  // max. dead lock repeats
 
+
 CAffinityDict::CAffinityDict()
 : m_AffDictDB(0),
-  m_AffDict_TokenIdx(0)
+  m_CurAffDB(0),
+  m_AffDict_TokenIdx(0),
+  m_CurTokenIdx(0)
 {
-    m_CurAffDB = m_CurTokenIdx = 0;
     m_IdCounter.Set(0);
 
 }
 
+
 CAffinityDict::~CAffinityDict()
 {
     try {
-        Close();
+        Detach();
     }
     catch (exception& ex)
     {
-        ERR_POST("Error while closing affinity dictionary " << ex.what());
+        ERR_POST("Error while detaching from affinity dictionary "
+                 << ex.what());
     }
 }
-
+/*
 void CAffinityDict::Close()
 {
     CFastMutexGuard guard(m_DbLock);
@@ -104,6 +108,35 @@ void CAffinityDict::Open(CBDB_Env& env, const string& queue_name)
     }
     }}
 }
+*/
+
+
+void CAffinityDict::Attach(SAffinityDictDB* aff_dict_db,
+                           SAffinityDictTokenIdx* aff_dict_token_idx)
+{
+    Detach();
+    m_AffDictDB        = aff_dict_db;
+    m_AffDict_TokenIdx = aff_dict_token_idx;
+    m_CurAffDB         = new CBDB_FileCursor(*m_AffDictDB);
+    m_CurTokenIdx      = new CBDB_FileCursor(*m_AffDict_TokenIdx);
+    {{
+        m_CurAffDB->SetCondition(CBDB_FileCursor::eLast);
+        if (m_CurAffDB->Fetch() == eBDB_Ok) {
+            unsigned aff_id = m_AffDictDB->aff_id;
+            m_IdCounter.Set(aff_id);
+        }
+    }}
+}
+
+
+void CAffinityDict::Detach()
+{
+    delete m_CurAffDB; m_CurAffDB = 0;
+    delete m_CurTokenIdx; m_CurTokenIdx = 0;
+    m_AffDictDB = 0;
+    m_AffDict_TokenIdx = 0;
+}
+
 
 unsigned CAffinityDict::CheckToken(const char*       aff_token,
                                    CBDB_Transaction& trans)

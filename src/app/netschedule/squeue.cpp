@@ -421,7 +421,7 @@ void CJob::CheckAffinityToken(SLockedQueue*     queue,
 {
     if (m_AffinityToken.size()) {
         m_AffinityId =
-            queue->affinity_dict.CheckToken(m_AffinityToken.c_str(), trans);
+            queue->m_AffinityDict.CheckToken(m_AffinityToken.c_str(), trans);
     }
 }
 
@@ -429,7 +429,7 @@ void CJob::CheckAffinityToken(SLockedQueue*     queue,
 void CJob::FetchAffinityToken(SLockedQueue* queue)
 {
     if (m_AffinityId)
-        m_AffinityToken = queue->affinity_dict.GetAffToken(m_AffinityId);
+        m_AffinityToken = queue->m_AffinityDict.GetAffToken(m_AffinityId);
 }
 
 
@@ -442,7 +442,7 @@ void CJob::Delete()
 
 CJob::EJobFetchResult CJob::Fetch(SLockedQueue* queue)
 {
-    SQueueDB&   job_db      = queue->db;
+    SQueueDB&   job_db      = queue->m_JobDB;
     SJobInfoDB& job_info_db = queue->m_JobInfoDB;
     SRunsDB&    runs_db     = queue->m_RunsDB;
 
@@ -517,7 +517,7 @@ CJob::EJobFetchResult CJob::Fetch(SLockedQueue* queue)
 
 CJob::EJobFetchResult CJob::Fetch(SLockedQueue* queue, unsigned id)
 {
-    SQueueDB& job_db = queue->db;
+    SQueueDB& job_db = queue->m_JobDB;
     job_db.id = id;
     EBDB_ErrCode res;
     if ((res = job_db.Fetch()) != eBDB_Ok) {
@@ -545,7 +545,7 @@ bool CJob::Flush(SLockedQueue* queue)
         LOG_POST(Error << "CheckAffinityToken call missed");
     }
     _ASSERT(!m_AffinityToken.size() || m_AffinityId);
-    SQueueDB&   job_db      = queue->db;
+    SQueueDB&   job_db      = queue->m_JobDB;
     SJobInfoDB& job_info_db = queue->m_JobInfoDB;
     SRunsDB&    runs_db     = queue->m_RunsDB;
 
@@ -661,6 +661,160 @@ void CJob::x_ParseTags(const string& strtags, TNSTagList& tags)
 
 
 //////////////////////////////////////////////////////////////////////////
+// SQueueDbBlock
+
+void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
+{
+    pos = pos_;
+    string prefix = string("jsq_") + NStr::IntToString(pos);
+    allocated = false;
+    try {
+        string fname = prefix + ".db";
+        job_db.SetEnv(env);
+        // TODO: RevSplitOff make sense only for long living queues,
+        // for dynamic ones it slows down the process, but because queue
+        // if eventually is disposed of, it does not make sense to save
+        // space here
+        job_db.RevSplitOff();
+        job_db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+
+        fname = prefix + "_jobinfo.db";
+        job_info_db.SetEnv(env);
+        job_info_db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+
+        fname = prefix + "_runs.db";
+        runs_db.SetEnv(env);
+        runs_db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+
+        fname = prefix + "_deleted.db";
+        deleted_jobs_db.SetEnv(env);
+        deleted_jobs_db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+
+        fname = prefix + "_affid.idx";
+        affinity_idx.SetEnv(env);
+        affinity_idx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+
+        fname = prefix + "_affdict.db";
+        aff_dict_db.SetEnv(env);
+        aff_dict_db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+
+        fname = prefix + "_affdict_token.idx";
+        aff_dict_token_idx.SetEnv(env);
+        aff_dict_token_idx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+
+        fname = prefix + "_tag.idx";
+        tag_db.SetEnv(env);
+        tag_db.SetPageSize(32*1024);
+        tag_db.RevSplitOff();
+        tag_db.Open(fname, CBDB_RawFile::eReadWriteCreate);
+
+    } catch (CBDB_ErrnoException& ex) {
+        throw;
+    }
+}
+
+
+void SQueueDbBlock::Close()
+{
+    tag_db.Close();
+    aff_dict_token_idx.Close();
+    aff_dict_db.Close();
+    affinity_idx.Close();
+    deleted_jobs_db.Close();
+    runs_db.Close();
+    job_info_db.Close();
+    job_db.Close();
+}
+
+
+void SQueueDbBlock::ResetTransaction()
+{
+    tag_db.SetTransaction(NULL);
+    aff_dict_token_idx.SetTransaction(NULL);
+    aff_dict_db.SetTransaction(NULL);
+    affinity_idx.SetTransaction(NULL);
+    deleted_jobs_db.SetTransaction(NULL);
+    runs_db.SetTransaction(NULL);
+    job_info_db.SetTransaction(NULL);
+    job_db.SetTransaction(NULL);
+}
+
+
+void SQueueDbBlock::Truncate()
+{
+    tag_db.Truncate();
+    aff_dict_token_idx.Truncate();
+    aff_dict_db.Truncate();
+    affinity_idx.Truncate();
+    deleted_jobs_db.Truncate();
+    runs_db.Truncate();
+    job_info_db.Truncate();
+    job_db.Truncate();
+}
+
+//////////////////////////////////////////////////////////////////////////
+// CQueueDbBlockArray
+
+CQueueDbBlockArray::CQueueDbBlockArray()
+  : m_Count(0), m_Array(0)
+{
+};
+
+
+CQueueDbBlockArray::~CQueueDbBlockArray()
+{
+}
+
+
+void CQueueDbBlockArray::Init(CBDB_Env& env, const string& path,
+                             unsigned count)
+{
+    m_Count = count;
+    m_Array = new SQueueDbBlock[m_Count];
+    for (unsigned n = 0; n < m_Count; ++n) {
+        m_Array[n].Open(env, path, n);
+    }
+}
+
+
+void CQueueDbBlockArray::Close()
+{
+    for (unsigned n = 0; n < m_Count; ++n) {
+        m_Array[n].Close();
+    }
+    delete [] m_Array;
+    m_Array = 0;
+    m_Count = 0;
+}
+
+
+int CQueueDbBlockArray::Allocate()
+{
+    for (unsigned n = 0; n < m_Count; ++n) {
+        if (!m_Array[n].allocated) {
+            m_Array[n].allocated = true;
+            return n;
+        }
+    }
+    return -1;
+}
+
+
+void CQueueDbBlockArray::Free(int pos)
+{
+    if (pos < 0 || unsigned(pos) >= m_Count) return;
+    m_Array[pos].ResetTransaction();
+    m_Array[pos].allocated = false;
+}
+
+
+SQueueDbBlock* CQueueDbBlockArray::Get(int pos)
+{
+    if (pos < 0 || unsigned(pos) >= m_Count) return 0;
+    return &m_Array[pos];
+}
+
+//////////////////////////////////////////////////////////////////////////
 // SQueueParameters
 
 void SQueueParameters::Read(const IRegistry& reg, const string& sname)
@@ -731,6 +885,14 @@ CNSTagMap::~CNSTagMap()
 
 
 //////////////////////////////////////////////////////////////////////////
+CQueueEnumCursor::CQueueEnumCursor(SLockedQueue* queue)
+  : CBDB_FileCursor(queue->m_JobDB)
+{
+    SetCondition(CBDB_FileCursor::eFirst);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 // SLockedQueue
 
 SLockedQueue::SLockedQueue(const string& queue_name,
@@ -740,6 +902,7 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     m_QueueName(queue_name),
     m_QueueClass(qclass_name),
     m_Kind(queue_kind),
+    m_QueueDbBlock(0),
 
     m_BecameEmpty(-1),
     last_notif(0),
@@ -778,11 +941,12 @@ SLockedQueue::SLockedQueue(const string& queue_name,
 SLockedQueue::~SLockedQueue()
 {
     delete run_time_line;
-    Close();
+    Detach();
     m_StatThread->RequestStop();
     m_StatThread->Join(NULL);
 }
 
+/*
 void SLockedQueue::Open(CBDB_Env& env, const string& path)
 {
     string prefix = string("jsq_") + m_QueueName;
@@ -791,14 +955,13 @@ void SLockedQueue::Open(CBDB_Env& env, const string& path)
         string fname = prefix + ".db";
         if (!CDirEntry(path+fname).Exists())
             delete_database = true;
-        db.SetEnv(env);
+        m_JobDB.SetEnv(env);
         // TODO: RevSplitOff make sense only for long living queues,
         // for dynamic ones it slows down the process, but because queue
         // if eventually is disposed of, it does not make sense to save
         // space here
-        db.RevSplitOff();
-        db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-        x_ReadFieldInfo();
+        m_JobDB.RevSplitOff();
+        m_JobDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
         files.push_back(path + fname);
 
         fname = prefix + "_jobinfo.db";
@@ -821,15 +984,15 @@ void SLockedQueue::Open(CBDB_Env& env, const string& path)
         m_AffinityIdx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
         files.push_back(path + fname);
 
-        affinity_dict.Open(env, m_QueueName);
+        m_AffinityDict.Open(env, m_QueueName);
         files.push_back(path + prefix + "_affdict.db");
         files.push_back(path + prefix + "_affdict_token.idx");
 
         fname = prefix + "_tag.idx";
-        m_TagDb.SetEnv(env);
-        m_TagDb.SetPageSize(32*1024);
-        m_TagDb.RevSplitOff();
-        m_TagDb.Open(fname, CBDB_RawFile::eReadWriteCreate);
+        m_TagDB.SetEnv(env);
+        m_TagDB.SetPageSize(32*1024);
+        m_TagDB.RevSplitOff();
+        m_TagDB.Open(fname, CBDB_RawFile::eReadWriteCreate);
         files.push_back(path + fname);
 
         last_notif = time(0);
@@ -843,13 +1006,13 @@ void SLockedQueue::Open(CBDB_Env& env, const string& path)
 
 void SLockedQueue::Close()
 {
-    m_TagDb.Close();
-    affinity_dict.Close();
+    m_TagDB.Close();
+    m_AffinityDict.Close();
     m_AffinityIdx.Close();
     m_DeletedJobsDB.Close();
     m_RunsDB.Close();
     m_JobInfoDB.Close();
-    db.Close();
+    m_JobDB.Close();
     if (delete_database) {
         ITERATE(vector<string>, it, files) {
             // NcbiCout << "Wiping out " << *it << NcbiEndl;
@@ -857,29 +1020,27 @@ void SLockedQueue::Close()
         }
     }
 }
+*/
 
 
-void SLockedQueue::x_ReadFieldInfo(void)
+void SLockedQueue::Attach(SQueueDbBlock* block)
 {
-    // Build field map
-    const CBDB_BufferManager* key  = db.GetKeyBuffer();
-    const CBDB_BufferManager* data = db.GetDataBuffer();
+    Detach();
+    m_QueueDbBlock = block;
+    m_AffinityDict.Attach(&m_QueueDbBlock->aff_dict_db,
+                          &m_QueueDbBlock->aff_dict_token_idx);
+}
 
-    m_NKeys = 0;
-    if (key) {
-        for (unsigned i = 0; i < key->FieldCount(); ++i) {
-            const CBDB_Field& fld = key->GetField(i);
-            m_FieldMap[fld.GetName()] = i;
-        }
-        m_NKeys = key->FieldCount();
-    }
 
-    if (data) {
-        for (unsigned i = 0; i < data->FieldCount(); ++i) {
-            const CBDB_Field& fld = data->GetField(i);
-            m_FieldMap[fld.GetName()] = m_NKeys + i;
-        }
+void SLockedQueue::Detach()
+{
+    m_AffinityDict.Detach();
+    if (delete_database) {
+        m_QueueDbBlock->ResetTransaction();
+        m_QueueDbBlock->Truncate();
     }
+    delete_database = false;
+    m_QueueDbBlock = 0;
 }
 
 
@@ -916,28 +1077,6 @@ void SLockedQueue::SetParameters(const SQueueParameters& params)
 }
 
 
-int SLockedQueue::GetFieldIndex(const string& name)
-{
-    map<string, int>::iterator i = m_FieldMap.find(name);
-    if (i == m_FieldMap.end()) return -1;
-    return i->second;
-}
-
-
-string SLockedQueue::GetField(int index)
-{
-    const CBDB_BufferManager* bm;
-    if (index < m_NKeys) {
-        bm = db.GetKeyBuffer();
-    } else {
-        bm = db.GetDataBuffer();
-        index -= m_NKeys;
-    }
-    const CBDB_Field& fld = bm->GetField(index);
-    return fld.GetString();
-}
-
-
 unsigned SLockedQueue::LoadStatusMatrix()
 {
     EBDB_ErrCode err;
@@ -956,7 +1095,7 @@ unsigned SLockedQueue::LoadStatusMatrix()
 
     // scan the queue, load the state machine from DB
 
-    CBDB_FileCursor cur(db);
+    CBDB_FileCursor cur(m_JobDB);
     cur.InitMultiFetch(1024*1024);
     cur.SetCondition(CBDB_FileCursor::eGE);
     cur.From << 0;
@@ -966,9 +1105,9 @@ unsigned SLockedQueue::LoadStatusMatrix()
     unsigned last_id = 0;
     unsigned group_last_id = 0;
     for (; cur.Fetch() == eBDB_Ok; ) {
-        unsigned job_id = db.id;
+        unsigned job_id = m_JobDB.id;
         if (m_JobsToDelete.test(job_id)) continue;
-        int i_status = db.status;
+        int i_status = m_JobDB.status;
         if (i_status < (int) CNetScheduleAPI::ePending ||
             i_status >= (int) CNetScheduleAPI::eLastStatus)
         {
@@ -982,7 +1121,7 @@ unsigned SLockedQueue::LoadStatusMatrix()
         status_tracker.SetExactStatusNoLock(job_id, status, true);
 
         if (status == CNetScheduleAPI::eReading) {
-            unsigned group_id = db.read_group;
+            unsigned group_id = m_JobDB.read_group;
             x_AddToReadGroupNoLock(group_id, job_id);
             if (group_last_id < group_id) group_last_id = group_id;
         }
@@ -1007,6 +1146,25 @@ TJobStatus
 SLockedQueue::GetJobStatus(unsigned job_id) const
 {
     return status_tracker.GetStatus(job_id);
+}
+
+
+bool
+SLockedQueue::CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
+                          const char*                           affinity_token)
+{
+    unsigned aff_id = 0;
+    TNSBitVector aff_jobs;
+    if (affinity_token && *affinity_token) {
+        aff_id = m_AffinityDict.GetTokenId(affinity_token);
+        if (!aff_id)
+            return false;
+        GetJobsWithAffinity(aff_id, &aff_jobs);
+    }
+
+    status_tracker.CountStatus(status_map, aff_id!=0 ? &aff_jobs : 0);
+
+    return true;
 }
 
 
@@ -1368,7 +1526,7 @@ void SLockedQueue::ClearAffinityIdx()
     TNSBitVector::enumerator en(bv.first());
     for (; en.valid(); ++en) {
         unsigned aff_id = *en;
-        CNS_Transaction trans(*db.GetEnv());
+        CNS_Transaction trans(this);
         CFastMutexGuard guard(m_AffinityIdxLock);
         m_AffinityIdx.SetTransaction(&trans);
 
@@ -1390,7 +1548,7 @@ void SLockedQueue::ClearAffinityIdx()
         m_AffinityIdx.aff_id = aff_id;
         if (bvect.any()) {
             bvect.optimize();
-            m_AffinityIdx.WriteVector(bvect, SQueueAffinityIdx::eNoCompact);
+            m_AffinityIdx.WriteVector(bvect, SAffinityIdx::eNoCompact);
         } else {
             // TODO: if there is no record in m_AffinityMap,
             // remove record from SAffinityDictDB
@@ -1399,7 +1557,7 @@ void SLockedQueue::ClearAffinityIdx()
             //{{
             //    CFastMutexGuard aff_guard(m_AffinityMapLock);
             //    if (!m_AffinityMap.CheckAffinity(aff_id);
-            //        affinity_dict.RemoveToken(aff_id, trans);
+            //        m_AffinityDict.RemoveToken(aff_id, trans);
             //}}
             m_AffinityIdx.Delete();
         }
@@ -1510,7 +1668,7 @@ void SLockedQueue::AddJobsToAffinity(CBDB_Transaction& trans,
         bv.set_range(job_id_from, job_id_to);
     }
     m_AffinityIdx.aff_id = aff_id;
-    m_AffinityIdx.WriteVector(bv, SQueueAffinityIdx::eNoCompact);
+    m_AffinityIdx.WriteVector(bv, SAffinityIdx::eNoCompact);
 }
 
 
@@ -1572,7 +1730,7 @@ void SLockedQueue::AddJobsToAffinity(CBDB_Transaction& trans,
             bv->optimize();
 
             m_AffinityIdx.aff_id = aff_id;
-            m_AffinityIdx.WriteVector(*bv, SQueueAffinityIdx::eNoCompact);
+            m_AffinityIdx.WriteVector(*bv, SAffinityIdx::eNoCompact);
 
             delete it->second; it->second = 0;
         }
@@ -1797,7 +1955,7 @@ void SLockedQueue::BlacklistJob(TNetAddress   addr,
 
 void SLockedQueue::SetTagDbTransaction(CBDB_Transaction* trans)
 {
-    m_TagDb.SetTransaction(trans);
+    m_TagDB.SetTransaction(trans);
 }
 
 
@@ -1830,34 +1988,34 @@ void SLockedQueue::AppendTags(CNSTagMap& tag_map,
 void SLockedQueue::FlushTags(CNSTagMap& tag_map, CBDB_Transaction& trans)
 {
     CFastMutexGuard guard(m_TagLock);
-    m_TagDb.SetTransaction(&trans);
+    m_TagDB.SetTransaction(&trans);
     NON_CONST_ITERATE(TNSTagMap, it, *tag_map) {
-        m_TagDb.key = it->first.first;
-        m_TagDb.val = it->first.second;
+        m_TagDB.key = it->first.first;
+        m_TagDB.val = it->first.second;
         /*
-        EBDB_ErrCode err = m_TagDb.ReadVector(it->second, bm::set_OR);
+        EBDB_ErrCode err = m_TagDB.ReadVector(it->second, bm::set_OR);
         if (err != eBDB_Ok && err != eBDB_NotFound) {
             // TODO: throw db error
         }
-        m_TagDb.key = it->first.first;
-        m_TagDb.val = it->first.second;
+        m_TagDB.key = it->first.first;
+        m_TagDB.val = it->first.second;
         it->second->optimize();
         if (it->first.first == "transcript") {
             it->second->stat();
         }
-        m_TagDb.WriteVector(*(it->second), STagDB::eNoCompact);
+        m_TagDB.WriteVector(*(it->second), STagDB::eNoCompact);
         */
 
         TNSBitVector bv_tmp(bm::BM_GAP);
-        EBDB_ErrCode err = m_TagDb.ReadVector(&bv_tmp);
+        EBDB_ErrCode err = m_TagDB.ReadVector(&bv_tmp);
         if (err != eBDB_Ok && err != eBDB_NotFound) {
             // TODO: throw db error
         }
         bm::combine_or(bv_tmp, it->second->begin(), it->second->end());
 
-        m_TagDb.key = it->first.first;
-        m_TagDb.val = it->first.second;
-        m_TagDb.WriteVector(bv_tmp, STagDB::eNoCompact);
+        m_TagDB.key = it->first.first;
+        m_TagDB.val = it->first.second;
+        m_TagDB.WriteVector(bv_tmp, STagDB::eNoCompact);
 
         delete it->second;
         it->second = 0;
@@ -1871,7 +2029,7 @@ bool SLockedQueue::ReadTag(const string& key,
                            TBuffer* buf)
 {
     // Guarded by m_TagLock through GetTagLock()
-    CBDB_FileCursor cur(m_TagDb);
+    CBDB_FileCursor cur(m_TagDB);
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << key << val;
 
@@ -1882,7 +2040,7 @@ bool SLockedQueue::ReadTag(const string& key,
 void SLockedQueue::ReadTags(const string& key, TNSBitVector* bv)
 {
     // Guarded by m_TagLock through GetTagLock()
-    CBDB_FileCursor cur(m_TagDb);
+    CBDB_FileCursor cur(m_TagDB);
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << key;
     TBuffer buf;
@@ -1903,8 +2061,8 @@ void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
                                 const TNSBitVector& ids)
 {
     CFastMutexGuard guard(m_TagLock);
-    m_TagDb.SetTransaction(&trans);
-    CBDB_FileCursor cur(m_TagDb, trans,
+    m_TagDB.SetTransaction(&trans);
+    CBDB_FileCursor cur(m_TagDB, trans,
                         CBDB_FileCursor::eReadModifyUpdate);
     // iterate over tags database, deleting ids from every entry
     cur.SetCondition(CBDB_FileCursor::eFirst);
@@ -2192,16 +2350,16 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
         if (residue) {
             ++txn_size; --residue;
         }
-        CNS_Transaction trans(*db.GetEnv());
 
+        CNS_Transaction trans(this);
         CQueueGuard guard(this, &trans);
 
         unsigned n;
         for (n = 0; en.valid() && n < txn_size; ++en, ++n) {
             unsigned job_id = *en;
-            db.id = job_id;
+            m_JobDB.id = job_id;
             try {
-                db.Delete();
+                m_JobDB.Delete();
                 ++del_rec;
             } catch (CBDB_ErrnoException& ex) {
                 ERR_POST(Error << "BDB error " << ex.what());
@@ -2257,14 +2415,14 @@ void SLockedQueue::MonitorPost(const string& msg)
 unsigned SLockedQueue::CountRecs()
 {
     CQueueGuard guard(this);
-    return db.CountRecs();
+    return m_JobDB.CountRecs();
 }
 
 
 void SLockedQueue::PrintStat(CNcbiOstream& out)
 {
     CQueueGuard guard(this);
-    db.PrintStat(out);
+    m_JobDB.PrintStat(out);
 }
 
 

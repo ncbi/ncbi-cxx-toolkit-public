@@ -49,7 +49,7 @@
 #include "access_list.hpp"
 #include "ns_affinity.hpp"
 
-#include "weak_ref.hpp"
+#include "weak_ref_orig.hpp"
 
 #include <deque>
 #include <map>
@@ -264,6 +264,46 @@ private:
 };
 
 
+/// Queue databases
+struct SQueueDbBlock
+{
+    void Open(CBDB_Env& env, const string& path, int pos);
+    void Close();
+    void ResetTransaction();
+    void Truncate();
+
+    bool                  allocated; // Am I allocated?
+    int                   pos;       // My own pos in array
+    SQueueDB              job_db;
+    SJobInfoDB            job_info_db;
+    SRunsDB               runs_db;
+    SDeletedJobsDB        deleted_jobs_db;
+    SAffinityIdx          affinity_idx;
+    SAffinityDictDB       aff_dict_db;
+    SAffinityDictTokenIdx aff_dict_token_idx;
+    STagDB                tag_db;
+};
+
+
+class CQueueDbBlockArray
+{
+public:
+    CQueueDbBlockArray();
+    ~CQueueDbBlockArray();
+    void Init(CBDB_Env& env, const string& path, unsigned count);
+    void Close();
+    // Allocate a block from array. Negative means no more free blocks
+    int  Allocate();
+    // Return block at position 'pos' to the array
+    void Free(int pos);
+    SQueueDbBlock* Get(int pos);
+private:
+    unsigned       m_Count;
+    SQueueDbBlock* m_Array;
+
+};
+
+
 /// Queue parameters
 struct SQueueParameters
 {
@@ -370,6 +410,14 @@ private:
 */
 
 
+class SLockedQueue;
+class CQueueEnumCursor : public CBDB_FileCursor
+{
+public:
+    CQueueEnumCursor(SLockedQueue* queue);
+};
+
+
 // slight violation of naming convention for porting to util/time_line
 typedef CTimeLine<TNSBitVector> CJobTimeLine;
 /// Mutex protected Queue database with job status FSM 
@@ -405,13 +453,18 @@ private:
     string                       m_QueueName;
     string                       m_QueueClass;      ///< Parameter class
     TQueueKind                   m_Kind;            ///< 0 - static, 1 - dynamic
-public:                                           
-    // Databases
-    SQueueDB                     db;                ///< Main queue database
-private:
-    SJobInfoDB                   m_JobInfoDB;       ///< Aux info on jobs, tags etc.
 
-    SRunsDB                      m_RunsDB;          ///< Info on jobs runs
+    friend class CQueueEnumCursor;
+    SQueueDbBlock*               m_QueueDbBlock;
+
+    // Databases
+//    SQueueDB                     m_JobDB;           ///< Main queue database
+#define m_JobDB m_QueueDbBlock->job_db
+    SJobInfoDB                   m_JobInfoDB;       ///< Aux info on jobs, tags etc.
+#define m_JobInfoDB m_QueueDbBlock->job_info_db
+
+//    SRunsDB                      m_RunsDB;          ///< Info on jobs runs
+#define m_RunsDB m_QueueDbBlock->runs_db
     auto_ptr<CBDB_FileCursor>    m_RunsCursor;      ///< DB cursor for RunsDB
 
     CFastMutex                   m_DbLock;          ///< db, cursor lock
@@ -420,25 +473,22 @@ public:
     CJobStatusTracker            status_tracker;    ///< status FSA
 
 private:
-    // Main DB field info
-    map<string, int> m_FieldMap;
-    int m_NKeys;
-
     // Affinity
-    SQueueAffinityIdx            m_AffinityIdx;     ///< Q affinity index
+//    SAffinityIdx                 m_AffinityIdx;     ///< Q affinity index
+#define m_AffinityIdx m_QueueDbBlock->affinity_idx
     CFastMutex                   m_AffinityIdxLock;
 
 
-public:
     // affinity dictionary does not need a mutex, because
     // CAffinityDict is a syncronized class itself (mutex included)
-    CAffinityDict                affinity_dict;     ///< Affinity tokens
-private:
+    CAffinityDict                m_AffinityDict;    ///< Affinity tokens
+
     CWorkerNodeAffinity          m_AffinityMap;     ///< Affinity map
     CFastMutex                   m_AffinityMapLock; ///< m_AffinityMap lock
 
     // Tags
-    STagDB                       m_TagDb;
+//    STagDB                       m_TagDB;
+#define m_TagDB m_QueueDbBlock->tag_db
     CFastMutex                   m_TagLock;
 
     ///< When it became empty, guarded by 'lock'
@@ -473,8 +523,12 @@ public:
         const string& qclass_name, TQueueKind queue_kind);
     ~SLockedQueue();
 
-    void Open(CBDB_Env& env, const string& path);
-    void Close();
+//    void Open(CBDB_Env& env, const string& path);
+//    void Close();
+
+    void Attach(SQueueDbBlock* block);
+    void Detach();
+    int  GetPos() { return m_QueueDbBlock->pos; }
 
     void x_ReadFieldInfo(void);
 
@@ -495,11 +549,13 @@ public:
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 
+    /// count status snapshot for affinity token
+    /// returns false if affinity token not found
+    bool CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
+                     const char*                           affinity_token);
+
     // Set UDP port for notifications
     void SetPort(unsigned short port);
-
-    int GetFieldIndex(const string& name);
-    string GetField(int index);
 
     /// Is the queue empty long enough to be deleted?
     bool IsExpired();
@@ -681,6 +737,10 @@ public:
     void CountEvent(TStatEvent event, int num=1);
     double GetAverage(TStatEvent event);
 
+private:
+    friend class CNS_Transaction;
+    CBDB_Env& GetEnv() { return *m_JobDB.GetEnv(); }
+
     void x_ChangeGroupStatus(unsigned            group_id,
                              const TNSBitVector& bv_jobs,
                              TJobStatus          status);
@@ -707,7 +767,8 @@ private:
     /// Lock for deleted jobs vectors
     CFastMutex                   m_JobsToDeleteLock;
     /// Database for vectors of deleted jobs
-    SDeletedJobsDB               m_DeletedJobsDB;
+//    SDeletedJobsDB               m_DeletedJobsDB;
+#define m_DeletedJobsDB m_QueueDbBlock->deleted_jobs_db
     /// Vector of jobs to be deleted from db unconditionally
     /// keeps jobs still to be deleted from main DB
     TNSBitVector                 m_JobsToDelete;
@@ -850,7 +911,7 @@ public:
     CNS_Transaction(SLockedQueue*         queue,
                     ETransSync            tsync = eEnvDefault,
                     EKeepFileAssociation  assoc = eNoAssociation)
-        : CBDB_Transaction(*(queue->db.GetEnv()), tsync, assoc)
+        : CBDB_Transaction(queue->GetEnv(), tsync, assoc)
     {
     }
 };
@@ -878,7 +939,7 @@ public:
         : m_Queue(0)
     {
         Guard(q);
-        q->db.SetTransaction(trans);
+        q->m_JobDB.SetTransaction(trans);
         q->m_JobInfoDB.SetTransaction(trans);
         q->m_RunsDB.SetTransaction(trans);
     }

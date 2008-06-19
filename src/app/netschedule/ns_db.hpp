@@ -113,11 +113,11 @@ struct SQueueDB : public CBDB_File
         BindData("aff_id", &aff_id);
         BindData("mask",   &mask);
 
-        BindData("input_overflow", &input_overflow);
+        BindData("input_overflow",  &input_overflow);
         BindData("output_overflow", &output_overflow);
-        BindData("input",  &input,  kNetScheduleSplitSize);
-        BindData("output", &output, kNetScheduleSplitSize);
-        BindData("progress_msg", &progress_msg, kNetScheduleMaxDBDataSize);
+        BindData("input",           &input,        kNetScheduleSplitSize);
+        BindData("output",          &output,       kNetScheduleSplitSize);
+        BindData("progress_msg",    &progress_msg, kNetScheduleMaxDBDataSize);
     }
 };
 
@@ -200,13 +200,13 @@ struct SDeletedJobsDB : public CBDB_BvStore<TNSBitVector>
 ///
 /// @internal
 ///
-struct SQueueAffinityIdx : public CBDB_BvStore<TNSBitVector>
+struct SAffinityIdx : public CBDB_BvStore<TNSBitVector>
 {
     CBDB_FieldUint4 aff_id;
 
     typedef CBDB_BvStore<TNSBitVector> TParent;
 
-    SQueueAffinityIdx()
+    SAffinityIdx()
     {
         DisableNull();
         BindKey("aff_id", &aff_id);
@@ -243,7 +243,7 @@ struct SAffinityDictTokenIdx : public CBDB_File
     SAffinityDictTokenIdx()
     {
         DisableNull();
-        BindKey("token", &token, kNetScheduleMaxDBDataSize);
+        BindKey("token",   &token, kNetScheduleMaxDBDataSize);
         BindData("aff_id", &aff_id);
     }
 };
@@ -277,14 +277,16 @@ struct SQueueDescriptionDB : public CBDB_File
 {
     CBDB_FieldString queue;
     CBDB_FieldUint4  kind; // static - 0 or dynamic - 1
+    CBDB_FieldUint4  pos;
     CBDB_FieldString qclass;
     CBDB_FieldString comment;
     SQueueDescriptionDB()
     {
         DisableNull();
-        BindKey("queue", &queue);
-        BindData("kind", &kind);
-        BindData("qclass", &qclass);
+        BindKey("queue",    &queue);
+        BindData("kind",    &kind);
+        BindData("pos",     &pos);
+        BindData("qclass",  &qclass);
         BindData("comment", &comment);
     }
 };
