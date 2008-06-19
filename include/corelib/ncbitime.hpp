@@ -117,20 +117,36 @@ typedef struct {
 class NCBI_XNCBI_EXPORT CTimeFormat
 {
 public:
-    /// Format type.
+    /// Flags.
     ///
     /// @sa SetFormat, AsString
-    enum EType {
+    enum EFlags {
         /// Use single characters as format symbols.
-        eNcbiSimple = 0,
+        fFormat_Simple     = (1 << 0),
         /// Specify that each format symbol have a preceding symbol '$'.
         /// This can be useful if you want to include to format string
         /// a characters that are a format symbols. 
         /// To include symbol '$' use '$$'.
-        eNcbi      = 1,
-        ///< Default format 
-        eDefault   = eNcbiSimple
+        fFormat_Ncbi       = (1 << 1),
+        /// A time string should strictly match the format string.
+        fMatch_Strict      = (1 << 5),       ///< eg "Y" and "1997"
+        /// A format string can have extra leading format symbols,
+        /// that do not have matching symbols in the time string.
+        /// Corresponding time components will be initialized by default
+        /// in the time object.
+        fMatch_ShortTime   = (1 << 6),       ///< eg "Y/M/D h:m:s" and "1997"
+        fMatch_ShortFormat = (1 << 7),       ///< eg "Y" and "1997/07/16"
+        fMatch_Weak        = fMatch_ShortFormat | fMatch_ShortTime,
+        /// Default flags
+        fDefault           = fFormat_Simple | fMatch_Strict,
+
+        /// "Enums", used for backward compatibility. Please use flags instead.
+        eNcbiSimple        = fFormat_Simple,
+        eNcbi              = fFormat_Ncbi,
+        eDefault           = fDefault
     };
+    typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
+    typedef EFlags EType;         ///< deprecated: used for backward compatibility.
 
     /// Predefined formats.
     ///
@@ -154,12 +170,12 @@ public:
     /// Constructor.
     ///
     /// @sa SetFormat
-    CTimeFormat(const char* fmt, EType fmt_type = eDefault);
+    CTimeFormat(const char* fmt, TFlags flags = fDefault);
 
     /// Constructor.
     ///
     /// @sa SetFormat
-    CTimeFormat(const string& fmt, EType fmt_type = eDefault);
+    CTimeFormat(const string& fmt, TFlags flags = fDefault);
 
     /// Assignment operator.
     CTimeFormat& operator= (const CTimeFormat& format);
@@ -168,35 +184,42 @@ public:
     ///
     /// @param fmt
     ///   String of letters describing the time format.
-    /// @param fmt_type
-    ///   Specify type of the format string.
+    /// @param flags
+    ///   Flags specifying how to match a time string against format string.
     /// @sa
     ///   GetFormat, EFormat
-    void SetFormat(const char* fmt, EType fmt_type = eDefault);
+    void SetFormat(const char* fmt, TFlags flags = fDefault);
 
     /// Set the current time format.
     ///
     /// @param fmt
     ///   String of letters describing the time format.
-    /// @param fmt_type
-    ///   Specify type of the format string.
+    /// @param flags
+    ///   Flags specifying how to match a time string against format string.
     /// @sa
     ///   GetFormat, EFormat
-    void SetFormat(const string& fmt, EType fmt_type = eDefault);
+    void SetFormat(const string& fmt, TFlags flags = fDefault);
 
     /// Get format string.
     ///
     /// @return
     ///   A string of letters describing the time format.
-    /// @sa SetFormat, GetType
+    /// @sa SetFormat, GetFlags
     const string& GetString(void) const;
+
+    /// Get format flags.
+    ///
+    /// @return
+    ///   A flags specifying how to match a time string against format string.
+    /// @sa SetFormat, GetString
+    TFlags GetFlags(void) const;
 
     /// Get type of the format string.
     ///
     /// @return
     ///   A type of the time format string.
     /// @sa SetFormat, GetString
-    EType GetType(void) const;
+    NCBI_DEPRECATED EType GetType(void) const;
 
     /// Check that format string is empty.
     bool IsEmpty(void) const;
@@ -209,8 +232,7 @@ public:
     /// @return
     ///   A time format object.
     /// @sa EPredefined, SetFormat
-    static CTimeFormat GetPredefined(EPredefined fmt,
-                                     EType fmt_type = eDefault);
+    static CTimeFormat GetPredefined(EPredefined fmt, TFlags flags = fDefault);
 public:
     /// Return time format as string.
     /// Note: This method added temporarely, and will be deleted soon.
@@ -218,8 +240,8 @@ public:
     NCBI_DEPRECATED operator string(void) const;
 
 private:
-    string  m_Str;    ///< String format.
-    EType   m_Type;   ///< Format type.
+    string  m_Str;        ///< String format.
+    TFlags  m_Flags;      ///< Format flags.
 };
 
 
@@ -1762,17 +1784,17 @@ ostream& operator<< (ostream& os, const CTime& t)
 //
 
 inline
-void CTimeFormat::SetFormat(const string& fmt, EType fmt_type)
+void CTimeFormat::SetFormat(const string& fmt, TFlags flags)
 {
-    m_Str  = fmt;
-    m_Type = fmt_type;
+    m_Str   = fmt;
+    m_Flags = flags;
 }
 
 inline
-void CTimeFormat::SetFormat(const char* fmt, EType fmt_type)
+void CTimeFormat::SetFormat(const char* fmt, TFlags flags)
 {
-    m_Str  = fmt;
-    m_Type = fmt_type;
+    m_Str   = fmt;
+    m_Flags = flags;
 }
 
 inline
@@ -1782,9 +1804,18 @@ const string& CTimeFormat::GetString(void) const
 }
 
 inline
+CTimeFormat::TFlags CTimeFormat::GetFlags(void) const
+{
+    return m_Flags;
+}
+
+inline
 CTimeFormat::EType CTimeFormat::GetType(void) const
 {
-    return m_Type;
+    if (m_Flags & fFormat_Simple) {
+        return eNcbiSimple;
+    }
+    return eNcbi;
 }
 
 inline

@@ -88,13 +88,11 @@ static void s_TestMisc(void)
         assert(CTime::DayOfWeekNumToName(CTime::eSaturday,
                                        CTime::eFull)     == "Saturday"); 
         assert(CTime::DayOfWeekNumToName(6,CTime::eAbbr) == "Sat"); 
-
-        LOG_POST("Throw exception below:");
         try {
             CTime::MonthNameToNum("Month"); 
-        } catch (CTimeException& e) {
-            NCBI_REPORT_EXCEPTION("", e);
+            _TROUBLE;
         }
+        catch (CTimeException&) {}
     }}
 
     // String <-> CTime conversion
@@ -147,9 +145,8 @@ static void s_TestMisc(void)
                 t = "6/16/2001 02:13:34";
                 LOG_POST(STR(t));
                 assert(t.AsString() == "06/16/2001 02:13:34");
-            } catch (CException& e) {
-                NCBI_REPORT_EXCEPTION("",e);
             }
+            catch (CTimeException&) {}
         }}
     }}
 
@@ -735,6 +732,45 @@ static void s_TestFormats(void)
             _TROUBLE; // year and day are not defined
         }
         catch (CTimeException&) {}
+    }}
+
+    // Strict/weak time assignment from a astring
+    {{
+        string s;
+        {{
+            CTime t("2001", CTimeFormat("Y/M/D", CTimeFormat::fMatch_ShortTime));
+            s = t.AsString("M/D/Y h:m:s");
+            assert(s.compare("01/01/2001 00:00:00") == 0);
+        }}
+        {{
+            // Note that day and month changed
+            CTime t("2001/01/02", CTimeFormat("Y", CTimeFormat::fMatch_ShortFormat));
+            s = t.AsString("M/D/Y h:m:s");
+            assert(s.compare("01/01/2001 00:00:00") == 0);
+        }}
+        {{
+            CTime t("2001", CTimeFormat("Y/M/D", CTimeFormat::fMatch_Weak));
+            s = t.AsString("M/D/Y h:m:s");
+            assert(s.compare("01/01/2001 00:00:00") == 0);
+        }}
+        {{
+            // Note that day and month changed
+            CTime t("2001/01/02", CTimeFormat("Y", CTimeFormat::fMatch_Weak));
+            s = t.AsString("M/D/Y h:m:s");
+            assert(s.compare("01/01/2001 00:00:00") == 0);
+        }}
+        {{  
+            try {
+                CTime t("2001", "Y/M/D");
+                _TROUBLE;  // by default used strict format matching
+            }
+            catch (CTimeException&) {}
+            try {
+                CTime t("2001/01/02", "Y");
+                _TROUBLE;  // by default used strict format matching
+            }
+            catch (CTimeException&) {}
+        }}
     }}
 
     // SetFormat/AsString with flag parameter test

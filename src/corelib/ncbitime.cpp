@@ -254,7 +254,7 @@ static void s_Offset(long *value, Int8 offset, long bound, int *major)
 
 
 CTimeFormat::CTimeFormat(void)
-    : m_Type(eDefault)
+    : m_Flags(fDefault)
 {
     return;
 }
@@ -266,15 +266,15 @@ CTimeFormat::CTimeFormat(const CTimeFormat& format)
 }
 
 
-CTimeFormat::CTimeFormat(const char* fmt, EType fmt_type)
+CTimeFormat::CTimeFormat(const char* fmt, TFlags flags)
 {
-    SetFormat(fmt, fmt_type);
+    SetFormat(fmt, flags);
 }
 
 
-CTimeFormat::CTimeFormat(const string& fmt, EType fmt_type)
+CTimeFormat::CTimeFormat(const string& fmt, TFlags flags)
 {
-    SetFormat(fmt, fmt_type);
+    SetFormat(fmt, flags);
 }
 
 
@@ -283,13 +283,13 @@ CTimeFormat& CTimeFormat::operator= (const CTimeFormat& format)
     if ( &format == this ) {
         return *this;
     }
-    m_Str  = format.m_Str;
-    m_Type = format.m_Type;
+    m_Str   = format.m_Str;
+    m_Flags = format.m_Flags;
     return *this;
 }
 
 
-CTimeFormat CTimeFormat::GetPredefined(EPredefined fmt, EType fmt_type)
+CTimeFormat CTimeFormat::GetPredefined(EPredefined fmt, TFlags flags)
 {
     // Predefined time formats
     static const char* s_Predefined[][2] =
@@ -301,7 +301,8 @@ CTimeFormat CTimeFormat::GetPredefined(EPredefined fmt, EType fmt_type)
         {"Y-M-DTh:m:s",    "$Y-$M-$DT$h:$m:$s"},
         {"Y-M-DTh:m:s.l",  "$Y-$M-$DT$h:$m:$s.$l"},
     };
-    return CTimeFormat(s_Predefined[(int)fmt][(int)fmt_type], fmt_type);
+    int fmt_type = (flags & fFormat_Ncbi) ? 1 : 0;
+    return CTimeFormat(s_Predefined[(int)fmt][(int)fmt_type], flags);
 }
 
 
@@ -345,8 +346,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
     bool is_time_present  = false;
 
     const string& fmt = format.GetString();
-    CTimeFormat::EType fmt_type = format.GetType();
-    bool is_escaped = (fmt_type != CTimeFormat::eNcbiSimple);
+    bool is_escaped = ((format.GetFlags() & CTimeFormat::fFormat_Simple) == 0);
     bool is_format_symbol = !is_escaped;
 
     const char* fff;
@@ -599,8 +599,14 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
 
     while ( isspace((unsigned char)(*sss)) )
         sss++;
-    if (*fff != '\0'  ||  *sss != '\0') {
-        NCBI_THROW(CTimeException, eFormat, "CTime: format is incorrect");
+
+    if (*fff != '\0'  &&  !(format.GetFlags() & CTimeFormat::fMatch_ShortTime)) {
+        NCBI_THROW(CTimeException, eFormat, 
+                   "CTime: time string is too short for specified time format");
+    }
+    if (*sss != '\0'  &&  !(format.GetFlags() & CTimeFormat::fMatch_ShortFormat)) {
+        NCBI_THROW(CTimeException, eFormat,
+                   "CTime: time string is too long for specified time format");
     }
 
     // For partialy defined times use default values
@@ -1005,16 +1011,16 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     }
     string str;
     string fmt;
-    CTimeFormat::EType fmt_type;
+    CTimeFormat::TFlags fmt_flags;
     if ( format.IsEmpty() ) {
         CTimeFormat f = GetFormat();
-        fmt      = f.GetString();
-        fmt_type = f.GetType();
+        fmt       = f.GetString();
+        fmt_flags = f.GetFlags();
     } else {
-        fmt      = format.GetString();
-        fmt_type = format.GetType();
+        fmt       = format.GetString();
+        fmt_flags = format.GetFlags();
     }
-    bool is_escaped = (fmt_type != CTimeFormat::eNcbiSimple);
+    bool is_escaped = ((fmt_flags & CTimeFormat::fFormat_Simple) == 0);
     bool is_format_symbol = !is_escaped;
 
     ITERATE(string, it, fmt) {
@@ -1917,8 +1923,7 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
         return;
     }
     const string& fmt = format.GetString();
-    CTimeFormat::EType fmt_type = format.GetType();
-    bool is_escaped = (fmt_type != CTimeFormat::eNcbiSimple);
+    bool is_escaped = ((format.GetFlags() & CTimeFormat::fFormat_Simple) == 0);
     bool is_format_symbol = !is_escaped;
 
     const char* fff;
@@ -2001,8 +2006,13 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
     x_Normalize();
 
     // Check on errors
-    if (*fff != '\0'  ||  *sss != '\0') {
-        NCBI_THROW(CTimeException, eFormat, "CTimeSpan:  format is incorrect");
+    if (*fff != '\0'  &&  !(format.GetFlags() & CTimeFormat::fMatch_ShortTime)) {
+        NCBI_THROW(CTimeException, eFormat, 
+                   "CTime: time string is too short for specified time format");
+    }
+    if (*sss != '\0'  &&  !(format.GetFlags() & CTimeFormat::fMatch_ShortFormat)) {
+        NCBI_THROW(CTimeException, eFormat,
+                   "CTime: time string is too long for specified time format");
     }
 }
 
@@ -2048,16 +2058,16 @@ string CTimeSpan::AsString(const CTimeFormat& format) const
 {
     string str;
     string fmt;
-    CTimeFormat::EType fmt_type;
+    CTimeFormat::TFlags fmt_flags;
     if ( format.IsEmpty() ) {
         CTimeFormat f = GetFormat();
-        fmt      = f.GetString();
-        fmt_type = f.GetType();
+        fmt       = f.GetString();
+        fmt_flags = f.GetFlags();
     } else {
-        fmt      = format.GetString();
-        fmt_type = format.GetType();
+        fmt       = format.GetString();
+        fmt_flags = format.GetFlags();
     }
-    bool is_escaped = (fmt_type != CTimeFormat::eNcbiSimple);
+    bool is_escaped = ((fmt_flags & CTimeFormat::fFormat_Simple) == 0);
     bool is_format_symbol = !is_escaped;
 
     ITERATE(string, it, fmt) {
