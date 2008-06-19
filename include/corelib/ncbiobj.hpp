@@ -1975,7 +1975,7 @@ public:
 
     /// Report about trying to convert incompatible interface fo CObjectEx
     NCBI_XNCBI_EXPORT
-    void ReportIncompatibleType(const type_info& type);
+    static void ReportIncompatibleType(const type_info& type);
 
 private:
     CObjectEx* m_Ptr;
