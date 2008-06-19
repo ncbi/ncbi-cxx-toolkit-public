@@ -1973,6 +1973,10 @@ public:
     NCBI_XNCBI_EXPORT
     CObjectEx* GetLockedObject(void);
 
+    /// Report about trying to convert incompatible interface fo CObjectEx
+    NCBI_XNCBI_EXPORT
+    void ReportIncompatibleType(const type_info& type);
+
 private:
     CObjectEx* m_Ptr;
 };
@@ -2026,6 +2030,83 @@ CPtrToObjectExProxy* CObjectEx::GetPtrProxy(void) const
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CWeakObjectExLocker --
+///
+/// Default locker class for CWeakRef template
+
+template <class C>
+class CWeakObjectExLocker : public CObjectCounterLocker
+{
+public:
+    /// Type working as proxy storage for pointer to object
+    typedef CPtrToObjectExProxy  TPtrProxyType;
+
+    /// Get proxy storage for pointer to object
+    TPtrProxyType* GetPtrProxy(C* object)
+    {
+        return object->GetPtrProxy();
+    }
+
+    /// Lock the object and return pointer to it stored in the proxy.
+    /// If object is already destroyed then return NULL.
+    C* GetLockedObject(TPtrProxyType* proxy)
+    {
+        return static_cast<C*>(proxy->GetLockedObject());
+    }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CWeakInterfaceLocker --
+///
+/// Default locker class for CWeakIRef template
+
+template <class Interface>
+class CWeakInterfaceLocker : public CInterfaceObjectLocker<Interface>
+{
+public:
+    /// Type working as proxy storage for pointer to object
+    typedef CPtrToObjectExProxy  TPtrProxyType;
+
+    /// Get proxy storage for pointer to object
+    TPtrProxyType* GetPtrProxy(Interface* ptr)
+    {
+        CObjectEx* object = dynamic_cast<CObjectEx*>(ptr);
+        if (!object) {
+            CPtrToObjectExProxy::ReportIncompatibleType(typeid(*object));
+        }
+        return object->GetPtrProxy();
+    }
+
+    /// Lock the object and return pointer to it stored in the proxy.
+    /// If object is already destroyed then return NULL.
+    Interface* GetLockedObject(TPtrProxyType* proxy)
+    {
+        // We are not checking that result of dynamic_cast is not null
+        // because type compatibility is already checked in GetPtrProxy()
+        // which always called first. Now we can be sure that this
+        // cast will not return null.
+        return dynamic_cast<Interface*>(proxy->GetLockedObject());
+    }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Traits for default locker parameter in CWeakRef
+/////////////////////////////////////////////////////////////////////////////
+
+template <class C>
+class CWeakLockerTraits
+{
+public:
+    typedef CWeakObjectExLocker<C>  TLockerType;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CWeakRef --
 ///
 /// Template for "weak" pointer to the object.
@@ -2041,14 +2122,17 @@ CPtrToObjectExProxy* CObjectEx::GetPtrProxy(void) const
 ///
 /// @sa CObjectEx
 
-template<class C, class Locker = typename CLockerTraits<C>::TLockerType>
+template<class C, class Locker = typename CWeakLockerTraits<C>::TLockerType>
 class CWeakRef
 {
 public:
     typedef C element_type;                 ///< Define alias element_type
     typedef element_type TObjectType;       ///< Define alias TObjectType
+    typedef Locker locker_type;             ///< Define alias for locking type
+    typedef typename Locker::TPtrProxyType proxy_type;
+                                            ///< Alias for pointer proxy type
     typedef CRef<C, Locker> TRefType;       ///< Alias for the CRef type
-    typedef CWeakRef<C, Locker> TThisType;  ///< Alias for this template type
+    typedef CWeakRef<C, Locker> TThisType;  ///< Alias for this type
 
 
     /// Constructor for null pointer
@@ -2067,7 +2151,21 @@ public:
         Reset(ptr);
     }
 
+    /// Constructor for explicit type conversion from pointer to object.
+    CWeakRef(TObjectType* ptr, const locker_type& locker_value)
+        : m_Locker(locker_value)
+    {
+        Reset(ptr);
+    }
+
     // Default copy constructor and copy assignment are ok
+
+
+    /// Get reference to locker object
+    const locker_type& GetLocker(void) const
+    {
+        return m_Locker;
+    }
 
     /// Lock the object and return reference to it.
     /// If object is already deleted then null reference is returned.
@@ -2076,8 +2174,7 @@ public:
         if (!m_Proxy)
             return null;
 
-        return TRefType(static_cast<TObjectType*>(
-                                            m_Proxy->GetLockedObject()));
+        return TRefType(m_Locker.GetLockedObject(m_Proxy), m_Locker);
     }
 
     /// Reset the containing pointer to null
@@ -2096,7 +2193,7 @@ public:
     void Reset(TObjectType* ptr)
     {
         if (ptr) {
-            m_Proxy.Reset(ptr->GetPtrProxy());
+            m_Proxy.Reset(m_Locker.GetPtrProxy(ptr));
         }
         else {
             m_Proxy.Reset();
@@ -2107,6 +2204,7 @@ public:
     void Swap(TThisType& ref)
     {
         m_Proxy.Swap(ref.m_Proxy);
+        swap(m_Locker, ref.m_Locker);
     }
 
     /// Assignment from ENull pointer
@@ -2124,7 +2222,8 @@ public:
     }
 
 private:
-    CRef<CPtrToObjectExProxy> m_Proxy;
+    CRef<proxy_type> m_Proxy;
+    locker_type      m_Locker;
 };
 
 
@@ -2144,18 +2243,14 @@ private:
 ///
 /// @sa CObjectEx, CWeakRef<>
 
-template<class Interface, class Locker = CInterfaceObjectLocker<Interface> >
-class CWeakIRef
+template<class Interface, class Locker = CWeakInterfaceLocker<Interface> >
+class CWeakIRef : public CWeakRef<Interface, Locker>
 {
+    typedef CWeakRef<Interface, Locker>   TParent;
 public:
-    /// Define alias element_type
-    typedef Interface element_type;
-    /// Define alias TObjectType
-    typedef element_type TObjectType;
-    /// Alias for the CIRef type
-    typedef CIRef<Interface, Locker> TRefType;
-    /// Alias for this template type
-    typedef CWeakIRef<Interface, Locker> TThisType;
+    typedef typename TParent::TObjectType TObjectType;
+    typedef typename TParent::locker_type locker_type;
+    typedef CWeakIRef<Interface, Locker>  TThisType;
 
 
     /// Constructor for null pointer
@@ -2169,77 +2264,33 @@ public:
     }
 
     /// Constructor for pointer to the interface
-    explicit CWeakIRef(Interface* ptr)
+    explicit CWeakIRef(TObjectType* ptr)
+        : TParent(ptr)
     {
-        Reset(ptr);
+    }
+
+    /// Constructor for explicit type conversion from pointer to object.
+    CWeakIRef(TObjectType* ptr, const locker_type& locker_value)
+        : TParent(ptr, locker_value)
+    {
     }
 
     // Default copy constructor and copy assignment are ok
 
-    /// Lock the object and return reference to it.
-    /// If object is already deleted then null reference is returned.
-    TRefType Lock(void) const
-    {
-        if (!m_Proxy)
-            return null;
-
-        // We are not checking that result of dynamic_cast is not null
-        // because type compatibility is already checked when this reference
-        // was assigned with non-null value. Now we can be sure that this
-        // cast will not return null.
-        return TRefType(dynamic_cast<Interface*>(
-                                            m_Proxy->GetLockedObject()));
-    }
-
-    /// Reset the containing pointer to null
-    void Reset(void)
-    {
-        m_Proxy.Reset();
-    }
-
-    /// Reset the containing pointer to ENull
-    void Reset(ENull /*null*/)
-    {
-        m_Proxy.Reset();
-    }
-
-    /// Reset the containing pointer to another interface
-    void Reset(Interface* ptr)
-    {
-        if (ptr) {
-            CObjectEx* obj = dynamic_cast<CObjectEx*>(ptr);
-            if (!obj) {
-                CObjectCounterLocker::ReportIncompatibleType(typeid(*obj));
-            }
-            m_Proxy.Reset(obj->GetPtrProxy());
-        }
-        else {
-            m_Proxy.Reset();
-        }
-    }
-
-    /// Swap values of this reference with another
-    void Swap(TThisType& ref)
-    {
-        m_Proxy.Swap(ref.m_Proxy);
-    }
 
     /// Assignment from ENull pointer
-    TThisType& operator= (ENull /*null*/)
+    TThisType& operator= (ENull null)
     {
-        Reset();
+        TParent::operator= (null);
         return *this;
     }
 
     /// Assignment from pointer to another interface
-    TThisType& operator= (Interface* ptr)
+    TThisType& operator= (TObjectType* ptr)
     {
-        Reset(ptr);
+        TParent::operator= (ptr);
         return *this;
     }
-
-private:
-    CRef<CPtrToObjectExProxy> m_Proxy;
 };
 
 

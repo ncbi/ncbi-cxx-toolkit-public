@@ -782,6 +782,17 @@ CObjectEx* CPtrToObjectExProxy::GetLockedObject(void)
     return m_Ptr;
 }
 
+void CPtrToObjectExProxy::ReportIncompatibleType(const type_info& type)
+{
+#ifdef _DEBUG
+    ERR_POST_X(8, Fatal <<
+                  "Type " << type.name() << " must be derived from CObjectEx");
+#else
+    NCBI_THROW(CCoreException, eInvalidArg,
+               string("Type ")+type.name()+" must be derived from CObjectEx");
+#endif
+}
+
 END_NCBI_SCOPE
 
 #ifdef USE_DEBUG_NEW
