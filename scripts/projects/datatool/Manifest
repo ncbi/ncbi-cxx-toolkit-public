@@ -39,5 +39,5 @@ SunOSSparc : plain : GCC.sh 4.0.1     --without-debug --without-mt --with-static
 
 PowerMAC   : plain : GCC.sh 4.0       --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
 
-Win32      : plain : msvc710_prj  static  32  DebugDLL
+Win32      : plain : msvc710_prj  static  32  ReleaseDLL
 Win64      : plain : msvc800_prj  static  64  ReleaseDLL
