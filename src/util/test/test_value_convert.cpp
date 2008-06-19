@@ -637,31 +637,31 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             const string yes("yes");
             const string no("no");
 
-            if (true && (bool)ConvertSafe(yes)) {
+            if (true && ConvertSafe(yes)) {
                 BOOST_CHECK(true);
             } else {
                 BOOST_CHECK(false);
             }
 
-            if (false || (bool)ConvertSafe(no)) {
+            if (false || ConvertSafe(no)) {
                 BOOST_CHECK(false);
             } else {
                 BOOST_CHECK(true);
             }
 
-            if ((bool)ConvertSafe(yes) && (bool)ConvertSafe(yes)) {
+            if (ConvertSafe(yes) && ConvertSafe(yes)) {
                 BOOST_CHECK(true);
             } else {
                 BOOST_CHECK(false);
             }
 
-            if ((bool)ConvertSafe(no) || (bool)ConvertSafe(no)) {
+            if (ConvertSafe(no) || ConvertSafe(no)) {
                 BOOST_CHECK(false);
             } else {
                 BOOST_CHECK(true);
             }
 
-            if (!(bool)ConvertSafe(no)) {
+            if (!ConvertSafe(no)) {
                 BOOST_CHECK(true);
             } else {
                 BOOST_CHECK(false);
