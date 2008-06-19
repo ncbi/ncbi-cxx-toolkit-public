@@ -342,9 +342,10 @@ void CObjectOStreamXml::x_EndNamespace(const string& ns_name)
         return;
     }
     string nsPrefix = m_NsNameToPrefix[ns_name];
-// not sure about it - should we erase them or not?
-//    m_NsNameToPrefix.erase(ns_name);
-//    m_NsPrefixToName.erase(nsPrefix);
+// we should erase then according to Namespace Scoping rules
+// http://www.w3.org/TR/REC-xml-names/#scoping 
+    m_NsNameToPrefix.erase(ns_name);
+    m_NsPrefixToName.erase(nsPrefix);
     m_NsPrefixes.pop();
     m_CurrNsPrefix = m_NsPrefixes.empty() ? kEmptyStr : m_NsPrefixes.top();
     if (!m_Attlist && GetStackDepth() <= 2) {
