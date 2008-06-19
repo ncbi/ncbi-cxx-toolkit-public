@@ -26,13 +26,14 @@
  *
  * ===========================================================================
  *
- * Author:  Eugene Vasilchenko
+ * Author:  Eugene Vasilchenko, Pavel Ivanov
  *
  *
  */
 
 /// @file ncbiobj.hpp
-/// Portable reference counted smart pointers using CRef and CObject.
+/// Portable reference counted smart and weak pointers using
+/// CWeakRef, CRef, CObject and CObjectEx.
 
 
 #include <corelib/ncbicntr.hpp>
@@ -57,6 +58,9 @@
 BEGIN_NCBI_SCOPE
 
 class CObjectMemoryPool;
+class CObject;
+class CObjectEx;
+
 
 /// Define "null" pointer value.
 enum ENull {
@@ -103,7 +107,6 @@ protected:
 // Default locker class for CRef/CConstRef templates
 ////////////////////////////////////////////////////////////////////////////
 
-class CObject;
 class CObjectCounterLocker
 {
 public:
@@ -346,6 +349,7 @@ private:
         eMagicCounterPoolNew    = 0x54917ec2 & ~eStateMask
     };
     friend class CObjectMemoryPool;
+    friend class CObjectEx;
 
     // special methods for parsing object state number
 
@@ -372,7 +376,7 @@ private:
 
     /// Remove the last reference.
     NCBI_XNCBI_EXPORT
-    void RemoveLastReference(void) const;
+    void RemoveLastReference(TCount count) const;
 
     // report different kinds of error
 
@@ -488,7 +492,7 @@ void CObject::RemoveReference(void) const
 {
     TCount newCount = m_Counter.Add(-eCounterStep);
     if ( !ObjectStateReferenced(newCount) ) {
-        RemoveLastReference();
+        RemoveLastReference(newCount);
     }
 }
 
@@ -1944,6 +1948,301 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CPtrToObjectExProxy --
+///
+/// Proxy class used for building CObjectEx and CWeakPtr.
+///
+/// Contains pointer to CObjectEx instance and NULL after this instance is
+/// destroyed.
+
+class CPtrToObjectExProxy : public CObject
+{
+public:
+    CPtrToObjectExProxy(CObjectEx* ptr);
+
+    NCBI_XNCBI_EXPORT
+    ~CPtrToObjectExProxy(void);
+
+    /// Set pointer to NULL from object's destructor.
+    void Clear(void);
+
+    /// Lock the object and return pointer to it.
+    /// If object is already destroyed then return NULL.
+    NCBI_XNCBI_EXPORT
+    CObjectEx* GetLockedObject(void);
+
+private:
+    CObjectEx* m_Ptr;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectEx --
+///
+/// The extended CObject class not only counting references to it but
+/// containing additional information to allow weak references to it.
+///
+/// @sa CWeakRef<>
+
+class CObjectEx : public CObject
+{
+public:
+    NCBI_XNCBI_EXPORT
+    CObjectEx(void);
+
+    NCBI_XNCBI_EXPORT
+    virtual ~CObjectEx(void);
+
+    /// Get pointer to proxy object containg pointer to this object
+    CPtrToObjectExProxy* GetPtrProxy(void) const;
+
+private:
+    /// Add reference to the object in "weak" manner
+    /// If reference was added successfully returns TRUE.
+    /// If the object is already destroying then returns FALSE.
+    bool WeakAddReference(void);
+
+    friend class CPtrToObjectExProxy;
+
+
+    /// Proxy object with pointer to this instance
+    CRef<CPtrToObjectExProxy> m_SelfPtrProxy;
+};
+
+////////////////////////////////////////////////////////////////////////////
+// CObjectCounterLocker inline methods
+////////////////////////////////////////////////////////////////////////////
+
+inline
+CPtrToObjectExProxy* CObjectEx::GetPtrProxy(void) const
+{
+    return m_SelfPtrProxy.GetNCPointer();
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CWeakRef --
+///
+/// Template for "weak" pointer to the object.
+///
+/// Contains the pointer to the CObjectEx but do not control the lifetime of
+/// the object. Access to the object can be obtained only via method Lock()
+/// which will return CRef to the object which will guarantee that object is
+/// not destroyed yet and until received CRef is not destroyed. If contained
+/// object is already destroyed at the time of calling Lock() then method will
+/// return empty reference.
+///
+/// Parameter class C should be derrived from CObjectEx class.
+///
+/// @sa CObjectEx
+
+template<class C, class Locker = typename CLockerTraits<C>::TLockerType>
+class CWeakRef
+{
+public:
+    typedef C element_type;                 ///< Define alias element_type
+    typedef element_type TObjectType;       ///< Define alias TObjectType
+    typedef CRef<C, Locker> TRefType;       ///< Alias for the CRef type
+    typedef CWeakRef<C, Locker> TThisType;  ///< Alias for this template type
+
+
+    /// Constructor for null pointer
+    CWeakRef(void)
+    {
+    }
+
+    /// Constructor for ENull pointer
+    CWeakRef(ENull /*null*/)
+    {
+    }
+
+    /// Constructor for pointer to a particular object
+    explicit CWeakRef(TObjectType* ptr)
+    {
+        Reset(ptr);
+    }
+
+    // Default copy constructor and copy assignment are ok
+
+    /// Lock the object and return reference to it.
+    /// If object is already deleted then null reference is returned.
+    TRefType Lock(void) const
+    {
+        if (!m_Proxy)
+            return null;
+
+        return TRefType(static_cast<TObjectType*>(
+                                            m_Proxy->GetLockedObject()));
+    }
+
+    /// Reset the containing pointer to null
+    void Reset(void)
+    {
+        m_Proxy.Reset();
+    }
+
+    /// Reset the containing pointer to null
+    void Reset(ENull /*null*/)
+    {
+        m_Proxy.Reset();
+    }
+
+    /// Reset the containing pointer to another object
+    void Reset(TObjectType* ptr)
+    {
+        if (ptr) {
+            m_Proxy.Reset(ptr->GetPtrProxy());
+        }
+        else {
+            m_Proxy.Reset();
+        }
+    }
+
+    /// Swap values of this reference with another
+    void Swap(TThisType& ref)
+    {
+        m_Proxy.Swap(ref.m_Proxy);
+    }
+
+    /// Assignment from ENull pointer
+    TThisType& operator= (ENull /*null*/)
+    {
+        Reset();
+        return *this;
+    }
+
+    /// Assignment from pointer to other object
+    TThisType& operator= (TObjectType* ptr)
+    {
+        Reset(ptr);
+        return *this;
+    }
+
+private:
+    CRef<CPtrToObjectExProxy> m_Proxy;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CWeakIRef --
+///
+/// Template for "weak" pointer to the interface.
+///
+/// Contains the pointer to interface. Final object pointed by this reference
+/// should have ability of dynamic cast to CObjectEx. Reference do not control
+/// the lifetime of the object. Access to the interface can be obtained only
+/// via method Lock() which will return CIRef to the object which will
+/// guarantee that object is not destroyed yet and until received CIRef is not
+/// destroyed. If contained interface is already destroyed at the time
+/// of calling Lock() then method will return empty reference.
+///
+/// @sa CObjectEx, CWeakRef<>
+
+template<class Interface, class Locker = CInterfaceObjectLocker<Interface> >
+class CWeakIRef
+{
+public:
+    /// Define alias element_type
+    typedef Interface element_type;
+    /// Define alias TObjectType
+    typedef element_type TObjectType;
+    /// Alias for the CIRef type
+    typedef CIRef<Interface, Locker> TRefType;
+    /// Alias for this template type
+    typedef CWeakIRef<Interface, Locker> TThisType;
+
+
+    /// Constructor for null pointer
+    CWeakIRef(void)
+    {
+    }
+
+    /// Constructor for ENull pointer
+    CWeakIRef(ENull /*null*/)
+    {
+    }
+
+    /// Constructor for pointer to the interface
+    explicit CWeakIRef(Interface* ptr)
+    {
+        Reset(ptr);
+    }
+
+    // Default copy constructor and copy assignment are ok
+
+    /// Lock the object and return reference to it.
+    /// If object is already deleted then null reference is returned.
+    TRefType Lock(void) const
+    {
+        if (!m_Proxy)
+            return null;
+
+        // We are not checking that result of dynamic_cast is not null
+        // because type compatibility is already checked when this reference
+        // was assigned with non-null value. Now we can be sure that this
+        // cast will not return null.
+        return TRefType(dynamic_cast<Interface*>(
+                                            m_Proxy->GetLockedObject()));
+    }
+
+    /// Reset the containing pointer to null
+    void Reset(void)
+    {
+        m_Proxy.Reset();
+    }
+
+    /// Reset the containing pointer to ENull
+    void Reset(ENull /*null*/)
+    {
+        m_Proxy.Reset();
+    }
+
+    /// Reset the containing pointer to another interface
+    void Reset(Interface* ptr)
+    {
+        if (ptr) {
+            CObjectEx* obj = dynamic_cast<CObjectEx*>(ptr);
+            if (!obj) {
+                CObjectCounterLocker::ReportIncompatibleType(typeid(*obj));
+            }
+            m_Proxy.Reset(obj->GetPtrProxy());
+        }
+        else {
+            m_Proxy.Reset();
+        }
+    }
+
+    /// Swap values of this reference with another
+    void Swap(TThisType& ref)
+    {
+        m_Proxy.Swap(ref.m_Proxy);
+    }
+
+    /// Assignment from ENull pointer
+    TThisType& operator= (ENull /*null*/)
+    {
+        Reset();
+        return *this;
+    }
+
+    /// Assignment from pointer to another interface
+    TThisType& operator= (Interface* ptr)
+    {
+        Reset(ptr);
+        return *this;
+    }
+
+private:
+    CRef<CPtrToObjectExProxy> m_Proxy;
+};
+
+
 /* @} */
 
 
@@ -1967,6 +2266,25 @@ void swap(NCBI_NS_NCBI::CConstRef<C,L>& ref1,
 {
     ref1.Swap(ref2);
 }
+
+
+template<class C, class L>
+inline
+void swap(NCBI_NS_NCBI::CWeakRef<C,L>& ref1,
+          NCBI_NS_NCBI::CWeakRef<C,L>& ref2)
+{
+    ref1.Swap(ref2);
+}
+
+
+template<class C, class L>
+inline
+void swap(NCBI_NS_NCBI::CWeakIRef<C,L>& ref1,
+          NCBI_NS_NCBI::CWeakIRef<C,L>& ref2)
+{
+    ref1.Swap(ref2);
+}
+
 
 END_STD_SCOPE
 

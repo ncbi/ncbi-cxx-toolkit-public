@@ -509,9 +509,8 @@ void CObject::CheckReferenceOverflow(TCount count) const
 }
 
 
-void CObject::RemoveLastReference(void) const
+void CObject::RemoveLastReference(TCount count) const
 {
-    TCount count = m_Counter.Get();
     if ( ObjectStateCanBeDeleted(count) ) {
         // last reference to heap object -> delete it
         if ( ObjectStateUnreferenced(count) ) {
@@ -722,6 +721,65 @@ const char* CObjectException::GetErrCodeString(void) const
     case eRefUnref:     return "eRefUnref";
     default:    return CException::GetErrCodeString();
     }
+}
+
+
+DEFINE_STATIC_FAST_MUTEX(sWeakRefMutex);
+
+
+CObjectEx::CObjectEx(void)
+    : m_SelfPtrProxy( new CPtrToObjectExProxy(this) )
+{
+}
+
+CObjectEx::~CObjectEx(void)
+{
+    m_SelfPtrProxy->Clear();
+}
+
+inline
+bool CObjectEx::WeakAddReference(void)
+{
+    TCount newCount = m_Counter.Add(eCounterStep);
+    if ( ObjectStateReferencedOnlyOnce(newCount) ) {
+        m_Counter.Add(-eCounterStep);
+        return false;
+    }
+    return true;
+}
+
+
+CPtrToObjectExProxy::CPtrToObjectExProxy(CObjectEx* ptr)
+    : m_Ptr(ptr)
+{
+}
+
+CPtrToObjectExProxy::~CPtrToObjectExProxy(void)
+{
+}
+
+void CPtrToObjectExProxy::Clear(void)
+{
+    CFastMutexGuard guard(sWeakRefMutex);
+
+    m_Ptr = NULL;
+}
+
+CObjectEx* CPtrToObjectExProxy::GetLockedObject(void)
+{
+    if (! m_Ptr)
+        return NULL;
+
+    CFastMutexGuard guard(sWeakRefMutex);
+
+    // m_Ptr is set to NULL in CObjectEx destructor and always under mutex.
+    // So if m_Ptr here is not NULL then it will be possible to execute
+    // WeakAddReference() without interfering with destructor.
+    if (m_Ptr  &&  ! m_Ptr->WeakAddReference()) {
+        m_Ptr = NULL;
+    }
+
+    return m_Ptr;
 }
 
 END_NCBI_SCOPE
