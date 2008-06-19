@@ -1215,88 +1215,6 @@ namespace value_slice
 // Several compilers, including MSVC, cannot deduce data type in case of 
 // logical expressions.
 
-template <typename CP, typename FROM>
-inline
-bool operator !(CValueConvert<CP, FROM> const& value)
-{
-    const bool bool_expr = value;
-    return !bool_expr;
-}
-
-template <
-    typename CP1, 
-    typename CP2, 
-    typename FROM1, 
-    typename FROM2
-    >
-inline
-bool operator &&(CValueConvert<CP1, FROM1> const& l, CValueConvert<CP2, FROM2> const& r)
-{
-    const bool l_expr = l;
-
-    if (!l) {
-        return false;
-    }
-
-    return r;
-}
-
-template <
-    typename CP1, 
-    typename CP2, 
-    typename FROM1,
-    typename FROM2
-    >
-inline
-bool operator ||(CValueConvert<CP1, FROM1> const& l, CValueConvert<CP2, FROM2> const& r)
-{
-    const bool l_expr = l;
-
-    if (l) {
-        return true;
-    }
-
-    return r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator &&(bool l, CValueConvert<CP, FROM> const& r)
-{
-    if (!l) {
-        return false;
-    }
-
-    return r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator &&(CValueConvert<CP, FROM> const& l, bool r)
-{
-    const bool l_expr = l;
-    return l_expr && r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator ||(bool l, CValueConvert<CP, FROM> const& r)
-{
-    if (l) {
-        return true;
-    }
-
-    return r;
-}
-
-template <typename CP, typename FROM>
-inline
-bool operator ||(CValueConvert<CP, FROM> const& l, bool r)
-{
-    const bool l_expr = l;
-    return l_expr || r;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 template <typename T>
 struct STypeMap
@@ -1431,6 +1349,96 @@ ConvertSafe(const FROM& value)
 }
 
 #else
+
+#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
+namespace value_slice
+{
+
+template <typename CP, typename FROM>
+inline
+bool operator !(CValueConvert<CP, FROM> const& value)
+{
+    const bool bool_expr = value;
+    return !bool_expr;
+}
+
+template <
+    typename CP1, 
+    typename CP2, 
+    typename FROM1, 
+    typename FROM2
+    >
+inline
+bool operator &&(CValueConvert<CP1, FROM1> const& l, CValueConvert<CP2, FROM2> const& r)
+{
+    const bool l_expr = l;
+
+    if (!l) {
+        return false;
+    }
+
+    return r;
+}
+
+template <
+    typename CP1, 
+    typename CP2, 
+    typename FROM1,
+    typename FROM2
+    >
+inline
+bool operator ||(CValueConvert<CP1, FROM1> const& l, CValueConvert<CP2, FROM2> const& r)
+{
+    const bool l_expr = l;
+
+    if (l) {
+        return true;
+    }
+
+    return r;
+}
+
+template <typename CP, typename FROM>
+inline
+bool operator &&(bool l, CValueConvert<CP, FROM> const& r)
+{
+    if (!l) {
+        return false;
+    }
+
+    return r;
+}
+
+template <typename CP, typename FROM>
+inline
+bool operator &&(CValueConvert<CP, FROM> const& l, bool r)
+{
+    const bool l_expr = l;
+    return l_expr && r;
+}
+
+template <typename CP, typename FROM>
+inline
+bool operator ||(bool l, CValueConvert<CP, FROM> const& r)
+{
+    if (l) {
+        return true;
+    }
+
+    return r;
+}
+
+template <typename CP, typename FROM>
+inline
+bool operator ||(CValueConvert<CP, FROM> const& l, bool r)
+{
+    const bool l_expr = l;
+    return l_expr || r;
+}
+
+}
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // A limited case ...
