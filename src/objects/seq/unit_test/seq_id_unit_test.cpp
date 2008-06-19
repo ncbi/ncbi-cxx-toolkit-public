@@ -666,7 +666,9 @@ static void s_TestFastaRoundTrip(const char* s)
     }
 }
 
-#ifdef BOOST_AUTO_TC_REGISTRAR
+#ifdef BOOST_AUTO_TU_REGISTRAR
+BOOST_AUTO_TU_REGISTRAR(s_FastaRoundTrip)
+#elif defined(BOOST_AUTO_TC_REGISTRAR)
 BOOST_AUTO_TC_REGISTRAR(s_FastaRoundTrip)
 #else
 static boost::unit_test::ut_detail::auto_unit_test_registrar
