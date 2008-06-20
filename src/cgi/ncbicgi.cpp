@@ -69,11 +69,6 @@
 BEGIN_NCBI_SCOPE
 
 
-
-const char* kPageInfoCookie = "ncbi_st";
-const char* kPageHitId      = "ncbi_phid";
-
-
 ///////////////////////////////////////////////////////
 //  CCgiCookie::
 //
@@ -899,34 +894,17 @@ void CCgiRequest::x_Init
 
     x_ProcessInputStream(flags, istr, ifd);
 
-    string phid;
     CRequestContext& rctx = CDiagContext::GetRequestContext();
     if ((flags & fIgnorePageHitId) == 0) {
         // Check if pageviewid is present. If not, generate one.
-        TCgiEntries::iterator phid_it = m_Entries.find(kPageHitId);
+        TCgiEntries::iterator phid_it = m_Entries.find("ncbi_phid");
         if ( phid_it == m_Entries.end() ) {
-            phid = rctx.SetHitID();
+            rctx.SetHitID();
         }
         else {
-            phid = phid_it->second;
-            rctx.SetHitID(phid);
+            rctx.SetHitID(phid_it->second);
         }
     }
-
-    // Check if ncbi_st cookie is set
-    const CCgiCookie* st = m_Cookies.Find(kPageInfoCookie);
-    CCgiArgs pg_info;
-    if ( st ) {
-        pg_info.SetQueryString(st->GetValue());
-    }
-    pg_info.SetValue(kPageHitId, phid);
-    // Log ncbi_st values
-    CDiagContext_Extra extra = GetDiagContext().Extra();
-    // extra.SetType("NCBICGI");
-    ITERATE(CCgiArgs::TArgs, it, pg_info.GetArgs()) {
-        extra.Print(it->name, it->value);
-    }
-    extra.Flush();
 
     // Check for an IMAGEMAP input entry like: "Command.x=5&Command.y=3" and
     // put them with empty string key for better access
