@@ -1350,7 +1350,7 @@ ConvertSafe(const FROM& value)
 
 #else
 
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION <= 550
+#if defined(NCBI_COMPILER_WORKSHOP)
 namespace value_slice
 {
 
