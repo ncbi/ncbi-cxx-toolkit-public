@@ -1602,7 +1602,7 @@ NCBI_PARAM_DECL(bool, Log, NoCreate);
 NCBI_PARAM_DEF_EX(bool, Log, NoCreate, false, eParam_NoThread, LOG_NOCREATE);
 typedef NCBI_PARAM_TYPE(Log, NoCreate) TLogNoCreate;
 
-bool OpenLogFileFromConfig(CNcbiRegistry& config)
+bool OpenLogFileFromConfig(CNcbiRegistry& config, string* new_name)
 {
     string logname = config.GetString("LOG", "File", kEmptyStr);
     // In eDS_User mode do not use config unless IgnoreEnvArg
@@ -1610,6 +1610,9 @@ bool OpenLogFileFromConfig(CNcbiRegistry& config)
     if ( !logname.empty() ) {
         if ( TLogNoCreate::GetDefault()  &&  !CDirEntry(logname).Exists() ) {
             return false;
+        }
+        if ( new_name ) {
+            *new_name = logname;
         }
         return SetLogFile(logname, eDiagFile_All, true);
     }
@@ -1652,6 +1655,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     }
 
     bool log_switched = false;
+    bool name_changed = true; // By default consider it's a new name
     bool merge_lines = false;
     bool try_root_log_first = false;
     if ( config ) {
@@ -1662,7 +1666,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             try_root_log_first = false;
         }
         if (force_config  ||  (ds != eDS_User  &&  !try_root_log_first)) {
-            log_switched = OpenLogFileFromConfig(*config);
+            log_switched = OpenLogFileFromConfig(*config, NULL);
         }
     }
 
@@ -1740,6 +1744,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                             log_name = CFile::ConcatPath(def_log_dir, log_base);
                             if ( SetLogFile(log_name, eDiagFile_All) ) {
                                 log_switched = true;
+                                name_changed = log_name != old_log_name;
                                 merge_lines = true;
                                 break;
                             }
@@ -1748,17 +1753,21 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         log_name = CFile::ConcatPath("/log/srv", log_base);
                         if ( SetLogFile(log_name, eDiagFile_All) ) {
                             log_switched = true;
+                            name_changed = log_name != old_log_name;
                             merge_lines = true;
                             break;
                         }
-                        if (try_root_log_first && OpenLogFileFromConfig(*config)) {
+                        if (try_root_log_first &&
+                            OpenLogFileFromConfig(*config, &log_name)) {
                             log_switched = true;
+                            name_changed = log_name != old_log_name;
                             break;
                         }
                         // Try to switch to /log/fallback/
                         log_name = CFile::ConcatPath("/log/fallback/", log_base);
                         if ( SetLogFile(log_name, eDiagFile_All) ) {
                             log_switched = true;
+                            name_changed = log_name != old_log_name;
                             merge_lines = true;
                             break;
                         }
@@ -1767,6 +1776,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     if (ds == eDS_ToStdlog) {
                         log_name = CFile::ConcatPath(".", log_base);
                         log_switched = SetLogFile(log_name, eDiagFile_All);
+                        name_changed = log_name != old_log_name;
                     }
                     if ( !log_switched ) {
                         ERR_POST_X(3, Info << "Failed to set log file to " +
@@ -1779,6 +1789,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     if ( s_UseRootLog ) {
                         if ( SetLogFile(kDefaultFallback, eDiagFile_All) ) {
                             log_switched = true;
+                            name_changed = kDefaultFallback != old_log_name;
                             merge_lines = true;
                         }
                         else {
@@ -1811,6 +1822,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         UnsetDiagPostFlag(eDPF_PreMergeLines);
         UnsetDiagPostFlag(eDPF_MergeLines);
     }
+    log_switched &= name_changed;
     CDiagHandler* handler = GetDiagHandler();
     if (collect == eDCM_Flush) {
         // Flush and discard
@@ -2346,6 +2358,7 @@ SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
         m_RequestId = message.m_RequestId;
         m_Event = message.m_Event;
         m_TypedExtra = message.m_TypedExtra;
+        m_ExtraArgs = message.m_ExtraArgs;
 
         m_Buffer = m_Data->m_Message.empty() ? 0 : m_Data->m_Message.c_str();
         m_BufferLen = m_Data->m_Message.empty() ?
