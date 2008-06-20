@@ -1,5 +1,14 @@
 corelib$
-util
+util$
+util/compress
+util/creaders
+util/fileblobstorage
+util/image$
+util/qparse$
+util/regexp$
+util/regexp/util
+util/sequtil
+util/tables$
 serial$
 serial/datatool
 
