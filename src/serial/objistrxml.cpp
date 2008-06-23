@@ -755,7 +755,7 @@ bool CObjectIStreamXml::ReadBool(void)
     CTempString attr;
 // accept both   <a>true</a>   and   <a value="true"/>
 // for compatibility with ASN-generated classes
-    bool checktag = HasAttlist(); //!x_IsStdXml();
+    bool checktag = m_Attlist ? false : HasAttlist(); //!x_IsStdXml();
     if (checktag) {
         while (HasAttlist()) {
             attr = ReadAttributeName();
