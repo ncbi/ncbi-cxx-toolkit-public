@@ -52,7 +52,9 @@
 TDS_RCSID(var, "$Id$");
 
 static int tds_send_login(TDSSOCKET * tds, TDSCONNECTION * connection);
+#ifdef NCBI_FTDS_ALLOW_TDS_80
 static int tds8_do_login(TDSSOCKET * tds, TDSCONNECTION * connection);
+#endif
 static int tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection);
 
 void
@@ -427,10 +429,13 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
         return TDS_FAIL;
 	tds_set_state(tds, TDS_IDLE);
 
+#ifdef NCBI_FTDS_ALLOW_TDS_80
     if (IS_TDS80(tds)) {
         retval = tds8_do_login(tds, connection);
         db_selected = 1;
-    } else if (IS_TDS7_PLUS(tds)) {
+    } else
+#endif
+    if (IS_TDS7_PLUS(tds)) {
         retval = tds7_send_login(tds, connection);
         db_selected = 1;
     } else {
@@ -1098,6 +1103,7 @@ tds7_crypt_pass(const unsigned char *clear_pass, int len, unsigned char *crypt_p
     return crypt_pass;
 }
 
+#ifdef NCBI_FTDS_ALLOW_TDS_80
 static int
 tds8_do_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 {
@@ -1206,4 +1212,4 @@ tds8_do_login(TDSSOCKET * tds, TDSCONNECTION * connection)
     return ret;
 #endif
 }
-
+#endif

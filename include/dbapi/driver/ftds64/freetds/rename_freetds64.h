@@ -163,8 +163,10 @@
 #define tds_set_version                 tds_set_version_ver64
 #define tds_skip_quoted                 tds_skip_quoted_ver64
 #define tds_srv_charset_changed         tds_srv_charset_changed_ver64
+#ifdef NCBI_FTDS_ALLOW_TDS_80
 #define tds_ssl_deinit                  tds_ssl_deinit_ver64
 #define tds_ssl_init                    tds_ssl_init_ver64
+#endif
 #define tds_strftime                    tds_strftime_ver64
 #define tds_strlcat                     tds_strlcat_ver64
 #define tds_strlcpy                     tds_strlcpy_ver64

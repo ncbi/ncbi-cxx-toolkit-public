@@ -1426,8 +1426,10 @@ int tds_close_socket(TDSSOCKET * tds);
 int tds_read_packet(TDSSOCKET * tds);
 int tds_write_packet(TDSSOCKET * tds, unsigned char final);
 int tds7_get_instance_port(const char *ip_addr, const char *instance);
+#ifdef NCBI_FTDS_ALLOW_TDS_80
 int tds_ssl_init(TDSSOCKET *tds);
 void tds_ssl_deinit(TDSSOCKET *tds);
+#endif
 
 
 
@@ -1454,7 +1456,11 @@ void tds_answer_challenge(TDSSOCKET * tds, TDSCONNECTION *connection, const unsi
 #define IS_TDS46(x) (x->major_version==4 && x->minor_version==6)
 #define IS_TDS50(x) (x->major_version==5 && x->minor_version==0)
 #define IS_TDS70(x) (x->major_version==7 && x->minor_version==0)
-#define IS_TDS80(x) (x->major_version==8 && x->minor_version==0)
+#ifdef NCBI_FTDS_ALLOW_TDS_80
+#  define IS_TDS80(x) (x->major_version==8 && x->minor_version==0)
+#else
+#  define IS_TDS80(x) 0
+#endif
 
 #define IS_TDS7_PLUS(x) ( IS_TDS70(x) || IS_TDS80(x) )
 

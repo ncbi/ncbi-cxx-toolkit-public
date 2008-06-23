@@ -952,8 +952,10 @@ tds_free_socket(TDSSOCKET * tds)
 			free(tds->in_buf);
 		if (tds->out_buf)
 			free(tds->out_buf);
+#ifdef NCBI_FTDS_ALLOW_TDS_80
 #if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 		tds_ssl_deinit(tds);
+#endif
 #endif
 		tds_close_socket(tds);
 		if (tds->date_fmt)

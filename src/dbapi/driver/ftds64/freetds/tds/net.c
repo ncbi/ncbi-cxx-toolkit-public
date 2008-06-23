@@ -92,10 +92,12 @@
 #include <signal.h>
 #include <assert.h>
 
+#ifdef NCBI_FTDS_ALLOW_TDS_80
 #ifdef HAVE_GNUTLS
 #include <gnutls/gnutls.h>
 #elif defined(HAVE_OPENSSL)
 #include <openssl/ssl.h>
+#endif
 #endif
 
 #ifdef DMALLOC
@@ -418,12 +420,14 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 static int
 goodread(TDSSOCKET * tds, unsigned char *buf, int buflen)
 {
+#ifdef NCBI_FTDS_ALLOW_TDS_80
 #ifdef HAVE_GNUTLS
 	if (tds->tls_session)
 		return gnutls_record_recv(tds->tls_session, buf, buflen);
 #elif defined(HAVE_OPENSSL)
 	if (tds->tls_session)
 		return SSL_read((SSL*) tds->tls_session, buf, buflen);
+#endif
 #endif
 	return tds_goodread(tds, buf, buflen, 0);
 }
@@ -720,6 +724,7 @@ tds_write_packet(TDSSOCKET * tds, unsigned char final)
 	}
 #endif
 
+#ifdef NCBI_FTDS_ALLOW_TDS_80
 #ifdef HAVE_GNUTLS
 	if (tds->tls_session)
 		sent = gnutls_record_send(tds->tls_session, tds->out_buf, tds->out_pos);
@@ -728,6 +733,7 @@ tds_write_packet(TDSSOCKET * tds, unsigned char final)
 	if (tds->tls_session)
 		sent = SSL_write((SSL*) tds->tls_session, tds->out_buf, tds->out_pos);
 	else
+#endif
 #endif
 		sent = tds_goodwrite(tds, tds->out_buf, tds->out_pos, final);
 
@@ -864,6 +870,7 @@ tds7_get_instance_port(const char *ip_addr, const char *instance)
 	return port;
 }
 
+#ifdef NCBI_FTDS_ALLOW_TDS_80
 #if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 
 #ifdef HAVE_GNUTLS
@@ -1200,6 +1207,7 @@ tds_ssl_deinit(TDSSOCKET *tds)
 }
 #endif
 
+#endif
 #endif
 /** \@} */
 
