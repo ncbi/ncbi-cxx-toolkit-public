@@ -48,6 +48,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CSeq_entry;
 class CBioseq;
 
 class NCBI_SEQSET_EXPORT CBioseq_set : public CBioseq_set_Base
@@ -58,6 +59,12 @@ public:
     CBioseq_set(void);
     // destructor
     ~CBioseq_set(void);
+
+    // Manage Seq-entry tree structure
+    // get parent Seq-entry.
+    // NULL means that either there is no parent Seq-entry,
+    // or CSeq_entry::Parentize() was never called.
+    CSeq_entry* GetParentEntry(void) const;
 
     enum ELabelType {
         eType,
@@ -78,6 +85,12 @@ private:
     // Prohibit copy constructor & assignment operator
     CBioseq_set(const CBioseq_set&);
     CBioseq_set& operator= (const CBioseq_set&);
+
+    // Seq-entry containing the Bioseq
+    void SetParentEntry(CSeq_entry* entry);
+    CSeq_entry* m_ParentEntry;
+
+    friend class CSeq_entry;
 };
 
 
@@ -87,9 +100,21 @@ private:
 // constructor
 inline
 CBioseq_set::CBioseq_set(void)
+    : m_ParentEntry(0)
 {
 }
 
+inline
+void CBioseq_set::SetParentEntry(CSeq_entry* entry)
+{
+    m_ParentEntry = entry;
+}
+
+inline
+CSeq_entry* CBioseq_set::GetParentEntry(void) const
+{
+    return m_ParentEntry;
+}
 
 /////////////////// end of CBioseq_set inline methods
 
