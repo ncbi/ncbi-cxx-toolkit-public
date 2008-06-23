@@ -285,7 +285,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     /// By default the limit is set to kIntMax, meaning no restriction.
     /// 
     ///  @sa
-    ///    SetExactDepth(), SetAdaptiveDepth(), SetAdaptiveTrigger()
+    ///    SetExactDepth(), SetAdaptiveDepth(), GetResolveDepth()
     SAnnotSelector& SetResolveDepth(int depth)
         {
             m_ResolveDepth = depth;
@@ -293,13 +293,21 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
     typedef vector<SAnnotTypeSelector> TAdaptiveTriggers;
+    enum EAdaptiveDepthFlags {
+        fAdaptive_ByTriggers = 1<<0,
+        fAdaptive_BySubtypes = 1<<1,
+        kAdaptive_None       = 0,
+        kAdaptive_All        = fAdaptive_ByTriggers | fAdaptive_BySubtypes,
+        kAdaptive_Default    = kAdaptive_All
+    };
+    typedef Uint1 TAdaptiveDepthFlags;
     /// GetAdaptiveDepth() returns current value of 'adaptive depth' flag.
     ///
     ///  @sa
     ///    SetAdaptiveDepth()
     bool GetAdaptiveDepth(void) const
         {
-            return m_AdaptiveDepth;
+            return m_AdaptiveDepthFlags != 0;
         }
     /// SetAdaptiveDepth() requests to restrict subsegment resolution
     /// depending on annotations found on lower level of segments.
@@ -331,12 +339,32 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     /// be found on B1.
     ///
     ///  @sa
-    ///    SetResolveDepth(), SetExactDepth(), SetAdaptiveTrigger()
+    ///    SetResolveDepth(), SetExactDepth(), SetAdaptiveTrigger(), GetAdaptiveDepth()
     SAnnotSelector& SetAdaptiveDepth(bool value = true)
         {
-            m_AdaptiveDepth = value;
+            m_AdaptiveDepthFlags = value? kAdaptive_Default: 0;
             return *this;
         }
+
+    /// SetAdaptiveDepthFlags() sets flags for adaptive depth heuristics
+    ///
+    ///  @sa
+    ///    SetAdaptiveDepth(), SetAdaptiveTrigger(), GetAdaptiveDepthFlags()
+    SAnnotSelector& SetAdaptiveDepthFlags(TAdaptiveDepthFlags flags)
+        {
+            m_AdaptiveDepthFlags = flags;
+            return *this;
+        }
+    /// GetAdaptiveDepthFlags() returns current set of adaptive depth
+    /// heuristics flags
+    ///
+    ///  @sa
+    ///    SetAdaptiveDepthFlags()
+    TAdaptiveDepthFlags GetAdaptiveDepthFlags(void) const
+        {
+            return m_AdaptiveDepthFlags;
+        }
+
     /// SetAdaptiveTrigger() allows to change default set of adaptive trigger
     /// annotations.
     /// Default set is: gene, mrna, cds.
@@ -570,7 +598,7 @@ protected:
     TAnnotsNames          m_IncludeAnnotsNames;
     TAnnotsNames          m_ExcludeAnnotsNames;
     bool                  m_NoMapping;
-    bool                  m_AdaptiveDepth;
+    TAdaptiveDepthFlags   m_AdaptiveDepthFlags;
     bool                  m_ExactDepth;
     bool                  m_ExcludeExternal;
     bool                  m_CollectSeq_annots;

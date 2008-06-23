@@ -204,9 +204,9 @@ CAnnotTypes_CI::~CAnnotTypes_CI(void)
 
 const CAnnotTypes_CI::TAnnotTypes& CAnnotTypes_CI::GetAnnotTypes(void) const
 {
-    if (m_AnnotTypes.empty()  && m_DataCollector->m_TypesBitset.any()) {
-        for (size_t i = 0; i < m_DataCollector->m_TypesBitset.size(); ++i) {
-            if ( m_DataCollector->m_TypesBitset.test(i) ) {
+    if (m_AnnotTypes.empty() && m_DataCollector->m_AnnotTypes.any()) {
+        for (size_t i = 0; i < m_DataCollector->m_AnnotTypes.size(); ++i) {
+            if ( m_DataCollector->m_AnnotTypes.test(i) ) {
                 m_AnnotTypes.push_back(CAnnotType_Index::GetTypeSelector(i));
             }
         }

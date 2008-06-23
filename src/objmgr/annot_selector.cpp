@@ -66,7 +66,7 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_UnresolvedFlag(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
-      m_AdaptiveDepth(false),
+      m_AdaptiveDepthFlags(kAdaptive_None),
       m_ExactDepth(false),
       m_ExcludeExternal(false),
       m_CollectSeq_annots(false),
@@ -91,7 +91,7 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_UnresolvedFlag(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
-      m_AdaptiveDepth(false),
+      m_AdaptiveDepthFlags(kAdaptive_None),
       m_ExactDepth(false),
       m_ExcludeExternal(false),
       m_CollectSeq_annots(false),
@@ -112,7 +112,7 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
       m_UnresolvedFlag(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
-      m_AdaptiveDepth(false),
+      m_AdaptiveDepthFlags(kAdaptive_None),
       m_ExactDepth(false),
       m_ExcludeExternal(false),
       m_CollectSeq_annots(false),
@@ -145,7 +145,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_IncludeAnnotsNames = sel.m_IncludeAnnotsNames;
         m_ExcludeAnnotsNames = sel.m_ExcludeAnnotsNames;
         m_NoMapping = sel.m_NoMapping;
-        m_AdaptiveDepth = sel.m_AdaptiveDepth;
+        m_AdaptiveDepthFlags = sel.m_AdaptiveDepthFlags;
         m_ExactDepth = sel.m_ExactDepth;
         m_ExcludeExternal = sel.m_ExcludeExternal;
         m_CollectSeq_annots = sel.m_CollectSeq_annots;

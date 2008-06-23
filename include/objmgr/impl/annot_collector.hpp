@@ -263,6 +263,7 @@ private:
     bool CanResolveId(const CSeq_id_Handle& idh, const CBioseq_Handle& bh);
 
     void x_Clear(void);
+    void x_Initialize0(const SAnnotSelector& selector);
     void x_Initialize(const SAnnotSelector& selector,
                       const CBioseq_Handle& bioseq,
                       const CRange<TSeqPos>& range,
@@ -271,6 +272,18 @@ private:
                       const CHandleRangeMap& master_loc);
     void x_Initialize(const SAnnotSelector& selector);
     void x_GetTSE_Info(void);
+
+    void x_SearchMaster(const CBioseq_Handle& bh,
+                        const CSeq_id_Handle& master_id,
+                        const CHandleRange& master_range);
+    bool x_SearchSegments(const CBioseq_Handle& bh,
+                          const CSeq_id_Handle& master_id,
+                          const CHandleRange& master_range,
+                          CSeq_loc& master_loc_empty,
+                          int level);
+    bool x_SearchSegments(const CHandleRangeMap& master_loc,
+                          int level);
+
     bool x_SearchMapped(const CSeqMap_CI&     seg,
                         CSeq_loc&             master_loc_empty,
                         const CSeq_id_Handle& master_id,
@@ -296,9 +309,7 @@ private:
                        const CAnnotName&     name,
                        const CSeq_id_Handle& id,
                        const CHandleRange&   hr,
-                       CSeq_loc_Conversion*  cvt,
-                       size_t                from_idx,
-                       size_t                to_idx);
+                       CSeq_loc_Conversion*  cvt);
     void x_SearchAll(void);
     void x_SearchAll(const CSeq_entry_Info& entry_info);
     void x_SearchAll(const CSeq_annot_Info& annot_info);
@@ -349,7 +360,10 @@ private:
     CRef<CCreatedFeat_Ref>  m_CreatedMapped;
 
     auto_ptr<TAnnotLocsSet> m_AnnotLocsSet;
-    TAnnotTypesBitset       m_TypesBitset;
+    TAnnotTypesBitset       m_AnnotTypes;
+    TAnnotTypesBitset       m_TriggerTypes;
+    TAnnotTypesBitset       m_UnseenAnnotTypes;
+    TAnnotTypesBitset       m_CollectAnnotTypes;
     mutable auto_ptr<TAnnotNames> m_AnnotNames;
 
     friend class CAnnotTypes_CI;
