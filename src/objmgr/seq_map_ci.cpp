@@ -381,6 +381,9 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
             }
             bh = GetScope()->GetBioseqHandle(seq_id);
             if ( !bh ) {
+                if ( GetFlags() & CSeqMap::fIgnoreUnresolved ) {
+                    return false;
+                }
                 NCBI_THROW(CSeqMapException, eFail,
                            "Cannot resolve "+
                            seq_id.AsFastaString()+": unknown");
