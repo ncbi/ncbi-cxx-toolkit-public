@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = ConvertSafe(value_float);
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = ConvertSafe(value_float);
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = ConvertSafe(value_float);
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = ConvertSafe(value_float);
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = ConvertSafe(value_float);
@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = ConvertSafe(value_float);
@@ -442,7 +442,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, value_Int1);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = ConvertSafe(value_float);
@@ -493,7 +493,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = ConvertSafe(value_float);
@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
             BOOST_CHECK_EQUAL(value, true);
 
             value = ConvertSafe(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = ConvertSafe(value_float);
@@ -981,7 +981,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = Convert(value_float);
@@ -1047,7 +1047,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_THROW(value = Convert(value_Int1), CInvalidConversionException);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = Convert(value_float);
@@ -1107,7 +1107,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = Convert(value_float);
@@ -1170,7 +1170,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_THROW(value = Convert(value_Int1), CInvalidConversionException);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = Convert(value_float);
@@ -1228,7 +1228,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_EQUAL(value, value_Uint1);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = Convert(value_float);
@@ -1286,7 +1286,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_THROW(value = Convert(value_Int1), CInvalidConversionException);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = Convert(value_float);
@@ -1340,7 +1340,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_THROW(value = Convert(value_Uint1), CInvalidConversionException);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = Convert(value_float);
@@ -1394,7 +1394,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_THROW(value = Convert(value_Int1), CInvalidConversionException);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = Convert(value_float);
@@ -1466,7 +1466,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
             BOOST_CHECK_EQUAL(value, true);
 
             value = Convert(value_bool);
-            BOOST_CHECK_EQUAL(value, value_bool);
+            BOOST_CHECK_EQUAL(value != 0, value_bool);
 
             // Doesn't compile ...
             // value = Convert(value_float);
