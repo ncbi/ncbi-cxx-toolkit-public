@@ -104,10 +104,10 @@ IF NOT _%CMD% == _make GOTO COMPLETE
 :BUILD
 
 :ARGLOOP
-IF %CFG% == DebugDLL   GOTO CONTCFG
-IF %CFG% == DebugMT    GOTO CONTCFG
-IF %CFG% == ReleaseDLL GOTO CONTCFG
-IF %CFG% == ReleaseMT  GOTO CONTCFG
+IF %CFG% == DebugDLL   GOTO CONTBLD
+IF %CFG% == DebugMT    GOTO CONTBLD
+IF %CFG% == ReleaseDLL GOTO CONTBLD
+IF %CFG% == ReleaseMT  GOTO CONTBLD
 ECHO The following configuration names are recognized:
 ECHO     DebugDLL DebugMT ReleaseDLL ReleaseMT
 ECHO FATAL: Unknown configuration name %CFG%. Please correct.
